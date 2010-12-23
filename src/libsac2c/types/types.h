@@ -1115,6 +1115,8 @@ typedef struct CUDA_ACCESS_INFO_T {
     node *arrayshp;
     node *sharray;
     node *sharrayshp;
+    int cuwldim; /* Dimesion of the containing cuda withloop */
+    node *tbshp; /* shape of the thread block */
     cuda_index_t *indices[MAX_REUSE_DIM];
     bool isconstant[MAX_REUSE_DIM]; /* whether a dimension is constant, i.e. consists of
                                        only IDX_CONSTANT and IDX_EXTID indeices*/

@@ -4541,6 +4541,12 @@ PRTpart (node *arg_node, info *arg_info)
         fprintf (global.outfile, "/*** CUDA Partition ***/\n");
     }
 
+    if (PART_THREADBLOCKSHAPE (arg_node) != NULL) {
+        fprintf (global.outfile, "/*** Thread Block Shape: ");
+        PRTarray (PART_THREADBLOCKSHAPE (arg_node), arg_info);
+        fprintf (global.outfile, " ***/\n");
+    }
+
     /* print generator */
     INDENT; /* each gen in a new line. */
     TRAVdo (PART_GENERATOR (arg_node), arg_info);

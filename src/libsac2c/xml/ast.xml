@@ -8657,6 +8657,18 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="ThreadBlockShape" inconstructor="no">
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="cuda_acuwl" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsCopy" />

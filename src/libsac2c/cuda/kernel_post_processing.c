@@ -359,8 +359,8 @@ KPPprf (node *arg_node, info *arg_info)
     case F_free:
         free_var = PRF_ARG1 (arg_node);
         type = AVIS_TYPE (ID_AVIS (free_var));
-        DBUG_ASSERT ((TYisAKV (type) || TYisAKS (type)),
-                     "Non AKV and AKS node found in CUDA kernels!");
+        DBUG_ASSERT ((TYisAKV (type) || TYisAKD (type) || TYisAKS (type)),
+                     "Non AKV, AKD or AKS node found in CUDA kernels!");
         dim_num = TYgetDim (type);
         if (dim_num > 0) {
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;

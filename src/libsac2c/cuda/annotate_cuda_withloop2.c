@@ -38,6 +38,7 @@
 #include "new_types.h"
 #include "DupTree.h"
 #include "type_utils.h"
+#include "shape.h"
 
 /** <!--********************************************************************-->
  *
@@ -126,6 +127,45 @@ InitCudaBlockSizes ()
     }
 
     DBUG_VOID_RETURN;
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ATravPart(node *arg_node, info *arg_info)
+ *
+ *
+ *   @param arg_node
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+static node *
+ATravPart (node *arg_node, info *arg_info)
+{
+    int dim;
+
+    DBUG_ENTER ("ATravPart");
+
+    dim = TCcountIds (PART_IDS (arg_node));
+
+    if (dim == 1) {
+        PART_THREADBLOCKSHAPE (arg_node)
+          = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim),
+                         TBmakeExprs (TBmakeNum (global.cuda_1d_block_large), NULL));
+    } else if (dim == 2) {
+        PART_THREADBLOCKSHAPE (arg_node)
+          = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim),
+                         TBmakeExprs (TBmakeNum (global.cuda_2d_block_y),
+                                      TBmakeExprs (TBmakeNum (global.cuda_2d_block_x),
+                                                   NULL)));
+    } else {
+        /* For all other dimensionalities, we do not create TB shape info */
+        PART_THREADBLOCKSHAPE (arg_node) = NULL;
+    }
+
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -259,6 +299,14 @@ ACUWLwith (node *arg_node, info *arg_info)
         /* We only cudarize AKS N_with */
         WITH_CUDARIZABLE (arg_node)
           = (TYisAKS (ty) || TYisAKD (ty)) && INFO_CUDARIZABLE (arg_info);
+
+        if (WITH_CUDARIZABLE (arg_node)) {
+            anontrav_t atrav[2] = {{N_part, &ATravPart}, {0, NULL}};
+
+            TRAVpushAnonymous (atrav, &TRAVsons);
+            WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), NULL);
+            TRAVpop ();
+        }
     } else {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);

@@ -605,10 +605,21 @@ CreatePrfOrConst (bool isprf, char *name, simpletype sty, shape *shp, prf pfun,
     DBUG_RETURN (avis);
 }
 
+/* This function works out the subscript computations for the
+ * new shared memory access and the global memory access.
+ * This includes the assignments of subscript computation and
+ * the final output avis(s) from the assignment chains. All
+ * are stored in the shared_global_info struct sg_info. Note
+ * that for shared memory, they will be directly used later in
+ * ComputeSharedMemoryOffset. However, for global memory, this
+ * only provides the base and more computation might be needed,
+ * for example, when the thread block size is small than the
+ * shared meory size. See function InsertGlobal2Shared. */
 static shared_global_info_t *
-ComputeIndexInternal (bool global, char *postfix, node *idx, node *coefficient,
-                      bool needsub, node *operand, bool prf,
-                      shared_global_info_t *sg_info, info *arg_info)
+ComputeIndexInternal (bool global, /* for global or shared memory access? */
+                      char *postfix, node *idx, node *coefficient, bool needsub,
+                      node *operand, bool prf, shared_global_info_t *sg_info,
+                      info *arg_info)
 {
     node *avis, *args, *vardecs = NULL, *assigns = NULL;
 
@@ -616,7 +627,9 @@ ComputeIndexInternal (bool global, char *postfix, node *idx, node *coefficient,
 
     /* Whether this idx need to substract a value first before it
      * it's mulitplied by the coefficient. This is the case for
-     * threadIdx.x and threaddx.y */
+     * threadIdx.x and threaddx.y in global memory access. If
+     * this is TRUE, then the argument "operand" denotes the
+     * amount to be substracted. */
     if (needsub) {
         args = TBmakeExprs (idx, TBmakeExprs (operand, NULL));
         avis = CreatePrfOrConst (TRUE, postfix, T_int, SHmakeShape (0), F_sub_SxS, args,
@@ -629,7 +642,6 @@ ComputeIndexInternal (bool global, char *postfix, node *idx, node *coefficient,
     if (idx != NULL) {
         args = TBmakeExprs (coefficient, TBmakeExprs (idx, NULL));
     } else {
-        // args = TBmakeExprs( coefficient, NULL);
         args = coefficient;
     }
 
@@ -679,7 +691,7 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
 
     switch (CUIDX_TYPE (idx)) {
     case IDX_CONSTANT:
-        /* For constant apprearing in global index, we create
+        /* For non-zero constant apprearing in global index, we create
          * an assignment "var_const = NUM;". For shared memory
          * index, we don't need to do anything */
         if (CUIDX_COEFFICIENT (idx) != 0) {
@@ -688,7 +700,6 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
                                             NULL, FALSE, sg_info, arg_info);
         }
         break;
-
     case IDX_EXTID:
         /* For external id apprearing in global index, we create
          * an assignment "var_extid = _mul_SxS_( id, coe);". For shared memory
@@ -700,9 +711,7 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
         sg_info = ComputeIndexInternal (FALSE, "extid_shr", NULL, TBmakeNum (0), FALSE,
                                         NULL, FALSE, sg_info, arg_info);
         break;
-
     case IDX_THREADIDX_X:
-
         /* Assignments for global memory index calculation */
         sg_info = ComputeIndexInternal (TRUE, "tx_glb", TBmakeId (CUIDX_ID (idx)),
                                         TBmakeNum (CUIDX_COEFFICIENT (idx)), TRUE,
@@ -716,9 +725,7 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
                                         TRUE, sg_info, arg_info);
 
         break;
-
     case IDX_THREADIDX_Y:
-
         /* Assignments for global memory index calculation */
         sg_info = ComputeIndexInternal (TRUE, "ty_glb", TBmakeId (CUIDX_ID (idx)),
                                         TBmakeNum (CUIDX_COEFFICIENT (idx)), TRUE,
@@ -790,10 +797,6 @@ CreateCudaIndexInitCode (node *part, info *arg_info)
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
       = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
 
-    /*
-      BLOCK_INSTR( PART_CBLOCK( part)) =
-        TCappendAssign( assigns, BLOCK_INSTR( PART_CBLOCK( part)));
-    */
     INFO_CIS (arg_info) = cis;
 
     DBUG_RETURN (assigns);
@@ -849,6 +852,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
 
         in_shared_array = CUAI_SHARRAY (access_info);
 
+        /* Since the array is 2D, we know there are only two assignment
+         * chains computing the base subscript expressions*/
         assigns = TCappendAssign (SG_INFO_GLBIDX_CAL (sg_info),
                                   SG_INFO_GLBIDX_CAL (SG_INFO_NEXT (sg_info)));
 
@@ -1037,13 +1042,20 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
     DBUG_VOID_RETURN;
 }
 
+/* This function concatenate all subscript computation assignments
+ * for a shared memory access in sg_info all together and add to the
+ * end of the chain a F_idxs2offset to compute the actual offset to
+ * access the shared memory. This will be used in the F_idx_sel
+ * assignment to select the element from the shared memory. This
+ * chain of assignments will be stored in INFO_PREASSIGNS and
+ * preappended to the F_idx_sel assignment */
 static node *
-ComputeSharedMemoryIndex (shared_global_info_t *sg_info, cuda_access_info_t *access_info,
-                          info *arg_info)
+ComputeSharedMemoryOffset (shared_global_info_t *sg_info, cuda_access_info_t *access_info,
+                           info *arg_info)
 {
     node *idx_avis, *new_ass, *args = NULL, *assigns = NULL;
 
-    DBUG_ENTER ("ComputeSharedMemoryIndex");
+    DBUG_ENTER ("ComputeSharedMemoryOffset");
 
     args = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP (access_info)), NULL);
 
@@ -1126,7 +1138,7 @@ CUDRdoCudaDataReuse (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CUDRdoCudaDaraReuse( node *arg_node, info *arg_info)
+ * @fn node *CUDRmodule( node *arg_node, info *arg_info)
  *
  * @brief
  *
@@ -1160,30 +1172,17 @@ CUDRfundef (node *arg_node, info *arg_info)
     node *old_fundef;
 
     DBUG_ENTER ("CUDRfundef");
-    /*
-      FUNDEF_NEXT( arg_node) = TRAVopt(  FUNDEF_NEXT( arg_node), arg_info);
-      INFO_FUNDEF( arg_info) = arg_node;
-      FUNDEF_BODY( arg_node) = TRAVopt(  FUNDEF_BODY( arg_node), arg_info);
-
-      if( INFO_CONDFUNS( arg_info) != NULL) {
-        arg_node = TCappendFundef( INFO_CONDFUNS( arg_info), arg_node);
-        INFO_CONDFUNS( arg_info) = NULL;
-      }
-    */
 
     if (INFO_FROMAP (arg_info)) {
         old_fundef = INFO_FUNDEF (arg_info);
         INFO_FUNDEF (arg_info) = arg_node;
-        printf ("Traverse function %s from branch1\n", FUNDEF_NAME (arg_node));
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = old_fundef;
     } else {
         if (FUNDEF_ISLACFUN (arg_node)) {
-            printf ("Skip function %s from branch2\n", FUNDEF_NAME (arg_node));
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         } else {
             INFO_FUNDEF (arg_info) = arg_node;
-            printf ("Traverse function %s from branch3\n", FUNDEF_NAME (arg_node));
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
             INFO_FUNDEF (arg_info) = NULL;
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -1317,6 +1316,7 @@ CUDRpart (node *arg_node, info *arg_info)
         BLOCK_INSTR (PART_CBLOCK (arg_node))
           = TCappendAssign (init_assigns, BLOCK_INSTR (PART_CBLOCK (arg_node)));
 
+        /* This struct is created in CreateCudaIndexInitCode and freed here */
         INFO_CIS (arg_info) = MEMfree (INFO_CIS (arg_info));
     }
 
@@ -1377,12 +1377,12 @@ CUDRrange (node *arg_node, info *arg_info)
 
         INFO_LEVEL (arg_info)++;
 
-#if 1
-        PrintSpaces (INFO_LEVEL (arg_info));
-        printf ("Entering range [index:%s level:%d blocked:%d]\n",
-                IDS_NAME (RANGE_INDEX (arg_node)), INFO_LEVEL (arg_info),
-                RANGE_ISBLOCKED (arg_node));
-        PrintRangeSet (INFO_RANGE_SETS (arg_info), INFO_LEVEL (arg_info));
+#if 0 
+    PrintSpaces( INFO_LEVEL( arg_info)); 
+    printf( "Entering range [index:%s level:%d blocked:%d]\n", 
+            IDS_NAME( RANGE_INDEX( arg_node)), 
+            INFO_LEVEL( arg_info), RANGE_ISBLOCKED( arg_node));
+    PrintRangeSet( INFO_RANGE_SETS( arg_info), INFO_LEVEL( arg_info));
 #endif
 
         RANGE_G2SINSTRS (arg_node) = NULL;
@@ -1396,11 +1396,11 @@ CUDRrange (node *arg_node, info *arg_info)
             RANGE_G2SINSTRS (arg_node) = NULL;
         }
 
-#if 1
-        PrintSpaces (INFO_LEVEL (arg_info));
-        printf ("Leaving range [index:%s level:%d blocked:%d]\n",
-                IDS_NAME (RANGE_INDEX (arg_node)), INFO_LEVEL (arg_info),
-                RANGE_ISBLOCKED (arg_node));
+#if 0
+    PrintSpaces( INFO_LEVEL( arg_info)); 
+    printf( "Leaving range [index:%s level:%d blocked:%d]\n", 
+            IDS_NAME( RANGE_INDEX( arg_node)), 
+            INFO_LEVEL( arg_info), RANGE_ISBLOCKED( arg_node));
 #endif
 
         INFO_LEVEL (arg_info)--;
@@ -1465,6 +1465,8 @@ CUDRprf (node *arg_node, info *arg_info)
             /* If this idx_sel accesses an array with reuse opportunity */
             if (access_info != NULL) {
                 for (i = 0; i < CUAI_DIM (access_info); i++) {
+                    /* Here sg_info is a chain of shared_global_info structs and
+                     * sg_info_tmp is the newly created shared_global_info struct. */
                     sg_info_tmp = CreateSharedGlobalInfo (&sg_info);
                     cuidx = CUAI_INDICES (access_info, i);
                     while (cuidx != NULL) {
@@ -1473,9 +1475,14 @@ CUDRprf (node *arg_node, info *arg_info)
                     }
                 }
 
-                shr_idx = ComputeSharedMemoryIndex (sg_info, access_info, arg_info);
+                shr_idx = ComputeSharedMemoryOffset (sg_info, access_info, arg_info);
                 InsertGlobal2Shared (sg_info, access_info, arg_info);
 
+                /*
+                 * F_idx_sel( A_dev, offset_host)
+                 * -->
+                 * F_idx_sel( A_shmem, offset_shmem)
+                 */
                 ID_AVIS (idx) = shr_idx;
                 ID_AVIS (arr) = CUAI_SHARRAY (access_info);
 

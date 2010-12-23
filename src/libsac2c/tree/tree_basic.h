@@ -233,7 +233,7 @@ extern cuda_index_t *TBfreeCudaIndex (cuda_index_t *index);
  ***/
 
 extern cuda_access_info_t *TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim,
-                                                 int nestlevel);
+                                                 int cuwldim, int nestlevel);
 
 #define CUAI_MATRIX(a) (a->coe_mtx)
 #define CUAI_TYPE(a) (a->type)
@@ -243,6 +243,8 @@ extern cuda_access_info_t *TBmakeCudaAccessInfo (node *array, node *arrayshp, in
 #define CUAI_SHARRAYSHP(a) (a->sharrayshp)
 #define CUAI_DIM(a) (a->dim)
 #define CUAI_NESTLEVEL(a) (a->nestlevel)
+#define CUAI_CUWLDIM(a) (a->cuwldim)
+#define CUAI_TBSHP(a) (a->tbshp)
 #define CUAI_INDICES(a, i) (a->indices[i])
 #define CUAI_ISCONSTANT(a, i) (a->isconstant[i])
 

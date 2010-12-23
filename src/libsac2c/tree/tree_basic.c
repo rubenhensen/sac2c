@@ -215,7 +215,7 @@ TBfreeCudaIndex (cuda_index_t *index)
 /*--------------------------------------------------------------------------*/
 
 cuda_access_info_t *
-TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim, int nestlevel)
+TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim, int cuwldim, int nestlevel)
 {
     cuda_access_info_t *info;
     int i;
@@ -232,6 +232,8 @@ TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim, int nestlevel)
     CUAI_SHARRAYSHP (info) = NULL;
     CUAI_DIM (info) = dim;
     CUAI_NESTLEVEL (info) = nestlevel;
+    CUAI_CUWLDIM (info) = cuwldim;
+    CUAI_TBSHP (info) = NULL;
 
     for (i = 0; i < MAX_REUSE_DIM; i++) {
         CUAI_INDICES (info, i) = NULL;

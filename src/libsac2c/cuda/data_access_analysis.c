@@ -383,7 +383,7 @@ CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
 
     DBUG_ENTER ("CreateSharedMemoryForReuse");
 
-    if (INFO_TRAVMODE (arg_info) == trav_normal) {
+    if (INFO_TRAVMODE (arg_info) == trav_collect) {
         CUAI_TYPE (access_info) = ACCTY_REUSE;
     }
 
@@ -407,16 +407,21 @@ CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
                     shmem_size += (coefficient * DIMS[dim - 1][0]);
                     break;
                 case IDX_LOOPIDX:
-                    if (INFO_TRAVMODE (arg_info) == trav_normal) {
+                    if (INFO_TRAVMODE (arg_info) == trav_collect) {
                         shmem_size += (coefficient * DIMS[dim - 1][1]);
                         /* Set the block size for the loop dim */
                         AVIS_NEEDBLOCKED (CUIDX_ID (index)) = TRUE;
                         /* Set the blocking factor of the loop index */
-                        if (DIMS[dim - 1][1] <= AVIS_BLOCKSIZE (CUIDX_ID (index))
+                        if (DIMS[dim - 1][1] < AVIS_BLOCKSIZE (CUIDX_ID (index))
                             || AVIS_BLOCKSIZE (CUIDX_ID (index)) == 0) {
                             AVIS_BLOCKSIZE (CUIDX_ID (index)) = DIMS[dim - 1][1];
                         }
                     } else if (INFO_TRAVMODE (arg_info) == trav_recal) {
+                        /* To recalculate the block size, we use the blocking
+                         * factor associated with the loop index. This value
+                         * is the smallest blocking factor that satisfied all
+                         * resue and coalescing accesses in the current loop
+                         * and is determined in the collect phase. */
                         shmem_size += (coefficient * AVIS_BLOCKSIZE (CUIDX_ID (index)));
                     }
                     break;
@@ -453,6 +458,7 @@ CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
 
     if (INFO_TRAVMODE (arg_info) == trav_recal) {
         CUAI_SHARRAYSHP (access_info) = FREEdoFreeNode (CUAI_SHARRAYSHP (access_info));
+        CUAI_SHARRAY (access_info) = FREEdoFreeNode (CUAI_SHARRAY (access_info));
     }
 
     CUAI_SHARRAYSHP (access_info)
@@ -478,7 +484,7 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
 
     DBUG_ENTER ("CreateSharedMemoryForCoalescing");
 
-    if (INFO_TRAVMODE (arg_info) == trav_normal) {
+    if (INFO_TRAVMODE (arg_info) == trav_collect) {
         CUAI_TYPE (access_info) = ACCTY_COALESCE;
     }
 
@@ -541,12 +547,12 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
                 shmem_size += (coefficient * block_sizes_2d[0]);
                 break;
             case IDX_LOOPIDX:
-                if (INFO_TRAVMODE (arg_info) == trav_normal) {
+                if (INFO_TRAVMODE (arg_info) == trav_collect) {
                     shmem_size += (coefficient * blocking_factor);
                     /* Set the block size for the loop dim */
                     AVIS_NEEDBLOCKED (CUIDX_ID (index)) = TRUE;
                     /* Set the blocking factor of the loop index */
-                    if (blocking_factor <= AVIS_BLOCKSIZE (CUIDX_ID (index))
+                    if (blocking_factor < AVIS_BLOCKSIZE (CUIDX_ID (index))
                         || AVIS_BLOCKSIZE (CUIDX_ID (index)) == 0) {
                         AVIS_BLOCKSIZE (CUIDX_ID (index)) = blocking_factor;
                     }
@@ -569,11 +575,13 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
                 shmem_size = ((shmem_size + size) / size) * size;
             }
         }
+
         sharray_shp = TBmakeExprs (TBmakeNum (shmem_size), sharray_shp);
     }
 
     if (INFO_TRAVMODE (arg_info) == trav_recal) {
         CUAI_SHARRAYSHP (access_info) = FREEdoFreeNode (CUAI_SHARRAYSHP (access_info));
+        CUAI_SHARRAY (access_info) = FREEdoFreeNode (CUAI_SHARRAY (access_info));
     }
 
     CUAI_SHARRAYSHP (access_info)
@@ -737,7 +745,7 @@ DAAwith (node *arg_node, info *arg_info)
 }
 
 static node *
-CreateBlockingPragma (node *ids, int dim)
+CreateBlockingPragma (node *ids, int dim, info *arg_info)
 {
     node *pragma, *array, *wlcomp_aps, *block_exprs = NULL;
     /* bool needblocked = FALSE; */
@@ -761,8 +769,12 @@ CreateBlockingPragma (node *ids, int dim)
                                 TBmakeExprs (TBmakeNum (AVIS_BLOCKSIZE (IDS_AVIS (ids))),
                                              NULL));
 
-            AVIS_BLOCKSIZE (IDS_AVIS (ids)) = 0;
-            AVIS_NEEDBLOCKED (IDS_AVIS (ids)) = FALSE;
+            /* We cannot reset these two fields here because when we do
+             * recal traverse, we still need these values. However,
+             * when we finish recal, do we really have to reset these
+             * two values before we leave DAA???? */
+            // AVIS_BLOCKSIZE( IDS_AVIS( ids)) = 0;
+            // AVIS_NEEDBLOCKED( IDS_AVIS( ids)) = FALSE;
         } else {
             block_exprs = TCcombineExprs (block_exprs, TBmakeExprs (TBmakeNum (1), NULL));
         }
@@ -801,61 +813,76 @@ DAApart (node *arg_node, info *arg_info)
 {
     int dim, ids_type;
     part_info_t *p_info;
-    node *old_wlidx;
+    node *old_wlidx, *ids;
     bool outermost_part;
 
     DBUG_ENTER ("DAApart");
 
-    dim = TCcountIds (PART_IDS (arg_node));
+    if (INFO_TRAVMODE (arg_info) == trav_normal) {
+        dim = TCcountIds (PART_IDS (arg_node));
 
-    DBUG_ASSERT ((INFO_NEST_LEVEL (arg_info) >= dim), "Wrong nesting level found!");
+        DBUG_ASSERT ((INFO_NEST_LEVEL (arg_info) >= dim), "Wrong nesting level found!");
 
-    outermost_part = (INFO_NEST_LEVEL (arg_info) == dim);
+        outermost_part = (INFO_NEST_LEVEL (arg_info) == dim);
 
-    /* If this partition belongs to the outer most cudarizable WL,
-     * its ids are annotated as cuda threadidx */
-    if (outermost_part) {
-        ids_type = IDX_THREADIDX;
-    }
-    /* If this partition belongs to any inner WLs,
-     * its ids are annotated as loop index */
-    else {
-        ids_type = IDX_LOOPIDX;
-    }
+        /* If this partition belongs to the outer most cudarizable WL,
+         * its ids are annotated as cuda threadidx */
+        if (outermost_part) {
+            ids_type = IDX_THREADIDX;
+        }
+        /* If this partition belongs to any inner WLs,
+         * its ids are annotated as loop index */
+        else {
+            ids_type = IDX_LOOPIDX;
+        }
 
-    /* Push information */
-    p_info = CreatePartInfo (dim, ids_type, PART_IDS (arg_node), NULL, NULL);
-    INFO_PART_INFO (arg_info) = PushPartInfo (INFO_PART_INFO (arg_info), p_info);
-    old_wlidx = INFO_WLIDXS (arg_info);
-    INFO_WLIDXS (arg_info) = WITHID_IDXS (PART_WITHID (arg_node));
+        ids = PART_IDS (arg_node);
+        while (ids != NULL) {
+            AVIS_NEEDBLOCKED (IDS_AVIS (ids)) = FALSE;
+            AVIS_BLOCKSIZE (IDS_AVIS (ids)) = 0;
+            ids = IDS_NEXT (ids);
+        }
 
-    if (outermost_part) {
-        INFO_LUT (arg_info) = LUTgenerateLut ();
-    }
+        /* Push information */
+        p_info = CreatePartInfo (dim, ids_type, PART_IDS (arg_node), NULL, NULL);
+        INFO_PART_INFO (arg_info) = PushPartInfo (INFO_PART_INFO (arg_info), p_info);
+        old_wlidx = INFO_WLIDXS (arg_info);
+        INFO_WLIDXS (arg_info) = WITHID_IDXS (PART_WITHID (arg_node));
 
-    /* Start traversing the code */
-    PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
+        if (outermost_part) {
+            INFO_LUT (arg_info) = LUTgenerateLut ();
+        }
 
-    if (outermost_part) {
-        INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
-    }
+        /* Start traversing the code */
+        PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
 
-    /* Pop information */
-    INFO_WLIDXS (arg_info) = old_wlidx;
-    INFO_PART_INFO (arg_info) = PopPartInfo (INFO_PART_INFO (arg_info));
+        if (outermost_part) {
+            INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
+        }
 
-    /* Create N_pragma for blocking */
-    INFO_PRAGMA (arg_info) = CreateBlockingPragma (PART_IDS (arg_node), dim);
+        /* Pop information */
+        INFO_WLIDXS (arg_info) = old_wlidx;
+        INFO_PART_INFO (arg_info) = PopPartInfo (INFO_PART_INFO (arg_info));
 
-    /* We only continue traversing more partitions if the partion belongs
-     * to the outermost CUWL. For inner WLs, we only traverse the first partition.
-     * this is becasue each partition of a inner WL might have a completely
-     * different blocking, and this is not allowed in sac. So we only traverse
-     * one partition. However, this is also problematic as the first partition
-     * might not necessarily contains the reusable data. So we need a more
-     * complex scheme to travse the most promising partition. */
-    if (outermost_part) {
+        /* Create N_pragma for blocking */
+        INFO_PRAGMA (arg_info)
+          = CreateBlockingPragma (PART_IDS (arg_node), dim, arg_info);
+
+        /* We only continue traversing more partitions if the partion belongs
+         * to the outermost CUWL. For inner WLs, we only traverse the first partition.
+         * this is becasue each partition of a inner WL might have a completely
+         * different blocking, and this is not allowed in sac. So we only traverse
+         * one partition. However, this is also problematic as the first partition
+         * might not necessarily contains the reusable data. So we need a more
+         * complex scheme to travse the most promising partition. */
+        if (outermost_part) {
+            PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+        }
+    } else if (INFO_TRAVMODE (arg_info) == trav_recal) {
+        PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
         PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+    } else {
+        DBUG_ASSERT ((0), "Wrong traverse mode found!");
     }
 
     DBUG_RETURN (arg_node);
@@ -962,7 +989,8 @@ DAAprf (node *arg_node, info *arg_info)
                                                   NULL, /* The shape information will be
                                                            assigned during traversal to
                                                            idxs2offset */
-                                                  dim, INFO_NEST_LEVEL (arg_info));
+                                                  dim, INFO_CUWLDIM (arg_info),
+                                                  INFO_NEST_LEVEL (arg_info));
 
                         /* Generate an empty coefficient matrix */
                         CUAI_MATRIX (INFO_ACCESS_INFO (arg_info))
