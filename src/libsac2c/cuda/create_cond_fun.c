@@ -23,6 +23,7 @@
 #include "namespaces.h"
 #include "new_types.h"
 #include "free.h"
+#include "shape.h"
 
 /*
  * INFO structure
@@ -75,8 +76,12 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-CCFdoCreateCondFun (node *fundef, node *assigns, node *predicate, node *in_mem,
-                    node *out_mem, node **condfun_p)
+CCFdoCreateCondFun (bool condfun, /* If true, we create cond fun, otherwise loop fun */
+                    node *fundef, node *assigns,
+                    node *predicate,  /* Used when create cond fun */
+                    node *iterator,   /* Used when create do fun */
+                    node *loop_bound, /* Used when create do fun */
+                    node *in_mem, node *out_mem, node **lacfun_p)
 {
     info *arg_info;
     node *dup_assigns;
@@ -92,78 +97,260 @@ CCFdoCreateCondFun (node *fundef, node *assigns, node *predicate, node *in_mem,
     arg_info = MakeInfo ();
     TRAVpush (TR_ccf);
 
-    INFO_DUPLUT (arg_info) = LUTgenerateLut ();
+    if (condfun) {
+        INFO_DUPLUT (arg_info) = LUTgenerateLut ();
 
-    /* Add the prediacte variable to the in mask */
-    in_mask = INFDFMSdoInferInDfmAssignChain (assigns, fundef);
-    DFMsetMaskEntrySet (in_mask, NULL, predicate);
+        /* Add the prediacte variable to the in mask */
+        in_mask = INFDFMSdoInferInDfmAssignChain (assigns, fundef);
+        DFMsetMaskEntrySet (in_mask, NULL, predicate);
 
-    /* Put all args into the loop up table */
-    fundef_args = DFMUdfm2Args (in_mask, INFO_DUPLUT (arg_info));
+        /* Put all args into the loop up table */
+        fundef_args = DFMUdfm2Args (in_mask, INFO_DUPLUT (arg_info));
 
-    assigns = TRAVdo (assigns, arg_info);
+        assigns = TRAVdo (assigns, arg_info);
 
-    /* Create actual conditional function */
-    fundef_rets = TBmakeRet (TYcopyType (AVIS_TYPE (out_mem)), NULL);
-    fundef_name = TRAVtmpVarName ("condfun");
-    fundef_ns = NSdupNamespace (FUNDEF_NS (fundef));
-    fundef_body = TBmakeBlock (NULL, NULL);
+        /* Create actual conditional function */
+        fundef_rets = TBmakeRet (TYcopyType (AVIS_TYPE (out_mem)), NULL);
+        fundef_name = TRAVtmpVarName ("condfun");
+        fundef_ns = NSdupNamespace (FUNDEF_NS (fundef));
+        fundef_body = TBmakeBlock (NULL, NULL);
 
-    *condfun_p = TBmakeFundef (fundef_name, fundef_ns, fundef_rets, fundef_args,
-                               fundef_body, *condfun_p);
+        *lacfun_p = TBmakeFundef (fundef_name, fundef_ns, fundef_rets, fundef_args,
+                                  fundef_body, *lacfun_p);
 
-    FUNDEF_ISCONDFUN (*condfun_p) = TRUE;
+        FUNDEF_ISCONDFUN (*lacfun_p) = TRUE;
 
-    dup_assigns = DUPdoDupTreeLutSsa (assigns, INFO_DUPLUT (arg_info), *condfun_p);
+        dup_assigns = DUPdoDupTreeLutSsa (assigns, INFO_DUPLUT (arg_info), *lacfun_p);
 
-    cond_ass
-      = TBmakeAssign (TBmakeCond (TBmakeId (
-                                    LUTsearchInLutPp (INFO_DUPLUT (arg_info), predicate)),
-                                  TBmakeBlock (dup_assigns, NULL),
-                                  TBmakeBlock (TBmakeEmpty (), NULL)),
-                      NULL);
+        cond_ass
+          = TBmakeAssign (TBmakeCond (TBmakeId (LUTsearchInLutPp (INFO_DUPLUT (arg_info),
+                                                                  predicate)),
+                                      TBmakeBlock (dup_assigns, NULL),
+                                      TBmakeBlock (TBmakeEmpty (), NULL)),
+                          NULL);
 
-    return_mem = TBmakeAvis (TRAVtmpVarName ("shmem"), TYcopyType (AVIS_TYPE (out_mem)));
+        return_mem
+          = TBmakeAvis (TRAVtmpVarName ("shmem"), TYcopyType (AVIS_TYPE (out_mem)));
 
-    INFO_VARDECS (arg_info) = TBmakeVardec (return_mem, INFO_VARDECS (arg_info));
+        INFO_VARDECS (arg_info) = TBmakeVardec (return_mem, INFO_VARDECS (arg_info));
 
-    phi_ass
-      = TBmakeAssign (TBmakeLet (TBmakeIds (return_mem, NULL),
-                                 TBmakeFuncond (TBmakeId (LUTsearchInLutPp (INFO_DUPLUT (
-                                                                              arg_info),
-                                                                            predicate)),
-                                                TBmakeId (LUTsearchInLutPp (INFO_DUPLUT (
-                                                                              arg_info),
-                                                                            out_mem)),
-                                                TBmakeId (LUTsearchInLutPp (INFO_DUPLUT (
-                                                                              arg_info),
-                                                                            in_mem)))),
-                      NULL);
-    AVIS_SSAASSIGN (return_mem) = phi_ass;
+        phi_ass
+          = TBmakeAssign (TBmakeLet (TBmakeIds (return_mem, NULL),
+                                     TBmakeFuncond (TBmakeId (
+                                                      LUTsearchInLutPp (INFO_DUPLUT (
+                                                                          arg_info),
+                                                                        predicate)),
+                                                    TBmakeId (
+                                                      LUTsearchInLutPp (INFO_DUPLUT (
+                                                                          arg_info),
+                                                                        out_mem)),
+                                                    TBmakeId (
+                                                      LUTsearchInLutPp (INFO_DUPLUT (
+                                                                          arg_info),
+                                                                        in_mem)))),
+                          NULL);
+        AVIS_SSAASSIGN (return_mem) = phi_ass;
 
-    return_node = TBmakeReturn (TBmakeExprs (TBmakeId (return_mem), NULL));
-    return_ass = TBmakeAssign (return_node, NULL);
+        return_node = TBmakeReturn (TBmakeExprs (TBmakeId (return_mem), NULL));
+        return_ass = TBmakeAssign (return_node, NULL);
 
-    /* Chain up the assigns */
-    ASSIGN_NEXT (phi_ass) = return_ass;
-    ASSIGN_NEXT (cond_ass) = phi_ass;
+        /* Chain up the assigns */
+        ASSIGN_NEXT (phi_ass) = return_ass;
+        ASSIGN_NEXT (cond_ass) = phi_ass;
 
-    FUNDEF_INSTR (*condfun_p) = cond_ass;
-    FUNDEF_VARDEC (*condfun_p) = INFO_VARDECS (arg_info);
-    INFO_VARDECS (arg_info) = NULL;
-    FUNDEF_RETURN (*condfun_p) = return_node;
+        FUNDEF_INSTR (*lacfun_p) = cond_ass;
+        FUNDEF_VARDEC (*lacfun_p) = INFO_VARDECS (arg_info);
+        INFO_VARDECS (arg_info) = NULL;
+        FUNDEF_RETURN (*lacfun_p) = return_node;
 
-    /* Create function application in the calling context */
-    ap_assign
-      = TBmakeAssign (TBmakeLet (TBmakeIds (out_mem, NULL),
-                                 TBmakeAp (*condfun_p, DFMUdfm2ApArgs (in_mask, NULL))),
-                      NULL);
+        /* Create function application in the calling context */
+        ap_assign = TBmakeAssign (TBmakeLet (TBmakeIds (out_mem, NULL),
+                                             TBmakeAp (*lacfun_p,
+                                                       DFMUdfm2ApArgs (in_mask, NULL))),
+                                  NULL);
 
-    AVIS_SSAASSIGN (out_mem) = ap_assign;
+        AVIS_SSAASSIGN (out_mem) = ap_assign;
 
-    INFO_DUPLUT (arg_info) = LUTremoveLut (INFO_DUPLUT (arg_info));
+        INFO_DUPLUT (arg_info) = LUTremoveLut (INFO_DUPLUT (arg_info));
 
-    assigns = FREEdoFreeTree (assigns);
+        assigns = FREEdoFreeTree (assigns);
+    } else {
+        node *new_iterator, *comp_val, *comp_predicate;
+        node *inc_ass, *sub_ass, *comp_ass, *recursive_ap;
+        node *recursive_ret;
+
+        INFO_DUPLUT (arg_info) = LUTgenerateLut ();
+
+        /* Add the prediacte variable to the in mask */
+        in_mask = INFDFMSdoInferInDfmAssignChain (assigns, fundef);
+        DFMsetMaskEntrySet (in_mask, NULL, iterator);
+        DFMsetMaskEntrySet (in_mask, NULL, in_mem);
+
+        /* Put all args into the loop up table */
+        fundef_args = DFMUdfm2Args (in_mask, INFO_DUPLUT (arg_info));
+
+        assigns = TRAVdo (assigns, arg_info);
+
+        dup_assigns = DUPdoDupTreeLutSsa (assigns, INFO_DUPLUT (arg_info), *lacfun_p);
+
+        /* Three assignments to work out loop termination condition */
+        new_iterator = TBmakeAvis (TRAVtmpVarName ("iterator"),
+                                   TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+
+        INFO_VARDECS (arg_info) = TBmakeVardec (new_iterator, INFO_VARDECS (arg_info));
+        inc_ass = TBmakeAssign (
+          TBmakeLet (TBmakeIds (new_iterator, NULL),
+                     TBmakePrf (F_add_SxS,
+                                TBmakeExprs (TBmakeId (
+                                               LUTsearchInLutPp (INFO_DUPLUT (arg_info),
+                                                                 iterator)),
+                                             TBmakeExprs (TBmakeNum (1), NULL)))),
+          NULL);
+        AVIS_SSAASSIGN (new_iterator) = inc_ass;
+
+        comp_val = TBmakeAvis (TRAVtmpVarName ("comp_val"),
+                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+        INFO_VARDECS (arg_info) = TBmakeVardec (comp_val, INFO_VARDECS (arg_info));
+        sub_ass
+          = TBmakeAssign (TBmakeLet (TBmakeIds (comp_val, NULL),
+                                     TBmakePrf (F_add_SxS,
+                                                TBmakeExprs (TBmakeNum (-(
+                                                               NUM_VAL (loop_bound) - 1)),
+                                                             TBmakeExprs (TBmakeId (
+                                                                            new_iterator),
+                                                                          NULL)))),
+                          NULL);
+        AVIS_SSAASSIGN (new_iterator) = sub_ass;
+
+        comp_predicate
+          = TBmakeAvis (TRAVtmpVarName ("iterator"),
+                        TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+
+        INFO_VARDECS (arg_info) = TBmakeVardec (comp_predicate, INFO_VARDECS (arg_info));
+        comp_ass
+          = TBmakeAssign (TBmakeLet (TBmakeIds (comp_predicate, NULL),
+                                     TBmakePrf (F_lt_SxS,
+                                                TBmakeExprs (TBmakeId (comp_val),
+                                                             TBmakeExprs (TBmakeNum (0),
+                                                                          NULL)))),
+                          NULL);
+        AVIS_SSAASSIGN (new_iterator) = comp_ass;
+
+        ASSIGN_NEXT (sub_ass) = comp_ass;
+        ASSIGN_NEXT (inc_ass) = sub_ass;
+        dup_assigns = TCappendAssign (dup_assigns, inc_ass);
+        /************************************************************/
+
+        /* Create actual loop function */
+        fundef_rets = TBmakeRet (TYcopyType (AVIS_TYPE (out_mem)), NULL);
+        fundef_name = TRAVtmpVarName ("loopfun");
+        fundef_ns = NSdupNamespace (FUNDEF_NS (fundef));
+        fundef_body = TBmakeBlock (NULL, NULL);
+
+        *lacfun_p = TBmakeFundef (fundef_name, fundef_ns, fundef_rets, fundef_args,
+                                  fundef_body, *lacfun_p);
+
+        FUNDEF_ISDOFUN (*lacfun_p) = TRUE;
+
+        /* Compute the argument list of the recursive function call */
+        node *recursive_args = NULL;
+        while (fundef_args != NULL) {
+            if (ARG_AVIS (fundef_args)
+                == LUTsearchInLutPp (INFO_DUPLUT (arg_info), in_mem)) {
+                if (recursive_args == NULL) {
+                    recursive_args
+                      = TBmakeExprs (TBmakeId (LUTsearchInLutPp (INFO_DUPLUT (arg_info),
+                                                                 out_mem)),
+                                     NULL);
+                } else {
+                    recursive_args
+                      = TCappendExprs (recursive_args,
+                                       TBmakeExprs (TBmakeId (
+                                                      LUTsearchInLutPp (INFO_DUPLUT (
+                                                                          arg_info),
+                                                                        out_mem)),
+                                                    NULL));
+                }
+            } else if (ARG_AVIS (fundef_args)
+                       == LUTsearchInLutPp (INFO_DUPLUT (arg_info), iterator)) {
+                if (recursive_args == NULL) {
+                    recursive_args = TBmakeExprs (TBmakeId (new_iterator), NULL);
+                } else {
+                    recursive_args
+                      = TCappendExprs (recursive_args,
+                                       TBmakeExprs (TBmakeId (new_iterator), NULL));
+                }
+            } else {
+                if (recursive_args == NULL) {
+                    recursive_args
+                      = TBmakeExprs (TBmakeId (ARG_AVIS (fundef_args)), NULL);
+                } else {
+                    recursive_args
+                      = TCappendExprs (recursive_args,
+                                       TBmakeExprs (TBmakeId (ARG_AVIS (fundef_args)),
+                                                    NULL));
+                }
+            }
+
+            fundef_args = ARG_NEXT (fundef_args);
+        }
+        /************************************************************/
+
+        recursive_ret
+          = TBmakeAvis (TRAVtmpVarName ("shmem"), TYcopyType (AVIS_TYPE (out_mem)));
+        INFO_VARDECS (arg_info) = TBmakeVardec (recursive_ret, INFO_VARDECS (arg_info));
+        recursive_ap = TBmakeAssign (TBmakeLet (TBmakeIds (recursive_ret, NULL),
+                                                TBmakeAp (*lacfun_p, recursive_args)),
+                                     NULL);
+        AVIS_SSAASSIGN (recursive_ret) = recursive_ap;
+
+        /* Conditional containing the recursive call */
+        cond_ass = TBmakeAssign (TBmakeCond (TBmakeId (comp_predicate),
+                                             TBmakeBlock (recursive_ap, NULL),
+                                             TBmakeBlock (TBmakeEmpty (), NULL)),
+                                 NULL);
+
+        return_mem
+          = TBmakeAvis (TRAVtmpVarName ("shmem"), TYcopyType (AVIS_TYPE (out_mem)));
+        INFO_VARDECS (arg_info) = TBmakeVardec (return_mem, INFO_VARDECS (arg_info));
+
+        phi_ass
+          = TBmakeAssign (TBmakeLet (TBmakeIds (return_mem, NULL),
+                                     TBmakeFuncond (TBmakeId (comp_predicate),
+                                                    TBmakeId (
+                                                      LUTsearchInLutPp (INFO_DUPLUT (
+                                                                          arg_info),
+                                                                        out_mem)),
+                                                    TBmakeId (recursive_ret))),
+                          NULL);
+        AVIS_SSAASSIGN (return_mem) = phi_ass;
+
+        return_node = TBmakeReturn (TBmakeExprs (TBmakeId (return_mem), NULL));
+        return_ass = TBmakeAssign (return_node, NULL);
+
+        /* Chain up the assigns */
+        ASSIGN_NEXT (phi_ass) = return_ass;
+        ASSIGN_NEXT (cond_ass) = phi_ass;
+
+        dup_assigns = TCappendAssign (dup_assigns, cond_ass);
+
+        FUNDEF_INSTR (*lacfun_p) = dup_assigns;
+        FUNDEF_VARDEC (*lacfun_p) = INFO_VARDECS (arg_info);
+        INFO_VARDECS (arg_info) = NULL;
+        FUNDEF_RETURN (*lacfun_p) = return_node;
+
+        /* Create function application in the calling context */
+        ap_assign = TBmakeAssign (TBmakeLet (TBmakeIds (out_mem, NULL),
+                                             TBmakeAp (*lacfun_p,
+                                                       DFMUdfm2ApArgs (in_mask, NULL))),
+                                  NULL);
+
+        AVIS_SSAASSIGN (out_mem) = ap_assign;
+
+        INFO_DUPLUT (arg_info) = LUTremoveLut (INFO_DUPLUT (arg_info));
+
+        assigns = FREEdoFreeTree (assigns);
+    }
 
     TRAVpop ();
     arg_info = FreeInfo (arg_info);

@@ -11,8 +11,9 @@
 
 #include "types.h"
 
-extern node *CCFdoCreateCondFun (node *fundef, node *assigns, node *predicate,
-                                 node *in_mem, node *out_mem, node **condfun_p);
+extern node *CCFdoCreateCondFun (bool condfun, node *fundef, node *assigns,
+                                 node *predicate, node *iterator, node *loop_bound,
+                                 node *in_mem, node *out_mem, node **lacfun_p);
 extern node *CCFassign (node *arg_node, info *arg_info);
 extern node *CCFids (node *arg_node, info *arg_info);
 extern node *CCFid (node *arg_node, info *arg_info);

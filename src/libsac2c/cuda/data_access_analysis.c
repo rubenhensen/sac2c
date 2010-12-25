@@ -61,7 +61,7 @@ struct INFO {
     cuda_access_info_t *access_info;
     lut_t *lut;
     bool fromap;
-    int blocksz_1d;
+    node *cuwlpart;
 };
 
 #define INFO_NEST_LEVEL(n) (n->nest_level)
@@ -79,7 +79,7 @@ struct INFO {
 #define INFO_ACCESS_INFO(n) (n->access_info)
 #define INFO_LUT(n) (n->lut)
 #define INFO_FROMAP(n) (n->fromap)
-#define INFO_BLOCKSZ_1D(n) (n->blocksz_1d)
+#define INFO_CUWLPART(n) (n->cuwlpart)
 
 #define PART_INFO_DIM(n) (n->dim)
 #define PART_INFO_TYPE(n) (n->type)
@@ -120,7 +120,7 @@ MakeInfo ()
     INFO_ACCESS_INFO (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_FROMAP (result) = FALSE;
-    INFO_BLOCKSZ_1D (result) = global.cuda_1d_block_large;
+    INFO_CUWLPART (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -535,7 +535,18 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
             switch (CUIDX_TYPE (index)) {
             case IDX_THREADIDX_X:
                 if (cuwl_dim == 1) {
+                    /* If we have a 1D cuda withloop and there's coalescing
+                     * opportunities here, then we need to reduce the size
+                     * of the thread block to make sure that we have enough
+                     * space to accomodate the shared memory allocated.
+                     */
                     shmem_size += (coefficient * global.cuda_1d_block_small);
+                    PART_THREADBLOCKSHAPE (INFO_CUWLPART (arg_info))
+                      = FREEdoFreeNode (PART_THREADBLOCKSHAPE (INFO_CUWLPART (arg_info)));
+                    PART_THREADBLOCKSHAPE (INFO_CUWLPART (arg_info))
+                      = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim),
+                                     TBmakeExprs (TBmakeNum (global.cuda_1d_block_small),
+                                                  NULL));
                 } else if (cuwl_dim == 2) {
                     shmem_size += (coefficient * block_sizes_2d[1]);
                 } else {
@@ -826,9 +837,12 @@ DAApart (node *arg_node, info *arg_info)
         outermost_part = (INFO_NEST_LEVEL (arg_info) == dim);
 
         /* If this partition belongs to the outer most cudarizable WL,
-         * its ids are annotated as cuda threadidx */
+         * its ids are annotated as cuda threadidx. Also, we stack the
+         * partition itself so that its ThreadBlockShape can be accessed
+         * later (See function CreateSharedMemoryForCoalescing). */
         if (outermost_part) {
             ids_type = IDX_THREADIDX;
+            INFO_CUWLPART (arg_info) = arg_node;
         }
         /* If this partition belongs to any inner WLs,
          * its ids are annotated as loop index */
@@ -858,6 +872,7 @@ DAApart (node *arg_node, info *arg_info)
 
         if (outermost_part) {
             INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
+            INFO_CUWLPART (arg_info) = NULL;
         }
 
         /* Pop information */
