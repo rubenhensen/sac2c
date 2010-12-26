@@ -100,7 +100,7 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
-      <traversal id="CCF" name="Create conditional functions" default="sons" include="create_cond_fun.h">
+      <traversal id="CLACF" name="Create lac functions" default="sons" include="create_lac_fun.h">
         <travuser>
           <node name="Assign" />
           <node name="Ids" />

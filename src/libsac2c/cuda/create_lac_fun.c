@@ -1,14 +1,14 @@
 /** <!--********************************************************************-->
  *
- * @file create_cond_fun.c
+ * @file create_lac_fun.c
  *
- * prefix: CCF
+ * prefix: CLACF
  *
  * description:
  *
  *****************************************************************************/
 
-#include "create_cond_fun.h"
+#include "create_lac_fun.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
@@ -66,7 +66,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CCFdoCreateCondFun( node *syntax_tree)
+ * @fn node *CLACFdoCreateLacFun( node *syntax_tree)
  *
  *   @brief  Inits the traversal for this phase
  *
@@ -76,12 +76,12 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-CCFdoCreateCondFun (bool condfun, /* If true, we create cond fun, otherwise loop fun */
-                    node *fundef, node *assigns,
-                    node *predicate,  /* Used when create cond fun */
-                    node *iterator,   /* Used when create do fun */
-                    node *loop_bound, /* Used when create do fun */
-                    node *in_mem, node *out_mem, node **lacfun_p)
+CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loop fun */
+                     node *fundef, node *assigns,
+                     node *predicate,  /* Used when create cond fun */
+                     node *iterator,   /* Used when create do fun */
+                     node *loop_bound, /* Used when create do fun */
+                     node *in_mem, node *out_mem, node **lacfun_p)
 {
     info *arg_info;
     node *dup_assigns;
@@ -92,10 +92,10 @@ CCFdoCreateCondFun (bool condfun, /* If true, we create cond fun, otherwise loop
     node *cond_ass, *phi_ass, *return_mem, *return_ass, *return_node;
     dfmask_t *in_mask;
 
-    DBUG_ENTER ("CCFdoCreateCondFun");
+    DBUG_ENTER ("CLACFdoCreateLacFun");
 
     arg_info = MakeInfo ();
-    TRAVpush (TR_ccf);
+    TRAVpush (TR_clacf);
 
     if (condfun) {
         INFO_DUPLUT (arg_info) = LUTgenerateLut ();
@@ -299,9 +299,11 @@ CCFdoCreateCondFun (bool condfun, /* If true, we create cond fun, otherwise loop
         recursive_ret
           = TBmakeAvis (TRAVtmpVarName ("shmem"), TYcopyType (AVIS_TYPE (out_mem)));
         INFO_VARDECS (arg_info) = TBmakeVardec (recursive_ret, INFO_VARDECS (arg_info));
-        recursive_ap = TBmakeAssign (TBmakeLet (TBmakeIds (recursive_ret, NULL),
-                                                TBmakeAp (*lacfun_p, recursive_args)),
-                                     NULL);
+        recursive_ap = TBmakeAp (*lacfun_p, recursive_args);
+        AP_ISRECURSIVEDOFUNCALL (recursive_ap) = TRUE;
+        recursive_ap
+          = TBmakeAssign (TBmakeLet (TBmakeIds (recursive_ret, NULL), recursive_ap),
+                          NULL);
         AVIS_SSAASSIGN (recursive_ret) = recursive_ap;
 
         /* Conditional containing the recursive call */
@@ -317,11 +319,11 @@ CCFdoCreateCondFun (bool condfun, /* If true, we create cond fun, otherwise loop
         phi_ass
           = TBmakeAssign (TBmakeLet (TBmakeIds (return_mem, NULL),
                                      TBmakeFuncond (TBmakeId (comp_predicate),
+                                                    TBmakeId (recursive_ret),
                                                     TBmakeId (
                                                       LUTsearchInLutPp (INFO_DUPLUT (
                                                                           arg_info),
-                                                                        out_mem)),
-                                                    TBmakeId (recursive_ret))),
+                                                                        out_mem)))),
                           NULL);
         AVIS_SSAASSIGN (return_mem) = phi_ass;
 
@@ -360,7 +362,7 @@ CCFdoCreateCondFun (bool condfun, /* If true, we create cond fun, otherwise loop
 
 /** <!--********************************************************************-->
  *
- * @fn node *CCFassign( node *arg_node, info *arg_info)
+ * @fn node *CLACFassign( node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -370,9 +372,9 @@ CCFdoCreateCondFun (bool condfun, /* If true, we create cond fun, otherwise loop
  *
  *****************************************************************************/
 node *
-CCFassign (node *arg_node, info *arg_info)
+CLACFassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CCFassign");
+    DBUG_ENTER ("CLACFassign");
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
@@ -382,7 +384,7 @@ CCFassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CCFids( node *arg_node, info *arg_info)
+ * @fn node *CLACFids( node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -392,11 +394,11 @@ CCFassign (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CCFids (node *arg_node, info *arg_info)
+CLACFids (node *arg_node, info *arg_info)
 {
     node *dup_avis;
 
-    DBUG_ENTER ("CCFids");
+    DBUG_ENTER ("CLACFids");
 
     if (LUTsearchInLutPp (INFO_DUPLUT (arg_info), IDS_AVIS (arg_node))
         == IDS_AVIS (arg_node)) {
@@ -417,7 +419,7 @@ CCFids (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CCFid( node *arg_node, info *arg_info)
+ * @fn node *CLACFid( node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -427,11 +429,11 @@ CCFids (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-CCFid (node *arg_node, info *arg_info)
+CLACFid (node *arg_node, info *arg_info)
 {
     node *dup_avis;
 
-    DBUG_ENTER ("CCFids");
+    DBUG_ENTER ("CLACFids");
 
     if (LUTsearchInLutPp (INFO_DUPLUT (arg_info), ID_AVIS (arg_node))
         == ID_AVIS (arg_node)) {
