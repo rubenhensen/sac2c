@@ -159,8 +159,16 @@ ATravPart (node *arg_node, info *arg_info)
                                       TBmakeExprs (TBmakeNum (global.cuda_2d_block_x),
                                                    NULL)));
     } else {
-        /* For all other dimensionalities, we do not create TB shape info */
-        PART_THREADBLOCKSHAPE (arg_node) = NULL;
+        /* For other dimensionalities, since no blocking is needed,
+         * we create an array of 0's */
+        int i = 0;
+        node *arr_elems = NULL;
+        while (i < dim) {
+            arr_elems = TBmakeExprs (TBmakeNum (0), arr_elems);
+            i++;
+        }
+        PART_THREADBLOCKSHAPE (arg_node)
+          = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), arr_elems);
     }
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);

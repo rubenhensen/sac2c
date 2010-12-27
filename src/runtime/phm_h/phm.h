@@ -53,7 +53,7 @@ typedef long int SAC_HM_size_unit_t;
  * Declaration of conventional heap management functions
  * used from within compiled SAC programs.
  */
-#if !SAC_MUTC_MACROS
+#if !SAC_MUTC_MACROS && !SAC_CUDA_MACROS
 SAC_C_EXTERN void *malloc (size_t size);
 SAC_C_EXTERN void free (void *addr);
 #endif

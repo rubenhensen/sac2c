@@ -214,8 +214,8 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
         sub_ass
           = TBmakeAssign (TBmakeLet (TBmakeIds (comp_val, NULL),
                                      TBmakePrf (F_add_SxS,
-                                                TBmakeExprs (TBmakeNum (-(
-                                                               NUM_VAL (loop_bound) - 1)),
+                                                TBmakeExprs (TBmakeNum (
+                                                               -(NUM_VAL (loop_bound))),
                                                              TBmakeExprs (TBmakeId (
                                                                             new_iterator),
                                                                           NULL)))),

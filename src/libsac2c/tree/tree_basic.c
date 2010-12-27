@@ -229,7 +229,8 @@ TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim, int cuwldim, int nes
     CUAI_ARRAY (info) = array;
     CUAI_ARRAYSHP (info) = arrayshp;
     CUAI_SHARRAY (info) = NULL;
-    CUAI_SHARRAYSHP (info) = NULL;
+    CUAI_SHARRAYSHP_PHY (info) = NULL;
+    CUAI_SHARRAYSHP_LOG (info) = NULL;
     CUAI_DIM (info) = dim;
     CUAI_NESTLEVEL (info) = nestlevel;
     CUAI_CUWLDIM (info) = cuwldim;

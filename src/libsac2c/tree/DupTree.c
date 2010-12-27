@@ -267,12 +267,12 @@ DUPCudaAccessInfo (cuda_access_info_t *access_info, node *new_array, info *arg_i
     new_access_info = (cuda_access_info_t *)MEMmalloc (sizeof (cuda_access_info_t));
 
     CUAI_MATRIX (new_access_info) = DupMatrix (CUAI_MATRIX (access_info));
-    /* CUAI_ARRAY(new_access_info)        = CUAI_ARRAY(access_info); */
     CUAI_ARRAY (new_access_info) = new_array;
     CUAI_ARRAYSHP (new_access_info) = DUPTRAV (CUAI_ARRAYSHP (access_info));
     CUAI_SHARRAY (new_access_info) = CUAI_SHARRAY (access_info);
     ;
-    CUAI_SHARRAYSHP (new_access_info) = DUPTRAV (CUAI_SHARRAYSHP (access_info));
+    CUAI_SHARRAYSHP_PHY (new_access_info) = DUPTRAV (CUAI_SHARRAYSHP_PHY (access_info));
+    CUAI_SHARRAYSHP_LOG (new_access_info) = DUPTRAV (CUAI_SHARRAYSHP_LOG (access_info));
     CUAI_DIM (new_access_info) = CUAI_DIM (access_info);
     ;
     CUAI_NESTLEVEL (new_access_info) = CUAI_NESTLEVEL (access_info);

@@ -457,18 +457,25 @@ CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
     }
 
     if (INFO_TRAVMODE (arg_info) == trav_recal) {
-        CUAI_SHARRAYSHP (access_info) = FREEdoFreeNode (CUAI_SHARRAYSHP (access_info));
+        CUAI_SHARRAYSHP_PHY (access_info)
+          = FREEdoFreeNode (CUAI_SHARRAYSHP_PHY (access_info));
+        CUAI_SHARRAYSHP_LOG (access_info)
+          = FREEdoFreeNode (CUAI_SHARRAYSHP_LOG (access_info));
         CUAI_SHARRAY (access_info) = FREEdoFreeNode (CUAI_SHARRAY (access_info));
     }
 
-    CUAI_SHARRAYSHP (access_info)
+    /* For reusable array access, shapes of the physical and logical
+     * shrmem arrays are always the same */
+    CUAI_SHARRAYSHP_LOG (access_info)
       = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), sharray_shp);
+    CUAI_SHARRAYSHP_PHY (access_info) = DUPdoDupNode (CUAI_SHARRAYSHP_LOG (access_info));
+
     CUAI_SHARRAY (access_info)
       = TBmakeAvis (TRAVtmpVarName ("shmem"),
                     TYmakeAKS (TYmakeSimpleType (
                                  CUd2shSimpleTypeConversion (TYgetSimpleType (
                                    TYgetScalar (AVIS_TYPE (CUAI_ARRAY (access_info)))))),
-                               SHarray2Shape (CUAI_SHARRAYSHP (access_info))));
+                               SHarray2Shape (CUAI_SHARRAYSHP_PHY (access_info))));
 
     DBUG_RETURN (access_info);
 }
@@ -480,7 +487,7 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
     cuda_index_t *index;
     int block_sizes_2d[2] = {global.cuda_2d_block_y, global.cuda_2d_block_x};
     int blocking_factor = global.cuda_2d_block_x;
-    node *sharray_shp = NULL;
+    node *sharray_shp_log = NULL, *sharray_shp_phy = NULL;
 
     DBUG_ENTER ("CreateSharedMemoryForCoalescing");
 
@@ -587,22 +594,36 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
             }
         }
 
-        sharray_shp = TBmakeExprs (TBmakeNum (shmem_size), sharray_shp);
+        sharray_shp_log = TBmakeExprs (TBmakeNum (shmem_size), sharray_shp_log);
+
+        /* For the X dimension, we add one to the logical size to avoid
+         * shared memory bank conflicts */
+        if (i == 1) {
+            sharray_shp_phy = TBmakeExprs (TBmakeNum (shmem_size + 1), sharray_shp_phy);
+        } else {
+            sharray_shp_phy = TBmakeExprs (TBmakeNum (shmem_size), sharray_shp_phy);
+        }
     }
 
     if (INFO_TRAVMODE (arg_info) == trav_recal) {
-        CUAI_SHARRAYSHP (access_info) = FREEdoFreeNode (CUAI_SHARRAYSHP (access_info));
+        CUAI_SHARRAYSHP_PHY (access_info)
+          = FREEdoFreeNode (CUAI_SHARRAYSHP_PHY (access_info));
+        CUAI_SHARRAYSHP_LOG (access_info)
+          = FREEdoFreeNode (CUAI_SHARRAYSHP_LOG (access_info));
         CUAI_SHARRAY (access_info) = FREEdoFreeNode (CUAI_SHARRAY (access_info));
     }
 
-    CUAI_SHARRAYSHP (access_info)
-      = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), sharray_shp);
+    CUAI_SHARRAYSHP_LOG (access_info)
+      = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), sharray_shp_log);
+
+    CUAI_SHARRAYSHP_PHY (access_info)
+      = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), sharray_shp_phy);
     CUAI_SHARRAY (access_info)
       = TBmakeAvis (TRAVtmpVarName ("shmem"),
                     TYmakeAKS (TYmakeSimpleType (
                                  CUd2shSimpleTypeConversion (TYgetSimpleType (
                                    TYgetScalar (AVIS_TYPE (CUAI_ARRAY (access_info)))))),
-                               SHarray2Shape (CUAI_SHARRAYSHP (access_info))));
+                               SHarray2Shape (CUAI_SHARRAYSHP_PHY (access_info))));
 
     DBUG_RETURN (access_info);
 }

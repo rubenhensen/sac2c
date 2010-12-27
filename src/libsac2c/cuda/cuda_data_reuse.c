@@ -851,7 +851,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
 
     DBUG_ENTER ("InsertGlobal2Shared");
 
-    array_elems = ARRAY_AELEMS (CUAI_SHARRAYSHP (access_info));
+    array_elems = ARRAY_AELEMS (CUAI_SHARRAYSHP_LOG (access_info));
     tb_shape_elems = ARRAY_AELEMS (PART_THREADBLOCKSHAPE (INFO_CUWLPART (arg_info)));
 
     if (CUAI_DIM (access_info) == 1) {
@@ -869,7 +869,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
                  * both shared and global memory accesses. Here we start with the
                  * respective shape first */
                 shr_args
-                  = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP (access_info)), NULL);
+                  = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP_PHY (access_info)), NULL);
                 glb_args = TBmakeExprs (DUPdoDupNode (CUAI_ARRAYSHP (access_info)), NULL);
 
                 if (!CUAI_ISCONSTANT (access_info, 0)) {
@@ -926,7 +926,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
                   = CreatePrfOrConst (TRUE, "shmem",
                                       TYgetSimpleType (TYgetScalar (
                                         AVIS_TYPE (CUAI_SHARRAY (access_info)))),
-                                      SHarray2Shape (CUAI_SHARRAYSHP (access_info)),
+                                      SHarray2Shape (CUAI_SHARRAYSHP_PHY (access_info)),
                                       F_idx_modarray_AxSxS, args, &vardecs, &assigns);
 
                 if (tb_x > NUM_VAL (EXPRS_EXPR1 (array_elems))) {
@@ -966,7 +966,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
             assigns = TCappendAssign (SG_INFO_GLBIDX_CAL (sg_info),
                                       SG_INFO_GLBIDX_CAL (SG_INFO_NEXT (sg_info)));
 
-            shr_args = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP (access_info)), NULL);
+            shr_args
+              = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP_PHY (access_info)), NULL);
             glb_args = TBmakeExprs (DUPdoDupNode (CUAI_ARRAYSHP (access_info)), NULL);
 
             /* Initialise loop iterator to 0 and set loop bound to
@@ -1029,7 +1030,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
               = CreatePrfOrConst (TRUE, "shmem",
                                   TYgetSimpleType (
                                     TYgetScalar (AVIS_TYPE (CUAI_SHARRAY (access_info)))),
-                                  SHarray2Shape (CUAI_SHARRAYSHP (access_info)),
+                                  SHarray2Shape (CUAI_SHARRAYSHP_PHY (access_info)),
                                   F_idx_modarray_AxSxS, args, &vardecs, &loop_assigns);
 
             /* Create a conditional so that only threads with threadIdx.x
@@ -1075,7 +1076,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
                  * both shared and global memory accesses. Here we start with the
                  * respective shape first */
                 shr_args
-                  = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP (access_info)), NULL);
+                  = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP_PHY (access_info)), NULL);
                 glb_args = TBmakeExprs (DUPdoDupNode (CUAI_ARRAYSHP (access_info)), NULL);
 
                 if (!CUAI_ISCONSTANT (access_info, 0)) {
@@ -1207,7 +1208,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
                       = CreatePrfOrConst (TRUE, "shmem",
                                           TYgetSimpleType (TYgetScalar (
                                             AVIS_TYPE (CUAI_SHARRAY (access_info)))),
-                                          SHarray2Shape (CUAI_SHARRAYSHP (access_info)),
+                                          SHarray2Shape (
+                                            CUAI_SHARRAYSHP_PHY (access_info)),
                                           F_idx_modarray_AxSxS, args, &vardecs, &assigns);
                 }
                 shr_args = FREEdoFreeTree (shr_args);
@@ -1242,8 +1244,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
       = CreatePrfOrConst (TRUE, "shmem",
                           TYgetSimpleType (
                             TYgetScalar (AVIS_TYPE (CUAI_SHARRAY (access_info)))),
-                          SHarray2Shape (CUAI_SHARRAYSHP (access_info)), F_syncthreads,
-                          args, &vardecs, &assigns);
+                          SHarray2Shape (CUAI_SHARRAYSHP_PHY (access_info)),
+                          F_syncthreads, args, &vardecs, &assigns);
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
       = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
@@ -1286,7 +1288,7 @@ ComputeSharedMemoryOffset (shared_global_info_t *sg_info, cuda_access_info_t *ac
 
     DBUG_ENTER ("ComputeSharedMemoryOffset");
 
-    args = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP (access_info)), NULL);
+    args = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP_PHY (access_info)), NULL);
 
     while (sg_info != NULL) {
         args = TCcombineExprs (args,

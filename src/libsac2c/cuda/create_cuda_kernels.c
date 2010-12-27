@@ -141,6 +141,7 @@ struct INFO {
     bool suballoc_rhs;
     node *suballoc_lhs;
     bool in_cuda_partition;
+    node *part_tbshp;
 };
 
 #define INFO_CUDAKERNELS(n) (n->cudakernels)
@@ -172,6 +173,7 @@ struct INFO {
 #define INFO_SUBALLOC_LHS(n) (n->suballoc_lhs)
 #define INFO_IN_CUDA_PARTITION(n) (n->in_cuda_partition)
 #define INFO_WITH(n) (n->with)
+#define INFO_PART_TBSHP(n) (n->part_tbshp)
 
 static info *
 MakeInfo ()
@@ -211,6 +213,7 @@ MakeInfo ()
     INFO_SUBALLOC_LHS (result) = FALSE;
     INFO_IN_CUDA_PARTITION (result) = FALSE;
     INFO_WITH (result) = NULL;
+    INFO_PART_TBSHP (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -743,7 +746,9 @@ CUKNLpart (node *arg_node, info *arg_info)
             dup_code = TRAVopt (dup_code, arg_info);
             INFO_IN_CUDA_PARTITION (arg_info) = FALSE;
 
+            INFO_PART_TBSHP (arg_info) = PART_THREADBLOCKSHAPE (arg_node);
             PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);
+            INFO_PART_TBSHP (arg_info) = NULL;
 
             /********** End traversal of N_part Sons/Attributes **********/
 
@@ -1013,6 +1018,12 @@ CUKNLgenerator (node *arg_node, info *arg_info)
         HandleBoundStepWidthExprs (upper_bound, &gridblock_exprs, "_ub_", arg_info);
 
         if (!INFO_IN_CUDA_PARTITION (arg_info)) {
+            if (INFO_PART_TBSHP (arg_info) != NULL) {
+                gridblock_exprs
+                  = TCappendExprs (gridblock_exprs, DUPdoDupTree (ARRAY_AELEMS (
+                                                      INFO_PART_TBSHP (arg_info))));
+            }
+
             INFO_PRFGRIDBLOCK (arg_info)
               = TBmakeAssign (TBmakeLet (NULL,
                                          TBmakePrf (F_cuda_grid_block, gridblock_exprs)),

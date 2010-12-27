@@ -239,7 +239,9 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
 void
 ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
 {
-    int array_dim;
+    /*
+      int array_dim;
+    */
 
     DBUG_ENTER ("ICMCompileCUDA_GRID_BLOCK");
 
@@ -247,32 +249,46 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef CUDA_GRID_BLOCK
-
-    array_dim = bounds_count / 2;
-
+    /*
+      array_dim = bounds_count/2;
+    */
     INDENT;
     fprintf (global.outfile, "{\n");
 
-    if (array_dim == 1) {
+    if (bounds_count == 3) { /* 1D CUDA withloop */
         INDENT;
         INDENT;
-        fprintf (global.outfile, "dim3 grid((%s-%s)/%d+1);\n", var_ANY[0], var_ANY[1],
-                 global.cuda_1d_block_large);
+        /*
+            fprintf( global.outfile, "dim3 grid((%s-%s)/%d+1);\n",
+                     var_ANY[0], var_ANY[1], global.cuda_1d_block_large);
+            INDENT;INDENT;
+            fprintf( global.outfile, "dim3 block(%d);", global.cuda_1d_block_large);
+        */
+        fprintf (global.outfile, "dim3 grid((%s-%s)/%s+1);\n", var_ANY[0], var_ANY[1],
+                 var_ANY[2]);
         INDENT;
         INDENT;
-        fprintf (global.outfile, "dim3 block(%d);", global.cuda_1d_block_large);
-    } else if (array_dim == 2) {
+        fprintf (global.outfile, "dim3 block(%s);", var_ANY[2]);
+
+    } else if (bounds_count == 6) { /* 2D CUDA withloop */
         INDENT;
         INDENT;
-        fprintf (global.outfile, "dim3 grid((%s-%s)/%d+1, (%s-%s)/%d+1);\n", var_ANY[0],
-                 var_ANY[2], global.cuda_2d_block_x, var_ANY[1], var_ANY[3],
-                 global.cuda_2d_block_y);
+        /*
+            fprintf( global.outfile,
+                     "dim3 grid((%s-%s)/%d+1, (%s-%s)/%d+1);\n",
+                     var_ANY[0], var_ANY[2], global.cuda_2d_block_x,
+                     var_ANY[1], var_ANY[3], global.cuda_2d_block_y);
+            INDENT;INDENT;
+            fprintf( global.outfile, "dim3 block(%d, %d);",
+                     global.cuda_2d_block_x, global.cuda_2d_block_y);
+        */
+        fprintf (global.outfile, "dim3 grid((%s-%s)/%s+1, (%s-%s)/%s+1);\n", var_ANY[0],
+                 var_ANY[2], var_ANY[5], var_ANY[1], var_ANY[3], var_ANY[4]);
         INDENT;
         INDENT;
-        fprintf (global.outfile, "dim3 block(%d, %d);", global.cuda_2d_block_x,
-                 global.cuda_2d_block_y);
+        fprintf (global.outfile, "dim3 block(%s, %s);", var_ANY[5], var_ANY[4]);
     } else {
-        if (array_dim == 3) {
+        if (bounds_count == 9) { /* 3D CUDA withloop */
             INDENT;
             INDENT;
             /*
@@ -284,7 +300,7 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
             INDENT;
             INDENT;
             fprintf (global.outfile, "dim3 block((%s-%s));", var_ANY[0], var_ANY[3]);
-        } else if (array_dim == 4) {
+        } else if (bounds_count == 12) { /* 4D CUDA withloop */
             INDENT;
             INDENT;
             /*

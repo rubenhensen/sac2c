@@ -432,8 +432,13 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
              AVIS_NAME (CUAI_SHARRAY (ASSIGN_ACCESS_INFO (arg_node))));
 
     INDENT;
-    fprintf (global.outfile, "     - Shared Memory Shape: ");
-    PRTarray (CUAI_SHARRAYSHP (ASSIGN_ACCESS_INFO (arg_node)), arg_info);
+    fprintf (global.outfile, "     - Shared Memory Shape (Logical): ");
+    PRTarray (CUAI_SHARRAYSHP_LOG (ASSIGN_ACCESS_INFO (arg_node)), arg_info);
+    fprintf (global.outfile, "\n");
+
+    INDENT;
+    fprintf (global.outfile, "     - Shared Memory Shape (Physical): ");
+    PRTarray (CUAI_SHARRAYSHP_PHY (ASSIGN_ACCESS_INFO (arg_node)), arg_info);
     fprintf (global.outfile, "\n");
 
     INDENT;
