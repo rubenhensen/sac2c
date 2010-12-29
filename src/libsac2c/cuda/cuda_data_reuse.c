@@ -854,8 +854,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
     array_elems = ARRAY_AELEMS (CUAI_SHARRAYSHP_LOG (access_info));
     tb_shape_elems = ARRAY_AELEMS (PART_THREADBLOCKSHAPE (INFO_CUWLPART (arg_info)));
 
-    if (CUAI_DIM (access_info) == 1) {
-        if (INFO_CUWLDIM (arg_info) == 1) {
+    if (CUAI_DIM (access_info) == 1) {      /* If the accessed array is 1D */
+        if (INFO_CUWLDIM (arg_info) == 1) { /* If the CUDA withloop is 1D */
             int x, tb_x;
 
             tb_x = NUM_VAL (EXPRS_EXPR1 (tb_shape_elems));
@@ -947,65 +947,150 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
             /* Do nothing */
         }
 
-    } else if (CUAI_DIM (access_info) == 2) {
-        if (INFO_CUWLDIM (arg_info) == 1) { /* If the CUDA WL is 1D */
-            node *loop_assigns = NULL;      /* Assigns of the loop body */
+    } else if (CUAI_DIM (access_info) == 2) { /* If the accessed array is 2D */
+        if (INFO_CUWLDIM (arg_info) == 1) {   /* If the CUDA WL is 1D */
+            node *loop_assigns = NULL;        /* Assigns of the loop body */
             int tb_x, arr_shp_y, arr_shp_x;
 
+            /* tb_x is the size of the thread block along the X
+             * dimension. arr_shp_y and arr_shp_x represent the
+             * logical shape of the shared array */
             tb_x = NUM_VAL (EXPRS_EXPR1 (tb_shape_elems));
             arr_shp_y = NUM_VAL (EXPRS_EXPR1 (array_elems));
             arr_shp_x = NUM_VAL (EXPRS_EXPR2 (array_elems));
 
             in_shared_array = CUAI_SHARRAY (access_info);
 
+            /* !!! For the time being, we assume that size of
+             * X dimension of the thread block is always larger
+             * than the X dimension of the shared memory. Howver,
+             * this is no always true and need to be generalised
+             * in the future !!!*/
             DBUG_ASSERT ((arr_shp_x <= tb_x),
                          "Size of X dimension is lager than thread block size!");
 
             /* Since the array is 2D, we know there are only two assignment
-             * chains computing the base subscript expressions*/
+             * chains computing the base subscript expressions */
             assigns = TCappendAssign (SG_INFO_GLBIDX_CAL (sg_info),
                                       SG_INFO_GLBIDX_CAL (SG_INFO_NEXT (sg_info)));
 
+            /* Because the shr_args will be used in F_idxs2offset to compute
+             * the actual address within physical memory, we need to use the
+             * physical shape of the shared memory */
             shr_args
               = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP_PHY (access_info)), NULL);
             glb_args = TBmakeExprs (DUPdoDupNode (CUAI_ARRAYSHP (access_info)), NULL);
 
-            /* Initialise loop iterator to 0 and set loop bound to
-             * size of the Y dimension of the share memory array */
-            iterator = CreatePrfOrConst (FALSE, "iterator", T_int, SHmakeShape (0),
-                                         F_add_SxS, TBmakeNum (0), &vardecs, &assigns);
-            loop_bound = TBmakeNum (arr_shp_y);
+            if (tb_x % arr_shp_x == 0 && arr_shp_y % ((int)(tb_x / arr_shp_x)) == 0) {
+                int load_block_size = arr_shp_y / (tb_x / arr_shp_x);
 
-            /* Y dimension shared memory */
-            args = TBmakeExprs (TBmakeId (iterator), TBmakeExprs (TBmakeNum (0), NULL));
-            avis = CreatePrfOrConst (TRUE, "ty_shr_g2s", T_int, SHmakeShape (0),
-                                     F_add_SxS, args, &vardecs, &loop_assigns);
-            shr_args = TCcombineExprs (shr_args, TBmakeExprs (TBmakeId (avis), NULL));
+                args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
+                                    TBmakeExprs (TBmakeNum (arr_shp_x), NULL));
+                avis = CreatePrfOrConst (TRUE, "ld_blk_idx", T_int, SHmakeShape (0),
+                                         F_div_SxS, args, &vardecs, &assigns);
 
-            /* X dimension shared memory */
-            args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
-                                TBmakeExprs (TBmakeNum (0), NULL));
-            avis = CreatePrfOrConst (TRUE, "tx_shr_g2s", T_int, SHmakeShape (0),
-                                     F_add_SxS, args, &vardecs, &loop_assigns);
-            shr_args = TCcombineExprs (shr_args, TBmakeExprs (TBmakeId (avis), NULL));
+                args = TBmakeExprs (TBmakeId (avis),
+                                    TBmakeExprs (TBmakeNum (load_block_size), NULL));
+                iterator = CreatePrfOrConst (TRUE, "iterator", T_int, SHmakeShape (0),
+                                             F_mul_SxS, args, &vardecs, &assigns);
 
-            /* Y dimension global memory */
-            args = TBmakeExprs (TBmakeId (iterator),
-                                TBmakeExprs (TBmakeId (SG_INFO_GLBAVIS (sg_info)), NULL));
-            avis = CreatePrfOrConst (TRUE, "ty_glb_g2s", T_int, SHmakeShape (0),
-                                     F_add_SxS, args, &vardecs, &loop_assigns);
+                args = TBmakeExprs (TBmakeId (iterator),
+                                    TBmakeExprs (TBmakeNum (load_block_size), NULL));
+                loop_bound = CreatePrfOrConst (TRUE, "loop_bound", T_int, SHmakeShape (0),
+                                               F_add_SxS, args, &vardecs, &assigns);
 
-            glb_args = TCcombineExprs (glb_args, TBmakeExprs (TBmakeId (avis), NULL));
+                /* Y dimension shared memory */
+                args
+                  = TBmakeExprs (TBmakeId (iterator), TBmakeExprs (TBmakeNum (0), NULL));
+                avis = CreatePrfOrConst (TRUE, "ty_shr_g2s", T_int, SHmakeShape (0),
+                                         F_add_SxS, args, &vardecs, &loop_assigns);
+                shr_args = TCcombineExprs (shr_args, TBmakeExprs (TBmakeId (avis), NULL));
 
-            /* X dimension global memory */
-            args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
-                                TBmakeExprs (TBmakeId (
-                                               SG_INFO_GLBAVIS (SG_INFO_NEXT (sg_info))),
-                                             NULL));
-            avis = CreatePrfOrConst (TRUE, "tx_glb_g2s", T_int, SHmakeShape (0),
-                                     F_add_SxS, args, &vardecs, &loop_assigns);
+                /* X dimension shared memory */
+                args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
+                                    TBmakeExprs (TBmakeNum (arr_shp_x), NULL));
+                avis = CreatePrfOrConst (TRUE, "tx_shr_g2s", T_int, SHmakeShape (0),
+                                         F_mod_SxS, args, &vardecs, &loop_assigns);
+                shr_args = TCcombineExprs (shr_args, TBmakeExprs (TBmakeId (avis), NULL));
 
-            glb_args = TCcombineExprs (glb_args, TBmakeExprs (TBmakeId (avis), NULL));
+                /* Y dimension global memory */
+                args = TBmakeExprs (TBmakeId (iterator),
+                                    TBmakeExprs (TBmakeId (SG_INFO_GLBAVIS (sg_info)),
+                                                 NULL));
+                avis = CreatePrfOrConst (TRUE, "ty_glb_g2s", T_int, SHmakeShape (0),
+                                         F_add_SxS, args, &vardecs, &loop_assigns);
+
+                glb_args = TCcombineExprs (glb_args, TBmakeExprs (TBmakeId (avis), NULL));
+
+                /* X dimension global memory */
+                args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
+                                    TBmakeExprs (TBmakeNum (arr_shp_x), NULL));
+                avis = CreatePrfOrConst (TRUE, "tx_glb_g2s", T_int, SHmakeShape (0),
+                                         F_mod_SxS, args, &vardecs, &loop_assigns);
+
+                args
+                  = TBmakeExprs (TBmakeId (avis), TBmakeExprs (TBmakeId (SG_INFO_GLBAVIS (
+                                                                 SG_INFO_NEXT (sg_info))),
+                                                               NULL));
+                avis = CreatePrfOrConst (TRUE, "tx_glb_g2s", T_int, SHmakeShape (0),
+                                         F_add_SxS, args, &vardecs, &loop_assigns);
+
+                glb_args = TCcombineExprs (glb_args, TBmakeExprs (TBmakeId (avis), NULL));
+            } else {
+                /* Initialise loop iterator to 0 and set loop bound to
+                 * size of the Y dimension of the share memory array */
+                iterator
+                  = CreatePrfOrConst (FALSE, "iterator", T_int, SHmakeShape (0),
+                                      F_add_SxS, TBmakeNum (0), &vardecs, &assigns);
+                /*
+                        loop_bound = TBmakeNum( arr_shp_y);
+                */
+                loop_bound = CreatePrfOrConst (FALSE, "loop_bound", T_int,
+                                               SHmakeShape (0), F_add_SxS,
+                                               TBmakeNum (arr_shp_y), &vardecs, &assigns);
+
+                /* Y dimension shared memory */
+                args
+                  = TBmakeExprs (TBmakeId (iterator), TBmakeExprs (TBmakeNum (0), NULL));
+                avis = CreatePrfOrConst (TRUE, "ty_shr_g2s", T_int, SHmakeShape (0),
+                                         F_add_SxS, args, &vardecs, &loop_assigns);
+                shr_args = TCcombineExprs (shr_args, TBmakeExprs (TBmakeId (avis), NULL));
+
+                /* X dimension shared memory */
+                args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
+                                    TBmakeExprs (TBmakeNum (0), NULL));
+                avis = CreatePrfOrConst (TRUE, "tx_shr_g2s", T_int, SHmakeShape (0),
+                                         F_add_SxS, args, &vardecs, &loop_assigns);
+                shr_args = TCcombineExprs (shr_args, TBmakeExprs (TBmakeId (avis), NULL));
+
+                /* Y dimension global memory */
+                args = TBmakeExprs (TBmakeId (iterator),
+                                    TBmakeExprs (TBmakeId (SG_INFO_GLBAVIS (sg_info)),
+                                                 NULL));
+                avis = CreatePrfOrConst (TRUE, "ty_glb_g2s", T_int, SHmakeShape (0),
+                                         F_add_SxS, args, &vardecs, &loop_assigns);
+
+                glb_args = TCcombineExprs (glb_args, TBmakeExprs (TBmakeId (avis), NULL));
+
+                /* X dimension global memory */
+                args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
+                                    TBmakeExprs (TBmakeId (SG_INFO_GLBAVIS (
+                                                   SG_INFO_NEXT (sg_info))),
+                                                 NULL));
+                avis = CreatePrfOrConst (TRUE, "tx_glb_g2s", T_int, SHmakeShape (0),
+                                         F_add_SxS, args, &vardecs, &loop_assigns);
+
+                glb_args = TCcombineExprs (glb_args, TBmakeExprs (TBmakeId (avis), NULL));
+
+                /* Create a conditional so that only threads with threadIdx.x
+                 * less than the size of the X dimension of the shared memory
+                 * array will participate in loading data */
+                args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
+                                    TBmakeExprs (TBmakeNum (arr_shp_x), NULL));
+
+                cond = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_lt_SxS,
+                                         args, &vardecs, &predicate);
+            }
 
             /* Create global2shared loading instruction i.e. idx_modarray_AxSxS */
             glb_idx = CreatePrfOrConst (TRUE, "idx_glb_g2s", T_int, SHmakeShape (0),
@@ -1032,15 +1117,6 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
                                     TYgetScalar (AVIS_TYPE (CUAI_SHARRAY (access_info)))),
                                   SHarray2Shape (CUAI_SHARRAYSHP_PHY (access_info)),
                                   F_idx_modarray_AxSxS, args, &vardecs, &loop_assigns);
-
-            /* Create a conditional so that only threads with threadIdx.x
-             * less than the size of the X dimension of the shared memory
-             * array will participate in loading data */
-            args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
-                                TBmakeExprs (TBmakeNum (arr_shp_x), NULL));
-
-            cond = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_lt_SxS,
-                                     args, &vardecs, &predicate);
 
             /* We have the add the new vardecs to the fundef here
              * because  function CLACFdoCreateLacFun need to know

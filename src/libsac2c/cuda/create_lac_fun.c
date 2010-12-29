@@ -184,9 +184,10 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
         /* Add the prediacte variable to the in mask */
         in_mask = INFDFMSdoInferInDfmAssignChain (assigns, fundef);
         DFMsetMaskEntrySet (in_mask, NULL, iterator);
+        DFMsetMaskEntrySet (in_mask, NULL, loop_bound);
         DFMsetMaskEntrySet (in_mask, NULL, in_mem);
 
-        /* Put all args into the loop up table */
+        /* Put all args into the look up table */
         fundef_args = DFMUdfm2Args (in_mask, INFO_DUPLUT (arg_info));
 
         assigns = TRAVdo (assigns, arg_info);
@@ -211,15 +212,16 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
         comp_val = TBmakeAvis (TRAVtmpVarName ("comp_val"),
                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
         INFO_VARDECS (arg_info) = TBmakeVardec (comp_val, INFO_VARDECS (arg_info));
-        sub_ass
-          = TBmakeAssign (TBmakeLet (TBmakeIds (comp_val, NULL),
-                                     TBmakePrf (F_add_SxS,
-                                                TBmakeExprs (TBmakeNum (
-                                                               -(NUM_VAL (loop_bound))),
-                                                             TBmakeExprs (TBmakeId (
-                                                                            new_iterator),
-                                                                          NULL)))),
-                          NULL);
+        sub_ass = TBmakeAssign (
+          TBmakeLet (TBmakeIds (comp_val, NULL),
+                     TBmakePrf (F_sub_SxS,
+                                TBmakeExprs (TBmakeId (new_iterator),
+                                             TBmakeExprs (TBmakeId (
+                                                            LUTsearchInLutPp (INFO_DUPLUT (
+                                                                                arg_info),
+                                                                              loop_bound)),
+                                                          NULL)))),
+          NULL);
         AVIS_SSAASSIGN (new_iterator) = sub_ass;
 
         comp_predicate
