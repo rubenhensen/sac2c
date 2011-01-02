@@ -8252,6 +8252,30 @@ N_tfarg :
                   If true, the given variable is a loop index and the loop needs to be blocked
           </description>
         </flag>
+        <flag name="IsGenarrayMemval" default="FALSE" >
+          <description>
+             Marks genarray with-loo operatorp memval identifier.
+             Only used in SPMD functions.
+          </description>
+        </flag>
+        <flag name="IsModarrayMemval" default="FALSE" >
+          <description>
+             Marks modarray with-loop operator memval identifier.
+             Only used in SPMD functions.                  
+          </description>
+        </flag>
+        <flag name="IsBreakMemval" default="FALSE" >
+          <description>
+             Marks break with-loop operator memval identifier.
+             Only used in SPMD functions.                  
+          </description>
+        </flag>
+        <flag name="IsPropagateDefault" default="FALSE" >
+          <description>
+             Marks propagate with-loop operator default identifier.
+             Only used in SPMD functions.                  
+          </description>
+        </flag>
         <flag name="FinverseSwap" default="FALSE" >
           <description>
                   If true, the AVIS_MIN and AVIS_MAX values for this
