@@ -1,5 +1,5 @@
 /*
- * $Id: mt.h 16792 2010-03-29 09:22:23Z cg $
+ * $Id$
  */
 
 /*****************************************************************************
@@ -105,6 +105,14 @@
       BYTE_SIZE_OF_DESC (DESC_DIM (SAC_spmd_frame.spmdfun.in_##num##_desc)));            \
     memcpy (SAC_ND_A_DESC (var_NT), SAC_spmd_frame.spmdfun.in_##num##_desc,              \
             BYTE_SIZE_OF_DESC (DESC_DIM (SAC_spmd_frame.spmdfun.in_##num##_desc)));
+
+#define SAC_MT_RECEIVE_PARAM_in__NEWDESC(spmdfun, num, basetype, var_NT)                 \
+    SAC_ND_TYPE (var_NT, basetype)                                                       \
+    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;                           \
+    SAC_ND_DESC_TYPE (var_NT)                                                            \
+    SAC_ND_A_DESC (var_NT)                                                               \
+      = (SAC_ND_DESC_TYPE (var_NT))alloca (SIZE_OF_DESC (0) * sizeof (int));             \
+    DESC_RC (SAC_ND_A_DESC (var_NT)) = 2;
 
 #define SAC_MT_RECEIVE_PARAM_inout__NODESC(spmdfun, num, basetype, var_NT)               \
     SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
