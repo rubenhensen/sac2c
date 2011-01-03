@@ -110,7 +110,7 @@ CUSKCdoSinkCode (node *syntax_tree)
 
     arg_info = FreeInfo (arg_info);
 
-    syntax_tree = DCRdoDeadCodeRemovalModule (syntax_tree);
+    syntax_tree = DCRdoDeadCodeRemoval (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }

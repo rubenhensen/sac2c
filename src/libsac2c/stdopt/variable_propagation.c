@@ -227,69 +227,13 @@ VPdoVarPropagation (node *arg_node)
 
     arg_info = MakeInfo ();
 
-    INFO_ONEFUNDEF (arg_info) = FALSE;
+    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
 
     TRAVpush (TR_vp);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
     arg_info = FreeInfo (arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/********************************************************************
- *
- * function:
- *   node* VPdoVarPropagationOneFundef(node *arg_node)
- *
- * description:
- *   This function is called to start this optimization.
- *   Starting point of the traversal through the AST.
- *
- ********************************************************************/
-
-node *
-VPdoVarPropagationOneFundef (node *arg_node)
-{
-    info *arg_info;
-
-    DBUG_ENTER ("VPdoVarPropagationOneFundef");
-
-    arg_info = MakeInfo ();
-
-    INFO_ONEFUNDEF (arg_info) = TRUE;
-
-    TRAVpush (TR_vp);
-    arg_node = TRAVdo (arg_node, arg_info);
-    TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/********************************************************************
- *
- * function:
- *   node *VPdoVarPropagationOneFundefAnon( node *arg_node, info *arg_info)
- *
- * description: Entry point for variable propagation within a single
- *              function, invoked from an anonymous traversal.
- *
- * parameters: arg_node - an N_fundef node
- *             arg_info - ignored; present only to placate anonymous
- *                        traversal invocation
- *
- ********************************************************************/
-
-node *
-VPdoVarPropagationOneFundefAnon (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("VPdoVarPropagationOneFundefAnon");
-
-    arg_node = VPdoVarPropagationOneFundef (arg_node);
 
     DBUG_RETURN (arg_node);
 }

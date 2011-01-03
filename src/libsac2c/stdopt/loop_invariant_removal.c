@@ -1856,78 +1856,36 @@ FreeLIRInformation (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node* LIRdoLoopInvariantRemovalOneFundef(node* fundef)
+ *   node* LIRdoLoopInvariantRemoval(node *arg_node
  *
  * description:
- *   starts the do-loop/with-loop invariant removal for fundef nodes.
+ *   starts the loop invariant removal for module/fundef nodes.
  *
  *****************************************************************************/
 node *
-DLIRdoLoopInvariantRemovalOneFundef (node *fundef)
+DLIRdoLoopInvariantRemoval (node *arg_node)
 {
-    info *info;
-    DBUG_ENTER ("LIRdoLoopInvariantRemovalOneFundef");
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "LIRdoLoopInvariantRemovalOneFundef called for non-fundef node");
-
-    info = MakeInfo ();
-
-    INFO_TRAVSTART (info) = TS_fundef;
-
-    TRAVpush (TR_dlir);
-    fundef = TRAVdo (fundef, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    /*
-     * we free the information gathered by LIR here as it is no longer
-     * used after this transformation
-     */
-    fundef = FreeLIRInformation (fundef);
-
-    DBUG_RETURN (fundef);
-}
-
-/******************************************************************************
- *
- * function:
- *   node* LIRdoLoopInvariantRemoval(node* module)
- *
- * description:
- *   starts the loop invariant removal for module nodes.
- *
- *****************************************************************************/
-node *
-DLIRdoLoopInvariantRemoval (node *module)
-{
-    int movedsofar;
-
-    info *info;
+    info *arg_info;
 
     DBUG_ENTER ("LIRdoLoopInvariantRemoval");
 
-    DBUG_ASSERT ((NODE_TYPE (module) == N_module),
-                 "LIRdoLoopInvariantRemoval called for non-module node");
+    arg_info = MakeInfo ();
 
-    movedsofar = global.optcounters.lir_expr;
-
-    info = MakeInfo ();
-
-    INFO_TRAVSTART (info) = TS_module;
+    INFO_TRAVSTART (arg_info)
+      = (N_module == NODE_TYPE (arg_node)) ? TS_module : TS_fundef;
 
     TRAVpush (TR_dlir);
-    module = TRAVdo (module, info);
+    arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
-    info = FreeInfo (info);
+    arg_info = FreeInfo (arg_info);
 
     /*
      * we free the information gathered by LIR here as it is no longer
      * used after this transformation
      */
-    module = FreeLIRInformation (module);
+    arg_node = FreeLIRInformation (arg_node);
 
-    DBUG_RETURN (module);
+    DBUG_RETURN (arg_node);
 }

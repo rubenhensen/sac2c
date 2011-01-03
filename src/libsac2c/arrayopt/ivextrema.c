@@ -280,6 +280,8 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 
+#ifdef DEADCODE
+
 /** <!--********************************************************************-->
  *
  * @fn node *IVEXIdoInsertIndexVectorExtrema( node *arg_node)
@@ -322,12 +324,13 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
     arg_info = FreeInfo (arg_info);
     DBUG_RETURN (arg_node);
 }
+#endif // DEADCODE
 
 node *
-IVEXIdoInsertIndexVectorExtremaOneFundef (node *arg_node)
+IVEXIdoInsertIndexVectorExtrema (node *arg_node)
 {
     info *arg_info;
-    DBUG_ENTER ("IVEXIdoIndexVectorExtremaInsertionOneFundef");
+    DBUG_ENTER ("IVEXIdoIndexVectorExtremaInsertion");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), "Expected N_fundef");
 
@@ -1001,7 +1004,7 @@ IVEXIpart (node *arg_node, info *arg_info)
     /* Don't try this on empty code blocks, kids. */
     /* Or default partitions, either! */
     if ((N_empty != NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node)))))
-        && (!PART_HASEXTREMA (arg_node))
+        && (!CODE_HASEXTREMA (PART_CODE (arg_node)))
         && (N_default != NODE_TYPE (PART_GENERATOR (arg_node)))) {
 
         populateLUTVars (arg_node, arg_info);
@@ -1045,7 +1048,7 @@ IVEXIpart (node *arg_node, info *arg_info)
                                 BLOCK_INSTR (CODE_CBLOCK (newcode)));
             INFO_PREASSIGNSPART (arg_info) = NULL;
         }
-        PART_HASEXTREMA (arg_node) = TRUE;
+        CODE_HASEXTREMA (PART_CODE (arg_node)) = TRUE;
     }
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);

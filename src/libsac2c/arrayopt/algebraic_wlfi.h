@@ -13,7 +13,7 @@
  * Prefix: AWLFI
  *
  *****************************************************************************/
-extern node *AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node);
+extern node *AWLFIdoAlgebraicWithLoopFolding (node *arg_node);
 extern bool AWLFIisSingleOpWL (node *arg_node);
 extern node *AWLFIgetWlWith (node *arg_node);
 extern node *AWLFIfindWlId (node *arg_node);

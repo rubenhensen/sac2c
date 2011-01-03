@@ -130,7 +130,24 @@ IVEXCpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("IVEXCpart");
 
-    PART_HASEXTREMA (arg_node) = FALSE;
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IVEXCcode(node *arg_node, info *arg_info)
+ *
+ * @brief  Resets N_with fields no longer needed by AWLF.
+ *
+ *****************************************************************************/
+node *
+IVEXCcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("IVEXCcode");
+
+    CODE_HASEXTREMA (arg_node) = FALSE;
     arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
@@ -205,11 +222,13 @@ IVEXCavis (node *arg_node, info *arg_info)
       = (NULL != AVIS_MIN (arg_node)) ? FREEdoFreeNode (AVIS_MIN (arg_node)) : NULL;
     AVIS_MAX (arg_node)
       = (NULL != AVIS_MAX (arg_node)) ? FREEdoFreeNode (AVIS_MAX (arg_node)) : NULL;
+    AVIS_WITHIDS (arg_node) = (NULL != AVIS_WITHIDS (arg_node))
+                                ? FREEdoFreeNode (AVIS_WITHIDS (arg_node))
+                                : NULL;
     AVIS_ISMINHANDLED (arg_node) = FALSE;
     AVIS_ISMAXHANDLED (arg_node) = FALSE;
     AVIS_COUNTING_WL (arg_node) = NULL;
     AVIS_WL_NEEDCOUNT (arg_node) = 0;
-    AVIS_WITHIDS (arg_node) = NULL;
 
     DBUG_RETURN (arg_node);
 }

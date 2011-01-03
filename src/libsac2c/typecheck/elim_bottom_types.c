@@ -226,42 +226,13 @@ TransformIntoTypeError (node *fundef)
 /******************************************************************************
  *
  * function:
- *   node *EBTdoEliminateBottomTypes( node *arg_node)
- *
- * description:
- *
- *
- ******************************************************************************/
-
-node *
-EBTdoEliminateBottomTypes (node *arg_node)
-{
-    info *info_node;
-
-    DBUG_ENTER ("EBTdoEliminateBottomTypes");
-
-    TRAVpush (TR_ebt);
-
-    info_node = MakeInfo ();
-    arg_node = TRAVdo (arg_node, info_node);
-    info_node = FreeInfo (info_node);
-
-    TRAVpop ();
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *EBTdoEliminateBottomTypesOneFunction( node *arg_node)
  *
  * description:
  *
  *
  ******************************************************************************/
-
-node *
+static node *
 EBTdoEliminateBottomTypesOneFunction (node *arg_node)
 {
     info *info_node;
@@ -295,24 +266,30 @@ EBTdoEliminateBottomTypesOneFunction (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *EBTdoEliminateBottomTypesOneFundefAnon( node *arg_node, info *arg_info)
+ *   node *EBTdoEliminateBottomTypes( node *arg_node)
  *
- * description: Apply EBT to one function, called from anonymous traversal
+ * description:
  *
- * @param arg_node: an N_fundef node
- *        arg_info: Included only to placate anonymous traversal call.
- *
- * @result: updated N_fundef node
  *
  ******************************************************************************/
-
 node *
-EBTdoEliminateBottomTypesOneFundefAnon (node *arg_node, info *arg_info)
+EBTdoEliminateBottomTypes (node *arg_node)
 {
+    info *info_node;
 
-    DBUG_ENTER ("EBTdoEliminateBottomTypesOneFundefAnon");
+    DBUG_ENTER ("EBTdoEliminateBottomTypes");
 
-    arg_node = EBTdoEliminateBottomTypesOneFunction (arg_node);
+    if (N_module == NODE_TYPE (arg_node)) {
+        TRAVpush (TR_ebt);
+
+        info_node = MakeInfo ();
+        arg_node = TRAVdo (arg_node, info_node);
+        info_node = FreeInfo (info_node);
+
+        TRAVpop ();
+    } else {
+        arg_node = EBTdoEliminateBottomTypesOneFunction (arg_node);
+    }
 
     DBUG_RETURN (arg_node);
 }

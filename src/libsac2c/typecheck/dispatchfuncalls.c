@@ -565,44 +565,13 @@ DFClet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * Function:
- *   node *DFCdoDispatchFunCalls( node *ast)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-DFCdoDispatchFunCalls (node *ast)
-{
-    info *info_node;
-
-    DBUG_ENTER ("DFCdoDispatchFunCalls");
-
-    info_node = MakeInfo ();
-
-    TRAVpush (TR_dfc);
-
-    ast = TRAVdo (ast, info_node);
-
-    TRAVpop ();
-
-    info_node = FreeInfo (info_node);
-
-    DBUG_RETURN (ast);
-}
-
-/******************************************************************************
- *
- * Function:
  *   node *DFCdoDispatchFunCallsOneFundef( node *ast)
  *
  * Description:
  *
  *
  ******************************************************************************/
-
-node *
+static node *
 DFCdoDispatchFunCallsOneFundef (node *fundef)
 {
     info *info_node;
@@ -633,7 +602,7 @@ DFCdoDispatchFunCallsOneFundef (node *fundef)
 /******************************************************************************
  *
  * Function:
- *   node *DFCdoDispatchFunCallsOneFundefAnon( node *arg_node, info *arg_info)
+ *   node *DFCdoDispatchFunCalls( node *ast)
  *
  * Description:
  *
@@ -641,12 +610,23 @@ DFCdoDispatchFunCallsOneFundef (node *fundef)
  ******************************************************************************/
 
 node *
-DFCdoDispatchFunCallsOneFundefAnon (node *arg_node, info *arg_info)
+DFCdoDispatchFunCalls (node *arg_node)
 {
+    info *arg_info;
 
-    DBUG_ENTER ("DFCdoDispatchFunCallsOneFundefAnon");
+    DBUG_ENTER ("DFCdoDispatchFunCalls");
 
-    arg_node = DFCdoDispatchFunCallsOneFundef (arg_node);
+    if (N_module == NODE_TYPE (arg_node)) {
+
+        arg_info = MakeInfo ();
+        TRAVpush (TR_dfc);
+        arg_node = TRAVdo (arg_node, arg_info);
+        TRAVpop ();
+        arg_info = FreeInfo (arg_info);
+
+    } else {
+        arg_node = DFCdoDispatchFunCallsOneFundef (arg_node);
+    }
 
     DBUG_RETURN (arg_node);
 }

@@ -116,96 +116,33 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   node *DCRdoDeadCodeRemovalOneFundef(node *fundef)
+ *   node *DCRdoDeadCodeRemoval(node *arg_node)
  *
  * description:
- *   starting point of dead code removal.
- *   applies dead code removal to the designated function only.
+ *   applies dead code removal to all functions of the given module
+ *   or fundef.
+ *
+ *   NB. Unnecessary arguments of LAC functions are removed.
  *
  *****************************************************************************/
 node *
-DCRdoDeadCodeRemovalOneFundef (node *fundef)
+DCRdoDeadCodeRemoval (node *arg_node)
 {
-    info *info;
+    info *arg_info;
 
     DBUG_ENTER ("DCRdoDeadCodeRemoval");
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "DCRdoDeadCodeRemovalOneFunction called for non-fundef node");
-
-    info = MakeInfo ();
-    INFO_TRAVSCOPE (info) = TS_fundef;
+    arg_info = MakeInfo ();
+    INFO_TRAVSCOPE (arg_info)
+      = (N_fundef == NODE_TYPE (arg_node)) ? TS_function : TS_module;
 
     TRAVpush (TR_dcr);
-    fundef = TRAVdo (fundef, info);
+    arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
-    info = FreeInfo (info);
+    arg_info = FreeInfo (arg_info);
 
-    DBUG_RETURN (fundef);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *DCRdoDeadCodeRemovalOneFunction(node *fundef)
- *
- * description:
- *   starting point of dead code removal.
- *   applies dead code removal to the designated function and its associated
- *   LAC funs only.
- *   Thereby, unnecessary arguments of LAC functions are removed.
- *
- *****************************************************************************/
-node *
-DCRdoDeadCodeRemovalOneFunction (node *fundef)
-{
-    info *info;
-
-    DBUG_ENTER ("DCRdoDeadCodeRemoval");
-
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "DCRdoDeadCodeRemovalOneFunction called for non-fundef node");
-
-    info = MakeInfo ();
-    INFO_TRAVSCOPE (info) = TS_function;
-
-    TRAVpush (TR_dcr);
-    fundef = TRAVdo (fundef, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (fundef);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *DCRdoDeadCodeRemovalModule(node *module)
- *
- * description:
- *   applies dead code removal to all functions of the given module.
- *   Thereby, unnecessary arguments of LAC functions are removed.
- *
- *****************************************************************************/
-node *
-DCRdoDeadCodeRemovalModule (node *module)
-{
-    info *info;
-
-    DBUG_ENTER ("DCRdoDeadCodeRemovalModule");
-
-    info = MakeInfo ();
-    INFO_TRAVSCOPE (info) = TS_module;
-
-    TRAVpush (TR_dcr);
-    module = TRAVdo (module, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (module);
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************

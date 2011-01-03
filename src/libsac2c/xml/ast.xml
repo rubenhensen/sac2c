@@ -635,6 +635,7 @@
       <traversal id="IVEXC" name="Index Vector Extrema Cleanup" default="sons" include="ivexcleanup.h" >
         <travuser>
           <node name="Part" />
+          <node name="Code" />
           <node name="Let" />
           <node name="Avis" />
           <node name="Prf" />
@@ -8696,14 +8697,6 @@ N_tfarg :
       </attributes>
       <flags>
         <flag name="IsCopy" />
-        <flag name="HasExtrema"  default="FALSE">
-          <description> 
-            Set to true if the WITHIDs for this partition have
-            extrema attached to them. The requirement for this arises
-            from a need to know which partitions of a just-sliced
-            WL need to have extrema attached to them.
-	  </description>
-	</flag>
         <flag name="IsRefcounted" default="TRUE" />
         <flag name="Cudarizable" default="FALSE" />
         <flag name="IsConsumerPart"  default="FALSE">
@@ -9026,6 +9019,13 @@ N_tfarg :
         <flag name="Visited" />
         <flag name="HasResolveableDependencies" />
         <flag name="IsSimdSuitable" />
+        <flag name="HasExtrema" default="FALSE">
+          <description> 
+            Set to true if the WITHIDs for this code block have
+            extrema attached to them. This keeps IVEXI from
+            attaching extrema more than once per block.
+	  </description>
+	</flag>
       </flags>
     </node>
 <!--

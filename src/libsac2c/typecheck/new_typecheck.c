@@ -174,16 +174,6 @@ static const te_funptr prf_te_funtab[] = {
  * @{
  */
 
-/******************************************************************************
- *
- * function:
- *    node *NTCdoNewTypeCheck( node *arg_node)
- *
- * description:
- *    starts the new type checking traversal!
- *
- ******************************************************************************/
-
 static node *
 MarkWrapperAsChecked (node *fundef, info *arg_info)
 {
@@ -196,6 +186,113 @@ MarkWrapperAsChecked (node *fundef, info *arg_info)
     DBUG_RETURN (fundef);
 }
 
+static node *
+TagAsUnchecked (node *fundef, info *info)
+{
+    DBUG_ENTER ("TagAsUnchecked");
+
+    FUNDEF_TCSTAT (fundef) = NTC_not_checked;
+
+    DBUG_RETURN (fundef);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *NTCdoNewTypeCheckOneFunction( node *arg_node)
+ *
+ *****************************************************************************/
+
+static node *
+NTCdoNewTypeCheckOneFunction (node *arg_node)
+{
+    ntype *old_rets = NULL, *new_rets = NULL, *new_rets_fixed = NULL;
+
+    DBUG_ENTER ("NTCdoNewTypeCheckOneFunction");
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
+                 "NTCdoNewTypeCheckOneFunction can only be applied to N_fundef");
+
+    if (!FUNDEF_ISWRAPPERFUN (arg_node) && !FUNDEF_ISLACFUN (arg_node)
+        && (FUNDEF_BODY (arg_node) != NULL)) {
+        int oldmaxspec;
+        info *arg_info;
+
+        /*
+         * De-activate specialising
+         */
+        oldmaxspec = global.maxspec;
+        global.maxspec = 0;
+
+        /*
+         * Apply typechecker
+         */
+        MCGdoMapCallGraph (arg_node, TagAsUnchecked, NULL, MCGcontLacFun, NULL);
+        arg_node = TagAsUnchecked (arg_node, NULL);
+
+        if (FUNDEF_RETS (arg_node) != NULL) {
+            /**
+             * collect the old return types for later comparison
+             */
+            old_rets = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
+
+            /**
+             * no alphaMax here, as icc may actually lead to less precise
+             * types!!! (see also UpdateVarSignature in specialize.c!)
+             */
+            FUNDEF_RETS (arg_node) = TUrettypes2alphaMax (FUNDEF_RETS (arg_node));
+        }
+
+        TRAVpush (TR_ntc);
+
+        arg_info = MakeInfo ();
+        INFO_IS_TYPE_UPGRADE (arg_info) = TRUE;
+
+        arg_node = TRAVdo (arg_node, arg_info);
+
+        arg_info = FreeInfo (arg_info);
+
+        TRAVpop ();
+
+        /**
+         * check for return type upgrades:
+         */
+        if (FUNDEF_RETS (arg_node) != NULL) {
+            new_rets = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
+            new_rets_fixed = TYfixAndEliminateAlpha (new_rets);
+            FUNDEF_WASUPGRADED (arg_node) = !TYeqTypes (old_rets, new_rets_fixed);
+            old_rets = TYfreeType (old_rets);
+            new_rets = TYfreeType (new_rets);
+            new_rets_fixed = TYfreeType (new_rets_fixed);
+        } else {
+            FUNDEF_WASUPGRADED (arg_node) = FALSE;
+        }
+
+        /**
+         * increase global optimisation counter
+         * if function was upgraded
+         */
+        if (FUNDEF_WASUPGRADED (arg_node)) {
+            global.optcounters.tup_upgrades++;
+        }
+
+        /*
+         * Restore global.maxspec
+         */
+        global.maxspec = oldmaxspec;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    node *NTCdoNewTypeCheck( node *arg_node)
+ *
+ * description:
+ *    starts the new type checking traversal!
+ *
+ ******************************************************************************/
 node *
 NTCdoNewTypeCheck (node *arg_node)
 {
@@ -204,46 +301,51 @@ NTCdoNewTypeCheck (node *arg_node)
 
     DBUG_ENTER ("NTCdoNewTypeCheck");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
-                 "NTCdoNewTypeCheck() not called with N_module node!");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
+                 "NTCdoNewTypeCheck() not called with N_module/N_fundef node!");
 
-    if (!SSIassumptionSystemIsInitialized ()) {
-        ok = SSIinitAssumptionSystem (SDhandleContradiction, SDhandleElimination);
-        DBUG_ASSERT (ok, "Initialisation of Assumption System went wrong!");
+    if (N_module == NODE_TYPE (arg_node)) {
+
+        if (!SSIassumptionSystemIsInitialized ()) {
+            ok = SSIinitAssumptionSystem (SDhandleContradiction, SDhandleElimination);
+            DBUG_ASSERT (ok, "Initialisation of Assumption System went wrong!");
+        }
+
+        SPECinitSpecChain ();
+
+        /**
+         * Before starting the type checking mechanism, we first mark all
+         * wrapper functions as NTC_checked (as these have no bodies).
+         * For all other functions, we rely on FUNDEF_TCSTAT being set
+         * properly. This is done by the TBmakeFundef function and
+         * the module system (for imported/used functions).
+         */
+        MODULE_FUNS (arg_node)
+          = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, MarkWrapperAsChecked);
+
+        /*
+         * Now we have to initialize the deserialisation unit, as
+         * specializations may add new functions as dependencies
+         * of bodies to the ast
+         */
+        DSinitDeserialize (arg_node);
+
+        TRAVpush (TR_ntc);
+
+        arg_info = MakeInfo ();
+        arg_node = TRAVdo (arg_node, arg_info);
+        arg_info = FreeInfo (arg_info);
+
+        TRAVpop ();
+
+        /*
+         * from here on, no more functions are deserialized, so we can
+         * finish the deseralization engine
+         */
+        DSfinishDeserialize (arg_node);
+    } else {
+        arg_node = NTCdoNewTypeCheckOneFunction (arg_node);
     }
-
-    SPECinitSpecChain ();
-
-    /**
-     * Before starting the type checking mechanism, we first mark all
-     * wrapper functions as NTC_checked (as these have no bodies).
-     * For all other functions, we rely on FUNDEF_TCSTAT being set
-     * properly. This is done by the TBmakeFundef function and
-     * the module system (for imported/used functions).
-     */
-    MODULE_FUNS (arg_node)
-      = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, MarkWrapperAsChecked);
-
-    /*
-     * Now we have to initialize the deserialisation unit, as
-     * specializations may add new functions as dependencies
-     * of bodies to the ast
-     */
-    DSinitDeserialize (arg_node);
-
-    TRAVpush (TR_ntc);
-
-    arg_info = MakeInfo ();
-    arg_node = TRAVdo (arg_node, arg_info);
-    arg_info = FreeInfo (arg_info);
-
-    TRAVpop ();
-
-    /*
-     * from here on, no more functions are deserialized, so we can
-     * finish the deseralization engine
-     */
-    DSfinishDeserialize (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -370,116 +472,6 @@ NTCdoNewReTypeCheckFromScratch (node *arg_node)
       = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, ResetWrapperTypes);
 
     arg_node = NTCdoNewReTypeCheck (arg_node);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *NTCdoNewTypeCheckOneFunction( node *arg_node)
- * @fn node *NTCdoNewTypeCheckOneFundefAnon( node *arg_node)
- *
- *****************************************************************************/
-
-static node *
-TagAsUnchecked (node *fundef, info *info)
-{
-    DBUG_ENTER ("TagAsUnchecked");
-
-    FUNDEF_TCSTAT (fundef) = NTC_not_checked;
-
-    DBUG_RETURN (fundef);
-}
-
-node *
-NTCdoNewTypeCheckOneFunction (node *arg_node)
-{
-    ntype *old_rets = NULL, *new_rets = NULL, *new_rets_fixed = NULL;
-
-    DBUG_ENTER ("NTCdoNewTypeCheckOneFunction");
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
-                 "NTCdoNewTypeCheckOneFunction can only be applied to N_fundef");
-
-    if (!FUNDEF_ISWRAPPERFUN (arg_node) && !FUNDEF_ISLACFUN (arg_node)
-        && (FUNDEF_BODY (arg_node) != NULL)) {
-        int oldmaxspec;
-        info *arg_info;
-
-        /*
-         * De-activate specialising
-         */
-        oldmaxspec = global.maxspec;
-        global.maxspec = 0;
-
-        /*
-         * Apply typechecker
-         */
-        MCGdoMapCallGraph (arg_node, TagAsUnchecked, NULL, MCGcontLacFun, NULL);
-        arg_node = TagAsUnchecked (arg_node, NULL);
-
-        if (FUNDEF_RETS (arg_node) != NULL) {
-            /**
-             * collect the old return types for later comparison
-             */
-            old_rets = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
-
-            /**
-             * no alphaMax here, as icc may actually lead to less precise
-             * types!!! (see also UpdateVarSignature in specialize.c!)
-             */
-            FUNDEF_RETS (arg_node) = TUrettypes2alphaMax (FUNDEF_RETS (arg_node));
-        }
-
-        TRAVpush (TR_ntc);
-
-        arg_info = MakeInfo ();
-        INFO_IS_TYPE_UPGRADE (arg_info) = TRUE;
-
-        arg_node = TRAVdo (arg_node, arg_info);
-
-        arg_info = FreeInfo (arg_info);
-
-        TRAVpop ();
-
-        /**
-         * check for return type upgrades:
-         */
-        if (FUNDEF_RETS (arg_node) != NULL) {
-            new_rets = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
-            new_rets_fixed = TYfixAndEliminateAlpha (new_rets);
-            FUNDEF_WASUPGRADED (arg_node) = !TYeqTypes (old_rets, new_rets_fixed);
-            old_rets = TYfreeType (old_rets);
-            new_rets = TYfreeType (new_rets);
-            new_rets_fixed = TYfreeType (new_rets_fixed);
-        } else {
-            FUNDEF_WASUPGRADED (arg_node) = FALSE;
-        }
-
-        /**
-         * increase global optimisation counter
-         * if function was upgraded
-         */
-        if (FUNDEF_WASUPGRADED (arg_node)) {
-            global.optcounters.tup_upgrades++;
-        }
-
-        /*
-         * Restore global.maxspec
-         */
-        global.maxspec = oldmaxspec;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-node *
-NTCdoNewTypeCheckOneFundefAnon (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("NTCdoNewTypeCheckOneFundefAnon");
-
-    arg_node = NTCdoNewTypeCheckOneFunction (arg_node);
 
     DBUG_RETURN (arg_node);
 }

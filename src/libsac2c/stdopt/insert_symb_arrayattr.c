@@ -166,65 +166,25 @@ FreeInfo (info *info)
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node *ISAAdoInsertShapeVariables( node *syntax_tree)
+ * @fn node *ISAAdoInsertShapeVariables( node *arg_node)
  *
  *****************************************************************************/
 node *
-ISAAdoInsertShapeVariables (node *syntax_tree)
+ISAAdoInsertShapeVariables (node *arg_node)
 {
-    info *info;
+    info *arg_info;
 
     DBUG_ENTER ("ISAAdoInsertShapeVariables");
 
-    info = MakeInfo ();
+    arg_info = MakeInfo ();
 
-    INFO_TRAVSCOPE (info) = TS_module;
+    INFO_TRAVSCOPE (arg_info)
+      = (N_module == NODE_TYPE (arg_node)) ? TS_module : TS_fundef;
     TRAVpush (TR_isaa);
-    syntax_tree = TRAVdo (syntax_tree, info);
+    arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
-    info = FreeInfo (info);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *ISAAdoInsertShapeVariablesOneFundef( node *fundef)
- *
- *****************************************************************************/
-node *
-ISAAdoInsertShapeVariablesOneFundef (node *fundef)
-{
-    info *info;
-
-    DBUG_ENTER ("ISAAdoInsertShapeVariablesOneFundef");
-
-    info = MakeInfo ();
-
-    INFO_TRAVSCOPE (info) = TS_fundef;
-    TRAVpush (TR_isaa);
-    fundef = TRAVdo (fundef, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (fundef);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *ISAAdoInsertShapeVariablesOneFundefAnon( node *arg_node,
- *                                                    info *arg_info)
- *
- *****************************************************************************/
-node *
-ISAAdoInsertShapeVariablesOneFundefAnon (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("ISAAdoInsertShapeVariablesOneFundefAnon");
-
-    arg_node = ISAAdoInsertShapeVariablesOneFundef (arg_node);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }

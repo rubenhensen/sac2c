@@ -94,6 +94,7 @@ struct INFO {
     node *intersectbound2;          /* upper bound of WL intersection */
     node *withcode;                 /* WITH_CODE from N_with */
     intersect_type_t intersecttype; /* intersect type. see enum */
+    lut_t *lut;                     /* LUT for renaming */
 };
 
 /**
@@ -109,6 +110,7 @@ struct INFO {
 #define INFO_INTERSECTBOUND2(n) ((n)->intersectbound2)
 #define INFO_WITHCODE(n) ((n)->withcode)
 #define INFO_INTERSECTTYPE(n) ((n)->intersecttype)
+#define INFO_LUT(n) ((n)->lut)
 
 static info *
 MakeInfo (node *fundef)
@@ -129,6 +131,7 @@ MakeInfo (node *fundef)
     INFO_INTERSECTBOUND2 (result) = NULL;
     INFO_WITHCODE (result) = NULL;
     INFO_INTERSECTTYPE (result) = INTERSECT_unknown;
+    INFO_LUT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -174,11 +177,13 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
 
     arg_info = MakeInfo (arg_node);
     INFO_ONEFUNDEF (arg_info) = TRUE;
+    INFO_LUT (arg_info) = LUTgenerateLut ();
 
     TRAVpush (TR_cubsl);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
+    INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
@@ -659,6 +664,43 @@ FindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpart,
 
 /** <!--********************************************************************-->
  *
+ * @fn node *CloneCode( arg_node, arg_info)
+ *
+ * @brief Clone a WL code block, renaming any LHS definitions.
+ *
+ * @params arg_node: an N_code
+ *
+ * @result: a cloned and renamed N_code
+ *
+ *****************************************************************************/
+static node *
+CloneCode (node *arg_node, info *arg_info)
+{
+    node *z;
+    /* FIXME
+    node *expravis;
+    node *newavis;
+   FIXME */
+
+    DBUG_ENTER ("CloneCode");
+
+    z = (N_empty == NODE_TYPE (arg_node))
+          ? NULL
+          : DUPdoDupTreeLutSsa (arg_node, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
+
+    /* We may need this... FIXME
+    expravis = ID_AVIS( EXPRS_EXPR( CODE_CEXPRS( arg_node)));
+    newavis = LUTsearchInLutPp( INFO_LUT( arg_info), expravis);
+      FIXME */
+
+    LUTremoveContentLut (INFO_LUT (arg_info));
+    CODE_INC_USED (z); /* DUP gives us Used=0 */
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn static node *PartitionSlicerOneAxis(...)
  *
  * @params consumerWLpartn: an N_part of the consumerWL.
@@ -776,6 +818,7 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
     node *puba;
     node *plb;
     node *pub;
+    node *clone;
     pattern *pat1;
     pattern *pat2;
 
@@ -803,17 +846,16 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
 
         /* Cases beta, gamma need partA */
         if (CMPT_EQ != CMPTdoCompareTree (ilba, plba)) {
-            DBUG_PRINT ("Constructing partition A for %s",
-                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+            DBUG_PRINT ("CUBSL", ("Constructing partition A for %s",
+                                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
             newlb = DUPdoDupTree (partlb);
             newub = DUPdoDupTree (partub);
             ARRAY_AELEMS (newub)
               = TCputNthExprs (axis, ARRAY_AELEMS (newub), DUPdoDupNode (ilba));
             genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
                                     DUPdoDupTree (width));
-            newpart
-              = TBmakePart (PART_CODE (consumerWLpartn), DUPdoDupTree (withid), genn);
-            CODE_INC_USED (PART_CODE (newpart));
+            clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
+            newpart = TBmakePart (clone, DUPdoDupTree (withid), genn);
             partz = TCappendPart (partz, newpart);
         }
 
@@ -822,21 +864,20 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
         newub = DUPdoDupTree (ub);
         genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
                                 DUPdoDupTree (width));
-        newpart = TBmakePart (PART_CODE (consumerWLpartn), DUPdoDupTree (withid), genn);
-        CODE_INC_USED (PART_CODE (newpart));
+        clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
+        newpart = TBmakePart (clone, DUPdoDupTree (withid), genn);
         partz = TCappendPart (partz, newpart);
 
         /* Case alpha, beta need partC */
         if (CMPT_EQ != CMPTdoCompareTree (iuba, puba)) {
-            DBUG_PRINT ("Constructing partition C for %s",
-                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+            DBUG_PRINT ("CUBSL", ("Constructing partition C for %s",
+                                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
             newlb = DUPdoDupTree (ub);
             newub = DUPdoDupTree (partub);
             genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
                                     DUPdoDupTree (width));
-            newpart
-              = TBmakePart (PART_CODE (consumerWLpartn), DUPdoDupTree (withid), genn);
-            CODE_INC_USED (PART_CODE (newpart));
+            clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
+            newpart = TBmakePart (clone, DUPdoDupTree (withid), genn);
             partz = TCappendPart (partz, newpart);
         }
     }
@@ -880,36 +921,24 @@ PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
     node *newpartns;
     node *curpartn;
     node *oldpartn;
-    node *strippedcode;
+    node *newcode;
     node *p;
     node *pnext;
     int axis;
     int axes;
 
-    anontrav_t freetrav[2] = {{N_prf, &IVEXCprf}, {0, NULL}};
-
     DBUG_ENTER ("PartitionSlicer");
-
-    /* "The first thing we do, let's kill all the lawyers."
-     *  The first thing we do, let's kill all the extrema and
-     *  intersect info, which is now useless in the new partition(s).
-     *
-     *  newpartns could get cleaned up here with VP and DCR, if need be.
-     */
-    TRAVpushAnonymous (freetrav, &TRAVsons);
 
     /* We have to clone the N_code, or we wipe the arg_node. */
     newpartns = DUPdoDupNode (arg_node);
     CODE_DEC_USED (PART_CODE (newpartns)); /* newpartns is just a template */
 
-    strippedcode = DUPdoDupNode (PART_CODE (newpartns));
-    CODE_USED (strippedcode) = 1;
-    strippedcode = IVEXCdoIndexVectorExtremaCleanupPartition (strippedcode, arg_info);
+    newcode = DUPdoDupNode (PART_CODE (newpartns));
+    CODE_USED (newcode) = 1;
     /* append new code block to N_code chain */
-    CODE_NEXT (strippedcode) = INFO_WITHCODE (arg_info);
-    INFO_WITHCODE (arg_info) = strippedcode;
-    PART_CODE (newpartns) = strippedcode;
-    TRAVpop ();
+    CODE_NEXT (newcode) = INFO_WITHCODE (arg_info);
+    INFO_WITHCODE (arg_info) = newcode;
+    PART_CODE (newpartns) = newcode;
 
     axes = SHgetUnrLen (ARRAY_FRAMESHAPE (lb));
 
@@ -952,6 +981,7 @@ CUBSLfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CUBSLfundef");
 
+#ifdef FIXME
     if (FUNDEF_BODY (arg_node) != NULL) {
 
         DBUG_PRINT ("CUBSL", ("Algebraic-With-Loop-Folding Cube Slicing in %s %s begins",
@@ -985,6 +1015,7 @@ CUBSLfundef (node *arg_node, info *arg_info)
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
+#endif // FIXME
 
     DBUG_RETURN (arg_node);
 }

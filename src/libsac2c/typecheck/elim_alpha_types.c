@@ -128,15 +128,19 @@ FreeInfo (info *info)
 node *
 EATdoEliminateAlphaTypes (node *arg_node)
 {
-    info *info_node;
+    info *arg_info;
 
     DBUG_ENTER ("EATdoEliminateAlphaTypes");
 
     TRAVpush (TR_eat);
 
-    info_node = MakeInfo ();
-    arg_node = TRAVdo (arg_node, info_node);
-    info_node = FreeInfo (info_node);
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
+                 "EATdoEliminateAlphaTypes expected N_fundef or N_module");
+
+    arg_info = MakeInfo ();
+    INFO_ONEFUNCTION (arg_info) = (N_fundef == NODE_TYPE (arg_node));
+    arg_node = TRAVdo (arg_node, arg_info);
+    arg_info = FreeInfo (arg_info);
 
     TRAVpop ();
 
@@ -147,73 +151,6 @@ EATdoEliminateAlphaTypes (node *arg_node)
     SSIfreeAllTvars ();
     SDfreeAllSignatureDependencies ();
     TEfreeAllTypeErrorInfos ();
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *EATdoEliminateAlphaTypesOneFunction( node *arg_node)
- *
- * description:
- *   adjusts all old vardec types according to the attached ntypes!
- *
- ******************************************************************************/
-
-node *
-EATdoEliminateAlphaTypesOneFunction (node *arg_node)
-{
-    info *info_node;
-
-    DBUG_ENTER ("EATdoEliminateAlphaTypesOneFunction");
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
-                 "EATdoEliminateAlphaTypesOneFunction can only be applied to fundefs");
-
-    TRAVpush (TR_eat);
-
-    info_node = MakeInfo ();
-    INFO_ONEFUNCTION (info_node) = TRUE;
-    arg_node = TRAVdo (arg_node, info_node);
-    info_node = FreeInfo (info_node);
-
-    TRAVpop ();
-
-    /**
-     * Since all alpha types are gone now, we may may free all tvars, all
-     *  sig_deps, and all te_infos:
-     */
-    SSIfreeAllTvars ();
-    SDfreeAllSignatureDependencies ();
-    TEfreeAllTypeErrorInfos ();
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *EATdoEliminateAlphaTypesOneFundefAnon( node *arg_node, info *arg_info)
- *
- * description:
- *   adjusts all old vardec types according to the attached ntypes!
- *   Called for one function only, from anonymous traversal
- *
- * @param arg_node: An N_fundef node
- *        arg_info: Ignored; supplied only to placate anonymous traversal call
- *
- * @result: updated N_fundef node
- *
- ******************************************************************************/
-
-node *
-EATdoEliminateAlphaTypesOneFundefAnon (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("EATdoEliminateAlphaTypesOneFundefAnon");
-
-    arg_node = EATdoEliminateAlphaTypesOneFunction (arg_node);
 
     DBUG_RETURN (arg_node);
 }

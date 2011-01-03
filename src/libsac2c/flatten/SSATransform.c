@@ -1437,6 +1437,9 @@ SSATids (node *arg_node, info *arg_info)
         if (AVIS_MAX (avis) != NULL) {
             AVIS_MAX (new_avis) = DUPdoDupNode (AVIS_MAX (avis));
         }
+        if (AVIS_WITHIDS (avis) != NULL) {
+            AVIS_WITHIDS (new_avis) = DUPdoDupNode (AVIS_WITHIDS (avis));
+        }
 
         if (global.compiler_phase <= PH_tc) {
             /**
@@ -1564,57 +1567,11 @@ TreatIdsAsRhs (node *arg_node, info *arg_info)
  * <!--
  * node *SSATransform(node *ast)            : general traversal function
  * node *SSATransformAllowGOs(node *ast)    : ignore usages of non-defined vars
- * node *SSATransformOneFunction(node *ast) : one fundef + included LC funs
- * node *SSATransformOneFundef(node *ast)   : one fundef only
  *
  * -->
  *
  */
 /*@{*/
-/** <!--********************************************************************-->
- *
- * @fn node *SSATdoTransform(node *syntax_tree)
- *
- *   @brief Starts traversal of AST to transform code in SSA form. Every
- *          variable has exaclty one definition. This code transformtion relies
- *          on the lac2fun transformation! After all the valid_ssaform flag is
- *          set to TRUE. It may be called several times until eventually
- *          UndoSSATransform is called. This sets valid_ssaform to false
- *          and increases the ssaform_phase global counter to avoid naming
- *          conflicts with further SSA-UndoSSA transformations.
- *
- ******************************************************************************/
-node *
-SSATdoTransform (node *syntax_tree)
-{
-    info *arg_info;
-
-    DBUG_ENTER ("SSATdoTransform");
-
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
-                 "SSATransform is used for module nodes only");
-
-#ifndef DBUG_OFF
-    if (global.compiler_phase == PH_opt) {
-        DBUG_PRINT ("OPT", ("starting ssa transformation for ast"));
-    }
-#endif
-
-    arg_info = MakeInfo ();
-    INFO_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
-    INFO_ALLOW_GOS (arg_info) = FALSE;
-
-    TRAVpush (TR_ssat);
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-    TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
-
-    global.valid_ssaform = TRUE;
-    CheckSSATCounter ();
-
-    DBUG_RETURN (syntax_tree);
-}
 
 /** <!--********************************************************************-->
  *
@@ -1661,87 +1618,59 @@ SSATdoTransformAllowGOs (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SSATdoTransformOneFunction(node *fundef)
+ * @fn node *SSATdoTransform(node *arg_node)
  *
- *   @brief same as SSATransform, but traverses the given function only.
- *          Does not trverse through LC functions per se, but if a call
- *          to an LC function is found, it will be followed through.
- *
- ******************************************************************************/
-node *
-SSATdoTransformOneFunction (node *fundef)
-{
-    info *arg_info;
-
-    DBUG_ENTER ("SSATdoTransformOneFunction");
-
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "SSATransformOneFunction is used for fundef nodes only");
-
-    if (!(FUNDEF_ISLACFUN (fundef))) {
-#ifndef DBUG_OFF
-        if (global.compiler_phase == PH_opt) {
-            DBUG_PRINT ("OPT",
-                        ("starting ssa transformation for %s", FUNDEF_NAME (fundef)));
-        }
-#endif
-
-        arg_info = MakeInfo ();
-        INFO_SINGLEFUNDEF (arg_info) = SSA_TRAV_SPECIALS;
-
-        TRAVpush (TR_ssat);
-        fundef = TRAVdo (fundef, arg_info);
-        TRAVpop ();
-
-        arg_info = FreeInfo (arg_info);
-    }
-
-    global.valid_ssaform = TRUE;
-
-    CheckSSATCounter ();
-
-    DBUG_RETURN (fundef);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *SSATdoTransformOneFundef(node *fundef)
- *
- *   @brief same as SSATransform, but traverses the given fundef only.
- *          Any LC functions will not be followed through!
+ *   @brief Starts traversal of AST to transform code in SSA form. Every
+ *          variable has exaclty one definition. This code transformtion relies
+ *          on the lac2fun transformation! After all the valid_ssaform flag is
+ *          set to TRUE. It may be called several times until eventually
+ *          UndoSSATransform is called. This sets valid_ssaform to false
+ *          and increases the ssaform_phase global counter to avoid naming
+ *          conflicts with further SSA-UndoSSA transformations.
  *
  ******************************************************************************/
 node *
-SSATdoTransformOneFundef (node *fundef)
+SSATdoTransform (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("SSATdoTransformOneFundef");
+    DBUG_ENTER ("SSATdoTransform");
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
-                 "SSATdoTransformOneFundef is applicable to fundef nodes only");
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
+                 "SSATransform expected N_module or N_fundef");
 
 #ifndef DBUG_OFF
     if (global.compiler_phase == PH_opt) {
-        DBUG_PRINT ("OPT", ("starting ssa transformation for %s", FUNDEF_NAME (fundef)));
+        DBUG_PRINT ("OPT", ("starting ssa transformation for ast"));
     }
 #endif
 
     arg_info = MakeInfo ();
-    INFO_SINGLEFUNDEF (arg_info) = SSA_TRAV_NONE;
+    if (N_module == NODE_TYPE (arg_node)) {
+        INFO_SINGLEFUNDEF (arg_info) = SSA_TRAV_FUNDEFS;
+        INFO_ALLOW_GOS (arg_info) = FALSE;
+    } else {
+        /** <!--********************************************************************-->
+         *
+         *   @brief same as SSATransform, but traverses the given function only.
+         *          Does not traverse through LACFUNs per se, but if a call
+         *          to a LACFUN function is found, the LACFUN
+         *          will be traversed.
+         *
+         ******************************************************************************/
+        INFO_SINGLEFUNDEF (arg_info) = SSA_TRAV_SPECIALS;
+    }
 
-    TRAVpush (TR_ssat);
-    fundef = TRAVdo (fundef, arg_info);
-    TRAVpop ();
+    if ((N_module == NODE_TYPE (arg_node)) || (!(FUNDEF_ISLACFUN (arg_node)))) {
+        TRAVpush (TR_ssat);
+        arg_node = TRAVdo (arg_node, arg_info);
+        TRAVpop ();
 
-    arg_info = FreeInfo (arg_info);
+        arg_info = FreeInfo (arg_info);
 
-    global.valid_ssaform = TRUE;
+        global.valid_ssaform = TRUE;
+        CheckSSATCounter ();
+    }
 
-    CheckSSATCounter ();
-
-    DBUG_RETURN (fundef);
+    DBUG_RETURN (arg_node);
 }
-/*@}*/
-
-/*@}*/ /* defgroup ssatransform */

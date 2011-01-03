@@ -68,8 +68,7 @@ SUBPHASE (copy, "Making copy operations explicit", EMECdoExplicitCopy, ALWAYS, c
 
 SUBPHASE (alloc, "Introducing explicit allocation statements ", EMALdoAlloc, ALWAYS, cmem)
 
-SUBPHASE (dcr2, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
-          cmem)
+SUBPHASE (dcr2, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, cmem)
 
 SUBPHASE (rc, "Reference counting", RCIdoReferenceCounting, ALWAYS, cmem)
 

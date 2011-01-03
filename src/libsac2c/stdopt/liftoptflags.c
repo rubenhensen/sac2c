@@ -70,30 +70,7 @@ LOFdoLiftOptFlags (node *arg_node)
     DBUG_ENTER ("LOFdoLiftOptFlags");
 
     arg_info = MakeInfo ();
-    TRAVpush (TR_lof);
-
-    arg_node = TRAVopt (arg_node, arg_info);
-
-    TRAVpop ();
-    arg_info = FreeInfo (arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *LOFdoLiftOptFlagsOneFundef( node *arg_node)
- *
- *****************************************************************************/
-node *
-LOFdoLiftOptFlagsOneFundef (node *arg_node)
-{
-    info *arg_info;
-
-    DBUG_ENTER ("LOFdoLiftOptFlagsOneFundef");
-
-    arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = TRUE;
+    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
     TRAVpush (TR_lof);
 
     arg_node = TRAVopt (arg_node, arg_info);

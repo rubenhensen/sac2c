@@ -15,8 +15,6 @@
 
 extern node *SSATdoTransform (node *ast);
 extern node *SSATdoTransformAllowGOs (node *ast);
-extern node *SSATdoTransformOneFunction (node *fundef);
-extern node *SSATdoTransformOneFundef (node *fundef);
 
 extern node *SSATap (node *arg_node, info *arg_info);
 extern node *SSATassign (node *arg_node, info *arg_info);

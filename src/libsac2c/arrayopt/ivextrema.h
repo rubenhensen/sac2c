@@ -14,7 +14,6 @@
  *
  *****************************************************************************/
 extern node *IVEXIdoInsertIndexVectorExtrema (node *arg_node);
-extern node *IVEXIdoInsertIndexVectorExtremaOneFundef (node *arg_node);
 
 extern node *IVEXImodule (node *arg_node, info *arg_info);
 extern node *IVEXIfundef (node *arg_node, info *arg_info);

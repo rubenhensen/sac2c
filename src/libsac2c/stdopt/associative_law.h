@@ -16,8 +16,6 @@
  *****************************************************************************/
 
 extern node *ALdoAssocLawOptimization (node *arg_node);
-extern node *ALdoAssocLawOptimizationOneFundefAnon (node *arg_node, info *arg_info);
-
 extern node *ALmodule (node *arg_node, info *arg_info);
 extern node *ALfundef (node *arg_node, info *arg_info);
 extern node *ALblock (node *arg_node, info *arg_info);

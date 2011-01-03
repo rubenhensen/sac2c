@@ -10,8 +10,6 @@
 #include "types.h"
 
 extern node *EBTdoEliminateBottomTypes (node *arg_node);
-extern node *EBTdoEliminateBottomTypesOneFunction (node *arg_node);
-extern node *EBTdoEliminateBottomTypesOneFundefAnon (node *arg_node, info *arg_info);
 extern node *EBTmodule (node *arg_node, info *arg_info);
 extern node *EBTfundef (node *arg_node, info *arg_info);
 extern node *EBTap (node *arg_node, info *arg_info);

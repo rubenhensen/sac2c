@@ -13,7 +13,7 @@
  * Prefix: IVEXP
  *
  *****************************************************************************/
-extern node *IVEXPdoIndexVectorExtremaPropOneFunction (node *arg_node);
+extern node *IVEXPdoIndexVectorExtremaProp (node *arg_node);
 void IVEXPsetExtremumIfNotNull (node **snk, node *src);
 extern node *IVEXPadjustExtremaBound (node *arg_node, info *arg_info, int k,
                                       node **vardecs, node **preassigns);

@@ -159,19 +159,19 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IVEXPdoIndexVectorExtremaPropOneFunction( node *arg_node)
+ * @fn node *IVEXPdoIndexVectorExtremaProp( node *arg_node)
  *
  * @brief: Perform index vector extrema propagation on a function.
  *
  *****************************************************************************/
 node *
-IVEXPdoIndexVectorExtremaPropOneFunction (node *arg_node)
+IVEXPdoIndexVectorExtremaProp (node *arg_node)
 {
     info *arg_info;
-    DBUG_ENTER ("IVEXPdoIndexVectorExtremaPropOneFunction");
+    DBUG_ENTER ("IVEXPdoIndexVectorExtremaProp");
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "IVEXPdoIndexVectorExtremaPropOneFunction expected N_fundef");
+                 "IVEXPdoIndexVectorExtremaPropexpected N_fundef");
 
     DBUG_PRINT ("IVEXP", ("Starting index vector extrema propagation traversal"));
     arg_info = MakeInfo ();
@@ -557,8 +557,9 @@ IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup, node *withids)
         DBUG_ASSERT ((NULL == withids) || (N_avis == NODE_TYPE (withids)),
                      "Expected N_avis withids");
         if (NULL == AVIS_WITHIDS (snk)) {
-            DBUG_ASSERT ((NULL == withids) || NULL == AVIS_SSAASSIGN (withids),
-                         "withids must be WITHID_VEC or WITHID_IDS");
+            DBUG_ASSERT ((NULL == withids) || (NULL == AVIS_SSAASSIGN (withids))
+                           || (TYisAKV (AVIS_TYPE (withids))),
+                         "withids must be WITHID_VEC or WITHID_IDS or N_num");
             AVIS_WITHIDS (snk) = (NULL != withids) ? TBmakeId (withids) : NULL;
         } else {
             DBUG_ASSERT (ID_AVIS (AVIS_WITHIDS (snk)) == withids,
@@ -593,8 +594,9 @@ IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup, node *withids)
         DBUG_ASSERT ((NULL == withids) || (N_avis == NODE_TYPE (withids)),
                      "Expected N_avis withids");
         if (NULL == AVIS_WITHIDS (snk)) {
-            DBUG_ASSERT ((NULL == withids) || NULL == AVIS_SSAASSIGN (withids),
-                         "withids must be WITHID_VEC or WITHID_IDS");
+            DBUG_ASSERT ((NULL == withids) || (NULL == AVIS_SSAASSIGN (withids))
+                           || (TYisAKV (AVIS_TYPE (withids))),
+                         "withids must be WITHID_VEC or WITHID_IDS or N_num");
             AVIS_WITHIDS (snk) = (NULL != withids) ? TBmakeId (withids) : NULL;
         } else {
             DBUG_ASSERT (ID_AVIS (AVIS_WITHIDS (snk)) == withids,
@@ -773,7 +775,7 @@ isAllNarrayExtremumPresent (node *arg_node, int minmax)
  *               is a member of WITHID_IDS,WITHID_VEC
  *              then return arg_node; else NULL.
  *
- * @params  arg_node: N_id or NULL.
+ * @params  arg_node: N_id or N_num or  NULL.
  *          curwith: the current consumerWL we are looking at.
  *
  * @result: arg_node, if arg_node is a member of the current WITHIDS,
@@ -789,8 +791,8 @@ IVEXPcheckWithids (node *arg_node, node *curwith)
 
     DBUG_ENTER ("IVEXPcheckWithids");
 
-    if ((NULL != arg_node) && (NULL != AVIS_WITHIDS (ID_AVIS (arg_node)))
-        && (NULL != curwith)) {
+    if ((NULL != arg_node) && (N_id == NODE_TYPE (arg_node))
+        && (NULL != AVIS_WITHIDS (ID_AVIS (arg_node))) && (NULL != curwith)) {
         withids = PART_WITHID (WITH_PART (curwith));
         wavis = ID_AVIS (AVIS_WITHIDS (ID_AVIS (arg_node)));
         if (wavis == IDS_AVIS (WITHID_VEC (withids))) {

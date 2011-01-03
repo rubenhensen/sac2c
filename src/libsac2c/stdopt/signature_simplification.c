@@ -108,51 +108,23 @@ FreeInfo (info *info)
 
 /**<!--***********************************************************************-->
  *
- * @fn node *SISIdoSignatureSimplification(node *module)
+ * @fn node *SISIdoSignatureSimplification(node *arg_node)
  *
  * @brief starting point of traversal
  *
- * @param module module to be traversed
+ * @param N_fundef or N_module to be traversed
  *
  * @result
  *
  ******************************************************************************/
 node *
-SISIdoSignatureSimplification (node *module)
+SISIdoSignatureSimplification (node *arg_node)
 {
     info *arg_info;
     DBUG_ENTER ("SISIdoSignatureSimplification");
 
     arg_info = MakeInfo ();
-
-    TRAVpush (TR_sisi);
-    module = TRAVdo (module, arg_info);
-    TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
-
-    DBUG_RETURN (module);
-}
-
-/**<!--***********************************************************************-->
- *
- * @fn node *SISIdoSignatureSimplificationOneFundef(node *arg_node)
- *
- * @brief starting point of traversal
- *
- * @param N_fundef to be traversed
- *
- * @result
- *
- ******************************************************************************/
-node *
-SISIdoSignatureSimplificationOneFundef (node *arg_node)
-{
-    info *arg_info;
-    DBUG_ENTER ("SISIdoSignatureSimplificationOneFundef");
-
-    arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = TRUE;
+    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
 
     TRAVpush (TR_sisi);
     arg_node = TRAVdo (arg_node, arg_info);

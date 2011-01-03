@@ -17,6 +17,7 @@ extern node *IVEXCdoIndexVectorExtremaCleanup (node *arg_node, info *arg_info);
 extern node *IVEXCdoIndexVectorExtremaCleanupPartition (node *arg_node, info *arg_info);
 
 extern node *IVEXCpart (node *arg_node, info *arg_info);
+extern node *IVEXCcode (node *arg_node, info *arg_info);
 extern node *IVEXClet (node *arg_node, info *arg_info);
 extern node *IVEXCavis (node *arg_node, info *arg_info);
 extern node *IVEXCprf (node *arg_node, info *arg_info);

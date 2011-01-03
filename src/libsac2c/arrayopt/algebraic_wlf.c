@@ -294,7 +294,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *AWLFdoAlgebraicWithLoopFoldingOneFunction( node *fundef)
+ * @fn node *AWLFdoAlgebraicWithLoopFolding( node *arg_node)
  *
  * @brief global entry point of Algebraic With-Loop folding
  *
@@ -304,11 +304,11 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-AWLFdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
+AWLFdoAlgebraicWithLoopFolding (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("AWLFdoAlgebraicWithLoopFoldingOneFunction");
+    DBUG_ENTER ("AWLFdoAlgebraicWithLoopFolding");
 
     arg_info = MakeInfo (NULL);
     INFO_ONEFUNDEF (arg_info) = TRUE;
@@ -326,6 +326,13 @@ AWLFdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
 
 /** <!--********************************************************************-->
  * @}  <!-- Entry functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @name Static helper functions
+ * @{
+ *
  *****************************************************************************/
 
 /** <!--********************************************************************-->
@@ -377,13 +384,6 @@ isPrfArg1AttachExtrema (node *arg_node)
     }
     DBUG_RETURN (z);
 }
-
-/** <!--********************************************************************-->
- *
- * @name Static helper functions
- * @{
- *
- *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
@@ -452,8 +452,9 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *consumerWLPart, int leve
                              AVIS_WL_NEEDCOUNT (producerWLavis)));
         producerWLpart = FindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info),
                                            consumerWLPart, producerWL, NULL);
-        if (INTERSECT_exact != INFO_INTERSECTTYPE (arg_info)) {
-            DBUG_PRINT ("AWLF", ("Cube must be sliced, or null intersect"));
+        if ((INTERSECT_unknown == INFO_INTERSECTTYPE (arg_info))
+            || (INTERSECT_null == INFO_INTERSECTTYPE (arg_info))) {
+            DBUG_PRINT ("AWLF", ("Cube can not be intersected, or null intersect"));
             producerWLpart = NULL;
         }
 
@@ -765,6 +766,11 @@ AWLFassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("AWLFassign");
 
+    /*
+     * Top-down traversal
+     */
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
 #ifdef VERBOSE
     DBUG_PRINT ("AWLF", ("Traversing N_assign"));
 #endif // VERBOSE
@@ -773,11 +779,6 @@ AWLFassign (node *arg_node, info *arg_info)
     INFO_AWLFOLDABLEPRODUCERWLPART (arg_info) = NULL;
     DBUG_ASSERT ((NULL == INFO_PREASSIGNS (arg_info)),
                  "AWLFassign INFO_PREASSIGNS not NULL");
-
-    /*
-     * Top-down traversal
-     */
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     /*
      * Append the new cloned block
@@ -962,10 +963,6 @@ AWLFprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- * @}  <!-- Traversal functions -->
- *****************************************************************************/
-
 /******************************************************************************
  *
  * function:
@@ -1028,6 +1025,31 @@ AWLFwhile (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   node *AWLFlet( node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+node *
+AWLFlet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("AWLFlet");
+
+    DBUG_PRINT ("AWLF", ("Traversing N_let for LHS %s",
+                         AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
+
+    LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
 
 /** <!--********************************************************************-->
  * @}  <!-- Algebraic with loop folding -->

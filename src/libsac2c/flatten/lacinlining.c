@@ -190,6 +190,10 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                 if (NULL != AVIS_MAX (ARG_AVIS (form_arg))) {
                     AVIS_MAX (newavis) = DUPdoDupNode (AVIS_MAX (ARG_AVIS (form_arg)));
                 }
+                if (NULL != AVIS_WITHIDS (ARG_AVIS (form_arg))) {
+                    AVIS_WITHIDS (newavis)
+                      = DUPdoDupNode (AVIS_WITHIDS (ARG_AVIS (form_arg)));
+                }
 
                 ARG_AVIS (form_arg) = newavis;
             } else {

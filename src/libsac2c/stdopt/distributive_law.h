@@ -15,10 +15,7 @@
  *
  *****************************************************************************/
 
-extern node *DLdoDistributiveLawOptimizationModule (node *arg_node);
-extern node *DLdoDistributiveLawOptimizationOneFundef (node *arg_node);
-extern node *DLdoDistributiveLawOptimizationOneFundefAnon (node *arg_node,
-                                                           info *arg_info);
+extern node *DLdoDistributiveLawOptimization (node *arg_node);
 
 extern node *DLfundef (node *arg_node, info *arg_info);
 extern node *DLblock (node *arg_node, info *arg_info);

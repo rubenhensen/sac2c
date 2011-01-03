@@ -109,7 +109,7 @@ CNSTASSdoCUDAconstantAssignment (node *syntax_tree)
 
     info = FreeInfo (info);
 
-    syntax_tree = DCRdoDeadCodeRemovalModule (syntax_tree);
+    syntax_tree = DCRdoDeadCodeRemoval (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }

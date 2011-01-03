@@ -47,8 +47,7 @@
  *   traversal functions to infer loop invariant expressions
  *
  *****************************************************************************/
-extern node *LIRdoLoopInvariantRemoval (node *fundef);
-extern node *LIRdoLoopInvariantRemovalOneFundef (node *fundef);
+extern node *LIRdoLoopInvariantRemoval (node *arg_node);
 
 extern node *LIRfundef (node *arg_node, info *arg_info);
 extern node *LIRarg (node *arg_node, info *arg_info);

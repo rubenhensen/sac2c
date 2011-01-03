@@ -258,62 +258,31 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *WLSIMPdoWithloopSimplificationOneFunction( node *arg_node)
+ * @fn node *WLSIMPdoWithloopSimplification( node *arg_node)
  *
  * @brief
  *
- * @return modified syntax_tree.
+ * @return modified N_fundef or N_module node.
  *
  *****************************************************************************/
 node *
-WLSIMPdoWithloopSimplificationOneFunction (node *arg_node)
+WLSIMPdoWithloopSimplification (node *arg_node)
 {
-    info *info;
-
-    DBUG_ENTER ("WLSIMPdoWithloopSimplificationOneFunction");
-
-    info = MakeInfo ();
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "fundef node expected!");
-
-    TRAVpush (TR_wlsimp);
-    arg_node = TRAVdo (arg_node, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *WLSIMPdoWithloopSimplification( node *syntax_tree)
- *
- * @brief
- *
- * @return modified syntax_tree.
- *
- *****************************************************************************/
-node *
-WLSIMPdoWithloopSimplification (node *syntax_tree)
-{
-    info *info;
+    info *arg_info;
 
     DBUG_ENTER ("WLSIMPdoWithloopSimplification");
 
-    info = MakeInfo ();
+    arg_info = MakeInfo ();
 
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "module node expected!");
-
-    INFO_ONEFUNDEF (info) = FALSE;
+    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
 
     TRAVpush (TR_wlsimp);
-    syntax_tree = TRAVdo (syntax_tree, info);
+    arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
-    info = FreeInfo (info);
+    arg_info = FreeInfo (arg_info);
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (arg_node);
 }
 
 /**

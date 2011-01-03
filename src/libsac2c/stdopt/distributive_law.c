@@ -101,88 +101,32 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *DLdoDistribLawOptimizationarg_node node *arg_node)
- *
- * @brief starting point of distributivity optimization for a module
- *
- * @param arg_node: an N_module node
- *
- * @return
- *
- *****************************************************************************/
-
-node *
-DLdoDistribLawOptimizationModule (node *arg_node)
-{
-    info *info;
-
-    DBUG_ENTER ("DLdoDistribLawOptimizationModule");
-
-    info = MakeInfo ();
-
-    TRAVpush (TR_dl);
-    arg_node = TRAVdo (arg_node, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *DLdoDistribLawOptimizationOneFundef( node *arg_node)
- *
- * @brief starting point of distributivity optimization
- *
- * @param arg_node
- *
- * @return
- *
- *****************************************************************************/
-
-node *
-DLdoDistribLawOptimizationOneFundef (node *syntax_tree)
-{
-    info *info;
-
-    DBUG_ENTER ("DLdoDistribLawOptimizationOneFundef");
-
-    info = MakeInfo ();
-    INFO_ONEFUNDEF (info) = TRUE;
-
-    TRAVpush (TR_dl);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (syntax_tree);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *DLdoDistributiveLawOptimizationOneFundefAnon( node *arg_node,
- *                                                         info *arg_info)
+ * @fn node *DLdoDistribLawOptimization( node *arg_node)
  *
  * @brief starting point of distributivity optimization for
- *        a single function, invoked by an anonymous traversal
+ *        module or fundef
  *
- * @param arg_node
- *        arg_node: ignored; present only to placate anonymous traversal
- *                  code
+ * @param arg_node: an N_module or N_fundef node
  *
- * @return updated arg_node
+ * @return updated node
  *
  *****************************************************************************/
 
 node *
-DLdoDistributiveLawOptimizationOneFundefAnon (node *arg_node, info *arg_info)
+DLdoDistribLawOptimization (node *arg_node)
 {
+    info *arg_info;
 
-    DBUG_ENTER ("DLdoDistributiveLawOptimizationOneFundefAnon");
+    DBUG_ENTER ("DLdoDistribLawOptimization");
 
-    arg_node = DLdoDistribLawOptimizationOneFundef (arg_node);
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
+
+    TRAVpush (TR_dl);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }

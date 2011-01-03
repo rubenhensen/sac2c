@@ -1229,6 +1229,7 @@ CSEids (node *arg_node, info *arg_info)
     AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
     AVIS_MIN (avis) = TRAVopt (AVIS_MIN (avis), arg_info);
     AVIS_MAX (avis) = TRAVopt (AVIS_MAX (avis), arg_info);
+    AVIS_WITHIDS (avis) = TRAVopt (AVIS_WITHIDS (avis), arg_info);
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
@@ -1274,7 +1275,7 @@ CSEcode (node *arg_node, info *arg_info)
  *   their order of usage.
  *
  *****************************************************************************/
-node *
+static node *
 CSEdoCommonSubexpressionEliminationOneFundef (node *arg_node)
 {
     info *arg_info;
@@ -1298,33 +1299,9 @@ CSEdoCommonSubexpressionEliminationOneFundef (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-/******************************************************************************
- *
- * function:
- *   node* CSEdoCommonSubexpressionEliminationOneFundefAnon( node *arg_node,
- *                                                           info *arg_info)
- *
- * description:
- *   Starts the traversal for a given fundef.
- *   Starting fundef must not be a special fundef (do, while, cond) created by
- *   lac2fun transformation. These "inline" functions will be traversed in
- *   their order of usage.
- *
- *****************************************************************************/
-node *
-CSEdoCommonSubexpressionEliminationOneFundefAnon (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("CSEdoCommonSubexpressionEliminationOneFundefAnon");
-
-    arg_node = CSEdoCommonSubexpressionEliminationOneFundef (arg_node);
-
-    DBUG_RETURN (arg_node);
-}
-
 /** <!--********************************************************************-->
  *
- * @fn node *CSEdoCommonSubexpressionEliminationModule( node *arg_node)
+ * @fn node *CSEdoCommonSubexpressionElimination( node *arg_node)
  *
  *****************************************************************************/
 static node *
@@ -1334,11 +1311,16 @@ WrapCSECall (node *arg_node, info *arg_info)
 }
 
 node *
-CSEdoCommonSubexpressionEliminationModule (node *arg_node)
+CSEdoCommonSubexpressionElimination (node *arg_node)
 {
-    DBUG_ENTER ("CSEdoCommonSubexpressionEliminationModule");
+    DBUG_ENTER ("CSEdoCommonSubexpressionElimination");
 
-    MODULE_FUNS (arg_node) = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, WrapCSECall);
+    if (N_module == NODE_TYPE (arg_node)) {
+        MODULE_FUNS (arg_node)
+          = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, WrapCSECall);
+    } else {
+        arg_node = CSEdoCommonSubexpressionEliminationOneFundef (arg_node);
+    }
 
     DBUG_RETURN (arg_node);
 }

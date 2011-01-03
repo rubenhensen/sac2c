@@ -319,31 +319,6 @@ ASdoArithmeticSimplification (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node *ASdoArithmeticSimplificationOneFundefAnon( node *arg_node,
- *                                                      info *arg_info)
- *
- * @brief starting point of arithmetic simplification for single
- *        function from an anonymous traversal.
- *
- * @param arg_node - An N_fundef
- *        arg_info - ignored. Only present to placate anonymous traversal.
- *
- * @return
- *
- *****************************************************************************/
-node *
-ASdoArithmeticSimplificationOneFundefAnon (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ("ASdoArithmeticSimplificationOneFundefAnon");
-
-    arg_node = ASdoArithmeticSimplification (arg_node);
-
-    DBUG_RETURN (arg_node);
-}
-
 node *
 ASfundef (node *arg_node, info *arg_info)
 {

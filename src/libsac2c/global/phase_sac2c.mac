@@ -235,10 +235,9 @@ SUBPHASE (des, "Removing all structs", DESdoDeStruct, ALWAYS, cwc)
 SUBPHASE (eudt, "Eliminating User-Defined Types", RCdoRemoveCasts, ALWAYS, cwc)
 
 SUBPHASE (cse, "Applying common subexpression elimination",
-          CSEdoCommonSubexpressionEliminationModule, global.optimize.docse, cwc)
+          CSEdoCommonSubexpressionElimination, global.optimize.docse, cwc)
 
-SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
-          cwc)
+SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, cwc)
 
 SUBPHASE (icc, "Inserting Conformity Checks", ICCdoInsertConformityChecks,
           global.insertconformitychecks, cwc)
@@ -263,7 +262,7 @@ SUBPHASE (adp, "Adding default partitions", WLDPdoWlDefaultPartition, ALWAYS, ew
 SUBPHASE (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf, ewl)
 
 SUBPHASE (cse, "Applying common subexpression elimination",
-          CSEdoCommonSubexpressionEliminationModule, global.optimize.docse, ewl)
+          CSEdoCommonSubexpressionElimination, global.optimize.docse, ewl)
 
 SUBPHASE (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
           ALWAYS, ewl)
@@ -285,8 +284,7 @@ SUBPHASE (inl, "Applying function inlining", INLdoInlining, global.optimize.doin
 SUBPHASE (dfr2, "Removing dead functions", DFRdoDeadFunctionRemoval,
           global.optimize.dodfr, opt)
 
-SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
-          opt)
+SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, opt)
 
 SUBPHASE (lir, "Applying do-loop/with-loop invariant removal", LIRdoLoopInvariantRemoval,
           FALSE, // global.optimize.dolir,
@@ -299,40 +297,39 @@ CYCLE (cyc, "Optimization cycle", global.optimize.docyc, opt, RESET)
 FUNBEGIN (cyc, opt, cyc)
 
 CYCLEPHASEFUN (cse, "Applying common subexpression elimination",
-               CSEdoCommonSubexpressionEliminationOneFundef, global.optimize.docse, opt,
-               cyc)
+               CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, cyc)
 
 CYCLEPHASEFUN (ili, "Inferring loop invariant variables",
                IIPIdoIterationInvariantParameterInference, ALWAYS, opt, cyc)
 
-CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
+CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheck, global.optimize.dotup,
+               opt, cyc)
+
+CYCLEPHASEFUN (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes,
                global.optimize.dotup, opt, cyc)
 
-CYCLEPHASEFUN (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypesOneFunction,
+CYCLEPHASEFUN (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes,
                global.optimize.dotup, opt, cyc)
 
-CYCLEPHASEFUN (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypesOneFunction,
-               global.optimize.dotup, opt, cyc)
-
-CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCallsOneFundef,
-               ALWAYS, opt, cyc)
+CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS, opt,
+               cyc)
 
 CYCLEPHASEFUN (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt, cyc)
 
 CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
                global.optimize.dowlprop, opt, cyc)
 
-CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarizationOneFundef,
+CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
                global.optimize.dols, opt, cyc)
 
-CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFoldingOneFundef,
-               global.optimize.docf, opt, cyc)
+CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
+               opt, cyc)
 
-CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInlining,
                global.lacinline, opt, cyc)
 
-CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagationOneFundef,
-               global.optimize.dovp, opt, cyc)
+CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt,
+               cyc)
 
 CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
                global.optimize.dowlpg, opt, cyc)
@@ -340,9 +337,8 @@ CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGe
 CYCLEPHASEFUN (wlbsc, "Ensuring structrual constants for with-loop partition bounds",
                WLBSCdoWlbounds2structConsts, global.optimize.dowlpg, opt, cyc)
 
-CYCLEPHASEFUN (wlsimp, "Simplifying with-loops",
-               WLSIMPdoWithloopSimplificationOneFunction, global.optimize.dowlsimp, opt,
-               cyc)
+CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
+               global.optimize.dowlsimp, opt, cyc)
 
 CYCLEPHASEFUN (cwle, "Eliminate copy with-loops", CWLEdoTemplateTraversal,
                global.optimize.docwle, opt, cyc)
@@ -353,8 +349,8 @@ CYCLEPHASEFUN (wli, "Inferring foldable with-loops", WLIdoWLI, global.optimize.d
 CYCLEPHASEFUN (wlf, "Applying with-loop folding", WLFdoWLF, global.optimize.dowlf, opt,
                cyc)
 
-CYCLEPHASEFUN (wlfssa, "Restoring SSA form after with-loop folding",
-               SSATdoTransformOneFunction, global.optimize.dowlf, opt, cyc)
+CYCLEPHASEFUN (wlfssa, "Restoring SSA form after with-loop folding", SSATdoTransform,
+               global.optimize.dowlf, opt, cyc)
 
 CYCLEPHASEFUN (shwlc, "Activating display of WL-Cost information", SHWLCactivate,
                global.optimize.doawlf, opt, cyc)
@@ -362,14 +358,14 @@ CYCLEPHASEFUN (shwlc, "Activating display of WL-Cost information", SHWLCactivate
 CYCLEPHASEFUN (unshwlc, "Deactivating display of WL-Cost information", SHWLCdeactivate,
                global.optimize.doawlf, opt, cyc)
 
-CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemovalOneFunction,
+CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemoval,
                global.optimize.dodcr, opt, cyc)
 
-CYCLEPHASEFUN (linl2, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+CYCLEPHASEFUN (linl2, "Inlining degenerated LaC functions", LINLdoLACInlining,
                global.lacinline, opt, cyc)
 
 CYCLEPHASEFUN (lir, "Applying do-loop/with-loop invariant removal",
-               LIRdoLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, cyc)
+               LIRdoLoopInvariantRemoval, global.optimize.dolir, opt, cyc)
 
 CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                global.optimize.dowls, opt, cyc)
@@ -380,14 +376,14 @@ CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
 CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
                opt, cyc)
 
-CYCLEPHASEFUN (lurssa, "Restoring SSA form after loop unrolling",
-               SSATdoTransformOneFunction, global.optimize.dolur, opt, cyc)
+CYCLEPHASEFUN (lurssa, "Restoring SSA form after loop unrolling", SSATdoTransform,
+               global.optimize.dolur, opt, cyc)
 
 CYCLEPHASEFUN (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
                global.optimize.dowlur, opt, cyc)
 
-CYCLEPHASEFUN (wlurssa, "Restoring SSA form after withloop unrolling",
-               SSATdoTransformOneFunction, global.optimize.dowlur, opt, cyc)
+CYCLEPHASEFUN (wlurssa, "Restoring SSA form after withloop unrolling", SSATdoTransform,
+               global.optimize.dowlur, opt, cyc)
 
 CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
                global.optimize.doetc, opt, cyc)
@@ -399,13 +395,12 @@ CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimS
                global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, cyc)
 
-CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)",
-               CFdoConstantFoldingOneFundef,
+CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)", CFdoConstantFolding,
                (global.optimize.docf && (global.optimize.doal || global.optimize.dodl)),
                opt, cyc)
 
 CYCLEPHASEFUN (esdcse, "Applying common subexpression elimination (esd case)",
-               CSEdoCommonSubexpressionEliminationOneFundef,
+               CSEdoCommonSubexpressionElimination,
                (global.optimize.docse && (global.optimize.doal || global.optimize.dodl)),
                opt, cyc)
 
@@ -415,7 +410,7 @@ CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
 CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimization,
                global.optimize.doal, opt, cyc)
 
-CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistribLawOptimizationOneFundef,
+CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistribLawOptimization,
                global.optimize.dodl, opt, cyc)
 
 CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
@@ -423,10 +418,10 @@ CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
                global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, cyc)
 
-CYCLEPHASEFUN (dcr2, "Applying dead code removal", DCRdoDeadCodeRemovalOneFunction,
+CYCLEPHASEFUN (dcr2, "Applying dead code removal", DCRdoDeadCodeRemoval,
                global.optimize.dodcr, opt, cyc)
 
-CYCLEPHASEFUN (linl3, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+CYCLEPHASEFUN (linl3, "Inlining degenerated LaC functions", LINLdoLACInlining,
                global.lacinline, opt, cyc)
 
 FUNEND (cyc)
@@ -460,27 +455,26 @@ CYCLE (saacyc, "Symbolic array attribute cycle 2", global.optimize.dosaacyc, opt
 
 FUNBEGIN (saacyc, opt, saacyc)
 
-CYCLEPHASEFUN (isaa3, "Inserting symbolic array attributes",
-               ISAAdoInsertShapeVariablesOneFundef, global.optimize.dosaa, opt, saacyc)
+CYCLEPHASEFUN (isaa3, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
+               global.optimize.dosaa, opt, saacyc)
 
 CYCLEPHASEFUN (cse, "Eliminating common subexpressions",
-               CSEdoCommonSubexpressionEliminationOneFundef, global.optimize.docse, opt,
-               saacyc)
+               CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
 
 CYCLEPHASEFUN (ili, "Inferring loop invariant variables",
                IIPIdoIterationInvariantParameterInference, ALWAYS, opt, saacyc)
 
-CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
+CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheck, global.optimize.dotup,
+               opt, saacyc)
+
+CYCLEPHASEFUN (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
                global.optimize.dotup, opt, saacyc)
 
-CYCLEPHASEFUN (etv, "Eliminating type variables", EATdoEliminateAlphaTypesOneFunction,
+CYCLEPHASEFUN (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
                global.optimize.dotup, opt, saacyc)
 
-CYCLEPHASEFUN (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypesOneFunction,
-               global.optimize.dotup, opt, saacyc)
-
-CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCallsOneFundef,
-               ALWAYS, opt, saacyc)
+CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS, opt,
+               saacyc)
 
 CYCLEPHASEFUN (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt,
                saacyc)
@@ -488,17 +482,17 @@ CYCLEPHASEFUN (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, o
 CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
                global.optimize.dowlprop, opt, saacyc)
 
-CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarizationOneFundef,
+CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
                global.optimize.dols, opt, saacyc)
 
-CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFoldingOneFundef,
-               global.optimize.docf, opt, saacyc)
+CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
+               opt, saacyc)
 
-CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+CYCLEPHASEFUN (linl, "Inlining degenerated LaC functions", LINLdoLACInlining,
                global.lacinline, opt, saacyc)
 
-CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagationOneFundef,
-               global.optimize.dovp, opt, saacyc)
+CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt,
+               saacyc)
 
 CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
                global.optimize.dowlpg, opt, saacyc)
@@ -506,54 +500,40 @@ CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGe
 CYCLEPHASEFUN (wlbsc, "Ensuring structural constants for with-loop partition bounds",
                WLBSCdoWlbounds2structConsts, global.optimize.dowlpg, opt, saacyc)
 
-CYCLEPHASEFUN (wlsimp, "Simplifying with-loops",
-               WLSIMPdoWithloopSimplificationOneFunction, global.optimize.dowlsimp, opt,
-               saacyc)
+CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
+               global.optimize.dowlsimp, opt, saacyc)
 
 CYCLEPHASEFUN (cwle, "Eliminate copy with-loops", CWLEdoTemplateTraversal,
                global.optimize.docwle, opt, saacyc)
 
-CYCLEPHASEFUN (ivexi, "Inserting index vector extrema",
-               IVEXIdoInsertIndexVectorExtremaOneFundef, global.doivext, opt, saacyc)
+CYCLEPHASEFUN (ivexi, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
+               global.doivext, opt, saacyc)
 
-CYCLEPHASEFUN (ivexp, "Propagating index vector extrema",
-               IVEXPdoIndexVectorExtremaPropOneFunction, global.optimize.doawlf, opt,
-               saacyc)
+CYCLEPHASEFUN (ivexp, "Propagating index vector extrema", IVEXPdoIndexVectorExtremaProp,
+               global.optimize.doawlf, opt, saacyc)
 
 CYCLEPHASEFUN (awlfi, "Inferring algebraically foldable with-loops",
-               AWLFIdoAlgebraicWithLoopFoldingOneFunction, global.optimize.doawlf, opt,
-               saacyc)
+               AWLFIdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
 
 /* CUBSL needs this for partition-slicing decisions. */
 CYCLEPHASEFUN (cse2, "Eliminating common subexpressions",
-               CSEdoCommonSubexpressionEliminationOneFundef, global.optimize.docse, opt,
-               saacyc)
+               CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
 
 CYCLEPHASEFUN (cubsl, "Slicing algebraically foldable with-loops",
                CUBSLdoAlgebraicWithLoopFoldingCubeSlicing, global.optimize.doawlf, opt,
                saacyc)
 
 CYCLEPHASEFUN (awlf, "Applying algebraic with-loop folding",
-               AWLFdoAlgebraicWithLoopFoldingOneFunction, global.optimize.doawlf, opt,
-               saacyc)
+               AWLFdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
 
-#ifdef DEADCODE
-/* This VP traversal
- * is an attempt to cure never-ending saacyc in AWLF. 2010-04-26.
- * If it does not help, rip it out. FIXME
- */
-CYCLEPHASEFUN (vp2, "Propagating variables", VPdoVarPropagationOneFundef,
-               global.optimize.dovp, opt, saacyc)
-#endif // DEADCODE
+CYCLEPHASEFUN (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
+               opt, saacyc)
 
-CYCLEPHASEFUN (dcr, "Removing dead code", DCRdoDeadCodeRemovalOneFunction,
-               global.optimize.dodcr, opt, saacyc)
-
-CYCLEPHASEFUN (linl2, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+CYCLEPHASEFUN (linl2, "Inlining degenerated LaC functions", LINLdoLACInlining,
                global.lacinline, opt, saacyc)
 
 CYCLEPHASEFUN (lir, "Applying do-loop/with-loop invariant removal",
-               LIRdoLoopInvariantRemovalOneFundef, global.optimize.dolir, opt, saacyc)
+               LIRdoLoopInvariantRemoval, global.optimize.dolir, opt, saacyc)
 
 CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                global.optimize.dowls, opt, saacyc)
@@ -564,14 +544,14 @@ CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
 CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
                opt, saacyc)
 
-CYCLEPHASEFUN (lurssa, "Restoring SSA form after loop unrolling",
-               SSATdoTransformOneFunction, global.optimize.dolur, opt, saacyc)
+CYCLEPHASEFUN (lurssa, "Restoring SSA form after loop unrolling", SSATdoTransform,
+               global.optimize.dolur, opt, saacyc)
 
 CYCLEPHASEFUN (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
                global.optimize.dowlur, opt, saacyc)
 
-CYCLEPHASEFUN (wlurssa, "Restoring SSA form after withloop unrolling",
-               SSATdoTransformOneFunction, global.optimize.dowlur, opt, saacyc)
+CYCLEPHASEFUN (wlurssa, "Restoring SSA form after withloop unrolling", SSATdoTransform,
+               global.optimize.dowlur, opt, saacyc)
 
 CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
                global.optimize.doetc, opt, saacyc)
@@ -586,20 +566,19 @@ CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimS
 CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
                global.optimize.doas, opt, saacyc)
 
-CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)",
-               CFdoConstantFoldingOneFundef,
+CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)", CFdoConstantFolding,
                (global.optimize.docf && (global.optimize.doal || global.optimize.dodl)),
                opt, saacyc)
 
 CYCLEPHASEFUN (esdcse, "Applying common subexpression elimination (esd case)",
-               CSEdoCommonSubexpressionEliminationOneFundef,
+               CSEdoCommonSubexpressionElimination,
                (global.optimize.docse && (global.optimize.doal || global.optimize.dodl)),
                opt, saacyc)
 
 CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimization,
                global.optimize.doal, opt, saacyc)
 
-CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistribLawOptimizationOneFundef,
+CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistribLawOptimization,
                global.optimize.dodl, opt, saacyc)
 
 CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
@@ -607,18 +586,16 @@ CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
                global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, saacyc)
 
-CYCLEPHASEFUN (dcr2, "Removing dead code", DCRdoDeadCodeRemovalOneFunction,
-               global.optimize.dodcr, opt, saacyc)
+CYCLEPHASEFUN (dcr2, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
+               opt, saacyc)
 
-CYCLEPHASEFUN (linl3, "Inlining degenerated LaC functions", LINLdoLACInliningOneFundef,
+CYCLEPHASEFUN (linl3, "Inlining degenerated LaC functions", LINLdoLACInlining,
                global.lacinline, opt, saacyc)
 
-CYCLEPHASEFUN (sisi, "Simplifying function signatures",
-               SISIdoSignatureSimplificationOneFundef,
+CYCLEPHASEFUN (sisi, "Simplifying function signatures", SISIdoSignatureSimplification,
                global.optimize.dosisi &&global.optimize.dodcr, opt, saacyc)
 
-CYCLEPHASEFUN (lof, "Lifting optimization flags", LOFdoLiftOptFlagsOneFundef, ALWAYS, opt,
-               saacyc)
+CYCLEPHASEFUN (lof, "Lifting optimization flags", LOFdoLiftOptFlags, ALWAYS, opt, saacyc)
 
 FUNEND (saacyc)
 
@@ -650,10 +627,10 @@ SUBPHASE (wlfs, "Applying with-loop fusion", WLFSdoWithloopFusion, global.optimi
           opt)
 
 SUBPHASE (wlfscse, "Eliminating common subexpressions after fusion",
-          CSEdoCommonSubexpressionEliminationModule,
+          CSEdoCommonSubexpressionElimination,
           global.optimize.dowlfs &&global.optimize.docse, opt)
 
-SUBPHASE (wlfsdcr, "Removing dead code after fusion", DCRdoDeadCodeRemovalModule,
+SUBPHASE (wlfsdcr, "Removing dead code after fusion", DCRdoDeadCodeRemoval,
           global.optimize.dowlfs &&global.optimize.dodcr, opt)
 
 /*
@@ -704,13 +681,13 @@ CYCLE (scyc, "Type stabilization cycle",
 
 FUNBEGIN (scyc, opt, scyc)
 
-CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheckOneFunction,
+CYCLEPHASEFUN (tup, "Applying type upgrade", NTCdoNewTypeCheck, global.optimize.dotup,
+               opt, scyc)
+
+CYCLEPHASEFUN (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes,
                global.optimize.dotup, opt, scyc)
 
-CYCLEPHASEFUN (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypesOneFunction,
-               global.optimize.dotup, opt, scyc)
-
-CYCLEPHASEFUN (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypesOneFunction,
+CYCLEPHASEFUN (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes,
                global.optimize.dotup, opt, scyc)
 
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
@@ -719,8 +696,8 @@ CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.opti
 CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt,
                scyc)
 
-CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCallsOneFundef,
-               ALWAYS, opt, scyc)
+CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS, opt,
+               scyc)
 
 FUNEND (scyc)
 
@@ -792,10 +769,10 @@ SUBPHASE (vpls, "Propagating variables for LS", VPdoVarPropagation,
 SUBPHASE (cpive, "Propagating constants for IVE", CPdoConstantPropagation,
           global.optimize.doive &&global.optimize.docp, opt)
 
-SUBPHASE (cse2, "Eliminating common subexpression",
-          CSEdoCommonSubexpressionEliminationModule, global.optimize.docse, opt)
+SUBPHASE (cse2, "Eliminating common subexpression", CSEdoCommonSubexpressionElimination,
+          global.optimize.docse, opt)
 
-SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemovalModule,
+SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemoval,
           (global.optimize.dosaa || global.optimize.doive
            || !global.runtimecheck.conformity)
             && global.optimize.dodcr,
@@ -879,8 +856,8 @@ SUBPHASE( shmem,
           cuda)
 #endif
 
-SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule,
-          global.backend == BE_cuda, cuda)
+SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.backend == BE_cuda,
+          cuda)
 
 SUBPHASE (sptn, "CUDA Split partitions", SPTNdoSplitPartitions,
           global.backend == BE_cuda
@@ -952,8 +929,7 @@ SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp,
 SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.backend == BE_cuda,
           wlt)
 
-SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
-          wlt)
+SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, wlt)
 
 ENDPHASE (wlt)
 
@@ -1029,8 +1005,7 @@ SUBPHASE (racc, "Removing alias results from conformity checks",
 
 SUBPHASE (alloc, "Introducing explicit allocation statements ", EMALdoAlloc, ALWAYS, mem)
 
-SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemovalModule, global.optimize.dodcr,
-          mem)
+SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, mem)
 
 SUBPHASE (rci, "Inferring reuse candidates", EMRIdoReuseInference, global.optimize.douip,
           mem)
@@ -1066,8 +1041,8 @@ SUBPHASE (dr, "Exploiting data reuse", EMDRdoDataReuse,
 SUBPHASE (pew3, "MUTC Prune empty with3", PEW3doPruneEmptyWith3,
           global.backend == BE_mutc, mem)
 
-SUBPHASE (dcr2, "Removing dead code again", DCRdoDeadCodeRemovalModule,
-          global.optimize.dodcr, mem)
+SUBPHASE (dcr2, "Removing dead code again", DCRdoDeadCodeRemoval, global.optimize.dodcr,
+          mem)
 
 SUBPHASE (unshal, "Deactivating display of alias information", SHALdeactivate, ALWAYS,
           mem)

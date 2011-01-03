@@ -123,11 +123,11 @@ MBTRAN2doMinimizeBlockTransfers (node *syntax_tree)
 
     info = FreeInfo (info);
 
-    syntax_tree = CSEdoCommonSubexpressionEliminationModule (syntax_tree);
+    syntax_tree = CSEdoCommonSubexpressionElimination (syntax_tree);
 
     /* We rely on Dead Code Removal to remove the
      * unused <host2device>/<device2host> */
-    syntax_tree = DCRdoDeadCodeRemovalModule (syntax_tree);
+    syntax_tree = DCRdoDeadCodeRemoval (syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }

@@ -899,60 +899,27 @@ LSid (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn  node *LSdoLoopScalarization( node *syntax_tree)
+ * @fn  node *LSdoLoopScalarization( node *arg_node)
  *
- *   @brief This traversal eliminates arrays within loops for an N_module
- *   @param the entire syntax tree.
+ *   @brief This traversal eliminates arrays within loops for one function
+ *          or module.
+ *   @param N_fundef or N_module
  *   @return modified AST.
  *
  *****************************************************************************/
 node *
-LSdoLoopScalarization (node *syntax_tree)
+LSdoLoopScalarization (node *arg_node)
 {
     info *arg_info;
 
     DBUG_ENTER ("LSdoLoopScalarization");
 
-    DBUG_PRINT ("LS", ("Starting Loop Scalarization on module"));
-    DBUG_ASSERT (N_module == NODE_TYPE (syntax_tree), "Expected N_module");
+    DBUG_PRINT ("LS", ("Starting Loop Scalarization"));
 
     TRAVpush (TR_ls);
 
     arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = FALSE;
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-
-    arg_info = FreeInfo (arg_info);
-    TRAVpop ();
-
-    DBUG_PRINT ("LS", ("Loop Scalarization done!"));
-
-    DBUG_RETURN (syntax_tree);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn  node *LSdoLoopScalarizationOneFundef( node *arg_node)
- *
- *   @brief This traversal eliminates arrays within loops for one function
- *   @param N_fundef
- *   @return modified AST.
- *
- *****************************************************************************/
-node *
-LSdoLoopScalarizationOneFundef (node *arg_node)
-{
-    info *arg_info;
-
-    DBUG_ENTER ("LSdoLoopScalarizationOneFundef");
-
-    DBUG_PRINT ("LS", ("Starting Loop Scalarization on function"));
-    DBUG_ASSERT (N_fundef == NODE_TYPE (arg_node), "Expected N_fundef");
-
-    TRAVpush (TR_ls);
-
-    arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = TRUE;
+    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
     arg_node = TRAVdo (arg_node, arg_info);
 
     arg_info = FreeInfo (arg_info);

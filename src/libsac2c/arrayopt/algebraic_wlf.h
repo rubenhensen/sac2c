@@ -13,12 +13,13 @@
  * Prefix: AWLF
  *
  *****************************************************************************/
-extern node *AWLFdoAlgebraicWithLoopFoldingOneFunction (node *arg_node);
+extern node *AWLFdoAlgebraicWithLoopFolding (node *arg_node);
 extern bool isPrfArg1AttachExtrema (node *arg_node);
 extern bool isPrfArg1AttachIntersect (node *arg_node);
 
 extern node *AWLFfundef (node *arg_node, info *arg_info);
 extern node *AWLFassign (node *arg_node, info *arg_info);
+extern node *AWLFlet (node *arg_node, info *arg_info);
 extern node *AWLFwith (node *arg_node, info *arg_info);
 extern node *AWLFpart (node *arg_node, info *arg_info);
 extern node *AWLFcode (node *arg_node, info *arg_info);

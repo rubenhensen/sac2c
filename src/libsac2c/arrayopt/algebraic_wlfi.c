@@ -108,19 +108,6 @@
 #include "SSAWithloopFolding.h"
 #include "new_typecheck.h"
 #include "ivexpropagation.h"
-#include "SSACSE.h"
-#include "constant_folding.h"
-#include "variable_propagation.h"
-#include "ElimSubDiv.h"
-#include "arithmetic_simplification.h"
-#include "associative_law.h"
-#include "distributive_law.h"
-#include "UndoElimSubDiv.h"
-#include "inlining.h"
-#include "elim_alpha_types.h"
-#include "elim_bottom_types.h"
-#include "insert_symb_arrayattr.h"
-#include "dispatchfuncalls.h"
 #include "string.h"
 
 /** <!--********************************************************************-->
@@ -152,6 +139,7 @@ struct INFO {
     bool onefundef;           /* fundef-based traversal */
     bool nofinverse;          /* no intersect to CWL mapping found */
     bool finverseswap;        /* If TRUE, must swp min/max */
+    bool finverseintroduced;  /* If TRUE, most simplify F-inverse */
 };
 
 /**
@@ -173,6 +161,7 @@ struct INFO {
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_NOFINVERSE(n) ((n)->nofinverse)
 #define INFO_FINVERSESWAP(n) ((n)->finverseswap)
+#define INFO_FINVERSEINTRODUCED(n) ((n)->finverseintroduced)
 
 static info *
 MakeInfo (node *fundef)
@@ -199,6 +188,7 @@ MakeInfo (node *fundef)
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_NOFINVERSE (result) = FALSE;
     INFO_FINVERSESWAP (result) = FALSE;
+    INFO_FINVERSEINTRODUCED (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -227,18 +217,18 @@ FreeInfo (info *info)
 /******************************************************************************
  *
  * function:
- *   node *AWLFIdoAlgebraicWithLoopFoldingOneFunction(node *arg_node)
+ *   node *AWLFIdoAlgebraicWithLoopFolding(node *arg_node)
  *
  * @brief Global entry point of Algebraic With-Loop folding
  *        Applies Algebraic WL folding to a fundef.
  *
  *****************************************************************************/
 node *
-AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
+AWLFIdoAlgebraicWithLoopFolding (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("AWLFIdoAlgebraicWithLoopFoldingOneFunction");
+    DBUG_ENTER ("AWLFIdoAlgebraicWithLoopFolding");
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
                  ("AWLFIdoAlgebraicWithLoopFoldingOneFunction called for non-fundef"));
@@ -269,101 +259,6 @@ AWLFIdoAlgebraicWithLoopFoldingOneFunction (node *arg_node)
  * @{
  *
  *****************************************************************************/
-
-/******************************************************************************
- *
- * function: node *SimplifySymbioticExpression
- *
- * description: Code to simplify symbiotic expression for
- *              AWLF intersect calculation.
- *
- *              We perform inlining to bring sacprelude code into
- *              this function, then repeatedly invoke a small
- *              set of optimizations until we reach a fix point
- *              or give up.
- *
- * @params  arg_node: an N_fundef node.
- *
- * @result: an updated N_fundef node.
- *
- ******************************************************************************/
-static node *
-SimplifySymbioticExpression (node *arg_node, info *arg_info)
-{
-    int i;
-    int j;
-    int ct;
-    int countINL;
-    int countCSE;
-    int countTUP;
-    int countCF;
-    int countVP;
-    int countAS;
-    int countAL;
-    int countDL;
-
-    DBUG_ENTER ("SimplifySymbioticExpression");
-
-#define LISTCOUNT 17
-    anontrav_t freetravOptList[LISTCOUNT]
-      = {{N_fundef, &INLdoInliningAnon},
-         {N_fundef, &ISAAdoInsertShapeVariablesOneFundefAnon},
-         {N_fundef, &CSEdoCommonSubexpressionEliminationOneFundefAnon},
-         {N_fundef, &NTCdoNewTypeCheckOneFundefAnon},
-         {N_fundef, &EATdoEliminateAlphaTypesOneFundefAnon},
-         {N_fundef, &EBTdoEliminateBottomTypesOneFundefAnon},
-         {N_fundef, &DFCdoDispatchFunCallsOneFundefAnon},
-         {N_fundef, &CFdoConstantFoldingOneFundefAnon},
-         {N_fundef, &VPdoVarPropagationOneFundefAnon},
-         {N_fundef, &ESDdoElimSubDivOneFundefAnon},
-         {N_fundef, &ASdoArithmeticSimplificationOneFundefAnon},
-         {N_fundef, &CSEdoCommonSubexpressionEliminationOneFundefAnon},
-         {N_fundef, &CFdoConstantFoldingOneFundefAnon},
-         {N_fundef, &ALdoAssocLawOptimizationOneFundefAnon},
-         {N_fundef, &DLdoDistributiveLawOptimizationOneFundefAnon},
-         {N_fundef, &UESDdoUndoElimSubDivOneFundefAnon}};
-
-    anontrav_t freetravOpt[2] = {{N_fundef, NULL}, {0, NULL}};
-
-    DBUG_PRINT ("SSE", ("Entering opt micro-cycle for %s %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                        FUNDEF_NAME (arg_node)));
-    /* Loop over optimizers until we reach a fix point or give up */
-    for (i = 0; i < global.max_optcycles; i++) {
-        ct = i;
-        countINL = global.optcounters.inl_fun;
-        countCSE = global.optcounters.cse_expr;
-        countTUP = global.optcounters.tup_upgrades;
-        countCF = global.optcounters.cf_expr;
-        countVP = global.optcounters.vp_expr;
-        countAS = global.optcounters.as_expr;
-        countAL = global.optcounters.al_expr;
-        countDL = global.optcounters.dl_expr;
-
-        /* Invoke each opt */
-        for (j = 0; j < LISTCOUNT; j++) {
-            memcpy (freetravOpt, freetravOptList + j, sizeof (anontrav_t));
-            TRAVpushAnonymous (freetravOpt, &TRAVsons);
-            arg_node = TRAVopt (arg_node, arg_info);
-            TRAVpop ();
-        }
-
-        if (/* Fix point check */
-            (countINL == global.optcounters.inl_fun)
-            && (countCSE == global.optcounters.cse_expr)
-            && (countTUP == global.optcounters.tup_upgrades)
-            && (countCF == global.optcounters.cf_expr)
-            && (countVP == global.optcounters.vp_expr)
-            && (countAS == global.optcounters.as_expr)
-            && (countAL == global.optcounters.al_expr)
-            && (countDL == global.optcounters.dl_expr)) {
-            i = global.max_optcycles;
-        }
-    }
-    DBUG_PRINT ("SSE", ("Stabilized at iteration %d", ct));
-
-    DBUG_RETURN (arg_node);
-}
 
 /******************************************************************************
  *
@@ -464,10 +359,6 @@ FindPrfParent2 (node *arg_node, info *arg_info)
  *          As a side effect, INFO_PREASSIGNSFINVERSE contains
  *          the code to perform that mapping.
  *
- *          FIXME: This code should allow for mixed indexing, such as:
- *                 sel( [0, j, i], producerWL). However, it doesn't
- *                 do that yet.
- *
  *****************************************************************************/
 static node *
 TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withids)
@@ -566,7 +457,12 @@ TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withid
             default:
                 break;
             }
+            break;
 
+        case N_num:
+            DBUG_PRINT ("AWLFI", ("Found integer as source of iv'=%s",
+                                  AVIS_NAME (ID_AVIS (idxscalar))));
+            z = ID_AVIS (idxscalar);
             break;
 
         case N_array:
@@ -1292,6 +1188,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
 
         PART_ISCONSUMERPART (INFO_CONSUMERPART (arg_info)) = TRUE;
         PRF_ISNOTEINTERSECTPRESENT (arg_node) = TRUE;
+        INFO_FINVERSEINTRODUCED (arg_info) = TRUE;
     } else {
         ivpavis = ivavis;
         INFO_PRODUCERWLFOLDABLE (arg_info) = FALSE;
@@ -1566,11 +1463,9 @@ AWLFIfundef (node *arg_node, info *arg_info)
             }
 
             FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-
-            INFO_ONEFUNDEF (arg_info) = old_onefundef;
         }
 
-        arg_node = SimplifySymbioticExpression (arg_node, arg_info);
+        INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
         DBUG_PRINT ("AWLFI", ("Algebraic-With-Loop-Folding Inference in %s %s ends",
                               (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
@@ -1670,6 +1565,7 @@ AWLFIwith (node *arg_node, info *arg_info)
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_arg_info);
     INFO_CONSUMERWL (arg_info) = AWLFIgetWlWith (arg_node);
     INFO_ONEFUNDEF (arg_info) = INFO_ONEFUNDEF (old_arg_info);
+    INFO_FINVERSEINTRODUCED (arg_info) = INFO_FINVERSEINTRODUCED (old_arg_info);
 
     DBUG_PRINT ("AWLFI", ("Resetting WITH_REFERENCED_CONSUMERWL, etc."));
     WITH_REFERENCED_FOLD (arg_node) = 0;
@@ -1679,6 +1575,7 @@ AWLFIwith (node *arg_node, info *arg_info)
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
     INFO_VARDECS (old_arg_info) = INFO_VARDECS (arg_info);
+    INFO_FINVERSEINTRODUCED (old_arg_info) = INFO_FINVERSEINTRODUCED (arg_info);
 
     arg_info = FreeInfo (arg_info);
     arg_info = old_arg_info;
