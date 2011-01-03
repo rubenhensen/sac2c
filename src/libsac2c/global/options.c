@@ -461,8 +461,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE ("memcheck", global.memcheck = TRUE);
 #endif
         ARG_CHOICE ("efence", global.use_efence = TRUE);
-        ARG_CHOICE ("nocleanup", global.cleanup = FALSE);
         ARG_CHOICE ("nolacinline", global.lacinline = FALSE);
+        ARG_CHOICE ("nocleanup", global.cleanup = FALSE);
         ARG_CHOICE ("syscall", global.show_syscall = TRUE);
         ARG_CHOICE ("cccall", global.gen_cccall = TRUE; global.cleanup = FALSE);
         ARG_CHOICE_END ();

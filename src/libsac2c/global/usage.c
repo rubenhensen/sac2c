@@ -638,32 +638,15 @@ PrintBackendOptions (void)
     DBUG_VOID_RETURN;
 }
 
-static void
-PrintGeneralDebugOptions (void)
-{
-    DBUG_ENTER ("PrintGeneralDebugOptions");
-
-    printf (
-      "\n\nGENERAL DEBUG OPTIONS:\n\n"
-
-      "    -d nocleanup    Do not remove temporary files and directories.\n"
-      "    -d syscall      Show all system calls during compilation.\n"
-      "    -d cccall       Generate shell script \".sac2c\" that contains C compiler\n"
-      "                    invocation.\n"
-      "                    This implies option \"-d nocleanup\".\n");
-
-    DBUG_VOID_RETURN;
-}
-
 #ifndef DBUG_OFF
 
 static void
-PrintInternalDBUGOptions (void)
+PrintFredFishOptions (void)
 {
-    DBUG_ENTER ("PrintInternalDBUGOptions");
+    DBUG_ENTER ("PrintFredFishOptions");
 
     printf (
-      "\n\nINTERNAL OPTIONS FOR FRED FISH'S DBUG:\n\n"
+      "\n\nOPTIONS FOR FRED FISH'S DBUG:\n\n"
       "    -# t            Display trace information.\n"
       "                    Each function entry and exit during program execution is\n"
       "                    printed on the screen.\n"
@@ -686,19 +669,27 @@ PrintInternalDBUGOptions (void)
 }
 
 static void
-PrintInternalDebugOptions (void)
+PrintDebugOptions (void)
 {
-    DBUG_ENTER ("PrintInternalDebugOptions");
+    DBUG_ENTER ("PrintDebugOptions");
 
-    printf ("\n\nINTERNAL DEBUG OPTIONS:\n\n"
+    printf ("\n\nDEBUG OPTIONS:\n\n"
             "    -d treecheck    Check syntax tree for consistency with xml "
             "specification.\n"
+#ifdef SHOW_MALLOC
             "    -d memcheck     Check syntax tree for memory consistency.\n"
+#endif
             "    -d sancheck     Check syntax tree for structural consistency.\n"
             "    -d lacfuncheck  Check syntax tree for single call property of LaC "
             "functions.\n"
             "    -d nolacinline  Do not inline loop and conditional functions.\n"
             "    -d efence       Link executable with ElectricFence (malloc debugger).\n"
+            "    -d nocleanup    Do not remove temporary files and directories.\n"
+            "    -d syscall      Show all system calls during compilation.\n"
+            "    -d cccall       Generate shell script \".sac2c\" that contains C "
+            "compiler\n"
+            "                    invocation.\n"
+            "                    This implies option \"-d nocleanup\".\n"
             "\n"
             "    -chkfreq <n>    Frequency of treecheck and lacfuncheck:\n"
             "                       0: no checks\n"
@@ -1121,10 +1112,9 @@ USGprintUsage ()
         PrintMutcOptions ();
         PrintIrregularArrayOptions ();
         PrintBackendOptions ();
-        PrintGeneralDebugOptions ();
 #ifndef DBUG_OFF
-        PrintInternalDebugOptions ();
-        PrintInternalDBUGOptions ();
+        PrintDebugOptions ();
+        PrintFredFishOptions ();
 #endif /* DBUG_OFF */
         PrintRuntimeCheckOptions ();
         PrintRuntimeTraceOptions ();
@@ -1137,9 +1127,8 @@ USGprintUsage ()
     case TOOL_sac4c:
         PrintDescriptionSac4c ();
         PrintOptionsSac4c ();
-        PrintGeneralDebugOptions ();
 #ifndef DBUG_OFF
-        PrintInternalDBUGOptions ();
+        PrintFredFishOptions ();
 #endif /* DBUG_OFF */
         PrintBreakoptionSpecifierSac4c ();
         PrintCCompilerOptions ();
@@ -1147,9 +1136,8 @@ USGprintUsage ()
     case TOOL_sac2tex:
         PrintDescriptionSac2tex ();
         PrintGeneralOptions ();
-        PrintGeneralDebugOptions ();
 #ifndef DBUG_OFF
-        PrintInternalDBUGOptions ();
+        PrintFredFishOptions ();
 #endif /* DBUG_OFF */
         break;
     }
