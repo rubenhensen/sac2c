@@ -597,8 +597,8 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
         sharray_shp_log = TBmakeExprs (TBmakeNum (shmem_size), sharray_shp_log);
 
         /* For the X dimension, we add one to the logical size to avoid
-         * shared memory bank conflicts */
-        if (i == 1) {
+         * shared memory bank conflicts if shared memory padding is enabled */
+        if (i == 1 && global.optimize.dopad) {
             sharray_shp_phy = TBmakeExprs (TBmakeNum (shmem_size + 1), sharray_shp_phy);
         } else {
             sharray_shp_phy = TBmakeExprs (TBmakeNum (shmem_size), sharray_shp_phy);
