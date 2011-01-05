@@ -180,9 +180,6 @@
  *  STDLIB_LIBPATH  STDLIB_LIBPATH specifies the directories where sac2c looks for
  *                  library files belonging to the SAC standard library.
  *                 
- *  SYSTEM_LIBPATH  SYSTEM_LIBPATH specifies the directories where sac2c looks for
- *                  system libraries (C standard libraries).
- *
  *  TMPDIR          TMPDIR specifies a directory where sac2c may create temporary files.
  *                  Please make sure that you have write permission to that directory
  *                  as well as sufficient space.
@@ -463,13 +460,8 @@ CCFLAGS        :=  "-dalign -xsafe=mem"
 OPT_O0         :=  ""
 OPT_O1         :=  "-xO2"
 OPT_O2         :=  "-xO4"
-OPT_O3         :=  "-fast -xvector=simd"
+OPT_O3         :=  "-fast"
  
-SYSTEM_LIBPATH :=  "/usr/ccs/bin:"
-                   "/usr/ccs/lib:"
-                   "/lib:"
-                   "/usr/lib"
-
 
 /*******************************************************************************
  *

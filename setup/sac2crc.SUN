@@ -111,4 +111,18 @@ CACHE2_ASSOC    :=  1
 CACHE2_WRITEPOL :=  "write_around"
 
 
+target ultrat3::suncc:
+
+CACHE1_SIZE     :=  8 
+CACHE1_LINE     :=  16
+CACHE1_ASSOC    :=  4
+CACHE1_WRITEPOL :=  "write_around"
+
+CACHE2_SIZE     :=  6144
+CACHE2_LINE     :=  64
+CACHE2_ASSOC    :=  24
+CACHE2_WRITEPOL :=  "write_around"
+
+CCFLAGS         += " -target=ultrat3"
+
 
