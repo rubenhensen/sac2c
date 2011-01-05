@@ -6627,6 +6627,7 @@ N_tfarg :
         </attribute>
       </attributes>
       <flags>
+        <flag name="IsIrregularArray" default="FALSE"/>
       </flags>
     </node>
 <!--
