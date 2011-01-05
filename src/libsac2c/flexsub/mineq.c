@@ -31,41 +31,6 @@
 #include "mineq.h"
 #include "graphutils.h"
 
-/*
- * INFO structure
- */
-struct INFO {
-};
-
-/*
- * INFO macros
- */
-
-/*
- * INFO functions
- */
-static info *
-MakeInfo ()
-{
-    info *result;
-
-    DBUG_ENTER ("MakeInfo");
-
-    result = MEMmalloc (sizeof (info));
-
-    DBUG_RETURN (result);
-}
-
-static info *
-FreeInfo (info *info)
-{
-    DBUG_ENTER ("FreeInfo");
-
-    info = MEMfree (info);
-
-    DBUG_RETURN (info);
-}
-
 /** <!--********************************************************************-->
  *
  * @fn node *TFMINdoReduceGraph( node *syntax_tree)
@@ -80,17 +45,11 @@ FreeInfo (info *info)
 node *
 TFMINdoReduceTFGraph (node *syntax_tree)
 {
-    info *arg_info;
-
     DBUG_ENTER ("TFMINdoReduceGraph");
-
-    arg_info = MakeInfo ();
 
     TRAVpush (TR_tfmin);
 
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
-
-    arg_info = FreeInfo (arg_info);
+    syntax_tree = TRAVdo (syntax_tree, NULL);
 
     DBUG_RETURN (syntax_tree);
 }

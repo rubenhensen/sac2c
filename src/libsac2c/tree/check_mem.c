@@ -766,6 +766,6 @@ MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
     DBUG_ASSERT (test < 1024, "buffer is too small");
 
     DBUG_RETURN (str);
-};
+}
 
 #endif /* SHOW_MALLOC */

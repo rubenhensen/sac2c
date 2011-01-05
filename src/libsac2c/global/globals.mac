@@ -419,7 +419,7 @@ GLOBAL (bool, fpnoopt, FALSE)
  *  refer to -D, -cppI command line options:
  */
 
-GLOBAL (char *, cpp_options, NULL);
+GLOBAL (char *, cpp_options, NULL)
 
 /*
  * C compiler options
@@ -1017,8 +1017,8 @@ GLOBAL (const char **, mdb_type, mdb_type_init)
  * Type to string conversion tables
  */
 
-GLOBAL (const char **, type_string, type_string_init);
-GLOBAL (const char **, rename_type, rename_type_init);
+GLOBAL (const char **, type_string, type_string_init)
+GLOBAL (const char **, rename_type, rename_type_init)
 
 /*
  * Resource / configuration management
@@ -1042,37 +1042,37 @@ GLOBAL (configuration_t, config, config_init)
  * Storing module dependencies
  */
 
-GLOBAL (stringset_t *, dependencies, NULL);
+GLOBAL (stringset_t *, dependencies, NULL)
 
 /*
  * MUTC backend options
  */
 
-GLOBAL (bool, mutc_fun_as_threads, FALSE);
-GLOBAL (bool, mutc_thread_mem, FALSE);
-GLOBAL (bool, mutc_disable_thread_mem, FALSE);
-GLOBAL (bool, mutc_disable_concurrent_rc, FALSE);
-GLOBAL (bool, mutc_benchmark, FALSE);
-GLOBAL (bool, mutc_suballoc_desc_one_level_up, FALSE);
-GLOBAL (bool, mutc_static_resource_management, FALSE);
-GLOBAL (mutc_distribution_mode_t, mutc_distribution_mode, MUTC_DMODE_default);
-GLOBAL (int, mutc_distribution_mode_arg, -1);
-GLOBAL (int, mutc_force_block_size, -1);
-GLOBAL (int, mutc_unroll, 1);
-GLOBAL (int, mutc_rc_places, 1);
-GLOBAL (bool, mutc_rc_indirect, FALSE);
+GLOBAL (bool, mutc_fun_as_threads, FALSE)
+GLOBAL (bool, mutc_thread_mem, FALSE)
+GLOBAL (bool, mutc_disable_thread_mem, FALSE)
+GLOBAL (bool, mutc_disable_concurrent_rc, FALSE)
+GLOBAL (bool, mutc_benchmark, FALSE)
+GLOBAL (bool, mutc_suballoc_desc_one_level_up, FALSE)
+GLOBAL (bool, mutc_static_resource_management, FALSE)
+GLOBAL (mutc_distribution_mode_t, mutc_distribution_mode, MUTC_DMODE_default)
+GLOBAL (int, mutc_distribution_mode_arg, -1)
+GLOBAL (int, mutc_force_block_size, -1)
+GLOBAL (int, mutc_unroll, 1)
+GLOBAL (int, mutc_rc_places, 1)
+GLOBAL (bool, mutc_rc_indirect, FALSE)
 
 /*
  * CUDA backend options
  */
-GLOBAL (int, optimal_threads, 0); /* optimal number of threads per block */
-GLOBAL (int, optimal_blocks, 0);  /* optimal number of  blocks per SM */
-GLOBAL (int, cuda_1d_block_x, 0);
-GLOBAL (int, cuda_1d_block_large, 0);
-GLOBAL (int, cuda_1d_block_small, 0);
-GLOBAL (int, cuda_2d_block_x, 0);
-GLOBAL (int, cuda_2d_block_y, 0);
-GLOBAL (int, cuda_blocking_factor, 0);
+GLOBAL (int, optimal_threads, 0) /* optimal number of threads per block */
+GLOBAL (int, optimal_blocks, 0)  /* optimal number of  blocks per SM */
+GLOBAL (int, cuda_1d_block_x, 0)
+GLOBAL (int, cuda_1d_block_large, 0)
+GLOBAL (int, cuda_1d_block_small, 0)
+GLOBAL (int, cuda_2d_block_x, 0)
+GLOBAL (int, cuda_2d_block_y, 0)
+GLOBAL (int, cuda_blocking_factor, 0)
 
 #undef GLOBALtype
 #undef GLOBALname

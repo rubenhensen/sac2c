@@ -63,40 +63,6 @@
 
 /** <!--********************************************************************-->
  *
- * @name INFO structure
- * @{
- *
- *****************************************************************************/
-struct INFO {
-};
-
-static info *
-MakeInfo ()
-{
-    info *result;
-
-    DBUG_ENTER ("MakeInfo");
-
-    result = MEMmalloc (sizeof (info));
-
-    DBUG_RETURN (result);
-}
-
-static info *
-FreeInfo (info *info)
-{
-    DBUG_ENTER ("FreeInfo");
-
-    info = MEMfree (info);
-
-    DBUG_RETURN (info);
-}
-/** <!--********************************************************************-->
- * @}  <!-- INFO structure -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
  * @name Entry functions
  * @{
  *
@@ -109,8 +75,6 @@ FreeInfo (info *info)
 node *
 CFPdoCreateFunctionPairs (node *syntax_tree)
 {
-    info *info;
-
     DBUG_ENTER ("CFPdoCreateFunctionPairs");
 
     DBUG_ASSERT (((NODE_TYPE (syntax_tree) == N_module)
@@ -120,17 +84,13 @@ CFPdoCreateFunctionPairs (node *syntax_tree)
     DBUG_ASSERT (((global.filetype == F_modimp) || (global.filetype == F_classimp)),
                  "CFP is intended for use on classes and modules only");
 
-    info = MakeInfo ();
-
     DBUG_PRINT ("CFP", ("Create Function Pairs traversal."));
 
     TRAVpush (TR_cfp);
-    syntax_tree = TRAVdo (syntax_tree, info);
+    syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
 
     DBUG_PRINT ("CFP", ("Create Function Pairs complete."));
-
-    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }

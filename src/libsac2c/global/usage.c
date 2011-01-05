@@ -846,7 +846,8 @@ PrintCacheSimulationOptions (void)
       "                    program.\n"
       "                    The general default directory is the tmp directory specified\n"
       "                    in your sac2crc file.\n"
-      "\n\n"
+      "\n\n");
+    printf (
       "CACHE SIMULATION FEATURES:\n"
       "\n"
       "    Simple cache simulation only counts cache hits and cache misses while\n"
