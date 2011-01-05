@@ -36,6 +36,7 @@
 #define SAC_MT_SPMD_FRAME_ELEMENT_BEGIN(spmdfun) struct {
 
 #define SAC_MT_SPMD_FRAME_ELEMENT_END(spmdfun)                                           \
+    int _dummy; /* C99 does not allow empty structs/unions */                            \
     }                                                                                    \
     spmdfun;
 
@@ -171,7 +172,7 @@
         union {                                                                          \
             struct {                                                                     \
                 char cache_align_buffer[SAC_MT_CACHE_LINE_MAX () - sizeof (int)];        \
-            } dummy;
+            } _dummy;
 
 #define SAC_MT_SPMD_BARRIER_ELEMENT_BEGIN(spmdfun) struct {
 
@@ -185,6 +186,7 @@
     SAC_ND_DESC_TYPE (var_NT) in_##num##_desc;
 
 #define SAC_MT_SPMD_BARRIER_ELEMENT_END(spmdfun)                                         \
+    int _dummy; /* C99 does not allow empty structs/unions */                            \
     }                                                                                    \
     spmdfun;
 
