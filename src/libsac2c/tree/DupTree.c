@@ -2369,6 +2369,8 @@ DUPpart (node *arg_node, info *arg_info)
 
     PART_FLAGSTRUCTURE (new_node) = PART_FLAGSTRUCTURE (arg_node);
 
+    PART_THREADBLOCKSHAPE (new_node) = PART_THREADBLOCKSHAPE (arg_node);
+
     CopyCommonNodeData (new_node, arg_node);
 
     DBUG_RETURN (new_node);
