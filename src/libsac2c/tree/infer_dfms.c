@@ -209,7 +209,7 @@ DbugPrintMask (char *dfm_str, dfmask_t *dfm)
 {
     DBUG_ENTER ("DbugPrintMask");
 
-    fprintf (stderr, "%s<" F_PTR ">: ", dfm_str, dfm);
+    fprintf (stderr, "%s<" F_PTR ">: ", dfm_str, (void *)dfm);
     if (dfm != NULL) {
         DFMprintMask (stderr, "%s ", dfm);
     } else {

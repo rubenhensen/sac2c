@@ -490,8 +490,8 @@ UTprintRepository (FILE *outfile)
         fprintf (outfile, " %4d " UTPRINT_FORMAT " %6d |  %8p | %7d\n", i,
                  NSgetName (UTgetNamespace (i)), UTgetName (i),
                  TYtype2String (UTgetTypedef (i), TRUE, 0),
-                 TYtype2String (UTgetBaseType (i), TRUE, 0), UTgetLine (i), UTgetTdef (i),
-                 UTgetAlias (i));
+                 TYtype2String (UTgetBaseType (i), TRUE, 0), UTgetLine (i),
+                 (void *)UTgetTdef (i), UTgetAlias (i));
     }
 
     DBUG_VOID_RETURN;

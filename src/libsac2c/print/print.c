@@ -420,7 +420,7 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
     INDENT;
     fprintf (global.outfile, "     - Access Array: %s(avis: %p)\n",
              AVIS_NAME (CUAI_ARRAY (ASSIGN_ACCESS_INFO (arg_node))),
-             CUAI_ARRAY (ASSIGN_ACCESS_INFO (arg_node)));
+             (void *)CUAI_ARRAY (ASSIGN_ACCESS_INFO (arg_node)));
 
     INDENT;
     fprintf (global.outfile, "     - Access Array Shape: ");
@@ -462,7 +462,7 @@ CUAIprintCudaAccessInfo (node *arg_node, info *arg_info)
             fprintf (global.outfile, "( ( %d)", CUIDX_COEFFICIENT (idx));
             if (CUIDX_ID (idx) != NULL) {
                 fprintf (global.outfile, " * %s(avis: %p))", AVIS_NAME (CUIDX_ID (idx)),
-                         CUIDX_ID (idx));
+                         (void *)CUIDX_ID (idx));
             } else {
                 fprintf (global.outfile, ")");
             }
@@ -816,7 +816,7 @@ PRTprintArgtab (argtab_t *argtab, bool is_def)
                 fprintf (global.outfile, " %s:", global.argtag_string[argtab->tag[i]]);
 
                 if (argtab->ptr_in[i] != NULL) {
-                    PRINT_POINTER_BRACKETS (global.outfile, argtab->ptr_in[i]);
+                    PRINT_POINTER_BRACKETS (global.outfile, (void *)argtab->ptr_in[i]);
                     if (is_def) {
                         DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
                                      "illegal argtab entry found!");
@@ -838,7 +838,7 @@ PRTprintArgtab (argtab_t *argtab, bool is_def)
                 fprintf (global.outfile, "/");
 
                 if (argtab->ptr_out[i] != NULL) {
-                    PRINT_POINTER_BRACKETS (global.outfile, argtab->ptr_out[i]);
+                    PRINT_POINTER_BRACKETS (global.outfile, (void *)argtab->ptr_out[i]);
                     if (is_def) {
                     } else {
                         fprintf (global.outfile, "%s",
@@ -1036,7 +1036,7 @@ PRTids (node *arg_node, info *arg_info)
 
         if (global.print.avis) {
             if (IDS_AVIS (arg_node) != NULL) {
-                fprintf (global.outfile, "/* avis: %p */", IDS_AVIS (arg_node));
+                fprintf (global.outfile, "/* avis: %p */", (void *)IDS_AVIS (arg_node));
             }
         }
 
@@ -1681,7 +1681,8 @@ PrintFunctionHeader (node *arg_node, info *arg_info, bool in_comment)
 
     DBUG_ENTER ("PrintFunctionHeader");
 
-    DBUG_EXECUTE ("PRINT_PTR", fprintf (global.outfile, "/* " F_PTR " */\n", arg_node););
+    DBUG_EXECUTE ("PRINT_PTR",
+                  fprintf (global.outfile, "/* " F_PTR " */\n", (void *)arg_node););
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
@@ -2347,7 +2348,8 @@ PRTvardec (node *arg_node, info *arg_info)
 
         if (global.print.avis) {
             fprintf (global.outfile, "/* avis %p  SSA assign: %p */",
-                     VARDEC_AVIS (arg_node), AVIS_SSAASSIGN (VARDEC_AVIS (arg_node)));
+                     (void *)VARDEC_AVIS (arg_node),
+                     (void *)AVIS_SSAASSIGN (VARDEC_AVIS (arg_node)));
         }
 
         TRAVdo (VARDEC_AVIS (arg_node), arg_info);
@@ -2554,7 +2556,7 @@ PRTassign (node *arg_node, info *arg_info)
         TRAVdo (instr, arg_info);
 
         if (global.print.avis) {
-            fprintf (global.outfile, "/* addr: %p */", arg_node);
+            fprintf (global.outfile, "/* addr: %p */", (void *)arg_node);
         }
 
         fprintf (global.outfile, "\n");
@@ -2935,7 +2937,7 @@ PRTap (node *arg_node, info *arg_info)
     fprintf (global.outfile, ") ");
 
     DBUG_EXECUTE ("PRINT_PTR", fprintf (global.outfile, " /* ");
-                  PRINT_POINTER (global.outfile, fundef);
+                  PRINT_POINTER (global.outfile, (void *)fundef);
                   fprintf (global.outfile, " */ "););
 
     DBUG_RETURN (arg_node);
@@ -3221,7 +3223,7 @@ PRTid (node *arg_node, info *arg_info)
 
     if (global.print.avis) {
         if (ID_AVIS (arg_node) != NULL) {
-            fprintf (global.outfile, "/* avis: %p */", ID_AVIS (arg_node));
+            fprintf (global.outfile, "/* avis: %p */", (void *)ID_AVIS (arg_node));
         }
     };
 
@@ -5370,7 +5372,7 @@ PRTssacnt (node *arg_node, info *arg_info)
 
     INDENT;
     fprintf (global.outfile, " *  ");
-    PRINT_POINTER_BRACKETS (global.outfile, arg_node);
+    PRINT_POINTER_BRACKETS (global.outfile, (void *)arg_node);
     fprintf (global.outfile, " baseid = %s, counter = %d\n", SSACNT_BASEID (arg_node),
              SSACNT_COUNT (arg_node));
 
@@ -5408,7 +5410,7 @@ PRTavis (node *arg_node, info *arg_info)
         fprintf (global.outfile, " TYPE   = %s,",
                  TYtype2String (AVIS_TYPE (arg_node), FALSE, 0));
         fprintf (global.outfile, " SSACNT = ");
-        PRINT_POINTER_BRACKETS (global.outfile, AVIS_SSACOUNT (arg_node));
+        PRINT_POINTER_BRACKETS (global.outfile, (void *)AVIS_SSACOUNT (arg_node));
 
         if (global.valid_ssaform && (AVIS_SSACOUNT (arg_node) != NULL)) {
             node *cnt = AVIS_SSACOUNT (arg_node);
@@ -5417,7 +5419,7 @@ PRTavis (node *arg_node, info *arg_info)
                      SSACNT_COUNT (cnt));
         }
 
-        fprintf (global.outfile, " SSAASSIGN = %p ", AVIS_SSAASSIGN (arg_node));
+        fprintf (global.outfile, " SSAASSIGN = %p ", (void *)AVIS_SSAASSIGN (arg_node));
         fprintf (global.outfile, " */ ");
     }
 

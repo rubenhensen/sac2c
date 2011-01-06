@@ -153,7 +153,7 @@ SSdump (serstack_t *stack)
     printf ("StackDump:\n\n");
 
     while (ptr != NULL) {
-        printf ("- " F_PTR " (", ptr->val);
+        printf ("- " F_PTR " (", (void *)ptr->val);
 
         if (ptr->val != NULL) {
             printf ("%s )\n", NODE_TEXT (ptr->val));

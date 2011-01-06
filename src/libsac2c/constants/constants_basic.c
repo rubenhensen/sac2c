@@ -739,7 +739,8 @@ COprintConstant (FILE *file, constant *a)
     char *tmp_str;
     DBUG_ENTER ("COprintConstant");
 
-    fprintf (file, "constant at " F_PTR ": %s ", a, global.mdb_type[CONSTANT_TYPE (a)]);
+    fprintf (file, "constant at " F_PTR ": %s ", (void *)a,
+             global.mdb_type[CONSTANT_TYPE (a)]);
     SHprintShape (file, CONSTANT_SHAPE (a));
     tmp_str = COconstantData2String (10000, a);
     fprintf (file, " [%s]\n", tmp_str);
