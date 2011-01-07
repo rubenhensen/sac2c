@@ -981,7 +981,6 @@ CUBSLfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("CUBSLfundef");
 
-#ifdef FIXME
     if (FUNDEF_BODY (arg_node) != NULL) {
 
         DBUG_PRINT ("CUBSL", ("Algebraic-With-Loop-Folding Cube Slicing in %s %s begins",
@@ -1015,7 +1014,6 @@ CUBSLfundef (node *arg_node, info *arg_info)
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
-#endif // FIXME
 
     DBUG_RETURN (arg_node);
 }
