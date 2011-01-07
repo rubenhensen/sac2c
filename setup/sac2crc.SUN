@@ -123,6 +123,6 @@ CACHE2_LINE     :=  64
 CACHE2_ASSOC    :=  24
 CACHE2_WRITEPOL :=  "write_around"
 
-CCFLAGS         += " -target=ultraT3"
+CCFLAGS         += " -xtarget=ultraT3"
 
 
