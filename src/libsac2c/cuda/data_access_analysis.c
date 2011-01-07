@@ -310,11 +310,20 @@ ActOnId (node *avis, info *arg_info)
              * constant */
             CUAI_ISCONSTANT (INFO_ACCESS_INFO (arg_info), INFO_IDXDIM (arg_info)) = FALSE;
 
+            printf ("Found loop index of thread index %s  at dimension %d\n",
+                    AVIS_NAME (avis), INFO_IDXDIM (arg_info));
+
             AddIndex (type, INFO_COEFFICIENT (arg_info), avis,
                       PART_INFO_NTH (part_info) + 1, INFO_IDXDIM (arg_info), arg_info);
+            // MatrixDisplay( CUAI_MATRIX( INFO_ACCESS_INFO( arg_info)), stdout);
             MatrixSetEntry (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)),
                             PART_INFO_NTH (part_info), INFO_IDXDIM (arg_info),
                             INFO_COEFFICIENT (arg_info));
+            printf ("Set entry: [%d][%d]\n", INFO_IDXDIM (arg_info),
+                    PART_INFO_NTH (part_info));
+            // printf( "Matrix at address: %p\n",CUAI_MATRIX( INFO_ACCESS_INFO(
+            // arg_info)));  MatrixDisplay( CUAI_MATRIX( INFO_ACCESS_INFO( arg_info)),
+            // stdout);
         } else {
             DBUG_ASSERT ((0), "Found id whose ssaassign is NULL and it is neither an arg "
                               "or a withids!");
@@ -585,9 +594,9 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
             index = CUIDX_NEXT (index);
         }
 
-        /* For 2D share memory, size of each dimension must be a multiple
-         * of the corresonding block size */
-        if (dim == 2) {
+        /* For 2D share memory in 2D thread block, size of each dimension must be a
+         * multiple of the corresonding block size */
+        if (dim == 2 && cuwl_dim == 2) {
             int size = block_sizes_2d[i];
             if (shmem_size % size != 0) {
                 shmem_size = ((shmem_size + size) / size) * size;
@@ -1100,7 +1109,10 @@ DAAprf (node *arg_node, info *arg_info)
 
                 INFO_IDXDIM (arg_info) = 0;
 
+                MatrixDisplay (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)), stdout);
                 rank = MatrixRank (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)));
+
+                MatrixDisplay (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)), stdout);
                 /* If rank of the coefficient matric is less than the nestlevel,
                  * we have potential data reuse for the accessed array */
                 if (rank < CUAI_NESTLEVEL (INFO_ACCESS_INFO (arg_info))) {

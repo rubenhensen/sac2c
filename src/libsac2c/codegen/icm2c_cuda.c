@@ -29,8 +29,12 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
     DBUG_ENTER ("ICMCompileCUDA_GLOBALFUN_DECL");
 
     INDENT;
-    fprintf (global.outfile, "__global__ void __launch_bounds__(%d, %d) %s(",
-             global.optimal_threads, global.optimal_blocks, funname);
+    fprintf (global.outfile, "__global__ void");
+    if (global.optimize.dolb) {
+        fprintf (global.outfile, " __launch_bounds__(%d, %d) ", global.optimal_threads,
+                 global.optimal_blocks);
+    }
+    fprintf (global.outfile, " %s(", funname);
 
     cnt = 0;
     for (i = 0; i < 4 * vararg_cnt; i += 4) {

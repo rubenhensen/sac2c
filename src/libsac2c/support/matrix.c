@@ -327,14 +327,11 @@ int
 MatrixRank (Matrix m)
 {
     Matrix tmp;
-    int n, rank;
+    int rank;
 
     DBUG_ENTER ("MatrixRank");
 
-    n = m->dim_x * m->dim_y;
-    tmp = NewMatrix (m->dim_x, m->dim_y);
-    memcpy (tmp->m_stor, m->m_stor, sizeof (int) * n);
-    memcpy (tmp->mtx, m->mtx, sizeof (int *) * m->dim_y);
+    tmp = DupMatrix (m);
 
     MatrixToReducedREForm (tmp);
 
