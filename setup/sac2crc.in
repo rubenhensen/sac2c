@@ -456,7 +456,7 @@ target suncc:
 
 CC             :=  "cc"
 CCFLAGS        :=  "-dalign -xsafe=mem"
-CMTLINK        :=  "-lpthread -mt"
+CCMTLINK       :=  "-lpthread -mt"
  
 OPT_O0         :=  ""
 OPT_O1         :=  "-xO2"
