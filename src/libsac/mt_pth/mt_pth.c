@@ -30,6 +30,15 @@
 
 #include "config.h"
 
+/******************************************************************************
+ *
+ * If all defines are falls this source file is "emptry".
+ * Emptry source files are not allowed by the C99 standard
+ * For this reason a dummy variable is declared.
+ *
+ ******************************************************************************/
+int dummy_mt_pth;
+
 /*
  * In case we do not have mt available, we have to make sure this file
  * does not cause any problems (e.g. when running implicit dependency

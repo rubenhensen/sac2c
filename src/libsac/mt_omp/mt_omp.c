@@ -19,6 +19,15 @@
 
 #include "config.h"
 
+/******************************************************************************
+ *
+ * If all defines are falls this source file is "emptry".
+ * Emptry source files are not allowed by the C99 standard
+ * For this reason a dummy variable is declared.
+ *
+ ******************************************************************************/
+int dummy_mt_omp;
+
 /*
  * In case we do not have mt available, we have to make sure this file
  * does not cause any problems (e.g. when running implicit dependency
@@ -74,5 +83,7 @@ SAC_Get_ThreadID (pthread_key_t SAC_MT_threadid_key)
 }
 
 #endif /* OMP */
+
+#else /* ENABLE_MT && ENABLE_OMP */
 
 #endif /*  ENABLE_MT && ENABLE_OMP  */
