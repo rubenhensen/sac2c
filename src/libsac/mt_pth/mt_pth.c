@@ -63,13 +63,16 @@ int dummy_mt_pth;
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_MT_PTHREAD 1
 #define SAC_DO_THREADS_STATIC 1
+#define SAC_DO_COMPILE_MODULE 1
 
 #include "sac.h"
 
 #undef SAC_DO_MULTITHREAD
 #undef SAC_DO_MT_PTHREAD
 #undef SAC_DO_THREADS_STATIC
+#undef SAC_DO_COMPILE_MODULE
 
+#if 0
 /*
  * External declarations of global variables defined in the
  * compiled SAC program.
@@ -79,6 +82,7 @@ extern pthread_mutex_t SAC_MT_Tasklock[];
 extern pthread_mutex_t SAC_MT_TS_Tasklock[];
 
 extern volatile int SAC_MT_Task[];
+#endif
 
 /*
  *  Definition of global variables.

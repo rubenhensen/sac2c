@@ -62,13 +62,75 @@
 /*****************************************************************************/
 
 /*
- * Macros for data structures used by scheduling disciplines
+ * Macros for defining data structures used by scheduling disciplines
  */
 
-#define SAC_MT_DEFINE_TASKLOCKS()                                                        \
-    static pthread_mutex_t SAC_MT_Tasklock[SAC_SET_THREADS_MAX * SAC_SET_NUM_SCHEDULERS];
+#if !SAC_DO_COMPILE_MODULE
 
-#define SAC_MT_DEFINE_DUMMY_TASKLOCKS() static pthread_mutex_t SAC_MT_Tasklock[1];
+#define SAC_MT_DEFINE_TASKLOCKS()                                                        \
+    pthread_mutex_t SAC_MT_Tasklock[SAC_SET_THREADS_MAX * SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_DEFINE_DUMMY_TASKLOCKS() pthread_mutex_t SAC_MT_Tasklock[1];
+
+#define SAC_MT_DEFINE_TASKS()                                                            \
+    volatile int SAC_MT_Task[SAC_SET_THREADS_MAX * SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_DEFINE_LAST_TASKS()                                                       \
+    volatile int SAC_MT_LAST_Task[SAC_SET_THREADS_MAX * SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_DEFINE_REST_ITERATIONS()                                                  \
+    volatile int SAC_MT_rest_iterations[SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_DEFINE_ACT_TASKSIZE()                                                     \
+    volatile int SAC_MT_act_tasksize[SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_DEFINE_LAST_TASKEND()                                                     \
+    volatile int SAC_MT_last_taskend[SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_DEFINE_TS_TASKLOCKS()                                                     \
+    pthread_mutex_t SAC_MT_TS_Tasklock[SAC_SET_NUM_SCHEDULERS];
+
+#define SAC_MT_DEFINE_DUMMY_TS_TASKLOCKS() pthread_mutex_t SAC_MT_TS_Tasklock[1];
+
+#define SAC_MT_DEFINE_TASKCOUNT() volatile int SAC_MT_Taskcount[SAC_SET_NUM_SCHEDULERS];
+
+#endif
+
+/*****************************************************************************/
+
+/*
+ * Macros for declaring data structures used by scheduling disciplines
+ */
+
+#if SAC_DO_COMPILE_MODULE
+
+#define SAC_MT_DEFINE_TASKLOCKS() extern pthread_mutex_t SAC_MT_Tasklock[];
+
+#define SAC_MT_DEFINE_DUMMY_TASKLOCKS() extern pthread_mutex_t SAC_MT_Tasklock[];
+
+#define SAC_MT_DEFINE_TASKS() extern volatile int SAC_MT_Task[];
+
+#define SAC_MT_DEFINE_LAST_TASKS() extern volatile int SAC_MT_LAST_Task[];
+
+#define SAC_MT_DEFINE_REST_ITERATIONS() extern volatile int SAC_MT_rest_iterations[];
+
+#define SAC_MT_DEFINE_ACT_TASKSIZE() extern volatile int SAC_MT_act_tasksize[];
+
+#define SAC_MT_DEFINE_LAST_TASKEND() extern volatile int SAC_MT_last_taskend[];
+
+#define SAC_MT_DEFINE_TS_TASKLOCKS() extern pthread_mutex_t SAC_MT_TS_Tasklock[];
+
+#define SAC_MT_DEFINE_DUMMY_TS_TASKLOCKS() extern pthread_mutex_t SAC_MT_TS_Tasklock[];
+
+#define SAC_MT_DEFINE_TASKCOUNT() extern volatile int SAC_MT_Taskcount[];
+
+#endif
+
+/*****************************************************************************/
+
+/*
+ * Macros for accessing data structures used by scheduling disciplines
+ */
 
 #define SAC_MT_TASKLOCK(sched_id, num)                                                   \
     SAC_MT_Tasklock[num + SAC_SET_NUM_SCHEDULERS * sched_id]
@@ -76,41 +138,18 @@
 #define SAC_MT_TASKLOCK_INIT(sched_id, num, num_sched)                                   \
     SAC_MT_Tasklock[num + num_sched * sched_id]
 
-#define SAC_MT_DEFINE_TASKS()                                                            \
-    static volatile int SAC_MT_Task[SAC_SET_THREADS_MAX * SAC_SET_NUM_SCHEDULERS];
-
 #define SAC_MT_TASK(sched_id, num) SAC_MT_Task[num + SAC_SET_NUM_SCHEDULERS * sched_id]
-
-#define SAC_MT_DEFINE_LAST_TASKS()                                                       \
-    static volatile int SAC_MT_LAST_Task[SAC_SET_THREADS_MAX * SAC_SET_NUM_SCHEDULERS];
 
 #define SAC_MT_LAST_TASK(sched_id, num)                                                  \
     SAC_MT_LAST_Task[num + SAC_SET_NUM_SCHEDULERS * sched_id]
 
-#define SAC_MT_DEFINE_REST_ITERATIONS()                                                  \
-    static volatile int SAC_MT_rest_iterations[SAC_SET_NUM_SCHEDULERS];
-
 #define SAC_MT_REST_ITERATIONS(sched_id) SAC_MT_rest_iterations[sched_id]
-
-#define SAC_MT_DEFINE_ACT_TASKSIZE()                                                     \
-    static volatile int SAC_MT_act_tasksize[SAC_SET_NUM_SCHEDULERS];
 
 #define SAC_MT_ACT_TASKSIZE(sched_id) SAC_MT_act_tasksize[sched_id]
 
-#define SAC_MT_DEFINE_LAST_TASKEND()                                                     \
-    static volatile int SAC_MT_last_taskend[SAC_SET_NUM_SCHEDULERS];
-
 #define SAC_MT_LAST_TASKEND(sched_id) SAC_MT_last_taskend[sched_id]
 
-#define SAC_MT_DEFINE_TS_TASKLOCKS()                                                     \
-    static pthread_mutex_t SAC_MT_TS_Tasklock[SAC_SET_NUM_SCHEDULERS];
-
-#define SAC_MT_DEFINE_DUMMY_TS_TASKLOCKS() static pthread_mutex_t SAC_MT_TS_Tasklock[1];
-
 #define SAC_MT_TS_TASKLOCK(sched_id) SAC_MT_TS_Tasklock[sched_id]
-
-#define SAC_MT_DEFINE_TASKCOUNT()                                                        \
-    static volatile int SAC_MT_Taskcount[SAC_SET_NUM_SCHEDULERS];
 
 #define SAC_MT_TASKCOUNT(sched_id) SAC_MT_Taskcount[sched_id]
 
