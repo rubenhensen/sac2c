@@ -229,7 +229,7 @@ Negate (node *arg_node, info *info)
 
     if (PMmatchFlatSkipGuards (pat, arg_node)) {
         /* Create negexpr */
-        negcexpr = COneg (cexpr);
+        negcexpr = COneg (cexpr, NULL, NULL);
         negexpr = COconstant2AST (negcexpr);
         negcexpr = COfreeConstant (negcexpr);
         cexpr = COfreeConstant (cexpr);

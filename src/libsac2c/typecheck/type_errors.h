@@ -78,7 +78,7 @@ extern node *TEgetWrapper (te_info *info);
 extern int TEgetNumRets (te_info *info);
 extern node *TEgetAssign (te_info *info);
 extern prf TEgetPrf (te_info *info);
-extern const void *TEgetCFFun (te_info *info);
+extern constant *(*TEgetCFFun (te_info *info)) (constant *, constant *, constant *);
 extern te_info *TEgetParent (te_info *info);
 
 #endif /* _SAC_TYPE_ERRORS_H_ */

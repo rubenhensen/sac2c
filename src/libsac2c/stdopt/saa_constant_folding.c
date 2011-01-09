@@ -693,13 +693,13 @@ SAACFprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
         shp = COaST2Constant (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))));
         if (NULL != shp) {
             val = COaST2Constant (PRF_ARG1 (arg_node)); /* Case 1 */
-            if ((NULL != val) && COlt (val, shp)) {
+            if ((NULL != val) && COlt (val, shp, NULL)) {
                 z = TRUE;
             } else {
                 maxv = AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node)));
                 if (NULL != maxv) {
                     val2 = COaST2Constant (maxv); /* Case 2 */
-                    if ((NULL != val2) && COle (val2, shp)) {
+                    if ((NULL != val2) && COle (val2, shp, NULL)) {
                         /* COle because maxv is 1 greater than its true value */
                         z = TRUE;
                     }
@@ -805,7 +805,8 @@ SAACFprf_val_lt_val_SxS (node *arg_node, info *arg_info)
 
 typedef enum { REL_lt, REL_le, REL_ge, REL_gt } relationalfns;
 
-static constant *(*relfn[]) (constant *, constant *) = {COlt, COle, COge, COgt};
+static constant *(*relfn[]) (constant *, constant *, constant *)
+  = {COlt, COle, COge, COgt};
 
 /** <!--********************************************************************-->
  *
@@ -884,8 +885,8 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
         arg2c = COaST2Constant (prfarg2);
 
         if ((PMmatchFlatSkipExtrema (pat, arg1ex)) && (NULL != arg2c)) {
-            arg1cp = COsub (arg1c, adj); /* Correct AVIS_MAX*/
-            b = ((relfn[fna])) (arg1cp, arg2c);
+            arg1cp = COsub (arg1c, adj, NULL); /* Correct AVIS_MAX*/
+            b = ((relfn[fna])) (arg1cp, arg2c, NULL);
             if (COisTrue (b, TRUE)) {
                 res = tf ? SCSmakeTrue (prfargres) : SCSmakeFalse (prfargres);
                 DBUG_PRINT ("CF", ("saarelat replacing RHS by constant"));

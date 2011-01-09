@@ -542,7 +542,7 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
         non_empty_bounds = (SHgetUnrLen (COgetShape (lbc)) > 0);
 
         if (!non_empty_bounds) {
-            tmpc = COge (lbc, ubc);
+            tmpc = COge (lbc, ubc, NULL);
             if (COisTrue (tmpc, FALSE)) {
                 res = GPT_empty;
             }
@@ -567,14 +567,14 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
                  */
                 sh = COgetShape (ubc);
                 tmp = COmakeConstantFromShape (sh);
-                tmpc = COtake (tmp, shpc);
+                tmpc = COtake (tmp, shpc, NULL);
 
                 tmp = COfreeConstant (tmp);
                 shpc = COfreeConstant (shpc);
 
                 shpc = tmpc;
 
-                tmpc = COeq (ubc, shpc);
+                tmpc = COeq (ubc, shpc, NULL);
                 if (COisZero (lbc, TRUE) && COisTrue (tmpc, TRUE)) {
                     if (steps == NULL) {
                         res = GPT_full;

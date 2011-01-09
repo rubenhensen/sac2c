@@ -211,7 +211,7 @@ COzipUnary (const zipcvfunptr *fun_arr, constant *a, simpletype target_type)
  ******************************************************************************/
 
 constant *
-COadd (constant *a, constant *b)
+COadd (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -234,7 +234,7 @@ COadd (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COsub (constant *a, constant *b)
+COsub (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -257,7 +257,7 @@ COsub (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COmul (constant *a, constant *b)
+COmul (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -280,7 +280,7 @@ COmul (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COdiv (constant *a, constant *b)
+COdiv (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -303,7 +303,7 @@ COdiv (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COmod (constant *a, constant *b)
+COmod (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -326,7 +326,7 @@ COmod (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COmin (constant *a, constant *b)
+COmin (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -349,7 +349,7 @@ COmin (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COmax (constant *a, constant *b)
+COmax (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -372,7 +372,7 @@ COmax (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COand (constant *a, constant *b)
+COand (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -395,7 +395,7 @@ COand (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COor (constant *a, constant *b)
+COor (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -418,7 +418,7 @@ COor (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COle (constant *a, constant *b)
+COle (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -441,7 +441,7 @@ COle (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COlt (constant *a, constant *b)
+COlt (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -464,7 +464,7 @@ COlt (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COge (constant *a, constant *b)
+COge (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -487,7 +487,7 @@ COge (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COgt (constant *a, constant *b)
+COgt (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -510,7 +510,7 @@ COgt (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COeq (constant *a, constant *b)
+COeq (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -533,7 +533,7 @@ COeq (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COneq (constant *a, constant *b)
+COneq (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
@@ -554,7 +554,7 @@ COneq (constant *a, constant *b)
  ******************************************************************************/
 
 constant *
-COnot (constant *a)
+COnot (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -575,7 +575,7 @@ COnot (constant *a)
  ******************************************************************************/
 
 constant *
-COtob (constant *a)
+COtob (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -596,7 +596,7 @@ COtob (constant *a)
  ******************************************************************************/
 
 constant *
-COtos (constant *a)
+COtos (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -617,7 +617,7 @@ COtos (constant *a)
  ******************************************************************************/
 
 constant *
-COtoi (constant *a)
+COtoi (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -638,7 +638,7 @@ COtoi (constant *a)
  ******************************************************************************/
 
 constant *
-COtol (constant *a)
+COtol (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -659,7 +659,7 @@ COtol (constant *a)
  ******************************************************************************/
 
 constant *
-COtoll (constant *a)
+COtoll (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -680,7 +680,7 @@ COtoll (constant *a)
  ******************************************************************************/
 
 constant *
-COtoub (constant *a)
+COtoub (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -701,7 +701,7 @@ COtoub (constant *a)
  ******************************************************************************/
 
 constant *
-COtous (constant *a)
+COtous (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -722,7 +722,7 @@ COtous (constant *a)
  ******************************************************************************/
 
 constant *
-COtoui (constant *a)
+COtoui (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -743,7 +743,7 @@ COtoui (constant *a)
  ******************************************************************************/
 
 constant *
-COtoul (constant *a)
+COtoul (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -764,7 +764,7 @@ COtoul (constant *a)
  ******************************************************************************/
 
 constant *
-COtoull (constant *a)
+COtoull (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -785,7 +785,7 @@ COtoull (constant *a)
  ******************************************************************************/
 
 constant *
-COtof (constant *a)
+COtof (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -806,7 +806,7 @@ COtof (constant *a)
  ******************************************************************************/
 
 constant *
-COtod (constant *a)
+COtod (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -827,7 +827,7 @@ COtod (constant *a)
  ******************************************************************************/
 
 constant *
-COabs (constant *a)
+COabs (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -849,7 +849,7 @@ COabs (constant *a)
  ******************************************************************************/
 
 constant *
-COneg (constant *a)
+COneg (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -871,7 +871,7 @@ COneg (constant *a)
  ******************************************************************************/
 
 constant *
-COreciproc (constant *a)
+COreciproc (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *one;
     constant *res;

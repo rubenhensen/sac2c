@@ -300,7 +300,7 @@ GetPartitionSize (node *lb_elements, node *ub_elements)
         DBUG_ASSERT ((lb_cnst != NULL), "Lower bound is not constant!");
         DBUG_ASSERT ((ub_cnst != NULL), "Upper bound is not constant!");
 
-        size_cnst = COadd (size_cnst, COsub (ub_cnst, lb_cnst));
+        size_cnst = COadd (size_cnst, COsub (ub_cnst, lb_cnst, NULL), NULL);
 
         lb_elements = EXPRS_NEXT (lb_elements);
         ub_elements = EXPRS_NEXT (ub_elements);

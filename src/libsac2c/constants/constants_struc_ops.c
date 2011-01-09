@@ -330,7 +330,7 @@ incCounter (int *counter, int *upper_bounds, int depth)
  ******************************************************************************/
 
 constant *
-COreshape (constant *new_shp, constant *a)
+COreshape (constant *new_shp, constant *a, constant *tmp1)
 {
     void *elems;
     int res_vlen, curr_ext_res, i;
@@ -382,7 +382,7 @@ COreshape (constant *new_shp, constant *a)
  ******************************************************************************/
 
 constant *
-COsel (constant *idx, constant *a)
+COsel (constant *idx, constant *a, constant *tmp1)
 {
     void *elems;
     int res_dim, res_vlen, curr_ext_a, i;
@@ -432,7 +432,7 @@ COsel (constant *idx, constant *a)
  ******************************************************************************/
 
 constant *
-COidxSel (constant *idx, constant *a)
+COidxSel (constant *idx, constant *a, constant *tmp1)
 {
     void *elem;
     int index;
@@ -470,7 +470,7 @@ COidxSel (constant *idx, constant *a)
  *****************************************************************************/
 
 constant *
-COoverSel (constant *idx, constant *a)
+COoverSel (constant *idx, constant *a, constant *tmp1)
 {
     DBUG_ENTER ("COoverSel");
 
@@ -590,7 +590,7 @@ COoverSel (constant *idx, constant *a)
  ******************************************************************************/
 
 constant *
-COtake (constant *idx, constant *a)
+COtake (constant *idx, constant *a, constant *tmp1)
 {
     shape *res_shp;
     int i, curr_val_idx;
@@ -681,7 +681,7 @@ COtake (constant *idx, constant *a)
  ******************************************************************************/
 
 constant *
-COdrop (constant *idx, constant *a)
+COdrop (constant *idx, constant *a, constant *tmp1)
 {
     shape *res_shp;
     int i, curr_val_idx;
@@ -769,7 +769,7 @@ COdrop (constant *idx, constant *a)
  ******************************************************************************/
 
 constant *
-COcat (constant *a, constant *b)
+COcat (constant *a, constant *b, constant *tmp1)
 {
     int dim, vlen;
     int i;
@@ -851,7 +851,7 @@ COcat (constant *a, constant *b)
  *
  ******************************************************************************/
 constant *
-COdim (constant *a)
+COdim (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
@@ -873,7 +873,7 @@ COdim (constant *a)
  *
  ******************************************************************************/
 constant *
-COshape (constant *a)
+COshape (constant *a, constant *tmp1, constant *tmp2)
 {
     int *shape_vec;
     constant *res;

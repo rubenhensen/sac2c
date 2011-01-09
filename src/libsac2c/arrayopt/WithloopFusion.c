@@ -500,7 +500,7 @@ CheckIterationSpace (info *arg_info)
     shape2 = INFO_FWL_SHAPE (arg_info);
 
     if (SHgetUnrLen (COgetShape (shape1)) == SHgetUnrLen (COgetShape (shape2))) {
-        tmpc = COeq (shape1, shape2);
+        tmpc = COeq (shape1, shape2, NULL);
         if (COisTrue (tmpc, TRUE))
             is_equal = TRUE;
         else
@@ -2244,7 +2244,7 @@ WLFSgenerator (node *arg_node, info *arg_info)
         if (const_expr != NULL) {
             max_shape = INFO_WL_SHAPE (arg_info);
             if (max_shape != NULL) {
-                tmpc = COge (const_expr, max_shape);
+                tmpc = COge (const_expr, max_shape, NULL);
                 if (COisTrue (tmpc, TRUE)) {
                     INFO_WL_SHAPE (arg_info) = COfreeConstant (INFO_WL_SHAPE (arg_info));
                     INFO_WL_SHAPE (arg_info) = const_expr;

@@ -1144,7 +1144,7 @@ COisZero (constant *a, bool all)
     /* check for correct constant */
     if (zero != NULL) {
         /* compare constants (elements must be equal) */
-        eq = COeq (a, zero);
+        eq = COeq (a, zero, NULL);
 
         /* compute result dependend of flag "all" */
         if (all) {
@@ -1185,7 +1185,7 @@ COisNonNeg (constant *a, bool all)
     /* check for correct constant */
     if (zero != NULL) {
         /* vector-compare constants */
-        eq = COge (a, zero);
+        eq = COge (a, zero, NULL);
 
         /* compute result dependent on flag "all" */
         if (all) {
@@ -1226,7 +1226,7 @@ COisOne (constant *a, bool all)
     /* check for correct constant */
     if (one != NULL) {
         /* compare constants */
-        eq = COeq (a, one);
+        eq = COeq (a, one, NULL);
 
         /* compute result dependend of flag "all" */
         if (all) {
@@ -1300,7 +1300,7 @@ COcompareConstants (constant *c1, constant *c2)
         && (SHcompareShapes (COgetShape (c1), COgetShape (c2)))) {
 
         /* compare constant elements */
-        eq = COeq (c1, c2);
+        eq = COeq (c1, c2, NULL);
 
         /* check result for all elements */
         result = TRUE;

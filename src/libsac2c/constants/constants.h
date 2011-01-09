@@ -113,19 +113,19 @@ extern bool COisEmptyVect (constant *a);
  ***
  ***/
 
-extern constant *COreshape (constant *idx, constant *a);
-extern constant *COsel (constant *idx, constant *a);
-extern constant *COidxSel (constant *idx, constant *a);
-extern constant *COoverSel (constant *idx, constant *a);
-extern constant *COtake (constant *idx, constant *a);
-extern constant *COdrop (constant *idx, constant *a);
-extern constant *COdim (constant *a);
-extern constant *COshape (constant *a);
+extern constant *COreshape (constant *idx, constant *a, constant *);
+extern constant *COsel (constant *idx, constant *a, constant *);
+extern constant *COidxSel (constant *idx, constant *a, constant *);
+extern constant *COoverSel (constant *idx, constant *a, constant *);
+extern constant *COtake (constant *idx, constant *a, constant *);
+extern constant *COdrop (constant *idx, constant *a, constant *);
+extern constant *COdim (constant *a, constant *b, constant *);
+extern constant *COshape (constant *a, constant *b, constant *);
 extern constant *COmodarray_AxVxS (constant *a, constant *idx, constant *elem);
 extern constant *COmodarray_AxVxA (constant *a, constant *idx, constant *elem);
 extern constant *COidx_modarray_AxSxS (constant *a, constant *idx, constant *elem);
 extern constant *COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem);
-extern constant *COcat (constant *a, constant *b);
+extern constant *COcat (constant *a, constant *b, constant *);
 /* missing: not yet implemented
 extern constant *  CORotate  ( constant *dim, constant *num, constant *a);
 */
@@ -139,44 +139,44 @@ extern int COvect2offset (constant *shp, constant *iv);
  ***
  ***/
 /* numerical ops */
-extern constant *COadd (constant *a, constant *b);
-extern constant *COsub (constant *a, constant *b);
-extern constant *COmul (constant *a, constant *b);
-extern constant *COdiv (constant *a, constant *b);
-extern constant *COmod (constant *a, constant *b);
-extern constant *COmin (constant *a, constant *b);
-extern constant *COmax (constant *a, constant *b);
+extern constant *COadd (constant *a, constant *b, constant *);
+extern constant *COsub (constant *a, constant *b, constant *);
+extern constant *COmul (constant *a, constant *b, constant *);
+extern constant *COdiv (constant *a, constant *b, constant *);
+extern constant *COmod (constant *a, constant *b, constant *);
+extern constant *COmin (constant *a, constant *b, constant *);
+extern constant *COmax (constant *a, constant *b, constant *);
 
 /* bool ops */
-extern constant *COand (constant *a, constant *b);
-extern constant *COor (constant *a, constant *b);
+extern constant *COand (constant *a, constant *b, constant *);
+extern constant *COor (constant *a, constant *b, constant *);
 
 /* compare ops */
-extern constant *COeq (constant *a, constant *b);
-extern constant *COneq (constant *a, constant *b);
+extern constant *COeq (constant *a, constant *b, constant *);
+extern constant *COneq (constant *a, constant *b, constant *);
 
-extern constant *COle (constant *a, constant *b);
-extern constant *COlt (constant *a, constant *b);
-extern constant *COge (constant *a, constant *b);
-extern constant *COgt (constant *a, constant *b);
+extern constant *COle (constant *a, constant *b, constant *);
+extern constant *COlt (constant *a, constant *b, constant *);
+extern constant *COge (constant *a, constant *b, constant *);
+extern constant *COgt (constant *a, constant *b, constant *);
 
 /* unary ops */
-extern constant *COnot (constant *a);
-extern constant *COtob (constant *a);
-extern constant *COtos (constant *a);
-extern constant *COtoi (constant *a);
-extern constant *COtol (constant *a);
-extern constant *COtoll (constant *a);
-extern constant *COtoub (constant *a);
-extern constant *COtous (constant *a);
-extern constant *COtoui (constant *a);
-extern constant *COtoul (constant *a);
-extern constant *COtoull (constant *a);
-extern constant *COtof (constant *a);
-extern constant *COtod (constant *a);
-extern constant *COabs (constant *a);
-extern constant *COneg (constant *a);
-extern constant *COreciproc (constant *a);
+extern constant *COnot (constant *a, constant *, constant *);
+extern constant *COtob (constant *a, constant *, constant *);
+extern constant *COtos (constant *a, constant *, constant *);
+extern constant *COtoi (constant *a, constant *, constant *);
+extern constant *COtol (constant *a, constant *, constant *);
+extern constant *COtoll (constant *a, constant *, constant *);
+extern constant *COtoub (constant *a, constant *, constant *);
+extern constant *COtous (constant *a, constant *, constant *);
+extern constant *COtoui (constant *a, constant *, constant *);
+extern constant *COtoul (constant *a, constant *, constant *);
+extern constant *COtoull (constant *a, constant *, constant *);
+extern constant *COtof (constant *a, constant *, constant *);
+extern constant *COtod (constant *a, constant *, constant *);
+extern constant *COabs (constant *a, constant *, constant *);
+extern constant *COneg (constant *a, constant *, constant *);
+extern constant *COreciproc (constant *a, constant *, constant *);
 
 // Not sure where this stuff belongs, really. Neither fish nor fowl
 // These should go!!! please use COvect2offset instead!!!

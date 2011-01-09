@@ -63,8 +63,8 @@ struct TE_INFO {
  *
  */
 
-static const void *prf_co_funtab[] = {
-#define PRFco_fun(co_fun) (void *)co_fun
+static constant *(*prf_co_funtab[]) (constant *, constant *, constant *) = {
+#define PRFco_fun(co_fun) co_fun
 #include "prf_info.mac"
 };
 
@@ -342,8 +342,7 @@ TEgetPrf (te_info *info)
     DBUG_RETURN (TI_PRF (info));
 }
 
-const void *
-TEgetCFFun (te_info *info)
+constant *(*TEgetCFFun (te_info *info)) (constant *, constant *, constant *)
 {
     DBUG_ENTER ("TEgetCFFun");
     DBUG_RETURN (prf_co_funtab[TI_PRF (info)]);

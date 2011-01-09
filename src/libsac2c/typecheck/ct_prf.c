@@ -128,12 +128,12 @@ NTCCTprf_array (te_info *info, ntype *elems)
             val = COcopyConstant (TYgetValue (TYgetProductMember (elems, 1)));
             for (i = 2; i < num_elems; i++) {
                 tmp = val;
-                val = COcat (tmp, TYgetValue (TYgetProductMember (elems, i)));
+                val = COcat (tmp, TYgetValue (TYgetProductMember (elems, i)), NULL);
                 tmp = COfreeConstant (tmp);
             }
             shp = TYgetShape (outer);
             tmp = COmakeConstantFromShape (SHappendShapes (shp, TYgetShape (elem)));
-            res = TYmakeAKV (TYcopyType (TYgetScalar (elem)), COreshape (tmp, val));
+            res = TYmakeAKV (TYcopyType (TYgetScalar (elem)), COreshape (tmp, val, NULL));
             tmp = COfreeConstant (tmp);
             val = COfreeConstant (val);
         } else {

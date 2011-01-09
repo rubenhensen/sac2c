@@ -2084,7 +2084,8 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
         if (TUdimKnown (arrtype)) {
             arrshp = TYgetShape (arrtype);
             arrc = COmakeConstantFromShape (arrshp);
-            if ((COgetExtent (ivc, 0) == COgetExtent (arrc, 0)) && COlt (ivc, arrc)) {
+            if ((COgetExtent (ivc, 0) == COgetExtent (arrc, 0))
+                && COlt (ivc, arrc, NULL)) {
                 res = TBmakeExprs (DUPdoDupNode (iv),
                                    TBmakeExprs (TBmakeBool (TRUE), NULL));
                 DBUG_PRINT ("SCS", ("Case 1 removed guard( %s, %s)",
@@ -2149,7 +2150,7 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
 
     /* Cases 1 and 2 */
     if ((PMmatchFlatSkipExtrema (pat2, arg_node))
-        || (PMmatchFlatSkipExtrema (pat1, arg_node) && (COlt (con1, con2)))) {
+        || (PMmatchFlatSkipExtrema (pat1, arg_node) && (COlt (con1, con2, NULL)))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT ("SCS", ("removed guard Case 1( %s, %s)",
@@ -2215,7 +2216,7 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
         minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
         con1 = (NULL != minv) ? COaST2Constant (minv) : NULL;
         con2 = COaST2Constant (PRF_ARG2 (arg_node));
-        if ((NULL != con1) && (NULL != con2) && (COlt (con1, con2))) {
+        if ((NULL != con1) && (NULL != con2) && (COlt (con1, con2, NULL))) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
             DBUG_PRINT ("SCS", ("removed guard Case 5( %s, %s)",
@@ -2289,7 +2290,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
 
     /* Cases 1 and 2 */
     if ((PMmatchFlatSkipExtrema (pat2, arg_node))
-        || (PMmatchFlatSkipExtrema (pat1, arg_node) && (COle (con1, con2)))) {
+        || (PMmatchFlatSkipExtrema (pat1, arg_node) && (COle (con1, con2, NULL)))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT ("SCS", ("removed guard Case 1( %s, %s)",
@@ -2339,7 +2340,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
         minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
         con1 = (NULL != minv) ? COaST2Constant (minv) : NULL;
         con2 = COaST2Constant (PRF_ARG2 (arg_node));
-        if ((NULL != con1) && (NULL != con2) && (COle (con1, con2))) {
+        if ((NULL != con1) && (NULL != con2) && (COle (con1, con2, NULL))) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
             DBUG_PRINT ("SCS", ("removed guard Case 5( %s, %s)",
@@ -2407,7 +2408,8 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
     /* Cases 1 and 2 */
     if ((PMmatchFlatSkipExtrema (pat2, arg_node))
         || (PMmatchFlatSkipExtrema (pat1, arg_node)
-            && (COgetExtent (con1, 0) == COgetExtent (con2, 0)) && COle (con1, con2))) {
+            && (COgetExtent (con1, 0) == COgetExtent (con2, 0))
+            && COle (con1, con2, NULL))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT ("SCS", ("removed guard Case 1( %s, %s)",
@@ -2474,7 +2476,8 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
         con1 = (NULL != minv) ? COaST2Constant (minv) : NULL;
         con2 = COaST2Constant (PRF_ARG2 (arg_node));
         if ((NULL != con1) && (NULL != con2)
-            && (COgetExtent (con1, 0) == COgetExtent (con2, 0)) && (COle (con1, con2))) {
+            && (COgetExtent (con1, 0) == COgetExtent (con2, 0))
+            && (COle (con1, con2, NULL))) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
             DBUG_PRINT ("SCS", ("removed guard Case 5( %s, %s)",

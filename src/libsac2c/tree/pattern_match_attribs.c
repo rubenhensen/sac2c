@@ -483,7 +483,7 @@ attribAnyLeVal (attrib *attr, node *arg)
     DBUG_PRINT ("PMA", (PMASTART "PMAanyLeVal( %s in *" F_PTR " ):", co_str, c));
     DBUG_EXECUTE ("PMA", co_str = MEMfree (co_str););
     c2 = COaST2Constant (arg);
-    c3 = COle (c, c2);
+    c3 = COle (c, c2, NULL);
 
     res = COisTrue (c3, FALSE);
 

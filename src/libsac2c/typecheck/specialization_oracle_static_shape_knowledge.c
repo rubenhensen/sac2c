@@ -274,7 +274,7 @@ computeDemand (node *ids, node *fundef_arg, int num_rets, bool is_ext_fun)
 
         arg_dem_sel_constant
           = COmakeConstantFromArray (T_int, 1, shape_arg_dem, elem_arg_dem);
-        arg_dem_sel = COsel (arg_dem_sel_constant, current_fundef_arg_demand);
+        arg_dem_sel = COsel (arg_dem_sel_constant, current_fundef_arg_demand, NULL);
 
         current_ids_demand = AVIS_DEMAND (IDS_AVIS (current_ids));
 
@@ -287,10 +287,11 @@ computeDemand (node *ids, node *fundef_arg, int num_rets, bool is_ext_fun)
                 oversel_shape_constant = COmakeConstantFromShape (oversel_shape);
             }
             /* reshape ids demand to the right selection-vector-shape*/
-            reshaped_ids_demand = COreshape (oversel_shape_constant, current_ids_demand);
+            reshaped_ids_demand
+              = COreshape (oversel_shape_constant, current_ids_demand, NULL);
 
             /* compute the selection*/
-            selection_matrix = COoverSel (reshaped_ids_demand, arg_dem_sel);
+            selection_matrix = COoverSel (reshaped_ids_demand, arg_dem_sel, NULL);
         } else {
             selection_matrix = NULL;
         }
@@ -304,7 +305,7 @@ computeDemand (node *ids, node *fundef_arg, int num_rets, bool is_ext_fun)
             selection_matrix = NULL;
         } else if (selection_matrix != NULL) { /*MAX(all ids)*/
             constant *tmp_demand = NULL;
-            tmp_demand = COmax (new_demand, selection_matrix);
+            tmp_demand = COmax (new_demand, selection_matrix, NULL);
             new_demand = COfreeConstant (new_demand);
             new_demand = tmp_demand;
             tmp_demand = NULL;
@@ -367,10 +368,10 @@ doOverSel (constant *idx, constant *matrix)
     shape_extent = SHcreateShape (1, 1);
     oversel_shape = SHappendShapes (COgetShape (idx), shape_extent);
     oversel_shape_constant = COmakeConstantFromShape (oversel_shape);
-    reshaped_idx = COreshape (oversel_shape_constant, idx);
+    reshaped_idx = COreshape (oversel_shape_constant, idx, NULL);
 
     /* execute Overselection*/
-    result = COoverSel (reshaped_idx, matrix);
+    result = COoverSel (reshaped_idx, matrix, NULL);
 
     /* Free reshape constants and shapes*/
     reshaped_idx = COfreeConstant (reshaped_idx);
@@ -430,11 +431,11 @@ doOverSelMatrix (constant *idx_matrix, constant *sel_matrix)
         /* Get a single row*/
         idx = COmakeConstantFromArray (T_int, 1, idx_shape, idx_elems);
 
-        sel_idx_matrix = COsel (idx, idx_matrix);
-        sel_sel_matrix = COsel (idx, sel_matrix);
+        sel_idx_matrix = COsel (idx, idx_matrix, NULL);
+        sel_sel_matrix = COsel (idx, sel_matrix, NULL);
 
         /* Reshape the selected idx-row to [1,4]*/
-        reshaped_sel_idx_matrix = COreshape (shape_constant, sel_idx_matrix);
+        reshaped_sel_idx_matrix = COreshape (shape_constant, sel_idx_matrix, NULL);
 
         tmp_demand = doOverSel (reshaped_sel_idx_matrix, sel_sel_matrix);
 
@@ -454,7 +455,7 @@ doOverSelMatrix (constant *idx_matrix, constant *sel_matrix)
         if (res_matrix == NULL) {
             res_matrix = COcopyConstant (tmp_demand);
         } else {
-            tmp2_demand = COcat (res_matrix, tmp_demand);
+            tmp2_demand = COcat (res_matrix, tmp_demand, NULL);
             res_matrix = COfreeConstant (res_matrix);
             res_matrix = tmp2_demand;
             tmp2_demand = NULL;
@@ -540,7 +541,7 @@ wrapperMax (node *fundef, node *wrapper)
              * the fundef*/
             if (cur_wrapper_arg_dem != NULL) {
                 constant *tmp_demand = NULL;
-                tmp_demand = COmax (cur_wrapper_arg_dem, cur_fundef_arg_dem);
+                tmp_demand = COmax (cur_wrapper_arg_dem, cur_fundef_arg_dem, NULL);
 
                 DBUG_EXECUTE ("SOSSK_DEMAND",
                               string = demand2String (cur_wrapper_arg_dem););
@@ -612,7 +613,7 @@ getReturnDemand (constant *demand, int row)
     DBUG_ENTER ("getReturnDemand");
 
     constant *idx = COmakeConstantFromDynamicArguments (T_int, 1, 1, row);
-    constant *res_row = COsel (idx, demand);
+    constant *res_row = COsel (idx, demand, NULL);
     constant *res = NULL;
 
     int *res_row_int = COgetDataVec (res_row);
@@ -739,7 +740,7 @@ SOSSKarg (node *arg_node, info *arg_info)
                            SHshape2String (0, COgetShape (new_demand)),
                            ID_NAME (EXPRS_EXPR (current_ap_args))));
 
-            tmp_constant = COmax (current_ap_arg_demand, new_demand);
+            tmp_constant = COmax (current_ap_arg_demand, new_demand, NULL);
 
             DBUG_EXECUTE ("SOSSK_DEMAND",
                           string = demand2String (current_ap_arg_demand););
@@ -1267,7 +1268,7 @@ SOSSKid (node *arg_node, info *arg_info)
                            SHshape2String (0, COgetShape (id_demand)),
                            SHshape2String (0, COgetShape (INFO_DEMAND (arg_info)))));
 
-            tmp_constant = COmax (id_demand, INFO_DEMAND (arg_info));
+            tmp_constant = COmax (id_demand, INFO_DEMAND (arg_info), NULL);
             DBUG_PRINT ("SOSSK_DEMAND", ("--------------------"));
             DBUG_EXECUTE ("SOSSK_DEMAND", string = demand2String (id_demand););
             DBUG_PRINT ("SOSSK_DEMAND", ("id_demand: %s", string));
@@ -1766,7 +1767,7 @@ SOSSKwithid (node *arg_node, info *arg_info)
             DBUG_EXECUTE ("SOSSK_DEMAND", string = demand2String (ids_demand););
             DBUG_PRINT ("SOSSK_DEMAND", ("ids_demand: %s", string));
             DBUG_EXECUTE ("SOSSK_DEMAND", string = MEMfree (string););
-            INFO_DEMAND (arg_info) = COmax (vec_demand, ids_demand);
+            INFO_DEMAND (arg_info) = COmax (vec_demand, ids_demand, NULL);
 
             COfreeConstant (vec_demand);
             COfreeConstant (ids_demand);

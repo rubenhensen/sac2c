@@ -147,7 +147,7 @@ StructOpSel (node *arg_node, info *arg_info)
         take_vec = COmakeConstantFromInt (X_dim);
 
         // Select the N_array element we want w/iv prefix
-        con2 = COtake (take_vec, con1);
+        con2 = COtake (take_vec, con1, NULL);
         offset = Idx2OffsetArray (con2, arg2);
         con2 = COfreeConstant (con2);
         tmpXid = DUPdoDupNode (TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
@@ -160,7 +160,7 @@ StructOpSel (node *arg_node, info *arg_info)
             // Perform partial selection on X now; build new selection for
             // run-time.
             DBUG_ASSERT (N_id == NODE_TYPE (tmpXid), "StructOpSel X element not N_id");
-            con1 = COdrop (take_vec, con1); // iv suffix
+            con1 = COdrop (take_vec, con1, NULL); // iv suffix
             take_vec = COfreeConstant (take_vec);
             tmpivavis
               = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
@@ -556,7 +556,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                     && ((COgetExtent (coiv, 0) + COgetExtent (fsval, 0))
                         == COgetExtent (fsX, 0))) {
                     ivlen = COmakeConstantFromInt (COgetExtent (coiv, 0));
-                    fsX_tail = COdrop (ivlen, fsX);
+                    fsX_tail = COdrop (ivlen, fsX, NULL);
                     if (COcompareConstants (fsval, fsX_tail)) {
                         offset = COvect2offset (fsX, coiv);
                         res = DUPdoDupNode (X);
@@ -670,7 +670,7 @@ SCCFprf_cat_VxV (node *arg_node, info *arg_info)
         /* Both arguments are constants or structure constants */
         arg1xrho = COconst2Int (fs1);
         arg2xrho = COconst2Int (fs2);
-        frameshape = COadd (fs1, fs2);
+        frameshape = COadd (fs1, fs2, NULL);
         frameshaperes = COconstant2Shape (frameshape);
         frameshape = COfreeConstant (frameshape);
         fs1 = COfreeConstant (fs1);
