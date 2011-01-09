@@ -64,6 +64,7 @@ int dummy_mt_pth;
 #define SAC_DO_MT_PTHREAD 1
 #define SAC_DO_THREADS_STATIC 1
 #define SAC_DO_COMPILE_MODULE 1
+#define SAC_SET_NUM_SCHEDULERS 10
 
 #include "sac.h"
 
@@ -71,6 +72,9 @@ int dummy_mt_pth;
 #undef SAC_DO_MT_PTHREAD
 #undef SAC_DO_THREADS_STATIC
 #undef SAC_DO_COMPILE_MODULE
+#undef SAC_SET_NUM_SCHEDULERS
+
+SAC_MT_DEFINE ()
 
 #if 0
 /*
