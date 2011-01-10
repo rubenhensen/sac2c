@@ -265,12 +265,14 @@
 
 #define SAC_DO_PHM 1
 #define SAC_COMPILE_SACLIB
+#define SAC_DO_COMPILE_MODULE 1
 
 #include "sac.h"
 
 #undef SAC_COMPILE_SACLIB
 #undef SAC_DO_MULTITHREAD
 #undef SAC_DO_THREADS_STATIC
+#undef SAC_DO_COMPILE_MODULE
 
 /*
  * Macro definition of sbrk() system call
