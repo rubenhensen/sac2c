@@ -12,7 +12,10 @@
 #include <string.h>
 #include <stdio.h>
 
-typedef int (*sacmain_p) (int, char **);
+typedef union {
+    void *v;
+    int (*f) (int, char **);
+} sacmain_u;
 
 #define SAC2CBASEENV "SAC2CBASE"
 
@@ -46,7 +49,7 @@ typedef int (*sacmain_p) (int, char **);
         char *sac2cbase;                                                                 \
         char *libname;                                                                   \
         void *libsac2c;                                                                  \
-        sacmain_p mainptr;                                                               \
+        sacmain_u mainptr;                                                               \
                                                                                          \
         sac2cbase = getenv (SAC2CBASEENV);                                               \
                                                                                          \
@@ -70,9 +73,9 @@ typedef int (*sacmain_p) (int, char **);
             exit (10);                                                                   \
         }                                                                                \
                                                                                          \
-        mainptr = (sacmain_p)dlsym (libsac2c, mainfun);                                  \
+        mainptr.v = dlsym (libsac2c, mainfun);                                           \
                                                                                          \
-        if (mainptr == NULL) {                                                           \
+        if (mainptr.f == NULL) {                                                         \
             printf ("ERROR: Cannot find symbol '%s' in shared library "                  \
                     "'%s'... aborting.\n",                                               \
                     mainfun, libname);                                                   \
@@ -80,7 +83,7 @@ typedef int (*sacmain_p) (int, char **);
             exit (10);                                                                   \
         }                                                                                \
                                                                                          \
-        result = mainptr (argc, argv);                                                   \
+        result = mainptr.f (argc, argv);                                                 \
                                                                                          \
         if (dlclose (libsac2c) != 0) {                                                   \
             printf ("ERROR: Cannot unload shared library '%s'... "                       \

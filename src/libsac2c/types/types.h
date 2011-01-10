@@ -836,6 +836,10 @@ typedef struct PAD_INFO_T {
 
 typedef struct MODULE_T module_t;
 typedef node *(*serfun_p) ();
+typedef union {
+    void *v;
+    node *(*f) ();
+} serfun_u;
 
 /*
  * moved from symboltable.h

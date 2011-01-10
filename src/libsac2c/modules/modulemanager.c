@@ -30,18 +30,51 @@ struct MODULE_T {
 static module_t *modulepool = NULL;
 
 typedef sttable_t *(*symtabfun_p) ();
+typedef union {
+    void *v;
+    sttable_t *(*f) ();
+} symtabfun_u;
+
 typedef stringset_t *(*deptabfun_p) ();
-typedef const char *(*astversionfun_p) ();
-typedef const char *(*mixedcasenamefun_p) ();
-typedef int (*serversionfun_p) ();
-typedef int (*flagfun_p) ();
-typedef const char *(*deprecatedfun_p) ();
-typedef void (*nsmapfun_p) ();
+typedef union {
+    void *v;
+    stringset_t *(*f) ();
+} deptabfun_u;
+
+typedef union {
+    void *v;
+    const char *(*f) ();
+} astversionfun_u;
+
+typedef union {
+    void *v;
+    const char *(*f) ();
+} mixedcasenamefun_u;
+
+typedef union {
+    void *v;
+    int (*f) ();
+} serversionfun_u;
+
+typedef union {
+    void *v;
+    int (*f) ();
+} flagfun_u;
+
+typedef union {
+    void *v;
+    const char *(*f) ();
+} deprecatedfun_u;
+
+typedef union {
+    void *v;
+    void (*f) ();
+} nsmapfun_u;
 
 static void
 checkMixedCasesCorrect (module_t *module)
 {
-    mixedcasenamefun_p mixedcasenamefun;
+    mixedcasenamefun_u mixedcasenamefun;
     char *name;
 
     DBUG_ENTER ("checkMixedCasesCorrect");
@@ -51,21 +84,21 @@ checkMixedCasesCorrect (module_t *module)
 
     STRtoupper (name, 2, 2 + STRlen (module->name));
 
-    mixedcasenamefun = (mixedcasenamefun_p)LIBMgetLibraryFunction (name, module->lib);
+    mixedcasenamefun.v = LIBMgetLibraryFunction (name, module->lib);
 
-    if (mixedcasenamefun == NULL) {
+    if (mixedcasenamefun.f == NULL) {
         CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
                   "file format.",
                   module->name, module->sofile);
     }
 
-    if (!STReq (mixedcasenamefun (), module->name)) {
+    if (!STReq (mixedcasenamefun.f (), module->name)) {
         CTIabort ("Module '%s' not found; file-system search returned a module "
                   "named '%s'. "
                   "Most likely, you are using a case-insensitive filesystem. "
                   "Please check your module spelling and make sure you do "
                   "not attempt to use two modules that differ in their cases only.",
-                  module->name, mixedcasenamefun ());
+                  module->name, mixedcasenamefun.f ());
     }
 
     DBUG_VOID_RETURN;
@@ -74,8 +107,8 @@ checkMixedCasesCorrect (module_t *module)
 static void
 checkHasSameASTVersion (module_t *module)
 {
-    astversionfun_p astverfun;
-    serversionfun_p serverfun;
+    astversionfun_u astverfun;
+    serversionfun_u serverfun;
     char *name;
 
     DBUG_ENTER ("checkHasSameASTVersion");
@@ -83,15 +116,15 @@ checkHasSameASTVersion (module_t *module)
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 14));
     sprintf (name, "__%s_ASTVERSION", module->name);
 
-    astverfun = (astversionfun_p)LIBMgetLibraryFunction (name, module->lib);
+    astverfun.v = LIBMgetLibraryFunction (name, module->lib);
 
-    if (astverfun == NULL) {
+    if (astverfun.f == NULL) {
         CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
                   "file format.",
                   module->name, module->sofile);
     }
 
-    if (!STReq (astverfun (), build_ast)) {
+    if (!STReq (astverfun.f (), build_ast)) {
         CTIabort ("The module '%s' (%s) uses an incompatible syntax tree layout. "
                   "Please update the module and compiler to the most "
                   "recent version.",
@@ -100,9 +133,9 @@ checkHasSameASTVersion (module_t *module)
 
     sprintf (name, "__%s_SERIALIZER", module->name);
 
-    serverfun = (serversionfun_p)LIBMgetLibraryFunction (name, module->lib);
+    serverfun.v = LIBMgetLibraryFunction (name, module->lib);
 
-    if (serverfun == NULL) {
+    if (serverfun.f == NULL) {
         CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
                   "file format.",
                   module->name, module->sofile);
@@ -110,7 +143,7 @@ checkHasSameASTVersion (module_t *module)
 
     name = MEMfree (name);
 
-    if (!(serverfun () == SAC_SERIALIZE_VERSION)) {
+    if (!(serverfun.f () == SAC_SERIALIZE_VERSION)) {
         CTIabort ("The module '%s' (%s) uses an incompatible serialisation algorithm. "
                   "Please update the module and compiler to the most "
                   "recent version.",
@@ -123,7 +156,7 @@ checkHasSameASTVersion (module_t *module)
 static void
 checkWasBuildUsingSameFlags (module_t *module)
 {
-    flagfun_p flagfun;
+    flagfun_u flagfun;
     char *name;
 
     DBUG_ENTER ("checkWasBuildUsingSameFlags");
@@ -131,9 +164,9 @@ checkWasBuildUsingSameFlags (module_t *module)
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 13));
     sprintf (name, "__%s_USEDFLAGS", module->name);
 
-    flagfun = (flagfun_p)LIBMgetLibraryFunction (name, module->lib);
+    flagfun.v = LIBMgetLibraryFunction (name, module->lib);
 
-    if (flagfun == NULL) {
+    if (flagfun.f == NULL) {
         CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
                   "file format.",
                   module->name, module->sofile);
@@ -155,7 +188,7 @@ checkWasBuildUsingSameFlags (module_t *module)
 static void
 checkWhetherDeprecated (module_t *module)
 {
-    deprecatedfun_p dfun;
+    deprecatedfun_u dfun;
     char *name;
     const char *msg;
 
@@ -164,15 +197,15 @@ checkWhetherDeprecated (module_t *module)
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 14));
     sprintf (name, "__%s_DEPRECATED", module->name);
 
-    dfun = (deprecatedfun_p)LIBMgetLibraryFunction (name, module->lib);
+    dfun.v = LIBMgetLibraryFunction (name, module->lib);
 
-    if (dfun == NULL) {
+    if (dfun.f == NULL) {
         CTIabort ("The module '%s' (%s) is either corrupted or uses an outdated "
                   "file format.",
                   module->name, module->sofile);
     }
 
-    msg = dfun ();
+    msg = dfun.f ();
     if (msg != NULL) {
         CTIwarn ("The module '%s' (%s) is deprecated: %s", module->name, module->sofile,
                  msg);
@@ -184,7 +217,7 @@ checkWhetherDeprecated (module_t *module)
 static void
 addNamespaceMappings (module_t *module)
 {
-    nsmapfun_p mapfun;
+    nsmapfun_u mapfun;
     char *name;
 
     DBUG_ENTER ("addNamespaceMappings");
@@ -192,15 +225,15 @@ addNamespaceMappings (module_t *module)
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 19));
     sprintf (name, "__%s__MapConstructor", module->name);
 
-    mapfun = (nsmapfun_p)LIBMgetLibraryFunction (name, module->lib);
+    mapfun.v = LIBMgetLibraryFunction (name, module->lib);
 
-    if (mapfun == NULL) {
+    if (mapfun.f == NULL) {
         CTIabort ("Error loading namespace mapping information for "
                   "module `%s' (%s): %s",
                   module->name, module->sofile, LIBMgetError ());
     }
 
-    mapfun ();
+    mapfun.f ();
 
     name = MEMfree (name);
 
@@ -342,23 +375,23 @@ static symtabfun_p
 GetSymbolTableFunction (module_t *module)
 {
     char *name;
-    symtabfun_p result;
+    symtabfun_u result;
 
     DBUG_ENTER ("GetSymbolTableFunction");
 
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 11));
     sprintf (name, "__%s__SYMTAB", module->name);
 
-    result = (symtabfun_p)LIBMgetLibraryFunction (name, module->lib);
+    result.v = LIBMgetLibraryFunction (name, module->lib);
 
-    if (result == NULL) {
+    if (result.f == NULL) {
         CTIabort ("Error loading symbol table for module `%s' (%s): %s", module->name,
                   module->sofile, LIBMgetError ());
     }
 
     name = MEMfree (name);
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (result.f);
 }
 
 const sttable_t *
@@ -380,7 +413,7 @@ MODMgetSymbolTable (module_t *module)
 static deptabfun_p
 GetDependencyTableFunction (module_t *module)
 {
-    deptabfun_p result;
+    deptabfun_u result;
     char *name;
 
     DBUG_ENTER ("GetDependencyTableFunction");
@@ -388,16 +421,16 @@ GetDependencyTableFunction (module_t *module)
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 11));
     sprintf (name, "__%s__DEPTAB", module->name);
 
-    result = (deptabfun_p)LIBMgetLibraryFunction (name, module->lib);
+    result.v = LIBMgetLibraryFunction (name, module->lib);
 
-    if (result == NULL) {
+    if (result.f == NULL) {
         CTIabort ("Error loading dependency table for module `%s' (%s): %s", module->name,
                   module->sofile, LIBMgetError ());
     }
 
     name = MEMfree (name);
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (result.f);
 }
 
 stringset_t *
@@ -418,11 +451,11 @@ MODMgetDependencyTable (module_t *module)
 serfun_p
 MODMgetDeSerializeFunction (const char *name, module_t *module)
 {
-    serfun_p result;
+    serfun_u result;
 
     DBUG_ENTER ("MODMgetDeSerializeFunction");
 
-    result = (serfun_p)LIBMgetLibraryFunction (name, module->lib);
+    result.v = LIBMgetLibraryFunction (name, module->lib);
 
-    DBUG_RETURN (result);
+    DBUG_RETURN (result.f);
 }
