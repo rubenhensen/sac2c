@@ -288,7 +288,7 @@ PrintSpaces (int num)
     DBUG_ENTER ("PrintSpaces");
 
     for (i = 0; i < num; i++) {
-        printf ("  ");
+        DBUG_PRINT ("CUDR", ("  "));
     }
 
     DBUG_VOID_RETURN;
@@ -306,48 +306,52 @@ PrintRangeSet (range_set_t *sets, int indent)
     nonblocked_ranges = RS_NONBLOCKED_RANGES (sets);
 
     PrintSpaces (indent);
-    printf ("++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+    DBUG_PRINT ("CUDR", ("++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"));
 
     PrintSpaces (indent);
     if (RS_LAST_BLOCKED_RANGE (sets) != NULL) {
-        printf ("Last Blocked Range: %s[toplevel:%d]\n",
-                IDS_NAME (RANGE_INDEX (RI_RANGE (RS_LAST_BLOCKED_RANGE (sets)))),
-                RI_TOPLEVEL (RS_LAST_BLOCKED_RANGE (sets)));
+        DBUG_PRINT ("CUDR",
+                    ("Last Blocked Range: %s[toplevel:%d]\n",
+                     IDS_NAME (RANGE_INDEX (RI_RANGE (RS_LAST_BLOCKED_RANGE (sets)))),
+                     RI_TOPLEVEL (RS_LAST_BLOCKED_RANGE (sets))));
     } else {
-        printf ("Last Blocked Range: NULL\n");
+        DBUG_PRINT ("CUDR", ("Last Blocked Range: NULL\n"));
     }
 
     PrintSpaces (indent);
     if (RS_LAST_NONBLOCKED_RANGE (sets) != NULL) {
-        printf ("Last Nonblocked Range: %s[toplevel:%d]\n",
-                IDS_NAME (RANGE_INDEX (RI_RANGE (RS_LAST_NONBLOCKED_RANGE (sets)))),
-                RI_TOPLEVEL (RS_LAST_NONBLOCKED_RANGE (sets)));
+        DBUG_PRINT ("CUDR",
+                    ("Last Nonblocked Range: %s[toplevel:%d]\n",
+                     IDS_NAME (RANGE_INDEX (RI_RANGE (RS_LAST_NONBLOCKED_RANGE (sets)))),
+                     RI_TOPLEVEL (RS_LAST_NONBLOCKED_RANGE (sets))));
     } else {
-        printf ("Last Nonblocked Range: NULL\n");
+        DBUG_PRINT ("CUDR", ("Last Nonblocked Range: NULL\n"));
     }
 
     PrintSpaces (indent);
-    printf ("Blocked Ranges[%d]: ", RS_BLOCKED_RANGES_CNT (sets));
+    DBUG_PRINT ("CUDR", ("Blocked Ranges[%d]: ", RS_BLOCKED_RANGES_CNT (sets)));
     while (blocked_ranges != NULL) {
-        printf ("(Index:%s) ", IDS_NAME (RANGE_INDEX (RI_RANGE (blocked_ranges))));
+        DBUG_PRINT ("CUDR",
+                    ("(Index:%s) ", IDS_NAME (RANGE_INDEX (RI_RANGE (blocked_ranges)))));
         blocked_ranges = RI_NEXT (blocked_ranges);
     }
-    printf ("\n");
+    DBUG_PRINT ("CUDR", ("\n"));
 
     PrintSpaces (indent);
-    printf ("Nonblocked Ranges[%d]: ", RS_NONBLOCKED_RANGES_CNT (sets));
+    DBUG_PRINT ("CUDR", ("Nonblocked Ranges[%d]: ", RS_NONBLOCKED_RANGES_CNT (sets)));
     while (nonblocked_ranges != NULL) {
         if (RANGE_INDEX (RI_RANGE (nonblocked_ranges)) == NULL) {
-            printf ("(Index:Dummy) ");
+            DBUG_PRINT ("CUDR", ("(Index:Dummy) "));
         } else {
-            printf ("(Index:%s) ", IDS_NAME (RANGE_INDEX (RI_RANGE (nonblocked_ranges))));
+            DBUG_PRINT ("CUDR", ("(Index:%s) ",
+                                 IDS_NAME (RANGE_INDEX (RI_RANGE (nonblocked_ranges)))));
         }
         nonblocked_ranges = RI_NEXT (nonblocked_ranges);
     }
-    printf ("\n");
+    DBUG_PRINT ("CUDR", ("\n"));
 
     PrintSpaces (indent);
-    printf ("++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+    DBUG_PRINT ("CUDR", ("++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"));
 
     DBUG_VOID_RETURN;
 }
@@ -982,6 +986,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
             glb_args = TBmakeExprs (DUPdoDupNode (CUAI_ARRAYSHP (access_info)), NULL);
 
             if (tb_x % arr_shp_x == 0 && arr_shp_y % ((int)(tb_x / arr_shp_x)) == 0) {
+                printf ("hahah, in then branh!\n");
+
                 int load_block_size = arr_shp_y / (tb_x / arr_shp_x);
 
                 args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
@@ -1037,6 +1043,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
 
                 glb_args = TCcombineExprs (glb_args, TBmakeExprs (TBmakeId (avis), NULL));
             } else {
+                printf ("hahah, in else branh!\n");
                 /* Initialise loop iterator to 0 and set loop bound to
                  * size of the Y dimension of the share memory array */
                 iterator
@@ -1686,13 +1693,13 @@ CUDRrange (node *arg_node, info *arg_info)
 
         INFO_LEVEL (arg_info)++;
 
-#if 0 
-    PrintSpaces( INFO_LEVEL( arg_info)); 
-    printf( "Entering range [index:%s level:%d blocked:%d]\n", 
-            IDS_NAME( RANGE_INDEX( arg_node)), 
-            INFO_LEVEL( arg_info), RANGE_ISBLOCKED( arg_node));
-    PrintRangeSet( INFO_RANGE_SETS( arg_info), INFO_LEVEL( arg_info));
-#endif
+        /*
+            PrintSpaces( INFO_LEVEL( arg_info));
+            DBUG_PRINT( "CUDR", ("Entering range [index:%s level:%d blocked:%d]\n",
+                        IDS_NAME( RANGE_INDEX( arg_node)),
+                        INFO_LEVEL( arg_info), RANGE_ISBLOCKED( arg_node)));
+            PrintRangeSet( INFO_RANGE_SETS( arg_info), INFO_LEVEL( arg_info));
+        */
 
         RANGE_G2SINSTRS (arg_node) = NULL;
 
@@ -1705,12 +1712,12 @@ CUDRrange (node *arg_node, info *arg_info)
             RANGE_G2SINSTRS (arg_node) = NULL;
         }
 
-#if 0
-    PrintSpaces( INFO_LEVEL( arg_info)); 
-    printf( "Leaving range [index:%s level:%d blocked:%d]\n", 
-            IDS_NAME( RANGE_INDEX( arg_node)), 
-            INFO_LEVEL( arg_info), RANGE_ISBLOCKED( arg_node));
-#endif
+        /*
+            PrintSpaces( INFO_LEVEL( arg_info));
+            DBUG_PRINT( "CUDR", ("Leaving range [index:%s level:%d blocked:%d]\n",
+                        IDS_NAME( RANGE_INDEX( arg_node)),
+                        INFO_LEVEL( arg_info), RANGE_ISBLOCKED( arg_node)));
+        */
 
         INFO_LEVEL (arg_info)--;
 
