@@ -4528,9 +4528,9 @@ if  test "$GCC" = yes ; then
 
   RCCCFLAGS="-Wall -Wno-unused -fno-builtin -std=c99"
 
-  MKCCFLAGS="-Wall -g -std=c99"
+  MKCCFLAGS="-pedantic -Wall -g -std=c99"
 
-  PDCCFLAGS="-Wall -g -O3 -std=c99"
+  PDCCFLAGS="-pedantic -Wall -g -O3 -std=c99"
 
   GENPIC="-fPIC -DPIC"
 
