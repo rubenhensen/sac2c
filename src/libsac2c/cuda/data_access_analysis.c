@@ -489,8 +489,9 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
     int i, coefficient, shmem_size, dim, cuwl_dim;
     cuda_index_t *index;
     int block_sizes_2d[2] = {global.cuda_2d_block_y, global.cuda_2d_block_x};
+
     // int blocking_factor = global.cuda_2d_block_x;
-    int blocking_factor = 16;
+    int blocking_factor = 32;
     node *sharray_shp_log = NULL, *sharray_shp_phy = NULL;
 
     DBUG_ENTER ("CreateSharedMemoryForCoalescing");
