@@ -151,6 +151,10 @@ node *CHKdoTreeCheck( node *arg_node)
     </xsl:apply-templates>
     <xsl:value-of select="'} attr_list;'"/>
     <xsl:value-of select="$newline"/>
+    <xsl:value-of select="'#else  /* SHOW_MALLOC */'"/>
+    <xsl:value-of select="$newline"/>
+    <xsl:value-of select="'static int _dummy; /* C99 does not allow for empty files. */'"/>
+    <xsl:value-of select="$newline"/>
     <xsl:value-of select="'#endif /* SHOW_MALLOC */'"/>
     <xsl:value-of select="$newline"/>
   </xsl:template>
