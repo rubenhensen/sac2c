@@ -1640,7 +1640,7 @@ expr_ar: SQBR_L { $<cint>$ = global.linenum; } exprs SQBR_R
          { $$ = TCmakeVector( TYmakeAKS( TYmakeSimpleType( T_unknown), 
                                          SHmakeShape(0)),
                               $3);
-           ARRAY_ISIRREGULARARRAY($$) = TRUE;
+           ARRAY_ISIRREGULAR($$) = TRUE;
            NODE_LINE( $$) = $<cint>2;
          }
        ;

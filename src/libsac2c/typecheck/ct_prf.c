@@ -115,7 +115,10 @@ NTCCTprf_array (te_info *info, ntype *elems)
     for (i = 2; i < num_elems; i++) {
         elem2 = TYgetProductMember (elems, i);
         TEassureSameScalarType ("array element #0", elem, TEarrayElem2Obj (i), elem2);
-        elem2 = TEassureSameShape ("array element #0", elem, TEarrayElem2Obj (i), elem2);
+        if (TEgetIsIrregular (info) == FALSE) {
+            elem2
+              = TEassureSameShape ("array element #0", elem, TEarrayElem2Obj (i), elem2);
+        }
         TYfreeType (elem);
         elem = elem2;
     }

@@ -5568,7 +5568,9 @@ ntype * TYdeNestTypeFromInner( ntype *nested, ntype *inner)
 
   DBUG_ENTER("TYdeNestTypeFromInner");
 
-  DBUG_ASSERT( TYisAKS( inner), "TYDeNestTypeFromInner with non AKS inner type not yet implemented!");
+  if (global.irregular_arrays != TRUE) {
+    DBUG_ASSERT( TYisAKS( inner), "TYDeNestTypeFromInner with non AKS inner type not yet implemented!");
+  }
 
   switch( NTYPE_CON( nested)) {
     case TC_aks:

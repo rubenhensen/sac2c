@@ -1356,7 +1356,7 @@ NTCprf (node *arg_node, info *arg_info)
         INFO_TYPE (arg_info) = NULL;
 
         info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf,
-                              global.prf_name[prf], prf, prf_te_funtab[prf](args));
+                              global.prf_name[prf], prf, prf_te_funtab[prf](args), FALSE);
         res = NTCCTcomputeType (prf_tc_funtab[prf], info, args);
         TYfreeType (args);
     }
@@ -1470,7 +1470,11 @@ NTCarray (node *arg_node, info *arg_info)
          * Now, we built the resulting (AKS-)type type from the product type found:
          */
         info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf,
-                              "array-constructor", 0, 1);
+                              "array-constructor", 0, 1, ARRAY_ISIRREGULAR (arg_node));
+
+        if (ARRAY_ISIRREGULAR (arg_node)) {
+            /* Do something */
+        }
 
         /*
          * TODO: syntatic sugar for the irregular array option
@@ -1777,7 +1781,8 @@ NTCcast (node *arg_node, info *arg_info)
     }
     cast_t = CAST_NTYPE (arg_node);
 
-    info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf, "type-cast", 0, 1);
+    info
+      = TEmakeInfoPrf (global.linenum, global.filename, TE_prf, "type-cast", 0, 1, FALSE);
     type = NTCCTcomputeType (NTCCTprf_cast, info, TYmakeProductType (2, cast_t, expr_t));
 
     INFO_TYPE (arg_info) = TYgetProductMember (type, 0);

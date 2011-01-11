@@ -38,6 +38,7 @@ struct TE_INFO {
     const char *file;     /* file in which application is situated */
     te_kind_t kind;       /* kind of function we are dealing with */
     const char *name_str; /* name of the function */
+    bool is_irregular;    /* flag for irregular arrays */
     union {
         struct TE_INFO_UDF udf;
         struct TE_INFO_PRF prf;
@@ -49,6 +50,7 @@ struct TE_INFO {
 #define TI_KIND(n) ((n)->kind)
 #define TI_MOD(n) ((n)->info.udf.mod_str)
 #define TI_NAME(n) ((n)->name_str)
+#define TI_ISIRREGULAR(n) ((n)->is_irregular)
 #define TI_FUNDEF(n) ((n)->info.udf.wrapper)
 #define TI_ASSIGN(n) ((n)->info.udf.assign)
 #define TI_CHN(n) ((n)->info.udf.chn)
@@ -234,6 +236,7 @@ TEmakeInfo (int linenum, const char *file, te_kind_t kind, const char *name_str)
     TI_FILE (res) = file;
     TI_KIND (res) = kind;
     TI_NAME (res) = name_str;
+    TI_ISIRREGULAR (res) = FALSE;
 
     DBUG_RETURN (res);
 }
@@ -257,7 +260,7 @@ TEmakeInfoUdf (int linenum, const char *file, te_kind_t kind, const char *mod_st
 
 te_info *
 TEmakeInfoPrf (int linenum, const char *file, te_kind_t kind, const char *name_str,
-               prf prf_no, int num_rets)
+               prf prf_no, int num_rets, bool is_irregular)
 {
     te_info *res;
 
@@ -266,6 +269,7 @@ TEmakeInfoPrf (int linenum, const char *file, te_kind_t kind, const char *name_s
     res = TEmakeInfo (linenum, file, kind, name_str);
     TI_PRF (res) = prf_no;
     TI_NUM_RETS (res) = num_rets;
+    TI_ISIRREGULAR (res) = is_irregular;
 
     DBUG_RETURN (res);
 }
@@ -353,6 +357,13 @@ TEgetParent (te_info *info)
 {
     DBUG_ENTER ("TEgetParent");
     DBUG_RETURN (TI_CHN (info));
+}
+
+bool
+TEgetIsIrregular (te_info *info)
+{
+    DBUG_ENTER ("TEgetIsIrregular");
+    DBUG_RETURN (TI_ISIRREGULAR (info));
 }
 
 int
