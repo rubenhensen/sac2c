@@ -1176,15 +1176,21 @@ ATravCNLgenOrModArray (node *arg_node, info *arg_info)
 
     DBUG_ASSERT ((!TYisAKV (old_type)), "lhs with known value?");
 
-    if (INFO_CURRENT_SIZE (arg_info) != NULL) {
-        /* Outer wl has chunksize */
-        constant *length = COaST2Constant (INFO_CURRENT_SIZE (arg_info));
-        if (length != NULL) {
-            new_type = TYmakeAKS (TYcopyType (TYgetScalar (old_type)),
-                                  SHcreateShape (1, COconst2Int (length)));
-            length = COfreeConstant (length);
-        }
+#if 0
+  /*
+   * This can not work! What about the shape of the rest of the array if 
+   * there is more array?
+   */
+  if ( INFO_CURRENT_SIZE( arg_info) != NULL){
+    /* Outer wl has chunksize */
+    constant *length = COaST2Constant( INFO_CURRENT_SIZE( arg_info));
+    if ( length != NULL){
+      new_type = TYmakeAKS( TYcopyType( TYgetScalar( old_type)),
+                            SHcreateShape( 1, COconst2Int( length)));
+      length = COfreeConstant( length);
     }
+  }
+#endif
 
     if (new_type == NULL) {
         if (TUshapeKnown (old_type)) {
