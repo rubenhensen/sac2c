@@ -148,7 +148,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 #undef SAC_ND_A_RC__DEFAULT
 #define SAC_ND_A_RC__DEFAULT(var_NT)                                                     \
     ({                                                                                   \
-        SAC_TR_REF_PRINT (("ND_DEC_RC_FREE( %s)", NT_STR (var_NT)))                      \
+        SAC_TR_REF_PRINT (("ND_A_RC( %s)", NT_STR (var_NT)))                             \
         SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
                                                                                          \
         SAC_IF_MUTC_RC_INDIRECT (sl_create (, SAC_mutc_rc_place_w, , , , , ,             \
@@ -161,7 +161,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
                      sl_glarg (int *, , SAC_ND_A_DESC (var_NT)),                         \
                      sl_sharg (int, val, 0));)                                           \
         sl_sync ();                                                                      \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
         (int)sl_geta (val);                                                              \
     })
 

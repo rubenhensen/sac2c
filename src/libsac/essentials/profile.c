@@ -19,6 +19,8 @@
  *
  *****************************************************************************/
 
+#ifndef SAC_BACKEND_MUTC
+
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -139,3 +141,5 @@ SAC_PF_PrintTimePercentage (char *title, char *space, __PF_TIMER *time1,
              title, space, __PF_TIMER ((*time1)),
              __PF_TIMER_PERCENTAGE ((*time1), (*time2)));
 }
+
+#endif /* SAC_BACKEND_MUTC */

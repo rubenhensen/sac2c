@@ -20,10 +20,6 @@
 #ifndef _SAC_TRACE_H
 #define _SAC_TRACE_H
 
-#if SAC_MUTC_MACROS
-#define SAC_DO_TRACE 0
-#endif
-
 #ifndef SAC_C_EXTERN
 #define SAC_C_EXTERN extern
 #endif /* SAC_C_EXTERN */
@@ -86,7 +82,8 @@ SAC_C_EXTERN void SAC_TR_DecHiddenMemcnt (int size);
 
 #define SAC_TR_REF_PRINT_RC(var_NT)                                                      \
     SAC_TR_REF_PRINT (("refcnt of %s at address %p: %d", NT_STR (var_NT),                \
-                       SAC_ND_A_FIELD (var_NT), SAC_ND_A_RC (var_NT)))
+                       SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT)),                  \
+                       SAC_ND_A_RC (var_NT)))
 
 #else /* SAC_DO_TRACE_REF */
 

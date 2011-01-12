@@ -18,13 +18,14 @@
 #define SAC_BACKEND MUTC
 #include <sac.h>
 
+#undef SAC_MUTC_DEBUG_RC
 #define SAC_MUTC_DEBUG_RC(a)
 #define SAC_MUTC_ASSERT_RC(a, b)
 
 /*   Original functions */
 sl_def (SAC_set_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc))
 {
-    SAC_MUTC_DEBUG_RC (printf ("SAC_set_rc( %p, %d) was: %d\n", sl_getp (desc),
+    SAC_MUTC_DEBUG_RC (printf ("SAC_set_rc( %p, %d) was: %d\n", (void *)sl_getp (desc),
                                sl_getp (rc), DESC_RC (sl_getp (desc))););
     DESC_RC (sl_getp (desc)) = sl_getp (rc);
 }
@@ -32,7 +33,7 @@ sl_enddef
 
 sl_def (SAC_inc_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc))
 {
-    SAC_MUTC_DEBUG_RC (printf ("SAC_inc_rc( %p, %d) was: %d\n", sl_getp (desc),
+    SAC_MUTC_DEBUG_RC (printf ("SAC_inc_rc( %p, %d) was: %d\n", (void *)sl_getp (desc),
                                sl_getp (rc), DESC_RC (sl_getp (desc))););
     SAC_MUTC_ASSERT_RC (DESC_RC (sl_getp (desc)), sl_getp (desc));
     DESC_RC (sl_getp (desc)) += sl_getp (rc);
@@ -41,7 +42,7 @@ sl_enddef
 
 sl_def (SAC_dec_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc))
 {
-    SAC_MUTC_DEBUG_RC (printf ("SAC_dec_rc( %p, %d) was: %d\n", sl_getp (desc),
+    SAC_MUTC_DEBUG_RC (printf ("SAC_dec_rc( %p, %d) was: %d\n", (void *)sl_getp (desc),
                                sl_getp (rc), DESC_RC (sl_getp (desc))););
     SAC_MUTC_ASSERT_RC (DESC_RC (sl_getp (desc)), sl_getp (desc));
     DESC_RC (sl_getp (desc)) -= sl_getp (rc);
@@ -50,8 +51,9 @@ sl_enddef
 
 sl_def (SAC_dec_and_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val))
 {
-    SAC_MUTC_DEBUG_RC (printf ("SAC_dec_and_get_rc( %p, %d) was: %d\n", sl_getp (desc),
-                               sl_getp (val), DESC_RC (sl_getp (desc))););
+    SAC_MUTC_DEBUG_RC (printf ("SAC_dec_and_get_rc( %p, %d) was: %d\n",
+                               (void *)sl_getp (desc), sl_getp (val),
+                               DESC_RC (sl_getp (desc))););
     SAC_MUTC_ASSERT_RC (DESC_RC (sl_getp (desc)), sl_getp (desc));
     DESC_RC (sl_getp (desc)) -= sl_getp (val);
     sl_setp (val, DESC_RC (sl_getp (desc)));
@@ -62,7 +64,8 @@ sl_def (SAC_dec_and_maybeFree_rc, void, sl_glparm (int *, desc), sl_glparm (int,
         sl_glparm (void *, data))
 {
     SAC_MUTC_DEBUG_RC (printf ("SAC_dec_and_maybeFree_rc( %p, %d) was: %d\n",
-                               sl_getp (desc), sl_getp (val), DESC_RC (sl_getp (desc))););
+                               (void *)sl_getp (desc), sl_getp (val),
+                               DESC_RC (sl_getp (desc))););
     SAC_MUTC_ASSERT_RC (DESC_RC (sl_getp (desc)), sl_getp (desc));
     DESC_RC (sl_getp (desc)) -= sl_getp (val);
     if (DESC_RC (sl_getp (desc)) == 0) {
@@ -74,11 +77,11 @@ sl_enddef
 
 sl_def (SAC_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val))
 {
-    SAC_MUTC_DEBUG_RC (printf ("SAC_get_rc( %p, %d) was: %d\n", sl_getp (desc),
+    SAC_MUTC_DEBUG_RC (printf ("SAC_get_rc( %p, %d) was: %d\n", (void *)sl_getp (desc),
                                sl_getp (val), DESC_RC (sl_getp (desc))););
     SAC_MUTC_ASSERT_RC (DESC_RC (sl_getp (desc)), sl_getp (desc));
     int dummy = sl_getp (val);
-    sl_setp (val, (DESC_RC (sl_getp (desc)) + dummy));
+    sl_setp (val, (DESC_RC (sl_getp (desc)) + dummy - dummy));
 }
 sl_enddef
 
@@ -123,7 +126,7 @@ sl_enddef
 sl_def (SAC_get_rc_w, void, sl_glparm (int *, desc), sl_shparm (int, val))
 {
     sl_create (, SAC_mutc_rc_place, , , , , sl__exclusive, SAC_get_rc,
-               sl_glarg (int *, , sl_getp (desc)), sl_sharg (int, val2, 0));
+               sl_glarg (int *, , sl_getp (desc)), sl_sharg (int, val2, sl_getp (val)));
     sl_sync ();
     sl_setp (val, sl_geta (val2));
 }

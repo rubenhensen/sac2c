@@ -1516,7 +1516,7 @@ PRTtypedef (node *arg_node, info *arg_info)
         fprintf (global.outfile, "\n");
     }
 
-    if (global.backend != BE_mutc && global.backend != BE_cuda) {
+    if (global.backend != BE_cuda) {
         if (TYPEDEF_COPYFUN (arg_node) != NULL) {
             fprintf (global.outfile, "\n%s %s %s( %s);\n", PRINT_EXTERN,
                      TYPEDEF_NAME (arg_node), TYPEDEF_COPYFUN (arg_node),

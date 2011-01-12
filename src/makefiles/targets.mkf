@@ -336,7 +336,7 @@ libsac_extraclean_devel    :=
 libsac_extraclean_prod     := 
 
 ifeq  (MUTC, $(CROSS_BACKEND))
-libsac_sourcedirs          := interface mutc
+libsac_sourcedirs          := essentials interface mutc phm
 else
 libsac_sourcedirs          := essentials mt mt_omp mt_pth phm cachesim interface rtspec
 endif

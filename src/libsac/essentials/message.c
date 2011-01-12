@@ -39,6 +39,18 @@
 
 #include "sac.h"
 
+#ifdef SAC_BACKEND_MUTC
+void
+SAC_HM_ShowDiagnostics ()
+{
+}
+char *
+strtok (char *str, const char *delim)
+{
+    return (str);
+}
+#endif
+
 /*
  * Function definitions
  */
