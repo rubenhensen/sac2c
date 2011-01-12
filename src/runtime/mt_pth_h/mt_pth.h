@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: mt.h 16792 2010-03-29 09:22:23Z cg $
  */
 
 /*****************************************************************************
@@ -36,7 +36,6 @@
 #define SAC_MT_SPMD_FRAME_ELEMENT_BEGIN(spmdfun) struct {
 
 #define SAC_MT_SPMD_FRAME_ELEMENT_END(spmdfun)                                           \
-    int _dummy; /* C99 does not allow empty structs/unions */                            \
     }                                                                                    \
     spmdfun;
 
@@ -98,6 +97,14 @@
     SAC_ND_TYPE (var_NT, basetype)                                                       \
     SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;
 
+#define SAC_MT_RECEIVE_PARAM_in__NODESC__FAKERC(spmdfun, num, basetype, var_NT)          \
+    SAC_ND_TYPE (var_NT, basetype)                                                       \
+    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;                           \
+    SAC_ND_DESC_TYPE (var_NT)                                                            \
+    SAC_ND_A_DESC (var_NT)                                                               \
+      = (SAC_ND_DESC_TYPE (var_NT))alloca (FIXED_SIZE_OF_DESC * sizeof (int));           \
+    memset (SAC_ND_A_DESC (var_NT), '\0', FIXED_SIZE_OF_DESC * sizeof (int));
+
 #define SAC_MT_RECEIVE_PARAM_in__DESC(spmdfun, num, basetype, var_NT)                    \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
     SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;                           \
@@ -106,14 +113,6 @@
       BYTE_SIZE_OF_DESC (DESC_DIM (SAC_spmd_frame.spmdfun.in_##num##_desc)));            \
     memcpy (SAC_ND_A_DESC (var_NT), SAC_spmd_frame.spmdfun.in_##num##_desc,              \
             BYTE_SIZE_OF_DESC (DESC_DIM (SAC_spmd_frame.spmdfun.in_##num##_desc)));
-
-#define SAC_MT_RECEIVE_PARAM_in__NEWDESC(spmdfun, num, basetype, var_NT)                 \
-    SAC_ND_TYPE (var_NT, basetype)                                                       \
-    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;                           \
-    SAC_ND_DESC_TYPE (var_NT)                                                            \
-    SAC_ND_A_DESC (var_NT)                                                               \
-      = (SAC_ND_DESC_TYPE (var_NT))alloca (SIZE_OF_DESC (0) * sizeof (int));             \
-    DESC_RC (SAC_ND_A_DESC (var_NT)) = 2;
 
 #define SAC_MT_RECEIVE_PARAM_inout__NODESC(spmdfun, num, basetype, var_NT)               \
     SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
@@ -146,18 +145,6 @@
 /*****************************************************************************/
 
 /*
- * Macros for establishing a fake descriptor for AKS SPMD function arguments
- */
-
-#define SAC_MT_DECL__MIRROR_PARAM__DESC(var_NT, dim)                                     \
-    SAC_ND_DESC_TYPE (var_NT) SAC_ND_A_DESC (var_NT) = alloca (BYTE_SIZE_OF_DESC (dim)); \
-    DESC_DIM (SAC_ND_A_DESC (var_NT)) = 2;
-
-#define SAC_MT_DECL__MIRROR_PARAM__NODESC(var_NT, dim) SAC_NOOP ()
-
-/*****************************************************************************/
-
-/*
  * Macros for defining the synchronisation barrier
  *
  * SAC MT BARRIER, used to pass out parameters out of SPMD functions.
@@ -172,7 +159,7 @@
         union {                                                                          \
             struct {                                                                     \
                 char cache_align_buffer[SAC_MT_CACHE_LINE_MAX () - sizeof (int)];        \
-            } _dummy;
+            } dummy;
 
 #define SAC_MT_SPMD_BARRIER_ELEMENT_BEGIN(spmdfun) struct {
 
@@ -186,7 +173,6 @@
     SAC_ND_DESC_TYPE (var_NT) in_##num##_desc;
 
 #define SAC_MT_SPMD_BARRIER_ELEMENT_END(spmdfun)                                         \
-    int _dummy; /* C99 does not allow empty structs/unions */                            \
     }                                                                                    \
     spmdfun;
 
