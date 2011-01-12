@@ -770,6 +770,6 @@ MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
 
 #else /* SHOW_MALLOC */
 
-static int _dummy; /* C99 does not allow for empty files. */
+int _dummy_check_mem_c; /* C99 does not allow for empty files. */
 
 #endif /* SHOW_MALLOC */
