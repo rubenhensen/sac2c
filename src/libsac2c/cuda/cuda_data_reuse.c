@@ -280,81 +280,82 @@ PopRangeSet (range_set_t *sets)
     DBUG_RETURN (sets);
 }
 
-static void
-PrintSpaces (int num)
+/*
+static void PrintSpaces(int num)
 {
-    int i;
+  int i;
 
-    DBUG_ENTER ("PrintSpaces");
+  DBUG_ENTER( "PrintSpaces");
 
-    for (i = 0; i < num; i++) {
-        DBUG_PRINT ("CUDR", ("  "));
-    }
+  for( i = 0; i < num; i++) {
+    DBUG_PRINT( "CUDR", ("  "));
+  }
 
-    DBUG_VOID_RETURN;
+  DBUG_VOID_RETURN;
 }
 
-static void
-PrintRangeSet (range_set_t *sets, int indent)
+static void PrintRangeSet( range_set_t *sets, int indent)
 {
-    range_info_t *blocked_ranges;
-    range_info_t *nonblocked_ranges;
+  range_info_t *blocked_ranges;
+  range_info_t *nonblocked_ranges;
 
-    DBUG_ENTER ("PrintRangeSet");
+  DBUG_ENTER( "PrintRangeSet");
 
-    blocked_ranges = RS_BLOCKED_RANGES (sets);
-    nonblocked_ranges = RS_NONBLOCKED_RANGES (sets);
+  blocked_ranges = RS_BLOCKED_RANGES( sets);
+  nonblocked_ranges = RS_NONBLOCKED_RANGES( sets);
 
-    PrintSpaces (indent);
-    DBUG_PRINT ("CUDR", ("++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"));
+  PrintSpaces( indent);
+  DBUG_PRINT( "CUDR", ("++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"));
 
-    PrintSpaces (indent);
-    if (RS_LAST_BLOCKED_RANGE (sets) != NULL) {
-        DBUG_PRINT ("CUDR",
-                    ("Last Blocked Range: %s[toplevel:%d]\n",
-                     IDS_NAME (RANGE_INDEX (RI_RANGE (RS_LAST_BLOCKED_RANGE (sets)))),
-                     RI_TOPLEVEL (RS_LAST_BLOCKED_RANGE (sets))));
-    } else {
-        DBUG_PRINT ("CUDR", ("Last Blocked Range: NULL\n"));
+  PrintSpaces( indent);
+  if( RS_LAST_BLOCKED_RANGE( sets) != NULL) {
+    DBUG_PRINT( "CUDR", ("Last Blocked Range: %s[toplevel:%d]\n",
+                IDS_NAME( RANGE_INDEX( RI_RANGE( RS_LAST_BLOCKED_RANGE( sets)))),
+                RI_TOPLEVEL( RS_LAST_BLOCKED_RANGE( sets))));
+  }
+  else {
+    DBUG_PRINT( "CUDR", ("Last Blocked Range: NULL\n"));
+  }
+
+
+  PrintSpaces( indent);
+  if( RS_LAST_NONBLOCKED_RANGE( sets) != NULL) {
+    DBUG_PRINT( "CUDR", ("Last Nonblocked Range: %s[toplevel:%d]\n",
+                IDS_NAME( RANGE_INDEX( RI_RANGE( RS_LAST_NONBLOCKED_RANGE( sets)))),
+                RI_TOPLEVEL( RS_LAST_NONBLOCKED_RANGE( sets))));
+  }
+  else {
+    DBUG_PRINT( "CUDR", ("Last Nonblocked Range: NULL\n"));
+  }
+
+  PrintSpaces( indent);
+  DBUG_PRINT( "CUDR", ("Blocked Ranges[%d]: ", RS_BLOCKED_RANGES_CNT( sets)));
+  while( blocked_ranges != NULL) {
+    DBUG_PRINT( "CUDR", ("(Index:%s) ", IDS_NAME( RANGE_INDEX( RI_RANGE(
+blocked_ranges))))); blocked_ranges = RI_NEXT( blocked_ranges);
+  }
+  DBUG_PRINT("CUDR", ("\n"));
+
+  PrintSpaces( indent);
+  DBUG_PRINT( "CUDR", ("Nonblocked Ranges[%d]: ", RS_NONBLOCKED_RANGES_CNT( sets)));
+  while( nonblocked_ranges != NULL) {
+    if( RANGE_INDEX( RI_RANGE( nonblocked_ranges)) == NULL) {
+      DBUG_PRINT( "CUDR", ("(Index:Dummy) "));
     }
-
-    PrintSpaces (indent);
-    if (RS_LAST_NONBLOCKED_RANGE (sets) != NULL) {
-        DBUG_PRINT ("CUDR",
-                    ("Last Nonblocked Range: %s[toplevel:%d]\n",
-                     IDS_NAME (RANGE_INDEX (RI_RANGE (RS_LAST_NONBLOCKED_RANGE (sets)))),
-                     RI_TOPLEVEL (RS_LAST_NONBLOCKED_RANGE (sets))));
-    } else {
-        DBUG_PRINT ("CUDR", ("Last Nonblocked Range: NULL\n"));
+    else {
+      DBUG_PRINT( "CUDR", ("(Index:%s) ", IDS_NAME( RANGE_INDEX( RI_RANGE(
+nonblocked_ranges)))));
     }
+    nonblocked_ranges = RI_NEXT( nonblocked_ranges);
+  }
+  DBUG_PRINT( "CUDR", ("\n"));
 
-    PrintSpaces (indent);
-    DBUG_PRINT ("CUDR", ("Blocked Ranges[%d]: ", RS_BLOCKED_RANGES_CNT (sets)));
-    while (blocked_ranges != NULL) {
-        DBUG_PRINT ("CUDR",
-                    ("(Index:%s) ", IDS_NAME (RANGE_INDEX (RI_RANGE (blocked_ranges)))));
-        blocked_ranges = RI_NEXT (blocked_ranges);
-    }
-    DBUG_PRINT ("CUDR", ("\n"));
+  PrintSpaces( indent);
+  DBUG_PRINT("CUDR", ("++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"));
 
-    PrintSpaces (indent);
-    DBUG_PRINT ("CUDR", ("Nonblocked Ranges[%d]: ", RS_NONBLOCKED_RANGES_CNT (sets)));
-    while (nonblocked_ranges != NULL) {
-        if (RANGE_INDEX (RI_RANGE (nonblocked_ranges)) == NULL) {
-            DBUG_PRINT ("CUDR", ("(Index:Dummy) "));
-        } else {
-            DBUG_PRINT ("CUDR", ("(Index:%s) ",
-                                 IDS_NAME (RANGE_INDEX (RI_RANGE (nonblocked_ranges)))));
-        }
-        nonblocked_ranges = RI_NEXT (nonblocked_ranges);
-    }
-    DBUG_PRINT ("CUDR", ("\n"));
-
-    PrintSpaces (indent);
-    DBUG_PRINT ("CUDR", ("++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"));
-
-    DBUG_VOID_RETURN;
+  DBUG_VOID_RETURN;
 }
+*/
 
 typedef struct RANGE_PAIR_T {
     node *outer;
