@@ -44,6 +44,84 @@
  *
  * Prefix: IVESLI
  *
+ * This phase implementent the splitting of vect2offset operations that
+ * depend on values from different loop nesting levels into multiple
+ * vect2offset operations that depend only on values of outer loop
+ * nesting levels, if possible. As an example, consider the simple case
+ * where the selection has the form
+ *
+ *   x = A[iv + 1]
+ *
+ * Here, iv is the index vector of a withloop and the 1 obviously is
+ * independent of that loop. The naive translation to vect2offsets will
+ * yield code similar to
+ *
+ *   flat_1 = 1;
+ *   flat_2 = _add_VxV_( iv, 1);
+ *   idx = _vect2offset_( shp, flat_2);
+ *   x = _idx_sel_( idx, A);
+ *
+ * This is translated to
+ *
+ *   flat_1 = 1;
+ *   idx_1 = _vect2offset_( shp, flat_1);
+ *   idx_2 = _vect2offset_( sho, iv);
+ *   idx = _add_SxS_( idx_1, idx_2);
+ *   x = _idx_sel_( idx, A);
+ *
+ * A consecutive application of LIR/WLIR can then move the idx_1 computation
+ * out of the loop. Furthermore, IVERAS homefully may be able to use the
+ * withloop index for idx_2.
+ *
+ * The general case is a bit more complicated. To allow for easy extension
+ * and gradual implementation of further optimisation steps, this phase
+ * uses a rather general framework. Basically, its operation can be divided
+ * into three phases:
+ *
+ * (1) transformation of the second argument of a _vect2offset_ into a
+ *     level-sorted data structure
+ *
+ * (2) simplification of that structure and optimisation of its composition
+ *
+ * (3) transformation of the data structure back into _vect2offset_
+ *     operations
+ *
+ * The first step uses an internal datastructure for representing the
+ * tree of index computations. The structure has the following format:
+ *
+ * INDEXLEVEL ---> INDEXVECTOR ---> inverse
+ *             |                |-> value
+ *             |                |-> next ----> INDEXVECTOR...
+ *             |
+ *             |-> INDEXCHAIN ---> current --->INDEXSCALAR ---> inverse
+ *             |               |                            |-> value
+ *             |               |                            |-> next ---> IND...
+ *             |               |-> next ------> INDEXCHAIN...
+ *             |
+ *             |-> next ---> INDEXLEVEL...
+ *
+ * On the top level, multiple levels for sorting indices into are modelled by
+ * means of the INDEXLEVEL data-structure; it stores a chain of index vectors,
+ * index scalars and further INDEXLEVEL structures.
+ * The INDEXVECTOR structure stores a chain of vectors that contribute to the
+ * index at the current level. The field inverse is true if the vector needs
+ * to be substracted. The value hold a expression node (N_id) that
+ * represents the vectors value.
+ * The INDEXCHAIN structure stores a chain of chains of indexscalars. The
+ * double chaining is required as index scalars do not occur in isolation but
+ * are usually identified with a vector of indices. The outer chain is used to
+ * store multiple of those vectors.
+ * Finally, the INDEXSCALAR data structure stores individual index scalars.
+ * Again, the field inverse is true if the scalar needs to be substracted.
+ * The field value points to an expression node (N_id or N_num) that
+ * represents the value of the scalar. Lastly, the next field points to the
+ * next scalar in the chain. Note that the chain is computed lazily, i.e., it
+ * may not have the full length of the corresponding index vector. Furthermore,
+ * value field may be NULL if no index scalar is present at that position at
+ * that level.
+ *
+ * The initial sorting is based on data-flow masks that model the scope of
+ * variables.
  *****************************************************************************/
 #include "ive_split_loop_invariants.h"
 
@@ -456,6 +534,8 @@ InsertLetAssign (node *op, ntype *restype, info *arg_info)
 
     DBUG_ENTER ("InsertLetAssign");
 
+    DBUG_ASSERT ((op != NULL), "empty rhs for let expression detected!");
+
     avis = TBmakeAvis (TRAVtmpVar (), restype);
 
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), op), NULL);
@@ -850,6 +930,8 @@ CombineVect2Offsets (node *first, node *second, bool inv, info *arg_info)
 
     DBUG_ENTER ("CombineVect2Offsets");
 
+    DBUG_ASSERT ((second != NULL), "cannot combine with empty vect2offsets.");
+
     if (first == NULL) {
         if (inv) {
             result
@@ -1098,6 +1180,15 @@ IVESLIprf (node *arg_node, info *arg_info)
         DBUG_PRINT ("IVESLI", ("||| processing vect2offset phase 3 (replace)"));
         new_node = ComputeVect2Offsets (levels, PRF_ARG1 (arg_node), arg_info);
         arg_node = FREEdoFreeNode (arg_node);
+
+        if (new_node == NULL) {
+            /* If after reassembly the vect2offset chain is empty, this can only
+             * mean that the vect2offset before was empty, as well. Instead of
+             * producing the empty vect2offset again, I directly insert its
+             * scalar value: 0
+             */
+            new_node = TBmakeNum (0);
+        }
 
         levels = FreeIndexLevel (levels);
     } else {
