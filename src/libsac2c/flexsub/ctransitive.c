@@ -123,6 +123,7 @@ TFCTRtfspec (node *arg_node, info *arg_info)
 
     node *defs;
     int compidx = 0;
+    compinfo *ci;
 
     defs = TFSPEC_DEFS (arg_node);
 
@@ -143,9 +144,10 @@ TFCTRtfspec (node *arg_node, info *arg_info)
                  * targets in a DAG.
                  */
 
-                setSrcTarArrays (INFO_TLTABLE (arg_info),
-                                 &(COMPINFO_CSRC (TFSPEC_INFO (arg_node)[compidx])),
-                                 &(COMPINFO_CTAR (TFSPEC_INFO (arg_node)[compidx])));
+                ci = TFSPEC_INFO (arg_node)[compidx];
+
+                setSrcTarArrays (INFO_TLTABLE (arg_info), &(COMPINFO_CSRC (ci)),
+                                 &(COMPINFO_CTAR (ci)));
 
                 /*
                  * For each cross edge source, compute all the source edge targets that
@@ -153,20 +155,23 @@ TFCTRtfspec (node *arg_node, info *arg_info)
                  * entries in the transitive link table.
                  */
 
-                buildTransitiveLinkTable (INFO_TLTABLE (arg_info));
-
                 if (DYNARRAY_TOTALELEMS (INFO_TLTABLE (arg_info)) > 0) {
-                    COMPINFO_TLC (TFSPEC_INFO (arg_node)[compidx])
-                      = computeTLCMatrix (INFO_TLTABLE (arg_info),
-                                          COMPINFO_CSRC (TFSPEC_INFO (arg_node)[compidx]),
-                                          COMPINFO_CTAR (
-                                            TFSPEC_INFO (arg_node)[compidx]));
+
+                    COMPINFO_TLTABLE (ci) = INFO_TLTABLE (arg_info);
+
+                    /*
+                     * The transitive link table and cross closure are two different
+                     * things.
+                     */
+
+                    buildTransitiveLinkTable (COMPINFO_TLTABLE (ci));
+
+                    COMPINFO_TLC (ci)
+                      = computeTLCMatrix (INFO_TLTABLE (arg_info), COMPINFO_CSRC (ci),
+                                          COMPINFO_CTAR (ci));
                 }
 
                 // freeDynarray( INFO_TLTABLE( arg_info));
-
-                COMPINFO_TLTABLE (TFSPEC_INFO (arg_node)[compidx])
-                  = INFO_TLTABLE (arg_info);
 
                 INFO_TLTABLE (arg_info) = NULL;
 

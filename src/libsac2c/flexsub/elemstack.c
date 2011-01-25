@@ -13,6 +13,21 @@
 #include "dynelem.h"
 #include "elemstack.h"
 
+int
+isElemstackEmpty (elemstack *s)
+{
+
+    DBUG_ENTER ("isElemstackEmpty");
+
+    int result = 0;
+
+    if (ELEMSTACK_CURR (s) == NULL) {
+        result = 1;
+    }
+
+    DBUG_RETURN (result);
+}
+
 void
 initElemstack (elemstack *s)
 {

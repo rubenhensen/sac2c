@@ -141,6 +141,9 @@ SUBPHASE (ctr, "Classify edges and compute reachability over crossedges",
 SUBPHASE (rch, "Build link count matrix and label vertices for reachability query",
           TFRCHdoReachabilityAnalysis, ALWAYS, uds)
 
+SUBPHASE (plb, "Preprocessing graph for answering LUB queries", TFPLBdoLUBPreprocessing,
+          ALWAYS, uds)
+
 ENDPHASE (uds)
 
 /******************************************************************************/

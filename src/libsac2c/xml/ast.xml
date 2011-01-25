@@ -150,6 +150,12 @@
           <node name="Tfvertex" />
         </travuser>
       </traversal>
+      <traversal id="TFPLB" name="Preprocess subtyping graph for LUB queries" default="sons" include="lub.h" >
+        <travuser>
+          <node name="Tfspec" />
+          <node name="Tfvertex" />
+        </travuser>
+      </traversal>
       <traversal id="ESBL" name="CUDA Expand shared memory boundary load" default="sons" include="expand_shmem_boundary_load.h" >
         <travuser>
           <node name="Fundef" />

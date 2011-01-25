@@ -71,19 +71,28 @@ freeMatrix (matrix *m)
 }
 
 void
-setMatrixValue (matrix *m, int x, int y, int value)
+setMatrixElem (matrix *m, int x, int y, elem *element)
 {
 
     int i, oldlength;
 
-    elem *element = MEMmalloc (sizeof (elem));
-    ELEM_IDX (element) = value;
-    ELEM_DATA (element) = NULL;
     oldlength = MATRIX_TOTALROWS (m);
+
+    /*
+     * Grow the matrix columnwise if necessary.
+     */
 
     if (MATRIX_TOTALCOLS (m) < y + 1) {
         MATRIX_TOTALCOLS (m) = y + 1;
+
+        for (i = 0; i < MATRIX_TOTALROWS (m); i++) {
+            addToArrayAtPos (MATRIX_ARRAY2D (m)[i], NULL, MATRIX_TOTALCOLS (m) - 1);
+        }
     }
+
+    /*
+     * Now grow the matrix rowwise if necessary.
+     */
 
     if (MATRIX_TOTALROWS (m) < x + 1) {
         MATRIX_TOTALROWS (m) = x + 1;
@@ -101,15 +110,63 @@ setMatrixValue (matrix *m, int x, int y, int value)
     }
 
     for (i = oldlength; i < MATRIX_TOTALROWS (m); i++) {
-        MATRIX_ARRAY2D (m)[i] = NULL;
-    }
-
-    if (MATRIX_ARRAY2D (m)[x] == NULL) {
-        MATRIX_ARRAY2D (m)[x] = MEMmalloc (sizeof (dynarray));
-        initDynarray (MATRIX_ARRAY2D (m)[x]);
+        MATRIX_ARRAY2D (m)[i] = MEMmalloc (sizeof (dynarray));
+        initDynarray (MATRIX_ARRAY2D (m)[i]);
+        addToArrayAtPos (MATRIX_ARRAY2D (m)[i], NULL, MATRIX_TOTALCOLS (m) - 1);
     }
 
     addToArrayAtPos (MATRIX_ARRAY2D (m)[x], element, y);
+}
+/*
+void setMatrixElem( matrix *m, int x, int y, elem *element){
+
+  int i, oldlength;
+
+  oldlength = MATRIX_TOTALROWS(m);
+
+  if( MATRIX_TOTALCOLS(m) < y + 1){
+    MATRIX_TOTALCOLS(m) = y + 1;
+  }
+
+  if( MATRIX_TOTALROWS(m) < x + 1){
+    MATRIX_TOTALROWS(m) = x + 1;
+
+    void *_temp = MEMrealloc( MATRIX_ARRAY2D(m),
+      ( MATRIX_TOTALROWS(m) * sizeof( dynarray *)),
+      oldlength * sizeof( dynarray *));
+
+    if (!_temp){
+      CTIabort( "setMatrixValue couldn't realloc memory!\n");
+    }
+
+    MEMfree( MATRIX_ARRAY2D(m));
+    MATRIX_ARRAY2D(m) = ( dynarray**)_temp;
+
+  }
+
+  for( i = oldlength; i < MATRIX_TOTALROWS(m); i++){
+    MATRIX_ARRAY2D(m)[i] = NULL;
+  }
+
+  if( MATRIX_ARRAY2D(m)[x] == NULL){
+    MATRIX_ARRAY2D(m)[x] = MEMmalloc( sizeof( dynarray));
+    initDynarray( MATRIX_ARRAY2D(m)[x]);
+  }
+
+  addToArrayAtPos( MATRIX_ARRAY2D(m)[x], element, y);
+
+}
+*/
+
+void
+setMatrixValue (matrix *m, int x, int y, int value)
+{
+
+    elem *element = MEMmalloc (sizeof (elem));
+    ELEM_IDX (element) = value;
+    ELEM_DATA (element) = NULL;
+
+    setMatrixElem (m, x, y, element);
 }
 
 int

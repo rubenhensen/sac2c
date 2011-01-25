@@ -6310,6 +6310,8 @@ PRTtfvertex (node *arg_node, info *arg_info)
 
         fprintf (global.outfile, "%d)\\n", TFVERTEX_PREMAX (arg_node));
 
+        fprintf (global.outfile, "post=%d\\n", TFVERTEX_POST (arg_node));
+
         fprintf (global.outfile, "topo=%d\\n", TFVERTEX_TOPO (arg_node));
 
         fprintf (global.outfile, "depth=%d\\n", TFVERTEX_DEPTH (arg_node));

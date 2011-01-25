@@ -389,13 +389,13 @@ LUBgetLowestFromCandidates (dynarray *d, int indices[4])
 }
 
 node *
-LUBcomputeLCAinSPTree (node *n1, node *n2, compinfo *ci)
+LUBtreeLCAfromNodes (node *n1, node *n2, compinfo *ci)
 {
 
-    DBUG_ENTER ("LUBcomputeLCAinSPTree");
+    DBUG_ENTER ("LUBtreeLCAfromNodes");
 
     DBUG_ASSERT ((n1 != NULL && n2 != NULL && ci != NULL),
-                 "Incompatible arguments passed to LUBcomputeLCAinSPTree");
+                 "Incompatible arguments passed to LUBtreeLCAfromNodes");
 
     node *result;
     int lblockid, lmatrow, lmatcol;

@@ -1025,6 +1025,17 @@ struct ELEMSTACK {
     struct ELEMSTACK *next;
 };
 
+struct ELEMLIST {
+    struct ELEM *curr;
+    struct ELEMLIST *prev;
+    struct ELEMLIST *next;
+};
+
+struct ELEMQUEUE {
+    struct ELEMLIST *head;
+    struct ELEMLIST *tail;
+};
+
 struct LUBINFO {
     int numintra;
     int blocksize;
@@ -1055,6 +1066,8 @@ typedef struct ELEM elem;
 typedef struct DYNARRAY dynarray;
 typedef struct MATRIX matrix;
 typedef struct ELEMSTACK elemstack;
+typedef struct ELEMLIST elemlist;
+typedef struct ELEMQUEUE elemqueue;
 typedef struct LUBINFO lubinfo;
 typedef struct COMPINFO compinfo;
 

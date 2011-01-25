@@ -16,6 +16,7 @@
 #include "dynarray.h"
 #include "dynmatrix.h"
 #include "reachhelper.h"
+#include "tfprintutils.h"
 
 void
 buildTransitiveLinkTable (dynarray *arrayd)
