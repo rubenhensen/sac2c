@@ -8,6 +8,8 @@
  *
  * Remove unneeded with3s
  *
+ * THIS PHASE IS SUPERSEDED BY UW3 Unroll With3
+ *
  * As an artifact of the with2 there are lots of with3 loops that just
  * go over a single element i=0, i<1; i++.  This wastes resources on
  * MGSim.
