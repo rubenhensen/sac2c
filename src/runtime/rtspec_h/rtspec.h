@@ -1,3 +1,7 @@
+/*
+ * $Id: omp.c 16606 2009-11-19 18:33:30Z cg $
+ */
+
 /**<!--*********************************************************************-->
  *
  * $Id: gen_startup_code.c 17065 2010-09-28 15:19:00Z nkk $
@@ -43,13 +47,13 @@
 /*
  * Declare the flag needed to check if registration has taken place.
  */
-#define SAC_WE_DECL_REG_FLAG static int SAC_registered = 0;
+#define SAC_WE_DECL_REG_FLAG() static int SAC_registered = 0;
 
 /*
  * Declare the registry object needed to store the pointer to the original
  * wrapper.
  */
-#define SAC_WE_DECL_REG_OBJ static reg_obj_t *SAC_reg_obj;
+#define SAC_WE_DECL_REG_OBJ() static reg_obj_t *SAC_reg_obj;
 
 /*
  * Store the name of the original module, needed for the registry and the
@@ -72,13 +76,13 @@
  * Declare the integer array that will hold the shapes of the arguments at
  * runtime.
  */
-#define SAC_WE_DECL_SHAPE_ARRAY int *SAC_shapes = NULL;
+#define SAC_WE_DECL_SHAPE_ARRAY() int *SAC_shapes = NULL;
 
 /*
  * Declare and initialize two integers needed to traverse the shape array and
  * the descriptors.
  */
-#define SAC_WE_DECL_I_J int i = 0, j = 0;
+#define SAC_WE_DECL_I_J() int i = 0, j = 0;
 
 /*
  * Print the declaration and initialization of the variable 'size'. This
@@ -106,7 +110,7 @@
 /*
  * Print the 'update' of the function pointer.
  */
-#define SAC_WE_PTR_UPDATE SAC_func_ptr = SAC_reg_obj->func_ptr;
+#define SAC_WE_PTR_UPDATE() SAC_func_ptr = SAC_reg_obj->func_ptr;
 
 /*
  * Print the correct indexation of the descriptor to get the dimensions of a
@@ -117,7 +121,7 @@
 /*
  * Allocate memory for the shape array.
  */
-#define SAC_WE_ALLOC_SHAPE_ARRAY SAC_shapes = malloc (size * sizeof (int));
+#define SAC_WE_ALLOC_SHAPE_ARRAY() SAC_shapes = malloc (size * sizeof (int));
 
 /*
  * Set the first item of the shape array to the number of arguments.
@@ -147,7 +151,8 @@
 #define SAC_WE_FUNAP2(types, name, ...)                                                  \
     SAC_WE_REGISTRATION (SAC_module, name)                                               \
     SAC_WE_ENQ_REQ (types, name)                                                         \
-    SAC_WE_PTR_UPDATE (*SAC_func_ptr) (__VA_ARGS__);
+    SAC_WE_PTR_UPDATE ()                                                                 \
+    (*SAC_func_ptr) (__VA_ARGS__);
 
 #else /* SAC_DO_RTSPEC */
 
