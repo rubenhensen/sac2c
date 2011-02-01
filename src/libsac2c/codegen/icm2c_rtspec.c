@@ -1,3 +1,7 @@
+/*
+ * $Id: main.c 16306 2009-08-10 14:08:31Z cg $
+ */
+
 /** <!--*******************************************************************-->
  *
  * @file icm2c_rtspec.c
@@ -15,6 +19,7 @@
 #include "globals.h"
 #include "print.h"
 #include "str.h"
+#include "str_buffer.h"
 
 #include "dbug.h"
 
@@ -122,16 +127,23 @@ ICMCompileWE_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
     /*
      * Encode the base type information.
      */
-    char types[256] = "";
-    char current[10] = "";
+    str_buf *buffer;
+    buffer = SBUFcreate (256);
+    char *types;
+
+    // char types[256] = "";
+    // char current[10] = "";
 
     int i = 0;
     for (; i < vararg_cnt * 3; i += 3) {
         if (STReq (vararg[i], "in")) {
-            sprintf (current, "%s-", vararg[i + 1]);
-            sprintf (types, "%s", STRcat (types, current));
+            SBUFprintf (buffer, "%s-", vararg[i + 1]);
+            // sprintf( current, "%s-", vararg[i+1]);
+            // sprintf( types, "%s", STRcat( types, current));
         }
     }
+
+    types = SBUF2str (buffer);
 
     INDENT;
     if (!STReq (retname, "")) {
@@ -170,10 +182,10 @@ ICMCompileWE_MODFUN_INFO (char *name, char *modname)
 {
     DBUG_ENTER ("ICMCompileWE_MODFUN_INFO");
 
-    fprintf (global.outfile, "SAC_WE_DECL_REG_FLAG\n");
+    fprintf (global.outfile, "SAC_WE_DECL_REG_FLAG()\n");
 
     INDENT;
-    fprintf (global.outfile, "SAC_WE_DECL_REG_OBJ\n");
+    fprintf (global.outfile, "SAC_WE_DECL_REG_OBJ()\n");
 
     INDENT;
     fprintf (global.outfile, "SAC_WE_DECL_MOD( %s)\n", modname);
@@ -182,7 +194,7 @@ ICMCompileWE_MODFUN_INFO (char *name, char *modname)
     fprintf (global.outfile, "SAC_WE_DECL_FUN( %s)\n", name);
 
     INDENT;
-    fprintf (global.outfile, "SAC_WE_DECL_SHAPE_ARRAY\n");
+    fprintf (global.outfile, "SAC_WE_DECL_SHAPE_ARRAY()\n");
 
     DBUG_VOID_RETURN;
 }
@@ -200,7 +212,7 @@ ICMCompileWE_SHAPE_ENCODE (int arg_cnt, char **arg)
 {
     DBUG_ENTER ("ICMCompileWE_SHAPE_ENCODE");
 
-    fprintf (global.outfile, "SAC_WE_DECL_I_J\n");
+    fprintf (global.outfile, "SAC_WE_DECL_I_J()\n");
 
     INDENT;
     fprintf (global.outfile, "SAC_WE_CALC_SIZE( %d", arg_cnt);
@@ -213,7 +225,7 @@ ICMCompileWE_SHAPE_ENCODE (int arg_cnt, char **arg)
     fprintf (global.outfile, ")\n");
 
     INDENT;
-    fprintf (global.outfile, "SAC_WE_ALLOC_SHAPE_ARRAY\n");
+    fprintf (global.outfile, "SAC_WE_ALLOC_SHAPE_ARRAY()\n");
 
     INDENT;
     fprintf (global.outfile, "SAC_WE_SET_NUM_ARGS( %d)\n", arg_cnt);
