@@ -546,9 +546,15 @@ AmendWithLoopCode (node *withops, node *idxs, node *chunksize, node *cexprs,
             if (als->dim == NULL) {
                 if (TUdimKnown (AVIS_TYPE (cexavis))) {
                     if (chunksize != NULL) {
-                        dim = TYgetDim (AVIS_TYPE (cexavis)) - 1;
+                        /*
+                         * as computing in current dim drop 1 from the dim
+                         * as we have a chunk size we are computing a group of values so
+                         * add one to the dim to hold the set of results
+                         * AKA: no change
+                         */
+                        dim = TYgetDim (AVIS_TYPE (cexavis)) - 1 + 1;
                     } else {
-                        dim = TYgetDim (AVIS_TYPE (cexavis));
+                        dim = TYgetDim (AVIS_TYPE (cexavis)) - 1;
                     }
 
                     als->dim
@@ -922,7 +928,7 @@ AmendWithLoopCode (node *withops, node *idxs, node *chunksize, node *cexprs,
                 }
                 args = TBmakeExprs (TBmakeId (als->avis),
                                     TBmakeExprs (TBmakeId (wlidx),
-                                                 TBmakeExprs ((chunksize == NULL)
+                                                 TBmakeExprs ((chunksize != NULL)
                                                                 ? TBmakeNum (0)
                                                                 : TBmakeNum (1),
                                                               args)));

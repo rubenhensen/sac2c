@@ -907,6 +907,13 @@ SUBPHASE (wlsd, "Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensio
            || (global.backend == BE_cuda && global.optimize.doshr)),
           wlt)
 
+SUBPHASE (cse, "Applying common subexpression elimination",
+          CSEdoCommonSubexpressionElimination,
+          global.optimize.docse
+            && (global.backend == BE_mutc
+                || (global.backend == BE_cuda && global.optimize.doshr)),
+          wlt)
+
 SUBPHASE (rw3, "Remove unneeded With3s", RW3doRemoveWith3,
           (global.backend == BE_mutc
            || (global.backend == BE_cuda && global.optimize.doshr))
@@ -929,8 +936,8 @@ SUBPHASE (cudr, "CUDA Exploiting data reuse with cuda shared memory", CUDRdoCuda
 
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, wlt)
 
-SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.backend == BE_cuda,
-          wlt)
+SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation,
+          global.backend == BE_cuda || global.backend == BE_mutc, wlt)
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, wlt)
 

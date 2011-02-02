@@ -4988,6 +4988,7 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
          */
         ret_node = MakeMutcLocalAllocDescIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), 1,
                                               sub_get_dim, ret_node);
+#if FREE_LOCAL /* Do not free local alloced stuff */
         /*
          * 4) add a corresponding descriptor free to the
          *    postfun icm chain
@@ -4997,6 +4998,7 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
                               TCmakeIdCopyStringNt (IDS_NAME (let_ids),
                                                     IDS_TYPE (let_ids)),
                               INFO_POSTFUN (arg_info));
+#endif
     }
 
     DBUG_RETURN (ret_node);
