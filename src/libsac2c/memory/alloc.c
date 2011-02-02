@@ -1460,6 +1460,15 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCmakePrf1 (F_shape_A, DUPdoDupNode (arg_node));
         break;
 
+    case F_sel_VxIA:
+        // DBUG_ASSERT( FALSE, "IMPLEMENT THIS");
+        als->dim = TCmakePrf2 (F_sub_SxS,
+                               TCmakePrf1 (F_dim_A, DUPdoDupNode (PRF_ARG2 (arg_node))),
+                               MakeSizeArg (PRF_ARG1 (arg_node)));
+
+        als->shape = TCmakePrf1 (F_shape_A, DUPdoDupNode (arg_node));
+        break;
+
     case F_idx_sel:
         /*
          * idx_sel can only occur when the result shape is known!!!

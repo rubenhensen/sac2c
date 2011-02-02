@@ -505,6 +505,9 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
        SCSprf_sel_VxA, SCCFprf_sel, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
        PPIgetPVSel, ICCsel, TEone, NULL, NULL),
 
+  PRF (sel_VxIA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_sel_VxIA, NULL, COMPprfSelI,
+       NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
   PRF (modarray_AxVxS, (PA_A, PA_V, PA_S), 3, XXX, NOSIMD, NTCCTprf_modarray_AxVxS,
        COmodarray_AxVxS, COMPprfModarray_AxVxS, NULL, SCCFprf_modarray_AxVxS, NULL,
        SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, PPIgetPVModarray, ICCprfModarray, TEone,

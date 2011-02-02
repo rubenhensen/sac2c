@@ -143,6 +143,8 @@ int charpos = 0;
 "_sel_VxA_"                { FILTER( PRF_SEL_VxA); }
 "_modarray_AxVxS_"         { FILTER( PRF_MODARRAY_AxVxS); }
 
+"_sel_VxIA_"               { FILTER( PRF_SEL_VxIA); }
+
 "_hideValue_SxA_"          { FILTER( PRF_HIDEVALUE_SxA); }
 "_hideShape_SxA_"          { FILTER( PRF_HIDESHAPE_SxA); }
 "_hideDim_SxA_"            { FILTER( PRF_HIDEDIM_SxA); }

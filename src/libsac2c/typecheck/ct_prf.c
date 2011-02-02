@@ -127,7 +127,7 @@ NTCCTprf_array (te_info *info, ntype *elems)
         res = TYmakeBottomType (err_msg);
 
     } else {
-        if (TYisProdOfAKVafter (elems, 1)) {
+        if (TYisProdOfAKVafter (elems, 1) && TEgetIsIrregular (info) == FALSE) {
             val = COcopyConstant (TYgetValue (TYgetProductMember (elems, 1)));
             for (i = 2; i < num_elems; i++) {
                 tmp = val;
@@ -1403,6 +1403,66 @@ NTCCTprf_sel_VxA (te_info *info, ntype *args)
                     res = TYmakeAKV (TYcopyType (TYgetScalar (array)),
                                      ApplyCF (info, args));
                 } else {
+                    res = TYmakeAKS (TYcopyType (TYgetScalar (array)), SHmakeShape (0));
+                }
+            }
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_sel_VxIA( te_info *info, ntype *args)
+ *
+ * description:
+ *
+ * TODO: Implement properly!
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_sel_VxIA (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *idx, *array;
+    char *err_msg;
+
+    DBUG_ENTER ("NTCCTprf_selIS");
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "selIS called with incorrect number of arguments");
+
+    idx = TYgetProductMember (args, 0);
+    array = TYgetProductMember (args, 1);
+
+    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        TEassureShpMatchesDim (TEprfArg2Obj (TEgetNameStr (info), 1), idx, TEarg2Obj (2),
+                               array);
+        err_msg = TEfetchErrors ();
+        if (err_msg != NULL) {
+            printf ("ERROR!\n");
+            res = TYmakeBottomType (err_msg);
+        } else {
+
+            TEassureValMatchesShape (TEprfArg2Obj (TEgetNameStr (info), 1), idx,
+                                     TEarg2Obj (2), array);
+            err_msg = TEfetchErrors ();
+            if (err_msg != NULL) {
+                res = TYmakeBottomType (err_msg);
+            } else {
+                if (TYisAKV (idx) && TYisAKV (array)) {
+                    printf ("BOTH AKS\n");
+                    res = TYmakeAKV (TYcopyType (TYgetScalar (array)),
+                                     ApplyCF (info, args));
+
+                } else {
+                    printf ("NOT BOTH AKS\n");
                     res = TYmakeAKS (TYcopyType (TYgetScalar (array)), SHmakeShape (0));
                 }
             }

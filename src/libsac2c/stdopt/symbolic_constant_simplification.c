@@ -1769,6 +1769,65 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *SCSprf_sel_VxIA( node *arg_node, info *arg_info)
+ *
+ * @brief: Replace _sel_VxA_([scalar], _shape_A_(arr)) by
+ *                 _idx_shape_sel_SxA_(scalar, arr)
+ *
+ * TODO: IMPLEMENT PROPERLY
+ *
+ *****************************************************************************/
+node *
+SCSprf_sel_VxIA (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+#ifdef RBEDISABLEDTHIS20100502
+    node *arg2 = NULL;
+    node *scalar = NULL;
+    ntype *typ;
+    pattern *pat1;
+#endif // RBEDISABLEDTHIS20100502
+
+    DBUG_ENTER ("SCSprf_sel_VxA");
+
+#ifdef RBEDISABLEDTHIS20100502
+    /* I think we want to avoid all idx_shape_sel ops until
+     * post-optimizer time.
+     */
+
+    DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
+                 "SCSprf_sel_VxA expected N_id as PRF_ARG1");
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2,
+                  PMarray (0, 1, PMint (1, PMAgetNode (&scalar), 0)),
+                  PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&arg2), 0)));
+
+    if ((PMmatchFlat (pat1, arg_node)) && (N_num == NODE_TYPE (scalar))) {
+        DBUG_PRINT ("SCS", ("Replacing idx_sel by idx_shape_sel"));
+        res = TCmakePrf2 (F_idx_shape_sel, DUPdoDupNode (scalar), DUPdoDupNode (arg2));
+    }
+    pat1 = PMfree (pat1);
+
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2,
+                  PMarray (0, 1, PMvar (1, PMAgetNode (&scalar), 0)),
+                  PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&arg2), 0)));
+
+    if ((NULL == res) && (PMmatchFlat (pat1, arg_node))
+        && (N_num == NODE_TYPE (scalar))) {
+        DBUG_PRINT ("SCS", ("Replacing idx_sel by idx_shape_sel"));
+        typ = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+        scalar = AWLFIflattenExpression (scalar, &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGN (arg_info), typ);
+        typ = TYfreeType (typ);
+        res = TCmakePrf2 (F_idx_shape_sel, scalar, DUPdoDupNode (arg2));
+    }
+
+    pat1 = PMfree (pat1);
+#endif //  RBEDISABLEDTHIS20100502
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *SCSprf_reshape( node *arg_node, info *arg_info)
  *
  * @brief: Replace _reshape_VxA_( shp1, _reshape_VxA_( shp2, X))

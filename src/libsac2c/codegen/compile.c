@@ -5847,6 +5847,40 @@ COMPprfSel (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node *COMPprfSelI( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_sel_VxAI.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfSelI (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2;
+
+    DBUG_ENTER ("COMPprfSelI");
+
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    if (NODE_TYPE (arg1) == N_id) {
+        DBUG_ASSERT (((TCgetBasetype (ID_TYPE (arg1)) == T_int)),
+                     "1st arg of F_sel_VxA is a illegal indexing var!");
+
+        DBUG_ASSERT (FALSE, "N_id!!");
+    } else {
+        DBUG_ASSERT (FALSE, "Not an N_id!!");
+    }
+    DBUG_RETURN (NULL);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node *COMPprfModarray( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_modarray_AxVxS.

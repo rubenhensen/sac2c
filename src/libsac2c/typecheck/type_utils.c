@@ -1455,7 +1455,7 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
     if (base == NULL) {
         base = UTgetTypedef (udt);
         if (!TYisAKS (base)) {
-            if (!global.irregular_arrays) {
+            if (global.irregular_arrays == FALSE) {
                 CTIerrorLine (global.linenum,
                               "Typedef of %s::%s is illegal; should be either"
                               " scalar type or array type of fixed shape",
