@@ -573,26 +573,30 @@ endif
               $(ECHO) "Generating source files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
 	@$(ECHO) "  Generating source code from YACC specification:  $(notdir $@)"
-	$(HIDE)$(YACC) $<
-	$(HIDE)$(GREP) -v "#pragma ident" y.tab.c > $@
-	$(HIDE)if [ -f sac.tab.h -a -f sac.tab.c ] ; \
-               then $(RM) y.tab.h y.tab.c ; \
-               fi
-	@$(CLOCK_SKEW_ELIMINATION) 
-
-%.tab.h: %.y 
-	@if [ "generate header $(dir $*)" != "`cat .make_track`" ] ; \
-         then $(ECHO) "generate header $(dir $*)" > .make_track; \
-              $(ECHO) ""; \
-              $(ECHO) "Generating header files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
-         fi
 	@$(ECHO) "  Generating header file from YACC specification:  $(notdir $@)"
 	$(HIDE)$(YACC) $<
-	$(HIDE)$(CP) y.tab.h $@
-	$(HIDE)if [ -f sac.tab.h -a -f sac.tab.c ] ; \
-               then $(RM) y.tab.h y.tab.c ; \
-               fi
+	$(HIDE)$(GREP) -v "#pragma ident" y.tab.c > $@
+	$(HIDE)$(CP) y.tab.h $(basename $@).h
 	@$(CLOCK_SKEW_ELIMINATION) 
+
+# As the above rule produces %.tab.h just update the time stamp on it
+%.tab.h: %.tab.c
+	$(HIDE) touch $@
+	@$(CLOCK_SKEW_ELIMINATION)
+
+#%.tab.h: %.y 
+#	@if [ "generate header $(dir $*)" != "`cat .make_track`" ] ; \
+#         then $(ECHO) "generate header $(dir $*)" > .make_track; \
+#              $(ECHO) ""; \
+#              $(ECHO) "Generating header files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
+#         fi
+#	@$(ECHO) "  Generating header file from YACC specification:  $(notdir $@)"
+#	$(HIDE)$(YACC) $<
+#	$(HIDE)$(CP) y.tab.h $@
+#	$(HIDE)if [ -f sac.tab.h -a -f sac.tab.c ] ; \
+#               then $(RM) y.tab.h y.tab.c ; \
+#               fi
+#	@$(CLOCK_SKEW_ELIMINATION) 
 
 
 ###############################################################################
