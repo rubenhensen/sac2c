@@ -480,7 +480,6 @@ makeNarray (node *extrema, info *arg_info, ntype *typ, node *nar)
     DBUG_ENTER ("makeNarray");
 
     if (NULL != extrema) {
-
         /* Copy the original array, and overwrite its elements */
         narr = DUPdoDupNode (nar);
         ARRAY_AELEMS (narr) = extrema;
@@ -491,6 +490,31 @@ makeNarray (node *extrema, info *arg_info, ntype *typ, node *nar)
     }
 
     DBUG_RETURN (zavis);
+}
+
+/******************************************************************************
+ *
+ * function: bool vetWithids( node *withids)
+ *
+ * description:
+ *
+ * @params  withids: an N_avis node.
+ * @result: True if the node is a valid withids node.
+ *          Else die.
+ *
+ ******************************************************************************/
+static bool
+vetWithids (node *withids)
+{
+    bool z = TRUE;
+    DBUG_ENTER ("vetWithids");
+#ifdef FIXME // must check N_array nodes usually
+    DBUG_ASSERT ((NULL == withids) || (NULL == AVIS_SSAASSIGN (withids))
+                   || (TYisAKV (AVIS_TYPE (withids))),
+                 "withids must be WITHID_VEC or WITHID_IDS or N_num");
+#endif // FIXME // must check N_array nodes usually
+
+    DBUG_RETURN (z);
 }
 
 /******************************************************************************
@@ -556,10 +580,7 @@ IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup, node *withids)
 
         DBUG_ASSERT ((NULL == withids) || (N_avis == NODE_TYPE (withids)),
                      "Expected N_avis withids");
-        if (NULL == AVIS_WITHIDS (snk)) {
-            DBUG_ASSERT ((NULL == withids) || (NULL == AVIS_SSAASSIGN (withids))
-                           || (TYisAKV (AVIS_TYPE (withids))),
-                         "withids must be WITHID_VEC or WITHID_IDS or N_num");
+        if ((NULL == AVIS_WITHIDS (snk)) && vetWithids (withids)) {
             AVIS_WITHIDS (snk) = (NULL != withids) ? TBmakeId (withids) : NULL;
         } else {
             DBUG_ASSERT (ID_AVIS (AVIS_WITHIDS (snk)) == withids,
@@ -593,7 +614,7 @@ IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup, node *withids)
 
         DBUG_ASSERT ((NULL == withids) || (N_avis == NODE_TYPE (withids)),
                      "Expected N_avis withids");
-        if (NULL == AVIS_WITHIDS (snk)) {
+        if ((NULL == AVIS_WITHIDS (snk)) && vetWithids (withids)) {
             DBUG_ASSERT ((NULL == withids) || (NULL == AVIS_SSAASSIGN (withids))
                            || (TYisAKV (AVIS_TYPE (withids))),
                          "withids must be WITHID_VEC or WITHID_IDS or N_num");
@@ -772,8 +793,11 @@ isAllNarrayExtremumPresent (node *arg_node, int minmax)
  * function: node *IVEXPcheckWithids( node *arg_node, node *curwith)
  *
  * description: If N_id arg_node has AVIS_WITHIDS that
- *               is a member of WITHID_IDS,WITHID_VEC
+ *              is a member of curwith's  WITHID_IDS or WITHID_VEC
  *              then return arg_node; else NULL.
+ *
+ *              If the AVIS_WITHIDS is an N_array, then look
+ *              for match on its elements.
  *
  * @params  arg_node: N_id or N_num or  NULL.
  *          curwith: the current consumerWL we are looking at.
@@ -813,52 +837,53 @@ IVEXPcheckWithids (node *arg_node, node *curwith)
 
 /******************************************************************************
  *
- * function: node *FindWithids(...)
+ * function: node *BuildWithids(...)
  *
  * description: Given an N_avis node that points to an N_array,
- *              search the N_array elements for xxx
- *              1. If no AVIS_WITHIDS that are members of
- *                 INFO_CURWITH's WITHIDS_IDS/WITHIDS_VEC,
- *                 then NULL.
- *              2. Otherwise, the first matching entry we find.
+ *              search the N_array elements for withids:
  *
- * @params  arg_node: an N_exprs node.
+ *              If all N_array elements have valid AVIS_WITHIDS,
+ *              then the result is the N_avis for an N_exprs
+ *              chain formed from those AVIS_WITHIDS.
+ *              Otherwise, NULL.
  *
- * @result: The N_id for the WITHID_IDS/WITHID_VEC entry
- *          that the N_array elements derived from.
+ * @params  arg_node: an N_array
+ *          lhsavis: the LHS of the N_array assignment
+ *          arg_info: your basic arg_info
  *
- *          NB. This is a kludge, as it's intended to let us
- *              associate a withids with an N_array's N_id node,
- *              even though the N_array elements may have derived
- *              from several distinct WITHIDS entries. E.g.:
- *
- *              z = with {... ( lb <= iv=[i,j] < ub)...
- *               arr = [ j, i + 1];
- *
- *              The code that builds the F_inverse function for arr
- *              has to be aware of this problem, and look into the
- *              N_array elements, as each of them may have a different
- *              F_inverse function.
+ * @result: NULL, or an N_avis of an N_exprs chain of withids.
  *
  ******************************************************************************/
 static node *
-FindWithids (node *exprs, info *arg_info)
+BuildWithids (node *arg_node, node *lhsavis, info *arg_info)
 {
     node *nid;
     node *withid;
+    ntype *typ;
     node *z = NULL;
+    node *aelems;
+    bool zvalid = TRUE;
 
-    DBUG_ENTER ("FindWithids");
+    DBUG_ENTER ("BuildWithids");
 
+    aelems = ARRAY_AELEMS (arg_node);
     withid = INFO_CURWITH (arg_info);
-    while (NULL != exprs) {
-        nid = IVEXPcheckWithids (EXPRS_EXPR (exprs), INFO_CURWITH (arg_info));
-        z = ((NULL == z) && (NULL != nid)) ? AVIS_WITHIDS (ID_AVIS (nid)) : z;
-        if ((NULL != nid) && (z != nid)) {
-            DBUG_PRINT ("IVEXP", ("Warning: Found mismatched WITHIDs: %s and %s",
-                                  AVIS_NAME (ID_AVIS (z)), AVIS_NAME (ID_AVIS (nid))));
+    while (zvalid && (NULL != aelems)) {
+        nid = IVEXPcheckWithids (EXPRS_EXPR (aelems), INFO_CURWITH (arg_info));
+        zvalid = zvalid && (NULL != nid);
+        if (zvalid) {
+            z = TCappendExprs (z,
+                               TBmakeExprs (DUPdoDupNode (AVIS_WITHIDS (ID_AVIS (nid))),
+                                            NULL));
+        } else {
+            z = (NULL != z) ? FREEdoFreeTree (z) : z;
         }
-        exprs = EXPRS_NEXT (exprs);
+        aelems = EXPRS_NEXT (aelems);
+    }
+
+    if (NULL != z) {
+        typ = TYeliminateAKV (AVIS_TYPE (lhsavis));
+        z = makeNarray (z, arg_info, typ, arg_node);
     }
 
     DBUG_RETURN (z);
@@ -899,7 +924,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
     node *minv = NULL;
     node *maxv = NULL;
     node *z;
-    node *withids;
+    node *withidsavis;
 
     DBUG_ENTER ("GenerateNarrayExtrema");
 
@@ -910,20 +935,20 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
 
     if (!TYisAKV (AVIS_TYPE (IDS_AVIS (lhs)))) {
 
-        withids = FindWithids (ARRAY_AELEMS (rhs), arg_info);
-        withids = (NULL != withids) ? ID_AVIS (withids) : NULL;
+        withidsavis = BuildWithids (rhs, lhsavis, arg_info);
+        withidsavis = (NULL != withidsavis) ? withidsavis : NULL;
         if ((!AVIS_ISMINHANDLED (IDS_AVIS (lhs)))
             && (isAllNarrayExtremumPresent (rhs, 0))) {
             minv = buildExtremaChain (ARRAY_AELEMS (rhs), 0);
             minv = makeNarray (minv, arg_info, AVIS_TYPE (IDS_AVIS (lhs)), rhs);
-            IVEXPsetMinvalIfNotNull (lhsavis, TBmakeId (minv), FALSE, withids);
+            IVEXPsetMinvalIfNotNull (lhsavis, TBmakeId (minv), FALSE, withidsavis);
         }
 
         if ((!AVIS_ISMAXHANDLED (IDS_AVIS (lhs)))
             && (isAllNarrayExtremumPresent (rhs, 1))) {
             maxv = buildExtremaChain (ARRAY_AELEMS (rhs), 1);
             maxv = makeNarray (maxv, arg_info, AVIS_TYPE (IDS_AVIS (lhs)), rhs);
-            IVEXPsetMaxvalIfNotNull (lhsavis, TBmakeId (maxv), FALSE, withids);
+            IVEXPsetMaxvalIfNotNull (lhsavis, TBmakeId (maxv), FALSE, withidsavis);
         }
     }
 

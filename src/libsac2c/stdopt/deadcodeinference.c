@@ -179,6 +179,11 @@ MarkAvisAlive (node *avis)
             DBUG_PRINT ("DCI", ("Traversing AVIS_MAX for %s", AVIS_NAME (avis)));
             AVIS_MAX (avis) = TRAVdo (AVIS_MAX (avis), NULL);
         }
+
+        if (AVIS_WITHIDS (avis) != NULL) {
+            DBUG_PRINT ("DCI", ("Traversing AVIS_WITHIDS for %s", AVIS_NAME (avis)));
+            AVIS_WITHIDS (avis) = TRAVdo (AVIS_WITHIDS (avis), NULL);
+        }
     }
 
     DBUG_VOID_RETURN;
