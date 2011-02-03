@@ -491,6 +491,7 @@ ASTisScalar (node *ast)
  *        Lifted from EMALcode.
  *
  * @param withops   withops of this with loop
+ * @param with3     amending a with3 loop
  * @param idxs      wl idxs for with3, NULL otherwise
  * @param chunksize chunksize for with3, NULL otherwise
  * @param cexprs    result expressions
@@ -499,7 +500,7 @@ ASTisScalar (node *ast)
  * @return N_assign change to be prepended to the body of this part
  ******************************************************************************/
 static node *
-AmendWithLoopCode (node *withops, node *idxs, node *chunksize, node *cexprs,
+AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node *cexprs,
                    info *arg_info)
 {
     node *memavis, *valavis, *cexavis, *indexvector, *wlidx;
@@ -545,16 +546,19 @@ AmendWithLoopCode (node *withops, node *idxs, node *chunksize, node *cexprs,
 
             if (als->dim == NULL) {
                 if (TUdimKnown (AVIS_TYPE (cexavis))) {
-                    if (chunksize != NULL) {
-                        /*
-                         * as computing in current dim drop 1 from the dim
-                         * as we have a chunk size we are computing a group of values so
-                         * add one to the dim to hold the set of results
-                         * AKA: no change
-                         */
-                        dim = TYgetDim (AVIS_TYPE (cexavis)) - 1 + 1;
-                    } else {
-                        dim = TYgetDim (AVIS_TYPE (cexavis)) - 1;
+                    dim = TYgetDim (AVIS_TYPE (cexavis));
+                    if (with3) {
+                        if (chunksize != NULL) {
+                            /*
+                             * as computing in current dim drop 1 from the dim
+                             * as we have a chunk size we are computing a group of values
+                             * so add one to the dim to hold the set of results AKA: no
+                             * change
+                             */
+                            dim += 1 - 1;
+                        } else {
+                            dim += -1;
+                        }
                     }
 
                     als->dim
@@ -1156,7 +1160,7 @@ EMALcode (node *arg_node, info *arg_info)
      * Shape information for each result array must be set and
      * suballoc/fill(copy,...) must be inserted
      */
-    assign = AmendWithLoopCode (INFO_WITHOPS (arg_info), NULL, NULL,
+    assign = AmendWithLoopCode (INFO_WITHOPS (arg_info), FALSE, NULL, NULL,
                                 CODE_CEXPRS (arg_node), arg_info);
 
     if (assign != NULL) {
@@ -2511,7 +2515,7 @@ EMALrange (node *arg_node, info *arg_info)
          */
         INFO_INDEXVECTOR (arg_info)
           = TCmakeIntVector (TCids2Exprs (RANGE_INDEX (arg_node)));
-        assign = AmendWithLoopCode (INFO_WITHOPS (arg_info), RANGE_IDXS (arg_node),
+        assign = AmendWithLoopCode (INFO_WITHOPS (arg_info), TRUE, RANGE_IDXS (arg_node),
                                     RANGE_CHUNKSIZE (arg_node), RANGE_RESULTS (arg_node),
                                     arg_info);
         /*
