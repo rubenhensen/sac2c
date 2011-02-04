@@ -2232,6 +2232,7 @@ DUPgenarray (node *arg_node, info *arg_info)
     GENARRAY_MEM (new_node) = DUPTRAV (GENARRAY_MEM (arg_node));
     GENARRAY_SUB (new_node) = DUPTRAV (GENARRAY_SUB (arg_node));
     GENARRAY_RC (new_node) = DUPTRAV (GENARRAY_RC (arg_node));
+    GENARRAY_DEFSHAPEEXPR (new_node) = DUPTRAV (GENARRAY_DEFSHAPEEXPR (arg_node));
 
     GENARRAY_IDX (new_node)
       = LUTsearchInLutPp (INFO_LUT (arg_info), GENARRAY_IDX (arg_node));
