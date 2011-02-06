@@ -84,10 +84,10 @@ typedef int *SAC_array_descriptor_t;
 
 #define BYTE_SIZE_OF_DESC(dim) (SIZE_OF_DESC (dim) * sizeof (int))
 
-#define DESC_RC(desc) desc[0]
-#define DESC_DIM(desc) desc[1]
-#define DESC_SIZE(desc) desc[2]
-#define DESC_SHAPE(desc, pos) desc[FIXED_SIZE_OF_DESC + pos]
+#define DESC_RC(desc) (desc)[0]
+#define DESC_DIM(desc) (desc)[1]
+#define DESC_SIZE(desc) (desc)[2]
+#define DESC_SHAPE(desc, pos) (desc)[FIXED_SIZE_OF_DESC + (pos)]
 
 /* Overloaded by MUTC */
 #define SAC_ND_DEF_FUN_BEGIN2(name, type, ...)                                           \
