@@ -5878,7 +5878,7 @@ COMPprfSelI (node *arg_node, info *arg_info)
     } else {
         DBUG_ASSERT (FALSE, "Not an N_id!!");
     }
-    DBUG_RETURN (NULL);
+    DBUG_RETURN ((node *)NULL);
 }
 
 /** <!--********************************************************************-->
