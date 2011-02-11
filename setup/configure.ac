@@ -35,7 +35,7 @@ AC_DEFINE_UNQUOTED(ARCH,"$target_cpu",set to the architecture)
 AC_SUBST(ARCH,$target_cpu)
 
 dnl search for a C compiler
-AC_PROG_CC(gcc cc)
+AC_PROG_CC(cc gcc)
 
 dnl
 dnl check whether its suns cc
