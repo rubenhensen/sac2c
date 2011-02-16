@@ -132,6 +132,8 @@ extern node *TClastIds (node *ids);
 
 extern node *TClookupIds (const char *name, node *ids_chain);
 
+extern node *TCgetNthIds (int n, node *ids_chain);
+
 extern int TCcountNums (node *nums);
 extern bool TCnumsContains (int val, node *nums);
 

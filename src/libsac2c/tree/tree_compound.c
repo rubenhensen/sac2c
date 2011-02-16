@@ -767,6 +767,30 @@ TClookupIds (const char *name, node *ids_chain)
     DBUG_RETURN (ids_chain);
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   node *TCgetNthIds( int n, node *ids_chain)
+ *
+ * Description:
+ *   Return  IDS_AVIS( ids_chain[n])
+ *
+ ******************************************************************************/
+node *
+TCgetNthIds (int n, node *ids_chain)
+{
+    DBUG_ENTER ("TCgetNthIds");
+    int i = 0;
+
+    while ((ids_chain != NULL) && (i != n)) {
+        ids_chain = IDS_NEXT (ids_chain);
+        i++;
+    }
+    ids_chain = IDS_AVIS (ids_chain);
+
+    DBUG_RETURN (ids_chain);
+}
+
 int
 TCcountIds (node *ids_arg)
 {
