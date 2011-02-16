@@ -365,9 +365,12 @@ ExtractNthItem (int itemno, node *idx)
     DBUG_ASSERT ((F_noteintersect == PRF_PRF (dfg)),
                  ("Wanted F_noteintersect as idx parent"));
     bnd = TCgetNthExprsExpr (itemno, PRF_ARGS (dfg));
+    val = bnd;
+#ifdef FIXME // perhaps dead?
     if (NULL != bnd) {
         PMO (PMOlastVarGuards (&val, bnd));
     }
+#endif // FIXME // perhaps dead?
 
     DBUG_RETURN (val);
 }
@@ -426,6 +429,40 @@ isExactIntersect (node *cbound1, node *intersectb1, node *cbound2, node *interse
 
 /** <!--********************************************************************-->
  *
+ * @fn static node *ReorderIntersect(...)
+ *
+ * @brief Reorder WL partition intersect result to make it
+ *        match consumerWL bounds ordering.
+ *
+ *        I.e., intersectb1[ partwithids iota withids]
+ *
+ * @params  intersectb: the intersect result; an N_id pointing to
+ *                      an N_array
+ *          idx: The N_id index vector from the sel(idx, producerWL) in
+ *               the consumerWL.
+ *          consumerWLPart: The N_part of the consumerWL.
+ *
+ * @result: The reordered intersect data.
+ *
+ *****************************************************************************/
+static node *
+ReorderIntersect (node *intersectb, node *withids, node *consumerWLPart)
+{
+    node *z = NULL;
+    node *withidvec;
+
+    DBUG_ENTER ("ReorderIntersect");
+
+    if (NULL != withids) {
+        withidvec = WITHID_IDS (PART_WITHID (consumerWLPart));
+    }
+
+    z = intersectb;
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn static intersect_type_t FindIntersection(
  *
  * @brief Search the _noteintersect_() list to see if there is an intersection
@@ -446,13 +483,14 @@ isExactIntersect (node *cbound1, node *intersectb1, node *cbound2, node *interse
  *****************************************************************************/
 static intersect_type_t
 FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLGenerator,
-                  node *consumerWLGenerator, info *arg_info)
+                  node *consumerWLPart, info *arg_info)
 {
     intersect_type_t z = INTERSECT_unknown;
     node *intersectb1;
     node *intersectb2;
     node *producerWLBound1Original;
     node *producerWLBound2Original;
+    node *consumerWLGenerator;
     node *bnd;
     pattern *pat;
     intersect_type_t nullIntersect;
@@ -466,11 +504,16 @@ FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLG
       PRF_ARGS (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (idx))))));
     intersectListLim = (intersectListLim - 1) / WLEPP;
     pat = PMarray (1, PMAgetNode (&bnd), 1, PMskip (0));
+    consumerWLGenerator = PART_GENERATOR (consumerWLPart);
 
     while (((INTERSECT_unknown == z) || (INTERSECT_null == z))
            && (intersectListNo < intersectListLim)) {
         intersectb1 = ExtractNthItem (WLINTERSECTION1 (intersectListNo), idx);
+        intersectb1
+          = ReorderIntersect (intersectb1, AVIS_WITHIDS (ID_AVIS (idx)), consumerWLPart);
         intersectb2 = ExtractNthItem (WLINTERSECTION2 (intersectListNo), idx);
+        intersectb2
+          = ReorderIntersect (intersectb2, AVIS_WITHIDS (ID_AVIS (idx)), consumerWLPart);
         if (NULL != arg_info) { /* Different callers! */
             bnd = NULL;
             INFO_INTERSECTBOUND1 (arg_info) = PMmatchFlat (pat, intersectb1) ? bnd : NULL;
@@ -553,7 +596,7 @@ FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLG
 /** <!--********************************************************************-->
  *
  *
- * @fn node * FindMatchingPart(...
+ * @fn node * CUBSLfindMatchingPart(...
  *
  * @brief Search for a producerWL partition that matches the
  *        consumerWLPart index set, or that is a superset thereof.
@@ -596,10 +639,9 @@ FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLG
  *
  *****************************************************************************/
 node *
-FindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpart,
-                  node *producerWL, info *arg_info)
+CUBSLfindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpart,
+                       node *producerWL, info *arg_info)
 {
-    node *consumerWLGenerator;
     node *producerWLGenerator;
     node *producerWLPart;
     node *idx;
@@ -611,19 +653,15 @@ FindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpart,
     char *typ;
     int producerPartno = 0;
 
-    DBUG_ENTER ("FindMatchingPart");
-    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node),
-                 ("FindMatchingPart expected N_prf arg_node"));
-    DBUG_ASSERT (N_with == NODE_TYPE (producerWL),
-                 ("FindMatchingPart expected N_with producerWL"));
-    DBUG_ASSERT (N_part == NODE_TYPE (consumerpart),
-                 ("FindMatchingPart expected N_part consumerpart"));
+    DBUG_ENTER ("CUBSLfindMatchingPart");
+    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), ("expected N_prf arg_node"));
+    DBUG_ASSERT (N_with == NODE_TYPE (producerWL), ("expected N_with producerWL"));
+    DBUG_ASSERT (N_part == NODE_TYPE (consumerpart), ("expected N_part consumerpart"));
 
     idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, producerWL) */
     idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
     idxparent = LET_EXPR (ASSIGN_INSTR (idxassign));
 
-    consumerWLGenerator = PART_GENERATOR (consumerpart);
     producerWLPart = WITH_PART (producerWL);
     idxbound1 = AVIS_MIN (ID_AVIS (PRF_ARG1 (idxparent)));
     idxbound2 = AVIS_MAX (ID_AVIS (PRF_ARG1 (idxparent)));
@@ -633,7 +671,7 @@ FindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpart,
            && (producerWLPart != NULL)) {
         producerWLGenerator = PART_GENERATOR (producerWLPart);
         intersecttype = FindIntersection (idx, idxbound1, idxbound2, producerWLGenerator,
-                                          consumerWLGenerator, arg_info);
+                                          consumerpart, arg_info);
         if ((INTERSECT_unknown == intersecttype) || (INTERSECT_null == intersecttype)) {
             producerWLPart = PART_NEXT (producerWLPart);
             producerPartno++;
@@ -1198,8 +1236,9 @@ CUBSLprf (node *arg_node, info *arg_info)
          */
         if (NULL != producerWL) {
             producerPart
-              = FindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info),
-                                  INFO_CONSUMERPART (arg_info), producerWL, arg_info);
+              = CUBSLfindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info),
+                                       INFO_CONSUMERPART (arg_info), producerWL,
+                                       arg_info);
             if (NULL != producerPart) {
                 DBUG_PRINT ("CUBSL", ("CUBSLprf found producerPart"));
             }

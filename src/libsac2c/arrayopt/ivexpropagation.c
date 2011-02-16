@@ -480,6 +480,7 @@ makeNarray (node *extrema, info *arg_info, ntype *typ, node *nar)
     DBUG_ENTER ("makeNarray");
 
     if (NULL != extrema) {
+        DBUG_ASSERT (N_exprs == NODE_TYPE (extrema), "Expected N_exprs");
         /* Copy the original array, and overwrite its elements */
         narr = DUPdoDupNode (nar);
         ARRAY_AELEMS (narr) = extrema;
@@ -494,11 +495,12 @@ makeNarray (node *extrema, info *arg_info, ntype *typ, node *nar)
 
 /******************************************************************************
  *
- * function: bool vetWithids( node *withids)
+ * function: bool vetWithids( node *withids, node *npart)
  *
  * description:
  *
  * @params  withids: an N_avis node.
+ * @params  npart: the N_part for the consumerWL.
  * @result: True if the node is a valid withids node.
  *          Else die.
  *
@@ -506,8 +508,13 @@ makeNarray (node *extrema, info *arg_info, ntype *typ, node *nar)
 static bool
 vetWithids (node *withids)
 {
-    bool z = TRUE;
+    bool z;
+
     DBUG_ENTER ("vetWithids");
+
+    z = (NULL != withids);
+    DBUG_ASSERT ((!z) || (N_avis == NODE_TYPE (withids)),
+                 "Expected NULL or  N_avis withids");
 #ifdef FIXME // must check N_array nodes usually
     DBUG_ASSERT ((NULL == withids) || (NULL == AVIS_SSAASSIGN (withids))
                    || (TYisAKV (AVIS_TYPE (withids))),
@@ -578,13 +585,13 @@ IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup, node *withids)
                                   AVIS_NAME (ID_AVIS (src))));
         }
 
-        DBUG_ASSERT ((NULL == withids) || (N_avis == NODE_TYPE (withids)),
-                     "Expected N_avis withids");
-        if ((NULL == AVIS_WITHIDS (snk)) && vetWithids (withids)) {
-            AVIS_WITHIDS (snk) = (NULL != withids) ? TBmakeId (withids) : NULL;
-        } else {
-            DBUG_ASSERT (ID_AVIS (AVIS_WITHIDS (snk)) == withids,
-                         "Trying to change AVIS_WITHIDS");
+        if (vetWithids (withids)) {
+            if ((NULL == AVIS_WITHIDS (snk))) {
+                AVIS_WITHIDS (snk) = TBmakeId (withids);
+            } else {
+                DBUG_ASSERT (ID_AVIS (AVIS_WITHIDS (snk)) == withids,
+                             "Trying to change AVIS_WITHIDS");
+            }
         }
     }
 
@@ -595,7 +602,7 @@ void
 IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup, node *withids)
 {
 
-    DBUG_ENTER ("IVEXPsetMaxValIfNotNull");
+    DBUG_ENTER ("IVEXPsetMaxvalIfNotNull");
 
     if (NULL != src) {
         DBUG_ASSERT (N_id == NODE_TYPE (src), "Expected N_id src");
@@ -612,95 +619,17 @@ IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup, node *withids)
                                   AVIS_NAME (ID_AVIS (src))));
         }
 
-        DBUG_ASSERT ((NULL == withids) || (N_avis == NODE_TYPE (withids)),
-                     "Expected N_avis withids");
-        if ((NULL == AVIS_WITHIDS (snk)) && vetWithids (withids)) {
-            DBUG_ASSERT ((NULL == withids) || (NULL == AVIS_SSAASSIGN (withids))
-                           || (TYisAKV (AVIS_TYPE (withids))),
-                         "withids must be WITHID_VEC or WITHID_IDS or N_num");
-            AVIS_WITHIDS (snk) = (NULL != withids) ? TBmakeId (withids) : NULL;
-        } else {
-            DBUG_ASSERT (ID_AVIS (AVIS_WITHIDS (snk)) == withids,
-                         "Trying to change AVIS_WITHIDS");
+        if (vetWithids (withids)) {
+            if ((NULL == AVIS_WITHIDS (snk))) {
+                AVIS_WITHIDS (snk) = TBmakeId (withids);
+            } else {
+                DBUG_ASSERT (ID_AVIS (AVIS_WITHIDS (snk)) == withids,
+                             "Trying to change AVIS_WITHIDS");
+            }
         }
     }
 
     DBUG_VOID_RETURN;
-}
-
-/******************************************************************************
- *
- * function:
- *   static GetWithids( arg_node)
- *
- * description:
- *          Get AVIS_WITHIDS from the argument, if it has one,
- *          or NULL.
- *          If there is no AVIS_WITHIDS, see if arg_node is the
- *          WITHID_IDS or WITHID_VEC. This is done by checking
- *          if the arg_node has no SSAASSIGN.
- *
- * @params  arg_node: an N_id node.
- *
- * @result: An N_avis or NULL.
- *
- ******************************************************************************/
-static node *
-GetWithids (node *arg_node)
-{
-    node *z = NULL;
-    node *wid1;
-
-    DBUG_ENTER ("GetWithids");
-
-    wid1 = AVIS_WITHIDS (ID_AVIS (arg_node));
-    if (NULL != wid1) {
-        z = ID_AVIS (wid1);
-    } else {
-        z = (NULL == AVIS_SSAASSIGN (ID_AVIS (arg_node))) ? ID_AVIS (arg_node) : NULL;
-    }
-
-    DBUG_RETURN (z);
-}
-
-/******************************************************************************
- *
- * function:
- *   static GetWithids2( arg_node)
- *
- * description:
- *          Get AVIS_WITHIDS from whichever dyadic N_prf argument has it,
- *          or NULL.
- *          If there is no AVIS_WITHIDS, see if arg_node is the
- *          WITHID_IDS or WITHID_VEC. This is done by checking
- *          if the arg_node has no SSAASSIGN.
- *
- * @params  arg_node: an N_prf node.
- *
- * @result: An N_avis or NULL.
- *
- ******************************************************************************/
-static node *
-GetWithids2 (node *arg_node)
-{
-    node *z = NULL;
-    node *wid1;
-    node *wid2;
-
-    DBUG_ENTER ("GetWithids2");
-
-    wid1 = AVIS_WITHIDS (ID_AVIS (PRF_ARG1 (arg_node)));
-    wid2 = AVIS_WITHIDS (ID_AVIS (PRF_ARG2 (arg_node)));
-    z = (NULL != wid1) ? ID_AVIS (wid1) : NULL;
-    z = (NULL != wid2) ? ID_AVIS (wid2) : z;
-
-    if (NULL == z) {
-        z = (NULL == AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node))))
-              ? ID_AVIS (PRF_ARG1 (arg_node))
-              : NULL;
-    }
-
-    DBUG_RETURN (z);
 }
 
 /******************************************************************************
@@ -790,45 +719,207 @@ isAllNarrayExtremumPresent (node *arg_node, int minmax)
 
 /******************************************************************************
  *
- * function: node *IVEXPcheckWithids( node *arg_node, node *curwith)
+ * function:  Set membership for WITHIDS
+ *
+ * description: TRUE if arg_node matches WITHID_IDS, element-by-element.
+ *              I.e., no elements missing, duplicated, or permuted.
+ *
+ * @params  arg_node: N_array
+ *          withids: the current consumerWL WITHID node we are looking at.
+ *
+ * @result: TRUE if N_array matches WITHID_IDS
+ *
+ ******************************************************************************/
+static bool
+isWithidIds (node *arg_node, node *withids)
+{
+    node *exprs;
+    bool z = TRUE;
+
+    DBUG_ENTER ("isWithidIds");
+
+    if (NULL != arg_node) {
+        exprs = ARRAY_AELEMS (arg_node);
+        withids = WITHID_IDS (withids);
+        while (z && (NULL != withids) && (NULL != exprs)) {
+            z = z && (ID_AVIS (EXPRS_EXPR (exprs)) == IDS_AVIS (withids));
+            exprs = EXPRS_NEXT (exprs);
+            withids = IDS_NEXT (withids);
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+/******************************************************************************
+ *
+ * function:  Set membership for WITHIDS
+ *
+ * description: TRUE if arg_node matches some element of WITHID_IDS
+ *
+ * @params  arg_node: N_id
+ *          withids: the current consumerWL WITHID node we are looking at.
+ *
+ * @result: TRUE if N_id is in curwith. WITHID_IDS
+ *
+ ******************************************************************************/
+static bool
+isMemberWithidIds (node *arg_node, node *withids)
+{
+    bool z = FALSE;
+
+    DBUG_ENTER ("isMemberWithidIds");
+
+    if ((NULL != arg_node) && (NULL != withids)) {
+        withids = WITHID_IDS (withids);
+        while ((!z) && (NULL != withids)) {
+            z = (ID_AVIS (arg_node) == IDS_AVIS (withids));
+            withids = IDS_NEXT (withids);
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:  Set membership for WITHIDS
+ *
+ * description: TRUE if arg_node matches WITHID_IDS
+ *
+ * @params  arg_node: N_id
+ *          withids: the current consumerWL WITHID node we are looking at.
+ *
+ * @result: TRUE if N_id matches WITHID_VEC
+ *
+ ******************************************************************************/
+static bool
+isMemberWithidVec (node *arg_node, node *withids)
+{
+    bool z;
+
+    DBUG_ENTER ("isMemberWithidVec");
+
+    z = (NULL != arg_node) && (NULL != withids) && (N_id == NODE_TYPE (arg_node))
+        && (ID_AVIS (arg_node) == IDS_AVIS (WITHID_VEC (withids)));
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static GetWithids( node *arg_node, node *withid)
+ *
+ * description:
+ *          If AVIS_WITHIDS of arg_node is non-NULL, return that N_id.
+ *          If arg_node is WITHID_VEC, return that N_avis.
+ *          If arg_node is an element of WITHID_IDS, return that
+ *          N_avis.
+ *          Otherwise, NULL.
+ *
+ * @params  arg_node: an N_id node.
+ *
+ * @result: An N_avis or NULL.
+ *
+ ******************************************************************************/
+static node *
+GetWithids (node *arg_node, node *withid)
+{
+    node *z;
+
+    DBUG_ENTER ("GetWithids");
+
+    z = AVIS_WITHIDS (ID_AVIS (arg_node));
+    if (NULL != z) {
+        z = ID_AVIS (z);
+    } else {
+        if ((isMemberWithidVec (arg_node, withid))
+            || (isMemberWithidIds (arg_node, withid))) {
+            z = ID_AVIS (arg_node);
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   static GetWithids2( node *arg_node, node *withid)
+ *
+ * description:
+ *          Get AVIS_WITHIDS from whichever dyadic N_prf argument has it,
+ *          or NULL.
+ *          If there is no AVIS_WITHIDS, see if arg_node is the
+ *          WITHID_IDS or WITHID_VEC. This is done by checking
+ *          if the arg_node has no SSAASSIGN.
+ *
+ * @params  arg_node: an N_prf node.
+ *          withid: The PART_WITHID of the current WL, or NULL.
+ *
+ * @result: An N_avis or NULL.
+ *
+ ******************************************************************************/
+static node *
+GetWithids2 (node *arg_node, node *withid)
+{
+    node *z;
+
+    DBUG_ENTER ("GetWithids2");
+
+    z = GetWithids (PRF_ARG1 (arg_node), withid);
+    if (NULL == z) {
+        z = GetWithids (PRF_ARG2 (arg_node), withid);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function: bool IVEXPisCheckWithids( node *arg_node, node *curwith)
+ * function: bool IVEXPisCheckWithidsOne( node *arg_node, node *curwith)
+ *                The latter is a subfn of the former; latter checks
+ *                one N_id only.
  *
  * description: If N_id arg_node has AVIS_WITHIDS that
- *              is a member of curwith's  WITHID_IDS or WITHID_VEC
+ *              is a member of curwith's WITHID_IDS
  *              then return arg_node; else NULL.
  *
  *              If the AVIS_WITHIDS is an N_array, then look
- *              for match on its elements.
+ *              for match on all of its elements.
  *
  * @params  arg_node: N_id or N_num or  NULL.
- *          curwith: the current consumerWL we are looking at.
+ *          withids: the current consumerWL WITHID node we are looking at.
  *
- * @result: arg_node, if arg_node is a member of the current WITHIDS,
- *          else NULL
+ * @result: TRUE if all N_id elements are in curwith.
  *
  ******************************************************************************/
-node *
-IVEXPcheckWithids (node *arg_node, node *curwith)
+bool
+IVEXPisCheckWithids (node *arg_node, node *curwith)
 {
-    node *z = NULL;
     node *withids;
-    node *wavis;
+    node *arg = NULL;
+    pattern *pat;
+    bool z = FALSE;
 
-    DBUG_ENTER ("IVEXPcheckWithids");
+    DBUG_ENTER ("IVEXPisCheckWithids");
 
-    if ((NULL != arg_node) && (N_id == NODE_TYPE (arg_node))
-        && (NULL != AVIS_WITHIDS (ID_AVIS (arg_node))) && (NULL != curwith)) {
+    if (NULL != curwith) {
         withids = PART_WITHID (WITH_PART (curwith));
-        wavis = ID_AVIS (AVIS_WITHIDS (ID_AVIS (arg_node)));
-        if (wavis == IDS_AVIS (WITHID_VEC (withids))) {
-            z = arg_node;
-        }
+        z = isMemberWithidVec (arg_node, withids);
 
-        if (NULL == z) {
-            withids = WITHID_IDS (withids);
-            while ((NULL == z) && (NULL != withids)) {
-                z = (wavis == IDS_AVIS (withids)) ? arg_node : NULL;
-                withids = IDS_NEXT (withids);
+        if (!z) {
+            pat = PMarray (1, PMAgetNode (&arg), 1, PMskip (0));
+            if ((PMmatchFlat (pat, arg_node))) {
+                z = TRUE;
+                arg = ARRAY_AELEMS (arg);
+                while (z && (NULL != arg)) {
+                    z = z && isMemberWithidIds (EXPRS_EXPR (arg), withids);
+                    arg = EXPRS_NEXT (arg);
+                }
             }
+            pat = PMfree (pat);
         }
     }
 
@@ -842,16 +933,30 @@ IVEXPcheckWithids (node *arg_node, node *curwith)
  * description: Given an N_avis node that points to an N_array,
  *              search the N_array elements for withids:
  *
- *              If all N_array elements have valid AVIS_WITHIDS,
+ *   Case 1:    If lhsavis already has a non-NULL withids, just
+ *              return that value.
+ *
+ *   Case 2:    If arg_node is, itself, the WITHID_VEC or
+ *              WITHID_IDS, return NULL.
+ *
+ *   Case 3:    If all N_array elements have valid AVIS_WITHIDS,
  *              then the result is the N_avis for an N_exprs
  *              chain formed from those AVIS_WITHIDS.
- *              Otherwise, NULL.
+ *              [This differs from the previous one in that
+ *              elements are permuted, duplicated, or
+ *              missing.]
+ *
+ *   Case 4:    If any N_array element is not a member of the WITHIDS,
+ *              return NULL.
  *
  * @params  arg_node: an N_array
  *          lhsavis: the LHS of the N_array assignment
  *          arg_info: your basic arg_info
  *
- * @result: NULL, or an N_avis of an N_exprs chain of withids.
+ * @result: NULL, or an N_avis of an N_array of withids,
+ *          or the N_avis of the WITHID_VEC, if the N_array
+ *          elements match WITHID_IDS.
+ *          [ The latter case appears due to the actions of CSE.]
  *
  ******************************************************************************/
 static node *
@@ -862,28 +967,39 @@ BuildWithids (node *arg_node, node *lhsavis, info *arg_info)
     ntype *typ;
     node *z = NULL;
     node *aelems;
+    node *a0;
+    node *wid;
     bool zvalid = TRUE;
 
     DBUG_ENTER ("BuildWithids");
 
-    aelems = ARRAY_AELEMS (arg_node);
-    withid = INFO_CURWITH (arg_info);
-    while (zvalid && (NULL != aelems)) {
-        nid = IVEXPcheckWithids (EXPRS_EXPR (aelems), INFO_CURWITH (arg_info));
-        zvalid = zvalid && (NULL != nid);
-        if (zvalid) {
-            z = TCappendExprs (z,
-                               TBmakeExprs (DUPdoDupNode (AVIS_WITHIDS (ID_AVIS (nid))),
-                                            NULL));
+    withid = PART_WITHID (WITH_PART (INFO_CURWITH (arg_info)));
+    if (NULL != AVIS_WITHIDS (lhsavis)) {
+        z = ID_AVIS (AVIS_WITHIDS (lhsavis)); /* Case 1 */
+    } else {
+        if ((isMemberWithidVec (arg_node, withid)) || (isWithidIds (arg_node, withid))) {
+            z = NULL; /* Case 2 */
         } else {
-            z = (NULL != z) ? FREEdoFreeTree (z) : z;
-        }
-        aelems = EXPRS_NEXT (aelems);
-    }
+            aelems = ARRAY_AELEMS (arg_node);
+            a0 = EXPRS_EXPR (aelems);
+            while (zvalid && (NULL != aelems)) {
+                nid = EXPRS_EXPR (aelems);
+                wid = AVIS_WITHIDS (ID_AVIS (nid));
+                zvalid = zvalid && isMemberWithidIds (wid, withid);
+                if (zvalid) {
+                    z = TCappendExprs (z, /* Case 3 */
+                                       TBmakeExprs (DUPdoDupNode (wid), NULL));
+                } else {
+                    z = (NULL != z) ? FREEdoFreeTree (z) : z; /* Case 4 */
+                }
+                aelems = EXPRS_NEXT (aelems);
+            }
 
-    if (NULL != z) {
-        typ = TYeliminateAKV (AVIS_TYPE (lhsavis));
-        z = makeNarray (z, arg_info, typ, arg_node);
+            if (NULL != z) {
+                typ = TYeliminateAKV (AVIS_TYPE (lhsavis));
+                z = makeNarray (z, arg_info, typ, arg_node);
+            }
+        }
     }
 
     DBUG_RETURN (z);
@@ -912,7 +1028,11 @@ BuildWithids (node *arg_node, node *lhsavis, info *arg_info)
  *            maxv = [ AVIS_MAX( I), AVIS_MAX( J), AVIS_MAX( K) ]
  *
  *          Then, we set the extrema on V.
+ *          We do similar for withids.
  *
+ *          If arg_node matches WITHIDS_VEC or WITHIDS_IDS,
+ *          we can not generate an AVIS_WITHIDS for arg_node,
+ *          because we would end up with a loop in the AST.
  *
  ******************************************************************************/
 static node *
@@ -933,10 +1053,9 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
     rhs = LET_EXPR (arg_node);
     z = rhs;
 
-    if (!TYisAKV (AVIS_TYPE (IDS_AVIS (lhs)))) {
+    if ((NULL != INFO_CURWITH (arg_info)) && (!TYisAKV (AVIS_TYPE (IDS_AVIS (lhs))))) {
 
         withidsavis = BuildWithids (rhs, lhsavis, arg_info);
-        withidsavis = (NULL != withidsavis) ? withidsavis : NULL;
         if ((!AVIS_ISMINHANDLED (IDS_AVIS (lhs)))
             && (isAllNarrayExtremumPresent (rhs, 0))) {
             minv = buildExtremaChain (ARRAY_AELEMS (rhs), 0);
@@ -949,6 +1068,12 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
             maxv = buildExtremaChain (ARRAY_AELEMS (rhs), 1);
             maxv = makeNarray (maxv, arg_info, AVIS_TYPE (IDS_AVIS (lhs)), rhs);
             IVEXPsetMaxvalIfNotNull (lhsavis, TBmakeId (maxv), FALSE, withidsavis);
+        }
+
+        /* We may have extrema already, but withids just arrived. */
+        if ((NULL != withidsavis) && (NULL == AVIS_WITHIDS (lhsavis))) {
+            DBUG_ASSERT (N_avis == NODE_TYPE (withidsavis), "Expected N_avis");
+            AVIS_WITHIDS (lhsavis) = TBmakeId (withidsavis);
         }
     }
 
@@ -1429,6 +1554,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
     node *rhsavis;
     node *nca = NULL;
     node *zr;
+    node *withid;
     prf nprf;
 
     DBUG_ENTER ("GenerateExtremaComputationsPrf");
@@ -1436,6 +1562,8 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
     INFO_MINVAL (arg_info) = NULL;
     INFO_MAXVAL (arg_info) = NULL;
     INFO_WITHIDS (arg_info) = NULL;
+    withid = INFO_CURWITH (arg_info);
+    withid = (NULL != withid) ? PART_WITHID (WITH_PART (withid)) : NULL;
     lhsavis = IDS_AVIS (LET_IDS (arg_node));
     rhs = LET_EXPR (arg_node);
     if ((!isAvisHasBothExtrema (lhsavis))
@@ -1469,7 +1597,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     AVIS_ISMINHANDLED (minv) = TRUE;
                     AVIS_ISMAXHANDLED (minv) = TRUE;
                     INFO_MINVAL (arg_info) = TBmakeId (minv);
-                    INFO_WITHIDS (arg_info) = GetWithids (PRF_ARG1 (rhs));
+                    INFO_WITHIDS (arg_info) = GetWithids (PRF_ARG1 (rhs), withid);
                 }
                 break;
 
@@ -1519,7 +1647,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     }
                 }
 
-                INFO_WITHIDS (arg_info) = GetWithids2 (rhs);
+                INFO_WITHIDS (arg_info) = GetWithids2 (rhs, withid);
                 break;
 
                 /* FIXME Have to make constant scalar into vector, or vice versa.
@@ -1554,7 +1682,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                         INFO_MINVAL (arg_info) = DUPdoDupNode (nca);
                     }
                 }
-                INFO_WITHIDS (arg_info) = GetWithids2 (rhs);
+                INFO_WITHIDS (arg_info) = GetWithids2 (rhs, withid);
                 break;
 
             case F_neg_S:
@@ -1587,7 +1715,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     AVIS_ISMINHANDLED (maxv) = TRUE;
                     INFO_MINVAL (arg_info) = TBmakeId (maxv);
                 }
-                INFO_WITHIDS (arg_info) = GetWithids (PRF_ARG1 (rhs));
+                INFO_WITHIDS (arg_info) = GetWithids (PRF_ARG1 (rhs), withid);
                 break;
 
             /* Non-commutative dyadic functions */
@@ -1607,7 +1735,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_mul_VxV:
                 arg_node
                   = GenerateExtremaComputationsDyadicScalarPrf (arg_node, arg_info);
-                INFO_WITHIDS (arg_info) = GetWithids2 (rhs);
+                INFO_WITHIDS (arg_info) = GetWithids2 (rhs, withid);
                 break;
 
             default:
@@ -1670,9 +1798,7 @@ GenerateExtremaComputations (node *arg_node, info *arg_info)
 #ifdef VERBOSE
         DBUG_PRINT ("IVEXP", ("Looking at N_array %s", AVIS_NAME (lhsavis)));
 #endif // VERBOSE
-        if ((!CFisFullyConstantNode (rhs))
-            && (TUisIntScalar (AVIS_TYPE (lhsavis)) || TUisIntVect (AVIS_TYPE (lhsavis)))
-            && (!TYisAKV (AVIS_TYPE (lhsavis))) && (!isAvisHasBothExtrema (lhsavis))) {
+        if ((!CFisFullyConstantNode (rhs)) && (TUisIntVect (AVIS_TYPE (lhsavis)))) {
             rhs = GenerateNarrayExtrema (arg_node, arg_info);
             LET_EXPR (arg_node) = rhs;
         }
@@ -1725,18 +1851,21 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     node *rhs;
     node *rhsavis;
     node *withids;
+    node *withid;
 
     DBUG_ENTER ("PropagatePrfExtrema");
 
     lhsid = LET_IDS (arg_node);
     lhsavis = IDS_AVIS (lhsid);
     rhs = LET_EXPR (arg_node);
+    withid = INFO_CURWITH (arg_info);
+    withid = (NULL != withid) ? PART_WITHID (WITH_PART (withid)) : NULL;
 
     switch (PRF_PRF (rhs)) {
 
     case F_saabind:
         rhsavis = ID_AVIS (PRF_ARG3 (rhs));
-        withids = GetWithids (PRF_ARG3 (rhs));
+        withids = GetWithids (PRF_ARG3 (rhs), withid);
         IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE, withids);
         IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE, withids);
         break;
@@ -1751,7 +1880,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     case F_val_le_val_VxV:
     case F_val_lt_val_SxS:
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
-        withids = GetWithids (PRF_ARG1 (rhs));
+        withids = GetWithids (PRF_ARG1 (rhs), withid);
         IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE, withids);
         IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE, withids);
         if (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (rhs))))) {
@@ -1762,21 +1891,21 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
 
     case F_noteminval:
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
-        withids = GetWithids (PRF_ARG1 (rhs));
+        withids = GetWithids (PRF_ARG1 (rhs), withid);
         IVEXPsetMinvalIfNotNull (lhsavis, PRF_ARG2 (rhs), TRUE, withids);
         IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE, withids);
         break;
 
     case F_notemaxval:
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
-        withids = GetWithids (PRF_ARG1 (rhs));
+        withids = GetWithids (PRF_ARG1 (rhs), withid);
         IVEXPsetMaxvalIfNotNull (lhsavis, PRF_ARG2 (rhs), TRUE, withids);
         IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE, withids);
         break;
 
     case F_min_SxS:
     case F_min_VxV:
-        withids = GetWithids2 (rhs);
+        withids = GetWithids2 (rhs, withid);
         /* If either argument has a maxval, propagate it */
         IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))), TRUE,
                                  withids);
@@ -1786,7 +1915,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
 
     case F_max_SxS:
     case F_max_VxV:
-        withids = GetWithids2 (rhs);
+        withids = GetWithids2 (rhs, withid);
         /* If either argument has a minval, propagate it */
         IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))), TRUE,
                                  withids);
@@ -1838,6 +1967,10 @@ PropagateExtrema (node *arg_node, info *arg_info)
         break;
 
     case N_array:
+        /* handled by GenerateNarrayExtrema */
+
+        break;
+
     case N_with:
     case N_ap:
     case N_funcond:

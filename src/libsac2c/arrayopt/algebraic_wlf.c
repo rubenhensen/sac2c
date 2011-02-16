@@ -450,8 +450,8 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *consumerWLPart, int leve
         DBUG_PRINT ("AWLF", ("producerWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
                              AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
                              AVIS_WL_NEEDCOUNT (producerWLavis)));
-        producerWLpart = FindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info),
-                                           consumerWLPart, producerWL, NULL);
+        producerWLpart = CUBSLfindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info),
+                                                consumerWLPart, producerWL, NULL);
         if ((INTERSECT_unknown == INFO_INTERSECTTYPE (arg_info))
             || (INTERSECT_sliceneeded == INFO_INTERSECTTYPE (arg_info))
             || (INTERSECT_null == INFO_INTERSECTTYPE (arg_info))) {

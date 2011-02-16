@@ -395,6 +395,65 @@ IVEXImakeIntScalar (int k, node **vardecs, node **preassigns)
     DBUG_RETURN (favis);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *generateAvisWithids( node *iv, info *arg_info)
+ *
+ * @brief Return N_avis of WITHID_IDS entry for iv=[i,j,k...],
+ *          where n is Nth element of iv.
+ *
+ *   @param: iv: a WITHID node
+ *   @param: arg_info - your basic arg_info
+ *   @param: idx: the first WITHID_IDS to use.
+ *
+ *    e.g., with the above example, and idx=1, we would
+ *    return j.
+ *
+ *   @return The N_avis for k
+ *
+ ******************************************************************************/
+static node *
+generateAvisWithids (node *withids, info *arg_info, int idx)
+{
+    node *zavis;
+#ifdef DEAD
+    node *zass;
+    node *exprs = NULL;
+    node *avis;
+    int i;
+#endif // DEAD
+
+    DBUG_ENTER ("generateAvisWithids");
+#ifdef DEAD
+
+    if (1 == n) {
+        zavis = IDS_AVIS (WITHID_VEC (withids));
+    } else {
+        /* Create z = [ i,j, k...]k]; */
+        zavis = TBmakeAvis (TRAVtmpVar (),
+                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, n)));
+        INFO_VARDECS (arg_info) = TBmakeVardec (zavis, INFO_VARDECS (arg_info));
+
+        for (i = 0; i < n; i++) {
+            avis = TCgetNthIds (idx + i, WITHID_IDS (withids));
+            exprs = TCappendExprs (TBmakeExprs (TBmakeId (avis), NULL), exprs);
+        }
+
+        zass = TBmakeAssign (TBmakeLet (TBmakeIds (zavis, NULL),
+                                        TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int),
+                                                                SHcreateShape (0)),
+                                                     SHcreateShape (1, n), exprs)),
+                             NULL);
+        INFO_PREASSIGNSPART (arg_info)
+          = TCappendAssign (INFO_PREASSIGNSPART (arg_info), zass);
+        AVIS_SSAASSIGN (zavis) = zass;
+    }
+
+#endif // DEAD
+    zavis = TCgetNthIds (idx, WITHID_IDS (withids));
+    DBUG_RETURN (zavis);
+}
+
 #ifndef DBUG_OFF
 /** <!--********************************************************************-->
  *
@@ -468,7 +527,7 @@ isSameTypeShape (node *ida, node *idb)
  *****************************************************************************/
 static node *
 IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassigns,
-                    prf nprf)
+                    prf nprf, node *withids)
 
 {
     node *nas;
@@ -477,7 +536,6 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
     node *prf;
     node *ivid;
     node *extid;
-    node *withids;
 
     DBUG_ENTER ("IVEXIattachExtrema");
 
@@ -500,8 +558,6 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
 
     *preassigns = TCappendAssign (*preassigns, nas);
 
-    withids
-      = (NULL == AVIS_SSAASSIGN (ivavis)) ? ivavis : ID_AVIS (AVIS_WITHIDS (ivavis));
     if ((F_noteminval == nprf)) {
         IVEXPsetMinvalIfNotNull (lhsavis, extid, TRUE, withids);
     }
@@ -603,7 +659,7 @@ generateSelect (node *arg_node, info *arg_info, int k)
  *      Insert a temp, its vardec, and an assign for ivavis.
  *      We start with an WITHID_VEC:
  *
- *           iv
+ *           (lb <= iv=[i,j,k...] < ub)
  *
  *      and want:
  *
@@ -612,8 +668,9 @@ generateSelect (node *arg_node, info *arg_info, int k)
  *
  *      and appropriate vardecs for iv' and iv'', of course.
  *
- *      We have to build an N_id for iv because WITHIDs don't have them,
- *      just N_avis nodes. If -ssaiv becomes a reality, this
+ *      We have to build an N_id for iv because WL WITHIDs don't have them,
+ *      just N_avis nodes.
+ *      . If -ssaiv becomes a reality, this
  *      can be scrapped, and we can attach the extrema to iv
  *      directly.
  *
@@ -632,6 +689,7 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
     node *avispp;
     node *b1;
     node *b2;
+    node *withids;
 
     DBUG_ENTER ("IVEXItmpVec");
 
@@ -642,13 +700,17 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
     b2 = WLSflattenBound (DUPdoDupTree (b2), &INFO_VARDECS (arg_info),
                           &INFO_PREASSIGNSPART (arg_info));
-
+    withids = IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node)));
+#ifdef DEAD
+    n = TCcountIds (WITHID_IDS (PART_WITHID (arg_node)));
+    withids = generateAvisWithids (PART_WITHID (arg_node), arg_info, 0);
+#endif // DEAD
     avisp = IVEXIattachExtrema (b1, ivavis, &INFO_VARDECS (arg_info),
-                                &INFO_PREASSIGNSPART (arg_info), F_noteminval);
+                                &INFO_PREASSIGNSPART (arg_info), F_noteminval, withids);
     AVIS_ISMINHANDLED (avisp) = TRUE;
 
     avispp = IVEXIattachExtrema (b2, avisp, &INFO_VARDECS (arg_info),
-                                 &INFO_PREASSIGNSPART (arg_info), F_notemaxval);
+                                 &INFO_PREASSIGNSPART (arg_info), F_notemaxval, withids);
     AVIS_ISMAXHANDLED (avisp) = TRUE;
 
     DBUG_RETURN (avispp);
@@ -681,6 +743,7 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *iavis, int k)
     node *b2;
     node *b1f;
     node *b2f;
+    node *withids;
 
     DBUG_ENTER ("IVEXItmpIds");
 
@@ -696,15 +759,14 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *iavis, int k)
                            &INFO_PREASSIGNSPART (arg_info));
     b2 = generateSelect (b2f, arg_info, k);
 
+    withids = generateAvisWithids (PART_WITHID (arg_node), arg_info, k);
     avisp = IVEXIattachExtrema (b1, iavis, &INFO_VARDECS (arg_info),
-                                &INFO_PREASSIGNSPART (arg_info), F_noteminval);
+                                &INFO_PREASSIGNSPART (arg_info), F_noteminval, withids);
     AVIS_ISMINHANDLED (avisp) = TRUE;
-    AVIS_WITHIDS (avisp) = TBmakeId (iavis);
 
     avispp = IVEXIattachExtrema (b2, avisp, &INFO_VARDECS (arg_info),
-                                 &INFO_PREASSIGNSPART (arg_info), F_notemaxval);
+                                 &INFO_PREASSIGNSPART (arg_info), F_notemaxval, withids);
     AVIS_ISMAXHANDLED (avisp) = TRUE;
-    AVIS_WITHIDS (avisp) = TBmakeId (iavis);
 
     DBUG_PRINT ("IVEXI", ("IVEXItmpIds introduced: %s and %s for: %s", AVIS_NAME (avisp),
                           AVIS_NAME (avispp), AVIS_NAME (iavis)));
