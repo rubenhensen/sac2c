@@ -152,3 +152,25 @@ GDBprintPrfArgs (node *arg_node, node *fundef)
 
     return;
 }
+
+/******************************************************************************
+ *
+ * function: GDBprintAvisName( node *avis)
+ *
+ * description: Print avis name.
+ *
+ *
+ * Typical usage:
+ *    GDBprintAvisName( N_avisNode)
+ *
+ ******************************************************************************/
+void
+GDBprintAvisName (node *avis)
+{
+
+    if (NULL != avis) {
+        printf ("%s\n", AVIS_NAME (avis));
+    }
+
+    return;
+}
