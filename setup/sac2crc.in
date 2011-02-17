@@ -247,7 +247,7 @@
 target default:
  
 CC               :=  "@CC@"
-CCFLAGS          :=  "@RCCCFLAGS@"
+CCFLAGS          :=  "-pedantic @RCCCFLAGS@"
 CCDIR            :=  "-I$SAC2CBASE/include/ "
                      "-L$SAC2CBASE/lib/"
 LDFLAGS          :=  "@RCLDFLAGS@ -ldl -lpthread"

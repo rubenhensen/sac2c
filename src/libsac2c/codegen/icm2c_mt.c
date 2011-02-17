@@ -74,7 +74,7 @@ ICMCompileMT_SPMDFUN_DECL (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile,
              "SAC_MT_SPMDFUN_REAL_RETTYPE()"
-             " %s( SAC_MT_SPMDFUN_REAL_PARAM_LIST());\n",
+             " %s( SAC_MT_SPMDFUN_REAL_PARAM_LIST())\n",
              funname);
 
     DBUG_VOID_RETURN;

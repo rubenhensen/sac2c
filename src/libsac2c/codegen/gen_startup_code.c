@@ -803,7 +803,7 @@ GSCprintSACargCopyFreeStubs ()
                                  " */\n"
                                  "extern void SACARGfreeDataUdt( int, void *);\n"
                                  "extern void *SACARGcopyDataUdt( int, int, void *);\n"
-                                 "void SACARGfreeDataUdt( int size, void *data) {};\n"
+                                 "void SACARGfreeDataUdt( int size, void *data) {}\n"
                                  "void *SACARGcopyDataUdt( int type, int size, void "
                                  "*data) { return ((void *) 0x0); } \n"
                                  "\n");
@@ -814,7 +814,7 @@ GSCprintSACargCopyFreeStubs ()
                  " */\n"
                  "extern \"C\" void SACARGfreeDataUdt( int, void *);\n"
                  "extern \"C\" void *SACARGcopyDataUdt( int, int, void *);\n"
-                 "void SACARGfreeDataUdt( int size, void *data) {};\n"
+                 "void SACARGfreeDataUdt( int size, void *data) {}\n"
                  "void *SACARGcopyDataUdt( int type, int size, void *data) { return "
                  "((void *) 0x0); } \n"
                  "\n");

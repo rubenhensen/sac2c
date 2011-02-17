@@ -30,6 +30,7 @@
 #define SAC_MT_SPMD_FRAME_BEGIN() static volatile union {
 
 #define SAC_MT_SPMD_FRAME_END()                                                          \
+    int dummy; /* C99 does not allow empty structs or unions */                          \
     }                                                                                    \
     SAC_spmd_frame;
 
@@ -178,7 +179,9 @@
         int ready;                                                                       \
         union {                                                                          \
             struct {                                                                     \
-                char cache_align_buffer[SAC_MT_CACHE_LINE_MAX () - sizeof (int)];        \
+                char                                                                     \
+                  cache_align_buffer[SAC_MAX (SAC_MT_CACHE_LINE_MAX () - sizeof (int),   \
+                                              1)];                                       \
             } _dummy;
 
 #define SAC_MT_SPMD_BARRIER_ELEMENT_BEGIN(spmdfun) struct {
