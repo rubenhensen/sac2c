@@ -290,7 +290,7 @@ ICMCompileWE_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **v
     INDENT;
     fprintf (global.outfile, "}\n");
     INDENT;
-    fprintf (global.outfile, "SAC_WE_FUN_DEF_END2();\n");
+    fprintf (global.outfile, "SAC_WE_FUN_DEF_END2()\n");
 
     DBUG_VOID_RETURN;
 }
