@@ -14,7 +14,7 @@
  *   It provides definitions of functions to maintain reference count.
  *
  *****************************************************************************/
-
+#define free(a)
 #define SAC_BACKEND MUTC
 #include <sac.h>
 
