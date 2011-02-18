@@ -83,11 +83,16 @@
 
 #if SAC_DO_CHECK_TYPE
 
-#define SAC_ASSURE_TYPE(cond, message) (cond) ? 0 : SAC_RuntimeError message
+#define SAC_ASSURE_TYPE(cond, message)                                                   \
+    if (!(cond)) {                                                                       \
+        SAC_RuntimeError message;                                                        \
+    }
 /* yes, in C '0;' is indeed a legal statement 8-)) */
 
 #define SAC_ASSURE_TYPE_LINE(cond, line, message)                                        \
-    (cond) ? 0 : SAC_RuntimeErrorLine (line, message)
+    if (!(cond)) {                                                                       \
+        SAC_RuntimeErrorLine (line, message);                                            \
+    }
 
 #else /* SAC_DO_CHECK_TYPE */
 
