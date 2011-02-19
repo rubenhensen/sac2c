@@ -156,14 +156,14 @@ printDepthAndPre (dynarray *d)
 
     int i;
 
-    printf ("\n---------\n");
+    printf ("\n----------\n");
 
     for (i = 0; i < DYNARRAY_TOTALELEMS (d); i++) {
         printf ("{%d,", *(int *)ELEM_DATA (DYNARRAY_ELEMS_POS (d, i)));
         printf ("%d} ", ELEM_IDX (DYNARRAY_ELEMS_POS (d, i)));
     }
 
-    printf ("\n---------\n");
+    printf ("\n----------\n");
 
     DBUG_VOID_RETURN;
 }
