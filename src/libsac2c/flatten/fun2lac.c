@@ -40,7 +40,7 @@
  * is transformed. The function itself will be inlined in a subsequent
  * using standard function inlining.
  *
- * A tail-end-recursive do-function of the form
+ * Consider a tail-end-recursive do-function of the form
  *
  *   a,b = DoFun( c, d, e)
  *   {
@@ -55,7 +55,30 @@
  *     return( x, y);
  *   }
  *
- * is transformed into
+ * On first glance, one might consider a transformtion into
+ *
+ *   a,b = DoFun( c, d, e)
+ *   {
+ *     goto label;
+ *     do {
+ *       <rc-assings-then>
+ *       c = C;
+ *       d = D;
+ *      label:
+ *       <assigns>
+ *     } while (p);
+ *     <rc-assigns-else>
+ *     return(x,y);
+ *
+ * where each all those parameters that are not just passed through
+ * without modification (such as "e" in our example) are re-assigned
+ * in the start of the loop just before the label.
+ *
+ * Unfortunately, function inlining REQUIRES NO re-assignments to arguments
+ * to occur in the function body !!
+ *
+ * As a consequence, we need to introduce fresh names for all those
+ * arguments that require re-asssignment within the loop:
  *
  *   a,b = DoFun( c, d, e)
  *   {
@@ -63,25 +86,15 @@
  *     d' = d;
  *     goto label;
  *     do {
- *       <rc-assings-then>
+ *       <rc-assings-then> | [c->c',d->d']
+ *       c' = C;           | [c->c',d->d']
+ *       d' = D;           | [c->c',d->d']
  *      label:
- *       <assigns> | [c->c',d->d']
- *       c' = C;   | [c->c',d->d']
- *       d' = D;   | [c->c',d->d']
- *     } while (p);
- *     <rc-assigns-else>
- *     return(x,y);  | [c->c',d->d']
+ *       <assigns>         | [c->c',d->d']
+ *     } while (p);        | [c->c',d->d']
+ *     <rc-assigns-else>   | [c->c',d->d']
+ *     return(x,y);        | [c->c',d->d']
  *
- * We introduce a fresh variable for each argument that does not directly go into
- * the corresponding argument position of the recursive call.
- * The assignment chain is alpha-converted to use these fresh variables instead of
- * the function arguments. Towards the end of the loop body we introduce re-assignments
- * to the fresh variables to realise the control flow loop. Since we only assign to
- * fresh variables, the sequence of assignments doesn't matter and parasitic bindings
- * cannot occur.
- *
- * This transformation scheme carefully avoids introducing assignments to function
- * arguments as that would violate a prerequisite of function inlining.
  *
  * Unfortunately, there is a rather weird case that requires further attention:
  * Function arguments may go unchanged to the recursive call, but in a different
@@ -92,7 +105,7 @@
  *     <assigns>
  *     if (p) {
  *       <rc-assings-then>
- *       x, y = DoFun( C, e, d);
+ *       x, y = DoFun( d, c, e);
  *     }
  *     else {
  *       <rc-assigns-else>
@@ -100,24 +113,23 @@
  *     return( x, y);
  *   }
  *
- * In this case, our scheme would indeed introduce a parasitic binding:
+ * In this case, our scheme would lead to an errorneous second assignment
+ * to d':
  *
  *   a,b = DoFun( c, d, e)
  *   {
  *     c' = c;
  *     d' = d;
- *     e' = e;
  *     goto label;
  *     do {
- *       <rc-assings-then>
+ *       <rc-assings-then> | [c->c',d->d']
+ *       c' = d';
+ *       d' = c';          <<<< WRONG !!!
  *      label:
- *       <assigns> | [c->c',d->d',e'->e]
- *       c' = C;   | [c->c',d->d',e'->e]
- *       d' = e;   | [c->c',d->d',e'->e]
- *       e' = d;   | [c->c',d->d',e'->e]
- *     } while (p);
- *     <rc-assigns-else>
- *     return(x,y);  | [c->c',d->d',e'->e]
+ *       <assigns>         | [c->c',d->d']
+ *     } while (p);        | [c->c',d->d']
+ *     <rc-assigns-else>   | [c->c',d->d']
+ *     return(x,y);        | [c->c',d->d']
  *
  * We avoid this problem by explicitly introducing a renaming assignment:
  *
@@ -125,19 +137,17 @@
  *   {
  *     c' = c;
  *     d' = d;
- *     e' = e;
  *     goto label;
  *     do {
- *       <rc-assings-then>
+ *       <rc-assings-then> | [c->c',d->d']
+ *       c^ = c';
+ *       c' = d';
+ *       d' = c^;
  *      label:
- *       <assigns> | [c->c',d->d',e'->e]
- *       d^ = d;   | [c->c',d->d',e'->e]
- *       c' = C;   | [c->c',d->d',e'->e]
- *       d' = e;   | [c->c',d->d',e'->e]
- *       e' = d^;  | [c->c',d->d',e'->e]
- *     } while (p);
- *     <rc-assigns-else>
- *     return(x,y);  | [c->c',d->d',e'->e]
+ *       <assigns>         | [c->c',d->d']
+ *     } while (p);        | [c->c',d->d']
+ *     <rc-assigns-else>   | [c->c',d->d']
+ *     return(x,y);        | [c->c',d->d']
  *
  */
 
@@ -372,7 +382,7 @@ F2Larg (node *arg_node, info *arg_info)
 static node *
 TransformIntoDoLoop (node *arg_node, info *arg_info)
 {
-    node *loop_body, *loop, *fun_body;
+    node *loop, *fun_body;
     node *body_assigns, *then_assigns, *else_assigns, *return_assign, *loop_pred;
 
     DBUG_ENTER ("TransformIntoDoLoop");
@@ -415,7 +425,8 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
     }
 
     /*
-     * The above strange code is necessary because empty assign chains are represented
+     * The above strange code is necessary because empty assign chains are
+     * represented
      * by the N_empty node rather than a NULL pointer. This should be changed!
      */
 
@@ -424,14 +435,14 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
 
     f2l_lut = LUTremoveContentLut (f2l_lut);
 
-    loop_body
-      = TCappendAssign (body_assigns, TCappendAssign (INFO_NEW_AUXASSIGNS (arg_info),
+    then_assigns
+      = TCappendAssign (then_assigns, TCappendAssign (INFO_NEW_AUXASSIGNS (arg_info),
                                                       INFO_NEW_BOTASSIGNS (arg_info)));
 
     INFO_NEW_AUXASSIGNS (arg_info) = NULL;
     INFO_NEW_BOTASSIGNS (arg_info) = NULL;
 
-    loop = TBmakeDo (loop_pred, TBmakeBlock (loop_body, NULL));
+    loop = TBmakeDo (loop_pred, TBmakeBlock (body_assigns, NULL));
 
     DO_ISCUDARIZABLE (loop) = FUNDEF_ISCUDALACFUN (arg_node);
 
