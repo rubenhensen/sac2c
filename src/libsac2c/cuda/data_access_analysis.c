@@ -286,6 +286,7 @@ ActOnId (node *avis, info *arg_info)
      */
     if (ssa_assign == NULL) {
         if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
+            printf ("Found function argument %s\n", AVIS_NAME (avis));
             node *new_avis;
             new_avis
               = LUTsearchInLutPp (INFO_LUT (arg_info), ARG_AVIS (AVIS_DECL (avis)));
@@ -296,6 +297,8 @@ ActOnId (node *avis, info *arg_info)
                 ActOnId (new_avis, arg_info);
             }
         } else if ((part_info = SearchIndex (INFO_PART_INFO (arg_info), avis)) != NULL) {
+            printf ("Found loop index or thread index %s  at dimension %d\n",
+                    AVIS_NAME (avis), INFO_IDXDIM (arg_info));
             unsigned int type = IDX_LOOPIDX;
             DBUG_ASSERT ((PART_INFO_TYPE (part_info) == IDX_THREADIDX
                           || PART_INFO_TYPE (part_info) == IDX_LOOPIDX),
@@ -310,9 +313,6 @@ ActOnId (node *avis, info *arg_info)
              * constant */
             CUAI_ISCONSTANT (INFO_ACCESS_INFO (arg_info), INFO_IDXDIM (arg_info)) = FALSE;
 
-            printf ("Found loop index of thread index %s  at dimension %d\n",
-                    AVIS_NAME (avis), INFO_IDXDIM (arg_info));
-
             AddIndex (type, INFO_COEFFICIENT (arg_info), avis,
                       PART_INFO_NTH (part_info) + 1, INFO_IDXDIM (arg_info), arg_info);
             MatrixSetEntry (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)),
@@ -325,6 +325,7 @@ ActOnId (node *avis, info *arg_info)
     } else {
         /* If this id is defined by an assignment outside the current cuda WL */
         if (ASSIGN_LEVEL (ssa_assign) == 0) {
+            printf ("Found external id %s with constant RHS\n", AVIS_NAME (avis));
             constant *cnst = COaST2Constant (ASSIGN_RHS (ssa_assign));
             if (cnst != NULL) {
                 AddIndex (IDX_CONSTANT, COconst2Int (cnst), NULL, 0,
@@ -340,6 +341,7 @@ ActOnId (node *avis, info *arg_info)
         }
         /* Otherwise, we start backtracking to collect data access information */
         else {
+            printf ("Found id %s with non-constant RHS\n", AVIS_NAME (avis));
             ASSIGN_INSTR (ssa_assign) = TRAVopt (ASSIGN_INSTR (ssa_assign), arg_info);
         }
     }
@@ -489,9 +491,7 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
     int i, coefficient, shmem_size, dim, cuwl_dim;
     cuda_index_t *index;
     int block_sizes_2d[2] = {global.cuda_2d_block_y, global.cuda_2d_block_x};
-
-    // int blocking_factor = global.cuda_2d_block_x;
-    int blocking_factor = 32;
+    int blocking_factor = global.cuda_2d_block_x;
     node *sharray_shp_log = NULL, *sharray_shp_phy = NULL;
 
     DBUG_ENTER ("CreateSharedMemoryForCoalescing");
@@ -995,6 +995,7 @@ node *
 DAAprf (node *arg_node, info *arg_info)
 {
     node *operand1, *operand2;
+    int old_coefficient;
 
     DBUG_ENTER ("DAAprf");
 
@@ -1034,6 +1035,9 @@ DAAprf (node *arg_node, info *arg_info)
                                                   INFO_NEST_LEVEL (arg_info));
 
                         /* Generate an empty coefficient matrix */
+                        printf ("creating coefficient matrix with %d rows and %d cols "
+                                "for array %s\n",
+                                dim, INFO_NEST_LEVEL (arg_info), ID_NAME (arr));
                         CUAI_MATRIX (INFO_ACCESS_INFO (arg_info))
                           = NewMatrix (INFO_NEST_LEVEL (arg_info), dim);
 
@@ -1095,6 +1099,7 @@ DAAprf (node *arg_node, info *arg_info)
                     if (!INFO_IS_AFFINE (arg_info)) {
                         INFO_ACCESS_INFO (arg_info)
                           = TBfreeCudaAccessInfo (INFO_ACCESS_INFO (arg_info));
+                        printf ("Setting Access Info to NULL!\n");
                         INFO_ACCESS_INFO (arg_info) = NULL;
                         break;
                     }
@@ -1153,7 +1158,6 @@ DAAprf (node *arg_node, info *arg_info)
             break;
         case F_sub_SxS:
             if (INFO_TRAVMODE (arg_info) == trav_collect) {
-                int old_coefficient;
                 operand1 = PRF_ARG1 (arg_node);
                 operand2 = PRF_ARG2 (arg_node);
 
@@ -1186,7 +1190,6 @@ DAAprf (node *arg_node, info *arg_info)
             break;
         case F_mul_SxS:
             if (INFO_TRAVMODE (arg_info) == trav_collect) {
-                int old_coefficient;
                 operand1 = PRF_ARG1 (arg_node);
                 operand2 = PRF_ARG2 (arg_node);
 
@@ -1204,6 +1207,27 @@ DAAprf (node *arg_node, info *arg_info)
                     old_coefficient = INFO_COEFFICIENT (arg_info);
                     INFO_COEFFICIENT (arg_info) *= NUM_VAL (operand1);
                     ActOnId (ID_AVIS (operand2), arg_info);
+                    INFO_COEFFICIENT (arg_info) = old_coefficient;
+                } else {
+                    DBUG_ASSERT ((0), "Unknown type of node found in operands!");
+                }
+            }
+            break;
+        case F_neg_S:
+            if (INFO_TRAVMODE (arg_info) == trav_collect) {
+                operand1 = PRF_ARG1 (arg_node);
+
+                if (NODE_TYPE (operand1) == N_num) {
+                    old_coefficient = INFO_COEFFICIENT (arg_info);
+                    INFO_COEFFICIENT (arg_info) *= -1;
+                    AddIndex (IDX_CONSTANT,
+                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand1), NULL, 0,
+                              INFO_IDXDIM (arg_info), arg_info);
+                    INFO_COEFFICIENT (arg_info) = old_coefficient;
+                } else if (NODE_TYPE (operand1) == N_id) {
+                    old_coefficient = INFO_COEFFICIENT (arg_info);
+                    INFO_COEFFICIENT (arg_info) *= -1;
+                    ActOnId (ID_AVIS (operand1), arg_info);
                     INFO_COEFFICIENT (arg_info) = old_coefficient;
                 } else {
                     DBUG_ASSERT ((0), "Unknown type of node found in operands!");
