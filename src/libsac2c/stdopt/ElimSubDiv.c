@@ -132,7 +132,7 @@ TogglePrf (prf op)
          * version will continue execution (the DBUG_ASSERT is
          * ignored!)
          */
-        result = F_unknown;
+        result = F_unknownPrf;
     }
 
     DBUG_RETURN (result);
@@ -171,7 +171,7 @@ InversionPrf (prf op, simpletype stype)
                 inv_prf = F_reciproc_V;
                 break;
             default:
-                inv_prf = F_unknown;
+                inv_prf = F_unknownPrf;
             }
         }
         /* There is no break missing here. */
@@ -196,11 +196,11 @@ InversionPrf (prf op, simpletype stype)
             inv_prf = F_neg_V;
             break;
         default:
-            inv_prf = F_unknown;
+            inv_prf = F_unknownPrf;
         }
         break;
     default:
-        inv_prf = F_unknown;
+        inv_prf = F_unknownPrf;
     }
 
     DBUG_RETURN (inv_prf);
@@ -410,7 +410,7 @@ ESDlet (node *arg_node, info *arg_info)
 node *
 ESDprf (node *arg_node, info *arg_info)
 {
-    prf op = F_unknown;
+    prf op = F_unknownPrf;
 
     DBUG_ENTER ("ESDprf");
 
@@ -420,7 +420,7 @@ ESDprf (node *arg_node, info *arg_info)
     op = InversionPrf (PRF_PRF (arg_node),
                        TYgetSimpleType (TYgetScalar (IDS_NTYPE (INFO_LHS (arg_info)))));
 
-    if (op != F_unknown) {
+    if (op != F_unknownPrf) {
         node *avis, *vardec;
         node *prf = NULL;
         ntype *ptype;

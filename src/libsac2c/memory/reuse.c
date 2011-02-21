@@ -71,7 +71,7 @@ MakeInfo ()
     INFO_RHSCAND (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_TRAVMODE (result) = ri_default;
-    INFO_ALLOCATOR (result) = F_unknown;
+    INFO_ALLOCATOR (result) = F_unknownPrf;
 
     DBUG_RETURN (result);
 }
@@ -382,7 +382,7 @@ EMRIprf (node *arg_node, info *arg_info)
             AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))
               = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node))), arg_info);
             INFO_TRAVMODE (arg_info) = ri_default;
-            INFO_ALLOCATOR (arg_info) = F_unknown;
+            INFO_ALLOCATOR (arg_info) = F_unknownPrf;
         }
         break;
 
@@ -430,7 +430,7 @@ EMRIgenarray (node *arg_node, info *arg_info)
         AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))
           = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node))), arg_info);
         INFO_TRAVMODE (arg_info) = ri_default;
-        INFO_ALLOCATOR (arg_info) = F_unknown;
+        INFO_ALLOCATOR (arg_info) = F_unknownPrf;
     } else {
         INFO_RHSCAND (arg_info) = GENARRAY_PRC (arg_node);
         GENARRAY_PRC (arg_node) = NULL;
@@ -439,7 +439,7 @@ EMRIgenarray (node *arg_node, info *arg_info)
         AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))
           = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node))), arg_info);
         INFO_TRAVMODE (arg_info) = ri_default;
-        INFO_ALLOCATOR (arg_info) = F_unknown;
+        INFO_ALLOCATOR (arg_info) = F_unknownPrf;
     }
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
@@ -468,7 +468,7 @@ EMRImodarray (node *arg_node, info *arg_info)
         AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node)))
           = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node))), arg_info);
         INFO_TRAVMODE (arg_info) = ri_default;
-        INFO_ALLOCATOR (arg_info) = F_unknown;
+        INFO_ALLOCATOR (arg_info) = F_unknownPrf;
     }
 
     if (MODARRAY_NEXT (arg_node) != NULL) {

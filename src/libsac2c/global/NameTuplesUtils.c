@@ -254,7 +254,7 @@ NTUgetMutcScopeFromTypes (types *type)
 mutc_usage_class_t
 NTUgetMutcUsageFromTypes (types *type)
 {
-    mutc_scope_class_t z;
+    mutc_usage_class_t z;
 
     DBUG_ENTER ("NTUgetMutcUsageFromTypes");
 
