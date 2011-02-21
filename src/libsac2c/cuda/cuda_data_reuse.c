@@ -758,20 +758,39 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
         RP_NEXT (pair) = SG_INFO_RANGE_PAIRS (sg_info);
         SG_INFO_RANGE_PAIRS (sg_info) = pair;
 
-        /* Assignments for global memory index calculation */
-        sg_info
-          = ComputeIndexInternal (TRUE, "loop_glb",
-                                  TBmakeId (IDS_AVIS (RANGE_INDEX (RP_OUTER (pair)))),
-                                  TBmakeNum (CUIDX_COEFFICIENT (idx)), FALSE, NULL, TRUE,
-                                  sg_info, arg_info);
+        if (CUIDX_COEFFICIENT (idx) > 0) {
+            /* Assignments for global memory index calculation */
+            sg_info
+              = ComputeIndexInternal (TRUE, "loop_glb",
+                                      TBmakeId (IDS_AVIS (RANGE_INDEX (RP_OUTER (pair)))),
+                                      TBmakeNum (CUIDX_COEFFICIENT (idx)), FALSE, NULL,
+                                      TRUE, sg_info, arg_info);
 
-        /* Assignments for shared memory index calculation */
-        sg_info
-          = ComputeIndexInternal (FALSE, "loop_shr",
-                                  TBmakeId (IDS_AVIS (RANGE_INDEX (RP_INNER (pair)))),
-                                  TBmakeNum (CUIDX_COEFFICIENT (idx)), FALSE, NULL, TRUE,
-                                  sg_info, arg_info);
+            /* Assignments for shared memory index calculation */
+            sg_info
+              = ComputeIndexInternal (FALSE, "loop_shr",
+                                      TBmakeId (IDS_AVIS (RANGE_INDEX (RP_INNER (pair)))),
+                                      TBmakeNum (CUIDX_COEFFICIENT (idx)), FALSE, NULL,
+                                      TRUE, sg_info, arg_info);
+        } else {
+            /* Assignments for global memory index calculation */
+            sg_info
+              = ComputeIndexInternal (TRUE, "loop_glb_neg",
+                                      TBmakeId (IDS_AVIS (RANGE_INDEX (RP_OUTER (pair)))),
+                                      TBmakeNum (CUIDX_COEFFICIENT (idx)), TRUE,
+                                      TBmakeNum (
+                                        -NUM_VAL (RANGE_UPPERBOUND (RP_INNER (pair)))),
+                                      TRUE, sg_info, arg_info);
 
+            /* Assignments for shared memory index calculation */
+            sg_info
+              = ComputeIndexInternal (FALSE, "loop_shr_neg",
+                                      TBmakeId (IDS_AVIS (RANGE_INDEX (RP_INNER (pair)))),
+                                      TBmakeNum (CUIDX_COEFFICIENT (idx)), TRUE,
+                                      TBmakeNum (
+                                        NUM_VAL (RANGE_UPPERBOUND (RP_INNER (pair)))),
+                                      TRUE, sg_info, arg_info);
+        }
         break;
     default:
         DBUG_ASSERT ((0), "Unknown index type found!");
