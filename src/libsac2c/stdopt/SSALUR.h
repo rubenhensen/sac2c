@@ -1,32 +1,50 @@
 /*
- * $Log$
- * Revision 1.6  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.5  2004/11/22 18:33:19  ktr
- * SACDevCamp 04 Ismop
- *
- * Revision 1.4  2004/07/18 19:54:54  sah
- * switch to new INFO structure
- * PHASE I
- * (as well some code cleanup)
- *
- * Revision 1.3  2001/05/25 08:42:18  nmw
- * comments added, code beautyfied
- *
- * Revision 1.2  2001/05/07 09:03:00  nmw
- * withloop unrolling by WLUnroll integrated in traversal
- *
- * Revision 1.1  2001/04/20 11:20:56  nmw
- * Initial revision
- *
- *
+ * $Id$
  */
 
 #ifndef _SAC_SSALUR_H_
 #define _SAC_SSALUR_H_
 
 #include "types.h"
+#include <sys/queue.h>
+
+/* type to perform loop unrolling operations on */
+typedef long loopc_t;
+
+struct int_or_var {
+    bool is_int;
+    union union_int_or_var {
+        node *var;
+        /* FIXME: What type does
+           PMint (1, PMAgetValue (x)) returns?  */
+        int num;
+    } value;
+};
+
+struct prf_expr {
+    node *lhs;
+    prf func;
+    struct int_or_var arg1;
+    struct int_or_var arg2;
+    TAILQ_ENTRY (prf_expr) entries;
+};
+
+/* Structure to store function a*x + b  or  x/a + b  */
+struct m_func {
+    prf func;
+    int a, b;
+};
+
+struct idx_vector {
+    node *var;
+    node *loopvar;
+    struct m_func mfunc;
+    loopc_t init_value;
+    TAILQ_ENTRY (idx_vector) entries;
+};
+
+TAILQ_HEAD (prf_expr_queue, prf_expr);
+TAILQ_HEAD (idx_vector_queue, idx_vector);
 
 /*****************************************************************************
  *
