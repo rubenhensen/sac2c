@@ -86,7 +86,7 @@ extern char *_db_process_;        /* Name of current process */
 extern int _db_keyword_ (char *); /* Accept/reject keyword */
 extern void _db_push_ (char *);   /* Push state, set up new state */
 extern void _db_pop_ (void);      /* Pop previous debug state */
-extern void _db_enter_ (char *, char *, int, char **, char **, int *);
+extern void _db_enter_ (const char *, char *, int, char **, char **, int *);
 /* New user function entered */
 extern void _db_return_ (int, char **, char **, int *);
 /* User function return */
@@ -172,12 +172,16 @@ extern void _db_longjmp_ (void); /* Restore debugger environment */
         a1                                                                               \
     } else                                                                               \
         NOOP
+#if 0
 #define DBUG_PRINT(keyword, arglist)                                                     \
     if (_db_on_) {                                                                       \
         _db_pargs_ (__LINE__, keyword);                                                  \
         _db_doprnt_ arglist;                                                             \
     } else                                                                               \
         NOOP
+#endif
+#define DBUG_PRINT(kw, arglist)                                                          \
+    ((void)(_db_on_ ? (_db_pargs_ (__LINE__, kw), _db_doprnt_ arglist, 0) : 0))
 #define DBUG_PUSH(a1) _db_push_ (a1)
 #define DBUG_POP() _db_pop_ ()
 #define DBUG_PROCESS(a1) (_db_process_ = a1)
