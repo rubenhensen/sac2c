@@ -535,8 +535,15 @@ AMTRANprf (node *arg_node, info *arg_info)
                         pat = PMprf (1, PMAisPrf (F_device2host), 1, PMvar (0, 0));
 
                         if (ID_DECL (ap_arg) != ID_DECL (id) &&
-                            //! ISDEVICE2HOST( AVIS_SSAASSIGN( ID_AVIS( ap_arg)))) {
-                            !PMmatchFlat (pat, ap_arg)) {
+                            /* This following two conditions are added to fix the bug
+                             * occurs when compiling the wave kernel. The bug has to do
+                             * with the fact that when an argument is passed to the loop
+                             * recursive at a different position than its position in the
+                             * loop function signature. However, this is a quick fix and
+                             * needs to be investigated more carefully. */
+                            (NODE_TYPE (ID_DECL (ap_arg)) != N_arg
+                             || NLUTgetNum (INFO_NLUT (arg_info), ID_AVIS (ap_arg)) != 0)
+                            && !PMmatchFlat (pat, ap_arg)) {
                             ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (INFO_LASTASSIGN (arg_info))
                               = TRUE;
                         }
@@ -557,14 +564,6 @@ AMTRANprf (node *arg_node, info *arg_info)
                      *      loop_fun( *, c_host , *, *);
                      *    }
                      */
-
-                    /*
-                                if( ISDEVICE2HOST( AVIS_SSAASSIGN( ID_AVIS( ap_arg))) &&
-                                    ASSIGN_ISNOTALLOWEDTOBEMOVEDUP( INFO_LASTASSIGN(
-                       arg_info))) { ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN( AVIS_SSAASSIGN(
-                       ID_AVIS( ap_arg))) = TRUE;
-                                }
-                    */
                     if (ISDEVICE2HOST (AVIS_SSAASSIGN (ID_AVIS (ap_arg)))) {
                         if (ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (INFO_LASTASSIGN (arg_info))) {
                             ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (
@@ -584,25 +583,6 @@ AMTRANprf (node *arg_node, info *arg_info)
                               PRF_ARG1 (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (ap_arg)))));
                         }
                     }
-                    /*
-                                pattern *pat;
-                                pat = PMprf( 1, PMAisPrf( F_device2host),
-                                             1, PMvar( 0, 0));
-
-                                if( PMmatchFlat( pat, ap_arg) &&
-                                    ASSIGN_ISNOTALLOWEDTOBEMOVEDUP( INFO_LASTASSIGN(
-                       arg_info))) { node *d2h_assign = AVIS_SSAASSIGN( ID_AVIS( ap_arg));
-                                  node *rhs = ASSIGN_RHS( d2h_assign);
-                                  while( NODE_TYPE( rhs) != N_prf) {
-                                    DBUG_ASSERT( NODE_TYPE( rhs) == N_id, "Non-id node
-                       found!"); d2h_assign = AVIS_SSAASSIGN( ID_AVIS( rhs)); rhs =
-                       ASSIGN_RHS( d2h_assign);
-                                  }
-                                  ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN( d2h_assign) = TRUE;
-                                }
-
-                                pat = PMfree( pat);
-                    */
                 }
                 /* If the host variable is not passed as an argument to the do-fun,
                  * the <host2device> CANNOT be moved out of the do-fun. */
