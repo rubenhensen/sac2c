@@ -43,7 +43,7 @@
 #include "pattern_match.h"
 
 #define DBUG_PREFIX "SSALUR"
-#include "debug1.h"
+#include "debug.h"
 
 /* INFO structure and macros */
 #include "SSALUR_info.h"
