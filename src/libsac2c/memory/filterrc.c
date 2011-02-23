@@ -432,7 +432,7 @@ FRCid (node *arg_node, info *arg_info)
 
     if (!DFMtestMaskEntry (INFO_USEMASK (arg_info), NULL, ID_AVIS (arg_node))) {
 
-        DBUG_PRINT ("FRC", ("Used Variable: %s", ID_NAME (arg_node)););
+        DBUG_PRINT ("FRC", ("Used Variable: %s", ID_NAME (arg_node)));
 
         DFMsetMaskEntrySet (INFO_USEMASK (arg_info), NULL, ID_AVIS (arg_node));
     }

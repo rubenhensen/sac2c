@@ -633,7 +633,7 @@ WLSWcode (node *arg_node, info *arg_info)
             DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
             DBUG_PRINT ("WLS", ("first"));
             DBUG_EXECUTE ("WLS", PRTdoPrintFile (stderr, first););
-            DBUG_PRINT ("WLS", ("last"););
+            DBUG_PRINT ("WLS", ("last"));
             DBUG_EXECUTE ("WLS", PRTdoPrintFile (stderr, last););
 
             /*
