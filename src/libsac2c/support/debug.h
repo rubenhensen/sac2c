@@ -35,11 +35,11 @@ extern void _db_longjmp_ (void); /* Restore debugger environment */
 #ifdef DBUG_OFF
 #define DBUG_ENTER()
 #define DBUG_RETURN(x) return x
-#define DBUG_PRINT(...)
-#define DBUG_PRINT_TAG(tag, ...)
-#define DBUG_EXECUTE(expr)
-#define DBUG_EXECUTE_TAG(tag, expr)
-#define DBUG_ASSERT(cond, ...)
+#define DBUG_PRINT(...) (void)0
+#define DBUG_PRINT_TAG(tag, ...) (void)0
+#define DBUG_EXECUTE(expr) (void)0
+#define DBUG_EXECUTE_TAG(tag, expr) (void)0
+#define DBUG_ASSERT(cond, ...) (void)0
 #define DBUG_POP()
 #define DBUG_PUSH(var)
 #else
@@ -72,21 +72,21 @@ extern void _db_longjmp_ (void); /* Restore debugger environment */
 #define DBUG_EXECUTE(...)                                                                \
     do {                                                                                 \
         if ((_db_on_ && _db_keyword_ (DBUG_PREFIX))) {                                   \
-            __VA_ARGS__                                                                  \
+            __VA_ARGS__;                                                                 \
         }                                                                                \
     } while (0)
 
-#define DBUG_EXECUTE_TAG(...)                                                            \
+#define DBUG_EXECUTE_TAG(tag, ...)                                                       \
     do {                                                                                 \
         if ((_db_on_ && _db_keyword_ (tag))) {                                           \
-            __VA_ARGS__                                                                  \
+            __VA_ARGS__;                                                                 \
         }                                                                                \
     } while (0)
 
 #define DBUG_ASSERT(cond, ...)                                                           \
     ((void)(!(cond) ? (fprintf (_db_fp_, "%s:%i Assertion \"" #cond "\" failed!",        \
                                 __FILE__, __LINE__),                                     \
-                       fprintf (_db_fp_, __VA_ARGS__), exit (-1))                        \
+                       fprintf (_db_fp_, __VA_ARGS__), exit (-1), 0)                     \
                     : 0))
 
 #define DBUG_POP() _db_pop_ ()

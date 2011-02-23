@@ -95,8 +95,10 @@ static bool GetModifier (node *, struct prf_expr_queue *, struct idx_vector_queu
 
 static loopc_t CalcUnrolling (node *, node *, struct idx_vector_queue *);
 
+#ifndef DBUG_OFF
 static void print_idx_queue (struct idx_vector_queue *);
 static void print_prf_queue (struct prf_expr_queue *);
+#endif
 
 static bool CheckPredicateNF (node *, int *, int *);
 static bool Newton (struct idx_vector_queue *, prf, loopc_t, double, double, int,
@@ -231,7 +233,9 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
      * parameters and getting modifiers for every loop variable.  */
     TAILQ_FOREACH (ivtmp, &ext_ivs, entries)
     {
+#ifndef DBUG_OFF
         const char *var_name = AVIS_NAME (ID_AVIS (ivtmp->var));
+#endif
         const char *loopvar_name = "?";
         node *m;
 
@@ -831,7 +835,9 @@ GetPredicateData (node *expr, prf *pred, loopc_t *term)
 static bool
 IsLURModifier (node *m, struct idx_vector *iv)
 {
+#ifndef DBUG_OFF
     const char *var_name = AVIS_NAME (ID_AVIS (iv->var));
+#endif
 
     DBUG_ENTER ();
 
@@ -1282,6 +1288,7 @@ GetModifier (node *var, struct prf_expr_queue *stack, struct idx_vector_queue *e
     return FALSE;
 }
 
+#ifndef DBUG_OFF
 /* Helper functions to print queue of type struct idx_vector_queue.  */
 static void
 print_idx_queue (struct idx_vector_queue *ivs)
@@ -1333,6 +1340,7 @@ print_prf_queue (struct prf_expr_queue *stack)
     DBUG_PRINT ("------ End -------");
     DBUG_RETURN ();
 }
+#endif
 
 /** <!--********************************************************************-->
  *
