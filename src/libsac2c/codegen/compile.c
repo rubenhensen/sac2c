@@ -4550,11 +4550,24 @@ COMParray (node *arg_node, info *arg_info)
             copyfun = NULL;
         }
 
-        ret_node
-          = TCmakeAssignIcm2 ("ND_CREATE__ARRAY__DATA",
-                              MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
-                                            TRUE, FALSE, DUPdoDupTree (icm_args)),
-                              TCmakeIdCopyString (copyfun), ret_node);
+        /*
+         * Array data is generated differently when using an irregular
+         * array.
+         */
+        if (ARRAY_ISIRREGULAR (arg_node) == TRUE) {
+            ret_node = TCmakeAssignIcm2 ("ND_CREATE__IRREGULAR__ARRAY__DATA",
+                                         MakeTypeArgs (IDS_NAME (let_ids),
+                                                       IDS_TYPE (let_ids), FALSE, TRUE,
+                                                       FALSE, DUPdoDupTree (icm_args)),
+                                         TCmakeIdCopyString (copyfun), ret_node);
+
+        } else {
+            ret_node = TCmakeAssignIcm2 ("ND_CREATE__ARRAY__DATA",
+                                         MakeTypeArgs (IDS_NAME (let_ids),
+                                                       IDS_TYPE (let_ids), FALSE, TRUE,
+                                                       FALSE, DUPdoDupTree (icm_args)),
+                                         TCmakeIdCopyString (copyfun), ret_node);
+        }
     }
 
     DBUG_RETURN (ret_node);
@@ -5864,9 +5877,13 @@ static node *
 COMPprfSelI (node *arg_node, info *arg_info)
 {
     node *arg1, *arg2;
+    node *icm_args;
+    node *let_ids;
+    node *ret_node;
 
     DBUG_ENTER ("COMPprfSelI");
 
+    let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
@@ -5874,11 +5891,20 @@ COMPprfSelI (node *arg_node, info *arg_info)
         DBUG_ASSERT (((TCgetBasetype (ID_TYPE (arg1)) == T_int)),
                      "1st arg of F_sel_VxA is a illegal indexing var!");
 
-        DBUG_ASSERT (FALSE, "N_id!!");
+        icm_args
+          = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                        FALSE, TBmakeExprs (DUPdupIdNt (arg1), NULL)));
+
+        ret_node
+          = TCmakeAssignIcm3 ("ND_PRF_SEL_VxIA__DATA_id", DUPdoDupTree (icm_args),
+                              MakeSizeArg (arg1, TRUE),
+                              TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
+                              NULL);
     } else {
         DBUG_ASSERT (FALSE, "Not an N_id!!");
     }
-    DBUG_RETURN ((node *)NULL);
+    DBUG_RETURN (ret_node);
 }
 
 /** <!--********************************************************************-->

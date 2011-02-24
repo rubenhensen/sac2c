@@ -354,6 +354,15 @@ ICM_DEF( ND_CREATE__ARRAY__DATA, ICM_TRACE_NONE)
 ICM_END( ND_CREATE__ARRAY__DATA, (to_NT, to_sdim, val_size, vals_ANY, copyfun))
 #endif
 
+#if defined(ND_CREATE__IRREGULAR__ARRAY__DATA) || defined(ICM_ALL)
+ICM_DEF( ND_CREATE__IRREGULAR__ARRAY__DATA, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_INT( val_size)
+  ICM_VARANY( val_size, vals_ANY)
+  ICM_ID( copyfun)
+ICM_END( ND_CREATE__IRREGULAR__ARRAY__DATA, (to_NT, to_sdim, val_size, vals_ANY, copyfun))
+#endif
 
 #if defined(ND_PRF_SHAPE_A__DATA) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_SHAPE_A__DATA, ICM_TRACE_NONE)
