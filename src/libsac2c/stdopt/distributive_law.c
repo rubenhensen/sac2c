@@ -101,7 +101,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *DLdoDistribLawOptimization( node *arg_node)
+ * @fn node *DLdoDistributiveLawOptimization( node *arg_node)
  *
  * @brief starting point of distributivity optimization for
  *        module or fundef
@@ -113,11 +113,11 @@ FreeInfo (info *info)
  *****************************************************************************/
 
 node *
-DLdoDistribLawOptimization (node *arg_node)
+DLdoDistributiveLawOptimization (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("DLdoDistribLawOptimization");
+    DBUG_ENTER ("DLdoDistributiveLawOptimization");
 
     arg_info = MakeInfo ();
     INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));

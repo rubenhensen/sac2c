@@ -321,7 +321,7 @@ matchGeneratorField (node *fa, node *fb)
  *          Otherwise, INTERSECT_unknown.
  *
  *****************************************************************************/
-static intersect_type_t
+intersect_type_t
 isNullIntersect (node *arg_node)
 {
     intersect_type_t z = INTERSECT_unknown;
@@ -508,10 +508,10 @@ FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLG
 
     while (((INTERSECT_unknown == z) || (INTERSECT_null == z))
            && (intersectListNo < intersectListLim)) {
-        intersectb1 = ExtractNthItem (WLINTERSECTION1 (intersectListNo), idx);
+        intersectb1 = ExtractNthItem (WLPROJECTION1 (intersectListNo), idx);
         intersectb1
           = ReorderIntersect (intersectb1, AVIS_WITHIDS (ID_AVIS (idx)), consumerWLPart);
-        intersectb2 = ExtractNthItem (WLINTERSECTION2 (intersectListNo), idx);
+        intersectb2 = ExtractNthItem (WLPROJECTION1 (intersectListNo), idx);
         intersectb2
           = ReorderIntersect (intersectb2, AVIS_WITHIDS (ID_AVIS (idx)), consumerWLPart);
         if (NULL != arg_info) { /* Different callers! */

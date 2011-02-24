@@ -178,9 +178,9 @@ ETCfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("ETCfundef");
 
-    DBUG_PRINT ("CF", ("traversing body of (%s) %s",
-                       (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                       FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("ETC", ("traversing body of (%s) %s",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                        FUNDEF_NAME (arg_node)));
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     one_fundef = INFO_ONEFUNDEF (arg_info);

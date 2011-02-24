@@ -109,6 +109,20 @@
 #include "new_typecheck.h"
 #include "ivexpropagation.h"
 #include "string.h"
+#include "constant_folding.h"
+#include "variable_propagation.h"
+#include "ElimSubDiv.h"
+#include "arithmetic_simplification.h"
+#include "associative_law.h"
+#include "distributive_law.h"
+#include "UndoElimSubDiv.h"
+#include "inlining.h"
+#include "elim_alpha_types.h"
+#include "elim_bottom_types.h"
+#include "insert_symb_arrayattr.h"
+#include "dispatchfuncalls.h"
+#include "SSACSE.h"
+#include "cubeslicer.h"
 
 /** <!--********************************************************************-->
  *
@@ -259,6 +273,129 @@ AWLFIdoAlgebraicWithLoopFolding (node *arg_node)
  * @{
  *
  *****************************************************************************/
+
+/******************************************************************************
+ *
+ * function: node *SimplifySymbioticExpression
+ *
+ * description: Code to simplify symbiotic expression for
+ *              AWLF intersect calculation.
+ *
+ *              We perform inlining to bring sacprelude code into
+ *              this function, then repeatedly invoke a small
+ *              set of optimizations until we reach a fix point
+ *              or give up.
+ *
+ * @params  arg_node: an N_fundef node.
+ *
+ * @result: an updated N_fundef node.
+ *
+ ******************************************************************************/
+static node *
+SimplifySymbioticExpression (node *arg_node, info *arg_info)
+{
+    int i;
+    int ct;
+    int countINL;
+    int countCSE;
+    int countTUP;
+    int countCF;
+    int countVP;
+    int countAS;
+    int countAL;
+    int countDL;
+
+    DBUG_ENTER ("SimplifySymbioticExpression");
+
+    DBUG_PRINT ("SSE", ("Entering opt micro-cycle for %s %s",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                        FUNDEF_NAME (arg_node)));
+    /* Loop over optimizers until we reach a fix point or give up */
+    for (i = 0; i < global.max_optcycles; i++) {
+        ct = i;
+
+        /* Invoke each opt */
+        if (global.optimize.doinl) {
+            countINL = global.optcounters.inl_fun;
+            arg_node = INLdoInlining (arg_node);
+        }
+        if (global.optimize.dosaa) {
+            arg_node = ISAAdoInsertShapeVariables (arg_node);
+        }
+        if (global.optimize.docse) {
+            countCSE = global.optcounters.cse_expr;
+            arg_node = CSEdoCommonSubexpressionElimination (arg_node);
+        }
+        if (global.optimize.dotup) {
+            countTUP = global.optcounters.tup_upgrades;
+            arg_node = NTCdoNewTypeCheck (arg_node);
+        }
+        if (global.optimize.dotup) {
+            arg_node = EATdoEliminateAlphaTypes (arg_node);
+        }
+        if (global.optimize.dotup) {
+            arg_node = EBTdoEliminateBottomTypes (arg_node);
+        }
+        if (TRUE) {
+            arg_node = DFCdoDispatchFunCalls (arg_node);
+        }
+        if (global.optimize.docf) {
+            arg_node = CFdoConstantFolding (arg_node);
+            countCF = global.optcounters.cf_expr;
+        }
+        if (global.optimize.dovp) {
+            arg_node = VPdoVarPropagation (arg_node);
+            countVP = global.optcounters.vp_expr;
+        }
+        if (global.optimize.dosde) {
+            arg_node = ESDdoElimSubDiv (arg_node);
+        }
+        if (global.optimize.doas) {
+            arg_node = ASdoArithmeticSimplification (arg_node);
+            countAS = global.optcounters.as_expr;
+        }
+        if (global.optimize.docse) {
+            arg_node = CSEdoCommonSubexpressionElimination (arg_node);
+        }
+        if (global.optimize.docf) {
+            arg_node = CFdoConstantFolding (arg_node);
+            countCF = global.optcounters.cf_expr;
+        }
+        if (global.optimize.doas) {
+            countAL = global.optcounters.al_expr;
+            arg_node = ALdoAssocLawOptimization (arg_node);
+        }
+        if (global.optimize.dodl) {
+            countDL = global.optcounters.dl_expr;
+            arg_node = DLdoDistributiveLawOptimization (arg_node);
+        }
+
+        DBUG_PRINT ("SSE", ("INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, AS=%d, AL=%d, DL=%d\n",
+                            (global.optcounters.inl_fun - countINL),
+                            (global.optcounters.cse_expr - countCSE),
+                            (global.optcounters.tup_upgrades - countTUP),
+                            (global.optcounters.cf_expr - countCF),
+                            (global.optcounters.vp_expr - countVP),
+                            (global.optcounters.as_expr - countAS),
+                            (global.optcounters.al_expr - countAL),
+                            (global.optcounters.dl_expr - countDL)));
+
+        if (/* Fix point check */
+            (countINL == global.optcounters.inl_fun)
+            && (countCSE == global.optcounters.cse_expr)
+            && (countTUP == global.optcounters.tup_upgrades)
+            && (countCF == global.optcounters.cf_expr)
+            && (countVP == global.optcounters.vp_expr)
+            && (countAS == global.optcounters.as_expr)
+            && (countAL == global.optcounters.al_expr)
+            && (countDL == global.optcounters.dl_expr)) {
+            i = global.max_optcycles;
+        }
+    }
+    DBUG_PRINT ("SSE", ("Stabilized at iteration %d", ct));
+
+    DBUG_RETURN (arg_node);
+}
 
 /** <!--********************************************************************-->
  *
@@ -525,10 +662,13 @@ TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withid
 
 /** <!--********************************************************************-->
  *
- * @fn node *BuildInverseProjection( node *arg_node, info *arg_info)
+ * @fn node *BuildInverseProjectionOne( node *arg_node, info *arg_info,
+ *                                      node *intrsct)
  *
  * @brief Given a consumerWL _sel_VxA_( iv', producerWL) arg_node,
- *        create a symbiotic expression to compute the inverse projection
+ *        and a known non-NULL intersection between the consumerWL
+ *        and the producerWL, create a symbiotic expression to
+ *        compute the inverse projection
  *        of the intersection of the producerWL partition bounds
  *        with the consumerWL's index vector, iv', back into
  *        the consumerWL's partition bounds.
@@ -553,7 +693,7 @@ TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withid
  *
  *****************************************************************************/
 static node *
-BuildInverseProjection (node *arg_node, info *arg_info, node *intrsct)
+BuildInverseProjectionOne (node *arg_node, info *arg_info, node *intrsct)
 {
     node *z = NULL;
     node *i;
@@ -565,59 +705,97 @@ BuildInverseProjection (node *arg_node, info *arg_info, node *intrsct)
     node *intrsctid;
     node *withids = NULL;
     ntype *typ;
-    pattern *pat1;
-    pattern *pat2;
     int dim;
     int ivindx;
-    DBUG_ENTER ("BuildInverseProjection");
+    DBUG_ENTER ("BuildInverseProjectionOne");
 
-    pat1 = PMany (1, PMAgetNode (&seliv), 0);
-    pat2 = PMarray (1, PMAgetNode (&intrsctsc), 1, PMskip (0));
+    intrsctid = NULL; /* FIXME */
 
-    intrsctid = TBmakeId (intrsct);
-    if ((PMmatchFlatSkipExtremaAndGuards (pat1, PRF_ARG1 (arg_node)))
-        && (PMmatchFlatSkipExtremaAndGuards (pat2, intrsctid))) {
-        DBUG_PRINT ("AWLFI", ("Building inverse map fn for iv'=%s",
-                              AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))));
-        DBUG_ASSERT (N_array == NODE_TYPE (seliv), "Expected N_array seliv");
-        dim = SHgetUnrLen (ARRAY_FRAMESHAPE (seliv));
+    DBUG_PRINT ("AWLFI", ("Building inverse map fn for iv'=%s",
+                          AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))));
+    DBUG_ASSERT (N_array == NODE_TYPE (seliv), "Expected N_array seliv");
+    dim = SHgetUnrLen (ARRAY_FRAMESHAPE (seliv));
 
-        for (ivindx = 0; ivindx < dim; ivindx++) {
-            i = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (seliv));
-            withids = getNthWithids (0, intrsctid);
-            intrsctscel = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (intrsctsc));
-            INFO_FINVERSESWAP (arg_info) = FALSE;
-            ziavis = TraceIndexScalar (i, arg_info, ID_AVIS (intrsctscel), withids);
-            if (NULL != ziavis) {
-                AVIS_FINVERSESWAP (ziavis) = INFO_FINVERSESWAP (arg_info);
-                z = TCappendExprs (z, TBmakeExprs (TBmakeId (ziavis), NULL));
-            } else {
-                DBUG_PRINT ("AWLFI",
-                            ("Failed to find inverse map for N_array %s at axis %d",
-                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), ivindx));
-                ivindx = dim;
-                z = (NULL != z) ? FREEdoFreeTree (z) : z;
-            }
-        }
-
-        if (NULL != z) {
-            zarr = DUPdoDupNode (seliv); /* Result shape matches argument shape */
-            FREEdoFreeTree (ARRAY_AELEMS (zarr));
-            ARRAY_AELEMS (zarr) = z;
-            typ = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
-            z = AWLFIflattenExpression (zarr, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNS (arg_info), TYcopyType (typ));
+    for (ivindx = 0; ivindx < dim; ivindx++) {
+        i = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (seliv));
+        withids = getNthWithids (0, intrsctid);
+        intrsctscel = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (intrsctsc));
+        INFO_FINVERSESWAP (arg_info) = FALSE;
+        ziavis = TraceIndexScalar (i, arg_info, ID_AVIS (intrsctscel), withids);
+        if (NULL != ziavis) {
+            AVIS_FINVERSESWAP (ziavis) = INFO_FINVERSESWAP (arg_info);
+            z = TCappendExprs (z, TBmakeExprs (TBmakeId (ziavis), NULL));
+        } else {
+            DBUG_PRINT ("AWLFI", ("Failed to find inverse map for N_array %s at axis %d",
+                                  AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), ivindx));
+            ivindx = dim;
+            z = (NULL != z) ? FREEdoFreeTree (z) : z;
         }
     }
-    intrsctid = FREEdoFreeNode (intrsctid);
+
+    if (NULL != z) {
+        zarr = DUPdoDupNode (seliv); /* Result shape matches argument shape */
+        FREEdoFreeTree (ARRAY_AELEMS (zarr));
+        ARRAY_AELEMS (zarr) = z;
+        typ = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
+        z = AWLFIflattenExpression (zarr, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info), TYcopyType (typ));
+    }
 
     if (NULL == z) {
         z = intrsct;
         INFO_NOFINVERSE (arg_info) = TRUE;
+    } else {
+        global.optcounters.awlfi_expr += 1;
     }
 
-    pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
+    DBUG_RETURN (z);
+}
+/** <!--********************************************************************-->
+ *
+ * @fn node *BuildInverseProjections( node *arg_node, info *arg_info)
+ *
+ * @brief Given a consumerWL _sel_VxA_( iv', producerWL) arg_node,
+ *        we seek an F_noteintersect hanging from iv'.
+ *        If we find one, we examine each set of intersects,
+ *        to compute the inverse projection
+ *        of the intersection of the producerWL partition bounds
+ *        with the consumerWL's index vector, iv', back into
+ *        the consumerWL's partition bounds.
+ *
+ * @params: arg_node, arg_info.
+ *
+ * @result: An N_avis node, which represents the result of
+ *          mapping the intersect extrema back to CWL space.
+ *
+ *          If we are unable to compute the intersect, we merely
+ *          return intrsct, but leave tracks indicating the failure
+ *          in INFO_NOFIVINVERSE.
+ *          This may occur if, e.g., we multiply
+ *          iv by an unknown value, k. If we cannot show
+ *          that k is non-zero, we do not have an inverse.
+ *          We also have multiple calls to BuildInverseProjection,
+ *          one per PWL axis, and a failure on any axis is cause
+ *          for failure. I think.  *
+ *
+ *****************************************************************************/
+static node *
+BuildInverseProjections (node *arg_node, info *arg_info)
+{
+    node *z = NULL;
+    pattern *pat;
+    node *ni = NULL;
+    DBUG_ENTER ("BuildInverseProjections");
+
+    pat = PMprf (1, PMAisPrf (F_noteintersect), 1, PMvar (1, PMAgetNode (&ni), 0));
+
+    if (PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG1 (arg_node))) {
+
+        z = BuildInverseProjectionOne (arg_node, arg_info,
+                                       arg_node); /* fraudlent call! */
+    }
+
+    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
@@ -905,10 +1083,8 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
                                       &INFO_PREASSIGNS (arg_info),
                                       TYmakeAKS (TYmakeSimpleType (T_int),
                                                  SHcreateShape (1, shp)));
-    resavis = TUscalarizeVector (resavis, &INFO_PREASSIGNS (arg_info),
-                                 &INFO_VARDECS (arg_info));
-    /* Project partitionIntersectMin/Max data back from PWL to CWL */
-    z = BuildInverseProjection (arg_node, arg_info, resavis);
+    z = TUscalarizeVector (resavis, &INFO_PREASSIGNS (arg_info),
+                           &INFO_VARDECS (arg_info));
 
     pat = PMfree (pat);
 
@@ -1007,6 +1183,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     node *maxex;
     node *minel;
     node *maxel;
+    node *hole;
     pattern *pat1;
     pattern *pat2;
 
@@ -1096,6 +1273,14 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
         curavis = IntersectNullComputationBuilder (AVIS_MIN (ivavis), AVIS_MAX (ivavis),
                                                    g1, g2, arg_info);
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
+
+        /* Reserve room for inverse projections */
+#define HOLE -1
+        hole = IVEXImakeIntScalar (HOLE, &INFO_VARDECS (arg_info),
+                                   &INFO_PREASSIGNS (arg_info));
+        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (hole), NULL));
+        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (hole), NULL));
+
         partn = PART_NEXT (partn);
     }
 #ifdef FIXME // THis is probably garbage */
@@ -1155,7 +1340,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
     intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, ivavis);
     if (NULL != intersectcalc) {
         args = TBmakeExprs (TBmakeId (ivavis), NULL);
-        args = TCappendExprs (args, intersectcalc);
+        args = TCappendExprs (args, intersectcalc); /* WLINTERSECT1/2 */
 
         ivshape = SHgetUnrLen (TYgetShape (AVIS_TYPE (ivavis)));
         ivpavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ivavis)),
@@ -1420,6 +1605,7 @@ node *
 AWLFIfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
+    int optctr;
 
     DBUG_ENTER ("AWLFIfundef");
 
@@ -1431,6 +1617,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
 
         old_onefundef = INFO_ONEFUNDEF (arg_info);
         INFO_ONEFUNDEF (arg_info) = FALSE;
+        optctr = global.optcounters.awlfi_expr;
 
         arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_awlfi);
 
@@ -1446,6 +1633,10 @@ AWLFIfundef (node *arg_node, info *arg_info)
             }
 
             FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+        }
+
+        if (global.optcounters.awlfi_expr != optctr) {
+            arg_node = SimplifySymbioticExpression (arg_node, arg_info);
         }
 
         INFO_ONEFUNDEF (arg_info) = old_onefundef;
@@ -1712,6 +1903,13 @@ AWLFIprf (node *arg_node, info *arg_info)
                   ("AWLFIprf inserted F_attachintersect into cwl=%s at _sel_VxA_",
                    AVIS_NAME (INFO_CONSUMERWLNAME (arg_info))));
             }
+        }
+
+        /* Possibly compute inverse projection of intersect */
+        if ((INFO_PRODUCERWLFOLDABLE (arg_info))
+            && (PRF_ISNOTEINTERSECTPRESENT (arg_node))) {
+            /* Project partitionIntersectMin/Max data back from PWL to CWL */
+            arg_node = BuildInverseProjections (arg_node, arg_info);
         }
     }
 
