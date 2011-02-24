@@ -448,7 +448,7 @@ elif [ test "$SUNC" = yes ]; then
   AC_SUBST(PDCCFLAGS, ["-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4 -xc99=all -KPIC"])
   AC_SUBST(GENPIC, ["-KPIC"])
   AC_SUBST(DEPSFLAG, ["-xM"])
-  AC_SUBST(CPPFILE, ["cc -E -C -x c"])
+  AC_SUBST(CPPFILE, ["cpp -E -C -x c"])
   AC_SUBST(CCMTLINK, ["-lpthread"])
   AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Sun cc settings])
