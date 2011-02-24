@@ -17,19 +17,15 @@ extern char *_db_process_;        /* Name of current process */
 extern int _db_keyword_ (char *); /* Accept/reject keyword */
 extern void _db_push_ (char *);   /* Push state, set up new state */
 extern void _db_pop_ (void);      /* Pop previous debug state */
-extern void _db_enter_ (const char *, char *, int, char **, char **, int *);
-/* New user function entered */
-extern void _db_return_ (int, char **, char **, int *);
-/* User function return */
-extern void _db_pargs_ (int, char *); /* Remember args for line */
-extern void _db_doprnt_ (char *, ...);
-/* Print debug output */
-extern void _db_doprnt_assert_1_ (char *, int, char *);
-/* Print debug output */
-extern void _db_doprnt_assert_2_ (char *, ...);
-/* Print debug output */
-extern void _db_setjmp_ (void);  /* Save debugger environment */
-extern void _db_longjmp_ (void); /* Restore debugger environment */
+extern void _db_enter_ (const char *, char *, int, char **, char **,
+                        int *);                         /* New user function entered */
+extern void _db_return_ (int, char **, char **, int *); /* User function return */
+extern void _db_pargs_ (int, char *);                   /* Remember args for line */
+extern void _db_doprnt_ (char *, ...);                  /* Print debug output */
+extern void _db_doprnt_assert_1_ (char *, int, char *); /* Print debug output */
+extern void _db_doprnt_assert_2_ (char *, ...);         /* Print debug output */
+extern void _db_setjmp_ (void);                         /* Save debugger environment */
+extern void _db_longjmp_ (void);                        /* Restore debugger environment */
 #endif
 
 #ifdef DBUG_OFF
@@ -84,8 +80,10 @@ extern void _db_longjmp_ (void); /* Restore debugger environment */
     } while (0)
 
 #define DBUG_ASSERT(cond, ...)                                                           \
-    ((void)(!(cond) ? (fprintf (_db_fp_, "%s:%i Assertion \"" #cond "\" failed!",        \
-                                __FILE__, __LINE__),                                     \
+    ((void)(!(cond) ? (fprintf (_db_fp_,                                                 \
+                                "%s:%i Assertion \"%s"                                   \
+                                "\" failed!",                                            \
+                                __FILE__, __LINE__, #cond),                              \
                        fprintf (_db_fp_, __VA_ARGS__), exit (-1), 0)                     \
                     : 0))
 

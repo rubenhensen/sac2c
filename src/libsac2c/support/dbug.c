@@ -543,7 +543,7 @@ VOID _db_pop_ (VOID)
  */
 
 VOID
-_db_enter_ (const char *_func_, char *_file_, int _line_, char **_sfunc_, char **_sfile_,
+_db_enter_ (char *_func_, char *_file_, int _line_, char **_sfunc_, char **_sfile_,
             int *_slevel_)
 {
     if (!init_done) {

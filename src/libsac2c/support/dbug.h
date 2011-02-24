@@ -86,7 +86,7 @@ extern char *_db_process_;        /* Name of current process */
 extern int _db_keyword_ (char *); /* Accept/reject keyword */
 extern void _db_push_ (char *);   /* Push state, set up new state */
 extern void _db_pop_ (void);      /* Pop previous debug state */
-extern void _db_enter_ (const char *, char *, int, char **, char **, int *);
+extern void _db_enter_ (char *, char *, int, char **, char **, int *);
 /* New user function entered */
 extern void _db_return_ (int, char **, char **, int *);
 /* User function return */
