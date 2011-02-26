@@ -5902,6 +5902,7 @@ COMPprfSelI (node *arg_node, info *arg_info)
                               TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                               NULL);
     } else {
+        ret_node = (node *)NULL;
         DBUG_ASSERT (FALSE, "Not an N_id!!");
     }
     DBUG_RETURN (ret_node);

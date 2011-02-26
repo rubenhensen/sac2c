@@ -36,20 +36,22 @@ ICMCompileND_CREATE__IRREGULAR__ARRAY__DATA (char *to_NT, int to_sdim, int val_s
 
     DBUG_ENTER ("ICMCompileND_CREATE__IRREGULAR__ARRAY__DATA");
 
-    if (val_size > 0) {
-        BLOCK_VARDECS (fprintf (global.outfile, "int SAC_j, SAC_i = 0;");
-                       , for (i = 0; i < val_size; i++) {
-                           FOR_LOOP_INC (fprintf (global.outfile, "SAC_j");
-                                         , fprintf (global.outfile, "0");
-                                         , fprintf (global.outfile, "SAC_ND_A_SIZE( %s)",
-                                                    vals_ANY[i]);
-                                         , INDENT;
-                                         fprintf (global.outfile,
-                                                  "SAC_ND_WRITE_READ_COPY("
-                                                  " %s, SAC_i, %s, SAC_j, %s)\n",
-                                                  to_NT, vals_ANY[i], copyfun);
-                                         INDENT; fprintf (global.outfile, "SAC_i++;\n"););
-                       });
+#define ND_CREATE__IRREGULAR__ARRAY__DATA
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_CREATE__IRREGULAR__ARRAY__DATA
+
+    /* USE:
+     *
+     * SAC_ND_A_DEC   <-- descriptor
+     * SAC_ND_A_FIELD <-- data
+     */
+
+    for (i = 0; i < 0 * val_size; i++) {
+        fprintf (global.outfile,
+                 "SAC_ND_A_DEC("
+                 "%s)\n",
+                 vals_ANY[i]);
     }
 
     for (i = 0; i < val_size; i++) {
