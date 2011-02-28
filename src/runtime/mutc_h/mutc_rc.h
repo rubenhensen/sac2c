@@ -51,7 +51,8 @@ SAC_IF_MUTC_RC_INDIRECT (
   sl_decl (SAC_dec_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc));
   sl_decl (SAC_dec_and_maybeFree_rc_w, void, sl_glparm (int *, desc),
            sl_glparm (int, val), sl_glparm (void *, data));
-  sl_decl (SAC_get_rc_w, void, sl_glparm (int *, desc), sl_shparm (int, val));)
+  sl_decl (SAC_get_rc_w, void, sl_glparm (int *, desc), sl_shparm (int, val));
+  sl_decl (SAC_rc_barrier_w, void, sl_glparm (int *, desc));)
 
 SAC_IF_NOT_MUTC_RC_INDIRECT (
   sl_decl (SAC_set_rc, void, sl_glparm (int *, desc), sl_glparm (int, rc));
@@ -60,7 +61,8 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
   sl_decl (SAC_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
   sl_decl (SAC_dec_and_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val));
   sl_decl (SAC_dec_and_maybeFree_rc, void, sl_glparm (int *, desc), sl_glparm (int, val),
-           sl_glparm (void *, data));)
+           sl_glparm (void *, data));
+  sl_decl (SAC_rc_barrier, void, sl_glparm (int *, desc));)
 
 /*
  * SAC_ND_SET__RC implementations (referenced by sac_std_gen.h)
@@ -163,6 +165,23 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         sl_sync ();                                                                      \
         (int)sl_geta (val);                                                              \
     })
+
+/*
+ * SAC_MUTC_RC_BARRIER implementation (referenced from mutc_rc_gen.h)
+ */
+#define SAC_MUTC_RC_BARRIER__DESC(var_NT)                                                \
+    {                                                                                    \
+        SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
+        SAC_TR_REF_PRINT (("MUTC_RC_BARRIER( %s)", NT_STR (var_NT)))                     \
+        SAC_IF_MUTC_RC_INDIRECT (                                                        \
+          sl_create (, SAC_mutc_rc_place_w, , , , , , SAC_rc_barrier_w,                  \
+                     sl_glarg (int *, , SAC_ND_A_DESC (var_NT)));)                       \
+        SAC_IF_NOT_MUTC_RC_INDIRECT (                                                    \
+          sl_create (, SAC_MUTC_GET_RC_PLACE (SAC_ND_A_DESC (var_NT)), 0, 1, 1, ,        \
+                     sl__exclusive, SAC_rc_barrier,                                      \
+                     sl_glarg (int *, , SAC_ND_A_DESC (var_NT)));)                       \
+        SAC_MUTC_SYNC ();                                                                \
+    }
 
 #endif /* SAC_BACKEND */
 #undef MUTC

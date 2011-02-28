@@ -11,12 +11,18 @@ extern void ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_c
                                       char **vararg);
 extern void ICMCompileMUTC_THREADFUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
                                            char **vararg);
+extern void ICMCompileMUTC_SPAWNFUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
+                                          char **vararg);
 extern void ICMCompileMUTC_THREADFUN_DEF_BEGIN (char *name, char *rettype_NT,
                                                 int vararg_cnt, char **vararg);
+extern void ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT,
+                                               int vararg_cnt, char **vararg);
 extern void ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt,
                                  char **vararg);
 extern void ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt,
                                          char **vararg);
+extern void ICMCompileMUTC_SPAWNFUN_AP (char *syncid, char *place, char *name,
+                                        char *retname, int vararg_cnt, char **vararg);
 extern void ICMCompileMUTC_FUNTHREADFUN_AP (char *name, char *retname, int vararg_cnt,
                                             char **vararg);
 extern void ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg);

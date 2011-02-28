@@ -2925,15 +2925,24 @@ COMPfundef (node *arg_node, info *arg_info)
               = TBmakeIcm ("MT_MTFUN_DEF_END", DUPdoDupTree (icm_args));
         } else if (FUNDEF_ISTHREADFUN (arg_node)) {
             icm_args = MakeFunctionArgs (arg_node);
-            if (FUNDEF_WASWITH3BODY (arg_node) && global.mutc_suballoc_desc_one_level_up
-                && FUNDEF_WITHOPS (arg_node) != NULL) {
-                icm_args = AddDescParams (FUNDEF_WITHOPS (arg_node), icm_args);
+            if (FUNDEF_ISSPAWNFUN (arg_node)) {
+                FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("MUTC_SPAWNFUN_DECL", icm_args);
+                FUNDEF_ICMDEFBEGIN (arg_node)
+                  = TBmakeIcm ("MUTC_SPAWNFUN_DEF_BEGIN", DUPdoDupTree (icm_args));
+                FUNDEF_ICMDEFEND (arg_node)
+                  = TBmakeIcm ("MUTC_SPAWNFUN_DEF_END", DUPdoDupTree (icm_args));
+            } else {
+                if (FUNDEF_WASWITH3BODY (arg_node)
+                    && global.mutc_suballoc_desc_one_level_up
+                    && FUNDEF_WITHOPS (arg_node) != NULL) {
+                    icm_args = AddDescParams (FUNDEF_WITHOPS (arg_node), icm_args);
+                }
+                FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("MUTC_THREADFUN_DECL", icm_args);
+                FUNDEF_ICMDEFBEGIN (arg_node)
+                  = TBmakeIcm ("MUTC_THREADFUN_DEF_BEGIN", DUPdoDupTree (icm_args));
+                FUNDEF_ICMDEFEND (arg_node)
+                  = TBmakeIcm ("MUTC_THREADFUN_DEF_END", DUPdoDupTree (icm_args));
             }
-            FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("MUTC_THREADFUN_DECL", icm_args);
-            FUNDEF_ICMDEFBEGIN (arg_node)
-              = TBmakeIcm ("MUTC_THREADFUN_DEF_BEGIN", DUPdoDupTree (icm_args));
-            FUNDEF_ICMDEFEND (arg_node)
-              = TBmakeIcm ("MUTC_THREADFUN_DEF_END", DUPdoDupTree (icm_args));
         } else if (FUNDEF_ISCUDAGLOBALFUN (arg_node)
                    || FUNDEF_ISCUDASTGLOBALFUN (arg_node)) {
             icm_args = MakeFunctionArgsCuda (arg_node);
@@ -3043,17 +3052,23 @@ COMPvardec (node *arg_node, info *arg_info)
       } */
 
     if (TCgetBasetype (VARDEC_TYPE (arg_node)) == T_sync) {
-        DBUG_PRINT ("COMP", ("Removing sync vardec"));
+        if (global.backend != BE_mutc) {
+            DBUG_PRINT ("COMP", ("Removing sync vardec"));
 
-        VARDEC_ICM (arg_node) = TCmakeIcm0 ("NOOP");
+            VARDEC_ICM (arg_node) = TCmakeIcm0 ("NOOP");
 
-        if (!FUNDEF_ISSLOWCLONE (INFO_FUNDEF (arg_info))) {
-            INFO_FPFRAME (arg_info)
-              = TCmakeAssignIcm1 ("FP_FRAME_SYNC",
-                                  TCmakeIdCopyString (AVIS_NAME (VARDEC_AVIS (arg_node))),
-                                  INFO_FPFRAME (arg_info));
+            if (!FUNDEF_ISSLOWCLONE (INFO_FUNDEF (arg_info))) {
+                INFO_FPFRAME (arg_info)
+                  = TCmakeAssignIcm1 ("FP_FRAME_SYNC",
+                                      TCmakeIdCopyString (
+                                        AVIS_NAME (VARDEC_AVIS (arg_node))),
+                                      INFO_FPFRAME (arg_info));
+            }
+        } else {
+            VARDEC_ICM (arg_node)
+              = TCmakeIcm1 ("SAC_MUTC_DECL_SYNCVAR",
+                            TCmakeIdCopyString (VARDEC_NAME (arg_node)));
         }
-
     } else if (AVIS_ISTHREADINDEX (VARDEC_AVIS (arg_node))) {
         VARDEC_ICM (arg_node) = TCmakeIcm1 ("SAC_MUTC_DECL_INDEX",
                                             TCmakeIdCopyString (VARDEC_NAME (arg_node)));
@@ -3733,7 +3748,13 @@ COMPap (node *arg_node, info *arg_info)
     } else if (FUNDEF_ISMTFUN (fundef)) {
         icm = TBmakeIcm ("MT_MTFUN_AP", icm_args);
     } else if (FUNDEF_ISTHREADFUN (fundef)) {
-        if (!FUNDEF_WASWITH3BODY (fundef)) {
+        if (FUNDEF_ISSPAWNFUN (fundef)) {
+            icm_args = TBmakeExprs (TCmakeIdCopyString (
+                                      AP_ISREMOTE (arg_node) ? "" : "PLACE_LOCAL"),
+                                    icm_args);
+            icm_args = TBmakeExprs (DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), icm_args);
+            icm = TBmakeIcm ("MUTC_SPAWNFUN_AP", icm_args);
+        } else if (!FUNDEF_WASWITH3BODY (fundef)) {
             icm = TBmakeIcm ("MUTC_FUNTHREADFUN_AP", icm_args);
         } else {
             if (global.mutc_suballoc_desc_one_level_up) {
@@ -3758,9 +3779,16 @@ COMPap (node *arg_node, info *arg_info)
     }
 
     // If ap is spaned, wrap the ap in spawn start and end icm's
-    if (AP_ISSPAWNED (arg_node)) {
+    if (AP_ISSPAWNED (arg_node) && (global.backend != BE_mutc)) {
         arg_node
           = TCappendAssign (MakeFPAp (INFO_LET (arg_info), icm, arg_info), assigns);
+    } else if (AP_ISSPAWNED (arg_node) && AP_ISREMOTE (arg_node)
+               && (global.backend == BE_mutc)) {
+        if (AP_ARGS (arg_node) != NULL) {
+            assigns = TBmakeAssign (icm, assigns);
+            icm = TCmakeIcm1 ("SAC_MUTC_RC_BARRIER", DUPdupIdNt (AP_ARG1 (arg_node)));
+        }
+        arg_node = TBmakeAssign (icm, assigns);
     } else {
         /*
          * We return an N_assign chain here rather than an N_ap node.
@@ -7453,7 +7481,7 @@ COMPprfSyncthreads (node *arg_node, info *arg_info)
 node *
 COMPprfSync (node *arg_node, info *arg_info)
 {
-    node *ret_node;
+    node *ret_node = NULL;
     node *fundef, *let;
     node *vars;
 
@@ -7461,41 +7489,46 @@ COMPprfSync (node *arg_node, info *arg_info)
 
     fundef = INFO_FUNDEF (arg_info);
 
-    if (!FUNDEF_ISSLOWCLONE (fundef)) {
-        // TODO: make better empty statement
-        ret_node = TCmakeAssignIcm0 ("SAC_NOOP", NULL);
+    if (global.backend != BE_mutc) {
+        if (!FUNDEF_ISSLOWCLONE (fundef)) {
+            // TODO: make better empty statement
+            ret_node = TCmakeAssignIcm0 ("SAC_NOOP", NULL);
+        } else {
+            ret_node = TCmakeAssignIcm0 ("SAC_FP_SYNC_END", NULL);
+
+            let = INFO_LET (arg_info);
+            vars = LET_LIVEVARS (let);
+
+            while (vars != NULL) {
+                ret_node = TCmakeAssignIcm2 ("SAC_FP_GET_LIVEVAR",
+                                             TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                                             TCmakeIdCopyString (
+                                               AVIS_NAME (LIVEVARS_AVIS (vars))),
+                                             ret_node);
+                vars = LIVEVARS_NEXT (vars);
+            }
+
+            ret_node = TCmakeAssignIcm3 ("SAC_FP_SYNC_START",
+                                         TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                                         TCmakeIdCopyString (
+                                           AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
+                                         TBmakeNum (LET_SPAWNSYNCINDEX (let)), ret_node);
+
+            // TODO: set only livevars minus results from sync
+            vars = LET_LIVEVARS (let);
+
+            while (vars != NULL) {
+                ret_node = TCmakeAssignIcm2 ("SAC_FP_SET_LIVEVAR",
+                                             TCmakeIdCopyString (FUNDEF_NAME (fundef)),
+                                             TCmakeIdCopyString (
+                                               AVIS_NAME (LIVEVARS_AVIS (vars))),
+                                             ret_node);
+                vars = LIVEVARS_NEXT (vars);
+            }
+        }
     } else {
-        ret_node = TCmakeAssignIcm0 ("SAC_FP_SYNC_END", NULL);
-
-        let = INFO_LET (arg_info);
-        vars = LET_LIVEVARS (let);
-
-        while (vars != NULL) {
-            ret_node
-              = TCmakeAssignIcm2 ("SAC_FP_GET_LIVEVAR",
-                                  TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                                  TCmakeIdCopyString (AVIS_NAME (LIVEVARS_AVIS (vars))),
-                                  ret_node);
-            vars = LIVEVARS_NEXT (vars);
-        }
-
-        ret_node = TCmakeAssignIcm3 ("SAC_FP_SYNC_START",
-                                     TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                                     TCmakeIdCopyString (
-                                       AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
-                                     TBmakeNum (LET_SPAWNSYNCINDEX (let)), ret_node);
-
-        // TODO: set only livevars minus results from sync
-        vars = LET_LIVEVARS (let);
-
-        while (vars != NULL) {
-            ret_node
-              = TCmakeAssignIcm2 ("SAC_FP_SET_LIVEVAR",
-                                  TCmakeIdCopyString (FUNDEF_NAME (fundef)),
-                                  TCmakeIdCopyString (AVIS_NAME (LIVEVARS_AVIS (vars))),
-                                  ret_node);
-            vars = LIVEVARS_NEXT (vars);
-        }
+        ret_node = TCmakeAssignIcm1 ("SAC_MUTC_SPAWNSYNC",
+                                     DUPdupIdNt (PRF_ARG1 (arg_node)), ret_node);
     }
 
     DBUG_RETURN (ret_node);

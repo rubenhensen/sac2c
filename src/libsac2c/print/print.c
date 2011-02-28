@@ -2016,6 +2016,10 @@ PRTfundef (node *arg_node, info *arg_info)
                     fprintf (global.outfile, " * MUTC thread fun\n");
                 }
 
+                if (FUNDEF_ISSPAWNFUN (arg_node)) {
+                    fprintf (global.outfile, " * MUTC spawn fun\n");
+                }
+
                 if (FUNDEF_ISMTFUN (arg_node)) {
                     fprintf (global.outfile, " * MT function:\n");
                 } else if (FUNDEF_ISSTFUN (arg_node)) {

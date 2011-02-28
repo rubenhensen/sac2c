@@ -129,6 +129,9 @@ RenameFunName (node *fundef)
     buf = SBUFcreate (40);
 
     buf = SBUFprint (buf, "SAC");
+    if (FUNDEF_ISSPAWNFUN (fundef)) {
+        buf = SBUFprint (buf, "s");
+    }
     if (FUNDEF_ISWRAPPERFUN (fundef) || FUNDEF_ISWRAPPERENTRYFUN (fundef)) {
         buf = SBUFprint (buf, "w");
     }

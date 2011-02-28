@@ -1327,8 +1327,18 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_IS_REUSED__BLOCK_BEGIN__SCL(to_NT, from_NT) if (0) {
 
+#ifdef DBUG_REUSE
+#define SAC_IS_REUSED__BLOCK_BEGIN__DEFAULT(to_NT, from_NT)                              \
+    if (SAC_ND_A_FIELD (to_NT) == SAC_ND_A_FIELD (from_NT)) {                            \
+        fprintf (stderr, "REUSE DYNAMIC\n");
+#else
+#ifdef DBUG_NOREUSE
+#define SAC_IS_REUSED__BLOCK_BEGIN__DEFAULT(to_NT, from_NT) if (0) {
+#else
 #define SAC_IS_REUSED__BLOCK_BEGIN__DEFAULT(to_NT, from_NT)                              \
     if (SAC_ND_A_FIELD (to_NT) == SAC_ND_A_FIELD (from_NT)) {
+#endif
+#endif
 
 /******************************************************************************
  *

@@ -48,6 +48,15 @@ ICM_DEF( MUTC_THREADFUN_DECL, ICM_TRACE_NONE)
 ICM_END( MUTC_THREADFUN_DECL, (name, rettype_NT, vararg_cnt, vararg))
 #endif
 
+#if defined(MUTC_SPAWNFUN_DECL) || defined(ICM_ALL)
+ICM_DEF( MUTC_SPAWNFUN_DECL, ICM_TRACE_NONE)
+  ICM_ID( name)
+  ICM_NT( rettype_NT)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MUTC_SPAWNFUN_DECL, (name, rettype_NT, vararg_cnt, vararg))
+#endif
+
 #if defined(MUTC_THREADFUN_DEF_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MUTC_THREADFUN_DEF_BEGIN, ICM_TRACE_NONE)
   ICM_ID( name)
@@ -55,6 +64,15 @@ ICM_DEF( MUTC_THREADFUN_DEF_BEGIN, ICM_TRACE_NONE)
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
 ICM_END( MUTC_THREADFUN_DEF_BEGIN, (name, rettype_NT, vararg_cnt, vararg))
+#endif
+
+#if defined(MUTC_SPAWNFUN_DEF_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MUTC_SPAWNFUN_DEF_BEGIN, ICM_TRACE_NONE)
+  ICM_ID( name)
+  ICM_NT( rettype_NT)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MUTC_SPAWNFUN_DEF_BEGIN, (name, rettype_NT, vararg_cnt, vararg))
 #endif
 
 #if defined(WE_FUN_DEF_BEGIN) || defined(ICM_ALL)
@@ -120,6 +138,17 @@ ICM_DEF( MUTC_THREADFUN_AP, ICM_TRACE(fun))
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
 ICM_END( MUTC_THREADFUN_AP, (name, retname, vararg_cnt, vararg))
+#endif
+
+#if defined(MUTC_SPAWNFUN_AP) || defined(ICM_ALL)
+ICM_DEF( MUTC_SPAWNFUN_AP, ICM_TRACE(fun))
+  ICM_NT( var_NT)
+  ICM_ID( place)
+  ICM_ID( name)
+  ICM_ID( retname)
+  ICM_INT( vararg_cnt)
+  ICM_VARANY( (3*vararg_cnt), vararg)
+ICM_END( MUTC_SPAWNFUN_AP, (var_NT, place, name, retname, vararg_cnt, vararg))
 #endif
 
 #if defined(MUTC_FUNTHREADFUN_AP) || defined(ICM_ALL)

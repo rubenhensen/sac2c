@@ -230,6 +230,25 @@
 #define SAC_MUTC_INIT_SUBALLOC_DESC_DO(var_NT)                                           \
     SAC_ND_A_DESC_NAME (var_NT) = sl_getp (SAC_ND_A_DESC_NAME (var_NT));
 
+#define SAC_MUTC_SPAWN_AP(syncid, place, name, ...)                                      \
+    sl_spawn (NT_NAME (syncid), place, , , , , , name, __VA_ARGS__);
+
+#define SAC_MUTC_DECL_SYNCVAR(syncid) sl_spawndecl (syncid);
+
+#define SAC_MUTC_SPAWNFUN_DECL2(...) sl_decl (__VAR_ARGS__)
+
+#define SAC_MUTC_DEF_SPAWNFUN_BEGIN2(name, anon, ...)                                    \
+    sl_def (name, void, __VA_ARGS__)                                                     \
+    {                                                                                    \
+        SAC_MUTC_THREAD_INIT
+
+#define SAC_MUTC_SPAWNFUN_DEF_END(...)                                                   \
+    SAC_MUTC_THREAD_CLEANUP                                                              \
+    }                                                                                    \
+    sl_enddef
+
+#define SAC_MUTC_SPAWNSYNC(syncid) sl_spawnsync (NT_NAME (syncid));
+
 #endif /* BACKEND */
 #undef MUTC
 #endif /* _SAC_MUTC_H_ */

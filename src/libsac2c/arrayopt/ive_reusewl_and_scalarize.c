@@ -17,6 +17,10 @@
 #include "globals.h"
 #include "pattern_match.h"
 #include "algebraic_wlfi.h"
+#include "ctinfo.h"
+#ifndef DBUG_OFF
+#include "print.h"
+#endif
 
 /**
  * forward declarations
@@ -399,6 +403,9 @@ FindIVOffset (ivinfo *info, node *iv, node *shapeexpr)
                    || ((arrayRestA != NULL) && (NULL == arrayRestB))
                    || !((arrayRestA == arrayRestB)
                         || (CMPTdoCompareTree (arrayRestA, arrayRestB) == CMPT_EQ)))) {
+            DBUG_PRINT ("IVERAS", ("no match"));
+            DBUG_EXECUTE ("IVERAS", PRTdoPrintNode (shapeexpr);
+                          PRTdoPrintNode (WITHOFFSET_SHAPEEXPR (oinfo)););
             oinfo = WITHOFFSET_NEXT (oinfo);
         }
 

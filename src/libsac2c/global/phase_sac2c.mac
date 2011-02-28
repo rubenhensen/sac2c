@@ -183,6 +183,9 @@ SUBPHASE (rgd, "Removing generic function definitions", RGDdoRemoveGenericDefini
 SUBPHASE (iif, "Restoring bodies of imported inline functions", PPIdoPrepareInline,
           ALWAYS, exp)
 
+SUBPHASE (cspf, "MUTC Creating spawn functions", CSPFdoCreateSpawnFunctions,
+          (global.backend == BE_mutc), exp)
+
 ENDPHASE (exp)
 
 /******************************************************************************/
@@ -661,13 +664,11 @@ SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
           IVESPLITdoSplitSelections, global.optimize.doive, opt)
 
 SUBPHASE (ivesli, "Eliminating index vectors (split loop invariants)",
-          IVESLIdoIVESplitLoopInvariants, global.optimize.doive, opt)
+          IVESLIdoIVESplitLoopInvariants,
+          global.optimize.doive &&global.optimize.doivesli, opt)
 
 SUBPHASE (ivevp, "Propagating variables (for IVE)", VPdoVarPropagation,
           global.optimize.doive &&global.optimize.dovp, opt)
-
-SUBPHASE (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
-          IVERASdoWithloopReuseAndOptimisation, global.optimize.doive, opt)
 
 /*************************************************/
 
@@ -774,6 +775,13 @@ SUBPHASE (cpive, "Propagating constants for IVE", CPdoConstantPropagation,
 
 SUBPHASE (cse2, "Eliminating common subexpression", CSEdoCommonSubexpressionElimination,
           global.optimize.docse, opt)
+
+/*
+ * iveras needs to run after the ive phases and after cse. So I
+ * have moved it down here
+ */
+SUBPHASE (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
+          IVERASdoWithloopReuseAndOptimisation, global.optimize.doive, opt)
 
 SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemoval,
           (global.optimize.dosaa || global.optimize.doive
@@ -978,17 +986,17 @@ ENDPHASE (mt3)
 
 /******************************************************************************/
 
-PHASE (fp, "Functional Parallelism", global.fp)
+PHASE (fp, "Functional Parallelism", global.fp || global.backend == BE_mutc)
 
 SUBPHASE (syn, "Add Sync Statements", SYNdoAddSync, ALWAYS, fp)
 
 SUBPHASE (mss, "Move Sync Statements", MSSdoMoveSyncStatement, !global.fpnoopt, fp)
 
-SUBPHASE (tff, "Tag Fundef Nodes", TFFdoTagFPFundefs, ALWAYS, fp)
+SUBPHASE (tff, "Tag Fundef Nodes", TFFdoTagFPFundefs, global.fp, fp)
 
-SUBPHASE (tfa, "Tag Ap Nodes", TFFdoTagFPAps, ALWAYS, fp)
+SUBPHASE (tfa, "Tag Ap Nodes", TFFdoTagFPAps, global.fp, fp)
 
-SUBPHASE (lva, "Live Variable Analysis", LVAdoLiveVariableAnalysis, ALWAYS, fp)
+SUBPHASE (lva, "Live Variable Analysis", LVAdoLiveVariableAnalysis, global.fp, fp)
 
 SUBPHASE (css, "Count Spawns and Syncs", CSSdoCountSpawnSync, ALWAYS, fp)
 

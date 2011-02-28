@@ -116,7 +116,7 @@ COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
 WLCOMP  CACHESIM  SPECIALIZE 
 TARGET  STEP  WIDTH  GENARRAY  MODARRAY  PROPAGATE
 LE  LT  GT LAZYAND LAZYOR
-STAR  PLUS  MINUS  TILDE  EXCL SPAWN
+STAR  PLUS  MINUS  TILDE  EXCL SPAWN RSPAWN
 TRIANGLEBR_L TRIANGLEBR_R
 
 PRF_DIM_A  PRF_SHAPE_A  PRF_RESHAPE_VxA  PRF_SEL_VxA  PRF_MODARRAY_AxVxS
@@ -1610,6 +1610,13 @@ expr_ap: qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRAC
          {
            $$ = TBmakeSpap( $2, $5);
            SPAP_ISSPAWNED( $$) = TRUE;
+           NODE_LINE( $$) = $<cint>4;
+         }
+       | RSPAWN qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRACKET_R
+         {
+           $$ = TBmakeSpap( $2, $5);
+           SPAP_ISSPAWNED( $$) = TRUE;
+           SPAP_ISREMOTE( $$) = TRUE;
            NODE_LINE( $$) = $<cint>4;
          }
        ;

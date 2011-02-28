@@ -229,6 +229,64 @@ ICMCompileMUTC_THREADFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt
     DBUG_VOID_RETURN;
 }
 
+/**<!--*********************************************************************-->
+ *
+ * @fn void ICMCompileMUTC_SPAWNFUN_DECL( char *name, char *rettype_NT,
+ *                                         int vararg_cnt, char **vararg)
+ *
+ * @brief
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMUTC_SPAWNFUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMUTC_SPAWNFUN_DECL");
+
+#define MUTC_SPAWNFUN_DECL
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MUTC_SPAWNFUN_DECL
+
+    DBUG_ASSERT (rettype_NT[0] == '\0', "Spawn funs must have a return type of void");
+
+    INDENT;
+    fprintf (global.outfile, "SAC_MUTC_SPAWNFUN_DECL2 ");
+
+    fprintf (global.outfile, "( %s, , ", name);
+    ScanArglist (vararg_cnt, 3, ",", ,
+                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
+    fprintf (global.outfile, ")");
+
+    DBUG_VOID_RETURN;
+}
+
+void
+ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
+                                   char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMUTC_SPAWNFUN_DEF_BEGIN");
+
+#define MUTC_SPAWNFUN_DEF_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MUTC_SPAWNFUN_DEF_BEGIN
+
+    DBUG_ASSERT (rettype_NT[0] == '\0', "Spawn funs must have a return type of void");
+
+    INDENT;
+    fprintf (global.outfile, "SAC_MUTC_DEF_SPAWNFUN_BEGIN2 ");
+
+    fprintf (global.outfile, "( %s, , ", name);
+    ScanArglist (vararg_cnt, 3, ",", ,
+                 fprintf (global.outfile, " SAC_ND_PARAM_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
+    fprintf (global.outfile, ")");
+
+    DBUG_VOID_RETURN;
+}
+
 /******************************************************************************
  *
  * function:
@@ -352,6 +410,52 @@ ICMCompileMUTC_FUNTHREADFUN_AP (char *name, char *retname, int vararg_cnt, char 
     fprintf (global.outfile, "SAC_MUTC_THREAD_FUNAP(");
 
     fprintf (global.outfile, "%s, ", name);
+    ScanArglist (vararg_cnt, 3, ",", ,
+                 fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
+                          vararg[i + 2], vararg[i + 1]));
+    fprintf (global.outfile, ")");
+
+    fprintf (global.outfile, "\n");
+
+    DBUG_VOID_RETURN;
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMUTC_SPAWNFUN_AP( char *var_NT,
+ *                                    char *place,
+ *                                    char *name,
+ *                                    char *retname,
+ *                                    int vararg_cnt,
+ *                                    char **vararg)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   MUTC_SPAWNFUN_AP( var_NT, place, name, vararg_cnt,
+ *                     [ TAG, basetype, arg_NT ]* )
+ *
+ *   where TAG is element in { in, in_..., out, out_..., inout, inout_... }.
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMUTC_SPAWNFUN_AP (char *var_NT, char *place, char *name, char *retname,
+                            int vararg_cnt, char **vararg)
+{
+    DBUG_ENTER ("ICMCompileMUTC_SPAWNFUN_AP");
+
+#define MUTC_SPAWNFUN_AP
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MUTC_SPAWNFUN_AP
+
+    INDENT;
+
+    fprintf (global.outfile, "SAC_MUTC_SPAWN_AP(");
+
+    fprintf (global.outfile, "%s, %s, %s, ", var_NT, place, name);
     ScanArglist (vararg_cnt, 3, ",", ,
                  fprintf (global.outfile, " SAC_ND_ARG_%s( %s, %s)", vararg[i],
                           vararg[i + 2], vararg[i + 1]));

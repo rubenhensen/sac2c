@@ -696,6 +696,12 @@
           <node name="With3" />
         </travuser>
       </traversal>
+      <traversal id="CSPF" name="MUTC create spawn functions" default="sons" include="create_spawn_funs.h">
+        <travuser>
+          <node name="Module" />
+          <node name="Ap" />
+        </travuser>
+      </traversal>
       <traversal id="TP" name="Tag Preparation" default="sons" include="tag_preparation.h" >
         <travuser>
           <node name="Arg" />
@@ -4908,6 +4914,22 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="SpawnFun" inconstructor="no">
+	  <description>
+      Points to the copy of this function that can be used as target for a 
+      spawn operation in the mutc backend.
+	  </description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no" >
+                <node name="Fundef" />
+                <phases>
+                  <range from="exp_cspf" to="final" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
 	<attribute name="SpecNs" inconstructor="no">
 	  <type name="Namespace">
             <targets>
@@ -5304,6 +5326,9 @@ N_tfarg :
         <flag name="IsWrapperfun" />
         <flag name="IsWrapperEntryfun" default="FALSE"/>
         <flag name="IsIndirectWrapperfun" default="FALSE"/>
+        <flag name="IsSpawnFun" default="FALSE">
+	  <description>True if the function is the target of a spawn operation in the mutc backend</description>
+	</flag>
         <flag name="IsZombie" />
         <flag name="IsExtern" />
         <flag name="IsGeneric" >
@@ -6437,6 +6462,11 @@ N_tfarg :
         <flag name="IsSpawned">
           <description>
             This function call should be spawned
+          </description>
+        </flag>
+        <flag name="IsRemote">
+          <description>
+            This function call should be spawned on another resource
           </description>
         </flag>
         <flag name="ToSpawn">
@@ -11006,6 +11036,11 @@ N_tfarg :
         <flag name="IsSpawned">
           <description>This function is spawned when using functional
           parallelism</description>
+        </flag>
+        <flag name="IsRemote">
+          <description>
+            This function call should be spawned on another resource
+          </description>
         </flag>
       </flags>
     </node>

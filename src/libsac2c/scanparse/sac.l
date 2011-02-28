@@ -312,6 +312,7 @@ int charpos = 0;
 "mutcthreadfun"            { FILTER( MUTCTHREADFUN); }
 "noinline"                 { FILTER( NOINLINE); }
 "spawn"                    { FILTER( SPAWN); }
+"rspawn"                   { FILTER( RSPAWN); }
 
 "iff" 			   { FILTER( IFF); }
 "builtin-typedef" 	   { FILTER( TFBUILTIN); }

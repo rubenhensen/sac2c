@@ -85,6 +85,12 @@ sl_def (SAC_get_rc, void, sl_glparm (int *, desc), sl_shparm (int, val))
 }
 sl_enddef
 
+sl_def (SAC_rc_barrier, void, sl_glparm (int *, desc))
+{
+    SAC_MUTC_DEBUG_RC (printf ("SAC_rc_barrier( %p)\n", (void *)sl_getp (desc)););
+}
+sl_enddef
+
 /*  Wrapper functions   */
 sl_def (SAC_set_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc))
 {
@@ -129,5 +135,13 @@ sl_def (SAC_get_rc_w, void, sl_glparm (int *, desc), sl_shparm (int, val))
                sl_glarg (int *, , sl_getp (desc)), sl_sharg (int, val2, sl_getp (val)));
     sl_sync ();
     sl_setp (val, sl_geta (val2));
+}
+sl_enddef
+
+sl_def (SAC_rc_barrier_w, void, sl_glparm (int *, desc))
+{
+    sl_create (, SAC_mutc_rc_place, , , , , sl__exclusive, SAC_inc_rc,
+               sl_glarg (int *, , sl_getp (desc)));
+    sl_sync ();
 }
 sl_enddef
