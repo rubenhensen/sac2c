@@ -367,7 +367,7 @@ FindAssignOfType (node *assigns, nodetype n)
     DBUG_ENTER ();
 
     TRAVpushAnonymous ((anontrav_t[]){{N_assign, &ATravFilter}, {0, NULL}}, &TRAVsons);
-    assigns = TRAVopt (assigns, (info *)&linfo);
+    assigns = TRAVopt (assigns, (info *)(void *)&linfo);
     TRAVpop ();
 
     DBUG_RETURN (linfo.res);
