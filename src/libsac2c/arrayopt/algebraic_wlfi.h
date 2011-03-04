@@ -37,8 +37,10 @@ extern node *AWLFIids (node *arg_node, info *arg_info);
 extern node *AWLFIprf (node *arg_node, info *arg_info);
 extern node *AWLFIavis (node *arg_node, info *arg_info);
 
-/* expressions per partition are: bound1, bound2, intlo, inthi, intNull */
-#define WLEPP (5)
+/* expressions per partition are: bound1, bound2, intlo, inthi, intNull,
+ *                                inverseprojectionlo,
+ *                                inverseprojectionhi */
+#define WLEPP (7)
 #define WLBOUND1ORIGINAL(partno) (1 + 0 + (WLEPP * partno))
 #define WLBOUND2ORIGINAL(partno) (1 + 1 + (WLEPP * partno))
 #define WLINTERSECTION1(partno) (1 + 2 + (WLEPP * partno))

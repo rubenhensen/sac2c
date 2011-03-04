@@ -783,19 +783,17 @@ static node *
 BuildInverseProjections (node *arg_node, info *arg_info)
 {
     node *z = NULL;
-    pattern *pat;
     node *ni = NULL;
+    int numpart;
+    int curpart;
     DBUG_ENTER ("BuildInverseProjections");
 
-    pat = PMprf (1, PMAisPrf (F_noteintersect), 1, PMvar (1, PMAgetNode (&ni), 0));
-
-    if (PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG1 (arg_node))) {
-
-        z = BuildInverseProjectionOne (arg_node, arg_info,
-                                       arg_node); /* fraudlent call! */
+    ni = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node)))));
+    DBUG_ASSERT (F_noteintersect == PRF_PRF (ni), "Did not find F_noteintersect");
+    numpart = (TCcountExprs (PRF_ARGS (ni)) - 1) / WLEPP;
+    for (curpart = 0; curpart < numpart; curpart++) {
+        z = BuildInverseProjectionOne (arg_node, arg_info, arg_node);
     }
-
-    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
