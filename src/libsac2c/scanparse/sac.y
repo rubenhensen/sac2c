@@ -1609,14 +1609,20 @@ expr_ap: qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRAC
        | SPAWN qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRACKET_R
          {
            $$ = TBmakeSpap( $2, $5);
-           SPAP_ISSPAWNED( $$) = TRUE;
+           if (global.fp || (global.backend == BE_mutc)) {
+             /* only parse spawn if support is enabled, otherwise ignore it */
+             SPAP_ISSPAWNED( $$) = TRUE;
+           }
            NODE_LINE( $$) = $<cint>4;
          }
        | RSPAWN qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRACKET_R
          {
            $$ = TBmakeSpap( $2, $5);
-           SPAP_ISSPAWNED( $$) = TRUE;
-           SPAP_ISREMOTE( $$) = TRUE;
+           if (global.fp || (global.backend == BE_mutc)) {
+             /* only parse spawn if support is enabled, otherwise ignore it */
+             SPAP_ISSPAWNED( $$) = TRUE;
+             SPAP_ISREMOTE( $$) = TRUE;
+           }
            NODE_LINE( $$) = $<cint>4;
          }
        ;
