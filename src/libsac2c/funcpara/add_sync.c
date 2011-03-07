@@ -258,6 +258,7 @@ SYNlet (node *arg_node, info *arg_info)
 {
     node *sync;
     node *avis;
+    node *apavis;
     node *let;
 
     DBUG_ENTER ("SYNlet");
@@ -286,12 +287,15 @@ SYNlet (node *arg_node, info *arg_info)
 
         // change ids to use newly created temp spawn value
         // and point let nodes to each other
+        apavis = IDS_AVIS (LET_IDS (arg_node));
         LET_IDS (arg_node) = TBmakeIds (avis, NULL);
         LET_MATCHINGSPAWNSYNC (arg_node) = let;
         LET_MATCHINGSPAWNSYNC (let) = arg_node;
+        AVIS_SSAASSIGN (avis) = AVIS_SSAASSIGN (apavis);
 
         // Create the assign node and save it in info
         sync = TBmakeAssign (let, NULL);
+        AVIS_SSAASSIGN (apavis) = sync;
 
         INFO_NEWASSIGN (arg_info) = sync;
     }
