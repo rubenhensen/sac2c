@@ -4737,6 +4737,64 @@ COMPprfDecRC (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn  node COMPprfRestorerc( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_restorrc.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+static node *
+COMPprfRestorerc (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+    DBUG_ENTER ("COMPprfRestore");
+
+    ret_node
+      = TCmakeAssignIcm2 ("ND_RESTORERC",
+                          TCmakeIdCopyStringNt (AVIS_NAME (INFO_LASTIDS (arg_info)),
+                                                GetType (INFO_LASTIDS (arg_info))),
+                          TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                                                GetType (ID_AVIS (PRF_ARG1 (arg_node)))),
+                          NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node COMPprf2norc( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_restorrc.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+static node *
+COMPprf2norc (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+    DBUG_ENTER ("COMPprf2norc");
+
+    ret_node
+      = TCmakeAssignIcm2 ("ND_2NORC",
+                          TCmakeIdCopyStringNt (AVIS_NAME (INFO_LASTIDS (arg_info)),
+                                                GetType (INFO_LASTIDS (arg_info))),
+                          TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                                                GetType (ID_AVIS (PRF_ARG1 (arg_node)))),
+                          NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn  node COMPprfAlloc( node *arg_node, info *arg_info)
  *
  * @brief  Compiles N_prf node of type F_alloc.

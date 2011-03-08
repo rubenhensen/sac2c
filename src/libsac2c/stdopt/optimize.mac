@@ -111,6 +111,7 @@ OPTIMIZE ("ms", ms, TRUE, TRUE, "MUTC move syncs")
 OPTIMIZE ("uw3", uw3, TRUE, TRUE, "MUTC unroll with3 loops")
 OPTIMIZE ("pew3", pew3, TRUE, TRUE, "MUTC prune empty with3 loops")
 OPTIMIZE ("msa", msa, TRUE, TRUE, "MUTC mark suballoc as unique")
+OPTIMIZE ("anrp", anrp, FALSE, FALSE, "MUTC add norc prf")
 /*
 OPTIMIZE( "cuskc",  cuskc,   TRUE,  TRUE,  "CUDA sink code")
 OPTIMIZE( "cucc",   cucc,    TRUE,  TRUE,  "CUDA create cells")

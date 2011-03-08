@@ -168,6 +168,14 @@ TYP_IF (T_double_shmem, "double_shmem", "double_shmem", "dsh", COcv2Double, COcv
 TYP_IF (T_sync, "sync", "SAC_sync", "syn", COcv2ScalarDummy, COcv2CvHidden, COcv2StrDummy,
         sizeof (void *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
 
+/*
+ * This is an internal type that is used to store information about the state of
+ * the reference counter of a variable.  e.g. value and mode.
+ * This type is only used in the mutc backend at this time.
+ */
+TYP_IF (T_rc, "reference_count", "referencecount", "rc", COcv2ScalarDummy, COcv2CvDummy,
+        COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, NULL)
+
 TYP_IF (T_nothing, "nothing", "nothing", "n", COcv2ScalarDummy, COcv2CvDummy,
         COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
 

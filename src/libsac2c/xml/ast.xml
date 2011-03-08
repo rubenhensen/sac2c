@@ -94,6 +94,15 @@
            error TravError
          include the include file needed for the traversal
     -->
+      <traversal id="ANRP" name="Add NoRC PRF" default="sons" include="add_norc_prf.h">
+        <travuser>
+          <node name="With3" />
+          <node name="Assign" />
+          <node name="Ap" />
+          <node name="Id" />
+          <node name="Fundef" />
+        </travuser>
+      </traversal>
       <traversal id="RTSPEC" name="Runtime Specialization" default="sons" include="runtime_specialization.h">
         <travuser>
           <node name="Module" />
