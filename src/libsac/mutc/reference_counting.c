@@ -140,7 +140,7 @@ sl_enddef
 
 sl_def (SAC_rc_barrier_w, void, sl_glparm (int *, desc))
 {
-    sl_create (, SAC_mutc_rc_place, , , , , sl__exclusive, SAC_inc_rc,
+    sl_create (, SAC_mutc_rc_place, , , , , sl__exclusive, SAC_rc_barrier,
                sl_glarg (int *, , sl_getp (desc)));
     sl_sync ();
 }
