@@ -990,7 +990,8 @@ PHASE (fp, "Functional Parallelism", global.fp || global.backend == BE_mutc)
 
 SUBPHASE (syn, "Add Sync Statements", SYNdoAddSync, ALWAYS, fp)
 
-SUBPHASE (mss, "Move Sync Statements", MSSdoMoveSyncStatement, !global.fpnoopt, fp)
+SUBPHASE (mss, "Move Sync Statements", MSSdoMoveSyncStatement,
+          !global.fpnoopt || global.backend == BE_mutc, fp)
 
 SUBPHASE (tff, "Tag Fundef Nodes", TFFdoTagFPFundefs, global.fp, fp)
 
