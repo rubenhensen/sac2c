@@ -46,7 +46,9 @@ extern node *AWLFIavis (node *arg_node, info *arg_info);
 #define WLINTERSECTION1(partno) (1 + 2 + (WLEPP * partno))
 #define WLINTERSECTION2(partno) (1 + 3 + (WLEPP * partno))
 #define WLINTERSECTIONNULL(partno) (1 + 4 + (WLEPP * partno))
-#define WLPROJECTION1(partno) (1 + 5 * (WLEPP * partno))
-#define WLPROJECTION2(partno) (1 + 6 * (WLEPP * partno))
+#define WLPROJECTION1(partno) (1 + 5 + (WLEPP * partno))
+#define WLPROJECTION2(partno) (1 + 6 + (WLEPP * partno))
+#define WLLB 0 /* Lower bound */
+#define WLUB 1 /* Upper bound */
 
 #endif /* _SAC_ALGEBRAIC_WLFI_H_ */

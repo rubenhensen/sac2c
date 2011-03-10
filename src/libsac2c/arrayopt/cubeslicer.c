@@ -511,14 +511,17 @@ FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLG
         intersectb1 = ExtractNthItem (WLPROJECTION1 (intersectListNo), idx);
         intersectb1
           = ReorderIntersect (intersectb1, AVIS_WITHIDS (ID_AVIS (idx)), consumerWLPart);
-        intersectb2 = ExtractNthItem (WLPROJECTION1 (intersectListNo), idx);
+        intersectb2 = ExtractNthItem (WLPROJECTION2 (intersectListNo), idx);
         intersectb2
           = ReorderIntersect (intersectb2, AVIS_WITHIDS (ID_AVIS (idx)), consumerWLPart);
         if (NULL != arg_info) { /* Different callers! */
             bnd = NULL;
-            INFO_INTERSECTBOUND1 (arg_info) = PMmatchFlat (pat, intersectb1) ? bnd : NULL;
+            PMmatchFlat (pat, intersectb1);
+            INFO_INTERSECTBOUND1 (arg_info) = bnd;
+
             bnd = NULL;
-            INFO_INTERSECTBOUND2 (arg_info) = PMmatchFlat (pat, intersectb2) ? bnd : NULL;
+            PMmatchFlat (pat, intersectb2);
+            INFO_INTERSECTBOUND2 (arg_info) = bnd;
         }
 
         /* producerWL may have vanished, due to CWLE, etc. */

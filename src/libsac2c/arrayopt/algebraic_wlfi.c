@@ -412,7 +412,7 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 static node *
 getNthWithids (int n, node *arg_node)
 {
-    node *z;
+    node *z = NULL;
     node *withids;
     bool b;
     pattern *pat;
@@ -421,14 +421,10 @@ getNthWithids (int n, node *arg_node)
 
     pat = PMany (1, PMAgetNode (&withids), 1, PMskip (0));
     b = PMmatchFlatSkipExtremaAndGuards (pat, arg_node);
-    DBUG_ASSERT (b, "Did not find AVIS_WITHIDS");
-
-    if (N_array == NODE_TYPE (withids)) {
+    if (b && (N_array == NODE_TYPE (withids))) {
         z = TCgetNthExprsExpr (n, ARRAY_AELEMS (withids));
-    } else {
-        DBUG_ASSERT (0 == n, "Did not find AVIS_WITHIDS");
-        z = withids;
     }
+
     pat = PMfree (pat);
 
     DBUG_RETURN (z);
@@ -518,6 +514,36 @@ FindPrfParent2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool isHasInverseProjection( node *arg_node)
+ *
+ * @brief: Predicate for presence of inverse projection of arg_node
+ *
+ * @param: arg_node - an F_intersect WLPROJECTION1/2 entry.
+ *
+ * @result: TRUE if  arg_node has an inverse projection
+ *          associated with it.
+ *
+ *****************************************************************************/
+static bool
+isHasInverseProjection (node *arg_node)
+{
+    bool z = FALSE;
+    constant *co;
+
+    DBUG_ENTER ("isHasinverseProjection");
+
+#define NOINVERSEPROJECTION -1
+    co = COaST2Constant (arg_node);
+    if (NULL != co) {
+        z = (NOINVERSEPROJECTION != COconst2Int (co));
+        co = COfreeConstant (co);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *TraceIndexScalar(...)
  *
  * @brief Chase one element of an N_array back to its WITH_IDS,
@@ -528,6 +554,8 @@ FindPrfParent2 (node *arg_node, info *arg_info)
  *           arg_info: Your basic arg_info node.
  *           intrsctsc: The N_avis of the current
  *           result of the iv'/pwl intersect calculation and F-inverse.
+ *           Or, an N_id.
+ *           Or, an N_num.
  *           withids:  The N_id of the WITHIDS element we are chasing.
  *
  * @result: An N_avis node that gives the result of the F-inverse mapping
@@ -555,107 +583,120 @@ TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withid
 
     DBUG_ENTER ("TraceIndexScalar");
 
-    DBUG_ASSERT (N_avis == NODE_TYPE (intrsctsc), "Expected N_avis intrsctsc");
+    if (N_num == NODE_TYPE (intrsctsc)) {
+        z = AWLFIflattenExpression (DUPdoDupNode (intrsctsc), &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info),
+                                    TYmakeAKS (TYmakeSimpleType (T_int),
+                                               SHcreateShape (0, 0)));
+    } else {
+        if (N_id == NODE_TYPE (intrsctsc)) {
+            intrsctsc = ID_AVIS (intrsctsc);
+        }
 
-    DBUG_PRINT ("AWLFI", ("Tracing %s", AVIS_NAME (ID_AVIS (idxscalar))));
-    pat = PMparam (1, PMAgetNode (&idx), 0);
-    if (PMmatchFlatSkipExtremaAndGuards (pat, idxscalar)) {
-        switch (NODE_TYPE (idx)) {
-        case N_id:
-            if (ID_AVIS (idx) == ID_AVIS (withids)) {
-                DBUG_PRINT ("AWLFI",
-                            ("Found %s as source of iv'=%s", AVIS_NAME (ID_AVIS (idx)),
-                             AVIS_NAME (ID_AVIS (idxscalar))));
-                z = intrsctsc;
-            } else {
-                DBUG_PRINT ("AWLFI", ("We lost the trail."));
-                z = NULL;
-            }
-            break;
-
-        case N_prf:
-            ivarg = FindPrfParent2 (idx, arg_info);
-            xarg = (ivarg == PRF_ARG1 (idx)) ? PRF_ARG2 (idx) : PRF_ARG1 (idx);
-
-            switch (PRF_PRF (idx)) {
-            case F_add_SxS:
-                /* iv' = ( iv + x);   -->  iv = ( iv' - x);
-                 * iv' = ( x  + iv);  -->  iv = ( iv' - x);
-                 */
-                resavis
-                  = TBmakeAvis (TRAVtmpVarName ("tis"),
-                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-                INFO_VARDECS (arg_info) = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
-                ids = TBmakeIds (resavis, NULL);
-                assgn
-                  = TBmakeAssign (TBmakeLet (ids,
-                                             TCmakePrf2 (F_sub_SxS, TBmakeId (intrsctsc),
-                                                         TBmakeId (ID_AVIS (xarg)))),
-                                  NULL);
-                INFO_PREASSIGNS (arg_info)
-                  = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
-                AVIS_SSAASSIGN (resavis) = assgn;
-                z = TraceIndexScalar (ivarg, arg_info, IDS_AVIS (ids), withids);
-                break;
-
-            case F_sub_SxS:
-                /* Case 1: iv' = ( iv - x);   -->  iv = ( iv' + x);
-                 * Case 2: iv' = ( x - iv);   -->  iv = ( x - iv');
-                 *         Also, must swap minval/maxval.
-                 */
-                resavis
-                  = TBmakeAvis (TRAVtmpVarName ("tis"),
-                                TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-                INFO_VARDECS (arg_info) = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
-                if (ID_AVIS (ivarg) == ID_AVIS (PRF_ARG1 (idx))) {
-                    nprf = F_add_SxS; /* Case 1 */
-                    id1 = TBmakeId (intrsctsc);
-                    id2 = TBmakeId (ID_AVIS (xarg));
+        DBUG_PRINT ("AWLFI", ("Tracing %s", AVIS_NAME (ID_AVIS (idxscalar))));
+        pat = PMparam (1, PMAgetNode (&idx), 0);
+        if (PMmatchFlatSkipExtremaAndGuards (pat, idxscalar)) {
+            switch (NODE_TYPE (idx)) {
+            case N_id:
+                if (ID_AVIS (idx) == ID_AVIS (withids)) {
+                    DBUG_PRINT ("AWLFI", ("Found %s as source of iv'=%s",
+                                          AVIS_NAME (ID_AVIS (idx)),
+                                          AVIS_NAME (ID_AVIS (idxscalar))));
+                    z = intrsctsc;
                 } else {
-                    nprf = F_sub_SxS; /* Case 2 */
-                    id1 = TBmakeId (ID_AVIS (xarg));
-                    id2 = TBmakeId (intrsctsc);
-                    INFO_FINVERSESWAP (arg_info) = !INFO_FINVERSESWAP (arg_info);
+                    DBUG_PRINT ("AWLFI", ("We lost the trail."));
+                    z = NULL;
                 }
-
-                ids = TBmakeIds (resavis, NULL);
-                assgn = TBmakeAssign (TBmakeLet (ids, TCmakePrf2 (nprf, id1, id2)), NULL);
-                INFO_PREASSIGNS (arg_info)
-                  = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
-                AVIS_SSAASSIGN (resavis) = assgn;
-                z = TraceIndexScalar (ivarg, arg_info, IDS_AVIS (ids), withids);
                 break;
 
-            case F_mul_SxS:
-                DBUG_ASSERT (FALSE, "Coding time for F_mul_SxS_");
-                if (COisConstant (PRF_ARG2 (idx))) {
+            case N_prf:
+                ivarg = FindPrfParent2 (idx, arg_info);
+                xarg = (ivarg == PRF_ARG1 (idx)) ? PRF_ARG2 (idx) : PRF_ARG1 (idx);
+
+                switch (PRF_PRF (idx)) {
+                case F_add_SxS:
+                    /* iv' = ( iv + x);   -->  iv = ( iv' - x);
+                     * iv' = ( x  + iv);  -->  iv = ( iv' - x);
+                     */
+                    resavis = TBmakeAvis (TRAVtmpVarName ("tis"),
+                                          TYmakeAKS (TYmakeSimpleType (T_int),
+                                                     SHcreateShape (0)));
+                    INFO_VARDECS (arg_info)
+                      = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
+                    ids = TBmakeIds (resavis, NULL);
+                    assgn
+                      = TBmakeAssign (TBmakeLet (ids,
+                                                 TCmakePrf2 (F_sub_SxS,
+                                                             TBmakeId (intrsctsc),
+                                                             TBmakeId (ID_AVIS (xarg)))),
+                                      NULL);
+                    INFO_PREASSIGNS (arg_info)
+                      = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
+                    AVIS_SSAASSIGN (resavis) = assgn;
+                    z = TraceIndexScalar (ivarg, arg_info, IDS_AVIS (ids), withids);
+                    break;
+
+                case F_sub_SxS:
+                    /* Case 1: iv' = ( iv - x);   -->  iv = ( iv' + x);
+                     * Case 2: iv' = ( x - iv);   -->  iv = ( x - iv');
+                     *         Also, must swap minval/maxval.
+                     */
+                    resavis = TBmakeAvis (TRAVtmpVarName ("tis"),
+                                          TYmakeAKS (TYmakeSimpleType (T_int),
+                                                     SHcreateShape (0)));
+                    INFO_VARDECS (arg_info)
+                      = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
+                    if (ID_AVIS (ivarg) == ID_AVIS (PRF_ARG1 (idx))) {
+                        nprf = F_add_SxS; /* Case 1 */
+                        id1 = TBmakeId (intrsctsc);
+                        id2 = TBmakeId (ID_AVIS (xarg));
+                    } else {
+                        nprf = F_sub_SxS; /* Case 2 */
+                        id1 = TBmakeId (ID_AVIS (xarg));
+                        id2 = TBmakeId (intrsctsc);
+                        INFO_FINVERSESWAP (arg_info) = !INFO_FINVERSESWAP (arg_info);
+                    }
+
+                    ids = TBmakeIds (resavis, NULL);
+                    assgn
+                      = TBmakeAssign (TBmakeLet (ids, TCmakePrf2 (nprf, id1, id2)), NULL);
+                    INFO_PREASSIGNS (arg_info)
+                      = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
+                    AVIS_SSAASSIGN (resavis) = assgn;
+                    z = TraceIndexScalar (ivarg, arg_info, IDS_AVIS (ids), withids);
+                    break;
+
+                case F_mul_SxS:
+                    DBUG_ASSERT (FALSE, "Coding time for F_mul_SxS_");
+                    if (COisConstant (PRF_ARG2 (idx))) {
+                    }
+                    break;
+
+                default:
+                    break;
                 }
+                break;
+
+            case N_num:
+                DBUG_PRINT ("AWLFI", ("Found integer as source of iv'=%s",
+                                      AVIS_NAME (ID_AVIS (idxscalar))));
+                z = ID_AVIS (idxscalar);
+                break;
+
+            case N_array:
+                DBUG_ASSERT (1 == SHgetUnrLen (ARRAY_FRAMESHAPE (idx)),
+                             "Expected 1-element N_array");
+                DBUG_ASSERT (FALSE, "We are confused");
                 break;
 
             default:
+                DBUG_ASSERT (FALSE, ("Cannot chase iv'"));
                 break;
             }
-            break;
-
-        case N_num:
-            DBUG_PRINT ("AWLFI", ("Found integer as source of iv'=%s",
-                                  AVIS_NAME (ID_AVIS (idxscalar))));
-            z = ID_AVIS (idxscalar);
-            break;
-
-        case N_array:
-            DBUG_ASSERT (1 == SHgetUnrLen (ARRAY_FRAMESHAPE (idx)),
-                         "Expected 1-element N_array");
-            DBUG_ASSERT (FALSE, "We are confused");
-            break;
-
-        default:
-            DBUG_ASSERT (FALSE, ("Cannot chase iv'"));
-            break;
         }
-    }
 
-    pat = PMfree (pat);
+        pat = PMfree (pat);
+    }
 
     DBUG_RETURN (z);
 }
@@ -663,9 +704,9 @@ TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withid
 /** <!--********************************************************************-->
  *
  * @fn node *BuildInverseProjectionOne( node *arg_node, info *arg_info,
- *                                      node *intrsct)
+ *                                      node *curel)
  *
- * @brief Given a consumerWL _sel_VxA_( iv', producerWL) arg_node,
+ * @brief Given an F_intersect arg_node,
  *        and a known non-NULL intersection between the consumerWL
  *        and the producerWL, create a symbiotic expression to
  *        compute the inverse projection
@@ -676,65 +717,54 @@ TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withid
  *        We search backwards from iv'.
  *
  * @params: arg_node, arg_info: as above
- *          intrsct: the N_id PWL/CWL intersect computed by sacprelude.
+ *          curel: the intersect extrema calc of interest
  *
  * @result: An N_avis node, which represents the result of
  *          mapping the intersect extrema back to CWL space.
  *
- *          If we are unable to compute the intersect, we merely
- *          return intrsct, but leave tracks indicating the failure
- *          in INFO_NOFIVINVERSE.
- *          This may occur if, e.g., we multiply
+ *          If we are unable to compute the inverse, we
+ *          return NULL. This may occur if, e.g., we multiply
  *          iv by an unknown value, k. If we cannot show
  *          that k is non-zero, we do not have an inverse.
- *          We also have multiple calls to BuildInverseProjection,
- *          one per PWL axis, and a failure on any axis is cause
- *          for failure. I think.  *
  *
  *****************************************************************************/
 static node *
-BuildInverseProjectionOne (node *arg_node, info *arg_info, node *intrsct)
+BuildInverseProjectionOne (node *arg_node, info *arg_info, node *curel)
 {
     node *z = NULL;
     node *i;
     node *ziavis;
-    node *seliv = NULL;
     node *zarr;
-    node *intrsctsc = NULL;
     node *intrsctscel;
-    node *intrsctid;
-    node *withids = NULL;
+    node *withids;
     ntype *typ;
     int dim;
     int ivindx;
     DBUG_ENTER ("BuildInverseProjectionOne");
 
-    intrsctid = NULL; /* FIXME */
-
-    DBUG_PRINT ("AWLFI", ("Building inverse map fn for iv'=%s",
-                          AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))));
-    DBUG_ASSERT (N_array == NODE_TYPE (seliv), "Expected N_array seliv");
-    dim = SHgetUnrLen (ARRAY_FRAMESHAPE (seliv));
+    DBUG_ASSERT (N_array == NODE_TYPE (curel), "Expected N_array curel");
+    dim = SHgetUnrLen (ARRAY_FRAMESHAPE (curel));
 
     for (ivindx = 0; ivindx < dim; ivindx++) {
-        i = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (seliv));
-        withids = getNthWithids (0, intrsctid);
-        intrsctscel = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (intrsctsc));
-        INFO_FINVERSESWAP (arg_info) = FALSE;
-        ziavis = TraceIndexScalar (i, arg_info, ID_AVIS (intrsctscel), withids);
-        if (NULL != ziavis) {
-            AVIS_FINVERSESWAP (ziavis) = INFO_FINVERSESWAP (arg_info);
-            z = TCappendExprs (z, TBmakeExprs (TBmakeId (ziavis), NULL));
-        } else {
-            DBUG_PRINT ("AWLFI", ("Failed to find inverse map for N_array %s at axis %d",
-                                  AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), ivindx));
-            ivindx = dim;
-            z = (NULL != z) ? FREEdoFreeTree (z) : z;
+        i = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (curel));
+        withids = getNthWithids (ivindx, PRF_ARG1 (arg_node));
+        if (NULL != withids) {
+            intrsctscel = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (curel));
+            INFO_FINVERSESWAP (arg_info) = FALSE;
+            ziavis = TraceIndexScalar (i, arg_info, intrsctscel, withids);
+            if (NULL != ziavis) {
+                AVIS_FINVERSESWAP (ziavis) = INFO_FINVERSESWAP (arg_info);
+                z = TCappendExprs (z, TBmakeExprs (TBmakeId (ziavis), NULL));
+            } else {
+                DBUG_PRINT ("AWLFI", ("Failed to find inverse map for N_array"));
+                ivindx = dim;
+                z = (NULL != z) ? FREEdoFreeTree (z) : z;
+            }
         }
     }
 
     if (NULL != z) {
-        zarr = DUPdoDupNode (seliv); /* Result shape matches argument shape */
+        zarr = DUPdoDupTree (curel); /* Make result shape match argument shape */
         FREEdoFreeTree (ARRAY_AELEMS (zarr));
         ARRAY_AELEMS (zarr) = z;
         typ = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
@@ -742,60 +772,81 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *intrsct)
                                     &INFO_PREASSIGNS (arg_info), TYcopyType (typ));
     }
 
-    if (NULL == z) {
-        z = intrsct;
-        INFO_NOFINVERSE (arg_info) = TRUE;
-    } else {
+    if (NULL != z) {
         global.optcounters.awlfi_expr += 1;
     }
 
     DBUG_RETURN (z);
 }
+
 /** <!--********************************************************************-->
  *
  * @fn node *BuildInverseProjections( node *arg_node, info *arg_info)
  *
- * @brief Given a consumerWL _sel_VxA_( iv', producerWL) arg_node,
- *        we seek an F_noteintersect hanging from iv'.
- *        If we find one, we examine each set of intersects,
- *        to compute the inverse projection
+ * @brief Given an F_noteintersect node,
+ *        examine each set of intersects to compute the inverse projection
  *        of the intersection of the producerWL partition bounds
  *        with the consumerWL's index vector, iv', back into
  *        the consumerWL's partition bounds.
  *
  * @params: arg_node, arg_info.
  *
- * @result: An N_avis node, which represents the result of
- *          mapping the intersect extrema back to CWL space.
+ * @result: Updated F_noteintersect node.
  *
- *          If we are unable to compute the intersect, we merely
- *          return intrsct, but leave tracks indicating the failure
- *          in INFO_NOFIVINVERSE.
+ *          We may return non-updated node if we can not
+ *          compute the inverse projection.
  *          This may occur if, e.g., we multiply
  *          iv by an unknown value, k. If we cannot show
  *          that k is non-zero, we do not have an inverse.
  *          We also have multiple calls to BuildInverseProjection,
  *          one per PWL axis, and a failure on any axis is cause
- *          for failure. I think.  *
+ *          for failure.
  *
  *****************************************************************************/
 static node *
 BuildInverseProjections (node *arg_node, info *arg_info)
 {
     node *z = NULL;
-    node *ni = NULL;
+    pattern *pat;
     int numpart;
     int curpart;
+    int curelidx;
+    node *curel;
+
     DBUG_ENTER ("BuildInverseProjections");
 
-    ni = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node)))));
-    DBUG_ASSERT (F_noteintersect == PRF_PRF (ni), "Did not find F_noteintersect");
-    numpart = (TCcountExprs (PRF_ARGS (ni)) - 1) / WLEPP;
+    numpart = (TCcountExprs (PRF_ARGS (arg_node)) / WLEPP);
+    pat = PMarray (1, PMAgetNode (&curel), 1, PMskip (0));
     for (curpart = 0; curpart < numpart; curpart++) {
-        z = BuildInverseProjectionOne (arg_node, arg_info, arg_node);
+        curelidx = WLPROJECTION1 (curpart);
+        if (!isHasInverseProjection (TCgetNthExprsExpr (curelidx, PRF_ARGS (arg_node)))) {
+            curel = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
+            if (PMmatchFlat (pat, curel)) {
+                z = BuildInverseProjectionOne (arg_node, arg_info, curel);
+                if ((NULL != z)) {
+                    z = TBmakeId (z);
+                    PRF_ARGS (arg_node)
+                      = TCputNthExprs (curelidx, PRF_ARGS (arg_node), z);
+                }
+            }
+        }
+        curelidx = WLPROJECTION2 (curpart);
+        if (!isHasInverseProjection (TCgetNthExprsExpr (curelidx, PRF_ARGS (arg_node)))) {
+            curel = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
+            if (PMmatchFlat (pat, curel)) {
+                z = BuildInverseProjectionOne (arg_node, arg_info, curel);
+                if ((NULL != z)) {
+                    z = TBmakeId (z);
+                    PRF_ARGS (arg_node)
+                      = TCputNthExprs (curelidx, PRF_ARGS (arg_node), z);
+                }
+            }
+        }
     }
 
-    DBUG_RETURN (z);
+    pat = PMfree (pat);
+
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -1273,8 +1324,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
 
         /* Reserve room for inverse projections */
-#define HOLE -1
-        hole = IVEXImakeIntScalar (HOLE, &INFO_VARDECS (arg_info),
+        hole = IVEXImakeIntScalar (NOINVERSEPROJECTION, &INFO_VARDECS (arg_info),
                                    &INFO_PREASSIGNS (arg_info));
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (hole), NULL));
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (hole), NULL));
@@ -1902,13 +1952,11 @@ AWLFIprf (node *arg_node, info *arg_info)
                    AVIS_NAME (INFO_CONSUMERWLNAME (arg_info))));
             }
         }
+    }
 
-        /* Possibly compute inverse projection of intersect */
-        if ((INFO_PRODUCERWLFOLDABLE (arg_info))
-            && (PRF_ISNOTEINTERSECTPRESENT (arg_node))) {
-            /* Project partitionIntersectMin/Max data back from PWL to CWL */
-            arg_node = BuildInverseProjections (arg_node, arg_info);
-        }
+    if (F_noteintersect == PRF_PRF (arg_node)) {
+        /* Project partitionIntersectMin/Max data back from PWL to CWL */
+        arg_node = BuildInverseProjections (arg_node, arg_info);
     }
 
     DBUG_RETURN (arg_node);
