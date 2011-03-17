@@ -68,6 +68,7 @@ struct INFO {
     node *avis;
     bool found_avis;
     bool is_syncin;
+    bool in_with3;
 };
 
 /**
@@ -80,6 +81,7 @@ struct INFO {
 #define INFO_AVIS(n) (n->avis)
 #define INFO_FOUND_AVIS(n) (n->found_avis)
 #define INFO_IS_SYNCIN(n) (n->is_syncin)
+#define INFO_IN_WITH3(n) (n->in_with3)
 
 static info *
 MakeInfo ()
@@ -94,6 +96,7 @@ MakeInfo ()
     INFO_AVIS (result) = NULL;
     INFO_FOUND_AVIS (result) = FALSE;
     INFO_IS_SYNCIN (result) = FALSE;
+    INFO_IN_WITH3 (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -191,20 +194,49 @@ ATravAssign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_FOUND_AVIS (arg_info)) {
-        ASSIGN_NEXT (INFO_SYNC_ASSIGN (arg_info)) = arg_node;
-        arg_node = INFO_SYNC_ASSIGN (arg_info);
-
-        INFO_SYNC_ASSIGN (arg_info) = NULL;
-        INFO_FOUND_AVIS (arg_info) = FALSE;
-        INFO_AVIS (arg_info) = NULL;
+    if (INFO_IN_WITH3 (arg_info)) {
+        if (!INFO_FOUND_AVIS (arg_info)) {
+            ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+        }
     } else {
-        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+        if (INFO_FOUND_AVIS (arg_info)) {
+            ASSIGN_NEXT (INFO_SYNC_ASSIGN (arg_info)) = arg_node;
+            arg_node = INFO_SYNC_ASSIGN (arg_info);
+
+            INFO_SYNC_ASSIGN (arg_info) = NULL;
+            INFO_FOUND_AVIS (arg_info) = FALSE;
+            INFO_AVIS (arg_info) = NULL;
+        } else {
+            ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *ATravWith3(node *arg_node)
+ *
+ * @brief Look into this with3 to see if this with3 uses the avis but
+ * do not move sync into this with3 but allow it to be put before.
+ *
+ *****************************************************************************/
+static node *
+ATravWith3 (node *arg_node, info *arg_info)
+{
+    bool stack = FALSE;
+    DBUG_ENTER ("ATravWith3");
+
+    stack = INFO_IN_WITH3 (arg_info);
+    INFO_IN_WITH3 (arg_info) = TRUE;
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_IN_WITH3 (arg_info) = stack;
+
+    DBUG_RETURN (arg_node);
+}
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
@@ -220,7 +252,8 @@ ATravAssign (node *arg_node, info *arg_info)
  *
  * @fn node *MSAssign(node *arg_node, info *arg_info)
  *
- * @brief If this assign is a sync in move it down as far as posible.
+ * @brief If this assign is a sync in move it down as far as
+ * posible. But not into a different with3 scope
  *
  *****************************************************************************/
 node *
@@ -239,12 +272,10 @@ MSassign (node *arg_node, info *arg_info)
 
     if (INFO_AVIS (arg_info) != NULL) {
         /* Found an unseen sync in */
-        anontrav_t atrav[5]
-          = {{N_assign, &ATravAssign},
-             {N_id, &ATravId},
-             {N_block, &TRAVnone}, /* Do not trav into blocks as we do */
-             {N_code, &TRAVnone},  /* not want to change scope */
-             {0, NULL}};
+        anontrav_t atrav[5] = {{N_assign, &ATravAssign},
+                               {N_id, &ATravId},
+                               {N_with3, &ATravWith3},
+                               {0, NULL}};
 
         ASSIGN_NEXT (arg_node) = NULL;
         INFO_SYNC_ASSIGN (arg_info) = arg_node;

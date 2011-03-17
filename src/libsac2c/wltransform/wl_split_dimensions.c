@@ -1870,7 +1870,7 @@ static node *
 CreateFoldAccumulatorsAvis (node *assign, node *lhs, node *ops, info *arg_info)
 {
     node *newLhs = NULL;
-    node *avis;
+    node *avis = NULL;
     DBUG_ENTER ("CreateFoldAccumulatorsAvis");
 
     DBUG_ASSERT ((lhs != NULL), "No left hand side (arg == NULL)");
@@ -1888,8 +1888,14 @@ CreateFoldAccumulatorsAvis (node *assign, node *lhs, node *ops, info *arg_info)
     }
 
     if (IDS_NEXT (lhs) != NULL) {
-        newLhs = CreateFoldAccumulatorsAvis (assign, IDS_NEXT (lhs), WITHOP_NEXT (ops),
-                                             arg_info);
+        node *newNewLhs = NULL;
+        newNewLhs = CreateFoldAccumulatorsAvis (assign, IDS_NEXT (lhs), WITHOP_NEXT (ops),
+                                                arg_info);
+        if (newLhs != NULL) {
+            newLhs = TCappendIds (newLhs, newNewLhs);
+        } else {
+            newLhs = newNewLhs;
+        }
     }
 
     DBUG_RETURN (newLhs);
@@ -2030,8 +2036,8 @@ MakeRangeBody (node *outerindex, node *contents, node *size, int newdim, node **
     }
 
     if (AnyFold (ops)) {
-        accu = CreateFoldAccumulators (TClastIds (INFO_INDICES (arg_info)),
-                                       INFO_WITH2_LHS (arg_info), ops, arg_info);
+        accu = CreateFoldAccumulators (INFO_INDICES (arg_info), INFO_WITH2_LHS (arg_info),
+                                       ops, arg_info);
     }
     /*
      * produce with3
