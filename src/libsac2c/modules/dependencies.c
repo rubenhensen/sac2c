@@ -230,8 +230,9 @@ PrintSACLib (const char *name)
      * first try to find the .so file
      */
 
-    filename = MEMmalloc (sizeof (char) * (STRlen (name) + 11));
-    sprintf (filename, "lib%sTree.so", name);
+    filename = MEMmalloc (sizeof (char)
+                          * (STRlen (name) + 11 + STRlen (global.config.lib_variant)));
+    sprintf (filename, "lib%sTree%s.so", name, global.config.lib_variant);
 
     result = STRcpy (FMGRfindFile (PK_lib_path, filename));
 
@@ -255,8 +256,9 @@ PrintSACLib (const char *name)
          * otherwise use the pure filename
          */
 
-        result = MEMmalloc (sizeof (char) * (STRlen (name) + 11));
-        sprintf (result, "lib%sTree.so", name);
+        result = MEMmalloc (sizeof (char)
+                            * (STRlen (name) + 11 + STRlen (global.config.lib_variant)));
+        sprintf (result, "lib%sTree%s.so", name, global.config.lib_variant);
     }
 
     printf (" \\\n  %s", result);
@@ -269,9 +271,14 @@ PrintSACLib (const char *name)
 static void
 PrintObjFile (const char *name)
 {
+    char *oName = NULL;
     DBUG_ENTER ("PrintObjFile");
 
-    printf (" \\\n  %s", name);
+    oName = STRncpy (name, STRlen (name) - 2);
+
+    printf (" \\\n  %s%s.o", oName, global.config.lib_variant);
+
+    oName = MEMfree (oName);
 
     DBUG_VOID_RETURN;
 }
@@ -306,10 +313,11 @@ PrintTargetName (node *tree)
         break;
     case F_modimp:
     case F_classimp:
-        printf ("%slib%sTree.so %slib%sMod.a %slib%sMod.so:", global.targetdir,
-                NSgetName (MODULE_NAMESPACE (tree)), global.targetdir,
-                NSgetName (MODULE_NAMESPACE (tree)), global.targetdir,
-                NSgetName (MODULE_NAMESPACE (tree)));
+        printf ("%slib%sTree%s.so %slib%sMod%s.a %slib%sMod%s.so:", global.targetdir,
+                NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant,
+                global.targetdir, NSgetName (MODULE_NAMESPACE (tree)),
+                global.config.lib_variant, global.targetdir,
+                NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant);
         break;
     default:
         DBUG_ASSERT (0, ("unknown file type found!"));
