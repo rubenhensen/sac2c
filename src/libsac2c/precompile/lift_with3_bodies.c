@@ -818,6 +818,26 @@ LW3fundef (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *LW3with3( node *arg_node, info *arg_info)
+ *
+ * @brief Save link to withops in info struct
+ *****************************************************************************/
+node *
+LW3with3 (node *arg_node, info *arg_info)
+{
+    node *stack = NULL;
+    DBUG_ENTER ("LW3with3");
+
+    stack = INFO_WITHOPS (arg_info);
+    INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    INFO_WITHOPS (arg_info) = stack;
+
+    DBUG_RETURN (arg_node);
+}
+/** <!-- ****************************************************************** -->
  * @fn node *LW3range( node *arg_node, info *arg_info)
  *
  * @brief Triggers the lifting of the body into a thread function.
@@ -843,9 +863,11 @@ LW3range (node *arg_node, info *arg_info)
      * Believe the need stems from nested fold with3
      */
 #if 1
-    INFO_FUNDEF (arg_info)
-      = INFDFMSdoInferDfms (RDFMSdoRemoveDfms (INFO_FUNDEF (arg_info)),
-                            HIDE_LOCALS_WITH3);
+    if (TCcountWithopsEq (INFO_WITHOPS (arg_info), N_fold) != 0) {
+        INFO_FUNDEF (arg_info)
+          = INFDFMSdoInferDfms (RDFMSdoRemoveDfms (INFO_FUNDEF (arg_info)),
+                                HIDE_LOCALS_WITH3);
+    }
 #endif
 
     RANGE_RESULTS (arg_node)
