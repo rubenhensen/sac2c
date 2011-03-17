@@ -296,14 +296,14 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 {
     int i;
     int ct;
-    int countINL;
-    int countCSE;
-    int countTUP;
-    int countCF;
-    int countVP;
-    int countAS;
-    int countAL;
-    int countDL;
+    int countINL = 0;
+    int countCSE = 0;
+    int countTUP = 0;
+    int countCF = 0;
+    int countVP = 0;
+    int countAS = 0;
+    int countAL = 0;
+    int countDL = 0;
 
     DBUG_ENTER ("SimplifySymbioticExpression");
 
@@ -496,7 +496,7 @@ isAllWithidsPresent (node *arg_node)
 static node *
 FindPrfParent2 (node *arg_node, info *arg_info)
 {
-    node *z;
+    node *z = NULL;
 
     DBUG_ENTER ("FindPrfParent2");
 
