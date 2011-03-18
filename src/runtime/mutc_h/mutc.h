@@ -38,20 +38,9 @@
 
 #define SAC_MUTC_SAVE_NODESC(nt) NT_NAME (nt) = sl_geta (CAT0 (SAC_ND_A_FIELD (nt), _sh));
 
-#undef SAC_ND_ALLOC__DESC__FIXED
-#define SAC_ND_ALLOC__DESC__FIXED(var_NT, dim)                                           \
-    {                                                                                    \
-        SAC_ND_ALLOC__DESC__FIXED_C99 (var_NT, dim);                                     \
-        SAC_ND_ALLOC__DESC__PARENT (var_NT, dim);                                        \
-    }
-
-#undef SAC_ND_ALLOC__DESC__AUD
-#define SAC_ND_ALLOC__DESC__AUD(var_NT, dim)                                             \
-    {                                                                                    \
-        SAC_ND_ALLOC__DESC__AUD_C99 (var_NT, dim);                                       \
-        SAC_ND_ALLOC__DESC__PARENT (var_NT, dim);                                        \
-    }
-
+#define SAC_MUTC_SAVE_DESC(nt)                                                           \
+    SAC_MUTC_SAVE_NODESC (nt)                                                            \
+    SAC_ND_A_DESC_NAME (nt) = sl_geta (CAT0 (SAC_ND_A_DESC_NAME (nt), _sh));
 #define SAC_MUTC_CREATE_BLOCK_START() {
 #define SAC_MUTC_CREATE_BLOCK_END() }
 

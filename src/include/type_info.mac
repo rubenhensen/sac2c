@@ -173,8 +173,8 @@ TYP_IF (T_sync, "sync", "SAC_sync", "syn", COcv2ScalarDummy, COcv2CvHidden, COcv
  * the reference counter of a variable.  e.g. value and mode.
  * This type is only used in the mutc backend at this time.
  */
-TYP_IF (T_rc, "reference_count", "SAC_referencecount_t", "rc", COcv2ScalarDummy,
-        COcv2CvDummy, COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, NULL)
+TYP_IF (T_rc, "reference_count", "referencecount", "rc", COcv2ScalarDummy, COcv2CvDummy,
+        COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, NULL)
 
 TYP_IF (T_nothing, "nothing", "nothing", "n", COcv2ScalarDummy, COcv2CvDummy,
         COcv2StrDummy, 0, COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
