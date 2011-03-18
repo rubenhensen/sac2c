@@ -169,12 +169,110 @@ printDepthAndPre (dynarray *d)
 }
 
 void
-printLubInfo (lubinfo *linfo)
+printPCPTMat (matrix *pcptmat, dynarray *csrc, dynarray *ctar)
+{
+
+    DBUG_ENTER ("printPCPTMat");
+
+    printf ("\n");
+    printf ("PCPT Matrix \n");
+    printf ("----------- \n");
+
+    int i, j;
+    elem *e;
+    int lower, upper;
+
+    for (i = -1; i < DYNARRAY_TOTALELEMS (csrc); i++) {
+
+        if (i == -1) {
+
+            printf ("| \t");
+
+            for (j = 0; j < DYNARRAY_TOTALELEMS (csrc); j++) {
+
+                printf ("| %d\t\t", ELEM_IDX (DYNARRAY_ELEMS_POS (csrc, j)));
+            }
+
+        } else {
+
+            for (j = -1; j < DYNARRAY_TOTALELEMS (ctar); j++) {
+
+                if (j == -1) {
+
+                    printf ("| %d\t", ELEM_IDX (DYNARRAY_ELEMS_POS (ctar, i)));
+
+                } else {
+
+                    e = getMatrixElem (pcptmat, i, j);
+
+                    lower = ((int *)ELEM_DATA (e))[0];
+                    upper = ((int *)ELEM_DATA (e))[1];
+
+                    printf ("| (%d, %d)\t", lower, upper);
+                }
+            }
+        }
+
+        printf ("|\n");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+void
+printPCPCMat (matrix *pcpcmat, dynarray *ctar)
+{
+
+    DBUG_ENTER ("printPCPCMat");
+
+    int i, j;
+
+    printf ("\n");
+    printf ("PCPC Matrix \n");
+    printf ("----------- \n");
+
+    for (i = -1; i < DYNARRAY_TOTALELEMS (ctar); i++) {
+
+        if (i == -1) {
+
+            printf ("| \t");
+
+            for (j = 0; j < DYNARRAY_TOTALELEMS (ctar); j++) {
+
+                printf ("| %d\t", ELEM_IDX (DYNARRAY_ELEMS_POS (ctar, j)));
+            }
+
+        } else {
+
+            for (j = -1; j < DYNARRAY_TOTALELEMS (ctar); j++) {
+
+                if (j == -1) {
+
+                    printf ("| %d\t", ELEM_IDX (DYNARRAY_ELEMS_POS (ctar, i)));
+
+                } else {
+
+                    printf ("| %d\t", getMatrixValue (pcpcmat, i, j));
+                }
+            }
+        }
+
+        printf ("|\n");
+    }
+
+    DBUG_VOID_RETURN;
+}
+
+void
+printLubInfo (compinfo *ci)
 {
 
     DBUG_ENTER ("printLubInfo");
 
+    lubinfo *linfo;
     int i;
+
+    linfo = COMPINFO_LUB (ci);
 
     if (linfo != NULL) {
 
@@ -197,11 +295,12 @@ printLubInfo (lubinfo *linfo)
         }
 
         if (LUBINFO_PCPTMAT (linfo) != NULL) {
-            printMatrix (LUBINFO_PCPTMAT (linfo));
+            printPCPTMat (LUBINFO_PCPTMAT (linfo), COMPINFO_CSRC (ci),
+                          COMPINFO_CTAR (ci));
         }
 
         if (LUBINFO_PCPCMAT (linfo) != NULL) {
-            printMatrix (LUBINFO_PCPCMAT (linfo));
+            printPCPCMat (LUBINFO_PCPCMAT (linfo), COMPINFO_CTAR (ci));
         }
     }
 

@@ -1,10 +1,12 @@
 /** <!--********************************************************************-->
  *
- * @file dfwalk.c
+ * @file lub.c
  *
- * prefix: TFDFW
+ * prefix: TFPLB
  *
- * description: depth first walk of the subtyping hierarchy
+ * description: This file calls functions to preprocess the tpye hierarchy graph
+ * for answering least upper bound queries. This is done with the aid of a
+ * compiler pass.
  *
  *****************************************************************************/
 
@@ -158,7 +160,7 @@ testlubtree (node *arg_node)
         prearr = COMPINFO_PREARR (TFSPEC_INFO (arg_node)[i]);
         nodecount = DYNARRAY_TOTALELEMS (prearr);
         printDepthAndPre (COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[i]));
-        printLubInfo (COMPINFO_LUB (TFSPEC_INFO (arg_node)[i]));
+        printLubInfo (TFSPEC_INFO (arg_node)[i]);
 
         for (j = 0; j < nodecount; j++) {
             randNumGen (nodecount, testpre);

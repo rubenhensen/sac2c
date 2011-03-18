@@ -117,46 +117,6 @@ setMatrixElem (matrix *m, int x, int y, elem *element)
 
     addToArrayAtPos (MATRIX_ARRAY2D (m)[x], element, y);
 }
-/*
-void setMatrixElem( matrix *m, int x, int y, elem *element){
-
-  int i, oldlength;
-
-  oldlength = MATRIX_TOTALROWS(m);
-
-  if( MATRIX_TOTALCOLS(m) < y + 1){
-    MATRIX_TOTALCOLS(m) = y + 1;
-  }
-
-  if( MATRIX_TOTALROWS(m) < x + 1){
-    MATRIX_TOTALROWS(m) = x + 1;
-
-    void *_temp = MEMrealloc( MATRIX_ARRAY2D(m),
-      ( MATRIX_TOTALROWS(m) * sizeof( dynarray *)),
-      oldlength * sizeof( dynarray *));
-
-    if (!_temp){
-      CTIabort( "setMatrixValue couldn't realloc memory!\n");
-    }
-
-    MEMfree( MATRIX_ARRAY2D(m));
-    MATRIX_ARRAY2D(m) = ( dynarray**)_temp;
-
-  }
-
-  for( i = oldlength; i < MATRIX_TOTALROWS(m); i++){
-    MATRIX_ARRAY2D(m)[i] = NULL;
-  }
-
-  if( MATRIX_ARRAY2D(m)[x] == NULL){
-    MATRIX_ARRAY2D(m)[x] = MEMmalloc( sizeof( dynarray));
-    initDynarray( MATRIX_ARRAY2D(m)[x]);
-  }
-
-  addToArrayAtPos( MATRIX_ARRAY2D(m)[x], element, y);
-
-}
-*/
 
 void
 setMatrixValue (matrix *m, int x, int y, int value)
@@ -169,12 +129,20 @@ setMatrixValue (matrix *m, int x, int y, int value)
     setMatrixElem (m, x, y, element);
 }
 
-int
-getMatrixValue (matrix *m, int x, int y)
+elem *
+getMatrixElem (matrix *m, int x, int y)
 {
 
     dynarray *arrayd = MATRIX_ARRAY2D (m)[x];
     elem *e = DYNARRAY_ELEMS (arrayd)[y];
+    return e;
+}
+
+int
+getMatrixValue (matrix *m, int x, int y)
+{
+
+    elem *e = getMatrixElem (m, x, y);
     if (e != NULL)
         return ELEM_IDX (e);
     else

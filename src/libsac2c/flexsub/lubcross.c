@@ -27,6 +27,7 @@
 #include "lubtree.h"
 #include "lubcross.h"
 #include "binheap.h"
+#include "graphinterface.h"
 
 typedef struct POSTINFO {
     int iscsrc;
@@ -68,10 +69,6 @@ LUBcreateReachMat (compinfo *ci)
     int i, j;
     matrix *result;
     node *srcvert, *tarvert;
-    int reachtree, reachcross;
-    int cola, colb, row;
-    int reaching_csrc_after_pre;
-    int reaching_csrc_after_premax;
     elem *e;
 
     result = MEMmalloc (sizeof (matrix));
@@ -91,48 +88,7 @@ LUBcreateReachMat (compinfo *ci)
             e = DYNARRAY_ELEMS_POS (prearr, ELEM_IDX (DYNARRAY_ELEMS_POS (ctar, j)) - 1);
             tarvert = (node *)ELEM_DATA (e);
 
-            if ((TFVERTEX_PRE (tarvert) >= TFVERTEX_PRE (srcvert)
-                 && TFVERTEX_PRE (tarvert) < TFVERTEX_PREMAX (srcvert))) {
-
-                reachtree = 1;
-
-            } else {
-
-                reachtree = 0;
-            }
-
-            cola = TFVERTEX_REACHCOLA (srcvert);
-            colb = TFVERTEX_REACHCOLB (srcvert);
-            row = TFVERTEX_ROW (tarvert);
-
-            if (!TFVERTEX_ISROWMARKED (tarvert)) {
-
-                reachcross = 0;
-
-            } else {
-
-                if (!TFVERTEX_ISRCHCOLAMARKED (srcvert)) {
-                    reaching_csrc_after_pre = 0;
-                } else {
-                    reaching_csrc_after_pre
-                      = getMatrixValue (COMPINFO_TLC (ci), cola, row);
-                }
-
-                if (!TFVERTEX_ISRCHCOLBMARKED (srcvert)) {
-                    reaching_csrc_after_premax = 0;
-                } else {
-                    reaching_csrc_after_premax
-                      = getMatrixValue (COMPINFO_TLC (ci), colb, row);
-                }
-
-                if (reaching_csrc_after_pre - reaching_csrc_after_premax > 0) {
-                    reachcross = 1;
-                } else {
-                    reachcross = 0;
-                }
-            }
-
-            if (reachtree || reachcross) {
+            if (GINisReachable (srcvert, tarvert, ci)) {
                 setMatrixValue (result, j, i, 1);
             } else {
                 setMatrixValue (result, j, i, 0);
@@ -404,6 +360,102 @@ LUBrearrangeNoncsrcOnTopo (dynarray *noncsrc)
 }
 
 matrix *
+LUBcomputeMaximalWitness (pcpcinfo *ppi)
+{
+
+    DBUG_ENTER ("LUBcomputeMaximalWitness");
+
+    matrix *result;
+    matrix *csrcmax, *noncsrcmax;
+
+    dynarray *csrc, *noncsrc;
+    matrix *csrcmat, *noncsrcmat;
+    int i, j, k, max = 0;
+    node *vertex_csrc, *vertex_noncsrc;
+
+    csrc = PCPCINFO_CSRC (ppi);
+    csrcmat = PCPCINFO_CSRCMAT (ppi);
+    csrcmax = MEMmalloc (sizeof (matrix));
+    initMatrix (csrcmax);
+
+    for (i = 0; i < MATRIX_TOTALROWS (csrcmat); i++) {
+
+        for (j = 0; j < MATRIX_TOTALROWS (csrcmat); j++) {
+
+            for (k = 0; k < MATRIX_TOTALCOLS (csrcmat); k++) {
+
+                if (getMatrixValue (csrcmat, i, k) && getMatrixValue (csrcmat, j, k)) {
+                    max = k;
+                }
+            }
+
+            setMatrixValue (csrcmax, i, j, max);
+            max = 0;
+        }
+    }
+
+    noncsrc = PCPCINFO_NONCSRC (ppi);
+    noncsrcmat = PCPCINFO_NONCSRCMAT (ppi);
+    noncsrcmax = MEMmalloc (sizeof (matrix));
+    initMatrix (noncsrcmax);
+
+    for (i = 0; i < MATRIX_TOTALROWS (noncsrcmat); i++) {
+
+        for (j = 0; j < MATRIX_TOTALROWS (noncsrcmat); j++) {
+
+            for (k = 0; k < MATRIX_TOTALCOLS (noncsrcmat); k++) {
+
+                if (getMatrixValue (noncsrcmat, i, k)
+                    && getMatrixValue (noncsrcmat, j, k)) {
+                    max = k;
+                }
+            }
+
+            setMatrixValue (noncsrcmax, i, j, max);
+            max = 0;
+        }
+    }
+
+    /*
+     * We have two matrices now. Each cell in each matrix contains an index to the
+     * csrc and noncsrc arrays. These arrays hold vertices sorted in topological
+     * sequence. Now we compare the two matrices cell-wise and store the pre-order
+     * number of the vertex which has a higher topological number between the two
+     * cell entries.
+     */
+
+    DBUG_ASSERT ((MATRIX_TOTALROWS (csrcmax) == MATRIX_TOTALROWS (noncsrcmax)
+                  && MATRIX_TOTALCOLS (csrcmax) == MATRIX_TOTALCOLS (noncsrcmax)),
+                 "Matrix shape mismatch while bulding PC-PC matrix.");
+
+    result = MEMmalloc (sizeof (matrix));
+    initMatrix (result);
+
+    for (i = 0; i < MATRIX_TOTALROWS (csrcmax); i++) {
+
+        for (j = 0; j < MATRIX_TOTALCOLS (csrcmax); j++) {
+
+            vertex_csrc = TOPOINFO_VERTEX ((topoinfo *)ELEM_DATA (
+              DYNARRAY_ELEMS_POS (csrc, getMatrixValue (csrcmax, i, j))));
+
+            vertex_noncsrc = TOPOINFO_VERTEX ((topoinfo *)ELEM_DATA (
+              DYNARRAY_ELEMS_POS (noncsrc, getMatrixValue (noncsrcmax, i, j))));
+
+            if (TFVERTEX_TOPO (vertex_csrc) > TFVERTEX_TOPO (vertex_noncsrc)) {
+                setMatrixValue (result, i, j, TFVERTEX_PRE (vertex_csrc));
+            } else {
+                setMatrixValue (result, i, j, TFVERTEX_PRE (vertex_noncsrc));
+            }
+        }
+    }
+
+    freeMatrix (csrcmax);
+    freeMatrix (noncsrcmax);
+
+    DBUG_RETURN (result);
+}
+
+matrix *
 LUBrearrangeMatOnTopo (dynarray *topoarr, matrix *mat)
 {
 
@@ -457,11 +509,6 @@ LUBcreatePCPCMat (matrix *reachmat, dynarray *postarr, compinfo *ci)
             pi2 = (postinfo *)ELEM_DATA (PQgetMinElem (q));
             n2 = POSTINFO_VERTEX (pi2);
             treelca = LUBtreeLCAfromNodes (n1, n2, ci);
-        }
-
-        if (result == NULL) {
-            result = MEMmalloc (sizeof (matrix));
-            initMatrix (result);
         }
 
         if (!LUBisNodeCsrc (treelca, COMPINFO_CSRC (ci))) {
@@ -532,25 +579,7 @@ LUBcreatePCPCMat (matrix *reachmat, dynarray *postarr, compinfo *ci)
         PCPCINFO_NONCSRCMAT (ppi)
           = LUBrearrangeMatOnTopo (PCPCINFO_NONCSRC (ppi), currmat);
 
-        /*
-        printf( "csrcarr\n");
-        printDynarray( COMPINFO_CSRC( ci));
-
-        printf( "reachmat\n");
-        printMatrix( reachmat);
-
-        printf( "csrc topoarr\n");
-        printDynarray( PCPCINFO_CSRC( ppi));
-
-        printf( "csrc mat\n");
-        printMatrix( PCPCINFO_CSRCMAT( ppi));
-
-        printf( "noncsrc topoarr\n");
-        printDynarray( PCPCINFO_NONCSRC( ppi));
-
-        printf( "noncsrc mat\n");
-        printMatrix( PCPCINFO_NONCSRCMAT( ppi));
-        */
+        result = LUBcomputeMaximalWitness (ppi);
     }
 
     DBUG_RETURN (result);
@@ -572,6 +601,7 @@ LUBincorporateCrossEdges (compinfo *ci)
 
         LUBINFO_PCPTMAT (COMPINFO_LUB (ci)) = LUBcreatePCPTMat (reachmat, ci);
         LUBINFO_PCPCMAT (COMPINFO_LUB (ci)) = LUBcreatePCPCMat (reachmat, postarr, ci);
+        printLubInfo (ci);
     }
 
     DBUG_VOID_RETURN;
