@@ -56,6 +56,8 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
+#include "pattern_match.h"
+#include "move_assigns.h"
 
 /** <!--********************************************************************-->
  *
@@ -64,24 +66,7 @@
  *
  *****************************************************************************/
 struct INFO {
-    node *sync_assign;
-    node *avis;
-    bool found_avis;
-    bool is_syncin;
-    bool in_with3;
 };
-
-/**
- * SYNC_ASSIGN the assigment node of the sync that we are moving
- * AVIS        the avis that affects where we can move to
- * FOUND_AVIS  found the avis that we are looking for
- * IS_SYNCIN   this is a syncin prf
- */
-#define INFO_SYNC_ASSIGN(n) (n->sync_assign)
-#define INFO_AVIS(n) (n->avis)
-#define INFO_FOUND_AVIS(n) (n->found_avis)
-#define INFO_IS_SYNCIN(n) (n->is_syncin)
-#define INFO_IN_WITH3(n) (n->in_with3)
 
 static info *
 MakeInfo ()
@@ -91,12 +76,6 @@ MakeInfo ()
     DBUG_ENTER ("MakeInfo");
 
     result = MEMmalloc (sizeof (info));
-
-    INFO_SYNC_ASSIGN (result) = NULL;
-    INFO_AVIS (result) = NULL;
-    INFO_FOUND_AVIS (result) = FALSE;
-    INFO_IS_SYNCIN (result) = FALSE;
-    INFO_IN_WITH3 (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -129,6 +108,7 @@ node *
 MSdoMoveSyncs (node *syntax_tree)
 {
     info *info;
+    pattern *pat;
 
     DBUG_ENTER ("MSdoMoveSyncs");
 
@@ -136,11 +116,13 @@ MSdoMoveSyncs (node *syntax_tree)
 
     DBUG_PRINT ("MS", ("Starting move syncs traversal."));
 
-    TRAVpush (TR_ms);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
+    pat = PMprf (1, PMAisPrf (F_syncin), 0);
 
-    DBUG_PRINT ("TEMP", ("Move syncs traversal complete."));
+    syntax_tree = MAdoMoveAssigns (syntax_tree, pat, FALSE);
+
+    DBUG_PRINT ("MS", ("Move syncs traversal complete."));
+
+    pat = PMfree (pat);
 
     info = FreeInfo (info);
 
@@ -159,85 +141,6 @@ MSdoMoveSyncs (node *syntax_tree)
  *****************************************************************************/
 
 /** <!--********************************************************************-->
- *
- * @fn node *ATravId(node *arg_node)
- *
- * @brief Does the current ID node have the avis we are looking for?
- *
- *****************************************************************************/
-static node *
-ATravId (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("ATravId");
-
-    if (ID_AVIS (arg_node) == INFO_AVIS (arg_info)) {
-        INFO_FOUND_AVIS (arg_info) = TRUE;
-    } else {
-        arg_node = TRAVcont (arg_node, arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *ATravAssign(node *arg_node)
- *
- * @brief Insert the sync assign before current assign if it is this assign
- *        that uses the avis that prevent more movement.
- *
- *****************************************************************************/
-static node *
-ATravAssign (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("ATravAssign");
-
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
-    if (INFO_IN_WITH3 (arg_info)) {
-        if (!INFO_FOUND_AVIS (arg_info)) {
-            ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-        }
-    } else {
-        if (INFO_FOUND_AVIS (arg_info)) {
-            ASSIGN_NEXT (INFO_SYNC_ASSIGN (arg_info)) = arg_node;
-            arg_node = INFO_SYNC_ASSIGN (arg_info);
-
-            INFO_SYNC_ASSIGN (arg_info) = NULL;
-            INFO_FOUND_AVIS (arg_info) = FALSE;
-            INFO_AVIS (arg_info) = NULL;
-        } else {
-            ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *ATravWith3(node *arg_node)
- *
- * @brief Look into this with3 to see if this with3 uses the avis but
- * do not move sync into this with3 but allow it to be put before.
- *
- *****************************************************************************/
-static node *
-ATravWith3 (node *arg_node, info *arg_info)
-{
-    bool stack = FALSE;
-    DBUG_ENTER ("ATravWith3");
-
-    stack = INFO_IN_WITH3 (arg_info);
-    INFO_IN_WITH3 (arg_info) = TRUE;
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    INFO_IN_WITH3 (arg_info) = stack;
-
-    DBUG_RETURN (arg_node);
-}
-/** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
 
@@ -247,93 +150,6 @@ ATravWith3 (node *arg_node, info *arg_info)
  * @{
  *
  *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @fn node *MSAssign(node *arg_node, info *arg_info)
- *
- * @brief If this assign is a sync in move it down as far as
- * posible. But not into a different with3 scope
- *
- *****************************************************************************/
-node *
-MSassign (node *arg_node, info *arg_info)
-{
-    node *next = NULL;
-    DBUG_ENTER ("MSAssign");
-
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        info *stack_info = MakeInfo ();
-        next = TRAVdo (ASSIGN_NEXT (arg_node), stack_info);
-        stack_info = FreeInfo (stack_info);
-    }
-
-    if (INFO_AVIS (arg_info) != NULL) {
-        /* Found an unseen sync in */
-        anontrav_t atrav[5] = {{N_assign, &ATravAssign},
-                               {N_id, &ATravId},
-                               {N_with3, &ATravWith3},
-                               {0, NULL}};
-
-        ASSIGN_NEXT (arg_node) = NULL;
-        INFO_SYNC_ASSIGN (arg_info) = arg_node;
-        arg_node = next;
-
-        TRAVpushAnonymous (atrav, &TRAVsons);
-        arg_node = TRAVdo (next, arg_info);
-        TRAVpop ();
-
-        DBUG_ASSERT ((INFO_SYNC_ASSIGN (arg_info) == NULL),
-                     "Do not know where to put sync assign");
-    } else {
-        ASSIGN_NEXT (arg_node) = next;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *MSPrf(node *arg_node, info *arg_info)
- *
- * @brief Is this a sync in prf?
- *
- *****************************************************************************/
-node *
-MSprf (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("MSPrf");
-
-    INFO_IS_SYNCIN (arg_info) = (PRF_PRF (arg_node) == F_syncin);
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *MSLet(node *arg_node, info *arg_info)
- *
- * @brief Is this a sync in prf?
- *
- *****************************************************************************/
-node *
-MSlet (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ("MSLet");
-
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-
-    if (INFO_IS_SYNCIN (arg_info)) {
-        INFO_AVIS (arg_info) = IDS_AVIS (LET_IDS (arg_node));
-        INFO_IS_SYNCIN (arg_info) = FALSE;
-    }
-
-    DBUG_RETURN (arg_node);
-}
 
 /** <!--********************************************************************-->
  * @}  <!-- Traversal functions -->

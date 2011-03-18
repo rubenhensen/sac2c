@@ -745,9 +745,10 @@
         </travuser>
       </traversal>
       <traversal id="MS" name="MUTC move syncs" default="sons" include="move_syncs.h">
+      </traversal>
+      <traversal id="MA" name="MUTC move assigns" default="sons" include="move_assigns.h">
         <travuser>
           <node name="Let" />
-          <node name="Prf" />
           <node name="Assign" />
         </travuser>
       </traversal>
@@ -3326,9 +3327,6 @@
     <traversal id="MSS" name="Moving Sync Statements" default="sons"
                include="move_sync_statement.h" >
       <travuser>
-        <node name="Fundef" />
-        <node name="Assign" />
-        <node name="Id" />
       </travuser>
     </traversal>
     <traversal id="TFF" name="Tag Fundef Nodes" default="sons"

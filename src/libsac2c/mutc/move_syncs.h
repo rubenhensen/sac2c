@@ -15,8 +15,4 @@
  *****************************************************************************/
 extern node *MSdoMoveSyncs (node *syntax_tree);
 
-extern node *MSlet (node *arg_node, info *arg_info);
-extern node *MSprf (node *arg_node, info *arg_info);
-extern node *MSassign (node *arg_node, info *arg_info);
-
 #endif /* _SAC_MOVE_SYNCS_H_ */

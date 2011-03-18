@@ -14,8 +14,5 @@
  *
  *****************************************************************************/
 extern node *MSSdoMoveSyncStatement (node *arg_node);
-extern node *MSSfundef (node *arg_node, info *arg_info);
-extern node *MSSassign (node *arg_node, info *arg_info);
-extern node *MSSid (node *arg_node, info *arg_info);
 
 #endif /* _SAC_MOVE_SYNC_STATEMENT_H_ */
