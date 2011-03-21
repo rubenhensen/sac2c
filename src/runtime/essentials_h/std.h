@@ -22,6 +22,10 @@
 
 #ifndef _SAC_STD_H_
 #define _SAC_STD_H_
+#include <stdint.h> /* intptr_t */
+
+#define TRUE 1
+#define FALSE 0
 
 /*
  * Positional parameters for name tuples (nt):
@@ -63,30 +67,61 @@
 
 typedef void *SAC_hidden;
 
+/* This type is used to store
+ * inforamtiona about a saved reference count
+ * [0]       -> rc
+ * [1]       -> rc_mode
+ */
+typedef intptr_t *SAC_referencecount_t;
+/*
+ *  array descriptor parent:
+ *  [0]      -> child descriptors
+ */
+typedef intptr_t *SAC_array_descriptor_parent_t;
 /*
  * array descriptor:
  *   [0]     -> reference count
- *   [1]     -> # of dimensions
- *   [2]     -> # of elements
- *   [3,...] -> shape vector
+ *   [1]     -> reference count mode
+ *   [2]     -> parent descriptor ( pointer)
+ *   [3]     -> # of dimensions
+ *   [4]     -> # of elements
+ *   [5,...] -> shape vector
  */
-
-typedef int *SAC_array_descriptor_t;
+/*
+ * Use intptr_t so that we can store ints and pointers in the same
+ * array
+ */
+typedef intptr_t *SAC_array_descriptor_t;
 
 #endif /* SAC_SIMD_COMPILATION */
 
+#define SAC_RC_T_SIZE (2 * sizeof (intptr_t))
+
+#define SAC_RC_T_RC(rc) (rc)[0]
+#define SAC_RC_T_MODE(rc) (rc)[1]
+
+#define SAC_DESC_PARENT_T_SIZE (1 * sizeof (intptr_t))
+
+#define SAC_DESC_PARENT_T_CHILDREN(desc_parent) ((desc_parent)[0])
+
 /* size of dimension-independent parts of the descriptor */
-#define FIXED_SIZE_OF_DESC 3
+#define FIXED_SIZE_OF_DESC 5
 /* size of dimension-dependent parts of the descriptor */
 #define VAR_SIZE_OF_DESC 1
 /* size of the descriptor = (FIXED_SIZE_OF_DESC + dim * VAR_SIZE_OF_DESC) */
 #define SIZE_OF_DESC(dim) (FIXED_SIZE_OF_DESC + (dim)*VAR_SIZE_OF_DESC)
 
-#define BYTE_SIZE_OF_DESC(dim) (SIZE_OF_DESC (dim) * sizeof (int))
+#define BYTE_SIZE_OF_DESC(dim) (SIZE_OF_DESC (dim) * sizeof (intptr_t))
+
+#define SAC_DESC_RC_MODE_SEQ 0
+#define SAC_DESC_RC_MODE_NORC 1
+#define SAC_DESC_RC_MODE_ASYNC 2
 
 #define DESC_RC(desc) (desc)[0]
-#define DESC_DIM(desc) (desc)[1]
-#define DESC_SIZE(desc) (desc)[2]
+#define DESC_PARENT(desc) (desc)[1]
+#define DESC_RC_MODE(desc) (desc)[2]
+#define DESC_DIM(desc) (desc)[3]
+#define DESC_SIZE(desc) (desc)[4]
 #define DESC_SHAPE(desc, pos) (desc)[FIXED_SIZE_OF_DESC + (pos)]
 
 /* Overloaded by MUTC */
@@ -124,6 +159,12 @@ typedef int *SAC_array_descriptor_t;
 /* Overloaded by MUTC */
 #define SAC_CLEANUP_LOCAL_MEM()
 
+/* Overloaded by MUTC */
+#define SAC_ND_PRF_RESTORERC(array, desc)
+
+/* Overloaded by MUTC */
+#define SAC_ND_PRF_2NORC(desc, array)
+
 #define SAC_NOP(...)
 
 /**********************************
@@ -134,6 +175,10 @@ typedef int *SAC_array_descriptor_t;
  *** CAT9, CAT10, CAT11, CAT12    (ND_A_DESC_*, ND_A_MIRROR_*)
  ***
  ***/
+
+#define SAC_ND_A_RC_T_MODE(var_NT) SAC_RC_T_MODE (SAC_ND_A_FIELD (var_NT))
+
+#define SAC_ND_A_RC_T_RC(var_NT) SAC_RC_T_RC (SAC_ND_A_FIELD (var_NT))
 
 /******************************************************************************
  *
@@ -185,6 +230,14 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_A_DESC_NAME__UNDEF(var_NT) SAC_ICM_UNDEF ()
 
 #define SAC_ND_A_DESC_NAME__DEFAULT(var_NT) CAT5 (NT_NAME (var_NT), __desc)
+
+#define SAC_ND_A_DESC_RC_MODE(var_NT) DESC_RC_MODE (SAC_ND_A_DESC (var_NT))
+
+/*
+ * Cast as stored as intptr_t
+ */
+#define SAC_ND_A_DESC_PARENT(var_NT)                                                     \
+    ((SAC_ND_DESC_PARENT_TYPE)DESC_PARENT (SAC_ND_A_DESC (var_NT)))
 
 /*
  * SAC_ND_A_DESC_DIM implementations (referenced by sac_std_gen.h)
@@ -249,7 +302,9 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_A_RC__UNDEF(var_NT) SAC_ICM_UNDEF ()
 
-#define SAC_ND_A_RC__DEFAULT(var_NT) DESC_RC (SAC_ND_A_DESC (var_NT))
+#define SAC_ND_A_RC__DEFAULT(var_NT) SAC_ND_A_RC__C99 (var_NT)
+
+#define SAC_ND_A_RC__C99(var_NT) DESC_RC (SAC_ND_A_DESC (var_NT))
 
 /*
  * SAC_ND_A_DIM implementations (referenced by sac_std_gen.h)
@@ -383,6 +438,12 @@ typedef int *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_DESC_TYPE__DEFAULT(var_NT) SAC_array_descriptor_t
+
+#define SAC_ND_DESC_BASETYPE(var_NT) intptr_t
+
+#define SAC_ND_DESC_PARENT_TYPE SAC_array_descriptor_parent_t
+
+#define SAC_ND_DESC_PARENT_BASETYPE intptr_t
 
 /*
  * SAC_ND_TYPE_TAG implementations (referenced by sac_std_gen.h)
@@ -833,26 +894,40 @@ typedef int *SAC_array_descriptor_t;
 
 #define SAC_ND_ALLOC__DESC__NOOP(var_NT, dim) SAC_NOOP ()
 
-#define SAC_ND_ALLOC__DESC__FIXED(var_NT, dim)                                           \
+/* Overloaded in mutc */
+#define SAC_ND_ALLOC__DESC__FIXED(var_NT, dim) SAC_ND_ALLOC__DESC__FIXED_C99 (var_NT, dim)
+
+#define SAC_ND_ALLOC__DESC__FIXED_C99(var_NT, dim)                                       \
     {                                                                                    \
         SAC_ASSURE_TYPE ((dim == SAC_ND_A_MIRROR_DIM (var_NT)),                          \
                          ("Inconsistant dimension for array %s found!",                  \
                           NT_STR (var_NT)));                                             \
         SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (var_NT),                                \
-                                  BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)), int) \
+                                  BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)),      \
+                                  SAC_ND_DESC_BASETYPE (var_NT))                         \
+        DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_SEQ;                    \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
     }
 
-#define SAC_ND_ALLOC__DESC__AUD(var_NT, dim)                                             \
+/* Overloaded in mutc */
+#define SAC_ND_ALLOC__DESC__AUD(var_NT, dim) SAC_ND_ALLOC__DESC__AUD_C99 (var_NT, dim)
+
+#define SAC_ND_ALLOC__DESC__AUD_C99(var_NT, dim)                                         \
     {                                                                                    \
         SAC_ASSURE_TYPE ((dim >= 0),                                                     \
                          ("Illegal dimension for array %s found!", NT_STR (var_NT)));    \
-        SAC_HM_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim), int)             \
+        SAC_HM_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim),                  \
+                       SAC_ND_DESC_BASETYPE (var_NT))                                    \
+        DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_SEQ;                    \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
+
+#define SAC_ND_ALLOC__DESC__PARENT(var_NT, dim)                                          \
+    SAC_HM_MALLOC_AS_SCALAR (DESC_PARENT (SAC_ND_A_DESC (var_NT)),                       \
+                             SAC_DESC_PARENT_T_SIZE, SAC_ND_DESC_PARENT_BASETYPE)
 
 #define SAC_ND_ALLOC__DESC__NOOP_BASETYPE(var_NT, dim, basetype)                         \
     SAC_ND_ALLOC__DESC__NOOP (var_NT, dim)
@@ -861,7 +936,7 @@ typedef int *SAC_array_descriptor_t;
     SAC_ND_ALLOC__DESC__FIXED (var_NT, dim)
 
 #define SAC_ND_ALLOC__DESC__AUD_BASETYPE(var_NT, dim, basetype)                          \
-    SAC_ND_ALLOC__DESC__AUD (var_NT, dim)
+    SAC_ND_ALLOC__DESC__AUD_C99 (var_NT, dim)
 
 #define SAC_ND_ALLOC__DATA__NOOP(var_NT) SAC_NOOP ()
 
@@ -925,7 +1000,8 @@ typedef int *SAC_array_descriptor_t;
                                             SAC_ND_A_DESC (var_NT),                      \
                                             SAC_ND_A_MIRROR_SIZE (var_NT)                \
                                               * sizeof (*SAC_ND_A_FIELD (var_NT)),       \
-                                            SAC_ND_A_MIRROR_DIM (var_NT), basetype)      \
+                                            SAC_ND_A_MIRROR_DIM (var_NT), basetype,      \
+                                            SAC_ND_DESC_BASETYPE (var_NT))               \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_TR_MEM_PRINT (                                                               \
@@ -1152,6 +1228,26 @@ typedef int *SAC_array_descriptor_t;
         }                                                                                \
     }
 
+#define SAC_ND_COPY__DESC_SCL(to_NT, from_NT)
+
+#define SAC_ND_COPY__DESC_AKS(to_NT, from_NT)                                            \
+    SAC_ND_A_COPY__DESC_SCL                                                              \
+    SAC_ND_A_DESC_RC (to_NT) = SAC_ND_A_DESC_RC (from_NT);
+
+#define SAC_ND_COPY__DESC_AKD(to_NT, from_NT)                                            \
+    SAC_ND_A_COPY__DESC_AKS (to_NT, from_NT)                                             \
+    SAC_ND_A_DESC_SIZE (to_NT) = SAC_ND_A_DESC_SIZE (from_NT);                           \
+    {                                                                                    \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_DIM (from_NT); SAC_i++) {                       \
+            SAC_ND_A_DESC_SHAPE (to_NT) = SAC_ND_A_DESC_SHAPE (from_NT);                 \
+        }                                                                                \
+    }
+
+#define SAC_ND_COPY__DESC_AUD(to_NT, from_NT)                                            \
+    SAC_ND_A_COPY__DESC_AKD (to_NT, from_NT)                                             \
+    SAC_ND_A_DESC_DIM (to_NT) = SAC_ND_A_DESC_DIM (from_NT);
+
 /******************************************************************************
  *
  * ICMs for creating refcounted objects:
@@ -1214,10 +1310,12 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_SET__RC__NOOP(var_NT, rc) SAC_NOOP ()
 
 /* Overloaded by MUTC */
-#define SAC_ND_SET__RC__DEFAULT(var_NT, rc)                                              \
+#define SAC_ND_SET__RC__DEFAULT(var_NT, rc) SAC_ND_SET__RC__C99 (var_NT, rc)
+
+#define SAC_ND_SET__RC__C99(var_NT, rc)                                                  \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_SET__RC( %s, %d)", NT_STR (var_NT), rc))                  \
-        SAC_ND_A_RC (var_NT) = rc;                                                       \
+        SAC_ND_A_RC__C99 (var_NT) = rc;                                                  \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
@@ -1231,6 +1329,7 @@ typedef int *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_INIT__RC( %s, %d)", NT_STR (var_NT), rc))                 \
         DESC_RC (SAC_ND_A_DESC (var_NT)) = rc;                                           \
+        DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_SEQ;                    \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
@@ -1241,10 +1340,12 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_INC_RC__NOOP(var_NT, rc) SAC_NOOP ()
 
 /* Overloaded by MUTC */
-#define SAC_ND_INC_RC__DEFAULT(var_NT, rc)                                               \
+#define SAC_ND_INC_RC__DEFAULT(var_NT, rc) SAC_ND_INC_RC__C99 (var_NT, rc)
+
+#define SAC_ND_INC_RC__C99(var_NT, rc)                                                   \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_INC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
-        SAC_ND_A_RC (var_NT) += rc;                                                      \
+        SAC_ND_A_RC__C99 (var_NT) += rc;                                                 \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
@@ -1255,10 +1356,12 @@ typedef int *SAC_array_descriptor_t;
 #define SAC_ND_DEC_RC__NOOP(var_NT, rc) SAC_NOOP ()
 
 /* Overloaded by MUTC */
-#define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
+#define SAC_ND_DEC_RC__DEFAULT(var_NT, rc) SAC_ND_DEC_RC__C99 (var_NT, rc)
+
+#define SAC_ND_DEC_RC__C99(var_NT, rc)                                                   \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_DEC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
-        SAC_ND_A_RC (var_NT) -= rc;                                                      \
+        SAC_ND_A_RC__C99 (var_NT) -= rc;                                                 \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
@@ -1273,10 +1376,13 @@ typedef int *SAC_array_descriptor_t;
 
 /* Overloaded by MUTC */
 #define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \
+    SAC_ND_DEC_RC_FREE__C99 (var_NT, rc, freefun)
+
+#define SAC_ND_DEC_RC_FREE__C99(var_NT, rc, freefun)                                     \
     {                                                                                    \
         SAC_TR_REF_PRINT (                                                               \
           ("ND_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))                \
-        if ((SAC_ND_A_RC (var_NT) -= rc) == 0) {                                         \
+        if ((SAC_ND_A_RC__C99 (var_NT) -= rc) == 0) {                                    \
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
             SAC_ND_FREE (var_NT, freefun)                                                \
         } else {                                                                         \

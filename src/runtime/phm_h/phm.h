@@ -425,6 +425,21 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
         }                                                                                \
     }
 
+#define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype)                                     \
+    {                                                                                    \
+        switch (SAC_HM_thread_status) {                                                  \
+        case SAC_HM_single_threaded:                                                     \
+            var = (basetype)SAC_HM_MallocAnyChunk_st (size);                             \
+            break;                                                                       \
+        case SAC_HM_multi_threaded:                                                      \
+            var = (basetype)SAC_HM_MallocAnyChunk_mt (size, SAC_MT_MYTHREAD ());         \
+            break;                                                                       \
+        case SAC_HM_any_threaded:                                                        \
+            var = (basetype)SAC_HM_MallocAnyChunk_at (size, SAC_MT_MYTHREAD ());         \
+            break;                                                                       \
+        }                                                                                \
+    }
+
 #if SAC_DO_MULTITHREAD
 
 #define SAC_HM_MALLOC_SMALL_CHUNK(var, units, arena_num, basetype)                       \
@@ -632,6 +647,13 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #if SAC_DO_DAO
 
 #if 0
+/*
+ * The below macro should realy use macros to find out the type of the
+ * descriptor rather than assume that it is SAC_array_descriptor_t if
+ * it is ever revived in the future
+ *
+ * CAJ 110318
+ */
 #define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim)                     \
     {                                                                                    \
         SAC_HM_MALLOC_FIXED_SIZE (var, ((size) + BYTE_SIZE_OF_DESC (dim)                 \
@@ -642,24 +664,26 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
         SAC_HM_ADDR_ARENA (var_desc) = NULL;                                             \
     }
 #else
-#define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim, basetype)           \
+#define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim, basetype,           \
+                                           descbasetype)                                 \
     {                                                                                    \
         SAC_HM_MALLOC_FIXED_SIZE (var,                                                   \
                                   ((size) + BYTE_SIZE_OF_DESC (dim)                      \
                                    + 2 * SAC_HM_UNIT_SIZE),                              \
                                   basetype)                                              \
                                                                                          \
-        var_desc = (int *)SAC_HM_MallocDesc ((SAC_HM_header_t *)var, size,               \
-                                             BYTE_SIZE_OF_DESC (dim));                   \
+        var_desc = (descbasetype *)SAC_HM_MallocDesc ((SAC_HM_header_t *)var, size,      \
+                                                      BYTE_SIZE_OF_DESC (dim));          \
     }
 #endif
 
 #else /* SAC_DO_DAO */
 
-#define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim, basetype)           \
+#define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim, basetype,           \
+                                           descbasetype)                                 \
     {                                                                                    \
         SAC_HM_MALLOC_FIXED_SIZE (var, (size), basetype)                                 \
-        SAC_HM_MALLOC_FIXED_SIZE (var_desc, BYTE_SIZE_OF_DESC (dim), int)                \
+        SAC_HM_MALLOC_FIXED_SIZE (var_desc, BYTE_SIZE_OF_DESC (dim), descbasetype)       \
     }
 
 #endif /* SAC_DO_DAO */
@@ -810,16 +834,20 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #if SAC_DO_CHECK_MALLOC
 SAC_C_EXTERN void *SAC_HM_MallocCheck (unsigned int);
 #define SAC_HM_MALLOC(var, size, basetype) var = (basetype *)SAC_HM_MallocCheck (size);
+#define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype)                                     \
+    var = (basetype)SAC_HM_MallocCheck (size);
 #else /* SAC_DO_CHECK_MALLOC */
 #define SAC_HM_MALLOC(var, size, basetype) var = (basetype *)malloc (size);
+#define SAC_HM_MALLOC_AS_SCALAR(var, size, basetype) var = (basetype)malloc (size);
 #endif /* SAC_DO_CHECK_MALLOC */
 
 #define SAC_HM_MALLOC_FIXED_SIZE(var, size, basetype) SAC_HM_MALLOC (var, size, basetype)
 
-#define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim, basetype)           \
+#define SAC_HM_MALLOC_FIXED_SIZE_WITH_DESC(var, var_desc, size, dim, basetype,           \
+                                           descbasetype)                                 \
     {                                                                                    \
         SAC_HM_MALLOC_FIXED_SIZE (var, (size), basetype)                                 \
-        SAC_HM_MALLOC_FIXED_SIZE (var_desc, BYTE_SIZE_OF_DESC (dim), int)                \
+        SAC_HM_MALLOC_FIXED_SIZE (var_desc, BYTE_SIZE_OF_DESC (dim), descbasetype)       \
     }
 
 #define SAC_HM_FREE(addr) free (addr);

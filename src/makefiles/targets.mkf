@@ -197,7 +197,7 @@ libsac2c_multithread := multithread_lib tag_executionmode \
                         consolidate_cells abort
 
 libsac2c_mutc        := tag_fun_thread create_function_pairs move_syncs \
-                        create_spawn_funs add_norc_prf
+                        create_spawn_funs add_rc_mode_prf
 
 libsac2c_profile     := annotate_fun_calls
 

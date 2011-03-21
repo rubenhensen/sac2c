@@ -1159,8 +1159,8 @@ SUBPHASE (msa, "MUTC Mark SubAlloc", MSAdoMarkSubAlloc,
 SUBPHASE (lw3, "MUTC Lifting With-Loop bodies into threads", LW3doLiftWith3,
           global.backend == BE_mutc, pc)
 
-SUBPHASE (anrp, "MUTC Add NoRC PRF", ANRPdoAddNorcPrf,
-          global.backend == BE_mutc && global.optimize.doanrp, pc)
+SUBPHASE (armp, "MUTC Add RC Mode PRF", ARMPdoAddRcModePrf,
+          global.backend == BE_mutc && global.optimize.doarmp, pc)
 
 SUBPHASE (dmui, "MUTC Dynamic memory usage inference", DMUIdoDynamicMemoryUsageInference,
           global.backend == BE_mutc, pc)
