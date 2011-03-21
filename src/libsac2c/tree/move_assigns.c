@@ -71,6 +71,7 @@
 #include "pattern_match.h"
 #include "traverse.h"
 #include "tree_basic.h"
+#include "tree_compound.h"
 #include "memory.h"
 #include "ctinfo.h"
 /** <!--********************************************************************-->
