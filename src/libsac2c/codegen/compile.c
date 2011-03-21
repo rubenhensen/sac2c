@@ -3748,7 +3748,7 @@ COMPap (node *arg_node, info *arg_info)
     } else if (FUNDEF_ISMTFUN (fundef)) {
         icm = TBmakeIcm ("MT_MTFUN_AP", icm_args);
     } else if (FUNDEF_ISTHREADFUN (fundef)) {
-        if (FUNDEF_ISSPAWNFUN (fundef)) {
+        if (AP_ISSPAWNED (arg_node)) {
             icm_args = TBmakeExprs (TCmakeIdCopyString (
                                       AP_ISREMOTE (arg_node) ? "" : "PLACE_LOCAL"),
                                     icm_args);

@@ -235,7 +235,7 @@
 
 #define SAC_MUTC_DECL_SYNCVAR(syncid) sl_spawndecl (syncid);
 
-#define SAC_MUTC_SPAWNFUN_DECL2(...) sl_decl (__VAR_ARGS__)
+#define SAC_MUTC_SPAWNFUN_DECL2(...) sl_decl (__VA_ARGS__)
 
 #define SAC_MUTC_DEF_SPAWNFUN_BEGIN2(name, anon, ...)                                    \
     sl_def (name, void, __VA_ARGS__)                                                     \
