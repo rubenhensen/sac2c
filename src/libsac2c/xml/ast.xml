@@ -94,7 +94,7 @@
            error TravError
          include the include file needed for the traversal
     -->
-      <traversal id="ARMP" name="Add RC Mode PRF" default="sons" include="add_rc_mode_prf.h">
+      <traversal id="ANRP" name="Add NoRC PRF" default="sons" include="add_norc_prf.h">
         <travuser>
           <node name="With3" />
           <node name="Assign" />

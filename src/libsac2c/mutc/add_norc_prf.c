@@ -4,7 +4,7 @@
 
 /** <!--********************************************************************-->
  *
- * @defgroup armp add rc mode prfs
+ * @defgroup anrp add norc prfs
  *
  * <pre>
  * Property                                | should be | y/n |  who  |  when
@@ -40,17 +40,17 @@
  *   ...
  * }
  *
- * rfv1_oldrc = _2norc_( rfv1);
- * rfvn_oldrc = _2norc_( rfvn);
+ * rfv1', rfv1_oldrc = _2norc_( rfv1);
+ * rfvn', rfvn_oldrc = _2norc_( rfvn);
  * a = with3 {
  *   ...
- *   v1 = rfv1;
+ *   v1 = rfv1';
  *   ...
- *   vn = rfvn;
+ *   vn = rfvn'
  *   ...
  * }
- * rfv1 = _norc2_( rfv1_oldrc);
- * rfvn = _norc2_( rfvn_oldrc);
+ * rfv1 = _norc2_( rfv1', rfv1_oldrc);
+ * rfvn = _norc2_( rfvn', rfvn_oldrc);
  *
  * @ingroup tt
  *
@@ -60,12 +60,12 @@
 
 /** <!--********************************************************************-->
  *
- * @file add_rc_mode_prf.c
+ * @file add_norc_prf.c
  *
- * Prefix: armp
+ * Prefix: anrp
  *
  *****************************************************************************/
-#include "add_rc_mode_prf.h"
+#include "add_norc_prf.h"
 
 /*
  * Other includes go here
@@ -75,9 +75,6 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
-#include "DupTree.h"
-#include "new_types.h"
-#include "shape.h"
 
 /** <!--********************************************************************-->
  *
@@ -85,11 +82,9 @@
  * @{
  *
  *****************************************************************************/
-typedef enum { RCM_null, RCM_norc, RCM_async } rcmode_t;
-
 struct INFO {
     bool with3;
-    rcmode_t args_2_prf;
+    bool args_2_prf;
     node *preassign;
     node *postassign;
     node *vardecs;
@@ -114,7 +109,7 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_WITH3 (result) = FALSE;
-    INFO_ARGS_2_PRF (result) = RCM_null;
+    INFO_ARGS_2_PRF (result) = FALSE;
     INFO_PREASSIGN (result) = NULL;
     INFO_POSTASSIGN (result) = NULL;
     INFO_VARDECS (result) = NULL;
@@ -132,11 +127,11 @@ FreeInfo (info *info)
     DBUG_ASSERT (INFO_ARGS_2_PRF (info) == FALSE,
                  "Finished traversal while looking at with3 thread fun args");
 
-    DBUG_ASSERT (INFO_PREASSIGN (info) == NULL, "Possible memory leak");
+    DBUG_ASSERT (INFO_PREASSIGN (info), "Possible memory leak");
 
-    DBUG_ASSERT (INFO_POSTASSIGN (info) == NULL, "Possible memory leak");
+    DBUG_ASSERT (INFO_POSTASSIGN (info), "Possible memory leak");
 
-    DBUG_ASSERT (INFO_VARDECS (info) == NULL, "Possible memory leak");
+    DBUG_ASSERT (INFO_VARDECS (info), "Possible memory leak");
 
     info = MEMfree (info);
 
@@ -154,25 +149,25 @@ FreeInfo (info *info)
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node *ARMPdoAddRcModePrf( node *syntax_tree)
+ * @fn node *ANRPdoAddNorcPrf( node *syntax_tree)
  *
  *****************************************************************************/
 node *
-ARMPdoAddRcModePrf (node *syntax_tree)
+ANRPdoAddNorcPrf (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("ARMPdoAddRcModePrf");
+    DBUG_ENTER ("ANRPdoAddNorcPrf");
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("ARMP", ("Starting Add RC Mode PRF traversal."));
+    DBUG_PRINT ("ANRP", ("Starting template traversal."));
 
-    TRAVpush (TR_armp);
+    TRAVpush (TR_anrp);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("ARMP", ("Add RC Mode complete."));
+    DBUG_PRINT ("ANRP", ("Template traversal complete."));
 
     info = FreeInfo (info);
 
@@ -203,16 +198,16 @@ ARMPdoAddRcModePrf (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ARMPwith3(node *arg_node, info *arg_info)
+ * @fn node *ANRPwith3(node *arg_node, info *arg_info)
  *
  * @brief mark the info that we are in a with3
  *
  *****************************************************************************/
 node *
-ARMPwith3 (node *arg_node, info *arg_info)
+ANRPwith3 (node *arg_node, info *arg_info)
 {
     bool stack;
-    DBUG_ENTER ("ARMPwith3");
+    DBUG_ENTER ("ANRPwith3");
 
     stack = INFO_WITH3 (arg_info);
     INFO_WITH3 (arg_info) = TRUE;
@@ -226,18 +221,17 @@ ARMPwith3 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ARMPassign(node *arg_node, info *arg_info)
+ * @fn node *ANRPassign(node *arg_node, info *arg_info)
  *
  * @brief Insert pre and post assign
  *
  *****************************************************************************/
 node *
-ARMPassign (node *arg_node, info *arg_info)
+ANRPassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ARMPwith3");
+    DBUG_ENTER ("ANRPwith3");
 
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    arg_node = TRAVcont (arg_node, arg_info);
 
     if (INFO_POSTASSIGN (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
@@ -255,7 +249,7 @@ ARMPassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ARMPap(node *arg_node, info *arg_info)
+ * @fn node *ANRPap(node *arg_node, info *arg_info)
  *
  * @brief If this is a thread fun ap in a with3 then the arguments are the
  *        relative free variables in one of the partitions.
@@ -264,9 +258,9 @@ ARMPassign (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-ARMPap (node *arg_node, info *arg_info)
+ANRPap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ARMPap");
+    DBUG_ENTER ("ANRPap");
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -278,13 +272,7 @@ ARMPap (node *arg_node, info *arg_info)
         /* Could do with check that all args are ids */
 
         stack = INFO_ARGS_2_PRF (arg_info);
-        INFO_ARGS_2_PRF (arg_info) = RCM_norc;
-        arg_node = TRAVcont (arg_node, arg_info);
-        INFO_ARGS_2_PRF (arg_info) = stack;
-    } else if (AP_ISSPAWNED (arg_node)) {
-        rcmode_t stack = FALSE;
-        stack = INFO_ARGS_2_PRF (arg_info);
-        INFO_ARGS_2_PRF (arg_info) = RCM_async;
+        INFO_ARGS_2_PRF (arg_info) = TRUE;
         arg_node = TRAVcont (arg_node, arg_info);
         INFO_ARGS_2_PRF (arg_info) = stack;
     }
@@ -294,22 +282,21 @@ ARMPap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ARMPid(node *arg_node, info *arg_info)
+ * @fn node *ANRPid(node *arg_node, info *arg_info)
  *
  * @brief If we are in a with3 and looking at arguments of a fun ap then
  *        create pre assign to stop rc and post assign to restore the rc mode.
  *
  *****************************************************************************/
 node *
-ARMPid (node *arg_node, info *arg_info)
+ANRPid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ARMPid");
+    DBUG_ENTER ("ANRPid");
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    if (INFO_ARGS_2_PRF (arg_info) == RCM_norc) {
-        node *avis = TBmakeAvis (TRAVtmpVar (),
-                                 TYmakeAKS (TYmakeSimpleType (T_rc), SHmakeShape (0)));
+    if (INFO_ARGS_2_PRF (arg_info)) {
+        node *avis = TBmakeAvis (TRAVtmpVar (), NULL);
 
         /*
          * rc avis;
@@ -322,55 +309,33 @@ ARMPid (node *arg_node, info *arg_info)
          *
          */
 
-        INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
-
-        AVIS_DECL (avis) = INFO_VARDECS (arg_info);
-
         INFO_PREASSIGN (arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                     TBmakePrf (F_2norc,
-                                                TBmakeExprs (DUPdoDupNode (arg_node),
-                                                             NULL))),
+                                     TBmakePrf (F_2norc, TBmakeExprs (arg_node, NULL))),
                           INFO_PREASSIGN (arg_info));
 
         INFO_POSTASSIGN (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (ID_AVIS (arg_node), NULL),
+          = TBmakeAssign (TBmakeLet (TBmakeIds (arg_node, NULL),
                                      TBmakePrf (F_restorerc,
                                                 TBmakeExprs (TBmakeId (avis), NULL))),
                           INFO_POSTASSIGN (arg_info));
-    } else if (INFO_ARGS_2_PRF (arg_info) == RCM_async) {
-        INFO_PREASSIGN (arg_info)
-          = TBmakeAssign (TBmakeLet (NULL,
-                                     TBmakePrf (F_2asyncrc,
-                                                TBmakeExprs (DUPdoDupNode (arg_node),
-                                                             NULL))),
-                          INFO_PREASSIGN (arg_info));
     }
 
     DBUG_RETURN (arg_node);
 }
 /** <!--********************************************************************-->
  *
- * @fn node *ARMPfundef(node *arg_node, info *arg_info)
+ * @fn node *ANRPfundef(node *arg_node, info *arg_info)
  *
  * @brief Save any vardecs in info into fundef vardec chain.
  *
  *****************************************************************************/
 node *
-ARMPfundef (node *arg_node, info *arg_info)
+ANRPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ARMPfundef");
+    DBUG_ENTER ("ANRPfundef");
 
-    /* Next first */
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-
-    FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
-    FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
-    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-    FUNDEF_OBJECTS (arg_node) = TRAVopt (FUNDEF_OBJECTS (arg_node), arg_info);
-    FUNDEF_AFFECTEDOBJECTS (arg_node)
-      = TRAVopt (FUNDEF_AFFECTEDOBJECTS (arg_node), arg_info);
-    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    arg_node = TRAVcont (arg_node, arg_info);
 
     if (INFO_VARDECS (arg_info) != NULL) {
         BLOCK_VARDEC (FUNDEF_BODY (arg_node))
