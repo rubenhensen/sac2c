@@ -8,6 +8,9 @@ dnl the general layout is to first to the platform
 dnl independent checks for programs and then have
 dnl one big check for different operating systems
 
+dnl Old versions of Autoconf appear to fail
+AC_PREREQ([2.63])
+
 dnl tell configure who we are
 dnl parameters: package name, version, where to send bugreports
 AC_INIT(sac2c, svn, info@sac-home.org)
