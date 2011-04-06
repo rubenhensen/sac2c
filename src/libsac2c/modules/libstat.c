@@ -95,8 +95,8 @@ PrintLibStatCode (module_t *module, const sttable_t *table)
 
     DBUG_ENTER ("PrintLibStatPrintCode");
 
-    syntax_tree = TBmakeModule (NSgetNamespace (MODMgetModuleName (module)), F_prog, NULL,
-                                NULL, NULL, NULL, NULL);
+    syntax_tree = TBmakeModule (NSgetNamespace (MODMgetModuleName (module)), FT_prog,
+                                NULL, NULL, NULL, NULL, NULL);
 
     iterator = STsymbolIteratorGet (table);
 

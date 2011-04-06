@@ -175,7 +175,7 @@ SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optim
           exp)
 
 SUBPHASE (ser, "Serializing syntax tree", SERdoSerialize,
-          ((global.filetype == F_modimp) || (global.filetype == F_classimp)), exp)
+          ((global.filetype == FT_modimp) || (global.filetype == FT_classimp)), exp)
 
 SUBPHASE (rgd, "Removing generic function definitions", RGDdoRemoveGenericDefinitions,
           ALWAYS, exp)
@@ -1181,7 +1181,7 @@ SUBPHASE (dvr, "Removing obsolete variable declarations", DVRdoDeadVardecRemoval
           pc)
 
 SUBPHASE (dst, "MUTC Computing static thread mapping", DSTdoDistributeThreads,
-          ((global.backend == BE_mutc) && (global.filetype == F_prog)), pc)
+          ((global.backend == BE_mutc) && (global.filetype == FT_prog)), pc)
 
 SUBPHASE (sls, "Applying linksign pragma", SLSdoSetLinksign, ALWAYS, pc)
 
@@ -1191,14 +1191,14 @@ SUBPHASE (rcs, "Resolving code sharing in With-Loops", RCSdoResolveCodeSharing, 
           pc)
 
 SUBPHASE (tmft, "MUTC tag main function as thread function", TMFTdoTagMainFunThread,
-          (global.backend == BE_mutc && global.filetype == F_prog), pc)
+          (global.backend == BE_mutc && global.filetype == FT_prog), pc)
 
 SUBPHASE (tft, "MUTC tag functions as thread functions if needed",
           TFTdoTagFunctionsAsThreads, (global.backend == BE_mutc), pc)
 
 /* KEEP ABOVE fpc */
 SUBPHASE (cfp, "MUTC create function pairs", CFPdoCreateFunctionPairs,
-          (global.backend == BE_mutc && global.filetype != F_prog), pc)
+          (global.backend == BE_mutc && global.filetype != FT_prog), pc)
 
 /* TVD: Runtime Specialization */
 SUBPHASE (rtspec, "Runtime Specialization create wrapper entry functions",
@@ -1251,7 +1251,7 @@ SUBPHASE (hdep, "Handling dependencies", DEPdoHandleDependencies, ALWAYS, icc)
 
 SUBPHASE (ivcc, "Invoking C compiler", CCMinvokeCC, ALWAYS, icc)
 
-SUBPHASE (crl, "Creating SAC library", LIBBcreateLibrary, global.filetype != F_prog, icc)
+SUBPHASE (crl, "Creating SAC library", LIBBcreateLibrary, global.filetype != FT_prog, icc)
 
 ENDPHASE (icc)
 

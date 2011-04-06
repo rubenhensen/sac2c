@@ -155,7 +155,7 @@ EXPprovide (node *arg_node, info *arg_info)
     }
 
     if (INFO_SYMBMODE (arg_info) == SYM_filter) {
-        if (INFO_FILETYPE (arg_info) != F_prog) {
+        if (INFO_FILETYPE (arg_info) != FT_prog) {
             if (CheckExport (PROVIDE_ALL (arg_node), PROVIDE_SYMBOL (arg_node),
                              arg_info)) {
                 INFO_PROVIDED (arg_info) = TRUE;
@@ -184,7 +184,7 @@ EXPexport (node *arg_node, info *arg_info)
     }
 
     if (INFO_SYMBMODE (arg_info) == SYM_filter) {
-        if (INFO_FILETYPE (arg_info) != F_prog) {
+        if (INFO_FILETYPE (arg_info) != FT_prog) {
             if (CheckExport (EXPORT_ALL (arg_node), EXPORT_SYMBOL (arg_node), arg_info)) {
                 INFO_EXPORTED (arg_info) = TRUE;
             }
@@ -264,7 +264,7 @@ EXPfundef (node *arg_node, info *arg_info)
 
             FUNDEF_ISEXPORTED (arg_node) = FALSE;
             FUNDEF_ISPROVIDED (arg_node) = FALSE;
-        } else if ((INFO_FILETYPE (arg_info) == F_prog) && (FUNDEF_ISLOCAL (arg_node))
+        } else if ((INFO_FILETYPE (arg_info) == FT_prog) && (FUNDEF_ISLOCAL (arg_node))
                    && (STReq (FUNDEF_NAME (arg_node), "main"))) {
 
             /* override exports/provide for function main in a
@@ -453,7 +453,7 @@ EXPdoExport (node *syntax_tree)
 {
     DBUG_ENTER ("EXPdoExport");
 
-    if (MODULE_FILETYPE (syntax_tree) != F_prog) {
+    if (MODULE_FILETYPE (syntax_tree) != FT_prog) {
         if (!global.optimize.dodfr) {
             CTIwarn ("Dead Function Removal is disabled. This will lead to "
                      "bigger modules.");

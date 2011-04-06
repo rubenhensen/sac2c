@@ -308,11 +308,11 @@ PrintTargetName (node *tree)
     DBUG_ENTER ("PrintTargetName");
 
     switch (MODULE_FILETYPE (tree)) {
-    case F_prog:
+    case FT_prog:
         printf ("%s:", global.outfilename);
         break;
-    case F_modimp:
-    case F_classimp:
+    case FT_modimp:
+    case FT_classimp:
         printf ("%slib%sTree%s.so %slib%sMod%s.a %slib%sMod%s.so:", global.targetdir,
                 NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant,
                 global.targetdir, NSgetName (MODULE_NAMESPACE (tree)),
@@ -373,7 +373,7 @@ DEPdoHandleDependencies (node *syntax_tree)
 {
     DBUG_ENTER ("DEPdoHandleDependencies");
 
-    if ((global.filetype == F_modimp) || (global.filetype == F_classimp)) {
+    if ((global.filetype == FT_modimp) || (global.filetype == FT_classimp)) {
         /*
          * finally generate the dependency table.
          * we do this here as new dependencies may be introduced

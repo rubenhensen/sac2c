@@ -81,7 +81,7 @@ CFPdoCreateFunctionPairs (node *syntax_tree)
                   || (NODE_TYPE (syntax_tree) == N_fundef)),
                  "CFP is only designed to work on modules and fundefs");
 
-    DBUG_ASSERT (((global.filetype == F_modimp) || (global.filetype == F_classimp)),
+    DBUG_ASSERT (((global.filetype == FT_modimp) || (global.filetype == FT_classimp)),
                  "CFP is intended for use on classes and modules only");
 
     DBUG_PRINT ("CFP", ("Create Function Pairs traversal."));

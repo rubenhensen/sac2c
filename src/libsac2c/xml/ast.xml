@@ -34,7 +34,7 @@
     <type name="ExtLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
     <!-- a Link pointing from a N_part node to a N_code node -->
     <type name="CodeLink" ctype="node*" init="NULL" copy="hash" persist="yes" />
-    <type name="FileType" ctype="file_type" init="F_unknown"
+    <type name="FileType" ctype="file_type" init="FT_unknown"
     copy="literal" />
     <type name="LUT" ctype="lut_t*" init="NULL" copy="function" persist="no" />
     <type name="Prf" ctype="prf" init="0" copy="literal" />

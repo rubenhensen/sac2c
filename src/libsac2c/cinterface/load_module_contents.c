@@ -75,7 +75,7 @@ LMCdoLoadModuleContents (node *syntax_tree)
                  "has been created!");
 
     syntax_tree
-      = TBmakeModule (NSgetCWrapperNamespace (), F_cmod, NULL, NULL, NULL, NULL, NULL);
+      = TBmakeModule (NSgetCWrapperNamespace (), FT_cmod, NULL, NULL, NULL, NULL, NULL);
 
     DSinitDeserialize (syntax_tree);
 

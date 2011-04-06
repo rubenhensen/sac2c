@@ -130,9 +130,9 @@ GLOBAL (char *, targetdir, NULL)
  * name of C source code file
  */
 
-GLOBAL (file_type, filetype, F_prog)
+GLOBAL (file_type, filetype, FT_prog)
 /*
- * kind of file: F_PROG, F_MODIMP or F_CLASSIMP
+ * kind of file: FT_prog, FT_modimp or FT_classimp
  */
 
 GLOBAL (char *, tmp_dirname, NULL)

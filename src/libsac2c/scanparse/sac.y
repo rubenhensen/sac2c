@@ -54,7 +54,7 @@ static bool has_dot_args = FALSE;
  * used to distinguish the different kinds of files
  * which are parsed with this single parser
  */
-static file_type file_kind = F_prog;
+static file_type file_kind = FT_prog;
 static bool main_found = FALSE;
 static int main_found_line = 0;
  
@@ -310,7 +310,7 @@ eof: { if (commlevel) {
 prg: defs
      { $$ = $1;
        MODULE_NAMESPACE( $$) = NSgetRootNamespace();
-       MODULE_FILETYPE( $$) = F_prog;
+       MODULE_FILETYPE( $$) = FT_prog;
      }
    ;
 
@@ -412,7 +412,7 @@ def5: EXTERN fundec {  pragma_type = PRAG_fundec; } pragmas def5
       { $$ = $1; }
     ;
 
-def6: { $$ = TBmakeModule( NULL, F_prog, NULL, NULL, NULL, NULL, NULL);
+def6: { $$ = TBmakeModule( NULL, FT_prog, NULL, NULL, NULL, NULL, NULL);
 
         DBUG_PRINT( "PARSE",
                     ("%s:"F_PTR,
@@ -788,7 +788,7 @@ main: TYPE_INT K_MAIN BRACKET_L mainargs BRACKET_R { $<cint>$ = global.linenum; 
                            $4, $7, NULL);
         NODE_LINE( $$) = $<cint>6;
 
-        if (file_kind != F_prog) {
+        if (file_kind != FT_prog) {
           CTIerrorLine( global.linenum, 
                         "Defintion of main function found in module/class implementation");
         }
@@ -2275,7 +2275,7 @@ polyntype: LT ID LET ID SQBR_L ID SQBR_R GT
  ******************************************************************************
  ******************************************************************************/
 
-module: MODULE { file_kind = F_modimp; } ID deprecated SEMIC defs
+module: MODULE { file_kind = FT_modimp; } ID deprecated SEMIC defs
         { $$ = $6;
           MODULE_NAMESPACE( $$) = NSgetNamespace( $3);
           MODULE_FILETYPE( $$) = file_kind;
@@ -2283,7 +2283,7 @@ module: MODULE { file_kind = F_modimp; } ID deprecated SEMIC defs
         }
         ;
 
-class: CLASS { file_kind = F_classimp; } ID deprecated SEMIC classtype 
+class: CLASS { file_kind = FT_classimp; } ID deprecated SEMIC classtype 
        classpragmas defs
        { $$ = $8;
          MODULE_NAMESPACE( $$) = NSgetNamespace( $3);

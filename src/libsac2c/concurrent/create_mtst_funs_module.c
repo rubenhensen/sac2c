@@ -203,8 +203,8 @@ MTSTFMODdoCreateMtStFunsModule (node *syntax_tree)
 
     DBUG_ENTER ("MTSTFMODdoCreateMtStFunsModule");
 
-    DBUG_ASSERT ((MODULE_FILETYPE (syntax_tree) == F_modimp)
-                   || (MODULE_FILETYPE (syntax_tree) == F_classimp),
+    DBUG_ASSERT ((MODULE_FILETYPE (syntax_tree) == FT_modimp)
+                   || (MODULE_FILETYPE (syntax_tree) == FT_classimp),
                  "MTSTFMODdoCreateMtStFunsModule() not applicable to programs");
 
     info = MakeInfo ();

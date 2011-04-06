@@ -1090,7 +1090,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
         global.outfilename = STRcpy ("cwrapper");
     }
     global.optimize.dophm = FALSE;
-    global.filetype = F_cmod;
+    global.filetype = FT_cmod;
     if (global.printldflags || global.printccflags) {
         global.verbose_level = 0;
     }

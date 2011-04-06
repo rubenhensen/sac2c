@@ -143,11 +143,11 @@ CheckExpr (node *expr, prf op)
             prfop2 = F_reciproc_V;
             break;
         default:
-            prfop1 = F_unknownPrf;
-            prfop2 = F_unknownPrf;
+            prfop1 = F_unknown;
+            prfop2 = F_unknown;
         }
 
-        if ((prfop1 != F_unknownPrf) && (N_let == NODE_TYPE (ASSIGN_INSTR (assign)))
+        if ((prfop1 != F_unknown) && (N_let == NODE_TYPE (ASSIGN_INSTR (assign)))
             && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))))
             && ((PRF_PRF (LET_EXPR (ASSIGN_INSTR (assign))) == prfop1)
                 || (PRF_PRF (LET_EXPR (ASSIGN_INSTR (assign))) == prfop2))) {
@@ -176,7 +176,7 @@ CheckExpr (node *expr, prf op)
 static prf
 TogglePrf (prf op)
 {
-    prf result = F_unknownPrf;
+    prf result = F_unknown;
 
     DBUG_ENTER ("TogglePrf");
 
@@ -235,7 +235,7 @@ TogglePrf (prf op)
 static prf
 TogglePrfSwap (prf op)
 {
-    prf result = F_unknownPrf;
+    prf result = F_unknown;
 
     DBUG_ENTER ("TogglePrfSwap");
 

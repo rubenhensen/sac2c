@@ -380,7 +380,7 @@ GetSubtractionOperator (prf op)
 
     default:
         DBUG_ASSERT ((0), "Illegal argument, must be a comparison operator");
-        result = F_unknownPrf;
+        result = F_unknown;
     }
 
     DBUG_RETURN (result);

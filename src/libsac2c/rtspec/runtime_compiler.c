@@ -256,7 +256,7 @@ RTsetupRuntimeCompiler (node *syntax_tree)
      *
      * The namespace is created according to the name of the module.
      */
-    syntax_tree = TBmakeModule (NSgetNamespace (global.rt_new_module), F_modimp, NULL,
+    syntax_tree = TBmakeModule (NSgetNamespace (global.rt_new_module), FT_modimp, NULL,
                                 NULL, NULL, NULL, NULL);
 
     MODULE_INTERFACE (syntax_tree) = export;

@@ -1230,7 +1230,7 @@ PRTmodule (node *arg_node, info *arg_info)
         global.outfile = NULL;
     } else {
         switch (global.filetype) {
-        case F_modimp:
+        case FT_modimp:
             fprintf (global.outfile,
                      "\n"
                      "/*\n"
@@ -1238,7 +1238,7 @@ PRTmodule (node *arg_node, info *arg_info)
                      " */\n",
                      NSgetName (MODULE_NAMESPACE (arg_node)));
             break;
-        case F_classimp:
+        case FT_classimp:
             fprintf (global.outfile,
                      "\n"
                      "/*\n"
@@ -1246,7 +1246,7 @@ PRTmodule (node *arg_node, info *arg_info)
                      NSgetName (MODULE_NAMESPACE (arg_node)));
             fprintf (global.outfile, " */\n");
             break;
-        case F_prog:
+        case FT_prog:
             fprintf (global.outfile,
                      "\n"
                      "/*\n"
@@ -1254,7 +1254,7 @@ PRTmodule (node *arg_node, info *arg_info)
                      " */\n",
                      global.puresacfilename);
             break;
-        case F_cmod:
+        case FT_cmod:
             fprintf (global.outfile, "\n"
                                      "/*\n"
                                      " *  C-Wrapper Module\n"
@@ -5601,7 +5601,7 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
 
     if ((global.compiler_subphase == PH_cg_prt)
         || (global.compiler_subphase == PH_ccg_prt)) {
-        if (global.filetype == F_prog) {
+        if (global.filetype == FT_prog) {
             /*
              * The current file is a SAC program.
              * Therefore, the C file is generated within the target directory.

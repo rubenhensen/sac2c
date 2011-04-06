@@ -171,7 +171,7 @@ MTSTFdoCreateMtStFunsProg (node *syntax_tree)
 
     DBUG_ENTER ("MTSTFdoCreateMtStFunsProg");
 
-    DBUG_ASSERT (MODULE_FILETYPE (syntax_tree) == F_prog,
+    DBUG_ASSERT (MODULE_FILETYPE (syntax_tree) == FT_prog,
                  "MTSTFdoCreateMtStFunsProg() not applicable to modules/classes");
 
     info = MakeInfo ();
@@ -654,7 +654,7 @@ MTSTFdoCreateMtStFuns (node *syntax_tree)
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
-    if (MODULE_FILETYPE (syntax_tree) == F_prog) {
+    if (MODULE_FILETYPE (syntax_tree) == FT_prog) {
         syntax_tree = MTSTFdoCreateMtStFunsProg (syntax_tree);
     } else {
         syntax_tree = MTSTFMODdoCreateMtStFunsModule (syntax_tree);

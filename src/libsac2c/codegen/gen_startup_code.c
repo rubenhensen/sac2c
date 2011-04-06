@@ -222,8 +222,8 @@ PrintGlobalSwitches ()
     fprintf (global.outfile, "\n");
 
     fprintf (global.outfile, "#define SAC_DO_COMPILE_MODULE  %d\n",
-             ((global.filetype == F_modimp) || (global.filetype == F_classimp)
-              || (global.filetype == F_cmod))
+             ((global.filetype == FT_modimp) || (global.filetype == FT_classimp)
+              || (global.filetype == FT_cmod))
                ? 1
                : 0);
     if (global.genlib.c) {

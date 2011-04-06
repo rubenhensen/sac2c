@@ -625,7 +625,7 @@ FMGRsetFileNames (node *module)
 
     global.filetype = MODULE_FILETYPE (module);
 
-    if (MODULE_FILETYPE (module) == F_prog) {
+    if (MODULE_FILETYPE (module) == FT_prog) {
 
         global.modulenamespace = NSdupNamespace (MODULE_NAMESPACE (module));
         global.modulename = STRcpy (NSgetName (MODULE_NAMESPACE (module)));

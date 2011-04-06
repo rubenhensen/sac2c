@@ -480,9 +480,9 @@ CCMinvokeCC (node *syntax_tree)
     ccflags = GetCCFlags ();
     libs = GetLibs ();
 
-    if (global.filetype == F_prog) {
+    if (global.filetype == FT_prog) {
         InvokeCCProg (cccall, ccflags, libs, deps);
-    } else if (global.filetype == F_cmod) {
+    } else if (global.filetype == FT_cmod) {
         InvokeCCWrapper (cccall, ccflags);
     } else {
         InvokeCCModule (cccall, ccflags);
