@@ -94,7 +94,7 @@
            error TravError
          include the include file needed for the traversal
     -->
-      <traversal id="ANRP" name="Add NoRC PRF" default="sons" include="add_norc_prf.h">
+      <traversal id="ARMP" name="Add RC Mode PRF" default="sons" include="add_rc_mode_prf.h">
         <travuser>
           <node name="With3" />
           <node name="Assign" />
@@ -3062,7 +3062,7 @@
         <node name="Genarray" />
         <node name="Propagate" />
         <node name="Id" />
-        <node name="Ids" />
+        <node name="Ids" /> 
         <node name="Ap" />
         <node name="Let" />
         <node name="Modarray" />
@@ -5531,6 +5531,16 @@ N_tfarg :
               <node name="Vardec" />
               <phases>
                 <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Shareds" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Arg" />
+              <phases>
+                <phase name="lw3"/>
               </phases>
             </target>
           </targets>

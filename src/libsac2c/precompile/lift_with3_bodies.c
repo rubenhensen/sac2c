@@ -77,6 +77,7 @@ struct INFO {
     node *withops;
     node *preassigns;
     lut_t *withops_ids;
+    node *shareds;
 
     lut_t *at_lut;
     lut_t *at_init_lut;
@@ -91,6 +92,7 @@ struct INFO {
 #define INFO_NS(n) ((n)->ns)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_SHAREDS(n) ((n)->shareds)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_WITHOPS(n) ((n)->withops)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
@@ -117,6 +119,7 @@ MakeInfo ()
     INFO_NS (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_VARDECS (result) = NULL;
+    INFO_SHAREDS (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_WITHOPS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
@@ -137,6 +140,7 @@ FreeInfo (info *info)
     DBUG_ASSERT ((INFO_AT_EXPRS_IDS (info) == NULL),
                  "Leaking memory in AT_EXPRS_IDS chain");
     DBUG_ASSERT ((INFO_PREASSIGNS (info) == NULL), "Leaking memory in PREASSIGNS");
+    DBUG_ASSERT ((INFO_SHAREDS (info) == NULL), "Shareds not null");
 
     INFO_AT_LUT (info) = LUTremoveLut (INFO_AT_LUT (info));
     INFO_AT_INIT_LUT (info) = LUTremoveLut (INFO_AT_INIT_LUT (info));
@@ -168,6 +172,44 @@ ATravFundef (node *arg_node, info *arg_info)
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+#if 0
+/** <!-- ****************************************************************** -->                                                                                             
+ * @fn node *AddVardec2DFM( node *arg_node, info *arg_info)
+ *
+ * @brief Add chain of vardecs to dfm in
+ *****************************************************************************/
+static
+void AddVardec2DFM( dfmask_t *mask, node *vardec)
+{
+  DBUG_ENTER( "AddVardec2DFM");
+
+  if ( vardec != NULL){
+    DFMsetMaskEntrySet( mask, NULL, VARDEC_AVIS( vardec));
+    AddVardec2DFM( mask, VARDEC_NEXT( vardec));
+  }
+  
+  DBUG_VOID_RETURN;
+}
+#endif
+/** <!-- ****************************************************************** -->
+ * @fn node *ATravBlock( node *arg_node, info *arg_info)
+ *
+ * @brief Save vardec ins to the in dfm mask and move the vardec ins
+ * to the vardecs.  This is to correct the dfm for shared variables.
+ *****************************************************************************/
+static node *
+ATravBlock (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravBlock");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    BLOCK_SHAREDS (arg_node) = INFO_SHAREDS (arg_info);
+
+    INFO_SHAREDS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -300,13 +342,13 @@ ATravRange (node *arg_node, info *arg_info)
  *             also results of range.
  * @param lut  Look up table to store mappings of avis -> avis ( shared) in
  *
- * @return Chain of vardecs for new shareds.
+ * @return Chain of args for new shareds.
  *****************************************************************************/
 static node *
 IdsIdsToShareds (node *ids, node *ids2, lut_t *lut, lut_t *init_lut)
 {
     node *avis;
-    node *vardec = NULL;
+    node *args = NULL;
     ntype *type;
     node *fold;
     DBUG_ENTER ("IdsIdsToShareds");
@@ -314,7 +356,7 @@ IdsIdsToShareds (node *ids, node *ids2, lut_t *lut, lut_t *init_lut)
     if (ids != NULL) {
         DBUG_ASSERT ((ids2 != NULL), "Expected two lists of the same length");
 
-        vardec = IdsIdsToShareds (IDS_NEXT (ids), IDS_NEXT (ids2), lut, init_lut);
+        args = IdsIdsToShareds (IDS_NEXT (ids), IDS_NEXT (ids2), lut, init_lut);
 
         type = TYcopyType (AVIS_TYPE (IDS_AVIS (ids2)));
 
@@ -326,7 +368,7 @@ IdsIdsToShareds (node *ids, node *ids2, lut_t *lut, lut_t *init_lut)
 
         type = TYsetMutcScope (type, MUTC_SHARED);
         avis = TBmakeAvis (TRAVtmpVar (), type);
-        vardec = TBmakeVardec (avis, vardec);
+        args = TBmakeArg (avis, args);
 
         fold = (node *)LUTsearchInLutPp (init_lut, IDS_AVIS (ids2));
         DBUG_ASSERT ((fold != NULL), "Lost information about fold");
@@ -339,7 +381,7 @@ IdsIdsToShareds (node *ids, node *ids2, lut_t *lut, lut_t *init_lut)
         DBUG_ASSERT ((ids2 == NULL), "Expected two lists of the same length");
     }
 
-    DBUG_RETURN (vardec);
+    DBUG_RETURN (args);
 }
 
 /** <!-- ****************************************************************** -->
@@ -353,12 +395,12 @@ ATravPrfAccu (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ATravPrfAccu");
 
-    INFO_VARDECS (arg_info)
-      = TCappendVardec (INFO_VARDECS (arg_info),
-                        IdsIdsToShareds (INFO_LHS (arg_info),
-                                         INFO_AT_EXPRS_IDS (arg_info),
-                                         INFO_AT_LUT (arg_info),
-                                         INFO_AT_INIT_LUT (arg_info)));
+    DBUG_ASSERT ((INFO_SHAREDS (arg_info) == NULL),
+                 "Already have shareds why have I found more");
+
+    INFO_SHAREDS (arg_info)
+      = IdsIdsToShareds (INFO_LHS (arg_info), INFO_AT_EXPRS_IDS (arg_info),
+                         INFO_AT_LUT (arg_info), INFO_AT_INIT_LUT (arg_info));
 
     INFO_AT_EXPRS_IDS (arg_info) = FREEdoFreeTree (INFO_AT_EXPRS_IDS (arg_info));
 
@@ -475,10 +517,10 @@ ATravLet (node *arg_node, info *arg_info)
 static node *
 addShareds (node *syntax_tree, info *arg_info)
 {
-    anontrav_t atrav[8] = {{N_prf, &ATravPrf},       {N_range, &ATravRange},
-                           {N_fundef, &ATravFundef}, {N_let, &ATravLet},
-                           {N_with, &TRAVnone},      {N_with2, &TRAVnone},
-                           {N_with3, &ATravWith3},   {0, NULL}};
+    anontrav_t atrav[9]
+      = {{N_prf, &ATravPrf},     {N_range, &ATravRange}, {N_fundef, &ATravFundef},
+         {N_block, &ATravBlock}, {N_let, &ATravLet},     {N_with, &TRAVnone},
+         {N_with2, &TRAVnone},   {N_with3, &ATravWith3}, {0, NULL}};
     info *anon_info;
 
     DBUG_ENTER ("addShareds");
@@ -621,28 +663,21 @@ CreateThreadFunName (info *arg_info)
 }
 
 static node *
-ShareFolds (node *exprs, lut_t *lut)
+ShareFolds (node *args, lut_t *lut)
 {
+    node *next = NULL;
+    node *fold = NULL;
     DBUG_ENTER ("ShareFolds");
 
-    if (exprs != NULL) {
-        node *fold;
-
-        if (EXPRS_NEXT (exprs) != NULL) {
-            EXPRS_NEXT (exprs) = ShareFolds (EXPRS_NEXT (exprs), lut);
-        }
-
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id), "Expected N_id");
-
-        fold = AVIS_WITH3FOLD (ID_AVIS (EXPRS_EXPR (exprs)));
-
-        if (fold != NULL) {
-            ID_AVIS (EXPRS_EXPR (exprs))
-              = IDS_AVIS ((node *)LUTsearchInLutPp (lut, fold));
-        }
+    if (ARG_NEXT (args) != NULL) {
+        next = ShareFolds (ARG_NEXT (args), lut);
     }
 
-    DBUG_RETURN (exprs);
+    fold = AVIS_WITH3FOLD (ARG_AVIS (args));
+
+    next = TBmakeExprs (TBmakeId (IDS_AVIS ((node *)LUTsearchInLutPp (lut, fold))), next);
+
+    DBUG_RETURN (next);
 }
 
 /** <!-- ****************************************************************** -->
@@ -666,6 +701,7 @@ CreateThreadFunction (node *block, node *results, node *index, info *arg_info)
 {
     lut_t *lut;
     node *args, *rets, *retassign, *threadfun, *ap, *vardecs, *assigns;
+    node *apargs = NULL;
     node *innerindex;
     char *funName;
     dfmask_t *ret_mask, *arg_mask, *local_mask;
@@ -694,6 +730,13 @@ CreateThreadFunction (node *block, node *results, node *index, info *arg_info)
 
     assigns = TCappendAssign (DUPdoDupTreeLut (BLOCK_INSTR (block), lut), retassign);
 
+    if (BLOCK_SHAREDS (block) != NULL) {
+        /* neet to leave a copy but use original because of links*/
+        node *shared = DUPdoDupTree (BLOCK_SHAREDS (block));
+        args = TCappendArgs (BLOCK_SHAREDS (block), args);
+        BLOCK_SHAREDS (block) = shared;
+    }
+
     funName = CreateThreadFunName (arg_info);
     threadfun = TBmakeFundef (funName, NSdupNamespace (INFO_NS (arg_info)), rets, args,
                               TBmakeBlock (assigns, vardecs), INFO_THREADS (arg_info));
@@ -713,8 +756,18 @@ CreateThreadFunction (node *block, node *results, node *index, info *arg_info)
     lut = LUTremoveLut (lut);
 
     /* Create ap for OUTER context */
-    ap = TBmakeAp (threadfun, ShareFolds (DFMUdfm2ApArgs (arg_mask, NULL),
-                                          INFO_WITHOPS_IDS (arg_info)));
+    if (BLOCK_SHAREDS (block) != NULL) {
+        apargs = ShareFolds (BLOCK_SHAREDS (block), INFO_WITHOPS_IDS (arg_info));
+        BLOCK_SHAREDS (block) = NULL; /* used above in args*/
+    }
+
+    if (apargs != NULL) {
+        apargs = TCappendExprs (apargs, DFMUdfm2ApArgs (arg_mask, NULL));
+    } else {
+        apargs = DFMUdfm2ApArgs (arg_mask, NULL);
+    }
+
+    ap = TBmakeAp (threadfun, apargs);
 
     ret_mask = DFMremoveMask (ret_mask);
     arg_mask = DFMremoveMask (arg_mask);
@@ -748,12 +801,13 @@ LW3doLiftWith3 (node *syntax_tree)
     TRAVpush (TR_lw3);
 
     info = MakeInfo ();
-    syntax_tree = addShareds (syntax_tree, info);
-    syntax_tree = InitFolds (syntax_tree);
     /*
      * Infer dataflow masks
      */
     syntax_tree = INFDFMSdoInferDfms (syntax_tree, HIDE_LOCALS_WITH3);
+
+    syntax_tree = addShareds (syntax_tree, info);
+    syntax_tree = InitFolds (syntax_tree);
 
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
@@ -862,12 +916,12 @@ LW3range (node *arg_node, info *arg_info)
      * This is needed for mmult
      * Believe the need stems from nested fold with3
      */
-#if 1
-    if (TCcountWithopsEq (INFO_WITHOPS (arg_info), N_fold) != 0) {
-        INFO_FUNDEF (arg_info)
-          = INFDFMSdoInferDfms (RDFMSdoRemoveDfms (INFO_FUNDEF (arg_info)),
-                                HIDE_LOCALS_WITH3);
-    }
+#if 0
+  if ( TCcountWithopsEq( INFO_WITHOPS( arg_info), N_fold) != 0){
+    INFO_FUNDEF( arg_info) = 
+      INFDFMSdoInferDfms( RDFMSdoRemoveDfms( INFO_FUNDEF( arg_info)), 
+                          HIDE_LOCALS_WITH3);
+  }
 #endif
 
     RANGE_RESULTS (arg_node)
