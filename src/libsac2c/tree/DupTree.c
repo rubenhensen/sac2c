@@ -2779,6 +2779,8 @@ DUPavis (node *arg_node, info *arg_info)
     AVIS_NEEDCOUNT (new_node) = AVIS_NEEDCOUNT (arg_node);
     AVIS_SUBST (new_node) = AVIS_SUBST (arg_node);
 
+    AVIS_WITH3FOLD (new_node) = AVIS_WITH3FOLD (arg_node);
+
     /* DEBUG TEMP FIXME  chasing missing info in N_ap */
     AVIS_DIM (new_node) = DUPTRAV (AVIS_DIM (arg_node));
     AVIS_SHAPE (new_node) = DUPTRAV (AVIS_SHAPE (arg_node));
