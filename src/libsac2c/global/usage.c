@@ -519,6 +519,7 @@ PrintMutcOptions (void)
       "    -mutc_static_resource_management Staticly manage resources\n\n"
       "    -mutc_force_block_size <n>       Force the block size to <n> for all\n"
       "                                     creates\n"
+      "    -mutc_force_spawn_flags <s>      Force the flags to <s> for all spawns\n"
       "    -mutc_distribute <mode>          Select a mode for distributing threads\n"
       "                                     across cores. Possible modes are:\n\n"
       "                                     toplevel : only distribute the top-evel\n"

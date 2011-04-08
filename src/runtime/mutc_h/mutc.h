@@ -231,7 +231,8 @@
     SAC_ND_A_DESC_NAME (var_NT) = sl_getp (SAC_ND_A_DESC_NAME (var_NT));
 
 #define SAC_MUTC_SPAWN_AP(syncid, place, name, ...)                                      \
-    sl_spawn (NT_NAME (syncid), place, , , , , , name, __VA_ARGS__);
+    sl_spawn (NT_NAME (syncid), place, , , , , SAC_MUTC_FORCE_SPAWN_FLAGS, name,         \
+              __VA_ARGS__);
 
 #define SAC_MUTC_DECL_SYNCVAR(syncid) sl_spawndecl (syncid);
 

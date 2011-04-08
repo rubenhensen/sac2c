@@ -184,6 +184,9 @@ OPTcheckOptionConsistency (void)
         if (global.mutc_benchmark == TRUE) {
             CTIerror ("-mutc_benchmark needs mutc backend");
         }
+        if (global.mutc_force_spawn_flags != NULL) {
+            CTIerror ("-mutc_force_spawn_flags needs mutc backend");
+        }
         if (global.mutc_disable_concurrent_rc == TRUE) {
             CTIerror ("-mutc_disable_concurrent_rc only works with mutc backend");
         }
@@ -652,6 +655,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION ("mutc_distribute_arg", ARG_NUM (global.mutc_distribution_mode_arg));
 
     ARGS_OPTION ("mutc_force_block_size", ARG_NUM (global.mutc_force_block_size));
+
+    ARGS_OPTION ("mutc_force_spawn_flags", global.mutc_force_spawn_flags = STRcpy (ARG));
 
     ARGS_OPTION ("mutc_unroll", ARG_NUM (global.mutc_unroll));
 

@@ -190,6 +190,12 @@ PrintGlobalSwitches ()
     fprintf (global.outfile, "#define SAC_MUTC_RC_PLACES  %d\n", global.mutc_rc_places);
     fprintf (global.outfile, "#define SAC_MUTC_RC_INDIRECT  %d\n",
              (global.mutc_rc_indirect) ? 1 : 0);
+    if (global.mutc_force_spawn_flags != NULL) {
+        fprintf (global.outfile, "#define SAC_MUTC_FORCE_SPAWN_FLAGS  %s\n",
+                 global.mutc_force_spawn_flags);
+    } else {
+        fprintf (global.outfile, "#define SAC_MUTC_FORCE_SPAWN_FLAGS\n");
+    }
 
     fprintf (global.outfile, "\n");
 
