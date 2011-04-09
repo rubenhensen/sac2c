@@ -123,6 +123,7 @@
 #include "dispatchfuncalls.h"
 #include "SSACSE.h"
 #include "cubeslicer.h"
+#include "prfunroll.h"
 
 /** <!--********************************************************************-->
  *
@@ -399,30 +400,44 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *gegtNthWithids(...)
+ * @fn node *getNthWithids(...)
  *
- * @brief:
+ * @brief: A Withids entry starts off as an N_array, such
+ *         as:  [ j, i], where j and i are WITHID_IDS
+ *         entries. However, if the withids entry matches
+ *         the WL's WITHID_IDS exactly, then CSE will
+ *         replace it by the WITHID_VEC. This code is
+ *         intended to deal with both cases, so when
+ *         you write getNthWithids( 1, [j, i]), you get i.
  *
  * @param: arg_node - the AVIS_WITHIDS of interest.
  *         n: the element # we want to fetch.
  *
- * @result: N_id node for withids or NULL.
+ * @result: N_avis node for withids or NULL.
  *
  *****************************************************************************/
 static node *
-getNthWithids (int n, node *arg_node)
+getNthWithids (int n, node *arg_node, info *arg_info)
 {
     node *z = NULL;
+    node *partwithid;
     node *withids;
-    bool b;
     pattern *pat;
 
     DBUG_ENTER ("getNthWithids");
 
     pat = PMany (1, PMAgetNode (&withids), 1, PMskip (0));
-    b = PMmatchFlatSkipExtremaAndGuards (pat, arg_node);
-    if (b && (N_array == NODE_TYPE (withids))) {
-        z = TCgetNthExprsExpr (n, ARRAY_AELEMS (withids));
+    if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
+        if (N_array == NODE_TYPE (withids)) {
+            z = TCgetNthExprsExpr (n, ARRAY_AELEMS (withids));
+            z = ID_AVIS (z);
+        } else { /* withids is WITHID_VEC. Get WITHID_IDS */
+            partwithid = PART_WITHID (INFO_CONSUMERPART (arg_info));
+            if (ID_AVIS (withids) == IDS_AVIS (WITHID_VEC (partwithid))) {
+                withids = WITHID_IDS (partwithid);
+                z = TCgetNthIds (n, withids);
+            }
+        }
     }
 
     pat = PMfree (pat);
@@ -489,24 +504,29 @@ isAllWithidsPresent (node *arg_node)
  *
  * @param: arg_node - the N_prf of interest.
  *         arg_info - your basic arg_info node
+ *         withids - the withids we are tracing
  *
  * @result: N_id node for resulting vector..
  *
  *****************************************************************************/
 static node *
-FindPrfParent2 (node *arg_node, info *arg_info)
+FindPrfParent2 (node *arg_node, info *arg_info, node *withids)
 {
     node *z = NULL;
+    node *w;
 
     DBUG_ENTER ("FindPrfParent2");
 
-    if (IVEXPisCheckWithids (PRF_ARG1 (arg_node), INFO_CONSUMERWL (arg_info))) {
+    w = AVIS_WITHIDS (ID_AVIS (PRF_ARG1 (arg_node)));
+    if ((NULL != w) && (withids == ID_AVIS (w))) {
         z = PRF_ARG1 (arg_node);
-    } else {
-        if (IVEXPisCheckWithids (PRF_ARG2 (arg_node), INFO_CONSUMERWL (arg_info))) {
-            z = PRF_ARG2 (arg_node);
-        }
     }
+
+    w = AVIS_WITHIDS (ID_AVIS (PRF_ARG2 (arg_node)));
+    if ((NULL != w) && (withids == ID_AVIS (w))) {
+        z = PRF_ARG2 (arg_node);
+    }
+
     DBUG_ASSERT (z, "Could not find scalar function parent with withids");
 
     DBUG_RETURN (z);
@@ -527,7 +547,7 @@ FindPrfParent2 (node *arg_node, info *arg_info)
 static bool
 isHasInverseProjection (node *arg_node)
 {
-    bool z = FALSE;
+    bool z = TRUE;
     constant *co;
 
     DBUG_ENTER ("isHasinverseProjection");
@@ -550,13 +570,13 @@ isHasInverseProjection (node *arg_node)
  *        if possible.
  *
  *
- * @params:  idxscalar: an element of iv' in _sel_VxA_( iv', pwl).
+ * @params:  iprime: an element of iv' in _sel_VxA_( iv', pwl).
  *           arg_info: Your basic arg_info node.
- *           intrsctsc: The N_avis of the current
+ *           intrsctel: The N_avis of the current
  *           result of the iv'/pwl intersect calculation and F-inverse.
  *           Or, an N_id.
  *           Or, an N_num.
- *           withids:  The N_id of the WITHIDS element we are chasing.
+ *           withids:  The N_avis of the WITHIDS element we are chasing.
  *
  * @result: An N_avis node that gives the result of the F-inverse mapping
  *          function to take us from iv'->iv.
@@ -566,7 +586,7 @@ isHasInverseProjection (node *arg_node)
  *
  *****************************************************************************/
 static node *
-TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withids)
+TraceIndexScalar (node *iprime, info *arg_info, node *intrsctel, node *withids)
 {
     node *z = NULL;
     node *ivarg;
@@ -577,40 +597,48 @@ TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withid
     node *ids;
     node *assgn;
     node *idx = NULL;
+    node *rhs;
+    constant *con;
     prf nprf;
 
     pattern *pat;
 
     DBUG_ENTER ("TraceIndexScalar");
 
-    if (N_num == NODE_TYPE (intrsctsc)) {
-        z = AWLFIflattenExpression (DUPdoDupNode (intrsctsc), &INFO_VARDECS (arg_info),
+    if (N_num == NODE_TYPE (intrsctel)) {
+        con = COaST2Constant (intrsctel);
+        z = AWLFIflattenExpression (DUPdoDupNode (intrsctel), &INFO_VARDECS (arg_info),
                                     &INFO_PREASSIGNS (arg_info),
-                                    TYmakeAKS (TYmakeSimpleType (T_int),
-                                               SHcreateShape (0, 0)));
+                                    TYmakeAKV (TYmakeSimpleType (T_int),
+                                               COcopyConstant (con)));
+        con = COfreeConstant (con);
     } else {
-        if (N_id == NODE_TYPE (intrsctsc)) {
-            intrsctsc = ID_AVIS (intrsctsc);
+        if (N_id == NODE_TYPE (intrsctel)) {
+            intrsctel = ID_AVIS (intrsctel);
         }
 
-        DBUG_PRINT ("AWLFI", ("Tracing %s", AVIS_NAME (ID_AVIS (idxscalar))));
-        pat = PMparam (1, PMAgetNode (&idx), 0);
-        if (PMmatchFlatSkipExtremaAndGuards (pat, idxscalar)) {
+        DBUG_PRINT ("AWLFI", ("Tracing %s", AVIS_NAME (ID_AVIS (iprime))));
+        pat = PMany (1, PMAgetNode (&idx), 0);
+        if (PMmatchFlatSkipExtremaAndGuards (pat, iprime)) {
             switch (NODE_TYPE (idx)) {
             case N_id:
-                if (ID_AVIS (idx) == ID_AVIS (withids)) {
+                /* parm or withids */
+                if ((NULL == AVIS_SSAASSIGN (ID_AVIS (idx)))
+                    && (ID_AVIS (idx) == withids)) {
                     DBUG_PRINT ("AWLFI", ("Found %s as source of iv'=%s",
                                           AVIS_NAME (ID_AVIS (idx)),
-                                          AVIS_NAME (ID_AVIS (idxscalar))));
-                    z = intrsctsc;
+                                          AVIS_NAME (ID_AVIS (iprime))));
+                    z = intrsctel;
                 } else {
+                    /* Vanilla variable */
+                    rhs = AVIS_SSAASSIGN (ID_AVIS (idx));
                     DBUG_PRINT ("AWLFI", ("We lost the trail."));
                     z = NULL;
                 }
                 break;
 
             case N_prf:
-                ivarg = FindPrfParent2 (idx, arg_info);
+                ivarg = FindPrfParent2 (idx, arg_info, withids);
                 xarg = (ivarg == PRF_ARG1 (idx)) ? PRF_ARG2 (idx) : PRF_ARG1 (idx);
 
                 switch (PRF_PRF (idx)) {
@@ -627,7 +655,7 @@ TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withid
                     assgn
                       = TBmakeAssign (TBmakeLet (ids,
                                                  TCmakePrf2 (F_sub_SxS,
-                                                             TBmakeId (intrsctsc),
+                                                             TBmakeId (intrsctel),
                                                              TBmakeId (ID_AVIS (xarg)))),
                                       NULL);
                     INFO_PREASSIGNS (arg_info)
@@ -648,12 +676,12 @@ TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withid
                       = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
                     if (ID_AVIS (ivarg) == ID_AVIS (PRF_ARG1 (idx))) {
                         nprf = F_add_SxS; /* Case 1 */
-                        id1 = TBmakeId (intrsctsc);
+                        id1 = TBmakeId (intrsctel);
                         id2 = TBmakeId (ID_AVIS (xarg));
                     } else {
                         nprf = F_sub_SxS; /* Case 2 */
                         id1 = TBmakeId (ID_AVIS (xarg));
-                        id2 = TBmakeId (intrsctsc);
+                        id2 = TBmakeId (intrsctel);
                         INFO_FINVERSESWAP (arg_info) = !INFO_FINVERSESWAP (arg_info);
                     }
 
@@ -679,8 +707,8 @@ TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withid
 
             case N_num:
                 DBUG_PRINT ("AWLFI", ("Found integer as source of iv'=%s",
-                                      AVIS_NAME (ID_AVIS (idxscalar))));
-                z = ID_AVIS (idxscalar);
+                                      AVIS_NAME (ID_AVIS (iprime))));
+                z = ID_AVIS (iprime);
                 break;
 
             case N_array:
@@ -704,23 +732,31 @@ TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withid
 /** <!--********************************************************************-->
  *
  * @fn node *BuildInverseProjectionOne( node *arg_node, info *arg_info,
- *                                      node *curel)
+ *                                      node( *ivprime,
+ *                                      node *intr)
  *
- * @brief Given an F_intersect arg_node,
- *        and a known non-NULL intersection between the consumerWL
- *        and the producerWL, create a symbiotic expression to
- *        compute the inverse projection
- *        of the intersection of the producerWL partition bounds
- *        with the consumerWL's index vector, iv', back into
- *        the consumerWL's partition bounds.
+ * @brief   For a consumerWL with iv as WITHID_IDS,
+ *          we have code of the form:
  *
- *        We search backwards from iv'.
+ *             iv' = F( iv);
+ *             el = producerWL( iv');
  *
- * @params: arg_node, arg_info: as above
- *          curel: the intersect extrema calc of interest
+ *         We are given iv' lb/ub as the WL intersection
+ *         between a partition of the producerWL and the consumerWL.
+ *
+ *         This function generates code to compute F_1,
+ *         the inverse of F, and applies it to iv', to compute
+ *         a new iv, which is the bound of the WL intersection
+ *         in the consumerWL space. I.e.,
+ *
+ *            iv = F_1( iv');
+ *
+ * @params: arg_node is an F_intersect node.
+ *          ivprime: The iv' N_array node.
+ *          intr: the WLintersect N_array node for lb or ub.
  *
  * @result: An N_avis node, which represents the result of
- *          mapping the intersect extrema back to CWL space.
+ *          mapping the WLintersect extrema back to consumerWL space.
  *
  *          If we are unable to compute the inverse, we
  *          return NULL. This may occur if, e.g., we multiply
@@ -729,30 +765,35 @@ TraceIndexScalar (node *idxscalar, info *arg_info, node *intrsctsc, node *withid
  *
  *****************************************************************************/
 static node *
-BuildInverseProjectionOne (node *arg_node, info *arg_info, node *curel)
+BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *intr)
 {
     node *z = NULL;
-    node *i;
+    node *iprime;
     node *ziavis;
     node *zarr;
-    node *intrsctscel;
+    node *intrsctel;
     node *withids;
     ntype *typ;
     int dim;
     int ivindx;
     DBUG_ENTER ("BuildInverseProjectionOne");
 
-    DBUG_ASSERT (N_array == NODE_TYPE (curel), "Expected N_array curel");
-    dim = SHgetUnrLen (ARRAY_FRAMESHAPE (curel));
+    DBUG_ASSERT (N_array == NODE_TYPE (ivprime), "Expected N_array ivprime");
+    DBUG_ASSERT (N_array == NODE_TYPE (intr), "Expected N_array intr");
+    dim = SHgetUnrLen (ARRAY_FRAMESHAPE (ivprime));
 
     for (ivindx = 0; ivindx < dim; ivindx++) {
-        i = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (curel));
-        withids = getNthWithids (ivindx, PRF_ARG1 (arg_node));
+        iprime = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (ivprime));
+        intrsctel = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (intr));
+
+        withids = getNthWithids (ivindx, AVIS_WITHIDS (ID_AVIS (PRF_ARG1 (arg_node))),
+                                 arg_info);
         if (NULL != withids) {
-            intrsctscel = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (curel));
             INFO_FINVERSESWAP (arg_info) = FALSE;
-            ziavis = TraceIndexScalar (i, arg_info, intrsctscel, withids);
+            ziavis = TraceIndexScalar (iprime, arg_info, intrsctel, withids);
             if (NULL != ziavis) {
+                DBUG_ASSERT (N_avis == NODE_TYPE (ziavis), "Expected N_avis");
+                /* NO IDEA WHAT NEXT LINE IS FOR */
                 AVIS_FINVERSESWAP (ziavis) = INFO_FINVERSESWAP (arg_info);
                 z = TCappendExprs (z, TBmakeExprs (TBmakeId (ziavis), NULL));
             } else {
@@ -764,7 +805,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *curel)
     }
 
     if (NULL != z) {
-        zarr = DUPdoDupTree (curel); /* Make result shape match argument shape */
+        zarr = DUPdoDupTree (ivprime); /* Make result shape match argument shape */
         FREEdoFreeTree (ARRAY_AELEMS (zarr));
         ARRAY_AELEMS (zarr) = z;
         typ = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
@@ -774,6 +815,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *curel)
 
     if (NULL != z) {
         global.optcounters.awlfi_expr += 1;
+        DBUG_ASSERT (N_avis == NODE_TYPE (z), "Expected N_avis z");
     }
 
     DBUG_RETURN (z);
@@ -803,48 +845,100 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *curel)
  *          for failure.
  *
  *****************************************************************************/
+static bool
+MatchExpr (node *arg, node *expr)
+{
+    bool z;
+
+    DBUG_ENTER ("MatchExpr");
+    z = (arg == expr);
+    DBUG_RETURN (z);
+}
+
 static node *
 BuildInverseProjections (node *arg_node, info *arg_info)
 {
-    node *z = NULL;
-    pattern *pat;
+    node *zlb = NULL;
+    node *zub = NULL;
+    pattern *pat1;
+    pattern *pat2;
     int numpart;
     int curpart;
-    int curelidx;
-    node *curel;
+    int curelidxlb;
+    int curelidxub;
+    node *ivprime;
+    bool swaplb;
+    bool swapub;
+    node *tmp;
+    node *intr;
+    node *nlet;
+    node *newnlet;
 
     DBUG_ENTER ("BuildInverseProjections");
 
     numpart = (TCcountExprs (PRF_ARGS (arg_node)) / WLEPP);
-    pat = PMarray (1, PMAgetNode (&curel), 1, PMskip (0));
-    for (curpart = 0; curpart < numpart; curpart++) {
-        curelidx = WLPROJECTION1 (curpart);
-        if (!isHasInverseProjection (TCgetNthExprsExpr (curelidx, PRF_ARGS (arg_node)))) {
-            curel = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
-            if (PMmatchFlat (pat, curel)) {
-                z = BuildInverseProjectionOne (arg_node, arg_info, curel);
-                if ((NULL != z)) {
-                    z = TBmakeId (z);
-                    PRF_ARGS (arg_node)
-                      = TCputNthExprs (curelidx, PRF_ARGS (arg_node), z);
+    pat1 = PMarray (1, PMAgetNode (&intr), 1, PMskip (0));
+    pat2 = PMarray (1, PMAgetNode (&ivprime), 1, PMskip (0));
+
+    if (PMmatchFlat (pat2, PRF_ARG1 (arg_node))) {
+
+        /* Iterate across intersects */
+        for (curpart = 0; curpart < numpart; curpart++) {
+            curelidxlb = WLPROJECTION1 (curpart);
+            if (!isHasInverseProjection (
+                  TCgetNthExprsExpr (curelidxlb, PRF_ARGS (arg_node)))) {
+                intr = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
+                if (PMmatchFlat (pat1, intr)) {
+                    zlb = BuildInverseProjectionOne (arg_node, arg_info, ivprime, intr);
+                    swaplb = INFO_FINVERSESWAP (arg_info);
                 }
             }
-        }
-        curelidx = WLPROJECTION2 (curpart);
-        if (!isHasInverseProjection (TCgetNthExprsExpr (curelidx, PRF_ARGS (arg_node)))) {
-            curel = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
-            if (PMmatchFlat (pat, curel)) {
-                z = BuildInverseProjectionOne (arg_node, arg_info, curel);
-                if ((NULL != z)) {
-                    z = TBmakeId (z);
-                    PRF_ARGS (arg_node)
-                      = TCputNthExprs (curelidx, PRF_ARGS (arg_node), z);
+            curelidxub = WLPROJECTION2 (curpart);
+            if (!isHasInverseProjection (
+                  TCgetNthExprsExpr (curelidxub, PRF_ARGS (arg_node)))) {
+                intr = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
+                intr = IVEXPadjustExtremaBound (ID_AVIS (intr), arg_info, -1,
+                                                &INFO_VARDECS (arg_info),
+                                                &INFO_PREASSIGNS (arg_info));
+                nlet = ASSIGN_INSTR (AVIS_SSAASSIGN (intr));
+                newnlet
+                  = UPRFdoUnrollPRFsPrf (LET_EXPR (nlet), &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGNS (arg_info), LET_IDS (nlet));
+                FREEdoFreeNode (LET_EXPR (nlet));
+                LET_EXPR (nlet) = newnlet;
+                nlet = TCfilterAssignArg (MatchExpr, AVIS_SSAASSIGN (intr),
+                                          &INFO_PREASSIGNS (arg_info));
+                INFO_PREASSIGNS (arg_info)
+                  = TCappendAssign (INFO_PREASSIGNS (arg_info), nlet);
+                intr = TBmakeId (intr);
+                if (PMmatchFlat (pat1, intr)) {
+                    zub = BuildInverseProjectionOne (arg_node, arg_info, ivprime, intr);
+                    swapub = INFO_FINVERSESWAP (arg_info);
                 }
+            }
+
+            /* If we have both new bounds, update the F_intersect */
+            if ((NULL != zlb) && (NULL != zub)) {
+                DBUG_ASSERT ((swaplb == swapub), ("Swap confusion"));
+                if (swaplb) {
+                    tmp = zlb;
+                    zlb = zub;
+                    zub = tmp;
+                }
+                zlb = TBmakeId (zlb);
+                PRF_ARGS (arg_node)
+                  = TCputNthExprs (curelidxlb, PRF_ARGS (arg_node), zlb);
+                zub = IVEXPadjustExtremaBound (zub, arg_info, 1, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info));
+                zub = TBmakeId (zub);
+                PRF_ARGS (arg_node)
+                  = TCputNthExprs (curelidxub, PRF_ARGS (arg_node), zub);
             }
         }
     }
 
-    pat = PMfree (pat);
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
 
     DBUG_RETURN (arg_node);
 }

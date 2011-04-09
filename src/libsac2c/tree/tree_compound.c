@@ -2357,6 +2357,96 @@ TCfilterExprs (bool (*pred) (node *), node **exprs)
     DBUG_RETURN (res);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *TCfilterExprsArg( bool (*pred)( node *, node *), node **exprs)
+ * @brief Given an N_exprs chain, a predicate function, pred,
+ *        and an argument node to be passed to pred,
+ *        split the N_exprs chain into two pieces, based on
+ *        application of the predicate to each element of the
+ *        N_exprs chain, using arg as the first argument of
+ *        pred.
+ *
+ * @param
+ *        pred: the predicate function
+ *        exprs:  N_exprs chain
+ *        arg: the first argument to the predicate function
+ *
+ * @return: res: the N_exprs chain for those elements of exprs
+ *               that satisfied the predicate.
+ *          SIDE EFFECT: exprs has the satisfied elements REMOVED
+ *               from it.
+ *
+ ******************************************************************************/
+node *
+TCfilterExprsArg (bool (*pred) (node *, node *), node *arg, node **exprs)
+{
+    node *res = NULL;
+    node *tmp;
+
+    DBUG_ENTER ("TCfilterExprs");
+
+    if (*exprs != NULL) {
+        if (EXPRS_NEXT (*exprs) != NULL) {
+            res = TCfilterExprsArg (pred, arg, &(EXPRS_NEXT (*exprs)));
+        }
+
+        if (pred (arg, EXPRS_EXPR (*exprs))) {
+            tmp = EXPRS_NEXT (*exprs);
+            EXPRS_NEXT (*exprs) = res;
+            res = *exprs;
+            *exprs = tmp;
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCfilterAssignArg( bool (*pred)( node *, node *), node **assgn)
+ * @brief Given an N_assign chain, a predicate function, pred,
+ *        and an argument node to be passed to pred,
+ *        split the N_assign chain into two pieces, based on
+ *        application of the predicate to each element of the
+ *        N_assign chain, using arg as the first argument of
+ *        pred.
+ *
+ * @param
+ *        pred: the predicate function, to be called as:
+ *           pred( arg, assgn);
+ *
+ *        assgn:  N_assign chain
+ *        arg: the first argument to the predicate function
+ *
+ * @return: res: the N_assign chain for those elements of assgn
+ *               that satisfied the predicate.
+ *          SIDE EFFECT: assgn has the satisfied elements REMOVED
+ *               from it.
+ *
+ ******************************************************************************/
+node *
+TCfilterAssignArg (bool (*pred) (node *, node *), node *arg, node **assgn)
+{
+    node *res = NULL;
+    node *tmp;
+
+    DBUG_ENTER ("TCfilterAssignArg");
+
+    if (*assgn != NULL) {
+        if (ASSIGN_NEXT (*assgn) != NULL) {
+            res = TCfilterAssignArg (pred, arg, &(ASSIGN_NEXT (*assgn)));
+        }
+
+        if (pred (arg, *assgn)) {
+            tmp = ASSIGN_NEXT (*assgn);
+            ASSIGN_NEXT (*assgn) = res;
+            res = *assgn;
+            *assgn = tmp;
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
 bool
 TCfoldPredExprs (bool (*pred) (node *), node *exprs)
 {

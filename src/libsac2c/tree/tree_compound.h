@@ -720,12 +720,19 @@ extern node *TCcreateExprsFromIds (node *ids);
  *
  * function:
  *   node *TCfilterExprs( bool (*pred)( node *), node **exprs)
+ *   node *TCfilterExprsArg( bool (*pred)( node *, node *),
+ *                           node *arg, node **exprs);
+ *   node *TCfilterAssignArg( bool (*pred)( node *, node *),
+ *                            node *arg, node **assgn);
  *
  * description:
- *   Filters the given exprs chain
+ *   Filters the given exprs/assign chain
+ *   or filter with arg as first argument to pred function.
  *
  *****************************************************************************/
 extern node *TCfilterExprs (bool (*pred) (node *), node **exprs);
+extern node *TCfilterExprsArg (bool (*pred) (node *, node *), node *arg, node **exprs);
+extern node *TCfilterAssignArg (bool (*pred) (node *, node *), node *arg, node **assgn);
 
 /******************************************************************************
  *

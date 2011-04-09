@@ -174,6 +174,44 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *UPRFdoUnrollPRFsPrf( node *arg_node, node *vardecs, node *preassigns, node
+ **lhs))
+ *
+ * @brief starting point of prf unrolling for a single N_prf
+ *
+ * @param arg_node: An N_prf node
+ *        vardecs: A pointer to a pointer to an N_vardec chain
+ *        preassigns: A pointer to a pointer to an N_assign chain
+ *        lhs: A pointer to the LHS for the N_prf.
+ *
+ * @return updated arg_node, items added to vardecs and preassigns
+ *
+ *****************************************************************************/
+node *
+UPRFdoUnrollPRFsPrf (node *arg_node, node **vardecs, node **preassigns, node *lhs)
+{
+    info *arg_info;
+
+    DBUG_ENTER ("UPRFdoUnrollPRFsPrf");
+
+    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "Expected N_prf");
+
+    arg_info = MakeInfo ();
+    INFO_LHS (arg_info) = lhs;
+
+    TRAVpush (TR_uprf);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
+
+    *vardecs = TCappendVardec (INFO_VARDEC (arg_info), *vardecs);
+    *preassigns = TCappendAssign (*preassigns, INFO_PREASSIGN (arg_info));
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+/** <!--********************************************************************-->
+ *
  * @fn node *UPRFdoUnrollPRFs( node *fundef)
  *
  * @brief starting point of prf unrolling
