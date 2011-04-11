@@ -76,6 +76,7 @@ void *tls_malloc (size_t arg1);
     (SAC_res, T_SHP (SCL, T_HID (NHD, T_UNQ (UNQ, T_REG (INT, T_SCO (GLO, T_EMPTY))))))
 
 #if SVP_HAS_SEP
+#if 0
 #define SAC_MUTC_SEPALLOC(P, N)                                                          \
     do {                                                                                 \
         sl_create (, root_sep->sep_place | 1, , , , , , root_sep->sep_alloc,             \
@@ -88,9 +89,18 @@ void *tls_malloc (size_t arg1);
             svp_abort ();                                                                \
         }                                                                                \
         (P) = sl_geta (p)->pid;                                                          \
-        /* output_string("main_place",2);                                                \
-        output_int(P,2); */                                                                                      \
     } while (0)
+#else
+#define SAC_MUTC_SEPALLOC(P, N)                                                          \
+    do {                                                                                 \
+        int res = sep_alloc (root_sep, &(P), SAL_EXACT, 1);                              \
+        if (res == -1) {                                                                 \
+            output_string ("Can not allocate place @ " #P "\n");                         \
+            svp_abort ();                                                                \
+        }                                                                                \
+    } while (0);
+#endif
+#if 0
 #define SAC_MUTC_RC_ALLOC(P)                                                             \
     do {                                                                                 \
         sl_create (, root_sep->sep_place, , , , , sl__exclusive, root_sep->sep_alloc,    \
@@ -99,49 +109,35 @@ void *tls_malloc (size_t arg1);
                    sl_sharg (struct placeinfo *, p, 0));                                 \
         sl_sync ();                                                                      \
         if (sl_geta (p) == 0) {                                                          \
-            output_string (                                                              \
-              "Place allocation for exclusive place for reference counting failed!\n",   \
-              2);                                                                        \
-            svp_abort ();                                                                \
-        }                                                                                \
-        P = sl_geta (p)->pid;                                                            \
-        /*    output_string("rc_place",2);                                               \
-            output_int(P,2); */                                                                                      \
-    } while (0)
-
-#define SAC_MUTC_RC_ALLOC_MANY(P, N)                                                     \
-    do {                                                                                 \
-        int i;                                                                           \
-        for (i = 0; i < N; i++) {                                                        \
-            sl_create (, root_sep->sep_place, , , , , sl__exclusive,                     \
-                       root_sep->sep_alloc, sl_glarg (struct SEP *, , root_sep),         \
-                       sl_glarg (unsigned long, , SAL_EXCLUSIVE),                        \
-                       sl_sharg (struct placeinfo *, p, 0));                             \
-            sl_sync ();                                                                  \
-            if (sl_geta (p) == 0) {                                                      \
-                output_string ("Place allocation for exclusive place for reference "     \
-                               "counting failed!\n",                                     \
-                               2);                                                       \
-                svp_abort ();                                                            \
-            }                                                                            \
-            P[i] = sl_geta (p)->pid;                                                     \
-        }                                                                                \
-    } while (0)
-
-#define SAC_MUTC_RC_ALLOC_W(P)                                                           \
-    do {                                                                                 \
-        sl_create (, root_sep->sep_place, , , , , sl__exclusive, root_sep->sep_alloc,    \
-                   sl_glarg (struct SEP *, , root_sep), sl_glarg (unsigned long, , 1),   \
-                   sl_sharg (struct placeinfo *, p, 0));                                 \
-        sl_sync ();                                                                      \
-        if (sl_geta (p) == 0) {                                                          \
-            output_string ("Place allocation for place to use in Wrapper for reference " \
-                           "counting failed!\n",                                         \
+            output_string ("Place allocation for exclusive place "                       \
+                           "for reference counting failed!\n",                           \
                            2);                                                           \
             svp_abort ();                                                                \
         }                                                                                \
         P = sl_geta (p)->pid;                                                            \
     } while (0)
+#else
+#define SAC_MUTC_RC_ALLOC(P)                                                             \
+    do {                                                                                 \
+        int res = sep_alloc (root_sep, &(P), SAL_EXACT, 0);                              \
+        if (res == -1) {                                                                 \
+            output_string ("Place allocation of exclusive place "                        \
+                           "for reference counting failed @ " #P "\n",                   \
+                           2);                                                           \
+            svp_abort ();                                                                \
+        }                                                                                \
+    } while (0)
+#endif
+
+#define SAC_MUTC_RC_ALLOC_MANY(P, N)                                                     \
+    do {                                                                                 \
+        int i;                                                                           \
+        for (i = 0; i < N; i++) {                                                        \
+            SAC_MUTC_RC_ALLOC (P[i]);                                                    \
+        }                                                                                \
+    } while (0)
+
+#define SAC_MUTC_RC_ALLOC_W(P) SAC_MUTC_SEPALLOC (P, 1)
 #else
 #define SAC_MUTC_SEPALLOC(P, N)                                                          \
     do {                                                                                 \
@@ -167,45 +163,45 @@ void *tls_malloc (size_t arg1);
 #define SAC_MUTC_OUTPUT(a) __asm__ __volatile__("print %0, 0x10" : : "r"(0xa##ULL));
 
 #define SAC_MUTC_DISPLAY_ENV                                                             \
-    SAC_MUTC_OUTPUT (5052433020)                                                         \
+    SAC_MUTC_OUTPUT (0x5052433020)                                                       \
     output_hex (SAC_mutc_rc_place_many[0], 0);                                           \
     if (SAC_MUTC_RC_PLACES > 1) {                                                        \
-        SAC_MUTC_OUTPUT (5052433120)                                                     \
+        SAC_MUTC_OUTPUT (0x5052433120)                                                   \
         output_hex (SAC_mutc_rc_place_many[1], 0);                                       \
     }                                                                                    \
     if (SAC_MUTC_RC_PLACES > 2) {                                                        \
-        SAC_MUTC_OUTPUT (5052433220)                                                     \
+        SAC_MUTC_OUTPUT (0x5052433220)                                                   \
         output_hex (SAC_mutc_rc_place_many[2], 0);                                       \
     }                                                                                    \
     if (SAC_MUTC_RC_PLACES > 3) {                                                        \
-        SAC_MUTC_OUTPUT (5052433320)                                                     \
+        SAC_MUTC_OUTPUT (0x5052433320)                                                   \
         output_hex (SAC_mutc_rc_place_many[3], 0);                                       \
     }                                                                                    \
     if (SAC_MUTC_RC_PLACES > 4) {                                                        \
-        SAC_MUTC_OUTPUT (5052433420)                                                     \
+        SAC_MUTC_OUTPUT (0x5052433420)                                                   \
         output_hex (SAC_mutc_rc_place_many[4], 0);                                       \
     }                                                                                    \
     if (SAC_MUTC_RC_PLACES > 5) {                                                        \
-        SAC_MUTC_OUTPUT (5052433520)                                                     \
+        SAC_MUTC_OUTPUT (0x5052433520)                                                   \
         output_hex (SAC_mutc_rc_place_many[5], 0);                                       \
     }                                                                                    \
     if (SAC_MUTC_RC_PLACES > 6) {                                                        \
-        SAC_MUTC_OUTPUT (5052433620)                                                     \
+        SAC_MUTC_OUTPUT (0x5052433620)                                                   \
         output_hex (SAC_mutc_rc_place_many[6], 0);                                       \
     }                                                                                    \
     if (SAC_MUTC_RC_PLACES > 7) {                                                        \
-        SAC_MUTC_OUTPUT (5052433720)                                                     \
+        SAC_MUTC_OUTPUT (0x5052433720)                                                   \
         output_hex (SAC_mutc_rc_place_many[7], 0);                                       \
     }                                                                                    \
     if (SAC_MUTC_RC_PLACES > 8) {                                                        \
-        SAC_MUTC_OUTPUT (5052433820)                                                     \
+        SAC_MUTC_OUTPUT (0x5052433820)                                                   \
         output_hex (SAC_mutc_rc_place_many[8], 0);                                       \
     }                                                                                    \
     if (SAC_MUTC_RC_PLACES > 9) {                                                        \
-        SAC_MUTC_OUTPUT (5052433920)                                                     \
+        SAC_MUTC_OUTPUT (0x5052433920)                                                   \
         output_hex (SAC_mutc_rc_place_many[9], 0);                                       \
     }                                                                                    \
-    SAC_IF_MUTC_RC_INDIRECT (SAC_MUTC_OUTPUT (5052435720))                               \
+    SAC_IF_MUTC_RC_INDIRECT (SAC_MUTC_OUTPUT (0x5052435720))                             \
     SAC_IF_MUTC_RC_INDIRECT (output_hex (SAC_mutc_rc_place_w, 0);)
 
 #if 0
