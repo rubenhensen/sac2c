@@ -203,13 +203,16 @@ void AddVardec2DFM( dfmask_t *mask, node *vardec)
 static node *
 ATravBlock (node *arg_node, info *arg_info)
 {
+    node *stack = NULL;
     DBUG_ENTER ("ATravBlock");
 
+    stack = INFO_SHAREDS (arg_info);
+    INFO_SHAREDS (arg_info) = NULL;
     arg_node = TRAVcont (arg_node, arg_info);
 
     BLOCK_SHAREDS (arg_node) = INFO_SHAREDS (arg_info);
 
-    INFO_SHAREDS (arg_info) = NULL;
+    INFO_SHAREDS (arg_info) = stack;
 
     DBUG_RETURN (arg_node);
 }
