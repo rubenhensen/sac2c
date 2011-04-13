@@ -119,7 +119,7 @@ void *tls_malloc (size_t arg1);
 #else
 #define SAC_MUTC_RC_ALLOC(P)                                                             \
     do {                                                                                 \
-        int res = sep_alloc (root_sep, &(P), SAL_EXACT, 0);                              \
+        int res = sep_alloc (root_sep, &(P), SAL_EXACT, 1);                              \
         if (res == -1) {                                                                 \
             output_string ("Place allocation of exclusive place "                        \
                            "for reference counting failed @ " #P "\n",                   \
