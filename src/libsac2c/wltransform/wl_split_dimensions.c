@@ -76,8 +76,6 @@
  *                             originating with2, i.e., it spans all dimensions.
  *                             Used to translate references to the original
  *                             withloop offset.
- * INFO_ACCUS:                 Stores the N_ids chain of accus for the
- *                             current with-loop 3.
  * INFO_VARDECS:               Stores vardecs that need to be joined into
  *                             the fundef vardec chain.
  * INFO_PREASSIGNS:            Holds assignments that need to be inserted before
@@ -112,7 +110,6 @@ struct INFO {
     node *indices;
     node *frame_indices;
     node *offsets;
-    node *accus;
     node *vardecs;
     node *preassigns;
     node *block_chunk;
@@ -141,7 +138,6 @@ struct INFO {
 #define INFO_WITH3_ASSIGN(n) ((n)->with3_assign)
 #define INFO_INDICES(n) ((n)->indices)
 #define INFO_OFFSETS(n) ((n)->offsets)
-#define INFO_ACCUS(n) ((n)->accus)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_BLOCK_CHUNK(n) ((n)->block_chunk)
@@ -179,7 +175,6 @@ MakeInfo ()
     INFO_INDICES (result) = NULL;
     INFO_FRAME_INDICES (result) = NULL;
     INFO_OFFSETS (result) = NULL;
-    INFO_ACCUS (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_LUT (result) = LUTgenerateLut ();
@@ -2251,6 +2246,52 @@ ProcessBlock (int level, int dim, node *lower, node *upper, node *step, node *co
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *Accu2DimIndexPrf( node *arg_node, info *arg_info)
+ *
+ ******************************************************************************/
+static node *
+Accu2DimIndexPrf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("Accu2DimIndexPrf");
+
+    if (PRF_PRF (arg_node) == F_accu) {
+        PRF_ARGS (arg_node) = FREEdoFreeTree (PRF_ARGS (arg_node));
+        PRF_ARGS (arg_node)
+          = TBmakeExprs (TBmakeId (IDS_AVIS (INFO_INDICES (arg_info))), NULL);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *Accu2DimIndex( node *assigns)
+ *
+ * @brief Find accus not in with loops and convert there argument to
+ *        current dims index
+ *
+ * @param  assign assigns to look for accus in
+ * @return corrected assigns
+ ******************************************************************************/
+static node *
+Accu2DimIndex (node *assigns, info *arg_info)
+{
+    anontrav_t trav[5] = {{N_prf, &Accu2DimIndexPrf},
+                          {N_with, &TRAVnone},
+                          {N_with2, &TRAVnone},
+                          {N_with3, &TRAVnone},
+                          {0, NULL}};
+    DBUG_ENTER ("Accu2DimIndex");
+
+    TRAVpushAnonymous (trav, &TRAVsons);
+
+    assigns = TRAVopt (assigns, arg_info);
+
+    TRAVpop ();
+
+    DBUG_RETURN (assigns);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *ProcessGrid( int level, int dim, node *lower, node *upper,
  *                        node *nextdim, node **code, node *next,
  *                        info *arg_info)
@@ -2339,6 +2380,10 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
                 body = DUPdoDupTreeLut (CODE_CBLOCK (*code), lut);
             }
             BLOCK_INSTR (body) = TCappendAssign (preassigns, BLOCK_INSTR (body));
+
+            INFO_INDICES (arg_info) = TBmakeIds (iv_avis, INFO_INDICES (arg_info));
+            body = Accu2DimIndex (body, arg_info);
+            INFO_INDICES (arg_info) = FREEdoFreeNode (INFO_INDICES (arg_info));
         }
 
         res = DUPdoDupTreeLut (CODE_CEXPRS (*code), lut);
