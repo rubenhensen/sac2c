@@ -198,7 +198,7 @@
 #if SAC_MUTC_DISABLE_THREAD_MEM || !SVP_HAS_SEP
 #define SAC_MUTC_THREAD_INIT_MALLOC
 #define SAC_MUTC_THREAD_CLEANUP_MALLOC
-#define SAC_MUTC_LOCAL_MALLOC(var, size, basetype) var = (basetype *)alloca (size);
+#define SAC_MUTC_LOCAL_MALLOC(var, size, basetype) var = (basetype *)malloca (size);
 #else
 #define SAC_MUTC_THREAD_INIT_MALLOC
 #define SAC_MUTC_THREAD_CLEANUP_MALLOC
