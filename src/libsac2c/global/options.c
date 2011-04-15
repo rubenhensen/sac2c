@@ -287,6 +287,16 @@ OPTcheckOptionConsistency (void)
         global.optimize.dowlur = TRUE;
     }
 
+    if (global.optimize.doawlf && (!global.insertconformitychecks)) {
+        global.insertconformitychecks = TRUE;
+        CTIwarn ("AWLF is enabled. Therefore, -ecc is set.");
+    }
+
+    if (global.optimize.doawlf && (!global.doivext)) {
+        global.doivext = TRUE;
+        CTIwarn ("AWLF is enabled. Therefore, -extrema is set.");
+    }
+
 #if !ENABLE_RTSPEC || !ENABLE_MT
     if (global.rtspec) {
         CTIerror ("Runtime specialization (-rtspec) not supported by this installation.");
