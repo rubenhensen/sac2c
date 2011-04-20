@@ -175,13 +175,15 @@ createIn (node *lhsnew, node *lhsold, node *next, info *arg_info)
         /*assert*/
     } else {
         /*assert*/
+        node *lhs = DUPdoDupNode (lhsold);
         assign
-          = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhsold),
+          = TBmakeAssign (TBmakeLet (lhs,
                                      TBmakePrf (F_syncin,
                                                 TBmakeExprs (TBmakeId (IDS_AVIS (lhsnew)),
                                                              NULL))),
                           createIn (IDS_NEXT (lhsnew), IDS_NEXT (lhsold), next,
                                     arg_info));
+        AVIS_SSAASSIGN (IDS_AVIS (lhs)) = assign;
     }
 
     DBUG_RETURN (assign);
