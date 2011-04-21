@@ -297,8 +297,10 @@ PairWithopsIds (lut_t *lut, node *withops, node *ids)
 static node *
 ATravWith3 (node *arg_node, info *arg_info)
 {
+    node *stack;
     DBUG_ENTER ("ATravWith3");
 
+    stack = INFO_WITHOPS (arg_info);
     INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
 
     arg_node = TRAVcont (arg_node, arg_info);
@@ -306,6 +308,8 @@ ATravWith3 (node *arg_node, info *arg_info)
     INFO_WITHOPS_IDS (arg_info)
       = PairWithopsIds (INFO_WITHOPS_IDS (arg_info), WITH3_OPERATIONS (arg_node),
                         INFO_LHS (arg_info));
+
+    INFO_WITHOPS (arg_info) = stack;
 
     DBUG_RETURN (arg_node);
 }
@@ -363,19 +367,13 @@ IdsIdsToShareds (node *ids, node *ids2, lut_t *lut, lut_t *init_lut)
 
         type = TYcopyType (AVIS_TYPE (IDS_AVIS (ids2)));
 
-#if 0
-    /* set avis of ids from accu to correct type */
-    AVIS_TYPE( IDS_AVIS( ids)) = TYfreeType( AVIS_TYPE( IDS_AVIS( ids)));
-    AVIS_TYPE( IDS_AVIS( ids)) = TYcopyType( AVIS_TYPE( IDS_AVIS( ids2)));
-#endif
-
         type = TYsetMutcScope (type, MUTC_SHARED);
         avis = TBmakeAvis (TRAVtmpVar (), type);
         args = TBmakeArg (avis, args);
 
         fold = (node *)LUTsearchInLutPp (init_lut, IDS_AVIS (ids2));
         DBUG_ASSERT ((fold != NULL), "Lost information about fold");
-
+        DBUG_ASSERT ((NODE_TYPE (fold) == N_fold), "Fold nolonger a fold");
         AVIS_WITH3FOLD (avis) = fold;
 
         lut = LUTinsertIntoLutP (lut, IDS_AVIS (ids), avis);
@@ -678,6 +676,8 @@ ShareFolds (node *args, lut_t *lut)
 
     fold = AVIS_WITH3FOLD (ARG_AVIS (args));
 
+    DBUG_ASSERT (NODE_TYPE (fold) == N_fold, "Fold no longer fold");
+
     next = TBmakeExprs (TBmakeId (IDS_AVIS ((node *)LUTsearchInLutPp (lut, fold))), next);
 
     DBUG_RETURN (next);
@@ -913,19 +913,6 @@ LW3range (node *arg_node, info *arg_info)
      * we perform the transformation depth first / bottom up
      */
     RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
-
-    /*
-     * Re compute dfm to account for init of folds
-     * This is needed for mmult
-     * Believe the need stems from nested fold with3
-     */
-#if 0
-  if ( TCcountWithopsEq( INFO_WITHOPS( arg_info), N_fold) != 0){
-    INFO_FUNDEF( arg_info) = 
-      INFDFMSdoInferDfms( RDFMSdoRemoveDfms( INFO_FUNDEF( arg_info)), 
-                          HIDE_LOCALS_WITH3);
-  }
-#endif
 
     RANGE_RESULTS (arg_node)
       = CreateThreadFunction (RANGE_BODY (arg_node), RANGE_RESULTS (arg_node),
