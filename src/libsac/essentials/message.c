@@ -195,11 +195,11 @@ SAC_PrintShape (SAC_array_descriptor_t desc)
 
     for (pos = 0; pos < DESC_DIM (desc); pos++) {
         if (pos < DESC_DIM (desc) - 1) {
-            written
-              = snprintf (to, MAX_SHAPE_SIZE - 5, "%s %d,", from, DESC_SHAPE (desc, pos));
+            written = snprintf (to, MAX_SHAPE_SIZE - 5, "%s %d,", from,
+                                (int)DESC_SHAPE (desc, pos));
         } else {
-            written
-              = snprintf (to, MAX_SHAPE_SIZE - 5, "%s %d", from, DESC_SHAPE (desc, pos));
+            written = snprintf (to, MAX_SHAPE_SIZE - 5, "%s %d", from,
+                                (int)DESC_SHAPE (desc, pos));
         }
         if (written == MAX_SHAPE_SIZE - 5) {
             snprintf (from, MAX_SHAPE_SIZE, "%s...", to);

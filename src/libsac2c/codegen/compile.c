@@ -4753,12 +4753,17 @@ COMPprfRestorerc (node *arg_node, info *arg_info)
     node *ret_node = NULL;
     DBUG_ENTER ("COMPprfRestore");
 
+    DBUG_ASSERT (ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))
+                   == IDS_AVIS (INFO_LASTIDS (arg_info)),
+                 "Second arg to Restorerc and lhs must have same avis");
+
     ret_node
-      = TCmakeAssignIcm2 ("ND_RESTORERC",
-                          TCmakeIdCopyStringNt (AVIS_NAME (INFO_LASTIDS (arg_info)),
+      = TCmakeAssignIcm2 ("ND_PRF_RESTORERC",
+                          TCmakeIdCopyStringNt (AVIS_NAME (
+                                                  IDS_AVIS (INFO_LASTIDS (arg_info))),
                                                 GetType (INFO_LASTIDS (arg_info))),
                           TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                                GetType (ID_AVIS (PRF_ARG1 (arg_node)))),
+                                                GetType (PRF_ARG1 (arg_node))),
                           NULL);
 
     DBUG_RETURN (ret_node);
@@ -4768,7 +4773,7 @@ COMPprfRestorerc (node *arg_node, info *arg_info)
  *
  * @fn  node COMPprf2norc( node *arg_node, info *arg_info)
  *
- * @brief  Compiles N_prf node of type F_restorrc.
+ * @brief  Compiles N_prf node of type F_2norc.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *
@@ -4783,12 +4788,49 @@ COMPprf2norc (node *arg_node, info *arg_info)
     DBUG_ENTER ("COMPprf2norc");
 
     ret_node
-      = TCmakeAssignIcm2 ("ND_2NORC",
-                          TCmakeIdCopyStringNt (AVIS_NAME (INFO_LASTIDS (arg_info)),
+      = TCmakeAssignIcm2 ("ND_PRF_2NORC",
+                          TCmakeIdCopyStringNt (AVIS_NAME (
+                                                  IDS_AVIS (INFO_LASTIDS (arg_info))),
                                                 GetType (INFO_LASTIDS (arg_info))),
                           TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                                GetType (ID_AVIS (PRF_ARG1 (arg_node)))),
+                                                GetType (PRF_ARG1 (arg_node))),
                           NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node COMPprf2asyncrc( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_2asyncrc.
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+static node *
+COMPprf2asyncrc (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+    DBUG_ENTER ("COMPprf2ayncrc");
+
+    ret_node = TCmakeAssignIcm1 ("ND_REFRESH__MIRROR",
+                                 MakeTypeArgs (IDS_NAME (INFO_LASTIDS (arg_info)),
+                                               IDS_TYPE (INFO_LASTIDS (arg_info)), FALSE,
+                                               TRUE, FALSE, NULL),
+                                 ret_node);
+
+    ret_node
+      = TCmakeAssignIcm2 ("ND_PRF_2ASYNC",
+                          TCmakeIdCopyStringNt (AVIS_NAME (
+                                                  IDS_AVIS (INFO_LASTIDS (arg_info))),
+                                                GetType (INFO_LASTIDS (arg_info))),
+                          TCmakeIdCopyStringNt (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                                                GetType (PRF_ARG1 (arg_node))),
+                          ret_node);
 
     DBUG_RETURN (ret_node);
 }

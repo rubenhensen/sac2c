@@ -14,7 +14,6 @@
  *   It provides definitions of functions to maintain reference count.
  *
  *****************************************************************************/
-#define free(a)
 #define SAC_BACKEND MUTC
 #include <sac.h>
 
@@ -88,6 +87,35 @@ sl_enddef
 sl_def (SAC_rc_barrier, void, sl_glparm (int *, desc))
 {
     SAC_MUTC_DEBUG_RC (printf ("SAC_rc_barrier( %p)\n", (void *)sl_getp (desc)););
+}
+sl_enddef
+
+sl_def (SAC_dec_and_maybeFree_parent, void, sl_glparm (SAC_ND_DESC_PARENT_TYPE, parent))
+{
+    SAC_MUTC_DEBUG_RC (printf ("SAC_dec_and_maybeFree_parent( %p) was: %d\n",
+                               (void *)sl_getp (desc), sl_getp (parent)[0]););
+    sl_getp (parent)[0]--;
+    if (sl_getp (parent)[0] == 0) {
+        free (sl_getp (parent));
+    }
+}
+sl_enddef
+
+sl_def (SAC_inc_parent_count, void, sl_glparm (SAC_ND_DESC_PARENT_TYPE, parent))
+{
+    SAC_MUTC_DEBUG_RC (printf ("SAC_inc_parent_count( %p) was: %d\n",
+                               (void *)sl_getp (desc), sl_getp (parent)[0]););
+    sl_getp (parent)[0]++;
+}
+sl_enddef
+
+sl_def (SAC_get_parent_count, void, sl_glparm (SAC_ND_DESC_PARENT_TYPE, parent),
+        sl_shparm (SAC_ND_DESC_PARENT_BASETYPE, val))
+{
+    SAC_MUTC_DEBUG_RC (printf ("SAC_get_parent_count( %p, %d) was: %d\n",
+                               (void *)sl_getp (parent), (int)sl_getp (val),
+                               (int)sl_getp (parent)[0]););
+    sl_setp (val, sl_getp (parent)[0] + sl_getp (val));
 }
 sl_enddef
 

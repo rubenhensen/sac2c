@@ -247,6 +247,7 @@ MMVdo (node *arg_node, info *arg_info)
 node *
 MMVfundef (node *arg_node, info *arg_info)
 {
+    anontrav_t anon[2] = {{N_ids, &MMVids}, {0, NULL}};
     DBUG_ENTER ("MMVfundef");
 
     /*
@@ -255,6 +256,14 @@ MMVfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = arg_node;
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
+    /*
+     * Ensure all lhss have been changed.
+     * In some cases the lhs in one side of ifs may be missed.
+     */
+    TRAVpushAnonymous (anon, &TRAVsons);
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    TRAVpop ();
 
     /*
      * for regular functions go on, otherwise fix rets

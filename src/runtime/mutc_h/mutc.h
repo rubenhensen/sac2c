@@ -38,9 +38,6 @@
 
 #define SAC_MUTC_SAVE_NODESC(nt) NT_NAME (nt) = sl_geta (CAT0 (SAC_ND_A_FIELD (nt), _sh));
 
-#define SAC_MUTC_SAVE_DESC(nt)                                                           \
-    SAC_MUTC_SAVE_NODESC (nt)                                                            \
-    SAC_ND_A_DESC_NAME (nt) = sl_geta (CAT0 (SAC_ND_A_DESC_NAME (nt), _sh));
 #define SAC_MUTC_CREATE_BLOCK_START() {
 #define SAC_MUTC_CREATE_BLOCK_END() }
 
@@ -180,7 +177,8 @@
         SAC_ASSURE_TYPE ((dim == SAC_ND_A_MIRROR_DIM (var_NT)),                          \
                          ("Inconsistant dimension for array %s found!",                  \
                           NT_STR (var_NT)));                                             \
-        SAC_MUTC_LOCAL_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim), int)     \
+        SAC_MUTC_LOCAL_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim),          \
+                               SAC_ND_DESC_TYPE (var_NT))                                \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
     }
@@ -202,7 +200,7 @@
 #else
 #define SAC_MUTC_THREAD_INIT_MALLOC
 #define SAC_MUTC_THREAD_CLEANUP_MALLOC
-#define SAC_MUTC_LOCAL_MALLOC(var, size, basetype) var = (basetype *)tls_malloc (size);
+#define SAC_MUTC_LOCAL_MALLOC(var, size, basetype) var = (basetype)tls_malloc (size);
 #endif
 
 #if SAC_MUTC_THREAD_MALLOC
@@ -215,7 +213,7 @@
 #ifdef SAC_HM_FREE
 #undef SAC_HM_FREE
 #endif
-#define SAC_HM_FREE(var)
+#define SAC_HM_FREE(var) free (var)
 
 #endif /* SAC_MUTC_THREAD_MALLOC */
 

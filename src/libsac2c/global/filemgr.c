@@ -461,6 +461,76 @@ FMGRabsolutePathname (const char *path)
     DBUG_RETURN (buffer);
 }
 
+const char *
+FMGRdirname (const char *path)
+{
+    static char buffer[MAX_PATH_LEN];
+    char *last = NULL;
+
+    DBUG_ENTER ("FMGRdirname");
+
+    last = strrchr (path, '/');
+
+    if (last == NULL) {
+        /* No dir */
+        strcpy (buffer, "./");
+    } else {
+        DBUG_ASSERT (last > path, "End is before the beginning");
+        memcpy (buffer, path, last - path);
+        buffer[last - path + 0] = '/';
+        buffer[last - path + 1] = '\0';
+    }
+
+    DBUG_RETURN (buffer);
+}
+
+const char *
+FMGRbasename (const char *path)
+{
+    static char buffer[MAX_PATH_LEN];
+    const char *last = NULL;
+
+    DBUG_ENTER ("FMGRdirname");
+
+    last = strrchr (path, '/');
+
+    if (last == NULL) {
+        last = path;
+    }
+
+    strcpy (buffer, last);
+
+    DBUG_RETURN (buffer);
+}
+
+/*
+ * Convert file name to identifier
+ * Make non alpha numeric '_'
+ */
+const char *
+FMGRfile2id (const char *path)
+{
+    static char buffer[MAX_PATH_LEN];
+    char *current = NULL;
+
+    DBUG_ENTER ("FMGRfile2id");
+
+    strcpy (buffer, path);
+
+    current = buffer;
+
+    while (current[0] != '\0') {
+        if ((current[0] < 'a' || current[0] > 'z')
+            && (current[0] < 'A' || current[0] > 'Z')
+            && (current[0] < '0' || current[0] > '9')) {
+            current[0] = '_';
+        }
+        current++;
+    }
+
+    DBUG_RETURN (buffer);
+}
+
 /*
  *
  *  functionname  : FMGRwriteOpen

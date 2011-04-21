@@ -42,5 +42,8 @@ extern void FMGRdeleteTmpDir ();
 extern void FMGRcreateTmpDir ();
 extern void FMGRforEach (const char *path, const char *fileexpr, void *funargs,
                          void(const char *path, const char *file, void *params));
+extern const char *FMGRdirname (const char *path);
+extern const char *FMGRbasename (const char *path);
+extern const char *FMGRfile2id (const char *path);
 
 #endif /* _SAC_FILEMGR_H_ */

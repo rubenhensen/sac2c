@@ -246,9 +246,24 @@ PrintSACLib (const char *name)
         filename = MEMmalloc (sizeof (char) * (STRlen (name) + 5));
         sprintf (filename, "%s.sac", name);
 
-        result = STRcpy (FMGRfindFile (PK_imp_path, filename));
+        result = STRcpy (FMGRdirname (FMGRfindFile (PK_imp_path, filename)));
 
         filename = MEMfree (filename);
+
+        if (result != NULL) {
+            filename = MEMmalloc (sizeof (char)
+                                  * (STRlen (result) + 5 + /* /lib/ */
+                                     3 +                   /* lib */
+                                     4 +                   /* Tree */
+                                     4 +                   /* .so\0 */
+                                     1024 + STRlen (global.config.lib_variant)));
+            sprintf (filename, "%slib/lib%sTree%s.so", result, name,
+                     global.config.lib_variant);
+
+            result = MEMfree (result);
+            result = filename;
+            filename = NULL;
+        }
     }
 
     if (result == NULL) {
@@ -267,6 +282,63 @@ PrintSACLib (const char *name)
 
     DBUG_VOID_RETURN;
 }
+#if 0
+static void PrintSACLibInclude( const char *name)
+{
+  char *filename;
+  const char *dir;
+  char *cwd="./";
+
+  DBUG_ENTER("PrintSACLibInclude");
+
+  filename = MEMmalloc( sizeof( char) * ( STRlen( name) + 5));
+  sprintf( filename, "%s.sac", name);
+  
+  dir = FMGRdirname( FMGRfindFile( PK_imp_path, filename));
+  
+  filename = MEMfree( filename);
+
+  if (dir == NULL) {
+    dir = cwd;
+  }
+
+  printf( "FILE_%s%s%s_d := yes\n", 
+          FMGRfile2id( dir), 
+          name, 
+          global.config.lib_variant);
+  printf( "ifneq ($(FILE_%s%s%s_d),yes)\n", 
+          FMGRfile2id( dir), 
+          name, 
+          global.config.lib_variant);
+  printf( "-include %s.%s%s.d\n", dir, name, global.config.lib_variant);
+  printf( "endif\n");
+
+  DBUG_VOID_RETURN;
+}
+#endif
+
+static void
+PrintObjFileInclude (const char *name)
+{
+    char *oName = NULL;
+    char *dirName = NULL;
+    DBUG_ENTER ("PrintObjFile");
+
+    oName = STRncpy (name, STRlen (name) - 2);
+    dirName = STRcpy (FMGRdirname (global.sacfilename));
+
+    printf ("ifneq ($(FILE_%s%s_d),yes)\n", FMGRfile2id (oName),
+            global.config.lib_variant);
+    printf ("FILE_%s%s_d := yes\n", FMGRfile2id (oName), global.config.lib_variant);
+    printf ("-include  %s%s.%s%s.d\n", dirName, FMGRdirname (oName), FMGRbasename (oName),
+            global.config.lib_variant);
+    printf ("endif\n");
+
+    oName = MEMfree (oName);
+    dirName = MEMfree (dirName);
+
+    DBUG_VOID_RETURN;
+}
 
 static void
 PrintObjFile (const char *name)
@@ -276,11 +348,33 @@ PrintObjFile (const char *name)
 
     oName = STRncpy (name, STRlen (name) - 2);
 
-    printf (" \\\n  %s%s.o", oName, global.config.lib_variant);
+    printf (" \\\n  %s%s%s.o", FMGRdirname (global.sacfilename), oName,
+            global.config.lib_variant);
 
     oName = MEMfree (oName);
 
     DBUG_VOID_RETURN;
+}
+
+static void *
+PrintDepInclude (const char *entry, strstype_t kind, void *rest)
+{
+    DBUG_ENTER ("PrintDepInclude");
+
+    switch (kind) {
+    case STRS_saclib:
+#if 0
+      PrintSACLibInclude( entry);
+#endif
+        break;
+    case STRS_objfile:
+        PrintObjFileInclude (entry);
+        break;
+    default:
+        break;
+    }
+
+    DBUG_RETURN ((void *)NULL);
 }
 
 static void *
@@ -313,10 +407,12 @@ PrintTargetName (node *tree)
         break;
     case FT_modimp:
     case FT_classimp:
-        printf ("%slib%sTree%s.so %slib%sMod%s.a %slib%sMod%s.so:", global.targetdir,
+        printf ("%slib%sTree%s.so %slib%sMod%s.a %slib%sMod%s.so:",
+                FMGRabsolutePathname (global.targetdir),
                 NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant,
-                global.targetdir, NSgetName (MODULE_NAMESPACE (tree)),
-                global.config.lib_variant, global.targetdir,
+                FMGRabsolutePathname (global.targetdir),
+                NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant,
+                FMGRabsolutePathname (global.targetdir),
                 NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant);
         break;
     default:
@@ -332,9 +428,11 @@ DEPdoPrintDependencies (node *syntax_tree)
 {
     DBUG_ENTER ("DEPdoPrintDependencies");
 
-#ifndef DBUG_OFF
     printf ("#\n# dependencies for file %s\n#\n\n", global.filename);
-#endif
+
+    printf ("ifeq ($(RECURSIVE_DEPEND),yes)\n");
+    STRSfold (&PrintDepInclude, global.dependencies, NULL);
+    printf ("endif\n\n");
 
     /*
      * first, print how the output will be named
