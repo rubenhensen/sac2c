@@ -127,14 +127,15 @@ OPTcheckOptionConsistency (void)
                       "backend.");
         }
 
-#if 0
-    CTInote( "Disabling reference counting optimisations not suitable "
-             "for mutc backend.");
-    global.optimize.dosrf = FALSE;
-    /* global.optimize.doipc = FALSE; */
-    /* global.optimize.douip = FALSE; */
-    /* global.optimize.dodr = FALSE; */
-    global.optimize.dorco = FALSE;
+#if 1
+        /* This causes fft to fail if removed do not know why.  CAJ 110426*/
+        CTInote ("Disabling reference counting optimisations not suitable "
+                 "for mutc backend.");
+        global.optimize.dosrf = FALSE;
+        /* global.optimize.doipc = FALSE; */
+        /* global.optimize.douip = FALSE; */
+        /* global.optimize.dodr = FALSE; */
+        global.optimize.dorco = FALSE;
 
 #endif
 
