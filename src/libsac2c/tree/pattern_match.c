@@ -751,7 +751,9 @@ followId (node *expr, node **new_assign)
     DBUG_ENTER ("followId");
 
     if (NODE_TYPE (expr) == N_id) {
-        if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
+        if ((AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)
+            && (TCcountIds (LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (expr)))))
+                == 1)) {
             *new_assign = AVIS_SSAASSIGN (ID_AVIS (expr));
             expr = LET_EXPR (ASSIGN_INSTR (*new_assign));
         } else if (follow_lut != NULL) {
@@ -1089,7 +1091,8 @@ PMvar (int num_attribs, ...)
  * pattern *PMparam( int num_attribs, ... );
  *
  * @brief matches an identifier (N_id) that has no SSA_ASSIGN and, thus,
- *        relates to either an N_arg or to a WL-index-variable!
+ *        relates to either an N_arg, or to a WL-index-variable, or to a
+ *        LHS with more than one return value!
  *        - no inner pattern
  *        - does depend on matching mode!
  *
