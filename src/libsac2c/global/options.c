@@ -127,13 +127,16 @@ OPTcheckOptionConsistency (void)
                       "backend.");
         }
 
-        CTInote ("Disabling reference counting optimisations not suitable "
-                 "for mutc backend.");
-        global.optimize.dosrf = FALSE;
-        /* global.optimize.doipc = FALSE; */
-        /* global.optimize.douip = FALSE; */
-        /* global.optimize.dodr = FALSE; */
-        global.optimize.dorco = FALSE;
+#if 0
+    CTInote( "Disabling reference counting optimisations not suitable "
+             "for mutc backend.");
+    global.optimize.dosrf = FALSE;
+    /* global.optimize.doipc = FALSE; */
+    /* global.optimize.douip = FALSE; */
+    /* global.optimize.dodr = FALSE; */
+    global.optimize.dorco = FALSE;
+
+#endif
 
         if (global.optimize.dophm) {
             CTInote ("Private heap management has been disabled due to use "
