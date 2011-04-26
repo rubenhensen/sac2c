@@ -72,7 +72,7 @@ typedef void *SAC_hidden;
  * [0]       -> rc
  * [1]       -> rc_mode
  */
-typedef intptr_t *SAC_referencecount_t;
+typedef intptr_t SAC_referencecount_t;
 /*
  *  array descriptor parent:
  *  [0]      -> child descriptors
@@ -95,10 +95,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #endif /* SAC_SIMD_COMPILATION */
 
-#define SAC_RC_T_SIZE (2 * sizeof (intptr_t))
-
-#define SAC_RC_T_RC(rc) (rc)[0]
-#define SAC_RC_T_MODE(rc) (rc)[1]
+#define SAC_RC_T_MODE(rc) (rc)
 
 #define SAC_DESC_PARENT_T_SIZE (1 * sizeof (intptr_t))
 

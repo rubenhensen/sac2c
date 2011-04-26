@@ -344,16 +344,13 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 
 #define SAC_ND_PRF_RESTORERC__DO(array, rc)                                              \
     SAC_MUTC_RC_PRINT (array);                                                           \
-    SAC_ND_A_DESC_RC_MODE (array) = SAC_ND_A_RC_T_MODE (rc);                             \
-    DESC_RC (SAC_ND_A_DESC (array)) = SAC_ND_A_RC_T_RC (rc);
+    SAC_ND_A_DESC_RC_MODE (array) = SAC_ND_A_RC_T_MODE (rc);
 
 #define SAC_ND_PRF_RESTORERC__NOOP(array, rc)
 
 #define SAC_ND_PRF_2NORC__DO(rc, array)                                                  \
     SAC_MUTC_RC_PRINT (array);                                                           \
-    SAC_ND_A_FIELD (rc) = alloca (SAC_RC_T_SIZE);                                        \
     SAC_ND_A_RC_T_MODE (rc) = SAC_ND_A_DESC_RC_MODE (array);                             \
-    SAC_ND_A_RC_T_RC (rc) = DESC_RC (SAC_ND_A_DESC (array));                             \
     SAC_ND_A_DESC_RC_MODE (array) = SAC_DESC_RC_MODE_NORC;
 
 #define SAC_ND_PRF_2NORC__NOOP(rc, array)
