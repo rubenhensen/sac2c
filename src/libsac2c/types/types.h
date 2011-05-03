@@ -435,6 +435,7 @@ typedef struct ARGTAB_T {
 #define NT_MUTC_STORAGE_CLASS_INDEX 4
 #define NT_MUTC_SCOPE_INDEX 5
 #define NT_MUTC_USAGE_INDEX 6
+#define NT_BITARRAY_INDEX 7
 
 /*
  * Enumerated types for data class and uniqueness class
@@ -487,6 +488,14 @@ typedef enum {
 #undef NTIFtype
 #undef ATTRIB
 } mutc_usage_class_t;
+
+typedef enum {
+#define ATTRIB NT_BITARRAY_INDEX
+#define NTIFtype(it_type) it_type
+#include "nt_info.mac"
+#undef NTIFtype
+#undef ATTRIB
+} bitarray_class_t;
 
 /*
  * moved from shape.h

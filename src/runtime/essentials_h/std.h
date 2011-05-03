@@ -56,6 +56,7 @@
 #define NT_REG(var_NT) Item4 var_NT
 #define NT_SCO(var_NT) Item5 var_NT
 #define NT_USG(var_NT) Item6 var_NT
+#define NT_BIT(var_NT) Item7 var_NT
 
 #define NT_STR(var_NT) TO_STR (NT_NAME (var_NT))
 
@@ -379,6 +380,12 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_ND_READ__SCL(from_NT, from_pos)                                              \
     SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))
 
+/* This mirrors __DEFAULT for now (step-by-step introduction of bitarrays). */
+#define SAC_ND_READ__BITARRAY(from_NT, from_pos)                                         \
+    (SAC_TR_AA_PRINT ("read_bit", from_NT, from_pos) SAC_BC_READ (from_NT, from_pos)     \
+       SAC_CS_READ_ARRAY (from_NT, from_pos)                                             \
+         SAC_ND_GETVAR (from_NT, SAC_ND_A_FIELD (from_NT))[from_pos])
+
 #define SAC_ND_READ__DEFAULT(from_NT, from_pos)                                          \
     (SAC_TR_AA_PRINT ("read", from_NT, from_pos) SAC_BC_READ (from_NT, from_pos)         \
        SAC_CS_READ_ARRAY (from_NT, from_pos)                                             \
@@ -389,6 +396,13 @@ typedef intptr_t *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_WRITE__SCL(to_NT, to_pos) SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))
+
+/* This mirrors __DEFAULT for now (step-by-step introduction of bitarrays). */
+#define SAC_ND_WRITE__BITARRAY(to_NT, to_pos)                                            \
+    SAC_TR_AA_PRINT ("write_bit", to_NT, to_pos)                                         \
+    SAC_BC_WRITE (to_NT, to_pos)                                                         \
+    SAC_CS_WRITE_ARRAY (to_NT, to_pos)                                                   \
+    SAC_ND_GETVAR (to_NT, SAC_ND_A_FIELD (to_NT))[to_pos]
 
 #define SAC_ND_WRITE__DEFAULT(to_NT, to_pos)                                             \
     SAC_TR_AA_PRINT ("write", to_NT, to_pos)                                             \

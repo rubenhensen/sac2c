@@ -151,6 +151,14 @@ static char *nt_mutc_usage_string_init[] = {
 #undef NTIFstr
 };
 
+static char *nt_bitarray_string_init[] = {
+#define ATTRIB NT_BITARRAY_INDEX
+#define NTIFstr(it_str) it_str
+#include "nt_info.mac"
+#undef ATTRIB
+#undef NTIFstr
+};
+
 static const char *backend_string[] = {
 #define BACKENDstring(string) string,
 #include "backends.mac"

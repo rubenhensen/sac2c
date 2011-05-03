@@ -81,6 +81,11 @@ NTIF (C_threadparam, "TPA"), NTIF (C_threadparamio, "TPO"), NTIF (C_funparam, "F
   NTIF (C_funparamio, "FPO"), NTIF (C_funarg, "FAG"), NTIF (C_none, "NON"),
   NTIF (C_unknowna, "???") /* should be the last entry! */
 
+#elif (ATTRIB == NT_BITARRAY_INDEX)
+
+NTIF (C_dense, "YES"), NTIF (C_sparse, "NOT"),
+  NTIF (C_unknownb, "???") /* should be the last entry! */
+
 #endif
 
 #undef NTIF

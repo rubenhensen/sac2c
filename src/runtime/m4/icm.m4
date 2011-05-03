@@ -12,6 +12,7 @@ define(_star, `ifelse(`$1', `*SHP', `SCL, AKS, AKD, AUD, ___',
                       `$1', `*REG', `INT, FLO, ___',
                       `$1', `*SCO', `SHR, GLO, ___',
                       `$1', `*USG', `TPM, TPA, TAG, TPO, FTA, FPM, FPA, FPO, FAG, NON, ___',
+                      `$1', `*BIT', `YES, NOT, ___',
                       `errprint(`Unknown wild card "$1"
 ')')')
 

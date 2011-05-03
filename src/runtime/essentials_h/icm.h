@@ -78,6 +78,7 @@
 #define Item4(a, b) Item3 b
 #define Item5(a, b) Item4 b
 #define Item6(a, b) Item5 b
+#define Item7(a, b) Item6 b
 
 /*
  * The odd-looking CAT? macros is required to provide a degree of indirection
@@ -187,6 +188,117 @@
 
 #define CAT31(x, y) xCAT31 (x, y)
 #define xCAT31(x, y) x##y
+
+#define CAT32(x, y) xCAT32 (x, y)
+#define xCAT32(x, y) x##y
+
+#define CAT33(x, y) xCAT33 (x, y)
+#define xCAT33(x, y) x##y
+
+#define CAT34(x, y) xCAT34 (x, y)
+#define xCAT34(x, y) x##y
+
+#define CAT35(x, y) xCAT35 (x, y)
+#define xCAT35(x, y) x##y
+
+#define CAT36(x, y) xCAT36 (x, y)
+#define xCAT36(x, y) x##y
+
+#define CAT37(x, y) xCAT37 (x, y)
+#define xCAT37(x, y) x##y
+
+#define CAT38(x, y) xCAT38 (x, y)
+#define xCAT38(x, y) x##y
+
+#define CAT39(x, y) xCAT39 (x, y)
+#define xCAT39(x, y) x##y
+
+#define CAT40(x, y) xCAT40 (x, y)
+#define xCAT40(x, y) x##y
+
+#define CAT41(x, y) xCAT41 (x, y)
+#define xCAT41(x, y) x##y
+
+#define CAT42(x, y) xCAT42 (x, y)
+#define xCAT42(x, y) x##y
+
+#define CAT43(x, y) xCAT43 (x, y)
+#define xCAT43(x, y) x##y
+
+#define CAT44(x, y) xCAT44 (x, y)
+#define xCAT44(x, y) x##y
+
+#define CAT45(x, y) xCAT45 (x, y)
+#define xCAT45(x, y) x##y
+
+#define CAT46(x, y) xCAT46 (x, y)
+#define xCAT46(x, y) x##y
+
+#define CAT47(x, y) xCAT47 (x, y)
+#define xCAT47(x, y) x##y
+
+#define CAT48(x, y) xCAT48 (x, y)
+#define xCAT48(x, y) x##y
+
+#define CAT49(x, y) xCAT49 (x, y)
+#define xCAT49(x, y) x##y
+
+#define CAT51(x, y) xCAT51 (x, y)
+#define xCAT51(x, y) x##y
+
+#define CAT52(x, y) xCAT52 (x, y)
+#define xCAT52(x, y) x##y
+
+#define CAT53(x, y) xCAT53 (x, y)
+#define xCAT53(x, y) x##y
+
+#define CAT54(x, y) xCAT54 (x, y)
+#define xCAT54(x, y) x##y
+
+#define CAT55(x, y) xCAT55 (x, y)
+#define xCAT55(x, y) x##y
+
+#define CAT56(x, y) xCAT56 (x, y)
+#define xCAT56(x, y) x##y
+
+#define CAT57(x, y) xCAT57 (x, y)
+#define xCAT57(x, y) x##y
+
+#define CAT58(x, y) xCAT58 (x, y)
+#define xCAT58(x, y) x##y
+
+#define CAT59(x, y) xCAT59 (x, y)
+#define xCAT59(x, y) x##y
+
+#define CAT60(x, y) xCAT60 (x, y)
+#define xCAT60(x, y) x##y
+
+#define CAT61(x, y) xCAT61 (x, y)
+#define xCAT61(x, y) x##y
+
+#define CAT62(x, y) xCAT62 (x, y)
+#define xCAT62(x, y) x##y
+
+#define CAT63(x, y) xCAT63 (x, y)
+#define xCAT63(x, y) x##y
+
+#define CAT63(x, y) xCAT63 (x, y)
+#define xCAT63(x, y) x##y
+
+#define CAT64(x, y) xCAT64 (x, y)
+#define xCAT64(x, y) x##y
+
+#define CAT65(x, y) xCAT65 (x, y)
+#define xCAT65(x, y) x##y
+
+#define CAT66(x, y) xCAT66 (x, y)
+#define xCAT66(x, y) x##y
+
+#define CAT67(x, y) xCAT67 (x, y)
+#define xCAT67(x, y) x##y
+
+#define CAT68(x, y) xCAT68 (x, y)
+#define xCAT68(x, y) x##y
 
 #define AddParens(a) xAddParens (a)
 #define xAddParens(a) (a)
