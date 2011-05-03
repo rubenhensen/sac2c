@@ -49,8 +49,14 @@
  *   vn = rfvn;
  *   ...
  * }
- * rfv1 = _norc2_( rfv1_oldrc);
- * rfvn = _norc2_( rfvn_oldrc);
+ * rfv1 = _restorerc2_( rfv1_oldrc, rfv1);
+ * rfvn = _restorerc2_( rfvn_oldrc, rfvn);
+ *
+ *
+ * res = spawn foo( a);
+ *
+ * arg0 = _2ayncrc_( a);
+ * res = spawn foo( arg0);
  *
  * @ingroup tt
  *
