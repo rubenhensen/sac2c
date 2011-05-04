@@ -27,6 +27,7 @@ extern unique_class_t NTUgetUniqueClassFromTypes (types *type);
 extern mutc_storage_class_class_t NTUMutcgetStorageClassFromTypes (types *type);
 extern mutc_scope_class_t NTUgetMutcScopeFromTypes (types *type);
 extern mutc_usage_class_t NTUgetMutcUsageFromTypes (types *type);
+extern bitarray_class_t NTUgetBitarrayFromTypes (types *type);
 
 extern char *NTUcreateNtTagFromNType (const char *name, ntype *ntype);
 
@@ -36,5 +37,6 @@ extern unique_class_t NTUgetUniqueClassFromNType (ntype *ntype);
 extern mutc_storage_class_class_t NTUgetMutcStorageClassFromNType (ntype *ntype);
 extern mutc_scope_class_t NTUgetMutcScopeFromNType (ntype *ntype);
 extern mutc_usage_class_t NTUgetMutcUsageFromNType (ntype *ntype);
+extern bitarray_class_t NTUgetBitarrayFromNtype (ntype *ntype);
 
 #endif /* _SAC_NAMETUPLESUTILS_H_ */

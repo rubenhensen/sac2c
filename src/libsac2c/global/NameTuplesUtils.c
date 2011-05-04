@@ -295,6 +295,32 @@ NTUgetMutcUsageFromTypes (types *type)
 /******************************************************************************
  *
  * function:
+ *   bitarray_class_t NTUgetBitarrayFromTypes( types *type)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+bitarray_class_t
+NTUgetBitarrayFromTypes (types *type)
+{
+#ifdef DBUG_OFF
+    (void)type;
+#endif
+    bitarray_class_t z;
+
+    DBUG_ENTER ("NTUgetBitarrayFromTypes");
+
+    DBUG_ASSERT ((type != NULL), "No type found!");
+
+    z = C_sparse;
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   char *NTUcreateNtTag( const char *name, types *type)
  *
  * description:
@@ -311,6 +337,7 @@ NTUcreateNtTag (const char *name, types *type)
     mutc_storage_class_class_t storage;
     mutc_scope_class_t scope;
     mutc_usage_class_t usage;
+    bitarray_class_t bitarray;
     char *res;
 
     DBUG_ENTER ("NTUcreateNtTag");
@@ -325,18 +352,31 @@ NTUcreateNtTag (const char *name, types *type)
     scope = NTUgetMutcScopeFromTypes (type);
     usage = NTUgetMutcUsageFromTypes (type);
 
-    res = (char *)MEMmalloc ((STRlen (name) + STRlen (global.nt_shape_string[sc])
-                              + STRlen (global.nt_hidden_string[hc])
-                              + STRlen (global.nt_unique_string[uc])
-                              + STRlen (global.nt_mutc_storage_class_string[storage])
-                              + STRlen (global.nt_mutc_scope_string[scope])
-                              + STRlen (global.nt_mutc_usage_string[usage]) + 29)
-                             * sizeof (char));
+    bitarray = NTUgetBitarrayFromTypes (type);
 
-    sprintf (res, "(%s, (%s, (%s, (%s, (%s, (%s, (%s, )))))))", name,
+    /*
+     * Allocate enough space for the textual representation of the type tuple.
+     * The total length is the length of all textual representations combined
+     * plus some space for administration:
+     *
+     * - 8 is the number of elements (including the name)
+     * - 4 is the number of chars each element takes aside of its name: "( ,)"
+     * - 1 is the terminating \0 byte.
+     */
+    res = (char *)MEMmalloc (
+      (STRlen (name) + STRlen (global.nt_shape_string[sc])
+       + STRlen (global.nt_hidden_string[hc]) + STRlen (global.nt_unique_string[uc])
+       + STRlen (global.nt_mutc_storage_class_string[storage])
+       + STRlen (global.nt_mutc_scope_string[scope])
+       + STRlen (global.nt_mutc_usage_string[usage])
+       + STRlen (global.nt_bitarray_string[bitarray]) + (8 * 4 + 1))
+      * sizeof (char));
+
+    sprintf (res, "(%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, ))))))))", name,
              global.nt_shape_string[sc], global.nt_hidden_string[hc],
              global.nt_unique_string[uc], global.nt_mutc_storage_class_string[storage],
-             global.nt_mutc_scope_string[scope], global.nt_mutc_usage_string[usage]);
+             global.nt_mutc_scope_string[scope], global.nt_mutc_usage_string[usage],
+             global.nt_bitarray_string[bitarray]);
 
     DBUG_RETURN (res);
 }
@@ -636,6 +676,33 @@ NTUgetMutcUsageFromNType (ntype *ntype)
     DBUG_RETURN (z);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   bitarray_class_t NTUgetBitarrayFromNType( ntype *ntype)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+bitarray_class_t
+NTUgetBitarrayFromNType (ntype *ntype)
+{
+#ifdef DBUG_OFF
+    (void)ntype;
+#endif
+    bitarray_class_t z;
+
+    DBUG_ENTER ("NTUgetBitarrayFromNType");
+
+    DBUG_ASSERT ((ntype != NULL), "No type found!");
+
+    /* Place-holder code: always assume regular. */
+    z = C_sparse;
+
+    DBUG_RETURN (z);
+}
+
 /** <!-- ****************************************************************** -->
  * @brief Creates the tag of an object (usually an array) from its type.
  *
@@ -654,6 +721,7 @@ NTUcreateNtTagFromNType (const char *name, ntype *ntype)
     mutc_storage_class_class_t storage;
     mutc_scope_class_t scope;
     mutc_usage_class_t usage;
+    bitarray_class_t bitarray;
 
     DBUG_ENTER ("NTUcreateNtTagFromNType");
 
@@ -667,18 +735,22 @@ NTUcreateNtTagFromNType (const char *name, ntype *ntype)
     scope = NTUgetMutcScopeFromNType (ntype);
     usage = NTUgetMutcUsageFromNType (ntype);
 
-    res = (char *)MEMmalloc ((STRlen (name) + STRlen (global.nt_shape_string[sc])
-                              + STRlen (global.nt_hidden_string[hc])
-                              + STRlen (global.nt_unique_string[uc])
-                              + STRlen (global.nt_mutc_storage_class_string[storage])
-                              + STRlen (global.nt_mutc_scope_string[scope])
-                              + STRlen (global.nt_mutc_usage_string[usage]) + 29)
-                             * sizeof (char));
+    bitarray = NTUgetBitarrayFromNType (ntype);
 
-    sprintf (res, "(%s, (%s, (%s, (%s, (%s, (%s, (%s, )))))))", name,
+    res = (char *)MEMmalloc (
+      (STRlen (name) + STRlen (global.nt_shape_string[sc])
+       + STRlen (global.nt_hidden_string[hc]) + STRlen (global.nt_unique_string[uc])
+       + STRlen (global.nt_mutc_storage_class_string[storage])
+       + STRlen (global.nt_mutc_scope_string[scope])
+       + STRlen (global.nt_mutc_usage_string[usage])
+       + STRlen (global.nt_bitarray_string[bitarray]) + (8 * 4) + 1)
+      * sizeof (char));
+
+    sprintf (res, "(%s, (%s, (%s, (%s, (%s, (%s, (%s, (%s, ))))))))", name,
              global.nt_shape_string[sc], global.nt_hidden_string[hc],
              global.nt_unique_string[uc], global.nt_mutc_storage_class_string[storage],
-             global.nt_mutc_scope_string[scope], global.nt_mutc_usage_string[usage]);
+             global.nt_mutc_scope_string[scope], global.nt_mutc_usage_string[usage],
+             global.nt_bitarray_string[bitarray]);
 
     DBUG_RETURN (res);
 }

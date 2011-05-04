@@ -106,30 +106,16 @@ rule(`SAC_ND_A_SHAPE', `SAC_ND_A_SHAPE__AKS_AKD', `AKD')
 rule(`SAC_ND_A_SHAPE', `SAC_ND_A_SHAPE__AUD', `AUD')
 
 
-pat(`SAC_ND_READ', `0', `1', `NT_SHP')
-rule(`SAC_ND_READ', `SAC_ND_READ__SCL', `SCL')
-rule(`SAC_ND_READ', `SAC_ND_READ__DEFAULT', `*SHP')
-
-/* Work in progress, enabling it breaks build. -- hly 2011-05-03 */
-/*
 pat(`SAC_ND_READ', `0', `1', `NT_SHP', `NT_BIT')
 rule(`SAC_ND_READ', `SAC_ND_READ__SCL', `SCL', `*BIT')
 rule(`SAC_ND_READ', `SAC_ND_READ__BITARRAY', `*SHP', `YES')
 rule(`SAC_ND_READ', `SAC_ND_READ__DEFAULT', `*SHP', `*BIT')
-*/
 
 
-pat(`SAC_ND_WRITE', `0', `1', `NT_SHP')
-rule(`SAC_ND_WRITE', `SAC_ND_WRITE__SCL', `SCL')
-rule(`SAC_ND_WRITE', `SAC_ND_WRITE__DEFAULT', `*SHP')
-
-/* Work in progress, enabling it breaks build. -- hly 2011-05-03 */
-/*
 pat(`SAC_ND_WRITE', `0', `1', `NT_SHP', `NT_BIT')
 rule(`SAC_ND_WRITE', `SAC_ND_WRITE__SCL', `SCL', `*BIT')
 rule(`SAC_ND_WRITE', `SAC_ND_WRITE__BITARRAY', `*SHP', `YES')
 rule(`SAC_ND_WRITE', `SAC_ND_WRITE__DEFAULT', `*SHP', `*BIT')
-*/
 
 
 pat(`SAC_ND_WRITE_COPY', `0', `3', `NT_HID')
