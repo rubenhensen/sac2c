@@ -160,7 +160,11 @@ void *tls_malloc (size_t arg1);
     } while (0)
 #endif
 
+#if defined(__slc_arch_mtalpha__)
 #define SAC_MUTC_OUTPUT(a) __asm__ __volatile__("print %0, 0x10" : : "r"(0xa##ULL));
+#else
+#define SAC_MUTC_OUTPUT(a)
+#endif
 
 #define SAC_MUTC_DISPLAY_ENV                                                             \
     SAC_MUTC_OUTPUT (0x5052433020)                                                       \
