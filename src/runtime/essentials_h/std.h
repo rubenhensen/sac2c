@@ -127,7 +127,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define DESC_RC_MODE(desc) (desc)[DESC_OFFSET_RC_MODE]
 #define DESC_DIM(desc) (desc)[DESC_OFFSET_DIM]
 #define DESC_SIZE(desc) (desc)[DESC_OFFSET_SIZE]
-#define DESC_SHAPE(desc, pos) (desc)[DESC_OFFSET_DIM + (pos)]
+#define DESC_SHAPE(desc, pos) (desc)[DESC_OFFSET_SHAPE + (pos)]
 
 /* Overloaded by MUTC */
 #define SAC_ND_DEF_FUN_BEGIN2(name, type, ...)                                           \
