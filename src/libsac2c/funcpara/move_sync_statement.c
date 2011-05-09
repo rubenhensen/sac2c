@@ -27,7 +27,7 @@
 #include "traverse.h"
 #include "pattern_match.h"
 #include "move_assigns.h"
-
+#include <limits.h> /* MAX_INT */
 /** <!--********************************************************************-->
  *
  * @name INFO structure
@@ -82,6 +82,7 @@ MSSdoMoveSyncStatement (node *syntax_tree)
 {
     info *info;
     pattern *pat;
+    pattern *stop_pat;
     DBUG_ENTER ("MSSdoMoveSyncStatement");
     DBUG_PRINT ("MSS", ("Moving sync statements..."));
 
@@ -90,12 +91,14 @@ MSSdoMoveSyncStatement (node *syntax_tree)
     TRAVpush (TR_mss);
 
     pat = PMprf (1, PMAisPrf (F_sync), 0);
+    stop_pat = PMfalse (0, 0);
 
-    syntax_tree = MAdoMoveAssigns (syntax_tree, pat, FALSE);
+    syntax_tree = MAdoMoveAssigns (syntax_tree, pat, FALSE, INT_MAX, stop_pat);
 
     TRAVpop ();
 
     pat = PMfree (pat);
+    stop_pat = PMfree (stop_pat);
 
     info = FreeInfo (info);
 

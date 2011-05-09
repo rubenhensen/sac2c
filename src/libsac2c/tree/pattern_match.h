@@ -36,6 +36,8 @@ extern pattern *PMvar (int num_attribs, ...);
 
 extern pattern *PMparam (int num_attribs, ...);
 extern pattern *PMany (int num_attribs, ...);
+extern pattern *PMtrue (int num_attribs, ...);
+extern pattern *PMfalse (int num_attribs, ...);
 extern pattern *PMconst (int num_attribs, ...);
 extern pattern *PMint (int num_attribs, ...);
 extern pattern *PMarray (int num_attribs, ...);

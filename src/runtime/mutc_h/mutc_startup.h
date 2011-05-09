@@ -25,13 +25,16 @@
 #define SAC_IF_NOT_MUTC_RC_INDIRECT(A) A
 #endif
 
+#define SAC_MUTC_RC_PLACES_VAR SAC_mutc_rc_places
 #ifndef SAC_MUTC_RC_PLACES
 #define SAC_DO_COMPILE_MODULE 1
-#endif
-sl_place_t SAC_mutc_rc_place;
-#if SAC_DO_COMPILE_MODULE == 0
+const int SAC_MUTC_RC_PLACES_VAR;
+sl_place_t SAC_mutc_rc_place_many[];
+#else
+const int SAC_MUTC_RC_PLACES_VAR = SAC_MUTC_RC_PLACES;
 sl_place_t SAC_mutc_rc_place_many[SAC_MUTC_RC_PLACES];
 #endif
+
 SAC_IF_MUTC_RC_INDIRECT (sl_place_t SAC_mutc_rc_place_w;)
 
 void *tls_malloc (size_t arg1);
@@ -169,39 +172,39 @@ void *tls_malloc (size_t arg1);
 #define SAC_MUTC_DISPLAY_ENV                                                             \
     SAC_MUTC_OUTPUT (0x5052433020)                                                       \
     output_hex (SAC_mutc_rc_place_many[0], 0);                                           \
-    if (SAC_MUTC_RC_PLACES > 1) {                                                        \
+    if (SAC_MUTC_RC_PLACES_VAR > 1) {                                                    \
         SAC_MUTC_OUTPUT (0x5052433120)                                                   \
         output_hex (SAC_mutc_rc_place_many[1], 0);                                       \
     }                                                                                    \
-    if (SAC_MUTC_RC_PLACES > 2) {                                                        \
+    if (SAC_MUTC_RC_PLACES_VAR > 2) {                                                    \
         SAC_MUTC_OUTPUT (0x5052433220)                                                   \
         output_hex (SAC_mutc_rc_place_many[2], 0);                                       \
     }                                                                                    \
-    if (SAC_MUTC_RC_PLACES > 3) {                                                        \
+    if (SAC_MUTC_RC_PLACES_VAR > 3) {                                                    \
         SAC_MUTC_OUTPUT (0x5052433320)                                                   \
         output_hex (SAC_mutc_rc_place_many[3], 0);                                       \
     }                                                                                    \
-    if (SAC_MUTC_RC_PLACES > 4) {                                                        \
+    if (SAC_MUTC_RC_PLACES_VAR > 4) {                                                    \
         SAC_MUTC_OUTPUT (0x5052433420)                                                   \
         output_hex (SAC_mutc_rc_place_many[4], 0);                                       \
     }                                                                                    \
-    if (SAC_MUTC_RC_PLACES > 5) {                                                        \
+    if (SAC_MUTC_RC_PLACES_VAR > 5) {                                                    \
         SAC_MUTC_OUTPUT (0x5052433520)                                                   \
         output_hex (SAC_mutc_rc_place_many[5], 0);                                       \
     }                                                                                    \
-    if (SAC_MUTC_RC_PLACES > 6) {                                                        \
+    if (SAC_MUTC_RC_PLACES_VAR > 6) {                                                    \
         SAC_MUTC_OUTPUT (0x5052433620)                                                   \
         output_hex (SAC_mutc_rc_place_many[6], 0);                                       \
     }                                                                                    \
-    if (SAC_MUTC_RC_PLACES > 7) {                                                        \
+    if (SAC_MUTC_RC_PLACES_VAR > 7) {                                                    \
         SAC_MUTC_OUTPUT (0x5052433720)                                                   \
         output_hex (SAC_mutc_rc_place_many[7], 0);                                       \
     }                                                                                    \
-    if (SAC_MUTC_RC_PLACES > 8) {                                                        \
+    if (SAC_MUTC_RC_PLACES_VAR > 8) {                                                    \
         SAC_MUTC_OUTPUT (0x5052433820)                                                   \
         output_hex (SAC_mutc_rc_place_many[8], 0);                                       \
     }                                                                                    \
-    if (SAC_MUTC_RC_PLACES > 9) {                                                        \
+    if (SAC_MUTC_RC_PLACES_VAR > 9) {                                                    \
         SAC_MUTC_OUTPUT (0x5052433920)                                                   \
         output_hex (SAC_mutc_rc_place_many[9], 0);                                       \
     }                                                                                    \
@@ -238,7 +241,6 @@ static int sac_benchmark_count;
 #define SAC_MUTC_SAC_MAIN                                                                \
     sl_def (sac_main, void)                                                              \
     {                                                                                    \
-        SAC_MUTC_RC_ALLOC (SAC_mutc_rc_place);                                           \
         SAC_MUTC_RC_ALLOC_MANY (SAC_mutc_rc_place_many, SAC_MUTC_RC_PLACES);             \
         SAC_IF_MUTC_RC_INDIRECT (SAC_MUTC_RC_ALLOC_W (SAC_mutc_rc_place_w);)             \
         SAC_MUTC_DISPLAY_ENV                                                             \

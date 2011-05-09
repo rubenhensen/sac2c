@@ -112,15 +112,22 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define BYTE_SIZE_OF_DESC(dim) (SIZE_OF_DESC (dim) * sizeof (intptr_t))
 
 #define SAC_DESC_RC_MODE_SEQ 0
-#define SAC_DESC_RC_MODE_NORC 1
-#define SAC_DESC_RC_MODE_ASYNC 2
+#define SAC_DESC_RC_MODE_ASYNC 1
+#define SAC_DESC_RC_MODE_NORC 2
 
-#define DESC_RC(desc) (desc)[0]
-#define DESC_PARENT(desc) (desc)[1]
-#define DESC_RC_MODE(desc) (desc)[2]
-#define DESC_DIM(desc) (desc)[3]
-#define DESC_SIZE(desc) (desc)[4]
-#define DESC_SHAPE(desc, pos) (desc)[FIXED_SIZE_OF_DESC + (pos)]
+#define DESC_OFFSET_RC 0
+#define DESC_OFFSET_PARENT 1
+#define DESC_OFFSET_RC_MODE 2
+#define DESC_OFFSET_DIM 3
+#define DESC_OFFSET_SIZE 4
+#define DESC_OFFSET_SHAPE FIXED_SIZE_OF_DESC
+
+#define DESC_RC(desc) (desc)[DESC_OFFSET_RC]
+#define DESC_PARENT(desc) (desc)[DESC_OFFSET_PARENT]
+#define DESC_RC_MODE(desc) (desc)[DESC_OFFSET_RC_MODE]
+#define DESC_DIM(desc) (desc)[DESC_OFFSET_DIM]
+#define DESC_SIZE(desc) (desc)[DESC_OFFSET_SIZE]
+#define DESC_SHAPE(desc, pos) (desc)[DESC_OFFSET_DIM + (pos)]
 
 /* Overloaded by MUTC */
 #define SAC_ND_DEF_FUN_BEGIN2(name, type, ...)                                           \

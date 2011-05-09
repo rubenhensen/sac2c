@@ -109,6 +109,7 @@ MSdoMoveSyncs (node *syntax_tree)
 {
     info *info;
     pattern *pat;
+    pattern *stop_pat;
 
     DBUG_ENTER ("MSdoMoveSyncs");
 
@@ -118,11 +119,14 @@ MSdoMoveSyncs (node *syntax_tree)
 
     pat = PMprf (1, PMAisPrf (F_syncin), 0);
 
-    syntax_tree = MAdoMoveAssigns (syntax_tree, pat, FALSE);
+    stop_pat = PMfalse (0, 0);
+
+    syntax_tree = MAdoMoveAssigns (syntax_tree, pat, FALSE, 0, stop_pat);
 
     DBUG_PRINT ("MS", ("Move syncs traversal complete."));
 
     pat = PMfree (pat);
+    stop_pat = PMfree (stop_pat);
 
     info = FreeInfo (info);
 

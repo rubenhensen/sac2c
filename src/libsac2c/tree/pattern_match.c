@@ -1162,6 +1162,72 @@ PMany (int num_attribs, ...)
 
 /** <!-- ****************************************************************** -->
  *
+ * pattern *PMfalse( int num_attribs, ... );
+ *
+ * @brief always fail
+ *
+ ******************************************************************************/
+static node *
+falseMatcher (pattern *pat, node *stack)
+{
+    DBUG_ENTER ("falseMatcher");
+    DBUG_PRINT ("PM", (PMSTART "matching false:", matching_level));
+
+    stack = failMatch (stack);
+
+    DBUG_PRINT ("PM", (PMEND, matching_level));
+
+    DBUG_RETURN (stack);
+}
+
+pattern *
+PMfalse (int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res
+      = genericFillPattern (makePattern (N_module, falseMatcher), FALSE, num_attribs, ap);
+    va_end (ap);
+
+    return (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
+ * pattern *PMtrue( int num_attribs, ... );
+ *
+ * @brief always match
+ *
+ ******************************************************************************/
+static node *
+trueMatcher (pattern *pat, node *stack)
+{
+    DBUG_ENTER ("trueMatcher");
+    DBUG_PRINT ("PM", (PMSTART "matching true:", matching_level));
+
+    DBUG_PRINT ("PM", (PMEND, matching_level));
+
+    DBUG_RETURN (stack);
+}
+
+pattern *
+PMtrue (int num_attribs, ...)
+{
+    va_list ap;
+    pattern *res;
+
+    va_start (ap, num_attribs);
+    res
+      = genericFillPattern (makePattern (N_module, trueMatcher), FALSE, num_attribs, ap);
+    va_end (ap);
+
+    return (res);
+}
+
+/** <!-- ****************************************************************** -->
+ *
  * pattern *PMconst( int num_attribs, ...);
  *
  * @brief matches constant nodes...

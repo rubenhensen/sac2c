@@ -40,7 +40,8 @@
  * Matching rhs must have at least one of the lhs used somewhere that
  * can be found.  AKA matching rhs must to be part of dead code.
  *
- * syntax_tree' = MAdoMoveAssigns( syntax_tree, pattern, block);
+ * syntax_tree' =
+ *   MAdoMoveAssigns( syntax_tree, pattern, block, count, stopPattern);
  *
  * where syntax_tree is the ast to change
  *       pattern     is a pattern that matches the rhs of lets of
@@ -48,6 +49,9 @@
  *       block       true if assigns can be moved into blocks.
  *                   if false leave assign before a block where it
  *                   is used
+ *       count       move this number of blocking assigns down
+ *       stopPattern give up moving assigns when lhs matches this
+ *                   pattern
  *
  * @ingroup tt
  *
@@ -82,33 +86,42 @@
  *****************************************************************************/
 struct INFO {
     pattern *pattern;
+    pattern *stopPattern;
     bool block;
+    int count;
 
     node *assign;
     node *ids;
     bool found_avis;
     bool is_to_move;
     bool in_block;
+    bool stop;
 };
 
 /**
- * PATTERN     the pattern to match with the rhs
- * BLOCK       can we move into blocks
+ * PATTERN      the pattern to match with the rhs
+ * STOP_PATTERN stop moving when reaching this lhs
+ * BLOCK        can we move into blocks
+ * COUNT        maximun number of assigns to move
  *
- * ASSIGN      the assigment node that we are moving
- * IDS         the ids that affects where we can move to
- * FOUND_AVIS  found the avis that we are looking for
- * IS_TO_MOVE  this is an assign that should be moved
- * IN_BLOCK    are we in a block in the anon trav
+ * ASSIGN       the assigment node that we are moving
+ * IDS          the ids that affects where we can move to
+ * FOUND_AVIS   found the avis that we are looking for
+ * IS_TO_MOVE   this is an assign that should be moved
+ * IN_BLOCK     are we in a block in the anon trav
+ * STOP         we should stop moveing as reached stop pattern
  */
 #define INFO_PATTERN(n) (n->pattern)
+#define INFO_STOP_PATTERN(n) (n->stopPattern)
 #define INFO_BLOCK(n) (n->block)
+#define INFO_COUNT(n) (n->count)
 
 #define INFO_ASSIGN(n) (n->assign)
 #define INFO_IDS(n) (n->ids)
 #define INFO_FOUND_AVIS(n) (n->found_avis)
 #define INFO_IS_TO_MOVE(n) (n->is_to_move)
 #define INFO_IN_BLOCK(n) (n->in_block)
+#define INFO_STOP(n) (n->stop)
 
 static info *
 MakeInfo ()
@@ -119,14 +132,17 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_PATTERN (result) = FALSE;
+    INFO_PATTERN (result) = NULL;
+    INFO_STOP_PATTERN (result) = NULL;
     INFO_BLOCK (result) = FALSE;
+    INFO_COUNT (result) = 0;
 
     INFO_ASSIGN (result) = NULL;
     INFO_IDS (result) = NULL;
     INFO_FOUND_AVIS (result) = FALSE;
     INFO_IS_TO_MOVE (result) = FALSE;
     INFO_IN_BLOCK (result) = FALSE;
+    INFO_STOP (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -144,7 +160,9 @@ MakeInfoClone (info *arg_info)
     result = MakeInfo ();
 
     INFO_PATTERN (result) = INFO_PATTERN (arg_info);
+    INFO_STOP_PATTERN (result) = INFO_STOP_PATTERN (arg_info);
     INFO_BLOCK (result) = INFO_BLOCK (arg_info);
+    INFO_COUNT (result) = INFO_COUNT (arg_info);
 
     DBUG_RETURN (result);
 }
@@ -174,7 +192,8 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-MAdoMoveAssigns (node *syntax_tree, pattern *pat, bool block)
+MAdoMoveAssigns (node *syntax_tree, pattern *pat, bool block, int count,
+                 pattern *stop_pat)
 {
     info *info;
 
@@ -185,7 +204,9 @@ MAdoMoveAssigns (node *syntax_tree, pattern *pat, bool block)
     DBUG_PRINT ("MA", ("Starting move assigns traversal."));
 
     INFO_PATTERN (info) = pat;
+    INFO_STOP_PATTERN (info) = stop_pat;
     INFO_BLOCK (info) = block;
+    INFO_COUNT (info) = count;
 
     TRAVpush (TR_ma);
     syntax_tree = TRAVdo (syntax_tree, info);
@@ -208,6 +229,7 @@ MAdoMoveAssigns (node *syntax_tree, pattern *pat, bool block)
  * @{
  *
  *****************************************************************************/
+static node *moveAssign (node *assign, node *assigns, info *arg_info);
 
 /** <!--********************************************************************-->
  *
@@ -235,7 +257,7 @@ SameAvis (node *ids, node *avis)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ATravId(node *arg_node)
+ * @fn node *ATravId(node *arg_node, info *arg_info)
  *
  * @brief Does the current ID node have the avis we are looking for?
  *
@@ -256,10 +278,32 @@ ATravId (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ATravAssign(node *arg_node)
+ * @fn node *ATravLet( node *arg_node, info arg_info)
  *
- * @brief Insert the sync assign before current assign if it is this assign
- *        that uses the avis that prevents more movement.
+ * @brief If rhs matches stop pattern then mark info stop
+ *
+ *****************************************************************************/
+static node *
+ATravLet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravLet");
+
+    arg_node = TRAVcont (arg_node, arg_info);
+
+    if (PMmatchFlat (INFO_STOP_PATTERN (arg_info), LET_EXPR (arg_node))) {
+        INFO_STOP (arg_info) = TRUE;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ATravAssign( node *arg_node, info *arg_info)
+ *
+ * @brief Insert the assign before current assign if it is this assign
+ *        that uses the avis that prevents more movement or move this
+ *        assign as well.
  *
  *****************************************************************************/
 static node *
@@ -269,14 +313,33 @@ ATravAssign (node *arg_node, info *arg_info)
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
-    if (INFO_FOUND_AVIS (arg_info)
+    if ((INFO_FOUND_AVIS (arg_info) || INFO_STOP (arg_info))
         && (INFO_BLOCK (arg_info) || !INFO_IN_BLOCK (arg_info))) {
-        ASSIGN_NEXT (INFO_ASSIGN (arg_info)) = arg_node;
-        arg_node = INFO_ASSIGN (arg_info);
 
-        INFO_ASSIGN (arg_info) = NULL;
-        INFO_FOUND_AVIS (arg_info) = FALSE;
-        INFO_IDS (arg_info) = NULL;
+        if (INFO_COUNT (arg_info) > 0) {
+            /* move current assign as well */
+            node *assign = arg_node;
+            node *chain = ASSIGN_NEXT (arg_node);
+            ASSIGN_NEXT (assign) = NULL;
+
+            INFO_COUNT (arg_info)--;
+
+            arg_node = moveAssign (assign, chain, arg_info);
+            INFO_FOUND_AVIS (arg_info) = FALSE;
+            /*
+             * no longer put here as now we have moved blockers we may be
+             * able to put this assign later
+             */
+            INFO_COUNT (arg_info) = 0; /* Do not push any more */
+            arg_node = TRAVopt (arg_node, arg_info);
+        } else {
+            ASSIGN_NEXT (INFO_ASSIGN (arg_info)) = arg_node;
+            arg_node = INFO_ASSIGN (arg_info);
+
+            INFO_ASSIGN (arg_info) = NULL;
+            INFO_FOUND_AVIS (arg_info) = FALSE;
+            INFO_IDS (arg_info) = NULL;
+        }
     } else {
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     }
@@ -308,6 +371,54 @@ ATravBlock (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *moveAssign(node *assign, node *assigns, info *arg_info)
+ *
+ * @brief Place assign as low down as possible in assigns.
+ *
+ *****************************************************************************/
+static node *
+moveAssign (node *assign, node *assigns, info *arg_info)
+{
+    DBUG_ENTER ("moveAssign");
+
+    DBUG_ASSERT (ASSIGN_NEXT (assign) == NULL, "Can only move one assign at a time.");
+
+    if ((assign != NULL) && (NODE_TYPE (ASSIGN_INSTR (assign)) == N_let)) {
+        anontrav_t atrav[6] = {{N_assign, &ATravAssign},
+                               {N_id, &ATravId},
+                               {N_block, &ATravBlock},
+                               {N_let, &ATravLet},
+                               {0, NULL}};
+        info *stack_info = MakeInfoClone (arg_info);
+
+        /* Been asked to move a let node.  We should be able to do that */
+        if (LET_IDS (ASSIGN_INSTR (assign)) != NULL) {
+            /* Have a let with a lhs so try and move it */
+            INFO_ASSIGN (stack_info) = assign;
+            INFO_IDS (stack_info) = LET_IDS (ASSIGN_INSTR (assign));
+
+            TRAVpushAnonymous (atrav, &TRAVsons);
+            assigns = TRAVopt (assigns, stack_info);
+            TRAVpop ();
+
+            if (INFO_ASSIGN (stack_info) != NULL) {
+                CTInote ("Did not find use of lhs placing assign at end of block");
+                assigns = TCappendAssign (assigns, INFO_ASSIGN (stack_info));
+            }
+
+            INFO_ASSIGN (stack_info) = NULL;
+        }
+        stack_info = FreeInfo (stack_info);
+    } else {
+        assigns = TCappendAssign (assign, assigns);
+    }
+
+    DBUG_RETURN (assigns);
+}
+
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
@@ -341,25 +452,11 @@ MAassign (node *arg_node, info *arg_info)
         stack_info = FreeInfo (stack_info);
     }
 
-    if (INFO_IDS (arg_info) != NULL) {
-        anontrav_t atrav[5] = {{N_assign, &ATravAssign},
-                               {N_id, &ATravId},
-                               {N_block, &ATravBlock},
-                               {0, NULL}};
+    if (INFO_IS_TO_MOVE (arg_info)) {
+        node *move = arg_node;
+        ASSIGN_NEXT (move) = NULL;
 
-        ASSIGN_NEXT (arg_node) = NULL;
-        INFO_ASSIGN (arg_info) = arg_node;
-        arg_node = next;
-
-        TRAVpushAnonymous (atrav, &TRAVsons);
-        arg_node = TRAVopt (next, arg_info);
-        TRAVpop ();
-
-        if (INFO_ASSIGN (arg_info) != NULL) {
-            CTInote ("Did not find use of lhs placing assign at end of block");
-            arg_node = TCappendAssign (next, INFO_ASSIGN (arg_info));
-            INFO_ASSIGN (arg_info) = NULL;
-        }
+        arg_node = moveAssign (move, next, arg_info);
     } else {
         ASSIGN_NEXT (arg_node) = next;
     }
@@ -382,8 +479,7 @@ MAlet (node *arg_node, info *arg_info)
     arg_node = TRAVcont (arg_node, arg_info);
 
     if (PMmatchFlat (INFO_PATTERN (arg_info), LET_EXPR (arg_node))) {
-        INFO_IDS (arg_info) = LET_IDS (arg_node);
-        INFO_IS_TO_MOVE (arg_info) = FALSE;
+        INFO_IS_TO_MOVE (arg_info) = TRUE;
     }
 
     DBUG_RETURN (arg_node);

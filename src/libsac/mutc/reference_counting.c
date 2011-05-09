@@ -122,7 +122,7 @@ sl_enddef
 /*  Wrapper functions   */
 sl_def (SAC_set_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc))
 {
-    sl_create (, SAC_mutc_rc_place, , , , , sl__exclusive, SAC_set_rc,
+    sl_create (, SAC_MUTC_RC_PLACES_VAR, , , , , sl__exclusive, SAC_set_rc,
                sl_glarg (int *, , sl_getp (desc)), sl_glarg (int, , sl_getp (rc)));
     sl_detach ();
 }
@@ -130,7 +130,7 @@ sl_enddef
 
 sl_def (SAC_inc_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc))
 {
-    sl_create (, SAC_mutc_rc_place, , , , , sl__exclusive, SAC_inc_rc,
+    sl_create (, SAC_MUTC_RC_PLACES_VAR, , , , , sl__exclusive, SAC_inc_rc,
                sl_glarg (int *, , sl_getp (desc)), sl_glarg (int, , sl_getp (rc)));
     sl_detach ();
 }
@@ -138,7 +138,7 @@ sl_enddef
 
 sl_def (SAC_dec_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc))
 {
-    sl_create (, SAC_mutc_rc_place, , , , , sl__exclusive, SAC_dec_rc,
+    sl_create (, SAC_MUTC_RC_PLACES_VAR, , , , , sl__exclusive, SAC_dec_rc,
                sl_glarg (int *, , sl_getp (desc)), sl_glarg (int, , sl_getp (rc)));
     sl_detach ();
 }
@@ -147,7 +147,7 @@ sl_enddef
 sl_def (SAC_dec_and_maybeFree_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, val),
         sl_glparm (void *, data))
 {
-    sl_create (, SAC_mutc_rc_place, , , , , sl__exclusive, SAC_dec_and_get_rc,
+    sl_create (, SAC_MUTC_RC_PLACES_VAR, , , , , sl__exclusive, SAC_dec_and_get_rc,
                sl_glarg (int *, , sl_getp (desc)), sl_sharg (int, val2, sl_getp (val)));
     sl_sync ();
     if (sl_geta (val2) == 0) {
@@ -159,7 +159,7 @@ sl_enddef
 
 sl_def (SAC_get_rc_w, void, sl_glparm (int *, desc), sl_shparm (int, val))
 {
-    sl_create (, SAC_mutc_rc_place, , , , , sl__exclusive, SAC_get_rc,
+    sl_create (, SAC_MUTC_RC_PLACES_VAR, , , , , sl__exclusive, SAC_get_rc,
                sl_glarg (int *, , sl_getp (desc)), sl_sharg (int, val2, sl_getp (val)));
     sl_sync ();
     sl_setp (val, sl_geta (val2));
@@ -168,7 +168,7 @@ sl_enddef
 
 sl_def (SAC_rc_barrier_w, void, sl_glparm (int *, desc))
 {
-    sl_create (, SAC_mutc_rc_place, , , , , sl__exclusive, SAC_rc_barrier,
+    sl_create (, SAC_MUTC_RC_PLACES_VAR, , , , , sl__exclusive, SAC_rc_barrier,
                sl_glarg (int *, , sl_getp (desc)));
     sl_sync ();
 }

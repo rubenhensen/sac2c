@@ -13,7 +13,8 @@
  * Prefix: MA
  *
  *****************************************************************************/
-extern node *MAdoMoveAssigns (node *syntax_tree, pattern *pat, bool block);
+extern node *MAdoMoveAssigns (node *syntax_tree, pattern *pat, bool block, int count,
+                              pattern *stop_pat);
 
 extern node *MAlet (node *arg_node, info *arg_info);
 extern node *MAassign (node *arg_node, info *arg_info);

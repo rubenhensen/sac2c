@@ -44,17 +44,13 @@
  * by default 1.
  *
  * **************************************************/
-#if SAC_DO_COMPILE_MODULE == 1
-#define SAC_MUTC_GET_RC_PLACE(DESC) SAC_mutc_rc_place
-#else /* SAC_DO_COMPILE_MODULE */
 #define SAC_MUTC_GET_RC_PLACE(DESC)                                                      \
     ({                                                                                   \
         long int address = (long int)DESC;                                               \
         address = address >> 6;                                                          \
-        address = (SAC_MUTC_RC_PLACES - 1) & address;                                    \
+        address = (SAC_MUTC_RC_PLACES_VAR - 1) & address;                                \
         SAC_mutc_rc_place_many[address];                                                 \
     })
-#endif /*SAC_DO_COMPILE_MODULE*/
 
 SAC_IF_MUTC_RC_INDIRECT (
   sl_decl (SAC_set_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc));
@@ -159,6 +155,99 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
  * SAC_ND_DEC_RC implementations (referenced by sac_std_gen.h)
  */
 #undef SAC_ND_DEC_RC__DEFAULT
+#if SAC_MUTC_RC_ASM
+#define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
+    {                                                                                    \
+        __asm__ __volatile__(                                                            \
+          "    lda  $16, 0f                                                      \n"     \
+          "    addq $16, %1, $16                                                 \n"     \
+          "    jsr  $16, ($16)                                                   \n"     \
+          "    .balign %0                                                        \n"     \
+          "    # Traditional # COUNT: 4+5+5+1=15                                 \n"     \
+          "    # COUNT: 4                                                        \n"     \
+          "0:  ldq  %1, %5( %2)     # load rc                                    \n"     \
+          "    subq %1, %6, %1      # dec rc                                     \n"     \
+          "    stq  %1, %5( %2)     # save rc                                    \n"     \
+          "    bne  %1, 9f          # is rc now 0                                \n"     \
+          "                                                                      \n"     \
+          "    # COUNT: 5                                                        \n"     \
+          "    # free(%2)                                                        \n"     \
+          "    mov  %2, $16                                                      \n"     \
+          "    ldq  $27,free($29)   !literal                                     \n"     \
+          "    jsr  $26,($27)                                                    \n"     \
+          "    ldgp $29,0($26)      # 2 INST                                     \n"     \
+          "                                                                      \n"     \
+          "    # COUNT: 5                                                        \n"     \
+          "    # free(%3)                                                        \n"     \
+          "    mov  %3,$16                                                       \n"     \
+          "    ldq  $27,free($29)   !literal                                     \n"     \
+          "    jsr  $26,($27)                                                    \n"     \
+          "    ldgp $29,0($26)      # 2 INST                                     \n"     \
+          "                                                                      \n"     \
+          "    jmp 9f                                                            \n"     \
+          "    .balign %0                                                        \n"     \
+          "                                                                      \n"     \
+          "1:  # AYNC/LOCKING COUNT: 4+7+7+5+5+1=29                              \n"     \
+          "    # COUNT: 4                                                        \n"     \
+          "    ldq  %1, %5( %2)     # load rc                                    \n"     \
+          "    subq %1, %6, %1      # dec rc                                     \n"     \
+          "    stq  %1, %5( %2)     # save rc                                    \n"     \
+          "    bne  %1, 9f          # is rc now 0                                \n"     \
+          "                                                                      \n"     \
+          "    # COUNT: 7                                                        \n"     \
+          "    lda  $16, %4( %2)    # load parent address                        \n"     \
+          "    sra  $16, 6, %1      # %1 = %1 >> 6                               \n"     \
+          "    ldah $16,SAC_mutc_rc_place_many($29)            !gprelhigh        \n"     \
+          "    lda  $16,SAC_mutc_rc_place_many($16)            !gprellow         \n"     \
+          "    ldq  $16, 0( $16)    # load places array                          \n"     \
+          "    and  %1, $16, %1     # %1 = (SAC_MUTC_RC_PLACES - 1) & %1         \n"     \
+          "    ldah $16,SAC_mutc_rc_place_many($29)            !gprelhigh        \n"     \
+          "    lda  $16,SAC_mutc_rc_place_many($16)            !gprellow         \n"     \
+          "    addq %1, $16, %1                                                  \n"     \
+          "    lda  %1, 0( %1)      # load place                                 \n"     \
+          "                                                                      \n"     \
+          "    # COUNT: 7                                                        \n"     \
+          "    allocate/x %1, %1, %1                                             \n"     \
+          "    # setstart %1, 0                                                  \n"     \
+          "    ldah $27,__slFfmta_SAC_dec_and_maybeFree_parent($29) !gprelhigh   \n"     \
+          "    lda  $27,__slFfmta_SAC_dec_and_maybeFree_parent($27) !gprellow    \n"     \
+          "    # setlimit %1, 1                                                  \n"     \
+          "    # setstep  %1, 1                                                  \n"     \
+          "    # setblock %1, 0                                                  \n"     \
+          "    wmb                                                               \n"     \
+          "    crei %1, 0($27)                                                   \n"     \
+          "    lda  $16, %4( %2)    # load parent address                        \n"     \
+          "    putg $16, %1, 0      # parent arg                                 \n"     \
+          "    release %1           # detach                                     \n"     \
+          "                                                                      \n"     \
+          "    # COUNT: 5                                                        \n"     \
+          "    # free()                                                          \n"     \
+          "    mov  %2,$16                                                       \n"     \
+          "    ldq  $27,free($29)   !literal                                     \n"     \
+          "    jsr  $26,($27)                                                    \n"     \
+          "    ldgp $29,0($26)      # 2 INST                                     \n"     \
+          "                                                                      \n"     \
+          "    # COUNT: 5                                                        \n"     \
+          "    # free()                                                          \n"     \
+          "    mov  %3,$16                                                       \n"     \
+          "    ldq  $27,free($29)   !literal                                     \n"     \
+          "    jsr  $26,($27)                                                    \n"     \
+          "    ldgp $29,0($26)      # 2 INST                                     \n"     \
+          "                                                                      \n"     \
+          "    # COUNT: 1                                                        \n"     \
+          "    jmp 9f                                                            \n"     \
+          "    .balign %0                                                        \n"     \
+          "2: # NORC                                                             \n"     \
+          "   # Nothing!!!                                                       \n"     \
+          "9:  nop                                                               \n"     \
+          : /* 0 */ "i"(1 << REGION_SIZE),                                               \
+            /* 1 */ "r"(DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) << REGION_SIZE),           \
+            /* 2 */ "r"(SAC_ND_A_DESC (var_NT)), /* 3 */ "r"(SAC_ND_A_FIELD (var_NT)),   \
+            /* 4 */ "i"(DESC_OFFSET_PARENT), /* 5 */ "i"(DESC_OFFSET_RC),                \
+            /* 6 */ "ri"(rc)                                                             \
+          : "memory", "cc", "$16", "$26", "$27");                                        \
+    }
+#else
 #define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
@@ -170,6 +259,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
             SAC_ND_DEC_RC__C99 (var_NT, rc);                                             \
         }                                                                                \
     }
+#endif
 
 #define SAC_ND_DEC_RC__NORC(var_NT, rc)                                                  \
     {                                                                                    \
@@ -392,7 +482,8 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         }                                                                                \
     }
 
-#define SAC_ND_PRF_2ASYNC__NOOP(new, array) SAC_ND_A_FIELD (new) = SAC_ND_A_FIELD (array);
+#define SAC_ND_PRF_2ASYNC__NOOP(new, array)                                              \
+    SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));
 
 #endif /* SAC_BACKEND */
 #undef MUTC
