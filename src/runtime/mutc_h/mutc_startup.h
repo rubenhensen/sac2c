@@ -26,11 +26,16 @@
 #endif
 
 #define SAC_MUTC_RC_PLACES_VAR SAC_mutc_rc_places
-#ifndef SAC_MUTC_RC_PLACES
-#define SAC_DO_COMPILE_MODULE 1
-const int SAC_MUTC_RC_PLACES_VAR;
-sl_place_t SAC_mutc_rc_place_many[];
+
+#if SAC_DO_COMPILE_MODULE == 1
+extern const int SAC_MUTC_RC_PLACES_VAR;
+extern sl_place_t SAC_mutc_rc_place_many[];
 #else
+
+#ifndef SAC_MUTC_RC_PLACES
+#define SAC_MUTC_RC_PLACES 1
+#endif
+
 const int SAC_MUTC_RC_PLACES_VAR = SAC_MUTC_RC_PLACES;
 sl_place_t SAC_mutc_rc_place_many[SAC_MUTC_RC_PLACES];
 #endif
