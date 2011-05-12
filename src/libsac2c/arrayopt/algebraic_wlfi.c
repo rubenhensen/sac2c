@@ -138,7 +138,7 @@ struct INFO {
     node *postassigns;        /* These go below current statement */
     node *preassignswl;       /* These go above the consumerWL */
     node *preassignsfinverse; /* iv' -> iv function */
-    node *consumerpart;       /* The current consumerWL partition */
+    node *consumerwlpart;     /* The current consumerWL partition */
     node *consumerwl;         /* The current consumerWL N_with */
     node *consumerwlname;     /* The current consumerWL LHS */
     node *producerwl;         /* The producerWL LHS for this consumerWL */
@@ -166,7 +166,7 @@ struct INFO {
 #define INFO_POSTASSIGNS(n) ((n)->postassigns)
 #define INFO_PREASSIGNSWL(n) ((n)->preassignswl)
 #define INFO_PREASSIGNSFINVERSE(n) ((n)->preassignsfinverse)
-#define INFO_CONSUMERPART(n) ((n)->consumerpart)
+#define INFO_CONSUMERWLPART(n) ((n)->consumerwlpart)
 #define INFO_CONSUMERWL(n) ((n)->consumerwl)
 #define INFO_CONSUMERWLNAME(n) ((n)->consumerwlname)
 #define INFO_PRODUCERWL(n) ((n)->producerwl)
@@ -193,7 +193,7 @@ MakeInfo (node *fundef)
     INFO_POSTASSIGNS (result) = NULL;
     INFO_PREASSIGNSWL (result) = NULL;
     INFO_PREASSIGNSFINVERSE (result) = NULL;
-    INFO_CONSUMERPART (result) = NULL;
+    INFO_CONSUMERWLPART (result) = NULL;
     INFO_CONSUMERWL (result) = NULL;
     INFO_CONSUMERWLNAME (result) = NULL;
     INFO_PRODUCERWL (result) = NULL;
@@ -432,7 +432,7 @@ getNthWithids (int n, node *arg_node, info *arg_info)
             z = TCgetNthExprsExpr (n, ARRAY_AELEMS (withids));
             z = ID_AVIS (z);
         } else { /* withids is WITHID_VEC. Get WITHID_IDS */
-            partwithid = PART_WITHID (INFO_CONSUMERPART (arg_info));
+            partwithid = PART_WITHID (INFO_CONSUMERWLPART (arg_info));
             if (ID_AVIS (withids) == IDS_AVIS (WITHID_VEC (partwithid))) {
                 withids = WITHID_IDS (partwithid);
                 z = TCgetNthIds (n, withids);
@@ -731,6 +731,81 @@ TraceIndexScalar (node *iprime, info *arg_info, node *intrsctel, node *withids)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *PermuteIntersectElements( node *intr, node *zwithids,  node *zarr,
+ *                                     info *arg_info)
+ *
+ * @brief: Permute and/or merge
+ *
+ * @params: intr: an N_exprs chain of an intersect calculation
+ *          Its length matches that of iv in the sel( iv, producerWL)
+ *          in the consumerWL.
+ *
+ *          zwithids: an N_ids chain, of the same shape as
+ *          intr, comprising the WITHID_IDS related to the
+ *          corresponding element of intr.
+ *
+ *          zarr: a writable copy of the resulting N_array's N_exprs list.
+ *
+ *          arg_info: your basic arg_info node.
+ *
+ *
+ * @result: The permuted and/or confluenced N_exprs chain.
+ *          Its length matches that of the WITHID_IDS in the
+ *          consumerWL.
+ *
+ *          Effectively, this code performs, in the absence
+ *          of duplicate zwithids entries:
+ *
+ *            z[ withidsids iota zwithids] = intr;
+ *
+ *          If there are duplicates, we insert min/max ops... FIXME
+ *
+ *****************************************************************************/
+static node *
+PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info)
+{
+    node *z;
+    node *ids;
+    int shpz;
+    int shpids;
+    int shpintr;
+    int i;
+    int idx;
+    node *hole;
+
+    DBUG_ENTER ("PermuteIntersectElements");
+
+    ids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
+    shpids = TCcountIds (ids);
+    shpintr = TCcountExprs (intr);
+
+    hole = IVEXImakeIntScalar (NOINVERSEPROJECTION, &INFO_VARDECS (arg_info),
+                               &INFO_PREASSIGNS (arg_info));
+    z = zarr;
+
+    for (i = 0; i < shpids; i++) {
+        z = TCputNthExprs (i, z, TBmakeId (hole));
+    }
+
+    for (i = 0; i < shpintr; i++) {
+        idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids));
+        DBUG_ASSERT (hole == ID_AVIS (TCgetNthExprsExpr (idx, z)),
+                     "Time to code confluence stuff");
+        z = TCputNthExprs (idx, z, TCgetNthExprsExpr (i, intr));
+    }
+
+    for (i = 0; i < shpids; i++) {
+        DBUG_ASSERT (hole != ID_AVIS (TCgetNthExprsExpr (i, z)), "No holes wanted!");
+    }
+
+    shpz = TCcountExprs (z);
+    DBUG_ASSERT (shpz == shpids, "Wrong boundary intersect shape");
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *BuildInverseProjectionOne( node *arg_node, info *arg_info,
  *                                      node( *ivprime,
  *                                      node *intr)
@@ -756,7 +831,10 @@ TraceIndexScalar (node *iprime, info *arg_info, node *intrsctel, node *withids)
  *          intr: the WLintersect N_array node for lb or ub.
  *
  * @result: An N_avis node, which represents the result of
- *          mapping the WLintersect extrema back to consumerWL space.
+ *          mapping the WLintersect extrema back to consumerWL space,
+ *          and performing any axis transposition and/or confluence,
+ *          so that said result shape matches the shape of the
+ *          consumerWL generators.
  *
  *          If we are unable to compute the inverse, we
  *          return NULL. This may occur if, e.g., we multiply
@@ -768,6 +846,7 @@ static node *
 BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *intr)
 {
     node *z = NULL;
+    node *zwithids = NULL;
     node *iprime;
     node *ziavis;
     node *zarr;
@@ -775,11 +854,13 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
     node *withids;
     ntype *typ;
     int dim;
+
     int ivindx;
     DBUG_ENTER ("BuildInverseProjectionOne");
 
     DBUG_ASSERT (N_array == NODE_TYPE (ivprime), "Expected N_array ivprime");
     DBUG_ASSERT (N_array == NODE_TYPE (intr), "Expected N_array intr");
+
     dim = SHgetUnrLen (ARRAY_FRAMESHAPE (ivprime));
 
     for (ivindx = 0; ivindx < dim; ivindx++) {
@@ -796,17 +877,20 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
                 /* NO IDEA WHAT NEXT LINE IS FOR */
                 AVIS_FINVERSESWAP (ziavis) = INFO_FINVERSESWAP (arg_info);
                 z = TCappendExprs (z, TBmakeExprs (TBmakeId (ziavis), NULL));
+                zwithids = TCappendIds (zwithids, TBmakeIds (withids, NULL));
             } else {
                 DBUG_PRINT ("AWLFI", ("Failed to find inverse map for N_array"));
                 ivindx = dim;
                 z = (NULL != z) ? FREEdoFreeTree (z) : z;
+                zwithids = (NULL != zwithids) ? FREEdoFreeTree (zwithids) : zwithids;
             }
         }
     }
 
     if (NULL != z) {
-        zarr = DUPdoDupTree (ivprime); /* Make result shape match argument shape */
-        FREEdoFreeTree (ARRAY_AELEMS (zarr));
+        zarr = GENERATOR_BOUND1 (PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)));
+        zarr = DUPdoDupTree (zarr); /* Make result shape match generator shape */
+        z = PermuteIntersectElements (z, zwithids, ARRAY_AELEMS (zarr), arg_info);
         ARRAY_AELEMS (zarr) = z;
         typ = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
         z = AWLFIflattenExpression (zarr, &INFO_VARDECS (arg_info),
@@ -1199,7 +1283,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
                           ? GENERATOR_BOUND1 (PART_GENERATOR (producerPart))
                           : GENERATOR_BOUND2 (PART_GENERATOR (producerPart));
     shp = SHgetUnrLen (ARRAY_FRAMESHAPE (producerGenerator));
-    bound1 = GENERATOR_BOUND1 (PART_GENERATOR (INFO_CONSUMERPART (arg_info)));
+    bound1 = GENERATOR_BOUND1 (PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)));
     DBUG_ASSERT (N_array == NODE_TYPE (bound1), "Expected N_array bound1");
     bound1 = AWLFIflattenExpression (DUPdoDupTree (bound1), &INFO_VARDECS (arg_info),
                                      &INFO_PREASSIGNS (arg_info),
@@ -1496,7 +1580,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
           = TCappendAssign (INFO_PREASSIGNS (arg_info), ivassign);
         AVIS_SSAASSIGN (ivpavis) = ivassign;
 
-        PART_ISCONSUMERPART (INFO_CONSUMERPART (arg_info)) = TRUE;
+        PART_ISCONSUMERPART (INFO_CONSUMERWLPART (arg_info)) = TRUE;
         PRF_ISNOTEINTERSECTPRESENT (arg_node) = TRUE;
         INFO_FINVERSEINTRODUCED (arg_info) = TRUE;
     } else {
@@ -1911,10 +1995,10 @@ AWLFIpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("AWLFIpart");
 
-    INFO_CONSUMERPART (arg_info) = arg_node;
+    INFO_CONSUMERWLPART (arg_info) = arg_node;
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVdo (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
-    INFO_CONSUMERPART (arg_info) = NULL;
+    INFO_CONSUMERWLPART (arg_info) = NULL;
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -2021,7 +2105,7 @@ AWLFIprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("AWLFIprf");
 
-    if ((INFO_CONSUMERPART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
+    if ((INFO_CONSUMERWLPART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
 

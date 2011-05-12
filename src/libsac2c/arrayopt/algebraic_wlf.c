@@ -218,8 +218,6 @@ struct INFO {
     /* This is the WITH_ID renaming lut */
     node *vardecs;
     node *preassigns;
-    node *intersectb1;
-    node *intersectb2;
     node *idxbound1;
     node *idxbound2;
     intersect_type_t intersecttype;
@@ -237,8 +235,6 @@ struct INFO {
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
-#define INFO_INTERSECTB1(n) ((n)->intersectb1)
-#define INFO_INTERSECTB2(n) ((n)->intersectb2)
 #define INFO_IDXBOUND1(n) ((n)->idxbound1)
 #define INFO_IDXBOUND2(n) ((n)->idxbound2)
 #define INFO_INTERSECTTYPE(n) ((n)->intersecttype)
@@ -261,8 +257,6 @@ MakeInfo (node *fundef)
     INFO_LUT (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
-    INFO_INTERSECTB1 (result) = NULL;
-    INFO_INTERSECTB2 (result) = NULL;
     INFO_IDXBOUND1 (result) = NULL;
     INFO_IDXBOUND2 (result) = NULL;
     INFO_INTERSECTTYPE (result) = INTERSECT_unknown;
@@ -409,14 +403,11 @@ isEmptyPartitionCodeBlock (node *partn)
 /** <!--********************************************************************-->
  *
  * @fn bool checkAWLFoldable( node *arg_node, info *arg_info,
- * node *consumerWLPart, int level)
+ * node *cwlp, int level)
  *
- * @brief check if _sel_VxA_(idx, producerWL), appearing in consumer WL
- *        partition, part, is foldable into the consumer WL.
+ * @brief check if _sel_VxA_(idx, producerWL), appearing in
+ *        consumer WL partition cwlp, is foldable into cwlp.
  *        Most checks have already been made by AWLFI.
- *        Here, we check that the generators match,
- *        and that the only references to the producerWL result are
- *        in the consumerWL.
  *
  *        We have to be careful, because (See Bug #652) the
  *        producerWL may have changed underfoot, due to CWLE
@@ -426,7 +417,7 @@ isEmptyPartitionCodeBlock (node *partn)
  *        be equally unpleasant.
  *
  * @param _sel_VxA_( idx, producerWL)
- * @param consumerWLPart: The partition into which we would like to
+ * @param cwlp: The partition into which we would like to
  *        fold this sel().
  * @param level
  * @result If the producerWL is foldable into the consumerWL, return the
@@ -434,11 +425,11 @@ isEmptyPartitionCodeBlock (node *partn)
  *
  *****************************************************************************/
 static node *
-checkAWLFoldable (node *arg_node, info *arg_info, node *consumerWLPart, int level)
+checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
 {
     node *producerWLavis;
     node *producerWL;
-    node *producerWLpart = NULL;
+    node *pwlp = NULL;
 
     DBUG_ENTER ("checkAWLFoldable");
 
@@ -450,25 +441,27 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *consumerWLPart, int leve
         DBUG_PRINT ("AWLF", ("producerWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
                              AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
                              AVIS_WL_NEEDCOUNT (producerWLavis)));
-        producerWLpart = CUBSLfindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info),
-                                                consumerWLPart, producerWL, NULL);
+        /* Search for pwlp that intersects cwlp */
+        pwlp = CUBSLfindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info), cwlp,
+                                      producerWL, NULL);
         if ((INTERSECT_unknown == INFO_INTERSECTTYPE (arg_info))
-            || (INTERSECT_sliceneeded == INFO_INTERSECTTYPE (arg_info))
+            || (INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info))
             || (INTERSECT_null == INFO_INTERSECTTYPE (arg_info))) {
             DBUG_PRINT ("AWLF", ("Cube can not be intersected, or null intersect or "
                                  "slice needed"));
-            producerWLpart = NULL;
+            pwlp = NULL;
         }
 
-        /* Allow fold if needcounts match OR if producerWLpart
+        /* Allow fold if needcounts match OR if pwlp
          * has empty code block. This is a crude cost function:
          * We should allow "cheap" producerWL partitions to fold.
          * E.g., toi(iota(N)), but I'm in a hurry...
          */
-        if ((NULL != producerWLpart)
+        if ((NULL != pwlp)
             && ((AVIS_NEEDCOUNT (producerWLavis) != AVIS_WL_NEEDCOUNT (producerWLavis)))
-            && (!isEmptyPartitionCodeBlock (producerWLpart))) {
-            producerWLpart = NULL;
+            && (!isEmptyPartitionCodeBlock (pwlp))) {
+            DBUG_PRINT ("AWLF", ("Cube can not be intersected - NEEDCOUNT mismatch"));
+            pwlp = NULL;
         }
     } else {
         DBUG_PRINT ("AWLF",
@@ -476,7 +469,7 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *consumerWLPart, int leve
                      AVIS_NAME (producerWLavis), AVIS_DEFDEPTH (producerWLavis), level));
     }
 
-    if (NULL != producerWLpart) {
+    if (NULL != pwlp) {
         AVIS_ISWLFOLDED (producerWLavis) = TRUE;
         DBUG_PRINT ("AWLF",
                     ("producerWL %s will be folded.", AVIS_NAME (producerWLavis)));
@@ -485,7 +478,7 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *consumerWLPart, int leve
                              AVIS_NAME (producerWLavis)));
     }
 
-    DBUG_RETURN (producerWLpart);
+    DBUG_RETURN (pwlp);
 }
 
 /** <!--********************************************************************-->

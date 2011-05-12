@@ -11,7 +11,7 @@ typedef enum {
     INTERSECT_null,
     INTERSECT_notnull,
     INTERSECT_exact,
-    INTERSECT_sliceneeded
+    INTERSECT_nonexact,
 } intersect_type_t;
 
 /** <!--********************************************************************-->

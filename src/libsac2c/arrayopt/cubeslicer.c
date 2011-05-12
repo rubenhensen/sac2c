@@ -90,8 +90,8 @@ struct INFO {
     bool onefundef; /* fundef-based traversal */
     node *lhs;
     node *consumerpart;
-    node *intersectbound1;          /* lower bound of WL intersection */
-    node *intersectbound2;          /* upper bound of WL intersection */
+    node *wlprojection1;            /* lower bound of WL proj */
+    node *wlprojection2;            /* upper bound of WL proj */
     node *withcode;                 /* WITH_CODE from N_with */
     intersect_type_t intersecttype; /* intersect type. see enum */
     lut_t *lut;                     /* LUT for renaming */
@@ -106,8 +106,8 @@ struct INFO {
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_CONSUMERPART(n) ((n)->consumerpart)
-#define INFO_INTERSECTBOUND1(n) ((n)->intersectbound1)
-#define INFO_INTERSECTBOUND2(n) ((n)->intersectbound2)
+#define INFO_WLPROJECTION1(n) ((n)->wlprojection1)
+#define INFO_WLPROJECTION2(n) ((n)->wlprojection2)
 #define INFO_WITHCODE(n) ((n)->withcode)
 #define INFO_INTERSECTTYPE(n) ((n)->intersecttype)
 #define INFO_LUT(n) ((n)->lut)
@@ -127,8 +127,8 @@ MakeInfo (node *fundef)
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_LHS (result) = NULL;
     INFO_CONSUMERPART (result) = NULL;
-    INFO_INTERSECTBOUND1 (result) = NULL;
-    INFO_INTERSECTBOUND2 (result) = NULL;
+    INFO_WLPROJECTION1 (result) = NULL;
+    INFO_WLPROJECTION2 (result) = NULL;
     INFO_WITHCODE (result) = NULL;
     INFO_INTERSECTTYPE (result) = INTERSECT_unknown;
     INFO_LUT (result) = NULL;
@@ -366,11 +366,11 @@ ExtractNthItem (int itemno, node *idx)
                  ("Wanted F_noteintersect as idx parent"));
     bnd = TCgetNthExprsExpr (itemno, PRF_ARGS (dfg));
     val = bnd;
-#ifdef FIXME // perhaps dead?
+#ifdef DEADCODE // FIXME perhaps dead?
     if (NULL != bnd) {
         PMO (PMOlastVarGuards (&val, bnd));
     }
-#endif // FIXME // perhaps dead?
+#endif // DEADCODE // perhaps dead?
 
     DBUG_RETURN (val);
 }
@@ -420,44 +420,10 @@ isExactIntersect (node *cbound1, node *intersectb1, node *cbound2, node *interse
     if ((NULL != c1) && (NULL != c2) && (NULL != i1) && (NULL != i2)) {
         z = (matchGeneratorField (c1, i1)) && (matchGeneratorField (c2, i2))
               ? INTERSECT_exact
-              : INTERSECT_sliceneeded;
+              : INTERSECT_nonexact;
     }
     pat = PMfree (pat);
 
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static node *ReorderIntersect(...)
- *
- * @brief Reorder WL partition intersect result to make it
- *        match consumerWL bounds ordering.
- *
- *        I.e., intersectb1[ partwithids iota withids]
- *
- * @params  intersectb: the intersect result; an N_id pointing to
- *                      an N_array
- *          idx: The N_id index vector from the sel(idx, producerWL) in
- *               the consumerWL.
- *          consumerWLPart: The N_part of the consumerWL.
- *
- * @result: The reordered intersect data.
- *
- *****************************************************************************/
-static node *
-ReorderIntersect (node *intersectb, node *withids, node *consumerWLPart)
-{
-    node *z = NULL;
-    node *withidvec;
-
-    DBUG_ENTER ("ReorderIntersect");
-
-    if (NULL != withids) {
-        withidvec = WITHID_IDS (PART_WITHID (consumerWLPart));
-    }
-
-    z = intersectb;
     DBUG_RETURN (z);
 }
 
@@ -468,30 +434,28 @@ ReorderIntersect (node *intersectb, node *withids, node *consumerWLPart)
  * @brief Search the _noteintersect_() list to see if there is an intersection
  *        that could match the current producerWL partition.
  *        Side effect is to set INFO_INTERSECTBOUND1/2( arg_info).
- *        Side effect is to set INFO_AXISINDICES( arg_info).
- *
  *
  * @params idx: N_id node of _noteintersect() list.
- *         idxbound1: lower bound of iv in _sel_VxA_(iv, producerWL).
- *         idxbound2: upper bound of iv in _sel_VxA_(iv, producerWL).
  *         producerWLGenerator: PART_GENERATOR of producerWL
- *         consumerWLGenerator: PART_GENERATOR of consumerWL.
+ *         cwlp: consumer WL partition.
+ *         arg_info: Your basic arg_info
  *
- * @result: Type of WL intersection between consumerWL partition
- *          idxbounds and current producerWL partition.
+ * @result: Type of WL intersection between cwlp and
+ *          current producerWL partition.
  *
  *****************************************************************************/
 static intersect_type_t
-FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLGenerator,
-                  node *consumerWLPart, info *arg_info)
+FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_info)
 {
     intersect_type_t z = INTERSECT_unknown;
-    node *intersectb1;
-    node *intersectb2;
+    node *newb1;
+    node *newb2;
     node *producerWLBound1Original;
     node *producerWLBound2Original;
     node *consumerWLGenerator;
     node *bnd;
+    node *proj1;
+    node *proj2;
     pattern *pat;
     intersect_type_t nullIntersect;
     int intersectListNo;
@@ -504,40 +468,22 @@ FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLG
       PRF_ARGS (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (idx))))));
     intersectListLim = (intersectListLim - 1) / WLEPP;
     pat = PMarray (1, PMAgetNode (&bnd), 1, PMskip (0));
-    consumerWLGenerator = PART_GENERATOR (consumerWLPart);
+    consumerWLGenerator = PART_GENERATOR (cwlp);
 
     while (((INTERSECT_unknown == z) || (INTERSECT_null == z))
            && (intersectListNo < intersectListLim)) {
-        intersectb1 = ExtractNthItem (WLPROJECTION1 (intersectListNo), idx);
-        intersectb1
-          = ReorderIntersect (intersectb1, AVIS_WITHIDS (ID_AVIS (idx)), consumerWLPart);
-        intersectb2 = ExtractNthItem (WLPROJECTION2 (intersectListNo), idx);
-        intersectb2
-          = ReorderIntersect (intersectb2, AVIS_WITHIDS (ID_AVIS (idx)), consumerWLPart);
+        newb1 = ExtractNthItem (WLINTERSECTION1 (intersectListNo), idx);
+        newb2 = ExtractNthItem (WLINTERSECTION2 (intersectListNo), idx);
+
+        bnd = NULL;
+        PMmatchFlat (pat, ExtractNthItem (WLPROJECTION1 (intersectListNo), idx));
+        proj1 = bnd;
+        bnd = NULL;
+        PMmatchFlat (pat, ExtractNthItem (WLPROJECTION2 (intersectListNo), idx));
+        proj2 = bnd;
         if (NULL != arg_info) { /* Different callers! */
-            bnd = NULL;
-            PMmatchFlat (pat, intersectb1);
-            INFO_INTERSECTBOUND1 (arg_info) = bnd;
-
-            bnd = NULL;
-            PMmatchFlat (pat, intersectb2);
-            INFO_INTERSECTBOUND2 (arg_info) = bnd;
-        }
-
-        /* producerWL may have vanished, due to CWLE, etc. */
-        if ((NULL != idxbound1) && (NULL != intersectb1)) {
-            DBUG_PRINT (
-              "CUBSL",
-              ("intersectListNo #%d matching producer idxbound1 %s, intersectb1 %s",
-               intersectListNo, AVIS_NAME (ID_AVIS (idxbound1)),
-               AVIS_NAME (ID_AVIS (intersectb1))));
-        }
-        if ((NULL != idxbound2) && (NULL != intersectb2)) {
-            DBUG_PRINT (
-              "CUBSL",
-              ("intersectListNo #%d matching producer idxbound2 %s, intersectb2 %s",
-               intersectListNo, AVIS_NAME (ID_AVIS (idxbound2)),
-               AVIS_NAME (ID_AVIS (intersectb2))));
+            INFO_WLPROJECTION1 (arg_info) = proj1;
+            INFO_WLPROJECTION2 (arg_info) = proj2;
         }
 
         producerWLBound1Original
@@ -570,9 +516,14 @@ FindIntersection (node *idx, node *idxbound1, node *idxbound2, node *producerWLG
                 break;
 
             case INTERSECT_notnull:
-                z = isExactIntersect (GENERATOR_BOUND1 (consumerWLGenerator), intersectb1,
-                                      GENERATOR_BOUND2 (consumerWLGenerator),
-                                      intersectb2);
+                bnd = NULL;
+                PMmatchFlat (pat, newb1);
+                newb1 = bnd;
+                bnd = NULL;
+                PMmatchFlat (pat, newb2);
+                newb2 = bnd;
+                z = isExactIntersect (GENERATOR_BOUND1 (consumerWLGenerator), proj1,
+                                      GENERATOR_BOUND2 (consumerWLGenerator), proj2);
                 if (INTERSECT_exact == z) {
                     DBUG_PRINT ("CUBSL", ("Intersect suitable for exact AWLF"));
                 } else {
@@ -648,8 +599,6 @@ CUBSLfindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpa
     node *producerWLGenerator;
     node *producerWLPart;
     node *idx;
-    node *idxbound1;
-    node *idxbound2;
     node *idxassign;
     node *idxparent;
     intersect_type_t intersecttype = INTERSECT_unknown;
@@ -666,15 +615,13 @@ CUBSLfindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpa
     idxparent = LET_EXPR (ASSIGN_INSTR (idxassign));
 
     producerWLPart = WITH_PART (producerWL);
-    idxbound1 = AVIS_MIN (ID_AVIS (PRF_ARG1 (idxparent)));
-    idxbound2 = AVIS_MAX (ID_AVIS (PRF_ARG1 (idxparent)));
 
     /* Find producerWL partition, if any, that matches the extrema of iv */
     while (((INTERSECT_unknown == intersecttype) || (INTERSECT_null == intersecttype))
            && (producerWLPart != NULL)) {
         producerWLGenerator = PART_GENERATOR (producerWLPart);
-        intersecttype = FindIntersection (idx, idxbound1, idxbound2, producerWLGenerator,
-                                          consumerpart, arg_info);
+        intersecttype
+          = FindIntersection (idx, producerWLGenerator, consumerpart, arg_info);
         if ((INTERSECT_unknown == intersecttype) || (INTERSECT_null == intersecttype)) {
             producerWLPart = PART_NEXT (producerWLPart);
             producerPartno++;
@@ -691,7 +638,7 @@ CUBSLfindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpa
     case INTERSECT_exact:
         typ = "exact";
         break;
-    case INTERSECT_sliceneeded:
+    case INTERSECT_nonexact:
         typ = "slice needed";
         break;
     }
@@ -718,10 +665,10 @@ static node *
 CloneCode (node *arg_node, info *arg_info)
 {
     node *z;
-    /* FIXME
+#ifdef DEADCODE // FIXME
     node *expravis;
     node *newavis;
-   FIXME */
+#endif // DEADCODE // FIXME
 
     DBUG_ENTER ("CloneCode");
 
@@ -729,13 +676,17 @@ CloneCode (node *arg_node, info *arg_info)
           ? NULL
           : DUPdoDupTreeLutSsa (arg_node, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
 
-    /* We may need this... FIXME
-    expravis = ID_AVIS( EXPRS_EXPR( CODE_CEXPRS( arg_node)));
-    newavis = LUTsearchInLutPp( INFO_LUT( arg_info), expravis);
-      FIXME */
+#ifdef DEADCODE // FIXME
+    We may need this... FIXME expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node)));
+    newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
+#endif // DEADCODE // FIXME
 
     LUTremoveContentLut (INFO_LUT (arg_info));
     CODE_INC_USED (z); /* DUP gives us Used=0 */
+
+    /* prepend new code block to N_code chain */
+    CODE_NEXT (z) = CODE_NEXT (INFO_WITHCODE (arg_info));
+    CODE_NEXT (INFO_WITHCODE (arg_info)) = z;
 
     DBUG_RETURN (z);
 }
@@ -886,7 +837,7 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
         puba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (partub));
 
         /* Cases beta, gamma need partA */
-        if (CMPT_EQ != CMPTdoCompareTree (ilba, plba)) {
+        if (CMPT_NEQ == CMPTdoCompareTree (ilba, plba)) {
             DBUG_PRINT ("CUBSL", ("Constructing partition A for %s",
                                   AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
             newlb = DUPdoDupTree (partlb);
@@ -894,23 +845,28 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
             ARRAY_AELEMS (newub)
               = TCputNthExprs (axis, ARRAY_AELEMS (newub), DUPdoDupNode (ilba));
             genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
-                                    DUPdoDupTree (width));
+                                    NULL);
             clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
             newpart = TBmakePart (clone, DUPdoDupTree (withid), genn);
             partz = TCappendPart (partz, newpart);
         }
 
-        /* All cases need partI */
-        newlb = DUPdoDupTree (lb);
-        newub = DUPdoDupTree (ub);
-        genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
-                                DUPdoDupTree (width));
-        clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
-        newpart = TBmakePart (clone, DUPdoDupTree (withid), genn);
-        partz = TCappendPart (partz, newpart);
+        /* All cases need partI or original node */
+        if ((CMPT_EQ == CMPTdoCompareTree (ilba, plba))
+            && (CMPT_EQ == CMPTdoCompareTree (iuba, puba))) {
+            partz = DUPdoDupTree (consumerWLpartn); /* No slicing along this axis */
+        } else {
+            newlb = DUPdoDupTree (lb);
+            newub = DUPdoDupTree (ub);
+            genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
+                                    NULL);
+            clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
+            newpart = TBmakePart (clone, DUPdoDupTree (withid), genn);
+            partz = TCappendPart (partz, newpart);
+        }
 
         /* Case alpha, beta need partC */
-        if (CMPT_EQ != CMPTdoCompareTree (iuba, puba)) {
+        if (CMPT_NEQ == CMPTdoCompareTree (iuba, puba)) {
             DBUG_PRINT ("CUBSL", ("Constructing partition C for %s",
                                   AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
             newlb = DUPdoDupTree (ub);
@@ -961,42 +917,35 @@ PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
 {
     node *newpartns;
     node *curpartn;
-    node *oldpartn;
-    node *newcode;
     node *p;
-    node *pnext;
     int axis;
     int axes;
 
     DBUG_ENTER ("PartitionSlicer");
 
+    DBUG_ASSERT (N_part == NODE_TYPE (arg_node), "Expected N_part");
+
+#ifdef DEADCODE
     /* We have to clone the N_code, or we wipe the arg_node. */
     newpartns = DUPdoDupNode (arg_node);
     CODE_DEC_USED (PART_CODE (newpartns)); /* newpartns is just a template */
-
-    newcode = DUPdoDupNode (PART_CODE (newpartns));
-    CODE_USED (newcode) = 1;
-    /* append new code block to N_code chain */
-    CODE_NEXT (newcode) = INFO_WITHCODE (arg_info);
-    INFO_WITHCODE (arg_info) = newcode;
-    PART_CODE (newpartns) = newcode;
+#endif                                     // DEADCODE
 
     axes = SHgetUnrLen (ARRAY_FRAMESHAPE (lb));
+
+    /* We start with one N_part, but each axis may add more N_parts. */
+    curpartn = DUPdoDupNode (arg_node);
 
     for (axis = 0; axis < axes; axis++) {
         DBUG_PRINT ("CUBSL", ("Slicing partition %s on axis %d",
                               AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), axis));
-        oldpartn = newpartns;
-        curpartn = newpartns;
         newpartns = NULL;
         while (NULL != curpartn) {
-            pnext = PART_NEXT (curpartn);
-            PART_NEXT (curpartn) = NULL;
             p = PartitionSlicerOneAxis (curpartn, lb, ub, axis, arg_info);
             newpartns = TCappendPart (newpartns, p);
-            curpartn = pnext;
+            curpartn = PART_NEXT (curpartn);
         }
-        oldpartn = FREEdoFreeTree (oldpartn);
+        curpartn = newpartns;
     }
 
     DBUG_RETURN (newpartns);
@@ -1149,12 +1098,12 @@ CUBSLpart (node *arg_node, info *arg_info)
 
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
-    if ((INTERSECT_sliceneeded == INFO_INTERSECTTYPE (arg_info))
-        && (NULL != INFO_INTERSECTBOUND1 (arg_info))
-        && (NULL != INFO_INTERSECTBOUND2 (arg_info))) {
+    if ((INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info))
+        && (NULL != INFO_WLPROJECTION1 (arg_info))
+        && (NULL != INFO_WLPROJECTION2 (arg_info))) {
 
-        newparts = PartitionSlicer (arg_node, arg_info, INFO_INTERSECTBOUND1 (arg_info),
-                                    INFO_INTERSECTBOUND2 (arg_info));
+        newparts = PartitionSlicer (arg_node, arg_info, INFO_WLPROJECTION1 (arg_info),
+                                    INFO_WLPROJECTION2 (arg_info));
 
         newparts = TCappendPart (newparts, PART_NEXT (arg_node));
         arg_node = FREEdoFreeNode (arg_node);
@@ -1232,6 +1181,8 @@ CUBSLprf (node *arg_node, info *arg_info)
          * due to it being copyWL, etc.
          * Or, it may have been sliced, so partition bounds differ from
          * what they were originally.
+         *
+         * Side effect of call is to set INFO_CONSUMERPART.
          */
         if (NULL != producerWL) {
             producerPart
