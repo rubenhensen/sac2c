@@ -48,14 +48,14 @@ SAC_COMMON_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
     int i;
 
     if (num_threads == 0) {
-        for (i = 1; i < argc; i++) {
+        for (i = 1; i < argc - 1; i++) {
             if ((argv[i][0] == '-') && (argv[i][1] == 'm') && (argv[i][2] == 't')
                 && (argv[i][3] == '\0')) {
                 SAC_MT_threads = atoi (argv[i + 1]);
                 break;
             }
         }
-        if (i == argc) { /* '-mt' option not found */
+        if (i == argc - 1) { /* '-mt' option not found */
             SAC_MT_threads = atoi (getenv (SAC_PARALLEL_ENV_VAR_NAME));
         }
         if ((SAC_MT_threads <= 0) || (SAC_MT_threads > max_threads)) {
