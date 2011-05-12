@@ -767,6 +767,24 @@ TClookupIds (const char *name, node *ids_chain)
     DBUG_RETURN (ids_chain);
 }
 
+int
+TClookupIdsNode (node *ids_chain, node *idsavis)
+{
+    int z;
+
+    DBUG_ENTER ("TClookupIdsNode");
+
+    z = 0;
+    while ((ids_chain != NULL) && (IDS_AVIS (ids_chain) != idsavis)) {
+        ids_chain = IDS_NEXT (ids_chain);
+        z++;
+    }
+
+    z = (NULL != ids_chain) ? z : -1;
+
+    DBUG_RETURN (z);
+}
+
 /******************************************************************************
  *
  * Function:
@@ -2208,9 +2226,10 @@ TCgetNthExprs (int n, node *exprs)
 
     DBUG_ENTER ("TCgetNthExprs");
 
+    DBUG_ASSERT (n >= 0, "n<0");
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
-            break;
+            DBUG_ASSERT (FALSE, "n > N_exprs chain length.");
         }
 
         exprs = EXPRS_NEXT (exprs);
@@ -2240,6 +2259,8 @@ TCputNthExprs (int n, node *oldexprs, node *val)
     DBUG_ENTER ("TCputNthExprs");
 
     exprs = oldexprs;
+    DBUG_ASSERT (n >= 0, "n<0");
+
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
             DBUG_ASSERT (FALSE, "n > N_exprs chain length.");

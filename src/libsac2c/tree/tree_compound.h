@@ -123,14 +123,16 @@ extern node *TClastIds (node *ids);
  *
  * function:
  *   node *LookupIds(char *name, node *ids_chain)
+ *   node *LookupIdsNode( node *ids_chain, node *ids)
  *
  * description:
- *   This function searches for a given identifier name within an ids-chain
+ *   These functions search for a given identifier name within an ids-chain
  *   of identifiers and returns the ids-structure if found or NULL otherwise.
  *
  ******************************************************************************/
 
 extern node *TClookupIds (const char *name, node *ids_chain);
+extern int TClookupIdsNode (node *ids_chain, node *idsavis);
 
 extern node *TCgetNthIds (int n, node *ids_chain);
 
