@@ -35,6 +35,8 @@
 #undef SAC_DO_MULTITHREAD
 #undef SAC_DO_THREADS_STATIC
 
+#define SAC_PARALLEL_ENV_VAR_NAME "SAC_PARALLEL"
+
 unsigned int SAC_MT_threads;
 volatile unsigned int SAC_MT_not_yet_parallel = 1;
 pthread_key_t SAC_MT_threadid_key;
@@ -46,18 +48,22 @@ SAC_COMMON_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
     int i;
 
     if (num_threads == 0) {
-        for (i = 1; i < argc - 1; i++) {
+        for (i = 1; i < argc; i++) {
             if ((argv[i][0] == '-') && (argv[i][1] == 'm') && (argv[i][2] == 't')
                 && (argv[i][3] == '\0')) {
                 SAC_MT_threads = atoi (argv[i + 1]);
                 break;
             }
         }
+        if (i == argc) { /* '-mt' option not found */
+            SAC_MT_threads = atoi (getenv (SAC_PARALLEL_ENV_VAR_NAME));
+        }
         if ((SAC_MT_threads <= 0) || (SAC_MT_threads > max_threads)) {
             SAC_RuntimeError ("Number of threads is unspecified or exceeds legal"
                               " range (1 to %d).\n"
-                              "    Use option '-mt <num>'.",
-                              max_threads);
+                              "    Use the '%s' environment variable or the option"
+                              " -mt <num>' (which override the environment variable).",
+                              max_threads, SAC_PARALLEL_ENV_VAR_NAME);
         }
     } else {
         SAC_MT_threads = num_threads;
