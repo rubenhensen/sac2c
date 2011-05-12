@@ -15,6 +15,7 @@
  *
  *****************************************************************************/
 #define SAC_BACKEND MUTC
+#define SAC_DO_COMPILE_MODULE 1
 #include <sac.h>
 
 #undef SAC_MUTC_DEBUG_RC
