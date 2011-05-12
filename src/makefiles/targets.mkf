@@ -280,7 +280,7 @@ runtime_mt_omp_h       := mt_omp
 
 runtime_mutc_h         := mutc mutc_world \
                           mutc_gen mutc_tostring \
-                          mutc_unin mutc_startup mutc_rc mutc_rc_gen
+                          mutc_startup mutc_rc mutc_rc_gen
 
 runtime_cuda_h         := cuda cuda_gen
 

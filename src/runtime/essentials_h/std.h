@@ -1383,7 +1383,7 @@ typedef intptr_t *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_TR_REF_PRINT (                                                               \
           ("ND_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))                \
-        if ((SAC_ND_A_RC (var_NT) -= rc) == 0) {                                         \
+        if ((SAC_ND_A_RC__C99 (var_NT) -= rc) == 0) {                                    \
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
             SAC_ND_FREE (var_NT, freefun)                                                \
         } else {                                                                         \

@@ -55,7 +55,6 @@ void *tls_malloc (size_t arg1);
 
 #define SAC_MUTC_STARTUP                                                                 \
     SAC_MUTC_STARTUP_ANON ()                                                             \
-    SAC_MUTC_UNIN                                                                        \
     SAC_MUTC_TOSTRING                                                                    \
     SAC_MUTC_SAC_SVP_IO_PUTN
 
