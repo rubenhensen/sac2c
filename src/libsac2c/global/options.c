@@ -191,9 +191,6 @@ OPTcheckOptionConsistency (void)
         if (global.mutc_force_spawn_flags != NULL) {
             CTIerror ("-mutc_force_spawn_flags needs mutc backend");
         }
-        if (global.mutc_disable_concurrent_rc == TRUE) {
-            CTIerror ("-mutc_disable_concurrent_rc only works with mutc backend");
-        }
         if (global.mutc_suballoc_desc_one_level_up == TRUE) {
             CTIerror ("-mutc_suballoc_desc_one_level_up only works with mutc backend");
         }
@@ -324,6 +321,24 @@ OPTcheckOptionConsistency (void)
                  "but multithreading not activated. "
                  "Compiling in sequential mode");
         global.num_threads = 1;
+    }
+
+    /* rc_method checks */
+    if (global.rc_method == -1) {
+        if (global.backend == BE_mutc) {
+            global.rc_method = 2;
+        } else {
+            global.rc_method = 0;
+        }
+    }
+
+    if ((global.rc_method < 0) || (global.rc_method > 2)) {
+        CTIerror ("Unknown reference counting mode");
+    }
+
+    if ((global.rc_method == 2) && global.backend != BE_mutc) {
+        CTIerror ("Multimodal reference counting not supported with the selected"
+                  " backend");
     }
 
     DBUG_VOID_RETURN;
@@ -664,7 +679,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /* mutc options */
     ARGS_FLAG ("mutc_benchmark", global.mutc_benchmark = TRUE);
     ARGS_FLAG ("mutc_disable_thread_mem", global.mutc_disable_thread_mem = TRUE);
-    ARGS_FLAG ("mutc_disable_concurrent_rc", global.mutc_disable_concurrent_rc = TRUE);
 
     ARGS_OPTION ("mutc_distribute_arg", ARG_NUM (global.mutc_distribution_mode_arg));
 
@@ -775,6 +789,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
      */
 
+    ARGS_OPTION ("rc_method", ARG_NUM (global.rc_method));
     /* -- Runtime Specialization -- */
 
     /* Specialization has to be turned of otherwise the compiler will pick the

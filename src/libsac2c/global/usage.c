@@ -514,7 +514,6 @@ PrintMutcOptions (void)
       "    -mutc_thread_mem                 Use thread local memory every where not\n"
       "                                     global memory\n\n"
       "    -mutc_disable_thread_mem         Disable creation of thread local memory\n"
-      "    -mutc_disable_concurrent_rc      Disable the use of concurrent rc\n\n"
       "    -mutc_benchmark                  Enable mutc benchmarking support\n\n"
       "    -mutc_static_resource_management Staticly manage resources\n\n"
       "    -mutc_force_block_size <n>       Force the block size to <n> for all\n"
@@ -1003,8 +1002,12 @@ PrintCustomisationOptions (void)
       "\n"
       "                      c99       default backend to produce C99 code\n"
       "                      mutc      backend to produce muTC code\n"
-      "                      cuda      backend to produce Cuda code\n");
-
+      "                      cuda      backend to produce Cuda code\n"
+      "\n"
+      "    -rc_method <n>  Change the reference counting mode\n"
+      "                      0         Traditional reference counting\n"
+      "                      1         No reference counting\n"
+      "                      2         Multimodal reference counting\n");
     DBUG_VOID_RETURN;
 }
 

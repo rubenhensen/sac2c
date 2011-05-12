@@ -1044,7 +1044,7 @@ GLOBAL (configuration_t, config, config_init)
  */
 
 GLOBAL (stringset_t *, dependencies, NULL)
-
+GLOBAL (int, rc_method, -1)
 /*
  * MUTC backend options
  */
@@ -1052,7 +1052,6 @@ GLOBAL (stringset_t *, dependencies, NULL)
 GLOBAL (bool, mutc_fun_as_threads, FALSE)
 GLOBAL (bool, mutc_thread_mem, FALSE)
 GLOBAL (bool, mutc_disable_thread_mem, FALSE)
-GLOBAL (bool, mutc_disable_concurrent_rc, FALSE)
 GLOBAL (bool, mutc_benchmark, FALSE)
 GLOBAL (bool, mutc_suballoc_desc_one_level_up, FALSE)
 GLOBAL (bool, mutc_static_resource_management, FALSE)

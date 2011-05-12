@@ -302,16 +302,6 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_ND_A_FIELD__BOXED(var_NT) *SAC_ND_A_FIELD (var_NT)
 
 /*
- * SAC_ND_A_RC implementations (referenced by sac_std_gen.h)
- */
-
-#define SAC_ND_A_RC__UNDEF(var_NT) SAC_ICM_UNDEF ()
-
-#define SAC_ND_A_RC__DEFAULT(var_NT) SAC_ND_A_RC__C99 (var_NT)
-
-#define SAC_ND_A_RC__C99(var_NT) DESC_RC (SAC_ND_A_DESC (var_NT))
-
-/*
  * SAC_ND_A_DIM implementations (referenced by sac_std_gen.h)
  */
 
@@ -1332,9 +1322,6 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_SET__RC__NOOP(var_NT, rc) SAC_NOOP ()
 
-/* Overloaded by MUTC */
-#define SAC_ND_SET__RC__DEFAULT(var_NT, rc) SAC_ND_SET__RC__C99 (var_NT, rc)
-
 #define SAC_ND_SET__RC__C99(var_NT, rc)                                                  \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_SET__RC( %s, %d)", NT_STR (var_NT), rc))                  \
@@ -1363,9 +1350,6 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_INC_RC__NOOP(var_NT, rc) SAC_NOOP ()
 
-/* Overloaded by MUTC */
-#define SAC_ND_INC_RC__DEFAULT(var_NT, rc) SAC_ND_INC_RC__C99 (var_NT, rc)
-
 #define SAC_ND_INC_RC__C99(var_NT, rc)                                                   \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_INC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
@@ -1378,9 +1362,6 @@ typedef intptr_t *SAC_array_descriptor_t;
  */
 
 #define SAC_ND_DEC_RC__NOOP(var_NT, rc) SAC_NOOP ()
-
-/* Overloaded by MUTC */
-#define SAC_ND_DEC_RC__DEFAULT(var_NT, rc) SAC_ND_DEC_RC__C99 (var_NT, rc)
 
 #define SAC_ND_DEC_RC__C99(var_NT, rc)                                                   \
     {                                                                                    \
@@ -1398,21 +1379,50 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_DEC_RC_FREE__NOOP(var_NT, rc, freefun) SAC_NOOP ()
 
-/* Overloaded by MUTC */
-#define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \
-    SAC_ND_DEC_RC_FREE__C99 (var_NT, rc, freefun)
-
 #define SAC_ND_DEC_RC_FREE__C99(var_NT, rc, freefun)                                     \
     {                                                                                    \
         SAC_TR_REF_PRINT (                                                               \
           ("ND_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))                \
-        if ((SAC_ND_A_RC__C99 (var_NT) -= rc) == 0) {                                    \
+        if ((SAC_ND_A_RC (var_NT) -= rc) == 0) {                                         \
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
             SAC_ND_FREE (var_NT, freefun)                                                \
         } else {                                                                         \
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
         }                                                                                \
     }
+
+/*
+ * SAC_ND_A_RC implementations (referenced by sac_std_gen.h)
+ */
+
+#define SAC_ND_A_RC__UNDEF(var_NT) SAC_ICM_UNDEF ()
+
+#define SAC_ND_A_RC__C99(var_NT) DESC_RC (SAC_ND_A_DESC (var_NT))
+
+#if SAC_RC_METHOD == 0
+/* Default mode */
+
+#define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \
+    SAC_ND_DEC_RC_FREE__C99 (var_NT, rc, freefun)
+
+#define SAC_ND_SET__RC__DEFAULT(var_NT, rc) SAC_ND_SET__RC__C99 (var_NT, rc)
+
+#define SAC_ND_DEC_RC__DEFAULT(var_NT, rc) SAC_ND_DEC_RC__C99 (var_NT, rc)
+
+#define SAC_ND_INC_RC__DEFAULT(var_NT, rc) SAC_ND_INC_RC__C99 (var_NT, rc)
+
+#define SAC_ND_A_RC__DEFAULT(var_NT) SAC_ND_A_RC__C99 (var_NT)
+#endif
+
+#if SAC_RC_METHOD == 1
+/* No rc */
+
+#define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)
+#define SAC_ND_SET__RC__DEFAULT(var_NT, rc)
+#define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)
+#define SAC_ND_INC_RC__DEFAULT(var_NT, rc)
+#define SAC_ND_A_RC__DEFAULT(var_NT) INT_MAX
+#endif
 
 /******************************************************************************
  *

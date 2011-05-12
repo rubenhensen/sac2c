@@ -16,11 +16,9 @@
  *
  ******************************************************************************/
 
-#if !SAC_MUTC_DISABLE_CONCURRENT_RC
-
 #define MUTC 1
 #if SAC_BACKEND == MUTC
-
+#if SAC_RC_METHOD == 2
 #include <limits.h>
 
 #define SAC_SL_DETACH() sl_detach ()
@@ -83,7 +81,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 /*
  * SAC_ND_SET__RC implementations (referenced by sac_std_gen.h)
  */
-#undef SAC_ND_SET__RC__DEFAULT
 #define SAC_ND_SET__RC__DEFAULT(var_NT, rc)                                              \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
@@ -119,7 +116,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 /*
  * SAC_ND_INC_RC implementations (referenced by sac_std_gen.h)
  */
-#undef SAC_ND_INC_RC__DEFAULT
 #define SAC_ND_INC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
@@ -154,7 +150,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 /*
  * SAC_ND_DEC_RC implementations (referenced by sac_std_gen.h)
  */
-#undef SAC_ND_DEC_RC__DEFAULT
 #if SAC_MUTC_RC_ASM
 #define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
@@ -287,7 +282,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 /*
  * SAC_ND_DEC_RC_FREE implementations (referenced by sac_std_gen.h)
  */
-#undef SAC_ND_DEC_RC_FREE__DEFAULT
 #define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
@@ -335,7 +329,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         SAC_SL_DETACH ();                                                                \
     }
 
-#undef SAC_ND_A_RC__DEFAULT
 #define SAC_ND_A_RC__DEFAULT(var_NT)                                                     \
     ({                                                                                   \
         int rc;                                                                          \
@@ -443,8 +436,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
     SAC_ND_A_RC_T_MODE (rc) = SAC_ND_A_DESC_RC_MODE (array);                             \
     SAC_ND_A_DESC_RC_MODE (array) = SAC_DESC_RC_MODE_NORC;
 
-#define SAC_ND_PRF_2NORC__NOOP(rc, array)
-
 /*
  * Need to do the inc in sync not detached as the queue must be
  * flushed before the spawn else order maybe lost.
@@ -482,10 +473,18 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         }                                                                                \
     }
 
+#else /* SAC_RC_MODE */
+
+#define SAC_ND_PRF_RESTORERC__DO(array, rc) SAC_ND_PRF_RESTORERC__NOOP (array, rc)
+#define SAC_ND_PRF_2NORC__DO(rc, array) SAC_ND_PRF_2NORC__NOOP (rc, array)
+#define SAC_ND_PRF_2ASYNC__DO(new, array) SAC_ND_PRF_2ASYNC__NOOP (new, array)
+
+#endif /* SAC_RC_MODE */
+
+#define SAC_ND_PRF_RESTORERC__NOOP(array, rc)
+#define SAC_ND_PRF_2NORC__NOOP(rc, array)
 #define SAC_ND_PRF_2ASYNC__NOOP(new, array)                                              \
     SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));
 
 #endif /* SAC_BACKEND */
 #undef MUTC
-
-#endif
