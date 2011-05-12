@@ -46,17 +46,21 @@ SAC_COMMON_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                             unsigned int max_threads)
 {
     int i;
+    bool mt_option_exists = FALSE;
+    char *sac_parallel = NULL;
 
     if (num_threads == 0) {
         for (i = 1; i < argc - 1; i++) {
             if ((argv[i][0] == '-') && (argv[i][1] == 'm') && (argv[i][2] == 't')
                 && (argv[i][3] == '\0')) {
                 SAC_MT_threads = atoi (argv[i + 1]);
+                mt_option_exists = TRUE;
                 break;
             }
         }
-        if (i == argc - 1) { /* '-mt' option not found */
-            SAC_MT_threads = atoi (getenv (SAC_PARALLEL_ENV_VAR_NAME));
+        if (!mt_option_exists) {
+            sac_parallel = getenv (SAC_PARALLEL_ENV_VAR_NAME);
+            SAC_MT_threads = (sac_parallel != NULL) ? atoi (sac_parallel) : 0;
         }
         if ((SAC_MT_threads <= 0) || (SAC_MT_threads > max_threads)) {
             SAC_RuntimeError ("Number of threads is unspecified or exceeds legal"
