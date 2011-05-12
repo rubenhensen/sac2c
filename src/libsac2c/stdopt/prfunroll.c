@@ -715,7 +715,7 @@ MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node 
                                                       TBmakeId (argavis2))),
                           INFO_PREASSIGN (arg_info));
         AVIS_SSAASSIGN (resavis) = INFO_PREASSIGN (arg_info);
-        if (NULL != IDS_NEXT (ids)) { /* val_lt_shape_VxA only */
+        if (NULL != IDS_NEXT (ids)) { /* guards only */
             AVIS_SSAASSIGN (IDS_AVIS (IDS_NEXT (ids))) = INFO_PREASSIGN (arg_info);
         }
         break;
@@ -730,7 +730,7 @@ MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node 
                                                       TBmakeId (argavis1))),
                           INFO_PREASSIGN (arg_info));
         AVIS_SSAASSIGN (resavis) = INFO_PREASSIGN (arg_info);
-        if (NULL != IDS_NEXT (ids)) { /* F_non_neg_val only */
+        if (NULL != IDS_NEXT (ids)) { /* guards only */
             AVIS_SSAASSIGN (IDS_AVIS (IDS_NEXT (ids))) = INFO_PREASSIGN (arg_info);
         }
         break;
