@@ -332,11 +332,12 @@ OPTcheckOptionConsistency (void)
         }
     }
 
-    if ((global.rc_method < 0) || (global.rc_method > 2)) {
+    if ((global.rc_method < 0) || (global.rc_method > 3)) {
         CTIerror ("Unknown reference counting mode");
     }
 
-    if ((global.rc_method == 2) && global.backend != BE_mutc) {
+    if (((global.rc_method == 2) || (global.rc_method == 3))
+        && global.backend != BE_mutc) {
         CTIerror ("Multimodal reference counting not supported with the selected"
                   " backend");
     }

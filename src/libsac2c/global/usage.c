@@ -1007,7 +1007,9 @@ PrintCustomisationOptions (void)
       "    -rc_method <n>  Change the reference counting mode\n"
       "                      0         Traditional reference counting\n"
       "                      1         No reference counting\n"
-      "                      2         Multimodal reference counting\n");
+      "                      2         Multimodal reference counting\n"
+      "                      3         Asynchronous reference counting\n"
+      "\n");
     DBUG_VOID_RETURN;
 }
 
