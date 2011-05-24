@@ -2370,7 +2370,10 @@ DUPpart (node *arg_node, info *arg_info)
 
     PART_FLAGSTRUCTURE (new_node) = PART_FLAGSTRUCTURE (arg_node);
 
-    PART_THREADBLOCKSHAPE (new_node) = PART_THREADBLOCKSHAPE (arg_node);
+    if (PART_THREADBLOCKSHAPE (arg_node) != NULL) {
+        PART_THREADBLOCKSHAPE (new_node)
+          = DUParray (PART_THREADBLOCKSHAPE (arg_node), arg_info);
+    }
 
     CopyCommonNodeData (new_node, arg_node);
 

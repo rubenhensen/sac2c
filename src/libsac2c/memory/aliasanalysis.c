@@ -430,7 +430,10 @@ EMAAfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMAAfold");
 
-    DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (INFO_LHS (arg_info)));
+    if (!FOLD_ISPARTIALFOLD (arg_node)) {
+        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (INFO_LHS (arg_info)));
+    }
+
     DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (FOLD_NEUTRAL (arg_node)));
 
     if (FOLD_NEXT (arg_node) != NULL) {

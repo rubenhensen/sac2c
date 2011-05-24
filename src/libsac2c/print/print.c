@@ -1888,7 +1888,8 @@ PRTfundef (node *arg_node, info *arg_info)
          */
 
         if (global.backend == BE_cuda && FUNDEF_NS (arg_node) != NULL
-            && STReq (NSgetModule (FUNDEF_NS (arg_node)), "Math")) {
+            && (STReq (NSgetModule (FUNDEF_NS (arg_node)), "Math")
+                || STReq (FUNDEF_NAME (arg_node), "srandom"))) {
             /* If the function is a math function, we do not print
              * it's declaration as CUDA has already provided that. */
         } else {
@@ -4805,6 +4806,11 @@ PRTfold (node *arg_node, info *arg_info)
         FOLD_INITIAL (arg_node) = TRAVdo (FOLD_INITIAL (arg_node), arg_info);
     }
 
+    if (FOLD_PARTIALMEM (arg_node) != NULL) {
+        fprintf (global.outfile, ", ");
+        TRAVdo (FOLD_PARTIALMEM (arg_node), arg_info);
+    }
+
     fprintf (global.outfile, ")");
 
     if (FOLD_GUARD (arg_node) != NULL) {
@@ -4818,6 +4824,10 @@ PRTfold (node *arg_node, info *arg_info)
          * continue with other withops
          */
         PRINT_CONT (TRAVdo (FOLD_NEXT (arg_node), arg_info), ;);
+    }
+
+    if (FOLD_ISPARTIALFOLD (arg_node)) {
+        fprintf (global.outfile, " /* CUDA partial fold */");
     }
 
     DBUG_RETURN (arg_node);

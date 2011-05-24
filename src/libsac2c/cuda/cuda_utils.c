@@ -100,6 +100,29 @@ CUd2shSimpleTypeConversion (simpletype sty)
     DBUG_RETURN (res);
 }
 
+simpletype
+CUh2shSimpleTypeConversion (simpletype sty)
+{
+    simpletype res = T_unknown;
+
+    DBUG_ENTER ("CUd2shSimpleTypeConversion");
+
+    switch (sty) {
+    case T_int:
+        res = T_int_shmem;
+        break;
+    case T_float:
+        res = T_float_shmem;
+        break;
+    case T_double:
+        res = T_double_shmem;
+        break;
+    default:
+        DBUG_ASSERT ((0), "Simple type conversion found undefined host simple type!");
+    }
+    DBUG_RETURN (res);
+}
+
 bool
 CUisDeviceTypeNew (ntype *ty)
 {

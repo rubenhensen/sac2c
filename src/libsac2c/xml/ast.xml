@@ -187,6 +187,21 @@
           <node name="With2" />
         </travnone>
       </traversal>
+      <traversal id="PFD" name="CUDA Partial folding" default="sons" include="partial_fold.h" >
+        <travuser>
+          <node name="With" />
+          <node name="Withid" />
+          <node name="Part" />
+          <node name="Generator" />
+          <node name="Fold" />
+          <node name="Let" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Code" />
+          <node name="Prf" />
+          <node name="Module" />
+        </travuser>
+      </traversal>
       <traversal id="SHMEM" name="CUDA Exploiting data reuse with shared memory" default="sons" include="shared_memory_reuse.h" >
         <travuser>
           <node name="Fundef" />
@@ -9616,6 +9631,16 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="PartialMem" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Id" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
       </sons>
       <attributes>
         <attribute name="Fundef" inconstructor="yes">
@@ -9645,7 +9670,13 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsPartialFold" >
+          <description>
+            Flag to indicate if the fold performs a partial CUDA fold.
+          </description>
+        </flag>
+      </flags>
     </node>
 <!--
 

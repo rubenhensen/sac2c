@@ -443,9 +443,12 @@ IWLMEMap (node *arg_node, info *arg_info)
 
                 /* If the avis has NOT been come across before */
                 if (avis == id_avis) {
+                    printf ("fundef %s, id %s\n", FUNDEF_NAME (AP_FUNDEF (arg_node)),
+                            AVIS_NAME (avis));
                     /* If the id is NOT the one we don't want to create data transfer for
                      */
                     if (LUTsearchInLutPp (INFO_NOTRAN (arg_info), id_avis) == id_avis) {
+                        printf ("There will be transfer for %s\n", AVIS_NAME (id_avis));
                         dev_type = TypeConvert (AVIS_TYPE (id_avis), N_id, arg_info);
 
                         if( dev_type != NULL /* &&
@@ -464,6 +467,8 @@ IWLMEMap (node *arg_node, info *arg_info)
                             AVIS_DECL (dup_avis) = fundef_args;
                         }
                     } else {
+                        printf ("There will NOT be transfer for %s\n",
+                                AVIS_NAME (id_avis));
                         /* If the N_id is the one we don't want to create host2device for,
                          * propogate that information to the traversal of LAC functions */
                         INFO_NOTRAN (arg_info)
@@ -490,9 +495,18 @@ IWLMEMap (node *arg_node, info *arg_info)
                     AVIS_DECL (dup_avis) = fundef_args;
                 }
 
+                /* make sure the based type of the ap id and the fundef arg is the same */
+                if (TYgetSimpleType (TYgetScalar (ID_NTYPE (EXPRS_EXPR (ap_args))))
+                    != TYgetSimpleType (
+                         TYgetScalar (AVIS_TYPE (ARG_AVIS (fundef_args))))) {
+                    TYsetSimpleType (TYgetScalar (AVIS_TYPE (ARG_AVIS (fundef_args))),
+                                     TYgetSimpleType (
+                                       TYgetScalar (ID_NTYPE (EXPRS_EXPR (ap_args)))));
+                }
+
                 ap_args = EXPRS_NEXT (ap_args);
                 fundef_args = ARG_NEXT (fundef_args);
-            }
+            } // wnd of while loop
 
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
         }
@@ -630,7 +644,7 @@ IWLMEMfuncond (node *arg_node, info *arg_info)
                     IDS_NAME (ids) = MEMfree (IDS_NAME (ids));
                     IDS_NAME (ids) = TRAVtmpVarName ("dev");
                 } else {
-                    /* .... TODO ... */
+                    // .... TODO ...
                     DBUG_ASSERT ((0), "Found arrays of unequal types while not one host "
                                       "type and one device type!");
                 }
@@ -861,7 +875,12 @@ IWLMEMids (node *arg_node, info *arg_info)
             INFO_NOTRAN (arg_info)
               = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), ids_avis, TBmakeEmpty ());
 
+            /* If the ids is cuda local, we change its base type
+             * from host to device */
             AVIS_ISCUDALOCAL (IDS_AVIS (arg_node)) = TRUE;
+            TYsetSimpleType (TYgetScalar (ids_type),
+                             CUh2dSimpleTypeConversion (
+                               TYgetSimpleType (TYgetScalar (ids_type))));
         }
     } else {
         if (INFO_CREATE_D2H (arg_info)) {

@@ -237,13 +237,13 @@ ACUWLfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ("ACUWLfundef");
 
     /* During the main traversal, we only look at non-lac functions */
-    if (!FUNDEF_ISLACFUN (arg_node)) {
-        /* Need to find out why the function must not be sticky */
-        // if ( !FUNDEF_ISSTICKY( arg_node)) {
+    if (!FUNDEF_ISLACFUN (arg_node) && !FUNDEF_ISSTICKY (arg_node)) {
+        /* Functions in prelude are all sticky and we do not want
+         * cudarize withloops in those functions */
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
-        //}
+
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
     /* If the fundef is lac function, we check whether the traversal
@@ -300,10 +300,20 @@ ACUWLwith (node *arg_node, info *arg_info)
 
     ty = IDS_NTYPE (INFO_LETIDS (arg_info));
 
-    INFO_CUDARIZABLE (arg_info) = TRUE;
+    /* The following assignment cauese a bug when a fold wl is inside
+     * a fold wl. Usually, in such a case, the outer fold wl should not
+     * be cudarized and this is indicated when tranvering the withop.
+     * however, before we set this flag to the outer wl, we traverse
+     * the body first. And when the inner fold wl is traversed, it will
+     * set INFO)CUDARIZABLE to true here. Essentially, this overwrites
+     * the flag value set previously. So we need to move the following
+     * statment into the "if" branch. */
+    // INFO_CUDARIZABLE( arg_info) = TRUE;
 
     /* If the N_with is a top level withloop */
     if (!INFO_INWL (arg_info)) {
+        INFO_CUDARIZABLE (arg_info) = TRUE;
+
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
         INFO_INWL (arg_info) = TRUE;
@@ -311,8 +321,17 @@ ACUWLwith (node *arg_node, info *arg_info)
         INFO_INWL (arg_info) = FALSE;
 
         /* We only cudarize AKS N_with */
-        WITH_CUDARIZABLE (arg_node)
-          = (TYisAKS (ty) || TYisAKD (ty)) && INFO_CUDARIZABLE (arg_info);
+        if (NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold) {
+            /* For fold withloop to be cudarized, it *must* be AKS */
+            WITH_CUDARIZABLE (arg_node) = TYisAKS (ty) && INFO_CUDARIZABLE (arg_info);
+
+            if (WITH_CUDARIZABLE (arg_node)) {
+                FOLD_ISPARTIALFOLD (WITH_WITHOP (arg_node)) = TRUE;
+            }
+        } else {
+            WITH_CUDARIZABLE (arg_node)
+              = (TYisAKS (ty) || TYisAKD (ty)) && INFO_CUDARIZABLE (arg_info);
+        }
 
         if (WITH_CUDARIZABLE (arg_node)) {
             anontrav_t atrav[2] = {{N_part, &ATravPart}, {0, NULL}};
@@ -352,11 +371,18 @@ ACUWLfold (node *arg_node, info *arg_info)
     /* An outermost fold N_with is currently not cudarizable;
      * however, if the fold is within an N_with, we do not signal
      * uncudarizeable to the enclosing N_with. */
-    if (!INFO_INWL (arg_info)) {
-        if (!global.optimize.doscuf) {
-            INFO_CUDARIZABLE (arg_info) = FALSE;
+    /*
+      if( !INFO_INWL( arg_info)) {
+        if(!global.optimize.doscuf) {
+          INFO_CUDARIZABLE( arg_info) = FALSE;
         }
-    }
+      }
+    */
+
+    /* We have commented out the code above to experiemnt
+     * with cudarizing fold withloop */
+    FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
+    FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

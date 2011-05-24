@@ -543,7 +543,6 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
          *       cases.
          */
         if (NODE_TYPE (withops) == N_genarray) {
-
             if (als->dim == NULL) {
                 if (TUdimKnown (AVIS_TYPE (cexavis))) {
                     dim = TYgetDim (AVIS_TYPE (cexavis));
@@ -1746,6 +1745,8 @@ EMALprf (node *arg_node, info *arg_info)
     case F_cuda_threadIdx_x:
     case F_cuda_threadIdx_y:
     case F_cuda_threadIdx_z:
+    case F_cuda_blockIdx_x:
+    case F_cuda_blockIdx_y:
     case F_cuda_blockDim_x:
     case F_cuda_blockDim_y:
     case F_cuda_blockDim_z:
@@ -2399,6 +2400,7 @@ node *
 EMALfold (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
+    node *wlavis;
 
     DBUG_ENTER ("EMALfold");
 
@@ -2414,23 +2416,58 @@ EMALfold (node *arg_node, info *arg_info)
 
     FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
 
-    if (INFO_WITHOPMODE (arg_info) == EA_memname) {
-        /*
-         * Restore first element of alloclist as it is still needed in EMALcode
-         * to preserve correspondence between the result values and the withops
-         */
-        als->next = INFO_ALLOCLIST (arg_info);
-        INFO_ALLOCLIST (arg_info) = als;
-    } else {
-        DBUG_ASSERT (INFO_WITHOPMODE (arg_info) == EA_shape,
-                     "Unknown Withop traversal mode");
-        /*
-         * Ultimately, fold-wls allocate memory on their own and thus don't need
-         * further storage
-         */
-        als = FreeALS (als);
-    }
+    if (FOLD_ISPARTIALFOLD (arg_node)) {
+        if (INFO_WITHOPMODE (arg_info) == EA_memname) {
+            /*
+             * Create new identifier for new memory
+             */
+            wlavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (als->avis)),
+                                 TYeliminateAKV (AVIS_TYPE (als->avis)));
 
+            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (wlavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
+            als->avis = wlavis;
+
+            /*
+             * Annotate which memory is to be used
+             */
+            FOLD_PARTIALMEM (arg_node) = TBmakeId (wlavis);
+
+            /*
+             * Restore first element of alloclist as it is needed in EMALcode
+             * to preserve correspondence between the result values and the withops
+             */
+            als->next = INFO_ALLOCLIST (arg_info);
+            INFO_ALLOCLIST (arg_info) = als;
+        } else {
+            DBUG_ASSERT (INFO_WITHOPMODE (arg_info) == EA_shape,
+                         "Unknown Withop traversal mode");
+
+            als->dim = TBmakeNum (TYgetDim (AVIS_TYPE (als->avis)));
+            als->shape = SHshape2Array (TYgetShape (AVIS_TYPE (als->avis)));
+
+            als->next = INFO_ALLOCLIST (arg_info);
+            INFO_ALLOCLIST (arg_info) = als;
+        }
+    } else {
+        if (INFO_WITHOPMODE (arg_info) == EA_memname) {
+            /*
+             * Restore first element of alloclist as it is still needed in EMALcode
+             * to preserve correspondence between the result values and the withops
+             */
+            als->next = INFO_ALLOCLIST (arg_info);
+            INFO_ALLOCLIST (arg_info) = als;
+        } else {
+            DBUG_ASSERT (INFO_WITHOPMODE (arg_info) == EA_shape,
+                         "Unknown Withop traversal mode");
+            /*
+             * Ultimately, fold-wls allocate memory on their own and thus don't need
+             * further storage
+             */
+            als = FreeALS (als);
+        }
+    }
     DBUG_RETURN (arg_node);
 }
 

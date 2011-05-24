@@ -504,6 +504,12 @@ EMRCOfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("EMRCOfold");
 
+    if (FOLD_PARTIALMEM (arg_node) != NULL) {
+        INFO_FILLLUT (arg_info)
+          = LUTinsertIntoLutP (INFO_FILLLUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
+                               ID_AVIS (FOLD_PARTIALMEM (arg_node)));
+    }
+
     if (FOLD_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
         FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);

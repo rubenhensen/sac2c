@@ -820,6 +820,8 @@ PHASE (cuda, "Automatic parallelisation for GPUs", global.backend == BE_cuda)
 SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
           global.backend == BE_cuda, cuda)
 
+SUBPHASE (pfd, "CUDA Partial folding", PFDdoPartialFold, global.backend == BE_cuda, cuda)
+
 SUBPHASE (scuf, "CUDA Split CUDA fold withloops", SCUFdoSplitCudaFold,
           global.backend == BE_cuda && global.optimize.doscuf, cuda)
 
