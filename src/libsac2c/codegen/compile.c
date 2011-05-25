@@ -7569,7 +7569,7 @@ COMPprfSyncthreads (node *arg_node, info *arg_info)
 node *
 COMPprfCond (node *arg_node, info *arg_info)
 {
-    node *ret_node;
+    node *ret_node = NULL;
 
     DBUG_ENTER ("COMPprfCond");
 
