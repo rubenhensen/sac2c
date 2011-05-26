@@ -280,52 +280,6 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 
-#ifdef DEADCODE
-
-/** <!--********************************************************************-->
- *
- * @fn node *IVEXIdoInsertIndexVectorExtrema( node *arg_node)
- *
- * @brief:
- *   Create two LUTs:
- *     LUTVARS holds information for renaming WITHID references
- *             to temp names within each WITH_CODE block.
- *     LUTCODES holds the old and new WITH_CODE block pointers,
- *             to let IVEXIpart correct the N_code pointers in
- *             each partition.
- *     Traverse subtree.
- *
- *****************************************************************************/
-node *
-IVEXIdoInsertIndexVectorExtrema (node *arg_node)
-{
-    info *arg_info;
-    DBUG_ENTER ("IVEXIdoIndexVectorExtremaInsertion");
-
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
-                 "IVEXIdoIndexVectorExtremaInsertion expected N_module");
-
-    arg_info = MakeInfo ();
-    INFO_LUTVARS (arg_info) = LUTgenerateLut ();
-    INFO_LUTCODES (arg_info) = LUTgenerateLut ();
-    INFO_ONEFUNDEF (arg_info) = FALSE;
-
-    DBUG_PRINT ("IVEXI", ("Starting index vector extrema insertion traversal."));
-
-    TRAVpush (TR_ivexi);
-    arg_node = TRAVdo (arg_node, arg_info);
-    TRAVpop ();
-
-    INFO_LUTVARS (arg_info) = LUTremoveLut (INFO_LUTVARS (arg_info));
-    INFO_LUTCODES (arg_info) = LUTremoveLut (INFO_LUTCODES (arg_info));
-
-    DBUG_PRINT ("IVEXI", ("Index vector extrema insertion complete."));
-
-    arg_info = FreeInfo (arg_info);
-    DBUG_RETURN (arg_node);
-}
-#endif // DEADCODE
-
 node *
 IVEXIdoInsertIndexVectorExtrema (node *arg_node)
 {
@@ -416,40 +370,8 @@ static node *
 generateAvisWithids (node *withids, info *arg_info, int idx)
 {
     node *zavis;
-#ifdef DEAD
-    node *zass;
-    node *exprs = NULL;
-    node *avis;
-    int i;
-#endif // DEAD
 
     DBUG_ENTER ("generateAvisWithids");
-#ifdef DEAD
-
-    if (1 == n) {
-        zavis = IDS_AVIS (WITHID_VEC (withids));
-    } else {
-        /* Create z = [ i,j, k...]k]; */
-        zavis = TBmakeAvis (TRAVtmpVar (),
-                            TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, n)));
-        INFO_VARDECS (arg_info) = TBmakeVardec (zavis, INFO_VARDECS (arg_info));
-
-        for (i = 0; i < n; i++) {
-            avis = TCgetNthIds (idx + i, WITHID_IDS (withids));
-            exprs = TCappendExprs (TBmakeExprs (TBmakeId (avis), NULL), exprs);
-        }
-
-        zass = TBmakeAssign (TBmakeLet (TBmakeIds (zavis, NULL),
-                                        TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int),
-                                                                SHcreateShape (0)),
-                                                     SHcreateShape (1, n), exprs)),
-                             NULL);
-        INFO_PREASSIGNSPART (arg_info)
-          = TCappendAssign (INFO_PREASSIGNSPART (arg_info), zass);
-        AVIS_SSAASSIGN (zavis) = zass;
-    }
-
-#endif // DEAD
     zavis = TCgetNthIds (idx, WITHID_IDS (withids));
     DBUG_RETURN (zavis);
 }
@@ -510,7 +432,7 @@ isSameTypeShape (node *ida, node *idb)
  *
  *           int[.] iv';
  *
- *      The AVIS_WITHIDS of the result is AVIS_WITHIS( ivavisi), unless
+ *      The AVIS_WITHIDS of the result is AVIS_WITHIDS( ivavisi), unless
  *      ivavis is a WITHID_VEC or WITHID_IDS, in which case it
  *      is ivavis itself.
  *
@@ -625,8 +547,8 @@ generateSelect (node *arg_node, info *arg_info, int k)
                                                     SHcreateShape (1, 1),
                                                     TBmakeExprs (TBmakeNum (k), NULL))),
                       NULL);
-    INFO_PREASSIGNSPART (arg_info)
-      = TCappendAssign (INFO_PREASSIGNSPART (arg_info), kass);
+    INFO_PREASSIGNSWITH (arg_info)
+      = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), kass);
     AVIS_SSAASSIGN (kavis) = kass;
 
     DBUG_PRINT ("IVEXI", ("generateSelect flattened k: %s for: %s", AVIS_NAME (kavis),
@@ -642,8 +564,8 @@ generateSelect (node *arg_node, info *arg_info, int k)
       = TBmakeAssign (TBmakeLet (zids, TCmakePrf2 (F_sel_VxA, kid, TBmakeId (arg_node))),
                       NULL);
 
-    INFO_PREASSIGNSPART (arg_info)
-      = TCappendAssign (INFO_PREASSIGNSPART (arg_info), zass);
+    INFO_PREASSIGNSWITH (arg_info)
+      = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), zass);
     AVIS_SSAASSIGN (zavis) = zass;
 
     DBUG_PRINT ("IVEXI", ("generateSelect introduced temp index variable: %s for: %s",
@@ -696,15 +618,11 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
     DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "IVEXItmpVec expected N_avis");
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
     b1 = WLSflattenBound (DUPdoDupTree (b1), &INFO_VARDECS (arg_info),
-                          &INFO_PREASSIGNSPART (arg_info));
+                          &INFO_PREASSIGNSWITH (arg_info));
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
     b2 = WLSflattenBound (DUPdoDupTree (b2), &INFO_VARDECS (arg_info),
-                          &INFO_PREASSIGNSPART (arg_info));
+                          &INFO_PREASSIGNSWITH (arg_info));
     withids = IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node)));
-#ifdef DEAD
-    n = TCcountIds (WITHID_IDS (PART_WITHID (arg_node)));
-    withids = generateAvisWithids (PART_WITHID (arg_node), arg_info, 0);
-#endif // DEAD
     avisp = IVEXIattachExtrema (b1, ivavis, &INFO_VARDECS (arg_info),
                                 &INFO_PREASSIGNSPART (arg_info), F_noteminval, withids);
     AVIS_ISMINHANDLED (avisp) = TRUE;
@@ -751,12 +669,12 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *iavis, int k)
 
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
     b1f = WLSflattenBound (DUPdoDupTree (b1), &INFO_VARDECS (arg_info),
-                           &INFO_PREASSIGNSPART (arg_info));
+                           &INFO_PREASSIGNSWITH (arg_info));
     b1 = generateSelect (b1f, arg_info, k);
 
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
     b2f = WLSflattenBound (DUPdoDupTree (b2), &INFO_VARDECS (arg_info),
-                           &INFO_PREASSIGNSPART (arg_info));
+                           &INFO_PREASSIGNSWITH (arg_info));
     b2 = generateSelect (b2f, arg_info, k);
 
     withids = generateAvisWithids (PART_WITHID (arg_node), arg_info, k);
