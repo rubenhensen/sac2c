@@ -3718,7 +3718,7 @@ COMPap (node *arg_node, info *arg_info)
 {
     node *let_ids, *icm, *icm_args;
     node *fundef;
-    node *assigns, *assigns1, *assigns2;
+    node *assigns, *assigns1 = NULL, *assigns2 = NULL;
 
     DBUG_ENTER ("COMPap");
 
@@ -3732,7 +3732,10 @@ COMPap (node *arg_node, info *arg_info)
     /*
      * traverse ids on LHS of application
      */
-    assigns1 = COMPApIds (arg_node, arg_info);
+    if (!(FUNDEF_ISTHREADFUN (fundef) && AP_ISSPAWNED (arg_node))) {
+        /* Do update results ect, as this should be done after sync */
+        assigns1 = COMPApIds (arg_node, arg_info);
+    }
 
     /*
      * traverse arguments of application
@@ -7643,6 +7646,25 @@ COMPprfCond (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+/*
+ * Refresh mirrors of results of spawned function
+ */
+node *
+COMPprfSyncIds (node *ids, node *chain)
+{
+    DBUG_ENTER ("COMPprfSyncIds");
+
+    if (ids != NULL) {
+        chain = COMPprfSyncIds (IDS_NEXT (ids), chain);
+        chain = TCmakeAssignIcm1 ("ND_REFRESH__MIRROR",
+                                  MakeTypeArgs (IDS_NAME (ids), IDS_TYPE (ids), FALSE,
+                                                TRUE, FALSE, NULL),
+                                  chain);
+    }
+
+    DBUG_RETURN (chain);
+}
+
 node *
 COMPprfSync (node *arg_node, info *arg_info)
 {
@@ -7692,6 +7714,7 @@ COMPprfSync (node *arg_node, info *arg_info)
             }
         }
     } else {
+        ret_node = COMPprfSyncIds (INFO_LASTIDS (arg_info), ret_node);
         ret_node = TCmakeAssignIcm1 ("SAC_MUTC_SPAWNSYNC",
                                      DUPdupIdNt (PRF_ARG1 (arg_node)), ret_node);
     }

@@ -330,6 +330,9 @@ OPTcheckOptionConsistency (void)
         } else {
             global.rc_method = 0;
         }
+    } else {
+        CTIwarn ("If your stdlib is not compiled with the same rc method "
+                 "you may get unexpected behavior of your generated program");
     }
 
     if ((global.rc_method < 0) || (global.rc_method > 3)) {
@@ -338,8 +341,8 @@ OPTcheckOptionConsistency (void)
 
     if (((global.rc_method == 2) || (global.rc_method == 3))
         && global.backend != BE_mutc) {
-        CTIerror ("Multimodal reference counting not supported with the selected"
-                  " backend");
+        CTIerror ("Current reference counting method is not supported "
+                  "with the current backend");
     }
 
     DBUG_VOID_RETURN;
@@ -459,6 +462,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /*
      * Options starting with ddddddddddddddddddddddddddddddddddddddddddd
      */
+    ARGS_FLAG ("debug_rc", global.debug_rc = TRUE);
 
     ARGS_FLAG ("ds", global.dynamic_shapes = TRUE);
 

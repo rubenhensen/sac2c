@@ -1044,7 +1044,9 @@ GLOBAL (configuration_t, config, config_init)
  */
 
 GLOBAL (stringset_t *, dependencies, NULL)
+
 GLOBAL (int, rc_method, -1)
+GLOBAL (bool, debug_rc, FALSE)
 /*
  * MUTC backend options
  */

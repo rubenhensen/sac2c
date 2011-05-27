@@ -674,6 +674,7 @@ PrintDebugOptions (void)
     DBUG_ENTER ("PrintDebugOptions");
 
     printf ("\n\nDEBUG OPTIONS:\n\n"
+            "    -debug_rc       Enable reference counting debuging features\n"
             "    -d treecheck    Check syntax tree for consistency with xml "
             "specification.\n"
 #ifdef SHOW_MALLOC

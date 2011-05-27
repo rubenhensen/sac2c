@@ -174,6 +174,8 @@ PrintGlobalSwitches ()
 
     fprintf (global.outfile, "#define SAC_RC_METHOD %d\n", global.rc_method);
 
+    fprintf (global.outfile, "#define SAC_DEBUG_RC %d\n", global.debug_rc ? 1 : 0);
+
     fprintf (global.outfile, "\n");
 
     /* MUTC Switches */

@@ -19,12 +19,13 @@
 #define MUTC 1
 #if SAC_BACKEND == MUTC
 #include <limits.h>
-
+#include <stdio.h>
 #define SAC_SL_DETACH() sl_detach ()
 #define SAC_MUTC_DEBUG_RC(a)
 
-#if 0
+#if SAC_DEBUG_RC
 #define SAC_MUTC_RC_PRINT(var_NT)                                                        \
+    fprintf (stddebug, " ");                                                             \
     printf ("%s:%d " TO_STR (var_NT) " @ %p = [ %d, %p, %d]\n", __FILE__, __LINE__,      \
             SAC_ND_A_DESC (var_NT), (int)SAC_ND_A_DESC (var_NT)[0],                      \
             (void *)SAC_ND_A_DESC (var_NT)[1], (int)SAC_ND_A_DESC (var_NT)[2]);
@@ -508,7 +509,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
  * flushed before the spawn else order maybe lost.
  *
  * If rc is 1 the ownership of the memory can be passed to the new
- * reference.  The new reference coan reuse the parent count and
+ * reference.  The new reference can reuse the parent count and
  * descriptor.  Full reuse analysis is not needed as we are only
  * reusing this aliases
  */
@@ -552,7 +553,8 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 #define SAC_ND_PRF_RESTORERC__NOOP(array, rc)
 #define SAC_ND_PRF_2NORC__NOOP(rc, array)
 #define SAC_ND_PRF_2ASYNC__NOOP(new, array)                                              \
-    SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));
+    SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));                \
+    SAC_ND_A_DESC (new) = SAC_ND_GETVAR (array, SAC_ND_A_DESC (array));
 
 #endif /* SAC_BACKEND */
 #undef MUTC
