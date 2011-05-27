@@ -1220,6 +1220,15 @@ ICM_DEF( CUDA_ASSIGN, ICM_TRACE_NONE)
 ICM_END( CUDA_ASSIGN, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
 #endif
 
+#if defined(CUDA_COND_WL_ASSIGN) || defined(ICM_ALL)
+ICM_DEF( CUDA_COND_WL_ASSIGN, ICM_TRACE_NONE)
+  ICM_NT( cond_NT)
+  ICM_INT( origin)
+  ICM_NT( shmem_NT)
+  ICM_NT( devidx_NT)
+  ICM_NT( devmem_NT)
+ICM_END( CUDA_COND_WL_ASSIGN, ( cond_NT, origin, shmem_NT, devidx_NT, devmem_NT))
+#endif
 
 /*
  * ICMs for implementing scheduling strategies
@@ -1487,5 +1496,14 @@ ICM_DEF( FP_FUN_AP, ICM_TRACE(fun))
   ICM_INT( vararg_cnt)
   ICM_VARANY( (3*vararg_cnt), vararg)
 ICM_END( FP_FUN_AP, (framename, name, retname, vararg_cnt, vararg))
+#endif
+
+#if defined(ND_PRF_COND) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_COND, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_NT( cond_NT)
+  ICM_NT( then_NT)
+  ICM_NT( else_NT)
+ICM_END( ND_PRF_COND, ( to_NT, cond_NT, then_NT, else_NT))
 #endif
 

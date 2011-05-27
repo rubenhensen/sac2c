@@ -1830,3 +1830,45 @@ ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT, char *from
 
     DBUG_VOID_RETURN;
 }
+
+/******************************************************************************
+ *
+ * Function:
+ *   void ICMCompileND_PRF_COND( char *cond_NT, char *then_NT, char *else_NT)
+ *
+ * Description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_PRF_COND( cond_NT, then_NT, else_NT)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_PRF_COND (char *to_NT, char *cond_NT, char *then_NT, char *else_NT)
+{
+    DBUG_ENTER ("ICMCompileND_PRF_COND");
+
+#define ND_PRF_COND
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_PRF_COND
+
+    INDENT;
+    fprintf (global.outfile, "if( NT_NAME( %s)) {\n", cond_NT);
+
+    INDENT;
+    INDENT;
+    fprintf (global.outfile, "NT_NAME( %s) = NT_NAME( %s);\n", to_NT, then_NT);
+
+    INDENT;
+    fprintf (global.outfile, "} else {\n");
+
+    INDENT;
+    INDENT;
+    fprintf (global.outfile, "NT_NAME( %s) = NT_NAME( %s);\n", to_NT, else_NT);
+
+    INDENT;
+    fprintf (global.outfile, "}\n");
+
+    DBUG_VOID_RETURN;
+}

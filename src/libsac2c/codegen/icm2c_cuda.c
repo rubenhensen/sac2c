@@ -1005,3 +1005,38 @@ ICMCompileCUDA_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
 
     DBUG_VOID_RETURN;
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileCUDA_COND_WL_ASSIGN( char *cond_NT, int origin,
+ *                                       char *shmem_NT, char *devidx_NT,
+ *                                       char *devmem_NT)
+ *
+ *
+ ******************************************************************************/
+
+void
+ICMCompileCUDA_COND_WL_ASSIGN (char *cond_NT, int origin, char *shmem_NT, char *devidx_NT,
+                               char *devmem_NT)
+{
+    DBUG_ENTER ("ICMCompileCUDA_COND_WL_ASSIGN");
+
+#define CUDA_COND_WL_ASSIGN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef CUDA_COND_WL_ASSIGN
+
+    INDENT;
+    fprintf (global.outfile, "if( NT_NAME( %s)) {\n", cond_NT);
+
+    INDENT;
+    INDENT;
+    fprintf (global.outfile, "NT_NAME( %s)[NT_NAME( %s)] = NT_NAME( %s)[%d];\n",
+             devmem_NT, devidx_NT, shmem_NT, origin);
+
+    INDENT;
+    fprintf (global.outfile, "}\n");
+
+    DBUG_VOID_RETURN;
+}

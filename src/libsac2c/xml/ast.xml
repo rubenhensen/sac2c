@@ -460,6 +460,7 @@
           <node name="Fundef" />
           <node name="Genarray" />
           <node name="Modarray" />
+          <node name="Fold" />
           <node name="Part" />
           <node name="Code" />
           <node name="Generator" />

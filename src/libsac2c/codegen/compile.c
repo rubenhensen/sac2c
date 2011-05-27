@@ -5189,6 +5189,19 @@ COMPprfWLAssign (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn  node COMPprfCUDAWLAssign( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_cuda_wl_assign
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
 static node *
 COMPprfCUDAWLAssign (node *arg_node, info *arg_info)
 {
@@ -5204,6 +5217,49 @@ COMPprfCUDAWLAssign (node *arg_node, info *arg_info)
                                                ID_TYPE (PRF_ARG2 (arg_node)), FALSE, TRUE,
                                                FALSE, NULL),
                                  DUPdupIdNt (PRF_ARG3 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node COMPprfCondWLAssign( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles N_prf node of type F_cond_wl_assign
+ *   The return value is a N_assign chain of ICMs.
+ *   Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+static node *
+COMPprfCondWLAssign (node *arg_node, info *arg_info)
+{
+    node *cond, *shmem, *devidx, *devmem;
+    int zero;
+    node *icm_args;
+
+    node *ret_node = NULL;
+
+    DBUG_ENTER ("COMPprfCondWLAssign");
+
+    cond = PRF_ARG1 (arg_node);
+    zero = NUM_VAL (PRF_ARG2 (arg_node));
+    shmem = PRF_ARG3 (arg_node);
+    devidx = PRF_ARG4 (arg_node);
+    devmem = PRF_ARG5 (arg_node);
+
+    icm_args
+      = TBmakeExprs (DUPdupNodeNt (cond),
+                     TBmakeExprs (TBmakeNum (zero),
+                                  TBmakeExprs (DUPdupNodeNt (shmem),
+                                               TBmakeExprs (DUPdupNodeNt (devidx),
+                                                            TBmakeExprs (DUPdupNodeNt (
+                                                                           devmem),
+                                                                         NULL)))));
+
+    ret_node = TCmakeAssignIcm1 ("CUDA_COND_WL_ASSIGN", icm_args, NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -5690,30 +5746,12 @@ COMPprfIdxSel (node *arg_node, info *arg_info)
     dim = TCgetDim (IDS_TYPE (let_ids));
     DBUG_ASSERT ((dim >= 0), "unknown dimension found!");
 
-    /*
-      if( global.backend == BE_cuda &&
-          ( TCgetBasetype( ID_TYPE( arg2)) == T_float_dev ||
-            TCgetBasetype( ID_TYPE( arg2)) == T_int_dev) &&
-          !FUNDEF_ISCUDAGLOBALFUN( INFO_FUNDEF( arg_info))) {
-        ret_node = TCmakeAssignIcm2( "CUDA_PRF_IDX_SEL__DATA",
-                                     MakeTypeArgs( IDS_NAME( let_ids),
-                                                   IDS_TYPE( let_ids),
-                                                   FALSE, TRUE, FALSE,
-                                                   DUPdoDupTree( icm_args)),
-                                     MakeBasetypeArg( ID_TYPE(arg2)),
-                                     NULL);
-      }
-      else {
-    */
     ret_node
       = TCmakeAssignIcm2 ("ND_PRF_IDX_SEL__DATA",
                           MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
                                         TRUE, FALSE, DUPdoDupTree (icm_args)),
                           TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                           NULL);
-    /*
-      }
-    */
 
     DBUG_RETURN (ret_node);
 }
@@ -7569,9 +7607,38 @@ COMPprfSyncthreads (node *arg_node, info *arg_info)
 node *
 COMPprfCond (node *arg_node, info *arg_info)
 {
-    node *ret_node = NULL;
+    node *arg1, *arg2, *arg3;
+    node *let_ids;
+    node *icm_args;
+    node *ret_node;
 
     DBUG_ENTER ("COMPprfCond");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+    arg3 = PRF_ARG3 (arg_node);
+
+    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_cond is not N_id!");
+    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_cond is not N_id!");
+    DBUG_ASSERT ((NODE_TYPE (arg3) == N_id), "3rd arg of F_cond is not N_id!");
+
+    /*
+      DBUG_ASSERT( TYisScalar( ID_NTYPE( arg1)),
+                   "1st arg of F_cond is not scalar!");
+      DBUG_ASSERT( TYisScalar( ID_NTYPE( arg2)),
+                   "2nd arg of F_cond is not scalar!");
+      DBUG_ASSERT( TYisScalar( ID_NTYPE( arg3)),
+                   "3rd arg of F_cond is not scalar!");
+    */
+
+    icm_args
+      = TBmakeExprs (DUPdupIdsIdNt (let_ids),
+                     TBmakeExprs (DUPdupNodeNt (arg1),
+                                  TBmakeExprs (DUPdupNodeNt (arg2),
+                                               TBmakeExprs (DUPdupNodeNt (arg3), NULL))));
+
+    ret_node = TCmakeAssignIcm1 ("ND_PRF_COND", icm_args, NULL);
 
     DBUG_RETURN (ret_node);
 }

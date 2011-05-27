@@ -27,7 +27,7 @@ extern node *CUKNLpart (node *arg_node, info *arg_info);
 extern node *CUKNLcode (node *arg_node, info *arg_info);
 extern node *CUKNLgenarray (node *arg_node, info *arg_info);
 extern node *CUKNLmodarray (node *arg_node, info *arg_info);
-
+extern node *CUKNLfold (node *arg_node, info *arg_info);
 extern node *CUKNLprf (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CREATE_SPMD_FUNS_H_ */

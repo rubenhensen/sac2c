@@ -220,7 +220,8 @@ KPPlet (node *arg_node, info *arg_info)
     } else if (LET_IDS (arg_node) != NULL) {
         if (NODE_TYPE (LET_EXPR (arg_node)) == N_array
             || (NODE_TYPE (LET_EXPR (arg_node)) == N_prf
-                && PRF_PRF (LET_EXPR (arg_node)) == F_copy)) {
+                && (PRF_PRF (LET_EXPR (arg_node)) == F_copy
+                    || PRF_PRF (LET_EXPR (arg_node)) == F_cond_wl_assign))) {
             NLUTincNum (INFO_NLUT (arg_info), IDS_AVIS (LET_IDS (arg_node)), 1);
         } else if (NLUTgetNum (INFO_NLUT (arg_info), IDS_AVIS (LET_IDS (arg_node)))
                    == 0) {
@@ -414,7 +415,7 @@ KPPprf (node *arg_node, info *arg_info)
          * the first argument has an old avis in the calling context (
          * See function CUKNLid in create_cuda_kernels.c). This causes
          * problem when dvr is run when the avis in the calling context
-         * is freed. So here we simple set the avis of the first argument
+         * is freed. So here we simply set the avis of the first argument
          * to the avis of the lhs ids. However, a better solution should
          * eventually replace this quick fix.
          */

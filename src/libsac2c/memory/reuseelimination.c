@@ -408,6 +408,18 @@ EMREprf (node *arg_node, info *arg_info)
         }
         break;
 
+    case F_cond_wl_assign:
+        /*
+         * Replace memory variable with reused variable
+         */
+        avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (PRF_ARG5 (arg_node)));
+
+        if (avis != ID_AVIS (PRF_ARG5 (arg_node))) {
+            PRF_ARG5 (arg_node) = FREEdoFreeNode (PRF_ARG5 (arg_node));
+            PRF_ARG5 (arg_node) = TBmakeId (avis);
+        }
+        break;
+
     case F_suballoc:
         /*
          * Replace memory variable with reused variable

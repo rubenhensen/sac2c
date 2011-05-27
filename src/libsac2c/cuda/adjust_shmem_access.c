@@ -152,10 +152,29 @@ ASHAassign (node *arg_node, info *arg_info)
 node *
 ASHAlet (node *arg_node, info *arg_info)
 {
+    node *subst_avis;
+
     DBUG_ENTER ("ASHAlet");
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
+
+    /* if the let is of form a = b; */
+    if (NODE_TYPE (LET_EXPR (arg_node)) == N_id) {
+        if (CUisShmemTypeNew (IDS_NTYPE (LET_IDS (arg_node)))
+            && CUisShmemTypeNew (ID_NTYPE (LET_EXPR (arg_node)))) {
+            subst_avis = AVIS_SUBST (IDS_AVIS (LET_IDS (arg_node)));
+            if (subst_avis != NULL) {
+                IDS_AVIS (LET_IDS (arg_node)) = subst_avis;
+                AVIS_SUBST (ID_AVIS (LET_EXPR (arg_node))) = subst_avis;
+                ID_AVIS (LET_EXPR (arg_node)) = subst_avis;
+            } else {
+                AVIS_SUBST (ID_AVIS (LET_EXPR (arg_node)))
+                  = IDS_AVIS (LET_IDS (arg_node));
+                ID_AVIS (LET_EXPR (arg_node)) = IDS_AVIS (LET_IDS (arg_node));
+            }
+        }
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -257,7 +276,11 @@ ASHAprf (node *arg_node, info *arg_info)
                   = IDS_AVIS (INFO_LHS (arg_info));
                 ID_AVIS (PRF_ARG1 (arg_node)) = IDS_AVIS (INFO_LHS (arg_info));
             }
-        } else if (PRF_PRF (arg_node) == F_shmem_boundary_load) {
+        } else if (PRF_PRF (arg_node) == F_idx_sel) {
+            subst_avis = AVIS_SUBST (ID_AVIS (PRF_ARG2 (arg_node)));
+            if (subst_avis != NULL && CUisShmemTypeNew (ID_NTYPE (PRF_ARG2 (arg_node)))) {
+                ID_AVIS (PRF_ARG2 (arg_node)) = subst_avis;
+            }
         } else {
         }
     }

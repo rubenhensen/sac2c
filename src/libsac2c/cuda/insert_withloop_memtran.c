@@ -875,12 +875,14 @@ IWLMEMids (node *arg_node, info *arg_info)
             INFO_NOTRAN (arg_info)
               = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), ids_avis, TBmakeEmpty ());
 
-            /* If the ids is cuda local, we change its base type
-             * from host to device */
+            /* If the ids is cuda local and its type is not of shared
+             * memory type, we change its base type from host to device */
             AVIS_ISCUDALOCAL (IDS_AVIS (arg_node)) = TRUE;
-            TYsetSimpleType (TYgetScalar (ids_type),
-                             CUh2dSimpleTypeConversion (
-                               TYgetSimpleType (TYgetScalar (ids_type))));
+            if (!CUisShmemTypeNew (ids_type)) {
+                TYsetSimpleType (TYgetScalar (ids_type),
+                                 CUh2dSimpleTypeConversion (
+                                   TYgetSimpleType (TYgetScalar (ids_type))));
+            }
         }
     } else {
         if (INFO_CREATE_D2H (arg_info)) {
@@ -968,6 +970,7 @@ IWLMEMid (node *arg_node, info *arg_info)
             if (((INFO_IN_CEXPRS (arg_info) && ssaassign != NULL
                   && AssignInTopBlock (ssaassign, arg_info))
                  || !INFO_IN_CEXPRS (arg_info))
+                && !CUisShmemTypeNew (id_type)
                 && LUTsearchInLutPp (INFO_NOTRAN (arg_info), id_avis) == id_avis) {
                 dev_type = TypeConvert (id_type, NODE_TYPE (arg_node), arg_info);
                 if (dev_type != NULL) {

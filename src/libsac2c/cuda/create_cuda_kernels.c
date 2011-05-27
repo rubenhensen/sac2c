@@ -252,9 +252,7 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
-    // if( global.backend == BE_cuda && global.optimize.doshr) {
     syntax_tree = ASHAdoAdjustShmemAccess (syntax_tree);
-    //}
 
     info = MakeInfo ();
 
@@ -265,10 +263,7 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
     info = FreeInfo (info);
 
     syntax_tree = KPPdoKernelPostProcessing (syntax_tree);
-
-    // if( global.backend == BE_cuda && global.optimize.doshr) {
     syntax_tree = ESBLdoExpandShmemBoundaryLoad (syntax_tree);
-    //}
 
     DBUG_RETURN (syntax_tree);
 }
@@ -861,6 +856,36 @@ CUKNLmodarray (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *CUKNLfold( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+CUKNLfold (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("CUKNLfold");
+
+    if (INFO_COLLECT (arg_info)) {
+        if (INFO_IN_CUDA_PARTITION (arg_info)) {
+            /* Shape needs to be traversed as well. */
+            FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
+            FOLD_INITIAL (arg_node) = TRAVopt (FOLD_INITIAL (arg_node), arg_info);
+            FOLD_PARTIALMEM (arg_node) = TRAVopt (FOLD_PARTIALMEM (arg_node), arg_info);
+        } else {
+            FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
+            FOLD_INITIAL (arg_node) = TRAVopt (FOLD_INITIAL (arg_node), arg_info);
+            INFO_TRAVMEM (arg_info) = TRUE;
+            FOLD_PARTIALMEM (arg_node) = TRAVopt (FOLD_PARTIALMEM (arg_node), arg_info);
+            INFO_TRAVMEM (arg_info) = FALSE;
+        }
+        FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
+    }
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *CUKNLwithid( node *arg_node, info *arg_info)
  *
  * @brief
@@ -940,10 +965,6 @@ CUKNLwithid (node *arg_node, info *arg_info)
                 DBUG_ASSERT ((new_mem_avis != mem_avis),
                              "Withop->mem has not been traversed before!");
 
-                // prf_wlidxs_args = TBmakeExprs( TBmakeNum( dim), DUPdoDupTree(
-                // new_wlids));  prf_wlidxs_args = TBmakeExprs( TBmakeId( new_mem_avis),
-                // prf_wlidxs_args);  prf_wlidxs_args = TBmakeExprs( TBmakeId( new_avis),
-                // prf_wlidxs_args);
                 prf_wlidxs_args
                   = TBmakeExprs (TBmakeId (new_mem_avis), DUPdoDupTree (new_wlids));
 
@@ -1176,7 +1197,6 @@ CUKNLprf (node *arg_node, info *arg_info)
                 || INFO_IN_CUDA_PARTITION (arg_info)) {
                 /* Replace the F_wlassign by a new F_cuda_wlassign which
                  * doesn't contain N_withid->vec */
-
                 if (PART_INNERWLIDXASSIGN (INFO_PART (arg_info)) != NULL) {
                     ID_AVIS (PRF_ARG4 (arg_node)) = IDS_AVIS (
                       ASSIGN_LHS (PART_INNERWLIDXASSIGN (INFO_PART (arg_info))));
@@ -1192,12 +1212,6 @@ CUKNLprf (node *arg_node, info *arg_info)
                 ret_node = TBmakePrf (F_cuda_wl_assign, args);
                 arg_node = FREEdoFreeTree (arg_node);
                 PRF_ARGS (ret_node) = TRAVopt (PRF_ARGS (ret_node), arg_info);
-                /*
-                          node *mem_id = DUPdoDupNode( PRF_ARG2( arg_node));
-                          IDS_AVIS( INFO_LETIDS( arg_info)) = ID_AVIS( mem_id);
-                          PRF_ARGS( arg_node) = TRAVopt( PRF_ARGS( arg_node), arg_info);
-                          ret_node = arg_node;
-                */
             } else {
                 /* We only create a <device2device> primitive if this is the
                  * first non-cudarizable partition we come across. */

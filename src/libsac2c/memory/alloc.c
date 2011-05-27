@@ -943,6 +943,18 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                 AVIS_SSAASSIGN (memavis) = assign;
             }
         }
+
+        if ((NODE_TYPE (withops) == N_fold) && FOLD_ISPARTIALFOLD (withops)) {
+            node *prf;
+            prf = ASSIGN_RHS (AVIS_SSAASSIGN (cexavis));
+            DBUG_ASSERT ((NODE_TYPE (prf) == N_prf && PRF_PRF (prf) == F_cond_wl_assign),
+                         "Result of partial fold is not defined by F_cond_wl_assign");
+            PRF_ARGS (prf)
+              = TCappendExprs (PRF_ARGS (prf),
+                               TBmakeExprs (DUPdoDupNode (FOLD_PARTIALMEM (withops)),
+                                            NULL));
+        }
+
         als = als->next;
         withops = WITHOP_NEXT (withops);
         cexprs = EXPRS_NEXT (cexprs);
@@ -1752,6 +1764,18 @@ EMALprf (node *arg_node, info *arg_info)
     case F_cuda_blockDim_z:
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_int);
+        break;
+
+    case F_cond:
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_int);
+        break;
+
+    case F_cond_wl_assign:
+        // als->dim   = TBmakeNum( 0);
+        // als->shape = TCcreateZeroVector( 0, T_int);
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
+        INFO_MUSTFILL (arg_info) = FALSE;
         break;
 
     case F_shmem_boundary_load:

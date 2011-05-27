@@ -1318,6 +1318,16 @@ MMVfold (node *arg_node, info *arg_info)
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     FOLD_INITIAL (arg_node) = TRAVopt (FOLD_INITIAL (arg_node), arg_info);
 
+    if (FOLD_ISPARTIALFOLD (arg_node)) {
+        FOLD_PARTIALMEM (arg_node) = TRAVdo (FOLD_PARTIALMEM (arg_node), arg_info);
+
+        LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (INFO_LHS (arg_info)),
+                           ID_NAME (FOLD_PARTIALMEM (arg_node)));
+
+        LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
+                           ID_AVIS (FOLD_PARTIALMEM (arg_node)));
+    }
+
     if (FOLD_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
         FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
@@ -1370,7 +1380,7 @@ MMVcode (node *arg_node, info *arg_info)
     withop = INFO_WITHOP (arg_info);
 
     while (withop != NULL) {
-        if (NODE_TYPE (withop) == N_fold) {
+        if (NODE_TYPE (withop) == N_fold && !FOLD_ISPARTIALFOLD (withop)) {
             BLOCK_INSTR (CODE_CBLOCK (arg_node))
               = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)),
                                 TBmakeAssign (TBmakeLet (DUPdoDupNode (wlids),

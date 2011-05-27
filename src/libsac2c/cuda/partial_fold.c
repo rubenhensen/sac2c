@@ -234,6 +234,9 @@ BuildLoadAssigns (node *part, info *arg_info)
                                        TYgetScalar (AVIS_TYPE (INFO_CEXPR (arg_info)))))),
                                    SHarray2Shape (PART_THREADBLOCKSHAPE (part))));
 
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (shmem, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+
     args
       = TBmakeExprs (TBmakeId (shmem),
                      TBmakeExprs (TBmakeId (avis),
@@ -282,11 +285,6 @@ BuildReduceAssigns (node *part, info *arg_info)
 
     if (INFO_DIM (arg_info) == 1) {
     } else if (INFO_DIM (arg_info) == 2) {
-        in_shared_array = INFO_SHRARRAY (arg_info);
-
-        /* i = 1; */
-        iterator = CreatePrfOrConst (FALSE, "iterator", T_int, SHmakeShape (0), F_add_SxS,
-                                     TBmakeNum (1), &vardecs, &assigns);
 
         partshp_y = NUM_VAL (EXPRS_EXPR1 (ARRAY_AELEMS (INFO_PARTSHP (arg_info))));
         partshp_x = NUM_VAL (EXPRS_EXPR2 (ARRAY_AELEMS (INFO_PARTSHP (arg_info))));
@@ -298,6 +296,18 @@ BuildReduceAssigns (node *part, info *arg_info)
         remain_y = partshp_y % shmemshp_y;
         remain_x = partshp_x % shmemshp_x;
 
+        in_shared_array = INFO_SHRARRAY (arg_info);
+        /* i = 1; */
+        iterator = CreatePrfOrConst (FALSE, "iterator", T_int, SHmakeShape (0), F_add_SxS,
+                                     TBmakeNum (1), &vardecs, &assigns);
+
+        /* Test if the length of the Y dimension is evenly divisible by
+         * the lenght of the Y dimension shared memory. If not, we need
+         * to generate the loop bound in way so that the last thread block
+         * does not access elements off boundary in the shared memory.
+         * If yes, then the loop bound is simply the lengh of the Y dimesnion
+         * of the shared memory.
+         */
         if (remain_y != 0) {
             node *bound1, *bound2, *by_bound;
             bound1
@@ -330,7 +340,10 @@ BuildReduceAssigns (node *part, info *arg_info)
                                   TBmakeNum (shmemshp_y), &vardecs, &assigns);
         }
 
-        /* Loop body */
+        /* Body of the loop. The loop is executed by all threads in a block with
+         * ty == 0. Each thread executes a loop to reduce all elements from [0][tx]
+         * to [loop_bound][tx] into [0][tx]. This is the firsdt step of folding
+         * for a two dimension array. */
         avis = CreatePrfOrConst (FALSE, "const", T_int, SHmakeShape (0), F_unknown,
                                  TBmakeNum (0), &vardecs, &loop_assigns);
 
@@ -378,6 +391,11 @@ BuildReduceAssigns (node *part, info *arg_info)
                               SHarray2Shape (PART_THREADBLOCKSHAPE (part)),
                               F_idx_modarray_AxSxS, args, &vardecs, &loop_assigns);
 
+        /* This is actually the condition to allow only threads with ty == 0
+         * the execute the reduction loop. We put it here because the new
+         * variables related to the condition need to be added to the function
+         * vardec list before CLACdoCreateLacFun for the conditional can be called.
+         */
         args = TBmakeExprs (TBmakeId (CIS_TY (INFO_CIS (arg_info))),
                             TBmakeExprs (TBmakeNum (0), NULL));
 
@@ -397,8 +415,9 @@ BuildReduceAssigns (node *part, info *arg_info)
 
         /* This is the final assignment chain used to create the conditional function */
         assigns = TCappendAssign (assigns, loop_assigns);
+        loop_assigns = NULL;
 
-        /* Create conditional */
+        /* Here we create the conditional function. Its body is contained in "assigns" */
         out_shared_array = INFO_SHRARRAY (arg_info);
 
         /* After this, assigns is the function application of a conditional function */
@@ -406,26 +425,244 @@ BuildReduceAssigns (node *part, info *arg_info)
                                        cond_predicate, NULL, NULL, in_shared_array,
                                        out_shared_array, &INFO_LACFUNS (arg_info));
 
-        assigns = TCappendAssign (predicate, assigns);
+        node *y_reduction_assigns;
 
-        /* Thread at tx=0 && ty=0 select the final reduction result */
-        args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
-                            TBmakeExprs (TBmakeNum (0), NULL));
-        tx_zero = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_eq_SxS, args,
-                                    &vardecs, &assigns);
+        /* Join the condition testing and the conditional function together */
+        y_reduction_assigns = TCappendAssign (predicate, assigns);
+        assigns = NULL;
+        predicate = NULL;
 
+        args = TBmakeExprs (TBmakeId (INFO_SHRARRAY (arg_info)), NULL);
+
+        /* Synchronising the threads in the block after the conditional */
+        avis = CreatePrfOrConst (TRUE, "shmem", sty,
+                                 SHarray2Shape (PART_THREADBLOCKSHAPE (part)),
+                                 F_syncthreads, args, &vardecs, &y_reduction_assigns);
+
+        INFO_SHRARRAY (arg_info) = avis;
+
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        in_shared_array = INFO_SHRARRAY (arg_info);
+        /* i = 1; */
+        iterator = CreatePrfOrConst (FALSE, "iterator", T_int, SHmakeShape (0), F_add_SxS,
+                                     TBmakeNum (1), &vardecs, &assigns);
+
+        /* Test if the length of the X dimension is evenly divisible by
+         * the lenght of the X dimension shared memory. If not, we need
+         * to generate the loop bound in way so that the last thread block
+         * does not access elements off boundary in the shared memory.
+         * If yes, then the loop bound is simply the lengh of the Y dimesnion
+         * of the shared memory.
+         */
+        if (remain_x != 0) {
+            node *bound1, *bound2, *bx_bound;
+            bound1
+              = CreatePrfOrConst (FALSE, "loop_bound", T_int, SHmakeShape (0), F_unknown,
+                                  TBmakeNum (shmemshp_x), &vardecs, &assigns);
+
+            bound2
+              = CreatePrfOrConst (FALSE, "loop_bound", T_int, SHmakeShape (0), F_unknown,
+                                  TBmakeNum (remain_x), &vardecs, &assigns);
+
+            bx_bound
+              = CreatePrfOrConst (FALSE, "bx_bound", T_int, SHmakeShape (0), F_unknown,
+                                  TBmakeNum (partialshp_x - 1), &vardecs, &assigns);
+
+            args = TBmakeExprs (TBmakeId (CIS_BX (INFO_CIS (arg_info))),
+                                TBmakeExprs (TBmakeId (bx_bound), NULL));
+
+            cond = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_eq_SxS,
+                                     args, &vardecs, &assigns);
+
+            args = TBmakeExprs (TBmakeId (cond),
+                                TBmakeExprs (TBmakeId (bound2),
+                                             TBmakeExprs (TBmakeId (bound1), NULL)));
+
+            loop_bound = CreatePrfOrConst (TRUE, "loop_bound", T_int, SHmakeShape (0),
+                                           F_cond, args, &vardecs, &assigns);
+        } else {
+            loop_bound
+              = CreatePrfOrConst (FALSE, "loop_bound", T_int, SHmakeShape (0), F_unknown,
+                                  TBmakeNum (shmemshp_x), &vardecs, &assigns);
+        }
+
+        /* Body of the loop. The loop is executed by thread in a block withi tx == 0
+         * ty == 0. The thread executes a loop to reduce all elements from [0][0]
+         * to [0][loop_bound] into [0][0]. This is the second step of folding
+         * for a two dimension array. */
+        avis = CreatePrfOrConst (FALSE, "const", T_int, SHmakeShape (0), F_unknown,
+                                 TBmakeNum (0), &vardecs, &loop_assigns);
+
+        args = TBmakeExprs (DUPdoDupNode (PART_THREADBLOCKSHAPE (part)),
+                            TBmakeExprs (TBmakeId (avis),
+                                         TBmakeExprs (TBmakeId (avis), NULL)));
+
+        idx1 = CreatePrfOrConst (TRUE, "idx", T_int, SHmakeShape (0), F_idxs2offset, args,
+                                 &vardecs, &loop_assigns);
+
+        args = TBmakeExprs (TBmakeId (idx1),
+                            TBmakeExprs (TBmakeId (INFO_SHRARRAY (arg_info)), NULL));
+
+        val1 = CreatePrfOrConst (TRUE, "val", sty, SHmakeShape (0), F_idx_sel, args,
+                                 &vardecs, &loop_assigns);
+
+        args = TBmakeExprs (DUPdoDupNode (PART_THREADBLOCKSHAPE (part)),
+                            TBmakeExprs (TBmakeId (avis),
+                                         TBmakeExprs (TBmakeId (iterator), NULL)));
+
+        idx2 = CreatePrfOrConst (TRUE, "idx", T_int, SHmakeShape (0), F_idxs2offset, args,
+                                 &vardecs, &loop_assigns);
+
+        args = TBmakeExprs (TBmakeId (idx2),
+                            TBmakeExprs (TBmakeId (INFO_SHRARRAY (arg_info)), NULL));
+
+        val2 = CreatePrfOrConst (TRUE, "val", sty, SHmakeShape (0), F_idx_sel, args,
+                                 &vardecs, &loop_assigns);
+
+        args = TBmakeExprs (TBmakeId (val1), TBmakeExprs (TBmakeId (val2), NULL));
+
+        val3 = CreatePrfOrConst (TRUE, "val", sty, SHmakeShape (0),
+                                 INFO_FOLDOP (arg_info), args, &vardecs, &loop_assigns);
+
+        args = TBmakeExprs (TBmakeId (INFO_SHRARRAY (arg_info)),
+                            TBmakeExprs (TBmakeId (idx1),
+                                         TBmakeExprs (TBmakeId (val3), NULL)));
+
+        INFO_SHRARRAY (arg_info)
+          = CreatePrfOrConst (TRUE, "shmem", sty,
+                              SHarray2Shape (PART_THREADBLOCKSHAPE (part)),
+                              F_idx_modarray_AxSxS, args, &vardecs, &loop_assigns);
+
+        /* This is actually the condition to allow only threads with tx == 0 and ty == 0
+         * the execute the reduction loop. We put it here because the new
+         * variables related to the condition need to be added to the function
+         * vardec list before CLACdoCreateLacFun for the conditional can be called.
+         */
         args = TBmakeExprs (TBmakeId (CIS_TY (INFO_CIS (arg_info))),
                             TBmakeExprs (TBmakeNum (0), NULL));
+
         ty_zero = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_eq_SxS, args,
-                                    &vardecs, &assigns);
+                                    &vardecs, &predicate);
+
+        args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
+                            TBmakeExprs (TBmakeNum (0), NULL));
+
+        tx_zero = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_eq_SxS, args,
+                                    &vardecs, &predicate);
 
         args = TBmakeExprs (TBmakeId (tx_zero), TBmakeExprs (TBmakeId (ty_zero), NULL));
-        avis = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_and_SxS, args,
-                                 &vardecs, &assigns);
+        cond_predicate = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0),
+                                           F_and_SxS, args, &vardecs, &predicate);
 
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+
+        vardecs = NULL;
+
+        /* After this, loop_assigns is the function application of a loop function */
+        loop_assigns
+          = CLACFdoCreateLacFun (FALSE, INFO_FUNDEF (arg_info), loop_assigns, NULL,
+                                 iterator, loop_bound, in_shared_array,
+                                 INFO_SHRARRAY (arg_info), &INFO_LACFUNS (arg_info));
+
+        /* This is the final assignment chain used to create the conditional function */
+        assigns = TCappendAssign (assigns, loop_assigns);
+        loop_assigns = NULL;
+
+        /* Here we create the conditional function. Its body is contained in "assigns" */
+        out_shared_array = INFO_SHRARRAY (arg_info);
+
+        /* After this, assigns is the function application of a conditional function */
+        assigns = CLACFdoCreateLacFun (TRUE, INFO_FUNDEF (arg_info), assigns,
+                                       cond_predicate, NULL, NULL, in_shared_array,
+                                       out_shared_array, &INFO_LACFUNS (arg_info));
+
+        node *x_reduction_assigns;
+
+        /* Join the condition testing and the conditional function together */
+        x_reduction_assigns = TCappendAssign (predicate, assigns);
+        predicate = NULL;
+        assigns = NULL;
+
+        args = TBmakeExprs (TBmakeId (INFO_SHRARRAY (arg_info)), NULL);
+
+        /* Synchronising the threads in the block after the conditional */
+        avis = CreatePrfOrConst (TRUE, "shmem", sty,
+                                 SHarray2Shape (PART_THREADBLOCKSHAPE (part)),
+                                 F_syncthreads, args, &vardecs, &x_reduction_assigns);
+
+        INFO_SHRARRAY (arg_info) = avis;
+
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+
+        assigns = TCappendAssign (y_reduction_assigns, x_reduction_assigns);
     } else {
         DBUG_ASSERT ((0), "High dimension is not suppored yet!");
     }
+
+    DBUG_RETURN (assigns);
+}
+
+static node *
+BuildStoreAssigns (node *part, info *arg_info)
+{
+    node *vardecs = NULL, *assigns = NULL;
+    node *args, *avis, *tx_zero, *ty_zero;
+    simpletype sty;
+    node *target_idx;
+
+    DBUG_ENTER ("BuildStoreAssigns");
+
+    sty = TYgetSimpleType (TYgetScalar (AVIS_TYPE (INFO_SHRARRAY (arg_info))));
+
+    /* Here we generate code so that only thread with tx == 0 and ty == 0
+     * selects the first element in the shared memory (final reduction result)
+     */
+    args = TBmakeExprs (DUPdoDupNode (INFO_PARTIALSHP (arg_info)),
+                        TBmakeExprs (TBmakeId (CIS_BY (INFO_CIS (arg_info))),
+                                     TBmakeExprs (TBmakeId (CIS_BX (INFO_CIS (arg_info))),
+                                                  NULL)));
+
+    target_idx = CreatePrfOrConst (TRUE, "idx", T_int, SHmakeShape (0), F_idxs2offset,
+                                   args, &vardecs, &assigns);
+
+    args = TBmakeExprs (TBmakeId (CIS_TX (INFO_CIS (arg_info))),
+                        TBmakeExprs (TBmakeNum (0), NULL));
+    tx_zero = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_eq_SxS, args,
+                                &vardecs, &assigns);
+
+    args = TBmakeExprs (TBmakeId (CIS_TY (INFO_CIS (arg_info))),
+                        TBmakeExprs (TBmakeNum (0), NULL));
+    ty_zero = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_eq_SxS, args,
+                                &vardecs, &assigns);
+
+    args = TBmakeExprs (TBmakeId (tx_zero), TBmakeExprs (TBmakeId (ty_zero), NULL));
+    avis = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_and_SxS, args,
+                             &vardecs, &assigns);
+
+    args = TBmakeExprs (TBmakeId (avis),
+                        TBmakeExprs (TBmakeNum (0),
+                                     TBmakeExprs (TBmakeId (INFO_SHRARRAY (arg_info)),
+                                                  TBmakeExprs (TBmakeId (target_idx),
+                                                               NULL))));
+
+    avis = CreatePrfOrConst (TRUE, "res", sty, SHmakeShape (0), F_cond_wl_assign, args,
+                             &vardecs, &assigns);
+
+    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+
+    ID_AVIS (EXPRS_EXPR (PART_CEXPRS (part))) = avis;
 
     DBUG_RETURN (assigns);
 }
@@ -654,7 +891,7 @@ PFDpart (node *arg_node, info *arg_info)
     int dim, tbshp_len, partshp_len, partialshp_len;
     node *tbshp_elems = NULL, *partshp_elems = NULL, *partialshp_elems = NULL;
 
-    node *init_assigns, *load_assigns, *reduce_assigns;
+    node *init_assigns, *load_assigns, *reduce_assigns, *store_assigns;
 
     DBUG_ENTER ("PFDpart");
 
@@ -716,6 +953,11 @@ PFDpart (node *arg_node, info *arg_info)
 
     BLOCK_INSTR (PART_CBLOCK (arg_node))
       = TCappendAssign (BLOCK_INSTR (PART_CBLOCK (arg_node)), reduce_assigns);
+
+    store_assigns = BuildStoreAssigns (arg_node, arg_info);
+
+    BLOCK_INSTR (PART_CBLOCK (arg_node))
+      = TCappendAssign (BLOCK_INSTR (PART_CBLOCK (arg_node)), store_assigns);
 
     /* This struct is created in CreateCudaIndexInitCode and freed here */
     INFO_CIS (arg_info) = MEMfree (INFO_CIS (arg_info));
