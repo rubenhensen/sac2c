@@ -95,6 +95,7 @@ struct INFO {
     node *withcode;                 /* WITH_CODE from N_with */
     intersect_type_t intersecttype; /* intersect type. see enum */
     lut_t *lut;                     /* LUT for renaming */
+    node *noteintersect;            /* F_noteintersect node */
 };
 
 /**
@@ -111,6 +112,7 @@ struct INFO {
 #define INFO_WITHCODE(n) ((n)->withcode)
 #define INFO_INTERSECTTYPE(n) ((n)->intersecttype)
 #define INFO_LUT(n) ((n)->lut)
+#define INFO_NOTEINTERSECT(n) ((n)->noteintersect)
 
 static info *
 MakeInfo (node *fundef)
@@ -132,6 +134,7 @@ MakeInfo (node *fundef)
     INFO_WITHCODE (result) = NULL;
     INFO_INTERSECTTYPE (result) = INTERSECT_unknown;
     INFO_LUT (result) = NULL;
+    INFO_NOTEINTERSECT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -456,6 +459,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     node *bnd;
     node *proj1;
     node *proj2;
+    node *noteint;
     pattern *pat;
     intersect_type_t nullIntersect;
     int intersectListNo;
@@ -464,8 +468,10 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     DBUG_ENTER ("FindIntersection");
 
     intersectListNo = 0;
-    intersectListLim = TCcountExprs (
-      PRF_ARGS (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (idx))))));
+
+    /* NB. We assume noteintersect immediately precedes idx ! */
+    noteint = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (idx))));
+    intersectListLim = TCcountExprs (PRF_ARGS (noteint));
     intersectListLim = (intersectListLim - 1) / WLEPP;
     pat = PMarray (1, PMAgetNode (&bnd), 1, PMskip (0));
     consumerWLGenerator = PART_GENERATOR (cwlp);
@@ -484,6 +490,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
         if (NULL != arg_info) { /* Different callers! */
             INFO_WLPROJECTION1 (arg_info) = proj1;
             INFO_WLPROJECTION2 (arg_info) = proj2;
+            INFO_NOTEINTERSECT (arg_info) = noteint;
         }
 
         producerWLBound1Original
@@ -691,6 +698,8 @@ CloneCode (node *arg_node, info *arg_info)
     DBUG_RETURN (z);
 }
 
+#ifdef DEADCODE
+
 /** <!--********************************************************************-->
  *
  * @fn static node *PartitionSlicerOneAxis(...)
@@ -884,6 +893,8 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
     DBUG_RETURN (partz);
 }
 
+#endif // DEADCODE
+
 /** <!--********************************************************************-->
  *
  * @fn static node *PartitionSlicer(...)
@@ -898,28 +909,25 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
  * @result: 1-3 N_part nodes, per dimension of the WL generator.
  *          New N_code nodes are also built.
  *
- * @brief Slice a WL partition into as many partitions as required.
+ * @brief Slice a consumerWL partition into as many partitions as required.
  *
- * NOTE: FIXME - At present (2010-05-21), this code picks only one
- *       slice for each consumer-WL partition.
- *       It is possible to perform multiple slice operations on
- *       that partition, by choosing appropriate (adjacent?)
- *       intersections from multiple producer-WL partitions,
- *       but I have not had time to code that. The information
- *       is all there, in the F_noteintersect, but I have not
- *       had time to code it. This change should improve AWLF
- *       performance, because we would, in many cases, need
- *       fewer trips through SAACYC to achieve the same end.
  *
  *****************************************************************************/
 static node *
 PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
 {
-    node *newpartns;
-    node *curpartn;
-    node *p;
-    int axis;
-    int axes;
+    node *newpartns = NULL;
+    node *newlb;
+    node *newub;
+    node *clone;
+    node *genn;
+    node *step;
+    node *width;
+    node *newpart;
+    node *withid;
+    node *noteinter;
+    int i;
+    int intersectListLim;
 
     DBUG_ENTER ("PartitionSlicer");
 
@@ -931,6 +939,7 @@ PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
     CODE_DEC_USED (PART_CODE (newpartns)); /* newpartns is just a template */
 #endif                                     // DEADCODE
 
+#ifdef CRAP
     axes = SHgetUnrLen (ARRAY_FRAMESHAPE (lb));
 
     /* We start with one N_part, but each axis may add more N_parts. */
@@ -946,6 +955,24 @@ PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
             curpartn = PART_NEXT (curpartn);
         }
         curpartn = newpartns;
+    }
+#endif // CRAP
+
+    step = GENERATOR_STEP (PART_GENERATOR (arg_node));
+    width = GENERATOR_WIDTH (PART_GENERATOR (arg_node));
+    withid = PART_WITHID (arg_node);
+
+    noteinter = PRF_ARGS (INFO_NOTEINTERSECT (arg_info));
+    intersectListLim = TCcountExprs (noteinter);
+    intersectListLim = (intersectListLim - 1) / WLEPP;
+    for (i = 0; i < intersectListLim; i++) {
+        newlb = DUPdoDupTree (TCgetNthExprsExpr (WLPROJECTION1 (i), noteinter));
+        newub = DUPdoDupTree (TCgetNthExprsExpr (WLPROJECTION2 (i), noteinter));
+        genn
+          = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step), NULL);
+        clone = CloneCode (PART_CODE (arg_node), arg_info);
+        newpart = TBmakePart (clone, DUPdoDupTree (withid), genn);
+        newpartns = TCappendPart (newpartns, newpart);
     }
 
     DBUG_RETURN (newpartns);
