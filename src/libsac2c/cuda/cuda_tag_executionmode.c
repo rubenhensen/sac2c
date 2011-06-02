@@ -42,6 +42,7 @@ struct INFO {
     node *apargs;
     bool dofunargs;
     bool at_iscudarizable;
+    int at_wlcount;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
@@ -55,6 +56,7 @@ struct INFO {
 #define INFO_APARGS(n) (n->apargs)
 #define INFO_DOFUNARGS(n) (n->dofunargs)
 #define INFO_AT_ISCUDARIZABLE(n) (n->at_iscudarizable)
+#define INFO_AT_WLCOUNT(n) (n->at_wlcount)
 
 /*
  * INFO functions
@@ -79,6 +81,7 @@ MakeInfo ()
     INFO_APARGS (result) = NULL;
     INFO_DOFUNARGS (result) = FALSE;
     INFO_AT_ISCUDARIZABLE (result) = TRUE;
+    INFO_AT_WLCOUNT (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -159,7 +162,8 @@ IsIdCudaDefined (node *id, info *arg_info)
      */
     else if (NODE_TYPE (ID_DECL (id)) == N_arg) {
         if (FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)) && !TUisScalar (ID_NTYPE (id))
-            && !AVIS_ISHOSTREFERENCED (ID_AVIS (id))) {
+            && !AVIS_ISHOSTREFERENCED (ID_AVIS (id))
+            && FUNDEF_WLCOUNT (INFO_FUNDEF (arg_info)) != 0) {
             res = TRUE;
         }
     } else {
@@ -243,7 +247,7 @@ GetApArgFromFundefArg (node *apargs, node *fundefargs, node *arg)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ATravFundef(node *arg_node, info *arg_info)
+ * @fn node *ATravFundefCheckCudarizable(node *arg_node, info *arg_info)
  *
  *
  *   @param arg_node
@@ -252,9 +256,9 @@ GetApArgFromFundefArg (node *apargs, node *fundefargs, node *arg)
  *
  *****************************************************************************/
 static node *
-ATravFundef (node *arg_node, info *arg_info)
+ATravFundefCheckCudarizable (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TCULACfundef");
+    DBUG_ENTER ("ATravFundefCheckCudarizable");
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
@@ -263,7 +267,7 @@ ATravFundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ATravAp(node *arg_node, info *arg_info)
+ * @fn node *ATravApCheckCudarizable(node *arg_node, info *arg_info)
  *
  *
  *   @param arg_node
@@ -272,11 +276,11 @@ ATravFundef (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 static node *
-ATravAp (node *arg_node, info *arg_info)
+ATravApCheckCudarizable (node *arg_node, info *arg_info)
 {
     node *fundef;
 
-    DBUG_ENTER ("ATravAp");
+    DBUG_ENTER ("ATravApCheckCudarizable");
 
     fundef = AP_FUNDEF (arg_node);
 
@@ -300,7 +304,7 @@ ATravAp (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ATravWith(node *arg_node, info *arg_info)
+ * @fn node *ATravWithCheckCudarizable(node *arg_node, info *arg_info)
  *
  *
  *   @param arg_node
@@ -309,12 +313,52 @@ ATravAp (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 static node *
-ATravWith (node *arg_node, info *arg_info)
+ATravWithCheckCudarizable (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravWith");
+    DBUG_ENTER ("ATravWithCheckCudarizable");
 
     /* Any withloops within a lac function makes it un-cudarizable */
     INFO_AT_ISCUDARIZABLE (arg_info) = FALSE;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ATravFundefWLCount(node *arg_node, info *arg_info)
+ *
+ *
+ *   @param arg_node
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+static node *
+ATravFundefWLCount (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravFundefWLCount");
+
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *ATravWithWLCount(node *arg_node, info *arg_info)
+ *
+ *
+ *   @param arg_node
+ *   @param arg_info
+ *   @return
+ *
+ *****************************************************************************/
+static node *
+ATravWithWLCount (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("ATravWithWLCount");
+
+    INFO_AT_WLCOUNT (arg_info)++;
 
     DBUG_RETURN (arg_node);
 }
@@ -378,7 +422,27 @@ CUTEMdoTagExecutionmode (node *syntax_tree)
 node *
 CUTEMfundef (node *arg_node, info *arg_info)
 {
+    info *anon_info;
+
     DBUG_ENTER ("CUTEMfundef");
+
+    /************ Anonymous Traversal ************/
+    anontrav_t atrav[3]
+      = {{N_fundef, &ATravFundefWLCount}, {N_with, &ATravWithWLCount}, {0, NULL}};
+
+    TRAVpushAnonymous (atrav, &TRAVsons);
+
+    anon_info = MakeInfo ();
+
+    arg_node = TRAVdo (arg_node, anon_info);
+    /*********************************************/
+
+    FUNDEF_WLCOUNT (arg_node) = INFO_AT_WLCOUNT (anon_info);
+
+    /************ Anonymous Traversal ************/
+    anon_info = FreeInfo (anon_info);
+    TRAVpop ();
+    /*********************************************/
 
     INFO_FUNDEF (arg_info) = arg_node;
 
@@ -756,9 +820,9 @@ CUTEMap (node *arg_node, info *arg_info)
                 && CheckApIds (INFO_LHS (arg_info))) {
 
                 /************ Anonymous Traversal ************/
-                anontrav_t atrav[4] = {{N_fundef, &ATravFundef},
-                                       {N_ap, &ATravAp},
-                                       {N_with, &ATravWith},
+                anontrav_t atrav[4] = {{N_fundef, &ATravFundefCheckCudarizable},
+                                       {N_ap, &ATravApCheckCudarizable},
+                                       {N_with, &ATravWithCheckCudarizable},
                                        {0, NULL}};
 
                 TRAVpushAnonymous (atrav, &TRAVsons);

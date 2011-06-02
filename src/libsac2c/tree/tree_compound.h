@@ -118,6 +118,7 @@ extern int TCcountIds (node *ids_arg);
 extern node *TCmakeIdsFromVardecs (node *vardecs);
 extern node *TCsetSSAAssignForIdsChain (node *ids, node *assign);
 extern node *TClastIds (node *ids);
+extern node *TCconvertIds2Exprs (node *ids);
 
 /******************************************************************************
  *
@@ -1124,6 +1125,7 @@ extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *a
 #define WITH_BOUND2(n) (PART_BOUND2 (WITH_PART (n)))
 #define WITH_STEP(n) (PART_STEP (WITH_PART (n)))
 #define WITH_WIDTH(n) (PART_WIDTH (WITH_PART (n)))
+#define WITH_GENWIDTH(n) (PART_GENWIDTH (WITH_PART (n)))
 
 /*
  * CBLOCK, CEXPR of the *first* N_code-node
@@ -1147,6 +1149,7 @@ extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *a
 #define PART_BOUND2(n) (GENERATOR_BOUND2 (PART_GENERATOR (n)))
 #define PART_STEP(n) (GENERATOR_STEP (PART_GENERATOR (n)))
 #define PART_WIDTH(n) (GENERATOR_WIDTH (PART_GENERATOR (n)))
+#define PART_GENWIDTH(n) (GENERATOR_GENWIDTH (PART_GENERATOR (n)))
 
 #define PART_CEXPRS(n) (CODE_CEXPRS (PART_CODE (n)))
 #define PART_CBLOCK(n) (CODE_CBLOCK (PART_CODE (n)))

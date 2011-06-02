@@ -5244,6 +5244,18 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="WLCount" default="0" mandatory="no" inconstructor="no">
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="cuda_cutem" to="final"/>
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="Livevars" inconstructor="no">
           <description>
             Contains a union of all livevars inside the body

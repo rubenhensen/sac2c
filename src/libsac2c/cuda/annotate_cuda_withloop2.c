@@ -368,21 +368,19 @@ ACUWLfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ACUWLfold");
 
-    /* An outermost fold N_with is currently not cudarizable;
-     * however, if the fold is within an N_with, we do not signal
-     * uncudarizeable to the enclosing N_with. */
-    /*
-      if( !INFO_INWL( arg_info)) {
-        if(!global.optimize.doscuf) {
-          INFO_CUDARIZABLE( arg_info) = FALSE;
+    if (global.optimize.dopfd) {
+        FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
+        FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
+    } else {
+        /* An outermost fold N_with is currently not cudarizable;
+         * however, if the fold is within an N_with, we do not signal
+         * uncudarizeable to the enclosing N_with. */
+        if (!INFO_INWL (arg_info)) {
+            if (!global.optimize.doscuf) {
+                INFO_CUDARIZABLE (arg_info) = FALSE;
+            }
         }
-      }
-    */
-
-    /* We have commented out the code above to experiemnt
-     * with cudarizing fold withloop */
-    FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
-    FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

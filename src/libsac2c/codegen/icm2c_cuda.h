@@ -40,7 +40,8 @@ extern void ICMCompileCUDA_SHMEM_BOUNDARY_CHECK (char *to_NT, int dim_pos, char 
 extern void ICMCompileCUDA_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                                    char *copyfun);
 
-extern void ICMCompileCUDA_COND_WL_ASSIGN (char *cond_NT, int origin, char *shmem_NT,
-                                           char *devidx_NT, char *devmem_NT);
+extern void ICMCompileCUDA_COND_WL_ASSIGN (char *cond_NT, char *shmemidx_NT,
+                                           char *shmem_NT, char *devidx_NT,
+                                           char *devmem_NT);
 
 #endif /* _SAC_ICM2C_CUDA_H_ */

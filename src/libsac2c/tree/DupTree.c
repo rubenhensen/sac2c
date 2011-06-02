@@ -2280,6 +2280,8 @@ DUPfold (node *arg_node, info *arg_info)
 
     FOLD_GUARD (new_node) = DUPTRAV (FOLD_GUARD (arg_node));
 
+    FOLD_ISPARTIALFOLD (new_node) = FOLD_ISPARTIALFOLD (arg_node);
+
     FOLD_FUNDEF (new_node)
       = LUTsearchInLutPp (INFO_LUT (arg_info), FOLD_FUNDEF (arg_node));
 
@@ -2287,6 +2289,10 @@ DUPfold (node *arg_node, info *arg_info)
 
     if (FOLD_INITIAL (arg_node) != NULL) {
         FOLD_INITIAL (new_node) = DUPTRAV (FOLD_INITIAL (arg_node));
+    }
+
+    if (FOLD_PARTIALMEM (arg_node) != NULL) {
+        FOLD_PARTIALMEM (new_node) = DUPTRAV (FOLD_PARTIALMEM (arg_node));
     }
 
     CopyCommonNodeData (new_node, arg_node);

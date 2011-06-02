@@ -3081,7 +3081,8 @@ COMPvardec (node *arg_node, info *arg_info)
                         MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
                                       TRUE, TRUE, TRUE, NULL));
     } else if (FUNDEF_ISCUDAGLOBALFUN (INFO_FUNDEF (arg_info))
-               && CUisShmemTypeOld (VARDEC_TYPE (arg_node))) {
+               && CUisShmemTypeOld (VARDEC_TYPE (arg_node))
+               && TCgetShapeDim (VARDEC_TYPE (arg_node)) != 0) {
         VARDEC_ICM (arg_node)
           = TCmakeIcm1 ("CUDA_DECL_SHMEM_ARRAY",
                         MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
@@ -5239,8 +5240,7 @@ COMPprfCUDAWLAssign (node *arg_node, info *arg_info)
 static node *
 COMPprfCondWLAssign (node *arg_node, info *arg_info)
 {
-    node *cond, *shmem, *devidx, *devmem;
-    int zero;
+    node *cond, *shmemidx, *shmem, *devidx, *devmem;
     node *icm_args;
 
     node *ret_node = NULL;
@@ -5248,14 +5248,14 @@ COMPprfCondWLAssign (node *arg_node, info *arg_info)
     DBUG_ENTER ("COMPprfCondWLAssign");
 
     cond = PRF_ARG1 (arg_node);
-    zero = NUM_VAL (PRF_ARG2 (arg_node));
+    shmemidx = NUM_VAL (PRF_ARG2 (arg_node));
     shmem = PRF_ARG3 (arg_node);
     devidx = PRF_ARG4 (arg_node);
     devmem = PRF_ARG5 (arg_node);
 
     icm_args
       = TBmakeExprs (DUPdupNodeNt (cond),
-                     TBmakeExprs (TBmakeNum (zero),
+                     TBmakeExprs (DUPdupNodeNt (shmemidx),
                                   TBmakeExprs (DUPdupNodeNt (shmem),
                                                TBmakeExprs (DUPdupNodeNt (devidx),
                                                             TBmakeExprs (DUPdupNodeNt (

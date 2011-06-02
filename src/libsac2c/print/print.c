@@ -2029,6 +2029,11 @@ PRTfundef (node *arg_node, info *arg_info)
                     fprintf (global.outfile, " * SPMD function:\n");
                 }
 
+                if (global.backend == BE_cuda) {
+                    fprintf (global.outfile, " * WITH-loop Count: %d\n",
+                             FUNDEF_WLCOUNT (arg_node));
+                }
+
                 fprintf (global.outfile, " * ");
                 if (FUNDEF_NS (arg_node) != NULL) {
                     fprintf (global.outfile, "%s::", NSgetName (FUNDEF_NS (arg_node)));

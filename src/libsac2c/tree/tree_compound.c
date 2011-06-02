@@ -859,6 +859,25 @@ TClastIds (node *ids)
     DBUG_RETURN (lastIds);
 }
 
+node *
+TCconvertIds2Exprs (node *ids)
+{
+    node *exprs = NULL;
+    DBUG_ENTER ("TCconverIds2Exprs");
+
+    while (ids != NULL) {
+        if (exprs == NULL) {
+            exprs = TBmakeExprs (TBmakeId (IDS_AVIS (ids)), NULL);
+        } else {
+            exprs = TCappendExprs (exprs, TBmakeExprs (TBmakeId (IDS_AVIS (ids)), NULL));
+        }
+
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN (exprs);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***

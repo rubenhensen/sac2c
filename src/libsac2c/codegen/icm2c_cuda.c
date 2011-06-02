@@ -227,6 +227,12 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
       cutGetTimerValue(timer));\n", funname); fprintf( global.outfile,
       "cutResetTimer(timer);\n");
     */
+
+    /*
+      INDENT;
+      fprintf( global.outfile, "cutilCheckMsg(\"%s failed!\\n\");\n", funname);
+    */
+
     INDENT;
     fprintf (global.outfile, "}\n");
 
@@ -1009,7 +1015,7 @@ ICMCompileCUDA_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
 /******************************************************************************
  *
  * function:
- *   void ICMCompileCUDA_COND_WL_ASSIGN( char *cond_NT, int origin,
+ *   void ICMCompileCUDA_COND_WL_ASSIGN( char *cond_NT, char *shmemidx_NT,
  *                                       char *shmem_NT, char *devidx_NT,
  *                                       char *devmem_NT)
  *
@@ -1017,8 +1023,8 @@ ICMCompileCUDA_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
  ******************************************************************************/
 
 void
-ICMCompileCUDA_COND_WL_ASSIGN (char *cond_NT, int origin, char *shmem_NT, char *devidx_NT,
-                               char *devmem_NT)
+ICMCompileCUDA_COND_WL_ASSIGN (char *cond_NT, char *shmemidx_NT, char *shmem_NT,
+                               char *devidx_NT, char *devmem_NT)
 {
     DBUG_ENTER ("ICMCompileCUDA_COND_WL_ASSIGN");
 
@@ -1032,8 +1038,8 @@ ICMCompileCUDA_COND_WL_ASSIGN (char *cond_NT, int origin, char *shmem_NT, char *
 
     INDENT;
     INDENT;
-    fprintf (global.outfile, "NT_NAME( %s)[NT_NAME( %s)] = NT_NAME( %s)[%d];\n",
-             devmem_NT, devidx_NT, shmem_NT, origin);
+    fprintf (global.outfile, "NT_NAME( %s)[NT_NAME( %s)] = NT_NAME( %s)[NT_NAME( %s)];\n",
+             devmem_NT, devidx_NT, shmem_NT, shmemidx_NT);
 
     INDENT;
     fprintf (global.outfile, "}\n");
