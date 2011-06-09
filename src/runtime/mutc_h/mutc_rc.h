@@ -73,8 +73,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
   sl_decl (SAC_inc_parent_count, void, sl_glparm (SAC_ND_DESC_PARENT_TYPE, parent));)
 
 #if SAC_RC_METHOD == 3
-
-#define SAC_ND_INIT__RC__DEFAUT(var_NT, rc)                                              \
+#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
     {                                                                                    \
         SAC_ND_INIT__RC__C99 (var_NT, rc)                                                \
     }
