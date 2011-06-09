@@ -74,6 +74,11 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 
 #if SAC_RC_METHOD == 3
 
+#define SAC_ND_INIT__RC__DEFAUT(var_NT, rc)                                              \
+    {                                                                                    \
+        SAC_ND_INIT__RC__C99 (var_NT, rc)                                                \
+    }
+
 #define SAC_MUTC_GET_RC_PLACE(DESC)                                                      \
     ({                                                                                   \
         long int address = (long int)DESC;                                               \
@@ -172,6 +177,14 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
  * SAC_ND_SET__RC implementations (referenced by sac_std_gen.h)
  */
 #if SAC_RC_METHOD == 2
+
+#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
+    {                                                                                    \
+        SAC_ND_INIT__RC__C99 (var_NT, rc)                                                \
+        DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_SEQ;                    \
+        DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
+    }
+
 #define SAC_MUTC_GET_RC_PLACE(desc)                                                      \
     ({                                                                                   \
         long int address = (long int)(DESC_PARENT (desc));                               \

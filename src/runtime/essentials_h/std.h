@@ -1335,7 +1335,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_INIT__RC__NOOP(var_NT, rc) SAC_NOOP ()
 
-#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
+#define SAC_ND_INIT__RC__C99(var_NT, rc)                                                 \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_INIT__RC( %s, %d)", NT_STR (var_NT), rc))                 \
         DESC_RC (SAC_ND_A_DESC (var_NT)) = rc;                                           \
@@ -1402,6 +1402,8 @@ typedef intptr_t *SAC_array_descriptor_t;
 #if SAC_RC_METHOD == 0
 /* Default mode */
 
+#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc) SAC_ND_INIT__RC__C99 (var_NT, rc)
+
 #define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \
     SAC_ND_DEC_RC_FREE__C99 (var_NT, rc, freefun)
 
@@ -1416,7 +1418,8 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #if SAC_RC_METHOD == 1
 /* No rc */
-
+#include <stdint.h>
+#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)
 #define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)
 #define SAC_ND_SET__RC__DEFAULT(var_NT, rc)
 #define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)

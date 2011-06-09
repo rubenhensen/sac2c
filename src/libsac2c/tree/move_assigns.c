@@ -311,6 +311,7 @@ ATravAssign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ("ATravAssign");
 
+    INFO_FOUND_AVIS (arg_info) = FALSE;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if ((INFO_FOUND_AVIS (arg_info) || INFO_STOP (arg_info))

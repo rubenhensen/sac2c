@@ -625,15 +625,21 @@ PrintBackendOptions (void)
 {
     DBUG_ENTER ("PrintBackendOptions");
 
-    printf ("\n\nBACKEND OPTIONS:\n\n"
-
+    printf ("\n\nBACKEND OPTIONS:\n"
+            "\n"
             "    -minarrayrep <class>\n"
             "                    Specify the minimum array representation class used:\n"
             "                      s: use all (SCL, AKS, AKD, AUD) representations,\n"
             "                      d: use SCL, AKD, AUD representations only,\n"
             "                      +: use SCL, AUD representations only,\n"
             "                      *: use AUD representation only.\n"
-            "                    (default: s)\n");
+            "                    (default: s)\n"
+            "\n"
+            "    -rc_method <n>  Change the reference counting mode\n"
+            "                      0         Traditional reference counting\n"
+            "                      1         No reference counting\n"
+            "                      2         Multimodal reference counting\n"
+            "                      3         Asynchronous reference counting\n");
 
     DBUG_VOID_RETURN;
 }
@@ -1004,12 +1010,6 @@ PrintCustomisationOptions (void)
       "                      c99       default backend to produce C99 code\n"
       "                      mutc      backend to produce muTC code\n"
       "                      cuda      backend to produce Cuda code\n"
-      "\n"
-      "    -rc_method <n>  Change the reference counting mode\n"
-      "                      0         Traditional reference counting\n"
-      "                      1         No reference counting\n"
-      "                      2         Multimodal reference counting\n"
-      "                      3         Asynchronous reference counting\n"
       "\n");
     DBUG_VOID_RETURN;
 }

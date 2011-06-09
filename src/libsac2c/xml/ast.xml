@@ -2736,6 +2736,8 @@
         <node name="Cond" />
         <node name="With" />
         <node name="With2" />
+        <node name="With3" />
+        <node name="Range" />
         <node name="Code" />
       </travsons>
     </traversal>
@@ -2783,6 +2785,8 @@
         <node name="Module" />
         <node name="With" />
         <node name="With2" />
+        <node name="With3" />
+        <node name="Range" />
         <node name="Fold" />
         <node name="Code" />
       </travsons>
