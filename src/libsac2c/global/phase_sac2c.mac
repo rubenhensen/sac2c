@@ -914,8 +914,9 @@ SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification, ALWA
 SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALWAYS, wlt)
 
 SUBPHASE (wlsd, "Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
-          (global.backend == BE_mutc
-           || (global.backend == BE_cuda && global.optimize.doshr)),
+          global.optimize.dowlsd
+            && ((global.backend == BE_mutc
+                 || (global.backend == BE_cuda && global.optimize.doshr))),
           wlt)
 
 SUBPHASE (cse, "Applying common subexpression elimination",

@@ -112,6 +112,7 @@ OPTIMIZE ("uw3", uw3, TRUE, TRUE, "MUTC unroll with3 loops")
 OPTIMIZE ("pew3", pew3, TRUE, TRUE, "MUTC prune empty with3 loops")
 OPTIMIZE ("msa", msa, TRUE, TRUE, "MUTC mark suballoc as unique")
 OPTIMIZE ("armp", armp, TRUE, TRUE, "MUTC add rc mode prf")
+OPTIMIZE ("wlsd", wlsd, TRUE, TRUE, "withloop split dimension")
 /*
 OPTIMIZE( "cuskc",  cuskc,   TRUE,  TRUE,  "CUDA sink code")
 OPTIMIZE( "cucc",   cucc,    TRUE,  TRUE,  "CUDA create cells")
