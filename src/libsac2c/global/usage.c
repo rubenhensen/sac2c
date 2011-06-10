@@ -1219,7 +1219,7 @@ USGprintCopyright ()
       "\n"
       "COPYRIGHT NOTICE, LICENSE AND DISCLAIMER\n"
       "\n"
-      "(c) Copyright 1994 - 2007 by\n"
+      "(c) Copyright 1994 - 2011 by\n"
       "\n"
       "  SAC Development Team\n"
       "\n"
