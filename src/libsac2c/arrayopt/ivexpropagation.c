@@ -1094,6 +1094,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
      *
      *   @brief arg_node is an N_avis of an AVIS_MIN/AVIS_MAX,
      *          that needs adjusting, by adding +1 or -1 to it.
+     *          Alternately, arg_node can be an N_num.
      *
      *          Because arg_node can also be a WITHID_IDS node,
      *          we have to decide whether to generate vector
@@ -1105,38 +1106,81 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
      *
      *          NULL arg_node is ignored.
      *
+     *          If arg_node points to an N_array, each element of
+     *          the N_array is adjusted using _add_SxS_(). This
+     *          is required by BuildInverseProjections, which is
+     *          unable to exploit CF to do the job.
      *
-     *   @param  arg_node: an N_avis node.
+     *   @param  arg_node: an N_avis node or N_num node.
      *           int k:    Constant value to be used.
      *           vardecs:  Address of a vardecs chain that we will append to.
      *           preassigns: Address of a preassigns chain we will append to.
      *
      *   @return The N_avis result of the adjusted computation.
+     *           If the argument was an N_num, the result is also an N_num.
      *
      ******************************************************************************/
     node *IVEXPadjustExtremaBound (node * arg_node, info * arg_info, int k,
                                    node **vardecs, node **preassigns)
     {
-        node *zavis;
+        node *zavis = NULL;
         node *zids;
         node *zass;
         node *kavis;
+        node *argarray = NULL;
+        node *aelems = NULL;
+        node *argid;
+        pattern *pat;
+        int i;
+        int lim;
+        node *el;
+        node *zarr;
+        node *z;
+        constant *con;
+        constant *kcon;
         prf op;
 
         DBUG_ENTER ("IVEXPadjustExtremaBound");
 
         if (NULL != arg_node) {
             kavis = IVEXImakeIntScalar (k, vardecs, preassigns);
-
             zavis = TBmakeAvis (TRAVtmpVarName ("aeb"),
                                 TYeliminateAKV (AVIS_TYPE (arg_node)));
-
             *vardecs = TBmakeVardec (zavis, *vardecs);
             zids = TBmakeIds (zavis, NULL);
-            op = TUisScalar (AVIS_TYPE (arg_node)) ? F_add_SxS : F_add_VxS;
-            zass = TBmakeAssign (TBmakeLet (zids, TCmakePrf2 (op, TBmakeId (arg_node),
-                                                              TBmakeId (kavis))),
-                                 NULL);
+
+            pat = PMarray (1, PMAgetNode (&argarray), 1, PMskip (0));
+            argid = TBmakeId (arg_node);
+            if ((PMmatchFlat (pat, argid))) {
+                /* Unrolled version of function for N_array nodes */
+                lim = SHgetUnrLen (TYgetShape (AVIS_TYPE (arg_node)));
+                for (i = 0; i < lim; i++) {
+                    el = TCgetNthExprsExpr (i, ARRAY_AELEMS (argarray));
+                    if (N_num == NODE_TYPE (el)) { /* [50], etc. */
+                        kcon = COmakeConstantFromInt (k);
+                        con = COaST2Constant (el);
+                        con = COadd (con, kcon, NULL);
+                        z = COconstant2AST (con);
+                        kcon = COfreeConstant (kcon);
+                        con = COfreeConstant (con);
+                    } else {
+                        z = IVEXPadjustExtremaBound (ID_AVIS (el), arg_info, k, vardecs,
+                                                     preassigns);
+                        z = TBmakeId (z);
+                        DBUG_ASSERT (NULL != z, "Expected non-null result");
+                    }
+                    aelems = TCappendExprs (aelems, TBmakeExprs (z, NULL));
+                }
+                zarr = DUPdoDupNode (argarray);
+                ARRAY_AELEMS (zarr) = aelems;
+                zass = TBmakeAssign (TBmakeLet (zids, zarr), NULL);
+            } else {
+                op = TUisScalar (AVIS_TYPE (arg_node)) ? F_add_SxS : F_add_VxS;
+                zass = TBmakeAssign (TBmakeLet (zids, TCmakePrf2 (op, TBmakeId (arg_node),
+                                                                  TBmakeId (kavis))),
+                                     NULL);
+            }
+            argid = FREEdoFreeNode (argid);
             AVIS_SSAASSIGN (zavis) = zass;
             *preassigns = TCappendAssign (*preassigns, zass);
 
@@ -1149,9 +1193,9 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
             DBUG_PRINT ("IVEXP",
                         ("adjustExtremaBound introduced adjustment named: %s for: %s",
                          AVIS_NAME (zavis), AVIS_NAME (arg_node)));
-        } else {
-            zavis = arg_node;
+            pat = PMfree (pat);
         }
+
         DBUG_RETURN (zavis);
     }
 
