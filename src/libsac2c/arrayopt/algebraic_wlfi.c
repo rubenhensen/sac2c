@@ -650,37 +650,34 @@ BuildInverseProjectionScalar (node *el, info *arg_info, node *projz)
                     break;
 
                 case N_prf:
-                    if ((F_add_SxS == PRF_PRF (idx)) || (F_sub_SxS == PRF_PRF (idx))
-                        || (F_mul_SxS == PRF_PRF (idx))) {
-                        ivarg = FindPrfParent2 (idx, arg_info);
-                        if (0 == ivarg)
-                            break;
-                        xarg = (1 == ivarg) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
-                        xarg = BuildInverseProjectionScalar (ID_AVIS (xarg), arg_info,
-                                                             projz);
-                    }
-
                     switch (PRF_PRF (idx)) {
                     case F_add_SxS:
                         /* iv' = ( iv + x);   -->  iv = ( iv' - x);
                          * iv' = ( x  + iv);  -->  iv = ( iv' - x);
                          */
-                        resavis = TBmakeAvis (TRAVtmpVarName ("tis"),
-                                              TYmakeAKS (TYmakeSimpleType (T_int),
-                                                         SHcreateShape (0)));
-                        INFO_VARDECS (arg_info)
-                          = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
-                        ids = TBmakeIds (resavis, NULL);
-                        assgn
-                          = TBmakeAssign (TBmakeLet (ids, TCmakePrf2 (F_sub_SxS,
-                                                                      TBmakeId (elavis),
-                                                                      TBmakeId (
-                                                                        ID_AVIS (xarg)))),
-                                          NULL);
-                        INFO_PREASSIGNS (arg_info)
-                          = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
-                        AVIS_SSAASSIGN (resavis) = assgn;
-                        z = BuildInverseProjectionScalar (xarg, arg_info, projz);
+                        ivarg = FindPrfParent2 (idx, arg_info);
+                        if (0 != ivarg) {
+                            xarg = (1 == ivarg) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
+                            xarg = BuildInverseProjectionScalar (ID_AVIS (xarg), arg_info,
+                                                                 projz);
+                            resavis = TBmakeAvis (TRAVtmpVarName ("tis"),
+                                                  TYmakeAKS (TYmakeSimpleType (T_int),
+                                                             SHcreateShape (0)));
+                            INFO_VARDECS (arg_info)
+                              = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
+                            ids = TBmakeIds (resavis, NULL);
+                            assgn
+                              = TBmakeAssign (TBmakeLet (ids,
+                                                         TCmakePrf2 (F_sub_SxS,
+                                                                     TBmakeId (elavis),
+                                                                     TBmakeId (
+                                                                       ID_AVIS (xarg)))),
+                                              NULL);
+                            INFO_PREASSIGNS (arg_info)
+                              = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
+                            AVIS_SSAASSIGN (resavis) = assgn;
+                            z = BuildInverseProjectionScalar (xarg, arg_info, projz);
+                        }
                         break;
 
                     case F_sub_SxS:
@@ -693,28 +690,46 @@ BuildInverseProjectionScalar (node *el, info *arg_info, node *projz)
                                                          SHcreateShape (0)));
                         INFO_VARDECS (arg_info)
                           = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
-                        if (1 == ivarg) {
-                            nprf = F_add_SxS; /* Case 1 */
-                            id1 = TBmakeId (elavis);
-                            id2 = TBmakeId (ID_AVIS (xarg));
-                        } else {
-                            nprf = F_sub_SxS; /* Case 2 */
-                            id1 = TBmakeId (ID_AVIS (xarg));
-                            id2 = TBmakeId (elavis);
-                            INFO_FINVERSESWAP (arg_info) = !INFO_FINVERSESWAP (arg_info);
-                        }
+                        ivarg = FindPrfParent2 (idx, arg_info);
+                        if (0 != ivarg) {
+                            xarg = (1 == ivarg) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
+                            xarg = BuildInverseProjectionScalar (ID_AVIS (xarg), arg_info,
+                                                                 projz);
+                            switch (ivarg) {
+                            case 1:
+                                nprf = F_add_SxS; /* Case 1 */
+                                id1 = TBmakeId (elavis);
+                                id2 = TBmakeId (ID_AVIS (xarg));
+                                break;
 
-                        ids = TBmakeIds (resavis, NULL);
-                        assgn
-                          = TBmakeAssign (TBmakeLet (ids, TCmakePrf2 (nprf, id1, id2)),
-                                          NULL);
-                        INFO_PREASSIGNS (arg_info)
-                          = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
-                        AVIS_SSAASSIGN (resavis) = assgn;
-                        z = BuildInverseProjectionScalar (xarg, arg_info, projz);
+                            case 2:
+                                nprf = F_sub_SxS; /* Case 2 */
+                                id1 = TBmakeId (ID_AVIS (xarg));
+                                id2 = TBmakeId (elavis);
+                                INFO_FINVERSESWAP (arg_info)
+                                  = !INFO_FINVERSESWAP (arg_info);
+                                break;
+
+                            default:
+                                nprf = F_add_SxS;
+                                id1 = NULL;
+                                id2 = NULL;
+                                DBUG_ASSERT (FALSE, "ivarg confusion");
+                            }
+
+                            ids = TBmakeIds (resavis, NULL);
+                            assgn = TBmakeAssign (TBmakeLet (ids,
+                                                             TCmakePrf2 (nprf, id1, id2)),
+                                                  NULL);
+                            INFO_PREASSIGNS (arg_info)
+                              = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
+                            AVIS_SSAASSIGN (resavis) = assgn;
+                            z = BuildInverseProjectionScalar (xarg, arg_info, projz);
+                        }
                         break;
 
                     case F_mul_SxS:
+                        ivarg = FindPrfParent2 (idx, arg_info);
                         DBUG_ASSERT (FALSE, "Coding time for F_mul_SxS_");
                         if (COisConstant (PRF_ARG2 (idx))) {
                         }
@@ -1016,14 +1031,6 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                 intr = IVEXPadjustExtremaBound (ID_AVIS (intr), arg_info, -1,
                                                 &INFO_VARDECS (arg_info),
                                                 &INFO_PREASSIGNSWL (arg_info));
-#ifdef DEADCODE
-                nlet = ASSIGN_INSTR (AVIS_SSAASSIGN (intr));
-                newnlet
-                  = UPRFdoUnrollPRFsPrf (LET_EXPR (nlet), &INFO_VARDECS (arg_info),
-                                         &INFO_PREASSIGNSWL (arg_info), LET_IDS (nlet));
-                FREEdoFreeNode (LET_EXPR (nlet));
-                LET_EXPR (nlet) = newnlet;
-#endif // DEADCODE
                 nlet = TCfilterAssignArg (MatchExpr, AVIS_SSAASSIGN (intr),
                                           &INFO_PREASSIGNSWL (arg_info));
                 INFO_PREASSIGNSWL (arg_info)
