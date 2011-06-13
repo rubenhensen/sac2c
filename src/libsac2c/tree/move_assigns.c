@@ -269,6 +269,7 @@ ATravId (node *arg_node, info *arg_info)
 
     if (SameAvis (INFO_IDS (arg_info), ID_AVIS (arg_node))) {
         INFO_FOUND_AVIS (arg_info) = TRUE;
+        DBUG_PRINT ("MA", ("found %s", AVIS_NAME (ID_AVIS (arg_node))));
     } else {
         arg_node = TRAVcont (arg_node, arg_info);
     }
@@ -361,15 +362,17 @@ static node *
 ATravBlock (node *arg_node, info *arg_info)
 {
     bool stack = FALSE;
+    bool stackFound = FALSE;
     DBUG_ENTER ("ATravBlock");
 
     stack = INFO_IN_BLOCK (arg_info);
+    stackFound = INFO_FOUND_AVIS (arg_info);
     INFO_IN_BLOCK (arg_info) = TRUE;
 
     arg_node = TRAVcont (arg_node, arg_info);
 
     INFO_IN_BLOCK (arg_info) = stack;
-
+    INFO_FOUND_AVIS (arg_info) = INFO_FOUND_AVIS (arg_info) || stackFound;
     DBUG_RETURN (arg_node);
 }
 
@@ -398,16 +401,24 @@ moveAssign (node *assign, node *assigns, info *arg_info)
         /* Been asked to move a let node.  We should be able to do that */
         if (LET_IDS (ASSIGN_INSTR (assign)) != NULL) {
             /* Have a let with a lhs so try and move it */
+            DBUG_PRINT ("MA", ("Trying to move %s ...",
+                               AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign))))));
             INFO_ASSIGN (stack_info) = assign;
             INFO_IDS (stack_info) = LET_IDS (ASSIGN_INSTR (assign));
 
             TRAVpushAnonymous (atrav, &TRAVsons);
             assigns = TRAVopt (assigns, stack_info);
             TRAVpop ();
-
             if (INFO_ASSIGN (stack_info) != NULL) {
                 CTInote ("Did not find use of lhs placing assign at end of block");
+                DBUG_PRINT ("MA",
+                            ("LHS %s ...",
+                             AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign))))));
                 assigns = TCappendAssign (assigns, INFO_ASSIGN (stack_info));
+            } else {
+                DBUG_PRINT ("MA",
+                            ("Moved %s ...",
+                             AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign))))));
             }
 
             INFO_ASSIGN (stack_info) = NULL;
