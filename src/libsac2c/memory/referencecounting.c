@@ -636,13 +636,17 @@ RCIprf (node *arg_node, info *arg_info)
 
     case F_cond_wl_assign:
         /*
-         * cond_wl_assign( c, 0, shmem, idx, mem)
+         * cond_wl_assign( cond, shmemidx, shmem, devidx, devmem)
          *
          */
         INFO_MODE (arg_info) = rc_prfuse;
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        PRF_ARG2 (arg_node) = TRAVdo (PRF_ARG2 (arg_node), arg_info);
         PRF_ARG3 (arg_node) = TRAVdo (PRF_ARG3 (arg_node), arg_info);
         PRF_ARG4 (arg_node) = TRAVdo (PRF_ARG4 (arg_node), arg_info);
+        if (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG6 (arg_node))) != NULL) {
+            PRF_ARG6 (arg_node) = TRAVdo (PRF_ARG6 (arg_node), arg_info);
+        }
         break;
 
     case F_prop_obj_out:

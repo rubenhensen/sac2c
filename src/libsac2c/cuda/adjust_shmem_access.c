@@ -251,7 +251,8 @@ ASHAprf (node *arg_node, info *arg_info)
 
     /* If we are in cuda withloop */
     if (INFO_LEVEL (arg_info) > 0) {
-        if (PRF_PRF (arg_node) == F_idx_modarray_AxSxS) {
+        if (PRF_PRF (arg_node) == F_idx_modarray_AxSxS
+            || PRF_PRF (arg_node) == F_idx_modarray_AxSxA) {
             if (CUisShmemTypeNew (IDS_NTYPE (INFO_LHS (arg_info)))
                 && CUisShmemTypeNew (ID_NTYPE (PRF_ARG1 (arg_node)))) {
                 subst_avis = AVIS_SUBST (IDS_AVIS (INFO_LHS (arg_info)));

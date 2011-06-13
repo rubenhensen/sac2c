@@ -945,14 +945,19 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
         }
 
         if ((NODE_TYPE (withops) == N_fold) && FOLD_ISPARTIALFOLD (withops)) {
-            node *prf;
-            prf = ASSIGN_RHS (AVIS_SSAASSIGN (cexavis));
-            DBUG_ASSERT ((NODE_TYPE (prf) == N_prf && PRF_PRF (prf) == F_cond_wl_assign),
-                         "Result of partial fold is not defined by F_cond_wl_assign");
-            PRF_ARGS (prf)
-              = TCappendExprs (PRF_ARGS (prf),
-                               TBmakeExprs (DUPdoDupNode (FOLD_PARTIALMEM (withops)),
-                                            NULL));
+            node *prf, *avis, *tmp_exprs;
+            avis = cexavis;
+
+            while (AVIS_SSAASSIGN (avis) != NULL) {
+                prf = ASSIGN_RHS (AVIS_SSAASSIGN (avis));
+                DBUG_ASSERT ((NODE_TYPE (prf) == N_prf
+                              && PRF_PRF (prf) == F_cond_wl_assign),
+                             "Result of partial fold is not defined by F_cond_wl_assign");
+                tmp_exprs = TBmakeExprs (DUPdoDupNode (FOLD_PARTIALMEM (withops)),
+                                         EXPRS_EXPRS5 (PRF_ARGS (prf)));
+                EXPRS_NEXT (EXPRS_EXPRS4 (PRF_ARGS (prf))) = tmp_exprs;
+                avis = ID_AVIS (PRF_ARG6 (prf));
+            }
         }
 
         als = als->next;
@@ -1772,8 +1777,6 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     case F_cond_wl_assign:
-        // als->dim   = TBmakeNum( 0);
-        // als->shape = TCcreateZeroVector( 0, T_int);
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
         INFO_MUSTFILL (arg_info) = FALSE;
         break;

@@ -343,6 +343,12 @@ PKNLGprf (node *arg_node, info *arg_info)
               = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
                                    INFO_LASTASSIGN (arg_info));
             break;
+        case F_cond_wl_assign:
+            EXPRS_EXPRS6 (PRF_ARGS (arg_node))
+              = FREEdoFreeTree (EXPRS_EXPRS6 (PRF_ARGS (arg_node)));
+            EXPRS_NEXT (EXPRS_EXPRS5 (PRF_ARGS (arg_node))) = NULL;
+            PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
+            break;
         default:
             PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
             break;

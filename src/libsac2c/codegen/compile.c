@@ -5248,7 +5248,7 @@ COMPprfCondWLAssign (node *arg_node, info *arg_info)
     DBUG_ENTER ("COMPprfCondWLAssign");
 
     cond = PRF_ARG1 (arg_node);
-    shmemidx = NUM_VAL (PRF_ARG2 (arg_node));
+    shmemidx = PRF_ARG2 (arg_node);
     shmem = PRF_ARG3 (arg_node);
     devidx = PRF_ARG4 (arg_node);
     devmem = PRF_ARG5 (arg_node);

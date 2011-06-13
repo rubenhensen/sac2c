@@ -409,6 +409,7 @@ KPPprf (node *arg_node, info *arg_info)
         INFO_REMOVE_IDS (arg_info) = TRUE;
         break;
     case F_idx_modarray_AxSxS:
+    case F_idx_modarray_AxSxA:
         /*
          * Note that this is a quick fix for the problem generated in
          * cuknl. In cuknl, if a modarray_AxSxS works on shared memory,
