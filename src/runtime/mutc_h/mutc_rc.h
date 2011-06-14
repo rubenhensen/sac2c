@@ -565,8 +565,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 #define SAC_ND_PRF_RESTORERC__NOOP(array, rc)
 #define SAC_ND_PRF_2NORC__NOOP(rc, array)
 #define SAC_ND_PRF_2ASYNC__NOOP(new, array)                                              \
-    SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));                \
-    SAC_ND_A_DESC (new) = SAC_ND_GETVAR (array, SAC_ND_A_DESC (array));
+    SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));
 
 #endif /* SAC_BACKEND */
 #undef MUTC
