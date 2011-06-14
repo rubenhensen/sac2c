@@ -591,10 +591,8 @@ isHasInverseProjection (node *arg_node)
  * @brief Chase one element of an N_array back to its WITHID_IDS,
  *        if possible.
  *
- * @params:  el: The N_avis of the current element we are chasing.
- *           result of the iv'/pwl intersect calculation and F-inverse.
- *           Or, an N_id.
- *           Or, an N_num.
+ * @params:  iprime: The current element of iv'.
+ *           An N_id or an N_num.
  *           arg_info: Your basic arg_info node.
  *           projz: The current inverse projection result exprs chain.
  *
@@ -604,7 +602,7 @@ isHasInverseProjection (node *arg_node)
  *
  *****************************************************************************/
 static node *
-BuildInverseProjectionScalar (node *el, info *arg_info, node *projz)
+BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
 {
     node *z = NULL;
     int ivarg;
@@ -624,14 +622,14 @@ BuildInverseProjectionScalar (node *el, info *arg_info, node *projz)
 
     DBUG_ENTER ("BuildInverseProjectionScalar");
 
-    if (N_num == NODE_TYPE (el)) {
-        z = DUPdoDupNode (el);
+    if (N_num == NODE_TYPE (iprime)) {
+        z = DUPdoDupNode (iprime);
     } else {
-        if (N_id == NODE_TYPE (el)) {
-            elavis = ID_AVIS (el);
+        if (N_id == NODE_TYPE (iprime)) {
+            elavis = ID_AVIS (iprime);
             DBUG_PRINT ("AWLFI", ("Tracing %s", AVIS_NAME (elavis)));
             pat = PMany (1, PMAgetNode (&idx), 0);
-            if (PMmatchFlatSkipExtremaAndGuards (pat, el)) {
+            if (PMmatchFlatSkipExtremaAndGuards (pat, iprime)) {
                 switch (NODE_TYPE (idx)) {
                 case N_id:
                     /* Check for WITHID_IDS */
@@ -640,7 +638,18 @@ BuildInverseProjectionScalar (node *el, info *arg_info, node *projz)
                         DBUG_PRINT ("AWLFI",
                                     ("Found %s as source of iv'=%s",
                                      AVIS_NAME (ID_AVIS (idx)), AVIS_NAME (elavis)));
-                        z = elavis;
+                        if (N_num == NODE_TYPE (projz)) {
+                            z = AWLFIflattenExpression (DUPdoDupTree (projz),
+                                                        &INFO_VARDECS (arg_info),
+                                                        &INFO_PREASSIGNS (arg_info),
+                                                        TYmakeAKS (TYmakeSimpleType (
+                                                                     T_int),
+                                                                   SHcreateShape (0)));
+                        } else {
+                            DBUG_ASSERT (N_id == NODE_TYPE (projz),
+                                         "Expected N_id projz");
+                            z = ID_AVIS (projz);
+                        }
                     } else {
                         /* Vanilla variable */
                         rhs = AVIS_SSAASSIGN (ID_AVIS (idx));
@@ -658,8 +667,7 @@ BuildInverseProjectionScalar (node *el, info *arg_info, node *projz)
                         ivarg = FindPrfParent2 (idx, arg_info);
                         if (0 != ivarg) {
                             xarg = (1 == ivarg) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
-                            xarg = BuildInverseProjectionScalar (ID_AVIS (xarg), arg_info,
-                                                                 projz);
+                            DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
                             resavis = TBmakeAvis (TRAVtmpVarName ("tis"),
                                                   TYmakeAKS (TYmakeSimpleType (T_int),
                                                              SHcreateShape (0)));
@@ -670,8 +678,7 @@ BuildInverseProjectionScalar (node *el, info *arg_info, node *projz)
                               = TBmakeAssign (TBmakeLet (ids,
                                                          TCmakePrf2 (F_sub_SxS,
                                                                      TBmakeId (elavis),
-                                                                     TBmakeId (
-                                                                       ID_AVIS (xarg)))),
+                                                                     TBmakeId (xarg))),
                                               NULL);
                             INFO_PREASSIGNS (arg_info)
                               = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
@@ -693,8 +700,7 @@ BuildInverseProjectionScalar (node *el, info *arg_info, node *projz)
                         ivarg = FindPrfParent2 (idx, arg_info);
                         if (0 != ivarg) {
                             xarg = (1 == ivarg) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
-                            xarg = BuildInverseProjectionScalar (ID_AVIS (xarg), arg_info,
-                                                                 projz);
+                            DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
                             switch (ivarg) {
                             case 1:
                                 nprf = F_add_SxS; /* Case 1 */
@@ -763,6 +769,7 @@ BuildInverseProjectionScalar (node *el, info *arg_info, node *projz)
         }
     }
 
+    DBUG_ASSERT ((NULL == z) || N_avis == NODE_TYPE (z), "failed to gen avis");
     DBUG_RETURN (z);
 }
 
@@ -866,7 +873,7 @@ PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info
  *
  *            iv = F_1( iv');
  *
- * @params: arg_node is an F_intersect node.
+ * @params: arg_node is an F_noteintersect node.
  *          ivprime: The iv' N_array node.
  *          intr: the WLintersect N_array node for lb or ub.
  *
@@ -913,7 +920,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
                                  arg_info);
         if (NULL != withids) {
             INFO_FINVERSESWAP (arg_info) = FALSE;
-            ziavis = BuildInverseProjectionScalar (el, arg_info, NULL);
+            ziavis = BuildInverseProjectionScalar (iprime, arg_info, el);
             if (NULL != ziavis) {
                 if (N_avis == NODE_TYPE (ziavis)) {
                     AVIS_FINVERSESWAP (ziavis) = INFO_FINVERSESWAP (arg_info);
