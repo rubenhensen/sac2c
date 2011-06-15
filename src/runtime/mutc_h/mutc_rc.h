@@ -529,10 +529,10 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 #define SAC_ND_PRF_2ASYNC__DO(new, array)                                                \
     if (DESC_RC_MODE (SAC_ND_A_DESC (array)) != SAC_DESC_RC_MODE_NORC) {                 \
         if (DESC_RC (SAC_ND_A_DESC (array)) == 1) {                                      \
-            SAC_ND_A_FIELD (new) = SAC_ND_A_FIELD (array);                               \
+            SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));        \
             SAC_ND_A_DESC (new) = SAC_ND_A_DESC (array);                                 \
         } else {                                                                         \
-            SAC_ND_A_FIELD (new) = SAC_ND_A_FIELD (array);                               \
+            SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));        \
             SAC_ND_A_DESC_RC_MODE (array) = SAC_DESC_RC_MODE_ASYNC;                      \
             SAC_MUTC_RC_PRINT (array);                                                   \
             if (SAC_ND_A_DESC_PARENT (array) == NULL) {                                  \
@@ -546,7 +546,8 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
             }                                                                            \
             SAC_ND_A_COPY_DESC (new, array);                                             \
             DESC_RC (SAC_ND_A_DESC (new));                                               \
-            SAC_MUTC_DEBUG_RC (printf ("copy from %p to %p\n", SAC_ND_A_DESC (array),    \
+            SAC_MUTC_DEBUG_RC (printf ("copy from %p to %p\n",                           \
+                                       SAC_ND_GETVAR (array, SAC_ND_A_DESC (array)),     \
                                        SAC_ND_A_DESC (new)););                           \
             SAC_MUTC_RC_PRINT (array);                                                   \
             SAC_MUTC_RC_PRINT (new);                                                     \
