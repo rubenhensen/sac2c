@@ -537,7 +537,7 @@ case "$target_os" in
     ;;
   *linux*)      
     OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
-    LD_DYNAMIC=["-dy -shared -allow-shlib-undefined"]
+    LD_DYNAMIC=["-dy -shared -Wl,-allow-shlib-undefined"]
     LD_PATH=["-L%path% -Wl,-rpath,%path%"]
     LD_FLAGS="-Wl,-allow-shlib-undefined"
     AC_MSG_RESULT([linux settings])
