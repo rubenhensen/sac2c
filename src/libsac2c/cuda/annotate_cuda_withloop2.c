@@ -126,7 +126,7 @@ InitCudaBlockSizes ()
         */
         global.cuda_1d_block_small = 64;
         global.cuda_blocking_factor = 32;
-        global.cuda_2d_block_x = 32;
+        global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
     } else {
         DBUG_ASSERT (FALSE, "Unknown CUDA architecture");

@@ -795,7 +795,8 @@ static node *
 BuildStoreAssigns (node *part, info *arg_info)
 {
     node *vardecs = NULL, *assigns = NULL;
-    node *args, *avis, *tx_zero, *ty_zero, *cnst;
+    // args and avis may be used uninitialized
+    node *args = NULL, *avis = NULL, *tx_zero, *ty_zero, *cnst;
     simpletype sty;
     node *idx, *target_idx;
     int i, inner_array_size;
@@ -1371,7 +1372,8 @@ static node *
 BuildFoldWithloop (node *old_foldwl, info *arg_info)
 {
     int dim;
-    node *new_foldwl, *avis;
+    // new_foldwl may be used uninitialized
+    node *new_foldwl = NULL, *avis;
     node *part, *new_code, *withop;
     node *withid, *generator;
     node *vec, *ids = NULL;
