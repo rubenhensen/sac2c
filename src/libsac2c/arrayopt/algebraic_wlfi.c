@@ -1006,8 +1006,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     int curelidxlb;
     int curelidxub;
     node *ivprime;
-    bool swaplb;
-    bool swapub;
+    bool swaplb = FALSE;
+    bool swapub = FALSE;
     node *tmp;
     node *intr;
     node *nlet;
