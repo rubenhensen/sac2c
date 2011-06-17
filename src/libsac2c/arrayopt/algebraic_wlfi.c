@@ -615,7 +615,6 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
     node *idx = NULL;
     node *rhs;
     node *withidids;
-    prf nprf;
     node *elavis;
 
     pattern *pat;
@@ -666,7 +665,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                          */
                         ivarg = FindPrfParent2 (idx, arg_info);
                         if (0 != ivarg) {
-                            xarg = (1 == ivarg) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
+                            xarg = (2 == ivarg) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
                             DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
                             resavis = TBmakeAvis (TRAVtmpVarName ("tis"),
                                                   TYmakeAKS (TYmakeSimpleType (T_int),
@@ -699,17 +698,15 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                           = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
                         ivarg = FindPrfParent2 (idx, arg_info);
                         if (0 != ivarg) {
-                            xarg = (1 == ivarg) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
+                            xarg = (2 == ivarg) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
                             DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
                             switch (ivarg) {
                             case 1:
-                                nprf = F_add_SxS; /* Case 1 */
                                 id1 = TBmakeId (elavis);
                                 id2 = TBmakeId (ID_AVIS (xarg));
                                 break;
 
                             case 2:
-                                nprf = F_sub_SxS; /* Case 2 */
                                 id1 = TBmakeId (ID_AVIS (xarg));
                                 id2 = TBmakeId (elavis);
                                 INFO_FINVERSESWAP (arg_info)
@@ -717,16 +714,16 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                                 break;
 
                             default:
-                                nprf = F_add_SxS;
                                 id1 = NULL;
                                 id2 = NULL;
                                 DBUG_ASSERT (FALSE, "ivarg confusion");
                             }
 
                             ids = TBmakeIds (resavis, NULL);
-                            assgn = TBmakeAssign (TBmakeLet (ids,
-                                                             TCmakePrf2 (nprf, id1, id2)),
-                                                  NULL);
+                            assgn
+                              = TBmakeAssign (TBmakeLet (ids, TCmakePrf2 (PRF_PRF (idx),
+                                                                          id1, id2)),
+                                              NULL);
                             INFO_PREASSIGNS (arg_info)
                               = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
                             AVIS_SSAASSIGN (resavis) = assgn;
@@ -742,7 +739,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                         break;
 
                     default:
-                        DBUG_PRINT ("AWLFI", ("N_prf not recognized"));
+                        DBUG_ASSERT (FALSE, "N_prf not recognized");
                         break;
                     }
                     break;
@@ -750,7 +747,6 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                 case N_num:
                     DBUG_PRINT ("AWLFI", ("Found integer as source of iv'=%s",
                                           AVIS_NAME (elavis)));
-                    DBUG_ASSERT (FALSE, "bobbo is confused");
                     z = elavis;
                     break;
 
@@ -1317,9 +1313,6 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     node *producerGenerator;
     node *resavis;
     node *fncall;
-#ifdef DEADCODE
-    node *bound1;
-#endif // DEADCODE
     pattern *pat;
     node *gen = NULL;
     node *mmx;
@@ -1333,15 +1326,6 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
                           ? GENERATOR_BOUND1 (PART_GENERATOR (producerPart))
                           : GENERATOR_BOUND2 (PART_GENERATOR (producerPart));
     shp = SHgetUnrLen (ARRAY_FRAMESHAPE (producerGenerator));
-
-#ifdef DEADCODE
-    bound1 = GENERATOR_BOUND1 (PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)));
-    DBUG_ASSERT (N_array == NODE_TYPE (bound1), "Expected N_array bound1");
-    bound1 = AWLFIflattenExpression (DUPdoDupTree (bound1), &INFO_VARDECS (arg_info),
-                                     &INFO_PREASSIGNS (arg_info),
-                                     TYmakeAKS (TYmakeSimpleType (T_int),
-                                                SHcreateShape (1, shp)));
-#endif // DEADCODE
 
     pat = PMvar (1, PMAgetNode (&gen), 0);
     if (PMmatchFlatSkipExtrema (pat, producerGenerator)) {
