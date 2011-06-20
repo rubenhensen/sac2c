@@ -605,8 +605,9 @@ static node *
 BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
 {
     node *z = NULL;
-    int ivarg;
+    int markiv;
     node *xarg;
+    node *ivarg;
     node *id1;
     node *id2;
     node *resavis;
@@ -616,6 +617,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
     node *rhs;
     node *withidids;
     node *elavis;
+    prf nprf;
 
     pattern *pat;
 
@@ -663,9 +665,10 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                         /* iv' = ( iv + x);   -->  iv = ( iv' - x);
                          * iv' = ( x  + iv);  -->  iv = ( iv' - x);
                          */
-                        ivarg = FindPrfParent2 (idx, arg_info);
-                        if (0 != ivarg) {
-                            xarg = (2 == ivarg) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
+                        markiv = FindPrfParent2 (idx, arg_info);
+                        if (0 != markiv) {
+                            xarg = (2 == markiv) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
+                            ivarg = (2 == markiv) ? PRF_ARG2 (idx) : PRF_ARG1 (idx);
                             DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
                             resavis = TBmakeAvis (TRAVtmpVarName ("tis"),
                                                   TYmakeAKS (TYmakeSimpleType (T_int),
@@ -682,7 +685,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                             INFO_PREASSIGNS (arg_info)
                               = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
                             AVIS_SSAASSIGN (resavis) = assgn;
-                            z = BuildInverseProjectionScalar (xarg, arg_info, projz);
+                            z = BuildInverseProjectionScalar (ivarg, arg_info,
+                                                              TBmakeId (resavis));
                         }
                         break;
 
@@ -696,17 +700,20 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                                                          SHcreateShape (0)));
                         INFO_VARDECS (arg_info)
                           = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
-                        ivarg = FindPrfParent2 (idx, arg_info);
-                        if (0 != ivarg) {
-                            xarg = (2 == ivarg) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
+                        markiv = FindPrfParent2 (idx, arg_info);
+                        if (0 != markiv) {
+                            xarg = (2 == markiv) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
+                            ivarg = (2 == markiv) ? PRF_ARG2 (idx) : PRF_ARG1 (idx);
                             DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
-                            switch (ivarg) {
+                            switch (markiv) {
                             case 1:
+                                nprf = F_add_SxS;
                                 id1 = TBmakeId (elavis);
                                 id2 = TBmakeId (ID_AVIS (xarg));
                                 break;
 
                             case 2:
+                                nprf = F_sub_SxS;
                                 id1 = TBmakeId (ID_AVIS (xarg));
                                 id2 = TBmakeId (elavis);
                                 INFO_FINVERSESWAP (arg_info)
@@ -714,25 +721,26 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                                 break;
 
                             default:
+                                nprf = F_add_SxS;
                                 id1 = NULL;
                                 id2 = NULL;
                                 DBUG_ASSERT (FALSE, "ivarg confusion");
                             }
 
                             ids = TBmakeIds (resavis, NULL);
-                            assgn
-                              = TBmakeAssign (TBmakeLet (ids, TCmakePrf2 (PRF_PRF (idx),
-                                                                          id1, id2)),
-                                              NULL);
+                            assgn = TBmakeAssign (TBmakeLet (ids,
+                                                             TCmakePrf2 (nprf, id1, id2)),
+                                                  NULL);
                             INFO_PREASSIGNS (arg_info)
                               = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
                             AVIS_SSAASSIGN (resavis) = assgn;
-                            z = BuildInverseProjectionScalar (xarg, arg_info, projz);
+                            z = BuildInverseProjectionScalar (ivarg, arg_info,
+                                                              TBmakeId (resavis));
                         }
                         break;
 
                     case F_mul_SxS:
-                        ivarg = FindPrfParent2 (idx, arg_info);
+                        markiv = FindPrfParent2 (idx, arg_info);
                         DBUG_ASSERT (FALSE, "Coding time for F_mul_SxS_");
                         if (COisConstant (PRF_ARG2 (idx))) {
                         }
@@ -943,7 +951,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
             ARRAY_AELEMS (zarr) = z;
             typ = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
             z = AWLFIflattenExpression (zarr, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNSWL (arg_info), TYcopyType (typ));
+                                        &INFO_PREASSIGNS (arg_info), TYcopyType (typ));
         }
         pat = PMfree (pat);
     }
