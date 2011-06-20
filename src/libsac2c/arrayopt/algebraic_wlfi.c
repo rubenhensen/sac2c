@@ -616,7 +616,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
     node *idx = NULL;
     node *rhs;
     node *withidids;
-    node *elavis;
+    node *ipavis;
     prf nprf;
 
     pattern *pat;
@@ -627,8 +627,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
         z = DUPdoDupNode (iprime);
     } else {
         if (N_id == NODE_TYPE (iprime)) {
-            elavis = ID_AVIS (iprime);
-            DBUG_PRINT ("AWLFI", ("Tracing %s", AVIS_NAME (elavis)));
+            ipavis = ID_AVIS (iprime);
+            DBUG_PRINT ("AWLFI", ("Tracing %s", AVIS_NAME (ipavis)));
             pat = PMany (1, PMAgetNode (&idx), 0);
             if (PMmatchFlatSkipExtremaAndGuards (pat, iprime)) {
                 switch (NODE_TYPE (idx)) {
@@ -638,11 +638,11 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                     if (-1 != TClookupIdsNode (withidids, ID_AVIS (idx))) {
                         DBUG_PRINT ("AWLFI",
                                     ("Found %s as source of iv'=%s",
-                                     AVIS_NAME (ID_AVIS (idx)), AVIS_NAME (elavis)));
+                                     AVIS_NAME (ID_AVIS (idx)), AVIS_NAME (ipavis)));
                         if (N_num == NODE_TYPE (projz)) {
                             z = AWLFIflattenExpression (DUPdoDupTree (projz),
                                                         &INFO_VARDECS (arg_info),
-                                                        &INFO_PREASSIGNS (arg_info),
+                                                        &INFO_PREASSIGNSWL (arg_info),
                                                         TYmakeAKS (TYmakeSimpleType (
                                                                      T_int),
                                                                    SHcreateShape (0)));
@@ -660,6 +660,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                     break;
 
                 case N_prf:
+                    DBUG_ASSERT ((N_id == NODE_TYPE (projz)), "Expected N_id projz");
                     switch (PRF_PRF (idx)) {
                     case F_add_SxS:
                         /* iv' = ( iv + x);   -->  iv = ( iv' - x);
@@ -670,7 +671,9 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                             xarg = (2 == markiv) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
                             ivarg = (2 == markiv) ? PRF_ARG2 (idx) : PRF_ARG1 (idx);
                             DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
-                            resavis = TBmakeAvis (TRAVtmpVarName ("tis"),
+                            DBUG_ASSERT (N_id == NODE_TYPE (ivarg),
+                                         "Expected N_id ivarg");
+                            resavis = TBmakeAvis (TRAVtmpVarName ("tisadd"),
                                                   TYmakeAKS (TYmakeSimpleType (T_int),
                                                              SHcreateShape (0)));
                             INFO_VARDECS (arg_info)
@@ -679,11 +682,13 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                             assgn
                               = TBmakeAssign (TBmakeLet (ids,
                                                          TCmakePrf2 (F_sub_SxS,
-                                                                     TBmakeId (elavis),
-                                                                     TBmakeId (xarg))),
+                                                                     TBmakeId (
+                                                                       ID_AVIS (projz)),
+                                                                     TBmakeId (
+                                                                       ID_AVIS (xarg)))),
                                               NULL);
-                            INFO_PREASSIGNS (arg_info)
-                              = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
+                            INFO_PREASSIGNSWL (arg_info)
+                              = TCappendAssign (INFO_PREASSIGNSWL (arg_info), assgn);
                             AVIS_SSAASSIGN (resavis) = assgn;
                             z = BuildInverseProjectionScalar (ivarg, arg_info,
                                                               TBmakeId (resavis));
@@ -695,7 +700,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                          * Case 2: iv' = ( x - iv);   -->  iv = ( x - iv');
                          *         Also, must swap minval/maxval.
                          */
-                        resavis = TBmakeAvis (TRAVtmpVarName ("tis"),
+                        resavis = TBmakeAvis (TRAVtmpVarName ("tissub"),
                                               TYmakeAKS (TYmakeSimpleType (T_int),
                                                          SHcreateShape (0)));
                         INFO_VARDECS (arg_info)
@@ -705,17 +710,19 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                             xarg = (2 == markiv) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
                             ivarg = (2 == markiv) ? PRF_ARG2 (idx) : PRF_ARG1 (idx);
                             DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
+                            DBUG_ASSERT (N_id == NODE_TYPE (ivarg),
+                                         "Expected N_id ivarg");
                             switch (markiv) {
                             case 1:
                                 nprf = F_add_SxS;
-                                id1 = TBmakeId (elavis);
+                                id1 = TBmakeId (ID_AVIS (projz));
                                 id2 = TBmakeId (ID_AVIS (xarg));
                                 break;
 
                             case 2:
                                 nprf = F_sub_SxS;
                                 id1 = TBmakeId (ID_AVIS (xarg));
-                                id2 = TBmakeId (elavis);
+                                id2 = TBmakeId (ID_AVIS (projz));
                                 INFO_FINVERSESWAP (arg_info)
                                   = !INFO_FINVERSESWAP (arg_info);
                                 break;
@@ -731,8 +738,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                             assgn = TBmakeAssign (TBmakeLet (ids,
                                                              TCmakePrf2 (nprf, id1, id2)),
                                                   NULL);
-                            INFO_PREASSIGNS (arg_info)
-                              = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
+                            INFO_PREASSIGNSWL (arg_info)
+                              = TCappendAssign (INFO_PREASSIGNSWL (arg_info), assgn);
                             AVIS_SSAASSIGN (resavis) = assgn;
                             z = BuildInverseProjectionScalar (ivarg, arg_info,
                                                               TBmakeId (resavis));
@@ -754,8 +761,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
 
                 case N_num:
                     DBUG_PRINT ("AWLFI", ("Found integer as source of iv'=%s",
-                                          AVIS_NAME (elavis)));
-                    z = elavis;
+                                          AVIS_NAME (ipavis)));
+                    z = ipavis;
                     break;
 
                 case N_array:
@@ -829,7 +836,7 @@ PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info
     shpintr = TCcountExprs (intr);
 
     hole = IVEXImakeIntScalar (NOINVERSEPROJECTION, &INFO_VARDECS (arg_info),
-                               &INFO_PREASSIGNS (arg_info));
+                               &INFO_PREASSIGNSWL (arg_info));
     z = zarr;
 
     for (i = 0; i < shpids; i++) {
@@ -951,7 +958,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
             ARRAY_AELEMS (zarr) = z;
             typ = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
             z = AWLFIflattenExpression (zarr, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNS (arg_info), TYcopyType (typ));
+                                        &INFO_PREASSIGNSWL (arg_info), TYcopyType (typ));
         }
         pat = PMfree (pat);
     }
