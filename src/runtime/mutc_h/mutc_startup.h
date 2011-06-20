@@ -43,6 +43,7 @@ sl_place_t SAC_mutc_rc_place_many[SAC_MUTC_RC_PLACES];
 SAC_IF_MUTC_RC_INDIRECT (sl_place_t SAC_mutc_rc_place_w;)
 
 void *tls_malloc (size_t arg1);
+void *tlstack_malloc (size_t arg1);
 
 #endif /* SAC_BACKEND */
 #undef MUTC

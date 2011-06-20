@@ -5090,7 +5090,8 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
                                      DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
     }
 
-    if ((global.backend == BE_mutc) && !(global.mutc_suballoc_desc_one_level_up)) {
+    if ((global.backend == BE_mutc)
+        && !AVIS_SUBALLOC (IDS_AVIS (INFO_LASTIDS (arg_info)))) {
 #if 0 /* Still may be present if not canonical */
     DBUG_ASSERT( (PRF_ARG3( arg_node) != NULL),
                  "suballoc lacking default information in mutc backend");

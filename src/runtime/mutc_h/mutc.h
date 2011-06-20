@@ -193,7 +193,7 @@
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
     }
 
-#if SAC_MUTC_DISABLE_THREAD_MEM || !SVP_HAS_SEP
+#if SAC_MUTC_DISABLE_THREAD_MEM
 #define SAC_MUTC_THREAD_INIT_MALLOC
 #define SAC_MUTC_THREAD_CLEANUP_MALLOC
 #define SAC_MUTC_LOCAL_MALLOC(var, size, basetype) var = (basetype)malloc (size);
