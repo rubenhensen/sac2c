@@ -1121,7 +1121,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
      *
      ******************************************************************************/
     node *IVEXPadjustExtremaBound (node * arg_node, info * arg_info, int k,
-                                   node **vardecs, node **preassigns)
+                                   node **vardecs, node **preassigns, char *tagit)
     {
         node *zavis = NULL;
         node *zids;
@@ -1144,7 +1144,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
 
         if (NULL != arg_node) {
             kavis = IVEXImakeIntScalar (k, vardecs, preassigns);
-            zavis = TBmakeAvis (TRAVtmpVarName ("aeb"),
+            zavis = TBmakeAvis (TRAVtmpVarName (tagit),
                                 TYeliminateAKV (AVIS_TYPE (arg_node)));
             *vardecs = TBmakeVardec (zavis, *vardecs);
             zids = TBmakeIds (zavis, NULL);
@@ -1165,7 +1165,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
                         con = COfreeConstant (con);
                     } else {
                         z = IVEXPadjustExtremaBound (ID_AVIS (el), arg_info, k, vardecs,
-                                                     preassigns);
+                                                     preassigns, tagit);
                         z = TBmakeId (z);
                         DBUG_ASSERT (NULL != z, "Expected non-null result");
                     }
@@ -1381,10 +1381,11 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
                 if (max2) { /* Case 1 */
                     minarg1 = ID_AVIS (PRF_ARG1 (rhs));
                     minarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
-                    minarg2 = IVEXPadjustExtremaBound (/* Normalize maxv */
-                                                       minarg2, arg_info, -1,
-                                                       &INFO_VARDECS (arg_info),
-                                                       &INFO_PREASSIGNS (arg_info));
+                    minarg2
+                      = IVEXPadjustExtremaBound (/* Normalize maxv */
+                                                 minarg2, arg_info, -1,
+                                                 &INFO_VARDECS (arg_info),
+                                                 &INFO_PREASSIGNS (arg_info), "dsf1");
                 } else if (min1) { /* Case 2 */
                     minarg1 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
                     minarg2 = ID_AVIS (PRF_ARG2 (rhs));
@@ -1416,10 +1417,11 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
                     maxarg2 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))));
                 } else if (max1) { /* Case 2 */
                     maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
-                    maxarg1 = IVEXPadjustExtremaBound (/* Normalize maxv */
-                                                       maxarg1, arg_info, -1,
-                                                       &INFO_VARDECS (arg_info),
-                                                       &INFO_PREASSIGNS (arg_info));
+                    maxarg1
+                      = IVEXPadjustExtremaBound (/* Normalize maxv */
+                                                 maxarg1, arg_info, -1,
+                                                 &INFO_VARDECS (arg_info),
+                                                 &INFO_PREASSIGNS (arg_info), "dsf2");
                     maxarg2 = ID_AVIS (PRF_ARG2 (rhs));
                 }
                 break;
@@ -1427,18 +1429,20 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
             default:
                 if (max1) {
                     maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
-                    maxarg1 = IVEXPadjustExtremaBound (/* Normalize maxv */
-                                                       maxarg1, arg_info, -1,
-                                                       &INFO_VARDECS (arg_info),
-                                                       &INFO_PREASSIGNS (arg_info));
+                    maxarg1
+                      = IVEXPadjustExtremaBound (/* Normalize maxv */
+                                                 maxarg1, arg_info, -1,
+                                                 &INFO_VARDECS (arg_info),
+                                                 &INFO_PREASSIGNS (arg_info), "dsf3");
                     maxarg2 = ID_AVIS (PRF_ARG2 (rhs));
                 } else {
                     maxarg1 = ID_AVIS (PRF_ARG1 (rhs));
                     maxarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
-                    maxarg2 = IVEXPadjustExtremaBound (/* Normalize maxv */
-                                                       maxarg2, arg_info, -1,
-                                                       &INFO_VARDECS (arg_info),
-                                                       &INFO_PREASSIGNS (arg_info));
+                    maxarg2
+                      = IVEXPadjustExtremaBound (/* Normalize maxv */
+                                                 maxarg2, arg_info, -1,
+                                                 &INFO_VARDECS (arg_info),
+                                                 &INFO_PREASSIGNS (arg_info), "dsf4");
                 }
                 break;
             }
@@ -1461,7 +1465,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
 
         /* Denormalize maxv */
         maxv = IVEXPadjustExtremaBound (maxv, arg_info, +1, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNS (arg_info));
+                                        &INFO_PREASSIGNS (arg_info), "dsf5");
 
         INFO_MINVAL (arg_info) = (NULL != minv) ? TBmakeId (minv) : minv;
         INFO_MAXVAL (arg_info) = (NULL != maxv) ? TBmakeId (maxv) : maxv;
@@ -1677,7 +1681,8 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
                                   = IVEXPadjustExtremaBound (ID_AVIS (PRF_ARG1 (rhs)),
                                                              arg_info, 1,
                                                              &INFO_VARDECS (arg_info),
-                                                             &INFO_PREASSIGNS (arg_info));
+                                                             &INFO_PREASSIGNS (arg_info),
+                                                             "dsf6");
 
                                 INFO_MAXVAL (arg_info) = TBmakeId (maxv);
                                 AVIS_ISMAXHANDLED (maxv) = TRUE;
@@ -1688,7 +1693,8 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
                                                                  arg_info, 1,
                                                                  &INFO_VARDECS (arg_info),
                                                                  &INFO_PREASSIGNS (
-                                                                   arg_info));
+                                                                   arg_info),
+                                                                 "dsf7");
                                     INFO_MAXVAL (arg_info) = TBmakeId (maxv);
                                     AVIS_ISMAXHANDLED (maxv) = TRUE;
                                 }
@@ -1746,9 +1752,10 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
                         && (isAvisHasMin (rhsavis))) {
                         minv = InvokeMonadicFn (ID_AVIS (AVIS_MIN (rhsavis)), lhsavis,
                                                 rhs, arg_info);
-                        minv = IVEXPadjustExtremaBound (minv, arg_info, +1,
-                                                        &INFO_VARDECS (arg_info),
-                                                        &INFO_PREASSIGNS (arg_info));
+                        minv
+                          = IVEXPadjustExtremaBound (minv, arg_info, +1,
+                                                     &INFO_VARDECS (arg_info),
+                                                     &INFO_PREASSIGNS (arg_info), "dsf8");
                         INFO_MAXVAL (arg_info) = TBmakeId (minv);
                     }
 

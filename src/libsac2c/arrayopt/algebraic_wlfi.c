@@ -831,13 +831,12 @@ PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info
 
     DBUG_ENTER ("PermuteIntersectElements");
 
+    z = zarr;
     ids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
     shpids = TCcountIds (ids);
     shpintr = TCcountExprs (intr);
-
     hole = IVEXImakeIntScalar (NOINVERSEPROJECTION, &INFO_VARDECS (arg_info),
                                &INFO_PREASSIGNSWL (arg_info));
-    z = zarr;
 
     for (i = 0; i < shpids; i++) {
         z = TCputNthExprs (i, z, TBmakeId (hole));
@@ -1048,7 +1047,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                 intr = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
                 intr = IVEXPadjustExtremaBound (ID_AVIS (intr), arg_info, -1,
                                                 &INFO_VARDECS (arg_info),
-                                                &INFO_PREASSIGNSWL (arg_info));
+                                                &INFO_PREASSIGNSWL (arg_info), "bip1");
                 nlet = TCfilterAssignArg (MatchExpr, AVIS_SSAASSIGN (intr),
                                           &INFO_PREASSIGNSWL (arg_info));
                 INFO_PREASSIGNSWL (arg_info)
@@ -1072,7 +1071,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                 PRF_ARGS (arg_node)
                   = TCputNthExprs (curelidxlb, PRF_ARGS (arg_node), zlb);
                 zub = IVEXPadjustExtremaBound (zub, arg_info, 1, &INFO_VARDECS (arg_info),
-                                               &INFO_PREASSIGNSWL (arg_info));
+                                               &INFO_PREASSIGNSWL (arg_info), "bip2");
                 zub = TBmakeId (zub);
                 PRF_ARGS (arg_node)
                   = TCputNthExprs (curelidxub, PRF_ARGS (arg_node), zub);
@@ -1478,14 +1477,14 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
             g1 = gen1;
         }
         g1 = WLSflattenBound (DUPdoDupTree (g1), &INFO_VARDECS (arg_info),
-                              &INFO_PREASSIGNS (arg_info));
+                              &INFO_PREASSIGNSWL (arg_info));
 
         g2 = GENERATOR_BOUND2 (PART_GENERATOR (partn));
         if (PMmatchFlatSkipExtrema (pat2, g2)) {
             g2 = gen2;
         }
         g2 = WLSflattenBound (DUPdoDupTree (g2), &INFO_VARDECS (arg_info),
-                              &INFO_PREASSIGNS (arg_info));
+                              &INFO_PREASSIGNSWL (arg_info));
 
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (g1), NULL));
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (g2), NULL));
@@ -1535,7 +1534,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
             maxel = EXPRS_EXPR (maxex);
             maxel = IVEXPadjustExtremaBound (ID_AVIS (maxel), arg_info, 1,
                                              &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGNS (arg_info));
+                                             &INFO_PREASSIGNS (arg_info), "ibb1");
             FREEdoFreeNode (EXPRS_EXPR (maxex));
             EXPRS_EXPR (maxex) = TBmakeId (maxel);
 
