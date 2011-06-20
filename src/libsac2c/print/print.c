@@ -2919,6 +2919,10 @@ PRTap (node *arg_node, info *arg_info)
         fprintf (global.outfile, "spawn ");
     }
 
+    if (AP_SPAWNPLACE (arg_node) != NULL) {
+        fprintf (global.outfile, "(\"%s\")", AP_SPAWNPLACE (arg_node));
+    }
+
     /*
      * print name of 'AP_FUNDEF(arg_node)'
      */
@@ -2970,6 +2974,10 @@ PRTspap (node *arg_node, info *arg_info)
 
     if (SPAP_ISSPAWNED (arg_node)) {
         fprintf (global.outfile, "spawn ");
+    }
+
+    if (SPAP_SPAWNPLACE (arg_node) != NULL) {
+        fprintf (global.outfile, "(\"%s\")", SPAP_SPAWNPLACE (arg_node));
     }
 
     if (NODE_ERROR (arg_node) != NULL) {

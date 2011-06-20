@@ -195,7 +195,7 @@ TFTYPEREL SUBTYPE IFF
      returndectypes ntypes varntypes
 %type <prf> genop prf
 
-%type <id> reservedid  string ext_id
+%type <id> reservedid  string ext_id opt_place
 
 %type <ntype> simplentype userntype polyntype basentype ntype
 
@@ -1606,26 +1606,35 @@ expr_ap: qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRAC
            }
            NODE_LINE( $$) = $<cint>3;
          }
-       | SPAWN qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRACKET_R
+       | SPAWN opt_place qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRACKET_R
          {
-           $$ = TBmakeSpap( $2, $5);
+           $$ = TBmakeSpap( $3, $6);
            if (global.fp || (global.backend == BE_mutc)) {
              /* only parse spawn if support is enabled, otherwise ignore it */
              SPAP_ISSPAWNED( $$) = TRUE;
+             if ( $2 != NULL){
+               SPAP_SPAWNPLACE( $$) = $2;
+             }
            }
-           NODE_LINE( $$) = $<cint>4;
+           NODE_LINE( $$) = $<cint>5;
          }
-       | RSPAWN qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRACKET_R
+       | RSPAWN opt_place qual_ext_id BRACKET_L { $<cint>$ = global.linenum; } opt_arguments BRACKET_R
          {
-           $$ = TBmakeSpap( $2, $5);
+           $$ = TBmakeSpap( $3, $6);
            if (global.fp || (global.backend == BE_mutc)) {
              /* only parse spawn if support is enabled, otherwise ignore it */
              SPAP_ISSPAWNED( $$) = TRUE;
              SPAP_ISREMOTE( $$) = TRUE;
+             if ( $2 != NULL){
+               SPAP_SPAWNPLACE( $$) = $2;
+             }
            }
-           NODE_LINE( $$) = $<cint>4;
+           NODE_LINE( $$) = $<cint>5;
          }
        ;
+
+opt_place: BRACKET_L STR BRACKET_R { $$ = $2;   }
+           | /* empty */           { $$ = NULL; }
 
 opt_arguments: exprs         { $$ = $1;   }
              | /* empty */   { $$ = NULL; }

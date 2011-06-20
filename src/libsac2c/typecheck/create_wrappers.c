@@ -683,6 +683,7 @@ CRTWRPspap (node *arg_node, info *arg_info)
 
         AP_ISSPAWNED (new_node) = SPAP_ISSPAWNED (arg_node);
         AP_ISREMOTE (new_node) = SPAP_ISREMOTE (arg_node);
+        AP_SPAWNPLACE (new_node) = STRcpy (SPAP_SPAWNPLACE (arg_node));
 
         SPAP_ARGS (arg_node) = NULL;
         arg_node = FREEdoFreeNode (arg_node);

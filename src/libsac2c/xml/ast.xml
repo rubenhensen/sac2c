@@ -6505,6 +6505,17 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="SpawnPlace" inconstructor="no" >
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <phases>
+                 <all/>
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="ConsiderInline" default="TRUE" />
@@ -11097,7 +11108,19 @@ N_tfarg :
           </targets>
         </son>
       </sons>
-      <attributes></attributes>
+      <attributes>
+        <attribute name="SpawnPlace" inconstructor="no" >
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <phases>
+                 <all/>
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
       <flags>
         <flag name="IsSpawned">
           <description>This function is spawned when using functional

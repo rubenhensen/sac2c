@@ -3753,9 +3753,10 @@ COMPap (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("MT_MTFUN_AP", icm_args);
     } else if (FUNDEF_ISTHREADFUN (fundef)) {
         if (AP_ISSPAWNED (arg_node)) {
-            icm_args = TBmakeExprs (TCmakeIdCopyString (
-                                      AP_ISREMOTE (arg_node) ? "" : "PLACE_LOCAL"),
-                                    icm_args);
+            char *place = AP_SPAWNPLACE (arg_node) == NULL
+                            ? (AP_ISREMOTE (arg_node) ? "" : "PLACE_LOCAL")
+                            : AP_SPAWNPLACE (arg_node);
+            icm_args = TBmakeExprs (TCmakeIdCopyString (place), icm_args);
             icm_args = TBmakeExprs (DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), icm_args);
             icm = TBmakeIcm ("MUTC_SPAWNFUN_AP", icm_args);
         } else if (!FUNDEF_WASWITH3BODY (fundef)) {
