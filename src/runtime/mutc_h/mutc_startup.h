@@ -17,6 +17,71 @@
 #include <svp/perf.h>
 #include <svp/testoutput.h>
 
+#ifndef SL_PLACES
+#define SL_PLACES
+
+#define CORE_PLACE(P)                                                                    \
+    ({                                                                                   \
+        sl_place_t cpid = get_current_place ();                                          \
+        sl_place_t cpid_nosize = cpid & (cpid - 1);                                      \
+        sl_place_t newsize = 1;                                                          \
+        ((cpid_nosize + ((P) << 1)) | newsize);                                          \
+    })
+
+#define SIBLING                                                                          \
+    ({                                                                                   \
+        sl_place_t cpid = get_current_place ();                                          \
+        sl_place_t cpid_nosize = cpid & (cpid - 1);                                      \
+        sl_place_t size = cpid & -cpid;                                                  \
+        sl_place_t cid = get_core_id ();                                                 \
+        sl_place_t mybit = (cid << 1) & size;                                            \
+        sl_place_t otherbit = mybit ^ size;                                              \
+        (cpid_nosize | otherbit | (size >> 1));                                          \
+    })
+
+#define UPPER_HALF                                                                       \
+    ({                                                                                   \
+        sl_place_t cpid = get_current_place ();                                          \
+        sl_place_t size = cpid & -cpid;                                                  \
+        (cpid + size / 2);                                                               \
+    })
+
+#define LOWER_HALF                                                                       \
+    ({                                                                                   \
+        sl_place_t cpid = get_current_place ();                                          \
+        sl_place_t size = cpid & -cpid;                                                  \
+        (cpid + size / 2);                                                               \
+    })
+
+#define NEXT_CORE NEXT_N_CORE (1)
+#define PREV_CORE PREV_N_CORE (1)
+
+#define NEXT_N_CORE(N)                                                                   \
+    ({                                                                                   \
+        sl_place_t cpid = get_current_place ();                                          \
+        sl_place_t size = cpid & -cpid;                                                  \
+        sl_place_t cpid_nosize = cpid - size;                                            \
+        sl_palce_t newsize = 1;                                                          \
+        sl_place_t gcid = get_core_id ();                                                \
+        sl_place_t lcid = gcid & (size - 1);                                             \
+        sl_place_t ncid = (lcid + (N)) & (size - 1);                                     \
+        (cpid_nosize | (ncid << 1) | newsize);                                           \
+    })
+
+#define PREV_N_CORE(N)                                                                   \
+    ({                                                                                   \
+        sl_place_t cpid = get_current_place ();                                          \
+        sl_place_t size = cpid & -cpid;                                                  \
+        sl_place_t cpid_nosize = cpid - size;                                            \
+        sl_palce_t newsize = 1;                                                          \
+        sl_place_t gcid = get_core_id ();                                                \
+        sl_place_t lcid = gcid & (size - 1);                                             \
+        sl_place_t ncid = (lcid + (size - (N))) & (size - 1);                            \
+        (cpid_nosize | (ncid << 1) | newsize);                                           \
+    })
+
+#endif
+
 #if SAC_MUTC_RC_INDIRECT == 1
 #define SAC_IF_MUTC_RC_INDIRECT(A) A
 #define SAC_IF_NOT_MUTC_RC_INDIRECT(A)
