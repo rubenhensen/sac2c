@@ -949,7 +949,7 @@ AWLFprf (node *arg_node, info *arg_info)
 #endif // VERBOSE
     arg1 = PRF_ARG1 (arg_node);
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
-        && (PRF_ISNOTEINTERSECTPRESENT (arg_node))) {
+        && (AWLFIisHasNoteintersect (arg_node))) {
         INFO_AWLFOLDABLEPRODUCERWLPART (arg_info)
           = checkAWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
                               INFO_LEVEL (arg_info));

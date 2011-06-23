@@ -138,9 +138,11 @@ struct INFO {
     node *preassignswl;      /* These go above the consumerWL */
     node *consumerwlpart;    /* The current consumerWL partition */
     node *consumerwl;        /* The current consumerWL N_with */
-    node *consumerwlname;    /* The current consumerWL LHS */
-    node *producerwl;        /* The producerWL LHS for this consumerWL */
+    node *consumerwllhs;     /* The current consumerWL LHS */
+    node *producerwl;        /* The producerWL N_with for this PWL */
+    node *producerwllhs;     /* The producerWL LHS for this consumerWL */
     node *let;               /* The N_let node */
+    node *withids;           /* the WITHID_IDS entry for an iv element */
     int level;               /* The current nesting level of WLs. This
                               * is used to ensure that an index expression
                               * refers to an earlier WL in the same code
@@ -164,9 +166,11 @@ struct INFO {
 #define INFO_PREASSIGNSWL(n) ((n)->preassignswl)
 #define INFO_CONSUMERWLPART(n) ((n)->consumerwlpart)
 #define INFO_CONSUMERWL(n) ((n)->consumerwl)
-#define INFO_CONSUMERWLNAME(n) ((n)->consumerwlname)
+#define INFO_CONSUMERWLLHS(n) ((n)->consumerwllhs)
 #define INFO_PRODUCERWL(n) ((n)->producerwl)
+#define INFO_PRODUCERWLLHS(n) ((n)->producerwllhs)
 #define INFO_LET(n) ((n)->let)
+#define INFO_WITHIDS(n) ((n)->withids)
 #define INFO_LEVEL(n) ((n)->level)
 #define INFO_PRODUCERWLFOLDABLE(n) ((n)->producerWLFoldable)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
@@ -189,9 +193,11 @@ MakeInfo (node *fundef)
     INFO_PREASSIGNSWL (result) = NULL;
     INFO_CONSUMERWLPART (result) = NULL;
     INFO_CONSUMERWL (result) = NULL;
-    INFO_CONSUMERWLNAME (result) = NULL;
+    INFO_CONSUMERWLLHS (result) = NULL;
     INFO_PRODUCERWL (result) = NULL;
+    INFO_PRODUCERWLLHS (result) = NULL;
     INFO_LET (result) = NULL;
+    INFO_WITHIDS (result) = NULL;
     INFO_LEVEL (result) = 0;
     INFO_PRODUCERWLFOLDABLE (result) = TRUE;
     INFO_ONEFUNDEF (result) = FALSE;
@@ -439,6 +445,7 @@ getNthWithids (int n, node *arg_node, info *arg_info)
     DBUG_RETURN (z);
 }
 
+#ifdef DEADCODE // FIXME
 /******************************************************************************
  *
  * function: node *isAllWithidsPresent( node *arg_node)
@@ -464,7 +471,7 @@ isAllWithidsPresent (node *arg_node)
 
     DBUG_ENTER ("isAllWithidsPresent");
 
-    /* Check that we have WITHIS for all non-constant array elements.
+    /* Check that we have WITHIDS for all non-constant array elements.
      * All N_array elements must be N_id nodes.
      */
 
@@ -489,6 +496,7 @@ isAllWithidsPresent (node *arg_node)
 
     DBUG_RETURN (z);
 }
+#endif //  DEADCODE  //FIXME
 
 /** <!--********************************************************************-->
  *
@@ -513,6 +521,7 @@ FindPrfParent2 (node *arg_node, info *arg_info)
     node *arg = NULL;
     ;
     pattern *pat;
+    int tcindex = -1;
 
     DBUG_ENTER ("FindPrfParent2");
 
@@ -522,11 +531,13 @@ FindPrfParent2 (node *arg_node, info *arg_info)
     switch (NODE_TYPE (arg_node)) {
     case N_prf:
 
-        if (-1 != TClookupIdsNode (withidids, ID_AVIS (PRF_ARG2 (arg_node)))) {
+        tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG2 (arg_node)));
+        if (-1 != tcindex) {
             z = 2;
         }
 
-        if (-1 != TClookupIdsNode (withidids, ID_AVIS (PRF_ARG1 (arg_node)))) {
+        tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG1 (arg_node)));
+        if (-1 != tcindex) {
             z = 1;
         }
 
@@ -539,9 +550,12 @@ FindPrfParent2 (node *arg_node, info *arg_info)
         break;
 
     case N_id:
-        if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (N_id == NODE_TYPE (arg))
-            && (-1 != TClookupIdsNode (withidids, ID_AVIS (arg)))) {
-            z = 1;
+        if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node))
+            && (N_id == NODE_TYPE (arg))) {
+            tcindex = TClookupIdsNode (withidids, ID_AVIS (arg));
+            if (-1 != tcindex) {
+                z = 1;
+            }
         }
         break;
 
@@ -549,6 +563,37 @@ FindPrfParent2 (node *arg_node, info *arg_info)
         break;
     }
 
+    if ((z != 0) && (-1 != tcindex)) {
+        INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
+    }
+
+    pat = PMfree (pat);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool AWLFIisHasNoteintersect( node *arg_node)
+ *
+ * @brief: Predicate for presence of F_noteintersect on sel() statement.
+ *
+ * @param: arg_node - an F_sel_VxA_ N_prf node.
+ *
+ * @result: TRUE if  arg_node has an F_noteintersect associated with it.
+ *
+ *****************************************************************************/
+bool
+AWLFIisHasNoteintersect (node *arg_node)
+{
+    node *prf;
+    pattern *pat;
+    bool z;
+
+    DBUG_ENTER ("AWLFIisHasNoteintersect");
+
+    pat = PMprf (1, PMAgetNode (&prf), 0);
+    z = (PMmatchFlat (pat, PRF_ARG1 (arg_node))) && (F_noteintersect == PRF_PRF (prf));
     pat = PMfree (pat);
 
     DBUG_RETURN (z);
@@ -591,18 +636,20 @@ isHasInverseProjection (node *arg_node)
  * @brief Chase one element of an N_array back to its WITHID_IDS,
  *        if possible.
  *
- * @params:  iprime: The current element of iv'.
+ * @params:  fn: The current expression we are tracing,
  *           An N_id or an N_num.
  *           arg_info: Your basic arg_info node.
- *           projz: The current inverse projection result exprs chain.
+ *           ivp: The current inverse projection, iv'
  *
  * @result: An N_avis node that gives the result of the F-inverse mapping
  *          function to take us from iv'->iv, or
  *          a N_num or else NULL, if no such node can be found.
  *
+ *          Side effect: Set INFO_WITHIDS, if possible.
+ *
  *****************************************************************************/
 static node *
-BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
+BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
 {
     node *z = NULL;
     int markiv;
@@ -617,39 +664,41 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
     node *rhs;
     node *withidids;
     node *ipavis;
+    int tcindex;
     prf nprf;
 
     pattern *pat;
 
     DBUG_ENTER ("BuildInverseProjectionScalar");
 
-    if (N_num == NODE_TYPE (iprime)) {
-        z = DUPdoDupNode (iprime);
+    if (N_num == NODE_TYPE (fn)) {
+        z = DUPdoDupNode (fn);
     } else {
-        if (N_id == NODE_TYPE (iprime)) {
-            ipavis = ID_AVIS (iprime);
+        if (N_id == NODE_TYPE (fn)) {
+            ipavis = ID_AVIS (fn);
             DBUG_PRINT ("AWLFI", ("Tracing %s", AVIS_NAME (ipavis)));
             pat = PMany (1, PMAgetNode (&idx), 0);
-            if (PMmatchFlatSkipExtremaAndGuards (pat, iprime)) {
+            if (PMmatchFlatSkipExtremaAndGuards (pat, fn)) {
                 switch (NODE_TYPE (idx)) {
                 case N_id:
                     /* Check for WITHID_IDS */
                     withidids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
-                    if (-1 != TClookupIdsNode (withidids, ID_AVIS (idx))) {
+                    tcindex = TClookupIdsNode (withidids, ID_AVIS (idx));
+                    if (-1 != tcindex) {
                         DBUG_PRINT ("AWLFI",
                                     ("Found %s as source of iv'=%s",
                                      AVIS_NAME (ID_AVIS (idx)), AVIS_NAME (ipavis)));
-                        if (N_num == NODE_TYPE (projz)) {
-                            z = AWLFIflattenExpression (DUPdoDupTree (projz),
+                        INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
+                        if (N_num == NODE_TYPE (ivp)) {
+                            z = AWLFIflattenExpression (DUPdoDupTree (ivp),
                                                         &INFO_VARDECS (arg_info),
                                                         &INFO_PREASSIGNSWL (arg_info),
                                                         TYmakeAKS (TYmakeSimpleType (
                                                                      T_int),
                                                                    SHcreateShape (0)));
                         } else {
-                            DBUG_ASSERT (N_id == NODE_TYPE (projz),
-                                         "Expected N_id projz");
-                            z = ID_AVIS (projz);
+                            DBUG_ASSERT (N_id == NODE_TYPE (ivp), "Expected N_id ivp");
+                            z = ID_AVIS (ivp);
                         }
                     } else {
                         /* Vanilla variable */
@@ -660,7 +709,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                     break;
 
                 case N_prf:
-                    DBUG_ASSERT ((N_id == NODE_TYPE (projz)), "Expected N_id projz");
+                    DBUG_ASSERT ((N_id == NODE_TYPE (ivp)), "Expected N_id ivp");
                     switch (PRF_PRF (idx)) {
                     case F_add_SxS:
                         /* iv' = ( iv + x);   -->  iv = ( iv' - x);
@@ -668,8 +717,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                          */
                         markiv = FindPrfParent2 (idx, arg_info);
                         if (0 != markiv) {
-                            xarg = (2 == markiv) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
                             ivarg = (2 == markiv) ? PRF_ARG2 (idx) : PRF_ARG1 (idx);
+                            xarg = (2 == markiv) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
                             DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
                             DBUG_ASSERT (N_id == NODE_TYPE (ivarg),
                                          "Expected N_id ivarg");
@@ -683,7 +732,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                               = TBmakeAssign (TBmakeLet (ids,
                                                          TCmakePrf2 (F_sub_SxS,
                                                                      TBmakeId (
-                                                                       ID_AVIS (projz)),
+                                                                       ID_AVIS (ivp)),
                                                                      TBmakeId (
                                                                        ID_AVIS (xarg)))),
                                               NULL);
@@ -707,22 +756,22 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *projz)
                           = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
                         markiv = FindPrfParent2 (idx, arg_info);
                         if (0 != markiv) {
-                            xarg = (2 == markiv) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
                             ivarg = (2 == markiv) ? PRF_ARG2 (idx) : PRF_ARG1 (idx);
+                            xarg = (2 == markiv) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
                             DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
                             DBUG_ASSERT (N_id == NODE_TYPE (ivarg),
                                          "Expected N_id ivarg");
                             switch (markiv) {
                             case 1:
                                 nprf = F_add_SxS;
-                                id1 = TBmakeId (ID_AVIS (projz));
+                                id1 = TBmakeId (ID_AVIS (ivp));
                                 id2 = TBmakeId (ID_AVIS (xarg));
                                 break;
 
                             case 2:
                                 nprf = F_sub_SxS;
                                 id1 = TBmakeId (ID_AVIS (xarg));
-                                id2 = TBmakeId (ID_AVIS (projz));
+                                id2 = TBmakeId (ID_AVIS (ivp));
                                 INFO_FINVERSESWAP (arg_info)
                                   = !INFO_FINVERSESWAP (arg_info);
                                 break;
@@ -904,6 +953,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
 {
     node *z = NULL;
     node *zwithids = NULL;
+    node *zw = NULL;
     node *iprime;
     node *ziavis;
     node *zarr;
@@ -921,6 +971,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
     DBUG_ASSERT (N_array == NODE_TYPE (intr), "Expected N_array intr");
 
     dim = SHgetUnrLen (ARRAY_FRAMESHAPE (ivprime));
+    INFO_WITHIDS (arg_info) = NULL;
 
     for (ivindx = 0; ivindx < dim; ivindx++) {
         iprime = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (ivprime));
@@ -939,6 +990,8 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
 
                 z = TCappendExprs (z, TBmakeExprs (ziavis, NULL));
                 zwithids = TCappendIds (zwithids, TBmakeIds (withids, NULL));
+                DBUG_ASSERT (NULL != INFO_WITHIDS (arg_info), ("No withids found"));
+                zw = TCappendIds (zw, TBmakeIds (INFO_WITHIDS (arg_info), NULL));
             } else {
                 DBUG_PRINT ("AWLFI", ("Failed to find inverse map for N_array"));
                 ivindx = dim;
@@ -952,6 +1005,12 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
         lb = GENERATOR_BOUND1 (PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)));
         pat = PMarray (1, PMAgetNode (&zarr), 1, PMskip (0));
         if (PMmatchFlat (pat, lb)) {
+            if (CMPT_EQ == CMPTdoCompareTree (zwithids, zw)) {
+                DBUG_PRINT ("AWLFI", ("they match"));
+            } else {
+                DBUG_PRINT ("AWLFI", ("they do not match"));
+                DBUG_ASSERT (FALSE, ("Failing..."));
+            }
             zarr = DUPdoDupTree (zarr); /* Make result shape match generator shape */
             z = PermuteIntersectElements (z, zwithids, ARRAY_AELEMS (zarr), arg_info);
             ARRAY_AELEMS (zarr) = z;
@@ -1101,16 +1160,21 @@ node *
 AWLFIgetWlWith (node *arg_node)
 {
     node *wl = NULL;
-    node *z;
+    node *z = NULL;
     pattern *pat;
 
     DBUG_ENTER ("AWLFIgetWlWith");
 
     pat = PMwith (1, PMAgetNode (&wl), 0);
-    z = ((PMmatchFlatWith (pat, arg_node))
-         && (N_array == NODE_TYPE (GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (wl))))))
-          ? wl
-          : NULL;
+    if (PMmatchFlatWith (pat, arg_node)) {
+        z = wl;
+    }
+
+#ifdef FIXME
+    (N_array == NODE_TYPE (GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (wl))))) ? wl
+                                                                                : NULL;
+#endif // FIXME
+
     pat = PMfree (pat);
 
     DBUG_RETURN (z);
@@ -1132,22 +1196,23 @@ AWLFIgetWlWith (node *arg_node)
 node *
 AWLFIfindWlId (node *arg_node)
 {
-    node *z = NULL;
+    node *wlid = NULL;
     node *wl;
+    node *z = NULL;
     pattern *pat;
 
     DBUG_ENTER ("AWLFIfindWlId");
 
-    pat = PMvar (1, PMAgetNode (&z), 0);
+    pat = PMvar (1, PMAgetNode (&wlid), 0);
     if (PMmatchFlatSkipGuards (pat, arg_node)) {
-        wl = AWLFIgetWlWith (z);
+        wl = AWLFIgetWlWith (wlid);
         if (NULL != wl) {
             DBUG_PRINT ("AWLFI",
                         ("Found WL:%s: WITH_REFERENCED_FOLD=%d",
                          AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (wl)));
+            z = wlid;
         }
     } else {
-        z = NULL;
         DBUG_PRINT ("AWLFI", ("Did not find WL:%s", AVIS_NAME (ID_AVIS (arg_node))));
     }
     pat = PMfree (pat);
@@ -1467,7 +1532,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 
     DBUG_ENTER ("IntersectBoundsBuilder");
 
-    partn = WITH_PART (AWLFIgetWlWith (INFO_PRODUCERWL (arg_info)));
+    partn = WITH_PART (INFO_PRODUCERWL (arg_info));
     pat1 = PMvar (1, PMAgetNode (&gen1), 0);
     pat2 = PMvar (1, PMAgetNode (&gen2), 0);
 
@@ -1632,7 +1697,6 @@ attachIntersectCalc (node *arg_node, info *arg_info)
         AVIS_SSAASSIGN (ivpavis) = ivassign;
 
         PART_ISCONSUMERPART (INFO_CONSUMERWLPART (arg_info)) = TRUE;
-        PRF_ISNOTEINTERSECTPRESENT (arg_node) = TRUE;
         INFO_FINVERSEINTRODUCED (arg_info) = TRUE;
     } else {
         ivpavis = ivavis;
@@ -1750,7 +1814,7 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("checkProducerWLFoldable");
 
-    p = AWLFIgetWlWith (INFO_PRODUCERWL (arg_info));
+    p = INFO_PRODUCERWL (arg_info);
     z = NULL != p;
     if (z) {
         z = (AWLFIisSingleOpWL (p)) && (noDefaultPartition (p))
@@ -1808,9 +1872,14 @@ checkConsumerWLFoldable (node *arg_node, info *arg_info)
     iv = PRF_ARG1 (arg_node);
     ivavis = ID_AVIS (iv);
     /* iv has extrema or F_noteintersect */
-    z = ((NULL != AVIS_MIN (ivavis)) && (NULL != AVIS_MAX (ivavis))
-         && (isAllWithidsPresent (arg_node)) && (NULL != INFO_CONSUMERWL (arg_info)))
-        || PRF_ISNOTEINTERSECTPRESENT (arg_node);
+    z = ((NULL != AVIS_MIN (ivavis)) && (NULL != AVIS_MAX (ivavis)) &&
+#ifdef FIXME // DEBUG
+         (isAllWithidsPresent (arg_node)) &&
+#else  // FIXME // DEBUG
+         (TRUE) &&
+#endif //  FIXME // DEBUG
+         (NULL != INFO_CONSUMERWL (arg_info)))
+        || AWLFIisHasNoteintersect (arg_node);
 
     DBUG_RETURN (z);
 }
@@ -1843,7 +1912,7 @@ checkBothFoldable (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("checkBothFoldable");
 
-    pwl = AWLFIgetWlWith (INFO_PRODUCERWL (arg_info));
+    pwl = INFO_PRODUCERWL (arg_info);
     if (NULL != pwl) {
         bp = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (pwl)));
         xrhob = SHgetUnrLen (ARRAY_FRAMESHAPE (bp));
@@ -1855,17 +1924,17 @@ checkBothFoldable (node *arg_node, info *arg_info)
     }
 
     /* Both producerWL and consumerWL must be at same nesting level */
-    lev = 1 + AVIS_DEFDEPTH (ID_AVIS (INFO_PRODUCERWL (arg_info)));
+    lev = 1 + AVIS_DEFDEPTH (ID_AVIS (INFO_PRODUCERWLLHS (arg_info)));
     z = z && (lev == INFO_LEVEL (arg_info));
 
     if (z) {
         DBUG_PRINT ("AWLFI", ("Producer with-loop %s is foldable into %s",
-                              AVIS_NAME (ID_AVIS (INFO_PRODUCERWL (arg_info))),
-                              AVIS_NAME (INFO_CONSUMERWLNAME (arg_info))));
+                              AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))),
+                              AVIS_NAME (INFO_CONSUMERWLLHS (arg_info))));
     } else {
         DBUG_PRINT ("AWLFI", ("Producer with-loop %s is not foldable into %s",
-                              AVIS_NAME (ID_AVIS (INFO_PRODUCERWL (arg_info))),
-                              AVIS_NAME (INFO_CONSUMERWLNAME (arg_info))));
+                              AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))),
+                              AVIS_NAME (INFO_CONSUMERWLLHS (arg_info))));
     }
 
     DBUG_RETURN (z);
@@ -1994,7 +2063,7 @@ AWLFIwith (node *arg_node, info *arg_info)
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
     INFO_LEVEL (arg_info) = INFO_LEVEL (old_arg_info) + 1;
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_arg_info);
-    INFO_CONSUMERWL (arg_info) = AWLFIgetWlWith (arg_node);
+    INFO_CONSUMERWL (arg_info) = arg_node;
     INFO_ONEFUNDEF (arg_info) = INFO_ONEFUNDEF (old_arg_info);
     INFO_FINVERSEINTRODUCED (arg_info) = INFO_FINVERSEINTRODUCED (old_arg_info);
 
@@ -2141,7 +2210,8 @@ AWLFIprf (node *arg_node, info *arg_info)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
 
-        INFO_PRODUCERWL (arg_info) = AWLFIfindWlId (PRF_ARG2 (arg_node));
+        INFO_PRODUCERWLLHS (arg_info) = AWLFIfindWlId (PRF_ARG2 (arg_node));
+        INFO_PRODUCERWL (arg_info) = AWLFIgetWlWith (INFO_PRODUCERWLLHS (arg_info));
         INFO_PRODUCERWLFOLDABLE (arg_info)
           = checkConsumerWLFoldable (arg_node, arg_info)
             && checkProducerWLFoldable (arg_node, arg_info)
@@ -2151,7 +2221,7 @@ AWLFIprf (node *arg_node, info *arg_info)
 
         /* Maybe attach intersect calculations now. */
         if ((INFO_PRODUCERWLFOLDABLE (arg_info))
-            && (!PRF_ISNOTEINTERSECTPRESENT (arg_node))) {
+            && (!AWLFIisHasNoteintersect (arg_node))) {
             z = attachIntersectCalc (arg_node, arg_info);
             if (z != ID_AVIS (PRF_ARG1 (arg_node))) {
                 FREEdoFreeNode (PRF_ARG1 (arg_node));
@@ -2159,7 +2229,7 @@ AWLFIprf (node *arg_node, info *arg_info)
                 DBUG_PRINT (
                   "AWLFI",
                   ("AWLFIprf inserted F_attachintersect into cwl=%s at _sel_VxA_",
-                   AVIS_NAME (INFO_CONSUMERWLNAME (arg_info))));
+                   AVIS_NAME (INFO_CONSUMERWLLHS (arg_info))));
             }
         }
     }
@@ -2214,7 +2284,7 @@ AWLFImodarray (node *arg_node, info *arg_info)
 
     if (N_modarray == NODE_TYPE (arg_node)) {
         INFO_PRODUCERWL (arg_info) = AWLFIfindWlId (MODARRAY_ARRAY (arg_node));
-        wl = AWLFIgetWlWith (INFO_PRODUCERWL (arg_info));
+        wl = INFO_PRODUCERWL (arg_info);
         (WITH_REFERENCED_FOLD (wl))++;
         DBUG_PRINT ("AWLFI", ("AWLFImodarray: WITH_REFERENCED_FOLD(%s) = %d",
                               AVIS_NAME (ID_AVIS (MODARRAY_ARRAY (arg_node))),
@@ -2240,13 +2310,13 @@ AWLFIlet (node *arg_node, info *arg_info)
 
     DBUG_ENTER ("AWLFIlet");
 
-    oldconsumerwlname = INFO_CONSUMERWLNAME (arg_info);
-    INFO_CONSUMERWLNAME (arg_info) = IDS_AVIS (LET_IDS (arg_node));
+    oldconsumerwlname = INFO_CONSUMERWLLHS (arg_info);
+    INFO_CONSUMERWLLHS (arg_info) = IDS_AVIS (LET_IDS (arg_node));
     oldlet = INFO_LET (arg_info);
     INFO_LET (arg_info) = arg_node;
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     INFO_LET (arg_info) = oldlet;
-    INFO_CONSUMERWLNAME (arg_info) = oldconsumerwlname;
+    INFO_CONSUMERWLLHS (arg_info) = oldconsumerwlname;
 
     DBUG_RETURN (arg_node);
 }

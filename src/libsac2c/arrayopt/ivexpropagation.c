@@ -589,8 +589,10 @@ IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup, node *withids)
             if ((NULL == AVIS_WITHIDS (snk))) {
                 AVIS_WITHIDS (snk) = TBmakeId (withids);
             } else {
+#ifdef PARANOIA // FIXME
                 DBUG_ASSERT (ID_AVIS (AVIS_WITHIDS (snk)) == withids,
                              "Trying to change AVIS_WITHIDS");
+#endif // PARANOIA // FIXME
             }
         }
     }
@@ -623,8 +625,10 @@ IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup, node *withids)
             if ((NULL == AVIS_WITHIDS (snk))) {
                 AVIS_WITHIDS (snk) = TBmakeId (withids);
             } else {
+#ifdef PARANOIA // FIXME
                 DBUG_ASSERT (ID_AVIS (AVIS_WITHIDS (snk)) == withids,
                              "Trying to change AVIS_WITHIDS");
+#endif // PARANOIA // FIXME
             }
         }
     }

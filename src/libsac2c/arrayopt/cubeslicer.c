@@ -690,6 +690,7 @@ CloneCode (node *arg_node, info *arg_info)
 
     LUTremoveContentLut (INFO_LUT (arg_info));
     CODE_INC_USED (z); /* DUP gives us Used=0 */
+    z = IVEXCdoIndexVectorExtremaCleanupPartition (z, NULL);
 
     /* prepend new code block to N_code chain */
     CODE_NEXT (z) = CODE_NEXT (INFO_WITHCODE (arg_info));
@@ -1198,7 +1199,7 @@ CUBSLprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("CUBSLprf");
 
     if ((F_sel_VxA == PRF_PRF (arg_node)) && (INFO_CONSUMERPART (arg_info) != NULL)
-        && (PRF_ISNOTEINTERSECTPRESENT (arg_node))) {
+        && (AWLFIisHasNoteintersect (arg_node))) {
         DBUG_PRINT ("CUBSL", ("Looking at %s =_sel_VxA_( iv, X)",
                               AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
         producerWL = AWLFIfindWlId (PRF_ARG2 (arg_node));

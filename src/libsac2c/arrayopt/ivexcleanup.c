@@ -247,7 +247,6 @@ IVEXCprf (node *arg_node, info *arg_info)
     DBUG_ENTER ("IVEXCprf");
 
     res = arg_node;
-    PRF_ISNOTEINTERSECTPRESENT (arg_node) = FALSE;
     switch (PRF_PRF (arg_node)) {
     case F_noteminval:
     case F_notemaxval:
