@@ -80,6 +80,42 @@
         (cpid_nosize | (ncid << 1) | newsize);                                           \
     })
 
+#define NEXT_N_GCORE(N)                                                                  \
+    ({                                                                                   \
+        sl_place_t cpid = SAC_MUTC_main_place;                                           \
+        sl_place_t size = cpid & -cpid;                                                  \
+        sl_place_t cpid_nosize = cpid - size;                                            \
+        sl_place_t newsize = 1;                                                          \
+        sl_place_t gcid = get_core_id ();                                                \
+        sl_place_t lcid = gcid & (size - 1);                                             \
+        sl_place_t ncid = (lcid + (N)) & (size - 1);                                     \
+        (cpid_nosize | (ncid << 1) | newsize);                                           \
+    })
+
+#define NEXT_HALF_GCORE                                                                  \
+    ({                                                                                   \
+        sl_place_t cpid = SAC_MUTC_main_place;                                           \
+        sl_place_t size = cpid & -cpid;                                                  \
+        sl_place_t cpid_nosize = cpid - size;                                            \
+        sl_place_t newsize = 1;                                                          \
+        sl_place_t gcid = get_core_id ();                                                \
+        sl_place_t lcid = gcid & (size - 1);                                             \
+        sl_place_t ncid = (lcid + (size >> 1)) & (size - 1);                             \
+        (cpid_nosize | (ncid << 1) | newsize);                                           \
+    })
+
+#define PREV_N_GCORE(N)                                                                  \
+    ({                                                                                   \
+        sl_place_t cpid = SAC_MUTC_main_place;                                           \
+        sl_place_t size = cpid & -cpid;                                                  \
+        sl_place_t cpid_nosize = cpid - size;                                            \
+        sl_place_t newsize = 1;                                                          \
+        sl_place_t gcid = get_core_id ();                                                \
+        sl_place_t lcid = gcid & (size - 1);                                             \
+        sl_place_t ncid = (lcid + (size - (N))) & (size - 1);                            \
+        (cpid_nosize | (ncid << 1) | newsize);                                           \
+    })
+
 #endif
 
 #if SAC_MUTC_RC_INDIRECT == 1
@@ -95,6 +131,7 @@
 #if SAC_DO_COMPILE_MODULE == 1
 extern const int SAC_MUTC_RC_PLACES_VAR;
 extern sl_place_t SAC_mutc_rc_place_many[];
+extern const sl_place_t SAC_MUTC_main_place;
 #else
 
 #ifndef SAC_MUTC_RC_PLACES
@@ -103,6 +140,7 @@ extern sl_place_t SAC_mutc_rc_place_many[];
 
 const int SAC_MUTC_RC_PLACES_VAR = SAC_MUTC_RC_PLACES;
 sl_place_t SAC_mutc_rc_place_many[SAC_MUTC_RC_PLACES];
+sl_place_t SAC_MUTC_main_place;
 #endif
 
 SAC_IF_MUTC_RC_INDIRECT (sl_place_t SAC_mutc_rc_place_w;)
@@ -240,6 +278,7 @@ void *tlstack_malloc (size_t arg1);
 #endif
 
 #define SAC_MUTC_DISPLAY_ENV                                                             \
+    output_hex (SAC_MUTC_main_place, 0);                                                 \
     SAC_MUTC_OUTPUT (0x5052433020)                                                       \
     output_hex (SAC_mutc_rc_place_many[0], 0);                                           \
     if (SAC_MUTC_RC_PLACES_VAR > 1) {                                                    \
@@ -313,6 +352,7 @@ static int sac_benchmark_count;
     {                                                                                    \
         SAC_MUTC_RC_ALLOC_MANY (SAC_mutc_rc_place_many, SAC_MUTC_RC_PLACES);             \
         SAC_IF_MUTC_RC_INDIRECT (SAC_MUTC_RC_ALLOC_W (SAC_mutc_rc_place_w);)             \
+        SAC_MUTC_SAVE_PLACE                                                              \
         SAC_MUTC_DISPLAY_ENV                                                             \
         SAC_ND_DECL__DATA (SAC_MUTC_MAIN_RES_NT, int, )                                  \
         SAC_ND_DECL__DESC (SAC_MUTC_MAIN_RES_NT, )                                       \
@@ -323,6 +363,8 @@ static int sac_benchmark_count;
     }                                                                                    \
     sl_enddef
 #endif
+
+#define SAC_MUTC_SAVE_PLACE SAC_MUTC_main_place = get_current_place ();
 
 #define SAC_MUTC_T_MAIN                                                                  \
     sl_def (t_main, void)                                                                \
