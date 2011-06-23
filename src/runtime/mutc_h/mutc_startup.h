@@ -61,7 +61,7 @@
         sl_place_t cpid = get_current_place ();                                          \
         sl_place_t size = cpid & -cpid;                                                  \
         sl_place_t cpid_nosize = cpid - size;                                            \
-        sl_palce_t newsize = 1;                                                          \
+        sl_place_t newsize = 1;                                                          \
         sl_place_t gcid = get_core_id ();                                                \
         sl_place_t lcid = gcid & (size - 1);                                             \
         sl_place_t ncid = (lcid + (N)) & (size - 1);                                     \
@@ -73,7 +73,7 @@
         sl_place_t cpid = get_current_place ();                                          \
         sl_place_t size = cpid & -cpid;                                                  \
         sl_place_t cpid_nosize = cpid - size;                                            \
-        sl_palce_t newsize = 1;                                                          \
+        sl_place_t newsize = 1;                                                          \
         sl_place_t gcid = get_core_id ();                                                \
         sl_place_t lcid = gcid & (size - 1);                                             \
         sl_place_t ncid = (lcid + (size - (N))) & (size - 1);                            \
