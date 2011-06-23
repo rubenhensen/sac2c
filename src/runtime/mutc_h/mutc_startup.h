@@ -50,7 +50,7 @@
     ({                                                                                   \
         sl_place_t cpid = get_current_place ();                                          \
         sl_place_t size = cpid & -cpid;                                                  \
-        (cpid + size / 2);                                                               \
+        (cpid - size / 2);                                                               \
     })
 
 #define NEXT_CORE NEXT_N_CORE (1)
