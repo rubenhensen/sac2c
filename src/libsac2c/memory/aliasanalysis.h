@@ -36,6 +36,7 @@ extern node *EMAAmodarray (node *arg_node, info *arg_info);
 extern node *EMAAprf (node *arg_node, info *arg_info);
 extern node *EMAAwith (node *arg_node, info *arg_info);
 extern node *EMAAwith2 (node *arg_node, info *arg_info);
+extern node *EMAAwith3 (node *arg_node, info *arg_info);
 extern node *EMAAvardec (node *arg_node, info *arg_info);
 
 #endif /* _SAC_ALIASANALYSIS_H_ */

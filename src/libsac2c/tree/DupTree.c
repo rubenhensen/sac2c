@@ -1780,6 +1780,8 @@ DUPap (node *arg_node, info *arg_info)
 
     AP_ARGTAB (new_node) = DupArgtab (AP_ARGTAB (arg_node), arg_info);
 
+    AP_SPAWNPLACE (new_node) = STRcpy (AP_SPAWNPLACE (arg_node));
+
     CopyCommonNodeData (new_node, arg_node);
     AP_FLAGSTRUCTURE (new_node) = AP_FLAGSTRUCTURE (arg_node);
 

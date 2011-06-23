@@ -787,6 +787,24 @@ EMAAwith2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *EMAAwith3( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *****************************************************************************/
+node *
+EMAAwith3 (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ("EMAAwith3");
+
+    WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
+    WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *EMAAvardec( node *arg_node, info *arg_info)
  *
  * @brief

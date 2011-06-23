@@ -2320,12 +2320,14 @@
         <node name="Prf" />
         <node name="With" />
         <node name="With2" />
+        <node name="With3" />
         <node name="Vardec" />
       </travuser>
       <travsons>
         <node name="Module" />
         <node name="Block" />
         <node name="Exprs" />
+        <node name="Range" />
       </travsons>
     </traversal>
     <traversal id="EMLR" name="Loop reuse" default="none" include="loopreuseopt.h">
