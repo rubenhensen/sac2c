@@ -335,11 +335,12 @@ OPTcheckOptionConsistency (void)
                  "you may get unexpected behavior of your generated program");
     }
 
-    if ((global.rc_method < 0) || (global.rc_method > 3)) {
+    if ((global.rc_method < 0) || (global.rc_method > 4)) {
         CTIerror ("Unknown reference counting mode");
     }
 
-    if (((global.rc_method == 2) || (global.rc_method == 3))
+    if (((global.rc_method == 2) || (global.rc_method == 3) || (global.rc_method == 4)
+         || (global.rc_method == 5))
         && global.backend != BE_mutc) {
         CTIerror ("Current reference counting method is not supported "
                   "with the current backend");

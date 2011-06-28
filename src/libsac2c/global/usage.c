@@ -638,8 +638,10 @@ PrintBackendOptions (void)
             "    -rc_method <n>  Change the reference counting mode\n"
             "                      0         Traditional reference counting\n"
             "                      1         No reference counting\n"
-            "                      2         Multimodal reference counting\n"
-            "                      3         Asynchronous reference counting\n");
+            "                      2         FP Multimodal reference counting\n"
+            "                      3         Asynchronous reference counting\n"
+            "                      4         Bimodal (c99+norc) reference counting\n"
+            "                      5         DP Multimodal reference counting\n");
 
     DBUG_VOID_RETURN;
 }
