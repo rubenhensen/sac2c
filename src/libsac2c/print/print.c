@@ -4564,6 +4564,8 @@ PRTpart (node *arg_node, info *arg_info)
 
     if (PART_CUDARIZABLE (arg_node)) {
         fprintf (global.outfile, "/*** CUDA Partition ***/\n");
+    } else {
+        fprintf (global.outfile, "/*** Partition ***/\n");
     }
 
     if (PART_THREADBLOCKSHAPE (arg_node) != NULL) {
