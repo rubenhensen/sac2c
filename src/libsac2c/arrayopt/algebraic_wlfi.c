@@ -580,13 +580,13 @@ FindPrfParent2 (node *arg_node, info *arg_info)
  *
  * @param: arg_node - an F_sel_VxA_ N_prf node.
  *
- * @result: TRUE if  arg_node has an F_noteintersect associated with it.
+ * @result: TRUE if  arg_node has a F_noteintersect associated with it.
  *
  *****************************************************************************/
 bool
 AWLFIisHasNoteintersect (node *arg_node)
 {
-    node *prf;
+    node *prf = NULL;
     pattern *pat;
     bool z;
 
@@ -594,6 +594,87 @@ AWLFIisHasNoteintersect (node *arg_node)
 
     pat = PMprf (1, PMAgetNode (&prf), 0);
     z = (PMmatchFlat (pat, PRF_ARG1 (arg_node))) && (F_noteintersect == PRF_PRF (prf));
+    pat = PMfree (pat);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool isHasValidNoteintersect( node *arg_node, info *arg_info)
+ *
+ * @brief: Predicate for presence of valid F_noteintersect on sel() statement.
+ *
+ * @param: arg_node - an F_sel_VxA_ N_prf node.
+ *
+ * @result: TRUE if  arg_node has a valid F_noteintersect associated with it.
+ *          By "valid", we mean that the PWL and the F_noteintersect
+ *          have identical bounds and identical PWL partition counts.
+ *          A mismatch can arise when we have a code sequence such as:
+ *
+ *            A = WL( ...);
+ *            B = WL( A);
+ *            C = WL( B);
+ *
+ *          and A is folded into B AFTER B has been cube-sliced.
+ *          This invalidates the F_noteintersect previously generated
+ *          within C.
+ *
+ *          For now, we merely check that the partition count for
+ *          B (the PWL) matches the partition count for the F_noteintersect
+ *          for C (the CWL).
+ *
+ *****************************************************************************/
+static bool
+isHasValidNoteintersect (node *arg_node, info *arg_info)
+{
+    node *prf = NULL;
+    pattern *pat;
+    bool z;
+    int nexprs;
+    int npart;
+
+    DBUG_ENTER ("isHasValidNoteintersect");
+
+    pat = PMprf (1, PMAgetNode (&prf), 0);
+    z = (PMmatchFlat (pat, PRF_ARG1 (arg_node))) && (F_noteintersect == PRF_PRF (prf));
+    if (z) {
+        nexprs = (TCcountExprs (PRF_ARGS (prf)) - 1) / WLEPP;
+        npart = TCcountParts (WITH_PART (INFO_PRODUCERWL (arg_info)));
+        z = (nexprs == npart);
+    }
+
+    pat = PMfree (pat);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *detachNoteintersect( node *arg_node)
+ *
+ * @brief:
+ *
+ * @param: arg_node - an F_sel_VxA_ N_prf node.
+ *
+ * @result:  same F_sel op, but with PRF_ARG1 replaced.
+ *
+ *****************************************************************************/
+static node *
+detachNoteintersect (node *arg_node)
+{
+    node *prf = NULL;
+    pattern *pat;
+    node *z;
+
+    DBUG_ENTER ("detachNoteintersect");
+
+    z = arg_node;
+    pat = PMprf (1, PMAgetNode (&prf), 0);
+    if ((PMmatchFlat (pat, PRF_ARG1 (arg_node))) && (F_noteintersect == PRF_PRF (prf))) {
+        FREEdoFreeNode (PRF_ARG1 (arg_node));
+        PRF_ARG1 (arg_node) = DUPdoDupNode (PRF_ARG1 (prf));
+    }
     pat = PMfree (pat);
 
     DBUG_RETURN (z);
@@ -1012,7 +1093,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
                 DBUG_ASSERT (FALSE, ("Failing..."));
             }
             zarr = DUPdoDupTree (zarr); /* Make result shape match generator shape */
-            z = PermuteIntersectElements (z, zwithids, ARRAY_AELEMS (zarr), arg_info);
+            z = PermuteIntersectElements (z, zw, ARRAY_AELEMS (zarr), arg_info);
             ARRAY_AELEMS (zarr) = z;
             typ = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
             z = AWLFIflattenExpression (zarr, &INFO_VARDECS (arg_info),
@@ -1169,11 +1250,6 @@ AWLFIgetWlWith (node *arg_node)
     if (PMmatchFlatWith (pat, arg_node)) {
         z = wl;
     }
-
-#ifdef FIXME
-    (N_array == NODE_TYPE (GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (wl))))) ? wl
-                                                                                : NULL;
-#endif // FIXME
 
     pat = PMfree (pat);
 
@@ -1389,7 +1465,7 @@ static node *
 IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
                            int boundnum, node *ivmin, node *ivmax)
 {
-    node *producerGenerator;
+    node *pg;
     node *resavis;
     node *fncall;
     pattern *pat;
@@ -1401,27 +1477,22 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
 
     DBUG_ENTER ("IntersectBoundsBuilderOne");
 
-    producerGenerator = (boundnum == 1)
-                          ? GENERATOR_BOUND1 (PART_GENERATOR (producerPart))
-                          : GENERATOR_BOUND2 (PART_GENERATOR (producerPart));
-    shp = SHgetUnrLen (ARRAY_FRAMESHAPE (producerGenerator));
+    pg = (boundnum == 1) ? GENERATOR_BOUND1 (PART_GENERATOR (producerPart))
+                         : GENERATOR_BOUND2 (PART_GENERATOR (producerPart));
 
-    pat = PMvar (1, PMAgetNode (&gen), 0);
-    if (PMmatchFlatSkipExtrema (pat, producerGenerator)) {
-        producerGenerator = gen;
-    }
+    pat = PMarray (1, PMAgetNode (&gen), 0);
+    PMmatchFlatSkipExtrema (pat, pg);
+    shp = SHgetUnrLen (ARRAY_FRAMESHAPE (gen));
 
     fun = (1 == boundnum) ? "partitionIntersectMax" : "partitionIntersectMin";
     mmx = (1 == boundnum) ? ID_AVIS (ivmin) : ID_AVIS (ivmax);
 
-    DBUG_ASSERT (N_array == NODE_TYPE (producerGenerator),
-                 "Expected N_array producerGenerator");
-    producerGenerator
-      = WLSflattenBound (DUPdoDupTree (producerGenerator), &INFO_VARDECS (arg_info),
-                         &INFO_PREASSIGNS (arg_info));
+    DBUG_ASSERT (N_array == NODE_TYPE (gen), "Expected N_array gen");
+    gen = WLSflattenBound (DUPdoDupTree (gen), &INFO_VARDECS (arg_info),
+                           &INFO_PREASSIGNS (arg_info));
 
     fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fun,
-                                TCcreateExprsChainFromAvises (2, producerGenerator, mmx));
+                                TCcreateExprsChainFromAvises (2, gen, mmx));
     resavis = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info),
                                       TYmakeAKS (TYmakeSimpleType (T_int),
@@ -1533,8 +1604,8 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     DBUG_ENTER ("IntersectBoundsBuilder");
 
     partn = WITH_PART (INFO_PRODUCERWL (arg_info));
-    pat1 = PMvar (1, PMAgetNode (&gen1), 0);
-    pat2 = PMvar (1, PMAgetNode (&gen2), 0);
+    pat1 = PMarray (1, PMAgetNode (&gen1), 0);
+    pat2 = PMarray (1, PMAgetNode (&gen2), 0);
 
     while (NULL != partn) {
         g1 = GENERATOR_BOUND1 (PART_GENERATOR (partn));
@@ -1909,12 +1980,14 @@ checkBothFoldable (node *arg_node, info *arg_info)
     int xrhob;
     int xrhoc;
     bool z = FALSE;
+    pattern *pat;
 
     DBUG_ENTER ("checkBothFoldable");
 
     pwl = INFO_PRODUCERWL (arg_info);
-    if (NULL != pwl) {
-        bp = GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (pwl)));
+    pat = PMarray (1, PMAgetNode (&bp), 1, PMskip (0));
+    if ((NULL != pwl)
+        && (PMmatchFlat (pat, GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (pwl)))))) {
         xrhob = SHgetUnrLen (ARRAY_FRAMESHAPE (bp));
         bc = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
         if (NULL != bc) {
@@ -1936,6 +2009,8 @@ checkBothFoldable (node *arg_node, info *arg_info)
                               AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))),
                               AVIS_NAME (INFO_CONSUMERWLLHS (arg_info))));
     }
+
+    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
@@ -2218,6 +2293,12 @@ AWLFIprf (node *arg_node, info *arg_info)
             && checkBothFoldable (arg_node, arg_info);
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+
+        /* Maybe detach invalid intersect calculations now. */
+        if ((INFO_PRODUCERWLFOLDABLE (arg_info)) && (AWLFIisHasNoteintersect (arg_node))
+            && (!isHasValidNoteintersect (arg_node, arg_info))) {
+            arg_node = detachNoteintersect (arg_node);
+        }
 
         /* Maybe attach intersect calculations now. */
         if ((INFO_PRODUCERWLFOLDABLE (arg_info))

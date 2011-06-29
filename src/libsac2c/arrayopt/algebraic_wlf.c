@@ -434,48 +434,53 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
     DBUG_ENTER ("checkAWLFoldable");
 
     producerWL = AWLFIfindWlId (PRF_ARG2 (arg_node)); /* Now the N_id */
-    producerWLavis = (NULL != producerWL) ? ID_AVIS (producerWL) : NULL;
-    producerWL = AWLFIgetWlWith (producerWL); /* Now the N_with */
-    if ((NULL != producerWL) && (AVIS_DEFDEPTH (producerWLavis) + 1 == level)
-        && (AWLFIisSingleOpWL (producerWL))) {
-        DBUG_PRINT ("AWLF", ("producerWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
-                             AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
-                             AVIS_WL_NEEDCOUNT (producerWLavis)));
-        /* Search for pwlp that intersects cwlp */
-        pwlp = CUBSLfindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info), cwlp,
-                                      producerWL, NULL);
-        if ((INTERSECT_unknown == INFO_INTERSECTTYPE (arg_info))
-            || (INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info))
-            || (INTERSECT_null == INFO_INTERSECTTYPE (arg_info))) {
-            DBUG_PRINT ("AWLF", ("Cube can not be intersected, or null intersect or "
-                                 "slice needed"));
-            pwlp = NULL;
+    if (NULL != producerWL) {
+        producerWLavis = ID_AVIS (producerWL);
+        producerWL = AWLFIgetWlWith (producerWL); /* Now the N_with */
+        if (((AVIS_DEFDEPTH (producerWLavis) + 1) == level)
+            && (AWLFIisSingleOpWL (producerWL))) {
+            DBUG_PRINT ("AWLF",
+                        ("producerWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
+                         AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
+                         AVIS_WL_NEEDCOUNT (producerWLavis)));
+            /* Search for pwlp that intersects cwlp */
+            pwlp = CUBSLfindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info), cwlp,
+                                          producerWL, NULL);
+            if ((INTERSECT_unknown == INFO_INTERSECTTYPE (arg_info))
+                || (INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info))
+                || (INTERSECT_null == INFO_INTERSECTTYPE (arg_info))) {
+                DBUG_PRINT ("AWLF", ("Cube can not be intersected, or null intersect or "
+                                     "slice needed"));
+                pwlp = NULL;
+            }
+
+            /* Allow fold if needcounts match OR if pwlp
+             * has empty code block. This is a crude cost function:
+             * We should allow "cheap" producerWL partitions to fold.
+             * E.g., toi(iota(N)), but I'm in a hurry...
+             */
+            if ((NULL != pwlp)
+                && ((AVIS_NEEDCOUNT (producerWLavis)
+                     != AVIS_WL_NEEDCOUNT (producerWLavis)))
+                && (!isEmptyPartitionCodeBlock (pwlp))) {
+                DBUG_PRINT ("AWLF", ("Cube can not be intersected - NEEDCOUNT mismatch"));
+                pwlp = NULL;
+            }
+        } else {
+            DBUG_PRINT ("AWLF",
+                        ("producerWL %s will never fold. AVIS_DEFDEPTH: %d, level: %d",
+                         AVIS_NAME (producerWLavis), AVIS_DEFDEPTH (producerWLavis),
+                         level));
         }
 
-        /* Allow fold if needcounts match OR if pwlp
-         * has empty code block. This is a crude cost function:
-         * We should allow "cheap" producerWL partitions to fold.
-         * E.g., toi(iota(N)), but I'm in a hurry...
-         */
-        if ((NULL != pwlp)
-            && ((AVIS_NEEDCOUNT (producerWLavis) != AVIS_WL_NEEDCOUNT (producerWLavis)))
-            && (!isEmptyPartitionCodeBlock (pwlp))) {
-            DBUG_PRINT ("AWLF", ("Cube can not be intersected - NEEDCOUNT mismatch"));
-            pwlp = NULL;
+        if (NULL != pwlp) {
+            AVIS_ISWLFOLDED (producerWLavis) = TRUE;
+            DBUG_PRINT ("AWLF",
+                        ("producerWL %s will be folded.", AVIS_NAME (producerWLavis)));
+        } else {
+            DBUG_PRINT ("AWLF", ("producerWLs %s can not be folded, at present.",
+                                 AVIS_NAME (producerWLavis)));
         }
-    } else {
-        DBUG_PRINT ("AWLF",
-                    ("producerWL %s will never fold. AVIS_DEFDEPTH: %d, level: %d",
-                     AVIS_NAME (producerWLavis), AVIS_DEFDEPTH (producerWLavis), level));
-    }
-
-    if (NULL != pwlp) {
-        AVIS_ISWLFOLDED (producerWLavis) = TRUE;
-        DBUG_PRINT ("AWLF",
-                    ("producerWL %s will be folded.", AVIS_NAME (producerWLavis)));
-    } else {
-        DBUG_PRINT ("AWLF", ("producerWLs %s can not be folded, at present.",
-                             AVIS_NAME (producerWLavis)));
     }
 
     DBUG_RETURN (pwlp);

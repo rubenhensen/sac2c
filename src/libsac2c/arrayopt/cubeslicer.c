@@ -334,7 +334,7 @@ isNullIntersect (node *arg_node)
 
     con = COaST2Constant (arg_node);
     if (NULL != con) {
-        z = (COisTrue (con, TRUE)) ? INTERSECT_null : INTERSECT_notnull;
+        z = (COisFalse (con, TRUE)) ? INTERSECT_notnull : INTERSECT_null;
         COfreeConstant (con);
     }
 
