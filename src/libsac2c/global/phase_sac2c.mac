@@ -441,19 +441,8 @@ ENDCYCLE (cyc)
 
 /*************************************************/
 
-/*
- *  DEADCODE FIXME There were lir2 and dfr3 traversals here, in rbe's extrema version.
- */
-
 SUBPHASE (wlbscnf, "Unflattening WL-partition structural constants",
           WLBSCdoWlbounds2nonFlatStructConsts, ALWAYS, opt)
-
-#ifdef DEADCODE // Brave new world of WLBSC and friends
-// Attempt to fix into BNW by no longer flattening generators in SAACYC.
-// THis will undoubtedly break several opts.
-SUBPHASE (flt, "Flattening with-loop generators", FLATGdoFlatten,
-          global.optimize.doawlf || global.doivext, opt)
-#endif //  DEADCODE
 
 /*************************************************/
 
@@ -503,8 +492,8 @@ CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.
 CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
                global.optimize.dowlpg, opt, saacyc)
 
-CYCLEPHASEFUN (wlbsc, "Ensuring structural constants for with-loop partition bounds",
-               WLBSCdoWlbounds2structConsts, global.optimize.dowlpg, opt, saacyc)
+CYCLEPHASEFUN (wlbsc, "Unflattening WL-partition structural constants",
+               WLBSCdoWlbounds2nonFlatStructConsts, global.optimize.dowlpg, opt, saacyc)
 
 CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
                global.optimize.dowlsimp, opt, saacyc)
