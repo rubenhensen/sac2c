@@ -1229,7 +1229,6 @@ CSEids (node *arg_node, info *arg_info)
     AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
     AVIS_MIN (avis) = TRAVopt (AVIS_MIN (avis), arg_info);
     AVIS_MAX (avis) = TRAVopt (AVIS_MAX (avis), arg_info);
-    AVIS_WITHIDS (avis) = TRAVopt (AVIS_WITHIDS (avis), arg_info);
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 

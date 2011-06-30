@@ -432,10 +432,6 @@ isSameTypeShape (node *ida, node *idb)
  *
  *           int[.] iv';
  *
- *      The AVIS_WITHIDS of the result is AVIS_WITHIDS( ivavisi), unless
- *      ivavis is a WITHID_VEC or WITHID_IDS, in which case it
- *      is ivavis itself.
- *
  * @params:
  *     ivavis: The N_avis of iv, the name for which we want to build iv'.
  *     extremum: the N_avis of an AVIS_MIN/AVIS_MAX to be attached to iv'.
@@ -481,11 +477,11 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
     *preassigns = TCappendAssign (*preassigns, nas);
 
     if ((F_noteminval == nprf)) {
-        IVEXPsetMinvalIfNotNull (lhsavis, extid, TRUE, withids);
+        IVEXPsetMinvalIfNotNull (lhsavis, extid, TRUE);
     }
 
     if ((F_notemaxval == nprf)) {
-        IVEXPsetMaxvalIfNotNull (lhsavis, extid, TRUE, withids);
+        IVEXPsetMaxvalIfNotNull (lhsavis, extid, TRUE);
     }
 
     DBUG_PRINT ("IVEXI", ("IVEXIattachExtrema introduced temp index variable: %s for: %s",

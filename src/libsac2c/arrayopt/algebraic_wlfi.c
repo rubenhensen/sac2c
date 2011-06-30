@@ -400,106 +400,6 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *getNthWithids(...)
- *
- * @brief: A Withids entry starts off as an N_array, such
- *         as:  [ j, i], where j and i are WITHID_IDS
- *         entries. However, if the withids entry matches
- *         the WL's WITHID_IDS exactly, then CSE will
- *         replace it by the WITHID_VEC. This code is
- *         intended to deal with both cases, so when
- *         you write getNthWithids( 1, [j, i]), you get i.
- *
- * @param: arg_node - the AVIS_WITHIDS of interest.
- *         n: the element # we want to fetch.
- *
- * @result: N_avis node for withids or NULL.
- *
- *****************************************************************************/
-static node *
-getNthWithids (int n, node *arg_node, info *arg_info)
-{
-    node *z = NULL;
-    node *partwithid;
-    node *withids;
-    pattern *pat;
-
-    DBUG_ENTER ("getNthWithids");
-
-    pat = PMany (1, PMAgetNode (&withids), 1, PMskip (0));
-    if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
-        if (N_array == NODE_TYPE (withids)) {
-            z = TCgetNthExprsExpr (n, ARRAY_AELEMS (withids));
-            z = ID_AVIS (z);
-        } else { /* withids is WITHID_VEC. Get WITHID_IDS */
-            partwithid = PART_WITHID (INFO_CONSUMERWLPART (arg_info));
-            if (ID_AVIS (withids) == IDS_AVIS (WITHID_VEC (partwithid))) {
-                withids = WITHID_IDS (partwithid);
-                z = TCgetNthIds (n, withids);
-            }
-        }
-    }
-
-    pat = PMfree (pat);
-
-    DBUG_RETURN (z);
-}
-
-#ifdef DEADCODE // FIXME
-/******************************************************************************
- *
- * function: node *isAllWithidsPresent( node *arg_node)
- *
- * description: Predicate for determining if an N_id node
- *              has all its AVIS_WITHID elements present, for
- *              non-constant elements.
- *
- * @params  arg_node: an N_id node.
- *
- * @result: A boolean, TRUE if AVIS_WITHID are present for all
- *          non-constant elements.
- *
- ******************************************************************************/
-static bool
-isAllWithidsPresent (node *arg_node)
-{
-    node *exprs;
-    node *avis;
-    node *arr;
-    pattern *pat;
-    bool z = FALSE;
-
-    DBUG_ENTER ("isAllWithidsPresent");
-
-    /* Check that we have WITHIDS for all non-constant array elements.
-     * All N_array elements must be N_id nodes.
-     */
-
-    pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
-    if (PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG1 (arg_node))) {
-        exprs = ARRAY_AELEMS (arr);
-        z = (NULL != exprs);
-        while (z && (NULL != exprs)) {
-            if (N_id == NODE_TYPE (EXPRS_EXPR (exprs))) {
-                avis = ID_AVIS (EXPRS_EXPR (exprs));
-                z = z
-                    && ((NULL != AVIS_WITHIDS (avis))
-                        || COisConstant (EXPRS_EXPR (exprs)));
-            } else {
-                z = FALSE;
-            }
-            exprs = EXPRS_NEXT (exprs);
-        }
-    }
-
-    pat = PMfree (pat);
-
-    DBUG_RETURN (z);
-}
-#endif //  DEADCODE  //FIXME
-
-/** <!--********************************************************************-->
- *
  * @fn int FindPrfParent2(...)
  *
  * @brief: Find parent node -- the one with a WITHID_IDS,
@@ -1033,14 +933,12 @@ static node *
 BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *intr)
 {
     node *z = NULL;
-    node *zwithids = NULL;
     node *zw = NULL;
     node *iprime;
     node *ziavis;
     node *zarr;
     node *lb;
     node *el;
-    node *withids;
     ntype *typ;
     pattern *pat;
     int dim;
@@ -1058,27 +956,20 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
         iprime = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (ivprime));
         el = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (intr));
 
-        withids = getNthWithids (ivindx, AVIS_WITHIDS (ID_AVIS (PRF_ARG1 (arg_node))),
-                                 arg_info);
-        if (NULL != withids) {
-            INFO_FINVERSESWAP (arg_info) = FALSE;
-            ziavis = BuildInverseProjectionScalar (iprime, arg_info, el);
-            if (NULL != ziavis) {
-                if (N_avis == NODE_TYPE (ziavis)) {
-                    AVIS_FINVERSESWAP (ziavis) = INFO_FINVERSESWAP (arg_info);
-                    ziavis = TBmakeId (ziavis);
-                }
-
-                z = TCappendExprs (z, TBmakeExprs (ziavis, NULL));
-                zwithids = TCappendIds (zwithids, TBmakeIds (withids, NULL));
-                DBUG_ASSERT (NULL != INFO_WITHIDS (arg_info), ("No withids found"));
-                zw = TCappendIds (zw, TBmakeIds (INFO_WITHIDS (arg_info), NULL));
-            } else {
-                DBUG_PRINT ("AWLFI", ("Failed to find inverse map for N_array"));
-                ivindx = dim;
-                z = (NULL != z) ? FREEdoFreeTree (z) : z;
-                zwithids = (NULL != zwithids) ? FREEdoFreeTree (zwithids) : zwithids;
+        INFO_FINVERSESWAP (arg_info) = FALSE;
+        ziavis = BuildInverseProjectionScalar (iprime, arg_info, el);
+        if (NULL != ziavis) {
+            if (N_avis == NODE_TYPE (ziavis)) {
+                AVIS_FINVERSESWAP (ziavis) = INFO_FINVERSESWAP (arg_info);
+                ziavis = TBmakeId (ziavis);
             }
+
+            z = TCappendExprs (z, TBmakeExprs (ziavis, NULL));
+            zw = TCappendIds (zw, TBmakeIds (INFO_WITHIDS (arg_info), NULL));
+        } else {
+            DBUG_PRINT ("AWLFI", ("Failed to find inverse map for N_array"));
+            ivindx = dim;
+            z = (NULL != z) ? FREEdoFreeTree (z) : z;
         }
     }
 
@@ -1086,12 +977,6 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
         lb = GENERATOR_BOUND1 (PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)));
         pat = PMarray (1, PMAgetNode (&zarr), 1, PMskip (0));
         if (PMmatchFlat (pat, lb)) {
-            if (CMPT_EQ == CMPTdoCompareTree (zwithids, zw)) {
-                DBUG_PRINT ("AWLFI", ("they match"));
-            } else {
-                DBUG_PRINT ("AWLFI", ("they do not match"));
-                DBUG_ASSERT (FALSE, ("Failing..."));
-            }
             zarr = DUPdoDupTree (zarr); /* Make result shape match generator shape */
             z = PermuteIntersectElements (z, zw, ARRAY_AELEMS (zarr), arg_info);
             ARRAY_AELEMS (zarr) = z;
@@ -1917,10 +1802,6 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
  *
  *        We deem the prf foldable if iv directly from
  *        an _attachintersect_, or if iv has extrema.
- *        We also require that iv has a non-NULL AVIS_WITHIDS,
- *        so that we can trace back the iv to its withids,
- *        and thereby construct an inverse mapping function.
- *
  *        This may not be enough to guarantee foldability, but
  *        without extrema, we're stuck.
  *
@@ -1943,13 +1824,8 @@ checkConsumerWLFoldable (node *arg_node, info *arg_info)
     iv = PRF_ARG1 (arg_node);
     ivavis = ID_AVIS (iv);
     /* iv has extrema or F_noteintersect */
-    z = ((NULL != AVIS_MIN (ivavis)) && (NULL != AVIS_MAX (ivavis)) &&
-#ifdef FIXME // DEBUG
-         (isAllWithidsPresent (arg_node)) &&
-#else  // FIXME // DEBUG
-         (TRUE) &&
-#endif //  FIXME // DEBUG
-         (NULL != INFO_CONSUMERWL (arg_info)))
+    z = ((NULL != AVIS_MIN (ivavis)) && (NULL != AVIS_MAX (ivavis))
+         && (NULL != INFO_CONSUMERWL (arg_info)))
         || AWLFIisHasNoteintersect (arg_node);
 
     DBUG_RETURN (z);

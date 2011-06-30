@@ -112,7 +112,6 @@ VPavis (node *arg_node, info *arg_info)
     AVIS_SHAPE (arg_node) = TRAVopt (AVIS_SHAPE (arg_node), arg_info);
     AVIS_MIN (arg_node) = TRAVopt (AVIS_MIN (arg_node), arg_info);
     AVIS_MAX (arg_node) = TRAVopt (AVIS_MAX (arg_node), arg_info);
-    AVIS_WITHIDS (arg_node) = TRAVopt (AVIS_WITHIDS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

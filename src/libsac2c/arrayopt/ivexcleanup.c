@@ -222,9 +222,6 @@ IVEXCavis (node *arg_node, info *arg_info)
       = (NULL != AVIS_MIN (arg_node)) ? FREEdoFreeNode (AVIS_MIN (arg_node)) : NULL;
     AVIS_MAX (arg_node)
       = (NULL != AVIS_MAX (arg_node)) ? FREEdoFreeNode (AVIS_MAX (arg_node)) : NULL;
-    AVIS_WITHIDS (arg_node) = (NULL != AVIS_WITHIDS (arg_node))
-                                ? FREEdoFreeNode (AVIS_WITHIDS (arg_node))
-                                : NULL;
     AVIS_ISMINHANDLED (arg_node) = FALSE;
     AVIS_ISMAXHANDLED (arg_node) = FALSE;
     AVIS_COUNTING_WL (arg_node) = NULL;

@@ -369,11 +369,6 @@ ExtractNthItem (int itemno, node *idx)
                  ("Wanted F_noteintersect as idx parent"));
     bnd = TCgetNthExprsExpr (itemno, PRF_ARGS (dfg));
     val = bnd;
-#ifdef DEADCODE // FIXME perhaps dead?
-    if (NULL != bnd) {
-        PMO (PMOlastVarGuards (&val, bnd));
-    }
-#endif // DEADCODE // perhaps dead?
 
     DBUG_RETURN (val);
 }
@@ -672,21 +667,12 @@ static node *
 CloneCode (node *arg_node, info *arg_info)
 {
     node *z;
-#ifdef DEADCODE // FIXME
-    node *expravis;
-    node *newavis;
-#endif // DEADCODE // FIXME
 
     DBUG_ENTER ("CloneCode");
 
     z = (N_empty == NODE_TYPE (arg_node))
           ? NULL
           : DUPdoDupTreeLutSsa (arg_node, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
-
-#ifdef DEADCODE // FIXME
-    We may need this... FIXME expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node)));
-    newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
-#endif // DEADCODE // FIXME
 
     LUTremoveContentLut (INFO_LUT (arg_info));
     CODE_INC_USED (z); /* DUP gives us Used=0 */
@@ -698,203 +684,6 @@ CloneCode (node *arg_node, info *arg_info)
 
     DBUG_RETURN (z);
 }
-
-#ifdef DEADCODE
-
-/** <!--********************************************************************-->
- *
- * @fn static node *PartitionSlicerOneAxis(...)
- *
- * @params consumerWLpartn: an N_part of the consumerWL.
- *         lb: An N_array, presenting the lower bound of the intersect
- *             between the consumerWL index set and a producerWL's
- *             partition bounds.
- *         ub: Same as lb, except the upper bound.
- *         axis: the axis which we are going to slice. e.g., for matrix,
- *            axis = 0 --> slice rows
- *            axis = 1 --> slice columns
- *            etc.
- *
- * @result: 1-3 N_part nodes, depending on the value of idx.
- *
- * @brief Slice a WL partition into 1-3 partitions.
- *
- * We have a WL partition, consumerWLpartn, and an intersection index set, idx,
- * for the partition that is smaller than the partition. We wish
- * to slice consumerWLpartn into sub-partitions, in order that AWLF
- * can operate on the sub-partition(s).
- *
- * idx is known to lie totally within consumerWLpartn, as it arises from
- * the WL index set intersection bounds.
- *
- * In the simplest situation, there are three possible
- * cases of intersect. The rectangle represents consumerWLpartn;
- * the xxxx's represent the array covered by lb, ub.
- *
- *   alpha        beta        gamma
- *  __________   __________  _________
- *  |xxxxxxxxx| | partA   | | partA   |
- *  |xxpartIxx| |         | |         |
- *  |         | |xxxxxxxxx| |         |
- *  |         | |xxpartIxx| |         |
- *  | partC   | |         | |xxxxxxxxx|
- *  |         | | partC   | |xxxxxxxxx|
- *  |_________| |_________| |xxpartIxx|
- *
- *  For cases alpha and gamma, we split consumerWLpartn into two parts.
- *  For case beta, we split it into three parts. In each case,
- *  one of the partitions is guaranteed to match idx.
- *
- * Because the intersection is multi-dimensional, we perform
- * the splitting on one axis at a time. Hence, we may end up
- * with each axis generating 1-3 new partitions for each
- * partition it gets as input.
- *
- * Here are the cases for splitting along axis 1 (columns) in a rank-2 array;
- * an x denotes partI:
- *
- *         Case 1:
- * alpha   alpha  alpha
- *
- * x..     .x.    ..x
- * ...     ...    ...
- * ...     ...    ...
- *
- *
- *         Case 2:
- * alpha   alpha  alpha
- * beta    beta   beta
- * ...     ...    ...
- * x..     .x.    ..x
- * ...     ...    ...
- *
- *
- *         Case 3:
- * alpha   alpha  alpha
- * gamma  gamma   gamma
- * ...    ...     ...
- * ...    ...     ...
- * x..    .x.     ..x
- *
- *
- *
- * Note: This code bears some resemblance to that of CutSlices.
- *       This is simpler, because we know more
- *       about the index set intersection.
- *
- * Note: Re the question of when to perform partition slicing.
- *       I'm not sure, but let's start here:
- *       We want to avoid a situation in which we slice
- *       a partition before we know that slicing is required.
- *       These are the requirements:
- *
- *        - The consumerWL index set is an N_array.
- *        - The intersect of the consumerWL index set with
- *          the producerWL partition bounds:
- *            . is non-empty  (or we are looking at a total mismatch)
- *            . is not an exact match (because it could fold as is).
- *            . has an associated set of AVIS_WITHIDS entries that
- *              are all known constants.
- *
- * Note: We do not do SSA renames here, because as soon as we
- *       hit IVEXI, it will do that, anyway.
- *
- *****************************************************************************/
-static node *
-PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
-                        info *arg_info)
-{
-    node *partz = NULL;
-    node *newpart = NULL;
-    node *partlb = NULL;
-    node *partub = NULL;
-    node *step;
-    node *width;
-    node *withid;
-    node *newlb;
-    node *newub;
-    node *genn;
-    node *ilba;
-    node *iuba;
-    node *plba;
-    node *puba;
-    node *plb;
-    node *pub;
-    node *clone;
-    pattern *pat1;
-    pattern *pat2;
-
-    DBUG_ENTER ("PartitionSlicerOneAxis");
-
-    DBUG_ASSERT (N_part == NODE_TYPE (consumerWLpartn),
-                 "expected N_part consumerWLpartn");
-    DBUG_ASSERT (N_array == NODE_TYPE (lb), "expected N_array lb");
-    DBUG_ASSERT (N_array == NODE_TYPE (ub), "expected N_array ub");
-
-    plb = GENERATOR_BOUND1 (PART_GENERATOR (consumerWLpartn));
-    pub = GENERATOR_BOUND2 (PART_GENERATOR (consumerWLpartn));
-    pat1 = PMarray (1, PMAgetNode (&partlb), 1, PMskip (0));
-    pat2 = PMarray (1, PMAgetNode (&partub), 1, PMskip (0));
-
-    if ((PMmatchFlat (pat1, plb)) && (PMmatchFlat (pat2, pub))) {
-        step = GENERATOR_STEP (PART_GENERATOR (consumerWLpartn));
-        width = GENERATOR_WIDTH (PART_GENERATOR (consumerWLpartn));
-        withid = PART_WITHID (consumerWLpartn);
-
-        ilba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (lb));
-        iuba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (ub));
-        plba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (partlb));
-        puba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (partub));
-
-        /* Cases beta, gamma need partA */
-        if (CMPT_NEQ == CMPTdoCompareTree (ilba, plba)) {
-            DBUG_PRINT ("CUBSL", ("Constructing partition A for %s",
-                                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
-            newlb = DUPdoDupTree (partlb);
-            newub = DUPdoDupTree (partub);
-            ARRAY_AELEMS (newub)
-              = TCputNthExprs (axis, ARRAY_AELEMS (newub), DUPdoDupNode (ilba));
-            genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
-                                    NULL);
-            clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
-            newpart = TBmakePart (clone, DUPdoDupTree (withid), genn);
-            partz = TCappendPart (partz, newpart);
-        }
-
-        /* All cases need partI or original node */
-        if ((CMPT_EQ == CMPTdoCompareTree (ilba, plba))
-            && (CMPT_EQ == CMPTdoCompareTree (iuba, puba))) {
-            partz = DUPdoDupTree (consumerWLpartn); /* No slicing along this axis */
-        } else {
-            newlb = DUPdoDupTree (lb);
-            newub = DUPdoDupTree (ub);
-            genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
-                                    NULL);
-            clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
-            newpart = TBmakePart (clone, DUPdoDupTree (withid), genn);
-            partz = TCappendPart (partz, newpart);
-        }
-
-        /* Case alpha, beta need partC */
-        if (CMPT_NEQ == CMPTdoCompareTree (iuba, puba)) {
-            DBUG_PRINT ("CUBSL", ("Constructing partition C for %s",
-                                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
-            newlb = DUPdoDupTree (ub);
-            newub = DUPdoDupTree (partub);
-            genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupTree (step),
-                                    DUPdoDupTree (width));
-            clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
-            newpart = TBmakePart (clone, DUPdoDupTree (withid), genn);
-            partz = TCappendPart (partz, newpart);
-        }
-    }
-    pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
-
-    DBUG_RETURN (partz);
-}
-
-#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *
@@ -933,31 +722,6 @@ PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
     DBUG_ENTER ("PartitionSlicer");
 
     DBUG_ASSERT (N_part == NODE_TYPE (arg_node), "Expected N_part");
-
-#ifdef DEADCODE
-    /* We have to clone the N_code, or we wipe the arg_node. */
-    newpartns = DUPdoDupNode (arg_node);
-    CODE_DEC_USED (PART_CODE (newpartns)); /* newpartns is just a template */
-#endif                                     // DEADCODE
-
-#ifdef CRAP
-    axes = SHgetUnrLen (ARRAY_FRAMESHAPE (lb));
-
-    /* We start with one N_part, but each axis may add more N_parts. */
-    curpartn = DUPdoDupNode (arg_node);
-
-    for (axis = 0; axis < axes; axis++) {
-        DBUG_PRINT ("CUBSL", ("Slicing partition %s on axis %d",
-                              AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), axis));
-        newpartns = NULL;
-        while (NULL != curpartn) {
-            p = PartitionSlicerOneAxis (curpartn, lb, ub, axis, arg_info);
-            newpartns = TCappendPart (newpartns, p);
-            curpartn = PART_NEXT (curpartn);
-        }
-        curpartn = newpartns;
-    }
-#endif // CRAP
 
     step = GENERATOR_STEP (PART_GENERATOR (arg_node));
     width = GENERATOR_WIDTH (PART_GENERATOR (arg_node));

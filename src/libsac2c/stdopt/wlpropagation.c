@@ -600,8 +600,6 @@ WLPROPid (node *arg_node, info *arg_info)
                   = DUPdoDupNodeLut (AVIS_MIN (ID_AVIS (arg_node)), lut);
                 AVIS_MAX (ARG_AVIS (witharg))
                   = DUPdoDupNodeLut (AVIS_MAX (ID_AVIS (arg_node)), lut);
-                AVIS_WITHIDS (ARG_AVIS (witharg))
-                  = DUPdoDupNodeLut (AVIS_WITHIDS (ID_AVIS (arg_node)), lut);
 
                 /*
                  * Now the withloop definition was moved into the body

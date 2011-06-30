@@ -7747,22 +7747,6 @@ N_tfarg :
               </target>
             </targets>
         </son>
-        <son name="WithIds" default="NULL">
-            <description>
-            Inside a WL, this is the N_id of the
-            WITHID_IDS from which this node is derived. E.g., if
-            we have IV=[i,j,k] and k' = k + 42, then the 
-            WithIdsof k' is k.
-            </description>
-            <targets>
-              <target mandatory="no">
-                <node name="Id" />
-              <phases>
-                <range from="opt_saacyc" to="opt_esaa2" />
-              </phases>
-              </target>
-            </targets>
-        </son>        
       </sons>
 
       <attributes>
