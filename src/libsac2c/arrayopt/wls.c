@@ -224,13 +224,6 @@ WLSflattenBound (node *arg_node, node **vardecs, node **preassigns)
         AVIS_SSAASSIGN (avis) = assgn;
         *preassigns = TCappendAssign (*preassigns, assgn);
 
-#ifdef LETISAADOIT
-        if (PHisSAAMode ()) {
-            /* Now, create the dim and shape info */
-            AVIS_DIM (avis) = TBmakeNum (1);
-            AVIS_SHAPE (avis) = TCmakeIntVector (TBmakeExprs (TBmakeNum (shp), NULL));
-        }
-#endif // LETISAADOIT
         DBUG_PRINT ("WLS",
                     ("WLSflattenBound introduced flattened bound: %s", AVIS_NAME (avis)));
     } else {

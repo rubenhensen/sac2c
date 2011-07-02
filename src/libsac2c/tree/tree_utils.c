@@ -201,6 +201,33 @@ checkStepWidth (node *generator)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool checkBoundShape( node *arg1, node *arg2)
+ * Predicate for arg1 matching arg2
+ *
+ *****************************************************************************/
+static bool
+checkBoundShape (node *arg1, node *arg2)
+{
+    pattern *pat1;
+    pattern *pat2;
+    node *node_ptr = NULL;
+    bool res;
+
+    DBUG_ENTER ("checkBoundShape");
+
+    pat1 = PMany (1, PMAgetNodeOrAvis (&node_ptr), 0);
+    pat2 = PMany (1, PMAisNodeOrAvis (&node_ptr), 0);
+    res = PMmatchFlatSkipExtremaAndGuards (pat1, arg1)
+          && PMmatchFlatSkipExtremaAndGuards (pat2, arg2);
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TULSisFullGenerator( node *generator, node *operator)
  *
  * @brief
@@ -276,8 +303,7 @@ TULSisFullGenerator (node *generator, node *operator)
     case N_genarray:
         z = PMmatchFlatSkipGuards (patlb, GENERATOR_BOUND1 (generator))
             && COisZero (lb, TRUE)
-            && (ID_AVIS (GENERATOR_BOUND2 (generator))
-                == ID_AVIS (GENARRAY_SHAPE (operator)))
+            && checkBoundShape (GENERATOR_BOUND2 (generator), GENARRAY_SHAPE (operator))
             && checkStepWidth (generator);
         break;
 

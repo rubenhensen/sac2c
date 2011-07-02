@@ -103,6 +103,7 @@
 #include "pattern_match.h"
 #include "deserialize.h"
 #include "namespaces.h"
+#include "wls.h"
 
 typedef enum { SP_mod, SP_func } sub_phase_t;
 
@@ -203,7 +204,21 @@ CreateMaxFrameShapeAvis (node *withop, int fdim, info *arg_info)
 
     switch (NODE_TYPE (withop)) {
     case N_genarray:
-        res_avis = ID_AVIS (GENARRAY_SHAPE (withop));
+        if (N_id == NODE_TYPE (GENARRAY_SHAPE (withop))) {
+            res_avis = ID_AVIS (GENARRAY_SHAPE (withop));
+        } else {
+            DBUG_ASSERT (N_array == NODE_TYPE (GENARRAY_SHAPE (withop)),
+                         ("Expected N_array"));
+            shp_avis = CreateAvisAndInsertVardec ("shp",
+                                                  TYmakeAKS (TYmakeSimpleType (T_int),
+                                                             SHcreateShape (1, fdim)),
+                                                  arg_info);
+            INFO_PREASSIGN (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (shp_avis, NULL),
+                                         DUPdoDupTree (GENARRAY_SHAPE (withop))),
+                              INFO_PREASSIGN (arg_info));
+            AVIS_SSAASSIGN (shp_avis) = INFO_PREASSIGN (arg_info);
+        }
         break;
     case N_modarray:
         shp_avis = CreateAvisAndInsertVardec ("shp",
@@ -498,8 +513,12 @@ CreateFullPartition (node *parts, node *withop, info *arg_info)
     min_avis = CreateVarOfHomogeneousIntVect (fdim, 0, arg_info);
     max_avis = CreateMaxFrameShapeAvis (withop, fdim, arg_info);
 
-    lb_avis = ID_AVIS (PART_BOUND1 (parts));
-    ub_avis = ID_AVIS (PART_BOUND2 (parts));
+    lb_avis
+      = WLSflattenBound (PART_BOUND1 (parts), &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                         &INFO_PREASSIGN (arg_info));
+    ub_avis
+      = WLSflattenBound (PART_BOUND2 (parts), &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                         &INFO_PREASSIGN (arg_info));
 
     /* create surrounding cuboids */
     new_parts = CutSlices (min_avis, max_avis, fdim, lb_avis, ub_avis, def_withid,
