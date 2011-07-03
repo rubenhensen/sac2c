@@ -7,7 +7,10 @@
 #include "tree_compound.h"
 #include "globals.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -57,7 +60,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -75,7 +78,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -85,9 +88,9 @@ FreeInfo (info *info)
 static rc_t *
 FreeAllRcs (rc_t *rcs)
 {
-    DBUG_ENTER ("FreeAllRcs");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((rcs != NULL), "RC to be freed is NULL!");
+    DBUG_ASSERT (rcs != NULL, "RC to be freed is NULL!");
 
     if (RC_NEXT (rcs) != NULL) {
         RC_NEXT (rcs) = FreeAllRcs (RC_NEXT (rcs));
@@ -113,7 +116,7 @@ CreateShmemBoundaryLoadPrf (node *cond, node *shmem, rc_t *rc, int dim, node *sh
 {
     node *A_shmem, *A_shmem_old, *new_assign;
 
-    DBUG_ENTER ("CreateShmemBoundaryLoadPrf");
+    DBUG_ENTER ();
 
     A_shmem_old = shmem;
     A_shmem = DUPdoDupNode (shmem);
@@ -155,7 +158,7 @@ CreatePrf (char *name, simpletype sty, shape *shp, prf pfun, node *args, node **
 {
     node *avis = NULL, *new_assign;
 
-    DBUG_ENTER ("CreatePrf");
+    DBUG_ENTER ();
 
     if (name != NULL) {
         avis
@@ -193,7 +196,7 @@ CreateSharedMemoryAccessCode (rc_t *rc, info *arg_info)
     node *shmem_ids, *offsets;
     simpletype sty;
 
-    DBUG_ENTER ("CreateSharedMemoryAccessCode");
+    DBUG_ENTER ();
 
     dim = RC_DIM (rc);
     withids = INFO_WITHIDS (arg_info);
@@ -390,7 +393,7 @@ SHMEMdoSharedMemoryReuse (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("SHMEMdoSharedMemoryReuse");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_shmem);
@@ -411,7 +414,7 @@ SHMEMdoSharedMemoryReuse (node *syntax_tree)
 node *
 SHMEMfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SHMEMfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -430,7 +433,7 @@ SHMEMfundef (node *arg_node, info *arg_info)
 node *
 SHMEMassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SHMEMassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -451,7 +454,7 @@ SHMEMassign (node *arg_node, info *arg_info)
 node *
 SHMEMwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SHMEMwith");
+    DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
         INFO_LEVEL (arg_info)++;
@@ -472,7 +475,7 @@ SHMEMwith (node *arg_node, info *arg_info)
 node *
 SHMEMpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SHMEMpart");
+    DBUG_ENTER ();
 
     INFO_WITHIDS (arg_info) = PART_IDS (arg_node);
     PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
@@ -497,7 +500,7 @@ SHMEMcode (node *arg_node, info *arg_info)
     node *sync_ids = NULL, *sync_exprs = NULL, *avis;
     node *sync_assign;
 
-    DBUG_ENTER ("SHMEMcode");
+    DBUG_ENTER ();
 
     if (CODE_IRA_INFO (arg_node) != NULL) {
         if (CODE_IRA_RCCOUNT (arg_node) > 0) {
@@ -506,7 +509,7 @@ SHMEMcode (node *arg_node, info *arg_info)
                 if (RC_REUSABLE (rcs)) {
                     INFO_LUT (arg_info) = LUTgenerateLut ();
                     assigns = CreateSharedMemoryAccessCode (rcs, arg_info);
-                    DBUG_ASSERT ((assigns != NULL),
+                    DBUG_ASSERT (assigns != NULL,
                                  "Found null assign chain for reuse candidate!");
 
                     sync_exprs = TBmakeExprs (TBmakeId (RC_SHARRAY (rcs)), NULL);
@@ -560,7 +563,7 @@ SHMEMcode (node *arg_node, info *arg_info)
 node *
 SHMEMprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SHMEMprf");
+    DBUG_ENTER ();
 
     /* If we are in cuda withloop */
     if (INFO_LEVEL (arg_info) > 0) {
@@ -590,7 +593,7 @@ SHMEMprf (node *arg_node, info *arg_info)
             nodelist *nl = NULL;
 
             rc = INFO_RC (arg_info);
-            DBUG_ASSERT ((rc != NULL), "Null reuse candidate found!");
+            DBUG_ASSERT (rc != NULL, "Null reuse candidate found!");
 
             pat1 = PMprf (1, PMAisPrf (F_sub_SxS), 2, PMvar (1, PMAgetNode (&id), 0),
                           PMint (1, PMAgetIVal (&off), 0));
@@ -653,3 +656,5 @@ SHMEMprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

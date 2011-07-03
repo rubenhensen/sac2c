@@ -101,7 +101,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UPRF"
+#include "debug.h"
+
 #include "print.h"
 #include "DupTree.h"
 #include "str.h"
@@ -146,7 +149,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -165,7 +168,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -192,7 +195,7 @@ UPRFdoUnrollPRFsPrf (node *arg_node, node **vardecs, node **preassigns, node *lh
 {
     info *arg_info;
 
-    DBUG_ENTER ("UPRFdoUnrollPRFsPrf");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "Expected N_prf");
 
@@ -226,7 +229,7 @@ UPRFdoUnrollPRFs (node *fundef)
 {
     info *info;
 
-    DBUG_ENTER ("UPRFdoUnrollPRFs");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -255,7 +258,7 @@ UPRFdoUnrollPRFsModule (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("UPRFdoUnrollPRFsModule");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -280,7 +283,7 @@ PRFUnrollOracle (node *arg_node)
 {
     bool res;
 
-    DBUG_ENTER ("PRFUnrollOracle");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_add_VxS:
@@ -339,7 +342,7 @@ PRFUnrollOracle (node *arg_node)
 static prf
 NormalizePrf (prf p)
 {
-    DBUG_ENTER ("NormalizePrf");
+    DBUG_ENTER ();
 
     switch (p) {
     case F_add_VxS:
@@ -389,7 +392,7 @@ NormalizePrf (prf p)
 #endif // SLOWLOOPS
 
     default:
-        DBUG_ASSERT ((FALSE), "Illegal prf!");
+        DBUG_ASSERT (FALSE, "Illegal prf!");
         break;
     }
 
@@ -401,7 +404,7 @@ ReverseExprs (node *exprs, node *agg)
 {
     node *res;
 
-    DBUG_ENTER ("ReverseExprs");
+    DBUG_ENTER ();
 
     if (exprs == NULL) {
         res = agg;
@@ -419,7 +422,7 @@ ReverseAssignments (node *ass, node *agg)
 {
     node *res;
 
-    DBUG_ENTER ("ReverseAssignments");
+    DBUG_ENTER ();
 
     if (ass == NULL) {
         res = agg;
@@ -446,7 +449,7 @@ MakeIntScalar (int i, info *arg_info)
 {
     node *selarravis;
 
-    DBUG_ENTER ("MakeIntScalar");
+    DBUG_ENTER ();
     selarravis = TBmakeAvis (TRAVtmpVar (),
                              TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
     INFO_VARDEC (arg_info) = TBmakeVardec (selarravis, INFO_VARDEC (arg_info));
@@ -472,7 +475,7 @@ MakeIntVec (int i, info *arg_info)
 {
     node *selarravis;
 
-    DBUG_ENTER ("MakeIntVec");
+    DBUG_ENTER ();
     selarravis = TBmakeAvis (TRAVtmpVar (),
                              TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
     INFO_VARDEC (arg_info) = TBmakeVardec (selarravis, INFO_VARDEC (arg_info));
@@ -499,7 +502,7 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
     node *zavis = NULL;
     prf nprf;
 
-    DBUG_ENTER ("MakeSelOpArg1");
+    DBUG_ENTER ();
 
     nprf = PRF_PRF (arg_node);
     switch (PRF_PRF (arg_node)) {
@@ -575,7 +578,7 @@ MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
     bool dyadic = TRUE;
     prf nprf;
 
-    DBUG_ENTER ("MakeSelOpArg2");
+    DBUG_ENTER ();
 
     nprf = PRF_PRF (arg_node);
     switch (PRF_PRF (arg_node)) {
@@ -657,7 +660,7 @@ MakeIdsAndPredAvis (node *resavis, node *arg_node, info *arg_info)
     node *res;
     node *predavis;
 
-    DBUG_ENTER ("MakeIdsAndPredAvis");
+    DBUG_ENTER ();
     switch (PRF_PRF (arg_node)) {
     case F_non_neg_val_V:
     case F_val_lt_shape_VxA:
@@ -689,7 +692,7 @@ MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node 
                 node *resavis)
 {
 
-    DBUG_ENTER ("MakeUnrolledOp");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
 
@@ -764,7 +767,7 @@ MakeTrueScalar (node *arg_node, info *arg_info)
     node *bavis;
     int dim;
 
-    DBUG_ENTER ("MakeTrueScalar");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
 
@@ -801,7 +804,7 @@ MakeTrueScalar (node *arg_node, info *arg_info)
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -825,7 +828,7 @@ MakeResultNode (node *arg_node, info *arg_info, node *elems, node *ids)
     node *res;
     node *guardres;
 
-    DBUG_ENTER ("MakeResultNode");
+    DBUG_ENTER ();
 
     /* Conditionally create guard result */
     switch (PRF_PRF (arg_node)) {
@@ -873,7 +876,7 @@ MakeFoldOp (node *ids, node *arg_node, info *arg_info)
     node *x;
     node *y;
 
-    DBUG_ENTER ("MakeFoldOp");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_non_neg_val_V:
@@ -896,7 +899,7 @@ MakeFoldOp (node *ids, node *arg_node, info *arg_info)
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -916,14 +919,14 @@ node *
 UPRFfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
-    DBUG_ENTER ("UPRFfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_VARDEC (arg_info) = NULL;
         INFO_FUNDEF (arg_info) = arg_node; /* handy for debugging */
-        DBUG_PRINT ("UPRF", ("traversing body of (%s) %s",
-                             (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                             FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("traversing body of (%s) %s",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                    FUNDEF_NAME (arg_node));
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         /* If new vardecs were made, append them to the current set */
@@ -933,9 +936,9 @@ UPRFfundef (node *arg_node, info *arg_info)
             INFO_VARDEC (arg_info) = NULL;
         }
 
-        DBUG_PRINT ("UPRF", ("leaving body of (%s) %s",
-                             (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                             FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("leaving body of (%s) %s",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                    FUNDEF_NAME (arg_node));
     }
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -960,7 +963,7 @@ UPRFfundef (node *arg_node, info *arg_info)
 node *
 UPRFassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("UPRFassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -984,7 +987,7 @@ UPRFassign (node *arg_node, info *arg_info)
 node *
 UPRFlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("UPRFlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -1010,7 +1013,7 @@ UPRFprf (node *arg_node, info *arg_info)
     bool valltshp;
     int i;
 
-    DBUG_ENTER ("UPRFprf");
+    DBUG_ENTER ();
 
     if ((PRFUnrollOracle (arg_node)) && (TYisAKS (IDS_NTYPE (INFO_LHS (arg_info))))
         && (TYgetDim (IDS_NTYPE (INFO_LHS (arg_info))) == 1)) {
@@ -1052,8 +1055,8 @@ UPRFprf (node *arg_node, info *arg_info)
 
             INFO_PREASSIGN (arg_info)
               = ReverseAssignments (INFO_PREASSIGN (arg_info), NULL);
-            DBUG_PRINT ("UPRF", ("prf unrolled for %s",
-                                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+            DBUG_PRINT ("prf unrolled for %s",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
         }
 
         nt1 = TYfreeType (nt1);
@@ -1064,3 +1067,5 @@ UPRFprf (node *arg_node, info *arg_info)
 }
 
 /* @} */
+
+#undef DBUG_PREFIX

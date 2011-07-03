@@ -12,7 +12,10 @@
 #include "types.h"
 #include "new_types.h"
 #include "pattern_match.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "TULS"
+#include "debug.h"
+
 #include "constants.h"
 #include "shape.h"
 #include "type_utils.h"
@@ -72,7 +75,7 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
     constant *c = NULL;
     int n = 0, i, lk;
 
-    DBUG_ENTER ("TULSisZeroTripGenerator");
+    DBUG_ENTER ();
 
     pat1 = PMmulti (2, PMvar (1, PMAgetNode (&a), 0), PMvar (1, PMAisVar (&a), 0));
     pat2 = PMmulti (2, PMconst (1, PMAgetVal (&c)), PMconst (1, PMAanyLeVal (&c)));
@@ -89,14 +92,14 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
                                 PMarray (1, PMAhasLen (&n), 3, PMskipN (&i, 0),
                                          PMint (1, PMAleIVal (&lk), 0), PMskip (0))));
 
-    DBUG_PRINT ("TULS", ("checking criteria 1, 2, and 3:"));
+    DBUG_PRINT ("checking criteria 1, 2, and 3:");
     if (PMmatchFlat (pat1, PMmultiExprs (2, lb, ub)) && (TUshapeKnown (ID_NTYPE (lb)))
         && (TYgetDim (ID_NTYPE (lb)) == 1)
         && (SHgetExtent (TYgetShape (ID_NTYPE (lb)), 0) > 0)) {
         /**
          * criteria 1) (  a <= iv <  a)    where a::int[n]  with n>0  !
          */
-        DBUG_PRINT ("TULS", ("criterion 1 met!"));
+        DBUG_PRINT ("criterion 1 met!");
         res = TRUE;
     } else if (PMmatchFlat (pat2, PMmultiExprs (2, lb, ub))
                && (SHgetExtent (COgetShape (c), 0) > 0)) {
@@ -106,7 +109,7 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
          *                                       vec1 >= vec2
          *                                       n > 0!
          */
-        DBUG_PRINT ("TULS", ("criterion 2 met!"));
+        DBUG_PRINT ("criterion 2 met!");
         res = TRUE;
     } else if ((PMmatchFlat (pat3, PMmultiExprs (2, lb, ub))
                 || PMmatchFlat (pat4, PMmultiExprs (2, lb, ub)))
@@ -118,7 +121,7 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
          *                   lk and uk are the same variable
          *                   || lk >= uk
          */
-        DBUG_PRINT ("TULS", ("criterion 3 met!"));
+        DBUG_PRINT ("criterion 3 met!");
         res = TRUE;
     }
     pat1 = PMfree (pat1);
@@ -138,20 +141,20 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
         pat2 = PMarray (1, PMAgetLen (&l), 1,
                         PMretryAny (&i, &l, 3, PMskipN (&i, 0),
                                     PMint (1, PMAisIVal (&zero)), PMskip (0)));
-        DBUG_PRINT ("TULS", ("checking criteria 4 and 5:"));
+        DBUG_PRINT ("checking criteria 4 and 5:");
         if (PMmatchFlat (pat1, width) && COisZero (c, FALSE)) {
             /**
              * criteria 4) ( lb <= iv <= ub width a)
              *              where a::int[n]{vec} and vec contains a 0
              */
-            DBUG_PRINT ("TULS", ("criterion 4 met!"));
+            DBUG_PRINT ("criterion 4 met!");
             res = TRUE;
         } else if (PMmatchFlat (pat2, width)) {
             /**
              * criteria 5) ( lb <= iv <= ub width [v1,...,vn])
              *             where exists i such that vi == 0
              */
-            DBUG_PRINT ("TULS", ("criterion 5 met!"));
+            DBUG_PRINT ("criterion 5 met!");
             res = TRUE;
         }
         pat1 = PMfree (pat1);
@@ -183,7 +186,7 @@ checkStepWidth (node *generator)
     constant *sw = NULL;
     pattern *pat;
 
-    DBUG_ENTER ("checkStepWidth");
+    DBUG_ENTER ();
     pat = PMconst (1, PMAgetVal (&sw));
     z = (NULL == GENERATOR_STEP (generator))
         || (GENERATOR_STEP (generator) == GENERATOR_WIDTH (generator))
@@ -213,7 +216,7 @@ checkBoundShape (node *arg1, node *arg2)
     node *node_ptr = NULL;
     bool res;
 
-    DBUG_ENTER ("checkBoundShape");
+    DBUG_ENTER ();
 
     pat1 = PMany (1, PMAgetNodeOrAvis (&node_ptr), 0);
     pat2 = PMany (1, PMAisNodeOrAvis (&node_ptr), 0);
@@ -281,7 +284,7 @@ TULSisFullGenerator (node *generator, node *operator)
     pattern *patub;
     pattern *patarr;
 
-    DBUG_ENTER ("TULSisFullGenerator");
+    DBUG_ENTER ();
 
     patlb = PMconst (1, PMAgetVal (&lb));
     patub = PMarray (1, PMAgetNode (&ub), 0);
@@ -359,9 +362,9 @@ TULSisFullGenerator (node *generator, node *operator)
 node *
 TUremoveUnusedCodes (node *codes)
 {
-    DBUG_ENTER ("TUremoveUnusedCodes");
-    DBUG_ASSERT ((codes != NULL), "no codes available!");
-    DBUG_ASSERT ((NODE_TYPE (codes) == N_code), "type of codes is not N_code!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (codes != NULL, "no codes available!");
+    DBUG_ASSERT (NODE_TYPE (codes) == N_code, "type of codes is not N_code!");
 
     if (CODE_NEXT (codes) != NULL)
         CODE_NEXT (codes) = TUremoveUnusedCodes (CODE_NEXT (codes));
@@ -391,7 +394,7 @@ TUmakeIntVec (int i, node **preassign, node **vardec)
 {
     node *selarravis;
 
-    DBUG_ENTER ("TUmakeIntVec");
+    DBUG_ENTER ();
     selarravis = TBmakeAvis (TRAVtmpVar (),
                              TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
     *vardec = TBmakeVardec (selarravis, *vardec);
@@ -440,7 +443,7 @@ TUscalarizeVector (node *arg_node, node **preassigns, node **vardecs)
     int lim;
     int i;
 
-    DBUG_ENTER ("TUscalarizeVector");
+    DBUG_ENTER ();
 
     restyp = AVIS_TYPE (arg_node);
     scalartype = TYgetSimpleType (TYgetScalar (restyp));
@@ -501,7 +504,7 @@ TUmoveAssign (node *avis, node *preassigns)
     node *pred = NULL;
     node *ournode;
 
-    DBUG_ENTER ("TUmoveAssign");
+    DBUG_ENTER ();
 
     z = preassigns;
 
@@ -537,3 +540,5 @@ TUmoveAssign (node *avis, node *preassigns)
 
     DBUG_RETURN (z);
 }
+
+#undef DBUG_PREFIX

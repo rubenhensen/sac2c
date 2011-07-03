@@ -18,7 +18,9 @@
 
 #include "ungroup_local_funs.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "globals.h"
 #include "traverse.h"
 #include "tree_basic.h"
@@ -33,7 +35,7 @@ UGLFdoUngroupLocalFuns (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("UGLFdoUngroupLocalFuns");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
@@ -53,7 +55,7 @@ UGLFdoUngroupLocalFuns (node *syntax_tree)
 node *
 UGLFmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("UGLFmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
     global.local_funs_grouped = FALSE;
@@ -64,7 +66,7 @@ UGLFmodule (node *arg_node, info *arg_info)
 node *
 UGLFfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("UGLFfundef");
+    DBUG_ENTER ();
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
@@ -75,3 +77,5 @@ UGLFfundef (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

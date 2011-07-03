@@ -31,7 +31,10 @@
 #include "traverse.h"
 #include "globals.h"
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "DupTree.h"
 #include "ctinfo.h"
 
@@ -61,7 +64,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -75,7 +78,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -106,7 +109,7 @@ CreateTypeConv (node *avis, ntype *type)
 {
     node *res;
 
-    DBUG_ENTER ("CreateTypeConv");
+    DBUG_ENTER ();
 
     res
       = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
@@ -134,7 +137,7 @@ CreateTypeConv (node *avis, ntype *type)
 node *
 INSTCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSTCfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_INSTC_RETS (arg_info) = FUNDEF_RETS (arg_node);
@@ -162,7 +165,7 @@ INSTCfundef (node *arg_node, info *arg_info)
 node *
 INSTCblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSTCblock");
+    DBUG_ENTER ();
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
@@ -189,7 +192,7 @@ INSTCavis (node *arg_node, info *arg_info)
 {
     ntype *old_type;
 
-    DBUG_ENTER ("INSTCavis");
+    DBUG_ENTER ();
 
     old_type = AVIS_TYPE (arg_node);
     if (!TYisAUD (old_type)) {
@@ -211,7 +214,7 @@ INSTCavis (node *arg_node, info *arg_info)
 node *
 INSTCassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSTCassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -266,7 +269,7 @@ INSTCids (node *arg_node, info *arg_info)
     ntype *scalar_type;
     node *assign;
 
-    DBUG_ENTER ("INSTCids");
+    DBUG_ENTER ();
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
@@ -299,7 +302,7 @@ INSTCwith (node *arg_node, info *arg_info)
 {
     node *old_new_assign;
 
-    DBUG_ENTER ("INSTCwith");
+    DBUG_ENTER ();
     old_new_assign = INFO_INSTC_NEW_ASSIGN (arg_info);
     INFO_INSTC_NEW_ASSIGN (arg_info) = NULL;
 
@@ -325,7 +328,7 @@ INSTCid (node *arg_node, info *arg_info)
     node *assign;
     ntype *old_type;
 
-    DBUG_ENTER ("INSTCid");
+    DBUG_ENTER ();
 
     if (INFO_INSTC_RETURN (arg_info) != NULL) {
 
@@ -364,7 +367,7 @@ INSTCid (node *arg_node, info *arg_info)
 node *
 INSTCreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSTCreturn");
+    DBUG_ENTER ();
 
     INFO_INSTC_RETURN (arg_info) = arg_node;
 
@@ -396,7 +399,7 @@ INSTCdoInsertTypeConv (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("INSTCdoInsertTypeConv");
+    DBUG_ENTER ();
 
     TRAVpush (TR_instc);
 
@@ -409,3 +412,5 @@ INSTCdoInsertTypeConv (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

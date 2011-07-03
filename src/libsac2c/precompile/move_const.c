@@ -60,7 +60,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "MC"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -92,7 +95,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -105,7 +108,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_VARDECS (info) == NULL,
                  "Unexpected link to vardecs still in info struct");
@@ -128,7 +131,7 @@ FreeInfo (info *info)
 static node *
 ATravIds (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravIds");
+    DBUG_ENTER ();
 
     AVIS_COUNT (IDS_AVIS (arg_node))++;
 
@@ -139,7 +142,7 @@ static node *
 CountLhsUsage (node *syntax_tree)
 {
     anontrav_t trav[2] = {{N_ids, &ATravIds}, {0, NULL}};
-    DBUG_ENTER ("CountLhsUsage");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);
 
@@ -160,7 +163,7 @@ CountLhsUsage (node *syntax_tree)
 static void
 SetConst (node *avis, node *rhs, node *vardecs)
 {
-    DBUG_ENTER ("SetConst");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (vardecs != NULL, "No more vardecs to check");
 
@@ -170,7 +173,7 @@ SetConst (node *avis, node *rhs, node *vardecs)
         SetConst (avis, rhs, VARDEC_NEXT (vardecs));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -193,11 +196,11 @@ MCdoMoveConst (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MCdoMoveConst");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("MC", ("Starting move const traversal."));
+    DBUG_PRINT ("Starting move const traversal.");
 
     syntax_tree = CountLhsUsage (syntax_tree);
 
@@ -205,7 +208,7 @@ MCdoMoveConst (node *syntax_tree)
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("MC", ("Move const traversal complete."));
+    DBUG_PRINT ("Move const traversal complete.");
 
     info = FreeInfo (info);
 
@@ -234,7 +237,7 @@ node *
 MCfundef (node *arg_node, info *arg_info)
 {
     node *stack = INFO_VARDECS (arg_info);
-    DBUG_ENTER ("MCfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_VARDECS (arg_info) = BLOCK_VARDEC (FUNDEF_BODY (arg_node));
@@ -258,7 +261,7 @@ node *
 MCassign (node *arg_node, info *arg_info)
 {
     bool stack = INFO_DEAD_ASSIGN (arg_info);
-    DBUG_ENTER ("MCassign");
+    DBUG_ENTER ();
 
     INFO_DEAD_ASSIGN (arg_info) = FALSE;
 
@@ -283,7 +286,7 @@ MCassign (node *arg_node, info *arg_info)
 node *
 MClet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MClet");
+    DBUG_ENTER ();
 
     if ((LET_IDS (arg_node) != NULL)
         && TUisScalar (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node))))
@@ -318,3 +321,5 @@ MClet (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

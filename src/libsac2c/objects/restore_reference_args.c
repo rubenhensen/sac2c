@@ -2,7 +2,9 @@
 
 #include "restore_reference_args.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "free.h"
 #include "traverse.h"
 #include "tree_basic.h"
@@ -37,7 +39,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -52,7 +54,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -65,7 +67,7 @@ FreeInfo (info *info)
 static node *
 ReintroduceReferenceArgs (node *args)
 {
-    DBUG_ENTER ("ReintroduceReferenceArgs");
+    DBUG_ENTER ();
 
     if (args != NULL) {
         ARG_NEXT (args) = ReintroduceReferenceArgs (ARG_NEXT (args));
@@ -82,7 +84,7 @@ ReintroduceReferenceArgs (node *args)
 static node *
 RemoveArtificialRets (node *rets)
 {
-    DBUG_ENTER ("RemoveArtificialRets");
+    DBUG_ENTER ();
 
     if (rets != NULL) {
         RET_NEXT (rets) = RemoveArtificialRets (RET_NEXT (rets));
@@ -98,10 +100,10 @@ RemoveArtificialRets (node *rets)
 static node *
 RemoveArtificialReturnValues (node *form_args, node *act_args, node *ids)
 {
-    DBUG_ENTER ("RemoveArtificialReturnValues");
+    DBUG_ENTER ();
 
     if (form_args != NULL) {
-        DBUG_ASSERT ((act_args != NULL), "formal and actual args do not match");
+        DBUG_ASSERT (act_args != NULL, "formal and actual args do not match");
 
         if (ARG_WASREFERENCE (form_args)) {
             /*
@@ -124,7 +126,7 @@ RemoveArtificialReturnValues (node *form_args, node *act_args, node *ids)
 static void
 RemoveArtificialWithloopReturns (node *withops, node *withexprs, node *letlhs)
 {
-    DBUG_ENTER ("RemoveArtificialWithloopReturn");
+    DBUG_ENTER ();
 
     while (withops != NULL) {
         /* If the withop is of type N_propagate, then the LHS is artificial
@@ -138,13 +140,13 @@ RemoveArtificialWithloopReturns (node *withops, node *withexprs, node *letlhs)
         withops = WITHOP_NEXT (withops);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static node *
 TransformArtificialReturnExprsIntoAssignments (node *args, node *exprs, node **assigns)
 {
-    DBUG_ENTER ("TransformArtificialReturnExprsIntoAssignments");
+    DBUG_ENTER ();
 
     if (args != NULL) {
         if (ARG_WASREFERENCE (args)) {
@@ -174,7 +176,7 @@ TransformArtificialReturnExprsIntoAssignments (node *args, node *exprs, node **a
 static node *
 InitialiseVardecs (node *vardecs)
 {
-    DBUG_ENTER ("InitialiseVardecs");
+    DBUG_ENTER ();
 
     if (vardecs != NULL) {
         VARDEC_NEXT (vardecs) = InitialiseVardecs (VARDEC_NEXT (vardecs));
@@ -188,7 +190,7 @@ InitialiseVardecs (node *vardecs)
 static node *
 RemoveSubstitutedVardecs (node *vardecs)
 {
-    DBUG_ENTER ("RemoveSubstitutedVardecs");
+    DBUG_ENTER ();
 
     if (vardecs != NULL) {
         VARDEC_NEXT (vardecs) = RemoveSubstitutedVardecs (VARDEC_NEXT (vardecs));
@@ -209,7 +211,7 @@ node *
 RERAassign (node *arg_node, info *arg_info)
 {
     bool delete;
-    DBUG_ENTER ("RERAassign");
+    DBUG_ENTER ();
 
     /*
      * traverse the instruction to check for substitutions
@@ -251,7 +253,7 @@ RERAlet (node *arg_node, info *arg_info)
     node *oldlhs;
     node *arg;
 
-    DBUG_ENTER ("RERAlet");
+    DBUG_ENTER ();
 
     oldlhs = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = LET_IDS (arg_node);
@@ -296,7 +298,7 @@ RERAlet (node *arg_node, info *arg_info)
 node *
 RERAap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RERAap");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info)
       = RemoveArtificialReturnValues (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
@@ -310,7 +312,7 @@ RERAap (node *arg_node, info *arg_info)
 node *
 RERAid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RERAid");
+    DBUG_ENTER ();
 
     while (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
@@ -322,7 +324,7 @@ RERAid (node *arg_node, info *arg_info)
 node *
 RERAids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RERAids");
+    DBUG_ENTER ();
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
@@ -338,7 +340,7 @@ RERAids (node *arg_node, info *arg_info)
 node *
 RERAreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RERAreturn");
+    DBUG_ENTER ();
 
     /*
      * first ensure that all substitutions have taken place!
@@ -356,7 +358,7 @@ RERAreturn (node *arg_node, info *arg_info)
 node *
 RERAfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RERAfundef");
+    DBUG_ENTER ();
 
     /*
      * clean up body first
@@ -402,7 +404,7 @@ RERAprf (node *arg_node, info *arg_info)
     node *args;
     node *lhs;
 
-    DBUG_ENTER ("RERAprf");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -460,7 +462,7 @@ RERAprf (node *arg_node, info *arg_info)
             node *arg = AVIS_DECL (ID_AVIS (PRF_ARG1 (arg_node)));
 
             if (ARG_WASREFERENCE (arg) || ARG_ISREFERENCE (arg)) {
-                DBUG_ASSERT ((IDS_NEXT (INFO_LHS (arg_info)) == NULL),
+                DBUG_ASSERT (IDS_NEXT (INFO_LHS (arg_info)) == NULL,
                              "afterguard with multiple LHS found");
 
                 AVIS_SUBST (IDS_AVIS (INFO_LHS (arg_info))) = ARG_AVIS (arg);
@@ -478,7 +480,7 @@ RERAprf (node *arg_node, info *arg_info)
 node *
 RERAmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RERAmodule");
+    DBUG_ENTER ();
 
     /*
      * we have to traverse the FUNS first here, as we have
@@ -503,7 +505,7 @@ RERAmodule (node *arg_node, info *arg_info)
 node *
 RERAwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RERAwith");
+    DBUG_ENTER ();
 
     if (WITH_CODE (arg_node) != NULL) {
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -523,7 +525,7 @@ RERAwith (node *arg_node, info *arg_info)
 node *
 RERAwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RERAwith2");
+    DBUG_ENTER ();
 
     if (WITH2_CODE (arg_node) != NULL) {
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
@@ -543,7 +545,7 @@ RERAwith2 (node *arg_node, info *arg_info)
 node *
 RERAblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RERAblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
@@ -562,7 +564,7 @@ RERAdoRestoreReferenceArguments (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("RERAdoRestoreReferenceArgs");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -576,3 +578,5 @@ RERAdoRestoreReferenceArguments (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

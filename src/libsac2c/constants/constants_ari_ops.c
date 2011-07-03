@@ -28,7 +28,9 @@
 
 #include <stdlib.h>
 
-#include "dbug.h"
+#define DBUG_PREFIX "COOPS"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "constants.h"
@@ -75,8 +77,8 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
     void *cv;
     int i;
 
-    DBUG_ENTER ("COzip");
-    DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (b)),
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_TYPE (a) == CONSTANT_TYPE (b),
                  "COzip called with args of different base type!");
 
     if (CONSTANT_DIM (a) == 0) {
@@ -136,7 +138,7 @@ COzip (const zipcvfunptr *fun_arr, constant *a, constant *b, simpletype target_t
                 }
 
             } else {
-                DBUG_ASSERT ((0 == 1), "COzip called with args of different shape!");
+                DBUG_ASSERT (0 == 1, "COzip called with args of different shape!");
                 res = NULL;
             }
         }
@@ -168,7 +170,7 @@ COzipUnary (const zipcvfunptr *fun_arr, constant *a, simpletype target_type)
     void *cv;
     int i;
 
-    DBUG_ENTER ("COzipUnary");
+    DBUG_ENTER ();
 
     if (target_type != T_unknown) {
         res = COmakeConstant (target_type, SHcopyShape (COgetShape (a)),
@@ -215,9 +217,9 @@ COadd (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COadd");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_plus, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COadd", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COadd", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -238,9 +240,9 @@ COsub (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COsub");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_minus, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COsub", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COsub", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -261,9 +263,9 @@ COmul (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COmul");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_mul, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COmul", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COmul", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -284,9 +286,9 @@ COdiv (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COdiv");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_div, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COdiv", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COdiv", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -307,9 +309,9 @@ COmod (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("CODmod");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_mod, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COmod", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COmod", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -330,9 +332,9 @@ COmin (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("CODmin");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_min, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COmin", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COmin", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -353,9 +355,9 @@ COmax (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COmax");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_max, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COmax", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COmax", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -376,9 +378,9 @@ COand (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COand");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_and, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COand", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COand", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -399,9 +401,9 @@ COor (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COor");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_or, a, b, T_unknown);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COor", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COor", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -422,9 +424,9 @@ COle (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COle");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_le, a, b, T_bool);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COle", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COle", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -445,9 +447,9 @@ COlt (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COlt");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_lt, a, b, T_bool);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COlt", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COlt", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -468,9 +470,9 @@ COge (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COge");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_ge, a, b, T_bool);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COge", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COge", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -491,9 +493,9 @@ COgt (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COgt");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_gt, a, b, T_bool);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COgt", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COgt", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -514,9 +516,9 @@ COeq (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COeq");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_eq, a, b, T_bool);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COeq", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COeq", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -537,9 +539,9 @@ COneq (constant *a, constant *b, constant *tmp1)
 {
     constant *res;
 
-    DBUG_ENTER ("COneq");
+    DBUG_ENTER ();
     res = COzip (global.zipcv_neq, a, b, T_bool);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COneq", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COneq", a, b, res));
     DBUG_RETURN (res);
 }
 
@@ -558,9 +560,9 @@ COnot (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COnot");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_not, a, T_unknown);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COnot", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COnot", a, res));
     DBUG_RETURN (res);
 }
 
@@ -579,9 +581,9 @@ COtob (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COtob");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_tob, a, T_byte);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtob", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtob", a, res));
     DBUG_RETURN (res);
 }
 
@@ -600,9 +602,9 @@ COtos (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COtos");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_tos, a, T_short);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtos", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtos", a, res));
     DBUG_RETURN (res);
 }
 
@@ -621,9 +623,9 @@ COtoi (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COtoi");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_toi, a, T_int);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoi", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtoi", a, res));
     DBUG_RETURN (res);
 }
 
@@ -642,9 +644,9 @@ COtol (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COtol");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_tol, a, T_long);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtol", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtol", a, res));
     DBUG_RETURN (res);
 }
 
@@ -663,9 +665,9 @@ COtoll (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COtoll");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_toll, a, T_longlong);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoll", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtoll", a, res));
     DBUG_RETURN (res);
 }
 
@@ -684,9 +686,9 @@ COtoub (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COtoub");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_toub, a, T_ubyte);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoub", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtoub", a, res));
     DBUG_RETURN (res);
 }
 
@@ -705,9 +707,9 @@ COtous (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COtous");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_tous, a, T_ushort);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtous", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtous", a, res));
     DBUG_RETURN (res);
 }
 
@@ -726,9 +728,9 @@ COtoui (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COtoui");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_toui, a, T_uint);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoui", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtoui", a, res));
     DBUG_RETURN (res);
 }
 
@@ -747,9 +749,9 @@ COtoul (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COtoul");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_toul, a, T_ulong);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoul", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtoul", a, res));
     DBUG_RETURN (res);
 }
 
@@ -768,9 +770,9 @@ COtoull (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COtoull");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_toull, a, T_ulonglong);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtoull", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtoull", a, res));
     DBUG_RETURN (res);
 }
 
@@ -789,9 +791,9 @@ COtof (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COtof");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_tof, a, T_float);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtof", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtof", a, res));
     DBUG_RETURN (res);
 }
 
@@ -810,9 +812,9 @@ COtod (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COtod");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_tod, a, T_double);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COtod", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtod", a, res));
     DBUG_RETURN (res);
 }
 
@@ -831,9 +833,9 @@ COabs (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COabs");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_abs, a, T_unknown);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COabs", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COabs", a, res));
     DBUG_RETURN (res);
 }
 
@@ -853,9 +855,9 @@ COneg (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COneg");
+    DBUG_ENTER ();
     res = COzipUnary (global.zipcv_neg, a, T_unknown);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COneg", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COneg", a, res));
     DBUG_RETURN (res);
 }
 
@@ -876,10 +878,12 @@ COreciproc (constant *a, constant *tmp1, constant *tmp2)
     constant *one;
     constant *res;
 
-    DBUG_ENTER ("COreciproc");
+    DBUG_ENTER ();
     one = COmakeOne (COgetType (a), COgetShape (a));
     res = COzip (global.zipcv_div, one, a, T_unknown);
     one = COfreeConstant (one);
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintUnaryOp ("COreciproc", a, res););
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COreciproc", a, res));
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

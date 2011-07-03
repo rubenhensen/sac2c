@@ -97,7 +97,10 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLSIMP"
+#include "debug.h"
+
 #include "print.h"
 #include "str.h"
 #include "memory.h"
@@ -156,7 +159,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -174,7 +177,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -211,7 +214,7 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
     node *ub;
     node *prfassgn;
 
-    DBUG_ENTER ("CreateGenwidth");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (lb_array) == N_array, "lb should be N_array");
     DBUG_ASSERT (NODE_TYPE (ub_array) == N_array, "ub should be N_array");
@@ -220,7 +223,7 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
     ub_exprs = ARRAY_AELEMS (ub_array);
 
     while (lb_exprs != NULL) {
-        DBUG_ASSERT ((ub_exprs != NULL), "upper bound shorter than lower bound!");
+        DBUG_ASSERT (ub_exprs != NULL, "upper bound shorter than lower bound!");
         diffavis = TBmakeAvis (TRAVtmpVar (),
                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
@@ -251,7 +254,7 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
         lb_exprs = EXPRS_NEXT (lb_exprs);
         ub_exprs = EXPRS_NEXT (ub_exprs);
     }
-    DBUG_ASSERT ((ub_exprs == NULL), "upper bound longer than lower bound!");
+    DBUG_ASSERT (ub_exprs == NULL, "upper bound longer than lower bound!");
 
     DBUG_RETURN (TCmakeIntVector (exprs));
 }
@@ -270,7 +273,7 @@ WLSIMPdoWithloopSimplification (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("WLSIMPdoWithloopSimplification");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -303,7 +306,7 @@ node *
 WLSIMPfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
-    DBUG_ENTER ("WLSIMPfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
@@ -337,7 +340,7 @@ WLSIMPfundef (node *arg_node, info *arg_info)
 node *
 WLSIMPassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSIMPassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -365,7 +368,7 @@ WLSIMPassign (node *arg_node, info *arg_info)
 node *
 WLSIMPlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSIMPlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -384,16 +387,15 @@ WLSIMPwith (node *arg_node, info *arg_info)
 {
     node *preass;
 
-    DBUG_ENTER ("WLSIMPwith");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLSIMP",
-                ("examining With-Loop: %s in line %d",
-                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), NODE_LINE (arg_node)));
+    DBUG_PRINT ("examining With-Loop: %s in line %d",
+                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), NODE_LINE (arg_node));
 
     INFO_NUM_GENPARTS (arg_info) = 0;
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
-    DBUG_PRINT ("WLSIMP", ("%d parts left", INFO_NUM_GENPARTS (arg_info)));
+    DBUG_PRINT ("%d parts left", INFO_NUM_GENPARTS (arg_info));
 
     if (INFO_NUM_GENPARTS (arg_info) == 0) {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
@@ -427,9 +429,9 @@ WLSIMPgenarray (node *arg_node, info *arg_info)
     node *lhs, *empty;
     ntype *lhstype;
 
-    DBUG_ENTER ("WLSIMPgenarray");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLSIMP", ("transforming N_genarray"));
+    DBUG_PRINT ("transforming N_genarray");
 
     lhs = INFO_LHS (arg_info);
     lhstype = IDS_NTYPE (lhs);
@@ -467,9 +469,9 @@ WLSIMPmodarray (node *arg_node, info *arg_info)
 {
     node *lhs;
 
-    DBUG_ENTER ("WLSIMPmodarray");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLSIMP", ("transforming N_modarray"));
+    DBUG_PRINT ("transforming N_modarray");
     lhs = INFO_LHS (arg_info);
     INFO_PREASSIGN (arg_info)
       = TBmakeAssign (TBmakeLet (DUPdoDupNode (lhs),
@@ -483,7 +485,7 @@ WLSIMPmodarray (node *arg_node, info *arg_info)
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
         MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
     } else {
-        DBUG_ASSERT ((IDS_NEXT (lhs) == NULL), "lhs length does not match WLops");
+        DBUG_ASSERT (IDS_NEXT (lhs) == NULL, "lhs length does not match WLops");
     }
     DBUG_RETURN (arg_node);
 }
@@ -502,9 +504,9 @@ WLSIMPfold (node *arg_node, info *arg_info)
 {
     node *lhs;
 
-    DBUG_ENTER ("WLSIMPfold");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLSIMP", ("transforming N_fold"));
+    DBUG_PRINT ("transforming N_fold");
     lhs = INFO_LHS (arg_info);
 
     INFO_PREASSIGN (arg_info)
@@ -533,7 +535,7 @@ WLSIMPfold (node *arg_node, info *arg_info)
 node *
 WLSIMPbreak (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSIMPbreak");
+    DBUG_ENTER ();
 
     if (BREAK_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -554,7 +556,7 @@ WLSIMPbreak (node *arg_node, info *arg_info)
 node *
 WLSIMPpropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSIMPpropagate");
+    DBUG_ENTER ();
 
     INFO_PREASSIGN (arg_info)
       = TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_LHS (arg_info)),
@@ -579,7 +581,7 @@ WLSIMPpropagate (node *arg_node, info *arg_info)
 node *
 WLSIMPcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSIMPcode");
+    DBUG_ENTER ();
 
     CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
@@ -601,7 +603,7 @@ WLSIMPcode (node *arg_node, info *arg_info)
 node *
 WLSIMPpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSIMPpart");
+    DBUG_ENTER ();
 
     INFO_NUM_GENPARTS (arg_info) = INFO_NUM_GENPARTS (arg_info) + 1;
 
@@ -612,7 +614,7 @@ WLSIMPpart (node *arg_node, info *arg_info)
     if ((INFO_ZEROTRIP (arg_info))
         && ((1 != INFO_NUM_GENPARTS (arg_info))
             || (TUshapeKnown (IDS_NTYPE (INFO_LHS (arg_info)))))) {
-        DBUG_PRINT ("WLSIMP", ("eliminating zero-trip generator"));
+        DBUG_PRINT ("eliminating zero-trip generator");
         /**
          * The following free implicitly decrements CODE_USED.
          * We therefore, rely on a code traversal AFTER this partition
@@ -650,7 +652,7 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
     node *width;
     pattern *pat;
 
-    DBUG_ENTER ("WLSIMPgenerator");
+    DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
 
@@ -690,3 +692,5 @@ WLSIMPgenerator (node *arg_node, info *arg_info)
 }
 
 /* @} */
+
+#undef DBUG_PREFIX

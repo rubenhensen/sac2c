@@ -25,7 +25,10 @@
 #include "globals.h"
 #include "free.h"
 #include "ctinfo.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLUR"
+#include "debug.h"
+
 #include "traverse.h"
 #include "constants.h"
 #include "new_types.h"
@@ -61,7 +64,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -75,7 +78,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -99,7 +102,7 @@ CreateBodyCode (node *partn, node *index, ntype *def_type)
     node *_ids;
     node *cexpr_avis;
 
-    DBUG_ENTER ("CreateBodyCode");
+    DBUG_ENTER ();
 
     coden = PART_CODE (partn);
     if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden)))) {
@@ -159,7 +162,7 @@ ApplyModGenarray (node *bodycode, node *index, node *partn, node *cexpr, node *a
 {
     node *exprs, *letexpr, *tmpn;
 
-    DBUG_ENTER ("ApplyModGenarray");
+    DBUG_ENTER ();
 
     /* create prf modarray */
     tmpn = TBmakeId (IDS_AVIS (array));
@@ -198,7 +201,7 @@ ApplyFold (node *bodycode, node *index, node *partn, node *cexpr, node *lhs)
     node *tmp, *letn;
     bool F_accu_found = FALSE;
 
-    DBUG_ENTER ("ApplyFold");
+    DBUG_ENTER ();
 
     /*
      * special handling of
@@ -210,7 +213,7 @@ ApplyFold (node *bodycode, node *index, node *partn, node *cexpr, node *lhs)
      * append new last assignment: LHS of current WL = cexpr;
      */
 
-    DBUG_ASSERT ((NODE_TYPE (bodycode) != N_empty), "BLOCK_INSTR is empty!");
+    DBUG_ASSERT (NODE_TYPE (bodycode) != N_empty, "BLOCK_INSTR is empty!");
 
     tmp = bodycode;
     while (tmp != NULL) {
@@ -222,7 +225,7 @@ ApplyFold (node *bodycode, node *index, node *partn, node *cexpr, node *lhs)
         }
 
         if (ASSIGN_NEXT (tmp) == NULL) {
-            DBUG_ASSERT ((F_accu_found), "No F_accu found!");
+            DBUG_ASSERT (F_accu_found, "No F_accu found!");
 
             /* Append new assign: lhs(wl) = cexpr; */
             letn = TBmakeLet (DUPdoDupNode (lhs), DUPdoDupNode (cexpr));
@@ -254,9 +257,9 @@ ApplyPropagate (node *bodycode, node *index, node *partn, node *withop, node *ce
     node *tmp_prev;
     bool F_prop_obj_found;
 
-    DBUG_ENTER ("ApplyPropagate");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (bodycode) != N_empty), "BLOCK_INSTR is empty!");
+    DBUG_ASSERT (NODE_TYPE (bodycode) != N_empty, "BLOCK_INSTR is empty!");
 
     /*
      * remove affected objects from the expression
@@ -400,7 +403,7 @@ ForEachElementWithop (node *bodycode, node *wln, node *partn, node *index, info 
     node *cexpr;
     node *lhs;
 
-    DBUG_ENTER ("ForEachElementWithop");
+    DBUG_ENTER ();
 
     withop = WITH_WITHOP (wln);
     cexpr = CODE_CEXPRS (PART_CODE (partn));
@@ -409,26 +412,26 @@ ForEachElementWithop (node *bodycode, node *wln, node *partn, node *index, info 
     while (withop != NULL) {
         switch (NODE_TYPE (withop)) {
         case N_genarray:
-            DBUG_PRINT ("WLUR", ("withop: genarray"));
+            DBUG_PRINT ("withop: genarray");
             break;
         case N_modarray:
-            DBUG_PRINT ("WLUR", ("withop: modarray"));
+            DBUG_PRINT ("withop: modarray");
             break;
         case N_fold:
-            DBUG_PRINT ("WLUR", ("withop: fold"));
+            DBUG_PRINT ("withop: fold");
             break;
         case N_break:
-            DBUG_PRINT ("WLUR", ("withop: break"));
+            DBUG_PRINT ("withop: break");
             break;
         case N_propagate:
-            DBUG_PRINT ("WLUR", ("withop: propagate"));
+            DBUG_PRINT ("withop: propagate");
             break;
         default:
             DBUG_ASSERT (0, "unhandled withop");
         }
 
-        DBUG_PRINT ("WLUR", ("cexpr: %s", ID_NAME (EXPRS_EXPR (cexpr))));
-        DBUG_PRINT ("WLUR", ("lhs: %s\n", IDS_NAME (lhs)));
+        DBUG_PRINT ("cexpr: %s", ID_NAME (EXPRS_EXPR (cexpr)));
+        DBUG_PRINT ("lhs: %s\n", IDS_NAME (lhs));
 
         switch (NODE_TYPE (withop)) {
         case N_genarray:
@@ -476,9 +479,9 @@ ForEachElementHelp (int *l, int *u, int *s, int *w, int dim, int maxdim, node *a
     node *index, *bodycode;
     ntype *def_type;
 
-    DBUG_ENTER ("ForEachElementHelp");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((maxdim > 0), "illegal max. dim found!");
+    DBUG_ASSERT (maxdim > 0, "illegal max. dim found!");
     count = l[dim];
     act_w = 0;
     while (count + act_w < u[dim]) {
@@ -542,7 +545,7 @@ ForEachElement (node *assignn, node *wln, node *partn, info *arg_info)
     int maxdim, *l, *u, *s, *w;
     ntype *def_type;
 
-    DBUG_ENTER ("ForEachElement");
+    DBUG_ENTER ();
 
     maxdim = SHgetExtent (TYgetShape (IDS_NTYPE (PART_VEC (partn))), 0);
 
@@ -609,22 +612,22 @@ CountElements (node *genn)
     constant *const_l, *const_u, *const_s, *const_w;
     int *l, *u, *s, *w;
 
-    DBUG_ENTER ("CountElements");
+    DBUG_ENTER ();
 
     const_l = COaST2Constant (GENERATOR_BOUND1 (genn));
     l = COgetDataVec (const_l);
-    DBUG_ASSERT ((COgetDim (const_l) == 1), "inconsistant wl bounds found!");
+    DBUG_ASSERT (COgetDim (const_l) == 1, "inconsistant wl bounds found!");
     dim = SHgetExtent (COgetShape (const_l), 0);
 
     const_u = COaST2Constant (GENERATOR_BOUND2 (genn));
     u = COgetDataVec (const_u);
-    DBUG_ASSERT ((SHgetExtent (COgetShape (const_u), 0) == dim),
+    DBUG_ASSERT (SHgetExtent (COgetShape (const_u), 0) == dim,
                  "inconsistant wl bounds found!");
 
     if (GENERATOR_STEP (genn) != NULL) {
         const_s = COaST2Constant (GENERATOR_STEP (genn));
         s = COgetDataVec (const_s);
-        DBUG_ASSERT ((SHgetExtent (COgetShape (const_s), 0) == dim),
+        DBUG_ASSERT (SHgetExtent (COgetShape (const_s), 0) == dim,
                      "inconsistant wl bounds found!");
     } else {
         const_s = NULL;
@@ -634,7 +637,7 @@ CountElements (node *genn)
     if (GENERATOR_WIDTH (genn) != NULL) {
         const_w = COaST2Constant (GENERATOR_WIDTH (genn));
         w = COgetDataVec (const_w);
-        DBUG_ASSERT ((SHgetExtent (COgetShape (const_w), 0) == dim),
+        DBUG_ASSERT (SHgetExtent (COgetShape (const_w), 0) == dim,
                      "inconsistant wl bounds found!");
     } else {
         const_w = NULL;
@@ -699,7 +702,7 @@ CheckUnrollModarray (node *wln, node *lhs, info *arg_info)
     int elts;
     node *partn, *genn, *coden, *tmpn, *exprn;
 
-    DBUG_ENTER ("CheckUnrollModarray");
+    DBUG_ENTER ();
 
     /*
      * Check all N_parts:
@@ -783,7 +786,7 @@ FinalizeModarray (node *bodycode, node *withop, node *lhs, info *arg_info)
     node *letn;
     node *res;
 
-    DBUG_ENTER ("FinalizeModarray");
+    DBUG_ENTER ();
 
     /* Finally add duplication of new array name */
     letn = TBmakeLet (DUPdoDupNode (lhs), DUPdoDupTree (MODARRAY_ARRAY (withop)));
@@ -810,7 +813,7 @@ CheckUnrollGenarray (node *wln, node *lhs, info *arg_info)
     bool ok;
     int length;
 
-    DBUG_ENTER ("WLUCheckUnrollGenarray");
+    DBUG_ENTER ();
 
     if (TYisAKS (IDS_NTYPE (lhs)) || TYisAKV (IDS_NTYPE (lhs))) {
         length = SHgetUnrLen (TYgetShape (IDS_NTYPE (lhs)));
@@ -856,7 +859,7 @@ FinalizeGenarray (node *bodycode, node *withop, node *lhs, info *arg_info)
     node *reshape;
     node *res;
 
-    DBUG_ENTER ("FinalizeGenarray");
+    DBUG_ENTER ();
 
     /*
      * Prepend:
@@ -914,7 +917,7 @@ CheckUnrollFold (node *wln)
     node *partn;
     node *genn;
 
-    DBUG_ENTER ("CheckUnrollFold");
+    DBUG_ENTER ();
 
     /*
      * Loop through all N_parts, counting elements.
@@ -958,7 +961,7 @@ CheckUnrollPropagate (node *wln)
     node *partn;
     node *genn;
 
-    DBUG_ENTER ("CheckUnrollPropagate");
+    DBUG_ENTER ();
 
     /*
      * Loop through all N_parts, counting elements.
@@ -1001,7 +1004,7 @@ FinalizeFold (node *bodycode, node *withop, node *lhs, info *arg_info)
     node *letn;
     node *res;
 
-    DBUG_ENTER ("FinalizeFold");
+    DBUG_ENTER ();
 
     /* add initialisation of accumulator with neutral element. */
     letn = TBmakeLet (DUPdoDupNode (lhs), DUPdoDupTree (FOLD_NEUTRAL (withop)));
@@ -1027,7 +1030,7 @@ FinalizePropagate (node *bodycode, node *withop, node *lhs, info *arg_info)
     node *letn;
     node *assignn;
 
-    DBUG_ENTER ("FinalizePropagate");
+    DBUG_ENTER ();
 
     /* Append final assign of the last resulting object to the loop's lhs. */
     letn = TBmakeLet (DUPdoDupNode (lhs), DUPdoDupTree (PROPAGATE_DEFAULT (withop)));
@@ -1055,7 +1058,7 @@ DoUnrollWithloop (node *wln, info *arg_info)
     node *withop;
     node *lhs;
 
-    DBUG_ENTER ("DoUnrollWithloop");
+    DBUG_ENTER ();
 
     partn = WITH_PART (wln);
     withop = WITH_WITHOP (wln);
@@ -1125,7 +1128,7 @@ CheckUnrollWithloop (node *wln, info *arg_info)
     node *op;
     node *lhs;
 
-    DBUG_ENTER ("CheckUnrollWithloop");
+    DBUG_ENTER ();
 
     partn = WITH_PART (wln);
 
@@ -1185,7 +1188,7 @@ CheckUnrollWithloop (node *wln, info *arg_info)
 node *
 LacFundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("LacFundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     /* traverse block of fundef */
@@ -1215,17 +1218,16 @@ WLURap (node *arg_node, info *arg_info)
 {
     info *new_arg_info;
 
-    DBUG_ENTER ("WLURap");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
+    DBUG_ASSERT (AP_FUNDEF (arg_node) != NULL, "missing fundef in ap-node");
 
     AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
     /* traverse special fundef without recursion */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-        DBUG_PRINT ("WLUR", ("traverse in special fundef %s",
-                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("traverse in special fundef %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
@@ -1233,13 +1235,13 @@ WLURap (node *arg_node, info *arg_info)
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = LacFundef (AP_FUNDEF (arg_node), new_arg_info);
 
-        DBUG_PRINT ("WLUR", ("traversal of special fundef %s finished\n",
-                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("traversal of special fundef %s finished\n",
+                    FUNDEF_NAME (AP_FUNDEF (arg_node)));
         new_arg_info = FreeInfo (new_arg_info);
 
     } else {
-        DBUG_PRINT ("WLUR", ("do not traverse in normal fundef %s",
-                             FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("do not traverse in normal fundef %s",
+                    FUNDEF_NAME (AP_FUNDEF (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -1261,9 +1263,9 @@ WLURassign (node *arg_node, info *arg_info)
     node *tmp;
     node *old_assign;
 
-    DBUG_ENTER ("WLURassign");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "assign node without instruction");
+    DBUG_ASSERT (ASSIGN_INSTR (arg_node) != NULL, "assign node without instruction");
 
     /* stack actual assign */
     old_assign = INFO_ASSIGN (arg_info);
@@ -1302,7 +1304,7 @@ WLURassign (node *arg_node, info *arg_info)
 node *
 WLURfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLURfundef");
+    DBUG_ENTER ();
 
     if (!FUNDEF_ISLACFUN (arg_node)) {
         INFO_FUNDEF (arg_info) = arg_node;
@@ -1328,7 +1330,7 @@ WLURfundef (node *arg_node, info *arg_info)
 node *
 WLURwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLURwith");
+    DBUG_ENTER ();
 
     /* traverse the N_Nwithop node */
     WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
@@ -1363,7 +1365,7 @@ WLURdoWithloopUnrolling (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("WLURdoWithloopUnrolling");
+    DBUG_ENTER ();
 
     TRAVpush (TR_wlur);
 
@@ -1384,3 +1386,5 @@ WLURdoWithloopUnrolling (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

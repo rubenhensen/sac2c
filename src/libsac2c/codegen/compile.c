@@ -18,7 +18,10 @@
 #include "memory.h"
 
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "COMP"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -134,7 +137,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -168,7 +171,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -237,7 +240,7 @@ static node *
 With3Folds (node *ids, node *ops)
 {
     node *res = NULL;
-    DBUG_ENTER ("With3Folds");
+    DBUG_ENTER ();
 
     if (IDS_NEXT (ids) != NULL) {
         res = With3Folds (IDS_NEXT (ids), WITHOP_NEXT (ops));
@@ -265,13 +268,13 @@ GetBasetypeStr (types *type)
     simpletype basetype;
     const char *str;
 
-    DBUG_ENTER ("GetBasetypeStr");
+    DBUG_ENTER ();
 
     basetype = TCgetBasetype (type);
 
     if (basetype == T_user) {
         str = TYPES_NAME (type);
-        DBUG_ASSERT ((str != NULL), "Name of user-defined type not found");
+        DBUG_ASSERT (str != NULL, "Name of user-defined type not found");
     } else if (basetype == T_float_dev || basetype == T_float_shmem) {
         str = "float";
     } else if (basetype == T_int_dev || basetype == T_int_shmem) {
@@ -305,7 +308,7 @@ MakeBasetypeArg (types *type)
     node *ret_node;
     const char *str;
 
-    DBUG_ENTER ("MakeBasetypeArg");
+    DBUG_ENTER ();
 
     str = GetBasetypeStr (type);
 
@@ -329,7 +332,7 @@ MakeBasetypeArg_NT (types *type)
     node *ret_node;
     const char *str;
 
-    DBUG_ENTER ("MakeBasetypeArg_NT");
+    DBUG_ENTER ();
 
     str = GetBasetypeStr (type);
 
@@ -355,7 +358,7 @@ MakeTypeArgs (char *name, types *type, bool add_type, bool add_dim, bool add_sha
 {
     int dim;
 
-    DBUG_ENTER ("MakeTypeArgs");
+    DBUG_ENTER ();
 
     dim = TCgetShapeDim (type);
 
@@ -406,7 +409,7 @@ MakeDimArg (node *arg, bool int_only)
 {
     node *ret;
 
-    DBUG_ENTER ("MakeDimArg");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (arg) == N_id) {
         int dim = TCgetDim (ID_TYPE (arg));
@@ -435,7 +438,7 @@ MakeDimArg (node *arg, bool int_only)
     } else if (NODE_TYPE (arg) == N_char) {
         ret = TBmakeNum (0);
     } else {
-        DBUG_ASSERT ((0), "not yet implemented");
+        DBUG_ASSERT (0, "not yet implemented");
         ret = NULL;
     }
 
@@ -454,7 +457,7 @@ MakeSizeArg (node *arg, bool int_only)
 {
     node *ret;
 
-    DBUG_ENTER ("MakeSizeArg");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (arg) == N_id) {
         types *type = ID_TYPE (arg);
@@ -479,7 +482,7 @@ MakeSizeArg (node *arg, bool int_only)
     } else if (NODE_TYPE (arg) == N_char) {
         ret = TBmakeNum (1);
     } else {
-        DBUG_ASSERT ((0), "not yet implemented");
+        DBUG_ASSERT (0, "not yet implemented");
         ret = NULL;
     }
 
@@ -507,22 +510,22 @@ GenericFun (generic_fun_t which, types *type)
 #endif
     usertype utype;
 
-    DBUG_ENTER ("GenericFun");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("COMP", tmp = CVtype2String (type, 0, FALSE); switch (which) {
+    DBUG_EXECUTE (tmp = CVtype2String (type, 0, FALSE); switch (which) {
         case GF_copy:
-            DBUG_PRINT ("COMP", ("Looking for generic copy function for type %s", tmp));
+            DBUG_PRINT ("Looking for generic copy function for type %s", tmp);
             break;
         case GF_free:
-            DBUG_PRINT ("COMP", ("Looking for generic free function for type %s", tmp));
+            DBUG_PRINT ("Looking for generic free function for type %s", tmp);
             break;
-    } tmp = MEMfree (tmp););
+    } tmp = MEMfree (tmp));
 
-    DBUG_ASSERT ((type != NULL), "no type found!");
+    DBUG_ASSERT (type != NULL, "no type found!");
 
     if (TYPES_BASETYPE (type) == T_user) {
         tdef = TYPES_TDEF (type);
-        DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
+        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
 
         utype = UTfindUserType (TYPEDEF_NAME (tdef), TYPEDEF_NS (tdef));
 
@@ -542,7 +545,7 @@ GenericFun (generic_fun_t which, types *type)
         }
     }
 
-    DBUG_PRINT ("COMP", ("Found generic fun `%s'", STRonNull ("", ret)));
+    DBUG_PRINT ("Found generic fun `%s'", STRonNull ("", ret));
 
     DBUG_RETURN (ret);
 }
@@ -569,10 +572,10 @@ COMPgetFoldCode (node *fundef)
     node *fold_code;
     node *tmp;
 
-    DBUG_ENTER ("COMPgetFoldCode");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((fundef != NULL), "no fundef found!");
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "fold-fun corrupted!");
+    DBUG_ASSERT (fundef != NULL, "no fundef found!");
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "fold-fun corrupted!");
 
     /*
      * get code of the special fold-fun
@@ -592,7 +595,7 @@ COMPgetFoldCode (node *fundef)
      * (it is the last assignment)
      */
     tmp = fold_code;
-    DBUG_ASSERT ((ASSIGN_NEXT (tmp) != NULL), "corrupted fold code found!");
+    DBUG_ASSERT (ASSIGN_NEXT (tmp) != NULL, "corrupted fold code found!");
     while (ASSIGN_NEXT (ASSIGN_NEXT (tmp)) != NULL) {
         tmp = ASSIGN_NEXT (tmp);
     }
@@ -614,7 +617,7 @@ RemoveIdxDuplicates (node *arg_node)
 {
     node *withop;
 
-    DBUG_ENTER ("RemoveIdxDuplicates");
+    DBUG_ENTER ();
 
     withop = arg_node;
     while (withop != NULL) {
@@ -657,7 +660,7 @@ DupExpr_NT_AddReadIcms (node *expr)
 {
     node *new_expr = NULL;
 
-    DBUG_ENTER ("DupExpr_NT_AddReadIcms");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((expr != NULL) && (NODE_TYPE (expr) != N_exprs)),
                  "Illegal argument for DupExpr_NT_AddReadIcms() found!");
@@ -689,10 +692,10 @@ DupExprs_NT_AddReadIcms (node *exprs)
 {
     node *new_exprs = NULL;
 
-    DBUG_ENTER ("DupExprs_NT_AddReadIcms");
+    DBUG_ENTER ();
 
     if (exprs != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "no N_exprs node found!");
+        DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "no N_exprs node found!");
 
         new_exprs = TBmakeExprs (DupExpr_NT_AddReadIcms (EXPRS_EXPR (exprs)),
                                  DupExprs_NT_AddReadIcms (EXPRS_NEXT (exprs)));
@@ -715,14 +718,14 @@ MakeAnAllocDescIcm (char *name, types *type, int rc, node *get_dim, node *assign
                     char *icm)
 {
     int dim;
-    DBUG_ENTER ("MakeAnAllocDescIcm");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
+    DBUG_ASSERT (RC_IS_LEGAL (rc), "illegal RC value found!");
 
     if (RC_IS_ACTIVE (rc)) {
         if (get_dim == NULL) {
             dim = TCgetDim (type);
-            DBUG_ASSERT ((dim >= 0), "dimension undefined -> size of descriptor unknown");
+            DBUG_ASSERT (dim >= 0, "dimension undefined -> size of descriptor unknown");
             get_dim = TBmakeNum (dim);
         }
 
@@ -744,7 +747,7 @@ MakeAnAllocDescIcm (char *name, types *type, int rc, node *get_dim, node *assign
 static node *
 MakeAllocDescIcm (char *name, types *type, int rc, node *get_dim, node *assigns)
 {
-    DBUG_ENTER ("MakeAllocDescIcm");
+    DBUG_ENTER ();
     assigns = MakeAnAllocDescIcm (name, type, rc, get_dim, assigns, "ND_ALLOC__DESC");
     DBUG_RETURN (assigns);
 }
@@ -760,7 +763,7 @@ MakeAllocDescIcm (char *name, types *type, int rc, node *get_dim, node *assigns)
 static node *
 MakeMutcLocalAllocDescIcm (char *name, types *type, int rc, node *get_dim, node *assigns)
 {
-    DBUG_ENTER ("MakeMutcLocalAllocDescIcm");
+    DBUG_ENTER ();
 
     assigns
       = MakeAnAllocDescIcm (name, type, rc, get_dim, assigns, "MUTC_LOCAL_ALLOC__DESC");
@@ -778,9 +781,9 @@ MakeMutcLocalAllocDescIcm (char *name, types *type, int rc, node *get_dim, node 
 static node *
 MakeSetRcIcm (char *name, types *type, int rc, node *assigns)
 {
-    DBUG_ENTER ("MakeSetRcIcm");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
+    DBUG_ASSERT (RC_IS_LEGAL (rc), "illegal RC value found!");
 
     if (RC_IS_ACTIVE (rc)) {
         if (RC_IS_VITAL (rc)) {
@@ -817,9 +820,9 @@ MakeSetRcIcm (char *name, types *type, int rc, node *assigns)
 static node *
 MakeIncRcIcm (char *name, types *type, int num, node *assigns)
 {
-    DBUG_ENTER ("MakeIncRcIcm");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((num >= 0), "increment for rc must be >= 0.");
+    DBUG_ASSERT (num >= 0, "increment for rc must be >= 0.");
 
     if (num > 0) {
         assigns = TCmakeAssignIcm2 ("ND_INC_RC", TCmakeIdCopyStringNt (name, type),
@@ -843,9 +846,9 @@ MakeIncRcIcm (char *name, types *type, int num, node *assigns)
 static node *
 MakeDecRcIcm (char *name, types *type, int num, node *assigns)
 {
-    DBUG_ENTER ("MakeDecRcIcm");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((num >= 0), "decrement for rc must be >= 0.");
+    DBUG_ASSERT (num >= 0, "decrement for rc must be >= 0.");
 
     if (num > 0) {
         if (TCgetBasetype (type) != T_float_dev && TCgetBasetype (type) != T_int_dev
@@ -882,10 +885,10 @@ static node *
 MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_icm,
               node *pragma, node *assigns)
 {
-    DBUG_ENTER ("MakeAllocIcm");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
-    DBUG_ASSERT ((get_dim != NULL), "no dimension found!");
+    DBUG_ASSERT (RC_IS_LEGAL (rc), "illegal RC value found!");
+    DBUG_ASSERT (get_dim != NULL, "no dimension found!");
     DBUG_ASSERT (((set_shape_icm != NULL) && (NODE_TYPE (set_shape_icm) == N_icm)),
                  "no N_icm node found!");
 
@@ -962,14 +965,14 @@ MakeAllocIcm_IncRc (char *name, types *type, int rc, node *get_dim, node *set_sh
 {
     node *new_assigns;
 
-    DBUG_ENTER ("MakeAllocIcm_IncRc");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
+    DBUG_ASSERT (RC_IS_LEGAL (rc), "illegal RC value found!");
 
     new_assigns = MakeAllocIcm (name, type, 0, get_dim, set_shape_icm, pragma, NULL);
 
     if (new_assigns != NULL) {
-        DBUG_ASSERT ((RC_IS_VITAL (rc)), "INC_RC(rc) with (rc <= 0) found!");
+        DBUG_ASSERT (RC_IS_VITAL (rc), "INC_RC(rc) with (rc <= 0) found!");
         assigns = TCappendAssign (new_assigns,
                                   TCmakeAssignIcm2 ("ND_INC_RC",
                                                     TCmakeIdCopyStringNt (name, type),
@@ -993,7 +996,7 @@ MakeAllocIcm_IncRc (char *name, types *type, int rc, node *get_dim, node *set_sh
 static node *
 MakeCheckReuseIcm (char *name, types *type, node *reuse_id, node *assigns)
 {
-    DBUG_ENTER ("MakeCheckReuseIcm");
+    DBUG_ENTER ();
 
     assigns
       = TCmakeAssignIcm2 ("ND_CHECK_REUSE",
@@ -1023,13 +1026,13 @@ static node *
 MakeReAllocIcm (char *name, types *type, char *sname, types *stype, int rc, node *get_dim,
                 node *set_shape_icm, node *pragma, node *assigns)
 {
-    DBUG_ENTER ("MakeReAllocIcm");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((RC_IS_LEGAL (rc)), "illegal RC value found!");
-    DBUG_ASSERT ((get_dim != NULL), "no dimension found!");
+    DBUG_ASSERT (RC_IS_LEGAL (rc), "illegal RC value found!");
+    DBUG_ASSERT (get_dim != NULL, "no dimension found!");
     DBUG_ASSERT (((set_shape_icm != NULL) && (NODE_TYPE (set_shape_icm) == N_icm)),
                  "no N_icm node found!");
-    DBUG_ASSERT ((pragma == NULL), "realloc has no pragma support");
+    DBUG_ASSERT (pragma == NULL, "realloc has no pragma support");
 
     if (RC_IS_ACTIVE (rc)) {
         /* This is an array that should be allocated on the device */
@@ -1088,7 +1091,7 @@ static node *
 MakeCheckResizeIcm (char *name, types *type, node *reuse_id, int rc, node *get_dim,
                     node *set_shape_icm, node *assigns)
 {
-    DBUG_ENTER ("MakeCheckResizeIcm");
+    DBUG_ENTER ();
 
     assigns
       = TCmakeAssignIcm1 ("SAC_IS_LASTREF__BLOCK_ELSE",
@@ -1122,7 +1125,7 @@ MakeGetDimIcm (node *arg_node)
 {
     node *get_dim = NULL;
 
-    DBUG_ENTER ("MakeGetDimIcm");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (arg_node)) {
     case N_num:
@@ -1155,12 +1158,12 @@ MakeGetDimIcm (node *arg_node)
             break;
 
         default:
-            DBUG_ASSERT ((0), "Unrecognized dim descriptor");
+            DBUG_ASSERT (0, "Unrecognized dim descriptor");
             break;
         }
         break;
     default:
-        DBUG_ASSERT ((0), "Unrecognized dim descriptor");
+        DBUG_ASSERT (0, "Unrecognized dim descriptor");
         break;
     }
 
@@ -1184,7 +1187,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
     node *arg1, *arg2;
     node *set_shape = NULL;
 
-    DBUG_ENTER ("MakeSetShapeIcm");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (arg_node)) {
     case N_array:
@@ -1273,9 +1276,9 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                     {
                         node *icm_args;
 
-                        DBUG_ASSERT ((NODE_TYPE (arg1) == N_id),
+                        DBUG_ASSERT (NODE_TYPE (arg1) == N_id,
                                      "1st arg of F_cat_VxV is no N_id!");
-                        DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
+                        DBUG_ASSERT (NODE_TYPE (arg2) == N_id,
                                      "2nd arg of F_cat_VxV is no N_id!");
 
                         icm_args
@@ -1305,7 +1308,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                         DBUG_ASSERT (((NODE_TYPE (arg1) == N_id)
                                       || (NODE_TYPE (arg1) == N_num)),
                                      "1st arg of F_drop_SxV is neither N_id nor N_num!");
-                        DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
+                        DBUG_ASSERT (NODE_TYPE (arg2) == N_id,
                                      "2nd arg of F_drop_SxV is no N_id!");
 
                         icm_args
@@ -1333,7 +1336,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                         DBUG_ASSERT (((NODE_TYPE (arg1) == N_id)
                                       || (NODE_TYPE (arg1) == N_num)),
                                      "1st arg of F_take_SxV is neither N_id nor N_num!");
-                        DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
+                        DBUG_ASSERT (NODE_TYPE (arg2) == N_id,
                                      "2nd arg of F_take_SxV is no N_id!");
 
                         icm_args
@@ -1382,7 +1385,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                         {
                             node *icm_args;
 
-                            DBUG_ASSERT (((TCgetBasetype (ID_TYPE (arg1)) == T_int)),
+                            DBUG_ASSERT ((TCgetBasetype (ID_TYPE (arg1)) == T_int),
                                          "1st arg of F_sel_VxA is a illegal indexing "
                                          "var!");
 
@@ -1401,7 +1404,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                         break;
 
                     default:
-                        DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+                        DBUG_ASSERT (0, "Unrecognized shape descriptor");
                         break;
                     }
                     break;
@@ -1421,7 +1424,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                                       || ((NODE_TYPE (arg1) == N_prf))),
                                      "1st arg of F_idx_sel is neither N_id nor N_num, "
                                      "N_prf!");
-                        DBUG_ASSERT ((NODE_TYPE (arg2) == N_id),
+                        DBUG_ASSERT (NODE_TYPE (arg2) == N_id,
                                      "2nd arg of F_idx_sel is no N_id!");
 
                         icm_args
@@ -1471,7 +1474,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                         break;
 
                     default:
-                        DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+                        DBUG_ASSERT (0, "Unrecognized shape descriptor");
                         break;
                     }
                     break;
@@ -1516,7 +1519,7 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                                                       FALSE, TRUE, FALSE, NULL));
                         break;
                     default:
-                        DBUG_ASSERT ((0), "Unrecognized shape descriptor!");
+                        DBUG_ASSERT (0, "Unrecognized shape descriptor!");
                         break;
                     }
 
@@ -1531,13 +1534,13 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                     break;
 
                 default:
-                    DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+                    DBUG_ASSERT (0, "Unrecognized shape descriptor");
                     break;
                 }
                 break;
 
             default:
-                DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+                DBUG_ASSERT (0, "Unrecognized shape descriptor");
                 break;
             }
             break;
@@ -1585,19 +1588,19 @@ MakeSetShapeIcm (node *arg_node, node *let_ids)
                 break;
 
             default:
-                DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+                DBUG_ASSERT (0, "Unrecognized shape descriptor");
                 break;
             }
             break;
 
         default:
-            DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+            DBUG_ASSERT (0, "Unrecognized shape descriptor");
             break;
         }
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unrecognized shape descriptor");
+        DBUG_ASSERT (0, "Unrecognized shape descriptor");
         break;
     }
 
@@ -1620,7 +1623,7 @@ MakeArgNode (int idx, types *arg_type, bool thread)
     char *name;
     types *type;
 
-    DBUG_ENTER ("MakeArgNode");
+    DBUG_ENTER ();
 
     type = DUPdupAllTypes (arg_type);
 
@@ -1665,14 +1668,14 @@ MakeFunctionArgsSpmd (node *fundef)
     int i;
     node *icm_args = NULL;
 
-    DBUG_ENTER ("MakeFunctionArgsSpmd");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no fundef node found!");
 
     argtab = FUNDEF_ARGTAB (fundef);
-    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
-    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
+    DBUG_ASSERT (argtab != NULL, "no argtab found!");
+    DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab inconsistent!");
 
     /* arguments */
     for (i = argtab->size - 1; i >= 1; i--) {
@@ -1681,14 +1684,14 @@ MakeFunctionArgsSpmd (node *fundef)
         types *type;
 
         if (argtab->ptr_in[i] != NULL) {
-            DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
+            DBUG_ASSERT (NODE_TYPE (argtab->ptr_in[i]) == N_arg,
                          "no N_arg node found in argtab");
 
             name = ARG_NAME (argtab->ptr_in[i]);
             type = ARG_TYPE (argtab->ptr_in[i]);
             id = TCmakeIdCopyStringNt (STRonNull ("", name), type);
         } else {
-            DBUG_ASSERT ((argtab->ptr_out[i] != NULL), "argtab is uncompressed!");
+            DBUG_ASSERT (argtab->ptr_out[i] != NULL, "argtab is uncompressed!");
             type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
             id = MakeArgNode (i, type, FALSE);
         }
@@ -1700,7 +1703,7 @@ MakeFunctionArgsSpmd (node *fundef)
     size = argtab->size - 1;
 
     /* return value */
-    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab is inconsistent!");
+    DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab is inconsistent!");
     if (argtab->ptr_out[0] != NULL) {
         types *type;
         type = TYtype2OldType (RET_TYPE (argtab->ptr_out[0]));
@@ -1733,14 +1736,14 @@ MakeFunctionArgsCuda (node *fundef)
     int i;
     node *icm_args = NULL;
 
-    DBUG_ENTER ("MakeFunctionArgsCuda");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no fundef node found!");
 
     argtab = FUNDEF_ARGTAB (fundef);
-    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
-    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
+    DBUG_ASSERT (argtab != NULL, "no argtab found!");
+    DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab inconsistent!");
 
     /* arguments */
     for (i = argtab->size - 1; i >= 1; i--) {
@@ -1749,14 +1752,14 @@ MakeFunctionArgsCuda (node *fundef)
         types *type;
 
         if (argtab->ptr_in[i] != NULL) {
-            DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
+            DBUG_ASSERT (NODE_TYPE (argtab->ptr_in[i]) == N_arg,
                          "no N_arg node found in argtab");
 
             name = ARG_NAME (argtab->ptr_in[i]);
             type = ARG_TYPE (argtab->ptr_in[i]);
             id = TCmakeIdCopyStringNt (STRonNull ("", name), type);
         } else {
-            DBUG_ASSERT ((argtab->ptr_out[i] != NULL), "argtab is uncompressed!");
+            DBUG_ASSERT (argtab->ptr_out[i] != NULL, "argtab is uncompressed!");
             type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
             id = MakeArgNode (i, type, FALSE);
         }
@@ -1771,7 +1774,7 @@ MakeFunctionArgsCuda (node *fundef)
     size = argtab->size - 1;
 
     /* return value */
-    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab is inconsistent!");
+    DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab is inconsistent!");
     if (argtab->ptr_out[0] != NULL) {
         types *type;
         type = TYtype2OldType (RET_TYPE (argtab->ptr_out[0]));
@@ -1807,10 +1810,10 @@ MakeFunctionArgs (node *fundef)
     argtab_t *argtab;
     int i;
 
-    DBUG_ENTER ("MakeFunctionArgs");
+    DBUG_ENTER ();
 
     argtab = FUNDEF_ARGTAB (fundef);
-    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+    DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
     if (FUNDEF_HASDOTARGS (fundef) || FUNDEF_HASDOTRETS (fundef)) {
         /*
@@ -1832,7 +1835,7 @@ MakeFunctionArgs (node *fundef)
         node *id;
 
         if (argtab->ptr_in[i] != NULL) {
-            DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_arg),
+            DBUG_ASSERT (NODE_TYPE (argtab->ptr_in[i]) == N_arg,
                          "no N_arg node found in argtab");
 
             tag = argtab->tag[i];
@@ -1844,7 +1847,7 @@ MakeFunctionArgs (node *fundef)
                 id = MakeArgNode (i, type, FUNDEF_ISTHREADFUN (fundef));
             }
         } else {
-            DBUG_ASSERT ((argtab->ptr_out[i] != NULL), "argtab is uncompressed!");
+            DBUG_ASSERT (argtab->ptr_out[i] != NULL, "argtab is uncompressed!");
             tag = argtab->tag[i];
             type = TYtype2OldType (RET_TYPE (argtab->ptr_out[i]));
             id = MakeArgNode (i, type, FUNDEF_ISTHREADFUN (fundef));
@@ -1862,7 +1865,7 @@ MakeFunctionArgs (node *fundef)
     }
 
     /* return value */
-    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
+    DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab inconsistent!");
     if (argtab->ptr_out[0] == NULL) {
         icm_args = TBmakeExprs (TCmakeIdCopyString (NULL), icm_args);
     } else {
@@ -1888,8 +1891,8 @@ GetBaseTypeFromAvis (node *in)
 {
     types *type = NULL;
 
-    DBUG_ENTER ("GetBaseTypeFromAvis");
-    DBUG_ASSERT ((in != NULL), "no node found!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (in != NULL, "no node found!");
 
     in = AVIS_DECL (in);
 
@@ -1916,8 +1919,8 @@ static const char *
 GetBaseTypeFromExpr (node *in)
 {
     const char *ret = NULL;
-    DBUG_ENTER ("GetBaseTypeFromExpr");
-    DBUG_ASSERT ((in != NULL), "no node found!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (in != NULL, "no node found!");
 
     if (NODE_TYPE (in) == N_exprs) {
         in = EXPRS_EXPR (in);
@@ -1951,7 +1954,7 @@ static node *
 MakeFunApArgIdsNt (node *ids)
 {
     node *icm, *id = NULL;
-    DBUG_ENTER ("MakeFunApArgIdsNt");
+    DBUG_ENTER ();
 
     if (TYPES_MUTC_USAGE (IDS_TYPE (ids)) == MUTC_US_FUNPARAM) {
         id = TCmakeIdCopyString ("FPA");
@@ -1979,7 +1982,7 @@ static node *
 MakeFunApArgIdsNtThread (node *ids)
 {
     node *icm, *id = NULL;
-    DBUG_ENTER ("MakeFunApArgIdsNtThread");
+    DBUG_ENTER ();
 
     if (TYPES_MUTC_USAGE (IDS_TYPE (ids)) == MUTC_US_THREADPARAM) {
         id = TCmakeIdCopyString ("TPA");
@@ -2004,7 +2007,7 @@ static node *
 MakeFunApArgIdNt (node *id)
 {
     node *icm, *st = NULL;
-    DBUG_ENTER ("MakeFunApArgIdNt");
+    DBUG_ENTER ();
 
     if (TYPES_MUTC_USAGE (ID_TYPE (id)) == MUTC_US_FUNPARAM) {
         st = TCmakeIdCopyString ("FPA");
@@ -2031,7 +2034,7 @@ static node *
 MakeFunApArgIdNtThread (node *id)
 {
     node *icm, *st = NULL;
-    DBUG_ENTER ("MakeFunApArgIdNtThread");
+    DBUG_ENTER ();
 
     if (TYPES_MUTC_USAGE (ID_TYPE (id)) == MUTC_US_THREADPARAM) {
         st = TCmakeIdCopyString ("TPA");
@@ -2060,14 +2063,14 @@ MakeFunApArgs (node *ap)
     node *icm_args = NULL;
     node *fundef;
 
-    DBUG_ENTER ("MakeFunApArgs");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((ap != NULL) && (NODE_TYPE (ap) == N_ap)), "no ap node found!");
 
     fundef = AP_FUNDEF (ap);
 
     argtab = AP_ARGTAB (ap);
-    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+    DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
     /* arguments */
     for (i = argtab->size - 1; i >= 1; i--) {
@@ -2094,8 +2097,8 @@ MakeFunApArgs (node *ap)
                                                   exprs));
             }
         } else {
-            DBUG_ASSERT ((argtab->ptr_in[i] != NULL), "argtab is uncompressed!");
-            DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_exprs),
+            DBUG_ASSERT (argtab->ptr_in[i] != NULL, "argtab is uncompressed!");
+            DBUG_ASSERT (NODE_TYPE (argtab->ptr_in[i]) == N_exprs,
                          "no N_exprs node found in argtab");
             if (NODE_TYPE (EXPRS_EXPR (argtab->ptr_in[i])) == N_id) {
                 if (!FUNDEF_ISTHREADFUN (fundef)) {
@@ -2205,7 +2208,7 @@ MakeIcm_PROP_OBJ_OUT (node *prop_obj, node *lhs, node *assigns)
     node *ret_node;
     int count;
 
-    DBUG_ENTER ("MakeIcm_PROP_OBJ_OUT");
+    DBUG_ENTER ();
 
     exprs = PRF_ARGS (prop_obj);
     icm_args = NULL;
@@ -2242,7 +2245,7 @@ MakeIcm_PROP_OBJ_IN (node *prop_obj, node *lhs, node *assigns)
     node *ret_node;
     int count;
 
-    DBUG_ENTER ("MakeIcm_PROP_OBJ_IN");
+    DBUG_ENTER ();
 
     exprs = EXPRS_NEXT (PRF_ARGS (prop_obj));
     icm_args = NULL;
@@ -2276,7 +2279,7 @@ MakeIcmFPCases (int n)
     int i;
     node *assign;
 
-    DBUG_ENTER ("MakeICMFPCases");
+    DBUG_ENTER ();
 
     assign = TBmakeAssign (TBmakeIcm ("FP_SETUP_SLOW_END", NULL), NULL);
 
@@ -2304,7 +2307,7 @@ MakeFPAp (node *let, node *icm, info *arg_info)
     node *livevars, *start, *vars, *end;
     node *assign;
 
-    DBUG_ENTER ("MakeFPAp");
+    DBUG_ENTER ();
 
     fundef = INFO_FUNDEF (arg_info);
 
@@ -2370,19 +2373,18 @@ CheckAp (node *ap, info *arg_info)
     int ids_idx, arg_idx;
     bool ok = TRUE;
 
-    DBUG_ENTER ("CheckAp");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), "no N_ap node found!");
+    DBUG_ASSERT (NODE_TYPE (ap) == N_ap, "no N_ap node found!");
 
     argtab = AP_ARGTAB (ap);
-    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+    DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
-    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
+    DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab inconsistent");
     for (arg_idx = 1; arg_idx < argtab->size; arg_idx++) {
         arg = argtab->ptr_in[arg_idx];
         if (arg != NULL) {
-            DBUG_ASSERT ((NODE_TYPE (arg) == N_exprs),
-                         "no N_exprs node found in argtab!");
+            DBUG_ASSERT (NODE_TYPE (arg) == N_exprs, "no N_exprs node found in argtab!");
             arg_id = EXPRS_EXPR (arg);
             if (NODE_TYPE (arg_id) == N_id) {
 
@@ -2424,7 +2426,7 @@ RhsId (node *arg_node, info *arg_info)
     node *ret_node = NULL;
     node *fundef;
 
-    DBUG_ENTER ("RhsId");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -2474,7 +2476,7 @@ static node *
 AnnotateDescParamsWith3 (node *arg_node, info *arg_info)
 {
     node *ops;
-    DBUG_ENTER ("AnnotateDescParamsWith3");
+    DBUG_ENTER ();
 
     ops = INFO_WITHOPS (arg_info);
     INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
@@ -2489,7 +2491,7 @@ AnnotateDescParamsWith3 (node *arg_node, info *arg_info)
 static node *
 AnnotateDescParamsAp (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AnnotateDescParamsAp");
+    DBUG_ENTER ();
 
     if (FUNDEF_WITHOPS (AP_FUNDEF (arg_node)) == NULL) {
         FUNDEF_WITHOPS (AP_FUNDEF (arg_node)) = DUPdoDupTree (INFO_WITHOPS (arg_info));
@@ -2514,7 +2516,7 @@ AnnotateDescParams (node *syntax_tree)
     anontrav_t trav[]
       = {{N_with3, &AnnotateDescParamsWith3}, {N_ap, &AnnotateDescParamsAp}, {0, NULL}};
     info *info;
-    DBUG_ENTER ("AnnotateDescParams");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -2545,7 +2547,7 @@ COMPdoCompile (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("Compile");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -2578,7 +2580,7 @@ COMPdoCompile (node *arg_node)
 node *
 COMPmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COMPmodule");
+    DBUG_ENTER ();
 
     INFO_MODUL (arg_info) = arg_node;
 
@@ -2644,9 +2646,9 @@ COMPtypedef (node *arg_node, info *arg_info)
 {
     node *icm = NULL;
 
-    DBUG_ENTER ("COMPtypedef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("COMP", ("compiling typedef '%s'", TYPEDEF_NAME (arg_node)));
+    DBUG_PRINT ("compiling typedef '%s'", TYPEDEF_NAME (arg_node));
 
     icm
       = TCmakeIcm1 ("ND_TYPEDEF", MakeTypeArgs (TYPEDEF_NAME (arg_node),
@@ -2677,7 +2679,7 @@ COMPobjdef (node *arg_node, info *arg_info)
 {
     node *icm;
 
-    DBUG_ENTER ("COMPobjdef");
+    DBUG_ENTER ();
 
     if (!OBJDEF_ISLOCAL (arg_node)) {
         icm = TCmakeIcm1 ("ND_OBJDEF_EXTERN",
@@ -2718,12 +2720,12 @@ COMPFundefArgs (node *fundef, info *arg_info)
     int i;
     node *assigns = NULL;
 
-    DBUG_ENTER ("COMPFundefArgs");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "no N_fundef node found!");
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "no N_fundef node found!");
 
     argtab = FUNDEF_ARGTAB (fundef);
-    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+    DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
     /*
      * Additional icms for the function body are generated regardless of the
@@ -2733,12 +2735,11 @@ COMPFundefArgs (node *fundef, info *arg_info)
 
     if (!FUNDEF_ISEXTERN (fundef)) {
 
-        DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent");
+        DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab inconsistent");
         for (i = 1; i < argtab->size; i++) {
             arg = argtab->ptr_in[i];
             if (arg != NULL) {
-                DBUG_ASSERT ((NODE_TYPE (arg) == N_arg),
-                             "no N_arg node found in argtab!");
+                DBUG_ASSERT (NODE_TYPE (arg) == N_arg, "no N_arg node found in argtab!");
 
                 /*
                  * put "ND_DECL__MIRROR_PARAM" ICMs at beginning of function block
@@ -2770,7 +2771,7 @@ COMPFundefArgs (node *fundef, info *arg_info)
 static node *
 AddDescParams (node *ops, node *params)
 {
-    DBUG_ENTER ("AddDescParams");
+    DBUG_ENTER ();
 
     if (ops != NULL) {
         if (WITHOP_SUB (ops) != NULL) {
@@ -2810,9 +2811,9 @@ COMPfundef (node *arg_node, info *arg_info)
     node *assigns;
     node *icm_args;
 
-    DBUG_ENTER ("COMPfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("COMP", ("compiling %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("compiling %s", FUNDEF_NAME (arg_node));
 
     if (!FUNDEF_ISZOMBIE (arg_node)) {
         /*
@@ -2853,7 +2854,7 @@ COMPfundef (node *arg_node, info *arg_info)
              */
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-            DBUG_ASSERT ((INFO_POSTFUN (arg_info) == NULL),
+            DBUG_ASSERT (INFO_POSTFUN (arg_info) == NULL,
                          "left-over postfun icms found!");
             /*
              * Store collected scheduler information.
@@ -3045,7 +3046,7 @@ COMPfundef (node *arg_node, info *arg_info)
 node *
 COMPvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COMPvardec");
+    DBUG_ENTER ();
 
     /*  if( TYisUser( AVIS_DECLTYPE( VARDEC_AVIS( arg_node)))) {
         DBUG_PRINT( "COMP", ("Sync!!!"));
@@ -3053,7 +3054,7 @@ COMPvardec (node *arg_node, info *arg_info)
 
     if (TCgetBasetype (VARDEC_TYPE (arg_node)) == T_sync) {
         if (global.backend != BE_mutc) {
-            DBUG_PRINT ("COMP", ("Removing sync vardec"));
+            DBUG_PRINT ("Removing sync vardec");
 
             VARDEC_ICM (arg_node) = TCmakeIcm0 ("NOOP");
 
@@ -3134,7 +3135,7 @@ COMPblock (node *arg_node, info *arg_info)
     node *assign;
     char *fun_name, *cs_tag;
 
-    DBUG_ENTER ("COMPblock");
+    DBUG_ENTER ();
 
     if (BLOCK_CACHESIM (arg_node) != NULL) {
         fun_name = FUNDEF_NAME (INFO_FUNDEF (arg_info));
@@ -3148,9 +3149,8 @@ COMPblock (node *arg_node, info *arg_info)
 
         BLOCK_CACHESIM (arg_node) = MEMfree (BLOCK_CACHESIM (arg_node));
 
-        DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL),
-                     "first instruction of block is NULL"
-                     " (should be a N_empty node)");
+        DBUG_ASSERT (BLOCK_INSTR (arg_node) != NULL, "first instruction of block is NULL"
+                                                     " (should be a N_empty node)");
         assign = BLOCK_INSTR (arg_node);
 
         BLOCK_INSTR (arg_node)
@@ -3198,7 +3198,7 @@ COMPassign (node *arg_node, info *arg_info)
 {
     node *instr, *last, *next;
 
-    DBUG_ENTER ("COMPassign");
+    DBUG_ENTER ();
 
     INFO_ASSIGN (arg_info) = arg_node;
     instr = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -3261,24 +3261,24 @@ MakeFunRetArgs (node *arg_node, info *arg_info)
     node *icm_args = NULL;
     node *last_arg = NULL;
 
-    DBUG_ENTER ("MakeFunRetArgs");
+    DBUG_ENTER ();
 
     fundef = INFO_FUNDEF (arg_info);
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no fundef node found!");
 
     argtab = FUNDEF_ARGTAB (fundef);
-    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+    DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
     /* return value */
-    DBUG_ASSERT ((argtab->ptr_in[0] == NULL), "argtab inconsistent!");
+    DBUG_ASSERT (argtab->ptr_in[0] == NULL, "argtab inconsistent!");
     if (RETURN_CRET (arg_node) != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (RETURN_CRET (arg_node)) == N_exprs),
+        DBUG_ASSERT (NODE_TYPE (RETURN_CRET (arg_node)) == N_exprs,
                      "no N_exprs node found in RETURN_CRET");
-        DBUG_ASSERT ((argtab->ptr_out[0] != NULL), "argtab inconsistent!");
+        DBUG_ASSERT (argtab->ptr_out[0] != NULL, "argtab inconsistent!");
         cret_node = DUPdoDupTree (EXPRS_EXPR (RETURN_CRET (arg_node)));
     } else {
-        DBUG_ASSERT ((argtab->ptr_out[0] == NULL), "argtab or RETURN_CRET inconsistent!");
+        DBUG_ASSERT (argtab->ptr_out[0] == NULL, "argtab or RETURN_CRET inconsistent!");
     }
 
     /* regular arguments */
@@ -3286,12 +3286,12 @@ MakeFunRetArgs (node *arg_node, info *arg_info)
     ret_cnt = 0;
     for (i = 1; i < argtab->size; i++) {
         if (argtab->ptr_out[i] != NULL) {
-            DBUG_ASSERT ((ret_exprs != NULL), "not enough return values found!");
+            DBUG_ASSERT (ret_exprs != NULL, "not enough return values found!");
             if (RETURN_CRET (arg_node) == ret_exprs) {
                 ret_exprs = EXPRS_NEXT (ret_exprs);
-                DBUG_ASSERT ((ret_exprs != NULL), "not enough return values found!");
+                DBUG_ASSERT (ret_exprs != NULL, "not enough return values found!");
             }
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ret_exprs)) == N_id),
+            DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (ret_exprs)) == N_id,
                          "argument of return-statement must be a N_id node!");
 
             new_args
@@ -3313,7 +3313,7 @@ MakeFunRetArgs (node *arg_node, info *arg_info)
             ret_exprs = EXPRS_NEXT (ret_exprs);
             ret_cnt++;
         } else {
-            DBUG_ASSERT ((argtab->ptr_in[i] != NULL), "argtab is uncompressed!");
+            DBUG_ASSERT (argtab->ptr_in[i] != NULL, "argtab is uncompressed!");
         }
     }
 
@@ -3382,14 +3382,14 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
     node *foldfun_tag;
     node *foldfun_name;
 
-    DBUG_ENTER ("MakeFunRetArgsSpmd");
+    DBUG_ENTER ();
 
     fundef = INFO_FUNDEF (arg_info);
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no fundef node found!");
 
     argtab = FUNDEF_ARGTAB (fundef);
-    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+    DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
     /* regular arguments */
     ret_exprs = RETURN_EXPRS (arg_node);
@@ -3400,8 +3400,8 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
         if (argtab->ptr_out[i] != NULL) {
             node *foldfun;
 
-            DBUG_ASSERT ((ret_exprs != NULL), "not enough return values found!");
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ret_exprs)) == N_id),
+            DBUG_ASSERT (ret_exprs != NULL, "not enough return values found!");
+            DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (ret_exprs)) == N_id,
                          "no N_id node found!");
 
             foldfun = LUTsearchInLutPp (INFO_FOLDLUT (arg_info),
@@ -3477,7 +3477,7 @@ COMPreturn (node *arg_node, info *arg_info)
 {
     node *fundef, *icm;
 
-    DBUG_ENTER ("COMPreturn");
+    DBUG_ENTER ();
 
     fundef = INFO_FUNDEF (arg_info);
 
@@ -3525,7 +3525,7 @@ COMPlet (node *arg_node, info *arg_info)
     node *expr;
     node *ret_node;
 
-    DBUG_ENTER ("COMPlet");
+    DBUG_ENTER ();
 
     INFO_LASTIDS (arg_info) = LET_IDS (arg_node);
     INFO_LET (arg_info) = arg_node;
@@ -3578,12 +3578,12 @@ COMPApIds (node *ap, info *arg_info)
     int i;
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPApIds");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (ap) == N_ap), "no N_ap node found!");
+    DBUG_ASSERT (NODE_TYPE (ap) == N_ap, "no N_ap node found!");
 
     argtab = AP_ARGTAB (ap);
-    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+    DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
     for (i = argtab->size - 1; i >= 0; i--) {
         if (argtab->ptr_out[i] != NULL) {
@@ -3611,7 +3611,7 @@ COMPApIds (node *ap, info *arg_info)
                     /* function sets no shape information */
                     shape_class_t sc = NTUgetShapeClassFromTypes (
                       IDS_TYPE (((node *)argtab->ptr_out[i])));
-                    DBUG_ASSERT ((sc != C_unknowns), "illegal data class found!");
+                    DBUG_ASSERT (sc != C_unknowns, "illegal data class found!");
                     if ((sc == C_akd) || (sc == C_aud)) {
                         CTIabortLine (global.linenum,
                                       "Return value with undefined shape/dimension found."
@@ -3652,14 +3652,14 @@ COMPApArgs (node *ap, info *arg_info)
     int i;
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPApArgs");
+    DBUG_ENTER ();
 
     argtab = AP_ARGTAB (ap);
-    DBUG_ASSERT ((argtab != NULL), "no argtab found!");
+    DBUG_ASSERT (argtab != NULL, "no argtab found!");
 
     for (i = argtab->size - 1; i >= 0; i--) {
         if (argtab->ptr_in[i] != NULL) {
-            DBUG_ASSERT ((NODE_TYPE (argtab->ptr_in[i]) == N_exprs),
+            DBUG_ASSERT (NODE_TYPE (argtab->ptr_in[i]) == N_exprs,
                          "no N_exprs node found in argtab");
             arg = EXPRS_EXPR (argtab->ptr_in[i]);
             tag = argtab->tag[i];
@@ -3675,7 +3675,7 @@ COMPApArgs (node *ap, info *arg_info)
 static node *
 AddDescArgs (node *ops, node *args)
 {
-    DBUG_ENTER ("AddDescArgs");
+    DBUG_ENTER ();
 
     if (ops != NULL) {
         if (WITHOP_SUB (ops) != NULL) {
@@ -3721,12 +3721,12 @@ COMPap (node *arg_node, info *arg_info)
     node *fundef;
     node *assigns, *assigns1 = NULL, *assigns2 = NULL;
 
-    DBUG_ENTER ("COMPap");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     fundef = AP_FUNDEF (arg_node);
 
-    DBUG_ASSERT ((CheckAp (arg_node, arg_info)),
+    DBUG_ASSERT (CheckAp (arg_node, arg_info),
                  "application of a user-defined function without own"
                  " refcounting: refcounted argument occurs also on LHS!");
 
@@ -3822,7 +3822,7 @@ COMPid (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPid");
+    DBUG_ENTER ();
 
     if (INFO_COND (arg_info)) {
         if (NODE_TYPE (arg_node) == N_id) {
@@ -3860,7 +3860,7 @@ GetType (node *arg_node)
     types *type = NULL;
     node *decl = NULL;
 
-    DBUG_ENTER ("GetType");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (arg_node) == N_ids) {
         decl = IDS_DECL (arg_node);
@@ -3895,7 +3895,7 @@ MakeIcm_PRF_TYPE_CONV_AKD (char *error, node *let_ids, node *id)
     int i;
     node *ret_node = NULL;
 
-    DBUG_ENTER ("MakeIcm_PRF_TYPE_CONV__AKD");
+    DBUG_ENTER ();
 
     ret_node
       = TCmakeAssignIcm3 ("SAC_ND_PRF_TYPE_CONV__AKD_END", TBmakeStr (STRcpy (error)),
@@ -3937,7 +3937,7 @@ MakeIcm_PRF_TYPE_CONV_AKS (char *error, node *let_ids, node *id)
     int i;
     node *ret_node = NULL;
 
-    DBUG_ENTER ("MakeIcm_PRF_TYPE_CONV__AKS");
+    DBUG_ENTER ();
 
     ret_node
       = TCmakeAssignIcm3 ("SAC_ND_PRF_TYPE_CONV__AKS_END", TBmakeStr (STRcpy (error)),
@@ -3969,7 +3969,7 @@ static node *
 COMPprfSecond (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    DBUG_ENTER ("COMPprfSecond");
+    DBUG_ENTER ();
     ret_node
       = TCmakeAssignIcm2 ("SAC_ND_PRF_SECOND", DUPdupIdsIdNt (INFO_LASTIDS (arg_info)),
                           DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
@@ -3980,7 +3980,7 @@ static node *
 COMPprfSyncIn (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    DBUG_ENTER ("COMPprfSyncIn");
+    DBUG_ENTER ();
 
     if (global.backend == BE_mutc) {
         ret_node = TCmakeAssignIcm1 ("ND_REFRESH__MIRROR",
@@ -3997,7 +3997,7 @@ COMPprfSyncIn (node *arg_node, info *arg_info)
                                      DUPdupIdsIdNt (INFO_LASTIDS (arg_info)),
                                      DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
     } else {
-        DBUG_ASSERT ((0), "syncin is not supported for this backend!");
+        DBUG_ASSERT (0, "syncin is not supported for this backend!");
     }
 
     DBUG_RETURN (ret_node);
@@ -4007,7 +4007,7 @@ static node *
 COMPprfSyncOut (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    DBUG_ENTER ("COMPprfSyncOut");
+    DBUG_ENTER ();
 
     if (global.backend == BE_mutc) {
         ret_node
@@ -4018,7 +4018,7 @@ COMPprfSyncOut (node *arg_node, info *arg_info)
           = TCmakeAssignIcm2 ("SAC_CUDA_PRF_SYNCOUT", DUPdupIdNt (PRF_ARG2 (arg_node)),
                               DUPdupIdNt (PRF_ARG1 (arg_node)), ret_node);
     } else {
-        DBUG_ASSERT ((0), "syncout is not supported for this backend!");
+        DBUG_ASSERT (0, "syncout is not supported for this backend!");
     }
 
     DBUG_RETURN (ret_node);
@@ -4043,7 +4043,7 @@ COMPprfTypeConv (node *arg_node, info *arg_info)
     int error_len = 0;
     node *id = NULL;
 
-    DBUG_ENTER ("COMPprfTypeConv");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     id = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
@@ -4103,7 +4103,7 @@ COMPprfFromUnq (node *arg_node, info *arg_info)
     types *lhs_type, *rhs_type;
     node *ret_node, *arg;
 
-    DBUG_ENTER ("COMPprfFromUnq");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -4119,7 +4119,7 @@ COMPprfFromUnq (node *arg_node, info *arg_info)
      */
 
     lhs_type = IDS_TYPE (let_ids);
-    DBUG_ASSERT ((!TCisUnique (lhs_type)), "from_unq() with unique LHS found!");
+    DBUG_ASSERT (!TCisUnique (lhs_type), "from_unq() with unique LHS found!");
     rhs_type = ID_TYPE (arg);
 
     if (!TCisUnique (rhs_type)) {
@@ -4160,7 +4160,7 @@ COMPprfToUnq (node *arg_node, info *arg_info)
     node *icm_args;
     node *ret_node, *arg;
 
-    DBUG_ENTER ("COMPprfToUnq");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -4180,7 +4180,7 @@ COMPprfToUnq (node *arg_node, info *arg_info)
 
     lhs_type = IDS_TYPE (let_ids);
     rhs_type = ID_TYPE (arg);
-    DBUG_ASSERT ((!TCisUnique (rhs_type)), "to_unq() with unique RHS found!");
+    DBUG_ASSERT (!TCisUnique (rhs_type), "to_unq() with unique RHS found!");
 
     icm_args
       = MakeTypeArgs (IDS_NAME (let_ids), lhs_type, FALSE, TRUE, FALSE,
@@ -4211,7 +4211,7 @@ COMPscalar (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPscalar");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -4235,7 +4235,7 @@ COMPnumbyte (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPnumbyte");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4256,7 +4256,7 @@ COMPnumshort (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPnumshort");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4277,7 +4277,7 @@ COMPnum (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPnum");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4298,7 +4298,7 @@ COMPnumint (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPnumint");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4319,7 +4319,7 @@ COMPnumlong (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPnumlong");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4340,7 +4340,7 @@ COMPnumlonglong (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPnumlonglong");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4361,7 +4361,7 @@ COMPnumubyte (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPnumubyte");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4382,7 +4382,7 @@ COMPnumushort (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPnumushort");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4403,7 +4403,7 @@ COMPnumuint (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPnumuint");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4424,7 +4424,7 @@ COMPnumulong (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPnumulong");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4445,7 +4445,7 @@ COMPnumulonglong (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPnumulonglong");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4466,7 +4466,7 @@ COMPchar (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPchar");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4487,7 +4487,7 @@ COMPbool (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPbool");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4508,7 +4508,7 @@ COMPfloat (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPfloat");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4529,7 +4529,7 @@ COMPdouble (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPdouble");
+    DBUG_ENTER ();
 
     ret_node = COMPscalar (arg_node, arg_info);
 
@@ -4552,7 +4552,7 @@ COMParray (node *arg_node, info *arg_info)
     node *ret_node = NULL;
     node *let_ids;
 
-    DBUG_ENTER ("COMParray");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -4620,7 +4620,7 @@ node *
 COMPprfPropObjIn (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    DBUG_ENTER ("COMPprfPropObjIn");
+    DBUG_ENTER ();
 
     ret_node = MakeIcm_PROP_OBJ_IN (arg_node, INFO_LASTIDS (arg_info), NULL);
     DBUG_RETURN (ret_node);
@@ -4640,7 +4640,7 @@ node *
 COMPprfPropObjOut (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    DBUG_ENTER ("COMPprfPropObjOut");
+    DBUG_ENTER ();
 
     ret_node = MakeIcm_PROP_OBJ_OUT (arg_node, INFO_LASTIDS (arg_info), NULL);
     DBUG_RETURN (ret_node);
@@ -4666,7 +4666,7 @@ COMPprfIncRC (node *arg_node, info *arg_info)
     node *ret_node = NULL;
     int num;
 
-    DBUG_ENTER ("COMPprfIncRC");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (PRF_ARG1 (arg_node))) {
     case N_id:
@@ -4713,7 +4713,7 @@ COMPprfDecRC (node *arg_node, info *arg_info)
     node *ret_node = NULL;
     int num;
 
-    DBUG_ENTER ("COMPprfDecRC");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (PRF_ARG1 (arg_node))) {
     case N_id:
@@ -4756,7 +4756,7 @@ static node *
 COMPprfRestorerc (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    DBUG_ENTER ("COMPprfRestore");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))
                    == IDS_AVIS (INFO_LASTIDS (arg_info)),
@@ -4790,7 +4790,7 @@ static node *
 COMPprf2norc (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    DBUG_ENTER ("COMPprf2norc");
+    DBUG_ENTER ();
 
     ret_node
       = TCmakeAssignIcm2 ("ND_PRF_2NORC",
@@ -4820,7 +4820,7 @@ static node *
 COMPprf2asyncrc (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    DBUG_ENTER ("COMPprf2ayncrc");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm1 ("ND_REFRESH__MIRROR",
                                  MakeTypeArgs (IDS_NAME (INFO_LASTIDS (arg_info)),
@@ -4862,7 +4862,7 @@ COMPprfAlloc (node *arg_node, info *arg_info)
     node *get_dim;
     node *set_shape;
 
-    DBUG_ENTER ("COMPprfAlloc");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -4899,7 +4899,7 @@ COMPprfAllocOrReuse (node *arg_node, info *arg_info)
     node *set_shape;
     node *cand;
 
-    DBUG_ENTER ("COMPprfAllocOrReuse");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -4943,7 +4943,7 @@ COMPprfResize (node *arg_node, info *arg_info)
     node *set_shape;
     node *resizecand;
 
-    DBUG_ENTER ("COMPprfResize");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -4952,7 +4952,7 @@ COMPprfResize (node *arg_node, info *arg_info)
     set_shape = MakeSetShapeIcm (PRF_ARG3 (arg_node), let_ids);
     resizecand = PRF_ARG4 (arg_node);
 
-    DBUG_ASSERT ((resizecand != NULL), "no source for resize found!");
+    DBUG_ASSERT (resizecand != NULL, "no source for resize found!");
 
     ret_node
       = MakeReAllocIcm (IDS_NAME (let_ids), IDS_TYPE (let_ids), ID_NAME (resizecand),
@@ -4984,7 +4984,7 @@ COMPprfAllocOrResize (node *arg_node, info *arg_info)
     node *set_shape;
     node *cand;
 
-    DBUG_ENTER ("COMPprfAllocOrResize");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -5037,9 +5037,9 @@ COMPprfFree (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfFree");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (arg_node)) != N_globobj),
+    DBUG_ASSERT (NODE_TYPE (PRF_ARG1 (arg_node)) != N_globobj,
                  "Application of F_free to N_globobj detected!");
 
     ret_node = MakeSetRcIcm (ID_NAME (PRF_ARG1 (arg_node)), ID_TYPE (PRF_ARG1 (arg_node)),
@@ -5070,7 +5070,7 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
     shape_class_t sc;
     node *sub_get_dim = NULL;
 
-    DBUG_ENTER ("COMPprfSuballoc");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     mem_id = PRF_ARG1 (arg_node);
@@ -5094,8 +5094,7 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
     if ((global.backend == BE_mutc)
         && !AVIS_SUBALLOC (IDS_AVIS (INFO_LASTIDS (arg_info)))) {
 #if 0 /* Still may be present if not canonical */
-    DBUG_ASSERT( (PRF_ARG3( arg_node) != NULL),
-                 "suballoc lacking default information in mutc backend");
+    DBUG_ASSERT (PRF_ARG3( arg_node) != NULL, "suballoc lacking default information in mutc backend");
 #endif
         /*
          * We need to allocate a descriptor and set the shape
@@ -5119,8 +5118,7 @@ COMPprfSuballoc (node *arg_node, info *arg_info)
         if (TCcountExprs (PRF_ARGS (arg_node)) >= 4) {
             if (!KNOWN_SHAPE (TCgetShapeDim (IDS_TYPE (let_ids)))) {
 #if 0 /* Still may be present if not canonical */
-        DBUG_ASSERT( (PRF_ARG4( arg_node) != NULL),
-                     "missing shape information for suballoc");
+        DBUG_ASSERT (PRF_ARG4( arg_node) != NULL, "missing shape information for suballoc");
 #endif
 
                 ret_node = TBmakeAssign (MakeSetShapeIcm (PRF_ARG4 (arg_node), let_ids),
@@ -5169,7 +5167,7 @@ COMPprfWLAssign (node *arg_node, info *arg_info)
 {
     node *ret_node;
     node *arg3;
-    DBUG_ENTER ("COMPprfWLAssign");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (PRF_ARG3 (arg_node)) == N_id) {
         arg3 = DUPdupIdNt (PRF_ARG3 (arg_node));
@@ -5213,7 +5211,7 @@ COMPprfCUDAWLAssign (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfCUDAWLAssign");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm3 ("CUDA_WL_ASSIGN",
                                  MakeTypeArgs (ID_NAME (PRF_ARG1 (arg_node)),
@@ -5247,7 +5245,7 @@ COMPprfCondWLAssign (node *arg_node, info *arg_info)
 
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfCondWLAssign");
+    DBUG_ENTER ();
 
     cond = PRF_ARG1 (arg_node);
     shmemidx = PRF_ARG2 (arg_node);
@@ -5275,10 +5273,10 @@ COMPprfCUDAWLIdxs (node *arg_node, info *arg_info)
     node *ret_node = NULL;
     int array_dim;
 
-    DBUG_ENTER ("COMPprfCUDAWLIdxs");
+    DBUG_ENTER ();
 
     array_dim = NUM_VAL (PRF_ARG3 (arg_node));
-    DBUG_ASSERT ((array_dim > 0), "Dimension of result CUDA array must be > 0");
+    DBUG_ASSERT (array_dim > 0, "Dimension of result CUDA array must be > 0");
 
     ret_node
       = TCmakeAssignIcm4 ("CUDA_WLIDXS",
@@ -5304,12 +5302,12 @@ COMPprfCUDAWLIds (node *arg_node, info *arg_info)
     node *let_ids;
     node *iv;
 
-    DBUG_ENTER ("COMPprfCUDAWLIds");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
     array_dim = NUM_VAL (PRF_ARG2 (arg_node));
-    DBUG_ASSERT ((array_dim > 0), "Dimension of result CUDA array must be > 0");
+    DBUG_ASSERT (array_dim > 0, "Dimension of result CUDA array must be > 0");
 
     args = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
 
@@ -5333,7 +5331,7 @@ COMPprfCUDAGridBlock (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfCUDAGridBlock");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm2 ("CUDA_GRID_BLOCK",
                                  TBmakeNum (TCcountExprs (PRF_ARGS (arg_node))),
@@ -5360,7 +5358,7 @@ COMPprfWLBreak (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfWLBreak");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm3 ("ND_ASSIGN__DATA", DUPdupIdNt (PRF_ARG2 (arg_node)),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
@@ -5390,7 +5388,7 @@ COMPprfCopy (node *arg_node, info *arg_info)
     node *ret_node;
     simpletype src_basetype, dst_basetype;
 
-    DBUG_ENTER ("COMPprfCopy");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -5447,7 +5445,7 @@ COMPprfIsReused (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfIsReused");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -5478,12 +5476,12 @@ COMPprfDim (node *arg_node, info *arg_info)
     node *arg;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfDim");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_dim_A is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg) == N_id, "arg of F_dim_A is no N_id!");
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_DIM_A__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
@@ -5515,12 +5513,12 @@ COMPprfShape (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfShape");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_shape_A is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg) == N_id, "arg of F_shape_A is no N_id!");
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_SHAPE_A__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
@@ -5552,12 +5550,12 @@ COMPprfSize (node *arg_node, info *arg_info)
     node *arg;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfSize");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg) == N_id), "arg of F_size_A is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg) == N_id, "arg of F_size_A is no N_id!");
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_SIZE_A__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
@@ -5592,7 +5590,7 @@ COMPprfReshape (node *arg_node, info *arg_info)
     int dim_new, dim_old;
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfReshape");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -5682,7 +5680,7 @@ COMPprfAllocOrReshape (node *arg_node, info *arg_info)
     int rc;
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfAllocOrReshape");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -5729,7 +5727,7 @@ COMPprfIdxSel (node *arg_node, info *arg_info)
     node *icm_args;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfIdxSel");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -5742,14 +5740,14 @@ COMPprfIdxSel (node *arg_node, info *arg_info)
     DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)
                   || ((NODE_TYPE (arg1) == N_prf))),
                  "1st arg of F_idx_sel is neither N_id nor N_num, N_prf!");
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_idx_sel is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg2) == N_id, "2nd arg of F_idx_sel is no N_id!");
 
     icm_args = MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE, FALSE,
                              TBmakeExprs (DUPdupNodeNt (arg1), NULL));
 
     /* idx_sel() works only for arrays with known dimension!!! */
     dim = TCgetDim (IDS_TYPE (let_ids));
-    DBUG_ASSERT ((dim >= 0), "unknown dimension found!");
+    DBUG_ASSERT (dim >= 0, "unknown dimension found!");
 
     ret_node
       = TCmakeAssignIcm2 ("ND_PRF_IDX_SEL__DATA",
@@ -5781,15 +5779,14 @@ COMPprfIdxModarray_AxSxS (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfIdxModarray_AxSxS");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
     arg3 = PRF_ARG3 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id),
-                 "1st arg of F_idx_modarray_AxSxS is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg1) == N_id, "1st arg of F_idx_modarray_AxSxS is no N_id!");
     /*
      * Because of IVE, at the 2nd argument position of F_idx_modarray might occur
      * an arithmetical expression (see function IdxArray)!!!
@@ -5800,7 +5797,7 @@ COMPprfIdxModarray_AxSxS (node *arg_node, info *arg_info)
     DBUG_ASSERT (((NODE_TYPE (arg2) != N_id)
                   || (TCgetBasetype (ID_TYPE (arg2)) == T_int)),
                  "2nd arg of F_idx_modarray_AxSxS is a illegal indexing var!");
-    DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
+    DBUG_ASSERT (NODE_TYPE (arg3) != N_array,
                  "3rd arg of F_idx_modarray_AxSxS is a N_array!");
 
     /*
@@ -5858,15 +5855,14 @@ COMPprfIdxModarray_AxSxA (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfIdxModarray_AxSxA");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
     arg3 = PRF_ARG3 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id),
-                 "1st arg of F_idx_modarray_AxSxA is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg1) == N_id, "1st arg of F_idx_modarray_AxSxA is no N_id!");
     /*
      * Because of IVE, at the 2nd argument position of F_idx_modarray might occur
      * an arithmetical expression (see function IdxArray)!!!
@@ -5877,7 +5873,7 @@ COMPprfIdxModarray_AxSxA (node *arg_node, info *arg_info)
     DBUG_ASSERT (((NODE_TYPE (arg2) != N_id)
                   || (TCgetBasetype (ID_TYPE (arg2)) == T_int)),
                  "2nd arg of F_idx_modarray_AxSxA is a illegal indexing var!");
-    DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
+    DBUG_ASSERT (NODE_TYPE (arg3) != N_array,
                  "3rd arg of F_idx_modarray_AxSxA is a N_array!");
 
     if (global.backend == BE_cuda
@@ -5931,14 +5927,14 @@ COMPprfIdxShapeSel (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfIdxShapeSel");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg1) == N_num), "1st arg of F_idx_shape_sel is no N_num!");
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_idx_shape_sel is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg1) == N_num, "1st arg of F_idx_shape_sel is no N_num!");
+    DBUG_ASSERT (NODE_TYPE (arg2) == N_id, "2nd arg of F_idx_shape_sel is no N_id!");
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_IDX_SHAPE_SEL__DATA",
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
@@ -5971,7 +5967,7 @@ COMPprfSel (node *arg_node, info *arg_info)
     node *icm_args;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfSel");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -5992,10 +5988,10 @@ COMPprfSel (node *arg_node, info *arg_info)
      * [3,4].
      */
 
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_sel_VxA is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg2) == N_id, "2nd arg of F_sel_VxA is no N_id!");
 
     if (NODE_TYPE (arg1) == N_id) {
-        DBUG_ASSERT (((TCgetBasetype (ID_TYPE (arg1)) == T_int)),
+        DBUG_ASSERT ((TCgetBasetype (ID_TYPE (arg1)) == T_int),
                      "1st arg of F_sel_VxA is a illegal indexing var!");
 
         icm_args
@@ -6009,7 +6005,7 @@ COMPprfSel (node *arg_node, info *arg_info)
                               TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                               NULL);
     } else {
-        DBUG_ASSERT ((NODE_TYPE (arg1) == N_array),
+        DBUG_ASSERT (NODE_TYPE (arg1) == N_array,
                      "1st arg of F_sel_VxA is neither N_id nor N_array!");
 
         icm_args
@@ -6052,14 +6048,14 @@ COMPprfSelI (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfSelI");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
     if (NODE_TYPE (arg1) == N_id) {
-        DBUG_ASSERT (((TCgetBasetype (ID_TYPE (arg1)) == T_int)),
+        DBUG_ASSERT ((TCgetBasetype (ID_TYPE (arg1)) == T_int),
                      "1st arg of F_sel_VxA is a illegal indexing var!");
 
         icm_args
@@ -6099,7 +6095,7 @@ COMPprfModarray_AxVxS (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfModarray_AxVxS");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -6121,12 +6117,12 @@ COMPprfModarray_AxVxS (node *arg_node, info *arg_info)
      * [3,4].
      */
 
-    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_modarray_AxVxS is no N_id!");
-    DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
+    DBUG_ASSERT (NODE_TYPE (arg1) == N_id, "1st arg of F_modarray_AxVxS is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg3) != N_array,
                  "3rd arg of F_modarray_AxVxS is a N_array!");
 
     if (NODE_TYPE (arg2) == N_id) {
-        DBUG_ASSERT (((TCgetBasetype (ID_TYPE (arg2)) == T_int)),
+        DBUG_ASSERT ((TCgetBasetype (ID_TYPE (arg2)) == T_int),
                      "2nd arg of F_modarray_AxVxS is a illegal indexing var!");
 
         ret_node
@@ -6140,7 +6136,7 @@ COMPprfModarray_AxVxS (node *arg_node, info *arg_info)
                               TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg1))),
                               NULL);
     } else {
-        DBUG_ASSERT ((NODE_TYPE (arg2) == N_array),
+        DBUG_ASSERT (NODE_TYPE (arg2) == N_array,
                      "2nd arg of F_modarray_AxVxS is neither N_id nor N_array!");
 
         ret_node
@@ -6165,7 +6161,7 @@ COMPprfModarray_AxVxA (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfModarray_AxVxA");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -6187,12 +6183,12 @@ COMPprfModarray_AxVxA (node *arg_node, info *arg_info)
      * [3,4].
      */
 
-    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_modarray_AxVxA is no N_id!");
-    DBUG_ASSERT ((NODE_TYPE (arg3) != N_array),
+    DBUG_ASSERT (NODE_TYPE (arg1) == N_id, "1st arg of F_modarray_AxVxA is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg3) != N_array,
                  "3rd arg of F_modarray_AxVxA is a N_array!");
 
     if (NODE_TYPE (arg2) == N_id) {
-        DBUG_ASSERT (((TCgetBasetype (ID_TYPE (arg2)) == T_int)),
+        DBUG_ASSERT ((TCgetBasetype (ID_TYPE (arg2)) == T_int),
                      "2nd arg of F_modarray_AxVxA is a illegal indexing var!");
 
         ret_node
@@ -6206,7 +6202,7 @@ COMPprfModarray_AxVxA (node *arg_node, info *arg_info)
                               TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg1))),
                               NULL);
     } else {
-        DBUG_ASSERT ((NODE_TYPE (arg2) == N_array),
+        DBUG_ASSERT (NODE_TYPE (arg2) == N_array,
                      "2nd arg of F_modarray_AxVxA is neither N_id nor N_array!");
 
         ret_node
@@ -6244,13 +6240,13 @@ COMPprfGenarray (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfGenarray");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT ((0), "prf F_genarray not implemented yet!");
+    DBUG_ASSERT (0, "prf F_genarray not implemented yet!");
 
     ret_node = NULL;
 
@@ -6278,7 +6274,7 @@ COMPprfTake (node *arg_node, info *arg_info)
     node *icm_args;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfTake");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -6286,7 +6282,7 @@ COMPprfTake (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)),
                  "1st arg of F_take_SxV is neither N_id nor N_num!");
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_take_SxV is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg2) == N_id, "2nd arg of F_take_SxV is no N_id!");
 
     icm_args
       = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
@@ -6322,7 +6318,7 @@ COMPprfDrop (node *arg_node, info *arg_info)
     node *icm_args;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfDrop");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
@@ -6330,7 +6326,7 @@ COMPprfDrop (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (((NODE_TYPE (arg1) == N_id) || (NODE_TYPE (arg1) == N_num)),
                  "1st arg of F_drop_SxV is neither N_id nor N_num!");
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_drop_SxV is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg2) == N_id, "2nd arg of F_drop_SxV is no N_id!");
 
     icm_args
       = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
@@ -6367,14 +6363,14 @@ COMPprfCat (node *arg_node, info *arg_info)
     char *copyfun1, *copyfun2;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfCat");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_cat_VxV is no N_id!");
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_cat_VxV is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg1) == N_id, "1st arg of F_cat_VxV is no N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg2) == N_id, "2nd arg of F_cat_VxV is no N_id!");
 
     icm_args
       = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
@@ -6414,16 +6410,15 @@ COMPprfOp_S (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfOp_S");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
     /* assure that the prf has exactly one argument */
-    DBUG_ASSERT ((PRF_EXPRS2 (arg_node) == NULL), "more than a single argument found!");
-    DBUG_ASSERTF (((NODE_TYPE (arg) != N_id)
-                   || (TCgetShapeDim (ID_TYPE (arg)) == SCALAR)),
-                  ("non-scalar argument found!", global.prf_name[PRF_PRF (arg_node)]));
+    DBUG_ASSERT (PRF_EXPRS2 (arg_node) == NULL, "more than a single argument found!");
+    DBUG_ASSERT (NODE_TYPE (arg) != N_id || TCgetShapeDim (ID_TYPE (arg)) == SCALAR,
+                 "non-scalar argument `%s' found!", global.prf_name[PRF_PRF (arg_node)]);
 
     /* If enforce float flag is set, we change all tods to tofs */
     if (global.enforce_float && PRF_PRF (arg_node) == F_tod_S) {
@@ -6461,13 +6456,13 @@ COMPprfOp_V (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfOp_V");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg = PRF_ARG1 (arg_node);
 
     /* assure that the prf has exactly one argument */
-    DBUG_ASSERT ((PRF_EXPRS2 (arg_node) == NULL), "more than a single argument found!");
+    DBUG_ASSERT (PRF_EXPRS2 (arg_node) == NULL, "more than a single argument found!");
     ret_node = TCmakeAssignIcm3 ("ND_PRF_V__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
@@ -6495,7 +6490,7 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfOp_SxS");
+    DBUG_ENTER ();
 
     /* assure that the prf has exactly two arguments */
     DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
@@ -6506,15 +6501,15 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERTF (((NODE_TYPE (arg1) != N_id)
-                   || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
-                  ("%s: non-scalar first argument found!",
-                   global.prf_name[PRF_PRF (arg_node)]));
+    DBUG_ASSERT (((NODE_TYPE (arg1) != N_id)
+                  || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
+                 "%s: non-scalar first argument found!",
+                 global.prf_name[PRF_PRF (arg_node)]);
 
-    DBUG_ASSERTF (((NODE_TYPE (arg2) != N_id)
-                   || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
-                  ("%s: non-scalar second argument found!",
-                   global.prf_name[PRF_PRF (arg_node)]));
+    DBUG_ASSERT (((NODE_TYPE (arg2) != N_id)
+                  || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
+                 "%s: non-scalar second argument found!",
+                 global.prf_name[PRF_PRF (arg_node)]);
     ret_node = TCmakeAssignIcm3 ("ND_PRF_SxS__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
@@ -6542,7 +6537,7 @@ COMPprfOp_SxV (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfOp_SxV");
+    DBUG_ENTER ();
 
     /* assure that the prf has exactly two arguments */
     DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
@@ -6553,10 +6548,10 @@ COMPprfOp_SxV (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERTF (((NODE_TYPE (arg1) != N_id)
-                   || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
-                  ("%s: non-scalar first argument found!",
-                   global.prf_name[PRF_PRF (arg_node)]));
+    DBUG_ASSERT (((NODE_TYPE (arg1) != N_id)
+                  || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
+                 "%s: non-scalar first argument found!",
+                 global.prf_name[PRF_PRF (arg_node)]);
 
     ret_node = TCmakeAssignIcm3 ("ND_PRF_SxV__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
@@ -6585,7 +6580,7 @@ COMPprfOp_VxS (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfOp_VxS");
+    DBUG_ENTER ();
 
     /* assure that the prf has exactly two arguments */
     DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
@@ -6596,10 +6591,10 @@ COMPprfOp_VxS (node *arg_node, info *arg_info)
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERTF (((NODE_TYPE (arg2) != N_id)
-                   || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
-                  ("%s: non-scalar second argument found!",
-                   global.prf_name[PRF_PRF (arg_node)]));
+    DBUG_ASSERT (((NODE_TYPE (arg2) != N_id)
+                  || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
+                 "%s: non-scalar second argument found!",
+                 global.prf_name[PRF_PRF (arg_node)]);
     ret_node = TCmakeAssignIcm3 ("ND_PRF_VxS__DATA", DUPdupIdsIdNt (let_ids),
                                  TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
@@ -6627,7 +6622,7 @@ COMPprfOp_VxV (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfOp_VxV");
+    DBUG_ENTER ();
 
     /* assure that the prf has exactly two arguments */
     DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
@@ -6665,7 +6660,7 @@ COMPprfOp_VxVxV (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfOp_VxVxV");
+    DBUG_ENTER ();
 
     /* assure that the prf has exactly three arguments */
     DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
@@ -6699,17 +6694,16 @@ COMPprfTypeError (node *arg_node, info *arg_info)
     node *message;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfTypeError");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL),
-                 "1st argument of F_type_error not found!");
+    DBUG_ASSERT (PRF_ARGS (arg_node) != NULL, "1st argument of F_type_error not found!");
 
-    DBUG_ASSERT ((NODE_TYPE (PRF_ARG1 (arg_node)) == N_type),
+    DBUG_ASSERT (NODE_TYPE (PRF_ARG1 (arg_node)) == N_type,
                  "1st argument of F_type_error  not a N_type node!");
 
     bottom = EXPRS_EXPR (PRF_ARGS (arg_node));
 
-    DBUG_ASSERT ((TYisBottom (TYPE_TYPE (bottom))),
+    DBUG_ASSERT (TYisBottom (TYPE_TYPE (bottom)),
                  "1st argument of F_type_error contains non bottom type!");
 
     message = TBmakeStr (STRstring2SafeCEncoding (TYgetBottomError (TYPE_TYPE (bottom))));
@@ -6740,13 +6734,13 @@ COMPprfWrapperShapeEncode (node *arg_node, info *arg_info)
     char *name;
     int num_args;
 
-    DBUG_ENTER ("COMPprfWrapperShapeEncode");
+    DBUG_ENTER ();
 
     num_args = 0;
     args = PRF_ARGS (arg_node);
 
     if (args == NULL) {
-        DBUG_PRINT ("RTSPEC", ("Arguments are NULL!"));
+        DBUG_PRINT_TAG ("RTSPEC", "Arguments are NULL!");
         assigns = TCmakeAssignIcm1 ("WE_NO_SHAPE_ENCODE", TBmakeNum (num_args), NULL);
     } else {
         while (args != NULL) {
@@ -6754,7 +6748,7 @@ COMPprfWrapperShapeEncode (node *arg_node, info *arg_info)
             name = AVIS_NAME (ID_AVIS (curr_arg));
 
             DBUG_ASSERT (curr_arg != NULL, "Missing argument name!");
-            DBUG_PRINT ("RTSPEC", ("Argument name: %s", name));
+            DBUG_PRINT_TAG ("RTSPEC", "Argument name: %s", name);
 
             if (expr == NULL) {
                 expr = TBmakeExprs (TCmakeIdCopyString (name), NULL);
@@ -6795,7 +6789,7 @@ COMPprfWrapperModFunInfo (node *arg_node, info *arg_info)
     node *funname;
     node *modname;
 
-    DBUG_ENTER ("COMPprfWrapperRegister");
+    DBUG_ENTER ();
 
     args = PRF_ARGS (arg_node);
     funname = EXPRS_EXPR (args);
@@ -6827,11 +6821,11 @@ COMPprfDispatchError (node *arg_node, info *arg_info)
     node *funname, *funargs;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfDispatchError");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL),
+    DBUG_ASSERT (PRF_ARGS (arg_node) != NULL,
                  "1st argument of F_dispatch_error not found!");
 
     /*
@@ -6840,7 +6834,7 @@ COMPprfDispatchError (node *arg_node, info *arg_info)
      */
     args = PRF_ARGS (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (args)) = N_num), "N_num expected as 1st arg!");
+    DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (args)) = N_num, "N_num expected as 1st arg!");
 
     skip = NUM_VAL (EXPRS_EXPR (args)) + 1;
 
@@ -6873,7 +6867,7 @@ COMPprfNoop (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfNoop");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm0 ("NOOP", NULL);
 
@@ -6895,7 +6889,7 @@ COMPprfIdxs2Offset (node *arg_node, info *arg_info)
     node *icm = NULL;
     node *idxs_exprs;
 
-    DBUG_ENTER ("COMPprfIdxs2Offset");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     idxs_exprs = EXPRS_NEXT (PRF_ARGS (arg_node));
@@ -6918,7 +6912,7 @@ COMPprfIdxs2Offset (node *arg_node, info *arg_info)
                         DUPdupIdNt (PRF_ARG1 (arg_node)));
 #ifndef DBUG_OFF
     } else {
-        DBUG_ASSERT ((0), "unexpected 1st arg to idxs2offset");
+        DBUG_ASSERT (0, "unexpected 1st arg to idxs2offset");
 #endif
     }
 
@@ -6941,13 +6935,13 @@ COMPprfArrayIdxs2Offset (node *arg_node, info *arg_info)
     node *array;
     node *idxs_exprs;
 
-    DBUG_ENTER ("COMPprfArrayIdxs2Offset");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     array = PRF_ARG1 (arg_node);
     idxs_exprs = EXPRS_NEXT (PRF_ARGS (arg_node));
 
-    DBUG_ASSERT ((NODE_TYPE (array) == N_id),
+    DBUG_ASSERT (NODE_TYPE (array) == N_id,
                  "First argument of F_array_idxs2offset must be an N_id Node!");
 
     icm = TCmakeIcm5 ("ND_ARRAY_IDXS2OFFSET_id", DUPdupIdsIdNt (let_ids),
@@ -6974,13 +6968,13 @@ COMPprfArrayVect2Offset (node *arg_node, info *arg_info)
     node *array;
     node *iv_vect;
 
-    DBUG_ENTER ("COMPprfArrayVect2Offset");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     array = PRF_ARG1 (arg_node);
     iv_vect = PRF_ARG2 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (array) == N_id),
+    DBUG_ASSERT (NODE_TYPE (array) == N_id,
                  "First argument of F_array_vect2offset must be an N_id Node!");
 
     icm = TCmakeIcm5 ("ND_ARRAY_VECT2OFFSET_id", DUPdupIdsIdNt (let_ids),
@@ -7014,7 +7008,7 @@ COMPprfVect2Offset (node *arg_node, info *arg_info)
     node *iv_vect;
     node *icm = NULL;
 
-    DBUG_ENTER ("COMPprfVect2Offset");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     iv_vect = PRF_ARG2 (arg_node);
@@ -7035,7 +7029,7 @@ COMPprfVect2Offset (node *arg_node, info *arg_info)
                           DUPdupIdNt (PRF_ARG1 (arg_node)));
 #ifndef DBUG_OFF
     } else {
-        DBUG_ASSERT ((0), "unexpected 1st arg to vect2offset");
+        DBUG_ASSERT (0, "unexpected 1st arg to vect2offset");
 #endif
     }
 
@@ -7062,7 +7056,7 @@ COMPprfRunMtGenarray (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfRunMtGenarray");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7094,7 +7088,7 @@ COMPprfRunMtModarray (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfRunMtModarray");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7126,7 +7120,7 @@ COMPprfRunMtFold (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfRunMtFold");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7148,7 +7142,7 @@ COMPprfGuard (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfGuard");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm1 ("ND_PRF_GUARD",
                                  DupExpr_NT_AddReadIcms (PRF_ARG1 (arg_node)), NULL);
@@ -7168,7 +7162,7 @@ COMPprfTypeConstraint (node *arg_node, info *arg_info)
     node *let_ids;
     ntype *arg_type;
 
-    DBUG_ENTER ("COMPprfTypeConstraint");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg_type = TYPE_TYPE (PRF_ARG1 (arg_node));
@@ -7214,7 +7208,7 @@ COMPprfSameShape (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfSameShape");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7240,7 +7234,7 @@ COMPprfShapeMatchesDim (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfShapeMatchesDim");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7262,7 +7256,7 @@ COMPprfNonNegVal_S (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfNonNegVal_S");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7283,7 +7277,7 @@ COMPprfNonNegVal_V (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfNonNegVal_V");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7304,7 +7298,7 @@ COMPprfValLtShape (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfValLtShape");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7329,7 +7323,7 @@ COMPprfValLtVal_SxS (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfValLtVal_SxS");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7351,7 +7345,7 @@ COMPprfValLeVal_SxS (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfValLeVal_SxS");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7373,7 +7367,7 @@ COMPprfValLeVal_VxV (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfValLeVal_VxV");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7395,7 +7389,7 @@ COMPprfProdMatchesProdShape (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfProdMatchesProdShape");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7415,7 +7409,7 @@ COMPprfDevice2Host (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfDevice2Host");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7433,7 +7427,7 @@ COMPprfHost2Device (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfHost2Device");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7451,7 +7445,7 @@ COMPprfDevice2Device (node *arg_node, info *arg_info)
     node *ret_node;
     node *let_ids;
 
-    DBUG_ENTER ("COMPprfDevice2Device");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
@@ -7468,7 +7462,7 @@ COMPprfCUDAThreadIdxX (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfCUDAThreadIdxX");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm1 ("SAC_CUDA_THREADIDX_X",
                                  DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
@@ -7481,7 +7475,7 @@ COMPprfCUDAThreadIdxY (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfCUDAThreadIdxY");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm1 ("SAC_CUDA_THREADIDX_Y",
                                  DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
@@ -7494,7 +7488,7 @@ COMPprfCUDAThreadIdxZ (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfCUDAThreadIdxZ");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm1 ("SAC_CUDA_THREADIDX_Z",
                                  DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
@@ -7507,7 +7501,7 @@ COMPprfCUDABlockIdxX (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfCUDABlockIdxX");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm1 ("SAC_CUDA_BLOCKIDX_X",
                                  DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
@@ -7520,7 +7514,7 @@ COMPprfCUDABlockIdxY (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfCUDABlockIdxY");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm1 ("SAC_CUDA_BLOCKIDX_Y",
                                  DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
@@ -7533,7 +7527,7 @@ COMPprfCUDABlockDimX (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfCUDABlockDimX");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm1 ("SAC_CUDA_BLOCKDIM_X",
                                  DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
@@ -7546,7 +7540,7 @@ COMPprfCUDABlockDimY (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfCUDABlockDimY");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm1 ("SAC_CUDA_BLOCKDIM_Y",
                                  DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
@@ -7559,7 +7553,7 @@ COMPprfCUDABlockDimZ (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprfCUDABlockDimZ");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm1 ("SAC_CUDA_BLOCKDIM_Z",
                                  DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
@@ -7570,9 +7564,9 @@ COMPprfCUDABlockDimZ (node *arg_node, info *arg_info)
 node *
 COMPprfShmemBoundaryLoad (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COMPprfShmemBoundaryLoad");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((0), "Illegal primitive function found!");
+    DBUG_ASSERT (0, "Illegal primitive function found!");
 
     DBUG_RETURN (arg_node);
 }
@@ -7583,7 +7577,7 @@ COMPprfShmemBoundaryCheck (node *arg_node, info *arg_info)
     int dim_pos, offset;
     node *let_ids, *idx, *ret_node;
 
-    DBUG_ENTER ("COMPprfShmemBoundaryCheck");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     dim_pos = NUM_VAL (PRF_ARG1 (arg_node));
@@ -7602,7 +7596,7 @@ COMPprfSyncthreads (node *arg_node, info *arg_info)
 {
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfSyncthreads");
+    DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm0 ("SAC_CUDA_SYNCTHREADS", NULL);
 
@@ -7617,16 +7611,16 @@ COMPprfCond (node *arg_node, info *arg_info)
     node *icm_args;
     node *ret_node;
 
-    DBUG_ENTER ("COMPprfCond");
+    DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
     arg1 = PRF_ARG1 (arg_node);
     arg2 = PRF_ARG2 (arg_node);
     arg3 = PRF_ARG3 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (arg1) == N_id), "1st arg of F_cond is not N_id!");
-    DBUG_ASSERT ((NODE_TYPE (arg2) == N_id), "2nd arg of F_cond is not N_id!");
-    DBUG_ASSERT ((NODE_TYPE (arg3) == N_id), "3rd arg of F_cond is not N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg1) == N_id, "1st arg of F_cond is not N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg2) == N_id, "2nd arg of F_cond is not N_id!");
+    DBUG_ASSERT (NODE_TYPE (arg3) == N_id, "3rd arg of F_cond is not N_id!");
 
     /*
       DBUG_ASSERT( TYisScalar( ID_NTYPE( arg1)),
@@ -7654,7 +7648,7 @@ COMPprfCond (node *arg_node, info *arg_info)
 node *
 COMPprfSyncIds (node *ids, node *chain)
 {
-    DBUG_ENTER ("COMPprfSyncIds");
+    DBUG_ENTER ();
 
     if (ids != NULL) {
         chain = COMPprfSyncIds (IDS_NEXT (ids), chain);
@@ -7674,7 +7668,7 @@ COMPprfSync (node *arg_node, info *arg_info)
     node *fundef, *let;
     node *vars;
 
-    DBUG_ENTER ("COMPprfSync");
+    DBUG_ENTER ();
 
     fundef = INFO_FUNDEF (arg_info);
 
@@ -7753,7 +7747,7 @@ COMPprf (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
 
-    DBUG_ENTER ("COMPprf");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (prf_comp_funtab[PRF_PRF (arg_node)] != NULL,
                  "prf found that lacks code generation!");
@@ -7791,7 +7785,7 @@ COMPdo (node *arg_node, info *arg_info)
     node *cond, *body;
     char *label_str = NULL;
 
-    DBUG_ENTER ("COMPdo");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (DO_COND (arg_node)) == N_id)
                   || (NODE_TYPE (DO_COND (arg_node)) == N_bool)),
@@ -7865,7 +7859,7 @@ COMPdo (node *arg_node, info *arg_info)
 node *
 COMPcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COMPcond");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (COND_COND (arg_node)) == N_id)
                   || (NODE_TYPE (COND_COND (arg_node)) == N_bool)),
@@ -7901,7 +7895,7 @@ MakeIcmArgs_WL_LOOP1 (node *arg_node)
     node *args;
     int dim;
 
-    DBUG_ENTER ("MakeIcmArgs_WL_LOOP1");
+    DBUG_ENTER ();
 
     dim = WLNODE_DIM (arg_node);
     args = TBmakeExprs (
@@ -7932,7 +7926,7 @@ MakeIcmArgs_WL_LOOP2 (node *arg_node)
 {
     node *args;
 
-    DBUG_ENTER ("MakeIcmArgs_WL_LOOP2");
+    DBUG_ENTER ();
 
     args = TBmakeExprs (MakeIcmArgs_WL_LOOP1 (arg_node),
                         TBmakeExprs (WLBidOrNumMakeIndex (WLNODE_STEP (arg_node),
@@ -7955,7 +7949,7 @@ MakeIcmArgs_WL_OP1 (node *arg_node, node *_ids)
 {
     node *args;
 
-    DBUG_ENTER ("MakeIcmArgs_WL_OP1");
+    DBUG_ENTER ();
 
     args
       = MakeTypeArgs (IDS_NAME (_ids), IDS_TYPE (_ids), FALSE, TRUE, FALSE,
@@ -7981,16 +7975,16 @@ MakeIcmArgs_WL_OP2 (node *arg_node, node *_ids)
     node *withid_ids;
     int num_args;
 
-    DBUG_ENTER ("MakeIcmArgs_WL_OP2");
+    DBUG_ENTER ();
 
     args = MakeIcmArgs_WL_OP1 (arg_node, _ids);
-    DBUG_ASSERT ((args != NULL), "no ICM args found!");
+    DBUG_ASSERT (args != NULL, "no ICM args found!");
     last_arg = args;
     while (EXPRS_NEXT (last_arg) != NULL) {
         last_arg = EXPRS_NEXT (last_arg);
     }
 
-    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (last_arg)) == N_num), "wrong ICM arg found!");
+    DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (last_arg)) == N_num, "wrong ICM arg found!");
     num_args = NUM_VAL (EXPRS_EXPR (last_arg));
 
     withid_ids = WITH2_IDS (wlnode);
@@ -8000,7 +7994,7 @@ MakeIcmArgs_WL_OP2 (node *arg_node, node *_ids)
         num_args--;
         withid_ids = EXPRS_NEXT (withid_ids);
     }
-    DBUG_ASSERT ((num_args == 0), "wrong number of ids in WITHID_IDS found!");
+    DBUG_ASSERT (num_args == 0, "wrong number of ids in WITHID_IDS found!");
 
     DBUG_RETURN (args);
 }
@@ -8025,7 +8019,7 @@ MakeIcm_MT_ADJUST_SCHEDULER (node *arg_node, node *assigns)
 
     int dim;
 
-    DBUG_ENTER ("MakeIcm_MT_ADJUST_SCHEDULER");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (arg_node) == N_wlblock)
                   || (NODE_TYPE (arg_node) == N_wlublock)
@@ -8092,7 +8086,7 @@ MakeIcm_WL_INIT_OFFSET (node *arg_node, node *assigns)
     node *tmp_ids;
     node *idxs_exprs;
 
-    DBUG_ENTER ("MakeIcm_WL_INIT_OFFSET");
+    DBUG_ENTER ();
 
     /* for every ids of wlids (multioperator WL) */
     idxs_exprs = WITH2_IDXS (wlnode);
@@ -8124,7 +8118,7 @@ MakeIcm_WL_INIT_OFFSET (node *arg_node, node *assigns)
 static node *
 MakeIcm_GETVAR_ifNeeded (node *arg_node)
 {
-    DBUG_ENTER ("MakeIcm_GETVAR_ifNeeded");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (arg_node) == N_id) {
         node *res
@@ -8153,7 +8147,7 @@ MakeIcm_WL_ADJUST_OFFSET (node *arg_node, node *assigns)
     node *tmp_ids;
     node *idxs_exprs;
 
-    DBUG_ENTER ("MakeIcm_WL_ADJUST_OFFSET");
+    DBUG_ENTER ();
 
     /* for every ids of wlids (multioperator WL) */
     tmp_ids = wlids;
@@ -8206,7 +8200,7 @@ MakeIcm_WL_SET_OFFSET (node *arg_node, node *assigns)
     node *tmp_ids;
     node *idxs_exprs;
 
-    DBUG_ENTER ("MakeIcm_WL_SET_OFFSET");
+    DBUG_ENTER ();
 
     /* for every ids of wlids (multioperator WL) */
     tmp_ids = wlids;
@@ -8331,7 +8325,7 @@ COMPwith (node *arg_node, info *arg_info)
     bool isfold;
     node *old_withloop;
 
-    DBUG_ENTER ("COMPwith");
+    DBUG_ENTER ();
 
     res_ids = INFO_LASTIDS (arg_info);
 
@@ -8352,7 +8346,7 @@ COMPwith (node *arg_node, info *arg_info)
      * For single propagates, i.e., withloops that have only a propagate
      * operator, we use the fold compilation scheme, as well.
      */
-    DBUG_ASSERT ((WITH_PARTS (arg_node) < 2),
+    DBUG_ASSERT (WITH_PARTS (arg_node) < 2,
                  "with-loop with non-AKS withid and multiple generators found!");
 
     isfold = ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold)
@@ -8489,7 +8483,7 @@ COMPwith (node *arg_node, info *arg_info)
             if ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray)
                 && (!KNOWN_SHAPE (TCgetShapeDim (ID_TYPE (sub_id))))) {
                 if (GENARRAY_DEFAULT (WITH_WITHOP (arg_node)) != NULL) {
-                    DBUG_PRINT ("COMP", ("creating COPY__SHAPE for SUBALLOC var"));
+                    DBUG_PRINT ("creating COPY__SHAPE for SUBALLOC var");
                     /*
                      * copy shape
                      */
@@ -8516,7 +8510,7 @@ COMPwith (node *arg_node, info *arg_info)
                 }
             } else if ((NODE_TYPE (WITH_WITHOP (arg_node)) == N_modarray)
                        && (!KNOWN_SHAPE (TCgetShapeDim (ID_TYPE (sub_id))))) {
-                DBUG_PRINT ("COMP", ("creating WL_MODARRAY_SUBSHAPE for SUBALLOC var"));
+                DBUG_PRINT ("creating WL_MODARRAY_SUBSHAPE for SUBALLOC var");
                 /*
                  * set shape in modarray case based upon result
                  * and index vector
@@ -8557,11 +8551,11 @@ COMPwith (node *arg_node, info *arg_info)
 node *
 COMPpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COMPpart");
-    DBUG_ASSERT ((PART_WITHID (arg_node) != NULL), "N_part without N_withid!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (PART_WITHID (arg_node) != NULL, "N_part without N_withid!");
     PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
 
-    DBUG_ASSERT ((PART_GENERATOR (arg_node) != NULL), "N_part without N_generator!");
+    DBUG_ASSERT (PART_GENERATOR (arg_node) != NULL, "N_part without N_generator!");
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -8581,7 +8575,7 @@ COMPpart (node *arg_node, info *arg_info)
 node *
 COMPwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COMPwithid");
+    DBUG_ENTER ();
     DBUG_ASSERT (WITHID_IDS (arg_node) == NULL,
                  "AUD with loop with WITHID_IDS found!"
                  "Should have been transformed into N_with2 (AKD)!");
@@ -8609,7 +8603,7 @@ COMPgenerator (node *arg_node, info *arg_info)
 {
     node *lower, *upper, *step, *width, *idx;
 
-    DBUG_ENTER ("COMPgenerator");
+    DBUG_ENTER ();
     lower = GENERATOR_BOUND1 (arg_node);
     upper = GENERATOR_BOUND2 (arg_node);
     step = GENERATOR_STEP (arg_node);
@@ -8686,7 +8680,7 @@ COMPwith2 (node *arg_node, info *arg_info)
     node *let_neutral;
     char *break_label_str;
 
-    DBUG_ENTER ("COMPwith2");
+    DBUG_ENTER ();
 
     /*
      * we must store the with-loop ids *before* compiling the codes
@@ -8773,7 +8767,7 @@ COMPwith2 (node *arg_node, info *arg_info)
                 if ((NODE_TYPE (withop) == N_genarray)
                     && (!KNOWN_SHAPE (TCgetShapeDim (ID_TYPE (sub_id))))) {
                     if (GENARRAY_DEFAULT (withop) != NULL) {
-                        DBUG_PRINT ("COMP", ("creating COPY__SHAPE for SUBALLOC var"));
+                        DBUG_PRINT ("creating COPY__SHAPE for SUBALLOC var");
                         /*
                          * copy shape
                          */
@@ -8798,8 +8792,7 @@ COMPwith2 (node *arg_node, info *arg_info)
                     }
                 } else if ((NODE_TYPE (withop) == N_modarray)
                            && (!KNOWN_SHAPE (TCgetShapeDim (ID_TYPE (sub_id))))) {
-                    DBUG_PRINT ("COMP",
-                                ("creating WL_MODARRAY_SUBSHAPE for SUBALLOC var"));
+                    DBUG_PRINT ("creating WL_MODARRAY_SUBSHAPE for SUBALLOC var");
                     /*
                      * set shape in modarray case based upon result
                      * and index vector
@@ -8877,10 +8870,10 @@ COMPwith2 (node *arg_node, info *arg_info)
             break;
 
         case N_break:
-            DBUG_ASSERT ((0), "Break must not appear as a first withop");
+            DBUG_ASSERT (0, "Break must not appear as a first withop");
 
         default:
-            DBUG_ASSERT ((0), "illegal withop type found");
+            DBUG_ASSERT (0, "illegal withop type found");
             break;
         }
     }
@@ -8936,7 +8929,7 @@ COMPwith2 (node *arg_node, info *arg_info)
 static void
 COMPwith3AllocDesc (node *ops, node **pre, node **post)
 {
-    DBUG_ENTER ("COMPwith3AllocDesc");
+    DBUG_ENTER ();
 
     if (global.mutc_suballoc_desc_one_level_up) {
         if (WITHOP_NEXT (ops) != NULL) {
@@ -8948,7 +8941,7 @@ COMPwith3AllocDesc (node *ops, node **pre, node **post)
             node *sub
               = NODE_TYPE (ops) == N_genarray ? GENARRAY_SUB (ops) : MODARRAY_SUB (ops);
             int dim = TCgetDim (ID_TYPE (WITHOP_MEM (ops)));
-            DBUG_ASSERT ((dim >= 0), "Can only handle AKD or better");
+            DBUG_ASSERT (dim >= 0, "Can only handle AKD or better");
             *pre = MakeMutcLocalAllocDescIcm (ID_NAME (sub), ID_TYPE (sub), 1,
                                               TBmakeNum (dim), *pre);
             *pre = TCmakeAssignIcm2 ("ND_DECL__DESC",
@@ -8962,7 +8955,7 @@ COMPwith3AllocDesc (node *ops, node **pre, node **post)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -8982,7 +8975,7 @@ COMPwith3 (node *arg_node, info *arg_info)
     node *pre = NULL;
     node *post = NULL;
     node *ops = NULL;
-    DBUG_ENTER ("COMPwith3");
+    DBUG_ENTER ();
 
     if (global.backend == BE_mutc) {
         INFO_CONCURRENTRANGES (arg_info) = WITH3_USECONCURRENTRANGES (arg_node);
@@ -9038,7 +9031,7 @@ COMPrange (node *arg_node, info *arg_info)
 
     node *loopnests;
 
-    DBUG_ENTER ("COMPrange");
+    DBUG_ENTER ();
 
     if (global.backend == BE_mutc) {
         buffer = SBUFcreate (1024);
@@ -9088,8 +9081,7 @@ COMPrange (node *arg_node, info *arg_info)
         family = TCappendAssign (family, create);
 #if 0
     if (INFO_CONCURRENTRANGES( arg_info)) {
-      DBUG_ASSERT( ( INFO_WITH3_FOLDS( arg_info) == NULL),
-                   "Fold and concurrent not supported");
+      DBUG_ASSERT ( INFO_WITH3_FOLDS( arg_info) == NULL, "Fold and concurrent not supported");
       family = TCappendAssign(family, next);
       family = TCappendAssign(family, sync);
     } else {
@@ -9103,7 +9095,7 @@ COMPrange (node *arg_node, info *arg_info)
 
         if (INFO_WITH3_FOLDS (arg_info) != NULL) {
             node *save;
-            DBUG_ASSERT ((IDS_NEXT (INFO_WITH3_FOLDS (arg_info)) == NULL),
+            DBUG_ASSERT (IDS_NEXT (INFO_WITH3_FOLDS (arg_info)) == NULL,
                          "Only single fold with3 loops supported");
             save = TCmakeAssignIcm1 ("SAC_MUTC_SAVE",
                                      TCmakeIdCopyStringNt (IDS_NAME (
@@ -9181,7 +9173,7 @@ COMPwlseg (node *arg_node, info *arg_info)
     node *ret_node;
     node *next_icms = NULL;
 
-    DBUG_ENTER ("COMPWLsegx");
+    DBUG_ENTER ();
 
     /*
      * stack old 'wlseg'.
@@ -9268,7 +9260,7 @@ COMPwlxblock (node *arg_node, info *arg_info)
     node *node_icms = NULL;
     node *next_icms = NULL;
 
-    DBUG_ENTER ("COMPwlxblock");
+    DBUG_ENTER ();
 
     level = WLXBLOCK_LEVEL (arg_node);
     dim = WLXBLOCK_DIM (arg_node);
@@ -9285,14 +9277,14 @@ COMPwlxblock (node *arg_node, info *arg_info)
         node_icms = MakeIcm_WL_ADJUST_OFFSET (arg_node, NULL);
     } else {
         if (WLXBLOCK_NEXTDIM (arg_node) != NULL) {
-            DBUG_ASSERT ((WLXBLOCK_CONTENTS (arg_node) == NULL),
+            DBUG_ASSERT (WLXBLOCK_CONTENTS (arg_node) == NULL,
                          "CONTENTS and NEXTDIM used simultaneous!");
 
             node_icms = TRAVdo (WLXBLOCK_NEXTDIM (arg_node), arg_info);
         }
 
         if (WLXBLOCK_CONTENTS (arg_node) != NULL) {
-            DBUG_ASSERT ((WLXBLOCK_NEXTDIM (arg_node) == NULL),
+            DBUG_ASSERT (WLXBLOCK_NEXTDIM (arg_node) == NULL,
                          "CONTENTS and NEXTDIM used simultaneous!");
 
             node_icms = TRAVdo (WLXBLOCK_CONTENTS (arg_node), arg_info);
@@ -9304,7 +9296,7 @@ COMPwlxblock (node *arg_node, info *arg_info)
      *******************************************/
 
     if (WLXBLOCK_ISNOOP (arg_node)) {
-        DBUG_ASSERT ((level == 0), "inner NOOP N_wl...-node found!");
+        DBUG_ASSERT (level == 0, "inner NOOP N_wl...-node found!");
 
         if (offset_needed) {
             if (is_block) {
@@ -9409,7 +9401,7 @@ COMPwlblock (node *arg_node, info *arg_info)
 {
     node *res;
 
-    DBUG_ENTER ("COMPwlblock");
+    DBUG_ENTER ();
 
     res = COMPwlxblock (arg_node, arg_info);
 
@@ -9437,7 +9429,7 @@ COMPwlublock (node *arg_node, info *arg_info)
 {
     node *res;
 
-    DBUG_ENTER ("COMPwlublock");
+    DBUG_ENTER ();
 
     res = COMPwlxblock (arg_node, arg_info);
 
@@ -9477,7 +9469,7 @@ COMPwlstride (node *arg_node, info *arg_info)
 
     static int simd_counter = 0;
 
-    DBUG_ENTER ("COMPwlstridex");
+    DBUG_ENTER ();
 
     /*
      * stack old 'wlstride'.
@@ -9509,7 +9501,7 @@ COMPwlstride (node *arg_node, info *arg_info)
      *******************************************/
 
     if (WLSTRIDE_ISNOOP (arg_node)) {
-        DBUG_ASSERT ((level == 0), "inner NOOP N_wl...-node found!");
+        DBUG_ASSERT (level == 0, "inner NOOP N_wl...-node found!");
 
         if (offset_needed) {
             if (mt_active) {
@@ -9527,7 +9519,7 @@ COMPwlstride (node *arg_node, info *arg_info)
         /*
          * unrolling
          */
-        DBUG_ASSERT ((level > 0), "outer UNROLLING stride found!");
+        DBUG_ASSERT (level > 0, "outer UNROLLING stride found!");
 
         if (mt_active) {
             icm_name_begin = "WL_MT_STRIDE_UNROLL_BEGIN";
@@ -9537,10 +9529,10 @@ COMPwlstride (node *arg_node, info *arg_info)
             icm_name_end = "WL_STRIDE_UNROLL_END";
         }
 
-        DBUG_ASSERT ((((NUM_VAL (WLSTRIDE_BOUND2 (arg_node))
-                        - NUM_VAL (WLSTRIDE_BOUND1 (arg_node)))
-                       % NUM_VAL (WLSTRIDE_STEP (arg_node)))
-                      == 0),
+        DBUG_ASSERT (((NUM_VAL (WLSTRIDE_BOUND2 (arg_node))
+                       - NUM_VAL (WLSTRIDE_BOUND1 (arg_node)))
+                      % NUM_VAL (WLSTRIDE_STEP (arg_node)))
+                       == 0,
                      "'step' is not a divisor of 'bound2 - bound1'!");
 
         for (cnt_unroll = (NUM_VAL (WLSTRIDE_BOUND2 (arg_node))
@@ -9649,7 +9641,7 @@ COMPwlgrid (node *arg_node, info *arg_info)
     node *node_icms = NULL;
     node *next_icms = NULL;
 
-    DBUG_ENTER ("COMPwlgridx");
+    DBUG_ENTER ();
 
     dim = WLGRID_DIM (arg_node);
 
@@ -9664,7 +9656,7 @@ COMPwlgrid (node *arg_node, info *arg_info)
          *******************************************/
 
         if (WLGRID_NEXTDIM (arg_node) != NULL) {
-            DBUG_ASSERT ((WLGRID_CODE (arg_node) == NULL),
+            DBUG_ASSERT (WLGRID_CODE (arg_node) == NULL,
                          "CODE and NEXTDIM used simultaneous!");
 
             node_icms
@@ -9692,9 +9684,9 @@ COMPwlgrid (node *arg_node, info *arg_info)
              */
             cexprs = CODE_CEXPRS (WLGRID_CODE (arg_node));
 
-            DBUG_ASSERT ((WLGRID_CBLOCK (arg_node) != NULL),
+            DBUG_ASSERT (WLGRID_CBLOCK (arg_node) != NULL,
                          "no code block found in N_Ncode node");
-            DBUG_ASSERT ((WLGRID_CBLOCK_INSTR (arg_node) != NULL),
+            DBUG_ASSERT (WLGRID_CBLOCK_INSTR (arg_node) != NULL,
                          "first instruction of block is NULL"
                          " (should be a N_empty node)");
 
@@ -9716,7 +9708,7 @@ COMPwlgrid (node *arg_node, info *arg_info)
                 case N_genarray:
                     /* here is no break missing! */
                 case N_modarray:
-                    DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "code expr is not a id");
+                    DBUG_ASSERT (NODE_TYPE (cexpr) == N_id, "code expr is not a id");
 
                     if (WITHOP_IDX (withop) != NULL) {
                         icm_name = "WL_INC_OFFSET";
@@ -9743,7 +9735,7 @@ COMPwlgrid (node *arg_node, info *arg_info)
                     break;
 
                 default:
-                    DBUG_ASSERT ((0), "illegal withop type found");
+                    DBUG_ASSERT (0, "illegal withop type found");
                     icm_name = NULL;
                     icm_args = NULL;
                     break;
@@ -9769,7 +9761,7 @@ COMPwlgrid (node *arg_node, info *arg_info)
 
     if ((WITHID_VECNEEDED (WITH2_WITHID (wlnode))) && (!WLGRID_ISNOOP (arg_node))
         && ((WLGRID_CODE (arg_node) != NULL) || (WLGRID_NEXTDIM (arg_node) != NULL))) {
-        DBUG_PRINT ("COMP", ("IV %s is built! :(", ID_NAME (WITH2_VEC (wlnode))));
+        DBUG_PRINT ("IV %s is built! :(", ID_NAME (WITH2_VEC (wlnode)));
         node_icms = TCmakeAssignIcm1 ("WL_SET_IDXVEC", MakeIcmArgs_WL_LOOP1 (arg_node),
                                       node_icms);
     }
@@ -9882,7 +9874,7 @@ COMPwlgrid (node *arg_node, info *arg_info)
 node *
 COMPcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COMPcode");
+    DBUG_ENTER ();
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
@@ -9892,3 +9884,5 @@ COMPcode (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

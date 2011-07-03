@@ -5,7 +5,9 @@
  */
 
 #include "constraint_statistics.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -48,7 +50,7 @@ static info *
 InitCounters (info *info)
 {
     int i;
-    DBUG_ENTER ("InitInfo");
+    DBUG_ENTER ();
 
     for (i = 0; i < NUM_CONSTRAINT_PRFS; i++) {
         INFO_PRF_COUNT (info, i) = 0;
@@ -63,7 +65,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -78,7 +80,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     INFO_PRF_CNT (info) = MEMfree (INFO_PRF_CNT (info));
     info = MEMfree (info);
@@ -104,7 +106,7 @@ PrintStatistics (node *fundef, info *info)
     char *tmp;
     int i;
 
-    DBUG_ENTER ("PrintStatistics");
+    DBUG_ENTER ();
 
     if (!INFO_ALL_GONE (info)) {
         buf = SBUFcreate (80);
@@ -136,7 +138,7 @@ PrintStatistics (node *fundef, info *info)
         buf = SBUFfree (buf);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -154,7 +156,7 @@ CSdoPrintConstraintStatistics (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CSdoPrintConstraintStatistics");
+    DBUG_ENTER ();
 
     TRAVpush (TR_cs);
 
@@ -188,7 +190,7 @@ CSdoPrintConstraintStatistics (node *arg_node)
 node *
 CSfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /**
@@ -221,7 +223,7 @@ CSfundef (node *arg_node, info *arg_info)
 node *
 CSprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSprf");
+    DBUG_ENTER ();
 
     if ((PRF_PRF (arg_node) >= MIN_CONSTRAINT_PRF)
         && (PRF_PRF (arg_node) <= MAX_CONSTRAINT_PRF)) {
@@ -232,3 +234,5 @@ CSprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -6,7 +6,10 @@
  *****************************************************************************/
 
 #include "omp_find_private.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "OFP"
+#include "debug.h"
+
 #include "memory.h"
 #include "LookUpTable.h"
 #include "DataFlowMask.h"
@@ -48,7 +51,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -63,7 +66,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -75,7 +78,7 @@ OFPdoFindPrivate (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("OFPdoFindPrivate");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -93,7 +96,7 @@ OFPdoFindPrivate (node *arg_node)
 node *
 OFPmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OFPmodule");
+    DBUG_ENTER ();
 
     MODULE_TYPES (arg_node) = TRAVopt (MODULE_TYPES (arg_node), arg_info);
     MODULE_OBJS (arg_node) = TRAVopt (MODULE_OBJS (arg_node), arg_info);
@@ -108,14 +111,14 @@ OFPmodule (node *arg_node, info *arg_info)
 node *
 OFPlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OFPlet");
+    DBUG_ENTER ();
 
     /*
      * if it is fold operation, the ids should be tagged as OpenMP reduction variable
      */
     if ((NODE_TYPE (LET_EXPR (arg_node)) == N_with2)
         && (NODE_TYPE (WITH2_WITHOP (LET_EXPR (arg_node))) == N_fold)) {
-        DBUG_PRINT ("OFP", ("the ids should be tagged as OpenMP reduction var\n"));
+        DBUG_PRINT ("the ids should be tagged as OpenMP reduction var\n");
         AVIS_ISOMPREDUCTION (IDS_AVIS (LET_IDS (arg_node))) = TRUE;
         INFO_OMP_REDUCTION_VAR (arg_info) = AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)));
     }
@@ -134,7 +137,7 @@ OFPlet (node *arg_node, info *arg_info)
 node *
 OFPwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OFPwith2");
+    DBUG_ENTER ();
 
     INFO_NUM_WITH_LOOP (arg_info)++;
 
@@ -148,8 +151,8 @@ OFPwith2 (node *arg_node, info *arg_info)
 
     INFO_NUM_WITH_LOOP (arg_info)--;
 
-    DBUG_PRINT ("OFP", ("OpenMP reducation var %s\n", INFO_OMP_REDUCTION_VAR (arg_info)));
-    DBUG_PRINT ("OFP", ("OpenMP private list %s\n", INFO_OMP_PRIVATE_LIST (arg_info)));
+    DBUG_PRINT ("OpenMP reducation var %s\n", INFO_OMP_REDUCTION_VAR (arg_info));
+    DBUG_PRINT ("OpenMP private list %s\n", INFO_OMP_PRIVATE_LIST (arg_info));
 
     WITH2_OMP_PRIVATE_LIST (arg_node) = INFO_OMP_PRIVATE_LIST (arg_info);
     INFO_OMP_PRIVATE_LIST (arg_info) = NULL;
@@ -160,7 +163,7 @@ OFPwith2 (node *arg_node, info *arg_info)
 node *
 OFPwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OFPwithid");
+    DBUG_ENTER ();
 
     INFO_IN_WITH_LOOP_ID (arg_info) = TRUE;
 
@@ -184,7 +187,7 @@ OFPwithid (node *arg_node, info *arg_info)
 node *
 OFPwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OFPwith");
+    DBUG_ENTER ();
 
     DBUG_RETURN (arg_node);
 }
@@ -192,7 +195,7 @@ OFPwith (node *arg_node, info *arg_info)
 node *
 OFPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OFPfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -212,7 +215,7 @@ OFPfundef (node *arg_node, info *arg_info)
 node *
 OFPids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OFPIds");
+    DBUG_ENTER ();
 
     if (INFO_NUM_WITH_LOOP (arg_info) > 0) {
         if ((!AVIS_ISOMPPRIVATE (IDS_AVIS (arg_node)))
@@ -241,7 +244,7 @@ OFPids (node *arg_node, info *arg_info)
 node *
 OFPid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OFPId");
+    DBUG_ENTER ();
 
     if (INFO_IN_WITH_LOOP_ID (arg_info)) {
         if (!AVIS_ISOMPPRIVATE (ID_AVIS (arg_node))) {
@@ -261,3 +264,5 @@ OFPid (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

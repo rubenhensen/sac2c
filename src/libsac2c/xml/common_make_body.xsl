@@ -46,20 +46,9 @@ version="1.0">
     <xsl:value-of select="'int cnt;'" />
   </xsl:if>
   <!-- DBUG_ENTER call -->
-  <xsl:value-of select="'DBUG_ENTER( &quot;TBmake'"/>
-  <xsl:call-template name="uppercase" >
-    <xsl:with-param name="string" >
-      <xsl:value-of select="substring( @name, 1, 1)" />
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:call-template name="lowercase" >
-    <xsl:with-param name="string" >
-      <xsl:value-of select="substring( @name, 2, 30)" />
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'&quot;);'"/>
+  <xsl:value-of select="'DBUG_ENTER ();'"/>
   <!-- allocate new node this -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;allocating node structure&quot;));'"/>
+  <xsl:value-of select="'DBUG_PRINT (&quot;allocating node structure&quot;);'"/>
   <xsl:value-of select="'size = sizeof( struct NODE_ALLOC_N_'" />
   <xsl:call-template name="uppercase" >
     <xsl:with-param name="string">
@@ -143,9 +132,9 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="';'" />
 
-  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;address: &quot;F_PTR, this));'"/>
+  <xsl:value-of select="'DBUG_PRINT (&quot;address: &quot;F_PTR, this);'"/>
   <!-- set node type -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting node type&quot;));'"/>
+  <xsl:value-of select="'DBUG_PRINT (&quot;setting node type&quot;);'"/>
   <xsl:value-of select="'NODE_TYPE(this) = '" />
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
@@ -154,11 +143,11 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="';'" />
   <!-- set lineno -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting lineno to %d&quot;, global.linenum));'"/>
+  <xsl:value-of select="'DBUG_PRINT (&quot;setting lineno to %d&quot;, global.linenum);'"/>
   <xsl:value-of select="'NODE_LINE( this) = global.linenum;'" />
   <xsl:value-of select="'NODE_ERROR( this) = NULL;'" />
   <!-- set filename -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;setting filename to %s&quot;, global.filename));'"/>
+  <xsl:value-of select="'DBUG_PRINT (&quot;setting filename to %s&quot;, global.filename);'"/>
   <xsl:value-of select="'NODE_FILE( this) = global.filename;'" />
   <!-- assign sons and attributes a value -->
   <xsl:apply-templates select="sons/son" mode="make-body"/>
@@ -169,7 +158,7 @@ version="1.0">
   <xsl:call-template name="newline" />
   <xsl:value-of select="'#ifndef DBUG_OFF'" />
   <xsl:call-template name="newline" />
-  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;doing son target checks&quot;));'"/>
+  <xsl:value-of select="'DBUG_PRINT (&quot;doing son target checks&quot;);'"/>
   <!-- generate warning messages -->
   <xsl:apply-templates select="sons/son[not( @default)]" mode="make-assertion-target">
     <xsl:with-param name="self"><xsl:value-of select="'this'"/></xsl:with-param>
@@ -178,13 +167,13 @@ version="1.0">
   <xsl:value-of select="'#endif /* DBUG_OFF */'" />
   <xsl:call-template name="newline" />
   <!-- DBUG_RETURN call -->
-  <xsl:value-of select="'DBUG_RETURN( this);'"/>
+  <xsl:value-of select="'DBUG_RETURN (this);'"/>
   <xsl:value-of select="'}'"/>
 </xsl:template>
 
 <!-- generate the assignment for a son -->
 <xsl:template match="sons/son" mode="make-body">
-  <xsl:value-of select="'DBUG_PRINT( &quot;MAKE&quot;, (&quot;assigning son '"/>
+  <xsl:value-of select="'DBUG_PRINT (&quot;assigning son '"/>
   <xsl:value-of select="@name"/>
   <xsl:value-of select="' initial value: &quot;F_PTR, '"/>
   <xsl:choose>
@@ -195,7 +184,7 @@ version="1.0">
       <xsl:value-of select="@name" />
     </xsl:otherwise>
   </xsl:choose>
-  <xsl:value-of select="'));'"/>
+  <xsl:value-of select="');'"/>
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
       <xsl:value-of select="'this'" />

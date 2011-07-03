@@ -28,7 +28,10 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "free.h"
 #include "str.h"
 #include "memory.h"
@@ -64,7 +67,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -82,7 +85,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -113,7 +116,7 @@ FreeInfo (info *info)
 node *
 RCMdoRefcountMinimization (node *syntax_tree)
 {
-    DBUG_ENTER ("RCMdoRefcountMinimization");
+    DBUG_ENTER ();
 
     TRAVpush (TR_rcm);
     syntax_tree = TRAVdo (syntax_tree, NULL);
@@ -139,7 +142,7 @@ MakeRCMAssignments (nlut_t *nlut)
     node *res, *avis, *prf;
     int count;
 
-    DBUG_ENTER ("MakeRCMAssignments");
+    DBUG_ENTER ();
 
     res = NULL;
 
@@ -148,7 +151,7 @@ MakeRCMAssignments (nlut_t *nlut)
         count = NLUTgetNum (nlut, avis);
         NLUTsetNum (nlut, avis, 0);
 
-        DBUG_ASSERT ((count > 0), "Illegal increment found!");
+        DBUG_ASSERT (count > 0, "Illegal increment found!");
 
         prf = TCmakePrf2 (F_inc_rc, TBmakeId (avis), TBmakeNum (count));
 
@@ -163,7 +166,7 @@ MakeRCMAssignments (nlut_t *nlut)
 static node *
 ModifyExistingIncRcs (nlut_t *nlut, node *ass)
 {
-    DBUG_ENTER ("ModifyExistingIncRcs");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (ass) != NULL) {
         ASSIGN_NEXT (ass) = ModifyExistingIncRcs (nlut, ASSIGN_NEXT (ass));
@@ -177,7 +180,7 @@ ModifyExistingIncRcs (nlut_t *nlut, node *ass)
 
         avis = ID_AVIS (PRF_ARG1 (ASSIGN_RHS (ass)));
         count = NLUTgetNum (nlut, avis);
-        DBUG_ASSERT ((count >= 0), "Illegal increment found!");
+        DBUG_ASSERT (count >= 0, "Illegal increment found!");
         NLUTsetNum (nlut, avis, 0);
 
         NUM_VAL (PRF_ARG2 (ASSIGN_RHS (ass))) += count;
@@ -189,7 +192,7 @@ ModifyExistingIncRcs (nlut_t *nlut, node *ass)
 static node *
 PrependRCMAssignments (nlut_t *nlut, node *ass)
 {
-    DBUG_ENTER ("PrependRCMAssignments");
+    DBUG_ENTER ();
 
     if ((ass != NULL) && (NODE_TYPE (ass) == N_empty)) {
         ass = FREEdoFreeNode (ass);
@@ -229,7 +232,7 @@ PrependRCMAssignments (nlut_t *nlut, node *ass)
 node *
 RCMap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCMap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
@@ -254,11 +257,11 @@ RCMarg (node *arg_node, info *arg_info)
 {
     int n;
 
-    DBUG_ENTER ("RCMarg");
+    DBUG_ENTER ();
 
     n = NLUTgetNum (INFO_ENV (arg_info), ARG_AVIS (arg_node));
 
-    DBUG_ASSERT ((n == 0), "Enequal numbers of inc_rc / dec_rc removed!");
+    DBUG_ASSERT (n == 0, "Enequal numbers of inc_rc / dec_rc removed!");
 
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
@@ -277,7 +280,7 @@ RCMarg (node *arg_node, info *arg_info)
 node *
 RCMassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCMassign");
+    DBUG_ENTER ();
 
     /*
      * bottom-up traversal
@@ -310,7 +313,7 @@ RCMcode (node *arg_node, info *arg_info)
     nlut_t *oldenv;
     dfmask_t *oldusedmask;
 
-    DBUG_ENTER ("RCMcode");
+    DBUG_ENTER ();
 
     oldenv = INFO_ENV (arg_info);
     oldusedmask = INFO_USEDMASK (arg_info);
@@ -347,7 +350,7 @@ RCMrange (node *arg_node, info *arg_info)
     nlut_t *oldenv;
     dfmask_t *oldusedmask;
 
-    DBUG_ENTER ("RCMrange");
+    DBUG_ENTER ();
 
     /*
      * visit all N_id sons
@@ -395,7 +398,7 @@ RCMcond (node *arg_node, info *arg_info)
     dfmask_t *usedmask;
     node *avis;
 
-    DBUG_ENTER ("RCMcond");
+    DBUG_ENTER ();
 
     /*
      * Traverse both branches
@@ -471,7 +474,7 @@ RCMfuncond (node *arg_node, info *arg_info)
 {
     node *lhs;
 
-    DBUG_ENTER ("RCMfuncond");
+    DBUG_ENTER ();
 
     if (INFO_ENV2 (arg_info) == NULL) {
         INFO_ENV2 (arg_info) = NLUTduplicateNlut (INFO_ENV (arg_info));
@@ -515,7 +518,7 @@ RCMfundef (node *arg_node, info *arg_info)
 {
     dfmask_base_t *maskbase;
 
-    DBUG_ENTER ("RCMfundef");
+    DBUG_ENTER ();
 
     if ((!FUNDEF_ISCONDFUN (arg_node)) || (arg_info != NULL)) {
 
@@ -631,7 +634,7 @@ RCMfundef (node *arg_node, info *arg_info)
 node *
 RCMid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCMid");
+    DBUG_ENTER ();
 
     DFMsetMaskEntrySet (INFO_USEDMASK (arg_info), NULL, ID_AVIS (arg_node));
 
@@ -650,12 +653,12 @@ RCMids (node *arg_node, info *arg_info)
 {
     int n;
 
-    DBUG_ENTER ("RCMids");
+    DBUG_ENTER ();
 
     n = NLUTgetNum (INFO_ENV (arg_info), IDS_AVIS (arg_node));
 
-    DBUG_ASSERTF ((n == 0), ("Unequal numbers of inc_rc / dec_rc removed for %s!",
-                             AVIS_NAME (IDS_AVIS (arg_node))));
+    DBUG_ASSERT (n == 0, "Unequal numbers of inc_rc / dec_rc removed for %s!",
+                 AVIS_NAME (IDS_AVIS (arg_node)));
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
@@ -674,7 +677,7 @@ RCMids (node *arg_node, info *arg_info)
 node *
 RCMlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCMlet");
+    DBUG_ENTER ();
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -697,7 +700,7 @@ RCMprf (node *arg_node, info *arg_info)
 {
     int env, n, min;
 
-    DBUG_ENTER ("RCMprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_dec_rc:
@@ -786,7 +789,7 @@ RCMprf (node *arg_node, info *arg_info)
 node *
 RCMreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCMreturn");
+    DBUG_ENTER ();
 
     if (!FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))) {
         if (RETURN_EXPRS (arg_node) != NULL) {
@@ -804,3 +807,5 @@ RCMreturn (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Reference counting minimization template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

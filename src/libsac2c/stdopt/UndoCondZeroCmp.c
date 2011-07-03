@@ -19,7 +19,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UCZC"
+#include "debug.h"
+
 #include "memory.h"
 #include "new_typecheck.h"
 #include "globals.h"
@@ -54,7 +57,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -69,7 +72,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -97,7 +100,7 @@ FreeInfo (info *info)
 static bool
 IsComparisonOperator (prf op)
 {
-    DBUG_ENTER ("IsComparisonOperator");
+    DBUG_ENTER ();
 
     DBUG_RETURN (op == F_eq_SxS || op == F_eq_SxV || op == F_eq_VxS || op == F_eq_VxV
                  || op == F_neq_SxS || op == F_neq_SxV || op == F_neq_VxS
@@ -123,7 +126,7 @@ IsComparisonOperator (prf op)
 static prf
 CmpToSub (prf op)
 {
-    DBUG_ENTER ("ToScalarComparison");
+    DBUG_ENTER ();
 
     switch (op) {
     // SxS
@@ -206,7 +209,7 @@ IsNodeLiteralZero (node *node)
     constant *argconst;
     bool res = FALSE;
 
-    DBUG_ENTER ("IsNodeLiteralZero");
+    DBUG_ENTER ();
 
     argconst = COaST2Constant (node);
 
@@ -233,7 +236,7 @@ IsNodeLiteralZero (node *node)
 node *
 UCZCblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("UCZCblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
@@ -255,7 +258,7 @@ UCZCblock (node *arg_node, info *arg_info)
 node *
 UCZCassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("UCZCassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -289,7 +292,7 @@ UCZCassign (node *arg_node, info *arg_info)
 node *
 UCZClet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("UCZClet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
@@ -301,9 +304,8 @@ UCZClet (node *arg_node, info *arg_info)
 node *
 UCZCprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("UCZCprf");
-    DBUG_PRINT ("UCZC",
-                ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
     // if we find a pattern like (a > 0)
     // then look in the previous assignments
@@ -312,7 +314,7 @@ UCZCprf (node *arg_node, info *arg_info)
     // if so we change (a > 0) into (t1 > t2)
     if (IsComparisonOperator (PRF_PRF (arg_node))
         && IsNodeLiteralZero (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))) {
-        DBUG_PRINT ("UCZC", ("find pattern a > 0"));
+        DBUG_PRINT ("find pattern a > 0");
 
         // the key issue now is find the pattern a = t1 -t2
         node *t1 = NULL;
@@ -324,7 +326,7 @@ UCZCprf (node *arg_node, info *arg_info)
                      PMvar (1, PMAgetNode (&t1), 0), PMvar (1, PMAgetNode (&t2), 0));
 
         if (PMmatchFlat (pat, EXPRS_EXPR (PRF_ARGS (arg_node)))) {
-            DBUG_PRINT ("UCZC", ("pattern matches a = t1 - t2"));
+            DBUG_PRINT ("pattern matches a = t1 - t2");
 
             // free exprs node d in expression d > 0
             FREEdoFreeNode (EXPRS_EXPR (PRF_ARGS (arg_node)));
@@ -336,7 +338,7 @@ UCZCprf (node *arg_node, info *arg_info)
             PRF_ARGS (arg_node)
               = TBmakeExprs (DUPdoDupNode (t1), TBmakeExprs (DUPdoDupNode (t2), NULL));
         } else {
-            DBUG_PRINT ("UCZC", ("pattern unmatches"));
+            DBUG_PRINT ("pattern unmatches");
         }
 
         pat = PMfree (pat);
@@ -360,7 +362,7 @@ node *
 UCZCdoUndoCondZeroCmp (node *arg_node)
 {
     info *info;
-    DBUG_ENTER ("UCZCdoUndoCondZeroCmp");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -395,13 +397,13 @@ UCZCfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("UCZCfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    DBUG_PRINT ("UCZC", ("traversing body of (%s) %s",
-                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                         FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("traversing body of (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -415,3 +417,5 @@ UCZCfundef (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

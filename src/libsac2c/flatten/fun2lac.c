@@ -18,7 +18,9 @@
  *
  *****************************************************************************/
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "types.h"
 #include "new_types.h"
 #include "tree_basic.h"
@@ -194,7 +196,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -215,7 +217,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -228,7 +230,7 @@ SearchStoreVar (node *avis, node *assigns)
     node *tmp;
     node *res;
 
-    DBUG_ENTER ("SearchStoreVar");
+    DBUG_ENTER ();
 
     res = NULL;
     tmp = assigns;
@@ -248,7 +250,7 @@ SearchStoreVar (node *avis, node *assigns)
 node *
 F2Lassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("F2Lassign");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (ASSIGN_INSTR (arg_node))) {
     case N_return:
@@ -292,7 +294,7 @@ F2Lassign (node *arg_node, info *arg_info)
 node *
 F2Lcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("F2Lcond");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (!INFO_BELOW_COND (arg_info), "Nested conditional found.");
 
@@ -311,7 +313,7 @@ Arg2Var (node *arg, info *arg_info)
     char *new_name;
     node *new_avis;
 
-    DBUG_ENTER ("Arg2Var");
+    DBUG_ENTER ();
 
     new_name = TRAVtmpVarName (ARG_NAME (arg));
     new_avis = TBmakeAvis (new_name, TYcopyType (AVIS_TYPE (ARG_AVIS (arg))));
@@ -327,7 +329,7 @@ F2Larg (node *arg_node, info *arg_info)
     node *recarg, *new_avis, *tmp_avis;
     bool needs_aux_assign;
 
-    DBUG_ENTER ("F2Larg");
+    DBUG_ENTER ();
 
     recarg = EXPRS_EXPR (INFO_RECARG (arg_info));
     new_avis = NULL;
@@ -385,7 +387,7 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
     node *loop, *fun_body;
     node *body_assigns, *then_assigns, *else_assigns, *return_assign, *loop_pred;
 
-    DBUG_ENTER ("TransformIntoDoLoop");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
@@ -482,7 +484,7 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
 node *
 F2Lfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("F2Lfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISCONDFUN (arg_node)) {
         FUNDEF_ISCONDFUN (arg_node) = FALSE;
@@ -520,7 +522,7 @@ F2Lfundef (node *arg_node, info *arg_info)
 node *
 F2Lmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FUN2LACmodul");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -546,7 +548,7 @@ F2LdoFun2Lac (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("F2LdoFun2Lac");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     f2l_lut = LUTgenerateLut ();
@@ -560,3 +562,5 @@ F2LdoFun2Lac (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

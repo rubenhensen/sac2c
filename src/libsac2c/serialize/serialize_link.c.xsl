@@ -87,7 +87,8 @@ version="1.0">
 #include "serialize_stack.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "dbug.h"
+#define DBUG_PREFIX "SET"
+#include "debug.h"
 
   </xsl:text>
   <!-- functions -->
@@ -120,13 +121,7 @@ version="1.0">
   <!-- start of body -->
   <xsl:value-of select="'{'"/>
   <!-- DBUG_ENTER statement -->
-  <xsl:value-of select="'DBUG_ENTER( &quot;SET'"/>
-  <xsl:call-template name="lowercase" >
-    <xsl:with-param name="string" >
-      <xsl:value-of select="@name" />
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'&quot;);'" />
+  <xsl:value-of select="'DBUG_ENTER ();'"/>
   <!-- serialize link attributes -->
   <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Link&quot;] | attributes/attribute[type/@name=&quot;CodeLink&quot;]" />
   <!-- trav sons -->
@@ -134,7 +129,7 @@ version="1.0">
   <!-- trav node attributes -->
   <xsl:apply-templates select="attributes/attribute[type/@name=&quot;Node&quot;]" mode="trav-node-attribs" />
   <!-- DBUG_RETURN call -->
-  <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
+  <xsl:value-of select="'DBUG_RETURN (arg_node);'"/>
   <!-- end of body -->
   <xsl:value-of select="'}'"/>
 </xsl:template>

@@ -25,7 +25,10 @@
 #include "DupTree.h"
 #include "free.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "RI"
+#include "debug.h"
+
 #include "print.h"
 #include "str.h"
 #include "memory.h"
@@ -64,7 +67,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -79,7 +82,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -104,7 +107,7 @@ TypeMatch (node *cand, node *lhs)
     ntype *lhs_aks;
     ntype *cand_aks;
 
-    DBUG_ENTER ("TypeMatch");
+    DBUG_ENTER ();
 
     if (cand != NULL) {
         if (EXPRS_NEXT (cand) != NULL) {
@@ -143,9 +146,9 @@ EMRIdoReuseInference (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("EMRIdoReuseInference");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
                  "ReuseInference not started with modul node");
 
     arg_info = MakeInfo ();
@@ -172,7 +175,7 @@ EMRIdoReuseInference (node *arg_node)
 node *
 EMRIassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRIassign");
+    DBUG_ENTER ();
 
     /*
      * Traverse instruction
@@ -206,7 +209,7 @@ EMRIassign (node *arg_node, info *arg_info)
 node *
 EMRIlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRIlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 
@@ -231,7 +234,7 @@ EMRIprf (node *arg_node, info *arg_info)
     ntype *rt, *lt;
     node *rhc;
 
-    DBUG_ENTER ("EMRIprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_tobool_S:
@@ -318,22 +321,22 @@ EMRIprf (node *arg_node, info *arg_info)
     case F_shape_A:
     case F_idxs2offset:
         if (PRF_ARGS (arg_node) != NULL) {
-            DBUG_PRINT ("RI", ("prf args"));
-            DBUG_EXECUTE ("RI", PRTdoPrintFile (stderr, PRF_ARGS (arg_node)););
+            DBUG_PRINT ("prf args");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, PRF_ARGS (arg_node)));
         }
 
         rhc = TypeMatch (DUPdoDupTree (PRF_ARGS (arg_node)), INFO_LHS (arg_info));
 
         if (rhc != NULL) {
-            DBUG_PRINT ("RI", ("rhc"));
-            DBUG_EXECUTE ("RI", PRTdoPrintFile (stderr, rhc););
+            DBUG_PRINT ("rhc");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, rhc));
         }
 
         INFO_RHSCAND (arg_info) = rhc;
 
         if (INFO_RHSCAND (arg_info) != NULL) {
-            DBUG_PRINT ("RI", ("RHSCAND"));
-            DBUG_EXECUTE ("RI", PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)););
+            DBUG_PRINT ("RHSCAND");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
         }
         break;
 
@@ -345,7 +348,7 @@ EMRIprf (node *arg_node, info *arg_info)
         break;
 
     case F_reshape_VxA:
-        DBUG_ASSERT ((0), "Illegal prf!");
+        DBUG_ASSERT (0, "Illegal prf!");
         break;
 
     case F_alloc_or_reshape:
@@ -396,8 +399,8 @@ EMRIprf (node *arg_node, info *arg_info)
         if (TYeqTypes (lt, rt)) {
             INFO_RHSCAND (arg_info) = DUPdoDupTree (PRF_ARGS (arg_node));
 
-            DBUG_PRINT ("RI", ("RHSCAND"));
-            DBUG_EXECUTE ("RI", PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)););
+            DBUG_PRINT ("RHSCAND");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
         }
 
         rt = TYfreeType (rt);
@@ -419,7 +422,7 @@ EMRIprf (node *arg_node, info *arg_info)
 node *
 EMRIgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRIgenarray");
+    DBUG_ENTER ();
 
     INFO_RHSCAND (arg_info) = GENARRAY_RC (arg_node);
     GENARRAY_RC (arg_node) = NULL;
@@ -457,7 +460,7 @@ EMRIgenarray (node *arg_node, info *arg_info)
 node *
 EMRImodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRImodarray");
+    DBUG_ENTER ();
 
     INFO_RHSCAND (arg_info) = MODARRAY_RC (arg_node);
     MODARRAY_RC (arg_node) = NULL;
@@ -479,3 +482,5 @@ EMRImodarray (node *arg_node, info *arg_info)
 }
 
 /*@}*/
+
+#undef DBUG_PREFIX

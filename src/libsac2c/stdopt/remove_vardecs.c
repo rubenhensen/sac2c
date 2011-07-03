@@ -24,7 +24,9 @@
  *****************************************************************************/
 #include "remove_vardecs.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "RMV"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
@@ -51,7 +53,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -64,7 +66,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -90,7 +92,7 @@ RMVdoRemoveVardecsOneFundef (node *fundef)
 {
     info *info;
 
-    DBUG_ENTER ("RMVdoRemoveVardecsOneFundef");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
@@ -140,7 +142,7 @@ node *
 RMVfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
-    DBUG_ENTER ("RMVfundef");
+    DBUG_ENTER ();
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
@@ -163,7 +165,7 @@ RMVfundef (node *arg_node, info *arg_info)
 node *
 RMVblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RMVblock");
+    DBUG_ENTER ();
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         if (BLOCK_VARDEC (arg_node) != NULL) {
@@ -190,19 +192,19 @@ RMVblock (node *arg_node, info *arg_info)
 node *
 RMVvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RMVvardec");
+    DBUG_ENTER ();
 
     VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     switch (INFO_TRAVMODE (arg_info)) {
     case TM_init:
         AVIS_ISDEAD (VARDEC_AVIS (arg_node)) = TRUE;
-        DBUG_PRINT ("RMV", ("marking %s as dead!", VARDEC_NAME (arg_node)));
+        DBUG_PRINT ("marking %s as dead!", VARDEC_NAME (arg_node));
         break;
 
     case TM_delete:
         if (AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
-            DBUG_PRINT ("RMV", ("deleting %s !", VARDEC_NAME (arg_node)));
+            DBUG_PRINT ("deleting %s !", VARDEC_NAME (arg_node));
             arg_node = FREEdoFreeNode (arg_node);
         }
         break;
@@ -219,10 +221,10 @@ RMVvardec (node *arg_node, info *arg_info)
 node *
 RMVids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RMVids");
+    DBUG_ENTER ();
 
     AVIS_ISDEAD (IDS_AVIS (arg_node)) = FALSE;
-    DBUG_PRINT ("RMV", ("marking %s as alive!", IDS_NAME (arg_node)));
+    DBUG_PRINT ("marking %s as alive!", IDS_NAME (arg_node));
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
@@ -236,3 +238,5 @@ RMVids (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Remove Vardecs -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

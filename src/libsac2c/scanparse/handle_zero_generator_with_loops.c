@@ -2,7 +2,8 @@
  * $Id$
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 #include "traverse.h"
 #include "tree_basic.h"
@@ -91,7 +92,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -109,7 +110,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -133,7 +134,7 @@ HZGWLdoHandleZeroGeneratorWithLoops (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("HZGWLdoHandleZeroGeneratorWithLoops");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -163,7 +164,7 @@ HZGWLdoHandleZeroGeneratorWithLoops (node *arg_node)
 static node *
 BuildDefault (node *arg_node)
 {
-    DBUG_ENTER ("BuildDefault");
+    DBUG_ENTER ();
 
     WITH_PART (arg_node)
       = TBmakePart (NULL, TBmakeWithid (TBmakeSpids (TRAVtmpVar (), NULL), NULL),
@@ -184,7 +185,7 @@ MergeNewExprs (node **preassigns, node **postassigns, node *with, node **exprs,
     node *tmp;
     char *tmpvar;
 
-    DBUG_ENTER ("MergeNewExprs");
+    DBUG_ENTER ();
 
     if (*exprs != NULL) {
         if ((lhs == NULL) || (*lhs == NULL)) {
@@ -235,7 +236,7 @@ MergeNewExprs (node **preassigns, node **postassigns, node *with, node **exprs,
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 bool
@@ -243,7 +244,7 @@ AllPartsEmpty (node *part)
 {
     bool result = TRUE;
 
-    DBUG_ENTER ("AllPartsEmpty");
+    DBUG_ENTER ();
 
     result
       = result && (NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (part)))) == N_empty);
@@ -260,7 +261,7 @@ HZGWLwith (node *arg_node, info *arg_info)
 {
     bool exprpos;
 
-    DBUG_ENTER ("HZGWLwith");
+    DBUG_ENTER ();
 
     if ((WITH_PART (arg_node) == NULL) && (WITH_WITHOP (arg_node) != NULL)) {
         /**
@@ -350,7 +351,7 @@ HZGWLwith (node *arg_node, info *arg_info)
 node *
 HZGWLgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HZGWLgenarray");
+    DBUG_ENTER ();
 
     if (INFO_MODE (arg_info) == T_traverse) {
         arg_node = TRAVcont (arg_node, arg_info);
@@ -374,7 +375,7 @@ HZGWLgenarray (node *arg_node, info *arg_info)
 node *
 HZGWLmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HZGWLmodarray");
+    DBUG_ENTER ();
 
     if (INFO_MODE (arg_info) == T_traverse) {
         arg_node = TRAVcont (arg_node, arg_info);
@@ -393,7 +394,7 @@ HZGWLmodarray (node *arg_node, info *arg_info)
 node *
 HZGWLspfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HZGWLfold");
+    DBUG_ENTER ();
 
     if (INFO_MODE (arg_info) == T_traverse) {
         arg_node = TRAVcont (arg_node, arg_info);
@@ -412,7 +413,7 @@ HZGWLspfold (node *arg_node, info *arg_info)
 node *
 HZGWLpropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HZGWLpropagate");
+    DBUG_ENTER ();
 
     if (INFO_MODE (arg_info) == T_traverse) {
         arg_node = TRAVcont (arg_node, arg_info);
@@ -433,7 +434,7 @@ HZGWLlet (node *arg_node, info *arg_info)
 {
     node *oldlhs;
 
-    DBUG_ENTER ("HZGWLlet");
+    DBUG_ENTER ();
 
     oldlhs = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = LET_IDS (arg_node);
@@ -457,7 +458,7 @@ HZGWLassign (node *arg_node, info *arg_info)
 {
     node *tmp;
 
-    DBUG_ENTER ("HZGWLassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -491,7 +492,7 @@ HZGWLassign (node *arg_node, info *arg_info)
 node *
 HZGWLreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HZGWLreturn");
+    DBUG_ENTER ();
 
     /**
      * remember whether we have a wl is non expression
@@ -503,3 +504,5 @@ HZGWLreturn (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

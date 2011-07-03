@@ -54,7 +54,9 @@
  *****************************************************************************/
 #include "withloop_invariant_removal.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "WLIR"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "str.h"
 #include "memory.h"
@@ -114,7 +116,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -136,7 +138,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -178,7 +180,7 @@ ForbiddenMovement (node *chain)
 {
     bool res;
 
-    DBUG_ENTER ("ForbiddenMovement");
+    DBUG_ENTER ();
     res = FALSE;
 
 #if 0
@@ -208,7 +210,7 @@ ForbiddenMovement (node *chain)
 static nodelist *
 InsListPushFrame (nodelist *il)
 {
-    DBUG_ENTER ("InsListPushFrame");
+    DBUG_ENTER ();
 
     if (il == NULL) {
         /* new insert list, create level 0 */
@@ -235,9 +237,9 @@ InsListPushFrame (nodelist *il)
 static nodelist *
 InsListPopFrame (nodelist *il)
 {
-    DBUG_ENTER ("InsListPopFrame");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((il != NULL), "tried to pop of empty insert list");
+    DBUG_ASSERT (il != NULL, "tried to pop of empty insert list");
 
     il = FREEfreeNodelistNode (il);
 
@@ -258,7 +260,7 @@ InsListAppendAssigns (nodelist *il, node *assign, int depth)
 {
     nodelist *tmp;
 
-    DBUG_ENTER ("InsListAppendAssigns");
+    DBUG_ENTER ();
 
     tmp = InsListGetFrame (il, depth);
     NODELIST_NODE (tmp) = TCappendAssign (NODELIST_NODE (tmp), assign);
@@ -280,7 +282,7 @@ InsListSetAssigns (nodelist *il, node *assign, int depth)
 {
     nodelist *tmp;
 
-    DBUG_ENTER ("InsListSetAssigns");
+    DBUG_ENTER ();
 
     tmp = InsListGetFrame (il, depth);
 
@@ -301,7 +303,7 @@ InsListSetAssigns (nodelist *il, node *assign, int depth)
 static node *
 InsListGetAssigns (nodelist *il, int depth)
 {
-    DBUG_ENTER ("InsListGetAssigns");
+    DBUG_ENTER ();
 
     DBUG_RETURN (NODELIST_NODE (InsListGetFrame (il, depth)));
 }
@@ -322,9 +324,9 @@ InsListGetFrame (nodelist *il, int depth)
     int pos;
     nodelist *tmp;
 
-    DBUG_ENTER ("InsListGetFrame");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((il != NULL), "try to access empty insert list");
+    DBUG_ASSERT (il != NULL, "try to access empty insert list");
 
     DBUG_ASSERT (((depth >= 0) && (depth <= NODELIST_INT (il))),
                  "parameter depth out of range of given insert list");
@@ -332,11 +334,11 @@ InsListGetFrame (nodelist *il, int depth)
     /* search for nodelist element of given depth */
     tmp = il;
     for (pos = NODELIST_INT (il); pos > depth; pos--) {
-        DBUG_ASSERT ((tmp != NULL), "unexpected end of insert list");
+        DBUG_ASSERT (tmp != NULL, "unexpected end of insert list");
         tmp = NODELIST_NEXT (tmp);
     }
 
-    DBUG_ASSERT ((NODELIST_INT (tmp) == depth),
+    DBUG_ASSERT (NODELIST_INT (tmp) == depth,
                  "select wrong frame - maybe corrupted insert list");
 
     DBUG_RETURN (tmp);
@@ -356,9 +358,9 @@ WLIRfundef (node *arg_node, info *arg_info)
 {
     info *info;
 
-    DBUG_ENTER ("WLIRfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLIR", ("loop-invariant removal in fundef %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("loop-invariant removal in fundef %s", FUNDEF_NAME (arg_node));
 
     /**
      * only traverse fundef node if fundef is not lacfun, or if traversal
@@ -369,7 +371,7 @@ WLIRfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (info) = arg_node;
 
     /* traverse args */
-    DBUG_PRINT ("WLIR", ("Traversing FUNDEF_ARGS for %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("Traversing FUNDEF_ARGS for %s", FUNDEF_NAME (arg_node));
     FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), info);
 
     /* top level (not [directly] contained in any withloop) */
@@ -410,7 +412,7 @@ WLIRarg (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("WLIRarg");
+    DBUG_ENTER ();
 
     avis = ARG_AVIS (arg_node);
 
@@ -437,7 +439,7 @@ WLIRvardec (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("WLIRvardec");
+    DBUG_ENTER ();
 
     avis = VARDEC_AVIS (arg_node);
 
@@ -464,7 +466,7 @@ WLIRblock (node *arg_node, info *arg_info)
 {
     int old_flag;
 
-    DBUG_ENTER ("WLIRblock");
+    DBUG_ENTER ();
 
     /* save block mode */
     old_flag = INFO_TOPBLOCK (arg_info);
@@ -512,9 +514,9 @@ WLIRassign (node *arg_node, info *arg_info)
     node *old_assign;
     int wlir_move_up;
 
-    DBUG_ENTER ("WLIRassign");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ASSIGN_INSTR (arg_node)), "missing instruction in assignment");
+    DBUG_ASSERT (ASSIGN_INSTR (arg_node), "missing instruction in assignment");
 
     /* init traversal flags */
     INFO_REMASSIGN (arg_info) = FALSE;
@@ -562,7 +564,7 @@ WLIRassign (node *arg_node, info *arg_info)
         tmp = arg_node;
         arg_node = TBmakeAssign (NULL, ASSIGN_NEXT (arg_node));
 
-        DBUG_ASSERT ((remove_assign == FALSE), "wlur expression must not be removed");
+        DBUG_ASSERT (remove_assign == FALSE, "wlur expression must not be removed");
 
         remove_assign = TRUE;
         ASSIGN_NEXT (tmp) = NULL;
@@ -629,10 +631,10 @@ node *
 WLIRlet (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("WLIRlet");
+    DBUG_ENTER ();
 
     INFO_LHSAVIS (arg_info) = IDS_AVIS (LET_IDS (arg_node));
-    DBUG_PRINT ("WLIR", ("looking at %s", AVIS_NAME (INFO_LHSAVIS (arg_info))));
+    DBUG_PRINT ("looking at %s", AVIS_NAME (INFO_LHSAVIS (arg_info)));
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     /* detect withloop-independent expression, will be moved up */
@@ -644,8 +646,8 @@ WLIRlet (node *arg_node, info *arg_info)
               && (INFO_PREASSIGN (arg_info) != NULL)))) {
         /* set new target definition depth */
         INFO_SETDEPTH (arg_info) = INFO_MAXDEPTH (arg_info);
-        DBUG_PRINT ("WLIR", ("moving assignment from depth %d to depth %d",
-                             INFO_WITHDEPTH (arg_info), INFO_MAXDEPTH (arg_info)));
+        DBUG_PRINT ("moving assignment from depth %d to depth %d",
+                    INFO_WITHDEPTH (arg_info), INFO_MAXDEPTH (arg_info));
 
     } else {
         /* set current depth */
@@ -681,13 +683,13 @@ WLIRlet (node *arg_node, info *arg_info)
 node *
 WLIRid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLIRid");
+    DBUG_ENTER ();
 
     /*
      * calc the maximum definition depth of all identifiers in the
      * current assignment
      */
-    DBUG_ASSERT ((AVIS_DEFDEPTH (ID_AVIS (arg_node)) != DD_UNDEFINED),
+    DBUG_ASSERT (AVIS_DEFDEPTH (ID_AVIS (arg_node)) != DD_UNDEFINED,
                  "usage of undefined identifier");
     if (INFO_MAXDEPTH (arg_info) < AVIS_DEFDEPTH (ID_AVIS (arg_node))) {
         INFO_MAXDEPTH (arg_info) = AVIS_DEFDEPTH (ID_AVIS (arg_node));
@@ -712,9 +714,9 @@ WLIRid (node *arg_node, info *arg_info)
 node *
 WLIRwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLIRwith");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLIR", ("Looking at %s=with...", AVIS_NAME (INFO_LHSAVIS (arg_info))));
+    DBUG_PRINT ("Looking at %s=with...", AVIS_NAME (INFO_LHSAVIS (arg_info)));
     /* clear current InsertListFrame */
     INFO_INSLIST (arg_info)
       = InsListSetAssigns (INFO_INSLIST (arg_info), NULL, INFO_WITHDEPTH (arg_info));
@@ -764,7 +766,7 @@ WLIRwith (node *arg_node, info *arg_info)
 node *
 WLIRwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLIRwithid");
+    DBUG_ENTER ();
 
     /* traverse all local definitions to mark their depth in withloops */
     INFO_SETDEPTH (arg_info) = INFO_WITHDEPTH (arg_info);
@@ -789,7 +791,7 @@ WLIRids (node *arg_ids, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("WLIRids");
+    DBUG_ENTER ();
 
     avis = IDS_AVIS (arg_ids);
 
@@ -815,9 +817,9 @@ node *
 WLIRdoLoopInvariantRemovalOneFundef (node *fundef)
 {
     info *info;
-    DBUG_ENTER ("LIRdoLoopInvariantRemovalOneFundef");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "LIRdoLoopInvariantRemovalOneFundef called for non-fundef node");
 
     info = MakeInfo ();
@@ -849,9 +851,9 @@ WLIRdoLoopInvariantRemoval (node *module)
 
     info *info;
 
-    DBUG_ENTER ("WLIRdoLoopInvariantRemoval");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (module) == N_module),
+    DBUG_ASSERT (NODE_TYPE (module) == N_module,
                  "WLIRdoLoopInvariantRemoval called for non-module node");
 
     movedsofar = global.optcounters.lir_expr;
@@ -868,3 +870,5 @@ WLIRdoLoopInvariantRemoval (node *module)
 
     DBUG_RETURN (module);
 }
+
+#undef DBUG_PREFIX

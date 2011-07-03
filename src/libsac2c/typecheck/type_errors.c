@@ -6,7 +6,10 @@
 #include <stdarg.h>
 
 #include "type_errors.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "NTC_INFOCHN"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "str.h"
 #include "globals.h"
@@ -82,7 +85,7 @@ MatchScalar (ntype *type)
 {
     bool res;
 
-    DBUG_ENTER ("MatchScalar");
+    DBUG_ENTER ();
 
     switch (TYgetConstr (type)) {
     case TC_akv:
@@ -106,7 +109,7 @@ static bool
 MatchVect (ntype *type)
 {
     bool res = FALSE;
-    DBUG_ENTER ("MatchVect");
+    DBUG_ENTER ();
 
     switch (TYgetConstr (type)) {
     case TC_akv:
@@ -129,7 +132,7 @@ static bool
 MatchVectLengthOne (ntype *type)
 {
     bool res = FALSE;
-    DBUG_ENTER ("MatchVect");
+    DBUG_ENTER ();
 
     switch (TYgetConstr (type)) {
     case TC_akv:
@@ -155,7 +158,7 @@ MatchIntA (ntype *type)
 {
     bool res;
 
-    DBUG_ENTER ("MatchIntA");
+    DBUG_ENTER ();
 
     res = ((TYgetConstr (TYgetScalar (type)) == TC_simple)
            && (TYgetSimpleType (TYgetScalar (type)) == T_int));
@@ -168,7 +171,7 @@ MatchBoolA (ntype *type)
 {
     bool res;
 
-    DBUG_ENTER ("MatchBoolA");
+    DBUG_ENTER ();
 
     res = ((TYgetConstr (TYgetScalar (type)) == TC_simple)
            && (TYgetSimpleType (TYgetScalar (type)) == T_bool));
@@ -181,7 +184,7 @@ MatchNumA (ntype *type)
 {
     bool res;
 
-    DBUG_ENTER ("MatchNumA");
+    DBUG_ENTER ();
 
     res = ((TYgetConstr (TYgetScalar (type)) == TC_simple)
            && ((TYgetSimpleType (TYgetScalar (type)) == T_byte)
@@ -205,7 +208,7 @@ MatchSimpleA (ntype *type)
 {
     bool res;
 
-    DBUG_ENTER ("MatchSimpleA");
+    DBUG_ENTER ();
 
     res = TYisSimple (TYgetScalar (type));
 
@@ -224,7 +227,7 @@ TEmakeInfo (int linenum, const char *file, te_kind_t kind, const char *name_str)
 {
     te_info *res;
 
-    DBUG_ENTER ("TEmakeInfo");
+    DBUG_ENTER ();
 
     if (tinfo_heap == NULL) {
         tinfo_heap = PHPcreateHeap (sizeof (te_info), 1000);
@@ -247,7 +250,7 @@ TEmakeInfoUdf (int linenum, const char *file, te_kind_t kind, const char *mod_st
 {
     te_info *res;
 
-    DBUG_ENTER ("TEmakeInfo");
+    DBUG_ENTER ();
 
     res = TEmakeInfo (linenum, file, kind, name_str);
     TI_MOD (res) = mod_str;
@@ -264,7 +267,7 @@ TEmakeInfoPrf (int linenum, const char *file, te_kind_t kind, const char *name_s
 {
     te_info *res;
 
-    DBUG_ENTER ("TEmakeInfo");
+    DBUG_ENTER ();
 
     res = TEmakeInfo (linenum, file, kind, name_str);
     TI_PRF (res) = prf_no;
@@ -277,92 +280,92 @@ TEmakeInfoPrf (int linenum, const char *file, te_kind_t kind, const char *name_s
 void
 TEfreeAllTypeErrorInfos ()
 {
-    DBUG_ENTER ("TEfreeAllTypeErrorInfos");
+    DBUG_ENTER ();
 
     tinfo_heap = PHPfreeHeap (tinfo_heap);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 int
 TEgetLine (te_info *info)
 {
-    DBUG_ENTER ("TEgetLine");
+    DBUG_ENTER ();
     DBUG_RETURN (TI_LINE (info));
 }
 
 const char *
 TEgetFile (te_info *info)
 {
-    DBUG_ENTER ("TEgetFile");
+    DBUG_ENTER ();
     DBUG_RETURN (TI_FILE (info));
 }
 
 te_kind_t
 TEgetKind (te_info *info)
 {
-    DBUG_ENTER ("TEgetKind");
+    DBUG_ENTER ();
     DBUG_RETURN (TI_KIND (info));
 }
 char *
 TEgetKindStr (te_info *info)
 {
-    DBUG_ENTER ("TEgetKindStr");
+    DBUG_ENTER ();
     DBUG_RETURN (TI_KIND_STR (info));
 }
 
 const char *
 TEgetModStr (te_info *info)
 {
-    DBUG_ENTER ("TEgetModStr");
+    DBUG_ENTER ();
     DBUG_RETURN (TI_MOD (info));
 }
 
 const char *
 TEgetNameStr (te_info *info)
 {
-    DBUG_ENTER ("TEgetNameStr");
+    DBUG_ENTER ();
     DBUG_RETURN (TI_NAME (info));
 }
 
 node *
 TEgetWrapper (te_info *info)
 {
-    DBUG_ENTER ("TEgetWrapper");
+    DBUG_ENTER ();
     DBUG_RETURN (TI_FUNDEF (info));
 }
 
 node *
 TEgetAssign (te_info *info)
 {
-    DBUG_ENTER ("TEgetAssign");
+    DBUG_ENTER ();
     DBUG_RETURN (TI_ASSIGN (info));
 }
 
 prf
 TEgetPrf (te_info *info)
 {
-    DBUG_ENTER ("TEgetPrf");
+    DBUG_ENTER ();
     DBUG_RETURN (TI_PRF (info));
 }
 
 constant *(*TEgetCFFun (te_info *info)) (constant *, constant *, constant *)
 {
-    DBUG_ENTER ("TEgetCFFun");
+    DBUG_ENTER ();
     DBUG_RETURN (prf_co_funtab[TI_PRF (info)]);
 }
 
 te_info *
 TEgetParent (te_info *info)
 {
-    DBUG_ENTER ("TEgetParent");
+    DBUG_ENTER ();
     DBUG_RETURN (TI_CHN (info));
 }
 
 bool
 TEgetIsIrregular (te_info *info)
 {
-    DBUG_ENTER ("TEgetIsIrregular");
+    DBUG_ENTER ();
     DBUG_RETURN (TI_ISIRREGULAR (info));
 }
 
@@ -372,7 +375,7 @@ TEgetNumRets (te_info *info)
     int num_res;
     node *wrapper;
 
-    DBUG_ENTER ("TEgetNumRets");
+    DBUG_ENTER ();
 
     switch (TI_KIND (info)) {
     case TE_udf:
@@ -425,7 +428,7 @@ TEhandleError (int line, const char *file, const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("TEhandleError");
+    DBUG_ENTER ();
 
     va_start (arg_p, format);
 
@@ -443,7 +446,7 @@ TEhandleError (int line, const char *file, const char *format, ...)
 
     va_end (arg_p);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -460,7 +463,7 @@ char *
 TEfetchErrors ()
 {
     char *res;
-    DBUG_ENTER ("TEfetchErrors");
+    DBUG_ENTER ();
 
     res = errors;
     errors = NULL;
@@ -474,8 +477,8 @@ TEextendedAbort ()
     node *assign;
     ntype *args;
 
-    DBUG_ENTER ("TEextendedAbort");
-    DBUG_PRINT ("NTC_INFOCHN", ("act_info_chn is %p", global.act_info_chn));
+    DBUG_ENTER ();
+    DBUG_PRINT ("act_info_chn is %p", global.act_info_chn);
     if (global.act_info_chn != NULL) {
         CTIerrorContinued ("\nTYPE ERROR TRACE:");
         while (global.act_info_chn != NULL) {
@@ -510,7 +513,7 @@ TEextendedAbort ()
 
     CTIabortOnError ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -536,7 +539,7 @@ TEprfArg2Obj (const char *prf_str, int pos)
     static char buffer[64];
     char *tmp = &buffer[0];
 
-    DBUG_ENTER ("TEprfArg2Obj");
+    DBUG_ENTER ();
 
     tmp += sprintf (tmp, "argument #%d of \"%s\"", pos, prf_str);
 
@@ -559,7 +562,7 @@ TEarg2Obj (int pos)
     static char buffer[64];
     char *tmp = &buffer[0];
 
-    DBUG_ENTER ("TEarg2Obj");
+    DBUG_ENTER ();
 
     tmp += sprintf (tmp, "argument #%d", pos);
 
@@ -582,7 +585,7 @@ TEanotherArg2Obj (int pos)
     static char buffer[64];
     char *tmp = &buffer[0];
 
-    DBUG_ENTER ("TEanotherArg2Obj");
+    DBUG_ENTER ();
 
     tmp += sprintf (tmp, "argument #%d", pos);
 
@@ -605,7 +608,7 @@ TEarrayElem2Obj (int pos)
     static char buffer[64];
     char *tmp = &buffer[0];
 
-    DBUG_ENTER ("TEarrayElem2Obj");
+    DBUG_ENTER ();
 
     tmp += sprintf (tmp, "array element #%d", pos);
 
@@ -632,7 +635,7 @@ TEarrayElem2Obj (int pos)
 void
 TEassureScalar (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEassureScalar");
+    DBUG_ENTER ();
 
     if (!MatchScalar (type)) {
         TEhandleError (global.linenum, global.filename,
@@ -640,7 +643,7 @@ TEassureScalar (char *obj, ntype *type)
                        TYtype2String (type, FALSE, 0));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -656,7 +659,7 @@ TEassureScalar (char *obj, ntype *type)
 void
 TEassureVect (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEassureVect");
+    DBUG_ENTER ();
 
     if (!MatchVect (type)) {
         TEhandleError (global.linenum, global.filename,
@@ -664,7 +667,7 @@ TEassureVect (char *obj, ntype *type)
                        TYtype2String (type, FALSE, 0));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -680,14 +683,14 @@ TEassureVect (char *obj, ntype *type)
 void
 TEassureIntS (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEassureIntS");
+    DBUG_ENTER ();
 
     if (!MatchScalar (type) || !MatchIntA (type)) {
         TEhandleError (global.linenum, global.filename,
                        "%s should be of type int; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -703,14 +706,14 @@ TEassureIntS (char *obj, ntype *type)
 void
 TEassureIntV (char *obj, ntype *type)
 {
-    DBUG_ENTER ("AssureIntV");
+    DBUG_ENTER ();
 
     if (!MatchIntA (type) || !MatchVect (type)) {
         TEhandleError (global.linenum, global.filename,
                        "%s should be an integer vector; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -726,14 +729,14 @@ TEassureIntV (char *obj, ntype *type)
 void
 TEassureBoolS (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEassureBoolS");
+    DBUG_ENTER ();
 
     if (!MatchScalar (type) || !MatchBoolA (type)) {
         TEhandleError (global.linenum, global.filename,
                        "%s should be of type bool; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -749,14 +752,14 @@ TEassureBoolS (char *obj, ntype *type)
 void
 TEassureBoolV (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEassureBoolV");
+    DBUG_ENTER ();
 
     if (!MatchVect (type) || !MatchBoolA (type)) {
         TEhandleError (global.linenum, global.filename,
                        "%s should be a boolean vector; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -772,14 +775,14 @@ TEassureBoolV (char *obj, ntype *type)
 void
 TEassureBoolA (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEassureBoolA");
+    DBUG_ENTER ();
 
     if (!MatchBoolA (type)) {
         TEhandleError (global.linenum, global.filename,
                        "Element type of %s should be boolean; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -795,14 +798,14 @@ TEassureBoolA (char *obj, ntype *type)
 void
 TEassureNumS (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEassureNumS");
+    DBUG_ENTER ();
 
     if (!MatchScalar (type) || !MatchNumA (type)) {
         TEhandleError (global.linenum, global.filename,
                        "%s should be of type int / float / double; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -818,7 +821,7 @@ TEassureNumS (char *obj, ntype *type)
 void
 TEassureNumV (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEassureNumV");
+    DBUG_ENTER ();
 
     if (!MatchVect (type) || !MatchNumA (type)) {
         TEhandleError (global.linenum, global.filename,
@@ -826,7 +829,7 @@ TEassureNumV (char *obj, ntype *type)
                        "%s",
                        obj, TYtype2String (type, FALSE, 0));
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -842,14 +845,14 @@ TEassureNumV (char *obj, ntype *type)
 void
 TEassureNumA (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEassureNumA");
+    DBUG_ENTER ();
 
     if (!MatchNumA (type)) {
         TEhandleError (global.linenum, global.filename,
                        "Element type of %s should be numeric; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -865,14 +868,14 @@ TEassureNumA (char *obj, ntype *type)
 void
 TEassureSimpleType (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEassureSimpleType");
+    DBUG_ENTER ();
 
     if (!MatchSimpleA (type)) {
         TEhandleError (global.linenum, global.filename,
                        "%s should be a built-in type; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -888,14 +891,14 @@ TEassureSimpleType (char *obj, ntype *type)
 void
 TEassureSimpleS (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEassureSimpleS");
+    DBUG_ENTER ();
 
     if (!MatchSimpleA (type) || !MatchScalar (type)) {
         TEhandleError (global.linenum, global.filename,
                        "%s should be a scalar of a built-in type; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -911,14 +914,14 @@ TEassureSimpleS (char *obj, ntype *type)
 void
 TEassureSimpleV (char *obj, ntype *type)
 {
-    DBUG_ENTER ("TEassureSimpleV");
+    DBUG_ENTER ();
 
     if (!MatchSimpleA (type) || !MatchVect (type)) {
         TEhandleError (global.linenum, global.filename,
                        "%s should be a vector of a built-in type; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -934,14 +937,14 @@ TEassureSimpleV (char *obj, ntype *type)
 void
 TEassureIntVectLengthOne (char *obj, ntype *type)
 {
-    DBUG_ENTER ("AssureIntVectLengthOne");
+    DBUG_ENTER ();
 
     if (!MatchIntA (type) || !MatchVectLengthOne (type)) {
         TEhandleError (global.linenum, global.filename,
                        "%s should be an integer vector; type found: %s", obj,
                        TYtype2String (type, FALSE, 0));
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -959,7 +962,7 @@ TEassureNonNegativeValues_S (char *obj, ntype *type)
 {
     int *dv;
 
-    DBUG_ENTER ("TEassureNonNegativeValues_S");
+    DBUG_ENTER ();
 
     if (TYgetConstr (type) == TC_akv) {
         dv = (int *)COgetDataVec (TYgetValue (type));
@@ -969,7 +972,7 @@ TEassureNonNegativeValues_S (char *obj, ntype *type)
                            TYtype2String (type, FALSE, 0));
         }
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -988,7 +991,7 @@ TEassureNonNegativeValues_V (char *obj, ntype *type)
     int i, dim;
     int *dv;
 
-    DBUG_ENTER ("TEassureNonNegativeValues_V");
+    DBUG_ENTER ();
 
     if (TYgetConstr (type) == TC_akv) {
         dim = SHgetExtent (TYgetShape (type), 0);
@@ -1002,7 +1005,7 @@ TEassureNonNegativeValues_V (char *obj, ntype *type)
             }
         }
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1019,7 +1022,7 @@ TEassureNonNegativeValues_V (char *obj, ntype *type)
 void
 TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
-    DBUG_ENTER ("TEassureShpMatchesDim");
+    DBUG_ENTER ();
 
     if (((TYgetConstr (type1) == TC_aks) || (TYgetConstr (type1) == TC_akv))
         && ((TYgetConstr (type2) == TC_akv) || (TYgetConstr (type2) == TC_aks)
@@ -1032,7 +1035,7 @@ TEassureShpMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
                        TYtype2String (type2, FALSE, 0));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1051,7 +1054,7 @@ void
 TEassureShpPlusDimMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2,
                               char *obj3, ntype *type3)
 {
-    DBUG_ENTER ("TEassureShpPlusDimMatchesDim");
+    DBUG_ENTER ();
 
     if (((TYgetConstr (type1) == TC_aks) || (TYgetConstr (type1) == TC_akv))
         && ((TYgetConstr (type2) == TC_akv) || (TYgetConstr (type2) == TC_aks)
@@ -1067,7 +1070,7 @@ TEassureShpPlusDimMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2
                        TYtype2String (type2, FALSE, 0), TYtype2String (type3, FALSE, 0));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1086,7 +1089,7 @@ TEassureShpIsPostfixOfShp (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
     int i, offset;
 
-    DBUG_ENTER ("TEassureShpIsPostfixOfShp");
+    DBUG_ENTER ();
 
     if (((TYgetConstr (type1) == TC_aks) || (TYgetConstr (type1) == TC_akv))
         && ((TYgetConstr (type2) == TC_aks) || (TYgetConstr (type2) == TC_akv))) {
@@ -1105,7 +1108,7 @@ TEassureShpIsPostfixOfShp (char *obj1, ntype *type1, char *obj2, ntype *type2)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1124,7 +1127,7 @@ TEassureValMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
     int *dv;
 
-    DBUG_ENTER ("TEassureValMatchesDim");
+    DBUG_ENTER ();
 
     if ((TYgetConstr (type1) == TC_akv)
         && ((TYgetConstr (type2) == TC_akd) || (TYgetConstr (type2) == TC_aks)
@@ -1139,7 +1142,7 @@ TEassureValMatchesDim (char *obj1, ntype *type1, char *obj2, ntype *type2)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1160,7 +1163,7 @@ TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
     int i, dim;
     int *dv;
 
-    DBUG_ENTER ("TEassureValMatchesShape");
+    DBUG_ENTER ();
 
     if ((TYgetConstr (type1) == TC_akv)
         && ((TYgetConstr (type2) == TC_aks) || (TYgetConstr (type2) == TC_akv))) {
@@ -1177,7 +1180,7 @@ TEassureValMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1197,7 +1200,7 @@ TEassureValLtVal_SxS (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
     int *dv1, *dv2;
 
-    DBUG_ENTER ("TEassureValLtVal_SxS");
+    DBUG_ENTER ();
 
     if ((TYgetConstr (type1) == TC_akv) && (TYgetConstr (type2) == TC_akv)) {
         dv1 = (int *)COgetDataVec (TYgetValue (type1));
@@ -1211,7 +1214,7 @@ TEassureValLtVal_SxS (char *obj1, ntype *type1, char *obj2, ntype *type2)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1230,7 +1233,7 @@ TEassureValLeVal_SxS (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
     int *dv1, *dv2;
 
-    DBUG_ENTER ("TEassureValLeVal_SxS");
+    DBUG_ENTER ();
 
     if ((TYgetConstr (type1) == TC_akv) && (TYgetConstr (type2) == TC_akv)) {
         dv1 = (int *)COgetDataVec (TYgetValue (type1));
@@ -1244,7 +1247,7 @@ TEassureValLeVal_SxS (char *obj1, ntype *type1, char *obj2, ntype *type2)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1265,7 +1268,7 @@ TEassureValLeVal (char *obj1, ntype *type1, char *obj2, ntype *type2)
     int i, dim1, dim2;
     int *dv1, *dv2;
 
-    DBUG_ENTER ("TEassureValLeVal");
+    DBUG_ENTER ();
 
     if ((TYgetConstr (type1) == TC_akv) && (TYgetConstr (type2) == TC_akv)) {
         dim1 = SHgetExtent (COgetShape (TYgetValue (type1)), 0);
@@ -1283,7 +1286,7 @@ TEassureValLeVal (char *obj1, ntype *type1, char *obj2, ntype *type2)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1299,7 +1302,7 @@ TEassureValLeVal (char *obj1, ntype *type1, char *obj2, ntype *type2)
 void
 TEassureValNonZero (char *obj1, ntype *type1)
 {
-    DBUG_ENTER ("TEassureValNonZero");
+    DBUG_ENTER ();
 
     if (TYgetConstr (type1) == TC_akv) {
         if (COisZero (TYgetValue (type1), FALSE)) {
@@ -1310,7 +1313,7 @@ TEassureValNonZero (char *obj1, ntype *type1)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1329,7 +1332,7 @@ TEassureIdxMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
     int *dv;
 
-    DBUG_ENTER ("TEassureValMatchesShape");
+    DBUG_ENTER ();
 
     if ((TYgetConstr (type1) == TC_akv)
         && ((TYgetConstr (type2) == TC_aks) || (TYgetConstr (type2) == TC_akv))) {
@@ -1343,7 +1346,7 @@ TEassureIdxMatchesShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1364,7 +1367,7 @@ TEassureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
     int i, dim;
     int *dv;
 
-    DBUG_ENTER ("TEassureAbsValFitsShape");
+    DBUG_ENTER ();
 
     if ((TYgetConstr (type1) == TC_akv)
         && ((TYgetConstr (type2) == TC_aks) || (TYgetConstr (type2) == TC_akv))) {
@@ -1381,7 +1384,7 @@ TEassureAbsValFitsShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1401,7 +1404,7 @@ TEassureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2, ntype *ty
     int i, dim, prod;
     int *dv;
 
-    DBUG_ENTER ("TEassureProdValMatchesProdShape");
+    DBUG_ENTER ();
 
     if ((TYgetConstr (type1) == TC_akv)
         && ((TYgetConstr (type2) == TC_aks) || (TYgetConstr (type2) == TC_akv))) {
@@ -1420,7 +1423,7 @@ TEassureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2, ntype *ty
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1439,7 +1442,7 @@ TEassureProdValMatchesProdShape (char *obj1, ntype *type1, char *obj2, ntype *ty
 void
 TEassureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
-    DBUG_ENTER ("TEassureSameSimpleType");
+    DBUG_ENTER ();
 
     if (TYgetSimpleType (TYgetScalar (type1)) != TYgetSimpleType (TYgetScalar (type2))) {
         TEhandleError (global.linenum, global.filename,
@@ -1449,7 +1452,7 @@ TEassureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2)
                        TYtype2String (type2, FALSE, 0));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1465,7 +1468,7 @@ TEassureSameSimpleType (char *obj1, ntype *type1, char *obj2, ntype *type2)
 void
 TEassureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2)
 {
-    DBUG_ENTER ("TEassureSameScalarType");
+    DBUG_ENTER ();
 
     if (!TYeqTypes (TYgetScalar (type1), TYgetScalar (type2))) {
         TEhandleError (global.linenum, global.filename,
@@ -1475,7 +1478,7 @@ TEassureSameScalarType (char *obj1, ntype *type1, char *obj2, ntype *type2)
                        TYtype2String (type2, FALSE, 0));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1496,7 +1499,7 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
     ntype *pend1 = NULL, *pend2 = NULL;
     ntype *type1_org = NULL, *type2_org = NULL;
 
-    DBUG_ENTER ("TEassureSameShape");
+    DBUG_ENTER ();
 
     /**
      * lift AKVs to AKSs!
@@ -1625,35 +1628,35 @@ TEassureSameShape (char *obj1, ntype *type1, char *obj2, ntype *type2)
 int
 TEone (ntype *args)
 {
-    DBUG_ENTER ("TEone");
+    DBUG_ENTER ();
     DBUG_RETURN (1);
 }
 
 int
 TEtwo (ntype *args)
 {
-    DBUG_ENTER ("TEtwo");
+    DBUG_ENTER ();
     DBUG_RETURN (2);
 }
 
 int
 TEthree (ntype *args)
 {
-    DBUG_ENTER ("TEthree");
+    DBUG_ENTER ();
     DBUG_RETURN (3);
 }
 
 int
 TEnMinusOne (ntype *args)
 {
-    DBUG_ENTER ("TEnMinusOne");
+    DBUG_ENTER ();
     DBUG_RETURN (TYgetProductSize (args) - 1);
 }
 
 int
 TEn (ntype *args)
 {
-    DBUG_ENTER ("TEn");
+    DBUG_ENTER ();
     DBUG_RETURN (TYgetProductSize (args));
 }
 
@@ -1664,16 +1667,16 @@ TEval (ntype *args)
     constant *co;
     int num_rets;
 
-    DBUG_ENTER ("TEval");
+    DBUG_ENTER ();
 
     num_rets_t = TYgetProductMember (args, 0);
     DBUG_ASSERT (TYisAKV (num_rets_t), "illegal construction of _dispatch_error_:"
                                        " first argument not a constant");
     co = TYgetValue (num_rets_t);
-    DBUG_ASSERT ((COgetType (co) == T_int), "illegal construction of _dispatch_error_:"
-                                            " first argument not an integer");
-    DBUG_ASSERT ((COgetDim (co) == 0), "illegal construction of _dispatch_error_:"
-                                       " first argument not a scalar");
+    DBUG_ASSERT (COgetType (co) == T_int, "illegal construction of _dispatch_error_:"
+                                          " first argument not an integer");
+    DBUG_ASSERT (COgetDim (co) == 0, "illegal construction of _dispatch_error_:"
+                                     " first argument not a scalar");
     num_rets = ((int *)COgetDataVec (co))[0];
 
     DBUG_RETURN (num_rets);
@@ -1694,7 +1697,7 @@ TEassureShpMatchesInt (char *obj, ntype *shp, int len)
 {
     int shpel;
 
-    DBUG_ENTER ("TEassureShpMatchesInt");
+    DBUG_ENTER ();
 
     if ((TYgetConstr (shp) == TC_akv) || (TYgetConstr (shp) == TC_aks)) {
         shpel = SHgetUnrLen (TYgetShape (shp));
@@ -1705,7 +1708,7 @@ TEassureShpMatchesInt (char *obj, ntype *shp, int len)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1717,3 +1720,5 @@ TEassureShpMatchesInt (char *obj, ntype *shp, int len)
  *
  *
  ******************************************************************************/
+
+#undef DBUG_PREFIX

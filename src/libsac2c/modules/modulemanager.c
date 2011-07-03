@@ -9,7 +9,10 @@
 #include "serialize.h"
 #include "filemgr.h"
 #include "ctinfo.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "MODM"
+#include "debug.h"
+
 #include "build.h"
 #include "str.h"
 #include "memory.h"
@@ -77,7 +80,7 @@ checkMixedCasesCorrect (module_t *module)
     mixedcasenamefun_u mixedcasenamefun;
     char *name;
 
-    DBUG_ENTER ("checkMixedCasesCorrect");
+    DBUG_ENTER ();
 
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 17));
     sprintf (name, "__%s_MIXEDCASENAME", module->name);
@@ -101,7 +104,7 @@ checkMixedCasesCorrect (module_t *module)
                   module->name, mixedcasenamefun.f ());
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -111,7 +114,7 @@ checkHasSameASTVersion (module_t *module)
     serversionfun_u serverfun;
     char *name;
 
-    DBUG_ENTER ("checkHasSameASTVersion");
+    DBUG_ENTER ();
 
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 14));
     sprintf (name, "__%s_ASTVERSION", module->name);
@@ -150,7 +153,7 @@ checkHasSameASTVersion (module_t *module)
                   module->name, module->sofile);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -159,7 +162,7 @@ checkWasBuildUsingSameFlags (module_t *module)
     flagfun_u flagfun;
     char *name;
 
-    DBUG_ENTER ("checkWasBuildUsingSameFlags");
+    DBUG_ENTER ();
 
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 13));
     sprintf (name, "__%s_USEDFLAGS", module->name);
@@ -182,7 +185,7 @@ checkWasBuildUsingSameFlags (module_t *module)
   }
 #endif
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -192,7 +195,7 @@ checkWhetherDeprecated (module_t *module)
     char *name;
     const char *msg;
 
-    DBUG_ENTER ("checkWhetherDeprecated");
+    DBUG_ENTER ();
 
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 14));
     sprintf (name, "__%s_DEPRECATED", module->name);
@@ -211,7 +214,7 @@ checkWhetherDeprecated (module_t *module)
                  msg);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -220,7 +223,7 @@ addNamespaceMappings (module_t *module)
     nsmapfun_u mapfun;
     char *name;
 
-    DBUG_ENTER ("addNamespaceMappings");
+    DBUG_ENTER ();
 
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 19));
     sprintf (name, "__%s__MapConstructor", module->name);
@@ -237,7 +240,7 @@ addNamespaceMappings (module_t *module)
 
     name = MEMfree (name);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static module_t *
@@ -246,7 +249,7 @@ LookupModuleInPool (const char *name)
     module_t *result = NULL;
     module_t *pos = modulepool;
 
-    DBUG_ENTER ("LookupModuleInPool");
+    DBUG_ENTER ();
 
     while ((result == NULL) && (pos != NULL)) {
         if (STReq (pos->name, name)) {
@@ -265,9 +268,9 @@ AddModuleToPool (const char *name)
     module_t *result;
     char *tmp;
 
-    DBUG_ENTER ("AddModuleToPool");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("MODM", ("Start loading module '%s'.", name));
+    DBUG_PRINT ("Start loading module '%s'.", name);
 
     result = MEMmalloc (sizeof (module_t));
 
@@ -281,7 +284,7 @@ AddModuleToPool (const char *name)
         CTIabort ("Cannot find library `%s' for module `%s'", tmp, name);
     }
 
-    DBUG_PRINT ("MODM", ("Found library file '%s'.", result->sofile));
+    DBUG_PRINT ("Found library file '%s'.", result->sofile);
 
     tmp = MEMfree (tmp);
 
@@ -323,12 +326,11 @@ AddModuleToPool (const char *name)
 static module_t *
 RemoveModuleFromPool (module_t *module)
 {
-    DBUG_ENTER ("RemoveModuleFromPool");
+    DBUG_ENTER ();
 
     module->usecount--;
 
-    DBUG_PRINT ("MODM",
-                ("Module %s has usage count %d.", module->name, module->usecount));
+    DBUG_PRINT ("Module %s has usage count %d.", module->name, module->usecount);
 
     module = NULL;
 
@@ -338,9 +340,9 @@ RemoveModuleFromPool (module_t *module)
 const char *
 MODMgetModuleName (module_t *module)
 {
-    DBUG_ENTER ("MODMgetModuleName");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((module != NULL), "MODMgetModuleName called with NULL pointer");
+    DBUG_ASSERT (module != NULL, "MODMgetModuleName called with NULL pointer");
 
     DBUG_RETURN (module->name);
 }
@@ -350,7 +352,7 @@ MODMloadModule (const char *name)
 {
     module_t *result;
 
-    DBUG_ENTER ("MODMloadModule");
+    DBUG_ENTER ();
 
     result = LookupModuleInPool (name);
 
@@ -364,7 +366,7 @@ MODMloadModule (const char *name)
 module_t *
 MODMunLoadModule (module_t *module)
 {
-    DBUG_ENTER ("MODMunLoadModule");
+    DBUG_ENTER ();
 
     module = RemoveModuleFromPool (module);
 
@@ -377,7 +379,7 @@ GetSymbolTableFunction (module_t *module)
     char *name;
     symtabfun_u result;
 
-    DBUG_ENTER ("GetSymbolTableFunction");
+    DBUG_ENTER ();
 
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 11));
     sprintf (name, "__%s__SYMTAB", module->name);
@@ -399,7 +401,7 @@ MODMgetSymbolTable (module_t *module)
 {
     symtabfun_p symtabfun;
 
-    DBUG_ENTER ("MODMgetSymbolTable");
+    DBUG_ENTER ();
 
     if (module->stable == NULL) {
         symtabfun = GetSymbolTableFunction (module);
@@ -416,7 +418,7 @@ GetDependencyTableFunction (module_t *module)
     deptabfun_u result;
     char *name;
 
-    DBUG_ENTER ("GetDependencyTableFunction");
+    DBUG_ENTER ();
 
     name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 11));
     sprintf (name, "__%s__DEPTAB", module->name);
@@ -439,7 +441,7 @@ MODMgetDependencyTable (module_t *module)
     deptabfun_p deptabfun;
     stringset_t *result;
 
-    DBUG_ENTER ("MODMgetDependencyTable");
+    DBUG_ENTER ();
 
     deptabfun = GetDependencyTableFunction (module);
 
@@ -453,9 +455,11 @@ MODMgetDeSerializeFunction (const char *name, module_t *module)
 {
     serfun_u result;
 
-    DBUG_ENTER ("MODMgetDeSerializeFunction");
+    DBUG_ENTER ();
 
     result.v = LIBMgetLibraryFunction (name, module->lib);
 
     DBUG_RETURN (result.f);
 }
+
+#undef DBUG_PREFIX

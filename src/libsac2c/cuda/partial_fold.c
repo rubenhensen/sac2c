@@ -22,7 +22,10 @@
 #include "str.h"
 #include "memory.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -133,7 +136,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -177,7 +180,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -191,7 +194,7 @@ FreeInfo (info *info)
 static node *
 AppendVardec (node *fundef, node *avis)
 {
-    DBUG_ENTER ("AppendVardec");
+    DBUG_ENTER ();
 
     FUNDEF_VARDEC (fundef)
       = TCappendVardec (FUNDEF_VARDEC (fundef), TBmakeVardec (avis, NULL));
@@ -205,7 +208,7 @@ CreatePrfOrConst (bool isprf, char *name, simpletype sty, shape *shp, prf pfun,
 {
     node *avis = NULL, *new_assign;
 
-    DBUG_ENTER ("CreatePrfOrConst");
+    DBUG_ENTER ();
 
     if (name != NULL) {
         avis
@@ -238,7 +241,7 @@ CreateCudaIndexInitCode (node *part, info *arg_info)
     cuidx_set_t *cis;
     node *assigns = NULL, *vardecs = NULL;
 
-    DBUG_ENTER ("CreateCudaIndexInitCode");
+    DBUG_ENTER ();
 
     cis = MEMmalloc (sizeof (cuidx_set_t));
     dim = TCcountIds (PART_IDS (part));
@@ -274,7 +277,7 @@ BuildLoadAssigns (node *part, info *arg_info)
     shape *inner_shp;
     int inner_size;
 
-    DBUG_ENTER ("BuildLoadAssigns");
+    DBUG_ENTER ();
 
     if (INFO_RESDEF (arg_info) == def_array) {
         inner_shp = TYgetShape (AVIS_TYPE (INFO_CEXPR (arg_info)));
@@ -299,7 +302,7 @@ BuildLoadAssigns (node *part, info *arg_info)
                                                         CIS_TX (INFO_CIS (arg_info))),
                                                       NULL)));
     } else {
-        DBUG_ASSERT ((0), "Only 1D and 2D fold withloop is supported!");
+        DBUG_ASSERT (0, "Only 1D and 2D fold withloop is supported!");
     }
 
     /* Create  i.e. idx_modarray_AxSxS */
@@ -375,7 +378,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
     node *tx_zero, *ty_zero;
     node *inner_idxs_internal = NULL;
 
-    DBUG_ENTER ("BuildReduceAssignsInternal");
+    DBUG_ENTER ();
 
     sty = TYgetSimpleType (TYgetScalar (AVIS_TYPE (INFO_SHRARRAY (arg_info))));
 
@@ -409,7 +412,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
             args = TBmakeExprs (TBmakeId (CIS_BX (INFO_CIS (arg_info))),
                                 TBmakeExprs (TBmakeId (bound), NULL));
         } else {
-            DBUG_ASSERT ((0), "Reduction in unknown dimension!");
+            DBUG_ASSERT (0, "Reduction in unknown dimension!");
         }
 
         cond = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_neq_SxS, args,
@@ -471,7 +474,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
                                                  TBmakeExprs (TBmakeId (avis), NULL)));
             }
         } else {
-            DBUG_ASSERT ((0), "Dimension not supported!");
+            DBUG_ASSERT (0, "Dimension not supported!");
         }
     }
 
@@ -539,7 +542,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
                                               TBmakeExprs (TBmakeId (iterator), NULL)));
             }
         } else {
-            DBUG_ASSERT ((0), "Dimension not supported!");
+            DBUG_ASSERT (0, "Dimension not supported!");
         }
     }
 
@@ -677,7 +680,7 @@ BuildInnerIdxs (node *inner_shp_exprs, node *inner_idxs, reduction_kind kind, in
     node *tmp_assigns = NULL, *assigns = NULL;
     node *prev, *next;
 
-    DBUG_ENTER ("BuildReduceAssigns");
+    DBUG_ENTER ();
 
     if (inner_shp_exprs != NULL) {
         for (i = 0; i < NUM_VAL (EXPRS_EXPR (inner_shp_exprs)); i++) {
@@ -729,7 +732,7 @@ BuildReduceAssigns (node *part, info *arg_info)
       remain_x, remain_y;
     node *assigns = NULL, *y_reduction_assigns = NULL, *x_reduction_assigns = NULL;
 
-    DBUG_ENTER ("BuildReduceAssigns");
+    DBUG_ENTER ();
 
     if (INFO_DIM (arg_info) == 1) {
         partshp_x = NUM_VAL (EXPRS_EXPR1 (ARRAY_AELEMS (INFO_PARTSHP (arg_info))));
@@ -785,7 +788,7 @@ BuildReduceAssigns (node *part, info *arg_info)
 
         assigns = TCappendAssign (y_reduction_assigns, x_reduction_assigns);
     } else {
-        DBUG_ASSERT ((0), "Higher dimension is not suppored yet!");
+        DBUG_ASSERT (0, "Higher dimension is not suppored yet!");
     }
 
     DBUG_RETURN (assigns);
@@ -803,7 +806,7 @@ BuildStoreAssigns (node *part, info *arg_info)
     node *arg5, *vec_avis;
     node *cond;
 
-    DBUG_ENTER ("BuildStoreAssigns");
+    DBUG_ENTER ();
 
     sty = TYgetSimpleType (TYgetScalar (AVIS_TYPE (INFO_SHRARRAY (arg_info))));
     vec_avis = IDS_AVIS (PART_VEC (part));
@@ -924,7 +927,7 @@ BuildStoreAssigns (node *part, info *arg_info)
                                                           NULL)));
         } else if (INFO_RESDEF (arg_info) == def_array) {
         } else {
-            DBUG_ASSERT ((0), "Unknow result definition assignment!");
+            DBUG_ASSERT (0, "Unknow result definition assignment!");
         }
 
         target_idx = CreatePrfOrConst (TRUE, "idx", T_int, SHmakeShape (0), F_idxs2offset,
@@ -982,7 +985,7 @@ BuildStoreAssigns (node *part, info *arg_info)
                                                                   NULL)))));
         } else if (INFO_RESDEF (arg_info) == def_array) {
         } else {
-            DBUG_ASSERT ((0), "Unknow result definition assignment!");
+            DBUG_ASSERT (0, "Unknow result definition assignment!");
         }
 
         /*
@@ -1025,7 +1028,7 @@ node *
 PFDdoPartialFold (node *syntax_tree)
 {
     info *info;
-    DBUG_ENTER ("PFDdoPartialFold");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_pfd);
@@ -1058,7 +1061,7 @@ PFDdoPartialFold (node *syntax_tree)
 node *
 PFDmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PFDmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -1082,7 +1085,7 @@ PFDmodule (node *arg_node, info *arg_info)
 node *
 PFDfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PFDfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -1104,7 +1107,7 @@ PFDassign (node *arg_node, info *arg_info)
 {
     node *old_lastassign;
 
-    DBUG_ENTER ("PFDassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -1135,7 +1138,7 @@ PFDlet (node *arg_node, info *arg_info)
 {
     node *old_lhs;
 
-    DBUG_ENTER ("PFDlet");
+    DBUG_ENTER ();
 
     old_lhs = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = LET_IDS (arg_node);
@@ -1159,7 +1162,7 @@ PFDgenerator (node *arg_node, info *arg_info)
     node *bound1;
     node *bound2;
 
-    DBUG_ENTER ("PFDgenerator");
+    DBUG_ENTER ();
 
     bound1 = GENERATOR_BOUND1 (arg_node);
     bound2 = GENERATOR_BOUND2 (arg_node);
@@ -1187,7 +1190,7 @@ PFDgenerator (node *arg_node, info *arg_info)
 node *
 PFDwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PFDwithid");
+    DBUG_ENTER ();
 
     INFO_DIM (arg_info) = TCcountIds (WITHID_IDS (arg_node));
     INFO_WITHIDS (arg_info) = WITHID_IDS (arg_node);
@@ -1208,7 +1211,7 @@ PFDcode (node *arg_node, info *arg_info)
 {
     node *rhs, *cexpr_avis, *first_elem;
 
-    DBUG_ENTER ("PFDcode");
+    DBUG_ENTER ();
 
     /* collect the type of the result and the folding operation */
     cexpr_avis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (arg_node)));
@@ -1260,9 +1263,9 @@ PFDpart (node *arg_node, info *arg_info)
     node *tbshp_elems = NULL, *partshp_elems = NULL, *partialshp_elems = NULL;
     node *init_assigns, *load_assigns, *reduce_assigns, *store_assigns;
 
-    DBUG_ENTER ("PFDpart");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((PART_NEXT (arg_node) == NULL),
+    DBUG_ASSERT (PART_NEXT (arg_node) == NULL,
                  "Found fold withloop with more than one partition!");
 
     /* Collect the dimension of this part and store it in INFO_DIM */
@@ -1291,8 +1294,8 @@ PFDpart (node *arg_node, info *arg_info)
 
     dim = 0;
     while (dim < INFO_DIM (arg_info)) {
-        DBUG_ASSERT ((tbshp_elems != NULL), "Thread shape is NULL!");
-        DBUG_ASSERT ((partshp_elems != NULL), "Partition shape is NULL!");
+        DBUG_ASSERT (tbshp_elems != NULL, "Thread shape is NULL!");
+        DBUG_ASSERT (partshp_elems != NULL, "Partition shape is NULL!");
 
         tbshp_len = NUM_VAL (EXPRS_EXPR (tbshp_elems));
         partshp_len = NUM_VAL (EXPRS_EXPR (partshp_elems));
@@ -1385,7 +1388,7 @@ BuildFoldWithloop (node *old_foldwl, info *arg_info)
     node *code_instr;
     prf op;
 
-    DBUG_ENTER ("BuildFoldWithloop");
+    DBUG_ENTER ();
 
     if (INFO_RESDEF (arg_info) == def_scalar) {
         /* iv */
@@ -1873,7 +1876,7 @@ BuildFoldWithloop (node *old_foldwl, info *arg_info)
         WITH_REFERENCED (new_foldwl) = WITH_REFERENCED (old_foldwl);
         WITH_ISFOLDABLE (new_foldwl) = WITH_ISFOLDABLE (old_foldwl);
     } else {
-        DBUG_ASSERT ((0), "Unknow result definition assignment!");
+        DBUG_ASSERT (0, "Unknow result definition assignment!");
     }
 
     /* Cleanup arg_info */
@@ -1892,7 +1895,7 @@ BuildFoldWithloop (node *old_foldwl, info *arg_info)
 node *
 ATravWithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravWithid");
+    DBUG_ENTER ();
 
     INFO_AT_VECASSIGNS (arg_info)
       = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (WITHID_VEC (arg_node)), NULL),
@@ -1928,7 +1931,7 @@ ATravGenerator (node *arg_node, info *arg_info)
     node *outer_b1, *outer_b2, *inner_b1, *inner_b2;
     node *outer_genwidth, *inner_genwidth;
 
-    DBUG_ENTER ("ATravGenerator");
+    DBUG_ENTER ();
 
     outer_b1 = GENERATOR_BOUND1 (arg_node);
     outer_b2 = GENERATOR_BOUND2 (arg_node);
@@ -1961,7 +1964,7 @@ ATravCode (node *arg_node, info *arg_info)
 {
     node *assigns, *prev, *next;
 
-    DBUG_ENTER ("ATravCode");
+    DBUG_ENTER ();
 
     assigns = CODE_CBLOCK_INSTR (arg_node);
 
@@ -1991,9 +1994,9 @@ ATravPart (node *arg_node, info *arg_info)
     node *lhs_avis, *cexpr, *ssa_assign, *defining_rhs;
     int cat_dim;
 
-    DBUG_ENTER ("ATravPart");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((PART_NEXT (arg_node) == NULL),
+    DBUG_ASSERT (PART_NEXT (arg_node) == NULL,
                  "Found fold withloop with more than one partition!");
 
     lhs_avis = IDS_AVIS (INFO_LHS (arg_info));
@@ -2080,7 +2083,7 @@ ATravPart (node *arg_node, info *arg_info)
 node *
 ATravWith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravPart");
+    DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node) && NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold) {
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
@@ -2107,7 +2110,7 @@ PFDwith (node *arg_node, info *arg_info)
     node *new_fold;
     info *anon_info;
 
-    DBUG_ENTER ("PFDwith");
+    DBUG_ENTER ();
 
     /************ Anonymous Traversal ************/
     anontrav_t atrav[6]
@@ -2211,7 +2214,7 @@ PFDwith (node *arg_node, info *arg_info)
 node *
 PFDfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PFDfold");
+    DBUG_ENTER ();
 
     INFO_FOLDFUNDEF (arg_info) = FOLD_FUNDEF (arg_node);
     INFO_NEUTRAL (arg_info) = FOLD_NEUTRAL (arg_node);
@@ -2230,7 +2233,7 @@ PFDfold (node *arg_node, info *arg_info)
 node *
 PFDprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PFDprf");
+    DBUG_ENTER ();
 
     if (INFO_LEVEL (arg_info) == 1) {
         if (PRF_PRF (arg_node) == F_accu) {
@@ -2243,3 +2246,5 @@ PFDprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

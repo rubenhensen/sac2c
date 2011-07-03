@@ -25,7 +25,9 @@
 
 #include "dead_vardec_removal.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -57,7 +59,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -70,7 +72,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -86,7 +88,7 @@ FreeInfo (info *info)
 node *
 DVRmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DVRmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -102,7 +104,7 @@ DVRmodule (node *arg_node, info *arg_info)
 node *
 DVRfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DVRfundef");
+    DBUG_ENTER ();
 
     if (!FUNDEF_ISCUDAGLOBALFUN (arg_node)) {
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -122,7 +124,7 @@ DVRfundef (node *arg_node, info *arg_info)
 node *
 DVRblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DVRblock");
+    DBUG_ENTER ();
 
     INFO_RESET (arg_info) = TRUE;
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
@@ -146,7 +148,7 @@ DVRblock (node *arg_node, info *arg_info)
 node *
 DVRvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DVRvardec");
+    DBUG_ENTER ();
 
     if (INFO_RESET (arg_info)) {
         AVIS_ISDEAD (VARDEC_AVIS (arg_node)) = TRUE;
@@ -172,7 +174,7 @@ DVRvardec (node *arg_node, info *arg_info)
 node *
 DVRids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DVRids");
+    DBUG_ENTER ();
 
     AVIS_ISDEAD (IDS_AVIS (arg_node)) = FALSE;
 
@@ -188,7 +190,7 @@ DVRids (node *arg_node, info *arg_info)
 node *
 DVRid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DVRid");
+    DBUG_ENTER ();
 
     AVIS_ISDEAD (ID_AVIS (arg_node)) = FALSE;
 
@@ -212,7 +214,7 @@ DVRdoDeadVardecRemoval (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("DVRdoDeadVardecRemoval");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
@@ -226,3 +228,5 @@ DVRdoDeadVardecRemoval (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

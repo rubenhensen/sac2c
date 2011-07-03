@@ -11,7 +11,10 @@
 #include "str.h"
 #include "memory.h"
 #include "ctinfo.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "free.h"
 #include "LookUpTable.h"
 #include "globals.h"
@@ -50,7 +53,7 @@ MakePrec (assoc_t assoc, int val)
 {
     prec_t *res;
 
-    DBUG_ENTER ("MakePrec");
+    DBUG_ENTER ();
     res = (prec_t *)MEMmalloc (sizeof (prec_t));
 
     PREC_ASS (res) = assoc;
@@ -72,7 +75,7 @@ MakePrec (assoc_t assoc, int val)
 static prec_t *
 FreePrec (prec_t *prec)
 {
-    DBUG_ENTER ("FreePrec");
+    DBUG_ENTER ();
 
     prec = MEMfree (prec);
 
@@ -94,7 +97,7 @@ InitPrecLut ()
 {
     lut_t *res;
 
-    DBUG_ENTER ("InitPrecLut");
+    DBUG_ENTER ();
 
     res = LUTgenerateLut ();
 
@@ -134,7 +137,7 @@ LeftAssoc (node *lop, node *rop)
 
     static prec_t default_prec = {Ass_n, 0};
 
-    DBUG_ENTER ("LeftAssoc");
+    DBUG_ENTER ();
 
     prec_p = (prec_t **)LUTsearchInLutS (prec_lut, SPID_NAME (lop));
     if (prec_p == NULL) {
@@ -204,7 +207,7 @@ Mop2Ap (node *op, node *mop)
     node *ap, *exprs, *exprs3, *exprs_prime;
     node *fun_ids;
 
-    DBUG_ENTER ("Mop2Ap");
+    DBUG_ENTER ();
 
     exprs = SPMOP_EXPRS (mop);
     fun_ids = SPMOP_OPS (mop);
@@ -303,7 +306,7 @@ Mop2Ap (node *op, node *mop)
 node *
 HMdoHandleMops (node *arg_node)
 {
-    DBUG_ENTER ("HMdoHandleMops");
+    DBUG_ENTER ();
 
     prec_lut = InitPrecLut ();
 
@@ -332,7 +335,7 @@ HMspmop (node *arg_node, info *arg_info)
 {
     node *mop, *res;
 
-    DBUG_ENTER ("HMspmop");
+    DBUG_ENTER ();
 
     mop = Mop2Ap (NULL, arg_node);
     DBUG_ASSERT (((mop != NULL) && (NODE_TYPE (mop) == N_spmop)
@@ -347,3 +350,5 @@ HMspmop (node *arg_node, info *arg_info)
 
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

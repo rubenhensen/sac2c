@@ -70,7 +70,8 @@ version="1.0">
 #include "globals.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "dbug.h"
+#define DBUG_PREFIX "CHK"
+#include "debug.h"
 #include "check_lib.h"
 #include "check_mem.h"
 
@@ -84,13 +85,13 @@ node *CHKdoTreeCheck( node *arg_node)
 {
   node *keep_next;
   
-  DBUG_ENTER("CHKdoTreeCheck");
+  DBUG_ENTER ();
   
-  DBUG_ASSERT( (NODE_TYPE( arg_node) == N_module)
-               || (NODE_TYPE( arg_node) == N_fundef),
+  DBUG_ASSERT( NODE_TYPE( arg_node) == N_module
+               || NODE_TYPE( arg_node) == N_fundef,
                "Illegal argument node!");
 
-  DBUG_ASSERT( (NODE_TYPE( arg_node) == N_module)
+  DBUG_ASSERT( NODE_TYPE( arg_node) == N_module
                || global.local_funs_grouped ,
                "If run fun-based, special funs must be grouped.");
 
@@ -104,13 +105,13 @@ node *CHKdoTreeCheck( node *arg_node)
     FUNDEF_NEXT( arg_node) = NULL;
   }
 
-  DBUG_PRINT( "CHK", ("Starting the check mechanism"));
+  DBUG_PRINT( "Starting the check mechanism");
 
   TRAVpush( TR_chk);
   arg_node = TRAVdo( arg_node, NULL);
   TRAVpop();
 
-  DBUG_PRINT( "CHK", ("Check mechanism complete"));
+  DBUG_PRINT( "Check mechanism complete");
 
   if (NODE_TYPE( arg_node) == N_fundef) {
     /* 
@@ -232,15 +233,7 @@ node *CHKdoTreeCheck( node *arg_node)
     <xsl:if test="attributes/attribute[key(&quot;arraytypes&quot;, ./type/@name)]">
       <xsl:value-of select="'int cnt;'" />
     </xsl:if>
-    <xsl:value-of select="'DBUG_ENTER'"/>
-    <xsl:value-of select="'(&quot;CHK'"/>
-    <xsl:call-template name="lowercase">
-      <xsl:with-param name="string" >
-        <xsl:value-of select="@name"/>
-      </xsl:with-param>
-    </xsl:call-template>
-    <xsl:value-of select="'&quot;);'"/>
-
+    <xsl:value-of select="'DBUG_ENTER ();'"/>
     <xsl:value-of select="$newline"/>
     <xsl:value-of select="'  if (NODE_CHECKVISITED( arg_node)) {'"/>
     <xsl:value-of select="$newline"/>
@@ -268,7 +261,7 @@ node *CHKdoTreeCheck( node *arg_node)
     <xsl:apply-templates select="./sons/son" mode="trav">
       <xsl:sort select="@name"/>
     </xsl:apply-templates>
-    <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
+    <xsl:value-of select="'DBUG_RETURN (arg_node);'"/>
     <xsl:value-of select="'}'"/>
   </xsl:template>
 

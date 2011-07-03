@@ -21,7 +21,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "LookUpTable.h"
@@ -64,7 +67,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -85,7 +88,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -105,9 +108,9 @@ FreeInfo (info *info)
 static node *
 GetApArgFromFundefArg (node *arg, node *fundef_args, node *ap_args)
 {
-    DBUG_ENTER ("GetApArgFromFundefArg");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((TCcountArgs (fundef_args) == TCcountExprs (ap_args)),
+    DBUG_ASSERT (TCcountArgs (fundef_args) == TCcountExprs (ap_args),
                  "Number of arguments and paramenters mismatch!");
 
     while (fundef_args != NULL) {
@@ -133,7 +136,7 @@ GetApArgFromFundefArg (node *arg, node *fundef_args, node *ap_args)
 static node *
 GetRetByLinksign (node *rets, int linksign)
 {
-    DBUG_ENTER ("GetRetByLinksign");
+    DBUG_ENTER ();
 
     while (rets != NULL) {
         if (RET_HASLINKSIGNINFO (rets) && RET_LINKSIGN (rets) == linksign) {
@@ -158,7 +161,7 @@ GetRetByLinksign (node *rets, int linksign)
 static node *
 ATravFundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravFundef");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (FUNDEF_ISCUDASTGLOBALFUN (arg_node),
                  "N_fundef must be a cudast function!");
@@ -181,7 +184,7 @@ ATravFundef (node *arg_node, info *arg_info)
 static node *
 ATravAssign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravAssign");
+    DBUG_ENTER ();
 
     /* Bottom up traversal */
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
@@ -202,7 +205,7 @@ ATravAssign (node *arg_node, info *arg_info)
 static node *
 ATravLet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravLet");
+    DBUG_ENTER ();
 
     if (LET_IDS (arg_node) != NULL
         && IDS_AVIS (LET_IDS (arg_node)) == INFO_AT_AVIS (arg_info)) {
@@ -228,7 +231,7 @@ ATravId (node *arg_node, info *arg_info)
 {
     node *letids;
 
-    DBUG_ENTER ("ATravId");
+    DBUG_ENTER ();
 
     letids = INFO_AT_LETIDS (arg_info);
 
@@ -254,7 +257,7 @@ CUASRdoAdjustStknlRets (node *syntax_tree)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CUASRdoAdjustStknlRets");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -279,7 +282,7 @@ CUASRdoAdjustStknlRets (node *syntax_tree)
 node *
 CUASRmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUASRmodule");
+    DBUG_ENTER ();
 
     INFO_LUT (arg_info) = LUTgenerateLut ();
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
@@ -301,7 +304,7 @@ CUASRmodule (node *arg_node, info *arg_info)
 node *
 CUASRassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUASRassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
@@ -322,7 +325,7 @@ CUASRassign (node *arg_node, info *arg_info)
 node *
 CUASRlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUASRlet");
+    DBUG_ENTER ();
 
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
@@ -347,7 +350,7 @@ CUASRfundef (node *arg_node, info *arg_info)
 {
     node *old_fundef;
 
-    DBUG_ENTER ("CUASRfundef");
+    DBUG_ENTER ();
 
     old_fundef = INFO_FUNDEF (arg_info);
 
@@ -385,7 +388,7 @@ CUASRfundef (node *arg_node, info *arg_info)
 node *
 CUASRret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUASRret");
+    DBUG_ENTER ();
 
     RET_HASLINKSIGNINFO (arg_node) = FALSE;
     RET_LINKSIGN (arg_node) = INFO_LSNUM (arg_info);
@@ -410,7 +413,7 @@ CUASRret (node *arg_node, info *arg_info)
 node *
 CUASRarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUASRarg");
+    DBUG_ENTER ();
 
     ARG_HASLINKSIGNINFO (arg_node) = FALSE;
     ARG_LINKSIGN (arg_node) = INFO_LSNUM (arg_info);
@@ -435,7 +438,7 @@ CUASRarg (node *arg_node, info *arg_info)
 node *
 CUASRap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUASRap");
+    DBUG_ENTER ();
 
     AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
@@ -474,7 +477,7 @@ CUASRreturn (node *arg_node, info *arg_info)
 
     info *anon_info;
 
-    DBUG_ENTER ("CUASRreturn");
+    DBUG_ENTER ();
 
     fundef = INFO_FUNDEF (arg_info);
 
@@ -546,7 +549,7 @@ CUASRreturn (node *arg_node, info *arg_info)
                 node *tmp_ret
                   = GetRetByLinksign (FUNDEF_RETS (fundef), ARG_LINKSIGN (decl));
 
-                DBUG_ASSERT ((tmp_ret != NULL),
+                DBUG_ASSERT (tmp_ret != NULL,
                              "Found linksigned N_arg with no corresponding N_ret!");
 
                 ARG_LINKSIGN (decl)--;
@@ -589,7 +592,7 @@ CUASRid (node *arg_node, info *arg_info)
 {
     node *new_avis;
 
-    DBUG_ENTER ("CUASRid");
+    DBUG_ENTER ();
 
     new_avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
 
@@ -615,7 +618,7 @@ CUASRids (node *arg_node, info *arg_info)
 {
     node *new_avis;
 
-    DBUG_ENTER ("CUASRids");
+    DBUG_ENTER ();
 
     new_avis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
 
@@ -627,3 +630,5 @@ CUASRids (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

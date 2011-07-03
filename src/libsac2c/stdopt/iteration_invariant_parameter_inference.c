@@ -43,7 +43,9 @@
  *
  *****************************************************************************/
 
-#include "dbug.h"
+#define DBUG_PREFIX "IIPI"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "str.h"
@@ -77,7 +79,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -90,7 +92,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -116,21 +118,21 @@ FreeInfo (info *info)
 node *
 IIPIarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IIPIarg");
+    DBUG_ENTER ();
 
     /* Infer loop invariant args */
-    DBUG_ASSERT ((INFO_EXPRCHAIN (arg_info) != NULL),
+    DBUG_ASSERT (INFO_EXPRCHAIN (arg_info) != NULL,
                  "reached IIPIarg without having a link to the args "
                  "of the recursive call!");
-    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (INFO_EXPRCHAIN (arg_info))) == N_id),
+    DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (INFO_EXPRCHAIN (arg_info))) == N_id,
                  "function args are no identifiers");
 
     /* compare arg and fun-ap argument */
     if (ARG_AVIS (arg_node) == ID_AVIS (EXPRS_EXPR (INFO_EXPRCHAIN (arg_info)))) {
-        DBUG_PRINT ("IIPI", ("mark %s as loop-invariant", ARG_NAME (arg_node)));
+        DBUG_PRINT ("mark %s as loop-invariant", ARG_NAME (arg_node));
         AVIS_SSALPINV (ARG_AVIS (arg_node)) = TRUE;
     } else {
-        DBUG_PRINT ("IIPI", ("%s is non-loop-invariant", ARG_NAME (arg_node)));
+        DBUG_PRINT ("%s is non-loop-invariant", ARG_NAME (arg_node));
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -158,7 +160,7 @@ IIPIarg (node *arg_node, info *arg_info)
 static node *
 ATravAvis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravAvis");
+    DBUG_ENTER ();
     AVIS_SSALPINV (arg_node) = FALSE;
     DBUG_RETURN (arg_node);
 }
@@ -173,7 +175,7 @@ IIPIfundef (node *arg_node, info *arg_info)
                               {N_vardec, &TRAVsons},
                               {0, NULL}};
 
-    DBUG_ENTER ("IIPIfundef");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     INFO_FUNDEF (info) = arg_node;
@@ -208,9 +210,9 @@ IIPIfundef (node *arg_node, info *arg_info)
 node *
 IIPIap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IIPIap");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
+    DBUG_ASSERT (AP_FUNDEF (arg_node) != NULL, "missing fundef in ap-node");
 
     /*
      * if this is the recursive function call of this loop function
@@ -230,13 +232,13 @@ IIPIap (node *arg_node, info *arg_info)
             /* remove exprs chain */
             INFO_EXPRCHAIN (arg_info) = NULL;
         } else {
-            DBUG_PRINT ("IIPI", ("traverse in special fundef %s",
-                                 CTIitemName (AP_FUNDEF (arg_node))));
+            DBUG_PRINT ("traverse in special fundef %s",
+                        CTIitemName (AP_FUNDEF (arg_node)));
 
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-            DBUG_PRINT ("IIPI", ("traversal of special fundef %s finished\n",
-                                 CTIitemName (AP_FUNDEF (arg_node))));
+            DBUG_PRINT ("traversal of special fundef %s finished\n",
+                        CTIitemName (AP_FUNDEF (arg_node)));
         }
     }
 
@@ -255,11 +257,10 @@ IIPIap (node *arg_node, info *arg_info)
 node *
 IIPIdoIterationInvariantParameterInference (node *fundef)
 {
-    DBUG_ENTER ("IIPIdoIterationInvariantParameterInference");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "IIPIdoIterationInvariantParameterInfe"
-                                                   "rence() is used for fundef nodes "
-                                                   "only");
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "IIPIdoIterationInvariantParameterInfere"
+                                                 "nce() is used for fundef nodes only");
 
     if (!(FUNDEF_ISLACFUN (fundef))) {
         TRAVpush (TR_iipi);
@@ -269,3 +270,5 @@ IIPIdoIterationInvariantParameterInference (node *fundef)
 
     DBUG_RETURN (fundef);
 }
+
+#undef DBUG_PREFIX

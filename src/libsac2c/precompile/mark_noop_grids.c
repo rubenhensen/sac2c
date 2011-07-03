@@ -35,7 +35,10 @@
 #include "tree_compound.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "MNG"
+#include "debug.h"
+
 #include "traverse.h"
 #include "free.h"
 
@@ -59,7 +62,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -71,7 +74,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -90,7 +93,7 @@ MNGwlblock (node *arg_node, info *arg_info)
 {
     bool oldinfo;
 
-    DBUG_ENTER ("MNGwlblock");
+    DBUG_ENTER ();
 
     /*
      * traverse next dim first
@@ -138,7 +141,7 @@ MNGwlublock (node *arg_node, info *arg_info)
 {
     bool oldinfo;
 
-    DBUG_ENTER ("MNGwlublock");
+    DBUG_ENTER ();
 
     /*
      * traverse next dim first
@@ -186,7 +189,7 @@ MNGwlstride (node *arg_node, info *arg_info)
 {
     bool oldinfo;
 
-    DBUG_ENTER ("MNGwlstride");
+    DBUG_ENTER ();
 
     /*
      * check whether this stride is a noop
@@ -202,7 +205,7 @@ MNGwlstride (node *arg_node, info *arg_info)
      * transform this stride into a NOOP if it is one
      */
     if (INFO_ISNOOP (arg_info)) {
-        DBUG_PRINT ("MNG", ("tagging wlstride as noop"));
+        DBUG_PRINT ("tagging wlstride as noop");
 
         if (WLSTRIDE_CONTENTS (arg_node) != NULL) {
             WLSTRIDE_CONTENTS (arg_node) = FREEdoFreeTree (WLSTRIDE_CONTENTS (arg_node));
@@ -230,7 +233,7 @@ MNGwlgrid (node *arg_node, info *arg_info)
 {
     bool oldinfo;
 
-    DBUG_ENTER ("MNGwlgrid");
+    DBUG_ENTER ();
 
     /*
      * check whether this grid is a noop
@@ -255,7 +258,7 @@ MNGwlgrid (node *arg_node, info *arg_info)
      */
 #ifndef DBUG_OFF
     if (INFO_ISNOOP (arg_info)) {
-        DBUG_PRINT ("MNG", ("tagging wlgrid as noop"));
+        DBUG_PRINT ("tagging wlgrid as noop");
     }
 #endif
 
@@ -301,7 +304,7 @@ MNGwlgrid (node *arg_node, info *arg_info)
 node *
 MNGcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MNGcode");
+    DBUG_ENTER ();
 
     /*
      * only traverse this block and do not continue
@@ -326,7 +329,7 @@ MNGcode (node *arg_node, info *arg_info)
 node *
 MNGlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MNGlet");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
         if (PRF_PRF (LET_EXPR (arg_node)) != F_noop) {
@@ -339,7 +342,7 @@ MNGlet (node *arg_node, info *arg_info)
     /*
      * we have to continue the traversal here as we
      * want to walk through the entire tree. Otherwise
-     * we would miss all contained with nodes (nesting!) ;)
+     * we would miss all contained with nodes (nesting!);)
      */
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -358,7 +361,7 @@ MNGdoMarkNoopGrids (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MNGdoMarkNoopGrids");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -376,3 +379,5 @@ MNGdoMarkNoopGrids (node *syntax_tree)
 /** <!--********************************************************************-->
  * @}  <!-- Mark NoOP Grids -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

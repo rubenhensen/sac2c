@@ -143,7 +143,10 @@
 #include "copywlelim.h"
 
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CWLE"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"
@@ -195,7 +198,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -212,7 +215,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     INFO_LHS (info) = NULL;
     INFO_RHSAVIS (info) = NULL;
@@ -243,20 +246,20 @@ CWLEdoTemplateTraversal (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CWLEdoTemplateTraversal");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_fundef, "CWLE called on non-N_fundef node");
 
     INFO_ONEFUNDEF (info) = TRUE;
 
-    DBUG_PRINT ("CWLE", ("Starting template traversal."));
+    DBUG_PRINT ("Starting template traversal.");
 
     TRAVpush (TR_cwle);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("CWLE", ("Template traversal complete."));
+    DBUG_PRINT ("Template traversal complete.");
 
     info = FreeInfo (info);
 
@@ -311,7 +314,7 @@ ShapeFromShape (node *avisshape)
     char *nm1;
     char *nm2;
 
-    DBUG_ENTER ("ShapeFromShape");
+    DBUG_ENTER ();
 
     patarray = PMarray (1, PMAgetNode (&narray), 0);
     pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
@@ -355,9 +358,9 @@ ShapeFromShape (node *avisshape)
     nm2
       = ((NULL != M) && (N_id == NODE_TYPE (M))) ? AVIS_NAME (ID_AVIS (M)) : "( N_array)";
     if (b) {
-        DBUG_PRINT ("CWLE", ("Case 2: AVIS_SHAPE %s is shape(%s)", nm1, nm2));
+        DBUG_PRINT ("Case 2: AVIS_SHAPE %s is shape(%s)", nm1, nm2);
     } else {
-        DBUG_PRINT ("CWLE", ("Case 2: AVIS_SHAPE %s not derived from _sel_()", nm1));
+        DBUG_PRINT ("Case 2: AVIS_SHAPE %s not derived from _sel_()", nm1);
     }
 
     DBUG_RETURN (M);
@@ -413,7 +416,7 @@ arrayFromShape (node *avisshape)
     char *nm1;
     char *nm2;
 
-    DBUG_ENTER ("arrayFromShape");
+    DBUG_ENTER ();
 
     /* Case 1*/
     patarray = PMarray (1, PMAgetNode (&narray), 0);
@@ -447,10 +450,9 @@ arrayFromShape (node *avisshape)
       = ((NULL != M) && (N_id == NODE_TYPE (M))) ? AVIS_NAME (ID_AVIS (M)) : "( N_array)";
 
     if (b) {
-        DBUG_PRINT ("CWLE", ("Case 1: AVIS_SHAPE %s is shape(%s)", nm1, nm2));
+        DBUG_PRINT ("Case 1: AVIS_SHAPE %s is shape(%s)", nm1, nm2);
     } else {
-        DBUG_PRINT ("CWLE",
-                    ("Case 1: AVIS_SHAPE %s not derived from _idx_shape_sel_()", nm1));
+        DBUG_PRINT ("Case 1: AVIS_SHAPE %s not derived from _idx_shape_sel_()", nm1);
     }
 
     if (NULL == M) { /* Case 2 */
@@ -497,11 +499,9 @@ arrayFromShape (node *avisshape)
                                                        : "( N_array)";
 
         if (b) {
-            DBUG_PRINT ("CWLE", ("Case 2: AVIS_SHAPE %s is shape(%s)", nm1, nm2));
+            DBUG_PRINT ("Case 2: AVIS_SHAPE %s is shape(%s)", nm1, nm2);
         } else {
-            DBUG_PRINT ("CWLE",
-                        ("Case 2: AVIS_SHAPE %s not derived from _idx_shape_sel_()",
-                         nm1));
+            DBUG_PRINT ("Case 2: AVIS_SHAPE %s not derived from _idx_shape_sel_()", nm1);
         }
     }
 
@@ -556,10 +556,9 @@ isAvisShapesMatch (node *arg1, node *arg2)
     ntype *arg2type;
     bool z = FALSE;
 
-    DBUG_ENTER ("isAvisShapesMatch");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("CWLE", ("checking shape match for %s and %s", AVIS_NAME (arg1),
-                         AVIS_NAME (arg2)));
+    DBUG_PRINT ("checking shape match for %s and %s", AVIS_NAME (arg1), AVIS_NAME (arg2));
 
     /* Case 1: AKS and result shapes match */
     arg1type = AVIS_TYPE (arg1);
@@ -607,11 +606,10 @@ isAvisShapesMatch (node *arg1, node *arg2)
 #endif // FIXME
 
         if (z) {
-            DBUG_PRINT ("CWLE", ("shapes match for %s and %s", AVIS_NAME (arg1),
-                                 AVIS_NAME (arg2)));
+            DBUG_PRINT ("shapes match for %s and %s", AVIS_NAME (arg1), AVIS_NAME (arg2));
         } else {
-            DBUG_PRINT ("CWLE", ("shapes do not match for %s and %s", AVIS_NAME (arg1),
-                                 AVIS_NAME (arg2)));
+            DBUG_PRINT ("shapes do not match for %s and %s", AVIS_NAME (arg1),
+                        AVIS_NAME (arg2));
         }
 
         DBUG_RETURN (z);
@@ -638,14 +636,14 @@ isAvisShapesMatch (node *arg1, node *arg2)
         node *withid_avis;
         pattern *pat1;
 
-        DBUG_ENTER ("ivMatchCase1");
+        DBUG_ENTER ();
 
         withid_avis = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
         pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMparam (1, PMAhasAvis (&withid_avis)),
                       PMvar (1, PMAgetAvis (&target), 0));
 
         if (PMmatchFlat (pat1, cexpr)) {
-            DBUG_PRINT ("CWLE", ("Case 1: body matches _sel_VxA_( withid, &target)"));
+            DBUG_PRINT ("Case 1: body matches _sel_VxA_( withid, &target)");
         }
         pat1 = PMfree (pat1);
 
@@ -719,7 +717,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
         char *lhs;
         bool z = TRUE;
 
-        DBUG_ENTER ("ivMatchCase4");
+        DBUG_ENTER ();
 
         pat2 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMarray (1, PMAgetNode (&narray), 0),
                       PMvar (1, PMAgetAvis (&target), 0));
@@ -741,7 +739,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
             z = z && (NULL == withids) && (NULL == narrayels);
 
             if (z) {
-                DBUG_PRINT ("CWLE", ("Case 4: body matches _sel_VxA_( withid, &target)"));
+                DBUG_PRINT ("Case 4: body matches _sel_VxA_( withid, &target)");
             } else {
                 target = NULL;
             }
@@ -780,14 +778,14 @@ isAvisShapesMatch (node *arg1, node *arg2)
         node *oldfundef;
         dfmask_base_t *dfmask_base = NULL;
 
-        DBUG_ENTER ("CWLEfundef");
+        DBUG_ENTER ();
 
         oldfundef = INFO_FUNDEF (arg_info);
         INFO_FUNDEF (arg_info) = arg_node;
         if (NULL != FUNDEF_BODY (arg_node)) {
-            DBUG_PRINT ("CWLE", ("traversing body of (%s) %s",
-                                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                                 FUNDEF_NAME (arg_node)));
+            DBUG_PRINT ("traversing body of (%s) %s",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                        FUNDEF_NAME (arg_node));
 
             dfmask_base = DFMgenMaskBase (FUNDEF_ARGS (arg_node),
                                           BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
@@ -798,9 +796,9 @@ isAvisShapesMatch (node *arg1, node *arg2)
 
             INFO_DFM (arg_info) = DFMremoveMask (INFO_DFM (arg_info));
             DFMremoveMaskBase (dfmask_base);
-            DBUG_PRINT ("CWLE", ("leaving body of (%s) %s",
-                                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                                 FUNDEF_NAME (arg_node)));
+            DBUG_PRINT ("leaving body of (%s) %s",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                        FUNDEF_NAME (arg_node));
         }
 
         old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -825,7 +823,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
      *****************************************************************************/
     node *CWLEarg (node * arg_node, info * arg_info)
     {
-        DBUG_ENTER ("CWLEarg");
+        DBUG_ENTER ();
 
         ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
@@ -849,9 +847,9 @@ isAvisShapesMatch (node *arg1, node *arg2)
 
     node *CWLElet (node * arg_node, info * arg_info)
     {
-        DBUG_ENTER ("CWLElet");
+        DBUG_ENTER ();
 #ifdef VERBOSE
-        DBUG_PRINT ("CWLE", ("Looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
+        DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
 #endif // VERBOSE
 
         INFO_VALID (arg_info) = TRUE;
@@ -882,7 +880,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
      *****************************************************************************/
     node *CWLEassign (node * arg_node, info * arg_info)
     {
-        DBUG_ENTER ("CWLEassign");
+        DBUG_ENTER ();
 
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
@@ -899,7 +897,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
      *****************************************************************************/
     node *CWLEids (node * arg_node, info * arg_info)
     {
-        DBUG_ENTER ("CWLEids");
+        DBUG_ENTER ();
 
         DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, IDS_AVIS (arg_node));
 
@@ -925,10 +923,9 @@ isAvisShapesMatch (node *arg1, node *arg2)
 
     node *CWLEwith (node * arg_node, info * arg_info)
     {
-        DBUG_ENTER ("CWLEwith");
+        DBUG_ENTER ();
 
-        DBUG_PRINT ("CWLE",
-                    ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+        DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
         INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
@@ -944,15 +941,15 @@ isAvisShapesMatch (node *arg1, node *arg2)
             && (N_genarray == WITH_TYPE (arg_node)
                 || N_modarray == WITH_TYPE (arg_node))) {
 
-            DBUG_PRINT ("CWLE", ("Codes OK. Comparing shapes of LHS(%s), RHS(%s)",
-                                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
-                                 AVIS_NAME (INFO_RHSAVIS (arg_info))));
+            DBUG_PRINT ("Codes OK. Comparing shapes of LHS(%s), RHS(%s)",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                        AVIS_NAME (INFO_RHSAVIS (arg_info)));
 
             if (isAvisShapesMatch (INFO_RHSAVIS (arg_info),
                                    IDS_AVIS (INFO_LHS (arg_info)))) {
-                DBUG_PRINT ("CWLE", ("All ok. replacing LHS(%s) WL by %s",
-                                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
-                                     AVIS_NAME (INFO_RHSAVIS (arg_info))));
+                DBUG_PRINT ("All ok. replacing LHS(%s) WL by %s",
+                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                            AVIS_NAME (INFO_RHSAVIS (arg_info)));
                 global.optcounters.cwle_wl++;
 
                 /*
@@ -989,23 +986,21 @@ isAvisShapesMatch (node *arg1, node *arg2)
         char *lhs;
         info *subinfo;
 
-        DBUG_ENTER ("CWLEcode");
+        DBUG_ENTER ();
 
         if (INFO_VALID (arg_info)) {
 
-            DBUG_PRINT ("CWLE", ("prev nodes and wl signal ok"));
+            DBUG_PRINT ("prev nodes and wl signal ok");
             cexpr = EXPRS_EXPR (CODE_CEXPRS (arg_node));
             target = ivMatchCase1 (arg_node, arg_info, cexpr);
             target = (NULL != target) ? target : ivMatchCase4 (arg_node, arg_info, cexpr);
             lhs = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)));
             if (NULL == target) {
-                DBUG_PRINT ("CWLE",
-                            ("body of %s does not match _sel_VxA_( withid, &target)",
-                             lhs));
+                DBUG_PRINT ("body of %s does not match _sel_VxA_( withid, &target)", lhs);
                 INFO_VALID (arg_info) = FALSE;
             }
         } else {
-            DBUG_PRINT ("CWLE", ("previous nodes signal NOT ok"));
+            DBUG_PRINT ("previous nodes signal NOT ok");
         }
 
         /*
@@ -1016,15 +1011,15 @@ isAvisShapesMatch (node *arg1, node *arg2)
          * was defined _before_ this wl.
          */
         if (INFO_VALID (arg_info)) {
-            DBUG_PRINT ("CWLE", ("checking if target is legitimate and known"));
+            DBUG_PRINT ("checking if target is legitimate and known");
 
             if ((NULL == INFO_RHSAVIS (arg_info) || target == INFO_RHSAVIS (arg_info))
                 && DFMtestMaskEntry (INFO_DFM (arg_info), NULL, target)) {
-                DBUG_PRINT ("CWLE", ("target is valid. saving"));
+                DBUG_PRINT ("target is valid. saving");
 
                 INFO_RHSAVIS (arg_info) = target;
             } else {
-                DBUG_PRINT ("CWLE", ("target is NOT valid. skipping wl"));
+                DBUG_PRINT ("target is NOT valid. skipping wl");
 
                 INFO_VALID (arg_info) = FALSE;
                 INFO_RHSAVIS (arg_info) = NULL;
@@ -1063,3 +1058,5 @@ isAvisShapesMatch (node *arg1, node *arg2)
     /** <!--********************************************************************-->
      * @}  <!-- Traversal template -->
      *****************************************************************************/
+
+#undef DBUG_PREFIX

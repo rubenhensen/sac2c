@@ -5,7 +5,9 @@
 #include "icm2c_utils.h"
 #include "icm2c_ia.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
@@ -34,7 +36,7 @@ ICMCompileND_CREATE__IRREGULAR__ARRAY__DATA (char *to_NT, int to_sdim, int val_s
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_CREATE__IRREGULAR__ARRAY__DATA");
+    DBUG_ENTER ();
 
 #define ND_CREATE__IRREGULAR__ARRAY__DATA
 #include "icm_comment.c"
@@ -61,8 +63,10 @@ ICMCompileND_CREATE__IRREGULAR__ARRAY__DATA (char *to_NT, int to_sdim, int val_s
     fprintf (global.outfile, "%s\n", to_NT);
     fprintf (global.outfile, "%s\n", copyfun);
 
-    // DBUG_ASSERT( FALSE, "O YES!");
+    // DBUG_ASSERT (FALSE, "O YES!");
     fprintf (global.outfile, "FOOBAR!!!!!!!!!!");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

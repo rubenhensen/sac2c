@@ -4,7 +4,9 @@
 #include "tree_compound.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 /******************************************************************************
  *
@@ -37,7 +39,7 @@ NLUTgenerateNlut (node *args, node *vardecs)
     node *tmp;
     int c;
 
-    DBUG_ENTER ("NLUTgenerateNlut");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((args == NULL) || (NODE_TYPE (args) == N_arg),
                  "First argument of NLUTgenerateNlut must be NULL or N_arg");
@@ -87,7 +89,7 @@ NLUTgenerateNlutFromNlut (nlut_t *nlut)
     int i;
     nlut_t *newnlut;
 
-    DBUG_ENTER ("NLUTgenerateNlutFromNlut");
+    DBUG_ENTER ();
 
     newnlut = MEMmalloc (sizeof (nlut_t));
 
@@ -118,7 +120,7 @@ NLUTduplicateNlut (nlut_t *nlut)
     int i;
     nlut_t *newnlut;
 
-    DBUG_ENTER ("NLUTduplicateNlut");
+    DBUG_ENTER ();
 
     newnlut = MEMmalloc (sizeof (nlut_t));
 
@@ -146,7 +148,7 @@ NLUTduplicateNlut (nlut_t *nlut)
 nlut_t *
 NLUTremoveNlut (nlut_t *nlut)
 {
-    DBUG_ENTER ("NLUTremoveNlut");
+    DBUG_ENTER ();
 
     NLUT_NUMS (nlut) = MEMfree (NLUT_NUMS (nlut));
     NLUT_AVIS (nlut) = MEMfree (NLUT_AVIS (nlut));
@@ -171,7 +173,7 @@ NLUTaddNluts (nlut_t *nlut1, nlut_t *nlut2)
     int i;
     nlut_t *res;
 
-    DBUG_ENTER ("NLUTaddNluts");
+    DBUG_ENTER ();
 
     res = NLUTduplicateNlut (nlut1);
     for (i = 0; i < NLUT_SIZE (nlut2); i++) {
@@ -195,7 +197,7 @@ NLUTgetNum (nlut_t *nlut, node *avis)
 {
     int i;
 
-    DBUG_ENTER ("NLUTgetNum");
+    DBUG_ENTER ();
 
     i = NLUT_NUMS (nlut)[AVIS_VARNO (avis)];
 
@@ -214,11 +216,11 @@ NLUTgetNum (nlut_t *nlut, node *avis)
 void
 NLUTsetNum (nlut_t *nlut, node *avis, int num)
 {
-    DBUG_ENTER ("NLUTsetNum");
+    DBUG_ENTER ();
 
     NLUT_NUMS (nlut)[AVIS_VARNO (avis)] = num;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -233,11 +235,11 @@ NLUTsetNum (nlut_t *nlut, node *avis, int num)
 void
 NLUTincNum (nlut_t *nlut, node *avis, int num)
 {
-    DBUG_ENTER ("NLUTincNum");
+    DBUG_ENTER ();
 
     NLUT_NUMS (nlut)[AVIS_VARNO (avis)] += num;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -257,7 +259,7 @@ NLUTgetNonZeroAvis (nlut_t *nlut)
     static nlut_t *store;
     static int i;
 
-    DBUG_ENTER ("NLUTgetNonZeroAvis");
+    DBUG_ENTER ();
 
     if (nlut != NULL) {
         store = nlut;
@@ -272,3 +274,5 @@ NLUTgetNonZeroAvis (nlut_t *nlut)
 
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

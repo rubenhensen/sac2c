@@ -18,7 +18,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "types.h"
@@ -38,7 +41,7 @@ int
 GINisReachable (node *n1, node *n2, compinfo *ci)
 {
 
-    DBUG_ENTER ("GINisReachable");
+    DBUG_ENTER ();
 
     int result = 0;
     int reachtree = 0, reachcross = 0;
@@ -96,7 +99,7 @@ static void
 GINreorderVerticesInDAG (node *n1, node *n2)
 {
 
-    DBUG_ENTER ("GINreorderVertices");
+    DBUG_ENTER ();
 
     node *temp;
 
@@ -110,14 +113,14 @@ GINreorderVerticesInDAG (node *n1, node *n2)
         n2 = temp;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 node *
 GINlcaFromVertices (node *n1, node *n2, compinfo *ci)
 {
 
-    DBUG_ENTER ("GINlcaFromNodes");
+    DBUG_ENTER ();
 
     matrix *pcpt_matrix, *pcpc_matrix;
     int pcpt_col, pcpt_row;
@@ -208,3 +211,5 @@ GINlcaFromVertices (node *n1, node *n2, compinfo *ci)
 
     DBUG_RETURN (result);
 }
+
+#undef DBUG_PREFIX

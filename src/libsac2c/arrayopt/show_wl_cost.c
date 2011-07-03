@@ -27,7 +27,10 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "print.h"
 
 /** <!--********************************************************************-->
@@ -40,7 +43,7 @@
 node *
 SHWLCprintPreFun (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SHWLCprintPreFun");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (arg_node)) {
     case N_with:
@@ -71,7 +74,7 @@ SHWLCprintPreFun (node *arg_node, info *arg_info)
 node *
 SHWLCactivate (node *syntax_tree)
 {
-    DBUG_ENTER ("SHWLCactivate");
+    DBUG_ENTER ();
 
     TRAVsetPreFun (TR_prt, SHWLCprintPreFun);
 
@@ -89,7 +92,7 @@ SHWLCactivate (node *syntax_tree)
 node *
 SHWLCdeactivate (node *syntax_tree)
 {
-    DBUG_ENTER ("SHWLCdeactivate");
+    DBUG_ENTER ();
 
     TRAVsetPreFun (TR_prt, NULL);
 
@@ -99,3 +102,5 @@ SHWLCdeactivate (node *syntax_tree)
 /** <!--********************************************************************-->
  * @}  <!-- Symbolic With-Loop Folding -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

@@ -5,7 +5,10 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "free.h"
 #include "DupTree.h"
 #include "resource.h"
@@ -40,12 +43,12 @@ ExtractNaiveCompPragmaAp (bool *do_naive_comp, node *exprs, int line)
 {
     node *ap;
 
-    DBUG_ENTER ("ExtractNaiveCompPragmaAp");
+    DBUG_ENTER ();
 
     if (exprs != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "Illegal wlcomp pragma!");
+        DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "Illegal wlcomp pragma!");
         ap = EXPRS_EXPR (exprs);
-        DBUG_ASSERT ((NODE_TYPE (ap) == N_spap), ("Illegal wlcomp pragma!"));
+        DBUG_ASSERT (NODE_TYPE (ap) == N_spap, "Illegal wlcomp pragma!");
 
         if (STReq (SPAP_NAME (ap), "Naive")) {
             if (SPAP_ARGS (ap) != NULL) {
@@ -80,7 +83,7 @@ ExtractNaiveCompPragma (node *pragma, int line)
 {
     bool do_naive_comp = FALSE;
 
-    DBUG_ENTER ("ExtractNaiveCompPragma");
+    DBUG_ENTER ();
 
     if (pragma != NULL) {
         PRAGMA_WLCOMP_APS (pragma)
@@ -112,12 +115,12 @@ ExtractAplPragmaAp (node *exprs, node *pragma, int line)
     node *ap;
     int size;
 
-    DBUG_ENTER ("ExtractAplPragmaAp");
+    DBUG_ENTER ();
 
     if (exprs != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "Illegal wlcomp pragma.");
+        DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "Illegal wlcomp pragma.");
         ap = EXPRS_EXPR (exprs);
-        DBUG_ASSERT ((NODE_TYPE (ap) == N_spap), "Illegal wlcomp pragma.");
+        DBUG_ASSERT (NODE_TYPE (ap) == N_spap, "Illegal wlcomp pragma.");
         if (STReq (SPAP_NAME (ap), "APL")) {
             if ((SPAP_EXPRS1 (ap) == NULL) || (NODE_TYPE (SPAP_ARG1 (ap)) != N_id)
                 || (SPAP_EXPRS2 (ap) == NULL) || (NODE_TYPE (SPAP_ARG2 (ap)) != N_num)
@@ -170,7 +173,7 @@ ExtractAplPragma (node *pragma, int line)
 {
     node *res;
 
-    DBUG_ENTER ("ExtractAplPragma");
+    DBUG_ENTER ();
 
     if (pragma != NULL) {
         PRAGMA_WLCOMP_APS (pragma)
@@ -235,13 +238,13 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
     int bound1, bound2, step, width, offset, grid1_b1, grid1_b2, grid2_b1, grid2_b2;
     bool empty = FALSE; /* is the intersection empty in the current dim? */
 
-    DBUG_ENTER ("IntersectStridesArray");
+    DBUG_ENTER ();
 
     isect = NULL;
     if (strides != NULL) {
 
-        DBUG_ASSERT ((NODE_TYPE (strides) == N_wlstride), "no stride found");
-        DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (strides)), "dynamic stride found");
+        DBUG_ASSERT (NODE_TYPE (strides) == N_wlstride, "no stride found");
+        DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (strides), "dynamic stride found");
 
         if ((aelems1 == NULL) || (aelems2 == NULL)) {
             CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
@@ -324,7 +327,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
                     }
                 }
                 if (grid2_b1 < width) {
-                    DBUG_ASSERT ((grid1_b1 < width), "wrong grid bounds");
+                    DBUG_ASSERT (grid1_b1 < width, "wrong grid bounds");
                     grid2_b2 = MATHmin (grid2_b2, width);
 
                     if (!empty) {
@@ -347,7 +350,7 @@ IntersectStridesArray (node *strides, node *aelems1, node *aelems2, int line)
                   = WLTRAinsertWlNodes (WLSTRIDE_CONTENTS (isect), new_grids);
             } else {
                 /* next dim is empty -> erase current dim */
-                DBUG_ASSERT ((new_grids == NULL), "cubes not consistent");
+                DBUG_ASSERT (new_grids == NULL, "cubes not consistent");
                 isect = FREEdoFreeTree (isect);
             }
         }
@@ -382,7 +385,7 @@ Array2Bv (node *array, int dims, char *fun_name, int line)
     int d;
     node *result, *tmp;
 
-    DBUG_ENTER ("Array2Bv");
+    DBUG_ENTER ();
 
     tmp = ARRAY_AELEMS (array);
     for (d = 0; d < dims; d++) {
@@ -438,7 +441,7 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
     node *abv;
     int level;
 
-    DBUG_ENTER ("StoreBv");
+    DBUG_ENTER ();
 
     if (parms == NULL) {
         CTIabortLine (line,
@@ -447,7 +450,7 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
                       fun_name);
     }
 
-    DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
+    DBUG_ASSERT (NODE_TYPE (parms) == N_exprs,
                  "illegal parameter of wlcomp-pragma found!");
 
     if (NODE_TYPE (EXPRS_EXPR (parms)) != N_num) {
@@ -476,7 +479,7 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
                 }
 
                 if (level >= 0) {
-                    DBUG_ASSERT ((level < WLSEG_BLOCKS (seg)),
+                    DBUG_ASSERT (level < WLSEG_BLOCKS (seg),
                                  "illegal blocking level found!");
 
                     abv = TCgetNthExprs (level, WLSEG_BV (seg));
@@ -518,7 +521,7 @@ StoreBv (node *segs, node *parms, node *cubes, int dims, char *fun_name, int lin
 node *
 WLCOMP_All (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    DBUG_ENTER ("WLCOMP_All");
+    DBUG_ENTER ();
 
     if (parms != NULL) {
         CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
@@ -555,7 +558,7 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
     node *new_seg;
     node *last_seg = NULL;
 
-    DBUG_ENTER ("WLCOMP_Cubes");
+    DBUG_ENTER ();
 
     if (parms != NULL) {
         CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
@@ -566,7 +569,7 @@ WLCOMP_Cubes (node *segs, node *parms, node *cubes, int dims, int line)
         segs = FREEdoFreeTree (segs);
     }
 
-    DBUG_ASSERT ((cubes != NULL), "no cubes found!");
+    DBUG_ASSERT (cubes != NULL, "no cubes found!");
 
     while (cubes != NULL) {
         /*
@@ -613,7 +616,7 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
     node *new_cubes, *new_seg;
     node *last_seg = NULL;
 
-    DBUG_ENTER ("WLCOMP_ConstSegs");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (cubes) != N_wlstride) {
         CTIwarnLine (line, "wlcomp-pragma function ConstSeg() ignored"
@@ -629,7 +632,7 @@ WLCOMP_ConstSegs (node *segs, node *parms, node *cubes, int dims, int line)
         }
 
         do {
-            DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
+            DBUG_ASSERT (NODE_TYPE (parms) == N_exprs,
                          "illegal parameter of wlcomp-pragma found!");
 
             if (EXPRS_NEXT (parms) == NULL) {
@@ -685,7 +688,7 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
     int b;
     node *seg = segs;
 
-    DBUG_ENTER ("WLCOMP_NoBlocking");
+    DBUG_ENTER ();
 
     if (parms != NULL) {
         CTIabortLine (line, "Illegal argument in wlcomp-pragma found;"
@@ -729,7 +732,7 @@ WLCOMP_NoBlocking (node *segs, node *parms, node *cubes, int dims, int line)
 node *
 WLCOMP_BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    DBUG_ENTER ("WLCOMP_BvL0");
+    DBUG_ENTER ();
 
     parms = TBmakeExprs (TBmakeNum (0), parms);
     segs = StoreBv (segs, parms, cubes, dims, "BvL0", line);
@@ -752,7 +755,7 @@ WLCOMP_BvL0 (node *segs, node *parms, node *cubes, int dims, int line)
 node *
 WLCOMP_BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    DBUG_ENTER ("WLCOMP_BvL1");
+    DBUG_ENTER ();
 
     parms = TBmakeExprs (TBmakeNum (1), parms);
     segs = StoreBv (segs, parms, cubes, dims, "BvL1", line);
@@ -775,7 +778,7 @@ WLCOMP_BvL1 (node *segs, node *parms, node *cubes, int dims, int line)
 node *
 WLCOMP_BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    DBUG_ENTER ("WLCOMP_BvL2");
+    DBUG_ENTER ();
 
     parms = TBmakeExprs (TBmakeNum (2), parms);
     segs = StoreBv (segs, parms, cubes, dims, "BvL2", line);
@@ -798,7 +801,7 @@ WLCOMP_BvL2 (node *segs, node *parms, node *cubes, int dims, int line)
 node *
 WLCOMP_Ubv (node *segs, node *parms, node *cubes, int dims, int line)
 {
-    DBUG_ENTER ("WLCOMP_Ubv");
+    DBUG_ENTER ();
 
     if (segs != NULL) {
         parms = TBmakeExprs (TBmakeNum (-1), parms);
@@ -826,7 +829,7 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
     node *arg;
     node *seg = segs;
 
-    DBUG_ENTER ("WLCOMP_Scheduling");
+    DBUG_ENTER ();
 
     if (global.mtmode == MT_none) {
         CTIwarnLine (line, "wlcomp-pragma function Scheduling() ignored"
@@ -838,7 +841,7 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
                                     " Scheduling(): Missing Parameter");
             }
 
-            DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
+            DBUG_ASSERT (NODE_TYPE (parms) == N_exprs,
                          "illegal parameter of wlcomp-pragma found!");
 
             arg = EXPRS_EXPR (parms);
@@ -882,7 +885,7 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
     node *arg;
     node *seg = segs;
 
-    DBUG_ENTER ("WLCOMP_Tasksel");
+    DBUG_ENTER ();
 
     if (global.mtmode == MT_none) {
         CTIwarnLine (line, "wlcomp-pragma function Tasksel() ignored"
@@ -894,7 +897,7 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
                                     " Tasksel(): Missing Parameter");
             }
 
-            DBUG_ASSERT ((NODE_TYPE (parms) == N_exprs),
+            DBUG_ASSERT (NODE_TYPE (parms) == N_exprs,
                          "illegal parameter of wlcomp-pragma found!");
 
             arg = EXPRS_EXPR (parms);
@@ -923,3 +926,5 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
 
     DBUG_RETURN (segs);
 }
+
+#undef DBUG_PREFIX

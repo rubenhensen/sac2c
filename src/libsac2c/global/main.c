@@ -17,7 +17,9 @@
 #include "resource.h"
 #include "libstat.h"
 #include "filemgr.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 #include <stdlib.h>
 #include <locale.h>
@@ -31,7 +33,7 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
 {
     node *syntax_tree = NULL;
 
-    DBUG_ENTER ("SetupCompiler");
+    DBUG_ENTER ();
 
     setlocale (LC_ALL, "en_US");
     CTIinstallInterruptHandlers ();
@@ -65,7 +67,7 @@ SACrunSac2c (int argc, char *argv[])
 {
     node *syntax_tree;
 
-    DBUG_ENTER ("SACrunSac2c");
+    DBUG_ENTER ();
 
     syntax_tree = SetupCompiler (argc, argv, TOOL_sac2c, "sac2c");
 
@@ -85,7 +87,7 @@ SACrunSac4c (int argc, char *argv[])
 {
     node *syntax_tree;
 
-    DBUG_ENTER ("SACrunSac4c");
+    DBUG_ENTER ();
 
     syntax_tree = SetupCompiler (argc, argv, TOOL_sac4c, "sac4c");
 
@@ -105,7 +107,7 @@ SACrunSac2tex (int argc, char *argv[])
 {
     node *syntax_tree;
 
-    DBUG_ENTER ("SACrunSac2tex");
+    DBUG_ENTER ();
 
     syntax_tree = SetupCompiler (argc, argv, TOOL_sac2tex, "sac2tex");
 
@@ -115,3 +117,5 @@ SACrunSac2tex (int argc, char *argv[])
 
     DBUG_RETURN (0);
 }
+
+#undef DBUG_PREFIX

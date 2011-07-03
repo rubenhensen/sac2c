@@ -14,7 +14,10 @@
 #include "new_types.h"
 #include "user_types.h"
 #include "shape.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "HS"
+#include "debug.h"
+
 #include "memory.h"
 #include "str.h"
 #include "ctinfo.h"
@@ -65,7 +68,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -80,7 +83,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -99,9 +102,9 @@ HSdoHideStructs (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("HSdoHideStructs");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("HS", ("Starting struct hiding."));
+    DBUG_PRINT ("Starting struct hiding.");
 
     info = MakeInfo ();
 
@@ -111,7 +114,7 @@ HSdoHideStructs (node *syntax_tree)
 
     info = FreeInfo (info);
 
-    DBUG_PRINT ("HS", ("Done hiding all structs."));
+    DBUG_PRINT ("Done hiding all structs.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -126,7 +129,7 @@ HSdoHideStructs (node *syntax_tree)
 node *
 HSmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HSmodule");
+    DBUG_ENTER ();
 
     INFO_MODULE (arg_info) = arg_node;
 
@@ -156,7 +159,7 @@ HSstructdef (node *arg_node, info *arg_info)
     ntype *structtype;
     char *sname;
 
-    DBUG_ENTER ("HSstructdef");
+    DBUG_ENTER ();
 
     if (!global.enable_structs) {
         CTIabort (
@@ -182,7 +185,7 @@ HSstructdef (node *arg_node, info *arg_info)
     MODULE_TYPES (module) = typedef_;
     /* Prepare the argument list for the N_structelem handlers. */
     DBUG_ASSERT (INFO_INIT_ARGS (arg_info) == NULL,
-                 ("Garbage constructor arguments lying around in arg_info."));
+                 "Garbage constructor arguments lying around in arg_info.");
     INFO_STRUCTDEF (arg_info) = arg_node;
     /* Create a new userntype for this struct (typechecker will link above typedef
      * to this userntype). */
@@ -243,14 +246,14 @@ HSstructelem (node *arg_node, info *arg_info)
     ntype *structtype;
     node *avis;
 
-    DBUG_ENTER ("HSstructelem");
+    DBUG_ENTER ();
 
     module = INFO_MODULE (arg_info);
-    DBUG_ASSERT (module != NULL, ("No module set for this struct element."));
+    DBUG_ASSERT (module != NULL, "No module set for this struct element.");
     structdef = INFO_STRUCTDEF (arg_info);
-    DBUG_ASSERT (structdef != NULL, ("No structdef for this struct element."));
+    DBUG_ASSERT (structdef != NULL, "No structdef for this struct element.");
     structtype = INFO_STRUCTTYPE (arg_info);
-    DBUG_ASSERT (structtype != NULL, ("No struct set for this struct element."));
+    DBUG_ASSERT (structtype != NULL, "No struct set for this struct element.");
 
     /* Create getter as new external fundec. */
     arg = TBmakeArg (TBmakeAvis (STRcpy ("s"), TYcopyType (structtype)), NULL);
@@ -305,3 +308,5 @@ HSstructelem (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

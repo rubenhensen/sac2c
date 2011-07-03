@@ -29,7 +29,10 @@
 #include "memory.h"
 #include "traverse.h"
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "RCI"
+#include "debug.h"
+
 #include "NumLookUpTable.h"
 #include "DataFlowMask.h"
 #include "cuda_utils.h"
@@ -76,7 +79,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -97,7 +100,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -130,15 +133,15 @@ FreeInfo (info *info)
 node *
 RCIdoReferenceCounting (node *syntax_tree)
 {
-    DBUG_ENTER ("RCIdoReferenceCounting");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("RCI", ("Starting reference counting inference..."));
+    DBUG_PRINT ("Starting reference counting inference...");
 
     TRAVpush (TR_rci);
     syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
 
-    DBUG_PRINT ("RCI", ("Reference counting inference complete."));
+    DBUG_PRINT ("Reference counting inference complete.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -158,7 +161,7 @@ AdjustRC (node *avis, int count, node *arg_node)
 {
     node *prf;
 
-    DBUG_ENTER ("AdjustRC");
+    DBUG_ENTER ();
 
     if (count != 0) {
         if (count > 0) {
@@ -178,7 +181,7 @@ MakeRCAssignments (nlut_t *nlut)
     node *res, *avis;
     int count;
 
-    DBUG_ENTER ("MakeRCAssignments");
+    DBUG_ENTER ();
 
     res = NULL;
 
@@ -198,7 +201,7 @@ MakeRCAssignments (nlut_t *nlut)
 static node *
 PrependAssignments (node *ass1, node *ass2)
 {
-    DBUG_ENTER ("PrependAssignments");
+    DBUG_ENTER ();
 
     if ((ass2 != NULL) && (NODE_TYPE (ass2) == N_empty)) {
         ass2 = FREEdoFreeNode (ass2);
@@ -218,7 +221,7 @@ ArgIsInout (node *arg, node *rets)
 {
     bool res;
 
-    DBUG_ENTER ("ArgIsInout");
+    DBUG_ENTER ();
 
     res
       = ((ARG_HASLINKSIGNINFO (arg)) && (rets != NULL)
@@ -250,12 +253,12 @@ ArgIsInout (node *arg, node *rets)
 node *
 RCIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCIfundef");
+    DBUG_ENTER ();
 
     if ((!FUNDEF_ISCONDFUN (arg_node)) || (arg_info != NULL)) {
 
-        DBUG_PRINT ("RCI", ("Inferencing reference counters in function %s...",
-                            FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Inferencing reference counters in function %s...",
+                    FUNDEF_NAME (arg_node));
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             info *info;
@@ -328,8 +331,8 @@ RCIfundef (node *arg_node, info *arg_info)
             info = FreeInfo (info);
         }
 
-        DBUG_PRINT ("RCI", ("Reference counting inference in function %s complete.",
-                            FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Reference counting inference in function %s complete.",
+                    FUNDEF_NAME (arg_node));
     }
 
     /*
@@ -352,7 +355,7 @@ RCIfundef (node *arg_node, info *arg_info)
 node *
 RCIassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCIassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -378,7 +381,7 @@ RCIassign (node *arg_node, info *arg_info)
 node *
 RCIlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCIlet");
+    DBUG_ENTER ();
 
     INFO_MUSTCOUNT (arg_info) = TRUE;
 
@@ -405,7 +408,7 @@ RCIlet (node *arg_node, info *arg_info)
 node *
 RCIreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCIreturn");
+    DBUG_ENTER ();
 
     if (!FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))) {
         INFO_MODE (arg_info) = rc_apuse;
@@ -428,7 +431,7 @@ RCIreturn (node *arg_node, info *arg_info)
 node *
 RCIid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCIid");
+    DBUG_ENTER ();
 
     NLUTincNum (INFO_ENV (arg_info), ID_AVIS (arg_node), 1);
 
@@ -452,7 +455,7 @@ RCIids (node *arg_node, info *arg_info)
 {
     int count;
 
-    DBUG_ENTER ("RCIids");
+    DBUG_ENTER ();
 
     count = NLUTgetNum (INFO_ENV (arg_info), IDS_AVIS (arg_node));
     NLUTsetNum (INFO_ENV (arg_info), IDS_AVIS (arg_node), 0);
@@ -481,7 +484,7 @@ node *
 RCIap (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("RCIap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
         /*
@@ -560,7 +563,7 @@ RCIap (node *arg_node, info *arg_info)
 node *
 RCIprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCIprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_alloc:
@@ -706,7 +709,7 @@ RCIprf (node *arg_node, info *arg_info)
 
     case F_syncout:
     case F_syncin:
-        DBUG_ASSERT ((TCcountExprs (PRF_ARGS (arg_node)) == 1),
+        DBUG_ASSERT (TCcountExprs (PRF_ARGS (arg_node)) == 1,
                      "_sync{out,in}_ should have 1 argument in this phase");
         INFO_MODE (arg_info) = rc_apuse;
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
@@ -730,7 +733,7 @@ RCIprf (node *arg_node, info *arg_info)
 node *
 RCIarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCIarray");
+    DBUG_ENTER ();
 
     INFO_MODE (arg_info) = rc_prfuse;
 
@@ -754,7 +757,7 @@ RCIwith (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("RCIwith");
+    DBUG_ENTER ();
 
     INFO_WITHMASK (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
@@ -807,7 +810,7 @@ RCIwith2 (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("RCIwith2");
+    DBUG_ENTER ();
 
     INFO_WITHMASK (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
@@ -858,7 +861,7 @@ RCIwith3 (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("RCIwith3");
+    DBUG_ENTER ();
 
     INFO_WITHMASK (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
@@ -905,7 +908,7 @@ RCIcode (node *arg_node, info *arg_info)
     dfmask_t *withmask;
     nlut_t *old_env;
 
-    DBUG_ENTER ("RCIcode");
+    DBUG_ENTER ();
 
     withmask = INFO_WITHMASK (arg_info);
     INFO_WITHMASK (arg_info) = NULL;
@@ -965,7 +968,7 @@ RCIrange (node *arg_node, info *arg_info)
     dfmask_t *withmask;
     nlut_t *old_env;
 
-    DBUG_ENTER ("RCIrange");
+    DBUG_ENTER ();
 
     withmask = INFO_WITHMASK (arg_info);
     INFO_WITHMASK (arg_info) = NULL;
@@ -1028,7 +1031,7 @@ RCIrange (node *arg_node, info *arg_info)
 node *
 RCIwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCIwithid");
+    DBUG_ENTER ();
 
     INFO_MODE (arg_info) = rc_prfuse;
 
@@ -1048,8 +1051,8 @@ RCIwithid (node *arg_node, info *arg_info)
       = (0 < NLUTgetNum (INFO_ENV (arg_info), ID_AVIS (WITHID_VEC (arg_node))));
 
     if (!WITHID_VECNEEDED (arg_node)) {
-        DBUG_PRINT ("RCI", ("Index vector %s will not be built!\n",
-                            ID_NAME (WITHID_VEC (arg_node))));
+        DBUG_PRINT ("Index vector %s will not be built!\n",
+                    ID_NAME (WITHID_VEC (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -1065,7 +1068,7 @@ RCIwithid (node *arg_node, info *arg_info)
 node *
 RCIgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCgenarray");
+    DBUG_ENTER ();
 
     /*
      * genarray( shp, def, mem)
@@ -1107,7 +1110,7 @@ RCIgenarray (node *arg_node, info *arg_info)
 node *
 RCImodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCImodarray");
+    DBUG_ENTER ();
 
     /*
      * modarray( A, mem);
@@ -1137,7 +1140,7 @@ RCImodarray (node *arg_node, info *arg_info)
 node *
 RCIfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCIfold");
+    DBUG_ENTER ();
 
     /*
      * fold( op, n);
@@ -1178,7 +1181,7 @@ RCIfold (node *arg_node, info *arg_info)
 node *
 RCIpropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCIpropagate");
+    DBUG_ENTER ();
 
     /*
      * propagate( n);
@@ -1208,7 +1211,7 @@ RCIfuncond (node *arg_node, info *arg_info)
     int n;
     node *lhs;
 
-    DBUG_ENTER ("RCIfuncond");
+    DBUG_ENTER ();
 
     if (INFO_ENV2 (arg_info) == NULL) {
         INFO_ENV2 (arg_info) = NLUTduplicateNlut (INFO_ENV (arg_info));
@@ -1241,7 +1244,7 @@ RCIcond (node *arg_node, info *arg_info)
     nlut_t *nzlut;
     nlut_t *env;
 
-    DBUG_ENTER ("RCIcond");
+    DBUG_ENTER ();
 
     if (INFO_ENV2 (arg_info) == NULL) {
         INFO_ENV2 (arg_info) = NLUTduplicateNlut (INFO_ENV (arg_info));
@@ -1315,3 +1318,5 @@ RCIcond (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Reference counting -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

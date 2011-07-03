@@ -9,7 +9,9 @@
 
 #include "update_wrapper_type.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "new_types.h"
@@ -25,7 +27,7 @@ UWTfundef (node *arg_node, info *arg_info)
     ntype *new_type, *type;
     node *fundef;
 
-    DBUG_ENTER ("UWTfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISWRAPPERFUN (arg_node)) {
         type = FUNDEF_WRAPPERTYPE (arg_node);
@@ -54,7 +56,7 @@ node *
 UWTdoUpdateWrapperType (node *arg_node)
 {
 
-    DBUG_ENTER ("UWTdoUpdateWrapperType");
+    DBUG_ENTER ();
 
     TRAVpush (TR_uwt);
 
@@ -64,3 +66,5 @@ UWTdoUpdateWrapperType (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

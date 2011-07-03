@@ -12,7 +12,9 @@
 #include "NameTuplesUtils.h"
 #include "str.h"
 #include "new_types.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 /** <!-- ****************************************************************** -->
  * @fn bool WLBidOrNumEq( node *arg1, node *arg2)
@@ -33,7 +35,7 @@ WLBidOrNumEq (node *arg1, node *arg2)
 {
     bool result;
 
-    DBUG_ENTER ("WLBidOrNumEq");
+    DBUG_ENTER ();
 
     if ((NODE_TYPE (arg1) == N_id) && (NODE_TYPE (arg2) == N_id)) {
         result = (ID_AVIS (arg1) == ID_AVIS (arg2));
@@ -67,7 +69,7 @@ WLBidOrNumLe (node *arg1, node *arg2, int shape)
 {
     bool result;
 
-    DBUG_ENTER ("WLBidOrNumLe");
+    DBUG_ENTER ();
 
     result = WLBidOrNumEq (arg1, arg2);
 
@@ -107,7 +109,7 @@ WLBidOrNumMakeIndex (node *bound, int dim, node *wl_ids)
     node *index;
     int sel_dim;
 
-    DBUG_ENTER ("WLBnodeOrIntMakeIndex");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (bound) == N_num) {
         if (NUM_VAL (bound) == IDX_SHAPE) {
@@ -117,7 +119,7 @@ WLBidOrNumMakeIndex (node *bound, int dim, node *wl_ids)
         }
     } else {
 
-        DBUG_ASSERT ((ID_DECL (bound) != NULL), "no vardec/decl found!");
+        DBUG_ASSERT (ID_DECL (bound) != NULL, "no vardec/decl found!");
 
         /**
          * As we assume that this code is relevant for with2 only(!!),
@@ -138,3 +140,5 @@ WLBidOrNumMakeIndex (node *bound, int dim, node *wl_ids)
 
     DBUG_RETURN (index);
 }
+
+#undef DBUG_PREFIX

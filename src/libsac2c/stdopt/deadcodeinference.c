@@ -9,7 +9,10 @@
 #include "tree_compound.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "DCI"
+#include "debug.h"
+
 #include "traverse.h"
 #include "ctinfo.h"
 #include "free.h"
@@ -46,7 +49,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -64,7 +67,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -85,9 +88,9 @@ DCIdoDeadCodeInferenceOneFundef (node *fundef)
 {
     info *info;
 
-    DBUG_ENTER ("DCIdoDeadCodeInferenceOneFundef");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "DCIdoDeadCodeInferenceOneFunction called for non-fundef node");
 
     info = MakeInfo ();
@@ -116,9 +119,9 @@ DCIdoDeadCodeInferenceOneFunction (node *fundef)
 {
     info *info;
 
-    DBUG_ENTER ("DCIdoDeadCodeInferenceOneFunction");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "DCIdoDeadCodeInferenceOneFunction called for non-fundef node");
 
     info = MakeInfo ();
@@ -152,36 +155,36 @@ DCIdoDeadCodeInferenceOneFunction (node *fundef)
 static void
 MarkAvisAlive (node *avis)
 {
-    DBUG_ENTER ("MarkAvisAlive");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("DCI", ("looking at %s", AVIS_NAME (avis)));
+    DBUG_PRINT ("looking at %s", AVIS_NAME (avis));
 
     if (AVIS_ISDEAD (avis)) {
         AVIS_ISDEAD (avis) = FALSE;
-        DBUG_PRINT ("DCI", ("marking var %s as alive", AVIS_NAME (avis)));
+        DBUG_PRINT ("marking var %s as alive", AVIS_NAME (avis));
 
         if (AVIS_DIM (avis) != NULL) {
-            DBUG_PRINT ("DCI", ("Traversing AVIS_DIM for %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("Traversing AVIS_DIM for %s", AVIS_NAME (avis));
             AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), NULL);
         }
 
         if (AVIS_SHAPE (avis) != NULL) {
-            DBUG_PRINT ("DCI", ("Traversing AVIS_SHAPE for %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("Traversing AVIS_SHAPE for %s", AVIS_NAME (avis));
             AVIS_SHAPE (avis) = TRAVdo (AVIS_SHAPE (avis), NULL);
         }
 
         if (AVIS_MIN (avis) != NULL) {
-            DBUG_PRINT ("DCI", ("Traversing AVIS_MIN for %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("Traversing AVIS_MIN for %s", AVIS_NAME (avis));
             AVIS_MIN (avis) = TRAVdo (AVIS_MIN (avis), NULL);
         }
 
         if (AVIS_MAX (avis) != NULL) {
-            DBUG_PRINT ("DCI", ("Traversing AVIS_MAX for %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("Traversing AVIS_MAX for %s", AVIS_NAME (avis));
             AVIS_MAX (avis) = TRAVdo (AVIS_MAX (avis), NULL);
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -197,10 +200,9 @@ MarkAvisAlive (node *avis)
 node *
 DCIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("DCI",
-                ("\nstarting dead code inference in fundef %s.", CTIitemName (arg_node)));
+    DBUG_PRINT ("\nstarting dead code inference in fundef %s.", CTIitemName (arg_node));
 
     if (FUNDEF_BODY (arg_node) != NULL) {
 
@@ -216,7 +218,7 @@ DCIfundef (node *arg_node, info *arg_info)
             INFO_FUNDEF (info) = arg_node;
             INFO_TRAVSCOPE (info) = INFO_TRAVSCOPE (arg_info);
 
-            DBUG_PRINT ("DCI", ("...processing %s.", CTIitemName (arg_node)));
+            DBUG_PRINT ("...processing %s.", CTIitemName (arg_node));
 
             /*
              * Traverse ARGS and VARDECS to initialize AVIS_ISDEAD
@@ -269,7 +271,7 @@ DCIfundef (node *arg_node, info *arg_info)
 node *
 DCIarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIarg");
+    DBUG_ENTER ();
 
     AVIS_ISDEAD (ARG_AVIS (arg_node)) = TRUE;
 
@@ -293,10 +295,9 @@ DCIarg (node *arg_node, info *arg_info)
 node *
 DCIvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIvardec");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("DCI", ("marking var %s as potentially dead",
-                        AVIS_NAME (VARDEC_AVIS (arg_node))));
+    DBUG_PRINT ("marking var %s as potentially dead", AVIS_NAME (VARDEC_AVIS (arg_node)));
     AVIS_ISDEAD (VARDEC_AVIS (arg_node)) = TRUE;
 
     VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
@@ -316,7 +317,7 @@ DCIvardec (node *arg_node, info *arg_info)
 node *
 DCIblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
@@ -335,7 +336,7 @@ DCIblock (node *arg_node, info *arg_info)
 node *
 DCIassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -358,7 +359,7 @@ DCIassign (node *arg_node, info *arg_info)
 node *
 DCIreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIreturn");
+    DBUG_ENTER ();
 
     if ((INFO_TRAVSCOPE (arg_info) == TS_function)
         && (FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))) {
@@ -396,7 +397,7 @@ DCIreturn (node *arg_node, info *arg_info)
 node *
 DCIcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIcond");
+    DBUG_ENTER ();
 
     /*
      * Do not traverse COND_COND as the demand for the predicate should have been
@@ -419,7 +420,7 @@ DCIcond (node *arg_node, info *arg_info)
 node *
 DCIlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIlet");
+    DBUG_ENTER ();
 
     INFO_ONEIDSNEEDED (arg_info) = FALSE;
     INFO_ALLIDSNEEDED (arg_info) = FALSE;
@@ -477,7 +478,7 @@ DCIap (node *arg_node, info *arg_info)
 {
     node *extids, *recids;
 
-    DBUG_ENTER ("DCIap");
+    DBUG_ENTER ();
 
     /* traverse special fundef without recursion */
     if ((INFO_TRAVSCOPE (arg_info) == TS_function)
@@ -504,9 +505,9 @@ DCIap (node *arg_node, info *arg_info)
             while (extids != NULL) {
                 if ((!AVIS_ISDEAD (IDS_AVIS (extids)))
                     && (AVIS_ISDEAD (IDS_AVIS (recids)))) {
-                    DBUG_PRINT ("DCI", ("Marking fn argument %s alive in function %s",
-                                        AVIS_NAME (IDS_AVIS (recids)),
-                                        FUNDEF_NAME (AP_FUNDEF (arg_node))));
+                    DBUG_PRINT ("Marking fn argument %s alive in function %s",
+                                AVIS_NAME (IDS_AVIS (recids)),
+                                FUNDEF_NAME (AP_FUNDEF (arg_node)));
                     MarkAvisAlive (IDS_AVIS (recids));
                 }
                 extids = IDS_NEXT (extids);
@@ -518,16 +519,16 @@ DCIap (node *arg_node, info *arg_info)
         } else {
             node *args, *argexprs;
 
-            DBUG_PRINT ("DCI", ("traverse in special fundef %s",
-                                FUNDEF_NAME (AP_FUNDEF (arg_node))));
+            DBUG_PRINT ("traverse in special fundef %s",
+                        FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
             /* start traversal of special fundef (and maybe reduce parameters!) */
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-            DBUG_PRINT ("DCI", ("traversal of special fundef %s finished;\n"
-                                "continue in fundef %s\n",
-                                FUNDEF_NAME (AP_FUNDEF (arg_node)),
-                                FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+            DBUG_PRINT ("traversal of special fundef %s finished;\n"
+                        "continue in fundef %s\n",
+                        FUNDEF_NAME (AP_FUNDEF (arg_node)),
+                        FUNDEF_NAME (INFO_FUNDEF (arg_info)));
 
             /* mark only those variables needed by the special function as live */
             args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
@@ -535,9 +536,9 @@ DCIap (node *arg_node, info *arg_info)
 
             while (args != NULL) {
                 if (!AVIS_ISDEAD (ARG_AVIS (args))) {
-                    DBUG_PRINT ("DCI", ("Marking fn argument %s alive in function %s",
-                                        AVIS_NAME (ID_AVIS (EXPRS_EXPR (argexprs))),
-                                        FUNDEF_NAME (AP_FUNDEF (arg_node))));
+                    DBUG_PRINT ("Marking fn argument %s alive in function %s",
+                                AVIS_NAME (ID_AVIS (EXPRS_EXPR (argexprs))),
+                                FUNDEF_NAME (AP_FUNDEF (arg_node)));
                     MarkAvisAlive (ID_AVIS (EXPRS_EXPR (argexprs)));
                 }
 
@@ -567,7 +568,7 @@ DCIap (node *arg_node, info *arg_info)
 node *
 DCIid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIid");
+    DBUG_ENTER ();
 
     /* Mark identifier as needed */
     MarkAvisAlive (ID_AVIS (arg_node));
@@ -587,7 +588,7 @@ DCIid (node *arg_node, info *arg_info)
 node *
 DCIids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIids");
+    DBUG_ENTER ();
 
     if (INFO_ALLIDSNEEDED (arg_info)) {
         /* Mark identifier as needed */
@@ -615,7 +616,7 @@ DCIids (node *arg_node, info *arg_info)
 node *
 DCIcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIcode");
+    DBUG_ENTER ();
 
     /* traverse expression */
     if (CODE_CEXPRS (arg_node) != NULL) {
@@ -648,7 +649,7 @@ DCIcode (node *arg_node, info *arg_info)
 node *
 DCIwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIwithid");
+    DBUG_ENTER ();
 
     INFO_ALLIDSNEEDED (arg_info) = TRUE;
 
@@ -672,7 +673,7 @@ DCIwithid (node *arg_node, info *arg_info)
 node *
 DCIrange (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCIrange");
+    DBUG_ENTER ();
 
     /* mark index and offsets alive */
     INFO_ALLIDSNEEDED (arg_info) = TRUE;
@@ -695,3 +696,5 @@ DCIrange (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

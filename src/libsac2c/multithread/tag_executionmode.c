@@ -34,7 +34,10 @@
 #include "multithread_lib.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "TEM"
+#include "debug.h"
+
 #include "globals.h"
 #include "type_utils.h"
 
@@ -75,7 +78,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -90,7 +93,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -130,8 +133,8 @@ TEMdoTagExecutionmode (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("TagExecutionmode");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
                  "TagExecutionmode expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
@@ -174,8 +177,8 @@ TEMdoTagExecutionmode (node *arg_node)
 node *
 TEMassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TEMassign");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_assign,
                  "TEMassign expects a N_assign as arg_node");
 
     /* initialize the executionmode */
@@ -190,9 +193,9 @@ TEMassign (node *arg_node, info *arg_info)
             ASSIGN_EXECMODE (arg_node) = MUTH_MULTI;
             /* this assignment will be done MT -> let's mark the allocations as
                single-threaded */
-            DBUG_ASSERT ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let),
+            DBUG_ASSERT (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let,
                          "TEMassign expects a N_let here");
-            DBUG_ASSERT ((NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_with2),
+            DBUG_ASSERT (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_with2,
                          "TEMassign expects a N_Nwith2 here");
             /* set the calcparallel-flag */
 
@@ -232,15 +235,15 @@ TEMassign (node *arg_node, info *arg_info)
 node *
 TEMwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TEMwith2");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_with2),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_with2,
                  "TEMwith2 expects a N_with2 as argument");
 
     if (INFO_TRAVMODE (arg_info) == TEM_TRAVMODE_COULDMT) {
-        DBUG_PRINT ("TEM", ("traversalmode is COULDMT - analyse with-loop"));
+        DBUG_PRINT ("traversalmode is COULDMT - analyse with-loop");
 
         /* INFO_LETLHS(arg_info) must contain a minimum of 1 chain member */
-        DBUG_ASSERT ((INFO_LETLHS (arg_info) != NULL),
+        DBUG_ASSERT (INFO_LETLHS (arg_info) != NULL,
                      "INFO_LETLHS(arg_info) must not be NULL");
 
         /* check for permission to execute this with-loop in MT
@@ -298,8 +301,8 @@ TEMwith2 (node *arg_node, info *arg_info)
 node *
 TEMprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TEMprf");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_prf), "TEMprf expects a N_prf as argument");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_prf, "TEMprf expects a N_prf as argument");
 
     if (INFO_TRAVMODE (arg_info) == TEM_TRAVMODE_MUSTST
         && IsSTClever (INFO_LETLHS (arg_info))) {
@@ -326,8 +329,8 @@ TEMprf (node *arg_node, info *arg_info)
 node *
 TEMlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TEMlet");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_let), "TEMlet expects a N_let as argument");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_let, "TEMlet expects a N_let as argument");
 
     /* store the ids of the lhs into arg_info */
     INFO_LETLHS (arg_info) = LET_IDS (arg_node);
@@ -338,7 +341,7 @@ TEMlet (node *arg_node, info *arg_info)
     */
     if (INFO_TRAVMODE (arg_info) == TEM_TRAVMODE_MUSTST && INFO_WITHDEEP (arg_info) == 0
         && AnyUniqueTypeInThere (LET_IDS (arg_node))) {
-        DBUG_PRINT ("TEM", ("N_let with unique type => MUTH_SINGLE"));
+        DBUG_PRINT ("N_let with unique type => MUTH_SINGLE");
         INFO_EXECMODE (arg_info) = MUTH_SINGLE;
     } else {
         EXPRS_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -363,12 +366,12 @@ TEMlet (node *arg_node, info *arg_info)
 node *
 TEMap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TEMap");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ap), "TEMap expects a N_ap as argument");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_ap, "TEMap expects a N_ap as argument");
 
     if (INFO_TRAVMODE (arg_info) == TEM_TRAVMODE_MUSTEX
         && FUNDEF_BODY (AP_FUNDEF (arg_node)) == NULL) {
-        DBUG_PRINT ("TEM", ("N_ap with unknown Body => MUTH_EXCLUSIVE"));
+        DBUG_PRINT ("N_ap with unknown Body => MUTH_EXCLUSIVE");
         INFO_EXECMODE (arg_info) = MUTH_EXCLUSIVE;
     } else if (INFO_TRAVMODE (arg_info) == TEM_TRAVMODE_MUSTST
                && INFO_WITHDEEP (arg_info) == 0 && IsSTClever (INFO_LETLHS (arg_info))) {
@@ -396,8 +399,8 @@ TEMap (node *arg_node, info *arg_info)
 node *
 TEMarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TEMarray");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_array),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_array,
                  "TEMarray expects a N_array as argument");
 
     if (INFO_TRAVMODE (arg_info) == TEM_TRAVMODE_MUSTST && INFO_WITHDEEP (arg_info) == 0
@@ -426,9 +429,8 @@ TEMarray (node *arg_node, info *arg_info)
 node *
 TEMcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TEMcond");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_cond),
-                 "TEMcond expects a N_cond as argument");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_cond, "TEMcond expects a N_cond as argument");
 
     if (INFO_TRAVMODE (arg_info) == TEM_TRAVMODE_MUSTST && INFO_WITHDEEP (arg_info) == 0
         && IsSTClever (INFO_LETLHS (arg_info))) {
@@ -462,8 +464,8 @@ static bool
 IsMTAllowed (node *withloop)
 {
     bool is_allowed;
-    DBUG_ENTER ("IsMTAllowed");
-    DBUG_ASSERT ((NODE_TYPE (withloop) == N_with2),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (withloop) == N_with2,
                  "IsMTAllowed expects a N_with2 as argument");
 
     if ((NODE_TYPE (WITH2_WITHOP (withloop)) == N_fold) && global.no_fold_parallel) {
@@ -496,7 +498,7 @@ IsGeneratorBigEnough (node *test_variables)
     int var_dim, var_size; /* dimension and size of an actual variable */
     int i;
     node *vardec;
-    DBUG_ENTER ("IsGeneratorBigEnough");
+    DBUG_ENTER ();
 
     /* some initializations */
     is_bigenough = FALSE;
@@ -549,7 +551,7 @@ IsMTClever (node *test_variables)
     double var_size; /* size of an actual variable */
     double carry;
     node *iterator, *vardec;
-    DBUG_ENTER ("IsMTClever");
+    DBUG_ENTER ();
 
     /* some initialization */
     is_clever = FALSE;
@@ -570,7 +572,7 @@ IsMTClever (node *test_variables)
 
         if (carry >= (double)(global.min_parallel_size_per_thread * global.max_threads)) {
             is_clever = TRUE;
-            DBUG_PRINT ("TEM", ("Found a variable, big enough for parallel execution"));
+            DBUG_PRINT ("Found a variable, big enough for parallel execution");
         }
         iterator = IDS_NEXT (iterator);
     }
@@ -597,7 +599,7 @@ IsSTClever (node *test_variables)
     int i, var_dim;  /* dimension and size of an actual variable */
     double var_size; /* size of an actual variable */
     node *iterator, *vardec;
-    DBUG_ENTER ("IsSTClever");
+    DBUG_ENTER ();
 
     /* some initialization */
     is_clever = FALSE;
@@ -613,7 +615,7 @@ IsSTClever (node *test_variables)
         }
         if (var_size >= (double)(global.max_replication_size)) {
             is_clever = TRUE;
-            DBUG_PRINT ("TEM", ("Found variable, #elements > max_replication_size"));
+            DBUG_PRINT ("Found variable, #elements > max_replication_size");
         }
         iterator = IDS_NEXT (iterator);
     }
@@ -639,9 +641,9 @@ static bool
 MustExecuteExclusive (node *assign, info *arg_info)
 {
     bool exclusive;
-    DBUG_ENTER ("MustExecuteExclusive");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
+    DBUG_ASSERT (NODE_TYPE (assign) == N_assign,
                  "MustExecuteExclusive expects a N_assign");
 
     /* some initialization */
@@ -678,10 +680,9 @@ static bool
 CouldExecuteMulti (node *assign, info *arg_info)
 {
     bool multi;
-    DBUG_ENTER ("CouldExecuteMulti");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
-                 "CouldExecuteMulti expects a N_assign");
+    DBUG_ASSERT (NODE_TYPE (assign) == N_assign, "CouldExecuteMulti expects a N_assign");
 
     /* some initialization */
     INFO_TRAVMODE (arg_info) = TEM_TRAVMODE_COULDMT;
@@ -720,10 +721,9 @@ static bool
 MustExecuteSingle (node *assign, info *arg_info)
 {
     bool single;
-    DBUG_ENTER ("MustExecuteSingle");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
-                 "MustExecuteSingle expects a N_assign");
+    DBUG_ASSERT (NODE_TYPE (assign) == N_assign, "MustExecuteSingle expects a N_assign");
 
     /* some initialization */
     INFO_TRAVMODE (arg_info) = TEM_TRAVMODE_MUSTST;
@@ -755,7 +755,7 @@ AnyUniqueTypeInThere (node *letids)
 {
     bool unique_found;
 
-    DBUG_ENTER ("AnyUniqueTypeInThere");
+    DBUG_ENTER ();
 
     unique_found = FALSE;
 
@@ -770,3 +770,5 @@ AnyUniqueTypeInThere (node *letids)
 /**
  * @}
  **/
+
+#undef DBUG_PREFIX

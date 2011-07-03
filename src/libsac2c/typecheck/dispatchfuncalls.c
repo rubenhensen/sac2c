@@ -7,7 +7,10 @@
 #include "tree_compound.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "DFC"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "new_typecheck.h"
@@ -53,7 +56,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -70,7 +73,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -82,7 +85,7 @@ CountSpecializations (int num_fundefs, node **fundeflist)
 {
     int i, res;
 
-    DBUG_ENTER ("CountSpecializations");
+    DBUG_ENTER ();
 
     res = 0;
     for (i = 0; i < num_fundefs; i++) {
@@ -103,18 +106,18 @@ CountSpecializations (int num_fundefs, node **fundeflist)
 static node *
 GetOMPReductionOp (node *arg_node)
 {
-    DBUG_ENTER ("GetOMPReductionOp");
+    DBUG_ENTER ();
 
     char *fun_name = FUNDEF_NAME (FOLD_FUNDEF (arg_node));
 
     if (STReq ("ScalarArith", NSgetName (FUNDEF_NS (FOLD_FUNDEF (arg_node))))) {
         switch (*fun_name) {
         case '+':
-            DBUG_PRINT ("DFC", ("Fold has a scalar add operation\n"));
+            DBUG_PRINT ("Fold has a scalar add operation\n");
             FOLD_OMPREDUCTIONOP (arg_node) = OMP_REDUCTION_SCL_ADD;
             break;
         case '*':
-            DBUG_PRINT ("DFC", ("Fold has a scalar mul operation\n"));
+            DBUG_PRINT ("Fold has a scalar mul operation\n");
             FOLD_OMPREDUCTIONOP (arg_node) = OMP_REDUCTION_SCL_MUL;
             break;
         default:
@@ -138,7 +141,7 @@ GetOMPReductionOp (node *arg_node)
 node *
 DFCmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DFCmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -166,16 +169,16 @@ DispatchFunCall (node *fundef, ntype *arg_types, info *arg_info)
     dft_res *dft_res;
     node *new_fundef = NULL;
 
-    DBUG_ENTER ("DispatchFunCall");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((fundef != NULL), "fundef not found!");
+    DBUG_ASSERT (fundef != NULL, "fundef not found!");
     if (FUNDEF_ISWRAPPERFUN (fundef)) {
         /*
          * 'fundef' points to an generic function
          *   -> try to dispatch the function application statically in order to
          *      avoid superfluous wrapper function calls
          */
-        DBUG_PRINT ("DFC", ("correcting fundef for %s", CTIitemName (fundef)));
+        DBUG_PRINT ("correcting fundef for %s", CTIitemName (fundef));
 
         /*
          * if we have a bottom type, we cannot dispatch statically.
@@ -187,7 +190,7 @@ DispatchFunCall (node *fundef, ntype *arg_types, info *arg_info)
              */
             dft_res = NTCCTdispatchFunType (fundef, arg_types);
             if (dft_res == NULL) {
-                DBUG_ASSERT ((TYgetProductSize (arg_types) == 0),
+                DBUG_ASSERT (TYgetProductSize (arg_types) == 0,
                              "illegal dispatch result found!");
                 /*
                  * no args found -> static dispatch possible
@@ -195,8 +198,7 @@ DispatchFunCall (node *fundef, ntype *arg_types, info *arg_info)
                  * fundef can be found in FUNDEF_IMPL (dirty hack!)
                  */
                 new_fundef = FUNDEF_IMPL (fundef);
-                DBUG_PRINT ("DFC",
-                            ("  dispatched statically %s", CTIitemName (new_fundef)));
+                DBUG_PRINT ("  dispatched statically %s", CTIitemName (new_fundef));
             } else if ((dft_res->num_partials
                         == CountSpecializations (dft_res->num_partials,
                                                  dft_res->partials))
@@ -232,7 +234,7 @@ DispatchFunCall (node *fundef, ntype *arg_types, info *arg_info)
                  * overhead due to (b) negligible.
                  */
                 if (dft_res->def != NULL) {
-                    DBUG_ASSERT ((dft_res->deriveable == NULL),
+                    DBUG_ASSERT (dft_res->deriveable == NULL,
                                  "def and deriveable found!");
                     new_fundef = dft_res->def;
                 } else if (dft_res->deriveable != NULL) {
@@ -243,8 +245,8 @@ DispatchFunCall (node *fundef, ntype *arg_types, info *arg_info)
                         && !FUNDEF_ISINLINE (new_fundef)) {
                         new_fundef = NULL;
                     } else {
-                        DBUG_PRINT ("DFC", ("  dispatched statically %s",
-                                            CTIitemName (new_fundef)));
+                        DBUG_PRINT ("  dispatched statically %s",
+                                    CTIitemName (new_fundef));
                     }
                 }
             } else if (!CWChasWrapperCode (fundef)) {
@@ -263,17 +265,17 @@ DispatchFunCall (node *fundef, ntype *arg_types, info *arg_info)
                                  "Application of var-arg function %s found which may"
                                  " cause a type error",
                                  CTIitemName (new_fundef));
-                    DBUG_PRINT ("DFC", ("  dispatched statically although only partial"
-                                        " has been found (T_dots)!"));
+                    DBUG_PRINT ("  dispatched statically although only partial"
+                                " has been found (T_dots)!");
                 } else {
-                    DBUG_ASSERT ((0), "wrapper with T_dots found which could be "
-                                      "dispatched statically!");
+                    DBUG_ASSERT (0, "wrapper with T_dots found which could be dispatched "
+                                    "statically!");
                 }
             } else {
                 /*
                  * static dispatch impossible -> keep the wrapper
                  */
-                DBUG_PRINT ("DFC", ("  static dispatch impossible"));
+                DBUG_PRINT ("  static dispatch impossible");
             }
         }
     }
@@ -300,7 +302,7 @@ node *
 DFCfundef (node *arg_node, info *arg_info)
 {
     node *old_fundef;
-    DBUG_ENTER ("DFCfundef");
+    DBUG_ENTER ();
 
     /**
      * we do not dispatch within wrapper functions, and we only look at
@@ -314,17 +316,17 @@ DFCfundef (node *arg_node, info *arg_info)
     if (!FUNDEF_ISWRAPPERFUN (arg_node)
         && ((INFO_ONEFUNDEF (arg_info) && (INFO_FUNDEF (arg_info) != NULL))
             || !FUNDEF_ISLACFUN (arg_node) || !INFO_ONEFUNDEF (arg_info))) {
-        DBUG_PRINT ("DFC", ("traversing function body of %s", CTIitemName (arg_node)));
+        DBUG_PRINT ("traversing function body of %s", CTIitemName (arg_node));
         old_fundef = INFO_FUNDEF (arg_info);
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = old_fundef;
-        DBUG_PRINT ("DFC", ("leaving function body of %s", CTIitemName (arg_node)));
+        DBUG_PRINT ("leaving function body of %s", CTIitemName (arg_node));
 
         if (INFO_DISPATCHED (arg_info)) {
             FUNDEF_ISINLINECOMPLETED (arg_node) = FALSE;
-            DBUG_PRINT ("DFC", ("FUNDEF_ISINLINECOMPLETED set to FALSE for %s",
-                                CTIitemName (arg_node)));
+            DBUG_PRINT ("FUNDEF_ISINLINECOMPLETED set to FALSE for %s",
+                        CTIitemName (arg_node));
         }
     }
 
@@ -352,20 +354,18 @@ DFCap (node *arg_node, info *arg_info)
     bool old_dispatched;
     ntype *arg_types;
 
-    DBUG_ENTER ("DFCap");
+    DBUG_ENTER ();
 
     AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
-    DBUG_PRINT ("DFC",
-                ("Ap of function %s::%s pointed to " F_PTR ".",
-                 NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
+    DBUG_PRINT ("Ap of function %s::%s pointed to " F_PTR ".",
+                NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node));
 
     arg_types = TUactualArgs2Ntype (AP_ARGS (arg_node));
     AP_FUNDEF (arg_node) = DispatchFunCall (AP_FUNDEF (arg_node), arg_types, arg_info);
 
-    DBUG_PRINT ("DFC",
-                ("Ap of function %s:%s now points to " F_PTR ".",
-                 NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
+    DBUG_PRINT ("Ap of function %s:%s now points to " F_PTR ".",
+                NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node));
     arg_types = TYfreeType (arg_types);
 
     if (INFO_ONEFUNDEF (arg_info) && FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
@@ -390,7 +390,7 @@ DFCap (node *arg_node, info *arg_info)
 node *
 DFCwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DFCwith");
+    DBUG_ENTER ();
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -415,13 +415,13 @@ DFCwith (node *arg_node, info *arg_info)
 node *
 DFCgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DFCgenarrray");
+    DBUG_ENTER ();
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
     GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
-        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+        DBUG_ASSERT (EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL,
                      "Fewer cexprs than withops!");
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
@@ -445,12 +445,12 @@ DFCgenarray (node *arg_node, info *arg_info)
 node *
 DFCmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DFCmodarray");
+    DBUG_ENTER ();
 
     MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
-        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+        DBUG_ASSERT (EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL,
                      "Fewer cexprs than withops!");
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
@@ -477,7 +477,7 @@ DFCfold (node *arg_node, info *arg_info)
     ntype *neutr_type, *body_type;
     ntype *arg_type, *arg_types;
 
-    DBUG_ENTER ("DFCfold");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (FOLD_FUNDEF (arg_node) != NULL, "fold-wl inconsistency");
 
@@ -506,7 +506,7 @@ DFCfold (node *arg_node, info *arg_info)
     neutr_type = TYfreeType (neutr_type);
 
     if (FOLD_NEXT (arg_node) != NULL) {
-        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+        DBUG_ASSERT (EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL,
                      "Fewer cexprs than withops!");
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
@@ -530,12 +530,12 @@ DFCfold (node *arg_node, info *arg_info)
 node *
 DFCpropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DFCpropagate");
+    DBUG_ENTER ();
 
     PROPAGATE_DEFAULT (arg_node) = TRAVdo (PROPAGATE_DEFAULT (arg_node), arg_info);
 
     if (PROPAGATE_NEXT (arg_node) != NULL) {
-        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+        DBUG_ASSERT (EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL,
                      "Fewer cexprs than withops!");
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
@@ -550,7 +550,7 @@ DFClet (node *arg_node, info *arg_info)
 {
     node *old_lastlet;
 
-    DBUG_ENTER ("DFClet");
+    DBUG_ENTER ();
 
     old_lastlet = INFO_LASTLET (arg_info);
     INFO_LASTLET (arg_info) = arg_node;
@@ -576,7 +576,7 @@ DFCdoDispatchFunCallsOneFundef (node *fundef)
 {
     info *info_node;
 
-    DBUG_ENTER ("DFCdoDispatchFunCallsOneFundef");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "DFCdoDispatchFunCallsOneFundef not called with N_fundef!");
@@ -614,7 +614,7 @@ DFCdoDispatchFunCalls (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("DFCdoDispatchFunCalls");
+    DBUG_ENTER ();
 
     if (N_module == NODE_TYPE (arg_node)) {
 
@@ -630,3 +630,5 @@ DFCdoDispatchFunCalls (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

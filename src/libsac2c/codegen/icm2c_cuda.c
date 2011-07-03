@@ -5,7 +5,10 @@
 #include "icm2c_utils.h"
 #include "icm2c_cuda.h"
 #include "icm2c_std.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
@@ -26,7 +29,7 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
     int i, j, cnt, dim;
     char *basetype;
 
-    DBUG_ENTER ("ICMCompileCUDA_GLOBALFUN_DECL");
+    DBUG_ENTER ();
 
     INDENT;
     fprintf (global.outfile, "__global__ void");
@@ -66,7 +69,7 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
     }
     fprintf (global.outfile, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -81,7 +84,7 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
 void
 ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileCUDA_GLOBALFUN_DECL");
+    DBUG_ENTER ();
 
 #define CUDA_GLOBALFUN_DECL
 #include "icm_comment.c"
@@ -92,7 +95,7 @@ ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg)
 
     fprintf (global.outfile, ";\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -107,7 +110,7 @@ ICMCompileCUDA_GLOBALFUN_DECL (char *funname, int vararg_cnt, char **vararg)
 void
 ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileCUDA_GLOBALFUN_DEF_BEGIN");
+    DBUG_ENTER ();
 
 #define CUDA_GLOBALFUN_DEF_BEGIN
 #include "icm_comment.c"
@@ -118,7 +121,7 @@ ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg
 
     fprintf (global.outfile, "{\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -133,12 +136,12 @@ ICMCompileCUDA_GLOBALFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg
 void
 ICMCompileCUDA_GLOBALFUN_RET (char *funname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileCUDA_GLOBALFUN_RET");
+    DBUG_ENTER ();
 
     INDENT;
     fprintf (global.outfile, "SAC_NOOP()\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -153,7 +156,7 @@ ICMCompileCUDA_GLOBALFUN_RET (char *funname, int vararg_cnt, char **vararg)
 void
 ICMCompileCUDA_GLOBALFUN_DEF_END (char *funname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileCUDA_GLOBALFUN_DEF_END");
+    DBUG_ENTER ();
 
 #define CUDA_GLOBALFUN_DEF_END
 #include "icm_comment.c"
@@ -163,7 +166,7 @@ ICMCompileCUDA_GLOBALFUN_DEF_END (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "}\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -181,7 +184,7 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     int dim, cnt, i, j;
     char *basetype;
 
-    DBUG_ENTER ("ICMCompileCUDA_GLOBALFUN_AP");
+    DBUG_ENTER ();
 
 #define CUDA_GLOBALFUN_AP
 #include "icm_comment.c"
@@ -236,7 +239,7 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "}\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -253,7 +256,7 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
       int array_dim;
     */
 
-    DBUG_ENTER ("ICMCompileCUDA_GRID_BLOCK");
+    DBUG_ENTER ();
 
 #define CUDA_GRID_BLOCK
 #include "icm_comment.c"
@@ -353,7 +356,7 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
       fprintf( global.outfile, "cutCreateTimer(&timer);\n");
       fprintf( global.outfile, "cutStartTimer(timer);\n");
     */
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -371,7 +374,7 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     int dim, cnt, i, j;
     char *basetype;
 
-    DBUG_ENTER ("ICMCompileCUDA_ST_GLOBALFUN_AP");
+    DBUG_ENTER ();
 
 #define CUDA_ST_GLOBALFUN_AP
 #include "icm_comment.c"
@@ -430,7 +433,7 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "}\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -448,7 +451,7 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
 {
     bool has_postfix;
 
-    DBUG_ENTER ("ICMCompileCUDA_WLIDS");
+    DBUG_ENTER ();
 
 #define CUDA_WLIDS
 #include "icm_comment.c"
@@ -519,7 +522,7 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
                      wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos,
                      wlids_dim_pos);
         } else {
-            DBUG_ASSERT ((0), "Invalid index found!");
+            DBUG_ASSERT (0, "Invalid index found!");
         }
     } else if (array_dim >= 3) {
         INDENT;
@@ -558,17 +561,17 @@ ICMCompileCUDA_WLIDS (char *wlids_NT, int wlids_NT_dim, int array_dim, int wlids
                      wlids_NT, wlids_NT_dim, wlids_dim_pos, wlids_dim_pos, wlids_dim_pos,
                      wlids_dim_pos);
         } else {
-            DBUG_ASSERT ((0),
+            DBUG_ASSERT (0,
                          "Invalid combination of array dimension and dimension index!");
         }
     } else {
-        DBUG_ASSERT ((0), "Invalid array dimension found!");
+        DBUG_ASSERT (0, "Invalid array dimension found!");
     }
 
     fprintf (global.outfile, "SAC_ND_WRITE( %s, %d) = SAC_ND_READ( %s, 0);\n", iv_NT,
              wlids_dim_pos, wlids_NT);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -584,7 +587,7 @@ void
 ICMCompileCUDA_WLIDXS (char *wlidxs_NT, int wlidxs_NT_dim, char *array_NT, int array_dim,
                        char **var_ANY)
 {
-    DBUG_ENTER ("ICMCompileCUDA_WLIDXS");
+    DBUG_ENTER ();
 
 #define CUDA_WLIDXS
 #include "icm_comment.c"
@@ -616,7 +619,7 @@ ICMCompileCUDA_WLIDXS (char *wlidxs_NT, int wlidxs_NT_dim, char *array_NT, int a
         fprintf (global.outfile, ";\n");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -629,7 +632,7 @@ ICMCompileCUDA_WLIDXS (char *wlidxs_NT, int wlidxs_NT_dim, char *array_NT, int a
 void
 ICMCompileCUDA_THREADIDX (char *to_NT, int dim, int dim_pos)
 {
-    DBUG_ENTER ("ICMCompileCUDA_THREADIDX");
+    DBUG_ENTER ();
 
 #define CUDA_THREADIDX
 #include "icm_comment.c"
@@ -646,7 +649,7 @@ ICMCompileCUDA_THREADIDX (char *to_NT, int dim, int dim_pos)
         } else if (dim_pos == 1) {
             fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = THREADIDX_X;\n", to_NT);
         } else {
-            DBUG_ASSERT ((0), "Illegal dimension position found!");
+            DBUG_ASSERT (0, "Illegal dimension position found!");
         }
     } else if (dim == 3) {
         INDENT;
@@ -657,13 +660,13 @@ ICMCompileCUDA_THREADIDX (char *to_NT, int dim, int dim_pos)
         } else if (dim_pos == 2) {
             fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = THREADIDX_X;\n", to_NT);
         } else {
-            DBUG_ASSERT ((0), "Illegal dimension position found!");
+            DBUG_ASSERT (0, "Illegal dimension position found!");
         }
     } else {
-        DBUG_ASSERT ((0), "Illegal dimension found!");
+        DBUG_ASSERT (0, "Illegal dimension found!");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -676,7 +679,7 @@ ICMCompileCUDA_THREADIDX (char *to_NT, int dim, int dim_pos)
 void
 ICMCompileCUDA_BLOCKDIM (char *to_NT, int dim, int dim_pos)
 {
-    DBUG_ENTER ("ICMCompileCUDA_BLOCKDIM");
+    DBUG_ENTER ();
 
 #define CUDA_BLOCKDIM
 #include "icm_comment.c"
@@ -693,7 +696,7 @@ ICMCompileCUDA_BLOCKDIM (char *to_NT, int dim, int dim_pos)
         } else if (dim_pos == 1) {
             fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = BLOCKDIM_X;\n", to_NT);
         } else {
-            DBUG_ASSERT ((0), "Illegal dimension position found!");
+            DBUG_ASSERT (0, "Illegal dimension position found!");
         }
     } else if (dim == 3) {
         INDENT;
@@ -704,13 +707,13 @@ ICMCompileCUDA_BLOCKDIM (char *to_NT, int dim, int dim_pos)
         } else if (dim_pos == 2) {
             fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = BLOCKDIM_X;\n", to_NT);
         } else {
-            DBUG_ASSERT ((0), "Illegal dimension position found!");
+            DBUG_ASSERT (0, "Illegal dimension position found!");
         }
     } else {
-        DBUG_ASSERT ((0), "Illegal dimension found!");
+        DBUG_ASSERT (0, "Illegal dimension found!");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -727,7 +730,7 @@ ICMCompileCUDA_WL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
 {
     int val_dim;
 
-    DBUG_ENTER ("ICMCompileCUDA_WL_ASSIGN");
+    DBUG_ENTER ();
 
 #define CUDA_WL_ASSIGN
 #include "icm_comment.c"
@@ -744,7 +747,7 @@ ICMCompileCUDA_WL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
                  to_NT, off_NT, val_NT, "");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -759,7 +762,7 @@ void
 ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype, char *direction)
 {
 
-    DBUG_ENTER ("ICMCompileCUDA_MEM_TRANSFER");
+    DBUG_ENTER ();
 
 #define CUDA_MEM_TRANSFER
 #include "icm_comment.c"
@@ -775,7 +778,7 @@ ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype, char *d
     fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER(%s, %s, %s, %s)", to_NT, from_NT,
              basetype, direction);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -792,7 +795,7 @@ ICMCompileCUDA_WL_SUBALLOC (char *sub_NT, int sub_dim, char *to_NT, int to_dim,
 {
     int sdim, tdim, i;
 
-    DBUG_ENTER ("ICMCompileCUDA_WL_SUBALLOC");
+    DBUG_ENTER ();
 
 #define CUDA_WL_SUBALLOC
 #include "icm_comment.c"
@@ -814,7 +817,7 @@ ICMCompileCUDA_WL_SUBALLOC (char *sub_NT, int sub_dim, char *to_NT, int to_dim,
 
     fprintf (global.outfile, ";\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -836,7 +839,7 @@ ICMCompileCUDA_PRF_IDX_MODARRAY_AxSxA__DATA (char *to_NT, int to_sdim, char *fro
                                              char *val_array, char *basetype)
 
 {
-    DBUG_ENTER ("ICMCompileCUDA_PRF_IDX_MODARRAY_AxSxA__DATA");
+    DBUG_ENTER ();
 
 #define CUDA_PRF_IDX_MODARRAY_AxSxA__DATA
 #include "icm_comment.c"
@@ -854,7 +857,7 @@ ICMCompileCUDA_PRF_IDX_MODARRAY_AxSxA__DATA (char *to_NT, int to_sdim, char *fro
     ReadScalar (idx_ANY, NULL, 0);
     fprintf (global.outfile, ", %s, %s)", val_array, basetype);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -871,7 +874,7 @@ ICMCompileCUDA_DECL_KERNEL_ARRAY (char *var_NT, char *basetype, int sdim, int *s
     int i, dim;
     shape_class_t sc;
 
-    DBUG_ENTER ("ICMCompileCUDA_DECL_KERNEL_ARRAY");
+    DBUG_ENTER ();
 
 #define CUDA_DECL_KERNEL_ARRAY
 #include "icm_comment.c"
@@ -884,7 +887,7 @@ ICMCompileCUDA_DECL_KERNEL_ARRAY (char *var_NT, char *basetype, int sdim, int *s
     switch (sc) {
     case C_aks:
         INDENT;
-        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (dim >= 0, "illegal dimension found!");
         fprintf (global.outfile, "%s SAC_ND_A_FIELD( %s)[", basetype, var_NT);
         for (i = 0; i < dim; i++) {
             fprintf (global.outfile, "%d", shp[i]);
@@ -900,11 +903,11 @@ ICMCompileCUDA_DECL_KERNEL_ARRAY (char *var_NT, char *basetype, int sdim, int *s
         ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
         break;
     default:
-        DBUG_ASSERT ((0), "Non-AKS array found in CUDA kernel!");
+        DBUG_ASSERT (0, "Non-AKS array found in CUDA kernel!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -921,7 +924,7 @@ ICMCompileCUDA_DECL_SHMEM_ARRAY (char *var_NT, char *basetype, int sdim, int *sh
     int i, dim, size = 1;
     shape_class_t sc;
 
-    DBUG_ENTER ("ICMCompileCUDA_DECL_SHMEM_ARRAY");
+    DBUG_ENTER ();
 
 #define CUDA_DECL_SHMEM_ARRAY
 #include "icm_comment.c"
@@ -934,7 +937,7 @@ ICMCompileCUDA_DECL_SHMEM_ARRAY (char *var_NT, char *basetype, int sdim, int *sh
     switch (sc) {
     case C_aks:
         INDENT;
-        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (dim >= 0, "illegal dimension found!");
 
         for (i = 0; i < dim; i++) {
             size *= shp[i];
@@ -943,11 +946,11 @@ ICMCompileCUDA_DECL_SHMEM_ARRAY (char *var_NT, char *basetype, int sdim, int *sh
                  var_NT, size);
         break;
     default:
-        DBUG_ASSERT ((0), "Non-AKS shared memory array found in CUDA kernel!");
+        DBUG_ASSERT (0, "Non-AKS shared memory array found in CUDA kernel!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -962,7 +965,7 @@ ICMCompileCUDA_DECL_SHMEM_ARRAY (char *var_NT, char *basetype, int sdim, int *sh
 void
 ICMCompileCUDA_SHMEM_BOUNDARY_CHECK (char *to_NT, int dim_pos, char *idx_NT, int offset)
 {
-    DBUG_ENTER ("ICMCompileCUDA_SHMEM_BOUNDARY_CHECK");
+    DBUG_ENTER ();
 
 #define CUDA_SHMEM_BOUNDARY_CHECK
 #include "icm_comment.c"
@@ -974,7 +977,7 @@ ICMCompileCUDA_SHMEM_BOUNDARY_CHECK (char *to_NT, int dim_pos, char *idx_NT, int
              "SAC_ND_A_FIELD( %s) = ( ( SACp_ub_%d-%d) == SAC_ND_A_FIELD( %s))\n", to_NT,
              dim_pos, offset, idx_NT);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -992,7 +995,7 @@ ICMCompileCUDA_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
 {
     int from_dim;
 
-    DBUG_ENTER ("ICMCompileCUDA_ASSIGN");
+    DBUG_ENTER ();
 
 #define CUDA_ASSIGN
 #include "icm_comment.c"
@@ -1009,7 +1012,7 @@ ICMCompileCUDA_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
     fprintf (global.outfile, "SAC_ND_ASSIGN__DATA( %s, %s, %s)\n", to_NT, from_NT,
              copyfun);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1026,7 +1029,7 @@ void
 ICMCompileCUDA_COND_WL_ASSIGN (char *cond_NT, char *shmemidx_NT, char *shmem_NT,
                                char *devidx_NT, char *devmem_NT)
 {
-    DBUG_ENTER ("ICMCompileCUDA_COND_WL_ASSIGN");
+    DBUG_ENTER ();
 
 #define CUDA_COND_WL_ASSIGN
 #include "icm_comment.c"
@@ -1044,5 +1047,7 @@ ICMCompileCUDA_COND_WL_ASSIGN (char *cond_NT, char *shmemidx_NT, char *shmem_NT,
     INDENT;
     fprintf (global.outfile, "}\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

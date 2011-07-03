@@ -6,7 +6,9 @@
 
 #include "phase_drivers.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "phase.h"
 #include "globals.h"
 
@@ -17,7 +19,7 @@
 #define FUNBEGINname(name)                                                               \
     node *PHDdriveCycleFun_##name (node *fundef)                                         \
     {                                                                                    \
-        DBUG_ENTER ("PHDdriveCycleFun_" #name);
+        DBUG_ENTER ();
 
 #define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle)                               \
     fundef = PHrunCyclePhaseFun (PH_##phase##_##cycle##_##name, fundef, cond);
@@ -41,7 +43,7 @@
 #define CYCLEname(name)                                                                  \
     node *PHDdriveCycle_##name (node *syntax_tree)                                       \
     {                                                                                    \
-        DBUG_ENTER ("PHDdriveCycle_" #name);
+        DBUG_ENTER ();
 
 #define CYCLEPHASE(name, text, fun, cond, phase, cycle)                                  \
     syntax_tree = PHrunCyclePhase (PH_##phase##_##cycle##_##name, syntax_tree, cond);
@@ -69,7 +71,7 @@
 #define PHASEname(name)                                                                  \
     node *PHDdrivePhase_##name (node *syntax_tree)                                       \
     {                                                                                    \
-        DBUG_ENTER ("PHDdrivePhase_" #name);
+        DBUG_ENTER ();
 
 #define SUBPHASE(name, text, fun, cond, phase)                                           \
     syntax_tree = PHrunSubPhase (PH_##phase##_##name, syntax_tree, cond);
@@ -97,7 +99,7 @@
 node *
 PHDdriveSac2c (node *syntax_tree)
 {
-    DBUG_ENTER ("PHDdriveSac2c");
+    DBUG_ENTER ();
 
 #define PHASEname(name)                                                                  \
   syntax_tree = PHrunPhase( PH_##name, syntax_tree,
@@ -116,7 +118,7 @@ PHDdriveSac2c (node *syntax_tree)
 node *
 PHDdriveSac4c (node *syntax_tree)
 {
-    DBUG_ENTER ("PHDdriveSac4c");
+    DBUG_ENTER ();
 
 #define PHASEname(name)                                                                  \
   syntax_tree = PHrunPhase( PH_##name, syntax_tree,
@@ -135,7 +137,7 @@ PHDdriveSac4c (node *syntax_tree)
 node *
 PHDdriveSac2tex (node *syntax_tree)
 {
-    DBUG_ENTER ("PHDdriveSac2tex");
+    DBUG_ENTER ();
 
 #define PHASEname(name)                                                                  \
   syntax_tree = PHrunPhase( PH_##name, syntax_tree,
@@ -150,3 +152,5 @@ PHDdriveSac2tex (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

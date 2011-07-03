@@ -10,7 +10,10 @@
 #include "memory.h"
 #include "free.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "KPP"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -64,7 +67,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -82,7 +85,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -92,7 +95,7 @@ FreeInfo (info *info)
 static node *
 RemoveUnusedVardecs (node *vardecs, info *arg_info)
 {
-    DBUG_ENTER ("RemoveUnusedVardecs");
+    DBUG_ENTER ();
 
     if (VARDEC_NEXT (vardecs) != NULL) {
         VARDEC_NEXT (vardecs) = RemoveUnusedVardecs (VARDEC_NEXT (vardecs), arg_info);
@@ -111,7 +114,7 @@ KPPdoKernelPostProcessing (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("KPPdoKernelPostProcessing");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_kpp);
@@ -125,7 +128,7 @@ KPPdoKernelPostProcessing (node *syntax_tree)
 node *
 KPPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("KPPfundef");
+    DBUG_ENTER ();
 
     /* we only traverse cuda kernels */
     if (FUNDEF_ISCUDAGLOBALFUN (arg_node) || FUNDEF_ISCUDASTGLOBALFUN (arg_node)) {
@@ -149,7 +152,7 @@ KPPfundef (node *arg_node, info *arg_info)
 node *
 KPPassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("KPPassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
@@ -170,7 +173,7 @@ KPPassign (node *arg_node, info *arg_info)
 node *
 KPPlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("KPPlet");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_id) {
         /* if we found a assignment of the form N_id = N_id
@@ -240,7 +243,7 @@ KPPwith3 (node *arg_node, info *arg_info)
     node *old_with3ids, *preassign = NULL;
     node *rhs = NULL;
 
-    DBUG_ENTER ("KPPwith3");
+    DBUG_ENTER ();
 
     old_with3ids = INFO_WITH3IDS (arg_info);
     INFO_WITH3IDS (arg_info) = INFO_LHS (arg_info);
@@ -251,7 +254,7 @@ KPPwith3 (node *arg_node, info *arg_info)
         } else if (FOLD_NEUTRAL (WITH3_OPERATIONS (arg_node)) != NULL) {
             rhs = DUPdoDupTree (FOLD_NEUTRAL (WITH3_OPERATIONS (arg_node)));
         } else {
-            DBUG_ASSERT ((0), "Both neutral and initial are NULL!");
+            DBUG_ASSERT (0, "Both neutral and initial are NULL!");
         }
 
         preassign
@@ -276,7 +279,7 @@ KPPwith3 (node *arg_node, info *arg_info)
 node *
 KPPrange (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("KPPrange");
+    DBUG_ENTER ();
 
     RANGE_RESULTS (arg_node) = TRAVopt (RANGE_RESULTS (arg_node), arg_info);
     RANGE_INDEX (arg_node) = TRAVopt (RANGE_INDEX (arg_node), arg_info);
@@ -292,7 +295,7 @@ KPPrange (node *arg_node, info *arg_info)
 node *
 KPPgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("KPPgenarray");
+    DBUG_ENTER ();
 
     GENARRAY_SHAPE (arg_node) = TRAVopt (GENARRAY_SHAPE (arg_node), arg_info);
     GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
@@ -314,7 +317,7 @@ KPPgenarray (node *arg_node, info *arg_info)
 node *
 KPPid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("KPPid");
+    DBUG_ENTER ();
 
     NLUTincNum (INFO_NLUT (arg_info), ID_AVIS (arg_node), 1);
 
@@ -328,7 +331,7 @@ KPPprf (node *arg_node, info *arg_info)
     int dim_num;
     ntype *type;
 
-    DBUG_ENTER ("KPPprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_alloc:
@@ -337,24 +340,24 @@ KPPprf (node *arg_node, info *arg_info)
             dim_num = NUM_VAL (dim);
             if (dim_num > 0) {
                 INFO_REMOVE_ASSIGN (arg_info) = TRUE;
-                DBUG_PRINT ("KPP", ("%s = F_alloc() removed in function %s\n",
-                                    IDS_NAME (INFO_LHS (arg_info)),
-                                    FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+                DBUG_PRINT ("%s = F_alloc() removed in function %s\n",
+                            IDS_NAME (INFO_LHS (arg_info)),
+                            FUNDEF_NAME (INFO_FUNDEF (arg_info)));
             }
         } else if (NODE_TYPE (dim) == N_prf) {
             if (PRF_PRF (dim) == F_dim_A) {
                 array = PRF_ARG1 (dim);
-                DBUG_ASSERT ((NODE_TYPE (array) == N_id),
+                DBUG_ASSERT (NODE_TYPE (array) == N_id,
                              "Non N_id node found for arguemnt of F_dim_A!");
                 DBUG_ASSERT (TYgetDim (ID_NTYPE (array)) == 0, "Non scalar found for "
                                                                "F_dim_A as the second "
                                                                "arguemnt of F_alloc!");
             } else {
-                DBUG_ASSERT ((0), "Wrong dim argument for F_alloc!");
+                DBUG_ASSERT (0, "Wrong dim argument for F_alloc!");
             }
             PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         } else {
-            DBUG_ASSERT ((0), "Wrong dim argument for F_alloc!");
+            DBUG_ASSERT (0, "Wrong dim argument for F_alloc!");
         }
         break;
     case F_free:
@@ -365,9 +368,8 @@ KPPprf (node *arg_node, info *arg_info)
         dim_num = TYgetDim (type);
         if (dim_num > 0) {
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
-            DBUG_PRINT ("KPP",
-                        ("F_free( %s) removed in function %s\n", ID_NAME (free_var),
-                         FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+            DBUG_PRINT ("F_free( %s) removed in function %s\n", ID_NAME (free_var),
+                        FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         } else {
             PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         }
@@ -377,8 +379,8 @@ KPPprf (node *arg_node, info *arg_info)
         if (!TUisScalar (AVIS_TYPE (ID_AVIS (array)))) {
             /* AVIS_ISCUDALOCAL( ID_AVIS( array)) */
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
-            DBUG_PRINT ("KPP", ("F_dec_rc( %s) removed in function %s\n", ID_NAME (array),
-                                FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+            DBUG_PRINT ("F_dec_rc( %s) removed in function %s\n", ID_NAME (array),
+                        FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         } else {
             PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         }
@@ -388,8 +390,8 @@ KPPprf (node *arg_node, info *arg_info)
         if (!TUisScalar (AVIS_TYPE (ID_AVIS (array)))) {
             /* AVIS_ISCUDALOCAL( ID_AVIS( array)) */
             INFO_REMOVE_ASSIGN (arg_info) = TRUE;
-            DBUG_PRINT ("KPP", ("F_inc_rc( %s) removed in function %s\n", ID_NAME (array),
-                                FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+            DBUG_PRINT ("F_inc_rc( %s) removed in function %s\n", ID_NAME (array),
+                        FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         } else {
             PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         }
@@ -453,3 +455,5 @@ KPPprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

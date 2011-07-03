@@ -34,7 +34,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "TMFT"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -65,7 +68,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -77,7 +80,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -103,22 +106,22 @@ TMFTdoTagMainFunThread (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("TMFTdoTagMainFunThread");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("TMFT", ("Starting Tag main function thread function."));
+    DBUG_PRINT ("Starting Tag main function thread function.");
 
     TRAVpush (TR_tmft);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_ASSERTF ((INFO_FOUND (info) == EXPECTED),
-                  ("Did not find correct number of main functions, found %d, "
-                   "expected %d",
-                   INFO_FOUND (info), EXPECTED));
+    DBUG_ASSERT (INFO_FOUND (info) == EXPECTED,
+                 "Did not find correct number of main functions, found %d, "
+                 "expected %d",
+                 INFO_FOUND (info), EXPECTED);
 
-    DBUG_PRINT ("TMFT", ("Finished Tag main function thread function."));
+    DBUG_PRINT ("Finished Tag main function thread function.");
 
     info = FreeInfo (info);
 
@@ -157,7 +160,7 @@ TMFTdoTagMainFunThread (node *syntax_tree)
 node *
 TMFTfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TMFTfundef");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -176,3 +179,5 @@ TMFTfundef (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

@@ -3,7 +3,10 @@
 #include "check_uniqueness_annotations.h"
 
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "tree_basic.h"
 #include "new_types.h"
@@ -15,7 +18,7 @@
 node *
 CUAobjdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUAobjdef");
+    DBUG_ENTER ();
 
     if (!TUisUniqueUserType (TYgetScalar (OBJDEF_TYPE (arg_node)))) {
         CTIerrorLine (NODE_LINE (arg_node),
@@ -28,7 +31,7 @@ CUAobjdef (node *arg_node, info *arg_info)
 node *
 CUAarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUAarg");
+    DBUG_ENTER ();
 
     if (TYisArray (AVIS_TYPE (ARG_AVIS (arg_node)))
         && TUisUniqueUserType (TYgetScalar (AVIS_TYPE (ARG_AVIS (arg_node))))) {
@@ -48,7 +51,7 @@ CUAarg (node *arg_node, info *arg_info)
 node *
 CUAret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUAret");
+    DBUG_ENTER ();
 
     if (TYisArray (RET_TYPE (arg_node))
         && TUisUniqueUserType (TYgetScalar (RET_TYPE (arg_node)))) {
@@ -66,7 +69,7 @@ CUAret (node *arg_node, info *arg_info)
 node *
 CUAdoCheckUniquenessAnnotations (node *syntax_tree)
 {
-    DBUG_ENTER ("CUAdoCheckUniquenessAnnotations");
+    DBUG_ENTER ();
 
     TRAVpush (TR_cua);
 
@@ -76,3 +79,5 @@ CUAdoCheckUniquenessAnnotations (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

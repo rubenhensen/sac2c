@@ -49,7 +49,10 @@
 #include "tree_compound.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "DCR"
+#include "debug.h"
+
 #include "traverse.h"
 #include "free.h"
 #include "deadcodeinference.h"
@@ -88,7 +91,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -106,7 +109,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -130,7 +133,7 @@ DCRdoDeadCodeRemoval (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("DCRdoDeadCodeRemoval");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
     INFO_TRAVSCOPE (arg_info)
@@ -154,15 +157,15 @@ DCRdoDeadCodeRemoval (node *arg_node)
 static node *
 RemoveUnusedReturnValues (node *exprs)
 {
-    DBUG_ENTER ("RemoveUnusedReturnValues");
+    DBUG_ENTER ();
 
     if (EXPRS_NEXT (exprs) != NULL) {
         EXPRS_NEXT (exprs) = RemoveUnusedReturnValues (EXPRS_NEXT (exprs));
     }
 
     if (AVIS_ISDEAD (ID_AVIS (EXPRS_EXPR (exprs)))) {
-        DBUG_PRINT ("DCR", ("Removing dead return value %s",
-                            AVIS_NAME (ID_AVIS (EXPRS_EXPR (exprs)))));
+        DBUG_PRINT ("Removing dead return value %s",
+                    AVIS_NAME (ID_AVIS (EXPRS_EXPR (exprs))));
         exprs = FREEdoFreeNode (exprs);
     }
 
@@ -183,18 +186,17 @@ RemoveUnusedReturnValues (node *exprs)
 node *
 DCRfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCRfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("DCR",
-                ("\nStarting dead code removal using %s mode in %s %s",
-                 ((INFO_TRAVSCOPE (arg_info) == TS_module)
-                    ? "module"
-                    : ((INFO_TRAVSCOPE (arg_info) == TS_fundef)
-                         ? "fundef"
-                         : ((INFO_TRAVSCOPE (arg_info) == TS_function) ? "function"
-                                                                       : "unknown"))),
-                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "function"),
-                 CTIitemName (arg_node)));
+    DBUG_PRINT ("\nStarting dead code removal using %s mode in %s %s",
+                ((INFO_TRAVSCOPE (arg_info) == TS_module)
+                   ? "module"
+                   : ((INFO_TRAVSCOPE (arg_info) == TS_fundef)
+                        ? "fundef"
+                        : ((INFO_TRAVSCOPE (arg_info) == TS_function) ? "function"
+                                                                      : "unknown"))),
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "function"),
+                CTIitemName (arg_node));
 
     if ((INFO_TRAVSCOPE (arg_info) == TS_fundef)
         || (((INFO_TRAVSCOPE (arg_info) == TS_module)
@@ -273,7 +275,7 @@ DCRarg (node *arg_node, info *arg_info)
     node *intap = NULL;
     node *extap;
 
-    DBUG_ENTER ("DCRarg");
+    DBUG_ENTER ();
 
     /*
      * Store the internal and external N_ap nodes
@@ -319,7 +321,7 @@ DCRarg (node *arg_node, info *arg_info)
      * the ARG list along with the concrete argument in the function applications
      */
     if (AVIS_ISDEAD (ARG_AVIS (arg_node))) {
-        DBUG_PRINT ("DCR", ("remove arg %s", ARG_NAME (arg_node)));
+        DBUG_PRINT ("remove arg %s", ARG_NAME (arg_node));
 
         arg_node = FREEdoFreeNode (arg_node);
         AP_ARGS (extap) = FREEdoFreeNode (AP_ARGS (extap));
@@ -347,7 +349,7 @@ DCRret (node *arg_node, info *arg_info)
     node *intlet = NULL;
     node *extlet;
 
-    DBUG_ENTER ("DCRret");
+    DBUG_ENTER ();
 
     /*
      * Store the internal and external N_ap nodes
@@ -393,8 +395,7 @@ DCRret (node *arg_node, info *arg_info)
      * the RET list along with the concrete argument in the function applications
      */
     if (AVIS_ISDEAD (IDS_AVIS (LET_IDS (extlet)))) {
-        DBUG_PRINT ("DCR",
-                    ("removing ret for %s", AVIS_NAME (IDS_AVIS (LET_IDS (extlet)))));
+        DBUG_PRINT ("removing ret for %s", AVIS_NAME (IDS_AVIS (LET_IDS (extlet))));
 
         arg_node = FREEdoFreeNode (arg_node);
         LET_IDS (extlet) = FREEdoFreeNode (LET_IDS (extlet));
@@ -418,7 +419,7 @@ DCRret (node *arg_node, info *arg_info)
 node *
 DCRblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCRblock");
+    DBUG_ENTER ();
 
     /* traverse assignment chain in block */
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
@@ -448,14 +449,14 @@ DCRblock (node *arg_node, info *arg_info)
 node *
 DCRvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCRvardec");
+    DBUG_ENTER ();
 
     /* traverse to next vardec */
     VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     /* process vardec and remove it, if dead code */
     if (!VARDEC_ISSTICKY (arg_node) && AVIS_ISDEAD (VARDEC_AVIS (arg_node))) {
-        DBUG_PRINT ("DCR", ("remove unused vardec %s", VARDEC_NAME (arg_node)));
+        DBUG_PRINT ("remove unused vardec %s", VARDEC_NAME (arg_node));
         arg_node = FREEdoFreeNode (arg_node);
         global.optcounters.dead_var++;
     }
@@ -476,7 +477,7 @@ DCRvardec (node *arg_node, info *arg_info)
 node *
 DCRassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCRassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -487,8 +488,8 @@ DCRassign (node *arg_node, info *arg_info)
 
     /* free this assignment if unused anymore */
     if (INFO_REMASSIGN (arg_info)) {
-        DBUG_PRINT ("DCR", ("removing assignment for %s",
-                            AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node))))));
+        DBUG_PRINT ("removing assignment for %s",
+                    AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node)))));
         arg_node = FREEdoFreeNode (arg_node);
         global.optcounters.dead_expr++;
     }
@@ -508,7 +509,7 @@ DCRassign (node *arg_node, info *arg_info)
 node *
 DCRannotate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCRannotate");
+    DBUG_ENTER ();
 
     INFO_REMASSIGN (arg_info) = FALSE;
 
@@ -526,7 +527,7 @@ DCRannotate (node *arg_node, info *arg_info)
 node *
 DCRreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCRreturn");
+    DBUG_ENTER ();
 
     if (RETURN_EXPRS (arg_node) != NULL) {
         RETURN_EXPRS (arg_node) = RemoveUnusedReturnValues (RETURN_EXPRS (arg_node));
@@ -548,7 +549,7 @@ DCRreturn (node *arg_node, info *arg_info)
 node *
 DCRlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCRlet");
+    DBUG_ENTER ();
 
     /*
      * Traverse lhs identifiers
@@ -579,7 +580,7 @@ DCRlet (node *arg_node, info *arg_info)
 node *
 DCRap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCRap");
+    DBUG_ENTER ();
 
     if ((INFO_TRAVSCOPE (arg_info) == TS_module)
         || (INFO_TRAVSCOPE (arg_info) == TS_function)) {
@@ -591,16 +592,16 @@ DCRap (node *arg_node, info *arg_info)
                 /* remember internal assignment */
                 INFO_INT_ASSIGN (arg_info) = INFO_ASSIGN (arg_info);
             } else {
-                DBUG_PRINT ("DCR", ("traverse in special fundef %s",
-                                    CTIitemName (AP_FUNDEF (arg_node))));
+                DBUG_PRINT ("traverse in special fundef %s",
+                            CTIitemName (AP_FUNDEF (arg_node)));
 
                 /* start traversal of special fundef (and maybe reduce parameters!) */
                 AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-                DBUG_PRINT ("DCR", ("traversal of special fundef %s finished.",
-                                    CTIitemName (AP_FUNDEF (arg_node))));
-                DBUG_PRINT ("DCR", ("continuing with function %s...",
-                                    CTIitemName (INFO_FUNDEF (arg_info))));
+                DBUG_PRINT ("traversal of special fundef %s finished.",
+                            CTIitemName (AP_FUNDEF (arg_node)));
+                DBUG_PRINT ("continuing with function %s...",
+                            CTIitemName (INFO_FUNDEF (arg_info)));
             }
         }
     }
@@ -620,7 +621,7 @@ DCRap (node *arg_node, info *arg_info)
 node *
 DCRids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCRids");
+    DBUG_ENTER ();
 
     /*
      * Traverse ids bottom-up
@@ -628,12 +629,12 @@ DCRids (node *arg_node, info *arg_info)
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     if (!AVIS_ISDEAD (IDS_AVIS (arg_node))) {
-        DBUG_PRINT ("DCR", ("%s is alive", AVIS_NAME (IDS_AVIS (arg_node))));
+        DBUG_PRINT ("%s is alive", AVIS_NAME (IDS_AVIS (arg_node)));
 
         INFO_REMASSIGN (arg_info) = FALSE;
 #ifndef DBUG_OFF
     } else {
-        DBUG_PRINT ("DCR", ("%s is dead", AVIS_NAME (IDS_AVIS (arg_node))));
+        DBUG_PRINT ("%s is dead", AVIS_NAME (IDS_AVIS (arg_node)));
 #endif
     }
 
@@ -652,7 +653,7 @@ DCRids (node *arg_node, info *arg_info)
 node *
 DCRcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCRcode");
+    DBUG_ENTER ();
 
     /* traverse code block */
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
@@ -675,7 +676,7 @@ DCRcode (node *arg_node, info *arg_info)
 node *
 DCRcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DCRcond");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (INFO_ASSIGN (arg_info)))) != N_return) {
 
@@ -690,3 +691,5 @@ DCRcond (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

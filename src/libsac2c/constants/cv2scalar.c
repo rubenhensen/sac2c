@@ -25,7 +25,9 @@
  */
 
 #include "tree_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 #include "cv2scalar.h"
 
@@ -37,7 +39,7 @@
 node *
 COcv2Num (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Num");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeNum (((int *)elems)[offset]));
 }
@@ -45,7 +47,7 @@ COcv2Num (void *elems, int offset)
 node *
 COcv2Numbyte (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Numbyte");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeNumbyte (((char *)elems)[offset]));
 }
@@ -53,7 +55,7 @@ COcv2Numbyte (void *elems, int offset)
 node *
 COcv2Numshort (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Numshort");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeNumshort (((short *)elems)[offset]));
 }
@@ -61,7 +63,7 @@ COcv2Numshort (void *elems, int offset)
 node *
 COcv2Numint (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Numint");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeNumint (((int *)elems)[offset]));
 }
@@ -69,7 +71,7 @@ COcv2Numint (void *elems, int offset)
 node *
 COcv2Numlong (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Numlong");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeNumlong (((long *)elems)[offset]));
 }
@@ -77,7 +79,7 @@ COcv2Numlong (void *elems, int offset)
 node *
 COcv2Numlonglong (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Numlonglong");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeNumlonglong (((long long *)elems)[offset]));
 }
@@ -85,7 +87,7 @@ COcv2Numlonglong (void *elems, int offset)
 node *
 COcv2Numubyte (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Numubyte");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeNumubyte (((unsigned char *)elems)[offset]));
 }
@@ -93,7 +95,7 @@ COcv2Numubyte (void *elems, int offset)
 node *
 COcv2Numushort (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Numushort");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeNumushort (((unsigned short *)elems)[offset]));
 }
@@ -101,7 +103,7 @@ COcv2Numushort (void *elems, int offset)
 node *
 COcv2Numuint (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Numuint");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeNumuint (((unsigned int *)elems)[offset]));
 }
@@ -109,7 +111,7 @@ COcv2Numuint (void *elems, int offset)
 node *
 COcv2Numulong (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Numulong");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeNumulong (((unsigned long *)elems)[offset]));
 }
@@ -117,7 +119,7 @@ COcv2Numulong (void *elems, int offset)
 node *
 COcv2Numulonglong (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Numulonglong");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeNumulonglong (((unsigned long long *)elems)[offset]));
 }
@@ -125,7 +127,7 @@ COcv2Numulonglong (void *elems, int offset)
 node *
 COcv2Double (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Num");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeDouble (((double *)elems)[offset]));
 }
@@ -133,7 +135,7 @@ COcv2Double (void *elems, int offset)
 node *
 COcv2Bool (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Bool");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeBool (((bool *)elems)[offset]));
 }
@@ -141,7 +143,7 @@ COcv2Bool (void *elems, int offset)
 node *
 COcv2Float (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Float");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeFloat (((float *)elems)[offset]));
 }
@@ -149,7 +151,7 @@ COcv2Float (void *elems, int offset)
 node *
 COcv2Char (void *elems, int offset)
 {
-    DBUG_ENTER ("COCv2Char");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeChar (((char *)elems)[offset]));
 }
@@ -157,6 +159,8 @@ COcv2Char (void *elems, int offset)
 node *
 COcv2ScalarDummy (void *elems, int offset)
 {
-    DBUG_ASSERT ((1 == 0), "COCv2SCalarDummy called!");
+    DBUG_ASSERT (1 == 0, "COCv2SCalarDummy called!");
     return (NULL);
 }
+
+#undef DBUG_PREFIX

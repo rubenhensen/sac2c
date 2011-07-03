@@ -1,5 +1,7 @@
 
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 #include "split_partitions.h"
 
@@ -16,7 +18,6 @@
 #include "shape.h"
 #include "LookUpTable.h"
 #include "pattern_match.h"
-#include "dbug.h"
 #include "constants.h"
 #include "types.h"
 
@@ -79,7 +80,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -93,7 +94,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -116,7 +117,7 @@ CheckAndGetBound (node *bound)
     pattern *pat;
     node *array = NULL;
 
-    DBUG_ENTER ("CheckGeneratorHelper");
+    DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
 
@@ -124,10 +125,10 @@ CheckAndGetBound (node *bound)
         /* Since we are after constant propogation, we expect
          * the bounds of an AKS N_with (which is also a cudarizable
          * N_with) to be constant arrays */
-        DBUG_ASSERT ((COisConstant (array)),
+        DBUG_ASSERT (COisConstant (array),
                      "N_gnerator must be contain only constant N_array!");
     } else {
-        DBUG_ASSERT (FALSE, ("Non constant N_array node found in N_generator!"));
+        DBUG_ASSERT (FALSE, "Non constant N_array node found in N_generator!");
     }
 
     pat = PMfree (pat);
@@ -150,7 +151,7 @@ MakeSeg (seg_t *seg, int offset, int extent)
 {
     seg_t *new_seg;
 
-    DBUG_ENTER ("MakeSeg");
+    DBUG_ENTER ();
 
     new_seg = MEMmalloc (sizeof (seg_t));
 
@@ -174,7 +175,7 @@ MakeSeg (seg_t *seg, int offset, int extent)
 static seg_t *
 FreeSeg (seg_t *seg)
 {
-    DBUG_ENTER ("FreeSeg");
+    DBUG_ENTER ();
 
     if (seg != NULL) {
         if (SEG_NEXT (seg) != NULL) {
@@ -201,7 +202,7 @@ MakePartition (int segs_cnt)
 {
     partition_t *new_part;
 
-    DBUG_ENTER ("MakePartition");
+    DBUG_ENTER ();
 
     new_part = MEMmalloc (sizeof (partition_t));
 
@@ -230,7 +231,7 @@ MakePartition (int segs_cnt)
 static partition_t *
 FreePartition (partition_t *part)
 {
-    DBUG_ENTER ("FreePartition");
+    DBUG_ENTER ();
 
     if (part != NULL) {
         int i = 0;
@@ -261,7 +262,7 @@ PartitionNeedsSplit (partition_t *part)
     int i = 0;
     bool res;
 
-    DBUG_ENTER ("PartitionNeedsSplit");
+    DBUG_ENTER ();
 
     while (i < PARTITION_SEGS_CNT (part)) {
         total_volume *= PARTITION_EXTENT (part, i);
@@ -294,7 +295,7 @@ CreatePartitionsAndSegs (node *lb, node *ub, node *step, node *width, int dims)
     int lb_num, ub_num, step_num, width_num;
     bool has_step_width = FALSE;
 
-    DBUG_ENTER ("CreatePartitionsAndSegs");
+    DBUG_ENTER ();
 
     part = MakePartition (dims - 2);
 
@@ -311,7 +312,7 @@ CreatePartitionsAndSegs (node *lb, node *ub, node *step, node *width, int dims)
 
     int i = 0;
     while (lb_rem_dims != NULL) {
-        DBUG_ASSERT ((ub_rem_dims != NULL),
+        DBUG_ASSERT (ub_rem_dims != NULL,
                      "Lower bound and upper bound have different number of elements!");
 
         if (has_step_width) {
@@ -375,7 +376,7 @@ CreateWithloopPartitionsHelper (node *lb, node *ub, node *step, node *width,
 {
     node *new_generator, *new_withid, *new_partition, *old_partition;
 
-    DBUG_ENTER ("CreateWithloopPartitionsHelper");
+    DBUG_ENTER ();
 
     old_partition = INFO_PART (arg_info);
 
@@ -387,7 +388,7 @@ CreateWithloopPartitionsHelper (node *lb, node *ub, node *step, node *width,
     PART_NEXT (new_partition) = INFO_NEW_PARTS (arg_info);
     INFO_NEW_PARTS (arg_info) = new_partition;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--**********************************************************************
@@ -409,7 +410,7 @@ CreateWithloopPartitions (node *lb_array, node *ub_array, node *step_array,
     seg_t *seg1, *seg2, *seg3;
     seg_t *seg1_iter, *seg2_iter, *seg3_iter;
 
-    DBUG_ENTER ("CreateWithloopPartitions");
+    DBUG_ENTER ();
 
     if (PARTITION_SEGS_CNT (part) == 1) { /* For 3D N_with */
         seg1 = PARTITION_SEG (part, 0);
@@ -496,7 +497,7 @@ CreateWithloopPartitions (node *lb_array, node *ub_array, node *step_array,
         DBUG_ASSERT (FALSE, "Wrong number of segments!");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--**********************************************************************
@@ -514,7 +515,7 @@ SPTNdoSplitPartitions (node *arg_node)
 {
     info *info_node;
 
-    DBUG_ENTER ("SPTNdoSplitPartitions");
+    DBUG_ENTER ();
 
     info_node = MakeInfo ();
 
@@ -540,7 +541,7 @@ SPTNdoSplitPartitions (node *arg_node)
 node *
 SPTNwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SPTNwith");
+    DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
         INFO_WL_DIM (arg_info) = TCcountIds (WITH_IDS (arg_node));
@@ -563,7 +564,7 @@ SPTNwith (node *arg_node, info *arg_info)
 node *
 SPTNpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SPTNpart");
+    DBUG_ENTER ();
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -600,9 +601,9 @@ SPTNgenerator (node *arg_node, info *arg_info)
     node *lb_array, *ub_array, *step_array, *width_array;
     partition_t *part;
 
-    DBUG_ENTER ("SPTNgenerator");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_WL_DIM (arg_info) <= 5),
+    DBUG_ASSERT (INFO_WL_DIM (arg_info) <= 5,
                  "N_with with dimension larger than 5 found!");
 
     lb = GENERATOR_BOUND1 (arg_node);
@@ -618,7 +619,7 @@ SPTNgenerator (node *arg_node, info *arg_info)
 
     /* We only have to manipulate the lower bound and the upper bound */
     if (step == NULL) {
-        DBUG_ASSERT ((width == NULL), "step is NULL while width is not NULL!");
+        DBUG_ASSERT (width == NULL, "step is NULL while width is not NULL!");
 
         part = CreatePartitionsAndSegs (lb_array, ub_array, NULL, NULL,
                                         INFO_WL_DIM (arg_info));
@@ -628,7 +629,7 @@ SPTNgenerator (node *arg_node, info *arg_info)
         }
         part = FreePartition (part);
     } else {
-        DBUG_ASSERT ((width != NULL), "Found step but width is NULL!s");
+        DBUG_ASSERT (width != NULL, "Found step but width is NULL!s");
         /* Ooops, there's step and width, more
          * sophisticated analysis is required */
         step_array = CheckAndGetBound (step);
@@ -646,3 +647,5 @@ SPTNgenerator (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

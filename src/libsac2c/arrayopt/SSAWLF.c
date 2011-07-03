@@ -68,7 +68,10 @@
 #include "DupTree.h"
 #include "globals.h"
 #include "ctinfo.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLF"
+#include "debug.h"
+
 #include "traverse.h"
 #include "SSAWithloopFolding.h"
 #include "SSAWLF.h"
@@ -119,7 +122,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -141,7 +144,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -228,7 +231,7 @@ AddCC (node *targetn, node *substn, node *resultn)
 {
     code_constr_type *cc;
 
-    DBUG_ENTER ("AddCC");
+    DBUG_ENTER ();
 
     cc = MEMmalloc (sizeof (code_constr_type));
     cc->target = targetn;
@@ -237,7 +240,7 @@ AddCC (node *targetn, node *substn, node *resultn)
     cc->next = code_constr;
     code_constr = cc;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -256,7 +259,7 @@ SearchCC (node *targetn, node *substn)
 {
     code_constr_type *cc;
 
-    DBUG_ENTER ("SearchCC");
+    DBUG_ENTER ();
 
     cc = code_constr;
     while (cc && (cc->target != targetn || cc->subst != substn)) {
@@ -281,7 +284,7 @@ FreeCC (code_constr_type *cc)
 {
     code_constr_type *tmpcc;
 
-    DBUG_ENTER ("FreeCC");
+    DBUG_ENTER ();
 
     while (cc) {
         tmpcc = cc;
@@ -289,7 +292,7 @@ FreeCC (code_constr_type *cc)
         tmpcc = MEMfree (tmpcc);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -309,7 +312,7 @@ FreeCC (code_constr_type *cc)
 static intern_gen *
 MergeGenerators (intern_gen *ig)
 {
-    DBUG_ENTER ("MergeGenerators");
+    DBUG_ENTER ();
 
     DBUG_RETURN (ig);
 }
@@ -333,7 +336,7 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
     int lbuf, ubuf, cut, buf;
     intern_gen *newig = NULL;
 
-    DBUG_ENTER ("LinearTransformationsHelp");
+    DBUG_ENTER ();
     DBUG_ASSERT (((1 == arg_no) || (2 == arg_no)), "wrong parameters");
 
     switch (prf) {
@@ -437,13 +440,13 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
         }
 
         if (ig->step) {
-            DBUG_ASSERT (0, ("WL folding with transformed index variables "
-                             "by multiplication and grids not supported right now."));
+            DBUG_ASSERT (0, "WL folding with transformed index variables "
+                            "by multiplication and grids not supported right now.");
         }
         break;
 
     case F_div_SxS:
-        DBUG_ASSERT ((arg_no == 2),
+        DBUG_ASSERT (arg_no == 2,
                      "WLF transformation (scalar / index) not yet implemented!");
 
         /*
@@ -482,13 +485,13 @@ LinearTransformationsHelp (intern_gen *ig, int dim, prf prf, int arg_no, int con
         }
 
         if (ig->step) {
-            DBUG_ASSERT (0, ("WL folding with transformed index variables "
-                             "by division and grids not supported right now."));
+            DBUG_ASSERT (0, "WL folding with transformed index variables "
+                            "by division and grids not supported right now.");
         }
         break;
 
     default:
-        DBUG_ASSERT (0, ("Wrong transformation function"));
+        DBUG_ASSERT (0, "Wrong transformation function");
     }
 
     DBUG_RETURN (newig);
@@ -511,11 +514,11 @@ LinearTransformationsScalar (intern_gen *ig, index_info *transformations, int di
 {
     intern_gen *actig, *newig;
 
-    DBUG_ENTER ("LinearTransformationsScalar");
-    DBUG_ASSERT (0 == transformations->vector, ("wrong parameters"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (0 == transformations->vector, "wrong parameters");
     DBUG_ASSERT (!transformations->last[0] || !transformations->last[0]->vector,
-                 ("scalar points to vector"));
-    DBUG_ASSERT (transformations->permutation[0], ("scalar constant???"));
+                 "scalar points to vector");
+    DBUG_ASSERT (transformations->permutation[0], "scalar constant???");
 
     actig = ig;
     if (transformations->arg_no)
@@ -557,9 +560,9 @@ LinearTransformationsVector (intern_gen *ig, index_info *transformations)
     int dim, act_dim;
     intern_gen *actig, *newig;
 
-    DBUG_ENTER ("LinearTransformationsVector");
+    DBUG_ENTER ();
     DBUG_ASSERT (transformations->vector == ig->shape,
-                 ("Transformations do not fit to generators"));
+                 "Transformations do not fit to generators");
 
     dim = ig->shape;
 
@@ -616,8 +619,8 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
     intern_gen *tmpig, *newig, *rootig;
     int ok, i, *help;
 
-    DBUG_ENTER ("FinalTransformations");
-    DBUG_ASSERT (transformations->vector == substig->shape, ("wrong parameters"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (transformations->vector == substig->shape, "wrong parameters");
 
     /* create array to speed up later transformations.
        help[i] is
@@ -675,7 +678,7 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
                 }
             }
             DBUG_ASSERT (0 == WLFnormalizeInternGen (newig),
-                         ("Error while normalizing ig"));
+                         "Error while normalizing ig");
 
             newig->code = tmpig->code;
             newig->next = rootig;
@@ -712,10 +715,10 @@ CreateCode (node *target, node *subst)
     node *coden;
     info *new_arg_info;
 
-    DBUG_ENTER ("CreateCode");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((N_code == NODE_TYPE (target)), "wrong target Parameter");
-    DBUG_ASSERT ((N_code == NODE_TYPE (subst)), "wrong subst Parameter");
+    DBUG_ASSERT (N_code == NODE_TYPE (target), "wrong target Parameter");
+    DBUG_ASSERT (N_code == NODE_TYPE (subst), "wrong subst Parameter");
 
     wlf_mode = wlfm_replace;
 
@@ -765,7 +768,7 @@ IntersectGrids (int dim)
     code_constr_type *cc;
     node *coden;
 
-    DBUG_ENTER ("IntersectGrids");
+    DBUG_ENTER ();
 
     dc = 0;
 
@@ -844,7 +847,7 @@ IntersectGrids (int dim)
         dc++;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -867,8 +870,8 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
     code_constr_type *cc;
     node *coden;
 
-    DBUG_ENTER ("IntersectInternGen");
-    DBUG_ASSERT (target_ig->shape == subst_ig->shape, ("wrong parameters"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (target_ig->shape == subst_ig->shape, "wrong parameters");
 
     max_dim = target_ig->shape;
     new_gen_step = NULL;
@@ -1004,7 +1007,7 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
     int *found, i, act_dim, dim, fdim;
     intern_gen *act_ig;
 
-    DBUG_ENTER ("RemoveDoubleIndexVectors");
+    DBUG_ENTER ();
 
     i = sizeof (int) * SHP_SEG_SIZE; /* max number of dimensions */
     found = MEMmalloc (i);
@@ -1085,7 +1088,7 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
     ntype *shtype;
     int *shvec;
 
-    DBUG_ENTER ("TransformationRangeCheck");
+    DBUG_ENTER ();
 
     /* create bounds of substwln in whole_ig */
     dim = transformations->vector;
@@ -1111,7 +1114,7 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
         break;
 
     default:
-        DBUG_ASSERT (0, ("TransformationRangeCheck called with fold-op"));
+        DBUG_ASSERT (0, "TransformationRangeCheck called with fold-op");
     }
 
     /* transform whole_ig */
@@ -1156,7 +1159,7 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     int error;
     index_info *transf2;
 
-    DBUG_ENTER ("Fold");
+    DBUG_ENTER ();
 
     code_constr = NULL;
 
@@ -1171,7 +1174,7 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
 
     /* check if array access is in range. Don't use the original *transformations
        because RemoveDoubleIndexVectors() modifies it.  */
-    DBUG_PRINT ("WLF", ("  ...starting transformations..."));
+    DBUG_PRINT ("  ...starting transformations...");
     transf2 = WLFduplicateIndexInfo (transformations);
     error = TransformationRangeCheck (transf2, substwln, target_ig);
     transf2 = FREEfreeIndexInfo (transf2);
@@ -1196,9 +1199,9 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
 
     /* intersect target_ig and subst_ig
        and create new code blocks */
-    DBUG_PRINT ("WLF", ("  ...done. Intersecting generators now..."));
+    DBUG_PRINT ("  ...done. Intersecting generators now...");
     intersect_ig = IntersectInternGen (target_ig, subst_ig);
-    DBUG_PRINT ("WLF", ("  ...done..."));
+    DBUG_PRINT ("  ...done...");
 
     /* results are in intersect_ig. At the moment, just append to new_ig. */
 #if 0
@@ -1206,7 +1209,7 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
    * Is this assertion actually required???
    * See bug #124 for a program that does not compile with this assertion.
    */
-  DBUG_ASSERT(intersect_ig,("No new intersections"));
+  DBUG_ASSERT (intersect_ig, "No new intersections");
 #endif
     tmpig = new_ig;
     if (!tmpig) { /* at the mom: always true */
@@ -1223,7 +1226,7 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
     WLFfreeInternGenChain (subst_ig);
     FreeCC (code_constr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1254,7 +1257,7 @@ FoldDecision (node *target_wl, node *subst_wl)
 {
     int result;
 
-    DBUG_ENTER ("FoldDecision");
+    DBUG_ENTER ();
 
     subst_wl = LET_EXPR (ASSIGN_INSTR (subst_wl));
 
@@ -1284,7 +1287,7 @@ CheckForSuperfluousCodes (node *wln)
 {
     node **tmp;
 
-    DBUG_ENTER ("CheckForSuperfluousCodes");
+    DBUG_ENTER ();
 
     tmp = &WITH_CODE (wln);
     while (*tmp) {
@@ -1316,7 +1319,7 @@ CheckForSuperfluousCodes (node *wln)
 static node *
 Modarray2Genarray (node *withop, node *wln, node *substwln)
 {
-    DBUG_ENTER ("Modarray2Genarray");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (substwln, "substwln is NULL");
     DBUG_ASSERT (withop != NULL, "withop is NULL");
@@ -1375,7 +1378,7 @@ Modarray2Genarray (node *withop, node *wln, node *substwln)
 static node *
 FreeWLIAssignInfo (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FreeWLIAssignInfo");
+    DBUG_ENTER ();
 
     if (ASSIGN_INDEX (arg_node) != NULL) {
         ASSIGN_INDEX (arg_node) = FREEfreeIndexInfo (ASSIGN_INDEX (arg_node));
@@ -1403,9 +1406,9 @@ FreeWLIInformation (node *fundef)
 {
     anontrav_t freetrav[2] = {{N_assign, &FreeWLIAssignInfo}, {0, NULL}};
 
-    DBUG_ENTER ("FreeWLIInformation");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "FreeWLIInformation called with non-fundef node");
 
     TRAVpushAnonymous (freetrav, &TRAVsons);
@@ -1435,9 +1438,9 @@ WLFfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("WLFfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLF", ("entering %s for WLF", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("entering %s for WLF", FUNDEF_NAME (arg_node));
     INFO_WL (arg_info) = NULL;
     INFO_FUNDEF (arg_info) = arg_node;
 
@@ -1472,7 +1475,7 @@ WLFassign (node *arg_node, info *arg_info)
 {
     node *tmpn, *last_assign, *substn;
 
-    DBUG_ENTER ("WLFassign");
+    DBUG_ENTER ();
 
     INFO_ASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -1562,7 +1565,7 @@ WLFid (node *arg_node, info *arg_info)
     node *subst_wl_ids, *_ids;
     int count;
 
-    DBUG_ENTER ("SSAWLFid");
+    DBUG_ENTER ();
 
     switch (wlf_mode) {
     case wlfm_search_WL:
@@ -1690,7 +1693,7 @@ WLFid (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, ("Not expected"));
+        DBUG_ASSERT (0, "Not expected");
     }
 
     DBUG_RETURN (arg_node);
@@ -1712,7 +1715,7 @@ WLFlet (node *arg_node, info *arg_info)
     node *prfn, *idn, *targetwln, *substwln;
     index_info *transformation;
 
-    DBUG_ENTER ("WLFlet");
+    DBUG_ENTER ();
 
     switch (wlf_mode) {
     case wlfm_rename:
@@ -1743,10 +1746,10 @@ WLFlet (node *arg_node, info *arg_info)
                ASSIGN_INDEX provides the correct index_info.*/
             transformation = ASSIGN_INDEX (INFO_ASSIGN (arg_info));
 
-            DBUG_PRINT ("WLF", ("folding array %s in line %d now...", ID_NAME (idn),
-                                NODE_LINE (arg_node)));
+            DBUG_PRINT ("folding array %s in line %d now...", ID_NAME (idn),
+                        NODE_LINE (arg_node));
             Fold (idn, transformation, targetwln, substwln);
-            DBUG_PRINT ("WLF", ("                               ...successful"));
+            DBUG_PRINT ("                               ...successful");
             global.optcounters.wlf_expr++;
             /* the WL substwln is now referenced one times less*/
             (WITH_REFERENCES_FOLDED (substwln))++;
@@ -1759,7 +1762,7 @@ WLFlet (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, ("Not expected"));
+        DBUG_ASSERT (0, "Not expected");
     }
 
     DBUG_RETURN (arg_node);
@@ -1783,7 +1786,7 @@ WLFwith (node *arg_node, info *arg_info)
     info *tmpi;
     node *tmpn, *substwln = NULL;
 
-    DBUG_ENTER ("WLFwith");
+    DBUG_ENTER ();
 
     switch (wlf_mode) {
     case wlfm_search_WL:
@@ -1809,7 +1812,7 @@ WLFwith (node *arg_node, info *arg_info)
            2. and then try to fold references to other WLs.
            */
         INFO_FLAG (arg_info) = 0;
-        DBUG_PRINT ("WLF", ("traversing body of WL in line %d", NODE_LINE (arg_node)));
+        DBUG_PRINT ("traversing body of WL in line %d", NODE_LINE (arg_node));
         arg_node = TRAVcont (arg_node, arg_info);
 
         if (INFO_FLAG (arg_info)) {
@@ -1826,8 +1829,8 @@ WLFwith (node *arg_node, info *arg_info)
             intersect_grids_ot = MEMmalloc (sizeof (int) * dim);
             intersect_grids_os = MEMmalloc (sizeof (int) * dim);
 
-            DBUG_PRINT ("WLF", ("=> found something to fold in WL in line %d",
-                                NODE_LINE (arg_node)));
+            DBUG_PRINT ("=> found something to fold in WL in line %d",
+                        NODE_LINE (arg_node));
             WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
             intersect_grids_ot = MEMfree (intersect_grids_ot);
@@ -1851,14 +1854,14 @@ WLFwith (node *arg_node, info *arg_info)
                 arg_node = WLFinternGen2Tree (arg_node, all_new_ig);
                 all_new_ig = WLFfreeInternGenChain (all_new_ig);
                 arg_node = CheckForSuperfluousCodes (arg_node);
-                DBUG_PRINT ("WLF", ("<= new generators created"));
+                DBUG_PRINT ("<= new generators created");
             }
 
             /* this WL is finished. Search other WLs on same level. */
             wlf_mode = wlfm_search_WL;
         } else {
-            DBUG_PRINT ("WLF", ("=> found nothing to fold in WL in line %d",
-                                NODE_LINE (arg_node)));
+            DBUG_PRINT ("=> found nothing to fold in WL in line %d",
+                        NODE_LINE (arg_node));
         }
 
         /*
@@ -1891,7 +1894,7 @@ WLFwith (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, ("Not expected"));
+        DBUG_ASSERT (0, "Not expected");
     }
 
     DBUG_RETURN (arg_node);
@@ -1912,8 +1915,8 @@ WLFcode (node *arg_node, info *arg_info)
 {
     intern_gen *ig;
 
-    DBUG_ENTER ("WLFcode");
-    DBUG_ASSERT ((CODE_USED (arg_node)), "traversing unused code");
+    DBUG_ENTER ();
+    DBUG_ASSERT (CODE_USED (arg_node), "traversing unused code");
 
     switch (wlf_mode) {
     case wlfm_search_WL:
@@ -1947,7 +1950,7 @@ WLFcode (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT (0, ("Unexpected WLF mode"));
+        DBUG_ASSERT (0, "Unexpected WLF mode");
     }
 
     CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
@@ -1965,18 +1968,17 @@ WLFdoWLF (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("WLFdoWLF");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
-                 "WLFdoWLF called on non-fundef node");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "WLFdoWLF called on non-fundef node");
 
     INFO_ONEFUNDEF (info) = TRUE;
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+                    global.current_allocated_mem);
 #endif
 
     global.valid_ssaform = FALSE;
@@ -1991,8 +1993,8 @@ WLFdoWLF (node *arg_node)
     TRAVpop ();
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+                    global.current_allocated_mem);
 #endif
 
     info = FreeInfo (info);
@@ -2005,3 +2007,5 @@ WLFdoWLF (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

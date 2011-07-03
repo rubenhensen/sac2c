@@ -7,7 +7,10 @@
 #include "compare_tree.h"
 #include "DupTree.h"
 #include "shape.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "free.h"
 #include "new_types.h"
 #include "new_typecheck.h"
@@ -66,7 +69,7 @@ TCgetShpsegLength (int dims, shpseg *shape)
 {
     int length, i;
 
-    DBUG_ENTER ("TCgetShpsegLength");
+    DBUG_ENTER ();
 
     if (dims > 0) {
         length = 1;
@@ -99,7 +102,7 @@ TCdiffShpseg (int dim, shpseg *shape1, shpseg *shape2)
     shpseg *shape_diff;
     int i;
 
-    DBUG_ENTER ("TCdiffShpseg");
+    DBUG_ENTER ();
 
     shape_diff = TBmakeShpseg (NULL);
 
@@ -127,7 +130,7 @@ TCshapeVarsMatch (node *avis1, node *avis2)
 {
     bool res;
 
-    DBUG_ENTER ("TCshapeVarsMatch");
+    DBUG_ENTER ();
 
     res = ((TYeqTypes (TYgetScalar (AVIS_TYPE (avis1)), TYgetScalar (AVIS_TYPE (avis2))))
            && (AVIS_DIM (avis1) != NULL) && (AVIS_DIM (avis2) != NULL)
@@ -155,7 +158,7 @@ TCequalShpseg (int dim, shpseg *shape2, shpseg *shape1)
     bool equal_shapes;
     int i;
 
-    DBUG_ENTER ("TCequalShpseg");
+    DBUG_ENTER ();
 
     equal_shapes = TRUE;
 
@@ -176,7 +179,7 @@ TCmergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
     shpseg *new;
     int i;
 
-    DBUG_ENTER ("TCmergeShpseg");
+    DBUG_ENTER ();
 
     new = TBmakeShpseg (NULL);
 
@@ -210,14 +213,14 @@ TCarray2Shpseg (node *array, int *ret_dim)
     shpseg *shape;
     int i;
 
-    DBUG_ENTER ("TCarray2Shpseg");
+    DBUG_ENTER ();
 
     shape = TBmakeShpseg (NULL);
 
     tmp = ARRAY_AELEMS (array);
     i = 0;
     while (tmp != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (tmp)) == N_num), "integer array expected!");
+        DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (tmp)) == N_num, "integer array expected!");
         SHPSEG_SHAPE (shape, i) = NUM_VAL (EXPRS_EXPR (tmp));
         i++;
         tmp = EXPRS_NEXT (tmp);
@@ -247,7 +250,7 @@ TCshpseg2Array (shpseg *shape, int dim)
     node *next;
     node *array_node;
 
-    DBUG_ENTER ("TCshpseg2Array");
+    DBUG_ENTER ();
 
     next = NULL;
     for (i = dim - 1; i >= 0; i--) {
@@ -280,7 +283,7 @@ TCappendTypes (types *chain, types *item)
 {
     types *ret;
 
-    DBUG_ENTER ("TCappendTypes");
+    DBUG_ENTER ();
 
     APPEND (ret, types *, TYPES, chain, item);
 
@@ -302,7 +305,7 @@ TCcountTypes (types *type)
 {
     int count = 0;
 
-    DBUG_ENTER ("TCcountTypes");
+    DBUG_ENTER ();
 
     while (type != NULL) {
         if (TYPES_BASETYPE (type) != T_void) {
@@ -331,7 +334,7 @@ TCgetTypesLine (types *type, int line)
     node *tdef;
     types *res_type = NULL;
 
-    DBUG_ENTER ("TCgetTypesLine");
+    DBUG_ENTER ();
 
     if (TYPES_BASETYPE (type) == T_user) {
         tdef = TYPES_TDEF (type);
@@ -346,7 +349,7 @@ TCgetTypesLine (types *type, int line)
                               TYPES_NAME (type));
             }
         } else {
-            DBUG_ASSERT ((tdef != NULL), "typedef not found!");
+            DBUG_ASSERT (tdef != NULL, "typedef not found!");
         }
 
         /*
@@ -390,7 +393,7 @@ TCgetTypes (types *type)
 {
     types *res_type;
 
-    DBUG_ENTER ("TCgetTypes");
+    DBUG_ENTER ();
 
     res_type = TCgetTypesLine (type, 0);
 
@@ -418,7 +421,7 @@ TCgetShapeDim (types *type)
     types *impl_type;
     int dim, base_dim, impl_dim;
 
-    DBUG_ENTER ("TCgetShapeDim");
+    DBUG_ENTER ();
 
     base_dim = TYPES_DIM (type);
 
@@ -450,7 +453,7 @@ TCgetShapeDim (types *type)
             dim = impl_dim + base_dim - KNOWN_DIM_OFFSET;
         } else {
             dim = 0;
-            DBUG_ASSERT ((0), "illegal shape/dim information found!");
+            DBUG_ASSERT (0, "illegal shape/dim information found!");
         }
     } else {
         /*
@@ -480,7 +483,7 @@ TCgetDim (types *type)
 {
     int dim;
 
-    DBUG_ENTER ("TCgetDim");
+    DBUG_ENTER ();
 
     dim = TCgetShapeDim (type);
     dim = DIM_NO_OFFSET (dim);
@@ -503,7 +506,7 @@ TCgetBasetype (types *type)
 {
     simpletype res;
 
-    DBUG_ENTER ("TCgetBasetype");
+    DBUG_ENTER ();
 
     res = TYPES_BASETYPE (TCgetTypes (type));
 
@@ -525,7 +528,7 @@ TCgetBasetypeSize (types *type)
 {
     int size;
 
-    DBUG_ENTER ("TCgetBasetypeSize");
+    DBUG_ENTER ();
 
     size = global.basetype_size[TCgetBasetype (type)];
 
@@ -549,7 +552,7 @@ TCgetTypesLength (types *type)
     shpseg *shape;
     int dim, length;
 
-    DBUG_ENTER ("TCgetTypesLength");
+    DBUG_ENTER ();
 
     shape = TCtype2Shpseg (type, &dim);
 
@@ -579,11 +582,11 @@ TCtype2Shpseg (types *type, int *ret_dim)
     types *impl_type;
     shpseg *new_shpseg = NULL;
 
-    DBUG_ENTER ("TCtype2Shpseg");
+    DBUG_ENTER ();
 
     dim = TCgetShapeDim (type);
 
-    DBUG_ASSERT ((dim < SHP_SEG_SIZE), "shape is out of range");
+    DBUG_ASSERT (dim < SHP_SEG_SIZE, "shape is out of range");
 
     if (dim > SCALAR) {
         new_shpseg = TBmakeShpseg (NULL);
@@ -630,7 +633,7 @@ TCtype2Shape (types *type)
     shpseg *new_shpseg = NULL;
     int dim;
 
-    DBUG_ENTER ("TCtype2Shape");
+    DBUG_ENTER ();
 
     dim = TCgetShapeDim (type);
     new_shpseg = TCtype2Shpseg (type, NULL);
@@ -663,7 +666,7 @@ TCtype2Exprs (types *type)
     int dim, i;
     node *ret_node = NULL;
 
-    DBUG_ENTER ("TCtype2Exprs");
+    DBUG_ENTER ();
 
     /* create a dummy node to append the shape items to */
     ret_node = TBmakeExprs (NULL, NULL);
@@ -703,13 +706,13 @@ TCisHidden (types *type)
     node *tdef;
     bool ret = FALSE;
 
-    DBUG_ENTER ("IsHidden");
+    DBUG_ENTER ();
 
     if (TYPES_BASETYPE (type) == T_hidden) {
         ret = TRUE;
     } else if (TYPES_BASETYPE (type) == T_user) {
         tdef = TYPES_TDEF (type);
-        DBUG_ASSERT ((tdef != NULL), "Failed attempt to look up typedef");
+        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
 
         /*
          * we have to move to the new types here, as the typedef does
@@ -728,7 +731,7 @@ TCisUnique (types *type)
 {
     bool ret = FALSE;
 
-    DBUG_ENTER ("TCisUnique");
+    DBUG_ENTER ();
 
     if (TYPES_BASETYPE (type) == T_user) {
         ret = TUisUniqueUserType (TYoldType2Type (type));
@@ -748,7 +751,7 @@ TCappendIds (node *chain, node *item)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendIds");
+    DBUG_ENTER ();
 
     APPEND (ret, node *, IDS, chain, item);
 
@@ -758,7 +761,7 @@ TCappendIds (node *chain, node *item)
 node *
 TClookupIds (const char *name, node *ids_chain)
 {
-    DBUG_ENTER ("TClookupIds");
+    DBUG_ENTER ();
 
     while ((ids_chain != NULL) && (!STReq (name, IDS_NAME (ids_chain)))) {
         ids_chain = IDS_NEXT (ids_chain);
@@ -772,7 +775,7 @@ TClookupIdsNode (node *ids_chain, node *idsavis)
 {
     int z;
 
-    DBUG_ENTER ("TClookupIdsNode");
+    DBUG_ENTER ();
 
     z = 0;
     while ((ids_chain != NULL) && (IDS_AVIS (ids_chain) != idsavis)) {
@@ -797,7 +800,7 @@ TClookupIdsNode (node *ids_chain, node *idsavis)
 node *
 TCgetNthIds (int n, node *ids_chain)
 {
-    DBUG_ENTER ("TCgetNthIds");
+    DBUG_ENTER ();
     int i = 0;
 
     while ((ids_chain != NULL) && (i != n)) {
@@ -814,7 +817,7 @@ TCcountIds (node *ids_arg)
 {
     int count = 0;
 
-    DBUG_ENTER ("TCcountIds");
+    DBUG_ENTER ();
 
     while (ids_arg != NULL) {
         count++;
@@ -828,7 +831,7 @@ node *
 TCmakeIdsFromVardecs (node *vardecs)
 {
     node *ids = NULL;
-    DBUG_ENTER ("TCmakeIdsFromVardecs");
+    DBUG_ENTER ();
     while (vardecs != NULL) {
         ids = TBmakeIds (VARDEC_AVIS (vardecs), ids);
         vardecs = VARDEC_NEXT (vardecs);
@@ -848,7 +851,7 @@ node *
 TClastIds (node *ids)
 {
     node *lastIds;
-    DBUG_ENTER ("TClastIds");
+    DBUG_ENTER ();
 
     if (IDS_NEXT (ids) != NULL) {
         lastIds = TClastIds (IDS_NEXT (ids));
@@ -863,7 +866,7 @@ node *
 TCconvertIds2Exprs (node *ids)
 {
     node *exprs = NULL;
-    DBUG_ENTER ("TCconverIds2Exprs");
+    DBUG_ENTER ();
 
     while (ids != NULL) {
         if (exprs == NULL) {
@@ -889,7 +892,7 @@ TCcountNums (node *nums)
 {
     int cnt = 0;
 
-    DBUG_ENTER ("TCcountNums");
+    DBUG_ENTER ();
 
     while (nums != NULL) {
         cnt++;
@@ -904,7 +907,7 @@ TCnumsContains (int val, node *nums)
 {
     bool result = FALSE;
 
-    DBUG_ENTER ("TCnumsContains");
+    DBUG_ENTER ();
 
     while ((nums != NULL) && (!result)) {
         result = (NUMS_VAL (nums) == val);
@@ -948,7 +951,7 @@ TCnumsContains (int val, node *nums)
 nodelist *
 TCnodeListAppend (nodelist *nl, node *newnode, void *attrib)
 {
-    DBUG_ENTER ("TCnodeListAppend");
+    DBUG_ENTER ();
 
     nl = TBmakeNodelistNode (newnode, nl);
     NODELIST_ATTRIB2 (nl) = attrib;
@@ -961,7 +964,7 @@ TCnodeListDelete (nodelist *nl, node *node, bool free_attrib)
 {
     nodelist *tmpnl, *prevnl;
 
-    DBUG_ENTER ("TCnodeListDelete");
+    DBUG_ENTER ();
 
     while (nl && NODELIST_NODE (nl) == node) {
         if (free_attrib && NODELIST_ATTRIB2 (nl)) {
@@ -992,7 +995,7 @@ TCnodeListDelete (nodelist *nl, node *node, bool free_attrib)
 nodelist *
 TCnodeListFree (nodelist *nl, bool free_attrib)
 {
-    DBUG_ENTER ("TCnodeListFree");
+    DBUG_ENTER ();
 
     while (nl) {
         if (free_attrib && NODELIST_ATTRIB2 (nl)) {
@@ -1007,7 +1010,7 @@ TCnodeListFree (nodelist *nl, bool free_attrib)
 nodelist *
 TCnodeListFind (nodelist *nl, node *node)
 {
-    DBUG_ENTER ("TCnodeListFind");
+    DBUG_ENTER ();
 
     while (nl && NODELIST_NODE (nl) != node) {
         nl = NODELIST_NEXT (nl);
@@ -1067,7 +1070,7 @@ TCsearchTypedef (const char *name, const namespace_t *ns, node *implementations)
 {
     node *tmp;
 
-    DBUG_ENTER ("TCsearchTypedef");
+    DBUG_ENTER ();
 
     tmp = implementations;
 
@@ -1084,12 +1087,12 @@ TCappendTypedef (node *tdef_chain, node *tdef)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendTypedef");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((tdef_chain == NULL) || (NODE_TYPE (tdef_chain) == N_typedef)),
-                 ("First argument of TCappendTypedef() has wrong node type."));
+                 "First argument of TCappendTypedef() has wrong node type.");
     DBUG_ASSERT (((tdef == NULL) || (NODE_TYPE (tdef) == N_typedef)),
-                 ("Second argument of TCappendTypedef() has wrong node type."));
+                 "Second argument of TCappendTypedef() has wrong node type.");
 
     APPEND (ret, node *, TYPEDEF, tdef_chain, tdef);
 
@@ -1107,12 +1110,12 @@ TCappendObjdef (node *objdef_chain, node *objdef)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendObjdef");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((objdef_chain == NULL) || (NODE_TYPE (objdef_chain) == N_objdef)),
-                 ("First argument of AppendObjdef() has wrong node type."));
+                 "First argument of AppendObjdef() has wrong node type.");
     DBUG_ASSERT (((objdef == NULL) || (NODE_TYPE (objdef) == N_objdef)),
-                 ("Second argument of AppendObjdef() has wrong node type."));
+                 "Second argument of AppendObjdef() has wrong node type.");
 
     APPEND (ret, node *, OBJDEF, objdef_chain, objdef);
 
@@ -1124,12 +1127,12 @@ TCunAliasObjdef (node *objdef)
 {
     node *result;
 
-    DBUG_ENTER ("TCunAliasObjdef");
+    DBUG_ENTER ();
 
     result = objdef;
 
     while (OBJDEF_ISALIAS (result)) {
-        DBUG_ASSERT ((NODE_TYPE (OBJDEF_EXPR (result)) == N_globobj),
+        DBUG_ASSERT (NODE_TYPE (OBJDEF_EXPR (result)) == N_globobj,
                      "found objdef alias without proper init expression!");
 
         result = GLOBOBJ_OBJDEF (OBJDEF_EXPR (result));
@@ -1149,12 +1152,12 @@ TCappendFundef (node *fundef_chain, node *fundef)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendFundef");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((fundef_chain == NULL) || (NODE_TYPE (fundef_chain) == N_fundef)),
-                 ("First argument of TCappendFundef() has wrong node type."));
+                 "First argument of TCappendFundef() has wrong node type.");
     DBUG_ASSERT (((fundef == NULL) || (NODE_TYPE (fundef) == N_fundef)),
-                 ("Second argument of TCappendFundef() has wrong node type."));
+                 "Second argument of TCappendFundef() has wrong node type.");
 
     APPEND (ret, node *, FUNDEF, fundef_chain, fundef);
 
@@ -1165,7 +1168,7 @@ node *
 TCremoveFundef (node *fundef_chain, node *fundef)
 {
     node *pos;
-    DBUG_ENTER ("TCremoveFundef");
+    DBUG_ENTER ();
 
     if (fundef_chain == fundef) {
         fundef_chain = FUNDEF_NEXT (fundef_chain);
@@ -1212,7 +1215,7 @@ TCremoveFundef (node *fundef_chain, node *fundef)
 node *
 TCaddVardecs (node *fundef, node *vardecs)
 {
-    DBUG_ENTER ("TCaddVardecs");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no N_fundef node found!");
@@ -1249,12 +1252,12 @@ TCappendVardec (node *vardec_chain, node *vardec)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendVardec");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((vardec_chain == NULL) || (NODE_TYPE (vardec_chain) == N_vardec)),
-                 ("First argument of AppendVardec() has wrong node type."));
+                 "First argument of AppendVardec() has wrong node type.");
     DBUG_ASSERT (((vardec == NULL) || (NODE_TYPE (vardec) == N_vardec)),
-                 ("Second argument of AppendVardec() has wrong node type."));
+                 "Second argument of AppendVardec() has wrong node type.");
 
     APPEND (ret, node *, VARDEC, vardec_chain, vardec);
 
@@ -1276,10 +1279,10 @@ TCcountVardecs (node *vardecs)
 {
     int count = 0;
 
-    DBUG_ENTER ("TCcountVardecs");
+    DBUG_ENTER ();
 
     while (vardecs != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (vardecs) == N_vardec), "no N_vardec node found!");
+        DBUG_ASSERT (NODE_TYPE (vardecs) == N_vardec, "no N_vardec node found!");
         count++;
         vardecs = VARDEC_NEXT (vardecs);
     }
@@ -1308,10 +1311,10 @@ TCcountArgs (node *args)
 {
     int count = 0;
 
-    DBUG_ENTER ("TCcountArgs");
+    DBUG_ENTER ();
 
     while (args != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg node found!");
+        DBUG_ASSERT (NODE_TYPE (args) == N_arg, "no N_arg node found!");
         count++;
         args = ARG_NEXT (args);
     }
@@ -1335,10 +1338,10 @@ TCcountArgsIgnoreArtificials (node *args)
 {
     int count = 0;
 
-    DBUG_ENTER ("TCcountArgsIgnoreArtificials");
+    DBUG_ENTER ();
 
     while (args != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg node found!");
+        DBUG_ASSERT (NODE_TYPE (args) == N_arg, "no N_arg node found!");
         if (!ARG_ISARTIFICIAL (args)) {
             count++;
         }
@@ -1363,12 +1366,12 @@ TCappendArgs (node *arg_chain, node *arg)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendArgs");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((arg_chain == NULL) || (NODE_TYPE (arg_chain) == N_arg)),
-                 ("First argument of TCappendArgs() has wrong node type."));
+                 "First argument of TCappendArgs() has wrong node type.");
     DBUG_ASSERT (((arg == NULL) || (NODE_TYPE (arg) == N_arg)),
-                 ("Second argument of TCappendArgs() has wrong node type."));
+                 "Second argument of TCappendArgs() has wrong node type.");
 
     APPEND (ret, node *, ARG, arg_chain, arg);
 
@@ -1396,12 +1399,12 @@ TCappendRet (node *ret_chain, node *item)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendRet");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((ret_chain == NULL) || (NODE_TYPE (ret_chain) == N_ret)),
-                 ("First argument of TCappendRet() has wrong node type."));
+                 "First argument of TCappendRet() has wrong node type.");
     DBUG_ASSERT (((item == NULL) || (NODE_TYPE (item) == N_ret)),
-                 ("Second argument of TCappendRet() has wrong node type."));
+                 "Second argument of TCappendRet() has wrong node type.");
 
     APPEND (ret, node *, RET, ret_chain, item);
 
@@ -1423,10 +1426,10 @@ TCcountRets (node *rets)
 {
     int count = 0;
 
-    DBUG_ENTER ("TCcountRets");
+    DBUG_ENTER ();
 
     while (rets != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (rets) == N_ret), "no N_ret node found!");
+        DBUG_ASSERT (NODE_TYPE (rets) == N_ret, "no N_ret node found!");
         count++;
         rets = RET_NEXT (rets);
     }
@@ -1450,10 +1453,10 @@ TCcountRetsIgnoreArtificials (node *rets)
 {
     int count = 0;
 
-    DBUG_ENTER ("TCcountRetsIgnoreArtificials");
+    DBUG_ENTER ();
 
     while (rets != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (rets) == N_ret), "no N_ret node found!");
+        DBUG_ASSERT (NODE_TYPE (rets) == N_ret, "no N_ret node found!");
         if (!RET_ISARTIFICIAL (rets)) {
             count++;
         }
@@ -1481,7 +1484,7 @@ TCcreateIdsFromRets (node *rets, node **vardecs)
     node *vardec;
     node *result;
 
-    DBUG_ENTER ("TCcreateIdsFromRets");
+    DBUG_ENTER ();
 
     if (rets != NULL) {
         vardec
@@ -1519,7 +1522,7 @@ TCsearchDecl (const char *name, node *decl_node)
 {
     node *found = NULL;
 
-    DBUG_ENTER ("TCsearchDecl");
+    DBUG_ENTER ();
 
     while (NULL != decl_node) {
         if (N_vardec == NODE_TYPE (decl_node)) {
@@ -1562,7 +1565,7 @@ TCmakeAssignInstr (node *instr, node *next)
 {
     node *result;
 
-    DBUG_ENTER ("TCmakeAssignInstr");
+    DBUG_ENTER ();
 
     if (instr == NULL) {
         result = next;
@@ -1585,7 +1588,7 @@ TCcountAssigns (node *arg_node)
 {
     int res = 0;
 
-    DBUG_ENTER ("TCcountAssigns");
+    DBUG_ENTER ();
 
     while (arg_node != NULL) {
         res += 1;
@@ -1603,7 +1606,7 @@ TCcountAssigns (node *arg_node)
 node *
 TCgetLastAssign (node *arg_node)
 {
-    DBUG_ENTER ("TCgetLastAssign");
+    DBUG_ENTER ();
 
     if (arg_node != NULL) {
         while (ASSIGN_NEXT (arg_node) != NULL) {
@@ -1629,7 +1632,7 @@ TCmakeAssigns1 (node *part1)
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssigns1");
+    DBUG_ENTER ();
 
     assigns = TCmakeAssignInstr (part1, NULL);
 
@@ -1641,7 +1644,7 @@ TCmakeAssigns2 (node *part1, node *part2)
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssigns2");
+    DBUG_ENTER ();
 
     assigns = TCmakeAssignInstr (part1, TCmakeAssigns1 (part2));
 
@@ -1653,7 +1656,7 @@ TCmakeAssigns3 (node *part1, node *part2, node *part3)
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssigns3");
+    DBUG_ENTER ();
 
     assigns = TCmakeAssignInstr (part1, TCmakeAssigns2 (part2, part3));
 
@@ -1665,7 +1668,7 @@ TCmakeAssigns4 (node *part1, node *part2, node *part3, node *part4)
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssigns4");
+    DBUG_ENTER ();
 
     assigns = TCmakeAssignInstr (part1, TCmakeAssigns3 (part2, part3, part4));
 
@@ -1677,7 +1680,7 @@ TCmakeAssigns5 (node *part1, node *part2, node *part3, node *part4, node *part5)
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssigns5");
+    DBUG_ENTER ();
 
     assigns = TCmakeAssignInstr (part1, TCmakeAssigns4 (part2, part3, part4, part5));
 
@@ -1690,7 +1693,7 @@ TCmakeAssigns6 (node *part1, node *part2, node *part3, node *part4, node *part5,
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssigns6");
+    DBUG_ENTER ();
 
     assigns
       = TCmakeAssignInstr (part1, TCmakeAssigns5 (part2, part3, part4, part5, part6));
@@ -1704,7 +1707,7 @@ TCmakeAssigns7 (node *part1, node *part2, node *part3, node *part4, node *part5,
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssigns7");
+    DBUG_ENTER ();
 
     assigns = TCmakeAssignInstr (part1, TCmakeAssigns6 (part2, part3, part4, part5, part6,
                                                         part7));
@@ -1718,7 +1721,7 @@ TCmakeAssigns8 (node *part1, node *part2, node *part3, node *part4, node *part5,
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssigns8");
+    DBUG_ENTER ();
 
     assigns = TCmakeAssignInstr (part1, TCmakeAssigns7 (part2, part3, part4, part5, part6,
                                                         part7, part8));
@@ -1732,7 +1735,7 @@ TCmakeAssigns9 (node *part1, node *part2, node *part3, node *part4, node *part5,
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssigns9");
+    DBUG_ENTER ();
 
     assigns = TCmakeAssignInstr (part1, TCmakeAssigns8 (part2, part3, part4, part5, part6,
                                                         part7, part8, part9));
@@ -1760,7 +1763,7 @@ TCmakeAssignIcm0 (char *name, node *next)
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssignIcm0");
+    DBUG_ENTER ();
 
     assigns = TBmakeAssign (TCmakeIcm0 (name), next);
 
@@ -1772,7 +1775,7 @@ TCmakeAssignIcm1 (char *name, node *arg1, node *next)
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssignIcm1");
+    DBUG_ENTER ();
 
     assigns = TBmakeAssign (TCmakeIcm1 (name, arg1), next);
 
@@ -1784,7 +1787,7 @@ TCmakeAssignIcm2 (char *name, node *arg1, node *arg2, node *next)
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssignIcm2");
+    DBUG_ENTER ();
 
     assigns = TBmakeAssign (TCmakeIcm2 (name, arg1, arg2), next);
 
@@ -1796,7 +1799,7 @@ TCmakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3, node *next)
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssignIcm3");
+    DBUG_ENTER ();
 
     assigns = TBmakeAssign (TCmakeIcm3 (name, arg1, arg2, arg3), next);
 
@@ -1808,7 +1811,7 @@ TCmakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssignIcm4");
+    DBUG_ENTER ();
 
     assigns = TBmakeAssign (TCmakeIcm4 (name, arg1, arg2, arg3, arg4), next);
 
@@ -1821,7 +1824,7 @@ TCmakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssignIcm5");
+    DBUG_ENTER ();
 
     assigns = TBmakeAssign (TCmakeIcm5 (name, arg1, arg2, arg3, arg4, arg5), next);
 
@@ -1834,7 +1837,7 @@ TCmakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssignIcm6");
+    DBUG_ENTER ();
 
     assigns = TBmakeAssign (TCmakeIcm6 (name, arg1, arg2, arg3, arg4, arg5, arg6), next);
 
@@ -1847,7 +1850,7 @@ TCmakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
 {
     node *assigns;
 
-    DBUG_ENTER ("TCmakeAssignIcm7");
+    DBUG_ENTER ();
 
     assigns
       = TBmakeAssign (TCmakeIcm7 (name, arg1, arg2, arg3, arg4, arg5, arg6, arg7), next);
@@ -1870,9 +1873,9 @@ TCgetCompoundNode (node *arg_node)
 {
     node *compound_node;
 
-    DBUG_ENTER ("TCgetCompoundNode");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_assign,
                  "TCgetCompoundNode() can handle N_assign nodes only!");
 
     arg_node = ASSIGN_INSTR (arg_node);
@@ -1921,13 +1924,13 @@ TCappendAssign (node *assign_chain, node *assign)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendAssign");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((assign_chain == NULL) || (NODE_TYPE (assign_chain) == N_assign)
                   || (NODE_TYPE (assign_chain) == N_empty)),
-                 ("First argument of TCappendAssign() has wrong node type."));
+                 "First argument of TCappendAssign() has wrong node type.");
     DBUG_ASSERT (((assign == NULL) || (NODE_TYPE (assign) == N_assign)),
-                 ("Second argument of TCappendAssign() has wrong node type."));
+                 "Second argument of TCappendAssign() has wrong node type.");
 
     if ((assign_chain != NULL) && (NODE_TYPE (assign_chain) == N_empty)) {
         if (assign != NULL) {
@@ -1959,7 +1962,7 @@ TCappendAssignIcm (node *assign, char *name, node *args)
 {
     node *result;
 
-    DBUG_ENTER ("TCappendAssignIcm");
+    DBUG_ENTER ();
 
     result = TCappendAssign (assign, TCmakeAssignIcm1 (name, args, NULL));
 
@@ -1987,12 +1990,12 @@ TCappendExprs (node *exprs_chain, node *exprs)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendExprs");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((exprs_chain == NULL) || (NODE_TYPE (exprs_chain) == N_exprs)),
-                 ("First argument of TCappendExprs() has wrong node type."));
+                 "First argument of TCappendExprs() has wrong node type.");
     DBUG_ASSERT (((exprs == NULL) || (NODE_TYPE (exprs) == N_exprs)),
-                 ("Second argument of TCappendExprs() has wrong node type."));
+                 "Second argument of TCappendExprs() has wrong node type.");
 
     APPEND (ret, node *, EXPRS, exprs_chain, exprs);
 
@@ -2015,7 +2018,7 @@ TCcombineExprs (node *first, node *second)
 {
     node *result;
 
-    DBUG_ENTER ("CombineExprs");
+    DBUG_ENTER ();
 
     if (first != NULL) {
         if (NODE_TYPE (first) != N_exprs) {
@@ -2051,7 +2054,7 @@ TCcreateExprsFromVardecs (node *vardec)
 {
     node *result;
 
-    DBUG_ENTER ("TCcreateExprsFromVardecs");
+    DBUG_ENTER ();
 
     if (vardec != NULL) {
         result = TBmakeExprs (TBmakeId (VARDEC_AVIS (vardec)),
@@ -2078,7 +2081,7 @@ TCcreateExprsChainFromAvises (int num_avises, ...)
     int i;
     node *exprs;
 
-    DBUG_ENTER ("TCcreateExprsChainFromAvises");
+    DBUG_ENTER ();
     va_start (ap, num_avises);
     exprs = NULL;
     for (i = 0; i < num_avises; i++) {
@@ -2103,7 +2106,7 @@ TCmakeExprsNum (int num)
 {
     node *result;
 
-    DBUG_ENTER ("TCmakeExprsNum");
+    DBUG_ENTER ();
 
     result = TBmakeExprs (TBmakeNum (num), NULL);
 
@@ -2125,11 +2128,11 @@ TCcountExprs (node *exprs)
 {
     int count;
 
-    DBUG_ENTER ("CountExprs");
+    DBUG_ENTER ();
 
     count = 0;
     while (exprs != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "no N_exprs node found!");
+        DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "no N_exprs node found!");
         count++;
         exprs = EXPRS_NEXT (exprs);
     }
@@ -2152,7 +2155,7 @@ TCcreateExprsFromIds (node *ids)
 {
     node *result;
 
-    DBUG_ENTER ("TCcreateExprsFromIds");
+    DBUG_ENTER ();
 
     if (ids != NULL) {
         result = TBmakeExprs (TBmakeId (IDS_AVIS (ids)),
@@ -2179,7 +2182,7 @@ TCcreateExprsFromArgs (node *args)
 {
     node *result;
 
-    DBUG_ENTER ("TCcreateExprsFromArgs");
+    DBUG_ENTER ();
 
     if (args != NULL) {
         result = TBmakeExprs (TBmakeId (ARG_AVIS (args)),
@@ -2212,7 +2215,7 @@ TCgetNthExprsNext (int n, node *exprs)
     int cnt;
     node *result;
 
-    DBUG_ENTER ("TCgetNthExprsNext");
+    DBUG_ENTER ();
 
     for (cnt = 0; cnt < n; cnt++) {
         if (exprs == NULL) {
@@ -2243,7 +2246,7 @@ TCgetNthExprs (int n, node *exprs)
     int cnt;
     node *result = NULL;
 
-    DBUG_ENTER ("TCgetNthExprs");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (n >= 0, "n<0");
     for (cnt = 0; cnt < n; cnt++) {
@@ -2275,7 +2278,7 @@ TCputNthExprs (int n, node *oldexprs, node *val)
     int cnt;
     node *exprs;
 
-    DBUG_ENTER ("TCputNthExprs");
+    DBUG_ENTER ();
 
     exprs = oldexprs;
     DBUG_ASSERT (n >= 0, "n<0");
@@ -2310,7 +2313,7 @@ TCgetNthExprsExpr (int n, node *exprs)
 {
     node *result = NULL;
 
-    DBUG_ENTER ("TCgetNthExprsExpr");
+    DBUG_ENTER ();
 
     exprs = TCgetNthExprs (n, exprs);
 
@@ -2340,10 +2343,10 @@ TCtakeDropExprs (int takecount, int dropcount, node *exprs)
     node *res = NULL;
     node *tail;
 
-    DBUG_ENTER ("TCtakeDropExprs");
+    DBUG_ENTER ();
     DBUG_ASSERT ((takecount >= 0) && (dropcount >= 0),
-                 ("TCtakeDropExprs take or drop count < 0"));
-    DBUG_ASSERT ((N_exprs == NODE_TYPE (exprs)),
+                 "TCtakeDropExprs take or drop count < 0");
+    DBUG_ASSERT (N_exprs == NODE_TYPE (exprs),
                  "TCtakeDropExprs disappointed at not getting N_exprs");
     if (0 != takecount) {
         /* This does too much work, but I'm not sure of a nice way to fix it. */
@@ -2379,7 +2382,7 @@ TCfilterExprs (bool (*pred) (node *), node **exprs)
     node *res = NULL;
     node *tmp;
 
-    DBUG_ENTER ("TCfilterExprs");
+    DBUG_ENTER ();
 
     if (*exprs != NULL) {
         if (EXPRS_NEXT (*exprs) != NULL) {
@@ -2423,7 +2426,7 @@ TCfilterExprsArg (bool (*pred) (node *, node *), node *arg, node **exprs)
     node *res = NULL;
     node *tmp;
 
-    DBUG_ENTER ("TCfilterExprs");
+    DBUG_ENTER ();
 
     if (*exprs != NULL) {
         if (EXPRS_NEXT (*exprs) != NULL) {
@@ -2469,7 +2472,7 @@ TCfilterAssignArg (bool (*pred) (node *, node *), node *arg, node **assgn)
     node *res = NULL;
     node *tmp;
 
-    DBUG_ENTER ("TCfilterAssignArg");
+    DBUG_ENTER ();
 
     if (*assgn != NULL) {
         if (ASSIGN_NEXT (*assgn) != NULL) {
@@ -2492,7 +2495,7 @@ TCfoldPredExprs (bool (*pred) (node *), node *exprs)
 {
     bool res;
 
-    DBUG_ENTER ("TCfoldPredExprs");
+    DBUG_ENTER ();
 
     if (exprs == NULL) {
         res = TRUE;
@@ -2533,7 +2536,7 @@ TCfoldPredExprs (bool (*pred) (node *), node *exprs)
 node *
 TCnodeBehindCast (node *arg_node)
 {
-    DBUG_ENTER ("TCnodeBehindCast");
+    DBUG_ENTER ();
     while (N_cast == NODE_TYPE (arg_node)) {
         arg_node = CAST_EXPR (arg_node);
     }
@@ -2588,7 +2591,7 @@ TCnodeBehindCast (node *arg_node)
 node *
 TCmakeVector (ntype *elemtype, node *aelems)
 {
-    DBUG_ENTER ("TCmakeVector");
+    DBUG_ENTER ();
 
     DBUG_RETURN (
       TBmakeArray (elemtype, SHcreateShape (1, TCcountExprs (aelems)), aelems));
@@ -2606,7 +2609,7 @@ TCmakeVector (ntype *elemtype, node *aelems)
 node *
 TCmakeIntVector (node *aelems)
 {
-    DBUG_ENTER ("TCmakeIntVector");
+    DBUG_ENTER ();
 
     DBUG_RETURN (
       TCmakeVector (TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)), aelems));
@@ -2632,7 +2635,7 @@ TCcreateIntVector (int length, int value, int step)
     int d;
     int v;
 
-    DBUG_ENTER ("TCcreateIntVector");
+    DBUG_ENTER ();
 
     v = value + ((length - 1) * step);
 
@@ -2660,14 +2663,14 @@ TCgetIntVectorNthValue (int pos, node *vect)
 {
     node *elem;
 
-    DBUG_ENTER ("TCgetIntVectorNthValue");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((SHgetDim (ARRAY_FRAMESHAPE (vect)) == 1), "argument not a vector");
+    DBUG_ASSERT (SHgetDim (ARRAY_FRAMESHAPE (vect)) == 1, "argument not a vector");
 
     elem = TCgetNthExprsExpr (pos, ARRAY_AELEMS (vect));
 
-    DBUG_ASSERT ((elem != NULL), "vector too short!");
-    DBUG_ASSERT ((NODE_TYPE (elem) == N_num), "element not an int!");
+    DBUG_ASSERT (elem != NULL, "vector too short!");
+    DBUG_ASSERT (NODE_TYPE (elem) == N_num, "element not an int!");
 
     DBUG_RETURN (NUM_VAL (elem));
 }
@@ -2686,10 +2689,10 @@ TCcreateZeroScalar (simpletype btype)
 {
     node *ret_node;
 
-    DBUG_ENTER ("TCcreateZeroScalar");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((btype != T_user), "unresolved user-type found");
-    DBUG_ASSERT ((btype != T_hidden), "hidden-type found");
+    DBUG_ASSERT (btype != T_user, "unresolved user-type found");
+    DBUG_ASSERT (btype != T_hidden, "hidden-type found");
 
     switch (btype) {
     case T_byte:
@@ -2736,7 +2739,7 @@ TCcreateZeroScalar (simpletype btype)
         break;
     default:
         ret_node = NULL;
-        DBUG_ASSERT (0, ("unkown basetype found"));
+        DBUG_ASSERT (0, "unkown basetype found");
     }
 
     DBUG_RETURN (ret_node);
@@ -2758,10 +2761,10 @@ TCcreateZeroVector (int length, simpletype btype)
     node *ret_node, *exprs_node;
     int i;
 
-    DBUG_ENTER ("TCcreateZeroVector");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((btype != T_user), "unresolved user-type found");
-    DBUG_ASSERT ((btype != T_hidden), "hidden-type found");
+    DBUG_ASSERT (btype != T_user, "unresolved user-type found");
+    DBUG_ASSERT (btype != T_hidden, "hidden-type found");
 
     exprs_node = NULL;
     for (i = 0; i < length; i++) {
@@ -2789,7 +2792,7 @@ TCids2Exprs (node *ids_arg)
 {
     node *exprs;
 
-    DBUG_ENTER ("TCids2Exprs");
+    DBUG_ENTER ();
 
     if (ids_arg != NULL) {
         exprs = TBmakeExprs (DUPdupIdsId (ids_arg), TCids2Exprs (IDS_NEXT (ids_arg)));
@@ -2815,7 +2818,7 @@ TCids2ExprsNt (node *ids_arg)
 {
     node *exprs;
 
-    DBUG_ENTER ("TCids2ExprsNt");
+    DBUG_ENTER ();
 
     if (ids_arg != NULL) {
         exprs = TBmakeExprs (DUPdupIdsIdNt (ids_arg), TCids2ExprsNt (IDS_NEXT (ids_arg)));
@@ -2837,7 +2840,7 @@ node *
 TCmakeIdCopyString (const char *str)
 {
     node *result;
-    DBUG_ENTER ("TCmakeIdCopyString");
+    DBUG_ENTER ();
 
     if (str == NULL) {
         str = "";
@@ -2855,7 +2858,7 @@ TCmakeIdCopyStringNt (const char *str, types *type)
 {
     node *result;
 
-    DBUG_ENTER ("TCmakeIdCopyStringNt");
+    DBUG_ENTER ();
 
     result = TCmakeIdCopyString (str);
     ID_NT_TAG (result) = NTUcreateNtTag (str, type);
@@ -2875,7 +2878,7 @@ TCmakeIdCopyStringNtNew (const char *str, ntype *type)
 {
     node *result;
 
-    DBUG_ENTER ("TCmakeIdCopyStringNtNew");
+    DBUG_ENTER ();
 
     result = TCmakeIdCopyString (str);
     ID_NT_TAG (result) = NTUcreateNtTagFromNType (str, type);
@@ -2906,7 +2909,7 @@ TCcreateIdsChainFromAvises (int num_avises, ...)
     int i;
     node *ids;
 
-    DBUG_ENTER ("TCcreateIdsChainFromAvises");
+    DBUG_ENTER ();
     va_start (ap, num_avises);
     ids = NULL;
     for (i = 0; i < num_avises; i++) {
@@ -2935,7 +2938,7 @@ TCisPhiFun (node *id)
 
     bool result;
 
-    DBUG_ENTER ("TCisPhiFun");
+    DBUG_ENTER ();
 
     if ((AVIS_SSAASSIGN (ID_AVIS (id)) != NULL)
         && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (id)))) == N_funcond))
@@ -2949,10 +2952,10 @@ TCisPhiFun (node *id)
 node *
 TCsetSSAAssignForIdsChain (node *ids, node *assign)
 {
-    DBUG_ENTER ("TCsetSSAAssignForIdsChain");
+    DBUG_ENTER ();
 
     if (ids != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (ids) == N_ids), "N_ids expected!");
+        DBUG_ASSERT (NODE_TYPE (ids) == N_ids, "N_ids expected!");
 
         IDS_NEXT (ids) = TCsetSSAAssignForIdsChain (IDS_NEXT (ids), assign);
 
@@ -2987,7 +2990,7 @@ TCmakePrf1 (prf prf, node *arg1)
 {
     node *res;
 
-    DBUG_ENTER ("TBmakePrf1");
+    DBUG_ENTER ();
 
     res = TBmakePrf (prf, TBmakeExprs (arg1, NULL));
 
@@ -2999,7 +3002,7 @@ TCmakePrf2 (prf prf, node *arg1, node *arg2)
 {
     node *res;
 
-    DBUG_ENTER ("TBmakePrf2");
+    DBUG_ENTER ();
 
     res = TBmakePrf (prf, TBmakeExprs (arg1, TBmakeExprs (arg2, NULL)));
 
@@ -3011,7 +3014,7 @@ TCmakePrf3 (prf prf, node *arg1, node *arg2, node *arg3)
 {
     node *res;
 
-    DBUG_ENTER ("TBmakePrf3");
+    DBUG_ENTER ();
 
     res
       = TBmakePrf (prf, TBmakeExprs (arg1, TBmakeExprs (arg2, TBmakeExprs (arg3, NULL))));
@@ -3024,7 +3027,7 @@ TCmakePrf4 (prf prf, node *arg1, node *arg2, node *arg3, node *arg4)
 {
     node *res;
 
-    DBUG_ENTER ("TBmakePrf4");
+    DBUG_ENTER ();
 
     res = TBmakePrf (prf,
                      TBmakeExprs (arg1,
@@ -3040,7 +3043,7 @@ TCmakePrf5 (prf prf, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5)
 {
     node *res;
 
-    DBUG_ENTER ("TBmakePrf5");
+    DBUG_ENTER ();
 
     res = TBmakePrf (
       prf,
@@ -3077,7 +3080,7 @@ TCmakeAp1 (node *fundef, node *arg1)
 {
     node *res;
 
-    DBUG_ENTER ("TCmakeAp1");
+    DBUG_ENTER ();
 
     res = TBmakeAp (fundef, TBmakeExprs (arg1, NULL));
 
@@ -3088,7 +3091,7 @@ TCmakeAp2 (node *fundef, node *arg1, node *arg2)
 {
     node *res;
 
-    DBUG_ENTER ("TCmakeAp2");
+    DBUG_ENTER ();
 
     res = TBmakeAp (fundef, TBmakeExprs (arg1, TBmakeExprs (arg2, NULL)));
 
@@ -3100,7 +3103,7 @@ TCmakeAp3 (node *fundef, node *arg1, node *arg2, node *arg3)
 {
     node *res;
 
-    DBUG_ENTER ("TCmakeAp3");
+    DBUG_ENTER ();
 
     res = TBmakeAp (fundef,
                     TBmakeExprs (arg1, TBmakeExprs (arg2, TBmakeExprs (arg3, NULL))));
@@ -3113,7 +3116,7 @@ TCmakeSpap1 (namespace_t *ns, char *name, node *arg1)
 {
     node *result;
 
-    DBUG_ENTER ("TCmakeSpap1");
+    DBUG_ENTER ();
 
     result = TBmakeSpap (TBmakeSpid (ns, name), TBmakeExprs (arg1, NULL));
 
@@ -3125,7 +3128,7 @@ TCmakeSpap2 (namespace_t *ns, char *name, node *arg1, node *arg2)
 {
     node *result;
 
-    DBUG_ENTER ("TCmakeSpap1");
+    DBUG_ENTER ();
 
     result
       = TBmakeSpap (TBmakeSpid (ns, name), TBmakeExprs (arg1, TBmakeExprs (arg2, NULL)));
@@ -3138,7 +3141,7 @@ TCmakeSpap3 (namespace_t *ns, char *name, node *arg1, node *arg2, node *arg3)
 {
     node *result;
 
-    DBUG_ENTER ("TCmakeSpap1");
+    DBUG_ENTER ();
 
     result
       = TBmakeSpap (TBmakeSpid (ns, name),
@@ -3183,7 +3186,7 @@ TCmakeIcm0 (char *name)
 {
     node *icm;
 
-    DBUG_ENTER ("TCmakeIcm0");
+    DBUG_ENTER ();
 
     icm = TBmakeIcm (name, NULL);
 
@@ -3195,7 +3198,7 @@ TCmakeIcm1 (char *name, node *arg1)
 {
     node *icm;
 
-    DBUG_ENTER ("TCmakeIcm1");
+    DBUG_ENTER ();
 
     arg1 = TCcombineExprs (arg1, NULL);
     icm = TBmakeIcm (name, arg1);
@@ -3208,7 +3211,7 @@ TCmakeIcm2 (char *name, node *arg1, node *arg2)
 {
     node *icm;
 
-    DBUG_ENTER ("TCmakeIcm2");
+    DBUG_ENTER ();
 
     icm = TBmakeIcm (name, TCcombineExprs (arg1, TCcombineExprs (arg2, NULL)));
 
@@ -3220,7 +3223,7 @@ TCmakeIcm3 (char *name, node *arg1, node *arg2, node *arg3)
 {
     node *icm;
 
-    DBUG_ENTER ("TCmakeIcm3");
+    DBUG_ENTER ();
 
     arg1 = TCcombineExprs (arg1, TCcombineExprs (arg2, TCcombineExprs (arg3, NULL)));
     icm = TBmakeIcm (name, arg1);
@@ -3233,7 +3236,7 @@ TCmakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4)
 {
     node *icm;
 
-    DBUG_ENTER ("TCmakeIcm4");
+    DBUG_ENTER ();
 
     arg4 = TCcombineExprs (arg4, NULL);
     arg3 = TCcombineExprs (arg3, arg4);
@@ -3249,7 +3252,7 @@ TCmakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *ar
 {
     node *icm;
 
-    DBUG_ENTER ("TCmakeIcm5");
+    DBUG_ENTER ();
 
     arg5 = TCcombineExprs (arg5, NULL);
     arg4 = TCcombineExprs (arg4, arg5);
@@ -3267,7 +3270,7 @@ TCmakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *ar
 {
     node *icm;
 
-    DBUG_ENTER ("TCmakeIcm6");
+    DBUG_ENTER ();
 
     arg6 = TCcombineExprs (arg6, NULL);
     arg5 = TCcombineExprs (arg5, arg6);
@@ -3286,7 +3289,7 @@ TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *ar
 {
     node *icm;
 
-    DBUG_ENTER ("TCmakeIcm7");
+    DBUG_ENTER ();
 
     arg7 = TCcombineExprs (arg7, NULL);
     arg6 = TCcombineExprs (arg6, arg7);
@@ -3340,7 +3343,7 @@ TCcountParts (node *parts)
 {
     int counter = 0;
 
-    DBUG_ENTER ("TCcountParts");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (parts == NULL || NODE_TYPE (parts) == N_part,
                  "TCcountParts called with wrong node type.");
@@ -3369,7 +3372,7 @@ TCappendPart (node *parts1, node *parts2)
 {
     node *current;
 
-    DBUG_ENTER ("TCappendPart");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (parts1 == NULL || NODE_TYPE (parts1) == N_part,
                  "TCappendPart called with wrong node type.");
@@ -3403,7 +3406,7 @@ TCappendPart (node *parts1, node *parts2)
 bool
 TCcontainsDefaultPartition (node *parts)
 {
-    DBUG_ENTER ("TCcontainsDefaultPartition");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (parts == NULL || NODE_TYPE (parts) == N_part,
                  "TCcontainsDefaultPartition called with wrong node type.");
@@ -3432,7 +3435,7 @@ TCcountWithops (node *withop)
 {
     int counter = 0;
 
-    DBUG_ENTER ("TCcountWithops");
+    DBUG_ENTER ();
 
     while (withop != NULL) {
         counter += 1;
@@ -3447,7 +3450,7 @@ TCcountWithopsEq (node *withop, nodetype eq)
 {
     int counter = 0;
 
-    DBUG_ENTER ("TCcountWithops");
+    DBUG_ENTER ();
 
     while (withop != NULL) {
         if (NODE_TYPE (withop) == eq) {
@@ -3464,7 +3467,7 @@ TCcountWithopsNeq (node *withop, nodetype neq)
 {
     int counter = 0;
 
-    DBUG_ENTER ("TCcountWithops");
+    DBUG_ENTER ();
 
     while (withop != NULL) {
         if (NODE_TYPE (withop) != neq) {
@@ -3493,7 +3496,7 @@ TCcountWlseg (node *wlseg)
 {
     int counter = 0;
 
-    DBUG_ENTER ("TCcountWlseg");
+    DBUG_ENTER ();
 
     while (wlseg != NULL) {
         counter += 1;
@@ -3512,7 +3515,7 @@ TCcountWlseg (node *wlseg)
 node *
 TCmakeStrCopy (const char *str)
 {
-    DBUG_ENTER ("TCmakeStrCopy");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeStr (STRcpy (str)));
 }
@@ -3537,12 +3540,12 @@ TCappendSet (node *links1, node *links2)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendSet");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((links1 == NULL) || (NODE_TYPE (links1) == N_set)),
-                 ("First argument of TCappendSet() has wrong node type."));
+                 "First argument of TCappendSet() has wrong node type.");
     DBUG_ASSERT (((links2 == NULL) || (NODE_TYPE (links2) == N_set)),
-                 ("Second argument of TCappendSet() has wrong node type."));
+                 "Second argument of TCappendSet() has wrong node type.");
 
     APPEND (ret, node *, SET, links1, links2);
 
@@ -3568,7 +3571,7 @@ DropSetHelper (int *drop, node *set)
 {
     bool tagged = FALSE;
 
-    DBUG_ENTER ("DropSetHelper");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((set != NULL) || (*drop <= 0)),
                  "cannot drop more elements from list than elements in list!");
@@ -3599,13 +3602,12 @@ DropSetHelper (int *drop, node *set)
 node *
 TCdropSet (int drop, node *set)
 {
-    DBUG_ENTER ("TCdropSet");
+    DBUG_ENTER ();
 
     set = DropSetHelper (&drop, set);
 
-    DBUG_ASSERT ((drop == 0),
-                 "Cannot drop more elements from end of list than elements in "
-                 "list!");
+    DBUG_ASSERT (drop == 0, "Cannot drop more elements from end of list than elements in "
+                            "list!");
 
     DBUG_RETURN (set);
 }
@@ -3630,7 +3632,7 @@ TCsetAdd (node **links, node *link)
 {
     int result = 0;
 
-    DBUG_ENTER ("TCsetAdd");
+    DBUG_ENTER ();
 
     if (*links == NULL) {
         /*
@@ -3666,7 +3668,7 @@ TCsetRemove (node **links, node *link)
 {
     int result = 0;
 
-    DBUG_ENTER ("TCsetRemove");
+    DBUG_ENTER ();
 
     if (*links != NULL) {
         if (SET_MEMBER (*links) == link) {
@@ -3696,7 +3698,7 @@ TCsetUnion (node **links, node *add)
 {
     int result = 0;
 
-    DBUG_ENTER ("TCsetUnion");
+    DBUG_ENTER ();
 
     while (add != NULL) {
         result += TCsetAdd (links, SET_MEMBER (add));
@@ -3721,10 +3723,10 @@ TCsetContains (node *set, node *link)
 {
     bool result = FALSE;
 
-    DBUG_ENTER ("TCsetContains");
+    DBUG_ENTER ();
 
     while ((set != NULL) && (!result)) {
-        DBUG_ASSERT ((NODE_TYPE (set) == N_set),
+        DBUG_ASSERT (NODE_TYPE (set) == N_set,
                      "called TCsetContains with non N_set node!");
 
         result = (SET_MEMBER (set) == link);
@@ -3750,10 +3752,10 @@ TCsetIsSubset (node *super, node *sub)
 {
     bool result = TRUE;
 
-    DBUG_ENTER ("TClinklistIsSubset");
+    DBUG_ENTER ();
 
     while ((sub != NULL) && result) {
-        DBUG_ASSERT ((NODE_TYPE (sub) == N_set),
+        DBUG_ASSERT (NODE_TYPE (sub) == N_set,
                      "called TCsetIsSubset with non N_set node!");
 
         result = result && TCsetContains (super, SET_MEMBER (sub));
@@ -3775,7 +3777,7 @@ TCappendError (node *chain, node *item)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendError");
+    DBUG_ENTER ();
 
     APPEND (ret, node *, IDS, chain, item);
 
@@ -3802,12 +3804,12 @@ TCappendRange (node *range_chain, node *range)
 {
     node *ret;
 
-    DBUG_ENTER ("TCappendRange");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((range_chain == NULL) || (NODE_TYPE (range_chain) == N_range)),
-                 ("First argument of AppendRange() has wrong node type."));
+                 "First argument of AppendRange() has wrong node type.");
     DBUG_ASSERT (((range == NULL) || (NODE_TYPE (range) == N_range)),
-                 ("Second argument of AppendRange() has wrong node type."));
+                 "Second argument of AppendRange() has wrong node type.");
 
     APPEND (ret, node *, RANGE, range_chain, range);
 
@@ -3819,7 +3821,7 @@ TCcountRanges (node *range)
 {
     int counter = 0;
 
-    DBUG_ENTER ("TCcountRanges");
+    DBUG_ENTER ();
 
     while (range != NULL) {
         counter += 1;
@@ -3843,7 +3845,7 @@ TCfindVardec_Name (char *name, node *fundef)
     node *curv = NULL;
     bool b = FALSE;
 
-    DBUG_ENTER ("TCfindVardec_Name");
+    DBUG_ENTER ();
 
     /* Search vardec chain */
     v = FUNDEF_VARDEC (fundef);
@@ -3881,7 +3883,7 @@ bool
 TCisScalar (node *arg_node)
 {
     bool res = FALSE;
-    DBUG_ENTER ("TCisScalar");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (arg_node)) {
     case N_num:
@@ -3907,3 +3909,5 @@ TCisScalar (node *arg_node)
 
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

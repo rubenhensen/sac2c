@@ -44,7 +44,10 @@
 #include "globals.h"
 #include "free.h"
 #include "ctinfo.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "IVD"
+#include "debug.h"
+
 #include "DupTree.h"
 #include "namespaces.h"
 
@@ -76,7 +79,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -90,7 +93,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -110,7 +113,7 @@ FreeInfo (info *info)
 static node *
 SearchForNameInVardecs (char *name, node *vardecs)
 {
-    DBUG_ENTER ("SearchForNameInVardecs");
+    DBUG_ENTER ();
 
     while ((vardecs != NULL) && (!STReq (VARDEC_NAME (vardecs), name))) {
         vardecs = VARDEC_NEXT (vardecs);
@@ -131,7 +134,7 @@ SearchForNameInVardecs (char *name, node *vardecs)
 static node *
 SearchForNameInArgs (char *name, node *args)
 {
-    DBUG_ENTER ("SearchForNameInArgs");
+    DBUG_ENTER ();
 
     while ((args != NULL) && (!STReq (ARG_NAME (args), name))) {
         args = ARG_NEXT (args);
@@ -152,7 +155,7 @@ SearchForNameInArgs (char *name, node *args)
 static node *
 SearchForNameInObjs (const namespace_t *ns, const char *name, node *objs)
 {
-    DBUG_ENTER ("SearchForNameInObjs");
+    DBUG_ENTER ();
 
     while (
       (objs != NULL)
@@ -174,7 +177,7 @@ SearchForNameInObjs (const namespace_t *ns, const char *name, node *objs)
 node *
 INSVDmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSVDmodule");
+    DBUG_ENTER ();
 
     INFO_MODULE (arg_info) = arg_node;
     INFO_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
@@ -198,7 +201,7 @@ INSVDmodule (node *arg_node, info *arg_info)
 node *
 INSVDfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSVDfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
@@ -227,7 +230,7 @@ INSVDfundef (node *arg_node, info *arg_info)
 node *
 INSVDspap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSVDspap");
+    DBUG_ENTER ();
 
     /*
      * we have to make sure here, that the ID of an SPAP is not traversed
@@ -253,7 +256,7 @@ INSVDspap (node *arg_node, info *arg_info)
 node *
 INSVDlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSVDlet");
+    DBUG_ENTER ();
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -278,7 +281,7 @@ INSVDspid (node *arg_node, info *arg_info)
 {
     node *vardec;
 
-    DBUG_ENTER ("INSVDspid");
+    DBUG_ENTER ();
 
     if (SPID_NS (arg_node) == NULL) {
         vardec = SearchForNameInVardecs (SPID_NAME (arg_node), INFO_VARDECS (arg_info));
@@ -365,7 +368,7 @@ node *
 INSVDspids (node *arg_node, info *arg_info)
 {
     node *vardec, *avis, *new_ids;
-    DBUG_ENTER ("INSVDspids");
+    DBUG_ENTER ();
 
     vardec = SearchForNameInVardecs (SPIDS_NAME (arg_node), INFO_VARDECS (arg_info));
     if (vardec == NULL) {
@@ -385,8 +388,8 @@ INSVDspids (node *arg_node, info *arg_info)
 
         INFO_VARDECS (arg_info) = vardec;
 
-        DBUG_PRINT ("IVD", ("inserting new vardec (" F_PTR ") for id %s.", vardec,
-                            SPIDS_NAME (arg_node)));
+        DBUG_PRINT ("inserting new vardec (" F_PTR ") for id %s.", vardec,
+                    SPIDS_NAME (arg_node));
     }
 
     if (SPIDS_NEXT (arg_node) != NULL) {
@@ -420,7 +423,7 @@ INSVDspids (node *arg_node, info *arg_info)
 node *
 INSVDwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSVDwith");
+    DBUG_ENTER ();
 
     /* traverse all sons in following order:*/
 
@@ -451,7 +454,7 @@ INSVDwith (node *arg_node, info *arg_info)
 node *
 INSVDdo (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSVDdo");
+    DBUG_ENTER ();
 
     /* traverse all sons in following order:*/
 
@@ -482,7 +485,7 @@ INSVDdo (node *arg_node, info *arg_info)
 node *
 INSVDpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSVDpart");
+    DBUG_ENTER ();
 
     /* withid has to be traversed first */
 
@@ -513,7 +516,7 @@ INSVDpart (node *arg_node, info *arg_info)
 node *
 INSVDcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INSVDcode");
+    DBUG_ENTER ();
 
     /* cblock has to be traversed first */
 
@@ -551,12 +554,12 @@ INSVDdoInsertVardec (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("INSVDdoInsertVardecs");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
-                 ("InsertVardec can only be called on N_modul nodes"));
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module,
+                 "InsertVardec can only be called on N_modul nodes");
 
     TRAVpush (TR_insvd);
     syntax_tree = TRAVdo (syntax_tree, info);
@@ -568,3 +571,5 @@ INSVDdoInsertVardec (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

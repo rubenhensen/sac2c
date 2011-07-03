@@ -9,7 +9,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 
 /**
@@ -34,7 +37,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -47,7 +50,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -61,7 +64,7 @@ FreeInfo (info *info)
 node *
 MFTfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MFTfundef");
+    DBUG_ENTER ();
 
     arg_node = INFO_MAPTRAV (arg_info) (arg_node, INFO_EXTINFO (arg_info));
 
@@ -80,7 +83,7 @@ MFTdoMapFunTrav (node *arg_node, info *extinfo, travfun_p maptrav)
 {
     info *localinfo;
 
-    DBUG_ENTER ("MFTdoMapFunTrav");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((arg_node == NULL)
                   || ((NODE_TYPE (arg_node) == N_fundef)
@@ -104,3 +107,5 @@ MFTdoMapFunTrav (node *arg_node, info *extinfo, travfun_p maptrav)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

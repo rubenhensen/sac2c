@@ -87,7 +87,8 @@ version="1.0">
 #include "serialize_stack.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "dbug.h"
+#define DBUG_PREFIX "SBT"
+#include "debug.h"
 
   </xsl:text>
   <!-- functions -->
@@ -121,17 +122,11 @@ version="1.0">
   <!-- start of body -->
   <xsl:value-of select="'{'"/>
   <!-- DBUG_ENTER statement -->
-  <xsl:value-of select="'DBUG_ENTER( &quot;SBT'"/>
-  <xsl:call-template name="lowercase" >
-    <xsl:with-param name="string" >
-      <xsl:value-of select="@name"/>
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'&quot;);'"/>
+  <xsl:value-of select="'DBUG_ENTER ();'"/>
   <!-- DBUG PRINT -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;SBT&quot;, (&quot;Stacking '" />
+  <xsl:value-of select="'DBUG_PRINT (&quot;Stacking '" />
   <xsl:value-of select="@name"/>
-  <xsl:value-of select="' node&quot;));'" />
+  <xsl:value-of select="' node&quot;);'" />
   <!-- push this node onto the stack -->
   <xsl:value-of select="'SSpush( arg_node, INFO_SER_STACK( arg_info));'" />
   <!-- handle sons -->
@@ -139,7 +134,7 @@ version="1.0">
   <!-- handle attributes -->
   <xsl:apply-templates select="attributes/attribute" />
   <!-- DBUG_RETURN call -->
-  <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
+  <xsl:value-of select="'DBUG_RETURN (arg_node);'"/>
   <!-- end of body -->
   <xsl:value-of select="'}'"/>
 </xsl:template>

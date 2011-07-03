@@ -47,7 +47,8 @@ version="1.0">
   <xsl:text>
 #include "node_alloc.h"
 #include "tree_basic.h"
-#include "dbug.h"
+#define DBUG_PREFIX "NDBASIC"
+#include "debug.h"
 #include "check_mem.h"
 #include "str.h"
 #include "globals.h"

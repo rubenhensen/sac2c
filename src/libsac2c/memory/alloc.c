@@ -36,7 +36,10 @@
 #include "constants.h"
 #include "string.h"
 #include "new_typecheck.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "EMAL"
+#include "debug.h"
+
 #include "cuda_utils.h"
 #include "ctinfo.h"
 
@@ -107,7 +110,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -123,7 +126,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -161,7 +164,7 @@ MakeALS (alloclist_struct *als, node *avis, node *dim, node *shape)
 {
     alloclist_struct *res;
 
-    DBUG_ENTER ("MakeALS");
+    DBUG_ENTER ();
 
     res = MEMmalloc (sizeof (alloclist_struct));
 
@@ -189,7 +192,7 @@ MakeALS (alloclist_struct *als, node *avis, node *dim, node *shape)
 static alloclist_struct *
 FreeALS (alloclist_struct *als)
 {
-    DBUG_ENTER ("FreeALS");
+    DBUG_ENTER ();
 
     if (als != NULL) {
         if (als->dim != NULL) {
@@ -246,7 +249,7 @@ static bool AlloclistContains( alloclist_struct *als, node *avis)
 {
   bool res;
 
-  DBUG_ENTER( "AlloclistContains");
+  DBUG_ENTER ();
 
   if ( als == NULL) {
     res = FALSE;
@@ -260,7 +263,7 @@ static bool AlloclistContains( alloclist_struct *als, node *avis)
     }
   }
 
-  DBUG_RETURN( res);
+  DBUG_RETURN (res);
 }
 #endif
 
@@ -284,7 +287,7 @@ MakeAllocAssignment (alloclist_struct *als, node *next_node)
     node *alloc;
     node *ids;
 
-    DBUG_ENTER ("MakeAllocAssignment");
+    DBUG_ENTER ();
 
     ids = TBmakeIds (als->avis, NULL);
 
@@ -339,7 +342,7 @@ MakeAllocAssignment (alloclist_struct *als, node *next_node)
 static node *
 MakeDimArg (node *arg)
 {
-    DBUG_ENTER ("MakeDimArg");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (arg)) {
     case N_numbyte:
@@ -369,8 +372,8 @@ MakeDimArg (node *arg)
         break;
 
     default:
-        DBUG_EXECUTE ("EMAL", PRTdoPrintNodeFile (stderr, arg););
-        DBUG_ASSERT ((0), "Invalid argument");
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg));
+        DBUG_ASSERT (0, "Invalid argument");
     }
 
     DBUG_RETURN (arg);
@@ -389,7 +392,7 @@ MakeDimArg (node *arg)
 static node *
 MakeShapeArg (node *arg)
 {
-    DBUG_ENTER ("MakeShapeArg");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (arg)) {
     case N_numbyte:
@@ -419,8 +422,8 @@ MakeShapeArg (node *arg)
         break;
 
     default:
-        DBUG_EXECUTE ("EMAL", PRTdoPrintNodeFile (stderr, arg););
-        DBUG_ASSERT ((0), "Invalid argument");
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg));
+        DBUG_ASSERT (0, "Invalid argument");
     }
 
     DBUG_RETURN (arg);
@@ -441,7 +444,7 @@ MakeShapeArg (node *arg)
 static node *
 MakeSizeArg (node *arg)
 {
-    DBUG_ENTER ("MakeSizeArg");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (arg)) {
     case N_num:
@@ -462,8 +465,8 @@ MakeSizeArg (node *arg)
         break;
 
     default:
-        DBUG_EXECUTE ("EMAL", PRTdoPrintNodeFile (stderr, arg););
-        DBUG_ASSERT ((0), "Invalid argument");
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg));
+        DBUG_ASSERT (0, "Invalid argument");
     }
 
     DBUG_RETURN (arg);
@@ -475,7 +478,7 @@ ASTisScalar (node *ast)
     bool res;
     ntype *atype;
 
-    DBUG_ENTER ("ASTisScalar");
+    DBUG_ENTER ();
 
     atype = NTCnewTypeCheck_Expr (ast);
     res = (TYgetDim (atype) == 0);
@@ -509,7 +512,7 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
     int dim;
     alloclist_struct *als;
 
-    DBUG_ENTER ("AmendWithLoopCode");
+    DBUG_ENTER ();
 
     indexvector = INFO_INDEXVECTOR (arg_info);
     als = INFO_ALLOCLIST (arg_info);
@@ -633,7 +636,7 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
          * N_genarray
          */
         if ((NODE_TYPE (withops) == N_genarray) && (GENARRAY_DEFAULT (withops) != NULL)) {
-            DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFAULT (withops)) == N_id),
+            DBUG_ASSERT (NODE_TYPE (GENARRAY_DEFAULT (withops)) == N_id,
                          "found a non flattened default expression!");
 
             /*
@@ -723,7 +726,7 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                     /*
                      * a scalar!
                      */
-                    DBUG_PRINT ("EMAL", ("subvar %s is Scalar", AVIS_NAME (als->avis)));
+                    DBUG_PRINT ("subvar %s is Scalar", AVIS_NAME (als->avis));
 
                     crestype
                       = TYmakeAKS (TYcopyType (TYgetScalar (restype)), SHmakeShape (0));
@@ -732,8 +735,7 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                      * non scalar!
                      */
                     if (TUshapeKnown (restype)) {
-                        DBUG_PRINT ("EMAL",
-                                    ("subvar of %s is AKS", AVIS_NAME (als->avis)));
+                        DBUG_PRINT ("subvar of %s is AKS", AVIS_NAME (als->avis));
 
                         crestype
                           = TYmakeAKS (TYcopyType (TYgetScalar (restype)),
@@ -741,8 +743,7 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                                                                      0),
                                                         TYgetShape (restype)));
                     } else {
-                        DBUG_PRINT ("EMAL",
-                                    ("subvar of %s is AKD", AVIS_NAME (als->avis)));
+                        DBUG_PRINT ("subvar of %s is AKD", AVIS_NAME (als->avis));
 
                         crestype = TYmakeAKD (TYcopyType (TYgetScalar (restype)),
                                               TYgetDim (restype) - TYgetDim (ivtype),
@@ -891,15 +892,15 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                     && !TUshapeKnown (AVIS_TYPE (memavis))) {
                     node *genshape = NULL;
 
-                    DBUG_ASSERT ((GENARRAY_DEFAULT (withops) != NULL),
+                    DBUG_ASSERT (GENARRAY_DEFAULT (withops) != NULL,
                                  "default element required!");
 
                     /*
                      * first, add in the default shape expression
                      */
                     if (GENARRAY_DEFSHAPEEXPR (withops) != NULL) {
-                        DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFSHAPEEXPR (withops))
-                                      == N_array),
+                        DBUG_ASSERT (NODE_TYPE (GENARRAY_DEFSHAPEEXPR (withops))
+                                       == N_array,
                                      "default-shape expression needs to be a vector!");
                         genshape
                           = DUPdoDupTree (ARRAY_AELEMS (GENARRAY_DEFSHAPEEXPR (withops)));
@@ -998,7 +999,7 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
 node *
 EMALap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMALap");
+    DBUG_ENTER ();
 
     INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
 
@@ -1031,7 +1032,7 @@ EMALarray (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
 
-    DBUG_ENTER ("EMALarray");
+    DBUG_ENTER ();
 
     als = INFO_ALLOCLIST (arg_info);
 
@@ -1105,7 +1106,7 @@ EMALassign (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
 
-    DBUG_ENTER ("EMALassign");
+    DBUG_ENTER ();
 
     /*
      * Bottom-up traversal
@@ -1148,7 +1149,7 @@ EMALcode (node *arg_node, info *arg_info)
     alloclist_struct *als;
     node *withops, *indexvector, *assign;
 
-    DBUG_ENTER ("EMALcode");
+    DBUG_ENTER ();
 
     /*
      * Rescue ALLOCLIST, WITHOPS and INDEXVECTOR
@@ -1200,7 +1201,7 @@ EMALcode (node *arg_node, info *arg_info)
     {                                                                                    \
         alloclist_struct *als;                                                           \
                                                                                          \
-        DBUG_ENTER ("EMAL" #name);                                                       \
+        DBUG_ENTER ();                                                                   \
                                                                                          \
         als = INFO_ALLOCLIST (arg_info);                                                 \
                                                                                          \
@@ -1257,7 +1258,7 @@ EMALCONST (numulonglong)
 node *
 EMALfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMALfuncond");
+    DBUG_ENTER ();
 
     INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
 
@@ -1280,7 +1281,7 @@ EMALfuncond (node *arg_node, info *arg_info)
 node *
 EMALfundef (node *fundef, info *arg_info)
 {
-    DBUG_ENTER ("EMALfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = fundef;
 
@@ -1312,7 +1313,7 @@ EMALfundef (node *fundef, info *arg_info)
 node *
 EMALid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMALid");
+    DBUG_ENTER ();
 
     INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
 
@@ -1336,7 +1337,7 @@ EMALlet (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("EMALlet");
+    DBUG_ENTER ();
 
     /*
      * Put all LHS identifiers into ALLOCLIST
@@ -1400,7 +1401,7 @@ EMALprf (node *arg_node, info *arg_info)
     node *new_node;
     alloclist_struct *als;
 
-    DBUG_ENTER ("EMALprf");
+    DBUG_ENTER ();
 
     als = INFO_ALLOCLIST (arg_info);
 
@@ -1487,7 +1488,7 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     case F_sel_VxIA:
-        // DBUG_ASSERT( FALSE, "IMPLEMENT THIS");
+        // DBUG_ASSERT (FALSE, "IMPLEMENT THIS");
         als->dim = TCmakePrf2 (F_sub_SxS,
                                TCmakePrf1 (F_dim_A, DUPdoDupNode (PRF_ARG2 (arg_node))),
                                MakeSizeArg (PRF_ARG1 (arg_node)));
@@ -1810,7 +1811,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_run_mt_modarray:
     case F_run_mt_fold:
 
-        DBUG_ASSERT ((0), "invalid prf found!");
+        DBUG_ASSERT (0, "invalid prf found!");
         break;
 
     case F_sync:
@@ -1824,7 +1825,7 @@ EMALprf (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_EXECUTE ("EMAL", PRTdoPrintNodeFile (stderr, arg_node););
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
         DBUG_ASSERT (FALSE, "unknown prf found!");
         break;
     }
@@ -1849,7 +1850,7 @@ EMALwith (node *arg_node, info *arg_info)
 {
     node *expr;
 
-    DBUG_ENTER ("EMALwith");
+    DBUG_ENTER ();
 
     /*
      * ALLOCLIST is needed to traverse CODEs and will be rescued there
@@ -1938,7 +1939,7 @@ EMALwith (node *arg_node, info *arg_info)
 node *
 EMALwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMALwith2");
+    DBUG_ENTER ();
 
     /*
      * Annoate destination memory by traversing WITHOPS
@@ -2008,7 +2009,7 @@ EMALwithid (node *arg_node, info *arg_info)
 {
     node *expr, *ids;
 
-    DBUG_ENTER ("EMALwithid");
+    DBUG_ENTER ();
 
     /*
      * Do not allocate memory for the index vector as its shape may not
@@ -2076,7 +2077,7 @@ EMALgenarray (node *arg_node, info *arg_info)
     node *wlavis;
     alloclist_struct *als;
 
-    DBUG_ENTER ("EMALgenarray");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_ALLOCLIST (arg_info) != NULL,
                  "ALLOCLIST must contain an entry for each WITHOP!");
@@ -2143,8 +2144,7 @@ EMALgenarray (node *arg_node, info *arg_info)
                                        MakeDimArg (GENARRAY_DEFAULT (arg_node)));
             } else {
                 /* with3 */
-                DBUG_ASSERT ((TCcountExprs (ARRAY_AELEMS (GENARRAY_SHAPE (arg_node)))
-                              == 1),
+                DBUG_ASSERT (TCcountExprs (ARRAY_AELEMS (GENARRAY_SHAPE (arg_node))) == 1,
                              "Illegal shape length in with3 genarray.");
 
                 als->dim
@@ -2169,9 +2169,9 @@ EMALgenarray (node *arg_node, info *arg_info)
                                             DUPdoDupNode (GENARRAY_DEFAULT (arg_node))));
             } else {
                 /* with3 */
-                DBUG_ASSERT ((NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_array),
+                DBUG_ASSERT (NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_array,
                              "Illegal shape in genarray of with3");
-                DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFSHAPEEXPR (arg_node)) == N_array),
+                DBUG_ASSERT (NODE_TYPE (GENARRAY_DEFSHAPEEXPR (arg_node)) == N_array,
                              "Illegal defshapeexpr in genarray of with3");
 
                 als->shape
@@ -2217,7 +2217,7 @@ EMALmodarray (node *arg_node, info *arg_info)
     node *wlavis;
     alloclist_struct *als;
 
-    DBUG_ENTER ("EMALwithop");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_ALLOCLIST (arg_info) != NULL,
                  "ALLOCLIST must contain an entry for each WITHOP!");
@@ -2294,7 +2294,7 @@ EMALbreak (node *arg_node, info *arg_info)
     node *wlavis;
     alloclist_struct *als;
 
-    DBUG_ENTER ("EMALbreak");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_ALLOCLIST (arg_info) != NULL,
                  "ALLOCLIST must contain an entry for each WITHOP!");
@@ -2370,7 +2370,7 @@ EMALpropagate (node *arg_node, info *arg_info)
 {
     alloclist_struct *als;
 
-    DBUG_ENTER ("EMALpropagate");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_ALLOCLIST (arg_info) != NULL,
                  "ALLOCLIST must contain an entry for each WITHOP!");
@@ -2429,7 +2429,7 @@ EMALfold (node *arg_node, info *arg_info)
     alloclist_struct *als;
     node *wlavis;
 
-    DBUG_ENTER ("EMALfold");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_ALLOCLIST (arg_info) != NULL,
                  "ALLOCLIST must contain an entry for each WITHOP!");
@@ -2501,7 +2501,7 @@ EMALfold (node *arg_node, info *arg_info)
 node *
 EMALwith3 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMALwith3");
+    DBUG_ENTER ();
 
     /*
      * Annoate destination memory by traversing WITHOPS
@@ -2547,7 +2547,7 @@ EMALrange (node *arg_node, info *arg_info)
     node *withops, *assign, *ids;
     ea_rangemode mode;
 
-    DBUG_ENTER ("EMALrange");
+    DBUG_ENTER ();
 
     if (INFO_RANGEMODE (arg_info) == EA_body) {
         /*
@@ -2592,7 +2592,7 @@ EMALrange (node *arg_node, info *arg_info)
               = TCappendAssign (BLOCK_INSTR (RANGE_BODY (arg_node)), assign);
         }
     } else {
-        DBUG_ASSERT ((INFO_RANGEMODE (arg_info) == EA_index), "unknown EA_range mode");
+        DBUG_ASSERT (INFO_RANGEMODE (arg_info) == EA_index, "unknown EA_range mode");
         /*
          * allocate memory for the index and replace the ids by an id.
          * NOTE: we do not allocate memory for the IDXS here, as they
@@ -2642,7 +2642,7 @@ EMALdoAlloc (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("EMALdoAlloc");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -2662,3 +2662,5 @@ EMALdoAlloc (node *syntax_tree)
 /**
  * @}
  */
+
+#undef DBUG_PREFIX

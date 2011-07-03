@@ -14,7 +14,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "dynelem.h"
@@ -63,7 +66,7 @@ matrix *
 LUBcreateReachMat (compinfo *ci)
 {
 
-    DBUG_ENTER ("LUBcreateReachMat");
+    DBUG_ENTER ();
 
     dynarray *csrc, *ctar, *prearr;
     int i, j;
@@ -103,7 +106,7 @@ matrix *
 LUBcreatePCPTMat (matrix *reachmat, compinfo *ci)
 {
 
-    DBUG_ENTER ("LUBcreatePCPTMat");
+    DBUG_ENTER ();
 
     matrix *pcptmat;
     elemstack *stk;
@@ -194,7 +197,7 @@ dynarray *
 LUBsortInPostorder (compinfo *ci)
 {
 
-    DBUG_ENTER ("LUBsortInPostorder");
+    DBUG_ENTER ();
 
     dynarray *result, *prearr, *csrc;
     int i;
@@ -240,9 +243,9 @@ void
 LUBorColumnsAndUpdate (matrix *m1, int colidx1, matrix *m2, int colidx2, matrix *result,
                        int rescolidx)
 {
-    DBUG_ENTER ("LUBorColumnsAndAppend");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((MATRIX_TOTALROWS (m1) == MATRIX_TOTALROWS (m2)),
+    DBUG_ASSERT (MATRIX_TOTALROWS (m1) == MATRIX_TOTALROWS (m2),
                  "The two matrices in LUBorColumnsAndAppend do \
 	       not have the same row count");
 
@@ -267,14 +270,14 @@ LUBorColumnsAndUpdate (matrix *m1, int colidx1, matrix *m2, int colidx2, matrix 
         setMatrixValue (result, i, rescolidx, value);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 int
 LUBisNodeCsrc (node *n, dynarray *csrc)
 {
 
-    DBUG_ENTER ("LUBcheckIsNodeCsrc");
+    DBUG_ENTER ();
 
     int i, result = 0;
 
@@ -293,7 +296,7 @@ dynarray *
 LUBrearrangeCsrcOnTopo (dynarray *csrc, dynarray *prearr)
 {
 
-    DBUG_ENTER ("LUBrearrangeCsrcOnTopo");
+    DBUG_ENTER ();
 
     dynarray *result;
     node *vertex;
@@ -328,7 +331,7 @@ dynarray *
 LUBrearrangeNoncsrcOnTopo (dynarray *noncsrc)
 {
 
-    DBUG_ENTER ("LUBrearrangeNoncsrcOnTopo");
+    DBUG_ENTER ();
 
     dynarray *result;
     int i;
@@ -363,7 +366,7 @@ matrix *
 LUBcomputeMaximalWitness (pcpcinfo *ppi)
 {
 
-    DBUG_ENTER ("LUBcomputeMaximalWitness");
+    DBUG_ENTER ();
 
     matrix *result;
     matrix *csrcmax, *noncsrcmax;
@@ -459,7 +462,7 @@ matrix *
 LUBrearrangeMatOnTopo (dynarray *topoarr, matrix *mat)
 {
 
-    DBUG_ENTER ("LUBrearrangaMatOnTopo");
+    DBUG_ENTER ();
 
     matrix *result;
     topoinfo *ti;
@@ -484,7 +487,7 @@ matrix *
 LUBcreatePCPCMat (matrix *reachmat, dynarray *postarr, compinfo *ci)
 {
 
-    DBUG_ENTER ("LUBcreatePCPCMat");
+    DBUG_ENTER ();
 
     node *n1 = NULL, *n2, *treelca;
     matrix *result = NULL;
@@ -589,7 +592,7 @@ void
 LUBincorporateCrossEdges (compinfo *ci)
 {
 
-    DBUG_ENTER ("LUBincorporateCrossEdges");
+    DBUG_ENTER ();
 
     matrix *reachmat;
     dynarray *postarr;
@@ -604,5 +607,7 @@ LUBincorporateCrossEdges (compinfo *ci)
         printLubInfo (ci);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

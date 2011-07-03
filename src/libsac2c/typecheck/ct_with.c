@@ -4,7 +4,10 @@
  */
 
 #include "ct_with.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "type_errors.h"
 #include "new_types.h"
 #include "constants.h"
@@ -23,7 +26,7 @@ Idx2Outer (ntype *idx)
     ntype *scalar;
     ntype *res;
 
-    DBUG_ENTER ("Idx2Outer");
+    DBUG_ENTER ();
 
     scalar = TYgetScalar (idx);
     switch (TYgetConstr (idx)) {
@@ -73,7 +76,7 @@ NTCCTwl_idx (te_info *info, ntype *args)
     ntype *lb, *idx, *ub, *sv, *wv, *res;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTwl_idx");
+    DBUG_ENTER ();
 
     lb = TYgetProductMember (args, 0);
     idx = TYgetProductMember (args, 1);
@@ -154,7 +157,7 @@ NTCCTwl_multipart (te_info *info, ntype *args)
     ntype *expr1, *expr2, *res;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTwl_multipart");
+    DBUG_ENTER ();
 
     expr1 = TYgetProductMember (args, 0);
     expr2 = TYgetProductMember (args, 1);
@@ -185,7 +188,7 @@ NTCCTwl_multicode (te_info *info, ntype *args)
     ntype *expr1, *expr2, *res;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTwl_multicode");
+    DBUG_ENTER ();
 
     expr1 = TYgetProductMember (args, 0);
     expr2 = TYgetProductMember (args, 1);
@@ -219,7 +222,7 @@ NTCCTwl_multifoldcode (te_info *info, ntype *args)
     ntype *expr1, *expr2, *res;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTwl_multifoldcode");
+    DBUG_ENTER ();
 
     expr1 = TYgetProductMember (args, 0);
     expr2 = TYgetProductMember (args, 1);
@@ -253,7 +256,7 @@ NTCCTwl_gen (te_info *info, ntype *args)
     ntype *dummy;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTwl_gen");
+    DBUG_ENTER ();
 
     idx = TYgetProductMember (args, 0);
     shp = TYgetProductMember (args, 1);
@@ -306,7 +309,7 @@ NTCCTwl_mod (te_info *info, ntype *args)
     ntype *dummy;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTwl_mod");
+    DBUG_ENTER ();
 
     idx = TYgetProductMember (args, 0);
     array = TYgetProductMember (args, 1);
@@ -348,7 +351,7 @@ NTCCTwl_fold (te_info *info, ntype *args)
     ntype *idx, *neutr, *expr, *res;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTwl_foldfun");
+    DBUG_ENTER ();
 
     idx = TYgetProductMember (args, 0);
     neutr = TYgetProductMember (args, 1);
@@ -366,3 +369,5 @@ NTCCTwl_fold (te_info *info, ntype *args)
 
     DBUG_RETURN (TYmakeProductType (1, res));
 }
+
+#undef DBUG_PREFIX

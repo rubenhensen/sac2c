@@ -15,7 +15,10 @@
 #include "user_types.h"
 #include "type_utils.h"
 #include "shape.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "DES"
+#include "debug.h"
+
 #include "memory.h"
 #include "str.h"
 #include "hidestructs.h"
@@ -68,7 +71,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -86,7 +89,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -110,7 +113,7 @@ ExplodeArg (node *arg, node *selem)
     node *newarg;
     char *old_name;
 
-    DBUG_ASSERT (arg != NULL, ("Trying to explode NULL struct"));
+    DBUG_ASSERT (arg != NULL, "Trying to explode NULL struct");
     /* TODO: This should use the existing traversal mechanism. */
     if (selem == NULL) {
         return ARG_NEXT (arg);
@@ -124,7 +127,7 @@ ExplodeArg (node *arg, node *selem)
      */
     ARG_NAME (newarg) = STRcatn (4, "_", old_name, "_", STRUCTELEM_NAME (selem));
     old_name = MEMfree (old_name);
-    DBUG_PRINT ("DES", ("Created new N_arg: %s", ARG_NAME (newarg)));
+    DBUG_PRINT ("Created new N_arg: %s", ARG_NAME (newarg));
     /* Recursion for the rest of the struct elements. */
     ARG_NEXT (newarg) = ExplodeArg (arg, STRUCTELEM_NEXT (selem));
 
@@ -148,9 +151,9 @@ ExplodeExprs (node *exprs, node *selem)
     node *newid;
     char *old_name;
 
-    DBUG_ASSERT (exprs != NULL, ("Trying to explode NULL struct"));
+    DBUG_ASSERT (exprs != NULL, "Trying to explode NULL struct");
     id = EXPRS_EXPR (exprs);
-    DBUG_ASSERT (NODE_TYPE (id) == N_id, ("Exploding non-N_id node as struct."));
+    DBUG_ASSERT (NODE_TYPE (id) == N_id, "Exploding non-N_id node as struct.");
     /* TODO: This should use the existing traversal mechanism. */
     if (selem == NULL) {
         return EXPRS_NEXT (exprs);
@@ -171,7 +174,7 @@ ExplodeExprs (node *exprs, node *selem)
     ID_NAME (newid) = STRcatn (4, "_", old_name, "_", STRUCTELEM_NAME (selem));
     old_name = MEMfree (old_name);
     EXPRS_EXPR (newexprs) = newid;
-    DBUG_PRINT ("DES", ("Created new N_id: %s", ID_NAME (newid)));
+    DBUG_PRINT ("Created new N_id: %s", ID_NAME (newid));
     /* Recursion for the rest of the struct elements. */
     EXPRS_NEXT (newexprs) = ExplodeExprs (exprs, STRUCTELEM_NEXT (selem));
 
@@ -197,7 +200,7 @@ ExplodeRet (node *ret, node *selem)
 {
     node *newret;
 
-    DBUG_ASSERT (ret != NULL, ("Trying to explode NULL struct"));
+    DBUG_ASSERT (ret != NULL, "Trying to explode NULL struct");
     /* TODO: This should use the existing traversal mechanism. */
     if (selem == NULL) {
         return RET_NEXT (ret);
@@ -224,7 +227,7 @@ ExplodeIds (node *ids, node *selem)
     node *newids;
     char *old_name;
 
-    DBUG_ASSERT (ids != NULL, ("Trying to explode NULL struct"));
+    DBUG_ASSERT (ids != NULL, "Trying to explode NULL struct");
     /* TODO: This should use the existing traversal mechanism. */
     if (selem == NULL) {
         return IDS_NEXT (ids);
@@ -297,7 +300,7 @@ CreateFCAssignChain (node *assign, node *selem)
 
     let = ASSIGN_INSTR (assign);
     DBUG_ASSERT (NODE_TYPE (let) == N_let && NODE_TYPE (LET_EXPR (let)) == N_funcond,
-                 ("CreateFCAssignChain called with illegal first argument."));
+                 "CreateFCAssignChain called with illegal first argument.");
     if (selem == NULL) {
         return ASSIGN_NEXT (assign);
     }
@@ -317,7 +320,7 @@ CreateFCAssignChain (node *assign, node *selem)
     newfc = LET_EXPR (ASSIGN_INSTR (newass));
     FUNCOND_THEN (newfc) = IDstruct2elem (FUNCOND_THEN (newfc), selem);
     FUNCOND_ELSE (newfc) = IDstruct2elem (FUNCOND_ELSE (newfc), selem);
-    DBUG_PRINT ("DES", ("Created new funcond for %s", IDS_NAME (newids)));
+    DBUG_PRINT ("Created new funcond for %s", IDS_NAME (newids));
 
     ASSIGN_NEXT (newass) = CreateFCAssignChain (assign, STRUCTELEM_NEXT (selem));
 
@@ -366,7 +369,7 @@ MakeConstructor (node *constructor, info *arg_info)
 {
     node *body;
 
-    DBUG_PRINT ("DES", ("Giving constructor %s a body...", FUNDEF_NAME (constructor)));
+    DBUG_PRINT ("Giving constructor %s a body...", FUNDEF_NAME (constructor));
     /* Copy the arg list to an exprs list. */
     DBUG_ASSERT ((INFO_ARGS2EXPRS (arg_info) == FALSE
                   && INFO_ARGEXPRS (arg_info) == NULL),
@@ -399,7 +402,7 @@ MakeSetter (node *setter, info *arg_info)
     /* node * structdef; */
     node *e;
 
-    DBUG_PRINT ("DES", ("Giving setter %s a body...", FUNDEF_NAME (setter)));
+    DBUG_PRINT ("Giving setter %s a body...", FUNDEF_NAME (setter));
 #if 0
   /* Get the struct definition of the entire struct this getter is for. */
   structdef = TYPEDEF_STRUCTDEF( UTgetTdef( TYgetUserType( TYgetScalar(
@@ -435,9 +438,9 @@ DESdoDeStruct (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("DESdoDeStruct");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("DES", ("Starting struct removal."));
+    DBUG_PRINT ("Starting struct removal.");
 
     info = MakeInfo ();
 
@@ -447,7 +450,7 @@ DESdoDeStruct (node *syntax_tree)
 
     info = FreeInfo (info);
 
-    DBUG_PRINT ("DES", ("Done removing all structs."));
+    DBUG_PRINT ("Done removing all structs.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -462,7 +465,7 @@ DESdoDeStruct (node *syntax_tree)
 node *
 DESmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DESmodule");
+    DBUG_ENTER ();
 
     INFO_MODULE (arg_info) = arg_node;
 
@@ -491,11 +494,11 @@ DEStypedef (node *arg_node, info *arg_info)
 {
     node *next;
 
-    DBUG_ENTER ("DEStypedef");
+    DBUG_ENTER ();
 
     if (INFO_CLEANUP (arg_info)) {
         if (TYPEDEF_STRUCTDEF (arg_node) != NULL) {
-            DBUG_PRINT ("DES", ("Cleaning up typedef %s.", TYPEDEF_NAME (arg_node)));
+            DBUG_PRINT ("Cleaning up typedef %s.", TYPEDEF_NAME (arg_node));
             next = FREEdoFreeNode (arg_node);
             arg_node = TRAVopt (next, arg_info);
         }
@@ -518,10 +521,10 @@ DEStypedef (node *arg_node, info *arg_info)
 node *
 DESstructdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DESstructdef");
+    DBUG_ENTER ();
 
     if (INFO_CLEANUP (arg_info)) {
-        DBUG_PRINT ("DES", ("Cleaning up structdefs."));
+        DBUG_PRINT ("Cleaning up structdefs.");
         /* This operation frees the entire list right away. */
         arg_node = FREEdoFreeTree (arg_node);
         DBUG_ASSERT (arg_node == NULL, "Structdefs not properly freed.");
@@ -562,7 +565,7 @@ DESfundef (node *arg_node, info *arg_info)
     node *next_fundef;
     char *ret_name;
 
-    DBUG_ENTER ("DESfundef");
+    DBUG_ENTER ();
 
     /* No matter what kind of function this is, it will want at least a
      * non-recursive expansion of the argument list.
@@ -593,7 +596,7 @@ DESfundef (node *arg_node, info *arg_info)
         /* Save a pointer to the next function declaration. */
         next_fundecl = FUNDEF_NEXT (arg_node);
         arg_node = Fundecl2Fundef (arg_node, body, INFO_MODULE (arg_info));
-        DBUG_PRINT ("DES", ("Getter %s now has body", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Getter %s now has body", FUNDEF_NAME (arg_node));
         /* Pull the current arg_node (ex-fundec, now getter fundef with body) out of
          * the stack it is in (= fundec stack) and continue traversal on the next
          * node (which is the next fundec or NULL). First, though, the traversal
@@ -633,11 +636,11 @@ DESfundef (node *arg_node, info *arg_info)
 
     /* Constructor. */
     if (FUNDEF_ISSTRUCTCONSTR (arg_node) && !FUNDEF_ISWRAPPERFUN (arg_node)) {
-        DBUG_ASSERT (FUNDEF_BODY (arg_node) == NULL, ("Constructor already has a body."));
-        DBUG_ASSERT (FUNDEF_ISEXTERN (arg_node), ("Non-extern constructor."));
+        DBUG_ASSERT (FUNDEF_BODY (arg_node) == NULL, "Constructor already has a body.");
+        DBUG_ASSERT (FUNDEF_ISEXTERN (arg_node), "Non-extern constructor.");
         next_fundecl = FUNDEF_NEXT (arg_node);
         arg_node = MakeConstructor (arg_node, arg_info);
-        DBUG_PRINT ("DES", ("Constructor %s now has body", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Constructor %s now has body", FUNDEF_NAME (arg_node));
         /* Traversal has already done the next node (this part is bottom-up), so no
          * need to repeat traversal on the next node. */
         arg_node = next_fundecl;
@@ -668,7 +671,7 @@ DESarg (node *arg_node, info *arg_info)
     node *sd;
     char *typestr;
 
-    DBUG_ENTER ("DESarg");
+    DBUG_ENTER ();
 
     /* Special task of DESarg: copying arg list to exprs list. */
     if (INFO_ARGS2EXPRS (arg_info) == TRUE) {
@@ -683,13 +686,12 @@ DESarg (node *arg_node, info *arg_info)
     type = ARG_NTYPE (arg_node);
     if (TUisArrayOfUser (type)) {
         orig_td = UTgetTdef (TYgetUserType (TYgetScalar (type)));
-        DBUG_ASSERT (orig_td != NULL, ("No typedef found for this user type"));
+        DBUG_ASSERT (orig_td != NULL, "No typedef found for this user type");
         sd = TYPEDEF_STRUCTDEF (orig_td);
         if (sd != NULL) {
             /* TODO: Why can't I put this funcall directly in DBUG_PRINT()? - hly */
             typestr = TYtype2String (type, FALSE, 0);
-            DBUG_PRINT ("DES",
-                        ("Exploding arg struct %s (`%s')", STRUCTDEF_NAME (sd), typestr));
+            DBUG_PRINT ("Exploding arg struct %s (`%s')", STRUCTDEF_NAME (sd), typestr);
             old_arg = arg_node;
             arg_node = ExplodeArg (old_arg, STRUCTDEF_STRUCTELEM (sd));
             /* TODO: Applications of this function can have an N_id node as an
@@ -698,7 +700,7 @@ DESarg (node *arg_node, info *arg_info)
              * the memory can not be freed here. How do I fix this?
              */
             /* old_arg = FREEdoFreeNode( old_arg); */
-            DBUG_PRINT ("DES", ("Done exploding arg struct %s", STRUCTDEF_NAME (sd)));
+            DBUG_PRINT ("Done exploding arg struct %s", STRUCTDEF_NAME (sd));
         }
     }
 
@@ -734,23 +736,22 @@ DESret (node *arg_node, info *arg_info)
     node *sd;
     char *typestr;
 
-    DBUG_ENTER ("DESret");
+    DBUG_ENTER ();
 
     sd = NULL;
     type = RET_TYPE (arg_node);
     if (TUisArrayOfUser (type)) {
         orig_td = UTgetTdef (TYgetUserType (TYgetScalar (type)));
-        DBUG_ASSERT (orig_td != NULL, ("No typedef found for this user type"));
+        DBUG_ASSERT (orig_td != NULL, "No typedef found for this user type");
         sd = TYPEDEF_STRUCTDEF (orig_td);
         if (sd != NULL) {
             /* TODO: Why can't I put this funcall directly in DBUG_PRINT()? - hly */
             typestr = TYtype2String (type, FALSE, 0);
-            DBUG_PRINT ("DES",
-                        ("Exploding ret struct %s (`%s')", STRUCTDEF_NAME (sd), typestr));
+            DBUG_PRINT ("Exploding ret struct %s (`%s')", STRUCTDEF_NAME (sd), typestr);
             old_ret = arg_node;
             arg_node = ExplodeRet (old_ret, STRUCTDEF_STRUCTELEM (sd));
             old_ret = FREEdoFreeNode (old_ret);
-            DBUG_PRINT ("DES", ("Done exploding ret struct %s", STRUCTDEF_NAME (sd)));
+            DBUG_PRINT ("Done exploding ret struct %s", STRUCTDEF_NAME (sd));
         }
     }
 
@@ -784,23 +785,23 @@ DESassign (node *arg_node, info *arg_info)
     node *sd;
     node *ids;
 
-    DBUG_ENTER ("DESassign");
-    DBUG_PRINT ("DES", ("Entering DESassign."));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Entering DESassign.");
 
     /* Only deal with possible N_funcond if it's in a lifted conditional function.
      */
     if (!INFO_INCONDFUN (arg_info)) {
         arg_node = TRAVcont (arg_node, arg_info);
-        DBUG_PRINT ("DES", ("Shortcutting DESassign."));
+        DBUG_PRINT ("Shortcutting DESassign.");
         DBUG_RETURN (arg_node);
     }
 
-    DBUG_ASSERT (arg_node != NULL, ("Empty N_assign in N_funcond."));
+    DBUG_ASSERT (arg_node != NULL, "Empty N_assign in N_funcond.");
     newassign = NULL;
     instr = ASSIGN_INSTR (arg_node);
 
     if (instr == NULL) {
-        DBUG_PRINT ("DES", ("N_assign with empty instruction."));
+        DBUG_PRINT ("N_assign with empty instruction.");
     } else if (NODE_TYPE (instr) == N_let && LET_IDS (instr) != NULL) {
         /* In some cases, N_let nodes of void functions can still occur here. This
          * means that there is no IDS node being assigned to, so those situations
@@ -811,11 +812,10 @@ DESassign (node *arg_node, info *arg_info)
         type = IDS_NTYPE (ids);
         if (NODE_TYPE (expr) == N_funcond && TUisArrayOfUser (type)) {
             orig_td = UTgetTdef (TYgetUserType (TYgetScalar (type)));
-            DBUG_ASSERT (orig_td != NULL, ("No typedef found for this user type"));
+            DBUG_ASSERT (orig_td != NULL, "No typedef found for this user type");
             sd = TYPEDEF_STRUCTDEF (orig_td);
             if (sd != NULL) {
-                DBUG_PRINT ("DES",
-                            ("CondFun for a struct var: %s", IDS_NAME (LET_IDS (instr))));
+                DBUG_PRINT ("CondFun for a struct var: %s", IDS_NAME (LET_IDS (instr)));
                 /* Expand this assignment to a struct var into multiple assignments for
                  * each of the elements. */
                 newassign = CreateFCAssignChain (arg_node, STRUCTDEF_STRUCTELEM (sd));
@@ -830,7 +830,7 @@ DESassign (node *arg_node, info *arg_info)
         arg_node = TRAVcont (arg_node, arg_info);
     }
 
-    DBUG_PRINT ("DES", ("Leaving DESassign."));
+    DBUG_PRINT ("Leaving DESassign.");
     DBUG_RETURN (arg_node);
 }
 
@@ -851,7 +851,7 @@ DESexprs (node *arg_node, info *arg_info)
     node *old_exprs;
     char *typestr;
 
-    DBUG_ENTER ("DESexprs");
+    DBUG_ENTER ();
 
     sd = NULL;
     expr = EXPRS_EXPR (arg_node);
@@ -863,14 +863,14 @@ DESexprs (node *arg_node, info *arg_info)
     type = ID_NTYPE (expr);
     if (TUisArrayOfUser (type)) {
         orig_td = UTgetTdef (TYgetUserType (TYgetScalar (type)));
-        DBUG_ASSERT (orig_td != NULL, ("No typedef found for this user type"));
+        DBUG_ASSERT (orig_td != NULL, "No typedef found for this user type");
         sd = TYPEDEF_STRUCTDEF (orig_td);
         if (sd != NULL) {
             typestr = TYtype2String (type, FALSE, 0);
-            DBUG_PRINT ("DES", ("Exploding N_id %s (type %s).", ID_NAME (expr), typestr));
+            DBUG_PRINT ("Exploding N_id %s (type %s).", ID_NAME (expr), typestr);
             old_exprs = arg_node;
             arg_node = ExplodeExprs (old_exprs, STRUCTDEF_STRUCTELEM (sd));
-            DBUG_PRINT ("DES", ("Done exploding N_id of type %s.", typestr));
+            DBUG_PRINT ("Done exploding N_id of type %s.", typestr);
             /* TODO: Is freeing old_exprs safe, here? */
         }
     }
@@ -912,7 +912,7 @@ DESlet (node *arg_node, info *arg_info)
     node *sd;
     node *orig_td;
 
-    DBUG_ENTER ("DESlet");
+    DBUG_ENTER ();
 
     sd = NULL;
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_id) {
@@ -920,7 +920,7 @@ DESlet (node *arg_node, info *arg_info)
         type = ID_NTYPE (id);
         if (TUisArrayOfUser (type)) {
             orig_td = UTgetTdef (TYgetUserType (TYgetScalar (type)));
-            DBUG_ASSERT (orig_td != NULL, ("No typedef found for this user type"));
+            DBUG_ASSERT (orig_td != NULL, "No typedef found for this user type");
             sd = TYPEDEF_STRUCTDEF (orig_td);
             if (sd != NULL) {
                 /* Replace right-hand side by a function call. */
@@ -957,18 +957,18 @@ DESids (node *arg_node, info *arg_info)
     node *orig_td;
     node *sd;
 
-    DBUG_ENTER ("DESids");
+    DBUG_ENTER ();
 
     type = IDS_NTYPE (arg_node);
     sd = NULL;
     if (TUisArrayOfUser (type)) {
         orig_td = UTgetTdef (TYgetUserType (TYgetScalar (type)));
-        DBUG_ASSERT (orig_td != NULL, ("No typedef found for this user type"));
+        DBUG_ASSERT (orig_td != NULL, "No typedef found for this user type");
         sd = TYPEDEF_STRUCTDEF (orig_td);
         if (sd != NULL && INFO_INLET (arg_info)) {
-            DBUG_PRINT ("DES", ("Exploding N_let's ids %s", STRUCTDEF_NAME (sd)));
+            DBUG_PRINT ("Exploding N_let's ids %s", STRUCTDEF_NAME (sd));
             arg_node = ExplodeIds (arg_node, STRUCTDEF_STRUCTELEM (sd));
-            DBUG_PRINT ("DES", ("Done exploding N_let's ids %s.", STRUCTDEF_NAME (sd)));
+            DBUG_PRINT ("Done exploding N_let's ids %s.", STRUCTDEF_NAME (sd));
             /* TODO: Check if a memfree of the old ids is safe here. */
         }
     }
@@ -999,7 +999,7 @@ DESvardec (node *arg_node, info *arg_info)
     node *sd;
     node *oldvd;
 
-    DBUG_ENTER ("DESvardec");
+    DBUG_ENTER ();
 
     /* Bottom-up. */
     arg_node = TRAVcont (arg_node, arg_info);
@@ -1008,10 +1008,10 @@ DESvardec (node *arg_node, info *arg_info)
     sd = NULL;
     if (TUisArrayOfUser (type)) {
         orig_td = UTgetTdef (TYgetUserType (TYgetScalar (type)));
-        DBUG_ASSERT (orig_td != NULL, ("No typedef found for this user type"));
+        DBUG_ASSERT (orig_td != NULL, "No typedef found for this user type");
         sd = TYPEDEF_STRUCTDEF (orig_td);
         if (sd != NULL) {
-            DBUG_PRINT ("DES", ("Removing struct vardec %s", VARDEC_NAME (arg_node)));
+            DBUG_PRINT ("Removing struct vardec %s", VARDEC_NAME (arg_node));
             oldvd = arg_node;
             arg_node = VARDEC_NEXT (arg_node);
             /* TODO: Check if it is safe to free this node (hint: it's not). */
@@ -1021,3 +1021,5 @@ DESvardec (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

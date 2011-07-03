@@ -37,7 +37,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "EMEC"
+#include "debug.h"
+
 #include "print.h"
 #include "new_types.h"
 #include "str.h"
@@ -71,7 +74,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -84,7 +87,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -110,9 +113,9 @@ EMECdoExplicitCopy (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("EMECdoExplicitCopy");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMEC", ("Starting explicit copy traversal."));
+    DBUG_PRINT ("Starting explicit copy traversal.");
 
     info = MakeInfo ();
 
@@ -122,7 +125,7 @@ EMECdoExplicitCopy (node *syntax_tree)
 
     info = FreeInfo (info);
 
-    DBUG_PRINT ("EMEC", ("Explicit copy traversal complete."));
+    DBUG_PRINT ("Explicit copy traversal complete.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -150,7 +153,7 @@ CreateCopyId (node *oldid, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("CreateCopyId");
+    DBUG_ENTER ();
 
     /*
      * Create a new variable for b'
@@ -198,7 +201,7 @@ CreateCopyId (node *oldid, info *arg_info)
 node *
 EMECassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMECassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -224,7 +227,7 @@ EMECassign (node *arg_node, info *arg_info)
 node *
 EMECfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMECfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
@@ -251,7 +254,7 @@ EMECap (node *arg_node, info *arg_info)
 {
     node *args, *exprs;
 
-    DBUG_ENTER ("EMECap");
+    DBUG_ENTER ();
 
     exprs = AP_ARGS (arg_node);
     args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
@@ -295,7 +298,7 @@ EMECap (node *arg_node, info *arg_info)
 node *
 EMECprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMECprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_modarray_AxVxS:
@@ -323,3 +326,5 @@ EMECprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Explicit copy -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

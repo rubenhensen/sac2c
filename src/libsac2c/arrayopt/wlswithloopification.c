@@ -74,7 +74,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLS"
+#include "debug.h"
+
 #include "new_types.h"
 #include "print.h"
 #include "free.h"
@@ -118,7 +121,7 @@ MakeInfo (node *fundef, int innerdims)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -138,7 +141,7 @@ MakeInfo (node *fundef, int innerdims)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -173,7 +176,7 @@ WLSWdoWithloopify (node *with, node *fundef, int innerdims)
 {
     info *info;
 
-    DBUG_ENTER ("WLSWdoWithloopify");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (with) == N_with, "First parameter must be a with-loop");
 
@@ -220,7 +223,7 @@ LowerBound (shape *unrshp, int index)
     shape *idx_shape;
     int i;
 
-    DBUG_ENTER ("LowerBound");
+    DBUG_ENTER ();
 
     idx_shape = SHcopyShape (unrshp);
 
@@ -251,7 +254,7 @@ UpperBound (shape *unrshp, int index)
     shape *idx_shape;
     int i;
 
-    DBUG_ENTER ("UpperBound");
+    DBUG_ENTER ();
 
     idx_shape = SHcopyShape (unrshp);
 
@@ -290,7 +293,7 @@ MakeSelCodes (node *part, node *iv, node *arr, info *arg_info)
     ntype *new_type;
     int dim;
 
-    DBUG_ENTER ("MakeSelCodes");
+    DBUG_ENTER ();
 
     if (part != NULL) {
         dim = SHgetUnrLen (TYgetShape (AVIS_TYPE (IDS_AVIS (iv))));
@@ -345,7 +348,7 @@ MakeSelParts (shape *maxshp, int unrdim, node *withid, info *arg_info)
     shape *unrshp, *lower_tl, *upper_tl;
     int i;
 
-    DBUG_ENTER ("MakeSelParts");
+    DBUG_ENTER ();
 
     unrshp = SHtakeFromShape (unrdim, maxshp);
 
@@ -431,7 +434,7 @@ CreateCopyWithloop (node *array, info *arg_info)
     int dim;
     shape *maxshp;
 
-    DBUG_ENTER ("CreateCopyWithloop");
+    DBUG_ENTER ();
 
     dim = INFO_INNERDIMS (arg_info);
     avis = TBmakeAvis (TRAVtmpVar (),
@@ -516,7 +519,7 @@ WLSWcode (node *arg_node, info *arg_info)
     dfmask_base_t *maskbase;
     node *ids;
 
-    DBUG_ENTER ("WLSWcode");
+    DBUG_ENTER ();
 
     if (!INFO_INNERTRAV (arg_info)) {
         /*
@@ -561,13 +564,13 @@ WLSWcode (node *arg_node, info *arg_info)
         /*
          * 2. Insert copy with-loop (if required)
          */
-        DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
         if (INFO_MUSTCOPY (arg_info)) {
             node *avis;
             node *vardecs = NULL;
             node *ass;
 
-            DBUG_PRINT ("WLS", ("Copy with-loop required"));
+            DBUG_PRINT ("Copy with-loop required");
 
             avis
               = TBmakeAvis (TRAVtmpVar (), TYcopyType (ID_NTYPE (CODE_CEXPR (arg_node))));
@@ -588,10 +591,10 @@ WLSWcode (node *arg_node, info *arg_info)
             CODE_CEXPRS (arg_node) = FREEdoFreeTree (CODE_CEXPRS (arg_node));
             CODE_CEXPRS (arg_node) = TBmakeExprs (TBmakeId (avis), NULL);
 
-            DBUG_PRINT ("WLS", ("New code after insertion of copy with-loop"));
-            DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
+            DBUG_PRINT ("New code after insertion of copy with-loop");
+            DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
         } else {
-            DBUG_PRINT ("WLS", ("No copy with-loop required"));
+            DBUG_PRINT ("No copy with-loop required");
         }
 
         /*
@@ -603,7 +606,7 @@ WLSWcode (node *arg_node, info *arg_info)
             node *first, *last;
             node *innercode;
 
-            DBUG_PRINT ("WLS", ("Moving inter with-loop code into inner with-loop"));
+            DBUG_PRINT ("Moving inter with-loop code into inner with-loop");
 
             /*
              * Cut out code before the inner with-loop
@@ -613,14 +616,14 @@ WLSWcode (node *arg_node, info *arg_info)
              */
             first = BLOCK_INSTR (CODE_CBLOCK (arg_node));
             last = first;
-            DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, last););
-            DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, AVIS_SSAASSIGN (ID_AVIS (
-                                                               CODE_CEXPR (arg_node)))););
+            DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, last));
+            DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, AVIS_SSAASSIGN (ID_AVIS (
+                                                        CODE_CEXPR (arg_node)))));
 
             while (ASSIGN_NEXT (last)
                    != AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (arg_node)))) {
                 last = ASSIGN_NEXT (last);
-                DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, last););
+                DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, last));
             }
 
             /*
@@ -629,12 +632,12 @@ WLSWcode (node *arg_node, info *arg_info)
             BLOCK_INSTR (CODE_CBLOCK (arg_node)) = ASSIGN_NEXT (last);
             ASSIGN_NEXT (last) = NULL;
 
-            DBUG_PRINT ("WLS", ("Intermediate code cut out"));
-            DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
-            DBUG_PRINT ("WLS", ("first"));
-            DBUG_EXECUTE ("WLS", PRTdoPrintFile (stderr, first););
-            DBUG_PRINT ("WLS", ("last"));
-            DBUG_EXECUTE ("WLS", PRTdoPrintFile (stderr, last););
+            DBUG_PRINT ("Intermediate code cut out");
+            DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
+            DBUG_PRINT ("first");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, first));
+            DBUG_PRINT ("last");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, last));
 
             /*
              * Insert the code fragment into all inner codes
@@ -722,7 +725,7 @@ WLSWcode (node *arg_node, info *arg_info)
 node *
 WLSWid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSWid");
+    DBUG_ENTER ();
 
     /*
      * If the current id is marked in DEPMASK, all LHS identifiers depend on it
@@ -763,7 +766,7 @@ WLSWlet (node *arg_node, info *arg_info)
 {
     node *ids;
 
-    DBUG_ENTER ("WLSWlet");
+    DBUG_ENTER ();
 
     /*
      * Push all the LHS identifiers onto DEPSTACK
@@ -807,7 +810,7 @@ WLSWlet (node *arg_node, info *arg_info)
 node *
 WLSWpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSWpart");
+    DBUG_ENTER ();
 
     if (INFO_INNERTRAV (arg_info)) {
         /*
@@ -838,7 +841,7 @@ WLSWpart (node *arg_node, info *arg_info)
 node *
 WLSWwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSWwith");
+    DBUG_ENTER ();
 
     if (!INFO_INNERTRAV (arg_info)) {
         /*
@@ -855,8 +858,8 @@ WLSWwith (node *arg_node, info *arg_info)
          */
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-        DBUG_PRINT ("WLS", ("Withloopified with-loop:"));
-        DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
+        DBUG_PRINT ("Withloopified with-loop:");
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
     } else {
         /*
          * Traversal of inner with-loop
@@ -910,7 +913,7 @@ WLSWwith (node *arg_node, info *arg_info)
 node *
 WLSWwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSWwithid");
+    DBUG_ENTER ();
 
     INFO_OUTERWITHID (arg_info) = arg_node;
 
@@ -924,3 +927,5 @@ WLSWwithid (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- WLSW -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

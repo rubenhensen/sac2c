@@ -11,7 +11,10 @@
  */
 
 #include "serialize_stack.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -33,7 +36,7 @@ SSinit ()
 {
     serstack_t *result;
 
-    DBUG_ENTER ("SSinit");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (serstack_t));
 
@@ -45,7 +48,7 @@ SSinit ()
 serstack_t *
 SSdestroy (serstack_t *stack)
 {
-    DBUG_ENTER ("SSdestroy");
+    DBUG_ENTER ();
 
     while (stack->head != NULL) {
         serentry_t *tmp = stack->head;
@@ -64,7 +67,7 @@ SSpush (node *val, serstack_t *stack)
 {
     serentry_t *tmp;
 
-    DBUG_ENTER ("SSpush");
+    DBUG_ENTER ();
 
     tmp = MEMmalloc (sizeof (serentry_t));
 
@@ -72,7 +75,7 @@ SSpush (node *val, serstack_t *stack)
     tmp->next = stack->head;
     stack->head = tmp;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 node *
@@ -81,9 +84,9 @@ SSpop (serstack_t *stack)
     serentry_t *tmp;
     node *result;
 
-    DBUG_ENTER ("SSpop");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((stack->head != NULL), "cannot pop element from empty stack");
+    DBUG_ASSERT (stack->head != NULL, "cannot pop element from empty stack");
 
     tmp = stack->head;
     stack->head = stack->head->next;
@@ -100,7 +103,7 @@ SSfindPos (node *val, serstack_t *stack)
     int pos = 0;
     serentry_t *ptr;
 
-    DBUG_ENTER ("SSfindPos");
+    DBUG_ENTER ();
 
     ptr = stack->head;
 
@@ -125,14 +128,14 @@ SSlookup (int pos, serstack_t *stack)
     serentry_t *ptr = stack->head;
     node *result;
 
-    DBUG_ENTER ("SSlookup");
+    DBUG_ENTER ();
 
     while ((cnt < pos) && (ptr != NULL)) {
         ptr = ptr->next;
         cnt++;
     }
 
-    DBUG_ASSERT ((cnt == pos), "stack selection out of bounds.");
+    DBUG_ASSERT (cnt == pos, "stack selection out of bounds.");
 
     if (ptr == NULL) {
         result = NULL;
@@ -148,7 +151,7 @@ SSdump (serstack_t *stack)
 {
     serentry_t *ptr = stack->head;
 
-    DBUG_ENTER ("SSdump");
+    DBUG_ENTER ();
 
     printf ("StackDump:\n\n");
 
@@ -164,5 +167,7 @@ SSdump (serstack_t *stack)
         ptr = ptr->next;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

@@ -3,7 +3,10 @@
  */
 
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "FREE"
+#include "debug.h"
+
 #include "traverse.h"
 #include "str.h"
 #include "memory.h"
@@ -28,7 +31,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -41,7 +44,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -81,11 +84,11 @@ FreeInfo (info *info)
 index_info *
 FREEfreeIndexInfo (index_info *fr)
 {
-    DBUG_ENTER ("FREEfreeIndexInfo");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("FREE", ("Removing index info (WLF)"));
+    DBUG_PRINT ("Removing index info (WLF)");
 
-    DBUG_ASSERT ((fr != NULL), "cannot free a NULL index info (WLF)!");
+    DBUG_ASSERT (fr != NULL, "cannot free a NULL index info (WLF)!");
 
     fr->permutation = MEMfree (fr->permutation);
     fr->last = MEMfree (fr->last);
@@ -101,11 +104,11 @@ FREEfreeIndexInfo (index_info *fr)
 shpseg *
 FREEfreeShpseg (shpseg *fr)
 {
-    DBUG_ENTER ("FREEfreeShpseg");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("FREE", ("Removing shpseg"));
+    DBUG_PRINT ("Removing shpseg");
 
-    DBUG_ASSERT ((fr != NULL), "cannot free a NULL shpseg!");
+    DBUG_ASSERT (fr != NULL, "cannot free a NULL shpseg!");
 
     if (SHPSEG_NEXT (fr) != NULL) {
         SHPSEG_NEXT (fr) = FREEfreeShpseg (SHPSEG_NEXT (fr));
@@ -123,16 +126,16 @@ FREEfreeOneTypes (types *fr)
 {
     types *tmp;
 
-    DBUG_ENTER ("FREEfreeOneTypes");
+    DBUG_ENTER ();
 
     if (fr != NULL) {
-        DBUG_PRINT ("FREE", ("Removing types: %s",
-                             (TYPES_NAME (fr) == NULL) ? "<simple>" : TYPES_NAME (fr)));
+        DBUG_PRINT ("Removing types: %s",
+                    (TYPES_NAME (fr) == NULL) ? "<simple>" : TYPES_NAME (fr));
         tmp = fr;
         fr = TYPES_NEXT (fr);
 
         if (TYPES_DIM (tmp) > 0) {
-            DBUG_ASSERT ((TYPES_SHPSEG (tmp) != NULL),
+            DBUG_ASSERT (TYPES_SHPSEG (tmp) != NULL,
                          "SHPSEG not found although DIM is greater 0");
             TYPES_SHPSEG (tmp) = FREEfreeShpseg (TYPES_SHPSEG (tmp));
         }
@@ -150,7 +153,7 @@ FREEfreeOneTypes (types *fr)
 types *
 FREEfreeAllTypes (types *fr)
 {
-    DBUG_ENTER ("FREEfreeAllTypes");
+    DBUG_ENTER ();
 
     while (fr != NULL) {
         fr = FREEfreeOneTypes (fr);
@@ -170,7 +173,7 @@ FREEfreeNodelist (nodelist *list)
 {
     nodelist *tmp;
 
-    DBUG_ENTER ("FREEfreeNodelist");
+    DBUG_ENTER ();
 
     while (list != NULL) {
         tmp = list;
@@ -192,9 +195,9 @@ FREEfreeNodelistNode (nodelist *nl)
 {
     nodelist *tmp;
 
-    DBUG_ENTER ("FREEfreeNodelistNode");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((nl != NULL), "argument is NULL");
+    DBUG_ASSERT (nl != NULL, "argument is NULL");
 
     tmp = nl;
     nl = NODELIST_NEXT (nl);
@@ -212,21 +215,19 @@ FREEfreeOneAccess (access_t *fr)
   access_t *tmp;
 #endif
 
-    DBUG_ENTER ("FREEfreeOneAccess");
+    DBUG_ENTER ();
 
     if (fr != NULL) {
 #if 0
     DBUG_ASSERT (((NODE_TYPE (ACCESS_IV (fr)) == N_vardec) ||
-                  (NODE_TYPE (ACCESS_IV (fr)) == N_arg)),
-                 "ACCESS_IV is neither a N_vardec- nor a N_arg-node!");
+                  (NODE_TYPE (ACCESS_IV (fr)) == N_arg)), "ACCESS_IV is neither a N_vardec- nor a N_arg-node!");
 
     DBUG_ASSERT (((NODE_TYPE (ACCESS_ARRAY (fr)) == N_vardec) ||
-                  (NODE_TYPE (ACCESS_ARRAY (fr)) == N_arg)),
-                 "ACCESS_ARRAY is neither a N_vardec- nor a N_arg-node!");
+                  (NODE_TYPE (ACCESS_ARRAY (fr)) == N_arg)), "ACCESS_ARRAY is neither a N_vardec- nor a N_arg-node!");
 
-    DBUG_PRINT ("FREE", ("Removing Access: sel(%s, %s)",
+    DBUG_PRINT ("Removing Access: sel(%s, %s)",
                          VARDEC_OR_ARG_NAME (ACCESS_IV (fr)),
-                         VARDEC_OR_ARG_NAME (ACCESS_ARRAY (fr))));
+                         VARDEC_OR_ARG_NAME (ACCESS_ARRAY (fr)));
 
     tmp = fr;
     fr = ACCESS_NEXT (fr);
@@ -249,7 +250,7 @@ FREEfreeOneAccess (access_t *fr)
 access_t *
 FREEfreeAllAccess (access_t *fr)
 {
-    DBUG_ENTER ("FREEfreeAllAccess");
+    DBUG_ENTER ();
 
     while (fr != NULL) {
         fr = FREEfreeOneAccess (fr);
@@ -263,9 +264,9 @@ FREEfreeAllAccess (access_t *fr)
 argtab_t *
 FREEfreeArgtab (argtab_t *argtab)
 {
-    DBUG_ENTER ("FREEfreeArgtab");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((argtab != NULL), "argument is NULL");
+    DBUG_ASSERT (argtab != NULL, "argument is NULL");
 
     argtab->ptr_in = MEMfree (argtab->ptr_in);
     argtab->ptr_out = MEMfree (argtab->ptr_out);
@@ -297,7 +298,7 @@ FREEdoFreeNode (node *free_node)
     info *arg_info;
     bool store_valid_ssaform;
 
-    DBUG_ENTER ("FREEfreeNode");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -341,7 +342,7 @@ FREEdoFreeTree (node *free_node)
     info *arg_info;
     bool store_valid_ssaform;
 
-    DBUG_ENTER ("FREEfreeTree");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
     INFO_FREE_FLAG (arg_info) = NULL;
@@ -382,14 +383,14 @@ FreeZombie (node *fundef)
 {
     node *tmp;
 
-    DBUG_ENTER ("FreeZombie");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "FreeZombie() is suitable for N_fundef nodes only!");
 
     if (FUNDEF_ISZOMBIE (fundef)) {
 
-        DBUG_PRINT ("FREE", ("removing zombie at " F_PTR, fundef));
+        DBUG_PRINT ("removing zombie at " F_PTR, fundef);
 
         /*
          * remove all the zombie data
@@ -433,9 +434,9 @@ FreeZombie (node *fundef)
 node *
 FREEremoveAllZombies (node *arg_node)
 {
-    DBUG_ENTER ("FREEremoveAllZombies");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((arg_node != NULL), "FREEremoveAllZombies called with argument NULL");
+    DBUG_ASSERT (arg_node != NULL, "FREEremoveAllZombies called with argument NULL");
 
     if (global.local_funs_grouped && (FUNDEF_LOCALFUNS (arg_node) != NULL)
         && (num_zombies > 0)) {
@@ -467,7 +468,7 @@ FREEremoveAllZombies (node *arg_node)
 node *
 FREEzombify (node *arg_node)
 {
-    DBUG_ENTER ("FREEzombify");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
                  "Only N_fundef nodes may be zombified.");
@@ -510,3 +511,5 @@ FREEzombify (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

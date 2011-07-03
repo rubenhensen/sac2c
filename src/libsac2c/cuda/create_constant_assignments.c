@@ -13,7 +13,10 @@
  *
  *****************************************************************************/
 #include "create_constant_assignments.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -51,7 +54,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -66,7 +69,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -93,7 +96,7 @@ CNSTASSdoCUDAconstantAssignment (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CNSTASSdoCUDAconstantAssignment");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
@@ -138,7 +141,7 @@ UnflattenGeneratorComponent (node *id)
     node *ssaassign;
     node *res;
 
-    DBUG_ENTER ("UnflattenGeneratorComponent");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (AVIS_DECL (ID_AVIS (id))) == N_arg) {
         DBUG_ASSERT (TYisAKV (AVIS_TYPE (ID_AVIS (id))), "Non-AKS CUDA N_with found!");
@@ -147,7 +150,7 @@ UnflattenGeneratorComponent (node *id)
     } else {
         ssaassign = AVIS_SSAASSIGN (ID_AVIS (id));
 
-        DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array),
+        DBUG_ASSERT (NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array,
                      "Unflattened generator component must be an N_array node!");
 
         id = FREEdoFreeNode (id);
@@ -170,7 +173,7 @@ FlattenBoundStepWidthElements (node *exprs, char *suffix, info *arg_info)
     node *avis;
     node *ids, *vardec;
 
-    DBUG_ENTER ("UnflattenBoundStepWidthElements");
+    DBUG_ENTER ();
 
     while (exprs != NULL) {
         if (NODE_TYPE (EXPRS_EXPR (exprs)) == N_num) {
@@ -192,7 +195,7 @@ FlattenBoundStepWidthElements (node *exprs, char *suffix, info *arg_info)
         exprs = EXPRS_NEXT (exprs);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -216,7 +219,7 @@ FlattenBoundStepWidthElements (node *exprs, char *suffix, info *arg_info)
 node *
 CNSTASSfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CNSTASSfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
@@ -239,7 +242,7 @@ CNSTASSassign (node *arg_node, info *arg_info)
 {
     bool old_add_assigns;
 
-    DBUG_ENTER ("CNSTASSassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -269,7 +272,7 @@ CNSTASSwith (node *arg_node, info *arg_info)
 {
     node *old_assigns;
 
-    DBUG_ENTER ("CNSTASSwith");
+    DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
@@ -306,7 +309,7 @@ CNSTASSgenerator (node *arg_node, info *arg_info)
     node *lower_bound_elements = NULL, *upper_bound_elements = NULL;
     node *step_elements = NULL, *width_elements = NULL;
 
-    DBUG_ENTER ("CNSTASSgenerator");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_id
                   || NODE_TYPE (GENERATOR_BOUND1 (arg_node)) == N_array),
@@ -366,3 +369,5 @@ CNSTASSgenerator (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

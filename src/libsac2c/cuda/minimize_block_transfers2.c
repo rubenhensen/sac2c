@@ -47,7 +47,10 @@
 #include "tree_basic.h"
 #include "LookUpTable.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "deadcoderemoval.h"
 #include "cuda_utils.h"
 #include "SSACSE.h"
@@ -72,7 +75,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -85,7 +88,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -113,7 +116,7 @@ node *
 MBTRAN2doMinimizeBlockTransfers (node *syntax_tree)
 {
     info *info;
-    DBUG_ENTER ("MBTRAN2doMinimizeBlockTransfers");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -155,7 +158,7 @@ MBTRAN2block (node *arg_node, info *arg_info)
 {
     node *old_block;
 
-    DBUG_ENTER ("MBTRAN2block");
+    DBUG_ENTER ();
 
     old_block = INFO_CURRENT_BLOCK (arg_info);
     INFO_CURRENT_BLOCK (arg_info) = arg_node;
@@ -177,7 +180,7 @@ MBTRAN2block (node *arg_node, info *arg_info)
 node *
 MBTRAN2assign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MBTRAN2assign");
+    DBUG_ENTER ();
 
     // ASSIGN_CONTAINING_BLOCK( arg_node) = INFO_CURRENT_BLOCK( arg_info);
     INFO_LASTASSIGN (arg_info) = arg_node;
@@ -202,7 +205,7 @@ MBTRAN2prf (node *arg_node, info *arg_info)
 {
     node *ssaassign;
 
-    DBUG_ENTER ("MBTRAN2prf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_host2device:
@@ -232,3 +235,5 @@ MBTRAN2prf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

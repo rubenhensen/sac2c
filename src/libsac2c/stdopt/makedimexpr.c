@@ -26,7 +26,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
@@ -61,7 +64,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -75,7 +78,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -97,7 +100,7 @@ MakeScalarAvis (char *name)
 {
     node *res;
 
-    DBUG_ENTER ("MakeScalarAvis");
+    DBUG_ENTER ();
 
     res = TBmakeAvis (name, TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
@@ -119,7 +122,7 @@ SAAdim_is_0 (node *arg_node, info *arg_info)
 {
     node *dim_expr;
 
-    DBUG_ENTER ("SAAdim_is_0");
+    DBUG_ENTER ();
 
     dim_expr = TBmakeNum (0);
 
@@ -131,7 +134,7 @@ SAAdim_is_1 (node *arg_node, info *arg_info)
 {
     node *dim_expr;
 
-    DBUG_ENTER ("SAAdim_is_1");
+    DBUG_ENTER ();
 
     dim_expr = TBmakeNum (1);
 
@@ -143,7 +146,7 @@ SAAdim_of_arg1 (node *arg_node, info *arg_info)
 {
     node *dim_expr;
 
-    DBUG_ENTER ("SAAdim_of_arg1");
+    DBUG_ENTER ();
 
     dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))));
 
@@ -155,7 +158,7 @@ SAAdim_of_arg2 (node *arg_node, info *arg_info)
 {
     node *dim_expr;
 
-    DBUG_ENTER ("SAAdim_of_arg2");
+    DBUG_ENTER ();
 
     dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG2 (arg_node))));
 
@@ -167,7 +170,7 @@ SAAdim_is_arg1_0 (node *arg_node, info *arg_info)
 {
     node *dim_expr;
 
-    DBUG_ENTER ("SAAdim_is_arg1_0");
+    DBUG_ENTER ();
 
     /* FIXME the PRF_ARG1 zero needs to be flattened. */
     dim_expr
@@ -181,7 +184,7 @@ SAAdim_is_arg1 (node *arg_node, info *arg_info)
 {
     node *dim_expr;
 
-    DBUG_ENTER ("SAAdim_is_arg1");
+    DBUG_ENTER ();
 
     dim_expr = DUPdoDupNode (PRF_ARG1 (arg_node));
 
@@ -196,7 +199,7 @@ SAAdim_guard (node *arg_node, info *arg_info)
     node *ids;
     node *exprs;
 
-    DBUG_ENTER ("SAAdim_guard");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
 
@@ -220,7 +223,7 @@ SAAdim_type_constraint (node *arg_node, info *arg_info)
     node *lhsavis;
     node *ids;
 
-    DBUG_ENTER ("SAAdim_type_constraint");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
 
@@ -248,7 +251,7 @@ SAAdim_same_shape_AxA (node *arg_node, info *arg_info)
     node *lhsavis;
     node *ids;
 
-    DBUG_ENTER ("SAAdim_same_shape_AxA");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
 
@@ -272,7 +275,7 @@ SAAdim_shape_matches_dim_VxA (node *arg_node, info *arg_info)
     node *lhsavis;
     node *ids;
 
-    DBUG_ENTER ("SAAdim_shape_matches_dim_VxA");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
 
@@ -296,7 +299,7 @@ SAAdim_cc_inherit (node *arg_node, info *arg_info)
     node *lhsavis;
     node *ids;
 
-    DBUG_ENTER ("SAAdim_cc_inherit");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
 
@@ -345,7 +348,7 @@ MDEdoMakeDimExpression (node *expr, node *avis, node *allids, node *fundef)
     node *res;
     node *dimavis;
 
-    DBUG_ENTER ("MDEdoMakeDimExpression");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (AVIS_DIM (avis) == NULL, "AVIS_DIM( avis) is already set!");
 
@@ -397,7 +400,7 @@ MDEid (node *arg_node, info *arg_info)
     node *rhsnode;
     node *res;
 
-    DBUG_ENTER ("MDEid");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
     dimavis = ID_AVIS (AVIS_DIM (lhsavis));
@@ -419,7 +422,7 @@ MDEfuncond (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("MDEfuncond");
+    DBUG_ENTER ();
 
     DBUG_RETURN (res);
 }
@@ -438,7 +441,7 @@ MDEarray (node *arg_node, info *arg_info)
     node *preassigns = NULL;
     node *res = NULL;
 
-    DBUG_ENTER ("MDEarray");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
     dimavis = ID_AVIS (AVIS_DIM (lhsavis));
@@ -481,7 +484,7 @@ MDEap (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("MDEap");
+    DBUG_ENTER ();
 
     DBUG_RETURN (res);
 }
@@ -500,7 +503,7 @@ MDEprf (node *arg_node, info *arg_info)
     node *rhsnode = NULL;
     node *res = NULL;
 
-    DBUG_ENTER ("MDEprf");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
     dimavis = ID_AVIS (AVIS_DIM (lhsavis));
@@ -539,7 +542,7 @@ MDEwith (node *arg_node, info *arg_info)
     node *zer;
     int woc = 0;
 
-    DBUG_ENTER ("MDEwith");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
     dimavis = ID_AVIS (AVIS_DIM (lhsavis));
@@ -633,7 +636,7 @@ MDEwith (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown Withop encountered");
+        DBUG_ASSERT (0, "Unknown Withop encountered");
         break;
     }
 
@@ -666,7 +669,7 @@ MDEwith (node *arg_node, info *arg_info)
         node *rhsnode;                                                                   \
         node *res;                                                                       \
                                                                                          \
-        DBUG_ENTER ("MDE" #name);                                                        \
+        DBUG_ENTER ();                                                                   \
                                                                                          \
         lhsavis = INFO_AVIS (arg_info);                                                  \
         dimavis = ID_AVIS (AVIS_DIM (lhsavis));                                          \
@@ -712,3 +715,5 @@ MDECONST (numulonglong)
 /** <!--********************************************************************-->
  * @}  <!-- Make Dim Expression -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

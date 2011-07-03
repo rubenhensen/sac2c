@@ -32,7 +32,10 @@
 
 #include "tree_basic.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 
@@ -59,7 +62,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -71,7 +74,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -85,7 +88,7 @@ FreeInfo (info *info)
 node *
 SLSret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SLSret");
+    DBUG_ENTER ();
 
     INFO_COUNTER (arg_info)++;
 
@@ -101,7 +104,7 @@ SLSret (node *arg_node, info *arg_info)
 node *
 SLSarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SLSarg");
+    DBUG_ENTER ();
 
     INFO_COUNTER (arg_info)++;
 
@@ -117,7 +120,7 @@ SLSarg (node *arg_node, info *arg_info)
 node *
 SLSfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SLSfundef");
+    DBUG_ENTER ();
 
     INFO_COUNTER (arg_info) = 0;
 
@@ -132,7 +135,7 @@ SLSfundef (node *arg_node, info *arg_info)
 node *
 SLSmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SLSmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
@@ -150,7 +153,7 @@ SLSdoSetLinksign (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("SLSdoSetLinksign");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -162,3 +165,5 @@ SLSdoSetLinksign (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

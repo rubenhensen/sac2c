@@ -48,7 +48,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "TFLUB"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "dynelem.h"
@@ -75,7 +78,7 @@ void
 LUBsetBlockIds (dynarray *eulertour, int blocksize)
 {
 
-    DBUG_ENTER ("LUBsetBlockId");
+    DBUG_ENTER ();
 
     int i, j, prevdepth, currdepth, blockid = 0;
 
@@ -119,14 +122,14 @@ LUBsetBlockIds (dynarray *eulertour, int blocksize)
         blockid = 0;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 matrix *
 LUBcomputeIntraTable (dynarray *eulertour, int start, int end)
 {
 
-    DBUG_ENTER ("LUBcomputeIntraTable");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((start <= end && eulertour != NULL),
                  "Incompatible arguments passed to LUBcomputeIntraTable");
@@ -175,7 +178,7 @@ dynarray *
 LUBcomputePerBlockMin (dynarray *eulertour, int blocksize)
 {
 
-    DBUG_ENTER ("LUBcomputePerBlockMin");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((blocksize > 0 && eulertour != NULL),
                  "Incompatible arguments passed to LUBcomputePerBlockMin");
@@ -220,7 +223,7 @@ matrix *
 LUBprocessBlockMinArray (dynarray *a)
 {
 
-    DBUG_ENTER ("LUBprocessBlockMinArray");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((a != NULL && DYNARRAY_TOTALELEMS (a) > 0),
                  "Incompatible arguments passed to LUBprocessBlockMinArray");
@@ -289,7 +292,7 @@ int
 LUBgetBlockId (dynarray *eulertour, int index)
 {
 
-    DBUG_ENTER ("LUBgetBlockId");
+    DBUG_ENTER ();
 
     elem *e = DYNARRAY_ELEMS_POS (eulertour, index);
 
@@ -300,7 +303,7 @@ lubinfo *
 LUBcreatePartitions (dynarray *eulertour)
 {
 
-    DBUG_ENTER ("LUBcreatePartitions");
+    DBUG_ENTER ();
 
     int i, j, totalelems, blocksize, oldsize, index;
     lubinfo *lub = MEMmalloc (sizeof (lubinfo));
@@ -319,8 +322,7 @@ LUBcreatePartitions (dynarray *eulertour)
 
     LUBINFO_BLOCKSIZE (lub) = blocksize;
 
-    DBUG_PRINT ("TFLUB",
-                ("Size of block for LCA query on spanning tree is %d", blocksize));
+    DBUG_PRINT ("Size of block for LCA query on spanning tree is %d", blocksize);
 
     LUBsetBlockIds (eulertour, blocksize);
 
@@ -370,7 +372,7 @@ int
 LUBgetLowestFromCandidates (dynarray *d, int indices[4])
 {
 
-    DBUG_ENTER ("LUBgetLowestFromCandidates");
+    DBUG_ENTER ();
 
     int i, result;
     int mindepth;
@@ -392,7 +394,7 @@ node *
 LUBtreeLCAfromNodes (node *n1, node *n2, compinfo *ci)
 {
 
-    DBUG_ENTER ("LUBtreeLCAfromNodes");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((n1 != NULL && n2 != NULL && ci != NULL),
                  "Incompatible arguments passed to LUBtreeLCAfromNodes");
@@ -413,15 +415,15 @@ LUBtreeLCAfromNodes (node *n1, node *n2, compinfo *ci)
 
     lubinfo *lub = COMPINFO_LUB (ci);
 
-    DBUG_ASSERT ((lub != NULL), "The type component graph lacks LCA info");
+    DBUG_ASSERT (lub != NULL, "The type component graph lacks LCA info");
 
     intramats = LUBINFO_INTRAMATS (lub);
 
-    DBUG_ASSERT ((intramats != NULL), "No intra matrices found");
+    DBUG_ASSERT (intramats != NULL, "No intra matrices found");
 
     blocksize = LUBINFO_BLOCKSIZE (lub);
 
-    DBUG_ASSERT ((blocksize > 0), "Blocksize should be a positive integer");
+    DBUG_ASSERT (blocksize > 0, "Blocksize should be a positive integer");
 
     if (TFVERTEX_EULERID (n1) < TFVERTEX_EULERID (n2)) {
         lowerid = TFVERTEX_EULERID (n1);
@@ -474,10 +476,10 @@ LUBtreeLCAfromNodes (node *n1, node *n2, compinfo *ci)
         etindices[3] = indexupper;
 
         intermat = LUBINFO_INTERMAT (lub);
-        DBUG_ASSERT ((intermat != NULL), "No inter-block query matrix found");
+        DBUG_ASSERT (intermat != NULL, "No inter-block query matrix found");
 
         blockmin = LUBINFO_BLOCKMIN (lub);
-        DBUG_ASSERT ((blockmin != NULL), "No block minimum array found");
+        DBUG_ASSERT (blockmin != NULL, "No block minimum array found");
 
         if (upperid / blocksize > lowerid / blocksize + 1) {
 
@@ -506,3 +508,5 @@ LUBtreeLCAfromNodes (node *n1, node *n2, compinfo *ci)
 
     DBUG_RETURN (result);
 }
+
+#undef DBUG_PREFIX

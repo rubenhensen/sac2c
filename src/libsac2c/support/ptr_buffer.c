@@ -6,7 +6,9 @@
 
 #include "ptr_buffer.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "PBUF"
+#include "debug.h"
+
 #include "memory.h"
 
 struct PTR_BUF {
@@ -33,14 +35,14 @@ PBUFcreate (int size)
 {
     ptr_buf *res;
 
-    DBUG_ENTER ("PBUFcreate");
+    DBUG_ENTER ();
 
     res = (ptr_buf *)MEMmalloc (sizeof (ptr_buf));
     res->buf = (void **)MEMmalloc (size * sizeof (void *));
     res->pos = 0;
     res->size = size;
 
-    DBUG_PRINT ("PBUF", ("allocating buffer size %d : %p", size, res));
+    DBUG_PRINT ("allocating buffer size %d : %p", size, res);
 
     DBUG_RETURN (res);
 }
@@ -64,12 +66,11 @@ PBUFadd (ptr_buf *s, void *ptr)
     void **new_buf;
     int i;
 
-    DBUG_ENTER ("PBUFadd");
+    DBUG_ENTER ();
 
     if (s->pos == s->size) {
         new_size = 2 * s->size;
-        DBUG_PRINT ("PBUF", ("increasing buffer %p from size %d to size %d", s, s->size,
-                             new_size));
+        DBUG_PRINT ("increasing buffer %p from size %d to size %d", s, s->size, new_size);
 
         new_buf = (void **)MEMmalloc (new_size * sizeof (void *));
         for (i = 0; i < s->pos; i++) {
@@ -81,8 +82,8 @@ PBUFadd (ptr_buf *s, void *ptr)
     }
     s->buf[s->pos] = ptr;
     s->pos++;
-    DBUG_PRINT ("PBUF", ("%p added to buffer %p", ptr, s));
-    DBUG_PRINT ("PBUF", ("pos of buffer %p now is %d", s, s->pos));
+    DBUG_PRINT ("%p added to buffer %p", ptr, s);
+    DBUG_PRINT ("pos of buffer %p now is %d", s, s->pos);
 
     DBUG_RETURN (s);
 }
@@ -101,7 +102,7 @@ PBUFadd (ptr_buf *s, void *ptr)
 int
 PBUFsize (ptr_buf *s)
 {
-    DBUG_ENTER ("PBUFsize");
+    DBUG_ENTER ();
     DBUG_RETURN (s->size);
 }
 
@@ -122,7 +123,7 @@ PBUFptr (ptr_buf *s, int pos)
 {
     void *res;
 
-    DBUG_ENTER ("PBUFptr");
+    DBUG_ENTER ();
     if (pos < s->pos) {
         res = s->buf[pos];
     } else {
@@ -144,12 +145,12 @@ PBUFptr (ptr_buf *s, int pos)
 void
 PBUFflush (ptr_buf *s)
 {
-    DBUG_ENTER ("PBUFflush");
+    DBUG_ENTER ();
 
     s->pos = 0;
-    DBUG_PRINT ("PBUF", ("pos of buffer %p reset to %d", s, s->pos));
+    DBUG_PRINT ("pos of buffer %p reset to %d", s, s->pos);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -165,11 +166,13 @@ PBUFflush (ptr_buf *s)
 void *
 PBUFfree (ptr_buf *s)
 {
-    DBUG_ENTER ("PBUFfree");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("PBUF", ("freeing buffer %p", s));
+    DBUG_PRINT ("freeing buffer %p", s);
     s->buf = MEMfree (s->buf);
     s = MEMfree (s);
 
     DBUG_RETURN (s);
 }
+
+#undef DBUG_PREFIX

@@ -29,7 +29,10 @@
 #include "shape.h"
 #include "DupTree.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLPG"
+#include "debug.h"
+
 #include "traverse.h"
 #include "constants.h"
 #include "WLPartitionGeneration.h"
@@ -73,7 +76,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -91,7 +94,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -136,10 +139,10 @@ VectVar2StructConst (node **expr, node *fundef, info *arg_info)
     node *lb_id;
     int shpext;
 
-    DBUG_ENTER ("VectVar2StructConst");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((*expr != NULL), "Expr is empty");
-    DBUG_ASSERT ((NODE_TYPE (*expr) == N_id), "VectVar2StructConst not called with N_id");
+    DBUG_ASSERT (*expr != NULL, "Expr is empty");
+    DBUG_ASSERT (NODE_TYPE (*expr) == N_id, "VectVar2StructConst not called with N_id");
 
     shpext = INFO_SHPEXT (arg_info);
     nassigns = NULL;
@@ -200,7 +203,7 @@ VectVar2StructConst (node **expr, node *fundef, info *arg_info)
     *expr = FREEdoFreeTree (*expr);
     *expr = lb_id;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static node *
@@ -210,7 +213,7 @@ PropagateConstArrayIdentifier (node *expr)
     node *assign;
     node *defexpr;
 
-    DBUG_ENTER ("PropagateConstArrayIdentifier");
+    DBUG_ENTER ();
 
     if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
         assign = AVIS_SSAASSIGN (ID_AVIS (expr));
@@ -252,7 +255,7 @@ DetectVectorConstants (node *arg_node)
     ntype *t;
     pattern *pat;
 
-    DBUG_ENTER ("DetectVectorConstants");
+    DBUG_ENTER ();
 
     if (NULL != arg_node) {
 
@@ -310,7 +313,7 @@ CheckBounds (node *arg_node, shape *max_shp)
     int dim;
     int lbnum, ubnum, tnum;
 
-    DBUG_ENTER ("CheckBounds");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (WITH_WITHOP (arg_node)) == N_modarray)
                   || (NODE_TYPE (WITH_WITHOP (arg_node)) == N_genarray)),
@@ -333,7 +336,7 @@ CheckBounds (node *arg_node, shape *max_shp)
 
     dim = 0;
     while (lbe) {
-        DBUG_ASSERT ((ube != NULL),
+        DBUG_ASSERT (ube != NULL,
                      "upper WL bound has lower dimensionality than lower bound.");
         DBUG_ASSERT (((NODE_TYPE (EXPRS_EXPR (lbe)) == N_num)
                       && (NODE_TYPE (EXPRS_EXPR (ube)) == N_num)),
@@ -341,7 +344,7 @@ CheckBounds (node *arg_node, shape *max_shp)
         lbnum = NUM_VAL (EXPRS_EXPR (lbe));
         ubnum = NUM_VAL (EXPRS_EXPR (ube));
 
-        DBUG_ASSERT ((dim < SHgetDim (max_shp)),
+        DBUG_ASSERT (dim < SHgetDim (max_shp),
                      "dimensionality of lb greater than that of the result!");
         tnum = SHgetExtent (max_shp, dim);
         if (lbnum < 0) {
@@ -362,12 +365,12 @@ CheckBounds (node *arg_node, shape *max_shp)
         lbe = EXPRS_NEXT (lbe);
         ube = EXPRS_NEXT (ube);
     }
-    DBUG_ASSERT ((NULL == ube),
+    DBUG_ASSERT (NULL == ube,
                  "lower WL bound has lower dimensionality than upper bound.");
 
     lbv = FREEdoFreeTree (lbv);
     ubv = FREEdoFreeTree (ubv);
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -394,7 +397,7 @@ PropagateVectorConstants (node **expr)
     constant *const_expr;
     gen_shape_t gshape;
 
-    DBUG_ENTER ("PropagateVectorConstants");
+    DBUG_ENTER ();
 
     if (global.ssaiv) {
         gshape = DetectVectorConstants (*expr);
@@ -456,7 +459,7 @@ CropBounds (node *wl, shape *max_shp)
     int dim;
     int lbnum, ubnum, tnum;
 
-    DBUG_ENTER ("CropBounds");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (WITH_WITHOP (wl)) == N_modarray)
                   || (NODE_TYPE (WITH_WITHOP (wl)) == N_genarray)),
@@ -466,14 +469,14 @@ CropBounds (node *wl, shape *max_shp)
 
     dim = 0;
     while (lbe) {
-        DBUG_ASSERT ((ube != NULL), "dimensionality differs in lower and upper bound!");
+        DBUG_ASSERT (ube != NULL, "dimensionality differs in lower and upper bound!");
         DBUG_ASSERT (((NODE_TYPE (EXPRS_EXPR (lbe)) == N_num)
                       && (NODE_TYPE (EXPRS_EXPR (ube)) == N_num)),
                      "generator bounds must be constant!");
         lbnum = NUM_VAL (EXPRS_EXPR (lbe));
         ubnum = NUM_VAL (EXPRS_EXPR (ube));
 
-        DBUG_ASSERT ((dim < SHgetDim (max_shp)),
+        DBUG_ASSERT (dim < SHgetDim (max_shp),
                      "dimensionality of lb greater than that of the result!");
         tnum = SHgetExtent (max_shp, dim);
         if (lbnum < 0) {
@@ -516,7 +519,7 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
     constant *lbc, *ubc, *shpc, *tmpc, *tmp;
     shape *sh;
 
-    DBUG_ENTER ("ComputeGeneratorProperties");
+    DBUG_ENTER ();
 
     lbe = WITH_BOUND1 (wl);
     ube = WITH_BOUND2 (wl);
@@ -600,8 +603,8 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
     ubc = (ubc != NULL ? COfreeConstant (ubc) : NULL);
     lbc = (lbc != NULL ? COfreeConstant (lbc) : NULL);
 
-    DBUG_PRINT ("WLPG", ("generator property of with loop in line %d : %s",
-                         global.linenum, gen_prop_str[res]));
+    DBUG_PRINT ("generator property of with loop in line %d : %s", global.linenum,
+                gen_prop_str[res]);
     DBUG_RETURN (res);
 }
 
@@ -621,7 +624,7 @@ ComputeGeneratorProperties (node *wl, shape *max_shp)
 node *
 WLAwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLAwith");
+    DBUG_ENTER ();
 
     /*
      * traverse the one and only (!) regular PART.
@@ -630,7 +633,7 @@ WLAwith (node *arg_node, info *arg_info)
      *
      *  INFO_WLPG_GENSHP(arg_info) and INFO_WLPG_GENPROP(arg_info) !!
      */
-    DBUG_ASSERT ((WITH_PART (arg_node) != NULL),
+    DBUG_ASSERT (WITH_PART (arg_node) != NULL,
                  "WITH_PARTS is -1 although no PART is available!");
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
@@ -657,7 +660,7 @@ WLAwith (node *arg_node, info *arg_info)
 node *
 WLApart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLApart");
+    DBUG_ENTER ();
 
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
@@ -711,7 +714,7 @@ WLAgenerator (node *arg_node, info *arg_info)
     gen_prop_t gprop;
     gen_shape_t current_shape, gshape;
 
-    DBUG_ENTER ("WLAgenerator");
+    DBUG_ENTER ();
 
     wln = INFO_WL (arg_info);
     f_def = INFO_FUNDEF (arg_info);
@@ -833,7 +836,7 @@ WLAgenarray (node *arg_node, info *arg_info)
     node *fundef;
     gen_shape_t current_shape;
 
-    DBUG_ENTER ("WLAgenarray");
+    DBUG_ENTER ();
 
     fundef = INFO_FUNDEF (arg_info);
 
@@ -897,9 +900,9 @@ WLAdoWlAnalysis (node *arg_node, node *fundef, node *let, node **nassigns,
 {
     info *arg_info;
 
-    DBUG_ENTER ("WLAdoWlAnalysis");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_with),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_with,
                  "WLAnalysis not started with N_with node");
 
     DBUG_ASSERT (TUshapeKnown (IDS_NTYPE (WITH_VEC (arg_node))),
@@ -909,9 +912,9 @@ WLAdoWlAnalysis (node *arg_node, node *fundef, node *let, node **nassigns,
 
     DBUG_ASSERT ((let != NULL && NODE_TYPE (let) == N_let), "no N_let found");
 
-    DBUG_ASSERT (((*nassigns) == NULL), "nassigns should point to Null");
+    DBUG_ASSERT ((*nassigns) == NULL, "nassigns should point to Null");
 
-    DBUG_PRINT ("WLPG", ("starting with-loop analysis"));
+    DBUG_PRINT ("starting with-loop analysis");
 
     arg_info = MakeInfo ();
 
@@ -927,9 +930,11 @@ WLAdoWlAnalysis (node *arg_node, node *fundef, node *let, node **nassigns,
     (*gprop) = INFO_GENPROP (arg_info);
     (*nassigns) = INFO_NASSIGNS (arg_info);
 
-    DBUG_PRINT ("WLPG", ("with-loop analysis complete"));
+    DBUG_PRINT ("with-loop analysis complete");
 
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

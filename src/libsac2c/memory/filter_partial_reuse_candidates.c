@@ -41,7 +41,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -67,7 +70,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -79,7 +82,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -105,7 +108,7 @@ FPRCdoFilterPartialReuseCandidates (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("FPRCdoFilterPartialReuseCandidates");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -139,7 +142,7 @@ FPRCdoFilterPartialReuseCandidates (node *syntax_tree)
 static node *
 FilterPRC (node *arg_node)
 {
-    DBUG_ENTER ("FilterPRC");
+    DBUG_ENTER ();
 
     if (arg_node != NULL) {
         EXPRS_NEXT (arg_node) = FilterPRC (EXPRS_NEXT (arg_node));
@@ -176,7 +179,7 @@ FilterPRC (node *arg_node)
 node *
 FPRCblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FPRCblock");
+    DBUG_ENTER ();
 
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
 
@@ -197,7 +200,7 @@ FPRCblock (node *arg_node, info *arg_info)
 node *
 FPRCavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FPRCavis");
+    DBUG_ENTER ();
 
     AVIS_ISUSED (arg_node) = FALSE;
 
@@ -214,7 +217,7 @@ FPRCavis (node *arg_node, info *arg_info)
 node *
 FPRCassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FPRCassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -233,7 +236,7 @@ FPRCassign (node *arg_node, info *arg_info)
 node *
 FPRCwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FPRCwith");
+    DBUG_ENTER ();
 
     WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
@@ -252,7 +255,7 @@ FPRCwith (node *arg_node, info *arg_info)
 node *
 FPRCgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FPRCgenarray");
+    DBUG_ENTER ();
 
     GENARRAY_RC (arg_node) = TRAVopt (GENARRAY_RC (arg_node), arg_info);
 
@@ -273,7 +276,7 @@ FPRCgenarray (node *arg_node, info *arg_info)
 node *
 FPRCid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FPRCid");
+    DBUG_ENTER ();
 
     AVIS_ISUSED (ID_AVIS (arg_node)) = TRUE;
 
@@ -290,7 +293,7 @@ FPRCid (node *arg_node, info *arg_info)
 node *
 FPRCprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FPRCprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_idx_sel:
@@ -310,3 +313,5 @@ FPRCprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Filter Partial Reuse Candidates -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

@@ -17,7 +17,10 @@
 #include "traverse.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "globals.h"
 #include "type_utils.h"
 #include "new_types.h"
@@ -66,7 +69,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -89,7 +92,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -102,7 +105,7 @@ CheckApIds (node *ids)
     bool res = TRUE;
     ntype *type;
 
-    DBUG_ENTER ("CheckApIds");
+    DBUG_ENTER ();
 
     while (ids != NULL) {
         type = IDS_NTYPE (ids);
@@ -121,7 +124,7 @@ IsIdCudaDefined (node *id, info *arg_info)
     node *ssa;
     ntype *type;
 
-    DBUG_ENTER ("IsIdCudaDefined");
+    DBUG_ENTER ();
 
     /* Get the SSAASSIGN of this N_id */
     ssa = ID_SSAASSIGN (id);
@@ -167,7 +170,7 @@ IsIdCudaDefined (node *id, info *arg_info)
             res = TRUE;
         }
     } else {
-        DBUG_ASSERT ((0), "N_id's SSAASSIGN is NULL but it's not a function argument!");
+        DBUG_ASSERT (0, "N_id's SSAASSIGN is NULL but it's not a function argument!");
     }
 
     DBUG_RETURN (res);
@@ -178,7 +181,7 @@ HasCudaDefinedId (node *ap_args, info *arg_info)
 {
     bool res = FALSE;
 
-    DBUG_ENTER ("HasCudaDefinedId");
+    DBUG_ENTER ();
 
     while (ap_args != NULL) {
         if (IsIdCudaDefined (EXPRS_EXPR (ap_args), arg_info)) {
@@ -197,7 +200,7 @@ TraverseLacFun (node *fundef, node *ap, info *arg_info)
     node *old_fundef, *old_fundefargs, *old_apargs;
     bool old_fromap;
 
-    DBUG_ENTER ("TraverseLacFun");
+    DBUG_ENTER ();
 
     /* Push info */
     old_fundef = INFO_FUNDEF (arg_info);
@@ -226,10 +229,10 @@ GetApArgFromFundefArg (node *apargs, node *fundefargs, node *arg)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("GetApArgFromFundefArg");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((fundefargs != NULL), "Function argument list is NULL!");
-    DBUG_ASSERT ((apargs != NULL), "Application parameter list is NULL!");
+    DBUG_ASSERT (fundefargs != NULL, "Function argument list is NULL!");
+    DBUG_ASSERT (apargs != NULL, "Application parameter list is NULL!");
 
     while (apargs != NULL) {
         if (fundefargs == arg) {
@@ -240,7 +243,7 @@ GetApArgFromFundefArg (node *apargs, node *fundefargs, node *arg)
         fundefargs = ARG_NEXT (fundefargs);
     }
 
-    DBUG_ASSERT ((res != NULL), "No matching application arg found for fundef arg!");
+    DBUG_ASSERT (res != NULL, "No matching application arg found for fundef arg!");
 
     DBUG_RETURN (res);
 }
@@ -258,7 +261,7 @@ GetApArgFromFundefArg (node *apargs, node *fundefargs, node *arg)
 static node *
 ATravFundefCheckCudarizable (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravFundefCheckCudarizable");
+    DBUG_ENTER ();
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
@@ -280,7 +283,7 @@ ATravApCheckCudarizable (node *arg_node, info *arg_info)
 {
     node *fundef;
 
-    DBUG_ENTER ("ATravApCheckCudarizable");
+    DBUG_ENTER ();
 
     fundef = AP_FUNDEF (arg_node);
 
@@ -315,7 +318,7 @@ ATravApCheckCudarizable (node *arg_node, info *arg_info)
 static node *
 ATravWithCheckCudarizable (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravWithCheckCudarizable");
+    DBUG_ENTER ();
 
     /* Any withloops within a lac function makes it un-cudarizable */
     INFO_AT_ISCUDARIZABLE (arg_info) = FALSE;
@@ -336,7 +339,7 @@ ATravWithCheckCudarizable (node *arg_node, info *arg_info)
 static node *
 ATravFundefWLCount (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravFundefWLCount");
+    DBUG_ENTER ();
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
@@ -356,7 +359,7 @@ ATravFundefWLCount (node *arg_node, info *arg_info)
 static node *
 ATravWithWLCount (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravWithWLCount");
+    DBUG_ENTER ();
 
     INFO_AT_WLCOUNT (arg_info)++;
 
@@ -379,7 +382,7 @@ CUTEMdoTagExecutionmode (node *syntax_tree)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CUTagExecutionmode");
+    DBUG_ENTER ();
 
     TRAVpush (TR_cutem);
 
@@ -424,7 +427,7 @@ CUTEMfundef (node *arg_node, info *arg_info)
 {
     info *anon_info;
 
-    DBUG_ENTER ("CUTEMfundef");
+    DBUG_ENTER ();
 
     /************ Anonymous Traversal ************/
     anontrav_t atrav[3]
@@ -475,7 +478,7 @@ CUTEMfundef (node *arg_node, info *arg_info)
 node *
 CUTEMarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUTEMarg");
+    DBUG_ENTER ();
 
     /* We initilise IsHostReferenced in the first iteration of TAG traversal.
      * This is needed only once since once the flag has been changed to TRUE,
@@ -503,7 +506,7 @@ CUTEMarg (node *arg_node, info *arg_info)
 node *
 CUTEMblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUTEMblock");
+    DBUG_ENTER ();
 
     /* Must traverse all vardecs before traversing the body */
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
@@ -526,7 +529,7 @@ CUTEMblock (node *arg_node, info *arg_info)
 node *
 CUTEMvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUTEMvardec");
+    DBUG_ENTER ();
 
     /* We initilise IsHostReferenced in the first iteration of TAG traversal.
      * This is needed only once since once the flag has been changed to TRUE,
@@ -557,7 +560,7 @@ CUTEMassign (node *arg_node, info *arg_info)
     node *old_assign;
     cudaexecmode_t old_mode;
 
-    DBUG_ENTER ("CUTEMassign");
+    DBUG_ENTER ();
 
     old_assign = INFO_LASTASSIGN (arg_info);
     INFO_LASTASSIGN (arg_info) = arg_node;
@@ -601,10 +604,10 @@ CUTEMassign (node *arg_node, info *arg_info)
         if (INFO_INWITH (arg_info) || INFO_INCOND (arg_info)) {
             ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
         } else {
-            DBUG_ASSERT ((0), "Wrong traverse mode in CUTEMassign!");
+            DBUG_ASSERT (0, "Wrong traverse mode in CUTEMassign!");
         }
     } else {
-        DBUG_ASSERT ((0), "Unknown traverse mode in CUTEMassign!");
+        DBUG_ASSERT (0, "Unknown traverse mode in CUTEMassign!");
     }
 
     INFO_LASTASSIGN (arg_info) = old_assign;
@@ -629,7 +632,7 @@ CUTEMcond (node *arg_node, info *arg_info)
 {
     bool old_incond;
 
-    DBUG_ENTER ("CUTEMcond");
+    DBUG_ENTER ();
 
     /* We do not traverse the conditional in a do-fun, i.e. recursive call. */
     if (INFO_TRAVMODE (arg_info) == cutem_tag
@@ -647,7 +650,7 @@ CUTEMcond (node *arg_node, info *arg_info)
         COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
         INFO_INCOND (arg_info) = old_incond;
     } else {
-        DBUG_ASSERT ((0), "Unknown traverse mode in CUTEMcond!");
+        DBUG_ASSERT (0, "Unknown traverse mode in CUTEMcond!");
     }
 
     DBUG_RETURN (arg_node);
@@ -667,7 +670,7 @@ CUTEMcond (node *arg_node, info *arg_info)
 node *
 CUTEMlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUTEMlet");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == cutem_tag
         || INFO_TRAVMODE (arg_info) == cutem_untag) {
@@ -681,7 +684,7 @@ CUTEMlet (node *arg_node, info *arg_info)
     } else if (INFO_TRAVMODE (arg_info) == cutem_update) {
         LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
     } else {
-        DBUG_ASSERT ((0), "Unknown traverse mode in CUTEMlet!");
+        DBUG_ASSERT (0, "Unknown traverse mode in CUTEMlet!");
     }
 
     DBUG_RETURN (arg_node);
@@ -701,7 +704,7 @@ CUTEMlet (node *arg_node, info *arg_info)
 node *
 CUTEMids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUTEMids");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == cutem_tag) {
         /* Currently, we allow the LHS to be anything (e.g scalar, AKS, AKD, AUD)
@@ -720,7 +723,7 @@ CUTEMids (node *arg_node, info *arg_info)
             ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
         }
     } else {
-        DBUG_ASSERT ((0), "Invalid traverse mode!");
+        DBUG_ASSERT (0, "Invalid traverse mode!");
     }
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -744,7 +747,7 @@ CUTEMid (node *arg_node, info *arg_info)
 {
     node *lastassign, *param;
 
-    DBUG_ENTER ("CUTEMid");
+    DBUG_ENTER ();
 
     lastassign = INFO_LASTASSIGN (arg_info);
 
@@ -804,7 +807,7 @@ CUTEMap (node *arg_node, info *arg_info)
     node *fundef = NULL;
     info *anon_info;
 
-    DBUG_ENTER ("CUTEMap");
+    DBUG_ENTER ();
 
     fundef = AP_FUNDEF (arg_node);
 
@@ -881,7 +884,7 @@ CUTEMap (node *arg_node, info *arg_info)
             INFO_DOFUNARGS (arg_info) = FALSE;
         }
     } else {
-        DBUG_ASSERT ((0), "Invalid traverse mode!");
+        DBUG_ASSERT (0, "Invalid traverse mode!");
     }
 
     DBUG_RETURN (arg_node);
@@ -903,7 +906,7 @@ CUTEMwith (node *arg_node, info *arg_info)
 {
     bool old_inwith;
 
-    DBUG_ENTER ("CUTEMwith");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == cutem_tag) {
         /* Cudarizbale N_with is tagged as CUDA_DEVICE_MULTI */
@@ -925,3 +928,5 @@ CUTEMwith (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

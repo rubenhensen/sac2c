@@ -23,7 +23,9 @@
  *****************************************************************************/
 #include "count_spawn_sync.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "CSS"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
@@ -53,7 +55,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -66,7 +68,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -94,8 +96,8 @@ node *
 CSSdoCountSpawnSync (node *argnode)
 {
     info *info;
-    DBUG_ENTER ("CSSdoCountSpawnSync");
-    DBUG_PRINT ("CSS", ("Counting spawn and sync nodes"));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Counting spawn and sync nodes");
 
     info = MakeInfo ();
 
@@ -137,17 +139,17 @@ CSSdoCountSpawnSync (node *argnode)
 node *
 CSSfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSSfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("CSS", ("traversing body of (%s) %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                        FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("traversing body of (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
 
     if (FUNDEF_CONTAINSSPAWN (arg_node)) {
         INFO_COUNT (arg_info) = 0;
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-        DBUG_PRINT ("CSS", ("Num Found: %i", INFO_COUNT (arg_info)));
+        DBUG_PRINT ("Num Found: %i", INFO_COUNT (arg_info));
         FUNDEF_NUMSPAWNSYNC (arg_node) = INFO_COUNT (arg_info);
     }
 
@@ -173,7 +175,7 @@ CSSfundef (node *arg_node, info *arg_info)
 node *
 CSSlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSSlet");
+    DBUG_ENTER ();
 
     INFO_LET (arg_info) = arg_node;
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -196,10 +198,10 @@ CSSlet (node *arg_node, info *arg_info)
 node *
 CSSap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSSap");
+    DBUG_ENTER ();
 
     if (AP_ISSPAWNED (arg_node)) {
-        DBUG_PRINT ("CSS", ("Spawn index: %d", INFO_COUNT (arg_info)));
+        DBUG_PRINT ("Spawn index: %d", INFO_COUNT (arg_info));
         // check: does inc and assign work okay at same time?
         LET_SPAWNSYNCINDEX (INFO_LET (arg_info)) = INFO_COUNT (arg_info)++;
     }
@@ -222,10 +224,10 @@ CSSap (node *arg_node, info *arg_info)
 node *
 CSSprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSSprf");
+    DBUG_ENTER ();
 
     if (PRF_PRF (arg_node) == F_sync) {
-        DBUG_PRINT ("CSS", ("Sync index:  %d", INFO_COUNT (arg_info)));
+        DBUG_PRINT ("Sync index:  %d", INFO_COUNT (arg_info));
         // check: does inc and assign work okay at same time?
         LET_SPAWNSYNCINDEX (INFO_LET (arg_info)) = INFO_COUNT (arg_info)++;
     }
@@ -240,3 +242,5 @@ CSSprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Tag Ap Nodes -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

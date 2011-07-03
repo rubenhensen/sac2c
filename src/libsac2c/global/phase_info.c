@@ -10,7 +10,9 @@
 
 #include "phase_info.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "phase.h"
 #include "globals.h"
 #include "phase_drivers.h"
@@ -41,7 +43,7 @@
 static node *
 DummyPhaseFun (node *syntax_tree)
 {
-    DBUG_ENTER ("DummyPhaseFun");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (FALSE, "This function should never be called.");
 
@@ -60,7 +62,7 @@ DummyPhaseFun (node *syntax_tree)
 phase_fun_t
 PHIphaseFun (compiler_phase_t phase)
 {
-    DBUG_ENTER ("PHIphaseFun");
+    DBUG_ENTER ();
 
     static const phase_fun_t phase_fun[] = {DummyPhaseFun,
 #include "phase_sac2c.mac"
@@ -92,7 +94,7 @@ PHIphaseFun (compiler_phase_t phase)
 const char *
 PHIphaseText (compiler_phase_t phase)
 {
-    DBUG_ENTER ("PHIphaseText");
+    DBUG_ENTER ();
 
     static const char *phase_text[] = {"initial",
 #include "phase_sac2c.mac"
@@ -124,7 +126,7 @@ PHIphaseText (compiler_phase_t phase)
 phase_type_t
 PHIphaseType (compiler_phase_t phase)
 {
-    DBUG_ENTER ("PHIphaseType");
+    DBUG_ENTER ();
 
     static phase_type_t phase_type[] = {PHT_dummy,
 #include "phase_sac2c.mac"
@@ -156,7 +158,7 @@ PHIphaseType (compiler_phase_t phase)
 const char *
 PHIphaseName (compiler_phase_t phase)
 {
-    DBUG_ENTER ("PHIphaseName");
+    DBUG_ENTER ();
 
     static const char *phase_name[] = {"initial",
 #include "phase_sac2c.mac"
@@ -193,7 +195,7 @@ PHIphaseName (compiler_phase_t phase)
 compiler_phase_t
 PHIphaseParent (compiler_phase_t phase)
 {
-    DBUG_ENTER ("PHIphaseParent");
+    DBUG_ENTER ();
 
     static compiler_phase_t phase_parent[] = {PH_initial,
 #include "phase_sac2c.mac"
@@ -230,7 +232,7 @@ PHIphaseParent (compiler_phase_t phase)
 const char *
 PHIphaseIdent (compiler_phase_t phase)
 {
-    DBUG_ENTER ("PHIphaseIdent");
+    DBUG_ENTER ();
 
     static const char *phase_ident[] = {"",
 #include "phase_sac2c.mac"
@@ -262,7 +264,7 @@ PHIphaseIdent (compiler_phase_t phase)
 bool
 PHIisFunBased (compiler_phase_t phase)
 {
-    DBUG_ENTER ("PHIisFunBased");
+    DBUG_ENTER ();
 
     static bool phase_isfunbased[] = {FALSE,
 #include "phase_sac2c.mac"
@@ -287,7 +289,7 @@ PHIfirstPhase ()
 {
     compiler_phase_t result = PH_undefined;
 
-    DBUG_ENTER ("PHIfirstPhase");
+    DBUG_ENTER ();
 
     switch (global.tool) {
     case TOOL_sac2c:
@@ -309,7 +311,7 @@ PHIlastPhase ()
 {
     compiler_phase_t result = PH_undefined;
 
-    DBUG_ENTER ("PHIlastPhase");
+    DBUG_ENTER ();
 
     switch (global.tool) {
     case TOOL_sac2c:
@@ -325,3 +327,5 @@ PHIlastPhase ()
 
     DBUG_RETURN (result);
 }
+
+#undef DBUG_PREFIX

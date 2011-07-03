@@ -2,7 +2,9 @@
  * $Id$
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "free.h"
 #include "str.h"
@@ -97,7 +99,7 @@ InsertIntoRepository (udt_entry *entry)
     udt_entry **new_rep;
     int i;
 
-    DBUG_ENTER ("InsertIntoRepository");
+    DBUG_ENTER ();
 
     /*
      * Before putting the new entry into the repository, we have to make sure
@@ -137,7 +139,7 @@ UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, int lineno
     udt_entry *entry;
     usertype result;
 
-    DBUG_ENTER ("UTaddUserType");
+    DBUG_ENTER ();
 
     /*
      * First, we generate the desired entry:
@@ -177,8 +179,8 @@ UTaddAlias (char *name, namespace_t *ns, usertype alias, int lineno, node *tdef)
     udt_entry *entry;
     int result;
 
-    DBUG_ENTER ("UTaddAlias");
-    DBUG_ASSERT ((alias < udt_no), "alias in UTaddAlias out of range");
+    DBUG_ENTER ();
+    DBUG_ASSERT (alias < udt_no, "alias in UTaddAlias out of range");
 
     entry = (udt_entry *)MEMmalloc (sizeof (udt_entry));
     ENTRY_NAME (entry) = name;
@@ -213,10 +215,10 @@ UTfindUserType (const char *name, const namespace_t *ns)
 {
     int res, res2;
 
-    DBUG_ENTER ("UTfindUserType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((UT_NOT_DEFINED == -1), "Invalid definition of UT_NOT_DEFINED");
-    DBUG_ASSERT ((name != NULL), "UTFindUserType called with NULL name!");
+    DBUG_ASSERT (UT_NOT_DEFINED == -1, "Invalid definition of UT_NOT_DEFINED");
+    DBUG_ASSERT (name != NULL, "UTFindUserType called with NULL name!");
 
     res = udt_no - 1;
     if (ns == NULL) {
@@ -256,7 +258,7 @@ UTfindUserType (const char *name, const namespace_t *ns)
 int
 UTgetNumberOfUserTypes ()
 {
-    DBUG_ENTER ("UTgetNumberOfUserTypes");
+    DBUG_ENTER ();
 
     DBUG_RETURN (udt_no);
 }
@@ -280,7 +282,7 @@ UTgetNumberOfUserTypes ()
 const namespace_t *
 UTgetNamespace (usertype udt)
 {
-    DBUG_ENTER ("UTgetNamespace");
+    DBUG_ENTER ();
     DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
                  "UTgetNamespace called with illegal udt!");
 
@@ -290,7 +292,7 @@ UTgetNamespace (usertype udt)
 char *
 UTgetName (usertype udt)
 {
-    DBUG_ENTER ("UTgetName");
+    DBUG_ENTER ();
     DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
                  "UTgetNamespace called with illegal udt!");
 
@@ -300,7 +302,7 @@ UTgetName (usertype udt)
 ntype *
 UTgetTypedef (usertype udt)
 {
-    DBUG_ENTER ("UTgetTypedef");
+    DBUG_ENTER ();
     DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
                  "UTgetNamespace called with illegal udt!");
 
@@ -310,7 +312,7 @@ UTgetTypedef (usertype udt)
 ntype *
 UTgetBaseType (usertype udt)
 {
-    DBUG_ENTER ("UTgetBaseType");
+    DBUG_ENTER ();
     DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
                  "UTgetNamespace called with illegal udt!");
 
@@ -320,7 +322,7 @@ UTgetBaseType (usertype udt)
 int
 UTgetLine (usertype udt)
 {
-    DBUG_ENTER ("UTgetLine");
+    DBUG_ENTER ();
     DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
                  "UTgetNamespace called with illegal udt!");
 
@@ -330,7 +332,7 @@ UTgetLine (usertype udt)
 node *
 UTgetTdef (usertype udt)
 {
-    DBUG_ENTER ("UTgetTdef");
+    DBUG_ENTER ();
     DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
                  "UTgetNamespace called with illegal udt!");
 
@@ -342,7 +344,7 @@ UTgetAlias (usertype udt)
 {
     usertype alias;
 
-    DBUG_ENTER ("UTgetAlias");
+    DBUG_ENTER ();
     DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
                  "UTgetNamespace called with illegal udt!");
 
@@ -356,7 +358,7 @@ UTgetUnAliasedType (usertype udt)
 {
     usertype result;
 
-    DBUG_ENTER ("UTgetUnAliasedType");
+    DBUG_ENTER ();
     DBUG_ASSERT (((udt < udt_no) && (udt > UT_NOT_DEFINED)),
                  "UTgetNamespace called with illegal udt!");
 
@@ -386,42 +388,42 @@ UTgetUnAliasedType (usertype udt)
 void
 UTsetTypedef (usertype udt, ntype *type)
 {
-    DBUG_ENTER ("UTsetTypedef");
-    DBUG_ASSERT ((udt < udt_no), "UTsetTypedef called with illegal udt!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (udt < udt_no, "UTsetTypedef called with illegal udt!");
 
     ENTRY_DEF (udt_rep[udt]) = type;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 UTsetBaseType (usertype udt, ntype *type)
 {
-    DBUG_ENTER ("UTsetBaseType");
-    DBUG_ASSERT ((udt < udt_no), "UTsetBaseType called with illegal udt!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (udt < udt_no, "UTsetBaseType called with illegal udt!");
 
     ENTRY_BASE (udt_rep[udt]) = type;
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 UTsetName (usertype udt, const char *name)
 {
-    DBUG_ENTER ("UTsetName");
-    DBUG_ASSERT ((udt < udt_no), "UTsetName called with illegal udt!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (udt < udt_no, "UTsetName called with illegal udt!");
 
     ENTRY_NAME (udt_rep[udt]) = STRcpy (name);
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 UTsetNamespace (usertype udt, const namespace_t *ns)
 {
-    DBUG_ENTER ("UTsetNamespace");
-    DBUG_ASSERT ((udt < udt_no), "UTsetNamespace called with illegal udt!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (udt < udt_no, "UTsetNamespace called with illegal udt!");
 
     ENTRY_NS (udt_rep[udt]) = NSdupNamespace (ns);
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!-- ****************************************************************** -->
@@ -440,7 +442,7 @@ UTeq (usertype udt1, usertype udt2)
 {
     bool result;
 
-    DBUG_ENTER ("UTeq");
+    DBUG_ENTER ();
 
     result = (UTgetUnAliasedType (udt1) == UTgetUnAliasedType (udt2));
 
@@ -459,8 +461,8 @@ UTeq (usertype udt1, usertype udt2)
 bool
 UTisAlias (usertype udt)
 {
-    DBUG_ENTER ("UTisAlias");
-    DBUG_ASSERT ((udt < udt_no), "UTisAlias called with illegal udt!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (udt < udt_no, "UTisAlias called with illegal udt!");
 
     DBUG_RETURN (ENTRY_ALIAS (udt_rep[udt]) != UT_NOT_DEFINED);
 }
@@ -482,7 +484,7 @@ UTprintRepository (FILE *outfile)
 {
     int i;
 
-    DBUG_ENTER ("UTprintRepository");
+    DBUG_ENTER ();
 
     fprintf (outfile, "\n %4.4s " UTPRINT_FORMAT " %6s | %9s | %7s\n", "udt:", "module:",
              "name:", "defining type:", "base type:", "line:", "def node:", "alias:");
@@ -494,5 +496,7 @@ UTprintRepository (FILE *outfile)
                  (void *)UTgetTdef (i), UTgetAlias (i));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

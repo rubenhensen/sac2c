@@ -26,7 +26,10 @@
 #include <stdlib.h>
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "memory.h"
 #include "NumLookUpTable.h"
@@ -75,7 +78,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -96,7 +99,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -110,7 +113,7 @@ FreeInfo (info *info)
 static node *
 GetFundefArgFromApArg (node *fundef_args, node *ap_args, node *id)
 {
-    DBUG_ENTER ("GetFundefArgFromApArg");
+    DBUG_ENTER ();
 
     while (fundef_args != NULL) {
         if (EXPRS_EXPR (ap_args) == id)
@@ -119,7 +122,7 @@ GetFundefArgFromApArg (node *fundef_args, node *ap_args, node *id)
         ap_args = EXPRS_NEXT (ap_args);
     }
 
-    DBUG_ASSERT ((fundef_args != NULL), "No matching N_fundef arg found!");
+    DBUG_ASSERT (fundef_args != NULL, "No matching N_fundef arg found!");
 
     DBUG_RETURN (fundef_args);
 }
@@ -139,7 +142,7 @@ node *
 AMTRANdoAnnotateMemoryTransfers (node *syntax_tree)
 {
     info *info;
-    DBUG_ENTER ("AMTRANdoAnnotateMemoryTransfers");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_amtran);
@@ -171,7 +174,7 @@ AMTRANdoAnnotateMemoryTransfers (node *syntax_tree)
 node *
 AMTRANfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AMTRANfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
@@ -216,7 +219,7 @@ AMTRANfundef (node *arg_node, info *arg_info)
 node *
 AMTRANarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AMTRANarg");
+    DBUG_ENTER ();
 
     /* N_arg->linksign is reused here to assign each argument
      * of a do-fun a sequential number starting from 0. */
@@ -239,7 +242,7 @@ AMTRANarg (node *arg_node, info *arg_info)
 node *
 AMTRANassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AMTRANassign");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == trav_consolidate) {
         /* Bottom-up traversal */
@@ -265,7 +268,7 @@ AMTRANassign (node *arg_node, info *arg_info)
 node *
 AMTRANlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AMTRANlet");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == trav_consolidate) {
         /* If we have assignment such as A = B; and the use count
@@ -307,7 +310,7 @@ AMTRANlet (node *arg_node, info *arg_info)
 node *
 AMTRANfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AMTRANfuncond");
+    DBUG_ENTER ();
 
     /* N_funcond can only appear after the recurive do-fun application(?).
      * The N_funcond selects either the value returned from the
@@ -336,7 +339,7 @@ AMTRANfuncond (node *arg_node, info *arg_info)
 node *
 AMTRANap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AMTRANap");
+    DBUG_ENTER ();
 
     if (INFO_INDOFUN (arg_info)) {
         /* If the N_ap is a recursive do-fun application
@@ -380,7 +383,7 @@ AMTRANap (node *arg_node, info *arg_info)
 node *
 AMTRANid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AMTRANid");
+    DBUG_ENTER ();
 
     if (INFO_INDOFUN (arg_info)) {
         if (INFO_TRAVMODE (arg_info) == trav_collect) {
@@ -477,7 +480,7 @@ node *
 AMTRANprf (node *arg_node, info *arg_info)
 {
     node *id;
-    DBUG_ENTER ("AMTRANprf");
+    DBUG_ENTER ();
 
     if (INFO_INDOFUN (arg_info)) {
         switch (PRF_PRF (arg_node)) {
@@ -621,3 +624,5 @@ AMTRANprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

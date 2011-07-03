@@ -12,7 +12,10 @@
 #include "filemgr.h"
 #include "stringset.h"
 #include "tree_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "new_types.h"
@@ -44,7 +47,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -57,7 +60,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     INFO_GDP_DEPS (info) = STRSfree (INFO_GDP_DEPS (info));
     INFO_GDP_MODULE (info) = NULL;
@@ -70,7 +73,7 @@ FreeInfo (info *info)
 static void
 AddNamespaceToDependencies (const namespace_t *ns, info *info)
 {
-    DBUG_ENTER ("AddNamespaceToDependencies");
+    DBUG_ENTER ();
 
     if (ns != NULL) {
         if (!NSequals (MODULE_NAMESPACE (INFO_GDP_MODULE (info)), ns)) {
@@ -83,13 +86,13 @@ AddNamespaceToDependencies (const namespace_t *ns, info *info)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 AddModuleToDependencies (const char *mod, info *info)
 {
-    DBUG_ENTER ("AddModuleToDependencies");
+    DBUG_ENTER ();
 
     if (mod != NULL) {
         if (!STReq (NSgetName (MODULE_NAMESPACE (INFO_GDP_MODULE (info))), mod)) {
@@ -101,7 +104,7 @@ AddModuleToDependencies (const char *mod, info *info)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static ntype *
@@ -109,7 +112,7 @@ GDPntype (ntype *arg_type, info *arg_info)
 {
     ntype *scalar;
 
-    DBUG_ENTER ("GDPntype");
+    DBUG_ENTER ();
 
     if (arg_type != NULL) {
         if (TYisArray (arg_type)) {
@@ -129,7 +132,7 @@ GDPntype (ntype *arg_type, info *arg_info)
 node *
 GDPspid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GDPspid");
+    DBUG_ENTER ();
 
     AddNamespaceToDependencies (SPID_NS (arg_node), arg_info);
 
@@ -141,7 +144,7 @@ GDPspid (node *arg_node, info *arg_info)
 node *
 GDPspfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GDPspfold");
+    DBUG_ENTER ();
 
     AddNamespaceToDependencies (SPFOLD_NS (arg_node), arg_info);
 
@@ -153,7 +156,7 @@ GDPspfold (node *arg_node, info *arg_info)
 node *
 GDPtypedef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GDPtypedef");
+    DBUG_ENTER ();
 
     TYPEDEF_NTYPE (arg_node) = GDPntype (TYPEDEF_NTYPE (arg_node), arg_info);
 
@@ -165,7 +168,7 @@ GDPtypedef (node *arg_node, info *arg_info)
 node *
 GDPret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GDPret");
+    DBUG_ENTER ();
 
     RET_TYPE (arg_node) = GDPntype (RET_TYPE (arg_node), arg_info);
 
@@ -177,7 +180,7 @@ GDPret (node *arg_node, info *arg_info)
 node *
 GDPavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GDPavis");
+    DBUG_ENTER ();
 
     AVIS_TYPE (arg_node) = GDPntype (AVIS_TYPE (arg_node), arg_info);
 
@@ -189,7 +192,7 @@ GDPavis (node *arg_node, info *arg_info)
 node *
 GDPcast (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GDPcast");
+    DBUG_ENTER ();
 
     CAST_NTYPE (arg_node) = GDPntype (CAST_NTYPE (arg_node), arg_info);
 
@@ -201,7 +204,7 @@ GDPcast (node *arg_node, info *arg_info)
 node *
 GDPobjdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GDPobjdef");
+    DBUG_ENTER ();
 
     OBJDEF_TYPE (arg_node) = GDPntype (OBJDEF_TYPE (arg_node), arg_info);
 
@@ -215,7 +218,7 @@ GDPobjdef (node *arg_node, info *arg_info)
 node *
 GDPuse (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GDPuse");
+    DBUG_ENTER ();
 
     AddModuleToDependencies (USE_MOD (arg_node), arg_info);
 
@@ -227,7 +230,7 @@ GDPuse (node *arg_node, info *arg_info)
 node *
 GDPimport (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GDPimport");
+    DBUG_ENTER ();
 
     AddModuleToDependencies (IMPORT_MOD (arg_node), arg_info);
 
@@ -239,7 +242,7 @@ GDPimport (node *arg_node, info *arg_info)
 node *
 GDPmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GDPmodule");
+    DBUG_ENTER ();
 
     INFO_GDP_MODULE (arg_info) = arg_node;
 
@@ -255,7 +258,7 @@ GDPdoGatherDependencies (node *tree)
 {
     info *info;
 
-    DBUG_ENTER ("GDPdoGatherDependencies");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -269,3 +272,5 @@ GDPdoGatherDependencies (node *tree)
 
     DBUG_RETURN (tree);
 }
+
+#undef DBUG_PREFIX

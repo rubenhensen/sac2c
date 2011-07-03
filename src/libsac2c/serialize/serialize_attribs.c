@@ -35,7 +35,9 @@
 #include "globals.h"
 #include "constants.h"
 #include "namespaces.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "SET"
+#include "debug.h"
 
 /** <!--******************************************************************-->
  *
@@ -54,21 +56,21 @@ SATserializeString (info *info, char *attr, node *parent)
 {
     char *tmp;
 
-    DBUG_ENTER ("SATserializeString");
+    DBUG_ENTER ();
 
     if (attr == NULL) {
-        DBUG_PRINT ("SET", ("Processing String (null)"));
+        DBUG_PRINT ("Processing String (null)");
 
         fprintf (INFO_SER_FILE (info), "NULL");
     } else {
-        DBUG_PRINT ("SET", ("Processing String `%s'", attr));
+        DBUG_PRINT ("Processing String `%s'", attr);
 
         tmp = STRstring2SafeCEncoding (attr);
         fprintf (INFO_SER_FILE (info), "STRcpy(\"%s\")", tmp);
         tmp = MEMfree (tmp);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -86,11 +88,11 @@ SATserializeString (info *info, char *attr, node *parent)
 void
 SATserializeSharedString (info *info, char *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeSharedString");
+    DBUG_ENTER ();
 
     SATserializeString (info, attr, parent);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -108,11 +110,11 @@ SATserializeSharedString (info *info, char *attr, node *parent)
 void
 SATserializeInteger (info *info, int attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeInteger");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -130,11 +132,11 @@ SATserializeInteger (info *info, int attr, node *parent)
 void
 SATserializeByte (info *info, char attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeByte");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -152,11 +154,11 @@ SATserializeByte (info *info, char attr, node *parent)
 void
 SATserializeShort (info *info, short attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeShort");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -174,11 +176,11 @@ SATserializeShort (info *info, short attr, node *parent)
 void
 SATserializeInt (info *info, int attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeInt");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -196,11 +198,11 @@ SATserializeInt (info *info, int attr, node *parent)
 void
 SATserializeLong (info *info, long attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeLong");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%ld", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -218,11 +220,11 @@ SATserializeLong (info *info, long attr, node *parent)
 void
 SATserializeLonglong (info *info, long long attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeLonglong");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%lldLL", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -240,11 +242,11 @@ SATserializeLonglong (info *info, long long attr, node *parent)
 void
 SATserializeUbyte (info *info, unsigned char attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeUbyte");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%u", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -262,11 +264,11 @@ SATserializeUbyte (info *info, unsigned char attr, node *parent)
 void
 SATserializeUshort (info *info, unsigned short attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeUshort");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%u", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -284,11 +286,11 @@ SATserializeUshort (info *info, unsigned short attr, node *parent)
 void
 SATserializeUint (info *info, unsigned int attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeUint");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%u", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -306,11 +308,11 @@ SATserializeUint (info *info, unsigned int attr, node *parent)
 void
 SATserializeUlong (info *info, unsigned long attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeUlong");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%lu", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -328,11 +330,11 @@ SATserializeUlong (info *info, unsigned long attr, node *parent)
 void
 SATserializeUlonglong (info *info, unsigned long long attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeUlonglong");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%lluULL", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -350,11 +352,11 @@ SATserializeUlonglong (info *info, unsigned long long attr, node *parent)
 void
 SATserializeBool (info *info, bool attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeBool");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -374,7 +376,7 @@ SATserializeFloat (info *info, float attr, node *parent)
 {
     char *data;
 
-    DBUG_ENTER ("SATserializeFloat");
+    DBUG_ENTER ();
 
     data = STRbytes2Hex (sizeof (float), (unsigned char *)&attr);
 
@@ -382,7 +384,7 @@ SATserializeFloat (info *info, float attr, node *parent)
 
     data = MEMfree (data);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -402,7 +404,7 @@ SATserializeDouble (info *info, double attr, node *parent)
 {
     char *data;
 
-    DBUG_ENTER ("SATserializeDouble");
+    DBUG_ENTER ();
 
     data = STRbytes2Hex (sizeof (double), (unsigned char *)&attr);
 
@@ -410,7 +412,7 @@ SATserializeDouble (info *info, double attr, node *parent)
 
     data = MEMfree (data);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -428,11 +430,11 @@ SATserializeDouble (info *info, double attr, node *parent)
 void
 SATserializeChar (info *info, unsigned char attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeChar");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%u", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -450,7 +452,7 @@ SATserializeChar (info *info, unsigned char attr, node *parent)
 void
 SATserializeOldType (info *info, types *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeOldType");
+    DBUG_ENTER ();
 
     if (attr == NULL) {
         fprintf (INFO_SER_FILE (info), "NULL");
@@ -458,7 +460,7 @@ SATserializeOldType (info *info, types *attr, node *parent)
         fprintf (INFO_SER_FILE (info), "MakeTypes1( %d)", T_unknown);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -476,7 +478,7 @@ SATserializeOldType (info *info, types *attr, node *parent)
 void
 SATserializeNode (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeNode");
+    DBUG_ENTER ();
 
     if (attr == NULL) {
         fprintf (INFO_SER_FILE (info), "NULL");
@@ -487,7 +489,7 @@ SATserializeNode (info *info, node *attr, node *parent)
         fprintf (INFO_SER_FILE (info), ")");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -505,7 +507,7 @@ SATserializeNode (info *info, node *attr, node *parent)
 void
 SATserializeNamespace (info *info, namespace_t *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeNamespace");
+    DBUG_ENTER ();
 
     if (attr == NULL) {
         fprintf (INFO_SER_FILE (info), "NULL");
@@ -513,7 +515,7 @@ SATserializeNamespace (info *info, namespace_t *attr, node *parent)
         NSserializeNamespace (INFO_SER_FILE (info), attr);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -531,7 +533,7 @@ SATserializeNamespace (info *info, namespace_t *attr, node *parent)
 void
 SATserializeLink (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeLink");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         /*
@@ -551,8 +553,8 @@ SATserializeLink (info *info, node *attr, node *parent)
                 args = ARG_NEXT (args);
             }
 
-            DBUG_ASSERT ((args != NULL), "found a link to an ARG_AVIS which does not "
-                                         "belong to current fundef");
+            DBUG_ASSERT (args != NULL, "found a link to an ARG_AVIS which does not "
+                                       "belong to current fundef");
 
             fprintf (INFO_SER_FILE (info), "DSfetchArgAvis( %d)", pos);
         } else {
@@ -562,7 +564,7 @@ SATserializeLink (info *info, node *attr, node *parent)
         fprintf (INFO_SER_FILE (info), "NULL");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -580,7 +582,7 @@ SATserializeLink (info *info, node *attr, node *parent)
 void
 SATserializeExtLink (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeExtink");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         switch (NODE_TYPE (attr)) {
@@ -599,7 +601,7 @@ SATserializeExtLink (info *info, node *attr, node *parent)
         fprintf (INFO_SER_FILE (info), "NULL");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -617,7 +619,7 @@ SATserializeExtLink (info *info, node *attr, node *parent)
 void
 SATserializeCodeLink (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeCodeLink");
+    DBUG_ENTER ();
 
     /*
      * links to N_code nodes are serialized and deserialized
@@ -627,7 +629,7 @@ SATserializeCodeLink (info *info, node *attr, node *parent)
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -645,11 +647,11 @@ SATserializeCodeLink (info *info, node *attr, node *parent)
 void
 SATserializeFileType (info *info, file_type attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeFileType");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -667,11 +669,11 @@ SATserializeFileType (info *info, file_type attr, node *parent)
 void
 SATserializeLUT (info *info, lut_t *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeLUT");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -689,11 +691,11 @@ SATserializeLUT (info *info, lut_t *attr, node *parent)
 void
 SATserializePrf (info *info, prf attr, node *parent)
 {
-    DBUG_ENTER ("SATserializePrf");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -712,11 +714,11 @@ SATserializePrf (info *info, prf attr, node *parent)
 void
 SATserializeMask (info *info, int pos, long *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeMask");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -734,11 +736,11 @@ SATserializeMask (info *info, int pos, long *attr, node *parent)
 void
 SATserializeNodeList (info *info, nodelist *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeNodeList");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -756,11 +758,11 @@ SATserializeNodeList (info *info, nodelist *attr, node *parent)
 void
 SATserializeSharedNodeList (info *info, nodelist *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeSharedNodeList");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -778,11 +780,11 @@ SATserializeSharedNodeList (info *info, nodelist *attr, node *parent)
 void
 SATserializePragmaLink (info *info, node *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializePragmaLink");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -800,11 +802,11 @@ SATserializePragmaLink (info *info, node *attr, node *parent)
 void
 SATserializeDFMask (info *info, dfmask_t *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeDFMask");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -822,11 +824,11 @@ SATserializeDFMask (info *info, dfmask_t *attr, node *parent)
 void
 SATserializeDFMaskBase (info *info, dfmask_base_t *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeDFMaskBase");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -844,15 +846,15 @@ SATserializeDFMaskBase (info *info, dfmask_base_t *attr, node *parent)
 void
 SATserializeNewType (info *info, ntype *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeNewType");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("SET", ("Starting traversal for ntype attribute"));
+    DBUG_PRINT ("Starting traversal for ntype attribute");
 
     TYserializeType (INFO_SER_FILE (info), attr);
 
-    DBUG_PRINT ("SET", ("Finished traversal for ntype attribute"));
+    DBUG_PRINT ("Finished traversal for ntype attribute");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -870,11 +872,11 @@ SATserializeNewType (info *info, ntype *attr, node *parent)
 void
 SATserializeArgTab (info *info, argtab_t *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeArgTab");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -892,11 +894,11 @@ SATserializeArgTab (info *info, argtab_t *attr, node *parent)
 void
 SATserializeIndexPointer (info *info, index_info *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeIndexPointer");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -914,11 +916,11 @@ SATserializeIndexPointer (info *info, index_info *attr, node *parent)
 void
 SATserializeShape (info *info, shape *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeShape");
+    DBUG_ENTER ();
 
     SHserializeShape (INFO_SER_FILE (info), attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -936,11 +938,11 @@ SATserializeShape (info *info, shape *attr, node *parent)
 void
 SATserializeSimpleType (info *info, simpletype attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeSimpleType");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -958,11 +960,11 @@ SATserializeSimpleType (info *info, simpletype attr, node *parent)
 void
 SATserializeAccessInfo (info *info, access_info_t *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeAccessInfo");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -980,11 +982,11 @@ SATserializeAccessInfo (info *info, access_info_t *attr, node *parent)
 void
 SATserializeShpSeg (info *info, shpseg *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeShpSeg");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -1002,11 +1004,11 @@ SATserializeShpSeg (info *info, shpseg *attr, node *parent)
 void
 SATserializeIntegerPointer (info *info, int *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeIntegerPointer");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -1025,11 +1027,11 @@ SATserializeIntegerPointer (info *info, int *attr, node *parent)
 void
 SATserializeIntegerPointerArray (info *info, int pos, int *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeIntegerPointerArray");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -1047,11 +1049,11 @@ SATserializeIntegerPointerArray (info *info, int pos, int *attr, node *parent)
 void
 SATserializeScheduling (info *info, sched_t *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeScheduling");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -1069,11 +1071,11 @@ SATserializeScheduling (info *info, sched_t *attr, node *parent)
 void
 SATserializeTaskSel (info *info, tasksel_t *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeTaskSel");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -1091,11 +1093,11 @@ SATserializeTaskSel (info *info, tasksel_t *attr, node *parent)
 void
 SATserializeNodePointer (info *info, node **attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeNodePointer");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -1113,11 +1115,11 @@ SATserializeNodePointer (info *info, node **attr, node *parent)
 void
 SATserializeBitField (info *info, int attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeBitField");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -1135,11 +1137,11 @@ SATserializeBitField (info *info, int attr, node *parent)
 void
 SATserializeConstant (info *info, constant *attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeConstant");
+    DBUG_ENTER ();
 
     COserializeConstant (INFO_SER_FILE (info), attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -1157,11 +1159,11 @@ SATserializeConstant (info *info, constant *attr, node *parent)
 void
 SATserializeMTExecMode (info *info, mtexecmode_t attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeMTExecMode");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -1179,11 +1181,11 @@ SATserializeMTExecMode (info *info, mtexecmode_t attr, node *parent)
 void
 SATserializeTypeCheckingStatus (info *info, NTC_stat attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeTypeCheckingStatus");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -1201,11 +1203,11 @@ SATserializeTypeCheckingStatus (info *info, NTC_stat attr, node *parent)
 void
 SATserializeCompilerPhase (info *info, compiler_phase_t attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeTypeCheckingStatus");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -1223,11 +1225,11 @@ SATserializeCompilerPhase (info *info, compiler_phase_t attr, node *parent)
 void
 SATserializeCompInfoArr (info *info, compinfo **attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeCompInfoArr");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--******************************************************************-->
@@ -1244,12 +1246,14 @@ SATserializeCompInfoArr (info *info, compinfo **attr, node *parent)
 void
 SATserializeOmpOP (info *info, omp_reduction_op attr, node *parent)
 {
-    DBUG_ENTER ("SATserializeOmpOP");
+    DBUG_ENTER ();
 
     fprintf (INFO_SER_FILE (info), "%d", attr);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 /**
  * @}
  */
+
+#undef DBUG_PREFIX

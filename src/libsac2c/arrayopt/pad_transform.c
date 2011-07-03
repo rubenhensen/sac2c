@@ -4,7 +4,8 @@
  *
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "APT"
+#include "debug.h"
 
 #include "types.h"
 #include "tree_basic.h"
@@ -48,7 +49,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -64,7 +65,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -100,12 +101,12 @@ void
 APdoTransform (node *arg_node)
 {
 
-    DBUG_ENTER ("APtransform");
+    DBUG_ENTER ();
 
 #ifndef PADT_DEACTIVATED
     info *arg_info; /* before DBUG_ENTER */
 
-    DBUG_PRINT ("APT", ("Array Padding: applying transformation..."));
+    DBUG_PRINT ("Array Padding: applying transformation...");
 
     arg_info = MakeInfo ();
 
@@ -119,7 +120,7 @@ APdoTransform (node *arg_node)
 
 #endif /* PADT_DEACTVATED */
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -141,7 +142,7 @@ PadName (char *unpadded_name)
 
     char *padded_name;
 
-    DBUG_ENTER ("PadName");
+    DBUG_ENTER ();
 
     padded_name = (char *)MEMmalloc (STRlen (unpadded_name) + 6 * sizeof (char));
     strcpy (padded_name, unpadded_name);
@@ -168,18 +169,17 @@ static void
 PadIds (node *arg, info *arg_info)
 {
 
-    DBUG_ENTER ("PadIds");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APT", ("check ids-attribute"));
+    DBUG_PRINT ("check ids-attribute");
 
     /* (for this test ensure that args and vardecs have been traversed previously!) */
     if (IDS_PADDED (arg)) {
-        DBUG_PRINT ("APT",
-                    (" padding: '%s' -> '%s'", IDS_NAME (arg), IDS_DECL_NAME (arg)));
+        DBUG_PRINT (" padding: '%s' -> '%s'", IDS_NAME (arg), IDS_DECL_NAME (arg));
         IDS_NAME (arg) = PadName (IDS_NAME (arg));
         INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
     } else {
-        DBUG_PRINT ("APT", (" leaving unpadded: '%s''", IDS_NAME (arg)));
+        DBUG_PRINT (" leaving unpadded: '%s''", IDS_NAME (arg));
         if ((NODE_TYPE (IDS_DECL (arg)) == N_vardec)
             && (VARDEC_PADDED (IDS_DECL (arg)))) {
             IDS_DECL (arg) = IDS_DECL_NEXT (arg);
@@ -188,7 +188,7 @@ PadIds (node *arg, info *arg_info)
         /* nothing to be done for arg-nodes */
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -209,7 +209,7 @@ LBound (shpseg *old_shape, int dims, int current_dim)
     int j;
     shpseg *lbound_shape;
 
-    DBUG_ENTER ("LBound");
+    DBUG_ENTER ();
 
     lbound_shape = TBmakeShpseg (NULL);
     for (j = 0; j < dims; j++) {
@@ -242,7 +242,7 @@ UBound (shpseg *old_shape, shpseg *new_shape, int dims, int current_dim)
     int j;
     shpseg *ubound_shape;
 
-    DBUG_ENTER ("UBound");
+    DBUG_ENTER ();
 
     ubound_shape = TBmakeShpseg (NULL);
     for (j = 0; j < dims; j++) {
@@ -282,7 +282,7 @@ AddDummyPart (node *wl, shpseg *old_shape, shpseg *new_shape, int dims)
     node *generator;
     node *code;
 
-    DBUG_ENTER ("AddDummyPart");
+    DBUG_ENTER ();
 
     /* dummy code put at the beginning of code-chain by AddDummyCode */
     code = WITH_CODE (wl);
@@ -344,7 +344,7 @@ AddDummyCode (node *wl)
     node *id;
     node *code;
 
-    DBUG_ENTER ("AddDummyCode");
+    DBUG_ENTER ();
 
     /* find last vardec */
 
@@ -364,7 +364,7 @@ AddDummyCode (node *wl)
 
     /* append new vardec-node */
     type = ID_TYPE (CODE_CEXPR (WITH_CODE (wl)));
-    DBUG_ASSERT ((TYPES_NEXT (type) == NULL), "single type expected");
+    DBUG_ASSERT (TYPES_NEXT (type) == NULL, "single type expected");
     VARDEC_NEXT (vardec) = TBmakeVardec (TRAVtmpVar (), DUPdupAllTypes (type), NULL);
     vardec = VARDEC_NEXT (vardec);
 
@@ -427,7 +427,7 @@ AddDummyCode (node *wl)
         break;
 
     default:
-        DBUG_ASSERT ((0), "unsupported type in with-loop!");
+        DBUG_ASSERT (0, "unsupported type in with-loop!");
         expr = NULL; /* just to avoid compiler warnings */
         break;
     }
@@ -490,7 +490,7 @@ InsertWithLoopGenerator (types *oldtype, types *newtype, node *wl)
     bool different = FALSE;
     int i;
 
-    DBUG_ENTER ("InsertWithLoopGenerator");
+    DBUG_ENTER ();
 
     /* calculate shape difference */
     shape_diff = TCdiffShpseg (TYPES_DIM (oldtype), TYPES_SHPSEG (newtype),
@@ -499,7 +499,7 @@ InsertWithLoopGenerator (types *oldtype, types *newtype, node *wl)
         if (SHPSEG_SHAPE (shape_diff, i) > 0) {
             different = TRUE;
         }
-        DBUG_ASSERT ((SHPSEG_SHAPE (shape_diff, i) >= 0), "negative shape difference");
+        DBUG_ASSERT (SHPSEG_SHAPE (shape_diff, i) >= 0, "negative shape difference");
     }
 
     if (different) {
@@ -512,7 +512,7 @@ InsertWithLoopGenerator (types *oldtype, types *newtype, node *wl)
                            TYPES_DIM (oldtype));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -531,19 +531,17 @@ APTarg (node *arg_node, info *arg_info)
 
     types *new_type;
 
-    DBUG_ENTER ("APTarg");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("APT",
-                  if (ARG_NAME (arg_node) != NULL) {
-                      DBUG_PRINT ("APT", ("check arg: %s", ARG_NAME (arg_node)));
-                  } else { DBUG_PRINT ("APT", ("check arg: (NULL)")); });
+    DBUG_EXECUTE (if (ARG_NAME (arg_node) != NULL) {
+        DBUG_PRINT ("APT", ("check arg: %s", ARG_NAME (arg_node)));
+    } else { DBUG_PRINT ("APT", ("check arg: (NULL)")); });
 
     new_type = PIgetNewType (ARG_TYPE (arg_node));
     if (new_type != NULL) {
         /* found shape to be padded */
         ARG_TYPE (arg_node) = new_type;
-        DBUG_PRINT ("APT", (" padding: %s -> %s__PAD", ARG_NAME (arg_node),
-                            ARG_NAME (arg_node)));
+        DBUG_PRINT (" padding: %s -> %s__PAD", ARG_NAME (arg_node), ARG_NAME (arg_node));
         ARG_NAME (arg_node) = PadName (ARG_NAME (arg_node));
         ARG_PADDED (arg_node) = TRUE;
     } else {
@@ -575,9 +573,9 @@ APTvardec (node *arg_node, info *arg_info)
     types *new_type;
     node *original_vardec;
 
-    DBUG_ENTER ("APTvardec");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APT", ("check vardec: %s", VARDEC_NAME (arg_node)));
+    DBUG_PRINT ("check vardec: %s", VARDEC_NAME (arg_node));
 
     original_vardec = DUPdoDupNode (arg_node);
 
@@ -586,8 +584,8 @@ APTvardec (node *arg_node, info *arg_info)
         /* found shape to be padded */
         VARDEC_NEXT (original_vardec) = VARDEC_NEXT (arg_node);
         VARDEC_TYPE (arg_node) = new_type;
-        DBUG_PRINT ("APT", (" padding: %s -> %s__PAD", VARDEC_NAME (arg_node),
-                            VARDEC_NAME (arg_node)));
+        DBUG_PRINT (" padding: %s -> %s__PAD", VARDEC_NAME (arg_node),
+                    VARDEC_NAME (arg_node));
 
         VARDEC_NAME (arg_node) = PadName (VARDEC_NAME (arg_node));
         VARDEC_NEXT (arg_node) = original_vardec;
@@ -630,13 +628,13 @@ APTassign (node *arg_node, info *arg_info)
     node *new_assigns;
     node *new_node;
 
-    DBUG_ENTER ("APTassign");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APT", ("assign-node detected"));
+    DBUG_PRINT ("assign-node detected");
 
     INFO_APT_ASSIGNMENTS (arg_info) = NULL;
 
-    DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "unexpected empty ASSIGN_INSTR");
+    DBUG_ASSERT (ASSIGN_INSTR (arg_node) != NULL, "unexpected empty ASSIGN_INSTR");
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     /* save new assigments */
@@ -683,12 +681,11 @@ node *
 APTarray (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("APTarray");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("APT",
-                  if (ARRAY_STRING (arg_node) != NULL) {
-                      DBUG_PRINT ("APT", (" trav array: %s", ARRAY_STRING (arg_node)));
-                  } else { DBUG_PRINT ("APT", (" trav array: (NULL)")); });
+    DBUG_EXECUTE (if (ARRAY_STRING (arg_node) != NULL) {
+        DBUG_PRINT ("APT", (" trav array: %s", ARRAY_STRING (arg_node)));
+    } else { DBUG_PRINT ("APT", (" trav array: (NULL)")); });
 
     /* constant arrays won't padded ! */
     INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
@@ -714,9 +711,9 @@ APTwith (node *arg_node, info *arg_info)
 
     node *save_ptr;
 
-    DBUG_ENTER ("APTwith");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APT", ("with-node detected"));
+    DBUG_PRINT ("with-node detected");
 
     /* save pointer to outer with-loop to support nested loops */
     save_ptr = INFO_APT_WITH (arg_info);
@@ -725,11 +722,11 @@ APTwith (node *arg_node, info *arg_info)
     INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
 
     /* check withop, if with-loop needs to be padded */
-    DBUG_ASSERT ((WITH_WITHOP (arg_node) != NULL), " unexpected empty WITHOP!");
+    DBUG_ASSERT (WITH_WITHOP (arg_node) != NULL, " unexpected empty WITHOP!");
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     /* arg_info passes check result to code-nodes */
-    DBUG_ASSERT ((WITH_CODE (arg_node) != NULL), " unexpected empty CODE!");
+    DBUG_ASSERT (WITH_CODE (arg_node) != NULL, " unexpected empty CODE!");
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     /* no need to traverse part-nodes */
@@ -759,19 +756,19 @@ APTcode (node *arg_node, info *arg_info)
     bool rhs_padded;
     bool save_padded_state;
 
-    DBUG_ENTER ("APTcode");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APT", ("code-node detected"));
+    DBUG_PRINT ("code-node detected");
 
     save_padded_state = INFO_APT_EXPRESSION_PADDED (arg_info);
 
     /* traverse code block */
-    DBUG_ASSERT ((CODE_CBLOCK (arg_node) != NULL), " unexpected empty CBLOCK!");
+    DBUG_ASSERT (CODE_CBLOCK (arg_node) != NULL, " unexpected empty CBLOCK!");
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
     rhs_padded = INFO_APT_EXPRESSION_PADDED (arg_info);
 
     /* traverse id-node (lvalue of assignment) */
-    DBUG_ASSERT ((CODE_CEXPR (arg_node) != NULL), " unexpected empty CEXPR!");
+    DBUG_ASSERT (CODE_CEXPR (arg_node) != NULL, " unexpected empty CEXPR!");
     CODE_CEXPR (arg_node) = TRAVdo (CODE_CEXPR (arg_node), arg_info);
 
     /*
@@ -812,16 +809,16 @@ APTgenarray (node *arg_node, info *arg_info)
     types *oldtype = NULL;
     types *newtype = NULL;
 
-    DBUG_ENTER ("APTgenarray");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APT", ("withop-node detected"));
+    DBUG_PRINT ("withop-node detected");
 
     INFO_APT_WITHOP_TYPE (arg_info) = NODE_TYPE (arg_node);
 
     /* set default - change it, if padding can be applied */
     INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
 
-    DBUG_PRINT ("APT", (" genarray-loop"));
+    DBUG_PRINT (" genarray-loop");
 
     shpseg = TCarray2Shpseg (GENARRAY_SHAPE (arg_node), NULL);
     /* constant array has dim=1
@@ -888,16 +885,16 @@ APTmodarray (node *arg_node, info *arg_info)
     types *oldtype = NULL;
     types *newtype = NULL;
 
-    DBUG_ENTER ("APTmodarray");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APT", ("withop-node detected"));
+    DBUG_PRINT ("withop-node detected");
 
     INFO_APT_WITHOP_TYPE (arg_info) = NODE_TYPE (arg_node);
 
     /* set default - change it, if padding can be applied */
     INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
 
-    DBUG_PRINT ("APT", (" modarray-loop"));
+    DBUG_PRINT (" modarray-loop");
 
     if (ID_PADDED (MODARRAY_ARRAY (arg_node))) {
         /* apply padding (modarray-specific)*/
@@ -907,7 +904,7 @@ APTmodarray (node *arg_node, info *arg_info)
         oldtype = PIgetOldType (DUPdupAllTypes (newtype));
 
         /* pad array referenced by WITHOP_ARRAY (pointing to id-node)*/
-        DBUG_ASSERT ((MODARRAY_ARRAY (arg_node) != NULL), " unexpected empty ARRAY!");
+        DBUG_ASSERT (MODARRAY_ARRAY (arg_node) != NULL, " unexpected empty ARRAY!");
         MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
 
         INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
@@ -945,16 +942,16 @@ APTfold (node *arg_node, info *arg_info)
     types *oldtype = NULL;
     types *newtype = NULL;
 
-    DBUG_ENTER ("APTwithop");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APT", ("withop-node detected"));
+    DBUG_PRINT ("withop-node detected");
 
     INFO_APT_WITHOP_TYPE (arg_info) = NODE_TYPE (arg_node);
 
     /* set default - change it, if padding can be applied */
     INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
 
-    DBUG_PRINT ("APT", (" foldfun-loop"));
+    DBUG_PRINT (" foldfun-loop");
 
     /* check all sons for paddable code */
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
@@ -989,14 +986,13 @@ node *
 APTap (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("APTap");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APT", ("ap-node detected"));
+    DBUG_PRINT ("ap-node detected");
 
-    DBUG_EXECUTE ("APT",
-                  if (AP_NAME (arg_node) != NULL) {
-                      DBUG_PRINT ("APT", (" trav ap: %s", AP_NAME (arg_node)));
-                  } else { DBUG_PRINT ("APT", (" trav ap: (NULL)")); });
+    DBUG_EXECUTE (if (AP_NAME (arg_node) != NULL) {
+        DBUG_PRINT ("APT", (" trav ap: %s", AP_NAME (arg_node)));
+    } else { DBUG_PRINT ("APT", (" trav ap: (NULL)")); });
 
     /* first inspect arguments */
     if (AP_ARGS (arg_node) != NULL) {
@@ -1030,25 +1026,24 @@ node *
 APTid (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("APTid");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("APT",
-                  if (ID_NAME (arg_node) != NULL) {
-                      DBUG_PRINT ("APT", ("check id: %s", ID_NAME (arg_node)));
-                  } else { DBUG_PRINT ("APT", ("check id: (NULL)")); });
+    DBUG_EXECUTE (if (ID_NAME (arg_node) != NULL) {
+        DBUG_PRINT ("APT", ("check id: %s", ID_NAME (arg_node)));
+    } else { DBUG_PRINT ("APT", ("check id: (NULL)")); });
 
     /*
      * for this test ensure that args and vardecs have been
      * previously traversed!
      */
     if (ID_PADDED (arg_node)) {
-        DBUG_PRINT ("APT", (" padding: '%s' -> '%s'", ID_NAME (arg_node),
-                            ID_DECL_NAME (arg_node)));
+        DBUG_PRINT (" padding: '%s' -> '%s'", ID_NAME (arg_node),
+                    ID_DECL_NAME (arg_node));
         ID_NAME (arg_node) = PadName (ID_NAME (arg_node));
         INFO_APT_EXPRESSION_PADDED (arg_info) = TRUE;
     } else {
         /* if not padded, update pointer to vardec */
-        DBUG_PRINT ("APT", (" leaving unpadded: '%s''", ID_NAME (arg_node)));
+        DBUG_PRINT (" leaving unpadded: '%s''", ID_NAME (arg_node));
         if ((NODE_TYPE (ID_DECL (arg_node)) == N_vardec)
             && (VARDEC_PADDED (ID_DECL (arg_node)))) {
             ID_DECL (arg_node) = ID_DECL_NEXT (arg_node);
@@ -1076,16 +1071,16 @@ node *
 APTprf (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("APTprf");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APT", ("prf-node detected: '%s'", global.prf_name[PRF_PRF (arg_node)]));
+    DBUG_PRINT ("prf-node detected: '%s'", global.prf_name[PRF_PRF (arg_node)]);
 
     /* only some PRFs may be padded successfully (without conversion) */
 
     switch (PRF_PRF (arg_node)) {
 
     case F_sel_VxA:
-        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " sel() has empty argument list!");
+        DBUG_ASSERT (PRF_ARGS (arg_node) != NULL, " sel() has empty argument list!");
         /* traverse arguments to apply padding */
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
@@ -1096,7 +1091,7 @@ APTprf (node *arg_node, info *arg_info)
         break;
 
     case F_dim_A:
-        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " dim() has empty argument list!");
+        DBUG_ASSERT (PRF_ARGS (arg_node) != NULL, " dim() has empty argument list!");
         /* traverse arguments to apply padding */
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
@@ -1107,7 +1102,7 @@ APTprf (node *arg_node, info *arg_info)
         break;
 
     case F_shape_A:
-        DBUG_ASSERT ((PRF_ARGS (arg_node) != NULL), " shape() has empty argument list!");
+        DBUG_ASSERT (PRF_ARGS (arg_node) != NULL, " shape() has empty argument list!");
         /* check, if argument has paddable shape */
 
         if (ID_PADDED (PRF_ARG1 (arg_node))) {
@@ -1148,25 +1143,24 @@ node *
 APTfundef (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("APTfundef");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("APT",
-                  if (FUNDEF_NAME (arg_node) != NULL) {
-                      DBUG_PRINT ("APT", (" trav fundef: %s", FUNDEF_NAME (arg_node)));
-                  } else { DBUG_PRINT ("APT", (" trav fundef: (NULL)")); });
+    DBUG_EXECUTE (if (FUNDEF_NAME (arg_node) != NULL) {
+        DBUG_PRINT ("APT", (" trav fundef: %s", FUNDEF_NAME (arg_node)));
+    } else { DBUG_PRINT ("APT", (" trav fundef: (NULL)")); });
 
     INFO_APT_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     } else {
-        DBUG_PRINT ("APT", (" no args"));
+        DBUG_PRINT (" no args");
     }
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     } else {
-        DBUG_PRINT ("APT", (" no body"));
+        DBUG_PRINT (" no body");
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -1190,17 +1184,17 @@ node *
 APTblock (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("APTblock");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APT", ("trav block"));
+    DBUG_PRINT ("trav block");
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
     } else {
-        DBUG_PRINT ("APT", (" no vardec"));
+        DBUG_PRINT (" no vardec");
     }
 
-    DBUG_ASSERT ((BLOCK_INSTR (arg_node) != NULL), "unexpected empty INSTR!");
+    DBUG_ASSERT (BLOCK_INSTR (arg_node) != NULL, "unexpected empty INSTR!");
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1224,15 +1218,15 @@ APTlet (node *arg_node, info *arg_info)
     node *ids_ptr;
     bool rhs_padded;
 
-    DBUG_ENTER ("APTlet");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APT", ("check let-node"));
+    DBUG_PRINT ("check let-node");
 
     /* set FALSE as default, so separate functions for N_num, N_float,
        N_double, N_char, N_bool are not needed */
     INFO_APT_EXPRESSION_PADDED (arg_info) = FALSE;
 
-    DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "let-node without rvalues detected!");
+    DBUG_ASSERT (LET_EXPR (arg_node) != NULL, "let-node without rvalues detected!");
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     rhs_padded = INFO_APT_EXPRESSION_PADDED (arg_info);
@@ -1265,3 +1259,5 @@ APTlet (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 #endif /* PADT_DEACTVATED */
+
+#undef DBUG_PREFIX

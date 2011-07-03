@@ -21,7 +21,8 @@
 #include "str.h"
 #include "str_buffer.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 #define ScanArglist(cnt, inc, sep_str, sep_code, code)                                   \
     {                                                                                    \
@@ -52,7 +53,7 @@
 void
 ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileWE_FUN_DEF_BEGIN");
+    DBUG_ENTER ();
 
 #define ND_FUN_DEF_BEGIN
 #include "icm_comment.c"
@@ -101,7 +102,7 @@ ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
                           vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ");\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--*******************************************************************-->
@@ -117,7 +118,7 @@ ICMCompileWE_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
 void
 ICMCompileWE_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileND_FUN_AP");
+    DBUG_ENTER ();
 
 #define ND_FUN_AP
 #include "icm_comment.c"
@@ -166,7 +167,7 @@ ICMCompileWE_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 
     fprintf (global.outfile, "\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--*******************************************************************-->
@@ -180,7 +181,7 @@ ICMCompileWE_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 void
 ICMCompileWE_MODFUN_INFO (char *name, char *modname)
 {
-    DBUG_ENTER ("ICMCompileWE_MODFUN_INFO");
+    DBUG_ENTER ();
 
     fprintf (global.outfile, "SAC_WE_DECL_REG_FLAG()\n");
 
@@ -196,7 +197,7 @@ ICMCompileWE_MODFUN_INFO (char *name, char *modname)
     INDENT;
     fprintf (global.outfile, "SAC_WE_DECL_SHAPE_ARRAY()\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--*******************************************************************-->
@@ -210,7 +211,7 @@ ICMCompileWE_MODFUN_INFO (char *name, char *modname)
 void
 ICMCompileWE_SHAPE_ENCODE (int arg_cnt, char **arg)
 {
-    DBUG_ENTER ("ICMCompileWE_SHAPE_ENCODE");
+    DBUG_ENTER ();
 
     fprintf (global.outfile, "SAC_WE_DECL_I_J()\n");
 
@@ -236,7 +237,7 @@ ICMCompileWE_SHAPE_ENCODE (int arg_cnt, char **arg)
         fprintf (global.outfile, "SAC_WE_GET_SHAPE( %s)\n", arg[i]);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--*******************************************************************-->
@@ -252,11 +253,11 @@ ICMCompileWE_SHAPE_ENCODE (int arg_cnt, char **arg)
 void
 ICMCompileWE_NO_SHAPE_ENCODE (int arg_cnt)
 {
-    DBUG_ENTER ("ICMCompileWE_NO_SHAPE_ENCODE");
+    DBUG_ENTER ();
 
     fprintf (global.outfile, "/* No shape information available!!! */");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -279,7 +280,7 @@ ICMCompileWE_NO_SHAPE_ENCODE (int arg_cnt)
 void
 ICMCompileWE_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileWE_FUN_DEF_END");
+    DBUG_ENTER ();
 
 #define ND_FUN_DEF_END
 #include "icm_comment.c"
@@ -292,5 +293,7 @@ ICMCompileWE_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **v
     INDENT;
     fprintf (global.outfile, "SAC_WE_FUN_DEF_END2()\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

@@ -32,7 +32,10 @@
 #include "tree_compound.h"
 #include "globals.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "AS"
+#include "debug.h"
+
 #include "memory.h"
 #include "free.h"
 #include "DupTree.h"
@@ -68,7 +71,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -81,7 +84,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -114,7 +117,7 @@ ContainedPrf (node *arg_node)
     node *val = NULL;
     pattern *pat;
 
-    DBUG_ENTER ("ContainedPrf");
+    DBUG_ENTER ();
 
     pat = PMany (1, PMAgetNode (&val), 0);
 
@@ -155,7 +158,7 @@ IsSuitableForPropagation (node *expression)
     pattern *pat;
     bool result = FALSE;
 
-    DBUG_ENTER ("IsSuitableForPropagation");
+    DBUG_ENTER ();
 
     pat = PMconst (1, PMAgetVal (&con));
 
@@ -171,7 +174,7 @@ IsSuitableForPropagation (node *expression)
         }
 #endif // DEADCODE // Why was this restricted to constants?
         result = TRUE;
-        DBUG_PRINT ("AS", ("IsSuitableForPropagation found TRUE expn"));
+        DBUG_PRINT ("IsSuitableForPropagation found TRUE expn");
     }
     PMfree (pat);
 
@@ -183,17 +186,17 @@ IsNegationOfNegation (node *expression)
 {
     bool result;
 
-    DBUG_ENTER ("IsNegationOfNegation");
+    DBUG_ENTER ();
 
     if ((NODE_TYPE (PRF_ARG1 (expression)) == N_id)
         && (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (expression))) != NULL)) {
         result
           = ((NODE_TYPE (expression) == N_prf)
              && ((PRF_PRF (expression) == F_neg_S) || (PRF_PRF (expression) == F_neg_V)));
-        DBUG_PRINT ("AS", ("IsNegationOfNegation found TRUE expn"));
+        DBUG_PRINT ("IsNegationOfNegation found TRUE expn");
     } else {
         result = FALSE;
-        DBUG_PRINT ("AS", ("IsNegationOfNegation found FALSE expn"));
+        DBUG_PRINT ("IsNegationOfNegation found FALSE expn");
     }
 
     DBUG_RETURN (result);
@@ -223,7 +226,7 @@ Negate (node *arg_node, info *info)
     pattern *pat;
     prf nprf;
 
-    DBUG_ENTER ("Negate");
+    DBUG_ENTER ();
 
     pat = PMconst (1, PMAgetVal (&cexpr));
 
@@ -249,7 +252,7 @@ Negate (node *arg_node, info *info)
       = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), negexpr), INFO_PREASSIGN (info));
     AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (info);
     TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (info)), TBmakeVardec (avis, NULL));
-    DBUG_PRINT ("AS", ("Replacing PRF_ARG by _neg_S/V( arg_node"));
+    DBUG_PRINT ("Replacing PRF_ARG by _neg_S/V( arg_node");
 
     DBUG_RETURN (TBmakeId (avis));
 }
@@ -270,7 +273,7 @@ ASdoArithmeticSimplificationModule (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("ASdoArithmeticSimplificationModule");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_module, "AS called on non-N_module node");
 
@@ -302,7 +305,7 @@ ASdoArithmeticSimplification (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("ASdoArithmeticSimplification");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -324,13 +327,13 @@ ASfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("ASfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    DBUG_PRINT ("AS", ("traversing body of (%s) %s",
-                       (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                       FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("traversing body of (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -350,7 +353,7 @@ ASfundef (node *arg_node, info *arg_info)
 node *
 ASassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASassign");
+    DBUG_ENTER ();
 
     /*
      * Bottom-up traversal
@@ -375,7 +378,7 @@ ASprf (node *arg_node, info *arg_info)
 {
     node *contained;
 
-    DBUG_ENTER ("ASprf");
+    DBUG_ENTER ();
 
     if ((PRF_PRF (arg_node) == F_neg_S) || (PRF_PRF (arg_node) == F_neg_V)) {
         contained = ContainedPrf (PRF_ARG1 (arg_node));
@@ -385,10 +388,10 @@ ASprf (node *arg_node, info *arg_info)
                 arg_node = TCmakePrf2 (PRF_PRF (contained),
                                        Negate (PRF_ARG1 (contained), arg_info),
                                        Negate (PRF_ARG2 (contained), arg_info));
-                DBUG_PRINT ("AS", ("Negating both arguments"));
+                DBUG_PRINT ("Negating both arguments");
                 global.optcounters.as_expr++;
             } else if (IsNegationOfNegation (contained)) {
-                DBUG_PRINT ("AS", ("Replacing negation of negation"));
+                DBUG_PRINT ("Replacing negation of negation");
                 contained = PRF_ARG1 (contained);
                 arg_node = FREEdoFreeTree (arg_node);
                 arg_node = DUPdoDupTree (contained);
@@ -399,3 +402,5 @@ ASprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

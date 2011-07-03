@@ -6,7 +6,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "globals.h"
@@ -17,7 +20,7 @@ int
 isElemstackEmpty (elemstack *s)
 {
 
-    DBUG_ENTER ("isElemstackEmpty");
+    DBUG_ENTER ();
 
     int result = 0;
 
@@ -65,3 +68,5 @@ popElemstack (elemstack **s)
 
     return e;
 }
+
+#undef DBUG_PREFIX

@@ -3,7 +3,10 @@
  */
 
 #include "type_utils.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "TU"
+#include "debug.h"
+
 #include "str.h"
 #include "str_buffer.h"
 #include "memory.h"
@@ -35,7 +38,7 @@
 static ntype *
 FuntypeFromArgs (ntype *res, node *args, node *fundef, bool all)
 {
-    DBUG_ENTER ("FuntypeFromArgs");
+    DBUG_ENTER ();
 
     if (args != NULL) {
         res = FuntypeFromArgs (res, ARG_NEXT (args), fundef, all);
@@ -52,9 +55,9 @@ TUcreateFuntype (node *fundef)
 {
     ntype *res;
 
-    DBUG_ENTER ("TUPcreateFuntype");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "TUcreateFuntype applied to non-fundef node!");
 
     res = FuntypeFromArgs (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)),
@@ -69,9 +72,9 @@ TUcreateFuntypeIgnoreArtificials (node *fundef)
     ntype *res;
     node *rets;
 
-    DBUG_ENTER ("TUPcreateFuntypeIgnoreArtificials");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "TUcreateFuntypeIgnoreArtificials applied to non-fundef node!");
 
     rets = FUNDEF_RETS (fundef);
@@ -99,7 +102,7 @@ TUcreateFuntypeIgnoreArtificials (node *fundef)
 static ntype *
 buildWrapperAlphaFix (node *fundef, ntype *type)
 {
-    DBUG_ENTER ("buildWrapperAlphaFix");
+    DBUG_ENTER ();
 
     /*
      * set this instances return types to alpha[*]
@@ -119,7 +122,7 @@ TUrebuildWrapperTypeAlphaFix (ntype *type)
 {
     ntype *new_type;
 
-    DBUG_ENTER ("TUrebuildWrapperTypeAlphaFix");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYisFun (type), "TUrebuildWrapperType called on non-fun type!");
 
@@ -143,12 +146,12 @@ TUrebuildWrapperTypeAlphaFix (ntype *type)
 static ntype *
 buildWrapperAlpha (node *fundef, ntype *type)
 {
-    DBUG_ENTER ("buildWrapperAlpha");
+    DBUG_ENTER ();
 
     /*
      * set this instances return types to alpha[*]
      */
-    DBUG_PRINT ("TU", ("opening return types of %s", CTIitemName (fundef)));
+    DBUG_PRINT ("opening return types of %s", CTIitemName (fundef));
     if (FUNDEF_BODY (fundef) != NULL) {
         FUNDEF_RETS (fundef) = TUrettypes2alphaAUDMax (FUNDEF_RETS (fundef));
     } else {
@@ -168,7 +171,7 @@ TUrebuildWrapperTypeAlpha (ntype *type)
 {
     ntype *new_type;
 
-    DBUG_ENTER ("TUrebuildWrapperTypeAlpha");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYisFun (type), "TUrebuildWrapperType called on non-fun type!");
 
@@ -194,7 +197,7 @@ TUcreateTmpVardecsFromRets (node *rets)
 {
     node *vardecs = NULL;
 
-    DBUG_ENTER ("TUcreateTmpVardecsFromRets");
+    DBUG_ENTER ();
 
     while (rets != NULL) {
         vardecs = TBmakeVardec (TBmakeAvis (TRAVtmpVar (), TYcopyType (RET_TYPE (rets))),
@@ -221,7 +224,7 @@ TUmakeProductTypeFromArgs (node *args)
     ntype *type = NULL;
     int i = 0;
 
-    DBUG_ENTER ("TUcreateTmpVardecsFromArgs");
+    DBUG_ENTER ();
 
     type = TYmakeEmptyProductType (TCcountArgs (args));
     while (args != NULL) {
@@ -249,7 +252,7 @@ TUmakeProductTypeFromRets (node *rets)
     ntype *type = NULL;
     int i = 0;
 
-    DBUG_ENTER ("TUcreateTmpVardecsFromRets");
+    DBUG_ENTER ();
 
     type = TYmakeEmptyProductType (TCcountRets (rets));
     while (rets != NULL) {
@@ -276,7 +279,7 @@ TUmakeTypeExprsFromRets (node *rets)
 {
     node *exprs;
 
-    DBUG_ENTER ("TUmakeTypeExprsFromRets");
+    DBUG_ENTER ();
 
     if (rets == NULL) {
         exprs = NULL;
@@ -305,7 +308,7 @@ TUreplaceRetTypes (node *rets, ntype *prodt)
     node *tmp = rets;
     int i = 0;
 
-    DBUG_ENTER ("TUreplaceRetTypes");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TCcountRets (tmp) == TYgetProductSize (prodt),
                  "lengths of N_rets and returntype do notmatch!");
@@ -335,7 +338,7 @@ TUrettypes2unknownAUD (node *rets)
 {
     node *tmp = rets;
 
-    DBUG_ENTER ("TUrettypes2unknownAUD");
+    DBUG_ENTER ();
 
     while (tmp != NULL) {
         RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
@@ -361,7 +364,7 @@ TUargtypes2unknownAUD (node *args)
 {
     node *tmp = args;
 
-    DBUG_ENTER ("TUargtypes2unknownAUD");
+    DBUG_ENTER ();
 
     while (tmp != NULL) {
         ARG_NTYPE (tmp) = TYfreeType (ARG_NTYPE (tmp));
@@ -397,7 +400,7 @@ TUtype2alphaMax (ntype *type)
     ntype *new, *scalar;
     tvar *tv;
 
-    DBUG_ENTER ("TUtype2alphaMax");
+    DBUG_ENTER ();
 
     if (TYisAlpha (type)) {
         tv = TYgetAlpha (type);
@@ -440,14 +443,14 @@ TUtype2alphaAUDMax (ntype *type)
     tvar *tv;
 #endif
 
-    DBUG_ENTER ("TUtype2alphaAUDMax");
+    DBUG_ENTER ();
 
     if (TYisAlpha (type)) {
         new = TYcopyType (type);
 #ifndef DBUG_OFF
         tv = TYgetAlpha (type);
 #endif
-        DBUG_ASSERT ((SSIgetMax (tv) != NULL),
+        DBUG_ASSERT (SSIgetMax (tv) != NULL,
                      "trying to TUtype2alphaAUDMax alpha without max!");
         DBUG_ASSERT (TYisAUD (SSIgetMax (tv)),
                      "trying to TUtype2alphaAUDMax alpha with non-AUD max!");
@@ -481,7 +484,7 @@ TUrettypes2alphaAUDMax (node *rets)
     node *tmp = rets;
     ntype *new;
 
-    DBUG_ENTER ("TUrettypes2alphaAUDMax");
+    DBUG_ENTER ();
 
     while (tmp != NULL) {
 
@@ -511,7 +514,7 @@ TUrettypes2alphaMax (node *rets)
     node *tmp = rets;
     ntype *new;
 
-    DBUG_ENTER ("TUrettypes2alphaMax");
+    DBUG_ENTER ();
 
     while (tmp != NULL) {
 
@@ -540,7 +543,7 @@ TUrettypes2alpha (node *rets)
 {
     node *tmp = rets;
 
-    DBUG_ENTER ("TUrettypes2alpha");
+    DBUG_ENTER ();
 
     while (tmp != NULL) {
 
@@ -568,7 +571,7 @@ TUrettypes2alphaFix (node *rets)
     node *tmp = rets;
     ntype *new, *scalar;
 
-    DBUG_ENTER ("TUrettypes2alphaFix");
+    DBUG_ENTER ();
 
     while (tmp != NULL) {
         if (!TYisAlpha (RET_TYPE (tmp))) {
@@ -611,7 +614,7 @@ TUalphaRettypes2bottom (node *rets, const char *msg)
 {
     node *tmp = rets;
 
-    DBUG_ENTER ("TUalphaRettypes2bottom");
+    DBUG_ENTER ();
 
     while (tmp != NULL) {
         if (TYisAlpha (RET_TYPE (tmp))) {
@@ -637,7 +640,7 @@ TUalphaRettypes2bottom (node *rets, const char *msg)
 bool
 TUdimKnown (ntype *ty)
 {
-    DBUG_ENTER ("TUdimKnown");
+    DBUG_ENTER ();
     DBUG_RETURN (TYisAKD (ty) || TYisAKS (ty) || TYisAKV (ty));
 }
 
@@ -654,7 +657,7 @@ TUdimKnown (ntype *ty)
 bool
 TUshapeKnown (ntype *ty)
 {
-    DBUG_ENTER ("TUshapeKnown");
+    DBUG_ENTER ();
     DBUG_RETURN (TYisAKS (ty) || TYisAKV (ty));
 }
 
@@ -673,7 +676,7 @@ TUisIntScalar (ntype *ty)
 {
     bool res;
 
-    DBUG_ENTER ("TUisIntScalar");
+    DBUG_ENTER ();
     res = ((TYgetSimpleType (TYgetScalar (ty)) == T_int)
            && (TYisAKD (ty) || TYisAKS (ty) || TYisAKV (ty)) && (TYgetDim (ty) == 0));
     DBUG_RETURN (res);
@@ -694,7 +697,7 @@ TUisIntVect (ntype *ty)
 {
     bool res;
 
-    DBUG_ENTER ("TUisIntVect");
+    DBUG_ENTER ();
     res = ((TYgetSimpleType (TYgetScalar (ty)) == T_int)
            && (TYisAKD (ty) || TYisAKS (ty) || TYisAKV (ty)) && (TYgetDim (ty) == 1));
     DBUG_RETURN (res);
@@ -715,7 +718,7 @@ TUisEmptyVect (ntype *ty)
 {
     bool res;
 
-    DBUG_ENTER ("TUisEmptyVect");
+    DBUG_ENTER ();
     res = ((TYgetSimpleType (TYgetScalar (ty)) == T_int) && (TUshapeKnown (ty))
            && (TYgetDim (ty) == 1) && (0 == SHgetExtent (TYgetShape (ty), 0)));
     DBUG_RETURN (res);
@@ -736,7 +739,7 @@ TUisUniqueUserType (ntype *ty)
 {
     bool res = FALSE;
 
-    DBUG_ENTER ("TUisUniqueUserType");
+    DBUG_ENTER ();
 
     if (TYisUser (ty)) {
         node *tdef = UTgetTdef (TYgetUserType (ty));
@@ -765,7 +768,7 @@ TUisHidden (ntype *ty)
 {
     bool res = FALSE;
 
-    DBUG_ENTER ("TUisHidden");
+    DBUG_ENTER ();
 
     if (!TYisBottom (ty) && !TYisSymb (TYgetScalar (ty))) {
         if (TYisUser (TYgetScalar (ty))) {
@@ -793,7 +796,7 @@ TUisArrayOfUser (ntype *type)
 {
     bool res;
 
-    DBUG_ENTER ("TUisArrayOfUser");
+    DBUG_ENTER ();
 
     res = (TYisArray (type) && TYisUser (TYgetScalar (type)));
 
@@ -816,7 +819,7 @@ TUcontainsUser (ntype *type)
     bool res = FALSE;
     int cnt;
 
-    DBUG_ENTER ("TUcontainsUser");
+    DBUG_ENTER ();
 
     if (TYisArray (type)) {
         res = TYisUser (TYgetScalar (type));
@@ -848,7 +851,7 @@ TUisBoxed (ntype *type)
     bool res = FALSE;
     ntype *impl;
 
-    DBUG_ENTER ("TUisBoxed");
+    DBUG_ENTER ();
 
     if (!TUisHidden (type)) {
         /*
@@ -876,7 +879,7 @@ TUisBoxed (ntype *type)
 bool
 TUisPolymorphic (ntype *type)
 {
-    DBUG_ENTER ("TUisPolymorphic");
+    DBUG_ENTER ();
 
     if (TYisArray (type)) {
         type = TYgetScalar (type);
@@ -899,7 +902,7 @@ TUstripImplicitNestingOperations (ntype *poly)
 {
     ntype *res;
 
-    DBUG_ENTER ("TUstripImplicitNestingOperations");
+    DBUG_ENTER ();
 
     if (TUisPolymorphic (poly)) {
         if (TYisArray (poly)) {
@@ -934,7 +937,7 @@ TUeqShapes (ntype *a, ntype *b)
 {
     bool res;
 
-    DBUG_ENTER ("TUeqShapes");
+    DBUG_ENTER ();
 
     res = SHcompareShapes (TYgetShape (a), TYgetShape (b));
 
@@ -958,7 +961,7 @@ TUleShapeInfo (ntype *a, ntype *b)
 {
     bool result;
 
-    DBUG_ENTER ("TUleShapeInfo");
+    DBUG_ENTER ();
 
     switch (TYgetConstr (a)) {
     case TC_akv:
@@ -1010,7 +1013,7 @@ TUeqElementSize (ntype *a, ntype *b)
 {
     bool result;
 
-    DBUG_ENTER ("TUeqElementSize");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYisArray (a), "first argument is not an array type");
     DBUG_ASSERT (TYisArray (b), "second argument is not an array type");
@@ -1040,7 +1043,7 @@ TUcomputeImplementationType (ntype *ty)
 {
     ntype *res;
 
-    DBUG_ENTER ("TUgetImplementationType");
+    DBUG_ENTER ();
 
     if (TUisArrayOfUser (ty)) {
         res = TYnestTypes (ty, UTgetBaseType (TYgetUserType (TYgetScalar (ty))));
@@ -1067,7 +1070,7 @@ TUtypeSignature2String (node *fundef)
     char *tmp_str;
     node *arg;
 
-    DBUG_ENTER ("TUtypeSignature2String");
+    DBUG_ENTER ();
 
     if (buf == NULL) {
         buf = SBUFcreate (100);
@@ -1113,7 +1116,7 @@ TUactualArgs2Ntype (node *actual)
     ntype *actual_type, *tmp_type, *prod_type;
     int size, pos;
 
-    DBUG_ENTER ("TUactualArgs2Ntype");
+    DBUG_ENTER ();
 
     size = TCcountExprs (actual);
     prod_type = TYmakeEmptyProductType (size);
@@ -1153,19 +1156,19 @@ TUsignatureMatches (node *formal, ntype *actual_prod_type, bool exact)
     char *tmp_str, *tmp2_str;
 #endif
 
-    DBUG_ENTER ("TUsignatureMatches");
+    DBUG_ENTER ();
 
     pos = 0;
     while ((formal != NULL) && (ARG_NTYPE (formal) != NULL)) {
-        DBUG_ASSERT ((NODE_TYPE (formal) == N_arg), "illegal args found!");
+        DBUG_ASSERT (NODE_TYPE (formal) == N_arg, "illegal args found!");
 
         formal_type = AVIS_TYPE (ARG_AVIS (formal));
         actual_type = TYgetProductMember (actual_prod_type, pos);
-        DBUG_EXECUTE ("TU", tmp_str = TYtype2String (formal_type, FALSE, 0);
-                      tmp2_str = TYtype2String (actual_type, FALSE, 0););
-        DBUG_PRINT ("TU", ("    comparing formal type %s with actual type %s", tmp_str,
-                           tmp2_str));
-        DBUG_EXECUTE ("TU", tmp_str = MEMfree (tmp_str); tmp2_str = MEMfree (tmp2_str););
+        DBUG_EXECUTE (tmp_str = TYtype2String (formal_type, FALSE, 0);
+                      tmp2_str = TYtype2String (actual_type, FALSE, 0));
+        DBUG_PRINT ("    comparing formal type %s with actual type %s", tmp_str,
+                    tmp2_str);
+        DBUG_EXECUTE (tmp_str = MEMfree (tmp_str); tmp2_str = MEMfree (tmp2_str));
 
         if (!(TYleTypes (actual_type, formal_type)
               || (!exact && TYgetSimpleType (TYgetScalar (formal_type)) == T_unknown))) {
@@ -1176,7 +1179,7 @@ TUsignatureMatches (node *formal, ntype *actual_prod_type, bool exact)
         formal = ARG_NEXT (formal);
         pos++;
     }
-    DBUG_PRINT ("TU", ("    result: %d", match));
+    DBUG_PRINT ("    result: %d", match);
 
     DBUG_RETURN (match);
 }
@@ -1200,7 +1203,7 @@ TUravelsHaveSameStructure (ntype *t1, ntype *t2)
 
     bool res = FALSE;
 
-    DBUG_ENTER ("TUravelsHaveSameStructure");
+    DBUG_ENTER ();
 
     aks1 = TYeliminateAKV (t1);
     aks2 = TYeliminateAKV (t2);
@@ -1250,7 +1253,7 @@ TUretsContainBottom (node *rets)
 {
     bool result;
 
-    DBUG_ENTER ("TUretsContainConstantOrBottom");
+    DBUG_ENTER ();
 
     if (rets == NULL) {
         result = FALSE;
@@ -1275,7 +1278,7 @@ TUretsAreConstant (node *rets)
 {
     bool result;
 
-    DBUG_ENTER ("TUretsAreConstant");
+    DBUG_ENTER ();
 
     result = ((rets == NULL)
               || (TYisAKV (RET_TYPE (rets)) && TUretsAreConstant (RET_NEXT (rets))));
@@ -1300,7 +1303,7 @@ TUcombineBottom (ntype *left, ntype *right)
 {
     ntype *result = NULL;
 
-    DBUG_ENTER ("TUcombineBottom");
+    DBUG_ENTER ();
 
     result = TYcopyType (left);
     TYextendBottomError (result, TYgetBottomError (right));
@@ -1325,7 +1328,7 @@ TUcombineBottoms (ntype *prod)
     ntype *res = NULL, *next = NULL;
     int i;
 
-    DBUG_ENTER ("TUcombineBottoms");
+    DBUG_ENTER ();
 
     if (TYisProd (prod)) {
         for (i = 0; i < TYgetProductSize (prod); i++) {
@@ -1366,7 +1369,7 @@ TUspreadBottoms (ntype *prod)
     ntype *result = NULL, *bottoms = NULL;
     int i;
 
-    DBUG_ENTER ("TUspreadBottoms");
+    DBUG_ENTER ();
 
     bottoms = TUcombineBottoms (prod);
     if (bottoms == NULL) {
@@ -1398,7 +1401,7 @@ TUcombineBottomsFromRets (node *rets)
 {
     ntype *result = NULL;
 
-    DBUG_ENTER ("TUcombineBottomsFromRets");
+    DBUG_ENTER ();
 
     if (rets != NULL) {
         result = TUcombineBottomsFromRets (RET_NEXT (rets));
@@ -1449,7 +1452,7 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
     ntype *new_base, *new_base_elem;
     int num_udt, i;
 
-    DBUG_ENTER ("TUcheckUdtandSetBaseType");
+    DBUG_ENTER ();
 
     base = UTgetBaseType (udt);
     if (base == NULL) {
@@ -1552,7 +1555,7 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
 bool
 TUisScalar (ntype *ty)
 {
-    DBUG_ENTER ("TUisScalar");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TUdimKnown (ty) && (TYgetDim (ty) == 0));
 }
@@ -1573,7 +1576,7 @@ TUhasBasetype (ntype *ty, simpletype smpl)
 {
     bool result;
 
-    DBUG_ENTER ("TUhasBasetype");
+    DBUG_ENTER ();
 
     result = TYisArray (ty) && TYisSimple (TYgetScalar (ty))
              && (TYgetSimpleType (TYgetScalar (ty)) == smpl);
@@ -1596,14 +1599,16 @@ TUgetBaseSimpleType (ntype *type)
 {
     usertype udt;
 
-    DBUG_ENTER ("TUgetBaseSimpleType");
+    DBUG_ENTER ();
     while (TUisArrayOfUser (type)) {
         udt = TYgetUserType (TYgetScalar (type));
         udt = UTgetUnAliasedType (udt);
         type = UTgetBaseType (udt);
     }
 
-    DBUG_ASSERT ((TYisArray (type)), "Non array type found!");
-    DBUG_ASSERT ((TYisSimple (TYgetScalar (type))), "non simple type as base!");
+    DBUG_ASSERT (TYisArray (type), "Non array type found!");
+    DBUG_ASSERT (TYisSimple (TYgetScalar (type)), "non simple type as base!");
     DBUG_RETURN (TYgetSimpleType (TYgetScalar (type)));
 }
+
+#undef DBUG_PREFIX

@@ -28,7 +28,10 @@
 #include "str_buffer.h"
 #include "memory.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -80,7 +83,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -98,7 +101,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -124,7 +127,7 @@ node *
 MCSTRANdoMinimizeCudastTransfers (node *syntax_tree)
 {
     info *info;
-    DBUG_ENTER ("MCSTRANdoMinimizeCudastTransfers");
+    DBUG_ENTER ();
 
     /*
      * Infer dataflow masks
@@ -168,7 +171,7 @@ MCSTRANcudast (node *arg_node, info *arg_info)
 {
     node *region;
 
-    DBUG_ENTER ("MCSTRANcudast");
+    DBUG_ENTER ();
 
     region = CUDAST_REGION (arg_node);
 
@@ -198,7 +201,7 @@ MCSTRANassign (node *arg_node, info *arg_info)
 {
     node *assigns;
 
-    DBUG_ENTER ("MCSTRANassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -266,7 +269,7 @@ MCSTRANassign (node *arg_node, info *arg_info)
 node *
 MCSTRANlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MCSTRANlet");
+    DBUG_ENTER ();
 
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
@@ -288,7 +291,7 @@ MCSTRANprf (node *arg_node, info *arg_info)
 {
     node *lhs_avis, *rhs_avis;
 
-    DBUG_ENTER ("MCSTRANprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_host2device:
@@ -337,3 +340,5 @@ MCSTRANprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

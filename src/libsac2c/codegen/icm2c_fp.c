@@ -19,7 +19,9 @@
 #include "icm2c_std.h"
 #include "icm2c_fp.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
@@ -65,7 +67,7 @@
 void
 ICMCompileFP_SLOWCLONE_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileFP_SLOWCLONE_DECL");
+    DBUG_ENTER ();
 
 #define FP_SLOWCLONE_DECL
 #include "icm_comment.c"
@@ -76,14 +78,14 @@ ICMCompileFP_SLOWCLONE_DECL (char *name, char *rettype_NT, int vararg_cnt, char 
 
     fprintf (global.outfile, "SAC_ND_DECL_FUN2(%s, void, SAC_fp_frame *_fp_frame)", name);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 ICMCompileFP_SLOWCLONE_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
                                   char **vararg)
 {
-    DBUG_ENTER ("ICMCompileFP_SLOWCLONE_DEF_BEGIN");
+    DBUG_ENTER ();
 
 #define FP_SLOWCLONE_DEF_BEGIN
 #include "icm_comment.c"
@@ -103,13 +105,13 @@ ICMCompileFP_SLOWCLONE_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
     INDENT;
     fprintf (global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 ICMCompileFP_FUN_RET (char *framename, char *retname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileFP_FUN_RET");
+    DBUG_ENTER ();
 
 #define FP_FUN_RET
 #include "icm_comment.c"
@@ -128,7 +130,7 @@ ICMCompileFP_FUN_RET (char *framename, char *retname, int vararg_cnt, char **var
 
     fprintf (global.outfile, "return;");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -137,7 +139,7 @@ ICMCompileFP_FUN_AP (char *framename, char *name, char *retname, int vararg_cnt,
 {
     char *tmp;
 
-    DBUG_ENTER ("ICMCompileFP_FUN_AP");
+    DBUG_ENTER ();
 
 #define FP_FUN_AP
 #include "icm_comment.c"
@@ -163,5 +165,7 @@ ICMCompileFP_FUN_AP (char *framename, char *name, char *retname, int vararg_cnt,
 
     fprintf (global.outfile, "SAC_FP_AP_CHECK_END(%s)\n", tmp);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

@@ -2,7 +2,8 @@
  * $Id$
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "ANS"
+#include "debug.h"
 
 #include "annotatenamespace.h"
 #include "traverse.h"
@@ -49,7 +50,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -67,7 +68,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     INFO_SYMBOLS (info) = STdestroy (INFO_SYMBOLS (info));
 
@@ -84,7 +85,7 @@ CheckUseUnique (sttable_t *table)
 {
     stsymboliterator_t *iterator;
 
-    DBUG_ENTER ("CheckUseUnique");
+    DBUG_ENTER ();
 
     iterator = STsymbolIteratorGet (table);
 
@@ -111,7 +112,7 @@ CheckUseUnique (sttable_t *table)
 
     iterator = STsymbolIteratorRelease (iterator);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -119,7 +120,7 @@ CheckImportNameClash (const char *symbol, const char *module, sttable_t *table)
 {
     stentryiterator_t *iterator;
 
-    DBUG_ENTER ("CheckImportNameClash");
+    DBUG_ENTER ();
 
     if (STcontains (symbol, table)) {
         iterator = STentryIteratorGet (symbol, table);
@@ -134,19 +135,19 @@ CheckImportNameClash (const char *symbol, const char *module, sttable_t *table)
         iterator = STentryIteratorRelease (iterator);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 CheckLocalNameClash (const char *symbol, sttable_t *table, int lineno)
 {
-    DBUG_ENTER ("CheckLocalNameClash");
+    DBUG_ENTER ();
 
     if (STcontains (symbol, table)) {
         CTIerrorLine (lineno, "Symbol `%s' used and locally defined", symbol);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 namespace_t *
@@ -154,7 +155,7 @@ LookupNamespaceForSymbol (const char *name, info *info)
 {
     namespace_t *result;
 
-    DBUG_ENTER ("LookupNamespaceForSymbol");
+    DBUG_ENTER ();
 
     if (STcontains (name, INFO_SYMBOLS (info))) {
         /*
@@ -183,7 +184,7 @@ ANSntype (ntype *arg_ntype, info *arg_info)
 {
     ntype *scalar = NULL;
 
-    DBUG_ENTER ("ANSntype");
+    DBUG_ENTER ();
 
     if (TYisArray (arg_ntype)) {
         scalar = TYgetScalar (arg_ntype);
@@ -203,8 +204,8 @@ ANSntype (ntype *arg_ntype, info *arg_info)
             scalar = TYsetNamespace (scalar, LookupNamespaceForSymbol (TYgetName (scalar),
                                                                        arg_info));
 
-            DBUG_PRINT ("ANS", ("Updated namespace for type %s to %s", TYgetName (scalar),
-                                NSgetName (TYgetNamespace (scalar))));
+            DBUG_PRINT ("Updated namespace for type %s to %s", TYgetName (scalar),
+                        NSgetName (TYgetNamespace (scalar)));
         }
     }
 
@@ -214,7 +215,7 @@ ANSntype (ntype *arg_ntype, info *arg_info)
 node *
 ANSsymbol (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSsymbol");
+    DBUG_ENTER ();
 
     if (INFO_CHECKIMPORT (arg_info)) {
         CheckImportNameClash (SYMBOL_ID (arg_node), INFO_CURRENT (arg_info),
@@ -236,7 +237,7 @@ ANSuse (node *arg_node, info *arg_info)
 {
     node *result;
 
-    DBUG_ENTER ("ANSuse");
+    DBUG_ENTER ();
 
     INFO_CURRENT (arg_info) = USE_MOD (arg_node);
 
@@ -261,7 +262,7 @@ ANSuse (node *arg_node, info *arg_info)
 node *
 ANSimport (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSimport");
+    DBUG_ENTER ();
 
     /*
      * we do not add imports to the symbol list as
@@ -292,7 +293,7 @@ ANSimport (node *arg_node, info *arg_info)
 node *
 ANSexport (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSexport");
+    DBUG_ENTER ();
 
     /* exports are ignored in this traversal */
 
@@ -306,7 +307,7 @@ ANSexport (node *arg_node, info *arg_info)
 node *
 ANSprovide (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSProvide");
+    DBUG_ENTER ();
 
     /* provides are ignored in this traversal */
 
@@ -320,9 +321,9 @@ ANSprovide (node *arg_node, info *arg_info)
 node *
 ANSfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSfundef");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_IDS (arg_info) == NULL), "found leftover ids in ans info");
+    DBUG_ASSERT (INFO_IDS (arg_info) == NULL, "found leftover ids in ans info");
 
     CheckLocalNameClash (FUNDEF_NAME (arg_node), INFO_SYMBOLS (arg_info),
                          NODE_LINE (arg_node));
@@ -362,15 +363,14 @@ ANSfundef (node *arg_node, info *arg_info)
 node *
 ANStypedef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANStypedef");
+    DBUG_ENTER ();
 
     CheckLocalNameClash (TYPEDEF_NAME (arg_node), INFO_SYMBOLS (arg_info),
                          NODE_LINE (arg_node));
 
     if (TYPEDEF_NS (arg_node) == NULL) {
-        DBUG_PRINT ("ANS",
-                    ("Updated namespace for typedef %s to %s", CTIitemName (arg_node),
-                     NSgetName (MODULE_NAMESPACE (INFO_MODULE (arg_info)))));
+        DBUG_PRINT ("Updated namespace for typedef %s to %s", CTIitemName (arg_node),
+                    NSgetName (MODULE_NAMESPACE (INFO_MODULE (arg_info))));
 
         TYPEDEF_NS (arg_node)
           = NSdupNamespace (MODULE_NAMESPACE (INFO_MODULE (arg_info)));
@@ -390,7 +390,7 @@ ANStypedef (node *arg_node, info *arg_info)
 node *
 ANSobjdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSobjdef");
+    DBUG_ENTER ();
 
     CheckLocalNameClash (OBJDEF_NAME (arg_node), INFO_SYMBOLS (arg_info),
                          NODE_LINE (arg_node));
@@ -411,7 +411,7 @@ ANSobjdef (node *arg_node, info *arg_info)
 node *
 ANSspap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSspap");
+    DBUG_ENTER ();
 
     if (SPAP_NS (arg_node) == NULL) {
         /*
@@ -429,7 +429,7 @@ ANSspap (node *arg_node, info *arg_info)
 node *
 ANSwhile (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSwhile");
+    DBUG_ENTER ();
 
     /*
      * whe have to traverse the body first, as it may contain
@@ -446,7 +446,7 @@ ANSwhile (node *arg_node, info *arg_info)
 node *
 ANSdo (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSwhile");
+    DBUG_ENTER ();
 
     /*
      * whe have to traverse the body first, as it may contain
@@ -463,7 +463,7 @@ ANSdo (node *arg_node, info *arg_info)
 node *
 ANSavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSavis");
+    DBUG_ENTER ();
 
     if (AVIS_TYPE (arg_node) != NULL) {
         AVIS_TYPE (arg_node) = ANSntype (AVIS_TYPE (arg_node), arg_info);
@@ -481,7 +481,7 @@ ANSavis (node *arg_node, info *arg_info)
 node *
 ANSarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSarray");
+    DBUG_ENTER ();
 
     if (ARRAY_ELEMTYPE (arg_node) != NULL) {
         ARRAY_ELEMTYPE (arg_node) = ANSntype (ARRAY_ELEMTYPE (arg_node), arg_info);
@@ -495,7 +495,7 @@ ANSarray (node *arg_node, info *arg_info)
 node *
 ANScast (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANScast");
+    DBUG_ENTER ();
 
     if (CAST_NTYPE (arg_node) != NULL) {
         CAST_NTYPE (arg_node) = ANSntype (CAST_NTYPE (arg_node), arg_info);
@@ -509,7 +509,7 @@ ANScast (node *arg_node, info *arg_info)
 node *
 ANSarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSarg");
+    DBUG_ENTER ();
 
     INFO_IDS (arg_info)
       = STRSadd (ARG_NAME (arg_node), STRS_unknown, INFO_IDS (arg_info));
@@ -528,7 +528,7 @@ ANSarg (node *arg_node, info *arg_info)
 node *
 ANSret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSret");
+    DBUG_ENTER ();
 
     if (RET_TYPE (arg_node) != NULL) {
         RET_TYPE (arg_node) = ANSntype (RET_TYPE (arg_node), arg_info);
@@ -544,7 +544,7 @@ ANSret (node *arg_node, info *arg_info)
 node *
 ANSvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSvardec");
+    DBUG_ENTER ();
 
     VARDEC_AVIS (arg_node) = TRAVdo (VARDEC_AVIS (arg_node), arg_info);
 
@@ -558,7 +558,7 @@ ANSvardec (node *arg_node, info *arg_info)
 node *
 ANSspids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSspids");
+    DBUG_ENTER ();
 
     /*
      * mark this id as locally defined
@@ -566,7 +566,7 @@ ANSspids (node *arg_node, info *arg_info)
     INFO_IDS (arg_info)
       = STRSadd (SPIDS_NAME (arg_node), STRS_unknown, INFO_IDS (arg_info));
 
-    DBUG_PRINT ("ANS", ("found local id '%s'", SPIDS_NAME (arg_node)));
+    DBUG_PRINT ("found local id '%s'", SPIDS_NAME (arg_node));
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -576,9 +576,9 @@ ANSspids (node *arg_node, info *arg_info)
 node *
 ANSspmop (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSspmop");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_INSIDEMOP (arg_info) == FALSE), "found illegal mop stacking!");
+    DBUG_ASSERT (INFO_INSIDEMOP (arg_info) == FALSE, "found illegal mop stacking!");
     /*
      * process ops in special mop-mode
      */
@@ -600,7 +600,7 @@ ANSspmop (node *arg_node, info *arg_info)
 node *
 ANSspid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSspid");
+    DBUG_ENTER ();
 
     if (INFO_INSIDEMOP (arg_info)) {
         /*
@@ -633,9 +633,8 @@ ANSspid (node *arg_node, info *arg_info)
                 SPID_NS (arg_node)
                   = LookupNamespaceForSymbol (SPID_NAME (arg_node), arg_info);
 
-                DBUG_PRINT ("ANS",
-                            ("found ns '%s' for id '%s'", NSgetName (SPID_NS (arg_node)),
-                             SPID_NAME (arg_node)));
+                DBUG_PRINT ("found ns '%s' for id '%s'", NSgetName (SPID_NS (arg_node)),
+                            SPID_NAME (arg_node));
             }
         }
     }
@@ -646,7 +645,7 @@ ANSspid (node *arg_node, info *arg_info)
 node *
 ANSlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSlet");
+    DBUG_ENTER ();
 
     /*
      * first traverse all defining ids
@@ -668,7 +667,7 @@ ANSlet (node *arg_node, info *arg_info)
 node *
 ANSwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSwith");
+    DBUG_ENTER ();
 
     /*
      * make sure, the withid is traversed prior to the code!
@@ -691,7 +690,7 @@ ANSwith (node *arg_node, info *arg_info)
 node *
 ANSspfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSspfold");
+    DBUG_ENTER ();
 
     if ((SPFOLD_NS (arg_node) == NULL) && (SPFOLD_FUN (arg_node) != NULL)) {
         /*
@@ -709,7 +708,7 @@ ANSspfold (node *arg_node, info *arg_info)
 node *
 ANSmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ANSmodule");
+    DBUG_ENTER ();
 
     INFO_MODULE (arg_info) = arg_node;
 
@@ -774,7 +773,7 @@ ANSdoAnnotateNamespace (node *module)
 {
     info *info;
 
-    DBUG_ENTER ("ANSdoAnnotateNamespace");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -788,3 +787,5 @@ ANSdoAnnotateNamespace (node *module)
 
     DBUG_RETURN (module);
 }
+
+#undef DBUG_PREFIX

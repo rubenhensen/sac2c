@@ -21,7 +21,9 @@
 
 #include "group_local_funs.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -52,7 +54,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -65,7 +67,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -85,7 +87,7 @@ GLFisLocalFun (node *fundef)
 {
     bool is_local_fun;
 
-    DBUG_ENTER ("IsLocalFun");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "IsLocalFun called with illegal node type.");
@@ -113,7 +115,7 @@ GLFdoGroupLocalFuns (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("GLFdoGroupLocalFuns");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
@@ -135,7 +137,7 @@ GLFdoGroupLocalFuns (node *syntax_tree)
 node *
 GLFmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GLFmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
     global.local_funs_grouped = TRUE;
@@ -146,7 +148,7 @@ GLFmodule (node *arg_node, info *arg_info)
 node *
 GLFfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GLFfundef");
+    DBUG_ENTER ();
 
     if (INFO_SPINE (arg_info)) {
         if (GLFisLocalFun (arg_node)) {
@@ -175,7 +177,7 @@ GLFfundef (node *arg_node, info *arg_info)
 node *
 GLFap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GLFap");
+    DBUG_ENTER ();
 
     if (!AP_ISRECURSIVEDOFUNCALL (arg_node)) {
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
@@ -183,3 +185,5 @@ GLFap (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

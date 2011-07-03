@@ -82,7 +82,9 @@
  *****************************************************************************/
 #include "symbolic_constant_simplification.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "CF"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "tree_compound.h"
@@ -122,10 +124,10 @@ SCSrecurseWithExtrema (node *arg_node, info *arg_info, node *arg1, node *arg2,
     node *res = NULL;
     node *myarg_node;
 
-    DBUG_ENTER ("SCSrecurseWithExtrema");
+    DBUG_ENTER ();
 
     if (!INFO_DOINGEXTREMA (arg_info)) {
-        DBUG_PRINT ("CF", ("Starting recursion for extrema"));
+        DBUG_PRINT ("Starting recursion for extrema");
         INFO_DOINGEXTREMA (arg_info) = TRUE;
         DBUG_ASSERT (N_id == NODE_TYPE (arg1), "Expected N_id arg1");
         DBUG_ASSERT (N_id == NODE_TYPE (arg2), "Expected N_id arg2");
@@ -138,7 +140,7 @@ SCSrecurseWithExtrema (node *arg_node, info *arg_info, node *arg1, node *arg2,
         res = (*fun) (myarg_node, arg_info);
         FREEdoFreeNode (myarg_node);
         INFO_DOINGEXTREMA (arg_info) = FALSE;
-        DBUG_PRINT ("CF", ("Ending recursion for extrema"));
+        DBUG_PRINT ("Ending recursion for extrema");
     }
 
     DBUG_RETURN (res);
@@ -160,8 +162,8 @@ GetBasetypeOfExpr (node *expr)
     simpletype stype;
     ntype *etype;
 
-    DBUG_ENTER ("GetBasetypeOfExpr");
-    DBUG_ASSERT ((expr != NULL), "GetBasetypeOfExpr called with NULL pointer");
+    DBUG_ENTER ();
+    DBUG_ASSERT (expr != NULL, "GetBasetypeOfExpr called with NULL pointer");
 
     etype = NTCnewTypeCheck_Expr (expr);
 
@@ -187,7 +189,7 @@ SCSmakeZero (node *prfarg)
     ntype *typ;
     node *res = NULL;
 
-    DBUG_ENTER ("SCSmakeZero");
+    DBUG_ENTER ();
     typ = NTCnewTypeCheck_Expr (prfarg);
     if (TUshapeKnown (typ)) {
         shp = TYgetShape (typ);
@@ -215,7 +217,7 @@ SCSmakeFalse (node *prfarg)
     ntype *typ;
     node *res = NULL;
 
-    DBUG_ENTER ("SCSmakeFalse");
+    DBUG_ENTER ();
     typ = NTCnewTypeCheck_Expr (prfarg);
     if (TUshapeKnown (typ)) {
         shp = TYgetShape (typ);
@@ -247,7 +249,7 @@ SCSmakeVectorConstant (shape *shp, node *scalarval)
     shape *frameshape;
     int xrho;
 
-    DBUG_ENTER ("SCSmakeVectorConstant");
+    DBUG_ENTER ();
 
     elemtype
       = TYmakeAKS (TYcopyType (TYgetScalar (ID_NTYPE (scalarval))), SHcreateShape (0));
@@ -279,7 +281,7 @@ SCSmakeTrue (node *prfarg)
     ntype *typ;
     node *res = NULL;
 
-    DBUG_ENTER ("SCSmakeTrue");
+    DBUG_ENTER ();
     typ = NTCnewTypeCheck_Expr (prfarg);
     if (TUshapeKnown (typ)) {
         shp = TYgetShape (typ);
@@ -306,7 +308,7 @@ MatchConstantZero (node *prfarg)
     pattern *pat;
     bool res = FALSE;
 
-    DBUG_ENTER ("MatchConstantZero");
+    DBUG_ENTER ();
 
     pat = PMconst (1, PMAgetVal (&argconst));
     if (PMmatchFlatSkipExtremaAndGuards (pat, prfarg)) {
@@ -332,7 +334,7 @@ MatchConstantOne (node *prfarg)
     pattern *pat;
     bool res = FALSE;
 
-    DBUG_ENTER ("MatchConstantOne");
+    DBUG_ENTER ();
 
     pat = PMconst (1, PMAgetVal (&argconst));
     if (PMmatchFlatSkipExtremaAndGuards (pat, prfarg)) {
@@ -358,7 +360,7 @@ MatchPrfargs (node *arg_node)
     node *node_ptr = NULL;
     bool res;
 
-    DBUG_ENTER ("MatchPrfargs");
+    DBUG_ENTER ();
 
     pat1 = PMany (1, PMAgetNodeOrAvis (&node_ptr), 0);
     pat2 = PMany (1, PMAisNodeOrAvis (&node_ptr), 0);
@@ -390,7 +392,7 @@ MatchNegV (node *arg1, node *arg2)
     pattern *pat2;
     node *arg1p = NULL;
 
-    DBUG_ENTER ("MatchNegV");
+    DBUG_ENTER ();
 
     pat1 = PMvar (1, PMAgetNode (&arg1p), 0);
 
@@ -424,7 +426,7 @@ MatchNegS (node *arg1, node *arg2)
     pattern *pat2;
     node *arg1p = NULL;
 
-    DBUG_ENTER ("MatchNegS");
+    DBUG_ENTER ();
 
     pat1 = PMvar (1, PMAgetNode (&arg1p), 0);
 
@@ -475,7 +477,7 @@ SCSprf_add_SxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_add_SxS");
+    DBUG_ENTER ();
     if (MatchConstantZero (PRF_ARG1 (arg_node))) {
         /*  Case 2: 0 + X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
@@ -487,7 +489,7 @@ SCSprf_add_SxS (node *arg_node, info *arg_info)
         /* Case 4:   X + _neg_S_( X)  */
         /* Case 3:	 _neg_S_( X) + X  */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_add_SxS generated zero vector"));
+        DBUG_PRINT ("SCSprf_add_SxS generated zero vector");
     }
 
     DBUG_RETURN (res);
@@ -508,11 +510,11 @@ SCSprf_add_SxV (node *arg_node, info *arg_info)
     pattern *pat;
     node *arr = NULL;
 
-    DBUG_ENTER ("SCSprf_add_SxV");
+    DBUG_ENTER ();
 
     if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 + X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_add_SxV replaced 0 + VEC by VEC"));
+        DBUG_PRINT ("SCSprf_add_SxV replaced 0 + VEC by VEC");
     } else {
         /* SCALAR + [0,0,..., 0] */
         pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
@@ -521,7 +523,7 @@ SCSprf_add_SxV (node *arg_node, info *arg_info)
             && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
 
             res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
-            DBUG_PRINT ("CF", ("SCSprf_add_SxV replaced S + [0,0...,0] by [S,S,..S]"));
+            DBUG_PRINT ("SCSprf_add_SxV replaced S + [0,0...,0] by [S,S,..S]");
         }
 
         pat = PMfree (pat);
@@ -542,14 +544,14 @@ SCSprf_add_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_add_VxV");
+    DBUG_ENTER ();
 
     if (MatchNegV (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node))
         || MatchNegV (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node))) {
         /* Case 1:	 _neg_V_( X) + X  */
         /* Case 2:   X + _neg_V_( X)  */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_add_VxV generated zero vector"));
+        DBUG_PRINT ("SCSprf_add_VxV generated zero vector");
     } else {
         if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X + 0 */
             res = DUPdoDupNode (PRF_ARG1 (arg_node));
@@ -578,11 +580,11 @@ SCSprf_add_VxS (node *arg_node, info *arg_info)
     pattern *pat;
     node *arr = NULL;
 
-    DBUG_ENTER ("SCSprf_add_VxS");
+    DBUG_ENTER ();
 
     if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X + 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_add_VxS replaced VEC + 0 by VEC"));
+        DBUG_PRINT ("SCSprf_add_VxS replaced VEC + 0 by VEC");
     } else {
         /* [0,0,..., 0] + X */
         pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
@@ -591,7 +593,7 @@ SCSprf_add_VxS (node *arg_node, info *arg_info)
             && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG1 (arg_node))) {
 
             res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
-            DBUG_PRINT ("CF", ("SCSprf_add_VxS replaced [0,0...,0] + S by [S,S,...S]"));
+            DBUG_PRINT ("SCSprf_add_VxS replaced [0,0...,0] + S by [S,S,...S]");
         }
 
         pat = PMfree (pat);
@@ -616,7 +618,7 @@ SCSprf_sub_SxV (node *arg_node, info *arg_info)
     node *arr = NULL;
     pattern *pat;
 
-    DBUG_ENTER ("SCSprf_sub_SxV");
+    DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
@@ -624,7 +626,7 @@ SCSprf_sub_SxV (node *arg_node, info *arg_info)
         && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
 
         res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_sub_SxV replaced  S - [0,0...,0] by [S,S,...S]"));
+        DBUG_PRINT ("SCSprf_sub_SxV replaced  S - [0,0...,0] by [S,S,...S]");
     }
     pat = PMfree (pat);
 
@@ -645,7 +647,7 @@ SCSprf_sub (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_sub");
+    DBUG_ENTER ();
 
     if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
@@ -668,7 +670,7 @@ SCSprf_sub_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_sub_VxV");
+    DBUG_ENTER ();
 
     if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
@@ -693,7 +695,7 @@ SCSprf_mul_SxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_mul_SxS");
+    DBUG_ENTER ();
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X * 1 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
 
@@ -723,7 +725,7 @@ SCSprf_mul_SxV (node *arg_node, info *arg_info)
     pattern *pat;
     node *arr = NULL;
 
-    DBUG_ENTER ("SCSprf_mul_SxV");
+    DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
@@ -736,12 +738,12 @@ SCSprf_mul_SxV (node *arg_node, info *arg_info)
         /* Vector constant cases */
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /*  S * [0,0,...0] */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_mul_SxV replaced  S* [0,0...,0] by [0,0,...0]"));
+        DBUG_PRINT ("SCSprf_mul_SxV replaced  S* [0,0...,0] by [0,0,...0]");
 
     } else if (MatchConstantOne (PRF_ARG2 (arg_node))
                && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
         res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_mul_SxV replaced S * [1,1,...1] by [S,S,...S]"));
+        DBUG_PRINT ("SCSprf_mul_SxV replaced S * [1,1,...1] by [S,S,...S]");
     }
 
     pat = PMfree (pat);
@@ -762,28 +764,28 @@ SCSprf_mul_VxS (node *arg_node, info *arg_info)
     pattern *pat;
     node *arr = NULL;
 
-    DBUG_ENTER ("SCSprf_mul_VxS");
+    DBUG_ENTER ();
 
     /* Scalar constant cases */
     pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X * 1 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced  V * 1 by V"));
+        DBUG_PRINT ("SCSprf_mul_VxS replaced  V * 1 by V");
 
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X * 0 */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced  V * 0 by [0,0,...0]"));
+        DBUG_PRINT ("SCSprf_mul_VxS replaced  V * 0 by [0,0,...0]");
 
         /* Vector constant cases */
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* [0,0,...0] * S */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced [0,0...,0] * S by [0,0,...0]"));
+        DBUG_PRINT ("SCSprf_mul_VxS replaced [0,0...,0] * S by [0,0,...0]");
 
     } else if (MatchConstantOne (PRF_ARG1 (arg_node))
                && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG1 (arg_node))) {
         res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_mul_VxS replaced [1,1,...1] * S by [S,S,...S]"));
+        DBUG_PRINT ("SCSprf_mul_VxS replaced [1,1,...1] * S by [S,S,...S]");
     }
 
     pat = PMfree (pat);
@@ -803,7 +805,7 @@ SCSprf_mul_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_mul_VxV");
+    DBUG_ENTER ();
 
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X * 1 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
@@ -838,7 +840,7 @@ SCSprf_div_SxX (node *arg_node, info *arg_info)
     pattern *pat;
     node *arr = NULL;
 
-    DBUG_ENTER ("SCSprf_div_SxX");
+    DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
@@ -850,7 +852,7 @@ SCSprf_div_SxX (node *arg_node, info *arg_info)
     } else if (MatchConstantOne (PRF_ARG2 (arg_node))
                && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
         res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_div_SxX replaced S / [1,1,...1] by [S,S,...S]"));
+        DBUG_PRINT ("SCSprf_div_SxX replaced S / [1,1,...1] by [S,S,...S]");
     }
     pat = PMfree (pat);
 
@@ -869,11 +871,11 @@ SCSprf_div_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_div_VxV");
+    DBUG_ENTER ();
 
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* V / [1,1...1] */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
-        DBUG_PRINT ("CF", ("SCSprf_div_VxV replaced V / [1,1,...1] by V"));
+        DBUG_PRINT ("SCSprf_div_VxV replaced V / [1,1,...1] by V");
     }
 
     DBUG_RETURN (res);
@@ -892,7 +894,7 @@ SCSprf_div_XxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_div_XxS");
+    DBUG_ENTER ();
 
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X / 1 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
@@ -916,7 +918,7 @@ SCSprf_not (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_not");
+    DBUG_ENTER ();
     DBUG_RETURN (res);
 }
 
@@ -935,7 +937,7 @@ SCSprf_or_SxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_or_SxS");
+    DBUG_ENTER ();
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X | 1 */
         res = SCSmakeTrue (PRF_ARG1 (arg_node));
 
@@ -968,7 +970,7 @@ SCSprf_or_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_or_SxV");
+    DBUG_ENTER ();
     if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 | X */
         res = SCSmakeTrue (PRF_ARG2 (arg_node));
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 | X */
@@ -990,7 +992,7 @@ SCSprf_or_VxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_or_VxS");
+    DBUG_ENTER ();
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X | 1 */
         res = SCSmakeTrue (PRF_ARG1 (arg_node));
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X | 0 */
@@ -1011,7 +1013,7 @@ SCSprf_or_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_or_VxV");
+    DBUG_ENTER ();
     if (MatchPrfargs (arg_node)) { /*  X | X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     }
@@ -1034,7 +1036,7 @@ SCSprf_and_SxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_and_SxS");
+    DBUG_ENTER ();
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X & 1 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
 
@@ -1066,7 +1068,7 @@ SCSprf_and_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_and_SxV");
+    DBUG_ENTER ();
     if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 & X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
@@ -1088,7 +1090,7 @@ SCSprf_and_VxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_and_VxS");
+    DBUG_ENTER ();
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X & 1 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X & 0 */
@@ -1109,7 +1111,7 @@ SCSprf_and_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_and_VxV");
+    DBUG_ENTER ();
     if (MatchPrfargs (arg_node)) { /*  X & X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     }
@@ -1128,7 +1130,7 @@ SCSprf_mod (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_mod");
+    DBUG_ENTER ();
     if (MatchConstantZero (PRF_ARG2 (arg_node))) {
         CTIabortLine (NODE_LINE (PRF_ARG2 (arg_node)), "mod(X,0) encountered.");
     }
@@ -1147,7 +1149,7 @@ SCSprf_tobool_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_tobool_S");
+    DBUG_ENTER ();
     if ((N_bool == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_bool
@@ -1168,7 +1170,7 @@ SCSprf_toc_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_toc_S");
+    DBUG_ENTER ();
     if ((N_char == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_char
@@ -1189,7 +1191,7 @@ SCSprf_tob_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_tob_S");
+    DBUG_ENTER ();
     if ((N_numbyte == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_byte
@@ -1210,7 +1212,7 @@ SCSprf_tos_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_tos_S");
+    DBUG_ENTER ();
     if ((N_numshort == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_short
@@ -1231,7 +1233,7 @@ SCSprf_toi_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_toi_S");
+    DBUG_ENTER ();
     if ((N_num == NODE_TYPE (PRF_ARG1 (arg_node)))
         || (N_numint == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
@@ -1253,7 +1255,7 @@ SCSprf_tol_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_tol_S");
+    DBUG_ENTER ();
     if ((N_numlong == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_long
@@ -1275,7 +1277,7 @@ SCSprf_toll_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_toll_S");
+    DBUG_ENTER ();
     if ((N_numlonglong == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_longlong
@@ -1296,7 +1298,7 @@ SCSprf_toub_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_toub_S");
+    DBUG_ENTER ();
     if ((N_numubyte == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_ubyte
@@ -1317,7 +1319,7 @@ SCSprf_tous_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_tous_S");
+    DBUG_ENTER ();
     if ((N_numushort == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_ushort
@@ -1338,7 +1340,7 @@ SCSprf_toui_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_toui_S");
+    DBUG_ENTER ();
     if ((N_numuint == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_uint
@@ -1359,7 +1361,7 @@ SCSprf_toul_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_toul_S");
+    DBUG_ENTER ();
     if ((N_numulong == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_ulong
@@ -1381,7 +1383,7 @@ SCSprf_toull_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_toull_S");
+    DBUG_ENTER ();
     if ((N_numulonglong == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_ulonglong
@@ -1402,7 +1404,7 @@ SCSprf_tof_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_tof_S");
+    DBUG_ENTER ();
     if ((N_float == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_float
@@ -1423,7 +1425,7 @@ SCSprf_tod_S (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_tod_S");
+    DBUG_ENTER ();
     if ((N_double == NODE_TYPE (PRF_ARG1 (arg_node)))
         || ((N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
             && (T_double
@@ -1455,7 +1457,7 @@ SCSprf_max_SxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_max_SxS");
+    DBUG_ENTER ();
     if (MatchPrfargs (arg_node)) { /* max ( X, X) */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
@@ -1482,7 +1484,7 @@ SCSprf_max_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_max_VxV");
+    DBUG_ENTER ();
     res = SCSprf_max_SxS (arg_node, arg_info);
     DBUG_RETURN (res);
 }
@@ -1492,7 +1494,7 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_min_SxS");
+    DBUG_ENTER ();
     if (MatchPrfargs (arg_node)) { /* min( X, X) */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
@@ -1519,7 +1521,7 @@ SCSprf_min_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_min_VxV");
+    DBUG_ENTER ();
     res = SCSprf_min_SxS (arg_node, arg_info);
 
     DBUG_RETURN (res);
@@ -1541,7 +1543,7 @@ SCSprf_mod_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_mod_VxV");
+    DBUG_ENTER ();
     /* Could be supported with ISMOP and shape conformability check */
     /* FIXME : what is mod(0,0) etc??? ??? */
     DBUG_RETURN (res);
@@ -1557,7 +1559,7 @@ SCSprf_eq_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_eq_SxV");
+    DBUG_ENTER ();
     /* Could be supported with ISMOP */
     /* I.e., attempt to convert V to constant, then check to see if all(S == ConstantV) */
     DBUG_RETURN (res);
@@ -1573,7 +1575,7 @@ SCSprf_eq_VxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_eq_VxS");
+    DBUG_ENTER ();
     /* Could be supported with ISMOP */
     DBUG_RETURN (res);
 }
@@ -1593,7 +1595,7 @@ SCSprf_nlege (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_nlege");
+    DBUG_ENTER ();
     if (MatchPrfargs (arg_node)) {
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
     }
@@ -1610,7 +1612,7 @@ SCSprf_neq_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_neq_SxV");
+    DBUG_ENTER ();
     /* Could be supported with ISMOP */
     DBUG_RETURN (res);
 }
@@ -1625,7 +1627,7 @@ SCSprf_neq_VxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_neq_VxS");
+    DBUG_ENTER ();
     /* Could be supported with ISMOP */
     DBUG_RETURN (res);
 }
@@ -1640,7 +1642,7 @@ SCSprf_le_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_le_SxV");
+    DBUG_ENTER ();
     /* Could be supported with ISMOP */
     DBUG_RETURN (res);
 }
@@ -1655,7 +1657,7 @@ SCSprf_le_VxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_le_VxS");
+    DBUG_ENTER ();
     /* Could be supported with ISMOP */
     DBUG_RETURN (res);
 }
@@ -1673,7 +1675,7 @@ SCSprf_lege (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_lege");
+    DBUG_ENTER ();
     if (MatchPrfargs (arg_node)) {
         res = SCSmakeTrue (PRF_ARG1 (arg_node));
     }
@@ -1690,7 +1692,7 @@ SCSprf_ge_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_ge_SxV");
+    DBUG_ENTER ();
     /* Could be supported with ISMOP */
     DBUG_RETURN (res);
 }
@@ -1705,7 +1707,7 @@ SCSprf_ge_VxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_ge_VxS");
+    DBUG_ENTER ();
     /* Could be supported with ISMOP */
     DBUG_RETURN (res);
 }
@@ -1729,7 +1731,7 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
     pattern *pat1;
 #endif // RBEDISABLEDTHIS20100502
 
-    DBUG_ENTER ("SCSprf_sel_VxA");
+    DBUG_ENTER ();
 
 #ifdef RBEDISABLEDTHIS20100502
     /* I think we want to avoid all idx_shape_sel ops until
@@ -1743,7 +1745,7 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
                   PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&arg2), 0)));
 
     if ((PMmatchFlat (pat1, arg_node)) && (N_num == NODE_TYPE (scalar))) {
-        DBUG_PRINT ("SCS", ("Replacing idx_sel by idx_shape_sel"));
+        DBUG_PRINT_TAG ("SCS", "Replacing idx_sel by idx_shape_sel");
         res = TCmakePrf2 (F_idx_shape_sel, DUPdoDupNode (scalar), DUPdoDupNode (arg2));
     }
     pat1 = PMfree (pat1);
@@ -1754,7 +1756,7 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
 
     if ((NULL == res) && (PMmatchFlat (pat1, arg_node))
         && (N_num == NODE_TYPE (scalar))) {
-        DBUG_PRINT ("SCS", ("Replacing idx_sel by idx_shape_sel"));
+        DBUG_PRINT_TAG ("SCS", "Replacing idx_sel by idx_shape_sel");
         typ = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
         scalar = AWLFIflattenExpression (scalar, &INFO_VARDECS (arg_info),
                                          &INFO_PREASSIGN (arg_info), typ);
@@ -1788,7 +1790,7 @@ SCSprf_sel_VxIA (node *arg_node, info *arg_info)
     pattern *pat1;
 #endif // RBEDISABLEDTHIS20100502
 
-    DBUG_ENTER ("SCSprf_sel_VxA");
+    DBUG_ENTER ();
 
 #ifdef RBEDISABLEDTHIS20100502
     /* I think we want to avoid all idx_shape_sel ops until
@@ -1802,7 +1804,7 @@ SCSprf_sel_VxIA (node *arg_node, info *arg_info)
                   PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&arg2), 0)));
 
     if ((PMmatchFlat (pat1, arg_node)) && (N_num == NODE_TYPE (scalar))) {
-        DBUG_PRINT ("SCS", ("Replacing idx_sel by idx_shape_sel"));
+        DBUG_PRINT_TAG ("SCS", "Replacing idx_sel by idx_shape_sel");
         res = TCmakePrf2 (F_idx_shape_sel, DUPdoDupNode (scalar), DUPdoDupNode (arg2));
     }
     pat1 = PMfree (pat1);
@@ -1813,7 +1815,7 @@ SCSprf_sel_VxIA (node *arg_node, info *arg_info)
 
     if ((NULL == res) && (PMmatchFlat (pat1, arg_node))
         && (N_num == NODE_TYPE (scalar))) {
-        DBUG_PRINT ("SCS", ("Replacing idx_sel by idx_shape_sel"));
+        DBUG_PRINT_TAG ("SCS", "Replacing idx_sel by idx_shape_sel");
         typ = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
         scalar = AWLFIflattenExpression (scalar, &INFO_VARDECS (arg_info),
                                          &INFO_PREASSIGN (arg_info), typ);
@@ -1844,13 +1846,13 @@ SCSprf_reshape (node *arg_node, info *arg_info)
     node *shp2;
     node *X;
 
-    DBUG_ENTER ("SCSprf_reshape");
+    DBUG_ENTER ();
 
     pat = PMprf (1, PMAisPrf (F_reshape_VxA), 2, PMvar (1, PMAgetNode (&shp1), 0),
                  PMprf (1, PMAisPrf (F_reshape_VxA), 2, PMvar (1, PMAgetNode (&shp2), 0),
                         PMvar (1, PMAgetNode (&X), 0)));
     if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
-        DBUG_PRINT ("SCS", ("Replacing reshape of reshape"));
+        DBUG_PRINT_TAG ("SCS", "Replacing reshape of reshape");
 
         res = DUPdoDupNode (arg_node);
         shp2 = FREEdoFreeNode (PRF_ARG2 (res));
@@ -1878,7 +1880,7 @@ SCSprf_guard (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_guard");
+    DBUG_ENTER ();
     DBUG_RETURN (res);
 }
 
@@ -1897,7 +1899,7 @@ SCSprf_afterguard (node *arg_node, info *arg_info)
     node *res = NULL;
     node *arg2up = NULL;
 
-    DBUG_ENTER ("SCSprf_afterguard");
+    DBUG_ENTER ();
     res = DUPdoDupNode (arg_node); /* Copy N_prf node and operate on the copy */
     arg2up = EXPRS_NEXT (PRF_ARGS (res));
     DBUG_ASSERT (NULL != arg2up, "Some joker caught us off guard with no guard");
@@ -1945,7 +1947,7 @@ SCSprf_same_shape_AxA (node *arg_node, info *arg_info)
     ntype *arg1type;
     ntype *arg2type;
 
-    DBUG_ENTER ("SCSprf_same_shape_AxA");
+    DBUG_ENTER ();
     arg1type = ID_NTYPE (PRF_ARG1 (arg_node));
     arg2type = ID_NTYPE (PRF_ARG2 (arg_node));
     if (MatchPrfargs (arg_node) /* same_shape(X, X) */
@@ -1986,7 +1988,7 @@ SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
     ntype *arrtype;
     pattern *pat;
 
-    DBUG_ENTER ("SCSprf_shape_matches_dim_VxA");
+    DBUG_ENTER ();
 
     pat = PMprf (1, PMAisPrf (F_shape_matches_dim_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
                  PMvar (1, PMAgetNode (&arr), 0));
@@ -1997,8 +1999,8 @@ SCSprf_shape_matches_dim_VxA (node *arg_node, info *arg_info)
         if (TUshapeKnown (ivtype) && TUdimKnown (arrtype)
             && SHgetExtent (TYgetShape (ivtype), 0) == TYgetDim (arrtype)) {
             res = TBmakeExprs (DUPdoDupNode (iv), TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT ("SCS", ("SCSprf_shape_matches_dim_VxA removed guard( %s, %s)",
-                                AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (arr))));
+            DBUG_PRINT_TAG ("SCS", "SCSprf_shape_matches_dim_VxA removed guard( %s, %s)",
+                            AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (arr)));
         }
     }
     pat = PMfree (pat);
@@ -2040,7 +2042,7 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
     constant *scalarp;
     pattern *pat1;
 
-    DBUG_ENTER ("SCSprf_non_neg_val_V");
+    DBUG_ENTER ();
 
     pat1 = PMconst (1, PMAgetVal (&arg1c));
 
@@ -2049,7 +2051,7 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
         || ((NULL != AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))))
             && PMmatchFlatSkipExtrema (pat1, AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))))
             && COisNonNeg (arg1c, TRUE))) {
-        DBUG_PRINT ("CF", ("SCSprf_non_neg_val removed guard"));
+        DBUG_PRINT ("SCSprf_non_neg_val removed guard");
 
         /* Generate   p = TRUE; */
         scalarp = COmakeTrue (SHmakeShape (0));
@@ -2061,9 +2063,8 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
                                                   INFO_PREASSIGN (arg_info));
 
         AVIS_SSAASSIGN (tmpivavis) = INFO_PREASSIGN (arg_info);
-        DBUG_PRINT ("CF",
-                    ("SCSprf_non_neg_val(%s) created TRUE pred %s",
-                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), AVIS_NAME (tmpivavis)));
+        DBUG_PRINT ("SCSprf_non_neg_val(%s) created TRUE pred %s",
+                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), AVIS_NAME (tmpivavis));
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeId (tmpivavis), NULL));
     }
@@ -2085,7 +2086,7 @@ SCSprf_non_neg_val_S (node *arg_node, info *arg_info)
 {
     node *res;
 
-    DBUG_ENTER ("SCSprf_non_neg_val_S");
+    DBUG_ENTER ();
 
     res = SCSprf_non_neg_val_V (arg_node, arg_info);
 
@@ -2130,7 +2131,7 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
     shape *arrshp;
     pattern *pat1;
 
-    DBUG_ENTER ("SCSprf_val_lt_shape_VxA");
+    DBUG_ENTER ();
 
     pat1 = PMprf (1, PMAisPrf (F_val_lt_shape_VxA), 2, PMconst (1, PMAgetVal (&ivc)),
                   PMvar (1, PMAgetNode (&arr), 0));
@@ -2147,8 +2148,8 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
                 && COlt (ivc, arrc, NULL)) {
                 res = TBmakeExprs (DUPdoDupNode (iv),
                                    TBmakeExprs (TBmakeBool (TRUE), NULL));
-                DBUG_PRINT ("SCS", ("Case 1 removed guard( %s, %s)",
-                                    AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (arr))));
+                DBUG_PRINT_TAG ("SCS", "Case 1 removed guard( %s, %s)",
+                                AVIS_NAME (ID_AVIS (iv)), AVIS_NAME (ID_AVIS (arr)));
             }
         }
     }
@@ -2162,8 +2163,8 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
         && (ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))))
             == ID_AVIS (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)))))) {
         res = TBmakeExprs (DUPdoDupNode (iv), TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT ("SCS", ("Case 2 removed guard( %s, %s)", AVIS_NAME (ID_AVIS (iv)),
-                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+        DBUG_PRINT_TAG ("SCS", "Case 2 removed guard( %s, %s)", AVIS_NAME (ID_AVIS (iv)),
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
     }
 
     DBUG_RETURN (res);
@@ -2193,7 +2194,7 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     pattern *pat3;
     pattern *pat4;
 
-    DBUG_ENTER ("SCSprf_val_lt_val_SxS");
+    DBUG_ENTER ();
 
     pat1 = PMprf (1, PMAisPrf (F_val_lt_val_SxS), 2, PMconst (1, PMAgetVal (&con1)),
                   PMconst (1, PMAgetVal (&con2), 0));
@@ -2212,9 +2213,9 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
         || (PMmatchFlatSkipExtrema (pat1, arg_node) && (COlt (con1, con2, NULL)))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT ("SCS", ("removed guard Case 1( %s, %s)",
-                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+        DBUG_PRINT_TAG ("SCS", "removed guard Case 1( %s, %s)",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
@@ -2225,9 +2226,9 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
         && (ID_AVIS (PRF_ARG1 (arg_node)) == ID_AVIS (PRF_ARG2 (arg_node)))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT ("SCS", ("removed guard Case 2( %s, %s)",
-                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+        DBUG_PRINT_TAG ("SCS", "removed guard Case 2( %s, %s)",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
     }
 #endif // DEADCODE
 
@@ -2240,9 +2241,9 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
             FREEdoFreeNode (res2);
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT ("SCS", ("removed guard Case 3a( %s, %s)",
-                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+            DBUG_PRINT_TAG ("SCS", "removed guard Case 3a( %s, %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         }
     }
 
@@ -2255,9 +2256,9 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
             FREEdoFreeNode (res2);
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT ("SCS", ("removed guard Case 3b( %s, %s)",
-                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+            DBUG_PRINT_TAG ("SCS", "removed guard Case 3b( %s, %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         }
     }
 
@@ -2265,9 +2266,9 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     if ((NULL == res) && (PMmatchFlatSkipExtrema (pat3, arg_node))
         && (PMmatchFlatSkipExtrema (pat4, val))) {
         res = TBmakeExprs (DUPdoDupNode (val3), TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT ("SCS", ("removed guard Case 4( %s -> %s)",
-                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                            AVIS_NAME (ID_AVIS (val3))));
+        DBUG_PRINT_TAG ("SCS", "removed guard Case 4( %s -> %s)",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (val3)));
     }
 
     /* Case 5 */
@@ -2278,9 +2279,9 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
         if ((NULL != con1) && (NULL != con2) && (COlt (con1, con2, NULL))) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT ("SCS", ("removed guard Case 5( %s, %s)",
-                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+            DBUG_PRINT_TAG ("SCS", "removed guard Case 5( %s, %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         }
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
@@ -2333,7 +2334,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     pattern *pat3;
     pattern *pat4;
 
-    DBUG_ENTER ("SCSprf_val_le_val_SxS");
+    DBUG_ENTER ();
 
     pat1 = PMprf (1, PMAisPrf (F_val_le_val_SxS), 2, PMconst (1, PMAgetVal (&con1)),
                   PMconst (1, PMAgetVal (&con2), 0));
@@ -2352,9 +2353,9 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
         || (PMmatchFlatSkipExtrema (pat1, arg_node) && (COle (con1, con2, NULL)))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT ("SCS", ("removed guard Case 1( %s, %s)",
-                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+        DBUG_PRINT_TAG ("SCS", "removed guard Case 1( %s, %s)",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
@@ -2368,9 +2369,9 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
             FREEdoFreeNode (res2);
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT ("SCS", ("removed guard Case 3a( %s, %s)",
-                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+            DBUG_PRINT_TAG ("SCS", "removed guard Case 3a( %s, %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         }
     }
 
@@ -2389,9 +2390,9 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     if ((NULL == res) && (PMmatchFlatSkipExtrema (pat3, arg_node))
         && (PMmatchFlatSkipExtrema (pat4, val))) {
         res = TBmakeExprs (DUPdoDupNode (val3), TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT ("SCS", ("removed guard Case 4( %s -> %s)",
-                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                            AVIS_NAME (ID_AVIS (val3))));
+        DBUG_PRINT_TAG ("SCS", "removed guard Case 4( %s -> %s)",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (val3)));
     }
 
     /* Case 5 */
@@ -2402,9 +2403,9 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
         if ((NULL != con1) && (NULL != con2) && (COle (con1, con2, NULL))) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT ("SCS", ("removed guard Case 5( %s, %s)",
-                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+            DBUG_PRINT_TAG ("SCS", "removed guard Case 5( %s, %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         }
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
@@ -2450,7 +2451,7 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
     pattern *pat3;
     pattern *pat4;
 
-    DBUG_ENTER ("SCSprf_val_le_val_VxV");
+    DBUG_ENTER ();
 
     pat1 = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMconst (1, PMAgetVal (&con1)),
                   PMconst (1, PMAgetVal (&con2), 0));
@@ -2471,9 +2472,9 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
             && COle (con1, con2, NULL))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT ("SCS", ("removed guard Case 1( %s, %s)",
-                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+        DBUG_PRINT_TAG ("SCS", "removed guard Case 1( %s, %s)",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
@@ -2484,9 +2485,9 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
         && (ID_AVIS (PRF_ARG1 (arg_node)) == ID_AVIS (PRF_ARG2 (arg_node)))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT ("SCS", ("removed guard Case 2( %s, %s)",
-                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+        DBUG_PRINT_TAG ("SCS", "removed guard Case 2( %s, %s)",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
     }
 #endif // DEADCODE
 
@@ -2499,9 +2500,9 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
             FREEdoFreeNode (res2);
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT ("SCS", ("removed guard Case 3a( %s, %s)",
-                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+            DBUG_PRINT_TAG ("SCS", "removed guard Case 3a( %s, %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         }
     }
 
@@ -2514,9 +2515,9 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
             FREEdoFreeNode (res2);
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT ("SCS", ("removed guard Case 3b( %s, %s)",
-                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+            DBUG_PRINT_TAG ("SCS", "removed guard Case 3b( %s, %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         }
     }
 
@@ -2524,9 +2525,9 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
     if ((NULL == res) && (PMmatchFlatSkipExtrema (pat3, arg_node))
         && (PMmatchFlatSkipExtrema (pat4, val))) {
         res = TBmakeExprs (DUPdoDupNode (val3), TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT ("SCS", ("removed guard Case 4( %s -> %s)",
-                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                            AVIS_NAME (ID_AVIS (val3))));
+        DBUG_PRINT_TAG ("SCS", "removed guard Case 4( %s -> %s)",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (val3)));
     }
 
     /* Case 5 */
@@ -2539,9 +2540,9 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
             && (COle (con1, con2, NULL))) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT ("SCS", ("removed guard Case 5( %s, %s)",
-                                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+            DBUG_PRINT_TAG ("SCS", "removed guard Case 5( %s, %s)",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         }
     }
 
@@ -2574,7 +2575,7 @@ SCSprf_prod_matches_prod_shape_VxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_prod_matches_prod_shape_VxA");
+    DBUG_ENTER ();
     DBUG_RETURN (res);
 }
 
@@ -2596,7 +2597,7 @@ SCSprf_shape (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("SCSprf_shape");
+    DBUG_ENTER ();
 
 #ifdef BUG524
     /* This code should never have gone live. It absolutely trashes
@@ -2668,14 +2669,14 @@ SCSprf_idx_shape_sel (node *arg_node, info *arg_info)
     node *res = NULL;
     node *idprimo = NULL;
 
-    DBUG_ENTER ("SCSprf_idx_shape_sel");
+    DBUG_ENTER ();
 
     idprimo = PMOshapePrimogenitor (PRF_ARG2 (arg_node));
     if ((ID_AVIS (idprimo) != ID_AVIS (PRF_ARG2 (arg_node)))) {
         res = DUPdoDupNode (arg_node);
-        DBUG_PRINT ("CF", ("SCSprf_idx_shape_sel replacing %s by %s",
-                           AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
-                           AVIS_NAME (ID_AVIS (idprimo))));
+        DBUG_PRINT ("SCSprf_idx_shape_sel replacing %s by %s",
+                    AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
+                    AVIS_NAME (ID_AVIS (idprimo)));
         PRF_ARG2 (res) = DUPdoDupNode (idprimo);
     }
 
@@ -2706,7 +2707,7 @@ SCSprf_reciproc_S (node *arg_node, info *arg_info)
     pattern *pat2;
     pattern *pat3;
 
-    DBUG_ENTER ("SCSprf_reciproc_S");
+    DBUG_ENTER ();
 
     pat1 = PMprf (1, PMAisPrf (F_reciproc_S), 1, PMvar (1, PMAgetNode (&arg1), 0));
     pat2 = PMprf (1, PMAisPrf (F_reciproc_S), 1, PMvar (1, PMAgetNode (&arg1p), 0));
@@ -2717,9 +2718,9 @@ SCSprf_reciproc_S (node *arg_node, info *arg_info)
         if (PMmatchFlatSkipExtremaAndGuards (pat2, arg1)) {
             /* Case 1 */
             res = DUPdoDupNode (arg1p);
-            DBUG_PRINT ("CF", ("SCSprf_reciproc_S Case 1 replacing %s by %s",
-                               AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                               AVIS_NAME (ID_AVIS (arg1p))));
+            DBUG_PRINT ("SCSprf_reciproc_S Case 1 replacing %s by %s",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (arg1p)));
         } else {
             if (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)) {
                 /* Case 2 */
@@ -2734,9 +2735,9 @@ SCSprf_reciproc_S (node *arg_node, info *arg_info)
                                              &INFO_PREASSIGN (arg_info),
                                              TYcopyType ((AVIS_TYPE (ID_AVIS (arg1p)))));
                 res = TCmakePrf2 (F_mul_SxS, TBmakeId (p1), TBmakeId (p2));
-                DBUG_PRINT ("CF", ("SCSprf_reciproc_S Case 2 replacing %s by %s",
-                                   AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                   AVIS_NAME (ID_AVIS (arg1p))));
+                DBUG_PRINT ("SCSprf_reciproc_S Case 2 replacing %s by %s",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (arg1p)));
             }
         }
     }
@@ -2772,7 +2773,7 @@ SCSprf_reciproc_V (node *arg_node, info *arg_info)
     pattern *pat2;
     pattern *pat3;
 
-    DBUG_ENTER ("SCSprf_reciproc_V");
+    DBUG_ENTER ();
 
     pat1 = PMprf (1, PMAisPrf (F_reciproc_V), 1, PMvar (1, PMAgetNode (&arg1), 0));
     pat2 = PMprf (1, PMAisPrf (F_reciproc_V), 1, PMvar (1, PMAgetNode (&arg1p), 0));
@@ -2783,9 +2784,9 @@ SCSprf_reciproc_V (node *arg_node, info *arg_info)
         if (PMmatchFlatSkipExtremaAndGuards (pat2, arg1)) {
             /* Case 1 */
             res = DUPdoDupNode (arg1p);
-            DBUG_PRINT ("CF", ("SCSprf_reciproc_V Case 1 replacing %s by %s",
-                               AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                               AVIS_NAME (ID_AVIS (arg1p))));
+            DBUG_PRINT ("SCSprf_reciproc_V Case 1 replacing %s by %s",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (arg1p)));
         } else {
             if (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)) {
                 /* Case 2 */
@@ -2800,9 +2801,9 @@ SCSprf_reciproc_V (node *arg_node, info *arg_info)
                                              &INFO_PREASSIGN (arg_info),
                                              TYcopyType ((AVIS_TYPE (ID_AVIS (arg1p)))));
                 res = TCmakePrf2 (F_mul_VxV, TBmakeId (p1), TBmakeId (p2));
-                DBUG_PRINT ("CF", ("SCSprf_reciproc_V Case 2 replacing %s by %s",
-                                   AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                   AVIS_NAME (ID_AVIS (arg1p))));
+                DBUG_PRINT ("SCSprf_reciproc_V Case 2 replacing %s by %s",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (arg1p)));
             }
         }
     }
@@ -2836,7 +2837,7 @@ SCSprf_neg_S (node *arg_node, info *arg_info)
     pattern *pat2;
     pattern *pat3;
 
-    DBUG_ENTER ("SCSprf_neg_S");
+    DBUG_ENTER ();
 
     pat1 = PMprf (1, PMAisPrf (F_neg_S), 1, PMvar (1, PMAgetNode (&arg1), 0));
     pat2 = PMprf (1, PMAisPrf (F_neg_S), 1, PMvar (1, PMAgetNode (&arg1), 0));
@@ -2847,9 +2848,9 @@ SCSprf_neg_S (node *arg_node, info *arg_info)
         if (PMmatchFlatSkipExtremaAndGuards (pat2, arg1)) {
             /* Case 1 */
             res = DUPdoDupNode (arg1);
-            DBUG_PRINT ("CF", ("SCSprf_neg_S Case 1 replacing %s by %s",
-                               AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                               AVIS_NAME (ID_AVIS (arg1))));
+            DBUG_PRINT ("SCSprf_neg_S Case 1 replacing %s by %s",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (arg1)));
         } else {
             if (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)) {
                 /* Case 2 */
@@ -2862,9 +2863,9 @@ SCSprf_neg_S (node *arg_node, info *arg_info)
                                              &INFO_PREASSIGN (arg_info),
                                              TYcopyType ((AVIS_TYPE (ID_AVIS (arg2p)))));
                 res = TCmakePrf2 (F_add_SxS, TBmakeId (p1), TBmakeId (p2));
-                DBUG_PRINT ("CF", ("SCSprf_neg_S Case 2 replacing %s by %s",
-                                   AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                   AVIS_NAME (ID_AVIS (arg1p))));
+                DBUG_PRINT ("SCSprf_neg_S Case 2 replacing %s by %s",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (arg1p)));
             }
         }
     }
@@ -2897,7 +2898,7 @@ SCSprf_neg_V (node *arg_node, info *arg_info)
     pattern *pat2;
     pattern *pat3;
 
-    DBUG_ENTER ("SCSprf_neg_V");
+    DBUG_ENTER ();
 
     pat1 = PMprf (1, PMAisPrf (F_neg_V), 1, PMvar (1, PMAgetNode (&arg1), 0));
     pat2 = PMprf (1, PMAisPrf (F_neg_V), 1, PMvar (1, PMAgetNode (&arg1), 0));
@@ -2909,9 +2910,9 @@ SCSprf_neg_V (node *arg_node, info *arg_info)
             /* Case 1*/
 
             res = DUPdoDupNode (arg1);
-            DBUG_PRINT ("CF", ("SCSprf_neg_V case 1 replacing %s by %s",
-                               AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                               AVIS_NAME (ID_AVIS (arg1))));
+            DBUG_PRINT ("SCSprf_neg_V case 1 replacing %s by %s",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (arg1)));
         } else {
             if (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)) {
                 /* Case 2 */
@@ -2924,9 +2925,9 @@ SCSprf_neg_V (node *arg_node, info *arg_info)
                                              &INFO_PREASSIGN (arg_info),
                                              TYcopyType ((AVIS_TYPE (ID_AVIS (arg2p)))));
                 res = TCmakePrf2 (F_add_VxV, TBmakeId (p1), TBmakeId (p2));
-                DBUG_PRINT ("CF", ("SCSprf_neg_V Case 2 replacing %s by %s",
-                                   AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                                   AVIS_NAME (ID_AVIS (arg1p))));
+                DBUG_PRINT ("SCSprf_neg_V Case 2 replacing %s by %s",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (ID_AVIS (arg1p)));
             }
         }
     }
@@ -2955,15 +2956,15 @@ SCSprf_noteminval (node *arg_node, info *arg_info)
     node *arg2p;
     pattern *pat;
 
-    DBUG_ENTER ("SCSprf_noteminval");
+    DBUG_ENTER ();
 
     pat = PMprf (1, PMAisPrf (F_noteminval), 2, PMvar (1, PMAgetNode (&arg1p), 0),
                  PMvar (1, PMAgetNode (&arg2p), 0));
     if ((PMmatchFlat (pat, arg_node)) && (NULL != AVIS_MIN (ID_AVIS (arg1p)))
         && (ID_AVIS (AVIS_MIN (ID_AVIS (arg1p))) == ID_AVIS (arg2p))) {
         res = DUPdoDupNode (arg1p);
-        DBUG_PRINT ("CF", ("Deleting nugatory F_noteminval for %s",
-                           AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))));
+        DBUG_PRINT ("Deleting nugatory F_noteminval for %s",
+                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
     }
 
     pat = PMfree (pat);
@@ -2987,17 +2988,19 @@ SCSprf_notemaxval (node *arg_node, info *arg_info)
     node *arg2p;
     pattern *pat;
 
-    DBUG_ENTER ("SCSprf_notemaxval");
+    DBUG_ENTER ();
 
     pat = PMprf (1, PMAisPrf (F_notemaxval), 2, PMvar (1, PMAgetNode (&arg1p), 0),
                  PMvar (1, PMAgetNode (&arg2p), 0));
     if ((PMmatchFlat (pat, arg_node)) && (NULL != AVIS_MAX (ID_AVIS (arg1p)))
         && (ID_AVIS (AVIS_MAX (ID_AVIS (arg1p))) == ID_AVIS (arg2p))) {
         res = DUPdoDupNode (arg1p);
-        DBUG_PRINT ("CF", ("Deleting nugatory F_notemaxval for %s",
-                           AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))));
+        DBUG_PRINT ("Deleting nugatory F_notemaxval for %s",
+                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
     }
 
     pat = PMfree (pat);
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

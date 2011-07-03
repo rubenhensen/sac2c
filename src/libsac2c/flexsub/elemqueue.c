@@ -6,7 +6,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "globals.h"
@@ -18,7 +21,7 @@ void
 EQenqueue (elemqueue *q, elem *e)
 {
 
-    DBUG_ENTER ("ELQenqueue");
+    DBUG_ENTER ();
 
     elemlist *head, *el;
 
@@ -34,14 +37,14 @@ EQenqueue (elemqueue *q, elem *e)
 
     ELEMQUEUE_HEAD (q) = el;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 elem *
 EQdequeue (elemqueue *q)
 {
 
-    DBUG_ENTER ("ELQdequeue");
+    DBUG_ENTER ();
 
     elemlist *tail, *prev;
     elem *e;
@@ -56,3 +59,5 @@ EQdequeue (elemqueue *q)
 
     DBUG_RETURN (result);
 }
+
+#undef DBUG_PREFIX

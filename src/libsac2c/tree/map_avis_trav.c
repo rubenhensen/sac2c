@@ -9,7 +9,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 
 /**
@@ -36,7 +39,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -50,7 +53,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -64,7 +67,7 @@ FreeInfo (info *info)
 node *
 MATfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MATfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
@@ -84,7 +87,7 @@ MATfundef (node *arg_node, info *arg_info)
 node *
 MATavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MATavis");
+    DBUG_ENTER ();
 
     arg_node = INFO_MAPTRAV (arg_info) (arg_node, INFO_EXTINFO (arg_info));
 
@@ -94,7 +97,7 @@ MATavis (node *arg_node, info *arg_info)
 node *
 MATblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MATblock");
+    DBUG_ENTER ();
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
@@ -111,7 +114,7 @@ MapAvisTrav (node *arg_node, info *extinfo, travfun_p maptrav, bool cont)
 {
     info *localinfo;
 
-    DBUG_ENTER ("MapAvisTrav");
+    DBUG_ENTER ();
 
     localinfo = MakeInfo ();
 
@@ -135,7 +138,7 @@ MapAvisTrav (node *arg_node, info *extinfo, travfun_p maptrav, bool cont)
 node *
 MATdoMapAvisTrav (node *arg_node, info *extinfo, travfun_p maptrav)
 {
-    DBUG_ENTER ("MATdoMapAvisTrav");
+    DBUG_ENTER ();
 
     arg_node = MapAvisTrav (arg_node, extinfo, maptrav, TRUE);
 
@@ -145,9 +148,11 @@ MATdoMapAvisTrav (node *arg_node, info *extinfo, travfun_p maptrav)
 node *
 MATdoMapAvisTravOneFundef (node *arg_node, info *extinfo, travfun_p maptrav)
 {
-    DBUG_ENTER ("MATdoMapAvisTravOneFundef");
+    DBUG_ENTER ();
 
     arg_node = MapAvisTrav (arg_node, extinfo, maptrav, FALSE);
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

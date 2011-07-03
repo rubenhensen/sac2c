@@ -59,7 +59,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "TFT"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -85,7 +88,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -99,7 +102,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     INFO_FUNS (info) = LUTremoveLut (INFO_FUNS (info));
 
@@ -127,11 +130,11 @@ TFTdoTagFunctionsAsThreads (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("TFTdoTagFunctionsAsThreads");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("TFT", ("Sarting tagging functions as threads traversal."));
+    DBUG_PRINT ("Sarting tagging functions as threads traversal.");
 
     INFO_MODULE (info) = (NODE_TYPE (syntax_tree) == N_module);
 
@@ -139,7 +142,7 @@ TFTdoTagFunctionsAsThreads (node *syntax_tree)
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("TFT", ("Taging functions as threads complete."));
+    DBUG_PRINT ("Taging functions as threads complete.");
 
     info = FreeInfo (info);
 
@@ -178,7 +181,7 @@ TFTdoTagFunctionsAsThreads (node *syntax_tree)
 node *
 TFTfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TFTfundef");
+    DBUG_ENTER ();
 
     /* If this is a thread fun then rember in info */
     if (FUNDEF_ISEXTERN (arg_node) && !FUNDEF_ISTHREADFUN (arg_node)) {
@@ -226,7 +229,7 @@ TFTfundef (node *arg_node, info *arg_info)
 node *
 TFTwith3 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TFTwith3");
+    DBUG_ENTER ();
 
     INFO_THREAD (arg_info) = TRUE;
 
@@ -248,7 +251,7 @@ TFTap (node *arg_node, info *arg_info)
 {
     bool module;
     bool thread;
-    DBUG_ENTER ("TFTap");
+    DBUG_ENTER ();
 
     thread = INFO_THREAD (arg_info);
     module = INFO_MODULE (arg_info);
@@ -270,3 +273,5 @@ TFTap (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

@@ -9,7 +9,8 @@
  * make sure that all simpletypes are dealt with.
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 #include "cv2cv.h"
 
@@ -30,11 +31,11 @@
     {                                                                                    \
         int i;                                                                           \
                                                                                          \
-        DBUG_ENTER ("COcv2Cv##ext");                                                     \
+        DBUG_ENTER ();                                                                   \
         for (i = 0; i < len; i++) {                                                      \
             ((type *)res)[i + res_off] = ((type *)src)[i + off];                         \
         }                                                                                \
-        DBUG_VOID_RETURN;                                                                \
+        DBUG_RETURN ();                                                                  \
     }
 
 /*
@@ -63,7 +64,9 @@ COcv2CvTEMPLATE (unsigned char, UByte) COcv2CvTEMPLATE (unsigned short, UShort)
 
   void COcv2CvDummy (void *src, int off, int len, void *res, int res_off)
 {
-    DBUG_ENTER ("COCv2CvDummy");
-    DBUG_ASSERT ((1 == 0), "COCv2CvDummy called!");
-    DBUG_VOID_RETURN;
+    DBUG_ENTER ();
+    DBUG_ASSERT (1 == 0, "COCv2CvDummy called!");
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

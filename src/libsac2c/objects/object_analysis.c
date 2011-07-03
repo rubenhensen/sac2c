@@ -11,7 +11,10 @@
 #include "str.h"
 #include "memory.h"
 #include "ctinfo.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "OAN"
+#include "debug.h"
+
 #include "globals.h"
 #include "specialization_oracle_static_shape_knowledge.h"
 #include "strip_external_signatures.h"
@@ -47,7 +50,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -64,7 +67,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -77,7 +80,7 @@ FreeInfo (info *info)
 static node *
 ResetArgs (node *args)
 {
-    DBUG_ENTER ("ResetArgs");
+    DBUG_ENTER ();
 
     if (args != NULL) {
         ARG_HASLINKSIGNINFO (args) = FALSE;
@@ -93,7 +96,7 @@ ResetArgs (node *args)
 static node *
 ResetRets (node *rets)
 {
-    DBUG_ENTER ("ResetRets");
+    DBUG_ENTER ();
 
     if (rets != NULL) {
         RET_HASLINKSIGNINFO (rets) = FALSE;
@@ -115,11 +118,11 @@ CreateObjectWrapper (node *wrapper, node *fundef)
     node *ids;
     node *vardecs = NULL;
 
-    DBUG_ENTER ("CreateObjectWrapper");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("OAN", ("Creating object wrapper for %s for " F_PTR "...",
-                        CTIitemName (fundef), fundef));
-    DBUG_PRINT ("OAN", ("The corresponding wrapper is %s...", CTIitemName (wrapper)));
+    DBUG_PRINT ("Creating object wrapper for %s for " F_PTR "...", CTIitemName (fundef),
+                fundef);
+    DBUG_PRINT ("The corresponding wrapper is %s...", CTIitemName (wrapper));
 
     /*
      * remove body for copying
@@ -196,7 +199,7 @@ CreateObjectWrapper (node *wrapper, node *fundef)
     FUNDEF_ISOBJECTWRAPPER (result) = TRUE;
     FUNDEF_IMPL (result) = fundef;
 
-    DBUG_PRINT ("OAN", ("The result is %s...", CTIitemName (result)));
+    DBUG_PRINT ("The result is %s...", CTIitemName (result));
 
     DBUG_RETURN (result);
 }
@@ -204,7 +207,7 @@ CreateObjectWrapper (node *wrapper, node *fundef)
 static node *
 CollectObjects (node *fundef, info *info)
 {
-    DBUG_ENTER ("CollectObjects");
+    DBUG_ENTER ();
 
     TCsetUnion (&INFO_OBJECTS (info), FUNDEF_OBJECTS (fundef));
 
@@ -214,7 +217,7 @@ CollectObjects (node *fundef, info *info)
 static node *
 ProjectObjects (node *fundef, info *info)
 {
-    DBUG_ENTER ("ProjectObjects");
+    DBUG_ENTER ();
 
     if ((FUNDEF_ISLOCAL (fundef) && !FUNDEF_WASIMPORTED (fundef))
         || INFO_WASUSED (info)) {
@@ -255,12 +258,11 @@ ProjectObjects (node *fundef, info *info)
 static void
 UnifyOverloadedFunctions (node *funs, info *info)
 {
-    DBUG_ENTER ("UnifyOverloadedFunctions");
+    DBUG_ENTER ();
 
     while (funs != NULL) {
         if (FUNDEF_ISWRAPPERFUN (funs)) {
-            DBUG_PRINT ("OAN",
-                        ("Unifying objects of function %s...", CTIitemName (funs)));
+            DBUG_PRINT ("Unifying objects of function %s...", CTIitemName (funs));
 
             INFO_WRAPPER (info) = funs;
 
@@ -293,7 +295,7 @@ UnifyOverloadedFunctions (node *funs, info *info)
         funs = FUNDEF_NEXT (funs);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static node *
@@ -301,7 +303,7 @@ LookupObjdef (namespace_t *ns, const char *name, node *objs)
 {
     node *result;
 
-    DBUG_ENTER ("LookupObjdef");
+    DBUG_ENTER ();
 
     if (objs == NULL) {
         result = NULL;
@@ -322,7 +324,7 @@ AddAffectedObjects (node **exprs, node *list, info *info)
     node *objdef;
     node *spid;
 
-    DBUG_ENTER ("AddAffectedObjects");
+    DBUG_ENTER ();
 
     if (*exprs != NULL) {
         spid = EXPRS_EXPR (*exprs);
@@ -340,7 +342,7 @@ AddAffectedObjects (node **exprs, node *list, info *info)
              */
             objdef = TCunAliasObjdef (objdef);
 
-            DBUG_PRINT ("OAN", (">>> adding effect on %s...", CTIitemName (objdef)));
+            DBUG_PRINT (">>> adding effect on %s...", CTIitemName (objdef));
 
             INFO_CHANGES (info) += TCsetAdd (&list, objdef);
         }
@@ -356,7 +358,7 @@ AddAffectedObjects (node **exprs, node *list, info *info)
 static node *
 ProjectObjectsToFunSpecs (node *spec, info *arg_info)
 {
-    DBUG_ENTER ("ProjectObjectsToFunSpecs");
+    DBUG_ENTER ();
 
     FUNDEF_OBJECTS (spec) = DUPdoDupTree (FUNDEF_OBJECTS (FUNDEF_IMPL (spec)));
 
@@ -371,7 +373,7 @@ OANdoObjectAnalysis (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("OANdoObjectAnalysis");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -392,7 +394,7 @@ OANdoObjectAnalysis (node *syntax_tree)
 node *
 OANmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OANModule");
+    DBUG_ENTER ();
 
     INFO_OBJDEFS (arg_info) = MODULE_OBJS (arg_node);
 
@@ -400,7 +402,7 @@ OANmodule (node *arg_node, info *arg_info)
      * first we iterate the FUNDECS once to add the
      * affectedobjects to the object list
      */
-    DBUG_PRINT ("OAN", ("!!! processing fundecs..."));
+    DBUG_PRINT ("!!! processing fundecs...");
 
     if (MODULE_FUNDECS (arg_node) != NULL) {
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
@@ -416,7 +418,7 @@ OANmodule (node *arg_node, info *arg_info)
          */
         INFO_CHANGES (arg_info) = 0;
 
-        DBUG_PRINT ("OAN", ("!!! starting new iteration"));
+        DBUG_PRINT ("!!! starting new iteration");
         /*
          * we have to trust the programmer for FUNDECS,
          * so we only traverse FUNS
@@ -426,8 +428,7 @@ OANmodule (node *arg_node, info *arg_info)
             MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
         }
 
-        DBUG_PRINT ("OAN",
-                    ("!!! last iteration added %d objects.", INFO_CHANGES (arg_info)));
+        DBUG_PRINT ("!!! last iteration added %d objects.", INFO_CHANGES (arg_info));
 
         /*
          * propagate the infered objects to the wrappers and ensure
@@ -438,11 +439,11 @@ OANmodule (node *arg_node, info *arg_info)
          * iteration as otherwise the object usage is not propagated
          * over wrapper calls!
          */
-        DBUG_PRINT ("OAN", ("unifying dependencies of overloaded instances..."));
+        DBUG_PRINT ("unifying dependencies of overloaded instances...");
 
         UnifyOverloadedFunctions (MODULE_FUNS (arg_node), arg_info);
 
-        DBUG_PRINT ("OAN", ("unifying completed."));
+        DBUG_PRINT ("unifying completed.");
     } while (INFO_CHANGES (arg_info) != 0);
 
     /*
@@ -472,12 +473,11 @@ OANmodule (node *arg_node, info *arg_info)
 node *
 OANglobobj (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OANglobobj");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((GLOBOBJ_OBJDEF (arg_node) != NULL),
-                 "found a global id without objdef!");
+    DBUG_ASSERT (GLOBOBJ_OBJDEF (arg_node) != NULL, "found a global id without objdef!");
 
-    DBUG_PRINT ("OAN", (">>> adding object %s", CTIitemName (GLOBOBJ_OBJDEF (arg_node))));
+    DBUG_PRINT (">>> adding object %s", CTIitemName (GLOBOBJ_OBJDEF (arg_node)));
 
     INFO_CHANGES (arg_info)
       += TCsetAdd (&INFO_OBJECTS (arg_info), GLOBOBJ_OBJDEF (arg_node));
@@ -490,15 +490,14 @@ OANap (node *arg_node, info *arg_info)
 {
     int newdeps;
 
-    DBUG_ENTER ("OANap");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("OAN",
-                (">>> adding dependencies of %s", CTIitemName (AP_FUNDEF (arg_node))));
+    DBUG_PRINT (">>> adding dependencies of %s", CTIitemName (AP_FUNDEF (arg_node)));
 
     newdeps
       = TCsetUnion (&INFO_OBJECTS (arg_info), FUNDEF_OBJECTS (AP_FUNDEF (arg_node)));
 
-    DBUG_PRINT ("OAN", (">>> %d dependencies added", newdeps));
+    DBUG_PRINT (">>> %d dependencies added", newdeps);
 
     INFO_CHANGES (arg_info) += newdeps;
 
@@ -510,9 +509,9 @@ OANap (node *arg_node, info *arg_info)
 node *
 OANfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OANfundef");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_OBJECTS (arg_info) == NULL),
+    DBUG_ASSERT (INFO_OBJECTS (arg_info) == NULL,
                  "entering fundef with objects left over ?!?");
 
     /*
@@ -520,7 +519,7 @@ OANfundef (node *arg_node, info *arg_info)
      * correct annotations already!
      */
     if (FUNDEF_ISLOCAL (arg_node)) {
-        DBUG_PRINT ("OAN", ("entering fundef %s", CTIitemName (arg_node)));
+        DBUG_PRINT ("entering fundef %s", CTIitemName (arg_node));
 
         /*
          * first add the objects from affectedobjects if any present
@@ -538,7 +537,7 @@ OANfundef (node *arg_node, info *arg_info)
         FUNDEF_OBJECTS (arg_node) = INFO_OBJECTS (arg_info);
         INFO_OBJECTS (arg_info) = NULL;
 
-        DBUG_PRINT ("OAN", ("leaving fundef %s", CTIitemName (arg_node)));
+        DBUG_PRINT ("leaving fundef %s", CTIitemName (arg_node));
     }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -549,7 +548,7 @@ OANfundef (node *arg_node, info *arg_info)
 node *
 OANobjdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OANobjdef");
+    DBUG_ENTER ();
 
     if ((OBJDEF_INITFUN (arg_node) != NULL)
         && (TCsetContains (FUNDEF_OBJECTS (OBJDEF_INITFUN (arg_node)), arg_node))) {
@@ -563,3 +562,5 @@ OANobjdef (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

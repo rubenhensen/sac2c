@@ -26,7 +26,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "SFWO"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -49,17 +52,17 @@ node *
 SFWOdoSetFundefWasOptimized (node *syntax_tree)
 {
 
-    DBUG_ENTER ("SFWOdoSetFundefWasOptimized");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("SFWO", ("Setting FUNDEF_WASOPTIMIZED flags starts"));
+    DBUG_PRINT ("Setting FUNDEF_WASOPTIMIZED flags starts");
     DBUG_ASSERT (N_module == NODE_TYPE (syntax_tree),
-                 ("SFWOdoSetFundefWasOptimizedModule needs N_module node"));
+                 "SFWOdoSetFundefWasOptimizedModule needs N_module node");
 
     TRAVpush (TR_sfwo);
     syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
 
-    DBUG_PRINT ("SFWO", ("Setting FUNDEF_WASOPTIMIZED flags ends"));
+    DBUG_PRINT ("Setting FUNDEF_WASOPTIMIZED flags ends");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -93,7 +96,7 @@ SFWOdoSetFundefWasOptimized (node *syntax_tree)
 node *
 SFWOmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SFWOmodule");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -113,7 +116,7 @@ SFWOmodule (node *arg_node, info *arg_info)
 node *
 SFWOfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SFWOfundef");
+    DBUG_ENTER ();
 
     FUNDEF_WASOPTIMIZED (arg_node) = TRUE;
 
@@ -127,3 +130,5 @@ SFWOfundef (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

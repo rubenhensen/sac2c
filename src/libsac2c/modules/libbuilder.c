@@ -5,7 +5,10 @@
  */
 
 #include "libbuilder.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "LIBB"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "system.h"
 #include "str.h"
@@ -27,7 +30,7 @@ static char *
 AddVariantToDotOFile (const char *file)
 {
     char *res;
-    DBUG_ENTER ("AddVariantToDotOFile");
+    DBUG_ENTER ();
 
     if (STRsuffix (".o", file)) {
         char *name = STRsubStr (file, 0, STRlen (file) - 2);
@@ -56,7 +59,7 @@ BuildDepLibsStringMod (const char *lib, strstype_t kind, void *rest)
     char *result = NULL;
     char *select;
 
-    DBUG_ENTER ("BuildDepLibsStringMod");
+    DBUG_ENTER ();
 
     switch (kind) {
     case STRS_objfile:
@@ -88,7 +91,7 @@ LIBBcreateLibrary (node *syntax_tree)
     char *ldCmd;
     stringset_t *deps = global.dependencies;
 
-    DBUG_ENTER ("LIBBcreateLibrary");
+    DBUG_ENTER ();
 
     if (global.gen_cccall) {
         /*
@@ -120,7 +123,7 @@ LIBBcreateLibrary (node *syntax_tree)
                                global.config.lib_variant, ".so");
         ldCmd = STRsubstToken (global.config.ld_dynamic, "%libname%", libraryName);
 
-        DBUG_PRINT ("LIBB", ("linker command: %s", ldCmd));
+        DBUG_PRINT ("linker command: %s", ldCmd);
 
         SYScall ("%s -o %s%s %s/fun*_pic.o %s/globals_pic.o %s", ldCmd, global.targetdir,
                  libraryName, global.tmp_dirname, global.tmp_dirname, deplibs);
@@ -164,7 +167,7 @@ LIBBcreateWrapperLibrary (node *syntax_tree)
     char *ldCmd;
     stringset_t *deps = global.dependencies;
 
-    DBUG_ENTER ("LIBBcreateWrapperLibrary");
+    DBUG_ENTER ();
 
     if (global.gen_cccall) {
         /*
@@ -207,3 +210,5 @@ LIBBcreateWrapperLibrary (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

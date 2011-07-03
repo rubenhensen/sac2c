@@ -43,7 +43,8 @@
     <xsl:text>
 
 #include "traverse_helper.h"
-#include "dbug.h"
+#define DBUG_PREFIX "TRAVHELP"
+#include "debug.h"
 #include "tree_basic.h"
 #include "traverse.h"
 
@@ -56,7 +57,7 @@ node *TRAVnone(node *arg_node, info *arg_info)
 
 node *TRAVerror(node *arg_node, info *arg_info)
 {
-  DBUG_ASSERT( (FALSE), "Illegal node type found.");
+  DBUG_ASSERT (FALSE, "Illegal node type found.");
 
   return( arg_node);
 }
@@ -70,8 +71,7 @@ node *TRAVsons(node *arg_node, info *arg_info)
   <xsl:apply-templates select="/definition/syntaxtree" mode="travsons" />
   <xsl:text>
     default:
-      DBUG_ASSERT( (FALSE), 
-         "Illegal nodetype found!" );
+      DBUG_ASSERT (FALSE, "Illegal nodetype found!");
       break;
   }
 
@@ -82,38 +82,36 @@ int TRAVnumSons( node *node)
 {
   int result = 0;
 
-  DBUG_ENTER("TRAVnumSons");
+  DBUG_ENTER ();
 
   switch (NODE_TYPE( node)) {
   </xsl:text>
   <xsl:apply-templates select="/definition/syntaxtree" mode="travnumsons" />
   <xsl:text>
     default:
-      DBUG_ASSERT( (FALSE),
-         "Illegal nodetype found!" );
+      DBUG_ASSERT (FALSE, "Illegal nodetype found!");
       break;
   }
 
-  DBUG_RETURN( result);
+  DBUG_RETURN (result);
 }
 
 node *TRAVgetSon( int no, node *parent)
 {
   node * result = NULL;
 
-  DBUG_ENTER("TRAVgetSon");
+  DBUG_ENTER ();
 
   switch (NODE_TYPE( parent)) {
   </xsl:text>
   <xsl:apply-templates select="/definition/syntaxtree" mode="travgetson" />
   <xsl:text>
     default:
-      DBUG_ASSERT( (FALSE),
-         "Illegal nodetype found!" );
+      DBUG_ASSERT (FALSE,  "Illegal nodetype found!");
       break;
   }
 
-  DBUG_RETURN( result);
+  DBUG_RETURN (result);
 }
     </xsl:text>
   </xsl:template>
@@ -163,7 +161,7 @@ node *TRAVgetSon( int no, node *parent)
     </xsl:call-template>
     <xsl:value-of select="': switch (no) { '" />
     <xsl:apply-templates select="sons/son" mode="travgetson" />
-    <xsl:value-of select="'default: DBUG_ASSERT( (FALSE), &quot;index out of range!&quot;); break; } break;'" />
+    <xsl:value-of select="'default: DBUG_ASSERT (FALSE, &quot;index out of range!&quot;); break; } break;'" />
   </xsl:template>
 
   <xsl:template match="son" mode="travgetson" >

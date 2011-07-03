@@ -5,7 +5,10 @@
  */
 
 #include "ssi.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "SSI"
+#include "debug.h"
+
 #include "new_types.h"
 #include "str.h"
 #include "memory.h"
@@ -86,7 +89,7 @@ IsIn (tvar *var, int num, tvar **list)
     bool res = FALSE;
     int i = 0;
 
-    DBUG_ENTER ("IsIn");
+    DBUG_ENTER ();
 
     while (!res && (i < num)) {
         res = (list[i] == var);
@@ -101,7 +104,7 @@ AddBigger (tvar *small, tvar *big)
     tvar **new;
     int i;
 
-    DBUG_ENTER ("AddBigger");
+    DBUG_ENTER ();
     if (TVAR_MBIG (small) == TVAR_NBIG (small)) {
         TVAR_MBIG (small) += CHUNK_SIZE;
         new = (tvar **)MEMmalloc (sizeof (tvar *) * TVAR_MBIG (small));
@@ -117,7 +120,7 @@ AddBigger (tvar *small, tvar *big)
     TVAR_BIG (small, TVAR_NBIG (small)) = big;
     TVAR_NBIG (small) += 1;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -126,7 +129,7 @@ AddSmaller (tvar *big, tvar *small)
     tvar **new;
     int i;
 
-    DBUG_ENTER ("AddSmaller");
+    DBUG_ENTER ();
     if (TVAR_MSMALL (big) == TVAR_NSMALL (big)) {
         TVAR_MSMALL (big) += CHUNK_SIZE;
         new = (tvar **)MEMmalloc (sizeof (tvar *) * TVAR_MSMALL (big));
@@ -142,7 +145,7 @@ AddSmaller (tvar *big, tvar *small)
     TVAR_SMALL (big, TVAR_NSMALL (big)) = small;
     TVAR_NSMALL (big) += 1;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -151,7 +154,7 @@ AddHandle (tvar *var, sig_dep *handle)
     sig_dep **new;
     int i;
 
-    DBUG_ENTER ("AddHandle");
+    DBUG_ENTER ();
     if (TVAR_MASS (var) == TVAR_NASS (var)) {
         TVAR_MASS (var) += CHUNK_SIZE;
         new = (sig_dep **)MEMmalloc (sizeof (sig_dep *) * TVAR_MASS (var));
@@ -167,7 +170,7 @@ AddHandle (tvar *var, sig_dep *handle)
     TVAR_HAND (var, TVAR_NASS (var)) = handle;
     TVAR_NASS (var) += 1;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*******************************************************************************
@@ -192,7 +195,7 @@ SSImakeVariable ()
 {
     tvar *res;
 
-    DBUG_ENTER ("SSImakeVariable");
+    DBUG_ENTER ();
 
     if (tvar_heap == NULL) {
         tvar_heap = PHPcreateHeap (sizeof (tvar), 1000);
@@ -215,8 +218,8 @@ SSImakeVariable ()
     TVAR_NASS (res) = 0;
     TVAR_HANDS (res) = NULL;
 
-    DBUG_PRINT ("SSI", ("new type var generated: #%d", var_cntr - 1));
-    DBUG_PRINT ("SSIMEM", ("type var #%d allocated at %p", var_cntr - 1, res));
+    DBUG_PRINT ("new type var generated: #%d", var_cntr - 1);
+    DBUG_PRINT_TAG ("SSIMEM", "type var #%d allocated at %p", var_cntr - 1, res);
 
     DBUG_RETURN (res);
 }
@@ -224,11 +227,11 @@ SSImakeVariable ()
 void
 SSIfreeAllTvars ()
 {
-    DBUG_ENTER ("SSIfreeAllTvars");
+    DBUG_ENTER ();
 
     tvar_heap = PHPfreeHeap (tvar_heap);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -252,11 +255,11 @@ NewMax (tvar *var, ntype *cmax, bool outer)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("NewMax");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (cmax, FALSE, 0););
-    DBUG_PRINT ("SSI", ("    new max for #%d: %s", TVAR_NO (var), tmp_str));
-    DBUG_EXECUTE ("SSI", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (cmax, FALSE, 0));
+    DBUG_PRINT ("    new max for #%d: %s", TVAR_NO (var), tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     if (cmax == NULL) {
         res = TRUE;
@@ -325,7 +328,7 @@ SSInewMax (tvar *var, ntype *cmax)
 {
     bool res;
 
-    DBUG_ENTER ("SSInewMax");
+    DBUG_ENTER ();
 
     res = NewMax (var, cmax, TRUE);
 
@@ -349,7 +352,7 @@ InsertMinAndCheckAssumption (tvar *var, ntype *new_min)
     ntype *old_min;
     int i;
 
-    DBUG_ENTER ("CheckAndHandleAssumption");
+    DBUG_ENTER ();
 
     old_min = TVAR_MIN (var);
 
@@ -359,7 +362,7 @@ InsertMinAndCheckAssumption (tvar *var, ntype *new_min)
 
         TVAR_MIN (var) = new_min;
         for (i = 0; i < TVAR_NASS (var); i++) {
-            DBUG_PRINT ("SSI", ("Handling contradiction : %p", TVAR_HAND (var, i)));
+            DBUG_PRINT ("Handling contradiction : %p", TVAR_HAND (var, i));
             ok = ok && ass_contra_handle (TVAR_HAND (var, i));
         }
 
@@ -373,7 +376,7 @@ InsertMinAndCheckAssumption (tvar *var, ntype *new_min)
         TYfreeType (old_min);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -396,11 +399,11 @@ NewMin (tvar *var, ntype *cmin, bool outer)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("NewMin");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (cmin, FALSE, 0););
-    DBUG_PRINT ("SSI", ("    new min for #%d: %s", TVAR_NO (var), tmp_str));
-    DBUG_EXECUTE ("SSI", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (cmin, FALSE, 0));
+    DBUG_PRINT ("    new min for #%d: %s", TVAR_NO (var), tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     if (cmin == NULL) {
         res = TRUE;
@@ -417,9 +420,9 @@ NewMin (tvar *var, ntype *cmin, bool outer)
             tmp = TYlubOfTypes (cmin, TVAR_MIN (var));
         }
 
-        DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (tmp, FALSE, 0););
-        DBUG_PRINT ("SSI", ("    is %s a legal min for #%d?", tmp_str, TVAR_NO (var)));
-        DBUG_EXECUTE ("SSI", tmp_str = MEMfree (tmp_str););
+        DBUG_EXECUTE (tmp_str = TYtype2String (tmp, FALSE, 0));
+        DBUG_PRINT ("    is %s a legal min for #%d?", tmp_str, TVAR_NO (var));
+        DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
         /*
          * Now, we check whether tmp can be used as new minimum:
@@ -443,7 +446,7 @@ NewMin (tvar *var, ntype *cmin, bool outer)
             }
             TYfreeType (tmp);
         } else {
-            DBUG_PRINT ("SSI", ("    no!"));
+            DBUG_PRINT ("    no!");
             res = FALSE;
         }
     }
@@ -456,7 +459,7 @@ SSInewMin (tvar *var, ntype *cmin)
 {
     bool res;
 
-    DBUG_ENTER ("SSInewMin");
+    DBUG_ENTER ();
     res = NewMin (var, cmin, TRUE);
     DBUG_RETURN (res);
 }
@@ -477,9 +480,9 @@ SSInewRel (tvar *small, tvar *big)
     bool res;
     int i, j;
 
-    DBUG_ENTER ("SSInewRel");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("SSI", ("    new rel #%d <= #%d", TVAR_NO (small), TVAR_NO (big)));
+    DBUG_PRINT ("    new rel #%d <= #%d", TVAR_NO (small), TVAR_NO (big));
 
     if (IsIn (small, TVAR_NSMALL (big), TVAR_SMALLS (big))) {
         /*
@@ -547,7 +550,7 @@ SSInewTypeRel (ntype *small, ntype *big)
 {
     bool res;
 
-    DBUG_ENTER ("SSInewTypeRel");
+    DBUG_ENTER ();
 
     if (TYisAlpha (small)) {
         if (TYisAlpha (big)) {
@@ -582,14 +585,14 @@ SSIinitAssumptionSystem (tvar_ass_handle_fun HandleContra, tvar_ass_handle_fun H
 {
     bool res;
 
-    DBUG_ENTER ("SSIinitAssumptionSystem");
+    DBUG_ENTER ();
 
     ass_contra_handle = HandleContra;
     ass_fix_handle = HandleFix;
     res = (!ass_system_active && (ass_fix_handle != NULL) && (ass_contra_handle != NULL));
     ass_system_active = TRUE;
 
-    DBUG_PRINT ("SSI", ("Assumption system initialized"));
+    DBUG_PRINT ("Assumption system initialized");
 
     DBUG_RETURN (res);
 }
@@ -602,7 +605,7 @@ SSIinitAssumptionSystem (tvar_ass_handle_fun HandleContra, tvar_ass_handle_fun H
 bool
 SSIassumptionSystemIsInitialized ()
 {
-    DBUG_ENTER ("SSIassumptionSystemIsInitialized");
+    DBUG_ENTER ();
 
     DBUG_RETURN (ass_system_active);
 }
@@ -620,10 +623,9 @@ SSIassumptionSystemIsInitialized ()
 bool
 SSIassumeLow (tvar *var, sig_dep *handle)
 {
-    DBUG_ENTER ("SSIassumeLow");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("SSI",
-                ("adding assumption for variable #%d, handle %p", TVAR_NO (var), handle));
+    DBUG_PRINT ("adding assumption for variable #%d, handle %p", TVAR_NO (var), handle);
     AddHandle (var, handle);
     DBUG_RETURN (ass_system_active);
 }
@@ -648,11 +650,11 @@ SSIfixLow (tvar *var)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("SSIfixLow");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (TVAR_MIN (var), FALSE, 0););
-    DBUG_PRINT ("SSI", ("fixing variable #%d to %s", TVAR_NO (var), tmp_str));
-    DBUG_EXECUTE ("SSI", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (TVAR_MIN (var), FALSE, 0));
+    DBUG_PRINT ("fixing variable #%d to %s", TVAR_NO (var), tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     SSInewMax (var, SSIgetMin (var));
 
@@ -667,7 +669,7 @@ SSIfixLow (tvar *var)
         TVAR_HANDS (var) = NULL;
 
         for (i = 0; i < n; i++) {
-            DBUG_PRINT ("SSI", ("Deleting handle : %p", hands[i]));
+            DBUG_PRINT ("Deleting handle : %p", hands[i]);
             res = res && ass_fix_handle (hands[i]);
         }
 
@@ -696,7 +698,7 @@ SSIfixLow (tvar *var)
 bool
 SSIisFix (tvar *var)
 {
-    DBUG_ENTER ("SSIisFix");
+    DBUG_ENTER ();
     DBUG_RETURN ((TVAR_MIN (var) != NULL) && (TVAR_MAX (var) != NULL)
                  && TYeqTypes (TVAR_MAX (var), TVAR_MIN (var)));
 }
@@ -704,21 +706,21 @@ SSIisFix (tvar *var)
 bool
 SSIisLe (tvar *var1, tvar *var2)
 {
-    DBUG_ENTER ("SSIisLe");
+    DBUG_ENTER ();
     DBUG_RETURN (IsIn (var2, TVAR_NBIG (var1), TVAR_BIGS (var1)));
 }
 
 ntype *
 SSIgetMax (tvar *var)
 {
-    DBUG_ENTER ("SSIgetMax");
+    DBUG_ENTER ();
     DBUG_RETURN (TVAR_MAX (var));
 }
 
 ntype *
 SSIgetMin (tvar *var)
 {
-    DBUG_ENTER ("SSIgetMin");
+    DBUG_ENTER ();
     DBUG_RETURN (TVAR_MIN (var));
 }
 
@@ -739,7 +741,7 @@ SSIvariable2String (tvar *var)
     char *tmp = &buf[0];
     char *tmp_str, *tmp_str2;
 
-    DBUG_ENTER ("SSIvariable2String");
+    DBUG_ENTER ();
     if (var == NULL) {
         tmp += sprintf (tmp, "--");
     } else {
@@ -771,7 +773,7 @@ SSIvariable2DebugString (tvar *var)
     char *tmp_str, *tmp_str2;
     int i;
 
-    DBUG_ENTER ("SSIvariable2DebugString");
+    DBUG_ENTER ();
     if (var == NULL) {
         tmp += sprintf (tmp, "--");
     } else {
@@ -795,3 +797,5 @@ SSIvariable2DebugString (tvar *var)
 }
 
 /* @} */ /* addtogroup ntc */
+
+#undef DBUG_PREFIX

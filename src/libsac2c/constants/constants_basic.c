@@ -45,7 +45,10 @@
 
 #include "globals.h"
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CO"
+#include "debug.h"
+
 #include "shape.h"
 #include "cv2scalar.h"
 #include "cv2cv.h"
@@ -102,7 +105,7 @@ COINTmakeConstant (simpletype type, shape *shp, void *elems, int vlen)
 {
     constant *res;
 
-    DBUG_ENTER ("COINTmakeConstant");
+    DBUG_ENTER ();
 
     res = (constant *)MEMmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
@@ -128,7 +131,7 @@ COINTallocCV (simpletype type, int length)
 {
     void *res;
 
-    DBUG_ENTER ("COINTallocCV");
+    DBUG_ENTER ();
 
     res = (void *)MEMmalloc (global.basetype_size[type] * length);
 
@@ -148,7 +151,7 @@ COINTallocCV (simpletype type, int length)
 static void *
 COINTcopyCVToMem (simpletype type, int length, void *cv)
 {
-    DBUG_ENTER ("COINTcopyCVToMem");
+    DBUG_ENTER ();
 
     void *res;
 
@@ -178,7 +181,7 @@ COINTpickNElemsFromCV (simpletype type, void *elems, int offset, int length)
 {
     void *res;
 
-    DBUG_ENTER ("COINTpickNElemsFromCV");
+    DBUG_ENTER ();
 
     res = COINTallocCV (type, length);
     global.cv2cv[type](elems, offset, length, res, 0);
@@ -203,11 +206,11 @@ void
 COINTcopyElemsFromCVToCV (simpletype type, void *from, int off, int len, void *to,
                           int to_off)
 {
-    DBUG_ENTER ("COINTcopyElemsFromCVToCV");
+    DBUG_ENTER ();
 
     global.cv2cv[type](from, off, len, to, to_off);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -228,7 +231,7 @@ COINTcopyElemsFromCVToCV (simpletype type, void *from, int off, int len, void *t
 void
 COINTdbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res)
 {
-    DBUG_ENTER ("COINTdbugPrintBinOp");
+    DBUG_ENTER ();
 
     fprintf (stderr, "%s applied to\n ", fun);
     COprintConstant (stderr, arg1);
@@ -237,7 +240,7 @@ COINTdbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res)
     fprintf (stderr, "results in: ");
     COprintConstant (stderr, res);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #endif
@@ -259,14 +262,14 @@ COINTdbugPrintBinOp (char *fun, constant *arg1, constant *arg2, constant *res)
 void
 COINTdbugPrintUnaryOp (char *fun, constant *arg1, constant *res)
 {
-    DBUG_ENTER ("COINTdbugPrintUnaryOp");
+    DBUG_ENTER ();
 
     fprintf (stderr, "%s applied to\n ", fun);
     COprintConstant (stderr, arg1);
     fprintf (stderr, "results in: ");
     COprintConstant (stderr, res);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #endif
@@ -293,7 +296,7 @@ MakeScalarConstantFromCV (simpletype type, void *cv)
 {
     constant *res;
 
-    DBUG_ENTER ("MakeScalarConstantFromCV");
+    DBUG_ENTER ();
 
     res = (constant *)MEMmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
@@ -329,7 +332,7 @@ COmakeConstant (simpletype type, shape *shp, void *elems)
 {
     constant *res;
 
-    DBUG_ENTER ("COmakeConstant");
+    DBUG_ENTER ();
 
     res = (constant *)MEMmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = type;
@@ -356,7 +359,7 @@ COmakeConstantFromInt (int val)
     constant *res;
     int *intelems;
 
-    DBUG_ENTER ("COmakeConstantFromInt");
+    DBUG_ENTER ();
 
     res = (constant *)MEMmalloc (sizeof (constant));
     CONSTANT_TYPE (res) = T_int;
@@ -387,7 +390,7 @@ COmakeConstantFromShape (shape *shp)
     constant *res;
     int vlen;
 
-    DBUG_ENTER ("COmakeConstantFromShape");
+    DBUG_ENTER ();
 
     vlen = SHgetDim (shp);
     res = (constant *)MEMmalloc (sizeof (constant));
@@ -416,7 +419,7 @@ COmakeConstantFromShape (shape *shp)
 constant *
 COmakeConstantFromDynamicArguments (simpletype type, int dim, ...)
 {
-    DBUG_ENTER ("COmakeConstantFromDynamicArguments");
+    DBUG_ENTER ();
 
     /* Pointer for dynamic arguments*/
     va_list Argp;
@@ -476,7 +479,7 @@ COmakeConstantFromDynamicArguments (simpletype type, int dim, ...)
 constant *
 COmakeConstantFromArray (simpletype type, int dim, int *shp, void *elems)
 {
-    DBUG_ENTER ("COmakeConstantFromArray");
+    DBUG_ENTER ();
 
     /* constant parts*/
     shape *res_shape = NULL;
@@ -528,7 +531,7 @@ COmakeConstantFromArray (simpletype type, int dim, int *shp, void *elems)
 simpletype
 COgetType (constant *a)
 {
-    DBUG_ENTER ("COgetType");
+    DBUG_ENTER ();
 
     DBUG_RETURN (CONSTANT_TYPE (a));
 }
@@ -536,7 +539,7 @@ COgetType (constant *a)
 int
 COgetDim (constant *a)
 {
-    DBUG_ENTER ("COgetDim");
+    DBUG_ENTER ();
 
     DBUG_RETURN (SHgetDim (CONSTANT_SHAPE (a)));
 }
@@ -544,7 +547,7 @@ COgetDim (constant *a)
 shape *
 COgetShape (constant *a)
 {
-    DBUG_ENTER ("COgetShape");
+    DBUG_ENTER ();
 
     DBUG_RETURN (CONSTANT_SHAPE (a));
 }
@@ -552,7 +555,7 @@ COgetShape (constant *a)
 int
 COgetExtent (constant *a, int i)
 {
-    DBUG_ENTER ("COgetExtent");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (i < CONSTANT_DIM (a), "COgetExtent called with illegal dim spec");
 
@@ -562,7 +565,7 @@ COgetExtent (constant *a, int i)
 void *
 COgetDataVec (constant *a)
 {
-    DBUG_ENTER ("COgetDataVec");
+    DBUG_ENTER ();
 
     DBUG_RETURN (CONSTANT_ELEMS (a));
 }
@@ -588,7 +591,7 @@ COcopyConstant (constant *a)
 {
     constant *res;
 
-    DBUG_ENTER ("COcopyConstant");
+    DBUG_ENTER ();
 
     res = COINTmakeConstant (CONSTANT_TYPE (a), SHcopyShape (CONSTANT_SHAPE (a)),
                              COINTpickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a),
@@ -612,7 +615,7 @@ COcopyScalar2OneElementVector (constant *a)
 {
     constant *res;
 
-    DBUG_ENTER ("COcopyScalar2OneElementVector");
+    DBUG_ENTER ();
 
     res = COINTmakeConstant (CONSTANT_TYPE (a), SHcreateShape (1, 1),
                              COINTpickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a),
@@ -643,7 +646,7 @@ COconstantData2String (int max_char, constant *a)
 {
     char *res;
 
-    DBUG_ENTER ("COconstantData2String");
+    DBUG_ENTER ();
 
     res = global.cv2str[CONSTANT_TYPE (a)](CONSTANT_ELEMS (a), 0, CONSTANT_VLEN (a),
                                            max_char);
@@ -668,7 +671,7 @@ COconstant2String (constant *a)
     static str_buf *buf = NULL;
     char *tmp_str, *tmp2_str, *res;
 
-    DBUG_ENTER ("COconstant2String");
+    DBUG_ENTER ();
 
     if (buf == NULL) {
         buf = SBUFcreate (64);
@@ -706,7 +709,7 @@ COconstant2Shape (constant *a)
     shape *shp;
     int *dv;
 
-    DBUG_ENTER ("COconstant2Shape");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (CONSTANT_TYPE (a) == T_int,
                  "COconstant2Shape applied to non int array!");
@@ -737,7 +740,7 @@ void
 COprintConstant (FILE *file, constant *a)
 {
     char *tmp_str;
-    DBUG_ENTER ("COprintConstant");
+    DBUG_ENTER ();
 
     fprintf (file, "constant at " F_PTR ": %s ", (void *)a,
              global.mdb_type[CONSTANT_TYPE (a)]);
@@ -746,7 +749,7 @@ COprintConstant (FILE *file, constant *a)
     fprintf (file, " [%s]\n", tmp_str);
     tmp_str = MEMfree (tmp_str);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -762,7 +765,7 @@ COprintConstant (FILE *file, constant *a)
 constant *
 COfreeConstant (constant *a)
 {
-    DBUG_ENTER ("COfreeConstant");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (a != NULL, "Constant is NULL!");
 
@@ -786,13 +789,13 @@ COfreeConstant (constant *a)
 void
 COtouchConstant (constant *a, info *arg_info)
 {
-    DBUG_ENTER ("COtouchConstant");
+    DBUG_ENTER ();
 
     SHtouchShape (CONSTANT_SHAPE (a), arg_info);
     CHKMtouch (CONSTANT_ELEMS (a), arg_info);
     CHKMtouch (a, arg_info);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -818,7 +821,7 @@ COconstant2AST (constant *a)
     node *res, *exprs;
     int dim, i;
 
-    DBUG_ENTER ("COconstant2AST");
+    DBUG_ENTER ();
 
     dim = COgetDim (a);
     if (dim == 0) {
@@ -864,7 +867,7 @@ COaST2Constant (node *n)
     void *element;
     ntype *atype;
 
-    DBUG_ENTER ("COAST2Constant");
+    DBUG_ENTER ();
 
     if ((n != NULL) && (COisConstant (n))) {
         /* convert the given constant node */
@@ -983,7 +986,7 @@ COaST2Constant (node *n)
             break;
 
         default:
-            DBUG_ASSERT ((FALSE), "missing implementation for given nodetype");
+            DBUG_ASSERT (FALSE, "missing implementation for given nodetype");
             new_co = NULL; /* just to please the compiler... */
         }
     } else {
@@ -1016,7 +1019,7 @@ COisConstant (node *n)
     ntype *atype;
     bool res;
 
-    DBUG_ENTER ("COisConstant");
+    DBUG_ENTER ();
 
     if (n != NULL) {
         switch (NODE_TYPE (n)) {
@@ -1081,7 +1084,7 @@ COisConstant (node *n)
 constant *
 COmakeZero (simpletype type, shape *shp)
 {
-    DBUG_ENTER ("COmakeZero");
+    DBUG_ENTER ();
 
     DBUG_RETURN (global.basecv_zero[type](shp));
 }
@@ -1089,7 +1092,7 @@ COmakeZero (simpletype type, shape *shp)
 constant *
 COmakeOne (simpletype type, shape *shp)
 {
-    DBUG_ENTER ("COmakeOne");
+    DBUG_ENTER ();
 
     DBUG_RETURN (global.basecv_one[type](shp));
 }
@@ -1097,7 +1100,7 @@ COmakeOne (simpletype type, shape *shp)
 constant *
 COmakeTrue (shape *shp)
 {
-    DBUG_ENTER ("COmakeTrue");
+    DBUG_ENTER ();
 
     DBUG_RETURN (global.basecv_one[T_bool](shp));
 }
@@ -1105,7 +1108,7 @@ COmakeTrue (shape *shp)
 constant *
 COmakeFalse (shape *shp)
 {
-    DBUG_ENTER ("COmakeFalse");
+    DBUG_ENTER ();
 
     DBUG_RETURN (global.basecv_zero[T_bool](shp));
 }
@@ -1134,9 +1137,9 @@ COisZero (constant *a, bool all)
     constant *eq;
     int i;
 
-    DBUG_ENTER ("COisZero");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((a != NULL), "COisZero called with NULL pointer");
+    DBUG_ASSERT (a != NULL, "COisZero called with NULL pointer");
 
     /* create a zero constant with one element */
     zero = COmakeZero (COgetType (a), SHmakeShape (0));
@@ -1175,9 +1178,9 @@ COisNonNeg (constant *a, bool all)
     constant *eq;
     int i;
 
-    DBUG_ENTER ("COisNonNeg");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((a != NULL), "COisNonNeg called with NULL pointer");
+    DBUG_ASSERT (a != NULL, "COisNonNeg called with NULL pointer");
 
     /* create a "zero" constant with one element */
     zero = COmakeZero (COgetType (a), SHmakeShape (0));
@@ -1216,9 +1219,9 @@ COisOne (constant *a, bool all)
     constant *eq;
     int i;
 
-    DBUG_ENTER ("COisOne");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((a != NULL), "COisOne called with NULL pointer");
+    DBUG_ASSERT (a != NULL, "COisOne called with NULL pointer");
 
     /* create a "one" constant with one element */
     one = COmakeOne (COgetType (a), SHmakeShape (0));
@@ -1252,7 +1255,7 @@ COisOne (constant *a, bool all)
 bool
 COisTrue (constant *a, bool all)
 {
-    DBUG_ENTER ("COisTrue");
+    DBUG_ENTER ();
 
     DBUG_RETURN (COisOne (a, all));
 }
@@ -1260,7 +1263,7 @@ COisTrue (constant *a, bool all)
 bool
 COisFalse (constant *a, bool all)
 {
-    DBUG_ENTER ("COisFalse");
+    DBUG_ENTER ();
 
     DBUG_RETURN (COisZero (a, all));
 }
@@ -1269,7 +1272,7 @@ bool
 COisEmptyVect (constant *a)
 {
     bool result;
-    DBUG_ENTER ("COisEmptyVect");
+    DBUG_ENTER ();
     result = ((COgetDim (a) == 1) && (SHgetExtent (COgetShape (a), 0) == 0));
     DBUG_RETURN (result);
 }
@@ -1291,7 +1294,7 @@ COcompareConstants (constant *c1, constant *c2)
     constant *eq;
     int i;
 
-    DBUG_ENTER ("COcompareConstants");
+    DBUG_ENTER ();
 
     result = FALSE;
 
@@ -1338,7 +1341,7 @@ COcreateAllIndicesAndFold (shape *shp, void *(*foldfun) (constant *idx, void *, 
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("COcreateAllIndicesAndFold");
+    DBUG_ENTER ();
 
     idx = COmakeZero (T_int, SHcreateShape (1, SHgetDim (shp)));
     datav = (int *)COgetDataVec (idx);
@@ -1351,9 +1354,9 @@ COcreateAllIndicesAndFold (shape *shp, void *(*foldfun) (constant *idx, void *, 
         do {
             accu = foldfun (idx, accu, attr);
 
-            DBUG_EXECUTE ("CO", tmp_str = COconstant2String (idx););
-            DBUG_PRINT ("CO", ("idx: %s", tmp_str));
-            DBUG_EXECUTE ("CO", tmp_str = MEMfree (tmp_str););
+            DBUG_EXECUTE (tmp_str = COconstant2String (idx));
+            DBUG_PRINT ("idx: %s", tmp_str);
+            DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
             d = max_d;
             datav[d]++;
@@ -1383,8 +1386,10 @@ COconst2Int (constant *c)
 {
     int res;
 
-    DBUG_ENTER ("COconst2Int");
+    DBUG_ENTER ();
     res = ((int *)CONSTANT_ELEMS (c))[0];
 
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

@@ -16,7 +16,8 @@
 #include "tree_compound.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+#define DBUG_PREFIX "PARSE"
+#include "debug.h"
 #include "DupTree.h"        /* for use of DUPdoDupTree() */
 #include "ctinfo.h"
 #include "free.h"
@@ -414,10 +415,7 @@ def5: EXTERN fundec {  pragma_type = PRAG_fundec; } pragmas def5
 
 def6: { $$ = TBmakeModule( NULL, FT_prog, NULL, NULL, NULL, NULL, NULL);
 
-        DBUG_PRINT( "PARSE",
-                    ("%s:"F_PTR,
-                     global.mdb_nodetype[ NODE_TYPE( $$)],
-                     $$));
+        DBUG_PRINT("%s:"F_PTR, global.mdb_nodetype[ NODE_TYPE( $$)], $$);
       }
     ;
 
@@ -528,8 +526,8 @@ structdef2: ntype ids SEMIC structdef2
             { node *ids_ptr = $2;
               $$ = $4;
 
-              DBUG_ASSERT( ($2 != NULL),
-                            "There must be at least one ids to assign to.");
+              DBUG_ASSERT( $2 != NULL,
+                           "There must be at least one ids to assign to.");
 
               do { /* Multiple vardecs. */
                 /* I copied this one from exprblock2, but couldn't you use
@@ -562,12 +560,11 @@ structdef2: ntype ids SEMIC structdef2
 typedef: TYPEDEF ntype ID SEMIC 
          { $$ = TBmakeTypedef( $3, NULL, $2, NULL);
 
-           DBUG_PRINT( "PARSE",
-                       ("%s:"F_PTR","F_PTR", Id: %s",
-                        global.mdb_nodetype[ NODE_TYPE( $$)],
-                        $$, 
-                        TYPEDEF_NTYPE( $$),
-                        TYPEDEF_NAME( $$)));
+           DBUG_PRINT( "%s:"F_PTR","F_PTR", Id: %s",
+                       global.mdb_nodetype[ NODE_TYPE( $$)],
+                       $$, 
+                       TYPEDEF_NTYPE( $$),
+                       TYPEDEF_NAME( $$));
          }
        ;
 
@@ -576,12 +573,11 @@ exttypedef: EXTERN TYPEDEF ID SEMIC
                      TYmakeHiddenSimpleType( UT_NOT_DEFINED), 
                      SHmakeShape( 0)), NULL);
 
-              DBUG_PRINT( "PARSE",
-                          ("%s:"F_PTR","F_PTR", Id: %s",
-                           global.mdb_nodetype[ NODE_TYPE( $$)],
-                           $$, 
-                           TYPEDEF_NTYPE( $$),
-                           TYPEDEF_NAME( $$)));
+              DBUG_PRINT( "%s:"F_PTR","F_PTR", Id: %s",
+                          global.mdb_nodetype[ NODE_TYPE( $$)],
+                          $$, 
+                          TYPEDEF_NTYPE( $$),
+                          TYPEDEF_NAME( $$));
             }
           ;
 
@@ -597,12 +593,11 @@ exttypedef: EXTERN TYPEDEF ID SEMIC
 objdef: OBJDEF ntype ID LET expr_ap SEMIC 
         { $$ = TBmakeObjdef( $2, NULL, $3, $5, NULL);
 
-          DBUG_PRINT( "PARSE",
-                      ("%s:"F_PTR","F_PTR", Id: %s",
+          DBUG_PRINT("%s:"F_PTR","F_PTR", Id: %s",
                        global.mdb_nodetype[ NODE_TYPE( $$)],
                        $$, 
                        OBJDEF_TYPE( $$),
-                       OBJDEF_NAME( $$)));
+                       OBJDEF_NAME( $$));
         }
       ;
 
@@ -612,12 +607,11 @@ extobjdef: EXTERN OBJDEF ntype ID SEMIC
 
           OBJDEF_ISEXTERN( $$) = TRUE;
 
-          DBUG_PRINT( "PARSE",
-                      ("%s:"F_PTR","F_PTR", Id: %s",
-                       global.mdb_nodetype[ NODE_TYPE( $$)],
-                       $$, 
-                       OBJDEF_TYPE( $$),
-                       OBJDEF_NAME( $$)));
+          DBUG_PRINT( "%s:"F_PTR","F_PTR", Id: %s",
+                      global.mdb_nodetype[ NODE_TYPE( $$)],
+                      $$, 
+                      OBJDEF_TYPE( $$),
+                      OBJDEF_NAME( $$));
         }
       ;
 
@@ -659,14 +653,13 @@ fundef2: returntypes BRACKET_L ext_id BRACKET_R BRACKET_L fundef3
            FUNDEF_NAME( $$) = $3; /* function name  */
            FUNDEF_ALLOWSINFIX( $$) = TRUE;
 
-           DBUG_PRINT( "PARSE",
-                        ("%s: %s:%s "F_PTR,
+           DBUG_PRINT(  "%s: %s:%s "F_PTR,
                         global.mdb_nodetype[ NODE_TYPE( $$)],
                         (FUNDEF_NS( $$) == NULL) 
                           ? "(null)"
                           : NSgetName( FUNDEF_NS( $$)),
                         FUNDEF_NAME( $$),
-                        FUNDEF_NAME( $$)));
+                        FUNDEF_NAME( $$));
 
          }
        | returntypes ext_id BRACKET_L fundef3
@@ -675,14 +668,13 @@ fundef2: returntypes BRACKET_L ext_id BRACKET_R BRACKET_L fundef3
            FUNDEF_NAME( $$) = $2;    /* function name  */
            FUNDEF_ALLOWSINFIX( $$) = FALSE;
 
-           DBUG_PRINT( "PARSE",
-                        ("%s: %s:%s "F_PTR,
+           DBUG_PRINT(  "%s: %s:%s "F_PTR,
                         global.mdb_nodetype[ NODE_TYPE( $$)],
                         (FUNDEF_NS( $$) == NULL) 
                           ? "(null)" 
                           : NSgetName( FUNDEF_NS( $$)),
                         FUNDEF_NAME( $$),
-                        FUNDEF_NAME( $$)));
+                        FUNDEF_NAME( $$));
 
          }
        ;
@@ -695,14 +687,13 @@ fundef3: fundefargs BRACKET_R
            FUNDEF_BODY( $$) = $4;             /* function body  */
            FUNDEF_ARGS( $$) = $1;             /* fundef args */
 
-           DBUG_PRINT( "PARSE",
-                       ("%s:"F_PTR", Id: %s"F_PTR" %s," F_PTR,
+           DBUG_PRINT(  "%s:"F_PTR", Id: %s"F_PTR" %s," F_PTR,
                         global.mdb_nodetype[ NODE_TYPE( $$)],
                         $$, 
                         global.mdb_nodetype[ NODE_TYPE( FUNDEF_BODY( $$))],
                         FUNDEF_BODY( $$),
                         global.mdb_nodetype[ NODE_TYPE( FUNDEF_ARGS( $$))],
-                        FUNDEF_ARGS( $$)));
+                        FUNDEF_ARGS( $$));
          }
        | BRACKET_R 
          { $<node>$ = TBmakeFundef( NULL, NULL, NULL, NULL, NULL, NULL); }
@@ -710,12 +701,11 @@ fundef3: fundefargs BRACKET_R
          { $<node>$ = $<node>2;
            FUNDEF_BODY( $$) = $3;
 
-           DBUG_PRINT( "PARSE",
-                       ("%s:"F_PTR" %s"F_PTR,
+           DBUG_PRINT(  "%s:"F_PTR" %s"F_PTR,
                         global.mdb_nodetype[ NODE_TYPE( $$)],
                         $$, 
                         global.mdb_nodetype[ NODE_TYPE( FUNDEF_BODY( $$))],
-                        FUNDEF_BODY( $$)));
+                        FUNDEF_BODY( $$));
          }
        ;
 
@@ -758,12 +748,10 @@ arg: ntype ID
 
        AVIS_DECLTYPE( ARG_AVIS( $$)) = TYcopyType( $1);
 
-       DBUG_PRINT( "PARSE",
-                   ("%s: "F_PTR", Id: %s ",
+       DBUG_PRINT(  "%s: "F_PTR", Id: %s ",
                     global.mdb_nodetype[ NODE_TYPE( $$)],
                     $$, 
-                    ARG_NAME( $$))
-                    );
+                    ARG_NAME( $$));
      }
    | ntype AMPERS ID
      { $$ = TBmakeArg( TBmakeAvis( $3, $1), NULL);
@@ -771,11 +759,10 @@ arg: ntype ID
 
        AVIS_DECLTYPE( ARG_AVIS( $$)) = TYcopyType( $1);
 
-       DBUG_PRINT( "PARSE",
-                   ("%s: "F_PTR", Id: %s, Attrib: %d ",
+       DBUG_PRINT(  "%s: "F_PTR", Id: %s, Attrib: %d ",
                     global.mdb_nodetype[ NODE_TYPE( $$)],
                     $$, 
-                    ARG_NAME( $$) ));
+                    ARG_NAME( $$));
      }
    ;
 
@@ -805,13 +792,12 @@ main: TYPE_INT K_MAIN BRACKET_L mainargs BRACKET_R { $<cint>$ = global.linenum; 
         main_found = TRUE;
         main_found_line = global.linenum;
 
-        DBUG_PRINT( "PARSE",
-                    ("%s:"F_PTR", main "F_PTR " %s (" F_PTR ") ",
+        DBUG_PRINT(  "%s:"F_PTR", main "F_PTR " %s (" F_PTR ") ",
                      global.mdb_nodetype[ NODE_TYPE( $$)],
                      $$, 
                      FUNDEF_NAME( $$),
                      global.mdb_nodetype[ NODE_TYPE( FUNDEF_BODY($$))],
-                     FUNDEF_BODY($$)));
+                     FUNDEF_BODY($$));
       }
     ;
 
@@ -1090,7 +1076,7 @@ exprblock2: ntype ids SEMIC exprblock2
                */
               vardec_ptr = BLOCK_VARDEC( $4);
 
-              DBUG_ASSERT( ($2 != NULL),
+              DBUG_ASSERT( $2 != NULL,
                            "non-terminal ids should not return NULL ptr!");
 
               /*
@@ -2404,7 +2390,7 @@ int SPmyYyparse()
 {
   char *tmp;
 
-  DBUG_ENTER( "SPmyYyparse");
+  DBUG_ENTER (); 
 
   /* 
    * make a copy of the actual filename, which will be used for
@@ -2416,10 +2402,10 @@ int SPmyYyparse()
   global.filename = tmp;
 
 #if YYDEBUG
-  DBUG_EXECUTE( "YACC", yydebug=1;);
+  DBUG_EXECUTE_TAG ("YACC", yydebug=1;);
 #endif
 
-  DBUG_RETURN( yyparse());
+  DBUG_RETURN (yyparse());
 }
 
 
@@ -2440,7 +2426,7 @@ int yyerror( char *errname)
   int offset = 0;
   int size_of_output;
   
-  DBUG_ENTER( "yyerror");
+  DBUG_ENTER ();
 
   charpos -= (STRlen( yytext) - 1);
 
@@ -2462,7 +2448,7 @@ int yyerror( char *errname)
                 linebuf_ptr + offset,
                 charpos - offset, "^");
 
-  DBUG_RETURN( 0);
+  DBUG_RETURN (0);
 }
 
 
@@ -2479,13 +2465,13 @@ int yyerror( char *errname)
 static
 void CleanUpParser()
 {
-  DBUG_ENTER( "CleanUpParser");
+  DBUG_ENTER ();
 
   if (global_wlcomp_aps != NULL) {
     global_wlcomp_aps = FREEdoFreeTree( global_wlcomp_aps);
   }
 
-  DBUG_VOID_RETURN;
+  DBUG_RETURN ();
 }
 
 
@@ -2504,7 +2490,7 @@ node *MakeIncDecLet( char *name, char *op)
 {
   node *let, *id, *ids, *ap;
 
-  DBUG_ENTER( "MakeIncDecLet");
+  DBUG_ENTER ();
   ids = TBmakeSpids(  STRcpy( name), NULL);
 
   id = TBmakeSpid( NULL, name);
@@ -2515,7 +2501,7 @@ node *MakeIncDecLet( char *name, char *op)
 
   let = TBmakeLet( ids, ap);
 
-  DBUG_RETURN( let);
+  DBUG_RETURN (let);
 }
 
 
@@ -2534,7 +2520,7 @@ node *MakeOpOnLet( char *name, node *expr, char *op)
 {
   node *let, *id, *ids, *ap;
 
-  DBUG_ENTER( "MakeOpOnLet");
+  DBUG_ENTER ();
   ids = TBmakeSpids( STRcpy( name), NULL);
 
   id = TBmakeSpid( NULL, name);
@@ -2545,7 +2531,7 @@ node *MakeOpOnLet( char *name, node *expr, char *op)
 
   let = TBmakeLet( ids, ap);
 
-  DBUG_RETURN( let);
+  DBUG_RETURN (let);
 }
 
 /******************************************************************************
@@ -2562,7 +2548,7 @@ node *Expr2Mop( node *expr)
 {
   node *res;
 
-  DBUG_ENTER("Expr2Mop");
+  DBUG_ENTER ();
 
   if( (NODE_TYPE( expr) == N_spmop) && ! SPMOP_ISFIXED( expr) ) {
     res = expr;
@@ -2570,7 +2556,7 @@ node *Expr2Mop( node *expr)
     res = TBmakeSpmop( NULL, TBmakeExprs( expr, NULL));
   }
 
-  DBUG_RETURN( res);
+  DBUG_RETURN (res);
 }
 
 
@@ -2589,7 +2575,7 @@ node *ConstructMop( node *expr1, node *fun_id, node *expr2)
 {
   node *res, *lmop, *rmop, *fun_exprs;
 
-  DBUG_ENTER("ConstructMop");
+  DBUG_ENTER ();
 
   lmop = Expr2Mop( expr1);
   rmop = Expr2Mop( expr2);
@@ -2612,7 +2598,7 @@ node *ConstructMop( node *expr1, node *fun_id, node *expr2)
   lmop = FREEdoFreeNode( lmop); 
   rmop = FREEdoFreeNode( rmop);
 
-  DBUG_RETURN( res);
+  DBUG_RETURN (res);
 }
 
 
@@ -2657,9 +2643,9 @@ node *ConstructMop( node *expr1, node *fun_id, node *expr2)
 static
 node *CheckWlcompConf( node *conf, node *exprs)
 {
-  DBUG_ENTER( "CheckWlcompConf");
+  DBUG_ENTER ();
 
-  DBUG_ASSERT( (conf != NULL), "wlcomp-pragma is empty!");
+  DBUG_ASSERT (conf != NULL, "wlcomp-pragma is empty!");
 
   if (NODE_TYPE( conf) == N_spid) {
     if (!STReq( SPID_NAME( conf), "Default")) {
@@ -2724,17 +2710,17 @@ node *CheckWlcompConf( node *conf, node *exprs)
     }
   }
   else {
-    DBUG_ASSERT( (0), "wlcomp-pragma with illegal configuration found!");
+    DBUG_ASSERT (0, "wlcomp-pragma with illegal configuration found!");
   }
 
-  DBUG_RETURN( exprs);
+  DBUG_RETURN (exprs);
 }
 
 static int CountDotsInExprs( node *exprs)
 {
   int result = 0;
 
-  DBUG_ENTER("CountDotsInExprs");
+  DBUG_ENTER ();
 
   while (exprs != NULL) {
     if (NODE_TYPE( EXPRS_EXPR( exprs)) == N_dot) {
@@ -2744,7 +2730,7 @@ static int CountDotsInExprs( node *exprs)
     exprs = EXPRS_NEXT( exprs);
   }
 
-  DBUG_RETURN( result);
+  DBUG_RETURN (result);
 }
 
 static shape *Exprs2Shape( node *exprs)
@@ -2753,7 +2739,7 @@ static shape *Exprs2Shape( node *exprs)
   int n;
   int cnt = 0;
 
-  DBUG_ENTER("Exprs2Shape");
+  DBUG_ENTER ();
   
   n = TCcountExprs( exprs);
 
@@ -2769,7 +2755,7 @@ static shape *Exprs2Shape( node *exprs)
     cnt++;
   }
 
-  DBUG_RETURN( result);
+  DBUG_RETURN (result);
 }
 
 static ntype *Exprs2NType( ntype *basetype, node *exprs)
@@ -2779,7 +2765,7 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
   shape *shp;
   ntype *result = NULL;
 
-  DBUG_ENTER("Exprs2NType");
+  DBUG_ENTER ();
 
   n = TCcountExprs( exprs);
 
@@ -2826,7 +2812,7 @@ static ntype *Exprs2NType( ntype *basetype, node *exprs)
 
   exprs = FREEdoFreeTree( exprs);
 
-  DBUG_RETURN( result);
+  DBUG_RETURN (result);
 }
 
 static
@@ -2834,7 +2820,7 @@ node *SetClassType( node *module, ntype *type, node *pragmas)
 {
   node *tdef;
 
-  DBUG_ENTER("SetClassType");
+  DBUG_ENTER ();
 
   tdef = TBmakeTypedef( 
            STRcpy( NSgetModule( MODULE_NAMESPACE( module))),
@@ -2846,6 +2832,6 @@ node *SetClassType( node *module, ntype *type, node *pragmas)
   TYPEDEF_PRAGMA( tdef) = pragmas;
   MODULE_TYPES( module) = tdef;
 
-  DBUG_RETURN( module);
+  DBUG_RETURN (module);
 }
       

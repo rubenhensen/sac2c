@@ -5,7 +5,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLLOS"
+#include "debug.h"
+
 #include "traverse.h"
 #include "DupTree.h"
 #include "free.h"
@@ -58,7 +61,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -77,7 +80,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -99,7 +102,7 @@ FreeInfo (info *info)
 node *
 WLLOSprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLLOSprf");
+    DBUG_ENTER ();
 
     if (INFO_WLLEVEL (arg_info) == 1) {
         /*Assignment asks if prop_obj_?*/
@@ -137,7 +140,7 @@ WLLOSprf (node *arg_node, info *arg_info)
 node *
 WLLOSassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLLOSassign");
+    DBUG_ENTER ();
 
     /*If I shift the current node, I have to return the next and if I shift
      * the current node I have to set the ->next to NULL, so I have to keep
@@ -160,7 +163,7 @@ WLLOSassign (node *arg_node, info *arg_info)
         if (INFO_IS_PROP_OBJ_OUT (arg_info) == TRUE) {
             INFO_WB (arg_info) = TRUE;
 
-            DBUG_PRINT ("WLLOS", ("Insert BEHIND-CHAIN"));
+            DBUG_PRINT ("Insert BEHIND-CHAIN");
 
             INFO_BEHIND_UNLOCK (arg_info)
               = TCappendAssign (INFO_BEHIND_UNLOCK (arg_info), ASSIGN_NEXT (arg_node));
@@ -196,11 +199,11 @@ WLLOSassign (node *arg_node, info *arg_info)
                 ASSIGN_NEXT (arg_node) = NULL;
 
                 if (ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (arg_node) == FALSE) {
-                    DBUG_PRINT ("WLLOS", ("^^^Insert %s", ASSIGN_NAME (arg_node)));
+                    DBUG_PRINT ("^^^Insert %s", ASSIGN_NAME (arg_node));
                     INFO_BEFORE_LOCK (arg_info)
                       = TCappendAssign (INFO_BEFORE_LOCK (arg_info), arg_node);
                 } else {
-                    DBUG_PRINT ("WLLOS", ("vvvInsert %s", ASSIGN_NAME (arg_node)));
+                    DBUG_PRINT ("vvvInsert %s", ASSIGN_NAME (arg_node));
                     INFO_BEHIND_UNLOCK (arg_info)
                       = TCappendAssign (INFO_BEHIND_UNLOCK (arg_info), arg_node);
                 }
@@ -222,7 +225,7 @@ WLLOSassign (node *arg_node, info *arg_info)
             INFO_FOUND_LOCK (arg_info) = FALSE;
         } /*Else if we are in the assignment right above the lock, insert chain*/
         else if (INFO_INSERT_CHAIN_BL (arg_info) == TRUE) {
-            DBUG_PRINT ("WLLOS", ("Insert ABOVE-Chain (ASSIGN)"));
+            DBUG_PRINT ("Insert ABOVE-Chain (ASSIGN)");
             ASSIGN_NEXT (arg_node) = INFO_BEFORE_LOCK (arg_info);
             INFO_BEFORE_LOCK (arg_info) = NULL;
             INFO_INSERT_CHAIN_BL (arg_info) = FALSE;
@@ -251,13 +254,13 @@ WLLOSassign (node *arg_node, info *arg_info)
 node *
 WLLOSblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLLOSblock");
+    DBUG_ENTER ();
 
     if (INFO_WLLEVEL (arg_info) == 1) {
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
         if (INFO_INSERT_CHAIN_BL (arg_info) == TRUE) {
-            DBUG_PRINT ("WLLOS", ("Insert ABOVE-Chain (BLOCK)"));
+            DBUG_PRINT ("Insert ABOVE-Chain (BLOCK)");
             BLOCK_INSTR (arg_node) = INFO_BEFORE_LOCK (arg_info);
             INFO_BEFORE_LOCK (arg_info) = NULL;
             INFO_INSERT_CHAIN_BL (arg_info) = FALSE;
@@ -286,7 +289,7 @@ WLLOSblock (node *arg_node, info *arg_info)
 node *
 WLLOSwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLLOSwith");
+    DBUG_ENTER ();
 
     INFO_WLLEVEL (arg_info) = INFO_WLLEVEL (arg_info) + 1;
 
@@ -315,9 +318,9 @@ WLLOSdoLockOptimizationShifting (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("WLLOSdoLockOptimizationShifting");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module,
                  "WLLOSdoLockOptimizationShifting is intended to run on the entire tree");
 
     info = MakeInfo ();
@@ -330,3 +333,5 @@ WLLOSdoLockOptimizationShifting (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

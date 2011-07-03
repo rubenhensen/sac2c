@@ -24,7 +24,9 @@
 
 #include "globals.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 
@@ -573,7 +575,7 @@ BuildFunApLine (int maxfun, int maxfunap)
 {
     int i, **aps;
 
-    DBUG_ENTER ("BuildFunApLine");
+    DBUG_ENTER ();
 
     aps = (int **)MEMmalloc (maxfun * sizeof (int *));
 
@@ -591,7 +593,7 @@ BuildFunApLine (int maxfun, int maxfunap)
 void
 GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname)
 {
-    DBUG_ENTER ("GLOBinitializeGlobal");
+    DBUG_ENTER ();
 
 #define GLOBALname(name) global.name =
 #define GLOBALinit(init) init;
@@ -604,7 +606,7 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname)
     global.tool = tool;
     global.toolname = toolname;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*
@@ -614,7 +616,7 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname)
 void
 GLOBsetupBackend (void)
 {
-    DBUG_ENTER ("GLOBsetupBackend");
+    DBUG_ENTER ();
 
     if (STReq (global.config.backend, "")) {
         global.backend = BE_c99;
@@ -629,5 +631,7 @@ GLOBsetupBackend (void)
         CTIabort ("Unknown compiler backend in sac2crc file: %s", global.config.backend);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

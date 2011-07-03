@@ -62,7 +62,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "PINL"
+#include "debug.h"
+
 #include "traverse.h"
 #include "free.h"
 #include "str.h"
@@ -106,7 +109,7 @@ MakeInfo (node *fundef, node *letids, node *apargs)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -123,7 +126,7 @@ MakeInfo (node *fundef, node *letids, node *apargs)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -151,22 +154,22 @@ PINLfundef (node *arg_node, info *arg_info)
 {
     node *keep_letids;
 
-    DBUG_ENTER ("PINLfundef");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((FUNDEF_BODY (arg_node) != NULL),
+    DBUG_ASSERT (FUNDEF_BODY (arg_node) != NULL,
                  "Prepare inlining started on function declaration.");
 
     /* Map formal argument names to calling-site names. */
     FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
-    DBUG_EXECUTE ("PINL_LUT", LUTprintLut (stderr, inline_lut););
+    DBUG_EXECUTE_TAG ("PINL_LUT", LUTprintLut (stderr, inline_lut));
 
     /* Rename some vardec names to calling-site names. */
     if (FUNDEF_VARDEC (arg_node) != NULL) {
         INFO_VARDECS (arg_info) = DUPdoDupTreeLut (FUNDEF_VARDEC (arg_node), inline_lut);
     }
 
-    DBUG_EXECUTE ("PINL_LUT", LUTprintLut (stderr, inline_lut););
+    DBUG_EXECUTE_TAG ("PINL_LUT", LUTprintLut (stderr, inline_lut));
 
     keep_letids = INFO_LETIDS (arg_info);
 
@@ -175,7 +178,7 @@ PINLfundef (node *arg_node, info *arg_info)
 
     INFO_LETIDS (arg_info) = keep_letids;
 
-    DBUG_EXECUTE ("PINL_LUT", LUTprintLut (stderr, inline_lut););
+    DBUG_EXECUTE_TAG ("PINL_LUT", LUTprintLut (stderr, inline_lut));
 
     /* Perform renames of code in function body. */
     FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -202,17 +205,17 @@ PINLfundef (node *arg_node, info *arg_info)
 node *
 PINLarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PINLarg");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("PINL", ("formal parameter %s linked to argument %s",
-                         AVIS_NAME (ARG_AVIS (arg_node)),
-                         AVIS_NAME (ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))))));
+    DBUG_PRINT ("formal parameter %s linked to argument %s",
+                AVIS_NAME (ARG_AVIS (arg_node)),
+                AVIS_NAME (ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info)))));
 
     inline_lut = LUTinsertIntoLutP (inline_lut, ARG_AVIS (arg_node),
                                     ID_AVIS (EXPRS_EXPR (INFO_APARGS (arg_info))));
 
     if (ARG_NEXT (arg_node) != NULL) {
-        DBUG_ASSERT ((EXPRS_NEXT (INFO_APARGS (arg_info)) != NULL),
+        DBUG_ASSERT (EXPRS_NEXT (INFO_APARGS (arg_info)) != NULL,
                      "Number of arguments doesn't match number of parameters.");
         INFO_APARGS (arg_info) = EXPRS_NEXT (INFO_APARGS (arg_info));
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
@@ -242,7 +245,7 @@ PINLarg (node *arg_node, info *arg_info)
 node *
 PINLblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PINLblock");
+    DBUG_ENTER ();
 
     INFO_VARDECS (arg_info) = TRAVopt (INFO_VARDECS (arg_info), arg_info);
 
@@ -283,7 +286,7 @@ PINLblock (node *arg_node, info *arg_info)
 node *
 PINLvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PINLvardec");
+    DBUG_ENTER ();
 
     VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
@@ -293,8 +296,8 @@ PINLvardec (node *arg_node, info *arg_info)
          * in the return statement. This identifier is renamed to a let-bound
          * variable in the calling context. Hence, the vardec must be eliminated.
          */
-        DBUG_PRINT ("PINL", ("Removing vardec %p avis %p (%s)", arg_node,
-                             VARDEC_AVIS (arg_node), AVIS_NAME (VARDEC_AVIS (arg_node))));
+        DBUG_PRINT ("Removing vardec %p avis %p (%s)", arg_node, VARDEC_AVIS (arg_node),
+                    AVIS_NAME (VARDEC_AVIS (arg_node)));
 
         arg_node = FREEdoFreeNode (arg_node);
     } else {
@@ -330,11 +333,11 @@ PINLavis (node *arg_node, info *arg_info)
 {
     char *name;
 
-    DBUG_ENTER ("PINLavis");
+    DBUG_ENTER ();
 
     name = TRAVtmpVarName (AVIS_NAME (arg_node));
 
-    DBUG_PRINT ("PINL", ("renaming %s to %s", AVIS_NAME (arg_node), name));
+    DBUG_PRINT ("renaming %s to %s", AVIS_NAME (arg_node), name);
 
     MEMfree (AVIS_NAME (arg_node));
     AVIS_NAME (arg_node) = name;
@@ -374,7 +377,7 @@ PINLavis (node *arg_node, info *arg_info)
 node *
 PINLassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PINLassign");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return) {
         arg_node = FREEdoFreeTree (arg_node);
@@ -415,9 +418,9 @@ PINLid (node *arg_node, info *arg_info)
     node *new_avis;
     node *old_id;
 
-    DBUG_ENTER ("PINLid");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_LETIDS (arg_info) != NULL),
+    DBUG_ASSERT (INFO_LETIDS (arg_info) != NULL,
                  "Number of return expressions doesn't match "
                  "number of let-bound variables.");
 
@@ -427,8 +430,7 @@ PINLid (node *arg_node, info *arg_info)
 
     if (NODE_TYPE (AVIS_DECL (ID_AVIS (arg_node))) == N_vardec) {
 
-        DBUG_PRINT ("PINL",
-                    ("Return id is local var: %s", AVIS_NAME (ID_AVIS (arg_node))));
+        DBUG_PRINT ("Return id is local var: %s", AVIS_NAME (ID_AVIS (arg_node)));
 
         new_avis = LUTsearchInLutPp (inline_lut, ID_AVIS (arg_node));
         /*
@@ -450,11 +452,11 @@ PINLid (node *arg_node, info *arg_info)
              * string in the LUT.
              */
 
-            DBUG_PRINT ("PINL", ("Return id not previously found in return"));
+            DBUG_PRINT ("Return id not previously found in return");
 
-            DBUG_PRINT ("PINL", ("relinking return var %s to external let var %s",
-                                 AVIS_NAME (ID_AVIS (arg_node)),
-                                 AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info)))));
+            DBUG_PRINT ("relinking return var %s to external let var %s",
+                        AVIS_NAME (ID_AVIS (arg_node)),
+                        AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))));
 
             inline_lut = LUTupdateLutP (inline_lut, ID_AVIS (arg_node),
                                         IDS_AVIS (INFO_LETIDS (arg_info)), NULL);
@@ -467,10 +469,10 @@ PINLid (node *arg_node, info *arg_info)
             AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info)))
               = AVIS_SSAASSIGN (ID_AVIS (arg_node));
 
-            DBUG_PRINT ("PINL", ("Relinking SSA assign of avis %p (%s) to %p",
-                                 IDS_AVIS (INFO_LETIDS (arg_info)),
-                                 AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))),
-                                 AVIS_SSAASSIGN (ID_AVIS (arg_node))));
+            DBUG_PRINT ("Relinking SSA assign of avis %p (%s) to %p",
+                        IDS_AVIS (INFO_LETIDS (arg_info)),
+                        AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))),
+                        AVIS_SSAASSIGN (ID_AVIS (arg_node)));
 
         } else {
             /*
@@ -480,7 +482,7 @@ PINLid (node *arg_node, info *arg_info)
              * the previous binding. Instead, we create a corresponding assignment,
              * which will later on be appended to the assignment chain.
              */
-            DBUG_PRINT ("PINL", ("Return id previously found in return"));
+            DBUG_PRINT ("Return id previously found in return");
 
             old_id = TBmakeId (new_avis);
             INFO_INSERT (arg_info)
@@ -489,18 +491,18 @@ PINLid (node *arg_node, info *arg_info)
                                          old_id),
                               INFO_INSERT (arg_info));
 
-            DBUG_PRINT ("PINL", ("Created new assignment to var %s",
-                                 AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info)))));
+            DBUG_PRINT ("Created new assignment to var %s",
+                        AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))));
 
             if (global.valid_ssaform) {
                 AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info)))
                   = INFO_INSERT (arg_info);
             }
 
-            DBUG_PRINT ("PINL", ("Relinking SSA assign of avis %p (%s) to %p",
-                                 IDS_AVIS (INFO_LETIDS (arg_info)),
-                                 AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))),
-                                 INFO_INSERT (arg_info)));
+            DBUG_PRINT ("Relinking SSA assign of avis %p (%s) to %p",
+                        IDS_AVIS (INFO_LETIDS (arg_info)),
+                        AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))),
+                        INFO_INSERT (arg_info));
         }
     } else {
         /*
@@ -510,7 +512,7 @@ PINLid (node *arg_node, info *arg_info)
          * be appended to the assignment chain.
          */
 
-        DBUG_PRINT ("PINL", ("Return id is parameter of inline function"));
+        DBUG_PRINT ("Return id is parameter of inline function");
 
         old_id = TBmakeId (LUTsearchInLutPp (inline_lut, ID_AVIS (arg_node)));
         INFO_INSERT (arg_info)
@@ -518,22 +520,22 @@ PINLid (node *arg_node, info *arg_info)
                                      old_id),
                           INFO_INSERT (arg_info));
 
-        DBUG_PRINT ("PINL", ("Created new assignment to var %s",
-                             AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info)))));
+        DBUG_PRINT ("Created new assignment to var %s",
+                    AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))));
 
         if (global.valid_ssaform) {
             AVIS_SSAASSIGN (IDS_AVIS (INFO_LETIDS (arg_info))) = INFO_INSERT (arg_info);
         }
 
-        DBUG_PRINT ("PINL", ("Relinking SSA assign of avis %p (%s) to %p",
-                             IDS_AVIS (INFO_LETIDS (arg_info)),
-                             AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))),
-                             INFO_INSERT (arg_info)));
+        DBUG_PRINT ("Relinking SSA assign of avis %p (%s) to %p",
+                    IDS_AVIS (INFO_LETIDS (arg_info)),
+                    AVIS_NAME (IDS_AVIS (INFO_LETIDS (arg_info))),
+                    INFO_INSERT (arg_info));
     }
 
     INFO_LETIDS (arg_info) = IDS_NEXT (INFO_LETIDS (arg_info));
 
-    DBUG_EXECUTE ("PINL_LUT", LUTprintLut (stderr, inline_lut););
+    DBUG_EXECUTE_TAG ("PINL_LUT", LUTprintLut (stderr, inline_lut));
 
     DBUG_RETURN (arg_node);
 }
@@ -557,18 +559,18 @@ PINLids (node *arg_node, info *arg_info)
 {
     node *new_ssaassign, *old_ssaassign;
 
-    DBUG_ENTER ("PINLids");
+    DBUG_ENTER ();
 
     if (global.valid_ssaform) {
         old_ssaassign = AVIS_SSAASSIGN (IDS_AVIS (arg_node));
         new_ssaassign = LUTsearchInLutPp (inline_lut, old_ssaassign);
 
         if (new_ssaassign != old_ssaassign) {
-            DBUG_PRINT ("PINL", ("AVIS_SSAASSIGN corrected for %s.\n",
-                                 AVIS_NAME (IDS_AVIS (arg_node))));
+            DBUG_PRINT ("AVIS_SSAASSIGN corrected for %s.\n",
+                        AVIS_NAME (IDS_AVIS (arg_node)));
         } else {
-            DBUG_PRINT ("PINL", ("AVIS_SSAASSIGN not corrected for %s.\n",
-                                 AVIS_NAME (IDS_AVIS (arg_node))));
+            DBUG_PRINT ("AVIS_SSAASSIGN not corrected for %s.\n",
+                        AVIS_NAME (IDS_AVIS (arg_node)));
         }
 
         AVIS_SSAASSIGN (IDS_AVIS (arg_node)) = new_ssaassign;
@@ -605,7 +607,7 @@ PINLdoPrepareInlining (node **vardecs, node *fundef, node *letids, node *apargs)
     node *code;
     info *arg_info;
 
-    DBUG_ENTER ("PINLdoPrepareInlining");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo (fundef, letids, apargs);
 
@@ -613,7 +615,7 @@ PINLdoPrepareInlining (node **vardecs, node *fundef, node *letids, node *apargs)
         inline_lut = LUTgenerateLut ();
     }
 
-    DBUG_PRINT ("PINL", ("Inline preparing function %s", FUNDEF_NAME (fundef)));
+    DBUG_PRINT ("Inline preparing function %s", FUNDEF_NAME (fundef));
 
     TRAVpush (TR_pinl);
     fundef = PINLfundef (fundef, arg_info);
@@ -633,3 +635,5 @@ PINLdoPrepareInlining (node **vardecs, node *fundef, node *letids, node *apargs)
 
     DBUG_RETURN (code);
 }
+
+#undef DBUG_PREFIX

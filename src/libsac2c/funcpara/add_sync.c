@@ -38,7 +38,9 @@
  *****************************************************************************/
 #include "add_sync.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "SYN"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
@@ -70,7 +72,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -83,7 +85,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -114,13 +116,13 @@ FreeInfo (info *info)
 static void
 ErrorOnSpawnInExport (node *fundef, node *let)
 {
-    DBUG_ENTER ("ErrorOnSpawnInExport");
+    DBUG_ENTER ();
 
     CTIerrorLine (NODE_LINE (let), "Spawn found in exported function %s",
                   FUNDEF_NAME (fundef));
     CTIerrorContinued ("Not allowed, create a wrapper function to resolve this");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -144,8 +146,8 @@ node *
 SYNdoAddSync (node *argnode)
 {
     info *info;
-    DBUG_ENTER ("SYNdoAddSync");
-    DBUG_PRINT ("SYN", ("Adding sync statements..."));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Adding sync statements...");
 
     info = MakeInfo ();
 
@@ -187,13 +189,13 @@ SYNdoAddSync (node *argnode)
 node *
 SYNfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SYNfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    DBUG_PRINT ("SYN", ("traversing body of (%s) %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                        FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("traversing body of (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
@@ -219,8 +221,8 @@ SYNfundef (node *arg_node, info *arg_info)
 node *
 SYNassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SYNassign");
-    DBUG_PRINT ("SYN", ("Traversing Assign node"));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Traversing Assign node");
 
     INFO_NEWASSIGN (arg_info) = NULL;
 
@@ -261,13 +263,13 @@ SYNlet (node *arg_node, info *arg_info)
     node *apavis;
     node *let;
 
-    DBUG_ENTER ("SYNlet");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("SYN", ("Traversing Let node"));
+    DBUG_PRINT ("Traversing Let node");
 
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap && AP_ISSPAWNED (LET_EXPR (arg_node))) {
 
-        DBUG_PRINT ("SYN", ("- found spawned ap"));
+        DBUG_PRINT ("- found spawned ap");
 
         if (FUNDEF_ISEXPORTED (INFO_FUNDEF (arg_info))) {
             ErrorOnSpawnInExport (INFO_FUNDEF (arg_info), arg_node);
@@ -310,3 +312,5 @@ SYNlet (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Add Sync -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

@@ -5,7 +5,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "LOF"
+#include "debug.h"
+
 #include "traverse.h"
 #include "free.h"
 #include "str.h"
@@ -37,7 +40,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -50,7 +53,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -67,7 +70,7 @@ LOFdoLiftOptFlags (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("LOFdoLiftOptFlags");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
     INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
@@ -89,7 +92,7 @@ LOFdoLiftOptFlags (node *arg_node)
 static node *
 InferOptFlag (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("InferOptFlag");
+    DBUG_ENTER ();
 
     INFO_OPTFLAG (arg_info) |= FUNDEF_WASOPTIMIZED (arg_node);
     INFO_OPTFLAG (arg_info) |= FUNDEF_WASUPGRADED (arg_node);
@@ -100,7 +103,7 @@ InferOptFlag (node *arg_node, info *arg_info)
 static node *
 SetOptFlag (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SetOptFlag");
+    DBUG_ENTER ();
 
     FUNDEF_WASOPTIMIZED (arg_node) = TRUE;
 
@@ -115,7 +118,7 @@ SetOptFlag (node *arg_node, info *arg_info)
 node *
 LOFfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("LOFfundef");
+    DBUG_ENTER ();
 
     if (!FUNDEF_ISLACFUN (arg_node)) {
         INFO_OPTFLAG (arg_info) = FUNDEF_WASOPTIMIZED (arg_node);
@@ -123,7 +126,7 @@ LOFfundef (node *arg_node, info *arg_info)
                                       MCGcontLacFunAndOneLevel, arg_info);
 
         if (INFO_OPTFLAG (arg_info)) {
-            DBUG_PRINT ("LOF", ("setting opt flag on fundef %s", CTIitemName (arg_node)));
+            DBUG_PRINT ("setting opt flag on fundef %s", CTIitemName (arg_node));
 
             arg_info
               = MCGdoMapCallGraph (arg_node, SetOptFlag, NULL, MCGcontLacFun, arg_info);
@@ -138,3 +141,5 @@ LOFfundef (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

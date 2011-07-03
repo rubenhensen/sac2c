@@ -19,7 +19,10 @@
 #include "tree_compound.h"
 #include "memory.h"
 #include "namespaces.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "RTFILTER"
+#include "debug.h"
+
 #include "traverse.h"
 #include "specialize.h"
 #include "globals.h"
@@ -45,7 +48,7 @@ MakeInfo (info *arg_info)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -59,7 +62,7 @@ MakeInfo (info *arg_info)
 static info *
 FreeInfo (info *arg_info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     arg_info = MEMfree (arg_info);
 
@@ -94,16 +97,16 @@ RTFILTERarg (node *arg_node, info *arg_info)
     local = ARG_NTYPE (arg_node);
     global = ARG_NTYPE (INFO_ARGS (arg_info));
 
-    DBUG_ENTER ("RTFILTERarg");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("RTFILTER", (">>>>>> Checking argument ..."));
+    DBUG_PRINT (">>>>>> Checking argument ...");
 
     DBUG_ASSERT (!(TUcontainsUser (local) && TUcontainsUser (global)),
                  "User-defined are currently not supported!");
 
-    DBUG_EXECUTE ("RTFILTER", tmp_str_a = TYtype2String (local, 0, 0););
-    DBUG_EXECUTE ("RTFILTER", tmp_str_b = TYtype2String (global, 0, 0););
-    DBUG_PRINT ("RTFILTER", ("Searching for: %s, found: %s", tmp_str_a, tmp_str_b));
+    DBUG_EXECUTE (tmp_str_a = TYtype2String (local, 0, 0));
+    DBUG_EXECUTE (tmp_str_b = TYtype2String (global, 0, 0));
+    DBUG_PRINT ("Searching for: %s, found: %s", tmp_str_a, tmp_str_b);
 
     /*
      * Check if the base types match.
@@ -146,12 +149,12 @@ RTFILTERfundef (node *arg_node, info *arg_info)
 {
     node *funspec;
 
-    DBUG_ENTER ("RTFILTERfundef");
-    DBUG_PRINT ("RTFILTER", (">>>> Checking function ..."));
+    DBUG_ENTER ();
+    DBUG_PRINT (">>>> Checking function ...");
 
     /* We're only interested in the function we're specializing. */
     if (STReq (FUNDEF_NAME (arg_node), global.rt_fun_name)) {
-        DBUG_PRINT ("RTFILTER", (">>>> Function found ..."));
+        DBUG_PRINT (">>>> Function found ...");
 
         INFO_ARGS (arg_info) = global.rt_args;
 
@@ -159,7 +162,7 @@ RTFILTERfundef (node *arg_node, info *arg_info)
 
         /* Do we have the correct function? */
         if (INFO_ARGSFOUND (arg_info) == global.rt_num_args) {
-            DBUG_PRINT ("RTFILTER", ("Arguments match: creating FUNSPEC node."));
+            DBUG_PRINT ("Arguments match: creating FUNSPEC node.");
 
             /* Create a new fundef with the correct signature for specialization. */
             funspec
@@ -200,10 +203,10 @@ RTFILTERfundef (node *arg_node, info *arg_info)
 node *
 RTFILTERmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RTFILTERmodule");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
-        DBUG_PRINT ("RTFILTER", (">> Checking module ..."));
+        DBUG_PRINT (">> Checking module ...");
         INFO_MODULE (arg_info) = arg_node;
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
@@ -227,7 +230,7 @@ RTFILTERmodule (node *arg_node, info *arg_info)
 node *
 RTdoFilter (node *syntax_tree)
 {
-    DBUG_ENTER ("RTdoFilter");
+    DBUG_ENTER ();
 
     info *info = NULL;
 
@@ -243,3 +246,5 @@ RTdoFilter (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

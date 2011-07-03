@@ -5,7 +5,6 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
 #include "memory.h"
 #include "tree_compound.h"
 #include "types.h"

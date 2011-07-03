@@ -7,7 +7,10 @@
 #include "tree_compound.h"
 #include "globals.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -45,7 +48,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -57,7 +60,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -69,7 +72,7 @@ RLACdoRemoveUnusedLac (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("RLACdoRemoveUnusedLac");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_rlac);
@@ -83,7 +86,7 @@ RLACdoRemoveUnusedLac (node *syntax_tree)
 node *
 RLACmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RLACmodule");
+    DBUG_ENTER ();
 
     INFO_TRAVMODE (arg_info) = trav_collect;
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
@@ -97,7 +100,7 @@ RLACmodule (node *arg_node, info *arg_info)
 node *
 RLACfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCUFfundef");
+    DBUG_ENTER ();
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
@@ -113,7 +116,7 @@ RLACfundef (node *arg_node, info *arg_info)
             }
         }
     } else {
-        DBUG_ASSERT ((0), "Wrong traverse mode in RLACfundef!");
+        DBUG_ASSERT (0, "Wrong traverse mode in RLACfundef!");
     }
 
     DBUG_RETURN (arg_node);
@@ -124,7 +127,7 @@ RLACap (node *arg_node, info *arg_info)
 {
     node *fundef;
 
-    DBUG_ENTER ("RLACap");
+    DBUG_ENTER ();
 
     fundef = AP_FUNDEF (arg_node);
 
@@ -134,3 +137,5 @@ RLACap (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

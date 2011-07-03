@@ -26,7 +26,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
@@ -52,7 +55,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -64,7 +67,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -91,7 +94,7 @@ ESVdoEliminateShapeVariables (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("ESVdoEliminateShapeVariables");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -119,7 +122,7 @@ ESVdoEliminateShapeVariables (node *syntax_tree)
 static void
 ResetAvis (node *avis)
 {
-    DBUG_ENTER ("ResetAvis");
+    DBUG_ENTER ();
 
     AVIS_HASDTTHENPROXY (avis) = FALSE;
     AVIS_HASDTELSEPROXY (avis) = FALSE;
@@ -138,7 +141,7 @@ ResetAvis (node *avis)
 
     AVIS_SUBST (avis) = NULL;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -159,7 +162,7 @@ ResetAvis (node *avis)
 node *
 ESVfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ESVfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
@@ -180,7 +183,7 @@ ESVfundef (node *arg_node, info *arg_info)
 node *
 ESVavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ESVavis");
+    DBUG_ENTER ();
 
     ResetAvis (arg_node);
 
@@ -195,7 +198,7 @@ ESVavis (node *arg_node, info *arg_info)
 node *
 ESVassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ESVassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
@@ -211,7 +214,7 @@ ESVassign (node *arg_node, info *arg_info)
 node *
 ESVlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ESVlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -227,7 +230,7 @@ ESVlet (node *arg_node, info *arg_info)
 node *
 ESVprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ESVprf");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -246,7 +249,7 @@ ESVprf (node *arg_node, info *arg_info)
 node *
 ESVid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ESVid");
+    DBUG_ENTER ();
 
     if (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
@@ -262,3 +265,5 @@ ESVid (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Insert Shape Variables -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

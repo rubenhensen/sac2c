@@ -21,7 +21,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "EMRE"
+#include "debug.h"
+
 #include "print.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
@@ -60,7 +63,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -77,7 +80,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -100,9 +103,9 @@ EMREdoReuseElimination (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("EMREdoReuseElimination");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMRE", ("Starting reuse elimination."));
+    DBUG_PRINT ("Starting reuse elimination.");
 
     info = MakeInfo ();
 
@@ -112,7 +115,7 @@ EMREdoReuseElimination (node *syntax_tree)
 
     info = FreeInfo (info);
 
-    DBUG_PRINT ("EMRE", ("Reuse elimination complete."));
+    DBUG_PRINT ("Reuse elimination complete.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -142,7 +145,7 @@ EMREassign (node *arg_node, info *arg_info)
     bool remassign;
     node *postassign;
 
-    DBUG_ENTER ("EMREassign");
+    DBUG_ENTER ();
 
     /*
      * Top-down traversal
@@ -185,7 +188,7 @@ EMREassign (node *arg_node, info *arg_info)
 node *
 EMREblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMREblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
@@ -214,7 +217,7 @@ EMREcond (node *arg_node, info *arg_info)
     dfmask_t *oldmask;
     lut_t *oldlut;
 
-    DBUG_ENTER ("EMREcond");
+    DBUG_ENTER ();
 
     oldmask = INFO_MASK (arg_info);
     oldlut = INFO_LUT (arg_info);
@@ -256,13 +259,13 @@ EMREcond (node *arg_node, info *arg_info)
 node *
 EMREfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMREfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         dfmask_base_t *maskbase;
 
-        DBUG_PRINT ("EMRE", ("Performing Reuse elimination in function %s...",
-                             FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Performing Reuse elimination in function %s...",
+                    FUNDEF_NAME (arg_node));
 
         maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
 
@@ -277,8 +280,7 @@ EMREfundef (node *arg_node, info *arg_info)
 
         maskbase = DFMremoveMaskBase (maskbase);
 
-        DBUG_PRINT ("EMRE", ("Reuse elimination in function %s complete.",
-                             FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Reuse elimination in function %s complete.", FUNDEF_NAME (arg_node));
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -303,7 +305,7 @@ EMREfundef (node *arg_node, info *arg_info)
 node *
 EMRElet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRElet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -329,7 +331,7 @@ EMREprf (node *arg_node, info *arg_info)
     int n;
     node *avis, *bavis;
 
-    DBUG_ENTER ("EMREprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_reuse:
@@ -465,7 +467,7 @@ EMREprf (node *arg_node, info *arg_info)
 node *
 EMREvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMREvardec");
+    DBUG_ENTER ();
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
@@ -496,7 +498,7 @@ EMREgenarray (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("EMREgenarray");
+    DBUG_ENTER ();
 
     /*
      * replace memory variables with reused variables
@@ -531,7 +533,7 @@ EMREmodarray (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("EMREmodarray");
+    DBUG_ENTER ();
 
     /*
      * replace memory variables with reused variables
@@ -551,3 +553,5 @@ EMREmodarray (node *arg_node, info *arg_info)
 }
 
 /* @} */
+
+#undef DBUG_PREFIX

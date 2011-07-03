@@ -24,7 +24,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -69,7 +72,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -85,7 +88,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -111,7 +114,7 @@ CCWHdoCreateCWrapperHeader (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CCWHdoCreateCWrapperHeader");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -151,7 +154,7 @@ CCWHdoCreateCWrapperHeader (node *syntax_tree)
 static str_buf *
 PrintModuleNames (const char *module, strstype_t kind, str_buf *buffer)
 {
-    DBUG_ENTER ("PrintModuleNames");
+    DBUG_ENTER ();
 
     buffer = SBUFprintf (buffer, " *   %s\n", module);
 
@@ -171,7 +174,7 @@ PrintFileHeader (info *arg_info)
     str_buf *buffer;
     char *modules;
 
-    DBUG_ENTER ("PrintFileHeader");
+    DBUG_ENTER ();
 
     buffer = SBUFcreate (100);
     buffer = STRSfold ((strsfoldfun_p)PrintModuleNames, global.exported_modules, buffer);
@@ -189,7 +192,7 @@ PrintFileHeader (info *arg_info)
              "#include \"sacinterface.h\"\n\n",
              modules, global.version_id, build_style, build_rev);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -213,11 +216,11 @@ PrintFileHeader (info *arg_info)
 node *
 CCWHfunbundle (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CCWHfunbundle");
+    DBUG_ENTER ();
 
     INFO_INBUNDLE (arg_info) = TRUE;
 
-    DBUG_ASSERT ((FUNBUNDLE_FUNDEF (arg_node) != NULL), "empty funbundle found!");
+    DBUG_ASSERT (FUNBUNDLE_FUNDEF (arg_node) != NULL, "empty funbundle found!");
 
     /*
      * first print the descriptive comment
@@ -275,7 +278,7 @@ FunctionToComment (node *fundef, str_buf *buffer)
     ntype *rets, *args;
     char *retstr, *argstr;
 
-    DBUG_ENTER ("FunctionToComment");
+    DBUG_ENTER ();
 
     rets = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
     args = TUmakeProductTypeFromArgs (FUNDEF_ARGS (fundef));
@@ -298,7 +301,7 @@ CCWHfundef (node *arg_node, info *arg_info)
     str_buf *buffer = NULL;
     char *str;
 
-    DBUG_ENTER ("CCWHfundef");
+    DBUG_ENTER ();
 
     if (INFO_INBUNDLE (arg_info)) {
         if (INFO_COMMENT (arg_info)) {
@@ -352,7 +355,7 @@ CCWHfundef (node *arg_node, info *arg_info)
 node *
 CCWHarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CCWHarg");
+    DBUG_ENTER ();
 
     INFO_COUNTER (arg_info)++;
 
@@ -383,7 +386,7 @@ CCWHarg (node *arg_node, info *arg_info)
 node *
 CCWHret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CCWHret");
+    DBUG_ENTER ();
 
     INFO_COUNTER (arg_info)++;
 
@@ -411,7 +414,7 @@ CCWHtypedef (node *arg_node, info *arg_info)
 {
     usertype udt;
 
-    DBUG_ENTER ("CCWHtypedef");
+    DBUG_ENTER ();
 
     /*
      * we filter out prelude types
@@ -419,7 +422,7 @@ CCWHtypedef (node *arg_node, info *arg_info)
     if (!NSequals (TYPEDEF_NS (arg_node), NSgetNamespace (global.preludename))) {
         udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_NS (arg_node));
 
-        DBUG_ASSERT ((udt != UT_NOT_DEFINED), "cannot find udt!");
+        DBUG_ASSERT (udt != UT_NOT_DEFINED, "cannot find udt!");
 
         udt = UTgetUnAliasedType (udt);
 
@@ -447,7 +450,7 @@ CCWHtypedef (node *arg_node, info *arg_info)
 node *
 CCWHmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CCWHmodule");
+    DBUG_ENTER ();
 
     /*
      * 1) create the file header
@@ -486,3 +489,5 @@ CCWHmodule (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Create Wrapper Headers -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

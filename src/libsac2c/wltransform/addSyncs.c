@@ -29,7 +29,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "ASS"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -73,7 +76,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -92,7 +95,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     /*DBUG_ASSERT( ( INFO_POSTASSIGN( info) == NULL),
                  "Memory leaking");
@@ -124,17 +127,17 @@ ASdoAddSyncs (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("ASdoAddSyncs");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("ASS", ("Starting Add Syncs traversal."));
+    DBUG_PRINT ("Starting Add Syncs traversal.");
 
     TRAVpush (TR_ass);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("ASS", ("Add Syncs traversal complete."));
+    DBUG_PRINT ("Add Syncs traversal complete.");
 
     info = FreeInfo (info);
 
@@ -168,7 +171,7 @@ static node *
 createIn (node *lhsnew, node *lhsold, node *next, info *arg_info)
 {
     node *assign;
-    DBUG_ENTER ("createIn");
+    DBUG_ENTER ();
 
     if (lhsnew == NULL) {
         assign = next;
@@ -192,7 +195,7 @@ createIn (node *lhsnew, node *lhsold, node *next, info *arg_info)
 static node *
 ATravAssign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravAssign");
+    DBUG_ENTER ();
 
     INFO_ASSIGN (arg_info) = arg_node;
 
@@ -201,7 +204,7 @@ ATravAssign (node *arg_node, info *arg_info)
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_PRFACCU (arg_info)) {
-        DBUG_ASSERT ((INFO_LHSOLD (arg_info) != NULL), "_accu without lhs?");
+        DBUG_ASSERT (INFO_LHSOLD (arg_info) != NULL, "_accu without lhs?");
         ASSIGN_NEXT (arg_node) = createIn (INFO_LHSNEW (arg_info), INFO_LHSOLD (arg_info),
                                            ASSIGN_NEXT (arg_node), arg_info);
         INFO_LHSOLD (arg_info) = FREEdoFreeTree (INFO_LHSOLD (arg_info));
@@ -223,7 +226,7 @@ static node *
 createIds (node *lhs, node *assign, info *arg_info)
 {
     node *ids;
-    DBUG_ENTER ("createIds");
+    DBUG_ENTER ();
 
     if (lhs == NULL) {
         ids = NULL;
@@ -249,7 +252,7 @@ createIds (node *lhs, node *assign, info *arg_info)
 static node *
 ATravLet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravAssign");
+    DBUG_ENTER ();
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     if (INFO_PRFACCU (arg_info)) {
@@ -266,7 +269,7 @@ ATravLet (node *arg_node, info *arg_info)
 static node *
 ATravPrf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravAssign");
+    DBUG_ENTER ();
 
     INFO_PRFACCU (arg_info) = (PRF_PRF (arg_node) == F_accu);
 
@@ -277,7 +280,7 @@ static node *
 createSyncOut (node *rets, node *ops, info *arg_info)
 {
     node *res;
-    DBUG_ENTER ("createSyncOut");
+    DBUG_ENTER ();
 
     if (rets == NULL) {
         res = NULL;
@@ -286,7 +289,7 @@ createSyncOut (node *rets, node *ops, info *arg_info)
 
         if (NODE_TYPE (ops) == N_fold) {
             node *avis;
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (rets)) == N_id),
+            DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (rets)) == N_id,
                          "Expected an id for the results of range");
             avis = TBmakeAvis (TRAVtmpVar (),
                                TYcopyType (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (rets)))));
@@ -330,9 +333,9 @@ AddSyncs (node *assign, node *rets, info *arg_info)
                             {N_with2, &TRAVnone},
                             {N_with3, &TRAVnone},
                             {0, NULL}};
-    DBUG_ENTER ("AddSyncs");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign), "Node not an assign");
+    DBUG_ASSERT (NODE_TYPE (assign) == N_assign, "Node not an assign");
 
     TRAVpushAnonymous (insert, &TRAVsons);
 
@@ -369,7 +372,7 @@ AddSyncs (node *assign, node *rets, info *arg_info)
 node *
 ASSvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASSvardec");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -384,7 +387,7 @@ ASSvardec (node *arg_node, info *arg_info)
 node *
 ASSrange (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASSrange");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -401,7 +404,7 @@ node *
 ASSwith3 (node *arg_node, info *arg_info)
 {
     node *stack;
-    DBUG_ENTER ("ASSwith3");
+    DBUG_ENTER ();
 
     stack = INFO_WITHOPS (arg_info);
 
@@ -421,3 +424,5 @@ ASSwith3 (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

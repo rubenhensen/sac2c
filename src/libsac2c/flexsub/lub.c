@@ -18,7 +18,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "types.h"
@@ -57,7 +60,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
     INFO_EULER (result) = NULL;
@@ -67,7 +70,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -89,7 +92,7 @@ TFPLBdoLUBPreprocessing (node *syntax_tree)
 {
     info *arg_info;
 
-    DBUG_ENTER ("TFPLBdoLUBPreprocessing");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -191,7 +194,7 @@ node *
 TFPLBtfspec (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("TFPLBtfspec");
+    DBUG_ENTER ();
 
     node *defs;
     int comp = 0;
@@ -245,7 +248,7 @@ node *
 TFPLBtfvertex (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("TFPLBtfvertex");
+    DBUG_ENTER ();
 
     node *defs, *children;
     elem *e;
@@ -300,3 +303,5 @@ TFPLBtfvertex (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

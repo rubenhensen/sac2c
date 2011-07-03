@@ -48,7 +48,10 @@
  */
 
 #include "private_heap.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 
@@ -84,7 +87,7 @@ PHPcreateHeap (size_t elem_size, int chunk_size)
     char *data;
     heap *res;
 
-    DBUG_ENTER ("PHPcreateHeap");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (sizeof (char) == 1, "sizeof char is not 1 on this platform");
 
@@ -115,7 +118,7 @@ PHPmalloc (heap *private_heap)
 {
     void *res;
 
-    DBUG_ENTER ("PHPmalloc");
+    DBUG_ENTER ();
 
     while (HEAP_NUM_ELEMS (private_heap) == HEAP_CHUNK_SIZE (private_heap)) {
         private_heap = HEAP_NEXT (private_heap);
@@ -152,7 +155,7 @@ PHPfindElem (heap *private_heap, php_cmp_fun fun, void *elem)
     void *this = NULL;
     int i = 0;
 
-    DBUG_ENTER ("PHPfindElem");
+    DBUG_ENTER ();
 
     while ((i < HEAP_NUM_ELEMS (private_heap)) && !found) {
         this = (void *)(HEAP_DATA (private_heap) + HEAP_ELEM_SIZE (private_heap) * i);
@@ -183,7 +186,7 @@ PHPfindElem (heap *private_heap, php_cmp_fun fun, void *elem)
 heap *
 PHPfreeHeap (heap *private_heap)
 {
-    DBUG_ENTER ("PHPfreeHeap");
+    DBUG_ENTER ();
 
     if (private_heap != NULL) {
         if (HEAP_NEXT (private_heap) != NULL) {
@@ -195,3 +198,5 @@ PHPfreeHeap (heap *private_heap)
 
     DBUG_RETURN (private_heap);
 }
+
+#undef DBUG_PREFIX

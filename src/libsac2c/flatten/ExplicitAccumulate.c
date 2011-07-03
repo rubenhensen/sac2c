@@ -69,7 +69,10 @@
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "EA"
+#include "debug.h"
+
 #include "traverse.h"
 #include "constants.h"
 #include "shape.h"
@@ -110,7 +113,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -129,7 +132,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -151,7 +154,7 @@ MakeAccuAssign (node *code, info *arg_info)
 {
     node *lhs_ids, *avis, *assign;
 
-    DBUG_ENTER ("MakeAccuAssign");
+    DBUG_ENTER ();
 
     /* grab assign and get rid of N_empty nodes if one is there */
     assign = BLOCK_INSTR (CODE_CBLOCK (code));
@@ -200,7 +203,7 @@ MakeFoldFunAssign (info *arg_info)
 {
     node *old_cexpr_id, *avis, *assign, *args, *eq_funap, *fixassign;
 
-    DBUG_ENTER ("MakeFoldFunAssign");
+    DBUG_ENTER ();
 
     /*
      * create a function application of the form:
@@ -243,7 +246,7 @@ MakeFoldFunAssign (info *arg_info)
                          TBmakeExprs (DUPdoDupNode (INFO_FOLD_GUARD (arg_info)), NULL));
 
         eq_funap = DSdispatchFunCall (NSgetNamespace (global.preludename), "eq", args);
-        DBUG_ASSERTF (eq_funap != NULL, ("%s::eq not found", global.preludename));
+        DBUG_ASSERT (eq_funap != NULL, "%s::eq not found", global.preludename);
 
         avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (INFO_FOLD_GUARD (arg_info))),
                            TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
@@ -284,7 +287,7 @@ MakeFoldFunAssign (info *arg_info)
 node *
 EAmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EAmodule");
+    DBUG_ENTER ();
 
     DSinitDeserialize (arg_node);
     if (MODULE_FUNS (arg_node) != NULL) {
@@ -309,7 +312,7 @@ EAmodule (node *arg_node, info *arg_info)
 node *
 EAfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EAfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
@@ -338,7 +341,7 @@ EAfundef (node *arg_node, info *arg_info)
 node *
 EAassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EAassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -367,7 +370,7 @@ EAassign (node *arg_node, info *arg_info)
 node *
 EAlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EAlet");
+    DBUG_ENTER ();
 
     INFO_LHS_IDS (arg_info) = LET_IDS (arg_node);
 
@@ -392,7 +395,7 @@ EAwith (node *arg_node, info *arg_info)
 {
     info *tmp;
 
-    DBUG_ENTER ("EAwith");
+    DBUG_ENTER ();
 
     /* stack arg_info */
     tmp = arg_info;
@@ -432,7 +435,7 @@ EAwith (node *arg_node, info *arg_info)
 node *
 EApropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EApropagate");
+    DBUG_ENTER ();
 
     INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
     INFO_LHS_IDS (arg_info) = IDS_NEXT (INFO_LHS_IDS (arg_info));
@@ -455,9 +458,9 @@ EApropagate (node *arg_node, info *arg_info)
 node *
 EAfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EAfold");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EA", ("Fold WL found, inserting F_Accu..."));
+    DBUG_PRINT ("Fold WL found, inserting F_Accu...");
 
     INFO_FOLD (arg_info) = arg_node;
     INFO_FOLD_LHS (arg_info) = INFO_LHS_IDS (arg_info);
@@ -514,7 +517,7 @@ EAfold (node *arg_node, info *arg_info)
 node *
 EAcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EAcode");
+    DBUG_ENTER ();
 
     if (INFO_FOLD_LHS (arg_info) != NULL) {
         arg_node = MakeAccuAssign (arg_node, arg_info);
@@ -546,12 +549,12 @@ EAdoExplicitAccumulate (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("EAdoExplicitAccumulate");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
                  "ExplicitAccumulate not started with module node");
 
-    DBUG_PRINT ("EA", ("starting ExplicitAccumulation"));
+    DBUG_PRINT ("starting ExplicitAccumulation");
 
     arg_info = MakeInfo ();
 
@@ -563,3 +566,5 @@ EAdoExplicitAccumulate (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

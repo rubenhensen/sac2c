@@ -57,7 +57,9 @@
 #include "globals.h"
 #include "convert.h"
 #include "new_types.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "PFFUN"
+#include "debug.h"
 
 /*
  * INFO structure
@@ -81,7 +83,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -94,7 +96,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -125,7 +127,7 @@ FreeInfo (info *info)
 static node *
 SearchMain (node *fundef)
 {
-    DBUG_ENTER ("SearchMain");
+    DBUG_ENTER ();
 
     while ((fundef != NULL)
            && ((FUNDEF_ISWRAPPERFUN (fundef) == TRUE)
@@ -154,7 +156,7 @@ Fundef2ProfileString (node *fundef)
     str_buf *str_buff;
     node *arg;
 
-    DBUG_ENTER ("Fundef2ProfileString");
+    DBUG_ENTER ();
     str_buff = SBUFcreate (PF_MAXFUNNAMELEN - 1);
     str_buff = SBUFprintf (str_buff, "%s( ", FUNDEF_NAME (fundef));
 
@@ -210,7 +212,7 @@ Fundef2FunTypeMask (node *fundef)
 {
     int funtypemask = 0;
 
-    DBUG_ENTER ("Fundef2FunTypeMask");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISINLINE (fundef)) {
         funtypemask = funtypemask | INL_FUN;
@@ -252,11 +254,11 @@ PFfundef (node *arg_node, info *arg_info)
     ntype *wrappertype;
     node *mem_parent;
 
-    DBUG_ENTER ("PFfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_FUNNO (arg_node) == 0) { /* this function is not yet counted! */
         str_buff = Fundef2ProfileString (arg_node);
-        DBUG_PRINT ("PFFUN", ("annotating \"%s\"", str_buff));
+        DBUG_PRINT ("annotating \"%s\"", str_buff);
         if (global.profile_funcntr == PF_MAXFUN) {
             CTIwarn ("\"PF_MAXFUN\" too low!\n"
                      "Function \"%s\" will not be profiled separately. "
@@ -321,7 +323,7 @@ PFassign (node *arg_node, info *arg_info)
     node *old_next_assign, *res;
     char *str_buff;
 
-    DBUG_ENTER ("PFassign");
+    DBUG_ENTER ();
     /*
      * First, we traverse the instruction. If this turns out to be a function
      * application that requires the insertion of N_annotate's, this will
@@ -404,7 +406,7 @@ PFap (node *arg_node, info *arg_info)
 {
     node *fundef;
 
-    DBUG_ENTER ("PFap");
+    DBUG_ENTER ();
 
     /*
      * First, we traverse the function being called here!
@@ -451,7 +453,7 @@ PFdoProfileFunCalls (node *arg_node)
     node *main_fun;
     int i;
 
-    DBUG_ENTER ("ProfileFunCalls");
+    DBUG_ENTER ();
 
     TRAVpush (TR_pf);
 
@@ -469,19 +471,21 @@ PFdoProfileFunCalls (node *arg_node)
      * Now, we do traverse the program starting at the main function
      * if it exists; otherwise, we 're done.
      */
-    DBUG_PRINT ("PFFUN", ("starting function annotation"));
+    DBUG_PRINT ("starting function annotation");
     if (MODULE_FUNS (arg_node) != NULL) {
         main_fun = SearchMain (MODULE_FUNS (arg_node));
         if (main_fun != NULL) {
             main_fun = TRAVdo (main_fun, info);
         }
     }
-    DBUG_PRINT ("PFFUN", ("function annotation done"));
+    DBUG_PRINT ("function annotation done");
 
     info = FreeInfo (info);
 
     traversaltable = TRAVpop ();
-    DBUG_ASSERT ((traversaltable == TR_pf), "Popped incorrect traversal table");
+    DBUG_ASSERT (traversaltable == TR_pf, "Popped incorrect traversal table");
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

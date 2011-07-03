@@ -26,7 +26,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -69,7 +72,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -85,7 +88,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -112,7 +115,7 @@ FreeInfo (info *info)
 static node *
 LoadPreludeFunctions (node *syntax_tree)
 {
-    DBUG_ENTER ("LoadPreludeFunctions");
+    DBUG_ENTER ();
 
     DSaddSymbolByName ("isByte", SET_wrapperhead, global.preludename);
     DSaddSymbolByName ("isShort", SET_wrapperhead, global.preludename);
@@ -161,14 +164,14 @@ ArgsToSacArgs (node *args)
     node *result = NULL;
     usertype sacarg;
 
-    DBUG_ENTER ("ArgsToSacArgs");
+    DBUG_ENTER ();
 
     if (args != NULL) {
         result = ArgsToSacArgs (ARG_NEXT (args));
 
         sacarg = UTfindUserType ("SACarg", NSgetNamespace (global.preludename));
 
-        DBUG_ASSERT ((sacarg != UT_NOT_DEFINED), "cannot find SACarg type in prelude!");
+        DBUG_ASSERT (sacarg != UT_NOT_DEFINED, "cannot find SACarg type in prelude!");
 
         result
           = TBmakeArg (TBmakeAvis (STRcpy (AVIS_NAME (ARG_AVIS (args))),
@@ -193,14 +196,14 @@ RetsToSacArgs (node *rets)
     node *result = NULL;
     usertype sacarg;
 
-    DBUG_ENTER ("RetsToSacArgs");
+    DBUG_ENTER ();
 
     if (rets != NULL) {
         result = RetsToSacArgs (RET_NEXT (rets));
 
         sacarg = UTfindUserType ("SACarg", NSgetNamespace (global.preludename));
 
-        DBUG_ASSERT ((sacarg != UT_NOT_DEFINED), "cannot find SACarg type in prelude!");
+        DBUG_ASSERT (sacarg != UT_NOT_DEFINED, "cannot find SACarg type in prelude!");
 
         result = TBmakeRet (TYmakeAKS (TYmakeUserType (sacarg), SHmakeShape (0)), result);
     }
@@ -216,7 +219,7 @@ MakeDispatchError (node *fundef, info *arg_info)
     node *retids;
     int skip = 0;
 
-    DBUG_ENTER ("MakeDispatchError");
+    DBUG_ENTER ();
 
     exprs = TBmakeExprs (TCmakeStrCopy (FUNDEF_NAME (fundef)),
                          TCcreateExprsFromArgs (INFO_ARGS (arg_info)));
@@ -249,7 +252,7 @@ PickPredFun (ntype *type, node *args, node **preassign, node **vardecs)
     node *result;
     node *avis;
 
-    DBUG_ENTER ("PickPredFun");
+    DBUG_ENTER ();
 
     if (TYisSimple (TYgetScalar (type))) {
         switch (TYgetSimpleType (TYgetScalar (type))) {
@@ -321,7 +324,7 @@ PickPredFun (ntype *type, node *args, node **preassign, node **vardecs)
 
     result = DSdispatchFunCall (NSgetNamespace (global.preludename), name, args);
 
-    DBUG_ASSERT ((result != NULL), "cannot find prediacte function for type!");
+    DBUG_ASSERT (result != NULL, "cannot find prediacte function for type!");
 
     DBUG_RETURN (result);
 }
@@ -336,7 +339,7 @@ BuildPredicateForArgs (node *apargs, node *wrapargs, node **precond, node **vard
     node *assigns;
     node *preassigns = NULL;
 
-    DBUG_ENTER ("BuildPredicateForArgs");
+    DBUG_ENTER ();
 
     if (apargs != NULL) {
         result = BuildPredicateForArgs (ARG_NEXT (apargs), ARG_NEXT (wrapargs), precond,
@@ -380,7 +383,7 @@ PickInputConversion (ntype *type, node *args)
     const namespace_t *ns = NULL;
     node *result;
 
-    DBUG_ENTER ("PickInputConversion");
+    DBUG_ENTER ();
 
     if (TYisSimple (TYgetScalar (type))) {
         switch (TYgetSimpleType (TYgetScalar (type))) {
@@ -441,7 +444,7 @@ PickInputConversion (ntype *type, node *args)
 
     result = DSdispatchFunCall (ns, name, args);
 
-    DBUG_ASSERT ((result != NULL), "Cannot find matching instance for unwrapXXX!");
+    DBUG_ASSERT (result != NULL, "Cannot find matching instance for unwrapXXX!");
 
     name = MEMfree (name);
 
@@ -456,7 +459,7 @@ PickOutputConversion (ntype *type, node *args, node **vardecs, node **preassign)
     node *result;
     node *avis;
 
-    DBUG_ENTER ("OutputConversion");
+    DBUG_ENTER ();
 
     if (TYisSimple (TYgetScalar (type))) {
         name = STRcpy ("wrap");
@@ -485,7 +488,7 @@ PickOutputConversion (ntype *type, node *args, node **vardecs, node **preassign)
 
     result = DSdispatchFunCall (ns, name, args);
 
-    DBUG_ASSERT ((result != NULL), "Cannot find matching instance for wrapXXX!");
+    DBUG_ASSERT (result != NULL, "Cannot find matching instance for wrapXXX!");
 
     name = MEMfree (name);
 
@@ -499,7 +502,7 @@ ConvertInputs (node *apargs, node *wrapargs, node **vardecs, node **assigns)
     node *avis;
     node *args;
 
-    DBUG_ENTER ("ConvertInputs");
+    DBUG_ENTER ();
 
     if (apargs != NULL) {
         result = ConvertInputs (ARG_NEXT (apargs), ARG_NEXT (wrapargs), vardecs, assigns);
@@ -529,7 +532,7 @@ ConvertOutputs (node *aprets, node *wrapretids, node **vardecs, node **assigns)
     node *wrapinstance;
     node *preassigns = NULL;
 
-    DBUG_ENTER ("ConvertOutputs");
+    DBUG_ENTER ();
 
     if (aprets != NULL) {
         result
@@ -564,7 +567,7 @@ BuildApplication (node *fundef, info *arg_info)
     node *postconv = NULL;
     node *apply;
 
-    DBUG_ENTER ("BuildApplication");
+    DBUG_ENTER ();
 
     apply = TBmakeAssign (TBmakeLet (ConvertOutputs (FUNDEF_RETS (fundef),
                                                      INFO_RETS (arg_info),
@@ -601,9 +604,9 @@ BTFdoBundleToFundef (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("BTFdoBundleToFundef");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module,
                  "BTFdoBundleToFundef operates on modules only!");
 
     DSinitDeserialize (syntax_tree);
@@ -655,7 +658,7 @@ BTFfunbundle (node *arg_node, info *arg_info)
     node *rets;
     node *retassign;
 
-    DBUG_ENTER ("BTFfunbundle");
+    DBUG_ENTER ();
 
     /*
      * bottom up
@@ -720,7 +723,7 @@ BTFfundef (node *arg_node, info *arg_info)
     node *precond = NULL;
     node *thencode = NULL;
 
-    DBUG_ENTER ("BTFfundef");
+    DBUG_ENTER ();
 
     if (INFO_GENCODE (arg_info)) {
         /*
@@ -768,3 +771,5 @@ BTFfundef (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Bundle to fundef -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

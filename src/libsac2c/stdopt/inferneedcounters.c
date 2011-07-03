@@ -18,7 +18,10 @@
 
 #include "tree_basic.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 
@@ -48,7 +51,7 @@ MakeInfo (trav_t trav)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -62,7 +65,7 @@ MakeInfo (trav_t trav)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -86,7 +89,7 @@ exclusionDueToHostTraversal (node *arg_node, info *arg_info)
 {
     bool res = FALSE;
     node *parent;
-    DBUG_ENTER ("exclusionDueToHostTraversal");
+    DBUG_ENTER ();
 
     if (INFO_TRAV (arg_info) == TR_awlfi) {
         parent = INFO_PRF (arg_info);
@@ -132,7 +135,7 @@ INFNCdoInferNeedCounters (node *arg_node, trav_t trav)
 {
     info *info;
 
-    DBUG_ENTER ("INFNCdoInferNeedCounters");
+    DBUG_ENTER ();
 
     info = MakeInfo (trav);
 
@@ -164,7 +167,7 @@ INFNCdoInferNeedCountersOneFundef (node *arg_node, trav_t trav)
 {
     info *info;
 
-    DBUG_ENTER ("INFNCdoInferNeedCountersOneFundef");
+    DBUG_ENTER ();
 
     info = MakeInfo (trav);
     INFO_ONEFUNDEF (info) = TRUE;
@@ -189,7 +192,7 @@ node *
 INFNCfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
-    DBUG_ENTER ("INFNCfundef");
+    DBUG_ENTER ();
 
     FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -209,7 +212,7 @@ INFNCfundef (node *arg_node, info *arg_info)
 node *
 INFNCblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INFNCblock");
+    DBUG_ENTER ();
 
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
@@ -220,7 +223,7 @@ INFNCblock (node *arg_node, info *arg_info)
 node *
 INFNCavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INFNCavis");
+    DBUG_ENTER ();
 
     AVIS_NEEDCOUNT (arg_node) = 0;
 
@@ -249,7 +252,7 @@ INFNCid (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("INFNCid");
+    DBUG_ENTER ();
 
     avis = ID_AVIS (arg_node);
 
@@ -275,7 +278,7 @@ INFNCid (node *arg_node, info *arg_info)
 node *
 INFNCprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INFNCprf");
+    DBUG_ENTER ();
 
     INFO_PRF (arg_info) = arg_node;
     PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
@@ -283,3 +286,5 @@ INFNCprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -41,7 +41,9 @@
 
 #include "mtdcr.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "MTDCR"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -97,7 +99,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -118,7 +120,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_DFMALLOC (info) == NULL, "no dfm expected");
     DBUG_ASSERT (INFO_DFMFREE (info) == NULL, "no dfm expected");
@@ -139,13 +141,13 @@ FreeInfo (info *info)
 node *
 MTDCRmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTDCRmodule");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("MTDCR", outfile = global.outfile; global.outfile = stderr;);
+    DBUG_EXECUTE (outfile = global.outfile; global.outfile = stderr);
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
-    DBUG_EXECUTE ("MTDCR", global.outfile = outfile;);
+    DBUG_EXECUTE (global.outfile = outfile);
 
     DBUG_RETURN (arg_node);
 }
@@ -159,14 +161,14 @@ MTDCRmodule (node *arg_node, info *arg_info)
 node *
 MTDCRfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTDCRfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISSTFUN (arg_node) && (FUNDEF_BODY (arg_node) != NULL)) {
         /*
          * Only ST funs may have contained parallel with-loops.
          * Hence, we constrain our activity accordingly.
          */
-        DBUG_PRINT ("MTDCR", ("Entering function %s.", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Entering function %s.", FUNDEF_NAME (arg_node));
 
         INFO_DFMBASE (arg_info)
           = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
@@ -183,7 +185,7 @@ MTDCRfundef (node *arg_node, info *arg_info)
 
         INFO_DFMBASE (arg_info) = DFMremoveMaskBase (INFO_DFMBASE (arg_info));
 
-        DBUG_PRINT ("MTDCR", ("Leaving function %s.\n", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Leaving function %s.\n", FUNDEF_NAME (arg_node));
     }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -200,33 +202,33 @@ MTDCRfundef (node *arg_node, info *arg_info)
 node *
 MTDCRblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTDCRblock");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("MTDCR", ("Entering block"));
-    DBUG_EXECUTE ("MTDCR", PRTdoPrint (arg_node););
+    DBUG_PRINT ("Entering block");
+    DBUG_EXECUTE (PRTdoPrint (arg_node));
 
-    DBUG_PRINT ("MTDCR", ("DFM ALLOC:"));
-    DBUG_EXECUTE ("MTDCR", DFMprintMask (stderr, "%s ", INFO_DFMALLOC (arg_info)););
+    DBUG_PRINT ("DFM ALLOC:");
+    DBUG_EXECUTE (DFMprintMask (stderr, "%s ", INFO_DFMALLOC (arg_info)));
 
-    DBUG_PRINT ("MTDCR", ("DFM FREE:"));
-    DBUG_EXECUTE ("MTDCR", DFMprintMask (stderr, "%s ", INFO_DFMFREE (arg_info)););
+    DBUG_PRINT ("DFM FREE:");
+    DBUG_EXECUTE (DFMprintMask (stderr, "%s ", INFO_DFMFREE (arg_info)));
 
-    DBUG_PRINT ("MTDCR", ("DFM BLOCK:"));
-    DBUG_EXECUTE ("MTDCR", DFMprintMask (stderr, "%s ", INFO_DFMBLOCK (arg_info)););
+    DBUG_PRINT ("DFM BLOCK:");
+    DBUG_EXECUTE (DFMprintMask (stderr, "%s ", INFO_DFMBLOCK (arg_info)));
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
-    DBUG_PRINT ("MTDCR", ("Leaving block"));
-    DBUG_EXECUTE ("MTDCR", PRTdoPrint (arg_node););
+    DBUG_PRINT ("Leaving block");
+    DBUG_EXECUTE (PRTdoPrint (arg_node));
 
-    DBUG_PRINT ("MTDCR", ("DFM ALLOC:"));
-    DBUG_EXECUTE ("MTDCR", DFMprintMask (stderr, "%s ", INFO_DFMALLOC (arg_info)););
+    DBUG_PRINT ("DFM ALLOC:");
+    DBUG_EXECUTE (DFMprintMask (stderr, "%s ", INFO_DFMALLOC (arg_info)));
 
-    DBUG_PRINT ("MTDCR", ("DFM FREE:"));
-    DBUG_EXECUTE ("MTDCR", DFMprintMask (stderr, "%s ", INFO_DFMFREE (arg_info)););
+    DBUG_PRINT ("DFM FREE:");
+    DBUG_EXECUTE (DFMprintMask (stderr, "%s ", INFO_DFMFREE (arg_info)));
 
-    DBUG_PRINT ("MTDCR", ("DFM BLOCK:"));
-    DBUG_EXECUTE ("MTDCR", DFMprintMask (stderr, "%s ", INFO_DFMBLOCK (arg_info)););
+    DBUG_PRINT ("DFM BLOCK:");
+    DBUG_EXECUTE (DFMprintMask (stderr, "%s ", INFO_DFMBLOCK (arg_info)));
 
     DBUG_RETURN (arg_node);
 }
@@ -240,7 +242,7 @@ MTDCRblock (node *arg_node, info *arg_info)
 node *
 MTDCRassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTDCRassign");
+    DBUG_ENTER ();
 
     INFO_CHECK (arg_info) = TRUE;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -249,16 +251,16 @@ MTDCRassign (node *arg_node, info *arg_info)
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     } else {
-        DBUG_PRINT ("MTDCR", ("Reached end of block"));
+        DBUG_PRINT ("Reached end of block");
 
-        DBUG_PRINT ("MTDCR", ("DFM ALLOC:"));
-        DBUG_EXECUTE ("MTDCR", DFMprintMask (stderr, "%s ", INFO_DFMALLOC (arg_info)););
+        DBUG_PRINT ("DFM ALLOC:");
+        DBUG_EXECUTE (DFMprintMask (stderr, "%s ", INFO_DFMALLOC (arg_info)));
 
-        DBUG_PRINT ("MTDCR", ("DFM FREE:"));
-        DBUG_EXECUTE ("MTDCR", DFMprintMask (stderr, "%s ", INFO_DFMFREE (arg_info)););
+        DBUG_PRINT ("DFM FREE:");
+        DBUG_EXECUTE (DFMprintMask (stderr, "%s ", INFO_DFMFREE (arg_info)));
 
-        DBUG_PRINT ("MTDCR", ("DFM BLOCK:"));
-        DBUG_EXECUTE ("MTDCR", DFMprintMask (stderr, "%s ", INFO_DFMBLOCK (arg_info)););
+        DBUG_PRINT ("DFM BLOCK:");
+        DBUG_EXECUTE (DFMprintMask (stderr, "%s ", INFO_DFMBLOCK (arg_info)));
     }
 
     /*
@@ -298,7 +300,7 @@ MTDCRassign (node *arg_node, info *arg_info)
 node *
 MTDCRlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTDCRlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -321,7 +323,7 @@ MTDCRlet (node *arg_node, info *arg_info)
 node *
 MTDCRprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTDCRprf");
+    DBUG_ENTER ();
 
     if (INFO_CHECK (arg_info)) {
         switch (PRF_PRF (arg_node)) {
@@ -412,7 +414,7 @@ MTDCRprf (node *arg_node, info *arg_info)
 node *
 MTDCRids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTDCRids");
+    DBUG_ENTER ();
 
     if (INFO_CHECK (arg_info)) {
         if (!DFMtestMaskEntry (INFO_DFMBLOCK (arg_info), NULL, IDS_AVIS (arg_node))) {
@@ -434,7 +436,7 @@ MTDCRids (node *arg_node, info *arg_info)
 node *
 MTDCRid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTDCRid");
+    DBUG_ENTER ();
 
     if (INFO_CHECK (arg_info)) {
         if (!DFMtestMaskEntry (INFO_DFMBLOCK (arg_info), NULL, ID_AVIS (arg_node))) {
@@ -462,7 +464,7 @@ MTDCRdoMtDeadCodeRemoval (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MTDCRdoMtDeadCodeRemoval");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
@@ -476,3 +478,5 @@ MTDCRdoMtDeadCodeRemoval (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

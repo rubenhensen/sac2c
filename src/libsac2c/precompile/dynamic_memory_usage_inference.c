@@ -49,7 +49,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "DMUI"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -74,7 +77,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -86,7 +89,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -112,17 +115,17 @@ DMUIdoDynamicMemoryUsageInference (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("DMUIdoDynamicMemoryUsageInference");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("DMUI", ("Starting dynamic memory usage inference traversal."));
+    DBUG_PRINT ("Starting dynamic memory usage inference traversal.");
 
     TRAVpush (TR_dmui);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("DMUI", ("Dynamic memory usage inference traversal complete."));
+    DBUG_PRINT ("Dynamic memory usage inference traversal complete.");
 
     info = FreeInfo (info);
 
@@ -162,15 +165,15 @@ node *
 DMUIfundef (node *arg_node, info *arg_info)
 {
     info *stack;
-    DBUG_ENTER ("DMUIfundef");
+    DBUG_ENTER ();
 
     stack = arg_info;
     arg_info = MakeInfo ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    DBUG_PRINT ("DMUI", ("%s needs dynamic memory: %s", FUNDEF_NAME (arg_node),
-                         INFO_NEEDS_DYNAMIC_MEMORY (arg_info) ? "yes" : "no"));
+    DBUG_PRINT ("%s needs dynamic memory: %s", FUNDEF_NAME (arg_node),
+                INFO_NEEDS_DYNAMIC_MEMORY (arg_info) ? "yes" : "no");
     FUNDEF_NEEDSDYNAMICMEMORY (arg_node) = INFO_NEEDS_DYNAMIC_MEMORY (arg_info);
 
     arg_info = stack;
@@ -188,7 +191,7 @@ DMUIfundef (node *arg_node, info *arg_info)
 node *
 DMUIprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DMUIprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_alloc:
@@ -219,3 +222,5 @@ DMUIprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

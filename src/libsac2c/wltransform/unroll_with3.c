@@ -40,7 +40,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "UW3"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -118,7 +121,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
     INFO_ASSIGNS (result) = NULL;
@@ -137,16 +140,15 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_ASSIGNS (info) == NULL),
+    DBUG_ASSERT (INFO_ASSIGNS (info) == NULL,
                  "Trying to free info which still contains assigns");
 
-    DBUG_ASSERT ((INFO_FA_INIT (info) == NULL),
+    DBUG_ASSERT (INFO_FA_INIT (info) == NULL,
                  "Trying to free info which still contains initals of folds");
 
-    DBUG_ASSERT ((INFO_FA_LHS (info) == NULL),
-                 "Trying to free info which still has lhss");
+    DBUG_ASSERT (INFO_FA_LHS (info) == NULL, "Trying to free info which still has lhss");
 
     info = MEMfree (info);
 
@@ -175,11 +177,11 @@ UW3doUnrollWith3 (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("UW3doUnrollWith3");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("UW3", ("Starting Unroll With3 traversal."));
+    DBUG_PRINT ("Starting Unroll With3 traversal.");
 
     TRAVpush (TR_uw3);
     syntax_tree = TRAVdo (syntax_tree, info);
@@ -187,7 +189,7 @@ UW3doUnrollWith3 (node *syntax_tree)
 
     syntax_tree = RemoveArrayIndirection (syntax_tree);
 
-    DBUG_PRINT ("UW3", ("Ending Unroll With3 traversal complete."));
+    DBUG_PRINT ("Ending Unroll With3 traversal complete.");
 
     info = FreeInfo (info);
 
@@ -210,7 +212,7 @@ MakeIntegerConst (int rhs, node **assigns, node **vardecs)
 {
     node *avis;
 
-    DBUG_ENTER ("MakeIntegerConst");
+    DBUG_ENTER ();
 
     avis = TBmakeAvis (TRAVtmpVar (),
                        TYmakeAKV (TYmakeSimpleType (T_int), COmakeConstantFromInt (rhs)));
@@ -237,7 +239,7 @@ ATravRangeResult (node *exprs)
 {
     pattern *pat;
     node *id;
-    DBUG_ENTER ("ATravRangeResult");
+    DBUG_ENTER ();
 
     if (EXPRS_NEXT (exprs) != NULL) {
         EXPRS_NEXT (exprs) = ATravRangeResult (EXPRS_NEXT (exprs));
@@ -264,9 +266,9 @@ ATravRangeResult (node *exprs)
 static node *
 ATravRange (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravRange");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((RANGE_RESULTS (arg_node) != NULL), "Missing results");
+    DBUG_ASSERT (RANGE_RESULTS (arg_node) != NULL, "Missing results");
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -299,7 +301,7 @@ static node *
 RemoveArrayIndirection (node *syntax_tree)
 {
     anontrav_t trav[2] = {{N_range, &ATravRange}, {0, NULL}};
-    DBUG_ENTER ("RemoveArrayIndirection");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);
     syntax_tree = TRAVopt (syntax_tree, NULL);
@@ -340,12 +342,12 @@ static node *
 JoinIdsExprs (node *arg_ids, node *exprs)
 {
     node *assign, *ids, *rhs;
-    DBUG_ENTER ("JoinIdsExprs");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((arg_ids != NULL), "ids missing");
-    DBUG_ASSERT ((exprs != NULL), "exprs missing");
-    DBUG_ASSERT ((NODE_TYPE (arg_ids) == N_ids), "JoinIdsExprs called on non ids");
-    DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id), "Non id expr in exprs chain");
+    DBUG_ASSERT (arg_ids != NULL, "ids missing");
+    DBUG_ASSERT (exprs != NULL, "exprs missing");
+    DBUG_ASSERT (NODE_TYPE (arg_ids) == N_ids, "JoinIdsExprs called on non ids");
+    DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id, "Non id expr in exprs chain");
 
     if (IDS_NEXT (arg_ids) == NULL) {
         assign = NULL;
@@ -371,12 +373,12 @@ JoinIdsExprs (node *arg_ids, node *exprs)
   }
 #else
     if (TYgetDim (IDS_NTYPE (ids)) == (TYgetDim (AVIS_TYPE (ID_AVIS (rhs))) + 1)) {
-        DBUG_ASSERT ((SHgetExtent (TYgetShape (IDS_NTYPE (ids)), 0) == 1),
+        DBUG_ASSERT (SHgetExtent (TYgetShape (IDS_NTYPE (ids)), 0) == 1,
                      "Unexpected shape");
         rhs = TBmakeArray (TYcopyType (IDS_NTYPE (ids)), SHmakeShape (1),
                            TBmakeExprs (rhs, NULL));
     } else {
-        DBUG_ASSERT ((TYgetDim (IDS_NTYPE (ids)) == TYgetDim (AVIS_TYPE (ID_AVIS (rhs)))),
+        DBUG_ASSERT (TYgetDim (IDS_NTYPE (ids)) == TYgetDim (AVIS_TYPE (ID_AVIS (rhs))),
                      "Unexpected dim");
     }
 #endif
@@ -399,7 +401,7 @@ JoinIdsExprs (node *arg_ids, node *exprs)
 static info *
 ResetInfo (info *arg_info)
 {
-    DBUG_ENTER ("ResetInfo");
+    DBUG_ENTER ();
 
     /* Remove possibly old pointers from info */
     INFO_RESULTS (arg_info) = NULL;
@@ -420,7 +422,7 @@ ResetInfo (info *arg_info)
 static node *
 FAlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FAlet");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -442,12 +444,12 @@ FAlet (node *arg_node, info *arg_info)
 static node *
 FAprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FAprf");
+    DBUG_ENTER ();
 
     if (INFO_FA_PRF_ACCU (arg_info) == FALSE) {
         INFO_FA_PRF_ACCU (arg_info) = (PRF_PRF (arg_node) == F_accu);
     } else {
-        DBUG_ASSERT ((PRF_PRF (arg_node) != F_accu), "Found too many _accu_s");
+        DBUG_ASSERT (PRF_PRF (arg_node) != F_accu, "Found too many _accu_s");
     }
 
     DBUG_RETURN (arg_node);
@@ -456,7 +458,7 @@ FAprf (node *arg_node, info *arg_info)
 static node *
 UpgradeTypes (node *ids, node *exprs)
 {
-    DBUG_ENTER ("UpgradeTypes");
+    DBUG_ENTER ();
 
     if (IDS_NEXT (ids) != NULL) {
         DBUG_ASSERT (EXPRS_NEXT (exprs) != NULL,
@@ -474,7 +476,7 @@ UpgradeTypes (node *ids, node *exprs)
 static node *
 FAassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FAassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -499,7 +501,7 @@ static node *
 FAfold (node *arg_node, info *arg_info)
 {
     node *init;
-    DBUG_ENTER ("FAfold");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -535,7 +537,7 @@ ReplaceAccu (node *tree, node *ops)
 
                          {N_with, &TRAVnone},  {N_with2, &TRAVnone},
                          {N_with3, &TRAVnone}, {0, NULL}};
-    DBUG_ENTER ("FindAccu");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);
 
@@ -553,7 +555,7 @@ static node *
 S2Iprf (node *arg_node, info *arg_info)
 {
     node *id;
-    DBUG_ENTER ("S2Iprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_syncin:
@@ -594,7 +596,7 @@ Sync2Id (node *arg_node)
                          {N_with2, &TRAVnone},
                          {N_with3, &TRAVnone},
                          {0, NULL}};
-    DBUG_ENTER ("Sync2Id");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);
 
@@ -617,11 +619,11 @@ static node *
 GetInitals (node *folds)
 {
     node *exprs = NULL;
-    DBUG_ENTER ("GetInitals");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((folds != NULL), "Expected a chain of folds");
+    DBUG_ASSERT (folds != NULL, "Expected a chain of folds");
 
-    DBUG_ASSERT ((NODE_TYPE (folds) == N_fold), "Can only get initals from fold withops");
+    DBUG_ASSERT (NODE_TYPE (folds) == N_fold, "Can only get initals from fold withops");
 
     if (FOLD_NEXT (folds) != NULL) {
         exprs = GetInitals (FOLD_NEXT (folds));
@@ -635,7 +637,7 @@ GetInitals (node *folds)
 static node *
 SInext (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SInext");
+    DBUG_ENTER ();
 
     INFO_SI_OPS_INIT (arg_info) = EXPRS_NEXT (INFO_SI_OPS_INIT (arg_info));
 
@@ -647,7 +649,7 @@ SInext (node *arg_node, info *arg_info)
 static node *
 SIfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SIfold");
+    DBUG_ENTER ();
 
     if (FOLD_INITIAL (arg_node) != NULL) {
         FOLD_INITIAL (arg_node) = FREEdoFreeTree (FOLD_INITIAL (arg_node));
@@ -673,7 +675,7 @@ static node *
 SetInitials (node *ops, node *opsInitial)
 {
     info *info;
-    DBUG_ENTER ("SetInitials");
+    DBUG_ENTER ();
 
     anontrav_t trav[] = {{N_fold, &SIfold},
                          {N_genarray, &SInext},
@@ -727,7 +729,7 @@ node *
 UW3assign (node *arg_node, info *arg_info)
 {
     node *assign_stack;
-    DBUG_ENTER ("UW3assign");
+    DBUG_ENTER ();
 
     assign_stack = INFO_ASSIGNS (arg_info);
     INFO_ASSIGNS (arg_info) = NULL;
@@ -739,7 +741,7 @@ UW3assign (node *arg_node, info *arg_info)
         node *arg_node_original = arg_node;
         node *let = ASSIGN_INSTR (arg_node);
 
-        DBUG_PRINT ("UW3", ("With3 unrolled compleatly"));
+        DBUG_PRINT ("With3 unrolled compleatly");
 
         arg_node = TCappendAssign (JoinIdsExprs (LET_IDS (let), INFO_RESULTS (arg_info)),
                                    ASSIGN_NEXT (arg_node));
@@ -757,7 +759,7 @@ UW3assign (node *arg_node, info *arg_info)
         INFO_ASSIGNS (arg_info) = NULL;
     }
 
-    DBUG_ASSERT ((INFO_ASSIGNS (arg_info) == NULL),
+    DBUG_ASSERT (INFO_ASSIGNS (arg_info) == NULL,
                  "Assigns in info not expected at this point");
     INFO_ASSIGNS (arg_info) = assign_stack;
 
@@ -780,9 +782,9 @@ node *
 UW3with3 (node *arg_node, info *arg_info)
 {
     node *operators_stack;
-    DBUG_ENTER ("UW3with3");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_RANGES (arg_info) == 0), "Counted ranges that where not expected");
+    DBUG_ASSERT (INFO_RANGES (arg_info) == 0, "Counted ranges that where not expected");
 
     operators_stack = INFO_OPERATORS (arg_info);
     INFO_OPERATORS (arg_info) = WITH3_OPERATIONS (arg_node)
@@ -815,7 +817,7 @@ UW3with3 (node *arg_node, info *arg_info)
 node *
 UW3fundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("UW3fundef");
+    DBUG_ENTER ();
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
@@ -844,7 +846,7 @@ UW3range (node *arg_node, info *arg_info)
 {
     constant *clower, *cupper;
     info *nested_info;
-    DBUG_ENTER ("UW3range");
+    DBUG_ENTER ();
 
     nested_info = MakeInfo ();
     INFO_VARDECS (nested_info) = INFO_VARDECS (arg_info);
@@ -867,7 +869,7 @@ UW3range (node *arg_node, info *arg_info)
             int max = upper - lower;
             int i;
 
-            DBUG_PRINT ("UW3", ("Unrolling range %d times", max));
+            DBUG_PRINT ("Unrolling range %d times", max);
 
             for (i = 0; i < max; i++) {
                 /* Save the body of the with3 loop */
@@ -909,3 +911,5 @@ UW3range (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

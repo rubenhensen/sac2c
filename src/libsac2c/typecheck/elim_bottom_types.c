@@ -8,7 +8,9 @@
 
 #include "elim_bottom_types.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "EBT"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "str.h"
 #include "memory.h"
@@ -168,7 +170,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -185,7 +187,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -195,9 +197,9 @@ FreeInfo (info *info)
 static node *
 TransformIntoTypeError (node *fundef)
 {
-    DBUG_ENTER ("TransformIntoTypeError");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "cannot transform non fundef node");
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "cannot transform non fundef node");
 
     DBUG_ASSERT (TUretsContainBottom (FUNDEF_RETS (fundef)),
                  "cannot transform a fundef without bottom return types!");
@@ -237,7 +239,7 @@ EBTdoEliminateBottomTypesOneFunction (node *arg_node)
 {
     info *info_node;
 
-    DBUG_ENTER ("EBTdoEliminateBottomTypesOneFunction");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
                  "EBTdoEliminateBottomTypesOneFunction can only be applied to fundefs");
@@ -277,7 +279,7 @@ EBTdoEliminateBottomTypes (node *arg_node)
 {
     info *info_node;
 
-    DBUG_ENTER ("EBTdoEliminateBottomTypes");
+    DBUG_ENTER ();
 
     if (N_module == NODE_TYPE (arg_node)) {
         TRAVpush (TR_ebt);
@@ -307,7 +309,7 @@ EBTdoEliminateBottomTypes (node *arg_node)
 node *
 EBTmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EBTmodule");
+    DBUG_ENTER ();
 
     MODULE_TYPES (arg_node) = TRAVopt (MODULE_TYPES (arg_node), arg_info);
     MODULE_OBJS (arg_node) = TRAVopt (MODULE_OBJS (arg_node), arg_info);
@@ -332,19 +334,18 @@ EBTfundef (node *arg_node, info *arg_info)
 {
     ntype *ftype, *bottom;
 
-    DBUG_ENTER ("EBTfundef");
+    DBUG_ENTER ();
 
     if (!FUNDEF_ISLACFUN (arg_node) || INFO_ONEFUNCTION (arg_info)) {
         INFO_FUNDEF (arg_info) = arg_node;
 
-        DBUG_PRINT ("EBT", ("----> Processing function %s\n", CTIitemName (arg_node)));
+        DBUG_PRINT ("----> Processing function %s\n", CTIitemName (arg_node));
 
         ftype = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
 
         bottom = TYgetBottom (ftype);
         if (bottom != NULL) {
-            DBUG_PRINT ("EBT", ("bottom component found in function %s",
-                                CTIitemName (arg_node)));
+            DBUG_PRINT ("bottom component found in function %s", CTIitemName (arg_node));
             if (FUNDEF_ISPROVIDED (arg_node) || FUNDEF_ISEXPORTED (arg_node)) {
                 CTIabortOnBottom (TYgetBottomError (bottom));
             } else {
@@ -362,8 +363,8 @@ EBTfundef (node *arg_node, info *arg_info)
 
         } else {
             DBUG_ASSERT (TYisProdOfArray (ftype), "inconsistent return type found");
-            DBUG_PRINT ("EBT", ("ProdOfArray return type found for function %s",
-                                CTIitemName (arg_node)));
+            DBUG_PRINT ("ProdOfArray return type found for function %s",
+                        CTIitemName (arg_node));
 
             FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -397,7 +398,7 @@ EBTfundef (node *arg_node, info *arg_info)
 node *
 EBTblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EBTblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
@@ -420,7 +421,7 @@ EBTvardec (node *arg_node, info *arg_info)
 {
     node *this_vardec;
 
-    DBUG_ENTER ("EBTvardec");
+    DBUG_ENTER ();
 
     VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
@@ -428,7 +429,7 @@ EBTvardec (node *arg_node, info *arg_info)
         /**
          * eliminate this vardec completely!
          */
-        DBUG_PRINT ("EBT", ("eliminating bottom vardec for %s", VARDEC_NAME (arg_node)));
+        DBUG_PRINT ("eliminating bottom vardec for %s", VARDEC_NAME (arg_node));
         this_vardec = arg_node;
         arg_node = VARDEC_NEXT (arg_node);
         VARDEC_NEXT (this_vardec) = NULL;
@@ -451,7 +452,7 @@ EBTvardec (node *arg_node, info *arg_info)
 node *
 EBTassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EBTassign");
+    DBUG_ENTER ();
 
     /**
      * First we go down in order to collect those bottom funcond vars that need to
@@ -489,7 +490,7 @@ EBTassign (node *arg_node, info *arg_info)
 node *
 EBTlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EBTlet");
+    DBUG_ENTER ();
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
@@ -529,7 +530,7 @@ EBTids (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("EBTids");
+    DBUG_ENTER ();
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
@@ -537,14 +538,13 @@ EBTids (node *arg_node, info *arg_info)
 
     if (TYisBottom (AVIS_TYPE (avis))) {
         if (INFO_TYPEERROR (arg_info) == NULL) {
-            DBUG_PRINT ("EBT",
-                        ("creating type error due to bottom LHS %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("creating type error due to bottom LHS %s", AVIS_NAME (avis));
             INFO_TYPEERROR (arg_info)
               = TCmakePrf1 (F_type_error, TBmakeType (TYcopyType (AVIS_TYPE (avis))));
         }
 
         if (AVIS_BOTRT (avis) != NULL) {
-            DBUG_PRINT ("EBT", ("lifting bottom LHS %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("lifting bottom LHS %s", AVIS_NAME (avis));
             AVIS_TYPE (avis) = TYfreeType (AVIS_TYPE (avis));
             AVIS_TYPE (avis) = AVIS_BOTRT (avis);
             AVIS_BOTRT (avis) = NULL;
@@ -560,7 +560,7 @@ EBTids (node *arg_node, info *arg_info)
             }
 
         } else {
-            DBUG_PRINT ("EBT", ("eliminating bottom LHS %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("eliminating bottom LHS %s", AVIS_NAME (avis));
             arg_node = FREEdoFreeNode (arg_node);
         }
     }
@@ -582,7 +582,7 @@ EBTap (node *arg_node, info *arg_info)
 {
     ntype *argt, *bottom;
 
-    DBUG_ENTER ("EBTap");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -592,9 +592,8 @@ EBTap (node *arg_node, info *arg_info)
     if (bottom != NULL) {
         if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
             && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-            DBUG_PRINT ("EBT",
-                        ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node))));
-            DBUG_PRINT ("EBT", ("deleting %s", CTIitemName (AP_FUNDEF (arg_node))));
+            DBUG_PRINT ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node)));
+            DBUG_PRINT ("deleting %s", CTIitemName (AP_FUNDEF (arg_node)));
             AP_FUNDEF (arg_node) = FREEdoFreeNode (AP_FUNDEF (arg_node));
         }
         INFO_TYPEERROR (arg_info)
@@ -603,8 +602,7 @@ EBTap (node *arg_node, info *arg_info)
     } else {
         if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
             && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-            DBUG_PRINT ("EBT",
-                        ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node))));
+            DBUG_PRINT ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node)));
             info *new_info = MakeInfo ();
             INFO_ONEFUNCTION (new_info) = TRUE;
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
@@ -630,7 +628,7 @@ EBTap (node *arg_node, info *arg_info)
 node *
 EBTcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EBTcond");
+    DBUG_ENTER ();
 
     if (INFO_THENBOTTS (arg_info) && INFO_ELSEBOTTS (arg_info)) {
         /**
@@ -659,7 +657,7 @@ EBTfuncond (node *arg_node, info *arg_info)
 {
     ntype *ttype, *etype;
 
-    DBUG_ENTER ("EBTfuncond");
+    DBUG_ENTER ();
 
     ttype = AVIS_TYPE (ID_AVIS (FUNCOND_THEN (arg_node)));
     etype = AVIS_TYPE (ID_AVIS (FUNCOND_ELSE (arg_node)));
@@ -677,3 +675,5 @@ EBTfuncond (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -74,7 +74,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "PEW3"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -106,7 +109,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -120,7 +123,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_MEMVARS (info) == NULL, "Memory leak in info MEMVARS not empty");
 
@@ -151,17 +154,17 @@ PEW3doPruneEmptyWith3 (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("PEW3doPruneEmptyWith3");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("PEW3", ("Starting prune empty with3 traversal."));
+    DBUG_PRINT ("Starting prune empty with3 traversal.");
 
     TRAVpush (TR_pew3);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("PEW3", ("Prune empty with3 traversal complete."));
+    DBUG_PRINT ("Prune empty with3 traversal complete.");
 
     info = FreeInfo (info);
 
@@ -190,10 +193,10 @@ static node *
 createAssignChain (node *arg_ids, node *exprs)
 {
     node *assign = NULL;
-    DBUG_ENTER ("createAssignChain");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((arg_ids != NULL), "ids missing");
-    DBUG_ASSERT ((exprs != NULL), "exprs missing");
+    DBUG_ASSERT (arg_ids != NULL, "ids missing");
+    DBUG_ASSERT (exprs != NULL, "exprs missing");
 
     if (IDS_NEXT (arg_ids) != NULL) {
         assign = createAssignChain (IDS_NEXT (arg_ids), EXPRS_NEXT (exprs));
@@ -219,7 +222,7 @@ createAssignChain (node *arg_ids, node *exprs)
 static node *
 ATRAVgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATRAVgenarray");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -231,7 +234,7 @@ ATRAVgenarray (node *arg_node, info *arg_info)
 static node *
 ATRAVmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATRAVmodarray");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -257,7 +260,7 @@ getMemvars (node *withops, info *arg_info)
                          {N_break, &TRAVerror},
                          {N_propagate, &TRAVerror},
                          {0, NULL}};
-    DBUG_ENTER ("getMemvars");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);
     withops = TRAVopt (withops, arg_info);
@@ -286,7 +289,7 @@ getMemvars (node *withops, info *arg_info)
 node *
 PEW3with3 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PEW3with3");
+    DBUG_ENTER ();
 
     if ((TCcountWithopsEq (WITH3_OPERATIONS (arg_node), N_modarray)
          + TCcountWithopsEq (WITH3_OPERATIONS (arg_node), N_genarray))
@@ -314,7 +317,7 @@ PEW3with3 (node *arg_node, info *arg_info)
 node *
 PEW3range (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PEW3range");
+    DBUG_ENTER ();
 
     RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 
@@ -347,7 +350,7 @@ PEW3id (node *arg_node, info *arg_info)
     pattern *pat_with3;
     pattern *pat_copy;
     int zero = 0;
-    DBUG_ENTER ("PEW3range");
+    DBUG_ENTER ();
 
     pat_copy = PMprf (1, PMAisNotPrf (F_wl_assign), 0);
     pat_with3 = PMwith3 (1, PMAhasCountRange (&zero), 0);
@@ -376,9 +379,9 @@ PEW3id (node *arg_node, info *arg_info)
 node *
 PEW3assign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PEW3assign");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_REPLACE_ASSIGNS (arg_info) == NULL),
+    DBUG_ASSERT (INFO_REPLACE_ASSIGNS (arg_info) == NULL,
                  "Should not have any replace assigns until traved assign");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -405,9 +408,9 @@ PEW3assign (node *arg_node, info *arg_info)
 node *
 PEW3let (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PEW3let");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_MEMVARS (arg_info) == NULL),
+    DBUG_ASSERT (INFO_MEMVARS (arg_info) == NULL,
                  "Should not have any memvars at this point");
 
     arg_node = TRAVcont (arg_node, arg_info);
@@ -427,3 +430,5 @@ PEW3let (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

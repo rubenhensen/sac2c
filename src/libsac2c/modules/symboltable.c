@@ -3,7 +3,10 @@
  */
 
 #include "symboltable.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "types.h"
@@ -44,7 +47,7 @@ STentryInit (const char *name, stentrytype_t type)
 {
     stentry_t *result;
 
-    DBUG_ENTER ("STentryInit");
+    DBUG_ENTER ();
 
     result = (stentry_t *)MEMmalloc (sizeof (stentry_t));
 
@@ -60,7 +63,7 @@ STentryDestroy (stentry_t *entry)
 {
     stentry_t *result;
 
-    DBUG_ENTER ("STentryDestroy");
+    DBUG_ENTER ();
 
     entry->name = MEMfree (entry->name);
 
@@ -76,7 +79,7 @@ STentryCopy (const stentry_t *entry)
 {
     stentry_t *result = NULL;
 
-    DBUG_ENTER ("STentryCopy");
+    DBUG_ENTER ();
 
     if (entry != NULL) {
         result = (stentry_t *)MEMmalloc (sizeof (stentry_t));
@@ -94,7 +97,7 @@ STentryEqual (stentry_t *one, stentry_t *two)
 {
     bool result = TRUE;
 
-    DBUG_ENTER ("STentryEqual");
+    DBUG_ENTER ();
 
     result = result && STReq (one->name, two->name);
     result = result && (one->type == two->type);
@@ -110,7 +113,7 @@ STsymbolInit (const char *symbol, stvisibility_t vis)
 {
     stsymbol_t *result;
 
-    DBUG_ENTER ("STsymbolInit");
+    DBUG_ENTER ();
 
     result = (stsymbol_t *)MEMmalloc (sizeof (stsymbol_t));
 
@@ -127,7 +130,7 @@ STsymbolDestroy (stsymbol_t *symbol)
 {
     stsymbol_t *result;
 
-    DBUG_ENTER ("STsymbolDestroy");
+    DBUG_ENTER ();
 
     while (symbol->head != NULL)
         symbol->head = STentryDestroy (symbol->head);
@@ -146,7 +149,7 @@ STsymbolCopy (const stsymbol_t *symbol)
 {
     stsymbol_t *result = NULL;
 
-    DBUG_ENTER ("STsymbolCopy");
+    DBUG_ENTER ();
 
     if (symbol != NULL) {
         result = (stsymbol_t *)MEMmalloc (sizeof (stsymbol_t));
@@ -166,7 +169,7 @@ STentryAdd (stentry_t *entry, stsymbol_t *symbol)
     stentry_t *pos;
     bool found = FALSE;
 
-    DBUG_ENTER ("STsymbolAdd");
+    DBUG_ENTER ();
 
     /* check whether entry already exists */
     pos = symbol->head;
@@ -183,7 +186,7 @@ STentryAdd (stentry_t *entry, stsymbol_t *symbol)
         symbol->head = entry;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*
@@ -192,12 +195,12 @@ STentryAdd (stentry_t *entry, stsymbol_t *symbol)
 static void
 STsymbolAdd (stsymbol_t *symbol, sttable_t *table)
 {
-    DBUG_ENTER ("STsymbolAdd");
+    DBUG_ENTER ();
 
     symbol->next = table->head;
     table->head = symbol;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static stsymbol_t *
@@ -205,7 +208,7 @@ STlookupSymbol (const char *symbol, const sttable_t *table)
 {
     stsymbol_t *result;
 
-    DBUG_ENTER ("STlookupSymbol");
+    DBUG_ENTER ();
 
     result = table->head;
 
@@ -221,7 +224,7 @@ STinit ()
 {
     sttable_t *result;
 
-    DBUG_ENTER ("STinit");
+    DBUG_ENTER ();
 
     result = (sttable_t *)MEMmalloc (sizeof (sttable_t));
 
@@ -233,7 +236,7 @@ STinit ()
 sttable_t *
 STdestroy (sttable_t *table)
 {
-    DBUG_ENTER ("STdestroy");
+    DBUG_ENTER ();
 
     while (table->head != NULL) {
         table->head = STsymbolDestroy (table->head);
@@ -249,7 +252,7 @@ STcopy (const sttable_t *table)
 {
     sttable_t *result = NULL;
 
-    DBUG_ENTER ("STcopy");
+    DBUG_ENTER ();
 
     if (table != NULL) {
         result = (sttable_t *)MEMmalloc (sizeof (sttable_t));
@@ -266,7 +269,7 @@ STentryInsert (const char *symbolname, stvisibility_t vis, stentry_t *entry,
 {
     stsymbol_t *symbol;
 
-    DBUG_ENTER ("STentryInsert");
+    DBUG_ENTER ();
 
     symbol = STlookupSymbol (symbolname, table);
 
@@ -275,11 +278,11 @@ STentryInsert (const char *symbolname, stvisibility_t vis, stentry_t *entry,
         STsymbolAdd (symbol, table);
     }
 
-    DBUG_ASSERT ((vis == symbol->vis), "found symbol with mixed visibility!");
+    DBUG_ASSERT (vis == symbol->vis, "found symbol with mixed visibility!");
 
     STentryAdd (entry, symbol);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -288,12 +291,12 @@ STadd (const char *symbol, stvisibility_t vis, const char *name, stentrytype_t t
 {
     stentry_t *entry;
 
-    DBUG_ENTER ("STadd");
+    DBUG_ENTER ();
 
     entry = STentryInit (name, type);
     STentryInsert (symbol, vis, entry, table);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -301,7 +304,7 @@ STremove (const char *symbol, sttable_t *table)
 {
     stsymbol_t *symp;
 
-    DBUG_ENTER ("STremove");
+    DBUG_ENTER ();
 
     symp = STlookupSymbol (symbol, table);
 
@@ -321,7 +324,7 @@ STremove (const char *symbol, sttable_t *table)
         symp = STsymbolDestroy (symp);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 bool
@@ -329,7 +332,7 @@ STcontains (const char *symbol, const sttable_t *table)
 {
     bool result;
 
-    DBUG_ENTER ("STcontains");
+    DBUG_ENTER ();
 
     result = (STlookupSymbol (symbol, table) != NULL);
 
@@ -343,7 +346,7 @@ STcontainsEntry (const char *name, const sttable_t *table)
     stentry_t *entry;
     bool result = FALSE;
 
-    DBUG_ENTER ("STcontainsEntry");
+    DBUG_ENTER ();
 
     symbol = table->head;
 
@@ -364,7 +367,7 @@ STcontainsEntry (const char *name, const sttable_t *table)
 stsymbol_t *
 STget (const char *symbol, const sttable_t *table)
 {
-    DBUG_ENTER ("STget");
+    DBUG_ENTER ();
 
     DBUG_RETURN (STlookupSymbol (symbol, table));
 }
@@ -375,7 +378,7 @@ STgetFirstEntry (const char *symbol, const sttable_t *table)
     stentry_t *result;
     stsymbol_t *symbolp;
 
-    DBUG_ENTER ("STgetFirstEntry");
+    DBUG_ENTER ();
 
     symbolp = STlookupSymbol (symbol, table);
     result = symbolp->head;
@@ -391,7 +394,7 @@ STsymbolIteratorGet (const sttable_t *table)
 {
     stsymboliterator_t *result;
 
-    DBUG_ENTER ("STsymbolIteratorGet");
+    DBUG_ENTER ();
 
     result = (stsymboliterator_t *)MEMmalloc (sizeof (stsymboliterator_t));
 
@@ -404,7 +407,7 @@ STsymbolIteratorGet (const sttable_t *table)
 stsymboliterator_t *
 STsymbolIteratorRelease (stsymboliterator_t *iterator)
 {
-    DBUG_ENTER ("STsymbolIteratorRelease");
+    DBUG_ENTER ();
 
     iterator = MEMfree (iterator);
 
@@ -416,7 +419,7 @@ STsymbolIteratorNext (stsymboliterator_t *iterator)
 {
     stsymbol_t *result;
 
-    DBUG_ENTER ("STsymbolIteratorNext");
+    DBUG_ENTER ();
 
     if (iterator->pos == NULL) {
         result = NULL;
@@ -431,17 +434,17 @@ STsymbolIteratorNext (stsymboliterator_t *iterator)
 void
 STsymbolIteratorReset (stsymboliterator_t *iterator)
 {
-    DBUG_ENTER ("STsymbolIteratorReset");
+    DBUG_ENTER ();
 
     iterator->head = iterator->pos;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 int
 STsymbolIteratorHasMore (stsymboliterator_t *iterator)
 {
-    DBUG_ENTER ("STsymbolIteratorHasMore");
+    DBUG_ENTER ();
 
     DBUG_RETURN (iterator->pos != NULL);
 }
@@ -454,7 +457,7 @@ STentryIteratorInit (stsymbol_t *symbol)
 {
     stentryiterator_t *result;
 
-    DBUG_ENTER ("STentryIteratorInit");
+    DBUG_ENTER ();
 
     result = (stentryiterator_t *)MEMmalloc (sizeof (stentryiterator_t));
 
@@ -478,7 +481,7 @@ STentryIteratorGet (const char *symbolname, const sttable_t *table)
     stentryiterator_t *result;
     stsymbol_t *symbol;
 
-    DBUG_ENTER ("STentryIteratorGet");
+    DBUG_ENTER ();
 
     symbol = STlookupSymbol (symbolname, table);
 
@@ -490,7 +493,7 @@ STentryIteratorGet (const char *symbolname, const sttable_t *table)
 stentryiterator_t *
 STentryIteratorRelease (stentryiterator_t *iterator)
 {
-    DBUG_ENTER ("STentryIteratorRelease");
+    DBUG_ENTER ();
 
     iterator = MEMfree (iterator);
 
@@ -502,7 +505,7 @@ STentryIteratorNext (stentryiterator_t *iterator)
 {
     stentry_t *result;
 
-    DBUG_ENTER ("STentryIteratorNext");
+    DBUG_ENTER ();
 
     result = iterator->pos;
 
@@ -515,17 +518,17 @@ STentryIteratorNext (stentryiterator_t *iterator)
 void
 STentryIteratorReset (stentryiterator_t *iterator)
 {
-    DBUG_ENTER ("STentryIteratorReset");
+    DBUG_ENTER ();
 
     iterator->pos = iterator->head;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 int
 STentryIteratorHasMore (stentryiterator_t *iterator)
 {
-    DBUG_ENTER ("STentryIteratorHasMore");
+    DBUG_ENTER ();
 
     DBUG_RETURN (iterator->pos != NULL);
 }
@@ -536,7 +539,7 @@ STentryIteratorHasMore (stentryiterator_t *iterator)
 const char *
 STsymbolName (stsymbol_t *symbol)
 {
-    DBUG_ENTER ("STsymbolName");
+    DBUG_ENTER ();
 
     DBUG_RETURN (symbol->name);
 }
@@ -544,7 +547,7 @@ STsymbolName (stsymbol_t *symbol)
 stvisibility_t
 STsymbolVisibility (stsymbol_t *symbol)
 {
-    DBUG_ENTER ("STsymbolVisibility");
+    DBUG_ENTER ();
 
     DBUG_RETURN (symbol->vis);
 }
@@ -556,9 +559,9 @@ STsymbolVisibility (stsymbol_t *symbol)
 const char *
 STentryName (stentry_t *entry)
 {
-    DBUG_ENTER ("STentryName");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((entry != NULL), "STentryName called with NULL argument");
+    DBUG_ASSERT (entry != NULL, "STentryName called with NULL argument");
 
     DBUG_RETURN (entry->name);
 }
@@ -566,9 +569,9 @@ STentryName (stentry_t *entry)
 stentrytype_t
 STentryType (stentry_t *entry)
 {
-    DBUG_ENTER ("STentryType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((entry != NULL), "STentryType called with NULL argument");
+    DBUG_ASSERT (entry != NULL, "STentryType called with NULL argument");
 
     DBUG_RETURN (entry->type);
 }
@@ -579,11 +582,11 @@ STentryType (stentry_t *entry)
 static void
 STentryPrint (stentry_t *entry)
 {
-    DBUG_ENTER ("STentryPrint");
+    DBUG_ENTER ();
 
     printf ("    %s\n", entry->name);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -592,7 +595,7 @@ STsymbolPrint (stsymbol_t *symbol)
     stentry_t *entry;
     char *visname;
 
-    DBUG_ENTER ("STsymbolPrint");
+    DBUG_ENTER ();
 
     switch (symbol->vis) {
     case SVT_local:
@@ -620,7 +623,7 @@ STsymbolPrint (stsymbol_t *symbol)
 
     printf ("\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -628,7 +631,7 @@ STprint (const sttable_t *table)
 {
     stsymbol_t *symbol;
 
-    DBUG_ENTER ("STprint");
+    DBUG_ENTER ();
 
     symbol = table->head;
 
@@ -637,5 +640,7 @@ STprint (const sttable_t *table)
         symbol = symbol->next;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

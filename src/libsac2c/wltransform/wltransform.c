@@ -35,7 +35,10 @@
 #include "memory.h"
 #include "traverse.h"
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLtrans"
+#include "debug.h"
+
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "print.h"
@@ -72,7 +75,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -84,7 +87,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -1338,7 +1341,7 @@ GetShapeIndex (shape *shp, int dim)
 {
     int res;
 
-    DBUG_ENTER ("GetShapeIndex");
+    DBUG_ENTER ();
 
     if (shp == NULL) {
         res = IDX_SHAPE;
@@ -1369,7 +1372,7 @@ WLTRAallStridesAreConstant (node *wlnode, bool trav_cont, bool trav_nextdim)
 {
     bool all_const = TRUE;
 
-    DBUG_ENTER ("WLTRAallStridesAreConstant");
+    DBUG_ENTER ();
 
     if (wlnode != NULL) {
         switch (NODE_TYPE (wlnode)) {
@@ -1385,7 +1388,7 @@ WLTRAallStridesAreConstant (node *wlnode, bool trav_cont, bool trav_nextdim)
                          && WLTRAallStridesAreConstant (WLSTRIDE_NEXT (wlnode), trav_cont,
                                                         trav_nextdim));
                 } else {
-                    DBUG_ASSERT ((NUM_VAL (WLSTRIDE_BOUND2 (wlnode)) == IDX_SHAPE),
+                    DBUG_ASSERT (NUM_VAL (WLSTRIDE_BOUND2 (wlnode)) == IDX_SHAPE,
                                  "illegal WLSTRIDE_BOUND2 found!");
                     all_const = FALSE;
                 }
@@ -1405,7 +1408,7 @@ WLTRAallStridesAreConstant (node *wlnode, bool trav_cont, bool trav_nextdim)
             break;
 
         default:
-            DBUG_ASSERT ((0), "illegal stride/grid node found!");
+            DBUG_ASSERT (0, "illegal stride/grid node found!");
             break;
         }
     }
@@ -1437,7 +1440,7 @@ WLTRAinsertWlNodes (node *nodes, node *insert_nodes)
     node *tmp, *insert_here;
     int compare;
 
-    DBUG_ENTER ("WLTRAinsertWlNodes");
+    DBUG_ENTER ();
 
     /*
      * insert all elements of 'insert_nodes' in 'nodes'
@@ -1502,7 +1505,7 @@ WLTRAgridOffset (int new_bound1, int bound1, int step, int grid_b2)
 {
     int offset;
 
-    DBUG_ENTER ("WLTRAgridOffset");
+    DBUG_ENTER ();
 
     offset = (new_bound1 - bound1) % step;
 
@@ -1552,7 +1555,7 @@ CompareWlNode (node *node1, node *node2, bool outline)
     node *grid1, *grid2;
     int result, grid_result;
 
-    DBUG_ENTER ("CompareWlNode");
+    DBUG_ENTER ();
 
     if ((node1 == NULL) || (node2 == NULL)) {
         if ((node1 == NULL) && (node2 == NULL)) {
@@ -1587,9 +1590,9 @@ CompareWlNode (node *node1, node *node2, bool outline)
 
             case N_wlstride:
                 grid1 = WLSTRIDE_CONTENTS (node1);
-                DBUG_ASSERT ((grid1 != NULL), "no grid1 for comparison found");
+                DBUG_ASSERT (grid1 != NULL, "no grid1 for comparison found");
                 grid2 = WLSTRIDE_CONTENTS (node2);
-                DBUG_ASSERT ((grid2 != NULL), "no grid2 for comparison found");
+                DBUG_ASSERT (grid2 != NULL, "no grid2 for comparison found");
 
                 if (outline) {
                     /* compare outlines only -> skip grid */
@@ -1629,7 +1632,7 @@ CompareWlNode (node *node1, node *node2, bool outline)
 
             default:
                 result = 0;
-                DBUG_ASSERT ((0), "wrong node type");
+                DBUG_ASSERT (0, "wrong node type");
                 break;
             }
 
@@ -1659,20 +1662,19 @@ static void
 CheckStride (int bound1, int bound2, int step, int grid_b1, int grid_b2,
              bool should_be_non_empty)
 {
-    DBUG_ENTER ("CheckStride");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((0 <= bound1), "given stride has illegal lower bound (<= 0)");
+    DBUG_ASSERT (0 <= bound1, "given stride has illegal lower bound (<= 0)");
     if (should_be_non_empty) {
-        DBUG_ASSERT ((bound1 < bound2),
+        DBUG_ASSERT (bound1 < bound2,
                      "given stride is empty (lower bound >= upper bound)!");
     }
-    DBUG_ASSERT ((0 < step), "given step is illegal (<= 0)");
-    DBUG_ASSERT ((0 <= grid_b1), "given grid has illegal lower bound (<= 0)");
-    DBUG_ASSERT ((grid_b1 < grid_b2),
-                 "given grid is empty (lower bound >= upper bound)!");
-    DBUG_ASSERT ((grid_b2 <= step), "given grid has illegal upper bound (> step)!");
+    DBUG_ASSERT (0 < step, "given step is illegal (<= 0)");
+    DBUG_ASSERT (0 <= grid_b1, "given grid has illegal lower bound (<= 0)");
+    DBUG_ASSERT (grid_b1 < grid_b2, "given grid is empty (lower bound >= upper bound)!");
+    DBUG_ASSERT (grid_b2 <= step, "given grid has illegal upper bound (> step)!");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1707,19 +1709,18 @@ NormalizeStride1 (node *stride)
     node *grid;
     int bound1, bound2, step, grid_b1, grid_b2, new_bound1, new_bound2;
 
-    DBUG_ENTER ("NormalizeStride1");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (stride) == N_wlstride) && (!WLSTRIDE_ISDYNAMIC (stride))),
                  "given node is not a constant stride!");
 
     grid = WLSTRIDE_CONTENTS (stride);
-    DBUG_ASSERT ((grid != NULL), "given stride contains no grid!");
+    DBUG_ASSERT (grid != NULL, "given stride contains no grid!");
     /*
      * For the time being support for multiple grids is not needed
      * and therefore not implemented yet ...
      */
-    DBUG_ASSERT ((WLGRID_NEXT (grid) == NULL),
-                 "given stride contains more than one grid!");
+    DBUG_ASSERT (WLGRID_NEXT (grid) == NULL, "given stride contains more than one grid!");
 
     bound1 = NUM_VAL (WLSTRIDE_BOUND1 (stride));
     bound2 = NUM_VAL (WLSTRIDE_BOUND2 (stride));
@@ -1796,14 +1797,14 @@ NormalizeAllStrides (node *strides)
 {
     node *grid;
 
-    DBUG_ENTER ("NormalizeAllStrides");
+    DBUG_ENTER ();
 
     if (strides != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (strides) == N_wlstride), "illegal stride found!");
+        DBUG_ASSERT (NODE_TYPE (strides) == N_wlstride, "illegal stride found!");
         if (!WLSTRIDE_ISDYNAMIC (strides)) {
             strides = NormalizeStride1 (strides);
             grid = WLSTRIDE_CONTENTS (strides);
-            DBUG_ASSERT ((WLGRID_NEXT (grid) == NULL), "multiple grids found!");
+            DBUG_ASSERT (WLGRID_NEXT (grid) == NULL, "multiple grids found!");
             WLGRID_NEXTDIM (grid) = NormalizeAllStrides (WLGRID_NEXTDIM (grid));
             WLSTRIDE_NEXT (strides) = NormalizeAllStrides (WLSTRIDE_NEXT (strides));
         }
@@ -1832,13 +1833,13 @@ NormalizeGrids (node *stride)
     node *grids;
     int offset;
 
-    DBUG_ENTER ("NormalizeGrids");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (stride) == N_wlstride), "illegal stride found!");
+    DBUG_ASSERT (NODE_TYPE (stride) == N_wlstride, "illegal stride found!");
 
     if (!WLSTRIDE_ISDYNAMIC (stride)) {
         grids = WLSTRIDE_CONTENTS (stride);
-        DBUG_ASSERT ((grids != NULL), "no grid found");
+        DBUG_ASSERT (grids != NULL, "no grid found");
         offset = NUM_VAL (WLGRID_BOUND1 (grids));
 
         if (offset > 0) {
@@ -1880,7 +1881,7 @@ IndexHeadStride (node *stride)
     int bound1, bound2;
     node *grid;
 
-    DBUG_ENTER ("IndexHeadStride");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (stride) == N_wlstride) && !WLSTRIDE_ISDYNAMIC (stride)),
                  "given node is not a constant stride!");
@@ -1891,12 +1892,11 @@ IndexHeadStride (node *stride)
      * empty strides should have been sorted out by EmptyParts2StridesOrExpr()
      * already!
      */
-    DBUG_ASSERT ((bound1 < bound2),
-                 "given stride is empty (lower bound >= upper bound)!");
+    DBUG_ASSERT (bound1 < bound2, "given stride is empty (lower bound >= upper bound)!");
 
     grid = WLSTRIDE_CONTENTS (stride);
-    DBUG_ASSERT ((NODE_TYPE (grid) == N_wlgrid), "given stride contains no grid!");
-    DBUG_ASSERT ((!WLGRID_ISDYNAMIC (grid)), "constant stride contains dynamic grid!");
+    DBUG_ASSERT (NODE_TYPE (grid) == N_wlgrid, "given stride contains no grid!");
+    DBUG_ASSERT (!WLGRID_ISDYNAMIC (grid), "constant stride contains dynamic grid!");
 
     result = bound1 + NUM_VAL (WLGRID_BOUND1 (grid));
 
@@ -1919,19 +1919,18 @@ IndexRearStride (node *stride)
     node *grid;
     int bound1, bound2, grid_b1, result;
 
-    DBUG_ENTER ("IndexRearStride");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (stride) == N_wlstride) && !WLSTRIDE_ISDYNAMIC (stride)),
                  "given node is not a constant stride!");
 
     bound1 = NUM_VAL (WLSTRIDE_BOUND1 (stride));
     bound2 = NUM_VAL (WLSTRIDE_BOUND2 (stride));
-    DBUG_ASSERT ((bound1 < bound2),
-                 "given stride is empty (lower bound >= upper bound)!");
+    DBUG_ASSERT (bound1 < bound2, "given stride is empty (lower bound >= upper bound)!");
 
     grid = WLSTRIDE_CONTENTS (stride);
-    DBUG_ASSERT ((NODE_TYPE (grid) == N_wlgrid), "given stride contains no grid!");
-    DBUG_ASSERT ((!WLGRID_ISDYNAMIC (grid)), "constant stride contains dynamic grid!");
+    DBUG_ASSERT (NODE_TYPE (grid) == N_wlgrid, "given stride contains no grid!");
+    DBUG_ASSERT (!WLGRID_ISDYNAMIC (grid), "constant stride contains dynamic grid!");
 
     grid_b1 = NUM_VAL (WLGRID_BOUND1 (grid));
 
@@ -1971,7 +1970,7 @@ GetLcmUnroll (node *nodes, int dim, bool include_blocks)
 {
     int unroll = 1;
 
-    DBUG_ENTER ("GetLcmUnroll");
+    DBUG_ENTER ();
 
     if (nodes != NULL) {
         unroll = GetLcmUnroll (WLNODE_NEXT (nodes), dim, include_blocks);
@@ -2002,21 +2001,21 @@ GetLcmUnroll (node *nodes, int dim, bool include_blocks)
                 break;
 
             case N_wlstride:
-                DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (nodes)), "dynamic stride encountered");
+                DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (nodes), "dynamic stride encountered");
 
                 unroll = MATHlcm (unroll, GetLcmUnroll (WLSTRIDE_CONTENTS (nodes), dim,
                                                         include_blocks));
                 break;
 
             case N_wlgrid:
-                DBUG_ASSERT ((!WLGRID_ISDYNAMIC (nodes)), "dynamic stride encountered");
+                DBUG_ASSERT (!WLGRID_ISDYNAMIC (nodes), "dynamic stride encountered");
 
                 unroll = MATHlcm (unroll, GetLcmUnroll (WLGRID_NEXTDIM (nodes), dim,
                                                         include_blocks));
                 break;
 
             default:
-                DBUG_ASSERT ((0), "wrong node type");
+                DBUG_ASSERT (0, "wrong node type");
                 break;
             }
         }
@@ -2043,7 +2042,7 @@ GenerateShapeStrides (int dim, int iter_dims, shape *iter_shp)
     node *new_grid;
     node *strides = NULL;
 
-    DBUG_ENTER ("GenerateShapeStrides");
+    DBUG_ENTER ();
 
     if (dim < iter_dims) {
         new_grid
@@ -2093,23 +2092,23 @@ GenerateNodeForGap (node *wlnode, node *bound1, node *bound2, bool is_noop)
     bool is_const;
     node *gap_node = NULL;
 
-    DBUG_ENTER ("GenerateNodeForGap");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((wlnode != NULL), "no WL node found!");
+    DBUG_ASSERT (wlnode != NULL, "no WL node found!");
 
     if (!WLBidOrNumEq (bound1, bound2)) {
         is_const = ((NODE_TYPE (bound1) == N_num) && (NODE_TYPE (bound2) == N_num));
 
         switch (NODE_TYPE (wlnode)) {
         case N_wlblock:
-            DBUG_ASSERT ((is_const), "non-constant block bounds found!");
+            DBUG_ASSERT (is_const, "non-constant block bounds found!");
             gap_node = TBmakeWlblock (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode),
                                       DUPdoDupNode (bound1), DUPdoDupNode (bound2),
                                       TBmakeNum (1), NULL, NULL, NULL);
             break;
 
         case N_wlublock:
-            DBUG_ASSERT ((is_const), "non-constant block bounds found!");
+            DBUG_ASSERT (is_const, "non-constant block bounds found!");
             gap_node = TBmakeWlublock (WLNODE_LEVEL (wlnode), WLNODE_DIM (wlnode),
                                        DUPdoDupNode (bound1), DUPdoDupNode (bound2),
                                        TBmakeNum (1), NULL, NULL, NULL);
@@ -2132,7 +2131,7 @@ GenerateNodeForGap (node *wlnode, node *bound1, node *bound2, bool is_noop)
             break;
 
         default:
-            DBUG_ASSERT ((0), "illegal node type found!");
+            DBUG_ASSERT (0, "illegal node type found!");
             break;
         }
     }
@@ -2165,9 +2164,9 @@ node *FillGapPred( node **new_node,   /* a return value!! */
 {
   node *gap_node;
 
-  DBUG_ENTER( "FillGapPred");
+  DBUG_ENTER ();
 
-  DBUG_ASSERT( (wlnode != NULL), "no WL node found!");
+  DBUG_ASSERT (wlnode != NULL, "no WL node found!");
 
   gap_node = GenerateNodeForGap( wlnode,
                                  bound1, bound2,
@@ -2182,7 +2181,7 @@ node *FillGapPred( node **new_node,   /* a return value!! */
     (*new_node) = gap_node;
   }
 
-  DBUG_RETURN( wlnode);
+  DBUG_RETURN (wlnode);
 }
 
 #endif
@@ -2207,9 +2206,9 @@ FillGapSucc (node **new_node, /* a return value!! */
 {
     node *gap_node;
 
-    DBUG_ENTER ("FillGapSucc");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((wlnode != NULL), "no WL node found!");
+    DBUG_ASSERT (wlnode != NULL, "no WL node found!");
 
     gap_node = GenerateNodeForGap (wlnode, bound1, bound2, is_noop);
 
@@ -2249,9 +2248,9 @@ CheckWithids (node *part)
     node *_ids_part, *_ids_tmp;
     bool res = TRUE;
 
-    DBUG_ENTER ("CheckWithids");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (part) == N_part), "CheckWithids() needs a N_part node!");
+    DBUG_ASSERT (NODE_TYPE (part) == N_part, "CheckWithids() needs a N_part node!");
 
     if (part != NULL) {
         tmp = PART_NEXT (part);
@@ -2324,7 +2323,7 @@ GetWlIterShape (node *wl, node *res_ids)
     shape *iter_shp;            /* iter-shp for a single with-op */
     shape *ret_iter_shp = NULL; /* final iter-shp which will be returned */
 
-    DBUG_ENTER ("GetWlIterShape");
+    DBUG_ENTER ();
 
     /*
      * multioperator WL:
@@ -2346,7 +2345,7 @@ GetWlIterShape (node *wl, node *res_ids)
                     shp_co = COfreeConstant (shp_co);
                 }
             } else {
-                DBUG_ASSERT ((NODE_TYPE (shp_node) == N_id),
+                DBUG_ASSERT (NODE_TYPE (shp_node) == N_id,
                              "GENARRAY_SHAPE is neither N_array nor N_id");
 
                 if (TYisAKV (ID_NTYPE (shp_node))) {
@@ -2381,7 +2380,7 @@ GetWlIterShape (node *wl, node *res_ids)
              * check whether iter-shp is identical for each operand
              */
             if (iter_shp != NULL) {
-                DBUG_ASSERT ((SHcompareShapes (iter_shp, ret_iter_shp)),
+                DBUG_ASSERT (SHcompareShapes (iter_shp, ret_iter_shp),
                              "multioperator WL: shape of iteration space differs");
                 iter_shp = SHfreeShape (iter_shp);
             } else {
@@ -2425,22 +2424,21 @@ IsEmptyStride1 (node *stride)
     int bound1, bound2, step, grid_b1, grid_b2;
     bool is_empty;
 
-    DBUG_ENTER ("IsEmptyStride1");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (stride) == N_wlstride) && (!WLSTRIDE_ISDYNAMIC (stride))),
                  "given node is not a constant stride!");
 
     grid = WLSTRIDE_CONTENTS (stride);
 
-    DBUG_ASSERT ((grid != NULL), "given stride contains no grid!");
-    DBUG_ASSERT ((!WLGRID_ISDYNAMIC (grid)), "constant grid expected");
+    DBUG_ASSERT (grid != NULL, "given stride contains no grid!");
+    DBUG_ASSERT (!WLGRID_ISDYNAMIC (grid), "constant grid expected");
 
     /*
      * For the time being support for multiple grids is not needed
      * and therefore not implemented yet ...
      */
-    DBUG_ASSERT ((WLGRID_NEXT (grid) == NULL),
-                 "given stride contains more than one grid!");
+    DBUG_ASSERT (WLGRID_NEXT (grid) == NULL, "given stride contains more than one grid!");
 
     bound1 = NUM_VAL (WLSTRIDE_BOUND1 (stride));
     bound2 = NUM_VAL (WLSTRIDE_BOUND2 (stride));
@@ -2473,7 +2471,7 @@ ToFirstComponent (node *array)
     pattern *pat;
     node *elems = NULL;
 
-    DBUG_ENTER ("ToFirstComponent");
+    DBUG_ENTER ();
 
     pat = PMarray (0, 1, PMskip (1, PMAgetNode (&elems)));
 
@@ -2501,10 +2499,10 @@ ToNextComponent (node *aelems)
 {
     node *comp;
 
-    DBUG_ENTER ("ToNextComponent");
+    DBUG_ENTER ();
 
     if (aelems != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (aelems) == N_exprs),
+        DBUG_ASSERT (NODE_TYPE (aelems) == N_exprs,
                      "weird structure of array elements encountered");
         comp = EXPRS_NEXT (aelems);
     } else {
@@ -2534,7 +2532,7 @@ CurrentComponentGetNode (node *aelems)
     node *result;
     pattern *pattern;
 
-    DBUG_ENTER ("CurrentComponentGetNode");
+    DBUG_ENTER ();
 
     if (aelems != NULL) {
         pattern = PMint (1, PMAgetNode (&num), 0);
@@ -2575,7 +2573,7 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
     bool is_empty;
     node *last_grid = NULL;
 
-    DBUG_ENTER ("Parts2Strides");
+    DBUG_ENTER ();
 
     parts_stride = NULL;
     while (parts != NULL) {
@@ -2590,8 +2588,8 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
         stride = NULL;
 
         gen = PART_GENERATOR (parts);
-        DBUG_ASSERT ((GENERATOR_OP1 (gen) == F_wl_le), "op1 in generator is not <=");
-        DBUG_ASSERT ((GENERATOR_OP2 (gen) == F_wl_lt), "op2 in generator is not <");
+        DBUG_ASSERT (GENERATOR_OP1 (gen) == F_wl_le, "op1 in generator is not <=");
+        DBUG_ASSERT (GENERATOR_OP2 (gen) == F_wl_lt, "op2 in generator is not <");
 
         /* get components of current generator */
         bound1 = ToFirstComponent (GENERATOR_BOUND1 (gen));
@@ -2599,8 +2597,8 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
         step = ToFirstComponent (GENERATOR_STEP (gen));
         width = ToFirstComponent (GENERATOR_WIDTH (gen));
 
-        DBUG_ASSERT ((bound1 != NULL), "wl bound1 not structurally constant!");
-        DBUG_ASSERT ((bound2 != NULL), "wl bound2 not structurally constant!");
+        DBUG_ASSERT (bound1 != NULL, "wl bound1 not structurally constant!");
+        DBUG_ASSERT (bound2 != NULL, "wl bound2 not structurally constant!");
         DBUG_ASSERT (((step != NULL) || (GENERATOR_STEP (gen) == NULL)),
                      "wl step not structurally constant!");
         DBUG_ASSERT (((width != NULL) || (GENERATOR_WIDTH (gen) == NULL)),
@@ -2612,10 +2610,10 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
         /*
          * with-loops with empty shapes should have been removed already!!!
          */
-        DBUG_ASSERT ((iter_dims > 0), "with-loop with empty shape found!");
+        DBUG_ASSERT (iter_dims > 0, "with-loop with empty shape found!");
         for (dim = 0; dim < iter_dims; dim++) {
-            DBUG_ASSERT ((bound1 != NULL), "bound1 incomplete");
-            DBUG_ASSERT ((bound2 != NULL), "bound2 incomplete");
+            DBUG_ASSERT (bound1 != NULL, "bound1 incomplete");
+            DBUG_ASSERT (bound2 != NULL, "bound2 incomplete");
 
             new_grid = TBmakeWlgrid (0, dim, NULL, TBmakeNum (0),
                                      (width == NULL) ? TBmakeNum (1)
@@ -2675,7 +2673,7 @@ Parts2Strides (node *parts, int iter_dims, shape *iter_shp)
         }
 
         if (!is_empty) {
-            DBUG_ASSERT ((new_grid != NULL), "no produced grid found!");
+            DBUG_ASSERT (new_grid != NULL, "no produced grid found!");
             WLGRID_CODE (new_grid) = code;
             CODE_USED (code)++;
             parts_stride = WLTRAinsertWlNodes (parts_stride, stride);
@@ -2729,7 +2727,7 @@ StridesDisjointOneDim (int lb1, int ub1, int step1, int width1, int lb2, int ub2
     int iv;
     bool disjoint = TRUE;
 
-    DBUG_ENTER ("StridesDisjointOneDim");
+    DBUG_ENTER ();
 
     lb = MATHmax (lb1, lb2);
     ub = MATHmin (ub1, ub2);
@@ -2765,7 +2763,7 @@ StridesDisjointAllDims (node *stride1, node *stride2)
     bool disjoint = FALSE;
     node *grid1, *grid2;
 
-    DBUG_ENTER ("StridesDisjointAllDims");
+    DBUG_ENTER ();
 
     while (stride1 != NULL) {
         if (WLSTRIDE_ISDYNAMIC (stride1) || WLSTRIDE_ISDYNAMIC (stride2)) {
@@ -2775,7 +2773,7 @@ StridesDisjointAllDims (node *stride1, node *stride2)
             disjoint = TRUE;
             break;
         } else {
-            DBUG_ASSERT ((stride2 != NULL),
+            DBUG_ASSERT (stride2 != NULL,
                          "stride1 contains more dimensions than stride2");
 
             grid1 = WLSTRIDE_CONTENTS (stride1);
@@ -2830,7 +2828,7 @@ CheckDisjointness (node *strides)
     node *stride2;
     bool disjoint = TRUE;
 
-    DBUG_ENTER ("CheckDisjointness");
+    DBUG_ENTER ();
 
     while ((strides != NULL) && disjoint) {
         stride2 = WLSTRIDE_NEXT (strides);
@@ -2892,7 +2890,7 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
     int i_bound1, i_bound2, i_offset1, i_offset2, offset;
     int result = 0;
 
-    DBUG_ENTER ("TestAndDivideStrides");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((divided_stridea != NULL) && (divided_strideb != NULL)),
                  "a reference node pointer of TestAndDivideStrides() is NULL!");
@@ -2905,24 +2903,24 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
     trav_d_stride2b = divided_stride2b = DUPdoDupNode (stride2);
 
     while (stride1 != NULL) {
-        DBUG_ASSERT ((stride2 != NULL), "missing dim in second stride!");
+        DBUG_ASSERT (stride2 != NULL, "missing dim in second stride!");
 
-        DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (stride1)),
+        DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (stride1),
                      "constant stride expected as first argument!");
-        DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (stride2)),
+        DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (stride2),
                      "constant stride expected as first argument!");
 
-        DBUG_ASSERT ((WLSTRIDE_PART (stride1) != NULL), "no part found");
-        DBUG_ASSERT ((WLSTRIDE_PART (stride2) != NULL), "no part found");
+        DBUG_ASSERT (WLSTRIDE_PART (stride1) != NULL, "no part found");
+        DBUG_ASSERT (WLSTRIDE_PART (stride2) != NULL, "no part found");
 
         grid1 = WLSTRIDE_CONTENTS (stride1);
-        DBUG_ASSERT ((grid1 != NULL), "grid not found");
-        DBUG_ASSERT ((WLGRID_NEXT (grid1) == NULL), "more than one grid found");
-        DBUG_ASSERT ((!WLGRID_ISDYNAMIC (grid1)), "dynamic grid found!");
+        DBUG_ASSERT (grid1 != NULL, "grid not found");
+        DBUG_ASSERT (WLGRID_NEXT (grid1) == NULL, "more than one grid found");
+        DBUG_ASSERT (!WLGRID_ISDYNAMIC (grid1), "dynamic grid found!");
         grid2 = WLSTRIDE_CONTENTS (stride2);
-        DBUG_ASSERT ((grid2 != NULL), "grid not found");
-        DBUG_ASSERT ((WLGRID_NEXT (grid2) == NULL), "more than one grid found");
-        DBUG_ASSERT ((!WLGRID_ISDYNAMIC (grid2)), "dynamic grid found!");
+        DBUG_ASSERT (grid2 != NULL, "grid not found");
+        DBUG_ASSERT (WLGRID_NEXT (grid2) == NULL, "more than one grid found");
+        DBUG_ASSERT (!WLGRID_ISDYNAMIC (grid2), "dynamic grid found!");
 
         bound11 = NUM_VAL (WLSTRIDE_BOUND1 (stride1));
         bound21 = NUM_VAL (WLSTRIDE_BOUND2 (stride1));
@@ -2980,7 +2978,7 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                  * the intersection of 'stride1' with the outline of 'stride2' is empty
                  *  -> dividing stride1
                  */
-                DBUG_ASSERT ((i_bound1 + grid2_b1 - i_offset2 < i_bound2),
+                DBUG_ASSERT (i_bound1 + grid2_b1 - i_offset2 < i_bound2,
                              "the intersection of stride1 with the outline of stride2"
                              " as well as"
                              " the intersection of stride2 with the outline of stride1"
@@ -2990,7 +2988,7 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                 NUM_VAL (WLSTRIDE_BOUND1 (trav_d_stride1b)) = bound22;
                 offset = WLTRAgridOffset (bound22, bound11,
                                           NUM_VAL (WLSTRIDE_STEP (stride1)), grid1_b2);
-                DBUG_ASSERT ((offset <= grid1_b1), "offset is inconsistant");
+                DBUG_ASSERT (offset <= grid1_b1, "offset is inconsistant");
                 NUM_VAL (WLGRID_BOUND1 (WLSTRIDE_CONTENTS (trav_d_stride1b))) -= offset;
                 NUM_VAL (WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_d_stride1b))) -= offset;
 
@@ -3010,7 +3008,7 @@ TestAndDivideStrides (node *stride1, node *stride2, node **divided_stridea,
                 NUM_VAL (WLSTRIDE_BOUND1 (trav_d_stride2b)) = bound21;
                 offset = WLTRAgridOffset (bound21, bound12,
                                           NUM_VAL (WLSTRIDE_STEP (stride2)), grid2_b2);
-                DBUG_ASSERT ((offset <= grid2_b1), "offset is inconsistant");
+                DBUG_ASSERT (offset <= grid2_b1, "offset is inconsistant");
                 NUM_VAL (WLGRID_BOUND1 (WLSTRIDE_CONTENTS (trav_d_stride2b))) -= offset;
                 NUM_VAL (WLGRID_BOUND2 (WLSTRIDE_CONTENTS (trav_d_stride2b))) -= offset;
 
@@ -3088,7 +3086,7 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
     node *trav_i_stride2 = NULL;
     bool result = TRUE;
 
-    DBUG_ENTER ("IntersectStrideWithOutline");
+    DBUG_ENTER ();
 
     if (i_stride1 != NULL) {
         trav_i_stride1 = *i_stride1 = DUPdoDupNode (stride1);
@@ -3098,22 +3096,22 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
     }
 
     while (stride1 != NULL) {
-        DBUG_ASSERT ((stride2 != NULL), "missing dim in second stride!");
+        DBUG_ASSERT (stride2 != NULL, "missing dim in second stride!");
 
-        DBUG_ASSERT ((WLSTRIDE_PART (stride1) != NULL), "no part found");
-        DBUG_ASSERT ((WLSTRIDE_PART (stride2) != NULL), "no part found");
+        DBUG_ASSERT (WLSTRIDE_PART (stride1) != NULL, "no part found");
+        DBUG_ASSERT (WLSTRIDE_PART (stride2) != NULL, "no part found");
 
-        DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (stride1)), "dynamic stride encountered");
-        DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (stride2)), "dynamic stride encountered");
+        DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (stride1), "dynamic stride encountered");
+        DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (stride2), "dynamic stride encountered");
 
         grid1 = WLSTRIDE_CONTENTS (stride1);
-        DBUG_ASSERT ((grid1 != NULL), "grid not found");
-        DBUG_ASSERT ((WLGRID_NEXT (grid1) == NULL), "more than one grid found");
-        DBUG_ASSERT ((!WLGRID_ISDYNAMIC (grid1)), "dynamic grid encountered");
+        DBUG_ASSERT (grid1 != NULL, "grid not found");
+        DBUG_ASSERT (WLGRID_NEXT (grid1) == NULL, "more than one grid found");
+        DBUG_ASSERT (!WLGRID_ISDYNAMIC (grid1), "dynamic grid encountered");
         grid2 = WLSTRIDE_CONTENTS (stride2);
-        DBUG_ASSERT ((grid2 != NULL), "grid not found");
-        DBUG_ASSERT ((WLGRID_NEXT (grid2) == NULL), "more than one grid found");
-        DBUG_ASSERT ((!WLGRID_ISDYNAMIC (grid2)), "dynamic grid encountered");
+        DBUG_ASSERT (grid2 != NULL, "grid not found");
+        DBUG_ASSERT (WLGRID_NEXT (grid2) == NULL, "more than one grid found");
+        DBUG_ASSERT (!WLGRID_ISDYNAMIC (grid2), "dynamic grid encountered");
 
         bound11 = NUM_VAL (WLSTRIDE_BOUND1 (stride1));
         bound21 = NUM_VAL (WLSTRIDE_BOUND2 (stride1));
@@ -3193,13 +3191,13 @@ IntersectStrideWithOutline (node *stride1, node *stride2, node **i_stride1,
                  *         of 'ComputeCubes()' !!!
                  */
 
-                DBUG_ASSERT ((0),
-                             ("must resign:"
-                              " intersection of outline(stride1) and outline(stride2) is"
-                              " non-empty, while intersection of outline(stride1) and "
-                              "stride2,"
-                              " or intersection of stride1 and outline(stride2) is empty "
-                              ":-("));
+                DBUG_ASSERT (0,
+                             "must resign:"
+                             " intersection of outline(stride1) and outline(stride2) is"
+                             " non-empty, while intersection of outline(stride1) and "
+                             "stride2,"
+                             " or intersection of stride1 and outline(stride2) is empty "
+                             ":-(");
             }
 
             /* intersect 'stride1' with the outline of 'stride2' */
@@ -3279,14 +3277,14 @@ IsSubsetStride (node *stride1, node *stride2)
     int bound11, bound21, bound12, bound22;
     int res = 0;
 
-    DBUG_ENTER ("IsSubsetStride");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (stride1) == N_wlstride)
                   && (NODE_TYPE (stride2) == N_wlstride)),
                  "call by reference params are NULL");
 
-    DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (stride1)), "constant stride expected");
-    DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (stride2)), "constant stride expected");
+    DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (stride1), "constant stride expected");
+    DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (stride2), "constant stride expected");
 
     if (WLSTRIDE_PART (stride1) == WLSTRIDE_PART (stride2)) {
         new_stride1 = stride1;
@@ -3294,7 +3292,7 @@ IsSubsetStride (node *stride1, node *stride2)
 
         while (new_stride1 != NULL) {
             res = -1;
-            DBUG_ASSERT ((new_stride2 != NULL), "dim not found");
+            DBUG_ASSERT (new_stride2 != NULL, "dim not found");
 
             bound11 = NUM_VAL (WLSTRIDE_BOUND1 (new_stride1));
             bound21 = NUM_VAL (WLSTRIDE_BOUND2 (new_stride1));
@@ -3363,7 +3361,7 @@ AdjustBounds (node **stride1, node **stride2)
     int bound11, bound21, bound12, bound22;
     int res = 0;
 
-    DBUG_ENTER ("AdjustBounds");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((stride1 != NULL) && (stride2 != NULL)),
                  "call by reference parameters are NULL");
@@ -3376,10 +3374,10 @@ AdjustBounds (node **stride1, node **stride2)
         new_stride2 = *stride2;
 
         while (new_stride1 != NULL) {
-            DBUG_ASSERT ((new_stride2 != NULL), "dim of stride not found");
+            DBUG_ASSERT (new_stride2 != NULL, "dim of stride not found");
 
-            DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (new_stride1)), "static stride expected");
-            DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (new_stride2)), "static stride expected");
+            DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (new_stride1), "static stride expected");
+            DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (new_stride2), "static stride expected");
 
             bound11 = NUM_VAL (WLSTRIDE_BOUND1 (new_stride1));
             bound21 = NUM_VAL (WLSTRIDE_BOUND2 (new_stride1));
@@ -3387,7 +3385,7 @@ AdjustBounds (node **stride1, node **stride2)
             bound22 = NUM_VAL (WLSTRIDE_BOUND2 (new_stride2));
 
             if (bound21 < bound22) {
-                DBUG_ASSERT ((bound11 < bound12), "the two strides are not disjoint");
+                DBUG_ASSERT (bound11 < bound12, "the two strides are not disjoint");
                 if (IndexRearStride (new_stride1) > bound12) { /* bound21 > bound12 */
                     res = 1;
                     NUM_VAL (WLSTRIDE_BOUND2 (new_stride1)) = bound12;
@@ -3396,7 +3394,7 @@ AdjustBounds (node **stride1, node **stride2)
                 break;
             } else {
                 if (bound21 > bound22) {
-                    DBUG_ASSERT ((bound12 < bound11), "the two strides are not disjoint");
+                    DBUG_ASSERT (bound12 < bound11, "the two strides are not disjoint");
                     if (IndexRearStride (new_stride2) > bound11) { /* bound22 > bound11 */
                         res = 2;
                         NUM_VAL (WLSTRIDE_BOUND2 (new_stride2)) = bound11;
@@ -3463,7 +3461,7 @@ EleminateDuplicatesAndAdjustBounds (node *strides)
     node *stride1, *prev_stride1, *stride2, *prev_stride2;
     int res;
 
-    DBUG_ENTER ("EleminateDuplicatesAndAdjustBounds");
+    DBUG_ENTER ();
 
     /*
      * first step: remove redundant strides
@@ -3500,7 +3498,7 @@ EleminateDuplicatesAndAdjustBounds (node *strides)
                     stride2 = WLSTRIDE_NEXT (prev_stride2)
                       = FREEdoFreeNode (WLSTRIDE_NEXT (prev_stride2));
                 } else {
-                    DBUG_ASSERT ((res == 0), "unknown value returned");
+                    DBUG_ASSERT (res == 0, "unknown value returned");
                     prev_stride2 = stride2;
                     stride2 = WLSTRIDE_NEXT (stride2);
                 }
@@ -3547,10 +3545,10 @@ ComputeCubes (node *strides)
     int res;
     bool fixpoint;
 
-    DBUG_ENTER ("ComputeCubes");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (strides) == N_wlstride), "wrong node type found");
-    DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (strides)), "static stride expected");
+    DBUG_ASSERT (NODE_TYPE (strides) == N_wlstride, "wrong node type found");
+    DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (strides), "static stride expected");
 
     /*
      * first step:
@@ -3621,7 +3619,7 @@ ComputeCubes (node *strides)
         /* check WLSTRIDE_ISMODIFIED */
         stride1 = strides;
         while (stride1 != NULL) {
-            DBUG_ASSERT ((!WLSTRIDE_ISMODIFIED (stride1)), "stride was modified");
+            DBUG_ASSERT (!WLSTRIDE_ISMODIFIED (stride1), "stride was modified");
             stride1 = WLSTRIDE_NEXT (stride1);
         }
 
@@ -3684,7 +3682,7 @@ ComputeCubes (node *strides)
         /* check WLSTRIDE_ISMODIFIED */
         stride1 = strides;
         while (stride1 != NULL) {
-            DBUG_ASSERT ((!WLSTRIDE_ISMODIFIED (stride1)), "stride was modified");
+            DBUG_ASSERT (!WLSTRIDE_ISMODIFIED (stride1), "stride was modified");
             stride1 = WLSTRIDE_NEXT (stride1);
         }
 
@@ -3843,18 +3841,17 @@ BuildCubes (node *strides, int iter_dims, shape *iter_shp, bool *do_naive_comp)
     bool all_const;
     node *cubes = NULL;
 
-    DBUG_ENTER ("BuildCubes");
+    DBUG_ENTER ();
 
     all_const = WLTRAallStridesAreConstant (strides, TRUE, TRUE);
-    DBUG_EXECUTE ("WLtrans", CTInote (all_const ? "  constant-bounds with-loop: TRUE"
-                                                : "  constant-bounds with-loop: FALSE");
-                  CTInote ((iter_shp != NULL)
-                             ? "  known-shape with-loop: TRUE"
-                             : "  known-shape with-loop: FALSE (dim = %d)",
-                           iter_dims);
-                  CTInote ((WLSTRIDE_NEXT (strides) != NULL)
-                             ? "  multi-generator with-loop: TRUE"
-                             : "  multi-generator with-loop: FALSE"););
+    DBUG_EXECUTE (
+      CTInote (all_const ? "  constant-bounds with-loop: TRUE"
+                         : "  constant-bounds with-loop: FALSE");
+      CTInote ((iter_shp != NULL) ? "  known-shape with-loop: TRUE"
+                                  : "  known-shape with-loop: FALSE (dim = %d)",
+               iter_dims);
+      CTInote ((WLSTRIDE_NEXT (strides) != NULL) ? "  multi-generator with-loop: TRUE"
+                                                 : "  multi-generator with-loop: FALSE"));
 
     if (!all_const) {
         /*
@@ -3905,7 +3902,7 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
     node *segs;
     char *fun_names;
 
-    DBUG_ENTER ("SetSegs");
+    DBUG_ENTER ();
 
     /*
      * create default configuration.
@@ -3973,29 +3970,29 @@ CheckParams (node *seg)
     node *first_block = NULL, *first_sv, *first_ubv;
     int inner_block_pos = 0, inner_unr_block_pos;
 
-    DBUG_ENTER ("CheckParams");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (seg) == N_wlseg), "with-loop segment expected.");
+    DBUG_ASSERT (NODE_TYPE (seg) == N_wlseg, "with-loop segment expected.");
 
-    DBUG_ASSERT ((WLSEG_IDXINF (seg) != NULL), "WLSEG_IDXINF not found!");
-    DBUG_ASSERT ((WLSEG_IDXSUP (seg) != NULL), "WLSEG_IDXSUP not found!");
+    DBUG_ASSERT (WLSEG_IDXINF (seg) != NULL, "WLSEG_IDXINF not found!");
+    DBUG_ASSERT (WLSEG_IDXSUP (seg) != NULL, "WLSEG_IDXSUP not found!");
 
     if (!WLSEG_ISDYNAMIC (seg)) {
-        DBUG_ASSERT ((WLSEG_SV (seg) != NULL), "WLSEG_SV not found!");
-        DBUG_ASSERT ((WLSEG_BV (seg) != NULL), "WLSEG_BV not found!");
-        DBUG_ASSERT ((WLSEG_UBV (seg) != NULL), "WLSEG_UBV not found!");
+        DBUG_ASSERT (WLSEG_SV (seg) != NULL, "WLSEG_SV not found!");
+        DBUG_ASSERT (WLSEG_BV (seg) != NULL, "WLSEG_BV not found!");
+        DBUG_ASSERT (WLSEG_UBV (seg) != NULL, "WLSEG_UBV not found!");
 
         tmp1 = WLSEG_BV (seg);
         for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-            DBUG_ASSERT ((tmp1 != NULL), "WLSEG_BV contains to few vectors");
-            DBUG_ASSERT ((EXPRS_EXPR (tmp1) != NULL), "missing vector in WLSEG_BV!");
+            DBUG_ASSERT (tmp1 != NULL, "WLSEG_BV contains to few vectors");
+            DBUG_ASSERT (EXPRS_EXPR (tmp1) != NULL, "missing vector in WLSEG_BV!");
         }
 
         tmp1 = ARRAY_AELEMS (WLSEG_SV (seg));
         for (d = 0; d < WLSEG_DIMS (seg); d++) {
-            DBUG_ASSERT ((tmp1 != NULL), "WLSEG_SV too short.");
-            DBUG_ASSERT ((EXPRS_EXPR (tmp1) != NULL), "WLSEG_SV too short.");
-            DBUG_ASSERT ((NUM_VAL (EXPRS_EXPR (tmp1)) >= 1),
+            DBUG_ASSERT (tmp1 != NULL, "WLSEG_SV too short.");
+            DBUG_ASSERT (EXPRS_EXPR (tmp1) != NULL, "WLSEG_SV too short.");
+            DBUG_ASSERT (NUM_VAL (EXPRS_EXPR (tmp1)) >= 1,
                          "illegal WLSEG_SV value found!");
         }
 
@@ -4007,7 +4004,7 @@ CheckParams (node *seg)
             tmp2 = ARRAY_AELEMS (EXPRS_EXPR (tmp1));
 
             while (last != NULL) {
-                DBUG_ASSERT ((tmp2 != NULL),
+                DBUG_ASSERT (tmp2 != NULL,
                              "blocking vectors with differing lengths found");
 
                 if (NUM_VAL (EXPRS_EXPR (last)) < NUM_VAL (EXPRS_EXPR (tmp2))) {
@@ -4068,8 +4065,8 @@ CheckParams (node *seg)
             inner_block_pos = 0;
 
             while ((first_block != NULL) && (NUM_VAL (EXPRS_EXPR (first_block)) == 1)) {
-                DBUG_ASSERT ((first_sv != NULL), "WLSEG_SV too short");
-                DBUG_ASSERT ((first_ubv != NULL), "WLSEG_UBV too short");
+                DBUG_ASSERT (first_sv != NULL, "WLSEG_SV too short");
+                DBUG_ASSERT (first_ubv != NULL, "WLSEG_UBV too short");
 
                 first_block = EXPRS_NEXT (first_block);
                 first_sv = EXPRS_NEXT (first_sv);
@@ -4079,8 +4076,8 @@ CheckParams (node *seg)
 
             if (first_block != NULL) {
                 while (first_block != NULL) {
-                    DBUG_ASSERT ((first_sv != NULL), "WLSEG_SV too short");
-                    DBUG_ASSERT ((first_ubv != NULL), "WLSEG_UBV too short");
+                    DBUG_ASSERT (first_sv != NULL, "WLSEG_SV too short");
+                    DBUG_ASSERT (first_ubv != NULL, "WLSEG_UBV too short");
                     if (NUM_VAL (EXPRS_EXPR (first_block))
                         < MATHmax (NUM_VAL (EXPRS_EXPR (first_sv)),
                                    NUM_VAL (EXPRS_EXPR (first_ubv)))) {
@@ -4119,7 +4116,7 @@ CheckParams (node *seg)
         tmp2 = ARRAY_AELEMS (WLSEG_SV (seg));
         inner_unr_block_pos = 0;
         while ((tmp1 != NULL) && (NUM_VAL (EXPRS_EXPR (tmp1)) == 1)) {
-            DBUG_ASSERT ((tmp2 != NULL), "WLSEG_SV shorter than WLSEG_UBV");
+            DBUG_ASSERT (tmp2 != NULL, "WLSEG_SV shorter than WLSEG_UBV");
 
             tmp1 = EXPRS_NEXT (tmp1);
             tmp2 = EXPRS_NEXT (tmp2);
@@ -4149,7 +4146,7 @@ CheckParams (node *seg)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -4178,7 +4175,7 @@ NewBoundsStride (node *stride, int dim, int new_bound1, int new_bound2)
     node *grids, *new_grids, *grid, *grid2;
     int bound1, step, grid_b1, grid_b2, offset;
 
-    DBUG_ENTER ("NewBoundsStride");
+    DBUG_ENTER ();
 
     grids = WLSTRIDE_CONTENTS (stride);
 
@@ -4188,7 +4185,7 @@ NewBoundsStride (node *stride, int dim, int new_bound1, int new_bound2)
          *  -> set new bounds
          *  -> correct the grids if necessary
          */
-        DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (stride)), "constant stride expected.");
+        DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (stride), "constant stride expected.");
 
         bound1 = NUM_VAL (WLSTRIDE_BOUND1 (stride));
         if (bound1 != new_bound1) {
@@ -4278,7 +4275,7 @@ SplitStride (node *stride1, node *stride2, node **s_stride1, node **s_stride2)
     node *tmp1, *tmp2;
     int i_bound1, i_bound2, dim;
 
-    DBUG_ENTER ("SplitStride");
+    DBUG_ENTER ();
 
     tmp1 = stride1;
     tmp2 = stride2;
@@ -4331,7 +4328,7 @@ SplitStride (node *stride1, node *stride2, node **s_stride1, node **s_stride2)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -4350,7 +4347,7 @@ SplitWl (node *strides)
     node *stride1, *stride2, *split_stride1, *split_stride2, *new_strides, *tmp;
     bool fixpoint;
 
-    DBUG_ENTER ("SplitWl");
+    DBUG_ENTER ();
 
     if (strides != NULL) {
         /*
@@ -4368,7 +4365,7 @@ SplitWl (node *strides)
             /* check WLSTRIDE_ISMODIFIED */
             stride1 = strides;
             while (stride1 != NULL) {
-                DBUG_ASSERT ((!WLSTRIDE_ISMODIFIED (stride1)), "stride was modified");
+                DBUG_ASSERT (!WLSTRIDE_ISMODIFIED (stride1), "stride was modified");
                 stride1 = WLSTRIDE_NEXT (stride1);
             }
 
@@ -4381,14 +4378,14 @@ SplitWl (node *strides)
                 while (stride2 != NULL) {
                     SplitStride (stride1, stride2, &split_stride1, &split_stride2);
                     if (split_stride1 != NULL) {
-                        DBUG_ASSERT ((split_stride2 != NULL), "wrong splitting");
+                        DBUG_ASSERT (split_stride2 != NULL, "wrong splitting");
                         fixpoint = FALSE; /* no, not a fixpoint yet :( */
                         WLSTRIDE_ISMODIFIED (stride1) = TRUE;
                         WLSTRIDE_ISMODIFIED (stride2) = TRUE;
                         new_strides = WLTRAinsertWlNodes (new_strides, split_stride1);
                         new_strides = WLTRAinsertWlNodes (new_strides, split_stride2);
                     } else {
-                        DBUG_ASSERT ((split_stride2 == NULL), "wrong splitting");
+                        DBUG_ASSERT (split_stride2 == NULL, "wrong splitting");
                     }
                     stride2 = WLSTRIDE_NEXT (stride2);
                 }
@@ -4451,12 +4448,12 @@ BlockStride (node *stride, node *bv, bool unroll)
 {
     node *curr_stride, *curr_grid, *grids;
 
-    DBUG_ENTER ("BlockStride");
+    DBUG_ENTER ();
 
     if (stride != NULL) {
 
-        DBUG_ASSERT ((NODE_TYPE (stride) == N_wlstride), "no N_wlstride node found");
-        DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (stride)), "constant stride expected.");
+        DBUG_ASSERT (NODE_TYPE (stride) == N_wlstride, "no N_wlstride node found");
+        DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (stride), "constant stride expected.");
 
         curr_stride = stride;
         do {
@@ -4520,7 +4517,7 @@ BlockWl (node *stride, int iter_dims, node *bv, bool unroll)
       *last_block, *block;
     int level, d, block_val;
 
-    DBUG_ENTER ("BlockWl");
+    DBUG_ENTER ();
 
     if (stride != NULL) {
         switch (NODE_TYPE (stride)) {
@@ -4532,10 +4529,10 @@ BlockWl (node *stride, int iter_dims, node *bv, bool unroll)
             while (curr_block != NULL) {
                 /* go to contents of block -> skip all found block nodes */
                 curr_dim = curr_block;
-                DBUG_ASSERT ((NODE_TYPE (curr_dim) == N_wlblock), "no block found");
+                DBUG_ASSERT (NODE_TYPE (curr_dim) == N_wlblock, "no block found");
                 while (WLBLOCK_NEXTDIM (curr_dim) != NULL) {
                     curr_dim = WLBLOCK_NEXTDIM (curr_dim);
-                    DBUG_ASSERT ((NODE_TYPE (curr_dim) == N_wlblock), "no block found");
+                    DBUG_ASSERT (NODE_TYPE (curr_dim) == N_wlblock, "no block found");
                 }
 
                 /* block contents of found block */
@@ -4553,11 +4550,11 @@ BlockWl (node *stride, int iter_dims, node *bv, bool unroll)
              * unrolling-blocking is allowed only once after all conventional
              *  blocking!!
              */
-            DBUG_ASSERT ((0), "data of unrolling-blocking found while blocking");
+            DBUG_ASSERT (0, "data of unrolling-blocking found while blocking");
             break;
 
         case N_wlstride:
-            DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (stride)), "constant stride expected");
+            DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (stride), "constant stride expected");
             /*
              * unblocked stride found
              */
@@ -4568,7 +4565,7 @@ BlockWl (node *stride, int iter_dims, node *bv, bool unroll)
             while (curr_stride != NULL) {
                 block_val = NUM_VAL (
                   TCgetNthExprsExpr (WLSTRIDE_DIM (curr_stride), ARRAY_AELEMS (bv)));
-                DBUG_ASSERT ((block_val >= 1), "wrong bv-value found");
+                DBUG_ASSERT (block_val >= 1, "wrong bv-value found");
                 if (block_val == 1) {
                     /*
                      * no blocking -> go to next dim
@@ -4588,7 +4585,7 @@ BlockWl (node *stride, int iter_dims, node *bv, bool unroll)
                     contents = curr_stride;
                     lastdim = NULL;
                     for (d = WLSTRIDE_DIM (curr_stride); d < iter_dims; d++) {
-                        DBUG_ASSERT ((NODE_TYPE (contents) == N_wlstride),
+                        DBUG_ASSERT (NODE_TYPE (contents) == N_wlstride,
                                      "no stride found");
                         DBUG_ASSERT (((d == WLSTRIDE_DIM (curr_stride))
                                       || (WLSTRIDE_NEXT (contents) == NULL)),
@@ -4640,7 +4637,7 @@ BlockWl (node *stride, int iter_dims, node *bv, bool unroll)
                         }
                         lastdim = block;
 
-                        DBUG_ASSERT ((WLSTRIDE_CONTENTS (contents) != NULL),
+                        DBUG_ASSERT (WLSTRIDE_CONTENTS (contents) != NULL,
                                      "no grid found");
                         contents = WLGRID_NEXTDIM (WLSTRIDE_CONTENTS (contents));
                     }
@@ -4649,7 +4646,7 @@ BlockWl (node *stride, int iter_dims, node *bv, bool unroll)
                      * now the block nodes are complete
                      *  -> append contents of block
                      */
-                    DBUG_ASSERT ((lastdim != NULL), "block node of last dim not found");
+                    DBUG_ASSERT (lastdim != NULL, "block node of last dim not found");
                     L_WLXBLOCK_CONTENTS (lastdim, curr_stride);
                     curr_stride = WLSTRIDE_NEXT (curr_stride);
                     /* successor is in next block -> no 'next' anymore! */
@@ -4663,7 +4660,7 @@ BlockWl (node *stride, int iter_dims, node *bv, bool unroll)
             break;
 
         default:
-            DBUG_ASSERT ((0), "wrong node type");
+            DBUG_ASSERT (0, "wrong node type");
             break;
         }
     }
@@ -4704,14 +4701,14 @@ NewStepGrids (node *grids, int step, int new_step, int offset)
     node *last_old, *last, *new_grid, *tmp;
     int i, div;
 
-    DBUG_ENTER ("NewStepGrids");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((new_step % step == 0), "wrong new step");
+    DBUG_ASSERT (new_step % step == 0, "wrong new step");
 
     if (step == 1) {
-        DBUG_ASSERT ((NUM_VAL (WLGRID_BOUND1 (grids)) == 0),
+        DBUG_ASSERT (NUM_VAL (WLGRID_BOUND1 (grids)) == 0,
                      "step==1: lower bound of grid should equal 0!");
-        DBUG_ASSERT ((WLGRID_NEXT (grids) == NULL), "step==1: multiple grids found!");
+        DBUG_ASSERT (WLGRID_NEXT (grids) == NULL, "step==1: multiple grids found!");
         NUM_VAL (WLGRID_BOUND2 (grids)) = new_step;
     } else {
         div = new_step / step;
@@ -4758,7 +4755,7 @@ NewStepGrids (node *grids, int step, int new_step, int offset)
                  * have added an assert encase it is ever hit.
                  */
 
-                DBUG_ASSERT ((tmp == last_old), "Compiler bug endless loop found");
+                DBUG_ASSERT (tmp == last_old, "Compiler bug endless loop found");
             }
         }
     }
@@ -4785,7 +4782,7 @@ IntersectGrid (node *grid1, node *grid2, int step, node **i_grid1, node **i_grid
 {
     int bound11, bound21, bound12, bound22, i_bound1, i_bound2;
 
-    DBUG_ENTER ("IntersectGrid");
+    DBUG_ENTER ();
 
     *i_grid1 = *i_grid2 = NULL;
 
@@ -4814,7 +4811,7 @@ IntersectGrid (node *grid1, node *grid2, int step, node **i_grid1, node **i_grid
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -4836,7 +4833,7 @@ MergeWl (node *nodes)
     int bound1, bound2, step, rear1, count, i;
     bool fixpoint;
 
-    DBUG_ENTER ("MergeWl");
+    DBUG_ENTER ();
 
     node1 = nodes;
     while (node1 != NULL) {
@@ -4861,11 +4858,11 @@ MergeWl (node *nodes)
                    && (NUM_VAL (WLNODE_BOUND1 (node1))
                        == NUM_VAL (WLNODE_BOUND1 (WLNODE_NEXT (node1))))) {
 
-                DBUG_ASSERT ((NUM_VAL (WLNODE_BOUND2 (node1))
-                              == NUM_VAL (WLNODE_BOUND2 (WLNODE_NEXT (node1)))),
+                DBUG_ASSERT (NUM_VAL (WLNODE_BOUND2 (node1))
+                               == NUM_VAL (WLNODE_BOUND2 (WLNODE_NEXT (node1))),
                              "overlapping nodes with different upper bounds found");
-                DBUG_ASSERT ((WLNODE_NEXTDIM (node1) != NULL), "dim not found");
-                DBUG_ASSERT ((WLNODE_NEXTDIM (WLNODE_NEXT (node1)) != NULL),
+                DBUG_ASSERT (WLNODE_NEXTDIM (node1) != NULL, "dim not found");
+                DBUG_ASSERT (WLNODE_NEXTDIM (WLNODE_NEXT (node1)) != NULL,
                              "dim not found");
 
                 /*
@@ -4886,7 +4883,7 @@ MergeWl (node *nodes)
             break;
 
         case N_wlstride:
-            DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (node1)), "constant stride expected.");
+            DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (node1), "constant stride expected.");
             /*
              * compute new bounds and step
              *             ^^^^^^
@@ -4899,7 +4896,7 @@ MergeWl (node *nodes)
             count = 0;
             tmp = WLSTRIDE_NEXT (node1);
             while ((tmp != NULL) && (IndexHeadStride (tmp) < rear1)) {
-                DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (tmp)), "constant stride expected.");
+                DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (tmp), "constant stride expected.");
                 /* compute new bounds */
                 bound1 = MATHmax (bound1, NUM_VAL (WLSTRIDE_BOUND1 (tmp)));
                 bound2 = MATHmin (bound2, NUM_VAL (WLSTRIDE_BOUND2 (tmp)));
@@ -4944,7 +4941,7 @@ MergeWl (node *nodes)
                 /* check WLGRID_ISMODIFIED */
                 grid1 = grids;
                 while (grid1 != NULL) {
-                    DBUG_ASSERT ((!WLGRID_ISMODIFIED (grid1)), "grid was modified");
+                    DBUG_ASSERT (!WLGRID_ISMODIFIED (grid1), "grid was modified");
                     grid1 = WLGRID_NEXT (grid1);
                 }
 
@@ -4993,7 +4990,7 @@ MergeWl (node *nodes)
             break;
 
         default:
-            DBUG_ASSERT ((0), "wrong node type");
+            DBUG_ASSERT (0, "wrong node type");
             break;
         }
 
@@ -5039,15 +5036,15 @@ CompareWlTrees (node *tree1, node *tree2)
     node *tmp1, *tmp2;
     bool equal = TRUE;
 
-    DBUG_ENTER ("CompareWlTrees");
+    DBUG_ENTER ();
 
     if ((tree1 != NULL) && (tree2 != NULL)) {
 
-        DBUG_ASSERT ((NODE_TYPE (tree1) == NODE_TYPE (tree2)),
+        DBUG_ASSERT (NODE_TYPE (tree1) == NODE_TYPE (tree2),
                      "can not compare objects of different type");
 
-        DBUG_ASSERT ((!WLNODE_ISDYNAMIC (tree1)), "constant with2 expected.");
-        DBUG_ASSERT ((!WLNODE_ISDYNAMIC (tree2)), "constant with2 expected.");
+        DBUG_ASSERT (!WLNODE_ISDYNAMIC (tree1), "constant with2 expected.");
+        DBUG_ASSERT (!WLNODE_ISDYNAMIC (tree2), "constant with2 expected.");
 
         /*
          * compare the whole chains
@@ -5055,7 +5052,7 @@ CompareWlTrees (node *tree1, node *tree2)
         tmp1 = tree1;
         tmp2 = tree2;
         do {
-            DBUG_ASSERT ((tmp2 != NULL), "trees differ in length");
+            DBUG_ASSERT (tmp2 != NULL, "trees differ in length");
 
             /*
              * compare type-independent data
@@ -5078,9 +5075,9 @@ CompareWlTrees (node *tree1, node *tree2)
                         /*
                          * compare NEXTDIM (CONTENTS is NULL)
                          */
-                        DBUG_ASSERT ((WLXBLOCK_CONTENTS (tmp1) == NULL),
+                        DBUG_ASSERT (WLXBLOCK_CONTENTS (tmp1) == NULL,
                                      "data in NEXTDIM *and* CONTENTS found");
-                        DBUG_ASSERT ((WLXBLOCK_CONTENTS (tmp2) == NULL),
+                        DBUG_ASSERT (WLXBLOCK_CONTENTS (tmp2) == NULL,
                                      "data in NEXTDIM *and* CONTENTS found");
                         equal = CompareWlTrees (WLXBLOCK_NEXTDIM (tmp1),
                                                 WLXBLOCK_NEXTDIM (tmp2));
@@ -5103,9 +5100,9 @@ CompareWlTrees (node *tree1, node *tree2)
                         /*
                          * compare NEXTDIM (CODE is NULL)
                          */
-                        DBUG_ASSERT ((WLGRID_CODE (tmp1) == NULL),
+                        DBUG_ASSERT (WLGRID_CODE (tmp1) == NULL,
                                      "data in NEXTDIM *and* CODE found");
-                        DBUG_ASSERT ((WLGRID_CODE (tmp2) == NULL),
+                        DBUG_ASSERT (WLGRID_CODE (tmp2) == NULL,
                                      "data in NEXTDIM *and* CODE found");
                         equal
                           = CompareWlTrees (WLGRID_NEXTDIM (tmp1), WLGRID_NEXTDIM (tmp2));
@@ -5118,7 +5115,7 @@ CompareWlTrees (node *tree1, node *tree2)
                     break;
 
                 default:
-                    DBUG_ASSERT ((0), "wrong node type");
+                    DBUG_ASSERT (0, "wrong node type");
                     break;
                 }
             } else {
@@ -5153,7 +5150,7 @@ OptWl (node *nodes)
     node *cont1, *cont2;
     node *nextdim1, *nextdim2;
 
-    DBUG_ENTER ("OptWl");
+    DBUG_ENTER ();
 
     if (nodes != NULL) {
         /*
@@ -5184,7 +5181,7 @@ OptWl (node *nodes)
             break;
 
         case N_wlstride:
-            DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (nodes)), "constant stride expected.");
+            DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (nodes), "constant stride expected.");
             WLSTRIDE_CONTENTS (nodes) = OptWl (WLSTRIDE_CONTENTS (nodes));
             cont1 = WLSTRIDE_CONTENTS (nodes);
             nextdim1 = NULL;
@@ -5220,7 +5217,7 @@ OptWl (node *nodes)
 
         default:
             cont1 = nextdim1 = NULL;
-            DBUG_ASSERT ((0), "wrong node type");
+            DBUG_ASSERT (0, "wrong node type");
             break;
         }
 
@@ -5307,7 +5304,7 @@ AdjustBlockSize (int old_bv, int unroll, bool warn)
 {
     int mod, new_bv;
 
-    DBUG_ENTER ("AdjustBlockSize");
+    DBUG_ENTER ();
 
     mod = old_bv % unroll;
     if ((old_bv > 1) && (mod != 0)) {
@@ -5317,7 +5314,7 @@ AdjustBlockSize (int old_bv, int unroll, bool warn)
             new_bv = old_bv + unroll - mod;
         }
 
-        DBUG_ASSERT ((new_bv % unroll == 0), "adjustment of block size wrong!");
+        DBUG_ASSERT (new_bv % unroll == 0, "adjustment of block size wrong!");
     } else {
         new_bv = old_bv;
     }
@@ -5348,9 +5345,9 @@ FitNode (node *wlnode, int unroll)
     int bnd1, bnd2, width, remain;
     node *new_wlnode;
 
-    DBUG_ENTER ("FitNode");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((wlnode != NULL), "no node found!");
+    DBUG_ASSERT (wlnode != NULL, "no node found!");
 
     if (unroll > 0) {
         if ((NODE_TYPE (WLNODE_BOUND1 (wlnode)) == N_num)
@@ -5365,7 +5362,7 @@ FitNode (node *wlnode, int unroll)
                  */
                 new_wlnode = DUPdoDupNode (wlnode);
 
-                DBUG_ASSERT ((!(WLNODE_ISDYNAMIC (wlnode))), "illegal node found!");
+                DBUG_ASSERT (!(WLNODE_ISDYNAMIC (wlnode)), "illegal node found!");
 
                 NUM_VAL (WLNODE_BOUND1 (new_wlnode)) = (bnd2 - remain);
                 NUM_VAL (WLNODE_BOUND2 (wlnode)) = NUM_VAL (WLNODE_BOUND1 (new_wlnode));
@@ -5395,7 +5392,7 @@ FitWl (node *wlnode)
     node *grids;
     int unroll;
 
-    DBUG_ENTER ("FitWl");
+    DBUG_ENTER ();
 
     if (wlnode != NULL) {
         switch (NODE_TYPE (wlnode)) {
@@ -5404,9 +5401,9 @@ FitWl (node *wlnode)
                 /*
                  * fit in next dimension; compute unrolling information
                  */
-                DBUG_ASSERT ((WLBLOCK_CONTENTS (wlnode) == NULL),
-                             "Sons CONTENTS and NEXTDIM of WLblock are used "
-                             "simultaneous!");
+                DBUG_ASSERT (WLBLOCK_CONTENTS (wlnode) == NULL, "Sons CONTENTS and "
+                                                                "NEXTDIM of WLblock are "
+                                                                "used simultaneous!");
 
                 WLBLOCK_NEXTDIM (wlnode) = FitWl (WLBLOCK_NEXTDIM (wlnode));
 
@@ -5416,9 +5413,9 @@ FitWl (node *wlnode)
                 /*
                  * fit contents of block; compute unrolling information
                  */
-                DBUG_ASSERT ((WLBLOCK_NEXTDIM (wlnode) == NULL), "Sons CONTENTS and "
-                                                                 "NEXTDIM of WLblock are "
-                                                                 "used simultaneous!");
+                DBUG_ASSERT (WLBLOCK_NEXTDIM (wlnode) == NULL, "Sons CONTENTS and "
+                                                               "NEXTDIM of WLblock are "
+                                                               "used simultaneous!");
 
                 WLBLOCK_CONTENTS (wlnode) = FitWl (WLBLOCK_CONTENTS (wlnode));
 
@@ -5444,7 +5441,7 @@ FitWl (node *wlnode)
                 /*
                  * fit in next dimension
                  */
-                DBUG_ASSERT ((WLUBLOCK_CONTENTS (wlnode) == NULL),
+                DBUG_ASSERT (WLUBLOCK_CONTENTS (wlnode) == NULL,
                              "Sons CONTENTS and NEXTDIM of WLublock are used "
                              "simultaneous!");
 
@@ -5453,9 +5450,9 @@ FitWl (node *wlnode)
                 /*
                  * fit contents of block
                  */
-                DBUG_ASSERT ((WLUBLOCK_NEXTDIM (wlnode) == NULL),
-                             "Sons CONTENTS and NEXTDIM of WLublock are used "
-                             "simultaneous!");
+                DBUG_ASSERT (WLUBLOCK_NEXTDIM (wlnode) == NULL, "Sons CONTENTS and "
+                                                                "NEXTDIM of WLublock are "
+                                                                "used simultaneous!");
 
                 WLUBLOCK_CONTENTS (wlnode) = FitWl (WLUBLOCK_CONTENTS (wlnode));
             }
@@ -5483,7 +5480,7 @@ FitWl (node *wlnode)
 
         default:
             unroll = 0;
-            DBUG_ASSERT ((0), "wrong node type");
+            DBUG_ASSERT (0, "wrong node type");
             break;
         }
 
@@ -5503,7 +5500,7 @@ FitWl (node *wlnode)
                  * whose block size had been adjusted
                  *   -> we must fathom this adjustment here!
                  */
-                DBUG_ASSERT ((NUM_VAL (WLNODE_BOUND1 (wlnode)) == 0),
+                DBUG_ASSERT (NUM_VAL (WLNODE_BOUND1 (wlnode)) == 0,
                              "lower bound of inner node is != 0");
                 NUM_VAL (WLNODE_BOUND2 (wlnode))
                   = AdjustBlockSize (NUM_VAL (WLNODE_BOUND2 (wlnode)),
@@ -5581,7 +5578,7 @@ DoNormalize (node *nodes, node *width)
     node *anode;
     int curr_width;
 
-    DBUG_ENTER ("DoNormalize");
+    DBUG_ENTER ();
 
     if (nodes != NULL) {
         /*
@@ -5594,8 +5591,8 @@ DoNormalize (node *nodes, node *width)
             /*
              * adjust upper bound
              */
-            DBUG_ASSERT ((!WLNODE_ISDYNAMIC (anode)), "static node expected.");
-            DBUG_ASSERT ((NUM_VAL (WLNODE_BOUND1 (anode)) < curr_width),
+            DBUG_ASSERT (!WLNODE_ISDYNAMIC (anode), "static node expected.");
+            DBUG_ASSERT (NUM_VAL (WLNODE_BOUND1 (anode)) < curr_width,
                          "lower bound out of range");
 
             NUM_VAL (WLNODE_BOUND2 (anode))
@@ -5653,18 +5650,18 @@ DoNormalize (node *nodes, node *width)
                 break;
 
             case N_wlstride:
-                DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (anode)), "constant stride ecpected");
+                DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (anode), "constant stride ecpected");
                 WLSTRIDE_CONTENTS (anode)
                   = DoNormalize (WLSTRIDE_CONTENTS (anode), width);
                 break;
 
             case N_wlgrid:
-                DBUG_ASSERT ((!WLGRID_ISDYNAMIC (anode)), "constant grid ecpected");
+                DBUG_ASSERT (!WLGRID_ISDYNAMIC (anode), "constant grid ecpected");
                 WLGRID_NEXTDIM (anode) = DoNormalize (WLGRID_NEXTDIM (anode), width);
                 break;
 
             default:
-                DBUG_ASSERT ((0), "wrong node type");
+                DBUG_ASSERT (0, "wrong node type");
                 break;
             }
 
@@ -5700,10 +5697,10 @@ static
     node *result = NULL;
     int value;
 
-    DBUG_ENTER ("ComputeWidthExprs");
+    DBUG_ENTER ();
 
     if (pos != iter_dims) {
-        DBUG_ASSERT ((idx_max != NULL), "idx_max too short");
+        DBUG_ASSERT (idx_max != NULL, "idx_max too short");
 
         result = ComputeWidthExprs (iter_dims, pos + 1, iter_shp, EXPRS_NEXT (idx_max));
 
@@ -5711,13 +5708,12 @@ static
             && (NODE_TYPE (EXPRS_EXPR (idx_max)) == N_num)) {
             value = NUM_VAL (EXPRS_EXPR (idx_max));
 
-            DBUG_PRINT ("WLtrans", ("...found max-idx at position %d of %d", pos, value));
+            DBUG_PRINT ("...found max-idx at position %d of %d", pos, value);
         } else {
-            DBUG_ASSERT ((iter_shp != NULL), "no shape found!");
+            DBUG_ASSERT (iter_shp != NULL, "no shape found!");
             value = SHgetExtent (iter_shp, pos);
 
-            DBUG_PRINT ("WLtrans",
-                        ("...using iter-shape at position %d of %d", pos, value));
+            DBUG_PRINT ("...using iter-shape at position %d of %d", pos, value);
         }
 
         result = TBmakeExprs (TBmakeNum (value), result);
@@ -5741,7 +5737,7 @@ NormWl (int iter_dims, shape *iter_shp, node *idx_max, node *nodes)
 {
     node *width = NULL;
 
-    DBUG_ENTER ("NormWl");
+    DBUG_ENTER ();
 
     width = ComputeWidthExprs (iter_dims, 0, iter_shp, ARRAY_AELEMS (idx_max));
 
@@ -5795,17 +5791,17 @@ InsertNoopGrids (node *stride)
 {
     node *grid, *grid_next;
 
-    DBUG_ENTER ("InsertNoopGrids");
+    DBUG_ENTER ();
 
     if (stride != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (stride) == N_wlstride), "illegal stride found!");
+        DBUG_ASSERT (NODE_TYPE (stride) == N_wlstride, "illegal stride found!");
 
         grid = WLSTRIDE_CONTENTS (stride);
-        DBUG_ASSERT ((grid != NULL), "no grid found!");
+        DBUG_ASSERT (grid != NULL, "no grid found!");
 
         if (!WLSTRIDE_ISDYNAMIC (stride)) {
-            DBUG_ASSERT ((NODE_TYPE (grid) == N_wlgrid), "wrong node type found");
-            DBUG_ASSERT ((!WLGRID_ISDYNAMIC (grid)), "constant grid expected");
+            DBUG_ASSERT (NODE_TYPE (grid) == N_wlgrid, "wrong node type found");
+            DBUG_ASSERT (!WLGRID_ISDYNAMIC (grid), "constant grid expected");
 
             /*
              * lower bound of first grid >0 ??
@@ -5869,9 +5865,9 @@ InsertNoopNode (node *wlnode)
 {
     node *next;
 
-    DBUG_ENTER ("InsertNoopNode");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((wlnode != NULL), "no WL node found!");
+    DBUG_ASSERT (wlnode != NULL, "no WL node found!");
 
     next = WLNODE_NEXT (wlnode);
 
@@ -5899,7 +5895,7 @@ InsertNoopNodes (node *wlnode)
 {
     bool is_noop;
 
-    DBUG_ENTER ("InsertNoopNodes");
+    DBUG_ENTER ();
 
     if (wlnode != NULL) {
         switch (NODE_TYPE (wlnode)) {
@@ -5949,7 +5945,7 @@ InsertNoopNodes (node *wlnode)
             break;
 
         default:
-            DBUG_ASSERT ((0), "illegal node type found!");
+            DBUG_ASSERT (0, "illegal node type found!");
             is_noop = FALSE;
             break;
         }
@@ -6016,7 +6012,7 @@ ComputeIndexMinMax (node *wlseg, shape *iter_shp, node *wlnode)
     node *inf_expr, *sup_expr;
     int dim, shp_idx;
 
-    DBUG_ENTER ("ComputeIndexMinMax");
+    DBUG_ENTER ();
 
     if (wlnode != NULL) {
         nt = NODE_TYPE (wlnode);
@@ -6053,7 +6049,7 @@ ComputeIndexMinMax (node *wlseg, shape *iter_shp, node *wlnode)
             break;
 
         default:
-            DBUG_ASSERT ((0), "illegal node type found!");
+            DBUG_ASSERT (0, "illegal node type found!");
             dim = (-1);
             min = max = NULL;
             break;
@@ -6075,7 +6071,7 @@ ComputeIndexMinMax (node *wlseg, shape *iter_shp, node *wlnode)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -6097,16 +6093,15 @@ InferSegsParamsPre (node *segs, shape *iter_shp)
 {
     int d;
 
-    DBUG_ENTER ("InferSegsParamsPre");
+    DBUG_ENTER ();
 
     if (segs != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (segs) == N_wlseg), "no segment found!");
+        DBUG_ASSERT (NODE_TYPE (segs) == N_wlseg, "no segment found!");
 
-        DBUG_EXECUTE ("WLtrans", fprintf (stderr, "InferSegsParamsPre: ");
-                      fprintf (stderr, "SHAPE = ");
-                      if (iter_shp != NULL) { SHprintShape (stderr, iter_shp); } else {
-                          fprintf (stderr, "NULL");
-                      });
+        DBUG_EXECUTE (fprintf (stderr, "InferSegsParamsPre: ");
+                      fprintf (stderr, "SHAPE = "); if (iter_shp != NULL) {
+                          SHprintShape (stderr, iter_shp);
+                      } else { fprintf (stderr, "NULL"); });
 
         /**********************
          *  IDX_MIN, IDX_MAX  *
@@ -6120,10 +6115,10 @@ InferSegsParamsPre (node *segs, shape *iter_shp)
          */
         ComputeIndexMinMax (segs, iter_shp, WLSEG_CONTENTS (segs));
 
-        DBUG_EXECUTE ("WLtrans", fprintf (stderr, ", WLSEG_IDXINF = ");
+        DBUG_EXECUTE (fprintf (stderr, ", WLSEG_IDXINF = ");
                       PRTdoPrintFile (stderr, WLSEG_IDXINF (segs));
                       fprintf (stderr, ", WLSEG_IDXSUP = ");
-                      PRTdoPrintFile (stderr, WLSEG_IDXSUP (segs)););
+                      PRTdoPrintFile (stderr, WLSEG_IDXSUP (segs)));
 
         if (!WLSEG_ISDYNAMIC (segs)) {
             /*******************
@@ -6139,11 +6134,11 @@ InferSegsParamsPre (node *segs, shape *iter_shp)
             }
             WLSEG_SV (segs) = TCmakeIntVector (WLSEG_SV (segs));
 
-            DBUG_EXECUTE ("WLtrans", fprintf (stderr, ", WLSEG_SV = ");
-                          PRTdoPrintFile (stderr, WLSEG_SV (segs)););
+            DBUG_EXECUTE (fprintf (stderr, ", WLSEG_SV = ");
+                          PRTdoPrintFile (stderr, WLSEG_SV (segs)));
         }
 
-        DBUG_EXECUTE ("WLtrans", fprintf (stderr, "\n"););
+        DBUG_EXECUTE (fprintf (stderr, "\n"));
 
         WLSEG_NEXT (segs) = InferSegsParamsPre (WLSEG_NEXT (segs), iter_shp);
     }
@@ -6185,7 +6180,7 @@ IsHomSV (node *nodes, int dim, int sv, bool include_blocks)
 {
     int ishom = TRUE;
 
-    DBUG_ENTER ("IsHomSV");
+    DBUG_ENTER ();
 
     if (nodes != NULL) {
         ishom = IsHomSV (WLNODE_NEXT (nodes), dim, sv, include_blocks);
@@ -6214,17 +6209,17 @@ IsHomSV (node *nodes, int dim, int sv, bool include_blocks)
                 break;
 
             case N_wlstride:
-                DBUG_ASSERT ((!WLSTRIDE_ISDYNAMIC (nodes)), "wrong node type");
+                DBUG_ASSERT (!WLSTRIDE_ISDYNAMIC (nodes), "wrong node type");
                 ishom &= IsHomSV (WLSTRIDE_CONTENTS (nodes), dim, sv, include_blocks);
                 break;
 
             case N_wlgrid:
-                DBUG_ASSERT ((!WLGRID_ISDYNAMIC (nodes)), "wrong node type");
+                DBUG_ASSERT (!WLGRID_ISDYNAMIC (nodes), "wrong node type");
                 ishom &= IsHomSV (WLGRID_NEXTDIM (nodes), dim, sv, include_blocks);
                 break;
 
             default:
-                DBUG_ASSERT ((0), "wrong node type");
+                DBUG_ASSERT (0, "wrong node type");
                 break;
             }
         }
@@ -6249,12 +6244,12 @@ InferSegsParamsPost (node *segs)
     int sv, d;
     node *tmp;
 
-    DBUG_ENTER ("InferSegsParamsPost");
+    DBUG_ENTER ();
 
     if (segs != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (segs) == N_wlseg), "no segment found!");
+        DBUG_ASSERT (NODE_TYPE (segs) == N_wlseg, "no segment found!");
 
-        DBUG_EXECUTE ("WLtrans", fprintf (stderr, "InferSegsParams_Post: "););
+        DBUG_EXECUTE (fprintf (stderr, "InferSegsParams_Post: "));
 
         if (!WLSEG_ISDYNAMIC (segs)) {
 
@@ -6264,7 +6259,7 @@ InferSegsParamsPost (node *segs)
 
             tmp = ARRAY_AELEMS (WLSEG_SV (segs));
             for (d = 0; d < WLSEG_DIMS (segs); d++) {
-                DBUG_ASSERT ((tmp != NULL), "WLSEG_SV too short!");
+                DBUG_ASSERT (tmp != NULL, "WLSEG_SV too short!");
                 /*
                  * We must recalculate SV here because the with-loop transformations
                  * (especially the fitting) probabily have modified the layout!
@@ -6281,7 +6276,7 @@ InferSegsParamsPost (node *segs)
             WLSEG_HOMSV (segs) = DUPdoDupTree (WLSEG_SV (segs));
             tmp = ARRAY_AELEMS (WLSEG_HOMSV (segs));
             for (d = 0; d < WLSEG_DIMS (segs); d++) {
-                DBUG_ASSERT ((tmp != NULL), "WLSEG_HOMSV too short!");
+                DBUG_ASSERT (tmp != NULL, "WLSEG_HOMSV too short!");
 
                 if (!IsHomSV (WLSEG_CONTENTS (segs), d, NUM_VAL (EXPRS_EXPR (tmp)),
                               TRUE)) {
@@ -6291,11 +6286,10 @@ InferSegsParamsPost (node *segs)
                 tmp = EXPRS_NEXT (tmp);
             }
 
-            DBUG_EXECUTE ("WLtrans", fprintf (stderr, "WLSEG_SV = ");
-                          PRTdoPrintFile (stderr, WLSEG_SV (segs));
-                          fprintf (stderr, ", WLSEG_HOMSV = ");
-                          PRTdoPrintFile (stderr, WLSEG_HOMSV (segs));
-                          fprintf (stderr, "\n"););
+            DBUG_EXECUTE (
+              fprintf (stderr, "WLSEG_SV = "); PRTdoPrintFile (stderr, WLSEG_SV (segs));
+              fprintf (stderr, ", WLSEG_HOMSV = ");
+              PRTdoPrintFile (stderr, WLSEG_HOMSV (segs)); fprintf (stderr, "\n"));
 
         } else {
 
@@ -6303,7 +6297,7 @@ InferSegsParamsPost (node *segs)
              * nothing to do :-)
              */
 
-            DBUG_EXECUTE ("WLtrans", fprintf (stderr, "---"); fprintf (stderr, "\n"););
+            DBUG_EXECUTE (fprintf (stderr, "---"); fprintf (stderr, "\n"));
         }
 
         WLSEG_NEXT (segs) = InferSegsParamsPost (WLSEG_NEXT (segs));
@@ -6336,7 +6330,7 @@ InferFitted (node *wlnode)
     node *bnd1, *bnd2, *step, *g_bnd1, *g_bnd2;
     int width, remain = 0;
 
-    DBUG_ENTER ("InferFitted");
+    DBUG_ENTER ();
 
     if (wlnode != NULL) {
         L_WLNODE_NEXT (wlnode, InferFitted (WLNODE_NEXT (wlnode)));
@@ -6380,7 +6374,7 @@ InferFitted (node *wlnode)
             break;
 
         default:
-            DBUG_ASSERT ((0), "wrong node type found!");
+            DBUG_ASSERT (0, "wrong node type found!");
             break;
         }
     }
@@ -6407,16 +6401,16 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
 {
     node *seg;
 
-    DBUG_ENTER ("ProcessSegments");
+    DBUG_ENTER ();
 
     /* compute SEGX_IDX_MIN, SEGX_IDX_MAX and SEG_SV */
     segs = InferSegsParamsPre (segs, iter_shp);
 
     seg = segs;
     while (seg != NULL) {
-        DBUG_EXECUTE ("WLtrans", CTInote (">>> entering segment"););
+        DBUG_EXECUTE (CTInote (">>> entering segment"));
 
-        DBUG_ASSERT ((NODE_TYPE (seg) == N_wlseg), "segment expected");
+        DBUG_ASSERT (NODE_TYPE (seg) == N_wlseg, "segment expected");
 
         /* check params of segment */
         CheckParams (seg);
@@ -6425,7 +6419,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * splitting
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            DBUG_EXECUTE ("WLtrans", CTInote ("step 5: split"););
+            DBUG_EXECUTE (CTInote ("step 5: split"));
             WLSEG_CONTENTS (seg) = SplitWl (WLSEG_CONTENTS (seg));
         }
 
@@ -6441,11 +6435,10 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
             int b;
-            DBUG_EXECUTE ("WLtrans", CTInote ("step 6: hierarchical blocking"););
+            DBUG_EXECUTE (CTInote ("step 6: hierarchical blocking"));
             for (b = 0; b < WLSEG_BLOCKS (seg); b++) {
-                DBUG_EXECUTE ("WLtrans",
-                              CTInote ("step 6.%d: hierarchical blocking (level %d)",
-                                       b + 1, b););
+                DBUG_EXECUTE (
+                  CTInote ("step 6.%d: hierarchical blocking (level %d)", b + 1, b));
                 WLSEG_CONTENTS (seg)
                   = BlockWl (WLSEG_CONTENTS (seg), iter_dims,
                              TCgetNthExprsExpr (b, WLSEG_BV (seg)), FALSE);
@@ -6463,7 +6456,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * unrolling-blocking
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            DBUG_EXECUTE ("WLtrans", CTInote ("step 7: unrolling-blocking"););
+            DBUG_EXECUTE (CTInote ("step 7: unrolling-blocking"));
             WLSEG_CONTENTS (seg)
               = BlockWl (WLSEG_CONTENTS (seg), iter_dims, WLSEG_UBV (seg), TRUE);
         }
@@ -6479,7 +6472,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * merging
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            DBUG_EXECUTE ("WLtrans", CTInote ("step 8: merge"););
+            DBUG_EXECUTE (CTInote ("step 8: merge"));
             WLSEG_CONTENTS (seg) = MergeWl (WLSEG_CONTENTS (seg));
         }
 
@@ -6494,7 +6487,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * optimization
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            DBUG_EXECUTE ("WLtrans", CTInote ("step 9: optimize"););
+            DBUG_EXECUTE (CTInote ("step 9: optimize"));
             WLSEG_CONTENTS (seg) = OptWl (WLSEG_CONTENTS (seg));
         }
 
@@ -6509,7 +6502,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * fitting
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            DBUG_EXECUTE ("WLtrans", CTInote ("step 10: fit"););
+            DBUG_EXECUTE (CTInote ("step 10: fit"));
             WLSEG_CONTENTS (seg) = FitWl (WLSEG_CONTENTS (seg));
         }
 
@@ -6524,7 +6517,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
          * normalization
          */
         if ((!WLSEG_ISDYNAMIC (seg)) && (!do_naive_comp)) {
-            DBUG_EXECUTE ("WLtrans", CTInote ("step 11: normalize"););
+            DBUG_EXECUTE (CTInote ("step 11: normalize"));
             WLSEG_CONTENTS (seg)
               = NormWl (iter_dims, iter_shp, WLSEG_IDXSUP (seg), WLSEG_CONTENTS (seg));
         }
@@ -6539,7 +6532,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         /*
          * fill all gaps
          */
-        DBUG_EXECUTE ("WLtrans", CTInote ("step 12: fill gaps (all)"););
+        DBUG_EXECUTE (CTInote ("step 12: fill gaps (all)"));
         InsertNoopNodes (WLSEG_CONTENTS (seg));
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
@@ -6553,7 +6546,7 @@ ProcessSegments (node *segs, int iter_dims, shape *iter_shp, bool do_naive_comp)
         /* compute GRIDX_FITTED */
         WLSEG_CONTENTS (seg) = InferFitted (WLSEG_CONTENTS (seg));
 
-        DBUG_EXECUTE ("WLtrans", CTInote ("<<< leaving segment"););
+        DBUG_EXECUTE (CTInote ("<<< leaving segment"));
 
         seg = WLSEG_NEXT (seg);
     }
@@ -6580,7 +6573,7 @@ ConvertWith (node *wl, int iter_dims)
 {
     node *new_node, *withop;
 
-    DBUG_ENTER ("ConvertWith");
+    DBUG_ENTER ();
 
     new_node
       = TBmakeWith2 (iter_dims, WITH_WITHID (wl), NULL, WITH_CODE (wl), WITH_WITHOP (wl));
@@ -6645,9 +6638,9 @@ CheckWith (node *arg_node, node *res_ids)
     node *cexpr, *cexprs, *withop;
     ntype *res_type, *cexpr_type;
 
-    DBUG_ENTER ("CheckWith");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_with), "no N_with node found!");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_with, "no N_with node found!");
 
     cexprs = CODE_CEXPRS (WITH_CODE (arg_node));
     withop = WITH_WITHOP (arg_node);
@@ -6674,8 +6667,8 @@ CheckWith (node *arg_node, node *res_ids)
              * it would be impossible to compute the shape of the result at all!
              */
             cexpr = EXPRS_EXPR (cexprs);
-            DBUG_ASSERT ((cexpr != NULL), "CEXPR is missing");
-            DBUG_ASSERT ((NODE_TYPE (cexpr) == N_id), "CEXPR is not a N_id");
+            DBUG_ASSERT (cexpr != NULL, "CEXPR is missing");
+            DBUG_ASSERT (NODE_TYPE (cexpr) == N_id, "CEXPR is not a N_id");
 
             cexpr_type = ID_NTYPE (cexpr);
             res_type = IDS_NTYPE (res_ids);
@@ -6703,7 +6696,7 @@ CheckWith (node *arg_node, node *res_ids)
             break;
 
         default:
-            DBUG_ASSERT ((0), "illegal WITHOP_TYPE found");
+            DBUG_ASSERT (0, "illegal WITHOP_TYPE found");
         }
 
         cexprs = EXPRS_NEXT (cexprs);
@@ -6735,9 +6728,9 @@ WLTRAwith (node *arg_node, info *arg_info)
     node *withop;
     node *new_node = NULL;
 
-    DBUG_ENTER ("WLTRAwith");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("WLtrans", CTInote (">>> >>> entering with-loop"););
+    DBUG_EXECUTE (CTInote (">>> >>> entering with-loop"));
 
     /* stack arg_info */
     info_tmp = arg_info;
@@ -6754,14 +6747,12 @@ WLTRAwith (node *arg_node, info *arg_info)
 
     if (!TYisAKS (idx_type)) {
 
-        DBUG_EXECUTE ("WLtrans",
-                      CTInote ("With-loop without full partition found (line %d)",
-                               global.linenum););
+        DBUG_EXECUTE (
+          CTInote ("With-loop without full partition found (line %d)", global.linenum));
         new_node = arg_node;
     } else if (WITH_CUDARIZABLE (arg_node)) {
-        DBUG_EXECUTE ("WLtrans",
-                      CTInote ("Cudarizable with-loop found (line %d). Won't touch.",
-                               global.linenum););
+        DBUG_EXECUTE (CTInote ("Cudarizable with-loop found (line %d). Won't touch.",
+                               global.linenum));
         new_node = arg_node;
     } else {
         /*
@@ -6772,19 +6763,18 @@ WLTRAwith (node *arg_node, info *arg_info)
         int iter_dims;   /* >= 0 */
         shape *iter_shp; /* may be NULL! */
 
-        DBUG_EXECUTE ("WLtrans", CTInote ("with-loop with AKS withid found (line %d)",
-                                          global.linenum););
+        DBUG_EXECUTE (
+          CTInote ("with-loop with AKS withid found (line %d)", global.linenum));
 
 #if 0
-    DBUG_ASSERT( ( WITH_PARTS( arg_node) > 0),
-                 "With-loop with AKS index vector is not fully partitioned!");
+    DBUG_ASSERT ( WITH_PARTS( arg_node) > 0, "With-loop with AKS index vector is not fully partitioned!");
 #endif
 
         /*
          * check whether WITHID_VEC, WITHID_IDS of all parts have identical
          * names
          */
-        DBUG_ASSERT ((CheckWithids (WITH_PART (arg_node))),
+        DBUG_ASSERT (CheckWithids (WITH_PART (arg_node)),
                      "Not all N_withid nodes of the with-loop have identical"
                      " names!\n"
                      "This is probably due to an error during with-loop-folding.");
@@ -6799,7 +6789,7 @@ WLTRAwith (node *arg_node, info *arg_info)
              * this shouldn`t happen for multioperator with-loops,
              * because with-loops with empty iteration space are not fused
              */
-            DBUG_ASSERT ((FALSE), "with-loop with empty iteration space found!\n");
+            DBUG_ASSERT (FALSE, "with-loop with empty iteration space found!\n");
         } else {
             node *cubes = NULL;
             node *segs = NULL;
@@ -6808,15 +6798,14 @@ WLTRAwith (node *arg_node, info *arg_info)
             /*
              * convert parts of with-loop into new format
              */
-            DBUG_EXECUTE ("WLtrans", CTInote ("step 1.1: convert parts into strides"););
+            DBUG_EXECUTE (CTInote ("step 1.1: convert parts into strides"));
             strides = Parts2Strides (WITH_PART (arg_node), iter_dims, iter_shp);
 
             /*
              * consistence check: ensures that the strides are pairwise disjoint
              */
-            DBUG_EXECUTE ("WLtrans",
-                          CTInote ("step 1.2: check disjointness of strides"););
-            DBUG_ASSERT ((CheckDisjointness (strides)),
+            DBUG_EXECUTE (CTInote ("step 1.2: check disjointness of strides"));
+            DBUG_ASSERT (CheckDisjointness (strides),
                          "Consistence check failed:"
                          " Not all strides are pairwise disjoint!\n"
                          "This is probably due to an error during with-loopfolding.");
@@ -6840,7 +6829,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             /*
              * build the cubes
              */
-            DBUG_EXECUTE ("WLtrans", CTInote ("step 2: build cubes"););
+            DBUG_EXECUTE (CTInote ("step 2: build cubes"));
 
             cubes = BuildCubes (strides, iter_dims, iter_shp, &do_naive_comp);
 
@@ -6851,15 +6840,14 @@ WLTRAwith (node *arg_node, info *arg_info)
             }
 #endif
 
-            DBUG_EXECUTE ("WLtrans",
-                          if (do_naive_comp) {
-                              CTInote ("  naive compilation active");
-                          } else { CTInote ("  naive compilation inactive"); });
+            DBUG_EXECUTE (if (do_naive_comp) {
+                CTInote ("  naive compilation active");
+            } else { CTInote ("  naive compilation inactive"); });
 
             /*
              * normalize grids and fill gaps
              */
-            DBUG_EXECUTE ("WLtrans", CTInote ("step 3: fill gaps (grids)"););
+            DBUG_EXECUTE (CTInote ("step 3: fill gaps (grids)"));
             cubes = InsertNoopGrids (cubes);
 
 #if TO_BE_ADAPTED_TO_PHASE_MECHANISM
@@ -6869,7 +6857,7 @@ WLTRAwith (node *arg_node, info *arg_info)
             }
 #endif
 
-            DBUG_EXECUTE ("WLtrans", CTInote ("step 4: choose segments"););
+            DBUG_EXECUTE (CTInote ("step 4: choose segments"));
             if (do_naive_comp) {
                 /* naive compilation  ->  put each stride in a separate segment */
                 segs = WLCOMP_Cubes (NULL, NULL, cubes, iter_dims, global.linenum);
@@ -6928,7 +6916,7 @@ WLTRAwith (node *arg_node, info *arg_info)
 
     idx_type = TYfreeType (idx_type);
 
-    DBUG_EXECUTE ("WLtrans", CTInote ("<<< <<< leaving with-loop"););
+    DBUG_EXECUTE (CTInote ("<<< <<< leaving with-loop"));
 
     DBUG_RETURN (new_node);
 }
@@ -6946,9 +6934,9 @@ WLTRAwith (node *arg_node, info *arg_info)
 node *
 WLTRAcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLTRAcode");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((CODE_USED (arg_node) >= 0), "illegal NCODE_USED value!");
+    DBUG_ASSERT (CODE_USED (arg_node) >= 0, "illegal NCODE_USED value!");
 
     if (CODE_CBLOCK (arg_node) != NULL) {
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
@@ -6980,7 +6968,7 @@ WLTRAlet (node *arg_node, info *arg_info)
 {
     node *oldlhs;
 
-    DBUG_ENTER ("WLTRAlet");
+    DBUG_ENTER ();
 
     oldlhs = INFO_WL_LHS (arg_info);
     INFO_WL_LHS (arg_info) = LET_IDS (arg_node);
@@ -7007,7 +6995,7 @@ WLTRAdoWlTransform (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("WLTRAdoWlTransform");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -7019,3 +7007,5 @@ WLTRAdoWlTransform (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

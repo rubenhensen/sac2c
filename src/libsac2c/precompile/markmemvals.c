@@ -99,7 +99,9 @@
 #include "free.h"
 #include "scheduling.h"
 #include "new_types.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "MMV"
+#include "debug.h"
 
 /**
  * INFO structure
@@ -136,7 +138,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -157,7 +159,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     INFO_LUT (info) = LUTremoveLut (INFO_LUT (info));
     INFO_A2A_LUT (info) = LUTremoveLut (INFO_A2A_LUT (info));
@@ -188,7 +190,7 @@ node *
 MMVblock (node *arg_node, info *arg_info)
 {
     node *vardecs;
-    DBUG_ENTER ("MMVblock");
+    DBUG_ENTER ();
 
     vardecs = INFO_VARDECS (arg_info);
     INFO_VARDECS (arg_info) = NULL;
@@ -221,7 +223,7 @@ MMVblock (node *arg_node, info *arg_info)
 node *
 MMVdo (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MMVdo");
+    DBUG_ENTER ();
 
     DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
 
@@ -248,7 +250,7 @@ node *
 MMVfundef (node *arg_node, info *arg_info)
 {
     anontrav_t anon[2] = {{N_ids, &MMVids}, {0, NULL}};
-    DBUG_ENTER ("MMVfundef");
+    DBUG_ENTER ();
 
     /*
      * traverse body
@@ -294,7 +296,7 @@ MMVfundef (node *arg_node, info *arg_info)
 node *
 MMVmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MMVmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -317,7 +319,7 @@ MMVmodule (node *arg_node, info *arg_info)
 node *
 MMVlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MMVlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 
@@ -338,7 +340,7 @@ MMVids (node *arg_node, info *arg_info)
 {
     node *newavis;
 
-    DBUG_ENTER ("MMVids");
+    DBUG_ENTER ();
 
     /*
      * We rename the LHS ids here. As there might be multiply nested
@@ -374,7 +376,7 @@ MMVid (node *arg_node, info *arg_info)
 {
     node *newavis;
 
-    DBUG_ENTER ("MMVid");
+    DBUG_ENTER ();
 
     /*
      * Due to nested WLs, we might have renaming chains! So we
@@ -395,10 +397,10 @@ MMVid (node *arg_node, info *arg_info)
 static lut_t *
 pairArgs2Args (lut_t *lut, node *args_in, node *args_out)
 {
-    DBUG_ENTER ("pairParam2Args");
+    DBUG_ENTER ();
 
     if (args_in != NULL) {
-        DBUG_ASSERT ((args_out != NULL), "params and args should be the same length");
+        DBUG_ASSERT (args_out != NULL, "params and args should be the same length");
         lut = pairArgs2Args (lut, ARG_NEXT (args_in), EXPRS_NEXT (args_out));
         lut
           = LUTinsertIntoLutP (lut, ID_AVIS (EXPRS_EXPR (args_out)), ARG_AVIS (args_in));
@@ -418,7 +420,7 @@ MMVap (node *arg_node, info *arg_info)
     node *exprs, *args;
     bool toplevel;
 
-    DBUG_ENTER ("MMVap");
+    DBUG_ENTER ();
 
     /*
      * traverse special thread functions inline
@@ -500,7 +502,7 @@ MMVprfFill (node *arg_node, info *arg_info)
 {
     node *temp;
 
-    DBUG_ENTER ("MMVprfFill");
+    DBUG_ENTER ();
 
     /*
      * a = fill( ..., b')
@@ -556,7 +558,7 @@ MMVprfAccu (node *arg_node, info *arg_info)
     node *withop;
     node *ids_assign, *ids_wl;
 
-    DBUG_ENTER ("MMVprfAccu");
+    DBUG_ENTER ();
 
     /*
      * A,B = with(iv)
@@ -577,12 +579,12 @@ MMVprfAccu (node *arg_node, info *arg_info)
         ids_wl = INFO_LHS_WL (arg_info);
         withop = INFO_WITHOP (arg_info);
 
-        DBUG_ASSERT ((withop != NULL), "F_accu without withloop");
+        DBUG_ASSERT (withop != NULL, "F_accu without withloop");
 
         while (withop != NULL) {
             if (NODE_TYPE (withop) == N_fold) {
-                DBUG_ASSERT ((ids_wl != NULL), "ids of wl is missing");
-                DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
+                DBUG_ASSERT (ids_wl != NULL, "ids of wl is missing");
+                DBUG_ASSERT (ids_assign != NULL, "ids of assign is missing");
 
                 LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (ids_assign),
                                    IDS_NAME (ids_wl));
@@ -619,7 +621,7 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
     node *ids_wl = NULL;
     node *avis = NULL;
 
-    DBUG_ENTER ("MMVprfSuballoc");
+    DBUG_ENTER ();
 
     /*
      * a = suballoc( A, idx)
@@ -686,8 +688,8 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
                 } else if ((INFO_WITH (arg_info) == 3)
                            && (global.mutc_suballoc_desc_one_level_up)) {
                     /* Add vardec to this context */
-                    DBUG_PRINT ("MMV", ("Addd new vardec: %s",
-                                        AVIS_NAME (ID_AVIS (WITHOP_SUB (withop)))));
+                    DBUG_PRINT ("Addd new vardec: %s",
+                                AVIS_NAME (ID_AVIS (WITHOP_SUB (withop))));
                     INFO_VARDECS (arg_info)
                       = TBmakeVardec (DUPdoDupNode (ID_AVIS (WITHOP_SUB (withop))),
                                       INFO_VARDECS (arg_info));
@@ -738,7 +740,7 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
 static node *
 MMVprfWLAssign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MMVprfWLAssign");
+    DBUG_ENTER ();
 
     /*
      * a' = wl_assign( a, A, iv);
@@ -778,7 +780,7 @@ MMVprfPropObjIn (node *arg_node, info *arg_info)
     node *ids_assign;
     node *args;
 
-    DBUG_ENTER ("MMVprfPropObjIn");
+    DBUG_ENTER ();
 
     /*
      * A,B = with(iv)
@@ -799,7 +801,7 @@ MMVprfPropObjIn (node *arg_node, info *arg_info)
     args = EXPRS_NEXT (PRF_ARGS (arg_node));
 
     while (args != NULL) {
-        DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
+        DBUG_ASSERT (ids_assign != NULL, "ids of assign is missing");
         LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (ids_assign),
                            ID_NAME (EXPRS_EXPR (args)));
         LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids_assign),
@@ -833,7 +835,7 @@ MMVprfPropObjOut (node *arg_node, info *arg_info)
     node *ids_assign;
     node *args;
 
-    DBUG_ENTER ("MMVprfPropObjOut");
+    DBUG_ENTER ();
 
     /*
      * A,B = with(iv)
@@ -854,9 +856,9 @@ MMVprfPropObjOut (node *arg_node, info *arg_info)
     args = EXPRS_NEXT (PRF_ARGS (INFO_PROP_IN (arg_info)));
 
     while (args != NULL) {
-        DBUG_ASSERT ((ids_assign != NULL), "ids of assign is missing");
-        DBUG_PRINT ("MMV", ("renaming %s -> %s", IDS_NAME (ids_assign),
-                            ID_NAME (EXPRS_EXPR (args))));
+        DBUG_ASSERT (ids_assign != NULL, "ids of assign is missing");
+        DBUG_PRINT ("renaming %s -> %s", IDS_NAME (ids_assign),
+                    ID_NAME (EXPRS_EXPR (args)));
         LUTinsertIntoLutS (INFO_LUT (arg_info), IDS_NAME (ids_assign),
                            ID_NAME (EXPRS_EXPR (args)));
         LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids_assign),
@@ -883,7 +885,7 @@ MMVprfGuard (node *arg_node, info *arg_info)
     node *v;
     node *as;
 
-    DBUG_ENTER ("MMVprfGuard");
+    DBUG_ENTER ();
 
     /*
      * v1,...,vn = guard(p,a1,..an);
@@ -917,7 +919,7 @@ MMVprfAfterGuard (node *arg_node, info *arg_info)
     node *v;
     node *a;
 
-    DBUG_ENTER ("MMVprfAfterGuard");
+    DBUG_ENTER ();
 
     /*
      * v = guard(a,p1,..pn);
@@ -953,7 +955,7 @@ MMVprfAfterGuard (node *arg_node, info *arg_info)
 node *
 MMVprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MMVprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_fill:
@@ -1015,7 +1017,7 @@ MMVwith (node *arg_node, info *arg_info)
     node *prop_in;
     int with;
 
-    DBUG_ENTER ("MMVwith");
+    DBUG_ENTER ();
 
     /* stack lhs and withop of surrounding WL */
     lhs = INFO_LHS_WL (arg_info);
@@ -1061,7 +1063,7 @@ MMVwith2 (node *arg_node, info *arg_info)
     node *prop_in;
     int with;
 
-    DBUG_ENTER ("MMVwith2");
+    DBUG_ENTER ();
 
     /*
      * stack lhs and withop of surrounding WL
@@ -1107,7 +1109,7 @@ MMVwith3 (node *arg_node, info *arg_info)
     node *prop_in;
     int with;
 
-    DBUG_ENTER ("MMVwith3");
+    DBUG_ENTER ();
 
     /*
      * stack lhs and withop of surrounding WL
@@ -1147,7 +1149,7 @@ MMVwith3 (node *arg_node, info *arg_info)
 node *
 MMVwlseg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MMVwlseg");
+    DBUG_ENTER ();
 
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (arg_node)
@@ -1180,7 +1182,7 @@ MMVwlseg (node *arg_node, info *arg_info)
 node *
 MMVgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MMVgenarray");
+    DBUG_ENTER ();
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
 
@@ -1217,7 +1219,7 @@ MMVgenarray (node *arg_node, info *arg_info)
 node *
 MMVpropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MMVpropagate");
+    DBUG_ENTER ();
 
     PROPAGATE_DEFAULT (arg_node) = TRAVdo (PROPAGATE_DEFAULT (arg_node), arg_info);
 
@@ -1244,7 +1246,7 @@ MMVpropagate (node *arg_node, info *arg_info)
 node *
 MMVmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MMVmodarray");
+    DBUG_ENTER ();
 
     MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
 
@@ -1279,7 +1281,7 @@ MMVmodarray (node *arg_node, info *arg_info)
 node *
 MMVbreak (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MMVbreak");
+    DBUG_ENTER ();
 
     BREAK_MEM (arg_node) = TRAVdo (BREAK_MEM (arg_node), arg_info);
 
@@ -1313,7 +1315,7 @@ MMVbreak (node *arg_node, info *arg_info)
 node *
 MMVfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MMVfold");
+    DBUG_ENTER ();
 
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     FOLD_INITIAL (arg_node) = TRAVopt (FOLD_INITIAL (arg_node), arg_info);
@@ -1357,7 +1359,7 @@ MMVcode (node *arg_node, info *arg_info)
     node *cexprs;
     node *withop;
 
-    DBUG_ENTER ("MMVcode");
+    DBUG_ENTER ();
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
     CODE_CEXPRS (arg_node) = TRAVopt (CODE_CEXPRS (arg_node), arg_info);
@@ -1416,7 +1418,7 @@ MMVreturn (node *arg_node, info *arg_info)
 {
     node *withops, *exprs;
 
-    DBUG_ENTER ("MMVreturn");
+    DBUG_ENTER ();
 
     /*
      * 1) rename RHS
@@ -1434,7 +1436,7 @@ MMVreturn (node *arg_node, info *arg_info)
         exprs = RETURN_EXPRS (arg_node);
 
         while (exprs != NULL) {
-            DBUG_ASSERT ((withops != NULL), "more results in threadfun than withops!");
+            DBUG_ASSERT (withops != NULL, "more results in threadfun than withops!");
 
             if ((NODE_TYPE (withops) == N_genarray) || (NODE_TYPE (withops) == N_fold)) {
                 /*
@@ -1453,7 +1455,7 @@ MMVreturn (node *arg_node, info *arg_info)
             withops = WITHOP_NEXT (withops);
         }
 
-        DBUG_ASSERT ((withops == NULL), "more withops than results in threadfun!");
+        DBUG_ASSERT (withops == NULL, "more withops than results in threadfun!");
     }
 
     DBUG_RETURN (arg_node);
@@ -1474,11 +1476,11 @@ MMVret (node *arg_node, info *arg_info)
 {
     node *withops;
 
-    DBUG_ENTER ("MMVret");
+    DBUG_ENTER ();
 
     withops = INFO_WITHOP (arg_info);
 
-    DBUG_ASSERT ((withops != NULL), "more rets in threadfun than withops!");
+    DBUG_ASSERT (withops != NULL, "more rets in threadfun than withops!");
 
     INFO_WITHOP (arg_info) = WITHOP_NEXT (INFO_WITHOP (arg_info));
     RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
@@ -1515,7 +1517,7 @@ MMVdoMarkMemVals (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MMVdoMarkMemVals");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -1529,3 +1531,5 @@ MMVdoMarkMemVals (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

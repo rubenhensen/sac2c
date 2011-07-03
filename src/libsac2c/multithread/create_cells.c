@@ -28,7 +28,10 @@
 #include "traverse.h"
 #include "create_cells.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CRECE"
+#include "debug.h"
+
 #include "memory.h"
 #include "multithread_lib.h"
 
@@ -56,7 +59,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -69,7 +72,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -95,20 +98,20 @@ CRECEdoCreateCells (node *arg_node)
 {
     info *arg_info;
     trav_t traversaltable;
-    DBUG_ENTER ("CRECEdoCreateCells");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
                  "CRECEdoCreateCells expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
 
     TRAVpush (TR_crece);
 
-    DBUG_PRINT ("CRECE", ("trav into module-funs"));
+    DBUG_PRINT ("trav into module-funs");
     MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    DBUG_PRINT ("CRECE", ("trav from module-funs"));
+    DBUG_PRINT ("trav from module-funs");
 
     traversaltable = TRAVpop ();
-    DBUG_ASSERT ((traversaltable == TR_crece), "Popped incorrect traversal table");
+    DBUG_ASSERT (traversaltable == TR_crece, "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
 
@@ -120,8 +123,8 @@ CRECEblock (node *arg_node, info *arg_info)
 {
     int old_cellid;
     mtexecmode_t old_execmode;
-    DBUG_ENTER ("CRECEblock");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "arg_node is not a N_block");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_block, "arg_node is not a N_block");
 
     /* push info... */
     old_cellid = INFO_CRECE_LASTCELLID (arg_info);
@@ -132,9 +135,9 @@ CRECEblock (node *arg_node, info *arg_info)
 
     /* continue traversal */
     if (BLOCK_INSTR (arg_node) != NULL) {
-        DBUG_PRINT ("CRECE", ("trav into instruction(s)"));
+        DBUG_PRINT ("trav into instruction(s)");
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-        DBUG_PRINT ("CRECE", ("trav from instruction(s)"));
+        DBUG_PRINT ("trav from instruction(s)");
     }
 
     /* pop info... */
@@ -147,14 +150,14 @@ CRECEblock (node *arg_node, info *arg_info)
 node *
 CRECEassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CRECEassign");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "arg_node is not a N_assign");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_assign, "arg_node is not a N_assign");
 
     /* traverse into the instruction - it could be a conditional */
     if (ASSIGN_INSTR (arg_node) != NULL) {
-        DBUG_PRINT ("CRECE", ("trav into instruction"));
+        DBUG_PRINT ("trav into instruction");
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-        DBUG_PRINT ("CRECE", ("trav from instruction"));
+        DBUG_PRINT ("trav from instruction");
     }
 
     if ((ASSIGN_EXECMODE (arg_node) != MUTH_ANY)
@@ -174,9 +177,9 @@ CRECEassign (node *arg_node, info *arg_info)
         }
     }
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("CRECE", ("trav into next"));
+        DBUG_PRINT ("trav into next");
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("CRECE", ("trav from next"));
+        DBUG_PRINT ("trav from next");
     }
 
     DBUG_RETURN (arg_node);
@@ -186,8 +189,8 @@ static node *
 InsertCell (node *act_assign)
 {
     node *new_assign;
-    DBUG_ENTER ("InsertCell");
-    DBUG_ASSERT ((NODE_TYPE (act_assign) == N_assign), "N_assign expected");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (act_assign) == N_assign, "N_assign expected");
 
     new_assign = NULL;
 
@@ -202,9 +205,9 @@ InsertCell (node *act_assign)
         new_assign = TBmakeAssign (TBmakeMt (TBmakeBlock (act_assign, NULL)), NULL);
         break;
     case MUTH_MULTI_SPECIALIZED:
-        DBUG_ASSERT ((FALSE), "MUTH_MULTI_SPECIALIZED is impossible here");
+        DBUG_ASSERT (FALSE, "MUTH_MULTI_SPECIALIZED is impossible here");
     case MUTH_ANY:
-        DBUG_ASSERT ((FALSE), "MUTH_ANY is impossible here");
+        DBUG_ASSERT (FALSE, "MUTH_ANY is impossible here");
     }
 
     ASSIGN_EXECMODE (new_assign) = ASSIGN_EXECMODE (act_assign);
@@ -214,3 +217,5 @@ InsertCell (node *act_assign)
 
     DBUG_RETURN (new_assign);
 }
+
+#undef DBUG_PREFIX

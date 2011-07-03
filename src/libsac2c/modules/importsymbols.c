@@ -15,7 +15,9 @@
 #include "deserialize.h"
 #include "stringset.h"
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 struct INFO {
     node *module;
@@ -29,7 +31,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = (info *)MEMmalloc (sizeof (info));
 
@@ -41,7 +43,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -53,7 +55,7 @@ IMPimport (node *arg_node, info *arg_info)
 {
     node *tmp;
 
-    DBUG_ENTER ("IMPimport");
+    DBUG_ENTER ();
 
     INFO_IMP_CURRENT (arg_info) = IMPORT_MOD (arg_node);
 
@@ -76,7 +78,7 @@ IMPimport (node *arg_node, info *arg_info)
 node *
 IMPuse (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMPuse");
+    DBUG_ENTER ();
 
     if (USE_NEXT (arg_node) != NULL) {
         USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
@@ -88,7 +90,7 @@ IMPuse (node *arg_node, info *arg_info)
 node *
 IMPexport (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMPexport");
+    DBUG_ENTER ();
 
     if (EXPORT_NEXT (arg_node) != NULL) {
         EXPORT_NEXT (arg_node) = TRAVdo (EXPORT_NEXT (arg_node), arg_info);
@@ -100,7 +102,7 @@ IMPexport (node *arg_node, info *arg_info)
 node *
 IMPprovide (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMPprovide");
+    DBUG_ENTER ();
 
     if (PROVIDE_NEXT (arg_node) != NULL) {
         PROVIDE_NEXT (arg_node) = TRAVdo (PROVIDE_NEXT (arg_node), arg_info);
@@ -112,7 +114,7 @@ IMPprovide (node *arg_node, info *arg_info)
 node *
 IMPsymbol (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMPsymbol");
+    DBUG_ENTER ();
 
     DSimportInstancesByName (SYMBOL_ID (arg_node), INFO_IMP_CURRENT (arg_info));
     DSimportTypedefByName (SYMBOL_ID (arg_node), INFO_IMP_CURRENT (arg_info));
@@ -128,7 +130,7 @@ IMPsymbol (node *arg_node, info *arg_info)
 node *
 IMPmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMPmodule");
+    DBUG_ENTER ();
 
     if (MODULE_INTERFACE (arg_node) != NULL) {
         DSinitDeserialize (arg_node);
@@ -146,7 +148,7 @@ IMPdoImportSymbols (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("IMPdoImportSymbols");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -160,3 +162,5 @@ IMPdoImportSymbols (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

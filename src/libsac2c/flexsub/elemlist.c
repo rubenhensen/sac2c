@@ -6,7 +6,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "globals.h"
@@ -17,20 +20,20 @@ void
 ELinit (elemlist *el)
 {
 
-    DBUG_ENTER ("ELinit");
+    DBUG_ENTER ();
 
     ELEMLIST_CURR (el) = NULL;
     ELEMLIST_PREV (el) = NULL;
     ELEMLIST_NEXT (el) = NULL;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 elemlist *
 ELfreeNonRecursive (elemlist *el)
 {
 
-    DBUG_ENTER ("ELfreeNonRecursive");
+    DBUG_ENTER ();
 
     if (el != NULL) {
         el = MEMfree (el);
@@ -43,7 +46,7 @@ elemlist *
 ELfreeRecursive (elemlist *el)
 {
 
-    DBUG_ENTER ("ELfreeRecursive");
+    DBUG_ENTER ();
 
     if (ELEMLIST_CURR (el) == NULL) {
         freeElem (ELEMLIST_CURR (el));
@@ -53,3 +56,5 @@ ELfreeRecursive (elemlist *el)
 
     DBUG_RETURN (el);
 }
+
+#undef DBUG_PREFIX

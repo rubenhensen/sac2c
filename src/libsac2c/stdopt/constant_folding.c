@@ -110,7 +110,9 @@
 
 #include "constant_folding.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "CF"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "tree_compound.h"
@@ -144,7 +146,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -173,7 +175,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -223,7 +225,7 @@ CFdoConstantFolding (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CFdoConstantFolding");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -273,7 +275,7 @@ CFdoConstantFolding (node *arg_node)
 static bool
 IsScalarConstantNode (node *arg_node)
 {
-    DBUG_ENTER ("IsScalarConstantNode");
+    DBUG_ENTER ();
 
     DBUG_RETURN (PMO (PMObool (arg_node)) || PMO (PMOnumbyte (arg_node))
                  || PMO (PMOnumubyte (arg_node)) || PMO (PMOnumint (arg_node))
@@ -291,7 +293,7 @@ CFisFullyConstantNode (node *arg_node)
     bool res;
     constant *frameshape = NULL;
 
-    DBUG_ENTER ("CFisFullyConstantNode");
+    DBUG_ENTER ();
 
     if (IsScalarConstantNode (arg_node)) {
         res = TRUE;
@@ -321,7 +323,7 @@ isNarrayHasIdNode (node *arg_node)
 {
     bool res;
 
-    DBUG_ENTER ("isNarrayHasIdNode");
+    DBUG_ENTER ();
 
     arg_node = ARRAY_AELEMS (arg_node);
     res = FALSE;
@@ -360,7 +362,7 @@ CFunflattenSimpleScalars (node *arg_node)
     node *res;
     pattern *pat;
 
-    DBUG_ENTER ("CFunflattenSimpleScalars");
+    DBUG_ENTER ();
 
     res = arg_node;
     pat = PMconst (1, PMAgetNode (&cons));
@@ -368,7 +370,7 @@ CFunflattenSimpleScalars (node *arg_node)
     if (TUisScalar (ARRAY_ELEMTYPE (arg_node)) && isNarrayHasIdNode (arg_node)
         && CFisFullyConstantNode (arg_node)) {
         res = DUPdoDupTree (arg_node);
-        DBUG_PRINT ("CF", ("Unflattening N_array of scalar constants"));
+        DBUG_PRINT ("Unflattening N_array of scalar constants");
         el = ARRAY_AELEMS (res);
         while (NULL != el) {
             curel = EXPRS_EXPR (el);
@@ -397,7 +399,7 @@ CreateConstExprsFromType (ntype *type)
 {
     node *res = NULL;
     int i;
-    DBUG_ENTER ("CreateConstExprsFromType");
+    DBUG_ENTER ();
 
     if (TYisProd (type)) {
         for (i = TYgetProductSize (type) - 1; i >= 0; i--) {
@@ -428,7 +430,7 @@ PreventTypePrecisionLoss (node *id, ntype *oldtype)
 {
     node *res;
 
-    DBUG_ENTER ("PreventTypePrecisionLoss");
+    DBUG_ENTER ();
 
     if ((id != NULL) && (NODE_TYPE (id) == N_id)) {
         if (!TYleTypes (ID_NTYPE (id), oldtype)) {
@@ -466,10 +468,10 @@ CreateAssignsFromIdsExprs (node *ids, node *exprs, ntype *restypes)
     node *expr;
     int pos = 0;
 
-    DBUG_ENTER ("CreateAssignsFromIdsExprs");
+    DBUG_ENTER ();
 
     while (ids != NULL) {
-        DBUG_ASSERT ((exprs != NULL),
+        DBUG_ASSERT (exprs != NULL,
                      "ids chain longer than exprs chain in CreateAssignsFromIdsExprs");
 
         /* grab expression and ensure type */
@@ -495,7 +497,7 @@ CreateAssignsFromIdsExprs (node *ids, node *exprs, ntype *restypes)
         pos++;
     }
 
-    DBUG_ASSERT ((exprs == NULL),
+    DBUG_ASSERT (exprs == NULL,
                  "exprs chain longer than ids chain in CreateAssignsFromIdsExprs");
 
     DBUG_RETURN (res);
@@ -516,7 +518,7 @@ CorrectSSAASSIGNS (node *arg_node, info *arg_info)
     node *ids;
     node *ssa;
 
-    DBUG_ENTER ("CorrectSSAASSIGNS");
+    DBUG_ENTER ();
 
     let = ASSIGN_INSTR (arg_node);
     if (N_let == NODE_TYPE (let)) {
@@ -525,8 +527,7 @@ CorrectSSAASSIGNS (node *arg_node, info *arg_info)
             /* DEBUG REMOVE THIS */
             ssa = AVIS_SSAASSIGN (IDS_AVIS (ids));
             if ((ssa != NULL) && (ssa != arg_node)) {
-                DBUG_PRINT ("CF",
-                            ("Correcting SSAASSIGN for %s", AVIS_NAME (IDS_AVIS (ids))));
+                DBUG_PRINT ("Correcting SSAASSIGN for %s", AVIS_NAME (IDS_AVIS (ids)));
             }
             /* DEBUG REMOVE THIS */
 
@@ -557,7 +558,7 @@ InvokeCFprfAndFlattenExtrema (node *arg_node, info *arg_info, travfun_p fn, node
     node *ex;
     ntype *restype;
 
-    DBUG_ENTER ("InvokeCFprfAndFlattenExtrema");
+    DBUG_ENTER ();
 
     if ((NULL == res) && (NULL != fn)) {
         res = fn (arg_node, arg_info);
@@ -609,7 +610,7 @@ CFfundef (node *arg_node, info *arg_info)
     node *old_fundef, *old_topblock, *old_vardecs;
     ntype *old_lhstype;
 
-    DBUG_ENTER ("CFfundef");
+    DBUG_ENTER ();
 
     if ((FUNDEF_BODY (arg_node) != NULL)
         && (!FUNDEF_ISLACFUN (arg_node) || INFO_LACFUNOK (arg_info)
@@ -624,13 +625,13 @@ CFfundef (node *arg_node, info *arg_info)
         INFO_VARDECS (arg_info) = NULL;
         INFO_LHSTYPE (arg_info) = NULL;
 
-        DBUG_PRINT ("CF", ("traversing body of (%s) %s",
-                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                           FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("traversing body of (%s) %s",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                    FUNDEF_NAME (arg_node));
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        DBUG_PRINT ("CF", ("leaving body of (%s) %s",
-                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                           FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("leaving body of (%s) %s",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                    FUNDEF_NAME (arg_node));
 
         INFO_FUNDEF (arg_info) = old_fundef;
         INFO_TOPBLOCK (arg_info) = old_topblock;
@@ -663,7 +664,7 @@ node *
 CFblock (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CFblock");
+    DBUG_ENTER ();
 
     if (NULL == INFO_TOPBLOCK (arg_info)) {
         INFO_TOPBLOCK (arg_info) = arg_node;
@@ -722,7 +723,7 @@ CFassign (node *arg_node, info *arg_info)
     node *postassign;
     node *succ;
 
-    DBUG_ENTER ("CFassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -746,7 +747,7 @@ CFassign (node *arg_node, info *arg_info)
      * Delete the current one if needed.
      */
     if (remassign) {
-        DBUG_PRINT ("CF", ("CFassign removed dead assignment"));
+        DBUG_PRINT ("CFassign removed dead assignment");
         arg_node = FREEdoFreeNode (arg_node);
         INFO_REMASSIGN (arg_info) = FALSE;
     }
@@ -784,7 +785,7 @@ CFassign (node *arg_node, info *arg_info)
 node *
 CFfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CFfuncond");
+    DBUG_ENTER ();
     node *res;
 
     /* check for constant condition */
@@ -795,11 +796,11 @@ CFfuncond (node *arg_node, info *arg_info)
         if (COisTrue (TYgetValue (ID_NTYPE (FUNCOND_IF (arg_node))), TRUE)) {
             res = DUPdoDupTree (FUNCOND_THEN (arg_node));
             arg_node = FREEdoFreeTree (arg_node);
-            DBUG_PRINT ("CF", ("CFfuncond found TRUE condition"));
+            DBUG_PRINT ("CFfuncond found TRUE condition");
         } else {
             res = DUPdoDupTree (FUNCOND_ELSE (arg_node));
             arg_node = FREEdoFreeTree (arg_node);
-            DBUG_PRINT ("CF", ("CFfuncond found FALSE condition"));
+            DBUG_PRINT ("CFfuncond found FALSE condition");
         }
     }
     DBUG_RETURN (res);
@@ -820,13 +821,12 @@ CFcondThen (node *arg_node, info *arg_info)
 {
     node *pre;
     COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
-    DBUG_PRINT ("CF", ("CFcondThen found TRUE condition"));
+    DBUG_PRINT ("CFcondThen found TRUE condition");
 
     /* select then-part for later insertion in assignment chain */
     pre = BLOCK_INSTR (COND_THEN (arg_node));
     if (NODE_TYPE (pre) != N_empty) { /* empty code block must not be moved */
-        DBUG_ASSERT ((NULL == INFO_PREASSIGN (arg_info)),
-                     ("CFcondThen preassign confusion"));
+        DBUG_ASSERT (NULL == INFO_PREASSIGN (arg_info), "CFcondThen preassign confusion");
         INFO_PREASSIGN (arg_info) = pre;
         /*
          * delete pointer to codeblock to preserve assignments from
@@ -854,13 +854,12 @@ CFcondElse (node *arg_node, info *arg_info)
     node *pre;
 
     COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
-    DBUG_PRINT ("CF", ("CFcondElse found FALSE condition"));
+    DBUG_PRINT ("CFcondElse found FALSE condition");
 
     /* select else-part for later insertion in assignment chain */
     pre = BLOCK_INSTR (COND_ELSE (arg_node));
     if (NODE_TYPE (pre) != N_empty) { /* empty code block must not be moved */
-        DBUG_ASSERT ((NULL == INFO_PREASSIGN (arg_info)),
-                     ("CFcondElse preassign confusion"));
+        DBUG_ASSERT (NULL == INFO_PREASSIGN (arg_info), "CFcondElse preassign confusion");
         INFO_PREASSIGN (arg_info) = pre;
         /*
          * delete pointer to codeblock to preserve assignments from
@@ -891,7 +890,7 @@ CFcond (node *arg_node, info *arg_info)
     bool condknown = FALSE;
     bool condtrue = FALSE;
 
-    DBUG_ENTER ("CFcond");
+    DBUG_ENTER ();
 
     /* check for constant COND */
     condknown = TYisAKV (ID_NTYPE (COND_COND (arg_node)));
@@ -961,20 +960,20 @@ CFcond (node *arg_node, info *arg_info)
 node *
 CFlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CFlet");
+    DBUG_ENTER ();
 
     /*
      * What's intended here is that the typechecker may determine
      * that the lhs is of type AKV, so it knows the value of the lhs.
      * Hence, it can discard the RHS and replace it by the now-known lhs value.
      */
-    DBUG_ASSERT ((LET_IDS (arg_node) != NULL), "empty LHS of let found in CF");
-    DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "empty RHS of let found in CF");
-    DBUG_ASSERT ((NULL == INFO_AVISMIN (arg_info)), "AVISMIN non-NULL");
-    DBUG_ASSERT ((NULL == INFO_AVISMAX (arg_info)), "AVISMAX non-NULL");
-    DBUG_ASSERT ((FALSE == INFO_DOINGEXTREMA (arg_info)), "DOINGEXTREMA TRUE");
+    DBUG_ASSERT (LET_IDS (arg_node) != NULL, "empty LHS of let found in CF");
+    DBUG_ASSERT (LET_EXPR (arg_node) != NULL, "empty RHS of let found in CF");
+    DBUG_ASSERT (NULL == INFO_AVISMIN (arg_info), "AVISMIN non-NULL");
+    DBUG_ASSERT (NULL == INFO_AVISMAX (arg_info), "AVISMAX non-NULL");
+    DBUG_ASSERT (FALSE == INFO_DOINGEXTREMA (arg_info), "DOINGEXTREMA TRUE");
 
-    DBUG_PRINT ("CF", ("Looking at LHS: %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
+    DBUG_PRINT ("Looking at LHS: %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
     /**
      *  First, we collect the INFO_LHSTYPE!
      */
@@ -985,7 +984,7 @@ CFlet (node *arg_node, info *arg_info)
     /* If first result has extrema, add them now.
      */
     if (NULL != INFO_AVISMIN (arg_info)) {
-        DBUG_ASSERT ((N_avis == NODE_TYPE (INFO_AVISMIN (arg_info))),
+        DBUG_ASSERT (N_avis == NODE_TYPE (INFO_AVISMIN (arg_info)),
                      "AVIS_MIN not N_avis");
         IVEXPsetMinvalIfNotNull (IDS_AVIS (LET_IDS (arg_node)),
                                  TBmakeId (INFO_AVISMIN (arg_info)), FALSE);
@@ -993,7 +992,7 @@ CFlet (node *arg_node, info *arg_info)
         INFO_AVISMIN (arg_info) = NULL;
     }
     if (NULL != INFO_AVISMAX (arg_info)) {
-        DBUG_ASSERT ((N_avis == NODE_TYPE (INFO_AVISMAX (arg_info))),
+        DBUG_ASSERT (N_avis == NODE_TYPE (INFO_AVISMAX (arg_info)),
                      "AVIS_MAX not N_avis");
         IVEXPsetMaxvalIfNotNull (IDS_AVIS (LET_IDS (arg_node)),
                                  TBmakeId (INFO_AVISMAX (arg_info)), FALSE);
@@ -1010,8 +1009,8 @@ CFlet (node *arg_node, info *arg_info)
          */
 
         if (!CFisFullyConstantNode (LET_EXPR (arg_node))) {
-            DBUG_PRINT ("CF", ("LHS (%s) is AKV: replacing RHS by constant",
-                               AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
+            DBUG_PRINT ("LHS (%s) is AKV: replacing RHS by constant",
+                        AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
             LET_EXPR (arg_node) = FREEdoFreeTree (LET_EXPR (arg_node));
             if (TYgetProductSize (INFO_LHSTYPE (arg_info)) == 1) {
                 LET_EXPR (arg_node) = CreateConstExprsFromType (
@@ -1062,7 +1061,7 @@ node *
 CFids (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CFids");
+    DBUG_ENTER ();
 
     INFO_NUM_IDS_SOFAR (arg_info)++;
 
@@ -1102,10 +1101,10 @@ CFarray (node *arg_node, info *arg_info)
     node *lexprs = NULL;
     pattern *pat, *pat2;
 
-    DBUG_ENTER ("CFarray");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("CF", ("CFarray looking at  %s",
-                       AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info))))));
+    DBUG_PRINT ("CFarray looking at  %s",
+                AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
     exprs = ARRAY_AELEMS (arg_node);
     pat = PMarray (0, 2, PMarray (1, PMAgetFS (&fs), 1, PMskip (0)), PMskip (0));
 
@@ -1124,8 +1123,8 @@ CFarray (node *arg_node, info *arg_info)
               = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (array)),
                              SHappendShapes (ARRAY_FRAMESHAPE (arg_node), fshp), lexprs);
             fshp = SHfreeShape (fshp);
-            DBUG_PRINT ("CF", ("N_array %s being expanded",
-                               AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info))))));
+            DBUG_PRINT ("N_array %s being expanded",
+                        AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
             arg_node = FREEdoFreeNode (arg_node);
         } else {
             res = arg_node;
@@ -1158,8 +1157,8 @@ CFprf (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("CFprf");
-    DBUG_PRINT ("CF", ("evaluating prf %s", global.prf_name[PRF_PRF (arg_node)]));
+    DBUG_ENTER ();
+    DBUG_PRINT ("evaluating prf %s", global.prf_name[PRF_PRF (arg_node)]);
 
     /* Bog-standard constant-folding is all handled by typechecker now */
 
@@ -1197,7 +1196,7 @@ CFap (node *arg_node, info *arg_info)
 {
     bool old_til;
 
-    DBUG_ENTER ("CFap");
+    DBUG_ENTER ();
 
     if (!INFO_LACFUNOK (arg_info)
         && (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))
@@ -1223,7 +1222,7 @@ CFwith (node *arg_node, info *arg_info)
     node *vecassign = NULL;
     ntype *old_lhstype;
 
-    DBUG_ENTER ("CFwith");
+    DBUG_ENTER ();
 
     old_lhstype = INFO_LHSTYPE (arg_info);
     INFO_LHSTYPE (arg_info) = NULL;
@@ -1268,7 +1267,7 @@ CFwith (node *arg_node, info *arg_info)
 node *
 CFcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CFcode");
+    DBUG_ENTER ();
 
     /*
      * Do not traverse CODE_NEXT since codes are traversed through the Parts
@@ -1291,7 +1290,7 @@ CFpart (node *arg_node, info *arg_info)
     ntype *temp;
     node *n;
 
-    DBUG_ENTER ("CFpart");
+    DBUG_ENTER ();
 
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
@@ -1388,3 +1387,5 @@ CFpart (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

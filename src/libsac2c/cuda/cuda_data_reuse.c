@@ -7,7 +7,10 @@
 #include "tree_compound.h"
 #include "globals.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -86,7 +89,7 @@ CreateRangeInfo (node *range, bool toplevel)
 {
     range_info_t *res;
 
-    DBUG_ENTER ("CreateRangeInfo");
+    DBUG_ENTER ();
 
     res = MEMmalloc (sizeof (range_info_t));
 
@@ -101,7 +104,7 @@ CreateRangeInfo (node *range, bool toplevel)
 static range_info_t *
 FreeRangeInfo (range_info_t *info)
 {
-    DBUG_ENTER ("FreeRangeInfo");
+    DBUG_ENTER ();
 
     if (info == NULL) {
         return info;
@@ -125,7 +128,7 @@ EnqRangeInfo (range_set_t *set, node *range, bool toplevel)
 {
     range_info_t *info, *next, *dummy;
 
-    DBUG_ENTER ("EnqRangeInfo");
+    DBUG_ENTER ();
 
     info = CreateRangeInfo (range, toplevel);
 
@@ -175,7 +178,7 @@ DeqRangeInfo (range_set_t *set, node *range)
 {
     range_info_t *info;
 
-    DBUG_ENTER ("DeqRangeInfo");
+    DBUG_ENTER ();
 
     if (RS_LAST_BLOCKED_RANGE (set) != NULL
         && range == RI_RANGE (RS_LAST_BLOCKED_RANGE (set))) {
@@ -200,7 +203,7 @@ DeqRangeInfo (range_set_t *set, node *range)
         RS_NONBLOCKED_RANGES_CNT (set)--;
         info = MEMfree (info);
     } else {
-        DBUG_ASSERT ((0), "N_range in neither blocked nor nonblocked ranges!");
+        DBUG_ASSERT (0, "N_range in neither blocked nor nonblocked ranges!");
     }
 
     DBUG_RETURN (set);
@@ -211,7 +214,7 @@ CreateRangeSet ()
 {
     range_set_t *res;
 
-    DBUG_ENTER ("CreateRangeSet");
+    DBUG_ENTER ();
 
     res = MEMmalloc (sizeof (range_set_t));
 
@@ -232,7 +235,7 @@ PushRangeSet (range_set_t *sets)
 {
     range_set_t *new_set;
 
-    DBUG_ENTER ("PushRangeSet");
+    DBUG_ENTER ();
 
     new_set = CreateRangeSet ();
 
@@ -255,7 +258,7 @@ PopRangeSet (range_set_t *sets)
 {
     range_set_t *popped_set;
 
-    DBUG_ENTER ("PopRangeSet");
+    DBUG_ENTER ();
 
     if (sets != NULL) {
         popped_set = sets;
@@ -394,7 +397,7 @@ typedef struct SHARED_GLOBAL_INFO_T {
 static range_pair_t *
 FreeRangePair (range_pair_t *pairs)
 {
-    DBUG_ENTER ("FreeRangePair");
+    DBUG_ENTER ();
 
     if (pairs != NULL) {
         if (RP_NEXT (pairs) != NULL) {
@@ -416,7 +419,7 @@ GetNthRangePair (int nth)
     range_info_t *blocked, *nonblocked;
     int cnt = 1, old_nth;
 
-    DBUG_ENTER ("GetNthRangePair");
+    DBUG_ENTER ();
 
     old_nth = nth;
     sets = first_range_set;
@@ -428,8 +431,8 @@ GetNthRangePair (int nth)
             blocked = RS_BLOCKED_RANGES (sets);
             nonblocked = RS_NONBLOCKED_RANGES (sets);
             while (cnt < nth) {
-                DBUG_ASSERT ((blocked != NULL), "Blocked range list is NULL!");
-                DBUG_ASSERT ((nonblocked != NULL), "Nonblocked range list is NULL!");
+                DBUG_ASSERT (blocked != NULL, "Blocked range list is NULL!");
+                DBUG_ASSERT (nonblocked != NULL, "Nonblocked range list is NULL!");
                 blocked = RI_NEXT (blocked);
                 nonblocked = RI_NEXT (RI_NEXT (nonblocked));
                 cnt++;
@@ -458,7 +461,7 @@ CreateSharedGlobalInfo (shared_global_info_t **sg_infos)
 {
     shared_global_info_t *res, *tmp;
 
-    DBUG_ENTER ("CreateSharedGlobalInfo");
+    DBUG_ENTER ();
 
     /* Append new sg_info to the prev_sg_infos */
     res = MEMmalloc (sizeof (shared_global_info_t));
@@ -488,7 +491,7 @@ FreeSharedGlobalInfo (shared_global_info_t *sg_infos)
 {
     range_pair_t *pairs;
 
-    DBUG_ENTER ("FreeSharedGlobalInfo");
+    DBUG_ENTER ();
 
     if (sg_infos != NULL) {
         if (SG_INFO_NEXT (sg_infos) != NULL) {
@@ -545,7 +548,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -568,7 +571,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -587,7 +590,7 @@ CreatePrfOrConst (bool isprf, char *name, simpletype sty, shape *shp, prf pfun,
 {
     node *avis = NULL, *new_assign;
 
-    DBUG_ENTER ("CreatePrfOrConst");
+    DBUG_ENTER ();
 
     if (name != NULL) {
         avis
@@ -636,7 +639,7 @@ ComputeIndexInternal (bool global, /* for global or shared memory access? */
 {
     node *avis, *args, *vardecs = NULL, *assigns = NULL;
 
-    DBUG_ENTER ("ComputeIndexInternal");
+    DBUG_ENTER ();
 
     /* Whether this idx need to substract a value first before it
      * it's mulitplied by the coefficient. This is the case for
@@ -700,7 +703,7 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
 {
     range_pair_t *pair = NULL;
 
-    DBUG_ENTER ("ComputeIndex");
+    DBUG_ENTER ();
 
     switch (CUIDX_TYPE (idx)) {
     case IDX_CONSTANT:
@@ -754,7 +757,7 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
         break;
     case IDX_LOOPIDX:
         pair = GetNthRangePair (CUIDX_LOOPLEVEL (idx) - INFO_CUWLDIM (arg_info));
-        DBUG_ASSERT ((pair != NULL), "Range pair is NULL!");
+        DBUG_ASSERT (pair != NULL, "Range pair is NULL!");
         RP_NEXT (pair) = SG_INFO_RANGE_PAIRS (sg_info);
         SG_INFO_RANGE_PAIRS (sg_info) = pair;
 
@@ -793,7 +796,7 @@ ComputeIndex (shared_global_info_t *sg_info, cuda_index_t *idx, info *arg_info)
         }
         break;
     default:
-        DBUG_ASSERT ((0), "Unknown index type found!");
+        DBUG_ASSERT (0, "Unknown index type found!");
         break;
     }
 
@@ -807,7 +810,7 @@ CreateCudaIndexInitCode (node *part, info *arg_info)
     cuidx_set_t *cis;
     node *assigns = NULL, *vardecs = NULL;
 
-    DBUG_ENTER ("CreateCudaIndexInitCode");
+    DBUG_ENTER ();
 
     cis = MEMmalloc (sizeof (cuidx_set_t));
     dim = TCcountIds (PART_IDS (part));
@@ -840,7 +843,7 @@ GetInnermostRangePair (shared_global_info_t *sg_info)
     range_pair_t *pairs, *innermost = NULL;
     int level = -1;
 
-    DBUG_ENTER ("GetInnermostRangePair");
+    DBUG_ENTER ();
 
     while (sg_info != NULL) {
         pairs = SG_INFO_RANGE_PAIRS (sg_info);
@@ -873,7 +876,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
     node *cond = NULL, *predicate = NULL, *iterator = NULL, *loop_bound = NULL;
     node *tb_shape_elems = NULL;
 
-    DBUG_ENTER ("InsertGlobal2Shared");
+    DBUG_ENTER ();
 
     array_elems = ARRAY_AELEMS (CUAI_SHARRAYSHP_LOG (access_info));
     tb_shape_elems = ARRAY_AELEMS (PART_THREADBLOCKSHAPE (INFO_CUWLPART (arg_info)));
@@ -990,7 +993,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
              * than the X dimension of the shared memory. Howver,
              * this is no always true and need to be generalised
              * in the future !!!*/
-            DBUG_ASSERT ((arr_shp_x <= tb_x),
+            DBUG_ASSERT (arr_shp_x <= tb_x,
                          "Size of X dimension is lager than thread block size!");
 
             /* Since the array is 2D, we know there are only two assignment
@@ -1324,7 +1327,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
             /* Do nothing */
         }
     } else {
-        DBUG_ASSERT ((0), "Reuse array with unsupported dimension!");
+        DBUG_ASSERT (0, "Reuse array with unsupported dimension!");
     }
 
     vardecs = NULL;
@@ -1373,7 +1376,7 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
           = TCappendAssign (assigns, INFO_G2S_ASSIGNS (arg_info));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /* This function concatenate all subscript computation assignments
@@ -1389,7 +1392,7 @@ ComputeSharedMemoryOffset (shared_global_info_t *sg_info, cuda_access_info_t *ac
 {
     node *idx_avis, *new_ass, *args = NULL, *assigns = NULL;
 
-    DBUG_ENTER ("ComputeSharedMemoryOffset");
+    DBUG_ENTER ();
 
     args = TBmakeExprs (DUPdoDupNode (CUAI_SHARRAYSHP_PHY (access_info)), NULL);
 
@@ -1433,7 +1436,7 @@ ComputeSharedMemoryOffset (shared_global_info_t *sg_info, cuda_access_info_t *ac
 static node *
 ATravAssign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravAssign");
+    DBUG_ENTER ();
 
     if (ASSIGN_ACCESS_INFO (arg_node) != NULL) {
         ASSIGN_ACCESS_INFO (arg_node)
@@ -1459,7 +1462,7 @@ CUDRdoCudaDataReuse (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CUDRdoCudaDataReuse");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_cudr);
@@ -1480,7 +1483,7 @@ CUDRdoCudaDataReuse (node *syntax_tree)
 node *
 CUDRmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUDRmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -1505,7 +1508,7 @@ CUDRfundef (node *arg_node, info *arg_info)
 {
     node *old_fundef;
 
-    DBUG_ENTER ("CUDRfundef");
+    DBUG_ENTER ();
 
     if (INFO_FROMAP (arg_info)) {
         old_fundef = INFO_FUNDEF (arg_info);
@@ -1539,7 +1542,7 @@ CUDRap (node *arg_node, info *arg_info)
     node *fundef;
     bool old_fromap;
 
-    DBUG_ENTER ("CUDRap");
+    DBUG_ENTER ();
 
     fundef = AP_FUNDEF (arg_node);
 
@@ -1566,7 +1569,7 @@ CUDRassign (node *arg_node, info *arg_info)
 {
     node *old_lastassign, *tmp;
 
-    DBUG_ENTER ("CUDRassign");
+    DBUG_ENTER ();
 
     old_lastassign = INFO_LASTASSIGN (arg_info);
     INFO_LASTASSIGN (arg_info) = arg_node;
@@ -1596,7 +1599,7 @@ CUDRassign (node *arg_node, info *arg_info)
 node *
 CUDRwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUDRwith");
+    DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
         INFO_CUWLDIM (arg_info) = TCcountIds (WITH_IDS (arg_node));
@@ -1627,7 +1630,7 @@ CUDRpart (node *arg_node, info *arg_info)
     int dim;
     node *init_assigns;
 
-    DBUG_ENTER ("CUDRpart");
+    DBUG_ENTER ();
 
     dim = TCcountIds (PART_IDS (arg_node));
 
@@ -1673,7 +1676,7 @@ CUDRwith3 (node *arg_node, info *arg_info)
 {
     node *old_with3;
 
-    DBUG_ENTER ("CUDRwith3");
+    DBUG_ENTER ();
 
     /* Everytime we enter a top level with3, we push a range set */
     if (WITH3_ISTOPLEVEL (arg_node)) {
@@ -1703,7 +1706,7 @@ CUDRwith3 (node *arg_node, info *arg_info)
 node *
 CUDRrange (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUDRrange");
+    DBUG_ENTER ();
 
     /* We only traverse the range if it is NOT for fitting */
     if (!RANGE_ISFITTING (arg_node)) {
@@ -1759,7 +1762,7 @@ CUDRrange (node *arg_node, info *arg_info)
 node *
 CUDRcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUDRcode");
+    DBUG_ENTER ();
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
@@ -1781,7 +1784,7 @@ CUDRprf (node *arg_node, info *arg_info)
     node *shr_idx;
     cuda_index_t *cuidx;
 
-    DBUG_ENTER ("CUDRprf");
+    DBUG_ENTER ();
 
     /* If we are in cuda withloop */
     if (INFO_LEVEL (arg_info) > 0) {
@@ -1830,3 +1833,5 @@ CUDRprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -4,7 +4,9 @@
 
 #include "phase.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "OPT"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "globals.h"
 #include "str.h"
@@ -43,7 +45,7 @@ PHisSAAMode (void)
 {
     bool z;
 
-    DBUG_ENTER ("PHisSAAMode");
+    DBUG_ENTER ();
 
     z = global.optimize.dosaa
         && ((global.compiler_anyphase > PH_opt_saacyc_isaa3)
@@ -65,7 +67,7 @@ PHisSSAMode (void)
 {
     bool z;
 
-    DBUG_ENTER ("PHisSSAMode");
+    DBUG_ENTER ();
 
     z = ((global.compiler_anyphase >= PH_tc) && (global.compiler_anyphase < PH_ussa));
 
@@ -77,33 +79,33 @@ PHisSSAMode (void)
 static void
 CheckEnableDbug (compiler_phase_t phase)
 {
-    DBUG_ENTER ("CheckEnableDbug");
+    DBUG_ENTER ();
 
     if (global.my_dbug && (phase >= global.my_dbug_from) && !global.my_dbug_active) {
         DBUG_PUSH (global.my_dbug_str);
         global.my_dbug_active = TRUE;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 CheckDisableDbug (compiler_phase_t phase)
 {
-    DBUG_ENTER ("CheckDisableDbug");
+    DBUG_ENTER ();
 
     if (global.my_dbug && global.my_dbug_active && (phase >= global.my_dbug_to)) {
         DBUG_POP ();
         global.my_dbug_active = FALSE;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static node *
 RunConsistencyChecks (node *arg_node)
 {
-    DBUG_ENTER ("RunConsistencyCheck");
+    DBUG_ENTER ();
 
     if (arg_node != NULL) {
         if (global.treecheck) {
@@ -128,11 +130,10 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 {
     static int phase_num = 0;
 
-    DBUG_ENTER ("PHrunPhase");
+    DBUG_ENTER ();
 
-    DBUG_ASSERTF (PHIphaseType (phase) == PHT_phase,
-                  ("PHrunPhase called with incompatible phase: %s",
-                   PHIphaseIdent (phase)));
+    DBUG_ASSERT (PHIphaseType (phase) == PHT_phase,
+                 "PHrunPhase called with incompatible phase: %s", PHIphaseIdent (phase));
 
     DBUG_ASSERT ((syntax_tree == NULL) || (NODE_TYPE (syntax_tree) == N_module),
                  "PHrunPhase called with non N_module node");
@@ -160,7 +161,7 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 #endif
 
 #ifdef SHOW_MALLOC
-        DBUG_EXECUTE ("MEM_LEAK", MEMdbugMemoryLeakCheck (););
+        DBUG_EXECUTE_TAG ("MEM_LEAK", MEMdbugMemoryLeakCheck ());
 
         if (global.memcheck && (syntax_tree != NULL)) {
             syntax_tree = CHKMdoMemCheck (syntax_tree);
@@ -186,11 +187,11 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 node *
 PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
 {
-    DBUG_ENTER ("PHrunSubPhase");
+    DBUG_ENTER ();
 
-    DBUG_ASSERTF (PHIphaseType (subphase) == PHT_subphase,
-                  ("PHrunSubPhase called with incompatible phase: %s",
-                   PHIphaseIdent (subphase)));
+    DBUG_ASSERT (PHIphaseType (subphase) == PHT_subphase,
+                 "PHrunSubPhase called with incompatible phase: %s",
+                 PHIphaseIdent (subphase));
 
     DBUG_ASSERT ((syntax_tree == NULL) || (NODE_TYPE (syntax_tree) == N_module),
                  "PHrunSubPhase called with non N_module node");
@@ -240,11 +241,10 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
 {
     bool go_on;
 
-    DBUG_ENTER ("PHrunCycle");
+    DBUG_ENTER ();
 
-    DBUG_ASSERTF (PHIphaseType (cycle) == PHT_cycle,
-                  ("PHrunCycle called with incompatible phase: %s",
-                   PHIphaseIdent (cycle)));
+    DBUG_ASSERT (PHIphaseType (cycle) == PHT_cycle,
+                 "PHrunCycle called with incompatible phase: %s", PHIphaseIdent (cycle));
 
     DBUG_ASSERT ((syntax_tree != NULL) && (NODE_TYPE (syntax_tree) == N_module),
                  "PHrunCycle called with wrong node type.");
@@ -329,11 +329,11 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
 node *
 PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
 {
-    DBUG_ENTER ("PHrunCyclePhase");
+    DBUG_ENTER ();
 
-    DBUG_ASSERTF (PHIphaseType (cyclephase) == PHT_cyclephase,
-                  ("PHrunPhase called with incompatible phase: %s",
-                   PHIphaseIdent (cyclephase)));
+    DBUG_ASSERT (PHIphaseType (cyclephase) == PHT_cyclephase,
+                 "PHrunPhase called with incompatible phase: %s",
+                 PHIphaseIdent (cyclephase));
 
     DBUG_ASSERT ((syntax_tree != NULL) && (NODE_TYPE (syntax_tree) == N_module),
                  "PHrunCyclePhase called with wrong node type.");
@@ -377,11 +377,10 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
     node *specialized_fundefs;
     node *copied_special_fundefs;
 
-    DBUG_ENTER ("PHrunCycleFun");
+    DBUG_ENTER ();
 
-    DBUG_ASSERTF (PHIphaseType (cycle) == PHT_cycle_fun,
-                  ("PHrunPhase called with incompatible phase: %s",
-                   PHIphaseIdent (cycle)));
+    DBUG_ASSERT (PHIphaseType (cycle) == PHT_cycle_fun,
+                 "PHrunPhase called with incompatible phase: %s", PHIphaseIdent (cycle));
 
     DBUG_ASSERT ((syntax_tree != NULL) && (NODE_TYPE (syntax_tree) == N_module),
                  "PHrunCycleFun called with wrong node type.");
@@ -419,7 +418,7 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
                 STATclearCounters (&global.optcounters);
             }
 
-            DBUG_EXECUTE ("OPT", STATprint (&global.optcounters););
+            DBUG_EXECUTE (STATprint (&global.optcounters));
         }
 
         if (FUNDEF_NEXT (fundef) == NULL) {
@@ -438,11 +437,11 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
 node *
 PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
 {
-    DBUG_ENTER ("PHrunCyclePhaseFun");
+    DBUG_ENTER ();
 
-    DBUG_ASSERTF (PHIphaseType (cyclephase) == PHT_cyclephase_fun,
-                  ("PHrunCyclePhaseFun called with incompatible phase: %s",
-                   PHIphaseIdent (cyclephase)));
+    DBUG_ASSERT (PHIphaseType (cyclephase) == PHT_cyclephase_fun,
+                 "PHrunCyclePhaseFun called with incompatible phase: %s",
+                 PHIphaseIdent (cyclephase));
 
     DBUG_ASSERT ((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef),
                  "PHrunCyclePhaseFun called with wrong node type.");
@@ -478,3 +477,5 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
 
     DBUG_RETURN (fundef);
 }
+
+#undef DBUG_PREFIX

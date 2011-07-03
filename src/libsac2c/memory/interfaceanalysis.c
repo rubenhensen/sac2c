@@ -25,7 +25,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "IA"
+#include "debug.h"
+
 #include "print.h"
 #include "new_types.h"
 #include "DataFlowMask.h"
@@ -83,7 +86,7 @@ MakeInfo (node *fundef)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -101,7 +104,7 @@ MakeInfo (node *fundef)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -135,25 +138,25 @@ EMIAdoInterfaceAnalysis (node *syntax_tree)
 {
     int counter;
 
-    DBUG_ENTER ("EMIAInterfaceAnalysis");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMIA", ("Starting interface alias analysis..."));
+    DBUG_PRINT_TAG ("EMIA", "Starting interface alias analysis...");
 
     counter = 0;
     unaliased = -1;
 
     while (unaliased != 0) {
         unaliased = 0;
-        DBUG_PRINT ("EMIA", ("Starting interface analysis traversal..."));
+        DBUG_PRINT_TAG ("EMIA", "Starting interface analysis traversal...");
         TRAVpush (TR_emia);
         syntax_tree = TRAVdo (syntax_tree, NULL);
         TRAVpop ();
-        DBUG_PRINT ("EMIA", ("Interface analysis traversal complete."));
+        DBUG_PRINT_TAG ("EMIA", "Interface analysis traversal complete.");
         counter += unaliased;
     }
 
-    DBUG_PRINT ("EMIA", ("%d interfaces unaliased.", counter));
-    DBUG_PRINT ("EMIA", ("Interface alias analysis complete."));
+    DBUG_PRINT_TAG ("EMIA", "%d interfaces unaliased.", counter);
+    DBUG_PRINT_TAG ("EMIA", "Interface alias analysis complete.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -172,7 +175,7 @@ EMIAdoInterfaceAnalysis (node *syntax_tree)
 static node *
 SetArgAlias (node *arg, bool newval)
 {
-    DBUG_ENTER ("SetArgAlias");
+    DBUG_ENTER ();
 
     if (ARG_ISALIASING (arg) && (!newval)) {
         ARG_ISALIASING (arg) = FALSE;
@@ -188,7 +191,7 @@ GetRetAlias (node *fundef, int num)
     bool res = TRUE;
     node *ret;
 
-    DBUG_ENTER ("GetRetAlias");
+    DBUG_ENTER ();
 
     ret = FUNDEF_RETS (fundef);
     while ((ret != NULL) && (num > 0)) {
@@ -208,7 +211,7 @@ SetRetAlias (node *fundef, int num, bool newval)
 {
     node *ret;
 
-    DBUG_ENTER ("SetRetAlias");
+    DBUG_ENTER ();
 
     ret = FUNDEF_RETS (fundef);
 
@@ -245,7 +248,7 @@ SetRetAlias (node *fundef, int num, bool newval)
 node *
 EMIAap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAap");
+    DBUG_ENTER ();
 
     /*
      * Check whether arguments could have been aliased
@@ -271,7 +274,7 @@ EMIAap (node *arg_node, info *arg_info)
 node *
 EMIAarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAarg");
+    DBUG_ENTER ();
 
     switch (INFO_CONTEXT (arg_info)) {
     case IA_begin:
@@ -283,7 +286,7 @@ EMIAarg (node *arg_node, info *arg_info)
         DFMsetMaskEntrySet (AVIS_ALIASMASK (ARG_AVIS (arg_node)), NULL,
                             ARG_AVIS (arg_node));
 
-        DBUG_PRINT ("IA", ("Mask created for %s", ARG_NAME (arg_node)));
+        DBUG_PRINT ("Mask created for %s", ARG_NAME (arg_node));
         break;
 
     case IA_end:
@@ -292,7 +295,7 @@ EMIAarg (node *arg_node, info *arg_info)
          */
         AVIS_ALIASMASK (ARG_AVIS (arg_node))
           = DFMremoveMask (AVIS_ALIASMASK (ARG_AVIS (arg_node)));
-        DBUG_PRINT ("IA", ("Mask removed for %s", ARG_NAME (arg_node)));
+        DBUG_PRINT ("Mask removed for %s", ARG_NAME (arg_node));
         break;
 
     case IA_unqargs:
@@ -308,7 +311,7 @@ EMIAarg (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal context");
+        DBUG_ASSERT (0, "Illegal context");
         break;
     }
 
@@ -329,7 +332,7 @@ EMIAarg (node *arg_node, info *arg_info)
 node *
 EMIAassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAassign");
+    DBUG_ENTER ();
 
     /*
      * Top-down traversal
@@ -354,7 +357,7 @@ EMIAassign (node *arg_node, info *arg_info)
 node *
 EMIAblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
@@ -371,7 +374,7 @@ EMIAblock (node *arg_node, info *arg_info)
 node *
 EMIAcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAcond");
+    DBUG_ENTER ();
 
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
@@ -389,7 +392,7 @@ EMIAcond (node *arg_node, info *arg_info)
 node *
 EMIAfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAfuncond");
+    DBUG_ENTER ();
 
     INFO_CONTEXT (arg_info) = IA_funcond;
 
@@ -415,7 +418,7 @@ EMIAfuncond (node *arg_node, info *arg_info)
 node *
 EMIAfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAfundef");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo (arg_node);
 
@@ -434,11 +437,11 @@ EMIAfundef (node *arg_node, info *arg_info)
             FUNDEF_VARDEC (arg_node) = TRAVdo (FUNDEF_VARDEC (arg_node), arg_info);
         }
 
-        DBUG_PRINT ("IA", ("Going into function %s", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Going into function %s", FUNDEF_NAME (arg_node));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-        DBUG_PRINT ("IA", ("Coming from function %s", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Coming from function %s", FUNDEF_NAME (arg_node));
 
         /*
          * Traverse vardecs/args to remove ALIASMASKS
@@ -496,7 +499,7 @@ EMIAfundef (node *arg_node, info *arg_info)
 node *
 EMIAid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAid");
+    DBUG_ENTER ();
 
     switch (INFO_CONTEXT (arg_info)) {
     case IA_funcond:
@@ -534,7 +537,7 @@ EMIAid (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal context");
+        DBUG_ASSERT (0, "Illegal context");
         break;
     }
 
@@ -551,7 +554,7 @@ EMIAid (node *arg_node, info *arg_info)
 node *
 EMIAlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAlet");
+    DBUG_ENTER ();
 
     INFO_CONTEXT (arg_info) = IA_let;
     INFO_LHS (arg_info) = LET_IDS (arg_node);
@@ -571,7 +574,7 @@ EMIAlet (node *arg_node, info *arg_info)
 node *
 EMIAret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAret");
+    DBUG_ENTER ();
 
     if (TUisUniqueUserType (TYgetScalar (RET_TYPE (arg_node)))) {
         if (RET_ISALIASING (arg_node)) {
@@ -604,7 +607,7 @@ EMIAreturn (node *arg_node, info *arg_info)
     node *funargs;
     int retcount;
 
-    DBUG_ENTER ("EMIAreturn");
+    DBUG_ENTER ();
 
     retmask = DFMgenMaskClear (INFO_MASKBASE (arg_info));
     argmask = DFMgenMaskClear (INFO_MASKBASE (arg_info));
@@ -678,7 +681,7 @@ EMIAreturn (node *arg_node, info *arg_info)
 node *
 EMIAvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAvardec");
+    DBUG_ENTER ();
 
     switch (INFO_CONTEXT (arg_info)) {
     case IA_begin:
@@ -690,7 +693,7 @@ EMIAvardec (node *arg_node, info *arg_info)
 
         DFMsetMaskEntrySet (AVIS_ALIASMASK (VARDEC_AVIS (arg_node)), NULL,
                             VARDEC_AVIS (arg_node));
-        DBUG_PRINT ("IA", ("Mask created for %s", VARDEC_NAME (arg_node)));
+        DBUG_PRINT ("Mask created for %s", VARDEC_NAME (arg_node));
         break;
 
     case IA_end:
@@ -699,11 +702,11 @@ EMIAvardec (node *arg_node, info *arg_info)
          */
         AVIS_ALIASMASK (VARDEC_AVIS (arg_node))
           = DFMremoveMask (AVIS_ALIASMASK (VARDEC_AVIS (arg_node)));
-        DBUG_PRINT ("IA", ("Mask removed for %s", VARDEC_NAME (arg_node)));
+        DBUG_PRINT ("Mask removed for %s", VARDEC_NAME (arg_node));
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal context");
+        DBUG_ASSERT (0, "Illegal context");
         break;
     }
 
@@ -724,7 +727,7 @@ EMIAvardec (node *arg_node, info *arg_info)
 node *
 EMIAwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAwith");
+    DBUG_ENTER ();
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
@@ -741,7 +744,7 @@ EMIAwith (node *arg_node, info *arg_info)
 node *
 EMIAwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAwith2");
+    DBUG_ENTER ();
 
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
@@ -758,7 +761,7 @@ EMIAwith2 (node *arg_node, info *arg_info)
 node *
 EMIAfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAfold");
+    DBUG_ENTER ();
 
     INFO_CONTEXT (arg_info) = IA_neutral;
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
@@ -782,7 +785,7 @@ EMIAfold (node *arg_node, info *arg_info)
 node *
 EMIAgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAgenarray");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
 
@@ -803,7 +806,7 @@ EMIAgenarray (node *arg_node, info *arg_info)
 node *
 EMIAmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIAmodarray");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
 
@@ -821,3 +824,5 @@ EMIAmodarray (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Interface analysis -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

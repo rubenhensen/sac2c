@@ -7,7 +7,10 @@
 
 #include "globals.h"
 #include "build.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "usage.h"
 #include "phase_options.h"
 #include "config.h"
@@ -15,7 +18,7 @@
 static void
 PrintToolName (void)
 {
-    DBUG_ENTER ("PrintToolName");
+    DBUG_ENTER ();
 
     printf ("\n"
             "---------------------------------------------------------------------------"
@@ -31,13 +34,13 @@ PrintToolName (void)
             global.toolname, (global.version_id[0] == '\0') ? "???" : global.version_id,
             (global.target_platform[0] == '\0') ? "???" : global.target_platform);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintDescriptionSac2c (void)
 {
-    DBUG_ENTER ("PrintDescriptionSac2c");
+    DBUG_ENTER ();
 
     printf (
       "\n\nDESCRIPTION:\n\n"
@@ -66,13 +69,13 @@ PrintDescriptionSac2c (void)
       "    In this case, the -o option may be used to specify a\n"
       "    different directory but not a different file name.\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintDescriptionSac4c (void)
 {
-    DBUG_ENTER ("PrintDescriptionSac4c");
+    DBUG_ENTER ();
 
     printf (
       "\n\nDESCRIPTION:\n\n"
@@ -91,26 +94,26 @@ PrintDescriptionSac4c (void)
       "    add the flags printed by using the -ccflags option to the c compiler\n"
       "    call.\n\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintDescriptionSac2tex (void)
 {
-    DBUG_ENTER ("PrintDescriptionSac2tex");
+    DBUG_ENTER ();
 
     printf ("\n\nDESCRIPTION:\n\n"
 
             "    The sac2tex tool generates tex code from sac code\n"
             "    .\n\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintFeatureSet (void)
 {
-    DBUG_ENTER ("PrintFeatureSet");
+    DBUG_ENTER ();
 
     printf ("\n\nINSTALLATION-SPECIFIC FEATURE SET:\n\n");
 
@@ -144,13 +147,13 @@ PrintFeatureSet (void)
     printf ("    MuTC support:                       disabled\n");
 #endif
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintSpecialOptions (void)
 {
-    DBUG_ENTER ("PrintSpecialOptions");
+    DBUG_ENTER ();
 
     printf (
       "\n\nSPECIAL OPTIONS:\n\n"
@@ -178,13 +181,13 @@ PrintSpecialOptions (void)
       "    When called with one of these options, sac2c does not perform\n"
       "    any compilation steps.\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintOptionsSac4c (void)
 {
-    DBUG_ENTER ("PrintOptionsSac4c");
+    DBUG_ENTER ();
 
     printf ("\n\nGENERAL OPTIONS:\n\n"
 
@@ -212,13 +215,13 @@ PrintOptionsSac4c (void)
             "                    (default: %d)\n",
             global.verbose_level);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintGeneralOptions (void)
 {
-    DBUG_ENTER ("PrintGeneralOptions");
+    DBUG_ENTER ();
 
     printf ("\n\nGENERAL OPTIONS:\n\n"
 
@@ -246,13 +249,13 @@ PrintGeneralOptions (void)
             "                    (default: %d)\n",
             global.verbose_level);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintBreakOptions (void)
 {
-    DBUG_ENTER ("PrintBreakOptions");
+    DBUG_ENTER ();
 
     printf ("\n\nBREAK OPTIONS:\n\n"
 
@@ -273,37 +276,37 @@ PrintBreakOptions (void)
             "                    number. Alternatively, a number can be used\n"
             "                    for the phase, as well.\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintBreakoptionSpecifierSac2c (void)
 {
-    DBUG_ENTER ("PrintBreakoptionSpecifierSac2c");
+    DBUG_ENTER ();
 
     printf ("\n\nBREAK OPTION SPECIFIERS:\n");
 
     PHOprintPhasesSac2c ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintBreakoptionSpecifierSac4c (void)
 {
-    DBUG_ENTER ("PrintBreakoptionSpecifierSac4c");
+    DBUG_ENTER ();
 
     printf ("\n\nBREAK OPTION SPECIFIERS:\n");
 
     PHOprintPhasesSac4c ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintTypeInferenceOptions (void)
 {
-    DBUG_ENTER ("PrintTypeInferenceOptions");
+    DBUG_ENTER ();
 
     printf ("\n\nTYPE INFERENCE OPTIONS:\n\n");
     printf ("    -specmode <strat>  Specify function specialization strategy:\n"
@@ -318,13 +321,13 @@ PrintTypeInferenceOptions (void)
             "                         (default: %d)\n",
             global.maxspec);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintOptimisationOptions (void)
 {
-    DBUG_ENTER ("PrintOptimisationOptions");
+    DBUG_ENTER ();
     printf (
       "\n\nOPTIMIZATION OPTIONS:\n\n"
       "    -enforceIEEE    Treat floating point arithmetic as defined in the IEEE-754\n"
@@ -499,13 +502,13 @@ PrintOptimisationOptions (void)
 
     printf ("    -force_naive    Make wlt always run in naive mode\n\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintMutcOptions (void)
 {
-    DBUG_ENTER ("PrintMutcOptions");
+    DBUG_ENTER ();
     /*      12345678901234567890123456789012345678901234567890123456789012345678901234567890*/
     printf (
       "\n\nMUTC OPTIONS:\n\n"
@@ -538,13 +541,13 @@ PrintMutcOptions (void)
       "    -mutc_rc_indirect                Perform reference counting operations using\n"
       "                                     wrapper functions\n\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintIrregularArrayOptions (void)
 {
-    DBUG_ENTER ("PrintIrregularArrayOptions");
+    DBUG_ENTER ();
 
     printf (
       "\n\nIRREGULAR ARRAY OPTIONS:\n\n"
@@ -556,13 +559,13 @@ PrintIrregularArrayOptions (void)
       "    but the fourth element is 3x3 matrix\n\n"
       "    -irr_arr                          Enable the use of irregular arrays.\n\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintMultithreadOptions (void)
 {
-    DBUG_ENTER ("PrintMultithreadOptions");
+    DBUG_ENTER ();
 
     printf ("\n\nMULTI-THREAD OPTIONS:\n\n"
 
@@ -617,13 +620,13 @@ PrintMultithreadOptions (void)
             (int)MT_startstop, global.max_threads, global.min_parallel_size,
             global.max_replication_size);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintBackendOptions (void)
 {
-    DBUG_ENTER ("PrintBackendOptions");
+    DBUG_ENTER ();
 
     printf ("\n\nBACKEND OPTIONS:\n"
             "\n"
@@ -643,7 +646,7 @@ PrintBackendOptions (void)
             "                      4         Bimodal (c99+norc) reference counting\n"
             "                      5         DP Multimodal reference counting\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #ifndef DBUG_OFF
@@ -651,7 +654,7 @@ PrintBackendOptions (void)
 static void
 PrintFredFishOptions (void)
 {
-    DBUG_ENTER ("PrintFredFishOptions");
+    DBUG_ENTER ();
 
     printf (
       "\n\nOPTIONS FOR FRED FISH'S DBUG:\n\n"
@@ -673,13 +676,13 @@ PrintFredFishOptions (void)
       "                    All kinds of phases can be specified using a syntax\n"
       "                    analogous to that of the -b option.\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintDebugOptions (void)
 {
-    DBUG_ENTER ("PrintDebugOptions");
+    DBUG_ENTER ();
 
     printf ("\n\nDEBUG OPTIONS:\n\n"
             "    -debug_rc       Enable reference counting debuging features\n"
@@ -709,7 +712,7 @@ PrintDebugOptions (void)
             "                    Default: %d\n",
             global.check_frequency);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #endif /* DBUG_OFF */
@@ -717,7 +720,7 @@ PrintDebugOptions (void)
 static void
 PrintRuntimeCheckOptions (void)
 {
-    DBUG_ENTER ("PrintRuntimeCheckOptions");
+    DBUG_ENTER ();
 
     printf ("\n\nRUNTIME CHECK OPTIONS:\n\n"
 
@@ -735,13 +738,13 @@ PrintRuntimeCheckOptions (void)
             "                         external functions.\n"
             "                      h: Use diagnostic heap manager.\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintRuntimeTraceOptions (void)
 {
-    DBUG_ENTER ("PrintRuntimeTraceOptions");
+    DBUG_ENTER ();
 
     printf (
       "\n\nRUNTIME TRACE OPTIONS:\n\n"
@@ -763,13 +766,13 @@ PrintRuntimeTraceOptions (void)
       "    -utrace\n"
       "                    Introduce user tracing calls.");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintPrintingOptions (void)
 {
-    DBUG_ENTER ("PrintPrintingOptions");
+    DBUG_ENTER ();
 
     printf (
       "\n\nPRINTING OPTIONS:\n\n"
@@ -781,13 +784,13 @@ PrintPrintingOptions (void)
       "                 d: Print specialization demand.\n"
       "                 v: Print avis information.\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintRuntimeProfilingOptions (void)
 {
-    DBUG_ENTER ("PrintRuntimeProfilingOptions");
+    DBUG_ENTER ();
 
     printf (
       "\n\nRUNTIME PROFILING OPTIONS:\n\n"
@@ -800,13 +803,13 @@ PrintRuntimeProfilingOptions (void)
       "                      l: Analyse time spent in library functions.\n"
       "                      w: Analyse time spent in with-loops.\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintCacheSimulationOptions (void)
 {
-    DBUG_ENTER ("PrintCacheSimulationOptions");
+    DBUG_ENTER ();
 
     printf (
       "\n\nCACHE SIMULATION OPTIONS:\n\n"
@@ -905,13 +908,13 @@ PrintCacheSimulationOptions (void)
       "        v: write validate\n"
       "        a: write around\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintLibraryOptions (void)
 {
-    DBUG_ENTER ("PrintLibraryOptions");
+    DBUG_ENTER ();
 
     printf ("\n\nLIBRARY OPTIONS:\n\n"
 
@@ -955,13 +958,13 @@ PrintLibraryOptions (void)
             "    -noprelude       Do not load the standard prelude library `%s'.\n",
             global.linksetsize == INT_MAX ? 0 : global.linksetsize, global.preludename);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintCCompilerOptions (void)
 {
-    DBUG_ENTER ("PrintCCompilerOptions");
+    DBUG_ENTER ();
 
     printf ("\n\nC-COMPILER OPTIONS:\n\n"
 
@@ -986,13 +989,13 @@ PrintCCompilerOptions (void)
             "                    \"customization\".\n",
             global.cc_optimize);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintCustomisationOptions (void)
 {
-    DBUG_ENTER ("PrintCustomisationOptions");
+    DBUG_ENTER ();
 
     printf (
       "\n\nCUSTOMIZATION OPTIONS:\n\n"
@@ -1013,13 +1016,13 @@ PrintCustomisationOptions (void)
       "                      mutc      backend to produce muTC code\n"
       "                      cuda      backend to produce Cuda code\n"
       "\n");
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintEnvironmentVariables (void)
 {
-    DBUG_ENTER ("PrintEnvironmentVariables");
+    DBUG_ENTER ();
 
     printf (
       "\n\nENVIRONMENT VARIABLES:\n\n"
@@ -1030,13 +1033,13 @@ PrintEnvironmentVariables (void)
       "    SAC2CBASE       Base directory of SAC installation.\n"
       "\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintAuthors (void)
 {
-    DBUG_ENTER ("PrintAuthors");
+    DBUG_ENTER ();
 
     printf ("\n\nAUTHORS:\n\n"
 
@@ -1073,13 +1076,13 @@ PrintAuthors (void)
             "      Tim van Deurzen\n"
             "      Roeland Douma\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintContact (void)
 {
-    DBUG_ENTER ("PrintContact");
+    DBUG_ENTER ();
 
     printf ("\n\nCONTACT:\n\n"
 
@@ -1097,13 +1100,13 @@ PrintContact (void)
             "    you may well run into a compiler bug. So, we are happy to receive\n"
             "    your bug reports (Well, not really \"happy\", but ...).\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 USGprintUsage ()
 {
-    DBUG_ENTER ("USGprintUsage");
+    DBUG_ENTER ();
 
     PrintToolName ();
 
@@ -1158,13 +1161,13 @@ USGprintUsage ()
 
     printf ("\n\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 USGprintVersion ()
 {
-    DBUG_ENTER ("USGprintVersion");
+    DBUG_ENTER ();
 
     printf ("%s %s\n %s rev %s %s\n (%s by %s)\n", global.toolname,
             (global.version_id[0] == '\0') ? "???" : global.version_id,
@@ -1174,13 +1177,13 @@ USGprintVersion ()
             (build_date[0] == '\0') ? "???" : build_date,
             (build_user[0] == '\0') ? "???" : build_user);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 USGprintVersionVerbose ()
 {
-    DBUG_ENTER ("USGprintVerboseVersion");
+    DBUG_ENTER ();
 
     PrintToolName ();
 
@@ -1205,13 +1208,13 @@ USGprintVersionVerbose ()
             "  http://www.sac-home.org\n"
             "  email:info@sac-home.org\n\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 USGprintCopyright ()
 {
-    DBUG_ENTER ("USGprintCopyright");
+    DBUG_ENTER ();
 
     printf (
       "\n"
@@ -1261,5 +1264,7 @@ USGprintCopyright ()
       "---------------------------------------------------------------------------\n"
       "\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

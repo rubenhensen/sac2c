@@ -6,7 +6,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "VP"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -78,7 +81,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -90,7 +93,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -105,9 +108,9 @@ FreeInfo (info *info)
 node *
 VPavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("VPavis");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("VP", ("Looking at N_avis %s", AVIS_NAME (arg_node)));
+    DBUG_PRINT ("Looking at N_avis %s", AVIS_NAME (arg_node));
     AVIS_DIM (arg_node) = TRAVopt (AVIS_DIM (arg_node), arg_info);
     AVIS_SHAPE (arg_node) = TRAVopt (AVIS_SHAPE (arg_node), arg_info);
     AVIS_MIN (arg_node) = TRAVopt (AVIS_MIN (arg_node), arg_info);
@@ -131,16 +134,16 @@ VPid (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("VPid");
+    DBUG_ENTER ();
 
     avis = ID_AVIS (arg_node);
 
-    DBUG_PRINT ("VP", ("Looking at N_id %s", AVIS_NAME (avis)));
+    DBUG_PRINT ("Looking at N_id %s", AVIS_NAME (avis));
     if ((AVIS_SSAASSIGN (avis) != NULL)
         && (NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis))) == N_id)) {
         arg_node = FREEdoFreeNode (arg_node);
-        DBUG_PRINT ("VP", ("Replacing %s by %s", AVIS_NAME (avis),
-                           AVIS_NAME (ID_AVIS (ASSIGN_RHS (AVIS_SSAASSIGN (avis))))));
+        DBUG_PRINT ("Replacing %s by %s", AVIS_NAME (avis),
+                    AVIS_NAME (ID_AVIS (ASSIGN_RHS (AVIS_SSAASSIGN (avis)))));
         arg_node = DUPdoDupNode (ASSIGN_RHS (AVIS_SSAASSIGN (avis)));
         global.optcounters.vp_expr += 1;
     }
@@ -161,7 +164,7 @@ VPid (node *arg_node, info *arg_info)
 node *
 VPassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("VPassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
@@ -184,16 +187,16 @@ VPfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("VPfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("VP", ("traversing body of (%s) %s",
-                       (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                       FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("traversing body of (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-    DBUG_PRINT ("VP", ("leaving body of (%s) %s",
-                       (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                       FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("leaving body of (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
     INFO_ONEFUNDEF (arg_info) = FALSE;
@@ -223,7 +226,7 @@ VPdoVarPropagation (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("VPdoVarPropagation");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -237,3 +240,5 @@ VPdoVarPropagation (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

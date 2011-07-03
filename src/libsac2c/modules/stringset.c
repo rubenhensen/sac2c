@@ -3,7 +3,10 @@
  */
 
 #include "stringset.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "STRS"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "check_mem.h"
@@ -23,7 +26,7 @@ STRScontains (const char *string, stringset_t *set)
 {
     bool result;
 
-    DBUG_ENTER ("STRScontains");
+    DBUG_ENTER ();
 
     if (set == NULL) {
         result = FALSE;
@@ -41,12 +44,12 @@ STRScontains (const char *string, stringset_t *set)
 stringset_t *
 STRSadd (const char *string, strstype_t kind, stringset_t *set)
 {
-    DBUG_ENTER ("STRSadd");
+    DBUG_ENTER ();
 
     if (!STRScontains (string, set)) {
         stringset_t *new = MEMmalloc (sizeof (stringset_t));
 
-        DBUG_PRINT ("STRS", ("adding %s.", string));
+        DBUG_PRINT ("adding %s.", string);
 
         new->val = STRcpy (string);
         new->kind = kind;
@@ -61,7 +64,7 @@ STRSadd (const char *string, strstype_t kind, stringset_t *set)
 void *
 STRSfold (strsfoldfun_p fun, stringset_t *set, void *init)
 {
-    DBUG_ENTER ("STRSfold");
+    DBUG_ENTER ();
 
     while (set != NULL) {
         init = fun (set->val, set->kind, init);
@@ -76,7 +79,7 @@ STRSjoin (stringset_t *one, stringset_t *two)
 {
     stringset_t *result;
 
-    DBUG_ENTER ("STRSjoin");
+    DBUG_ENTER ();
 
     result = one;
 
@@ -99,7 +102,7 @@ STRSjoin (stringset_t *one, stringset_t *two)
 stringset_t *
 STRSfree (stringset_t *set)
 {
-    DBUG_ENTER ("STRSfree");
+    DBUG_ENTER ();
 
     if (set != NULL) {
         set->val = MEMfree (set->val);
@@ -113,7 +116,7 @@ STRSfree (stringset_t *set)
 void
 STRStouch (stringset_t *set, info *arg_info)
 {
-    DBUG_ENTER ("STRStouch");
+    DBUG_ENTER ();
 
     if (set != NULL) {
         CHKMtouch (set->val, arg_info);
@@ -121,13 +124,13 @@ STRStouch (stringset_t *set, info *arg_info)
         CHKMtouch (set, arg_info);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void *
 STRSprintFoldFun (const char *entry, strstype_t kind, void *rest)
 {
-    DBUG_ENTER ("STRSprintFoldFun");
+    DBUG_ENTER ();
 
     printf ("%s ", entry);
 
@@ -151,7 +154,7 @@ STRSduplicate (stringset_t *src)
 {
     stringset_t *result = NULL;
 
-    DBUG_ENTER ("STRSduplicate");
+    DBUG_ENTER ();
 
     if (src != NULL) {
         result = MEMmalloc (sizeof (stringset_t));
@@ -167,9 +170,11 @@ STRSduplicate (stringset_t *src)
 void
 STRSprint (stringset_t *set)
 {
-    DBUG_ENTER ("STRSprint");
+    DBUG_ENTER ();
 
     STRSfold (&STRSprintFoldFun, set, NULL);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

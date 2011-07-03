@@ -22,7 +22,10 @@
 #include "check_uniqueness.h"
 
 #include "ctinfo.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "new_types.h"
@@ -60,7 +63,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -73,7 +76,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -88,7 +91,7 @@ CUdoCheckUniqueness (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CUdoCheckUniqueness");
+    DBUG_ENTER ();
 
     TRAVpush (TR_cu);
 
@@ -107,7 +110,7 @@ CUdoCheckUniqueness (node *syntax_tree)
 node *
 CUavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUavis");
+    DBUG_ENTER ();
 
     bool used = AVIS_ISUNIQUECONSUMED (arg_node);
     bool thenused = AVIS_ISUNIQUECONSUMEDTHEN (arg_node);
@@ -147,7 +150,7 @@ CUavis (node *arg_node, info *arg_info)
 node *
 CUblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUblock");
+    DBUG_ENTER ();
 
     /*
      * First traverse the ASSIGNs which does the actual
@@ -167,7 +170,7 @@ CUblock (node *arg_node, info *arg_info)
 node *
 CUcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUwith");
+    DBUG_ENTER ();
 
     INFO_WITHLOOPLEVEL (arg_info) = INFO_WITHLOOPLEVEL (arg_info) + 1;
 
@@ -181,7 +184,7 @@ CUcode (node *arg_node, info *arg_info)
 node *
 CUcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUcond");
+    DBUG_ENTER ();
 
     if (COND_COND (arg_node) != NULL) {
         COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
@@ -207,7 +210,7 @@ CUcond (node *arg_node, info *arg_info)
 node *
 CUfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUfuncond");
+    DBUG_ENTER ();
 
     if (FUNCOND_IF (arg_node) != NULL) {
         FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
@@ -233,7 +236,7 @@ CUfuncond (node *arg_node, info *arg_info)
 node *
 CUfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUfundef");
+    DBUG_ENTER ();
 
     /*
      * First traverse the body, which sets the UniqueConsumed flags
@@ -262,7 +265,7 @@ CUfundef (node *arg_node, info *arg_info)
 node *
 CUid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUid");
+    DBUG_ENTER ();
 
     node *avis = ID_AVIS (arg_node);
     ntype *type = AVIS_TYPE (avis);
@@ -338,7 +341,7 @@ CUid (node *arg_node, info *arg_info)
 node *
 CUids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUids");
+    DBUG_ENTER ();
 
     AVIS_WITHLOOPLEVEL (IDS_AVIS (arg_node)) = INFO_WITHLOOPLEVEL (arg_info);
 
@@ -350,7 +353,7 @@ CUids (node *arg_node, info *arg_info)
 node *
 CUprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUprf");
+    DBUG_ENTER ();
 
     if (PRF_PRF (arg_node) != F_prop_obj_in) {
         arg_node = TRAVcont (arg_node, arg_info);
@@ -377,3 +380,5 @@ node *CUpropagate( node *arg_node, info *arg_info)
   DBUG_RETURN( arg_node);
 }
 */
+
+#undef DBUG_PREFIX

@@ -68,7 +68,10 @@
 #include "memory.h"
 #include "globals.h"
 #include "new_types.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CSE"
+#include "debug.h"
+
 #include "traverse.h"
 #include "free.h"
 #include "convert.h"
@@ -96,7 +99,7 @@ AddCseInfoLayer (cseinfo *nextlayer, int entries)
 {
     cseinfo *res;
 
-    DBUG_ENTER ("AddCseInfoLayer");
+    DBUG_ENTER ();
 
     res = (cseinfo *)MEMmalloc (sizeof (cseinfo));
 
@@ -111,7 +114,7 @@ AddCseInfoLayer (cseinfo *nextlayer, int entries)
 static cseinfo *
 RemoveTopCseLayer (cseinfo *top)
 {
-    DBUG_ENTER ("RemoveTopCseLayer");
+    DBUG_ENTER ();
 
     cseinfo *res = top->nextlayer;
 
@@ -124,7 +127,7 @@ RemoveTopCseLayer (cseinfo *top)
 static cseinfo *
 AddLet (cseinfo *layer, node *let)
 {
-    DBUG_ENTER ("AddLet");
+    DBUG_ENTER ();
 
     layer->lets[layer->current] = let;
     layer->current += 1;
@@ -140,7 +143,7 @@ FindCSE (cseinfo *layer, node *let)
     node *arhs = LET_EXPR (let);
     node *res = NULL;
 
-    DBUG_ENTER ("FindCSE");
+    DBUG_ENTER ();
 
     for (i = 0; i < stop; i++) {
         node *brhs = LET_EXPR (layer->lets[i]);
@@ -203,7 +206,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -221,7 +224,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -256,14 +259,14 @@ SetSubstAttributes (node *subst, node *with)
     node *tmpsubst;
     node *tmpwith;
 
-    DBUG_ENTER ("SetSubstAttributes");
+    DBUG_ENTER ();
 
     tmpsubst = subst;
     tmpwith = with;
 
     while (tmpsubst != NULL) {
-        DBUG_PRINT ("CSE", ("substitute ids %s with %s", (IDS_NAME (tmpsubst)),
-                            (IDS_NAME (tmpwith))));
+        DBUG_PRINT ("substitute ids %s with %s", (IDS_NAME (tmpsubst)),
+                    (IDS_NAME (tmpwith)));
 
         AVIS_SUBST (IDS_AVIS (tmpsubst)) = IDS_AVIS (tmpwith);
 
@@ -331,19 +334,19 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
     ct_res cmp;
     char *stype1, *stype2;
 
-    DBUG_ENTER ("PropagateSubst2Args");
+    DBUG_ENTER ();
 
     act_fun_arg = fun_args;
     act_ap_arg = ap_args;
     while (act_fun_arg != NULL) {
         /* process all arguments */
-        DBUG_ASSERT ((act_ap_arg != NULL), "too few arguments in function application");
+        DBUG_ASSERT (act_ap_arg != NULL, "too few arguments in function application");
 
         /* init AVIS_SUBST attribute (means no substitution) */
         AVIS_SUBST (ARG_AVIS (act_fun_arg)) = NULL;
 
         /* get external identifier in function application (here we use it avis) */
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (act_ap_arg)) == N_id),
+        DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (act_ap_arg)) == N_id,
                      "non N_id node as arg in special function application");
         ext_ap_avis = ID_AVIS (EXPRS_EXPR (act_ap_arg));
         ext_ap_type = AVIS_TYPE (ext_ap_avis);
@@ -363,11 +366,10 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
                 || ((FUNDEF_ISDOFUN (fundef))
                     && (AVIS_SSALPINV (ARG_AVIS (act_fun_arg))))) {
 
-                DBUG_PRINT ("CSE",
-                            ("type of formal LaC-fun (%s) arg specialized in line %d:"
-                             "  %s:%s->%s",
-                             CTIitemName (fundef), NODE_LINE (act_fun_arg),
-                             ARG_NAME (act_fun_arg), stype1, stype2));
+                DBUG_PRINT ("type of formal LaC-fun (%s) arg specialized in line %d:"
+                            "  %s:%s->%s",
+                            CTIitemName (fundef), NODE_LINE (act_fun_arg),
+                            ARG_NAME (act_fun_arg), stype1, stype2);
 
                 AVIS_TYPE (ARG_AVIS (act_fun_arg))
                   = TYfreeType (AVIS_TYPE (ARG_AVIS (act_fun_arg)));
@@ -377,10 +379,10 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
             /*
              * special function application with incompatible types found
              */
-            DBUG_PRINT ("CSE", ("application of LaC-function %s with incompatible types"
-                                " in line %d:  %s:%s->%s",
-                                FUNDEF_NAME (fundef), NODE_LINE (act_fun_arg),
-                                ARG_NAME (act_fun_arg), stype1, stype2));
+            DBUG_PRINT ("application of LaC-function %s with incompatible types"
+                        " in line %d:  %s:%s->%s",
+                        FUNDEF_NAME (fundef), NODE_LINE (act_fun_arg),
+                        ARG_NAME (act_fun_arg), stype1, stype2);
         }
         stype1 = MEMfree (stype1);
         stype2 = MEMfree (stype2);
@@ -398,7 +400,7 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
             search_ap_arg = ap_args;
             while ((search_fun_arg != act_fun_arg) && (!found_match)) {
                 /* compare identifiers via their avis pointers */
-                DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (search_ap_arg)) == N_id),
+                DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (search_ap_arg)) == N_id,
                              "non N_id node as arg in special function application");
                 if ((ID_AVIS (EXPRS_EXPR (search_ap_arg)) == ext_ap_avis)
                     && (AVIS_SSALPINV (ARG_AVIS (search_fun_arg)))) {
@@ -409,9 +411,9 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
                      */
                     found_match = TRUE;
                     AVIS_SUBST (ARG_AVIS (act_fun_arg)) = ARG_AVIS (search_fun_arg);
-                    DBUG_PRINT ("CSE", ("propagate copy propagation info for %s -> %s",
-                                        VARDEC_OR_ARG_NAME (act_fun_arg),
-                                        VARDEC_OR_ARG_NAME (search_fun_arg)));
+                    DBUG_PRINT ("propagate copy propagation info for %s -> %s",
+                                VARDEC_OR_ARG_NAME (act_fun_arg),
+                                VARDEC_OR_ARG_NAME (search_fun_arg));
                 }
 
                 /* parallel traversal to next arg in ap and fundef */
@@ -424,7 +426,7 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
         act_fun_arg = ARG_NEXT (act_fun_arg);
         act_ap_arg = EXPRS_NEXT (act_ap_arg);
     }
-    DBUG_ASSERT ((act_ap_arg == NULL), "too many arguments in function application");
+    DBUG_ASSERT (act_ap_arg == NULL, "too many arguments in function application");
 
     DBUG_RETURN (fun_args);
 }
@@ -475,9 +477,9 @@ BuildSubstNodelist (node *return_exprs, node *fundef, node *ext_assign)
     node *avis1;
     node *avis2;
 
-    DBUG_ENTER ("BuildSubstNodelist");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((FUNDEF_ISLACFUN (fundef)),
+    DBUG_ASSERT (FUNDEF_ISLACFUN (fundef),
                  "BuildSubstNodelist called for non special fundef");
 
     if (return_exprs != NULL) {
@@ -533,7 +535,7 @@ PropagateIdenticalReturn2Results (node *ap_fundef, node *ids_chain)
 
     bool found_match;
 
-    DBUG_ENTER ("PropagateIdenticalReturn2Results");
+    DBUG_ENTER ();
 
     /* process all identifier of result chain of a loop special fundef */
     act_result = ids_chain;
@@ -546,9 +548,9 @@ PropagateIdenticalReturn2Results (node *ap_fundef, node *ids_chain)
         found_match = FALSE;
 
         while ((search_result != act_result) && (!found_match)) {
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (act_exprs)) == N_id),
+            DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (act_exprs)) == N_id,
                          "non id node in return of special fundef (act)");
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (search_exprs)) == N_id),
+            DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (search_exprs)) == N_id,
                          "non id node in return of special fundef (search)");
 
             /*
@@ -603,15 +605,15 @@ PropagateIdenticalReturn2Results (node *ap_fundef, node *ids_chain)
 node *
 PropagateLoopInvariantArgs (node *ids, nodelist **nodes)
 {
-    DBUG_ENTER ("PropagateLoopInvariantArgs");
+    DBUG_ENTER ();
 
     /* process stored INFO_RESULTARG information if any */
     if ((ids != NULL) && (*nodes != NULL)) {
-        DBUG_ASSERT ((IDS_AVIS (ids) != NULL), "missing Avis backlink in ids");
+        DBUG_ASSERT (IDS_AVIS (ids) != NULL, "missing Avis backlink in ids");
 
-        DBUG_PRINT ("CSE", ("Looking at %s", AVIS_NAME (IDS_AVIS (ids))));
+        DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (ids)));
 
-        DBUG_ASSERT ((AVIS_SUBST (IDS_AVIS (ids)) == NULL),
+        DBUG_ASSERT (AVIS_SUBST (IDS_AVIS (ids)) == NULL,
                      "there must not exist any subst setting for"
                      " a freshly defined vardec");
 
@@ -623,7 +625,7 @@ PropagateLoopInvariantArgs (node *ids, nodelist **nodes)
 
 #ifndef DBUG_OFF
         if (AVIS_SUBST (IDS_AVIS (ids)) != NULL) {
-            DBUG_PRINT ("CSE", ("bypassing result %s", AVIS_NAME (IDS_AVIS (ids))));
+            DBUG_PRINT ("bypassing result %s", AVIS_NAME (IDS_AVIS (ids)));
         }
 #endif
 
@@ -652,11 +654,11 @@ GetResultArgAvis (node *id, condpart cp)
     node *result;
     node *defassign;
 
-    DBUG_ENTER ("GetResultArgAvis");
+    DBUG_ENTER ();
 
     result = NULL;
 
-    DBUG_ASSERT ((NODE_TYPE (id) == N_id), "GetResultArgAvis called for non id node");
+    DBUG_ASSERT (NODE_TYPE (id) == N_id, "GetResultArgAvis called for non id node");
 
     if (TCisPhiFun (id)) {
 
@@ -697,9 +699,9 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef, node *ext_assign)
     node *arg_chain;
     bool cont;
 
-    DBUG_ENTER ("GetApAvisOfArgAvis");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((FUNDEF_ISLACFUN (fundef)),
+    DBUG_ASSERT (FUNDEF_ISLACFUN (fundef),
                  "GetApAvisOfArgAvis called for non special fundef");
 
     arg_chain = FUNDEF_ARGS (fundef);
@@ -709,11 +711,11 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef, node *ext_assign)
     ap_avis = NULL;
     cont = TRUE;
     while ((arg_chain != NULL) && cont) {
-        DBUG_ASSERT ((exprs_chain != NULL), "mismatch between ap args and fun args");
+        DBUG_ASSERT (exprs_chain != NULL, "mismatch between ap args and fun args");
 
         if (ARG_AVIS (arg_chain) == arg_avis) {
             /* we found the matching one */
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs_chain)) == N_id),
+            DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (exprs_chain)) == N_id,
                          "non id node in special fundef application");
 
             ap_avis = ID_AVIS (EXPRS_EXPR (exprs_chain));
@@ -745,11 +747,11 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef, node *ext_assign)
 node *
 CSEfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSEfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("CSE", ("traversing (%s) %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                        FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("traversing (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
 
     INFO_FUNDEF (arg_info) = arg_node;
     INFO_RESULTARG (arg_info) = NULL;
@@ -780,9 +782,9 @@ CSEfundef (node *arg_node, info *arg_info)
             n = ARG_NEXT (n);
         }
     }
-    DBUG_PRINT ("CSE", ("leaving (%s) %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                        FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("leaving (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -799,9 +801,9 @@ CSEfundef (node *arg_node, info *arg_info)
 node *
 CSEavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSEavis");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("CSE", ("Resetting SUBST field of avis for %s", AVIS_NAME (arg_node)));
+    DBUG_PRINT ("Resetting SUBST field of avis for %s", AVIS_NAME (arg_node));
 
     AVIS_SUBST (arg_node) = NULL;
 
@@ -828,7 +830,7 @@ CSEblock (node *arg_node, info *arg_info)
     node *oldwithid = NULL;
     node *ivlet = NULL;
 
-    DBUG_ENTER ("CSEblock");
+    DBUG_ENTER ();
 
     /* reset AVIS_SUBST for local variables */
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
@@ -892,9 +894,9 @@ CSEassign (node *arg_node, info *arg_info)
 {
     node *old_assign;
 
-    DBUG_ENTER ("CSEassign");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "assign node without instruction");
+    DBUG_ASSERT (ASSIGN_INSTR (arg_node) != NULL, "assign node without instruction");
 
     old_assign = INFO_ASSIGN (arg_info);
     INFO_ASSIGN (arg_info) = arg_node;
@@ -921,9 +923,9 @@ CSEassign (node *arg_node, info *arg_info)
 node *
 CSEcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSEcond");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((COND_COND (arg_node) != NULL), "conditional without condition");
+    DBUG_ASSERT (COND_COND (arg_node) != NULL, "conditional without condition");
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
 
     COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
@@ -946,7 +948,7 @@ CSEcond (node *arg_node, info *arg_info)
 node *
 CSEreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSEreturn");
+    DBUG_ENTER ();
 
     RETURN_EXPRS (arg_node) = TRAVopt (RETURN_EXPRS (arg_node), arg_info);
 
@@ -990,10 +992,10 @@ CSElet (node *arg_node, info *arg_info)
 {
     node *match = NULL;
 
-    DBUG_ENTER ("CSElet");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("CSE", ("Looking at %s in line %d",
-                        AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))), NODE_LINE (arg_node)));
+    DBUG_PRINT ("Looking at %s in line %d", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))),
+                NODE_LINE (arg_node));
     /*
      * traverse left-hand side t0 do variable substitutions for extrema
      * and saa
@@ -1023,9 +1025,8 @@ CSElet (node *arg_node, info *arg_info)
         /* set subst attributes for results */
         LET_IDS (arg_node) = SetSubstAttributes (LET_IDS (arg_node), LET_IDS (match));
 
-        DBUG_PRINT ("CSE",
-                    ("Common subexpression eliminated for %s in line %d",
-                     AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))), NODE_LINE (arg_node)));
+        DBUG_PRINT ("Common subexpression eliminated for %s in line %d",
+                    AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))), NODE_LINE (arg_node));
         global.optcounters.cse_expr++;
 
     } else {
@@ -1069,9 +1070,9 @@ node *
 CSEap (node *arg_node, info *arg_info)
 {
     info *new_arg_info;
-    DBUG_ENTER ("CSEap");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
+    DBUG_ASSERT (AP_FUNDEF (arg_node) != NULL, "missing fundef in ap-node");
 
     /*
      * when traversing the recursive ap of a special loop fundef,
@@ -1093,8 +1094,7 @@ CSEap (node *arg_node, info *arg_info)
     /* traverse special fundef without recursion */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-        DBUG_PRINT ("CSE", ("traverse in special fundef %s",
-                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("traverse in special fundef %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
@@ -1113,8 +1113,8 @@ CSEap (node *arg_node, info *arg_info)
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
 
-        DBUG_PRINT ("CSE", ("traversal of special fundef %s finished\n",
-                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("traversal of special fundef %s finished\n",
+                    FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
         /*
          * save RESULTARG nodelist for processing bypassed identifiers
@@ -1140,16 +1140,16 @@ CSEap (node *arg_node, info *arg_info)
 node *
 CSEid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSEid");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ID_AVIS (arg_node) != NULL), "missing Avis backlink in id");
-    DBUG_PRINT ("CSE", ("Looking at %s", AVIS_NAME (ID_AVIS (arg_node))));
+    DBUG_ASSERT (ID_AVIS (arg_node) != NULL, "missing Avis backlink in id");
+    DBUG_PRINT ("Looking at %s", AVIS_NAME (ID_AVIS (arg_node)));
 
     /* check for necessary substitution */
     if ((AVIS_SUBST (ID_AVIS (arg_node)) != NULL)
         && (!((INFO_RECFUNAP (arg_info)) && (AVIS_SSALPINV (ID_AVIS (arg_node)))))) {
-        DBUG_PRINT ("CSE", ("Renaming: %s to %s", AVIS_NAME (ID_AVIS (arg_node)),
-                            AVIS_NAME (AVIS_SUBST (ID_AVIS (arg_node)))));
+        DBUG_PRINT ("Renaming: %s to %s", AVIS_NAME (ID_AVIS (arg_node)),
+                    AVIS_NAME (AVIS_SUBST (ID_AVIS (arg_node))));
 
         /* do renaming to new ssa vardec */
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
@@ -1157,7 +1157,7 @@ CSEid (node *arg_node, info *arg_info)
 
     /* process stored INFO_RESULTARG information */
     if (INFO_RESULTARG (arg_info) != NULL) {
-        DBUG_ASSERT ((AVIS_SUBST (ID_AVIS (arg_node)) == NULL),
+        DBUG_ASSERT (AVIS_SUBST (ID_AVIS (arg_node)) == NULL,
                      "there must not exist any subst setting for"
                      " a freshly defined vardec");
 
@@ -1169,7 +1169,7 @@ CSEid (node *arg_node, info *arg_info)
 
 #ifndef DBUG_OFF
         if (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
-            DBUG_PRINT ("CSE", ("bypassing result %s", AVIS_NAME (ID_AVIS (arg_node))));
+            DBUG_PRINT ("bypassing result %s", AVIS_NAME (ID_AVIS (arg_node)));
         }
 #endif
     }
@@ -1190,7 +1190,7 @@ CSEid (node *arg_node, info *arg_info)
 node *
 CSEwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSEwith");
+    DBUG_ENTER ();
 
     /* traverse and do variable substitution in partitions */
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
@@ -1221,7 +1221,7 @@ CSEids (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("CSEids");
+    DBUG_ENTER ();
 
     avis = IDS_AVIS (arg_node);
 
@@ -1248,7 +1248,7 @@ CSEids (node *arg_node, info *arg_info)
 node *
 CSEcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSEcode");
+    DBUG_ENTER ();
 
     /* traverse codeblock */
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
@@ -1279,9 +1279,9 @@ CSEdoCommonSubexpressionEliminationOneFundef (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CSEdoCommonSubexpressionEliminationOneFundef");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), "CSE called for non-fundef node");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "CSE called for non-fundef node");
 
     /* do not start traversal in special functions */
     if (!(FUNDEF_ISLACFUN (arg_node))) {
@@ -1312,7 +1312,7 @@ WrapCSECall (node *arg_node, info *arg_info)
 node *
 CSEdoCommonSubexpressionElimination (node *arg_node)
 {
-    DBUG_ENTER ("CSEdoCommonSubexpressionElimination");
+    DBUG_ENTER ();
 
     if (N_module == NODE_TYPE (arg_node)) {
         MODULE_FUNS (arg_node)
@@ -1323,3 +1323,5 @@ CSEdoCommonSubexpressionElimination (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

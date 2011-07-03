@@ -8,7 +8,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "dbug.h"
+#define DBUG_PREFIX "MEM_ALLOC"
+#include "debug.h"
+
 #include "check_mem.h"
 #include "ctinfo.h"
 #include "globals.h"
@@ -62,10 +64,10 @@ MEMmalloc (int size)
     void *orig_ptr;
     void *shifted_ptr;
 
-    DBUG_ENTER ("MEMmalloc");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((size >= 0), "MEMmalloc called with negative size!");
-    DBUG_ASSERT ((malloc_align_step > 0), "malloc_align_step not set");
+    DBUG_ASSERT (size >= 0, "MEMmalloc called with negative size!");
+    DBUG_ASSERT (malloc_align_step > 0, "malloc_align_step not set");
 
     if (size > 0) {
 
@@ -83,18 +85,17 @@ MEMmalloc (int size)
 
         if (global.current_allocated_mem + size < global.current_allocated_mem) {
 
-            DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
+            DBUG_ASSERT (0, "counter for allocated memory: overflow detected");
         }
         global.current_allocated_mem += size;
         if (global.max_allocated_mem < global.current_allocated_mem) {
             global.max_allocated_mem = global.current_allocated_mem;
         }
 
-        DBUG_PRINT ("MEM_ALLOC",
-                    ("Alloc memory: %d Bytes at adress: " F_PTR, size, shifted_ptr));
+        DBUG_PRINT ("Alloc memory: %d Bytes at adress: " F_PTR, size, shifted_ptr);
 
-        DBUG_PRINT ("MEM_TOTAL",
-                    ("Currently allocated memory: %u", global.current_allocated_mem));
+        DBUG_PRINT_TAG ("MEM_TOTAL", "Currently allocated memory: %u",
+                        global.current_allocated_mem);
 
 #ifdef CLEANMEM
         /*
@@ -115,7 +116,7 @@ MEMmallocAt (int size, char *file, int line)
 {
     void *pointer;
 
-    DBUG_ENTER ("MEMmallocAt");
+    DBUG_ENTER ();
 
     if (size > 0) {
         pointer = MEMmalloc (size);
@@ -133,7 +134,7 @@ MEMmallocAt (int size, char *file, int line)
 void *
 MEMfree (void *address)
 {
-    DBUG_ENTER ("MEMfree");
+    DBUG_ENTER ();
 
     address = NULL;
 
@@ -148,24 +149,23 @@ MEMfree (void *shifted_ptr)
     void *orig_ptr = NULL;
     int size;
 
-    DBUG_ENTER ("MEMfree");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((malloc_align_step > 0), "malloc_align_step not set");
+    DBUG_ASSERT (malloc_align_step > 0, "malloc_align_step not set");
 
     if (shifted_ptr != NULL) {
         size = CHKMgetSize (shifted_ptr);
 
-        DBUG_ASSERT ((size >= 0), "illegal size found!");
-        DBUG_PRINT ("MEM_ALLOC",
-                    ("Free memory: %d Bytes at adress: " F_PTR, size, shifted_ptr));
+        DBUG_ASSERT (size >= 0, "illegal size found!");
+        DBUG_PRINT ("Free memory: %d Bytes at adress: " F_PTR, size, shifted_ptr);
 
         if (global.current_allocated_mem < global.current_allocated_mem - size) {
-            DBUG_ASSERT ((0), "counter for allocated memory: overflow detected");
+            DBUG_ASSERT (0, "counter for allocated memory: overflow detected");
         }
         global.current_allocated_mem -= size;
 
-        DBUG_PRINT ("MEM_TOTAL",
-                    ("Currently allocated memory: %u", global.current_allocated_mem));
+        DBUG_PRINT_TAG ("MEM_TOTAL", "Currently allocated memory: %u",
+                        global.current_allocated_mem);
 
 #ifdef CLEANMEM
         /*
@@ -204,7 +204,7 @@ MEMdbugMemoryLeakCheck (void)
     node *ast_dup;
     int mem_before;
 
-    DBUG_ENTER ("MEMdbugMemoryLeakCheck");
+    DBUG_ENTER ();
 
     mem_before = global.current_allocated_mem;
     CTInote ("*** Currently allocated memory (Bytes):   %s",
@@ -218,7 +218,7 @@ MEMdbugMemoryLeakCheck (void)
     CTInote ("*** FreeTree / DupTree leak (Bytes):      %s",
              CVintBytes2String (global.current_allocated_mem - mem_before));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #else /*SHOW_MALLOC */
@@ -228,9 +228,9 @@ MEMmalloc (int size)
 {
     void *ptr;
 
-    DBUG_ENTER ("MEMmalloc");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((size >= 0), "MEMmalloc called with negative size!");
+    DBUG_ASSERT (size >= 0, "MEMmalloc called with negative size!");
 
     if (size > 0) {
         /*
@@ -252,7 +252,7 @@ MEMmalloc (int size)
 void *
 MEMfree (void *address)
 {
-    DBUG_ENTER ("MEMfree");
+    DBUG_ENTER ();
 
     if (address != NULL) {
         free (address);
@@ -279,7 +279,7 @@ MEMcopy (int size, void *mem)
 {
     void *result;
 
-    DBUG_ENTER ("MEMcopy");
+    DBUG_ENTER ();
 
     result = MEMmalloc (size);
 
@@ -287,3 +287,5 @@ MEMcopy (int size, void *mem)
 
     DBUG_RETURN (result);
 }
+
+#undef DBUG_PREFIX

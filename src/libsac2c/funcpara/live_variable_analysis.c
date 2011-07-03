@@ -39,7 +39,9 @@
  *****************************************************************************/
 #include "live_variable_analysis.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "LVA"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
@@ -77,7 +79,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -93,7 +95,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -121,8 +123,8 @@ node *
 LVAdoLiveVariableAnalysis (node *argnode)
 {
     info *info;
-    DBUG_ENTER ("LVAdoLiveVariableAnalysis");
-    DBUG_PRINT ("LVA", ("Live Variable Analysis"));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Live Variable Analysis");
 
     info = MakeInfo ();
 
@@ -163,7 +165,7 @@ AssignIsSpawn (node *assign)
     bool result;
     node *instr;
 
-    DBUG_ENTER ("AssignIsSpawn");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (assign) == N_assign, "Node must be an N_assign node");
 
@@ -192,7 +194,7 @@ AssignIsSync (node *assign)
     bool result;
     node *instr;
 
-    DBUG_ENTER ("AssignIsSync");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (assign) == N_assign, "Node must be an N_assign node");
 
@@ -236,11 +238,11 @@ LVAfundef (node *arg_node, info *arg_info)
     dfmask_base_t *base;
     node *avis, *livevars;
 
-    DBUG_ENTER ("LVAfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("LVA", ("traversing body of (%s) %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                        FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("traversing body of (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
 
     if (FUNDEF_CONTAINSSPAWN (arg_node)) {
         // function contains spawn, do analysis
@@ -255,14 +257,14 @@ LVAfundef (node *arg_node, info *arg_info)
 
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-        DBUG_PRINT ("LVA", ("Union for fundef"));
-        DBUG_EXECUTE ("LVA", DFMprintMaskDetailed (stdout, INFO_FUNION (arg_info)););
+        DBUG_PRINT ("Union for fundef");
+        DBUG_EXECUTE (DFMprintMaskDetailed (stdout, INFO_FUNION (arg_info)));
 
         avis = DFMgetMaskEntryAvisSet (INFO_FUNION (arg_info));
         livevars = NULL;
 
         while (avis != NULL) {
-            DBUG_PRINT ("LVA", ("Live Var Found"));
+            DBUG_PRINT ("Live Var Found");
             livevars = TBmakeLivevars (avis, livevars);
             avis = DFMgetMaskEntryAvisSet (NULL);
         }
@@ -297,12 +299,12 @@ LVAassign (node *arg_node, info *arg_info)
     node *avis;
     node *livevars;
 
-    DBUG_ENTER ("LVAassign");
+    DBUG_ENTER ();
 
     if (!INFO_ANALYSE (arg_info)
         && (AssignIsSpawn (arg_node) || AssignIsSync (arg_node))) {
 
-        DBUG_PRINT ("LVA", ("Assign node is spawn or sync, analysing..."));
+        DBUG_PRINT ("Assign node is spawn or sync, analysing...");
 
         INFO_ANALYSE (arg_info) = TRUE;
 
@@ -319,8 +321,8 @@ LVAassign (node *arg_node, info *arg_info)
 
         INFO_ANALYSE (arg_info) = FALSE;
 
-        DBUG_PRINT ("LVA", ("Done analysing"));
-        DBUG_EXECUTE ("LVA", DFMprintMaskDetailed (stdout, mask););
+        DBUG_PRINT ("Done analysing");
+        DBUG_EXECUTE (DFMprintMaskDetailed (stdout, mask));
 
         // create union mask for entire function
         DFMsetMaskOr (INFO_FUNION (arg_info), mask);
@@ -338,7 +340,7 @@ LVAassign (node *arg_node, info *arg_info)
         livevars = NULL;
 
         while (avis != NULL) {
-            DBUG_PRINT ("LVA", ("Live Var Found"));
+            DBUG_PRINT ("Live Var Found");
             livevars = TBmakeLivevars (avis, livevars);
             avis = DFMgetMaskEntryAvisSet (NULL);
         }
@@ -370,11 +372,11 @@ LVAassign (node *arg_node, info *arg_info)
 node *
 LVAlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("LVAlet");
-    DBUG_PRINT ("LVA", ("Traversing Let node"));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Traversing Let node");
 
     if (INFO_INSPAWN (arg_info)) {
-        DBUG_PRINT ("LVA", ("Found a spawned ap!"));
+        DBUG_PRINT ("Found a spawned ap!");
     }
 
     LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
@@ -398,14 +400,14 @@ LVAlet (node *arg_node, info *arg_info)
 node *
 LVAids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("LVAids");
-    DBUG_PRINT ("LVA", ("Traversing Ids node: %s", AVIS_NAME (IDS_AVIS (arg_node))));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Traversing Ids node: %s", AVIS_NAME (IDS_AVIS (arg_node)));
 
     DFMsetMaskEntrySet (INFO_LIVE (arg_info), NULL, IDS_AVIS (arg_node));
 
     // Always add result from spawned ap to task frame
     if (INFO_INSPAWN (arg_info)) {
-        DBUG_PRINT ("LVA", ("Adding Ids to funion"));
+        DBUG_PRINT ("Adding Ids to funion");
         DFMsetMaskEntrySet (INFO_FUNION (arg_info), NULL, IDS_AVIS (arg_node));
     }
 
@@ -429,8 +431,8 @@ LVAids (node *arg_node, info *arg_info)
 node *
 LVAid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("LVAid");
-    DBUG_PRINT ("LVA", ("Traversing Id node: %s", AVIS_NAME (ID_AVIS (arg_node))));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Traversing Id node: %s", AVIS_NAME (ID_AVIS (arg_node)));
 
     DFMsetMaskEntrySet (INFO_LIVE (arg_info), NULL, ID_AVIS (arg_node));
 
@@ -444,3 +446,5 @@ LVAid (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Live Variable Analysis -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

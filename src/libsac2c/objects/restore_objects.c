@@ -1,7 +1,10 @@
 /* $Id$ */
 
 #include "restore_objects.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "RESO"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -32,7 +35,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -45,7 +48,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -68,7 +71,7 @@ FreeInfo (info *info)
 static node *
 ResetAvisSubst (node *vardecs)
 {
-    DBUG_ENTER ("ResetAvisSubst");
+    DBUG_ENTER ();
 
     if (vardecs != NULL) {
         AVIS_SUBST (VARDEC_AVIS (vardecs)) = NULL;
@@ -92,7 +95,7 @@ ResetAvisSubst (node *vardecs)
 static node *
 DeleteSubstVardecs (node *vardecs)
 {
-    DBUG_ENTER ("DeleteSubstVardecs");
+    DBUG_ENTER ();
 
     if (vardecs != NULL) {
         VARDEC_NEXT (vardecs) = DeleteSubstVardecs (VARDEC_NEXT (vardecs));
@@ -118,7 +121,7 @@ DeleteSubstVardecs (node *vardecs)
 static node *
 StripArtificialArgs (node *args)
 {
-    DBUG_ENTER ("StripArtificialArgs");
+    DBUG_ENTER ();
 
     if (args != NULL) {
         ARG_NEXT (args) = StripArtificialArgs (ARG_NEXT (args));
@@ -145,7 +148,7 @@ StripArtificialArgs (node *args)
 static node *
 StripArtificialArgExprs (node *form_args, node *act_args)
 {
-    DBUG_ENTER ("StripArtificialArgExprs");
+    DBUG_ENTER ();
 
     if (form_args != NULL) {
         if (ARG_ISARTIFICIAL (form_args)) {
@@ -175,7 +178,7 @@ DeleteLHSforRHSobjects (node *lhs, node *rhs)
     node *prevlhs = NULL;
     node *lhs_out;
 
-    DBUG_ENTER ("DeleteLHSforRHSobjects");
+    DBUG_ENTER ();
 
     lhs_out = lhs;
 
@@ -219,7 +222,7 @@ DeleteRHSobjects (node *rhs)
     node *prevrhs = NULL;
     node *rhs_out = rhs;
 
-    DBUG_ENTER ("DeleteRHSobjects");
+    DBUG_ENTER ();
 
     while (rhs != NULL) {
         if (NODE_TYPE (EXPRS_EXPR (rhs)) == N_globobj) {
@@ -257,12 +260,12 @@ DeleteRHSobjects (node *rhs)
 static node *
 MarkArtificialArgs (node *fundef_args, node *ap_args)
 {
-    DBUG_ENTER ("MarkArtificialArgs");
+    DBUG_ENTER ();
     if (fundef_args != NULL) {
         node *avis = ID_AVIS (EXPRS_EXPR (ap_args));
         if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
             if (ARG_ISARTIFICIAL (AVIS_DECL (avis))) {
-                DBUG_PRINT ("RESO", ("Marking %s", AVIS_NAME (avis)));
+                DBUG_PRINT ("Marking %s", AVIS_NAME (avis));
                 ARG_ISARTIFICIAL (fundef_args) = TRUE;
                 ARG_OBJDEF (fundef_args) = ARG_OBJDEF (AVIS_DECL (avis));
             }
@@ -290,7 +293,7 @@ SignaturesIdenticalModuloArtificials (node *fun1, node *fun2)
     bool result = TRUE;
     node *rets1, *rets2, *args1, *args2;
 
-    DBUG_ENTER ("SignaturesIdenticalModuloArtificials");
+    DBUG_ENTER ();
 
     /* first check return types */
     rets1 = FUNDEF_RETS (fun1);
@@ -337,7 +340,7 @@ RESOid (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("RESOid");
+    DBUG_ENTER ();
 
     avis = ID_AVIS (arg_node);
 
@@ -347,7 +350,7 @@ RESOid (node *arg_node, info *arg_info)
              * found a reference to an objdef-argument, so
              * replace it.
              */
-            DBUG_ASSERT ((ARG_OBJDEF (AVIS_DECL (avis)) != NULL),
+            DBUG_ASSERT (ARG_OBJDEF (AVIS_DECL (avis)) != NULL,
                          "found artificial arg without objdef pointer!");
 
             arg_node = FREEdoFreeNode (arg_node);
@@ -367,7 +370,7 @@ RESOid (node *arg_node, info *arg_info)
 node *
 RESOap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RESOap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISSPMDFUN (AP_FUNDEF (arg_node))) {
         FUNDEF_ARGS (AP_FUNDEF (arg_node))
@@ -387,7 +390,7 @@ RESOap (node *arg_node, info *arg_info)
     while (FUNDEF_ISOBJECTWRAPPER (AP_FUNDEF (arg_node))
            && SignaturesIdenticalModuloArtificials (AP_FUNDEF (arg_node),
                                                     FUNDEF_IMPL (AP_FUNDEF (arg_node)))) {
-        DBUG_ASSERT ((FUNDEF_IMPL (AP_FUNDEF (arg_node)) != NULL),
+        DBUG_ASSERT (FUNDEF_IMPL (AP_FUNDEF (arg_node)) != NULL,
                      "found object wrapper with FUNDEF_IMPL not set!");
         AP_FUNDEF (arg_node) = FUNDEF_IMPL (AP_FUNDEF (arg_node));
     }
@@ -407,7 +410,7 @@ RESOprf (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("RESOprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_afterguard:
@@ -432,7 +435,7 @@ RESOprf (node *arg_node, info *arg_info)
 node *
 RESOlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RESOlet");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -541,7 +544,7 @@ RESOassign (node *arg_node, info *arg_info)
 {
     bool delete;
 
-    DBUG_ENTER ("RESOassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -562,7 +565,7 @@ RESOassign (node *arg_node, info *arg_info)
 node *
 RESOblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RESOblock");
+    DBUG_ENTER ();
 
     BLOCK_VARDEC (arg_node) = ResetAvisSubst (BLOCK_VARDEC (arg_node));
 
@@ -580,7 +583,7 @@ RESOblock (node *arg_node, info *arg_info)
 node *
 RESOfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RESOfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISSPMDFUN (arg_node) && !INFO_DOSPMD (arg_info)) {
         if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -621,7 +624,7 @@ RESOfundef (node *arg_node, info *arg_info)
 node *
 RESOmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RESOmodule");
+    DBUG_ENTER ();
 
     /*
      * we have to traverse the fundefs first, as the bodies have
@@ -647,7 +650,7 @@ RESOpropagate (node *arg_node, info *arg_info)
 {
     node *arg;
 
-    DBUG_ENTER ("RESOpropagate");
+    DBUG_ENTER ();
 
     if (PROPAGATE_NEXT (arg_node) != NULL) {
         PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
@@ -671,7 +674,7 @@ RESOdoRestoreObjects (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("RESOdoRestoreObjects");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_reso);
@@ -683,3 +686,5 @@ RESOdoRestoreObjects (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

@@ -38,7 +38,9 @@
  *****************************************************************************/
 #include "comparison_to_zero.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "CTZ"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
@@ -72,7 +74,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -87,7 +89,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -115,7 +117,7 @@ node *
 CTZdoComparisonToZero (node *argnode)
 {
     info *info;
-    DBUG_ENTER ("CTZdoComparisonToZero");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -157,9 +159,9 @@ IsComparisonOperator (prf op)
 {
     bool result;
 
-    DBUG_ENTER ("IsComparisonOperator");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("CTZ", ("Looking for comparison operator"));
+    DBUG_PRINT ("Looking for comparison operator");
 
     result = (op == F_eq_SxS || op == F_eq_SxV || op == F_eq_VxS || op == F_eq_VxV
               || op == F_neq_SxS || op == F_neq_SxV || op == F_neq_VxS || op == F_neq_VxV
@@ -169,9 +171,9 @@ IsComparisonOperator (prf op)
               || op == F_gt_SxS || op == F_gt_SxV || op == F_gt_VxS || op == F_gt_VxV);
 
     if (result) {
-        DBUG_PRINT ("CTZ", ("Comparison operator found"));
+        DBUG_PRINT ("Comparison operator found");
     } else {
-        DBUG_PRINT ("CTZ", ("Comparison operator NOT found"));
+        DBUG_PRINT ("Comparison operator NOT found");
     }
 
     DBUG_RETURN (result);
@@ -194,8 +196,8 @@ IsNodeLiteralZero (node *node)
     constant *argconst;
     bool res = FALSE;
 
-    DBUG_ENTER ("IsNodeLiteralZero");
-    DBUG_PRINT ("CTZ", ("Comparing to zero"));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Comparing to zero");
 
     argconst = COaST2Constant (node);
 
@@ -205,9 +207,9 @@ IsNodeLiteralZero (node *node)
     }
 
     if (res) {
-        DBUG_PRINT ("CTZ", ("Zero found"));
+        DBUG_PRINT ("Zero found");
     } else {
-        DBUG_PRINT ("CTZ", ("Zero not found"));
+        DBUG_PRINT ("Zero not found");
     }
 
     DBUG_RETURN (res);
@@ -232,9 +234,9 @@ HasSuitableType (node *node)
     simpletype simple;
     bool result;
 
-    DBUG_ENTER ("IsSuitableType");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("CTZ", ("Checking for suitable type"));
+    DBUG_PRINT ("Checking for suitable type");
 
     DBUG_ASSERT (NODE_TYPE (node) == N_id, "Node must be an N_id node");
 
@@ -252,9 +254,9 @@ HasSuitableType (node *node)
              || simple == T_double || simple == T_float;
 
     if (result) {
-        DBUG_PRINT ("CTZ", ("Suitable type found"));
+        DBUG_PRINT ("Suitable type found");
     } else {
-        DBUG_PRINT ("CTZ", ("Suitable type not found"));
+        DBUG_PRINT ("Suitable type not found");
     }
 
     DBUG_RETURN (result);
@@ -276,7 +278,7 @@ HasSuitableType (node *node)
 static prf
 ToScalarComparison (prf op)
 {
-    DBUG_ENTER ("ToScalarComparison");
+    DBUG_ENTER ();
 
     switch (op) {
     case F_eq_SxV:
@@ -339,7 +341,7 @@ GetSubtractionOperator (prf op)
 {
     prf result;
 
-    DBUG_ENTER ("GetSubtractionOperator");
+    DBUG_ENTER ();
 
     switch (op) {
     case F_eq_SxS:
@@ -379,7 +381,7 @@ GetSubtractionOperator (prf op)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal argument, must be a comparison operator");
+        DBUG_ASSERT (0, "Illegal argument, must be a comparison operator");
         result = F_unknown;
     }
 
@@ -417,13 +419,13 @@ CTZfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("CTZfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    DBUG_PRINT ("CTZ", ("traversing body of (%s) %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                        FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("traversing body of (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
@@ -454,7 +456,7 @@ CTZfundef (node *arg_node, info *arg_info)
 node *
 CTZblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CTZblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
@@ -476,7 +478,7 @@ CTZblock (node *arg_node, info *arg_info)
 node *
 CTZassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CTZassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -510,7 +512,7 @@ CTZassign (node *arg_node, info *arg_info)
 node *
 CTZlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CTZlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
@@ -543,16 +545,15 @@ CTZprf (node *arg_node, info *arg_info)
     node *avis_sub;
     node *avis_zero;
 
-    DBUG_ENTER ("CTZprf");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("CTZ",
-                ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+    DBUG_PRINT ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
     // Check for comparisons that don't already use a literal zero
     if (IsComparisonOperator (PRF_PRF (arg_node))
         && !IsNodeLiteralZero (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))
         && HasSuitableType (EXPRS_EXPR (PRF_ARGS (arg_node)))) {
-        DBUG_PRINT ("CTZ", ("Found suitable comparison function"));
+        DBUG_PRINT ("Found suitable comparison function");
 
         // Create the new subtraction assignment with same arguments as comparison
         f_sub = TBmakePrf (GetSubtractionOperator (PRF_PRF (arg_node)),
@@ -577,56 +578,56 @@ CTZprf (node *arg_node, info *arg_info)
         n_zero = NULL;
         switch (TYgetSimpleType (type_sub)) {
         case T_byte:
-            DBUG_PRINT ("CTZ", ("Type is byte"));
+            DBUG_PRINT ("Type is byte");
             n_zero = TBmakeNumbyte (0);
             break;
         case T_short:
-            DBUG_PRINT ("CTZ", ("Type is short"));
+            DBUG_PRINT ("Type is short");
             n_zero = TBmakeNumshort (0);
             break;
         case T_int:
-            DBUG_PRINT ("CTZ", ("Type is int"));
+            DBUG_PRINT ("Type is int");
             n_zero = TBmakeNum (0);
             break;
         case T_long:
-            DBUG_PRINT ("CTZ", ("Type is long"));
+            DBUG_PRINT ("Type is long");
             n_zero = TBmakeNumlong (0);
             break;
         case T_longlong:
-            DBUG_PRINT ("CTZ", ("Type is longlong"));
+            DBUG_PRINT ("Type is longlong");
             n_zero = TBmakeNumlonglong (0);
             break;
         case T_ubyte:
-            DBUG_PRINT ("CTZ", ("Type is ubyte"));
+            DBUG_PRINT ("Type is ubyte");
             n_zero = TBmakeNumubyte (0);
             break;
         case T_ushort:
-            DBUG_PRINT ("CTZ", ("Type is ushort"));
+            DBUG_PRINT ("Type is ushort");
             n_zero = TBmakeNumushort (0);
             break;
         case T_uint:
-            DBUG_PRINT ("CTZ", ("Type is uint"));
+            DBUG_PRINT ("Type is uint");
             n_zero = TBmakeNumuint (0);
             break;
         case T_ulong:
-            DBUG_PRINT ("CTZ", ("Type is ulong"));
+            DBUG_PRINT ("Type is ulong");
             n_zero = TBmakeNumulong (0);
             break;
         case T_ulonglong:
-            DBUG_PRINT ("CTZ", ("Type is ulonglong"));
+            DBUG_PRINT ("Type is ulonglong");
             n_zero = TBmakeNumulonglong (0);
             break;
         case T_double:
-            DBUG_PRINT ("CTZ", ("Type is double"));
+            DBUG_PRINT ("Type is double");
             n_zero = TBmakeDouble (0);
             break;
         case T_float:
-            DBUG_PRINT ("CTZ", ("Type is float"));
+            DBUG_PRINT ("Type is float");
             n_zero = TBmakeFloat (0);
             break;
 
         default:
-            DBUG_ASSERT ((0), "Type is unknown, must be int, double or float");
+            DBUG_ASSERT (0, "Type is unknown, must be int, double or float");
         }
 
         // Avis node for zero
@@ -655,7 +656,7 @@ CTZprf (node *arg_node, info *arg_info)
 
     } // end IsComparisonOperator...
 
-    DBUG_PRINT ("CTZ", ("Leaving prf"));
+    DBUG_PRINT ("Leaving prf");
     DBUG_RETURN (arg_node);
 }
 
@@ -666,3 +667,5 @@ CTZprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Conditional Zero Comparison -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

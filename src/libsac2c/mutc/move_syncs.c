@@ -52,7 +52,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "MS"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -73,7 +76,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -83,7 +86,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -111,11 +114,11 @@ MSdoMoveSyncs (node *syntax_tree)
     pattern *pat;
     pattern *stop_pat;
 
-    DBUG_ENTER ("MSdoMoveSyncs");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("MS", ("Starting move syncs traversal."));
+    DBUG_PRINT ("Starting move syncs traversal.");
 
     pat = PMprf (1, PMAisPrf (F_syncin), 0);
 
@@ -123,7 +126,7 @@ MSdoMoveSyncs (node *syntax_tree)
 
     syntax_tree = MAdoMoveAssigns (syntax_tree, pat, FALSE, 0, stop_pat);
 
-    DBUG_PRINT ("MS", ("Move syncs traversal complete."));
+    DBUG_PRINT ("Move syncs traversal complete.");
 
     pat = PMfree (pat);
     stop_pat = PMfree (stop_pat);
@@ -162,3 +165,5 @@ MSdoMoveSyncs (node *syntax_tree)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

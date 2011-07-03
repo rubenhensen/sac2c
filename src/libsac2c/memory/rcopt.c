@@ -23,7 +23,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "EMRCO"
+#include "debug.h"
+
 #include "print.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
@@ -66,7 +69,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -85,7 +88,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -108,9 +111,9 @@ EMRCOdoRefCountOpt (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("EMRCOdoRefCountOpt");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMRCO", ("Starting Reference counting optimizations"));
+    DBUG_PRINT ("Starting Reference counting optimizations");
 
     info = MakeInfo ();
 
@@ -120,7 +123,7 @@ EMRCOdoRefCountOpt (node *syntax_tree)
 
     info = FreeInfo (info);
 
-    DBUG_PRINT ("EMRCO", ("Reference counting optimizations complete"));
+    DBUG_PRINT ("Reference counting optimizations complete");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -150,7 +153,7 @@ EMRCOassign (node *arg_node, info *arg_info)
     bool secondtrav;
     bool remassign;
 
-    DBUG_ENTER ("EMRCOassign");
+    DBUG_ENTER ();
 
     /*
      * Top-down traversal
@@ -177,15 +180,15 @@ EMRCOassign (node *arg_node, info *arg_info)
     INFO_SECONDTRAV (arg_info) = FALSE;
 
     if (INFO_REMNEXT (arg_info)) {
-        DBUG_PRINT ("EMRCO", ("Removing assignment:"));
-        DBUG_EXECUTE ("EMRCO", PRTdoPrintNodeFile (stderr, ASSIGN_NEXT (arg_node)););
+        DBUG_PRINT ("Removing assignment:");
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, ASSIGN_NEXT (arg_node)));
         ASSIGN_NEXT (arg_node) = FREEdoFreeNode (ASSIGN_NEXT (arg_node));
         INFO_REMNEXT (arg_info) = FALSE;
     }
 
     if (remassign || INFO_REMASSIGN (arg_info)) {
-        DBUG_PRINT ("EMRCO", ("Removing assignment:"));
-        DBUG_EXECUTE ("EMRCO", PRTdoPrintNodeFile (stderr, arg_node););
+        DBUG_PRINT ("Removing assignment:");
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
         arg_node = FREEdoFreeNode (arg_node);
         INFO_REMASSIGN (arg_info) = FALSE;
         INFO_NEXTEXPR (arg_info) = NULL;
@@ -212,7 +215,7 @@ EMRCOblock (node *arg_node, info *arg_info)
     lut_t *old_lut;
     node *old_lhs;
 
-    DBUG_ENTER ("EMRCOblock");
+    DBUG_ENTER ();
 
     old_lut = INFO_FILLLUT (arg_info);
     old_lhs = INFO_LHS (arg_info);
@@ -248,7 +251,7 @@ EMRCOfundef (node *arg_node, info *arg_info)
 {
     dfmask_base_t *maskbase;
 
-    DBUG_ENTER ("EMRCOfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
@@ -283,7 +286,7 @@ EMRCOfundef (node *arg_node, info *arg_info)
 node *
 EMRCOlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRCOlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 
@@ -312,7 +315,7 @@ EMRCOlet (node *arg_node, info *arg_info)
 node *
 EMRCOprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRCOprf");
+    DBUG_ENTER ();
 
     if (INFO_DOWNTRAV (arg_info)) {
         /*
@@ -399,9 +402,8 @@ EMRCOprf (node *arg_node, info *arg_info)
 
                 NUM_VAL (PRF_ARG1 (alloc)) += NUM_VAL (PRF_ARG2 (arg_node));
 
-                DBUG_PRINT ("EMRCO", ("Melted inc_rc into alloc!"));
-                DBUG_EXECUTE ("EMRCO",
-                              PRTdoPrintNodeFile (stderr, AVIS_SSAASSIGN (avis)););
+                DBUG_PRINT ("Melted inc_rc into alloc!");
+                DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, AVIS_SSAASSIGN (avis)));
 
                 INFO_REMASSIGN (arg_info) = TRUE;
             }
@@ -435,14 +437,14 @@ EMRCOprf (node *arg_node, info *arg_info)
                     && (ID_AVIS (PRF_ARG1 (prf)) == IDS_AVIS (INFO_LHS (arg_info)))
                     && (NUM_VAL (PRF_ARG1 (arg_node)) == NUM_VAL (PRF_ARG2 (prf)))) {
 
-                    DBUG_PRINT ("EMRCO", ("Superfluous alloc/dec_rc combination found!"));
+                    DBUG_PRINT ("Superfluous alloc/dec_rc combination found!");
                     INFO_REMNEXT (arg_info) = TRUE;
                     INFO_REMASSIGN (arg_info) = TRUE;
                 }
                 if ((PRF_PRF (prf) == F_free)
                     && (ID_AVIS (PRF_ARG1 (prf)) == IDS_AVIS (INFO_LHS (arg_info)))) {
 
-                    DBUG_PRINT ("EMRCO", ("Superfluous alloc/free combination found!"));
+                    DBUG_PRINT ("Superfluous alloc/free combination found!");
                     INFO_REMNEXT (arg_info) = TRUE;
                     INFO_REMASSIGN (arg_info) = TRUE;
                 }
@@ -473,7 +475,7 @@ EMRCOprf (node *arg_node, info *arg_info)
 node *
 EMRCOgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRCOgenarray");
+    DBUG_ENTER ();
 
     INFO_FILLLUT (arg_info)
       = LUTinsertIntoLutP (INFO_FILLLUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
@@ -502,7 +504,7 @@ EMRCOgenarray (node *arg_node, info *arg_info)
 node *
 EMRCOfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRCOfold");
+    DBUG_ENTER ();
 
     if (FOLD_PARTIALMEM (arg_node) != NULL) {
         INFO_FILLLUT (arg_info)
@@ -533,7 +535,7 @@ EMRCOfold (node *arg_node, info *arg_info)
 node *
 EMRCOmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRCOmodarray");
+    DBUG_ENTER ();
 
     INFO_FILLLUT (arg_info)
       = LUTinsertIntoLutP (INFO_FILLLUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
@@ -548,3 +550,5 @@ EMRCOmodarray (node *arg_node, info *arg_info)
 }
 
 /*@}*/ /* defgroup rco */
+
+#undef DBUG_PREFIX

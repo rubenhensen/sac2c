@@ -31,7 +31,10 @@
 #include "memory.h"
 #include "traverse.h"
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "L2F"
+#include "debug.h"
+
 #include "DupTree.h"
 #include "DataFlowMask.h"
 #include "DataFlowMaskUtils.h"
@@ -65,7 +68,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -79,7 +82,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -103,7 +106,7 @@ CreateLacFunName (char *funname, char *suffix)
     static int number = 0;
     char *name;
 
-    DBUG_ENTER ("CreateLacFunName");
+    DBUG_ENTER ();
 
     name
       = (char *)MEMmalloc ((STRlen (funname) + STRlen (suffix) + 20 + 3) * sizeof (char));
@@ -135,7 +138,7 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
     node *args, *vardecs, *ret, *fundef, *assigns, *let, *ass;
     node *tmp;
 
-    DBUG_ENTER ("MakeL2fFundef");
+    DBUG_ENTER ();
 
     /*
      * Create a new LUT and store the old/new args and vardecs in it.
@@ -226,9 +229,9 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
         AVIS_ISUNIQUE( ARG_AVIS( tmp)) = TRUE;
       }
 
-      DBUG_PRINT( "L2F", ("ARG_ATTRIB[ .. %s( .. %s ..) { .. } ]: "
+      DBUG_PRINT ("ARG_ATTRIB[ .. %s( .. %s ..) { .. } ]: "
                           " ST_was_reference -> ST_unique",
-                          funname, ARG_NAME( tmp)));
+                          funname, ARG_NAME( tmp));
     }
     tmp = ARG_NEXT( tmp);
   }
@@ -278,7 +281,7 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
         break;
 
     default:
-        DBUG_ASSERT ((0), "illegal node type found!");
+        DBUG_ASSERT (0, "illegal node type found!");
         assigns = NULL;
         break;
     }
@@ -290,8 +293,8 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
 
     lut = LUTremoveLut (lut);
 
-    DBUG_PRINT ("L2F", ("created function '%s:%s'", NSgetName (FUNDEF_NS (fundef)),
-                        FUNDEF_NAME (fundef)));
+    DBUG_PRINT ("created function '%s:%s'", NSgetName (FUNDEF_NS (fundef)),
+                FUNDEF_NAME (fundef));
 
     DBUG_RETURN (fundef);
 }
@@ -312,7 +315,7 @@ MakeL2fFunLet (node *fundef, dfmask_t *in, dfmask_t *out)
 {
     node *let;
 
-    DBUG_ENTER ("MakeL2fFunLet");
+    DBUG_ENTER ();
 
     let = TBmakeLet (DFMUdfm2LetIds (out, NULL),
                      TBmakeAp (fundef, DFMUdfm2ApArgs (in, NULL)));
@@ -340,7 +343,7 @@ DoLifting (char *suffix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg
     namespace_t *funns;
     node *fundef, *let;
 
-    DBUG_ENTER ("DoLifting");
+    DBUG_ENTER ();
 
     /*
      * build call of the new LaC function
@@ -348,7 +351,7 @@ DoLifting (char *suffix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg
     funname = CreateLacFunName (FUNDEF_NAME (INFO_FUNDEF (arg_info)), suffix);
     funns = FUNDEF_NS (INFO_FUNDEF (arg_info));
 
-    DBUG_ASSERT ((funns != NULL), "modul name for LAC function is NULL!");
+    DBUG_ASSERT (funns != NULL, "modul name for LAC function is NULL!");
 
     let = MakeL2fFunLet (NULL, in, out);
 
@@ -357,7 +360,7 @@ DoLifting (char *suffix, dfmask_t *in, dfmask_t *out, dfmask_t *local, node *arg
      */
     fundef = MakeL2fFundef (funname, funns, arg_node, let, in, out, local, arg_info);
 
-    DBUG_ASSERT ((NODE_TYPE (LET_EXPR (let)) == N_ap), "N_ap expected!");
+    DBUG_ASSERT (NODE_TYPE (LET_EXPR (let)) == N_ap, "N_ap expected!");
 
     funname = MEMfree (funname);
 
@@ -397,7 +400,7 @@ L2Ffundef (node *arg_node, info *arg_info)
 {
     node *ret, *tmp;
 
-    DBUG_ENTER ("L2Ffundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
 
@@ -405,11 +408,11 @@ L2Ffundef (node *arg_node, info *arg_info)
         INFO_FUNS (arg_info) = NULL;
         INFO_LASTCOND (arg_info) = NULL;
 
-        DBUG_PRINT ("L2F", ("processing body of `%s'", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("processing body of `%s'", FUNDEF_NAME (arg_node));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-        DBUG_PRINT ("L2F", ("finished body of `%s'", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("finished body of `%s'", FUNDEF_NAME (arg_node));
         /*
          * insert LaC fundefs into the AST
          */
@@ -448,7 +451,7 @@ L2Ffundef (node *arg_node, info *arg_info)
 node *
 L2Fassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("L2Fassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -472,7 +475,7 @@ L2Fassign (node *arg_node, info *arg_info)
 node *
 L2Fcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("L2Fcond");
+    DBUG_ENTER ();
 
     if (INFO_LASTCOND (arg_info) == NULL) {
         INFO_LASTCOND (arg_info) = arg_node;
@@ -503,7 +506,7 @@ L2Fcond (node *arg_node, info *arg_info)
 node *
 L2Fdo (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("L2Fdo");
+    DBUG_ENTER ();
 
     DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
 
@@ -528,7 +531,7 @@ L2FdoLac2Fun (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("Lac2Fun");
+    DBUG_ENTER ();
 
     /*
      * infer the in-, out- and local-masks of each conditional or loop
@@ -556,3 +559,5 @@ L2FdoLac2Fun (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

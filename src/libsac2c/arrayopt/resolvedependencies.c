@@ -66,7 +66,10 @@
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLFS"
+#include "debug.h"
+
 #include "traverse.h"
 #include "constants.h"
 #include "print.h"
@@ -100,7 +103,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -117,7 +120,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -139,10 +142,10 @@ FreeInfo (info *info)
 static node *
 SelId (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SelId");
+    DBUG_ENTER ();
 
     if (AVIS_SSAASSIGN (ID_AVIS (arg_node)) == INFO_RDEPEND_FUSIONABLE_WL (arg_info)) {
-        DBUG_PRINT ("WLFS", ("found direct dependency"));
+        DBUG_PRINT ("found direct dependency");
         INFO_RDEPEND_DEPENDENT (arg_info) = TRUE;
     } else {
         INFO_RDEPEND_DEPENDENT (arg_info) = FALSE;
@@ -166,10 +169,10 @@ CheckPrfSel (node *arg_node, info *arg_info)
 {
     node *sel, *cexprs, *ids_tmp;
 
-    DBUG_ENTER ("CheckPrfSel");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLFS", ("consider following assignment:"));
-    DBUG_EXECUTE ("WLFS", PRTdoPrintNodeFile (stderr, INFO_RDEPEND_ASSIGN (arg_info)););
+    DBUG_PRINT ("consider following assignment:");
+    DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, INFO_RDEPEND_ASSIGN (arg_info)));
 
     /* first check first argument to detect direct dependency */
     PRF_ARG2 (arg_node) = SelId (PRF_ARG2 (arg_node), arg_info);
@@ -196,14 +199,14 @@ CheckPrfSel (node *arg_node, info *arg_info)
                 cexprs = EXPRS_NEXT (cexprs);
             }
             DBUG_ASSERT ((ids_tmp != NULL && cexprs != NULL),
-                         ("no suitable identifier found!"));
+                         "no suitable identifier found!");
 
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = DUPdoDupNode (EXPRS_EXPR (cexprs));
 
             INFO_RDEPEND_RESOLVED (arg_info) = TRUE;
         } else {
-            DBUG_ASSERT ((0), ("found unresolveable selection!"));
+            DBUG_ASSERT (0, "found unresolveable selection!");
         }
     }
 
@@ -226,16 +229,15 @@ CheckPrfSel (node *arg_node, info *arg_info)
 node *
 RDEPENDassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RDEPENDassign");
+    DBUG_ENTER ();
 
     INFO_RDEPEND_ASSIGN (arg_info) = arg_node;
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_RDEPEND_RESOLVED (arg_info)) {
-        DBUG_PRINT ("WLFS", ("selection is resolved:"));
-        DBUG_EXECUTE ("WLFS",
-                      PRTdoPrintNodeFile (stderr, INFO_RDEPEND_ASSIGN (arg_info)););
+        DBUG_PRINT ("selection is resolved:");
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, INFO_RDEPEND_ASSIGN (arg_info)));
         INFO_RDEPEND_RESOLVED (arg_info) = FALSE;
     }
 
@@ -259,7 +261,7 @@ RDEPENDassign (node *arg_node, info *arg_info)
 node *
 RDEPENDprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RDEPENDprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_sel_VxA:
@@ -295,18 +297,18 @@ RDEPENDdoResolveDependencies (node *assigns, node *cexprs, node *withid,
 {
     info *arg_info;
 
-    DBUG_ENTER ("RDEPENDdoResolveDependencies");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (assigns) == N_assign),
+    DBUG_ASSERT (NODE_TYPE (assigns) == N_assign,
                  "ResolveDependencies not started with N_assign node");
 
-    DBUG_ASSERT ((cexprs != NULL), "no cexprs found");
+    DBUG_ASSERT (cexprs != NULL, "no cexprs found");
 
-    DBUG_ASSERT ((withid != NULL), "no withid found");
+    DBUG_ASSERT (withid != NULL, "no withid found");
 
-    DBUG_ASSERT ((fusionable_wl != NULL), "no fusionable withloop found");
+    DBUG_ASSERT (fusionable_wl != NULL, "no fusionable withloop found");
 
-    DBUG_PRINT ("WLFS", ("starting resolving dependencies"));
+    DBUG_PRINT ("starting resolving dependencies");
 
     arg_info = MakeInfo ();
 
@@ -318,9 +320,11 @@ RDEPENDdoResolveDependencies (node *assigns, node *cexprs, node *withid,
     assigns = TRAVdo (assigns, arg_info);
     TRAVpop ();
 
-    DBUG_PRINT ("WLFS", ("resolving dependencies complete"));
+    DBUG_PRINT ("resolving dependencies complete");
 
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (assigns);
 }
+
+#undef DBUG_PREFIX

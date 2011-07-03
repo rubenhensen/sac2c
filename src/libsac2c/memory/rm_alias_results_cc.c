@@ -43,7 +43,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "RACC"
+#include "debug.h"
+
 #include "traverse.h"
 #include "new_types.h"
 #include "type_utils.h"
@@ -75,7 +78,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -88,7 +91,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -114,17 +117,17 @@ EMRACCdoRemoveAliasResultsFromConformityChecks (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("EMRACCdoRemoveAliasResultsFromConformityChecks");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("RACC", ("Starting to remove Alias Results from Conformity Checks."));
+    DBUG_PRINT ("Starting to remove Alias Results from Conformity Checks.");
 
     TRAVpush (TR_emracc);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("RACC", ("Removal of Alias Results from Conformity Checks complete."));
+    DBUG_PRINT ("Removal of Alias Results from Conformity Checks complete.");
 
     info = FreeInfo (info);
 
@@ -145,7 +148,7 @@ EMRACCdoRemoveAliasResultsFromConformityChecks (node *syntax_tree)
 info *
 Substitute (node **ids, node *rhs, info *arg_info)
 {
-    DBUG_ENTER ("Substitute");
+    DBUG_ENTER ();
 
     if ((NODE_TYPE (rhs) == N_id)
         && TYeqTypes (AVIS_TYPE (IDS_AVIS (*ids)), ID_NTYPE (rhs))) {
@@ -203,7 +206,7 @@ Substitute (node **ids, node *rhs, info *arg_info)
 node *
 EMRACCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRACCfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
@@ -228,7 +231,7 @@ EMRACCfundef (node *arg_node, info *arg_info)
 node *
 EMRACCarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRACCarg");
+    DBUG_ENTER ();
 
     AVIS_SUBST (ARG_AVIS (arg_node)) = NULL;
 
@@ -247,7 +250,7 @@ EMRACCarg (node *arg_node, info *arg_info)
 node *
 EMRACCblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRACCblock");
+    DBUG_ENTER ();
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
@@ -266,7 +269,7 @@ EMRACCblock (node *arg_node, info *arg_info)
 node *
 EMRACCvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRACCvardec");
+    DBUG_ENTER ();
 
     AVIS_SUBST (VARDEC_AVIS (arg_node)) = NULL;
 
@@ -285,7 +288,7 @@ EMRACCvardec (node *arg_node, info *arg_info)
 node *
 EMRACCassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRACCassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -310,7 +313,7 @@ EMRACCassign (node *arg_node, info *arg_info)
 node *
 EMRACClet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRACClet");
+    DBUG_ENTER ();
 
     INFO_LET (arg_info) = arg_node;
 
@@ -327,7 +330,7 @@ EMRACClet (node *arg_node, info *arg_info)
 node *
 EMRACCprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRACCprf");
+    DBUG_ENTER ();
 
     if (PRF_ARGS (arg_node) != NULL) {
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
@@ -384,7 +387,7 @@ EMRACCprf (node *arg_node, info *arg_info)
 node *
 EMRACCid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRACCid");
+    DBUG_ENTER ();
 
     if (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
@@ -400,3 +403,5 @@ EMRACCid (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

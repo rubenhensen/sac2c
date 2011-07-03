@@ -81,7 +81,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLS"
+#include "debug.h"
+
 #include "new_types.h"
 #include "print.h"
 #include "DupTree.h"
@@ -136,7 +139,7 @@ MakeInfo (node *fundef)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -161,7 +164,7 @@ MakeInfo (node *fundef)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     INFO_CODELUT (info) = LUTremoveLut (INFO_CODELUT (info));
     info = MEMfree (info);
@@ -197,7 +200,7 @@ WLSBdoBuild (node *arg_node, node *fundef, node **preassigns)
 {
     info *info;
 
-    DBUG_ENTER ("WLSBdoBuild");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_with, "First parameter must be a with-loop");
 
@@ -205,7 +208,7 @@ WLSBdoBuild (node *arg_node, node *fundef, node **preassigns)
 
     info = MakeInfo (fundef);
 
-    DBUG_PRINT ("WLS", ("Building new with-loop..."));
+    DBUG_PRINT ("Building new with-loop...");
 
     TRAVpush (TR_wlsb);
     arg_node = TRAVdo (arg_node, info);
@@ -218,12 +221,12 @@ WLSBdoBuild (node *arg_node, node *fundef, node **preassigns)
 
     info = FreeInfo (info);
 
-    DBUG_PRINT ("WLS", ("Scalarization complete. New with-loop is:"));
-    DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
+    DBUG_PRINT ("Scalarization complete. New with-loop is:");
+    DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
 #ifdef FIXME // fundef appears to be corrupt at this point...
 
-    DBUG_PRINT ("WLS", ("New fundef is:"));
-    DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, fundef););
+    DBUG_PRINT ("New fundef is:");
+    DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, fundef));
 #endif // FIXME
 
     DBUG_RETURN (arg_node);
@@ -257,7 +260,7 @@ CreateOneVector (int nr)
     node *res;
     node *temp;
 
-    DBUG_ENTER ("CreateOneVector");
+    DBUG_ENTER ();
 
     res = TCcreateZeroVector (nr, T_int);
 
@@ -298,7 +301,7 @@ ConcatVectors (node *vec1, node *vec2, info *arg_info)
     constant *v1fs = NULL;
     constant *v2fs = NULL;
 
-    DBUG_ENTER ("ConcatVectors");
+    DBUG_ENTER ();
 
     /* We start by dereferencing any N_id, in hopes of finding an N_array */
     if ((NODE_TYPE (vec1) == N_id) && (PMO (PMOarray (&v1fs, &v1, vec1)))) {
@@ -386,7 +389,7 @@ ConcatVectors (node *vec1, node *vec2, info *arg_info)
 node *
 WLSBcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSBcode");
+    DBUG_ENTER ();
 
     if (!INFO_INNERTRAV (arg_info)) {
         /*
@@ -410,7 +413,7 @@ WLSBcode (node *arg_node, info *arg_info)
          */
         INFO_NEWCODE (arg_info) = LUTsearchInLutPp (INFO_CODELUT (arg_info), arg_node);
         if (INFO_NEWCODE (arg_info) != arg_node) {
-            DBUG_PRINT ("WLS", ("Code can be reused!"));
+            DBUG_PRINT ("Code can be reused!");
         } else {
             /*
              * Create a new code
@@ -540,7 +543,7 @@ WLSBgenerator (node *arg_node, info *arg_info)
     int outerdim, innerdim;
     node *newlb, *newub, *newstep, *newwidth;
 
-    DBUG_ENTER ("WLSBgen");
+    DBUG_ENTER ();
 
     outerdim = TCcountIds (WITHID_IDS (INFO_OUTERWITHID (arg_info)));
     innerdim = TCcountIds (WITHID_IDS (INFO_INNERWITHID (arg_info)));
@@ -615,7 +618,7 @@ WLSBgenerator (node *arg_node, info *arg_info)
 node *
 WLSBpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSBpart");
+    DBUG_ENTER ();
 
     if (!INFO_INNERTRAV (arg_info)) {
         /*
@@ -705,7 +708,7 @@ WLSBpart (node *arg_node, info *arg_info)
 node *
 WLSBwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSBwith");
+    DBUG_ENTER ();
 
     if (!INFO_INNERTRAV (arg_info)) {
         /*
@@ -766,7 +769,7 @@ WLSBwith (node *arg_node, info *arg_info)
 node *
 WLSBwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSBwithid");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_INNERTRAV (arg_info) == TRUE,
                  "WLSBwithid only applicable in inner with-loop");
@@ -838,7 +841,7 @@ WLSBgenarray (node *arg_node, info *arg_info)
 {
     node *innershape;
 
-    DBUG_ENTER ("WLSBgenarray");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_INNERTRAV (arg_info) == FALSE,
                  "WLSBgenarray only applicable for outer with-loop");
@@ -880,7 +883,7 @@ WLSBgenarray (node *arg_node, info *arg_info)
 node *
 WLSBmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSBmodarray");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_INNERTRAV (arg_info) == FALSE,
                  "WLSBmodarray only applicable for outer with-loop");
@@ -897,3 +900,5 @@ WLSBmodarray (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- WLSB -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

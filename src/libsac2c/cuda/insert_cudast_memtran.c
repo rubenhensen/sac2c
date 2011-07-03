@@ -26,7 +26,10 @@
 #include "str_buffer.h"
 #include "memory.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -71,7 +74,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -88,7 +91,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -115,7 +118,7 @@ ICSMEMdoInsertCudastMemtran (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("ICSMEMdoInsertCudastMemtran");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -183,7 +186,7 @@ node *ICSMEMfundef( node *arg_node, info *arg_info)
 node *
 ICSMEMfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ICSMEMfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -210,7 +213,7 @@ ICSMEMassign (node *arg_node, info *arg_info)
 {
     node *next;
 
-    DBUG_ENTER ("ICSMEMassign");
+    DBUG_ENTER ();
 
     /*
       ASSIGN_NEXT( arg_node) = TRAVopt( ASSIGN_NEXT( arg_node), arg_info);
@@ -269,7 +272,7 @@ ICSMEMassign (node *arg_node, info *arg_info)
 node *
 ICSMEMlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ICSMEMlet");
+    DBUG_ENTER ();
 
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
 
@@ -296,7 +299,7 @@ ICSMEMlet (node *arg_node, info *arg_info)
 node *
 ICSMEMcudast (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ICSMEMcudast");
+    DBUG_ENTER ();
 
     INFO_INCUDAST (arg_info) = TRUE;
     CUDAST_REGION (arg_node) = TRAVopt (CUDAST_REGION (arg_node), arg_info);
@@ -345,7 +348,7 @@ node *ICSMEMap( node *arg_node, info *arg_info)
 node *
 ICSMEMap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ICSMEMap");
+    DBUG_ENTER ();
 
     /* If the application is lac fun, we don't need to create
      * host2device for it in this phase. It will be dealt with
@@ -372,7 +375,7 @@ ICSMEMap (node *arg_node, info *arg_info)
 node *
 ICSMEMfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ICSMEMfuncond");
+    DBUG_ENTER ();
 
     INFO_TRAV_IDS (arg_info) = FALSE;
 
@@ -397,14 +400,14 @@ ICSMEMids (node *arg_node, info *arg_info)
     ntype *dev_type, *scalar_type;
     simpletype sty;
 
-    DBUG_ENTER ("ICSMEMids");
+    DBUG_ENTER ();
 
     fundef = INFO_FUNDEF (arg_info);
     avis = IDS_AVIS (arg_node);
 
     if ((FUNDEF_ISCUDALACFUN (fundef) || INFO_INCUDAST (arg_info))
         && !TUisScalar (AVIS_TYPE (avis))) {
-        DBUG_ASSERT ((TYisAKS (AVIS_TYPE (avis))),
+        DBUG_ASSERT (TYisAKS (AVIS_TYPE (avis)),
                      "Non AKS N_ids found in CUDA LAC fun or CUDAST!");
 
         dev_type = TYcopyType (AVIS_TYPE (avis));
@@ -452,7 +455,7 @@ ICSMEMid (node *arg_node, info *arg_info)
     ntype *dev_type, *scalar_type;
     simpletype sty;
 
-    DBUG_ENTER ("ICSMEMid");
+    DBUG_ENTER ();
 
     fundef = INFO_FUNDEF (arg_info);
     avis = ID_AVIS (arg_node);
@@ -478,7 +481,7 @@ ICSMEMid (node *arg_node, info *arg_info)
               = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
                                 TBmakeVardec (new_avis, NULL));
         } else {
-            DBUG_ASSERT ((TYisAKS (AVIS_TYPE (avis))),
+            DBUG_ASSERT (TYisAKS (AVIS_TYPE (avis)),
                          "Non AKS N_id found in CUDA LAC fun or CUDAST!");
 
             dev_type = TYcopyType (AVIS_TYPE (avis));
@@ -511,3 +514,5 @@ ICSMEMid (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

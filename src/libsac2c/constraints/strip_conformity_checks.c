@@ -30,7 +30,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "SCC"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -63,7 +66,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -77,7 +80,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -103,17 +106,17 @@ SCCdoStripConformityChecks (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("SCCdoStripConformityChecks");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("SCC", ("Starting strip conformity checks traversal."));
+    DBUG_PRINT ("Starting strip conformity checks traversal.");
 
     TRAVpush (TR_scc);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("TEMP", ("Strip conformity checks traversal complete."));
+    DBUG_PRINT_TAG ("TEMP", "Strip conformity checks traversal complete.");
 
     info = FreeInfo (info);
 
@@ -153,7 +156,7 @@ RenameOrReplaceRets (int skip, int no, node *ids, node *args, node **assigns)
 {
     node *tmp;
 
-    DBUG_ENTER ("RenameOrReplaceRets");
+    DBUG_ENTER ();
 
     if (skip != 0) {
         ids = RenameOrReplaceRets (skip - 1, no, ids, EXPRS_NEXT (args), assigns);
@@ -165,17 +168,16 @@ RenameOrReplaceRets (int skip, int no, node *ids, node *args, node **assigns)
             /*
              * we mark the avis for substitution and deletion
              */
-            DBUG_PRINT ("SCC", ("Aliasing %s ...", IDS_NAME (ids)));
+            DBUG_PRINT ("Aliasing %s ...", IDS_NAME (ids));
 
-            DBUG_ASSERT ((AVIS_SUBST (IDS_AVIS (ids)) == NULL),
-                         "AVIS_SUBST already set!");
+            DBUG_ASSERT (AVIS_SUBST (IDS_AVIS (ids)) == NULL, "AVIS_SUBST already set!");
 
             AVIS_SUBST (IDS_AVIS (ids)) = ID_AVIS (EXPRS_EXPR (args));
         } else {
             /*
              * insert a substitution assign
              */
-            DBUG_PRINT ("SCC", ("Inserting substitution for %s ...", IDS_NAME (ids)));
+            DBUG_PRINT ("Inserting substitution for %s ...", IDS_NAME (ids));
 
             tmp = ids;
             ids = IDS_NEXT (ids);
@@ -192,7 +194,7 @@ RenameOrReplaceRets (int skip, int no, node *ids, node *args, node **assigns)
          * ids = TRUE assigns
          */
 
-        DBUG_PRINT ("SCC", ("Setting %s to TRUE...", IDS_NAME (ids)));
+        DBUG_PRINT ("Setting %s to TRUE...", IDS_NAME (ids));
 
         tmp = ids;
         ids = IDS_NEXT (ids);
@@ -230,7 +232,7 @@ SCCblock (node *arg_node, info *arg_info)
 {
     node *oldlhs, *preassigns;
 
-    DBUG_ENTER ("SCCblock");
+    DBUG_ENTER ();
 
     oldlhs = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = NULL;
@@ -256,20 +258,20 @@ SCCblock (node *arg_node, info *arg_info)
 node *
 SCCassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCCassign");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((!INFO_SCRAPASSIGN (arg_info)), "SCRAPASSIGN already set!");
+    DBUG_ASSERT (!INFO_SCRAPASSIGN (arg_info), "SCRAPASSIGN already set!");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
     if (INFO_SCRAPASSIGN (arg_info)) {
-        DBUG_PRINT ("SCC", ("Scrapping assignment..."));
+        DBUG_PRINT ("Scrapping assignment...");
 
         arg_node = FREEdoFreeNode (arg_node);
     }
 
     if (INFO_PREASSIGNS (arg_info) != NULL) {
-        DBUG_PRINT ("SCC", ("Inserting preassigns..."));
+        DBUG_PRINT ("Inserting preassigns...");
 
         arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
         INFO_PREASSIGNS (arg_info) = NULL;
@@ -295,7 +297,7 @@ SCCassign (node *arg_node, info *arg_info)
 node *
 SCClet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCClet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 
@@ -318,11 +320,11 @@ SCClet (node *arg_node, info *arg_info)
 node *
 SCCprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCCprf");
+    DBUG_ENTER ();
 
     PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
 
-    DBUG_PRINT ("SCC", ("Looking at prf %s...", PRF_NAME (PRF_PRF (arg_node))));
+    DBUG_PRINT ("Looking at prf %s...", PRF_NAME (PRF_PRF (arg_node)));
 
     switch (PRF_PRF (arg_node)) {
     /* prfs with one identity on first arg */
@@ -401,7 +403,7 @@ SCCprf (node *arg_node, info *arg_info)
 node *
 SCCid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCCid");
+    DBUG_ENTER ();
 
     while (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
@@ -420,11 +422,10 @@ SCCid (node *arg_node, info *arg_info)
 node *
 SCCvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCCvardec");
+    DBUG_ENTER ();
 
     if (AVIS_SUBST (VARDEC_AVIS (arg_node)) != NULL) {
-        DBUG_PRINT ("SCC",
-                    ("Removing variable %s...", AVIS_NAME (VARDEC_AVIS (arg_node))));
+        DBUG_PRINT ("Removing variable %s...", AVIS_NAME (VARDEC_AVIS (arg_node)));
 
         arg_node = FREEdoFreeNode (arg_node);
         if (arg_node != NULL) {
@@ -444,3 +445,5 @@ SCCvardec (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

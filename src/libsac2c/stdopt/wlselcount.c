@@ -55,7 +55,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "node_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLSELC"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -83,7 +86,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
     result = MEMmalloc (sizeof (info));
 
     INFO_WLSELSMAX (result) = 0;
@@ -97,7 +100,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -124,7 +127,7 @@ WLSELCdoWithloopSelectionCount (node *fundef)
 {
     info *arg_info;
 
-    DBUG_ENTER ("WLSELCdoWithloopSelection");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "WLSELCdoWithloopSelection called on non N_fundef node!");
@@ -155,7 +158,7 @@ WLSELCdoWithloopSelectionCount (node *fundef)
 node *
 WLSELCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSELCfundef");
+    DBUG_ENTER ();
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
@@ -181,7 +184,7 @@ WLSELCwith (node *arg_node, info *arg_info)
 {
     int old;
     bool old_funapps;
-    DBUG_ENTER ("WLSELCwith");
+    DBUG_ENTER ();
 
     old_funapps = INFO_WLFUNAPPS (arg_info);
     INFO_WLFUNAPPS (arg_info) = FALSE;
@@ -192,17 +195,17 @@ WLSELCwith (node *arg_node, info *arg_info)
     old = INFO_WLSELSMAX (arg_info);
     INFO_WLSELSMAX (arg_info) = 0;
 
-    DBUG_PRINT ("WLSELC", ("> analysing With-Loop in line %d", NODE_LINE (arg_node)));
+    DBUG_PRINT ("> analysing With-Loop in line %d", NODE_LINE (arg_node));
     /**
      * traverse into with-loop
      */
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     WITH_CONTAINSFUNAPS (arg_node) = INFO_WLFUNAPPS (arg_info);
-    DBUG_PRINT ("WLSELC", ("  containsFunAps flag set to %s",
-                           (WITH_CONTAINSFUNAPS (arg_node) ? "true" : "false")));
+    DBUG_PRINT ("  containsFunAps flag set to %s",
+                (WITH_CONTAINSFUNAPS (arg_node) ? "true" : "false"));
     WITH_SELMAX (arg_node) = INFO_WLSELSMAX (arg_info);
-    DBUG_PRINT ("WLSELC", ("  selmax counter set to %d", WITH_SELMAX (arg_node)));
+    DBUG_PRINT ("  selmax counter set to %d", WITH_SELMAX (arg_node));
 
     INFO_WLSELSMAX (arg_info) = old;
     INFO_WLFUNAPPS (arg_info) = old_funapps;
@@ -213,7 +216,7 @@ WLSELCwith (node *arg_node, info *arg_info)
           = INFO_WLFUNAPPS (arg_info) || WITH_CONTAINSFUNAPS (arg_node);
     }
 
-    DBUG_PRINT ("WLSELC", ("< done with With-Loop in line %d", NODE_LINE (arg_node)));
+    DBUG_PRINT ("< done with With-Loop in line %d", NODE_LINE (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -236,7 +239,7 @@ WLSELCcode (node *arg_node, info *arg_info)
 {
     int old_wlsels;
     bool old_iswlcode;
-    DBUG_ENTER ("WLSELCcode");
+    DBUG_ENTER ();
 
     /**
      * reset 'local' counters
@@ -288,7 +291,7 @@ WLSELCcode (node *arg_node, info *arg_info)
 node *
 WLSELCprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSELCprf");
+    DBUG_ENTER ();
 
     if ((INFO_ISWLCODE (arg_info)) && (F_sel_VxA == PRF_PRF (arg_node))) {
         INFO_WLSELS (arg_info)++;
@@ -313,7 +316,7 @@ WLSELCprf (node *arg_node, info *arg_info)
 node *
 WLSELCap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSELCap");
+    DBUG_ENTER ();
 
     if ((INFO_ISWLCODE (arg_info))) {
         INFO_WLFUNAPPS (arg_info) = TRUE;
@@ -321,3 +324,5 @@ WLSELCap (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

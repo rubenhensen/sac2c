@@ -13,10 +13,13 @@
 #include "tree_basic.h"
 #include "convert.h"
 
+#define DBUG_PREFIX "PRINT"
+#include "debug.h"
+
 #define ICM_DEF(prf, trf)                                                                \
     void Print##prf (node *exprs, node *arg_info)                                        \
     {                                                                                    \
-        DBUG_ENTER ("Print" #prf);
+        DBUG_ENTER ();
 
 #define ICM_ANY(name) exprs = GetNextAny (&name, exprs);
 
@@ -53,7 +56,7 @@
 #define ICM_END(prf, args)                                                               \
     print_comment = 1;                                                                   \
     ICMCompile##prf args;                                                                \
-    DBUG_VOID_RETURN;                                                                    \
+    DBUG_RETURN ();                                                                      \
     }
 
 /* forward declarations */
@@ -67,15 +70,15 @@ GetNextIcm (char **ret, node *exprs)
     int i;
     char **v, *tmp;
 
-    DBUG_ENTER ("GetNextIcm");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_icm), "wrong icm-arg: N_icm expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_icm, "wrong icm-arg: N_icm expected");
 
     cnt = TCcountExprs (ICM_ARGS (expr));
 
@@ -95,7 +98,7 @@ GetNextIcm (char **ret, node *exprs)
 
     v = MEMfree (v);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
+    DBUG_PRINT ("icm-arg found: %s", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -114,19 +117,18 @@ node *GetNextPrf( char **ret, node *exprs)
   int cnt, len;
   char **v;
 
-  DBUG_ENTER( "GetNextPrf");
+  DBUG_ENTER ();
 
-  DBUG_ASSERT( (ret != NULL), "no return value found!");
+  DBUG_ASSERT (ret != NULL, "no return value found!");
 
-  DBUG_ASSERT( (exprs != NULL), "wrong icm-arg: NULL found!");
-  DBUG_ASSERT( (NODE_TYPE( exprs) == N_exprs),
-               "wrong icm-arg: N_exprs expected");
+  DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+  DBUG_ASSERT (NODE_TYPE( exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
   expr = EXPRS_EXPR( exprs);
 
-  DBUG_ASSERT( (NODE_TYPE( expr) == N_prf), "wrong icm-arg: N_prf expected");
+  DBUG_ASSERT (NODE_TYPE( expr) == N_prf, "wrong icm-arg: N_prf expected");
 
   cnt = TCcountExprs( PRF_ARGS( expr));
-  DBUG_ASSERT( (cnt == 2), "icm-arg N_prf: only infix notation implemented!");
+  DBUG_ASSERT (cnt == 2, "icm-arg N_prf: only infix notation implemented!");
 
   GetNextVarAny( &v, &len, cnt, PRF_ARGS( expr));
 
@@ -137,11 +139,11 @@ node *GetNextPrf( char **ret, node *exprs)
 
   v = MEMfree( v);
 
-  DBUG_PRINT( "PRINT", ("icm-arg found: %s", (*ret)));
+  DBUG_PRINT ("icm-arg found: %s", (*ret));
 
   exprs = EXPRS_NEXT( exprs);
 
-  DBUG_RETURN( exprs);
+  DBUG_RETURN (exprs);
 }
 #endif
 
@@ -150,28 +152,28 @@ GetNextNt (char **ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextNt");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "wrong icm-arg: N_id expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_id, "wrong icm-arg: N_id expected");
 
     /*
      * as the backend creates id nodes without avis nodes, we
      * have to make sure to use the right name
      */
     if ((ID_NAME_OR_ICMTEXT (expr))[0] != '\0') {
-        DBUG_ASSERT ((ID_NT_TAG (expr) != NULL), "wrong icm-arg: no tag found");
+        DBUG_ASSERT (ID_NT_TAG (expr) != NULL, "wrong icm-arg: no tag found");
         (*ret) = STRcpy (ID_NT_TAG (expr));
     } else {
         (*ret) = STRcpy ("");
     }
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
+    DBUG_PRINT ("icm-arg found: %s", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -183,16 +185,16 @@ GetNextId (char **ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextId");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_id), "wrong icm-arg: N_id expected");
-    DBUG_ASSERT ((ID_NT_TAG (expr) == NULL), "wrong icm-arg: tag found");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_id, "wrong icm-arg: N_id expected");
+    DBUG_ASSERT (ID_NT_TAG (expr) == NULL, "wrong icm-arg: tag found");
 
     /*
      * we may have to use ICMTEXT here, as the backend does not
@@ -201,7 +203,7 @@ GetNextId (char **ret, node *exprs)
      */
     (*ret) = STRcpy (ID_NAME_OR_ICMTEXT (expr));
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
+    DBUG_PRINT ("icm-arg found: %s", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -213,19 +215,19 @@ GetNextGlobobj (char **ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextGlobobj");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_globobj), "wrong icm-arg: N_globobj expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_globobj, "wrong icm-arg: N_globobj expected");
 
     (*ret) = STRcpy (OBJDEF_NT_TAG (GLOBOBJ_OBJDEF (expr)));
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
+    DBUG_PRINT ("icm-arg found: %s", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -237,19 +239,19 @@ GetNextString (char **ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextString");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_str), "wrong icm-arg: N_str expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_str, "wrong icm-arg: N_str expected");
     (*ret) = MEMmalloc (STRlen (STR_STRING (expr)) + 3);
     sprintf ((*ret), "\"%s\"", STR_STRING (expr));
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %s", (*ret)));
+    DBUG_PRINT ("icm-arg found: %s", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -261,18 +263,18 @@ GetNextByte (char *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextByte");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_numbyte), "wrong icm-arg: N_numbyte expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_numbyte, "wrong icm-arg: N_numbyte expected");
     (*ret) = NUMBYTE_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %d", (*ret)));
+    DBUG_PRINT ("icm-arg found: %d", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -284,18 +286,18 @@ GetNextShort (short *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextShort");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_numshort), "wrong icm-arg: N_numshort expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_numshort, "wrong icm-arg: N_numshort expected");
     (*ret) = NUMSHORT_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %d", (*ret)));
+    DBUG_PRINT ("icm-arg found: %d", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -307,19 +309,19 @@ GetNextInt (int *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextInt");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
     DBUG_ASSERT ((NODE_TYPE (expr) == N_num) || (NODE_TYPE (expr) == N_numint),
                  "wrong icm-arg: N_num or N_int expected");
     (*ret) = NUM_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %d", (*ret)));
+    DBUG_PRINT ("icm-arg found: %d", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -331,18 +333,18 @@ GetNextLong (long *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextLong");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_numlong), "wrong icm-arg: N_numlong expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_numlong, "wrong icm-arg: N_numlong expected");
     (*ret) = NUMLONG_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %ld", (*ret)));
+    DBUG_PRINT ("icm-arg found: %ld", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -354,19 +356,19 @@ GetNextLonglong (long long *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextLonglong");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_numlonglong),
+    DBUG_ASSERT (NODE_TYPE (expr) == N_numlonglong,
                  "wrong icm-arg: N_numulonglong expected");
     (*ret) = NUMLONGLONG_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %lld", (*ret)));
+    DBUG_PRINT ("icm-arg found: %lld", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -378,18 +380,18 @@ GetNextUbyte (unsigned char *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextUbyte");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_numubyte), "wrong icm-arg: N_numubyte expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_numubyte, "wrong icm-arg: N_numubyte expected");
     (*ret) = NUMUBYTE_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %hu", (*ret)));
+    DBUG_PRINT ("icm-arg found: %hu", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -401,19 +403,18 @@ GetNextUshort (unsigned short *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextUshort");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_numushort),
-                 "wrong icm-arg: N_numushort expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_numushort, "wrong icm-arg: N_numushort expected");
     (*ret) = NUMUSHORT_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %hu", (*ret)));
+    DBUG_PRINT ("icm-arg found: %hu", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -425,18 +426,18 @@ GetNextUint (unsigned int *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextUint");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_numuint), "wrong icm-arg: N_numuint expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_numuint, "wrong icm-arg: N_numuint expected");
     (*ret) = NUMUINT_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %u", (*ret)));
+    DBUG_PRINT ("icm-arg found: %u", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -448,18 +449,18 @@ GetNextUlong (unsigned long *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextUlong");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_numulong), "wrong icm-arg: N_numulong expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_numulong, "wrong icm-arg: N_numulong expected");
     (*ret) = NUMULONG_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %lu", (*ret)));
+    DBUG_PRINT ("icm-arg found: %lu", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -471,19 +472,19 @@ GetNextUlonglong (unsigned long long *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextUlonglong");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_numulonglong),
+    DBUG_ASSERT (NODE_TYPE (expr) == N_numulonglong,
                  "wrong icm-arg: N_numulonglong expected");
     (*ret) = NUMULONGLONG_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %llu", (*ret)));
+    DBUG_PRINT ("icm-arg found: %llu", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -495,18 +496,18 @@ GetNextChar (char *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextChar");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_char), "wrong icm-arg: N_char expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_char, "wrong icm-arg: N_char expected");
     (*ret) = CHAR_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %d", (*ret)));
+    DBUG_PRINT ("icm-arg found: %d", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -518,18 +519,18 @@ GetNextBool (bool *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextBool");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_bool), "wrong icm-arg: N_bool expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_bool, "wrong icm-arg: N_bool expected");
     (*ret) = BOOL_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %d(bool)", (*ret)));
+    DBUG_PRINT ("icm-arg found: %d(bool)", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -541,18 +542,18 @@ GetNextFloat (float *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextFloat");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_float), "wrong icm-arg: N_float expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_float, "wrong icm-arg: N_float expected");
     (*ret) = FLOAT_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %d", (*ret)));
+    DBUG_PRINT ("icm-arg found: %d", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -564,18 +565,18 @@ GetNextDouble (double *ret, node *exprs)
 {
     node *expr;
 
-    DBUG_ENTER ("GetNextDouble");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "no return value found!");
+    DBUG_ASSERT (ret != NULL, "no return value found!");
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
-    DBUG_ASSERT ((NODE_TYPE (expr) == N_double), "wrong icm-arg: N_double expected");
+    DBUG_ASSERT (NODE_TYPE (expr) == N_double, "wrong icm-arg: N_double expected");
     (*ret) = DOUBLE_VAL (expr);
 
-    DBUG_PRINT ("PRINT", ("icm-arg found: %d", (*ret)));
+    DBUG_PRINT ("icm-arg found: %d", (*ret));
 
     exprs = EXPRS_NEXT (exprs);
 
@@ -601,10 +602,10 @@ GetNextAny (char **ret, node *exprs)
     double dval;
     node *expr;
 
-    DBUG_ENTER ("GetNextAny");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
     switch (NODE_TYPE (expr)) {
     case N_icm:
@@ -706,7 +707,7 @@ GetNextAny (char **ret, node *exprs)
         (*ret) = CVdouble2String (dval);
         break;
     default:
-        DBUG_ASSERT ((0), "illegal icm-arg found!");
+        DBUG_ASSERT (0, "illegal icm-arg found!");
     }
 
     DBUG_RETURN (exprs);
@@ -718,12 +719,12 @@ GetNextVarAny (char ***ret, int *ret_len, int cnt, node *exprs)
     int i;
     int len = 0;
 
-    DBUG_ENTER ("GetNextVarAny");
+    DBUG_ENTER ();
 
     (*ret) = (char **)MEMmalloc (cnt * sizeof (char *));
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
 
     len = 0;
     for (i = 0; i < cnt; i++) {
@@ -744,12 +745,12 @@ GetNextVarNt (char ***ret, int cnt, node *exprs)
     node *expr;
     int i;
 
-    DBUG_ENTER ("GetNextVarNt");
+    DBUG_ENTER ();
 
     (*ret) = (char **)MEMmalloc (cnt * sizeof (char *));
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
     for (i = 0; i < cnt; i++) {
@@ -766,20 +767,19 @@ node *GetNextVarId( char ***ret, int cnt, node *exprs)
   node *expr;
   int i;
 
-  DBUG_ENTER( "GetNextVarId");
+  DBUG_ENTER ();
 
   (*ret) = (char **) MEMmalloc( cnt * sizeof( char*));
 
-  DBUG_ASSERT( (exprs != NULL), "wrong icm-arg: NULL found!");
-  DBUG_ASSERT( (NODE_TYPE( exprs) == N_exprs),
-               "wrong icm-arg: N_exprs expected");
+  DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+  DBUG_ASSERT (NODE_TYPE( exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
   expr = EXPRS_EXPR( exprs);
 
   for (i = 0; i < cnt; i++) {
     exprs = GetNextId( &((*ret)[i]), exprs);
   }
 
-  DBUG_RETURN( exprs);
+  DBUG_RETURN (exprs);
 }
 #endif
 
@@ -789,12 +789,12 @@ GetNextVarInt (int **ret, int cnt, node *exprs)
     node *expr;
     int i;
 
-    DBUG_ENTER ("GetNextVarInt");
+    DBUG_ENTER ();
 
     (*ret) = (int *)MEMmalloc (cnt * sizeof (int));
 
-    DBUG_ASSERT ((exprs != NULL), "wrong icm-arg: NULL found!");
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs), "wrong icm-arg: N_exprs expected");
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
     expr = EXPRS_EXPR (exprs);
 
     for (i = 0; i < cnt; i++) {
@@ -818,3 +818,5 @@ GetNextVarInt (int **ret, int cnt, node *exprs)
 #undef ICM_VARID
 #undef ICM_VARINT
 #undef ICM_END
+
+#undef DBUG_PREFIX

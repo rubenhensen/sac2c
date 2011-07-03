@@ -177,7 +177,10 @@
 #include "tree_compound.h"
 #include "node_basic.h"
 #include "print.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "AWLF"
+#include "debug.h"
+
 #include "traverse.h"
 #include "str.h"
 #include "memory.h"
@@ -245,7 +248,7 @@ MakeInfo (node *fundef)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -268,7 +271,7 @@ MakeInfo (node *fundef)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -302,7 +305,7 @@ AWLFdoAlgebraicWithLoopFolding (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("AWLFdoAlgebraicWithLoopFolding");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo (NULL);
     INFO_ONEFUNDEF (arg_info) = TRUE;
@@ -354,7 +357,7 @@ isPrfArg1AttachExtrema (node *arg_node)
     node *prf2;
     bool z = FALSE;
 
-    DBUG_ENTER ("isPrfArg1AttachExtrema");
+    DBUG_ENTER ();
 
     arg1 = PRF_ARG1 (arg_node);
     DBUG_ASSERT (N_id == NODE_TYPE (arg1),
@@ -393,7 +396,7 @@ isEmptyPartitionCodeBlock (node *partn)
 {
     bool z;
 
-    DBUG_ENTER ("isEmptyPartitionCodeBlock");
+    DBUG_ENTER ();
 
     z = (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (partn)))));
 
@@ -431,7 +434,7 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
     node *producerWL;
     node *pwlp = NULL;
 
-    DBUG_ENTER ("checkAWLFoldable");
+    DBUG_ENTER ();
 
     producerWL = AWLFIfindWlId (PRF_ARG2 (arg_node)); /* Now the N_id */
     if (NULL != producerWL) {
@@ -439,18 +442,17 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
         producerWL = AWLFIgetWlWith (producerWL); /* Now the N_with */
         if (((AVIS_DEFDEPTH (producerWLavis) + 1) == level)
             && (AWLFIisSingleOpWL (producerWL))) {
-            DBUG_PRINT ("AWLF",
-                        ("producerWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
-                         AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
-                         AVIS_WL_NEEDCOUNT (producerWLavis)));
+            DBUG_PRINT ("producerWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
+                        AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
+                        AVIS_WL_NEEDCOUNT (producerWLavis));
             /* Search for pwlp that intersects cwlp */
             pwlp = CUBSLfindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info), cwlp,
                                           producerWL, NULL);
             if ((INTERSECT_unknown == INFO_INTERSECTTYPE (arg_info))
                 || (INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info))
                 || (INTERSECT_null == INFO_INTERSECTTYPE (arg_info))) {
-                DBUG_PRINT ("AWLF", ("Cube can not be intersected, or null intersect or "
-                                     "slice needed"));
+                DBUG_PRINT (
+                  "Cube can not be intersected, or null intersect or slice needed");
                 pwlp = NULL;
             }
 
@@ -463,23 +465,21 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
                 && ((AVIS_NEEDCOUNT (producerWLavis)
                      != AVIS_WL_NEEDCOUNT (producerWLavis)))
                 && (!isEmptyPartitionCodeBlock (pwlp))) {
-                DBUG_PRINT ("AWLF", ("Cube can not be intersected - NEEDCOUNT mismatch"));
+                DBUG_PRINT ("Cube can not be intersected - NEEDCOUNT mismatch");
                 pwlp = NULL;
             }
         } else {
-            DBUG_PRINT ("AWLF",
-                        ("producerWL %s will never fold. AVIS_DEFDEPTH: %d, level: %d",
-                         AVIS_NAME (producerWLavis), AVIS_DEFDEPTH (producerWLavis),
-                         level));
+            DBUG_PRINT ("producerWL %s will never fold. AVIS_DEFDEPTH: %d, level: %d",
+                        AVIS_NAME (producerWLavis), AVIS_DEFDEPTH (producerWLavis),
+                        level);
         }
 
         if (NULL != pwlp) {
             AVIS_ISWLFOLDED (producerWLavis) = TRUE;
-            DBUG_PRINT ("AWLF",
-                        ("producerWL %s will be folded.", AVIS_NAME (producerWLavis)));
+            DBUG_PRINT ("producerWL %s will be folded.", AVIS_NAME (producerWLavis));
         } else {
-            DBUG_PRINT ("AWLF", ("producerWLs %s can not be folded, at present.",
-                                 AVIS_NAME (producerWLavis)));
+            DBUG_PRINT ("producerWLs %s can not be folded, at present.",
+                        AVIS_NAME (producerWLavis));
         }
     }
 
@@ -521,7 +521,7 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
 {
     node *navis;
 
-    DBUG_ENTER ("populateLut");
+    DBUG_ENTER ();
 
     /* Generate a new LHS name for WITHID_VEC/IDS */
     navis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (arg_node)),
@@ -530,8 +530,8 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
     INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
     LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, navis);
 
-    DBUG_PRINT ("AWLF", ("Inserted WITHID_VEC into lut: oldname: %s, newname %s",
-                         AVIS_NAME (arg_node), AVIS_NAME (navis)));
+    DBUG_PRINT ("Inserted WITHID_VEC into lut: oldname: %s, newname %s",
+                AVIS_NAME (arg_node), AVIS_NAME (navis));
 
     DBUG_RETURN (navis);
 }
@@ -571,7 +571,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
     node *sel;
     int k;
 
-    DBUG_ENTER ("makeIdxAssigns");
+    DBUG_ENTER ();
 
     ids = WITHID_IDS (PART_WITHID (ProducerPart));
     idxid = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (arg_node)));
@@ -590,8 +590,8 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
         INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
 
         lhsavis = populateLut (IDS_AVIS (ids), arg_info, SHcreateShape (0));
-        DBUG_PRINT ("AWLF", ("makeIdxAssigns created %s = _sel_VxA_(%d, %s)",
-                             AVIS_NAME (lhsavis), k, AVIS_NAME (ID_AVIS (idxid))));
+        DBUG_PRINT ("makeIdxAssigns created %s = _sel_VxA_(%d, %s)", AVIS_NAME (lhsavis),
+                    k, AVIS_NAME (ID_AVIS (idxid)));
 
         sel = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
                                        TCmakePrf2 (F_sel_VxA, TBmakeId (navis),
@@ -608,8 +608,8 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
     lhsavis = populateLut (IDS_AVIS (lhsids), arg_info, SHcreateShape (1, k));
     z = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), DUPdoDupNode (idxid)), z);
     AVIS_SSAASSIGN (lhsavis) = z;
-    DBUG_PRINT ("AWLF", ("makeIdxAssigns created %s = %s)", AVIS_NAME (lhsavis),
-                         AVIS_NAME (ID_AVIS (idxid))));
+    DBUG_PRINT ("makeIdxAssigns created %s = %s)", AVIS_NAME (lhsavis),
+                AVIS_NAME (ID_AVIS (idxid)));
     DBUG_RETURN (z);
 }
 
@@ -652,7 +652,7 @@ doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consume
     node *idxassigns;
     node *expravis;
 
-    DBUG_ENTER ("doAWLFreplace");
+    DBUG_ENTER ();
 
     oldblock = BLOCK_INSTR (CODE_CBLOCK (PART_CODE (producerWLPart)));
 
@@ -710,13 +710,13 @@ AWLFfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("AWLFfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
 
-        DBUG_PRINT ("AWLF", ("Algebraic With-Loop folding in %s %s begins",
-                             (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                             FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Algebraic With-Loop folding in %s %s begins",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                    FUNDEF_NAME (arg_node));
 
         INFO_FUNDEF (arg_info) = arg_node;
 
@@ -738,9 +738,9 @@ AWLFfundef (node *arg_node, info *arg_info)
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
         INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
-        DBUG_PRINT ("AWLF", ("Algebraic With-Loop folding in %s %s ends",
-                             (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                             FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Algebraic With-Loop folding in %s %s ends",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                    FUNDEF_NAME (arg_node));
     }
     INFO_FUNDEF (arg_info) = NULL;
 
@@ -764,7 +764,7 @@ AWLFassign (node *arg_node, info *arg_info)
 {
     node *foldableProducerPart;
 
-    DBUG_ENTER ("AWLFassign");
+    DBUG_ENTER ();
 
     /*
      * Top-down traversal
@@ -772,12 +772,12 @@ AWLFassign (node *arg_node, info *arg_info)
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
 #ifdef VERBOSE
-    DBUG_PRINT ("AWLF", ("Traversing N_assign"));
+    DBUG_PRINT ("Traversing N_assign");
 #endif // VERBOSE
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     foldableProducerPart = INFO_AWLFOLDABLEPRODUCERWLPART (arg_info);
     INFO_AWLFOLDABLEPRODUCERWLPART (arg_info) = NULL;
-    DBUG_ASSERT ((NULL == INFO_PREASSIGNS (arg_info)),
+    DBUG_ASSERT (NULL == INFO_PREASSIGNS (arg_info),
                  "AWLFassign INFO_PREASSIGNS not NULL");
 
     /*
@@ -814,9 +814,9 @@ AWLFwith (node *arg_node, info *arg_info)
     node *producershape;
     info *old_info;
 
-    DBUG_ENTER ("AWLFwith");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("AWLF", ("Examining N_with"));
+    DBUG_PRINT ("Examining N_with");
     old_info = arg_info;
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
     INFO_WL (arg_info) = arg_node;
@@ -854,7 +854,7 @@ AWLFwith (node *arg_node, info *arg_info)
         GENARRAY_NEXT (genop) = MODARRAY_NEXT (consumerop);
         nextop = FREEdoFreeNode (consumerop);
         WITH_WITHOP (arg_node) = genop;
-        DBUG_PRINT ("AWLF", ("Replacing modarray by genarray"));
+        DBUG_PRINT ("Replacing modarray by genarray");
     }
 #endif // BREAKSDUPLHS
 
@@ -876,9 +876,9 @@ AWLFwith (node *arg_node, info *arg_info)
 node *
 AWLFcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFcode");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("AWLF", ("Traversing N_code"));
+    DBUG_PRINT ("Traversing N_code");
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -894,9 +894,9 @@ AWLFcode (node *arg_node, info *arg_info)
 node *
 AWLFpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFpart");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("AWLF", ("Traversing N_part"));
+    DBUG_PRINT ("Traversing N_part");
     INFO_PART (arg_info) = arg_node;
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
     INFO_PART (arg_info) = NULL;
@@ -916,10 +916,10 @@ AWLFpart (node *arg_node, info *arg_info)
 node *
 AWLFids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFids");
+    DBUG_ENTER ();
 
 #ifdef VERBOSE
-    DBUG_PRINT ("AWLF", ("Traversing N_ids"));
+    DBUG_PRINT ("Traversing N_ids");
 #endif // VERBOSE
     AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_LEVEL (arg_info);
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -947,10 +947,10 @@ AWLFprf (node *arg_node, info *arg_info)
 {
     node *arg1;
 
-    DBUG_ENTER ("AWLFprf");
+    DBUG_ENTER ();
 
 #ifdef VERBOSE
-    DBUG_PRINT ("AWLF", ("Traversing N_prf"));
+    DBUG_PRINT ("Traversing N_prf");
 #endif // VERBOSE
     arg1 = PRF_ARG1 (arg_node);
     if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
@@ -975,9 +975,9 @@ AWLFprf (node *arg_node, info *arg_info)
 node *
 AWLFcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFcond");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("AWLF", ("Traversing N_cond"));
+    DBUG_PRINT ("Traversing N_cond");
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THENINSTR (arg_node) = TRAVdo (COND_THENINSTR (arg_node), arg_info);
     COND_ELSEINSTR (arg_node) = TRAVdo (COND_ELSEINSTR (arg_node), arg_info);
@@ -996,9 +996,9 @@ AWLFcond (node *arg_node, info *arg_info)
 node *
 AWLFfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFfuncond");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("AWLF", ("Traversing N_funcond"));
+    DBUG_PRINT ("Traversing N_funcond");
     FUNCOND_IF (arg_node) = TRAVopt (FUNCOND_IF (arg_node), arg_info);
     FUNCOND_THEN (arg_node) = TRAVopt (FUNCOND_THEN (arg_node), arg_info);
     FUNCOND_ELSE (arg_node) = TRAVopt (FUNCOND_ELSE (arg_node), arg_info);
@@ -1017,9 +1017,9 @@ AWLFfuncond (node *arg_node, info *arg_info)
 node *
 AWLFwhile (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFwhile");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("AWLF", ("Traversing N_while"));
+    DBUG_PRINT ("Traversing N_while");
     WHILE_COND (arg_node) = TRAVopt (WHILE_COND (arg_node), arg_info);
     WHILE_BODY (arg_node) = TRAVopt (WHILE_BODY (arg_node), arg_info);
 
@@ -1037,10 +1037,9 @@ AWLFwhile (node *arg_node, info *arg_info)
 node *
 AWLFlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFlet");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("AWLF", ("Traversing N_let for LHS %s",
-                         AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
+    DBUG_PRINT ("Traversing N_let for LHS %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
 
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
 
@@ -1054,3 +1053,5 @@ AWLFlet (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Algebraic with loop folding -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

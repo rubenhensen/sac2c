@@ -44,7 +44,9 @@
 #include "str.h"
 #include "memory.h"
 #include <stdio.h>
-#include "dbug.h"
+
+#define DBUG_PREFIX "SET"
+#include "debug.h"
 
 #include "shape.h"
 #include "globals.h"
@@ -52,9 +54,9 @@
 void
 COserializeConstant (FILE *file, constant *cnst)
 {
-    DBUG_ENTER ("COserializeConstant");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("SET", ("Processing constant structure"));
+    DBUG_PRINT ("Processing constant structure");
 
     if (cnst == NULL) {
         fprintf (file, "NULL");
@@ -74,7 +76,7 @@ COserializeConstant (FILE *file, constant *cnst)
         data = MEMfree (data);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 constant *
@@ -83,7 +85,7 @@ COdeserializeConstant (simpletype type, shape *shp, int vlen, char *vec)
     constant *result;
     void *data;
 
-    DBUG_ENTER ("COdeserializeConstant");
+    DBUG_ENTER ();
 
     data = COINTallocCV (type, vlen);
     data = STRhex2Bytes ((unsigned char *)data, vec);
@@ -92,3 +94,5 @@ COdeserializeConstant (simpletype type, shape *shp, int vlen, char *vec)
 
     DBUG_RETURN (result);
 }
+
+#undef DBUG_PREFIX

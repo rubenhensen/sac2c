@@ -2,7 +2,9 @@
 
 #include "extend_wrapper_types.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "new_types.h"
@@ -31,7 +33,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -43,7 +45,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -67,7 +69,7 @@ FreeInfo (info *info)
 static ntype *
 buildWrapper (node *fundef, ntype *type)
 {
-    DBUG_ENTER ("buildWrapper");
+    DBUG_ENTER ();
 
     /*
      * set this instances return types to AUD[*]
@@ -98,7 +100,7 @@ ExtendWrapperType (ntype *type)
 {
     ntype *new_type;
 
-    DBUG_ENTER ("ExtendWrapperType");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYisFun (type), "ExtendWrapperType called on non-fun type!");
 
@@ -111,12 +113,12 @@ ExtendWrapperType (ntype *type)
 static ntype *
 buildProductType (node *fundef, ntype *type)
 {
-    DBUG_ENTER ("buildProductType");
+    DBUG_ENTER ();
 
     /*
      * there should be only one instance
      */
-    DBUG_ASSERT ((type == NULL), "function with no args but multiple instances found");
+    DBUG_ASSERT (type == NULL, "function with no args but multiple instances found");
 
     /*
      * set this instances return types to AUD[*]
@@ -147,7 +149,7 @@ WrapperType2ProductType (ntype *type)
 {
     ntype *new_type;
 
-    DBUG_ENTER ("WrapperType2ProductType");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYisFun (type), "WrapperType2ProductType called on non-fun type!");
 
@@ -167,7 +169,7 @@ EWTfundef (node *arg_node, info *arg_info)
     ntype *new_type, *type;
     node *fundef;
 
-    DBUG_ENTER ("EWTfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISWRAPPERFUN (arg_node)) {
         type = FUNDEF_WRAPPERTYPE (arg_node);
@@ -261,7 +263,7 @@ EWTdoExtendWrapperTypes (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("EWTdoExtendWrapperTypes");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_ewt);
@@ -279,7 +281,7 @@ EWTdoExtendWrapperTypesAfterTC (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("EWTdoExtendWrapperTypes");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_ewt);
@@ -292,3 +294,5 @@ EWTdoExtendWrapperTypesAfterTC (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -22,7 +22,9 @@
 
 #include "construct_bundles.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "CBL"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -49,7 +51,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -61,7 +63,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -87,7 +89,7 @@ CBLdoConstructBundles (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CBLdoConstructBundles");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -117,7 +119,7 @@ GenerateFunbundleName (char *name, namespace_t *ns, int arity)
     char *result, *safens, *safename;
     str_buf *buffer;
 
-    DBUG_ENTER ("GenerateFunbundleName");
+    DBUG_ENTER ();
 
     buffer = SBUFcreate (128);
 
@@ -143,9 +145,9 @@ GenerateFunbundleName (char *name, namespace_t *ns, int arity)
 static node *
 InsertIntoBundles (node *fundef, int arity, node *bundles)
 {
-    DBUG_ENTER ("InsertIntoBundles");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((FUNDEF_NEXT (fundef) == NULL),
+    DBUG_ASSERT (FUNDEF_NEXT (fundef) == NULL,
                  "FUNDEF_NEXT needs to be NULL before InsertIntoBundles is called!");
 
     if (bundles == NULL) {
@@ -194,7 +196,7 @@ CBLfundef (node *arg_node, info *arg_info)
     node *old_node = NULL;
     int arity;
 
-    DBUG_ENTER ("CBLfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISWRAPPERFUN (arg_node) && !FUNDEF_ISSACARGCONVERSION (arg_node)) {
         if (!FUNDEF_HASDOTRETS (arg_node) && !FUNDEF_HASDOTARGS (arg_node)) {
@@ -204,8 +206,8 @@ CBLfundef (node *arg_node, info *arg_info)
 
             arity = TCcountArgs (FUNDEF_ARGS (old_node));
 
-            DBUG_PRINT ("CBL", ("Adding function %s (%d) to bundle.",
-                                CTIitemName (old_node), arity));
+            DBUG_PRINT ("Adding function %s (%d) to bundle.", CTIitemName (old_node),
+                        arity);
 
             INFO_BUNDLES (arg_info)
               = InsertIntoBundles (old_node, arity, INFO_BUNDLES (arg_info));
@@ -251,7 +253,7 @@ CBLfundef (node *arg_node, info *arg_info)
 node *
 CBLmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CBLmodule");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -267,3 +269,5 @@ CBLmodule (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal Construct Bundles -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

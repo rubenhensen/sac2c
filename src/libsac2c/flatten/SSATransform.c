@@ -166,7 +166,10 @@
 #include "node_basic.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "SSA"
+#include "debug.h"
+
 #include "globals.h"
 #include "traverse.h"
 #include "free.h"
@@ -268,7 +271,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -291,7 +294,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -326,17 +329,17 @@ static int ssat_renamings = 0;
 static void
 CheckSSATCounter ()
 {
-    DBUG_ENTER ("CheckSSATCounter");
+    DBUG_ENTER ();
 
     if (ssat_renamings != 0) {
-        DBUG_ASSERT ((global.ssaform_phase < INT_MAX),
+        DBUG_ASSERT (global.ssaform_phase < INT_MAX,
                      "global.ssaform_phase overflow detected!");
 
         global.ssaform_phase++;
         ssat_renamings = 0;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!-- ****************************************************************** -->
@@ -347,12 +350,12 @@ CheckSSATCounter ()
 static void
 IncSSATCounter ()
 {
-    DBUG_ENTER ("IncSSATCounter");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ssat_renamings < INT_MAX), "SSATCounter overflow!");
+    DBUG_ASSERT (ssat_renamings < INT_MAX, "SSATCounter overflow!");
     ssat_renamings++;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*@}*/
@@ -403,7 +406,7 @@ IncSSATCounter ()
 static node *
 RemoveOldSsaStackElements (node *avis, int nestlevel)
 {
-    DBUG_ENTER ("RemoveOldSsaStackElements");
+    DBUG_ENTER ();
 
     while ((AVIS_SSASTACK (avis) != NULL)
            && (SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) > nestlevel)) {
@@ -423,7 +426,7 @@ RemoveOldSsaStackElements (node *avis, int nestlevel)
 static node *
 RemoveSsaStackElementsGreaterZero (node *avis)
 {
-    DBUG_ENTER ("RemoveSsaStackElementsGreaterZero");
+    DBUG_ENTER ();
 
     while ((AVIS_SSASTACK (avis) != NULL)
            && (SSASTACK_NESTLEVEL (AVIS_SSASTACK (avis)) > 0)) {
@@ -443,7 +446,7 @@ RemoveSsaStackElementsGreaterZero (node *avis)
 static node *
 EnsureSsaStackElement (node *avis, int nestlevel)
 {
-    DBUG_ENTER ("EnsureSsaStackElement");
+    DBUG_ENTER ();
 
     avis = RemoveOldSsaStackElements (avis, nestlevel);
 
@@ -470,7 +473,7 @@ DupTopSsastack (node *avis)
 {
     node *ssastack;
 
-    DBUG_ENTER ("DupTopSsastack");
+    DBUG_ENTER ();
 
     if (AVIS_SSASTACK_INUSE (avis)) {
         ssastack = AVIS_SSASTACK (avis);
@@ -492,7 +495,7 @@ DupTopSsastack (node *avis)
 static node *
 PopSsastackThen (node *avis)
 {
-    DBUG_ENTER ("PopSsastackThen");
+    DBUG_ENTER ();
 
     AVIS_SSATHEN (avis) = AVIS_SSASTACK_TOP (avis);
     AVIS_SSASTACK (avis) = FREEdoFreeNode (AVIS_SSASTACK (avis));
@@ -510,7 +513,7 @@ PopSsastackThen (node *avis)
 static node *
 PopSsastackElse (node *avis)
 {
-    DBUG_ENTER ("PopSsastackElse");
+    DBUG_ENTER ();
 
     AVIS_SSAELSE (avis) = AVIS_SSASTACK_TOP (avis);
     AVIS_SSASTACK (avis) = FREEdoFreeNode (AVIS_SSASTACK (avis));
@@ -543,9 +546,9 @@ PopSsastackElse (node *avis)
 static node *
 InitSSAT (node *avis)
 {
-    DBUG_ENTER ("InitSSAT");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("SSA", ("Initialising stack for %s.", AVIS_NAME (avis)));
+    DBUG_PRINT ("Initialising stack for %s.", AVIS_NAME (avis));
 
     AVIS_SSASTACK (avis) = TBmakeSsastack (NULL, 0, NULL);
 
@@ -562,7 +565,7 @@ InitSSAT (node *avis)
 static node *
 TearDownSSAT (node *avis)
 {
-    DBUG_ENTER ("TearDownSSAT");
+    DBUG_ENTER ();
 
     AVIS_SSASTACK (avis) = FREEdoFreeTree (AVIS_SSASTACK (avis));
     AVIS_SSATHEN (avis) = NULL;
@@ -592,7 +595,7 @@ CreateFuncondAssign (node *cond, node *id, node *assign)
     node *funcond;
     node *new_assign;
 
-    DBUG_ENTER ("CreateFuncondAssign");
+    DBUG_ENTER ();
 
     funcond = TBmakeFuncond (DUPdoDupTree (COND_COND (cond)), DUPdoDupTree (id),
                              DUPdoDupTree (id));
@@ -621,7 +624,7 @@ CreateFuncondAssign (node *cond, node *id, node *assign)
 node *
 SSATfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSATfundef");
+    DBUG_ENTER ();
 
     /*
      * process only fundefs with body
@@ -676,7 +679,7 @@ node *
 SSATblock (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("SSATblock");
+    DBUG_ENTER ();
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         /* there are some vardecs */
@@ -707,7 +710,7 @@ SSATassign (node *arg_node, info *arg_info)
 {
     node *old_assign;
 
-    DBUG_ENTER ("SSATassign");
+    DBUG_ENTER ();
 
     /* preserve the old assignment link */
     old_assign = INFO_ASSIGN (arg_info);
@@ -747,9 +750,9 @@ SSATassign (node *arg_node, info *arg_info)
 node *
 SSATlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSATlet");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), "N_let with empty EXPR attribute.");
+    DBUG_ASSERT (LET_EXPR (arg_node) != NULL, "N_let with empty EXPR attribute.");
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     if (LET_IDS (arg_node) != NULL) {
@@ -779,9 +782,9 @@ SSATarg (node *arg_node, info *arg_info)
 {
     node *avis = ARG_AVIS (arg_node);
 
-    DBUG_ENTER ("SSATarg");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("SSA", ("working on arg %s", ARG_NAME (arg_node)));
+    DBUG_PRINT ("working on arg %s", ARG_NAME (arg_node));
 
     if (AVIS_SSACOUNT (avis) == NULL) {
         node *topblock = FUNDEF_BODY (INFO_FUNDEF (arg_info));
@@ -833,7 +836,7 @@ SSATvardec (node *arg_node, info *arg_info)
 {
     node *avis = VARDEC_AVIS (arg_node);
 
-    DBUG_ENTER ("SSATvardec");
+    DBUG_ENTER ();
 
     if (AVIS_SSACOUNT (avis) == NULL) {
         node *topblock = FUNDEF_BODY (INFO_FUNDEF (arg_info));
@@ -878,7 +881,7 @@ SSATid (node *arg_node, info *arg_info)
 {
 
     node *new_avis = NULL;
-    DBUG_ENTER ("SSATid");
+    DBUG_ENTER ();
 
     ID_AVIS (arg_node)
       = RemoveOldSsaStackElements (ID_AVIS (arg_node), INFO_NESTLEVEL (arg_info));
@@ -964,9 +967,9 @@ SSATap (node *arg_node, info *arg_info)
 {
     info *new_arg_info;
 
-    DBUG_ENTER ("SSATap");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((AP_FUNDEF (arg_node) != NULL), "missing fundef in ap-node");
+    DBUG_ASSERT (AP_FUNDEF (arg_node) != NULL, "missing fundef in ap-node");
 
     AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
@@ -974,8 +977,7 @@ SSATap (node *arg_node, info *arg_info)
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (INFO_SINGLEFUNDEF (arg_info) == SSA_TRAV_SPECIALS)
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-        DBUG_PRINT ("SSA", ("traverse in special fundef %s",
-                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("traverse in special fundef %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
         /* stack arg_info frame for new fundef */
         new_arg_info = MakeInfo ();
@@ -985,13 +987,13 @@ SSATap (node *arg_node, info *arg_info)
         /* start traversal of special fundef */
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
 
-        DBUG_PRINT ("SSA", ("traversal of special fundef %s finished\n",
-                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("traversal of special fundef %s finished\n",
+                    FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
         new_arg_info = FreeInfo (new_arg_info);
     } else {
-        DBUG_PRINT ("SSA", ("do not traverse in normal fundef %s",
-                            FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("do not traverse in normal fundef %s",
+                    FUNDEF_NAME (AP_FUNDEF (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -1007,17 +1009,17 @@ SSATap (node *arg_node, info *arg_info)
 node *
 SSATwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSATwith");
+    DBUG_ENTER ();
 
     /* traverse in with-op */
-    DBUG_ASSERT ((WITH_WITHOP (arg_node) != NULL), "Nwith without WITHOP node!");
+    DBUG_ASSERT (WITH_WITHOP (arg_node) != NULL, "Nwith without WITHOP node!");
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     /**
      * traverse partitions: this implicitly checks withid consistency between
      * several partitions!
      */
-    DBUG_ASSERT ((WITH_PART (arg_node) != NULL), "Nwith without PART node!");
+    DBUG_ASSERT (WITH_PART (arg_node) != NULL, "Nwith without PART node!");
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     /**
      * reset FIRST_WITHID (being set in SSAwithid) for the next with loop
@@ -1029,7 +1031,7 @@ SSATwith (node *arg_node, info *arg_info)
      * traverse code: as we may have more than one code stacking is done
      * at the code nodes themselves!
      */
-    DBUG_ASSERT ((WITH_CODE (arg_node) != NULL), "Nwith without CODE node!");
+    DBUG_ASSERT (WITH_CODE (arg_node) != NULL, "Nwith without CODE node!");
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1045,18 +1047,18 @@ SSATwith (node *arg_node, info *arg_info)
 node *
 SSATwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSATwith2");
+    DBUG_ENTER ();
 
     /* traverse in with-op */
-    DBUG_ASSERT ((WITH2_WITHOP (arg_node) != NULL), "Nwith2 without WITHOP node!");
+    DBUG_ASSERT (WITH2_WITHOP (arg_node) != NULL, "Nwith2 without WITHOP node!");
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
     /* traverse segmented partitions */
-    DBUG_ASSERT ((WITH2_SEGS (arg_node) != NULL), "Nwith2 without SEGS node!");
+    DBUG_ASSERT (WITH2_SEGS (arg_node) != NULL, "Nwith2 without SEGS node!");
     WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
 
     /* traverse withid */
-    DBUG_ASSERT ((WITH2_WITHID (arg_node) != NULL), "Nwith2 without WITHID node!");
+    DBUG_ASSERT (WITH2_WITHID (arg_node) != NULL, "Nwith2 without WITHID node!");
     WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
     /**
      * reset FIRST_WITHID (being set in SSAwithid) for the next with loop
@@ -1068,7 +1070,7 @@ SSATwith2 (node *arg_node, info *arg_info)
      * traverse code: as we may have more than one code stacking is done
      * at the code nodes themselves!
      */
-    DBUG_ASSERT ((WITH2_CODE (arg_node) != NULL), "Nwith2 without CODE node!");
+    DBUG_ASSERT (WITH2_CODE (arg_node) != NULL, "Nwith2 without CODE node!");
     WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1086,16 +1088,16 @@ SSATwith2 (node *arg_node, info *arg_info)
 node *
 SSATpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSATpart");
+    DBUG_ENTER ();
 
     /* traverse generator */
-    DBUG_ASSERT ((PART_GENERATOR (arg_node) != NULL), "Npart without Ngen node!");
+    DBUG_ASSERT (PART_GENERATOR (arg_node) != NULL, "Npart without Ngen node!");
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
     /* traverse withid on our way back up: */
-    DBUG_ASSERT ((PART_WITHID (arg_node) != NULL), "Npart without Nwithid node!");
+    DBUG_ASSERT (PART_WITHID (arg_node) != NULL, "Npart without Nwithid node!");
 
     INFO_NESTLEVEL (arg_info) += 1;
     PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
@@ -1120,7 +1122,7 @@ SSATwithid (node *arg_node, info *arg_info)
     node *assign;
     node *first;
 
-    DBUG_ENTER ("SSATwithid");
+    DBUG_ENTER ();
 
     /* Set current assign to NULL for these special ids! */
     assign = INFO_ASSIGN (arg_info);
@@ -1136,25 +1138,25 @@ SSATwithid (node *arg_node, info *arg_info)
         INFO_FIRST_WITHID (arg_info) = arg_node;
 
         if (WITHID_VEC (arg_node) != NULL) {
-            DBUG_PRINT ("SSA", ("renaming: WITHID_VEC: %s",
-                                AVIS_NAME (IDS_AVIS (WITHID_VEC (arg_node)))));
+            DBUG_PRINT ("renaming: WITHID_VEC: %s",
+                        AVIS_NAME (IDS_AVIS (WITHID_VEC (arg_node))));
             WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
-            DBUG_ASSERT ((NULL == AVIS_SSAASSIGN (IDS_AVIS WITHID_VEC (arg_node))),
+            DBUG_ASSERT (NULL == AVIS_SSAASSIGN (IDS_AVIS WITHID_VEC (arg_node)),
                          "WITHID_VEC should not have AVIS_SSAASSIGN");
         }
 
         if (WITHID_IDS (arg_node) != NULL) {
-            DBUG_PRINT ("SSA", ("renaming: WITHID_IDS: %s",
-                                AVIS_NAME (IDS_AVIS (WITHID_IDS (arg_node)))));
+            DBUG_PRINT ("renaming: WITHID_IDS: %s",
+                        AVIS_NAME (IDS_AVIS (WITHID_IDS (arg_node))));
             WITHID_IDS (arg_node) = TRAVdo (WITHID_IDS (arg_node), arg_info);
             /* SHould have DBUG_ASSERT here on SSA_ASSIGNs */
         }
 
         if (WITHID_IDXS (arg_node) != NULL) {
-            DBUG_PRINT ("SSA", ("traversing: WITHID_IDXS: %s",
-                                AVIS_NAME (IDS_AVIS (WITHID_IDXS (arg_node)))));
+            DBUG_PRINT ("traversing: WITHID_IDXS: %s",
+                        AVIS_NAME (IDS_AVIS (WITHID_IDXS (arg_node))));
             WITHID_IDXS (arg_node) = TRAVdo (WITHID_IDXS (arg_node), arg_info);
-            DBUG_ASSERT ((NULL == AVIS_SSAASSIGN (IDS_AVIS WITHID_IDXS (arg_node))),
+            DBUG_ASSERT (NULL == AVIS_SSAASSIGN (IDS_AVIS WITHID_IDXS (arg_node)),
                          "WITHID_IDXS should not have AVIS_SSAASSIGN");
         }
 
@@ -1163,7 +1165,7 @@ SSATwithid (node *arg_node, info *arg_info)
         if (global.ssaiv && (global.compiler_phase == PH_opt)) {
             /* The following code should all be dead now, if we're in the
              * optimizer. */
-            DBUG_PRINT ("SSA", ("RBE dead code walking"));
+            DBUG_PRINT ("RBE dead code walking");
         }
 
         /**
@@ -1221,7 +1223,7 @@ SSATwithid (node *arg_node, info *arg_info)
 node *
 SSATcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSATcode");
+    DBUG_ENTER ();
 
     INFO_NESTLEVEL (arg_info) += 1;
 
@@ -1252,7 +1254,7 @@ SSATcode (node *arg_node, info *arg_info)
 node *
 SSATcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSATcond");
+    DBUG_ENTER ();
 
     /* save this cond_node for later insertions of copy assignments */
     INFO_CONDSTMT (arg_info) = arg_node;
@@ -1294,7 +1296,7 @@ SSATcond (node *arg_node, info *arg_info)
 node *
 SSATfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSATfuncond");
+    DBUG_ENTER ();
 
     INFO_FUNCOND_FOUND (arg_info) = TRUE;
 
@@ -1327,7 +1329,7 @@ SSATfuncond (node *arg_node, info *arg_info)
 node *
 SSATreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSATreturn");
+    DBUG_ENTER ();
 
     /**
      * check whether this function contains a conditional but does not contain
@@ -1384,7 +1386,7 @@ SSATids (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("SSATids");
+    DBUG_ENTER ();
 
     IDS_AVIS (arg_node)
       = EnsureSsaStackElement (IDS_AVIS (arg_node), INFO_NESTLEVEL (arg_info));
@@ -1397,8 +1399,8 @@ SSATids (node *arg_node, info *arg_info)
          */
         AVIS_SSASTACK_TOP (avis) = avis;
         AVIS_SSADEFINED (avis) = TRUE;
-        DBUG_PRINT ("SSA", ("first definition, no renaming: %s (" F_PTR ")",
-                            AVIS_NAME (avis), avis));
+        DBUG_PRINT ("first definition, no renaming: %s (" F_PTR ")", AVIS_NAME (avis),
+                    avis);
 
     } else {
         /*
@@ -1455,8 +1457,8 @@ SSATids (node *arg_node, info *arg_info)
         FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
           = TBmakeVardec (new_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
 
-        DBUG_PRINT ("SSA", ("re-definition, renaming: %s (" F_PTR ") -> %s",
-                            AVIS_NAME (avis), avis, AVIS_NAME (new_avis)));
+        DBUG_PRINT ("re-definition, renaming: %s (" F_PTR ") -> %s", AVIS_NAME (avis),
+                    avis, AVIS_NAME (new_avis));
 
         /* new rename-to target for old vardec */
         AVIS_SSASTACK_TOP (avis) = new_avis;
@@ -1503,7 +1505,7 @@ TreatIdsAsRhs (node *arg_node, info *arg_info)
 {
     node *new_avis;
 
-    DBUG_ENTER ("TreatIdsAsRhs");
+    DBUG_ENTER ();
 
     IDS_AVIS (arg_node)
       = RemoveOldSsaStackElements (IDS_AVIS (arg_node), INFO_NESTLEVEL (arg_info));
@@ -1586,14 +1588,14 @@ SSATdoTransformAllowGOs (node *syntax_tree)
 {
     info *arg_info;
 
-    DBUG_ENTER ("SSATdoTransformAllowGOs");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module,
                  "SSATdoTransformAllowGos is used for module nodes only");
 
 #ifndef DBUG_OFF
     if (global.compiler_phase == PH_opt) {
-        DBUG_PRINT ("OPT", ("starting ssa transformation allowing GOs for ast"));
+        DBUG_PRINT_TAG ("OPT", "starting ssa transformation allowing GOs for ast");
     }
 #endif
 
@@ -1631,14 +1633,14 @@ SSATdoTransform (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("SSATdoTransform");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
                  "SSATransform expected N_module or N_fundef");
 
 #ifndef DBUG_OFF
     if (global.compiler_phase == PH_opt) {
-        DBUG_PRINT ("OPT", ("starting ssa transformation for ast"));
+        DBUG_PRINT_TAG ("OPT", "starting ssa transformation for ast");
     }
 #endif
 
@@ -1671,3 +1673,5 @@ SSATdoTransform (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

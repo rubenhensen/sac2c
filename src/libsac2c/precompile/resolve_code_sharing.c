@@ -13,13 +13,16 @@
 #include "resolve_code_sharing.h"
 #include "tree_basic.h"
 #include "DupTree.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "RCS"
+#include "debug.h"
+
 #include "traverse.h"
 
 node *
 RCSdoResolveCodeSharing (node *arg_node)
 {
-    DBUG_ENTER ("RCSdoResolveCodeSharing");
+    DBUG_ENTER ();
 
     TRAVpush (TR_rcs);
 
@@ -35,12 +38,12 @@ ResolvePotentialSharing (node *code)
 {
     node *new_code, *next_code;
 
-    DBUG_ENTER ("ResolvePotentialSharing");
+    DBUG_ENTER ();
 
     if (code != NULL) {
         if (CODE_USED (code) == 0) {
             CODE_USED (code) = 1;
-            DBUG_PRINT ("RCS", ("CODE_USED( %p) = 1", code));
+            DBUG_PRINT ("CODE_USED( %p) = 1", code);
 
             new_code = code;
         } else {
@@ -62,7 +65,7 @@ ResolvePotentialSharing (node *code)
              */
             CODE_NEXT (code) = new_code;
             CODE_NEXT (new_code) = next_code;
-            DBUG_PRINT ("RCS", ("duplicated %p into %p", code, new_code));
+            DBUG_PRINT ("duplicated %p into %p", code, new_code);
         }
     } else {
         new_code = code;
@@ -81,7 +84,7 @@ ResolvePotentialSharing (node *code)
 node *
 RCSwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCSwith");
+    DBUG_ENTER ();
 
     /**
      * First, we reset all USED counters!
@@ -106,7 +109,7 @@ RCSwith (node *arg_node, info *arg_info)
 node *
 RCSwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCSwith2");
+    DBUG_ENTER ();
 
     /**
      * First, we reset all USED counters!
@@ -131,11 +134,11 @@ RCSwith2 (node *arg_node, info *arg_info)
 node *
 RCScode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCScode");
+    DBUG_ENTER ();
 
     CODE_USED (arg_node) = 0;
 
-    DBUG_PRINT ("RCS", ("CODE_USED( %p) = 0", arg_node));
+    DBUG_PRINT ("CODE_USED( %p) = 0", arg_node);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -152,7 +155,7 @@ RCScode (node *arg_node, info *arg_info)
 node *
 RCSpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCSpart");
+    DBUG_ENTER ();
 
     PART_CODE (arg_node) = ResolvePotentialSharing (PART_CODE (arg_node));
 
@@ -171,7 +174,7 @@ RCSpart (node *arg_node, info *arg_info)
 node *
 RCSwlgrid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RCSwlgrid");
+    DBUG_ENTER ();
 
     WLGRID_CODE (arg_node) = ResolvePotentialSharing (WLGRID_CODE (arg_node));
 
@@ -179,3 +182,5 @@ RCSwlgrid (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

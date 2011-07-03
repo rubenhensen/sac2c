@@ -4,7 +4,10 @@
 
 #include "handle_dots.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "free.h"
 #include "ctinfo.h"
 #include "DupTree.h"
@@ -156,7 +159,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -176,7 +179,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -197,7 +200,7 @@ MakeAssignLetNV (char *var_name, node *let_expr)
     node *tmp_ids;
     node *tmp_node;
 
-    DBUG_ENTER ("MakeAssignLet");
+    DBUG_ENTER ();
 
     tmp_ids = TBmakeSpids (var_name, NULL);
 
@@ -221,7 +224,7 @@ MakeAssignLetNV (char *var_name, node *let_expr)
 static void
 BuildDotList (node *tree, dotinfo *info)
 {
-    DBUG_ENTER ("BuildDotList");
+    DBUG_ENTER ();
 
     while (tree != NULL) {
         node *handle = EXPRS_EXPR (tree);
@@ -261,7 +264,7 @@ BuildDotList (node *tree, dotinfo *info)
         tree = EXPRS_NEXT (tree);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /**
@@ -277,7 +280,7 @@ MakeDotInfo (node *args)
 {
     dotinfo *result;
 
-    DBUG_ENTER ("MakeDotInfo");
+    DBUG_ENTER ();
 
     result = (dotinfo *)MEMmalloc (sizeof (dotinfo));
 
@@ -302,7 +305,7 @@ MakeDotInfo (node *args)
 static void
 FreeDotInfo (dotinfo *node)
 {
-    DBUG_ENTER ("FreeDotInfo");
+    DBUG_ENTER ();
 
     while (node->left != NULL) {
         dotlist *tmp = node->left;
@@ -312,7 +315,7 @@ FreeDotInfo (dotinfo *node)
 
     MEMfree (node);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /**
@@ -329,7 +332,7 @@ LDot2Pos (int dot, dotinfo *info)
     dotlist *dots = info->left;
     int cnt;
 
-    DBUG_ENTER ("LDot2Pos");
+    DBUG_ENTER ();
 
     for (cnt = 1; cnt < dot; cnt++) {
         dots = dots->next;
@@ -350,7 +353,7 @@ RDot2Pos (int dot, dotinfo *info)
     dotlist *dots = info->right;
     int cnt;
 
-    DBUG_ENTER ("RDot2Pos");
+    DBUG_ENTER ();
 
     for (cnt = 1; cnt < dot; cnt++) {
         dots = dots->prev;
@@ -372,7 +375,7 @@ LIsDot (int dot, dotinfo *info)
     int result = 0;
     dotlist *list = info->left;
 
-    DBUG_ENTER ("LIsDot");
+    DBUG_ENTER ();
 
     while ((list != NULL) && (list->position <= dot)) {
         if (list->position == dot) {
@@ -398,7 +401,7 @@ RIsDot (int dot, dotinfo *info)
 {
     int result = 0;
 
-    DBUG_ENTER ("RIsDot");
+    DBUG_ENTER ();
 
     result = LIsDot (info->selcnt - dot + 1, info);
 
@@ -423,7 +426,7 @@ MakeTmpId (char *name)
 {
     node *result;
 
-    DBUG_ENTER ("MakeTmpId");
+    DBUG_ENTER ();
 
 #ifdef HD_USE_EXPLANATORY_NAMES
     result = TBmakeSpid (NULL, TRAVtmpVarName (name));
@@ -451,7 +454,7 @@ BuildDrop (node *left, node *right, node *vector)
 #ifdef HD_USE_BUILTIN_TAKEDROP
     node *result;
 
-    DBUG_ENTER ("BuildDrop");
+    DBUG_ENTER ();
 
     result = MAKE_BIN_PRF (F_drop_SxV, left,
                            MAKE_BIN_PRF (F_drop_SxV,
@@ -484,7 +487,7 @@ BuildConcat (node *a, node *b)
 #ifdef HD_USE_BUILTIN_CONCAT
     node *result;
 
-    DBUG_ENTER ("BuildConcat");
+    DBUG_ENTER ();
 
     result = MAKE_BIN_PRF (F_cat_VxV, a, b);
 
@@ -512,7 +515,7 @@ BuildLeftShape (node *array, dotinfo *info)
     int maxdot;
     node *result = NULL;
 
-    DBUG_ENTER ("BuildLeftShape");
+    DBUG_ENTER ();
 
     if (info->tripledot == 0)
         maxdot = info->dotcnt;
@@ -557,7 +560,7 @@ BuildMiddleShape (node *array, dotinfo *info)
     node *left = NULL;
     node *right = NULL;
 
-    DBUG_ENTER ("BuildMiddleShape");
+    DBUG_ENTER ();
 
     shape = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL));
 
@@ -587,7 +590,7 @@ BuildRightShape (node *array, dotinfo *info)
     int maxdot;
     node *result = NULL;
 
-    DBUG_ENTER ("BuildRighthape");
+    DBUG_ENTER ();
 
     maxdot = info->dotcnt - info->tripledot;
 
@@ -640,7 +643,7 @@ BuildShape (node *array, dotinfo *info)
     node *middleshape = NULL;
     node *rightshape = NULL;
 
-    DBUG_ENTER ("BuildShape");
+    DBUG_ENTER ();
 
     if (info->triplepos != 1) {
         leftshape = BuildLeftShape (array, info);
@@ -669,7 +672,7 @@ BuildShape (node *array, dotinfo *info)
         }
     }
 
-    DBUG_ASSERT ((leftshape != NULL), "error building shape: the shape is empty!");
+    DBUG_ASSERT (leftshape != NULL, "error building shape: the shape is empty!");
 
     DBUG_RETURN (leftshape);
 }
@@ -692,7 +695,7 @@ BuildLeftIndex (node *args, node *iv, dotinfo *info)
     int maxcnt;
     node *result = NULL;
 
-    DBUG_ENTER ("BuildLeftIndex");
+    DBUG_ENTER ();
 
     if (info->tripledot == 0) {
         maxcnt = info->selcnt;
@@ -739,7 +742,7 @@ BuildMiddleIndex (node *args, node *iv, dotinfo *info)
     node *left = NULL;
     node *right = NULL;
 
-    DBUG_ENTER ("BuildMiddleIndex");
+    DBUG_ENTER ();
 
     left = TBmakeNum (info->tripledot - 1);
     right = TBmakeNum (info->dotcnt - info->tripledot);
@@ -767,7 +770,7 @@ BuildRightIndex (node *args, node *iv, dotinfo *info)
     int maxcnt;
     node *result = NULL;
 
-    DBUG_ENTER ("BuildRightIndex");
+    DBUG_ENTER ();
 
     maxcnt = info->selcnt - info->triplepos;
 
@@ -824,7 +827,7 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
     node *rightindex = NULL;
     node *rightid = NULL;
 
-    DBUG_ENTER ("BuildIndex");
+    DBUG_ENTER ();
 
     if (info->triplepos != 1) {
         leftindex = BuildLeftIndex (args, iv, info);
@@ -901,7 +904,7 @@ BuildDefaultWithloop (node *array, node *shape)
 {
     node *result = NULL;
 
-    DBUG_ENTER ("BuildDefaultWithloop");
+    DBUG_ENTER ();
 
     result
       = TBmakeWith (TBmakePart (NULL,
@@ -940,7 +943,7 @@ BuildSelectionElementShape (node *array, dotinfo *info)
 {
     node *shape = NULL;
 
-    DBUG_ENTER ("BuildSelectionElementShape");
+    DBUG_ENTER ();
 
     shape
       = MAKE_BIN_PRF (F_drop_SxV, TBmakeNum (info->selcnt),
@@ -960,7 +963,7 @@ BuildSelectionDefault (node *array, dotinfo *info)
 {
     node *result = NULL;
 
-    DBUG_ENTER ("BuildSelectionDefault");
+    DBUG_ENTER ();
 
     if (info->triplepos == 0) {
         /* no tripledot, build default */
@@ -998,7 +1001,7 @@ BuildWithLoop (node *shape, node *iv, node *array, node *index, node *block,
     node *ap;
     node *ids;
 
-    DBUG_ENTER ("BuildWithLoop");
+    DBUG_ENTER ();
 
     ap = TBmakeSpap (TBmakeSpid (NULL, STRcpy ("sel")),
                      TBmakeExprs (index, TBmakeExprs (DUPdoDupTree (array), NULL)));
@@ -1034,7 +1037,7 @@ BuildIdTable (node *ids, idtable *appendto)
 {
     idtable *result = appendto;
 
-    DBUG_ENTER ("BuildIdTable");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (ids) == N_exprs) {
         while (ids != NULL) {
@@ -1092,7 +1095,7 @@ IdTableContains (char *id, idtable *ids)
 {
     idtype result = ID_notfound;
 
-    DBUG_ENTER ("IdTableContains");
+    DBUG_ENTER ();
 
     while (ids != NULL) {
         if (STReq (id, ids->id)) {
@@ -1118,7 +1121,7 @@ IdTableContains (char *id, idtable *ids)
 static void
 FreeIdTable (idtable *table, idtable *until)
 {
-    DBUG_ENTER ("FreeIdTable");
+    DBUG_ENTER ();
 
     while (table != until) {
         idtable *next = table->next;
@@ -1136,7 +1139,7 @@ FreeIdTable (idtable *table, idtable *until)
         table = next;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /**
@@ -1159,7 +1162,7 @@ ScanVector (node *vector, node *array, info *arg_info)
     int exprslen = TCcountExprs (vector);
     idtable *ids = INFO_HD_IDTABLE (arg_info);
 
-    DBUG_ENTER ("ScanVector");
+    DBUG_ENTER ();
 
     while (vector != NULL) {
         if (NODE_TYPE (EXPRS_EXPR (vector)) == N_spid) {
@@ -1220,7 +1223,7 @@ ScanVector (node *vector, node *array, info *arg_info)
         vector = EXPRS_NEXT (vector);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #ifdef HD_SETWL_VECTOR
@@ -1236,7 +1239,7 @@ static void
 ScanId (node *id, node *array, info *arg_info)
 {
     idtable *ids = INFO_HD_IDTABLE (arg_info);
-    DBUG_ENTER ("ScanId");
+    DBUG_ENTER ();
 
     while (ids != NULL) {
         if (STReq (ids->id, SPID_NAME (id))) {
@@ -1261,7 +1264,7 @@ ScanId (node *id, node *array, info *arg_info)
         ids = ids->next;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /**
@@ -1281,7 +1284,7 @@ BuildShapeVectorMin (shpchain *vectors)
     node *expr = NULL;
     node *indexids = NULL;
 
-    DBUG_ENTER ("BuildVectorMin");
+    DBUG_ENTER ();
 
     indexids = TBmakeSpids (STRcpy (SPID_NAME (index)), NULL);
 
@@ -1332,7 +1335,7 @@ BuildWLShape (idtable *table, idtable *end)
 {
     node *result = NULL;
 
-    DBUG_ENTER ("BuildWLShape");
+    DBUG_ENTER ();
 
     if (table->type == ID_scalar) {
         while (table != end) {
@@ -1396,7 +1399,7 @@ Exprs2Ids (node *exprs)
     node *result = NULL;
     node *handle = NULL;
 
-    DBUG_ENTER ("Exprs2Ids");
+    DBUG_ENTER ();
 
     while (exprs != NULL) {
         node *newid = NULL;
@@ -1435,7 +1438,7 @@ CountDotsInVector (node *ids)
 {
     int result = 0;
 
-    DBUG_ENTER ("CountDotsInVector");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (ids) != N_exprs) {
         result = 0;
@@ -1462,7 +1465,7 @@ ContainsTripleDot (node *ids)
 {
     bool result = FALSE;
 
-    DBUG_ENTER ("ContainsTripleDot");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (ids) != N_exprs) {
         result = FALSE;
@@ -1492,7 +1495,7 @@ RemoveDotsFromVector (node *ids)
     node *result;
     node *temp;
 
-    DBUG_ENTER ("RemoveDotsFromVector");
+    DBUG_ENTER ();
 
     result = DUPdoDupTree (ids);
 
@@ -1537,7 +1540,7 @@ BuildInversePermutatedVector (node *ids, node *vect)
     int pos = 0, dpos = 0, allpos = 0;
     int cnt;
 
-    DBUG_ENTER ("BuildInversePermutatedVector");
+    DBUG_ENTER ();
 
     /*
      * collect stats about this vector
@@ -1615,8 +1618,8 @@ BuildInversePermutatedVector (node *ids, node *vect)
 
         texpr = TCgetNthExprs (target, result);
 
-        DBUG_ASSERT ((texpr != NULL), "bad permutation");
-        DBUG_ASSERT ((EXPRS_EXPR (texpr) == NULL), "slot taken in permutation");
+        DBUG_ASSERT (texpr != NULL, "bad permutation");
+        DBUG_ASSERT (EXPRS_EXPR (texpr) == NULL, "slot taken in permutation");
         EXPRS_EXPR (texpr) = entry;
 
         trav = EXPRS_NEXT (trav);
@@ -1624,7 +1627,7 @@ BuildInversePermutatedVector (node *ids, node *vect)
     }
 
     if (trav != NULL) {
-        DBUG_ASSERT ((triple > 0), "weird set notation");
+        DBUG_ASSERT (triple > 0, "weird set notation");
 
         left_expr = result;
 
@@ -1682,14 +1685,14 @@ BuildInversePermutatedVector (node *ids, node *vect)
             }
 
             target = TCgetNthExprs (dpos, result);
-            DBUG_ASSERT ((target != NULL), "permutation wrong");
-            DBUG_ASSERT ((EXPRS_EXPR (target) == NULL), "double entry");
+            DBUG_ASSERT (target != NULL, "permutation wrong");
+            DBUG_ASSERT (EXPRS_EXPR (target) == NULL, "double entry");
             EXPRS_EXPR (target) = entry;
             dpos++;
         } else {
             target = TCgetNthExprs (pos, left_expr);
-            DBUG_ASSERT ((target != NULL), "permutation wrong");
-            DBUG_ASSERT ((EXPRS_EXPR (target) == NULL), "double entry");
+            DBUG_ASSERT (target != NULL, "permutation wrong");
+            DBUG_ASSERT (EXPRS_EXPR (target) == NULL, "double entry");
             EXPRS_EXPR (target) = entry;
             pos++;
         }
@@ -1728,7 +1731,7 @@ BuildPermutatedVector (node *ids, node *vect)
     int single = 0, triple = 0, others = 0;
     int pos = 0, dpos = 0;
 
-    DBUG_ENTER ("BuildPermutatedVector");
+    DBUG_ENTER ();
 
     /*
      * first count the non-dot entries and the number of
@@ -1787,7 +1790,7 @@ BuildPermutatedVector (node *ids, node *vect)
     }
 
     if (trav != NULL) {
-        DBUG_ASSERT ((triple > 0), "weird set notation");
+        DBUG_ASSERT (triple > 0, "weird set notation");
 
         left
           = TCmakePrf2 (F_cat_VxV, TCmakeIntVector (result),
@@ -1874,7 +1877,7 @@ HDdoEliminateSelDots (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("HDdoEliminateSelDots");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
     INFO_HD_TRAVSTATE (arg_info) = HD_sel;
@@ -1917,7 +1920,7 @@ HDwith (node *arg_node, info *arg_info)
     node *olddotshape = INFO_HD_DOTSHAPE (arg_info);
     INFO_HD_DOTSHAPE (arg_info) = NULL;
 
-    DBUG_ENTER ("HDwith");
+    DBUG_ENTER ();
 
     /*
      * by default (TravSons), withop would be traversed last, but
@@ -1949,7 +1952,7 @@ HDwith (node *arg_node, info *arg_info)
 node *
 HDgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HDgenarray");
+    DBUG_ENTER ();
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
         INFO_HD_DOTSHAPE (arg_info) = DUPdoDupTree (GENARRAY_SHAPE (arg_node));
@@ -1972,7 +1975,7 @@ HDgenarray (node *arg_node, info *arg_info)
 node *
 HDmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HDmodarray");
+    DBUG_ENTER ();
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
         INFO_HD_DOTSHAPE (arg_info)
@@ -1996,7 +1999,7 @@ HDmodarray (node *arg_node, info *arg_info)
 node *
 HDfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HDfold");
+    DBUG_ENTER ();
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
         INFO_HD_DOTSHAPE (arg_info) = NULL;
@@ -2018,7 +2021,7 @@ HDfold (node *arg_node, info *arg_info)
 node *
 HDpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HDpart");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -2050,7 +2053,7 @@ HDpart (node *arg_node, info *arg_info)
 node *
 HDgenerator (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HDGenerator");
+    DBUG_ENTER ();
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
         /*
@@ -2123,7 +2126,7 @@ HDgenerator (node *arg_node, info *arg_info)
 node *
 HDdot (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HDdot");
+    DBUG_ENTER ();
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_sel) {
         if (DOT_NUM (arg_node) == 1) {
@@ -2152,7 +2155,7 @@ HDspap (node *arg_node, info *arg_info)
 {
     node *result = arg_node;
 
-    DBUG_ENTER ("HDspap");
+    DBUG_ENTER ();
 
     /* only sel statements are of interest here, so just return */
     /* on anything else                                         */
@@ -2388,7 +2391,7 @@ HDspap (node *arg_node, info *arg_info)
 node *
 HDprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HDprf");
+    DBUG_ENTER ();
 
     /* if in HD_scan mode, scan for shapes */
 
@@ -2421,7 +2424,7 @@ HDprf (node *arg_node, info *arg_info)
 node *
 HDassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HDassign");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -2450,7 +2453,7 @@ HDsetwl (node *arg_node, info *arg_info)
     node *ids = NULL;
     int dotcnt;
 
-    DBUG_ENTER ("HDsetwl");
+    DBUG_ENTER ();
 
     /* maybe the set-index contains some dots */
     dotcnt = CountDotsInVector (SETWL_VEC (arg_node));
@@ -2587,7 +2590,7 @@ HDsetwl (node *arg_node, info *arg_info)
 node *
 HDspid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HDspid");
+    DBUG_ENTER ();
 
     if (INFO_HD_TRAVSTATE (arg_info) == HD_default) {
         idtype type = IdTableContains (SPID_NAME (arg_node), INFO_HD_IDTABLE (arg_info));
@@ -2622,3 +2625,5 @@ HDspid (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

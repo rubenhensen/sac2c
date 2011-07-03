@@ -10,7 +10,10 @@
 #include "str.h"
 #include "memory.h"
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "DFR"
+#include "debug.h"
+
 #include "globals.h"
 #include "traverse.h"
 #include "ctinfo.h"
@@ -37,7 +40,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -50,7 +53,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -64,7 +67,7 @@ FreeInfo (info *info)
 static node *
 ATravDFRCmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravDFRCmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
@@ -76,7 +79,7 @@ ATravDFRCmodule (node *arg_node, info *arg_info)
 static node *
 ATravDFRCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravDFRCfundef");
+    DBUG_ENTER ();
 
     FUNDEF_ISNEEDED (arg_node) = FALSE;
 
@@ -89,7 +92,7 @@ ATravDFRCfundef (node *arg_node, info *arg_info)
 static node *
 ATravDFRCobjdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravDFRCobjdef");
+    DBUG_ENTER ();
 
     OBJDEF_ISNEEDED (arg_node) = FALSE;
 
@@ -106,7 +109,7 @@ ClearIsNeededFlags (node *syntax_tree)
                                {N_objdef, &ATravDFRCobjdef},
                                {0, NULL}};
 
-    DBUG_ENTER ("ClearIsNeededFlags");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (dfrc_trav, &TRAVsons);
 
@@ -126,16 +129,16 @@ tagFundefAsNeeded (node *fundef, info *info)
 {
     bool oldspine;
 
-    DBUG_ENTER ("tagFundefAsNeeded");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "tagFundefAsNeeded applied to non fundef node");
 
-    DBUG_ASSERT ((!FUNDEF_ISWRAPPERFUN (fundef)),
+    DBUG_ASSERT (!FUNDEF_ISWRAPPERFUN (fundef),
                  "tagFundefAsNeeded called on wrapper fun");
 
     if (!FUNDEF_ISNEEDED (fundef)) {
-        DBUG_PRINT ("DFR", (">>> tagging fundef %s as needed", CTIitemName (fundef)));
+        DBUG_PRINT (">>> tagging fundef %s as needed", CTIitemName (fundef));
 
         FUNDEF_ISNEEDED (fundef) = TRUE;
 
@@ -143,12 +146,12 @@ tagFundefAsNeeded (node *fundef, info *info)
         INFO_SPINE (info) = FALSE;
 
         if (FUNDEF_ARGS (fundef) != NULL) {
-            DBUG_PRINT ("DFR", (">>> inspecting args..."));
+            DBUG_PRINT (">>> inspecting args...");
             FUNDEF_ARGS (fundef) = TRAVdo (FUNDEF_ARGS (fundef), info);
         }
 
         if (FUNDEF_BODY (fundef) != NULL) {
-            DBUG_PRINT ("DFR", (">>> inspecting fundef body..."));
+            DBUG_PRINT (">>> inspecting fundef body...");
             FUNDEF_BODY (fundef) = TRAVdo (FUNDEF_BODY (fundef), info);
         }
 
@@ -160,7 +163,7 @@ tagFundefAsNeeded (node *fundef, info *info)
              * its implementation is not removed, as all object wrappers
              * are stripped out in the backend.
              */
-            DBUG_PRINT ("DFR", (">>> tagging implementation of objectwrapper..."));
+            DBUG_PRINT (">>> tagging implementation of objectwrapper...");
 
             FUNDEF_IMPL (fundef) = tagFundefAsNeeded (FUNDEF_IMPL (fundef), info);
         }
@@ -174,16 +177,16 @@ tagWrapperAsNeeded (node *wrapper, info *info)
 {
     bool oldspine;
 
-    DBUG_ENTER ("tagWrapperAsNeeded");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (wrapper) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (wrapper) == N_fundef,
                  "tagWrapperAsNeeded applied to non fundef node");
 
-    DBUG_ASSERT ((FUNDEF_ISWRAPPERFUN (wrapper)),
+    DBUG_ASSERT (FUNDEF_ISWRAPPERFUN (wrapper),
                  "tagWrapperAsNeeded called on non-wrapper fun");
 
     if (!FUNDEF_ISNEEDED (wrapper)) {
-        DBUG_PRINT ("DFR", (">>> tagging wrapper %s as needed", CTIitemName (wrapper)));
+        DBUG_PRINT (">>> tagging wrapper %s as needed", CTIitemName (wrapper));
 
         FUNDEF_ISNEEDED (wrapper) = TRUE;
 
@@ -204,12 +207,12 @@ tagWrapperAsNeeded (node *wrapper, info *info)
         INFO_SPINE (info) = FALSE;
 
         if (FUNDEF_ARGS (wrapper) != NULL) {
-            DBUG_PRINT ("DFR", (">>> inspecting args..."));
+            DBUG_PRINT (">>> inspecting args...");
             FUNDEF_ARGS (wrapper) = TRAVdo (FUNDEF_ARGS (wrapper), info);
         }
 
         if (FUNDEF_BODY (wrapper) != NULL) {
-            DBUG_PRINT ("DFR", (">>> inspecting wrapper body..."));
+            DBUG_PRINT (">>> inspecting wrapper body...");
             FUNDEF_BODY (wrapper) = TRAVdo (FUNDEF_BODY (wrapper), info);
         }
 
@@ -222,11 +225,11 @@ tagWrapperAsNeeded (node *wrapper, info *info)
              * has no arguments and thus only one instance!
              * so we tag that instance
              */
-            DBUG_PRINT ("DFR", (">>> inspecting FUNDEF_IMPL..."));
+            DBUG_PRINT (">>> inspecting FUNDEF_IMPL...");
 
             FUNDEF_IMPL (wrapper) = tagFundefAsNeeded (FUNDEF_IMPL (wrapper), info);
         } else if (FUNDEF_WRAPPERTYPE (wrapper) != NULL) {
-            DBUG_PRINT ("DFR", (">>> inspecting wrappertype..."));
+            DBUG_PRINT (">>> inspecting wrappertype...");
 
             FUNDEF_WRAPPERTYPE (wrapper)
               = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (wrapper), &tagFundefAsNeeded,
@@ -255,10 +258,10 @@ tagWrapperAsNeeded (node *wrapper, info *info)
 static node *
 tagObjdefAsNeeded (node *objdef, info *info)
 {
-    DBUG_ENTER ("tagObjdefAsNeeded");
+    DBUG_ENTER ();
 
     if (!OBJDEF_ISNEEDED (objdef)) {
-        DBUG_PRINT ("DFR", (">>> tagging objdef %s as needed", CTIitemName (objdef)));
+        DBUG_PRINT (">>> tagging objdef %s as needed", CTIitemName (objdef));
 
         OBJDEF_ISNEEDED (objdef) = TRUE;
 
@@ -269,7 +272,7 @@ tagObjdefAsNeeded (node *objdef, info *info)
         }
 
         if (OBJDEF_INITFUN (objdef) != NULL) {
-            DBUG_ASSERT ((NODE_TYPE (OBJDEF_INITFUN (objdef)) == N_fundef),
+            DBUG_ASSERT (NODE_TYPE (OBJDEF_INITFUN (objdef)) == N_fundef,
                          "found non N_fundef node as objdef init function.");
             OBJDEF_INITFUN (objdef) = tagFundefAsNeeded (OBJDEF_INITFUN (objdef), info);
         }
@@ -286,7 +289,7 @@ tagObjdefAsNeeded (node *objdef, info *info)
 static node *
 freeObjdefs (node *objdef)
 {
-    DBUG_ENTER ("freeObjdefs");
+    DBUG_ENTER ();
 
     if (OBJDEF_NEXT (objdef) != NULL) {
         OBJDEF_NEXT (objdef) = freeObjdefs (OBJDEF_NEXT (objdef));
@@ -314,17 +317,17 @@ DFRdoDeadFunctionRemoval (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("DFRdoDeadFunctionRemoval");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
                  "DFR can only be called on entire modules");
 
     DBUG_ASSERT (DUPgetCopiedSpecialFundefsHook () == NULL,
                  "DFR found LaC funs on hook.");
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+                    global.current_allocated_mem);
 #endif
 
     arg_info = MakeInfo ();
@@ -336,8 +339,8 @@ DFRdoDeadFunctionRemoval (node *arg_node)
     arg_info = FreeInfo (arg_info);
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+                    global.current_allocated_mem);
 #endif
 
     DBUG_RETURN (arg_node);
@@ -357,7 +360,7 @@ DFRdoDeadFunctionRemoval (node *arg_node)
 node *
 DFRmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DFRmodule");
+    DBUG_ENTER ();
 
     /*
      * Step 1: Clear dfr flag in fundec and fundef chain.
@@ -369,19 +372,19 @@ DFRmodule (node *arg_node, info *arg_info)
     /*
      * Step 2: Search for needed fundecs, fundefs and objdefs in fundef bodies.
      */
-    DBUG_PRINT ("DFR", ("processing objects..."));
+    DBUG_PRINT ("processing objects...");
     if (MODULE_OBJS (arg_node) != NULL) {
         INFO_SPINE (arg_info) = TRUE;
         MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
     }
 
-    DBUG_PRINT ("DFR", ("processing fundefs..."));
+    DBUG_PRINT ("processing fundefs...");
     if (MODULE_FUNS (arg_node) != NULL) {
         INFO_SPINE (arg_info) = TRUE;
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
-    DBUG_PRINT ("DFR", ("processing fundecs..."));
+    DBUG_PRINT ("processing fundecs...");
     if (MODULE_FUNDECS (arg_node) != NULL) {
         INFO_SPINE (arg_info) = TRUE;
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
@@ -411,7 +414,7 @@ DFRmodule (node *arg_node, info *arg_info)
 node *
 DFRobjdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DFRobjdef");
+    DBUG_ENTER ();
 
     if (OBJDEF_ISPROVIDED (arg_node)) {
         arg_node = tagObjdefAsNeeded (arg_node, arg_info);
@@ -437,20 +440,20 @@ DFRobjdef (node *arg_node, info *arg_info)
 node *
 DFRfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DFRfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("DFR", ("Dead Function Removal in %s: %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                        CTIitemName (arg_node)));
+    DBUG_PRINT ("Dead Function Removal in %s: %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                CTIitemName (arg_node));
 
     if (INFO_SPINE (arg_info)) {
         /*
          * remark: main is always tagged as provided
          */
         if (FUNDEF_ISSTICKY (arg_node) || FUNDEF_ISPROVIDED (arg_node)) {
-            DBUG_PRINT ("DFR", (">>> %s is %s",
-                                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                                (FUNDEF_ISSTICKY (arg_node) ? "sticky" : "provided")));
+            DBUG_PRINT (">>> %s is %s",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                        (FUNDEF_ISSTICKY (arg_node) ? "sticky" : "provided"));
 
             if (FUNDEF_ISWRAPPERFUN (arg_node)) {
                 arg_node = tagWrapperAsNeeded (arg_node, arg_info);
@@ -465,9 +468,9 @@ DFRfundef (node *arg_node, info *arg_info)
         }
 
         if (!FUNDEF_ISNEEDED (arg_node)) {
-            DBUG_PRINT ("DFR", ("Going to delete %s for %s",
-                                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                                CTIitemName (arg_node)));
+            DBUG_PRINT ("Going to delete %s for %s",
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                        CTIitemName (arg_node));
             if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
                 global.optcounters.dead_fun++;
             }
@@ -481,7 +484,7 @@ DFRfundef (node *arg_node, info *arg_info)
     } else if (INFO_LOCALFUNS (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         if (!FUNDEF_ISNEEDED (arg_node)) {
-            DBUG_PRINT ("DFR", ("Going to delete %s", CTIitemName (arg_node)));
+            DBUG_PRINT ("Going to delete %s", CTIitemName (arg_node));
             arg_node = FREEdoFreeNode (arg_node);
         }
     } else {
@@ -508,7 +511,7 @@ DFRfundef (node *arg_node, info *arg_info)
 node *
 DFRarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DFRarg");
+    DBUG_ENTER ();
 
     if (ARG_OBJDEF (arg_node) != NULL) {
         ARG_OBJDEF (arg_node) = tagObjdefAsNeeded (ARG_OBJDEF (arg_node), arg_info);
@@ -534,17 +537,16 @@ DFRarg (node *arg_node, info *arg_info)
 node *
 DFRap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DFRap");
+    DBUG_ENTER ();
 
     /*
      * we have found a function application. SO move into the called
      * function and mark it as needed.
      */
-    DBUG_PRINT ("DFR",
-                ("Traversing N_ap for function %s", FUNDEF_NAME (AP_FUNDEF (arg_node))));
+    DBUG_PRINT ("Traversing N_ap for function %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
     AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-    DBUG_PRINT ("DFR", ("Return from traversing N_ap for function %s",
-                        FUNDEF_NAME (AP_FUNDEF (arg_node))));
+    DBUG_PRINT ("Return from traversing N_ap for function %s",
+                FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
@@ -562,7 +564,7 @@ DFRap (node *arg_node, info *arg_info)
 node *
 DFRfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DFRfold");
+    DBUG_ENTER ();
 
     FOLD_FUNDEF (arg_node) = TRAVdo (FOLD_FUNDEF (arg_node), arg_info);
 
@@ -572,3 +574,5 @@ DFRfold (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

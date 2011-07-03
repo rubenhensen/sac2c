@@ -9,7 +9,8 @@
  *
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "IDC"
+#include "debug.h"
 
 #include "types.h"
 #include "DupTree.h"
@@ -70,7 +71,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -88,7 +89,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -105,7 +106,7 @@ FindAvisOfLastDefinition (node *exprs)
     node *avis, *last_avis = NULL;
     node *expr;
 
-    DBUG_ENTER ("FindAvisOfLastDefinition");
+    DBUG_ENTER ();
 
     while (exprs != NULL) {
         expr = EXPRS_EXPR (exprs);
@@ -143,7 +144,7 @@ CreateNewVarAndInitiateRenaming (node *id, info *arg_info)
 {
     node *old_avis, *avis;
 
-    DBUG_ENTER ("CreateNewVarAndInitiateRenaming");
+    DBUG_ENTER ();
 
     old_avis = ID_AVIS (id);
     avis = TBmakeAvis (TRAVtmpVar (), TYeliminateAKV (AVIS_TYPE (old_avis)));
@@ -163,7 +164,7 @@ DupIdExprsWithoutDuplicates (node *exprs)
     bool found;
     node *tmp, *avis;
 
-    DBUG_ENTER ("DupIdExprsWithoutDuplicates");
+    DBUG_ENTER ();
 
     if (exprs != NULL) {
         args = DupIdExprsWithoutDuplicates (EXPRS_NEXT (exprs));
@@ -197,7 +198,7 @@ BuildDataFlowHook (node *ids, node *expr, info *arg_info)
     ;
     int i;
 
-    DBUG_ENTER ("BuildDataFlowHook");
+    DBUG_ENTER ();
 
     exprs = PRF_ARGS (expr);
 
@@ -231,7 +232,7 @@ BuildPrfConstraint (node *pavis, node *expr, info *arg_info)
 {
     node *assign;
 
-    DBUG_ENTER ("BuildPrfConstraint");
+    DBUG_ENTER ();
 
     INFO_VARDECS (arg_info) = TBmakeVardec (pavis, INFO_VARDECS (arg_info));
     assign = BuildDataFlowHook (TBmakeIds (pavis, NULL), expr, arg_info);
@@ -245,7 +246,7 @@ BuildUdfConstraint (node *pavis, node *expr, info *arg_info)
 {
     node *assign;
 
-    DBUG_ENTER ("BuildUdfConstraint");
+    DBUG_ENTER ();
 
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (pavis, NULL), expr), NULL);
     AVIS_SSAASSIGN (pavis) = assign;
@@ -263,7 +264,7 @@ HandleConstraints (node *avis, info *arg_info)
 {
     node *expr, *constraint;
 
-    DBUG_ENTER ("HandleConstraints");
+    DBUG_ENTER ();
 
     if (AVIS_CONSTRTYPE (avis) != NULL) {
         expr = TCmakePrf2 (F_type_constraint, TBmakeType (AVIS_CONSTRTYPE (avis)),
@@ -304,13 +305,12 @@ HandleConstraints (node *avis, info *arg_info)
 node *
 IDCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDCfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IDC",
-                ("----- %s ----- %s:", CTIitemName (arg_node),
-                 (INFO_MODE (arg_info) == IDC_finalize
-                    ? "IDC_finalize"
-                    : (INFO_MODE (arg_info) == IDC_insert ? "IDC_insert" : "IDC_init"))));
+    DBUG_PRINT ("----- %s ----- %s:", CTIitemName (arg_node),
+                (INFO_MODE (arg_info) == IDC_finalize
+                   ? "IDC_finalize"
+                   : (INFO_MODE (arg_info) == IDC_insert ? "IDC_insert" : "IDC_init")));
 
     INFO_COUNTER (arg_info) = 1;
 
@@ -322,7 +322,7 @@ IDCfundef (node *arg_node, info *arg_info)
 
     if (INFO_VARDECS (arg_info) != NULL) {
         arg_node = TCaddVardecs (arg_node, INFO_VARDECS (arg_info));
-        DBUG_PRINT ("IDC", ("...inserting vardecs"));
+        DBUG_PRINT ("...inserting vardecs");
     }
 
     if (INFO_ALL (arg_info) && (FUNDEF_NEXT (arg_node) != NULL)) {
@@ -341,7 +341,7 @@ node *
 IDCblock (node *arg_node, info *arg_info)
 {
     node *post_assign;
-    DBUG_ENTER ("IDCblock");
+    DBUG_ENTER ();
 
     post_assign = INFO_POSTASSIGN (arg_info);
     INFO_POSTASSIGN (arg_info) = NULL;
@@ -356,7 +356,7 @@ IDCblock (node *arg_node, info *arg_info)
         } else {
             BLOCK_INSTR (arg_node) = TCappendAssign (post_assign, BLOCK_INSTR (arg_node));
         }
-        DBUG_PRINT ("IDC", ("...inserting assignments at beginning of N_block"));
+        DBUG_PRINT ("...inserting assignments at beginning of N_block");
     }
 
     DBUG_RETURN (arg_node);
@@ -372,7 +372,7 @@ IDCassign (node *arg_node, info *arg_info)
 {
     node *post_assign;
 
-    DBUG_ENTER ("IDCassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -385,7 +385,7 @@ IDCassign (node *arg_node, info *arg_info)
 
     if (post_assign != NULL) {
         ASSIGN_NEXT (arg_node) = TCappendAssign (post_assign, ASSIGN_NEXT (arg_node));
-        DBUG_PRINT ("IDC", ("...inserting assignments"));
+        DBUG_PRINT ("...inserting assignments");
     }
 
     DBUG_RETURN (arg_node);
@@ -399,7 +399,7 @@ IDCassign (node *arg_node, info *arg_info)
 node *
 IDClet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDClet");
+    DBUG_ENTER ();
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
@@ -417,7 +417,7 @@ IDCids (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("IDCids");
+    DBUG_ENTER ();
 
     avis = IDS_AVIS (arg_node);
 
@@ -452,7 +452,7 @@ IDCids (node *arg_node, info *arg_info)
 node *
 IDCwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDCwith");
+    DBUG_ENTER ();
 
     /**
      * part needs to be traversed BEFORE code so that the N_ids of
@@ -476,7 +476,7 @@ IDCwith (node *arg_node, info *arg_info)
 node *
 IDCwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDCwithid");
+    DBUG_ENTER ();
 
     /**
      * for proper renaming of upper and lower bounds, we need to make sure
@@ -499,7 +499,7 @@ IDCwithid (node *arg_node, info *arg_info)
 node *
 IDCcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDCcode");
+    DBUG_ENTER ();
 
     if (CODE_CBLOCK (arg_node) != NULL) {
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
@@ -523,7 +523,7 @@ IDCcode (node *arg_node, info *arg_info)
 node *
 IDCid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDCid");
+    DBUG_ENTER ();
 
     while ((AVIS_SUBST (ID_AVIS (arg_node)) != NULL)
            && (AVIS_SUBSTLVL (ID_AVIS (arg_node)) <= INFO_LEVEL (arg_info))
@@ -542,7 +542,7 @@ IDCid (node *arg_node, info *arg_info)
 node *
 IDCavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IDCavis");
+    DBUG_ENTER ();
 
     switch (INFO_MODE (arg_info)) {
     case IDC_init:
@@ -592,7 +592,7 @@ IDCinitialize (node *fundef, bool all)
 {
     info *arg_info;
 
-    DBUG_ENTER ("IDCinitialize");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "IDCinitialize called on nun-fundef!");
 
@@ -639,20 +639,19 @@ IDCaddTypeConstraint (ntype *type, node *avis)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("IDCaddTypeConstraint");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("IDC", tmp_str = TYtype2String (type, FALSE, 0););
-    DBUG_PRINT ("IDC",
-                ("type constraint requested: %s for %s", tmp_str, AVIS_NAME (avis)));
-    DBUG_EXECUTE ("IDC", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (type, FALSE, 0));
+    DBUG_PRINT ("type constraint requested: %s for %s", tmp_str, AVIS_NAME (avis));
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     act_type = AVIS_TYPE (avis);
     if (TYleTypes (act_type, type)) {
-        DBUG_PRINT ("IDC", ("inferred type is precise enough"));
+        DBUG_PRINT ("inferred type is precise enough");
     } else {
         if (AVIS_CONSTRTYPE (avis) != NULL) {
             if (TYleTypes (AVIS_CONSTRTYPE (avis), type)) {
-                DBUG_PRINT ("IDC", ("strong enough constraint exists already"));
+                DBUG_PRINT ("strong enough constraint exists already");
             } else {
                 AVIS_CONSTRTYPE (avis) = TYfreeType (AVIS_CONSTRTYPE (avis));
                 AVIS_CONSTRTYPE (avis) = TYcopyType (type);
@@ -664,7 +663,7 @@ IDCaddTypeConstraint (ntype *type, node *avis)
                 res = AVIS_CONSTRVAR (avis);
                 NODE_LINE (res) = NODE_LINE (avis);
                 NODE_FILE (res) = NODE_FILE (avis);
-                DBUG_PRINT ("IDC", ("replacing existing constraint"));
+                DBUG_PRINT ("replacing existing constraint");
             }
         } else {
             AVIS_CONSTRTYPE (avis) = TYcopyType (type);
@@ -678,7 +677,7 @@ IDCaddTypeConstraint (ntype *type, node *avis)
              */
             NODE_LINE (res) = NODE_LINE (avis);
             NODE_FILE (res) = NODE_FILE (avis);
-            DBUG_PRINT ("IDC", ("constraint added"));
+            DBUG_PRINT ("constraint added");
         }
     }
 
@@ -712,13 +711,12 @@ IDCaddFunConstraint (node *expr)
 {
     node *args, *avis, *res;
 
-    DBUG_ENTER ("IDCaddPrfConstraint");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_ap),
                  "illegal expr in IDCaddFunConstraint");
 
-    DBUG_PRINT ("IDC", ("constraint requested: %s",
-                        (NODE_TYPE (expr) == N_prf ? "prf" : "udf")));
+    DBUG_PRINT ("constraint requested: %s", (NODE_TYPE (expr) == N_prf ? "prf" : "udf"));
 
     args = AP_OR_PRF_ARGS (expr);
     avis = FindAvisOfLastDefinition (args);
@@ -737,7 +735,7 @@ IDCaddFunConstraint (node *expr)
          */
         NODE_LINE (res) = NODE_LINE (expr);
         NODE_FILE (res) = NODE_FILE (expr);
-        DBUG_PRINT ("IDC", ("constraint added to %s", AVIS_NAME (avis)));
+        DBUG_PRINT ("constraint added to %s", AVIS_NAME (avis));
     }
 
     DBUG_RETURN (res);
@@ -767,7 +765,7 @@ IDCinsertConstraints (node *fundef, bool all)
 {
     info *arg_info;
 
-    DBUG_ENTER ("IDCinsertConstraints");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "IDCinsertConstraints called on nun-fundef!");
@@ -805,7 +803,7 @@ IDCfinalize (node *fundef, bool all)
 {
     info *arg_info;
 
-    DBUG_ENTER ("IDCfinalize");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "IDCfinalize called on nun-fundef!");
 
@@ -822,3 +820,5 @@ IDCfinalize (node *fundef, bool all)
 
     DBUG_RETURN (fundef);
 }
+
+#undef DBUG_PREFIX

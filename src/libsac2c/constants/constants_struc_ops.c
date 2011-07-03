@@ -5,7 +5,9 @@
 #include <stdlib.h>
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "COOPS"
+#include "debug.h"
 
 #include "constants.h"
 #include "constants_internal.h"
@@ -38,12 +40,11 @@ Idx2OffsetArray (constant *idx, node *a)
     int lenshp;
     int i;
 
-    DBUG_ENTER ("Idx2OffsetArray");
-    DBUG_ASSERT ((N_array == NODE_TYPE (a)), "Idx2offsetArray arg2 not N_array");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int),
+    DBUG_ENTER ();
+    DBUG_ASSERT (N_array == NODE_TYPE (a), "Idx2offsetArray arg2 not N_array");
+    DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int,
                  "Idx2OffsetArray called with non-int index");
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1),
-                 "Idx2OffsetArray called with non-vector index");
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 1, "Idx2OffsetArray called with non-vector index");
 
     cvidx = (int *)CONSTANT_ELEMS (idx);
     lenidx = SHgetExtent (CONSTANT_SHAPE (idx), 0);
@@ -51,7 +52,7 @@ Idx2OffsetArray (constant *idx, node *a)
     shp = ARRAY_FRAMESHAPE (a);
     lenshp = SHgetDim (shp);
 
-    DBUG_ASSERT ((lenshp >= lenidx), "Idx2Offset called with longer idx than array dim");
+    DBUG_ASSERT (lenshp >= lenidx, "Idx2Offset called with longer idx than array dim");
 
     if (lenidx > 0) {
         DBUG_ASSERT (cvidx[0] < SHgetExtent (shp, 0),
@@ -94,9 +95,9 @@ Idx2Offset (constant *idx, constant *a)
     int lenshp;
     int i;
 
-    DBUG_ENTER ("Idx2Offset");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "Idx2Offset called with non-int index");
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "Idx2Offset called with non-vector index");
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "Idx2Offset called with non-int index");
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 1, "Idx2Offset called with non-vector index");
 
     cvidx = (int *)CONSTANT_ELEMS (idx);
     lenidx = SHgetExtent (CONSTANT_SHAPE (idx), 0);
@@ -104,7 +105,7 @@ Idx2Offset (constant *idx, constant *a)
     shp = CONSTANT_SHAPE (a);
     lenshp = SHgetDim (shp);
 
-    DBUG_ASSERT ((lenshp >= lenidx), "Idx2Offset called with longer idx than array dim");
+    DBUG_ASSERT (lenshp >= lenidx, "Idx2Offset called with longer idx than array dim");
 
     if (lenidx > 0) {
         DBUG_ASSERT (cvidx[0] < SHgetExtent (shp, 0),
@@ -147,7 +148,7 @@ IncrementIndex (constant *min, constant *idx, constant *max)
 {
     int dim;
 
-    DBUG_ENTER ("IncrementIndex");
+    DBUG_ENTER ();
 
     dim = CONSTANT_VLEN (idx) - 1;
     if (dim >= 0) {
@@ -199,10 +200,10 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
     shape *off_shp;
     constant *min, *max, *off, *res;
 
-    DBUG_ENTER ("TileFromArray");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "TileFromArray applied to non-int!");
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "TileFromArray applied to non-vector!");
-    DBUG_ASSERT ((CONSTANT_VLEN (idx) >= 1), "TileFromArray applied to empty vector!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "TileFromArray applied to non-int!");
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 1, "TileFromArray applied to non-vector!");
+    DBUG_ASSERT (CONSTANT_VLEN (idx) >= 1, "TileFromArray applied to empty vector!");
 
     /*
      * First, we allocate the CV for the result:
@@ -284,7 +285,7 @@ TileFromArray (constant *idx, shape *res_shp, constant *a)
 static bool
 incCounter (int *counter, int *upper_bounds, int depth)
 {
-    DBUG_ENTER ("incCounter");
+    DBUG_ENTER ();
 
     int i = (depth - 1);
     bool is_max = TRUE; /* TRUE to enter the loop initially*/
@@ -337,9 +338,9 @@ COreshape (constant *new_shp, constant *a, constant *tmp1)
     shape *res_shp;
     constant *res;
 
-    DBUG_ENTER ("COreshape");
-    DBUG_ASSERT ((CONSTANT_TYPE (new_shp) == T_int), "new_shp for COreshape not int!");
-    DBUG_ASSERT ((CONSTANT_DIM (new_shp) == 1), "new_shp for COreshape not vector!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_TYPE (new_shp) == T_int, "new_shp for COreshape not int!");
+    DBUG_ASSERT (CONSTANT_DIM (new_shp) == 1, "new_shp for COreshape not vector!");
 
     /*
      * First, we create the result shape:
@@ -366,7 +367,7 @@ COreshape (constant *new_shp, constant *a, constant *tmp1)
      */
     res = COINTmakeConstant (CONSTANT_TYPE (a), res_shp, elems, res_vlen);
 
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COreshape", new_shp, a, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COreshape", new_shp, a, res));
 
     DBUG_RETURN (res);
 }
@@ -389,10 +390,10 @@ COsel (constant *idx, constant *a, constant *tmp1)
     shape *res_shp;
     constant *res;
 
-    DBUG_ENTER ("COsel");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COSel not int!");
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COSel not vector!");
-    DBUG_ASSERT ((CONSTANT_DIM (a)) >= CONSTANT_VLEN (idx),
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "idx to COSel not int!");
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 1, "idx to COSel not vector!");
+    DBUG_ASSERT (CONSTANT_DIM (a) >= CONSTANT_VLEN (idx),
                  "idx-vector exceeds dim of array in COSel!");
 
     /*
@@ -439,9 +440,9 @@ COidxSel (constant *idx, constant *a, constant *tmp1)
     shape *res_shp;
     constant *res;
 
-    DBUG_ENTER ("COIdxSel");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COIdxSel not int!");
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 0), "idx to COIdxSel not scalar!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "idx to COIdxSel not int!");
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 0, "idx to COIdxSel not scalar!");
     res_shp = COgetShape (a);
     index = ((int *)COgetDataVec (idx))[0];
     DBUG_ASSERT ((SHgetUnrLen (res_shp)) > index,
@@ -472,7 +473,7 @@ COidxSel (constant *idx, constant *a, constant *tmp1)
 constant *
 COoverSel (constant *idx, constant *a, constant *tmp1)
 {
-    DBUG_ENTER ("COoverSel");
+    DBUG_ENTER ();
 
     /* Extract some informations about the arguments*/
     int idx_dim = CONSTANT_DIM (idx);
@@ -483,8 +484,8 @@ COoverSel (constant *idx, constant *a, constant *tmp1)
     shape *a_shape = CONSTANT_SHAPE (a);
     simpletype a_type = CONSTANT_TYPE (a);
 
-    DBUG_ASSERT ((idx_dim > 0), "overSel: idx scalar!");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "overSel: idx not T_int!");
+    DBUG_ASSERT (idx_dim > 0, "overSel: idx scalar!");
+    DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "overSel: idx not T_int!");
 
     int *idx_elems = CONSTANT_ELEMS (idx);
 
@@ -493,10 +494,10 @@ COoverSel (constant *idx, constant *a, constant *tmp1)
 
     char *cnst = NULL;
     cnst = COconstant2String (idx);
-    DBUG_PRINT ("CO", ("idx: %s", cnst));
+    DBUG_PRINT_TAG ("CO", "idx: %s", cnst);
     cnst = COconstant2String (a);
-    DBUG_PRINT ("CO", ("Matrix: %s", cnst));
-    DBUG_ASSERT ((iv_len <= a_dim), "overSel: dim(selection) > dim(array)!");
+    DBUG_PRINT_TAG ("CO", "Matrix: %s", cnst);
+    DBUG_ASSERT (iv_len <= a_dim, "overSel: dim(selection) > dim(array)!");
 
     /* Construct shape of the result*/
     shape *frame_shape = SHdropFromShape (-1, idx_shape);
@@ -598,20 +599,20 @@ COtake (constant *idx, constant *a, constant *tmp1)
     constant *offset, *res;
     constant *new_idx = NULL;
 
-    DBUG_ENTER ("COtake");
+    DBUG_ENTER ();
 
     if (CONSTANT_DIM (idx) == 0) {
         new_idx = COcopyScalar2OneElementVector (idx);
         idx = new_idx;
     }
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COTake not vector!");
-    DBUG_ASSERT ((CONSTANT_DIM (a)) >= CONSTANT_VLEN (idx),
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 1, "idx to COTake not vector!");
+    DBUG_ASSERT (CONSTANT_DIM (a) >= CONSTANT_VLEN (idx),
                  "idx-vector exceeds dim of array in COTake!");
 
     if (CONSTANT_VLEN (idx) > 0) {
         /* 'idx' is a non-empty array */
 
-        DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COTake not int!");
+        DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "idx to COTake not int!");
 
         /*
          * First, we create the result shape:
@@ -651,12 +652,12 @@ COtake (constant *idx, constant *a, constant *tmp1)
      * For the time being the TC infers for  '[]'  in  'drop( [], [1,2])'
      * the type  'T_nothing' !!
      */
-    DBUG_ASSERT( (CONSTANT_TYPE( idx) == T_int), "idx to CODrop not int!");
+    DBUG_ASSERT (CONSTANT_TYPE( idx) == T_int, "idx to CODrop not int!");
 #endif
 
         res = COcopyConstant (a);
     }
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COTake", idx, a, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COTake", idx, a, res));
 
     if (new_idx != NULL) {
         new_idx = COfreeConstant (new_idx);
@@ -690,20 +691,20 @@ COdrop (constant *idx, constant *a, constant *tmp1)
     constant *res;
     constant *new_idx = NULL;
 
-    DBUG_ENTER ("COdrop");
+    DBUG_ENTER ();
 
     if (CONSTANT_DIM (idx) == 0) {
         new_idx = COcopyScalar2OneElementVector (idx);
         idx = new_idx;
     }
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx to COdrop not vector!");
-    DBUG_ASSERT ((CONSTANT_DIM (a)) >= CONSTANT_VLEN (idx),
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 1, "idx to COdrop not vector!");
+    DBUG_ASSERT (CONSTANT_DIM (a) >= CONSTANT_VLEN (idx),
                  "idx-vector exceeds dim of array in COdrop!");
 
     if (CONSTANT_VLEN (idx) > 0) {
         /* 'idx' is a non-empty array */
 
-        DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COdrop not int!");
+        DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "idx to COdrop not int!");
 
         /*
          * First, we create the result shape:
@@ -740,13 +741,13 @@ COdrop (constant *idx, constant *a, constant *tmp1)
      * For the time being the TC infers for  '[]'  in  'drop( [], [1,2])'
      * the type  'T_nothing' !!
      */
-    DBUG_ASSERT( (CONSTANT_TYPE( idx) == T_int), "idx to CODrop not int!");
+    DBUG_ASSERT (CONSTANT_TYPE( idx) == T_int, "idx to CODrop not int!");
 #endif
 
         res = COcopyConstant (a);
     }
 
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("CODrop", idx, a, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("CODrop", idx, a, res));
 
     if (new_idx != NULL) {
         new_idx = COfreeConstant (new_idx);
@@ -778,7 +779,7 @@ COcat (constant *a, constant *b, constant *tmp1)
     constant *res, *new_a = NULL, *new_b = NULL;
     void *cv;
 
-    DBUG_ENTER ("COcat");
+    DBUG_ENTER ();
 
     if (CONSTANT_DIM (a) == 0) {
         new_a = COcopyScalar2OneElementVector (a);
@@ -807,8 +808,8 @@ COcat (constant *a, constant *b, constant *tmp1)
                  SHgetExtent (CONSTANT_SHAPE (a), 0)
                    + SHgetExtent (CONSTANT_SHAPE (b), 0));
     for (i = 1; i < dim; i++) {
-        DBUG_ASSERT ((SHgetExtent (CONSTANT_SHAPE (a), i)
-                      == SHgetExtent (CONSTANT_SHAPE (b), i)),
+        DBUG_ASSERT (SHgetExtent (CONSTANT_SHAPE (a), i)
+                       == SHgetExtent (CONSTANT_SHAPE (b), i),
                      "COCat applied to arrays with non identical extents in the trailing "
                      "axes!");
         SHsetExtent (shp, i, SHgetExtent (CONSTANT_SHAPE (a), i));
@@ -829,7 +830,7 @@ COcat (constant *a, constant *b, constant *tmp1)
      */
     res = COINTmakeConstant (type, shp, cv, vlen);
 
-    DBUG_EXECUTE ("COOPS", COINTdbugPrintBinOp ("COCat", a, b, res););
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COCat", a, b, res));
 
     if (new_a != NULL) {
         new_a = COfreeConstant (new_a);
@@ -855,7 +856,7 @@ COdim (constant *a, constant *tmp1, constant *tmp2)
 {
     constant *res;
 
-    DBUG_ENTER ("COdim");
+    DBUG_ENTER ();
 
     res = COmakeConstantFromInt (CONSTANT_DIM (a));
 
@@ -879,7 +880,7 @@ COshape (constant *a, constant *tmp1, constant *tmp2)
     constant *res;
     int i;
 
-    DBUG_ENTER ("COshape");
+    DBUG_ENTER ();
 
     if (CONSTANT_DIM (a) > 0) {
         shape_vec = (int *)MEMmalloc (CONSTANT_DIM (a) * sizeof (int));
@@ -907,12 +908,12 @@ COmodarray_AxVxS (constant *a, constant *idx, constant *elem)
 {
     constant *res;
 
-    DBUG_ENTER ("COmodarray_AxVxS");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx not int!");
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx not vector!");
-    DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (elem)),
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "idx not int!");
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 1, "idx not vector!");
+    DBUG_ASSERT (CONSTANT_TYPE (a) == CONSTANT_TYPE (elem),
                  "mixed types for array and inserted elements");
-    DBUG_ASSERT (((CONSTANT_DIM (a)) == (CONSTANT_VLEN (idx) + CONSTANT_DIM (elem))),
+    DBUG_ASSERT ((CONSTANT_DIM (a)) == (CONSTANT_VLEN (idx) + CONSTANT_DIM (elem)),
                  "idx-vector exceeds dim of array in COModarray_AxVxS!");
 
     /* first we create the modified target constant as copy of a */
@@ -943,12 +944,12 @@ COmodarray_AxVxA (constant *a, constant *idx, constant *elem)
 {
     constant *res;
 
-    DBUG_ENTER ("COmodarray_AxVxA");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx not int!");
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 1), "idx not vector!");
-    DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (elem)),
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "idx not int!");
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 1, "idx not vector!");
+    DBUG_ASSERT (CONSTANT_TYPE (a) == CONSTANT_TYPE (elem),
                  "mixed types for array and inserted elements");
-    DBUG_ASSERT (((CONSTANT_DIM (a)) == (CONSTANT_VLEN (idx) + CONSTANT_DIM (elem))),
+    DBUG_ASSERT ((CONSTANT_DIM (a)) == (CONSTANT_VLEN (idx) + CONSTANT_DIM (elem)),
                  "idx-vector exceeds dim of array in COModarray_AxVxS!");
 
     /* first we create the modified target constant as copy of a */
@@ -980,11 +981,11 @@ COidx_modarray_AxSxS (constant *a, constant *idx, constant *elem)
 {
     constant *res;
 
-    DBUG_ENTER ("COidx_modarray_AxSxS");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COSel not int!");
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 0), "idx to COidx_modarray_AxSxS not scalar!");
-    DBUG_ASSERT ((CONSTANT_DIM (elem) == 0), "elem to COidx_modarray_AxSxS not scalar!");
-    DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (elem)),
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "idx to COSel not int!");
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 0, "idx to COidx_modarray_AxSxS not scalar!");
+    DBUG_ASSERT (CONSTANT_DIM (elem) == 0, "elem to COidx_modarray_AxSxS not scalar!");
+    DBUG_ASSERT (CONSTANT_TYPE (a) == CONSTANT_TYPE (elem),
                  "mixed types for array and inserted elements");
 
     /* first we create the modified target constant as copy of a */
@@ -1016,10 +1017,10 @@ COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem)
 {
     constant *res;
 
-    DBUG_ENTER ("COidx_modarray_AxSxA");
-    DBUG_ASSERT ((CONSTANT_TYPE (idx) == T_int), "idx to COSel not int!");
-    DBUG_ASSERT ((CONSTANT_DIM (idx) == 0), "idx to COidx_modarray_AxSxS not scalar!");
-    DBUG_ASSERT ((CONSTANT_TYPE (a) == CONSTANT_TYPE (elem)),
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "idx to COSel not int!");
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 0, "idx to COidx_modarray_AxSxS not scalar!");
+    DBUG_ASSERT (CONSTANT_TYPE (a) == CONSTANT_TYPE (elem),
                  "mixed types for array and inserted elements");
 
     /* first we create the modified target constant as copy of a */
@@ -1051,14 +1052,12 @@ COvect2offset (constant *shp, constant *iv)
     int i;
     int offset;
 
-    DBUG_ENTER ("COvect2offset");
-    DBUG_ASSERT ((CONSTANT_TYPE (iv) == T_int),
-                 "COvect2offset called with non-int index");
-    DBUG_ASSERT ((CONSTANT_DIM (iv) == 1), "COvect2offset called with non-vector index");
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_TYPE (iv) == T_int, "COvect2offset called with non-int index");
+    DBUG_ASSERT (CONSTANT_DIM (iv) == 1, "COvect2offset called with non-vector index");
 
-    DBUG_ASSERT ((CONSTANT_TYPE (shp) == T_int),
-                 "COvect2offset called with non-int shape");
-    DBUG_ASSERT ((CONSTANT_DIM (shp) == 1), "COvect2offset called with non-vector shape");
+    DBUG_ASSERT (CONSTANT_TYPE (shp) == T_int, "COvect2offset called with non-int shape");
+    DBUG_ASSERT (CONSTANT_DIM (shp) == 1, "COvect2offset called with non-vector shape");
 
     cviv = (int *)CONSTANT_ELEMS (iv);
     leniv = SHgetExtent (CONSTANT_SHAPE (iv), 0);
@@ -1066,7 +1065,7 @@ COvect2offset (constant *shp, constant *iv)
     cvshp = (int *)CONSTANT_ELEMS (shp);
     lenshp = SHgetExtent (CONSTANT_SHAPE (shp), 0);
 
-    DBUG_ASSERT ((lenshp >= leniv), "COvect2offset called with incompatible shp/iv");
+    DBUG_ASSERT (lenshp >= leniv, "COvect2offset called with incompatible shp/iv");
 
     if (leniv > 0) {
         DBUG_ASSERT (cviv[0] < cvshp[0], "COvect2offset called with iv out of range");
@@ -1084,3 +1083,5 @@ COvect2offset (constant *shp, constant *iv)
 
     DBUG_RETURN (offset);
 }
+
+#undef DBUG_PREFIX

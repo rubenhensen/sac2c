@@ -15,7 +15,10 @@
 #include "type_utils.h"
 #include "new_types.h"
 #include "namespaces.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "PPI"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "globals.h"
 
@@ -43,7 +46,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -57,7 +60,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -70,25 +73,24 @@ FreeInfo (info *info)
 static node *
 tagFundefAsNeeded (node *fundef, info *info)
 {
-    DBUG_ENTER ("tagFundefAsNeeded");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "tagFundefAsNeeded applied to non fundef node");
 
-    DBUG_ASSERT ((!FUNDEF_ISWRAPPERFUN (fundef)),
+    DBUG_ASSERT (!FUNDEF_ISWRAPPERFUN (fundef),
                  "tagFundefAsNeeded called on wrapper fun");
 
     if (!FUNDEF_ISNEEDED (fundef)) {
         /*
          * mark it as needed first to avoid recursion
          */
-        DBUG_PRINT ("PPI", ("marking fundef %s as needed", CTIitemName (fundef)));
+        DBUG_PRINT ("marking fundef %s as needed", CTIitemName (fundef));
 
         FUNDEF_ISNEEDED (fundef) = TRUE;
 #ifndef DBUG_OFF
     } else {
-        DBUG_PRINT ("PPI",
-                    ("!!! fundef %s already marked as needed...", CTIitemName (fundef)));
+        DBUG_PRINT ("!!! fundef %s already marked as needed...", CTIitemName (fundef));
 #endif /* DBUG_OFF */
     }
 
@@ -98,10 +100,10 @@ tagFundefAsNeeded (node *fundef, info *info)
 static node *
 tagWrapperAsNeeded (node *wrapper, info *info)
 {
-    DBUG_ENTER ("tagWrapperAsNeeded");
+    DBUG_ENTER ();
 
     if (!FUNDEF_ISNEEDED (wrapper)) {
-        DBUG_PRINT ("PPI", ("marking wrapper %s as needed", CTIitemName (wrapper)));
+        DBUG_PRINT ("marking wrapper %s as needed", CTIitemName (wrapper));
 
         FUNDEF_ISNEEDED (wrapper) = TRUE;
 
@@ -120,8 +122,7 @@ tagWrapperAsNeeded (node *wrapper, info *info)
         }
 #ifndef DBUG_OFF
     } else {
-        DBUG_PRINT ("PPI", ("!!! wrapper %s already marked as needed...",
-                            CTIitemName (wrapper)));
+        DBUG_PRINT ("!!! wrapper %s already marked as needed...", CTIitemName (wrapper));
 #endif /* DBUG_OFF */
     }
 
@@ -131,7 +132,7 @@ tagWrapperAsNeeded (node *wrapper, info *info)
 node *
 PPIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PPIfundef");
+    DBUG_ENTER ();
 
     /*
      * traverse the body to mark functions that are needed.
@@ -141,7 +142,7 @@ PPIfundef (node *arg_node, info *arg_info)
      * wrapper function.
      */
 
-    DBUG_PRINT ("PPI", ("processing down '%s'", CTIitemName (arg_node)));
+    DBUG_PRINT ("processing down '%s'", CTIitemName (arg_node));
 
     if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL)) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -166,7 +167,7 @@ PPIfundef (node *arg_node, info *arg_info)
      * that appears at a rhs postion within the ast.
      */
 
-    DBUG_PRINT ("PPI", ("processing up '%s'", CTIitemName (arg_node)));
+    DBUG_PRINT ("processing up '%s'", CTIitemName (arg_node));
 
     if ((FUNDEF_BODY (arg_node) == NULL) && (FUNDEF_ISINLINE (arg_node))
         && (FUNDEF_ISNEEDED (arg_node)) && (FUNDEF_SYMBOLNAME (arg_node) != NULL)) {
@@ -175,8 +176,7 @@ PPIfundef (node *arg_node, info *arg_info)
         if (FUNDEF_BODY (arg_node) != NULL) {
             INFO_PPI_FETCHED (arg_info)++;
 
-            DBUG_PRINT ("PPI",
-                        ("fetched function body for '%s'", CTIitemName (arg_node)));
+            DBUG_PRINT ("fetched function body for '%s'", CTIitemName (arg_node));
         } else {
             char *funsig = TUtypeSignature2String (arg_node);
 
@@ -198,7 +198,7 @@ PPIfundef (node *arg_node, info *arg_info)
 node *
 PPIap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PPIap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISWRAPPERFUN (AP_FUNDEF (arg_node))) {
         AP_FUNDEF (arg_node) = tagWrapperAsNeeded (AP_FUNDEF (arg_node), arg_info);
@@ -212,7 +212,7 @@ PPIap (node *arg_node, info *arg_info)
 node *
 PPIfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PPIfold");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISWRAPPERFUN (FOLD_FUNDEF (arg_node))) {
         FOLD_FUNDEF (arg_node) = tagWrapperAsNeeded (FOLD_FUNDEF (arg_node), arg_info);
@@ -226,7 +226,7 @@ PPIfold (node *arg_node, info *arg_info)
 node *
 PPImodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PPImodul");
+    DBUG_ENTER ();
 
     DSinitDeserialize (arg_node);
 
@@ -247,7 +247,7 @@ PPIdoPrepareInline (node *syntax_tree)
     int rounds = 0;
 #endif
 
-    DBUG_ENTER ("PPIdoPrepareInline");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -262,14 +262,14 @@ PPIdoPrepareInline (node *syntax_tree)
 
     if (global.optimize.doinl) {
         do {
-            DBUG_PRINT ("PPI", ("Starting round %d.", rounds));
+            DBUG_PRINT ("Starting round %d.", rounds);
 
             INFO_PPI_FETCHED (info) = 0;
 
             syntax_tree = TRAVdo (syntax_tree, info);
 
-            DBUG_PRINT ("PPI", ("Finished round %d, fetched %d bodies.", rounds,
-                                INFO_PPI_FETCHED (info)));
+            DBUG_PRINT ("Finished round %d, fetched %d bodies.", rounds,
+                        INFO_PPI_FETCHED (info));
 
 #ifndef DBUG_OFF
             rounds++;
@@ -278,7 +278,7 @@ PPIdoPrepareInline (node *syntax_tree)
             CTIabortOnError ();
         } while (INFO_PPI_FETCHED (info) != 0);
     } else {
-        DBUG_PRINT ("PPI", ("skipping PPI as inlining is disabled..."));
+        DBUG_PRINT ("skipping PPI as inlining is disabled...");
     }
 
     TRAVpop ();
@@ -288,3 +288,5 @@ PPIdoPrepareInline (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

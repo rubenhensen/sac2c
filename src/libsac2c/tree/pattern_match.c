@@ -259,7 +259,9 @@
 #include <stdarg.h>
 #include "pattern_match.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "PM"
+#include "debug.h"
+
 #include "memory.h"
 #include "print.h"
 #include "globals.h"
@@ -351,7 +353,7 @@ genericFillPattern (pattern *res, bool nested, int num_attribs, va_list arg_p)
     va_list arg_p_copy;
     int i;
 
-    DBUG_ENTER ("genericFillPattern");
+    DBUG_ENTER ();
     va_copy (arg_p_copy, arg_p);
 
     PAT_NA (res) = num_attribs;
@@ -389,7 +391,7 @@ genericFillPatternNoAttribs (pattern *res, int num_pats, va_list arg_p)
     va_list arg_p_copy;
     int i;
 
-    DBUG_ENTER ("genericFillPatternNoAttribs");
+    DBUG_ENTER ();
     va_copy (arg_p_copy, arg_p);
 
     PAT_NA (res) = 0;
@@ -421,7 +423,7 @@ static node *
 copyStack (node *stack)
 {
     node *stack2;
-    DBUG_ENTER ("copyStack");
+    DBUG_ENTER ();
     if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
         stack2 = DUPdoDupTree (stack);
     } else {
@@ -441,7 +443,7 @@ copyStack (node *stack)
 static node *
 freeStack (node *stack)
 {
-    DBUG_ENTER ("freeStack");
+    DBUG_ENTER ();
     if ((stack != NULL) && (NODE_TYPE (stack) == N_set)) {
         stack = FREEdoFreeTree (stack);
     } else {
@@ -461,8 +463,8 @@ freeStack (node *stack)
 static node *
 failMatch (node *stack)
 {
-    DBUG_ENTER ("failMatch");
-    DBUG_PRINT ("PM", (PMINDENT "match failed!"));
+    DBUG_ENTER ();
+    DBUG_PRINT (PMINDENT "match failed!");
     stack = freeStack (stack);
 
     DBUG_RETURN ((node *)FAIL);
@@ -491,7 +493,7 @@ extractOneArg (node *stack, node **arg)
 {
     node *next;
 
-    DBUG_ENTER ("extractOneArg");
+    DBUG_ENTER ();
 
     if (stack != NULL) {
         if (NODE_TYPE (stack) == N_set) {
@@ -509,12 +511,12 @@ extractOneArg (node *stack, node **arg)
                 REF_SET (arg, stack);
                 stack = NULL;
             }
-            DBUG_PRINT ("PM", (PMINDENT "argument found:"));
-            DBUG_EXECUTE ("PM", PRTdoPrintNodeFile (stderr, *arg););
+            DBUG_PRINT (PMINDENT "argument found:");
+            DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, *arg));
         }
     } else {
         *arg = NULL;
-        DBUG_PRINT ("PM", (PMINDENT "trying to match against empty stack"));
+        DBUG_PRINT (PMINDENT "trying to match against empty stack");
         stack = failMatch (stack);
     }
     DBUG_RETURN (stack);
@@ -536,7 +538,7 @@ extractOneArg (node *stack, node **arg)
 static node *
 extractTopFrame (node *stack, node **top)
 {
-    DBUG_ENTER ("extractTopFrame");
+    DBUG_ENTER ();
 
     if ((stack != NULL) && (NODE_TYPE (stack) == N_set)
         && (NODE_TYPE (SET_MEMBER (stack)) = N_exprs)) {
@@ -552,8 +554,8 @@ extractTopFrame (node *stack, node **top)
 
 #ifndef DBUG_OFF
     if (*top != NULL) {
-        DBUG_PRINT ("PM", (PMINDENT "frame found:"));
-        DBUG_EXECUTE ("PM", PRTdoPrintNodeFile (stderr, *top););
+        DBUG_PRINT (PMINDENT "frame found:");
+        DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, *top));
     }
 #endif
 
@@ -574,7 +576,7 @@ extractTopFrame (node *stack, node **top)
 static node *
 pushArgs (node *stack, node *args)
 {
-    DBUG_ENTER ("pushArgs");
+    DBUG_ENTER ();
     if (stack == NULL) {
         stack = args;
     } else if (NODE_TYPE (stack) == N_set) {
@@ -596,7 +598,7 @@ static node *
 range2Set (node *range)
 {
     node *set = NULL;
-    DBUG_ENTER ("range2Set");
+    DBUG_ENTER ();
 
     if (RANGE_NEXT (range) != NULL) {
         set = range2Set (RANGE_NEXT (range));
@@ -625,7 +627,7 @@ range2Set (node *range)
 static bool
 isInExtrema (prf prfun)
 {
-    DBUG_ENTER ("isInExtrema");
+    DBUG_ENTER ();
     DBUG_RETURN ((prfun == F_noteminval) || (prfun == F_notemaxval)
                  || (prfun == F_noteintersect));
 }
@@ -643,7 +645,7 @@ isInExtrema (prf prfun)
 static bool
 isInGuards (prf prfun)
 {
-    DBUG_ENTER ("isInGuards");
+    DBUG_ENTER ();
     DBUG_RETURN ((prfun == F_guard) || (prfun == F_afterguard)
                  || (prfun == F_type_constraint) || (prfun == F_same_shape_AxA)
                  || (prfun == F_shape_matches_dim_VxA) || (prfun == F_non_neg_val_S)
@@ -666,7 +668,7 @@ isInGuards (prf prfun)
 static bool
 isAfterguard (prf prfun)
 {
-    DBUG_ENTER ("isInGuards");
+    DBUG_ENTER ();
     DBUG_RETURN ((prfun == F_afterguard));
 }
 
@@ -684,7 +686,7 @@ isAfterguard (prf prfun)
 static bool
 isInExtremaOrGuards (prf prfun)
 {
-    DBUG_ENTER ("isInExtremaOrGuards");
+    DBUG_ENTER ();
     DBUG_RETURN (isInExtrema (prfun) || isInGuards (prfun));
 }
 
@@ -702,7 +704,7 @@ getInner (node *arg_node)
 {
     node *inner;
 
-    DBUG_ENTER ("getInner");
+    DBUG_ENTER ();
     switch (NODE_TYPE (arg_node)) {
     case N_array:
         inner = ARRAY_AELEMS (arg_node);
@@ -748,7 +750,7 @@ static node *
 followId (node *expr, node **new_assign)
 {
     node *new_id;
-    DBUG_ENTER ("followId");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (expr) == N_id) {
         if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
@@ -780,7 +782,7 @@ followId (node *expr, node **new_assign)
 static node *
 followPrf (prfMatchFun prfInspectFun, node *expr, node *new_assign, node *old_expr)
 {
-    DBUG_ENTER ("followPrf");
+    DBUG_ENTER ();
 
     if ((NODE_TYPE (expr) == N_prf) && (prfInspectFun (PRF_PRF (expr)))) {
         if ((NULL != new_assign) && (N_id == NODE_TYPE (old_expr))
@@ -795,7 +797,7 @@ followPrf (prfMatchFun prfInspectFun, node *expr, node *new_assign, node *old_ex
                 && (ID_AVIS (old_expr)
                     == IDS_AVIS (IDS_NEXT (LET_IDS (ASSIGN_INSTR (new_assign)))))) {
                 expr = PRF_ARG2 (expr);
-                DBUG_PRINT ("PM", ("Found _same_shape_AxA"));
+                DBUG_PRINT ("Found _same_shape_AxA");
             }
         }
     }
@@ -815,7 +817,7 @@ followPrf (prfMatchFun prfInspectFun, node *expr, node *new_assign, node *old_ex
 static node *
 skipVarDefs (node *expr)
 {
-    DBUG_ENTER ("skipVarDefs");
+    DBUG_ENTER ();
     node *old_expr;
     node *new_assign = NULL;
 
@@ -884,9 +886,9 @@ genericAtribMatcher (pattern *pat, node *arg, node *stack)
 {
     int i;
     attrib *attr;
-    DBUG_ENTER ("genericAtribMatcher");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("PM", (PMINDENT "checking attributes"));
+    DBUG_PRINT (PMINDENT "checking attributes");
     for (i = 0; i < PAT_NA (pat); i++) {
         attr = PAT_PATTRS (pat)[i];
         if (!PMAmatch (attr, arg)) {
@@ -910,10 +912,10 @@ genericSubPatternMatcher (pattern *pat, node *inner_stack)
 {
     pattern *inner_pat;
     int i;
-    DBUG_ENTER ("genericSubPatternMatcher");
+    DBUG_ENTER ();
 
     if (PAT_NESTED (pat)) {
-        DBUG_PRINT ("PM", (PMINDENT "checking inner pattern"));
+        DBUG_PRINT (PMINDENT "checking inner pattern");
         matching_level++;
         for (i = 0; i < PAT_NP (pat); i++) {
             inner_pat = PAT_PATS (pat)[i];
@@ -924,9 +926,9 @@ genericSubPatternMatcher (pattern *pat, node *inner_stack)
         }
         matching_level--;
         if (inner_stack != NULL) {
-            DBUG_PRINT ("PM", (PMINDENT "inner match %s",
-                               (inner_stack == (node *)FAIL ? "failed"
-                                                            : "left unmatched item(s)")));
+            DBUG_PRINT (PMINDENT "inner match %s",
+                        (inner_stack == (node *)FAIL ? "failed"
+                                                     : "left unmatched item(s)"));
             inner_stack = freeStack (inner_stack);
             inner_stack = (node *)FAIL;
         }
@@ -948,9 +950,9 @@ genericPatternMatcher (pattern *pat, node *stack)
 {
     node *arg;
 
-    DBUG_ENTER ("genericPatternMatcher");
-    DBUG_PRINT ("PM", (PMSTART "matching %s:", matching_level,
-                       global.mdb_nodetype[PAT_NT (pat)]));
+    DBUG_ENTER ();
+    DBUG_PRINT (PMSTART "matching %s:", matching_level,
+                global.mdb_nodetype[PAT_NT (pat)]);
 
     stack = extractOneArg (stack, &arg);
     if (PAT_DOFOLLOW (pat)) {
@@ -959,11 +961,10 @@ genericPatternMatcher (pattern *pat, node *stack)
 
     if ((arg != NULL) && (NODE_TYPE (arg) == PAT_NT (pat))) {
 
-        DBUG_PRINT ("PM",
-                    (PMINDENT "found %s %s%s%s", global.mdb_nodetype[NODE_TYPE (arg)],
-                     (NODE_TYPE (arg) == N_id ? "\"" : ""),
-                     (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
-                     (NODE_TYPE (arg) == N_id ? "\"" : "")));
+        DBUG_PRINT (PMINDENT "found %s %s%s%s", global.mdb_nodetype[NODE_TYPE (arg)],
+                    (NODE_TYPE (arg) == N_id ? "\"" : ""),
+                    (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
+                    (NODE_TYPE (arg) == N_id ? "\"" : ""));
 
         stack = genericAtribMatcher (pat, arg, stack);
         if ((stack != (node *)FAIL) && PAT_NESTED (pat)
@@ -972,10 +973,10 @@ genericPatternMatcher (pattern *pat, node *stack)
         }
 
     } else {
-        DBUG_PRINT ("PM", (PMINDENT "%s not found!", global.mdb_nodetype[PAT_NT (pat)]));
+        DBUG_PRINT (PMINDENT "%s not found!", global.mdb_nodetype[PAT_NT (pat)]);
         stack = failMatch (stack);
     }
-    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_PRINT (PMEND, matching_level);
 
     DBUG_RETURN (stack);
 }
@@ -995,11 +996,11 @@ genericPatternMatcher (pattern *pat, node *stack)
 static node *
 multiMatcher (pattern *pat, node *stack)
 {
-    DBUG_PRINT ("PM", (PMSTART "multi match:", matching_level));
+    DBUG_PRINT (PMSTART "multi match:", matching_level);
 
     stack = genericSubPatternMatcher (pat, stack);
 
-    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_PRINT (PMEND, matching_level);
 
     return (stack);
 }
@@ -1029,11 +1030,11 @@ PMmulti (int num_pats, ...)
 static node *
 linkMatcher (pattern *pat, node *stack)
 {
-    DBUG_PRINT ("PM", (PMSTART "link match:", matching_level));
+    DBUG_PRINT (PMSTART "link match:", matching_level);
 
     stack = genericPatternMatcher (*PAT_PAT_LINK (pat), stack);
 
-    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_PRINT (PMEND, matching_level);
 
     return (stack);
 }
@@ -1122,27 +1123,26 @@ anyMatcher (pattern *pat, node *stack)
 {
     node *arg;
 
-    DBUG_ENTER ("anyMatcher");
-    DBUG_PRINT ("PM", (PMSTART "matching any node:", matching_level));
+    DBUG_ENTER ();
+    DBUG_PRINT (PMSTART "matching any node:", matching_level);
 
     stack = extractOneArg (stack, &arg);
     arg = skipVarDefs (arg);
 
     if (arg != NULL) {
 
-        DBUG_PRINT ("PM",
-                    (PMINDENT "found %s %s%s%s", global.mdb_nodetype[NODE_TYPE (arg)],
-                     (NODE_TYPE (arg) == N_id ? "\"" : ""),
-                     (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
-                     (NODE_TYPE (arg) == N_id ? "\"" : "")));
+        DBUG_PRINT (PMINDENT "found %s %s%s%s", global.mdb_nodetype[NODE_TYPE (arg)],
+                    (NODE_TYPE (arg) == N_id ? "\"" : ""),
+                    (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
+                    (NODE_TYPE (arg) == N_id ? "\"" : ""));
 
         stack = genericAtribMatcher (pat, arg, stack);
 
     } else {
-        DBUG_PRINT ("PM", (PMINDENT "nothing found!"));
+        DBUG_PRINT (PMINDENT "nothing found!");
         stack = failMatch (stack);
     }
-    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_PRINT (PMEND, matching_level);
 
     DBUG_RETURN (stack);
 }
@@ -1170,12 +1170,12 @@ PMany (int num_attribs, ...)
 static node *
 falseMatcher (pattern *pat, node *stack)
 {
-    DBUG_ENTER ("falseMatcher");
-    DBUG_PRINT ("PM", (PMSTART "matching false:", matching_level));
+    DBUG_ENTER ();
+    DBUG_PRINT (PMSTART "matching false:", matching_level);
 
     stack = failMatch (stack);
 
-    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_PRINT (PMEND, matching_level);
 
     DBUG_RETURN (stack);
 }
@@ -1204,10 +1204,10 @@ PMfalse (int num_attribs, ...)
 static node *
 trueMatcher (pattern *pat, node *stack)
 {
-    DBUG_ENTER ("trueMatcher");
-    DBUG_PRINT ("PM", (PMSTART "matching true:", matching_level));
+    DBUG_ENTER ();
+    DBUG_PRINT (PMSTART "matching true:", matching_level);
 
-    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_PRINT (PMEND, matching_level);
 
     DBUG_RETURN (stack);
 }
@@ -1244,7 +1244,7 @@ constMatcher (pattern *pat, node *stack)
     char *tmp_str;
 #endif
 
-    DBUG_PRINT ("PM", (PMSTART "matching a constant:", matching_level));
+    DBUG_PRINT (PMSTART "matching a constant:", matching_level);
 
     stack = extractOneArg (stack, &arg);
     if (PAT_DOFOLLOW (pat)) {
@@ -1252,15 +1252,15 @@ constMatcher (pattern *pat, node *stack)
     }
 
     if ((arg != NULL) && COisConstant (arg)) {
-        DBUG_EXECUTE ("PM", c = COaST2Constant (arg); tmp_str = COconstant2String (c););
-        DBUG_PRINT ("PM", (PMINDENT "constant %s found!", tmp_str));
-        DBUG_EXECUTE ("PM", tmp_str = MEMfree (tmp_str); c = COfreeConstant (c););
+        DBUG_EXECUTE (c = COaST2Constant (arg); tmp_str = COconstant2String (c));
+        DBUG_PRINT (PMINDENT "constant %s found!", tmp_str);
+        DBUG_EXECUTE (tmp_str = MEMfree (tmp_str); c = COfreeConstant (c));
         stack = genericAtribMatcher (pat, arg, stack);
     } else {
-        DBUG_PRINT ("PM", (PMINDENT "no constant found!"));
+        DBUG_PRINT (PMINDENT "no constant found!");
         stack = failMatch (stack);
     }
-    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_PRINT (PMEND, matching_level);
 
     return (stack);
 }
@@ -1420,8 +1420,8 @@ rangeSelector (pattern *pat, node *stack)
 {
     node *arg;
 
-    DBUG_ENTER ("rangeSelector");
-    DBUG_PRINT ("PM", (PMSTART "matching range"));
+    DBUG_ENTER ();
+    DBUG_PRINT (PMSTART "matching range");
 
     stack = extractOneArg (stack, &arg);
 
@@ -1433,11 +1433,11 @@ rangeSelector (pattern *pat, node *stack)
         }
 
     } else {
-        DBUG_PRINT ("PM", (PMINDENT "No with3 => no range"));
+        DBUG_PRINT (PMINDENT "No with3 => no range");
         stack = failMatch (stack);
     }
 
-    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_PRINT (PMEND, matching_level);
     DBUG_RETURN (stack);
 }
 
@@ -1467,9 +1467,9 @@ retryAnyMatcher (pattern *pat, node *stack)
     *PAT_I1 (pat) = 0;
     bool match;
 
-    DBUG_PRINT ("PM", (PMSTART "retry any matcher start", matching_level));
+    DBUG_PRINT (PMSTART "retry any matcher start", matching_level);
     do {
-        DBUG_PRINT ("PM", (PMINDENT "trying i = %d:", *PAT_I1 (pat)));
+        DBUG_PRINT (PMINDENT "trying i = %d:", *PAT_I1 (pat));
         match = (genericSubPatternMatcher (pat, copyStack (stack)) == NULL);
         *PAT_I1 (pat) = *PAT_I1 (pat) + 1;
     } while ((*PAT_I1 (pat) < *PAT_I2 (pat)) && (!match));
@@ -1477,11 +1477,11 @@ retryAnyMatcher (pattern *pat, node *stack)
     if (!match) {
         stack = failMatch (stack);
     } else {
-        DBUG_PRINT ("PM", (PMINDENT "success with i = %d!", (*PAT_I1 (pat)) - 1));
+        DBUG_PRINT (PMINDENT "success with i = %d!", (*PAT_I1 (pat)) - 1);
         stack = freeStack (stack);
     }
 
-    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_PRINT (PMEND, matching_level);
 
     return (stack);
 }
@@ -1515,9 +1515,9 @@ retryAllMatcher (pattern *pat, node *stack)
     *PAT_I1 (pat) = 0;
     bool match;
 
-    DBUG_PRINT ("PM", (PMSTART "retry all matcher start", matching_level));
+    DBUG_PRINT (PMSTART "retry all matcher start", matching_level);
     do {
-        DBUG_PRINT ("PM", (PMINDENT "trying i = %d:", *PAT_I1 (pat)));
+        DBUG_PRINT (PMINDENT "trying i = %d:", *PAT_I1 (pat));
         match = (genericSubPatternMatcher (pat, copyStack (stack)) == NULL);
         *PAT_I1 (pat) = *PAT_I1 (pat) + 1;
     } while ((*PAT_I1 (pat) < *PAT_I2 (pat)) && match);
@@ -1525,12 +1525,11 @@ retryAllMatcher (pattern *pat, node *stack)
     if (!match) {
         stack = failMatch (stack);
     } else {
-        DBUG_PRINT ("PM",
-                    (PMINDENT "success for all i in {o, ..., %d)!", (*PAT_I2 (pat)) - 1));
+        DBUG_PRINT (PMINDENT "success for all i in {o, ..., %d)!", (*PAT_I2 (pat)) - 1);
         stack = freeStack (stack);
     }
 
-    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_PRINT (PMEND, matching_level);
 
     return (stack);
 }
@@ -1566,7 +1565,7 @@ skipMatcher (pattern *pat, node *stack)
 {
     node *match;
 
-    DBUG_PRINT ("PM", (PMSTART "skipping remaining elements!", matching_level));
+    DBUG_PRINT (PMSTART "skipping remaining elements!", matching_level);
 
     stack = extractTopFrame (stack, &match);
 
@@ -1576,7 +1575,7 @@ skipMatcher (pattern *pat, node *stack)
         stack = freeStack (stack);
     }
 
-    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_PRINT (PMEND, matching_level);
     return (stack);
 }
 
@@ -1607,18 +1606,18 @@ skipNMatcher (pattern *pat, node *stack)
     node *arg;
     int i;
 
-    DBUG_PRINT ("PM", (PMSTART "skipping %d elements!", matching_level, *PAT_I1 (pat)));
+    DBUG_PRINT (PMSTART "skipping %d elements!", matching_level, *PAT_I1 (pat));
 
     stack = genericAtribMatcher (pat, stack, stack);
 
     if (stack != (node *)FAIL) {
         for (i = 0; i < *PAT_I1 (pat); i++) {
             stack = extractOneArg (stack, &arg);
-            DBUG_PRINT ("PM", (PMINDENT "deleting that argument"));
+            DBUG_PRINT (PMINDENT "deleting that argument");
         }
     }
 
-    DBUG_PRINT ("PM", (PMEND, matching_level));
+    DBUG_PRINT (PMEND, matching_level);
     return (stack);
 }
 
@@ -1649,7 +1648,7 @@ PMfree (pattern *p)
 {
     int i;
 
-    DBUG_ENTER ("PMfree");
+    DBUG_ENTER ();
     if (p != NULL) {
         for (i = 0; i < PAT_NA (p); i++) {
             PAT_PATTRS (p)[i] = PMAfree (PAT_PATTRS (p)[i]);
@@ -1689,11 +1688,11 @@ PMmatch (pattern *pat, pm_mode_t pm_mode, lut_t *f_lut, node *expr)
     follow_lut = f_lut;
     matching_level = 0;
     bool res;
-    DBUG_ENTER ("PMmatch");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("PM", ("starting match in mode %d", pm_mode));
+    DBUG_PRINT ("starting match in mode %d", pm_mode);
     res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("PM", ("match %s!", (res ? "succeeded" : "failed")));
+    DBUG_PRINT ("match %s!", (res ? "succeeded" : "failed"));
 
     DBUG_RETURN (res);
 }
@@ -1714,11 +1713,11 @@ PMmatchExact (pattern *pat, node *expr)
 
     matching_level = 0;
     bool res;
-    DBUG_ENTER ("PMmatchExact");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("PM", ("starting exact match"));
+    DBUG_PRINT ("starting exact match");
     res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("PM", ("exact match %s!", (res ? "succeeded" : "failed")));
+    DBUG_PRINT ("exact match %s!", (res ? "succeeded" : "failed"));
 
     DBUG_RETURN (res);
 }
@@ -1740,9 +1739,9 @@ PMmatchFlat (pattern *pat, node *expr)
     matching_level = 0;
     bool res;
 
-    DBUG_PRINT ("PM", ("starting flat match"));
+    DBUG_PRINT ("starting flat match");
     res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("PM", ("flat match %s!", (res ? "succeeded" : "failed")));
+    DBUG_PRINT ("flat match %s!", (res ? "succeeded" : "failed"));
 
     return (res);
 }
@@ -1764,9 +1763,9 @@ PMmatchFlatSkipExtrema (pattern *pat, node *expr)
     matching_level = 0;
     bool res;
 
-    DBUG_PRINT ("PM", ("starting flatSkipExtrema match"));
+    DBUG_PRINT ("starting flatSkipExtrema match");
     res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("PM", ("flatSkipExtrema match %s!", (res ? "succeeded" : "failed")));
+    DBUG_PRINT ("flatSkipExtrema match %s!", (res ? "succeeded" : "failed"));
 
     return (res);
 }
@@ -1788,9 +1787,9 @@ PMmatchFlatSkipGuards (pattern *pat, node *expr)
     matching_level = 0;
     bool res;
 
-    DBUG_PRINT ("PM", ("starting flatSkipGuards match"));
+    DBUG_PRINT ("starting flatSkipGuards match");
     res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("PM", ("flatSkipGuards match %s!", (res ? "succeeded" : "failed")));
+    DBUG_PRINT ("flatSkipGuards match %s!", (res ? "succeeded" : "failed"));
 
     return (res);
 }
@@ -1812,10 +1811,9 @@ PMmatchFlatSkipExtremaAndGuards (pattern *pat, node *expr)
     matching_level = 0;
     bool res;
 
-    DBUG_PRINT ("PM", ("starting flatSkipExtremaAndGuards match"));
+    DBUG_PRINT ("starting flatSkipExtremaAndGuards match");
     res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("PM",
-                ("flatSkipExtremaAndGuards match %s!", (res ? "succeeded" : "failed")));
+    DBUG_PRINT ("flatSkipExtremaAndGuards match %s!", (res ? "succeeded" : "failed"));
 
     return (res);
 }
@@ -1837,9 +1835,9 @@ PMmatchFlatWith (pattern *pat, node *expr)
     matching_level = 0;
     bool res;
 
-    DBUG_PRINT ("PM", ("starting flatWith match"));
+    DBUG_PRINT ("starting flatWith match");
     res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("PM", ("flatWith match %s!", (res ? "succeeded" : "failed")));
+    DBUG_PRINT ("flatWith match %s!", (res ? "succeeded" : "failed"));
 
     return (res);
 }
@@ -1867,3 +1865,5 @@ PMmultiExprs (int num_nodes, ...)
 
     return (stack);
 }
+
+#undef DBUG_PREFIX

@@ -187,7 +187,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "IVEXI"
+#include "debug.h"
+
 #include "traverse.h"
 #include "free.h"
 #include "tree_basic.h"
@@ -243,7 +246,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -263,7 +266,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -284,18 +287,18 @@ node *
 IVEXIdoInsertIndexVectorExtrema (node *arg_node)
 {
     info *arg_info;
-    DBUG_ENTER ("IVEXIdoIndexVectorExtremaInsertion");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), "Expected N_fundef");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "Expected N_fundef");
 
     arg_info = MakeInfo ();
     INFO_LUTVARS (arg_info) = LUTgenerateLut ();
     INFO_LUTCODES (arg_info) = LUTgenerateLut ();
     INFO_ONEFUNDEF (arg_info) = TRUE;
 
-    DBUG_PRINT ("IVEXI", ("Traversing body of (%s) %s",
-                          (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                          FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("Traversing body of (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
 
     TRAVpush (TR_ivexi);
     arg_node = TRAVdo (arg_node, arg_info);
@@ -304,7 +307,7 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
     INFO_LUTVARS (arg_info) = LUTremoveLut (INFO_LUTVARS (arg_info));
     INFO_LUTCODES (arg_info) = LUTremoveLut (INFO_LUTCODES (arg_info));
 
-    DBUG_PRINT ("IVEXI", ("Index vector extrema insertion complete."));
+    DBUG_PRINT ("Index vector extrema insertion complete.");
 
     arg_info = FreeInfo (arg_info);
     DBUG_RETURN (arg_node);
@@ -337,7 +340,7 @@ IVEXImakeIntScalar (int k, node **vardecs, node **preassigns)
     node *favis;
     node *fass;
 
-    DBUG_ENTER ("IVEXImakeIntScalar");
+    DBUG_ENTER ();
     favis = TBmakeAvis (TRAVtmpVarName ("is"),
                         TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
     *vardecs = TBmakeVardec (favis, *vardecs);
@@ -371,7 +374,7 @@ generateAvisWithids (node *withids, info *arg_info, int idx)
 {
     node *zavis;
 
-    DBUG_ENTER ("generateAvisWithids");
+    DBUG_ENTER ();
     zavis = TCgetNthIds (idx, WITHID_IDS (withids));
     DBUG_RETURN (zavis);
 }
@@ -393,7 +396,7 @@ isSameTypeShape (node *ida, node *idb)
     ntype *typa;
     ntype *typb;
 
-    DBUG_ENTER ("isSameTypeShape");
+    DBUG_ENTER ();
 
     if ((NULL != ida) && (NULL != idb)) {
         typa = TYeliminateAKV (AVIS_TYPE (ID_AVIS (ida)));
@@ -455,7 +458,7 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
     node *ivid;
     node *extid;
 
-    DBUG_ENTER ("IVEXIattachExtrema");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "Expected N_avis for ivavis");
     DBUG_ASSERT (N_avis == NODE_TYPE (extremum), "Expected N_avis for extremum");
@@ -464,7 +467,7 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
     extid = TBmakeId (extremum);
     /* without this check, length errors between x and extrema
      * break far from here, in a very confusing manner. */
-    DBUG_ASSERT ((isSameTypeShape (ivid, extid)), ("type/shape mismatch: id, extremum"));
+    DBUG_ASSERT (isSameTypeShape (ivid, extid), "type/shape mismatch: id, extremum");
 
     lhsavis = TBmakeAvis (TRAVtmpVarName ("ext"), TYeliminateAKV (AVIS_TYPE (ivavis)));
     *vardecs = TBmakeVardec (lhsavis, *vardecs);
@@ -484,8 +487,8 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
         IVEXPsetMaxvalIfNotNull (lhsavis, extid, TRUE);
     }
 
-    DBUG_PRINT ("IVEXI", ("IVEXIattachExtrema introduced temp index variable: %s for: %s",
-                          AVIS_NAME (lhsavis), AVIS_NAME (ivavis)));
+    DBUG_PRINT ("IVEXIattachExtrema introduced temp index variable: %s for: %s",
+                AVIS_NAME (lhsavis), AVIS_NAME (ivavis));
     global.optcounters.ivexp_attach++;
 
     DBUG_RETURN (lhsavis);
@@ -526,7 +529,7 @@ generateSelect (node *arg_node, info *arg_info, int k)
     node *zids;
     node *zass;
 
-    DBUG_ENTER ("generateSelect");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (N_avis == NODE_TYPE (arg_node), "Expected N_avis arg_node");
 
@@ -547,8 +550,8 @@ generateSelect (node *arg_node, info *arg_info, int k)
       = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), kass);
     AVIS_SSAASSIGN (kavis) = kass;
 
-    DBUG_PRINT ("IVEXI", ("generateSelect flattened k: %s for: %s", AVIS_NAME (kavis),
-                          AVIS_NAME (arg_node)));
+    DBUG_PRINT ("generateSelect flattened k: %s for: %s", AVIS_NAME (kavis),
+                AVIS_NAME (arg_node));
 
     /* Create z = _sel_VxA_([k], bound);  */
 
@@ -564,8 +567,8 @@ generateSelect (node *arg_node, info *arg_info, int k)
       = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), zass);
     AVIS_SSAASSIGN (zavis) = zass;
 
-    DBUG_PRINT ("IVEXI", ("generateSelect introduced temp index variable: %s for: %s",
-                          AVIS_NAME (zavis), AVIS_NAME (arg_node)));
+    DBUG_PRINT ("generateSelect introduced temp index variable: %s for: %s",
+                AVIS_NAME (zavis), AVIS_NAME (arg_node));
     DBUG_RETURN (zavis);
 }
 
@@ -609,7 +612,7 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
     node *b2;
     node *withids;
 
-    DBUG_ENTER ("IVEXItmpVec");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "IVEXItmpVec expected N_avis");
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
@@ -659,7 +662,7 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *iavis, int k)
     node *b2f;
     node *withids;
 
-    DBUG_ENTER ("IVEXItmpIds");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (N_avis == NODE_TYPE (iavis), "IVEXItmpIds expected N_avis");
 
@@ -682,8 +685,8 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *iavis, int k)
                                  &INFO_PREASSIGNSPART (arg_info), F_notemaxval, withids);
     AVIS_ISMAXHANDLED (avisp) = TRUE;
 
-    DBUG_PRINT ("IVEXI", ("IVEXItmpIds introduced: %s and %s for: %s", AVIS_NAME (avisp),
-                          AVIS_NAME (avispp), AVIS_NAME (iavis)));
+    DBUG_PRINT ("IVEXItmpIds introduced: %s and %s for: %s", AVIS_NAME (avisp),
+                AVIS_NAME (avispp), AVIS_NAME (iavis));
 
     DBUG_RETURN (avispp);
 }
@@ -712,27 +715,27 @@ populateLUTVars (node *arg_node, info *arg_info)
     node *ids;
     int k = 0;
 
-    DBUG_ENTER ("populateLUTVars");
+    DBUG_ENTER ();
 
     /* Populate LUTVARS with WITHID_VEC and new name. */
     oldavis = IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node)));
     navis = IVEXItmpVec (arg_node, arg_info, oldavis);
     LUTinsertIntoLutP (INFO_LUTVARS (arg_info), oldavis, navis);
-    DBUG_PRINT ("IVEXI", ("Inserting WITHID_VEC into lut: oldid: %s, newid: %s",
-                          AVIS_NAME (oldavis), AVIS_NAME (navis)));
+    DBUG_PRINT ("Inserting WITHID_VEC into lut: oldid: %s, newid: %s",
+                AVIS_NAME (oldavis), AVIS_NAME (navis));
 
     /* Rename withid scalars */
     ids = WITHID_IDS (PART_WITHID (arg_node));
     while (ids != NULL) {
         oldavis = IDS_AVIS (ids);
         navis = IVEXItmpIds (arg_node, arg_info, oldavis, k);
-        DBUG_PRINT ("IVEXI", ("Inserting WITHID_IDS into lut: oldid: %s, newid: %s",
-                              AVIS_NAME (oldavis), AVIS_NAME (navis)));
+        DBUG_PRINT ("Inserting WITHID_IDS into lut: oldid: %s, newid: %s",
+                    AVIS_NAME (oldavis), AVIS_NAME (navis));
         LUTinsertIntoLutP (INFO_LUTVARS (arg_info), oldavis, navis);
         ids = IDS_NEXT (ids);
         k++;
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -753,7 +756,7 @@ populateLUTVars (node *arg_node, info *arg_info)
 node *
 IVEXImodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXImodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -780,10 +783,10 @@ IVEXIfundef (node *arg_node, info *arg_info)
 {
     info *old_info;
 
-    DBUG_ENTER ("IVEXIfundef");
-    DBUG_PRINT ("IVEXI", ("IVEXI in %s %s begins",
-                          (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                          FUNDEF_NAME (arg_node)));
+    DBUG_ENTER ();
+    DBUG_PRINT ("IVEXI in %s %s begins",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                FUNDEF_NAME (arg_node));
 
     old_info = arg_info;
     arg_info = MakeInfo ();
@@ -809,9 +812,9 @@ IVEXIfundef (node *arg_node, info *arg_info)
         INFO_VARDECS (arg_info) = NULL;
     }
 
-    DBUG_PRINT ("IVEXI", ("IVEXI in %s %s ends",
-                          (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                          FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("IVEXI in %s %s ends",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                FUNDEF_NAME (arg_node));
 
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -835,9 +838,9 @@ IVEXIfundef (node *arg_node, info *arg_info)
 node *
 IVEXIblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXIblock");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXI", ("Traversing block"));
+    DBUG_PRINT ("Traversing block");
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -859,9 +862,9 @@ node *
 IVEXIwith (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("IVEXIwith");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXI", ("Traversing with"));
+    DBUG_PRINT ("Traversing with");
     INFO_WITH (arg_info) = arg_node;
 
     /* Traverse the partitions, to define new temps. */
@@ -882,7 +885,7 @@ IVEXIwith (node *arg_node, info *arg_info)
 node *
 IVEXIlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXIlet");
+    DBUG_ENTER ();
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -909,7 +912,7 @@ IVEXIassign (node *arg_node, info *arg_info)
 {
     info *old_info = NULL;
 
-    DBUG_ENTER ("IVEXIassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -930,7 +933,7 @@ IVEXIassign (node *arg_node, info *arg_info)
     if ((N_let == NODE_TYPE (ASSIGN_INSTR (arg_node)))
         && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))))
         && (NULL != INFO_PREASSIGNSWITH (arg_info))) {
-        DBUG_PRINT ("IVEXI", ("Prepending PREASSIGNSWITH"));
+        DBUG_PRINT ("Prepending PREASSIGNSWITH");
         arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);
         INFO_PREASSIGNSWITH (arg_info) = NULL;
     }
@@ -971,9 +974,9 @@ IVEXIpart (node *arg_node, info *arg_info)
 {
     node *newcode;
 
-    DBUG_ENTER ("IVEXIpart");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXI", ("Traversing part"));
+    DBUG_PRINT ("Traversing part");
     /* We will deal with our partition after looking inside it */
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
 
@@ -1044,9 +1047,9 @@ IVEXIpart (node *arg_node, info *arg_info)
 node *
 IVEXIcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXIcond");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXI", ("Traversing cond"));
+    DBUG_PRINT ("Traversing cond");
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
     COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
@@ -1066,9 +1069,9 @@ IVEXIcond (node *arg_node, info *arg_info)
 node *
 IVEXIfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXIfuncond");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXI", ("Traversing funcond"));
+    DBUG_PRINT ("Traversing funcond");
     FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
     FUNCOND_THEN (arg_node) = TRAVopt (FUNCOND_THEN (arg_node), arg_info);
     FUNCOND_ELSE (arg_node) = TRAVopt (FUNCOND_ELSE (arg_node), arg_info);
@@ -1086,9 +1089,9 @@ IVEXIfuncond (node *arg_node, info *arg_info)
 node *
 IVEXIwhile (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXIwhile");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXI", ("Traversing while"));
+    DBUG_PRINT ("Traversing while");
     WHILE_COND (arg_node) = TRAVopt (WHILE_COND (arg_node), arg_info);
     WHILE_BODY (arg_node) = TRAVopt (WHILE_BODY (arg_node), arg_info);
 
@@ -1115,9 +1118,9 @@ IVEXIwhile (node *arg_node, info *arg_info)
 node *
 IVEXIap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXIap");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXI", ("Traversing ap"));
+    DBUG_PRINT ("Traversing ap");
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
         INFO_FROMAP (arg_info) = TRUE;
@@ -1127,3 +1130,5 @@ IVEXIap (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

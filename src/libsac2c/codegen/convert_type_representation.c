@@ -14,7 +14,9 @@
  *
  *****************************************************************************/
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "convert_type_representation.h"
 #include "types.h"
 #include "tree_basic.h"
@@ -47,7 +49,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -59,7 +61,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -81,10 +83,10 @@ CTRvardec (node *arg_node, info *arg_info)
 {
     ntype *type;
 
-    DBUG_ENTER ("CTRvardec");
+    DBUG_ENTER ();
 
     type = AVIS_TYPE (VARDEC_AVIS (arg_node));
-    DBUG_ASSERT ((type != NULL), "missing ntype information");
+    DBUG_ASSERT (type != NULL, "missing ntype information");
 
     VARDEC_TYPE (arg_node) = TYtype2OldType (type);
 
@@ -112,10 +114,10 @@ CTRarg (node *arg_node, info *arg_info)
 {
     ntype *type;
 
-    DBUG_ENTER ("CTRarg");
+    DBUG_ENTER ();
 
     type = AVIS_TYPE (ARG_AVIS (arg_node));
-    DBUG_ASSERT ((type != NULL), "missing ntype information");
+    DBUG_ASSERT (type != NULL, "missing ntype information");
 
     if (ARG_TYPE (arg_node) != NULL)
         ARG_TYPE (arg_node) = FREEfreeAllTypes (ARG_TYPE (arg_node));
@@ -145,7 +147,7 @@ node *
 CTRblock (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CTRblock");
+    DBUG_ENTER ();
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
@@ -167,7 +169,7 @@ CTRblock (node *arg_node, info *arg_info)
 node *
 CTRfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CTRfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
@@ -207,7 +209,7 @@ CTRret (node *arg_node, info *arg_info)
     ntype *type;
     types *old_type;
 
-    DBUG_ENTER ("CTRret");
+    DBUG_ENTER ();
 
     type = RET_TYPE (arg_node);
     DBUG_ASSERT (type != NULL, "missing ntype in N_ret!");
@@ -238,7 +240,7 @@ CTRdoConvertToOldTypes (node *syntax_tree)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CTRdoConvertToOldTypes");
+    DBUG_ENTER ();
 
     TRAVpush (TR_ctr);
 
@@ -250,3 +252,5 @@ CTRdoConvertToOldTypes (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

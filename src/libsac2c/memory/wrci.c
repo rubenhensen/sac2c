@@ -24,7 +24,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "print.h"
 #include "str.h"
 #include "memory.h"
@@ -60,7 +63,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -74,7 +77,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -97,7 +100,7 @@ WRCIdoWithloopReuseCandidateInference (node *syntax_tree)
 {
     info *arg_info;
 
-    DBUG_ENTER ("WRCIdoWithloopReuseCandidateInference");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -118,7 +121,7 @@ WRCIdoWithloopReuseCandidateInference (node *syntax_tree)
 static node *
 ElimDupesOfAvis (node *avis, node *exprs)
 {
-    DBUG_ENTER ("ElimDupesOfAvis");
+    DBUG_ENTER ();
 
     if (exprs != NULL) {
         if (EXPRS_NEXT (exprs) != NULL) {
@@ -136,7 +139,7 @@ ElimDupesOfAvis (node *avis, node *exprs)
 static node *
 ElimDupes (node *exprs)
 {
-    DBUG_ENTER ("ElimDupes");
+    DBUG_ENTER ();
 
     if (exprs != NULL) {
         EXPRS_NEXT (exprs)
@@ -154,7 +157,7 @@ ShapeMatch (ntype *t1, ntype *t2)
     ntype *aks1, *aks2;
     bool res;
 
-    DBUG_ENTER ("ShapeMatch");
+    DBUG_ENTER ();
 
     aks1 = TYeliminateAKV (t1);
     aks2 = TYeliminateAKV (t2);
@@ -172,7 +175,7 @@ MatchingRCs (node *rcs, node *ids, node *modarray)
 {
     node *match = NULL;
 
-    DBUG_ENTER ("MatchingRCs");
+    DBUG_ENTER ();
 
     if (rcs != NULL) {
         match = MatchingRCs (EXPRS_NEXT (rcs), ids, modarray);
@@ -194,7 +197,7 @@ MatchingPRCs (node *rcs, node *ids)
 {
     node *match = NULL;
 
-    DBUG_ENTER ("MatchingRCs");
+    DBUG_ENTER ();
 
     if (rcs != NULL) {
         match = MatchingPRCs (EXPRS_NEXT (rcs), ids);
@@ -223,7 +226,7 @@ MatchingPRCs (node *rcs, node *ids)
 node *
 WRCIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WRCIfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
@@ -245,7 +248,7 @@ WRCIfundef (node *arg_node, info *arg_info)
 node *
 WRCIassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WRCIassign");
+    DBUG_ENTER ();
 
     /*
      * Top-down traversal
@@ -267,7 +270,7 @@ WRCIassign (node *arg_node, info *arg_info)
 node *
 WRCIlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WRCIlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -283,7 +286,7 @@ WRCIlet (node *arg_node, info *arg_info)
 node *
 WRCIwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WRCIwith");
+    DBUG_ENTER ();
 
     /*
      * First, find all conventional reuse candidates.
@@ -337,7 +340,7 @@ WRCIwith (node *arg_node, info *arg_info)
 node *
 WRCIgenerator (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WRCIgenerator");
+    DBUG_ENTER ();
 
     if (GENERATOR_GENWIDTH (arg_node) != NULL) {
         GENERATOR_GENWIDTH (arg_node) = FREEdoFreeTree (GENERATOR_GENWIDTH (arg_node));
@@ -354,7 +357,7 @@ WRCIgenerator (node *arg_node, info *arg_info)
 node *
 WRCIgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WRCIgenarray");
+    DBUG_ENTER ();
 
     /*
      * Annotate reuse candidates.
@@ -384,7 +387,7 @@ WRCIgenarray (node *arg_node, info *arg_info)
 node *
 WRCImodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WRCImodarray");
+    DBUG_ENTER ();
 
     /*
      * Annotate conventional reuse candidates.
@@ -408,7 +411,7 @@ WRCImodarray (node *arg_node, info *arg_info)
 node *
 WRCIfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WRCIfold");
+    DBUG_ENTER ();
 
     if (FOLD_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -419,3 +422,5 @@ WRCIfold (node *arg_node, info *arg_info)
 }
 
 /* @} */
+
+#undef DBUG_PREFIX

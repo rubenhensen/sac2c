@@ -13,7 +13,10 @@
  */
 
 #include "addspecialfuns.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "deserialize.h"
@@ -26,7 +29,7 @@
 static node *
 TagNamespaceAsSticky (node *fundef, namespace_t *ns)
 {
-    DBUG_ENTER ("TagNamespaceAsSticky");
+    DBUG_ENTER ();
 
     if (!FUNDEF_ISLACFUN (fundef) && NSequals (FUNDEF_NS (fundef), ns)) {
         FUNDEF_ISSTICKY (fundef) = TRUE;
@@ -40,7 +43,7 @@ TagPreludeAsSticky (node *syntax_tree)
 {
     namespace_t *prelude;
 
-    DBUG_ENTER ("TagPreludeAsSticky");
+    DBUG_ENTER ();
 
     prelude = NSgetNamespace (global.preludename);
 
@@ -55,9 +58,9 @@ TagPreludeAsSticky (node *syntax_tree)
 node *
 ASFdoAddSpecialFunctions (node *syntaxtree)
 {
-    DBUG_ENTER ("ASFdoAddSpecialFunctions");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (syntaxtree) == N_module),
+    DBUG_ASSERT (NODE_TYPE (syntaxtree) == N_module,
                  "ASFdoAddSpecialFunctions is designed for use on module nodes!");
 
     if (global.loadprelude) {
@@ -99,3 +102,5 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
 
     DBUG_RETURN (syntaxtree);
 }
+
+#undef DBUG_PREFIX

@@ -7,7 +7,10 @@
 #include "tree_compound.h"
 #include "globals.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -55,7 +58,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -74,7 +77,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -84,7 +87,7 @@ FreeInfo (info *info)
 static node *
 AppendVardec (node *fundef, node *avis)
 {
-    DBUG_ENTER ("AppendVardec");
+    DBUG_ENTER ();
 
     FUNDEF_VARDEC (fundef)
       = TCappendVardec (FUNDEF_VARDEC (fundef), TBmakeVardec (avis, NULL));
@@ -97,7 +100,7 @@ SCUFdoSplitCudaFold (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("SCUFdoSplitCudaFold");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_scuf);
@@ -113,7 +116,7 @@ SCUFdoSplitCudaFold (node *syntax_tree)
 node *
 SCUFfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCUFfundef");
+    DBUG_ENTER ();
 
     /* Bug found when compiling mandelbrot. We should
      * not traverse into sticky functions */
@@ -129,7 +132,7 @@ SCUFfundef (node *arg_node, info *arg_info)
 node *
 SCUFassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCUFassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
@@ -145,7 +148,7 @@ SCUFassign (node *arg_node, info *arg_info)
 node *
 SCUFlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCUFlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
@@ -158,7 +161,7 @@ SCUFwith (node *arg_node, info *arg_info)
 {
     node *new_with, *wlidx;
 
-    DBUG_ENTER ("SCUFwith");
+    DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node) && NODE_TYPE (WITH_WITHOP (arg_node)) == N_fold) {
         /* Traverse the partition and the opertaion to collect
@@ -205,7 +208,7 @@ SCUFwith (node *arg_node, info *arg_info)
 node *
 SCUFcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCUFcode");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_TRAVMODE (arg_info) == trav_genarray,
                  "Wrong traverse mode in SCUFcode!");
@@ -226,7 +229,7 @@ SCUFpart (node *arg_node, info *arg_info)
     node *new_code, *code_instr;
     prf op;
 
-    DBUG_ENTER ("SCUFpart");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == trav_normal) {
         if (PART_NEXT (arg_node) == NULL) {
@@ -305,7 +308,7 @@ SCUFpart (node *arg_node, info *arg_info)
         PART_CODE (arg_node) = new_code;
         WITH_CODE (INFO_FOLDWL (arg_info)) = new_code;
     } else {
-        DBUG_ASSERT ((0), "Wrong traverse mode in SCUFpart!");
+        DBUG_ASSERT (0, "Wrong traverse mode in SCUFpart!");
     }
 
     DBUG_RETURN (arg_node);
@@ -317,7 +320,7 @@ SCUFwithid (node *arg_node, info *arg_info)
     node *new_avis, *withids;
     ;
 
-    DBUG_ENTER ("SCUFwithid");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == trav_fold) {
         new_avis = TBmakeAvis (TRAVtmpVarName ("iv"),
@@ -344,7 +347,7 @@ SCUFgenerator (node *arg_node, info *arg_info)
     node *avis, *shape_expr;
     ntype *type = NULL;
 
-    DBUG_ENTER ("SCUFgenerator");
+    DBUG_ENTER ();
 
     shape_expr = DUPdoDupNode (GENERATOR_BOUND2 (arg_node));
 
@@ -355,9 +358,9 @@ SCUFgenerator (node *arg_node, info *arg_info)
                               SHarray2Shape (shape_expr));
         }
     } else if (NODE_TYPE (shape_expr) == N_id) {
-        DBUG_ASSERT ((0), "We are not supporting N_id bound2 yet!");
+        DBUG_ASSERT (0, "We are not supporting N_id bound2 yet!");
     } else {
-        DBUG_ASSERT ((0), "Bound2 is of wrong node type!");
+        DBUG_ASSERT (0, "Bound2 is of wrong node type!");
     }
 
     avis = TBmakeAvis (TRAVtmpVar (), type);
@@ -373,7 +376,7 @@ SCUFgenerator (node *arg_node, info *arg_info)
 node *
 SCUFfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCUFfold");
+    DBUG_ENTER ();
 
     INFO_NEUTRAL (arg_info) = DUPdoDupNode (FOLD_NEUTRAL (arg_node));
 
@@ -385,7 +388,7 @@ SCUFprf (node *arg_node, info *arg_info)
 {
     // ntype *type;
 
-    DBUG_ENTER ("SCUFprf");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == trav_genarray) {
         if (PRF_PRF (arg_node) == F_accu) {
@@ -405,3 +408,5 @@ SCUFprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

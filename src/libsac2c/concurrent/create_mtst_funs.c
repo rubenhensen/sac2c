@@ -44,7 +44,9 @@
 #include "create_mtst_funs.h"
 #include "create_mtst_funs_module.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -91,7 +93,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -108,7 +110,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -134,7 +136,7 @@ IsSpmdConditional (node *arg_node)
     bool res;
     node *prf;
 
-    DBUG_ENTER ("IsSpmdConditional");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_cond,
                  "IsSpmdConditional() applied to wrong node type.");
@@ -169,7 +171,7 @@ MTSTFdoCreateMtStFunsProg (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MTSTFdoCreateMtStFunsProg");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (MODULE_FILETYPE (syntax_tree) == FT_prog,
                  "MTSTFdoCreateMtStFunsProg() not applicable to modules/classes");
@@ -202,7 +204,7 @@ MakeCompanion (node *fundef)
 {
     node *companion;
 
-    DBUG_ENTER ("MakeCompanion");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "MakeCompanion() called with non N_fundef argument node");
@@ -237,7 +239,7 @@ MakeCompanion (node *fundef)
 static node *
 HandleApFold (node *callee, info *arg_info)
 {
-    DBUG_ENTER ("HandleApFold");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISMTFUN (callee) || FUNDEF_ISSTFUN (callee)) {
         /*
@@ -308,7 +310,7 @@ HandleApFold (node *callee, info *arg_info)
 node *
 MTSTFmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTSTFmodule");
+    DBUG_ENTER ();
 
     INFO_ONSPINE (arg_info) = TRUE;
 
@@ -335,7 +337,7 @@ MTSTFmodule (node *arg_node, info *arg_info)
 node *
 MTSTFfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTSTFfundef");
+    DBUG_ENTER ();
 
     if (INFO_ONSPINE (arg_info)) {
 
@@ -430,7 +432,7 @@ MTSTFfundef (node *arg_node, info *arg_info)
 node *
 MTSTFcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTSTFcond");
+    DBUG_ENTER ();
 
     if (IsSpmdConditional (arg_node)) {
         if (INFO_MTCONTEXT (arg_info)) {
@@ -500,7 +502,7 @@ MTSTFcond (node *arg_node, info *arg_info)
 node *
 MTSTFwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTSTFwith2");
+    DBUG_ENTER ();
 
     if (INFO_MTCONTEXT (arg_info)) {
         if (WITH2_PARALLELIZE (arg_node)) {
@@ -547,7 +549,7 @@ MTSTFwith2 (node *arg_node, info *arg_info)
 node *
 MTSTFassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTSTFassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -603,7 +605,7 @@ MTSTFassign (node *arg_node, info *arg_info)
 node *
 MTSTFap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTSTFap");
+    DBUG_ENTER ();
 
     AP_FUNDEF (arg_node) = HandleApFold (AP_FUNDEF (arg_node), arg_info);
 
@@ -626,7 +628,7 @@ MTSTFap (node *arg_node, info *arg_info)
 node *
 MTSTFfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTSTFfold");
+    DBUG_ENTER ();
 
     FOLD_FUNDEF (arg_node) = HandleApFold (FOLD_FUNDEF (arg_node), arg_info);
 
@@ -650,7 +652,7 @@ MTSTFfold (node *arg_node, info *arg_info)
 node *
 MTSTFdoCreateMtStFuns (node *syntax_tree)
 {
-    DBUG_ENTER ("MTSTFdoCreateMtStFuns");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
@@ -662,3 +664,5 @@ MTSTFdoCreateMtStFuns (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

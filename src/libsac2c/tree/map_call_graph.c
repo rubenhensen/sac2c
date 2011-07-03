@@ -9,7 +9,9 @@
 #include "tree_compound.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 /**
  * INFO structure
@@ -43,7 +45,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -61,7 +63,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -77,7 +79,7 @@ MCGfundef (node *arg_node, info *arg_info)
 {
     node *last;
 
-    DBUG_ENTER ("MCGfundef");
+    DBUG_ENTER ();
 
     last = INFO_CURRENT (arg_info);
     INFO_CURRENT (arg_info) = arg_node;
@@ -112,7 +114,7 @@ MCGfundef (node *arg_node, info *arg_info)
 node *
 MCGap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MCGap");
+    DBUG_ENTER ();
 
     /*
      * call the continue function to check whether we have to go on or not.
@@ -181,9 +183,9 @@ MCGdoMapCallGraph (node *arg_node, travfun_p mapfundown, travfun_p mapfunup,
 {
     info *localinfo;
 
-    DBUG_ENTER ("MCGdoMapCallGraph");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
                  "MCGdoMapLacFuns called on non fundef node");
 
     localinfo = MakeInfo ();
@@ -203,3 +205,5 @@ MCGdoMapCallGraph (node *arg_node, travfun_p mapfundown, travfun_p mapfunup,
 
     DBUG_RETURN (arg_info);
 }
+
+#undef DBUG_PREFIX

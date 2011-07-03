@@ -3,7 +3,10 @@
 #include "DataFlowMask.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 
 /** <!--********************************************************************-->
@@ -26,7 +29,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -38,7 +41,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -58,7 +61,7 @@ FreeInfo (info *info)
 node *
 RDFMSwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RDFMSwith");
+    DBUG_ENTER ();
 
     if (WITH_IN_MASK (arg_node) != NULL) {
         WITH_IN_MASK (arg_node) = DFMremoveMask (WITH_IN_MASK (arg_node));
@@ -90,7 +93,7 @@ RDFMSwith (node *arg_node, info *arg_info)
 node *
 RDFMSwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RDFMSwith2");
+    DBUG_ENTER ();
 
     if (WITH2_IN_MASK (arg_node) != NULL) {
         WITH2_IN_MASK (arg_node) = DFMremoveMask (WITH2_IN_MASK (arg_node));
@@ -122,7 +125,7 @@ RDFMSwith2 (node *arg_node, info *arg_info)
 node *
 RDFMSwith3 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RDFMSwith3");
+    DBUG_ENTER ();
 
     if (WITH3_IN_MASK (arg_node) != NULL) {
         WITH3_IN_MASK (arg_node) = DFMremoveMask (WITH3_IN_MASK (arg_node));
@@ -154,7 +157,7 @@ RDFMSwith3 (node *arg_node, info *arg_info)
 node *
 RDFMScond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RDFMScond");
+    DBUG_ENTER ();
 
     if (COND_IN_MASK (arg_node) != NULL) {
         COND_IN_MASK (arg_node) = DFMremoveMask (COND_IN_MASK (arg_node));
@@ -186,7 +189,7 @@ RDFMScond (node *arg_node, info *arg_info)
 node *
 RDFMSdo (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RDFMSdo");
+    DBUG_ENTER ();
 
     if (DO_IN_MASK (arg_node) != NULL) {
         DO_IN_MASK (arg_node) = DFMremoveMask (DO_IN_MASK (arg_node));
@@ -218,7 +221,7 @@ RDFMSdo (node *arg_node, info *arg_info)
 node *
 RDFMSblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RDFMSblock");
+    DBUG_ENTER ();
 
     if (BLOCK_IN_MASK (arg_node) != NULL) {
         BLOCK_IN_MASK (arg_node) = DFMremoveMask (BLOCK_IN_MASK (arg_node));
@@ -250,7 +253,7 @@ RDFMSblock (node *arg_node, info *arg_info)
 node *
 RDFMSfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RDFMSfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_DFM_BASE (arg_node) != NULL) {
         FUNDEF_DFM_BASE (arg_node) = DFMremoveMaskBase (FUNDEF_DFM_BASE (arg_node));
@@ -277,7 +280,7 @@ RDFMSdoRemoveDfms (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("RDFMSdoRemoveDfms");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
     INFO_ONEFUNDEF (arg_info) = (NODE_TYPE (arg_node) == N_fundef);
@@ -290,3 +293,5 @@ RDFMSdoRemoveDfms (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

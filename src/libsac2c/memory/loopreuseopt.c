@@ -25,7 +25,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "EMLR"
+#include "debug.h"
+
 #include "print.h"
 #include "new_types.h"
 #include "user_types.h"
@@ -68,7 +71,7 @@ MakeInfo (node *fundef)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -85,7 +88,7 @@ MakeInfo (node *fundef)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -116,15 +119,15 @@ FreeInfo (info *info)
 node *
 EMLRdoLoopReuseOptimization (node *arg_node)
 {
-    DBUG_ENTER ("EMLRdoLoopReuseOptimization");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMLR", ("Starting Loop Reuse Optimization..."));
+    DBUG_PRINT ("Starting Loop Reuse Optimization...");
 
     TRAVpush (TR_emlr);
     arg_node = TRAVdo (arg_node, NULL);
     TRAVpop ();
 
-    DBUG_PRINT ("EMLR", ("Loop Reuse Traversal complete."));
+    DBUG_PRINT ("Loop Reuse Traversal complete.");
 
     DBUG_RETURN (arg_node);
 }
@@ -145,7 +148,7 @@ DFMequalMasks (dfmask_t *mask1, dfmask_t *mask2)
     dfmask_t *d1, *d2;
     int sum;
 
-    DBUG_ENTER ("DFMEqualMasks");
+    DBUG_ENTER ();
 
     d1 = DFMgenMaskMinus (mask1, mask2);
     d2 = DFMgenMaskMinus (mask2, mask1);
@@ -178,7 +181,7 @@ DFMequalMasks (dfmask_t *mask1, dfmask_t *mask2)
 node *
 EMLRap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMLRap");
+    DBUG_ENTER ();
 
     /*
      * Traverse into special functions
@@ -315,7 +318,7 @@ EMLRap (node *arg_node, info *arg_info)
 node *
 EMLRassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMLRap");
+    DBUG_ENTER ();
 
     /*
      * Bottom-up traversal
@@ -346,11 +349,11 @@ EMLRassign (node *arg_node, info *arg_info)
 node *
 EMLRfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMLRfundef");
+    DBUG_ENTER ();
 
     if ((!FUNDEF_ISLACFUN (arg_node)) || (arg_info != NULL)) {
 
-        DBUG_PRINT ("EMLR", ("Traversing function %s", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Traversing function %s", FUNDEF_NAME (arg_node));
         if (FUNDEF_BODY (arg_node) != NULL) {
             info *info;
             info = MakeInfo (arg_node);
@@ -395,7 +398,7 @@ EMLRfundef (node *arg_node, info *arg_info)
 node *
 EMLROap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMLROap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
         INFO_APARGS (arg_info) = AP_ARGS (arg_node);
@@ -436,7 +439,7 @@ EMLROap (node *arg_node, info *arg_info)
 node *
 EMLROarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMLROarg");
+    DBUG_ENTER ();
 
     switch (INFO_CONTEXT (arg_info)) {
     case LR_doargs:
@@ -466,7 +469,7 @@ EMLROarg (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal context!");
+        DBUG_ASSERT (0, "Illegal context!");
         break;
     }
 
@@ -492,7 +495,7 @@ EMLROarg (node *arg_node, info *arg_info)
 node *
 EMLROfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMLROfundef");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (FUNDEF_ISLACFUN (arg_node),
                  "EMLROfundef is only applicable for LAC-functions");
@@ -503,7 +506,7 @@ EMLROfundef (node *arg_node, info *arg_info)
         dfmask_base_t *maskbase;
         dfmask_t *oldmask;
 
-        DBUG_PRINT ("EMLR", ("Optimizing %s", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Optimizing %s", FUNDEF_NAME (arg_node));
 
         /*
          * Traversal of DOFUN
@@ -561,9 +564,8 @@ EMLROfundef (node *arg_node, info *arg_info)
         /*
          * Print statically resusable variables
          */
-        DBUG_PRINT ("EMLR", ("The following variables can be statically reused:"));
-        DBUG_EXECUTE ("EMLR",
-                      DFMprintMask (global.outfile, "%s\n", INFO_REUSEMASK (info)););
+        DBUG_PRINT ("The following variables can be statically reused:");
+        DBUG_EXECUTE (DFMprintMask (global.outfile, "%s\n", INFO_REUSEMASK (info)));
 
         /*
          * Initialize arguments' AVIS_ALIAS with values from REUSEMASK
@@ -634,7 +636,7 @@ EMLROfundef (node *arg_node, info *arg_info)
 node *
 EMLROid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMLROid");
+    DBUG_ENTER ();
 
     switch (INFO_CONTEXT (arg_info)) {
     case LR_allocorreuse:
@@ -647,7 +649,7 @@ EMLROid (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal context!");
+        DBUG_ASSERT (0, "Illegal context!");
         break;
     }
 
@@ -669,7 +671,7 @@ EMLROid (node *arg_node, info *arg_info)
 node *
 EMLROprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMLROprf");
+    DBUG_ENTER ();
 
     if (PRF_PRF (arg_node) == F_alloc_or_reuse) {
         if (PRF_EXPRS3 (arg_node) != NULL) {
@@ -689,3 +691,5 @@ EMLROprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Loop Reuse Optimization -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

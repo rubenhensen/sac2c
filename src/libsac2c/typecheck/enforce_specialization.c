@@ -28,7 +28,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "ESP"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "ssi.h"
@@ -62,9 +65,9 @@ ESPdoEnforceSpecialization (node *syntax_tree)
 {
     bool ok;
 
-    DBUG_ENTER ("ESPdoEnforceSpecialization");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("ESP", ("Starting esp traversal."));
+    DBUG_PRINT ("Starting esp traversal.");
 
     ok = SSIinitAssumptionSystem (SDhandleContradiction, SDhandleElimination);
     DBUG_ASSERT (ok, "Initialisation of Assumption System went wrong!");
@@ -90,7 +93,7 @@ ESPdoEnforceSpecialization (node *syntax_tree)
      */
     DSfinishDeserialize (syntax_tree);
 
-    DBUG_PRINT ("ESP", ("EnforceSpecialization traversal complete."));
+    DBUG_PRINT ("EnforceSpecialization traversal complete.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -118,7 +121,7 @@ ESPmodule (node *arg_node, info *arg_info)
 {
     node *specialized_fundefs;
 
-    DBUG_ENTER ("ESPmodule");
+    DBUG_ENTER ();
 
     if (NULL != MODULE_FUNSPECS (arg_node)) {
         MODULE_FUNSPECS (arg_node) = TRAVdo (MODULE_FUNSPECS (arg_node), arg_info);
@@ -151,21 +154,21 @@ ESPfundef (node *arg_node, info *arg_info)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("ESPfundef");
+    DBUG_ENTER ();
 
     wrapper = FUNDEF_IMPL (arg_node);
 
     args = TUmakeProductTypeFromArgs (FUNDEF_ARGS (arg_node));
     rets = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
 
-    DBUG_EXECUTE ("ESP", tmp_str = TYtype2String (args, 0, 0););
-    DBUG_PRINT ("ESP", ("dispatching %s for %s", CTIitemName (wrapper), tmp_str));
+    DBUG_EXECUTE (tmp_str = TYtype2String (args, 0, 0));
+    DBUG_PRINT ("dispatching %s for %s", CTIitemName (wrapper), tmp_str);
 
     disp_res = TYdispatchFunType (FUNDEF_WRAPPERTYPE (wrapper), args);
 
-    DBUG_EXECUTE ("ESP", tmp_str = TYdft_res2DebugString (disp_res););
-    DBUG_PRINT ("ESP", ("%s", tmp_str));
-    DBUG_EXECUTE ("ESP", MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYdft_res2DebugString (disp_res));
+    DBUG_PRINT ("%s", tmp_str);
+    DBUG_EXECUTE (MEMfree (tmp_str));
 
     if (disp_res == NULL) {
         CTIwarnLine (global.linenum, "Specialization of \"%s\" to arguments () ignored",
@@ -208,3 +211,5 @@ ESPfundef (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

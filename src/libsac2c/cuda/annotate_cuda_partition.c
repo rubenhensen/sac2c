@@ -22,7 +22,10 @@
 #include "str_buffer.h"
 #include "memory.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -92,7 +95,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -106,7 +109,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -132,7 +135,7 @@ node *
 ACUPTNdoAnnotateCUDAPartition (node *syntax_tree)
 {
     info *info;
-    DBUG_ENTER ("ACUPTNdoAnnotateCUDAPartition");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     INFO_MODE (info) = mark_potential;
@@ -189,7 +192,7 @@ static arraylist_struct *MakeALS( arraylist_struct *als, node *avis, int size)
 static arraylist_struct *
 FreeALS (arraylist_struct *als)
 {
-    DBUG_ENTER ("FreeALS");
+    DBUG_ENTER ();
 
     if (als != NULL) {
         if (als->next != NULL) {
@@ -214,7 +217,7 @@ ArraylistContains (arraylist_struct *als, node *avis)
 {
     arraylist_struct *res;
 
-    DBUG_ENTER ("ArraylistContains");
+    DBUG_ENTER ();
 
     if (als == NULL) {
         res = NULL;
@@ -242,7 +245,7 @@ ArraylistMaxSizeAvis (arraylist_struct *als)
     node *res;
     arraylist_struct *current_max;
 
-    DBUG_ENTER ("ArraylistMaxSize");
+    DBUG_ENTER ();
 
     if (als == NULL) {
         res = NULL;
@@ -270,7 +273,7 @@ ArraylistMaxSizeAvis (arraylist_struct *als)
 static arraylist_struct *
 ArraylistIncSize (arraylist_struct *als, int size)
 {
-    DBUG_ENTER ("ArraylistIncSize");
+    DBUG_ENTER ();
 
     als->size = als->size + size;
 
@@ -289,7 +292,7 @@ GetPartitionSize (node *lb_elements, node *ub_elements)
 {
     constant *size_cnst, *lb_cnst, *ub_cnst;
 
-    DBUG_ENTER ("GetPartitionSize");
+    DBUG_ENTER ();
 
     size_cnst = COmakeConstantFromInt (0);
 
@@ -297,8 +300,8 @@ GetPartitionSize (node *lb_elements, node *ub_elements)
         lb_cnst = COaST2Constant (EXPRS_EXPR (lb_elements));
         ub_cnst = COaST2Constant (EXPRS_EXPR (ub_elements));
 
-        DBUG_ASSERT ((lb_cnst != NULL), "Lower bound is not constant!");
-        DBUG_ASSERT ((ub_cnst != NULL), "Upper bound is not constant!");
+        DBUG_ASSERT (lb_cnst != NULL, "Lower bound is not constant!");
+        DBUG_ASSERT (ub_cnst != NULL, "Upper bound is not constant!");
 
         size_cnst = COadd (size_cnst, COsub (ub_cnst, lb_cnst, NULL), NULL);
 
@@ -329,7 +332,7 @@ GetPartitionSize (node *lb_elements, node *ub_elements)
 node *
 ACUPTNwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ACUPTNwith");
+    DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
         INFO_MODE (arg_info) = mark_potential;
@@ -360,7 +363,7 @@ ACUPTNpart (node *arg_node, info *arg_info)
 {
     // node *block_instr;
 
-    DBUG_ENTER ("ACUPTNpart");
+    DBUG_ENTER ();
 
     /* For now, we mark each partition as true since the implementation
      * is not stable yet */
@@ -429,14 +432,14 @@ ACUPTNgenerator (node *arg_node, info *arg_info)
     int partition_size;
     arraylist_struct *als;
 
-    DBUG_ENTER ("ACUPTNgenerator");
+    DBUG_ENTER ();
 
     lower_bound = GENERATOR_BOUND1 (arg_node);
     upper_bound = GENERATOR_BOUND2 (arg_node);
 
     if (NODE_TYPE (lower_bound) == N_id) {
         node *ssaassign = AVIS_SSAASSIGN (ID_AVIS (lower_bound));
-        DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array),
+        DBUG_ASSERT (NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array,
                      "Lower bound should be an N_array node!");
         lower_bound_elements = ARRAY_AELEMS (ASSIGN_RHS (ssaassign));
     } else {
@@ -445,7 +448,7 @@ ACUPTNgenerator (node *arg_node, info *arg_info)
 
     if (NODE_TYPE (upper_bound) == N_id) {
         node *ssaassign = AVIS_SSAASSIGN (ID_AVIS (upper_bound));
-        DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array),
+        DBUG_ASSERT (NODE_TYPE (ASSIGN_RHS (ssaassign)) == N_array,
                      "Upper bound should be an N_array node!");
         upper_bound_elements = ARRAY_AELEMS (ASSIGN_RHS (ssaassign));
     } else {
@@ -470,3 +473,5 @@ ACUPTNgenerator (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

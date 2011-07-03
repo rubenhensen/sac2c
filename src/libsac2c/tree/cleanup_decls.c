@@ -11,7 +11,9 @@
 #include "traverse.h"
 #include "free.h"
 #include "DataFlowMask.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CUD"
+#include "debug.h"
 
 /******************************************************************************
  *
@@ -51,7 +53,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -64,7 +66,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -88,10 +90,10 @@ FreeInfo (info *info)
 node *
 CUDids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUDids");
+    DBUG_ENTER ();
 
     if (INFO_CUD_REF (arg_info) != NULL) {
-        DBUG_ASSERT ((AVIS_DECL (IDS_AVIS (arg_node)) != NULL),
+        DBUG_ASSERT (AVIS_DECL (IDS_AVIS (arg_node)) != NULL,
                      "Variable declaration missing! "
                      "CleanupDecls() can be used after type checking only!");
         DFMsetMaskEntryClear (INFO_CUD_REF (arg_info), NULL, IDS_AVIS (arg_node));
@@ -117,7 +119,7 @@ CUDids (node *arg_node, info *arg_info)
 node *
 CUDfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUDfundef");
+    DBUG_ENTER ();
 
     INFO_CUD_FUNDEF (arg_info) = arg_node;
 
@@ -135,7 +137,7 @@ CUDfundef (node *arg_node, info *arg_info)
          */
         INFO_CUD_REF (arg_info) = NULL;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        DBUG_ASSERT ((INFO_CUD_REF (arg_info) == NULL), "INFO_CUD_REF not freed!");
+        DBUG_ASSERT (INFO_CUD_REF (arg_info) == NULL, "INFO_CUD_REF not freed!");
 
         /*
          * update DFM base
@@ -174,10 +176,10 @@ CUDblock (node *arg_node, info *arg_info)
     node *vardec;
     dfmask_t *mask;
 
-    DBUG_ENTER ("CUDblock");
+    DBUG_ENTER ();
 
     if (BLOCK_VARDEC (arg_node) != NULL) {
-        DBUG_ASSERT ((INFO_CUD_REF (arg_info) == NULL), "(nested) local vardecs found!");
+        DBUG_ASSERT (INFO_CUD_REF (arg_info) == NULL, "(nested) local vardecs found!");
         INFO_CUD_REF (arg_info) = DFMgenMaskClear (INFO_DFMBASE (arg_info));
 
         BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
@@ -197,18 +199,18 @@ CUDblock (node *arg_node, info *arg_info)
         vardec = BLOCK_VARDEC (arg_node);
         while (VARDEC_NEXT (vardec) != NULL) {
             if (DFMtestMaskEntry (mask, NULL, VARDEC_AVIS (VARDEC_NEXT (vardec)))) {
-                DBUG_PRINT ("CUD", ("Variable %s removed in function %s",
-                                    VARDEC_NAME (VARDEC_NEXT (vardec)),
-                                    FUNDEF_NAME (INFO_CUD_FUNDEF (arg_info))));
+                DBUG_PRINT ("Variable %s removed in function %s",
+                            VARDEC_NAME (VARDEC_NEXT (vardec)),
+                            FUNDEF_NAME (INFO_CUD_FUNDEF (arg_info)));
                 VARDEC_NEXT (vardec) = FREEdoFreeNode (VARDEC_NEXT (vardec));
             } else {
                 vardec = VARDEC_NEXT (vardec);
             }
         }
         if (DFMtestMaskEntry (mask, NULL, VARDEC_AVIS (BLOCK_VARDEC (arg_node)))) {
-            DBUG_PRINT ("CUD", ("Variable %s removed in function %s",
-                                VARDEC_NAME (BLOCK_VARDEC (arg_node)),
-                                FUNDEF_NAME (INFO_CUD_FUNDEF (arg_info))));
+            DBUG_PRINT ("Variable %s removed in function %s",
+                        VARDEC_NAME (BLOCK_VARDEC (arg_node)),
+                        FUNDEF_NAME (INFO_CUD_FUNDEF (arg_info)));
             BLOCK_VARDEC (arg_node) = FREEdoFreeNode (BLOCK_VARDEC (arg_node));
         }
 
@@ -231,7 +233,7 @@ CUDblock (node *arg_node, info *arg_info)
 node *
 CUDvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUDvardec");
+    DBUG_ENTER ();
 
     DFMsetMaskEntrySet (INFO_CUD_REF (arg_info), NULL, VARDEC_AVIS (arg_node));
 
@@ -255,7 +257,7 @@ CUDvardec (node *arg_node, info *arg_info)
 node *
 CUDid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUDid");
+    DBUG_ENTER ();
 
     if (INFO_CUD_REF (arg_info) != NULL) {
         DFMsetMaskEntryClear (INFO_CUD_REF (arg_info), NULL, ID_AVIS (arg_node));
@@ -280,7 +282,7 @@ CUDdoCleanupDecls (node *syntax_tree)
     info *info;
     trav_t traversaltable;
 
-    DBUG_ENTER ("CleanupDecls");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -289,9 +291,11 @@ CUDdoCleanupDecls (node *syntax_tree)
     syntax_tree = TRAVdo (syntax_tree, info);
 
     traversaltable = TRAVpop ();
-    DBUG_ASSERT ((traversaltable == TR_cud), "Popped incorrect traversal table");
+    DBUG_ASSERT (traversaltable == TR_cud, "Popped incorrect traversal table");
 
     info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

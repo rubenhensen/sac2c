@@ -25,7 +25,10 @@
 #include "minimize_transfers.h"
 
 #include <stdlib.h>
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "minimize_block_transfers2.h"
 #include "annotate_memory_transfers.h"
 #include "annotate_cond_transfers.h"
@@ -50,7 +53,7 @@
 node *
 MTRANdoMinimizeTransfers (node *syntax_tree)
 {
-    DBUG_ENTER ("MTRANdoMinimizeTransfers");
+    DBUG_ENTER ();
 
     int i, j;
 
@@ -87,3 +90,5 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
 /** <!--********************************************************************-->
  * @}  <!-- Entry functions -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

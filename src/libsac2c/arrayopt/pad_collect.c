@@ -18,7 +18,8 @@
 
 #include "pad_collect.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "APC"
+#include "debug.h"
 
 #include "types.h"
 #include "tree_basic.h"
@@ -58,7 +59,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -72,7 +73,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -109,9 +110,9 @@ APCdoCollect (node *arg_node)
 
     info *arg_info;
 
-    DBUG_ENTER ("APcollect");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APC", ("Array Padding: collecting data..."));
+    DBUG_PRINT ("Array Padding: collecting data...");
 
     arg_info = MakeInfo ();
     INFO_APC_COUNT_CHANGES (arg_info) = 0;
@@ -124,9 +125,9 @@ APCdoCollect (node *arg_node)
 
     arg_info = FreeInfo (arg_info);
 
-    DBUG_EXECUTE ("APC", PIprintAccessPatterns (); PIprintUnsupportedShapes (););
+    DBUG_EXECUTE (PIprintAccessPatterns (); PIprintUnsupportedShapes ());
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -151,7 +152,7 @@ AccessClass2Group (accessclass_t class, int dim)
     int element;
     int i;
 
-    DBUG_ENTER ("AccessClass2Vector");
+    DBUG_ENTER ();
 
     switch (class) {
     case ACL_offset:
@@ -212,9 +213,9 @@ CollectAccessPatterns (node *arg_node)
     pattern_t *patterns;
     accessdir_t direction;
 
-    DBUG_ENTER ("CollectAccessPatterns");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APC", ("collecting access patterns..."));
+    DBUG_PRINT ("collecting access patterns...");
 
     /* collect array accesses and group by accessed array */
     collection = NULL;
@@ -311,7 +312,7 @@ static void
 AddUnsupported (info *arg_info, types *array_type)
 {
 
-    DBUG_ENTER ("AddUnsupported");
+    DBUG_ENTER ();
 
     INFO_APC_UNSUPPORTED (arg_info) = TRUE;
 
@@ -324,7 +325,7 @@ AddUnsupported (info *arg_info, types *array_type)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -343,9 +344,9 @@ APCarray (node *arg_node, info *arg_info)
     ntype *atype;
     types *otype;
 
-    DBUG_ENTER ("APCarray");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APC", ("array-node detected"));
+    DBUG_PRINT ("array-node detected");
 
     atype = NTCnewTypeCheck_Expr (arg_node);
     otype = TYtype2OldType (atype);
@@ -375,20 +376,20 @@ APCwith (node *arg_node, info *arg_info)
 {
     node *save_ptr;
 
-    DBUG_ENTER ("APCwith");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APC", ("with-node detected"));
+    DBUG_PRINT ("with-node detected");
 
     /* save pointer to outer with-loop to support nested loops */
     save_ptr = INFO_APC_WITH (arg_info);
 
     INFO_APC_WITH (arg_info) = arg_node;
 
-    DBUG_ASSERT ((WITH_CODE (arg_node) != NULL), " unexpected empty CODE!");
+    DBUG_ASSERT (WITH_CODE (arg_node) != NULL, " unexpected empty CODE!");
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     /* traverse withop */
-    DBUG_ASSERT ((WITH_WITHOP (arg_node) != NULL), " unexpected empty WITHOP!");
+    DBUG_ASSERT (WITH_WITHOP (arg_node) != NULL, " unexpected empty WITHOP!");
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     /* no need to traverse part-node here */
@@ -412,9 +413,9 @@ APCwith (node *arg_node, info *arg_info)
 node *
 APCap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("APCap");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APC", ("ap-node detected"));
+    DBUG_PRINT ("ap-node detected");
 
     /* look whether body exists or not */
     if (FUNDEF_BODY (AP_FUNDEF (arg_node)) == NULL) {
@@ -443,9 +444,9 @@ APCap (node *arg_node, info *arg_info)
 node *
 APCid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("APCid");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APC", ("id-node detected"));
+    DBUG_PRINT ("id-node detected");
 
     if (INFO_APC_UNSUPPORTED (arg_info)) {
         AddUnsupported (arg_info, ID_TYPE (arg_node));
@@ -467,9 +468,9 @@ APCid (node *arg_node, info *arg_info)
 node *
 APCprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("APCprf");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APC", ("prf-node detected: '%s'", global.prf_name[PRF_PRF (arg_node)]));
+    DBUG_PRINT ("prf-node detected: '%s'", global.prf_name[PRF_PRF (arg_node)]);
 
     INFO_APC_UNSUPPORTED (arg_info) = TRUE;
 
@@ -500,12 +501,11 @@ APCprf (node *arg_node, info *arg_info)
 node *
 APCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("APCfundef");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("APC",
-                  if (FUNDEF_NAME (arg_node) != NULL) {
-                      DBUG_PRINT ("APC", ("fundef-node: %s", FUNDEF_NAME (arg_node)));
-                  } else { DBUG_PRINT ("APC", ("fundef-node: (NULL)")); });
+    DBUG_EXECUTE (if (FUNDEF_NAME (arg_node) != NULL) {
+        DBUG_PRINT ("fundef-node: %s", FUNDEF_NAME (arg_node));
+    } else { DBUG_PRINT ("fundef-node: (NULL)"); });
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -537,14 +537,14 @@ APClet (node *arg_node, info *arg_info)
     node *ids_ptr;
     bool save_state;
 
-    DBUG_ENTER ("APClet");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APC", ("let-node detected (%s=...)", IDS_NAME (LET_IDS (arg_node))));
+    DBUG_PRINT ("let-node detected (%s=...)", IDS_NAME (LET_IDS (arg_node)));
 
     save_state = INFO_APC_UNSUPPORTED (arg_info);
     INFO_APC_UNSUPPORTED (arg_info) = FALSE;
 
-    DBUG_ASSERT ((LET_EXPR (arg_node) != NULL), " let-node without rvalues detected!");
+    DBUG_ASSERT (LET_EXPR (arg_node) != NULL, " let-node without rvalues detected!");
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     if (INFO_APC_UNSUPPORTED (arg_info)) {
@@ -572,7 +572,7 @@ APClet (node *arg_node, info *arg_info)
 node *
 APCgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("APCgenarray");
+    DBUG_ENTER ();
 
 #if 0
   shpseg* shape;
@@ -581,9 +581,9 @@ APCgenarray (node *arg_node, info *arg_info)
   simpletype basetype;
 
 
-  DBUG_PRINT( "APC", ("withop-node detected")); 
+  DBUG_PRINT ("withop-node detected"); 
 
-  DBUG_PRINT( "APC", (" genarray-loop"));
+  DBUG_PRINT (" genarray-loop");
   if (INFO_APC_UNSUPPORTED(arg_info)) {
   TODO: the following assumes, genarray_shape is given by a N_array node
     /* do not add type of vector, but contents of array to unsupported shapes */
@@ -617,11 +617,11 @@ APCgenarray (node *arg_node, info *arg_info)
 node *
 APCmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("APCmodarray");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APC", ("withop-node detected"));
+    DBUG_PRINT ("withop-node detected");
 
-    DBUG_PRINT ("APC", (" modarray-loop"));
+    DBUG_PRINT (" modarray-loop");
 
     if (INFO_APC_UNSUPPORTED (arg_info)) {
         AddUnsupported (arg_info, ID_TYPE (MODARRAY_ARRAY (arg_node)));
@@ -643,11 +643,11 @@ APCmodarray (node *arg_node, info *arg_info)
 node *
 APCfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("APCfold");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("APC", ("withop-node detected"));
+    DBUG_PRINT ("withop-node detected");
 
-    DBUG_PRINT ("APC", (" foldfun-loop"));
+    DBUG_PRINT (" foldfun-loop");
 
     DBUG_RETURN (arg_node);
 }
@@ -666,10 +666,10 @@ node *
 APCcode (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("APCcode");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((CODE_CEXPR (arg_node) != NULL), " unexpected empty CEXPR!");
-    DBUG_PRINT ("APC", ("code-node (%s=...)", ID_NAME (CODE_CEXPR (arg_node))));
+    DBUG_ASSERT (CODE_CEXPR (arg_node) != NULL, " unexpected empty CEXPR!");
+    DBUG_PRINT ("code-node (%s=...)", ID_NAME (CODE_CEXPR (arg_node)));
 
     /* collect access patterns */
     arg_node = CollectAccessPatterns (arg_node);
@@ -681,7 +681,7 @@ APCcode (node *arg_node, info *arg_info)
     }
 
     /* traverse code block */
-    DBUG_ASSERT ((CODE_CBLOCK (arg_node) != NULL), " unexpected empty CBLOCK!");
+    DBUG_ASSERT (CODE_CBLOCK (arg_node) != NULL, " unexpected empty CBLOCK!");
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
     /* traverse following code blocks (rvalue of assignment) */
@@ -691,3 +691,5 @@ APCcode (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

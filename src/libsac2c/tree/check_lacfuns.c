@@ -15,7 +15,9 @@
 
 #include "check_lacfuns.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -51,7 +53,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -65,7 +67,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -79,7 +81,7 @@ FreeInfo (info *info)
 static node *
 ATravCHKLACFCmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravCHKLACFCmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
@@ -90,7 +92,7 @@ ATravCHKLACFCmodule (node *arg_node, info *arg_info)
 static node *
 ATravCHKLACFCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravCHKLACFCfundef");
+    DBUG_ENTER ();
 
     FUNDEF_CALLFUN (arg_node) = NULL;
 
@@ -112,7 +114,7 @@ ClearCallSiteLinks (node *arg_node)
     anontrav_t dfrc_trav[4]
       = {{N_module, &ATravCHKLACFCmodule}, {N_fundef, &ATravCHKLACFCfundef}, {0, NULL}};
 
-    DBUG_ENTER ("ClearCallSiteLinks");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (dfrc_trav, &TRAVsons);
 
@@ -133,7 +135,7 @@ ClearCallSiteLinks (node *arg_node)
 node *
 CHKLACFmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CHKLACFmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -151,7 +153,7 @@ CHKLACFfundef (node *arg_node, info *arg_info)
 {
     node *fundef;
 
-    DBUG_ENTER ("CHKLACFfundef");
+    DBUG_ENTER ();
 
     if (INFO_SPINE (arg_info)) {
         if (!FUNDEF_ISDOFUN (arg_node) && !FUNDEF_ISCONDFUN (arg_node)) {
@@ -211,7 +213,7 @@ CHKLACFfundef (node *arg_node, info *arg_info)
 node *
 CHKLACFblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CHKLACFblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
@@ -229,7 +231,7 @@ CHKLACFap (node *arg_node, info *arg_info)
 {
     bool spine;
 
-    DBUG_ENTER ("CHKLACFap");
+    DBUG_ENTER ();
 
     if (!AP_ISRECURSIVEDOFUNCALL (arg_node)
         && (FUNDEF_ISDOFUN (AP_FUNDEF (arg_node))
@@ -261,7 +263,7 @@ CHKLACFdoCheckLacFuns (node *arg_node)
     info *info;
     node *keep_next = NULL;
 
-    DBUG_ENTER ("CHKLACFdoCheckLacFuns");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
                  "Illegal argument node!");
@@ -303,3 +305,5 @@ CHKLACFdoCheckLacFuns (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -60,7 +60,10 @@
 #include "new_types.h"
 #include "shape.h"
 #include "new_typecheck.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "ASD"
+#include "debug.h"
+
 #include "globals.h"
 
 /** <!--********************************************************************-->
@@ -98,7 +101,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -117,7 +120,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -149,7 +152,7 @@ ASDdoAudSclDistinction (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("ASDdoAudSclDistinction");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -182,7 +185,7 @@ GetLeastTypes (ntype *p1, ntype *p2)
 {
     ntype *res;
 
-    DBUG_ENTER ("GetLeastTypes");
+    DBUG_ENTER ();
 
     if ((p1 == NULL) || (p2 == NULL)) {
         res = p1 == NULL ? p2 : p1;
@@ -242,7 +245,7 @@ LiftId (node *id, ntype *new_type, node *fundef, node **new_assigns)
     node *new_ids;
     node *new_avis;
 
-    DBUG_ENTER ("LiftId");
+    DBUG_ENTER ();
 
     new_name = TRAVtmpVarName (ID_NAME (id));
 
@@ -267,7 +270,7 @@ LiftId (node *id, ntype *new_type, node *fundef, node **new_assigns)
 
     ID_AVIS (id) = new_avis;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -307,7 +310,7 @@ LiftIds (node *ids_arg, ntype *new_type, node *fundef, node **new_assigns,
     node *new_id;
     node *new_avis;
 
-    DBUG_ENTER ("LiftIds");
+    DBUG_ENTER ();
 
     new_name = TRAVtmpVarName (IDS_NAME (ids_arg));
 
@@ -333,7 +336,7 @@ LiftIds (node *ids_arg, ntype *new_type, node *fundef, node **new_assigns,
 
     AVIS_SSAASSIGN (new_avis) = new_ssaassign;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -359,7 +362,7 @@ LiftIds (node *ids_arg, ntype *new_type, node *fundef, node **new_assigns,
 node *
 ASDmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASDmodule");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -379,7 +382,7 @@ ASDmodule (node *arg_node, info *arg_info)
 node *
 ASDfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASDfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -409,7 +412,7 @@ ASDfundef (node *arg_node, info *arg_info)
 node *
 ASDassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASDassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -450,10 +453,9 @@ ASDap (node *arg_node, info *arg_info)
     node *ret, *arg;
     shape_class_t actual_cls, formal_cls;
 
-    DBUG_ENTER ("ASDap");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("ASD", ("analyzing application of %s ......",
-                        CTIitemName (AP_FUNDEF (arg_node))));
+    DBUG_PRINT ("analyzing application of %s ......", CTIitemName (AP_FUNDEF (arg_node)));
 
     ret = FUNDEF_RETS (AP_FUNDEF (arg_node));
 
@@ -469,11 +471,11 @@ ASDap (node *arg_node, info *arg_info)
 
         if ((actual_cls != formal_cls)
             && ((actual_cls == C_scl) || (formal_cls == C_scl))) {
-            DBUG_PRINT ("ASD", ("Return value with inappropriate shape class found:"));
-            DBUG_PRINT ("ASD", ("   ... %s ... = %s( ... ), %s instead of %s",
-                                FUNDEF_NAME (INFO_FUNDEF (arg_info)), IDS_NAME (ids),
-                                global.nt_shape_string[actual_cls],
-                                global.nt_shape_string[formal_cls]));
+            DBUG_PRINT ("Return value with inappropriate shape class found:");
+            DBUG_PRINT ("   ... %s ... = %s( ... ), %s instead of %s",
+                        FUNDEF_NAME (INFO_FUNDEF (arg_info)), IDS_NAME (ids),
+                        global.nt_shape_string[actual_cls],
+                        global.nt_shape_string[formal_cls]);
             LiftIds (ids, RET_TYPE (ret), INFO_FUNDEF (arg_info),
                      &INFO_POSTASSIGNS (arg_info), INFO_ASSIGN (arg_info));
         }
@@ -493,11 +495,11 @@ ASDap (node *arg_node, info *arg_info)
 
         if ((actual_cls != formal_cls)
             && ((actual_cls == C_scl) || (formal_cls == C_scl))) {
-            DBUG_PRINT ("ASD", ("Argument with inappropriate shape class found:"));
-            DBUG_PRINT ("ASD", ("   ... = %s( ... %s ...), %s instead of %s",
-                                FUNDEF_NAME (INFO_FUNDEF (arg_info)), ID_NAME (id),
-                                global.nt_shape_string[actual_cls],
-                                global.nt_shape_string[formal_cls]));
+            DBUG_PRINT ("Argument with inappropriate shape class found:");
+            DBUG_PRINT ("   ... = %s( ... %s ...), %s instead of %s",
+                        FUNDEF_NAME (INFO_FUNDEF (arg_info)), ID_NAME (id),
+                        global.nt_shape_string[actual_cls],
+                        global.nt_shape_string[formal_cls]);
 
             LiftId (id, ARG_NTYPE (arg), INFO_FUNDEF (arg_info),
                     &INFO_PREASSIGNS (arg_info));
@@ -527,7 +529,7 @@ ASDcond (node *arg_node, info *arg_info)
     ntype *cond_type;
     node *funcond_ass;
 
-    DBUG_ENTER ("ASDcond");
+    DBUG_ENTER ();
 
     funcond_ass = ASSIGN_NEXT (INFO_ASSIGN (arg_info));
 
@@ -605,9 +607,9 @@ ASDfuncond (node *arg_node, info *arg_info)
 {
     shape_class_t result_cls, then_cls, else_cls;
 
-    DBUG_ENTER ("ASDfuncond");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("ASD", ("analyzing funcond..."));
+    DBUG_PRINT ("analyzing funcond...");
 
     result_cls = NTUgetShapeClassFromNType (IDS_NTYPE (INFO_LHS (arg_info)));
 
@@ -615,10 +617,10 @@ ASDfuncond (node *arg_node, info *arg_info)
         then_cls = NTUgetShapeClassFromNType (ID_NTYPE (FUNCOND_THEN (arg_node)));
 
         if ((result_cls != then_cls) && ((result_cls == C_scl) || (then_cls == C_scl))) {
-            DBUG_PRINT ("ASD", ("Then branch and result of funcond have "
-                                "different ishape classes: %s instead of %s",
-                                global.nt_shape_string[then_cls],
-                                global.nt_shape_string[result_cls]));
+            DBUG_PRINT ("Then branch and result of funcond have "
+                        "different ishape classes: %s instead of %s",
+                        global.nt_shape_string[then_cls],
+                        global.nt_shape_string[result_cls]);
             LiftId (FUNCOND_THEN (arg_node), IDS_NTYPE (INFO_LHS (arg_info)),
                     INFO_FUNDEF (arg_info), &INFO_THENASSIGNS (arg_info));
         }
@@ -628,16 +630,16 @@ ASDfuncond (node *arg_node, info *arg_info)
         else_cls = NTUgetShapeClassFromNType (ID_NTYPE (FUNCOND_ELSE (arg_node)));
 
         if ((result_cls != else_cls) && ((result_cls == C_scl) || (else_cls == C_scl))) {
-            DBUG_PRINT ("ASD", ("Else branch and result of funcond have "
-                                "different ishape classes: %s instead of %s",
-                                global.nt_shape_string[else_cls],
-                                global.nt_shape_string[result_cls]));
+            DBUG_PRINT ("Else branch and result of funcond have "
+                        "different ishape classes: %s instead of %s",
+                        global.nt_shape_string[else_cls],
+                        global.nt_shape_string[result_cls]);
             LiftId (FUNCOND_ELSE (arg_node), IDS_NTYPE (INFO_LHS (arg_info)),
                     INFO_FUNDEF (arg_info), &INFO_ELSEASSIGNS (arg_info));
         }
     }
 
-    DBUG_PRINT ("ASD", ("...funcond done"));
+    DBUG_PRINT ("...funcond done");
 
     DBUG_RETURN (arg_node);
 }
@@ -650,7 +652,7 @@ ASDfuncond (node *arg_node, info *arg_info)
 node *
 ASDlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASDlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -669,7 +671,7 @@ ASDwith (node *arg_node, info *arg_info)
     ntype *oldcextypes;
     node *oldwithop;
 
-    DBUG_ENTER ("ASDwith");
+    DBUG_ENTER ();
 
     oldcextypes = INFO_CEXTYPES (arg_info);
     oldwithop = INFO_WITHOP (arg_info);
@@ -698,7 +700,7 @@ ASDwith2 (node *arg_node, info *arg_info)
     ntype *oldcextypes;
     node *oldwithop;
 
-    DBUG_ENTER ("ASDwith2");
+    DBUG_ENTER ();
 
     oldcextypes = INFO_CEXTYPES (arg_info);
     oldwithop = INFO_WITHOP (arg_info);
@@ -727,7 +729,7 @@ ASDcode (node *arg_node, info *arg_info)
     int i;
     node *cexprs, *withop;
 
-    DBUG_ENTER ("ASDcode");
+    DBUG_ENTER ();
 
     if (CODE_CBLOCK (arg_node) != NULL) {
         CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
@@ -800,7 +802,7 @@ ASDprf (node *arg_node, info *arg_info)
     shape_class_t tg_cls;
     int arg_cnt;
 
-    DBUG_ENTER ("ASDprf");
+    DBUG_ENTER ();
 
     if (PRF_PRF (arg_node) == F_type_conv) {
 
@@ -810,7 +812,7 @@ ASDprf (node *arg_node, info *arg_info)
         tg_cls = NTUgetShapeClassFromNType (tg);
 
         if ((actual_cls != tg_cls) && ((actual_cls == C_scl) || (tg_cls == C_scl))) {
-            DBUG_PRINT ("ASD", ("Shape class conversion disguised as typeconv found:"));
+            DBUG_PRINT ("Shape class conversion disguised as typeconv found:");
             PRF_ARG2 (arg_node) = NULL;
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = TCmakePrf1 (F_copy, arg);
@@ -826,12 +828,11 @@ ASDprf (node *arg_node, info *arg_info)
                 actual_cls = NTUgetShapeClassFromNType (ID_NTYPE (arg));
                 if (actual_cls != C_scl) {
 
-                    DBUG_PRINT ("ASD",
-                                (" prf applied to non-scalar in scalar arg-pos found: "));
-                    DBUG_PRINT ("ASD", ("   ... = %s( ... %s ...), %s instead of %s",
-                                        global.prf_name[PRF_PRF (arg_node)],
-                                        ID_NAME (arg), global.nt_shape_string[actual_cls],
-                                        global.nt_shape_string[C_scl]));
+                    DBUG_PRINT (" prf applied to non-scalar in scalar arg-pos found: ");
+                    DBUG_PRINT ("   ... = %s( ... %s ...), %s instead of %s",
+                                global.prf_name[PRF_PRF (arg_node)], ID_NAME (arg),
+                                global.nt_shape_string[actual_cls],
+                                global.nt_shape_string[C_scl]);
 
                     nt = TYmakeAKS (TYcopyType (TYgetScalar (ID_NTYPE (arg))),
                                     SHmakeShape (0));
@@ -854,3 +855,5 @@ ASDprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- AUD SCL Distinction -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

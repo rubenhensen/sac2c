@@ -62,7 +62,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -99,7 +102,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -115,7 +118,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -143,12 +146,12 @@ PMBLdoBuildPatternMatchingLut (node *fundef, pm_mode_t pmmode)
     info *info;
     lut_t *lut;
 
-    DBUG_ENTER ("PMBLdoBuildPatternMatchingLut");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "only fundef nodes can be used as argument here!");
 
-    DBUG_ASSERT ((!FUNDEF_ISLACFUN (fundef)),
+    DBUG_ASSERT (!FUNDEF_ISLACFUN (fundef),
                  "cannot start lut building on a lac function!");
 
     info = MakeInfo ();
@@ -190,12 +193,12 @@ TagIdentities (node *args, node *params, lut_t *lut, pm_mode_t pmmode)
     pattern *pat;
     node *avis;
 
-    DBUG_ENTER ("TagIdentities");
+    DBUG_ENTER ();
 
     pat = PMparam (1, PMAgetAvis (&avis));
 
     while (args != NULL) {
-        DBUG_ASSERT ((params != NULL), "no of args does not match no of params");
+        DBUG_ASSERT (params != NULL, "no of args does not match no of params");
 
         if ((PMmatch (pat, pmmode, NULL, EXPRS_EXPR (args)))
             && (avis == ARG_AVIS (params))) {
@@ -233,7 +236,7 @@ PMBLfundef (node *arg_node, info *arg_info)
 {
     node *lastfun;
 
-    DBUG_ENTER ("PMBLfundef");
+    DBUG_ENTER ();
 
     lastfun = INFO_FUNDEF (arg_info);
     INFO_FUNDEF (arg_info) = arg_node;
@@ -250,7 +253,7 @@ PMBLfundef (node *arg_node, info *arg_info)
         INFO_ARGUMENTS (arg_info) = AP_ARGS (INFO_AP (arg_info));
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
-        DBUG_ASSERT ((INFO_ARGUMENTS (arg_info) == NULL), "left-over arguments found!");
+        DBUG_ASSERT (INFO_ARGUMENTS (arg_info) == NULL, "left-over arguments found!");
     }
 
     INFO_FUNDEF (arg_info) = lastfun;
@@ -270,7 +273,7 @@ PMBLap (node *arg_node, info *arg_info)
 {
     node *oldap;
 
-    DBUG_ENTER ("PMBLap");
+    DBUG_ENTER ();
 
     /*
      * process all lac functions
@@ -305,9 +308,9 @@ PMBLap (node *arg_node, info *arg_info)
 node *
 PMBLarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PMBLarg");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_ARGUMENTS (arg_info) != NULL),
+    DBUG_ASSERT (INFO_ARGUMENTS (arg_info) != NULL,
                  "ran out of arguments when processing parameters!");
 
     if (!FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))
@@ -333,3 +336,5 @@ PMBLarg (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

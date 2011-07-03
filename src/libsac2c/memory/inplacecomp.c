@@ -25,7 +25,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "EMIP"
+#include "debug.h"
+
 #include "print.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
@@ -74,7 +77,7 @@ MakeInfo (node *fundef)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -96,7 +99,7 @@ MakeInfo (node *fundef)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -127,15 +130,15 @@ FreeInfo (info *info)
 node *
 EMIPdoInplaceComputation (node *syntax_tree)
 {
-    DBUG_ENTER ("EMIPdoInplaceComputation");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMIP", ("Inplace Computation  optimization..."));
+    DBUG_PRINT ("Inplace Computation  optimization...");
 
     TRAVpush (TR_emip);
     syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
 
-    DBUG_PRINT ("EMIP", ("Inplace Computation optimization complete."));
+    DBUG_PRINT ("Inplace Computation optimization complete.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -162,15 +165,15 @@ EMIPdoInplaceComputation (node *syntax_tree)
 static node *
 copyOrArray (node *val, int *depth)
 {
-    DBUG_ENTER ("copyOrArray");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (val) == N_prf) {
-        DBUG_ASSERT ((PRF_PRF (val) == F_copy), "Expected copy prf");
+        DBUG_ASSERT (PRF_PRF (val) == F_copy, "Expected copy prf");
         val = PRF_ARG1 (val);
     } else if (NODE_TYPE (val) == N_array) {
         while (NODE_TYPE (val) == N_array) {
-            DBUG_ASSERT ((NODE_TYPE (ARRAY_AELEMS (val)) == N_exprs), "Broken ast?");
-            DBUG_ASSERT ((EXPRS_NEXT (ARRAY_AELEMS (val)) == NULL),
+            DBUG_ASSERT (NODE_TYPE (ARRAY_AELEMS (val)) == N_exprs, "Broken ast?");
+            DBUG_ASSERT (EXPRS_NEXT (ARRAY_AELEMS (val)) == NULL,
                          "Can not perform ipc on [ a, b]");
             (*depth)++;
             val = EXPRS_EXPR (ARRAY_AELEMS (val));
@@ -196,10 +199,10 @@ static bool
 idArray (node *array)
 {
     bool ok = TRUE;
-    DBUG_ENTER ("idArray");
+    DBUG_ENTER ();
 
     while (NODE_TYPE (array) == N_array) {
-        DBUG_ASSERT ((NODE_TYPE (ARRAY_AELEMS (array)) == N_exprs), "Broken ast?");
+        DBUG_ASSERT (NODE_TYPE (ARRAY_AELEMS (array)) == N_exprs, "Broken ast?");
         if (NULL != EXPRS_NEXT (ARRAY_AELEMS (array))) {
             ok = FALSE;
         }
@@ -223,7 +226,7 @@ static node *
 removeArrayIndirectionFromSuballoc (node *suballoc, int depth)
 {
     int one = 1, three = 3;
-    DBUG_ENTER ("removeArrayIndirectionFromSuballoc");
+    DBUG_ENTER ();
 
     if ((depth > 0) && (TCcountExprs (PRF_ARGS (suballoc))) >= 4) {
         node *array, *exprs;
@@ -244,9 +247,8 @@ removeArrayIndirectionFromSuballoc (node *suballoc, int depth)
         pat = PMfree (pat);
         pat2 = PMfree (pat2);
 
-        DBUG_ASSERT ((NODE_TYPE (array) == N_array),
-                     "Can not remove array indirection if "
-                     "I can not find the array");
+        DBUG_ASSERT (NODE_TYPE (array) == N_array, "Can not remove array indirection if "
+                                                   "I can not find the array");
 
         exprs = ARRAY_AELEMS (array);
 
@@ -273,7 +275,7 @@ static node *
 HandleBlock (node *block, node *rets, info *arg_info)
 {
     int depth = 0;
-    DBUG_ENTER ("HandleBlock");
+    DBUG_ENTER ();
 
     while (rets != NULL) {
         node *cid;
@@ -506,7 +508,7 @@ HandleBlock (node *block, node *rets, info *arg_info)
 node *
 EMIPap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIPap");
+    DBUG_ENTER ();
 
     /*
      * CONDFUNs are traversed in order of appearance
@@ -555,7 +557,7 @@ EMIPcond (node *arg_node, info *arg_info)
 {
     lut_t *oldlut;
 
-    DBUG_ENTER ("EMIPcond");
+    DBUG_ENTER ();
 
     oldlut = INFO_REUSELUT (arg_info);
     INFO_REUSELUT (arg_info) = LUTduplicateLut (oldlut);
@@ -590,7 +592,7 @@ EMIPcond (node *arg_node, info *arg_info)
 node *
 EMIPcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIPcode");
+    DBUG_ENTER ();
 
     /*
      * Traverse into CBLOCK in order to apply datareuse in nested with-loops
@@ -617,7 +619,7 @@ EMIPcode (node *arg_node, info *arg_info)
 node *
 EMIPrange (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIPrange");
+    DBUG_ENTER ();
 
     RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
 
@@ -642,7 +644,7 @@ EMIPrange (node *arg_node, info *arg_info)
 node *
 EMIPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIPfundef");
+    DBUG_ENTER ();
 
     /*
      * CONDFUNs may only be traversed from AP-nodes
@@ -690,7 +692,7 @@ EMIPfundef (node *arg_node, info *arg_info)
 node *
 EMIPlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIPlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -708,7 +710,7 @@ EMIPlet (node *arg_node, info *arg_info)
 node *
 EMIPprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIPprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_reuse:
@@ -776,7 +778,7 @@ EMIPHap (node *arg_node, info *arg_info)
 {
     node *tmp;
 
-    DBUG_ENTER ("EMIPHap");
+    DBUG_ENTER ();
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
@@ -800,7 +802,7 @@ EMIPHap (node *arg_node, info *arg_info)
 node *
 EMIPHassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIPHaassign");
+    DBUG_ENTER ();
 
     if (arg_node != INFO_LASTSAFE (arg_info)) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -823,7 +825,7 @@ EMIPHassign (node *arg_node, info *arg_info)
 node *
 EMIPHid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMIPHid");
+    DBUG_ENTER ();
 
     if (ID_AVIS (arg_node) == INFO_NOUSE (arg_info)) {
         INFO_OK (arg_info) = FALSE;
@@ -839,3 +841,5 @@ EMIPHid (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Inplace Computation -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

@@ -4,7 +4,9 @@
 
 #include <stdio.h>
 
-#include "dbug.h"
+#define DBUG_PREFIX "NTC"
+#include "debug.h"
+
 #include "ctinfo.h"
 
 #include "types.h"
@@ -122,7 +124,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -144,7 +146,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -177,7 +179,7 @@ static const te_funptr prf_te_funtab[] = {
 static node *
 MarkWrapperAsChecked (node *fundef, info *arg_info)
 {
-    DBUG_ENTER ("MarkWrapperAsChecked");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISWRAPPERFUN (fundef)) {
         FUNDEF_TCSTAT (fundef) = NTC_checked;
@@ -189,7 +191,7 @@ MarkWrapperAsChecked (node *fundef, info *arg_info)
 static node *
 TagAsUnchecked (node *fundef, info *info)
 {
-    DBUG_ENTER ("TagAsUnchecked");
+    DBUG_ENTER ();
 
     FUNDEF_TCSTAT (fundef) = NTC_not_checked;
 
@@ -207,7 +209,7 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
 {
     ntype *old_rets = NULL, *new_rets = NULL, *new_rets_fixed = NULL;
 
-    DBUG_ENTER ("NTCdoNewTypeCheckOneFunction");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
                  "NTCdoNewTypeCheckOneFunction can only be applied to N_fundef");
@@ -299,7 +301,7 @@ NTCdoNewTypeCheck (node *arg_node)
     info *arg_info;
     bool ok;
 
-    DBUG_ENTER ("NTCdoNewTypeCheck");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
                  "NTCdoNewTypeCheck() not called with N_module/N_fundef node!");
@@ -363,7 +365,7 @@ NTCdoNewTypeCheck (node *arg_node)
 static node *
 ResetTCstatus (node *fundef, info *arg_info)
 {
-    DBUG_ENTER ("ResetTCstatus");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (fundef) != NULL) {
         FUNDEF_TCSTAT (fundef) = NTC_not_checked;
@@ -378,9 +380,9 @@ NTCdoNewReTypeCheck (node *arg_node)
     info *arg_info;
     int oldmaxspec;
 
-    DBUG_ENTER ("NTCdoNewTypeCheck");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
                  "NTCdoNewReTypeCheck() not called with N_module node!");
 
     /*
@@ -413,7 +415,7 @@ NTCdoNewReTypeCheck (node *arg_node)
 static node *
 ResetLacTypes (node *fundef, info *arg_info)
 {
-    DBUG_ENTER ("ResetLacTypes");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISLACFUN (fundef)) {
         FUNDEF_ARGS (fundef) = TUargtypes2unknownAUD (FUNDEF_ARGS (fundef));
@@ -429,7 +431,7 @@ ResetWrapperTypes (node *fundef, info *arg_info)
     ntype *type;
     node *impl;
 
-    DBUG_ENTER ("ResetWrapperTypes");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISWRAPPERFUN (fundef) && (FUNDEF_BODY (fundef) != NULL)) {
         type = FUNDEF_WRAPPERTYPE (fundef);
@@ -456,9 +458,9 @@ ResetWrapperTypes (node *fundef, info *arg_info)
 node *
 NTCdoNewReTypeCheckFromScratch (node *arg_node)
 {
-    DBUG_ENTER ("NTCdoNewTypeCheckFromScratch");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
                  "NTCdoNewReTypeCheckFromScratch() not called with "
                  "N_module node!");
 
@@ -493,7 +495,7 @@ NTCnewTypeCheck_Expr (node *arg_node)
     info *arg_info;
     ntype *type;
 
-    DBUG_ENTER ("NTCnewTypeCheck_Expr");
+    DBUG_ENTER ();
 
     TRAVpush (TR_ntc);
 
@@ -539,11 +541,11 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
     node *arg;
 #endif
 
-    DBUG_ENTER ("TypeCheckFunctionBody");
+    DBUG_ENTER ();
 
     FUNDEF_TCSTAT (fundef) = NTC_checking;
 
-    DBUG_PRINT ("NTC", ("type checking function \"%s\" with", CTIitemName (fundef)));
+    DBUG_PRINT ("type checking function \"%s\" with", CTIitemName (fundef));
 
     /**
      * First, we have to ensure that ALL return types are in fact type vars.
@@ -556,17 +558,15 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
         FUNDEF_RETS (fundef) = TUrettypes2alphaMax (FUNDEF_RETS (fundef));
     }
 
-    DBUG_EXECUTE (
-      "NTC", arg = FUNDEF_ARGS (fundef);
-
-      while (arg != NULL) {
-          tmp_str = TYtype2String (AVIS_TYPE (ARG_AVIS (arg)), FALSE, 0);
-          DBUG_PRINT ("NTC", ("  -> argument type: %s", tmp_str));
-          tmp_str = MEMfree (tmp_str);
-          arg = ARG_NEXT (arg);
-      } tmp_str
-      = TYtype2String (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)), FALSE, 0);
-      DBUG_PRINT ("NTC", ("  -> return type %s", tmp_str)); tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (arg = FUNDEF_ARGS (fundef); while (arg != NULL) {
+        tmp_str = TYtype2String (AVIS_TYPE (ARG_AVIS (arg)), FALSE, 0);
+        DBUG_PRINT ("  -> argument type: %s", tmp_str);
+        tmp_str = MEMfree (tmp_str);
+        arg = ARG_NEXT (arg);
+    } tmp_str = TYtype2String (TUmakeProductTypeFromRets (FUNDEF_RETS (fundef)), FALSE,
+                                              0);
+                  DBUG_PRINT ("  -> return type %s", tmp_str);
+                  tmp_str = MEMfree (tmp_str));
 
     /*
      * Then, we infer the type of the body:
@@ -592,7 +592,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
          */
         INFO_TYPE (arg_info) = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
 
-        DBUG_PRINT ("NTC", ("trusting imported return type"));
+        DBUG_PRINT ("trusting imported return type");
     }
 
     /*
@@ -603,10 +603,10 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
     inf_type = INFO_TYPE (arg_info);
     inf_n = TYgetProductSize (inf_type);
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (inf_type, FALSE, 0););
-    DBUG_PRINT ("NTC", ("Function %s: inferred return type of \"%s\" is %s",
-                        FUNDEF_NAME (fundef), CTIitemName (fundef), tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (inf_type, FALSE, 0));
+    DBUG_PRINT ("Function %s: inferred return type of \"%s\" is %s", FUNDEF_NAME (fundef),
+                CTIitemName (fundef), tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     spec_type = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
     spec_n = TYgetProductSize (spec_type);
@@ -674,10 +674,9 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
     TYfreeType (inf_type);
     INFO_TYPE (arg_info) = NULL;
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (spec_type, FALSE, 0););
-    DBUG_PRINT ("NTC",
-                ("final return type of \"%s\" is: %s", CTIitemName (fundef), tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (spec_type, FALSE, 0));
+    DBUG_PRINT ("final return type of \"%s\" is: %s", CTIitemName (fundef), tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     /* now the functions is entirely typechecked, so we mark it as checked */
     FUNDEF_TCSTAT (fundef) = NTC_checked;
@@ -706,7 +705,7 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
 node *
 NTCmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("NTCmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNDECS (arg_node) = TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
@@ -730,7 +729,7 @@ NTCfundef (node *arg_node, info *arg_info)
     node *copied_special_fundefs;
     node *integrated_fundefs;
 
-    DBUG_ENTER ("NTCfundef");
+    DBUG_ENTER ();
 
     if ((FUNDEF_TCSTAT (arg_node) == NTC_not_checked) && !FUNDEF_ISLACFUN (arg_node)) {
         /**
@@ -738,8 +737,9 @@ NTCfundef (node *arg_node, info *arg_info)
          * info chain (kept for extended error messages only) is reset:
          */
         global.act_info_chn = NULL;
-        DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn reset to NULL for function %s",
-                                    FUNDEF_NAME (arg_node)));
+        DBUG_PRINT_TAG ("NTC_INFOCHN",
+                        "global.act_info_chn reset to NULL for function %s",
+                        FUNDEF_NAME (arg_node));
 
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         arg_node = TypeCheckFunctionBody (arg_node, arg_info);
@@ -783,7 +783,7 @@ NTCfundef (node *arg_node, info *arg_info)
 node *
 NTCblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("NTCblock");
+    DBUG_ENTER ();
 
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
@@ -811,7 +811,7 @@ NTCvardec (node *arg_node, info *arg_info)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("NTCvardec");
+    DBUG_ENTER ();
 
     avis = VARDEC_AVIS (arg_node);
     type = AVIS_TYPE (avis);
@@ -832,10 +832,9 @@ NTCvardec (node *arg_node, info *arg_info)
          * The desired subtyping issue is (at least in case of a)!) achieved
          * by the explicit insertion of _type_conv_ operations in phase 5.
          */
-        DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (type, FALSE, 0););
-        DBUG_PRINT ("NTC",
-                    ("eliminating type declaration %s %s", tmp_str, AVIS_NAME (avis)));
-        DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
+        DBUG_EXECUTE (tmp_str = TYtype2String (type, FALSE, 0));
+        DBUG_PRINT ("eliminating type declaration %s %s", tmp_str, AVIS_NAME (avis));
+        DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
         AVIS_TYPE (avis) = NULL;
         type = TYfreeType (type);
     }
@@ -861,7 +860,7 @@ NTCassign (node *arg_node, info *arg_info)
 {
     node *tmp;
 
-    DBUG_ENTER ("NTCassign");
+    DBUG_ENTER ();
 
     tmp = INFO_LAST_ASSIGN (arg_info);
 
@@ -893,7 +892,7 @@ NTCcond (node *arg_node, info *arg_info)
     info *context_info;
     te_info *info;
 
-    DBUG_ENTER ("NTCcond");
+    DBUG_ENTER ();
 
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     args = TYmakeProductType (1, INFO_TYPE (arg_info));
@@ -908,9 +907,9 @@ NTCcond (node *arg_node, info *arg_info)
     args = TYfreeType (args);
     res = TYfreeType (res);
 
-    DBUG_PRINT ("NTC", ("traversing then branch..."));
+    DBUG_PRINT ("traversing then branch...");
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
-    DBUG_PRINT ("NTC", ("traversing else branch..."));
+    DBUG_PRINT ("traversing else branch...");
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -934,7 +933,7 @@ NTCfuncond (node *arg_node, info *arg_info)
     ntype *args, *res;
     te_info *info;
 
-    DBUG_ENTER ("NTCfuncond");
+    DBUG_ENTER ();
 
     FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
     pred = INFO_TYPE (arg_info);
@@ -994,7 +993,7 @@ NTClet (node *arg_node, info *arg_info)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("NTClet");
+    DBUG_ENTER ();
 
     /*
      * Infer the RHS type :
@@ -1018,7 +1017,7 @@ NTClet (node *arg_node, info *arg_info)
         || (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)
         || (NODE_TYPE (LET_EXPR (arg_node)) == N_with)) {
         if (NODE_TYPE (LET_EXPR (arg_node)) == N_ap) {
-            DBUG_ASSERT ((TCcountIds (lhs) >= TYgetProductSize (rhs_type)),
+            DBUG_ASSERT (TCcountIds (lhs) >= TYgetProductSize (rhs_type),
                          "fun ap yields more return values  than lhs vars available!");
         } else if (NODE_TYPE (LET_EXPR (arg_node)) == N_prf) {
             if ((PRF_PRF (LET_EXPR (arg_node)) != F_type_error)
@@ -1062,10 +1061,10 @@ NTClet (node *arg_node, info *arg_info)
                     }
                 }
 
-                DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (AVIS_TYPE (IDS_AVIS (lhs)),
-                                                              FALSE, 0););
-                DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
-                DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
+                DBUG_EXECUTE (tmp_str
+                              = TYtype2String (AVIS_TYPE (IDS_AVIS (lhs)), FALSE, 0));
+                DBUG_PRINT ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str);
+                DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
             } else {
                 if (existing_type == NULL) {
                     if (declared_type == NULL) {
@@ -1146,10 +1145,9 @@ NTClet (node *arg_node, info *arg_info)
             }
         }
 
-        DBUG_EXECUTE ("NTC",
-                      tmp_str = TYtype2String (AVIS_TYPE (IDS_AVIS (lhs)), FALSE, 0););
-        DBUG_PRINT ("NTC", ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str));
-        DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
+        DBUG_EXECUTE (tmp_str = TYtype2String (AVIS_TYPE (IDS_AVIS (lhs)), FALSE, 0));
+        DBUG_PRINT ("  type of \"%s\" is %s", IDS_NAME (lhs), tmp_str);
+        DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
     }
 
     DBUG_RETURN (arg_node);
@@ -1167,7 +1165,7 @@ NTClet (node *arg_node, info *arg_info)
 node *
 NTCreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("NTCreturn");
+    DBUG_ENTER ();
 
     /*
      * First we collect the return types. NTCexprs puts them into a product type
@@ -1213,7 +1211,7 @@ NTCap (node *arg_node, info *arg_info)
     te_info *old_info_chn;
     ct_funptr ntc_fun;
 
-    DBUG_ENTER ("NTCap");
+    DBUG_ENTER ();
 
     /*
      * First we collect the argument types. NTCexprs puts them into a product type
@@ -1265,12 +1263,12 @@ NTCap (node *arg_node, info *arg_info)
       = TEmakeInfoUdf (global.linenum, global.filename, TE_udf,
                        NSgetName (FUNDEF_NS (wrapper)), FUNDEF_NAME (wrapper), wrapper,
                        INFO_LAST_ASSIGN (arg_info), global.act_info_chn);
-    DBUG_PRINT ("TEINFO",
-                ("TE info %p created for udf ap %p", global.act_info_chn, arg_node));
+    DBUG_PRINT_TAG ("TEINFO", "TE info %p created for udf ap %p", global.act_info_chn,
+                    arg_node);
     res = NTCCTcomputeType (ntc_fun, global.act_info_chn, args);
 
     global.act_info_chn = old_info_chn;
-    DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn set back to %p", old_info_chn));
+    DBUG_PRINT_TAG ("NTC_INFOCHN", "global.act_info_chn set back to %p", old_info_chn);
 
     TYfreeType (args);
     INFO_TYPE (arg_info) = res;
@@ -1298,7 +1296,7 @@ NTCprf (node *arg_node, info *arg_info)
     ntype *alpha, *def_obj;
     bool ok;
 
-    DBUG_ENTER ("NTCprf");
+    DBUG_ENTER ();
 
     prf = PRF_PRF (arg_node);
 
@@ -1379,7 +1377,7 @@ NTCexprs (node *arg_node, info *arg_info)
 {
     ntype *type = NULL;
 
-    DBUG_ENTER ("NTCexprs");
+    DBUG_ENTER ();
 
     if (NULL != EXPRS_EXPR (arg_node)) {
         EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
@@ -1420,7 +1418,7 @@ NTCarray (node *arg_node, info *arg_info)
     char *tmp_str1, *tmp_str2;
 #endif
 
-    DBUG_ENTER ("NTCarray");
+    DBUG_ENTER ();
 
     if (NULL != ARRAY_AELEMS (arg_node)) {
         /*
@@ -1505,13 +1503,12 @@ NTCarray (node *arg_node, info *arg_info)
          * the the time being, we only build AKV empty arrays
          * for user defined types!
          */
-        DBUG_EXECUTE ("NTC", tmp_str1 = SHshape2String (0, ARRAY_FRAMESHAPE (arg_node));
-                      tmp_str2 = TYtype2String (ARRAY_ELEMTYPE (arg_node), FALSE, 0););
-        DBUG_PRINT ("NTC", ("computing type of empty array-constructor with outer "
-                            "shape %s and element type %s",
-                            tmp_str1, tmp_str2));
-        DBUG_EXECUTE ("NTC", tmp_str1 = MEMfree (tmp_str1);
-                      tmp_str2 = MEMfree (tmp_str2););
+        DBUG_EXECUTE (tmp_str1 = SHshape2String (0, ARRAY_FRAMESHAPE (arg_node));
+                      tmp_str2 = TYtype2String (ARRAY_ELEMTYPE (arg_node), FALSE, 0));
+        DBUG_PRINT ("computing type of empty array-constructor with outer "
+                    "shape %s and element type %s",
+                    tmp_str1, tmp_str2);
+        DBUG_EXECUTE (tmp_str1 = MEMfree (tmp_str1); tmp_str2 = MEMfree (tmp_str2));
 
         if (TYisSimple (scalar)) {
             type = TYmakeAKV (TYcopyType (scalar),
@@ -1528,9 +1525,9 @@ NTCarray (node *arg_node, info *arg_info)
 
         type = TYmakeProductType (1, type);
 
-        DBUG_EXECUTE ("NTC", tmp_str1 = TYtype2String (type, FALSE, 0););
-        DBUG_PRINT ("NTC", ("yields %s", tmp_str1));
-        DBUG_EXECUTE ("NTC", tmp_str1 = MEMfree (tmp_str1););
+        DBUG_EXECUTE (tmp_str1 = TYtype2String (type, FALSE, 0));
+        DBUG_PRINT ("yields %s", tmp_str1);
+        DBUG_EXECUTE (tmp_str1 = MEMfree (tmp_str1));
     }
 
     INFO_TYPE (arg_info) = TYgetProductMember (type, 0);
@@ -1555,7 +1552,7 @@ NTCid (node *arg_node, info *arg_info)
 {
     ntype *type;
 
-    DBUG_ENTER ("NTCid");
+    DBUG_ENTER ();
 
     type = AVIS_TYPE (ID_AVIS (arg_node));
 
@@ -1586,7 +1583,7 @@ NTCglobobj (node *arg_node, info *arg_info)
 {
     ntype *type;
 
-    DBUG_ENTER ("NTCglobobj");
+    DBUG_ENTER ();
 
     type = OBJDEF_TYPE (GLOBOBJ_OBJDEF (arg_node));
 
@@ -1611,7 +1608,7 @@ NTCglobobj (node *arg_node, info *arg_info)
     node *NTC##name (node *arg_node, info *arg_info)                                     \
     {                                                                                    \
         constant *cv;                                                                    \
-        DBUG_ENTER ("NTC" #name);                                                        \
+        DBUG_ENTER ();                                                                   \
                                                                                          \
         cv = COaST2Constant (arg_node);                                                  \
         if (cv == NULL) {                                                                \
@@ -1655,7 +1652,7 @@ NTCBASIC (bool, T_bool)
 simpletype
 NTCnodeToType (node *arg_node)
 {
-    DBUG_ENTER ("NTCnodeToType");
+    DBUG_ENTER ();
     simpletype z;
 
     switch (NODE_TYPE (arg_node)) {
@@ -1723,7 +1720,7 @@ NTCnodeToType (node *arg_node)
 node *
 NTCstr (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("NTCstr");
+    DBUG_ENTER ();
     INFO_TYPE (arg_info) = TYmakeAUD (TYmakeSimpleType (T_unknown));
     DBUG_RETURN (arg_node);
 }
@@ -1741,7 +1738,7 @@ NTCstr (node *arg_node, info *arg_info)
 node *
 NTCtype (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("NTCtype");
+    DBUG_ENTER ();
     INFO_TYPE (arg_info) = TYcopyType (TYPE_TYPE (arg_node));
     DBUG_RETURN (arg_node);
 }
@@ -1762,7 +1759,7 @@ NTCcast (node *arg_node, info *arg_info)
     te_info *info;
     ntype *type, *cast_t, *expr_t;
 
-    DBUG_ENTER ("NTCcast");
+    DBUG_ENTER ();
 
     CAST_EXPR (arg_node) = TRAVdo (CAST_EXPR (arg_node), arg_info);
     expr_t = INFO_TYPE (arg_info);
@@ -1811,7 +1808,7 @@ NTCwith (node *arg_node, info *arg_info)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("NTCwith");
+    DBUG_ENTER ();
 
     /*
      * First, we infer the generator type
@@ -1821,9 +1818,9 @@ NTCwith (node *arg_node, info *arg_info)
     TYfreeTypeConstructor (INFO_TYPE (arg_info));
     INFO_TYPE (arg_info) = NULL;
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (gen, FALSE, 0););
-    DBUG_PRINT ("NTC", ("  WL - generator type: %s", tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (gen, FALSE, 0));
+    DBUG_PRINT ("  WL - generator type: %s", tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     /*
      * Then, we infer the type of the WL body:
@@ -1856,9 +1853,9 @@ NTCwith (node *arg_node, info *arg_info)
      * than one return type!
      */
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (body, FALSE, 0););
-    DBUG_PRINT ("NTC", ("  WL - body type: %s", tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (body, FALSE, 0));
+    DBUG_PRINT ("  WL - body type: %s", tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     /*
      * Finally, we compute the return type from "gen" and "body".
@@ -1883,9 +1880,9 @@ NTCwith (node *arg_node, info *arg_info)
     }
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (INFO_TYPE (arg_info), FALSE, 0););
-    DBUG_PRINT ("NTC", ("  WL - final type: %s", tmp_str));
-    DBUG_EXECUTE ("NTC", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (INFO_TYPE (arg_info), FALSE, 0));
+    DBUG_PRINT ("  WL - final type: %s", tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     /**
      * eventually, we need to restore a potential outer accu / prop_objs
@@ -1915,7 +1912,7 @@ NTCpart (node *arg_node, info *arg_info)
     te_info *info;
     int num_ids;
 
-    DBUG_ENTER ("NTCpart");
+    DBUG_ENTER ();
 
     /*
      * First, we check whether we can extract some shape info from the
@@ -1993,7 +1990,7 @@ NTCgenerator (node *arg_node, info *arg_info)
     ntype *lb, *idx, *ub, *s, *w, *gen, *res;
     te_info *info;
 
-    DBUG_ENTER ("NTCgenerator");
+    DBUG_ENTER ();
 
     idx = TYgetProductMember (INFO_TYPE (arg_info), 0); /* generated in NTCNpart !*/
     INFO_TYPE (arg_info) = TYfreeTypeConstructor (INFO_TYPE (arg_info));
@@ -2048,7 +2045,7 @@ NTCwithid (node *arg_node, info *arg_info)
 {
     node *idxs, *vec;
 
-    DBUG_ENTER ("NTCwithid");
+    DBUG_ENTER ();
 
     idxs = WITHID_IDS (arg_node);
     while (idxs) {
@@ -2100,7 +2097,7 @@ NTCcode (node *arg_node, info *arg_info)
     te_info *info;
     node *wl_ops;
 
-    DBUG_ENTER ("NTCcode");
+    DBUG_ENTER ();
 
     wl_ops = INFO_WL_OPS (arg_info);
     INFO_WL_OPS (arg_info) = NULL;
@@ -2152,7 +2149,7 @@ NTCcode (node *arg_node, info *arg_info)
 static node *
 HandleMultiOperators (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HandleMultiOperators");
+    DBUG_ENTER ();
 
     if (arg_node != NULL) {
         INFO_NUM_EXPRS_SOFAR (arg_info)++;
@@ -2183,7 +2180,7 @@ NTCgenarray (node *arg_node, info *arg_info)
     ntype *shp, *dexpr, *args;
     te_info *info;
 
-    DBUG_ENTER ("NTCgenarray");
+    DBUG_ENTER ();
 
     gen = INFO_GEN_TYPE (arg_info);
     body
@@ -2236,7 +2233,7 @@ NTCmodarray (node *arg_node, info *arg_info)
     ntype *shp, *args;
     te_info *info;
 
-    DBUG_ENTER ("NTCmodarray");
+    DBUG_ENTER ();
 
     gen = INFO_GEN_TYPE (arg_info);
     body
@@ -2281,7 +2278,7 @@ NTCfold (node *arg_node, info *arg_info)
     te_info *info;
     bool ok;
 
-    DBUG_ENTER ("NTCfold");
+    DBUG_ENTER ();
 
     gen = INFO_GEN_TYPE (arg_info);
 
@@ -2344,14 +2341,14 @@ NTCfold (node *arg_node, info *arg_info)
         res = TYmakeProductType (1, elems);
 
         ok = SSInewTypeRel (neutr, acc);
-        DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
+        DBUG_ASSERT (ok, "initialization of fold-fun in fold-wl went wrong");
 
         ok = SSInewTypeRel (elems, acc);
 
     } else {
         acc = TYmakeAlphaType (NULL);
         ok = SSInewTypeRel (neutr, acc);
-        DBUG_ASSERT (ok, ("initialization of fold-fun in fold-wl went wrong"));
+        DBUG_ASSERT (ok, "initialization of fold-fun in fold-wl went wrong");
 
         args = TYmakeProductType (2, acc, elems);
         wrapper = FOLD_FUNDEF (arg_node);
@@ -2392,7 +2389,7 @@ NTCbreak (node *arg_node, info *arg_info)
 {
     ntype *body;
 
-    DBUG_ENTER ("NTCbreak");
+    DBUG_ENTER ();
     body
       = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
 
@@ -2420,7 +2417,7 @@ NTCpropagate (node *arg_node, info *arg_info)
     ntype *body, *prop_obj_type;
     bool ok;
 
-    DBUG_ENTER ("NTCpropagate");
+    DBUG_ENTER ();
     body
       = TYgetProductMember (INFO_BODIES_TYPE (arg_info), INFO_NUM_EXPRS_SOFAR (arg_info));
 
@@ -2482,7 +2479,7 @@ NTCtriggerTypeCheck (node *fundef)
 {
     info *arg_info;
 
-    DBUG_ENTER ("NTCtriggerTypeCheck");
+    DBUG_ENTER ();
 
     if (FUNDEF_TCSTAT (fundef) == NTC_not_checked) {
         arg_info = MakeInfo ();
@@ -2495,3 +2492,5 @@ NTCtriggerTypeCheck (node *fundef)
 
 /* @} */
 /* @} */ /* defgroup ntc */
+
+#undef DBUG_PREFIX

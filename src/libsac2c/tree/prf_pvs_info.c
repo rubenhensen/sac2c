@@ -1,6 +1,8 @@
 #include "prf_pvs_info.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "constants.h"
 
 /**
@@ -37,7 +39,7 @@ static constant *pv_0233 = NULL;
 void
 PPIinitializePVs ()
 {
-    DBUG_ENTER ("PVinitializePVs");
+    DBUG_ENTER ();
 
     if (pv_initialized != TRUE) {
         pv_id = COmakeConstantFromDynamicArguments (T_int, 1, 4, 0, 1, 2, 3);
@@ -51,7 +53,7 @@ PPIinitializePVs ()
 
         pv_initialized = TRUE;
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!-- ****************************************************************** -->
@@ -69,7 +71,7 @@ PPIinitializePVs ()
 constant *
 PPIgetPVId (int n)
 {
-    DBUG_ENTER ("PVgetPVid");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -95,7 +97,7 @@ PPIgetPVId (int n)
 constant *
 PPIgetPVIdxId (int n)
 {
-    DBUG_ENTER ("PPIgetPVIdxId");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -128,7 +130,7 @@ PPIgetPVIdxId (int n)
 constant *
 PPIgetPVS (int n)
 {
-    DBUG_ENTER ("PPIgetPVS");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -153,7 +155,7 @@ PPIgetPVS (int n)
 constant *
 PPIgetPVV (int n)
 {
-    DBUG_ENTER ("PPIgetPVV");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -179,7 +181,7 @@ PPIgetPVV (int n)
 constant *
 PPIgetPVSxS (int n)
 {
-    DBUG_ENTER ("PPIgetSxS");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -212,7 +214,7 @@ PPIgetPVSxS (int n)
 constant *
 PPIgetPVSxV (int n)
 {
-    DBUG_ENTER ("PPIgetSxV");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -245,7 +247,7 @@ PPIgetPVSxV (int n)
 constant *
 PPIgetPVVxS (int n)
 {
-    DBUG_ENTER ("PPIgetVxS");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -278,7 +280,7 @@ PPIgetPVVxS (int n)
 constant *
 PPIgetPVVxV (int n)
 {
-    DBUG_ENTER ("PPIgetVxV");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -310,7 +312,7 @@ PPIgetPVVxV (int n)
 constant *
 PPIgetPVDim (int n)
 {
-    DBUG_ENTER ("PPIgetPVDim");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -335,7 +337,7 @@ PPIgetPVDim (int n)
 constant *
 PPIgetPVReshape (int n)
 {
-    DBUG_ENTER ("PVgetPVreshape");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -367,7 +369,7 @@ PPIgetPVReshape (int n)
 constant *
 PPIgetPVSel (int n)
 {
-    DBUG_ENTER ("PPIgetPVSel");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -399,7 +401,7 @@ PPIgetPVSel (int n)
 constant *
 PPIgetPVShape (int n)
 {
-    DBUG_ENTER ("PPIgetPVShape");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -425,7 +427,7 @@ PPIgetPVShape (int n)
 constant *
 PPIgetPVModarray (int n)
 {
-    DBUG_ENTER ("PPIgetPVModarray");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -460,7 +462,7 @@ PPIgetPVModarray (int n)
 constant *
 PPIgetPVTakeAndDrop (int n)
 {
-    DBUG_ENTER ("PPIgetPVTakeAndDrop");
+    DBUG_ENTER ();
 
     constant *res = NULL;
 
@@ -476,3 +478,5 @@ PPIgetPVTakeAndDrop (int n)
     }
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

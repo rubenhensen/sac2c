@@ -51,7 +51,10 @@
 #include <limits.h>
 
 #include "types.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "resource.h"
 #include "scnprs.h"
 #include "globals.h"
@@ -167,11 +170,11 @@ void
 RSCprintConfigEntry (char *config)
 {
     int i = 0;
-    DBUG_ENTER ("printConfigEntry");
+    DBUG_ENTER ();
 
     for (i = 0; i < INT_MAX; i++) {
         if (resource_table[i].tag == 0) {
-            DBUG_ASSERT ((0 == 1), "Unknown config entry");
+            DBUG_ASSERT (0 == 1, "Unknown config entry");
             break; /* end of list */
         }
         if (STReq (resource_table[i].name, config)) {
@@ -183,14 +186,14 @@ RSCprintConfigEntry (char *config)
                 printf ("%d\n", *((int *)resource_table[i].store));
                 break;
             default:
-                DBUG_ASSERT ((0 == 1), "Unknown type of config entry");
+                DBUG_ASSERT (0 == 1, "Unknown type of config entry");
                 break;
             }
             break;
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -211,7 +214,7 @@ RSCmakeInheritenceListEntry (char *name, inheritence_list_t *next)
 {
     inheritence_list_t *new;
 
-    DBUG_ENTER ("RSCmakeInheritenceListEntry");
+    DBUG_ENTER ();
 
     new = (inheritence_list_t *)MEMmalloc (sizeof (inheritence_list_t));
 
@@ -246,7 +249,7 @@ RSCmakeResourceListEntry (char *name, char *value_str, int value_num, int add_fl
 {
     resource_list_t *tmp;
 
-    DBUG_ENTER ("RSCmakeResourceListEntry");
+    DBUG_ENTER ();
 
     tmp = (resource_list_t *)MEMmalloc (sizeof (resource_list_t));
 
@@ -284,7 +287,7 @@ RSCmakeTargetListEntry (char *name, inheritence_list_t *super_targets,
 {
     target_list_t *tmp;
 
-    DBUG_ENTER ("RSCmakeTargetListEntry");
+    DBUG_ENTER ();
 
     tmp = (target_list_t *)MEMmalloc (sizeof (target_list_t));
 
@@ -315,7 +318,7 @@ RSCaddTargetList (target_list_t *list1, target_list_t *list2)
 {
     target_list_t *tmp;
 
-    DBUG_ENTER ("RSCaddTargetList");
+    DBUG_ENTER ();
 
     if (list1 == NULL) {
         list1 = list2;
@@ -351,7 +354,7 @@ FreeTargetList (target_list_t *target)
     target_list_t *tmp_target;
     inheritence_list_t *tmp_inherit, *inherit;
 
-    DBUG_ENTER ("FreeTargetList");
+    DBUG_ENTER ();
 
     while (target != NULL) {
         tmp_target = target;
@@ -399,7 +402,7 @@ PrintResources ()
 {
     int i;
 
-    DBUG_ENTER ("PrintResources");
+    DBUG_ENTER ();
 
     printf ("\nConfiguration for target '%s`:\n\n", global.target_name);
 
@@ -418,7 +421,7 @@ PrintResources ()
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -437,7 +440,7 @@ RSCparseResourceFile (char *buffer)
 {
     bool ok = TRUE;
 
-    DBUG_ENTER ("RSCparseResourceFile");
+    DBUG_ENTER ();
 
     yyin = fopen (buffer, "r");
 
@@ -480,7 +483,7 @@ ParseResourceFiles ()
     char *envvar;
     bool ok;
 
-    DBUG_ENTER ("ParseResourceFiles");
+    DBUG_ENTER ();
 
     /*
      * First, the public sac2crc file is read.
@@ -520,7 +523,7 @@ ParseResourceFiles ()
 
     global.filename = global.puresacfilename; /* What is this good for ? */
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -543,7 +546,7 @@ EvaluateDefaultTarget (target_list_t *target)
     int i;
     resource_list_t *resource;
 
-    DBUG_ENTER ("EvaluateDefaultTarget");
+    DBUG_ENTER ();
 
     while ((target != NULL) && (!STReq (target->name, "default"))) {
         target = target->next;
@@ -589,7 +592,7 @@ EvaluateDefaultTarget (target_list_t *target)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -615,7 +618,7 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
     int i;
     inheritence_list_t *super_target;
 
-    DBUG_ENTER ("EvaluateCustomTarget");
+    DBUG_ENTER ();
 
     tmp = target_list;
 
@@ -690,7 +693,7 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
         resource = resource->next;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -707,7 +710,7 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
 void
 RSCevaluateConfiguration ()
 {
-    DBUG_ENTER ("RSCevaluateConfiguration");
+    DBUG_ENTER ();
 
     ParseResourceFiles ();
 
@@ -724,5 +727,7 @@ RSCevaluateConfiguration ()
         exit (0);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

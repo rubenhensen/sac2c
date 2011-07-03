@@ -26,7 +26,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
@@ -61,7 +64,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -76,7 +79,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -97,7 +100,7 @@ GenIntVector (node *element)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("GenIntVector");
+    DBUG_ENTER ();
 
     res = TCmakeIntVector (TBmakeExprs (element, NULL));
 
@@ -110,9 +113,9 @@ MakeAssignForIdShape (node *id, node *fundef, node **preass)
     node *res;
     node *newass;
 
-    DBUG_ENTER ("MakeAvisForIdShape");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NULL != AVIS_DIM (ID_AVIS (id))),
+    DBUG_ASSERT (NULL != AVIS_DIM (ID_AVIS (id)),
                  "Making assign for Id without Dimension!");
 
     if (NODE_TYPE (AVIS_DIM (ID_AVIS (id))) == N_num) {
@@ -145,7 +148,7 @@ MakeVectAvis (char *name, node *dim)
 {
     node *res;
 
-    DBUG_ENTER ("MakeVectAvis");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (dim) == N_num) {
         res = TBmakeAvis (name, TYmakeAKS (TYmakeSimpleType (T_int),
@@ -176,7 +179,7 @@ SAAshp_is_empty (node *arg_node, info *arg_info)
 {
     node *shp_expr;
 
-    DBUG_ENTER ("SAAshp_is_empty");
+    DBUG_ENTER ();
 
     shp_expr = TCmakeIntVector (NULL);
 
@@ -188,7 +191,7 @@ SAAshp_is_arg1 (node *arg_node, info *arg_info)
 {
     node *shp_expr;
 
-    DBUG_ENTER ("SAAshp_is_arg1");
+    DBUG_ENTER ();
 
     shp_expr = DUPdoDupNode (PRF_ARG1 (arg_node));
 
@@ -200,7 +203,7 @@ SAAshp_is_arg2 (node *arg_node, info *arg_info)
 {
     node *shp_expr;
 
-    DBUG_ENTER ("SAAshp_is_arg2");
+    DBUG_ENTER ();
 
     shp_expr = DUPdoDupNode (PRF_ARG2 (arg_node));
 
@@ -212,7 +215,7 @@ SAAshp_of_arg1 (node *arg_node, info *arg_info)
 {
     node *shp_expr;
 
-    DBUG_ENTER ("SAAshp_of_arg1");
+    DBUG_ENTER ();
 
     shp_expr = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node))));
 
@@ -224,7 +227,7 @@ SAAshp_of_arg2 (node *arg_node, info *arg_info)
 {
     node *shp_expr;
 
-    DBUG_ENTER ("SAAshp_of_arg2");
+    DBUG_ENTER ();
 
     shp_expr = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))));
 
@@ -236,7 +239,7 @@ SAAshp_for_shape (node *arg_node, info *arg_info)
 {
     node *shp_expr = NULL;
 
-    DBUG_ENTER ("SAAshp_for_shape");
+    DBUG_ENTER ();
 
     if (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))) != NULL) {
         node *adim = AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node)));
@@ -253,7 +256,7 @@ SAAshp_for_cat (node *arg_node, info *arg_info)
     node *v1savis, *v2savis;
     node *preass = NULL;
 
-    DBUG_ENTER ("SAAshp_for_cat");
+    DBUG_ENTER ();
 
     v1savis = MakeAssignForIdShape (PRF_ARG1 (arg_node), INFO_FUNDEF (arg_info), &preass);
 
@@ -275,7 +278,7 @@ SAAshp_for_take (node *arg_node, info *arg_info)
     node *absavis;
     node *preass = NULL;
 
-    DBUG_ENTER ("SAAshp_for_take");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_num) {
         scalar = TBmakeNum (abs (NUM_VAL (PRF_ARG1 (arg_node))));
@@ -317,7 +320,7 @@ SAAshp_for_drop (node *arg_node, info *arg_info)
     node *absavis;
     node *preass = NULL;
 
-    DBUG_ENTER ("SAAshp_for_drop");
+    DBUG_ENTER ();
 
     vsavis = MakeAssignForIdShape (PRF_ARG2 (arg_node), INFO_FUNDEF (arg_info), &preass);
 
@@ -359,7 +362,7 @@ SAAshp_guard (node *arg_node, info *arg_info)
     node *ids;
     node *exprs;
 
-    DBUG_ENTER ("SAAshp_guard");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
 
@@ -383,7 +386,7 @@ SAAshp_type_constraint (node *arg_node, info *arg_info)
     node *lhsavis;
     node *ids;
 
-    DBUG_ENTER ("SAAshp_type_constraint");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
 
@@ -411,7 +414,7 @@ SAAshp_same_shape_AxA (node *arg_node, info *arg_info)
     node *lhsavis;
     node *ids;
 
-    DBUG_ENTER ("SAAshp_same_shape_AxA");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
 
@@ -435,7 +438,7 @@ SAAshp_shape_matches_dim_VxA (node *arg_node, info *arg_info)
     node *lhsavis;
     node *ids;
 
-    DBUG_ENTER ("SAAshp_shape_matches_dim_VxA");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
 
@@ -460,7 +463,7 @@ SAAshp_cc_inherit (node *arg_node, info *arg_info)
     node *lhsavis;
     node *ids;
 
-    DBUG_ENTER ("SAAshp_cc_inherit");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
 
@@ -501,7 +504,7 @@ MSEdoMakeShapeExpression (node *expr, node *avis, node *allids, node *fundef)
     node *res;
     node *shpavis;
 
-    DBUG_ENTER ("MSEdoMakeShapeExpression");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((AVIS_DIM (avis) != NULL) && (AVIS_SHAPE (avis) == NULL),
                  "AVIS_DIM( avis) must not be NULL "
@@ -555,7 +558,7 @@ MSEid (node *arg_node, info *arg_info)
     node *rhsnode;
     node *res;
 
-    DBUG_ENTER ("MSEid");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
     shapeavis = ID_AVIS (AVIS_SHAPE (lhsavis));
@@ -577,7 +580,7 @@ MSEfuncond (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("MSEfuncond");
+    DBUG_ENTER ();
 
     DBUG_RETURN (res);
 }
@@ -596,7 +599,7 @@ MSEarray (node *arg_node, info *arg_info)
     node *res = NULL;
     node *preass = NULL;
 
-    DBUG_ENTER ("MSEarray");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
     shpavis = ID_AVIS (AVIS_SHAPE (lhsavis));
@@ -661,7 +664,7 @@ MSEap (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("MSEap");
+    DBUG_ENTER ();
 
     DBUG_RETURN (res);
 }
@@ -680,7 +683,7 @@ MSEprf (node *arg_node, info *arg_info)
     node *res = NULL;
     node *preass = NULL;
 
-    DBUG_ENTER ("MSEprf");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
     shpavis = ID_AVIS (AVIS_SHAPE (lhsavis));
@@ -724,7 +727,7 @@ MSEwith (node *arg_node, info *arg_info)
     node *withop;
     int woc = 0;
 
-    DBUG_ENTER ("MSEwith");
+    DBUG_ENTER ();
 
     lhsavis = INFO_AVIS (arg_info);
     shpavis = ID_AVIS (AVIS_SHAPE (lhsavis));
@@ -822,7 +825,7 @@ MSEwith (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown Withop encountered");
+        DBUG_ASSERT (0, "Unknown Withop encountered");
         break;
     }
 
@@ -851,7 +854,7 @@ MSEwith (node *arg_node, info *arg_info)
         node *rhsnode;                                                                   \
         node *res;                                                                       \
                                                                                          \
-        DBUG_ENTER ("MSE" #name);                                                        \
+        DBUG_ENTER ();                                                                   \
                                                                                          \
         lhsavis = INFO_AVIS (arg_info);                                                  \
         shpavis = ID_AVIS (AVIS_SHAPE (lhsavis));                                        \
@@ -897,3 +900,5 @@ MSECONST (numulonglong)
 /** <!--********************************************************************-->
  * @}  <!-- Make Shape Expression -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

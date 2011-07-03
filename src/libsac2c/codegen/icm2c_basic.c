@@ -6,7 +6,9 @@
 
 #include "icm2c_basic.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "COMP"
+#include "debug.h"
+
 #include "str.h"
 #include "globals.h"
 #include "print.h"
@@ -57,13 +59,13 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
-    DBUG_ENTER ("Check_Mirror");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((shp1_read_fun != NULL), "1st shape-read-fun not found!");
+    DBUG_ASSERT (shp1_read_fun != NULL, "1st shape-read-fun not found!");
     if (shp2 == NULL) {
-        DBUG_ASSERT ((shp2_size == 0), "inconsistant 2nd shape found!");
+        DBUG_ASSERT (shp2_size == 0, "inconsistant 2nd shape found!");
     } else {
-        DBUG_ASSERT ((shp2_read_fun != NULL), "2nd shape-read-fun not found!");
+        DBUG_ASSERT (shp2_read_fun != NULL, "2nd shape-read-fun not found!");
     }
 
     /*
@@ -85,7 +87,7 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
      */
     if (to_dim >= 0) {
         if ((shp1_size >= 0) && (shp2_size >= 0)) {
-            DBUG_ASSERT ((shp1_size == to_dim - shp2_size),
+            DBUG_ASSERT (shp1_size == to_dim - shp2_size,
                          "inconsistant dimensions/sizes found!");
         } else if ((shp1_size < 0) && (shp2_size >= 0)) {
             shp1_size = to_dim - shp2_size;
@@ -100,7 +102,7 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
      * check of SAC_ND_A_SHAPE
      */
     if ((to_sc == C_scl) || (to_sc == C_aks)) {
-        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (to_dim >= 0, "illegal dimension found!");
         if (shp1_size >= 0) {
             for (i = 0; i < shp1_size; i++) {
                 ASSURE_TYPE_ASS (fprintf (global.outfile,
@@ -111,7 +113,7 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
                                           "Assignment with incompatible types found!"););
             }
             for (; i < to_dim; i++) {
-                DBUG_ASSERT ((shp2 != NULL), "second shape not found!");
+                DBUG_ASSERT (shp2 != NULL, "second shape not found!");
                 ASSURE_TYPE_ASS (fprintf (global.outfile,
                                           "SAC_ND_A_SHAPE( %s, %d) == ", to_NT, i);
                                  shp2_read_fun (shp2, NULL, i - shp1_size);
@@ -121,7 +123,7 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
             }
         } else {
             for (i = 0; i < to_dim; i++) {
-                DBUG_ASSERT ((shp2 != NULL), "second shape not found!");
+                DBUG_ASSERT (shp2 != NULL, "second shape not found!");
                 ASSURE_TYPE_ASS (fprintf (global.outfile, "((%d < ", i);
                                  shp1_size_fun (shp1); fprintf (global.outfile, ") && ");
                                  fprintf (global.outfile,
@@ -147,7 +149,7 @@ Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
     if ((to_sc == C_scl) || (to_sc == C_aks)) {
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -200,18 +202,18 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
-    DBUG_ENTER ("Set_Shape");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((shp1_read_fun != NULL), "1st shape-read-fun not found!");
+    DBUG_ASSERT (shp1_read_fun != NULL, "1st shape-read-fun not found!");
     if (shp2 == NULL) {
-        DBUG_ASSERT ((shp2_size == 0), "inconsistant 2nd shape found!");
+        DBUG_ASSERT (shp2_size == 0, "inconsistant 2nd shape found!");
     } else {
-        DBUG_ASSERT ((shp2_read_fun != NULL), "2nd shape-read-fun not found!");
+        DBUG_ASSERT (shp2_read_fun != NULL, "2nd shape-read-fun not found!");
     }
 
     if (to_dim >= 0) {
         if ((shp1_size >= 0) && (shp2_size >= 0)) {
-            DBUG_ASSERT ((shp1_size == to_dim - shp2_size),
+            DBUG_ASSERT (shp1_size == to_dim - shp2_size,
                          "inconsistant dimensions/sizes found!");
         } else if ((shp1_size < 0) && (shp2_size >= 0)) {
             shp1_size = to_dim - shp2_size;
@@ -273,7 +275,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
 
                        if (shp2_size >= 0) {
                            for (i = 0; i < shp2_size; i++) {
-                               DBUG_ASSERT ((shp2 != NULL), "second shape not found!");
+                               DBUG_ASSERT (shp2 != NULL, "second shape not found!");
                                if (shp2_prod_fun == NULL) {
                                    INDENT;
                                    fprintf (global.outfile, "SAC_size *= \n");
@@ -283,7 +285,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
                                               , shp2_read_fun (shp2, NULL, i););
                            }
                        } else {
-                           DBUG_ASSERT ((shp2 != NULL), "second shape not found!");
+                           DBUG_ASSERT (shp2 != NULL, "second shape not found!");
                            FOR_LOOP (fprintf (global.outfile, "SAC_j = 0");
                                      , fprintf (global.outfile,
                                                 "SAC_i < SAC_ND_A_DIM( %s)", to_NT);
@@ -313,7 +315,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
         break;
 
     case C_akd:
-        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (to_dim >= 0, "illegal dimension found!");
         BLOCK_VARDECS (
           if (shp1_size < 0) {
               fprintf (global.outfile, "int SAC_i, SAC_j; ");
@@ -321,7 +323,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
               fprintf (global.outfile, "int SAC_size = 1;");
           },
           if (shp1_size < 0) {
-              DBUG_ASSERT ((shp2 != NULL), "second shape not found!");
+              DBUG_ASSERT (shp2 != NULL, "second shape not found!");
               FOR_LOOP_INC (fprintf (global.outfile, "SAC_i");
                             , fprintf (global.outfile, "0");, shp1_size_fun (shp1);
                             ,
@@ -361,7 +363,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
                                   INDENT;
                                   fprintf (global.outfile, "SAC_size *= \n");
                               },
-                              DBUG_ASSERT ((shp2 != NULL), "second shape not found!");
+                              DBUG_ASSERT (shp2 != NULL, "second shape not found!");
                               shp2_read_fun (shp2, NULL, i - shp1_size););
           }
 
@@ -385,11 +387,11 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
+        DBUG_ASSERT (0, "Unknown shape class found!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -405,7 +407,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
 static void
 WriteScalar (char *scl)
 {
-    DBUG_ENTER ("WriteScalar");
+    DBUG_ENTER ();
 
     if (scl[0] == '(') {
         /* 'scl' is a tagged id */
@@ -420,7 +422,7 @@ WriteScalar (char *scl)
         fprintf (global.outfile, "%s", scl);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -436,18 +438,18 @@ WriteScalar (char *scl)
 void
 ReadId (void *var_NT, char *idx_str, int idx)
 {
-    DBUG_ENTER ("ReadId");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((((char *)var_NT)[0] == '('), "no tag found!");
+    DBUG_ASSERT (((char *)var_NT)[0] == '(', "no tag found!");
 
     if (idx_str != NULL) {
         fprintf (global.outfile, "SAC_ND_READ( %s, %s)", (char *)var_NT, idx_str);
     } else {
-        DBUG_ASSERT ((idx >= 0), "illegal index found!");
+        DBUG_ASSERT (idx >= 0, "illegal index found!");
         fprintf (global.outfile, "SAC_ND_READ( %s, %d)", (char *)var_NT, idx);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -463,13 +465,13 @@ ReadId (void *var_NT, char *idx_str, int idx)
 void
 ReadScalar (void *scl, char *idx_str, int idx)
 {
-    DBUG_ENTER ("ReadScalar");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((scl != NULL), "scalar for ReadScalar() not found!");
-    DBUG_PRINT ("COMP", ("scalar = " F_PTR ", idx_s = %s, idx = %d", scl,
-                         STRonNull ("", idx_str), idx));
-    DBUG_PRINT ("COMP", ("scalar = \"%s\", idx_s = %s, idx = %d", scl,
-                         STRonNull ("", idx_str), idx));
+    DBUG_ASSERT (scl != NULL, "scalar for ReadScalar() not found!");
+    DBUG_PRINT ("scalar = " F_PTR ", idx_s = %s, idx = %d", scl, STRonNull ("", idx_str),
+                idx);
+    DBUG_PRINT ("scalar = \"%s\", idx_s = %s, idx = %d", scl, STRonNull ("", idx_str),
+                idx);
 
     if (((char *)scl)[0] == '(') {
         /* 'scl' is a tagged id */
@@ -481,14 +483,14 @@ ReadScalar (void *scl, char *idx_str, int idx)
         ReadId (scl, idx_str, idx);
     } else {
         if (idx_str == NULL) {
-            DBUG_ASSERT ((idx == 0), "illegal index found!");
+            DBUG_ASSERT (idx == 0, "illegal index found!");
         }
 
         /* 'scl' is a scalar constant */
         fprintf (global.outfile, "%s", (char *)scl);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -504,7 +506,7 @@ ReadScalar (void *scl, char *idx_str, int idx)
 void
 ReadScalar_Check (void *scl, char *idx_str, int idx)
 {
-    DBUG_ENTER ("ReadScalar_Check");
+    DBUG_ENTER ();
 
     if (((char *)scl)[0] == '(') {
         /* 'scl' is a tagged id */
@@ -533,7 +535,7 @@ ReadScalar_Check (void *scl, char *idx_str, int idx)
         fprintf (global.outfile, "%s", (char *)scl);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -549,18 +551,18 @@ ReadScalar_Check (void *scl, char *idx_str, int idx)
 void
 ReadConstArray_Str (void *v, char *idx_str, int idx)
 {
-    DBUG_ENTER ("ReadConstArray_Str");
+    DBUG_ENTER ();
 
     if (idx_str != NULL) {
-        DBUG_ASSERT ((0), "illegal argument for ReadConstArray_Str() found!");
+        DBUG_ASSERT (0, "illegal argument for ReadConstArray_Str() found!");
     } else {
-        DBUG_ASSERT ((idx >= 0), "illegal index for ReadConstArray_Str() found!");
-        DBUG_ASSERT ((v != NULL), "array for ReadConstArray_Str() not found!");
-        DBUG_PRINT ("COMP", ("array = " F_PTR ", idx = %d", v, idx));
+        DBUG_ASSERT (idx >= 0, "illegal index for ReadConstArray_Str() found!");
+        DBUG_ASSERT (v != NULL, "array for ReadConstArray_Str() not found!");
+        DBUG_PRINT ("array = " F_PTR ", idx = %d", v, idx);
         ReadScalar (((char **)v)[idx], NULL, 0);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -576,15 +578,15 @@ ReadConstArray_Str (void *v, char *idx_str, int idx)
 void
 ReadConstArray_Num (void *v, char *idx_str, int idx)
 {
-    DBUG_ENTER ("ReadConstArray_Num");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((idx_str == NULL), "illegal argument for ReadConstArray_Num() found!");
-    DBUG_ASSERT ((idx >= 0), "illegal index for ReadConstArray_Num() found!");
-    DBUG_ASSERT ((v != NULL), "array for ReadConstArray_Num() not found!");
-    DBUG_PRINT ("COMP", ("array = " F_PTR ", idx = %d", v, idx));
+    DBUG_ASSERT (idx_str == NULL, "illegal argument for ReadConstArray_Num() found!");
+    DBUG_ASSERT (idx >= 0, "illegal index for ReadConstArray_Num() found!");
+    DBUG_ASSERT (v != NULL, "array for ReadConstArray_Num() not found!");
+    DBUG_PRINT ("array = " F_PTR ", idx = %d", v, idx);
     fprintf (global.outfile, "%d", ((int *)v)[idx]);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -600,11 +602,11 @@ ReadConstArray_Num (void *v, char *idx_str, int idx)
 void
 DimId (void *var_NT)
 {
-    DBUG_ENTER ("DimId");
+    DBUG_ENTER ();
 
     fprintf (global.outfile, "SAC_ND_A_DIM( %s)", (char *)var_NT);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -620,7 +622,7 @@ DimId (void *var_NT)
 void
 ShapeId (void *var_NT, char *idx_str, int idx)
 {
-    DBUG_ENTER ("ShapeId");
+    DBUG_ENTER ();
 
     if (idx_str != NULL) {
         fprintf (global.outfile, "SAC_ND_A_SHAPE( %s, %s)", (char *)var_NT, idx_str);
@@ -628,7 +630,7 @@ ShapeId (void *var_NT, char *idx_str, int idx)
         fprintf (global.outfile, "SAC_ND_A_SHAPE( %s, %d)", (char *)var_NT, idx);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -644,11 +646,11 @@ ShapeId (void *var_NT, char *idx_str, int idx)
 void
 SizeId (void *var_NT)
 {
-    DBUG_ENTER ("SizeId");
+    DBUG_ENTER ();
 
     fprintf (global.outfile, "SAC_ND_A_SIZE( %s)", (char *)var_NT);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -664,16 +666,16 @@ SizeId (void *var_NT)
 void
 GetAttr (void *v, int v_attr, void (*v_attr_fun) (void *))
 {
-    DBUG_ENTER ("GetAttr");
+    DBUG_ENTER ();
 
     if (v_attr < 0) {
-        DBUG_ASSERT ((v_attr_fun != NULL), "access function not found!");
+        DBUG_ASSERT (v_attr_fun != NULL, "access function not found!");
         v_attr_fun (v);
     } else {
         fprintf (global.outfile, "%d", v_attr);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -699,10 +701,10 @@ Vect2Offset2 (char *off_ANY, void *v_ANY, int v_size, void (*v_size_fun) (void *
 {
     int i;
 
-    DBUG_ENTER ("Vect2Offset2");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((v_read_fun != NULL), "access function not found!");
-    DBUG_ASSERT ((a_shape_fun != NULL), "access function not found!");
+    DBUG_ASSERT (v_read_fun != NULL, "access function not found!");
+    DBUG_ASSERT (a_shape_fun != NULL, "access function not found!");
 
     DBUG_ASSERT ((((v_size >= 0) || (v_size_fun != NULL))
                   && ((a_dim >= 0) || (a_dim_fun != NULL))),
@@ -801,7 +803,7 @@ Vect2Offset2 (char *off_ANY, void *v_ANY, int v_size, void (*v_size_fun) (void *
           fprintf (global.outfile, " = SAC_l; "););
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -822,10 +824,12 @@ void
 Vect2Offset (char *off_ANY, void *v_ANY, int v_size, void (*v_size_fun) (void *),
              void (*v_read_fun) (void *, char *, int), void *a_NT, int a_dim)
 {
-    DBUG_ENTER ("Vect2Offset");
+    DBUG_ENTER ();
 
     Vect2Offset2 (off_ANY, v_ANY, v_size, v_size_fun, v_read_fun, a_NT, a_dim, DimId,
                   ShapeId);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

@@ -9,7 +9,10 @@
 #include "str.h"
 #include "str_buffer.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "globals.h"
 #include "config.h"
@@ -24,7 +27,7 @@ GetCCCall ()
     str_buf *buffer;
     char *result;
 
-    DBUG_ENTER ("GetCCCall");
+    DBUG_ENTER ();
 
     buffer = SBUFcreate (128);
 
@@ -42,7 +45,7 @@ GetCCCall ()
 static void
 AddOptimizeFlag (str_buf *buffer)
 {
-    DBUG_ENTER ("AddOptimizeFlag");
+    DBUG_ENTER ();
 
     switch (global.cc_optimize) {
     case 0:
@@ -61,19 +64,19 @@ AddOptimizeFlag (str_buf *buffer)
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 AddDebugFlag (str_buf *buffer)
 {
-    DBUG_ENTER ("AddDebugFlag");
+    DBUG_ENTER ();
 
     if (global.cc_debug) {
         SBUFprintf (buffer, "%s ", global.config.opt_g);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static char *
@@ -82,7 +85,7 @@ GetCCFlags ()
     str_buf *buffer;
     char *result;
 
-    DBUG_ENTER ("GetCCFlags");
+    DBUG_ENTER ();
 
     buffer = SBUFcreate (1024);
 
@@ -98,7 +101,7 @@ GetCCFlags ()
 static void
 AddCCLibs (str_buf *buffer)
 {
-    DBUG_ENTER ("AddCCLibs");
+    DBUG_ENTER ();
 
     SBUFprintf (buffer, "%s ", global.config.cclink);
 
@@ -126,13 +129,13 @@ AddCCLibs (str_buf *buffer)
     SBUFprintf (buffer, "%s ", global.config.ccdllink);
 #endif
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 AddSacLib (str_buf *buffer)
 {
-    DBUG_ENTER ("AddSacLib");
+    DBUG_ENTER ();
 
     SBUFprint (buffer, "-lsac");
     SBUFprint (buffer, global.config.lib_variant);
@@ -147,13 +150,13 @@ AddSacLib (str_buf *buffer)
         SBUFprint (buffer, ".mt.pth ");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 AddPhmLib (str_buf *buffer)
 {
-    DBUG_ENTER ("AddPhmLib");
+    DBUG_ENTER ();
 
     if (global.optimize.dophm) {
         SBUFprint (buffer, "-lsacphm");
@@ -172,13 +175,13 @@ AddPhmLib (str_buf *buffer)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 AddEfenceLib (str_buf *buffer)
 {
-    DBUG_ENTER ("AddEfenceLib");
+    DBUG_ENTER ();
 
     if (global.use_efence) {
         char *efence;
@@ -192,7 +195,7 @@ AddEfenceLib (str_buf *buffer)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static char *
@@ -201,7 +204,7 @@ GetLibs ()
     str_buf *buffer;
     char *result;
 
-    DBUG_ENTER ("GetLibs");
+    DBUG_ENTER ();
 
     buffer = SBUFcreate (256);
 
@@ -221,7 +224,7 @@ AddLibPath (const char *path, str_buf *buf)
 {
     char *flag;
 
-    DBUG_ENTER ("AddLibPath");
+    DBUG_ENTER ();
 
     flag = STRsubstToken (global.config.ld_path, "%path%", path);
     buf = SBUFprintf (buf, "%s ", flag);
@@ -236,7 +239,7 @@ GetLibPath ()
     char *result;
     str_buf *buffer = SBUFcreate (255);
 
-    DBUG_ENTER ("GetLibPath");
+    DBUG_ENTER ();
 
     buffer = (str_buf *)FMGRmapPath (PK_lib_path,
                                      (void *(*)(const char *, void *))AddLibPath, buffer);
@@ -255,7 +258,7 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 {
     char *result;
 
-    DBUG_ENTER ("BuildDepLibsStringProg");
+    DBUG_ENTER ();
 
     switch (kind) {
     case STRS_saclib:
@@ -298,7 +301,7 @@ InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
     char *libpath;
     char *deplibs;
 
-    DBUG_ENTER ("InvokeCCProg");
+    DBUG_ENTER ();
 
     libpath = GetLibPath ();
 
@@ -310,7 +313,7 @@ InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
     libpath = MEMfree (libpath);
     deplibs = MEMfree (deplibs);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -318,7 +321,7 @@ CompileOneFile (const char *dir, const char *file, const char *callstring)
 {
     char *basename;
 
-    DBUG_ENTER ("CompileOneFile");
+    DBUG_ENTER ();
 
     basename = STRtok (file, ".");
 
@@ -326,7 +329,7 @@ CompileOneFile (const char *dir, const char *file, const char *callstring)
 
     basename = MEMfree (basename);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -334,7 +337,7 @@ CompileOneFilePIC (const char *dir, const char *file, const char *callstring)
 {
     char *basename;
 
-    DBUG_ENTER ("CompileOneFilePIC");
+    DBUG_ENTER ();
 
     basename = STRtok (file, ".");
 
@@ -343,7 +346,7 @@ CompileOneFilePIC (const char *dir, const char *file, const char *callstring)
 
     basename = MEMfree (basename);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -352,7 +355,7 @@ InvokeCCModule (char *cccall, char *ccflags)
     char *callstring;
     char *str;
 
-    DBUG_ENTER ("InvokeCCModule");
+    DBUG_ENTER ();
 
     callstring = STRcat (cccall, ccflags);
 
@@ -394,7 +397,7 @@ InvokeCCModule (char *cccall, char *ccflags)
 
     callstring = MEMfree (callstring);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -402,7 +405,7 @@ InvokeCCWrapper (char *cccall, char *ccflags)
 {
     char *callstring;
     char *str;
-    DBUG_ENTER ("InvokeCCWrapper");
+    DBUG_ENTER ();
 
     callstring = STRcat (cccall, ccflags);
 
@@ -456,7 +459,7 @@ InvokeCCWrapper (char *cccall, char *ccflags)
 
     callstring = MEMfree (callstring);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 node *
@@ -467,7 +470,7 @@ CCMinvokeCC (node *syntax_tree)
     char *libs;
     stringset_t *deps = global.dependencies;
 
-    DBUG_ENTER ("CCMinvokeCC");
+    DBUG_ENTER ();
 
     if (global.gen_cccall) {
         /*
@@ -510,7 +513,7 @@ CCMgetLinkerFlags (node *syntax_tree)
     char *deplibs;
     char *result;
 
-    DBUG_ENTER ("CCMgetLinkerFlags");
+    DBUG_ENTER ();
 
     libs = GetLibs ();
     paths = GetLibPath ();
@@ -525,3 +528,5 @@ CCMgetLinkerFlags (node *syntax_tree)
 
     DBUG_RETURN (result);
 }
+
+#undef DBUG_PREFIX

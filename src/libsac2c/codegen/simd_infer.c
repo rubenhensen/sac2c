@@ -7,7 +7,10 @@
  */
 
 #include "tree_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "tree_compound.h"
 #include "str.h"
 #include "memory.h"
@@ -63,7 +66,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -75,7 +78,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -138,7 +141,7 @@ static const bool simd_suitable[] = {
 node *
 SIMDap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SIMDap");
+    DBUG_ENTER ();
 
     INFO_SUITABLE (arg_info) = FALSE;
 
@@ -153,7 +156,7 @@ SIMDap (node *arg_node, info *arg_info)
 node *
 SIMDprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SIMDprf");
+    DBUG_ENTER ();
 
     INFO_SUITABLE (arg_info)
       = INFO_SUITABLE (arg_info) && simd_suitable[PRF_PRF (arg_node)];
@@ -169,7 +172,7 @@ SIMDprf (node *arg_node, info *arg_info)
 node *
 SIMDarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SIMDarray");
+    DBUG_ENTER ();
 
     INFO_SUITABLE (arg_info) = FALSE;
 
@@ -184,7 +187,7 @@ SIMDarray (node *arg_node, info *arg_info)
 node *
 SIMDwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SIMDwith2");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (WITH2_CODE (arg_node) != NULL, "N_with2 without code found!");
 
@@ -204,7 +207,7 @@ SIMDwith2 (node *arg_node, info *arg_info)
 node *
 SIMDcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SIMDcode");
+    DBUG_ENTER ();
 
     INFO_SUITABLE (arg_info) = TRUE;
 
@@ -231,7 +234,7 @@ SIMDcode (node *arg_node, info *arg_info)
 node *
 SIMDwlstride (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SIMDwlstride");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (WLSTRIDE_CONTENTS (arg_node) != NULL, "N_wlstride wo contents found!");
     WLSTRIDE_CONTENTS (arg_node) = TRAVdo (WLSTRIDE_CONTENTS (arg_node), arg_info);
@@ -262,7 +265,7 @@ SIMDwlstride (node *arg_node, info *arg_info)
 node *
 SIMDwlgrid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SIMDwlgrid");
+    DBUG_ENTER ();
 
     if ((!WLGRID_ISDYNAMIC (arg_node)) && (WLGRID_CODE (arg_node) != NULL)) {
         DBUG_ASSERT (WLGRID_NEXTDIM (arg_node) == NULL,
@@ -306,7 +309,7 @@ SIMDdoInferSIMD (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("SIMDdoInferSIMD");
+    DBUG_ENTER ();
 
     TRAVpush (TR_simd);
 
@@ -321,3 +324,5 @@ SIMDdoInferSIMD (node *syntax_tree)
 
 /*@}*/
 /*@}*/ /* defgroup ive */
+
+#undef DBUG_PREFIX

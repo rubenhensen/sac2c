@@ -5,7 +5,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLLOM"
+#include "debug.h"
+
 #include "traverse.h"
 #include "DupTree.h"
 #include "free.h"
@@ -50,7 +53,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -65,7 +68,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -95,11 +98,11 @@ FreeInfo (info *info)
 node *
 WLLOMprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLLOMprf");
+    DBUG_ENTER ();
 
     if (!INFO_WB (arg_info)) { /*Traverses down the tree...*/
         if (PRF_PRF (arg_node) == F_prop_obj_in) {
-            DBUG_PRINT ("WLLOM", ("Found prop_obj_in!"));
+            DBUG_PRINT ("Found prop_obj_in!");
 
             INFO_FV (arg_info) = TRUE;
         } else {
@@ -110,7 +113,7 @@ WLLOMprf (node *arg_node, info *arg_info)
             INFO_FV (arg_info) = TRUE;              /*Set flags to mark*/
             INFO_MARK_NDOWN (arg_info) = TRUE;
 
-            DBUG_PRINT ("WLLOM", ("??? PROP_OBJ_OUT found, Mark last assignment"));
+            DBUG_PRINT ("??? PROP_OBJ_OUT found, Mark last assignment");
         }
         if (INFO_MARK_NDOWN (arg_info) == TRUE) {
             PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info); /*all vars*/
@@ -135,7 +138,7 @@ WLLOMprf (node *arg_node, info *arg_info)
 node *
 WLLOMfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLLOMfundef");
+    DBUG_ENTER ();
 
     INFO_WB (arg_info) = FALSE;
     arg_node = TRAVcont (arg_node, arg_info);
@@ -162,7 +165,7 @@ WLLOMfundef (node *arg_node, info *arg_info)
 node *
 WLLOMid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLLOMid");
+    DBUG_ENTER ();
 
     node *id_avis = ID_AVIS (arg_node); /* Just to stay below 80 signs in a row*/
 
@@ -172,7 +175,7 @@ WLLOMid (node *arg_node, info *arg_info)
         }
     } else { /*WB == TRUE*/
         if (INFO_MARK_NDOWN (arg_info) == TRUE) {
-            DBUG_PRINT ("WILLOM", ("Mark ID %s", ID_NAME (arg_node)));
+            DBUG_PRINT_TAG ("WILLOM", "Mark ID %s", ID_NAME (arg_node));
             AVIS_BELONGINGASSIGNMENTISNOTALLOWEDTOBEMOVEDDOWN (id_avis) = TRUE;
         }
     }
@@ -203,13 +206,13 @@ WLLOMid (node *arg_node, info *arg_info)
 node *
 WLLOMids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLLOMids");
+    DBUG_ENTER ();
 
     node *ids_avis = IDS_AVIS (arg_node); /* Just to stay below 80 signs in a row*/
 
     if (INFO_WB (arg_info) == FALSE) { /*On its way down...*/
         if (INFO_MARK_NUP (arg_info) == TRUE) {
-            DBUG_PRINT ("WLLOM", ("Mark IDS %s", IDS_NAME (arg_node)));
+            DBUG_PRINT ("Mark IDS %s", IDS_NAME (arg_node));
             AVIS_BELONGINGASSIGNMENTISNOTALLOWEDTOBEMOVEDUP (ids_avis) = TRUE;
         }
     } else { /*WB == TRUE*/
@@ -241,7 +244,7 @@ WLLOMids (node *arg_node, info *arg_info)
 node *
 WLLOMassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLLOMassign");
+    DBUG_ENTER ();
 
     /*TravDown and therefor !UP-Part*/
 
@@ -252,8 +255,7 @@ WLLOMassign (node *arg_node, info *arg_info)
      * on an object in the right way, mark assignment as !UP*/
     if ((INFO_WLLEVEL (arg_info) == 1) && (INFO_MARK_NUP (arg_info) == TRUE)) {
         ASSIGN_ISNOTALLOWEDTOBEMOVEDUP (arg_node) = TRUE;
-        DBUG_PRINT ("WLLOM",
-                    ("!!! Marked %s=... entirely (!UP)", ASSIGN_NAME (arg_node)));
+        DBUG_PRINT ("!!! Marked %s=... entirely (!UP)", ASSIGN_NAME (arg_node));
 
         INFO_MARK_NUP (arg_info) = FALSE;
     }
@@ -262,7 +264,7 @@ WLLOMassign (node *arg_node, info *arg_info)
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     } else if (INFO_WLLEVEL (arg_info) == 1) {
-        DBUG_PRINT ("WLLOM", ("--- END OF !UP START !DOWN ---"));
+        DBUG_PRINT ("--- END OF !UP START !DOWN ---");
         INFO_WB (arg_info) = TRUE;
     }
 
@@ -275,8 +277,7 @@ WLLOMassign (node *arg_node, info *arg_info)
      * on an object in the right way, mark assignment as !DOWN*/
     if ((INFO_WLLEVEL (arg_info) == 1) && (INFO_MARK_NDOWN (arg_info) == TRUE)) {
         ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (arg_node) = TRUE;
-        DBUG_PRINT ("WLLOM",
-                    ("!!! Marked %s=... entirely (!DOWN)", ASSIGN_NAME (arg_node)));
+        DBUG_PRINT ("!!! Marked %s=... entirely (!DOWN)", ASSIGN_NAME (arg_node));
 
         INFO_MARK_NDOWN (arg_info) = FALSE;
     }
@@ -307,8 +308,8 @@ WLLOMassign (node *arg_node, info *arg_info)
 node *
 WLLOMlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLLOlet");
-    DBUG_PRINT ("WLLOM", ("LET_NAME: %s", LET_NAME (arg_node)));
+    DBUG_ENTER ();
+    DBUG_PRINT ("LET_NAME: %s", LET_NAME (arg_node));
 
     if (INFO_WB (arg_info) == FALSE) { /*On its way down...*/
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -318,9 +319,9 @@ WLLOMlet (node *arg_node, info *arg_info)
         if ((INFO_WLLEVEL (arg_info) == 1) && (INFO_FV (arg_info) == TRUE)) {
             INFO_MARK_NUP (arg_info) = TRUE;
 
-            DBUG_PRINT ("WLLOM", ("??? Mark %s=... (!UP)", LET_NAME (arg_node)));
+            DBUG_PRINT ("??? Mark %s=... (!UP)", LET_NAME (arg_node));
             LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-            DBUG_PRINT ("WLLOM", ("Marked IDS..."));
+            DBUG_PRINT ("Marked IDS...");
 
             INFO_FV (arg_info) = FALSE;
         }
@@ -333,7 +334,7 @@ WLLOMlet (node *arg_node, info *arg_info)
             if (INFO_FV (arg_info) == TRUE) {
                 INFO_MARK_NDOWN (arg_info) = TRUE;
 
-                DBUG_PRINT ("WLLOM", ("??? Mark %s=... (!DOWN)", LET_NAME (arg_node)));
+                DBUG_PRINT ("??? Mark %s=... (!DOWN)", LET_NAME (arg_node));
             }
 
             /*Even if  the flag is not set you have to traverse further because
@@ -341,7 +342,7 @@ WLLOMlet (node *arg_node, info *arg_info)
             LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
             if (INFO_FV (arg_info) == TRUE) {
-                DBUG_PRINT ("WLLOM", ("Marked EXPR..."));
+                DBUG_PRINT ("Marked EXPR...");
 
                 INFO_FV (arg_info) = FALSE;
             }
@@ -367,11 +368,11 @@ WLLOMlet (node *arg_node, info *arg_info)
 node *
 WLLOMwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLLOMwith");
+    DBUG_ENTER ();
 
     INFO_WLLEVEL (arg_info) = INFO_WLLEVEL (arg_info) + 1;
 
-    DBUG_PRINT ("WLLOM", (">>>Enter WL-Level %i...", INFO_WLLEVEL (arg_info)));
+    DBUG_PRINT (">>>Enter WL-Level %i...", INFO_WLLEVEL (arg_info));
 
     if (INFO_WLLEVEL (arg_info) == 1) {
         INFO_WB (arg_info) = FALSE;
@@ -385,7 +386,7 @@ WLLOMwith (node *arg_node, info *arg_info)
     if (INFO_WLLEVEL (arg_info) == 1) {
         INFO_WB (arg_info) = FALSE;
     }
-    DBUG_PRINT ("WLLOM", ("<<<Leave WL-Level %i...", INFO_WLLEVEL (arg_info)));
+    DBUG_PRINT ("<<<Leave WL-Level %i...", INFO_WLLEVEL (arg_info));
     INFO_WLLEVEL (arg_info) = INFO_WLLEVEL (arg_info) - 1;
 
     DBUG_RETURN (arg_node);
@@ -394,7 +395,7 @@ WLLOMwith (node *arg_node, info *arg_info)
 node *
 WLLOMcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLLOMcode");
+    DBUG_ENTER ();
 
     /*
      * new code block, new game! So we start with !UP again
@@ -425,9 +426,9 @@ WLLOMdoLockOptimizationMarking (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("WLLOMdoLockOptimizationMarking");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module,
                  "WLLOMdoLockOptimizationMarking is intended to run on the entire tree");
 
     info = MakeInfo ();
@@ -441,3 +442,5 @@ WLLOMdoLockOptimizationMarking (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

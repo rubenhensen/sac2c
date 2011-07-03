@@ -7,7 +7,9 @@
 #include "icm2c_utils.h"
 #include "icm2c_error.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "globals.h"
 #include "print.h"
 
@@ -31,7 +33,7 @@ ICMCompileDISPATCH_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileDISPATCH_ERROR");
+    DBUG_ENTER ();
 
 #define DISPATCH_ERROR
 #include "icm_comment.c"
@@ -75,5 +77,7 @@ ICMCompileDISPATCH_ERROR (int cnt_to, char **to_ANY, char *funname, int cnt_from
     INDENT;
     fprintf (global.outfile, "return; /* dummy; is this really a good idea??? */\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

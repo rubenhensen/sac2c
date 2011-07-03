@@ -7,7 +7,10 @@
 #include "str_buffer.h"
 #include "memory.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -20,7 +23,7 @@ CUnthApArg (node *args, int n)
     int i = 0;
     node *tmp = args;
 
-    DBUG_ENTER ("CUnthApArg");
+    DBUG_ENTER ();
 
     while (i < n) {
         tmp = EXPRS_NEXT (tmp);
@@ -36,7 +39,7 @@ CUh2dSimpleTypeConversion (simpletype sty)
 {
     simpletype res = T_unknown;
 
-    DBUG_ENTER ("CUh2dSimpleTypeConversion");
+    DBUG_ENTER ();
 
     switch (sty) {
     case T_int:
@@ -49,7 +52,7 @@ CUh2dSimpleTypeConversion (simpletype sty)
         res = T_double_dev;
         break;
     default:
-        DBUG_ASSERT ((0), "Simple type conversion found undefined host simple type!");
+        DBUG_ASSERT (0, "Simple type conversion found undefined host simple type!");
     }
     DBUG_RETURN (res);
 }
@@ -59,7 +62,7 @@ CUd2hSimpleTypeConversion (simpletype sty)
 {
     simpletype res = T_unknown;
 
-    DBUG_ENTER ("CUd2hSimpleTypeConversion");
+    DBUG_ENTER ();
 
     switch (sty) {
     case T_int_dev:
@@ -72,7 +75,7 @@ CUd2hSimpleTypeConversion (simpletype sty)
         res = T_double;
         break;
     default:
-        DBUG_ASSERT ((0), "Simple type conversion found undefined device simple type!");
+        DBUG_ASSERT (0, "Simple type conversion found undefined device simple type!");
     }
     DBUG_RETURN (res);
 }
@@ -82,7 +85,7 @@ CUd2shSimpleTypeConversion (simpletype sty)
 {
     simpletype res = T_unknown;
 
-    DBUG_ENTER ("CUd2shSimpleTypeConversion");
+    DBUG_ENTER ();
 
     switch (sty) {
     case T_int_dev:
@@ -95,7 +98,7 @@ CUd2shSimpleTypeConversion (simpletype sty)
         res = T_double_shmem;
         break;
     default:
-        DBUG_ASSERT ((0), "Simple type conversion found undefined device simple type!");
+        DBUG_ASSERT (0, "Simple type conversion found undefined device simple type!");
     }
     DBUG_RETURN (res);
 }
@@ -105,7 +108,7 @@ CUh2shSimpleTypeConversion (simpletype sty)
 {
     simpletype res = T_unknown;
 
-    DBUG_ENTER ("CUd2shSimpleTypeConversion");
+    DBUG_ENTER ();
 
     switch (sty) {
     case T_int:
@@ -118,7 +121,7 @@ CUh2shSimpleTypeConversion (simpletype sty)
         res = T_double_shmem;
         break;
     default:
-        DBUG_ASSERT ((0), "Simple type conversion found undefined host simple type!");
+        DBUG_ASSERT (0, "Simple type conversion found undefined host simple type!");
     }
     DBUG_RETURN (res);
 }
@@ -128,7 +131,7 @@ CUisDeviceTypeNew (ntype *ty)
 {
     bool res;
 
-    DBUG_ENTER ("CUisDeviceTypeNew");
+    DBUG_ENTER ();
 
     res = TYgetSimpleType (TYgetScalar (ty)) == T_float_dev
           || TYgetSimpleType (TYgetScalar (ty)) == T_int_dev
@@ -142,7 +145,7 @@ CUisShmemTypeNew (ntype *ty)
 {
     bool res;
 
-    DBUG_ENTER ("CUisShmemTypeNew");
+    DBUG_ENTER ();
 
     res = TYgetSimpleType (TYgetScalar (ty)) == T_float_shmem
           || TYgetSimpleType (TYgetScalar (ty)) == T_int_shmem
@@ -156,7 +159,7 @@ CUisShmemTypeOld (types *ty)
 {
     bool res;
 
-    DBUG_ENTER ("CUisShmemTypeOld");
+    DBUG_ENTER ();
 
     res = TCgetBasetype (ty) == T_float_shmem || TCgetBasetype (ty) == T_int_shmem
           || TCgetBasetype (ty) == T_double_shmem;
@@ -169,7 +172,7 @@ CUisDeviceTypeOld (types *ty)
 {
     bool res;
 
-    DBUG_ENTER ("CUisDeviceTypeOld");
+    DBUG_ENTER ();
 
     res = TCgetBasetype (ty) == T_float_dev || TCgetBasetype (ty) == T_int_dev
           || TCgetBasetype (ty) == T_double_dev;
@@ -182,7 +185,7 @@ CUisDeviceArrayTypeNew (ntype *ty)
 {
     bool res;
 
-    DBUG_ENTER ("CUisDeviceArrayTypeNew");
+    DBUG_ENTER ();
 
     res = (TYgetSimpleType (TYgetScalar (ty)) == T_float_dev
            || TYgetSimpleType (TYgetScalar (ty)) == T_int_dev
@@ -191,3 +194,5 @@ CUisDeviceArrayTypeNew (ntype *ty)
 
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

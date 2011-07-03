@@ -30,7 +30,9 @@
 
 #include "remove_propagates.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -62,7 +64,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -75,7 +77,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -98,7 +100,7 @@ FreeInfo (info *info)
 node *
 RMPRmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RMPRmodule");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -123,7 +125,7 @@ RMPRmodule (node *arg_node, info *arg_info)
 node *
 RMPRfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RMPRfundef");
+    DBUG_ENTER ();
 
     if (!FUNDEF_ISSPMDFUN (arg_node)) {
         INFO_LEVEL (arg_info) += 1;
@@ -158,7 +160,7 @@ RMPRassign (node *arg_node, info *arg_info)
 {
     bool remove;
 
-    DBUG_ENTER ("RMPRassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -190,7 +192,7 @@ RMPRassign (node *arg_node, info *arg_info)
 node *
 RMPRwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RMPRwith2");
+    DBUG_ENTER ();
 
     INFO_LEVEL (arg_info) += 1;
     WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
@@ -215,7 +217,7 @@ RMPRwith2 (node *arg_node, info *arg_info)
 node *
 RMPRprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RMPRprf");
+    DBUG_ENTER ();
 
     if (INFO_LEVEL (arg_info) > 1) {
         if ((PRF_PRF (arg_node) == F_prop_obj_in)
@@ -244,7 +246,7 @@ RMPRdoRemovePropagates (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("RMPRdoRemovePropagates");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
@@ -258,3 +260,5 @@ RMPRdoRemovePropagates (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

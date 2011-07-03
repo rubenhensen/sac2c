@@ -17,7 +17,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "RTSPEC"
+#include "debug.h"
+
 #include "traverse.h"
 #include "DupTree.h"
 #include "globals.h"
@@ -37,7 +40,7 @@ MakeInfo (info *arg_info)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -49,7 +52,7 @@ MakeInfo (info *arg_info)
 static info *
 FreeInfo (info *arg_info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     arg_info = MEMfree (arg_info);
 
@@ -78,7 +81,7 @@ CreateWrapperEntry (node *arg_node, info *arg_info)
     node *vardecs = NULL;
     node *exprs = NULL;
 
-    DBUG_ENTER ("CreateWrapperEntry");
+    DBUG_ENTER ();
 
     body = FUNDEF_BODY (arg_node);
     FUNDEF_BODY (arg_node) = NULL;
@@ -181,13 +184,12 @@ RTSPECfundef (node *arg_node, info *arg_info)
     result = arg_node;
     bool wrapper_entry_created = FALSE;
 
-    DBUG_ENTER ("RTSPECfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISLOCAL (arg_node) && FUNDEF_ISWRAPPERFUN (arg_node)
         && NSequals (FUNDEF_NS (arg_node), global.modulenamespace)
         && FUNDEF_ISEXPORTED (arg_node)) {
-        DBUG_PRINT ("RTSPEC", ("Creating a wrapper entry function for: %s",
-                               FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Creating a wrapper entry function for: %s", FUNDEF_NAME (arg_node));
 
         result = CreateWrapperEntry (arg_node, arg_info);
         wrapper_entry_created = TRUE;
@@ -222,7 +224,7 @@ RTSPECfundef (node *arg_node, info *arg_info)
 node *
 RTSPECmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RTSPECmodule");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         INFO_MODULE (arg_info) = arg_node;
@@ -246,7 +248,7 @@ RTSPECmodule (node *arg_node, info *arg_info)
 node *
 RTSPECdoCreateWrapperEntries (node *arg_node)
 {
-    DBUG_ENTER ("RTSPECdoCreateWrapperEntries");
+    DBUG_ENTER ();
 
     info *info = NULL;
 
@@ -262,3 +264,5 @@ RTSPECdoCreateWrapperEntries (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

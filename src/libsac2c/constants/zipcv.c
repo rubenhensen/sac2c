@@ -18,7 +18,10 @@
 
 #include <strings.h>
 #include <stdlib.h>
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "types.h"
 
 #include "zipcv.h"
@@ -53,48 +56,48 @@
     void COzipCv##arg_ext##fun_ext (void *arg1, int pos1, void *arg2, int pos2,          \
                                     void *res, int res_pos)                              \
     {                                                                                    \
-        DBUG_ENTER (str (COzipCv##arg_ext##fun_ext));                                    \
+        DBUG_ENTER ();                                                                   \
         ((res_t *)res)[res_pos] = ((arg_t *)arg1)[pos1] fun ((arg_t *)arg2)[pos2];       \
-        DBUG_VOID_RETURN;                                                                \
+        DBUG_RETURN ();                                                                  \
     }
 
 #define COzipCvDUMMYTEMP(arg_ext, fun_ext)                                               \
     void COzipCv##arg_ext##fun_ext (void *arg1, int pos1, void *arg2, int pos2,          \
                                     void *res, int res_pos)                              \
     {                                                                                    \
-        DBUG_ENTER (str (COzipCv##arg_ext##fun_ext));                                    \
-        DBUG_ASSERT ((1 == 0), str (COzipCv##arg_ext##fun_ext called !));                \
-        DBUG_VOID_RETURN;                                                                \
+        DBUG_ENTER ();                                                                   \
+        DBUG_ASSERT (1 == 0, str (COzipCv##arg_ext##fun_ext called !));                  \
+        DBUG_RETURN ();                                                                  \
     }
 
 #define COzipCvMINMAXTEMPLATE(fun, fun_ext, arg_t, arg_ext, res_t)                       \
     void COzipCv##arg_ext##fun_ext (void *arg1, int pos1, void *arg2, int pos2,          \
                                     void *res, int res_pos)                              \
     {                                                                                    \
-        DBUG_ENTER (str (COzipCv##arg_ext##fun_ext));                                    \
+        DBUG_ENTER ();                                                                   \
         ((res_t *)res)[res_pos] = (((arg_t *)arg1)[pos1])fun (((arg_t *)arg2)[pos2])     \
                                     ? (((arg_t *)arg1)[pos1])                            \
                                     : (((arg_t *)arg2)[pos2]);                           \
-        DBUG_VOID_RETURN;                                                                \
+        DBUG_RETURN ();                                                                  \
     }
 
 #define COzipCvUNARYTEMPLATE(fun, fun_ext, arg_t, arg_ext, res_t)                        \
     void COzipCv##arg_ext##fun_ext (void *arg1, int pos1, void *arg2, int pos2,          \
                                     void *res, int res_pos)                              \
     {                                                                                    \
-        DBUG_ENTER (str (COzipCv##arg_ext##fun_ext));                                    \
+        DBUG_ENTER ();                                                                   \
         ((res_t *)res)[res_pos] = fun (((arg_t *)arg1)[pos1]);                           \
-        DBUG_VOID_RETURN;                                                                \
+        DBUG_RETURN ();                                                                  \
     }
 
 #define COzipCvABSTEMPLATE(fun, fun_ext, arg_t, arg_ext, res_t)                          \
     void COzipCv##arg_ext##fun_ext (void *arg1, int pos1, void *arg2, int pos2,          \
                                     void *res, int res_pos)                              \
     {                                                                                    \
-        DBUG_ENTER (str (COzipCv##arg_ext##fun_ext));                                    \
+        DBUG_ENTER ();                                                                   \
         ((res_t *)res)[res_pos] = (((arg_t *)arg1)[pos1]) < 0 ? (-((arg_t *)arg1)[pos1]) \
                                                               : (((arg_t *)arg1)[pos1]); \
-        DBUG_VOID_RETURN;                                                                \
+        DBUG_RETURN ();                                                                  \
     }
 
 /* macro expansion for all basetypes - or dummy if not useful */
@@ -360,3 +363,5 @@ MAP_NUMxNUM_NUM (+, Plus)
                                                         MAP_ABS_NUM_NUM (NOP, Abs)
 
                                                           MAP_NUM_NUM (-, Neg)
+
+#undef DBUG_PREFIX

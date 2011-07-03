@@ -12,7 +12,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "infer_dfms.h"
@@ -44,7 +47,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -57,7 +60,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -92,7 +95,7 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
     node *cond_ass, *phi_ass, *return_mem, *return_ass, *return_node;
     dfmask_t *in_mask;
 
-    DBUG_ENTER ("CLACFdoCreateLacFun");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
     TRAVpush (TR_clacf);
@@ -376,7 +379,7 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
 node *
 CLACFassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CLACFassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
@@ -400,7 +403,7 @@ CLACFids (node *arg_node, info *arg_info)
 {
     node *dup_avis;
 
-    DBUG_ENTER ("CLACFids");
+    DBUG_ENTER ();
 
     if (LUTsearchInLutPp (INFO_DUPLUT (arg_info), IDS_AVIS (arg_node))
         == IDS_AVIS (arg_node)) {
@@ -435,7 +438,7 @@ CLACFid (node *arg_node, info *arg_info)
 {
     node *dup_avis;
 
-    DBUG_ENTER ("CLACFids");
+    DBUG_ENTER ();
 
     if (LUTsearchInLutPp (INFO_DUPLUT (arg_info), ID_AVIS (arg_node))
         == ID_AVIS (arg_node)) {
@@ -448,3 +451,5 @@ CLACFid (node *arg_node, info *arg_info)
     }
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

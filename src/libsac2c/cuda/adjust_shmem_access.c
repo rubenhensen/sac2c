@@ -7,7 +7,10 @@
 #include "tree_compound.h"
 #include "globals.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -45,7 +48,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -58,7 +61,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -77,7 +80,7 @@ ASHAdoAdjustShmemAccess (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("ASHAdoAdjustShmemAccess");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_asha);
@@ -98,7 +101,7 @@ ASHAdoAdjustShmemAccess (node *syntax_tree)
 node *
 ASHAarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASHAarg");
+    DBUG_ENTER ();
 
     AVIS_SUBST (ARG_AVIS (arg_node)) = NULL;
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
@@ -116,7 +119,7 @@ ASHAarg (node *arg_node, info *arg_info)
 node *
 ASHAvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASHAvardec");
+    DBUG_ENTER ();
 
     AVIS_SUBST (VARDEC_AVIS (arg_node)) = NULL;
     VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
@@ -134,7 +137,7 @@ ASHAvardec (node *arg_node, info *arg_info)
 node *
 ASHAassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASHAassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
@@ -154,7 +157,7 @@ ASHAlet (node *arg_node, info *arg_info)
 {
     node *subst_avis;
 
-    DBUG_ENTER ("ASHAlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
@@ -189,7 +192,7 @@ ASHAlet (node *arg_node, info *arg_info)
 node *
 ASHAwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASHAwith");
+    DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
         INFO_LEVEL (arg_info)++;
@@ -210,7 +213,7 @@ ASHAwith (node *arg_node, info *arg_info)
 node *
 ASHApart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASHApart");
+    DBUG_ENTER ();
 
     PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
@@ -228,7 +231,7 @@ ASHApart (node *arg_node, info *arg_info)
 node *
 ASHAcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASHAcode");
+    DBUG_ENTER ();
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
@@ -247,7 +250,7 @@ ASHAprf (node *arg_node, info *arg_info)
 {
     node *subst_avis;
 
-    DBUG_ENTER ("ASHAprf");
+    DBUG_ENTER ();
 
     /* If we are in cuda withloop */
     if (INFO_LEVEL (arg_info) > 0) {
@@ -288,3 +291,5 @@ ASHAprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

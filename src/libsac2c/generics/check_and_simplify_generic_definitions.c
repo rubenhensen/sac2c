@@ -45,7 +45,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -108,7 +111,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -131,7 +134,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -157,7 +160,7 @@ CSGDdoCheckAndSimplifyGenericDefinitions (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CSGDdoCheckAndSimplifyGenericDefinitions");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -197,7 +200,7 @@ PolymorphicTypeComplies (ntype *a, ntype *b)
 {
     bool result = TRUE;
 
-    DBUG_ENTER ("PolymorphicTypeComplies");
+    DBUG_ENTER ();
 
     if (TYisArray (a)) {
         a = TYgetScalar (a);
@@ -265,7 +268,7 @@ PolymorphicTypeComplies (ntype *a, ntype *b)
 static info *
 AnnotateDefinedVars (ntype *type, ntype *def, info *arg_info)
 {
-    DBUG_ENTER ("AnnotateDefinedVars");
+    DBUG_ENTER ();
 
     if (TUisPolymorphic (def)) {
         if (TYisArray (type)) {
@@ -335,7 +338,7 @@ AnnotateDefinedVars (ntype *type, ntype *def, info *arg_info)
 node *
 CSGDmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSGDmodule");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -354,7 +357,7 @@ CSGDmodule (node *arg_node, info *arg_info)
 node *
 CSGDfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSGDfundef");
+    DBUG_ENTER ();
 
     /*
      * 0) store context in info node
@@ -441,7 +444,7 @@ CSGDfundef (node *arg_node, info *arg_info)
 node *
 CSGDarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSGDarg");
+    DBUG_ENTER ();
 
     switch (INFO_MODE (arg_info)) {
     case CSGD_normal:
@@ -569,7 +572,7 @@ CSGDarg (node *arg_node, info *arg_info)
 node *
 CSGDret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSGDret");
+    DBUG_ENTER ();
 
     INFO_RETNO (arg_info)++;
 
@@ -670,7 +673,7 @@ CSGDret (node *arg_node, info *arg_info)
 node *
 CSGDcast (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSGDcast");
+    DBUG_ENTER ();
 
     if (TUisPolymorphic (CAST_NTYPE (arg_node))) {
         INFO_CURRENT (arg_info) = arg_node;
@@ -738,7 +741,7 @@ CSGDcast (node *arg_node, info *arg_info)
 node *
 CSGDavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSGDavis");
+    DBUG_ENTER ();
 
     if (TUisPolymorphic (AVIS_TYPE (arg_node))) {
         INFO_CURRENT (arg_info) = arg_node;
@@ -806,7 +809,7 @@ CSGDavis (node *arg_node, info *arg_info)
 node *
 CSGDreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSGDreturn");
+    DBUG_ENTER ();
 
     if (RETURN_EXPRS (arg_node) != NULL) {
         RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
@@ -836,7 +839,7 @@ CSGDassign (node *arg_node, info *arg_info)
 {
     node *preassigns = NULL;
 
-    DBUG_ENTER ("CSGDassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -863,3 +866,5 @@ CSGDassign (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

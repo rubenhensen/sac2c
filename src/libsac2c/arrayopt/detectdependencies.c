@@ -54,7 +54,10 @@
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLFS"
+#include "debug.h"
+
 #include "traverse.h"
 #include "constants.h"
 #include "print.h"
@@ -88,7 +91,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -105,7 +108,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -130,15 +133,14 @@ CheckDependency (node *checkid, nodelist *nl)
     nodelist *nl_tmp;
     bool is_dependent = FALSE;
 
-    DBUG_ENTER ("CheckDependency");
+    DBUG_ENTER ();
 
     nl_tmp = nl;
 
     while (nl_tmp != NULL) {
         if (NODELIST_NODE (nl_tmp) == AVIS_SSAASSIGN (ID_AVIS (checkid))) {
             is_dependent = TRUE;
-            DBUG_PRINT ("WLFS",
-                        ("Dependency found for %s\n", AVIS_NAME (ID_AVIS (checkid))));
+            DBUG_PRINT ("Dependency found for %s\n", AVIS_NAME (ID_AVIS (checkid)));
             break;
         }
         nl_tmp = NODELIST_NEXT (nl_tmp);
@@ -162,10 +164,10 @@ CheckPrfSel (node *arg_node, info *arg_info)
 {
     node *sel;
 
-    DBUG_ENTER ("CheckPrfSel");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLFS", ("consider following selection:"));
-    DBUG_EXECUTE ("WLFS", PRTdoPrintNode (arg_node););
+    DBUG_PRINT ("consider following selection:");
+    DBUG_EXECUTE (PRTdoPrintNode (arg_node));
 
     /* only if WL is independent so far */
     if (!INFO_DDEPEND_WLDEPENDENT (arg_info)) {
@@ -188,7 +190,7 @@ CheckPrfSel (node *arg_node, info *arg_info)
                 && (ID_AVIS (sel)
                     == IDS_AVIS (WITHID_VEC (INFO_DDEPEND_WITHID (arg_info))))) {
 
-                DBUG_PRINT ("WLFS", ("selection is resolveable"));
+                DBUG_PRINT ("selection is resolveable");
 
                 INFO_DDEPEND_WLDEPENDENT (arg_info) = FALSE;
                 INFO_DDEPEND_RESOLVEABLE_DEPENDENCIES (arg_info) = TRUE;
@@ -221,7 +223,7 @@ CheckPrfSel (node *arg_node, info *arg_info)
 node *
 DDEPENDassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DDEPENDassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     if (INFO_DDEPEND_WLDEPENDENT (arg_info)) {
@@ -248,7 +250,7 @@ DDEPENDassign (node *arg_node, info *arg_info)
 node *
 DDEPENDprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DDEPENDprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_sel_VxA:
@@ -279,13 +281,12 @@ DDEPENDid (node *arg_node, info *arg_info)
 {
     bool is_dependent;
 
-    DBUG_ENTER ("DDEPENDid");
+    DBUG_ENTER ();
 
     if (INFO_DDEPEND_CHECK_DIRECT_DEPENDENCY (arg_info)) {
         if (AVIS_SSAASSIGN (ID_AVIS (arg_node))
             == INFO_DDEPEND_FUSIONABLE_WL (arg_info)) {
-            DBUG_PRINT ("WLFS", ("found direct dependency for %s",
-                                 AVIS_NAME (ID_AVIS (arg_node))));
+            DBUG_PRINT ("found direct dependency for %s", AVIS_NAME (ID_AVIS (arg_node)));
             is_dependent = TRUE;
         } else
             is_dependent = FALSE;
@@ -316,14 +317,14 @@ DDEPENDid (node *arg_node, info *arg_info)
 node *
 DDEPENDwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DDEPENDwith");
+    DBUG_ENTER ();
 
     INFO_DDEPEND_WITHID (arg_info) = WITH_WITHID (arg_node);
 
     /*
      * Traverse into parts
      */
-    DBUG_ASSERT ((WITH_PART (arg_node) != NULL), "no Part is available!");
+    DBUG_ASSERT (WITH_PART (arg_node) != NULL, "no Part is available!");
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
     /*
@@ -353,7 +354,7 @@ DDEPENDwith (node *arg_node, info *arg_info)
 node *
 DDEPENDcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DDEPENDcode");
+    DBUG_ENTER ();
 
     CODE_HASRESOLVEABLEDEPENDENCIES (arg_node) = FALSE;
 
@@ -373,7 +374,7 @@ DDEPENDcode (node *arg_node, info *arg_info)
      */
     if (INFO_DDEPEND_RESOLVEABLE_DEPENDENCIES (arg_info)
         && !INFO_DDEPEND_WLDEPENDENT (arg_info)) {
-        DBUG_PRINT ("WLFS", ("code contains resolveable dependencies"));
+        DBUG_PRINT ("code contains resolveable dependencies");
         CODE_HASRESOLVEABLEDEPENDENCIES (arg_node) = TRUE;
     }
 
@@ -404,16 +405,16 @@ DDEPENDdoDetectDependencies (node *with, node *fusionable_wl, nodelist *referenc
 {
     info *arg_info;
 
-    DBUG_ENTER ("DEPENDdoDetectDependencies");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (with) == N_with),
+    DBUG_ASSERT (NODE_TYPE (with) == N_with,
                  "DEPENDdoDetectDependencies not started with N_with node");
 
-    DBUG_ASSERT ((fusionable_wl != NULL), "no fusionable withloop found");
+    DBUG_ASSERT (fusionable_wl != NULL, "no fusionable withloop found");
 
-    DBUG_ASSERT ((references_fwl != NULL), "no references on fusionable withloop found");
+    DBUG_ASSERT (references_fwl != NULL, "no references on fusionable withloop found");
 
-    DBUG_PRINT ("WLFS", ("starting detection of dependencies"));
+    DBUG_PRINT ("starting detection of dependencies");
 
     arg_info = MakeInfo ();
 
@@ -432,9 +433,11 @@ DDEPENDdoDetectDependencies (node *with, node *fusionable_wl, nodelist *referenc
 
     WITH_ISDEPENDENT (with) = INFO_DDEPEND_WLDEPENDENT (arg_info);
 
-    DBUG_PRINT ("WLFS", ("detection of dependencies complete"));
+    DBUG_PRINT ("detection of dependencies complete");
 
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (with);
 }
+
+#undef DBUG_PREFIX

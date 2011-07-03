@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "dbug.h"
+#define DBUG_PREFIX "BEtest"
+#include "debug.h"
 
 #include "globals.h"
 
@@ -44,7 +45,7 @@ main (int argc, char *argv[])
     int scanf_res;
     char c;
 
-    DBUG_ENTER ("main");
+    DBUG_ENTER ();
 
     /*
      * preset some globals used for the compilation of ICM's
@@ -61,7 +62,7 @@ main (int argc, char *argv[])
             buffer[STRlen (buffer) - 1] = '\0';
         }
 
-        DBUG_PRINT ("BEtest", ("icm found: %s\n", buffer));
+        DBUG_PRINT ("icm found: %s\n", buffer);
 
 #define ICM_ALL
 #include "icm_betest.c"
@@ -86,3 +87,5 @@ main (int argc, char *argv[])
 
     DBUG_RETURN (0);
 }
+
+#undef DBUG_PREFIX

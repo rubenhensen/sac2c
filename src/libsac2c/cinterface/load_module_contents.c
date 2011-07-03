@@ -2,7 +2,9 @@
 
 #include "load_module_contents.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "LMC"
+#include "debug.h"
+
 #include "globals.h"
 #include "tree_basic.h"
 #include "namespaces.h"
@@ -17,7 +19,7 @@
 static node *
 CheckForObjdefs (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CheckForObjdefs");
+    DBUG_ENTER ();
 
     CTIerror ("Wrapper cannot be built due to global object `%s'.",
               CTIitemName (arg_node));
@@ -36,9 +38,9 @@ LoadModule (const char *name, strstype_t kind, node *syntax_tree)
     const sttable_t *table;
     stsymboliterator_t *iterator;
 
-    DBUG_ENTER ("LoadModule");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("LMC", ("Loading module '%s'.", name));
+    DBUG_PRINT ("Loading module '%s'.", name);
 
     module = MODMloadModule (name);
     table = MODMgetSymbolTable (module);
@@ -49,7 +51,7 @@ LoadModule (const char *name, strstype_t kind, node *syntax_tree)
 
         if ((STsymbolVisibility (symbol) == SVT_provided)
             || (STsymbolVisibility (symbol) == SVT_exported)) {
-            DBUG_PRINT ("LMC", ("Adding Symbol '%s'.", STsymbolName (symbol)));
+            DBUG_PRINT ("Adding Symbol '%s'.", STsymbolName (symbol));
 
             DSaddSymbolByName (STsymbolName (symbol), SET_wrapperhead, name);
         }
@@ -68,9 +70,9 @@ LMCdoLoadModuleContents (node *syntax_tree)
 {
     anontrav_t checktypes[2] = {{N_objdef, &CheckForObjdefs}, {0, NULL}};
 
-    DBUG_ENTER ("LMCdoLoadModuleContents");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((syntax_tree == NULL),
+    DBUG_ASSERT (syntax_tree == NULL,
                  "SMCdoLoadModuleContents can only be called as long as no syntax tree "
                  "has been created!");
 
@@ -94,3 +96,5 @@ LMCdoLoadModuleContents (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

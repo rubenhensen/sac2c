@@ -10,7 +10,10 @@
  */
 
 #include "serialize_filenames.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "filemgr.h"
@@ -31,7 +34,7 @@ SFNgetId (const char *filename)
     filenamedb_t *names;
     int result;
 
-    DBUG_ENTER ("SFNgetId");
+    DBUG_ENTER ();
 
     if (database == NULL) {
         database = (filenamedb_t *)MEMmalloc (sizeof (filenamedb_t));
@@ -76,7 +79,7 @@ SFNgenerateFilenameTable ()
     int cnt;
     filenamedb_t *names;
 
-    DBUG_ENTER ("SFNgenerateFilenameTable");
+    DBUG_ENTER ();
 
     filec = FMGRwriteOpen ("%s/filenames.c", global.tmp_dirname);
     fileh = FMGRwriteOpen ("%s/filenames.h", global.tmp_dirname);
@@ -103,5 +106,7 @@ SFNgenerateFilenameTable ()
     fclose (filec);
     fclose (fileh);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

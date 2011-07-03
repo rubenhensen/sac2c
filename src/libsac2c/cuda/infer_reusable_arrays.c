@@ -7,7 +7,10 @@
 #include "tree_compound.h"
 #include "globals.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -58,7 +61,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -77,7 +80,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -138,7 +141,7 @@ SearchRc (node *arr, rc_t *rc_list)
 {
     rc_t *rc = NULL;
 
-    DBUG_ENTER ("SearchRc");
+    DBUG_ENTER ();
 
     while (rc_list != NULL) {
         if (arr == RC_ARRAY (rc_list)) {
@@ -165,7 +168,7 @@ ConsolidateRcs (rc_t *rc_list, info *arg_info)
     int dim, i, negoff, posoff, block_sz = -1, extent, shmem_sz = 1;
     node *shmem_shp = NULL;
 
-    DBUG_ENTER ("ConsolidateRcs");
+    DBUG_ENTER ();
 
     rc = rc_list;
 
@@ -177,7 +180,7 @@ ConsolidateRcs (rc_t *rc_list, info *arg_info)
         } else if (dim == 2) {
             block_sz = 16;
         } else {
-            DBUG_ASSERT ((0), "Reusable array with dimension greater than 2!");
+            DBUG_ASSERT (0, "Reusable array with dimension greater than 2!");
         }
 
         for (i = dim - 1; i >= 0; i--) {
@@ -225,7 +228,7 @@ IRAdoInterReusableArrays (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("IRAdoInterReusableArrays");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_ira);
@@ -246,7 +249,7 @@ IRAdoInterReusableArrays (node *syntax_tree)
 node *
 IRAfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IRAfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -265,7 +268,7 @@ IRAfundef (node *arg_node, info *arg_info)
 node *
 IRAassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IRAassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -286,7 +289,7 @@ IRAassign (node *arg_node, info *arg_info)
 node *
 IRAwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IRAwith");
+    DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
         INFO_LEVEL (arg_info)++;
@@ -307,7 +310,7 @@ IRAwith (node *arg_node, info *arg_info)
 node *
 IRApart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IRApart");
+    DBUG_ENTER ();
 
     if (CODE_IRA_INFO (PART_CODE (arg_node)) == NULL) {
         INFO_WITHIDS (arg_info) = PART_IDS (arg_node);
@@ -329,7 +332,7 @@ IRApart (node *arg_node, info *arg_info)
 node *
 IRAcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IRAcode");
+    DBUG_ENTER ();
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
@@ -357,7 +360,7 @@ IRAcode (node *arg_node, info *arg_info)
 node *
 IRAprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IRAprf");
+    DBUG_ENTER ();
 
     /* If we are in cuda withloop */
     if (INFO_LEVEL (arg_info) > 0) {
@@ -410,7 +413,7 @@ IRAprf (node *arg_node, info *arg_info)
             bool selfref = TRUE;
 
             rc = INFO_CURRENT_RC (arg_info);
-            DBUG_ASSERT ((rc != NULL), "Null reuse candidate found!");
+            DBUG_ASSERT (rc != NULL, "Null reuse candidate found!");
 
             pat1 = PMprf (1, PMAisPrf (F_sub_SxS), 2, PMvar (1, PMAgetNode (&id), 0),
                           PMint (1, PMAgetIVal (&off), 0));
@@ -472,3 +475,5 @@ IRAprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

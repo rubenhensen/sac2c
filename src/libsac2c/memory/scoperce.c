@@ -22,7 +22,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "print.h"
 #include "str.h"
 #include "memory.h"
@@ -55,7 +58,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -70,7 +73,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -91,7 +94,7 @@ FreeInfo (info *info)
 node *
 SRCEdoRemoveReuseCandidates (node *syntax_tree)
 {
-    DBUG_ENTER ("SRCEdoRemoveReuseCandidates");
+    DBUG_ENTER ();
 
     TRAVpush (TR_srce);
     syntax_tree = TRAVdo (syntax_tree, NULL);
@@ -115,7 +118,7 @@ SRCEdoRemoveReuseCandidates (node *syntax_tree)
 node *
 SRCEfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SRCEfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISLACFUN (arg_node) && (arg_info != NULL)) {
         if (FUNDEF_BODY (arg_node) != NULL) {
@@ -162,7 +165,7 @@ SRCEfundef (node *arg_node, info *arg_info)
 node *
 SRCEarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SRCEarg");
+    DBUG_ENTER ();
 
     DFMsetMaskEntrySet (INFO_RCMASK (arg_info), NULL, ARG_AVIS (arg_node));
 
@@ -181,7 +184,7 @@ SRCEarg (node *arg_node, info *arg_info)
 node *
 SRCEassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SRCEassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -200,7 +203,7 @@ SRCEassign (node *arg_node, info *arg_info)
 node *
 SRCElet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SRCElet");
+    DBUG_ENTER ();
 
     if (LET_IDS (arg_node) != NULL) {
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
@@ -219,7 +222,7 @@ SRCElet (node *arg_node, info *arg_info)
 node *
 SRCEids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SRCEids");
+    DBUG_ENTER ();
 
     DFMsetMaskEntrySet (INFO_RCMASK (arg_info), NULL, IDS_AVIS (arg_node));
 
@@ -238,7 +241,7 @@ SRCEids (node *arg_node, info *arg_info)
 node *
 SRCEap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SRCEap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
@@ -284,7 +287,7 @@ SRCEcode (node *arg_node, info *arg_info)
 {
     dfmask_t *oldmask;
 
-    DBUG_ENTER ("SRCEcode");
+    DBUG_ENTER ();
 
     oldmask = INFO_RCMASK (arg_info);
     INFO_RCMASK (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
@@ -311,7 +314,7 @@ SRCEcode (node *arg_node, info *arg_info)
 node *
 SRCEprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SRCEprf");
+    DBUG_ENTER ();
 
     if ((PRF_PRF (arg_node) == F_alloc_or_reuse)
         || (PRF_PRF (arg_node) == F_alloc_or_reshape)
@@ -341,7 +344,7 @@ SRCEprf (node *arg_node, info *arg_info)
 node *
 SRCEexprs (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SRCEexprs");
+    DBUG_ENTER ();
 
     if (INFO_RCELIM (arg_info)) {
 
@@ -359,3 +362,5 @@ SRCEexprs (node *arg_node, info *arg_info)
 }
 
 /* @} */
+
+#undef DBUG_PREFIX

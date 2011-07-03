@@ -4,7 +4,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "DataFlowMask.h"
@@ -37,7 +40,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -51,7 +54,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -63,7 +66,7 @@ STKNLdoSingleThreadKernels (node *syntax_tree)
 {
     info *arg_info;
 
-    DBUG_ENTER ("STKNLdoSingleThreadKernels");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -94,7 +97,7 @@ STKNLdoSingleThreadKernels (node *syntax_tree)
 node *
 STKNLmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("STKNLmodule");
+    DBUG_ENTER ();
 
     INFO_NS (arg_info) = MODULE_NAMESPACE (arg_node);
 
@@ -117,7 +120,7 @@ STKNLmodule (node *arg_node, info *arg_info)
 node *
 STKNLfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("STKNLfundef");
+    DBUG_ENTER ();
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
@@ -147,7 +150,7 @@ STKNLfundef (node *arg_node, info *arg_info)
 node *
 STKNLassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("STKNLassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -182,7 +185,7 @@ STKNLcudast (node *arg_node, info *arg_info)
     dfmask_t *ret_mask, *arg_mask, *local_mask;
     node *region;
 
-    DBUG_ENTER ("STKNLcudast");
+    DBUG_ENTER ();
 
     region = CUDAST_REGION (arg_node);
 
@@ -227,3 +230,5 @@ STKNLcudast (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

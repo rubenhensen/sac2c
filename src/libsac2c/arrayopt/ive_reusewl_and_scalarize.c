@@ -2,7 +2,9 @@
 
 #include "ive_reusewl_and_scalarize.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "IVERAS"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -56,7 +58,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -72,7 +74,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -145,7 +147,7 @@ Nids2Nid (node *withids)
 {
     node *z = NULL;
 
-    DBUG_ENTER ("Nids2Nid");
+    DBUG_ENTER ();
 
     if (NULL != withids) {
         z = TBmakeExprs (TBmakeId (IDS_AVIS (withids)), (NULL != IDS_NEXT (withids))
@@ -175,10 +177,10 @@ GenOffsetInfo (node *lhs, node *withops)
     offsetinfo *result;
     offsetinfo *next;
 
-    DBUG_ENTER ("GenOffsetInfo");
+    DBUG_ENTER ();
 
     if (lhs != NULL) {
-        DBUG_ASSERT ((withops != NULL), "# withops does not match # lhs ids");
+        DBUG_ASSERT (withops != NULL, "# withops does not match # lhs ids");
 
         next = GenOffsetInfo (IDS_NEXT (lhs), WITHOP_NEXT (withops));
 
@@ -188,8 +190,8 @@ GenOffsetInfo (node *lhs, node *withops)
              * only genarray and modarray wls have a built in index.
              */
 
-            DBUG_PRINT ("IVEO", ("adding offset %s and lhs id %s", WITHOP_IDX (withops),
-                                 AVIS_NAME (IDS_AVIS (lhs))));
+            DBUG_PRINT_TAG ("IVEO", "adding offset %s and lhs id %s",
+                            WITHOP_IDX (withops), AVIS_NAME (IDS_AVIS (lhs)));
 
             result = MEMmalloc (sizeof (offsetinfo));
 
@@ -218,7 +220,7 @@ GenOffsetInfo (node *lhs, node *withops)
 static offsetinfo *
 FreeOffsetInfo (offsetinfo *info)
 {
-    DBUG_ENTER ("FreeOffsetInfo");
+    DBUG_ENTER ();
 
     if (info != NULL) {
         WITHOFFSET_NEXT (info) = FreeOffsetInfo (WITHOFFSET_NEXT (info));
@@ -248,10 +250,9 @@ PushIV (ivinfo *info, node *withid, node *lhs, node *withops)
 {
     ivinfo *result;
 
-    DBUG_ENTER ("PushIV");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVERAS",
-                ("adding WL withid %s", AVIS_NAME (IDS_AVIS (WITHID_VEC (withid)))));
+    DBUG_PRINT ("adding WL withid %s", AVIS_NAME (IDS_AVIS (WITHID_VEC (withid))));
 
     result = MEMmalloc (sizeof (ivinfo));
 
@@ -283,11 +284,11 @@ PopIV (ivinfo *info)
 {
     ivinfo *result;
 
-    DBUG_ENTER ("PopIV");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((info != NULL), "IVINFO stack already empty!");
+    DBUG_ASSERT (info != NULL, "IVINFO stack already empty!");
 
-    DBUG_PRINT ("IVERAS", ("removing withid %s", AVIS_NAME (WITHIV_IV (info))));
+    DBUG_PRINT ("removing withid %s", AVIS_NAME (WITHIV_IV (info)));
 
     result = WITHIV_NEXT (info);
 
@@ -318,7 +319,7 @@ PushLocalOffset (ivinfo *ivinfo, node *avis, node *shapeexpr)
 {
     offsetinfo *newinfo;
 
-    DBUG_ENTER ("PushLocalOffset");
+    DBUG_ENTER ();
 
     newinfo = MEMmalloc (sizeof (offsetinfo));
 
@@ -346,7 +347,7 @@ PushLocalOffset (ivinfo *ivinfo, node *avis, node *shapeexpr)
 static ivinfo *
 PopLocalOffsets (ivinfo *ivinfo)
 {
-    DBUG_ENTER ("PopLocalOffsets");
+    DBUG_ENTER ();
 
     WITHIV_LOCALOFFSETS (ivinfo) = FreeOffsetInfo (WITHIV_LOCALOFFSETS (ivinfo));
 
@@ -375,9 +376,9 @@ FindIVOffset (ivinfo *info, node *iv, node *shapeexpr)
     node *arrayRestA, *arrayRestB;
     int one = 1;
 
-    DBUG_ENTER ("FindIVOffset");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVERAS", ("looking up offset for %s.", AVIS_NAME (iv)));
+    DBUG_PRINT ("looking up offset for %s.", AVIS_NAME (iv));
 
     while ((info != NULL) && (WITHIV_IV (info) != iv)) {
         info = WITHIV_NEXT (info);
@@ -403,9 +404,9 @@ FindIVOffset (ivinfo *info, node *iv, node *shapeexpr)
                    || ((arrayRestA != NULL) && (NULL == arrayRestB))
                    || !((arrayRestA == arrayRestB)
                         || (CMPTdoCompareTree (arrayRestA, arrayRestB) == CMPT_EQ)))) {
-            DBUG_PRINT ("IVERAS", ("no match"));
-            DBUG_EXECUTE ("IVERAS", PRTdoPrintNode (shapeexpr);
-                          PRTdoPrintNode (WITHOFFSET_SHAPEEXPR (oinfo)););
+            DBUG_PRINT ("no match");
+            DBUG_EXECUTE (PRTdoPrintNode (shapeexpr);
+                          PRTdoPrintNode (WITHOFFSET_SHAPEEXPR (oinfo)));
             oinfo = WITHOFFSET_NEXT (oinfo);
         }
 
@@ -457,7 +458,7 @@ FindIVScalars (ivinfo *info, node *iv)
 {
     node *result = NULL;
 
-    DBUG_ENTER ("FindIVScalars");
+    DBUG_ENTER ();
 
     while ((info != NULL) && (WITHIV_IV (info) != iv)) {
         info = WITHIV_NEXT (info);
@@ -492,9 +493,9 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
     node *offset;
     node *scalars;
 
-    DBUG_ENTER ("ReplaceByWithOffset");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_IVINFO (arg_info) != NULL),
+    DBUG_ASSERT (INFO_IVINFO (arg_info) != NULL,
                  "found an id which was identified as a withid (no SSAASSIGN "
                  "and not N_arg) although not inside a withloop.");
 
@@ -502,13 +503,13 @@ ReplaceByWithOffset (node *arg_node, info *arg_info)
                            PRF_ARG1 (arg_node));
 
     if ((offset != NULL) && (global.iveo & IVEO_wlidx)) {
-        DBUG_PRINT ("IVEO", ("replacing vect2offset by wlidx %s",
-                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+        DBUG_PRINT_TAG ("IVEO", "replacing vect2offset by wlidx %s",
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
 
         arg_node = FREEdoFreeNode (arg_node);
         arg_node = TBmakeId (offset);
     } else if (global.iveo & IVEO_idxs) {
-        DBUG_PRINT ("IVERAS", ("replacing vect2offset by wl-idxs2offset"));
+        DBUG_PRINT ("replacing vect2offset by wl-idxs2offset");
 
         scalars = FindIVScalars (INFO_IVINFO (arg_info), ID_AVIS (PRF_ARG2 (arg_node)));
         scalars = Nids2Nid (scalars);
@@ -564,7 +565,7 @@ FlattenEachExprsNode (node *arg_node, info *arg_info)
     node *exprs;
     ntype *typ;
 
-    DBUG_ENTER ("FlattenEachExprsNode");
+    DBUG_ENTER ();
 
     z = NULL;
 
@@ -600,16 +601,16 @@ ReplaceByIdx2Offset (node *arg_node, info *arg_info)
     node *idxs;
     node *shape;
 
-    DBUG_ENTER ("ReplaceByIdx2Offset");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (PRF_ARG2 (arg_node)) == N_id),
+    DBUG_ASSERT (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id,
                  "ReplaceByIdx2Offset called with iv being non N_id node");
-    DBUG_ASSERT ((AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node))) != NULL),
+    DBUG_ASSERT (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node))) != NULL,
                  "ReplaceByIdx2Offset with AVIS_SSAASSIGN of iv being NULL");
 
     ivassign = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)));
 
-    DBUG_ASSERT ((NODE_TYPE (ASSIGN_RHS (ivassign)) == N_array),
+    DBUG_ASSERT (NODE_TYPE (ASSIGN_RHS (ivassign)) == N_array,
                  "ReplaceByIdx2Offset with non N_array AVIS_SSAASSIGN");
 
     idxs = ARRAY_AELEMS (ASSIGN_RHS (ivassign));
@@ -621,10 +622,10 @@ ReplaceByIdx2Offset (node *arg_node, info *arg_info)
             || ((NODE_TYPE (shape) == N_array)
                 && (TCcountExprs (ARRAY_AELEMS (shape)) == 1)))) {
         /* trivial case: the index is the offset :-) */
-        DBUG_PRINT ("IVERAS", ("replacing by trivial offset (1d case)"));
+        DBUG_PRINT ("replacing by trivial offset (1d case)");
         result = DUPdoDupTree (EXPRS_EXPR (idxs));
     } else {
-        DBUG_PRINT ("IVERAS", ("replacing by idxs2offset"));
+        DBUG_PRINT ("replacing by idxs2offset");
         idxs = FlattenEachExprsNode (idxs, arg_info);
         result = TBmakePrf (F_idxs2offset,
                             TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)), idxs));
@@ -653,7 +654,7 @@ IVERASassign (node *arg_node, info *arg_info)
 {
     node *oldpreassigns;
 
-    DBUG_ENTER ("IVERASassign");
+    DBUG_ENTER ();
 
     oldpreassigns = INFO_PREASSIGNS (arg_info);
     INFO_PREASSIGNS (arg_info) = NULL;
@@ -681,11 +682,11 @@ IVERASassign (node *arg_node, info *arg_info)
 node *
 IVERASlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVERASlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 
-    DBUG_PRINT ("IVERAS", ("Looking at %s...", IDS_NAME (LET_IDS (arg_node))));
+    DBUG_PRINT ("Looking at %s...", IDS_NAME (LET_IDS (arg_node)));
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -709,12 +710,11 @@ IVERASlet (node *arg_node, info *arg_info)
 node *
 IVERASpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVERASpart");
+    DBUG_ENTER ();
 
     if (global.ssaiv) {
-        DBUG_PRINT ("IVERAS",
-                    ("Adding partition withid %s",
-                     AVIS_NAME (IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node))))));
+        DBUG_PRINT ("Adding partition withid %s",
+                    AVIS_NAME (IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node)))));
         WITHIV_IV (INFO_IVINFO (arg_info))
           = IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node)));
         WITHIV_SCALARS (INFO_IVINFO (arg_info)) = WITHID_IDS (PART_WITHID (arg_node));
@@ -738,10 +738,10 @@ IVERASpart (node *arg_node, info *arg_info)
 node *
 IVERASwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVERASwith");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVERAS", ("Handling WL for partition 0 WITHID: %s",
-                           AVIS_NAME (IDS_AVIS (WITHID_VEC (WITH_WITHID (arg_node))))));
+    DBUG_PRINT ("Handling WL for partition 0 WITHID: %s",
+                AVIS_NAME (IDS_AVIS (WITHID_VEC (WITH_WITHID (arg_node)))));
 
     INFO_IVINFO (arg_info) = PushIV (INFO_IVINFO (arg_info), WITH_WITHID (arg_node),
                                      INFO_LHS (arg_info), WITH_WITHOP (arg_node));
@@ -766,7 +766,7 @@ IVERASwith (node *arg_node, info *arg_info)
 node *
 IVERAScode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVERAScode");
+    DBUG_ENTER ();
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
@@ -796,7 +796,7 @@ IVERASprf (node *arg_node, info *arg_info)
     node *ivarg;
     node *ivassign;
 
-    DBUG_ENTER ("IVERASprf");
+    DBUG_ENTER ();
 
     if (PRF_PRF (arg_node) == F_vect2offset) {
         ivarg = PRF_ARG2 (arg_node);
@@ -809,8 +809,8 @@ IVERASprf (node *arg_node, info *arg_info)
                  * this index vector is defined as a array of
                  * scalars.
                  */
-                DBUG_PRINT ("IVERAS", ("Trying to scalarise vect2offset for iv %s...",
-                                       AVIS_NAME (ID_AVIS (ivarg))));
+                DBUG_PRINT ("Trying to scalarise vect2offset for iv %s...",
+                            AVIS_NAME (ID_AVIS (ivarg)));
 
                 arg_node = ReplaceByIdx2Offset (arg_node, arg_info);
             }
@@ -824,9 +824,8 @@ IVERASprf (node *arg_node, info *arg_info)
                  * the lhs avis for this shape for later use. This is done
                  * by ReplaceByWithOffset.
                  */
-                DBUG_PRINT ("IVERAS",
-                            ("Trying to replace vect2offset for iv %s by wlidx...",
-                             AVIS_NAME (ID_AVIS (ivarg))));
+                DBUG_PRINT ("Trying to replace vect2offset for iv %s by wlidx...",
+                            AVIS_NAME (ID_AVIS (ivarg)));
 
                 arg_node = ReplaceByWithOffset (arg_node, arg_info);
             }
@@ -848,11 +847,11 @@ node *
 IVERASfundef (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("IVERASfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVERAS", ("IVERAS in %s %s begins",
-                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                           FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("IVERAS in %s %s begins",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                FUNDEF_NAME (arg_node));
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     /* If new vardecs were made, append them to the current set */
@@ -862,9 +861,9 @@ IVERASfundef (node *arg_node, info *arg_info)
                             BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
         INFO_VARDECS (arg_info) = NULL;
     }
-    DBUG_PRINT ("IVERAS", ("IVERAS in %s %s ends",
-                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                           FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("IVERAS in %s %s ends",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                FUNDEF_NAME (arg_node));
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
@@ -884,7 +883,7 @@ IVERASdoWithloopReuseAndOptimisation (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("IVEIdoWithloopReuseAndOptimisation");
+    DBUG_ENTER ();
 
     TRAVpush (TR_iveras);
 
@@ -898,3 +897,5 @@ IVERASdoWithloopReuseAndOptimisation (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

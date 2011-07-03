@@ -76,7 +76,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "ARMP"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -115,7 +118,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -131,7 +134,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_WITH3 (info) == FALSE, "Finished traversal in with3 loop");
 
@@ -168,17 +171,17 @@ ARMPdoAddRcModePrf (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("ARMPdoAddRcModePrf");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("ARMP", ("Starting Add RC Mode PRF traversal."));
+    DBUG_PRINT ("Starting Add RC Mode PRF traversal.");
 
     TRAVpush (TR_armp);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("ARMP", ("Add RC Mode complete."));
+    DBUG_PRINT ("Add RC Mode complete.");
 
     info = FreeInfo (info);
 
@@ -218,7 +221,7 @@ node *
 ARMPwith3 (node *arg_node, info *arg_info)
 {
     bool stack;
-    DBUG_ENTER ("ARMPwith3");
+    DBUG_ENTER ();
 
     stack = INFO_WITH3 (arg_info);
     INFO_WITH3 (arg_info) = TRUE;
@@ -240,7 +243,7 @@ ARMPwith3 (node *arg_node, info *arg_info)
 node *
 ARMPassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ARMPwith3");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -272,7 +275,7 @@ ARMPassign (node *arg_node, info *arg_info)
 node *
 ARMPap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ARMPap");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -309,7 +312,7 @@ ARMPap (node *arg_node, info *arg_info)
 node *
 ARMPid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ARMPid");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -392,7 +395,7 @@ ARMPid (node *arg_node, info *arg_info)
 node *
 ARMPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ARMPfundef");
+    DBUG_ENTER ();
 
     /* Next first */
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -422,3 +425,5 @@ ARMPfundef (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

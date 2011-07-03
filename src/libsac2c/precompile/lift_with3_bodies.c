@@ -45,7 +45,10 @@
  *****************************************************************************/
 
 #include "lift_with3_bodies.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "LookUpTable.h"
 #include "DataFlowMask.h"
@@ -110,7 +113,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -135,12 +138,12 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_AT_EXPRS_IDS (info) == NULL),
+    DBUG_ASSERT (INFO_AT_EXPRS_IDS (info) == NULL,
                  "Leaking memory in AT_EXPRS_IDS chain");
-    DBUG_ASSERT ((INFO_PREASSIGNS (info) == NULL), "Leaking memory in PREASSIGNS");
-    DBUG_ASSERT ((INFO_SHAREDS (info) == NULL), "Shareds not null");
+    DBUG_ASSERT (INFO_PREASSIGNS (info) == NULL, "Leaking memory in PREASSIGNS");
+    DBUG_ASSERT (INFO_SHAREDS (info) == NULL, "Shareds not null");
 
     INFO_AT_LUT (info) = LUTremoveLut (INFO_AT_LUT (info));
     INFO_AT_INIT_LUT (info) = LUTremoveLut (INFO_AT_INIT_LUT (info));
@@ -158,7 +161,7 @@ FreeInfo (info *info)
 static node *
 ATravFundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravFundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -184,14 +187,14 @@ ATravFundef (node *arg_node, info *arg_info)
 static
 void AddVardec2DFM( dfmask_t *mask, node *vardec)
 {
-  DBUG_ENTER( "AddVardec2DFM");
+  DBUG_ENTER ();
 
   if ( vardec != NULL){
     DFMsetMaskEntrySet( mask, NULL, VARDEC_AVIS( vardec));
     AddVardec2DFM( mask, VARDEC_NEXT( vardec));
   }
   
-  DBUG_VOID_RETURN;
+  DBUG_RETURN ();
 }
 #endif
 /** <!-- ****************************************************************** -->
@@ -204,7 +207,7 @@ static node *
 ATravBlock (node *arg_node, info *arg_info)
 {
     node *stack = NULL;
-    DBUG_ENTER ("ATravBlock");
+    DBUG_ENTER ();
 
     stack = INFO_SHAREDS (arg_info);
     INFO_SHAREDS (arg_info) = NULL;
@@ -247,12 +250,11 @@ Exprs2IdsWhenFold (node *exprs, node *ops, lut_t *lut)
 {
     node *ids = NULL;
     node *next;
-    DBUG_ENTER ("Exprs2IdsWhenFold");
+    DBUG_ENTER ();
 
     if (exprs != NULL) {
-        DBUG_ASSERT ((ops != NULL), "Results and withops have different lengths");
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id),
-                     "Expected an id in result");
+        DBUG_ASSERT (ops != NULL, "Results and withops have different lengths");
+        DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id, "Expected an id in result");
 
         next = Exprs2IdsWhenFold (EXPRS_NEXT (exprs), WITHOP_NEXT (ops), lut);
 
@@ -278,10 +280,10 @@ Exprs2IdsWhenFold (node *exprs, node *ops, lut_t *lut)
 static lut_t *
 PairWithopsIds (lut_t *lut, node *withops, node *ids)
 {
-    DBUG_ENTER ("PairWithopsIds");
+    DBUG_ENTER ();
 
     if (withops != NULL) {
-        DBUG_ASSERT ((ids != NULL), "Less ids than withops");
+        DBUG_ASSERT (ids != NULL, "Less ids than withops");
         lut = LUTinsertIntoLutP (lut, withops, ids);
 
         lut = PairWithopsIds (lut, WITHOP_NEXT (withops), IDS_NEXT (ids));
@@ -298,7 +300,7 @@ static node *
 ATravWith3 (node *arg_node, info *arg_info)
 {
     node *stack;
-    DBUG_ENTER ("ATravWith3");
+    DBUG_ENTER ();
 
     stack = INFO_WITHOPS (arg_info);
     INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
@@ -322,7 +324,7 @@ ATravWith3 (node *arg_node, info *arg_info)
 static node *
 ATravRange (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravRange");
+    DBUG_ENTER ();
 
     INFO_AT_EXPRS_IDS (arg_info)
       = Exprs2IdsWhenFold (RANGE_RESULTS (arg_node), INFO_WITHOPS (arg_info),
@@ -358,10 +360,10 @@ IdsIdsToShareds (node *ids, node *ids2, lut_t *lut, lut_t *init_lut)
     node *args = NULL;
     ntype *type;
     node *fold;
-    DBUG_ENTER ("IdsIdsToShareds");
+    DBUG_ENTER ();
 
     if (ids != NULL) {
-        DBUG_ASSERT ((ids2 != NULL), "Expected two lists of the same length");
+        DBUG_ASSERT (ids2 != NULL, "Expected two lists of the same length");
 
         args = IdsIdsToShareds (IDS_NEXT (ids), IDS_NEXT (ids2), lut, init_lut);
 
@@ -372,14 +374,14 @@ IdsIdsToShareds (node *ids, node *ids2, lut_t *lut, lut_t *init_lut)
         args = TBmakeArg (avis, args);
 
         fold = (node *)LUTsearchInLutPp (init_lut, IDS_AVIS (ids2));
-        DBUG_ASSERT ((fold != NULL), "Lost information about fold");
-        DBUG_ASSERT ((NODE_TYPE (fold) == N_fold), "Fold nolonger a fold");
+        DBUG_ASSERT (fold != NULL, "Lost information about fold");
+        DBUG_ASSERT (NODE_TYPE (fold) == N_fold, "Fold nolonger a fold");
         AVIS_WITH3FOLD (avis) = fold;
 
         lut = LUTinsertIntoLutP (lut, IDS_AVIS (ids), avis);
         lut = LUTinsertIntoLutP (lut, IDS_AVIS (ids2), avis);
     } else {
-        DBUG_ASSERT ((ids2 == NULL), "Expected two lists of the same length");
+        DBUG_ASSERT (ids2 == NULL, "Expected two lists of the same length");
     }
 
     DBUG_RETURN (args);
@@ -394,9 +396,9 @@ IdsIdsToShareds (node *ids, node *ids2, lut_t *lut, lut_t *init_lut)
 static node *
 ATravPrfAccu (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravPrfAccu");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_SHAREDS (arg_info) == NULL),
+    DBUG_ASSERT (INFO_SHAREDS (arg_info) == NULL,
                  "Already have shareds why have I found more");
 
     INFO_SHAREDS (arg_info)
@@ -417,15 +419,15 @@ static node *
 ATravPrfSyncIn (node *arg_node, info *arg_info)
 {
     node *avis;
-    DBUG_ENTER ("ATravPrfSyncIn");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((TCcountExprs (PRF_ARGS (arg_node)) == 1),
+    DBUG_ASSERT (TCcountExprs (PRF_ARGS (arg_node)) == 1,
                  "Expected syncin to have one argument");
 
     avis
       = (node *)LUTsearchInLutPp (INFO_AT_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)));
 
-    DBUG_ASSERT ((avis != NULL), "Could not create shared for syncIn");
+    DBUG_ASSERT (avis != NULL, "Could not create shared for syncIn");
 
     PRF_ARGS (arg_node)
       = TCappendExprs (PRF_ARGS (arg_node), TBmakeExprs (TBmakeId (avis), NULL));
@@ -442,15 +444,15 @@ static node *
 ATravPrfSyncOut (node *arg_node, info *arg_info)
 {
     node *avis;
-    DBUG_ENTER ("ATravPrfSyncOut");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((TCcountExprs (PRF_ARGS (arg_node)) == 1),
+    DBUG_ASSERT (TCcountExprs (PRF_ARGS (arg_node)) == 1,
                  "Expected syncout to have one argument");
 
     avis
       = (node *)LUTsearchInLutPp (INFO_AT_LUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
 
-    DBUG_ASSERT ((avis != NULL), "Could not create a shared for syncout");
+    DBUG_ASSERT (avis != NULL, "Could not create a shared for syncout");
 
     PRF_ARGS (arg_node)
       = TCappendExprs (PRF_ARGS (arg_node), TBmakeExprs (TBmakeId (avis), NULL));
@@ -468,7 +470,7 @@ ATravPrfSyncOut (node *arg_node, info *arg_info)
 static node *
 ATravPrf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravPrf");
+    DBUG_ENTER ();
     switch (PRF_PRF (arg_node)) {
     case F_accu:
         ATravPrfAccu (arg_node, arg_info);
@@ -495,7 +497,7 @@ static node *
 ATravLet (node *arg_node, info *arg_info)
 {
     node *stack;
-    DBUG_ENTER ("ATravLet");
+    DBUG_ENTER ();
 
     stack = INFO_LHS (arg_info);
 
@@ -524,7 +526,7 @@ addShareds (node *syntax_tree, info *arg_info)
          {N_with2, &TRAVnone},   {N_with3, &ATravWith3}, {0, NULL}};
     info *anon_info;
 
-    DBUG_ENTER ("addShareds");
+    DBUG_ENTER ();
 
     /* Need to pass fundef nodes to add vardecs */
     DBUG_ASSERT (((NODE_TYPE (syntax_tree) == N_module)
@@ -548,7 +550,7 @@ static node *
 ATravInitAssign (node *arg_node, info *arg_info)
 {
     node *ret_node;
-    DBUG_ENTER ("ATravInitAssign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     ret_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
@@ -563,7 +565,7 @@ static node *
 ATravInitLet (node *arg_node, info *arg_info)
 {
     node *stack;
-    DBUG_ENTER ("ATravInitLet");
+    DBUG_ENTER ();
 
     stack = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = LET_IDS (arg_node);
@@ -577,7 +579,7 @@ static node *
 GenerateWith3Assigns (node *ids, node *withop)
 {
     node *assigns = NULL;
-    DBUG_ENTER ("GenerateWith3Assigns");
+    DBUG_ENTER ();
 
     if (IDS_NEXT (ids) != NULL) {
         assigns = GenerateWith3Assigns (IDS_NEXT (ids), WITHOP_NEXT (withop));
@@ -588,9 +590,8 @@ GenerateWith3Assigns (node *ids, node *withop)
         if (init == NULL) {
             init = FOLD_NEUTRAL (withop);
         }
-        DBUG_ASSERT ((init != NULL), "Do not know what to start the fold withloop with");
-        DBUG_ASSERT ((NODE_TYPE (init) == N_id),
-                     "Can not start fold withloop without id");
+        DBUG_ASSERT (init != NULL, "Do not know what to start the fold withloop with");
+        DBUG_ASSERT (NODE_TYPE (init) == N_id, "Can not start fold withloop without id");
         assigns = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (ids), NULL),
                                            TBmakeId (ID_AVIS (init))),
                                 assigns);
@@ -602,7 +603,7 @@ GenerateWith3Assigns (node *ids, node *withop)
 static node *
 ATravInitWith3 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravInitWith3");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -622,7 +623,7 @@ InitFolds (node *syntax_tree)
                            {N_let, &ATravInitLet},
                            {N_assign, &ATravInitAssign},
                            {0, NULL}};
-    DBUG_ENTER ("InitFolds");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (atrav, &TRAVsons);
 
@@ -650,7 +651,7 @@ CreateThreadFunName (info *arg_info)
     str_buf *buffer;
     char *name;
 
-    DBUG_ENTER ("CreateThreadFunName");
+    DBUG_ENTER ();
 
     buffer = SBUFcreate (16);
 
@@ -668,7 +669,7 @@ ShareFolds (node *args, lut_t *lut)
 {
     node *next = NULL;
     node *fold = NULL;
-    DBUG_ENTER ("ShareFolds");
+    DBUG_ENTER ();
 
     if (ARG_NEXT (args) != NULL) {
         next = ShareFolds (ARG_NEXT (args), lut);
@@ -709,7 +710,7 @@ CreateThreadFunction (node *block, node *results, node *index, info *arg_info)
     char *funName;
     dfmask_t *ret_mask, *arg_mask, *local_mask;
 
-    DBUG_ENTER ("CreateThreadFunction");
+    DBUG_ENTER ();
 
     lut = LUTgenerateLut ();
 
@@ -796,10 +797,9 @@ LW3doLiftWith3 (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("LW3doLiftWith3");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
-                 "LW3 Called with non module node");
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "LW3 Called with non module node");
 
     TRAVpush (TR_lw3);
 
@@ -841,9 +841,9 @@ LW3doLiftWith3 (node *syntax_tree)
 node *
 LW3module (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("LW3module");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((MODULE_THREADFUNS (arg_node) == NULL),
+    DBUG_ASSERT (MODULE_THREADFUNS (arg_node) == NULL,
                  "Thread functions are already in this module");
 
     INFO_NS (arg_info) = MODULE_NAMESPACE (arg_node);
@@ -861,7 +861,7 @@ node *
 LW3fundef (node *arg_node, info *arg_info)
 {
     node *stack;
-    DBUG_ENTER ("LW3fundef");
+    DBUG_ENTER ();
 
     stack = INFO_FUNDEF (arg_info);
 
@@ -883,7 +883,7 @@ node *
 LW3with3 (node *arg_node, info *arg_info)
 {
     node *stack = NULL;
-    DBUG_ENTER ("LW3with3");
+    DBUG_ENTER ();
 
     stack = INFO_WITHOPS (arg_info);
     INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
@@ -907,7 +907,7 @@ LW3with3 (node *arg_node, info *arg_info)
 node *
 LW3range (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("LW3range");
+    DBUG_ENTER ();
 
     /*
      * we perform the transformation depth first / bottom up
@@ -924,3 +924,5 @@ LW3range (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

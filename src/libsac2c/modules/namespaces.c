@@ -9,7 +9,10 @@
  */
 
 #include "namespaces.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "NS"
+#include "debug.h"
+
 #include "str_buffer.h"
 #include "str.h"
 #include "memory.h"
@@ -59,7 +62,7 @@ EqualsView (view_t *one, view_t *two)
 {
     bool result = TRUE;
 
-    DBUG_ENTER ("EqualsView");
+    DBUG_ENTER ();
 
     if ((one == NULL) && (two != NULL)) {
         result = FALSE;
@@ -78,7 +81,7 @@ CreatePool ()
 {
     nspool_t *result;
 
-    DBUG_ENTER ("CreatePool");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (nspool_t));
     result->next = NULL;
@@ -92,7 +95,7 @@ PutInPool (namespace_t *ns)
     int cnt;
     nspool_t *pos;
 
-    DBUG_ENTER ("PutInPool");
+    DBUG_ENTER ();
 
     /*
      * create initial pool if necessary
@@ -119,7 +122,7 @@ PutInPool (namespace_t *ns)
      */
     pos->block[ns->id % BLOCKSIZE] = ns;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static namespace_t *
@@ -129,7 +132,7 @@ GetFromPool (int id)
     nspool_t *pos;
     int cnt;
 
-    DBUG_ENTER ("GetFromPool");
+    DBUG_ENTER ();
 
     pos = pool;
 
@@ -149,7 +152,7 @@ FindInPool (const char *module, view_t *view)
     nspool_t *pos;
     int cnt;
 
-    DBUG_ENTER ("FindInPool");
+    DBUG_ENTER ();
 
     pos = pool;
 
@@ -175,7 +178,7 @@ BuildNamespaceName (namespace_t *ns)
     str_buf *buf;
     view_t *view;
 
-    DBUG_ENTER ("BuildNamespaceName");
+    DBUG_ENTER ();
 
     buf = SBUFcreate (255);
 
@@ -199,7 +202,7 @@ AddNamespaceToPool (const char *module, view_t *view)
 {
     namespace_t *new;
 
-    DBUG_ENTER ("AddNamespaceToPool");
+    DBUG_ENTER ();
 
     new = MEMmalloc (sizeof (namespace_t));
 
@@ -218,7 +221,7 @@ DupView (const view_t *src)
 {
     view_t *result;
 
-    DBUG_ENTER ("DupView");
+    DBUG_ENTER ();
 
     if (src == NULL) {
         result = NULL;
@@ -236,7 +239,7 @@ DupView (const view_t *src)
 static view_t *
 FreeView (view_t *view)
 {
-    DBUG_ENTER ("FreeView");
+    DBUG_ENTER ();
 
     if (view != NULL) {
         view->id = 0;
@@ -254,7 +257,7 @@ MakeView (const char *name, const view_t *views)
 {
     view_t *result;
 
-    DBUG_ENTER ("MakeView");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (view_t));
 
@@ -270,7 +273,7 @@ NSgetNamespace (const char *module)
 {
     namespace_t *result;
 
-    DBUG_ENTER ("NSgetNamespace");
+    DBUG_ENTER ();
 
     if (module == NULL) {
         /*
@@ -295,7 +298,7 @@ NSgetRootNamespace ()
 {
     static namespace_t *result;
 
-    DBUG_ENTER ("NSgetRootNamespace");
+    DBUG_ENTER ();
 
     if (result == NULL) {
         result = NSgetNamespace ("_MAIN");
@@ -309,7 +312,7 @@ NSgetInitNamespace ()
 {
     static namespace_t *initns;
 
-    DBUG_ENTER ("NSgetInitNamespace");
+    DBUG_ENTER ();
 
     if (initns == NULL) {
         initns = AddNamespaceToPool (global.modulename, MakeView ("_INIT", NULL));
@@ -323,7 +326,7 @@ NSgetCWrapperNamespace ()
 {
     static namespace_t *result;
 
-    DBUG_ENTER ("NSgetCWrapperNamespace");
+    DBUG_ENTER ();
 
     if (result == NULL) {
         result = NSgetNamespace ("_CWRAPPER");
@@ -338,7 +341,7 @@ NSgetMTNamespace (const namespace_t *orig)
     namespace_t *result;
     view_t *view;
 
-    DBUG_ENTER ("NSgetMTNamespace");
+    DBUG_ENTER ();
 
     view = MakeView ("_MT", orig->view);
 
@@ -359,7 +362,7 @@ NSgetSTNamespace (const namespace_t *orig)
     namespace_t *result;
     view_t *view;
 
-    DBUG_ENTER ("NSgetSTNamespace");
+    DBUG_ENTER ();
 
     view = MakeView ("_ST", orig->view);
 
@@ -379,7 +382,7 @@ NSdupNamespace (const namespace_t *ns)
 {
     namespace_t *result;
 
-    DBUG_ENTER ("NSdupNamespace");
+    DBUG_ENTER ();
 
     result = (namespace_t *)ns;
 
@@ -389,7 +392,7 @@ NSdupNamespace (const namespace_t *ns)
 namespace_t *
 NSfreeNamespace (namespace_t *ns)
 {
-    DBUG_ENTER ("NSfreeNamespace");
+    DBUG_ENTER ();
 
     ns = NULL;
 
@@ -399,9 +402,9 @@ NSfreeNamespace (namespace_t *ns)
 void
 NStouchNamespace (namespace_t *ns, info *arg_info)
 {
-    DBUG_ENTER ("NStouchNamespace");
+    DBUG_ENTER ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 bool
@@ -409,7 +412,7 @@ NSequals (const namespace_t *one, const namespace_t *two)
 {
     bool result;
 
-    DBUG_ENTER ("NSequals");
+    DBUG_ENTER ();
 
     result = (one == two);
 
@@ -421,7 +424,7 @@ NSgetName (const namespace_t *ns)
 {
     const char *result;
 
-    DBUG_ENTER ("NSgetName");
+    DBUG_ENTER ();
 
     if (ns == NULL) {
         result = "--";
@@ -435,9 +438,9 @@ NSgetName (const namespace_t *ns)
 const char *
 NSgetModule (const namespace_t *ns)
 {
-    DBUG_ENTER ("NSgetModule");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ns != NULL), "called NSgetModule with argument NULL!");
+    DBUG_ASSERT (ns != NULL, "called NSgetModule with argument NULL!");
 
     DBUG_RETURN (ns->module);
 }
@@ -448,7 +451,7 @@ NSbuildView (const namespace_t *orig)
     namespace_t *result;
     view_t *view;
 
-    DBUG_ENTER ("NSbuildView");
+    DBUG_ENTER ();
 
     view = MakeView (orig->name, orig->view);
 
@@ -473,7 +476,7 @@ NSbuildView (const namespace_t *orig)
 void
 NSserializeNamespace (FILE *file, const namespace_t *ns)
 {
-    DBUG_ENTER ("NSserializeNamespace");
+    DBUG_ENTER ();
 
     /*
      * the MAPNS macro is defined by serialize.c
@@ -482,7 +485,7 @@ NSserializeNamespace (FILE *file, const namespace_t *ns)
      */
     fprintf (file, "NSdeserializeNamespace( MAPNS( %d))", ns->id);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 namespace_t *
@@ -490,7 +493,7 @@ NSdeserializeNamespace (int id)
 {
     namespace_t *result;
 
-    DBUG_ENTER ("NSdeserializeNamespace");
+    DBUG_ENTER ();
 
     result = NSdupNamespace (GetFromPool (id));
 
@@ -502,7 +505,7 @@ NSdeserializeView (const char *name, int id, view_t *next)
 {
     view_t *result;
 
-    DBUG_ENTER ("NSdeserializeView");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (view_t));
 
@@ -519,9 +522,9 @@ NSaddMapping (const char *module, view_t *view)
     namespace_t *ns;
     int result;
 
-    DBUG_ENTER ("NSaddMapping");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("NS", ("adding new mapping for module '%s'...", module));
+    DBUG_PRINT ("adding new mapping for module '%s'...", module);
 
     ns = FindInPool (module, view);
 
@@ -531,7 +534,7 @@ NSaddMapping (const char *module, view_t *view)
 
     result = ns->id;
 
-    DBUG_PRINT ("NS", ("...mapped '%s' to %d.", NSgetName (ns), result));
+    DBUG_PRINT ("...mapped '%s' to %d.", NSgetName (ns), result);
 
     DBUG_RETURN (result);
 }
@@ -539,14 +542,14 @@ NSaddMapping (const char *module, view_t *view)
 static void
 GenerateNamespaceMapHead (FILE *file)
 {
-    DBUG_ENTER ("GenerateNamespaceMapHead");
+    DBUG_ENTER ();
 
     fprintf (file, "/* namespace mapping generated by sac2c %s */\n\n",
              global.version_id);
     fprintf (file, "#include \"sac_serialize.h\"\n\n");
     fprintf (file, "#include \"namespacemap.h\"\n\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -554,19 +557,19 @@ GenerateNamespaceMapDeclaration (FILE *file)
 {
     int cnt;
 
-    DBUG_ENTER ("GenerateNamespaceMapDeclaration");
+    DBUG_ENTER ();
 
     for (cnt = 0; cnt < nextid; cnt++) {
         fprintf (file, "int __%s__nsmap_%d = 0;\n ", global.modulename, cnt);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 GenerateViewConstructor (FILE *file, view_t *view)
 {
-    DBUG_ENTER ("GenerateViewConstructor");
+    DBUG_ENTER ();
 
     if (view == NULL) {
         fprintf (file, "NULL");
@@ -578,7 +581,7 @@ GenerateViewConstructor (FILE *file, view_t *view)
         fprintf (file, ")");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -587,7 +590,7 @@ GenerateNamespaceMappingConstructor (FILE *file)
     nspool_t *pos;
     int cnt;
 
-    DBUG_ENTER ("GenerateNamespaceMappingConstructor");
+    DBUG_ENTER ();
 
     pos = pool;
 
@@ -608,7 +611,7 @@ GenerateNamespaceMappingConstructor (FILE *file)
 
     fprintf (file, "}\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -616,7 +619,7 @@ GenerateNamespaceMappingHeader (FILE *file)
 {
     int cnt;
 
-    DBUG_ENTER ("GenerateNamespaceMappingHeader");
+    DBUG_ENTER ();
 
     fprintf (file, "#ifndef _NAMESPACEMAP_H_\n#define _NAMESPACEMAP_H_\n\n");
 
@@ -628,7 +631,7 @@ GenerateNamespaceMappingHeader (FILE *file)
 
     fprintf (file, "#endif\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -636,7 +639,7 @@ NSgenerateNamespaceMap ()
 {
     FILE *file;
 
-    DBUG_ENTER ("NSgenerateNamespaceMap");
+    DBUG_ENTER ();
 
     file = FMGRwriteOpen ("%s/namespacemap.c", global.tmp_dirname);
 
@@ -654,5 +657,7 @@ NSgenerateNamespaceMap ()
 
     fclose (file);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

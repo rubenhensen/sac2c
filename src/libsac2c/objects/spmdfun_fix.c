@@ -1,6 +1,8 @@
 /* $Id$ */
 
-#include "dbug.h"
+#define DBUG_PREFIX "FSFS"
+#include "debug.h"
+
 #include "free.h"
 #include "str.h"
 #include "memory.h"
@@ -56,7 +58,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -74,7 +76,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -98,22 +100,21 @@ FreeInfo (info *info)
 static void
 ScanWithops (node *withop, node *lhs, info *arg_info)
 {
-    DBUG_ENTER ("ScanWithops");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("FSFS", ("with2"));
+    DBUG_PRINT ("with2");
 
     if (withop != NULL) {
-        DBUG_ASSERT (lhs != NULL, ("number of lhs exprs does not match withops"));
+        DBUG_ASSERT (lhs != NULL, "number of lhs exprs does not match withops");
 
         if (NODE_TYPE (withop) == N_propagate) {
             /*
              * Found a propagate node. Add it's argument to IN_OBJS
              * and it's LHS to OUT_OBJS.
              */
-            DBUG_PRINT ("FSFS", ("Adding arg %s to IN_OBJS",
-                                 AVIS_NAME (ID_AVIS (PROPAGATE_DEFAULT (withop)))));
-            DBUG_PRINT ("FSFS",
-                        ("Adding ret %s to OUT_OBJS", AVIS_NAME (IDS_AVIS (lhs))));
+            DBUG_PRINT ("Adding arg %s to IN_OBJS",
+                        AVIS_NAME (ID_AVIS (PROPAGATE_DEFAULT (withop))));
+            DBUG_PRINT ("Adding ret %s to OUT_OBJS", AVIS_NAME (IDS_AVIS (lhs)));
             INFO_OBJS_IN (arg_info)
               = TCappendIds (INFO_OBJS_IN (arg_info),
                              TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (withop)), NULL));
@@ -124,7 +125,7 @@ ScanWithops (node *withop, node *lhs, info *arg_info)
         ScanWithops (WITHOP_NEXT (withop), IDS_NEXT (lhs), arg_info);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!-- ****************************************************************** -->
@@ -385,7 +386,7 @@ ShuffleFundefArgs (node *fundef_args, info *arg_info)
     node *objs_iter;
     int pos;
 
-    DBUG_ENTER ("ShuffleFundefArgs");
+    DBUG_ENTER ();
 
     objs_iter = INFO_OBJS_IN (arg_info);
 
@@ -397,7 +398,7 @@ ShuffleFundefArgs (node *fundef_args, info *arg_info)
         pos = FindInArgs (fundef_args, objs_iter, 0);
 
         DBUG_ASSERT (pos != -1, "Couldn't find object in SPMD function sig");
-        DBUG_PRINT ("FSFS", ("arg found at %d", pos));
+        DBUG_PRINT ("arg found at %d", pos);
 
         /* Bubble it up in the formal argument chain, and because we don't
          * know the name of the applied argument, bubble up the same position
@@ -428,7 +429,7 @@ ShuffleReturnExprs (node *return_exprs, info *arg_info)
     node *objs_iter;
     int pos;
 
-    DBUG_ENTER ("ShuffleReturnValues");
+    DBUG_ENTER ();
 
     objs_iter = INFO_OBJS_OUT (arg_info);
 
@@ -440,7 +441,7 @@ ShuffleReturnExprs (node *return_exprs, info *arg_info)
         pos = FindInExprs (return_exprs, objs_iter, 0);
 
         DBUG_ASSERT (pos != -1, "Couldn't find object in SPMD function return");
-        DBUG_PRINT ("FSFS", ("ret found at %d", pos));
+        DBUG_PRINT ("ret found at %d", pos);
 
         /* Bubble it up simultaneously in the actual return expression, the
          * formal return signature and the application lhs. */
@@ -460,7 +461,7 @@ ShuffleReturnExprs (node *return_exprs, info *arg_info)
 node *
 FSFSap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FSFSap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISSPMDFUN (AP_FUNDEF (arg_node))) {
         DBUG_ASSERT (INFO_ENTER_SPMD (arg_info) == FALSE,
@@ -480,7 +481,7 @@ FSFSap (node *arg_node, info *arg_info)
 node *
 FSFSfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FSFSfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISSPMDFUN (arg_node) && INFO_ENTER_SPMD (arg_info)) {
         INFO_FUNDEF_RETS (arg_info) = FUNDEF_RETS (arg_node);
@@ -488,7 +489,7 @@ FSFSfundef (node *arg_node, info *arg_info)
 
     if ((!FUNDEF_ISSPMDFUN (arg_node))
         || (FUNDEF_ISSPMDFUN (arg_node) && INFO_ENTER_SPMD (arg_info))) {
-        DBUG_PRINT ("FSFS", ("entered fundef %s!", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("entered fundef %s!", FUNDEF_NAME (arg_node));
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         }
@@ -511,7 +512,7 @@ FSFSfundef (node *arg_node, info *arg_info)
 node *
 FSFSlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FSFSlet");
+    DBUG_ENTER ();
 
     /* first mode: put lhs of spmd-ap in info struct */
     if (!INFO_ENTER_SPMD (arg_info)) {
@@ -538,7 +539,7 @@ FSFSlet (node *arg_node, info *arg_info)
 node *
 FSFSreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FSFSreturn");
+    DBUG_ENTER ();
 
     if (INFO_ENTER_SPMD (arg_info)) {
         /* This is the return expression of the SPMD function. Shuffle it. */
@@ -551,7 +552,7 @@ FSFSreturn (node *arg_node, info *arg_info)
 node *
 FSFSwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FSFSwith2");
+    DBUG_ENTER ();
 
     if (INFO_ENTER_SPMD (arg_info)) {
         /* Scan through with-ops and with lhs at the same time. */
@@ -569,7 +570,7 @@ FSFSdoFixSpmdFunctionSignatures (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("FSFSdoFixSpmdFunctionSignatures");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -581,3 +582,5 @@ FSFSdoFixSpmdFunctionSignatures (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

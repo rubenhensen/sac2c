@@ -13,7 +13,10 @@
 #include "DupTree.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "TRAVSTACK"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "phase.h"
@@ -180,7 +183,7 @@ TRAVlacNewInfo (bool lacfunok)
 {
     lac_info_t *result;
 
-    DBUG_ENTER ("TRAVlacNewInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (lac_info_t));
 
@@ -202,7 +205,7 @@ TRAVlacNewInfo (bool lacfunok)
 lac_info_t *
 TRAVlacFreeInfo (lac_info_t *lac_info)
 {
-    DBUG_ENTER ("TRAVlacFreeInfo");
+    DBUG_ENTER ();
 
     lac_info = MEMfree (lac_info);
 
@@ -228,7 +231,7 @@ TRAVlacIsSuccOf (node *succ, node *parent, lac_info_t *lac_info)
 {
     bool result;
 
-    DBUG_ENTER ("TRAVlacIsSuccOf");
+    DBUG_ENTER ();
 
     if (succ == NULL) {
         result = FALSE;
@@ -269,7 +272,7 @@ TRAVlacIsSuccOf (node *succ, node *parent, lac_info_t *lac_info)
 node *
 TRAVlacDo (node *arg_node, info *arg_info, lac_info_t *lac_info)
 {
-    DBUG_ASSERT ((arg_node != NULL), "TRAVlacDo called with null as node");
+    DBUG_ASSERT (arg_node != NULL, "TRAVlacDo called with null as node");
 
     if (NODE_TYPE (arg_node) == N_block) {
         LAC_INFO_BLOCKLEVEL (lac_info)++;
@@ -311,7 +314,7 @@ TRAVpush (trav_t traversal)
 {
     travstack_t *new;
 
-    DBUG_ENTER ("TRAVpush");
+    DBUG_ENTER ();
 
     new = MEMmalloc (sizeof (travstack_t));
 
@@ -321,7 +324,7 @@ TRAVpush (trav_t traversal)
 
     travstack = new;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -331,9 +334,9 @@ TRAVpushAnonymous (anontrav_t *anontraversal, travfun_p deffun)
     travstack_t *new;
     int pos;
 
-    DBUG_ENTER ("TRAVpushAnonymous");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((anontraversal != NULL), "empty anonymous traversal!");
+    DBUG_ASSERT (anontraversal != NULL, "empty anonymous traversal!");
 
     travmap = MEMmalloc (sizeof (travfun_p) * (MAX_NODES + 1));
 
@@ -353,7 +356,7 @@ TRAVpushAnonymous (anontrav_t *anontraversal, travfun_p deffun)
 
     travstack = new;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 trav_t
@@ -362,9 +365,9 @@ TRAVpop ()
     travstack_t *tmp;
     trav_t result;
 
-    DBUG_ENTER ("TRAVpop");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((travstack != NULL), "no traversal on stack!");
+    DBUG_ASSERT (travstack != NULL, "no traversal on stack!");
 
     tmp = travstack;
     travstack = tmp->next;
@@ -385,7 +388,7 @@ TRAVgetName ()
 {
     const char *result;
 
-    DBUG_ENTER ("TRAVgetName");
+    DBUG_ENTER ();
 
     if (travstack == NULL) {
         result = "notrav";
@@ -407,7 +410,7 @@ TRAVgetName ()
     bool anonymous;
     static char buffer[MAX_VAR_BUFFER_SIZE + 1];
 
-    DBUG_ENTER ("TRAVgetName");
+    DBUG_ENTER ();
 
     tmp = travstack;
     anonymous = FALSE;
@@ -422,7 +425,7 @@ TRAVgetName ()
     } else if (anonymous) {
         strncpy (buffer, travnames[tmp->traversal], MAX_VAR_BUFFER_SIZE - 5);
         strcat (buffer, "anon");
-        DBUG_PRINT ("TRAVANON", ("Anonymous identifier generated: %s", buffer));
+        DBUG_PRINT_TAG ("TRAVANON", "Anonymous identifier generated: %s", buffer);
     } else {
         strncpy (buffer, travnames[tmp->traversal], MAX_VAR_BUFFER_SIZE);
     }
@@ -437,21 +440,21 @@ TRAVgetName ()
 void
 TRAVsetPreFun (trav_t traversal, travfun_p prefun)
 {
-    DBUG_ENTER ("TRAVsetPreFun");
+    DBUG_ENTER ();
 
     pretable[traversal] = prefun;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 TRAVsetPostFun (trav_t traversal, travfun_p postfun)
 {
-    DBUG_ENTER ("TRAVsetPreFun");
+    DBUG_ENTER ();
 
     posttable[traversal] = postfun;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -473,7 +476,7 @@ TRAVtmpVar (void)
     const char *prefix;
     char *result;
 
-    DBUG_ENTER ("TRAVtmpVar");
+    DBUG_ENTER ();
 
     prefix = TRAVgetName ();
     result = (char *)MEMmalloc ((STRlen (prefix) + MATHnumDigits (counter) + 3)
@@ -501,7 +504,7 @@ TRAVtmpVarName (char *postfix)
     const char *tmp;
     char *new_postfix, *result, *prefix;
 
-    DBUG_ENTER ("TRAVtmpVarName");
+    DBUG_ENTER ();
 
     /* avoid chains of same prefixes */
     tmp = TRAVgetName ();
@@ -554,15 +557,17 @@ TRAVprintStack ()
 {
     travstack_t *tmp = travstack;
 
-    DBUG_ENTER ("TRAVprintStack");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("TRAVSTACK", ("Current traversal stack:"));
+    DBUG_PRINT ("Current traversal stack:");
     while (tmp != NULL) {
-        DBUG_PRINT ("TRAVSTACK", ("  %s", travnames[tmp->traversal]));
+        DBUG_PRINT ("  %s", travnames[tmp->traversal]);
         tmp = tmp->next;
     }
-    DBUG_PRINT ("TRAVSTACK", ("End of traversal stack"));
+    DBUG_PRINT ("End of traversal stack");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 #endif /* DBUG_OFF */
+
+#undef DBUG_PREFIX

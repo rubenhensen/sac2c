@@ -24,7 +24,10 @@
 #include "new_typecheck.h"
 #include "type_utils.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "DL"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -73,7 +76,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -92,7 +95,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -117,7 +120,7 @@ DLdoDistributiveLawOptimization (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("DLdoDistributiveLawOptimization");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
     INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
@@ -146,7 +149,7 @@ DLdoDistributiveLawOptimization (node *arg_node)
 static node *
 ATravDLavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravDLavis");
+    DBUG_ENTER ();
     AVIS_ISDLACTIVE (arg_node) = FALSE;
     DBUG_RETURN (arg_node);
 }
@@ -156,7 +159,7 @@ ClearDLActiveFlags (node *arg_node)
 {
     anontrav_t ddl_trav[2] = {{N_avis, &ATravDLavis}, {0, NULL}};
 
-    DBUG_ENTER ("ClearDLActiveFlags");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (ddl_trav, &TRAVsons);
     arg_node = TRAVopt (arg_node, NULL);
@@ -168,7 +171,7 @@ ClearDLActiveFlags (node *arg_node)
 static prf
 normalizePrf (prf prf)
 {
-    DBUG_ENTER ("normalizePrf");
+    DBUG_ENTER ();
 
     switch (prf) {
     case F_add_SxS:
@@ -197,7 +200,7 @@ compatiblePrf (prf p1, prf p2)
 {
     bool res;
 
-    DBUG_ENTER ("compatiblePrf");
+    DBUG_ENTER ();
 
     res = (normalizePrf (p1) == normalizePrf (p2));
 
@@ -209,7 +212,7 @@ isScalar (node *n)
 {
     bool res;
 
-    DBUG_ENTER ("isScalar");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (n)) {
     case N_num:
@@ -249,7 +252,7 @@ getPrf (prf prf, node *e1, node *e2)
 {
     bool s1, s2;
 
-    DBUG_ENTER ("getPrf");
+    DBUG_ENTER ();
 
     s1 = isScalar (e1);
     s2 = isScalar (e2);
@@ -302,7 +305,7 @@ static bool
 isArg1Scl (prf prf)
 {
     bool res;
-    DBUG_ENTER ("isArg1Scl");
+    DBUG_ENTER ();
 
     switch (prf) {
     case F_add_SxS:
@@ -322,7 +325,7 @@ static bool
 isArg2Scl (prf prf)
 {
     bool res;
-    DBUG_ENTER ("isArg2Scl");
+    DBUG_ENTER ();
 
     switch (prf) {
     case F_add_SxS:
@@ -349,7 +352,7 @@ static node *
 flattenPrfarg (node *arg_node, info *arg_info)
 {
     node *res;
-    DBUG_ENTER ("flattenPrfarg");
+    DBUG_ENTER ();
 
     simpletype typ;
     if (N_id != NODE_TYPE (arg_node)) {
@@ -371,7 +374,7 @@ consumeHead (node *mop)
 {
     node *res;
 
-    DBUG_ENTER ("consumeHead");
+    DBUG_ENTER ();
 
     res = PRF_ARG1 (mop);
     PRF_ARG1 (mop) = NULL;
@@ -389,7 +392,7 @@ CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
     node *id;
     ntype *prod;
 
-    DBUG_ENTER ("CombineExprs2Prf");
+    DBUG_ENTER ();
 
     rhs = TCmakePrf2 (getPrf (prf, expr1, expr2), expr1, expr2);
 
@@ -420,7 +423,7 @@ ReverseAssignChain (node *ass, node *agg)
 {
     node *res;
 
-    DBUG_ENTER ("ReverseAssignChain");
+    DBUG_ENTER ();
 
     if (ass == NULL) {
         res = agg;
@@ -438,7 +441,7 @@ Mop2Ast (node *mop, info *arg_info)
 {
     node *res;
 
-    DBUG_ENTER ("Mop2Ast");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (mop) == N_prf) {
         if (TCcountExprs (PRF_ARGS (mop)) == 1) {
@@ -473,9 +476,9 @@ CollectExprs (prf prf, node *a, bool is_scalar_arg)
     node *left;
     node *right;
 
-    DBUG_ENTER ("CollectExprs");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("DL", ("Collecting exprs for %s", AVIS_NAME (ID_AVIS (a))));
+    DBUG_PRINT ("Collecting exprs for %s", AVIS_NAME (ID_AVIS (a)));
     res = TBmakeExprs (DUPdoDupNode (a), NULL);
     pat = PMany (1, PMAgetNode (&rhs), 0);
 
@@ -489,7 +492,7 @@ CollectExprs (prf prf, node *a, bool is_scalar_arg)
         switch (NODE_TYPE (rhs)) {
 
         case N_id:
-            DBUG_PRINT ("DL", ("Found N_id %s", AVIS_NAME (ID_AVIS (rhs))));
+            DBUG_PRINT ("Found N_id %s", AVIS_NAME (ID_AVIS (rhs)));
             res = FREEdoFreeTree (res);
             res = CollectExprs (prf, rhs, is_scalar_arg);
             AVIS_NEEDCOUNT (ID_AVIS (a)) = 0;
@@ -497,7 +500,7 @@ CollectExprs (prf prf, node *a, bool is_scalar_arg)
 
         case N_prf:
             if (compatiblePrf (prf, PRF_PRF (rhs))) {
-                DBUG_PRINT ("DL", ("Found N_prf"));
+                DBUG_PRINT ("Found N_prf");
                 left = CollectExprs (prf, PRF_ARG1 (rhs), isArg1Scl (PRF_PRF (rhs)));
                 right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)));
 
@@ -509,7 +512,7 @@ CollectExprs (prf prf, node *a, bool is_scalar_arg)
             break;
 
         default:
-            DBUG_PRINT ("DL", ("Nothing found"));
+            DBUG_PRINT ("Nothing found");
             break;
         }
     }
@@ -526,7 +529,7 @@ BuildMopTree (node *avis)
     node *id;
     bool sclprf;
 
-    DBUG_ENTER ("BuildMopTree");
+    DBUG_ENTER ();
 
     id = TBmakeId (avis);
     exprs = CollectExprs (F_add_SxS, id, FALSE);
@@ -561,7 +564,7 @@ isNotOne (node *n)
 {
     bool res;
 
-    DBUG_ENTER ("isNotOne");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (n)) {
     case N_float:
@@ -629,7 +632,7 @@ ContainsFactor (node *factor, node *mop)
     bool res = FALSE;
     node *f;
 
-    DBUG_ENTER ("ContainsFactor");
+    DBUG_ENTER ();
 
     f = PRF_ARGS (mop);
     while (f != NULL) {
@@ -649,7 +652,7 @@ RemoveFactorOnce (node *factor, node *mop)
     bool res = FALSE;
     node **f;
 
-    DBUG_ENTER ("RemoveFactorOnce");
+    DBUG_ENTER ();
 
     f = &PRF_ARGS (mop);
     while ((*f) != NULL) {
@@ -672,7 +675,7 @@ MostCommonFactor (node *mop)
     node *mcf = NULL;
     int count = 1;
 
-    DBUG_ENTER ("MostCommonFactor");
+    DBUG_ENTER ();
 
     /*
      * Collect all factors of all summands
@@ -729,7 +732,7 @@ SplitMop (node *mcf, node *mop)
 {
     node *newmop;
 
-    DBUG_ENTER ("SplitMop");
+    DBUG_ENTER ();
 
     if (PRF_ARGS (mop) == NULL) {
         newmop = TBmakePrf (F_add_SxS, NULL);
@@ -757,7 +760,7 @@ OptimizeMop (node *mop)
 {
     node *exprs;
 
-    DBUG_ENTER ("OptimizeMop");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (mop) == N_prf) {
         exprs = PRF_ARGS (mop);
@@ -788,7 +791,7 @@ OptimizeMop (node *mop)
                     mop = newmop;
                 }
 
-                DBUG_EXECUTE ("DL", PRTdoPrintFile (stderr, mop););
+                DBUG_EXECUTE (PRTdoPrintFile (stderr, mop));
                 global.optcounters.dl_expr++;
                 mop = OptimizeMop (mop);
             }
@@ -811,7 +814,7 @@ OptimizeMop (node *mop)
             }
 
             if (optimized) {
-                DBUG_EXECUTE ("DL", PRTdoPrintFile (stderr, mop););
+                DBUG_EXECUTE (PRTdoPrintFile (stderr, mop));
                 mop = OptimizeMop (mop);
             }
         }
@@ -823,7 +826,7 @@ OptimizeMop (node *mop)
 static node *
 EliminateEmptyProducts (node *mop, simpletype st)
 {
-    DBUG_ENTER ("EliminateEmptyProducts");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (mop) == N_prf) {
         node *n;
@@ -859,7 +862,7 @@ DLfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("DLfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /*
@@ -902,7 +905,7 @@ node *
 DLblock (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("DLblock");
+    DBUG_ENTER ();
 
     BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
       = ClearDLActiveFlags (BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
@@ -915,7 +918,7 @@ DLblock (node *arg_node, info *arg_info)
 node *
 DLassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DLassign");
+    DBUG_ENTER ();
 
     /*
      * Traverse LHS identifiers to mark them as local in the current block
@@ -944,7 +947,7 @@ DLassign (node *arg_node, info *arg_info)
 node *
 DLlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DLlet");
+    DBUG_ENTER ();
 
     if (INFO_DIRECTION (arg_info) == DIR_down) {
         LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
@@ -953,8 +956,7 @@ DLlet (node *arg_node, info *arg_info)
         LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
         if (INFO_TRAVRHS (arg_info)) {
             INFO_LHS (arg_info) = LET_IDS (arg_node);
-            DBUG_PRINT ("DL",
-                        ("looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
+            DBUG_PRINT ("looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
             LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
         }
     }
@@ -965,7 +967,7 @@ DLlet (node *arg_node, info *arg_info)
 node *
 DLids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DLids");
+    DBUG_ENTER ();
 
     if (INFO_DIRECTION (arg_info) == DIR_down) {
         AVIS_ISDLACTIVE (IDS_AVIS (arg_node)) = TRUE;
@@ -988,7 +990,7 @@ DLprf (node *arg_node, info *arg_info)
     node *mop;
     prf prf;
 
-    DBUG_ENTER ("DLprf");
+    DBUG_ENTER ();
 
     prf = PRF_PRF (arg_node);
 
@@ -1009,7 +1011,7 @@ DLprf (node *arg_node, info *arg_info)
             mop = BuildMopTree (IDS_AVIS (INFO_LHS (arg_info)));
 
             if (TCcountExprs (PRF_ARGS (mop)) >= 2) {
-                DBUG_EXECUTE ("DL", PRTdoPrintFile (stderr, mop););
+                DBUG_EXECUTE (PRTdoPrintFile (stderr, mop));
 
                 /*
                  * Optimize multi-operation
@@ -1027,7 +1029,7 @@ DLprf (node *arg_node, info *arg_info)
                     /*
                      * Convert mop back into ast representation
                      */
-                    DBUG_EXECUTE ("DL", PRTdoPrintFile (stderr, mop););
+                    DBUG_EXECUTE (PRTdoPrintFile (stderr, mop));
                     arg_node = FREEdoFreeNode (arg_node);
                     arg_node = Mop2Ast (mop, arg_info);
                 }
@@ -1043,3 +1045,5 @@ DLprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

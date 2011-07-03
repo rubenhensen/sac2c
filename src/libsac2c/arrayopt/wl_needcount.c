@@ -31,7 +31,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLNC"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "print.h"
@@ -59,7 +62,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -72,7 +75,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -105,9 +108,9 @@ WLNCdoWLNeedCount (node *fundef)
 {
     info *info;
 
-    DBUG_ENTER ("WLNCdoWLNeedCount");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "WLNCdoWLNeedCount called for non-fundef node");
 
     info = MakeInfo ();
@@ -144,20 +147,20 @@ static void
 incrementNeedcount (node *avis, info *arg_info)
 {
 
-    DBUG_ENTER ("incrementNeedCount");
+    DBUG_ENTER ();
 
     if (((NULL == AVIS_COUNTING_WL (avis))
          || (AVIS_COUNTING_WL (avis) == INFO_WITH (arg_info)))) {
         AVIS_WL_NEEDCOUNT (avis) += 1;
         AVIS_COUNTING_WL (avis) = INFO_WITH (arg_info);
-        DBUG_PRINT ("WLNC", ("WLNCid incremented AVIS_WL_NEEDCOUNT(%s)=%d",
-                             AVIS_NAME (avis), AVIS_WL_NEEDCOUNT (avis)));
+        DBUG_PRINT ("WLNCid incremented AVIS_WL_NEEDCOUNT(%s)=%d", AVIS_NAME (avis),
+                    AVIS_WL_NEEDCOUNT (avis));
     } else {
-        DBUG_PRINT ("WLNC", ("incrementNeedCount(%s) reference from different WL.",
-                             AVIS_NAME (avis)));
+        DBUG_PRINT ("incrementNeedCount(%s) reference from different WL.",
+                    AVIS_NAME (avis));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -177,17 +180,17 @@ incrementNeedcount (node *avis, info *arg_info)
 node *
 WLNCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLNCfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLNC", ("WL-needcounting for %s %s begins",
-                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                         FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("WL-needcounting for %s %s begins",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                FUNDEF_NAME (arg_node));
     FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-    DBUG_PRINT ("WLNC", ("WL-needcounting for %s %s ends",
-                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                         FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("WL-needcounting for %s %s ends",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                FUNDEF_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -202,7 +205,7 @@ WLNCfundef (node *arg_node, info *arg_info)
 node *
 WLNCblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLNCblock");
+    DBUG_ENTER ();
 
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
@@ -221,9 +224,9 @@ WLNCblock (node *arg_node, info *arg_info)
 node *
 WLNCavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLNCavis");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLNC", ("Zeroing AVIS_WL_NEEDCOUNT(%s)", AVIS_NAME (arg_node)));
+    DBUG_PRINT ("Zeroing AVIS_WL_NEEDCOUNT(%s)", AVIS_NAME (arg_node));
     AVIS_WL_NEEDCOUNT (arg_node) = 0;
     AVIS_COUNTING_WL (arg_node) = NULL;
 
@@ -243,7 +246,7 @@ WLNCwith (node *arg_node, info *arg_info)
     node *avis;
     node *outer_with;
 
-    DBUG_ENTER ("WLNCwith");
+    DBUG_ENTER ();
 
     outer_with = INFO_WITH (arg_info);
     INFO_WITH (arg_info) = arg_node;
@@ -270,7 +273,7 @@ WLNCwith (node *arg_node, info *arg_info)
 node *
 WLNCpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLNCpart");
+    DBUG_ENTER ();
 
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
@@ -289,7 +292,7 @@ WLNCpart (node *arg_node, info *arg_info)
 node *
 WLNCcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLNCcode");
+    DBUG_ENTER ();
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
@@ -306,7 +309,7 @@ WLNCcode (node *arg_node, info *arg_info)
 node *
 WLNCprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLNCprf");
+    DBUG_ENTER ();
 
     INFO_FUN (arg_info) = arg_node;
     PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
@@ -325,7 +328,7 @@ WLNCprf (node *arg_node, info *arg_info)
 node *
 WLNCap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLNCap");
+    DBUG_ENTER ();
 
     INFO_FUN (arg_info) = arg_node;
     AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
@@ -374,7 +377,7 @@ WLNCid (node *arg_node, info *arg_info)
     node *producerWL;
     pattern *pat;
 
-    DBUG_ENTER ("WLNCid");
+    DBUG_ENTER ();
 
     parent = INFO_FUN (arg_info);
     if ((parent != NULL) && (N_prf == NODE_TYPE (parent))) {
@@ -383,8 +386,8 @@ WLNCid (node *arg_node, info *arg_info)
             pat = PMvar (1, PMAgetNode (&producerWL), 0);
             if (PMmatchFlatSkipGuards (pat, PRF_ARG2 (parent))) {
                 avis = ID_AVIS (producerWL);
-                DBUG_EXECUTE ("WLNC", PRTdoPrintNodeFile (stderr, parent););
-                DBUG_PRINT ("WLNC", ("WLNCid looking at %s.", AVIS_NAME (avis)));
+                DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, parent));
+                DBUG_PRINT ("WLNCid looking at %s.", AVIS_NAME (avis));
                 if ((avis == ID_AVIS (arg_node))) {
                     incrementNeedcount (avis, arg_info);
                 }
@@ -421,3 +424,5 @@ WLNCid (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Need Count of With-Loop -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

@@ -13,7 +13,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "dbug.h"
+#define DBUG_PREFIX "FMGR"
+#include "debug.h"
+
 #include "config.h"
 #include "system.h"
 #include "str.h"
@@ -53,7 +55,7 @@ FMGRfindFilePath (pathkind_t p, const char *name)
     char *path;
     char *result = NULL;
 
-    DBUG_ENTER ("FMGRfindFilePath");
+    DBUG_ENTER ();
 
     if (name[0] == '/') { /* absolute path specified! */
         file = fopen (name, "r");
@@ -66,7 +68,7 @@ FMGRfindFilePath (pathkind_t p, const char *name)
                 strcpy (buffer, path);
                 strcat (buffer, "/");
                 strcat (buffer, name);
-                DBUG_PRINT ("FMGR", ("trying file %s\n", buffer));
+                DBUG_PRINT ("trying file %s\n", buffer);
                 file = fopen (buffer, "r");
                 if (file == NULL) {
                     path = strtok (NULL, ":");
@@ -90,7 +92,7 @@ FMGRfindFile (pathkind_t p, const char *name)
     static char buffer[MAX_FILE_NAME];
     const char *result;
 
-    DBUG_ENTER ("FMGRfindFile");
+    DBUG_ENTER ();
 
     result = FMGRfindFilePath (p, name);
 
@@ -109,7 +111,7 @@ FMGRmapPath (pathkind_t p, void *(*mapfun) (const char *, void *), void *neutral
     static char buffer[MAX_PATH_LEN];
     char *path;
 
-    DBUG_ENTER ("FMGRmapPath");
+    DBUG_ENTER ();
 
     strncpy (buffer, path_bufs[p], MAX_PATH_LEN);
     path = strtok (buffer, ":");
@@ -140,7 +142,7 @@ FMGRcheckSystemLibrary (const char *name)
 {
     int result;
 
-    DBUG_ENTER ("FMGRcheckSystemLibrary");
+    DBUG_ENTER ();
 
     /* remove trailing 'lib' */
     name += 3;
@@ -181,9 +183,9 @@ FMGRcheckExistFile (const char *dir, const char *name)
     FILE *file;
     bool res;
 
-    DBUG_ENTER ("FMGRcheckExistFile");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((name != NULL), "Function FMGRcheckExistFile() called with name NULL");
+    DBUG_ASSERT (name != NULL, "Function FMGRcheckExistFile() called with name NULL");
 
     if (dir == NULL) {
         dir = "";
@@ -219,9 +221,9 @@ FMGRcheckExistDir (const char *dir)
     int status;
     struct stat buffer;
 
-    DBUG_ENTER ("FMGRcheckExistDir");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((dir != NULL), "Function FMGRcheckExistDir() called with dir NULL");
+    DBUG_ASSERT (dir != NULL, "Function FMGRcheckExistDir() called with dir NULL");
 
     status = stat (dir, &buffer);
 
@@ -247,7 +249,7 @@ FMGRappendPath (pathkind_t p, const char *path)
 {
     int len;
 
-    DBUG_ENTER ("FMGRappendPath");
+    DBUG_ENTER ();
 
     len = STRlen (path) + 1;
     if (len + bufsize[p] >= MAX_PATH_LEN) {
@@ -255,11 +257,11 @@ FMGRappendPath (pathkind_t p, const char *path)
     } else {
         strcat (path_bufs[p], ":");
         strcat (path_bufs[p], path);
-        DBUG_PRINT ("FMGR", ("appending \":%s\" to path %d", path, p));
+        DBUG_PRINT ("appending \":%s\" to path %d", path, p);
         bufsize[p] += len;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*
@@ -282,7 +284,7 @@ AppendEnvVar (pathkind_t p, const char *var)
     int len;
     char *buffer;
 
-    DBUG_ENTER ("AppendEnvVar");
+    DBUG_ENTER ();
 
     buffer = getenv (var);
     if (buffer != NULL) {
@@ -292,11 +294,11 @@ AppendEnvVar (pathkind_t p, const char *var)
         } else {
             strcat (path_bufs[p], ":");
             strcat (path_bufs[p], buffer);
-            DBUG_PRINT ("FMGR", ("appending \":%s\" to path %d", buffer, p));
+            DBUG_PRINT ("appending \":%s\" to path %d", buffer, p);
             bufsize[p] += len;
         }
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -322,7 +324,7 @@ AppendConfigPaths (pathkind_t pathkind, const char *path)
     char *ptoken;
     int envvar_length;
 
-    DBUG_ENTER ("AppendConfigPaths");
+    DBUG_ENTER ();
 
     /*
      * we have to copy path here, as strtok modifies it
@@ -362,7 +364,7 @@ AppendConfigPaths (pathkind_t pathkind, const char *path)
 
     ptoken = MEMfree (ptoken);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -392,7 +394,7 @@ AppendConfigPaths (pathkind_t pathkind, const char *path)
 void
 FMGRsetupPaths ()
 {
-    DBUG_ENTER ("FMGRsetupPaths");
+    DBUG_ENTER ();
 
     FMGRappendPath (PK_path, ".");
     FMGRappendPath (PK_lib_path, ".");
@@ -407,12 +409,12 @@ FMGRsetupPaths ()
     AppendConfigPaths (PK_imp_path, global.config.imppath);
     AppendConfigPaths (PK_extlib_path, global.config.extlibpath);
 
-    DBUG_PRINT ("FMGR", ("PATH is %s", path_bufs[PK_path]));
-    DBUG_PRINT ("FMGR", ("LIB_PATH is %s", path_bufs[PK_lib_path]));
-    DBUG_PRINT ("FMGR", ("IMP_PATH is %s", path_bufs[PK_imp_path]));
-    DBUG_PRINT ("FMGR", ("EXTLIB_PATH is %s", path_bufs[PK_extlib_path]));
+    DBUG_PRINT ("PATH is %s", path_bufs[PK_path]);
+    DBUG_PRINT ("LIB_PATH is %s", path_bufs[PK_lib_path]);
+    DBUG_PRINT ("IMP_PATH is %s", path_bufs[PK_imp_path]);
+    DBUG_PRINT ("EXTLIB_PATH is %s", path_bufs[PK_extlib_path]);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*
@@ -435,7 +437,7 @@ FMGRabsolutePathname (const char *path)
     char *tmp, *cwd;
     static char buffer[MAX_PATH_LEN];
 
-    DBUG_ENTER ("FMGRabsolutePathname");
+    DBUG_ENTER ();
 
     if (path[0] == '/') {
         strcpy (buffer, path);
@@ -467,7 +469,7 @@ FMGRdirname (const char *path)
     static char buffer[MAX_PATH_LEN];
     char *last = NULL;
 
-    DBUG_ENTER ("FMGRdirname");
+    DBUG_ENTER ();
 
     last = strrchr (path, '/');
 
@@ -490,7 +492,7 @@ FMGRbasename (const char *path)
     static char buffer[MAX_PATH_LEN];
     const char *last = NULL;
 
-    DBUG_ENTER ("FMGRdirname");
+    DBUG_ENTER ();
 
     last = strrchr (path, '/');
 
@@ -513,7 +515,7 @@ FMGRfile2id (const char *path)
     static char buffer[MAX_PATH_LEN];
     char *current = NULL;
 
-    DBUG_ENTER ("FMGRfile2id");
+    DBUG_ENTER ();
 
     strcpy (buffer, path);
 
@@ -555,7 +557,7 @@ FMGRwriteOpen (const char *format, ...)
     static char buffer[MAX_PATH_LEN];
     FILE *file;
 
-    DBUG_ENTER ("FMGRwriteOpen");
+    DBUG_ENTER ();
 
     va_start (arg_p, format);
     vsprintf (buffer, format, arg_p);
@@ -595,7 +597,7 @@ FMGRwriteOpenExecutable (const char *format, ...)
     FILE *file;
     int fd;
 
-    DBUG_ENTER ("FMGRwriteOpenExecutable");
+    DBUG_ENTER ();
 
     va_start (arg_p, format);
     vsprintf (buffer, format, arg_p);
@@ -637,7 +639,7 @@ FMGRappendOpen (const char *format, ...)
     static char buffer[MAX_PATH_LEN];
     FILE *file;
 
-    DBUG_ENTER ("FMGRappendOpen");
+    DBUG_ENTER ();
 
     va_start (arg_p, format);
     vsprintf (buffer, format, arg_p);
@@ -665,7 +667,7 @@ FMGRappendOpen (const char *format, ...)
 FILE *
 FMGRclose (FILE *file)
 {
-    DBUG_ENTER ("FMGRclose");
+    DBUG_ENTER ();
 
     if (fclose (file) != 0) {
         CTIabort ("There was an error while closing a file.");
@@ -691,7 +693,7 @@ FMGRsetFileNames (node *module)
 {
     char *buffer;
 
-    DBUG_ENTER ("FMGRsetFileNames");
+    DBUG_ENTER ();
 
     global.filetype = MODULE_FILETYPE (module);
 
@@ -749,7 +751,7 @@ FMGRsetFileNames (node *module)
         global.outfilename = STRcat (global.modulename, ".out");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -766,13 +768,13 @@ FMGRsetFileNames (node *module)
 void
 FMGRdeleteTmpDir ()
 {
-    DBUG_ENTER ("FMGRdeleteTmpDir");
+    DBUG_ENTER ();
 
     if (global.tmp_dirname != NULL) {
         SYScall ("%s %s", global.config.rmdir, global.tmp_dirname);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -790,7 +792,7 @@ FMGRdeleteTmpDir ()
 void
 FMGRcreateTmpDir ()
 {
-    DBUG_ENTER ("FMGRcreateTmpDir");
+    DBUG_ENTER ();
 
     global.tmp_dirname = STRcat (global.config.tmpdir, "/SAC_XXXXXX");
     global.tmp_dirname = mkdtemp (global.tmp_dirname);
@@ -806,7 +808,7 @@ FMGRcreateTmpDir ()
      * signalled via an interrupt.
      */
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #else /* HAVE_MKDTEMP */
@@ -817,7 +819,7 @@ FMGRcreateTmpDir ()
 void
 FMGRcreateTmpDir ()
 {
-    DBUG_ENTER ("FMGRcreateTmpDir");
+    DBUG_ENTER ();
 
     global.tmp_dirname = tempnam (global.config.tmpdir, "SAC_");
 
@@ -836,7 +838,7 @@ FMGRcreateTmpDir ()
      * signalled via an interrupt.
      */
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #endif /* HAVE_MKDTEMP */
@@ -860,7 +862,7 @@ FMGRforEach (const char *path, const char *filterexpr, void *funargs,
     int error;
     char *fullpattern;
 
-    DBUG_ENTER ("FMGRforEach");
+    DBUG_ENTER ();
 
     /*
      * ensure the pattern only matches entire lines
@@ -874,7 +876,7 @@ FMGRforEach (const char *path, const char *filterexpr, void *funargs,
     }
 
     error = regcomp (&regexpr, fullpattern, REG_NOSUB);
-    DBUG_ASSERT ((error == 0), "Illegal regular expression!");
+    DBUG_ASSERT (error == 0, "Illegal regular expression!");
 
     direntry = readdir (currdir);
     while (direntry != NULL) {
@@ -889,5 +891,7 @@ FMGRforEach (const char *path, const char *filterexpr, void *funargs,
     closedir (currdir);
     fullpattern = MEMfree (fullpattern);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

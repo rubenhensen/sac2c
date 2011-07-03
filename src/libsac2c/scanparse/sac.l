@@ -22,7 +22,8 @@
 #include "ctinfo.h"
 #include "globals.h"
 #include "check_mem.h"
-#include "dbug.h"
+#define DBUG_PREFIX "PARSE"
+#include "debug.h"
 
 
 #define FILTER(token) \
@@ -672,7 +673,7 @@ int charpos = 0;
                                CHKMdoNotReport( global.filename);
                                strncpy( global.filename , yytext + start, len);
                                global.filename[len] = '\0';
-                               DBUG_PRINT( "PARSE", ("# %i %s" , global.linenum, global.filename));
+                               DBUG_PRINT ("# %i %s" , global.linenum, global.filename);
                              }
                            }
 
@@ -697,14 +698,14 @@ int charpos = 0;
                                CHKMdoNotReport( global.filename);
                                strncpy( global.filename , yytext + start, len);
                                global.filename[len] = '\0';
-                               DBUG_PRINT( "PARSE", ("# %i %s" , global.linenum, global.filename));
+                               DBUG_PRINT ("# %i %s" , global.linenum, global.filename);
                              }
                            }
 
 #\ *[0-9]+                 { charpos += yyleng;
                              if( commlevel == 0) {
                                global.linenum=atoi(yytext+1)-1;
-                               DBUG_PRINT( "PARSE", ("# %i" , global.linenum));
+                               DBUG_PRINT ("# %i" , global.linenum);
                              }
                            }
 

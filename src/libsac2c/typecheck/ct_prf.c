@@ -4,7 +4,9 @@
  *
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ct_prf.h"
 #include "constants.h"
 #include "new_types.h"
@@ -21,7 +23,7 @@ ApplyCF (te_info *info, ntype *args)
 {
     constant *res = NULL;
 
-    DBUG_ENTER ("NTCApplyCF");
+    DBUG_ENTER ();
 
     switch (TYgetProductSize (args)) {
     case 1:
@@ -65,7 +67,7 @@ ApplyCF (te_info *info, ntype *args)
 ntype *
 NTCCTprf_dummy (te_info *info, ntype *args)
 {
-    DBUG_ENTER ("NTCCTprf_dummy");
+    DBUG_ENTER ();
     DBUG_ASSERT (FALSE, "prf not yet implemented");
     DBUG_RETURN (args);
 }
@@ -83,7 +85,7 @@ NTCCTprf_dummy (te_info *info, ntype *args)
 ntype *
 NTCCTprf_id (te_info *info, ntype *args)
 {
-    DBUG_ENTER ("NTCCTprf_id");
+    DBUG_ENTER ();
     DBUG_RETURN (TYcopyType (args));
 }
 
@@ -106,7 +108,7 @@ NTCCTprf_array (te_info *info, ntype *elems)
     char *err_msg;
     int i;
 
-    DBUG_ENTER ("NTCCTprf_array");
+    DBUG_ENTER ();
 
     outer = TYgetProductMember (elems, 0);
     elem = TYcopyType (TYgetProductMember (elems, 1));
@@ -165,7 +167,7 @@ NTCCTprf_cast (te_info *info, ntype *elems)
     shape *shp, *d_shp, *s_shp;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_cast");
+    DBUG_ENTER ();
 
     cast_t = TYgetProductMember (elems, 0);
     cast_bt = TYeliminateUser (cast_t);
@@ -327,7 +329,7 @@ NTCCTprf_type_conv (te_info *info, ntype *args)
     ct_res cmp;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_type_conv");
+    DBUG_ENTER ();
 
     type = TYgetProductMember (args, 0);
     arg = TYgetProductMember (args, 1);
@@ -365,16 +367,16 @@ NTCCTprf_dispatch_error (te_info *info, ntype *args)
     constant *co;
     int num_rets, i;
 
-    DBUG_ENTER ("NTCCTprf_dispatch_error");
+    DBUG_ENTER ();
 
     num_rets_t = TYgetProductMember (args, 0);
     DBUG_ASSERT (TYisAKV (num_rets_t), "illegal construction of _dispatch_error_:"
                                        " first argument not a constant");
     co = TYgetValue (num_rets_t);
-    DBUG_ASSERT ((COgetType (co) == T_int), "illegal construction of _dispatch_error_:"
-                                            " first argument not an integer");
-    DBUG_ASSERT ((COgetDim (co) == 0), "illegal construction of _dispatch_error_:"
-                                       " first argument not a scalar");
+    DBUG_ASSERT (COgetType (co) == T_int, "illegal construction of _dispatch_error_:"
+                                          " first argument not an integer");
+    DBUG_ASSERT (COgetDim (co) == 0, "illegal construction of _dispatch_error_:"
+                                     " first argument not a scalar");
     num_rets = ((int *)COgetDataVec (co))[0];
 
     res = TYmakeEmptyProductType (num_rets);
@@ -402,7 +404,7 @@ NTCCTprf_guard (te_info *info, ntype *args)
     int i;
     bool guard_true;
 
-    DBUG_ENTER ("NTCCTprf_guard");
+    DBUG_ENTER ();
 
     pred = TYgetProductMember (args, 0);
 
@@ -446,7 +448,7 @@ NTCCTprf_afterguard (te_info *info, ntype *args)
     int i;
     bool all_true = TRUE;
 
-    DBUG_ENTER ("NTCCTprf_afterguard");
+    DBUG_ENTER ();
     arg = TYgetProductMember (args, 0);
 
     for (i = 1; (i < TYgetProductSize (args)) && (res == NULL); i++) {
@@ -511,7 +513,7 @@ NTCCTprf_noteminval (te_info *info, ntype *args)
     ntype *arg;
     ntype *res;
 
-    DBUG_ENTER ("NTCCTprf_noteminval");
+    DBUG_ENTER ();
 
     arg = TYgetProductMember (args, 0);
     res = TYcopyType (arg);
@@ -525,7 +527,7 @@ NTCCTprf_notemaxval (te_info *info, ntype *args)
     ntype *arg;
     ntype *res;
 
-    DBUG_ENTER ("NTCCTprf_notemaxval");
+    DBUG_ENTER ();
 
     arg = TYgetProductMember (args, 0);
     res = TYcopyType (arg);
@@ -569,7 +571,7 @@ NTCCTprf_noteintersect (te_info *info, ntype *args)
     ntype *arg;
     ntype *res;
 
-    DBUG_ENTER ("NTCCTprf_noteintersect");
+    DBUG_ENTER ();
 
     arg = TYgetProductMember (args, 0);
     arg = TYeliminateAKV (arg);
@@ -596,7 +598,7 @@ NTCCTprf_type_constraint (te_info *info, ntype *args)
     ct_res cmp;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_type_constraint");
+    DBUG_ENTER ();
 
     type = TYgetProductMember (args, 0);
     arg = TYgetProductMember (args, 1);
@@ -636,7 +638,7 @@ NTCCTprf_same_shape (te_info *info, ntype *args)
     ntype *array1, *array2, *res1, *res2, *pred;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_same_shape");
+    DBUG_ENTER ();
 
     array1 = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
@@ -687,7 +689,7 @@ NTCCTprf_shape_dim (te_info *info, ntype *args)
     ntype *idx, *array, *res, *pred;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_shape_dim");
+    DBUG_ENTER ();
 
     idx = TYgetProductMember (args, 0);
     array = TYgetProductMember (args, 1);
@@ -737,7 +739,7 @@ NTCCTprf_non_neg_S (te_info *info, ntype *args)
     ntype *res, *pred;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_non_neg_S");
+    DBUG_ENTER ();
 
     idx = TYgetProductMember (args, 0);
     TEassureNonNegativeValues_S (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
@@ -774,7 +776,7 @@ NTCCTprf_non_neg_V (te_info *info, ntype *args)
     ntype *res, *pred;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_non_neg_V");
+    DBUG_ENTER ();
 
     idx = TYgetProductMember (args, 0);
     TEassureNonNegativeValues_V (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
@@ -811,7 +813,7 @@ NTCCTprf_val_shape_S (te_info *info, ntype *args)
     ntype *res, *pred;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_val_shape_S");
+    DBUG_ENTER ();
 
     idx = TYgetProductMember (args, 0);
     array = TYgetProductMember (args, 1);
@@ -868,7 +870,7 @@ NTCCTprf_val_shape_V (te_info *info, ntype *args)
     ntype *res, *pred;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_val_shape_V");
+    DBUG_ENTER ();
 
     idx = TYgetProductMember (args, 0);
     array = TYgetProductMember (args, 1);
@@ -929,7 +931,7 @@ NTCCTprf_val_lt_val_SxS (te_info *info, ntype *args)
     ntype *res, *pred;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_val_lt_val_SxS");
+    DBUG_ENTER ();
 
     iv1 = TYgetProductMember (args, 0);
     iv2 = TYgetProductMember (args, 1);
@@ -978,7 +980,7 @@ NTCCTprf_val_le_val_SxS (te_info *info, ntype *args)
     ntype *res, *pred;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_val_le_val_SxS");
+    DBUG_ENTER ();
 
     iv1 = TYgetProductMember (args, 0);
     iv2 = TYgetProductMember (args, 1);
@@ -1027,7 +1029,7 @@ NTCCTprf_val_le_val_VxV (te_info *info, ntype *args)
     ntype *res, *pred;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_val_le_val_VxV");
+    DBUG_ENTER ();
 
     iv1 = TYgetProductMember (args, 0);
     iv2 = TYgetProductMember (args, 1);
@@ -1086,7 +1088,7 @@ NTCCTprf_prod_shape (te_info *info, ntype *args)
     ntype *res, *pred;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_prod_shape");
+    DBUG_ENTER ();
 
     new_shp = TYgetProductMember (args, 0);
     array = TYgetProductMember (args, 1);
@@ -1138,7 +1140,7 @@ NTCCTprf_nested_shape (te_info *info, ntype *args)
     shape *shp;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_type_conv");
+    DBUG_ENTER ();
 
     type = TYgetProductMember (args, 0);
 
@@ -1170,7 +1172,7 @@ NTCCTprf_saabind (te_info *info, ntype *args)
     ntype *type;
     ntype *res;
 
-    DBUG_ENTER ("NTCCTprf_saabind");
+    DBUG_ENTER ();
 
     dim = TYgetProductMember (args, 0);
     shape = TYgetProductMember (args, 1);
@@ -1207,7 +1209,7 @@ NTCCTprf_dim_A (te_info *info, ntype *args)
     ntype *res;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_dim_A");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "dim called with incorrect number of arguments");
 
@@ -1248,7 +1250,7 @@ NTCCTprf_shape_A (te_info *info, ntype *args)
 
     int n;
 
-    DBUG_ENTER ("NTCCTprf_shape_A");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "shape called with incorrect number of arguments");
 
@@ -1298,7 +1300,7 @@ NTCCTprf_reshape_VxA (te_info *info, ntype *args)
     ntype *new_shp, *array, *scalar;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_reshape_VxA");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "reshape called with incorrect number of arguments");
 
@@ -1372,7 +1374,7 @@ NTCCTprf_sel_VxA (te_info *info, ntype *args)
     ntype *idx, *array;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_selS");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "selS called with incorrect number of arguments");
 
@@ -1429,7 +1431,7 @@ NTCCTprf_sel_VxIA (te_info *info, ntype *args)
     ntype *idx, *array;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_selIS");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "selIS called with incorrect number of arguments");
 
@@ -1488,7 +1490,7 @@ NTCCTprf_idx_selS (te_info *info, ntype *args)
     ntype *idx, *array;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_idx_selS");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "selS called with incorrect number of arguments");
 
@@ -1534,7 +1536,7 @@ NTCCTprf_shape_sel (te_info *info, ntype *args)
     ntype *idx, *array;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_shape_sel");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "selS called with incorrect number of arguments");
 
@@ -1583,7 +1585,7 @@ NTCCTprf_idx_shape_sel (te_info *info, ntype *args)
     ntype *idx, *array;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_idx_shape_sel");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "selS called with incorrect number of arguments");
 
@@ -1632,7 +1634,7 @@ NTCCTprf_modarray_AxSxS (te_info *info, ntype *args)
     ntype *idx, *array, *val;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_modarray_AxSxS");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 3,
                  "modarray_AxSxS called with incorrect number of arguments");
 
@@ -1683,7 +1685,7 @@ NTCCTprf_modarray_AxVxS (te_info *info, ntype *args)
     ntype *idx, *array, *val;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_modarray_AxVxS");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 3,
                  "modarrayS called with incorrect number of arguments");
 
@@ -1751,7 +1753,7 @@ NTCCTprf_modarray_AxVxA (te_info *info, ntype *args)
     ntype *idx, *array, *val;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_modarray_AxVxA");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 3,
                  "modarrayA called with incorrect number of arguments");
 
@@ -1820,7 +1822,7 @@ NTCCTprf_modarray_AxSxA (te_info *info, ntype *args)
     ntype *idx, *array, *val;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_modarray_AxSxA");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 3,
                  "modarrayA called with incorrect number of arguments");
 
@@ -1884,7 +1886,7 @@ ConvS (te_info *info, ntype *args, simpletype st)
     ntype *array;
     char *err_msg;
 
-    DBUG_ENTER ("ConvS");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "ConvS called with incorrect number of arguments");
 
@@ -1925,7 +1927,7 @@ NTCCTprf_tob_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_tob_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_byte);
 
@@ -1949,7 +1951,7 @@ NTCCTprf_tos_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_tos_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_short);
 
@@ -1973,7 +1975,7 @@ NTCCTprf_toi_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_toi_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_int);
 
@@ -1997,7 +1999,7 @@ NTCCTprf_tol_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_tol_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_long);
 
@@ -2021,7 +2023,7 @@ NTCCTprf_toll_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_toll_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_longlong);
 
@@ -2045,7 +2047,7 @@ NTCCTprf_toub_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_toub_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_ubyte);
 
@@ -2069,7 +2071,7 @@ NTCCTprf_tous_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_tous_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_ushort);
 
@@ -2093,7 +2095,7 @@ NTCCTprf_toui_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_toui_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_uint);
 
@@ -2117,7 +2119,7 @@ NTCCTprf_toul_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_toul_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_ulong);
 
@@ -2141,7 +2143,7 @@ NTCCTprf_toull_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_toull_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_ulonglong);
 
@@ -2165,7 +2167,7 @@ NTCCTprf_tof_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_tof_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_float);
 
@@ -2189,7 +2191,7 @@ NTCCTprf_tod_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_tod_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_double);
 
@@ -2213,7 +2215,7 @@ NTCCTprf_tobool_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_tobool_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_bool);
 
@@ -2237,7 +2239,7 @@ NTCCTprf_toc_S (te_info *info, ntype *args)
 {
     ntype *res = NULL;
 
-    DBUG_ENTER ("NTCCTprf_toc_S");
+    DBUG_ENTER ();
 
     res = ConvS (info, args, T_char);
 
@@ -2261,7 +2263,7 @@ NTCCTprf_ari_op_SxS (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_ari_op_SxV");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "ari_op_SxV called with incorrect number of arguments");
 
@@ -2312,7 +2314,7 @@ NTCCTprf_ari_op_SxV (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_ari_op_SxV");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "ari_op_SxV called with incorrect number of arguments");
 
@@ -2363,7 +2365,7 @@ NTCCTprf_ari_op_VxS (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_ari_op_VxS");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "ari_op_VxS called with incorrect number of arguments");
 
@@ -2414,7 +2416,7 @@ NTCCTprf_ari_op_VxV (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_ari_op_VxV");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "ari_op_VxV called with incorrect number of arguments");
 
@@ -2466,7 +2468,7 @@ NTCCTprf_ari_op_S (te_info *info, ntype *args)
     ntype *array;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_ari_op_S");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "ari_op_A called with incorrect number of arguments");
 
@@ -2505,7 +2507,7 @@ NTCCTprf_ari_op_V (te_info *info, ntype *args)
     ntype *array;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_ari_op_V");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "ari_op_A called with incorrect number of arguments");
 
@@ -2544,7 +2546,7 @@ NTCCTprf_ari_op_A (te_info *info, ntype *args)
     ntype *array;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_ari_op_A");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "ari_op_A called with incorrect number of arguments");
 
@@ -2583,7 +2585,7 @@ NTCCTprf_rel_op_SxS (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_rel_op_SxS");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "rel_op_SxS called with incorrect number of arguments");
@@ -2630,7 +2632,7 @@ NTCCTprf_rel_op_SxV (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_rel_op_SxV");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "rel_op_SxV called with incorrect number of arguments");
@@ -2678,7 +2680,7 @@ NTCCTprf_rel_op_VxS (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_rel_op_VxS");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "rel_op_VxS called with incorrect number of arguments");
@@ -2726,7 +2728,7 @@ NTCCTprf_rel_op_VxV (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_rel_op_VxV");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "rel_op_AxA called with incorrect number of arguments");
@@ -2776,7 +2778,7 @@ NTCCTprf_log_op_SxS (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_log_op_SxS");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "log_op_SxS called with incorrect number of arguments");
@@ -2818,7 +2820,7 @@ NTCCTprf_log_op_SxV (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_log_op_SxV");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "log_op_SxV called with incorrect number of arguments");
@@ -2860,7 +2862,7 @@ NTCCTprf_log_op_VxS (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_log_op_VxS");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "log_op_VxS called with incorrect number of arguments");
@@ -2902,7 +2904,7 @@ NTCCTprf_log_op_VxV (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_log_op_VxV");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "log_op_VxV called with incorrect number of arguments");
@@ -2945,7 +2947,7 @@ NTCCTprf_log_op_V (te_info *info, ntype *args)
     ntype *array;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_log_op_V");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "log_op_V called with incorrect number of arguments");
 
@@ -2984,7 +2986,7 @@ NTCCTprf_log_op_S (te_info *info, ntype *args)
     ntype *array;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_log_op_S");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYgetProductSize (args) == 1,
                  "log_op_S called with incorrect number of arguments");
@@ -3024,7 +3026,7 @@ NTCCTprf_int_op_SxS (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_int_op_SxS");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "int_op_SxS called with incorrect number of arguments");
 
@@ -3069,7 +3071,7 @@ NTCCTprf_int_op_SxV (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_int_op_SxV");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "int_op_SxV called with incorrect number of arguments");
 
@@ -3115,7 +3117,7 @@ NTCCTprf_int_op_VxS (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_int_op_VxS");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "int_op_SxV called with incorrect number of arguments");
 
@@ -3161,7 +3163,7 @@ NTCCTprf_int_op_VxV (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_int_op_VxV");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "int_op_VxV called with incorrect number of arguments");
 
@@ -3209,7 +3211,7 @@ NTCCTprf_take_SxV (te_info *info, ntype *args)
     shape *shp;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_take_SxV");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "take_SxV called with incorrect number of arguments");
 
@@ -3268,7 +3270,7 @@ NTCCTprf_drop_SxV (te_info *info, ntype *args)
     shape *shp;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_drop_SxV");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "drop_SxV called with incorrect number of arguments");
 
@@ -3328,7 +3330,7 @@ NTCCTprf_cat_VxV (te_info *info, ntype *args)
     ntype *array1, *array2;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_cat_VxV");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "cat_VxV called with incorrect number of arguments");
 
@@ -3388,7 +3390,7 @@ NTCCTprf_mesh_VxVxV (te_info *info, ntype *args)
     ntype *arg;
     ntype *res;
 
-    DBUG_ENTER ("NTCCTprf_mesh_VxVxV");
+    DBUG_ENTER ();
 
     arg = TYgetProductMember (args, 1);
     arg = TYeliminateAKV (arg);
@@ -3415,7 +3417,7 @@ NTCCTprf_vect2offset (te_info *info, ntype *args)
     ntype *idx, *shp;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_vect2offset");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "vect2offset called with incorrect number of arguments");
 
@@ -3464,7 +3466,7 @@ NTCCTprf_idxs2offset (te_info *info, ntype *args)
     int i;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTprf_idxs2offset");
+    DBUG_ENTER ();
 
     len = TYgetProductSize (args) - 1;
     shp = TYgetProductMember (args, 0);
@@ -3505,7 +3507,7 @@ NTCCTprf_hideValue_SxA (te_info *info, ntype *args)
     ntype *res = NULL;
     ntype *array;
 
-    DBUG_ENTER ("NTCCTprf_hideValue_SxA");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "hideValue called with incorrect number of arguments");
 
@@ -3536,7 +3538,7 @@ NTCCTprf_hideShape_SxA (te_info *info, ntype *args)
     ntype *res = NULL;
     ntype *array;
 
-    DBUG_ENTER ("NTCCTprf_hideShape_SxA");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "hideShape called with incorrect number of arguments");
 
@@ -3570,7 +3572,7 @@ NTCCTprf_hideDim_SxA (te_info *info, ntype *args)
     ntype *res = NULL;
     ntype *array;
 
-    DBUG_ENTER ("NTCCTprf_hideDim_SxA");
+    DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
                  "hideDim called with incorrect number of arguments");
 
@@ -3580,3 +3582,5 @@ NTCCTprf_hideDim_SxA (te_info *info, ntype *args)
 
     DBUG_RETURN (TYmakeProductType (1, res));
 }
+
+#undef DBUG_PREFIX

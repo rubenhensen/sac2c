@@ -42,7 +42,9 @@
  *****************************************************************************/
 #include "distribute_threads.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "DST"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -99,7 +101,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -120,7 +122,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -146,7 +148,7 @@ DSTdoDistributeThreads (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("DSTdoDistributeThreads");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -182,9 +184,9 @@ DSTdoDistributeThreads (node *syntax_tree)
 static 
 node *DummyStaticHelper(node *arg_node)
 {
-  DBUG_ENTER( "DummyStaticHelper");
+  DBUG_ENTER ();
 
-  DBUG_RETURN( arg_node);
+  DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -209,18 +211,18 @@ node *DummyStaticHelper(node *arg_node)
 node *
 DSTmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DSTmodule");
+    DBUG_ENTER ();
 
     INFO_TRAVMODE (arg_info) = DST_findmain;
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
-    DBUG_ASSERT ((INFO_MAIN (arg_info) != NULL), "no main function found");
+    DBUG_ASSERT (INFO_MAIN (arg_info) != NULL, "no main function found");
 
     INFO_AVAIL (arg_info) = global.max_threads;
     INFO_THROTTLE (arg_info) = global.max_threads / 2;
     do {
         INFO_THROTTLE (arg_info) = MATHmax (1, INFO_THROTTLE (arg_info));
-        DBUG_PRINT ("DST", ("!!! Trying a throttle of %d.", INFO_THROTTLE (arg_info)));
+        DBUG_PRINT ("!!! Trying a throttle of %d.", INFO_THROTTLE (arg_info));
         INFO_TRAVMODE (arg_info) = DST_follow;
         INFO_FAILED (arg_info) = FALSE;
         INFO_MAIN (arg_info) = TRAVdo (INFO_MAIN (arg_info), arg_info);
@@ -250,7 +252,7 @@ DSTmodule (node *arg_node, info *arg_info)
 node *
 DSTfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DSTfundef");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == DST_findmain) {
         if (NSequals (FUNDEF_NS (arg_node), NSgetRootNamespace ())
@@ -260,14 +262,14 @@ DSTfundef (node *arg_node, info *arg_info)
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         }
     } else if (INFO_TRAVMODE (arg_info) == DST_follow) {
-        DBUG_PRINT ("DST", (">>> Entering function %s (%d/%d)...", CTIitemName (arg_node),
-                            FUNDEF_DEPTH (arg_node), FUNDEF_HEIGHT (arg_node)));
+        DBUG_PRINT (">>> Entering function %s (%d/%d)...", CTIitemName (arg_node),
+                    FUNDEF_DEPTH (arg_node), FUNDEF_HEIGHT (arg_node));
 
         if (FUNDEF_HEIGHT (arg_node) == PROCESSING) {
             /* recursive function, we don't know how deep it will go,
              * so we bump up the upwards level to infinite
              */
-            DBUG_PRINT ("DST", ("      recursive function!"));
+            DBUG_PRINT ("      recursive function!");
             INFO_UP (arg_info) = INFINITE;
         } else if ((FUNDEF_HEIGHT (arg_node) != UNKNOWN)
                    && (FUNDEF_DEPTH (arg_node) >= INFO_DOWN (arg_info))) {
@@ -279,7 +281,7 @@ DSTfundef (node *arg_node, info *arg_info)
              * levels, so we should be fine.
              * We reuse the height value.
              */
-            DBUG_PRINT ("DST", ("      seen function before!"));
+            DBUG_PRINT ("      seen function before!");
             INFO_UP (arg_info)
               = MAX_HEIGHT (FUNDEF_HEIGHT (arg_node), INFO_UP (arg_info));
         } else {
@@ -292,28 +294,28 @@ DSTfundef (node *arg_node, info *arg_info)
                  * we assume external functions spawn no further threads
                  * so we leave the level as is ( we compute MAX( current, 0)).
                  */
-                DBUG_PRINT ("DST", ("      external function!"));
+                DBUG_PRINT ("      external function!");
                 INFO_UP (arg_info) = 0;
             } else if (FUNDEF_BODY (arg_node) == NULL) {
                 /*
                  * we don't have the body. We cannot say anything here. To
                  * be safe we assume infinite.
                  */
-                DBUG_PRINT ("DST", ("      function without body!"));
+                DBUG_PRINT ("      function without body!");
                 INFO_UP (arg_info) = INFINITE;
             } else {
                 /*
                  * we traverse the body and see.
                  */
-                DBUG_PRINT ("DST", ("      entering body to infer information."));
+                DBUG_PRINT ("      entering body to infer information.");
                 FUNDEF_HEIGHT (arg_node) = PROCESSING;
                 FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
             }
             FUNDEF_DEPTH (arg_node) = INFO_DOWN (arg_info);
             FUNDEF_HEIGHT (arg_node) = INFO_UP (arg_info);
         }
-        DBUG_PRINT ("DST", ("<<< Leaving function %s (%d/%d)...", CTIitemName (arg_node),
-                            FUNDEF_DEPTH (arg_node), FUNDEF_HEIGHT (arg_node)));
+        DBUG_PRINT ("<<< Leaving function %s (%d/%d)...", CTIitemName (arg_node),
+                    FUNDEF_DEPTH (arg_node), FUNDEF_HEIGHT (arg_node));
     } else if (INFO_TRAVMODE (arg_info) == DST_clean) {
         FUNDEF_DEPTH (arg_node) = UNKNOWN;
         FUNDEF_HEIGHT (arg_node) = UNKNOWN;
@@ -333,7 +335,7 @@ DSTfundef (node *arg_node, info *arg_info)
 node *
 DSTap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DSTap");
+    DBUG_ENTER ();
 
     AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
@@ -350,7 +352,7 @@ DSTap (node *arg_node, info *arg_info)
 node *
 DSTwith3 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DSTwith3");
+    DBUG_ENTER ();
 
 #ifdef USE_CONCURRENT_RANGES
     WITH3_USECONCURRENTRANGES (arg_node) = TRUE;
@@ -377,7 +379,7 @@ DSTrange (node *arg_node, info *arg_info)
     int init_avail, level_avail, threshold;
     int level_used;
 
-    DBUG_ENTER ("DSTrange");
+    DBUG_ENTER ();
 
     /* count width */
     INFO_WIDTH (arg_info)++;
@@ -406,8 +408,8 @@ DSTrange (node *arg_node, info *arg_info)
         break;
     case MUTC_DMODE_bounded:
         threshold = global.mutc_distribution_mode_arg;
-        DBUG_PRINT ("DST", ("bounded mode: reached %d, max %d.", INFO_GLOBALS (arg_info),
-                            threshold));
+        DBUG_PRINT ("bounded mode: reached %d, max %d.", INFO_GLOBALS (arg_info),
+                    threshold);
 
         if ((NODE_TYPE (RANGE_LOWERBOUND (arg_node)) == N_num)
             && (NODE_TYPE (RANGE_UPPERBOUND (arg_node)) == N_num)) {
@@ -417,16 +419,16 @@ DSTrange (node *arg_node, info *arg_info)
             if (num_elements <= 1) {
                 /* do not distribute 1 element creates -> no point */
                 RANGE_ISGLOBAL (arg_node) = FALSE;
-                DBUG_PRINT ("DST", ("singleton create --> local"));
+                DBUG_PRINT ("singleton create --> local");
             } else if (INFO_GLOBALS (arg_info) * num_elements <= threshold) {
                 RANGE_ISGLOBAL (arg_node) = TRUE;
                 INFO_GLOBALS (arg_info) *= num_elements;
-                DBUG_PRINT ("DST", ("globals left, now using %d --> global",
-                                    INFO_GLOBALS (arg_info)));
+                DBUG_PRINT ("globals left, now using %d --> global",
+                            INFO_GLOBALS (arg_info));
             } else {
                 RANGE_ISGLOBAL (arg_node) = FALSE;
-                DBUG_PRINT ("DST", ("globals exhausted, cannot fit %d more --> local",
-                                    num_elements));
+                DBUG_PRINT ("globals exhausted, cannot fit %d more --> local",
+                            num_elements);
             }
         } else {
             if (INFO_GLOBALS (arg_info) <= threshold) {
@@ -436,10 +438,10 @@ DSTrange (node *arg_node, info *arg_info)
                  */
                 RANGE_ISGLOBAL (arg_node) = TRUE;
                 INFO_GLOBALS (arg_info) = threshold;
-                DBUG_PRINT ("DST", ("unknown size, grab all --> global"));
+                DBUG_PRINT ("unknown size, grab all --> global");
             } else {
                 RANGE_ISGLOBAL (arg_node) = FALSE;
-                DBUG_PRINT ("DST", ("unknown size, exhausted --> local"));
+                DBUG_PRINT ("unknown size, exhausted --> local");
             }
         }
         break;
@@ -567,3 +569,5 @@ DSTrange (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

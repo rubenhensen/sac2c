@@ -5,7 +5,10 @@
 #include <stdio.h>
 
 #include "ct_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "NTC"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "ctinfo.h"
@@ -51,16 +54,14 @@ ComputeType (ct_funptr CtFun, te_info *info, ntype *args, bool strict)
     char *tmp_str;
 #endif
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, 0, 0););
-    DBUG_PRINT ("NTC",
-                ("computing type of %s \"%s%s%s\" applied to %s", TEgetKindStr (info),
-                 ((TEgetKind (info) == TE_udf) || (TEgetKind (info) == TE_foldf)
-                    ? TEgetModStr (info)
-                    : ""),
-                 ((TEgetKind (info) == TE_udf) || (TEgetKind (info) == TE_foldf) ? "::"
-                                                                                 : ""),
-                 TEgetNameStr (info), tmp_str));
-    DBUG_EXECUTE ("NTC", MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (args, 0, 0));
+    DBUG_PRINT ("computing type of %s \"%s%s%s\" applied to %s", TEgetKindStr (info),
+                TEgetKind (info) == TE_udf || TEgetKind (info) == TE_foldf
+                  ? TEgetModStr (info)
+                  : "",
+                TEgetKind (info) == TE_udf || TEgetKind (info) == TE_foldf ? "::" : "",
+                TEgetNameStr (info), tmp_str);
+    DBUG_EXECUTE (MEMfree (tmp_str));
 
     /*
      * as all CtFun s  operate on array types only, we try to fix as many argument
@@ -88,7 +89,7 @@ ComputeType (ct_funptr CtFun, te_info *info, ntype *args, bool strict)
              * args contain bottom which needs to be propagated.
              */
             bottom = TYgetBottom (args);
-            DBUG_ASSERT ((bottom != NULL), "inconsistent type in NTCCTcomputeType!");
+            DBUG_ASSERT (bottom != NULL, "inconsistent type in NTCCTcomputeType!");
             num_res = TEgetNumRets (info);
             res = TYmakeEmptyProductType (num_res);
             for (i = 0; i < num_res; i++) {
@@ -99,9 +100,9 @@ ComputeType (ct_funptr CtFun, te_info *info, ntype *args, bool strict)
         res = SDcreateSignatureDependency (CtFun, info, args, strict);
     }
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (res, FALSE, 0););
-    DBUG_PRINT ("NTC", ("yields %s", tmp_str));
-    DBUG_EXECUTE ("NTC", MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (res, FALSE, 0));
+    DBUG_PRINT ("yields %s", tmp_str);
+    DBUG_EXECUTE (MEMfree (tmp_str));
 
     return (res);
 }
@@ -109,14 +110,14 @@ ComputeType (ct_funptr CtFun, te_info *info, ntype *args, bool strict)
 ntype *
 NTCCTcomputeType (ct_funptr CtFun, te_info *info, ntype *args)
 {
-    DBUG_ENTER ("NTCCTcomputeType");
+    DBUG_ENTER ();
     DBUG_RETURN (ComputeType (CtFun, info, args, TRUE));
 }
 
 ntype *
 NTCCTcomputeTypeNonStrict (ct_funptr CtFun, te_info *info, ntype *args)
 {
-    DBUG_ENTER ("NTCCTcomputeType");
+    DBUG_ENTER ();
     DBUG_RETURN (ComputeType (CtFun, info, args, FALSE));
 }
 
@@ -145,8 +146,8 @@ NTCCTcond (te_info *err_info, ntype *args)
     ntype *res = NULL;
     char *err_msg;
 
-    DBUG_ENTER ("NTCCTcond");
-    DBUG_ASSERT ((TYisProdOfArray (args)), "NTCCond called with non-fixed predicate!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYisProdOfArray (args), "NTCCond called with non-fixed predicate!");
 
     pred = TYgetProductMember (args, 0);
     TEassureBoolS ("predicate", pred);
@@ -181,7 +182,7 @@ NTCCTfuncond (te_info *err_info, ntype *args)
     constant *pred_val;
     ntype *non_alpha = NULL;
 
-    DBUG_ENTER ("NTCCTfuncond");
+    DBUG_ENTER ();
 
     pred = TYgetProductMember (args, 0);
     rhs1 = TYgetProductMember (args, 1);
@@ -254,3 +255,5 @@ NTCCTfuncond (te_info *err_info, ntype *args)
 
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

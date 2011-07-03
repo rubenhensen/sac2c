@@ -102,7 +102,10 @@
 #include "new_types.h"
 #include "new_typecheck.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "AL"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -144,7 +147,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -161,7 +164,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -185,7 +188,7 @@ ALdoAssocLawOptimization (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("ALdoAssocLawOptimization");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -220,7 +223,7 @@ AltPrf (prf op)
 {
     prf res;
 
-    DBUG_ENTER ("AltPrf");
+    DBUG_ENTER ();
 
     switch (op) {
     case F_neg_S:
@@ -243,7 +246,7 @@ getInverse (prf prf, node *exprs)
     node *var, *res;
     pattern *pat;
 
-    DBUG_ENTER ("getInverse");
+    DBUG_ENTER ();
 
     var = NULL;
     res = NULL;
@@ -278,7 +281,7 @@ getElement (node *exprs)
 {
     node *res;
 
-    DBUG_ENTER ("getElement");
+    DBUG_ENTER ();
 
     res = ID_AVIS (EXPRS_EXPR (exprs));
 
@@ -293,7 +296,7 @@ identifyInverses (prf inverse_prf, node **head)
     node *left, *right, *res, *tmp, *left_last, *right_last;
     node *left_inv, *right_inv, *left_elem, *right_elem;
 
-    DBUG_ENTER ("identifyInverses");
+    DBUG_ENTER ();
 
     left = *head;
     left_last = NULL;
@@ -344,7 +347,7 @@ isAssociativeAndCommutativePrf (prf prf)
 {
     bool res;
 
-    DBUG_ENTER ("isAssociativeAndCommutativePrf");
+    DBUG_ENTER ();
 
     switch (prf) {
     case F_add_SxS:
@@ -391,7 +394,7 @@ isPrfAdd (prf prf)
 {
     bool res;
 
-    DBUG_ENTER ("isPrfAdd");
+    DBUG_ENTER ();
 
     switch (prf) {
     case F_add_SxS:
@@ -414,7 +417,7 @@ isPrfMul (prf prf)
 {
     bool res;
 
-    DBUG_ENTER ("isPrfMul");
+    DBUG_ENTER ();
 
     switch (prf) {
     case F_mul_SxS:
@@ -437,7 +440,7 @@ isConst (node *n)
 {
     bool res;
 
-    DBUG_ENTER ("isConst");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (n)) {
     case N_char:
@@ -478,7 +481,7 @@ isNonConstScalar (node *n)
 {
     bool res;
 
-    DBUG_ENTER ("isNonConstScalar");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (n) == N_id) {
         res = ((TYisAKS (ID_NTYPE (n))) && (TYgetDim (ID_NTYPE (n)) == 0));
@@ -494,7 +497,7 @@ isScalar (node *n)
 {
     bool res;
 
-    DBUG_ENTER ("isScalar");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (n)) {
     case N_numbyte:
@@ -529,7 +532,7 @@ isScalar (node *n)
 static prf
 normalizePrf (prf prf)
 {
-    DBUG_ENTER ("normalizePrf");
+    DBUG_ENTER ();
 
     switch (prf) {
     case F_add_SxS:
@@ -558,7 +561,7 @@ compatiblePrf (prf p1, prf p2)
 {
     bool res;
 
-    DBUG_ENTER ("compatiblePrf");
+    DBUG_ENTER ();
 
     res = (normalizePrf (p1) == normalizePrf (p2));
 
@@ -570,7 +573,7 @@ getPrf (prf prf, node *e1, node *e2)
 {
     bool s1, s2;
 
-    DBUG_ENTER ("getPrf");
+    DBUG_ENTER ();
 
     s1 = isScalar (e1);
     s2 = isScalar (e2);
@@ -642,7 +645,7 @@ static bool
 isArg1Scl (prf prf)
 {
     bool res;
-    DBUG_ENTER ("isArg1Scl");
+    DBUG_ENTER ();
 
     switch (prf) {
     case F_add_SxS:
@@ -662,7 +665,7 @@ static bool
 isArg2Scl (prf prf)
 {
     bool res;
-    DBUG_ENTER ("isArg2Scl");
+    DBUG_ENTER ();
 
     switch (prf) {
     case F_add_SxS:
@@ -683,7 +686,7 @@ isSingletonOrEmpty (node *expr)
 {
     bool res;
 
-    DBUG_ENTER ("isSingleton");
+    DBUG_ENTER ();
 
     res = ((expr == NULL) || (EXPRS_NEXT (expr) == NULL));
 
@@ -695,7 +698,7 @@ consumeHead (node **exprs)
 {
     node *res;
 
-    DBUG_ENTER ("consumeHead");
+    DBUG_ENTER ();
 
     res = EXPRS_EXPR (*exprs);
     EXPRS_EXPR (*exprs) = NULL;
@@ -713,7 +716,7 @@ CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
     node *id;
     ntype *prod;
 
-    DBUG_ENTER ("CombineExprs2Prf");
+    DBUG_ENTER ();
 
     rhs = TCmakePrf2 (getPrf (prf, expr1, expr2), expr1, expr2);
 
@@ -741,7 +744,7 @@ revert (node *ass, node *agg)
 {
     node *res;
 
-    DBUG_ENTER ("revert");
+    DBUG_ENTER ();
 
     if (ass == NULL) {
         res = agg;
@@ -759,7 +762,7 @@ Exprs2PrfTree (prf prf, node *exprs, info *arg_info)
 {
     node *res;
 
-    DBUG_ENTER ("Exprs2PrfTree");
+    DBUG_ENTER ();
 
     if (exprs == NULL) {
         res = NULL;
@@ -783,7 +786,7 @@ CollectExprs (prf prf, node *a, bool sclprf)
     node *res, *rhs;
     node *left, *right;
 
-    DBUG_ENTER ("CollectExprs");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (a) == N_id, "CollectExprs called with illegal node type");
 
@@ -843,7 +846,7 @@ CollectExprs (prf prf, node *a, bool sclprf)
 node *
 ALmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ALmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -853,18 +856,18 @@ ALmodule (node *arg_node, info *arg_info)
 node *
 ALfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ALfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("AL", ("traversing body of (%s) %s",
-                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                           FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("traversing body of (%s) %s",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                    FUNDEF_NAME (arg_node));
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
-        DBUG_PRINT ("AL", ("leaving body of (%s) %s",
-                           (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                           FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("leaving body of (%s) %s",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                    FUNDEF_NAME (arg_node));
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
@@ -881,16 +884,16 @@ ALblock (node *arg_node, info *arg_info)
 {
     trav_mode_t old_mode;
 
-    DBUG_ENTER ("ALblock");
+    DBUG_ENTER ();
 
     old_mode = INFO_MODE (arg_info);
 
     INFO_MODE (arg_info) = MODE_recurse;
-    DBUG_PRINT ("AL", ("Traversing assignment chain, mode %d", INFO_MODE (arg_info)));
+    DBUG_PRINT ("Traversing assignment chain, mode %d", INFO_MODE (arg_info));
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     INFO_MODE (arg_info) = MODE_mark;
-    DBUG_PRINT ("AL", ("Traversing assignment chain, mode %d", INFO_MODE (arg_info)));
+    DBUG_PRINT ("Traversing assignment chain, mode %d", INFO_MODE (arg_info));
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
     INFO_MODE (arg_info) = old_mode;
@@ -901,15 +904,14 @@ ALblock (node *arg_node, info *arg_info)
 node *
 ALassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ALassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     } else {
-        DBUG_PRINT ("AL",
-                    ("Reaching end of assignment chain, mode %d", INFO_MODE (arg_info)));
+        DBUG_PRINT ("Reaching end of assignment chain, mode %d", INFO_MODE (arg_info));
 
         switch (INFO_MODE (arg_info)) {
         case MODE_recurse:
@@ -922,15 +924,15 @@ ALassign (node *arg_node, info *arg_info)
             DBUG_ASSERT (FALSE, "Illegal mode encountered at end of assign chain.");
             break;
         }
-        DBUG_PRINT ("AL", ("Reaching end of assignment chain, new mode %d",
-                           INFO_MODE (arg_info)));
+        DBUG_PRINT ("Reaching end of assignment chain, new mode %d",
+                    INFO_MODE (arg_info));
     }
 
     if (INFO_MODE (arg_info) == MODE_transform) {
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
         if (INFO_PREASSIGN (arg_info) != NULL) {
-            DBUG_PRINT ("AL", ("AL optimisation successful !!."));
+            DBUG_PRINT ("AL optimisation successful !!.");
             arg_node
               = TCappendAssign (revert (INFO_PREASSIGN (arg_info), NULL), arg_node);
             INFO_PREASSIGN (arg_info) = NULL;
@@ -943,9 +945,9 @@ ALassign (node *arg_node, info *arg_info)
 node *
 ALlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ALlet");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("AL", ("looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node)))));
+    DBUG_PRINT ("looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
     switch (INFO_MODE (arg_info)) {
     case MODE_recurse:
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -972,7 +974,7 @@ ALlet (node *arg_node, info *arg_info)
 node *
 ALids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ALids");
+    DBUG_ENTER ();
 
     switch (INFO_MODE (arg_info)) {
     case MODE_mark:
@@ -1003,13 +1005,13 @@ ALprf (node *arg_node, info *arg_info)
     node *consts_id, *scalars_id, *vects_id;
     node *scalars_inv, *scalars_inv_id, *vects_inv, *vects_inv_id;
 
-    DBUG_ENTER ("ALprf");
+    DBUG_ENTER ();
 
     prf = PRF_PRF (arg_node);
 
     if ((INFO_MODE (arg_info) == MODE_transform)
         && isAssociativeAndCommutativePrf (prf)) {
-        DBUG_PRINT ("AL", ("Eligible prf node found: %s", global.prf_name[prf]));
+        DBUG_PRINT ("Eligible prf node found: %s", global.prf_name[prf]);
 
         ltype = IDS_NTYPE (INFO_LHS (arg_info));
 
@@ -1021,11 +1023,11 @@ ALprf (node *arg_node, info *arg_info)
               = TCappendExprs (CollectExprs (prf, PRF_ARG1 (arg_node), isArg1Scl (prf)),
                                CollectExprs (prf, PRF_ARG2 (arg_node), isArg2Scl (prf)));
 
-            DBUG_PRINT ("AL", ("Operand set:"));
-            DBUG_EXECUTE ("AL", {
+            DBUG_PRINT ("Operand set:");
+            DBUG_EXECUTE ({
                 node *tmp = exprs;
                 while (tmp != NULL) {
-                    DBUG_PRINT ("AL", ("%s ", AVIS_NAME (ID_AVIS (EXPRS_EXPR (tmp)))));
+                    DBUG_PRINT ("%s ", AVIS_NAME (ID_AVIS (EXPRS_EXPR (tmp))));
                     tmp = EXPRS_NEXT (tmp);
                 }
             });
@@ -1118,3 +1120,5 @@ ALprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

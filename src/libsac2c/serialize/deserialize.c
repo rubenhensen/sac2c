@@ -23,7 +23,10 @@
 #include "traverse.h"
 #include "ctinfo.h"
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "DS"
+#include "debug.h"
+
 #include "globals.h"
 
 /*
@@ -86,7 +89,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -118,7 +121,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -156,7 +159,7 @@ makeAliasing (node *target, ds_aliasing_t *next)
 {
     ds_aliasing_t *result;
 
-    DBUG_ENTER ("makeAliasing");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (ds_aliasing_t));
 
@@ -175,7 +178,7 @@ InsertIntoState (node *item)
 {
     usertype udt, alias;
 
-    DBUG_ENTER ("InsertIntoState");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (item)) {
     case N_fundef:
@@ -213,7 +216,7 @@ InsertIntoState (node *item)
          */
         if (TYPEDEF_ISALIAS (item)) {
             DBUG_ASSERT (TYisAKSUdt (TYPEDEF_NTYPE (item)), "invalid type alias found!");
-            DBUG_ASSERT ((TYgetDim (TYPEDEF_NTYPE (item)) == 0),
+            DBUG_ASSERT (TYgetDim (TYPEDEF_NTYPE (item)) == 0,
                          "non scalar type as type alias found");
 
             alias = TYgetUserType (TYgetScalar (TYPEDEF_NTYPE (item)));
@@ -253,17 +256,17 @@ InsertIntoState (node *item)
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static node *
 getCurrentFundefHead ()
 {
-    DBUG_ENTER ("getCurrentFundefHead");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((DSstate != NULL), "called getCurrentFundefHead without starting DS...");
+    DBUG_ASSERT (DSstate != NULL, "called getCurrentFundefHead without starting DS...");
 
-    DBUG_ASSERT ((INFO_FUNHEAD (DSstate) != NULL),
+    DBUG_ASSERT (INFO_FUNHEAD (DSstate) != NULL,
                  "called getCurrentFundefHead but there is none!");
 
     DBUG_RETURN (INFO_FUNHEAD (DSstate));
@@ -272,36 +275,35 @@ getCurrentFundefHead ()
 static void
 SetCurrentFundefHead (node *fundef)
 {
-    DBUG_ENTER ("SetCurrentFundefHead");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((DSstate != NULL), "called SetCurrentFundefHead without starting DS...");
+    DBUG_ASSERT (DSstate != NULL, "called SetCurrentFundefHead without starting DS...");
 
     INFO_FUNHEAD (DSstate) = fundef;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 DSinitDeserialize (node *module)
 {
-    DBUG_ENTER ("DSinitDeserialize");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((DSstate == NULL),
-                 "InitDeserialize called before last run was finished!");
+    DBUG_ASSERT (DSstate == NULL, "InitDeserialize called before last run was finished!");
 
     DSstate = MakeInfo ();
 
     INFO_MODULE (DSstate) = module;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 DSfinishDeserialize (node *module)
 {
-    DBUG_ENTER ("DSfinishDeserialize");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((DSstate != NULL), "called DSfinishDeserialize without starting DS...");
+    DBUG_ASSERT (DSstate != NULL, "called DSfinishDeserialize without starting DS...");
 
     MODULE_FUNS (module) = TCappendFundef (MODULE_FUNS (module), INFO_FUNDEFS (DSstate));
 
@@ -317,7 +319,7 @@ DSfinishDeserialize (node *module)
 
     DSstate = FreeInfo (DSstate);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*
@@ -327,7 +329,7 @@ DSfinishDeserialize (node *module)
 static void
 updateContextInformation (node *entry)
 {
-    DBUG_ENTER ("updateContextInformation");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (entry)) {
     case N_fundef:
@@ -366,7 +368,7 @@ updateContextInformation (node *entry)
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*
@@ -376,11 +378,11 @@ updateContextInformation (node *entry)
 static void
 initAliasingLut ()
 {
-    DBUG_ENTER ("initAliasingLut");
+    DBUG_ENTER ();
 
     aliasinglut = LUTgenerateLut ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -390,19 +392,19 @@ DSaddAliasing (const char *symbol, node *target)
     ds_aliasing_t *alias;
     void **search;
 
-    DBUG_ENTER ("DSaddAliasing");
+    DBUG_ENTER ();
 
     if (aliasinglut == NULL) {
         initAliasingLut ();
     }
 
-    DBUG_PRINT ("DS_ALIAS", ("adding new aliasing for %s", symbol));
+    DBUG_PRINT_TAG ("DS_ALIAS", "adding new aliasing for %s", symbol);
 
     search = LUTsearchInLutS (aliasinglut, (char *)symbol);
 
     if (search != NULL) {
         oldalias = (ds_aliasing_t *)*search;
-        DBUG_PRINT ("DS_ALIAS", (">>> will hide old alias"));
+        DBUG_PRINT_TAG ("DS_ALIAS", ">>> will hide old alias");
 
     } else {
         oldalias = NULL;
@@ -412,7 +414,7 @@ DSaddAliasing (const char *symbol, node *target)
 
     aliasinglut = LUTinsertIntoLutS (aliasinglut, (char *)symbol, alias);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -421,11 +423,11 @@ DSremoveAliasing (const char *symbol)
     ds_aliasing_t *oldalias, *tmp;
     void **search;
 
-    DBUG_ENTER ("DSremoveAliasing");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("DS_ALIAS", ("removing aliasing for %s", symbol));
+    DBUG_PRINT_TAG ("DS_ALIAS", "removing aliasing for %s", symbol);
 
-    DBUG_ASSERT ((aliasinglut != NULL),
+    DBUG_ASSERT (aliasinglut != NULL,
                  "cannot remove a aliasing without ever defining one!");
 
     search = LUTsearchInLutS (aliasinglut, (char *)symbol);
@@ -444,7 +446,7 @@ DSremoveAliasing (const char *symbol)
 
 #ifndef DBUG_OFF
         if (oldalias != NULL) {
-            DBUG_PRINT ("DS_ALIAS", (">>> this will unhide old alias"));
+            DBUG_PRINT_TAG ("DS_ALIAS", ">>> this will unhide old alias");
         }
 #endif
     } else {
@@ -454,7 +456,7 @@ DSremoveAliasing (const char *symbol)
 
     aliasinglut = LUTupdateLutS (aliasinglut, (char *)symbol, oldalias, NULL);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static node *
@@ -464,7 +466,7 @@ getAliasing (const char *symbol)
     void **search;
     node *result;
 
-    DBUG_ENTER ("getAliasing");
+    DBUG_ENTER ();
 
     search = LUTsearchInLutS (aliasinglut, (char *)symbol);
 
@@ -476,7 +478,7 @@ getAliasing (const char *symbol)
         result = NULL;
     } else {
         result = alias->alias;
-        DBUG_PRINT ("DS_ALIAS", ("using alias for %s", symbol));
+        DBUG_PRINT_TAG ("DS_ALIAS", "using alias for %s", symbol);
     }
 
     DBUG_RETURN (result);
@@ -489,7 +491,7 @@ getAliasing (const char *symbol)
 static node *
 FindSymbolInFundefChain (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FindSymbolInFundefChain");
+    DBUG_ENTER ();
 
     if (FUNDEF_SYMBOLNAME (arg_node) != NULL) {
         if (STReq (FUNDEF_SYMBOLNAME (arg_node), INFO_SEARCH_SYMBOL (arg_info))) {
@@ -507,7 +509,7 @@ FindSymbolInFundefChain (node *arg_node, info *arg_info)
 static node *
 FindSymbolInTypedefChain (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FindSymbolInTypedefChain");
+    DBUG_ENTER ();
 
     if (TYPEDEF_SYMBOLNAME (arg_node) != NULL) {
         if (STReq (TYPEDEF_SYMBOLNAME (arg_node), INFO_SEARCH_SYMBOL (arg_info))) {
@@ -525,7 +527,7 @@ FindSymbolInTypedefChain (node *arg_node, info *arg_info)
 static node *
 FindSymbolInObjdefChain (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FindSymbolInObjdefChain");
+    DBUG_ENTER ();
 
     if (OBJDEF_SYMBOLNAME (arg_node) != NULL) {
         if (STReq (OBJDEF_SYMBOLNAME (arg_node), INFO_SEARCH_SYMBOL (arg_info))) {
@@ -550,7 +552,7 @@ FindSymbolInAst (const char *symbol)
                                 {0, NULL}};
     info *local_info;
 
-    DBUG_ENTER ("FindSymbolInAst");
+    DBUG_ENTER ();
 
     local_info = MakeInfo ();
     INFO_SEARCH_SYMBOL (local_info) = symbol;
@@ -560,8 +562,8 @@ FindSymbolInAst (const char *symbol)
 
 #ifndef DBUG_OFF
     if (INFO_SEARCH_RESULT (local_info) != NULL) {
-        DBUG_PRINT ("DS_ALIAS", ("using alias %s for symbol %s.",
-                                 CTIitemName (INFO_SEARCH_RESULT (local_info)), symbol));
+        DBUG_PRINT_TAG ("DS_ALIAS", "using alias %s for symbol %s.",
+                        CTIitemName (INFO_SEARCH_RESULT (local_info)), symbol);
     }
 #endif
 
@@ -622,7 +624,7 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
     node *entryp = NULL;
     serfun_p serfun;
 
-    DBUG_ENTER ("AddEntryToAst");
+    DBUG_ENTER ();
 
     if (STentryType (entry) == type) {
 
@@ -638,13 +640,12 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
         case SET_typedef:
         case SET_objdef:
             /* first check, whether it is already available */
-            DBUG_PRINT ("DS",
-                        ("Searching for entry '%s' in ast...", STentryName (entry)));
+            DBUG_PRINT ("Searching for entry '%s' in ast...", STentryName (entry));
             if (FindSymbolInAst (STentryName (entry)) == NULL) {
-                DBUG_PRINT ("DS", ("Adding entry '%s' to ast...", STentryName (entry)));
+                DBUG_PRINT ("Adding entry '%s' to ast...", STentryName (entry));
                 serfun = MODMgetDeSerializeFunction (STentryName (entry), module);
 
-                DBUG_ASSERT ((serfun != NULL),
+                DBUG_ASSERT (serfun != NULL,
                              "module is inconsistent. cannot find function referenced in"
                              "symbol table");
 
@@ -686,9 +687,9 @@ DSaddSymbolByName (const char *symbol, stentrytype_t type, const char *module)
     const sttable_t *table;
     stentryiterator_t *it;
 
-    DBUG_ENTER ("DSaddSymbolByName");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((DSstate != NULL),
+    DBUG_ASSERT (DSstate != NULL,
                  "DSaddSymbolByName called without calling InitDeserialize.");
 
     mod = MODMloadModule (module);
@@ -716,9 +717,9 @@ AddSymbolById (const char *symbid, const char *module, bool resetimport)
     serfun_p fun;
     node *entryp;
 
-    DBUG_ENTER ("AddSymbolById");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("DS", ("Adding symbol '%s' from module '5s'...", symbid, module));
+    DBUG_PRINT ("Adding symbol '%s' from module '5s'...", symbid, module);
 
     if (resetimport) {
         resetimport = INFO_IMPORTMODE (DSstate);
@@ -729,7 +730,7 @@ AddSymbolById (const char *symbid, const char *module, bool resetimport)
 
     fun = MODMgetDeSerializeFunction (symbid, mod);
 
-    DBUG_ASSERT ((fun != NULL), "requested symbol does not exist!");
+    DBUG_ASSERT (fun != NULL, "requested symbol does not exist!");
 
     entryp = fun ();
 
@@ -752,7 +753,7 @@ FreeObjectWrapper (node *arg_node, info *arg_info)
 {
     node *new_node;
 
-    DBUG_ENTER ("FreeObjectWrapper");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISOBJECTWRAPPER (arg_node)) {
         new_node = FUNDEF_IMPL (arg_node);
@@ -773,12 +774,12 @@ DSimportInstancesByName (const char *name, const char *module)
     node *entryp;
     serfun_p serfun;
 
-    DBUG_ENTER ("DSimportInstancesByName");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((DSstate != NULL),
+    DBUG_ASSERT (DSstate != NULL,
                  "DSimportInstancesByName called without calling InitDeserialize.");
 
-    DBUG_PRINT ("DS", ("processing import of '%s:%s'...", module, name));
+    DBUG_PRINT ("processing import of '%s:%s'...", module, name);
 
     mod = MODMloadModule (module);
 
@@ -794,12 +795,12 @@ DSimportInstancesByName (const char *name, const char *module)
         if (STentryType (symbol) == SET_wrapperhead) {
             INFO_IMPORTMODE (DSstate) = TRUE;
 
-            DBUG_PRINT ("DS", ("fetching instances for '%s:%s'...", module,
-                               STentryName (symbol)));
+            DBUG_PRINT ("fetching instances for '%s:%s'...", module,
+                        STentryName (symbol));
 
             serfun = MODMgetDeSerializeFunction (STentryName (symbol), mod);
 
-            DBUG_ASSERT ((serfun != NULL),
+            DBUG_ASSERT (serfun != NULL,
                          "found inconsistency between module and its symbol table");
 
             /*
@@ -850,7 +851,7 @@ DSimportInstancesByName (const char *name, const char *module)
     it = STentryIteratorRelease (it);
     mod = MODMunLoadModule (mod);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -858,7 +859,7 @@ DSimportTypedefByName (const char *name, const char *module)
 {
     node *orig_tdef;
 
-    DBUG_ENTER ("DSimportTypedefByName");
+    DBUG_ENTER ();
 
     /*
      * first make sure the typedef to be imported is available
@@ -932,7 +933,7 @@ DSimportTypedefByName (const char *name, const char *module)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -940,7 +941,7 @@ DSimportObjdefByName (const char *name, const char *module)
 {
     node *orig_objdef;
 
-    DBUG_ENTER ("DSimportObjdefByName");
+    DBUG_ENTER ();
 
     /*
      * first make sure the objdef to be imported is available
@@ -973,7 +974,7 @@ DSimportObjdefByName (const char *name, const char *module)
         INFO_OBJDEFS (DSstate) = TCappendObjdef (INFO_OBJDEFS (DSstate), new_objdef);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 node *
@@ -984,16 +985,16 @@ DSloadFunctionBody (node *fundef)
     serfun_p serfun;
     module_t *module;
 
-    DBUG_ENTER ("DSloadFunctionBody");
+    DBUG_ENTER ();
 
     module = MODMloadModule (NSgetModule (FUNDEF_NS (fundef)));
 
-    DBUG_ASSERT ((FUNDEF_SYMBOLNAME (fundef) != NULL),
+    DBUG_ASSERT (FUNDEF_SYMBOLNAME (fundef) != NULL,
                  "cannot load body for a function without symbolname!");
 
     serfunname = SERfundefHeadSymbol2BodySymbol (FUNDEF_SYMBOLNAME (fundef));
 
-    DBUG_PRINT ("DS_BODY", ("deserializing fundef body for symbol %s...", serfunname));
+    DBUG_PRINT_TAG ("DS_BODY", "deserializing fundef body for symbol %s...", serfunname);
 
     SetCurrentFundefHead (fundef);
 
@@ -1003,7 +1004,7 @@ DSloadFunctionBody (node *fundef)
 
     SetCurrentFundefHead (fundef);
 
-    DBUG_ASSERT ((serfun != NULL),
+    DBUG_ASSERT (serfun != NULL,
                  "deserializer not found. module seems to be inconsistent!");
 
     global.valid_ssaform = FALSE;
@@ -1024,7 +1025,7 @@ DSloadFunctionBody (node *fundef)
 static node *
 FindFunction (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FindFunction");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISWRAPPERFUN (arg_node)) {
         if (NSequals (FUNDEF_NS (arg_node), INFO_DISPATCH_NS (arg_info))
@@ -1051,7 +1052,7 @@ doDispatchFunCall (node *fundefs, const namespace_t *ns, const char *name,
     info *local_info;
     anontrav_t searchtrav[2] = {{N_fundef, &FindFunction}, {0, NULL}};
 
-    DBUG_ENTER ("doDispatchFunCall");
+    DBUG_ENTER ();
 
     local_info = MakeInfo ();
 
@@ -1089,9 +1090,9 @@ DSdispatchFunCall (const namespace_t *ns, const char *name, node *args)
     node *fundef;
     ntype *argtypes;
 
-    DBUG_ENTER ("DSdispatchFunCall");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((DSstate != NULL),
+    DBUG_ASSERT (DSstate != NULL,
                  "called doDispatchFunCall without initialising deserialise engine!");
 
     /*
@@ -1154,7 +1155,7 @@ DSloadUserType (const char *symbid, const namespace_t *ns)
     node *tdef;
     usertype udt;
 
-    DBUG_ENTER ("DSloadUserType");
+    DBUG_ENTER ();
 
     tdef = FindSymbolInAst (symbid);
 
@@ -1164,11 +1165,11 @@ DSloadUserType (const char *symbid, const namespace_t *ns)
         updateContextInformation (tdef);
     }
 
-    DBUG_ASSERT ((tdef != NULL), "deserialisation of typedef failed!");
+    DBUG_ASSERT (tdef != NULL, "deserialisation of typedef failed!");
 
     udt = UTfindUserType (TYPEDEF_NAME (tdef), ns);
 
-    DBUG_ASSERT ((udt != UT_NOT_DEFINED), "typedef not in udt repository");
+    DBUG_ASSERT (udt != UT_NOT_DEFINED, "typedef not in udt repository");
 
     DBUG_RETURN (udt);
 }
@@ -1178,22 +1179,21 @@ DSlookupFunction (const char *module, const char *symbol)
 {
     node *result = NULL;
 
-    DBUG_ENTER ("DSlookupFunction");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("DS", ("Looking up function `%s:%s' in ast.", module, symbol));
+    DBUG_PRINT ("Looking up function `%s:%s' in ast.", module, symbol);
 
     result = FindSymbolInAst (symbol);
 
     if (result == NULL) {
-        DBUG_PRINT ("DS",
-                    ("Looking up function `%s:%s' in `%s'.", module, symbol, module));
+        DBUG_PRINT ("Looking up function `%s:%s' in `%s'.", module, symbol, module);
 
         result = AddSymbolById (symbol, module, FALSE);
     } else {
         updateContextInformation (result);
     }
 
-    DBUG_ASSERT ((result != NULL), "lookup failed.");
+    DBUG_ASSERT (result != NULL, "lookup failed.");
 
     DBUG_RETURN (result);
 }
@@ -1203,21 +1203,21 @@ DSlookupObject (const char *module, const char *symbol)
 {
     node *result = NULL;
 
-    DBUG_ENTER ("DSlookupObjdef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("DS", ("Looking up objdef `%s:%s' in ast.", module, symbol));
+    DBUG_PRINT ("Looking up objdef `%s:%s' in ast.", module, symbol);
 
     result = FindSymbolInAst (symbol);
 
     if (result == NULL) {
-        DBUG_PRINT ("DS", ("Looking up objdef `%s:%s' in `%s'.", module, symbol, module));
+        DBUG_PRINT ("Looking up objdef `%s:%s' in `%s'.", module, symbol, module);
 
         result = AddSymbolById (symbol, module, TRUE);
     } else {
         updateContextInformation (result);
     }
 
-    DBUG_ASSERT ((result != NULL), "lookup failed.");
+    DBUG_ASSERT (result != NULL, "lookup failed.");
 
     DBUG_RETURN (result);
 }
@@ -1227,7 +1227,7 @@ DSfetchArgAvis (int pos)
 {
     node *arg;
 
-    DBUG_ENTER ("DSfetchArgAvis");
+    DBUG_ENTER ();
 
     arg = FUNDEF_ARGS (getCurrentFundefHead ());
 
@@ -1236,7 +1236,7 @@ DSfetchArgAvis (int pos)
         arg = ARG_NEXT (arg);
     }
 
-    DBUG_ASSERT ((pos == 0), "Referenced arg does not exist!");
+    DBUG_ASSERT (pos == 0, "Referenced arg does not exist!");
 
     DBUG_RETURN (ARG_AVIS (arg));
 }
@@ -1249,7 +1249,7 @@ DShex2Double (const char *string)
 {
     double res;
 
-    DBUG_ENTER ("DShex2Double");
+    DBUG_ENTER ();
 
     STRhex2Bytes ((unsigned char *)&res, string);
 
@@ -1261,9 +1261,11 @@ DShex2Float (const char *string)
 {
     float res;
 
-    DBUG_ENTER ("DShex2Float");
+    DBUG_ENTER ();
 
     STRhex2Bytes ((unsigned char *)&res, string);
 
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

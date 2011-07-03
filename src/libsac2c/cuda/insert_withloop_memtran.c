@@ -58,7 +58,10 @@
 #include "str_buffer.h"
 #include "memory.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -145,7 +148,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -170,7 +173,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -201,7 +204,7 @@ IWLMEMdoInsertWithloopMemtran (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("IWLMEMdoInsertWithloopMemtran");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -243,7 +246,7 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
     ntype *scalar_type, *dev_type = NULL;
     simpletype sty;
 
-    DBUG_ENTER ("TypeConvert");
+    DBUG_ENTER ();
 
     if (nty == N_id) {
         /* If the N_id is of known dimension and is not a scalar */
@@ -294,7 +297,7 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
             }
         }
     } else {
-        DBUG_ASSERT ((0), "Neither N_id nor N_ids found in TypeConvert!");
+        DBUG_ASSERT (0, "Neither N_id nor N_ids found in TypeConvert!");
     }
 
     DBUG_RETURN (dev_type);
@@ -303,7 +306,7 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
 static node *
 ATravWith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravWith");
+    DBUG_ENTER ();
 
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
@@ -315,7 +318,7 @@ ATravWith (node *arg_node, info *arg_info)
 static node *
 ATravId (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravId");
+    DBUG_ENTER ();
 
     NLUTincNum (INFO_AT_NLUT (arg_info), ID_AVIS (arg_node), 1);
 
@@ -325,7 +328,7 @@ ATravId (node *arg_node, info *arg_info)
 static node *
 ATravGenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravGenarray");
+    DBUG_ENTER ();
 
     if (GENARRAY_DEFAULT (arg_node) != NULL
         && NLUTgetNum (INFO_AT_NLUT (arg_info), ID_AVIS (GENARRAY_DEFAULT (arg_node)))
@@ -367,7 +370,7 @@ IWLMEMfundef (node *arg_node, info *arg_info)
     node *old_fundef;
     node *old_topblock;
 
-    DBUG_ENTER ("IWLMEMfundef");
+    DBUG_ENTER ();
 
     /* During the main traversal, we only look at non-lac functions */
     if (!FUNDEF_ISLACFUN (arg_node)) {
@@ -410,7 +413,7 @@ IWLMEMap (node *arg_node, info *arg_info)
     ntype *dev_type;
     node *fundef, *old_apids;
 
-    DBUG_ENTER ("IWLMEMap");
+    DBUG_ENTER ();
 
     fundef = AP_FUNDEF (arg_node);
 
@@ -433,9 +436,9 @@ IWLMEMap (node *arg_node, info *arg_info)
             fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
 
             while (ap_args != NULL) {
-                DBUG_ASSERT ((fundef_args != NULL), "# of Ap args != # of Fundef args!");
+                DBUG_ASSERT (fundef_args != NULL, "# of Ap args != # of Fundef args!");
 
-                DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ap_args)) == N_id),
+                DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (ap_args)) == N_id,
                              "N_ap argument is not N_id node!");
 
                 id_avis = ID_AVIS (EXPRS_EXPR (ap_args));
@@ -531,7 +534,7 @@ IWLMEMassign (node *arg_node, info *arg_info)
 {
     node *next;
 
-    DBUG_ENTER ("IWLMEMassign");
+    DBUG_ENTER ();
 
     /*
      * Here we have to do a top-down traversal for the following reason:
@@ -581,7 +584,7 @@ IWLMEMassign (node *arg_node, info *arg_info)
 node *
 IWLMEMlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IWLMEMlet");
+    DBUG_ENTER ();
 
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -607,7 +610,7 @@ IWLMEMfuncond (node *arg_node, info *arg_info)
     ntype *then_sclty, *else_sclty, *ids_sclty;
     node *ret_st, *ret_exprs, *fundef_ret;
 
-    DBUG_ENTER ("IWLMEMfuncond");
+    DBUG_ENTER ();
 
     if (INFO_INCUDAWL (arg_info)) {
         FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
@@ -645,14 +648,14 @@ IWLMEMfuncond (node *arg_node, info *arg_info)
                     IDS_NAME (ids) = TRAVtmpVarName ("dev");
                 } else {
                     // .... TODO ...
-                    DBUG_ASSERT ((0), "Found arrays of unequal types while not one host "
-                                      "type and one device type!");
+                    DBUG_ASSERT (0, "Found arrays of unequal types while not one host "
+                                    "type and one device type!");
                 }
 
                 AVIS_ISCUDALOCAL (IDS_AVIS (ids)) = TRUE;
 
                 ret_st = FUNDEF_RETURN (INFO_FUNDEF (arg_info));
-                DBUG_ASSERT ((ret_st != NULL), "N_return is null for lac fun!");
+                DBUG_ASSERT (ret_st != NULL, "N_return is null for lac fun!");
                 ret_exprs = RETURN_EXPRS (ret_st);
                 fundef_ret = FUNDEF_RETS (INFO_FUNDEF (arg_info));
 
@@ -690,7 +693,7 @@ IWLMEMwith (node *arg_node, info *arg_info)
     lut_t *old_lut;
     info *anon_info;
 
-    DBUG_ENTER ("IWLMEMwith");
+    DBUG_ENTER ();
 
     /* If the N_with is cudarizable */
     if (WITH_CUDARIZABLE (arg_node)) {
@@ -780,7 +783,7 @@ IWLMEMwith (node *arg_node, info *arg_info)
 node *
 IWLMEMcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IWLMEMcode");
+    DBUG_ENTER ();
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
@@ -803,7 +806,7 @@ IWLMEMcode (node *arg_node, info *arg_info)
 node *
 IWLMEMgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IWLMEMgenarray");
+    DBUG_ENTER ();
 
     if (INFO_INCUDAWL (arg_info)) {
         /* Note that we do not traverse N_genarray->shape. This is
@@ -812,7 +815,7 @@ IWLMEMgenarray (node *arg_node, info *arg_info)
          * of N_genarray we traverse are the default element and the
          * potential reuse candidates. */
         if (GENARRAY_DEFAULT (arg_node) != NULL) {
-            DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id),
+            DBUG_ASSERT (NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id,
                          "Non N_id default element found in N_genarray!");
             GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
         }
@@ -835,10 +838,10 @@ IWLMEMgenarray (node *arg_node, info *arg_info)
 node *
 IWLMEMmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IWLMEMmodarray");
+    DBUG_ENTER ();
 
     if (INFO_INCUDAWL (arg_info)) {
-        DBUG_ASSERT ((NODE_TYPE (MODARRAY_ARRAY (arg_node)) == N_id),
+        DBUG_ASSERT (NODE_TYPE (MODARRAY_ARRAY (arg_node)) == N_id,
                      "Non N_id modified array found in N_modarray!");
         INFO_IS_MODARR (arg_info) = TRUE;
         MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
@@ -863,7 +866,7 @@ IWLMEMids (node *arg_node, info *arg_info)
     node *new_avis, *ids_avis;
     ntype *ids_type, *dev_type;
 
-    DBUG_ENTER ("IWLMEMids");
+    DBUG_ENTER ();
 
     ids_avis = IDS_AVIS (arg_node);
     ids_type = AVIS_TYPE (ids_avis);
@@ -930,7 +933,7 @@ IWLMEMid (node *arg_node, info *arg_info)
     ntype *dev_type, *id_type;
     node *ssaassign;
 
-    DBUG_ENTER ("IWLMEMid");
+    DBUG_ENTER ();
 
     id_avis = ID_AVIS (arg_node);
     id_type = AVIS_TYPE (id_avis);
@@ -990,7 +993,7 @@ IWLMEMid (node *arg_node, info *arg_info)
 static void
 CreateHost2Device (node **id, node *host_avis, node *dev_avis, info *arg_info)
 {
-    DBUG_ENTER ("CreateHost2Device");
+    DBUG_ENTER ();
 
     ID_AVIS (*id) = dev_avis;
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -1008,7 +1011,7 @@ CreateHost2Device (node **id, node *host_avis, node *dev_avis, info *arg_info)
     /* Insert pair host_avis->dev_avis into lookup table. */
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), host_avis, dev_avis);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static bool
@@ -1017,7 +1020,7 @@ AssignInTopBlock (node *assign, info *arg_info)
     bool res = FALSE;
     node *assign_chain;
 
-    DBUG_ENTER ("AssignInTopBlock");
+    DBUG_ENTER ();
 
     assign_chain = BLOCK_INSTR (INFO_TOPBLOCK (arg_info));
 
@@ -1039,3 +1042,5 @@ AssignInTopBlock (node *assign, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

@@ -20,7 +20,8 @@
  - Konvertier-Funktionen (pad, unpad) fuer alle verbliebenen Shapes erzeugen
 */
 
-#include "dbug.h"
+#define DBUG_PREFIX "API"
+#include "debug.h"
 
 #include "types.h"
 #include "tree_basic.h"
@@ -113,7 +114,7 @@ CreateCacheSpec (int size, int line_size, int assoc, int el_size)
     unsigned int tmp, cnt;
     cache_t *cache;
 
-    DBUG_ENTER ("CreateCacheSpec");
+    DBUG_ENTER ();
 
     if (size == 0) {
         cache = NULL;
@@ -167,7 +168,7 @@ static void
 PrintCacheSpec (int level, cache_t *cache)
 {
 
-    DBUG_ENTER ("PrintCacheSpec");
+    DBUG_ENTER ();
 
     APprintDiag ("\n L%d cache:", level);
 
@@ -185,7 +186,7 @@ PrintCacheSpec (int level, cache_t *cache)
         APprintDiag ("  line shift       :  %u\n\n", cache->line_shift);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -205,15 +206,15 @@ SetVect (int dim, shpseg *pv, int val)
 {
     int i;
 
-    DBUG_ENTER ("SetVect");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((dim <= SHP_SEG_SIZE), " dimension out of range in SetVect()!");
+    DBUG_ASSERT (dim <= SHP_SEG_SIZE, " dimension out of range in SetVect()!");
 
     for (i = 0; i < dim; i++) {
         SHPSEG_SHAPE (pv, i) = val;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -221,15 +222,15 @@ CopyVect (int dim, shpseg *new, shpseg *old)
 {
     int i;
 
-    DBUG_ENTER ("CopyVect");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((dim <= SHP_SEG_SIZE), " dimension out of range in CopyVect()!");
+    DBUG_ASSERT (dim <= SHP_SEG_SIZE, " dimension out of range in CopyVect()!");
 
     for (i = 0; i < dim; i++) {
         SHPSEG_SHAPE (new, i) = SHPSEG_SHAPE (old, i);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -237,15 +238,15 @@ AddVect (int dim, shpseg *res, shpseg *a, shpseg *b)
 {
     int i;
 
-    DBUG_ENTER ("AddVect");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((dim <= SHP_SEG_SIZE), " dimension out of range in AddVect()!");
+    DBUG_ASSERT (dim <= SHP_SEG_SIZE, " dimension out of range in AddVect()!");
 
     for (i = 0; i < dim; i++) {
         SHPSEG_SHAPE (res, i) = SHPSEG_SHAPE (a, i) + SHPSEG_SHAPE (b, i);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static int
@@ -254,9 +255,9 @@ EqualVect (int dim, shpseg *a, shpseg *b)
     int i;
     int equal = 1;
 
-    DBUG_ENTER ("AddVect");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((dim <= SHP_SEG_SIZE), " dimension out of range in AddVect()!");
+    DBUG_ASSERT (dim <= SHP_SEG_SIZE, " dimension out of range in AddVect()!");
 
     for (i = 0; i < dim; i++) {
         if (SHPSEG_SHAPE (a, i) != SHPSEG_SHAPE (b, i)) {
@@ -285,7 +286,7 @@ PrintCacheUtil (int dim, int rows, cache_util_t *cache_util)
 {
     int i;
 
-    DBUG_ENTER ("PrintCacheUtil");
+    DBUG_ENTER ();
 
     APprintDiag ("Cache Utilisation Table:\n"
                  "(access,offs,shoffs,set|srconfl,srmindim,srmaxdim"
@@ -302,7 +303,7 @@ PrintCacheUtil (int dim, int rows, cache_util_t *cache_util)
                      cache_util[i].tr_minpaddim, cache_util[i].tr_maxpaddim);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -327,7 +328,7 @@ InitCacheUtil (cache_util_t **cache_util, pattern_t *pattern, array_type_t *arra
     int i;
     pattern_t *pt_ptr;
 
-    DBUG_ENTER ("InitCacheUtil");
+    DBUG_ENTER ();
 
     APprintDiag ("initialize cache utilisation (read access patterns):\n");
 
@@ -382,7 +383,7 @@ IsSpatialReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
     int is_conflict = 0;
     int offset_diff, set_diff;
 
-    DBUG_ENTER ("IsSpatialReuseConflict");
+    DBUG_ENTER ();
 
     offset_diff = abs (cache_util[a].shifted_offset - cache_util[b].shifted_offset);
 
@@ -415,7 +416,7 @@ IsPotentialTemporalReuse (cache_util_t *cache_util, cache_t *cache, int a)
 {
     int is_reuse = 0;
 
-    DBUG_ENTER ("IsPotentialTemopralReuseConflict");
+    DBUG_ENTER ();
 
     if (cache_util[a + 1].shifted_offset - cache_util[a].shifted_offset
         < (cache->set_num - 2) * cache->line_size) {
@@ -445,7 +446,7 @@ IsTemporalReuseConflict (cache_util_t *cache_util, cache_t *cache, int a, int b)
 {
     int is_conflict = 0;
 
-    DBUG_ENTER ("IsTemporalReuseConflict");
+    DBUG_ENTER ();
 
     if (cache_util[a].set <= cache_util[a + 1].set) {
         if ((cache_util[b].set > cache_util[a].set)
@@ -499,7 +500,7 @@ ComputeAccessData (int rows, cache_util_t *cache_util, cache_t *cache, int dim,
 {
     int a;
 
-    DBUG_ENTER ("ComputeAccessData");
+    DBUG_ENTER ();
 
     for (a = 0; a < rows; a++) {
 
@@ -536,7 +537,7 @@ ComputeSpatialReuse (int rows, cache_util_t *cache_util, cache_t *cache, int dim
 {
     int a, i, d, conflicts, minpaddim, maxpaddim;
 
-    DBUG_ENTER ("ComputeSpatialReuse");
+    DBUG_ENTER ();
 
     for (a = 0; a < rows; a++) {
         conflicts = 0;
@@ -610,7 +611,7 @@ ComputeTemporalMinpaddim (int rows, cache_util_t *cache_util, int a, int i,
 {
     int d, min1, min2, res, h;
 
-    DBUG_ENTER ("ComputeTemporalMinpaddim");
+    DBUG_ENTER ();
 
     min1 = dim;
     min2 = dim;
@@ -678,7 +679,7 @@ ComputeTemporalMaxpaddim (cache_util_t *cache_util, int a, int dim)
 
     int d;
 
-    DBUG_ENTER ("ComputeTemporalMaxpaddim");
+    DBUG_ENTER ();
 
     for (d = 0; d < dim; d++) {
         if (SHPSEG_SHAPE (cache_util[a].access, d)
@@ -714,7 +715,7 @@ ComputeTemporalReuse (int rows, cache_util_t *cache_util, cache_t *cache, int di
 {
     int a, i, conflicts, minpaddim;
 
-    DBUG_ENTER ("ComputeTemporalReuse");
+    DBUG_ENTER ();
 
     for (a = 0; a < rows - 1; a++) {
 
@@ -782,7 +783,7 @@ static int SelectPaddim(int min, int max, shpseg* shape)
 {
   int d, res;
   
-  DBUG_ENTER("SelectPaddim");
+  DBUG_ENTER ();
 
   res = min;
   
@@ -792,7 +793,7 @@ static int SelectPaddim(int min, int max, shpseg* shape)
     }
   }
   
-  DBUG_RETURN(res);
+  DBUG_RETURN (res);
 }
 
 
@@ -818,7 +819,7 @@ static int ChoosePaddimForTemporalReuse(int rows,
 
   int res, a, minpaddim, maxpaddim;
   
-  DBUG_ENTER("ChoosePaddimForTemporalReuse");
+  DBUG_ENTER ();
 
   minpaddim = -1;
   maxpaddim = -1;
@@ -852,7 +853,7 @@ static int ChoosePaddimForTemporalReuse(int rows,
     
   if (res==0) res=1;
   
-  DBUG_RETURN(res);
+  DBUG_RETURN (res);
 }
 
 
@@ -878,7 +879,7 @@ static int ChoosePaddimForSpatialReuse(int rows,
 {
   int res, a, minpaddim, maxpaddim;
   
-  DBUG_ENTER("ChoosePaddimForSpatialReuse");
+  DBUG_ENTER ();
 
   minpaddim = -1;
   maxpaddim = -1;
@@ -909,7 +910,7 @@ static int ChoosePaddimForSpatialReuse(int rows,
   
   res = SelectPaddim(minpaddim, maxpaddim, shape);
     
-  DBUG_RETURN(res);
+  DBUG_RETURN (res);
 }
 
 #endif /*  0  */
@@ -932,7 +933,7 @@ ComputeNumSpatialReuseConflicts (int rows, cache_util_t *cache_util)
 {
     int a, res;
 
-    DBUG_ENTER ("ComputeNumSpatialReuseConflicts");
+    DBUG_ENTER ();
 
     res = 0;
 
@@ -961,7 +962,7 @@ ComputeNumTemporalReuseConflicts (int rows, cache_util_t *cache_util)
 {
     int a, res;
 
-    DBUG_ENTER ("ComputeNumTemporalReuseConflicts");
+    DBUG_ENTER ();
 
     res = 0;
 
@@ -996,7 +997,7 @@ ComputeSpatialReuseMinPadDim (int dim, int rows, cache_util_t *cache_util)
 {
     int min_paddim, a;
 
-    DBUG_ENTER ("ComputeSpatialReuseMinPadDim");
+    DBUG_ENTER ();
 
     min_paddim = -1;
 
@@ -1029,7 +1030,7 @@ ComputeSpatialReuseMaxPadDim (int dim, int rows, cache_util_t *cache_util)
 {
     int max_paddim, a;
 
-    DBUG_ENTER ("ComputeSpatialReuseMaxPadDim");
+    DBUG_ENTER ();
 
     max_paddim = dim;
 
@@ -1062,7 +1063,7 @@ ComputeTemporalReuseMinPadDim (int dim, int rows, cache_util_t *cache_util)
 {
     int min_paddim, a;
 
-    DBUG_ENTER ("ComputeTemporalReuseMinPadDim");
+    DBUG_ENTER ();
 
     min_paddim = 0;
 
@@ -1095,7 +1096,7 @@ ComputeTemporalReuseMaxPadDim (int dim, int rows, cache_util_t *cache_util)
 {
     int max_paddim, a;
 
-    DBUG_ENTER ("ComputeTemporalReuseMaxPadDim");
+    DBUG_ENTER ();
 
     max_paddim = dim;
 
@@ -1133,7 +1134,7 @@ UpdatePaddingVectorForSpatialReuse (int rows, cache_util_t *cache_util, int dim,
     shpseg *res = NULL;
     int min_paddim, max_paddim, current_paddim;
 
-    DBUG_ENTER ("UpdatePaddingVectorForSpatialReuse");
+    DBUG_ENTER ();
 
     /*
      * Identify potential padding dimensions.
@@ -1194,7 +1195,7 @@ UpdatePaddingVectorForTemporalReuse (int rows, cache_util_t *cache_util, int dim
     shpseg *res = NULL;
     int min_paddim, max_paddim, current_paddim;
 
-    DBUG_ENTER ("UpdatePaddingVectorForTemporalReuse");
+    DBUG_ENTER ();
 
     /*
      * Identify potential padding dimensions.
@@ -1266,7 +1267,7 @@ EvaluatePadding (int *ret, int dim, cache_t *cache, int rows, cache_util_t *cach
     int num_sr_conflicts;
     int num_tr_conflicts;
 
-    DBUG_ENTER ("EvaluatePadding");
+    DBUG_ENTER ();
 
     if (pv == NULL) {
         num_sr_conflicts = VERY_LARGE_NUMBER;
@@ -1328,7 +1329,7 @@ ComputePaddingForSpatialReuse (int dim, cache_t *cache, int rows,
     int min_sr_conflicts;
     int num_sr_conflicts;
 
-    DBUG_ENTER ("ComputePaddingForSpatialReuse");
+    DBUG_ENTER ();
 
     actual_shape = TBmakeShpseg (NULL);
     pv_opt = TBmakeShpseg (NULL);
@@ -1461,7 +1462,7 @@ ComputePaddingForTemporalReuse (int dim, cache_t *cache, int rows,
     int num_sr_conflicts;
     int num_tr_conflicts;
 
-    DBUG_ENTER ("ComputePaddingForTemporalReuse");
+    DBUG_ENTER ();
 
     actual_shape = TBmakeShpseg (NULL);
     pv_opt = TBmakeShpseg (NULL);
@@ -1632,7 +1633,7 @@ ComputePadding (cache_t *cache_L1, cache_t *cache_L2, cache_t *cache_L3, int dim
     int num_tr_conflicts_P1;
     int num_tr_conflicts_P2;
 
-    DBUG_ENTER ("ComputePadding");
+    DBUG_ENTER ();
 
     rows = InitCacheUtil (&cache_util, pattern, array);
 
@@ -1846,9 +1847,9 @@ APinfer ()
 
     shpseg *new_shape;
 
-    DBUG_ENTER ("APinfer");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("API", ("Array Padding: infering new shapes..."));
+    DBUG_PRINT ("Array Padding: infering new shapes...");
 
     /*
      * Clean up collected information.
@@ -2019,5 +2020,7 @@ APinfer ()
 
     PIprintPadInfo ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

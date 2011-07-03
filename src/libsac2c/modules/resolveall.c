@@ -3,7 +3,10 @@
 #include "resolveall.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "modulemanager.h"
 #include "symboltable.h"
 #include "ctinfo.h"
@@ -32,7 +35,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -44,7 +47,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -58,14 +61,14 @@ FreeInfo (info *info)
 static void
 SubSymbols (sttable_t *table, node *symbols)
 {
-    DBUG_ENTER ("SubSymbols");
+    DBUG_ENTER ();
 
     while (symbols != NULL) {
         STremove (SYMBOL_ID (symbols), table);
         symbols = SYMBOL_NEXT (symbols);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static node *
@@ -73,7 +76,7 @@ Symboltable2Symbols (stsymboliterator_t *iterator, bool exportedonly)
 {
     node *result;
 
-    DBUG_ENTER ("Symboltable2Symbols");
+    DBUG_ENTER ();
 
     if (STsymbolIteratorHasMore (iterator)) {
         stsymbol_t *symb = STsymbolIteratorNext (iterator);
@@ -105,7 +108,7 @@ CheckSymbolExistsRec (const char *mod, const sttable_t *table, node *symbols,
 {
     stsymbol_t *symbol;
 
-    DBUG_ENTER ("CheckSymbolExistsRec");
+    DBUG_ENTER ();
 
     if (symbols != NULL) {
 
@@ -138,7 +141,7 @@ CheckSymbolExists (const char *mod, node *symbols, bool exportedonly)
     module_t *module;
     const sttable_t *table;
 
-    DBUG_ENTER ("CheckSymbolExists");
+    DBUG_ENTER ();
 
     module = MODMloadModule (mod);
 
@@ -159,7 +162,7 @@ ResolveAllFlag (char *module, node *symbols, bool exportedonly)
     stsymboliterator_t *iterator;
     node *result;
 
-    DBUG_ENTER ("ResolveAllFlag");
+    DBUG_ENTER ();
 
     /* get symbol table */
 
@@ -195,7 +198,7 @@ ResolveAllFlag (char *module, node *symbols, bool exportedonly)
 node *
 RSAuse (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSAuse");
+    DBUG_ENTER ();
 
     if (STReq (USE_MOD (arg_node), NSgetModule (INFO_CURRENTNS (arg_info)))) {
         CTIerrorLine (NODE_LINE (arg_node),
@@ -238,7 +241,7 @@ RSAuse (node *arg_node, info *arg_info)
 node *
 RSAimport (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSAImport");
+    DBUG_ENTER ();
 
     if (STReq (IMPORT_MOD (arg_node), NSgetModule (INFO_CURRENTNS (arg_info)))) {
         CTIerrorLine (NODE_LINE (arg_node),
@@ -281,7 +284,7 @@ RSAimport (node *arg_node, info *arg_info)
 node *
 RSAprovide (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSAProvide");
+    DBUG_ENTER ();
 
     if (PROVIDE_NEXT (arg_node) != NULL) {
         PROVIDE_NEXT (arg_node) = TRAVdo (PROVIDE_NEXT (arg_node), arg_info);
@@ -293,7 +296,7 @@ RSAprovide (node *arg_node, info *arg_info)
 node *
 RSAexport (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSAExport");
+    DBUG_ENTER ();
 
     if (EXPORT_NEXT (arg_node) != NULL) {
         EXPORT_NEXT (arg_node) = TRAVdo (EXPORT_NEXT (arg_node), arg_info);
@@ -305,7 +308,7 @@ RSAexport (node *arg_node, info *arg_info)
 node *
 RSAmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSAmodule");
+    DBUG_ENTER ();
 
     INFO_CURRENTNS (arg_info) = MODULE_NAMESPACE (arg_node);
 
@@ -323,7 +326,7 @@ RSAdoResolveAll (node *modul)
 {
     info *arg_info;
 
-    DBUG_ENTER ("RSAdoResolveAll");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -339,3 +342,5 @@ RSAdoResolveAll (node *modul)
 
     DBUG_RETURN (modul);
 }
+
+#undef DBUG_PREFIX

@@ -17,7 +17,9 @@
 #include "types.h"
 #include "str.h"
 #include "icm2c_utils.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 /******************************************************************************
  *
@@ -35,9 +37,9 @@ FindParen (char *var_NT, int n)
 {
     int i;
 
-    DBUG_ENTER ("FindParen");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((var_NT != NULL), "FindParen was called with NULL var_NT");
+    DBUG_ASSERT (var_NT != NULL, "FindParen was called with NULL var_NT");
 
     for (i = 0; var_NT[i] != '\0'; i++) {
         if (var_NT[i] == '(') {
@@ -48,7 +50,7 @@ FindParen (char *var_NT, int n)
         }
     }
 
-    DBUG_ASSERT ((var_NT[i] != '\0'), "FindParen() did not find the parenthesis");
+    DBUG_ASSERT (var_NT[i] != '\0', "FindParen() did not find the parenthesis");
 
     DBUG_RETURN (i);
 }
@@ -69,7 +71,7 @@ ICUGetShapeClass (char *var_NT)
     int nc, i;
     shape_class_t z;
 
-    DBUG_ENTER ("ICUGetShapeClass");
+    DBUG_ENTER ();
 
     nc = FindParen (var_NT, NT_SHAPE_INDEX + 1) + 1;
     i = 0;
@@ -81,7 +83,7 @@ ICUGetShapeClass (char *var_NT)
         i++;
     }
 
-    DBUG_ASSERT ((z != C_unknowns), "ICUGetShapeClass() did not find valid shape tag");
+    DBUG_ASSERT (z != C_unknowns, "ICUGetShapeClass() did not find valid shape tag");
 
     DBUG_RETURN (z);
 }
@@ -102,7 +104,7 @@ ICUGetHiddenClass (char *var_NT)
     int nc, i;
     hidden_class_t z;
 
-    DBUG_ENTER ("ICUGetHiddenClass");
+    DBUG_ENTER ();
 
     nc = FindParen (var_NT, NT_HIDDEN_INDEX + 1) + 1;
     i = 0;
@@ -114,7 +116,7 @@ ICUGetHiddenClass (char *var_NT)
         i++;
     }
 
-    DBUG_ASSERT ((z != C_unknownh), "ICUGetHiddenClass() did not find valid hidden tag");
+    DBUG_ASSERT (z != C_unknownh, "ICUGetHiddenClass() did not find valid hidden tag");
 
     DBUG_RETURN (z);
 }
@@ -135,7 +137,7 @@ ICUGetUniqueClass (char *var_NT)
     int nc, i;
     unique_class_t z;
 
-    DBUG_ENTER ("ICUGetUniqueClass");
+    DBUG_ENTER ();
 
     nc = FindParen (var_NT, NT_UNIQUE_INDEX + 1) + 1;
     i = 0;
@@ -147,8 +149,10 @@ ICUGetUniqueClass (char *var_NT)
         i++;
     }
 
-    DBUG_ASSERT ((z != C_unknownu),
+    DBUG_ASSERT (z != C_unknownu,
                  "ICUGetUniqueClass() did not find valid uniqueness tag");
 
     DBUG_RETURN (z);
 }
+
+#undef DBUG_PREFIX

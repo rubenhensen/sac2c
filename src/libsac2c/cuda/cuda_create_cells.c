@@ -12,7 +12,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 
@@ -30,7 +33,7 @@
 node *
 CUCCdoCreateCells (node *syntax_tree)
 {
-    DBUG_ENTER ("CUCCdoCreateCells");
+    DBUG_ENTER ();
 
     TRAVpush (TR_cucc);
 
@@ -53,7 +56,7 @@ CUCCdoCreateCells (node *syntax_tree)
 node *
 CUCCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUCCfundef");
+    DBUG_ENTER ();
 
     /* We do not traverse cuda lac fun as they itself will
      * be executed on cuda, and therefore no cuda cells can
@@ -83,7 +86,7 @@ CUCCassign (node *arg_node, info *arg_info)
 {
     node *cell, *last_cellassign;
 
-    DBUG_ENTER ("CUCCassign");
+    DBUG_ENTER ();
 
     /* First N_assign with CUDA_DEVICE_SINGLE execution mode */
     if (ASSIGN_EXECMODE (arg_node) == CUDA_DEVICE_SINGLE) {
@@ -105,3 +108,5 @@ CUCCassign (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -18,7 +18,9 @@
 #include "icm2c_utils.h"
 #include "icm2c_mt.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
@@ -64,7 +66,7 @@
 void
 ICMCompileMT_SPMDFUN_DECL (char *funname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMT_SPMDFUN_DECL");
+    DBUG_ENTER ();
 
 #define MT_SPMDFUN_DECL
 #include "icm_comment.c"
@@ -77,7 +79,7 @@ ICMCompileMT_SPMDFUN_DECL (char *funname, int vararg_cnt, char **vararg)
              " %s( SAC_MT_SPMDFUN_REAL_PARAM_LIST())\n",
              funname);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -102,7 +104,7 @@ ICMCompileMT_SPMDFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg)
     int i;
     int cnt;
 
-    DBUG_ENTER ("ICMCompileMT_SPMDFUN_DEF_BEGIN");
+    DBUG_ENTER ();
 
 #define MT_SPMDFUN_DEF_BEGIN
 #include "icm_comment.c"
@@ -130,7 +132,7 @@ ICMCompileMT_SPMDFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg)
                  funname, cnt++, vararg[i + 1], vararg[i + 2]);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -152,7 +154,7 @@ ICMCompileMT_SPMDFUN_DEF_BEGIN (char *funname, int vararg_cnt, char **vararg)
 void
 ICMCompileMT_SPMDFUN_DEF_END (char *funname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMT_SPMDFUN_DEF_END");
+    DBUG_ENTER ();
 
 #define MT_SPMDFUN_DEF_END
 #include "icm_comment.c"
@@ -163,7 +165,7 @@ ICMCompileMT_SPMDFUN_DEF_END (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "}\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -188,7 +190,7 @@ ICMCompileMT_SPMDFUN_AP (char *funname, int vararg_cnt, char **vararg)
     int i;
     int cnt;
 
-    DBUG_ENTER ("ICMCompileMT_SPMDFUN_AP");
+    DBUG_ENTER ();
 
 #define MT_SPMDFUN_AP
 #include "icm_comment.c"
@@ -211,7 +213,7 @@ ICMCompileMT_SPMDFUN_AP (char *funname, int vararg_cnt, char **vararg)
         fprintf (global.outfile, "SAC_MT_RECEIVE_RESULT_%s( %s, 0, %d, %s)\n", vararg[i],
                  funname, cnt++, vararg[i + 2]);
     }
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -238,7 +240,7 @@ ICMCompileMT_SPMDFUN_RET (char *funname, int vararg_cnt, char **vararg)
 {
     int i, cnt;
 
-    DBUG_ENTER ("ICMCompileMT_SPMDFUN_RET");
+    DBUG_ENTER ();
 
 #define MT_SPMDFUN_RET
 #include "icm_comment.c"
@@ -279,7 +281,7 @@ ICMCompileMT_SPMDFUN_RET (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "SAC_MT_SPMDFUN_REAL_RETURN();\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -302,7 +304,7 @@ ICMCompileMT_SPMDFUN_RET (char *funname, int vararg_cnt, char **vararg)
 void
 ICMCompileMT_MTFUN_DECL (char *funname, char *rettype_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMT_MTFUN_DECL");
+    DBUG_ENTER ();
 
 #define MT_MTFUN_DECL
 #include "icm_comment.c"
@@ -328,7 +330,7 @@ ICMCompileMT_MTFUN_DECL (char *funname, char *rettype_NT, int vararg_cnt, char *
                           vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -352,7 +354,7 @@ void
 ICMCompileMT_MTFUN_DEF_BEGIN (char *funname, char *rettype_NT, int vararg_cnt,
                               char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMT_MTFUN_DEF_BEGIN");
+    DBUG_ENTER ();
 
 #define MT_MTFUN_DEF_BEGIN
 #include "icm_comment.c"
@@ -384,7 +386,7 @@ ICMCompileMT_MTFUN_DEF_BEGIN (char *funname, char *rettype_NT, int vararg_cnt,
     INDENT;
     fprintf (global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_multi_threaded)\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -408,7 +410,7 @@ void
 ICMCompileMT_MTFUN_DEF_END (char *funname, char *rettype_NT, int vararg_cnt,
                             char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMT_MTFUN_DEF_END");
+    DBUG_ENTER ();
 
 #define MT_MTFUN_DEF_END
 #include "icm_comment.c"
@@ -419,7 +421,7 @@ ICMCompileMT_MTFUN_DEF_END (char *funname, char *rettype_NT, int vararg_cnt,
     INDENT;
     fprintf (global.outfile, "}\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -442,7 +444,7 @@ ICMCompileMT_MTFUN_DEF_END (char *funname, char *rettype_NT, int vararg_cnt,
 void
 ICMCompileMT_MTFUN_AP (char *funname, char *retname_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMT_MTFUN_AP");
+    DBUG_ENTER ();
 
 #define MT_MTFUN_AP
 #include "icm_comment.c"
@@ -465,7 +467,7 @@ ICMCompileMT_MTFUN_AP (char *funname, char *retname_NT, int vararg_cnt, char **v
                           vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ");\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -485,7 +487,7 @@ ICMCompileMT_MTFUN_AP (char *funname, char *retname_NT, int vararg_cnt, char **v
 void
 ICMCompileMT_MTFUN_RET (char *retname_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMT_MTFUN_RET");
+    DBUG_ENTER ();
 
 #define MT_MTFUN_RET
 #include "icm_comment.c"
@@ -507,7 +509,7 @@ ICMCompileMT_MTFUN_RET (char *retname_NT, int vararg_cnt, char **vararg)
         fprintf (global.outfile, "return;");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -532,7 +534,7 @@ ICMCompileMT_SPMD_FRAME_ELEMENT (char *funname, int vararg_cnt, char **vararg)
     int i;
     int cnt;
 
-    DBUG_ENTER ("ICMCompileMT_SPMD_FRAME_ELEMENT");
+    DBUG_ENTER ();
 
 #define MT_SPMD_FRAME_ELEMENT
 #include "icm_comment.c"
@@ -552,7 +554,7 @@ ICMCompileMT_SPMD_FRAME_ELEMENT (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "SAC_MT_SPMD_FRAME_ELEMENT_END( %s)\n", funname);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -577,7 +579,7 @@ ICMCompileMT_SPMD_BARRIER_ELEMENT (char *funname, int vararg_cnt, char **vararg)
     int i;
     int cnt;
 
-    DBUG_ENTER ("ICMCompileMT_SPMD_BARRIER_ELEMENT");
+    DBUG_ENTER ();
 
 #define MT_SPMD_BARRIER_ELEMENT
 #include "icm_comment.c"
@@ -597,5 +599,7 @@ ICMCompileMT_SPMD_BARRIER_ELEMENT (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "SAC_MT_SPMD_BARRIER_ELEMENT_END( %s)\n", funname);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

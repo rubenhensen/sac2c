@@ -28,7 +28,9 @@
 
 #include "cost_model.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -77,7 +79,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -96,7 +98,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -120,7 +122,7 @@ MTCMdoRunCostModel (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MTCMdoRunCostModel");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
@@ -144,7 +146,7 @@ MTCMdoRunCostModel (node *syntax_tree)
 node *
 MTCMmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTCMmodule");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -162,7 +164,7 @@ MTCMmodule (node *arg_node, info *arg_info)
 node *
 MTCMblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTCMblock");
+    DBUG_ENTER ();
 
     if (INFO_TOPMOSTBLOCK (arg_info) == NULL) {
         INFO_TOPMOSTBLOCK (arg_info) = arg_node;
@@ -192,7 +194,7 @@ MTCMblock (node *arg_node, info *arg_info)
 node *
 MTCMfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTCMfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
@@ -223,7 +225,7 @@ MTCMassign (node *arg_node, info *arg_info)
 {
     node *parblock, *seqblock;
 
-    DBUG_ENTER ("MTCMassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -257,7 +259,7 @@ MTCMassign (node *arg_node, info *arg_info)
 node *
 MTCMlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTCMlet");
+    DBUG_ENTER ();
 
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
 
@@ -277,7 +279,7 @@ MTCMlet (node *arg_node, info *arg_info)
 node *
 MTCMwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTCMwith2");
+    DBUG_ENTER ();
 
     INFO_MAYPAR (arg_info) = TRUE;
     INFO_ISWORTH (arg_info) = FALSE;
@@ -315,7 +317,7 @@ MTCMwith2 (node *arg_node, info *arg_info)
 node *
 MTCMwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTCMwith");
+    DBUG_ENTER ();
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
@@ -331,7 +333,7 @@ MTCMwith (node *arg_node, info *arg_info)
 node *
 MTCMfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTCMfold");
+    DBUG_ENTER ();
 
     if (global.no_fold_parallel) {
         /*
@@ -375,7 +377,7 @@ MTCMgenarray (node *arg_node, info *arg_info)
     int size;
     bool size_static;
 
-    DBUG_ENTER ("MTCMgenarray");
+    DBUG_ENTER ();
 
     if (INFO_LETIDS (arg_info) != NULL) {
         size_static = TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)));
@@ -455,7 +457,7 @@ MTCMmodarray (node *arg_node, info *arg_info)
     node *arg;
     int size;
 
-    DBUG_ENTER ("MTCMmodarray");
+    DBUG_ENTER ();
 
     if (TUshapeKnown (IDS_NTYPE (INFO_LETIDS (arg_info)))) {
         size = SHgetUnrLen (TYgetShape (IDS_NTYPE (INFO_LETIDS (arg_info))));
@@ -509,3 +511,5 @@ MTCMmodarray (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -14,7 +14,10 @@
 #include "modulemanager.h"
 #include "namespaces.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "AFB"
+#include "debug.h"
+
 #include "ctinfo.h"
 
 /*
@@ -39,7 +42,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -52,7 +55,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -65,19 +68,19 @@ AFBdoAddFunctionBody (node *fundef)
     node *body;
     info *info;
 
-    DBUG_ENTER ("AFBdoAddFunctionBody");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "AFBdoAddFunctionBody is intended to be used on fundef nodes!");
 
-    DBUG_ASSERT ((FUNDEF_BODY (fundef) == NULL),
+    DBUG_ASSERT (FUNDEF_BODY (fundef) == NULL,
                  "cannot fetch a body if one already exists");
 
-    DBUG_PRINT ("AFB", ("Adding function body to `%s'.", CTIitemName (fundef)));
+    DBUG_PRINT ("Adding function body to `%s'.", CTIitemName (fundef));
 
     body = DSloadFunctionBody (fundef);
 
-    DBUG_PRINT ("AFB", ("Operation %s", (body == NULL) ? "failed" : "completed"));
+    DBUG_PRINT ("Operation %s", (body == NULL) ? "failed" : "completed");
 
     FUNDEF_BODY (fundef) = body;
 
@@ -113,7 +116,7 @@ static node *
 LookUpSSACounter (node *cntchain, node *arg)
 {
     node *result = NULL;
-    DBUG_ENTER ("LookUpSSACounter");
+    DBUG_ENTER ();
 
     while ((cntchain != NULL) && (result == NULL)) {
         if (STReq (SSACNT_BASEID (cntchain), AVIS_NAME (ARG_AVIS (arg)))) {
@@ -143,7 +146,7 @@ LookUpSSACounter (node *cntchain, node *arg)
 node *
 AFBfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AFBfundef");
+    DBUG_ENTER ();
 
     /*
      * infer INFO_AFB_RETURN and INFO_AFB_SSACOUNTER
@@ -176,7 +179,7 @@ AFBfundef (node *arg_node, info *arg_info)
 node *
 AFBreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AFBreturn");
+    DBUG_ENTER ();
 
     INFO_AFB_RETURN (arg_info) = arg_node;
 
@@ -197,7 +200,7 @@ AFBreturn (node *arg_node, info *arg_info)
 node *
 AFBblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AFBblock");
+    DBUG_ENTER ();
 
     if (INFO_AFB_SSACOUNTER (arg_info) == NULL) {
         /* we are the first block underneath the Fundef node */
@@ -221,7 +224,7 @@ AFBblock (node *arg_node, info *arg_info)
 node *
 AFBarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AFBarg");
+    DBUG_ENTER ();
 
     AVIS_SSACOUNT (ARG_AVIS (arg_node))
       = LookUpSSACounter (INFO_AFB_SSACOUNTER (arg_info), arg_node);
@@ -244,7 +247,7 @@ AFBarg (node *arg_node, info *arg_info)
 node *
 AFBap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AFBap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
         && (FUNDEF_BODY (AP_FUNDEF (arg_node)) == NULL)) {
@@ -254,3 +257,5 @@ AFBap (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

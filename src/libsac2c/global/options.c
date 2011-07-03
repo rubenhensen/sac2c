@@ -20,7 +20,9 @@
 #include <stdio.h>
 
 #include "config.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 #include "getoptions.h"
 
@@ -60,7 +62,7 @@
 void
 OPTcheckPreSetupOptions (int argc, char *argv[])
 {
-    DBUG_ENTER ("OPTcheckPreSetupOptions");
+    DBUG_ENTER ();
 
     ARGS_BEGIN (argc, argv);
 
@@ -76,7 +78,7 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
 
     ARGS_END ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static bool
@@ -84,7 +86,7 @@ powOf2 (int arg)
 {
     int exp = 0;
     int orgArg = arg;
-    DBUG_ENTER ("powOf2");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (arg > 0, "Must be positive number");
     while (arg > 0) {
@@ -109,7 +111,7 @@ powOf2 (int arg)
 void
 OPTcheckOptionConsistency (void)
 {
-    DBUG_ENTER ("OPTcheckOptionConsistency");
+    DBUG_ENTER ();
 
     if (global.printConfig) {
         RSCprintConfigEntry (global.printConfig);
@@ -346,7 +348,7 @@ OPTcheckOptionConsistency (void)
                   "with the current backend");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -374,7 +376,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     int store_num_threads = 0;
     mtmode_t store_mtmode = MT_none;
 
-    DBUG_ENTER ("AnalyseCommandlineSac2c");
+    DBUG_ENTER ();
 
     ARGS_BEGIN (argc, argv);
 
@@ -950,13 +952,13 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_END ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 AnalyseCommandlineSac4c (int argc, char *argv[])
 {
-    DBUG_ENTER ("AnalyseCommandlineSac4c");
+    DBUG_ENTER ();
 
     ARGS_BEGIN (argc, argv);
 
@@ -1143,13 +1145,13 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
         CTIabort ("-ldflags and -ccflags cannot be used simultaneously.");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 AnalyseCommandlineSac2tex (int argc, char *argv[])
 {
-    DBUG_ENTER ("AnalyseCommandlineSac2tex");
+    DBUG_ENTER ();
 
     ARGS_BEGIN (argc, argv);
 
@@ -1279,13 +1281,13 @@ AnalyseCommandlineSac2tex (int argc, char *argv[])
         global.verbose_level = 0;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 OPTanalyseCommandline (int argc, char *argv[])
 {
-    DBUG_ENTER ("OPTanalyseCommandline");
+    DBUG_ENTER ();
 
     switch (global.tool) {
     case TOOL_sac2c:
@@ -1299,5 +1301,7 @@ OPTanalyseCommandline (int argc, char *argv[])
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

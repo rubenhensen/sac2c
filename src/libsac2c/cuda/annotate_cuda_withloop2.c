@@ -30,7 +30,10 @@
 #include "str.h"
 #include "memory.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -65,7 +68,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -81,7 +84,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -95,7 +98,7 @@ FreeInfo (info *info)
 static void
 InitCudaBlockSizes ()
 {
-    DBUG_ENTER ("InitCudaBlockSizes");
+    DBUG_ENTER ();
 
     if (STReq (global.config.cuda_arch, "10") || STReq (global.config.cuda_arch, "11")) {
         global.optimal_threads = 256;
@@ -132,7 +135,7 @@ InitCudaBlockSizes ()
         DBUG_ASSERT (FALSE, "Unknown CUDA architecture");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -150,7 +153,7 @@ ATravPart (node *arg_node, info *arg_info)
 {
     int dim;
 
-    DBUG_ENTER ("ATravPart");
+    DBUG_ENTER ();
 
     dim = TCcountIds (PART_IDS (arg_node));
 
@@ -197,7 +200,7 @@ node *
 ACUWLdoAnnotateCUDAWL (node *syntax_tree)
 {
     info *info;
-    DBUG_ENTER ("ACUWLdoAnnotateCUDAWL");
+    DBUG_ENTER ();
 
     InitCudaBlockSizes ();
 
@@ -234,7 +237,7 @@ ACUWLfundef (node *arg_node, info *arg_info)
 {
     node *old_fundef;
 
-    DBUG_ENTER ("ACUWLfundef");
+    DBUG_ENTER ();
 
     /* During the main traversal, we only look at non-lac functions */
     if (!FUNDEF_ISLACFUN (arg_node) && !FUNDEF_ISSTICKY (arg_node)) {
@@ -275,7 +278,7 @@ ACUWLfundef (node *arg_node, info *arg_info)
 node *
 ACUWLlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ACUWLlet");
+    DBUG_ENTER ();
 
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
@@ -296,7 +299,7 @@ ACUWLwith (node *arg_node, info *arg_info)
 {
     ntype *ty;
 
-    DBUG_ENTER ("ACUWLwith");
+    DBUG_ENTER ();
 
     ty = IDS_NTYPE (INFO_LETIDS (arg_info));
 
@@ -366,7 +369,7 @@ ACUWLwith (node *arg_node, info *arg_info)
 node *
 ACUWLfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ACUWLfold");
+    DBUG_ENTER ();
 
     if (global.optimize.dopfd) {
         FOLD_NEUTRAL (arg_node) = TRAVopt (FOLD_NEUTRAL (arg_node), arg_info);
@@ -396,7 +399,7 @@ ACUWLfold (node *arg_node, info *arg_info)
 node *
 ACUWLbreak (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ACUWLbreak");
+    DBUG_ENTER ();
 
     /* Currently, we do not support break N_with */
     INFO_CUDARIZABLE (arg_info) = FALSE;
@@ -415,7 +418,7 @@ ACUWLbreak (node *arg_node, info *arg_info)
 node *
 ACUWLpropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ACUWLpropagate");
+    DBUG_ENTER ();
 
     /* Currently, we do not support propagate N_with */
     INFO_CUDARIZABLE (arg_info) = FALSE;
@@ -436,7 +439,7 @@ ACUWLid (node *arg_node, info *arg_info)
 {
     ntype *type;
 
-    DBUG_ENTER ("ACUWLid");
+    DBUG_ENTER ();
 
     type = ID_NTYPE (arg_node);
 
@@ -466,7 +469,7 @@ ACUWLap (node *arg_node, info *arg_info)
     namespace_t *ns;
     bool traverse_lac_fun, old_from_ap;
 
-    DBUG_ENTER ("ACUWLap");
+    DBUG_ENTER ();
 
     fundef = AP_FUNDEF (arg_node);
 
@@ -536,3 +539,5 @@ ACUWLap (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

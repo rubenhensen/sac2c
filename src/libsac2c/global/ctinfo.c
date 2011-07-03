@@ -45,7 +45,9 @@
 
 #include "ctinfo.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "filemgr.h"
 #include "system.h"
 #include "str.h"
@@ -98,7 +100,7 @@ ProcessMessage (char *buffer, int line_length)
 {
     int index, column, last_space;
 
-    DBUG_ENTER ("ProcessMessage");
+    DBUG_ENTER ();
 
     index = 0;
     last_space = 0;
@@ -131,7 +133,7 @@ ProcessMessage (char *buffer, int line_length)
         column++;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -152,14 +154,14 @@ Format2Buffer (const char *format, va_list arg_p)
     int len;
     va_list arg_p_copy;
 
-    DBUG_ENTER ("Format2Buffer");
+    DBUG_ENTER ();
 
     va_copy (arg_p_copy, arg_p);
     len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy);
     va_end (arg_p_copy);
 
     if (len < 0) {
-        DBUG_ASSERT ((message_buffer_size == 0), "message buffer corruption");
+        DBUG_ASSERT (message_buffer_size == 0, "message buffer corruption");
         /*
          * Output error due to non-existing message buffer
          */
@@ -173,7 +175,7 @@ Format2Buffer (const char *format, va_list arg_p)
         va_copy (arg_p_copy, arg_p);
         len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy);
         va_end (arg_p_copy);
-        DBUG_ASSERT ((len >= 0), "message buffer corruption");
+        DBUG_ASSERT (len >= 0, "message buffer corruption");
     }
 
     if (len >= message_buffer_size) {
@@ -188,10 +190,10 @@ Format2Buffer (const char *format, va_list arg_p)
         len = vsnprintf (message_buffer, message_buffer_size, format, arg_p_copy);
         va_end (arg_p_copy);
 
-        DBUG_ASSERT ((len < message_buffer_size), "message buffer corruption");
+        DBUG_ASSERT (len < message_buffer_size, "message buffer corruption");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -219,7 +221,7 @@ CTIgetErrorMessageVA (int line, const char *file, const char *format, va_list ar
     char *res;
     str_buf *buffer;
 
-    DBUG_ENTER ("CTIgetErrorMessageVA");
+    DBUG_ENTER ();
     Format2Buffer (format, arg_p);
     ProcessMessage (message_buffer, message_line_length - STRlen (error_message_header));
 
@@ -256,7 +258,7 @@ PrintMessage (const char *header, const char *format, va_list arg_p)
 {
     char *line;
 
-    DBUG_ENTER ("PrintMessage");
+    DBUG_ENTER ();
 
     Format2Buffer (format, arg_p);
 
@@ -269,7 +271,7 @@ PrintMessage (const char *header, const char *format, va_list arg_p)
         line = strtok (NULL, "@");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -284,7 +286,7 @@ PrintMessage (const char *header, const char *format, va_list arg_p)
 static void
 CleanUp ()
 {
-    DBUG_ENTER ("CleanUp");
+    DBUG_ENTER ();
 
     if (global.cleanup) {
         global.cleanup = FALSE;
@@ -292,7 +294,7 @@ CleanUp ()
         FMGRdeleteTmpDir ();
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -311,7 +313,7 @@ CleanUpInterrupted ()
 {
     int status;
 
-    DBUG_ENTER ("CleanUpInterrupted");
+    DBUG_ENTER ();
 
     if (global.cleanup) {
         global.cleanup = FALSE;
@@ -325,7 +327,7 @@ CleanUpInterrupted ()
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -340,7 +342,7 @@ static void
 AbortCompilation ()
 {
     int ecode = (int)global.compiler_phase;
-    DBUG_ENTER ("AbortCompilation");
+    DBUG_ENTER ();
 
     if (ecode == 0) {
         ecode = 255;
@@ -355,7 +357,7 @@ AbortCompilation ()
 
     exit (ecode);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -555,13 +557,13 @@ UserForcedBreak (int sig)
 void
 CTIinstallInterruptHandlers ()
 {
-    DBUG_ENTER ("CTIinstallInterruptHandlers");
+    DBUG_ENTER ();
 
     signal (SIGSEGV, InternalCompilerErrorBreak); /* Segmentation Fault */
     signal (SIGBUS, InternalCompilerErrorBreak);  /* Bus Error */
     signal (SIGINT, UserForcedBreak);             /* Interrupt (Control-C) */
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -579,7 +581,7 @@ CTIerror (const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIerror");
+    DBUG_ENTER ();
 
     va_start (arg_p, format);
 
@@ -590,7 +592,7 @@ CTIerror (const char *format, ...)
 
     errors++;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -610,7 +612,7 @@ CTIerrorLine (int line, const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIerrorLine");
+    DBUG_ENTER ();
 
     va_start (arg_p, format);
 
@@ -623,7 +625,7 @@ CTIerrorLine (int line, const char *format, ...)
 
     errors++;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -641,7 +643,7 @@ CTIerrorLine (int line, const char *format, ...)
 void
 CTIerrorLineVA (int line, const char *format, va_list arg_p)
 {
-    DBUG_ENTER ("CTIerrorLineVA");
+    DBUG_ENTER ();
 
     fprintf (stderr, "\n");
     fprintf (stderr, "%sline %d  file: %s\n", error_message_header, line,
@@ -650,7 +652,7 @@ CTIerrorLineVA (int line, const char *format, va_list arg_p)
 
     errors++;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -668,7 +670,7 @@ CTIerrorContinued (const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIerrorContinued");
+    DBUG_ENTER ();
 
     va_start (arg_p, format);
 
@@ -676,7 +678,7 @@ CTIerrorContinued (const char *format, ...)
 
     va_end (arg_p);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -694,7 +696,7 @@ CTIerrorInternal (const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIerrorInternal");
+    DBUG_ENTER ();
 
     fprintf (stderr, "\n%sInternal %s failure\n", error_message_header, global.toolname);
 
@@ -714,7 +716,7 @@ CTIerrorInternal (const char *format, ...)
 
     errors++;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -730,7 +732,7 @@ CTIerrorInternal (const char *format, ...)
 int
 CTIgetErrorMessageLineLength ()
 {
-    DBUG_ENTER ("CTIgetErrorMessageLineLength");
+    DBUG_ENTER ();
 
     DBUG_RETURN (message_line_length - STRlen (error_message_header));
 }
@@ -751,7 +753,7 @@ CTIabortOnBottom (char *err_msg)
 {
     char *line;
 
-    DBUG_ENTER ("CTIabortOnBottom");
+    DBUG_ENTER ();
 
     fprintf (stderr, "\n");
 
@@ -766,7 +768,7 @@ CTIabortOnBottom (char *err_msg)
 
     AbortCompilation ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -785,7 +787,7 @@ CTIabort (const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIabort");
+    DBUG_ENTER ();
 
     va_start (arg_p, format);
 
@@ -798,7 +800,7 @@ CTIabort (const char *format, ...)
 
     AbortCompilation ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -818,7 +820,7 @@ CTIabortLine (int line, const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIabortLine");
+    DBUG_ENTER ();
 
     va_start (arg_p, format);
 
@@ -833,7 +835,7 @@ CTIabortLine (int line, const char *format, ...)
 
     AbortCompilation ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -857,7 +859,7 @@ CTIabortLine (int line, const char *format, ...)
 void
 CTIabortOutOfMemory (unsigned int request)
 {
-    DBUG_ENTER ("CTIabortOutOfMemory");
+    DBUG_ENTER ();
 
     fprintf (stderr,
              "\n"
@@ -874,7 +876,7 @@ CTIabortOutOfMemory (unsigned int request)
 
     AbortCompilation ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -888,13 +890,13 @@ CTIabortOutOfMemory (unsigned int request)
 void
 CTIabortOnError ()
 {
-    DBUG_ENTER ("CTIabortOnError");
+    DBUG_ENTER ();
 
     if (errors > 0) {
         AbortCompilation ();
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -913,7 +915,7 @@ CTIwarnLine (int line, const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIwarnLine");
+    DBUG_ENTER ();
 
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
@@ -927,7 +929,7 @@ CTIwarnLine (int line, const char *format, ...)
         warnings++;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -945,7 +947,7 @@ CTIwarn (const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIwarn");
+    DBUG_ENTER ();
 
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
@@ -957,7 +959,7 @@ CTIwarn (const char *format, ...)
         warnings++;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -975,7 +977,7 @@ CTIwarnContinued (const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIwarnContinued");
+    DBUG_ENTER ();
 
     va_start (arg_p, format);
 
@@ -983,7 +985,7 @@ CTIwarnContinued (const char *format, ...)
 
     va_end (arg_p);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -999,7 +1001,7 @@ CTIwarnContinued (const char *format, ...)
 int
 CTIgetWarnMessageLineLength ()
 {
-    DBUG_ENTER ("CTIgetWarnMessageLineLength");
+    DBUG_ENTER ();
 
     DBUG_RETURN (message_line_length - STRlen (warn_message_header));
 }
@@ -1019,7 +1021,7 @@ CTIstate (const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTIstate");
+    DBUG_ENTER ();
 
     if (global.verbose_level >= 2) {
         va_start (arg_p, format);
@@ -1029,7 +1031,7 @@ CTIstate (const char *format, ...)
         va_end (arg_p);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1047,7 +1049,7 @@ CTInote (const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTInote");
+    DBUG_ENTER ();
 
     if (global.verbose_level >= 3) {
         va_start (arg_p, format);
@@ -1057,7 +1059,7 @@ CTInote (const char *format, ...)
         va_end (arg_p);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1075,7 +1077,7 @@ CTInoteLine (int line, const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTInoteLine");
+    DBUG_ENTER ();
 
     if (global.verbose_level >= 3) {
         va_start (arg_p, format);
@@ -1087,7 +1089,7 @@ CTInoteLine (int line, const char *format, ...)
         va_end (arg_p);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1105,7 +1107,7 @@ CTItell (int verbose_level, const char *format, ...)
 {
     va_list arg_p;
 
-    DBUG_ENTER ("CTInote");
+    DBUG_ENTER ();
 
     if (global.verbose_level >= verbose_level) {
         va_start (arg_p, format);
@@ -1115,7 +1117,7 @@ CTItell (int verbose_level, const char *format, ...)
         va_end (arg_p);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1129,7 +1131,7 @@ CTItell (int verbose_level, const char *format, ...)
 void
 CTIterminateCompilation (node *syntax_tree)
 {
-    DBUG_ENTER ("CTIterminateCompilation");
+    DBUG_ENTER ();
 
     /*
      * Upon premature termination of compilation process show
@@ -1193,7 +1195,7 @@ CTIterminateCompilation (node *syntax_tree)
 
     exit (0);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /**
@@ -1215,7 +1217,7 @@ formatItemName (namespace_t *ns, char *name)
     static char buffer[MAX_ITEM_NAME_LENGTH + 1];
     int written;
 
-    DBUG_ENTER ("formatItemName");
+    DBUG_ENTER ();
 
     if (ns != NULL) {
         written = snprintf (buffer, MAX_ITEM_NAME_LENGTH, "%s::%s", NSgetName (ns), name);
@@ -1223,7 +1225,7 @@ formatItemName (namespace_t *ns, char *name)
         written = snprintf (buffer, MAX_ITEM_NAME_LENGTH, "%s", name);
     }
 
-    DBUG_ASSERT ((written < MAX_ITEM_NAME_LENGTH), "buffer in formatItemName too small");
+    DBUG_ASSERT (written < MAX_ITEM_NAME_LENGTH, "buffer in formatItemName too small");
 
     DBUG_RETURN (buffer);
 }
@@ -1233,7 +1235,7 @@ CTIitemName (node *item)
 {
     const char *ret;
 
-    DBUG_ENTER ("CTIitemName");
+    DBUG_ENTER ();
 
     if (item == NULL) {
         ret = "???";
@@ -1273,7 +1275,7 @@ CTIfunParams (node *fundef)
     static char argtype_buffer[80];
     static int buffer_space;
 
-    DBUG_ENTER ("CTIfunParams");
+    DBUG_ENTER ();
 
     if (fundef == NULL) {
         ret = "???";
@@ -1307,3 +1309,5 @@ CTIfunParams (node *fundef)
 
     DBUG_RETURN (ret);
 }
+
+#undef DBUG_PREFIX

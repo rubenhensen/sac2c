@@ -7,7 +7,10 @@
 #include "tree_compound.h"
 #include "globals.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -101,7 +104,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -128,7 +131,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -140,7 +143,7 @@ CreatePartInfo (int dim, int type, node *wlids, node *step, node *width)
 {
     part_info_t *info;
 
-    DBUG_ENTER ("CreatePartInfo");
+    DBUG_ENTER ();
 
     info = MEMmalloc (sizeof (part_info_t));
 
@@ -158,7 +161,7 @@ CreatePartInfo (int dim, int type, node *wlids, node *step, node *width)
 static part_info_t *
 PushPartInfo (part_info_t *infos, part_info_t *info)
 {
-    DBUG_ENTER ("PushPartInfo");
+    DBUG_ENTER ();
 
     if (infos == NULL) {
         infos = info;
@@ -177,9 +180,9 @@ PopPartInfo (part_info_t *infos)
 {
     part_info_t *res;
 
-    DBUG_ENTER ("PopPartInfo");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((infos != NULL), "Partition information chain is NULL!");
+    DBUG_ASSERT (infos != NULL, "Partition information chain is NULL!");
 
     if (PART_INFO_NEXT (infos) == NULL) {
         infos = MEMfree (infos);
@@ -199,7 +202,7 @@ SearchIndex (part_info_t *infos, node *avis)
     node *wlids;
     part_info_t *res = NULL;
 
-    DBUG_ENTER ("SearchIndex");
+    DBUG_ENTER ();
 
     while (infos != NULL) {
         wlids = PART_INFO_WLIDS (infos);
@@ -222,10 +225,10 @@ DecideThreadIdx (node *ids, int dim, node *avis)
 {
     unsigned int res = -1;
 
-    DBUG_ENTER ("DecideThreadIdx");
+    DBUG_ENTER ();
 
     if (dim == 1) {
-        DBUG_ASSERT ((IDS_AVIS (ids) == avis), "Unknown wl ids found!");
+        DBUG_ASSERT (IDS_AVIS (ids) == avis, "Unknown wl ids found!");
         res = IDX_THREADIDX_X;
     } else if (dim == 2) {
         if (IDS_AVIS (ids) == avis) {
@@ -233,10 +236,10 @@ DecideThreadIdx (node *ids, int dim, node *avis)
         } else if (IDS_AVIS (IDS_NEXT (ids)) == avis) {
             res = IDX_THREADIDX_X;
         } else {
-            DBUG_ASSERT ((0), "Found withids with more than 2 ids!");
+            DBUG_ASSERT (0, "Found withids with more than 2 ids!");
         }
     } else {
-        DBUG_ASSERT ((0), "Found withids with more than 2 ids!");
+        DBUG_ASSERT (0, "Found withids with more than 2 ids!");
     }
 
     DBUG_RETURN (res);
@@ -246,13 +249,13 @@ static void
 AddIndex (unsigned int type, int coefficient, node *idx, int looplevel, int dim,
           info *arg_info)
 {
-    DBUG_ENTER ("AddIndex");
+    DBUG_ENTER ();
 
     CUAI_INDICES (INFO_ACCESS_INFO (arg_info), dim)
       = TBmakeCudaIndex (type, coefficient, idx, looplevel,
                          CUAI_INDICES (INFO_ACCESS_INFO (arg_info), dim));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -261,7 +264,7 @@ ActOnId (node *avis, info *arg_info)
     node *ssa_assign;
     part_info_t *part_info;
 
-    DBUG_ENTER ("ActOnId");
+    DBUG_ENTER ();
 
     /* This function checks the id (avis) and performs the following
      * actions:
@@ -319,8 +322,8 @@ ActOnId (node *avis, info *arg_info)
                             PART_INFO_NTH (part_info), INFO_IDXDIM (arg_info),
                             INFO_COEFFICIENT (arg_info));
         } else {
-            DBUG_ASSERT ((0), "Found id whose ssaassign is NULL and it is neither an arg "
-                              "or a withids!");
+            DBUG_ASSERT (0, "Found id whose ssaassign is NULL and it is neither an arg "
+                            "or a withids!");
         }
     } else {
         /* If this id is defined by an assignment outside the current cuda WL */
@@ -346,7 +349,7 @@ ActOnId (node *avis, info *arg_info)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static bool
@@ -355,16 +358,16 @@ CoalescingNeeded (cuda_access_info_t *access_info, info *arg_info)
     bool res = FALSE;
     cuda_index_t *index = NULL;
 
-    DBUG_ENTER ("CoalescingNeeded");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((access_info != NULL), "Access info is NULL!");
+    DBUG_ASSERT (access_info != NULL, "Access info is NULL!");
 
     /* If the first dimension of a 2D array access contains threadIdx.x
      * and the second dimension is not constant, we need to consider
      * coalescing the access */
     if (CUAI_DIM (access_info) == 2 && !CUAI_ISCONSTANT (access_info, 1)) {
         index = CUAI_INDICES (access_info, 0);
-        DBUG_ASSERT ((index != NULL), "First index of access info is NULL!");
+        DBUG_ASSERT (index != NULL, "First index of access info is NULL!");
         while (index != NULL) {
             if (CUIDX_TYPE (index) == IDX_THREADIDX_X) {
                 res = TRUE;
@@ -386,7 +389,7 @@ CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
                       {global.cuda_2d_block_y, global.cuda_2d_block_x}};
     node *sharray_shp = NULL;
 
-    DBUG_ENTER ("CreateSharedMemoryForReuse");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == trav_collect) {
         CUAI_TYPE (access_info) = ACCTY_REUSE;
@@ -396,7 +399,7 @@ CreateSharedMemoryForReuse (cuda_access_info_t *access_info, info *arg_info)
 
     for (i = dim - 1; i >= 0; i--) {
         index = CUAI_INDICES (access_info, i);
-        DBUG_ASSERT ((index != NULL), "Found NULL index!");
+        DBUG_ASSERT (index != NULL, "Found NULL index!");
 
         shmem_size = 0;
 
@@ -494,7 +497,7 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
     int blocking_factor = global.cuda_2d_block_x;
     node *sharray_shp_log = NULL, *sharray_shp_phy = NULL;
 
-    DBUG_ENTER ("CreateSharedMemoryForCoalescing");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == trav_collect) {
         CUAI_TYPE (access_info) = ACCTY_COALESCE;
@@ -528,16 +531,16 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
      */
 
     dim = CUAI_DIM (access_info);
-    DBUG_ASSERT ((dim == 2), "Non-2D array found for coalescing!");
+    DBUG_ASSERT (dim == 2, "Non-2D array found for coalescing!");
 
     /* Dimension of cuda withloop can be either 1d or 2d */
     cuwl_dim = INFO_CUWLDIM (arg_info);
 
     for (i = dim - 1; i >= 0; i--) {
-        DBUG_ASSERT ((!CUAI_ISCONSTANT (access_info, i)),
+        DBUG_ASSERT (!CUAI_ISCONSTANT (access_info, i),
                      "Constant index found array to be coalesced!");
         index = CUAI_INDICES (access_info, i);
-        DBUG_ASSERT ((index != NULL), "Found NULL index!");
+        DBUG_ASSERT (index != NULL, "Found NULL index!");
 
         shmem_size = 0;
 
@@ -562,11 +565,11 @@ CreateSharedMemoryForCoalescing (cuda_access_info_t *access_info, info *arg_info
                 } else if (cuwl_dim == 2) {
                     shmem_size += (coefficient * block_sizes_2d[1]);
                 } else {
-                    DBUG_ASSERT ((0), "Unknown array dimension found!");
+                    DBUG_ASSERT (0, "Unknown array dimension found!");
                 }
                 break;
             case IDX_THREADIDX_Y:
-                DBUG_ASSERT ((cuwl_dim != 1), "THREADIDX_Y found for 1d cuda withloop!");
+                DBUG_ASSERT (cuwl_dim != 1, "THREADIDX_Y found for 1d cuda withloop!");
                 shmem_size += (coefficient * block_sizes_2d[0]);
                 break;
             case IDX_LOOPIDX:
@@ -645,7 +648,7 @@ DAAdoDataAccessAnalysis (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("DAAdoDataAccessAnalysis");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_daa);
@@ -668,7 +671,7 @@ DAAfundef (node *arg_node, info *arg_info)
 {
     node *old_fundef;
 
-    DBUG_ENTER ("DAAfundef");
+    DBUG_ENTER ();
 
     if (INFO_FROMAP (arg_info)) {
         old_fundef = INFO_FUNDEF (arg_info);
@@ -702,7 +705,7 @@ DAAap (node *arg_node, info *arg_info)
     node *fundef, *ap_args, *fundef_args;
     bool old_fromap;
 
-    DBUG_ENTER ("DAAap");
+    DBUG_ENTER ();
 
     fundef = AP_FUNDEF (arg_node);
 
@@ -712,7 +715,7 @@ DAAap (node *arg_node, info *arg_info)
             fundef_args = FUNDEF_ARGS (fundef);
 
             while (ap_args != NULL) {
-                DBUG_ASSERT ((fundef_args != NULL),
+                DBUG_ASSERT (fundef_args != NULL,
                              "Unequal number of ap_args and fundef_args!");
 
                 INFO_LUT (arg_info)
@@ -745,7 +748,7 @@ DAAwith (node *arg_node, info *arg_info)
     int dim;
     travmode_t old_mode;
 
-    DBUG_ENTER ("DAAwith");
+    DBUG_ENTER ();
 
     dim = TCcountIds (WITH_IDS (arg_node));
 
@@ -787,7 +790,7 @@ CreateBlockingPragma (node *ids, int dim, info *arg_info)
     node *pragma, *array, *wlcomp_aps, *block_exprs = NULL;
     /* bool needblocked = FALSE; */
 
-    DBUG_ENTER ("CreateBlockingPragma");
+    DBUG_ENTER ();
 
     pragma = TBmakePragma ();
 
@@ -853,12 +856,12 @@ DAApart (node *arg_node, info *arg_info)
     node *old_wlidx, *ids;
     bool outermost_part;
 
-    DBUG_ENTER ("DAApart");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == trav_normal) {
         dim = TCcountIds (PART_IDS (arg_node));
 
-        DBUG_ASSERT ((INFO_NEST_LEVEL (arg_info) >= dim), "Wrong nesting level found!");
+        DBUG_ASSERT (INFO_NEST_LEVEL (arg_info) >= dim, "Wrong nesting level found!");
 
         outermost_part = (INFO_NEST_LEVEL (arg_info) == dim);
 
@@ -923,7 +926,7 @@ DAApart (node *arg_node, info *arg_info)
         PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
         PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
     } else {
-        DBUG_ASSERT ((0), "Wrong traverse mode found!");
+        DBUG_ASSERT (0, "Wrong traverse mode found!");
     }
 
     DBUG_RETURN (arg_node);
@@ -939,7 +942,7 @@ DAApart (node *arg_node, info *arg_info)
 node *
 DAAcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("DAAcode");
+    DBUG_ENTER ();
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
@@ -958,7 +961,7 @@ DAAassign (node *arg_node, info *arg_info)
 {
     node *old_lastassign;
 
-    DBUG_ENTER ("DAAassign");
+    DBUG_ENTER ();
 
     old_lastassign = INFO_LASTASSIGN (arg_info);
     INFO_LASTASSIGN (arg_info) = arg_node;
@@ -976,7 +979,7 @@ DAAassign (node *arg_node, info *arg_info)
     }
 
     else {
-        DBUG_ASSERT ((0), "Wrong traverse mode!");
+        DBUG_ASSERT (0, "Wrong traverse mode!");
     }
 
     INFO_LASTASSIGN (arg_info) = old_lastassign;
@@ -997,7 +1000,7 @@ DAAprf (node *arg_node, info *arg_info)
     node *operand1, *operand2;
     int old_coefficient;
 
-    DBUG_ENTER ("DAAprf");
+    DBUG_ENTER ();
 
     /* If we are in cuda withloop */
     if (INFO_NEST_LEVEL (arg_info) > 0) {
@@ -1142,7 +1145,7 @@ DAAprf (node *arg_node, info *arg_info)
                 } else if (NODE_TYPE (operand1) == N_id) {
                     ActOnId (ID_AVIS (operand1), arg_info);
                 } else {
-                    DBUG_ASSERT ((0), "Unknown type of node found in operands!");
+                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
                 }
 
                 if (NODE_TYPE (operand2) == N_num) {
@@ -1152,7 +1155,7 @@ DAAprf (node *arg_node, info *arg_info)
                 } else if (NODE_TYPE (operand2) == N_id) {
                     ActOnId (ID_AVIS (operand2), arg_info);
                 } else {
-                    DBUG_ASSERT ((0), "Unknown type of node found in operands!");
+                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
                 }
             }
             break;
@@ -1168,7 +1171,7 @@ DAAprf (node *arg_node, info *arg_info)
                 } else if (NODE_TYPE (operand1) == N_id) {
                     ActOnId (ID_AVIS (operand1), arg_info);
                 } else {
-                    DBUG_ASSERT ((0), "Unknown type of node found in operands!");
+                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
                 }
 
                 if (NODE_TYPE (operand2) == N_num) {
@@ -1184,7 +1187,7 @@ DAAprf (node *arg_node, info *arg_info)
                     ActOnId (ID_AVIS (operand2), arg_info);
                     INFO_COEFFICIENT (arg_info) = old_coefficient;
                 } else {
-                    DBUG_ASSERT ((0), "Unknown type of node found in operands!");
+                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
                 }
             }
             break;
@@ -1209,7 +1212,7 @@ DAAprf (node *arg_node, info *arg_info)
                     ActOnId (ID_AVIS (operand2), arg_info);
                     INFO_COEFFICIENT (arg_info) = old_coefficient;
                 } else {
-                    DBUG_ASSERT ((0), "Unknown type of node found in operands!");
+                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
                 }
             }
             break;
@@ -1230,7 +1233,7 @@ DAAprf (node *arg_node, info *arg_info)
                     ActOnId (ID_AVIS (operand1), arg_info);
                     INFO_COEFFICIENT (arg_info) = old_coefficient;
                 } else {
-                    DBUG_ASSERT ((0), "Unknown type of node found in operands!");
+                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
                 }
             }
             break;
@@ -1245,3 +1248,5 @@ DAAprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -9,7 +9,9 @@
 #include "icm2c_utils.h"
 #include "icm2c_std.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
@@ -55,7 +57,7 @@
 void
 ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileND_FUN_DECL");
+    DBUG_ENTER ();
 
 #define ND_FUN_DECL
 #include "icm_comment.c"
@@ -79,7 +81,7 @@ ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vara
                           vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -100,7 +102,7 @@ ICMCompileND_FUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vara
 void
 ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileND_FUN_DEF_BEGIN");
+    DBUG_ENTER ();
 
 #define ND_FUN_DEF_BEGIN
 #include "icm_comment.c"
@@ -131,7 +133,7 @@ ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
     INDENT;
     fprintf (global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -154,7 +156,7 @@ ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
 void
 ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileND_FUN_DEF_END");
+    DBUG_ENTER ();
 
 #define ND_FUN_DEF_END
 #include "icm_comment.c"
@@ -167,7 +169,7 @@ ICMCompileND_FUN_DEF_END (char *name, char *rettype_NT, int vararg_cnt, char **v
     INDENT;
     fprintf (global.outfile, "SAC_ND_FUN_DEF_END2()\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /**<!--*********************************************************************-->
@@ -183,7 +185,7 @@ void
 ICMCompileMUTC_THREADFUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
                                char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMUTC_THREADFUN_DECL");
+    DBUG_ENTER ();
 
 #define MUTC_THREADFUN_DECL
 #include "icm_comment.c"
@@ -201,14 +203,14 @@ ICMCompileMUTC_THREADFUN_DECL (char *name, char *rettype_NT, int vararg_cnt,
                           vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 ICMCompileMUTC_THREADFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
                                     char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMUTC_THREADFUN_DEF_BEGIN");
+    DBUG_ENTER ();
 
 #define MUTC_THREADFUN_DEF_BEGIN
 #include "icm_comment.c"
@@ -226,7 +228,7 @@ ICMCompileMUTC_THREADFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt
                           vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /**<!--*********************************************************************-->
@@ -241,7 +243,7 @@ ICMCompileMUTC_THREADFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt
 void
 ICMCompileMUTC_SPAWNFUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMUTC_SPAWNFUN_DECL");
+    DBUG_ENTER ();
 
 #define MUTC_SPAWNFUN_DECL
 #include "icm_comment.c"
@@ -259,14 +261,14 @@ ICMCompileMUTC_SPAWNFUN_DECL (char *name, char *rettype_NT, int vararg_cnt, char
                           vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
                                    char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMUTC_SPAWNFUN_DEF_BEGIN");
+    DBUG_ENTER ();
 
 #define MUTC_SPAWNFUN_DEF_BEGIN
 #include "icm_comment.c"
@@ -284,7 +286,7 @@ ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
                           vararg[i + 2], vararg[i + 1]));
     fprintf (global.outfile, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -305,7 +307,7 @@ ICMCompileMUTC_SPAWNFUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt,
 void
 ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileND_FUN_AP");
+    DBUG_ENTER ();
 
 #define ND_FUN_AP
 #include "icm_comment.c"
@@ -333,7 +335,7 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 
     fprintf (global.outfile, "\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -356,7 +358,7 @@ ICMCompileND_FUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 void
 ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMUTC_THREADFUN_AP");
+    DBUG_ENTER ();
 
 #define MUTC_THREADFUN_AP
 #include "icm_comment.c"
@@ -375,7 +377,7 @@ ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt, char **v
 
     fprintf (global.outfile, "\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -398,7 +400,7 @@ ICMCompileMUTC_THREADFUN_AP (char *name, char *retname, int vararg_cnt, char **v
 void
 ICMCompileMUTC_FUNTHREADFUN_AP (char *name, char *retname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMUTC_FUNTHREADFUN_AP");
+    DBUG_ENTER ();
 
 #define MUTC_FUNTHREADFUN_AP
 #include "icm_comment.c"
@@ -417,7 +419,7 @@ ICMCompileMUTC_FUNTHREADFUN_AP (char *name, char *retname, int vararg_cnt, char 
 
     fprintf (global.outfile, "\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -444,7 +446,7 @@ void
 ICMCompileMUTC_SPAWNFUN_AP (char *var_NT, char *place, char *name, char *retname,
                             int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMUTC_SPAWNFUN_AP");
+    DBUG_ENTER ();
 
 #define MUTC_SPAWNFUN_AP
 #include "icm_comment.c"
@@ -463,7 +465,7 @@ ICMCompileMUTC_SPAWNFUN_AP (char *var_NT, char *place, char *name, char *retname
 
     fprintf (global.outfile, "\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -483,7 +485,7 @@ ICMCompileMUTC_SPAWNFUN_AP (char *var_NT, char *place, char *name, char *retname
 void
 ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileND_FUN_RET");
+    DBUG_ENTER ();
 
 #define ND_FUN_RET
 #include "icm_comment.c"
@@ -505,7 +507,7 @@ ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
         fprintf (global.outfile, "return;");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 /**<!--*********************************************************************-->
  *
@@ -526,7 +528,7 @@ ICMCompileND_FUN_RET (char *retname, int vararg_cnt, char **vararg)
 void
 ICMCompileMUTC_THREADFUN_RET (char *retname, int vararg_cnt, char **vararg)
 {
-    DBUG_ENTER ("ICMCompileMUTC_THREADFUN_RET");
+    DBUG_ENTER ();
 
 #define MUTC_THREADFUN_RET
 #include "icm_comment.c"
@@ -548,7 +550,7 @@ ICMCompileMUTC_THREADFUN_RET (char *retname, int vararg_cnt, char **vararg)
         fprintf (global.outfile, "return;");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -566,7 +568,7 @@ ICMCompileMUTC_THREADFUN_RET (char *retname, int vararg_cnt, char **vararg)
 void
 ICMCompileND_OBJDEF (char *var_NT, char *basetype, int sdim, int *shp)
 {
-    DBUG_ENTER ("ICMCompileND_OBJDEF");
+    DBUG_ENTER ();
 
 #define ND_OBJDEF
 #include "icm_comment.c"
@@ -579,7 +581,7 @@ ICMCompileND_OBJDEF (char *var_NT, char *basetype, int sdim, int *shp)
         ICMCompileND_DECL (var_NT, basetype, sdim, shp);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -597,7 +599,7 @@ ICMCompileND_OBJDEF (char *var_NT, char *basetype, int sdim, int *shp)
 void
 ICMCompileND_OBJDEF_EXTERN (char *var_NT, char *basetype, int sdim)
 {
-    DBUG_ENTER ("ICMCompileND_OBJDEF_EXTERN");
+    DBUG_ENTER ();
 
 #define ND_OBJDEF_EXTERN
 #include "icm_comment.c"
@@ -606,7 +608,7 @@ ICMCompileND_OBJDEF_EXTERN (char *var_NT, char *basetype, int sdim)
 
     ICMCompileND_DECL_EXTERN (var_NT, basetype, sdim);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -624,7 +626,7 @@ ICMCompileND_OBJDEF_EXTERN (char *var_NT, char *basetype, int sdim)
 void
 ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp)
 {
-    DBUG_ENTER ("ICMCompileND_DECL");
+    DBUG_ENTER ();
 
 #define ND_DECL
 #include "icm_comment.c"
@@ -639,7 +641,7 @@ ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp)
 
     ICMCompileND_DECL__MIRROR (var_NT, sdim, shp);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -657,7 +659,7 @@ ICMCompileND_DECL (char *var_NT, char *basetype, int sdim, int *shp)
 void
 ICMCompileND_DECL_EXTERN (char *var_NT, char *basetype, int sdim)
 {
-    DBUG_ENTER ("ICMCompileND_DECL_EXTERN");
+    DBUG_ENTER ();
 
 #define ND_DECL_EXTERN
 #include "icm_comment.c"
@@ -672,7 +674,7 @@ ICMCompileND_DECL_EXTERN (char *var_NT, char *basetype, int sdim)
 
     ICMCompileND_DECL__MIRROR_EXTERN (var_NT, sdim);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -694,7 +696,7 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
     shape_class_t sc = ICUGetShapeClass (var_NT);
     int dim = DIM_NO_OFFSET (sdim);
 
-    DBUG_ENTER ("ICMCompileND_DECL__MIRROR");
+    DBUG_ENTER ();
 
 #define ND_DECL__MIRROR
 #include "icm_comment.c"
@@ -709,13 +711,13 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
 
     case C_aks:
         size = 1;
-        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (dim >= 0, "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (global.outfile, "const int SAC_ND_A_MIRROR_SHAPE( %s, %d) = %d;\n",
                      var_NT, i, shp[i]);
             size *= shp[i];
-            DBUG_ASSERT ((size >= 0), "array with size <0 found!");
+            DBUG_ASSERT (size >= 0, "array with size <0 found!");
         }
         INDENT;
         fprintf (global.outfile, "const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", var_NT,
@@ -726,7 +728,7 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
         break;
 
     case C_akd:
-        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (dim >= 0, "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (global.outfile, "int SAC_ND_A_MIRROR_SHAPE( %s, %d);\n", var_NT, i);
@@ -746,11 +748,11 @@ ICMCompileND_DECL__MIRROR (char *var_NT, int sdim, int *shp)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
+        DBUG_ASSERT (0, "Unknown shape class found!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -772,7 +774,7 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
     shape_class_t sc = ICUGetShapeClass (var_NT);
     int dim = DIM_NO_OFFSET (sdim);
 
-    DBUG_ENTER ("ICMCompileND_DECL__MIRROR_PARAM");
+    DBUG_ENTER ();
 
 #define ND_DECL__MIRROR_PARAM
 #include "icm_comment.c"
@@ -787,13 +789,13 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
 
     case C_aks:
         size = 1;
-        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (dim >= 0, "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (global.outfile, "const int SAC_ND_A_MIRROR_SHAPE( %s, %d) = %d;\n",
                      var_NT, i, shp[i]);
             size *= shp[i];
-            DBUG_ASSERT ((size >= 0), "array with size <0 found!");
+            DBUG_ASSERT (size >= 0, "array with size <0 found!");
         }
         INDENT;
         fprintf (global.outfile, "const int SAC_ND_A_MIRROR_SIZE( %s) = %d;\n", var_NT,
@@ -804,7 +806,7 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
         break;
 
     case C_akd:
-        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (dim >= 0, "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (global.outfile,
@@ -836,11 +838,11 @@ ICMCompileND_DECL__MIRROR_PARAM (char *var_NT, int sdim, int *shp)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
+        DBUG_ASSERT (0, "Unknown shape class found!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -862,7 +864,7 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim)
     shape_class_t sc = ICUGetShapeClass (var_NT);
     int dim = DIM_NO_OFFSET (sdim);
 
-    DBUG_ENTER ("ICMCompileND_DECL__MIRROR_EXTERN");
+    DBUG_ENTER ();
 
 #define ND_DECL__MIRROR_EXTERN
 #include "icm_comment.c"
@@ -876,7 +878,7 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim)
         break;
 
     case C_aks:
-        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (dim >= 0, "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (global.outfile,
@@ -897,7 +899,7 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim)
         break;
 
     case C_akd:
-        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (dim >= 0, "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (global.outfile,
@@ -931,11 +933,11 @@ ICMCompileND_DECL__MIRROR_EXTERN (char *var_NT, int sdim)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
+        DBUG_ASSERT (0, "Unknown shape class found!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -958,7 +960,7 @@ ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
 {
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
 
-    DBUG_ENTER ("ICMCompileND_CHECK_REUSE");
+    DBUG_ENTER ();
 
 #define ND_CHECK_REUSE
 #include "icm_comment.c"
@@ -987,7 +989,7 @@ ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
         fprintf (global.outfile, "else\n");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1005,7 +1007,7 @@ ICMCompileND_CHECK_REUSE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
 void
 ICMCompileND_SET__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
 {
-    DBUG_ENTER ("ICMCompileND_SET__SHAPE_id");
+    DBUG_ENTER ();
 
 #define ND_SET__SHAPE_id
 #include "icm_comment.c"
@@ -1015,7 +1017,7 @@ ICMCompileND_SET__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
     Set_Shape (to_NT, to_sdim, shp_NT, -1, SizeId, NULL, ReadId, NULL, 0, NULL, NULL,
                NULL);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1033,7 +1035,7 @@ ICMCompileND_SET__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
 void
 ICMCompileND_SET__SHAPE_arr (char *to_NT, int dim, char **shp_ANY)
 {
-    DBUG_ENTER ("ICMCompileND_SET__SHAPE_arr");
+    DBUG_ENTER ();
 
 #define ND_SET__SHAPE_arr
 #include "icm_comment.c"
@@ -1049,7 +1051,7 @@ ICMCompileND_SET__SHAPE_arr (char *to_NT, int dim, char **shp_ANY)
     Set_Shape (to_NT, dim, shp_ANY, dim, NULL, NULL, ReadConstArray_Str, NULL, 0, NULL,
                NULL, NULL);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1071,7 +1073,7 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
     shape_class_t sc = ICUGetShapeClass (var_NT);
     int dim = DIM_NO_OFFSET (sdim);
 
-    DBUG_ENTER ("ICMCompileND_REFRESH__MIRROR");
+    DBUG_ENTER ();
 
 #define ND_REFRESH__MIRROR
 #include "icm_comment.c"
@@ -1090,7 +1092,7 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
         break;
 
     case C_akd:
-        DBUG_ASSERT ((dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (dim >= 0, "illegal dimension found!");
         for (i = 0; i < dim; i++) {
             INDENT;
             fprintf (global.outfile,
@@ -1119,11 +1121,11 @@ ICMCompileND_REFRESH__MIRROR (char *var_NT, int sdim)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
+        DBUG_ASSERT (0, "Unknown shape class found!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1144,7 +1146,7 @@ void
 ICMCompileND_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                      char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_ASSIGN");
+    DBUG_ENTER ();
 
 #define ND_ASSIGN
 #include "icm_comment.c"
@@ -1157,7 +1159,7 @@ ICMCompileND_ASSIGN (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
     fprintf (global.outfile, "SAC_ND_ASSIGN__DATA( %s, %s, %s)\n", to_NT, from_NT,
              copyfun);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1184,14 +1186,14 @@ ICMCompileND_ASSIGN__DESC (char *to_NT, char *from_NT)
 
     bool to_has_desc, from_has_desc;
 
-    DBUG_ENTER ("ICMCompileND_ASSIGN__DESC");
+    DBUG_ENTER ();
 
 #define ND_ASSIGN__DESC
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_ASSIGN__DESC
 
-    DBUG_ASSERT ((to_hc == from_hc), "Illegal assignment found!");
+    DBUG_ASSERT (to_hc == from_hc, "Illegal assignment found!");
 
     to_has_desc = ((to_sc != C_scl) || ((to_hc == C_hid) && (to_uc != C_unq)));
     from_has_desc = ((from_sc != C_scl) || ((from_hc == C_hid) && (from_uc != C_unq)));
@@ -1252,7 +1254,7 @@ ICMCompileND_ASSIGN__DESC (char *to_NT, char *from_NT)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1273,7 +1275,7 @@ ICMCompileND_ASSIGN__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sd
 {
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
-    DBUG_ENTER ("ICMCompileND_ASSIGN__SHAPE");
+    DBUG_ENTER ();
 
 #define ND_ASSIGN__SHAPE
 #include "icm_comment.c"
@@ -1291,7 +1293,7 @@ ICMCompileND_ASSIGN__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sd
     /* assign missing descriptor entries */
     ICMCompileND_UPDATE__DESC (to_NT, to_sdim, from_NT, from_sdim);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1315,7 +1317,7 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
     shape_class_t from_sc = ICUGetShapeClass (from_NT);
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
-    DBUG_ENTER ("ICMCompileND_UPDATE__DESC");
+    DBUG_ENTER ();
 
 #define ND_UPDATE__DESC
 #include "icm_comment.c"
@@ -1336,7 +1338,7 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
     case C_akd:
         switch (from_sc) {
         case C_aks:
-            DBUG_ASSERT ((from_dim >= 0), "illegal dimension found!");
+            DBUG_ASSERT (from_dim >= 0, "illegal dimension found!");
             for (i = 0; i < from_dim; i++) {
                 INDENT;
                 fprintf (global.outfile,
@@ -1355,7 +1357,7 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
             fprintf (global.outfile, "SAC_NOOP()\n");
             break;
         default:
-            DBUG_ASSERT ((0), ("Illegal assignment found!"));
+            DBUG_ASSERT (0, "Illegal assignment found!");
             break;
         }
         break;
@@ -1365,7 +1367,7 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
         case C_scl:
             /* here is no break missing! */
         case C_aks:
-            DBUG_ASSERT ((from_dim >= 0), "illegal dimension found!");
+            DBUG_ASSERT (from_dim >= 0, "illegal dimension found!");
             for (i = 0; i < from_dim; i++) {
                 INDENT;
                 fprintf (global.outfile,
@@ -1387,17 +1389,17 @@ ICMCompileND_UPDATE__DESC (char *to_NT, int to_sdim, char *from_NT, int from_sdi
             fprintf (global.outfile, "SAC_NOOP()\n");
             break;
         default:
-            DBUG_ASSERT ((0), ("Illegal assignment found!"));
+            DBUG_ASSERT (0, "Illegal assignment found!");
             break;
         }
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
+        DBUG_ASSERT (0, "Unknown shape class found!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1420,7 +1422,7 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
     shape_class_t to_sc = ICUGetShapeClass (to_NT);
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
-    DBUG_ENTER ("ICMCompileND_UPDATE__MIRROR");
+    DBUG_ENTER ();
 
 #define ND_UPDATE__MIRROR
 #include "icm_comment.c"
@@ -1438,7 +1440,7 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
         break;
 
     case C_akd:
-        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (to_dim >= 0, "illegal dimension found!");
         for (i = 0; i < to_dim; i++) {
             INDENT;
             fprintf (global.outfile,
@@ -1461,11 +1463,11 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
+        DBUG_ASSERT (0, "Unknown shape class found!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1485,7 +1487,7 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
 void
 ICMCompileND_COPY (char *to_NT, int to_sdim, char *from_NT, int from_sdim, char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_COPY");
+    DBUG_ENTER ();
 
 #define ND_COPY
 #include "icm_comment.c"
@@ -1507,7 +1509,7 @@ ICMCompileND_COPY (char *to_NT, int to_sdim, char *from_NT, int from_sdim, char 
     INDENT;
     fprintf (global.outfile, "SAC_ND_COPY__DATA( %s, %s, %s)\n", to_NT, from_NT, copyfun);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1528,7 +1530,7 @@ ICMCompileND_COPY__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
 {
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
-    DBUG_ENTER ("ICMCompileND_COPY__SHAPE");
+    DBUG_ENTER ();
 
 #define ND_COPY__SHAPE
 #include "icm_comment.c"
@@ -1538,7 +1540,7 @@ ICMCompileND_COPY__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
     Set_Shape (to_NT, to_sdim, from_NT, from_dim, DimId, SizeId, ShapeId, NULL, 0, NULL,
                NULL, NULL);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1559,7 +1561,7 @@ void
 ICMCompileND_MAKE_UNIQUE (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                           char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_MAKE_UNIQUE");
+    DBUG_ENTER ();
 
 #define ND_MAKE_UNIQUE
 #include "icm_comment.c"
@@ -1590,7 +1592,7 @@ ICMCompileND_MAKE_UNIQUE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
     INDENT;
     fprintf (global.outfile, "SAC_IS_LASTREF__BLOCK_END( %s)\n", from_NT);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1628,7 +1630,7 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_NT, int to_sdim, int dim, int *shp,
 #endif
     int val0_dim = DIM_NO_OFFSET (val0_sdim);
 
-    DBUG_ENTER ("ICMCompileND_CREATE__ARRAY__SHAPE");
+    DBUG_ENTER ();
 
 #define ND_CREATE__ARRAY__SHAPE
 #include "icm_comment.c"
@@ -1653,7 +1655,7 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_NT, int to_sdim, int dim, int *shp,
         /*
          * 'A = []' works only for arrays with known dimension/shape!
          */
-        DBUG_ASSERT ((to_sc == C_aks), "[] with unknown shape found!");
+        DBUG_ASSERT (to_sc == C_aks, "[] with unknown shape found!");
     } else if (entries_are_scalars) {
         char **shp_str = (char **)MEMmalloc (dim * sizeof (char *));
         for (i = 0; i < dim; i++) {
@@ -1728,7 +1730,7 @@ ICMCompileND_CREATE__ARRAY__SHAPE (char *to_NT, int to_sdim, int dim, int *shp,
                    val0_dim, DimId, SizeId, ShapeId);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1752,7 +1754,7 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_NT, int to_sdim, int val_size, char *
     bool entries_are_scalars;
     int i;
 
-    DBUG_ENTER ("ICMCompileND_CREATE__ARRAY__DATA");
+    DBUG_ENTER ();
 
 #define ND_CREATE__ARRAY__DATA
 #include "icm_comment.c"
@@ -1778,7 +1780,7 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_NT, int to_sdim, int val_size, char *
         /* ensure all entries are scalar */
         for (i = 0; i < val_size; i++) {
             if ((vals_ANY[i][0] == '(') && (ICUGetShapeClass (vals_ANY[i]) != C_scl)) {
-                DBUG_ASSERT ((ICUGetShapeClass (vals_ANY[i]) == C_aud),
+                DBUG_ASSERT (ICUGetShapeClass (vals_ANY[i]) == C_aud,
                              "tagged id is no scalar!");
                 INDENT;
                 ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0",
@@ -1841,7 +1843,7 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_NT, int to_sdim, int val_size, char *
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1862,7 +1864,7 @@ void
 ICMCompileND_VECT2OFFSET_arr (char *off_NT, int from_size, char *from_NT, int shp_size,
                               char **shp_ANY)
 {
-    DBUG_ENTER ("ICMCompileND_VECT2OFFSET_arr");
+    DBUG_ENTER ();
 
 #define ND_VECT2OFFSET_arr
 #include "icm_comment.c"
@@ -1875,12 +1877,12 @@ ICMCompileND_VECT2OFFSET_arr (char *off_NT, int from_size, char *from_NT, int sh
      * or a constant scalar.
      */
 
-    DBUG_ASSERT ((shp_size >= 0), "invalid size found!");
+    DBUG_ASSERT (shp_size >= 0, "invalid size found!");
 
     Vect2Offset2 (off_NT, from_NT, from_size, SizeId, ReadId, shp_ANY, shp_size, NULL,
                   ReadConstArray_Str);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1901,7 +1903,7 @@ void
 ICMCompileND_VECT2OFFSET_id (char *off_NT, int from_size, char *from_NT, int shp_size,
                              char *shp_NT)
 {
-    DBUG_ENTER ("ICMCompileND_VECT2OFFSET_id");
+    DBUG_ENTER ();
 
 #define ND_VECT2OFFSET_id
 #include "icm_comment.c"
@@ -1916,7 +1918,7 @@ ICMCompileND_VECT2OFFSET_id (char *off_NT, int from_size, char *from_NT, int shp
     Vect2Offset2 (off_NT, from_NT, from_size, SizeId, ReadId, shp_NT, shp_size, SizeId,
                   ReadId);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1937,7 +1939,7 @@ void
 ICMCompileND_IDXS2OFFSET_arr (char *off_NT, int idxs_size, char **idxs_ANY, int shp_size,
                               char **shp_ANY)
 {
-    DBUG_ENTER ("ICMCompileND_IDXS2OFFSET_arr");
+    DBUG_ENTER ();
 
 #define ND_IDXS2OFFSET_arr
 #include "icm_comment.c"
@@ -1953,13 +1955,13 @@ ICMCompileND_IDXS2OFFSET_arr (char *off_NT, int idxs_size, char **idxs_ANY, int 
      * or a constant scalar!
      */
 
-    DBUG_ASSERT ((idxs_size >= 0), "illegal index size");
-    DBUG_ASSERT ((shp_size >= 0), "illegal shape size");
+    DBUG_ASSERT (idxs_size >= 0, "illegal index size");
+    DBUG_ASSERT (shp_size >= 0, "illegal shape size");
 
     Vect2Offset2 (off_NT, idxs_ANY, idxs_size, NULL, ReadConstArray_Str, shp_ANY,
                   shp_size, NULL, ReadConstArray_Str);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1980,7 +1982,7 @@ void
 ICMCompileND_IDXS2OFFSET_id (char *off_NT, int idxs_size, char **idxs_ANY, int shp_size,
                              char *shp_NT)
 {
-    DBUG_ENTER ("ICMCompileND_IDXS2OFFSET_id");
+    DBUG_ENTER ();
 
 #define ND_IDXS2OFFSET_id
 #include "icm_comment.c"
@@ -1995,12 +1997,12 @@ ICMCompileND_IDXS2OFFSET_id (char *off_NT, int idxs_size, char **idxs_ANY, int s
      * or a constant scalar!
      */
 
-    DBUG_ASSERT ((idxs_size >= 0), "illegal index size");
+    DBUG_ASSERT (idxs_size >= 0, "illegal index size");
 
     Vect2Offset2 (off_NT, idxs_ANY, idxs_size, NULL, ReadConstArray_Str, shp_NT, shp_size,
                   SizeId, ReadId);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -2021,7 +2023,7 @@ void
 ICMCompileND_ARRAY_IDXS2OFFSET_id (char *off_NT, int idxs_size, char **idxs_ANY,
                                    int arr_dim, char *arr_NT)
 {
-    DBUG_ENTER ("ICMCompileND_ARRAY_IDXS2OFFSET_id");
+    DBUG_ENTER ();
 
 #define ND_ARRAY_IDXS2OFFSET_id
 #include "icm_comment.c"
@@ -2036,12 +2038,12 @@ ICMCompileND_ARRAY_IDXS2OFFSET_id (char *off_NT, int idxs_size, char **idxs_ANY,
      * or a constant scalar!
      */
 
-    DBUG_ASSERT ((idxs_size >= 0), "illegal index size");
+    DBUG_ASSERT (idxs_size >= 0, "illegal index size");
 
     Vect2Offset2 (off_NT, idxs_ANY, idxs_size, NULL, ReadConstArray_Str, arr_NT, arr_dim,
                   NULL, ShapeId);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -2062,7 +2064,7 @@ void
 ICMCompileND_ARRAY_VECT2OFFSET_id (char *off_NT, int from_size, char *from_NT,
                                    int arr_dim, char *arr_NT)
 {
-    DBUG_ENTER ("ICMCompileND_ARRAY_VECT2OFFSET_id");
+    DBUG_ENTER ();
 
 #define ND_ARRAY_VECT2OFFSET_id
 #include "icm_comment.c"
@@ -2077,5 +2079,7 @@ ICMCompileND_ARRAY_VECT2OFFSET_id (char *off_NT, int from_size, char *from_NT,
     Vect2Offset2 (off_NT, from_NT, from_size, SizeId, ReadId, arr_NT, arr_dim, NULL,
                   ShapeId);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

@@ -8,7 +8,9 @@
 
 #include "elim_alpha_types.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "FIXNT"
+#include "debug.h"
+
 #include "globals.h"
 #include "ctinfo.h"
 #include "str.h"
@@ -92,7 +94,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -108,7 +110,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -130,7 +132,7 @@ EATdoEliminateAlphaTypes (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("EATdoEliminateAlphaTypes");
+    DBUG_ENTER ();
 
     TRAVpush (TR_eat);
 
@@ -168,7 +170,7 @@ EATdoEliminateAlphaTypes (node *arg_node)
 node *
 EATmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EATmodule");
+    DBUG_ENTER ();
 
     MODULE_TYPES (arg_node) = TRAVopt (MODULE_TYPES (arg_node), arg_info);
     MODULE_OBJS (arg_node) = TRAVopt (MODULE_OBJS (arg_node), arg_info);
@@ -195,15 +197,15 @@ EATfundef (node *arg_node, info *arg_info)
     str_buf *msgbuf;
     char *msg, *tmp;
 
-    DBUG_ENTER ("EATfundef");
+    DBUG_ENTER ();
 
     if (!FUNDEF_ISLACFUN (arg_node) || INFO_ONEFUNCTION (arg_info)) {
         INFO_FUNDEF (arg_info) = arg_node;
 
-        DBUG_PRINT ("FIXNT", ("----> Processing function %s\n", CTIitemName (arg_node)));
+        DBUG_PRINT ("----> Processing function %s\n", CTIitemName (arg_node));
 
         otype = TUmakeProductTypeFromRets (FUNDEF_RETS (arg_node));
-        DBUG_ASSERT ((otype != NULL), "FUNDEF_RET_TYPE not found!");
+        DBUG_ASSERT (otype != NULL, "FUNDEF_RET_TYPE not found!");
         ftype = TYfixAndEliminateAlpha (otype);
         FUNDEF_RETS (arg_node) = TUreplaceRetTypes (FUNDEF_RETS (arg_node), ftype);
 
@@ -227,9 +229,8 @@ EATfundef (node *arg_node, info *arg_info)
                  * we replace the non min alpha by a type error and remove the body.
                  * elim_bottom_types then takes care of the rest.
                  */
-                DBUG_PRINT ("FIXNT",
-                            ("bottomozing function %s due to lacking result type",
-                             CTIitemName (arg_node)));
+                DBUG_PRINT ("bottomozing function %s due to lacking result type",
+                            CTIitemName (arg_node));
 
                 FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
@@ -254,8 +255,8 @@ EATfundef (node *arg_node, info *arg_info)
                 msg = MEMfree (msg);
             }
         } else {
-            DBUG_PRINT ("FIXNT", ("ProdOfArray return type found for function %s",
-                                  CTIitemName (arg_node)));
+            DBUG_PRINT ("ProdOfArray return type found for function %s",
+                        CTIitemName (arg_node));
 
             FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
@@ -296,7 +297,7 @@ EATap (node *arg_node, info *arg_info)
 {
     ntype *argt, *bottom;
 
-    DBUG_ENTER ("EATap");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -305,7 +306,7 @@ EATap (node *arg_node, info *arg_info)
 
     if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-        DBUG_PRINT ("FIXNT", ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node)));
         if (bottom == NULL) {
             info *new_info = MakeInfo ();
             INFO_ONEFUNCTION (new_info) = TRUE;
@@ -336,15 +337,15 @@ EATavis (node *arg_node, info *arg_info)
     char *tmp_str, *tmp_str2;
 #endif
 
-    DBUG_ENTER ("EATavis");
+    DBUG_ENTER ();
 
     type = AVIS_TYPE (arg_node);
 
     if (type != NULL) {
 
-        DBUG_EXECUTE ("FIXNT", tmp_str = TYtype2String (type, FALSE, 0););
-        DBUG_PRINT ("FIXNT", ("replacing argument/vardec %s\'s type %s by ...",
-                              AVIS_NAME (arg_node), tmp_str));
+        DBUG_EXECUTE (tmp_str = TYtype2String (type, FALSE, 0));
+        DBUG_PRINT ("replacing argument/vardec %s\'s type %s by ...",
+                    AVIS_NAME (arg_node), tmp_str);
         type = TYfixAndEliminateAlpha (type);
         /**
          * we try to avoid AKD(0) types and replace them by AKS([]) types
@@ -359,14 +360,13 @@ EATavis (node *arg_node, info *arg_info)
             type = TYfreeTypeConstructor (type);
             type = TYmakeAKS (scalar, SHmakeShape (0));
         }
-        DBUG_EXECUTE ("FIXNT", tmp_str2 = TYtype2String (type, FALSE, 0););
+        DBUG_EXECUTE (tmp_str2 = TYtype2String (type, FALSE, 0));
 #if CWC_WOULD_BE_PROPER
         AVIS_TYPE (arg_node) = TYfreeType (AVIS_TYPE (arg_node));
 #endif
         AVIS_TYPE (arg_node) = type;
-        DBUG_PRINT ("FIXNT", ("... %s", tmp_str2));
-        DBUG_EXECUTE ("FIXNT", tmp_str = MEMfree (tmp_str);
-                      tmp_str2 = MEMfree (tmp_str2););
+        DBUG_PRINT ("... %s", tmp_str2);
+        DBUG_EXECUTE (tmp_str = MEMfree (tmp_str); tmp_str2 = MEMfree (tmp_str2));
 
         if (!(TYisArray (type) || TYisBottom (type))) {
             CTIabort ("Could not infer proper type for arg %s", AVIS_NAME (arg_node));
@@ -400,7 +400,7 @@ EATarray (node *arg_node, info *arg_info)
     ntype *nested;
     ntype *arrayelem;
 
-    DBUG_ENTER ("EATarray");
+    DBUG_ENTER ();
 
     /*
      * first do the clean up in the sons
@@ -433,9 +433,8 @@ EATarray (node *arg_node, info *arg_info)
             || (TYgetSimpleType (TYgetScalar (arrayelem)) != T_unknown)) {
 
             if (!TYleTypes (elemtype, arrayelem)) {
-                DBUG_PRINT ("FIXNT",
-                            ("new element type of array does not match old type of LHS!",
-                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+                DBUG_PRINT ("new element type of array does not match old type of LHS!",
+                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
                 DBUG_ASSERT (FALSE, "new element type of array does not match old type!");
             }
         }
@@ -461,7 +460,7 @@ EATarray (node *arg_node, info *arg_info)
 node *
 EATblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EATblock");
+    DBUG_ENTER ();
 
     BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
@@ -482,7 +481,7 @@ EATblock (node *arg_node, info *arg_info)
 node *
 EATlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EATlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -504,7 +503,7 @@ EATlet (node *arg_node, info *arg_info)
 node *
 EATpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EATpart");
+    DBUG_ENTER ();
 
     PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
 
@@ -537,7 +536,7 @@ EATwithid (node *arg_node, info *arg_info)
     int i, num_vars;
     ntype *vec_type;
 
-    DBUG_ENTER ("EATwithid");
+    DBUG_ENTER ();
 
     if (INFO_WLIDS (arg_info) == NULL) {
         vec_type = AVIS_TYPE (IDS_AVIS (WITHID_VEC (arg_node)));
@@ -545,8 +544,8 @@ EATwithid (node *arg_node, info *arg_info)
 
         if (WITHID_IDS (arg_node) == NULL) {
             if (TYisAKS (vec_type)) {
-                DBUG_PRINT ("EAT", ("WITHID_IDS for %s built",
-                                    IDS_NAME (WITHID_VEC (arg_node))));
+                DBUG_PRINT_TAG ("EAT", "WITHID_IDS for %s built",
+                                IDS_NAME (WITHID_VEC (arg_node)));
                 num_vars = SHgetExtent (TYgetShape (vec_type), 0);
                 new_ids = NULL;
                 new_vardecs = INFO_VARDECS (arg_info);
@@ -561,8 +560,8 @@ EATwithid (node *arg_node, info *arg_info)
                 INFO_WLIDS (arg_info) = new_ids;
                 INFO_VARDECS (arg_info) = new_vardecs;
             } else {
-                DBUG_PRINT ("EAT", ("no WITHID_IDS for %s built",
-                                    IDS_NAME (WITHID_VEC (arg_node))));
+                DBUG_PRINT_TAG ("EAT", "no WITHID_IDS for %s built",
+                                IDS_NAME (WITHID_VEC (arg_node)));
             }
         } else {
             if (!global.ssaiv) {
@@ -573,13 +572,13 @@ EATwithid (node *arg_node, info *arg_info)
     } else {
         if (WITHID_IDS (arg_node) == NULL) {
             if (global.ssaiv) {
-                DBUG_PRINT ("EAT", ("Default partition found"));
+                DBUG_PRINT_TAG ("EAT", "Default partition found");
             }
             /**
              * we are dealing with a default partition here
              *  => Duplicate those of the real one!
              */
-            DBUG_PRINT ("EAT", ("duplicating withids for non-first partition"));
+            DBUG_PRINT_TAG ("EAT", "duplicating withids for non-first partition");
 
             WITHID_IDS (arg_node) = DUPdoDupTree (INFO_WLIDS (arg_info));
         }
@@ -603,7 +602,7 @@ EATwith (node *arg_node, info *arg_info)
 {
     node *oldlhs;
 
-    DBUG_ENTER ("EATwith");
+    DBUG_ENTER ();
 
     /*
      * unfortunately, withloops may contain unflattened array constructors.
@@ -624,3 +623,5 @@ EATwith (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

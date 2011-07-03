@@ -25,7 +25,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "new_types.h"
 #include "print.h"
 #include "str.h"
@@ -84,7 +87,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -110,7 +113,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -143,7 +146,7 @@ node *
 WLDSdoWithloopDescalarization (node *syntax_tree)
 {
     info *arg_info;
-    DBUG_ENTER ("WLDSdoWithloopUnscalarization");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_fundef)
                    || (NODE_TYPE (syntax_tree) == N_module),
@@ -181,7 +184,7 @@ WLDSdoWithloopDescalarization (node *syntax_tree)
 node *
 WLDSfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLDSfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -200,7 +203,7 @@ WLDSfundef (node *arg_node, info *arg_info)
 node *
 WLDSlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLDSlet");
+    DBUG_ENTER ();
 
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
@@ -218,7 +221,7 @@ WLDSlet (node *arg_node, info *arg_info)
 node *
 WLDSwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLDSwith");
+    DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
         node *res_avis = IDS_AVIS (INFO_LETIDS (arg_info));
@@ -251,11 +254,11 @@ CreateInnerGenarrayShape (node *lower_bound, node *upper_bound)
     node *lb_elems, *ub_elems;
     node *ret_node;
 
-    DBUG_ENTER ("CreateInnerGenarrayShape");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (lower_bound) == N_array),
+    DBUG_ASSERT (NODE_TYPE (lower_bound) == N_array,
                  "Lower bound must be an N_array node!");
-    DBUG_ASSERT ((NODE_TYPE (upper_bound) == N_array),
+    DBUG_ASSERT (NODE_TYPE (upper_bound) == N_array,
                  "Upper bound must be an N_array node!");
 
     lb_elems = ARRAY_AELEMS (lower_bound);
@@ -299,7 +302,7 @@ WLDSpart (node *arg_node, info *arg_info)
     node *inner_assign;
     lut_t *lut;
 
-    DBUG_ENTER ("WLDSpart");
+    DBUG_ENTER ();
 
     if (PART_CUDARIZABLE (arg_node)) {
         INFO_OLDWITHID (arg_info) = PART_WITHID (arg_node);
@@ -478,7 +481,7 @@ WLDSwithid (node *arg_node, info *arg_info)
     node *inner_wlidx_avis;
     node *new_assigns = NULL;
 
-    DBUG_ENTER ("WLDSwithid");
+    DBUG_ENTER ();
 
     vec = WITHID_VEC (arg_node);
     outer_ids = WITHID_IDS (arg_node);
@@ -605,7 +608,7 @@ WLDSgenerator (node *arg_node, info *arg_info)
 
     constant *inner_lb_const, *inner_ub_const;
 
-    DBUG_ENTER ("WLUSgenerator");
+    DBUG_ENTER ();
 
     old_withids = WITHID_IDS (INFO_OLDWITHID (arg_info));
     inner_withids = IDS_NEXT (IDS_NEXT (old_withids));
@@ -614,8 +617,8 @@ WLDSgenerator (node *arg_node, info *arg_info)
     lb = GENERATOR_BOUND1 (arg_node);
     ub = GENERATOR_BOUND2 (arg_node);
 
-    DBUG_ASSERT ((NODE_TYPE (lb) == N_array), "Lower bound must be an N_array node!");
-    DBUG_ASSERT ((NODE_TYPE (ub) == N_array), "Upper bound must be an N_array node!");
+    DBUG_ASSERT (NODE_TYPE (lb) == N_array, "Lower bound must be an N_array node!");
+    DBUG_ASSERT (NODE_TYPE (ub) == N_array, "Upper bound must be an N_array node!");
 
     lb_elems = ARRAY_AELEMS (lb);
     ub_elems = ARRAY_AELEMS (ub);
@@ -677,3 +680,5 @@ WLDSgenerator (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- WLDS -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

@@ -94,7 +94,10 @@ General remarks:
 #include "memory.h"
 #include "free.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLI"
+#include "debug.h"
+
 #include "constants.h"
 #include "traverse.h"
 #include "pattern_match.h"
@@ -140,7 +143,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -160,7 +163,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -180,7 +183,7 @@ FreeInfo (info *info)
 static prf
 SimplifyFun (prf prf)
 {
-    DBUG_ENTER ("SimplifyFun");
+    DBUG_ENTER ();
 
     switch (prf) {
     case F_add_SxS:
@@ -238,9 +241,9 @@ CheckArrayFoldable (node *indexn, node *idn, info *arg_info)
 {
     node *substn = NULL, *thisn;
 
-    DBUG_ENTER ("CheckArrayFoldable");
-    DBUG_ASSERT (N_id == NODE_TYPE (indexn), ("Wrong nodetype for indexn"));
-    DBUG_ASSERT (N_id == NODE_TYPE (idn), ("Wrong nodetype for idn"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (N_id == NODE_TYPE (indexn), "Wrong nodetype for indexn");
+    DBUG_ASSERT (N_id == NODE_TYPE (idn), "Wrong nodetype for idn");
 
     thisn = INFO_WL (arg_info);
     if (WITH_ISFOLDABLE (thisn)) {
@@ -257,9 +260,8 @@ CheckArrayFoldable (node *indexn, node *idn, info *arg_info)
                 && SHcompareShapes (TYgetShape (IDS_NTYPE (WITH_VEC (substn))),
                                     TYgetShape (ID_NTYPE (indexn)))) {
                 WITH_REFERENCED_FOLD (substn)++;
-                DBUG_PRINT ("WLI",
-                            ("CheckArrayFoldable WITH_REFERENCED_FOLD(%s) = %d",
-                             AVIS_NAME (ID_AVIS (idn)), WITH_REFERENCED_FOLD (substn)));
+                DBUG_PRINT ("CheckArrayFoldable WITH_REFERENCED_FOLD(%s) = %d",
+                            AVIS_NAME (ID_AVIS (idn)), WITH_REFERENCED_FOLD (substn));
             } else {
                 substn = NULL;
             }
@@ -296,8 +298,8 @@ Scalar2ArrayIndex (node *arrayn, node *wln, lut_t *pmlut)
     pattern *pat1;
     int cval;
 
-    DBUG_ENTER ("Scalar2ArrayIndex");
-    DBUG_ASSERT (N_array == NODE_TYPE (arrayn), ("wrong nodetype (array)"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (N_array == NODE_TYPE (arrayn), "wrong nodetype (array)");
 
     pat1 = PMint (1, PMAgetIVal (&cval));
 
@@ -383,18 +385,18 @@ CreateIndexInfoId (node *idn, info *arg_info)
     node *assignn, *wln;
     int index_var, i, elts;
 
-    DBUG_ENTER ("CreateIndexInfoId");
+    DBUG_ENTER ();
 
     assignn = INFO_ASSIGN (arg_info);
     wln = INFO_WL (arg_info);
 
-    DBUG_ASSERT (!ASSIGN_INDEX (assignn), ("index_info already assigned"));
+    DBUG_ASSERT (!ASSIGN_INDEX (assignn), "index_info already assigned");
 
     if (TUshapeKnown (ID_NTYPE (idn))) {
         /* index var? */
         index_var = WLFlocateIndexVar (idn, wln);
         if (index_var != 0) {
-            DBUG_PRINT ("WLI", ("valid index var found"));
+            DBUG_PRINT ("valid index var found");
             if (index_var < 0) {
                 /* Index vector */
                 iinfo = WLFcreateIndex (SHgetExtent (TYgetShape (ID_NTYPE (idn)), 0));
@@ -417,7 +419,7 @@ CreateIndexInfoId (node *idn, info *arg_info)
             /* valid local variable */
             iinfo = WLFvalidLocalId (idn);
             if (iinfo) {
-                DBUG_PRINT ("WLI", ("valid local id found"));
+                DBUG_PRINT ("valid local id found");
                 ASSIGN_INDEX (assignn) = WLFduplicateIndexInfo (iinfo);
             }
         }
@@ -446,7 +448,7 @@ CreateIndexInfoSxS (node *prfn, info *arg_info)
     pattern *pat1, *pat2;
     bool const_second;
 
-    DBUG_ENTER (" CreateIndexInfoSxS");
+    DBUG_ENTER ();
 
     pat1 = PMprf (0, 2, PMvar (1, PMAgetNode (&idn), 0), PMint (1, PMAgetIVal (&cval)));
     pat2 = PMprf (0, 2, PMint (1, PMAgetIVal (&cval)), PMvar (1, PMAgetNode (&idn), 0));
@@ -492,7 +494,7 @@ CreateIndexInfoSxS (node *prfn, info *arg_info)
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -528,7 +530,7 @@ CreateIndexInfoA (node *prfn, info *arg_info)
     constant *const1, *const2, *constn = NULL;
     int *const_elems;
 
-    DBUG_ENTER (" CreateIndexInfoA");
+    DBUG_ENTER ();
 
     assignn = INFO_ASSIGN (arg_info);
     wln = INFO_WL (arg_info);
@@ -655,7 +657,7 @@ CreateIndexInfoA (node *prfn, info *arg_info)
         constn = COfreeConstant (constn);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -672,13 +674,13 @@ WLIfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
     bool old_localfun;
-    DBUG_ENTER ("WLIfundef");
+    DBUG_ENTER ();
 
     INFO_WL (arg_info) = NULL;
     INFO_FUNDEF (arg_info) = arg_node;
 
     if (!INFO_LOCALFUN (arg_info)) {
-        DBUG_ASSERT ((INFO_PMLUT (arg_info) == NULL),
+        DBUG_ASSERT (INFO_PMLUT (arg_info) == NULL,
                      "left-over pattern matching lut found!");
         INFO_PMLUT (arg_info) = PMBLdoBuildPatternMatchingLut (arg_node, PM_flat);
     }
@@ -696,7 +698,7 @@ WLIfundef (node *arg_node, info *arg_info)
     INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
     if (!INFO_LOCALFUN (arg_info)) {
-        DBUG_ASSERT ((INFO_PMLUT (arg_info) != NULL), "pattern matching lut got lost!");
+        DBUG_ASSERT (INFO_PMLUT (arg_info) != NULL, "pattern matching lut got lost!");
         INFO_PMLUT (arg_info) = LUTremoveLut (INFO_PMLUT (arg_info));
     }
 
@@ -719,7 +721,7 @@ WLIfundef (node *arg_node, info *arg_info)
 node *
 WLIassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLIassign");
+    DBUG_ENTER ();
 
     INFO_ASSIGN (arg_info) = arg_node;
 
@@ -735,8 +737,7 @@ WLIassign (node *arg_node, info *arg_info)
    * we should be able to sort this out. Any volunteers?
    * I will leave the bug marked as open...
    */
-  DBUG_ASSERT( (ASSIGN_INDEX( arg_node) == NULL),
-               "left-over ASSIGN_INDEX found.");
+  DBUG_ASSERT (ASSIGN_INDEX( arg_node) == NULL, "left-over ASSIGN_INDEX found.");
 #else
     if (ASSIGN_INDEX (arg_node) != NULL) {
         ASSIGN_INDEX (arg_node) = FREEfreeIndexInfo (ASSIGN_INDEX (arg_node));
@@ -761,7 +762,7 @@ WLIassign (node *arg_node, info *arg_info)
 node *
 WLIcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLIcond");
+    DBUG_ENTER ();
 
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THENINSTR (arg_node) = TRAVdo (COND_THENINSTR (arg_node), arg_info);
@@ -786,7 +787,7 @@ WLIid (node *arg_node, info *arg_info)
 {
     node *assignn;
 
-    DBUG_ENTER ("WLIid");
+    DBUG_ENTER ();
 
     /* get the definition assignment via the AVIS_SSAASSIGN backreference */
     assignn = AVIS_SSAASSIGN (ID_AVIS (arg_node));
@@ -796,14 +797,13 @@ WLIid (node *arg_node, info *arg_info)
          * arg_node describes a WL, so WITH_REFERENCED has to be incremented
          */
         (WITH_REFERENCED (ASSIGN_RHS (assignn))) += 1;
-        DBUG_PRINT ("WLI",
-                    ("WLIid WITH_REFERENCED(%s) = %d (line %d)",
-                     AVIS_NAME (ID_AVIS (arg_node)),
-                     WITH_REFERENCED (ASSIGN_RHS (assignn)), NODE_LINE (arg_node)));
+        DBUG_PRINT ("WLIid WITH_REFERENCED(%s) = %d (line %d)",
+                    AVIS_NAME (ID_AVIS (arg_node)),
+                    WITH_REFERENCED (ASSIGN_RHS (assignn)), NODE_LINE (arg_node));
     } else {
         /* id is not defined by a withloop */
-        DBUG_PRINT ("WLIEXT",
-                    ("WLIid %s is not defined by a WL", AVIS_NAME (ID_AVIS (arg_node))));
+        DBUG_PRINT_TAG ("WLIEXT", "WLIid %s is not defined by a WL",
+                        AVIS_NAME (ID_AVIS (arg_node)));
 
         ID_WL (arg_node) = NULL;
     }
@@ -830,7 +830,7 @@ WLIlet (node *arg_node, info *arg_info)
     node *exprn, *tmpn, *old_assignn;
     prf prf;
 
-    DBUG_ENTER ("WLIlet");
+    DBUG_ENTER ();
 
     /* traverse sons first so that ID_WL of every Id is defined (or NULL). */
     old_assignn = INFO_ASSIGN (arg_info);
@@ -885,8 +885,7 @@ WLIlet (node *arg_node, info *arg_info)
                    - the first argument is a reference to a locally defined
                    valid (or invalid) transformation. If valid, duplicate it. */
                 if (N_id == NODE_TYPE (PRF_ARG1 (exprn))) {
-                    DBUG_PRINT ("WLI", ("checking id %s as WL-index",
-                                        ID_NAME (PRF_ARG1 (exprn))));
+                    DBUG_PRINT ("checking id %s as WL-index", ID_NAME (PRF_ARG1 (exprn)));
                 }
                 if (N_id == NODE_TYPE (PRF_ARG1 (exprn))
                     && CreateIndexInfoId (PRF_ARG1 (exprn), arg_info)) {
@@ -947,7 +946,7 @@ WLIwith (node *arg_node, info *arg_info)
     node *tmpn;
     info *tmpi;
 
-    DBUG_ENTER ("WLIwith");
+    DBUG_ENTER ();
 
     /* inside the body of this WL we may find another WL. So we better
        save the old arg_info information. */
@@ -974,20 +973,19 @@ WLIwith (node *arg_node, info *arg_info)
     INFO_FOLDABLE (arg_info) = TRUE;
 
     /* determine FOLDABLE */
-    DBUG_PRINT ("WLI", ("WLIwith determining foldability of  WL in line %d",
-                        NODE_LINE (arg_node)));
+    DBUG_PRINT ("WLIwith determining foldability of  WL in line %d",
+                NODE_LINE (arg_node));
     INFO_DETFOLDABLE (arg_info) = TRUE;
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_ISFOLDABLE (INFO_WL (arg_info)) = INFO_FOLDABLE (arg_info);
-    DBUG_PRINT ("WLI", ("WITH_ISFOLDABLE set to %s",
-                        (INFO_FOLDABLE (arg_info) ? "true" : "false")));
+    DBUG_PRINT ("WITH_ISFOLDABLE set to %s",
+                (INFO_FOLDABLE (arg_info) ? "true" : "false"));
     INFO_DETFOLDABLE (arg_info) = FALSE;
 
     /* traverse all parts and, implicitly, bodies) */
-    DBUG_PRINT ("WLI",
-                ("WLIwith searching code of  WL in line %d", NODE_LINE (arg_node)));
+    DBUG_PRINT ("WLIwith searching code of  WL in line %d", NODE_LINE (arg_node));
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    DBUG_PRINT ("WLI", ("WLIwith searching done"));
+    DBUG_PRINT ("WLIwith searching done");
 
     /* traverse N_withop */
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
@@ -1016,7 +1014,7 @@ WLImodarray (node *arg_node, info *arg_info)
 {
     node *substn;
 
-    DBUG_ENTER ("WLImodarray");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -1028,9 +1026,9 @@ WLImodarray (node *arg_node, info *arg_info)
          */
         if (substn != NULL) {
             (WITH_REFERENCED_FOLD (ASSIGN_RHS (substn)))++;
-            DBUG_PRINT ("WLI", ("WLImodarray: WITH_REFERENCED_FOLD(%s) = %d",
-                                AVIS_NAME (ID_AVIS (MODARRAY_ARRAY (arg_node))),
-                                WITH_REFERENCED_FOLD (ASSIGN_RHS (substn))));
+            DBUG_PRINT ("WLImodarray: WITH_REFERENCED_FOLD(%s) = %d",
+                        AVIS_NAME (ID_AVIS (MODARRAY_ARRAY (arg_node))),
+                        WITH_REFERENCED_FOLD (ASSIGN_RHS (substn)));
         }
     }
 
@@ -1049,7 +1047,7 @@ WLImodarray (node *arg_node, info *arg_info)
 node *
 WLIpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLIpart");
+    DBUG_ENTER ();
 
     if (INFO_DETFOLDABLE (arg_info)) {
         PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
@@ -1086,9 +1084,9 @@ WLIgenerator (node *arg_node, info *arg_info)
     static pattern *pat = NULL;
     lut_t *pmlut = INFO_PMLUT (arg_info);
 
-    DBUG_ENTER ("WLIgenerator");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((pmlut != NULL),
+    DBUG_ASSERT (pmlut != NULL,
                  "pattern matching lut has not made it to the matching site");
 
     if (pat == NULL) {
@@ -1115,7 +1113,7 @@ WLIgenerator (node *arg_node, info *arg_info)
                     PMmatch (pat, PM_flat, pmlut, GENERATOR_WIDTH (arg_node)));
         }
     } else {
-        DBUG_ASSERT ((GENERATOR_WIDTH (arg_node) == NULL),
+        DBUG_ASSERT (GENERATOR_WIDTH (arg_node) == NULL,
                      "width vector without step vector");
     }
 
@@ -1134,9 +1132,9 @@ WLIgenerator (node *arg_node, info *arg_info)
 node *
 WLIcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLIcode");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((!CODE_VISITED (arg_node)), "Body traversed a second time in WLI");
+    DBUG_ASSERT (!CODE_VISITED (arg_node), "Body traversed a second time in WLI");
 
     /*
      * this body has been traversed and all information has been gathered.
@@ -1163,7 +1161,7 @@ WLIdoWLI (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("WLIdoWLI");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -1172,8 +1170,8 @@ WLIdoWLI (node *arg_node)
     INFO_ONEFUNDEF (info) = TRUE;
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+                    global.current_allocated_mem);
 #endif
 
     TRAVpush (TR_wli);
@@ -1184,3 +1182,5 @@ WLIdoWLI (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

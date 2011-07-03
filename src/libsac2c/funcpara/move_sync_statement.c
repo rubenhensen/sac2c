@@ -21,7 +21,9 @@
  *****************************************************************************/
 #include "move_sync_statement.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "MSS"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "memory.h"
 #include "traverse.h"
@@ -43,7 +45,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -53,7 +55,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -83,8 +85,8 @@ MSSdoMoveSyncStatement (node *syntax_tree)
     info *info;
     pattern *pat;
     pattern *stop_pat;
-    DBUG_ENTER ("MSSdoMoveSyncStatement");
-    DBUG_PRINT ("MSS", ("Moving sync statements..."));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Moving sync statements...");
 
     info = MakeInfo ();
 
@@ -133,3 +135,5 @@ MSSdoMoveSyncStatement (node *syntax_tree)
 /** <!--********************************************************************-->
  * @}  <!-- Move Sync Statement -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

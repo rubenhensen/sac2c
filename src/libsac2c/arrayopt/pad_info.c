@@ -2,7 +2,8 @@
  * $Id$
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "API"
+#include "debug.h"
 
 #include "types.h"
 #include "tree_basic.h"
@@ -87,7 +88,7 @@ GetNewTableEntry (types *old_type)
     pad_info_t *tmp;
     pad_info_t *matching_entry;
 
-    DBUG_ENTER ("GetNewTableEntry");
+    DBUG_ENTER ();
 
     tmp = pad_info;
     matching_entry = NULL;
@@ -125,7 +126,7 @@ GetOldTableEntry (types *new_type)
     pad_info_t *tmp;
     pad_info_t *matching_entry;
 
-    DBUG_ENTER ("GetOldTableEntry");
+    DBUG_ENTER ();
 
     tmp = pad_info;
     matching_entry = NULL;
@@ -164,7 +165,7 @@ GetArrayTypeEntry (simpletype type, int dim, shpseg *shape)
     array_type_t *array_type_ptr;
     bool matched;
 
-    DBUG_ENTER ("GetArrayTypeEntry");
+    DBUG_ENTER ();
 
     array_type_ptr = array_type;
     matched = FALSE;
@@ -204,7 +205,7 @@ GetUnsupportedShapeEntry (simpletype type, int dim, shpseg *shape)
     unsupported_shape_t *unsupported_shape_ptr;
     bool matched;
 
-    DBUG_ENTER ("GetUnsupportedShapeEntry");
+    DBUG_ENTER ();
 
     unsupported_shape_ptr = unsupported_shape;
     matched = FALSE;
@@ -242,7 +243,7 @@ RemovePadInfoElement (pad_info_t *element)
 
     pad_info_t *pi_next_ptr;
 
-    DBUG_ENTER ("RemovePadInfoElement");
+    DBUG_ENTER ();
 
     FREEfreeShpseg (PI_OLD_SHAPE (element));
     FREEfreeShpseg (PI_NEW_SHAPE (element));
@@ -269,7 +270,7 @@ RemoveUnsupportedShapeElement (unsupported_shape_t *element)
 
     unsupported_shape_t *us_next_ptr;
 
-    DBUG_ENTER ("RemoveUnsupportedShapeElement");
+    DBUG_ENTER ();
 
     FREEfreeShpseg (US_SHAPE (element));
     us_next_ptr = US_NEXT (element);
@@ -294,7 +295,7 @@ RemoveArrayTypeElement (array_type_t *element)
 
     array_type_t *at_next_ptr;
 
-    DBUG_ENTER ("RemoveArrayTypeElement");
+    DBUG_ENTER ();
 
     FREEfreeShpseg (AT_SHAPE (element));
     at_next_ptr = AT_NEXT (element);
@@ -319,7 +320,7 @@ RemoveConflictGroupElement (conflict_group_t *element)
 
     conflict_group_t *cg_next_ptr;
 
-    DBUG_ENTER ("RemoveConflictGroupElement");
+    DBUG_ENTER ();
 
     FREEfreeShpseg (CG_GROUP (element));
     cg_next_ptr = CG_NEXT (element);
@@ -344,7 +345,7 @@ RemovePatternElement (pattern_t *element)
 
     pattern_t *pt_next_ptr;
 
-    DBUG_ENTER ("RemovePatternElement");
+    DBUG_ENTER ();
 
     FREEfreeShpseg (PT_PATTERN (element));
     pt_next_ptr = PT_NEXT (element);
@@ -377,9 +378,9 @@ SortAccesses ()
     pattern_t *pt_tmp_prv_ptr;
     bool matched;
 
-    DBUG_ENTER ("SortAccesses");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("API", ("  sorting accesses..."));
+    DBUG_PRINT ("  sorting accesses...");
     APprintDiag ("  sorting accesses...\n");
 
     /* for every array type... */
@@ -437,7 +438,7 @@ SortAccesses ()
         at_ptr = AT_NEXT (at_ptr);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -460,9 +461,9 @@ RemoveSingleAccessPatterns ()
     conflict_group_t *cg_ptr;
     conflict_group_t *cg_prv_ptr;
 
-    DBUG_ENTER ("RemoveSingleAccessPattern");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("API", ("  removing conflict groups with single access patterns..."));
+    DBUG_PRINT ("  removing conflict groups with single access patterns...");
     APprintDiag ("  removing conflict groups with single access patterns...\n");
 
     at_ptr = array_type;
@@ -509,7 +510,7 @@ RemoveSingleAccessPatterns ()
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -531,9 +532,9 @@ RemoveDuplicateAccesses ()
     conflict_group_t *cg_ptr;
     pattern_t *pt_ptr;
 
-    DBUG_ENTER ("RemoveDuplicateAccesses");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("API", ("  removing duplicate accesses from conflict groups..."));
+    DBUG_PRINT ("  removing duplicate accesses from conflict groups...");
     APprintDiag ("  removing duplicate accesses from conflict groups...\n");
 
     /* for every array type... */
@@ -569,7 +570,7 @@ RemoveDuplicateAccesses ()
         at_ptr = AT_NEXT (at_ptr);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -595,9 +596,9 @@ RemoveIdenticalConflictGroups ()
     pattern_t *pt_check_ptr;
     bool identical;
 
-    DBUG_ENTER ("RemoveIdenticalConflictGroups");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("API", ("  removing conflict groups with identical access patterns..."));
+    DBUG_PRINT ("  removing conflict groups with identical access patterns...");
     APprintDiag ("  removing conflict groups with identical access patterns...\n");
 
     /* for every array type... */
@@ -641,7 +642,7 @@ RemoveIdenticalConflictGroups ()
                 /* remove conflict group, if all access patterns are identical */
                 if (identical) {
 
-                    DBUG_ASSERT ((cg_prv_check_ptr != NULL),
+                    DBUG_ASSERT (cg_prv_check_ptr != NULL,
                                  "NULL pointer to conflict group!");
 
                     pt_ptr = CG_PATTERNS (cg_check_ptr);
@@ -663,7 +664,7 @@ RemoveIdenticalConflictGroups ()
         at_ptr = AT_NEXT (at_ptr);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -682,9 +683,9 @@ PIprintShpSeg (int dim, shpseg *shape)
 
     int i;
 
-    DBUG_ENTER ("PIprintShpSeg");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((dim <= SHP_SEG_SIZE), " dimension out of range in PrintVect()!");
+    DBUG_ASSERT (dim <= SHP_SEG_SIZE, " dimension out of range in PrintVect()!");
 
     APprintDiag ("[");
     for (i = 0; i < dim - 1; i++) {
@@ -692,7 +693,7 @@ PIprintShpSeg (int dim, shpseg *shape)
     }
     APprintDiag ("%3d]", SHPSEG_SHAPE (shape, dim - 1));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -709,14 +710,14 @@ void
 PIprintArrayTypeElement (array_type_t *at_ptr)
 {
 
-    DBUG_ENTER ("PIprintArrayTypeElement");
+    DBUG_ENTER ();
 
     APprintDiag ("\tarray type: %s\t%i\t", CVbasetype2String (AT_TYPE (at_ptr)),
                  AT_DIM (at_ptr));
     PIprintShpSeg (AT_DIM (at_ptr), AT_SHAPE (at_ptr));
     APprintDiag ("\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -734,7 +735,7 @@ void
 PIprintConflictGroupElement (array_type_t *at_ptr, conflict_group_t *cg_ptr)
 {
 
-    DBUG_ENTER ("PIprintConflictGroupElement");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((CG_DIR (cg_ptr) == ADIR_read) || (CG_DIR (cg_ptr) == ADIR_write)),
                  "unknown access direction (read|write expected)");
@@ -747,7 +748,7 @@ PIprintConflictGroupElement (array_type_t *at_ptr, conflict_group_t *cg_ptr)
     PIprintShpSeg (AT_DIM (at_ptr), CG_GROUP (cg_ptr));
     APprintDiag ("\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -765,13 +766,13 @@ void
 PIprintPatternElement (array_type_t *at_ptr, pattern_t *pt_ptr)
 {
 
-    DBUG_ENTER ("PIprintPatternElement");
+    DBUG_ENTER ();
 
     APprintDiag ("\t\t\t\taccess vector: ");
     PIprintShpSeg (AT_DIM (at_ptr), PT_PATTERN (pt_ptr));
     APprintDiag ("\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -788,13 +789,13 @@ static void
 PrintUnsupportedShapeElement (unsupported_shape_t *us_ptr)
 {
 
-    DBUG_ENTER ("PrintUnsupportedShapeElement");
+    DBUG_ENTER ();
 
     APprintDiag ("\t%s\t%i\t", CVbasetype2String (US_TYPE (us_ptr)), US_DIM (us_ptr));
     PIprintShpSeg (US_DIM (us_ptr), US_SHAPE (us_ptr));
     APprintDiag ("\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -811,7 +812,7 @@ static void
 PrintPadInfoElement (pad_info_t *pi_ptr)
 {
 
-    DBUG_ENTER ("PrintPadInfoElement");
+    DBUG_ENTER ();
 
     APprintDiag ("\t%i\t%s\t", PI_DIM (pi_ptr), CVbasetype2String (PI_TYPE (pi_ptr)));
     PIprintShpSeg (PI_DIM (pi_ptr), PI_OLD_SHAPE (pi_ptr));
@@ -829,7 +830,7 @@ PrintPadInfoElement (pad_info_t *pi_ptr)
         APprintDiag (" - \n");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -847,13 +848,13 @@ void
 PIinit ()
 {
 
-    DBUG_ENTER ("PIinit");
+    DBUG_ENTER ();
 
     pad_info = NULL;
     array_type = NULL;
     unsupported_shape = NULL;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -873,7 +874,7 @@ PIconcatPatterns (pattern_t *pattern, shpseg *shape)
 
     pattern_t *result;
 
-    DBUG_ENTER ("PIconcatPatterns");
+    DBUG_ENTER ();
 
     result = (pattern_t *)MEMmalloc (sizeof (pattern_t));
     PT_PATTERN (result) = shape;
@@ -905,9 +906,9 @@ PIaddAccessPattern (simpletype type, int dim, shpseg *shape, shpseg *group,
     conflict_group_t *cg_ptr;
     conflict_group_t *cg_next_ptr;
 
-    DBUG_ENTER ("PIaddAccessPattern");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((patterns != NULL), " unexpected empty access pattern!");
+    DBUG_ASSERT (patterns != NULL, " unexpected empty access pattern!");
 
     /* check existence of array type */
     at_ptr = GetArrayTypeEntry (type, dim, shape);
@@ -935,7 +936,7 @@ PIaddAccessPattern (simpletype type, int dim, shpseg *shape, shpseg *group,
     CG_PATTERNS (cg_ptr) = patterns;
     CG_NEXT (cg_ptr) = cg_next_ptr;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -957,7 +958,7 @@ PIprintAccessPatterns ()
     conflict_group_t *cg_ptr;
     pattern_t *pt_ptr;
 
-    DBUG_ENTER ("PIprintAccessPatterns");
+    DBUG_ENTER ();
 
     APprintDiag ("\nAccess Patterns:\n");
 
@@ -982,7 +983,7 @@ PIprintAccessPatterns ()
         at_ptr = AT_NEXT (at_ptr);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -1006,7 +1007,7 @@ PIaddUnsupportedShape (types *array_type)
     unsupported_shape_t *us_next_ptr;
     bool added;
 
-    DBUG_ENTER ("PIaddUnsupportedShape");
+    DBUG_ENTER ();
 
     /* check, if entry for array_type and class already exists */
     unsupported_shape_ptr
@@ -1047,7 +1048,7 @@ PIisUnsupportedShape (types *array_type)
     unsupported_shape_t *unsupported_shape_ptr;
     bool is_unsupported;
 
-    DBUG_ENTER ("PIisUnsupportedShape");
+    DBUG_ENTER ();
 
     unsupported_shape_ptr
       = GetUnsupportedShapeEntry (TYPES_BASETYPE (array_type), TYPES_DIM (array_type),
@@ -1077,7 +1078,7 @@ PIprintUnsupportedShapes ()
 
     unsupported_shape_t *us_ptr;
 
-    DBUG_ENTER ("PIprintUnsupportedTypes");
+    DBUG_ENTER ();
 
     APprintDiag ("\nUnsupported Shapes:\n");
 
@@ -1088,7 +1089,7 @@ PIprintUnsupportedShapes ()
         us_ptr = US_NEXT (us_ptr);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1110,7 +1111,7 @@ PIlinearizeVector (int dim, shpseg *shape, shpseg *vect)
     int offset;
     int i;
 
-    DBUG_ENTER ("PIlinearizeVector");
+    DBUG_ENTER ();
 
     /* Horner scheme */
     offset = SHPSEG_SHAPE (vect, 0);
@@ -1140,9 +1141,9 @@ void
 PItidyAccessPattern ()
 {
 
-    DBUG_ENTER ("PItidyAccessPattern");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("API", ("Cleaning up access patterns..."));
+    DBUG_PRINT ("Cleaning up access patterns...");
     APprintDiag ("\nCleaning up access patterns...\n");
 
     SortAccesses ();
@@ -1158,7 +1159,7 @@ PItidyAccessPattern ()
      *     on the inferred shape
      */
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -1181,9 +1182,9 @@ PIremoveUnsupportedShapes ()
     pad_info_t *pi_ptr;
     pad_info_t *pi_prv_ptr;
 
-    DBUG_ENTER ("RemoveUnsupportedShapes");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("API", ("Removing unsupported shapes..."));
+    DBUG_PRINT ("Removing unsupported shapes...");
 
     APprintDiag ("\nRemoving unsupported shapes...\n");
 
@@ -1221,7 +1222,7 @@ PIremoveUnsupportedShapes ()
 
     global.optcounters.ap_padded -= global.optcounters.ap_unsupported;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -1238,9 +1239,9 @@ int
 PIgetArrayTypeDim (array_type_t *at_ptr)
 {
 
-    DBUG_ENTER ("PIgetArrayTypeDim");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((at_ptr != NULL), " unexpected NULL pointer!");
+    DBUG_ASSERT (at_ptr != NULL, " unexpected NULL pointer!");
 
     DBUG_RETURN (AT_DIM (at_ptr));
 }
@@ -1259,9 +1260,9 @@ shpseg *
 PIgetArrayTypeShape (array_type_t *at_ptr)
 {
 
-    DBUG_ENTER ("PIgetArrayTypeShape");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((at_ptr != NULL), " unexpected NULL pointer!");
+    DBUG_ASSERT (at_ptr != NULL, " unexpected NULL pointer!");
 
     DBUG_RETURN (AT_SHAPE (at_ptr));
 }
@@ -1280,9 +1281,9 @@ simpletype
 PIgetArrayTypeBasetype (array_type_t *at_ptr)
 {
 
-    DBUG_ENTER ("PIgetArrayTypeBasetype");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((at_ptr != NULL), " unexpected NULL pointer!");
+    DBUG_ASSERT (at_ptr != NULL, " unexpected NULL pointer!");
 
     DBUG_RETURN (AT_TYPE (at_ptr));
 }
@@ -1301,9 +1302,9 @@ shpseg *
 PIgetPatternShape (pattern_t *pt_ptr)
 {
 
-    DBUG_ENTER ("PIgetPatternShape");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((pt_ptr != NULL), " unexpected NULL pointer!");
+    DBUG_ASSERT (pt_ptr != NULL, " unexpected NULL pointer!");
 
     DBUG_RETURN (PT_PATTERN (pt_ptr));
 }
@@ -1322,7 +1323,7 @@ array_type_t *
 PIgetFirstArrayType ()
 {
 
-    DBUG_ENTER ("PIgetFirstArrayType");
+    DBUG_ENTER ();
 
     DBUG_RETURN (array_type);
 }
@@ -1343,7 +1344,7 @@ PIgetNextArrayType (array_type_t *at_ptr)
 
     array_type_t *at_next_ptr;
 
-    DBUG_ENTER ("PIgetNextArrayType");
+    DBUG_ENTER ();
 
     if (at_ptr == NULL) {
         at_next_ptr = NULL;
@@ -1370,7 +1371,7 @@ PIgetFirstConflictGroup (array_type_t *at_ptr)
 
     conflict_group_t *cg_ptr;
 
-    DBUG_ENTER ("PIgetFirstConflictGroup");
+    DBUG_ENTER ();
 
     if (at_ptr == NULL) {
         cg_ptr = NULL;
@@ -1397,7 +1398,7 @@ PIgetNextConflictGroup (conflict_group_t *cg_ptr)
 
     conflict_group_t *cg_next_ptr;
 
-    DBUG_ENTER ("PIgetNextConflictGroup");
+    DBUG_ENTER ();
 
     if (cg_ptr == NULL) {
         cg_next_ptr = NULL;
@@ -1424,7 +1425,7 @@ PIgetFirstPattern (conflict_group_t *cg_ptr)
 
     pattern_t *pt_ptr;
 
-    DBUG_ENTER ("PIgetFirstPattern");
+    DBUG_ENTER ();
 
     if (cg_ptr == NULL) {
         pt_ptr = NULL;
@@ -1451,7 +1452,7 @@ PIgetNextPattern (pattern_t *pt_ptr)
 
     pattern_t *pt_next_ptr;
 
-    DBUG_ENTER ("PIgetNextPattern");
+    DBUG_ENTER ();
 
     if (pt_ptr == NULL) {
         pt_next_ptr = NULL;
@@ -1481,7 +1482,7 @@ PIaddInferredShape (simpletype type, int dim, shpseg *old_shape, shpseg *new_sha
 {
     pad_info_t *tmp;
 
-    DBUG_ENTER ("PIaddInferredShape");
+    DBUG_ENTER ();
 
     tmp = (pad_info_t *)MEMmalloc (sizeof (pad_info_t));
     PI_DIM (tmp) = dim;
@@ -1496,7 +1497,7 @@ PIaddInferredShape (simpletype type, int dim, shpseg *old_shape, shpseg *new_sha
 
     global.optcounters.ap_padded++;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1520,7 +1521,7 @@ PIpaddingOverhead (int dim, shpseg *orig_shape, shpseg *padding)
     int i, overhead;
     unsigned long int orig_size, padding_size;
 
-    DBUG_ENTER ("PIpaddingOverhead");
+    DBUG_ENTER ();
 
     orig_size = 1;
     padding_size = 1;
@@ -1563,7 +1564,7 @@ PInoteResults ()
     char *basetype, *old, *new, *pad;
     int overhead;
 
-    DBUG_ENTER ("PInoteResults");
+    DBUG_ENTER ();
 
     pi_ptr = pad_info;
 
@@ -1585,7 +1586,7 @@ PInoteResults ()
         pi_ptr = PI_NEXT (pi_ptr);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -1604,7 +1605,7 @@ PIprintPadInfo ()
 
     pad_info_t *pi_ptr;
 
-    DBUG_ENTER ("PIprintPadInfo");
+    DBUG_ENTER ();
 
     APprintDiag ("\nInferred Shapes:\n");
 
@@ -1615,7 +1616,7 @@ PIprintPadInfo ()
         pi_ptr = PI_NEXT (pi_ptr);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*****************************************************************************
@@ -1639,7 +1640,7 @@ PIgetNewType (types *old_type)
     types *new_type;
     pad_info_t *table_entry;
 
-    DBUG_ENTER ("PIgetNewType");
+    DBUG_ENTER ();
 
     new_type = NULL;
 
@@ -1676,7 +1677,7 @@ PIgetOldType (types *new_type)
     types *old_type;
     pad_info_t *table_entry;
 
-    DBUG_ENTER ("PIgetOldType");
+    DBUG_ENTER ();
 
     old_type = NULL;
 
@@ -1708,7 +1709,7 @@ PIgetFundefPad (types *old_type)
 
     pad_info_t *table_entry;
 
-    DBUG_ENTER ("PIgetFundefPad");
+    DBUG_ENTER ();
 
     table_entry = GetNewTableEntry (old_type);
 
@@ -1731,7 +1732,7 @@ PIgetFundefUnpad (types *old_type)
 
     pad_info_t *table_entry;
 
-    DBUG_ENTER ("PIgetFundefUnpad");
+    DBUG_ENTER ();
 
     table_entry = GetNewTableEntry (old_type);
 
@@ -1759,7 +1760,7 @@ PIfree ()
     pattern_t *current_pt;
     unsupported_shape_t *current_us;
 
-    DBUG_ENTER ("PIfree");
+    DBUG_ENTER ();
 
     /* free pad_info structure */
     current_pi = pad_info;
@@ -1790,5 +1791,7 @@ PIfree ()
     }
     unsupported_shape = NULL;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

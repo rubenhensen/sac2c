@@ -17,7 +17,10 @@
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "free.h"
 
 /**
@@ -40,7 +43,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -52,7 +55,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -75,7 +78,7 @@ HCEdoHandleConditionalExpressions (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("HCEdoHandleConditionalExpressions");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -110,7 +113,7 @@ HCEdoHandleConditionalExpressions (node *syntax_tree)
 node *
 HCEassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HCEassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -146,7 +149,7 @@ HCEassign (node *arg_node, info *arg_info)
 node *
 HCEcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HCEcode");
+    DBUG_ENTER ();
 
     if (CODE_NEXT (arg_node) != NULL) {
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
@@ -183,7 +186,7 @@ HCEcode (node *arg_node, info *arg_info)
 node *
 HCEcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HCEcond");
+    DBUG_ENTER ();
 
     COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
     COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
@@ -207,7 +210,7 @@ HCEcond (node *arg_node, info *arg_info)
 node *
 HCEdo (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HCEdo");
+    DBUG_ENTER ();
 
     DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
 
@@ -241,7 +244,7 @@ HCEfuncond (node *arg_node, info *arg_info)
     char *n;
     node *p, *t, *e;
 
-    DBUG_ENTER ("HCEfuncond");
+    DBUG_ENTER ();
 
     n = TRAVtmpVar ();
 
@@ -284,7 +287,7 @@ HCEfuncond (node *arg_node, info *arg_info)
 node *
 HCEwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HCEwith");
+    DBUG_ENTER ();
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
@@ -294,3 +297,5 @@ HCEwith (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

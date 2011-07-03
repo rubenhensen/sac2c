@@ -8,7 +8,10 @@
 
 #include "types.h"
 #include "tree_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "new_types.h"
 #include "str.h"
@@ -35,7 +38,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -47,7 +50,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -81,7 +84,7 @@ BuildInitFun (char *name, namespace_t *ns, ntype *objtype, node *expr)
     node *assign;
     node *argavis;
 
-    DBUG_ENTER ("BuildInitFun");
+    DBUG_ENTER ();
 
     argavis = TBmakeAvis (STRcpy ("_OI_object"), objtype);
     AVIS_DECLTYPE (argavis) = TYcopyType (AVIS_TYPE (argavis));
@@ -127,7 +130,7 @@ OIobjdef (node *arg_node, info *arg_info)
 {
     node *initfun;
 
-    DBUG_ENTER ("OIobjdef");
+    DBUG_ENTER ();
 
     if (OBJDEF_NEXT (arg_node) != NULL) {
         OBJDEF_NEXT (arg_node) = TRAVdo (OBJDEF_NEXT (arg_node), arg_info);
@@ -152,7 +155,7 @@ OIobjdef (node *arg_node, info *arg_info)
 node *
 OImodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("OImodule");
+    DBUG_ENTER ();
 
     INFO_FUNDEFS (arg_info) = MODULE_FUNS (arg_node);
 
@@ -184,7 +187,7 @@ OIdoObjectInit (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("OIdoObjectInit");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -196,3 +199,5 @@ OIdoObjectInit (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

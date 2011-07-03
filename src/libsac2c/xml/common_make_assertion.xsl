@@ -50,7 +50,7 @@ version="1.0">
 <!-- check for mandatory sons to be set to a value other than NULL -->
 <xsl:template match="son[@mandatory = 'yes']" mode="make-assertion-nonnull">
   <xsl:param name="self"/>
-  <xsl:value-of select="'DBUG_ASSERT( '" />
+  <xsl:value-of select="'DBUG_ASSERT ( '" />
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
       <xsl:value-of select="$self" />
@@ -62,11 +62,11 @@ version="1.0">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="' != NULL, ( &quot;Field '" />
+  <xsl:value-of select="' != NULL, &quot;Field '" />
   <xsl:value-of select="@name" />
   <xsl:value-of select="' of node N_'" />
   <xsl:value-of select="../../@name" />
-  <xsl:value-of select="' is mandatory but has value NULL&quot;));'" />
+  <xsl:value-of select="' is mandatory but has value NULL&quot;);'" />
 </xsl:template>
 
 <!-- ignore all other sons -->

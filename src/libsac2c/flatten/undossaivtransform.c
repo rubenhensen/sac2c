@@ -5,7 +5,10 @@
 #include <stdio.h>
 
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "USSAI"
+#include "debug.h"
+
 #include "types.h"
 #include "str.h"
 #include "memory.h"
@@ -53,7 +56,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -65,7 +68,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -88,10 +91,10 @@ FreeInfo (info *info)
 node *
 USSAIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSAIfundef");
+    DBUG_ENTER ();
 
     if (NULL != FUNDEF_BODY (arg_node)) {
-        DBUG_PRINT ("USSAI", ("Unflattening function: %s", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Unflattening function: %s", FUNDEF_NAME (arg_node));
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
@@ -118,7 +121,7 @@ node *
 USSAIwithid (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("USSAIwithid");
+    DBUG_ENTER ();
 
 #ifdef ssaiv
     node *curidxsp0;
@@ -139,19 +142,18 @@ USSAIwithid (node *arg_node, info *arg_info)
         if (NULL != WITHID_VEC (arg_node)) {
             AVIS_SUBST (IDS_AVIS (WITHID_VEC (arg_node)))
               = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
-            DBUG_PRINT ("USSAI",
-                        ("Marking WITHID_VEC %s to be replaced by %s",
-                         AVIS_NAME (IDS_AVIS (WITHID_VEC (arg_node))),
-                         AVIS_NAME (AVIS_SUBST (IDS_AVIS (WITHID_VEC (arg_node))))));
+            DBUG_PRINT ("Marking WITHID_VEC %s to be replaced by %s",
+                        AVIS_NAME (IDS_AVIS (WITHID_VEC (arg_node))),
+                        AVIS_NAME (AVIS_SUBST (IDS_AVIS (WITHID_VEC (arg_node)))));
         }
 
         curidxs = WITHID_IDS (arg_node);
         curidxsp0 = WITHID_IDS (INFO_WITHID (arg_info));
         while (NULL != curidxs) {
             AVIS_SUBST (IDS_AVIS (curidxs)) = IDS_AVIS (curidxsp0);
-            DBUG_PRINT ("USSAI", ("Marking WITHID_IDS %s to be replaced by %s",
-                                  AVIS_NAME (IDS_AVIS (curidxs)),
-                                  AVIS_NAME (AVIS_SUBST (IDS_AVIS (curidxs)))));
+            DBUG_PRINT ("Marking WITHID_IDS %s to be replaced by %s",
+                        AVIS_NAME (IDS_AVIS (curidxs)),
+                        AVIS_NAME (AVIS_SUBST (IDS_AVIS (curidxs))));
             curidxs = IDS_NEXT (curidxs);
             curidxsp0 = IDS_NEXT (curidxsp0);
         }
@@ -165,9 +167,9 @@ USSAIwithid (node *arg_node, info *arg_info)
         curidxsp0 = WITHID_IDXS (INFO_WITHID (arg_info));
         while (NULL != curidxs) {
             AVIS_SUBST (IDS_AVIS (curidxs)) = IDS_AVIS (curidxsp0);
-            DBUG_PRINT ("USSAI", ("Marking WITHID_IDXS %s to be replaced by %s",
-                                  AVIS_NAME (IDS_AVIS (curidxs)),
-                                  AVIS_NAME (AVIS_SUBST (IDS_AVIS (curidxs)))));
+            DBUG_PRINT ("Marking WITHID_IDXS %s to be replaced by %s",
+                        AVIS_NAME (IDS_AVIS (curidxs)),
+                        AVIS_NAME (AVIS_SUBST (IDS_AVIS (curidxs))));
             curidxs = IDS_NEXT (curidxs);
             curidxsp0 = IDS_NEXT (curidxsp0);
         }
@@ -217,7 +219,7 @@ node *
 USSAIblock (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("USSAIblock");
+    DBUG_ENTER ();
 
     /* Mark unreferenced variables; look for WL generators  */
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
@@ -245,15 +247,14 @@ node *
 USSAIvardec (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("USSAIvardec");
+    DBUG_ENTER ();
 
 #ifdef ssaiv
     VARDEC_NEXT (arg_node) = TRAVopt (VARDEC_NEXT (arg_node), arg_info);
 
     if ((NULL == VARDEC_AVIS (arg_node))
         || (NULL != AVIS_SUBST (VARDEC_AVIS (arg_node)))) {
-        DBUG_PRINT ("USSAI",
-                    ("Deleting vardec for %s", AVIS_NAME (VARDEC_AVIS (arg_node))));
+        DBUG_PRINT ("Deleting vardec for %s", AVIS_NAME (VARDEC_AVIS (arg_node)));
         arg_node = FREEdoFreeNode (arg_node);
     }
 #endif //  ssaiv
@@ -275,12 +276,12 @@ node *
 USSAIid (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("USSAIid");
+    DBUG_ENTER ();
 
 #ifdef ssaiv
     if (NULL != AVIS_SUBST (ID_AVIS (arg_node))) {
-        DBUG_PRINT ("USSAI", ("Renaming %s to %s", AVIS_NAME (ID_AVIS (arg_node)),
-                              AVIS_NAME (AVIS_SUBST (ID_AVIS (arg_node)))));
+        DBUG_PRINT ("Renaming %s to %s", AVIS_NAME (ID_AVIS (arg_node)),
+                    AVIS_NAME (AVIS_SUBST (ID_AVIS (arg_node))));
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
     }
 
@@ -306,7 +307,7 @@ node *
 USSAIpart (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("USSAIpart");
+    DBUG_ENTER ();
 
     if (NULL != arg_node) {
         PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
@@ -332,7 +333,7 @@ node *
 USSAIwith (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("USSAIwith");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -362,7 +363,7 @@ USSAIdoUndoSSAivTransform (node *arg_node)
 {
     info *arg_info = NULL;
 
-    DBUG_ENTER ("USSAIdoUndoSSAivTransform");
+    DBUG_ENTER ();
 
     TRAVpush (TR_ussai);
     arg_node = TRAVdo (arg_node, arg_info);
@@ -370,3 +371,5 @@ USSAIdoUndoSSAivTransform (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

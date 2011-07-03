@@ -48,7 +48,10 @@
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "print.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "memory.h"
 #include "free.h"
@@ -77,7 +80,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -91,7 +94,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -125,9 +128,9 @@ WLCCdoWLCostCheck (node *fundef)
 {
     info *arg_info;
 
-    DBUG_ENTER ("WLCCdoWLCostCheck");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "WLCCdoWLCostCheck called for non-fundef node");
 
     arg_info = MakeInfo ();
@@ -164,7 +167,7 @@ WLCCwith (node *arg_node, info *arg_info)
 {
     node *outer_with;
 
-    DBUG_ENTER ("WLCCwith");
+    DBUG_ENTER ();
 
     if (INFO_DO_CHECK (arg_info)) {
         INFO_CODE_COST (arg_info) += 2;
@@ -198,7 +201,7 @@ WLCCwith (node *arg_node, info *arg_info)
 node *
 WLCCcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLCCcode");
+    DBUG_ENTER ();
 
     if (!INFO_DO_CHECK (arg_info)) {
         arg_node = TRAVcont (arg_node, arg_info);
@@ -232,7 +235,7 @@ WLCCcode (node *arg_node, info *arg_info)
 node *
 WLCCprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLCCprf");
+    DBUG_ENTER ();
 
     if (PRF_PRF (arg_node) == F_sel_VxA) {
         INFO_CODE_COST (arg_info) += 1;
@@ -251,7 +254,7 @@ WLCCprf (node *arg_node, info *arg_info)
 node *
 WLCCap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLCCap");
+    DBUG_ENTER ();
 
     INFO_CODE_COST (arg_info) += 2;
 
@@ -265,3 +268,5 @@ WLCCap (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- With Loop Cost Check -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

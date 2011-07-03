@@ -21,7 +21,10 @@
 #include "cv2str.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 
@@ -45,7 +48,7 @@
         char *buffer;                                                                    \
         char *buffer_act;                                                                \
                                                                                          \
-        DBUG_ENTER ("COcv2Str##ext");                                                    \
+        DBUG_ENTER ();                                                                   \
         sprintf (format, ",%s", form);                                                   \
         buffer = (char *)MEMmalloc ((100 + max_char) * sizeof (char));                   \
         buffer_act = buffer;                                                             \
@@ -93,7 +96,9 @@ COcv2StrTEMPLATE (unsigned char, UByte, "%c")
 
   char *COcv2StrDummy (void *src, int off, int len, int max_char)
 {
-    DBUG_ENTER ("COcv2StrDummy");
-    DBUG_ASSERT ((1 == 0), "COcv2StrDummy called!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (1 == 0, "COcv2StrDummy called!");
     DBUG_RETURN ((char *)NULL);
 }
+
+#undef DBUG_PREFIX

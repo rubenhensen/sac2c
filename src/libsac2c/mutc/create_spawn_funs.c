@@ -51,7 +51,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -83,7 +86,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -95,7 +98,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -121,7 +124,7 @@ CSPFdoCreateSpawnFunctions (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CSPFdoCreateSpawnFunctions");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -158,7 +161,7 @@ LocalizeAndMakeSpawnFun (node *arg_node, info *arg_info)
     node *temp, *result;
     ntype *wtype = NULL;
 
-    DBUG_ENTER ("LocalizeAndMakeSpawnFun");
+    DBUG_ENTER ();
 
     if (FUNDEF_SPAWNFUN (arg_node) == NULL) {
         temp = FUNDEF_NEXT (arg_node);
@@ -176,7 +179,7 @@ LocalizeAndMakeSpawnFun (node *arg_node, info *arg_info)
             }
         } else if (FUNDEF_BODY (result) == NULL) {
             FUNDEF_BODY (result) = DSloadFunctionBody (arg_node);
-            DBUG_ASSERT ((FUNDEF_BODY (result) != NULL), "function body went missing");
+            DBUG_ASSERT (FUNDEF_BODY (result) != NULL, "function body went missing");
         }
         if (FUNDEF_SYMBOLNAME (result) != NULL) {
             FUNDEF_SYMBOLNAME (result) = MEMfree (FUNDEF_SYMBOLNAME (result));
@@ -225,7 +228,7 @@ LocalizeAndMakeSpawnFun (node *arg_node, info *arg_info)
 node *
 CSPFmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSPFmodule");
+    DBUG_ENTER ();
 
     DSinitDeserialize (arg_node);
 
@@ -254,7 +257,7 @@ CSPFmodule (node *arg_node, info *arg_info)
 node *
 CSPFap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CSPFap");
+    DBUG_ENTER ();
 
     if (AP_ISSPAWNED (arg_node)) {
         AP_FUNDEF (arg_node) = LocalizeAndMakeSpawnFun (AP_FUNDEF (arg_node), arg_info);
@@ -270,3 +273,5 @@ CSPFap (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Create Spawn Functions template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

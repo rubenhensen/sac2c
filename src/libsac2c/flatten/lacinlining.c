@@ -4,7 +4,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "LINL"
+#include "debug.h"
+
 #include "traverse.h"
 #include "free.h"
 #include "new_types.h"
@@ -46,7 +49,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -63,7 +66,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -91,7 +94,7 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
     char *tmp_str2;
 #endif
 
-    DBUG_ENTER ("AdaptConcreteArgs");
+    DBUG_ENTER ();
 
     if (conc_arg != NULL) {
         DBUG_ASSERT (NODE_TYPE (conc_arg) == N_exprs,
@@ -126,11 +129,10 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
              *    the type of the formal arg.
              */
 
-            DBUG_EXECUTE ("LINL", tmp_str = TYtype2String (ftype, 0, 0);
-                          tmp_str2 = TYtype2String (ctype, 0, 0););
-            DBUG_PRINT ("LINL", ("  >> trying to adapt %s to %s", tmp_str2, tmp_str));
-            DBUG_EXECUTE ("LINL", tmp_str = MEMfree (tmp_str);
-                          tmp_str2 = MEMfree (tmp_str2););
+            DBUG_EXECUTE (tmp_str = TYtype2String (ftype, 0, 0);
+                          tmp_str2 = TYtype2String (ctype, 0, 0));
+            DBUG_PRINT ("  >> trying to adapt %s to %s", tmp_str2, tmp_str);
+            DBUG_EXECUTE (tmp_str = MEMfree (tmp_str); tmp_str2 = MEMfree (tmp_str2));
 
 #if 0
       /* 
@@ -148,7 +150,7 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
          *     type as there is no representational difference
          *     at all.
          */
-        DBUG_PRINT( "LINL", ("    >> downgrade AKV -> AKS"));
+        DBUG_PRINT ("    >> downgrade AKV -> AKS");
 
         AVIS_TYPE( ID_AVIS( EXPRS_EXPR( conc_arg))) =
           TYfreeType( AVIS_TYPE( ID_AVIS( EXPRS_EXPR( conc_arg))));
@@ -161,7 +163,7 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                 /*
                  * 1b) type of concrete arg < type of formal arg
                  */
-                DBUG_PRINT ("LINL", ("    >> insert assignment to downgrade type"));
+                DBUG_PRINT ("    >> insert assignment to downgrade type");
 
                 newavis
                   = TBmakeAvis (TRAVtmpVarName (ARG_NAME (form_arg)), TYcopyType (ctype));
@@ -196,7 +198,7 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                 /*
                  * 2) type of concrete arg > type of formal arg
                  */
-                DBUG_PRINT ("LINL", ("    >> insert typeconv to upgrade type"));
+                DBUG_PRINT ("    >> insert typeconv to upgrade type");
 
                 newavis
                   = TBmakeAvis (TRAVtmpVarName (ARG_NAME (form_arg)), TYcopyType (ctype));
@@ -238,7 +240,7 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                      "No correspondence between formal and concrete arguments");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -253,7 +255,7 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
 node *
 LINLmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("LINLmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -274,9 +276,9 @@ LINLfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("LINLfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("LINL", ("lacinlining in %s", CTIitemName (arg_node)));
+    DBUG_PRINT ("lacinlining in %s", CTIitemName (arg_node));
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
@@ -284,7 +286,7 @@ LINLfundef (node *arg_node, info *arg_info)
         INFO_FUNDEF (arg_info) = NULL;
 
         if (INFO_SPAWNED (arg_info)) {
-            DBUG_PRINT ("LINL", ("Function inlined which contained spawn"));
+            DBUG_PRINT ("Function inlined which contained spawn");
             FUNDEF_CONTAINSSPAWN (arg_node) = TRUE;
         }
     }
@@ -323,7 +325,7 @@ LINLassign (node *arg_node, info *arg_info)
 {
     bool inlined = FALSE;
 
-    DBUG_ENTER ("LINLassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -373,7 +375,7 @@ LINLassign (node *arg_node, info *arg_info)
 node *
 LINLlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("LINLlet");
+    DBUG_ENTER ();
 
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -394,12 +396,12 @@ LINLlet (node *arg_node, info *arg_info)
 node *
 LINLap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("LINLap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISLACINLINE (AP_FUNDEF (arg_node))) {
 
-        DBUG_PRINT ("LINL", (">> processing application of %s",
-                             CTIitemName (AP_FUNDEF (arg_node))));
+        DBUG_PRINT (">> processing application of %s",
+                    CTIitemName (AP_FUNDEF (arg_node)));
 
         /*
          * Adapt types of the concrete loop/cond arguments to meet the
@@ -434,11 +436,11 @@ LINLdoLACInlining (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("LINLdoLACInlining");
+    DBUG_ENTER ();
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+                    global.current_allocated_mem);
 #endif
 
     arg_info = MakeInfo ();
@@ -450,8 +452,8 @@ LINLdoLACInlining (node *arg_node)
     FreeInfo (arg_info);
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+                    global.current_allocated_mem);
 #endif
 
     DBUG_RETURN (arg_node);
@@ -472,11 +474,11 @@ LINLdoLACInliningOneFundef (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("LINLdoLACInliningOneFundef");
+    DBUG_ENTER ();
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+                    global.current_allocated_mem);
 #endif
 
     arg_info = MakeInfo ();
@@ -489,9 +491,11 @@ LINLdoLACInliningOneFundef (node *arg_node)
     FreeInfo (arg_info);
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+                    global.current_allocated_mem);
 #endif
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

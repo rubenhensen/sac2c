@@ -17,7 +17,8 @@
 
 #include <stdarg.h>
 
-#include "dbug.h"
+#define DBUG_PREFIX "OPT"
+#include "debug.h"
 
 #include "types.h"
 #include "tree_basic.h"
@@ -62,7 +63,7 @@ void APprintDiag( char *format, ...)
   va_list arg_p;
   static char buffer[1024];
   
-  DBUG_ENTER("APprintDiag");
+  DBUG_ENTER ();
 
   if (apdiag) {
     va_start( arg_p, format);
@@ -72,7 +73,7 @@ void APprintDiag( char *format, ...)
     fprintf( apdiag_file, buffer);
   }
 
-  DBUG_VOID_RETURN;
+  DBUG_RETURN ();
 }
 
 #else
@@ -84,7 +85,7 @@ APprintDiag (char *format, ...)
     static int cnt = 1;
     int correction = 1;
 
-    DBUG_ENTER ("APprintDiag");
+    DBUG_ENTER ();
 
     if (global.apdiag && (cnt <= correction * global.apdiag_limit)) {
         va_start (arg_p, format);
@@ -107,7 +108,7 @@ APprintDiag (char *format, ...)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #endif
@@ -126,10 +127,10 @@ APprintDiag (char *format, ...)
 node *
 ArrayPadding (node *arg_node)
 {
-    DBUG_ENTER ("ArrayPadding");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("OPT", ("ARRAY PADDING"));
-    DBUG_PRINT ("AP", ("Entering Array Padding"));
+    DBUG_PRINT ("ARRAY PADDING");
+    DBUG_PRINT_TAG ("AP", "Entering Array Padding");
 
     CTInote ("Optimizing array types:");
 
@@ -195,3 +196,5 @@ ArrayPadding (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

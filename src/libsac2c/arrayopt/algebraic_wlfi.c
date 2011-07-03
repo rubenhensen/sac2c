@@ -81,7 +81,10 @@
 #include "tree_compound.h"
 #include "node_basic.h"
 #include "print.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "AWLFI"
+#include "debug.h"
+
 #include "traverse.h"
 #include "str.h"
 #include "memory.h"
@@ -183,7 +186,7 @@ MakeInfo (node *fundef)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -211,7 +214,7 @@ MakeInfo (node *fundef)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -243,10 +246,10 @@ AWLFIdoAlgebraicWithLoopFolding (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("AWLFIdoAlgebraicWithLoopFolding");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
-                 ("AWLFIdoAlgebraicWithLoopFoldingOneFunction called for non-fundef"));
+                 "AWLFIdoAlgebraicWithLoopFoldingOneFunction called for non-fundef");
 
     arg_info = MakeInfo (arg_node);
     INFO_ONEFUNDEF (arg_info) = TRUE;
@@ -306,11 +309,11 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
     int countAL = 0;
     int countDL = 0;
 
-    DBUG_ENTER ("SimplifySymbioticExpression");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("SSE", ("Entering opt micro-cycle for %s %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                        FUNDEF_NAME (arg_node)));
+    DBUG_PRINT_TAG ("SSE", "Entering opt micro-cycle for %s %s",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                    FUNDEF_NAME (arg_node));
     /* Loop over optimizers until we reach a fix point or give up */
     for (i = 0; i < global.max_optcycles; i++) {
         ct = i;
@@ -371,15 +374,16 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
             arg_node = DLdoDistributiveLawOptimization (arg_node);
         }
 
-        DBUG_PRINT ("SSE", ("INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, AS=%d, AL=%d, DL=%d\n",
-                            (global.optcounters.inl_fun - countINL),
-                            (global.optcounters.cse_expr - countCSE),
-                            (global.optcounters.tup_upgrades - countTUP),
-                            (global.optcounters.cf_expr - countCF),
-                            (global.optcounters.vp_expr - countVP),
-                            (global.optcounters.as_expr - countAS),
-                            (global.optcounters.al_expr - countAL),
-                            (global.optcounters.dl_expr - countDL)));
+        DBUG_PRINT_TAG ("SSE",
+                        "INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, AS=%d, AL=%d, DL=%d\n",
+                        (global.optcounters.inl_fun - countINL),
+                        (global.optcounters.cse_expr - countCSE),
+                        (global.optcounters.tup_upgrades - countTUP),
+                        (global.optcounters.cf_expr - countCF),
+                        (global.optcounters.vp_expr - countVP),
+                        (global.optcounters.as_expr - countAS),
+                        (global.optcounters.al_expr - countAL),
+                        (global.optcounters.dl_expr - countDL));
 
         if (/* Fix point check */
             (countINL == global.optcounters.inl_fun)
@@ -393,7 +397,7 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
             i = global.max_optcycles;
         }
     }
-    DBUG_PRINT ("SSE", ("Stabilized at iteration %d", ct));
+    DBUG_PRINT_TAG ("SSE", "Stabilized at iteration %d", ct);
 
     DBUG_RETURN (arg_node);
 }
@@ -423,7 +427,7 @@ FindPrfParent2 (node *arg_node, info *arg_info)
     pattern *pat;
     int tcindex = -1;
 
-    DBUG_ENTER ("FindPrfParent2");
+    DBUG_ENTER ();
 
     withidids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
     pat = PMany (1, PMAgetNode (&arg), 0);
@@ -490,7 +494,7 @@ AWLFIisHasNoteintersect (node *arg_node)
     pattern *pat;
     bool z;
 
-    DBUG_ENTER ("AWLFIisHasNoteintersect");
+    DBUG_ENTER ();
 
     pat = PMprf (1, PMAgetNode (&prf), 0);
     z = (PMmatchFlat (pat, PRF_ARG1 (arg_node))) && (F_noteintersect == PRF_PRF (prf));
@@ -534,7 +538,7 @@ isHasValidNoteintersect (node *arg_node, info *arg_info)
     int nexprs;
     int npart;
 
-    DBUG_ENTER ("isHasValidNoteintersect");
+    DBUG_ENTER ();
 
     pat = PMprf (1, PMAgetNode (&prf), 0);
     z = (PMmatchFlat (pat, PRF_ARG1 (arg_node))) && (F_noteintersect == PRF_PRF (prf));
@@ -567,7 +571,7 @@ detachNoteintersect (node *arg_node)
     pattern *pat;
     node *z;
 
-    DBUG_ENTER ("detachNoteintersect");
+    DBUG_ENTER ();
 
     z = arg_node;
     pat = PMprf (1, PMAgetNode (&prf), 0);
@@ -598,7 +602,7 @@ isHasInverseProjection (node *arg_node)
     bool z = TRUE;
     constant *co;
 
-    DBUG_ENTER ("isHasinverseProjection");
+    DBUG_ENTER ();
 
 #define NOINVERSEPROJECTION -1
     co = COaST2Constant (arg_node);
@@ -650,14 +654,14 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
 
     pattern *pat;
 
-    DBUG_ENTER ("BuildInverseProjectionScalar");
+    DBUG_ENTER ();
 
     if (N_num == NODE_TYPE (fn)) {
         z = DUPdoDupNode (fn);
     } else {
         if (N_id == NODE_TYPE (fn)) {
             ipavis = ID_AVIS (fn);
-            DBUG_PRINT ("AWLFI", ("Tracing %s", AVIS_NAME (ipavis)));
+            DBUG_PRINT ("Tracing %s", AVIS_NAME (ipavis));
             pat = PMany (1, PMAgetNode (&idx), 0);
             if (PMmatchFlatSkipExtremaAndGuards (pat, fn)) {
                 switch (NODE_TYPE (idx)) {
@@ -666,9 +670,8 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                     withidids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
                     tcindex = TClookupIdsNode (withidids, ID_AVIS (idx));
                     if (-1 != tcindex) {
-                        DBUG_PRINT ("AWLFI",
-                                    ("Found %s as source of iv'=%s",
-                                     AVIS_NAME (ID_AVIS (idx)), AVIS_NAME (ipavis)));
+                        DBUG_PRINT ("Found %s as source of iv'=%s",
+                                    AVIS_NAME (ID_AVIS (idx)), AVIS_NAME (ipavis));
                         INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
                         if (N_num == NODE_TYPE (ivp)) {
                             z = AWLFIflattenExpression (DUPdoDupTree (ivp),
@@ -684,13 +687,13 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                     } else {
                         /* Vanilla variable */
                         rhs = AVIS_SSAASSIGN (ID_AVIS (idx));
-                        DBUG_PRINT ("AWLFI", ("We lost the trail."));
+                        DBUG_PRINT ("We lost the trail.");
                         z = NULL;
                     }
                     break;
 
                 case N_prf:
-                    DBUG_ASSERT ((N_id == NODE_TYPE (ivp)), "Expected N_id ivp");
+                    DBUG_ASSERT (N_id == NODE_TYPE (ivp), "Expected N_id ivp");
                     switch (PRF_PRF (idx)) {
                     case F_add_SxS:
                         /* iv' = ( iv + x);   -->  iv = ( iv' - x);
@@ -790,8 +793,7 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                     break;
 
                 case N_num:
-                    DBUG_PRINT ("AWLFI", ("Found integer as source of iv'=%s",
-                                          AVIS_NAME (ipavis)));
+                    DBUG_PRINT ("Found integer as source of iv'=%s", AVIS_NAME (ipavis));
                     z = ipavis;
                     break;
 
@@ -802,7 +804,7 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                     break;
 
                 default:
-                    DBUG_ASSERT (FALSE, ("Cannot chase iv'"));
+                    DBUG_ASSERT (FALSE, "Cannot chase iv'");
                     break;
                 }
             }
@@ -859,7 +861,7 @@ PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info
     node *hole;
     node *el;
 
-    DBUG_ENTER ("PermuteIntersectElements");
+    DBUG_ENTER ();
 
     z = zarr;
     ids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
@@ -944,7 +946,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
     int dim;
 
     int ivindx;
-    DBUG_ENTER ("BuildInverseProjectionOne");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (N_array == NODE_TYPE (ivprime), "Expected N_array ivprime");
     DBUG_ASSERT (N_array == NODE_TYPE (intr), "Expected N_array intr");
@@ -967,7 +969,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
             z = TCappendExprs (z, TBmakeExprs (ziavis, NULL));
             zw = TCappendIds (zw, TBmakeIds (INFO_WITHIDS (arg_info), NULL));
         } else {
-            DBUG_PRINT ("AWLFI", ("Failed to find inverse map for N_array"));
+            DBUG_PRINT ("Failed to find inverse map for N_array");
             ivindx = dim;
             z = (NULL != z) ? FREEdoFreeTree (z) : z;
         }
@@ -1024,7 +1026,7 @@ MatchExpr (node *arg, node *expr)
 {
     bool z;
 
-    DBUG_ENTER ("MatchExpr");
+    DBUG_ENTER ();
     z = (arg == expr);
     DBUG_RETURN (z);
 }
@@ -1047,7 +1049,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     node *intr;
     node *nlet;
 
-    DBUG_ENTER ("BuildInverseProjections");
+    DBUG_ENTER ();
 
     numpart = (TCcountExprs (PRF_ARGS (arg_node)) / WLEPP);
     pat1 = PMarray (1, PMAgetNode (&intr), 1, PMskip (0));
@@ -1086,7 +1088,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
 
             /* If we have both new bounds, update the F_intersect */
             if ((NULL != zlb) && (NULL != zub)) {
-                DBUG_ASSERT ((swaplb == swapub), ("Swap confusion"));
+                DBUG_ASSERT (swaplb == swapub, "Swap confusion");
                 if (swaplb) {
                     tmp = zlb;
                     zlb = zub;
@@ -1129,7 +1131,7 @@ AWLFIgetWlWith (node *arg_node)
     node *z = NULL;
     pattern *pat;
 
-    DBUG_ENTER ("AWLFIgetWlWith");
+    DBUG_ENTER ();
 
     pat = PMwith (1, PMAgetNode (&wl), 0);
     if (PMmatchFlatWith (pat, arg_node)) {
@@ -1162,19 +1164,18 @@ AWLFIfindWlId (node *arg_node)
     node *z = NULL;
     pattern *pat;
 
-    DBUG_ENTER ("AWLFIfindWlId");
+    DBUG_ENTER ();
 
     pat = PMvar (1, PMAgetNode (&wlid), 0);
     if (PMmatchFlatSkipGuards (pat, arg_node)) {
         wl = AWLFIgetWlWith (wlid);
         if (NULL != wl) {
-            DBUG_PRINT ("AWLFI",
-                        ("Found WL:%s: WITH_REFERENCED_FOLD=%d",
-                         AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (wl)));
+            DBUG_PRINT ("Found WL:%s: WITH_REFERENCED_FOLD=%d",
+                        AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (wl));
             z = wlid;
         }
     } else {
-        DBUG_PRINT ("AWLFI", ("Did not find WL:%s", AVIS_NAME (ID_AVIS (arg_node))));
+        DBUG_PRINT ("Did not find WL:%s", AVIS_NAME (ID_AVIS (arg_node)));
     }
     pat = PMfree (pat);
 
@@ -1197,7 +1198,7 @@ noDefaultPartition (node *arg_node)
     node *partn;
     bool z = TRUE;
 
-    DBUG_ENTER ("noDefaultPartition");
+    DBUG_ENTER ();
 
     partn = WITH_PART (arg_node);
 
@@ -1245,7 +1246,7 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
     node *avis;
     node *nas;
 
-    DBUG_ENTER ("AWLFIflattenExpression");
+    DBUG_ENTER ();
 
     if (N_id == NODE_TYPE (arg_node)) {
         avis = ID_AVIS (arg_node);
@@ -1255,7 +1256,7 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
         nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), arg_node), NULL);
         *preassigns = TCappendAssign (*preassigns, nas);
         AVIS_SSAASSIGN (avis) = nas;
-        DBUG_PRINT ("AWLFI", ("Generated assign for %s", AVIS_NAME (avis)));
+        DBUG_PRINT ("Generated assign for %s", AVIS_NAME (avis));
     }
 
     DBUG_RETURN (avis);
@@ -1360,7 +1361,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     char *fun;
     int shp;
 
-    DBUG_ENTER ("IntersectBoundsBuilderOne");
+    DBUG_ENTER ();
 
     pg = (boundnum == 1) ? GENERATOR_BOUND1 (PART_GENERATOR (producerPart))
                          : GENERATOR_BOUND2 (PART_GENERATOR (producerPart));
@@ -1418,7 +1419,7 @@ IntersectNullComputationBuilder (node *idxavismin, node *idxavismax, node *bound
     node *resavis;
     int shp;
 
-    DBUG_ENTER ("IntersectNullComputationBuilder");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (N_avis == NODE_TYPE (bound1), "Expected N_avis bound1");
     DBUG_ASSERT (N_avis == NODE_TYPE (bound2), "Expected N_avis bound2");
@@ -1486,7 +1487,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     pattern *pat1;
     pattern *pat2;
 
-    DBUG_ENTER ("IntersectBoundsBuilder");
+    DBUG_ENTER ();
 
     partn = WITH_PART (INFO_PRODUCERWL (arg_info));
     pat1 = PMarray (1, PMAgetNode (&gen1), 0);
@@ -1543,9 +1544,8 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
                            == AVIS_FINVERSESWAP (ID_AVIS (maxel)),
                          "Expected matching swap values");
             if (AVIS_FINVERSESWAP (ID_AVIS (minel))) {
-                DBUG_PRINT ("AWLFI",
-                            ("Swapping F-inverse %s and %s", AVIS_NAME (ID_AVIS (minel)),
-                             AVIS_NAME (ID_AVIS (maxel))));
+                DBUG_PRINT ("Swapping F-inverse %s and %s", AVIS_NAME (ID_AVIS (minel)),
+                            AVIS_NAME (ID_AVIS (maxel)));
                 AVIS_FINVERSESWAP (ID_AVIS (minel)) = FALSE;
                 AVIS_FINVERSESWAP (ID_AVIS (maxel)) = FALSE;
                 EXPRS_EXPR (minex) = maxel;
@@ -1627,9 +1627,9 @@ attachIntersectCalc (node *arg_node, info *arg_info)
     node *intersectcalc;
     node *args;
 
-    DBUG_ENTER ("attachIntersectCalc");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("AWLFI", ("Inserting attachextrema computations"));
+    DBUG_PRINT ("Inserting attachextrema computations");
 
     /* Generate expressions for lower-bound intersection and
      * upper-bound intersection calculation.
@@ -1678,7 +1678,7 @@ AWLFIisSingleOpWL (node *arg_node)
 {
     bool z;
 
-    DBUG_ENTER ("AWLFIisSingleOpWL");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (WITH_WITHOP (arg_node))) {
     default:
@@ -1768,7 +1768,7 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
     node *p;
     bool z;
 
-    DBUG_ENTER ("checkProducerWLFoldable");
+    DBUG_ENTER ();
 
     p = INFO_PRODUCERWL (arg_info);
     z = NULL != p;
@@ -1779,13 +1779,12 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
                 || (NODE_TYPE (WITH_WITHOP (p)) == N_modarray));
 
         if (z) {
-            DBUG_PRINT ("AWLFI",
-                        ("ProducerWL:%s is suitable for folding; WITH_REFERENCED_FOLD=%d",
-                         AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
-                         WITH_REFERENCED_FOLD (p)));
+            DBUG_PRINT ("ProducerWL:%s is suitable for folding; WITH_REFERENCED_FOLD=%d",
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
+                        WITH_REFERENCED_FOLD (p));
         } else {
-            DBUG_PRINT ("AWLFI", ("ProducerWL %s is not suitable for folding.",
-                                  AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node)))));
+            DBUG_PRINT ("ProducerWL %s is not suitable for folding.",
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         }
     }
 
@@ -1819,7 +1818,7 @@ checkConsumerWLFoldable (node *arg_node, info *arg_info)
     node *ivavis;
     bool z;
 
-    DBUG_ENTER ("checkConsumerWLFoldable");
+    DBUG_ENTER ();
 
     iv = PRF_ARG1 (arg_node);
     ivavis = ID_AVIS (iv);
@@ -1858,7 +1857,7 @@ checkBothFoldable (node *arg_node, info *arg_info)
     bool z = FALSE;
     pattern *pat;
 
-    DBUG_ENTER ("checkBothFoldable");
+    DBUG_ENTER ();
 
     pwl = INFO_PRODUCERWL (arg_info);
     pat = PMarray (1, PMAgetNode (&bp), 1, PMskip (0));
@@ -1877,13 +1876,13 @@ checkBothFoldable (node *arg_node, info *arg_info)
     z = z && (lev == INFO_LEVEL (arg_info));
 
     if (z) {
-        DBUG_PRINT ("AWLFI", ("Producer with-loop %s is foldable into %s",
-                              AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))),
-                              AVIS_NAME (INFO_CONSUMERWLLHS (arg_info))));
+        DBUG_PRINT ("Producer with-loop %s is foldable into %s",
+                    AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))),
+                    AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
     } else {
-        DBUG_PRINT ("AWLFI", ("Producer with-loop %s is not foldable into %s",
-                              AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))),
-                              AVIS_NAME (INFO_CONSUMERWLLHS (arg_info))));
+        DBUG_PRINT ("Producer with-loop %s is not foldable into %s",
+                    AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))),
+                    AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
     }
 
     pat = PMfree (pat);
@@ -1904,13 +1903,13 @@ AWLFIfundef (node *arg_node, info *arg_info)
     bool old_onefundef;
     int optctr;
 
-    DBUG_ENTER ("AWLFIfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
 
-        DBUG_PRINT ("AWLFI", ("Algebraic-With-Loop-Folding Inference in %s %s begins",
-                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                              FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Algebraic-With-Loop-Folding Inference in %s %s begins",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                    FUNDEF_NAME (arg_node));
 
         old_onefundef = INFO_ONEFUNDEF (arg_info);
         INFO_ONEFUNDEF (arg_info) = FALSE;
@@ -1938,9 +1937,9 @@ AWLFIfundef (node *arg_node, info *arg_info)
 
         INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
-        DBUG_PRINT ("AWLFI", ("Algebraic-With-Loop-Folding Inference in %s %s ends",
-                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                              FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Algebraic-With-Loop-Folding Inference in %s %s ends",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                    FUNDEF_NAME (arg_node));
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
@@ -1964,7 +1963,7 @@ AWLFIassign (node *arg_node, info *arg_info)
     node *let;
     node *oldpreassigns;
 
-    DBUG_ENTER ("AWLFIassign");
+    DBUG_ENTER ();
 
     oldpreassigns = INFO_PREASSIGNS (arg_info);
     INFO_PREASSIGNS (arg_info) = NULL;
@@ -2007,7 +2006,7 @@ AWLFIwith (node *arg_node, info *arg_info)
 {
     info *old_arg_info;
 
-    DBUG_ENTER ("AWLFIwith");
+    DBUG_ENTER ();
 
     old_arg_info = arg_info;
 
@@ -2018,7 +2017,7 @@ AWLFIwith (node *arg_node, info *arg_info)
     INFO_ONEFUNDEF (arg_info) = INFO_ONEFUNDEF (old_arg_info);
     INFO_FINVERSEINTRODUCED (arg_info) = INFO_FINVERSEINTRODUCED (old_arg_info);
 
-    DBUG_PRINT ("AWLFI", ("Resetting WITH_REFERENCED_CONSUMERWL, etc."));
+    DBUG_PRINT ("Resetting WITH_REFERENCED_CONSUMERWL, etc.");
     WITH_REFERENCED_FOLD (arg_node) = 0;
     WITH_REFERENCED_CONSUMERWL (arg_node) = NULL;
     WITH_REFERENCES_FOLDED (arg_node) = 0;
@@ -2045,7 +2044,7 @@ AWLFIwith (node *arg_node, info *arg_info)
 node *
 AWLFIpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFIpart");
+    DBUG_ENTER ();
 
     INFO_CONSUMERWLPART (arg_info) = arg_node;
     CODE_CBLOCK (PART_CODE (arg_node))
@@ -2067,7 +2066,7 @@ AWLFIpart (node *arg_node, info *arg_info)
 node *
 AWLFIids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFIids");
+    DBUG_ENTER ();
 
     AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_LEVEL (arg_info);
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -2095,18 +2094,18 @@ AWLFIid (node *arg_node, info *arg_info)
 {
     node *p;
 
-    DBUG_ENTER ("AWLFIid");
+    DBUG_ENTER ();
     /* get the definition assignment via the AVIS_SSAASSIGN backreference */
 #ifdef NOISY
-    DBUG_PRINT ("AWLFI", ("AWLFIid looking at %s", AVIS_NAME (ID_AVIS (arg_node))));
+    DBUG_PRINT ("AWLFIid looking at %s", AVIS_NAME (ID_AVIS (arg_node)));
 #endif // NOISY
     p = INFO_CONSUMERWL (arg_info);
     if ((NULL != p) && (NULL == WITH_REFERENCED_CONSUMERWL (p))) {
         /* First reference to this WL. */
         WITH_REFERENCED_CONSUMERWL (p) = INFO_CONSUMERWL (arg_info);
         WITH_REFERENCED_FOLD (p) = 0;
-        DBUG_PRINT ("AWLFI", ("AWLFIid found first reference to %s",
-                              AVIS_NAME (ID_AVIS (arg_node))));
+        DBUG_PRINT ("AWLFIid found first reference to %s",
+                    AVIS_NAME (ID_AVIS (arg_node)));
     }
 
     /*
@@ -2117,12 +2116,11 @@ AWLFIid (node *arg_node, info *arg_info)
     if ((NULL != p) && (NULL != INFO_CONSUMERWL (arg_info))
         && (WITH_REFERENCED_CONSUMERWL (p) == INFO_CONSUMERWL (arg_info))) {
         (WITH_REFERENCED_FOLD (p))++;
-        DBUG_PRINT ("AWLFI", ("AWLFIid incrementing WITH_REFERENCED_FOLD(%s) = %d",
-                              AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (p)));
+        DBUG_PRINT ("AWLFIid incrementing WITH_REFERENCED_FOLD(%s) = %d",
+                    AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (p));
     } else {
 #ifdef NOISY
-        DBUG_PRINT ("AWLFI", ("AWLFIid %s is not defined by a WL",
-                              AVIS_NAME (ID_AVIS (arg_node))));
+        DBUG_PRINT ("AWLFIid %s is not defined by a WL", AVIS_NAME (ID_AVIS (arg_node)));
 #endif // NOISY
     }
 
@@ -2155,7 +2153,7 @@ AWLFIprf (node *arg_node, info *arg_info)
 {
     node *z;
 
-    DBUG_ENTER ("AWLFIprf");
+    DBUG_ENTER ();
 
     if ((INFO_CONSUMERWLPART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
@@ -2184,9 +2182,8 @@ AWLFIprf (node *arg_node, info *arg_info)
                 FREEdoFreeNode (PRF_ARG1 (arg_node));
                 PRF_ARG1 (arg_node) = TBmakeId (z);
                 DBUG_PRINT (
-                  "AWLFI",
-                  ("AWLFIprf inserted F_attachintersect into cwl=%s at _sel_VxA_",
-                   AVIS_NAME (INFO_CONSUMERWLLHS (arg_info))));
+                  "AWLFIprf inserted F_attachintersect into cwl=%s at _sel_VxA_",
+                  AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
             }
         }
     }
@@ -2211,7 +2208,7 @@ AWLFIprf (node *arg_node, info *arg_info)
 node *
 AWLFIcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFIcond");
+    DBUG_ENTER ();
 
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THENINSTR (arg_node) = TRAVdo (COND_THENINSTR (arg_node), arg_info);
@@ -2235,7 +2232,7 @@ AWLFImodarray (node *arg_node, info *arg_info)
 {
     node *wl;
 
-    DBUG_ENTER ("AWLFImodarray");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -2243,9 +2240,9 @@ AWLFImodarray (node *arg_node, info *arg_info)
         INFO_PRODUCERWL (arg_info) = AWLFIfindWlId (MODARRAY_ARRAY (arg_node));
         wl = INFO_PRODUCERWL (arg_info);
         (WITH_REFERENCED_FOLD (wl))++;
-        DBUG_PRINT ("AWLFI", ("AWLFImodarray: WITH_REFERENCED_FOLD(%s) = %d",
-                              AVIS_NAME (ID_AVIS (MODARRAY_ARRAY (arg_node))),
-                              WITH_REFERENCED_FOLD (wl)));
+        DBUG_PRINT ("AWLFImodarray: WITH_REFERENCED_FOLD(%s) = %d",
+                    AVIS_NAME (ID_AVIS (MODARRAY_ARRAY (arg_node))),
+                    WITH_REFERENCED_FOLD (wl));
     }
 
     DBUG_RETURN (arg_node);
@@ -2265,7 +2262,7 @@ AWLFIlet (node *arg_node, info *arg_info)
     node *oldlet;
     node *oldconsumerwlname;
 
-    DBUG_ENTER ("AWLFIlet");
+    DBUG_ENTER ();
 
     oldconsumerwlname = INFO_CONSUMERWLLHS (arg_info);
     INFO_CONSUMERWLLHS (arg_info) = IDS_AVIS (LET_IDS (arg_node));
@@ -2289,7 +2286,7 @@ AWLFIlet (node *arg_node, info *arg_info)
 node *
 AWLFIblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFIblock");
+    DBUG_ENTER ();
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
@@ -2306,7 +2303,7 @@ AWLFIblock (node *arg_node, info *arg_info)
 node *
 AWLFIavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFIavis");
+    DBUG_ENTER ();
 
     AVIS_NEEDCOUNT (arg_node) = 0;
     AVIS_ISWLFOLDED (arg_node) = FALSE;
@@ -2325,7 +2322,7 @@ AWLFIavis (node *arg_node, info *arg_info)
 node *
 AWLFIfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFIfuncond");
+    DBUG_ENTER ();
 
     FUNCOND_IF (arg_node) = TRAVopt (FUNCOND_IF (arg_node), arg_info);
     FUNCOND_THEN (arg_node) = TRAVopt (FUNCOND_THEN (arg_node), arg_info);
@@ -2345,7 +2342,7 @@ AWLFIfuncond (node *arg_node, info *arg_info)
 node *
 AWLFIwhile (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("AWLFIwhile");
+    DBUG_ENTER ();
 
     WHILE_COND (arg_node) = TRAVopt (WHILE_COND (arg_node), arg_info);
     WHILE_BODY (arg_node) = TRAVopt (WHILE_BODY (arg_node), arg_info);
@@ -2356,3 +2353,5 @@ AWLFIwhile (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Algebraic with loop folding inference -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

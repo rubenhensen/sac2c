@@ -22,7 +22,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "ESD"
+#include "debug.h"
+
 #include "memory.h"
 #include "new_typecheck.h"
 #include "globals.h"
@@ -53,7 +56,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -68,7 +71,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -90,7 +93,7 @@ static prf
 TogglePrf (prf op)
 {
     prf result;
-    DBUG_ENTER ("TogglePrf");
+    DBUG_ENTER ();
 
     switch (op) {
     case F_sub_SxS:
@@ -126,7 +129,7 @@ TogglePrf (prf op)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal argument prf!");
+        DBUG_ASSERT (0, "Illegal argument prf!");
         /*
          * the following line initialises result, as the product
          * version will continue execution (the DBUG_ASSERT is
@@ -155,7 +158,7 @@ InversionPrf (prf op, simpletype stype)
 {
     prf inv_prf;
 
-    DBUG_ENTER ("InversionPrf");
+    DBUG_ENTER ();
 
     switch (stype) {
     case T_float:
@@ -221,7 +224,7 @@ node *
 ESDdoElimSubDivModule (node *arg_node)
 {
     info *info;
-    DBUG_ENTER ("ESDdoElimSubDivModule");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -253,7 +256,7 @@ node *
 ESDdoElimSubDiv (node *arg_node)
 {
     info *info;
-    DBUG_ENTER ("ESDdoElimSubDiv");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -290,13 +293,13 @@ ESDfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("ESDFundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    DBUG_PRINT ("ESD", ("traversing body of (%s) %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                        FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("traversing body of (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -326,7 +329,7 @@ ESDfundef (node *arg_node, info *arg_info)
 node *
 ESDblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ESDblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
@@ -348,7 +351,7 @@ ESDblock (node *arg_node, info *arg_info)
 node *
 ESDassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ESDassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -384,7 +387,7 @@ ESDassign (node *arg_node, info *arg_info)
 node *
 ESDlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ESDlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
@@ -412,10 +415,9 @@ ESDprf (node *arg_node, info *arg_info)
 {
     prf op = F_unknown;
 
-    DBUG_ENTER ("ESDprf");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("ESD",
-                ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+    DBUG_PRINT ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
     op = InversionPrf (PRF_PRF (arg_node),
                        TYgetSimpleType (TYgetScalar (IDS_NTYPE (INFO_LHS (arg_info)))));
@@ -451,9 +453,10 @@ ESDprf (node *arg_node, info *arg_info)
         EXPRS_NEXT (PRF_ARGS (arg_node)) = TBmakeExprs (TBmakeId (avis), NULL);
         PRF_PRF (arg_node) = TogglePrf (PRF_PRF (arg_node));
 
-        DBUG_PRINT ("ESD",
-                    ("replacing prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+        DBUG_PRINT ("replacing prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
     }
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -30,7 +30,9 @@
 #include <stdlib.h>
 #include <limits.h>
 
-#include "dbug.h"
+#define DBUG_PREFIX "PRINT_TSI"
+#include "debug.h"
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -89,7 +91,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = Malloc (sizeof (info));
 
@@ -110,7 +112,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = Free (info);
 
@@ -186,7 +188,7 @@ MinDistance (list_t *acc_list, int mindist, info *arg_info)
     list_t *a_list = acc_list;
     enh_access_t *access;
 
-    DBUG_ENTER ("MinDistance");
+    DBUG_ENTER ();
 
     cacheparam = INFO_TSI_CACHEPARAM (arg_info);
     cSize = cacheparam[CSIZE_INDEX];
@@ -325,7 +327,7 @@ RecreateEnhAccesslist (list_t *acc_list, info *arg_info)
     shpseg *shape;
     enh_access_t *eaccess, *element;
 
-    DBUG_ENTER ("RecreateEnhAccesslist");
+    DBUG_ENTER ();
 
     dim = INFO_TSI_ARRAYDIM (arg_info);
     shape = INFO_TSI_ARRAYSHP (arg_info);
@@ -384,18 +386,18 @@ CreateEnhAccesslist (access_t *accesses, info *arg_info)
     list_t *acc_list = NULL;
     enh_access_t *eaccess;
 
-    DBUG_ENTER ("CreateEnhAccesslist");
+    DBUG_ENTER ();
 
     minline = INT_MAX;
     maxline = INT_MIN;
     dim = INFO_TSI_ARRAYDIM (arg_info);
 
-    DBUG_ASSERT ((ACCESS_CLASS (accesses) == ACL_offset),
+    DBUG_ASSERT (ACCESS_CLASS (accesses) == ACL_offset,
                  "Access without ACL_offset found !!");
 
     while (accesses != NULL) {
 
-        DBUG_ASSERT ((ACCESS_OFFSET (accesses) != NULL),
+        DBUG_ASSERT (ACCESS_OFFSET (accesses) != NULL,
                      "Access with ACL_offset found, but no offset !!");
         /*
          *  computing virtual address [byte]:
@@ -440,7 +442,7 @@ CalcTSInnerDim (list_t *acc_list, info *arg_info)
     int *cacheparam, cSize, lSize, dType;
     shpseg *shape;
 
-    DBUG_ENTER ("CalcTSInnerDim");
+    DBUG_ENTER ();
 
     cacheparam = INFO_TSI_CACHEPARAM (arg_info);
     cSize = cacheparam[CSIZE_INDEX];
@@ -453,14 +455,14 @@ CalcTSInnerDim (list_t *acc_list, info *arg_info)
     maxsize = MIN ((SHPSEG_SHAPE (shape, (dim - 1))), (dType * cSize / lSize));
     tilesize = MinDistance (acc_list, maxsize, arg_info);
 
-    DBUG_EXECUTE ("PRINT_TSI", fprintf (stderr, "*** tilesizing ... %d\n", tilesize););
+    DBUG_EXECUTE (fprintf (stderr, "*** tilesizing ... %d\n", tilesize));
 
     for (i = 0; i < (maxline - minline); i++) {
         acc_list = RecreateEnhAccesslist (acc_list, arg_info);
     }
     tilesize = MinDistance (acc_list, maxsize, arg_info);
 
-    DBUG_EXECUTE ("PRINT_TSI", fprintf (stderr, "*** tilesizing ... %d\n", tilesize););
+    DBUG_EXECUTE (fprintf (stderr, "*** tilesizing ... %d\n", tilesize));
 
     if ((tilesize >= maxsize) || (tilesize <= lSize)) {
         tilesize = SHPSEG_SHAPE (shape, (dim - 1));
@@ -469,7 +471,7 @@ CalcTSInnerDim (list_t *acc_list, info *arg_info)
         tilesize = SHPSEG_SHAPE (shape, (dim - 1));
     }
 
-    DBUG_EXECUTE ("PRINT_TSI", fprintf (stderr, "*** tilesize found: %d\n", tilesize););
+    DBUG_EXECUTE (fprintf (stderr, "*** tilesize found: %d\n", tilesize));
 
     DBUG_RETURN (tilesize);
 }
@@ -490,7 +492,7 @@ CalcTSOuterDims (list_t *acc_list, int index, info *arg_info)
     int size, dim;
     shpseg *shape;
 
-    DBUG_ENTER ("CalcTSOuterDims");
+    DBUG_ENTER ();
 
     dim = INFO_TSI_ARRAYDIM (arg_info);
     shape = INFO_TSI_ARRAYSHP (arg_info);
@@ -516,7 +518,7 @@ CalcTilesize (access_t *accesses, info *arg_info)
     list_t *acc_list;
     shpseg *shape, *tileshp;
 
-    DBUG_ENTER ("CalcTilesize");
+    DBUG_ENTER ();
 
     dim = INFO_TSI_ARRAYDIM (arg_info);
     shape = INFO_TSI_ARRAYSHP (arg_info);
@@ -540,8 +542,7 @@ CalcTilesize (access_t *accesses, info *arg_info)
     } else {
         acc_list = CreateEnhAccesslist (accesses, arg_info);
 
-        DBUG_ASSERT ((acc_list != NULL),
-                     ("Tiling without accesses ? Accesses exspected!"));
+        DBUG_ASSERT (acc_list != NULL, "Tiling without accesses ? Accesses exspected!");
 
         tilesize = CalcTSInnerDim (acc_list, arg_info);
         SHPSEG_SHAPE (tileshp, (dim - 1)) = tilesize;
@@ -573,7 +574,7 @@ TSIMakePragmaWLComp (int tilesize, info *arg_info)
     int i, dim;
     shpseg *shape;
 
-    DBUG_ENTER ("TSIMakePragmaWLComp");
+    DBUG_ENTER ();
 
     dim = INFO_TSI_ARRAYDIM (arg_info);
     shape = INFO_TSI_ARRAYSHP (arg_info);
@@ -597,8 +598,7 @@ TSIMakePragmaWLComp (int tilesize, info *arg_info)
             /*
              *  No #pragma wlcomp required.
              */
-            DBUG_EXECUTE ("PRINT_TSI",
-                          fprintf (stderr, "*** No #pragma wlcomp required.\n"););
+            DBUG_EXECUTE (fprintf (stderr, "*** No #pragma wlcomp required.\n"));
 
             pragma = NULL;
         }
@@ -606,7 +606,7 @@ TSIMakePragmaWLComp (int tilesize, info *arg_info)
         /*
          *  No #pragma wlcomp allowed.
          */
-        DBUG_EXECUTE ("PRINT_TSI", fprintf (stderr, "*** No #pragma wlcomp allowed!\n"););
+        DBUG_EXECUTE (fprintf (stderr, "*** No #pragma wlcomp allowed!\n"));
 
         pragma = NULL;
     }
@@ -634,13 +634,13 @@ TSIMakePragmaWLComp (int tilesize, info *arg_info)
 node *
 TSIdoTileSizeInference (node *arg_node)
 {
-    DBUG_ENTER ("TSIdoTileSizeInference");
+    DBUG_ENTER ();
 
 #ifndef TSI_DEACTIVATED
 
     info *arg_info;
 
-    DBUG_PRINT ("TSI", ("TSIdoTileSizeInference"));
+    DBUG_PRINT_TAG ("TSI", "TSIdoTileSizeInference");
 
     arg_info = MakeInfo ();
 
@@ -653,7 +653,7 @@ TSIdoTileSizeInference (node *arg_node)
          *   If there's no target specified, it's not possibile to infere a
          *   tilesize, because the TSI have to know the cache parameters.
          */
-        DBUG_PRINT ("PRINT_TSI", ("No target specified. No TSI possible!"));
+        DBUG_PRINT ("No target specified. No TSI possible!");
     }
 
     arg_info = FreeInfo (arg_info);
@@ -682,9 +682,9 @@ TSIdoTileSizeInference (node *arg_node)
 node *
 TSIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TSIfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("TSI", ("TSIfundef"));
+    DBUG_PRINT_TAG ("TSI", "TSIfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -719,9 +719,9 @@ TSIfundef (node *arg_node, info *arg_info)
 node *
 TSIblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TSIblock");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("TSI", ("TSIblock"));
+    DBUG_PRINT_TAG ("TSI", "TSIblock");
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
@@ -751,11 +751,11 @@ TSInwith (node *arg_node, info *arg_info)
     node *pragma;
     int *cacheparam;
 
-    DBUG_ENTER ("TSInwith");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("TSI", ("TSInwith"));
+    DBUG_PRINT_TAG ("TSI", "TSInwith");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Nwith),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_Nwith,
                  "Tile size selection not initiated on N_Nwith level");
 
     cacheparam = (int *)Malloc (NUM_OF_CACHEPARAM * sizeof (int));
@@ -774,24 +774,22 @@ TSInwith (node *arg_node, info *arg_info)
         pragma = TSIMakePragmaWLComp (INFO_TSI_WLCOMP (arg_info), arg_info);
 
         if (NWITH_PRAGMA (arg_node) != NULL) {
-            DBUG_EXECUTE ("PRINT_TSI", printf ("*** Tiling, manually set:"););
-            DBUG_EXECUTE ("PRINT_TSI", Print (NWITH_PRAGMA (arg_node)););
-            DBUG_EXECUTE ("PRINT_TSI", printf ("*** Tiling, tsi-proposal:"););
+            DBUG_EXECUTE (printf ("*** Tiling, manually set:"));
+            DBUG_EXECUTE (Print (NWITH_PRAGMA (arg_node)));
+            DBUG_EXECUTE (printf ("*** Tiling, tsi-proposal:"));
             if (pragma != NULL) {
-                DBUG_EXECUTE ("PRINT_TSI", Print (pragma););
+                DBUG_EXECUTE (Print (pragma));
                 FreePragma (pragma, NULL);
             } else {
-                DBUG_EXECUTE ("PRINT_TSI",
-                              printf ("\n*** #pragma wlcomp already exists.\n\n"););
+                DBUG_EXECUTE (printf ("\n*** #pragma wlcomp already exists.\n\n"));
             }
         } else {
             NWITH_PRAGMA (arg_node) = pragma;
-            DBUG_EXECUTE ("PRINT_TSI", printf ("*** Tiling, tsi-proposal:"););
+            DBUG_EXECUTE (printf ("*** Tiling, tsi-proposal:"));
             if (pragma != NULL) {
-                DBUG_EXECUTE ("PRINT_TSI", Print (pragma););
+                DBUG_EXECUTE (Print (pragma));
             } else {
-                DBUG_EXECUTE ("PRINT_TSI",
-                              printf ("\n*** No tsi-proposal possible.\n\n"););
+                DBUG_EXECUTE (printf ("\n*** No tsi-proposal possible.\n\n"));
             }
         }
     }
@@ -817,11 +815,11 @@ TSIncode (node *arg_node, info *arg_info)
 {
     int *cacheparam;
 
-    DBUG_ENTER ("TSIncode");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("TSI", ("TSIncode"));
+    DBUG_PRINT_TAG ("TSI", "TSIncode");
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_Ncode),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_Ncode,
                  "Tile size selection not initiated on N_Ncode level");
 
     cacheparam = (int *)INFO_TSI_CACHEPARAM (arg_info);
@@ -834,7 +832,7 @@ TSIncode (node *arg_node, info *arg_info)
     INFO_TSI_ACCESSCNT (arg_info) = NCODE_WLAA_ACCESSCNT (arg_node);
     INFO_TSI_TILESHP (arg_info) = DupShpseg (INFO_TSI_ARRAYSHP (arg_info));
 
-    DBUG_ASSERT ((INFO_TSI_ARRAYSHP (arg_info) != NULL), ("Array without shape!"));
+    DBUG_ASSERT (INFO_TSI_ARRAYSHP (arg_info) != NULL, "Array without shape!");
 
     NCODE_CBLOCK (arg_node) = Trav (NCODE_CBLOCK (arg_node), arg_info);
 
@@ -860,3 +858,5 @@ TSIncode (node *arg_node, info *arg_info)
 }
 
 #endif /* TSI_DEACTIVATED */
+
+#undef DBUG_PREFIX

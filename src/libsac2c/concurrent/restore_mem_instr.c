@@ -20,7 +20,9 @@
 
 #include "restore_mem_instr.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "MTRMI"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -61,7 +63,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -77,7 +79,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -93,7 +95,7 @@ FreeInfo (info *info)
 node *
 MTRMImodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTRMImodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -109,10 +111,10 @@ MTRMImodule (node *arg_node, info *arg_info)
 node *
 MTRMIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTRMIfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("MTRMI", ("Entering function %s.", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Entering function %s.", FUNDEF_NAME (arg_node));
 
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -135,19 +137,19 @@ MTRMIblock (node *arg_node, info *arg_info)
 {
     bool restore;
 
-    DBUG_ENTER ("MTRMIblock");
+    DBUG_ENTER ();
 
     restore = INFO_RESTORE (arg_info);
     INFO_RESTORE (arg_info)
       = BLOCK_ISMTSEQUENTIALBRANCH (arg_node) || BLOCK_ISMTPARALLELBRANCH (arg_node);
 
-    DBUG_PRINT ("MTRMI", (">> switched to restore mode: %d", INFO_RESTORE (arg_info)));
+    DBUG_PRINT (">> switched to restore mode: %d", INFO_RESTORE (arg_info));
 
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
     INFO_RESTORE (arg_info) = restore;
 
-    DBUG_PRINT ("MTRMI", ("<< switched to restore mode: %d", INFO_RESTORE (arg_info)));
+    DBUG_PRINT ("<< switched to restore mode: %d", INFO_RESTORE (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -163,7 +165,7 @@ MTRMIassign (node *arg_node, info *arg_info)
 {
     node *alloc_assigns, *free_assigns;
 
-    DBUG_ENTER ("MTRMIassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -175,7 +177,7 @@ MTRMIassign (node *arg_node, info *arg_info)
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    DBUG_EXECUTE ("MTRMI", {
+    DBUG_EXECUTE ({
         int i = 0;
         node *tmp = alloc_assigns;
         if (tmp != NULL) {
@@ -183,11 +185,11 @@ MTRMIassign (node *arg_node, info *arg_info)
                 tmp = ASSIGN_NEXT (tmp);
                 i++;
             }
-            DBUG_PRINT ("MTRMI", ("Alloc instrs found: %d", i));
+            DBUG_PRINT ("Alloc instrs found: %d", i);
         }
     });
 
-    DBUG_EXECUTE ("MTRMI", {
+    DBUG_EXECUTE ({
         int i = 0;
         node *tmp = free_assigns;
         if (tmp != NULL) {
@@ -195,7 +197,7 @@ MTRMIassign (node *arg_node, info *arg_info)
                 tmp = ASSIGN_NEXT (tmp);
                 i++;
             }
-            DBUG_PRINT ("MTRMI", ("Free instrs found: %d", i));
+            DBUG_PRINT ("Free instrs found: %d", i);
         }
     });
 
@@ -214,7 +216,7 @@ MTRMIassign (node *arg_node, info *arg_info)
 node *
 MTRMIwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTRMIwith2");
+    DBUG_ENTER ();
 
     WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
@@ -240,11 +242,11 @@ MTRMIwith2 (node *arg_node, info *arg_info)
 node *
 MTRMIwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTRMIwithid");
+    DBUG_ENTER ();
 
     INFO_ALLOCNEEDED (arg_info) = TRUE;
 
-    DBUG_PRINT ("MTRMI", ("withids found"));
+    DBUG_PRINT ("withids found");
 
     if (WITHID_VECNEEDED (arg_node)) {
         WITHID_VEC (arg_node) = TRAVopt (WITHID_VEC (arg_node), arg_info);
@@ -269,10 +271,10 @@ MTRMIid (node *arg_node, info *arg_info)
 {
     node *dim, *shape, *alloc, *ids, *free, *avis;
 
-    DBUG_ENTER ("MTRMIid");
+    DBUG_ENTER ();
 
     if (INFO_ALLOCNEEDED (arg_info) && INFO_RESTORE (arg_info)) {
-        DBUG_PRINT ("MTRMI", ("Creating alloc/free for %s", ID_NAME (arg_node)));
+        DBUG_PRINT ("Creating alloc/free for %s", ID_NAME (arg_node));
 
         avis = ID_AVIS (arg_node);
 
@@ -320,7 +322,7 @@ MTRMIdoRestoreMemoryInstrs (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MTRMIdoRestoreMemoryInstrs");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
@@ -334,3 +336,5 @@ MTRMIdoRestoreMemoryInstrs (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

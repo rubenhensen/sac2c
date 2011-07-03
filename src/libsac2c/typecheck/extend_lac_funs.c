@@ -8,7 +8,9 @@
 
 #include "extend_lac_funs.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "DupTree.h"
 #include "str.h"
 #include "memory.h"
@@ -68,7 +70,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -81,7 +83,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -99,7 +101,7 @@ SearchPredicate (node *ap)
 {
     node *pred_avis, *formal_args, *act_args, *assign;
 
-    DBUG_ENTER ("SearchPredicate");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (AP_FUNDEF (ap)) == N_fundef,
                  "AP_FUNDEF does not point to a fundef node");
@@ -136,7 +138,7 @@ CreateTmpVar (char *name, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("CreateTmpVar");
+    DBUG_ENTER ();
 
     avis = TBmakeAvis (TRAVtmpVarName (name), TYmakeAUD (TYmakeSimpleType (T_unknown)));
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
@@ -153,7 +155,7 @@ CreateTmpVar (char *name, info *arg_info)
 static node *
 CreateLetAssign (node *avis, node *rhs, node *next)
 {
-    DBUG_ENTER ("CreateLetAssign");
+    DBUG_ENTER ();
 
     DBUG_RETURN (TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), rhs), next));
 }
@@ -174,7 +176,7 @@ CreateLacFunCallAssignments (node *ap, node *pred_avis, node *result_avis,
     node *exprs, *arg_avis, *new_arg_avis, *new_arg_expr, *loc_args;
     node *arg, *args = NULL, *act_args = NULL;
     node *fundef, *result_expr;
-    DBUG_ENTER ("CreateLacFunCallAssignments");
+    DBUG_ENTER ();
 
     /**
      * First, we compute all new_args:
@@ -218,8 +220,8 @@ CreateLacFunCallAssignments (node *ap, node *pred_avis, node *result_avis,
                                                                         NULL))));
                 fundef = DSdispatchFunCall (NSgetNamespace (global.preludename),
                                             "adjustLacFunParamsReshape", loc_args);
-                DBUG_ASSERTF (fundef != NULL, ("%s::adjustLacFunParamsReshape not found",
-                                               global.preludename));
+                DBUG_ASSERT (fundef != NULL, "%s::adjustLacFunParamsReshape not found",
+                             global.preludename);
 
                 assigns = CreateLetAssign (new_arg_avis, fundef, assigns);
             } else {
@@ -229,8 +231,8 @@ CreateLacFunCallAssignments (node *ap, node *pred_avis, node *result_avis,
                                               TBmakeExprs (TBmakeId (idx_avis), NULL)));
                 fundef = DSdispatchFunCall (NSgetNamespace (global.preludename),
                                             "adjustLacFunParams", loc_args);
-                DBUG_ASSERTF (fundef != NULL,
-                              ("%s::adjustLacFunParams not found", global.preludename));
+                DBUG_ASSERT (fundef != NULL, "%s::adjustLacFunParams not found",
+                             global.preludename);
 
                 assigns = CreateLetAssign (new_arg_avis, fundef, assigns);
             }
@@ -276,7 +278,7 @@ CreateWithLoop (node *ap, info *arg_info)
     node *default_avis, *default_expr_ass, *iv_avis, *code_avis, *code_expr;
     node *code_expr_ass;
 
-    DBUG_ENTER ("CreateWithLoop");
+    DBUG_ENTER ();
 
     pred_avis = SearchPredicate (ap);
 
@@ -360,7 +362,7 @@ ELFdoExtendLacFuns (node *arg_node)
 {
     info *info_node;
 
-    DBUG_ENTER ("EBTdoEliminateBottomTypes");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
                  "EBTdoEliminateBottomTypes can be called on N_module only!");
@@ -390,7 +392,7 @@ ELFdoExtendLacFuns (node *arg_node)
 node *
 ELFfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ELFfundef");
+    DBUG_ENTER ();
 
     if (!NSequals (FUNDEF_NS (arg_node), NSgetNamespace (global.preludename))) {
         if (FUNDEF_BODY (arg_node) != NULL) {
@@ -424,7 +426,7 @@ ELFfundef (node *arg_node, info *arg_info)
 node *
 ELFassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ELFassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -452,7 +454,7 @@ ELFap (node *arg_node, info *arg_info)
 {
     node *with;
 
-    DBUG_ENTER ("ELFap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
         with = CreateWithLoop (arg_node, arg_info);
@@ -464,3 +466,5 @@ ELFap (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

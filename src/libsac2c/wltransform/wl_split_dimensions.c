@@ -26,7 +26,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLSD"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -158,7 +161,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -194,7 +197,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     INFO_LUT (info) = LUTremoveLut (INFO_LUT (info));
 
@@ -225,7 +228,7 @@ FreeInfo (info *info)
 static info *
 InitialiseNipInfo (info *info)
 {
-    DBUG_ENTER ("InitialiseNipInfo");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (info != NULL, "Need an info to crate a nip info");
     DBUG_ASSERT (INFO_WITH2_LHS (info) != NULL, "Need a lhs to create a nip info");
@@ -249,7 +252,7 @@ InitialiseNipInfo (info *info)
 static info *
 ResetNipInfo (info *info)
 {
-    DBUG_ENTER ("ResetNipInfo");
+    DBUG_ENTER ();
 
     INFO_NIP_LHS (info) = NULL;
     INFO_NIP_RESULT (info) = FALSE;
@@ -279,21 +282,21 @@ WLSDdoWithLoopSplitDimensions (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("WLSDdoWithLoopSplitDimensions");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("WLSD", ("Starting to split with-loops by dimension."));
+    DBUG_PRINT ("Starting to split with-loops by dimension.");
 
     TRAVpush (TR_wlsd);
     do {
-        DBUG_PRINT ("WLSD", ("Running wlsd trav"));
+        DBUG_PRINT ("Running wlsd trav");
         INFO_TRANSFORMED_W2_TO_W3 (info) = FALSE;
         syntax_tree = TRAVdo (syntax_tree, info);
     } while (INFO_TRANSFORMED_W2_TO_W3 (info));
     TRAVpop ();
 
-    DBUG_PRINT ("WLSD", ("With-loop splitting complete."));
+    DBUG_PRINT ("With-loop splitting complete.");
 
     info = FreeInfo (info);
 
@@ -326,7 +329,7 @@ MakeIntegerVar (node **vardecs)
 {
     node *avis;
 
-    DBUG_ENTER ("MakeIntegerVar");
+    DBUG_ENTER ();
 
     avis
       = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
@@ -353,7 +356,7 @@ AssignValue (node *avis, node *rhs, node **assigns)
 {
     node *assign;
 
-    DBUG_ENTER ("AssignValue");
+    DBUG_ENTER ();
 
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), rhs), NULL);
     AVIS_SSAASSIGN (avis) = assign;
@@ -381,7 +384,7 @@ MakeIntegerConst (int rhs, node **assigns, node **vardecs)
 {
     node *avis;
 
-    DBUG_ENTER ("MakeIntegerConst");
+    DBUG_ENTER ();
 
     avis = TBmakeAvis (TRAVtmpVar (),
                        TYmakeAKV (TYmakeSimpleType (T_int), COmakeConstantFromInt (rhs)));
@@ -408,7 +411,7 @@ IsNum (node *scalar)
 {
     bool result;
 
-    DBUG_ENTER ("IsNum");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (scalar) == N_num) || (NODE_TYPE (scalar) == N_id)),
                  "IsNum called with non-id, non-num node");
@@ -437,7 +440,7 @@ GetNum (node *scalar)
 {
     int result;
 
-    DBUG_ENTER ("GetNum");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (IsNum (scalar), "IsNum called with non int-value node");
 
@@ -469,7 +472,7 @@ PushDim (info *arg_info)
 {
     node *zero_avis;
 
-    DBUG_ENTER ("PushDim");
+    DBUG_ENTER ();
 
     INFO_CURRENT_DIM (arg_info)++;
     if (INFO_FRAME_INDICES (arg_info) != NULL) {
@@ -502,9 +505,9 @@ PushDim (info *arg_info)
 static info *
 PopDim (info *arg_info)
 {
-    DBUG_ENTER ("PopDim");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((TCcountIds (INFO_INDICES (arg_info)) > INFO_DIM_FRAME (arg_info)),
+    DBUG_ASSERT (TCcountIds (INFO_INDICES (arg_info)) > INFO_DIM_FRAME (arg_info),
                  "Stack eroding into frame");
     node *index = INFO_INDICES (arg_info);
     INFO_INDICES (arg_info) = IDS_NEXT (INFO_INDICES (arg_info));
@@ -513,14 +516,14 @@ PopDim (info *arg_info)
     INFO_FRAME_INDICES (arg_info) = index;
 
     INFO_CURRENT_DIM (arg_info)--;
-    DBUG_ASSERT ((INFO_CURRENT_DIM (arg_info) >= 0), "Negative dim found");
+    DBUG_ASSERT (INFO_CURRENT_DIM (arg_info) >= 0, "Negative dim found");
     DBUG_RETURN (arg_info);
 }
 
 static info *
 FrameDim (info *arg_info)
 {
-    DBUG_ENTER ("FrameDim");
+    DBUG_ENTER ();
 
     if (INFO_DIM_FRAME (arg_info) < 0) {
         INFO_DIM_FRAME (arg_info) = INFO_CURRENT_DIM (arg_info);
@@ -531,10 +534,10 @@ FrameDim (info *arg_info)
 static info *
 DeFrameDim (info *arg_info)
 {
-    DBUG_ENTER ("DeFrameDim");
+    DBUG_ENTER ();
 
     if (INFO_DIM_FRAME (arg_info) >= 0) {
-        DBUG_ASSERT ((INFO_DIM_FRAME (arg_info) <= INFO_CURRENT_DIM (arg_info)),
+        DBUG_ASSERT (INFO_DIM_FRAME (arg_info) <= INFO_CURRENT_DIM (arg_info),
                      "Stack frame corrupted");
         while (INFO_CURRENT_DIM (arg_info) > INFO_DIM_FRAME (arg_info)) {
             arg_info = PopDim (arg_info);
@@ -562,7 +565,7 @@ NeedsFitting (node *lower, node *upper, node *step)
 {
     bool result;
 
-    DBUG_ENTER ("NeedsFitting");
+    DBUG_ENTER ();
 
     result = ((!IsNum (step) || (GetNum (step) != 1))
               && (!(IsNum (lower) && IsNum (upper) && IsNum (step))
@@ -590,7 +593,7 @@ ComputeMax (node *nodea, node *nodeb, node **assigns, info *arg_info)
 {
     node *max;
 
-    DBUG_ENTER ("ComputeMax");
+    DBUG_ENTER ();
 
     if (IsNum (nodea) && IsNum (nodeb)) {
         /*
@@ -637,7 +640,7 @@ ComputeMin (node *nodea, node *nodeb, node **assigns, info *arg_info)
 {
     node *min;
 
-    DBUG_ENTER ("ComputeMin");
+    DBUG_ENTER ();
 
     if (IsNum (nodea) && IsNum (nodeb)) {
         /*
@@ -691,7 +694,7 @@ ComputeNewBounds (node *upper, node *lower, node *step, node **nupper, node **as
     node *newsize;
     node *length;
 
-    DBUG_ENTER ("NewBounds");
+    DBUG_ENTER ();
 
     if (IsNum (upper) && IsNum (lower)) {
         /*
@@ -780,7 +783,7 @@ node *ComputeSize( node *lower, node *upper, node **assigns, info *arg_info)
 {
   node *size;
 
-  DBUG_ENTER("ComputeSize");
+  DBUG_ENTER ();
 
   if (IsNum( upper) && IsNum( lower)) {
     /*
@@ -788,7 +791,7 @@ node *ComputeSize( node *lower, node *upper, node **assigns, info *arg_info)
      */
     size = TBmakeNum( GetNum( upper) - GetNum( lower));
 
-    DBUG_ASSERT( (NUM_VAL( size) >= 0), "negative size found");
+    DBUG_ASSERT (NUM_VAL( size) >= 0, "negative size found");
   } else {
     /*
      * we have to compute the length of the range at runtime
@@ -804,7 +807,7 @@ node *ComputeSize( node *lower, node *upper, node **assigns, info *arg_info)
     size = TBmakeId( savis);
   }
 
-  DBUG_RETURN( size);
+  DBUG_RETURN (size);
 }
 #endif
 
@@ -815,7 +818,7 @@ static node *
 MakeSel (int n, node *vec, info *arg_info)
 {
     node *avis, *assign;
-    DBUG_ENTER ("MakeSel");
+    DBUG_ENTER ();
 
     avis = TBmakeAvis (TRAVtmpVar (),
                        TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
@@ -848,10 +851,9 @@ static
 node *MakeModarrayShape( node *array, info *arg_info)
 {
   node *shapeAvis;
-  DBUG_ENTER( "MakeModarrayShape");
+  DBUG_ENTER ();
 
-  DBUG_ASSERT( ( NODE_TYPE( array) == N_id),
-               "ID expected");
+  DBUG_ASSERT ( NODE_TYPE( array) == N_id, "ID expected");
   
   shapeAvis = 
     TBmakeAvis( TRAVtmpVar(), 
@@ -871,7 +873,7 @@ node *MakeModarrayShape( node *array, info *arg_info)
                   INFO_PREASSIGNS( arg_info));
   AVIS_SSAASSIGN( shapeAvis) = INFO_PREASSIGNS( arg_info);
 
-  DBUG_RETURN( shapeAvis);
+  DBUG_RETURN (shapeAvis);
 }
 #endif
 /** <!-- ****************************************************************** -->
@@ -897,7 +899,7 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
     node *array = NULL;
     pattern *pat;
 
-    DBUG_ENTER ("ATravCNWgenarray");
+    DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
 
@@ -927,7 +929,7 @@ ATravCNWgenarray (node *arg_node, info *arg_info)
     }
     pat = PMfree (pat);
 
-    DBUG_ASSERT ((shape != NULL), "no shape info for genarray constructed");
+    DBUG_ASSERT (shape != NULL, "no shape info for genarray constructed");
 
     new_node = TBmakeGenarray (shape, DUPdoDupNode (GENARRAY_DEFAULT (arg_node)));
     GENARRAY_DEFSHAPEEXPR (new_node) = sexpr;
@@ -960,7 +962,7 @@ MakeZero (ntype *type, info *arg_info)
     node *avis;
     simpletype simple;
 
-    DBUG_ENTER ("MakeZero");
+    DBUG_ENTER ();
 
     simple = TYgetSimpleType (TYgetScalar (type));
     type
@@ -1000,9 +1002,9 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
     node *zero = NULL;
     int cnt;
 
-    DBUG_ENTER ("ATravCNWmodarray");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (MODARRAY_ARRAY (arg_node)) == N_id),
+    DBUG_ASSERT (NODE_TYPE (MODARRAY_ARRAY (arg_node)) == N_id,
                  "Unexpected MODARRAY_ARRAY node");
 
     atype = AVIS_TYPE (ID_AVIS (MODARRAY_ARRAY (arg_node)));
@@ -1029,7 +1031,7 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
         sexpr = SHshape2Exprs (TYgetShape (atype));
 
         for (cnt = 0; cnt <= INFO_CURRENT_DIM (arg_info); cnt++) {
-            DBUG_ASSERT ((sexpr != NULL), "Ooops, ran out of shape elements!");
+            DBUG_ASSERT (sexpr != NULL, "Ooops, ran out of shape elements!");
             sexpr = FREEdoFreeNode (sexpr);
         }
 
@@ -1060,7 +1062,7 @@ ATravCNWmodarray (node *arg_node, info *arg_info)
         sexpr = TCmakeIntVector (sexpr);
     }
 
-    DBUG_ASSERT ((shape != NULL), "no shape info for modarray constructed");
+    DBUG_ASSERT (shape != NULL, "no shape info for modarray constructed");
 
     shape = TCmakeIntVector (shape);
 
@@ -1092,7 +1094,7 @@ static node *
 ATravCNWfold (node *arg_node, info *arg_info)
 {
     node *res;
-    DBUG_ENTER ("ATravCNWfols");
+    DBUG_ENTER ();
 
     res = DUPdoDupNode (arg_node);
 
@@ -1122,7 +1124,7 @@ ComputeNewWithops (node *withops, info *arg_info)
          {N_break, &TRAVerror},           {0, NULL}};
     node *ops;
 
-    DBUG_ENTER ("ComputeNewWithops");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (cnw_trav, &TRAVerror);
 
@@ -1155,7 +1157,7 @@ ATravCNLgenOrModArray (node *arg_node, info *arg_info)
     node *avis;
     node *mylhs;
 
-    DBUG_ENTER ("ATravCNLgenOrModArray");
+    DBUG_ENTER ();
 
     mylhs = INFO_WITH2_LHS (arg_info);
 
@@ -1169,7 +1171,7 @@ ATravCNLgenOrModArray (node *arg_node, info *arg_info)
 
     old_type = AVIS_TYPE (IDS_AVIS (mylhs));
 
-    DBUG_ASSERT ((!TYisAKV (old_type)), "lhs with known value?");
+    DBUG_ASSERT (!TYisAKV (old_type), "lhs with known value?");
 
 #if 0
   /*
@@ -1245,7 +1247,7 @@ static node *
 ATravCNLfold (node *arg_node, info *arg_info)
 {
     node *mylhs, *next, *avis;
-    DBUG_ENTER ("ATravCNLfold");
+    DBUG_ENTER ();
     mylhs = INFO_WITH2_LHS (arg_info);
 
     avis = TBmakeAvis (TRAVtmpVar (),
@@ -1288,7 +1290,7 @@ ComputeNewLhs (node *withops, info *arg_info)
                               {0, NULL}};
     node *lhs;
 
-    DBUG_ENTER ("ComputeNewLhs");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (cnw_trav, &TRAVerror);
 
@@ -1321,7 +1323,7 @@ ComputeOneLengthVector (node *aelems, node *inner, info *arg_info)
     node *lavis;
     node *len;
 
-    DBUG_ENTER ("ComputeOneLengthVector");
+    DBUG_ENTER ();
 
     if (EXPRS_NEXT (aelems) != NULL) {
         exprs = ComputeOneLengthVector (EXPRS_NEXT (aelems), inner, arg_info);
@@ -1349,7 +1351,7 @@ ComputeOneLengthVector (node *aelems, node *inner, info *arg_info)
 static node *
 MakeSelExpr (int dim, node *array, info *arg_info, node *next)
 {
-    DBUG_ENTER ("MakeSel");
+    DBUG_ENTER ();
 
     next = TBmakeExprs (TBmakeId (MakeSel (dim, array, arg_info)), next);
 
@@ -1361,9 +1363,9 @@ MakeModarrayExprs (int dropDims, node *array, info *arg_info)
 {
     node *exprs = NULL;
     int i;
-    DBUG_ENTER ("MakeModarrayExprs");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (array) == N_avis), "Expected avis");
+    DBUG_ASSERT (NODE_TYPE (array) == N_avis, "Expected avis");
 
     for (i = (dropDims - 1); i >= 0; i--) {
         exprs = MakeSelExpr (i, array, arg_info, exprs);
@@ -1377,7 +1379,7 @@ ModarrayInnerAccu (int skip, node *array, info *arg_info)
 {
     int i, length;
     node *accu = NULL;
-    DBUG_ENTER ("ModarrayInnerAccu");
+    DBUG_ENTER ();
 
     length = TYgetDim (AVIS_TYPE (array));
 
@@ -1410,7 +1412,7 @@ static node *
 ModarrayInner (int dims, node *array, info *arg_info)
 {
     node *prod, *exprs;
-    DBUG_ENTER ("ModarrayInner");
+    DBUG_ENTER ();
 
     prod = ModarrayInnerAccu (dims, array, arg_info);
     exprs = TBmakeId (prod);
@@ -1438,7 +1440,7 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
     bool match;
     pattern *pat;
 
-    DBUG_ENTER ("ATravCDLgenarray");
+    DBUG_ENTER ();
 
     lhs = INFO_WITH2_LHS (arg_info);
     INFO_WITH2_LHS (arg_info) = IDS_NEXT (INFO_WITH2_LHS (arg_info));
@@ -1465,7 +1467,7 @@ ATravCDLgenarray (node *arg_node, info *arg_info)
         inner = TBmakeNum (SHgetUnrLen (shape));
         shape = SHfreeShape (shape);
     } else if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id),
+        DBUG_ASSERT (NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id,
                      "default value of genarray is not an id!");
 
         if (TUisScalar (AVIS_TYPE (ID_AVIS (GENARRAY_DEFAULT (arg_node))))) {
@@ -1518,7 +1520,7 @@ ATravCDLmodarray (node *arg_node, info *arg_info)
     shape *shape;
     int outerdims;
 
-    DBUG_ENTER ("ATravCDLmodarray");
+    DBUG_ENTER ();
 
     lhs = INFO_WITH2_LHS (arg_info);
     INFO_WITH2_LHS (arg_info) = IDS_NEXT (INFO_WITH2_LHS (arg_info));
@@ -1571,7 +1573,7 @@ static node *
 ATravCDLfold (node *arg_node, info *arg_info)
 {
     node *set, *lhs;
-    DBUG_ENTER ("ATravCDLfold");
+    DBUG_ENTER ();
 
     lhs = INFO_WITH2_LHS (arg_info);
 
@@ -1612,7 +1614,7 @@ ComputeLengths (node *withops, info *arg_info)
                               {N_fold, &ATravCDLfold},
                               {0, NULL}};
 
-    DBUG_ENTER ("ComputeLengths");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (len_trav, &TRAVerror);
     result = TRAVopt (withops, arg_info);
@@ -1641,7 +1643,7 @@ InitOffsets (node *lengths, info *arg_info)
     node *zeroavis;
     node *result = NULL;
 
-    DBUG_ENTER ("InitOffsets");
+    DBUG_ENTER ();
 
     if (lengths != NULL) {
         zeroavis
@@ -1693,7 +1695,7 @@ UpdateOffsets (node *index, node *offsets, int dim, node *chunksize, node *lengt
     node *new_offsets;
     node *len;
 
-    DBUG_ENTER ("UpdateOffsets");
+    DBUG_ENTER ();
 
     if (lengths != NULL) {
         new_offsets = UpdateOffsets (index, IDS_NEXT (offsets), dim, chunksize,
@@ -1701,7 +1703,7 @@ UpdateOffsets (node *index, node *offsets, int dim, node *chunksize, node *lengt
 
         len = TCgetNthExprsExpr (dim, SET_MEMBER (lengths));
 
-        DBUG_ASSERT ((len != NULL), "No length found");
+        DBUG_ASSERT (len != NULL, "No length found");
 
         if (IsNum (len) && (GetNum (len) == 1)) {
             /*
@@ -1745,7 +1747,7 @@ UpdateOffsets (node *index, node *offsets, int dim, node *chunksize, node *lengt
 static lut_t *
 InsertIndicesIntoLut (lut_t *lut, node **w2ind, node *w3ind)
 {
-    DBUG_ENTER ("InsertIndicesIntoLut");
+    DBUG_ENTER ();
 
     if (w3ind != NULL) {
         lut = InsertIndicesIntoLut (lut, w2ind, IDS_NEXT (w3ind));
@@ -1773,7 +1775,7 @@ CreateIndexVectorExprs (node *indices)
 {
     node *result = NULL;
 
-    DBUG_ENTER ("CreateIndexVectorExprs");
+    DBUG_ENTER ();
 
     if (indices != NULL) {
         if (IDS_NEXT (indices) != NULL) {
@@ -1814,13 +1816,13 @@ PrepareCopyLut (lut_t *lut, node *offsets, node **assigns, info *arg_info)
     node *w2ind;
     node *ivavis, *ivarray, *ivelems, *ivassign;
 
-    DBUG_ENTER ("PrepareCopyLut");
+    DBUG_ENTER ();
 
     /* insert offsets */
     w2off = INFO_WITH2_OFFSETS (arg_info);
     w3off = offsets;
     while (w3off != NULL) {
-        DBUG_ASSERT ((w2off != NULL), "less with2 offsets than with3 offsets");
+        DBUG_ASSERT (w2off != NULL, "less with2 offsets than with3 offsets");
 
         lut = LUTinsertIntoLutP (lut, IDS_AVIS (w2off), IDS_AVIS (w3off));
 
@@ -1866,10 +1868,10 @@ CreateFoldAccumulatorsAvis (node *assign, node *lhs, node *ops, info *arg_info)
 {
     node *newLhs = NULL;
     node *avis = NULL;
-    DBUG_ENTER ("CreateFoldAccumulatorsAvis");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((lhs != NULL), "No left hand side (arg == NULL)");
-    DBUG_ASSERT ((ops != NULL), "No withops (arg == NULL)");
+    DBUG_ASSERT (lhs != NULL, "No left hand side (arg == NULL)");
+    DBUG_ASSERT (ops != NULL, "No withops (arg == NULL)");
 
     if (NODE_TYPE (ops) == N_fold) {
         avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (IDS_AVIS (lhs))));
@@ -1914,7 +1916,7 @@ CreateFoldAccumulators (node *index, node *lhs, node *ops, info *arg_info)
 {
     node *accuLhs;
     node *assign = NULL;
-    DBUG_ENTER ("CreateFoldAccumulators");
+    DBUG_ENTER ();
 
     /* Create assign to be used in aviss ssaassign*/
     assign = TBmakeAssign (NULL, NULL);
@@ -1938,7 +1940,7 @@ static bool
 AnyFold (node *ops)
 {
     bool ret = FALSE;
-    DBUG_ENTER ("AnyFold");
+    DBUG_ENTER ();
 
     if (WITHOP_NEXT (ops) != NULL) {
         ret = AnyFold (WITHOP_NEXT (ops));
@@ -1982,7 +1984,7 @@ MakeRangeBody (node *outerindex, node *contents, node *size, int newdim, node **
     node *iv_avis, *old_iv_avis;
     node *iv_assigns = NULL;
 
-    DBUG_ENTER ("MakeRangeBody");
+    DBUG_ENTER ();
     INFO_WITH3_NESTING (arg_info)++;
     /*
      * compute current offset
@@ -1995,7 +1997,7 @@ MakeRangeBody (node *outerindex, node *contents, node *size, int newdim, node **
     /*
      * compute current index vector
      */
-    DBUG_ASSERT ((INFO_INDICES (arg_info) != NULL), "no wl indices found");
+    DBUG_ASSERT (INFO_INDICES (arg_info) != NULL, "no wl indices found");
 
     iv_avis = MakeIntegerVar (&INFO_VARDECS (arg_info));
     iv_avis
@@ -2099,7 +2101,7 @@ ProcessStride (int level, int dim, node *lower, node *upper, node *step, node *c
 {
     node *index, *body, *results, *offsets;
     node *block_chunk = NULL;
-    DBUG_ENTER ("ProcessStride");
+    DBUG_ENTER ();
 
     if (INFO_BLOCK_CHUNK (arg_info) != NULL) {
         block_chunk = SET_MEMBER (INFO_BLOCK_CHUNK (arg_info));
@@ -2185,7 +2187,7 @@ ProcessBlock (int level, int dim, node *lower, node *upper, node *step, node *co
     node *index, *body, *results, *offsets;
     int frame;
 
-    DBUG_ENTER ("ProcessBlock");
+    DBUG_ENTER ();
 
     /*
      * first process all the remaining blocks on this level
@@ -2252,7 +2254,7 @@ ProcessBlock (int level, int dim, node *lower, node *upper, node *step, node *co
 static node *
 Accu2DimIndexPrf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("Accu2DimIndexPrf");
+    DBUG_ENTER ();
 
     if (PRF_PRF (arg_node) == F_accu) {
         PRF_ARGS (arg_node) = FREEdoFreeTree (PRF_ARGS (arg_node));
@@ -2280,7 +2282,7 @@ Accu2DimIndex (node *assigns, info *arg_info)
                           {N_with2, &TRAVnone},
                           {N_with3, &TRAVnone},
                           {0, NULL}};
-    DBUG_ENTER ("Accu2DimIndex");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);
 
@@ -2317,7 +2319,7 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
 {
     node *index, *max, *body, *res, *result, *rangeoffsets, *resultindices;
 
-    DBUG_ENTER ("ProcessGrid");
+    DBUG_ENTER ();
 
     /*
      * first process all remaining grids on this level
@@ -2345,7 +2347,7 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
         node *iv_avis, *old_iv_avis, *final_offsets;
         lut_t *lut;
 
-        DBUG_ASSERT ((nextdim == NULL), "code and nextdim?");
+        DBUG_ASSERT (nextdim == NULL, "code and nextdim?");
 
         /*
          * compute current offset
@@ -2357,7 +2359,7 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
         /*
          * compute current index vector
          */
-        DBUG_ASSERT ((INFO_INDICES (arg_info) != NULL), "no wl indices found");
+        DBUG_ASSERT (INFO_INDICES (arg_info) != NULL, "no wl indices found");
 
         iv_avis = MakeIntegerVar (&INFO_VARDECS (arg_info));
         iv_avis = AssignValue (iv_avis,
@@ -2375,7 +2377,7 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
                 body
                   = DUPdoDupTreeLutSsa (CODE_CBLOCK (*code), lut, INFO_FUNDEF (arg_info));
             } else {
-                DBUG_ASSERT ((CODE_USED (*code) == 1), "used counter out of sync!");
+                DBUG_ASSERT (CODE_USED (*code) == 1, "used counter out of sync!");
 
                 body = DUPdoDupTreeLut (CODE_CBLOCK (*code), lut);
             }
@@ -2439,7 +2441,7 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
 static node *
 ATravNIfail (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravNIfail");
+    DBUG_ENTER ();
 
     INFO_NIP_RESULT (arg_info) = TRUE;
 
@@ -2449,7 +2451,7 @@ ATravNIfail (node *arg_node, info *arg_info)
 static node *
 ATravNIgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravNIgenarray");
+    DBUG_ENTER ();
 
     INFO_NIP_LHS (arg_info) = IDS_NEXT (INFO_NIP_LHS (arg_info));
     GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
@@ -2460,7 +2462,7 @@ ATravNIgenarray (node *arg_node, info *arg_info)
 static node *
 ATravNImodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravNImodarray");
+    DBUG_ENTER ();
 
 #ifdef MUTC_MODARRAY
     if (TUshapeKnown (AVIS_TYPE (IDS_AVIS (INFO_NIP_LHS (arg_info))))) {
@@ -2479,7 +2481,7 @@ ATravNImodarray (node *arg_node, info *arg_info)
 static node *
 ATravNIap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravNIap");
+    DBUG_ENTER ();
 
 #if !FUNS_IN_WL_SUPPORTED
     if (!FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
@@ -2498,7 +2500,7 @@ ATravNIap (node *arg_node, info *arg_info)
 static node *
 ATravNIarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravNIarg");
+    DBUG_ENTER ();
 
     INFO_NIP_ARG (arg_info) = INFO_NIP_ARG (arg_info)
                               || (!TYisScalar (AVIS_TYPE (ARG_AVIS (arg_node)))
@@ -2512,7 +2514,7 @@ ATravNIarg (node *arg_node, info *arg_info)
 static node *
 ATravNIfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravNIfold");
+    DBUG_ENTER ();
 
 #if 0
   if ( TYisAKS( AVIS_TYPE( IDS_AVIS( INFO_NIP_LHS( arg_info)))) ||
@@ -2541,7 +2543,7 @@ NotImplemented (node *with, info *arg_info)
          {N_propagate, &ATravNIfail},    {0, NULL}};
     anontrav_t nap_trav[3] = {{N_ap, &ATravNIap}, {N_arg, &ATravNIarg}, {0, NULL}};
 
-    DBUG_ENTER ("NotImplemented");
+    DBUG_ENTER ();
 
     info = InitialiseNipInfo (arg_info);
 
@@ -2591,9 +2593,9 @@ NotImplemented (node *with, info *arg_info)
 node *
 WLSDfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSDfundef");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_VARDECS (arg_info) == NULL), "leftover vardecs found.");
+    DBUG_ASSERT (INFO_VARDECS (arg_info) == NULL, "leftover vardecs found.");
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -2623,14 +2625,14 @@ WLSDfundef (node *arg_node, info *arg_info)
 node *
 WLSDassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSDassign");
+    DBUG_ENTER ();
 
     /*
      * bottom-up traversal to ease inserting pre-assigns
      */
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    DBUG_ASSERT ((INFO_PREASSIGNS (arg_info) == NULL), "left-over pre-assigns found.");
+    DBUG_ASSERT (INFO_PREASSIGNS (arg_info) == NULL, "left-over pre-assigns found.");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -2652,7 +2654,7 @@ WLSDassign (node *arg_node, info *arg_info)
 node *
 WLSDlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSDlet");
+    DBUG_ENTER ();
 
     INFO_WITH2_LHS (arg_info) = LET_IDS (arg_node);
 
@@ -2673,7 +2675,7 @@ WLSDblock (node *arg_node, info *arg_info)
 {
     node *outerlhs, *outerpreassigns;
 
-    DBUG_ENTER ("WLSDblock");
+    DBUG_ENTER ();
 
     outerlhs = INFO_WITH2_LHS (arg_info);
     outerpreassigns = INFO_PREASSIGNS (arg_info);
@@ -2699,7 +2701,7 @@ WLSDwith (node *arg_node, info *arg_info)
 {
     bool old_incudawl;
 
-    DBUG_ENTER ("WLSDwith");
+    DBUG_ENTER ();
 
     old_incudawl = INFO_INCUDAWL (arg_info);
     INFO_INCUDAWL (arg_info) = WITH_CUDARIZABLE (arg_node);
@@ -2726,7 +2728,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
     node *ranges, *withops;
     node *iv_avis;
 
-    DBUG_ENTER ("WLSDwith2");
+    DBUG_ENTER ();
 
     if (NotImplemented (arg_node, arg_info)) {
         CTInote ("Cannot transform with-loop due to unsupported operation");
@@ -2804,8 +2806,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
         INFO_WITH2_ISCLS (arg_info) = NULL;
         INFO_WITH2_OFFSETS (arg_info) = NULL;
 
-        DBUG_ASSERT ((INFO_CURRENT_DIM (arg_info) == 0),
-                     "dimension counter out of sync.");
+        DBUG_ASSERT (INFO_CURRENT_DIM (arg_info) == 0, "dimension counter out of sync.");
     }
 
     DBUG_RETURN (arg_node);
@@ -2822,7 +2823,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
 node *
 WLSDwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLSDwithid");
+    DBUG_ENTER ();
 
     INFO_WITH2_IVECT (arg_info) = WITHID_VEC (arg_node);
     INFO_WITH2_ISCLS (arg_info) = WITHID_IDS (arg_node);
@@ -2843,7 +2844,7 @@ WLSDwlseg (node *arg_node, info *arg_info)
 {
     node *ranges;
 
-    DBUG_ENTER ("WLSDwlseg");
+    DBUG_ENTER ();
 
     /*
      * A segment itself is just a wrapper around the strides/grids. Therefore,
@@ -2869,7 +2870,7 @@ WLSDwlstride (node *arg_node, info *arg_info)
 {
     node *result, *next = NULL;
 
-    DBUG_ENTER ("WLSDwlstride");
+    DBUG_ENTER ();
 
     arg_info = DeFrameDim (arg_info);
 
@@ -2898,7 +2899,7 @@ WLSDwlblock (node *arg_node, info *arg_info)
     node *result, *next = NULL;
     node *contents = NULL;
 
-    DBUG_ENTER ("WLSDwlblock");
+    DBUG_ENTER ();
 
     arg_info = FrameDim (arg_info);
 
@@ -2931,7 +2932,7 @@ WLSDwlgrid (node *arg_node, info *arg_info)
 {
     node *result;
 
-    DBUG_ENTER ("WLSDwlgrid");
+    DBUG_ENTER ();
 
     result = TRAVopt (WLGRID_NEXT (arg_node), arg_info);
 
@@ -2952,3 +2953,5 @@ WLSDwlgrid (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- With-loop Split Dimensions -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

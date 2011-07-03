@@ -21,7 +21,9 @@
  *****************************************************************************/
 #include "tag_fp_fundefs.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "TFF"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
@@ -49,7 +51,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -61,7 +63,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -89,8 +91,8 @@ node *
 TFFdoTagFPFundefs (node *argnode)
 {
     info *info;
-    DBUG_ENTER ("TFFdoTagFPFundefs");
-    DBUG_PRINT ("TFF", ("Tagging FP Fundef nodes"));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Tagging FP Fundef nodes");
 
     info = MakeInfo ();
 
@@ -132,11 +134,11 @@ TFFdoTagFPFundefs (node *argnode)
 node *
 TFFfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TFFfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("TFF", ("traversing body of (%s) %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                        FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("traversing body of (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
 
     INFO_SPAWNFOUND (arg_info) = FALSE;
 
@@ -165,8 +167,8 @@ TFFfundef (node *arg_node, info *arg_info)
 node *
 TFFap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TFFap");
-    DBUG_PRINT ("TFF", ("Traversing Ap node"));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Traversing Ap node");
 
     INFO_SPAWNFOUND (arg_info) = INFO_SPAWNFOUND (arg_info) || AP_ISSPAWNED (arg_node);
 
@@ -180,3 +182,5 @@ TFFap (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Tag Fundef Nodes -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

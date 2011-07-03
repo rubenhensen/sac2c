@@ -5,7 +5,10 @@
 #include "matrix.h"
 
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "math_utils.h"
 #include "str_buffer.h"
 #include "tree_basic.h"
@@ -32,7 +35,7 @@ MatrixMulAndAddRows (Matrix m, int ixrdest, int ixrsrc, int mplr)
     int ix;
     int *drow, *srow;
 
-    DBUG_ENTER ("MatrixMulAndAddRows");
+    DBUG_ENTER ();
 
     drow = m->mtx[ixrdest];
     srow = m->mtx[ixrsrc];
@@ -40,7 +43,7 @@ MatrixMulAndAddRows (Matrix m, int ixrdest, int ixrsrc, int mplr)
         drow[ix] += mplr * srow[ix];
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*******************************************************************************
@@ -58,7 +61,7 @@ MatrixSwapRows (Matrix m, int rix1, int rix2)
     int *r1, *r2, temp;
     int ix;
 
-    DBUG_ENTER ("MatrixSwapRows");
+    DBUG_ENTER ();
 
     if (rix1 == rix2)
         return;
@@ -70,7 +73,7 @@ MatrixSwapRows (Matrix m, int rix1, int rix2)
         r2[ix] = temp;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*******************************************************************************
@@ -89,7 +92,7 @@ MatrixNormalizeRow (Matrix m, int rix, int lead)
     int *drow;
     int lv;
 
-    DBUG_ENTER ("MatrixNormalizeRow");
+    DBUG_ENTER ();
 
     drow = m->mtx[rix];
     lv = drow[lead];
@@ -97,7 +100,7 @@ MatrixNormalizeRow (Matrix m, int rix, int lead)
         drow[ix] /= lv;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*******************************************************************************
@@ -116,7 +119,7 @@ NumOfZeroRows (Matrix m)
     int i, j, count = 0;
     int nzr;
 
-    DBUG_ENTER ("NumOfZeroRows");
+    DBUG_ENTER ();
 
     rows = m->dim_y;
     cols = m->dim_x;
@@ -151,7 +154,7 @@ NewMatrix (int dim_x, int dim_y)
     int n, i, j;
     Matrix m;
 
-    DBUG_ENTER ("NewMatrix");
+    DBUG_ENTER ();
 
     m = malloc (sizeof (sMatrix));
     n = dim_x * dim_y;
@@ -186,7 +189,7 @@ DupMatrix (Matrix m)
     int n, i, j;
     Matrix new_m;
 
-    DBUG_ENTER ("DupMatrix");
+    DBUG_ENTER ();
 
     new_m = malloc (sizeof (sMatrix));
     n = m->dim_x * m->dim_y;
@@ -218,13 +221,13 @@ DupMatrix (Matrix m)
 void
 FreeMatrix (Matrix m)
 {
-    DBUG_ENTER ("FreeMatrix");
+    DBUG_ENTER ();
 
     free (m->m_stor);
     free (m->mtx);
     free (m);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*******************************************************************************
@@ -239,11 +242,11 @@ FreeMatrix (Matrix m)
 void
 MatrixSetEntry (Matrix m, int x, int y, int elem)
 {
-    DBUG_ENTER ("MatrixSetEntry");
+    DBUG_ENTER ();
 
     m->mtx[y][x] = elem;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*******************************************************************************
@@ -260,7 +263,7 @@ MatrixGetEntry (Matrix m, int x, int y)
 {
     int elem;
 
-    DBUG_ENTER ("MatrixGetEntry");
+    DBUG_ENTER ();
 
     elem = m->mtx[y][x];
 
@@ -284,7 +287,7 @@ MatrixToReducedREForm (Matrix m)
     int lv;
     int rowCount = m->dim_y;
 
-    DBUG_ENTER ("MatrixToReducedREForm");
+    DBUG_ENTER ();
 
     lead = 0;
     for (rix = 0; rix < rowCount; rix++) {
@@ -311,7 +314,7 @@ MatrixToReducedREForm (Matrix m)
         lead++;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*******************************************************************************
@@ -329,7 +332,7 @@ MatrixRank (Matrix m)
     Matrix tmp;
     int rank;
 
-    DBUG_ENTER ("MatrixRank");
+    DBUG_ENTER ();
 
     tmp = DupMatrix (m);
 
@@ -357,7 +360,7 @@ MatrixDisplay (Matrix m, FILE *file)
     int iy, ix;
     const char *sc;
 
-    DBUG_ENTER ("MatrixDisplay");
+    DBUG_ENTER ();
 
     for (iy = 0; iy < m->dim_y; iy++) {
         fprintf (file, "   ");
@@ -375,5 +378,7 @@ MatrixDisplay (Matrix m, FILE *file)
     }
     // fprintf( file, "\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

@@ -25,7 +25,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "FRC"
+#include "debug.h"
+
 #include "print.h"
 #include "DataFlowMask.h"
 #include "str.h"
@@ -57,7 +60,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -73,7 +76,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -107,9 +110,9 @@ FRCdoFilterReuseCandidates (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("FRCdoFilterReuseCandidates");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("FRC", ("Starting to filter reuse candidates..."));
+    DBUG_PRINT ("Starting to filter reuse candidates...");
 
     info = MakeInfo ();
 
@@ -119,7 +122,7 @@ FRCdoFilterReuseCandidates (node *syntax_tree)
 
     info = FreeInfo (info);
 
-    DBUG_PRINT ("FRC", ("Filtering of reuse candidates complete."));
+    DBUG_PRINT ("Filtering of reuse candidates complete.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -145,7 +148,7 @@ FRCdoFilterReuseCandidates (node *syntax_tree)
 static node *
 FilterTrav (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FilterTrav");
+    DBUG_ENTER ();
 
     if (EXPRS_NEXT (arg_node) != NULL) {
         EXPRS_NEXT (arg_node) = FilterTrav (EXPRS_NEXT (arg_node), arg_info);
@@ -153,8 +156,8 @@ FilterTrav (node *arg_node, info *arg_info)
 
     if (DFMtestMaskEntry (INFO_USEMASK (arg_info), NULL,
                           ID_AVIS (EXPRS_EXPR (arg_node)))) {
-        DBUG_PRINT ("FRC", ("Invalid reuse candidate removed: %s",
-                            ID_NAME (EXPRS_EXPR (arg_node))));
+        DBUG_PRINT ("Invalid reuse candidate removed: %s",
+                    ID_NAME (EXPRS_EXPR (arg_node)));
         arg_node = FREEdoFreeNode (arg_node);
     } else {
         EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
@@ -175,11 +178,11 @@ FilterRCs (node *arg_node, info *arg_info)
 {
     node *alloc;
 
-    DBUG_ENTER ("FilterRCs");
+    DBUG_ENTER ();
 
     alloc = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (arg_node)));
 
-    DBUG_EXECUTE ("FRC", PRTdoPrintFile (stderr, alloc););
+    DBUG_EXECUTE (PRTdoPrintFile (stderr, alloc));
 
     DBUG_ASSERT ((NODE_TYPE (alloc) == N_prf)
                    && ((PRF_PRF (alloc) == F_alloc)
@@ -224,7 +227,7 @@ FilterRCs (node *arg_node, info *arg_info)
 node *
 FRCap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
         INFO_CONDARGS (arg_info) = AP_ARGS (arg_node);
@@ -248,11 +251,11 @@ FRCap (node *arg_node, info *arg_info)
 node *
 FRCarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCarg");
+    DBUG_ENTER ();
 
     if (DFMtestMaskEntry (INFO_OLDMASK (arg_info), NULL,
                           ID_AVIS (EXPRS_EXPR (INFO_CONDARGS (arg_info))))) {
-        DBUG_PRINT ("FRC", ("Variable used in calling context: %s", ARG_NAME (arg_node)));
+        DBUG_PRINT ("Variable used in calling context: %s", ARG_NAME (arg_node));
         DFMsetMaskEntrySet (INFO_USEMASK (arg_info), NULL, ARG_AVIS (arg_node));
     }
 
@@ -275,7 +278,7 @@ FRCarg (node *arg_node, info *arg_info)
 node *
 FRCassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCassign");
+    DBUG_ENTER ();
 
     /*
      * Bottom-up traversal
@@ -299,9 +302,9 @@ FRCassign (node *arg_node, info *arg_info)
 node *
 FRCcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCcond");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("FRC", ("Filtering conditional"));
+    DBUG_PRINT ("Filtering conditional");
 
     if (INFO_THENMASK (arg_info) == NULL) {
         /*
@@ -339,7 +342,7 @@ FRCcond (node *arg_node, info *arg_info)
 node *
 FRCfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCfuncond");
+    DBUG_ENTER ();
 
     FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
 
@@ -367,7 +370,7 @@ FRCfuncond (node *arg_node, info *arg_info)
 node *
 FRCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         if ((!FUNDEF_ISCONDFUN (arg_node)) || (INFO_USEMASK (arg_info) != NULL)) {
@@ -375,8 +378,8 @@ FRCfundef (node *arg_node, info *arg_info)
             dfmask_base_t *maskbase;
             dfmask_t *oldmask, *oldthen, *oldelse;
 
-            DBUG_PRINT ("FRC", ("Filtering reuse candidates in function %s",
-                                FUNDEF_NAME (arg_node)));
+            DBUG_PRINT ("Filtering reuse candidates in function %s",
+                        FUNDEF_NAME (arg_node));
 
             oldmask = INFO_USEMASK (arg_info);
             oldthen = INFO_THENMASK (arg_info);
@@ -406,8 +409,8 @@ FRCfundef (node *arg_node, info *arg_info)
             INFO_THENMASK (arg_info) = oldthen;
             INFO_ELSEMASK (arg_info) = oldelse;
 
-            DBUG_PRINT ("FRC", ("Filtering reuse candidates in function %s complete",
-                                FUNDEF_NAME (arg_node)));
+            DBUG_PRINT ("Filtering reuse candidates in function %s complete",
+                        FUNDEF_NAME (arg_node));
         }
     }
 
@@ -428,11 +431,11 @@ FRCfundef (node *arg_node, info *arg_info)
 node *
 FRCid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCid");
+    DBUG_ENTER ();
 
     if (!DFMtestMaskEntry (INFO_USEMASK (arg_info), NULL, ID_AVIS (arg_node))) {
 
-        DBUG_PRINT ("FRC", ("Used Variable: %s", ID_NAME (arg_node)));
+        DBUG_PRINT ("Used Variable: %s", ID_NAME (arg_node));
 
         DFMsetMaskEntrySet (INFO_USEMASK (arg_info), NULL, ID_AVIS (arg_node));
     }
@@ -450,7 +453,7 @@ FRCid (node *arg_node, info *arg_info)
 node *
 FRCprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCprf");
+    DBUG_ENTER ();
 
     if (PRF_PRF (arg_node) == F_fill) {
         PRF_ARG2 (arg_node) = FilterRCs (PRF_ARG2 (arg_node), arg_info);
@@ -473,7 +476,7 @@ FRCprf (node *arg_node, info *arg_info)
 node *
 FRCwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCwith");
+    DBUG_ENTER ();
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
@@ -492,7 +495,7 @@ FRCwith (node *arg_node, info *arg_info)
 node *
 FRCwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCwith2");
+    DBUG_ENTER ();
 
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
     WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
@@ -512,7 +515,7 @@ FRCwith2 (node *arg_node, info *arg_info)
 node *
 FRCwith3 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCwith3");
+    DBUG_ENTER ();
 
     WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
     WITH3_RANGES (arg_node) = TRAVopt (WITH3_RANGES (arg_node), arg_info);
@@ -530,7 +533,7 @@ FRCwith3 (node *arg_node, info *arg_info)
 node *
 FRCbreak (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCbreak");
+    DBUG_ENTER ();
 
     BREAK_MEM (arg_node) = TRAVdo (BREAK_MEM (arg_node), arg_info);
 
@@ -551,7 +554,7 @@ FRCbreak (node *arg_node, info *arg_info)
 node *
 FRCfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCfold");
+    DBUG_ENTER ();
 
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
@@ -572,7 +575,7 @@ FRCfold (node *arg_node, info *arg_info)
 node *
 FRCgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCgenarray");
+    DBUG_ENTER ();
 
     GENARRAY_MEM (arg_node) = FilterRCs (GENARRAY_MEM (arg_node), arg_info);
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
@@ -598,7 +601,7 @@ FRCgenarray (node *arg_node, info *arg_info)
 node *
 FRCmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCmodarray");
+    DBUG_ENTER ();
 
     MODARRAY_MEM (arg_node) = FilterRCs (MODARRAY_MEM (arg_node), arg_info);
     MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
@@ -618,7 +621,7 @@ FRCmodarray (node *arg_node, info *arg_info)
 node *
 FRCcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCcode");
+    DBUG_ENTER ();
 
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
@@ -641,7 +644,7 @@ FRCcode (node *arg_node, info *arg_info)
 node *
 FRCrange (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FRCrange");
+    DBUG_ENTER ();
 
     RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
     RANGE_UPPERBOUND (arg_node) = TRAVopt (RANGE_UPPERBOUND (arg_node), arg_info);
@@ -666,3 +669,5 @@ FRCrange (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Filter Reuse Candidates -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

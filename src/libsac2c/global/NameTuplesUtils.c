@@ -4,7 +4,9 @@
  *
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -31,7 +33,7 @@ simpletype2mutcStorageClass (simpletype st)
 {
     mutcStorageClass ret = 0;
 
-    DBUG_ENTER ("TBsimpletype2mutcStorageClass");
+    DBUG_ENTER ();
 
 #define TYP_IF(it_name, it_db_str, it_pr_str, it_funr_str, it_cv2scal, it_cv2cv,         \
                it_cv2str, it_size, it_zipcv, it_basecv, it_mutc_sc, unused2)             \
@@ -61,15 +63,15 @@ NTUgetShapeClassFromTypes (types *type)
 {
     shape_class_t z;
 
-    DBUG_ENTER ("NTUgetShapeClassFromTypes");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "No type found!");
+    DBUG_ASSERT (type != NULL, "No type found!");
 
     if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
         /*
          * the TC has probably not been called yet :-(
          */
-        DBUG_ASSERT ((0), "illegal data class found!");
+        DBUG_ASSERT (0, "illegal data class found!");
         z = C_unknowns;
     } else {
         int dim = TCgetShapeDim (type);
@@ -109,15 +111,15 @@ NTUgetHiddenClassFromTypes (types *type)
 {
     hidden_class_t z;
 
-    DBUG_ENTER ("NTUgetHiddenClassFromTypes");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "No type found!");
+    DBUG_ASSERT (type != NULL, "No type found!");
 
     if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
         /*
          * the TC has probably not been called yet :-(
          */
-        DBUG_ASSERT ((0), "illegal data class found!");
+        DBUG_ASSERT (0, "illegal data class found!");
         z = C_unknownh;
     } else if (TCisHidden (type)) {
         z = C_hid;
@@ -144,15 +146,15 @@ NTUgetUniqueClassFromTypes (types *type)
 {
     unique_class_t z;
 
-    DBUG_ENTER ("NTUgetUniqueClassFromTypes");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "No type found!");
+    DBUG_ASSERT (type != NULL, "No type found!");
 
     if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
         /*
          * the TC has probably not been called yet :-(
          */
-        DBUG_ASSERT ((0), "illegal data class found!");
+        DBUG_ASSERT (0, "illegal data class found!");
         z = C_unknownu;
     } else if (TCisUnique (type)) {
         z = C_unq;
@@ -179,15 +181,15 @@ NTUgetMutcStorageClassFromTypes (types *type)
 {
     mutc_storage_class_class_t z;
 
-    DBUG_ENTER ("NTUgetMutcStorageClassFromTypes");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "No type found!");
+    DBUG_ASSERT (type != NULL, "No type found!");
 
     if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
         /*
          * the TC has probably not been called yet :-(
          */
-        DBUG_ASSERT ((0), "illegal data class found!");
+        DBUG_ASSERT (0, "illegal data class found!");
         z = C_unknownc;
     } else {
         switch (simpletype2mutcStorageClass (TYPES_BASETYPE (type))) {
@@ -219,15 +221,15 @@ NTUgetMutcScopeFromTypes (types *type)
 {
     mutc_scope_class_t z;
 
-    DBUG_ENTER ("NTUgetMutcScopeFromTypes");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "No type found!");
+    DBUG_ASSERT (type != NULL, "No type found!");
 
     if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
         /*
          * the TC has probably not been called yet :-(
          */
-        DBUG_ASSERT ((0), "illegal scope found!");
+        DBUG_ASSERT (0, "illegal scope found!");
         z = C_unknowno;
     } else {
         switch (TYPES_MUTC_SCOPE (type)) {
@@ -256,15 +258,15 @@ NTUgetMutcUsageFromTypes (types *type)
 {
     mutc_usage_class_t z;
 
-    DBUG_ENTER ("NTUgetMutcUsageFromTypes");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "No type found!");
+    DBUG_ASSERT (type != NULL, "No type found!");
 
     if ((TYPES_BASETYPE (type) == T_user) && (TYPES_TDEF (type) == NULL)) {
         /*
          * the TC has probably not been called yet :-(
          */
-        DBUG_ASSERT ((0), "illegal usage found!");
+        DBUG_ASSERT (0, "illegal usage found!");
         z = C_unknowna;
     } else {
         switch (TYPES_MUTC_USAGE (type)) {
@@ -309,9 +311,9 @@ NTUgetBitarrayFromTypes (types *type)
 #endif
     bitarray_class_t z;
 
-    DBUG_ENTER ("NTUgetBitarrayFromTypes");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "No type found!");
+    DBUG_ASSERT (type != NULL, "No type found!");
 
     z = C_sparse;
 
@@ -340,9 +342,9 @@ NTUcreateNtTag (const char *name, types *type)
     bitarray_class_t bitarray;
     char *res;
 
-    DBUG_ENTER ("NTUcreateNtTag");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "No type found!");
+    DBUG_ASSERT (type != NULL, "No type found!");
 
     sc = NTUgetShapeClassFromTypes (type);
     hc = NTUgetHiddenClassFromTypes (type);
@@ -396,11 +398,11 @@ NTUaddNtTag (node *id)
 {
     node *avis;
 
-    DBUG_ENTER ("NTUaddNtTag");
+    DBUG_ENTER ();
 
     avis = ID_AVIS (id);
 
-    DBUG_ASSERT ((avis != NULL), "no avis found!");
+    DBUG_ASSERT (avis != NULL, "no avis found!");
 
     switch (NODE_TYPE (AVIS_DECL (avis))) {
     case N_vardec:
@@ -411,7 +413,7 @@ NTUaddNtTag (node *id)
         ID_NT_TAG (id) = NTUcreateNtTag (AVIS_NAME (avis), ARG_TYPE (AVIS_DECL (avis)));
         break;
     default:
-        DBUG_ASSERT ((FALSE), "illegal decl in avis node");
+        DBUG_ASSERT (FALSE, "illegal decl in avis node");
     }
 
     DBUG_RETURN (id);
@@ -442,9 +444,9 @@ NTUgetShapeClassFromNType (ntype *ntype)
 {
     shape_class_t z;
 
-    DBUG_ENTER ("NTUgetShapeClassFromNType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ntype != NULL), "No type found!");
+    DBUG_ASSERT (ntype != NULL, "No type found!");
 
     switch (TYgetConstr (ntype)) {
     case TC_akv:
@@ -470,7 +472,7 @@ NTUgetShapeClassFromNType (ntype *ntype)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal Shape Class");
+        DBUG_ASSERT (0, "Illegal Shape Class");
         z = C_unknowns;
         break;
     }
@@ -524,9 +526,9 @@ NTUgetHiddenClassFromNType (ntype *ntype)
 {
     hidden_class_t z;
 
-    DBUG_ENTER ("NTUgetHiddenClassFromNType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ntype != NULL), "No type found!");
+    DBUG_ASSERT (ntype != NULL, "No type found!");
 
     if (TUisHidden (ntype)) {
         z = C_hid;
@@ -553,9 +555,9 @@ NTUgetUniqueClassFromNType (ntype *ntype)
 {
     unique_class_t z;
 
-    DBUG_ENTER ("NTUgetUniqueClassFromNType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ntype != NULL), "No type found!");
+    DBUG_ASSERT (ntype != NULL, "No type found!");
 
     if (TUisUniqueUserType (ntype)) {
         z = C_unq;
@@ -580,9 +582,9 @@ NTUgetMutcStorageClassFromNType (ntype *ntype)
 {
     mutc_storage_class_class_t z;
 
-    DBUG_ENTER ("NTUgetMutcStorageClassFromNType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ntype != NULL), "No type found!");
+    DBUG_ASSERT (ntype != NULL, "No type found!");
 
     switch (simpletype2mutcStorageClass (TUgetBaseSimpleType (ntype))) {
     case MUTC_SC_INT:
@@ -612,9 +614,9 @@ NTUgetMutcScopeFromNType (ntype *ntype)
 {
     mutc_scope_class_t z;
 
-    DBUG_ENTER ("NTUgetMutcScopeFromNType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ntype != NULL), "No type found!");
+    DBUG_ASSERT (ntype != NULL, "No type found!");
 
     switch (TYgetMutcScope (ntype)) {
     case MUTC_GLOBAL:
@@ -648,9 +650,9 @@ NTUgetMutcUsageFromNType (ntype *ntype)
 {
     mutc_usage_class_t z;
 
-    DBUG_ENTER ("NTUgetMutcUsageFromNType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ntype != NULL), "No type found!");
+    DBUG_ASSERT (ntype != NULL, "No type found!");
 
     switch (TYgetMutcUsage (ntype)) {
     case MUTC_US_THREADPARAMIO:
@@ -693,9 +695,9 @@ NTUgetBitarrayFromNType (ntype *ntype)
 #endif
     bitarray_class_t z;
 
-    DBUG_ENTER ("NTUgetBitarrayFromNType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ntype != NULL), "No type found!");
+    DBUG_ASSERT (ntype != NULL, "No type found!");
 
     /* Place-holder code: always assume regular. */
     z = C_sparse;
@@ -723,9 +725,9 @@ NTUcreateNtTagFromNType (const char *name, ntype *ntype)
     mutc_usage_class_t usage;
     bitarray_class_t bitarray;
 
-    DBUG_ENTER ("NTUcreateNtTagFromNType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ntype != NULL), "No type found!");
+    DBUG_ASSERT (ntype != NULL, "No type found!");
 
     sc = NTUgetShapeClassFromNType (ntype);
     hc = NTUgetHiddenClassFromNType (ntype);
@@ -754,3 +756,5 @@ NTUcreateNtTagFromNType (const char *name, ntype *ntype)
 
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

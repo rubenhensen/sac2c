@@ -34,7 +34,10 @@
  */
 #include <stdarg.h>
 #include "shape.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
@@ -84,8 +87,8 @@ SHmakeShape (int dim)
 {
     shape *res;
 
-    DBUG_ENTER ("SHmakeShape");
-    DBUG_ASSERT (dim >= 0, ("SHmakeShape called with negative dimensionality!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (dim >= 0, "SHmakeShape called with negative dimensionality!");
 
     res = (shape *)MEMmalloc (sizeof (shape));
     if (dim > 0) {
@@ -118,10 +121,10 @@ SHcreateShape (int dim, ...)
     int i;
     shape *result;
 
-    DBUG_ENTER ("SHcreateShape");
+    DBUG_ENTER ();
     result = SHmakeShape (dim);
 
-    DBUG_ASSERT (result != NULL, ("CreateShape: Get NULL shape from MakeShape!"));
+    DBUG_ASSERT (result != NULL, "CreateShape: Get NULL shape from MakeShape!");
 
     if (dim > 0) {
         va_start (Argp, dim);
@@ -152,8 +155,8 @@ SHcopyShape (shape *shp)
     shape *res;
     int i, n;
 
-    DBUG_ENTER ("SHcopyShape");
-    DBUG_ASSERT ((shp != NULL), ("SHcopyShape called with NULL shape!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (shp != NULL, "SHcopyShape called with NULL shape!");
 
     n = SHAPE_DIM (shp);
     res = SHmakeShape (n);
@@ -180,8 +183,8 @@ SHprintShape (FILE *file, shape *shp)
 {
     int i;
 
-    DBUG_ENTER ("SHprintShape");
-    DBUG_ASSERT ((shp != NULL), ("SHprintShape called with NULL shape!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (shp != NULL, "SHprintShape called with NULL shape!");
 
     fprintf (file, "[ ");
     if (SHAPE_DIM (shp) > 0) {
@@ -192,7 +195,7 @@ SHprintShape (FILE *file, shape *shp)
     }
     fprintf (file, "]");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -210,8 +213,8 @@ SHprintShape (FILE *file, shape *shp)
 shape *
 SHfreeShape (shape *shp)
 {
-    DBUG_ENTER ("SHfreeShape");
-    DBUG_ASSERT ((shp != NULL), ("SHfreeShape called with NULL shape!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (shp != NULL, "SHfreeShape called with NULL shape!");
 
     if (SHAPE_DIM (shp) > 0) {
         SHAPE_ELEMS (shp) = MEMfree (SHAPE_ELEMS (shp));
@@ -236,15 +239,15 @@ SHfreeShape (shape *shp)
 void
 SHtouchShape (shape *shp, info *arg_info)
 {
-    DBUG_ENTER ("SHtouchShape");
-    DBUG_ASSERT ((shp != NULL), ("SHtouchShape called with NULL shape!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (shp != NULL, "SHtouchShape called with NULL shape!");
 
     if (SHAPE_DIM (shp) > 0) {
         CHKMtouch (SHAPE_ELEMS (shp), arg_info);
     }
     CHKMtouch (shp, arg_info);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -263,7 +266,7 @@ SHserializeShape (FILE *file, shape *shp)
 {
     int cnt;
 
-    DBUG_ENTER ("SHserializeShape");
+    DBUG_ENTER ();
 
     fprintf (file, "SHcreateShape( %d", SHAPE_DIM (shp));
 
@@ -273,7 +276,7 @@ SHserializeShape (FILE *file, shape *shp)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -287,8 +290,8 @@ SHserializeShape (FILE *file, shape *shp)
 int
 SHgetDim (shape *shp)
 {
-    DBUG_ENTER ("SHgetDim");
-    DBUG_ASSERT ((shp != NULL), ("SHgetDim called with NULL shape!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (shp != NULL, "SHgetDim called with NULL shape!");
 
     DBUG_RETURN (SHAPE_DIM (shp));
 }
@@ -303,10 +306,10 @@ SHgetDim (shape *shp)
 int
 SHgetExtent (shape *shp, int dim)
 {
-    DBUG_ENTER ("SHgetExtent");
-    DBUG_ASSERT ((shp != NULL), ("SHgetExtent called with NULL shape!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (shp != NULL, "SHgetExtent called with NULL shape!");
     DBUG_ASSERT ((SHAPE_DIM (shp) > dim) && (dim >= 0),
-                 ("SHgetExtent called with dim out of range!"));
+                 "SHgetExtent called with dim out of range!");
 
     DBUG_RETURN (SHAPE_EXT (shp, dim));
 }
@@ -323,8 +326,8 @@ SHgetUnrLen (shape *shp)
 {
     int i, length;
 
-    DBUG_ENTER ("SHgetUnrLen");
-    DBUG_ASSERT ((shp != NULL), ("SHgetUnrLen called with NULL shape!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (shp != NULL, "SHgetUnrLen called with NULL shape!");
 
     length = 1;
     for (i = SHAPE_DIM (shp) - 1; i >= 0; i--) {
@@ -353,8 +356,8 @@ SHsubarrayDim (shape *shp, int n)
 {
     int i, length;
 
-    DBUG_ENTER ("SHsubarrayDim");
-    DBUG_ASSERT ((shp != NULL), ("SHSubarrayDim called with NULL shape!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (shp != NULL, "SHSubarrayDim called with NULL shape!");
 
     length = 1;
     i = 0;
@@ -362,7 +365,7 @@ SHsubarrayDim (shape *shp, int n)
     while ((length != n) && (i < SHAPE_DIM (shp)))
         length *= SHAPE_EXT (shp, i++);
 
-    DBUG_ASSERT ((length == n), ("SHSubarrayDim called with invalid arguments."));
+    DBUG_ASSERT (length == n, "SHSubarrayDim called with invalid arguments.");
 
     DBUG_RETURN (SHAPE_DIM (shp) - i);
 }
@@ -378,10 +381,10 @@ SHsubarrayDim (shape *shp, int n)
 shape *
 SHsetExtent (shape *shp, int dim, int val)
 {
-    DBUG_ENTER ("SHsetExtent");
-    DBUG_ASSERT ((shp != NULL), ("SHsetExtent called with NULL shape!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (shp != NULL, "SHsetExtent called with NULL shape!");
     DBUG_ASSERT ((SHAPE_DIM (shp) > dim) && (dim >= 0),
-                 ("SHsetExtent called with dim out of range!"));
+                 "SHsetExtent called with dim out of range!");
 
     SHAPE_EXT (shp, dim) = val;
     DBUG_RETURN (shp);
@@ -403,7 +406,7 @@ SHcompareShapes (shape *a, shape *b)
     bool res;
     int i;
 
-    DBUG_ENTER ("SHcompareShapes");
+    DBUG_ENTER ();
 
     res = TRUE;
     if (SHAPE_DIM (a) == SHAPE_DIM (b)) {
@@ -432,8 +435,8 @@ SHappendShapes (shape *a, shape *b)
     int m, n, i, j;
     shape *res;
 
-    DBUG_ENTER ("SHAppendShapes");
-    DBUG_ASSERT ((a != NULL) && (b != NULL), ("SHAppendShapes called with NULL arg!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT ((a != NULL) && (b != NULL), "SHAppendShapes called with NULL arg!");
 
     m = SHAPE_DIM (a);
     n = SHAPE_DIM (b);
@@ -465,8 +468,8 @@ SHdropFromShape (int n, shape *a)
     int m, i;
     shape *res;
 
-    DBUG_ENTER ("SHdropFromShape");
-    DBUG_ASSERT ((a != NULL), ("SHDropFromShape called with NULL arg!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (a != NULL, "SHDropFromShape called with NULL arg!");
 
     m = SHAPE_DIM (a);
     DBUG_ASSERT ((m - abs (n)) >= 0, "dropping more elems from shape than available!");
@@ -502,8 +505,8 @@ SHtakeFromShape (int n, shape *a)
     int m, i;
     shape *res;
 
-    DBUG_ENTER ("SHDropFromShape");
-    DBUG_ASSERT ((a != NULL), ("SHDropFromShape called with NULL arg!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (a != NULL, "SHDropFromShape called with NULL arg!");
 
     m = SHAPE_DIM (a);
     DBUG_ASSERT ((m - abs (n)) >= 0, "taking more elems from shape than available!");
@@ -541,8 +544,8 @@ SHshape2String (int dots, shape *shp)
     char *tmp = &buf[0];
     int i, j, n;
 
-    DBUG_ENTER ("SHshape2String");
-    DBUG_ASSERT ((shp != NULL), ("SHshape2String called with NULL shape!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (shp != NULL, "SHshape2String called with NULL shape!");
 
     tmp += sprintf (tmp, "[");
     for (i = 0; i < dots; i++) {
@@ -580,8 +583,8 @@ SHoldTypes2Shape (types *types)
     shape *res;
     shpseg *shpseg;
 
-    DBUG_ENTER ("SHoldTypes2Shape");
-    DBUG_ASSERT ((types != NULL), ("SHoldTypes2Shape called with NULL types!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (types != NULL, "SHoldTypes2Shape called with NULL types!");
 
     /* this function handle user defined types, too */
     shpseg = TCtype2Shpseg (types, &dim);
@@ -609,7 +612,7 @@ SHoldShpseg2Shape (int dim, shpseg *shpseg)
     int i, j;
     shape *res;
 
-    DBUG_ENTER ("SHoldShpseg2Shape");
+    DBUG_ENTER ();
 
     if (dim >= 0) {
         res = SHmakeShape (dim);
@@ -617,7 +620,7 @@ SHoldShpseg2Shape (int dim, shpseg *shpseg)
         if (dim > 0) {
             i = 0;
             while (dim > SHP_SEG_SIZE) {
-                DBUG_ASSERT ((shpseg != NULL),
+                DBUG_ASSERT (shpseg != NULL,
                              "SHoldShpseg2Shape called with NULL shpseg but dim >0!");
                 for (j = 0; j < SHP_SEG_SIZE; j++, i++) {
                     SHAPE_EXT (res, i) = SHPSEG_SHAPE (shpseg, j);
@@ -651,8 +654,8 @@ SHshape2OldShpseg (shape *shp)
     int dim, i, j;
     shpseg *res, *curr_seg;
 
-    DBUG_ENTER ("SHshape2OldShpseg");
-    DBUG_ASSERT ((shp != NULL), ("SHshape2OldShpseg called with NULL shp!"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (shp != NULL, "SHshape2OldShpseg called with NULL shp!");
 
     dim = SHAPE_DIM (shp);
     if (dim > 0) {
@@ -693,12 +696,12 @@ SHcompareWithCArray (shape *shp, int *shpdata, int dim)
     bool flag;
     int i;
 
-    DBUG_ENTER ("SHcompareWithCArray");
+    DBUG_ENTER ();
 
     flag = TRUE;
 
     DBUG_ASSERT (((shp != NULL) && ((dim == 0) || (shpdata != NULL))),
-                 ("SHcompareWithCArray called with NULL pointer(s)!\n"));
+                 "SHcompareWithCArray called with NULL pointer(s)!\n");
 
     if (dim == SHAPE_DIM (shp)) {
         for (i = 0; i < dim; i++) {
@@ -732,10 +735,10 @@ SHcompareWithArguments (shape *shp, int dim, ...)
     bool flag;
     int i;
 
-    DBUG_ENTER ("SHcompareWithArguments");
+    DBUG_ENTER ();
 
     flag = TRUE;
-    DBUG_ASSERT ((shp != NULL), ("SHcompareWithCArray called with NULL pointer(s)!\n"));
+    DBUG_ASSERT (shp != NULL, "SHcompareWithCArray called with NULL pointer(s)!\n");
     if (dim == SHAPE_DIM (shp)) {
         va_start (Argp, dim);
         for (i = 0; i < dim; i++)
@@ -763,7 +766,7 @@ SHshape2IntVec (shape *shp)
     int i;
     int n;
 
-    DBUG_ENTER ("SHshape2IntVec");
+    DBUG_ENTER ();
 
     n = SHAPE_DIM (shp);
     if (n > 0) {
@@ -793,7 +796,7 @@ SHshape2Exprs (shape *shp)
     int dim;
     int i;
 
-    DBUG_ENTER ("SHshape2Exprs");
+    DBUG_ENTER ();
 
     dim = SHAPE_DIM (shp);
     exprs = NULL;
@@ -817,7 +820,7 @@ SHshape2Array (shape *shp)
 {
     node *array;
 
-    DBUG_ENTER ("SHshape2Array");
+    DBUG_ENTER ();
 
     array = TCmakeIntVector (SHshape2Exprs (shp));
 
@@ -838,9 +841,9 @@ SHvalidArrayIntVector (node *array)
     node *exprs;
     int cnt;
 
-    DBUG_ENTER ("SHvalidArrayIntVector");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (array) == N_array),
+    DBUG_ASSERT (NODE_TYPE (array) == N_array,
                  "SHvalidArrayIntVector called on non array node");
     exprs = ARRAY_AELEMS (array);
 
@@ -867,14 +870,14 @@ SHarray2Shape (node *array)
     node *exprs;
     int cnt;
 
-    DBUG_ENTER ("SHarray2Shape");
+    DBUG_ENTER ();
 
     if (SHvalidArrayIntVector (array)) {
         exprs = ARRAY_AELEMS (array);
         result = SHmakeShape (TCcountExprs (exprs));
 
         for (cnt = 0; cnt < SHAPE_DIM (result); cnt++) {
-            DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_num),
+            DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (exprs)) == N_num,
                          "SHarray2Shape can handle constant int vectors only!");
             SHAPE_EXT (result, cnt) = NUM_VAL (EXPRS_EXPR (exprs));
             exprs = EXPRS_NEXT (exprs);
@@ -884,3 +887,5 @@ SHarray2Shape (node *array)
 }
 
 /*@}*/ /* defgroup shape */
+
+#undef DBUG_PREFIX

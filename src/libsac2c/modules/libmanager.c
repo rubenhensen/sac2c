@@ -1,7 +1,10 @@
 /* $Id$ */
 
 #include "libmanager.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "LIB"
+#include "debug.h"
+
 #include "ctinfo.h"
 
 #include <dlfcn.h>
@@ -17,7 +20,7 @@ LibManagerError ()
 {
     const char *error;
 
-    DBUG_ENTER ("LibManagerError");
+    DBUG_ENTER ();
 
     error = dlerror ();
 
@@ -33,7 +36,7 @@ setError (const char *format, ...)
 {
     va_list args;
 
-    DBUG_ENTER ("setError");
+    DBUG_ENTER ();
 
     va_start (args, format);
 
@@ -41,13 +44,13 @@ setError (const char *format, ...)
 
     va_end (args);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 const char *
 LIBMgetError ()
 {
-    DBUG_ENTER ("LIBMgetError");
+    DBUG_ENTER ();
 
     DBUG_RETURN (LIBMerror);
 }
@@ -57,9 +60,9 @@ LIBMloadLibrary (const char *name)
 {
     dynlib_t result;
 
-    DBUG_ENTER ("LIBMloadLibrary");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("LIB", ("Loading library `%s'", name));
+    DBUG_PRINT ("Loading library `%s'", name);
 
 #ifdef RTLD_WORLD
     result = dlopen (name, RTLD_WORLD | RTLD_LAZY);
@@ -71,7 +74,7 @@ LIBMloadLibrary (const char *name)
         setError ("Cannot open library `%s':\n%s", name, LibManagerError ());
     }
 
-    DBUG_PRINT ("LIB", ("Done loading library"));
+    DBUG_PRINT ("Done loading library");
 
     DBUG_RETURN (result);
 }
@@ -81,9 +84,9 @@ LIBMunLoadLibrary (dynlib_t lib)
 {
     int result;
 
-    DBUG_ENTER ("LIBMunLoadLibrary");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("LIB", ("Unoading library"));
+    DBUG_PRINT ("Unoading library");
 
     result = dlclose (lib);
 
@@ -91,7 +94,7 @@ LIBMunLoadLibrary (dynlib_t lib)
         setError ("Cannot close library:\n%s", LibManagerError ());
     }
 
-    DBUG_PRINT ("LIB", ("Done unloading library"));
+    DBUG_PRINT ("Done unloading library");
 
     DBUG_RETURN ((dynlib_t)NULL);
 }
@@ -101,19 +104,21 @@ LIBMgetLibraryFunction (const char *name, dynlib_t lib)
 {
     dynfun_t result;
 
-    DBUG_ENTER ("LIBMgetLibraryFunction");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("LIB", ("Getting library function `%s'", name));
+    DBUG_PRINT ("Getting library function `%s'", name);
 
     result = dlsym (lib, name);
 
 #ifndef DBUG_OFF
     if (result != NULL) {
-        DBUG_PRINT ("LIB", ("Done getting library function"));
+        DBUG_PRINT ("Done getting library function");
     } else {
-        DBUG_PRINT ("LIB", ("Failed getting library function: ", LibManagerError ()));
+        DBUG_PRINT ("Failed getting library function: ", LibManagerError ());
     }
 #endif
 
     DBUG_RETURN (result);
 }
+
+#undef DBUG_PREFIX

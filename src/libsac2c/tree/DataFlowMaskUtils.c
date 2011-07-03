@@ -6,7 +6,10 @@
 
 #include "new_types.h"
 #include "tree_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "DataFlowMask.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
@@ -27,7 +30,7 @@ DFMUdfm2Rets (dfmask_t *mask)
     node *avis;
     node *rets = NULL;
 
-    DBUG_ENTER ("DFMUdfm2Rets");
+    DBUG_ENTER ();
 
     /*
      * build rets
@@ -59,7 +62,7 @@ DFMUdfm2ReturnTypes (dfmask_t *mask)
     types *tmp;
     types *rettypes = NULL;
 
-    DBUG_ENTER ("DFMUdfm2ReturnTypes");
+    DBUG_ENTER ();
 
     /*
      * build return types, return exprs (use SPMD_OUT).
@@ -101,7 +104,7 @@ DFMUdfm2Vardecs (dfmask_t *mask, lut_t *lut)
     node *avis;
     node *vardecs = NULL;
 
-    DBUG_ENTER ("DFMUdfm2Vardecs");
+    DBUG_ENTER ();
 
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
@@ -133,14 +136,14 @@ DFMUdfm2Args (dfmask_t *mask, lut_t *lut)
     node *avis;
     node *args = NULL;
 
-    DBUG_ENTER ("DFMUdfm2Args");
+    DBUG_ENTER ();
 
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
         args = TBmakeArg (DUPdoDupNode (avis), args);
         AVIS_SSAASSIGN (ARG_AVIS (args)) = NULL;
 
-        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "AAAHHH");
+        DBUG_ASSERT (NODE_TYPE (args) == N_arg, "AAAHHH");
 
         lut = LUTinsertIntoLutP (lut, avis, ARG_AVIS (args));
 
@@ -169,7 +172,7 @@ DFMUdfm2ReturnExprs (dfmask_t *mask, lut_t *lut)
     node *exprs = NULL;
     node *avis;
 
-    DBUG_ENTER ("DFMUdfm2ReturnExprs");
+    DBUG_ENTER ();
 
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
@@ -204,7 +207,7 @@ DFMUdfm2ApArgs (dfmask_t *mask, lut_t *lut)
     node *avis, *id, *newavis;
     node *exprs = NULL;
 
-    DBUG_ENTER ("DFMUdfm2ApArgs");
+    DBUG_ENTER ();
 
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
@@ -237,7 +240,7 @@ DFMUdfm2LetIds (dfmask_t *mask, lut_t *lut)
     node *avis, *newavis;
     node *ids = NULL;
 
-    DBUG_ENTER ("DFMUdfm2LetIds");
+    DBUG_ENTER ();
 
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
@@ -250,3 +253,5 @@ DFMUdfm2LetIds (dfmask_t *mask, lut_t *lut)
 
     DBUG_RETURN (ids);
 }
+
+#undef DBUG_PREFIX

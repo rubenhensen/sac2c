@@ -22,7 +22,10 @@
 #include "traverse.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "EMRB"
+#include "debug.h"
+
 #include "print.h"
 #include "infer_dfms.h"
 #include "DupTree.h"
@@ -66,7 +69,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -84,7 +87,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -107,9 +110,9 @@ EMRBdoReuseBranching (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("EMRBReuseBranching");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMRB", ("Starting reuse branching"));
+    DBUG_PRINT ("Starting reuse branching");
 
     info = MakeInfo ();
 
@@ -121,7 +124,7 @@ EMRBdoReuseBranching (node *syntax_tree)
 
     info = FreeInfo (info);
 
-    DBUG_PRINT ("EMRB", ("Reuse branching complete."));
+    DBUG_PRINT ("Reuse branching complete.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -149,7 +152,7 @@ CreateLacFunName (char *root_funname)
     static int number = 0;
     char *name;
 
-    DBUG_ENTER ("CreateLacFunName");
+    DBUG_ENTER ();
 
     name = (char *)MEMmalloc ((STRlen (root_funname) + 10 + 20 + 3) * sizeof (char));
     sprintf (name, "%s__ReuseCond_%i", root_funname, number);
@@ -175,7 +178,7 @@ GetReuseBranches (dfmask_t *drcs, node *memop)
 {
     node *res = NULL;
 
-    DBUG_ENTER ("GetReuseBranches");
+    DBUG_ENTER ();
 
     if ((PRF_PRF (memop) == F_alloc_or_reuse) || (PRF_PRF (memop) == F_alloc_or_reshape)
         || (PRF_PRF (memop) == F_alloc_or_resize)) {
@@ -222,7 +225,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
 {
     node *res = NULL;
 
-    DBUG_ENTER ("BuildCondTree");
+    DBUG_ENTER ();
 
     if (branches == NULL) {
         res = DUPdoDupTreeLutSsa (ass, lut, fundef);
@@ -382,7 +385,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             FUNDEF_RETURN (condfun) = ret;
             res = NULL;
 
-            DBUG_EXECUTE ("EMRB", PRTdoPrintNodeFile (stderr, condfun););
+            DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, condfun));
 
             /*
              * Create pattern:
@@ -466,7 +469,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
                                 res);
             AVIS_SSAASSIGN (IDS_AVIS (memids)) = res;
 
-            DBUG_EXECUTE ("EMRB", PRTdoPrintFile (stderr, res););
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, res));
         }
     }
 
@@ -495,7 +498,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
 node *
 EMRBassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRBassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -543,8 +546,8 @@ EMRBassign (node *arg_node, info *arg_info)
             /*
              * Replace LHS of new assignment in order to match current funcion
              */
-            DBUG_PRINT ("EMRB", ("New assignments: "));
-            DBUG_EXECUTE ("EMRB", PRTdoPrintFile (stderr, newass););
+            DBUG_PRINT ("New assignments: ");
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, newass));
 
             lastass = newass;
             while (ASSIGN_NEXT (lastass) != NULL) {
@@ -586,14 +589,14 @@ EMRBassign (node *arg_node, info *arg_info)
 node *
 EMRBfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRBfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("EMRB", ("Traversing function %s", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Traversing function %s", FUNDEF_NAME (arg_node));
 
         INFO_FUNDEF (arg_info) = arg_node;
         INFO_MASKBASE (arg_info)
@@ -603,8 +606,7 @@ EMRBfundef (node *arg_node, info *arg_info)
 
         INFO_MASKBASE (arg_info) = DFMremoveMaskBase (INFO_MASKBASE (arg_info));
 
-        DBUG_PRINT ("EMRB",
-                    ("Traversal of function %s complete", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Traversal of function %s complete", FUNDEF_NAME (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -625,7 +627,7 @@ EMRBfundef (node *arg_node, info *arg_info)
 node *
 EMRBids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRBids");
+    DBUG_ENTER ();
 
     /*
      * Mark declared variables in LOCALMASK
@@ -656,7 +658,7 @@ EMRBids (node *arg_node, info *arg_info)
 node *
 EMRBprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRBprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_fill:
@@ -792,7 +794,7 @@ handleCodeBlock (node *cexprs, info *arg_info)
                     break;
 
                 default:
-                    DBUG_PRINT ("EMRB", ("No suballoc or wl_assign found: Fold-Withop?"));
+                    DBUG_PRINT ("No suballoc or wl_assign found: Fold-Withop?");
                     break;
                 }
             }
@@ -807,7 +809,7 @@ EMRBrange (node *arg_node, info *arg_info)
     dfmask_t *oldlocals;
     node *cexprs;
 
-    DBUG_ENTER ("EMRBrange");
+    DBUG_ENTER ();
 
     /*
      * stack local indentifiers
@@ -853,7 +855,7 @@ EMRBcode (node *arg_node, info *arg_info)
     dfmask_t *oldlocals;
     node *cexprs;
 
-    DBUG_ENTER ("EMRBcode");
+    DBUG_ENTER ();
 
     /*
      * stack local indentifiers
@@ -902,7 +904,7 @@ EMRBwith (node *arg_node, info *arg_info)
 {
     dfmask_t *olddrcs;
 
-    DBUG_ENTER ("EMRBwith");
+    DBUG_ENTER ();
 
     /*
      * Stack outer data reuse candidates
@@ -943,7 +945,7 @@ EMRBwith2 (node *arg_node, info *arg_info)
 {
     dfmask_t *olddrcs;
 
-    DBUG_ENTER ("EMRBwith2");
+    DBUG_ENTER ();
 
     /*
      * Stack outer data reuse candidates
@@ -983,7 +985,7 @@ EMRBwith3 (node *arg_node, info *arg_info)
 {
     dfmask_t *olddrcs;
 
-    DBUG_ENTER ("EMRBwith3");
+    DBUG_ENTER ();
 
     /*
      * Stack outer data reuse candidates
@@ -1020,7 +1022,7 @@ StealLet (node *assign)
     node *let;
     node *res;
 
-    DBUG_ENTER ("StealLet");
+    DBUG_ENTER ();
 
     let = ASSIGN_INSTR (assign);
     ASSIGN_INSTR (assign) = NULL;
@@ -1049,7 +1051,7 @@ EMRBwithid (node *arg_node, info *arg_info)
     node *id;
     node *exprs;
 
-    DBUG_ENTER ("EMRBwithid");
+    DBUG_ENTER ();
 
     id = WITHID_VEC (arg_node);
     INFO_PRECODE (arg_info) = TCappendAssign (INFO_PRECODE (arg_info),
@@ -1085,7 +1087,7 @@ MakeWithopReuseBranches (node *mem, info *arg_info)
 {
     node *branches;
 
-    DBUG_ENTER ("MakeWithopReuseBranches");
+    DBUG_ENTER ();
 
     branches = GetReuseBranches (INFO_DRCS (arg_info),
                                  ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (mem))));
@@ -1100,7 +1102,7 @@ MakeWithopReuseBranches (node *mem, info *arg_info)
           = TBmakeExprs (DUPdoDupNode (mem), INFO_MEMVARS (arg_info));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1118,7 +1120,7 @@ MakeWithopReuseBranches (node *mem, info *arg_info)
 node *
 EMRBgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRBgenarray");
+    DBUG_ENTER ();
 
     MakeWithopReuseBranches (GENARRAY_MEM (arg_node), arg_info);
 
@@ -1144,7 +1146,7 @@ EMRBgenarray (node *arg_node, info *arg_info)
 node *
 EMRBmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMRBmodarray");
+    DBUG_ENTER ();
 
     MakeWithopReuseBranches (MODARRAY_MEM (arg_node), arg_info);
 
@@ -1156,3 +1158,5 @@ EMRBmodarray (node *arg_node, info *arg_info)
 }
 
 /*@}*/
+
+#undef DBUG_PREFIX

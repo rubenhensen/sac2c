@@ -6,7 +6,8 @@
 
 #include "math_utils.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 /******************************************************************************
  *
@@ -23,7 +24,7 @@ MATHlcm (int x, int y)
 {
     int u, v;
 
-    DBUG_ENTER ("MATHlcm");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((x > 0) && (y > 0)), "Arguments of MATHlcm() must be >0");
 
@@ -56,7 +57,7 @@ MATHipow (int base, int exp)
     int i;
     long res;
 
-    DBUG_ENTER ("MATHipow");
+    DBUG_ENTER ();
 
     res = 1;
 
@@ -82,7 +83,7 @@ MATHnumDigits (int number)
 {
     int digits = 1;
 
-    DBUG_ENTER ("MATHnumDigits");
+    DBUG_ENTER ();
 
     while (number / 10 >= 1) {
         number = number / 10;
@@ -107,7 +108,7 @@ MATHmin (int x, int y)
 {
     int min;
 
-    DBUG_ENTER ("MATHmin");
+    DBUG_ENTER ();
 
     if (x < y) {
         min = x;
@@ -133,7 +134,7 @@ MATHmax (int x, int y)
 {
     int max;
 
-    DBUG_ENTER ("MATHmax");
+    DBUG_ENTER ();
 
     if (x > y) {
         max = x;
@@ -143,3 +144,5 @@ MATHmax (int x, int y)
 
     DBUG_RETURN (max);
 }
+
+#undef DBUG_PREFIX

@@ -68,7 +68,10 @@
 #include <limits.h>
 
 #include "new_types.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "NTY"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "str.h"
@@ -292,7 +295,7 @@ MakeNtype (typeconstr con, int arity)
     ntype *res;
     int i;
 
-    DBUG_ENTER ("MakeNtype");
+    DBUG_ENTER ();
 
     res = (ntype *)MEMmalloc (sizeof (ntype));
     NTYPE_CON (res) = con;
@@ -330,7 +333,7 @@ MakeNewSon (ntype *father, ntype *son)
     ntype **new_sons;
     int i, arity;
 
-    DBUG_ENTER ("MakeNewSon");
+    DBUG_ENTER ();
 
     arity = NTYPE_ARITY (father);
     NTYPE_ARITY (father) = arity + 1;
@@ -362,7 +365,7 @@ DeleteSon (ntype *father, int son)
     ntype **new_sons;
     int i, arity;
 
-    DBUG_ENTER ("DeleteSon");
+    DBUG_ENTER ();
 
     arity = NTYPE_ARITY (father) - 1;
     NTYPE_ARITY (father) = arity;
@@ -396,7 +399,7 @@ IncreaseArity (ntype *type, int amount)
     ntype **new_sons;
     int i, arity;
 
-    DBUG_ENTER ("IncreaseArity");
+    DBUG_ENTER ();
 
     arity = NTYPE_ARITY (type);
     NTYPE_ARITY (type) = arity + amount;
@@ -433,7 +436,7 @@ MakeNewFundefsPoss (ntype *ires, int num, node **fundefs, int *poss)
     int *new_poss;
     int i, arity;
 
-    DBUG_ENTER ("MakeNewFundefsPoss");
+    DBUG_ENTER ();
 
     arity = IRES_NUMFUNS (ires);
     IRES_NUMFUNS (ires) = arity + num;
@@ -475,7 +478,7 @@ MakeNewFundefsPoss (ntype *ires, int num, node **fundefs, int *poss)
 typeconstr
 TYgetConstr (ntype *type)
 {
-    DBUG_ENTER ("TYgetConstr");
+    DBUG_ENTER ();
 
     DBUG_RETURN (NTYPE_CON (type));
 }
@@ -491,7 +494,7 @@ TYgetConstr (ntype *type)
 mutcScope
 TYgetMutcScope (ntype *type)
 {
-    DBUG_ENTER ("TYgetMutcScope");
+    DBUG_ENTER ();
 
     DBUG_RETURN (NTYPE_MUTC_SCOPE (type));
 }
@@ -507,7 +510,7 @@ TYgetMutcScope (ntype *type)
 mutcUsage
 TYgetMutcUsage (ntype *type)
 {
-    DBUG_ENTER ("TYgetMutcUsage");
+    DBUG_ENTER ();
 
     DBUG_RETURN (NTYPE_MUTC_USAGE (type));
 }
@@ -522,7 +525,7 @@ TYgetMutcUsage (ntype *type)
 bool
 TYisUnique (ntype *type)
 {
-    DBUG_ENTER ("TYisUnique");
+    DBUG_ENTER ();
 
     DBUG_RETURN (NTYPE_UNIQUE (type));
 }
@@ -548,7 +551,7 @@ TYmakeSimpleType (simpletype base)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakeSimpleType");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (base != T_hidden, "TYmakeSimpleType called with T_hidden arg!"
                                    "Please use TYmakeHiddenSimpleType instead!");
@@ -565,7 +568,7 @@ TYmakeHiddenSimpleType (usertype udt)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakeSimpleType");
+    DBUG_ENTER ();
 
     res = MakeNtype (TC_simple, 0);
     SIMPLE_TYPE (res) = T_hidden;
@@ -579,9 +582,9 @@ TYmakeSymbType (char *name, namespace_t *ns)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakeSymbType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((name != NULL), ("TYmakeSymbType called with NULL name!"));
+    DBUG_ASSERT (name != NULL, "TYmakeSymbType called with NULL name!");
 
     res = MakeNtype (TC_symbol, 0);
     SYMBOL_NS (res) = ns;
@@ -595,7 +598,7 @@ TYmakeUserType (usertype udt)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakeUserType");
+    DBUG_ENTER ();
 
     res = MakeNtype (TC_user, 0);
     USER_TYPE (res) = udt;
@@ -606,7 +609,7 @@ TYmakeUserType (usertype udt)
 ntype *
 TYsetSimpleType (ntype *simple, simpletype base)
 {
-    DBUG_ENTER ("TYsetSimpleType");
+    DBUG_ENTER ();
 
     SIMPLE_TYPE (simple) = base;
 
@@ -616,7 +619,7 @@ TYsetSimpleType (ntype *simple, simpletype base)
 ntype *
 TYsetHiddenUserType (ntype *simple, usertype udt)
 {
-    DBUG_ENTER ("TYsetHiddenUserType");
+    DBUG_ENTER ();
 
     SIMPLE_HIDDEN_UDT (simple) = udt;
 
@@ -626,7 +629,7 @@ TYsetHiddenUserType (ntype *simple, usertype udt)
 ntype *
 TYsetMutcUsage (ntype *type, mutcUsage usage)
 {
-    DBUG_ENTER ("TYsetMutcUsage");
+    DBUG_ENTER ();
 
     NTYPE_MUTC_USAGE (type) = usage;
 
@@ -636,7 +639,7 @@ TYsetMutcUsage (ntype *type, mutcUsage usage)
 ntype *
 TYsetUnique (ntype *type, bool val)
 {
-    DBUG_ENTER ("TYsetUnique");
+    DBUG_ENTER ();
 
     NTYPE_UNIQUE (type) = val;
 
@@ -646,7 +649,7 @@ TYsetUnique (ntype *type, bool val)
 ntype *
 TYsetMutcScope (ntype *type, mutcScope scope)
 {
-    DBUG_ENTER ("TYsetMutcUsage");
+    DBUG_ENTER ();
 
     NTYPE_MUTC_SCOPE (type) = scope;
 
@@ -670,8 +673,8 @@ TYsetMutcScope (ntype *type, mutcScope scope)
 simpletype
 TYgetSimpleType (ntype *simple)
 {
-    DBUG_ENTER ("TYgetSimpleType");
-    DBUG_ASSERT ((NTYPE_CON (simple) == TC_simple),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NTYPE_CON (simple) == TC_simple,
                  "TYgetSimpleType applied to nonsimple-type!");
     DBUG_RETURN (SIMPLE_TYPE (simple));
 }
@@ -679,10 +682,10 @@ TYgetSimpleType (ntype *simple)
 usertype
 TYgetHiddenUserType (ntype *simple)
 {
-    DBUG_ENTER ("TYgetHiddenUserType");
-    DBUG_ASSERT ((NTYPE_CON (simple) == TC_simple),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NTYPE_CON (simple) == TC_simple,
                  "TYgetHiddenUserType applied to nonsimple-type!");
-    DBUG_ASSERT ((SIMPLE_TYPE (simple) == T_hidden),
+    DBUG_ASSERT (SIMPLE_TYPE (simple) == T_hidden,
                  "TYgetHiddenUserType applied to non hidden type!");
     DBUG_RETURN (SIMPLE_HIDDEN_UDT (simple));
 }
@@ -690,25 +693,24 @@ TYgetHiddenUserType (ntype *simple)
 usertype
 TYgetUserType (ntype *user)
 {
-    DBUG_ENTER ("TYgetUserType");
-    DBUG_ASSERT ((NTYPE_CON (user) == TC_user),
-                 "TYgetUserType applied to non-user-type!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NTYPE_CON (user) == TC_user, "TYgetUserType applied to non-user-type!");
     DBUG_RETURN (USER_TYPE (user));
 }
 
 char *
 TYgetName (ntype *symb)
 {
-    DBUG_ENTER ("TYgetName");
-    DBUG_ASSERT ((NTYPE_CON (symb) == TC_symbol), "TYgetName applied to nonsymbol-type!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NTYPE_CON (symb) == TC_symbol, "TYgetName applied to nonsymbol-type!");
     DBUG_RETURN (SYMBOL_NAME (symb));
 }
 
 const namespace_t *
 TYgetNamespace (ntype *symb)
 {
-    DBUG_ENTER ("TYgetNamespace");
-    DBUG_ASSERT ((NTYPE_CON (symb) == TC_symbol),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NTYPE_CON (symb) == TC_symbol,
                  "TYgetNamespace applied to nonsymbol-type!");
     DBUG_RETURN (SYMBOL_NS (symb));
 }
@@ -725,8 +727,8 @@ TYgetNamespace (ntype *symb)
 ntype *
 TYsetNamespace (ntype *symb, namespace_t *ns)
 {
-    DBUG_ENTER ("TYsetNamespace");
-    DBUG_ASSERT ((NTYPE_CON (symb) == TC_symbol),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NTYPE_CON (symb) == TC_symbol,
                  "TYsetNamespace applied to nonsymbol-type!");
 
     if (SYMBOL_NS (symb) != NULL) {
@@ -759,7 +761,7 @@ TYmakeAKV (ntype *scalar, constant *val)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakeAKV");
+    DBUG_ENTER ();
 
     res = MakeNtype (TC_akv, 1);
     AKV_CONST (res) = val;
@@ -773,7 +775,7 @@ TYmakeAKS (ntype *scalar, shape *shp)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakeAKS");
+    DBUG_ENTER ();
 
     res = MakeNtype (TC_aks, 1);
     AKS_SHP (res) = shp;
@@ -787,7 +789,7 @@ TYmakeAKD (ntype *scalar, int dots, shape *shp)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakeAKD");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (dots != 0, "attempting to create AKD scalar; "
                             "should create AKS instead!");
@@ -804,7 +806,7 @@ TYmakeAUDGZ (ntype *scalar)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakeAUDGZ");
+    DBUG_ENTER ();
 
     res = MakeNtype (TC_audgz, 1);
     AUDGZ_BASE (res) = scalar;
@@ -817,7 +819,7 @@ TYmakeAUD (ntype *scalar)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakeAUD");
+    DBUG_ENTER ();
 
     res = MakeNtype (TC_aud, 1);
     AUD_BASE (res) = scalar;
@@ -828,7 +830,7 @@ TYmakeAUD (ntype *scalar)
 ntype *
 TYsetScalar (ntype *array, ntype *scalar)
 {
-    DBUG_ENTER ("TYsetScalar");
+    DBUG_ENTER ();
 
     NTYPE_SON (array, 0) = TYfreeType (NTYPE_SON (array, 0));
     NTYPE_SON (array, 0) = scalar;
@@ -855,7 +857,7 @@ TYgetDim (ntype *array)
     shape *shp;
     int res;
 
-    DBUG_ENTER ("TYgetDim");
+    DBUG_ENTER ();
     DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akv)
                    || (NTYPE_CON (array) == TC_akd),
                  "TYgetDim applied to other than AKV, AKS or AKD type!");
@@ -880,7 +882,7 @@ TYgetShape (ntype *array)
 {
     shape *res;
 
-    DBUG_ENTER ("TYgetShape");
+    DBUG_ENTER ();
     DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akv)
                    || (NTYPE_CON (array) == TC_akd),
                  "TYgetShape applied to other than AKV, AKS or AKD type!");
@@ -900,8 +902,8 @@ TYgetValue (ntype *array)
 {
     constant *res;
 
-    DBUG_ENTER ("TYgetValue");
-    DBUG_ASSERT ((NTYPE_CON (array) == TC_akv),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NTYPE_CON (array) == TC_akv,
                  "TYgetValue applied to other than AKV type!");
     res = AKV_CONST (array);
 
@@ -911,7 +913,7 @@ TYgetValue (ntype *array)
 ntype *
 TYgetScalar (ntype *array)
 {
-    DBUG_ENTER ("TYgetScalar");
+    DBUG_ENTER ();
     DBUG_ASSERT ((NTYPE_CON (array) == TC_aks) || (NTYPE_CON (array) == TC_akv)
                    || (NTYPE_CON (array) == TC_akd) || (NTYPE_CON (array) == TC_audgz)
                    || (NTYPE_CON (array) == TC_aud),
@@ -940,7 +942,7 @@ TYmakeUnionType (ntype *t1, ntype *t2)
     int arity = 2, pos = 0;
     int i;
 
-    DBUG_ENTER ("TYmakeUnionType");
+    DBUG_ENTER ();
 
     if (NTYPE_CON (t1) == TC_union) {
         arity += NTYPE_ARITY (t1) - 1;
@@ -996,7 +998,7 @@ TYmakeProductType (int size, ...)
     int i;
     ntype *res, *arg;
 
-    DBUG_ENTER ("TYmakeProductType");
+    DBUG_ENTER ();
 
     res = MakeNtype (TC_prod, size);
 
@@ -1019,7 +1021,7 @@ TYmakeEmptyProductType (int size)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakeEmptyProductType");
+    DBUG_ENTER ();
 
     res = MakeNtype (TC_prod, size);
 
@@ -1029,11 +1031,11 @@ TYmakeEmptyProductType (int size)
 ntype *
 TYsetProductMember (ntype *prod, int pos, ntype *member)
 {
-    DBUG_ENTER ("TYsetProductMember");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (prod) == TC_prod),
+    DBUG_ASSERT (NTYPE_CON (prod) == TC_prod,
                  "TYsetProductMember applied to non-product type");
-    DBUG_ASSERT ((pos < NTYPE_ARITY (prod)),
+    DBUG_ASSERT (pos < NTYPE_ARITY (prod),
                  "TYsetProductMember applied to product type with"
                  " too few elements");
 
@@ -1058,9 +1060,9 @@ TYsetProductMember (ntype *prod, int pos, ntype *member)
 int
 TYgetProductSize (ntype *prod)
 {
-    DBUG_ENTER ("TYgetProductSize");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (prod) == TC_prod),
+    DBUG_ASSERT (NTYPE_CON (prod) == TC_prod,
                  "TYgetProductSize applied to non-product type");
 
     DBUG_RETURN (NTYPE_ARITY (prod));
@@ -1069,11 +1071,11 @@ TYgetProductSize (ntype *prod)
 ntype *
 TYgetProductMember (ntype *prod, int pos)
 {
-    DBUG_ENTER ("TYgetProductMember");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (prod) == TC_prod),
+    DBUG_ASSERT (NTYPE_CON (prod) == TC_prod,
                  "TYgetProductMember applied to non-product type");
-    DBUG_ASSERT ((NTYPE_ARITY (prod) > pos),
+    DBUG_ASSERT (NTYPE_ARITY (prod) > pos,
                  "TYgetProductMember applied with illegal index");
 
     DBUG_RETURN (PROD_MEMBER (prod, pos));
@@ -1094,7 +1096,7 @@ TYmakePolyType (char *name)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakePolyType");
+    DBUG_ENTER ();
 
     res = MakeNtype (TC_poly, 0);
     POLY_NAME (res) = name;
@@ -1115,10 +1117,9 @@ TYmakePolyType (char *name)
 char *
 TYgetPolyName (ntype *type)
 {
-    DBUG_ENTER ("TYgetPolyName");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (type) == TC_poly),
-                 "TYgetPolyName applied to non poly type!");
+    DBUG_ASSERT (NTYPE_CON (type) == TC_poly, "TYgetPolyName applied to non poly type!");
 
     DBUG_RETURN (POLY_NAME (type));
 }
@@ -1139,7 +1140,7 @@ TYmakePolyUserType (char *outer, char *inner, char *shape, bool denest, bool ren
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakePolyUserType");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((!denest || !renest), "polyuser with de- and renest is illegal!");
 
@@ -1166,9 +1167,9 @@ TYmakePolyUserType (char *outer, char *inner, char *shape, bool denest, bool ren
 char *
 TYgetPolyUserOuter (ntype *type)
 {
-    DBUG_ENTER ("TYgetPolyUserOuter");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (type) == TC_polyuser),
+    DBUG_ASSERT (NTYPE_CON (type) == TC_polyuser,
                  "TYgetPolyUserOuter applied to non polyuser type!");
 
     DBUG_RETURN (POLYUSER_OUTER (type));
@@ -1187,9 +1188,9 @@ TYgetPolyUserOuter (ntype *type)
 char *
 TYgetPolyUserInner (ntype *type)
 {
-    DBUG_ENTER ("TYgetPolyUserInner");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (type) == TC_polyuser),
+    DBUG_ASSERT (NTYPE_CON (type) == TC_polyuser,
                  "TYgetPolyUserInner applied to non polyuser type!");
 
     DBUG_RETURN (POLYUSER_INNER (type));
@@ -1208,9 +1209,9 @@ TYgetPolyUserInner (ntype *type)
 char *
 TYgetPolyUserShape (ntype *type)
 {
-    DBUG_ENTER ("TYgetPolyUserShape");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (type) == TC_polyuser),
+    DBUG_ASSERT (NTYPE_CON (type) == TC_polyuser,
                  "TYgetPolyUserShape applied to non polyuser type!");
 
     DBUG_RETURN (POLYUSER_SHAPE (type));
@@ -1230,9 +1231,9 @@ TYgetPolyUserShape (ntype *type)
 bool
 TYgetPolyUserDeNest (ntype *type)
 {
-    DBUG_ENTER ("TYgetPolyUserDeNest");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (type) == TC_polyuser),
+    DBUG_ASSERT (NTYPE_CON (type) == TC_polyuser,
                  "TYgetPolyUserDeNest applied to non polyuser type!");
 
     DBUG_RETURN (POLYUSER_DENEST (type));
@@ -1252,9 +1253,9 @@ TYgetPolyUserDeNest (ntype *type)
 bool
 TYgetPolyUserReNest (ntype *type)
 {
-    DBUG_ENTER ("TYgetPolyUserReNest");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (type) == TC_polyuser),
+    DBUG_ASSERT (NTYPE_CON (type) == TC_polyuser,
                  "TYgetPolyUserReNest applied to non polyuser type!");
 
     DBUG_RETURN (POLYUSER_RENEST (type));
@@ -1274,7 +1275,7 @@ TYmakeBottomType (char *err_msg)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYmakeBottomType");
+    DBUG_ENTER ();
 
     res = MakeNtype (TC_bottom, 0);
     BOTTOM_MSG (res) = err_msg;
@@ -1297,13 +1298,13 @@ TYextendBottomError (ntype *type, char *err_msg)
 {
     char *new_msg;
 
-    DBUG_ENTER ("TYextendBottomError");
+    DBUG_ENTER ();
 
     new_msg = STRcatn (3, BOTTOM_MSG (type), "@", err_msg);
     BOTTOM_MSG (type) = MEMfree (BOTTOM_MSG (type));
     BOTTOM_MSG (type) = new_msg;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1319,9 +1320,9 @@ TYextendBottomError (ntype *type, char *err_msg)
 char *
 TYgetBottomError (ntype *type)
 {
-    DBUG_ENTER ("TYgetBottomError");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (type) == TC_bottom),
+    DBUG_ASSERT (NTYPE_CON (type) == TC_bottom,
                  "TYgetBottomError applied to non bottom type!");
 
     DBUG_RETURN (BOTTOM_MSG (type));
@@ -1385,10 +1386,10 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     char *tmp;
 #endif
 
-    DBUG_ENTER ("TYmakeFunType");
+    DBUG_ENTER ();
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("NTY_MEM", ("Allocated mem on entering TYmakeFunType: %u",
-                            global.current_allocated_mem));
+    DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on entering TYmakeFunType: %u",
+                    global.current_allocated_mem);
 #endif
 
     res = MakeNtype (TC_ires, 1);
@@ -1492,13 +1493,13 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
      */
     arg = TYfreeTypeConstructor (arg);
 
-    DBUG_EXECUTE ("NTY", tmp = TYtype2DebugString (fun, TRUE, 0););
-    DBUG_PRINT ("NTY", ("fun type built: %s\n", tmp));
-    DBUG_EXECUTE ("NTY", tmp = MEMfree (tmp););
+    DBUG_EXECUTE (tmp = TYtype2DebugString (fun, TRUE, 0));
+    DBUG_PRINT ("fun type built: %s\n", tmp);
+    DBUG_EXECUTE (tmp = MEMfree (tmp));
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("NTY_MEM", ("Allocated mem on leaving  TYmakeFunType: %u",
-                            global.current_allocated_mem));
+    DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on leaving  TYmakeFunType: %u",
+                    global.current_allocated_mem);
 #endif
 
     DBUG_RETURN (fun);
@@ -1537,7 +1538,7 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
     node **new_fundefs;
     int *new_poss;
 
-    DBUG_ENTER ("FilterFundefs");
+    DBUG_ENTER ();
 
     if (fun != NULL) {
         switch (NTYPE_CON (fun)) {
@@ -1656,7 +1657,7 @@ ProjDown (ntype *ires, ntype *template)
     ntype *tmp = NULL;
     node **kill_list;
 
-    DBUG_ENTER ("ProjDown");
+    DBUG_ENTER ();
 
     kill_list = (node **)MEMmalloc (sizeof (node *) * IRES_NUMFUNS (ires));
 
@@ -1807,7 +1808,7 @@ MergeSons (ntype *fun1, ntype *fun2, int start, int stop)
 {
     int i;
 
-    DBUG_ENTER ("MergeSons");
+    DBUG_ENTER ();
 
     for (i = start; i < (stop); i++) {
         NTYPE_SON (fun2, i)
@@ -1834,7 +1835,7 @@ AdjustSons (ntype **fun1_p, ntype **fun2_p, int start, int stop)
     ntype *fun1, *fun2;
     int i;
 
-    DBUG_ENTER ("AdjustSons");
+    DBUG_ENTER ();
 
     fun1 = *fun1_p;
     fun2 = *fun2_p;
@@ -1854,7 +1855,7 @@ AdjustSons (ntype **fun1_p, ntype **fun2_p, int start, int stop)
     *fun1_p = fun1;
     *fun2_p = fun2;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1879,13 +1880,13 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
     char *tmp, *tmp2;
 #endif
 
-    DBUG_ENTER ("TYmakeOverloadedFunType");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("NTY", tmp = TYtype2DebugString (fun1, TRUE, 0);
-                  tmp2 = TYtype2DebugString (fun2, TRUE, 0););
-    DBUG_PRINT ("NTY", ("functions:        %s", tmp));
-    DBUG_PRINT ("NTY", ("and               %s", tmp2));
-    DBUG_EXECUTE ("NTY", tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2););
+    DBUG_EXECUTE (tmp = TYtype2DebugString (fun1, TRUE, 0);
+                  tmp2 = TYtype2DebugString (fun2, TRUE, 0));
+    DBUG_PRINT ("functions:        %s", tmp);
+    DBUG_PRINT ("and               %s", tmp2);
+    DBUG_EXECUTE (tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2));
 
     /*
      * iff this is the very first call, instantiate rel. free vars 8-))
@@ -1928,9 +1929,9 @@ TYmakeOverloadedFunType (ntype *fun1, ntype *fun2)
     overload_luts = MEMfree (overload_luts);
     overload_num_luts = 0;
 
-    DBUG_EXECUTE ("NTY", tmp = TYtype2DebugString (res, TRUE, 0););
-    DBUG_PRINT ("NTY", ("overloaded into : %s", tmp));
-    DBUG_EXECUTE ("NTY", tmp = MEMfree (tmp););
+    DBUG_EXECUTE (tmp = TYtype2DebugString (res, TRUE, 0));
+    DBUG_PRINT ("overloaded into : %s", tmp);
+    DBUG_EXECUTE (tmp = MEMfree (tmp));
 
     DBUG_RETURN (res);
 }
@@ -1949,20 +1950,20 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
 #endif
     lut_t **new_luts;
 
-    DBUG_ENTER ("MakeOverloadedFunType");
+    DBUG_ENTER ();
 
     if (fun1 == NULL) {
         res = fun2;
     } else if (fun2 == NULL) {
         res = fun1;
     } else {
-        DBUG_EXECUTE ("NTY", tmpstring = TYtype2DebugString (fun1, TRUE, 0););
-        DBUG_PRINT ("NTY", ("fun1: %s", tmpstring));
+        DBUG_EXECUTE (tmpstring = TYtype2DebugString (fun1, TRUE, 0));
+        DBUG_PRINT ("fun1: %s", tmpstring);
 
-        DBUG_EXECUTE ("NTY", tmpstring = TYtype2DebugString (fun2, TRUE, 0););
-        DBUG_PRINT ("NTY", ("fun2: %s", tmpstring));
+        DBUG_EXECUTE (tmpstring = TYtype2DebugString (fun2, TRUE, 0));
+        DBUG_PRINT ("fun2: %s", tmpstring);
 
-        DBUG_ASSERT ((NTYPE_CON (fun1) == NTYPE_CON (fun2)),
+        DBUG_ASSERT (NTYPE_CON (fun1) == NTYPE_CON (fun2),
                      "TYOverloadFunType called with incompatible types!");
 
         res = fun2;
@@ -1995,13 +1996,13 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
             res = MakeNewFundefsPoss (fun2, IRES_NUMFUNS (fun1), IRES_FUNDEFS (fun1),
                                       IRES_POSS (fun1));
 
-            DBUG_PRINT ("NTOVLD", ("new ires:"));
-            DBUG_EXECUTE ("NTOVLD", DebugPrintDispatchInfo ("NTOVLD", res););
+            DBUG_PRINT_TAG ("NTOVLD", "new ires:");
+            DBUG_EXECUTE_TAG ("NTOVLD", DebugPrintDispatchInfo ("NTOVLD", res));
 
             MakeOverloadedFunType (IRES_TYPE (fun1), IRES_TYPE (fun2));
             break;
         case TC_prod:
-            DBUG_ASSERT ((NTYPE_ARITY (fun1) == NTYPE_ARITY (fun2)),
+            DBUG_ASSERT (NTYPE_ARITY (fun1) == NTYPE_ARITY (fun2),
                          "trying to overload function types with different number"
                          " of return types");
             if (NTYPE_ARITY (fun1) > overload_num_luts) {
@@ -2039,7 +2040,7 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
             if (overload_fun1_alphas[overload_pos] == NULL) {
                 overload_fun1_alphas[overload_pos] = ALPHA_SSI (fun1);
             } else {
-                DBUG_ASSERT ((overload_fun1_alphas[overload_pos] == ALPHA_SSI (fun1)),
+                DBUG_ASSERT (overload_fun1_alphas[overload_pos] == ALPHA_SSI (fun1),
                              "TYmakeOverloadedFunType called with overloaded fun1!");
             }
 #endif
@@ -2083,7 +2084,7 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
             overload_pos++;
             break;
         default:
-            DBUG_ASSERT ((0), "TYmakeOverloadFunType called with illegal funtype!");
+            DBUG_ASSERT (0, "TYmakeOverloadFunType called with illegal funtype!");
         }
         fun1 = TYfreeTypeConstructor (fun1);
     }
@@ -2109,7 +2110,7 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
 {
     int cnt;
 
-    DBUG_ENTER ("mapFunctionInstances");
+    DBUG_ENTER ();
 
     if (type != NULL) {
         switch (NTYPE_CON (type)) {
@@ -2179,9 +2180,9 @@ mapFunctionInstances (ntype *type, node *(*mapfun) (node *, info *), info *info)
 ntype *
 TYmapFunctionInstances (ntype *funtype, node *(*mapfun) (node *, info *), info *info)
 {
-    DBUG_ENTER ("TYmapFunctionInstances");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (funtype) == TC_fun),
+    DBUG_ASSERT (NTYPE_CON (funtype) == TC_fun,
                  "called TYmapFunctionInstances with non function type");
 
     funtype = mapFunctionInstances (funtype, mapfun, info);
@@ -2194,7 +2195,7 @@ foldFunctionInstances (ntype *type, void *(*foldfun) (node *, void *), void *res
 {
     int cnt;
 
-    DBUG_ENTER ("foldFunctionInstances");
+    DBUG_ENTER ();
 
     if (type != NULL) {
         switch (NTYPE_CON (type)) {
@@ -2265,9 +2266,9 @@ TYfoldFunctionInstances (ntype *funtype, void *(*foldfun) (node *, void *), void
 {
     void *result;
 
-    DBUG_ENTER ("TYfoldFunctionInstances");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (funtype) == TC_fun),
+    DBUG_ASSERT (NTYPE_CON (funtype) == TC_fun,
                  "TYfoldFunctionInstances called with non-function type");
 
     result = foldFunctionInstances (funtype, foldfun, initial);
@@ -2292,7 +2293,7 @@ TYgetArity (ntype *fun)
     int res = 0;
     ntype *next;
 
-    DBUG_ENTER ("TYgetArity");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NTYPE_CON (fun) == TC_fun, "TYgetArity applied to non function type");
     DBUG_ASSERT (NTYPE_ARITY (fun) >= 3, "TC_fun with (ARITY < 3) found!");
@@ -2331,7 +2332,7 @@ TYmakedft_res (ntype *type, int max_funs)
 {
     dft_res *res;
 
-    DBUG_ENTER ("TYmakedft_res");
+    DBUG_ENTER ();
 
     res = (dft_res *)MEMmalloc (sizeof (dft_res));
 
@@ -2359,9 +2360,9 @@ TYmakedft_res (ntype *type, int max_funs)
 dft_res *
 TYfreeDft_res (dft_res *res)
 {
-    DBUG_ENTER ("TYfreedft_res");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((res != NULL), "argument is NULL");
+    DBUG_ASSERT (res != NULL, "argument is NULL");
 
     if (res->partials != NULL) {
         res->partials = MEMfree (res->partials);
@@ -2390,7 +2391,7 @@ AllocDFT_state (int max_funs)
 {
     dft_state *state;
 
-    DBUG_ENTER ("AllocDFT_state");
+    DBUG_ENTER ();
 
     state = (dft_state *)MEMmalloc (sizeof (dft_state));
 
@@ -2417,7 +2418,7 @@ AllocDFT_state (int max_funs)
 static dft_state *
 freeDFT_state (dft_state *state)
 {
-    DBUG_ENTER ("freeDFT_state");
+    DBUG_ENTER ();
 
     state->fundefs = MEMfree (state->fundefs);
     state->legal = MEMfree (state->legal);
@@ -2445,7 +2446,7 @@ CopyDFT_state (dft_state *state)
     dft_state *new_state;
     int i;
 
-    DBUG_ENTER ("CopyDFT_state");
+    DBUG_ENTER ();
 
     new_state = AllocDFT_state (state->max_funs);
 
@@ -2476,7 +2477,7 @@ InsertFirstArgDFT_state (dft_state *state, ntype *ires, int lower)
 {
     int cnt, i;
 
-    DBUG_ENTER ("InsertFirstArgDFT_state");
+    DBUG_ENTER ();
 
     cnt = 0;
     for (i = 0; i < state->max_funs; i++) {
@@ -2517,7 +2518,7 @@ InsertNextArgDFT_state (dft_state *state, ntype *ires, int lower)
 {
     int cnt, i, j;
 
-    DBUG_ENTER ("InsertNextArgDFT_state");
+    DBUG_ENTER ();
 
     cnt = 0;
     j = 0;
@@ -2560,7 +2561,7 @@ FinalizeDFT_state (dft_state *state)
 {
     int i;
 
-    DBUG_ENTER ("FinalizeDFT_state");
+    DBUG_ENTER ();
 
     /*
      * all those that are lower than up-projections were marked as illegal
@@ -2594,7 +2595,7 @@ AllArgTypesLe (node *fundef, node *fundef2)
 {
     node *arg, *arg2;
 
-    DBUG_ENTER ("AllArgTypesLe");
+    DBUG_ENTER ();
 
     arg = FUNDEF_ARGS (fundef);
     arg2 = FUNDEF_ARGS (fundef2);
@@ -2612,14 +2613,14 @@ EliminateDeriveablePartial (node **dp_list, int *dp2ud, int length, int pos)
 {
     int i;
 
-    DBUG_ENTER ("EliminateDeriveablePartial");
+    DBUG_ENTER ();
 
     for (i = pos; i < length - 1; i++) {
         dp_list[i] = dp_list[i + 1];
         dp2ud[i] = dp2ud[i + 1];
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static dft_res *
@@ -2633,7 +2634,7 @@ DFT_state2dft_res (dft_state *state)
     int *dp2ud;
     int *p2ud;
 
-    DBUG_ENTER ("DFT_state2dft_res");
+    DBUG_ENTER ();
 
     res = TYmakedft_res (NULL, state->cnt_funs);
     dp2ud = (int *)MEMmalloc (state->cnt_funs * sizeof (int));
@@ -2729,7 +2730,7 @@ DFT_state2dft_res (dft_state *state)
      *      if so leave the one with smaller downs value
      */
 
-    DBUG_PRINT ("NTDIS", ("filtering derived partials:"));
+    DBUG_PRINT_TAG ("NTDIS", "filtering derived partials:");
 
     for (i = 0; i < res->num_deriveable_partials; i++) {
         for (j = i + 1; j < res->num_deriveable_partials; j++) {
@@ -2741,13 +2742,12 @@ DFT_state2dft_res (dft_state *state)
                     dom = j;
                     irr = i;
                 }
-                DBUG_PRINT ("NTDIS",
-                            ("  %p might shadow %p here", state->fundefs[dp2ud[dom]],
-                             state->fundefs[dp2ud[irr]]));
+                DBUG_PRINT_TAG ("NTDIS", "  %p might shadow %p here",
+                                state->fundefs[dp2ud[dom]], state->fundefs[dp2ud[irr]]);
                 if (AllArgTypesLe (state->fundefs[dp2ud[dom]],
                                    state->fundefs[dp2ud[irr]])) {
-                    DBUG_PRINT ("NTDIS",
-                                ("  eliminating %p", state->fundefs[dp2ud[irr]]));
+                    DBUG_PRINT_TAG ("NTDIS", "  eliminating %p",
+                                    state->fundefs[dp2ud[irr]]);
                     EliminateDeriveablePartial (res->deriveable_partials, dp2ud,
                                                 res->num_deriveable_partials, irr);
                     res->num_deriveable_partials--;
@@ -2766,13 +2766,12 @@ DFT_state2dft_res (dft_state *state)
             if (state->ups[dp2ud[i]] == state->ups[p2ud[j]]) {
                 dom = j;
                 irr = i;
-                DBUG_PRINT ("NTDIS",
-                            ("  %p might shadow %p here", state->fundefs[p2ud[dom]],
-                             state->fundefs[dp2ud[irr]]));
+                DBUG_PRINT_TAG ("NTDIS", "  %p might shadow %p here",
+                                state->fundefs[p2ud[dom]], state->fundefs[dp2ud[irr]]);
                 if (AllArgTypesLe (state->fundefs[p2ud[dom]],
                                    state->fundefs[dp2ud[irr]])) {
-                    DBUG_PRINT ("NTDIS",
-                                ("  eliminating %p", state->fundefs[dp2ud[irr]]));
+                    DBUG_PRINT_TAG ("NTDIS", "  eliminating %p",
+                                    state->fundefs[dp2ud[irr]]);
                     EliminateDeriveablePartial (res->deriveable_partials, dp2ud,
                                                 res->num_deriveable_partials, irr);
                     res->num_deriveable_partials--;
@@ -2801,7 +2800,7 @@ FindIbase (ntype *fun, ntype *scalar)
     ntype *res = NULL;
     int i = 0;
 
-    DBUG_ENTER ("FindIbase");
+    DBUG_ENTER ();
 
     while ((i < NTYPE_ARITY (fun) - 2)
            && !TYeqTypes (IBASE_BASE (FUN_IBASE (fun, i)), scalar)) {
@@ -2820,7 +2819,7 @@ FindIdim (ntype *iarr, int dim)
     ntype *res = NULL;
     int i = 0;
 
-    DBUG_ENTER ("FindIdim");
+    DBUG_ENTER ();
 
     while ((i < (NTYPE_ARITY (iarr) - 1)) && (IDIM_DIM (IARR_IDIM (iarr, i)) != dim)) {
         i++;
@@ -2838,7 +2837,7 @@ FindIshape (ntype *idim, shape *shp)
     ntype *res = NULL;
     int i = 0;
 
-    DBUG_ENTER ("FindIshape");
+    DBUG_ENTER ();
 
     while ((i < (NTYPE_ARITY (idim) - 1))
            && !SHcompareShapes (ISHAPE_SHAPE (IDIM_ISHAPE (idim, i)), shp)) {
@@ -2925,14 +2924,14 @@ DebugPrintDispatchInfo (char *dbug_str, ntype *ires)
 {
     int i;
 
-    DBUG_ENTER ("DebugPrintDispatchInfo");
+    DBUG_ENTER ();
 
     for (i = 0; i < IRES_NUMFUNS (ires); i++) {
-        DBUG_PRINT (dbug_str,
-                    ("  fundef %8p: %d", IRES_FUNDEF (ires, i), IRES_POS (ires, i)));
+        DBUG_PRINT_TAG (dbug_str, "  fundef %8p: %d", IRES_FUNDEF (ires, i),
+                        IRES_POS (ires, i));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -2940,14 +2939,14 @@ DebugPrintDFT_state (dft_state *state)
 {
     int i;
 
-    DBUG_ENTER ("DebugPrintDFT_state");
+    DBUG_ENTER ();
 
     for (i = 0; i < state->max_funs; i++) {
-        DBUG_PRINT ("NTDIS", ("  fundef %8p: ups %2d | downs %2d", state->fundefs[i],
-                              state->ups[i], state->downs[i]));
+        DBUG_PRINT_TAG ("NTDIS", "  fundef %8p: ups %2d | downs %2d", state->fundefs[i],
+                        state->ups[i], state->downs[i]);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #endif /* DBUG_OFF */
@@ -2965,11 +2964,11 @@ TYdispatchFunType (ntype *fun, ntype *args)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("TYDispatchFunType");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (fun != NULL, "first arg of TYDispatchFunType is NULL funtype !");
-    DBUG_ASSERT ((NTYPE_CON (args) = TC_prod),
-                 ("second arg of TYDispatchFunType non-product type!"));
+    DBUG_ASSERT (NTYPE_CON (args) = TC_prod,
+                 "second arg of TYDispatchFunType non-product type!");
 
     n = NTYPE_ARITY (args);
 
@@ -2991,11 +2990,11 @@ TYdispatchFunType (ntype *fun, ntype *args)
                               TYtype2String (args, FALSE, 0));
             }
 
-            DBUG_EXECUTE ("NTDIS", tmp_str = TYtype2String (arg, FALSE, 0););
-            DBUG_PRINT ("NTDIS",
-                        ("arg #%d: %s yields (lifted by %d):", i, tmp_str, lower));
-            DBUG_EXECUTE ("NTDIS", tmp_str = MEMfree (tmp_str););
-            DBUG_EXECUTE ("NTDIS", DebugPrintDispatchInfo ("NTDIS", ires););
+            DBUG_EXECUTE_TAG ("NTDIS", tmp_str = TYtype2String (arg, FALSE, 0));
+            DBUG_PRINT_TAG ("NTDIS", "arg #%d: %s yields (lifted by %d):", i, tmp_str,
+                            lower);
+            DBUG_EXECUTE_TAG ("NTDIS", tmp_str = MEMfree (tmp_str));
+            DBUG_EXECUTE_TAG ("NTDIS", DebugPrintDispatchInfo ("NTDIS", ires));
 
             /*
              * Now, we accumulate the ups and downs:
@@ -3007,8 +3006,8 @@ TYdispatchFunType (ntype *fun, ntype *args)
                 state = InsertNextArgDFT_state (state, ires, lower);
             }
 
-            DBUG_PRINT ("NTDIS", ("accumulated ups and downs:"));
-            DBUG_EXECUTE ("NTDIS", DebugPrintDFT_state (state););
+            DBUG_PRINT_TAG ("NTDIS", "accumulated ups and downs:");
+            DBUG_EXECUTE_TAG ("NTDIS", DebugPrintDFT_state (state));
 
             fun = IRES_TYPE (ires);
             if (NTYPE_CON (fun) != TC_fun) {
@@ -3018,8 +3017,8 @@ TYdispatchFunType (ntype *fun, ntype *args)
 
         state = FinalizeDFT_state (state);
 
-        DBUG_PRINT ("NTDIS", ("final ups and downs:"));
-        DBUG_EXECUTE ("NTDIS", DebugPrintDFT_state (state););
+        DBUG_PRINT_TAG ("NTDIS", "final ups and downs:");
+        DBUG_EXECUTE_TAG ("NTDIS", DebugPrintDFT_state (state));
 
         /*
          * Finally, we export our findings via a dft_res structure.
@@ -3053,7 +3052,7 @@ TYdft_res2DebugString (dft_res *dft)
     int i;
     char *tmp_str;
 
-    DBUG_ENTER ("TYdft_res2DebugString");
+    DBUG_ENTER ();
 
     if (buf == NULL) {
         buf = SBUFcreate (100);
@@ -3115,7 +3114,7 @@ TYmakeAlphaType (ntype *maxtype)
     ntype *res;
     tvar *alpha;
 
-    DBUG_ENTER ("TYmakeAlphaType");
+    DBUG_ENTER ();
 
     res = MakeNtype (TC_alpha, 0);
     alpha = SSImakeVariable ();
@@ -3140,9 +3139,9 @@ TYmakeAlphaType (ntype *maxtype)
 tvar *
 TYgetAlpha (ntype *type)
 {
-    DBUG_ENTER ("TYgetAlpha");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NTYPE_CON (type) == TC_alpha),
+    DBUG_ASSERT (NTYPE_CON (type) == TC_alpha,
                  "TYgetAlpha applied to non type variable!");
 
     DBUG_RETURN (ALPHA_SSI (type));
@@ -3154,7 +3153,7 @@ TYcontainsAlpha (ntype *type)
     bool result = FALSE;
     int cnt;
 
-    DBUG_ENTER ("TYcontainsAlpha");
+    DBUG_ENTER ();
 
     if (type != NULL) {
         switch (NTYPE_CON (type)) {
@@ -3274,35 +3273,35 @@ TYcontainsAlpha (ntype *type)
 bool
 TYisSimple (ntype *type)
 {
-    DBUG_ENTER ("TYisSimple");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_simple);
 }
 
 bool
 TYisUser (ntype *type)
 {
-    DBUG_ENTER ("TYisUser");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_user);
 }
 
 bool
 TYisPoly (ntype *type)
 {
-    DBUG_ENTER ("TYisPoly");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_poly);
 }
 
 bool
 TYisPolyUser (ntype *type)
 {
-    DBUG_ENTER ("TYisPolyUser");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_polyuser);
 }
 
 bool
 TYisSymb (ntype *type)
 {
-    DBUG_ENTER ("TYisSmb");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_symbol);
 }
 
@@ -3316,35 +3315,35 @@ TYisSymb (ntype *type)
 bool
 TYisScalar (ntype *type)
 {
-    DBUG_ENTER ("TYisScalar");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_ARITY (type) == 0);
 }
 
 bool
 TYisBottom (ntype *type)
 {
-    DBUG_ENTER ("TYisBottom");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_bottom);
 }
 
 bool
 TYisAlpha (ntype *type)
 {
-    DBUG_ENTER ("TYisAlpha");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_alpha);
 }
 
 bool
 TYisFixedAlpha (ntype *type)
 {
-    DBUG_ENTER ("TYisAlpha");
+    DBUG_ENTER ();
     DBUG_RETURN ((NTYPE_CON (type) == TC_alpha) && SSIisFix (ALPHA_SSI (type)));
 }
 
 bool
 TYisNonFixedAlpha (ntype *type)
 {
-    DBUG_ENTER ("TYisAlpha");
+    DBUG_ENTER ();
     DBUG_RETURN ((NTYPE_CON (type) == TC_alpha) && !SSIisFix (ALPHA_SSI (type)));
 }
 
@@ -3355,42 +3354,42 @@ TYisNonFixedAlpha (ntype *type)
 bool
 TYisAKV (ntype *type)
 {
-    DBUG_ENTER ("TYisAKV");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_akv);
 }
 
 bool
 TYisAKS (ntype *type)
 {
-    DBUG_ENTER ("TYisAKS");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_aks);
 }
 
 bool
 TYisAKD (ntype *type)
 {
-    DBUG_ENTER ("TYisAKD");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_akd);
 }
 
 bool
 TYisAUD (ntype *type)
 {
-    DBUG_ENTER ("TYisAUD");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_aud);
 }
 
 bool
 TYisAUDGZ (ntype *type)
 {
-    DBUG_ENTER ("TYisAUDGZ");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_audgz);
 }
 
 bool
 TYisArray (ntype *type)
 {
-    DBUG_ENTER ("TYisArray");
+    DBUG_ENTER ();
     DBUG_RETURN ((NTYPE_CON (type) == TC_aud) || (NTYPE_CON (type) == TC_audgz)
                  || (NTYPE_CON (type) == TC_akd) || (NTYPE_CON (type) == TC_aks)
                  || (NTYPE_CON (type) == TC_akv));
@@ -3399,14 +3398,14 @@ TYisArray (ntype *type)
 bool
 TYisArrayOrAlpha (ntype *type)
 {
-    DBUG_ENTER ("TYisArray");
+    DBUG_ENTER ();
     DBUG_RETURN (TYisArray (type) || (NTYPE_CON (type) == TC_alpha));
 }
 
 bool
 TYisArrayOrFixedAlpha (ntype *type)
 {
-    DBUG_ENTER ("TYisArray");
+    DBUG_ENTER ();
     DBUG_RETURN (TYisArray (type)
                  || ((NTYPE_CON (type) == TC_alpha) && SSIisFix (ALPHA_SSI (type))));
 }
@@ -3414,21 +3413,21 @@ TYisArrayOrFixedAlpha (ntype *type)
 bool
 TYisUnion (ntype *type)
 {
-    DBUG_ENTER ("TYisUnion");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_union);
 }
 
 bool
 TYisProd (ntype *type)
 {
-    DBUG_ENTER ("TYisProd");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_prod);
 }
 
 bool
 TYisFun (ntype *type)
 {
-    DBUG_ENTER ("TYisFun");
+    DBUG_ENTER ();
     DBUG_RETURN (NTYPE_CON (type) == TC_fun);
 }
 
@@ -3452,7 +3451,7 @@ TYisFun (ntype *type)
 bool
 TYisAKSSymb (ntype *type)
 {
-    DBUG_ENTER ("TYisAKSSymb");
+    DBUG_ENTER ();
     DBUG_RETURN (
       ((NTYPE_CON (type) == TC_aks) && (NTYPE_CON (AKS_BASE (type)) == TC_symbol)));
 }
@@ -3460,7 +3459,7 @@ TYisAKSSymb (ntype *type)
 bool
 TYisAKSUdt (ntype *type)
 {
-    DBUG_ENTER ("TYisAKSUdt");
+    DBUG_ENTER ();
     DBUG_RETURN (
       ((NTYPE_CON (type) == TC_aks) && (NTYPE_CON (AKS_BASE (type)) == TC_user)));
 }
@@ -3472,7 +3471,7 @@ TYisProdOfArrayOrFixedAlpha (ntype *args)
     ntype *arg;
     int i;
 
-    DBUG_ENTER ("TYisProdOfArrayOrFixedAlpha");
+    DBUG_ENTER ();
 
     if (TYisProd (args)) {
         for (i = 0; i < TYgetProductSize (args); i++) {
@@ -3493,7 +3492,7 @@ TYisProdOfArray (ntype *args)
     ntype *arg;
     int i;
 
-    DBUG_ENTER ("TYisProdOfArray");
+    DBUG_ENTER ();
 
     if (TYisProd (args)) {
         for (i = 0; i < TYgetProductSize (args); i++) {
@@ -3514,7 +3513,7 @@ TYisProdOfAKV (ntype *args)
     ntype *arg;
     int i;
 
-    DBUG_ENTER ("TYisProdOfAKV");
+    DBUG_ENTER ();
 
     if (TYisProd (args)) {
         for (i = 0; i < TYgetProductSize (args); i++) {
@@ -3534,7 +3533,7 @@ TYisProdOfAKVafter (ntype *args, int i)
     bool res = TRUE;
     ntype *arg;
 
-    DBUG_ENTER ("TYisProdOfAKVafter");
+    DBUG_ENTER ();
 
     if (TYisProd (args)) {
         for (; i < TYgetProductSize (args); i++) {
@@ -3555,7 +3554,7 @@ TYisProdContainingAKV (ntype *args)
     ntype *arg;
     int i;
 
-    DBUG_ENTER ("TYisProdContainingAKV");
+    DBUG_ENTER ();
 
     if (TYisProd (args)) {
         for (i = 0; i < TYgetProductSize (args); i++) {
@@ -3585,7 +3584,7 @@ TYcountNonFixedAlpha (ntype *type)
     int res = 0;
     int i, n;
 
-    DBUG_ENTER ("TYcountNonFixedAlpha");
+    DBUG_ENTER ();
 
     if (TYisProd (type)) {
         n = TYgetProductSize (type);
@@ -3615,7 +3614,7 @@ TYcountNoMinAlpha (ntype *type)
     int res = 0;
     int i, n;
 
-    DBUG_ENTER ("TYcountNoMinAlpha");
+    DBUG_ENTER ();
 
     if (TYisProd (type)) {
         n = TYgetProductSize (type);
@@ -3645,7 +3644,7 @@ TYgetBottom (ntype *type)
     ntype *res = NULL;
     int i, n;
 
-    DBUG_ENTER ("TYfindBottom");
+    DBUG_ENTER ();
 
     if (TYisProd (type)) {
         n = TYgetProductSize (type);
@@ -3691,12 +3690,13 @@ TYcmpTypes (ntype *t1, ntype *t2)
     int cnt;
     ct_res res = TY_dis;
 
-    DBUG_ENTER ("TYcmpTypes");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("NTY_CMP", tmp_str = TYtype2DebugString (t1, FALSE, 0);
-                  tmp_str2 = TYtype2DebugString (t2, FALSE, 0););
-    DBUG_PRINT ("NTY_CMP", ("comparing %s and %s", tmp_str, tmp_str2));
-    DBUG_EXECUTE ("NTY_CMP", tmp_str = MEMfree (tmp_str); tmp_str2 = MEMfree (tmp_str2););
+    DBUG_EXECUTE_TAG ("NTY_CMP", tmp_str = TYtype2DebugString (t1, FALSE, 0);
+                      tmp_str2 = TYtype2DebugString (t2, FALSE, 0));
+    DBUG_PRINT_TAG ("NTY_CMP", "comparing %s and %s", tmp_str, tmp_str2);
+    DBUG_EXECUTE_TAG ("NTY_CMP", tmp_str = MEMfree (tmp_str);
+                      tmp_str2 = MEMfree (tmp_str2));
 
     switch (NTYPE_CON (t1)) {
     case TC_prod:
@@ -3959,17 +3959,17 @@ TYcmpTypes (ntype *t1, ntype *t2)
         }
         break;
     default:
-        DBUG_ASSERT ((0), "Type comparison for non-array types not yet implemented!");
+        DBUG_ASSERT (0, "Type comparison for non-array types not yet implemented!");
     }
 
-    DBUG_PRINT ("NTY_CMP", ("result: %d", res));
+    DBUG_PRINT_TAG ("NTY_CMP", "result: %d", res);
     DBUG_RETURN (res);
 }
 
 bool
 TYeqTypes (ntype *t1, ntype *t2)
 {
-    DBUG_ENTER ("TYeqTypes");
+    DBUG_ENTER ();
     DBUG_RETURN (TYcmpTypes (t1, t2) == TY_eq);
 }
 
@@ -3978,7 +3978,7 @@ TYleTypes (ntype *t1, ntype *t2)
 {
     ct_res cmp;
 
-    DBUG_ENTER ("TYleTypes");
+    DBUG_ENTER ();
     cmp = TYcmpTypes (t1, t2);
     DBUG_RETURN ((cmp == TY_eq) || (cmp == TY_lt));
 }
@@ -3999,7 +3999,7 @@ TYlubOfTypes (ntype *t1, ntype *t2)
 {
     ntype *res, *new_t1;
 
-    DBUG_ENTER ("TYlubOfTypes");
+    DBUG_ENTER ();
 
     switch (TYcmpTypes (t1, t2)) {
     case TY_eq:
@@ -4055,11 +4055,11 @@ TYlubOfTypes (ntype *t1, ntype *t2)
             new_t1 = TYfreeTypeConstructor (new_t1);
             break;
         case TC_aud:
-            DBUG_ASSERT ((0), "Cannot compute LUB!");
+            DBUG_ASSERT (0, "Cannot compute LUB!");
             res = NULL;
             break;
         default:
-            DBUG_ASSERT ((0), "Cannot compute LUB!");
+            DBUG_ASSERT (0, "Cannot compute LUB!");
             res = NULL;
             break;
         }
@@ -4091,7 +4091,7 @@ TYeliminateAlpha (ntype *t1)
     ntype *res;
     int i;
 
-    DBUG_ENTER ("TYeliminateAlpha");
+    DBUG_ENTER ();
 
     if (TYisProd (t1)) {
         res = MakeNtype (TC_prod, NTYPE_ARITY (t1));
@@ -4125,18 +4125,18 @@ TYfixAndEliminateAlpha (ntype *t1)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYfixAndEliminateAlpha");
+    DBUG_ENTER ();
 
     if (t1 == NULL) {
         res = t1;
     } else if (TYisAlpha (t1)) {
         if (SSIgetMin (TYgetAlpha (t1)) != NULL) {
             res = TYcopyType (SSIgetMin (ALPHA_SSI (t1)));
-            DBUG_PRINT ("SSIMEM", ("fixing var at %p", TYgetAlpha (t1)));
+            DBUG_PRINT_TAG ("SSIMEM", "fixing var at %p", TYgetAlpha (t1));
         } else {
             res = TYcopyType (t1);
-            DBUG_PRINT ("SSIMEM",
-                        ("copying var at %p to %p", TYgetAlpha (t1), TYgetAlpha (res)));
+            DBUG_PRINT_TAG ("SSIMEM", "copying var at %p to %p", TYgetAlpha (t1),
+                            TYgetAlpha (res));
         }
     } else {
         int cnt;
@@ -4170,7 +4170,7 @@ TYliftBottomFixAndEliminateAlpha (ntype *t1)
     ntype *res;
     ntype *min;
 
-    DBUG_ENTER ("TYliftBottomFixAndEliminateAlpha");
+    DBUG_ENTER ();
 
     if (t1 == NULL) {
         res = t1;
@@ -4184,11 +4184,11 @@ TYliftBottomFixAndEliminateAlpha (ntype *t1)
             } else {
                 res = TYcopyType (SSIgetMin (ALPHA_SSI (t1)));
             }
-            DBUG_PRINT ("SSIMEM", ("fixing var at %p", TYgetAlpha (t1)));
+            DBUG_PRINT_TAG ("SSIMEM", "fixing var at %p", TYgetAlpha (t1));
         } else {
             res = TYcopyType (t1);
-            DBUG_PRINT ("SSIMEM",
-                        ("copying var at %p to %p", TYgetAlpha (t1), TYgetAlpha (res)));
+            DBUG_PRINT_TAG ("SSIMEM", "copying var at %p to %p", TYgetAlpha (t1),
+                            TYgetAlpha (res));
         }
     } else {
         int cnt;
@@ -4223,7 +4223,7 @@ TYeliminateUser (ntype *t1)
     int i;
     usertype udt;
 
-    DBUG_ENTER ("TYeliminateUser");
+    DBUG_ENTER ();
 
     if (TYisProd (t1)) {
         res = MakeNtype (TC_prod, NTYPE_ARITY (t1));
@@ -4273,7 +4273,7 @@ TYeliminateAKV (ntype *t1)
     ntype *res;
     int i;
 
-    DBUG_ENTER ("TYeliminateAKV");
+    DBUG_ENTER ();
 
     if (TYisProd (t1)) {
         res = MakeNtype (TC_prod, NTYPE_ARITY (t1));
@@ -4312,9 +4312,9 @@ TYeliminateAKV (ntype *t1)
 ntype *
 TYfreeTypeConstructor (ntype *type)
 {
-    DBUG_ENTER ("TYfreeTypeConstructor");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "argument is NULL");
+    DBUG_ASSERT (type != NULL, "argument is NULL");
 
     switch (NTYPE_CON (type)) {
     case TC_bottom:
@@ -4361,7 +4361,7 @@ TYfreeTypeConstructor (ntype *type)
     case TC_user:
         break;
     default:
-        DBUG_ASSERT ((0), "trying to free illegal type constructor!");
+        DBUG_ASSERT (0, "trying to free illegal type constructor!");
     }
     type = MEMfree (type);
 
@@ -4373,9 +4373,9 @@ TYfreeType (ntype *type)
 {
     int i;
 
-    DBUG_ENTER ("TYfreeType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "argument is NULL");
+    DBUG_ASSERT (type != NULL, "argument is NULL");
 
     for (i = 0; i < NTYPE_ARITY (type); i++) {
         if (NTYPE_SON (type, i) != NULL) {
@@ -4406,9 +4406,9 @@ TYfreeType (ntype *type)
 void
 TYtouchTypeConstructor (ntype *type, info *arg_info)
 {
-    DBUG_ENTER ("TYtouchTypeConstructor");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "argument is NULL");
+    DBUG_ASSERT (type != NULL, "argument is NULL");
 
     switch (NTYPE_CON (type)) {
     case TC_bottom:
@@ -4447,11 +4447,11 @@ TYtouchTypeConstructor (ntype *type, info *arg_info)
     case TC_user:
         break;
     default:
-        DBUG_ASSERT ((0), "trying to free illegal type constructor!");
+        DBUG_ASSERT (0, "trying to free illegal type constructor!");
     }
     CHKMtouch (type, arg_info);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -4459,9 +4459,9 @@ TYtouchType (ntype *type, info *arg_info)
 {
     int i;
 
-    DBUG_ENTER ("TYtouchType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "argument is NULL");
+    DBUG_ASSERT (type != NULL, "argument is NULL");
 
     for (i = 0; i < NTYPE_ARITY (type); i++) {
         if (NTYPE_SON (type, i) != NULL) {
@@ -4475,7 +4475,7 @@ TYtouchType (ntype *type, info *arg_info)
 
     TYtouchTypeConstructor (type, arg_info);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -4515,7 +4515,7 @@ CopyTypeConstructor (ntype *type, TV_treatment new_tvars)
     int i;
     bool ok;
 
-    DBUG_ENTER ("CopyTypeConstructor");
+    DBUG_ENTER ();
 
     if (type == NULL) {
         res = NULL;
@@ -4614,7 +4614,7 @@ TYcopyTypeConstructor (ntype *type)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYcopyTypeConstructor");
+    DBUG_ENTER ();
 
     res = CopyTypeConstructor (type, tv_id);
 
@@ -4630,10 +4630,10 @@ TYcopyType (ntype *type)
     int mem_entry;
 #endif
 
-    DBUG_ENTER ("TYcopyType");
+    DBUG_ENTER ();
 
 #ifdef SHOW_MALLOC
-    DBUG_EXECUTE ("NTY_MEM", mem_entry = global.current_allocated_mem;);
+    DBUG_EXECUTE_TAG ("NTY_MEM", mem_entry = global.current_allocated_mem);
 #endif
 
     res = CopyTypeConstructor (type, tv_id);
@@ -4646,8 +4646,8 @@ TYcopyType (ntype *type)
     }
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("NTY_MEM", ("size of type copied by TYcopyType: %u",
-                            global.current_allocated_mem - mem_entry));
+    DBUG_PRINT_TAG ("NTY_MEM", "size of type copied by TYcopyType: %u",
+                    global.current_allocated_mem - mem_entry);
 #endif
 
     if (res != NULL) {
@@ -4663,7 +4663,7 @@ TYcopyFixedType (ntype *type)
     ntype *res;
     int i;
 
-    DBUG_ENTER ("TYcopyFixedType");
+    DBUG_ENTER ();
 
     res = CopyTypeConstructor (type, tv_none);
     if (res != NULL) {
@@ -4683,7 +4683,7 @@ TYDeriveSubtype (ntype *type)
     ntype *res;
     int i;
 
-    DBUG_ENTER ("TYDeriveSubtype");
+    DBUG_ENTER ();
 
     res = CopyTypeConstructor (type, tv_sub);
     if (res != NULL) {
@@ -4718,7 +4718,7 @@ ScalarType2String (ntype *type)
     static str_buf *buf = NULL;
     char *res;
 
-    DBUG_ENTER ("ScalarType2String");
+    DBUG_ENTER ();
 
     if (buf == NULL) {
         buf = SBUFcreate (64);
@@ -4773,7 +4773,7 @@ ArrayType2String (ntype *type)
     static str_buf *buf = NULL;
     char *tmp_str;
 
-    DBUG_ENTER ("ArrayType2String");
+    DBUG_ENTER ();
 
     if (buf == NULL) {
         buf = SBUFcreate (128);
@@ -4832,7 +4832,7 @@ ArrayType2String (ntype *type)
 static str_buf *
 PrintFunSep (str_buf *buf, bool multiline, int offset)
 {
-    DBUG_ENTER ("FunType2String");
+    DBUG_ENTER ();
     if (multiline) {
         buf = SBUFprintf (buf, ",\n%*s", offset, "");
     } else {
@@ -4851,7 +4851,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
     int scal_len = 0;
     bool sep_needed = FALSE;
 
-    DBUG_ENTER ("FunType2String");
+    DBUG_ENTER ();
 
     buf = SBUFcreate (4096);
     switch (NTYPE_CON (type)) {
@@ -4875,7 +4875,7 @@ FunType2String (ntype *type, char *scal_str, bool multiline, int offset)
 
     case TC_ibase:
         DBUG_ASSERT (IBASE_GEN (type), "fun type without generic instance!");
-        DBUG_ASSERT ((scal_str == NULL),
+        DBUG_ASSERT (scal_str == NULL,
                      "FunType2String called on ibase with non NULL scal_str!");
 
         scal_str = ScalarType2String (IBASE_BASE (type));
@@ -5013,7 +5013,7 @@ TYtype2String (ntype *type, bool multiline, int offset)
     char *tmp_str, *res;
     int i;
 
-    DBUG_ENTER ("TYtype2String");
+    DBUG_ENTER ();
 
     if (type == NULL) {
         res = STRcpy ("--");
@@ -5083,7 +5083,7 @@ TYtype2DebugString (ntype *type, bool multiline, int offset)
     char *tmp_str;
     int i, n;
 
-    DBUG_ENTER ("TYtype2DebugString");
+    DBUG_ENTER ();
 
     buf = SBUFcreate (8192);
     if (type == NULL) {
@@ -5218,7 +5218,7 @@ TYArgs2FunTypeString (node *args, ntype *rettype)
     str_buf *buf;
     char *tmp;
 
-    DBUG_ENTER ("TYArgs2FunTypeString");
+    DBUG_ENTER ();
 
     buf = SBUFcreate (4096);
 
@@ -5268,7 +5268,7 @@ TYnestTypes (ntype *outer, ntype *inner)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYnestTypes");
+    DBUG_ENTER ();
 
     if (NTYPE_CON (outer) == TC_aks) {
         /*
@@ -5347,7 +5347,7 @@ TYnestTypes (ntype *outer, ntype *inner)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYnestTypes");
+    DBUG_ENTER ();
 
     switch (NTYPE_CON (outer)) {
     case TC_aks:
@@ -5496,7 +5496,7 @@ TYdeNestTypeFromInner (ntype *nested, ntype *inner)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYdeNestTypeFromInner");
+    DBUG_ENTER ();
 
     if (global.irregular_arrays != TRUE) {
         DBUG_ASSERT (TYisAKS (inner), "TYDeNestTypeFromInner with non AKS inner type not "
@@ -5633,7 +5633,7 @@ TYdeNestTypeFromOuter (ntype *nested, ntype *outer)
 {
     ntype *res;
 
-    DBUG_ENTER ("TYdeNestTypeFromOuter");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (TYisAKS (outer),
                  "TYDeNestTypeFromOuter with non AKS outer type not yet implemented!");
@@ -5818,7 +5818,7 @@ TYoldType2ScalarType (types *old)
     char *tmp, *tmp2;
 #endif
 
-    DBUG_ENTER ("TYoldType2ScalarType");
+    DBUG_ENTER ();
 
     switch (TYPES_BASETYPE (old)) {
     case T_user:
@@ -5867,10 +5867,10 @@ TYoldType2ScalarType (types *old)
         DBUG_ASSERT (0, "TYoldType2Type applied to illegal type");
     }
 
-    DBUG_EXECUTE ("NTY", tmp = CVtype2String (old, 3, TRUE);
-                  tmp2 = TYtype2DebugString (res, TRUE, 0););
-    DBUG_PRINT ("NTY", ("base type of %s converted into : %s\n", tmp, tmp2));
-    DBUG_EXECUTE ("NTY", tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2););
+    DBUG_EXECUTE (tmp = CVtype2String (old, 3, TRUE);
+                  tmp2 = TYtype2DebugString (res, TRUE, 0));
+    DBUG_PRINT ("base type of %s converted into : %s\n", tmp, tmp2);
+    DBUG_EXECUTE (tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2));
 
     DBUG_RETURN (res);
 }
@@ -5895,7 +5895,7 @@ TYoldType2Type (types *old)
     char *tmp, *tmp2;
 #endif
 
-    DBUG_ENTER ("TYoldType2Type");
+    DBUG_ENTER ();
 
     if (TYPES_AKV (old)) {
         CTInote ("AKV information lost in newtype->oldtype->newtype conversion");
@@ -5918,10 +5918,10 @@ TYoldType2Type (types *old)
         }
     }
 
-    DBUG_EXECUTE ("NTY", tmp = CVtype2String (old, 3, TRUE);
-                  tmp2 = TYtype2DebugString (res, TRUE, 0););
-    DBUG_PRINT ("NTY", ("%s converted into : %s\n", tmp, tmp2));
-    DBUG_EXECUTE ("NTY", tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2););
+    DBUG_EXECUTE (tmp = CVtype2String (old, 3, TRUE);
+                  tmp2 = TYtype2DebugString (res, TRUE, 0));
+    DBUG_PRINT ("%s converted into : %s\n", tmp, tmp2);
+    DBUG_EXECUTE (tmp = MEMfree (tmp); tmp2 = MEMfree (tmp2));
 
     DBUG_RETURN (res);
 }
@@ -5968,13 +5968,13 @@ Type2OldType (ntype *new)
     types *tmp = NULL;
     int i;
 
-    DBUG_ENTER ("Type2OldType");
+    DBUG_ENTER ();
 
     switch (NTYPE_CON (new)) {
     case TC_alpha:
-        DBUG_ASSERT ((TYcmpTypes (SSIgetMin (TYgetAlpha (new)),
-                                  SSIgetMax (TYgetAlpha (new)))
-                      == TY_eq),
+        DBUG_ASSERT (TYcmpTypes (SSIgetMin (TYgetAlpha (new)),
+                                 SSIgetMax (TYgetAlpha (new)))
+                       == TY_eq,
                      "Type2OldType applied to non-unique alpha type");
         res = Type2OldType (SSIgetMin (TYgetAlpha (new)));
         break;
@@ -6034,7 +6034,7 @@ Type2OldType (ntype *new)
         TYPES_TDEF (res) = UTgetTdef (USER_TYPE (new));
         break;
     default:
-        DBUG_ASSERT ((0), "Type2OldType not yet entirely implemented!");
+        DBUG_ASSERT (0, "Type2OldType not yet entirely implemented!");
         res = NULL;
         break;
     }
@@ -6058,17 +6058,17 @@ TYtype2OldType (ntype *new)
     char *tmp_str, *tmp_str2;
 #endif
 
-    DBUG_ENTER ("Type2OldType");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("NTY", tmp_str = TYtype2DebugString (new, FALSE, 0););
-    DBUG_PRINT ("NTY", ("converting %s", tmp_str));
+    DBUG_EXECUTE (tmp_str = TYtype2DebugString (new, FALSE, 0));
+    DBUG_PRINT ("converting %s", tmp_str);
 
     res = Type2OldType (new);
 
-    DBUG_EXECUTE ("NTY", tmp_str2 = CVtype2String (res, 0, TRUE););
-    DBUG_PRINT ("NTY", ("... result is %s", tmp_str2));
-    DBUG_EXECUTE ("NTY", tmp_str = MEMfree (tmp_str););
-    DBUG_EXECUTE ("NTY", tmp_str2 = MEMfree (tmp_str2););
+    DBUG_EXECUTE (tmp_str2 = CVtype2String (res, 0, TRUE));
+    DBUG_PRINT ("... result is %s", tmp_str2);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
+    DBUG_EXECUTE (tmp_str2 = MEMfree (tmp_str2));
 
     DBUG_RETURN (res);
 }
@@ -6094,7 +6094,7 @@ ExtractTopBaseSignature (ntype *fun, ntype **frame)
 {
     ntype *next;
 
-    DBUG_ENTER ("ExtractTopBaseSignature");
+    DBUG_ENTER ();
 
     *frame = TYcopyType (IBASE_BASE (FUN_IBASE (fun, 0)));
     next = IRES_TYPE (IBASE_GEN (FUN_IBASE (fun, 0)));
@@ -6103,7 +6103,7 @@ ExtractTopBaseSignature (ntype *fun, ntype **frame)
         ExtractTopBaseSignature (next, frame + 1);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -6123,7 +6123,7 @@ FindBase (ntype *scalar, ntype *fun)
     int res = -1;
     int i;
 
-    DBUG_ENTER ("FindBase");
+    DBUG_ENTER ();
 
     for (i = 2; i < NTYPE_ARITY (fun); i++) {
         if (TYeqTypes (scalar, IBASE_BASE (NTYPE_SON (fun, i)))) {
@@ -6157,28 +6157,28 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("SplitWrapperType");
+    DBUG_ENTER ();
 
     if (type == NULL) {
         new_type = NULL;
     } else {
         new_type = CopyTypeConstructor (type, tv_id);
 
-        DBUG_PRINT ("NTY_SPLIT", ("processing %s node at" F_PTR "(cpy:" F_PTR ")",
-                                  dbug_str[NTYPE_CON (type)], type, new_type));
+        DBUG_PRINT_TAG ("NTY_SPLIT", "processing %s node at" F_PTR "(cpy:" F_PTR ")",
+                        dbug_str[NTYPE_CON (type)], type, new_type);
         switch (NTYPE_CON (type)) {
 
         case TC_fun:
-            DBUG_ASSERT ((NTYPE_ARITY (type) >= 3), "TC_fun with (ARITY < 3) found!");
-            DBUG_ASSERT ((FUN_POLY (type) == NULL),
+            DBUG_ASSERT (NTYPE_ARITY (type) >= 3, "TC_fun with (ARITY < 3) found!");
+            DBUG_ASSERT (FUN_POLY (type) == NULL,
                          "SplitWrapperType called in the presence of poly version!");
-            DBUG_ASSERT ((FUN_UPOLY (type) == NULL),
+            DBUG_ASSERT (FUN_UPOLY (type) == NULL,
                          "SplitWrapperType called in the presence of poly-user version!");
 
-            DBUG_EXECUTE ("NTY_SPLIT",
-                          tmp_str = TYtype2DebugString (frame[level], FALSE, 0););
-            DBUG_PRINT ("NTY_SPLIT", ("--looking for %s", tmp_str));
-            DBUG_EXECUTE ("NTY_SPLIT", tmp_str = MEMfree (tmp_str););
+            DBUG_EXECUTE_TAG ("NTY_SPLIT",
+                              tmp_str = TYtype2DebugString (frame[level], FALSE, 0));
+            DBUG_PRINT_TAG ("NTY_SPLIT", "--looking for %s", tmp_str);
+            DBUG_EXECUTE_TAG ("NTY_SPLIT", tmp_str = MEMfree (tmp_str));
 
             pos = FindBase (frame[level], type);
             if (pos < 0) {
@@ -6186,24 +6186,25 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
                  * we found a dead end => switch to kill-mode
                  */
 
-                DBUG_PRINT ("NTY_SPLIT", ("--not found switching to kill mode"));
+                DBUG_PRINT_TAG ("NTY_SPLIT", "--not found switching to kill mode");
                 *pathes_remaining = 0;
 
             } else {
 
-                DBUG_PRINT ("NTY_SPLIT", ("--found in position %d", pos));
+                DBUG_PRINT_TAG ("NTY_SPLIT", "--found in position %d", pos);
                 son = SplitWrapperType (NTYPE_SON (type, pos), level + 1, frame,
                                         pathes_remaining);
 
-                DBUG_PRINT ("NTY_SPLIT", ("--adding " F_PTR " to " F_PTR, son, new_type));
+                DBUG_PRINT_TAG ("NTY_SPLIT", "--adding " F_PTR " to " F_PTR, son,
+                                new_type);
                 new_type = MakeNewSon (new_type, NULL);
                 new_type = MakeNewSon (new_type, NULL);
                 new_type = MakeNewSon (new_type, son);
 
                 if (*pathes_remaining == 1) {
                     *pathes_remaining = NTYPE_ARITY (type) - 2;
-                    DBUG_PRINT ("NTY_SPLIT", ("--deleting " F_PTR " from " F_PTR,
-                                              NTYPE_SON (type, pos), type));
+                    DBUG_PRINT_TAG ("NTY_SPLIT", "--deleting " F_PTR " from " F_PTR,
+                                    NTYPE_SON (type, pos), type);
                     type = DeleteSon (type, pos);
                 } else {
                     *pathes_remaining *= NTYPE_ARITY (type) - 2;
@@ -6227,13 +6228,14 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
                      * NB: In certain situations NULL sons NEED to be inserted.
                      *     These are mandatory nodes such as [] and [*] in IBASE.
                      */
-                    DBUG_PRINT ("NTY_SPLIT",
-                                ("--adding " F_PTR " to " F_PTR, son, new_type));
+                    DBUG_PRINT_TAG ("NTY_SPLIT", "--adding " F_PTR " to " F_PTR, son,
+                                    new_type);
                     new_type = MakeNewSon (new_type, son);
                     if (*pathes_remaining == 1) {
                         if (i >= mandatory) {
-                            DBUG_PRINT ("NTY_SPLIT", ("**deleting " F_PTR " from " F_PTR,
-                                                      NTYPE_SON (type, i), type));
+                            DBUG_PRINT_TAG ("NTY_SPLIT",
+                                            "**deleting " F_PTR " from " F_PTR,
+                                            NTYPE_SON (type, i), type);
                             type = DeleteSon (type, i);
                             /**
                              * ATTENTION: DeleteSons decrements our arity and thus the
@@ -6243,9 +6245,9 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
                              */
                             i--;
                         } else {
-                            DBUG_PRINT ("NTY_SPLIT",
-                                        ("**setting " F_PTR " from " F_PTR " to NULL",
-                                         NTYPE_SON (type, i), type));
+                            DBUG_PRINT_TAG ("NTY_SPLIT",
+                                            "**setting " F_PTR " from " F_PTR " to NULL",
+                                            NTYPE_SON (type, i), type);
                             NTYPE_SON (type, i) = NULL;
                         }
                     }
@@ -6261,11 +6263,11 @@ SplitWrapperType (ntype *type, int level, ntype **frame, int *pathes_remaining)
         }
 
         if (*pathes_remaining == 0) {
-            DBUG_PRINT ("NTY_SPLIT", ("--killing %s node at" F_PTR,
-                                      dbug_str[NTYPE_CON (type)], new_type));
+            DBUG_PRINT_TAG ("NTY_SPLIT", "--killing %s node at" F_PTR,
+                            dbug_str[NTYPE_CON (type)], new_type);
             new_type = MEMfree (new_type);
         } else if (*pathes_remaining == 1) {
-            DBUG_PRINT ("NTY_SPLIT", ("**freeing " F_PTR, type));
+            DBUG_PRINT_TAG ("NTY_SPLIT", "**freeing " F_PTR, type);
             type = TYfreeTypeConstructor (type);
         }
     }
@@ -6282,15 +6284,15 @@ TYsplitWrapperType (ntype *type, int *pathes_remaining)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("TYSplitWrapperType");
+    DBUG_ENTER ();
 
     if (NTYPE_CON (type) == TC_fun) {
 
-        DBUG_EXECUTE ("NTY_SPLIT", tmp_str = TYtype2DebugString (type, TRUE, 20););
+        DBUG_EXECUTE_TAG ("NTY_SPLIT", tmp_str = TYtype2DebugString (type, TRUE, 20));
 
-        DBUG_PRINT ("NTY_SPLIT", ("wrapper is: %s", tmp_str));
+        DBUG_PRINT_TAG ("NTY_SPLIT", "wrapper is: %s", tmp_str);
 
-        DBUG_EXECUTE ("NTY_SPLIT", tmp_str = MEMfree (tmp_str););
+        DBUG_EXECUTE_TAG ("NTY_SPLIT", tmp_str = MEMfree (tmp_str));
 
         n = TYgetArity (type);
         frame = (ntype **)MEMmalloc (n * sizeof (ntype *));
@@ -6306,11 +6308,11 @@ TYsplitWrapperType (ntype *type, int *pathes_remaining)
         }
         frame = MEMfree (frame);
 
-        DBUG_EXECUTE ("NTY_SPLIT", tmp_str = TYtype2DebugString (type, TRUE, 20););
+        DBUG_EXECUTE_TAG ("NTY_SPLIT", tmp_str = TYtype2DebugString (type, TRUE, 20));
 
-        DBUG_PRINT ("NTY_SPLIT", ("wrapper split-off: %s", tmp_str));
+        DBUG_PRINT_TAG ("NTY_SPLIT", "wrapper split-off: %s", tmp_str);
 
-        DBUG_EXECUTE ("NTY_SPLIT", tmp_str = MEMfree (tmp_str););
+        DBUG_EXECUTE_TAG ("NTY_SPLIT", tmp_str = MEMfree (tmp_str));
     } else {
         /**
          * we are dealing with a parameterless function here!
@@ -6336,18 +6338,18 @@ TYgetWrapperRetType (ntype *type)
 {
     ntype *ret_type;
 
-    DBUG_ENTER ("TYgetWrapperRetType");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "no type found!");
+    DBUG_ASSERT (type != NULL, "no type found!");
 
     if (TYisFun (type)) {
-        DBUG_ASSERT ((NTYPE_ARITY (type) == 3), "multiple FUN_IBASE found!");
+        DBUG_ASSERT (NTYPE_ARITY (type) == 3, "multiple FUN_IBASE found!");
 
         type = IRES_TYPE (IBASE_GEN (FUN_IBASE (type, 0)));
-        DBUG_ASSERT ((type != NULL), "IBASE_GEN not found!");
+        DBUG_ASSERT (type != NULL, "IBASE_GEN not found!");
         ret_type = TYgetWrapperRetType (type);
     } else {
-        DBUG_ASSERT ((TYisProd (type)), "neither TC_fun nor TC_prod found!");
+        DBUG_ASSERT (TYisProd (type), "neither TC_fun nor TC_prod found!");
         ret_type = type;
     }
 
@@ -6367,12 +6369,12 @@ TYgetWrapperRetType (ntype *type)
 node *
 TYcorrectWrapperArgTypes (node *args, ntype *type)
 {
-    DBUG_ENTER ("TYcorrectWrapperArgTypes");
+    DBUG_ENTER ();
 
     if (args != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg node found!");
-        DBUG_ASSERT ((TYisFun (type)), "no TC_fun found!");
-        DBUG_ASSERT ((NTYPE_ARITY (type) == 3), "multiple FUN_IBASE found!");
+        DBUG_ASSERT (NODE_TYPE (args) == N_arg, "no N_arg node found!");
+        DBUG_ASSERT (TYisFun (type), "no TC_fun found!");
+        DBUG_ASSERT (NTYPE_ARITY (type) == 3, "multiple FUN_IBASE found!");
 
         AVIS_TYPE (ARG_AVIS (args)) = TYfreeType (AVIS_TYPE (ARG_AVIS (args)));
 
@@ -6412,10 +6414,10 @@ Args2Exprs (node *args)
 {
     node *exprs;
 
-    DBUG_ENTER ("Args2Exprs");
+    DBUG_ENTER ();
 
     if (args != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg found!");
+        DBUG_ASSERT (NODE_TYPE (args) == N_arg, "no N_arg found!");
 
         exprs = TBmakeExprs (TBmakeId (ARG_AVIS (args)), Args2Exprs (ARG_NEXT (args)));
     } else {
@@ -6432,10 +6434,10 @@ ReferenceArgs2Ids (node *args)
 {
     node *ret_ids;
 
-    DBUG_ENTER ("ReferenceArgs2Ids");
+    DBUG_ENTER ();
 
     if (args != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "no N_arg found!");
+        DBUG_ASSERT (NODE_TYPE (args) == N_arg, "no N_arg found!");
 
         if (ARG_ISREFERENCE (args)) {
             ret_ids = TBmakeIds (ARG_AVIS (args), ReferenceArgs2Ids (ARG_NEXT (args)));
@@ -6456,7 +6458,7 @@ BuildTmpId (ntype *type, node **new_vardecs)
 {
     node *id, *avis;
 
-    DBUG_ENTER ("BuildTmpId");
+    DBUG_ENTER ();
 
     avis = TBmakeAvis (TRAVtmpVar (), type);
     id = TBmakeId (avis);
@@ -6470,7 +6472,7 @@ BuildTmpIds (ntype *type, node **new_vardecs)
 {
     node *ids, *avis;
 
-    DBUG_ENTER ("BuildTmpIds");
+    DBUG_ENTER ();
 
     avis = TBmakeAvis (TRAVtmpVar (), type);
     ids = TBmakeIds (avis, NULL);
@@ -6484,7 +6486,7 @@ GetPrfOrFundef (node *assigns)
 {
     node *res;
 
-    DBUG_ENTER ("GetApOrPrf");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((assigns != NULL) && (NODE_TYPE (assigns) == N_assign)),
                  "no assignment found!");
@@ -6495,8 +6497,8 @@ GetPrfOrFundef (node *assigns)
             res = LET_EXPR (ASSIGN_INSTR (assigns));
         } else if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assigns))) == N_ap) {
             res = AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (assigns)));
-            DBUG_ASSERT ((res != NULL), "AP_FUNDEF not found!");
-            DBUG_ASSERT ((NODE_TYPE (res) == N_fundef), "no N_fundef node found!");
+            DBUG_ASSERT (res != NULL, "AP_FUNDEF not found!");
+            DBUG_ASSERT (NODE_TYPE (res) == N_fundef, "no N_fundef node found!");
         } else {
             res = NULL;
         }
@@ -6513,7 +6515,7 @@ BranchesAreEquivalent (node *assigns1, node *assigns2)
     node *prf_or_fundef1, *prf_or_fundef2;
     bool res;
 
-    DBUG_ENTER ("BranchesAreEquivalent");
+    DBUG_ENTER ();
 
     prf_or_fundef1 = GetPrfOrFundef (assigns1);
     prf_or_fundef2 = GetPrfOrFundef (assigns2);
@@ -6548,7 +6550,7 @@ BuildDimAssign (node *arg, node **new_vardecs)
     node *dim;
     ntype *type;
 
-    DBUG_ENTER ("BuildDimAssign");
+    DBUG_ENTER ();
 
     /*
      * the generated dim statement has to calculate the
@@ -6616,7 +6618,7 @@ BuildShapeAssign (node *arg, node **new_vardecs)
     node *shape;
     ntype *type;
 
-    DBUG_ENTER ("BuildShapeAssign");
+    DBUG_ENTER ();
 
     /*
      * the generated shape statement has to calculate the
@@ -6682,7 +6684,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
     node *assigns;
     node *prf_ids;
 
-    DBUG_ENTER ("BuildCondAssign");
+    DBUG_ENTER ();
 
     if (BranchesAreEquivalent (then_ass, else_ass)) {
         /*
@@ -6711,7 +6713,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
             node *prf_ids2, *prf_ids3;
             node *id, *id2, *id3;
 
-            DBUG_ASSERT ((NODE_TYPE (expr) == N_num), "illegal expression found!");
+            DBUG_ASSERT (NODE_TYPE (expr) == N_num, "illegal expression found!");
 
             id = DUPdupIdsId (prf_ids);
 
@@ -6742,7 +6744,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
             node *id;
             int dim;
 
-            DBUG_ASSERT ((NODE_TYPE (expr) == N_array), "illegal expression found!");
+            DBUG_ASSERT (NODE_TYPE (expr) == N_array, "illegal expression found!");
 
             last_ass = assigns = TBmakeAssign (NULL, NULL); /* dummy assignment */
             aexprs = ARRAY_AELEMS (expr);
@@ -6805,7 +6807,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
         } break;
 
         default:
-            DBUG_ASSERT ((0), "illegal prf found!");
+            DBUG_ASSERT (0, "illegal prf found!");
             assigns = NULL;
             break;
         }
@@ -6825,7 +6827,7 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
     ntype *ret_type;
     int i;
 
-    DBUG_ENTER ("BuildApAssign");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef)),
                  "no fundef found!");
@@ -6835,7 +6837,7 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
     ret_type = TUmakeProductTypeFromRets (FUNDEF_RETS (fundef));
     i = NTYPE_ARITY (ret_type) - 1;
     while (i >= 0) {
-        DBUG_ASSERT ((vardecs != NULL), "inconsistant application found");
+        DBUG_ASSERT (vardecs != NULL, "inconsistant application found");
 
         tmp_id = BuildTmpId (TYcopyType (PROD_MEMBER (ret_type, i)), new_vardecs);
         assigns
@@ -6849,7 +6851,7 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
         i--;
         vardecs = VARDEC_NEXT (vardecs);
     }
-    DBUG_ASSERT ((vardecs == NULL), "inconsistant application found");
+    DBUG_ASSERT (vardecs == NULL, "inconsistant application found");
 
     ap = TBmakeAp (fundef, Args2Exprs (args));
 
@@ -6864,7 +6866,7 @@ BuildDispatchErrorAssign (char *funname, node *args, node *rets, node *vardecs)
     node *assigns;
     node *exprs;
 
-    DBUG_ENTER ("BuildDispatchErrorAssign");
+    DBUG_ENTER ();
 
     exprs = TBmakeExprs (TCmakeStrCopy (funname), Args2Exprs (args));
     exprs = TCappendExprs (TUmakeTypeExprsFromRets (rets), exprs);
@@ -6882,7 +6884,7 @@ BuildTypeErrorAssign (ntype *bottom, node *vardecs)
 {
     node *assigns;
 
-    DBUG_ENTER ("BuildTypeErrorAssign");
+    DBUG_ENTER ();
 
     assigns = TBmakeAssign (TBmakeLet (TCmakeIdsFromVardecs (vardecs),
                                        TCmakePrf1 (F_type_error, TBmakeType (bottom))),
@@ -6898,9 +6900,9 @@ IsRelevant (ntype *type)
     ntype *ires;
     int i;
 
-    DBUG_ENTER ("IsRelevant");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "no type found!");
+    DBUG_ASSERT (type != NULL, "no type found!");
 
     switch (TYgetConstr (type)) {
     case TC_iarr:
@@ -6916,11 +6918,11 @@ IsRelevant (ntype *type)
         break;
 
     default:
-        DBUG_ASSERT ((0), "illegal ntype constructor found!");
+        DBUG_ASSERT (0, "illegal ntype constructor found!");
         ires = NULL;
         break;
     }
-    DBUG_ASSERT ((ires != NULL), "I..._GEN not found!");
+    DBUG_ASSERT (ires != NULL, "I..._GEN not found!");
 
     ret = FALSE;
     for (i = 0; i < IRES_NUMFUNS (ires); i++) {
@@ -6943,17 +6945,17 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
     char *dbug_str;
 #endif
 
-    DBUG_ENTER ("CreateWrapperCode");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((type != NULL), "no type found!");
+    DBUG_ASSERT (type != NULL, "no type found!");
 
-    DBUG_EXECUTE ("NTY", dbug_str = TYtype2DebugString (type, TRUE, 0););
-    DBUG_PRINT ("NTY", ("building wrapper for type: %s\n", dbug_str));
-    DBUG_EXECUTE ("NTY", dbug_str = MEMfree (dbug_str););
+    DBUG_EXECUTE (dbug_str = TYtype2DebugString (type, TRUE, 0));
+    DBUG_PRINT ("building wrapper for type: %s\n", dbug_str);
+    DBUG_EXECUTE (dbug_str = MEMfree (dbug_str));
 
     switch (TYgetConstr (type)) {
     case TC_fun:
-        DBUG_ASSERT ((NTYPE_ARITY (type) == 3), "multipe FUN_IBASE found!");
+        DBUG_ASSERT (NTYPE_ARITY (type) == 3, "multipe FUN_IBASE found!");
         assigns = CreateWrapperCode (FUN_IBASE (type, 0), state, lower, funname, arg,
                                      args, rets, vardecs, new_vardecs);
         break;
@@ -6963,13 +6965,13 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             /*
              * this should identify all legal unique argument types!
              */
-            DBUG_ASSERT ((IBASE_SCAL (type) != NULL),
+            DBUG_ASSERT (IBASE_SCAL (type) != NULL,
                          "fun without instance for scalar unique argument found");
             assigns = CreateWrapperCode (IBASE_SCAL (type), state, 0, funname, arg, args,
                                          rets, vardecs, new_vardecs);
         } else {
 
-            DBUG_ASSERT ((IBASE_GEN (type) != NULL), "IBASE_GEN not found!");
+            DBUG_ASSERT (IBASE_GEN (type) != NULL, "IBASE_GEN not found!");
             if (IBASE_IARR (type) != NULL) {
                 assigns = CreateWrapperCode (IBASE_IARR (type), state, lower, funname,
                                              arg, args, rets, vardecs, new_vardecs);
@@ -7004,7 +7006,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
         break;
 
     case TC_iarr:
-        DBUG_ASSERT ((IARR_GEN (type) != NULL), "IARR_GEN not found!");
+        DBUG_ASSERT (IARR_GEN (type) != NULL, "IARR_GEN not found!");
         assigns = CreateWrapperCode (IARR_GEN (type), state, 2, funname, arg, args, rets,
                                      vardecs, new_vardecs);
 
@@ -7026,7 +7028,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
         break;
 
     case TC_idim:
-        DBUG_ASSERT ((IDIM_GEN (type) != NULL), "IDIM_GEN not found!");
+        DBUG_ASSERT (IDIM_GEN (type) != NULL, "IDIM_GEN not found!");
         assigns = CreateWrapperCode (IDIM_GEN (type), state, 1, funname, arg, args, rets,
                                      vardecs, new_vardecs);
 
@@ -7049,7 +7051,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
         break;
 
     case TC_ishape:
-        DBUG_ASSERT ((ISHAPE_GEN (type) != NULL), "ISHAPE_GEN not found!");
+        DBUG_ASSERT (ISHAPE_GEN (type) != NULL, "ISHAPE_GEN not found!");
         assigns = CreateWrapperCode (ISHAPE_GEN (type), state, 0, funname, arg, args,
                                      rets, vardecs, new_vardecs);
         break;
@@ -7075,7 +7077,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
                           && (res->num_deriveable_partials == 0)),
                          "partials found!");
             if (res->def != NULL) {
-                DBUG_ASSERT ((res->deriveable == NULL), "def and deriveable found!");
+                DBUG_ASSERT (res->deriveable == NULL, "def and deriveable found!");
                 fundef = res->def;
             } else {
                 fundef = res->deriveable;
@@ -7102,7 +7104,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
         break;
 
     default:
-        DBUG_ASSERT ((0), "illegal ntype constructor found!");
+        DBUG_ASSERT (0, "illegal ntype constructor found!");
         assigns = NULL;
         break;
     }
@@ -7117,16 +7119,16 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
     char *funsig;
     char *tmp;
 
-    DBUG_ENTER ("TYcreateWrapperCode");
+    DBUG_ENTER ();
 
     if (FUNDEF_ARGS (fundef) == NULL) {
-        DBUG_ASSERT ((FUNDEF_IMPL (fundef) != NULL), "FUNDEF_IMPL not found!");
+        DBUG_ASSERT (FUNDEF_IMPL (fundef) != NULL, "FUNDEF_IMPL not found!");
         assigns = BuildApAssign (FUNDEF_IMPL (fundef), FUNDEF_ARGS (fundef), vardecs,
                                  new_vardecs);
     } else {
-        DBUG_ASSERT ((!FUNDEF_HASDOTRETS (fundef)),
+        DBUG_ASSERT (!FUNDEF_HASDOTRETS (fundef),
                      "wrapper function with ... return type found!");
-        DBUG_ASSERT ((!FUNDEF_HASDOTARGS (fundef)),
+        DBUG_ASSERT (!FUNDEF_HASDOTARGS (fundef),
                      "wrapper function with ... argument found!");
 
         tmp = TUtypeSignature2String (fundef);
@@ -7154,7 +7156,7 @@ SerializeSimpleType (FILE *file, ntype *type)
 {
     char *funname;
 
-    DBUG_ENTER ("SerializeSimpleType");
+    DBUG_ENTER ();
 
     if (SIMPLE_HIDDEN_UDT (type) != UT_NOT_DEFINED) {
         node *tdef;
@@ -7176,18 +7178,18 @@ SerializeSimpleType (FILE *file, ntype *type)
                  SIMPLE_TYPE (type));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 SerializeSymbolType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("SerializeSymbolType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, \"%s\", \"%s\")", NTYPE_CON (type),
              SYMBOL_NAME (type), NSgetName (SYMBOL_NS (type)));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -7196,7 +7198,7 @@ SerializeUserType (FILE *file, ntype *type)
     node *tdef;
     char *funname;
 
-    DBUG_ENTER ("SerializeUserType");
+    DBUG_ENTER ();
 
     /*
      * we have to get the symbolname here. One could move
@@ -7216,13 +7218,13 @@ SerializeUserType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 SerializeAKVType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("SerializeAKVType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, ", NTYPE_CON (type));
 
@@ -7234,13 +7236,13 @@ SerializeAKVType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 SerializeAKSType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("SerializeAKSType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, ", NTYPE_CON (type));
 
@@ -7252,13 +7254,13 @@ SerializeAKSType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 SerializeAKDType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("SerializeAKDType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, ", NTYPE_CON (type));
 
@@ -7270,13 +7272,13 @@ SerializeAKDType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 SerializeAUDType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("SerializeAUDType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, ", NTYPE_CON (type));
 
@@ -7284,13 +7286,13 @@ SerializeAUDType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 SerializeAUDGZType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("SerializeAUDGZType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, ", NTYPE_CON (type));
 
@@ -7298,7 +7300,7 @@ SerializeAUDGZType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -7306,7 +7308,7 @@ SerializeProdType (FILE *file, ntype *type)
 {
     int cnt;
 
-    DBUG_ENTER ("SerializeProdType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, %d", NTYPE_CON (type), NTYPE_ARITY (type));
 
@@ -7318,7 +7320,7 @@ SerializeProdType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -7326,7 +7328,7 @@ SerializeUnionType (FILE *file, ntype *type)
 {
     int cnt;
 
-    DBUG_ENTER ("SerializeUnionType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, %d", NTYPE_CON (type), NTYPE_ARITY (type));
 
@@ -7338,7 +7340,7 @@ SerializeUnionType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -7346,7 +7348,7 @@ SerializeFunType (FILE *file, ntype *type)
 {
     int cnt;
 
-    DBUG_ENTER ("SerializeFunType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, %d", NTYPE_CON (type), NTYPE_ARITY (type));
 
@@ -7358,13 +7360,13 @@ SerializeFunType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 SerializeIBaseType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("SerializeIBaseType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, ", NTYPE_CON (type));
 
@@ -7384,7 +7386,7 @@ SerializeIBaseType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -7392,7 +7394,7 @@ SerializeIArrType (FILE *file, ntype *type)
 {
     int cnt;
 
-    DBUG_ENTER ("SerializeIArrType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, %d, ", NTYPE_CON (type), NTYPE_ARITY (type));
 
@@ -7406,7 +7408,7 @@ SerializeIArrType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -7414,7 +7416,7 @@ SerializeIDimType (FILE *file, ntype *type)
 {
     int cnt;
 
-    DBUG_ENTER ("SerializeIDimType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, %d, %d, ", NTYPE_CON (type),
              NTYPE_ARITY (type), IDIM_DIM (type));
@@ -7429,13 +7431,13 @@ SerializeIDimType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 SerializeIShapeType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("SerializeIShapeType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, ", NTYPE_CON (type));
 
@@ -7447,7 +7449,7 @@ SerializeIShapeType (FILE *file, ntype *type)
 
     fprintf (file, ")");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -7455,7 +7457,7 @@ SerializeIResType (FILE *file, ntype *type)
 {
     int cnt;
 
-    DBUG_ENTER ("SerializeIResType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, %d", NTYPE_CON (type), IRES_NUMFUNS (type));
 
@@ -7474,13 +7476,13 @@ SerializeIResType (FILE *file, ntype *type)
 
     fprintf (file, ") ");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 SerializeAlphaType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("SerializeAlphaType");
+    DBUG_ENTER ();
 
     /*
     DBUG_ASSERT( 0,
@@ -7489,29 +7491,29 @@ SerializeAlphaType (FILE *file, ntype *type)
 
     fprintf (file, "NULL");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 SerializePolyType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("SerializePolyType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, \"%s\")", NTYPE_CON (type), POLY_NAME (type));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 SerializePolyUserType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("SerializePolyUserType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d, \"%s\", \"%s\", \"%s\", %d, %d)",
              NTYPE_CON (type), POLYUSER_OUTER (type), POLYUSER_INNER (type),
              POLYUSER_SHAPE (type), POLYUSER_DENEST (type), POLYUSER_RENEST (type));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -7519,7 +7521,7 @@ SerializeBottomType (FILE *file, ntype *type)
 {
     char *tmp;
 
-    DBUG_ENTER ("SerializeBottomType");
+    DBUG_ENTER ();
 
     tmp = STRstring2SafeCEncoding (BOTTOM_MSG (type));
 
@@ -7527,32 +7529,32 @@ SerializeBottomType (FILE *file, ntype *type)
 
     tmp = MEMfree (tmp);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 SerializeDummyType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("SerializeDummyType");
+    DBUG_ENTER ();
 
     fprintf (file, "TYdeserializeType( %d)", NTYPE_CON (type));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 TYserializeType (FILE *file, ntype *type)
 {
-    DBUG_ENTER ("TYserializeType");
+    DBUG_ENTER ();
 
     if (type == NULL) {
-        DBUG_PRINT ("SET", ("Processing type (null)"));
+        DBUG_PRINT_TAG ("SET", "Processing type (null)");
 
         fprintf (file, "NULL");
 
-        DBUG_PRINT ("SET", ("Done processing type (null)"));
+        DBUG_PRINT_TAG ("SET", "Done processing type (null)");
     } else {
-        DBUG_PRINT ("SET", ("Processing type %s", dbug_str[NTYPE_CON (type)]));
+        DBUG_PRINT_TAG ("SET", "Processing type %s", dbug_str[NTYPE_CON (type)]);
 
         switch (NTYPE_CON (type)) {
         case TC_simple:
@@ -7620,10 +7622,10 @@ TYserializeType (FILE *file, ntype *type)
             break;
         }
 
-        DBUG_PRINT ("SET", ("Done processing type %s", dbug_str[NTYPE_CON (type)]));
+        DBUG_PRINT_TAG ("SET", "Done processing type %s", dbug_str[NTYPE_CON (type)]);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /**
@@ -7638,9 +7640,9 @@ TYdeserializeType (typeconstr con, ...)
     va_list args;
     simpletype st;
 
-    DBUG_ENTER ("TYdeserializeType");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("SER", ("Deserializing ntype %s", dbug_str[con]));
+    DBUG_PRINT_TAG ("SER", "Deserializing ntype %s", dbug_str[con]);
 
     switch (con) {
     case TC_simple: {
@@ -7655,7 +7657,7 @@ TYdeserializeType (typeconstr con, ...)
         has_hidden = (bool)va_arg (args, int);
 
         if (has_hidden) {
-            DBUG_ASSERT ((st == T_hidden), "Found hidden udt in non hidden type!");
+            DBUG_ASSERT (st == T_hidden, "Found hidden udt in non hidden type!");
 
             symid = va_arg (args, char *);
             ns = va_arg (args, namespace_t *);
@@ -7908,3 +7910,5 @@ TYdeserializeType (typeconstr con, ...)
 }
 
 /* @} */ /* defgroup nty */
+
+#undef DBUG_PREFIX

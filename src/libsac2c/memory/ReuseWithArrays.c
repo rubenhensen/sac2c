@@ -44,7 +44,9 @@
  *****************************************************************************/
 #include "ReuseWithArrays.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "types.h"
 #include "shape.h"
 #include "free.h"
@@ -81,7 +83,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -96,7 +98,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -128,7 +130,7 @@ REUSEdoGetReuseArrays (node *with, node *fundef)
     node *cand = NULL, *avis;
     dfmask_base_t *maskbase;
 
-    DBUG_ENTER ("REUSEdoGetReuseArrays");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (with) == N_with, "Illegal Argument!");
 
@@ -193,7 +195,7 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids)
     pattern *pat1, *pat2;
     bool result = FALSE;
 
-    DBUG_ENTER ("IsValidIndexHelper");
+    DBUG_ENTER ();
 
     /*
      * index can be
@@ -252,7 +254,7 @@ IsValidIndex (node *index, node *ivs, node *ivids)
 {
     bool result;
 
-    DBUG_ENTER ("IsValidIndex");
+    DBUG_ENTER ();
 
     result = IsValidIndexHelper (index, &ivs, &ivids) && (ivs == NULL) && (ivids == NULL);
 
@@ -296,7 +298,7 @@ IsValidIndex (node *index, node *ivs, node *ivids)
 node *
 REUSEwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REUSEwith");
+    DBUG_ENTER ();
 
     /* Decide what info we want to collect */
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
@@ -327,7 +329,7 @@ REUSEwith (node *arg_node, info *arg_info)
 node *
 REUSEpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REUSEpart");
+    DBUG_ENTER ();
 
     /*
      * add current index information to sets
@@ -366,7 +368,7 @@ REUSEpart (node *arg_node, info *arg_info)
 node *
 REUSEgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REUSEgenarray");
+    DBUG_ENTER ();
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
 
@@ -395,7 +397,7 @@ REUSEgenarray (node *arg_node, info *arg_info)
 node *
 REUSEmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REUSEmodarray");
+    DBUG_ENTER ();
 
     /*
      * we can possibly reuse the modarray-array.
@@ -429,7 +431,7 @@ REUSEmodarray (node *arg_node, info *arg_info)
 node *
 REUSEfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REUSEfold");
+    DBUG_ENTER ();
 
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
@@ -458,7 +460,7 @@ REUSEfold (node *arg_node, info *arg_info)
 node *
 REUSElet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REUSElet");
+    DBUG_ENTER ();
 
     /*
      * removes all left hand side ids from the reuse-mask
@@ -480,7 +482,7 @@ REUSElet (node *arg_node, info *arg_info)
 node *
 REUSEprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REUSEprf");
+    DBUG_ENTER ();
 
     if ((PRF_PRF (arg_node) == F_sel_VxA) && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
         && (!DFMtestMaskEntry (INFO_NEGMASK (arg_info), NULL,
@@ -511,7 +513,7 @@ REUSEprf (node *arg_node, info *arg_info)
 node *
 REUSEids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REUSEids");
+    DBUG_ENTER ();
 
     /*
      * remove left hand side ids from the reuse-mask
@@ -541,7 +543,7 @@ REUSEids (node *arg_node, info *arg_info)
 node *
 REUSEid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REUSEid");
+    DBUG_ENTER ();
 
     DFMsetMaskEntryClear (INFO_MASK (arg_info), NULL, ID_AVIS (arg_node));
     DFMsetMaskEntrySet (INFO_NEGMASK (arg_info), NULL, ID_AVIS (arg_node));
@@ -556,3 +558,5 @@ REUSEid (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Reuseable with-loop argument inference -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

@@ -26,7 +26,9 @@
 
 #include "set_spmd_linksign.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "SSPMDLS"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -64,7 +66,7 @@ struct INFO {
 static info *
 MakeInfo ()
 {
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     info *result;
     result = MEMmalloc (sizeof (info));
@@ -82,7 +84,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -107,7 +109,7 @@ SSPMDLSarg (node *arg_node, info *arg_info)
 {
     node *nret = NULL;
 
-    DBUG_ENTER ("SSPMDLSarg");
+    DBUG_ENTER ();
 
     nret = LUTsearchInLutPp (INFO_LUT (arg_info), ARG_AVIS (arg_node));
 
@@ -135,8 +137,7 @@ SSPMDLSarg (node *arg_node, info *arg_info)
      */
     ARG_HASLINKSIGNINFO (arg_node) = TRUE;
 
-    DBUG_PRINT ("SSPMDLS",
-                ("Add LS %i to arg %s", ARG_LINKSIGN (arg_node), ARG_NAME (arg_node)));
+    DBUG_PRINT ("Add LS %i to arg %s", ARG_LINKSIGN (arg_node), ARG_NAME (arg_node));
 
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
@@ -167,7 +168,7 @@ SSPMDLSid (node *arg_node, info *arg_info)
 {
     node *avis = NULL;
 
-    DBUG_ENTER ("SSPMDLSid");
+    DBUG_ENTER ();
 
     if (INFO_MEM (arg_info)) {
         /*
@@ -175,8 +176,8 @@ SSPMDLSid (node *arg_node, info *arg_info)
          * default (propagate). In this case insert letids-avis -> memval into the
          * LUT.
          */
-        DBUG_PRINT ("SSPMDLS", ("Insert %s->%s into LUT (id)",
-                                IDS_NAME (INFO_LETIDS (arg_info)), ID_NAME (arg_node)));
+        DBUG_PRINT ("Insert %s->%s into LUT (id)", IDS_NAME (INFO_LETIDS (arg_info)),
+                    ID_NAME (arg_node));
 
         INFO_LUT (arg_info)
           = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (INFO_LETIDS (arg_info)),
@@ -188,11 +189,10 @@ SSPMDLSid (node *arg_node, info *arg_info)
          * If this is an id of a return, get memval and insert memval -> ret into
          * the LUT.
          */
-        DBUG_PRINT ("SSPMDLS",
-                    ("Looking up arg for retexpr %s", AVIS_NAME (ID_AVIS (arg_node))));
+        DBUG_PRINT ("Looking up arg for retexpr %s", AVIS_NAME (ID_AVIS (arg_node)));
         avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
 
-        DBUG_PRINT ("SSPMDLS", ("...found %s", AVIS_NAME (avis)));
+        DBUG_PRINT ("...found %s", AVIS_NAME (avis));
 
         INFO_LUT (arg_info)
           = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, INFO_FUN_RETS (arg_info));
@@ -217,7 +217,7 @@ SSPMDLSid (node *arg_node, info *arg_info)
 node *
 SSPMDLSexprs (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSPMDLSexprs");
+    DBUG_ENTER ();
 
     /*
      * As we are just adding linksigns to arguments and rets, we just have to
@@ -255,7 +255,7 @@ SSPMDLSexprs (node *arg_node, info *arg_info)
 node *
 SSPMDLSreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSPMDLSreturn");
+    DBUG_ENTER ();
 
     INFO_RETURNS (arg_info) = TRUE;
     RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
@@ -281,7 +281,7 @@ SSPMDLSreturn (node *arg_node, info *arg_info)
 node *
 SSPMDLSpropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSPMDLSpropagate");
+    DBUG_ENTER ();
 
     INFO_MEM (arg_info) = TRUE;
 
@@ -320,7 +320,7 @@ SSPMDLSpropagate (node *arg_node, info *arg_info)
 node *
 SSPMDLSgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSPMDLSgenarray");
+    DBUG_ENTER ();
 
     INFO_MEM (arg_info) = TRUE;
 
@@ -361,7 +361,7 @@ SSPMDLSgenarray (node *arg_node, info *arg_info)
 node *
 SSPMDLSmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSPMDLSmodarray");
+    DBUG_ENTER ();
 
     INFO_MEM (arg_info) = TRUE;
 
@@ -402,7 +402,7 @@ SSPMDLSmodarray (node *arg_node, info *arg_info)
 node *
 SSPMDLSbreak (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSPMDLSbreak");
+    DBUG_ENTER ();
 
     INFO_MEM (arg_info) = TRUE;
 
@@ -442,7 +442,7 @@ SSPMDLSbreak (node *arg_node, info *arg_info)
 node *
 SSPMDLSwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSPMDLSwith2");
+    DBUG_ENTER ();
 
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
@@ -465,7 +465,7 @@ SSPMDLSwith2 (node *arg_node, info *arg_info)
 node *
 SSPMDLSlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSPMDLSlet");
+    DBUG_ENTER ();
 
     /*
      * Keep LHS, if RHS is withloop, it is needed to associate it to the
@@ -495,12 +495,12 @@ SSPMDLSlet (node *arg_node, info *arg_info)
 node *
 SSPMDLSret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSPMDLSret");
+    DBUG_ENTER ();
 
     RET_LINKSIGN (arg_node) = INFO_LS_NUM (arg_info);
     RET_HASLINKSIGNINFO (arg_node) = TRUE;
 
-    DBUG_PRINT ("SSPMDLS", ("Add LS %i to ret", RET_LINKSIGN (arg_node)));
+    DBUG_PRINT ("Add LS %i to ret", RET_LINKSIGN (arg_node));
 
     INFO_LS_NUM (arg_info) += 1;
 
@@ -526,7 +526,7 @@ SSPMDLSret (node *arg_node, info *arg_info)
 node *
 SSPMDLSfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSPMDLSfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISSPMDFUN (arg_node)) {
         INFO_LS_NUM (arg_info) = 1;
@@ -568,7 +568,7 @@ SSPMDLSfundef (node *arg_node, info *arg_info)
 node *
 SSPMDLSmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SSPMDLmodule");
+    DBUG_ENTER ();
 
     INFO_LUT (arg_info) = LUTgenerateLut ();
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
@@ -591,7 +591,7 @@ SSPMDLSmodule (node *arg_node, info *arg_info)
 node *
 SSPMDLSdoSetSpmdLinksign (node *syntax_tree)
 {
-    DBUG_ENTER ("SSPMDLSdoSetSpmdLinksign");
+    DBUG_ENTER ();
 
     info *info;
 
@@ -605,3 +605,5 @@ SSPMDLSdoSetSpmdLinksign (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

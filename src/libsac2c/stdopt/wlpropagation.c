@@ -56,7 +56,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "new_types.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLPROP"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -97,7 +100,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -113,7 +116,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *arg_info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     arg_info = MEMfree (arg_info);
 
@@ -142,7 +145,7 @@ IdIsDefinedByWL (node *arg_node)
     bool result = FALSE;
     node *tmp;
 
-    DBUG_ENTER ("IdIsDefinedByWL");
+    DBUG_ENTER ();
 
     tmp = AVIS_SSAASSIGN (ID_AVIS (arg_node));
     if (NULL != tmp) {
@@ -175,10 +178,10 @@ static node *
 GetRecursiveFunctionApplication (node *fundef)
 {
     node *chain;
-    DBUG_ENTER ("GetRecursiveFunctionApplication");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef), "N_fundef node expected.");
-    DBUG_ASSERT ((FUNDEF_ISDOFUN (fundef)), "Loop-Function expected.");
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "N_fundef node expected.");
+    DBUG_ASSERT (FUNDEF_ISDOFUN (fundef), "Loop-Function expected.");
 
     /**
      * search for recursive fun call
@@ -215,7 +218,7 @@ WLPROPdoWithloopPropagation (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("WLPROPdoWithloopPropagation");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -249,11 +252,11 @@ WLPROPdoWithloopPropagation (node *arg_node)
 node *
 WLPROPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLPROPfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    DBUG_PRINT ("WLPROP", ("Starting WLPROP for %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("Starting WLPROP for %s", FUNDEF_NAME (arg_node));
 
     /**
      * Infer before actual traversal:
@@ -293,7 +296,7 @@ WLPROPfundef (node *arg_node, info *arg_info)
 node *
 WLPROPassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLPROPassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -327,7 +330,7 @@ WLPROPap (node *arg_node, info *arg_info)
 
     info *newinfo;
 
-    DBUG_ENTER ("WLPROPap");
+    DBUG_ENTER ();
 
     if ((FUNDEF_ISDOFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
@@ -345,8 +348,8 @@ WLPROPap (node *arg_node, info *arg_info)
         INFO_ARGNUM (arg_info) = 0;
         INFO_CORRESPONDINGFUNARG (arg_info) = FUNDEF_ARGS (AP_FUNDEF (arg_node));
 
-        DBUG_PRINT ("WLPROP", ("Checking function arguments of %s",
-                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("Checking function arguments of %s",
+                    FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
         /**
          * traverse into argument chain and try to
@@ -358,8 +361,8 @@ WLPROPap (node *arg_node, info *arg_info)
          * traverse into applied do-fun and do
          * with-loop propagation again
          */
-        DBUG_PRINT ("WLPROP", ("Checking function application of %s",
-                               FUNDEF_NAME (AP_FUNDEF (arg_node))));
+        DBUG_PRINT ("Checking function application of %s",
+                    FUNDEF_NAME (AP_FUNDEF (arg_node)));
         newinfo = MakeInfo ();
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), newinfo);
         newinfo = FreeInfo (newinfo);
@@ -397,7 +400,7 @@ WLPROPap (node *arg_node, info *arg_info)
 node *
 WLPROPexprs (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLPROPexprs");
+    DBUG_ENTER ();
 
     EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
 
@@ -448,7 +451,7 @@ WLPROPid (node *arg_node, info *arg_info)
 {
     node *newids;
 
-    DBUG_ENTER ("WLPROPid");
+    DBUG_ENTER ();
 
     if (S_withloop_prop == INFO_TRAVSTATE (arg_info)) {
 
@@ -456,7 +459,7 @@ WLPROPid (node *arg_node, info *arg_info)
 
         correspond_arg = INFO_CORRESPONDINGFUNARG (arg_info);
 
-        DBUG_PRINT ("WLPROP", ("Checking argument number %i", INFO_ARGNUM (arg_info)));
+        DBUG_PRINT ("Checking argument number %i", INFO_ARGNUM (arg_info));
 
         /**
          * is the argument defined by an with-loop
@@ -482,8 +485,8 @@ WLPROPid (node *arg_node, info *arg_info)
                 node *new_withloop, *old_withloop;
                 node *witharg, *withvardec;
 
-                DBUG_PRINT ("WLPROP", ("Checking argument number %i successful",
-                                       INFO_ARGNUM (arg_info)));
+                DBUG_PRINT ("Checking argument number %i successful",
+                            INFO_ARGNUM (arg_info));
 
                 /*
                  * generate LUT to keep track of identifiers
@@ -639,3 +642,5 @@ WLPROPid (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -41,7 +41,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "IVEXC"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -65,15 +68,15 @@ node *
 IVEXCdoIndexVectorExtremaCleanup (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("IVEXCdoIndexVectorExtremaCleanup");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXC", ("Extrema cleanup strip traversal starts."));
+    DBUG_PRINT ("Extrema cleanup strip traversal starts.");
 
     TRAVpush (TR_ivexc);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
-    DBUG_PRINT ("IVEXC", ("Extrema cleanup traversal complete."));
+    DBUG_PRINT ("Extrema cleanup traversal complete.");
 
     DBUG_RETURN (arg_node);
 }
@@ -87,15 +90,15 @@ node *
 IVEXCdoIndexVectorExtremaCleanupPartition (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("IVEXCdoIndexVectorExtremaCleanupPartition");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXC", ("Extrema partition cleanup traversal starts."));
+    DBUG_PRINT ("Extrema partition cleanup traversal starts.");
 
     TRAVpush (TR_ivexc);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
-    DBUG_PRINT ("IVEXC", ("Extrema partition cleanup traversal complete."));
+    DBUG_PRINT ("Extrema partition cleanup traversal complete.");
 
     DBUG_RETURN (arg_node);
 }
@@ -128,7 +131,7 @@ IVEXCdoIndexVectorExtremaCleanupPartition (node *arg_node, info *arg_info)
 node *
 IVEXCpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXCpart");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -145,7 +148,7 @@ IVEXCpart (node *arg_node, info *arg_info)
 node *
 IVEXCcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXCcode");
+    DBUG_ENTER ();
 
     CODE_HASEXTREMA (arg_node) = FALSE;
     arg_node = TRAVcont (arg_node, arg_info);
@@ -163,7 +166,7 @@ IVEXCcode (node *arg_node, info *arg_info)
 node *
 IVEXCid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXCid");
+    DBUG_ENTER ();
 
     DBUG_RETURN (arg_node);
 }
@@ -178,7 +181,7 @@ IVEXCid (node *arg_node, info *arg_info)
 node *
 IVEXClet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXClet");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -196,9 +199,9 @@ IVEXClet (node *arg_node, info *arg_info)
 node *
 IVEXCids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXCids");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXC", ("Cleaning up %s", AVIS_NAME (IDS_AVIS (arg_node))));
+    DBUG_PRINT ("Cleaning up %s", AVIS_NAME (IDS_AVIS (arg_node)));
     IDS_AVIS (arg_node) = TRAVdo (IDS_AVIS (arg_node), arg_info);
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -215,9 +218,9 @@ IVEXCids (node *arg_node, info *arg_info)
 node *
 IVEXCavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVEXCavis");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXC", ("Cleaning up %s", AVIS_NAME (arg_node)));
+    DBUG_PRINT ("Cleaning up %s", AVIS_NAME (arg_node));
     AVIS_MIN (arg_node)
       = (NULL != AVIS_MIN (arg_node)) ? FREEdoFreeNode (AVIS_MIN (arg_node)) : NULL;
     AVIS_MAX (arg_node)
@@ -241,15 +244,15 @@ node *
 IVEXCprf (node *arg_node, info *arg_info)
 {
     node *res;
-    DBUG_ENTER ("IVEXCprf");
+    DBUG_ENTER ();
 
     res = arg_node;
     switch (PRF_PRF (arg_node)) {
     case F_noteminval:
     case F_notemaxval:
     case F_noteintersect:
-        DBUG_PRINT ("IVEXCprf",
-                    ("Deleting extrema for prf %s...", PRF_NAME (PRF_PRF (arg_node))));
+        DBUG_PRINT_TAG ("IVEXCprf", "Deleting extrema for prf %s...",
+                        PRF_NAME (PRF_PRF (arg_node)));
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
         arg_node = FREEdoFreeNode (arg_node);
         break;
@@ -262,3 +265,5 @@ IVEXCprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

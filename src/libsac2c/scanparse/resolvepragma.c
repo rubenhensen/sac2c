@@ -14,7 +14,10 @@
 #include "stringset.h"
 #include "free.h"
 #include "ctinfo.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "RSP"
+#include "debug.h"
+
 #include "globals.h"
 
 /*
@@ -41,7 +44,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -55,7 +58,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -68,13 +71,13 @@ CheckRefReadNums (int line, int size, node *nums)
     int i;
     node *tmp;
 
-    DBUG_ENTER ("CheckRefReadNums");
+    DBUG_ENTER ();
 
     tmp = nums;
     i = 1;
 
     while (tmp != NULL) {
-        DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_VAL (tmp)));
+        DBUG_PRINT_TAG ("PRAGMA", "Nums value is %d", NUMS_VAL (tmp));
 
         if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) >= size)) {
             CTIerrorLine (line,
@@ -87,7 +90,7 @@ CheckRefReadNums (int line, int size, node *nums)
         i++;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static bool
@@ -97,10 +100,10 @@ CheckLinkSignNums (int line, int size, node *nums)
     node *tmp;
     bool result = TRUE;
 
-    DBUG_ENTER ("CheckLinkSignNums");
+    DBUG_ENTER ();
 
     for (i = 0, tmp = nums; (i < size) && (tmp != NULL); i++, tmp = NUMS_NEXT (tmp)) {
-        DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_VAL (tmp)));
+        DBUG_PRINT_TAG ("PRAGMA", "Nums value is %d", NUMS_VAL (tmp));
 
         if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) > size)) {
             CTIerrorLine (line,
@@ -123,7 +126,7 @@ CheckLinkSignNums (int line, int size, node *nums)
         do {
             i++;
 
-            DBUG_PRINT ("PRAGMA", ("Nums value is %d", NUMS_VAL (tmp)));
+            DBUG_PRINT_TAG ("PRAGMA", "Nums value is %d", NUMS_VAL (tmp));
 
             tmp = NUMS_NEXT (tmp);
         } while (tmp != NULL);
@@ -141,10 +144,10 @@ CheckLinkSignNums (int line, int size, node *nums)
 static node *
 InitFundefRetsForExtern (node *rets)
 {
-    DBUG_ENTER ("InitFundefRetsForExtern");
+    DBUG_ENTER ();
 
     if (rets != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (rets) == N_ret), "found a non N_ret node");
+        DBUG_ASSERT (NODE_TYPE (rets) == N_ret, "found a non N_ret node");
 
         RET_ISREFCOUNTED (rets) = FALSE;
 
@@ -157,10 +160,10 @@ InitFundefRetsForExtern (node *rets)
 static node *
 InitFundefArgsForExtern (node *args)
 {
-    DBUG_ENTER ("InitFundefArgsForExtern");
+    DBUG_ENTER ();
 
     if (args != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (args) == N_arg), "found a non N_arg node");
+        DBUG_ASSERT (NODE_TYPE (args) == N_arg, "found a non N_arg node");
 
         ARG_ISREFCOUNTED (args) = FALSE;
 
@@ -173,7 +176,7 @@ InitFundefArgsForExtern (node *args)
 static node *
 AnnotateRefcounting (node *arg_node, info *arg_info, node *nums)
 {
-    DBUG_ENTER ("AnnotateRefcounting");
+    DBUG_ENTER ();
 
     INFO_COUNTER (arg_info) = 0;
     INFO_NUMS (arg_info) = nums;
@@ -196,7 +199,7 @@ AnnotateRefcounting (node *arg_node, info *arg_info, node *nums)
 static node *
 AnnotateLinksign (node *arg_node, info *arg_info, node *nums)
 {
-    DBUG_ENTER ("AnnotateLinksign");
+    DBUG_ENTER ();
 
     INFO_NUMS (arg_info) = nums;
     INFO_TRAVMODE (arg_info) = RSP_linksign;
@@ -217,7 +220,7 @@ AnnotateLinksign (node *arg_node, info *arg_info, node *nums)
 node *
 RSPret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSPret");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == RSP_refcnt) {
         if (TCnumsContains (INFO_COUNTER (arg_info), INFO_NUMS (arg_info))) {
@@ -243,7 +246,7 @@ RSPret (node *arg_node, info *arg_info)
 node *
 RSParg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSParg");
+    DBUG_ENTER ();
 
     if (INFO_TRAVMODE (arg_info) == RSP_refcnt) {
         if (TCnumsContains (INFO_COUNTER (arg_info), INFO_NUMS (arg_info))) {
@@ -271,9 +274,9 @@ RSPtypedef (node *arg_node, info *arg_info)
 {
     node *pragma;
 
-    DBUG_ENTER ("RSPtypedef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("RSP", ("Processing typedef '%s'...", CTIitemName (arg_node)));
+    DBUG_PRINT ("Processing typedef '%s'...", CTIitemName (arg_node));
 
     if (TYPEDEF_PRAGMA (arg_node) != NULL) {
         pragma = TYPEDEF_PRAGMA (arg_node);
@@ -317,9 +320,9 @@ RSPobjdef (node *arg_node, info *arg_info)
 {
     node *pragma;
 
-    DBUG_ENTER ("RSPobjdef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("RSP", ("Processing objdef '%s'...", CTIitemName (arg_node)));
+    DBUG_PRINT ("Processing objdef '%s'...", CTIitemName (arg_node));
 
     if (OBJDEF_PRAGMA (arg_node) != NULL) {
         pragma = OBJDEF_PRAGMA (arg_node);
@@ -339,9 +342,9 @@ RSPobjdef (node *arg_node, info *arg_info)
 node *
 RSPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSPFundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("RSP", ("Processing function '%s'...", CTIitemName (arg_node)));
+    DBUG_PRINT ("Processing function '%s'...", CTIitemName (arg_node));
 
     /*
      * first we set an initial state for all external
@@ -357,11 +360,10 @@ RSPfundef (node *arg_node, info *arg_info)
     if (FUNDEF_PRAGMA (arg_node) != NULL) {
         node *pragma = FUNDEF_PRAGMA (arg_node);
 
-        DBUG_ASSERT ((FUNDEF_ISEXTERN (arg_node)),
+        DBUG_ASSERT (FUNDEF_ISEXTERN (arg_node),
                      "Found a pragma at a non external function!");
 
-        DBUG_PRINT ("RSP",
-                    ("Processing pragmas for function '%s'...", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Processing pragmas for function '%s'...", FUNDEF_NAME (arg_node));
 
         PRAGMA_NUMPARAMS (pragma)
           = TCcountArgs (FUNDEF_ARGS (arg_node)) + TCcountRets (FUNDEF_RETS (arg_node));
@@ -483,7 +485,7 @@ RSPfundef (node *arg_node, info *arg_info)
 node *
 RSPmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSPModule");
+    DBUG_ENTER ();
 
     if (MODULE_OBJS (arg_node) != NULL) {
         MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
@@ -505,7 +507,7 @@ RSPdoResolvePragmas (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("RSPdoResolvePragmas");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -519,3 +521,5 @@ RSPdoResolvePragmas (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

@@ -16,7 +16,10 @@
 #include "tree_compound.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "USSA"
+#include "debug.h"
+
 #include "traverse.h"
 #include "free.h"
 #include "UndoSSATransform.h"
@@ -53,7 +56,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -69,7 +72,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -90,7 +93,7 @@ UssaInitAvisFlags (node *fundef)
 {
     node *tmp;
 
-    DBUG_ENTER ("UssaInitAvisFlags");
+    DBUG_ENTER ();
 
     /* process args */
     tmp = FUNDEF_ARGS (fundef);
@@ -123,7 +126,7 @@ node *
 USSATfundef (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("USSATfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         if (FUNDEF_ISLACFUN (arg_node)) {
@@ -160,7 +163,7 @@ USSATfundef (node *arg_node, info *arg_info)
 node *
 USSATblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSATblock");
+    DBUG_ENTER ();
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
@@ -187,7 +190,7 @@ USSATblock (node *arg_node, info *arg_info)
 node *
 USSATvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSATvardec");
+    DBUG_ENTER ();
 
     VARDEC_AVIS (arg_node) = TRAVdo (VARDEC_AVIS (arg_node), arg_info);
 
@@ -215,7 +218,7 @@ USSATvardec (node *arg_node, info *arg_info)
 node *
 USSATavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSATavis");
+    DBUG_ENTER ();
 
     AVIS_SSAASSIGN (arg_node) = NULL;
 
@@ -233,13 +236,13 @@ USSATavis (node *arg_node, info *arg_info)
 node *
 USSATid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSATid");
+    DBUG_ENTER ();
 
     if (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
-        DBUG_PRINT ("USSA", ("rename id %s(" F_PTR ") in %s(" F_PTR ")",
-                             AVIS_NAME (ID_AVIS (arg_node)), ID_AVIS (arg_node),
-                             AVIS_NAME (AVIS_SUBST (ID_AVIS (arg_node))),
-                             AVIS_SUBST (ID_AVIS (arg_node))));
+        DBUG_PRINT ("rename id %s(" F_PTR ") in %s(" F_PTR ")",
+                    AVIS_NAME (ID_AVIS (arg_node)), ID_AVIS (arg_node),
+                    AVIS_NAME (AVIS_SUBST (ID_AVIS (arg_node))),
+                    AVIS_SUBST (ID_AVIS (arg_node)));
 
         /* restore rename back to undo vardec */
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
@@ -259,13 +262,13 @@ USSATid (node *arg_node, info *arg_info)
 node *
 USSATids (node *arg_ids, info *arg_info)
 {
-    DBUG_ENTER ("USSATids");
+    DBUG_ENTER ();
 
     if (AVIS_SUBST (IDS_AVIS (arg_ids)) != NULL) {
-        DBUG_PRINT ("USSA", ("rename ids %s(" F_PTR ") in %s(" F_PTR ")",
-                             AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids),
-                             AVIS_NAME (AVIS_SUBST (IDS_AVIS (arg_ids))),
-                             AVIS_SUBST (IDS_AVIS (arg_ids))));
+        DBUG_PRINT ("rename ids %s(" F_PTR ") in %s(" F_PTR ")",
+                    AVIS_NAME (IDS_AVIS (arg_ids)), IDS_AVIS (arg_ids),
+                    AVIS_NAME (AVIS_SUBST (IDS_AVIS (arg_ids))),
+                    AVIS_SUBST (IDS_AVIS (arg_ids)));
 
         /* restore rename back to undo vardec */
         IDS_AVIS (arg_ids) = AVIS_SUBST (IDS_AVIS (arg_ids));
@@ -290,7 +293,7 @@ USSATids (node *arg_ids, info *arg_info)
 node *
 USSATassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSATassign");
+    DBUG_ENTER ();
 
     /*
      * Bottom-up traversal
@@ -329,7 +332,7 @@ USSATassign (node *arg_node, info *arg_info)
 node *
 USSATlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSATlet");
+    DBUG_ENTER ();
 
     if (LET_IDS (arg_node) != NULL) {
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
@@ -353,7 +356,7 @@ USSATlet (node *arg_node, info *arg_info)
 node *
 USSATcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSATcond");
+    DBUG_ENTER ();
 
     /*
      * After all informations from the funconds have been annotated,
@@ -418,7 +421,7 @@ IdGivenByFillOperation (node *idavis)
 {
     bool res = FALSE;
 
-    DBUG_ENTER ("IdGivenByFillOperation");
+    DBUG_ENTER ();
 
     if (AVIS_SSAASSIGN (idavis) != NULL) {
         node *ids, *expr;
@@ -497,7 +500,7 @@ USSATfuncond (node *arg_node, info *arg_info)
     node *lhsavis;
     node *rhsavis;
 
-    DBUG_ENTER ("USSATfuncond");
+    DBUG_ENTER ();
 
     lhsavis = IDS_AVIS (INFO_LHS (arg_info));
 
@@ -617,7 +620,7 @@ USSATdoUndoSsaTransform (node *module)
 {
     info *arg_info;
 
-    DBUG_ENTER ("USSATdoUndoSSATransform");
+    DBUG_ENTER ();
 
     /* ast is no longer in ssaform */
     global.valid_ssaform = FALSE;
@@ -632,3 +635,5 @@ USSATdoUndoSsaTransform (node *module)
 
     DBUG_RETURN (module);
 }
+
+#undef DBUG_PREFIX

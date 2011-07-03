@@ -2,7 +2,9 @@
 
 #include "generate_object_initialiser.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "GOI"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"
@@ -35,7 +37,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -48,7 +50,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -67,7 +69,7 @@ SortObjdefList (node *objlist)
     node *last;
     int changes;
 
-    DBUG_ENTER ("SortObjdefList");
+    DBUG_ENTER ();
 
     list = DUPdoDupTree (objlist);
     sorted = NULL;
@@ -78,7 +80,7 @@ SortObjdefList (node *objlist)
         changes = 0;
 
         while (pos != NULL) {
-            DBUG_PRINT ("GOI", ("trying %s ...", CTIitemName (SET_MEMBER (pos))));
+            DBUG_PRINT ("trying %s ...", CTIitemName (SET_MEMBER (pos)));
 
             /*
              * if all dependencies of this object are already satiesfied,
@@ -94,8 +96,7 @@ SortObjdefList (node *objlist)
                 /*
                  * move the member to the sorted list
                  */
-                DBUG_PRINT ("GOI",
-                            ("...adding %s to initlist", CTIitemName (SET_MEMBER (pos))));
+                DBUG_PRINT ("...adding %s to initlist", CTIitemName (SET_MEMBER (pos)));
 
                 node *tmp = pos;
                 pos = SET_NEXT (pos);
@@ -129,7 +130,7 @@ AddInitFunDependencies (node *objlist)
     node *new;
     int changes;
 
-    DBUG_ENTER ("AddInitFunDependencies");
+    DBUG_ENTER ();
 
     if (objlist != NULL) {
         do {
@@ -164,7 +165,7 @@ ObjdefsToInitAssigns (node *objdefs, node *assigns)
 {
     node *result;
 
-    DBUG_ENTER ("ObjdefsToInitAssigns");
+    DBUG_ENTER ();
 
     if (objdefs != NULL) {
         result = ObjdefsToInitAssigns (SET_NEXT (objdefs), assigns);
@@ -190,7 +191,7 @@ GenerateObjectInitFun (node *objlist)
     node *result;
     node *assigns;
 
-    DBUG_ENTER ("GenerateObjectInitFun");
+    DBUG_ENTER ();
 
     /*
      * return statement
@@ -218,7 +219,7 @@ GenerateObjectInitFun (node *objlist)
 static node *
 InsertInitFunCall (node *fun, node *initfun)
 {
-    DBUG_ENTER ("InsertInitFunCall");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (FUNDEF_BODY (fun))
       = TBmakeAssign (TBmakeLet (NULL, TBmakeAp (initfun, NULL)),
@@ -233,7 +234,7 @@ InsertInitFunCall (node *fun, node *initfun)
 node *
 GOIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GOIfundef");
+    DBUG_ENTER ();
 
     /*
      * check for function _MAIN::main
@@ -306,7 +307,7 @@ GOIfundef (node *arg_node, info *arg_info)
 node *
 GOImodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GOImodule");
+    DBUG_ENTER ();
 
     /*
      * we only generate object initialisers in programs
@@ -333,7 +334,7 @@ GOIdoGenerateObjectInitialiser (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("GOIdoGenerateObjectInitialiser");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_goi);
@@ -345,3 +346,5 @@ GOIdoGenerateObjectInitialiser (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

@@ -51,7 +51,10 @@
 #include "DupTree.h"
 #include "globals.h"
 #include "ctinfo.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLF"
+#include "debug.h"
+
 #include "traverse.h"
 #include "constants.h"
 #include "SSAWithloopFolding.h"
@@ -79,7 +82,7 @@ index_info *
 WLFcreateIndex (int vector)
 {
     index_info *pindex;
-    DBUG_ENTER ("WLFcreateInfoInfo");
+    DBUG_ENTER ();
 
     pindex = MEMmalloc (sizeof (index_info));
     pindex->vector = vector;
@@ -109,8 +112,8 @@ WLFduplicateIndexInfo (index_info *iinfo)
 {
     index_info *new;
     int i, to;
-    DBUG_ENTER ("WLFduplicateIndexInfo");
-    DBUG_ASSERT (iinfo, ("parameter NULL"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (iinfo, "parameter NULL");
 
     new = WLFcreateIndex (iinfo->vector);
 
@@ -142,8 +145,8 @@ WLFvalidLocalId (node *idn)
 {
     index_info *iinfo;
 
-    DBUG_ENTER ("WLFvalidLocalId");
-    DBUG_ASSERT (N_id == NODE_TYPE (idn), ("not an id node"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (N_id == NODE_TYPE (idn), "not an id node");
 
     /* get defining assignment via avis_ssaassign link */
     if (AVIS_SSAASSIGN (ID_AVIS (idn)) != NULL) {
@@ -172,7 +175,7 @@ WLFdbugIndexInfo (index_info *iinfo)
     int i, sel;
     index_info *tmpii;
 
-    DBUG_ENTER ("WLFdbugIndexInfo");
+    DBUG_ENTER ();
 
     printf (
       "\n|-------------------------INDEX-INFO----------------------------------------\n");
@@ -221,7 +224,7 @@ WLFdbugIndexInfo (index_info *iinfo)
     printf (
       "|---------------------------------------------------------------------------\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -261,8 +264,8 @@ WLFlocateIndexVar (node *idn, node *wln)
     int result = 0;
     int i;
 
-    DBUG_ENTER ("WLFlocateIndexVar");
-    DBUG_ASSERT (N_with == NODE_TYPE (wln), ("wln is not N_with node"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (N_with == NODE_TYPE (wln), "wln is not N_with node");
 
     partn = WITH_PART (wln);
     while ((result == 0) && NULL != partn) {
@@ -271,8 +274,7 @@ WLFlocateIndexVar (node *idn, node *wln)
         _ids = WITHID_VEC (mywln);
 
         if (IDS_AVIS (_ids) == ID_AVIS (idn)) {
-            DBUG_PRINT ("WLF", ("WLFlocateIndexVar found WITH_ID %s",
-                                AVIS_NAME (ID_AVIS (idn))));
+            DBUG_PRINT ("WLFlocateIndexVar found WITH_ID %s", AVIS_NAME (ID_AVIS (idn)));
             result = -1;
         } else {
             i = 1;
@@ -280,8 +282,8 @@ WLFlocateIndexVar (node *idn, node *wln)
             while (_ids != NULL) {
                 if (IDS_AVIS (_ids) == ID_AVIS (idn)) {
                     result = i;
-                    DBUG_PRINT ("WLF", ("WLFlocateIndexVar found WITH_IDS %s",
-                                        AVIS_NAME (ID_AVIS (idn))));
+                    DBUG_PRINT ("WLFlocateIndexVar found WITH_IDS %s",
+                                AVIS_NAME (ID_AVIS (idn)));
                     break;
                 }
                 i++;
@@ -310,7 +312,7 @@ WLFcreateInternGen (int shape, int stepwidth)
 {
     intern_gen *ig;
 
-    DBUG_ENTER ("WLFcreateInternGen");
+    DBUG_ENTER ();
 
     ig = MEMmalloc (sizeof (intern_gen));
     ig->shape = shape;
@@ -352,7 +354,7 @@ WLFappendInternGen (intern_gen *append_to, int shape, node *code, int stepwidth)
     intern_gen *ig;
     int i;
 
-    DBUG_ENTER ("WLFappendInternGen");
+    DBUG_ENTER ();
 
     ig = WLFcreateInternGen (shape, stepwidth);
 
@@ -389,7 +391,7 @@ WLFcopyInternGen (intern_gen *source)
     intern_gen *ig;
     int i;
 
-    DBUG_ENTER ("WLFcopyInternGen");
+    DBUG_ENTER ();
 
     ig = WLFcreateInternGen (source->shape, NULL != source->step);
     ig->code = source->code;
@@ -439,7 +441,7 @@ WLFnormalizeInternGen (intern_gen *ig)
 {
     int error = 0, i = 0, is_1 = 1;
 
-    DBUG_ENTER ("WLFnormalizeInternGen");
+    DBUG_ENTER ();
 
     if (ig->width && !ig->step)
         error = 3;
@@ -485,9 +487,9 @@ WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
     int *tmp;
     int i;
 
-    DBUG_ENTER ("WLFarrayST2ArrayInt");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((iarray != NULL), "no iarray found!");
+    DBUG_ASSERT (iarray != NULL, "no iarray found!");
 
     if (*iarray == NULL) {
         *iarray = MEMmalloc (shape * sizeof (int));
@@ -509,7 +511,7 @@ WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
             *iarray = MEMfree (*iarray);
         }
     } else /* (NODE_TYPE(arrayn) == N_id) */ {
-        DBUG_ASSERT ((NODE_TYPE (arrayn) == N_id), "wrong arrayn");
+        DBUG_ASSERT (NODE_TYPE (arrayn) == N_id, "wrong arrayn");
 
         if (TYisAKV (ID_NTYPE (arrayn))) {
             tmp = COgetDataVec (TYgetValue (ID_NTYPE (arrayn)));
@@ -521,7 +523,7 @@ WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -541,7 +543,7 @@ WLFtree2InternGen (node *wln, node *filter)
     node *partn, *genn;
     int shape;
 
-    DBUG_ENTER ("WLFtree2InternGen");
+    DBUG_ENTER ();
 
     partn = WITH_PART (wln);
     root = NULL;
@@ -600,7 +602,7 @@ WLFcreateArrayFromInternGen (int *source, int number)
     node *arrayn, *tmpn;
     int i;
 
-    DBUG_ENTER ("WLFcreateArrayFromInternGen");
+    DBUG_ENTER ();
 
     tmpn = NULL;
     for (i = number - 1; i >= 0; i--) {
@@ -631,7 +633,7 @@ WLFinternGen2Tree (node *wln, intern_gen *ig)
     node **part, *withidn, *genn, *b1n, *b2n, *stepn, *widthn;
     int no_parts; /* number of N_Npart nodes */
 
-    DBUG_ENTER ("WLFinternGen2Tree");
+    DBUG_ENTER ();
 
     withidn = DUPdoDupTree (PART_WITHID (WITH_PART (wln)));
     FREEdoFreeTree (WITH_PART (wln));
@@ -673,11 +675,11 @@ WLFinternGen2Tree (node *wln, intern_gen *ig)
 intern_gen *
 WLFfreeInternGen (intern_gen *tmp)
 {
-    DBUG_ENTER ("WLFfreeInternGen");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("FREE", ("Removing intern gen (WLF)"));
+    DBUG_PRINT_TAG ("FREE", "Removing intern gen (WLF)");
 
-    DBUG_ASSERT ((tmp != NULL), "cannot free a NULL intern gen (WLF)!");
+    DBUG_ASSERT (tmp != NULL, "cannot free a NULL intern gen (WLF)!");
 
     tmp->l = MEMfree (tmp->l);
     tmp->u = MEMfree (tmp->u);
@@ -704,7 +706,7 @@ WLFfreeInternGenChain (intern_gen *ig)
 {
     intern_gen *tmpig;
 
-    DBUG_ENTER ("WLFfreeInternGenChain");
+    DBUG_ENTER ();
 
     while (ig) {
         tmpig = ig;
@@ -714,3 +716,5 @@ WLFfreeInternGenChain (intern_gen *ig)
 
     DBUG_RETURN (ig);
 }
+
+#undef DBUG_PREFIX

@@ -10,7 +10,9 @@
 #include "icm2c_utils.h"
 #include "icm2c_wl.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
@@ -43,7 +45,7 @@ PrintTraceICM (char *to_NT, char *idx_vec_NT, int dims, char **idxs_scl_NT,
 {
     int i;
 
-    DBUG_ENTER ("PrintTraceICM");
+    DBUG_ENTER ();
 
     INDENT;
     fprintf (global.outfile, "SAC_TR_WL_PRINT( (\"index vector [%%d");
@@ -58,7 +60,7 @@ PrintTraceICM (char *to_NT, char *idx_vec_NT, int dims, char **idxs_scl_NT,
     }
     fprintf (global.outfile, "));\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -77,7 +79,7 @@ DefineShapeFactor (char *to_NT, int to_sdim, int current_dim)
     int to_dim = DIM_NO_OFFSET (to_sdim);
     int i;
 
-    DBUG_ENTER ("DefineShapeFactor");
+    DBUG_ENTER ();
 
     INDENT;
     fprintf (global.outfile, "SAC_WL_SHAPE_FACTOR( %s, %d) = 1", to_NT, current_dim);
@@ -97,7 +99,7 @@ DefineShapeFactor (char *to_NT, int to_sdim, int current_dim)
                                to_NT, current_dim, to_NT););
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -120,7 +122,7 @@ ICMCompileND_WL_GENARRAY__SHAPE_id_arr (char *to_NT, int to_sdim, char *shp_NT,
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_WL_GENARRAY__SHAPE_id_arr");
+    DBUG_ENTER ();
 
 #define ND_WL_GENARRAY__SHAPE_id_arr
 #include "icm_comment.c"
@@ -154,7 +156,7 @@ ICMCompileND_WL_GENARRAY__SHAPE_id_arr (char *to_NT, int to_sdim, char *shp_NT,
     Set_Shape (to_NT, to_sdim, shp_NT, -1, SizeId, NULL, ReadId, vals_ANY, val_size, NULL,
                NULL, ReadConstArray_Str);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -177,7 +179,7 @@ ICMCompileND_WL_GENARRAY__SHAPE_id_id (char *to_NT, int to_sdim, char *shp_NT,
 {
     int val_dim = DIM_NO_OFFSET (val_sdim);
 
-    DBUG_ENTER ("ICMCompileND_WL_GENARRAY__SHAPE_id_id");
+    DBUG_ENTER ();
 
 #define ND_WL_GENARRAY__SHAPE_id_id
 #include "icm_comment.c"
@@ -197,7 +199,7 @@ ICMCompileND_WL_GENARRAY__SHAPE_id_id (char *to_NT, int to_sdim, char *shp_NT,
     Set_Shape (to_NT, to_sdim, shp_NT, -1, SizeId, NULL, ReadId, val_NT, val_dim, DimId,
                SizeId, ShapeId);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -222,7 +224,7 @@ ICMCompileND_WL_GENARRAY__SHAPE_arr_id (char *to_NT, int to_sdim, int shp_size,
     int val_dim = DIM_NO_OFFSET (val_sdim);
     int i;
 
-    DBUG_ENTER ("ICMCompileND_WL_GENARRAY__SHAPE_arr_id");
+    DBUG_ENTER ();
 
 #define ND_WL_GENARRAY__SHAPE_arr_id
 #include "icm_comment.c"
@@ -253,7 +255,7 @@ ICMCompileND_WL_GENARRAY__SHAPE_arr_id (char *to_NT, int to_sdim, int shp_size,
     Set_Shape (to_NT, to_sdim, shp_ANY, shp_size, NULL, NULL, ReadConstArray_Str, val_NT,
                val_dim, DimId, SizeId, ShapeId);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -273,7 +275,7 @@ ICMCompileWL_SCHEDULE__BEGIN (int dims)
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileWL_SCHEDULE__BEGIN");
+    DBUG_ENTER ();
 
 #define WL_SCHEDULE__BEGIN
 #include "icm_comment.c"
@@ -291,7 +293,7 @@ ICMCompileWL_SCHEDULE__BEGIN (int dims)
         fprintf (global.outfile, "int SAC_WL_MT_SCHEDULE_STOP( %d);\n", i);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -311,7 +313,7 @@ void
 ICMCompileWL3_SCHEDULE__BEGIN (int lb, char *idx_nt, int ub, int chunksz,
                                bool need_unroll)
 {
-    DBUG_ENTER ("ICMCompileWL3_SCHEDULE__BEGIN");
+    DBUG_ENTER ();
 
 #define WL3_SCHEDULE__BEGIN
 #include "icm_comment.c"
@@ -332,7 +334,7 @@ ICMCompileWL3_SCHEDULE__BEGIN (int lb, char *idx_nt, int ub, int chunksz,
     fprintf (global.outfile, "{\n");
     global.indent++;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -353,7 +355,7 @@ ICMCompileWL_DECLARE_SHAPE_FACTOR (char *to_NT, int to_sdim, char *idx_vec_NT, i
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileWL_DECLARE_SHAPE_FACTOR");
+    DBUG_ENTER ();
 
 #define WL_DECLARE_SHAPE_FACTOR
 #include "icm_comment.c"
@@ -367,7 +369,7 @@ ICMCompileWL_DECLARE_SHAPE_FACTOR (char *to_NT, int to_sdim, char *idx_vec_NT, i
         fprintf (global.outfile, "int SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT, i);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -388,7 +390,7 @@ ICMCompileWL_DEFINE_SHAPE_FACTOR (char *to_NT, int to_sdim, char *idx_vec_NT, in
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileWL_DEFINE_SHAPE_FACTOR");
+    DBUG_ENTER ();
 
 #define WL_DEFINE_SHAPE_FACTOR
 #include "icm_comment.c"
@@ -409,7 +411,7 @@ ICMCompileWL_DEFINE_SHAPE_FACTOR (char *to_NT, int to_sdim, char *idx_vec_NT, in
     INDENT;
     fprintf (global.outfile, "}\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -427,7 +429,7 @@ ICMCompileWL_DEFINE_SHAPE_FACTOR (char *to_NT, int to_sdim, char *idx_vec_NT, in
 void
 ICMCompileWL_SCHEDULE__END (int dims)
 {
-    DBUG_ENTER ("ICMCompileWL_SCHEDULE__END");
+    DBUG_ENTER ();
 
 #define WL_SCHEDULE__END
 #include "icm_comment.c"
@@ -438,7 +440,7 @@ ICMCompileWL_SCHEDULE__END (int dims)
     INDENT;
     fprintf (global.outfile, "}\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -456,7 +458,7 @@ ICMCompileWL_SCHEDULE__END (int dims)
 void
 ICMCompileWL3_SCHEDULE__END (char *idx_nt)
 {
-    DBUG_ENTER ("ICMCompileWL3_SCHEDULE__END");
+    DBUG_ENTER ();
 
 #define WL3_SCHEDULE__END
 #include "icm_comment.c"
@@ -467,7 +469,7 @@ ICMCompileWL3_SCHEDULE__END (char *idx_nt)
     INDENT;
     fprintf (global.outfile, "}\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -485,7 +487,7 @@ ICMCompileWL3_SCHEDULE__END (char *idx_nt)
 void
 ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
 {
-    DBUG_ENTER ("ICMCompileWL_SUBALLOC");
+    DBUG_ENTER ();
 
 #define WL_SUBALLOC
 #include "icm_comment.c"
@@ -498,7 +500,7 @@ ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
              "SAC_ND_A_FIELD( %s))+SAC_ND_READ( %s, 0);\n",
              sub_NT, sub_NT, to_NT, to_NT, off_NT);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -523,7 +525,7 @@ ICMCompileWL_MODARRAY_SUBSHAPE (char *sub_NT, char *idx_NT, int dims, char *to_N
 #endif
     int cnt;
 
-    DBUG_ENTER ("ICMCompileWL_MODARRAY_SUBSHAPE");
+    DBUG_ENTER ();
 
 #define WL_MODARRAY_SUBSHAPE
 #include "icm_comment.c"
@@ -606,7 +608,7 @@ ICMCompileWL_MODARRAY_SUBSHAPE (char *sub_NT, char *idx_NT, int dims, char *to_N
         DBUG_ASSERT (0, "unknown shape class found!");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -633,7 +635,7 @@ ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
     int to_dim = DIM_NO_OFFSET (to_sdim);
     int val_dim = DIM_NO_OFFSET (val_sdim);
 
-    DBUG_ENTER ("ICMCompileWL_ASSIGN");
+    DBUG_ENTER ();
 
 #define WL_ASSIGN
 #include "icm_comment.c"
@@ -670,7 +672,7 @@ ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
                                                 to_NT, off_NT, val_NT, copyfun););
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -690,7 +692,7 @@ void
 ICMCompileWL_FOLD (char *to_NT, int to_sdim, char *idx_vec_NT, int dims,
                    char **idxs_scl_NT)
 {
-    DBUG_ENTER ("ICMCompileWL_FOLD");
+    DBUG_ENTER ();
 
 #define WL_FOLD
 #include "icm_comment.c"
@@ -702,7 +704,7 @@ ICMCompileWL_FOLD (char *to_NT, int to_sdim, char *idx_vec_NT, int dims,
     INDENT;
     fprintf (global.outfile, "/* fold operation */\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -735,7 +737,7 @@ ICMCompileWL_INIT_OFFSET (char *off_NT, char *to_NT, int to_sdim, char *idx_vec_
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileWL_INIT_OFFSET");
+    DBUG_ENTER ();
 
 #define WL_INIT_OFFSET
 #include "icm_comment.c"
@@ -762,7 +764,7 @@ ICMCompileWL_INIT_OFFSET (char *off_NT, char *to_NT, int to_sdim, char *idx_vec_
     fprintf (global.outfile, ";\n");
     global.indent--;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -790,7 +792,7 @@ void
 ICMCompileWL_ADJUST_OFFSET (char *off_NT, int dim, char *to_NT, int to_sdim,
                             char *idx_vec_NT, int dims, char **idxs_scl_NT)
 {
-    DBUG_ENTER ("ICMCompileWL_ADJUST_OFFSET");
+    DBUG_ENTER ();
 
 #define WL_ADJUST_OFFSET
 #include "icm_comment.c"
@@ -803,7 +805,7 @@ ICMCompileWL_ADJUST_OFFSET (char *off_NT, int dim, char *to_NT, int to_sdim,
              " * SAC_WL_SHAPE_FACTOR( %s, %d);\n",
              off_NT, idxs_scl_NT[dim], to_NT, dim);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -843,7 +845,7 @@ ICMCompileWL_SET_OFFSET (char *off_NT, int dim, int first_block_dim, char *to_NT
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileWL_SET_OFFSET");
+    DBUG_ENTER ();
 
 #define WL_SET_OFFSET
 #include "icm_comment.c"
@@ -884,7 +886,7 @@ ICMCompileWL_SET_OFFSET (char *off_NT, int dim, int first_block_dim, char *to_NT
     fprintf (global.outfile, " * SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT, dims - 1);
     global.indent--;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -893,7 +895,7 @@ ICMCompileWL_SIMD_BEGIN (int cnt)
     char *tmp_name;
     FILE *simd_file;
 
-    DBUG_ENTER ("ICMCompileWL_SIMD_BEGIN");
+    DBUG_ENTER ();
 
 #define WL_SIMD_BEGIN
 #include "icm_comment.c"
@@ -926,13 +928,13 @@ ICMCompileWL_SIMD_BEGIN (int cnt)
     fprintf (global.outfile, "\n#define SAC_SIMD_COMPILATION\n");
     fprintf (global.outfile, "#include \"sac.h\"\n");
 #endif
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 ICMCompileWL_SIMD_END (int cnt)
 {
-    DBUG_ENTER ("ICMCompileWL_SIMD_END");
+    DBUG_ENTER ();
 
     fclose (global.outfile);
 
@@ -950,5 +952,7 @@ ICMCompileWL_SIMD_END (int cnt)
 #include "icm_trace.c"
 #undef WL_SIMD_END
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

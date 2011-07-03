@@ -13,7 +13,10 @@
 #include "phase_options.h"
 
 #include "types.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "PHO"
+#include "debug.h"
+
 #include "str.h"
 #include "ctinfo.h"
 #include "globals.h"
@@ -25,7 +28,7 @@ SearchPhaseByName (char *name)
 {
     compiler_phase_t phase;
 
-    DBUG_ENTER ("SearchPhaseByName");
+    DBUG_ENTER ();
 
     phase = PHIfirstPhase ();
 
@@ -44,7 +47,7 @@ SearchPhaseByNumber (int num)
     compiler_phase_t phase;
     int cnt;
 
-    DBUG_ENTER ("SearchPhaseByNumber");
+    DBUG_ENTER ();
 
     phase = PHIfirstPhase ();
     cnt = 0;
@@ -63,7 +66,7 @@ SearchSubPhase (compiler_phase_t phase, char *name)
 {
     compiler_phase_t subphase;
 
-    DBUG_ENTER ("SearchSubPhase");
+    DBUG_ENTER ();
 
     subphase = phase;
 
@@ -86,7 +89,7 @@ SearchCyclePhase (compiler_phase_t cycle, char *name)
 {
     compiler_phase_t cyclephase;
 
-    DBUG_ENTER ("SearchCyclePhase");
+    DBUG_ENTER ();
 
     cyclephase = cycle;
 
@@ -115,9 +118,9 @@ PHOinterpretBreakOption (char *option)
     char *rest;
     int num;
 
-    DBUG_ENTER ("PHOinterpretBreakOption");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("PHO", ("Interpreting break option: %s", option));
+    DBUG_PRINT ("Interpreting break option: %s", option);
 
     break_phase = STRtok (option, ":");
 
@@ -200,7 +203,7 @@ PHOinterpretBreakOption (char *option)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #ifndef DBUG_OFF
@@ -210,7 +213,7 @@ SearchPhaseIdent (char *ident)
 {
     compiler_phase_t phase;
 
-    DBUG_ENTER ("SearchPhaseIdent");
+    DBUG_ENTER ();
 
     phase = PHIfirstPhase ();
 
@@ -227,7 +230,7 @@ PHOinterpretDbugOption (char *option)
     char *tok;
     compiler_phase_t phase;
 
-    DBUG_ENTER ("PHOinterpretDbugOption");
+    DBUG_ENTER ();
 
     tok = STRtok (option, "/");
 
@@ -289,7 +292,7 @@ PHOinterpretDbugOption (char *option)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #endif /* DBUG_OFF */
@@ -321,11 +324,11 @@ PHOprintPhasesSac2c (void)
 {
     int cnt = 0;
 
-    DBUG_ENTER ("PHOprintPhasesSac2c");
+    DBUG_ENTER ();
 
 #include "phase_sac2c.mac"
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -333,11 +336,11 @@ PHOprintPhasesSac4c (void)
 {
     int cnt = 0;
 
-    DBUG_ENTER ("PHOprintPhasesSac4c");
+    DBUG_ENTER ();
 
 #include "phase_sac4c.mac"
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #undef PHASname
@@ -350,3 +353,5 @@ PHOprintPhasesSac4c (void)
 #undef CYCLEPHASEtext
 #undef CYCLEPHASEFUNname
 #undef CYCLEPHASEFUNtext
+
+#undef DBUG_PREFIX

@@ -32,7 +32,10 @@
 #include "multithread_lib.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "ASMRA"
+#include "debug.h"
+
 #include "globals.h"
 
 /*
@@ -86,7 +89,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -98,7 +101,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -167,21 +170,21 @@ ASMRAdoAssignmentsRearrange (node *arg_node)
 {
     info *arg_info;
     trav_t traversaltable;
-    DBUG_ENTER ("ASMRAdoAssignmentsRearrange");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
                  "ASMRAdoAssignmentsRearrange expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
 
     TRAVpush (TR_asmra);
 
-    DBUG_PRINT ("ASMRA", ("trav into module-funs"));
+    DBUG_PRINT ("trav into module-funs");
     MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    DBUG_PRINT ("ASMRA", ("trav from module-funs"));
+    DBUG_PRINT ("trav from module-funs");
 
     traversaltable = TRAVpop ();
-    DBUG_ASSERT ((traversaltable == TR_asmra), "Popped incorrect traversal table");
+    DBUG_ASSERT (traversaltable == TR_asmra, "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
 
@@ -202,8 +205,8 @@ ASMRAdoAssignmentsRearrange (node *arg_node)
 node *
 ASMRAblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ASMRAblock");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "node is not a N_block");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_block, "node is not a N_block");
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         if (NODE_TYPE (BLOCK_INSTR (arg_node)) == N_assign) {
@@ -214,9 +217,9 @@ ASMRAblock (node *arg_node, info *arg_info)
     }
 
     /* continue traversal */
-    DBUG_PRINT ("ASMRA", ("trav into instruction(s)"));
+    DBUG_PRINT ("trav into instruction(s)");
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-    DBUG_PRINT ("ASMRA", ("trav from instruction(s)"));
+    DBUG_PRINT ("trav from instruction(s)");
 
     DBUG_RETURN (arg_node);
 }
@@ -247,8 +250,8 @@ CreateNewAssignmentOrder (node *arg_node)
 {
     struct asmra_list_s *my_list;
     node *graph;
-    DBUG_ENTER ("CreateNewAssignmentOrder");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "node is not a N_block");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_block, "node is not a N_block");
 
     graph = BLOCK_DATAFLOWGRAPH (arg_node);
 
@@ -282,7 +285,7 @@ BuildListOfCluster (node *graph)
     struct asmra_list_s *list_of_cluster;
     struct asmra_cluster_s *new_cluster;
     mtexecmode_t next_cluster_execmode;
-    DBUG_ENTER ("BuildListOfCluster");
+    DBUG_ENTER ();
 
     next_cluster_execmode = MUTH_EXCLUSIVE;
     /* create initial list */
@@ -350,7 +353,7 @@ BuildCluster (node *graph, mtexecmode_t execmode)
     struct asmra_cluster_s *result_part;
     bool node_added;
 
-    DBUG_ENTER ("BuildCluster");
+    DBUG_ENTER ();
 
     result = NULL;
     result_part = NULL;
@@ -411,7 +414,7 @@ FindElement (node *graph, mtexecmode_t execmode)
 {
     nodelist *member_iterator;
     node *result;
-    DBUG_ENTER ("ListFindElement");
+    DBUG_ENTER ();
 
     result = NULL;
     member_iterator = DATAFLOWGRAPH_MEMBERS (graph);
@@ -454,7 +457,7 @@ DissolveAllCluster (struct asmra_list_s *list)
     struct asmra_cluster_s *act_cluster;
     node *act_node;
 
-    DBUG_ENTER ("DissolveAllCluster");
+    DBUG_ENTER ();
     list_of_dfn = NULL;
     act_node = NULL;
     iterator = list;
@@ -506,7 +509,7 @@ CalculateDistances (struct asmra_cluster_s *cluster, struct asmra_list_s *list)
     bool found_dep;
     nodelist *dependent_nodes;
 
-    DBUG_ENTER ("CalculateDistances");
+    DBUG_ENTER ();
 
     act_member = cluster;
 
@@ -557,7 +560,7 @@ static bool
 FoundDependent (nodelist *dependent_nodes, struct asmra_cluster_s *search_area)
 {
     bool result;
-    DBUG_ENTER ("FoundDependent");
+    DBUG_ENTER ();
 
     result = FALSE;
 
@@ -584,7 +587,7 @@ static bool
 IsInCluster (node *dfn, struct asmra_cluster_s *search_area)
 {
     bool result;
-    DBUG_ENTER ("IsInCluster");
+    DBUG_ENTER ();
     result = FALSE;
 
     while ((search_area != NULL) && (result == FALSE)) {
@@ -623,7 +626,7 @@ GetNodeWithLowestDistance (struct asmra_cluster_s *cluster, struct asmra_list_s 
     int father_distance;
     int father_distance_tmp;
     struct asmra_cluster_s *iterator;
-    DBUG_ENTER ("GetNodeWithLowestDistance");
+    DBUG_ENTER ();
 
     result = NULL;
     iterator = cluster;
@@ -680,7 +683,7 @@ GetMinDistanceToFather (node *dfn, struct asmra_list_s *list)
 {
     int distance;
     node *list_dfn;
-    DBUG_ENTER ("GetMinDistanceToFather");
+    DBUG_ENTER ();
 
     distance = 0;
 
@@ -725,8 +728,8 @@ BuildNewAssignmentChain (struct asmra_list_s *list_of_dfn, node *arg_node)
     struct asmra_list_s *list_iterator;
     node *act_dfn;
     node *act_assign, *last_assign;
-    DBUG_ENTER ("BuildNewAssignmentChain");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "N_block expected");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_block, "N_block expected");
 
     list_iterator = list_of_dfn;
 
@@ -768,7 +771,7 @@ MakeCluster (node *dfn)
 {
     struct asmra_cluster_s *result;
 
-    DBUG_ENTER ("MakeCluster");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (struct asmra_cluster_s));
 
@@ -792,7 +795,7 @@ MakeCluster (node *dfn)
 static struct asmra_cluster_s *
 FreeCluster (struct asmra_cluster_s *cluster)
 {
-    DBUG_ENTER ("FreeCluster");
+    DBUG_ENTER ();
 
     if (ASMRA_CLUSTER_NEXT (cluster) != NULL) {
         ASMRA_CLUSTER_NEXT (cluster) = FreeCluster (ASMRA_CLUSTER_NEXT (cluster));
@@ -818,7 +821,7 @@ static struct asmra_cluster_s *
 ClusterAdd (struct asmra_cluster_s *cluster, node *dfn)
 {
     struct asmra_cluster_s *tmp;
-    DBUG_ENTER ("ClusterAdd");
+    DBUG_ENTER ();
     tmp = MakeCluster (dfn);
     ASMRA_CLUSTER_NEXT (tmp) = cluster;
 
@@ -843,7 +846,7 @@ ClusterMerge (struct asmra_cluster_s *cluster_1, struct asmra_cluster_s *cluster
 {
     struct asmra_cluster_s *tmp;
     struct asmra_cluster_s *old_tmp;
-    DBUG_ENTER ("ClusterMerge");
+    DBUG_ENTER ();
 
     if (cluster_1 == NULL) {
         cluster_1 = cluster_2;
@@ -878,7 +881,7 @@ ClusterRefUpdate (struct asmra_cluster_s *cluster)
     struct asmra_cluster_s *tmp;
     nodelist *dependent_iterator;
     static int cell_id = 0;
-    DBUG_ENTER ("ClusterRefUpdate");
+    DBUG_ENTER ();
 
     tmp = cluster;
     while (tmp != NULL) {
@@ -920,7 +923,7 @@ ClusterRefUpdate (struct asmra_cluster_s *cluster)
 static 
 void PrintCluster(struct asmra_cluster_s *cluster) 
 {
-  DBUG_ENTER("PrintCluster");
+  DBUG_ENTER ();
   
   if (cluster != NULL) {
     fprintf(stdout,"%s dist:%i execm:%s; ",
@@ -930,7 +933,7 @@ void PrintCluster(struct asmra_cluster_s *cluster)
     PrintCluster(ASMRA_CLUSTER_NEXT(cluster));
     fflush(stdout);
   }
-  DBUG_VOID_RETURN;  
+  DBUG_RETURN ();  
 }
 
 #endif
@@ -948,7 +951,7 @@ void PrintCluster(struct asmra_cluster_s *cluster)
 static struct asmra_list_s *
 FreeList (struct asmra_list_s *list)
 {
-    DBUG_ENTER ("FreeList");
+    DBUG_ENTER ();
 
     if (ASMRA_LIST_NEXT (list) != NULL) {
         list = FreeList (ASMRA_LIST_NEXT (list));
@@ -975,7 +978,7 @@ static struct asmra_list_s *
 ListAppend (struct asmra_list_s *list, node *node, struct asmra_cluster_s *cluster)
 {
     struct asmra_list_s *iter;
-    DBUG_ENTER ("ListAppend");
+    DBUG_ENTER ();
 
     iter = list;
 
@@ -1020,8 +1023,8 @@ static node *
 PrepareDataflowgraph (node *graph)
 {
     nodelist *iter;
-    DBUG_ENTER ("PrepareDataflowgraph");
-    DBUG_ASSERT ((NODE_TYPE (graph) == N_dataflowgraph), "N_dataflowgraph expected");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (graph) == N_dataflowgraph, "N_dataflowgraph expected");
 
     iter = DATAFLOWGRAPH_MEMBERS (graph);
 
@@ -1041,3 +1044,5 @@ PrepareDataflowgraph (node *graph)
 /**
  * @}
  **/
+
+#undef DBUG_PREFIX

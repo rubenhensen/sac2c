@@ -11,7 +11,10 @@
 
 #include "renameidentifiers.h"
 #include "tree_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "PREC"
+#include "debug.h"
+
 #include "traverse.h"
 #include "scheduling.h"
 #include "str_buffer.h"
@@ -46,7 +49,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -58,7 +61,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -70,7 +73,7 @@ RIDdoRenameIdentifiers (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("RIDdoRenameIdentifiers");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -90,7 +93,7 @@ BuildTypesRenaming (const char *mod, const char *name)
 {
     char *result;
 
-    DBUG_ENTER ("BuildTypesRenaming");
+    DBUG_ENTER ();
 
     result = (char *)MEMmalloc (sizeof (char) * (STRlen (name) + STRlen (mod) + 8));
     sprintf (result, "SACt_%s__%s", mod, name);
@@ -124,7 +127,7 @@ RenameFunName (node *fundef)
     str_buf *buf;
     node *arg;
 
-    DBUG_ENTER ("RenameFunName");
+    DBUG_ENTER ();
 
     buf = SBUFcreate (40);
 
@@ -194,7 +197,7 @@ RenameFun (node *fun)
 {
     char *new_name;
 
-    DBUG_ENTER ("RenameFun");
+    DBUG_ENTER ();
 
     if (FUNDEF_LINKNAME (fun) != NULL) {
         /*
@@ -204,13 +207,13 @@ RenameFun (node *fun)
          *  - sac4c setting the LINKNAME
          */
 
-        DBUG_PRINT ("PREC", ("renaming C function %s to %s", FUNDEF_NAME (fun),
-                             FUNDEF_LINKNAME (fun)));
+        DBUG_PRINT ("renaming C function %s to %s", FUNDEF_NAME (fun),
+                    FUNDEF_LINKNAME (fun));
 
         FUNDEF_NAME (fun) = MEMfree (FUNDEF_NAME (fun));
         FUNDEF_NAME (fun) = STRcpy (FUNDEF_LINKNAME (fun));
     } else if (FUNDEF_ISEXTERN (fun)) {
-        DBUG_PRINT ("PREC", ("C function %s has not been renamed", FUNDEF_NAME (fun)));
+        DBUG_PRINT ("C function %s has not been renamed", FUNDEF_NAME (fun));
     } else {
         /*
          * SAC functions which may be overloaded
@@ -224,8 +227,8 @@ RenameFun (node *fun)
             new_name = RenameFunName (fun);
         }
 
-        DBUG_PRINT ("PREC", ("renaming SAC function %s:%s to %s",
-                             NSgetName (FUNDEF_NS (fun)), FUNDEF_NAME (fun), new_name));
+        DBUG_PRINT ("renaming SAC function %s:%s to %s", NSgetName (FUNDEF_NS (fun)),
+                    FUNDEF_NAME (fun), new_name);
 
         FUNDEF_NAME (fun) = MEMfree (FUNDEF_NAME (fun));
         FUNDEF_NAME (fun) = new_name;
@@ -248,7 +251,7 @@ RenameFun (node *fun)
 node *
 RIDmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RIDmodul");
+    DBUG_ENTER ();
 
     INFO_RID_MODULE (arg_info) = arg_node;
 
@@ -278,7 +281,7 @@ RIDtypedef (node *arg_node, info *arg_info)
     char *newname;
     usertype type;
 
-    DBUG_ENTER ("RIDtypedef");
+    DBUG_ENTER ();
 
     /*
      * Why are imported C types renamed unlike imported C functions or
@@ -293,8 +296,8 @@ RIDtypedef (node *arg_node, info *arg_info)
     newname
       = BuildTypesRenaming (NSgetName (TYPEDEF_NS (arg_node)), TYPEDEF_NAME (arg_node));
 
-    DBUG_PRINT ("PREC", ("renaming type %s:%s to %s", NSgetName (TYPEDEF_NS (arg_node)),
-                         TYPEDEF_NAME (arg_node), newname));
+    DBUG_PRINT ("renaming type %s:%s to %s", NSgetName (TYPEDEF_NS (arg_node)),
+                TYPEDEF_NAME (arg_node), newname);
 
     /*
      * now we have to rename the type in the user type database
@@ -337,7 +340,7 @@ RIDobjdef (node *arg_node, info *arg_info)
 {
     char *new_name;
 
-    DBUG_ENTER ("RIDobjdef");
+    DBUG_ENTER ();
 
     if (!OBJDEF_ISEXTERN (arg_node)) {
         /*
@@ -386,7 +389,7 @@ RIDobjdef (node *arg_node, info *arg_info)
 node *
 RIDfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RIDfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
@@ -420,7 +423,7 @@ RIDarg (node *arg_node, info *arg_info)
 {
     types *ot;
 
-    DBUG_ENTER ("RIDarg");
+    DBUG_ENTER ();
 
     /*
      * Here, a string representation for the argument types is built which
@@ -457,7 +460,7 @@ RIDarg (node *arg_node, info *arg_info)
 node *
 RIDreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RIDreturn");
+    DBUG_ENTER ();
 
     if (RETURN_EXPRS (arg_node) != NULL) {
         RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
@@ -479,7 +482,7 @@ RIDreturn (node *arg_node, info *arg_info)
 node *
 RIDap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RIDap");
+    DBUG_ENTER ();
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
@@ -501,7 +504,7 @@ RIDap (node *arg_node, info *arg_info)
 node *
 RIDicm (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RIDicm");
+    DBUG_ENTER ();
 
     if (ICM_ARGS (arg_node) != NULL) {
         ICM_ARGS (arg_node) = TRAVdo (ICM_ARGS (arg_node), arg_info);
@@ -526,7 +529,7 @@ RIDicm (node *arg_node, info *arg_info)
 node *
 RIDwlseg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RIDwlsegx");
+    DBUG_ENTER ();
 
     if (WLSEG_SCHEDULING (arg_node) != NULL) {
         WLSEG_SCHEDULING (arg_node)
@@ -550,7 +553,7 @@ RIDavis (node *arg_node, info *arg_info)
 {
     char *newname;
 
-    DBUG_ENTER ("RIDavis");
+    DBUG_ENTER ();
 
     newname = RIDrenameLocalIdentifier (AVIS_NAME (arg_node));
 
@@ -607,7 +610,7 @@ RIDrenameLocalIdentifier (char *id)
     char *name_prefix;
     char *new_name;
 
-    DBUG_ENTER ("RIDrenameLocalIdentifier");
+    DBUG_ENTER ();
 
     if (id[0] == '_') {
         /*
@@ -633,3 +636,5 @@ RIDrenameLocalIdentifier (char *id)
 
     DBUG_RETURN (new_name);
 }
+
+#undef DBUG_PREFIX

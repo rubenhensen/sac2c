@@ -33,8 +33,10 @@
 #include "wlbounds2structconsts.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "dbug.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLBSC"
+#include "debug.h"
+
 #include "memory.h"
 #include "free.h"
 #include "DupTree.h"
@@ -79,7 +81,7 @@ MakeInfo (bool flat)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -95,7 +97,7 @@ MakeInfo (bool flat)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -115,7 +117,7 @@ CreateAvisAndInsertVardec (char *prefix, ntype *ty, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("CreateAvisAndInsertVardec");
+    DBUG_ENTER ();
     avis = TBmakeAvis (TRAVtmpVarName (prefix), ty);
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -157,7 +159,7 @@ CreateArrayOfShapeSels (node *id_avis, int dim, info *arg_info)
     node *iv_avis, *elem_avis;
     int i;
 
-    DBUG_ENTER ("CreateArrayOfShapeSels");
+    DBUG_ENTER ();
 
     for (i = dim - 1; i >= 0; i--) {
         iv_avis = CreateAvisAndInsertVardec ("sc_iv",
@@ -227,7 +229,7 @@ EnsureStructConstant (node *bound, ntype *type, info *arg_info)
     node *new_bound;
     int dim;
 
-    DBUG_ENTER ("EnsureStructConstant");
+    DBUG_ENTER ();
 
     if (pat == NULL) {
         pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
@@ -241,18 +243,17 @@ EnsureStructConstant (node *bound, ntype *type, info *arg_info)
                 /* but maybe flattened */
                 new_bound = array;
 
-                DBUG_PRINT ("WLBSC",
-                            ("...potentially already inline, store" F_PTR, array));
+                DBUG_PRINT ("...potentially already inline, store" F_PTR, array);
 
                 if (!PMmatch (pat, PM_exact, NULL, bound)) {
                     /* it is flattened -> de-flatten */
-                    DBUG_PRINT ("WLBSC", ("...was flat, replacing."));
+                    DBUG_PRINT ("...was flat, replacing.");
                     bound = FREEdoFreeTree (bound);
                     bound = DUPdoDupTree (new_bound);
                 }
             } else {
                 /* there are some obstacles in the way, i.e. extrema -> create vector */
-                DBUG_PRINT ("WLBSC", ("...otherwise defined."));
+                DBUG_PRINT ("...otherwise defined.");
                 dim = SHgetExtent (TYgetShape (type), 0);
                 new_bound = CreateArrayOfShapeSels (ID_AVIS (bound), dim, arg_info);
                 bound = FREEdoFreeTree (bound);
@@ -261,7 +262,7 @@ EnsureStructConstant (node *bound, ntype *type, info *arg_info)
         }
     } else if (TUshapeKnown (type)) {
         /* not an array at all but AKS -> create vector */
-        DBUG_PRINT ("WLBSC", ("...creating struct const."));
+        DBUG_PRINT ("...creating struct const.");
         dim = SHgetExtent (TYgetShape (type), 0);
         new_bound = CreateArrayOfShapeSels (ID_AVIS (bound), dim, arg_info);
         bound = FREEdoFreeTree (bound);
@@ -285,9 +286,9 @@ EnsureStructConstant (node *bound, ntype *type, info *arg_info)
 node *
 WLBSCmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLBSCmodule");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLBSC", ("WLPartitionGeneration module-wise"));
+    DBUG_PRINT ("WLPartitionGeneration module-wise");
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -310,7 +311,7 @@ WLBSCfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("WLBSCfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -343,7 +344,7 @@ WLBSCfundef (node *arg_node, info *arg_info)
 node *
 WLBSCassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLBSCassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -369,7 +370,7 @@ WLBSCassign (node *arg_node, info *arg_info)
 node *
 WLBSCwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLBSCwith");
+    DBUG_ENTER ();
     WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
@@ -390,7 +391,7 @@ WLBSCpart (node *arg_node, info *arg_info)
 {
     ntype *old_iv_type;
 
-    DBUG_ENTER ("WLBSCpart");
+    DBUG_ENTER ();
 
     PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
 
@@ -415,7 +416,7 @@ WLBSCpart (node *arg_node, info *arg_info)
 node *
 WLBSCgenerator (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLBSCgenerator");
+    DBUG_ENTER ();
 
     GENERATOR_BOUND1 (arg_node)
       = EnsureStructConstant (GENERATOR_BOUND1 (arg_node), INFO_IV_TYPE (arg_info),
@@ -446,7 +447,7 @@ WLBSCgenerator (node *arg_node, info *arg_info)
 node *
 WLBSCgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLBSCgenarray");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id) {
         GENARRAY_SHAPE (arg_node)
@@ -474,7 +475,7 @@ Wlbounds2structConsts (node *arg_node, bool flat)
 {
     info *arg_info;
 
-    DBUG_ENTER ("Wlbounds2structConsts");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo (flat);
 
@@ -498,13 +499,15 @@ Wlbounds2structConsts (node *arg_node, bool flat)
 node *
 WLBSCdoWlbounds2structConsts (node *arg_node)
 {
-    DBUG_ENTER ("WLBSCdoWlbounds2structConsts");
+    DBUG_ENTER ();
     DBUG_RETURN (Wlbounds2structConsts (arg_node, TRUE));
 }
 
 node *
 WLBSCdoWlbounds2nonFlatStructConsts (node *arg_node)
 {
-    DBUG_ENTER ("WLBSCdoWlbounds2nonFlatStructConsts");
+    DBUG_ENTER ();
     DBUG_RETURN (Wlbounds2structConsts (arg_node, FALSE));
 }
+
+#undef DBUG_PREFIX

@@ -9,7 +9,9 @@
 #include "memory.h"
 #include "ctinfo.h"
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 /*--------------------------------------------------------------------------*/
 /*  Make-functions for non-node structures                                  */
@@ -25,7 +27,7 @@ TBmakeShpseg (node *numsp)
     int i;
     node *oldnumsp;
 
-    DBUG_ENTER ("TBmakeShpseg");
+    DBUG_ENTER ();
 
     tmp = (shpseg *)MEMmalloc (sizeof (shpseg));
 
@@ -50,7 +52,7 @@ TBmakeShpseg (node *numsp)
             CTIabort ("Maximum number of dimensions exceeded");
         }
 
-        DBUG_ASSERT ((NODE_TYPE (numsp) == N_nums), "found a non numsp node as argument");
+        DBUG_ASSERT (NODE_TYPE (numsp) == N_nums, "found a non numsp node as argument");
 
         SHPSEG_SHAPE (tmp, i) = NUMS_VAL (numsp);
 
@@ -72,7 +74,7 @@ TBmakeTypes1 (simpletype btype)
 {
     types *tmp;
 
-    DBUG_ENTER ("TBmakeTypes1");
+    DBUG_ENTER ();
 
     tmp = TBmakeTypes (btype, 0, NULL, NULL, NULL);
 
@@ -86,7 +88,7 @@ TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name, char *mod)
 {
     types *tmp;
 
-    DBUG_ENTER ("TBmakeTypes");
+    DBUG_ENTER ();
 
     tmp = (types *)MEMmalloc (sizeof (types));
 
@@ -117,7 +119,7 @@ TBmakeNodelistNode (node *node, nodelist *next)
 {
     nodelist *tmp;
 
-    DBUG_ENTER ("TBmakeNodelistNode");
+    DBUG_ENTER ();
 
     tmp = (nodelist *)MEMmalloc (sizeof (nodelist));
     NODELIST_NODE (tmp) = node;
@@ -134,7 +136,7 @@ TBmakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
 {
     access_t *tmp;
 
-    DBUG_ENTER ("TBmakeAccess");
+    DBUG_ENTER ();
 
     tmp = (access_t *)MEMmalloc (sizeof (access_t));
 
@@ -156,7 +158,7 @@ TBmakeReuseCandidate (node *array, int dim, rc_t *next)
     rc_t *tmp;
     int i;
 
-    DBUG_ENTER ("TBmakeReuseCandidate");
+    DBUG_ENTER ();
 
     tmp = (rc_t *)MEMmalloc (sizeof (rc_t));
 
@@ -185,7 +187,7 @@ TBmakeCudaIndex (unsigned int type, int coefficient, node *id, int looplevel,
 {
     cuda_index_t *idx;
 
-    DBUG_ENTER ("TBmakeCudaIndex");
+    DBUG_ENTER ();
 
     idx = (cuda_index_t *)MEMmalloc (sizeof (cuda_index_t));
 
@@ -201,7 +203,7 @@ TBmakeCudaIndex (unsigned int type, int coefficient, node *id, int looplevel,
 cuda_index_t *
 TBfreeCudaIndex (cuda_index_t *index)
 {
-    DBUG_ENTER ("TBfreeCudaIndex");
+    DBUG_ENTER ();
 
     if (CUIDX_NEXT (index) != NULL) {
         CUIDX_NEXT (index) = TBfreeCudaIndex (CUIDX_NEXT (index));
@@ -220,7 +222,7 @@ TBmakeCudaAccessInfo (node *array, node *arrayshp, int dim, int cuwldim, int nes
     cuda_access_info_t *info;
     int i;
 
-    DBUG_ENTER ("TBmakeCudaAccessInfo");
+    DBUG_ENTER ();
 
     info = (cuda_access_info_t *)MEMmalloc (sizeof (cuda_access_info_t));
 
@@ -249,7 +251,7 @@ TBfreeCudaAccessInfo (cuda_access_info_t *access_info)
 {
     int i;
 
-    DBUG_ENTER ("TBfreeCudaAccessInfo");
+    DBUG_ENTER ();
 
     for (i = 0; i < MAX_REUSE_DIM; i++) {
         if (CUAI_INDICES (access_info, i) != NULL) {
@@ -271,7 +273,7 @@ TBmakeArgtab (int size)
     argtab_t *argtab;
     int i;
 
-    DBUG_ENTER ("TBmakeArgtab");
+    DBUG_ENTER ();
 
     argtab = (argtab_t *)MEMmalloc (sizeof (argtab_t));
 
@@ -288,3 +290,5 @@ TBmakeArgtab (int size)
 
     DBUG_RETURN (argtab);
 }
+
+#undef DBUG_PREFIX

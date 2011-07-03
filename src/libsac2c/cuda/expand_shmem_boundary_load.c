@@ -7,7 +7,10 @@
 #include "tree_compound.h"
 #include "globals.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -41,7 +44,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -54,7 +57,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -71,7 +74,7 @@ Expand (node *prf, info *arg_info)
     node *then_assigns = NULL, *assign;
     node *vardecs = NULL;
 
-    DBUG_ENTER ("Expand");
+    DBUG_ENTER ();
 
     cond = PRF_ARG1 (prf);
     shmem = PRF_ARG2 (prf);
@@ -79,8 +82,7 @@ Expand (node *prf, info *arg_info)
     mem = PRF_ARG4 (prf);
     memshp = PRF_ARG5 (prf);
 
-    DBUG_ASSERT ((NODE_TYPE (PRF_ARG6 (prf)) == N_num),
-                 "Non number found for dimension!");
+    DBUG_ASSERT (NODE_TYPE (PRF_ARG6 (prf)) == N_num, "Non number found for dimension!");
     dim = NUM_VAL (PRF_ARG6 (prf));
 
     shmem_ids = PRF_EXPRS7 (prf);
@@ -212,7 +214,7 @@ ESBLdoExpandShmemBoundaryLoad (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("ESBLdoExpandShmemBoundaryLoad");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_esbl);
@@ -233,7 +235,7 @@ ESBLdoExpandShmemBoundaryLoad (node *syntax_tree)
 node *
 ESBLfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SHMEMfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISCUDAGLOBALFUN (arg_node) || FUNDEF_ISCUDASTGLOBALFUN (arg_node)) {
         INFO_FUNDEF (arg_info) = arg_node;
@@ -254,7 +256,7 @@ ESBLfundef (node *arg_node, info *arg_info)
 node *
 ESBLassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ESBLassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -281,7 +283,7 @@ ESBLassign (node *arg_node, info *arg_info)
 node *
 ESBLprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ESBLprf");
+    DBUG_ENTER ();
 
     if (PRF_PRF (arg_node) == F_shmem_boundary_load) {
         INFO_COND_ASS (arg_info) = Expand (arg_node, arg_info);
@@ -289,3 +291,5 @@ ESBLprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

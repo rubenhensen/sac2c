@@ -21,7 +21,9 @@
  *****************************************************************************/
 #include "tag_fp_fundefs.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "TFA"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
@@ -47,8 +49,8 @@
 node *
 TFFdoTagFPAps (node *argnode)
 {
-    DBUG_ENTER ("TFFdoTagFPAps");
-    DBUG_PRINT ("TFF", ("Tagging FP Ap nodes"));
+    DBUG_ENTER ();
+    DBUG_PRINT_TAG ("TFF", "Tagging FP Ap nodes");
 
     TRAVpush (TR_tfa);
     argnode = TRAVdo (argnode, NULL);
@@ -83,8 +85,8 @@ TFFdoTagFPAps (node *argnode)
 node *
 TFAap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TFFap");
-    DBUG_PRINT ("TFA", ("Traversing Ap node"));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Traversing Ap node");
 
     AP_TOSPAWN (arg_node) = FUNDEF_CONTAINSSPAWN (AP_FUNDEF (arg_node));
 
@@ -98,3 +100,5 @@ TFAap (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Tag Ap Nodes -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

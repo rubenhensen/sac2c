@@ -2,7 +2,9 @@
 
 #include "strip_external_signatures.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "free.h"
 #include "map_fun_trav.h"
 #include "tree_basic.h"
@@ -10,7 +12,7 @@
 static node *
 StripArgs (node *args)
 {
-    DBUG_ENTER ("StripArgs");
+    DBUG_ENTER ();
 
     if (args != NULL) {
         ARG_NEXT (args) = StripArgs (ARG_NEXT (args));
@@ -29,7 +31,7 @@ StripArgs (node *args)
 static node *
 StripRets (node *rets)
 {
-    DBUG_ENTER ("StripRets");
+    DBUG_ENTER ();
 
     if (rets != NULL) {
         RET_NEXT (rets) = StripRets (RET_NEXT (rets));
@@ -45,7 +47,7 @@ StripRets (node *rets)
 static node *
 StripFunction (node *fundef, info *info)
 {
-    DBUG_ENTER ("StripFunction");
+    DBUG_ENTER ();
 
     FUNDEF_ARGS (fundef) = StripArgs (FUNDEF_ARGS (fundef));
     FUNDEF_RETS (fundef) = StripRets (FUNDEF_RETS (fundef));
@@ -56,7 +58,7 @@ StripFunction (node *fundef, info *info)
 node *
 SESstripOneFunction (node *fundef)
 {
-    DBUG_ENTER ("SESstripOneFunction");
+    DBUG_ENTER ();
 
     fundef = StripFunction (fundef, NULL);
 
@@ -66,10 +68,12 @@ SESstripOneFunction (node *fundef)
 node *
 SESdoStripExternalSignatures (node *syntax_tree)
 {
-    DBUG_ENTER ("SESdoStripExternalSignatures");
+    DBUG_ENTER ();
 
     MFTdoMapFunTrav (MODULE_FUNS (syntax_tree), NULL, StripFunction);
     MFTdoMapFunTrav (MODULE_FUNDECS (syntax_tree), NULL, StripFunction);
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

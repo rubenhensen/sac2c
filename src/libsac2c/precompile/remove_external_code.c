@@ -7,12 +7,14 @@
 #include "ctinfo.h"
 #include "free.h"
 #include "DataFlowMask.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "REC"
+#include "debug.h"
 
 node *
 RECfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RECfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -26,8 +28,8 @@ RECfundef (node *arg_node, info *arg_info)
          * again. So we remove the body here
          */
 
-        DBUG_PRINT ("REC", ("removing fundef body of external fundef %s...",
-                            CTIitemName (arg_node)));
+        DBUG_PRINT ("removing fundef body of external fundef %s...",
+                    CTIitemName (arg_node));
         /*
          * we set the nasty FUNDEF_RETURN pointer to NULL as we free its
          * target!
@@ -46,11 +48,11 @@ RECfundef (node *arg_node, info *arg_info)
 node *
 RECdoRemoveExternalCode (node *tree)
 {
-    DBUG_ENTER ("RECdoRemoveExternalCode");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("REC", (">>> starting to remove unused external code"));
+    DBUG_PRINT (">>> starting to remove unused external code");
 
-    DBUG_ASSERT ((NODE_TYPE (tree) = N_module),
+    DBUG_ASSERT (NODE_TYPE (tree) = N_module,
                  "RECdoRemoveExternalCode is intended to be called on modules");
 
     TRAVpush (TR_rec);
@@ -59,7 +61,9 @@ RECdoRemoveExternalCode (node *tree)
 
     TRAVpop ();
 
-    DBUG_PRINT ("REC", (">>> finished removing unused external code"));
+    DBUG_PRINT (">>> finished removing unused external code");
 
     DBUG_RETURN (tree);
 }
+
+#undef DBUG_PREFIX

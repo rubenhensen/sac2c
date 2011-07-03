@@ -26,7 +26,9 @@
 
 #include "create_spmd_funs.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "MTSPMDF"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -82,7 +84,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -104,7 +106,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -116,7 +118,7 @@ ATravCAVexprs (node *arg_node, info *arg_info)
 {
     node *vardecs, *vardec;
 
-    DBUG_ENTER ("ATravCAVexprs");
+    DBUG_ENTER ();
 
     vardecs = TRAVopt (EXPRS_NEXT (arg_node), arg_info);
 
@@ -132,7 +134,7 @@ ATravCAVid (node *arg_node, info *arg_info)
 {
     node *vardec;
 
-    DBUG_ENTER ("ATravCAVid");
+    DBUG_ENTER ();
 
     vardec = TBmakeVardec (TBmakeAvis (TRAVtmpVarName (ID_NAME (arg_node)),
                                        TYcopyType (AVIS_TYPE (ID_AVIS (arg_node)))),
@@ -158,7 +160,7 @@ CreateAuxiliaryVardecsFromRetExprs (node *retexprs)
     anontrav_t cav_trav[3] = {{N_exprs, &ATravCAVexprs}, {N_id, &ATravCAVid}, {0, NULL}};
     node *vardecs;
 
-    DBUG_ENTER ("CreateAuxiliaryVardecsFromRetExprs");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (cav_trav, &TRAVsons);
 
@@ -184,7 +186,7 @@ CreateSpmdFundef (node *arg_node, info *arg_info)
     node *spmd_fundef, *fundef, *body, *withlet, *retexprs, *vardecs;
     node *assigns, *args, *rets, *retur;
 
-    DBUG_ENTER ("CreateSpmdFundef");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_let,
                  "CreateSpmdFundef() called with illegal node type.");
@@ -235,7 +237,7 @@ CreateSpmdFundef (node *arg_node, info *arg_info)
 node *
 MTSPMDFmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTSPMDFmodule");
+    DBUG_ENTER ();
 
     INFO_LUT (arg_info) = LUTgenerateLut ();
 
@@ -259,7 +261,7 @@ MTSPMDFfundef (node *arg_node, info *arg_info)
 {
     node *spmdfuns = NULL;
 
-    DBUG_ENTER ("MTSPMDFfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISSTFUN (arg_node) && (FUNDEF_BODY (arg_node) != NULL)) {
         /*
@@ -295,7 +297,7 @@ MTSPMDFlet (node *arg_node, info *arg_info)
 {
     node *spmd_fundef, *spmd_ap;
 
-    DBUG_ENTER ("MTSPMDFlet");
+    DBUG_ENTER ();
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -337,32 +339,32 @@ MTSPMDFid (node *arg_node, info *arg_info)
 {
     node *avis, *new_avis;
 
-    DBUG_ENTER ("MTSPMDFid");
+    DBUG_ENTER ();
 
     avis = ID_AVIS (arg_node);
 
-    DBUG_PRINT ("MTSPMDF", ("ENTER id %s", ID_NAME (arg_node)));
+    DBUG_PRINT ("ENTER id %s", ID_NAME (arg_node));
 
     if (INFO_COLLECT (arg_info)) {
         if (INFO_WITHID (arg_info)) {
             /*
              * As a withid this N_id node actually represents a left hand side variable.
              */
-            DBUG_PRINT ("MTSPMDF", ("...is Withid-id"));
+            DBUG_PRINT ("...is Withid-id");
 
             if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
-                DBUG_PRINT ("MTSPMDF", ("  Not handled before..."));
+                DBUG_PRINT ("  Not handled before...");
                 new_avis = DUPdoDupNode (avis);
                 INFO_VARDECS (arg_info)
                   = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
                 INFO_LUT (arg_info)
                   = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
 
-                DBUG_PRINT ("MTSPMDF", (">>> ids %s added to LUT", ID_NAME (arg_node)));
+                DBUG_PRINT (">>> ids %s added to LUT", ID_NAME (arg_node));
             }
         } else {
             if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
-                DBUG_PRINT ("MTSPMDF", ("  Not handled before..."));
+                DBUG_PRINT ("  Not handled before...");
                 /*
                  * A right hand side variable that has not been handled before must be a
                  * free variable of the with-loop and that means it needs to become a
@@ -400,19 +402,19 @@ MTSPMDFids (node *arg_node, info *arg_info)
     node *avis;
     node *new_avis;
 
-    DBUG_ENTER ("MTSPMDFids");
+    DBUG_ENTER ();
 
     avis = IDS_AVIS (arg_node);
     new_avis = NULL;
 
-    DBUG_PRINT ("MTSPMDF", ("ENTER ids %s", IDS_NAME (arg_node)));
+    DBUG_PRINT ("ENTER ids %s", IDS_NAME (arg_node));
 
     if (INFO_COLLECT (arg_info)) {
         if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis) {
             new_avis = DUPdoDupNode (avis);
             INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
             INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
-            DBUG_PRINT ("MTSPMDF", (">>> ids %s added to LUT", IDS_NAME (arg_node)));
+            DBUG_PRINT (">>> ids %s added to LUT", IDS_NAME (arg_node));
         }
     } else {
         if (INFO_LIFT (arg_info)) {
@@ -460,7 +462,7 @@ MTSPMDFids (node *arg_node, info *arg_info)
 node *
 MTSPMDFwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTSPMDFwith2");
+    DBUG_ENTER ();
 
     if (WITH2_PARALLELIZE (arg_node)) {
         /*
@@ -521,7 +523,7 @@ MTSPMDFwith2 (node *arg_node, info *arg_info)
 node *
 MTSPMDFwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTSPMDFwithid");
+    DBUG_ENTER ();
 
     INFO_WITHID (arg_info) = TRUE;
 
@@ -551,7 +553,7 @@ MTSPMDFdoCreateSpmdFuns (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MTSPMDFdoCreateSpmdFuns");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
@@ -565,3 +567,5 @@ MTSPMDFdoCreateSpmdFuns (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

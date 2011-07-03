@@ -5,7 +5,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "graphtypes.h"
@@ -20,7 +23,7 @@ lubinfo *
 freeLubInfo (lubinfo *linfo)
 {
 
-    DBUG_ENTER ("freeLubInfo");
+    DBUG_ENTER ();
 
     lubinfo *result = NULL;
     int i;
@@ -63,7 +66,7 @@ compinfo **
 freeCompInfoArr (compinfo **cia, int n)
 {
 
-    DBUG_ENTER ("freeCompInfoArr");
+    DBUG_ENTER ();
 
     int i;
     compinfo **result;
@@ -127,3 +130,5 @@ freeCompInfoArr (compinfo **cia, int n)
 
     DBUG_RETURN (result);
 }
+
+#undef DBUG_PREFIX

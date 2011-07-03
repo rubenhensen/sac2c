@@ -29,7 +29,10 @@
 #include "traverse.h"
 #include "node_basic.h"
 #include "new_types.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "SISI"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -78,7 +81,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
     result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
@@ -99,7 +102,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -121,7 +124,7 @@ node *
 SISIdoSignatureSimplification (node *arg_node)
 {
     info *arg_info;
-    DBUG_ENTER ("SISIdoSignatureSimplification");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
     INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
@@ -150,7 +153,7 @@ SISIdoSignatureSimplification (node *arg_node)
 node *
 SISImodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SISImodule");
+    DBUG_ENTER ();
 
     INFO_TRAVPHASE (arg_info) = infer;
 
@@ -178,7 +181,7 @@ SISImodule (node *arg_node, info *arg_info)
 node *
 SISIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SISIfundef");
+    DBUG_ENTER ();
 
     if (INFO_TRAVPHASE (arg_info) == infer) {
         arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_sisi);
@@ -207,7 +210,7 @@ SISIfundef (node *arg_node, info *arg_info)
             FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         }
     } else {
-        DBUG_ASSERT ((FALSE), "Unexpected traversal phase!");
+        DBUG_ASSERT (FALSE, "Unexpected traversal phase!");
     }
     DBUG_RETURN (arg_node);
 }
@@ -230,7 +233,7 @@ SISIfundef (node *arg_node, info *arg_info)
 node *
 SISIarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SISIarg");
+    DBUG_ENTER ();
 
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
@@ -272,7 +275,7 @@ SISIarg (node *arg_node, info *arg_info)
 node *
 SISIblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SISIblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
@@ -294,7 +297,7 @@ SISIblock (node *arg_node, info *arg_info)
 node *
 SISIassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SISIassign");
+    DBUG_ENTER ();
 
     INFO_POSTASSIGN (arg_info) = NULL;
 
@@ -323,7 +326,7 @@ SISIassign (node *arg_node, info *arg_info)
 node *
 SISIlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SISIlet");
+    DBUG_ENTER ();
 
     INFO_ISAPNODE (arg_info) = FALSE;
 
@@ -356,7 +359,7 @@ node *
 SISIap (node *arg_node, info *arg_info)
 {
     node *fundef, *fun_args, *curr_args, *new_args, *tmp;
-    DBUG_ENTER ("SISIap");
+    DBUG_ENTER ();
 
     fundef = AP_FUNDEF (arg_node);
 
@@ -420,7 +423,7 @@ SISIids (node *arg_node, info *arg_info)
 {
     node *succ, *ret, *assign_let;
     constant *new_co;
-    DBUG_ENTER ("SISIids");
+    DBUG_ENTER ();
 
     if (INFO_IDSLET (arg_info)) {
 
@@ -428,8 +431,7 @@ SISIids (node *arg_node, info *arg_info)
         if (RET_NEXT (INFO_APFUNRETS (arg_info)) != NULL) {
             INFO_APFUNRETS (arg_info) = RET_NEXT (INFO_APFUNRETS (arg_info));
         } else {
-            DBUG_ASSERT ((IDS_NEXT (arg_node) == NULL),
-                         "ret and ids do not fit together");
+            DBUG_ASSERT (IDS_NEXT (arg_node) == NULL, "ret and ids do not fit together");
         }
 
         IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -441,8 +443,8 @@ SISIids (node *arg_node, info *arg_info)
         if ((TYisAKV (RET_TYPE (ret))) && (0 == TYgetDim (RET_TYPE (ret)))) {
             new_co = TYgetValue (RET_TYPE (ret));
 
-            DBUG_PRINT ("SISI", ("identifier %s marked as constant",
-                                 VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (arg_node)))));
+            DBUG_PRINT ("identifier %s marked as constant",
+                        VARDEC_OR_ARG_NAME (AVIS_DECL (IDS_AVIS (arg_node))));
 
             /*
              * create one let assign for constant definition,
@@ -459,8 +461,7 @@ SISIids (node *arg_node, info *arg_info)
             INFO_POSTASSIGN (arg_info)
               = TCappendAssign (INFO_POSTASSIGN (arg_info), assign_let);
 
-            DBUG_PRINT ("SISI",
-                        ("create constant assignment for %s", (IDS_NAME (arg_node))));
+            DBUG_PRINT ("create constant assignment for %s", (IDS_NAME (arg_node)));
 
             /*
              * Remove current ids
@@ -493,7 +494,7 @@ SISIids (node *arg_node, info *arg_info)
 node *
 SISIreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SISIreturn");
+    DBUG_ENTER ();
 
     if ((!FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))
         && (!STReq ("main", FUNDEF_NAME (INFO_FUNDEF (arg_info))))
@@ -525,7 +526,7 @@ SISIreturn (node *arg_node, info *arg_info)
 node *
 SISIret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SISIret");
+    DBUG_ENTER ();
 
     RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
     /*
@@ -561,7 +562,7 @@ SISIexprs (node *arg_node, info *arg_info)
 {
     bool remove;
     node *ret;
-    DBUG_ENTER ("SISIexprs");
+    DBUG_ENTER ();
 
     if (INFO_RETURNEXPRS (arg_info) == TRUE) {
 
@@ -609,7 +610,7 @@ SISIexprs (node *arg_node, info *arg_info)
 node *
 SISIid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SISIid");
+    DBUG_ENTER ();
 
     if ((TYisAKV (AVIS_TYPE (ID_AVIS (arg_node))))
         && (0 == TYgetDim (AVIS_TYPE (ID_AVIS (arg_node))))) {
@@ -619,3 +620,5 @@ SISIid (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

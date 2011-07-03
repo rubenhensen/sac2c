@@ -62,7 +62,8 @@
 #include <stdarg.h>
 
 #include "config.h"
-#include "dbug.h"
+#define DBUG_PREFIX "debug.c"
+#include "debug.h"
 
 /*
  *     Manifest constants that should not require any changes.
@@ -180,14 +181,14 @@ LOCAL struct state *stack = NULL; /* Linked list of stacked states */
  *     Local variables not seen by user.
  */
 
-LOCAL int lineno = 0;            /* Current debugger output line number */
-LOCAL char *func = "?func";      /* Name of current user function */
-LOCAL char *file = "?file";      /* Name of current user file */
-LOCAL BOOLEAN init_done = FALSE; /* Set to TRUE when initialization done */
+LOCAL int lineno = 0;             /* Current debugger output line number */
+LOCAL const char *func = "?func"; /* Name of current user function */
+LOCAL const char *file = "?file"; /* Name of current user file */
+LOCAL BOOLEAN init_done = FALSE;  /* Set to TRUE when initialization done */
 
-LOCAL int jmplevel;  /* Remember nesting level at setjmp () */
-LOCAL char *jmpfunc; /* Remember current function for setjmp */
-LOCAL char *jmpfile; /* Remember current file for setjmp */
+LOCAL int jmplevel;        /* Remember nesting level at setjmp () */
+LOCAL const char *jmpfunc; /* Remember current function for setjmp */
+LOCAL const char *jmpfile; /* Remember current file for setjmp */
 
 LOCAL struct link *ListParse (char *ctlp); /* Parse a debug command string */
 LOCAL char *StrDup (char *string);         /* Make a fresh copy of a string */
@@ -543,8 +544,8 @@ VOID _db_pop_ (VOID)
  */
 
 VOID
-_db_enter_ (char *_func_, char *_file_, int _line_, char **_sfunc_, char **_sfile_,
-            int *_slevel_)
+_db_enter_ (const char *_func_, char *_file_, int _line_, const char **_sfunc_,
+            const char **_sfile_, int *_slevel_)
 {
     if (!init_done) {
         _db_push_ ("");
@@ -598,7 +599,7 @@ _db_enter_ (char *_func_, char *_file_, int _line_, char **_sfunc_, char **_sfil
  */
 
 VOID
-_db_return_ (int _line_, char **_sfunc_, char **_sfile_, int *_slevel_)
+_db_return_ (int _line_, const char **_sfunc_, const char **_sfile_, int *_slevel_)
 {
     if (!init_done) {
         _db_push_ ("");
@@ -900,7 +901,7 @@ ListParse (char *ctlp)
  */
 
 LOCAL BOOLEAN
-InList (struct link *linkp, char *cp)
+InList (struct link *linkp, const char *cp)
 {
     REGISTER struct link *scan;
     REGISTER BOOLEAN accept;

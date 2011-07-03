@@ -19,7 +19,10 @@
 #include "new_types.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CMPT"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -52,7 +55,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -66,7 +69,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -101,7 +104,7 @@ TravLocal (node *arg_node, info *arg_info)
     node *arg_node2;
     int i;
 
-    DBUG_ENTER ("TravLocal");
+    DBUG_ENTER ();
 
     arg_node2 = INFO_TREE (arg_info);
 
@@ -156,7 +159,7 @@ TravLocal (node *arg_node, info *arg_info)
 node *
 CMPTnumbyte (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTnumbyte");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -177,7 +180,7 @@ CMPTnumbyte (node *arg_node, info *arg_info)
 node *
 CMPTnumshort (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTnumshort");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -198,7 +201,7 @@ CMPTnumshort (node *arg_node, info *arg_info)
 node *
 CMPTnumint (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTnumint");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -219,7 +222,7 @@ CMPTnumint (node *arg_node, info *arg_info)
 node *
 CMPTnumlong (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTnumlong");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -240,7 +243,7 @@ CMPTnumlong (node *arg_node, info *arg_info)
 node *
 CMPTnumlonglong (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTnumlonglong");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -261,7 +264,7 @@ CMPTnumlonglong (node *arg_node, info *arg_info)
 node *
 CMPTnumubyte (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTnumubyte");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -282,7 +285,7 @@ CMPTnumubyte (node *arg_node, info *arg_info)
 node *
 CMPTnumushort (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTnumushort");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -303,7 +306,7 @@ CMPTnumushort (node *arg_node, info *arg_info)
 node *
 CMPTnumuint (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTnumuint");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -324,7 +327,7 @@ CMPTnumuint (node *arg_node, info *arg_info)
 node *
 CMPTnumulong (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTnumulong");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -345,7 +348,7 @@ CMPTnumulong (node *arg_node, info *arg_info)
 node *
 CMPTnumulonglong (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTnumulonglong");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info), NUMULONGLONG_VAL (arg_node)
@@ -366,7 +369,7 @@ CMPTnumulonglong (node *arg_node, info *arg_info)
 node *
 CMPTnum (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTnum");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -387,7 +390,7 @@ CMPTnum (node *arg_node, info *arg_info)
 node *
 CMPTchar (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTchar");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -408,7 +411,7 @@ CMPTchar (node *arg_node, info *arg_info)
 node *
 CMPTbool (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTbool");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -429,7 +432,7 @@ CMPTbool (node *arg_node, info *arg_info)
 node *
 CMPTfloat (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTfloat");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -450,7 +453,7 @@ CMPTfloat (node *arg_node, info *arg_info)
 node *
 CMPTdouble (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTdouble");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -471,7 +474,7 @@ CMPTdouble (node *arg_node, info *arg_info)
 node *
 CMPTstr (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTstr");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -488,7 +491,7 @@ CMPTstr (node *arg_node, info *arg_info)
 node *
 CMPTtype (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTtype");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -512,7 +515,7 @@ CMPTid (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("CMPTid");
+    DBUG_ENTER ();
 
     if (INFO_EQFLAG (arg_info) == CMPT_EQ) {
         avis = ID_AVIS (INFO_TREE (arg_info));
@@ -537,7 +540,7 @@ CMPTid (node *arg_node, info *arg_info)
 node *
 CMPTids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTids");
+    DBUG_ENTER ();
 
     if (INFO_EQFLAG (arg_info) == CMPT_EQ) {
         AVIS_ALT (IDS_AVIS (INFO_TREE (arg_info))) = IDS_AVIS (arg_node);
@@ -580,7 +583,7 @@ HeterogeneousArrayCompare (node *arg_node, info *arg_info)
     pattern *pat1;
     pattern *pat2;
 
-    DBUG_ENTER ("HeterogeneousArrayCompare");
+    DBUG_ENTER ();
 
     if (TUisScalar (ARRAY_ELEMTYPE (arg_node)) && TYisAKV (ARRAY_ELEMTYPE (arg_node))
         && TYisAKV (ARRAY_ELEMTYPE (INFO_TREE (arg_info)))) {
@@ -621,7 +624,7 @@ HeterogeneousArrayCompare (node *arg_node, info *arg_info)
 node *
 CMPTarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTarray");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -648,7 +651,7 @@ CMPTarray (node *arg_node, info *arg_info)
 node *
 CMPTprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTprf");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -672,7 +675,7 @@ CMPTprf (node *arg_node, info *arg_info)
 node *
 CMPTap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTap");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -696,7 +699,7 @@ CMPTap (node *arg_node, info *arg_info)
 node *
 CMPTgenerator (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTgenerator");
+    DBUG_ENTER ();
 
     /* compare attributes */
     INFO_EQFLAG (arg_info)
@@ -725,7 +728,7 @@ CMPTgenerator (node *arg_node, info *arg_info)
 node *
 CMPTfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTfold");
+    DBUG_ENTER ();
 
     INFO_EQFLAG (arg_info)
       = CMPT_TEST (INFO_EQFLAG (arg_info),
@@ -750,11 +753,11 @@ CMPTfold (node *arg_node, info *arg_info)
 node *
 CMPTunknown (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTunknown");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("CMPT", CTInote ("Unknown node type %s encountered in compare tree "
-                                   "traversal!",
-                                   NODE_TEXT (arg_node)););
+    DBUG_EXECUTE (CTInote ("Unknown node type %s encountered in compare tree "
+                           "traversal!",
+                           NODE_TEXT (arg_node)));
     INFO_EQFLAG (arg_info) = CMPT_NEQ;
 
     DBUG_RETURN (arg_node);
@@ -768,7 +771,7 @@ CMPTunknown (node *arg_node, info *arg_info)
 #define CMPTBASIC(name)                                                                  \
     node *CMPT##name (node *arg_node, info *arg_info)                                    \
     {                                                                                    \
-        DBUG_ENTER ("CMPT" #name);                                                       \
+        DBUG_ENTER ();                                                                   \
                                                                                          \
         arg_node = TravLocal (arg_node, arg_info);                                       \
                                                                                          \
@@ -804,7 +807,7 @@ CMPTBASIC (modarray)
 node *
 CMPTnodeType (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CMPTnodeType");
+    DBUG_ENTER ();
 
     /* only one of the sons is NULL, so tree1 and tree2 cannot be equal */
     if (((arg_node == NULL) || (INFO_TREE (arg_info) == NULL))
@@ -842,7 +845,7 @@ CMPTdoCompareTree (node *tree1, node *tree2)
     info *arg_info;
     node *ids;
 
-    DBUG_ENTER ("CMPTdoCompareTree");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -873,3 +876,5 @@ CMPTdoCompareTree (node *tree1, node *tree2)
 
     DBUG_RETURN (result);
 }
+
+#undef DBUG_PREFIX

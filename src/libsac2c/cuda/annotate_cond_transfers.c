@@ -13,7 +13,10 @@
 #include <stdlib.h>
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "memory.h"
 #include "NumLookUpTable.h"
@@ -61,7 +64,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -82,7 +85,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -104,7 +107,7 @@ node *
 ACTRANdoAnnotateCondTransfers (node *syntax_tree)
 {
     info *info;
-    DBUG_ENTER ("ACTRANdoAnnotateCondTransfers");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_actran);
@@ -129,7 +132,7 @@ ACTRANdoAnnotateCondTransfers (node *syntax_tree)
 node *
 ACTRANfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ACTRANfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
@@ -168,7 +171,7 @@ ACTRANfundef (node *arg_node, info *arg_info)
 node *
 ACTRANassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ACTRANassign");
+    DBUG_ENTER ();
 
     INFO_LASTASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
@@ -191,7 +194,7 @@ ACTRANassign (node *arg_node, info *arg_info)
 node *
 ACTRANlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ACTRANlet");
+    DBUG_ENTER ();
 
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -217,7 +220,7 @@ ACTRANfuncond (node *arg_node, info *arg_info)
     /* ntype *then_type, *else_type; */
     node *then_ssaassign, *else_ssaassign;
 
-    DBUG_ENTER ("ACTRANfuncond");
+    DBUG_ENTER ();
 
     /* N_funcond can only appear after the N_cond node in cond-fun
      * The N_funcond selects value from either branch of the N_cond
@@ -283,7 +286,7 @@ ACTRANfuncond (node *arg_node, info *arg_info)
 node *
 ACTRANid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ACTRANid");
+    DBUG_ENTER ();
 
     if (INFO_INCONDFUN (arg_info)) {
         if (INFO_TRAVMODE (arg_info) == trav_collect) {
@@ -309,7 +312,7 @@ node *
 ACTRANprf (node *arg_node, info *arg_info)
 {
     node *id;
-    DBUG_ENTER ("ACTRANprf");
+    DBUG_ENTER ();
 
     if (INFO_INCONDFUN (arg_info)) {
         switch (PRF_PRF (arg_node)) {
@@ -365,3 +368,5 @@ ACTRANprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

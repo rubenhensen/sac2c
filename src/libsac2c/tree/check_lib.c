@@ -14,7 +14,9 @@
 #include "globals.h"
 #include "ctinfo.h"
 #include "phase.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CHK"
+#include "debug.h"
 
 /** <!--**********************************************************************-->
  *
@@ -23,7 +25,7 @@
 node *
 CHKinsertError (node *arg_node, char *string)
 {
-    DBUG_ENTER ("CHKinsertError");
+    DBUG_ENTER ();
 
     if (arg_node == NULL) {
 
@@ -62,7 +64,7 @@ CHKinsertError (node *arg_node, char *string)
 node *
 CHKexistSon (node *son, node *arg_node, char *string)
 {
-    DBUG_ENTER ("CHKexistSon");
+    DBUG_ENTER ();
 
     if (son == NULL) {
 
@@ -80,7 +82,7 @@ CHKexistSon (node *son, node *arg_node, char *string)
 node *
 CHKexistAttribute (void *attribute, node *arg_node, char *string)
 {
-    DBUG_ENTER ("CHKexistAttribute");
+    DBUG_ENTER ();
 
     if (attribute == NULL) {
 
@@ -99,7 +101,7 @@ CHKexistAttribute (void *attribute, node *arg_node, char *string)
 node *
 CHKnotExist (void *son_attribute, node *arg_node, char *string)
 {
-    DBUG_ENTER ("CHKnotExist");
+    DBUG_ENTER ();
 
     if (son_attribute != NULL) {
 
@@ -117,7 +119,7 @@ CHKnotExist (void *son_attribute, node *arg_node, char *string)
 node *
 CHKnotExistAttribute (void *attribute, node *arg_node, char *string)
 {
-    DBUG_ENTER ("CHKexistAttribute");
+    DBUG_ENTER ();
 
     if (attribute != NULL) {
 
@@ -135,7 +137,7 @@ CHKnotExistAttribute (void *attribute, node *arg_node, char *string)
 node *
 CHKcorrectTypeInsertError (node *arg_node, char *string)
 {
-    DBUG_ENTER ("CHKcorrectType");
+    DBUG_ENTER ();
 
     NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), string);
 
@@ -152,7 +154,7 @@ CHKassignAvisSSAAssign (node *arg_node)
 {
     node *ids;
 
-    DBUG_ENTER ("CHKassignAvisSSAAssign");
+    DBUG_ENTER ();
 
     if (global.valid_ssaform) {
         if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
@@ -163,7 +165,7 @@ CHKassignAvisSSAAssign (node *arg_node)
                       = CHKinsertError (NODE_ERROR (IDS_AVIS (ids)),
                                         "AVIS_SSAASSIGN does not point to correct "
                                         "N_assign node.");
-                    DBUG_PRINT ("CHK", ("for %s", AVIS_NAME (IDS_AVIS (ids))));
+                    DBUG_PRINT ("for %s", AVIS_NAME (IDS_AVIS (ids)));
                 }
                 ids = IDS_NEXT (ids);
             }
@@ -192,7 +194,7 @@ isMemberVardecs (node *arg_node, node *fundef)
     node *vardecs;
     bool z = FALSE;
 
-    DBUG_ENTER ("isMemberVardecs");
+    DBUG_ENTER ();
 
     vardecs = FUNDEF_BODY (fundef);
     if ((NULL != vardecs) && (NULL != BLOCK_VARDEC (vardecs))) {
@@ -228,7 +230,7 @@ isMemberArgs (node *arg_node, node *fundef)
     node *args;
     bool z = FALSE;
 
-    DBUG_ENTER ("isMemberVardecs");
+    DBUG_ENTER ();
 
     args = FUNDEF_ARGS (fundef);
     while ((!z) && NULL != args) {
@@ -263,7 +265,7 @@ CHKfundefVardecExtrema (node *arg_node)
     node *minmax;
     node *vardecs;
 
-    DBUG_ENTER ("CHKfundefVardecExtrema");
+    DBUG_ENTER ();
 
     if (NULL != arg_node) {
 
@@ -276,22 +278,20 @@ CHKfundefVardecExtrema (node *arg_node)
                 if ((NULL != minmax)
                     && (!(isMemberVardecs (ID_AVIS (minmax), arg_node)
                           || isMemberArgs (ID_AVIS (minmax), arg_node)))) {
-                    DBUG_PRINT ("CHK",
-                                ("WARNING: AVIS_MIN(%s)= %s does not point to a "
-                                 "vardec/arg in fundef %s",
-                                 AVIS_NAME (VARDEC_AVIS (curvardec)),
-                                 AVIS_NAME (ID_AVIS (minmax)), FUNDEF_NAME (arg_node)));
+                    DBUG_PRINT ("WARNING: AVIS_MIN(%s)= %s does not point to a "
+                                "vardec/arg in fundef %s",
+                                AVIS_NAME (VARDEC_AVIS (curvardec)),
+                                AVIS_NAME (ID_AVIS (minmax)), FUNDEF_NAME (arg_node));
                 }
 
                 minmax = AVIS_MAX (VARDEC_AVIS (curvardec));
                 if ((NULL != minmax)
                     && (!(isMemberVardecs (ID_AVIS (minmax), arg_node)
                           || isMemberArgs (ID_AVIS (minmax), arg_node)))) {
-                    DBUG_PRINT ("CHK",
-                                ("WARNING: AVIS_MAX(%s)= %s does not point to an "
-                                 "vardec/arg in fundef %s",
-                                 AVIS_NAME (VARDEC_AVIS (curvardec)),
-                                 AVIS_NAME (ID_AVIS (minmax)), FUNDEF_NAME (arg_node)));
+                    DBUG_PRINT ("WARNING: AVIS_MAX(%s)= %s does not point to an "
+                                "vardec/arg in fundef %s",
+                                AVIS_NAME (VARDEC_AVIS (curvardec)),
+                                AVIS_NAME (ID_AVIS (minmax)), FUNDEF_NAME (arg_node));
                 }
                 curvardec = VARDEC_NEXT (curvardec);
             }
@@ -300,3 +300,5 @@ CHKfundefVardecExtrema (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

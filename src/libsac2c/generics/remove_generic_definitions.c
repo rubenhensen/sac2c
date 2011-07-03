@@ -26,7 +26,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "map_fun_trav.h"
@@ -50,7 +53,7 @@
 static node *
 RemoveGenericFun (node *fundef, info *arg_info)
 {
-    DBUG_ENTER ("RemoveGenericFun");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISGENERIC (fundef)) {
         fundef = FREEdoFreeNode (fundef);
@@ -77,9 +80,9 @@ RemoveGenericFun (node *fundef, info *arg_info)
 node *
 RGDdoRemoveGenericDefinitions (node *syntax_tree)
 {
-    DBUG_ENTER ("RGDdoRemoveGenericDefinitions");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) = N_module),
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) = N_module,
                  "RGDdoRemoveGenericDefinitions expects a module node as argument!");
 
     MODULE_FUNS (syntax_tree)
@@ -95,3 +98,5 @@ RGDdoRemoveGenericDefinitions (node *syntax_tree)
 /** <!--********************************************************************-->
  * @}  <!--  Remove Generic Definitions -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

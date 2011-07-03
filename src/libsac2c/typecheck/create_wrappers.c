@@ -3,7 +3,10 @@
 #include <stdio.h>
 
 #include "create_wrappers.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CRTWRP"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "free.h"
 
@@ -53,7 +56,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -67,7 +70,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -102,7 +105,7 @@ CRTWRPdoCreateWrappers (node *arg_node)
 {
     info *info_node;
 
-    DBUG_ENTER ("CRTWRPdoCreateWrappers");
+    DBUG_ENTER ();
 
     TRAVpush (TR_crtwrp);
 
@@ -120,7 +123,7 @@ RefArgMatch (node *arg1, node *arg2)
 {
     bool result = TRUE;
 
-    DBUG_ENTER ("RefArgMatch");
+    DBUG_ENTER ();
 
     if ((arg1 != NULL) && ARG_ISARTIFICIAL (arg1)) {
         result = RefArgMatch (ARG_NEXT (arg1), arg2);
@@ -173,10 +176,10 @@ FindWrapper (namespace_t *ns, char *name, int num_args, int num_rets, lut_t *lut
     node *wrapper = NULL;
     bool found = FALSE;
 
-    DBUG_ENTER ("FindWrapper");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("CRTWRP", ("Searching for %s:%s %d args %d rets", NSgetName (ns), name,
-                           num_args, num_rets));
+    DBUG_PRINT ("Searching for %s:%s %d args %d rets", NSgetName (ns), name, num_args,
+                num_rets);
 
     /* initial search for wrapper in LUT */
     wrapper_p = (node **)LUTsearchInLutS (lut, name);
@@ -186,9 +189,9 @@ FindWrapper (namespace_t *ns, char *name, int num_args, int num_rets, lut_t *lut
         last_res_is_dots = FUNDEF_HASDOTRETS (wrapper);
         num_parms = TCcountArgsIgnoreArtificials (FUNDEF_ARGS (wrapper));
         num_res = TCcountRetsIgnoreArtificials (FUNDEF_RETS (wrapper));
-        DBUG_PRINT ("CRTWRP", (" ... checking %s %s%d args %s%d rets",
-                               FUNDEF_NAME (wrapper), (last_parm_is_dots ? ">=" : ""),
-                               num_parms, (last_res_is_dots ? ">=" : ""), num_res));
+        DBUG_PRINT (" ... checking %s %s%d args %s%d rets", FUNDEF_NAME (wrapper),
+                    (last_parm_is_dots ? ">=" : ""), num_parms,
+                    (last_res_is_dots ? ">=" : ""), num_res);
         if (((num_res == num_rets) || (last_res_is_dots && (num_res <= num_rets)))
             && ((num_parms == num_args) || (last_parm_is_dots && (num_parms <= num_args)))
             && NSequals (FUNDEF_NS (wrapper), ns)) {
@@ -222,7 +225,7 @@ FindWrapper (namespace_t *ns, char *name, int num_args, int num_rets, lut_t *lut
 static void
 ResetArgsOrRets (node *arg_node)
 {
-    DBUG_ENTER ("ResetArgsOrRets");
+    DBUG_ENTER ();
 
     while (arg_node != NULL) {
         switch (NODE_TYPE (arg_node)) {
@@ -243,7 +246,7 @@ ResetArgsOrRets (node *arg_node)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static node *
@@ -251,11 +254,11 @@ CreateWrapperFor (node *fundef, info *info)
 {
     node *body, *wrapper;
 
-    DBUG_ENTER ("CreateWrapperFor");
-    DBUG_PRINT ("CRTWRP", ("Creating wrapper for %s %s%d args %d rets",
-                           CTIitemName (fundef), (FUNDEF_HASDOTARGS (fundef) ? ">=" : ""),
-                           TCcountArgsIgnoreArtificials (FUNDEF_ARGS (fundef)),
-                           TCcountRetsIgnoreArtificials (FUNDEF_RETS (fundef))));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Creating wrapper for %s %s%d args %d rets", CTIitemName (fundef),
+                (FUNDEF_HASDOTARGS (fundef) ? ">=" : ""),
+                TCcountArgsIgnoreArtificials (FUNDEF_ARGS (fundef)),
+                TCcountRetsIgnoreArtificials (FUNDEF_RETS (fundef)));
 
     /*
      * if we have a wrapper function of a used function
@@ -348,9 +351,9 @@ SpecFundef (node *arg_node, info *arg_info)
     int num_args, num_rets;
     node *wrapper;
 
-    DBUG_ENTER ("SpecFundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("ESP", ("processing specialisation %s", CTIitemName (arg_node)));
+    DBUG_PRINT_TAG ("ESP", "processing specialisation %s", CTIitemName (arg_node));
 
     num_args = TCcountArgsIgnoreArtificials (FUNDEF_ARGS (arg_node));
     num_rets = TCcountRetsIgnoreArtificials (FUNDEF_RETS (arg_node));
@@ -365,7 +368,7 @@ SpecFundef (node *arg_node, info *arg_info)
                       num_rets);
 
     } else {
-        DBUG_PRINT ("ESP", ("assigned wrapper %s", CTIitemName (wrapper)));
+        DBUG_PRINT_TAG ("ESP", "assigned wrapper %s", CTIitemName (wrapper));
 
         FUNDEF_IMPL (arg_node) = wrapper;
     }
@@ -386,7 +389,7 @@ SpecFundef (node *arg_node, info *arg_info)
 static node *
 ConsFundefs (node *fundefs, node *fundef)
 {
-    DBUG_ENTER ("ConsFundefs");
+    DBUG_ENTER ();
 
     FUNDEF_NEXT (fundef) = fundefs;
 
@@ -396,9 +399,9 @@ ConsFundefs (node *fundefs, node *fundef)
 node *
 CRTWRPmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CRTWRPmodule");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((MODULE_WRAPPERFUNS (arg_node) == NULL),
+    DBUG_ASSERT (MODULE_WRAPPERFUNS (arg_node) == NULL,
                  "MODULE_WRAPPERFUNS is not NULL!");
     MODULE_WRAPPERFUNS (arg_node) = LUTgenerateLut ();
     INFO_WRAPPERFUNS (arg_info) = MODULE_WRAPPERFUNS (arg_node);
@@ -453,15 +456,14 @@ CRTWRPfundef (node *arg_node, info *arg_info)
     int num_args, num_rets;
     bool dot_args, dot_rets;
 
-    DBUG_ENTER ("CRTWRPfundef");
+    DBUG_ENTER ();
 
     dot_args = FUNDEF_HASDOTARGS (arg_node);
     dot_rets = FUNDEF_HASDOTRETS (arg_node);
     num_args = TCcountArgsIgnoreArtificials (FUNDEF_ARGS (arg_node));
     num_rets = TCcountRetsIgnoreArtificials (FUNDEF_RETS (arg_node));
 
-    DBUG_PRINT ("CRTWRP",
-                ("----- Processing function %s: -----", CTIitemName (arg_node)));
+    DBUG_PRINT ("----- Processing function %s: -----", CTIitemName (arg_node));
 
     /**
      * we need to include the following functions into wrappers:
@@ -587,8 +589,7 @@ CRTWRPfundef (node *arg_node, info *arg_info)
     INFO_EXPRETS (arg_info) = 1;
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("CRTWRP",
-                    ("----- Processing body of %s: -----", CTIitemName (arg_node)));
+        DBUG_PRINT ("----- Processing body of %s: -----", CTIitemName (arg_node));
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
@@ -628,7 +629,7 @@ CRTWRPlet (node *arg_node, info *arg_info)
 {
     int old_exprets;
 
-    DBUG_ENTER ("CRTWRPlet");
+    DBUG_ENTER ();
 
     old_exprets = INFO_EXPRETS (arg_info);
     INFO_EXPRETS (arg_info) = TCcountIds (LET_IDS (arg_node));
@@ -658,15 +659,14 @@ CRTWRPspap (node *arg_node, info *arg_info)
     node *wrapper;
     node *new_node = NULL;
 
-    DBUG_ENTER ("CRTWRPspap");
+    DBUG_ENTER ();
 
     num_args = TCcountExprs (SPAP_ARGS (arg_node));
     wrapper = FindWrapper (SPAP_NS (arg_node), SPAP_NAME (arg_node), num_args,
                            INFO_EXPRETS (arg_info), INFO_WRAPPERFUNS (arg_info));
 
-    DBUG_PRINT ("CRTWRP",
-                ("Adding backreference to %s:%s as " F_PTR ".",
-                 NSgetName (SPAP_NS (arg_node)), SPAP_NAME (arg_node), wrapper));
+    DBUG_PRINT ("Adding backreference to %s:%s as " F_PTR ".",
+                NSgetName (SPAP_NS (arg_node)), SPAP_NAME (arg_node), wrapper);
 
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),
@@ -706,7 +706,7 @@ node *
 CRTWRPgenarray (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CRTWRPgenarray");
+    DBUG_ENTER ();
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
     if (GENARRAY_DEFAULT (arg_node) != NULL) {
@@ -733,7 +733,7 @@ CRTWRPspfold (node *arg_node, info *arg_info)
     node *wrapper;
     node *new_node = NULL;
 
-    DBUG_ENTER ("CRTWRPspfold");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (SPFOLD_FUN (arg_node) != NULL, "N_spfold node wo FUN");
     DBUG_ASSERT (SPFOLD_NEUTRAL (arg_node) != NULL, "N_spfold node wo NEUTRAL");
@@ -767,3 +767,5 @@ CRTWRPspfold (node *arg_node, info *arg_info)
 
     DBUG_RETURN (new_node);
 }
+
+#undef DBUG_PREFIX

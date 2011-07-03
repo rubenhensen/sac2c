@@ -55,7 +55,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "CFP"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -75,7 +78,7 @@
 node *
 CFPdoCreateFunctionPairs (node *syntax_tree)
 {
-    DBUG_ENTER ("CFPdoCreateFunctionPairs");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (syntax_tree) == N_module)
                   || (NODE_TYPE (syntax_tree) == N_fundef)),
@@ -84,13 +87,13 @@ CFPdoCreateFunctionPairs (node *syntax_tree)
     DBUG_ASSERT (((global.filetype == FT_modimp) || (global.filetype == FT_classimp)),
                  "CFP is intended for use on classes and modules only");
 
-    DBUG_PRINT ("CFP", ("Create Function Pairs traversal."));
+    DBUG_PRINT ("Create Function Pairs traversal.");
 
     TRAVpush (TR_cfp);
     syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
 
-    DBUG_PRINT ("CFP", ("Create Function Pairs complete."));
+    DBUG_PRINT ("Create Function Pairs complete.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -128,7 +131,7 @@ CFPdoCreateFunctionPairs (node *syntax_tree)
 node *
 CFPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CFPfundef");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -151,3 +154,5 @@ CFPfundef (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

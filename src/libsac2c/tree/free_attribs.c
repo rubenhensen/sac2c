@@ -15,7 +15,10 @@
 #include "constants.h"
 #include "scheduling.h"
 #include "namespaces.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "FREE"
+#include "debug.h"
+
 #include "globals.h"
 #include "graphtypes.h"
 
@@ -34,10 +37,10 @@
 char *
 FREEattribString (char *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribString");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
-        DBUG_PRINT ("FREE", ("Freeing string '%s' at " F_PTR, attr, attr));
+        DBUG_PRINT ("Freeing string '%s' at " F_PTR, attr, attr);
         attr = MEMfree (attr);
     }
 
@@ -59,7 +62,7 @@ FREEattribString (char *attr, node *parent)
 char *
 FREEattribSharedString (char *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribSharedString");
+    DBUG_ENTER ();
 
     /* do nothing */
 
@@ -81,7 +84,7 @@ FREEattribSharedString (char *attr, node *parent)
 types *
 FREEattribOldType (types *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribOldType");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = FREEfreeOneTypes (attr);
@@ -105,11 +108,11 @@ FREEattribOldType (types *attr, node *parent)
 node *
 FREEattribNode (node *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribNode");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
-        DBUG_PRINT ("FREE", ("Starting to free %s node attribute at " F_PTR,
-                             NODE_TEXT (attr), attr));
+        DBUG_PRINT ("Starting to free %s node attribute at " F_PTR, NODE_TEXT (attr),
+                    attr);
         attr = FREEdoFreeTree (attr);
     }
 
@@ -131,7 +134,7 @@ FREEattribNode (node *attr, node *parent)
 namespace_t *
 FREEattribNamespace (namespace_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribNamespace");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = NSfreeNamespace (attr);
@@ -155,7 +158,7 @@ FREEattribNamespace (namespace_t *attr, node *parent)
 node *
 FREEattribLink (node *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribLink");
+    DBUG_ENTER ();
 
     /*
      * NEVER do anything with this kind of attribute
@@ -181,7 +184,7 @@ FREEattribLink (node *attr, node *parent)
 node *
 FREEattribExtLink (node *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribExtLink");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         if ((NODE_TYPE (attr) == N_fundef) && (NODE_TYPE (parent) == N_ap)) {
@@ -221,7 +224,7 @@ FREEattribExtLink (node *attr, node *parent)
 node *
 FREEattribCodeLink (node *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribCodeLink");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         CODE_DEC_USED (attr);
@@ -245,7 +248,7 @@ FREEattribCodeLink (node *attr, node *parent)
 lut_t *
 FREEattribLUT (lut_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribLUT");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = LUTremoveLut (attr);
@@ -269,7 +272,7 @@ FREEattribLUT (lut_t *attr, node *parent)
 nodelist *
 FREEattribNodeList (nodelist *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribNodeList");
+    DBUG_ENTER ();
 
     attr = FREEfreeNodelist (attr);
 
@@ -291,7 +294,7 @@ FREEattribNodeList (nodelist *attr, node *parent)
 nodelist *
 FREEattribSharedNodeList (nodelist *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribSharedNodeList");
+    DBUG_ENTER ();
 
     /* do nothing here */
 
@@ -313,7 +316,7 @@ FREEattribSharedNodeList (nodelist *attr, node *parent)
 dfmask_t *
 FREEattribDFMask (dfmask_t *attr)
 {
-    DBUG_ENTER ("FREEattribDFMask");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = DFMremoveMask (attr);
@@ -337,7 +340,7 @@ FREEattribDFMask (dfmask_t *attr)
 dfmask_base_t *
 FREEattribDFMaskBase (dfmask_base_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribDFMaskBase");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = DFMremoveMaskBase (attr);
@@ -361,10 +364,10 @@ FREEattribDFMaskBase (dfmask_base_t *attr, node *parent)
 ntype *
 FREEattribNewType (ntype *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribNewType");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
-        DBUG_PRINT ("FREE", ("Freeing ntype at " F_PTR, attr));
+        DBUG_PRINT ("Freeing ntype at " F_PTR, attr);
         attr = TYfreeType (attr);
     }
 
@@ -386,7 +389,7 @@ FREEattribNewType (ntype *attr, node *parent)
 argtab_t *
 FREEattribArgTab (argtab_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribArgTab");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr->ptr_in = MEMfree (attr->ptr_in);
@@ -415,7 +418,7 @@ FREEattribArgTab (argtab_t *attr, node *parent)
 index_info *
 FREEattribIndexPointer (index_info *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribIndexPointer");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = FREEfreeIndexInfo (attr);
@@ -439,7 +442,7 @@ FREEattribIndexPointer (index_info *attr, node *parent)
 shape *
 FREEattribShape (shape *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribShape");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = SHfreeShape (attr);
@@ -463,7 +466,7 @@ FREEattribShape (shape *attr, node *parent)
 void *
 FREEattribConstVecPointer (void *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribConstVecPointer");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = MEMfree (attr);
@@ -487,7 +490,7 @@ FREEattribConstVecPointer (void *attr, node *parent)
 access_t *
 FREEattribAccess (access_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribAccess");
+    DBUG_ENTER ();
 
     while (attr != NULL) {
         access_t *tmp = attr;
@@ -514,7 +517,7 @@ FREEattribAccess (access_t *attr, node *parent)
 access_info_t *
 FREEattribAccessInfo (access_info_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribAccessInfo");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr->access = FREEattribAccess (attr->access, parent);
@@ -539,7 +542,7 @@ FREEattribAccessInfo (access_info_t *attr, node *parent)
 rc_t *
 FREEattribRc (rc_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribRc");
+    DBUG_ENTER ();
 
     while (attr != NULL) {
         rc_t *tmp = attr;
@@ -565,7 +568,7 @@ FREEattribRc (rc_t *attr, node *parent)
 reuse_info_t *
 FREEattribReuseInfo (reuse_info_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribReuseInfo");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr->rcs = FREEattribRc (attr->rcs, parent);
@@ -590,7 +593,7 @@ FREEattribReuseInfo (reuse_info_t *attr, node *parent)
 cuda_index_t *
 FREEattribCudaIndex (cuda_index_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribCudaIndex");
+    DBUG_ENTER ();
 
     while (attr != NULL) {
         cuda_index_t *tmp = attr;
@@ -618,7 +621,7 @@ FREEattribCudaAccessInfo (cuda_access_info_t *attr, node *parent)
 {
     int i;
 
-    DBUG_ENTER ("FREEattribCudaAccessInfo");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         for (i = 0; i < MAX_REUSE_DIM; i++) {
@@ -646,7 +649,7 @@ FREEattribCudaAccessInfo (cuda_access_info_t *attr, node *parent)
 shpseg *
 FREEattribShpSeg (shpseg *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribShpSeg");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         SHPSEG_NEXT (attr) = FREEattribShpSeg (SHPSEG_NEXT (attr), parent);
@@ -671,7 +674,7 @@ FREEattribShpSeg (shpseg *attr, node *parent)
 int *
 FREEattribIntegerPointer (int *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribIntegerPointer");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = MEMfree (attr);
@@ -695,7 +698,7 @@ FREEattribIntegerPointer (int *attr, node *parent)
 int *
 FREEattribIntegerPointerArray (int *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribIntegerPointerArray");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = MEMfree (attr);
@@ -719,7 +722,7 @@ FREEattribIntegerPointerArray (int *attr, node *parent)
 sched_t *
 FREEattribScheduling (sched_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribScheduling");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = SCHremoveScheduling (attr);
@@ -743,7 +746,7 @@ FREEattribScheduling (sched_t *attr, node *parent)
 tasksel_t *
 FREEattribTaskSel (tasksel_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribTaskSel");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = SCHremoveTasksel (attr);
@@ -767,7 +770,7 @@ FREEattribTaskSel (tasksel_t *attr, node *parent)
 node **
 FREEattribNodePointer (node **attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribNodePointer");
+    DBUG_ENTER ();
 
     /* TODO: implement node pointer free function */
 
@@ -789,7 +792,7 @@ FREEattribNodePointer (node **attr, node *parent)
 constant *
 FREEattribConstant (constant *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribConstant");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = COfreeConstant (attr);
@@ -813,7 +816,7 @@ FREEattribConstant (constant *attr, node *parent)
 stringset_t *
 FREEattribStringSet (stringset_t *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribRCCounter");
+    DBUG_ENTER ();
 
     attr = STRSfree (attr);
 
@@ -835,7 +838,7 @@ FREEattribStringSet (stringset_t *attr, node *parent)
 index_info *
 FREEattribIndexInfo (index_info *attr, node *parent)
 {
-    DBUG_ENTER ("FREEattribIndexInfo");
+    DBUG_ENTER ();
 
     attr = MEMfree (attr);
 
@@ -858,9 +861,11 @@ compinfo **
 FREEattribCompInfoArr (compinfo **attr, node *parent)
 {
 
-    DBUG_ENTER ("FREEattribCompInfoArr");
+    DBUG_ENTER ();
 
     attr = freeCompInfoArr (attr, TFSPEC_NUMCOMP (parent));
 
     DBUG_RETURN (attr);
 }
+
+#undef DBUG_PREFIX

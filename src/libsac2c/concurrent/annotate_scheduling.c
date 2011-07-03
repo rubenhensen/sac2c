@@ -22,7 +22,9 @@
 
 #include "annotate_scheduling.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -54,7 +56,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -66,7 +68,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -90,7 +92,7 @@ MTASdoAnnotateScheduling (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MTASdoAnnotateScheduling");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!!!");
 
@@ -124,7 +126,7 @@ MakeDefaultSchedulingConstSegment ()
 {
     sched_t *sched;
 
-    DBUG_ENTER ("MakeDefaultSchedulingConstSegment");
+    DBUG_ENTER ();
 
     sched = SCHmakeScheduling ("Block");
 
@@ -136,7 +138,7 @@ MakeDefaultSchedulingVarSegment ()
 {
     sched_t *sched;
 
-    DBUG_ENTER ("MakeDefaultSchedulingVarSegment");
+    DBUG_ENTER ();
 
     sched = SCHmakeScheduling ("BlockVar");
 
@@ -159,7 +161,7 @@ InferSchedulingConstSegment (node *wlseg, info *arg_info)
 {
     sched_t *sched;
 
-    DBUG_ENTER ("InferSchedulingConstSegment");
+    DBUG_ENTER ();
 
     sched = MakeDefaultSchedulingConstSegment ();
 
@@ -182,7 +184,7 @@ InferSchedulingVarSegment (node *wlsegvar, info *arg_info)
 {
     sched_t *sched;
 
-    DBUG_ENTER ("InferSchedulingVarSegment");
+    DBUG_ENTER ();
 
     sched = MakeDefaultSchedulingVarSegment ();
 
@@ -198,7 +200,7 @@ InferSchedulingVarSegment (node *wlsegvar, info *arg_info)
 node *
 MTASmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTASmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -214,7 +216,7 @@ MTASmodule (node *arg_node, info *arg_info)
 node *
 MTASfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTASfundef");
+    DBUG_ENTER ();
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -239,7 +241,7 @@ MTASwith2 (node *arg_node, info *arg_info)
 {
     bool was_in_par_wl;
 
-    DBUG_ENTER ("MTASwith2");
+    DBUG_ENTER ();
 
     was_in_par_wl = INFO_INPARWL (arg_info);
 
@@ -269,7 +271,7 @@ MTASwith2 (node *arg_node, info *arg_info)
 node *
 MTASwlseg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MTASwlseg");
+    DBUG_ENTER ();
 
     if (INFO_INPARWL (arg_info)) {
         /*
@@ -312,3 +314,5 @@ MTASwlseg (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

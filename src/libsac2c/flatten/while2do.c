@@ -39,7 +39,9 @@
  *
  *****************************************************************************/
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "types.h"
 #include "tree_basic.h"
 #include "traverse.h"
@@ -65,7 +67,7 @@ W2Dwhile (node *arg_node, info *arg_info)
     node *new_cond;
     node *new_do;
 
-    DBUG_ENTER ("W2Dwhile");
+    DBUG_ENTER ();
 
     /* first traverse condition and body */
     if (WHILE_COND (arg_node) != NULL) {
@@ -107,7 +109,7 @@ W2Dwhile (node *arg_node, info *arg_info)
 node *
 W2DdoTransformWhile2Do (node *syntax_tree)
 {
-    DBUG_ENTER ("W2DdoTransformWhile2Do");
+    DBUG_ENTER ();
 
     TRAVpush (TR_w2d);
     syntax_tree = TRAVdo (syntax_tree, NULL);
@@ -115,3 +117,5 @@ W2DdoTransformWhile2Do (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

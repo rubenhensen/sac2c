@@ -9,7 +9,10 @@
 #include "tree_compound.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "SWR"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "LookUpTable.h"
 #include "traverse.h"
@@ -58,7 +61,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -73,7 +76,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -104,10 +107,9 @@ FreeInfo (info *info)
 node *
 SWRmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWRmodule");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((MODULE_WRAPPERFUNS (arg_node) != NULL),
-                 "MODULE_WRAPPERFUNS not found!");
+    DBUG_ASSERT (MODULE_WRAPPERFUNS (arg_node) != NULL, "MODULE_WRAPPERFUNS not found!");
     INFO_WRAPPERFUNS (arg_info) = MODULE_WRAPPERFUNS (arg_node);
     INFO_NAMESPACE (arg_info) = MODULE_NAMESPACE (arg_node);
 
@@ -151,7 +153,7 @@ SWRmodule (node *arg_node, info *arg_info)
 bool
 isLocalInstance (node *fundef, bool result)
 {
-    DBUG_ENTER ("isLocalInstance");
+    DBUG_ENTER ();
 
     result = result | FUNDEF_ISLOCAL (fundef);
 
@@ -163,7 +165,7 @@ containsLocalInstances (node *wrapper)
 {
     bool result;
 
-    DBUG_ENTER ("containsLocalInstances");
+    DBUG_ENTER ();
 
     if (FUNDEF_IMPL (wrapper) != NULL) {
         result = FUNDEF_ISLOCAL (FUNDEF_IMPL (wrapper));
@@ -208,12 +210,12 @@ SplitWrapper (node *fundef, info *arg_info)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("SplitWrapper");
+    DBUG_ENTER ();
 
     old_type = FUNDEF_WRAPPERTYPE (fundef);
     tmp_type = TYcopyType (old_type);
     FUNDEF_WRAPPERTYPE (fundef) = NULL;
-    DBUG_PRINT ("SWR", ("splitting wrapper of %s", CTIitemName (fundef)));
+    DBUG_PRINT ("splitting wrapper of %s", CTIitemName (fundef));
 
     do {
         new_fundef = DUPdoDupNode (fundef);
@@ -221,13 +223,12 @@ SplitWrapper (node *fundef, info *arg_info)
         if (pathes_remaining == 1) {
             tmp_type = NULL;
         }
-        DBUG_EXECUTE ("SWR", tmp_str = TYtype2String (new_type, TRUE, 0););
-        DBUG_PRINT ("SWR",
-                    ("  new wrapper split off: \n%s : " F_PTR, tmp_str, new_fundef));
-        DBUG_EXECUTE ("SWR", tmp_str = MEMfree (tmp_str););
-        DBUG_EXECUTE ("SWR", tmp_str = TYtype2String (tmp_type, TRUE, 0););
-        DBUG_PRINT ("SWR", ("  remaining wrapper : \n%s : ", tmp_str));
-        DBUG_EXECUTE ("SWR", tmp_str = MEMfree (tmp_str););
+        DBUG_EXECUTE (tmp_str = TYtype2String (new_type, TRUE, 0));
+        DBUG_PRINT ("  new wrapper split off: \n%s : " F_PTR, tmp_str, new_fundef);
+        DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
+        DBUG_EXECUTE (tmp_str = TYtype2String (tmp_type, TRUE, 0));
+        DBUG_PRINT ("  remaining wrapper : \n%s : ", tmp_str);
+        DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
         FUNDEF_WRAPPERTYPE (new_fundef) = new_type;
         new_rets = TYgetWrapperRetType (new_type);
@@ -273,7 +274,7 @@ SplitWrapper (node *fundef, info *arg_info)
             /* this will force the generation of the symbol name */
             sname = SERgetSerFunName (new_fundef);
 
-            DBUG_PRINT ("SWR", ("generated symbolname is %s", sname));
+            DBUG_PRINT ("generated symbolname is %s", sname);
 
             DSremoveAliasing (sname);
 
@@ -329,23 +330,23 @@ CorrectFundefPointer (node *fundef, ntype *arg_types)
 {
     node *newfundef;
 
-    DBUG_ENTER ("CorrectFundefPointer");
+    DBUG_ENTER ();
 
     newfundef = fundef;
 
-    DBUG_ASSERT ((fundef != NULL), "fundef not found!");
+    DBUG_ASSERT (fundef != NULL, "fundef not found!");
     if (FUNDEF_ISWRAPPERFUN (fundef) && !FUNDEF_ISNEEDED (fundef)) {
         /*
          * 'fundef' points to an generic wrapper function
          *    -> search the specific wrapper function
          */
-        DBUG_PRINT ("SWR", ("correcting fundef for %s", CTIitemName (fundef)));
+        DBUG_PRINT ("correcting fundef for %s", CTIitemName (fundef));
 
         if (TYgetBottom (arg_types) == NULL) {
             /*
              * -> search for correct wrapper
              */
-            DBUG_PRINT ("SWR", ("  search for wrapper"));
+            DBUG_PRINT ("  search for wrapper");
 
             do {
                 newfundef = FUNDEF_NEXT (newfundef);
@@ -355,9 +356,9 @@ CorrectFundefPointer (node *fundef, ntype *arg_types)
                               && FUNDEF_ISWRAPPERFUN (newfundef)),
                              "no appropriate wrapper function found!");
 
-                DBUG_ASSERT ((!FUNDEF_ISZOMBIE (newfundef)), "zombie found");
+                DBUG_ASSERT (!FUNDEF_ISZOMBIE (newfundef), "zombie found");
             } while (!TUsignatureMatches (FUNDEF_ARGS (newfundef), arg_types, TRUE));
-            DBUG_PRINT ("SWR", ("  correct wrapper found"));
+            DBUG_PRINT ("  correct wrapper found");
         } else {
             /**
              * as we are dealing with a bottom argument, we need to select any one
@@ -391,14 +392,14 @@ FundefBuildWrappers (node *arg_node, info *arg_info)
 {
     node *new_fundefs;
 
-    DBUG_ENTER ("FundefBuildWrappers");
+    DBUG_ENTER ();
 
     /*
      * only process wrappers that are local (eg. created by create_wrappers)
      * as for all others there is nothing to split
      */
     if ((FUNDEF_ISWRAPPERFUN (arg_node) && (FUNDEF_ISLOCAL (arg_node)))) {
-        DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
+        DBUG_ASSERT (FUNDEF_BODY (arg_node) == NULL,
                      "wrapper function has already a body!");
 
         /*
@@ -415,7 +416,7 @@ FundefBuildWrappers (node *arg_node, info *arg_info)
          * the generic wrapper is freed later on
          */
         new_fundefs = TCappendFundef (new_fundefs, FUNDEF_NEXT (arg_node));
-        DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
+        DBUG_ASSERT (FUNDEF_BODY (arg_node) == NULL,
                      "body of generic wrapper function has not been kept empty");
         FUNDEF_NEXT (arg_node) = new_fundefs;
 
@@ -447,7 +448,7 @@ FundefBuildWrappers (node *arg_node, info *arg_info)
 static node *
 FundefAdjustPointers (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FundefAdjustPointers");
+    DBUG_ENTER ();
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -463,7 +464,7 @@ FundefAdjustPointers (node *arg_node, info *arg_info)
 static node *
 FundefRemoveGarbage (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FundefRemoveGarbage");
+    DBUG_ENTER ();
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -482,7 +483,7 @@ FundefRemoveGarbage (node *arg_node, info *arg_info)
 static node *
 FundefMoveToFinalNs (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FundefMoveToFinalNs");
+    DBUG_ENTER ();
 
     /*
      * if the current wrapper has a SPECNS assign, this can have
@@ -516,7 +517,7 @@ FundefMoveToFinalNs (node *arg_node, info *arg_info)
 node *
 SWRfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWRfundef");
+    DBUG_ENTER ();
 
     if (INFO_TRAVNO (arg_info) == 1) {
         /*
@@ -532,7 +533,7 @@ SWRfundef (node *arg_node, info *arg_info)
          */
         arg_node = FundefAdjustPointers (arg_node, arg_info);
     } else {
-        DBUG_ASSERT ((INFO_TRAVNO (arg_info) == 3), "illegal INFO_TRAVNO found!");
+        DBUG_ASSERT (INFO_TRAVNO (arg_info) == 3, "illegal INFO_TRAVNO found!");
         /*
          * third traversal -> move all wrappers to their final ns and mark them
          *                    as local if they contain specialisations
@@ -562,22 +563,20 @@ SWRap (node *arg_node, info *arg_info)
 {
     ntype *arg_types;
 
-    DBUG_ENTER ("SWRap");
+    DBUG_ENTER ();
 
     if (AP_ARGS (arg_node) != NULL) {
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
     }
 
-    DBUG_PRINT ("SWR",
-                ("Ap of function %s::%s pointed to " F_PTR ".",
-                 NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
+    DBUG_PRINT ("Ap of function %s::%s pointed to " F_PTR ".",
+                NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node));
 
     arg_types = TUactualArgs2Ntype (AP_ARGS (arg_node));
     AP_FUNDEF (arg_node) = CorrectFundefPointer (AP_FUNDEF (arg_node), arg_types);
 
-    DBUG_PRINT ("SWR",
-                ("Ap of function %s::%s now points to " F_PTR ".",
-                 NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node)));
+    DBUG_PRINT ("Ap of function %s::%s now points to " F_PTR ".",
+                NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node));
     arg_types = TYfreeType (arg_types);
 
     DBUG_RETURN (arg_node);
@@ -594,7 +593,7 @@ SWRap (node *arg_node, info *arg_info)
 node *
 SWRwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWRwith");
+    DBUG_ENTER ();
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -619,7 +618,7 @@ SWRwith (node *arg_node, info *arg_info)
 node *
 SWRgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWRgenarrray");
+    DBUG_ENTER ();
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
     if (GENARRAY_DEFAULT (arg_node) != NULL) {
@@ -627,7 +626,7 @@ SWRgenarray (node *arg_node, info *arg_info)
     }
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
-        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+        DBUG_ASSERT (EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL,
                      "Fewer cexprs than withops!");
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
@@ -651,12 +650,12 @@ SWRgenarray (node *arg_node, info *arg_info)
 node *
 SWRmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWRmodarray");
+    DBUG_ENTER ();
 
     MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
-        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+        DBUG_ASSERT (EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL,
                      "Fewer cexprs than withops!");
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
@@ -683,7 +682,7 @@ SWRfold (node *arg_node, info *arg_info)
     ntype *neutr_type, *body_type;
     ntype *arg_type, *arg_types;
 
-    DBUG_ENTER ("SWRfold");
+    DBUG_ENTER ();
 
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
@@ -700,7 +699,7 @@ SWRfold (node *arg_node, info *arg_info)
     neutr_type = TYfreeType (neutr_type);
 
     if (FOLD_NEXT (arg_node) != NULL) {
-        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+        DBUG_ASSERT (EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL,
                      "Fewer cexprs than withops!");
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
@@ -724,12 +723,12 @@ SWRfold (node *arg_node, info *arg_info)
 node *
 SWRpropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SWRpropagate");
+    DBUG_ENTER ();
 
     PROPAGATE_DEFAULT (arg_node) = TRAVdo (PROPAGATE_DEFAULT (arg_node), arg_info);
 
     if (PROPAGATE_NEXT (arg_node) != NULL) {
-        DBUG_ASSERT ((EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL),
+        DBUG_ASSERT (EXPRS_NEXT (INFO_CEXPRS (arg_info)) != NULL,
                      "Fewer cexprs than withops!");
 
         INFO_CEXPRS (arg_info) = EXPRS_NEXT (INFO_CEXPRS (arg_info));
@@ -754,7 +753,7 @@ SWRdoSplitWrappers (node *ast)
 {
     info *info_node;
 
-    DBUG_ENTER ("SWRdoSplitWrappers");
+    DBUG_ENTER ();
 
     TRAVpush (TR_swr);
 
@@ -784,3 +783,5 @@ SWRdoSplitWrappers (node *ast)
 
     DBUG_RETURN (ast);
 }
+
+#undef DBUG_PREFIX

@@ -5,10 +5,12 @@
 #include <stdio.h>
 
 #include "scnprs.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "str.h"
-#include "dbug.h"
 #include "globals.h"
 #include "memory.h"
 #include "filemgr.h"
@@ -22,7 +24,7 @@ static const char *pathname;
 node *
 SPdoLocateSource (node *syntax_tree)
 {
-    DBUG_ENTER ("SPdoRunPreProcessor");
+    DBUG_ENTER ();
 
     global.filename = global.puresacfilename;
 
@@ -47,7 +49,7 @@ CreateInfoMacroCommandLine ()
 {
     char *res;
 
-    DBUG_ENTER ("CreateInfoMacroCommandLine");
+    DBUG_ENTER ();
 
     res = STRcatn (3 * 4 + 1, " ", "-DSAC_REVISION=", build_rev, " ",
                    "-DSAC_REVISION_SHORT=", build_srev, " ",
@@ -64,7 +66,7 @@ SPdoRunPreProcessor (node *syntax_tree)
     char *tmp, *cppcallstr;
     char *define;
 
-    DBUG_ENTER ("SPdoRunPreProcessor");
+    DBUG_ENTER ();
 
     global.filename = global.puresacfilename;
 
@@ -113,7 +115,7 @@ SPdoScanParse (node *syntax_tree)
     int err;
     char *cppfile;
 
-    DBUG_ENTER ("SPdoScanParse");
+    DBUG_ENTER ();
 
     cppfile = STRcat (global.tmp_dirname, "/source");
 
@@ -156,3 +158,5 @@ SPdoScanParse (node *syntax_tree)
 
     DBUG_RETURN (global.syntax_tree);
 }
+
+#undef DBUG_PREFIX

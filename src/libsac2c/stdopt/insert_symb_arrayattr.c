@@ -68,7 +68,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "ISAA"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "DupTree.h"
@@ -123,7 +126,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -147,7 +150,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -174,7 +177,7 @@ ISAAdoInsertShapeVariables (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("ISAAdoInsertShapeVariables");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -263,7 +266,7 @@ PrependSAAInFormalArgs (node *arg_node, info *arg_info)
 
     node *newarg = NULL;
 
-    DBUG_ENTER ("PrependSAAInFormalArgs");
+    DBUG_ENTER ();
 
     if (NULL != ARG_NEXT (arg_node)) {
         ARG_NEXT (arg_node) = PrependSAAInFormalArgs (ARG_NEXT (arg_node), arg_info);
@@ -277,7 +280,7 @@ PrependSAAInFormalArgs (node *arg_node, info *arg_info)
     if (!AVIS_HASSAAARGUMENTS (avis)) {
 #endif
         if (!TUdimKnown (AVIS_TYPE (avis))) {
-            DBUG_PRINT ("ISAA", ("inserting a formal dim for %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("inserting a formal dim for %s", AVIS_NAME (avis));
 
             newdim = CreateScalarAvisFrom (avis, NULL);
             AVIS_HASSAAARGUMENTS (newdim) = TRUE;
@@ -291,7 +294,7 @@ PrependSAAInFormalArgs (node *arg_node, info *arg_info)
         }
 
         if (!TUshapeKnown (AVIS_TYPE (avis))) {
-            DBUG_PRINT ("ISAA", ("inserting a formal shape for %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("inserting a formal shape for %s", AVIS_NAME (avis));
 
             newshp = CreateVectorAvisFrom (avis, DUPdoDupNode (AVIS_DIM (avis)), NULL);
             AVIS_HASSAAARGUMENTS (newshp) = TRUE;
@@ -325,7 +328,7 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
     node *newshp;
     node *newdim;
 
-    DBUG_ENTER ("PrependSAAInConcreteArgs");
+    DBUG_ENTER ();
 
     if ((NULL != EXPRS_NEXT (arg_node)) && (NULL != ARG_NEXT (funargs))) {
         EXPRS_NEXT (arg_node) = PrependSAAInConcreteArgs (EXPRS_NEXT (arg_node),
@@ -343,8 +346,8 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
     if (!AVIS_HASSAAARGUMENTS (funavis)) {
 
         if (!TUdimKnown (AVIS_TYPE (funavis))) {
-            DBUG_PRINT ("ISAA", ("inserting a concrete dim for %s in fun %s",
-                                 AVIS_NAME (avis), FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+            DBUG_PRINT ("inserting a concrete dim for %s in fun %s", AVIS_NAME (avis),
+                        FUNDEF_NAME (INFO_FUNDEF (arg_info)));
 
             /* create the new avis that shall be holding our dimension */
             newdim = CreateScalarAvisFrom (avis, INFO_FUNDEF (arg_info));
@@ -362,11 +365,11 @@ PrependSAAInConcreteArgs (node *arg_node, node *funargs, info *arg_info)
         }
 
         if (!TUshapeKnown (AVIS_TYPE (funavis))) {
-            DBUG_PRINT ("ISAA", ("inserting a concrete shape for %s in fun %s",
-                                 AVIS_NAME (avis), FUNDEF_NAME (INFO_FUNDEF (arg_info))));
+            DBUG_PRINT ("inserting a concrete shape for %s in fun %s", AVIS_NAME (avis),
+                        FUNDEF_NAME (INFO_FUNDEF (arg_info)));
 
             /* create the new avis that shall be holding our shape */
-            DBUG_ASSERT ((NULL != AVIS_DIM (avis)),
+            DBUG_ASSERT (NULL != AVIS_DIM (avis),
                          "created concrete shape for argument without dim!");
 
             newshp = CreateVectorAvisFrom (funavis, DUPdoDupNode (AVIS_DIM (avis)),
@@ -407,7 +410,7 @@ PrependSAAInConcreteResults (node *formalresults, node *concreteresults, node *f
     node *nextfr = RET_NEXT (formalresults);
     node *nextcr = IDS_NEXT (concreteresults);
 
-    DBUG_ENTER ("PrependSAAInConcreteResults");
+    DBUG_ENTER ();
 
     /* we need to NULL this, else we would get circular _NEXTs */
     IDS_NEXT (concreteresults) = NULL;
@@ -427,8 +430,7 @@ PrependSAAInConcreteResults (node *formalresults, node *concreteresults, node *f
                          "arrived at unexpected type difference in fun application!");
 
             if ((TYisAUD (ctype)) || (TYisAUDGZ (ctype))) {
-                DBUG_PRINT ("ISAA",
-                            ("inserting a concrete result dim for %s", AVIS_NAME (avis)));
+                DBUG_PRINT ("inserting a concrete result dim for %s", AVIS_NAME (avis));
 
                 /* create the new avis for our dimension */
                 newdim = CreateScalarAvisFrom (avis, INFO_FUNDEF (arg_info));
@@ -448,8 +450,7 @@ PrependSAAInConcreteResults (node *formalresults, node *concreteresults, node *f
                 AVIS_DIM (avis) = newdim;
             }
 
-            DBUG_PRINT ("ISAA",
-                        ("inserting a concrete result shape for %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("inserting a concrete result shape for %s", AVIS_NAME (avis));
 
             /* create the new avis for our shape */
             newshp = CreateVectorAvisFrom (IDS_AVIS (concreteresults),
@@ -483,7 +484,7 @@ InsertTempCondVarFor (node *avis_ds, node *dim, node *avis, node *fundef, int th
     node *retnode;
     node *ainstr;
 
-    DBUG_ENTER ("InsertTempCondVarFor");
+    DBUG_ENTER ();
 
     /* this function is just for the (very seldom!)
      * case, that the shape or dimension of the returned value of our
@@ -540,7 +541,7 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
     node *newrettype = NULL;
     node *newassign = NULL;
 
-    DBUG_ENTER ("PrependSAAInFormalResults");
+    DBUG_ENTER ();
 
     /* this function returns three results:
      * 1. The N_ret to be put into the function definition
@@ -585,7 +586,7 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
 
         if ((FALSE == TUdimKnown (AVIS_TYPE (avis))) && (NULL != thennode)
             && (NULL != elsenode)) {
-            DBUG_PRINT ("ISAA", ("inserting a formal result type as dimension"));
+            DBUG_PRINT ("inserting a formal result type as dimension");
 
             /* create the new avis that holds our returned dimension */
             newdim = CreateScalarAvisFrom (avis, fundef);
@@ -622,7 +623,7 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
 
         if ((FALSE == TUshapeKnown (AVIS_TYPE (avis))) && (NULL != thennode)
             && (NULL != elsenode) && (NULL != newdim)) {
-            DBUG_PRINT ("ISAA", ("inserting a formal result type as shape"));
+            DBUG_PRINT ("inserting a formal result type as shape");
 
             /* create the new avis that holds our returned shape */
             newshp = CreateVectorAvisFrom (avis, DUPdoDupNode (newdim), fundef);
@@ -675,7 +676,7 @@ GenerateExtendedReturns (node *funret)
     ntype *newtype;
     node *newret = NULL;
 
-    DBUG_ENTER ("GenerateExtendedReturns");
+    DBUG_ENTER ();
 
     /*
      * This function basically just generates a 'preview' of what a saa'ed version
@@ -722,7 +723,7 @@ ISAAretraverse (node *fun, bool save_args, node *newargs, info *arg_info)
     node *fundef;
     node *args;
 
-    DBUG_ENTER ("ISAAretraverse");
+    DBUG_ENTER ();
 
     preblock = INFO_PREBLOCK (arg_info);
     preassign = INFO_PREASSIGN (arg_info);
@@ -741,7 +742,7 @@ ISAAretraverse (node *fun, bool save_args, node *newargs, info *arg_info)
         INFO_ARGS (arg_info) = newargs;
     }
 
-    DBUG_PRINT ("ISAA", ("retraverse %s", FUNDEF_NAME (fun)));
+    DBUG_PRINT ("retraverse %s", FUNDEF_NAME (fun));
     fun = TRAVdo (fun, arg_info);
 
     if (TRUE == save_args) {
@@ -765,7 +766,7 @@ ISAAretraverse (node *fun, bool save_args, node *newargs, info *arg_info)
 static node *
 PrependAssign (node *prefix, node *rest)
 {
-    DBUG_ENTER ("PrependAssign");
+    DBUG_ENTER ();
 
     if (prefix != NULL) {
         if (NODE_TYPE (rest) == N_empty) {
@@ -786,7 +787,7 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
     bool islacfun = FALSE;
     node *newass = NULL;
 
-    DBUG_ENTER ("MakeDTProxy");
+    DBUG_ENTER ();
     /*
     DBUG_PRINT( "ISAA", ("enter MakeDTProxy in %s for %s",
                          FUNDEF_NAME( INFO_FUNDEF( arg_info ) ),
@@ -1002,7 +1003,7 @@ MakeArgProxies (node *arg_node, info *arg_info)
 {
     node *ass = NULL;
 
-    DBUG_ENTER ("MakeArgProxies");
+    DBUG_ENTER ();
 
     if (arg_node != NULL) {
         ass = MakeArgProxies (ARG_NEXT (arg_node), arg_info);
@@ -1015,7 +1016,7 @@ MakeArgProxies (node *arg_node, info *arg_info)
 static node *
 RemoveAvisSubst (node *fundef)
 {
-    DBUG_ENTER ("RemoveAvisSubst");
+    DBUG_ENTER ();
 
     FUNDEF_ARGS (fundef) = TRAVopt (FUNDEF_ARGS (fundef), NULL);
     FUNDEF_VARDEC (fundef) = TRAVopt (FUNDEF_VARDEC (fundef), NULL);
@@ -1042,9 +1043,9 @@ RemoveAvisSubst (node *fundef)
 node *
 ISAAfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISAAfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("ISAA", ("entering function %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("entering function %s", FUNDEF_NAME (arg_node));
 
     if ((NULL != FUNDEF_BODY (arg_node))
 
@@ -1127,7 +1128,7 @@ ISAAap (node *arg_node, info *arg_info)
     node *innerargs = NULL;
 #endif
 
-    DBUG_ENTER ("ISAAap");
+    DBUG_ENTER ();
 
 #if ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE
 
@@ -1157,12 +1158,12 @@ ISAAap (node *arg_node, info *arg_info)
         lhs = INFO_LHS (arg_info);
 
         if (TRUE == FUNDEF_ISCONDFUN (fun)) {
-            DBUG_PRINT ("ISAA", ("calling the cond fun %s", FUNDEF_NAME (fun)));
+            DBUG_PRINT ("calling the cond fun %s", FUNDEF_NAME (fun));
 
             /* 4. */
             AP_FUNDEF (arg_node) = ISAAretraverse (fun, FALSE, NULL, arg_info);
         } else if (TRUE == FUNDEF_ISDOFUN (fun)) {
-            DBUG_PRINT ("ISAA", ("calling the loop fun %s", FUNDEF_NAME (fun)));
+            DBUG_PRINT ("calling the loop fun %s", FUNDEF_NAME (fun));
 
             /* Create a SAA-augmented version of the N_ret-chain, os we may apply
              * PrependSAAInConreteResults before creating real formal augmented
@@ -1210,7 +1211,7 @@ ISAAap (node *arg_node, info *arg_info)
         }
     } else if ((TS_args == INFO_TRAVSCOPE (arg_info)) && (TRUE == FUNDEF_ISDOFUN (fun))
                && (fun == INFO_FUNDEF (arg_info))) {
-        DBUG_PRINT ("ISAA", ("inner application of the loop fun %s", FUNDEF_NAME (fun)));
+        DBUG_PRINT ("inner application of the loop fun %s", FUNDEF_NAME (fun));
 
         /* 1. We now may insert the dim/shape arguments in our recursive loop
          *    call; thisfor we need the copy of our arguments (called innerargs
@@ -1253,7 +1254,7 @@ ISAAap (node *arg_node, info *arg_info)
 node *
 ISAAavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISAAavis");
+    DBUG_ENTER ();
 
     AVIS_SUBST (arg_node) = NULL;
 
@@ -1268,7 +1269,7 @@ ISAAavis (node *arg_node, info *arg_info)
 node *
 ISAAblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISAAblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
@@ -1286,7 +1287,7 @@ ISAAassign (node *arg_node, info *arg_info)
     node *preassign;
     node *postassign;
 
-    DBUG_ENTER ("ISAAassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -1326,7 +1327,7 @@ ISAAassign (node *arg_node, info *arg_info)
 node *
 ISAAlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISAAlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -1352,7 +1353,7 @@ ISAAids (node *arg_node, info *arg_info)
     node *avis;
     node *preass = NULL;
 
-    DBUG_ENTER ("ISAAids");
+    DBUG_ENTER ();
 
     avis = IDS_AVIS (arg_node);
 
@@ -1423,7 +1424,7 @@ ISAAwith (node *arg_node, info *arg_info)
 {
     node *oldwithid;
 
-    DBUG_ENTER ("ISAAwith");
+    DBUG_ENTER ();
 
     oldwithid = INFO_WITHID (arg_info);
     INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
@@ -1447,7 +1448,7 @@ ISAApart (node *arg_node, info *arg_info)
 {
     node *ids;
 
-    DBUG_ENTER ("ISAApart");
+    DBUG_ENTER ();
 
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
@@ -1497,7 +1498,7 @@ ISAApart (node *arg_node, info *arg_info)
 node *
 ISAAcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISAAcode");
+    DBUG_ENTER ();
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
     CODE_CEXPRS (arg_node) = TRAVopt (CODE_CEXPRS (arg_node), arg_info);
@@ -1517,7 +1518,7 @@ ISAAcode (node *arg_node, info *arg_info)
 node *
 ISAAid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISAAid");
+    DBUG_ENTER ();
 
     if (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
@@ -1534,7 +1535,7 @@ ISAAid (node *arg_node, info *arg_info)
 node *
 ISAAcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISAAcond");
+    DBUG_ENTER ();
 
     switch (INFO_TRAVMODE (arg_info)) {
     case TM_then:
@@ -1558,7 +1559,7 @@ ISAAcond (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal traversal mode");
+        DBUG_ASSERT (0, "Illegal traversal mode");
         break;
     }
 
@@ -1573,7 +1574,7 @@ ISAAcond (node *arg_node, info *arg_info)
 node *
 ISAAfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ISAAfuncond");
+    DBUG_ENTER ();
 
     switch (INFO_TRAVMODE (arg_info)) {
     case TM_then:
@@ -1589,7 +1590,7 @@ ISAAfuncond (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal traversal mode");
+        DBUG_ASSERT (0, "Illegal traversal mode");
         break;
     }
 
@@ -1602,3 +1603,5 @@ ISAAfuncond (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Insert Shape Variables -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

@@ -59,7 +59,10 @@
 #include "free.h"
 #include "DupTree.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLFS"
+#include "debug.h"
+
 #include "traverse.h"
 #include "constants.h"
 #include "tagdependencies.h"
@@ -84,7 +87,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -97,7 +100,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -118,7 +121,7 @@ FreeInfo (info *info)
 node *
 TDEPENDassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TDEPENDassign");
+    DBUG_ENTER ();
 
     /*
      * Finds all assignments the current withloop depends on. This assignments
@@ -178,7 +181,7 @@ TDEPENDid (node *arg_node, info *arg_info)
     node *assignn;
     bool insidewl_tmp;
 
-    DBUG_ENTER ("TDEPENDid");
+    DBUG_ENTER ();
 
     /*
      * Assignments which are tagged with the fusionable withloop
@@ -218,12 +221,12 @@ TDEPENDid (node *arg_node, info *arg_info)
 node *
 TDEPENDwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TDEPENDwith");
+    DBUG_ENTER ();
 
     /*
      * Traverse into parts
      */
-    DBUG_ASSERT ((WITH_PART (arg_node) != NULL), "no Part is available!");
+    DBUG_ASSERT (WITH_PART (arg_node) != NULL, "no Part is available!");
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
     /*
@@ -255,14 +258,14 @@ TDEPENDdoTagDependencies (node *with, node *fusionable_wl)
 {
     info *arg_info;
 
-    DBUG_ENTER ("TDEPENDdoTagDependencies");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (with) == N_with),
+    DBUG_ASSERT (NODE_TYPE (with) == N_with,
                  "TDEPENDdoTagDependencies not started with N_with node");
 
-    DBUG_ASSERT ((fusionable_wl != NULL), "no fusionable withloop found");
+    DBUG_ASSERT (fusionable_wl != NULL, "no fusionable withloop found");
 
-    DBUG_PRINT ("WLFS", ("starting TDEPENDdoTagDependencies"));
+    DBUG_PRINT ("starting TDEPENDdoTagDependencies");
 
     arg_info = MakeInfo ();
 
@@ -273,9 +276,11 @@ TDEPENDdoTagDependencies (node *with, node *fusionable_wl)
     with = TRAVdo (with, arg_info);
     TRAVpop ();
 
-    DBUG_PRINT ("WLFS", ("tagging of dependencies complete"));
+    DBUG_PRINT ("tagging of dependencies complete");
 
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (with);
 }
+
+#undef DBUG_PREFIX

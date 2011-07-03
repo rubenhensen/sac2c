@@ -22,7 +22,10 @@
 #include "namespaces.h"
 #include "globals.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "traverse.h"
 #include "filemgr.h"
@@ -125,7 +128,7 @@ parseArguments (char *type_info, char *shape_info)
 
     node *args = NULL, *current_arg = NULL;
 
-    DBUG_ENTER ("parseArguments");
+    DBUG_ENTER ();
 
     /* Get the total number of arguments that is to be parsed. */
     stoken = strtok_r (shape_info, SHAPE_DELIM, &shp_saveptr);
@@ -219,7 +222,7 @@ RTsetupRuntimeCompiler (node *syntax_tree)
     node *export;
     node *args;
 
-    DBUG_ENTER ("RTdoParseArguments");
+    DBUG_ENTER ();
 
     /*
      * Make sure all the necessary information is present.
@@ -273,3 +276,5 @@ RTsetupRuntimeCompiler (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

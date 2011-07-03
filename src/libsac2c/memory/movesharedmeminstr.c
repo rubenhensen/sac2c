@@ -16,7 +16,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "print.h"
 #include "str.h"
 #include "memory.h"
@@ -65,7 +68,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -87,7 +90,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -110,7 +113,7 @@ MVSMIdoMoveSharedMemoryManagementInstructions (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MVSMIdoMoveSharedMemoryManagementInstructions");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -138,7 +141,7 @@ MVSMIdoMoveSharedMemoryManagementInstructions (node *syntax_tree)
 node *
 MVSMIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MVSMIfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
@@ -160,7 +163,7 @@ MVSMIfundef (node *arg_node, info *arg_info)
 node *
 MVSMIassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MVSMIassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -190,7 +193,7 @@ MVSMIassign (node *arg_node, info *arg_info)
 node *
 MVSMIap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MVSMIap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISSPMDFUN (AP_FUNDEF (arg_node))) {
         INFO_AP (arg_info) = arg_node;
@@ -222,7 +225,7 @@ COSMIfundef (node *arg_node, info *arg_info)
 {
     node *args, *apargs;
 
-    DBUG_ENTER ("COSMIfundef");
+    DBUG_ENTER ();
 
     /*
      * annotate initial linksign information
@@ -269,7 +272,7 @@ COSMIfundef (node *arg_node, info *arg_info)
 node *
 COSMIret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COSMIret");
+    DBUG_ENTER ();
 
     RET_LINKSIGN (arg_node) = INFO_LINKSIGN (arg_info);
     RET_HASLINKSIGNINFO (arg_node) = TRUE;
@@ -290,7 +293,7 @@ COSMIret (node *arg_node, info *arg_info)
 node *
 COSMIarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COSMIarg");
+    DBUG_ENTER ();
 
     ARG_LINKSIGN (arg_node) = INFO_LINKSIGN (arg_info);
     ARG_HASLINKSIGNINFO (arg_node) = TRUE;
@@ -311,7 +314,7 @@ COSMIarg (node *arg_node, info *arg_info)
 node *
 COSMIblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COSMIblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
 
@@ -332,7 +335,7 @@ COSMIvardec (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("COSMIvardec");
+    DBUG_ENTER ();
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
@@ -355,7 +358,7 @@ COSMIvardec (node *arg_node, info *arg_info)
 node *
 COSMIassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COSMIassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -392,7 +395,7 @@ COSMIassign (node *arg_node, info *arg_info)
 node *
 COSMIlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COSMIlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -408,7 +411,7 @@ COSMIlet (node *arg_node, info *arg_info)
 node *
 COSMIprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COSMIprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_dec_rc:
@@ -443,7 +446,7 @@ COSMIprf (node *arg_node, info *arg_info)
 node *
 COSMIwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COSMIwith2");
+    DBUG_ENTER ();
 
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
@@ -462,7 +465,7 @@ IsOutVar (node *fundef, node *avis)
     int count = 0;
     node *retexprs;
 
-    DBUG_ENTER ("IsOutVar");
+    DBUG_ENTER ();
 
     retexprs = RETURN_EXPRS (FUNDEF_RETURN (fundef));
     while (retexprs != NULL) {
@@ -491,7 +494,7 @@ MakeMemArg (node *memavis, node *extfundef, node *extap, node *spmdfun, lut_t *l
     node *avis;
     node *arg;
 
-    DBUG_ENTER ("MakeMemArg");
+    DBUG_ENTER ();
 
     avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (memavis)),
                        TYcopyType (AVIS_TYPE (memavis)));
@@ -511,7 +514,7 @@ MakeMemArg (node *memavis, node *extfundef, node *extap, node *spmdfun, lut_t *l
 
     LUTinsertIntoLutP (lut, memavis, avis);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -524,7 +527,7 @@ COSMIgenarray (node *arg_node, info *arg_info)
 {
     int linksign;
 
-    DBUG_ENTER ("COSMIgenarray");
+    DBUG_ENTER ();
 
     linksign = IsOutVar (INFO_SPMDFUN (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
 
@@ -553,7 +556,7 @@ COSMImodarray (node *arg_node, info *arg_info)
 {
     int linksign;
 
-    DBUG_ENTER ("COSMImodarray");
+    DBUG_ENTER ();
 
     linksign = IsOutVar (INFO_SPMDFUN (arg_info), IDS_AVIS (INFO_LHS (arg_info)));
 
@@ -580,7 +583,7 @@ COSMImodarray (node *arg_node, info *arg_info)
 node *
 COSMIfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("COSMIfold");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
 
@@ -590,3 +593,5 @@ COSMIfold (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -23,7 +23,9 @@
  *****************************************************************************/
 #include "create_c_wrapper_body.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -53,7 +55,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -65,7 +67,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -92,7 +94,7 @@ FreeInfo (info *info)
 static void
 PrintFileHeader (info *arg_info)
 {
-    DBUG_ENTER ("PrintFileHeader");
+    DBUG_ENTER ();
 
     fprintf (INFO_FILE (arg_info),
              "/*\n"
@@ -122,7 +124,7 @@ PrintFileHeader (info *arg_info)
              "  SAC_FREE( desc);\n"
              "}\n\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -145,7 +147,7 @@ CCWBdoCreateCWrapperBody (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CCWBdoCreateCWrapperBody");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -189,7 +191,7 @@ CCWBfunbundle (node *arg_node, info *arg_info)
     int norets;
     int pos;
 
-    DBUG_ENTER ("CCWBfunbundle");
+    DBUG_ENTER ();
 
     noargs = FUNBUNDLE_ARITY (arg_node);
     norets = TCcountRets (FUNDEF_RETS (FUNBUNDLE_FUNDEF (arg_node)));
@@ -259,3 +261,5 @@ CCWBfunbundle (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Create C Wrapper Body template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

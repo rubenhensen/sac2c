@@ -20,7 +20,9 @@
 #include "multithread_lib.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 /******************************************************************************
  *
@@ -43,7 +45,7 @@ MUTHLIBexpandFundefName (node *fundef, char *prefix)
 {
     char *old_name;
 
-    DBUG_ENTER ("MUTHLIBexpandFundefName");
+    DBUG_ENTER ();
 
     old_name = FUNDEF_NAME (fundef);
     FUNDEF_NAME (fundef) = STRcat (prefix, old_name);
@@ -66,8 +68,8 @@ MUTHLIBexpandFundefName (node *fundef, char *prefix)
 static node *
 RenewExecutionmode (node *assign, mtexecmode_t executionmode)
 {
-    DBUG_ENTER ("RenewExecutionmode");
-    DBUG_ASSERT ((NODE_TYPE (assign) == N_assign),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (assign) == N_assign,
                  "RenewExecutionmode expects a N_assign as #1 arg.");
 
     /* change the executionmode, if it's no MUTH_EXCLUSIVE already */
@@ -115,8 +117,8 @@ MUTHLIBtagAllocs (node *withloop, mtexecmode_t executionmode)
     node *assign;
     node *wlops;
     node *iterator;
-    DBUG_ENTER ("MUTHLIBtagAllocs");
-    DBUG_ASSERT ((NODE_TYPE (withloop) == N_with2),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (withloop) == N_with2,
                  "MUTHLIBtagAllocs expects a N_with2 as #1 argument");
 
     /* work on the withop */
@@ -125,7 +127,7 @@ MUTHLIBtagAllocs (node *withloop, mtexecmode_t executionmode)
         if ((NODE_TYPE (wlops) == N_genarray) || (NODE_TYPE (wlops) == N_modarray)) {
             assign = AVIS_SSAASSIGN (ID_AVIS (WITHOP_MEM (wlops)));
 
-            DBUG_ASSERT ((ASSIGN_EXECMODE (assign) != MUTH_MULTI),
+            DBUG_ASSERT (ASSIGN_EXECMODE (assign) != MUTH_MULTI,
                          "The execmode of the alloc-assign must'n be MUTH_MULTI");
 
             assign = RenewExecutionmode (assign, executionmode);
@@ -145,7 +147,7 @@ MUTHLIBtagAllocs (node *withloop, mtexecmode_t executionmode)
         iterator = IDS_NEXT (iterator);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -163,7 +165,7 @@ char *
 MUTHLIBdecodeExecmode (mtexecmode_t execmode)
 {
     char *result;
-    DBUG_ENTER ("MUTHLIBdecodeExecmode");
+    DBUG_ENTER ();
     switch (execmode) {
     case MUTH_ANY:
         result = "AT";
@@ -186,3 +188,5 @@ MUTHLIBdecodeExecmode (mtexecmode_t execmode)
     }
     DBUG_RETURN (result);
 }
+
+#undef DBUG_PREFIX

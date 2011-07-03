@@ -1,5 +1,7 @@
 
-#include "dbug.h"
+
+#define DBUG_PREFIX "SCUWL"
+#include "debug.h"
 
 #include "globals.h"
 #include "traverse.h"
@@ -91,7 +93,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -108,7 +110,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -132,7 +134,7 @@ SCUWLdoSplitCudaWithloops (node *arg_node)
 {
     info *info_node;
 
-    DBUG_ENTER ("SCUWLdoHandleWithLoops");
+    DBUG_ENTER ();
 
     info_node = MakeInfo ();
 
@@ -152,7 +154,7 @@ SCUWLdoSplitCudaWithloops (node *arg_node)
 node *
 SCUWLfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCUWLfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -182,11 +184,11 @@ SCUWLassign (node *arg_node, info *arg_info)
 {
     node *mem_last_assign, *return_node;
 
-    DBUG_ENTER ("SCUWLassign");
+    DBUG_ENTER ();
 
     mem_last_assign = INFO_LASTASSIGN (arg_info);
     INFO_LASTASSIGN (arg_info) = arg_node;
-    DBUG_PRINT ("SCUWL", ("LASTASSIGN set to %08x!", arg_node));
+    DBUG_PRINT ("LASTASSIGN set to %08x!", arg_node);
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     /*
@@ -197,11 +199,10 @@ SCUWLassign (node *arg_node, info *arg_info)
     return_node = INFO_LASTASSIGN (arg_info);
 
     if (return_node != arg_node) {
-        DBUG_PRINT ("SCUWL", ("node %08x will be inserted instead of %08x", return_node,
-                              arg_node));
+        DBUG_PRINT ("node %08x will be inserted instead of %08x", return_node, arg_node);
     }
     INFO_LASTASSIGN (arg_info) = mem_last_assign;
-    DBUG_PRINT ("SCUWL", ("LASTASSIGN (re)set to %08x!", mem_last_assign));
+    DBUG_PRINT ("LASTASSIGN (re)set to %08x!", mem_last_assign);
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -211,7 +212,7 @@ SCUWLassign (node *arg_node, info *arg_info)
 node *
 SCUWLlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SCUWLlet");
+    DBUG_ENTER ();
 
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -242,11 +243,11 @@ SplitWith (node *arg_node, info *arg_info)
     node *part, *withop, *first_wl, *first_let, *dup_code, *old_code;
     lut_t *lut;
 
-    DBUG_ENTER ("SplitWith");
+    DBUG_ENTER ();
 
     if (WITH_PART (arg_node) == NULL) {
 
-        DBUG_ASSERT ((WITH_CODE (arg_node) == NULL),
+        DBUG_ASSERT (WITH_CODE (arg_node) == NULL,
                      "found a WL w/o generators, but with code blocks!");
     } else if (PART_NEXT (WITH_PART (arg_node)) != NULL) {
 
@@ -341,7 +342,7 @@ SCUWLwith (node *arg_node, info *arg_info)
 {
     node *old_with_code;
 
-    DBUG_ENTER ("SCUWLwith");
+    DBUG_ENTER ();
 
     /**
      * Now, we recursively split Multi-Generator With-Loops:
@@ -378,11 +379,11 @@ SCUWLgenarray (node *arg_node, info *arg_info)
 
     printf ("in genarray\n");
 
-    DBUG_ENTER ("SCUWLgenarray");
+    DBUG_ENTER ();
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         // GENARRAY_NEXT( arg_node) = TRAVdo( GENARRAY_NEXT( arg_node), arg_info);
-        DBUG_ASSERT ((0), "Cudarizbale N_with with more than one operators!");
+        DBUG_ASSERT (0, "Cudarizbale N_with with more than one operators!");
     }
 
     avis = TBmakeAvis (TRAVtmpVar (),
@@ -425,11 +426,11 @@ SCUWLmodarray (node *arg_node, info *arg_info)
     node *new_withop;
     node *avis;
 
-    DBUG_ENTER ("SCUWLmodarray");
+    DBUG_ENTER ();
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
         // MODARRAY_NEXT( arg_node) = TRAVdo( MODARRAY_NEXT( arg_node), arg_info);
-        DBUG_ASSERT ((0), "Cudarizbale N_with with more than one operators!");
+        DBUG_ASSERT (0, "Cudarizbale N_with with more than one operators!");
     }
 
     avis = TBmakeAvis (TRAVtmpVar (),
@@ -452,3 +453,5 @@ SCUWLmodarray (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

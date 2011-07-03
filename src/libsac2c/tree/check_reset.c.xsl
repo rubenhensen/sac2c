@@ -66,7 +66,8 @@ version="1.0">
 #include "globals.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "dbug.h"
+#define DBUG_PREFIX "CHKRST"
+#include "debug.h"
 
 
 /*****************************************************************************
@@ -78,13 +79,13 @@ node *CHKRSTdoTreeCheckReset( node *arg_node)
 {
   node *keep_next = NULL;
 
-  DBUG_ENTER( "CHKRSTdoTreeCheckReset");
+  DBUG_ENTER ();
 
-  DBUG_ASSERT( (NODE_TYPE( arg_node) == N_module)
-               || (NODE_TYPE( arg_node) == N_fundef),
+  DBUG_ASSERT( NODE_TYPE( arg_node) == N_module
+               || NODE_TYPE( arg_node) == N_fundef,
                "Illegal argument node!");
 
-  DBUG_ASSERT( (NODE_TYPE( arg_node) == N_module)
+  DBUG_ASSERT( NODE_TYPE( arg_node) == N_module
                || global.local_funs_grouped ,
                "If run fun-based, special funs must be grouped.");
 
@@ -98,13 +99,13 @@ node *CHKRSTdoTreeCheckReset( node *arg_node)
     FUNDEF_NEXT( arg_node) = NULL;
   }
 
-  DBUG_PRINT( "CHKRST", ("Reset tree check mechanism"));
+  DBUG_PRINT( "Reset tree check mechanism");
 
   TRAVpush( TR_chkrst);
   arg_node = TRAVdo( arg_node, NULL);
   TRAVpop();
 
-  DBUG_PRINT( "CHKRST", ("Reset tree check mechanism completed"));
+  DBUG_PRINT( "Reset tree check mechanism completed");
 
   if (NODE_TYPE( arg_node) == N_fundef) {
     /* 
@@ -114,7 +115,7 @@ node *CHKRSTdoTreeCheckReset( node *arg_node)
     FUNDEF_NEXT( arg_node) = keep_next;
   }
   
-  DBUG_RETURN( arg_node);
+  DBUG_RETURN (arg_node);
 }
   </xsl:text>
   <xsl:value-of select="$newline"/>
@@ -141,14 +142,7 @@ node *CHKRSTdoTreeCheckReset( node *arg_node)
       <xsl:value-of select="$newline"/>
     </xsl:if>
     <xsl:value-of select="$newline"/>
-    <xsl:value-of select="'  DBUG_ENTER'"/>
-    <xsl:value-of select="'( &quot;CHKRST'"/>
-    <xsl:call-template name="lowercase">
-      <xsl:with-param name="string" >
-        <xsl:value-of select="@name"/>
-      </xsl:with-param>
-    </xsl:call-template>
-    <xsl:value-of select="'&quot;);'"/>
+    <xsl:value-of select="'  DBUG_ENTER ();'"/>
     <xsl:value-of select="$newline"/>
     <xsl:value-of select="$newline"/>
 
@@ -160,7 +154,7 @@ node *CHKRSTdoTreeCheckReset( node *arg_node)
     </xsl:apply-templates>
 
     <xsl:value-of select="$newline"/>
-    <xsl:value-of select="'  DBUG_RETURN( arg_node);'"/>
+    <xsl:value-of select="'  DBUG_RETURN (arg_node);'"/>
     <xsl:value-of select="$newline"/>
     <xsl:value-of select="'}'"/>
     <xsl:value-of select="$newline"/>

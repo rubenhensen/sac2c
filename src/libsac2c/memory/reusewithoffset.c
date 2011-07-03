@@ -23,7 +23,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "RWO"
+#include "debug.h"
+
 #include "print.h"
 #include "str.h"
 #include "memory.h"
@@ -54,7 +57,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -68,7 +71,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -87,7 +90,7 @@ IdentifyNoopArray (node *with)
     node *code = WITH_CODE (with);
     node *ivavis = IDS_AVIS (WITH_VEC (with));
 
-    DBUG_ENTER ("IdentifyNoopArray");
+    DBUG_ENTER ();
 
     while (code != NULL) {
         node *cass = AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (code)));
@@ -114,7 +117,7 @@ IsNoopPart (node *part, node *rc)
     node *ivavis = IDS_AVIS (PART_VEC (part));
     node *cass;
 
-    DBUG_ENTER ("IsNoopPart");
+    DBUG_ENTER ();
 
     cass = AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (code)));
 
@@ -136,7 +139,7 @@ IdentifyOtherPart (node *with, node *rc)
     node *hotpart = NULL;
     node *part = WITH_PART (with);
 
-    DBUG_ENTER ("IdentifyOtherGenerator");
+    DBUG_ENTER ();
 
     while (part != NULL) {
         if (!IsNoopPart (part, rc)) {
@@ -186,7 +189,7 @@ RWOdoOffsetAwareReuseCandidateInference (node *with)
 {
     node *cand = NULL;
 
-    DBUG_ENTER ("RWOdoOffsetAwareReuseCandidateInference");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (with) == N_with, "Illegal node type!");
 
@@ -198,11 +201,11 @@ RWOdoOffsetAwareReuseCandidateInference (node *with)
         cand = IdentifyNoopArray (with);
 
         if (cand != NULL) {
-            DBUG_PRINT ("RWO", ("Identified RC: %s\n", ID_NAME (cand)));
+            DBUG_PRINT ("Identified RC: %s\n", ID_NAME (cand));
             hotpart = IdentifyOtherPart (with, cand);
 
             if (hotpart != NULL) {
-                DBUG_EXECUTE ("RWO", PRTdoPrintNodeFile (stderr, hotpart););
+                DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, hotpart));
                 node *hotcode, *oldnext;
                 info *arg_info;
 
@@ -247,7 +250,7 @@ RWOdoOffsetAwareReuseCandidateInference (node *with)
 node *
 RWOids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RWOids");
+    DBUG_ENTER ();
 
     if ((INFO_RC (arg_info) != NULL)
         && (IDS_AVIS (arg_node) == ID_AVIS (INFO_RC (arg_info)))) {
@@ -269,7 +272,7 @@ RWOids (node *arg_node, info *arg_info)
 node *
 RWOid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RWOid");
+    DBUG_ENTER ();
 
     if ((INFO_RC (arg_info) != NULL)
         && (ID_AVIS (arg_node) == ID_AVIS (INFO_RC (arg_info)))) {
@@ -289,7 +292,7 @@ RWOprf (node *arg_node, info *arg_info)
 {
     bool traverse = TRUE;
 
-    DBUG_ENTER ("RWOprf");
+    DBUG_ENTER ();
 
     if ((PRF_PRF (arg_node) == F_sel_VxA) && (INFO_RC (arg_info) != NULL)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
@@ -302,7 +305,7 @@ RWOprf (node *arg_node, info *arg_info)
          */
         if ((ID_AVIS (PRF_ARG1 (arg_node))
              == IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info))))) {
-            DBUG_EXECUTE ("RWO", PRTdoPrintNodeFile (stderr, arg_node););
+            DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
             traverse = FALSE;
         }
 
@@ -349,8 +352,7 @@ RWOprf (node *arg_node, info *arg_info)
                                 && (ID_AVIS (PRF_ARG1 (rhs)) == IDS_AVIS (ids))
                                 && (NODE_TYPE (PRF_ARG2 (rhs)) == N_num)
                                 && (abs (NUM_VAL (PRF_ARG2 (rhs))) >= gwval)) {
-                                DBUG_EXECUTE ("RWO",
-                                              PRTdoPrintNodeFile (stderr, arg_node););
+                                DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
                                 traverse = FALSE;
                             }
 
@@ -359,8 +361,7 @@ RWOprf (node *arg_node, info *arg_info)
                                 && (ID_AVIS (PRF_ARG2 (rhs)) == IDS_AVIS (ids))
                                 && (NODE_TYPE (PRF_ARG1 (rhs)) == N_num)
                                 && (abs (NUM_VAL (PRF_ARG1 (rhs))) >= gwval)) {
-                                DBUG_EXECUTE ("RWO",
-                                              PRTdoPrintNodeFile (stderr, arg_node););
+                                DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
                                 traverse = FALSE;
                             }
                         }
@@ -382,3 +383,5 @@ RWOprf (node *arg_node, info *arg_info)
 }
 
 /* @} */
+
+#undef DBUG_PREFIX

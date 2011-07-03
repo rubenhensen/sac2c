@@ -2,7 +2,8 @@
  * $Id$
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "HWLO"
+#include "debug.h"
 
 #include "globals.h"
 #include "traverse.h"
@@ -216,7 +217,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -234,7 +235,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -258,7 +259,7 @@ HWLOdoHandleWithLoops (node *arg_node)
 {
     info *info_node;
 
-    DBUG_ENTER ("HWLOdoHandleWithLoops");
+    DBUG_ENTER ();
 
     info_node = MakeInfo ();
 
@@ -288,11 +289,11 @@ HWLOassign (node *arg_node, info *arg_info)
 {
     node *mem_last_assign, *return_node;
 
-    DBUG_ENTER ("HWLOassign");
+    DBUG_ENTER ();
 
     mem_last_assign = INFO_HWLO_LASTASSIGN (arg_info);
     INFO_HWLO_LASTASSIGN (arg_info) = arg_node;
-    DBUG_PRINT ("HWLO", ("LASTASSIGN set to %08x!", arg_node));
+    DBUG_PRINT ("LASTASSIGN set to %08x!", arg_node);
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     /*
@@ -303,11 +304,10 @@ HWLOassign (node *arg_node, info *arg_info)
     return_node = INFO_HWLO_LASTASSIGN (arg_info);
 
     if (return_node != arg_node) {
-        DBUG_PRINT ("HWLO", ("node %08x will be inserted instead of %08x", return_node,
-                             arg_node));
+        DBUG_PRINT ("node %08x will be inserted instead of %08x", return_node, arg_node);
     }
     INFO_HWLO_LASTASSIGN (arg_info) = mem_last_assign;
-    DBUG_PRINT ("HWLO", ("LASTASSIGN (re)set to %08x!", mem_last_assign));
+    DBUG_PRINT ("LASTASSIGN (re)set to %08x!", mem_last_assign);
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -333,7 +333,7 @@ HWLOlet (node *arg_node, info *arg_info)
 {
     node *mem_last_lhs;
 
-    DBUG_ENTER ("HWLOlet");
+    DBUG_ENTER ();
 
     mem_last_lhs = INFO_HWLO_LHS (arg_info);
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_with) {
@@ -369,7 +369,7 @@ HWLOwith (node *arg_node, info *arg_info)
 {
     node *new_let, *new_part, *new_code;
 
-    DBUG_ENTER ("HWLOwith");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((WITH_CODE (arg_node) == NULL)
                    || (CODE_NEXT (WITH_CODE (arg_node)) == NULL),
@@ -439,7 +439,7 @@ StdWithOp (node *arg_node, info *arg_info)
     node *my_lhs, *my_cexprs, *return_node;
     int my_pos;
 
-    DBUG_ENTER ("StdWithOp");
+    DBUG_ENTER ();
 
     INFO_HWLO_NUM_STD_OPS (arg_info)++;
 
@@ -512,7 +512,7 @@ StdWithOp (node *arg_node, info *arg_info)
 node *
 HWLOgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HWLOgenarray");
+    DBUG_ENTER ();
 
     DBUG_RETURN (StdWithOp (arg_node, arg_info));
 }
@@ -533,7 +533,7 @@ HWLOgenarray (node *arg_node, info *arg_info)
 node *
 HWLOmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HWLOmodarray");
+    DBUG_ENTER ();
 
     DBUG_RETURN (StdWithOp (arg_node, arg_info));
 }
@@ -554,7 +554,7 @@ HWLOmodarray (node *arg_node, info *arg_info)
 node *
 HWLOspfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HWLOspfold");
+    DBUG_ENTER ();
 
     DBUG_RETURN (StdWithOp (arg_node, arg_info));
 }
@@ -578,7 +578,7 @@ HWLOpropagate (node *arg_node, info *arg_info)
     char *tmp;
     node *my_lhs, *my_cexprs, *new_withop;
 
-    DBUG_ENTER ("HWLOpropagate");
+    DBUG_ENTER ();
 
     my_cexprs = INFO_HWLO_CEXPRS (arg_info);
     my_lhs = INFO_HWLO_LHS (arg_info);
@@ -635,3 +635,5 @@ HWLOpropagate (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -22,7 +22,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "EMSR"
+#include "debug.h"
+
 #include "print.h"
 #include "DupTree.h"
 #include "free.h"
@@ -42,15 +45,15 @@
 node *
 EMSRdoStaticReuse (node *syntax_tree)
 {
-    DBUG_ENTER ("EMSRdoStaticReuse");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMSR", ("Starting static reuse inference"));
+    DBUG_PRINT ("Starting static reuse inference");
 
     TRAVpush (TR_emsr);
     syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
 
-    DBUG_PRINT ("EMSR", ("Static reuse inference complete"));
+    DBUG_PRINT ("Static reuse inference complete");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -77,7 +80,7 @@ EMSRdoStaticReuse (node *syntax_tree)
 node *
 EMSRprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMSRprf");
+    DBUG_ENTER ();
 
     if ((PRF_PRF (arg_node) == F_alloc_or_reuse)
         || (PRF_PRF (arg_node) == F_alloc_or_reshape)
@@ -132,3 +135,5 @@ EMSRprf (node *arg_node, info *arg_info)
 }
 
 /*@}*/
+
+#undef DBUG_PREFIX

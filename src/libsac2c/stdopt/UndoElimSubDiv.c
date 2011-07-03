@@ -38,7 +38,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "node_basic.h"
 #include "tree_compound.h"
@@ -79,7 +81,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -95,7 +97,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -121,7 +123,7 @@ CheckExpr (node *expr, prf op)
     node *result;
     prf prfop1, prfop2;
 
-    DBUG_ENTER ("CheckExpr");
+    DBUG_ENTER ();
 
     if ((N_id == NODE_TYPE (expr)) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
 
@@ -178,7 +180,7 @@ TogglePrf (prf op)
 {
     prf result = F_unknown;
 
-    DBUG_ENTER ("TogglePrf");
+    DBUG_ENTER ();
 
     switch (op) {
     case F_add_SxS:
@@ -214,7 +216,7 @@ TogglePrf (prf op)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal argument prf!");
+        DBUG_ASSERT (0, "Illegal argument prf!");
     }
 
     DBUG_RETURN (result);
@@ -237,7 +239,7 @@ TogglePrfSwap (prf op)
 {
     prf result = F_unknown;
 
-    DBUG_ENTER ("TogglePrfSwap");
+    DBUG_ENTER ();
 
     switch (op) {
     case F_add_SxS:
@@ -273,7 +275,7 @@ TogglePrfSwap (prf op)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal argument prf!");
+        DBUG_ASSERT (0, "Illegal argument prf!");
     }
 
     DBUG_RETURN (result);
@@ -295,7 +297,7 @@ UESDdoUndoElimSubDivModule (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("UESDdoUndoElimSubDivModule");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -328,7 +330,7 @@ UESDdoUndoElimSubDiv (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("UESDdoUndoElimSubDiv");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -355,7 +357,7 @@ UESDfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("UESDfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
@@ -389,7 +391,7 @@ UESDfundef (node *arg_node, info *arg_info)
 node *
 UESDblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("UESDblock");
+    DBUG_ENTER ();
 
     BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
 
@@ -411,7 +413,7 @@ UESDblock (node *arg_node, info *arg_info)
 node *
 UESDassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("UESDassign");
+    DBUG_ENTER ();
 
     INFO_TOPDOWN (arg_info) = TRUE;
 
@@ -447,7 +449,7 @@ UESDassign (node *arg_node, info *arg_info)
 node *
 UESDlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("UESDlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 
@@ -477,7 +479,7 @@ UESDprf (node *arg_node, info *arg_info)
     prf op;
     node *id1, *id2;
 
-    DBUG_ENTER ("UESDprf");
+    DBUG_ENTER ();
 
     op = PRF_PRF (arg_node);
 
@@ -546,3 +548,5 @@ UESDprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

@@ -26,7 +26,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -69,7 +72,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -85,7 +88,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -111,7 +114,7 @@ IUTCdoIntroduceUserTraceCalls (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("IUTCdoIntroduceUserTraceCalls");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -150,7 +153,7 @@ ApTraceFun (const char *funname, const char *filename, int pos, node *args)
 {
     node *result;
 
-    DBUG_ENTER ("ApTraceFun");
+    DBUG_ENTER ();
 
     result
       = TBmakeSpap (TBmakeSpid (NSgetNamespace (TRACEFUN_NAMESPACE), STRcpy (funname)),
@@ -174,7 +177,7 @@ ReturnExprs2Trace (node *exprs, info *arg_info)
     char *newvar;
     node *newexpr;
 
-    DBUG_ENTER ("ReturnExprs2Trace");
+    DBUG_ENTER ();
 
     if (EXPRS_NEXT (exprs) != NULL) {
         EXPRS_NEXT (exprs) = ReturnExprs2Trace (EXPRS_NEXT (exprs), arg_info);
@@ -219,7 +222,7 @@ ReturnExprs2Trace (node *exprs, info *arg_info)
 node *
 IUTCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IUTCfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNNAME (arg_info) = FUNDEF_NAME (arg_node);
@@ -249,7 +252,7 @@ IUTCfundef (node *arg_node, info *arg_info)
 node *
 IUTCarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IUTCarg");
+    DBUG_ENTER ();
 
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
@@ -278,7 +281,7 @@ IUTCarg (node *arg_node, info *arg_info)
 node *
 IUTCspids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IUTCspids");
+    DBUG_ENTER ();
 
     if (SPIDS_NEXT (arg_node) != NULL) {
         SPIDS_NEXT (arg_node) = TRAVdo (SPIDS_NEXT (arg_node), arg_info);
@@ -307,7 +310,7 @@ IUTCspids (node *arg_node, info *arg_info)
 node *
 IUTCreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IUTCreturn");
+    DBUG_ENTER ();
 
     if (RETURN_EXPRS (arg_node) != NULL) {
         RETURN_EXPRS (arg_node) = ReturnExprs2Trace (RETURN_EXPRS (arg_node), arg_info);
@@ -328,7 +331,7 @@ IUTCassign (node *arg_node, info *arg_info)
 {
     node **chain;
 
-    DBUG_ENTER ("IUTCassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -386,7 +389,7 @@ IUTCblock (node *arg_node, info *arg_info)
 {
     node *preassigns, *postassigns;
 
-    DBUG_ENTER ("IUTCblock");
+    DBUG_ENTER ();
 
     /*
      * preserve outer context
@@ -431,7 +434,7 @@ IUTCblock (node *arg_node, info *arg_info)
         INFO_PREASSIGN (arg_info) = NULL;
     }
 
-    DBUG_ASSERT ((INFO_POSTASSIGN (arg_info) == NULL),
+    DBUG_ASSERT (INFO_POSTASSIGN (arg_info) == NULL,
                  "there should be no more post-assigns at end of block traversal!");
 
     INFO_PREASSIGN (arg_info) = preassigns;
@@ -447,3 +450,5 @@ IUTCblock (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Introduce User Trace Calls -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

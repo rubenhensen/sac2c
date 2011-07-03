@@ -27,7 +27,9 @@
 #include "cell_growth.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CEGRO"
+#include "debug.h"
 
 /*
  * INFO structure
@@ -51,7 +53,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -63,7 +65,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -88,20 +90,20 @@ CEGROdoCellGrowth (node *arg_node)
 {
     info *arg_info;
     trav_t traversaltable;
-    DBUG_ENTER ("CEGROdoCellGrowth");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
                  "CEGROdoCellGrowth expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
 
     TRAVpush (TR_cegro);
 
-    DBUG_PRINT ("CEGRO", ("trav into module-funs"));
+    DBUG_PRINT ("trav into module-funs");
     MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
-    DBUG_PRINT ("CEGRO", ("trav from module-funs"));
+    DBUG_PRINT ("trav from module-funs");
 
     traversaltable = TRAVpop ();
-    DBUG_ASSERT ((traversaltable == TR_cegro), "Popped incorrect traversal table");
+    DBUG_ASSERT (traversaltable == TR_cegro, "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
 
@@ -148,8 +150,8 @@ CEGROblock (node *arg_node, info *arg_info)
     node *xcell;
     node *iterator;
     node *old_nextcell;
-    DBUG_ENTER ("CEGROblock");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_block), "arg_node is not a N_block");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_block, "arg_node is not a N_block");
 
     /* push info... */
     old_nextcell = INFO_CEGRO_NEXTCELL (arg_info);
@@ -157,9 +159,9 @@ CEGROblock (node *arg_node, info *arg_info)
 
     /* continue traversal */
     if (BLOCK_INSTR (arg_node) != NULL) {
-        DBUG_PRINT ("CEGRO", ("trav into instruction(s)"));
+        DBUG_PRINT ("trav into instruction(s)");
         BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
-        DBUG_PRINT ("CEGRO", ("trav from instruction(s)"));
+        DBUG_PRINT ("trav from instruction(s)");
 
         /* add the first assignments to the belonging cell, if their
          * executionmode is MUTH_ANY and there exists an cell inside
@@ -173,7 +175,7 @@ CEGROblock (node *arg_node, info *arg_info)
             }
             /* due to the algorithm in CEGROassign iterator points to the last
              * assignment of the block, which isn't in a cell */
-            DBUG_ASSERT ((ASSIGN_EXECMODE (iterator) == MUTH_ANY),
+            DBUG_ASSERT (ASSIGN_EXECMODE (iterator) == MUTH_ANY,
                          "the executionmode has to be MUTH_ANY");
 
             /* get the EX-/ST-/MT-Cell (to make the code clearer) */
@@ -239,19 +241,19 @@ CEGROblock (node *arg_node, info *arg_info)
 node *
 CEGROassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CEGROassign");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "arg_node is no a N_assign");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_assign, "arg_node is no a N_assign");
 
     /* traverse into the instruction - it could be a conditional */
     if (ASSIGN_INSTR (arg_node) != NULL) {
-        DBUG_PRINT ("CEGRO", ("trav into instruction"));
+        DBUG_PRINT ("trav into instruction");
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-        DBUG_PRINT ("CEGRO", ("trav from instruction"));
+        DBUG_PRINT ("trav from instruction");
     }
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("CEGRO", ("trav into next"));
+        DBUG_PRINT ("trav into next");
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("CEGRO", ("trav from next"));
+        DBUG_PRINT ("trav from next");
     }
     /* bottom-up traversal */
 
@@ -275,3 +277,5 @@ CEGROassign (node *arg_node, info *arg_info)
     }
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

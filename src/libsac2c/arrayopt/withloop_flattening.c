@@ -68,7 +68,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLFLT"
+#include "debug.h"
+
 #include "traverse.h"
 #include "compare_tree.h"
 #include "free.h"
@@ -141,7 +144,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -162,7 +165,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -188,9 +191,9 @@ WLFLTdoWithloopFlattening (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("WLFLTdoWithloopFlattening");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module,
                  "WLFLTdoWithloopFlattening can only be called on entire "
                  "modules!");
 
@@ -198,13 +201,13 @@ WLFLTdoWithloopFlattening (node *syntax_tree)
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("WLFLT", ("Starting withloop flattening traversal."));
+    DBUG_PRINT ("Starting withloop flattening traversal.");
 
     TRAVpush (TR_wlflt);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("WLFLT", ("Withloop flattening complete."));
+    DBUG_PRINT ("Withloop flattening complete.");
 
     info = FreeInfo (info);
 
@@ -252,7 +255,7 @@ createLowerBound (info *arg_info)
     node *lb_assign;
     constant *lb_const;
 
-    DBUG_ENTER ("createLowerBound");
+    DBUG_ENTER ();
 
     lb_const = COmakeZero (T_int, SHcreateShape (1, 1));
     lb_avis = TBmakeAvis (TRAVtmpVar (), TYmakeAKV (TYmakeSimpleType (T_int), lb_const));
@@ -294,7 +297,7 @@ createUpperBound (node *bound, info *arg_info)
     node *bound_avis = NULL;
     node *bound_id;
 
-    DBUG_ENTER ("createUpperBound");
+    DBUG_ENTER ();
 
     prod_avis = TBmakeAvis (TRAVtmpVar (),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
@@ -319,7 +322,7 @@ createUpperBound (node *bound, info *arg_info)
     ap_node = DSdispatchFunCall (NSgetNamespace (SAC_PRELUDE_NAME), "prod",
                                  TBmakeExprs (bound_id, NULL));
 
-    DBUG_ASSERT ((ap_node != NULL), "cannot find `" SAC_PRELUDE_NAME "::prod'.");
+    DBUG_ASSERT (ap_node != NULL, "cannot find `" SAC_PRELUDE_NAME "::prod'.");
 
     INFO_PREASSIGNS (arg_info)
       = TBmakeAssign (TBmakeLet (TBmakeIds (ub_avis, NULL),
@@ -368,7 +371,7 @@ createReshapeAssignments (node *lhs, node *old_shp, node *new_shp, info *arg_inf
     node *new_lhs = NULL;
     ntype *newtype;
 
-    DBUG_ENTER ("createReshapeAssignments");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (old_shp) == N_array) || (NODE_TYPE (old_shp) == N_id)),
                  "N_array expected as 2nd arg in createReshapeAssignments");
@@ -446,7 +449,7 @@ createWLAssignAndReshapes (node *with, info *arg_info)
 {
     node *new_lhs, *assigns;
 
-    DBUG_ENTER ("createWLAssignAndReshapes");
+    DBUG_ENTER ();
 
     new_lhs = createReshapeAssignments (INFO_LHS (arg_info), INFO_SHAPE (arg_info),
                                         INFO_NEWSHP (arg_info), arg_info);
@@ -483,7 +486,7 @@ WLFLTMgenerator (node *arg_node, info *arg_info)
 {
     node *lb_id, *ub_id;
 
-    DBUG_ENTER ("WLFLTMgenerator");
+    DBUG_ENTER ();
 
     lb_id = createLowerBound (arg_info);
     ub_id = createUpperBound (GENERATOR_BOUND2 (arg_node), arg_info);
@@ -505,7 +508,7 @@ WLFLTMgenerator (node *arg_node, info *arg_info)
 static node *
 WLFLTMgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLFLTMgenarray");
+    DBUG_ENTER ();
 
     INFO_SHAPE (arg_info) = GENARRAY_SHAPE (arg_node);
     GENARRAY_SHAPE (arg_node) = TBmakeId (INFO_NEWSHP (arg_info));
@@ -536,7 +539,7 @@ WLFLTMwithid (node *arg_node, info *arg_info)
 {
     node *ids_avis, *vec_avis;
 
-    DBUG_ENTER ("WLFLTMwithid");
+    DBUG_ENTER ();
 
     if (WITHID_IDS (arg_node) != NULL) {
         WITHID_IDS (arg_node) = FREEdoFreeTree (WITHID_IDS (arg_node));
@@ -566,9 +569,9 @@ WLFLTMwithid (node *arg_node, info *arg_info)
 node *
 WLFLTid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLFLTid");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLFLT_TAG", ("Tagging %s as used.", AVIS_NAME (ID_AVIS (arg_node))));
+    DBUG_PRINT_TAG ("WLFLT_TAG", "Tagging %s as used.", AVIS_NAME (ID_AVIS (arg_node)));
 
     AVIS_ISUSED (ID_AVIS (arg_node)) = TRUE;
 
@@ -585,7 +588,7 @@ WLFLTid (node *arg_node, info *arg_info)
 node *
 WLFLTfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLFLTfundef");
+    DBUG_ENTER ();
 
     /*
      * As we do not trust the previous state, we clear the AVIS_ISUSED.
@@ -622,7 +625,7 @@ WLFLTfundef (node *arg_node, info *arg_info)
 node *
 WLFLTblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLFLTblock");
+    DBUG_ENTER ();
 
     /*
      * Clear left-over information from the AVIS_ISUSED flag.
@@ -660,9 +663,9 @@ WLFLTblock (node *arg_node, info *arg_info)
 node *
 WLFLTavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLFLTavis");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLFLT_TAG", ("Clearing %s's used flag.", AVIS_NAME (arg_node)));
+    DBUG_PRINT_TAG ("WLFLT_TAG", "Clearing %s's used flag.", AVIS_NAME (arg_node));
 
     AVIS_ISUSED (arg_node) = FALSE;
 
@@ -682,9 +685,9 @@ WLFLTwith (node *arg_node, info *arg_info)
     int wlopsno;
     node *oldlhs;
 
-    DBUG_ENTER ("WLFLTwith");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((WITH_WITHOP (arg_node) != NULL), "Malformed withloop: withop missing.");
+    DBUG_ASSERT (WITH_WITHOP (arg_node) != NULL, "Malformed withloop: withop missing.");
 
     /*
      * For the use analysis, we have to always traverse the entire tree,
@@ -725,7 +728,7 @@ WLFLTwith (node *arg_node, info *arg_info)
                                  {N_withid, &WLFLTMwithid},
                                  {0, NULL}};
 
-        DBUG_PRINT ("WLFLT", ("Found victim!"));
+        DBUG_PRINT ("Found victim!");
 
         TRAVpushAnonymous (modtrav, &TRAVsons);
 
@@ -755,10 +758,10 @@ WLFLTwith (node *arg_node, info *arg_info)
 node *
 WLFLTgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLFLTgenarray");
+    DBUG_ENTER ();
 
 #ifdef FLATTEN_IS_PROPER
-    DBUG_ASSERT ((NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id),
+    DBUG_ASSERT (NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id,
                  "Malformed withloop: non-id node as genarray shape.");
 #else
     DBUG_ASSERT ((NODE_TYPE (GENARRAY_SHAPE (arg_node)) == N_id)
@@ -790,7 +793,7 @@ WLFLTgenarray (node *arg_node, info *arg_info)
 node *
 WLFLTids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLFLTids");
+    DBUG_ENTER ();
 
     if (AVIS_ISUSED (IDS_AVIS (arg_node))) {
         INFO_IDSUSED (arg_info)++;
@@ -811,7 +814,7 @@ WLFLTids (node *arg_node, info *arg_info)
 node *
 WLFLTwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLFLTwithid");
+    DBUG_ENTER ();
 
     if (WITHID_VEC (arg_node) != NULL) {
         WITHID_VEC (arg_node) = TRAVdo (WITHID_VEC (arg_node), arg_info);
@@ -840,7 +843,7 @@ WLFLTgenerator (node *arg_node, info *arg_info)
 {
     bool stepok, widthok, lowerok, upperok;
 
-    DBUG_ENTER ("WLFLTgenerator");
+    DBUG_ENTER ();
 
     stepok = (GENERATOR_STEP (arg_node) == NULL);
     widthok = (GENERATOR_WIDTH (arg_node) == NULL);
@@ -881,7 +884,7 @@ WLFLTgenerator (node *arg_node, info *arg_info)
 node *
 WLFLTassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLFLTassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -917,7 +920,7 @@ WLFLTassign (node *arg_node, info *arg_info)
 node *
 WLFLTlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLFLTlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 
@@ -935,3 +938,5 @@ WLFLTlet (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal withloop flattening -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

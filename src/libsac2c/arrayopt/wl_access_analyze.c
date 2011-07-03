@@ -29,7 +29,10 @@
  *****************************************************************************/
 
 #include <stdlib.h>
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLAA_INFO"
+#include "debug.h"
+
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -80,7 +83,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = Malloc (sizeof (info));
 
@@ -100,7 +103,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = Free (info);
 
@@ -124,13 +127,13 @@ FreeInfo (info *info)
 node *
 WLAdoAccessAnalyze (node *arg_node)
 {
-    DBUG_ENTER ("WLAccessAnalyze");
+    DBUG_ENTER ();
 
 #ifndef WLAA_DEACTIVATED
 
     info *arg_info;
 
-    DBUG_PRINT ("WLAA", ("WLAccessAnalyze"));
+    DBUG_PRINT_TAG ("WLAA", "WLAccessAnalyze");
 
     DBUG_ASSERT (((NODE_TYPE (arg_node) == N_modul)
                   || (NODE_TYPE (arg_node) == N_fundef)),
@@ -176,15 +179,15 @@ NumVect2NumsList (int coeff, node *exprs)
 {
     nums *tmp;
 
-    DBUG_ENTER ("NumVect2NumsList");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (exprs) == N_exprs),
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs,
                  "Illegal node type in call to function NumVect2NumsList()");
 
     if (exprs == NULL) {
         tmp = NULL;
     } else {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_num),
+        DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (exprs)) == N_num,
                      "Illegal expression in call to function NumVect2NumsList()");
 
         tmp = MakeNums (coeff * NUM_VAL (EXPRS_EXPR (exprs)),
@@ -218,7 +221,7 @@ Shpseg2Shpseg (int coeff, shpseg *old_shpseg)
     int i;
     shpseg *new_shpseg;
 
-    DBUG_ENTER ("Shpseg2Shpseg");
+    DBUG_ENTER ();
 
     if (old_shpseg == NULL) {
         new_shpseg = NULL;
@@ -250,7 +253,7 @@ IntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
     int i;
     shpseg *result;
 
-    DBUG_ENTER ("IntVec2Shpseg");
+    DBUG_ENTER ();
 
     result = MakeShpseg (NULL);
 
@@ -289,7 +292,7 @@ AddIntVec2Shpseg (int coeff, int length, int *intvec, shpseg *next)
     int i;
     shpseg *result;
 
-    DBUG_ENTER ("IntVec2Shpseg");
+    DBUG_ENTER ();
 
     if (next == NULL) {
         result = MakeShpseg (NULL);
@@ -324,7 +327,7 @@ IsIndexVect (types *type)
 {
     bool res = FALSE;
 
-    DBUG_ENTER ("IsIndexVect");
+    DBUG_ENTER ();
 
     if ((TYPES_BASETYPE (type) == T_int) && (TYPES_DIM (type) == 1)
         && (TYPES_SHAPE (type, 0) < SHP_SEG_SIZE)) {
@@ -353,7 +356,7 @@ AccessInAccesslist (access_t *access, access_t *access_list)
 
     while ((access_list != NULL) && (isin == FALSE)) {
 
-        DBUG_ASSERT ((access != NULL), ("No access to compare with !"));
+        DBUG_ASSERT (access != NULL, "No access to compare with !");
 
         if ((ACCESS_CLASS (access) == ACCESS_CLASS (access_list))
             && (ACCESS_IV (access) == ACCESS_IV (access_list))
@@ -452,7 +455,7 @@ SearchAccess (access_t *access, info *arg_info)
 {
     int found = 0;
 
-    DBUG_ENTER ("SearchAccess");
+    DBUG_ENTER ();
 
     while ((access != NULL) && (found == 0)) {
         if ((ACCESS_IV (access) == IDS_VARDEC (INFO_WLAA_LASTLETIDS (arg_info)))
@@ -482,9 +485,9 @@ SearchAccess (access_t *access, info *arg_info)
 node *
 WLAAfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLAAfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLAA", ("WLAAfundef"));
+    DBUG_PRINT_TAG ("WLAA", "WLAAfundef");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = Trav (FUNDEF_BODY (arg_node), arg_info);
@@ -517,9 +520,9 @@ WLAAfundef (node *arg_node, info *arg_info)
 node *
 WLAAblock (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLAAblock");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLAA", ("WLAAblock"));
+    DBUG_PRINT_TAG ("WLAA", "WLAAblock");
 
     if (BLOCK_INSTR (arg_node) != NULL) {
         BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
@@ -546,15 +549,15 @@ WLAAblock (node *arg_node, info *arg_info)
 node *
 WLAAassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLAAassign");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLAA", ("WLAAassign"));
+    DBUG_PRINT_TAG ("WLAA", "WLAAassign");
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    DBUG_ASSERT ((ASSIGN_INSTR (arg_node) != NULL), "N_assign node without instruction.");
+    DBUG_ASSERT (ASSIGN_INSTR (arg_node) != NULL, "N_assign node without instruction.");
 
     ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -582,11 +585,11 @@ WLAAassign (node *arg_node, info *arg_info)
 node *
 WLAAnwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLAAnwith");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLAA", ("WLAAnwith"));
+    DBUG_PRINT_TAG ("WLAA", "WLAAnwith");
 
-    DBUG_ASSERT ((arg_info != NULL), "WLAAnwith called with empty info node!");
+    DBUG_ASSERT (arg_info != NULL, "WLAAnwith called with empty info node!");
     INFO_WLAA_INDEXVAR (arg_info) = IDS_VARDEC (NWITH_VEC (arg_node));
     INFO_WLAA_WOTYPE (arg_info) = NWITH_TYPE (arg_node);
     INFO_WLAA_WLLEVEL (arg_info) = INFO_WLAA_WLLEVEL (arg_info) + 1;
@@ -617,9 +620,9 @@ WLAAncode (node *arg_node, info *arg_info)
 {
     info *old_arg_info;
 
-    DBUG_ENTER ("WLAAncode");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLAA", ("WLAAncode"));
+    DBUG_PRINT_TAG ("WLAA", "WLAAncode");
 
     if (NCODE_NEXT (arg_node) != NULL) {
         NCODE_NEXT (arg_node) = Trav (NCODE_NEXT (arg_node), arg_info);
@@ -696,9 +699,9 @@ WLAAdo (node *arg_node, info *arg_info)
     access_t *old_access = NULL;
     feature_t old_feature = 0;
 
-    DBUG_ENTER ("WLAAdo");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLAA", ("WLAAdo"));
+    DBUG_PRINT_TAG ("WLAA", "WLAAdo");
 
     if (INFO_WLAA_WLLEVEL (arg_info) > 0) {
         old_access = INFO_WLAA_ACCESS (arg_info);
@@ -748,9 +751,9 @@ WLAAcond (node *arg_node, info *arg_info)
     int equal_flag = TRUE;
     access_t *access;
 
-    DBUG_ENTER ("WLAAcond");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLAA", ("WLAAcond"));
+    DBUG_PRINT_TAG ("WLAA", "WLAAcond");
 
     if (INFO_WLAA_WLLEVEL (arg_info) > 0) {
         then_arg_info = MakeInfo ();
@@ -849,9 +852,9 @@ WLAAlet (node *arg_node, info *arg_info)
     ids *var;
     access_t *access;
 
-    DBUG_ENTER ("WLAAlet");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLAA", ("WLAAlet"));
+    DBUG_PRINT_TAG ("WLAA", "WLAAlet");
 
     INFO_WLAA_LASTLETIDS (arg_info) = LET_IDS (arg_node);
     if (NODE_TYPE (LET_EXPR (arg_node)) == N_Nwith)
@@ -914,9 +917,9 @@ WLAAprf (node *arg_node, info *arg_info)
     access_t *access;
     node *arg_node_arg1, *arg_node_arg2, *prf_arg;
 
-    DBUG_ENTER ("WLAAprf");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLAA", ("WLAAprf"));
+    DBUG_PRINT_TAG ("WLAA", "WLAAprf");
 
     if (INFO_WLAA_WLLEVEL (arg_info) > 0) {
         /*
@@ -937,14 +940,13 @@ WLAAprf (node *arg_node, info *arg_info)
 
             switch (PRF_PRF (arg_node)) {
             case F_sel_VxA:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_sel_VxA"));
+                DBUG_PRINT ("primitive function F_sel_VxA");
 
                 if (INFO_WLAA_INDEXDIM (arg_info) != INFO_WLAA_ARRAYDIM (arg_info)) {
                     /*
                      *  Result of sel must not be a skalar !
                      */
-                    DBUG_PRINT ("WLAA_INFO",
-                                ("primitive function sel with array return value"));
+                    DBUG_PRINT ("primitive function sel with array return value");
                     INFO_WLAA_FEATURE (arg_info)
                       = INFO_WLAA_FEATURE (arg_info) | FEATURE_ASEL;
                 }
@@ -953,7 +955,7 @@ WLAAprf (node *arg_node, info *arg_info)
                     DBUG_ASSERT (((NODE_TYPE (arg_node_arg1) == N_id)
                                   || (NODE_TYPE (arg_node_arg1) == N_array)),
                                  "1st arg of sel is neither an array nor a variable");
-                    DBUG_ASSERT ((NODE_TYPE (arg_node_arg2) == N_id),
+                    DBUG_ASSERT (NODE_TYPE (arg_node_arg2) == N_id,
                                  "2nd arg of sel is not variable");
 
                     if (NODE_TYPE (arg_node_arg1) == N_id) {
@@ -969,7 +971,7 @@ WLAAprf (node *arg_node, info *arg_info)
                              */
                             ACCESS_CLASS (INFO_WLAA_ACCESS (arg_info)) = ACL_offset;
 
-                            DBUG_ASSERT ((ID_DIM (arg_node_arg2) > 0),
+                            DBUG_ASSERT (ID_DIM (arg_node_arg2) > 0,
                                          "Unknown dimension for 2nd arg of sel");
 
                             ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
@@ -979,7 +981,7 @@ WLAAprf (node *arg_node, info *arg_info)
                         } else if (ID_CONSTVEC (arg_node_arg1) != NULL) {
                             ACCESS_CLASS (INFO_WLAA_ACCESS (arg_info)) = ACL_const;
 
-                            DBUG_ASSERT ((ID_VECLEN (arg_node_arg1) > SCALAR),
+                            DBUG_ASSERT (ID_VECLEN (arg_node_arg1) > SCALAR,
                                          "propagated constant vector is no array");
 
                             ACCESS_OFFSET (INFO_WLAA_ACCESS (arg_info))
@@ -1005,38 +1007,37 @@ WLAAprf (node *arg_node, info *arg_info)
                     INFO_WLAA_COUNT (arg_info)++;
 
                 } else {
-                    DBUG_PRINT ("WLAA_INFO",
-                                ("primitive function sel with array return value"));
+                    DBUG_PRINT ("primitive function sel with array return value");
                     INFO_WLAA_FEATURE (arg_info)
                       = INFO_WLAA_FEATURE (arg_info) | FEATURE_ASEL;
                 }
                 break;
 
             case F_take:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_take"));
+                DBUG_PRINT ("primitive function F_take");
                 INFO_WLAA_FEATURE (arg_info)
                   = INFO_WLAA_FEATURE (arg_info) | FEATURE_TAKE;
                 break;
 
             case F_drop:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_drop"));
+                DBUG_PRINT ("primitive function F_drop");
                 INFO_WLAA_FEATURE (arg_info)
                   = INFO_WLAA_FEATURE (arg_info) | FEATURE_DROP;
                 break;
 
             case F_cat:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_cat"));
+                DBUG_PRINT ("primitive function F_cat");
                 INFO_WLAA_FEATURE (arg_info) = INFO_WLAA_FEATURE (arg_info) | FEATURE_CAT;
                 break;
 
             case F_rotate:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_rotate"));
+                DBUG_PRINT ("primitive function F_rotate");
                 INFO_WLAA_FEATURE (arg_info) = INFO_WLAA_FEATURE (arg_info) | FEATURE_ROT;
                 break;
 
             case F_modarray_AxVxS:
             case F_modarray_AxVxA:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_modarray_AxVxS"));
+                DBUG_PRINT ("primitive function F_modarray_AxVxS");
                 INFO_WLAA_FEATURE (arg_info)
                   = INFO_WLAA_FEATURE (arg_info) | FEATURE_MODA;
                 break;
@@ -1044,13 +1045,13 @@ WLAAprf (node *arg_node, info *arg_info)
             case F_cat_VxV:
             case F_take_SxV:
             case F_drop_SxV:
-                DBUG_PRINT ("WLAA_INFO", ("primitive vector function take/drop/cat"));
+                DBUG_PRINT ("primitive vector function take/drop/cat");
                 /* tiling is not apllicable to vectors, so */
                 /* we need not to do anything here ;)      */
                 break;
 
             case F_add_SxV:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_SxV"));
+                DBUG_PRINT ("primitive function F_add_SxV");
                 access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
                 if (access != NULL) {
                     if (NODE_TYPE (arg_node_arg1) == N_num) {
@@ -1086,9 +1087,8 @@ WLAAprf (node *arg_node, info *arg_info)
                     }
                 } else { /* access == NULL */
                     if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
-                        DBUG_PRINT ("WLAA_INFO",
-                                    ("primitive arithmetic operation on arrays "
-                                     "(not index vector access)"));
+                        DBUG_PRINT ("primitive arithmetic operation on arrays "
+                                    "(not index vector access)");
                         INFO_WLAA_FEATURE (arg_info)
                           = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                     }
@@ -1096,7 +1096,7 @@ WLAAprf (node *arg_node, info *arg_info)
                 break;
 
             case F_add_VxS:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_VxS"));
+                DBUG_PRINT ("primitive function F_add_VxS");
                 access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
                 if (access != NULL) {
                     if (NODE_TYPE (arg_node_arg2) == N_num) {
@@ -1132,9 +1132,8 @@ WLAAprf (node *arg_node, info *arg_info)
                     }
                 } else { /* access == NULL */
                     if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
-                        DBUG_PRINT ("WLAA_INFO",
-                                    ("primitive arithmetic operation on arrays "
-                                     "(not index vector access)"));
+                        DBUG_PRINT ("primitive arithmetic operation on arrays "
+                                    "(not index vector access)");
                         INFO_WLAA_FEATURE (arg_info)
                           = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                     }
@@ -1142,7 +1141,7 @@ WLAAprf (node *arg_node, info *arg_info)
                 break;
 
             case F_add_VxV:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_add_VxV"));
+                DBUG_PRINT ("primitive function F_add_VxV");
 
                 if ((NODE_TYPE (arg_node_arg1) != N_id)
                     || (NODE_TYPE (arg_node_arg2) != N_id)) {
@@ -1153,9 +1152,8 @@ WLAAprf (node *arg_node, info *arg_info)
 
                     if (access == NULL) {
                         if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
-                            DBUG_PRINT ("WLAA_INFO",
-                                        ("primitive arithmetic operation on arrays "
-                                         "(not index vector access)"));
+                            DBUG_PRINT ("primitive arithmetic operation on arrays "
+                                        "(not index vector access)");
                             INFO_WLAA_FEATURE (arg_info)
                               = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                         }
@@ -1253,7 +1251,7 @@ WLAAprf (node *arg_node, info *arg_info)
                 break;
 
             case F_sub_VxS:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_sub_VxS"));
+                DBUG_PRINT ("primitive function F_sub_VxS");
                 access = SearchAccess (INFO_WLAA_ACCESS (arg_info), arg_info);
                 /* not used yet:
                 if (access == NULL) {
@@ -1279,17 +1277,15 @@ WLAAprf (node *arg_node, info *arg_info)
                         }
                     } else if (!IsIndexVect (
                                  IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
-                        DBUG_PRINT ("WLAA_INFO",
-                                    ("primitive arithmetic operation on arrays "
-                                     "(not index vector access)"));
+                        DBUG_PRINT ("primitive arithmetic operation on arrays "
+                                    "(not index vector access)");
                         INFO_WLAA_FEATURE (arg_info)
                           = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                     }
                 } else { /* access == NULL */
                     if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
-                        DBUG_PRINT ("WLAA_INFO",
-                                    ("primitive arithmetic operation on arrays "
-                                     "(not index vector access)"));
+                        DBUG_PRINT ("primitive arithmetic operation on arrays "
+                                    "(not index vector access)");
                         INFO_WLAA_FEATURE (arg_info)
                           = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                     }
@@ -1297,7 +1293,7 @@ WLAAprf (node *arg_node, info *arg_info)
                 break;
 
             case F_sub_VxV:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function F_sub_VxV"));
+                DBUG_PRINT ("primitive function F_sub_VxV");
 
                 if ((NODE_TYPE (arg_node_arg1) != N_id)
                     || (NODE_TYPE (arg_node_arg2) != N_id)) {
@@ -1308,9 +1304,8 @@ WLAAprf (node *arg_node, info *arg_info)
 
                     if (access == NULL) {
                         if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
-                            DBUG_PRINT ("WLAA_INFO",
-                                        ("primitive arithmetic operation on "
-                                         "arrays (not index vector access)"));
+                            DBUG_PRINT ("primitive arithmetic operation on "
+                                        "arrays (not index vector access)");
                             INFO_WLAA_FEATURE (arg_info)
                               = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
                         }
@@ -1405,7 +1400,7 @@ WLAAprf (node *arg_node, info *arg_info)
             case F_div_SxV:
             case F_div_VxS:
             case F_div_VxV:
-                DBUG_PRINT ("WLAA_INFO", ("primitive function not inferable or unknown"));
+                DBUG_PRINT ("primitive function not inferable or unknown");
                 if (!IsIndexVect (IDS_TYPE (INFO_WLAA_LASTLETIDS (arg_info)))) {
                     INFO_WLAA_FEATURE (arg_info)
                       = INFO_WLAA_FEATURE (arg_info) | FEATURE_AARI;
@@ -1420,15 +1415,13 @@ WLAAprf (node *arg_node, info *arg_info)
                  * however tile size inference must always be applied before index
                  * vector elimination.
                  */
-                DBUG_PRINT ("WLAA_INFO",
-                            ("primitive function F_idx_sel | F_idx_modarray"));
+                DBUG_PRINT ("primitive function F_idx_sel | F_idx_modarray");
                 DBUG_ASSERT (0, "primitive function idx_sel or idx_modarray found "
                                 "during tile size selection");
                 break;
 
             default:
-                DBUG_PRINT ("WLAA_INFO",
-                            ("primitive function which do not deal with arrays"));
+                DBUG_PRINT ("primitive function which do not deal with arrays");
                 /*
                  * Do nothing !
                  *
@@ -1437,7 +1430,7 @@ WLAAprf (node *arg_node, info *arg_info)
                 break;
             }
         } else {
-            DBUG_PRINT ("WLAA_INFO", ("none-relevant primitive function"));
+            DBUG_PRINT ("none-relevant primitive function");
         }
     }
 
@@ -1466,9 +1459,9 @@ WLAAap (node *arg_node, info *arg_info)
 {
     ids *ret_var;
 
-    DBUG_ENTER ("WLAAap");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLAA", ("WLAAap"));
+    DBUG_PRINT_TAG ("WLAA", "WLAAap");
 
     if (INFO_WLAA_WLLEVEL (arg_info) > 0) {
         /*
@@ -1516,9 +1509,9 @@ WLAAap (node *arg_node, info *arg_info)
 node *
 WLAAid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLAAid");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLAA", ("WLAAid"));
+    DBUG_PRINT_TAG ("WLAA", "WLAAid");
 
     if ((INFO_WLAA_WLLEVEL (arg_info) > 0) && (INFO_WLAA_BELOWAP (arg_info))) {
         if (ID_DIM (arg_node) != SCALAR) {
@@ -1529,3 +1522,5 @@ WLAAid (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 #endif /* WLAA_DEACTIVATED */
+
+#undef DBUG_PREFIX

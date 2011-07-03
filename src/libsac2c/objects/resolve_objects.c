@@ -37,7 +37,9 @@
 
 #include "resolve_objects.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "RSO"
+#include "debug.h"
+
 #include "DupTree.h"
 #include "traverse.h"
 #include "tree_basic.h"
@@ -81,7 +83,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -98,7 +100,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -124,7 +126,7 @@ FindPropagateGoalExpr (node *prop, info *arg_info)
     node *wlexpr;
     node *wlop;
 
-    DBUG_ENTER ("FindPropagateGoalExpr");
+    DBUG_ENTER ();
 
     wlexpr = CODE_CEXPRS (WITH_CODE (INFO_WL (arg_info)));
     wlop = WITH_WITHOP (INFO_WL (arg_info));
@@ -152,7 +154,7 @@ AppendObjdefsToArgs (node *args, node *objlist)
 {
     node *avis;
 
-    DBUG_ENTER ("AppendObjdefsToArgs");
+    DBUG_ENTER ();
 
     if (objlist != NULL) {
         args = AppendObjdefsToArgs (args, SET_NEXT (objlist));
@@ -184,12 +186,12 @@ AppendObjdefsToArgs (node *args, node *objlist)
 static node *
 AppendObjdefsToArgExprs (node *exprs, node *objlist)
 {
-    DBUG_ENTER ("AppendObjdefsToArgExprs");
+    DBUG_ENTER ();
 
     if (objlist != NULL) {
         exprs = AppendObjdefsToArgExprs (exprs, SET_NEXT (objlist));
 
-        DBUG_ASSERT ((OBJDEF_ARGAVIS (SET_MEMBER (objlist)) != NULL),
+        DBUG_ASSERT (OBJDEF_ARGAVIS (SET_MEMBER (objlist)) != NULL,
                      "found objdef required for fun-ap but without argarvis!");
 
         exprs = TBmakeExprs (TBmakeId (OBJDEF_ARGAVIS (SET_MEMBER (objlist))), exprs);
@@ -210,7 +212,7 @@ AppendObjdefsToArgExprs (node *exprs, node *objlist)
 static node *
 CleanUpObjlist (node *list)
 {
-    DBUG_ENTER ("CleanUpObjlist");
+    DBUG_ENTER ();
 
     if (list != NULL) {
         SET_NEXT (list) = CleanUpObjlist (SET_NEXT (list));
@@ -241,7 +243,7 @@ AddPropObj (node *assign, node *prop, info *arg_info)
     node *prop_obj_out;
     node *wl_out;
 
-    DBUG_ENTER ("MakeAccu");
+    DBUG_ENTER ();
 
     /**** PROPOBJ_IN ****/
 
@@ -309,7 +311,7 @@ ModPropObj (node *prop, info *arg_info)
     node *args;
     node *lhs;
 
-    DBUG_ENTER ("ModPropObj");
+    DBUG_ENTER ();
 
     /**** PROPOBJ_IN ****/
 
@@ -350,7 +352,7 @@ ModPropObj (node *prop, info *arg_info)
       = TCappendExprs (args,
                        TBmakeExprs (TBmakeId (ID_AVIS (PROPAGATE_DEFAULT (prop))), NULL));
     lhs = TCappendIds (lhs, TBmakeIds (ID_AVIS (PROPAGATE_DEFAULT (prop)), NULL));
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!-- ****************************************************************** -->
@@ -370,7 +372,7 @@ AddObjectsToWithExprs (node *withexprs, node *objects)
     node *object;
     node *avis;
 
-    DBUG_ENTER ("AddObjectsToWithExprs");
+    DBUG_ENTER ();
 
     exprs = withexprs;
     while (exprs != NULL && EXPRS_NEXT (exprs) != NULL) {
@@ -409,7 +411,7 @@ AddObjectsToWithOps (node *withops, node *objects)
     node *object;
     node *newop;
 
-    DBUG_ENTER ("AddObjectsToWithOps");
+    DBUG_ENTER ();
 
     /* Fast-forward to the last withop */
     withop = withops;
@@ -450,7 +452,7 @@ AddObjectsToWithLoop (node *withnode, node *objects)
 {
     node *withexprs;
 
-    DBUG_ENTER ("AddObjectsToWithLoop");
+    DBUG_ENTER ();
 
     /* Add the objects the the withloop's exprs */
     withexprs = CODE_CEXPRS (WITH_CODE (withnode));
@@ -478,7 +480,7 @@ AddObjectsToLHS (node *lhs_ids, node *objects)
     node *object;
     node *avis;
 
-    DBUG_ENTER ("AddObjectsToLHS");
+    DBUG_ENTER ();
 
     /* Append to the last exprs to match the extract() ops */
     ids = lhs_ids;
@@ -516,7 +518,7 @@ AddToObjectSet (node *set, node *new_id)
 {
     node *iter;
 
-    DBUG_ENTER ("AddToObjectSet");
+    DBUG_ENTER ();
 
     iter = set;
     while (iter != NULL) {
@@ -548,7 +550,7 @@ MergeObjectSet (node *set_a, node *set_b)
 {
     node *a_iter;
 
-    DBUG_ENTER ("MergeObjectSet");
+    DBUG_ENTER ();
 
     /*
      * For every item in set a, we add it to set b.
@@ -578,7 +580,7 @@ AddFundefObjectsToObjectSet (node *set, node *fundef_objects)
     node *avis;
     ntype *type;
 
-    DBUG_ENTER ("AddFundefObjectsToObjectSet");
+    DBUG_ENTER ();
 
     if (fundef_objects != NULL) {
         set = AddFundefObjectsToObjectSet (set, SET_NEXT (fundef_objects));
@@ -586,9 +588,9 @@ AddFundefObjectsToObjectSet (node *set, node *fundef_objects)
         avis = OBJDEF_ARGAVIS (SET_MEMBER (fundef_objects));
         type = AVIS_TYPE (avis);
 
-        DBUG_PRINT ("RSO", (">>> adding unique object to with-loop:"
-                            "%s",
-                            AVIS_NAME (avis)));
+        DBUG_PRINT (">>> adding unique object to with-loop:"
+                    "%s",
+                    AVIS_NAME (avis));
         set = AddToObjectSet (set, TBmakeId (avis));
     }
 
@@ -602,7 +604,7 @@ AddFundefObjectsToObjectSet (node *set, node *fundef_objects)
 node *
 RSOmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSOmodule");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -622,14 +624,14 @@ RSOmodule (node *arg_node, info *arg_info)
 node *
 RSOfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSOfundef");
+    DBUG_ENTER ();
 
     /*
      * for used and imported functions, the objects already have been
      * annotated, so we ignore these here.
      */
     if (!FUNDEF_WASUSED (arg_node) && !FUNDEF_WASIMPORTED (arg_node)) {
-        DBUG_PRINT ("RSO", ("processing fundef %s...", CTIitemName (arg_node)));
+        DBUG_PRINT ("processing fundef %s...", CTIitemName (arg_node));
 
         FUNDEF_ARGS (arg_node)
           = AppendObjdefsToArgs (FUNDEF_ARGS (arg_node), FUNDEF_OBJECTS (arg_node));
@@ -645,7 +647,7 @@ RSOfundef (node *arg_node, info *arg_info)
             INFO_OBJECTS (arg_info) = FREEdoFreeTree (INFO_OBJECTS (arg_info));
         }
 
-        DBUG_PRINT ("RSO", ("leaving fundef %s...", CTIitemName (arg_node)));
+        DBUG_PRINT ("leaving fundef %s...", CTIitemName (arg_node));
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -661,22 +663,22 @@ RSOglobobj (node *arg_node, info *arg_info)
     node *new_node;
     node *avis;
 
-    DBUG_ENTER ("RSOglobobj");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((OBJDEF_ARGAVIS (GLOBOBJ_OBJDEF (arg_node)) != NULL),
+    DBUG_ASSERT (OBJDEF_ARGAVIS (GLOBOBJ_OBJDEF (arg_node)) != NULL,
                  "found a globobj with no matching arg!");
 
-    DBUG_PRINT ("RSO", (">>> replacing global object %s by local arg %s",
-                        CTIitemName (GLOBOBJ_OBJDEF (arg_node)),
-                        AVIS_NAME (OBJDEF_ARGAVIS (GLOBOBJ_OBJDEF (arg_node)))));
+    DBUG_PRINT (">>> replacing global object %s by local arg %s",
+                CTIitemName (GLOBOBJ_OBJDEF (arg_node)),
+                AVIS_NAME (OBJDEF_ARGAVIS (GLOBOBJ_OBJDEF (arg_node))));
 
     avis = OBJDEF_ARGAVIS (GLOBOBJ_OBJDEF (arg_node));
     new_node = TBmakeId (OBJDEF_ARGAVIS (GLOBOBJ_OBJDEF (arg_node)));
 
     if (INFO_INWITHLOOP (arg_info)) {
-        DBUG_PRINT ("RSO", (">>> adding unique object to with-loop:"
-                            "%s",
-                            AVIS_NAME (avis)));
+        DBUG_PRINT (">>> adding unique object to with-loop:"
+                    "%s",
+                    AVIS_NAME (avis));
         INFO_OBJECTS (arg_info) = AddToObjectSet (INFO_OBJECTS (arg_info), new_node);
     }
 
@@ -688,10 +690,9 @@ RSOglobobj (node *arg_node, info *arg_info)
 node *
 RSOap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSOap");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("RSO",
-                (">>> updating call to function %s", CTIitemName (AP_FUNDEF (arg_node))));
+    DBUG_PRINT (">>> updating call to function %s", CTIitemName (AP_FUNDEF (arg_node)));
 
     AP_ARGS (arg_node) = AppendObjdefsToArgExprs (AP_ARGS (arg_node),
                                                   FUNDEF_OBJECTS (AP_FUNDEF (arg_node)));
@@ -717,7 +718,7 @@ RSOlet (node *arg_node, info *arg_info)
 {
     node *saved_objs;
 
-    DBUG_ENTER ("RSOlet");
+    DBUG_ENTER ();
 
     if (LET_IDS (arg_node) != NULL) {
         LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
@@ -763,7 +764,7 @@ RSOpropagate (node *arg_node, info *arg_info)
 {
     node *block;
 
-    DBUG_ENTER ("RSOpropagate");
+    DBUG_ENTER ();
 
     block = CODE_CBLOCK (WITH_CODE (INFO_WL (arg_info)));
     if (INFO_PROPOBJ_IN (arg_info) == NULL) {
@@ -782,7 +783,7 @@ RSOpropagate (node *arg_node, info *arg_info)
 node *
 RSOwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSOwith");
+    DBUG_ENTER ();
     bool is_nested_withloop = FALSE;
 
     if (WITH_PART (arg_node) != NULL) {
@@ -816,7 +817,7 @@ node *
 RSOdoResolveObjects (node *syntax_tree)
 {
     info *arg_info;
-    DBUG_ENTER ("RSOdoResolveObjects");
+    DBUG_ENTER ();
 
     TRAVpush (TR_rso);
 
@@ -830,3 +831,5 @@ RSOdoResolveObjects (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

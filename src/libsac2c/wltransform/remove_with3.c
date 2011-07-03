@@ -45,7 +45,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "RW3"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -133,7 +136,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
     INFO_ASSIGNS (result) = NULL;
@@ -156,19 +159,18 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_ASSIGNS (info) == NULL),
+    DBUG_ASSERT (INFO_ASSIGNS (info) == NULL,
                  "Trying to free info which still contains assigns");
 
-    DBUG_ASSERT ((INFO_SAVED_RESULTS (info) == NULL),
+    DBUG_ASSERT (INFO_SAVED_RESULTS (info) == NULL,
                  "Trying to free info which still contains saved results");
 
-    DBUG_ASSERT ((INFO_FA_INIT (info) == NULL),
+    DBUG_ASSERT (INFO_FA_INIT (info) == NULL,
                  "Trying to free info which still contains initals of folds");
 
-    DBUG_ASSERT ((INFO_FA_LHS (info) == NULL),
-                 "Trying to free info which still has lhss");
+    DBUG_ASSERT (INFO_FA_LHS (info) == NULL, "Trying to free info which still has lhss");
 
     info = MEMfree (info);
 
@@ -194,17 +196,17 @@ RW3doRemoveWith3 (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("RW3doRemoveWith3");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("RW3", ("Starting Remove With3 traversal."));
+    DBUG_PRINT ("Starting Remove With3 traversal.");
 
     TRAVpush (TR_rw3);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("RW3", ("Ending Remove With3 traversal complete."));
+    DBUG_PRINT ("Ending Remove With3 traversal complete.");
 
     info = FreeInfo (info);
 
@@ -254,10 +256,10 @@ static node *
 JoinIdsExprs (node *arg_ids, node *exprs)
 {
     node *assign, *ids, *rhs;
-    DBUG_ENTER ("JoinIdsExprs");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((arg_ids != NULL), "ids missing");
-    DBUG_ASSERT ((exprs != NULL), "exprs missing");
+    DBUG_ASSERT (arg_ids != NULL, "ids missing");
+    DBUG_ASSERT (exprs != NULL, "exprs missing");
 
     if (IDS_NEXT (arg_ids) == NULL) {
         assign = NULL;
@@ -290,7 +292,7 @@ JoinIdsExprs (node *arg_ids, node *exprs)
 static info *
 ResetInfo (info *arg_info)
 {
-    DBUG_ENTER ("ResetInfo");
+    DBUG_ENTER ();
 
     /* Remove possibly old pointers from info */
     INFO_RESULTS (arg_info) = NULL;
@@ -315,7 +317,7 @@ ResetInfo (info *arg_info)
 static node *
 FAlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FAlet");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -337,12 +339,12 @@ FAlet (node *arg_node, info *arg_info)
 static node *
 FAprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FAprf");
+    DBUG_ENTER ();
 
     if (INFO_FA_PRF_ACCU (arg_info) == FALSE) {
         INFO_FA_PRF_ACCU (arg_info) = (PRF_PRF (arg_node) == F_accu);
     } else {
-        DBUG_ASSERT ((PRF_PRF (arg_node) != F_accu), "Found too many _accu_s");
+        DBUG_ASSERT (PRF_PRF (arg_node) != F_accu, "Found too many _accu_s");
     }
 
     DBUG_RETURN (arg_node);
@@ -351,7 +353,7 @@ FAprf (node *arg_node, info *arg_info)
 static node *
 FAassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FAassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -375,7 +377,7 @@ static node *
 FAfold (node *arg_node, info *arg_info)
 {
     node *init;
-    DBUG_ENTER ("FAfold");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -411,7 +413,7 @@ ReplaceAccu (node *tree, node *ops)
 
                          {N_with, &TRAVnone},  {N_with2, &TRAVnone},
                          {N_with3, &TRAVnone}, {0, NULL}};
-    DBUG_ENTER ("FindAccu");
+    DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);
 
@@ -438,11 +440,11 @@ static node *
 GetInitals (node *folds)
 {
     node *exprs = NULL;
-    DBUG_ENTER ("GetInitals");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((folds != NULL), "Expected a chain of folds");
+    DBUG_ASSERT (folds != NULL, "Expected a chain of folds");
 
-    DBUG_ASSERT ((NODE_TYPE (folds) == N_fold), "Can only get initals from fold withops");
+    DBUG_ASSERT (NODE_TYPE (folds) == N_fold, "Can only get initals from fold withops");
 
     if (FOLD_NEXT (folds) != NULL) {
         exprs = GetInitals (FOLD_NEXT (folds));
@@ -485,9 +487,9 @@ GetInitals (node *folds)
 node *
 RW3assign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RW3assign");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_ASSIGNS (arg_info) == NULL), "leftover assigns found.");
+    DBUG_ASSERT (INFO_ASSIGNS (arg_info) == NULL, "leftover assigns found.");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -496,7 +498,7 @@ RW3assign (node *arg_node, info *arg_info)
         node *arg_node_original = arg_node;
         node *let = ASSIGN_INSTR (arg_node);
 
-        DBUG_PRINT ("RW3", ("Removing with3"));
+        DBUG_PRINT ("Removing with3");
 
         arg_node
           = TCappendAssign (JoinIdsExprs (LET_IDS (let), INFO_SAVED_RESULTS (arg_info)),
@@ -535,9 +537,9 @@ node *
 RW3with3 (node *arg_node, info *arg_info)
 {
     node *let, *index;
-    DBUG_ENTER ("RW3with3");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_RANGES (arg_info) == 0), "Counted ranges that where not expected");
+    DBUG_ASSERT (INFO_RANGES (arg_info) == 0, "Counted ranges that where not expected");
 
     WITH3_OPERATIONS (arg_node) = TRAVopt (WITH3_OPERATIONS (arg_node), arg_info);
 
@@ -599,7 +601,7 @@ RW3range (node *arg_node, info *arg_info)
 {
     constant *clower, *cupper;
     info *nested_info;
-    DBUG_ENTER ("RW3range");
+    DBUG_ENTER ();
 
     nested_info = MakeInfo ();
     RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), nested_info);
@@ -643,3 +645,5 @@ RW3range (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

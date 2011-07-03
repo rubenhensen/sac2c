@@ -21,7 +21,10 @@
 #include "types.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CS"
+#include "debug.h"
+
 #include "free.h"
 #include "DupTree.h"
 #include "new_types.h"
@@ -41,9 +44,9 @@ FreeApNarg (node *exprs, int actpos, int freepos)
 {
     node *tmp;
 
-    DBUG_ENTER ("FreeApNarg");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((exprs != NULL), "unexpected end of exprs-list");
+    DBUG_ASSERT (exprs != NULL, "unexpected end of exprs-list");
 
     if (actpos == freepos) {
         tmp = exprs;
@@ -73,9 +76,9 @@ FreeFundefNarg (node *args, int actpos, int freepos)
 {
     node *tmp;
 
-    DBUG_ENTER ("FreeFundefNarg");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((args != NULL), "unexpected end of args-list");
+    DBUG_ASSERT (args != NULL, "unexpected end of args-list");
 
     if (actpos == freepos) {
         tmp = args;
@@ -105,9 +108,9 @@ FreeApNres (node *ids, int actpos, int freepos)
 {
     node *tmp;
 
-    DBUG_ENTER ("FreeApNres");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ids != NULL), "unexpected end of ids-list");
+    DBUG_ASSERT (ids != NULL, "unexpected end of ids-list");
 
     if (actpos == freepos) {
         tmp = ids;
@@ -137,9 +140,9 @@ FreeFundefNret (node *ret, int actpos, int freepos)
 {
     node *tmp;
 
-    DBUG_ENTER ("FreeFundefNret");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((ret != NULL), "unexpected end of ret-list");
+    DBUG_ASSERT (ret != NULL, "unexpected end of ret-list");
 
     if (actpos == freepos) {
         tmp = ret;
@@ -169,9 +172,9 @@ FreeFundefNretExpr (node *exprs, int actpos, int freepos)
 {
     node *tmp;
 
-    DBUG_ENTER ("FreeFundefNretExpr");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((exprs != NULL), "unexpected end of ret-list");
+    DBUG_ASSERT (exprs != NULL, "unexpected end of ret-list");
 
     if (actpos == freepos) {
         tmp = exprs;
@@ -210,7 +213,7 @@ CSremoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
     node *tmp;
     int position;
 
-    DBUG_ENTER ("CSremoveArg");
+    DBUG_ENTER ();
 
     /* get position in arg list */
     position = 0;
@@ -224,21 +227,20 @@ CSremoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
         }
     }
 
-    DBUG_ASSERT ((position > 0), "given argument not found in fundef");
+    DBUG_ASSERT (position > 0, "given argument not found in fundef");
 
     while (letlist != NULL) {
-        DBUG_PRINT ("CS",
-                    ("remove parameter %s in position %d", ARG_NAME (arg), position));
+        DBUG_PRINT ("remove parameter %s in position %d", ARG_NAME (arg), position);
 
         /* adjust the first given function application */
-        DBUG_ASSERT ((NODELIST_NODE (letlist) != NULL), "no node in nodelist");
-        DBUG_ASSERT ((NODE_TYPE (NODELIST_NODE (letlist)) == N_let),
+        DBUG_ASSERT (NODELIST_NODE (letlist) != NULL, "no node in nodelist");
+        DBUG_ASSERT (NODE_TYPE (NODELIST_NODE (letlist)) == N_let,
                      "non let node in nodelist");
 
         funap = LET_EXPR (NODELIST_NODE (letlist));
-        DBUG_ASSERT ((funap != NULL), "missing expr in let");
-        DBUG_ASSERT ((NODE_TYPE (funap) == N_ap), "no function application in let");
-        DBUG_ASSERT ((AP_FUNDEF (funap) == fundef), "application of different fundef");
+        DBUG_ASSERT (funap != NULL, "missing expr in let");
+        DBUG_ASSERT (NODE_TYPE (funap) == N_ap, "no function application in let");
+        DBUG_ASSERT (AP_FUNDEF (funap) == fundef, "application of different fundef");
 
         AP_ARGS (funap) = FreeApNarg (AP_ARGS (funap), 1, position);
 
@@ -247,7 +249,7 @@ CSremoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
     }
 
     /* no more adjustments - remove arg from fundef if flag is set */
-    DBUG_PRINT ("CS", ("remove arg %s in position %d", ARG_NAME (arg), position));
+    DBUG_PRINT ("remove arg %s in position %d", ARG_NAME (arg), position);
     if (freearg) {
         FUNDEF_ARGS (fundef) = FreeFundefNarg (FUNDEF_ARGS (fundef), 1, position);
     }
@@ -275,19 +277,19 @@ CSremoveArg (node *fundef, node *arg, nodelist *letlist, bool freearg)
 node *
 CSremoveResult (node *fundef, int position, nodelist *letlist)
 {
-    DBUG_ENTER ("CSremoveResult");
+    DBUG_ENTER ();
 
     while (letlist != NULL) {
         /*
          * adjust the first given function application
          */
-        DBUG_ASSERT ((NODELIST_NODE (letlist) != NULL), "no node in nodlist");
-        DBUG_ASSERT ((NODE_TYPE (NODELIST_NODE (letlist)) == N_let),
+        DBUG_ASSERT (NODELIST_NODE (letlist) != NULL, "no node in nodlist");
+        DBUG_ASSERT (NODE_TYPE (NODELIST_NODE (letlist)) == N_let,
                      "non let node in nodelist");
-        DBUG_ASSERT ((LET_EXPR (NODELIST_NODE (letlist)) != NULL), "missing expr in let");
-        DBUG_ASSERT ((NODE_TYPE (LET_EXPR (NODELIST_NODE (letlist))) == N_ap),
+        DBUG_ASSERT (LET_EXPR (NODELIST_NODE (letlist)) != NULL, "missing expr in let");
+        DBUG_ASSERT (NODE_TYPE (LET_EXPR (NODELIST_NODE (letlist))) == N_ap,
                      "no function application in let");
-        DBUG_ASSERT ((AP_FUNDEF (LET_EXPR (NODELIST_NODE (letlist))) == fundef),
+        DBUG_ASSERT (AP_FUNDEF (LET_EXPR (NODELIST_NODE (letlist))) == fundef,
                      "application of different fundef");
 
         LET_IDS (NODELIST_NODE (letlist))
@@ -299,7 +301,7 @@ CSremoveResult (node *fundef, int position, nodelist *letlist)
     /*
      * no more adjustments - remove result from return statement
      */
-    DBUG_ASSERT ((FUNDEF_RETURN (fundef) != NULL), "no return statement in fundef");
+    DBUG_ASSERT (FUNDEF_RETURN (fundef) != NULL, "no return statement in fundef");
 
     RETURN_EXPRS (FUNDEF_RETURN (fundef))
       = FreeFundefNretExpr (RETURN_EXPRS (FUNDEF_RETURN (fundef)), 1, position);
@@ -334,12 +336,12 @@ CSaddArg (node *fundef, node *arg, nodelist *letlist)
 {
     node *new_exprs;
 
-    DBUG_ENTER ("CSaddArg");
+    DBUG_ENTER ();
 
     while (letlist != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (LET_EXPR (NODELIST_NODE (letlist))) == N_ap),
+        DBUG_ASSERT (NODE_TYPE (LET_EXPR (NODELIST_NODE (letlist))) == N_ap,
                      "no function application");
-        DBUG_ASSERT ((AP_FUNDEF (LET_EXPR (NODELIST_NODE (letlist))) == fundef),
+        DBUG_ASSERT (AP_FUNDEF (LET_EXPR (NODELIST_NODE (letlist))) == fundef,
                      "call to different fundef");
 
         /*
@@ -385,14 +387,14 @@ CSaddResult (node *fundef, node *vardec, nodelist *letlist)
     node *new_ids;
     node *new_id;
 
-    DBUG_ENTER ("CSaddResult");
+    DBUG_ENTER ();
 
     while (letlist != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (LET_EXPR (NODELIST_NODE (letlist))) == N_ap),
+        DBUG_ASSERT (NODE_TYPE (LET_EXPR (NODELIST_NODE (letlist))) == N_ap,
                      "no function application");
-        DBUG_ASSERT ((AP_FUNDEF (LET_EXPR (NODELIST_NODE (letlist))) == fundef),
+        DBUG_ASSERT (AP_FUNDEF (LET_EXPR (NODELIST_NODE (letlist))) == fundef,
                      "call to different fundef");
-        DBUG_ASSERT ((NODE_TYPE (NODELIST_ATTRIB2 (letlist)) == N_vardec),
+        DBUG_ASSERT (NODE_TYPE (NODELIST_ATTRIB2 (letlist)) == N_vardec,
                      "no vardec for new result identifier");
 
         /*
@@ -415,7 +417,7 @@ CSaddResult (node *fundef, node *vardec, nodelist *letlist)
      * all applictions adjusted, now adjust fundef:
      * 1. add additional result (given id in exprs chain)
      */
-    DBUG_ASSERT ((FUNDEF_RETURN (fundef) != NULL), "missing link to return statement");
+    DBUG_ASSERT (FUNDEF_RETURN (fundef) != NULL, "missing link to return statement");
 
     new_id = TBmakeId (VARDEC_OR_ARG_AVIS (vardec));
 
@@ -429,3 +431,5 @@ CSaddResult (node *fundef, node *vardec, nodelist *letlist)
 
     DBUG_RETURN (fundef);
 }
+
+#undef DBUG_PREFIX

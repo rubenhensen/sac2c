@@ -30,7 +30,9 @@
 #include <strings.h>
 #include <stdlib.h>
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "types.h"
 #include "shape.h"
 #include "constants.h"
@@ -64,7 +66,7 @@
         int i;                                                                           \
         int unrlen;                                                                      \
         arg_t *data_vec;                                                                 \
-        DBUG_ENTER (str (CObaseCv##arg_ext##fun_ext));                                   \
+        DBUG_ENTER ();                                                                   \
         unrlen = SHgetUnrLen (shp);                                                      \
         data_vec = (arg_t *)MEMmalloc (unrlen * sizeof (arg_t));                         \
         for (i = 0; i < unrlen; i++)                                                     \
@@ -75,7 +77,7 @@
 #define CObaseCvDUMMYTEMP(arg_ext, fun_ext)                                              \
     constant *CObaseCv##arg_ext##fun_ext (shape *shp)                                    \
     {                                                                                    \
-        DBUG_ENTER (str (CObaseCv##arg_ext##fun_ext));                                   \
+        DBUG_ENTER ();                                                                   \
         DBUG_RETURN ((constant *)NULL);                                                  \
     }
 
@@ -103,3 +105,5 @@ MAP (One, 1)
 /* special versions for Boolean (Zero == False, One == True) */
 CObaseCvTEMPLATE (Zero, T_bool, bool, Bool, FALSE)
   CObaseCvTEMPLATE (One, T_bool, bool, Bool, TRUE)
+
+#undef DBUG_PREFIX

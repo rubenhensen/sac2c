@@ -7,7 +7,10 @@
  */
 
 #include "tree_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "tree_compound.h"
 #include "str.h"
 #include "memory.h"
@@ -44,7 +47,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -59,7 +62,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -134,7 +137,7 @@ FreeInfo (info *info)
 node *
 WLIDXfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLIDXfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
@@ -156,7 +159,7 @@ WLIDXfundef (node *arg_node, info *arg_info)
 node *
 WLIDXlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLIDXlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -172,7 +175,7 @@ WLIDXlet (node *arg_node, info *arg_info)
 node *
 WLIDXwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLIDXwith");
+    DBUG_ENTER ();
 
     INFO_WITHID (arg_info) = NULL;
     INFO_WITHOP (arg_info) = WITH_WITHOP (arg_node);
@@ -191,7 +194,7 @@ WLIDXwith (node *arg_node, info *arg_info)
 node *
 WLIDXwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLIDXwithid");
+    DBUG_ENTER ();
 
     if (INFO_WITHID (arg_info) == NULL) {
         node *withop, *ids;
@@ -277,7 +280,7 @@ WLIDXdoAnnotateWithloopIdxs (node *arg_node)
 {
     info *info;
 
-    DBUG_ENTER ("WLIDXdoAnnotateWithloopIdxs");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -292,3 +295,5 @@ WLIDXdoAnnotateWithloopIdxs (node *arg_node)
 
 /*@}*/
 /*@}*/
+
+#undef DBUG_PREFIX

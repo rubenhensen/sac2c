@@ -9,7 +9,10 @@
 #include "str_buffer.h"
 #include "memory.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -55,7 +58,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -74,7 +77,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -86,7 +89,7 @@ PKNLGdoPrepareKernelGeneration (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("PKNLGdoPrepareKernelGeneration");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_pknlg);
@@ -109,7 +112,7 @@ PKNLGdoPrepareKernelGeneration (node *syntax_tree)
 node *
 PKNLGfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PKNLGfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -131,7 +134,7 @@ PKNLGassign (node *arg_node, info *arg_info)
 {
     node *next;
 
-    DBUG_ENTER ("PKNLGassign");
+    DBUG_ENTER ();
 
     INFO_LASTASSIGN (arg_info) = arg_node;
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
@@ -190,7 +193,7 @@ PKNLGassign (node *arg_node, info *arg_info)
 node *
 PKNLGlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PKNLGlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
@@ -209,7 +212,7 @@ PKNLGlet (node *arg_node, info *arg_info)
 node *
 PKNLGwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PKNLGwith");
+    DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
         INFO_LUT (arg_info) = LUTgenerateLut ();
@@ -241,7 +244,7 @@ PKNLGwith (node *arg_node, info *arg_info)
 node *
 PKNLGwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("PKNLGwith2");
+    DBUG_ENTER ();
 
     WITH2_WITHOP (arg_node) = TRAVopt (WITH2_WITHOP (arg_node), arg_info);
     WITH2_CODE (arg_node) = TRAVopt (WITH2_CODE (arg_node), arg_info);
@@ -265,7 +268,7 @@ PKNLGgenarray (node *arg_node, info *arg_info)
     simpletype sty;
     node *modarray;
 
-    DBUG_ENTER ("PKNLGgenarray");
+    DBUG_ENTER ();
 
     avis = ID_AVIS (GENARRAY_MEM (arg_node));
     alloc_assign = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
@@ -320,13 +323,13 @@ PKNLGprf (node *arg_node, info *arg_info)
 {
     node *id, *avis;
 
-    DBUG_ENTER ("PKNLGprf");
+    DBUG_ENTER ();
 
     if (INFO_INCUDAWL (arg_info)) {
         switch (PRF_PRF (arg_node)) {
         case F_sel_VxA:
             id = PRF_ARG2 (arg_node);
-            DBUG_ASSERT ((NODE_TYPE (id) == N_id), "2nd arg of F_sel_VxA is no N_id!");
+            DBUG_ASSERT (NODE_TYPE (id) == N_id, "2nd arg of F_sel_VxA is no N_id!");
 
             avis = ID_AVIS (id);
 
@@ -357,3 +360,5 @@ PKNLGprf (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

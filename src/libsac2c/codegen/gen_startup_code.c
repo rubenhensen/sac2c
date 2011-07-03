@@ -22,7 +22,10 @@
 #include <stdlib.h>
 
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "globals.h"
 #include "resource.h"
 #include "types.h"
@@ -55,7 +58,7 @@ CalcMasterclass (int num_threads)
 {
     unsigned int res;
 
-    DBUG_ENTER ("GSCcalcMasterclass");
+    DBUG_ENTER ();
 
     for (res = 1; res < (unsigned int)num_threads; res <<= 1)
         ;
@@ -81,7 +84,7 @@ CalcMasterclass (int num_threads)
 static void
 PrintGlobalSwitches ()
 {
-    DBUG_ENTER ("PrintGlobalSwitches");
+    DBUG_ENTER ();
 
     fprintf (global.outfile, "\n\n"
                              "/*\n"
@@ -243,7 +246,7 @@ PrintGlobalSwitches ()
                : (global.backend == BE_cuda) ? "extern \"C\"" : "extern");
     fprintf (global.outfile, "\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -261,7 +264,7 @@ PrintProfileData ()
 {
     int i, j;
 
-    DBUG_ENTER ("PrintProfileData");
+    DBUG_ENTER ();
 
     fprintf (global.outfile, "#define SAC_SET_FUN_NAMES    \\\n");
     fprintf (global.outfile, "  {    \\\n");
@@ -339,7 +342,7 @@ PrintProfileData ()
 
     fprintf (global.outfile, "\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -355,7 +358,7 @@ PrintProfileData ()
 static void
 PrintGlobalSettings (node *syntax_tree)
 {
-    DBUG_ENTER ("PrintGlobalSettings");
+    DBUG_ENTER ();
 
     fprintf (global.outfile, "\n\n/*\n *  Global Settings\n */\n\n");
 
@@ -468,7 +471,7 @@ PrintGlobalSettings (node *syntax_tree)
         PrintProfileData ();
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -484,7 +487,7 @@ PrintGlobalSettings (node *syntax_tree)
 static void
 PrintIncludes ()
 {
-    DBUG_ENTER ("PrintIncludes");
+    DBUG_ENTER ();
 
     fprintf (global.outfile, "\n\n"
                              "/*\n"
@@ -509,7 +512,7 @@ PrintIncludes ()
                              "#include <cutil_inline_runtime.h>\n\n");
     fprintf (global.outfile, "#endif\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -525,7 +528,7 @@ PrintIncludes ()
 static void
 PrintDefines ()
 {
-    DBUG_ENTER ("PrintDefines");
+    DBUG_ENTER ();
 
     fprintf (global.outfile, "\n\n"
                              "/*\n"
@@ -536,7 +539,7 @@ PrintDefines ()
     fprintf (global.outfile, "SAC_PF_DEFINE()\n");
     fprintf (global.outfile, "SAC_HM_DEFINE()\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -552,13 +555,13 @@ PrintDefines ()
 void
 GSCprintFileHeader (node *syntax_tree)
 {
-    DBUG_ENTER ("GSCprintFileHeader");
+    DBUG_ENTER ();
 
     PrintGlobalSwitches ();
     PrintGlobalSettings (syntax_tree);
     PrintIncludes ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -577,11 +580,11 @@ GSCprintFileHeader (node *syntax_tree)
 void
 GSCprintDefines ()
 {
-    DBUG_ENTER ("GSCprintDefines");
+    DBUG_ENTER ();
 
     PrintDefines ();
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -597,7 +600,7 @@ GSCprintDefines ()
 void
 GSCprintMainBegin ()
 {
-    DBUG_ENTER ("GSCprintMainBegin");
+    DBUG_ENTER ();
 
     /* for a C library there is no command line available */
     if (global.genlib.c) {
@@ -620,7 +623,7 @@ GSCprintMainBegin ()
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -636,7 +639,7 @@ GSCprintMainBegin ()
 void
 GSCprintMainEnd ()
 {
-    DBUG_ENTER ("GSCprintMainEnd");
+    DBUG_ENTER ();
 
     /*
      * global.outfile is already indented by 2
@@ -652,7 +655,7 @@ GSCprintMainEnd ()
         fprintf (global.outfile, "SAC_RTSPEC_FINALIZE();\n\n");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -672,7 +675,7 @@ GSCprintMainC99 ()
     types *tmp_type;
     bool print_thread_id, run_mt, run_mt_pthread, run_mt_omp;
 
-    DBUG_ENTER ("GSCprintMainC99");
+    DBUG_ENTER ();
 
     run_mt_pthread = (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop);
     run_mt_omp = (global.backend == BE_omp);
@@ -725,7 +728,7 @@ GSCprintMainC99 ()
     INDENT;
     fprintf (global.outfile, "}\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -736,7 +739,7 @@ GSCprintMainMuTC ()
   types *tmp_type;
 #endif
 
-    DBUG_ENTER ("GSCprintMuTC");
+    DBUG_ENTER ();
 #if 0
   INDENT;
   fprintf( global.outfile, "thread main()\n");
@@ -768,13 +771,13 @@ GSCprintMainMuTC ()
   fprintf( global.outfile, "}\n");
 #endif
     fprintf (global.outfile, "SAC_MUTC_MAIN\n");
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 GSCprintMain ()
 {
-    DBUG_ENTER ("GSCprintMain");
+    DBUG_ENTER ();
 
     switch (global.backend) {
     case BE_c99:
@@ -793,7 +796,7 @@ GSCprintMain ()
         DBUG_ASSERT (FALSE, "unknown backend");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!-- ****************************************************************** -->
@@ -803,7 +806,7 @@ GSCprintMain ()
 void
 GSCprintSACargCopyFreeStubs ()
 {
-    DBUG_ENTER ("GSCprintSACargCopyFreeStubs");
+    DBUG_ENTER ();
 
     if (global.backend != BE_cuda) {
         fprintf (global.outfile, "/*\n"
@@ -828,5 +831,7 @@ GSCprintSACargCopyFreeStubs ()
                  "\n");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

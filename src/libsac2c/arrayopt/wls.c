@@ -108,7 +108,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLS"
+#include "debug.h"
+
 #include "new_types.h"
 #include "print.h"
 #include "str.h"
@@ -140,7 +143,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -155,7 +158,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -212,7 +215,7 @@ WLSflattenBound (node *arg_node, node **vardecs, node **preassigns)
     node *assgn;
     int shp;
 
-    DBUG_ENTER ("WLSflattenBound");
+    DBUG_ENTER ();
 
     if (N_array == NODE_TYPE (arg_node)) {
         shp = TCcountExprs (ARRAY_AELEMS (arg_node));
@@ -224,8 +227,7 @@ WLSflattenBound (node *arg_node, node **vardecs, node **preassigns)
         AVIS_SSAASSIGN (avis) = assgn;
         *preassigns = TCappendAssign (*preassigns, assgn);
 
-        DBUG_PRINT ("WLS",
-                    ("WLSflattenBound introduced flattened bound: %s", AVIS_NAME (avis)));
+        DBUG_PRINT ("WLSflattenBound introduced flattened bound: %s", AVIS_NAME (avis));
     } else {
         DBUG_ASSERT (N_id == NODE_TYPE (arg_node), "Expected N_id or N_array");
         avis = ID_AVIS (arg_node);
@@ -256,7 +258,7 @@ node *
 WLSdoWithloopScalarization (node *fundef)
 {
     info *arg_info;
-    DBUG_ENTER ("WLSdoWithloopScalarization");
+    DBUG_ENTER ();
 
     DBUG_ASSERT ((NODE_TYPE (fundef) == N_fundef) || (NODE_TYPE (fundef) == N_module),
                  "WLSdoWithloopScalarization called for non-fundef/module node");
@@ -296,7 +298,7 @@ WLSassign (node *arg_node, info *arg_info)
 {
     node *oldnassign;
 
-    DBUG_ENTER ("WLSassign");
+    DBUG_ENTER ();
 
     /*
      * Bottom-up traversal
@@ -304,7 +306,7 @@ WLSassign (node *arg_node, info *arg_info)
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    DBUG_ASSERT ((INFO_PREASSIGNS (arg_info) == NULL), "left-over pre-assigns found!");
+    DBUG_ASSERT (INFO_PREASSIGNS (arg_info) == NULL, "left-over pre-assigns found!");
     /*
      * Traverse RHS
      */
@@ -336,7 +338,7 @@ WLSfundef (node *arg_node, info *arg_info)
     node *old_fundef;
     bool old_onefundef;
 
-    DBUG_ENTER ("WLSfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
@@ -384,7 +386,7 @@ WLSwith (node *arg_node, info *arg_info)
 {
     int innerdims;
 
-    DBUG_ENTER ("WLSwith");
+    DBUG_ENTER ();
 
     /*
      * First, traverse all the codes in order to apply WLS
@@ -395,7 +397,7 @@ WLSwith (node *arg_node, info *arg_info)
     /*
      * Afterwards, try to scalarize the current with-loop
      */
-    DBUG_EXECUTE ("WLS", PRTdoPrintNodeFile (stderr, arg_node););
+    DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
 
     /*
      * Scalarization is possible iff WLSCheck does not return 0
@@ -426,3 +428,5 @@ WLSwith (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- WLS -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

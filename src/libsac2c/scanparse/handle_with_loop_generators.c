@@ -2,7 +2,8 @@
  * $Id$
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "HWLG"
+#include "debug.h"
 
 #include "globals.h"
 #include "traverse.h"
@@ -158,7 +159,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -175,12 +176,12 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     /*  DBUG_ASSERT( ( INFO_FOLD( info) == NULL),
         "Freeing non empty info");*/
 
-    DBUG_ASSERT ((INFO_POSTASSIGN (info) == NULL), "Freeing info with post assigns");
+    DBUG_ASSERT (INFO_POSTASSIGN (info) == NULL, "Freeing info with post assigns");
 
     info = MEMfree (info);
 
@@ -204,7 +205,7 @@ HWLGdoHandleWithLoops (node *arg_node)
 {
     info *info_node;
 
-    DBUG_ENTER ("HWLGdoHandleWithLoops");
+    DBUG_ENTER ();
 
     info_node = MakeInfo ();
 
@@ -238,11 +239,11 @@ HWLGassign (node *arg_node, info *arg_info)
 {
     node *mem_last_assign, *return_node, *mem_postassign;
 
-    DBUG_ENTER ("HWLGassign");
+    DBUG_ENTER ();
 
     mem_last_assign = INFO_HWLG_LASTASSIGN (arg_info);
     INFO_HWLG_LASTASSIGN (arg_info) = arg_node;
-    DBUG_PRINT ("HWLG", ("LASTASSIGN set to %08x!", arg_node));
+    DBUG_PRINT ("LASTASSIGN set to %08x!", arg_node);
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
     /*
@@ -253,11 +254,10 @@ HWLGassign (node *arg_node, info *arg_info)
     return_node = INFO_HWLG_LASTASSIGN (arg_info);
 
     if (return_node != arg_node) {
-        DBUG_PRINT ("HWLG", ("node %08x will be inserted instead of %08x", return_node,
-                             arg_node));
+        DBUG_PRINT ("node %08x will be inserted instead of %08x", return_node, arg_node);
     }
     INFO_HWLG_LASTASSIGN (arg_info) = mem_last_assign;
-    DBUG_PRINT ("HWLG", ("LASTASSIGN (re)set to %08x!", mem_last_assign));
+    DBUG_PRINT ("LASTASSIGN (re)set to %08x!", mem_last_assign);
 
     mem_postassign = INFO_POSTASSIGN (arg_info);
     INFO_POSTASSIGN (arg_info) = NULL;
@@ -287,7 +287,7 @@ HWLGassign (node *arg_node, info *arg_info)
 static node *
 InsertInitial (node *fun, char *var)
 {
-    DBUG_ENTER ("InsertInitial");
+    DBUG_ENTER ();
 
     if (fun != NULL) {
         if (EXPRS_EXPR (EXPRS_NEXT (SPAP_ARGS (fun))) == NULL) {
@@ -323,7 +323,7 @@ InsertInitial (node *fun, char *var)
 static node *
 RenameLhs (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RenameLhs");
+    DBUG_ENTER ();
 
     if (arg_node != NULL) {
 
@@ -368,7 +368,7 @@ RenameLhs (node *arg_node, info *arg_info)
 node *
 HWLGlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("HWLGlet");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -400,13 +400,13 @@ SplitWith (node *arg_node, info *arg_info)
 {
     node *part, *code, *withop, *first_wl, *first_let;
 
-    DBUG_ENTER ("SplitWith");
+    DBUG_ENTER ();
 
     if (WITH_PART (arg_node) == NULL) {
         /**
          * no generators at all
          */
-        DBUG_ASSERT ((WITH_CODE (arg_node) == NULL),
+        DBUG_ASSERT (WITH_CODE (arg_node) == NULL,
                      "found a WL w/o generators, but with code blocks!");
     } else if ((PART_NEXT (WITH_PART (arg_node)) != NULL)
                && (CODE_NEXT (WITH_CODE (arg_node)) != NULL)) {
@@ -475,14 +475,14 @@ HWLGwith (node *arg_node, info *arg_info)
 {
     node *old_lastassign, *new_assigns = NULL;
 
-    DBUG_ENTER ("HWLGwith");
+    DBUG_ENTER ();
 
     /**
      * First, we extract potential Multi-Generator With-Loops within
      * the withops. These may occur as we are run prior to flatten!
      */
     if (WITH_WITHOP (arg_node) != NULL) {
-        DBUG_PRINT ("HWLG", ("N_with found; traversing withops now:"));
+        DBUG_PRINT ("N_with found; traversing withops now:");
 
         old_lastassign = INFO_HWLG_LASTASSIGN (arg_info);
         INFO_HWLG_LASTASSIGN (arg_info) = NULL;
@@ -491,7 +491,7 @@ HWLGwith (node *arg_node, info *arg_info)
         INFO_HWLG_LASTASSIGN (arg_info) = old_lastassign;
     }
 
-    DBUG_PRINT ("HWLG", ("              splitting generators now:"));
+    DBUG_PRINT ("              splitting generators now:");
     /**
      * Now, we recursively split Multi-Generator With-Loops:
      */
@@ -527,7 +527,7 @@ HWLGgenarray (node *arg_node, info *arg_info)
     char *tmp;
     node *new_withop;
 
-    DBUG_ENTER ("HWLGgenarray");
+    DBUG_ENTER ();
 
     if (INFO_HWLG_MODE (arg_info) == T_create) {
 
@@ -574,7 +574,7 @@ HWLGmodarray (node *arg_node, info *arg_info)
     char *tmp;
     node *new_withop;
 
-    DBUG_ENTER ("HWLGmodarray");
+    DBUG_ENTER ();
 
     if (INFO_HWLG_MODE (arg_info) == T_create) {
 
@@ -622,7 +622,7 @@ HWLGspfold (node *arg_node, info *arg_info)
     node *new_withop;
     node *current_fold = NULL;
 
-    DBUG_ENTER ("HWLGspfold");
+    DBUG_ENTER ();
 
     if (INFO_HWLG_MODE (arg_info) == T_create) {
 
@@ -689,7 +689,7 @@ HWLGpropagate (node *arg_node, info *arg_info)
     char *tmp;
     node *new_withop;
 
-    DBUG_ENTER ("HWLGpropagate");
+    DBUG_ENTER ();
 
     if (INFO_HWLG_MODE (arg_info) == T_create) {
 
@@ -718,3 +718,5 @@ HWLGpropagate (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

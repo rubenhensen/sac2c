@@ -15,7 +15,9 @@
  *
  *****************************************************************************/
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "types.h"
 #include "tree_basic.h"
 #include "node_basic.h"
@@ -48,7 +50,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -60,7 +62,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
     /*
@@ -78,7 +80,7 @@ FreeInfo (info *info)
 node *
 RENarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RENarg");
+    DBUG_ENTER ();
 
     ARG_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), ARG_AVIS (arg_node));
 
@@ -92,7 +94,7 @@ RENarg (node *arg_node, info *arg_info)
 node *
 RENvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RENvardec");
+    DBUG_ENTER ();
 
     VARDEC_AVIS (arg_node)
       = LUTsearchInLutPp (INFO_LUT (arg_info), VARDEC_AVIS (arg_node));
@@ -107,7 +109,7 @@ RENvardec (node *arg_node, info *arg_info)
 node *
 RENid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RENid");
+    DBUG_ENTER ();
 
     ID_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
 
@@ -117,7 +119,7 @@ RENid (node *arg_node, info *arg_info)
 node *
 RENids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RENids");
+    DBUG_ENTER ();
 
     IDS_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
 
@@ -137,7 +139,7 @@ RENdoRenameLut (node *arg_node, lut_t *rename_lut)
 {
     info *info;
 
-    DBUG_ENTER ("RENdoRenameLut");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (rename_lut != NULL, "RENdoRenameLut() called without lookup table");
 
@@ -153,3 +155,5 @@ RENdoRenameLut (node *arg_node, lut_t *rename_lut)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

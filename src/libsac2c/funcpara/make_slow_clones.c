@@ -21,7 +21,9 @@
  *****************************************************************************/
 #include "make_slow_clones.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "MSC"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
@@ -50,8 +52,8 @@
 node *
 MSCdoMakeSlowClones (node *argnode)
 {
-    DBUG_ENTER ("MSCdoMakeSlowClones");
-    DBUG_PRINT ("MSC", ("Making slow clones..."));
+    DBUG_ENTER ();
+    DBUG_PRINT ("Making slow clones...");
 
     TRAVpush (TR_msc);
     argnode = TRAVdo (argnode, NULL);
@@ -90,17 +92,17 @@ MSCfundef (node *arg_node, info *arg_info)
 {
     node *clone;
 
-    DBUG_ENTER ("MSCfundef");
-    DBUG_PRINT ("MSC", ("traversing function (%s) %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                        FUNDEF_NAME (arg_node)));
+    DBUG_ENTER ();
+    DBUG_PRINT ("traversing function (%s) %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                FUNDEF_NAME (arg_node));
 
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     if (FUNDEF_CONTAINSSPAWN (arg_node)) {
-        DBUG_PRINT ("MSC", ("Function contains spawn, creating clone"));
+        DBUG_PRINT ("Function contains spawn, creating clone");
 
         FUNDEF_FPFRAMENAME (arg_node) = STRcpy (FUNDEF_NAME (arg_node));
         clone = DUPdoDupNode (arg_node);
@@ -128,3 +130,5 @@ MSCfundef (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Remove Spawn -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

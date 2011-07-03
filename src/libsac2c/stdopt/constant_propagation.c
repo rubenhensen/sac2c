@@ -6,7 +6,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CP"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -86,7 +89,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -101,7 +104,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -113,7 +116,7 @@ IsScalarConst (node *arg_node)
 {
     bool res;
 
-    DBUG_ENTER ("IsScalarConst");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (arg_node)) {
     case N_float:
@@ -155,7 +158,7 @@ node *
 CParray (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CParray");
+    DBUG_ENTER ();
 
     INFO_PROPMODE (arg_info) = PROP_scalarconst;
     arg_node = TRAVcont (arg_node, arg_info);
@@ -176,7 +179,7 @@ node *
 CPgenarray (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CPgenarray");
+    DBUG_ENTER ();
 
     INFO_PROPMODE (arg_info) = PROP_arrayconst | PROP_array;
 
@@ -203,7 +206,7 @@ CPgenarray (node *arg_node, info *arg_info)
 node *
 CPavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CPavis");
+    DBUG_ENTER ();
 
     INFO_PROPMODE (arg_info) = PROP_nothing;
 
@@ -246,7 +249,7 @@ CPid (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("CPid");
+    DBUG_ENTER ();
 
     avis = ID_AVIS (arg_node);
     if (TYisAKV (AVIS_TYPE (avis))
@@ -255,7 +258,7 @@ CPid (node *arg_node, info *arg_info)
             || ((INFO_PROPMODE (arg_info) & PROP_scalarconst)
                 && (TYgetDim (AVIS_TYPE (avis)) == 0)))) {
         arg_node = FREEdoFreeNode (arg_node);
-        DBUG_PRINT ("CP", ("CPid replacing %s by constant", AVIS_NAME (avis)));
+        DBUG_PRINT ("CPid replacing %s by constant", AVIS_NAME (avis));
         arg_node = COconstant2AST (TYgetValue (AVIS_TYPE (avis)));
         global.optcounters.cp_expr += 1;
     } else {
@@ -265,11 +268,10 @@ CPid (node *arg_node, info *arg_info)
                 || ((INFO_PROPMODE (arg_info) & PROP_scalarconst)
                     && (IsScalarConst (ASSIGN_RHS (AVIS_SSAASSIGN (avis))))))) {
             arg_node = FREEdoFreeNode (arg_node);
-            DBUG_PRINT ("CP", ("CPid replacing %s", AVIS_NAME (avis)));
+            DBUG_PRINT ("CPid replacing %s", AVIS_NAME (avis));
             if (N_id == NODE_TYPE (ASSIGN_RHS (AVIS_SSAASSIGN (avis)))) {
-                DBUG_PRINT ("CP",
-                            ("by %s",
-                             AVIS_NAME (ID_AVIS (ASSIGN_RHS (AVIS_SSAASSIGN (avis))))));
+                DBUG_PRINT ("by %s",
+                            AVIS_NAME (ID_AVIS (ASSIGN_RHS (AVIS_SSAASSIGN (avis)))));
             }
             arg_node = DUPdoDupNode (ASSIGN_RHS (AVIS_SSAASSIGN (avis)));
             global.optcounters.cp_expr += 1;
@@ -295,7 +297,7 @@ node *
 CPprf (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CPprf");
+    DBUG_ENTER ();
 
     /*
      * Depending on the primitive function, different arguments
@@ -460,7 +462,7 @@ CPprf (node *arg_node, info *arg_info)
 node *
 CPassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CPassign");
+    DBUG_ENTER ();
 
     INFO_PROPMODE (arg_info) = PROP_nothing;
     INFO_LHS (arg_info) = arg_node;
@@ -490,7 +492,7 @@ CPfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("CPfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -524,7 +526,7 @@ CPdoConstantPropagation (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CPdoConstantPropagation");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -555,7 +557,7 @@ CPdoConstantPropagationOneFundef (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CPdoConstantPropagationOneFundef");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -569,3 +571,5 @@ CPdoConstantPropagationOneFundef (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

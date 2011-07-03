@@ -15,7 +15,9 @@
  *
  *****************************************************************************/
 
-#include "dbug.h"
+#define DBUG_PREFIX "OPT"
+#include "debug.h"
+
 #include "types.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -49,7 +51,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -61,7 +63,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -83,7 +85,7 @@ RClet (node *arg_node, info *arg_info)
 {
     node *lhs;
 
-    DBUG_ENTER ("RClet");
+    DBUG_ENTER ();
 
     lhs = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = LET_IDS (arg_node);
@@ -106,12 +108,12 @@ RCcast (node *arg_node, info *arg_info)
 {
     node *expr, *type;
 
-    DBUG_ENTER ("RCcast");
+    DBUG_ENTER ();
 
     expr = TRAVdo (CAST_EXPR (arg_node), arg_info);
 
-    DBUG_ASSERT ((INFO_LHS (arg_info) != NULL), "I lost my left hand side");
-    DBUG_ASSERT ((IDS_NEXT (INFO_LHS (arg_info)) == NULL), "too much left hand side");
+    DBUG_ASSERT (INFO_LHS (arg_info) != NULL, "I lost my left hand side");
+    DBUG_ASSERT (IDS_NEXT (INFO_LHS (arg_info)) == NULL, "too much left hand side");
 
     type = TBmakeType (TYeliminateUser (AVIS_TYPE (IDS_AVIS (INFO_LHS (arg_info)))));
     expr = TCmakePrf2 (F_type_conv, type, expr);
@@ -133,7 +135,7 @@ RCavis (node *arg_node, info *arg_info)
 {
     ntype *type, *new_type;
 
-    DBUG_ENTER ("RCavis");
+    DBUG_ENTER ();
 
     type = AVIS_TYPE (arg_node);
     if (TUisArrayOfUser (type)) {
@@ -158,7 +160,7 @@ RCarray (node *arg_node, info *arg_info)
 {
     ntype *type, *new_type;
 
-    DBUG_ENTER ("RCarray");
+    DBUG_ENTER ();
 
     type = ARRAY_ELEMTYPE (arg_node);
     if (TUisArrayOfUser (type)) {
@@ -183,7 +185,7 @@ RCret (node *arg_node, info *arg_info)
 {
     ntype *type, *new_type;
 
-    DBUG_ENTER ("RCret");
+    DBUG_ENTER ();
 
     type = RET_TYPE (arg_node);
     if (TUisArrayOfUser (type)) {
@@ -208,7 +210,7 @@ RCobjdef (node *arg_node, info *arg_info)
 {
     ntype *type, *new_type;
 
-    DBUG_ENTER ("RCobjdef");
+    DBUG_ENTER ();
 
     type = OBJDEF_TYPE (arg_node);
     if (TUisArrayOfUser (type)) {
@@ -233,7 +235,7 @@ RCtype (node *arg_node, info *arg_info)
 {
     ntype *type, *new_type;
 
-    DBUG_ENTER ("RCtype");
+    DBUG_ENTER ();
 
     type = TYPE_TYPE (arg_node);
     if (TUisArrayOfUser (type)) {
@@ -261,9 +263,9 @@ RCdoRemoveCasts (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("RemoveCasts");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("OPT", ("starting remove casts traversal"));
+    DBUG_PRINT ("starting remove casts traversal");
 
     info = MakeInfo ();
 
@@ -284,3 +286,5 @@ RCdoRemoveCasts (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

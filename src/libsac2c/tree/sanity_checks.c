@@ -16,7 +16,9 @@
 
 #include "sanity_checks.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "phase_info.h"
 #include "traverse.h"
 #include "ctinfo.h"
@@ -34,7 +36,7 @@ SANCHKdoSanityChecksPreTraversal (node *arg_node, info *arg_info, void *travstac
 {
     node *ids;
 
-    DBUG_ENTER ("SANCHKdoSanityChecksPreTraversal");
+    DBUG_ENTER ();
 
     if (arg_node == NULL) {
         CTIerrorInternal ("Pre Traversal Sanity Check:\n"
@@ -106,7 +108,7 @@ SANCHKdoSanityChecksPreTraversal (node *arg_node, info *arg_info, void *travstac
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -114,7 +116,7 @@ SANCHKdoSanityChecksPostTraversal (node *arg_node, info *arg_info, void *travsta
 {
     node *ids;
 
-    DBUG_ENTER ("SANCHKdoSanityChecksPostTraversal");
+    DBUG_ENTER ();
 
     if (global.valid_ssaform && (NODE_TYPE (arg_node) == N_assign)
         && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)) {
@@ -143,7 +145,9 @@ SANCHKdoSanityChecksPostTraversal (node *arg_node, info *arg_info, void *travsta
         below_module_node = FALSE;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #endif
+
+#undef DBUG_PREFIX

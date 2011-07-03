@@ -57,7 +57,10 @@
 #include "tree_compound.h"
 #include "node_basic.h"
 #include "print.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CUBSL"
+#include "debug.h"
+
 #include "traverse.h"
 #include "str.h"
 #include "memory.h"
@@ -119,7 +122,7 @@ MakeInfo (node *fundef)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -142,7 +145,7 @@ MakeInfo (node *fundef)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -173,10 +176,10 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CUBSLdoAlgebraicWithLoopFoldingCubeSlicing");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
-                 ("CUBSLdoAlgebraicWithLoopFoldingCubeSlicing called for non-fundef"));
+                 "CUBSLdoAlgebraicWithLoopFoldingCubeSlicing called for non-fundef");
 
     arg_info = MakeInfo (arg_node);
     INFO_ONEFUNDEF (arg_info) = TRUE;
@@ -223,7 +226,7 @@ matchValues (node *fa, node *fb)
     constant *fbc;
     bool z;
 
-    DBUG_ENTER ("matchValues");
+    DBUG_ENTER ();
 
     /* If one field is local and the other is a function argument,
      * we can have both AKV, but they do not share the same N_vardec.
@@ -239,9 +242,9 @@ matchValues (node *fa, node *fb)
 
     if ((NULL != fa) && (NULL != fb)) {
         if (z) {
-            DBUG_PRINT ("CUBSL", ("Values match"));
+            DBUG_PRINT ("Values match");
         } else {
-            DBUG_PRINT ("CUBSL", ("Values do not match"));
+            DBUG_PRINT ("Values do not match");
         }
     }
 
@@ -280,7 +283,7 @@ matchGeneratorField (node *fa, node *fb)
     pattern *patb;
     bool z;
 
-    DBUG_ENTER ("matchGeneratorField");
+    DBUG_ENTER ();
 
     pata = PMarray (1, PMAgetNode (&fav), 1, PMskip (0));
     patb = PMarray (1, PMAgetNode (&fbv), 1, PMskip (0));
@@ -301,9 +304,9 @@ matchGeneratorField (node *fa, node *fb)
 
     if ((NULL != fa) && (NULL != fb)) {
         if (z) {
-            DBUG_PRINT ("CUBSL", ("matchGeneratorField matched"));
+            DBUG_PRINT ("matchGeneratorField matched");
         } else {
-            DBUG_PRINT ("CUBSL", ("matchGeneratorField did not match"));
+            DBUG_PRINT ("matchGeneratorField did not match");
         }
     }
 
@@ -330,7 +333,7 @@ isNullIntersect (node *arg_node)
     intersect_type_t z = INTERSECT_unknown;
     constant *con;
 
-    DBUG_ENTER ("isNullIntersect");
+    DBUG_ENTER ();
 
     con = COaST2Constant (arg_node);
     if (NULL != con) {
@@ -361,12 +364,12 @@ ExtractNthItem (int itemno, node *idx)
     node *dfg;
     node *val = NULL;
 
-    DBUG_ENTER ("ExtractNthItem");
+    DBUG_ENTER ();
 
     dfg = AVIS_SSAASSIGN (ID_AVIS (idx));
     dfg = LET_EXPR (ASSIGN_INSTR (dfg));
-    DBUG_ASSERT ((F_noteintersect == PRF_PRF (dfg)),
-                 ("Wanted F_noteintersect as idx parent"));
+    DBUG_ASSERT (F_noteintersect == PRF_PRF (dfg),
+                 "Wanted F_noteintersect as idx parent");
     bnd = TCgetNthExprsExpr (itemno, PRF_ARGS (dfg));
     val = bnd;
 
@@ -402,7 +405,7 @@ isExactIntersect (node *cbound1, node *intersectb1, node *cbound2, node *interse
     node *i2;
     intersect_type_t z = INTERSECT_unknown;
 
-    DBUG_ENTER ("isExactIntersect");
+    DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
@@ -460,7 +463,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     int intersectListNo;
     int intersectListLim;
 
-    DBUG_ENTER ("FindIntersection");
+    DBUG_ENTER ();
 
     intersectListNo = 0;
 
@@ -505,7 +508,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                                      GENERATOR_STEP (consumerWLGenerator)))
             && (matchGeneratorField (GENERATOR_WIDTH (producerWLGenerator),
                                      GENERATOR_WIDTH (consumerWLGenerator)))) {
-            DBUG_PRINT ("CUBSL", ("All generator fields match"));
+            DBUG_PRINT ("All generator fields match");
             switch (nullIntersect) {
 
             default:
@@ -514,7 +517,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
 
             case INTERSECT_null:
                 z = INTERSECT_null;
-                DBUG_PRINT ("CUBSL", ("Null intersect"));
+                DBUG_PRINT ("Null intersect");
                 break;
 
             case INTERSECT_notnull:
@@ -527,19 +530,19 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                 z = isExactIntersect (GENERATOR_BOUND1 (consumerWLGenerator), proj1,
                                       GENERATOR_BOUND2 (consumerWLGenerator), proj2);
                 if (INTERSECT_exact == z) {
-                    DBUG_PRINT ("CUBSL", ("Intersect suitable for exact AWLF"));
+                    DBUG_PRINT ("Intersect suitable for exact AWLF");
                 } else {
-                    DBUG_PRINT ("CUBSL", ("Intersect suitable for sliced AWLF"));
+                    DBUG_PRINT ("Intersect suitable for sliced AWLF");
                 }
                 break;
 
             case INTERSECT_unknown:
-                DBUG_PRINT ("CUBSL", ("intersection unknown"));
+                DBUG_PRINT ("intersection unknown");
                 z = INTERSECT_unknown;
                 break;
             }
         } else {
-            DBUG_PRINT ("CUBSL", ("Generator field mismatch"));
+            DBUG_PRINT ("Generator field mismatch");
             z = INTERSECT_null;
         }
         intersectListNo++;
@@ -607,10 +610,10 @@ CUBSLfindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpa
     char *typ;
     int producerPartno = 0;
 
-    DBUG_ENTER ("CUBSLfindMatchingPart");
-    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), ("expected N_prf arg_node"));
-    DBUG_ASSERT (N_with == NODE_TYPE (producerWL), ("expected N_with producerWL"));
-    DBUG_ASSERT (N_part == NODE_TYPE (consumerpart), ("expected N_part consumerpart"));
+    DBUG_ENTER ();
+    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "expected N_prf arg_node");
+    DBUG_ASSERT (N_with == NODE_TYPE (producerWL), "expected N_with producerWL");
+    DBUG_ASSERT (N_part == NODE_TYPE (consumerpart), "expected N_part consumerpart");
 
     idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, producerWL) */
     idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
@@ -646,8 +649,7 @@ CUBSLfindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpa
     }
     (*itype) = intersecttype;
 
-    DBUG_PRINT ("CUBSL", ("Referent match type is (%s) for producerPartno %d", typ,
-                          producerPartno));
+    DBUG_PRINT ("Referent match type is (%s) for producerPartno %d", typ, producerPartno);
 
     DBUG_RETURN (producerWLPart);
 }
@@ -668,7 +670,7 @@ CloneCode (node *arg_node, info *arg_info)
 {
     node *z;
 
-    DBUG_ENTER ("CloneCode");
+    DBUG_ENTER ();
 
     z = (N_empty == NODE_TYPE (arg_node))
           ? NULL
@@ -719,7 +721,7 @@ PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
     int i;
     int intersectListLim;
 
-    DBUG_ENTER ("PartitionSlicer");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (N_part == NODE_TYPE (arg_node), "Expected N_part");
 
@@ -761,13 +763,13 @@ CUBSLfundef (node *arg_node, info *arg_info)
 {
     bool old_onefundef;
 
-    DBUG_ENTER ("CUBSLfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
 
-        DBUG_PRINT ("CUBSL", ("Algebraic-With-Loop-Folding Cube Slicing in %s %s begins",
-                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                              FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Algebraic-With-Loop-Folding Cube Slicing in %s %s begins",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                    FUNDEF_NAME (arg_node));
 
         old_onefundef = INFO_ONEFUNDEF (arg_info);
         INFO_ONEFUNDEF (arg_info) = FALSE;
@@ -788,9 +790,9 @@ CUBSLfundef (node *arg_node, info *arg_info)
             INFO_ONEFUNDEF (arg_info) = old_onefundef;
         }
 
-        DBUG_PRINT ("CUBSL", ("Algebraic-With-Loop-Folding Cube Slicing in %s %s ends",
-                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                              FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("Algebraic-With-Loop-Folding Cube Slicing in %s %s ends",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                    FUNDEF_NAME (arg_node));
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
@@ -815,7 +817,7 @@ node *
 CUBSLassign (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("CUBSLassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -851,7 +853,7 @@ CUBSLwith (node *arg_node, info *arg_info)
 {
     node *oldwithcode;
 
-    DBUG_ENTER ("CUBSLwith");
+    DBUG_ENTER ();
 
     oldwithcode = INFO_WITHCODE (arg_info);
     INFO_WITHCODE (arg_info) = WITH_CODE (arg_node);
@@ -876,10 +878,10 @@ CUBSLpart (node *arg_node, info *arg_info)
     node *oldconsumerpart;
     intersect_type_t oldintersecttype;
 
-    DBUG_ENTER ("CUBSLpart");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("CUBSL", ("traversing partition for %s",
-                          AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+    DBUG_PRINT ("traversing partition for %s",
+                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
     DBUG_ASSERT (INTERSECT_unknown == INFO_INTERSECTTYPE (arg_info),
                  "partition confusion");
 
@@ -902,9 +904,9 @@ CUBSLpart (node *arg_node, info *arg_info)
         arg_node = newparts;
     }
 
-    DBUG_PRINT ("CUBSL", ("Partition %s intersect type is %d",
-                          AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
-                          INFO_INTERSECTTYPE (arg_info)));
+    DBUG_PRINT ("Partition %s intersect type is %d",
+                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                INFO_INTERSECTTYPE (arg_info));
     INFO_CONSUMERPART (arg_info) = oldconsumerpart;
     INFO_INTERSECTTYPE (arg_info) = oldintersecttype;
 
@@ -925,20 +927,18 @@ CUBSLlet (node *arg_node, info *arg_info)
 {
     node *oldlhs;
 
-    DBUG_ENTER ("CUBSLlet");
+    DBUG_ENTER ();
 
     oldlhs = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 #ifdef VERBOSE
-    DBUG_PRINT ("CUBSL",
-                ("Start looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+    DBUG_PRINT ("Start looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 #endif // VERBOSE
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
 #ifdef VERBOSE
-    DBUG_PRINT ("CUBSL",
-                ("Finished looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+    DBUG_PRINT ("Finished looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 #endif // VERBOSE
 
     INFO_LHS (arg_info) = oldlhs;
@@ -960,12 +960,12 @@ CUBSLprf (node *arg_node, info *arg_info)
     node *producerPart;
     node *producerWL;
 
-    DBUG_ENTER ("CUBSLprf");
+    DBUG_ENTER ();
 
     if ((F_sel_VxA == PRF_PRF (arg_node)) && (INFO_CONSUMERPART (arg_info) != NULL)
         && (AWLFIisHasNoteintersect (arg_node))) {
-        DBUG_PRINT ("CUBSL", ("Looking at %s =_sel_VxA_( iv, X)",
-                              AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+        DBUG_PRINT ("Looking at %s =_sel_VxA_( iv, X)",
+                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
         producerWL = AWLFIfindWlId (PRF_ARG2 (arg_node));
         producerWL = AWLFIgetWlWith (producerWL);
 
@@ -982,7 +982,7 @@ CUBSLprf (node *arg_node, info *arg_info)
                                        INFO_CONSUMERPART (arg_info), producerWL,
                                        arg_info);
             if (NULL != producerPart) {
-                DBUG_PRINT ("CUBSL", ("CUBSLprf found producerPart"));
+                DBUG_PRINT ("CUBSLprf found producerPart");
             }
         }
     }
@@ -993,3 +993,5 @@ CUBSLprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Algebraic with loop folding cube slicing -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

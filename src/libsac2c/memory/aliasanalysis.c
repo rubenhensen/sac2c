@@ -27,7 +27,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "EMAA"
+#include "debug.h"
+
 #include "print.h"
 #include "new_types.h"
 #include "DataFlowMask.h"
@@ -77,7 +80,7 @@ MakeInfo (node *fundef)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -96,7 +99,7 @@ MakeInfo (node *fundef)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -128,16 +131,16 @@ FreeInfo (info *info)
 node *
 EMAAdoAliasAnalysis (node *syntax_tree)
 {
-    DBUG_ENTER ("EMAAdoAliasAnalysis");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMAA", ("Starting alias analysis..."));
+    DBUG_PRINT ("Starting alias analysis...");
 
     TRAVpush (TR_emaa);
     syntax_tree = TRAVdo (syntax_tree, NULL);
     TRAVpop ();
 
-    DBUG_PRINT ("EMAA", ("%d variables unaliased.", unaliased));
-    DBUG_PRINT ("EMAA", ("Alias analysis complete."));
+    DBUG_PRINT ("%d variables unaliased.", unaliased);
+    DBUG_PRINT ("Alias analysis complete.");
 
     DBUG_RETURN (syntax_tree);
 }
@@ -156,7 +159,7 @@ EMAAdoAliasAnalysis (node *syntax_tree)
 static node *
 SetAvisAlias (node *avis, bool newval)
 {
-    DBUG_ENTER ("SetAvisAlias");
+    DBUG_ENTER ();
 
     if (AVIS_ISALIAS (avis) && (!newval)) {
         unaliased += 1;
@@ -173,7 +176,7 @@ GetRetAlias (node *fundef, int num)
     bool res = TRUE;
     node *nl;
 
-    DBUG_ENTER ("GetRetAlias");
+    DBUG_ENTER ();
 
     nl = FUNDEF_RETS (fundef);
     while ((nl != NULL) && (num > 0)) {
@@ -191,26 +194,26 @@ GetRetAlias (node *fundef, int num)
 static void
 MarkAllIdsAliasing (node *ids, dfmask_t *mask)
 {
-    DBUG_ENTER ("MarkAllIdsAliasing");
+    DBUG_ENTER ();
 
     while (ids != NULL) {
         DFMsetMaskEntrySet (mask, NULL, IDS_AVIS (ids));
         ids = IDS_NEXT (ids);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 MarkIdAliasing (node *id, dfmask_t *mask)
 {
-    DBUG_ENTER ("MarkIdAliasing");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (id) == N_id) {
         DFMsetMaskEntrySet (mask, NULL, ID_AVIS (id));
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -237,7 +240,7 @@ EMAAap (node *arg_node, info *arg_info)
     node *_ids;
     int argc;
 
-    DBUG_ENTER ("EMAAap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
         /*
@@ -284,7 +287,7 @@ EMAAap (node *arg_node, info *arg_info)
 node *
 EMAAarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAarg");
+    DBUG_ENTER ();
 
     switch (INFO_CONTEXT (arg_info)) {
 
@@ -310,7 +313,7 @@ EMAAarg (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal context!");
+        DBUG_ASSERT (0, "Illegal context!");
     }
 
     if (ARG_NEXT (arg_node) != NULL) {
@@ -330,7 +333,7 @@ EMAAarg (node *arg_node, info *arg_info)
 node *
 EMAAassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAassign");
+    DBUG_ENTER ();
 
     INFO_CONTEXT (arg_info) = AA_undef;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -352,7 +355,7 @@ EMAAassign (node *arg_node, info *arg_info)
 node *
 EMAAcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAcode");
+    DBUG_ENTER ();
 
     if (CODE_CBLOCK (arg_node) != NULL) {
         dfmask_t *oldmask, *oldlocalmask;
@@ -396,7 +399,7 @@ EMAAcond (node *arg_node, info *arg_info)
 {
     dfmask_t *thenmask, *elsemask, *oldmask;
 
-    DBUG_ENTER ("EMAAcond");
+    DBUG_ENTER ();
 
     oldmask = INFO_MASK (arg_info);
     thenmask = DFMgenMaskCopy (oldmask);
@@ -428,7 +431,7 @@ EMAAcond (node *arg_node, info *arg_info)
 node *
 EMAAfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAfold");
+    DBUG_ENTER ();
 
     if (!FOLD_ISPARTIALFOLD (arg_node)) {
         DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (INFO_LHS (arg_info)));
@@ -454,7 +457,7 @@ EMAAfold (node *arg_node, info *arg_info)
 node *
 EMAAgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAgenarray");
+    DBUG_ENTER ();
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -474,7 +477,7 @@ EMAAgenarray (node *arg_node, info *arg_info)
 node *
 EMAAmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAmodarray");
+    DBUG_ENTER ();
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
         INFO_LHS (arg_info) = IDS_NEXT (INFO_LHS (arg_info));
@@ -496,7 +499,7 @@ EMAAfuncond (node *arg_node, info *arg_info)
 {
     node *thenid, *elseid;
 
-    DBUG_ENTER ("EMAAfuncond");
+    DBUG_ENTER ();
 
     thenid = FUNCOND_THEN (arg_node);
     elseid = FUNCOND_ELSE (arg_node);
@@ -523,9 +526,9 @@ EMAAfuncond (node *arg_node, info *arg_info)
 node *
 EMAAfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMAA", ("Traversing function %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("Traversing function %s", FUNDEF_NAME (arg_node));
 
     if ((!FUNDEF_ISCONDFUN (arg_node)) || (arg_info != NULL)) {
 
@@ -626,7 +629,7 @@ EMAAfundef (node *arg_node, info *arg_info)
 node *
 EMAAid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAid");
+    DBUG_ENTER ();
 
     switch (INFO_CONTEXT (arg_info)) {
     case AA_let:
@@ -650,7 +653,7 @@ EMAAid (node *arg_node, info *arg_info)
         break;
 
     default:
-        DBUG_ASSERT ((0), "Illegal context");
+        DBUG_ASSERT (0, "Illegal context");
         break;
     }
 
@@ -668,7 +671,7 @@ node *
 EMAAlet (node *arg_node, info *arg_info)
 {
     node *_ids;
-    DBUG_ENTER ("EMAAlet");
+    DBUG_ENTER ();
 
     INFO_CONTEXT (arg_info) = AA_let;
     INFO_LHS (arg_info) = LET_IDS (arg_node);
@@ -697,7 +700,7 @@ EMAAlet (node *arg_node, info *arg_info)
 node *
 EMAAprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAprf");
+    DBUG_ENTER ();
 
     /*
      * Primitive functions in general yield a fresh result.
@@ -759,7 +762,7 @@ EMAAprf (node *arg_node, info *arg_info)
 node *
 EMAAwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAwith");
+    DBUG_ENTER ();
 
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -777,7 +780,7 @@ EMAAwith (node *arg_node, info *arg_info)
 node *
 EMAAwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAwith2");
+    DBUG_ENTER ();
 
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
     WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
@@ -795,7 +798,7 @@ EMAAwith2 (node *arg_node, info *arg_info)
 node *
 EMAAwith3 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAwith3");
+    DBUG_ENTER ();
 
     WITH3_OPERATIONS (arg_node) = TRAVdo (WITH3_OPERATIONS (arg_node), arg_info);
     WITH3_RANGES (arg_node) = TRAVdo (WITH3_RANGES (arg_node), arg_info);
@@ -813,10 +816,10 @@ EMAAwith3 (node *arg_node, info *arg_info)
 node *
 EMAAvardec (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMAAvardec");
+    DBUG_ENTER ();
 
     if (DFMtestMaskEntry (INFO_MASK (arg_info), NULL, VARDEC_AVIS (arg_node))) {
-        DBUG_PRINT ("EMAA", ("%s could not be unaliased", VARDEC_NAME (arg_node)));
+        DBUG_PRINT ("%s could not be unaliased", VARDEC_NAME (arg_node));
     }
 
     VARDEC_AVIS (arg_node) = SetAvisAlias (VARDEC_AVIS (arg_node),
@@ -837,3 +840,5 @@ EMAAvardec (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Alias Analysis -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

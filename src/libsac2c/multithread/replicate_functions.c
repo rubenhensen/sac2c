@@ -32,7 +32,9 @@
 #include "multithread_lib.h"
 #include "str.h"
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "REPFUN"
+#include "debug.h"
 
 /*
  * INFO structure
@@ -58,7 +60,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -71,7 +73,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -94,20 +96,20 @@ REPFUNdoReplicateFunctions (node *arg_node)
     info *arg_info;
     trav_t traversaltable;
 
-    DBUG_ENTER ("REPFUNdoReplicateFunctions");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
                  "REPFUNdoReplicateFunctions expects a N_module as arg_node");
 
     arg_info = MakeInfo ();
 
     TRAVpush (TR_repfun);
 
-    DBUG_PRINT ("REPFUN", ("trav into module"));
+    DBUG_PRINT ("trav into module");
     arg_node = TRAVdo (arg_node, arg_info);
-    DBUG_PRINT ("REPFUN", ("trav from module"));
+    DBUG_PRINT ("trav from module");
 
     traversaltable = TRAVpop ();
-    DBUG_ASSERT ((traversaltable == TR_repfun), "Popped incorrect traversal table");
+    DBUG_ASSERT (traversaltable == TR_repfun, "Popped incorrect traversal table");
 
     arg_info = FreeInfo (arg_info);
 
@@ -127,7 +129,7 @@ REPFUNdoReplicateFunctions (node *arg_node)
 node *
 REPFUNmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REPFUNmodule");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -152,8 +154,8 @@ REPFUNmodule (node *arg_node, info *arg_info)
 node *
 REPFUNfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("REPFUNfundef");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef), "N_fundef expected");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "N_fundef expected");
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         if (FUNDEF_EXECMODE (arg_node) != MUTH_ANY) {
@@ -166,7 +168,7 @@ REPFUNfundef (node *arg_node, info *arg_info)
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("REPFUN", ("trav into fundef-next"));
+        DBUG_PRINT ("trav into fundef-next");
         /*
          * FUNDEF_NEXT(arg_node) =
          */
@@ -175,7 +177,7 @@ REPFUNfundef (node *arg_node, info *arg_info)
          * (the FUNDEF_NEXT could change during the traversal - the pointer
          * is handled correct during REPFUNap)
          */
-        DBUG_PRINT ("REPFUN", ("trav from fundef-next"));
+        DBUG_PRINT ("trav from fundef-next");
     }
 
     DBUG_RETURN (arg_node);
@@ -196,17 +198,17 @@ node *
 REPFUNex (node *arg_node, info *arg_info)
 {
     mtexecmode_t old;
-    DBUG_ENTER ("REPFUNex");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ex), "N_ex expected");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_ex, "N_ex expected");
 
     /* push info */
     old = INFO_REPFUN_EXECMODE (arg_info);
 
     INFO_REPFUN_EXECMODE (arg_info) = MUTH_EXCLUSIVE;
 
-    DBUG_PRINT ("REPFUN", ("trav into ex-region"));
+    DBUG_PRINT ("trav into ex-region");
     EX_REGION (arg_node) = TRAVdo (EX_REGION (arg_node), arg_info);
-    DBUG_PRINT ("REPFUN", ("trav from ex-region"));
+    DBUG_PRINT ("trav from ex-region");
 
     /* pop info */
     INFO_REPFUN_EXECMODE (arg_info) = old;
@@ -229,17 +231,17 @@ node *
 REPFUNst (node *arg_node, info *arg_info)
 {
     mtexecmode_t old;
-    DBUG_ENTER ("REPFUNst");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_st), "N_st expected");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_st, "N_st expected");
 
     /* push info */
     old = INFO_REPFUN_EXECMODE (arg_info);
 
     INFO_REPFUN_EXECMODE (arg_info) = MUTH_SINGLE;
 
-    DBUG_PRINT ("REPFUN", ("trav into st-region"));
+    DBUG_PRINT ("trav into st-region");
     ST_REGION (arg_node) = TRAVdo (ST_REGION (arg_node), arg_info);
-    DBUG_PRINT ("REPFUN", ("trav from st-region"));
+    DBUG_PRINT ("trav from st-region");
 
     /* pop */
     INFO_REPFUN_EXECMODE (arg_info) = old;
@@ -262,17 +264,17 @@ node *
 REPFUNmt (node *arg_node, info *arg_info)
 {
     mtexecmode_t old;
-    DBUG_ENTER ("REPFUNmt");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_mt), "N_mt expected");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_mt, "N_mt expected");
 
     /* push info */
     old = INFO_REPFUN_EXECMODE (arg_info);
 
     INFO_REPFUN_EXECMODE (arg_info) = MUTH_MULTI;
 
-    DBUG_PRINT ("REPFUN", ("trav into mt-region"));
+    DBUG_PRINT ("trav into mt-region");
     MT_REGION (arg_node) = TRAVdo (MT_REGION (arg_node), arg_info);
-    DBUG_PRINT ("REPFUN", ("trav from mt-region"));
+    DBUG_PRINT ("trav from mt-region");
 
     /* pop info */
     INFO_REPFUN_EXECMODE (arg_info) = old;
@@ -296,25 +298,25 @@ node *
 REPFUNassign (node *arg_node, info *arg_info)
 {
     node *old_actassign;
-    DBUG_ENTER ("REPFUNassign");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_assign), "arg_node is no a N_assign");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_assign, "arg_node is no a N_assign");
 
     /* push info */
     old_actassign = INFO_REPFUN_ACTASSIGN (arg_info);
 
     INFO_REPFUN_ACTASSIGN (arg_info) = arg_node;
 
-    DBUG_PRINT ("REPFUN", ("trav into instruction"));
+    DBUG_PRINT ("trav into instruction");
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    DBUG_PRINT ("REPFUN", ("trav from instruction"));
+    DBUG_PRINT ("trav from instruction");
 
     /* pop info */
     INFO_REPFUN_ACTASSIGN (arg_info) = old_actassign;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
-        DBUG_PRINT ("REPFUN", ("trav into next"));
+        DBUG_PRINT ("trav into next");
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-        DBUG_PRINT ("REPFUN", ("trav from next"));
+        DBUG_PRINT ("trav from next");
     }
 
     DBUG_RETURN (arg_node);
@@ -338,8 +340,8 @@ REPFUNap (node *arg_node, info *arg_info)
 {
     node *my_fundef; /* shortcut to avoid AP_FUNDEF(arg_node) x-times */
     node *tmp_1, *tmp_2;
-    DBUG_ENTER ("REPFUNap");
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_ap), "arg_node is no a N_ap");
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_ap, "arg_node is no a N_ap");
 
     /*
      * only function applications within MUTH_ANY assignments have to be handled
@@ -380,8 +382,8 @@ REPFUNap (node *arg_node, info *arg_info)
                 }
                 /* there's already a specialisation (MUTH_MULTI_SPECIALIZED) */
                 else {
-                    DBUG_ASSERT ((FUNDEF_EXECMODE (FUNDEF_COMPANION (my_fundef))
-                                  == MUTH_MULTI_SPECIALIZED),
+                    DBUG_ASSERT (FUNDEF_EXECMODE (FUNDEF_COMPANION (my_fundef))
+                                   == MUTH_MULTI_SPECIALIZED,
                                  "companion must have executionmode "
                                  "MUTH_MULTI_SPECIALIZED");
                     FUNDEF_NEXT (tmp_2) = FUNDEF_NEXT (FUNDEF_COMPANION (my_fundef));
@@ -428,11 +430,13 @@ REPFUNap (node *arg_node, info *arg_info)
 
         /* time to check the body of the function - perhaps we have to duplicate
          * somebody within it */
-        DBUG_PRINT ("REPFUN", ("Duplicate: trav into function-body"));
+        DBUG_PRINT ("Duplicate: trav into function-body");
         FUNDEF_BODY (AP_FUNDEF (arg_node))
           = TRAVdo (FUNDEF_BODY (AP_FUNDEF (arg_node)), arg_info);
-        DBUG_PRINT ("REPFUN", ("Duplicate: trav from function-body"));
+        DBUG_PRINT ("Duplicate: trav from function-body");
     }
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

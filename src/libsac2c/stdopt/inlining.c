@@ -34,7 +34,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "node_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "INL"
+#include "debug.h"
+
 #include "traverse.h"
 #include "free.h"
 #include "ctinfo.h" /* for CTIitemName */
@@ -79,7 +82,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -96,7 +99,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -120,7 +123,7 @@ FreeInfo (info *info)
 node *
 INLmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INLmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -149,9 +152,9 @@ INLfundef (node *arg_node, info *arg_info)
 {
     info *old_info;
 
-    DBUG_ENTER ("INLfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("INL", ("Looking at %s", CTIitemName (arg_node)));
+    DBUG_PRINT ("Looking at %s", CTIitemName (arg_node));
 
     if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISINLINECOMPLETED (arg_node))
         && (!FUNDEF_ISOBJECTWRAPPER (arg_node)) && (!FUNDEF_ISWRAPPERFUN (arg_node))
@@ -163,11 +166,11 @@ INLfundef (node *arg_node, info *arg_info)
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_INLINECOUNTER (arg_node) += 1;
 
-        DBUG_PRINT ("INL", ("Traversing body of %s", CTIitemName (arg_node)));
+        DBUG_PRINT ("Traversing body of %s", CTIitemName (arg_node));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-        DBUG_PRINT ("INL", ("Leaving body of %s", CTIitemName (arg_node)));
+        DBUG_PRINT ("Leaving body of %s", CTIitemName (arg_node));
 
         if (GLFisLocalFun (arg_node)) {
             INFO_LACFUNS (old_info)
@@ -233,7 +236,7 @@ INLassign (node *arg_node, info *arg_info)
     node *code = NULL;
     node *vardecs = NULL;
 
-    DBUG_ENTER ("INLassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -249,7 +252,7 @@ INLassign (node *arg_node, info *arg_info)
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     if (inlined) {
-        DBUG_PRINT ("INL", ("Inlining code"));
+        DBUG_PRINT ("Inlining code");
 
         ASSIGN_NEXT (arg_node) = TCappendAssign (code, ASSIGN_NEXT (arg_node));
         BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
@@ -277,7 +280,7 @@ INLassign (node *arg_node, info *arg_info)
 node *
 INLlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("INLlet");
+    DBUG_ENTER ();
 
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -305,9 +308,9 @@ INLap (node *arg_node, info *arg_info)
 {
     bool spine;
 
-    DBUG_ENTER ("INLap");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("INL", ("Processing call of fun %s", CTIitemName (AP_FUNDEF (arg_node))));
+    DBUG_PRINT ("Processing call of fun %s", CTIitemName (AP_FUNDEF (arg_node)));
 
     if (AP_CONSIDERINLINE (arg_node)
         && (FUNDEF_INLINECOUNTER (AP_FUNDEF (arg_node)) <= global.max_recursive_inlining)
@@ -324,8 +327,7 @@ INLap (node *arg_node, info *arg_info)
 
         if (FUNDEF_ISINLINE (AP_FUNDEF (arg_node))
             && FUNDEF_ISINLINECOMPLETED (AP_FUNDEF (arg_node))) {
-            DBUG_PRINT ("INL",
-                        ("Inline preparing %s", CTIitemName (AP_FUNDEF (arg_node))));
+            DBUG_PRINT ("Inline preparing %s", CTIitemName (AP_FUNDEF (arg_node)));
 
             INFO_CODE (arg_info)
               = PINLdoPrepareInlining (&INFO_VARDECS (arg_info), AP_FUNDEF (arg_node),
@@ -393,14 +395,14 @@ INLdoInlining (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("INLdoInlining");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_module || NODE_TYPE (arg_node) == N_fundef,
                  "INLdoInlining called with wrong node type.");
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+                    global.current_allocated_mem);
 #endif
 
     if (NODE_TYPE (arg_node) == N_module) {
@@ -430,9 +432,11 @@ INLdoInlining (node *arg_node)
     }
 
 #ifdef SHOW_MALLOC
-    DBUG_PRINT ("OPTMEM",
-                ("mem currently allocated: %d bytes", global.current_allocated_mem));
+    DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
+                    global.current_allocated_mem);
 #endif
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

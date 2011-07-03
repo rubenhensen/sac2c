@@ -25,7 +25,10 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "EMDR"
+#include "debug.h"
+
 #include "print.h"
 #include "DupTree.h"
 #include "LookUpTable.h"
@@ -74,7 +77,7 @@ MakeInfo (node *fundef)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -97,7 +100,7 @@ MakeInfo (node *fundef)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     if (INFO_FREE_ME (info) != NULL) {
         INFO_FREE_ME (info) = FREEdoFreeTree (INFO_FREE_ME (info));
@@ -138,12 +141,11 @@ IsSameIndex (node *idxs_s, node *idxs_t, node *idx_s, node *idx_t)
 {
     bool result = FALSE;
 
-    DBUG_ENTER ("IsSameIndex");
+    DBUG_ENTER ();
 
     while (!result && (idxs_s != NULL) && (idxs_t != NULL)) {
-        DBUG_PRINT ("EMDR",
-                    ("comparing S(%s/%s) and T(%s/%s)", ID_NAME (idx_t),
-                     IDS_NAME (idxs_t), ID_NAME (idx_s), ID_NAME (EXPRS_EXPR (idxs_s))));
+        DBUG_PRINT ("comparing S(%s/%s) and T(%s/%s)", ID_NAME (idx_t), IDS_NAME (idxs_t),
+                    ID_NAME (idx_s), ID_NAME (EXPRS_EXPR (idxs_s)));
 
         result = result
                  || ((ID_AVIS (idx_t) == IDS_AVIS (idxs_t))
@@ -173,11 +175,11 @@ FindSubAllocRoot (lut_t *sublut, node *avis)
 {
     node *found, *result;
 
-    DBUG_ENTER ("FindSubAllocRoot");
+    DBUG_ENTER ();
 
     found = LUTsearchInLutPp (sublut, avis);
-    DBUG_PRINT ("EMDR", ("checking root of %s, found %s", AVIS_NAME (avis),
-                         (found == NULL) ? "--" : AVIS_NAME (found)));
+    DBUG_PRINT ("checking root of %s, found %s", AVIS_NAME (avis),
+                (found == NULL) ? "--" : AVIS_NAME (found));
 
     if (found == avis) {
         result = NULL;
@@ -204,7 +206,7 @@ node *
 WithResult (node *with)
 {
     node *result = NULL;
-    DBUG_ENTER ("WithResult");
+    DBUG_ENTER ();
 
     if ((NODE_TYPE (with) == N_with) || (NODE_TYPE (with) == N_with2)) {
         result = CODE_CEXPR (WITH_OR_WITH2_CODE (with));
@@ -241,7 +243,7 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
 {
     pattern *pat;
 
-    DBUG_ENTER ("HandleCodeBlock");
+    DBUG_ENTER ();
 
     while (exprs != NULL) {
         node *id = NULL;
@@ -324,14 +326,13 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                         if ((submem != NULL)
                             && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), submem)
                                 == ID_AVIS (arr))) {
-                            DBUG_PRINT ("EMDR",
-                                        ("found root for suballoc %s --> %s",
-                                         AVIS_NAME (ID_AVIS (mem)), AVIS_NAME (submem)));
+                            DBUG_PRINT ("found root for suballoc %s --> %s",
+                                        AVIS_NAME (ID_AVIS (mem)), AVIS_NAME (submem));
 
                             if (IsSameIndex (INFO_WLIIRR (arg_info),
                                              INFO_WLIDXS (arg_info), selidx, idx)) {
                                 inplace = TRUE;
-                                DBUG_PRINT ("EMDR", ("found with3 idx_sel copy."));
+                                DBUG_PRINT ("found with3 idx_sel copy.");
                             }
                         }
                     }
@@ -363,7 +364,7 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                 bool iscopy = TRUE;
                 int pos = 0;
 
-                DBUG_PRINT ("EMDR", ("vector copy: potential candiate found."));
+                DBUG_PRINT ("vector copy: potential candiate found.");
 
                 while ((aexprs != NULL) && iscopy) {
                     expr = EXPRS_EXPR (aexprs);
@@ -385,7 +386,7 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                         iscopy = FALSE;
 #ifndef DBUG_OFF
                     } else {
-                        DBUG_PRINT ("EMDR", ("vector copy: element %d fits.", pos));
+                        DBUG_PRINT ("vector copy: element %d fits.", pos);
 #endif
                     }
 
@@ -395,13 +396,13 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
 
 #ifndef DBUG_OFF
                 if (iscopy) {
-                    DBUG_PRINT ("EMDR", ("vector copy expression found"));
+                    DBUG_PRINT ("vector copy expression found");
                 }
 #endif
                 if (iscopy
                     && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
                         == ID_AVIS (arr))) {
-                    DBUG_PRINT ("EMDR", ("vector copy: reuse identified."));
+                    DBUG_PRINT ("vector copy: reuse identified.");
 
                     inplace = TRUE;
                 }
@@ -470,7 +471,7 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                                       PMvar( 1, PMAisVar( &mem), 0),
                                       PMskipN( 1, 0, 0)));
 #endif
-                    DBUG_PRINT ("EMDR", ("wl copy: potential candiate found."));
+                    DBUG_PRINT ("wl copy: potential candiate found.");
 
                     if (PMO (PMOvar (&arr, PMOvar (&offset,
                                                    PMOprf (F_idx_sel,
@@ -493,7 +494,7 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                                                                    PMOprf (F_fill,
                                                                            offset))))))) {
 
-                            DBUG_PRINT ("EMDR", ("wl copy: inner sel is scalar copy."));
+                            DBUG_PRINT ("wl copy: inner sel is scalar copy.");
                             iscopy = TRUE;
                         }
 
@@ -525,8 +526,7 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                                              PMOexprs (&wlids, PMOarray (NULL, NULL,
                                                                          cat_arg2))))))) {
 
-                                DBUG_PRINT ("EMDR",
-                                            ("wl copy: inner sel is vector copy."));
+                                DBUG_PRINT ("wl copy: inner sel is vector copy.");
                                 iscopy = TRUE;
                             }
                         }
@@ -536,7 +536,7 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                         && PMO (PMOvar (&mem, PMOprf (F_suballoc, GENARRAY_MEM (withop))))
                         && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
                             == ID_AVIS (arr))) {
-                        DBUG_PRINT ("EMDR", ("wl copy: reuse identified."));
+                        DBUG_PRINT ("wl copy: reuse identified.");
 
                         inplace = TRUE;
                     }
@@ -547,7 +547,7 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
         if (inplace) {
             node *avis;
 
-            DBUG_PRINT ("EMDR", ("Inplace copy situation recognized!"));
+            DBUG_PRINT ("Inplace copy situation recognized!");
 
             /*
              * Create a variable for new cexpr
@@ -605,7 +605,7 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
 node *
 EMDRdoDataReuse (node *syntax_tree)
 {
-    DBUG_ENTER ("EMDRdoDataReuse");
+    DBUG_ENTER ();
 
     TRAVpush (TR_emdr);
     syntax_tree = TRAVdo (syntax_tree, NULL);
@@ -635,7 +635,7 @@ EMDRdoDataReuse (node *syntax_tree)
 node *
 EMDRap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMDRap");
+    DBUG_ENTER ();
 
     /*
      * CONDFUNs are traversed in order of appearance
@@ -682,7 +682,7 @@ EMDRap (node *arg_node, info *arg_info)
 node *
 EMDRassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMDRassign");
+    DBUG_ENTER ();
 
     /*
      * Top-down traversal
@@ -708,7 +708,7 @@ EMDRcond (node *arg_node, info *arg_info)
 {
     lut_t *oldlut;
 
-    DBUG_ENTER ("EMDRcond");
+    DBUG_ENTER ();
 
     oldlut = INFO_REUSELUT (arg_info);
     INFO_REUSELUT (arg_info) = LUTduplicateLut (oldlut);
@@ -743,7 +743,7 @@ EMDRcond (node *arg_node, info *arg_info)
 node *
 EMDRwithid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMDRwithid");
+    DBUG_ENTER ();
 
     INFO_IV (arg_info) = WITHID_VEC (arg_node);
     INFO_IVIDS (arg_info) = WITHID_IDS (arg_node);
@@ -765,7 +765,7 @@ EMDRwith (node *arg_node, info *arg_info)
 {
     node *oldivs, *oldiv, *oldidxs, *oldiirr;
 
-    DBUG_ENTER ("EMDRwith");
+    DBUG_ENTER ();
 
     oldiv = INFO_IV (arg_info);
     oldivs = INFO_IVIDS (arg_info);
@@ -796,7 +796,7 @@ EMDRwith2 (node *arg_node, info *arg_info)
 {
     node *oldivs, *oldiv, *oldidxs, *oldiirr;
 
-    DBUG_ENTER ("EMDRwith2");
+    DBUG_ENTER ();
 
     oldiv = INFO_IV (arg_info);
     oldivs = INFO_IVIDS (arg_info);
@@ -827,7 +827,7 @@ EMDRwith3 (node *arg_node, info *arg_info)
 {
     node *oldivs, *oldiv, *oldidxs, *oldiirr;
 
-    DBUG_ENTER ("EMDRwith3");
+    DBUG_ENTER ();
 
     oldiv = INFO_IV (arg_info);
     oldivs = INFO_IVIDS (arg_info);
@@ -864,10 +864,10 @@ EMDRwith3 (node *arg_node, info *arg_info)
 node *
 EMDRgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMDRgenarray");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMDR", ("adding new suballoc root %s",
-                         AVIS_NAME (ID_AVIS (GENARRAY_MEM (arg_node)))));
+    DBUG_PRINT ("adding new suballoc root %s",
+                AVIS_NAME (ID_AVIS (GENARRAY_MEM (arg_node))));
     LUTinsertIntoLutP (INFO_SUBLUT (arg_info), ID_AVIS (GENARRAY_MEM (arg_node)), NULL);
 
     GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
@@ -885,10 +885,10 @@ EMDRgenarray (node *arg_node, info *arg_info)
 node *
 EMDRmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMDRmodarray");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMDR", ("adding new suballoc root %s",
-                         AVIS_NAME (ID_AVIS (MODARRAY_MEM (arg_node)))));
+    DBUG_PRINT ("adding new suballoc root %s",
+                AVIS_NAME (ID_AVIS (MODARRAY_MEM (arg_node))));
     LUTinsertIntoLutP (INFO_SUBLUT (arg_info), ID_AVIS (MODARRAY_MEM (arg_node)), NULL);
 
     MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
@@ -906,7 +906,7 @@ EMDRmodarray (node *arg_node, info *arg_info)
 node *
 EMDRcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMDRcode");
+    DBUG_ENTER ();
 
     /*
      * Traverse into CBLOCK in order to apply datareuse in nested with-loops
@@ -937,7 +937,7 @@ EMDRcode (node *arg_node, info *arg_info)
 node *
 EMDRrange (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMDRrange");
+    DBUG_ENTER ();
 
     /*
      * Traverse into CBLOCK in order to apply datareuse in nested with-loops
@@ -988,9 +988,9 @@ EMDRrange (node *arg_node, info *arg_info)
 node *
 EMDRfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMDRfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EMDR", ("Traversing function %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("Traversing function %s", FUNDEF_NAME (arg_node));
 
     /*
      * CONDFUNs may only be traversed from AP-nodes
@@ -1000,7 +1000,7 @@ EMDRfundef (node *arg_node, info *arg_info)
         if (FUNDEF_BODY (arg_node) != NULL) {
             info *info;
 
-            DBUG_PRINT ("EMDR", ("Traversing function body %s", FUNDEF_NAME (arg_node)));
+            DBUG_PRINT ("Traversing function body %s", FUNDEF_NAME (arg_node));
             info = MakeInfo (arg_node);
 
             if (arg_info != NULL) {
@@ -1043,7 +1043,7 @@ EMDRfundef (node *arg_node, info *arg_info)
 node *
 EMDRlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMDRlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -1061,7 +1061,7 @@ EMDRlet (node *arg_node, info *arg_info)
 node *
 EMDRprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EMDRprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_reuse:
@@ -1101,13 +1101,13 @@ EMDRprf (node *arg_node, info *arg_info)
          * Insert (b, A) into SUBLUT iff A is already contained
          * in sublut!
          */
-        DBUG_PRINT ("EMDR", ("checking for existing suballoc %s",
-                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))));
+        DBUG_PRINT ("checking for existing suballoc %s",
+                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
         if (LUTsearchInLutPp (INFO_SUBLUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)))
             != ID_AVIS (PRF_ARG1 (arg_node))) {
-            DBUG_PRINT ("EMDR", ("adding %s as new suballoc of %s.",
-                                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
-                                 AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))));
+            DBUG_PRINT ("adding %s as new suballoc of %s.",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
 
             LUTinsertIntoLutP (INFO_SUBLUT (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
                                ID_AVIS (PRF_ARG1 (arg_node)));
@@ -1130,7 +1130,7 @@ EMDRprf (node *arg_node, info *arg_info)
                 if (LUTsearchInLutPp (INFO_REUSELUT (arg_info),
                                       ID_AVIS (PRF_ARG2 (arg_node)))
                     == ID_AVIS (PRF_ARG1 (prf))) {
-                    DBUG_PRINT ("EMDR", ("Inplace copy situation recognized!"));
+                    DBUG_PRINT ("Inplace copy situation recognized!");
                     PRF_PRF (prf) = F_noop;
                 }
                 break;
@@ -1166,3 +1166,5 @@ EMDRprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Data Reuse Optimisation -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

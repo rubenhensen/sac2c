@@ -6,7 +6,10 @@
 #include <stdio.h>
 
 #include "sig_deps.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "SSI"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -93,7 +96,7 @@ MakeSig (ct_funptr ct_fun, te_info *info, ntype *args, bool strict, ntype *resul
 {
     sig_dep *res;
 
-    DBUG_ENTER ("MakeSig");
+    DBUG_ENTER ();
 
     if (sig_dep_heap == NULL) {
         sig_dep_heap = PHPcreateHeap (sizeof (sig_dep), 1000);
@@ -113,11 +116,11 @@ MakeSig (ct_funptr ct_fun, te_info *info, ntype *args, bool strict, ntype *resul
 void
 SDfreeAllSignatureDependencies ()
 {
-    DBUG_ENTER ("SDfreeAllSignatureDependencies");
+    DBUG_ENTER ();
 
     sig_dep_heap = PHPfreeHeap (sig_dep_heap);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -163,7 +166,7 @@ SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args, bool s
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("SDcreateSignatureDependency");
+    DBUG_ENTER ();
 
     /*
      * First, we create the return type as it is part of the sig_dep structure:
@@ -193,9 +196,9 @@ SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args, bool s
     }
     DBUG_ASSERT (ok, "Something went wrong creating a signature dependency");
 
-    DBUG_EXECUTE ("SSI", tmp_str = SDsigDep2DebugString (sig););
-    DBUG_PRINT ("SSI", ("sig dep created: handle %p : %s", sig, tmp_str));
-    DBUG_EXECUTE ("SSI", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = SDsigDep2DebugString (sig));
+    DBUG_PRINT ("sig dep created: handle %p : %s", sig, tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     /*
      * Finally, we try to create a first result type approximation
@@ -227,7 +230,7 @@ SDhandleContradiction (sig_dep *fun_sig)
     char *tmp_str, *tmp2_str;
 #endif
 
-    DBUG_ENTER ("SDhandleContradiction");
+    DBUG_ENTER ();
 
     /*
      * First, we check whether there is enough information available for
@@ -268,13 +271,12 @@ SDhandleContradiction (sig_dep *fun_sig)
             res_t = SD_FUN (fun_sig) (info, args);
             res_t = TYeliminateAlpha (res_t);
 
-            DBUG_EXECUTE ("SSI", tmp_str = TYtype2String (args, FALSE, 0););
-            DBUG_EXECUTE ("SSI", tmp2_str = TYtype2String (res_t, FALSE, 0););
-            DBUG_PRINT ("SSI",
-                        ("approximating %s \"%s\" for %s yields %s", TEgetKindStr (info),
-                         TEgetNameStr (info), tmp_str, tmp2_str));
-            DBUG_EXECUTE ("SSI", tmp_str = MEMfree (tmp_str););
-            DBUG_EXECUTE ("SSI", tmp2_str = MEMfree (tmp_str););
+            DBUG_EXECUTE (tmp_str = TYtype2String (args, FALSE, 0));
+            DBUG_EXECUTE (tmp2_str = TYtype2String (res_t, FALSE, 0));
+            DBUG_PRINT ("approximating %s \"%s\" for %s yields %s", TEgetKindStr (info),
+                        TEgetNameStr (info), tmp_str, tmp2_str);
+            DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
+            DBUG_EXECUTE (tmp2_str = MEMfree (tmp_str));
 
             /*
              * and insert the findings into the return types:
@@ -311,7 +313,7 @@ SDhandleContradiction (sig_dep *fun_sig)
 bool
 SDhandleElimination (sig_dep *fun_sig)
 {
-    DBUG_ENTER ("SDhandleElimination");
+    DBUG_ENTER ();
     DBUG_RETURN (TRUE);
 }
 
@@ -332,7 +334,7 @@ SDsigDep2DebugString (sig_dep *fun_sig)
     char *tmp_str;
     te_info *info;
 
-    DBUG_ENTER ("SDsigDep2DebugString");
+    DBUG_ENTER ();
 
     info = SD_INFO (fun_sig);
     tmp += sprintf (tmp, "%s \"%s\"", TEgetKindStr (info), TEgetNameStr (info));
@@ -349,3 +351,5 @@ SDsigDep2DebugString (sig_dep *fun_sig)
 }
 
 /* @} */ /* addtogroup ntc */
+
+#undef DBUG_PREFIX

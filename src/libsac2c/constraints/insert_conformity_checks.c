@@ -23,7 +23,9 @@
  *****************************************************************************/
 #include "insert_conformity_checks.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "ICC"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -71,7 +73,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -89,7 +91,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -116,7 +118,7 @@ ICCdoInsertConformityChecks (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("ICCdoInsertConformityChecks");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -162,14 +164,14 @@ EmitAfterguards (node **lhs, node **assigns, node *cids, node **vardecs)
     node *result;
     node *avis;
 
-    DBUG_ENTER ("EmitAfterguards");
+    DBUG_ENTER ();
 
     if (*lhs != NULL) {
         result = EmitAfterguards (&IDS_NEXT (*lhs), assigns, cids, vardecs);
 
-        DBUG_ASSERT ((IDS_NEXT (*lhs) == NULL), "N_ids has not been consumed!");
+        DBUG_ASSERT (IDS_NEXT (*lhs) == NULL, "N_ids has not been consumed!");
 
-        DBUG_PRINT ("ICC", (" ...emitting afterguard"));
+        DBUG_PRINT (" ...emitting afterguard");
 
         avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (IDS_AVIS (*lhs))));
         *vardecs = TBmakeVardec (avis, *vardecs);
@@ -211,7 +213,7 @@ ArgEncodingToTypeConstraint (prf fun, int argno, ntype *scalartype)
 {
     ntype *result = NULL;
 
-    DBUG_ENTER ("ArgEncodingToTypeConstraint");
+    DBUG_ENTER ();
 
     switch (PRF_ARGENCODING (fun, argno)) {
     case PA_S:
@@ -247,13 +249,13 @@ EmitConstraint (node *ids, node *constraint)
 {
     node *avis;
 
-    DBUG_ENTER ("EmitConstraint");
+    DBUG_ENTER ();
 
 #ifndef DBUG_OFF
     if (NODE_TYPE (constraint) == N_prf) {
-        DBUG_PRINT ("ICC", ("...emitting %s", PRF_NAME (PRF_PRF (constraint))));
+        DBUG_PRINT ("...emitting %s", PRF_NAME (PRF_PRF (constraint)));
     } else {
-        DBUG_PRINT ("ICC", ("...emitting fun constraint"));
+        DBUG_PRINT ("...emitting fun constraint");
     }
 #endif
 
@@ -271,7 +273,7 @@ EmitTypeConstraint (node *ids, node *arg, ntype *constraint)
 {
     node *cavis;
 
-    DBUG_ENTER ("EmitTypeConstraint");
+    DBUG_ENTER ();
 
     if (NODE_TYPE (arg) == N_id) {
         cavis = IDCaddTypeConstraint (constraint, ID_AVIS (arg));
@@ -287,7 +289,7 @@ EmitTypeConstraint (node *ids, node *arg, ntype *constraint)
 static node *
 ICCnone (node *ids, node *args)
 {
-    DBUG_ENTER ("ICCnone");
+    DBUG_ENTER ();
 
     DBUG_RETURN (ids);
 }
@@ -295,7 +297,7 @@ ICCnone (node *ids, node *args)
 static node *
 ICCsameShape (node *ids, node *args)
 {
-    DBUG_ENTER ("ICCsameShape");
+    DBUG_ENTER ();
 
     ids = EmitConstraint (ids, TBmakePrf (F_same_shape_AxA, DUPdoDupTree (args)));
 
@@ -305,7 +307,7 @@ ICCsameShape (node *ids, node *args)
 static node *
 ICCreshape (node *ids, node *args)
 {
-    DBUG_ENTER ("ICCreshape");
+    DBUG_ENTER ();
 
     ids = EmitConstraint (ids,
                           TCmakePrf1 (F_non_neg_val_V, DUPdoDupTree (EXPRS_EXPR (args))));
@@ -318,7 +320,7 @@ ICCreshape (node *ids, node *args)
 static node *
 ICCsel (node *ids, node *args)
 {
-    DBUG_ENTER ("ICCsel");
+    DBUG_ENTER ();
 
     ids = EmitConstraint (ids, TBmakePrf (F_shape_matches_dim_VxA, DUPdoDupTree (args)));
     ids = EmitConstraint (ids,
@@ -331,7 +333,7 @@ ICCsel (node *ids, node *args)
 static node *
 ICCprfModarray (node *ids, node *args)
 {
-    DBUG_ENTER ("ICCprfModarray");
+    DBUG_ENTER ();
 
     ids = EmitConstraint (ids, TCmakePrf2 (F_shape_matches_dim_VxA,
                                            DUPdoDupTree (EXPRS_EXPR2 (args)),
@@ -348,7 +350,7 @@ ICCprfModarray (node *ids, node *args)
 static node *
 ICCvalMatchLen (node *ids, node *args)
 {
-    DBUG_ENTER ("ICCvalMatchLen");
+    DBUG_ENTER ();
 
     DBUG_RETURN (ids);
 }
@@ -380,9 +382,9 @@ static iccfun_p iccfuns[] = {
 node *
 ICCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ICCfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("ICC", ("traversing %s:", CTIitemName (arg_node)));
+    DBUG_PRINT ("traversing %s:", CTIitemName (arg_node));
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         arg_node = IDCinitialize (arg_node, FALSE);
@@ -421,7 +423,7 @@ ICCassign (node *arg_node, info *arg_info)
 {
     node *postassigns;
 
-    DBUG_ENTER ("ICCassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -453,7 +455,7 @@ ICCassign (node *arg_node, info *arg_info)
 node *
 ICClet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ICClet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 
@@ -479,12 +481,12 @@ ICCprf (node *arg_node, info *arg_info)
     int arg_cnt;
     ntype *constraint_type, *scalartype;
 
-    DBUG_ENTER ("ICCprf");
+    DBUG_ENTER ();
 
     args = PRF_ARGS (arg_node);
     arg_cnt = 0;
 
-    DBUG_PRINT ("ICC", ("Traversing prf %s...", PRF_NAME (PRF_PRF (arg_node))));
+    DBUG_PRINT ("Traversing prf %s...", PRF_NAME (PRF_PRF (arg_node)));
 
     while (args != NULL) {
         /*
@@ -498,7 +500,7 @@ ICCprf (node *arg_node, info *arg_info)
             constraint_type
               = ArgEncodingToTypeConstraint (PRF_PRF (arg_node), arg_cnt, scalartype);
             if (constraint_type != NULL) {
-                DBUG_PRINT ("ICC", (" ...emitting type constraint"));
+                DBUG_PRINT (" ...emitting type constraint");
 
                 cids = EmitTypeConstraint (cids, EXPRS_EXPR (args), constraint_type);
 
@@ -528,7 +530,7 @@ ICCprf (node *arg_node, info *arg_info)
         cids = FREEdoFreeTree (cids);
     }
 
-    DBUG_PRINT ("ICC", ("Done prf %s...", PRF_NAME (PRF_PRF (arg_node))));
+    DBUG_PRINT ("Done prf %s...", PRF_NAME (PRF_PRF (arg_node)));
 
     DBUG_RETURN (arg_node);
 }
@@ -546,7 +548,7 @@ ICCblock (node *arg_node, info *arg_info)
     node *postassigns;
     node *lhs;
 
-    DBUG_ENTER ("ICCblock");
+    DBUG_ENTER ();
 
     postassigns = INFO_POSTASSIGNS (arg_info);
     INFO_POSTASSIGNS (arg_info) = NULL;
@@ -573,7 +575,7 @@ ICCwith (node *arg_node, info *arg_info)
 {
     node *guardids;
 
-    DBUG_ENTER ("ICCwith");
+    DBUG_ENTER ();
 
     guardids = INFO_WLGUARDIDS (arg_info);
     INFO_WLGUARDIDS (arg_info) = NULL;
@@ -629,7 +631,7 @@ ICCgenerator (node *arg_node, info *arg_info)
 {
     ntype *constraint_type;
 
-    DBUG_ENTER ("ICCgenerator");
+    DBUG_ENTER ();
 
     /*
      * ensure all are int[.]
@@ -709,7 +711,7 @@ ICCgenerator (node *arg_node, info *arg_info)
 node *
 ICCcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ICCcode");
+    DBUG_ENTER ();
 
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
 
@@ -719,7 +721,7 @@ ICCcode (node *arg_node, info *arg_info)
     if (INFO_WITHOPS (arg_info) != NULL) {
         INFO_CEXPRS (arg_info) = CODE_CEXPRS (arg_node);
         INFO_WITHOPS (arg_info) = TRAVdo (INFO_WITHOPS (arg_info), arg_info);
-        DBUG_ASSERT ((INFO_CEXPRS (arg_info) == NULL),
+        DBUG_ASSERT (INFO_CEXPRS (arg_info) == NULL,
                      "not all cexprs handled by withops!");
     }
 
@@ -739,7 +741,7 @@ ICCgenarray (node *arg_node, info *arg_info)
 {
     ntype *constraint_type;
 
-    DBUG_ENTER ("ICCgenarray");
+    DBUG_ENTER ();
 
     if (INFO_GENERATOR (arg_info) != NULL) {
         /*
@@ -777,7 +779,7 @@ ICCgenarray (node *arg_node, info *arg_info)
          * emit cexpr constraints iff we have a default value
          */
         if (GENARRAY_DEFAULT (arg_node) != NULL) {
-            DBUG_PRINT ("ICC", ("...emitting F_same_shape_AxA CEXPR-constraint"));
+            DBUG_PRINT ("...emitting F_same_shape_AxA CEXPR-constraint");
 
             /*
              * we simply ignore the returned avis, as we do not propagate the
@@ -823,7 +825,7 @@ ICCgenarray (node *arg_node, info *arg_info)
 node *
 ICCmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ICCmodarray");
+    DBUG_ENTER ();
 
     if (INFO_GENERATOR (arg_info) != NULL) {
         /*
@@ -861,7 +863,7 @@ ICCmodarray (node *arg_node, info *arg_info)
 node *
 ICCfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ICCfold");
+    DBUG_ENTER ();
 
     if (INFO_GENERATOR (arg_info) != NULL) {
         /*
@@ -897,7 +899,7 @@ ICCfold (node *arg_node, info *arg_info)
 node *
 ICCpropagate (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ICCpropagate");
+    DBUG_ENTER ();
 
     if (INFO_GENERATOR (arg_info) != NULL) {
         /*
@@ -929,3 +931,5 @@ ICCpropagate (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Insert Conformity Checks -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

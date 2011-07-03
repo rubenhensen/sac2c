@@ -12,7 +12,10 @@
 #include "str.h"
 
 #include "memory.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "math_utils.h"
 #include "str_buffer.h"
 #include "tree_basic.h"
@@ -35,7 +38,7 @@ STRtoupper (char *source, int start, int stop)
 {
     int i;
 
-    DBUG_ENTER ("STRtoupper");
+    DBUG_ENTER ();
 
     if (source != NULL) {
         for (i = start; i < stop; i++) {
@@ -43,7 +46,7 @@ STRtoupper (char *source, int start, int stop)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*******************************************************************************
@@ -61,7 +64,7 @@ STRcpy (const char *source)
 {
     char *ret;
 
-    DBUG_ENTER ("STRcpy");
+    DBUG_ENTER ();
 
     if (source != NULL) {
         ret = (char *)MEMmalloc (sizeof (char) * (STRlen (source) + 1));
@@ -91,7 +94,7 @@ STRncpy (const char *source, int maxlen)
     char *ret;
     int max;
 
-    DBUG_ENTER ("STRncpy");
+    DBUG_ENTER ();
 
     if (source != NULL) {
         max = STRlen (source);
@@ -125,7 +128,7 @@ STRsubStr (const char *string, int start, int len)
     int strlen = 0;
     char *ret = NULL;
 
-    DBUG_ENTER ("STRsubStr");
+    DBUG_ENTER ();
 
     strlen = STRlen (string);
 
@@ -160,7 +163,7 @@ char *
 STRnull ()
 {
     char *ret = NULL;
-    DBUG_ENTER ("STRnull");
+    DBUG_ENTER ();
 
     ret = MEMmalloc (sizeof (char) * 1);
     ret[0] = '\0';
@@ -181,7 +184,7 @@ STRsizeInt ()
 {
     int size = 0;
     int s = sizeof (int) * 8;
-    DBUG_ENTER ("STRsizeInt");
+    DBUG_ENTER ();
 
     switch (s) {
     case 8:
@@ -222,7 +225,7 @@ STRcat (const char *first, const char *second)
 {
     char *result;
 
-    DBUG_ENTER ("STRcat");
+    DBUG_ENTER ();
 
     if (first == NULL) {
         result = STRcpy (second);
@@ -258,9 +261,9 @@ STRcatn (int n, ...)
     const char *ptr;
     va_list arg_list;
 
-    DBUG_ENTER ("STRcatn");
+    DBUG_ENTER ();
 
-    DBUG_ASSERTF (n > 2, ("STRcatn called with %d arguments", n));
+    DBUG_ASSERT (n > 2, "STRcatn called with %d arguments", n);
 
     va_start (arg_list, n);
 
@@ -313,7 +316,7 @@ STReq (const char *first, const char *second)
 {
     bool res;
 
-    DBUG_ENTER ("STReq");
+    DBUG_ENTER ();
 
     if ((first == NULL) && (second == NULL)) {
         res = TRUE;
@@ -343,7 +346,7 @@ STReqhex (const char *first, const char *second)
 {
     bool res = TRUE;
 
-    DBUG_ENTER ("STReqnum");
+    DBUG_ENTER ();
 
     if ((first == NULL) && (second == NULL)) {
         res = TRUE;
@@ -393,7 +396,7 @@ STReqoct (const char *first, const char *second)
 {
     bool res = TRUE;
 
-    DBUG_ENTER ("STReqnum");
+    DBUG_ENTER ();
 
     if ((first == NULL) && (second == NULL)) {
         res = TRUE;
@@ -444,7 +447,7 @@ STReqci (const char *first, const char *second)
     bool res;
     int i;
 
-    DBUG_ENTER ("STReqci");
+    DBUG_ENTER ();
 
     if ((first == NULL) && (second == NULL)) {
         res = TRUE;
@@ -484,7 +487,7 @@ STReqn (const char *first, const char *second, int n)
 {
     bool res;
 
-    DBUG_ENTER ("STReq");
+    DBUG_ENTER ();
 
     if ((first == NULL) && (second == NULL)) {
         res = TRUE;
@@ -518,7 +521,7 @@ STRprefix (const char *prefix, const char *str)
 {
     bool res;
 
-    DBUG_ENTER ("STRprefix");
+    DBUG_ENTER ();
 
     if (prefix == NULL) {
         res = TRUE;
@@ -551,7 +554,7 @@ STRsuffix (const char *suffix, const char *str)
 {
     bool res = FALSE;
 
-    DBUG_ENTER ("STRsuffix");
+    DBUG_ENTER ();
 
     if (STRlen (suffix) > STRlen (str)) {
         res = FALSE;
@@ -580,7 +583,7 @@ STRsub (const char *sub, const char *str)
 {
     bool res;
 
-    DBUG_ENTER ("STRsub");
+    DBUG_ENTER ();
 
     if (sub == NULL) {
         res = TRUE;
@@ -609,7 +612,7 @@ STRlen (const char *s)
 {
     int len;
 
-    DBUG_ENTER ("STRlen");
+    DBUG_ENTER ();
 
     if (s == NULL) {
         len = 0;
@@ -643,7 +646,7 @@ CharInString (char c, const char *str)
     int i;
     bool res;
 
-    DBUG_ENTER ("CharInString");
+    DBUG_ENTER ();
 
     if ((str == NULL) || (c == '\0')) {
         res = FALSE;
@@ -666,7 +669,7 @@ STRtok (const char *first, const char *sep)
     char *ret;
     int i;
 
-    DBUG_ENTER ("STRtok");
+    DBUG_ENTER ();
 
     if (first != NULL) {
         if (keep_string != NULL) {
@@ -714,7 +717,7 @@ STRonNull (char *alt, char *str)
 {
     char *res;
 
-    DBUG_ENTER ("STRonNull");
+    DBUG_ENTER ();
 
     if (str == NULL) {
         res = alt;
@@ -741,7 +744,7 @@ STRitoa (int number)
     char *str;
     int num;
 
-    DBUG_ENTER ("STRitoa");
+    DBUG_ENTER ();
 
     str = (char *)MEMmalloc (sizeof (int) * 4);
     num = snprintf (str, (sizeof (int) * 4) - 1, "%d", number);
@@ -768,7 +771,7 @@ STRitoa_oct (int number)
     int length;
     int base = 8;
 
-    DBUG_ENTER ("STRitoa_oct");
+    DBUG_ENTER ();
 
     tmp = number;
     length = 1;
@@ -802,7 +805,7 @@ STRitoa_hex (int number)
     int length;
     int base = 16;
 
-    DBUG_ENTER ("STRitoa_hex");
+    DBUG_ENTER ();
 
     tmp = number;
     length = 1;
@@ -835,7 +838,7 @@ Hex2Dig (const char x)
 {
     unsigned char res;
 
-    DBUG_ENTER ("Hex2Dig");
+    DBUG_ENTER ();
 
     if ((x >= '0') && (x <= '9')) {
         res = x - '0';
@@ -852,7 +855,7 @@ STRhex2Bytes (unsigned char *array, const char *string)
     int pos;
     unsigned char low, high;
 
-    DBUG_ENTER ("STRhex2Bytes");
+    DBUG_ENTER ();
 
     pos = 0;
 
@@ -883,7 +886,7 @@ Dig2Hex (unsigned char x)
 {
     char res;
 
-    DBUG_ENTER ("Dig2Hex");
+    DBUG_ENTER ();
 
     if (x < 10) {
         res = '0' + x;
@@ -901,7 +904,7 @@ STRbytes2Hex (int len, unsigned char *array)
     char *result;
     unsigned char low, high;
 
-    DBUG_ENTER ("STRbytes2Hex");
+    DBUG_ENTER ();
 
     result = MEMmalloc ((1 + len * 2) * sizeof (char));
 
@@ -936,7 +939,7 @@ STRreplaceSpecialCharacters (const char *name)
     char *tmp;
     int i, j;
 
-    DBUG_ENTER ("STRreplaceSpecialCharacters");
+    DBUG_ENTER ();
 
     if (name == NULL) {
         new_name = NULL;
@@ -1101,7 +1104,7 @@ STRstring2SafeCEncoding (const char *string)
     char *result, *tmp;
     int i, len;
 
-    DBUG_ENTER ("STRstring2SafeCEncoding");
+    DBUG_ENTER ();
 
     if (string == NULL) {
         result = NULL;
@@ -1139,7 +1142,7 @@ STRcommentify (const char *string)
     char *split = NULL;
     str_buf *buffer = NULL;
 
-    DBUG_ENTER ("STRcommentify");
+    DBUG_ENTER ();
 
     if (string != NULL) {
         buffer = SBUFcreate (STRlen (string) + 42);
@@ -1175,7 +1178,7 @@ STRstring2Array (const char *str)
     node *len_expr;
     node *res;
 
-    DBUG_ENTER ("STRstring2Array");
+    DBUG_ENTER ();
 
     new_exprs = TBmakeExprs (TBmakeChar ('\0'), NULL);
 
@@ -1261,7 +1264,7 @@ STRsubstToken (const char *str, const char *token, const char *subst)
     char *pos;
     char *result;
 
-    DBUG_ENTER ("STRsubstToken");
+    DBUG_ENTER ();
 
     /* Find number of occurrences of token in str */
     occurrences = 0;
@@ -1292,3 +1295,5 @@ STRsubstToken (const char *str, const char *token, const char *subst)
 
     DBUG_RETURN (result);
 }
+
+#undef DBUG_PREFIX

@@ -71,7 +71,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "MA"
+#include "debug.h"
+
 #include "pattern_match.h"
 #include "traverse.h"
 #include "tree_basic.h"
@@ -128,7 +131,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -155,7 +158,7 @@ MakeInfoClone (info *arg_info)
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfoClone");
+    DBUG_ENTER ();
 
     result = MakeInfo ();
 
@@ -170,7 +173,7 @@ MakeInfoClone (info *arg_info)
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -197,11 +200,11 @@ MAdoMoveAssigns (node *syntax_tree, pattern *pat, bool block, int count,
 {
     info *info;
 
-    DBUG_ENTER ("MAdoMoveAssigns");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("MA", ("Starting move assigns traversal."));
+    DBUG_PRINT ("Starting move assigns traversal.");
 
     INFO_PATTERN (info) = pat;
     INFO_STOP_PATTERN (info) = stop_pat;
@@ -212,7 +215,7 @@ MAdoMoveAssigns (node *syntax_tree, pattern *pat, bool block, int count,
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("MA", ("Move assigns traversal complete."));
+    DBUG_PRINT ("Move assigns traversal complete.");
 
     info = FreeInfo (info);
 
@@ -242,7 +245,7 @@ static bool
 SameAvis (node *ids, node *avis)
 {
     bool res = FALSE;
-    DBUG_ENTER ("SameAvis");
+    DBUG_ENTER ();
 
     if (ids != NULL) {
         if (IDS_AVIS (ids) == avis) {
@@ -265,11 +268,11 @@ SameAvis (node *ids, node *avis)
 static node *
 ATravId (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravId");
+    DBUG_ENTER ();
 
     if (SameAvis (INFO_IDS (arg_info), ID_AVIS (arg_node))) {
         INFO_FOUND_AVIS (arg_info) = TRUE;
-        DBUG_PRINT ("MA", ("found %s", AVIS_NAME (ID_AVIS (arg_node))));
+        DBUG_PRINT ("found %s", AVIS_NAME (ID_AVIS (arg_node)));
     } else {
         arg_node = TRAVcont (arg_node, arg_info);
     }
@@ -287,7 +290,7 @@ ATravId (node *arg_node, info *arg_info)
 static node *
 ATravLet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravLet");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -310,7 +313,7 @@ ATravLet (node *arg_node, info *arg_info)
 static node *
 ATravAssign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ATravAssign");
+    DBUG_ENTER ();
 
     INFO_FOUND_AVIS (arg_info) = FALSE;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -363,7 +366,7 @@ ATravBlock (node *arg_node, info *arg_info)
 {
     bool stack = FALSE;
     bool stackFound = FALSE;
-    DBUG_ENTER ("ATravBlock");
+    DBUG_ENTER ();
 
     stack = INFO_IN_BLOCK (arg_info);
     stackFound = INFO_FOUND_AVIS (arg_info);
@@ -386,7 +389,7 @@ ATravBlock (node *arg_node, info *arg_info)
 static node *
 moveAssign (node *assign, node *assigns, info *arg_info)
 {
-    DBUG_ENTER ("moveAssign");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (ASSIGN_NEXT (assign) == NULL, "Can only move one assign at a time.");
 
@@ -401,8 +404,8 @@ moveAssign (node *assign, node *assigns, info *arg_info)
         /* Been asked to move a let node.  We should be able to do that */
         if (LET_IDS (ASSIGN_INSTR (assign)) != NULL) {
             /* Have a let with a lhs so try and move it */
-            DBUG_PRINT ("MA", ("Trying to move %s ...",
-                               AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign))))));
+            DBUG_PRINT ("Trying to move %s ...",
+                        AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign)))));
             INFO_ASSIGN (stack_info) = assign;
             INFO_IDS (stack_info) = LET_IDS (ASSIGN_INSTR (assign));
 
@@ -411,14 +414,12 @@ moveAssign (node *assign, node *assigns, info *arg_info)
             TRAVpop ();
             if (INFO_ASSIGN (stack_info) != NULL) {
                 CTInote ("Did not find use of lhs placing assign at end of block");
-                DBUG_PRINT ("MA",
-                            ("LHS %s ...",
-                             AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign))))));
+                DBUG_PRINT ("LHS %s ...",
+                            AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign)))));
                 assigns = TCappendAssign (assigns, INFO_ASSIGN (stack_info));
             } else {
-                DBUG_PRINT ("MA",
-                            ("Moved %s ...",
-                             AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign))))));
+                DBUG_PRINT ("Moved %s ...",
+                            AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign)))));
             }
 
             INFO_ASSIGN (stack_info) = NULL;
@@ -454,7 +455,7 @@ node *
 MAassign (node *arg_node, info *arg_info)
 {
     node *next = NULL;
-    DBUG_ENTER ("MAAssign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -486,7 +487,7 @@ MAassign (node *arg_node, info *arg_info)
 node *
 MAlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MALet");
+    DBUG_ENTER ();
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -504,3 +505,5 @@ MAlet (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

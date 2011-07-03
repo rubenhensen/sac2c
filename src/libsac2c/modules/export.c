@@ -2,7 +2,8 @@
  * $Id$
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "EXP"
+#include "debug.h"
 
 #include "export.h"
 #include "serialize.h"
@@ -51,7 +52,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -70,7 +71,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     INFO_SYMBOL (info) = NULL;
     INFO_INTERFACE (info) = NULL;
@@ -87,7 +88,7 @@ FreeInfo (info *info)
 static bool
 CheckExport (bool all, node *symbol, info *arg_info)
 {
-    DBUG_ENTER ("CheckExport");
+    DBUG_ENTER ();
 
     INFO_RESULT (arg_info) = FALSE;
 
@@ -108,7 +109,7 @@ CheckExport (bool all, node *symbol, info *arg_info)
 static node *
 CheckSymbolsUsed (node *symbols, info *info)
 {
-    DBUG_ENTER ("CheckSymbolsUsed");
+    DBUG_ENTER ();
 
     if (symbols != NULL) {
         symbols = TRAVdo (symbols, info);
@@ -124,7 +125,7 @@ CheckSymbolsUsed (node *symbols, info *info)
 node *
 EXPuse (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPuse");
+    DBUG_ENTER ();
 
     if (USE_NEXT (arg_node) != NULL) {
         USE_NEXT (arg_node) = TRAVdo (USE_NEXT (arg_node), arg_info);
@@ -136,7 +137,7 @@ EXPuse (node *arg_node, info *arg_info)
 node *
 EXPimport (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPimport");
+    DBUG_ENTER ();
 
     if (IMPORT_NEXT (arg_node) != NULL) {
         IMPORT_NEXT (arg_node) = TRAVdo (IMPORT_NEXT (arg_node), arg_info);
@@ -148,7 +149,7 @@ EXPimport (node *arg_node, info *arg_info)
 node *
 EXPprovide (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPprovide");
+    DBUG_ENTER ();
 
     if (PROVIDE_NEXT (arg_node) != NULL) {
         PROVIDE_NEXT (arg_node) = TRAVdo (PROVIDE_NEXT (arg_node), arg_info);
@@ -177,7 +178,7 @@ EXPprovide (node *arg_node, info *arg_info)
 node *
 EXPexport (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPexport");
+    DBUG_ENTER ();
 
     if (EXPORT_NEXT (arg_node) != NULL) {
         EXPORT_NEXT (arg_node) = TRAVdo (EXPORT_NEXT (arg_node), arg_info);
@@ -205,7 +206,7 @@ EXPexport (node *arg_node, info *arg_info)
 node *
 EXPsymbol (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPsymbol");
+    DBUG_ENTER ();
 
     if (INFO_SYMBMODE (arg_info) == SYM_filter) {
         if (STReq (INFO_SYMBOL (arg_info), SYMBOL_ID (arg_node))) {
@@ -234,17 +235,17 @@ EXPsymbol (node *arg_node, info *arg_info)
 node *
 EXPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("EXP", ("Processing %s %s...",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "function"),
-                        CTIitemName (arg_node)));
+    DBUG_PRINT ("Processing %s %s...",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "function"),
+                CTIitemName (arg_node));
 
     if (FUNDEF_ISLOCAL (arg_node)) {
-        DBUG_PRINT ("EXP", ("...local fundef"));
+        DBUG_PRINT ("...local fundef");
 
         if (FUNDEF_ISLACFUN (arg_node)) {
-            DBUG_PRINT ("EXP", ("...is not visible (LaC function)"));
+            DBUG_PRINT ("...is not visible (LaC function)");
 
             /*
              * LaC functions are not provided, as nobody could
@@ -254,7 +255,7 @@ EXPfundef (node *arg_node, info *arg_info)
             FUNDEF_ISEXPORTED (arg_node) = FALSE;
             FUNDEF_ISPROVIDED (arg_node) = FALSE;
         } else if (!NSequals (FUNDEF_NS (arg_node), INFO_NAMESPACE (arg_info))) {
-            DBUG_PRINT ("EXP", ("...is not visible (in view)"));
+            DBUG_PRINT ("...is not visible (in view)");
 
             /*
              * views are generally not visible as they
@@ -271,7 +272,7 @@ EXPfundef (node *arg_node, info *arg_info)
              * program! Main is always provided.
              */
 
-            DBUG_PRINT ("EXP", ("...override for main"));
+            DBUG_PRINT ("...override for main");
 
             FUNDEF_ISEXPORTED (arg_node) = FALSE;
             FUNDEF_ISPROVIDED (arg_node) = TRUE;
@@ -285,33 +286,33 @@ EXPfundef (node *arg_node, info *arg_info)
             }
 
             if (INFO_EXPORTED (arg_info)) {
-                DBUG_PRINT ("EXP", ("...is exported"));
+                DBUG_PRINT ("...is exported");
 
                 FUNDEF_ISEXPORTED (arg_node) = TRUE;
                 FUNDEF_ISPROVIDED (arg_node) = TRUE;
             } else if (INFO_PROVIDED (arg_info)) {
-                DBUG_PRINT ("EXP", ("...is provided"));
+                DBUG_PRINT ("...is provided");
 
                 FUNDEF_ISEXPORTED (arg_node) = FALSE;
                 FUNDEF_ISPROVIDED (arg_node) = TRUE;
             } else {
-                DBUG_PRINT ("EXP", ("...is not visible"));
+                DBUG_PRINT ("...is not visible");
 
                 FUNDEF_ISEXPORTED (arg_node) = FALSE;
                 FUNDEF_ISPROVIDED (arg_node) = FALSE;
             }
         }
     } else {
-        DBUG_PRINT ("EXP", ("...is not visible (non local)"));
+        DBUG_PRINT ("...is not visible (non local)");
 
         FUNDEF_ISEXPORTED (arg_node) = FALSE;
         FUNDEF_ISPROVIDED (arg_node) = FALSE;
     }
 
-    DBUG_PRINT ("EXP", ("%s %s has final status %d/%d [PROVIDE/EXPORT].",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "Wrapper" : "Function"),
-                        CTIitemName (arg_node), FUNDEF_ISPROVIDED (arg_node),
-                        FUNDEF_ISEXPORTED (arg_node)));
+    DBUG_PRINT ("%s %s has final status %d/%d [PROVIDE/EXPORT].",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "Wrapper" : "Function"),
+                CTIitemName (arg_node), FUNDEF_ISPROVIDED (arg_node),
+                FUNDEF_ISEXPORTED (arg_node));
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -323,7 +324,7 @@ EXPfundef (node *arg_node, info *arg_info)
 node *
 EXPtypedef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPtypedef");
+    DBUG_ENTER ();
 
     INFO_SYMBOL (arg_info) = TYPEDEF_NAME (arg_node);
     INFO_EXPORTED (arg_info) = FALSE;
@@ -354,7 +355,7 @@ EXPtypedef (node *arg_node, info *arg_info)
 node *
 EXPobjdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPobjdef");
+    DBUG_ENTER ();
 
     INFO_SYMBOL (arg_info) = OBJDEF_NAME (arg_node);
     INFO_EXPORTED (arg_info) = FALSE;
@@ -385,7 +386,7 @@ EXPobjdef (node *arg_node, info *arg_info)
 node *
 EXPmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("EXPmodule");
+    DBUG_ENTER ();
 
     INFO_INTERFACE (arg_info) = MODULE_INTERFACE (arg_node);
     INFO_FILETYPE (arg_info) = MODULE_FILETYPE (arg_node);
@@ -433,7 +434,7 @@ StartExpTraversal (node *modul)
 {
     info *info;
 
-    DBUG_ENTER ("StartExpTraversal");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -451,7 +452,7 @@ StartExpTraversal (node *modul)
 node *
 EXPdoExport (node *syntax_tree)
 {
-    DBUG_ENTER ("EXPdoExport");
+    DBUG_ENTER ();
 
     if (MODULE_FILETYPE (syntax_tree) != FT_prog) {
         if (!global.optimize.dodfr) {
@@ -464,3 +465,5 @@ EXPdoExport (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

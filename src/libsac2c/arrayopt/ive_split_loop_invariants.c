@@ -129,7 +129,9 @@
 #include <stdio.h>
 #endif /* not DBUG_OFF */
 
-#include "dbug.h"
+#define DBUG_PREFIX "IVESLI"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "DupTree.h"
 #include "free.h"
@@ -211,7 +213,7 @@ NewIndexVector (node *value, bool inverse, indexvector_t *next)
 {
     indexvector_t *result;
 
-    DBUG_ENTER ("NewIndexVector");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (indexvector_t));
 
@@ -227,7 +229,7 @@ NewIndexScalar (node *value, bool inverse, indexscalar_t *next)
 {
     indexscalar_t *result;
 
-    DBUG_ENTER ("NewIndexScalar");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (indexscalar_t));
 
@@ -243,7 +245,7 @@ NewIndexChain (indexscalar_t *current, indexchain_t *next)
 {
     indexchain_t *result;
 
-    DBUG_ENTER ("NewIndexChain");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (indexchain_t));
 
@@ -256,7 +258,7 @@ NewIndexChain (indexscalar_t *current, indexchain_t *next)
 static indexvector_t *
 FreeIndexVector (indexvector_t *ivect)
 {
-    DBUG_ENTER ("FreeIndexVector");
+    DBUG_ENTER ();
 
     if (ivect != NULL) {
         INDEXVECTOR_NEXT (ivect) = FreeIndexVector (INDEXVECTOR_NEXT (ivect));
@@ -269,7 +271,7 @@ FreeIndexVector (indexvector_t *ivect)
 static indexscalar_t *
 FreeIndexScalar (indexscalar_t *iscal)
 {
-    DBUG_ENTER ("FreeIndexScalar");
+    DBUG_ENTER ();
 
     if (iscal != NULL) {
         INDEXSCALAR_NEXT (iscal) = FreeIndexScalar (INDEXSCALAR_NEXT (iscal));
@@ -282,7 +284,7 @@ FreeIndexScalar (indexscalar_t *iscal)
 static indexchain_t *
 FreeIndexChain (indexchain_t *ichain)
 {
-    DBUG_ENTER ("FreeIndexChain");
+    DBUG_ENTER ();
 
     if (ichain != NULL) {
         INDEXCHAIN_CURRENT (ichain) = FreeIndexScalar (INDEXCHAIN_CURRENT (ichain));
@@ -296,7 +298,7 @@ FreeIndexChain (indexchain_t *ichain)
 static indexlevel_t *
 FreeIndexLevel (indexlevel_t *ilevel)
 {
-    DBUG_ENTER ("FreeIndexLevel");
+    DBUG_ENTER ();
 
     if (ilevel != NULL) {
         INDEXLEVEL_VECTOR (ilevel) = FreeIndexVector (INDEXLEVEL_VECTOR (ilevel));
@@ -402,7 +404,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -417,7 +419,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -443,7 +445,7 @@ IVESLIdoIVESplitLoopInvariants (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("IVESLIdoIVESplitLoopInvariants");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     INFO_ONEFUNDEF (info) = (NODE_TYPE (syntax_tree) == N_fundef);
@@ -485,9 +487,9 @@ EnterLevel (dfmask_t *locals, info *arg_info)
 {
     maskchain_t *new;
 
-    DBUG_ENTER ("EnterLevel");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVESLI", ("   >>> new level"));
+    DBUG_PRINT ("   >>> new level");
 
     new = MEMmalloc (sizeof (maskchain_t));
 
@@ -512,13 +514,13 @@ LeaveLevel (info *arg_info)
 {
     maskchain_t *old;
 
-    DBUG_ENTER ("LeaveLevel");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVESLI", ("   <<< done level"));
+    DBUG_PRINT ("   <<< done level");
 
     old = INFO_LOCALS (arg_info);
 
-    DBUG_ASSERT ((old != NULL), "no more scopes to leave!");
+    DBUG_ASSERT (old != NULL, "no more scopes to leave!");
 
     INFO_LOCALS (arg_info) = MASKCHAIN_NEXT (old);
 
@@ -532,9 +534,9 @@ InsertLetAssign (node *op, ntype *restype, info *arg_info)
 {
     node *assign, *avis;
 
-    DBUG_ENTER ("InsertLetAssign");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((op != NULL), "empty rhs for let expression detected!");
+    DBUG_ASSERT (op != NULL, "empty rhs for let expression detected!");
 
     avis = TBmakeAvis (TRAVtmpVar (), restype);
 
@@ -552,7 +554,7 @@ MaskChainToIndexLevels (maskchain_t *masks)
 {
     indexlevel_t *result = NULL;
 
-    DBUG_ENTER ("MaskChainToIndexLevels");
+    DBUG_ENTER ();
 
     if (masks != NULL) {
         result = MEMmalloc (sizeof (indexlevel_t));
@@ -568,7 +570,7 @@ MaskChainToIndexLevels (maskchain_t *masks)
 static indexchain_t *
 InsertIntoScalars (node *iscal, bool invert, int pos, indexchain_t *chain)
 {
-    DBUG_ENTER ("InsertIntoScalars");
+    DBUG_ENTER ();
 
     if (chain == NULL) {
         /* the chain is created on demand */
@@ -590,7 +592,7 @@ static indexlevel_t *
 InsertIntoLevel (int pos, node *value, bool invert, indexlevel_t *levels,
                  maskchain_t *masks)
 {
-    DBUG_ENTER ("InsertIntoLevel");
+    DBUG_ENTER ();
 
     if ((NODE_TYPE (value) != N_id)
         || ((DFMtestMaskEntry (MASKCHAIN_LOCALS (masks), NULL, ID_AVIS (value)))
@@ -626,7 +628,7 @@ SplitComputation (node *index, node **arg1, node **arg2, bool *invert)
     bool result = FALSE;
     bool needsInvert = FALSE;
 
-    DBUG_ENTER ("SplitComputation");
+    DBUG_ENTER ();
 
     if (isAddSub == NULL) {
         isAddSub = PMprf (1, PMAgetNode (&pPrf), 0);
@@ -666,7 +668,7 @@ SortIndexScalarsIntoLevelsHelper (node *idx, indexlevel_t *levels, bool invert,
     node *realIdx;
     bool needsInvert;
 
-    DBUG_ENTER ("SortIndexScalarsIntoLevelsHelper");
+    DBUG_ENTER ();
 
     if (idx != NULL) {
         realIdx = (NODE_TYPE (idx) == N_exprs) ? EXPRS_EXPR (idx) : idx;
@@ -694,7 +696,7 @@ static indexlevel_t *
 SortIndexScalarsIntoLevels (node *exprs, indexlevel_t *levels, bool invert,
                             maskchain_t *locals)
 {
-    DBUG_ENTER ("SortIndexScalarsIntoLevels");
+    DBUG_ENTER ();
 
     levels = SortIndexScalarsIntoLevelsHelper (exprs, levels, invert, locals, 0);
 
@@ -708,7 +710,7 @@ SortIndexVectorIntoLevels (node *iv, indexlevel_t *levels, bool invert,
     node *arg1, *arg2;
     bool needsInvert;
 
-    DBUG_ENTER ("SortVectorScalarsIntoLevels");
+    DBUG_ENTER ();
 
     if (SplitComputation (iv, &arg1, &arg2, &needsInvert)) {
         levels = SortIndexIntoLevels (arg1, levels, invert, locals);
@@ -726,19 +728,19 @@ SortIndexIntoLevels (node *idx, indexlevel_t *levels, bool invert, maskchain_t *
     static pattern *isScalarizedP = NULL;
     static node *array;
 
-    DBUG_ENTER ("SortIndexIntoLevels");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVESLI", ("    ||| sorting index into level"));
+    DBUG_PRINT (("    ||| sorting index into level"));
 
     if (isScalarizedP == NULL) {
         isScalarizedP = PMarray (1, PMAgetNode (&array), 0);
     }
 
     if (PMmatchFlat (isScalarizedP, idx)) {
-        DBUG_PRINT ("IVESLI", ("    ||| index is array node"));
+        DBUG_PRINT (("    ||| index is array node"));
         SortIndexScalarsIntoLevels (ARRAY_AELEMS (array), levels, invert, locals);
     } else {
-        DBUG_PRINT ("IVESLI", ("    ||| index is id node"));
+        DBUG_PRINT (("    ||| index is id node"));
         SortIndexVectorIntoLevels (idx, levels, invert, locals);
     }
 
@@ -750,7 +752,7 @@ IndexChainLength (indexchain_t *chain)
 {
     int len = 0;
 
-    DBUG_ENTER ("IndexChainLength");
+    DBUG_ENTER ();
 
     if (chain != NULL) {
         len = 1 + IndexChainLength (INDEXCHAIN_NEXT (chain));
@@ -764,7 +766,7 @@ ComputeLevelPadding (indexlevel_t *levels)
 {
     int result = 0;
 
-    DBUG_ENTER ("ComputeLevelPadding");
+    DBUG_ENTER ();
 
     if (levels != NULL) {
         result = MAX (result, ComputeLevelPadding (INDEXLEVEL_NEXT (levels)));
@@ -780,7 +782,7 @@ SimplifyScalar (indexscalar_t *scalars, info *arg_info)
     indexscalar_t *result;
     indexscalar_t *second;
 
-    DBUG_ENTER ("SimplifyScalar");
+    DBUG_ENTER ();
 
     /* combine multiple scalars */
     if (INDEXSCALAR_NEXT (scalars) != NULL) {
@@ -820,9 +822,9 @@ SimplifyScalar (indexscalar_t *scalars, info *arg_info)
 static indexchain_t *
 SimplifyChains (indexchain_t *chain, int pad, info *arg_info)
 {
-    DBUG_ENTER ("SimplifyChains");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((chain != NULL), "no chain to work on?!?");
+    DBUG_ASSERT (chain != NULL, "no chain to work on?!?");
 
     /* step 1: simplify or pad current chain */
     if (INDEXCHAIN_CURRENT (chain) == NULL) {
@@ -857,7 +859,7 @@ SimplifyVectors (indexvector_t *vectors, info *arg_info)
     indexvector_t *result;
     indexvector_t *second;
 
-    DBUG_ENTER ("SimplifyVectors");
+    DBUG_ENTER ();
 
     /* combine multiple vectors */
     if (INDEXVECTOR_NEXT (vectors) != NULL) {
@@ -897,7 +899,7 @@ SimplifyVectors (indexvector_t *vectors, info *arg_info)
 static indexlevel_t *
 SimplifyLevels (indexlevel_t *levels, int pad, info *arg_info)
 {
-    DBUG_ENTER ("SimplifyLevels");
+    DBUG_ENTER ();
 
     if (levels != NULL) {
         INDEXLEVEL_NEXT (levels)
@@ -928,9 +930,9 @@ CombineVect2Offsets (node *first, node *second, bool inv, info *arg_info)
 {
     node *result;
 
-    DBUG_ENTER ("CombineVect2Offsets");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((second != NULL), "cannot combine with empty vect2offsets.");
+    DBUG_ASSERT (second != NULL, "cannot combine with empty vect2offsets.");
 
     if (first == NULL) {
         if (inv) {
@@ -956,7 +958,7 @@ IndexExpr2Offsets (node *expr, node *shp, info *arg_info)
 {
     node *result;
 
-    DBUG_ENTER ("IndexVector2Offsets");
+    DBUG_ENTER ();
 
     result
       = InsertLetAssign (TCmakePrf2 (F_vect2offset, shp, expr),
@@ -971,7 +973,7 @@ IndexScalars2Exprs (indexchain_t *chain, info *arg_info)
     node *result = NULL;
     node *tmp;
 
-    DBUG_ENTER ("IndexScalars2Exprs");
+    DBUG_ENTER ();
 
     if (chain != NULL) {
         result = IndexScalars2Exprs (INDEXCHAIN_NEXT (chain), arg_info);
@@ -997,7 +999,7 @@ ComputeVect2Offsets (indexlevel_t *levels, node *shp, info *arg_info)
     node *partial;
     node *result = NULL;
 
-    DBUG_ENTER ("ComputeVect2Offsets");
+    DBUG_ENTER ();
 
     if (levels != NULL) {
         result = ComputeVect2Offsets (INDEXLEVEL_NEXT (levels), shp, arg_info);
@@ -1046,9 +1048,9 @@ IVESLIfundef (node *arg_node, info *arg_info)
 {
     dfmask_t *allSetMask;
 
-    DBUG_ENTER ("IVESLIfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVESLI", (">>> processing function %s...", CTIitemName (arg_node)));
+    DBUG_PRINT (">>> processing function %s...", CTIitemName (arg_node));
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         arg_node = INFDFMSdoInferDfms (arg_node, HIDE_LOCALS_WITH | HIDE_LOCALS_WITH2
@@ -1074,7 +1076,7 @@ IVESLIfundef (node *arg_node, info *arg_info)
         arg_node = RDFMSdoRemoveDfms (arg_node);
     }
 
-    DBUG_PRINT ("IVESLI", ("<<< done function %s...", CTIitemName (arg_node)));
+    DBUG_PRINT ("<<< done function %s...", CTIitemName (arg_node));
 
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -1093,7 +1095,7 @@ IVESLIfundef (node *arg_node, info *arg_info)
 node *
 IVESLIwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVESLIwith");
+    DBUG_ENTER ();
 
     arg_info = EnterLevel (WITH_LOCAL_MASK (arg_node), arg_info);
     arg_node = TRAVcont (arg_node, arg_info);
@@ -1112,7 +1114,7 @@ IVESLIwith (node *arg_node, info *arg_info)
 node *
 IVESLIwith2 (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVESLIwith2");
+    DBUG_ENTER ();
 
     arg_info = EnterLevel (WITH2_LOCAL_MASK (arg_node), arg_info);
     arg_node = TRAVcont (arg_node, arg_info);
@@ -1131,12 +1133,12 @@ IVESLIwith2 (node *arg_node, info *arg_info)
 node *
 IVESLIassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVESLIassign");
+    DBUG_ENTER ();
 
     /* bottom up traversal to ease inserting of pre-assigns */
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    DBUG_ASSERT ((INFO_PREASSIGNS (arg_info) == NULL), "left over preassigns!");
+    DBUG_ASSERT (INFO_PREASSIGNS (arg_info) == NULL, "left over preassigns!");
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -1160,24 +1162,24 @@ IVESLIprf (node *arg_node, info *arg_info)
 {
     node *new_node;
 
-    DBUG_ENTER ("IVESLIprf");
+    DBUG_ENTER ();
 
     if (PRF_PRF (arg_node) == F_vect2offset) {
-        DBUG_PRINT ("IVESLI", ("||| processing vect2offset phase 1 (inference)"));
+        DBUG_PRINT (("||| processing vect2offset phase 1 (inference)"));
 
         indexlevel_t *levels = MaskChainToIndexLevels (INFO_LOCALS (arg_info));
         levels = SortIndexIntoLevels (PRF_ARG2 (arg_node), levels, FALSE,
                                       INFO_LOCALS (arg_info));
 
-        DBUG_EXECUTE ("IVESLI", PrintIndexLevel (levels););
+        DBUG_EXECUTE (PrintIndexLevel (levels));
 
-        DBUG_PRINT ("IVESLI", ("||| processing vect2offset phase 2 (simplify)"));
+        DBUG_PRINT (("||| processing vect2offset phase 2 (simplify)"));
 
         levels = SimplifyLevels (levels, ComputeLevelPadding (levels), arg_info);
 
-        DBUG_EXECUTE ("IVESLI", PrintIndexLevel (levels););
+        DBUG_EXECUTE (PrintIndexLevel (levels));
 
-        DBUG_PRINT ("IVESLI", ("||| processing vect2offset phase 3 (replace)"));
+        DBUG_PRINT (("||| processing vect2offset phase 3 (replace)"));
         new_node = ComputeVect2Offsets (levels, PRF_ARG1 (arg_node), arg_info);
         arg_node = FREEdoFreeNode (arg_node);
 
@@ -1205,3 +1207,5 @@ IVESLIprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

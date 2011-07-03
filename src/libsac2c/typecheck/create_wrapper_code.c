@@ -5,7 +5,10 @@
 #include "create_wrapper_code.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "CWC"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -43,7 +46,7 @@ WrapperCodeIsNeeded (node *fundef)
 {
     bool result;
 
-    DBUG_ENTER ("WrapperCodeIsNeeded");
+    DBUG_ENTER ();
 
     result = FUNDEF_ISLOCAL (fundef);
 
@@ -66,7 +69,7 @@ WrapperCodeIsPossible (node *fundef)
 {
     bool result;
 
-    DBUG_ENTER ("WrapperCodeIsPossible");
+    DBUG_ENTER ();
 
     /*
      * SAC functions with var-args are not allowed
@@ -96,7 +99,7 @@ InsertWrapperCode (node *fundef)
     node *vardec;
     node *vardecs1, *vardecs2;
 
-    DBUG_ENTER ("InsertWrapperCode");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((NODE_TYPE (fundef) == N_fundef) && FUNDEF_ISWRAPPERFUN (fundef)
                   && (FUNDEF_BODY (fundef) == NULL)),
@@ -104,7 +107,7 @@ InsertWrapperCode (node *fundef)
 
     if (WrapperCodeIsNeeded (fundef) && WrapperCodeIsPossible (fundef)) {
 
-        DBUG_PRINT ("CWC", ("creating wrapper body for %s", CTIitemName (fundef)));
+        DBUG_PRINT ("creating wrapper body for %s", CTIitemName (fundef));
 
         /*
          * generate wrapper code together with the needed vardecs
@@ -151,10 +154,10 @@ InsertWrapperCode (node *fundef)
 node *
 CWCfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CWCfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISWRAPPERFUN (arg_node)) {
-        DBUG_ASSERT ((FUNDEF_BODY (arg_node) == NULL),
+        DBUG_ASSERT (FUNDEF_BODY (arg_node) == NULL,
                      "wrapper function has already a body!");
 
         arg_node = InsertWrapperCode (arg_node);
@@ -182,9 +185,9 @@ CWChasWrapperCode (node *fundef)
 {
     bool result;
 
-    DBUG_ENTER ("CWChasWrapperCode");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((FUNDEF_ISWRAPPERFUN (fundef)),
+    DBUG_ASSERT (FUNDEF_ISWRAPPERFUN (fundef),
                  "called CWChasWrapperCode with a non-wrapper fun");
 
     result = WrapperCodeIsPossible (fundef);
@@ -207,7 +210,7 @@ CWCdoCreateWrapperCode (node *ast)
 {
     info *info_node;
 
-    DBUG_ENTER ("CWCdoCreateWrapperCode");
+    DBUG_ENTER ();
 
     global.valid_ssaform = FALSE;
     /*
@@ -225,3 +228,5 @@ CWCdoCreateWrapperCode (node *ast)
 
     DBUG_RETURN (ast);
 }
+
+#undef DBUG_PREFIX

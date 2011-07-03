@@ -5,7 +5,10 @@
 #include "resolve_reference_args.h"
 
 #include "tree_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "RRA"
+#include "debug.h"
+
 #include "traverse.h"
 #include "str.h"
 #include "memory.h"
@@ -13,7 +16,6 @@
 #include "type_utils.h"
 #include "globals.h"
 #include "ctinfo.h"
-#include "dbug.h"
 
 /**
  * INFO structure
@@ -39,7 +41,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -53,7 +55,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -66,7 +68,7 @@ FreeInfo (info *info)
 static node *
 ExpandArgsToRets (node *rets, node *args)
 {
-    DBUG_ENTER ("ExpandArgsToRets");
+    DBUG_ENTER ();
 
     if (ARG_NEXT (args) != NULL) {
         rets = ExpandArgsToRets (rets, ARG_NEXT (args));
@@ -87,7 +89,7 @@ ExpandArgsToRets (node *rets, node *args)
 static node *
 ExpandArgsToReturnExprs (node *exprs, node *args)
 {
-    DBUG_ENTER ("ExpandArgsToReturnExprs");
+    DBUG_ENTER ();
 
     if (ARG_NEXT (args) != NULL) {
         exprs = ExpandArgsToReturnExprs (exprs, ARG_NEXT (args));
@@ -103,7 +105,7 @@ ExpandArgsToReturnExprs (node *exprs, node *args)
 static node *
 ExpandApArgsToResult (node *ids, node *args, node *exprs)
 {
-    DBUG_ENTER ("ExpandApArgsToResult");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (((args != NULL) && (exprs != NULL)),
                  "no of args and exprs does not match");
@@ -113,11 +115,10 @@ ExpandApArgsToResult (node *ids, node *args, node *exprs)
     }
 
     if ((ARG_ISREFERENCE (args)) || (ARG_WASREFERENCE (args))) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (exprs)) == N_id),
+        DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (exprs)) == N_id,
                      "non N_id node at reference arg position!");
 
-        DBUG_PRINT ("RRA",
-                    ("...expanding %s to ret", AVIS_NAME (ID_AVIS (EXPRS_EXPR (exprs)))));
+        DBUG_PRINT ("...expanding %s to ret", AVIS_NAME (ID_AVIS (EXPRS_EXPR (exprs))));
 
         ids = TBmakeIds (ID_AVIS (EXPRS_EXPR (exprs)), ids);
     }
@@ -128,9 +129,9 @@ ExpandApArgsToResult (node *ids, node *args, node *exprs)
 node *
 RRAfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RRAfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("RRA", ("Entering fundef %s...", CTIitemName (arg_node)));
+    DBUG_PRINT ("Entering fundef %s...", CTIitemName (arg_node));
 
     /*
      * expand reference parameters to parameters + return value
@@ -144,7 +145,7 @@ RRAfundef (node *arg_node, info *arg_info)
      * expand the return statement and function applications
      */
     if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("RRA", ("...processing body"));
+        DBUG_PRINT ("...processing body");
 
         INFO_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
         INFO_RETS (arg_info) = FUNDEF_RETS (arg_node);
@@ -155,7 +156,7 @@ RRAfundef (node *arg_node, info *arg_info)
         INFO_RETS (arg_info) = NULL;
     }
 
-    DBUG_PRINT ("RRA", ("Completed fundef %s...", CTIitemName (arg_node)));
+    DBUG_PRINT ("Completed fundef %s...", CTIitemName (arg_node));
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -167,7 +168,7 @@ RRAfundef (node *arg_node, info *arg_info)
 node *
 RRAreturn (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RRAreturn");
+    DBUG_ENTER ();
 
     if (INFO_ARGS (arg_info) != NULL) {
         RETURN_EXPRS (arg_node)
@@ -182,7 +183,7 @@ RRAlet (node *arg_node, info *arg_info)
 {
     node *oldlhs;
 
-    DBUG_ENTER ("RRAlet");
+    DBUG_ENTER ();
 
     oldlhs = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = LET_IDS (arg_node);
@@ -198,7 +199,7 @@ RRAlet (node *arg_node, info *arg_info)
 node *
 RRAap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RRAap");
+    DBUG_ENTER ();
 
     if (AP_ARGS (arg_node) != NULL) {
         INFO_LHS (arg_info)
@@ -212,7 +213,7 @@ RRAap (node *arg_node, info *arg_info)
 node *
 RRAmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RRAmodule");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -234,7 +235,7 @@ RRAdoResolveReferenceArgs (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("RRAdoResolveReferenceArgs");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_rra);
@@ -246,3 +247,5 @@ RRAdoResolveReferenceArgs (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

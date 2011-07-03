@@ -88,7 +88,8 @@ version="1.0">
 #include "serialize_filenames.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "dbug.h"
+#define DBUG_PREFIX "SET"
+#include "debug.h"
 
   </xsl:text>
   <!-- functions -->
@@ -125,13 +126,11 @@ version="1.0">
     <xsl:value-of select="'int cnt;'" />
   </xsl:if>
   <!-- DBUG_ENTER statement -->
-  <xsl:value-of select="'DBUG_ENTER( &quot;SET'"/>
-  <xsl:value-of select="@name"/>
-  <xsl:value-of select="'&quot;);'"/>
+  <xsl:value-of select="'DBUG_ENTER ();'"/>
   <!-- DBUG PRINT -->
-  <xsl:value-of select="'DBUG_PRINT( &quot;SET&quot;, (&quot;Serializing '" />
+  <xsl:value-of select="'DBUG_PRINT (&quot;Serializing '" />
   <xsl:value-of select="@name"/>
-  <xsl:value-of select="' node&quot;));'" />
+  <xsl:value-of select="' node&quot;);'" />
   <!-- print start of block -->
   <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, SHLPmakeNode( %d, %d, FILENAME( %d) &quot;, '" />
   <!-- generate nodetype argument -->
@@ -146,7 +145,7 @@ version="1.0">
   <!-- print end of block -->
   <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;)&quot;);'"/>
   <!-- DBUG_RETURN call -->
-  <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
+  <xsl:value-of select="'DBUG_RETURN (arg_node);'"/>
   <!-- end of body -->
   <xsl:value-of select="'}'"/>
 </xsl:template>

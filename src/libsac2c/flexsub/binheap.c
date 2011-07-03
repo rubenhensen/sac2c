@@ -6,7 +6,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "globals.h"
@@ -24,7 +27,7 @@ void
 PQinsertElem (elem *e, dynarray *q)
 {
 
-    DBUG_ENTER ("PQinsertElem");
+    DBUG_ENTER ();
 
     int i, mid;
 
@@ -48,14 +51,14 @@ PQinsertElem (elem *e, dynarray *q)
 
     DYNARRAY_ELEMS_POS (q, i) = e;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 PQinsert (int x, dynarray *q)
 {
 
-    DBUG_ENTER ("PQinsert");
+    DBUG_ENTER ();
 
     elem *e;
 
@@ -65,14 +68,14 @@ PQinsert (int x, dynarray *q)
 
     PQinsertElem (e, q);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 PQdeleteMin (dynarray *q)
 {
 
-    DBUG_ENTER ("PQdeleteMin");
+    DBUG_ENTER ();
 
     int i, child;
     elem *last;
@@ -107,14 +110,14 @@ PQdeleteMin (dynarray *q)
     DYNARRAY_ELEMS_POS (q, i) = last;
     DYNARRAY_ELEMS_POS (q, --DYNARRAY_TOTALELEMS (q)) = NULL;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 elem *
 PQgetMinElem (dynarray *q)
 {
 
-    DBUG_ENTER ("PQgetMinElem");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (DYNARRAY_TOTALELEMS (q) > 0, "Priority queue is empty");
 
@@ -128,7 +131,7 @@ int
 PQgetMin (dynarray *q)
 {
 
-    DBUG_ENTER ("PQgetMin");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (DYNARRAY_TOTALELEMS (q) > 0, "Priority queue is empty");
 
@@ -142,9 +145,11 @@ void
 PQprint (dynarray *q)
 {
 
-    DBUG_ENTER ("PQprint");
+    DBUG_ENTER ();
 
     printDynarray (q);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

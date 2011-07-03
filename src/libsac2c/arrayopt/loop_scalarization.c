@@ -259,7 +259,8 @@
  * avoid a superfluous traversal of the freshly generated assignments).
  */
 
-#include "dbug.h"
+#define DBUG_PREFIX "LS"
+#include "debug.h"
 
 #include "types.h"
 #include "DupTree.h"
@@ -307,7 +308,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -327,7 +328,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -362,7 +363,7 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
     node *assign;
     ntype *scalar_type;
 
-    DBUG_ENTER ("AdjustLoopSignature");
+    DBUG_ENTER ();
 
     /**
      * replace arg by vardec:
@@ -455,7 +456,7 @@ AdjustRecursiveCall (node *exprs, shape *shp, info *arg_info)
     struct ca_info local_info;
     struct ca_info *local_info_ptr = &local_info;
 
-    DBUG_ENTER ("AdjustRecursiveCall");
+    DBUG_ENTER ();
 
     /**
      * eliminate topmost exprs/expr:
@@ -534,7 +535,7 @@ AdjustExternalCall (node *exprs, shape *shp, info *arg_info)
     struct ca_info local_info;
     struct ca_info *local_info_ptr = &local_info;
 
-    DBUG_ENTER ("AdjustExternalCall");
+    DBUG_ENTER ();
 
     /**
      * eliminate topmost exprs/expr:
@@ -648,11 +649,11 @@ LSfundef (node *arg_node, info *arg_info)
     node *fundef, *args;
     node *extap, *recap;
 
-    DBUG_ENTER ("LSfundef");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("LS", ("Starting to traverse %s %s",
-                       (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                       FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("Starting to traverse %s %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                FUNDEF_NAME (arg_node));
     if (!((INFO_LEVEL (arg_info) == 0)
           && (FUNDEF_ISDOFUN (arg_node) || FUNDEF_ISCONDFUN (arg_node)))) {
 
@@ -697,7 +698,7 @@ LSfundef (node *arg_node, info *arg_info)
 
         INFO_FUNDEF (arg_info) = fundef;
     }
-    DBUG_PRINT ("LS", ("leaving function %s", FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
 
     if ((!INFO_ONEFUNDEF (arg_info)) && (INFO_LEVEL (arg_info) == 0)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -721,7 +722,7 @@ LSarg (node *arg_node, info *arg_info)
     node *mem_extcall, *mem_reccall;
     shape *shp;
 
-    DBUG_ENTER ("LSarg");
+    DBUG_ENTER ();
 
     if (ARG_NEXT (arg_node) != NULL) {
         mem_extcall = INFO_EXTCALL (arg_info);
@@ -737,7 +738,7 @@ LSarg (node *arg_node, info *arg_info)
         INFO_RECCALL (arg_info) = mem_reccall;
     }
 
-    DBUG_PRINT ("LS", ("inspecting arg %s!", ARG_NAME (arg_node)));
+    DBUG_PRINT ("inspecting arg %s!", ARG_NAME (arg_node));
     /* Traverse AVIS_SHAPE, etc., to mark extrema and SAA info as AVIS_ISUSED */
     ARG_AVIS (arg_node) = TRAVdo (ARG_AVIS (arg_node), arg_info);
 
@@ -746,7 +747,7 @@ LSarg (node *arg_node, info *arg_info)
         shp = SHcopyShape (TYgetShape (AVIS_TYPE (ARG_AVIS (arg_node))));
         if ((SHgetUnrLen (shp) <= global.minarray)
             && !AVIS_ISUSED (ARG_AVIS (arg_node))) {
-            DBUG_PRINT ("LS", ("   replacing arg %s!", ARG_NAME (arg_node)));
+            DBUG_PRINT ("   replacing arg %s!", ARG_NAME (arg_node));
             /**
              * First we create new arguments and we insert the array construction
              * at the beginning of the function body:
@@ -765,13 +766,12 @@ LSarg (node *arg_node, info *arg_info)
             INFO_EXTCALL (arg_info)
               = AdjustExternalCall (INFO_EXTCALL (arg_info), shp, arg_info);
         } else {
-            DBUG_PRINT ("LS",
-                        ("  %s!", AVIS_ISUSED (ARG_AVIS (arg_node)) ? "vector use!"
-                                                                    : "too large!"));
+            DBUG_PRINT ("  %s!",
+                        AVIS_ISUSED (ARG_AVIS (arg_node)) ? "vector use!" : "too large!");
         }
         shp = SHfreeShape (shp);
     } else {
-        DBUG_PRINT ("LS", ("  insufficient shape info!"));
+        DBUG_PRINT ("  insufficient shape info!");
     }
 
     DBUG_RETURN (arg_node);
@@ -788,7 +788,7 @@ LSassign (node *arg_node, info *arg_info)
     node *lastassign = NULL;
     node *precondassign;
 
-    DBUG_ENTER ("LSassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         lastassign = INFO_LASTASSIGN (arg_info);
@@ -826,7 +826,7 @@ LSap (node *arg_node, info *arg_info)
 {
     node *external, *recursive;
 
-    DBUG_ENTER ("LSap");
+    DBUG_ENTER ();
 
     if ((AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info))
         && FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))) {
@@ -869,7 +869,7 @@ node *
 LSprf (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("LSprf");
+    DBUG_ENTER ();
 
     if ((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel)) {
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
@@ -889,10 +889,10 @@ node *
 LSid (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("LSid");
+    DBUG_ENTER ();
 
     AVIS_ISUSED (ID_AVIS (arg_node)) = TRUE;
-    DBUG_PRINT ("LS", ("%s marked as used!", ID_NAME (arg_node)));
+    DBUG_PRINT ("%s marked as used!", ID_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -912,9 +912,9 @@ LSdoLoopScalarization (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("LSdoLoopScalarization");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("LS", ("Starting Loop Scalarization"));
+    DBUG_PRINT ("Starting Loop Scalarization");
 
     TRAVpush (TR_ls);
 
@@ -925,7 +925,9 @@ LSdoLoopScalarization (node *arg_node)
     arg_info = FreeInfo (arg_info);
     TRAVpop ();
 
-    DBUG_PRINT ("LS", ("Loop Scalarization done!"));
+    DBUG_PRINT ("Loop Scalarization done!");
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

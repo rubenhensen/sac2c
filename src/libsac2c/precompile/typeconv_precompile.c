@@ -33,7 +33,10 @@
 #include "new_types.h"
 #include "shape.h"
 #include "namespaces.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "TCP"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "globals.h"
 #include "new_typecheck.h"
@@ -63,7 +66,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -78,7 +81,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -99,7 +102,7 @@ TCPdoTypeConversions (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("TCPdoTypeConversions");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -141,7 +144,7 @@ LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
     node *new_ids;
     node *new_avis;
 
-    DBUG_ENTER ("LiftArg");
+    DBUG_ENTER ();
 
     new_name = TRAVtmpVarName (ID_NAME (arg));
 
@@ -170,7 +173,7 @@ LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
 
     ID_AVIS (arg) = new_avis;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -197,7 +200,7 @@ LiftIds (node *ids_arg, node *fundef, ntype *new_type, node **new_assigns)
     node *new_id;
     node *new_avis;
 
-    DBUG_ENTER ("LiftIds");
+    DBUG_ENTER ();
 
     new_name = TRAVtmpVarName (IDS_NAME (ids_arg));
 
@@ -228,7 +231,7 @@ LiftIds (node *ids_arg, node *fundef, ntype *new_type, node **new_assigns)
 
     IDS_AVIS (ids_arg) = new_avis;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*
@@ -247,7 +250,7 @@ LiftIds (node *ids_arg, node *fundef, ntype *new_type, node **new_assigns)
 node *
 TCPmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TCPmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
     MODULE_THREADFUNS (arg_node) = TRAVopt (MODULE_THREADFUNS (arg_node), arg_info);
@@ -266,7 +269,7 @@ TCPmodule (node *arg_node, info *arg_info)
 node *
 TCPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TCPfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
         FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
@@ -296,7 +299,7 @@ TCPfundef (node *arg_node, info *arg_info)
 node *
 TCPassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TCPassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -343,10 +346,9 @@ TCPap (node *arg_node, info *arg_info)
     int idx;
     shape_class_t actual_cls, formal_cls;
 
-    DBUG_ENTER ("TCPap");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("TCP", ("analyzing application of %s ......",
-                        CTIitemName (AP_FUNDEF (arg_node))));
+    DBUG_PRINT ("analyzing application of %s ......", CTIitemName (AP_FUNDEF (arg_node)));
 
     fun_argtab = FUNDEF_ARGTAB (AP_FUNDEF (arg_node));
     ap_argtab = AP_ARGTAB (arg_node);
@@ -366,13 +368,11 @@ TCPap (node *arg_node, info *arg_info)
             if ((actual_cls != formal_cls)
                 && (global.argtag_has_shp[fun_argtab->tag[idx]] || (actual_cls == C_scl)
                     || (formal_cls == C_scl))) {
-                DBUG_PRINT ("TCP",
-                            ("Return value with inappropriate shape class found:"));
-                DBUG_PRINT ("TCP",
-                            ("   ... %s ... = %s( ... ), index %d, %s instead of %s",
-                             CTIitemName (AP_FUNDEF (arg_node)), IDS_NAME (ids), idx,
-                             global.nt_shape_string[actual_cls],
-                             global.nt_shape_string[formal_cls]));
+                DBUG_PRINT ("Return value with inappropriate shape class found:");
+                DBUG_PRINT ("   ... %s ... = %s( ... ), index %d, %s instead of %s",
+                            CTIitemName (AP_FUNDEF (arg_node)), IDS_NAME (ids), idx,
+                            global.nt_shape_string[actual_cls],
+                            global.nt_shape_string[formal_cls]);
 
                 DBUG_ASSERT ((actual_cls != C_scl) && (formal_cls != C_scl),
                              "Conversion from or to scalar encountered!");
@@ -404,14 +404,13 @@ TCPap (node *arg_node, info *arg_info)
             if ((actual_cls != formal_cls)
                 && (global.argtag_has_shp[fun_argtab->tag[idx]] || (actual_cls == C_scl)
                     || (formal_cls == C_scl))) {
-                DBUG_PRINT ("TCP", ("Argument with inappropriate shape class found:"));
-                DBUG_PRINT ("TCP",
-                            ("   ... = %s( ... %s ...), index %d, %s instead of %s",
-                             CTIitemName (AP_FUNDEF (arg_node)), ID_NAME (id), idx,
-                             global.nt_shape_string[actual_cls],
-                             global.nt_shape_string[formal_cls]));
+                DBUG_PRINT ("Argument with inappropriate shape class found:");
+                DBUG_PRINT ("   ... = %s( ... %s ...), index %d, %s instead of %s",
+                            CTIitemName (AP_FUNDEF (arg_node)), ID_NAME (id), idx,
+                            global.nt_shape_string[actual_cls],
+                            global.nt_shape_string[formal_cls]);
 
-                DBUG_ASSERT ((NODE_TYPE (id) != N_globobj),
+                DBUG_ASSERT (NODE_TYPE (id) != N_globobj,
                              "possible lifting of global object encountered!");
 
                 DBUG_ASSERT ((actual_cls != C_scl) && (formal_cls != C_scl),
@@ -437,7 +436,7 @@ TCPap (node *arg_node, info *arg_info)
 node *
 TCPrange (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TCPrange");
+    DBUG_ENTER ();
 
     RANGE_BODY (arg_node) = TRAVdo (RANGE_BODY (arg_node), arg_info);
 
@@ -445,3 +444,5 @@ TCPrange (node *arg_node, info *arg_info)
 }
 
 /* @} */
+
+#undef DBUG_PREFIX

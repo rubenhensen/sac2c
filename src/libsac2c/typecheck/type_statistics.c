@@ -5,7 +5,9 @@
  */
 
 #include "type_statistics.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 #include "tree_basic.h"
 #include "tree_compound.h"
@@ -56,7 +58,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -71,7 +73,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -98,7 +100,7 @@ static char spec_mode_str[][4] = {"aks", "akd", "aud"};
 static info *
 ExamineTypes (ntype *type, info *info)
 {
-    DBUG_ENTER ("ExamineTypes");
+    DBUG_ENTER ();
     if (TYisAKV (type) || TYisAKS (type)) {
         INFO_TS_AKS (info) += 1;
     } else if (TYisAKD (type)) {
@@ -127,7 +129,7 @@ PrintStatistics (node *fundef, info *info)
     char *tmp;
     bool flag = FALSE;
 
-    DBUG_ENTER ("PrintStatistics");
+    DBUG_ENTER ();
 
     buf = SBUFcreate (80);
     buf = SBUFprintf (buf, "%s( ", FUNDEF_NAME (fundef));
@@ -169,7 +171,7 @@ PrintStatistics (node *fundef, info *info)
     }
     buf = SBUFfree (buf);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -188,7 +190,7 @@ TSdoPrintTypeStatistics (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("TSdoPrintTypeStatistics");
+    DBUG_ENTER ();
 
     TRAVpush (TR_ts);
 
@@ -224,7 +226,7 @@ TSdoPrintTypeStatistics (node *arg_node)
 node *
 TSfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("TSfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         /**
@@ -273,7 +275,7 @@ TSarg (node *arg_node, info *arg_info)
 {
     ntype *type;
 
-    DBUG_ENTER ("TSarg");
+    DBUG_ENTER ();
     type = ARG_NTYPE (arg_node);
     arg_info = ExamineTypes (type, arg_info);
     if (ARG_NEXT (arg_node) != NULL) {
@@ -298,7 +300,7 @@ TSvardec (node *arg_node, info *arg_info)
 {
     ntype *type;
 
-    DBUG_ENTER ("TSvardec");
+    DBUG_ENTER ();
     type = VARDEC_NTYPE (arg_node);
     arg_info = ExamineTypes (type, arg_info);
     if (VARDEC_NEXT (arg_node) != NULL) {
@@ -306,3 +308,5 @@ TSvardec (node *arg_node, info *arg_info)
     }
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

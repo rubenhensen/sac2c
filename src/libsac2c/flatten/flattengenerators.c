@@ -5,7 +5,9 @@
 #include <stdio.h>
 
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "FLATG"
+#include "debug.h"
 
 #include "new_types.h"
 #include "types.h"
@@ -73,7 +75,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -90,7 +92,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -175,7 +177,7 @@ FLATGflattenBound (node *arg_node, info *arg_info)
     shape *shp;
     int xrho;
 
-    DBUG_ENTER ("FLATGflattenBound");
+    DBUG_ENTER ();
 
     res = arg_node;
     if (NULL != arg_node) {
@@ -194,8 +196,7 @@ FLATGflattenBound (node *arg_node, info *arg_info)
 
             res = TBmakeId (avis);
             FREEdoFreeTree (arg_node);
-            DBUG_PRINT ("FLATG",
-                        ("Generated avis for: %s, of shape %d", AVIS_NAME (avis), xrho));
+            DBUG_PRINT ("Generated avis for: %s, of shape %d", AVIS_NAME (avis), xrho);
             break;
         case N_id:
             break;
@@ -224,7 +225,7 @@ FLATGdoFlatten (node *arg_node)
 {
     info *info_node;
 
-    DBUG_ENTER ("FLATGdoFlatten");
+    DBUG_ENTER ();
 
     info_node = MakeInfo ();
 
@@ -251,7 +252,7 @@ FLATGdoFlatten (node *arg_node)
 node *
 FLATGmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FLATGmodule");
+    DBUG_ENTER ();
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -275,7 +276,7 @@ node *
 FLATGfundef (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("FLATGfundef");
+    DBUG_ENTER ();
 
     /*
      * Do not flatten imported functions. These functions have already been
@@ -288,7 +289,7 @@ FLATGfundef (node *arg_node, info *arg_info)
     if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_WASIMPORTED (arg_node))
         && (!FUNDEF_ISWRAPPERFUN (arg_node)) && (FUNDEF_ISLOCAL (arg_node))) {
         INFO_VARDECS (arg_info) = NULL;
-        DBUG_PRINT ("FLATG", ("flattening function %s:", FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("flattening function %s:", FUNDEF_NAME (arg_node));
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
@@ -349,7 +350,7 @@ FLATGfundef (node *arg_node, info *arg_info)
 node *
 FLATGpart (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FLATGpart");
+    DBUG_ENTER ();
 
     PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
@@ -375,7 +376,7 @@ FLATGwith (node *arg_node, info *arg_info)
 {
     info *new_info;
 
-    DBUG_ENTER ("FLATGwith");
+    DBUG_ENTER ();
 
     new_info = MakeInfo ();
     INFO_VARDECS (new_info) = INFO_VARDECS (arg_info);
@@ -406,12 +407,12 @@ node *
 FLATGassign (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("FLATGassign");
+    DBUG_ENTER ();
     if ((N_let == NODE_TYPE (ASSIGN_INSTR (arg_node)))
         && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))))) {
         INFO_ASSIGNISNWITH (arg_info) = TRUE;
-        DBUG_PRINT ("FLATG", ("Traversing N_assign for %s",
-                              AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node))))));
+        DBUG_PRINT ("Traversing N_assign for %s",
+                    AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node)))));
     }
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
@@ -448,7 +449,7 @@ FLATGassign (node *arg_node, info *arg_info)
 node *
 FLATGgenerator (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FLATGgenerator");
+    DBUG_ENTER ();
 
     GENERATOR_BOUND1 (arg_node)
       = FLATGflattenBound (GENERATOR_BOUND1 (arg_node), arg_info);
@@ -472,7 +473,7 @@ FLATGgenerator (node *arg_node, info *arg_info)
 node *
 FLATGcond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FLATGcond");
+    DBUG_ENTER ();
 
     COND_COND (arg_node) = TRAVopt (COND_COND (arg_node), arg_info);
     COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
@@ -493,7 +494,7 @@ FLATGcond (node *arg_node, info *arg_info)
 node *
 FLATGfuncond (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FLATGfuncond");
+    DBUG_ENTER ();
 
     FUNCOND_IF (arg_node) = TRAVopt (FUNCOND_IF (arg_node), arg_info);
     FUNCOND_THEN (arg_node) = TRAVopt (FUNCOND_THEN (arg_node), arg_info);
@@ -514,7 +515,7 @@ FLATGfuncond (node *arg_node, info *arg_info)
 node *
 FLATGdo (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FLATGdo");
+    DBUG_ENTER ();
 
     DO_COND (arg_node) = TRAVopt (DO_COND (arg_node), arg_info);
     DO_BODY (arg_node) = TRAVopt (DO_BODY (arg_node), arg_info);
@@ -535,7 +536,7 @@ FLATGdo (node *arg_node, info *arg_info)
 node *
 FLATGwhile (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FLATGwhile");
+    DBUG_ENTER ();
 
     WHILE_COND (arg_node) = TRAVopt (WHILE_COND (arg_node), arg_info);
     WHILE_BODY (arg_node) = TRAVopt (WHILE_BODY (arg_node), arg_info);
@@ -555,10 +556,10 @@ FLATGwhile (node *arg_node, info *arg_info)
 node *
 FLATGlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FLATGlet");
+    DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
-    DBUG_PRINT ("FLATG", ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+    DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     INFO_LHS (arg_info) = NULL;
 
@@ -586,7 +587,7 @@ FLATGlet (node *arg_node, info *arg_info)
 node *
 FLATGprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FLATGprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     default:
@@ -619,7 +620,7 @@ FLATGexprs (node *arg_node, info *arg_info)
     node *expr;
     bool doflatten;
 
-    DBUG_ENTER ("FLATGexprs");
+    DBUG_ENTER ();
 
     if (INFO_EXPRSISINPRF (arg_info)) {
         expr = EXPRS_EXPR (arg_node);
@@ -637,8 +638,8 @@ FLATGexprs (node *arg_node, info *arg_info)
              || (NODE_TYPE (expr) == N_cast));
 
         if (doflatten) {
-            DBUG_PRINT ("FLATG", ("Flattening N_prf for %s",
-                                  AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)))));
+            DBUG_PRINT ("Flattening N_prf for %s",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             expr = AWLFIflattenExpression (expr, &INFO_VARDECS (arg_info),
                                            &INFO_PREASSIGNSPRF (arg_info),
                                            TYmakeAUD (TYmakeSimpleType (T_unknown)));
@@ -651,3 +652,5 @@ FLATGexprs (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

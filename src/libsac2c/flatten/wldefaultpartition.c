@@ -23,7 +23,10 @@
 #include "shape.h"
 #include "DupTree.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLDP"
+#include "debug.h"
+
 #include "traverse.h"
 #include "constants.h"
 #include "deserialize.h"
@@ -68,7 +71,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -90,7 +93,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -126,9 +129,9 @@ CreateScalarWL (int dim, node *array_shape, simpletype btype, node *expr, node *
     node *ass;
     node *code, *part, *withop;
 
-    DBUG_ENTER ("CreateScalarWL");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((dim >= 0), "CreateScalarWl() used with unknown shape!");
+    DBUG_ASSERT (dim >= 0, "CreateScalarWl() used with unknown shape!");
 
     vec_ids = TBmakeIds (TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                                SHcreateShape (1, dim))),
@@ -194,9 +197,9 @@ CreateZeros (ntype *array_type, node *fundef)
     shape *shape;
     int dim;
 
-    DBUG_ENTER ("CreateZeros");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((TYisSimple (array_type) == FALSE), "N_id is no array type!");
+    DBUG_ASSERT (TYisSimple (array_type) == FALSE, "N_id is no array type!");
 
     dim = TYgetDim (array_type);
     btype = TYgetSimpleType (TYgetScalar (array_type));
@@ -232,18 +235,18 @@ node *CreateArraySel( node *sel_vec, node *sel_array, info *arg_info)
   node *sel;
   int len_index, dim_array;
   
-  DBUG_ENTER( "CreateArraySel");
+  DBUG_ENTER ();
 
-  DBUG_ASSERT( (NODE_TYPE( sel_array) == N_id), "no N_id node found!");
+  DBUG_ASSERT (NODE_TYPE( sel_array) == N_id, "no N_id node found!");
 
   len_index = SHgetExtent( TYgetShape( IDS_NTYPE( sel_vec)), 0);
-  DBUG_ASSERT( (len_index > 0), "illegal index length found!");
+  DBUG_ASSERT (len_index > 0, "illegal index length found!");
 
   dim_array = TYgetDim( ID_NTYPE( sel_array));
-  DBUG_ASSERT( (dim_array > 0), "illegal array dimensionality found!");
+  DBUG_ASSERT (dim_array > 0, "illegal array dimensionality found!");
 
   if (len_index > dim_array) {
-    DBUG_ASSERT( (0), "illegal array selection found!");
+    DBUG_ASSERT (0, "illegal array selection found!");
     sel = NULL;
   }
   else if ((len_index == dim_array)) {
@@ -263,14 +266,13 @@ node *CreateArraySel( node *sel_vec, node *sel_array, info *arg_info)
       DSfinishDeserialize( INFO_MODULE( arg_info));
     }
     
-    DBUG_ASSERTF( (INFO_SELWRAPPER( arg_info) != NULL),
-                  ("Function %s::sel not found", global.preludename));
+    DBUG_ASSERT (INFO_SELWRAPPER( arg_info) != NULL, "Function %s::sel not found", global.preludename);
 
     sel = TCmakeAp2( INFO_SELWRAPPER( arg_info), 
                      DUPdupIdsId( sel_vec), DUPdoDupNode( sel_array)); 
   }
   
-  DBUG_RETURN( sel);
+  DBUG_RETURN (sel);
 }
 #endif
 
@@ -288,7 +290,7 @@ node *CreateArraySel( node *sel_vec, node *sel_array, info *arg_info)
 node *
 WLDPmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLDPmodule");
+    DBUG_ENTER ();
 
     DSinitDeserialize (arg_node);
 
@@ -317,11 +319,11 @@ WLDPmodule (node *arg_node, info *arg_info)
 node *
 WLDPfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLDPfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    DBUG_PRINT ("WLDP", ("traversing body of function %s", CTIitemName (arg_node)));
+    DBUG_PRINT ("traversing body of function %s", CTIitemName (arg_node));
 
     if (FUNDEF_BODY (arg_node)) {
         FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
@@ -348,7 +350,7 @@ WLDPfundef (node *arg_node, info *arg_info)
 node *
 WLDPassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLDPassign");
+    DBUG_ENTER ();
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -383,9 +385,9 @@ WLDPwith (node *arg_node, info *arg_info)
 {
     node *lastdefwithid;
 
-    DBUG_ENTER ("WLDPwith");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLDP", ("traversing With-Loop in line #%d ", NODE_LINE (arg_node)));
+    DBUG_PRINT ("traversing With-Loop in line #%d ", NODE_LINE (arg_node));
     /*
      * We have to stack the withloop info here to cater for nested withloops
      */
@@ -421,8 +423,8 @@ WLDPwith (node *arg_node, info *arg_info)
              */
             WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
         } else {
-            DBUG_ASSERT ((NODE_TYPE (PART_GENERATOR (PART_NEXT (WITH_PART (arg_node))))
-                          == N_default),
+            DBUG_ASSERT (NODE_TYPE (PART_GENERATOR (PART_NEXT (WITH_PART (arg_node))))
+                           == N_default,
                          "Second partition is no default partition!");
         }
     }
@@ -446,7 +448,7 @@ WLDPwith (node *arg_node, info *arg_info)
 node *
 WLDPgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLDPgenarray");
+    DBUG_ENTER ();
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
         GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
@@ -507,7 +509,7 @@ WLDPmodarray (node *arg_node, info *arg_info)
 {
     node *sel_vec, *sel_array, *sel_ap;
 
-    DBUG_ENTER ("WLDPmodarray");
+    DBUG_ENTER ();
 
     if (MODARRAY_NEXT (arg_node) != NULL) {
         MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
@@ -559,13 +561,13 @@ WLDPpropagate (node *arg_node, info *arg_info)
     node *inres, *outres;
     ntype *type;
 
-    DBUG_ENTER ("WLDPpropagate");
+    DBUG_ENTER ();
 
     if (PROPAGATE_NEXT (arg_node) != NULL) {
         PROPAGATE_NEXT (arg_node) = TRAVdo (PROPAGATE_NEXT (arg_node), arg_info);
     }
 
-    DBUG_ASSERT ((NODE_TYPE (PROPAGATE_DEFAULT (arg_node)) == N_id),
+    DBUG_ASSERT (NODE_TYPE (PROPAGATE_DEFAULT (arg_node)) == N_id,
                  "N_id node expected as propagate default");
 
     /*
@@ -619,9 +621,9 @@ WLDPpart (node *arg_node, info *arg_info)
     node *expriter, *temp, *idniter;
     node *newavis;
 
-    DBUG_ENTER ("WLDPpart");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_DEFEXPR (arg_info) != NULL), "default expression is missing!");
+    DBUG_ASSERT (INFO_DEFEXPR (arg_info) != NULL, "default expression is missing!");
 
     _ids = NULL;
     idn = NULL;
@@ -734,12 +736,12 @@ WLDPdoWlDefaultPartition (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("WLDPdoWlDefaultPartition");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
                  "WLDPdoDefaultPartition not started with N_module node");
 
-    DBUG_PRINT ("WLDP", ("starting with-loop default partition"));
+    DBUG_PRINT ("starting with-loop default partition");
 
     arg_info = MakeInfo ();
 
@@ -749,9 +751,11 @@ WLDPdoWlDefaultPartition (node *arg_node)
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
-    DBUG_PRINT ("WLDP", ("with-loop default partition complete"));
+    DBUG_PRINT ("with-loop default partition complete");
 
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

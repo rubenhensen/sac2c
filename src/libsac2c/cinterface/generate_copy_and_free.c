@@ -24,7 +24,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "filemgr.h"
@@ -54,7 +57,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -67,7 +70,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -93,7 +96,7 @@ GCFdoGenerateCopyAndFree (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("GCFdoGenerateCopyAndFree");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -120,7 +123,7 @@ GCFdoGenerateCopyAndFree (node *syntax_tree)
 static void
 PrintFileHeader (FILE *file)
 {
-    DBUG_ENTER ("PrintFileHeader");
+    DBUG_ENTER ();
 
     fprintf (file,
              "/*\n"
@@ -132,13 +135,13 @@ PrintFileHeader (FILE *file)
              "#include \"header.h\"\n\n",
              global.version_id, build_style, build_rev);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintFreeHead (FILE *file)
 {
-    DBUG_ENTER ("PrintFreeHead");
+    DBUG_ENTER ();
 
     fprintf (file, "extern void SACARGfreeDataInternal( int btype, void *data);\n"
                    "\n");
@@ -147,13 +150,13 @@ PrintFreeHead (FILE *file)
                    "{ \n"
                    "  switch( btype) {\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintFreeTail (FILE *file)
 {
-    DBUG_ENTER ("PrintFreeTail");
+    DBUG_ENTER ();
 
     fprintf (file,
              "  default:\n"
@@ -161,13 +164,13 @@ PrintFreeTail (FILE *file)
              "  }\n"
              "}\n\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintCopyHead (FILE *file)
 {
-    DBUG_ENTER ("PrintCopyHead");
+    DBUG_ENTER ();
 
     fprintf (file,
              "extern void *SACARGcopyDataInternal( int btype, int size, void *data);\n"
@@ -179,13 +182,13 @@ PrintCopyHead (FILE *file)
                    "\n"
                    "  switch( btype) {\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintCopyTail (FILE *file)
 {
-    DBUG_ENTER ("PrintCopyTail");
+    DBUG_ENTER ();
 
     fprintf (file,
              "  default:\n"
@@ -195,7 +198,7 @@ PrintCopyTail (FILE *file)
              "  return( result);\n"
              "}\n\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -224,12 +227,12 @@ GCFtypedef (node *arg_node, info *arg_info)
     int btype;
     node *unaliased_tdef;
 
-    DBUG_ENTER ("GCFtypedef");
+    DBUG_ENTER ();
 
     inner = TUgetBaseSimpleType (TYPEDEF_NTYPE (arg_node));
     udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_NS (arg_node));
 
-    DBUG_ASSERT ((udt != UT_NOT_DEFINED), "udt for typedef not found!");
+    DBUG_ASSERT (udt != UT_NOT_DEFINED, "udt for typedef not found!");
 
     btype = udt + global.sac4c_udt_offset;
 
@@ -305,7 +308,7 @@ GCFtypedef (node *arg_node, info *arg_info)
 node *
 GCFmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GCFmodule");
+    DBUG_ENTER ();
 
     INFO_COPYFILE (arg_info) = FMGRwriteOpen ("%s/sacargcopy.c", global.tmp_dirname);
     INFO_FREEFILE (arg_info) = FMGRwriteOpen ("%s/sacargfree.c", global.tmp_dirname);
@@ -345,3 +348,5 @@ GCFmodule (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

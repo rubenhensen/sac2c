@@ -3,7 +3,10 @@
  */
 
 #include "specialize.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "SPEC"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -63,7 +66,7 @@ InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
 {
     node *last_assign, *ret, *id, *avis, *new_avis;
 
-    DBUG_ENTER ("InsertTypeConv");
+    DBUG_ENTER ();
 
     last_assign = TCgetLastAssign (FUNDEF_INSTR (fundef));
 
@@ -108,7 +111,7 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
     int i;
     ntype *spec_type, *inherited_type, *new_type;
 
-    DBUG_ENTER ("AdjustReturnTypesOfSpecialization");
+    DBUG_ENTER ();
 
     ret = FUNDEF_RETS (fundef);
     i = 0;
@@ -144,7 +147,7 @@ AdjustReturnTypesOfSpecialization (node *fundef, ntype *rets)
         case TY_hcs:
         case TY_dis:
         default:
-            DBUG_ASSERT ((0), "dispach should no have worked!");
+            DBUG_ASSERT (0, "dispach should no have worked!");
         }
 
         ret = RET_NEXT (ret);
@@ -186,11 +189,11 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("SpecializationOracle");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("SPEC", tmp_str = TYtype2String (args, FALSE, 0););
-    DBUG_PRINT ("SPEC", ("spec %s for %s?", CTIitemName (fundef), tmp_str));
-    DBUG_EXECUTE ("SPEC", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (args, FALSE, 0));
+    DBUG_PRINT ("spec %s for %s?", CTIitemName (fundef), tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     if ((dft->num_deriveable_partials > 1)
         || ((dft->num_deriveable_partials == 1) && (dft->deriveable != NULL))
@@ -220,9 +223,9 @@ SpecializationOracle (node *wrapper, node *fundef, ntype *args, dft_res *dft)
         res = NULL;
     }
 
-    DBUG_EXECUTE ("SPEC", tmp_str = TYtype2String (res, FALSE, 0););
-    DBUG_PRINT ("SPEC", ("oracle: %s%s!", (res == NULL ? "yes" : "try with"), tmp_str));
-    DBUG_EXECUTE ("SPEC", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (res, FALSE, 0));
+    DBUG_PRINT ("oracle: %s%s!", (res == NULL ? "yes" : "try with"), tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     DBUG_RETURN (res);
 }
@@ -251,10 +254,10 @@ UpdateFixSignature (node *fundef, ntype *arg_ts, ntype *ret_ts)
     ntype *type, *old_type, *new_type;
     int i = 0;
 
-    DBUG_ENTER ("UpdateFixSignature");
-    DBUG_ASSERT ((TCcountArgs (FUNDEF_ARGS (fundef)) == TYgetProductSize (arg_ts)),
+    DBUG_ENTER ();
+    DBUG_ASSERT (TCcountArgs (FUNDEF_ARGS (fundef)) == TYgetProductSize (arg_ts),
                  "UpdateFixSignature called with incompatible no of arguments!");
-    DBUG_ASSERT ((TYisProdOfArrayOrFixedAlpha (arg_ts)),
+    DBUG_ASSERT (TYisProdOfArrayOrFixedAlpha (arg_ts),
                  "UpdateFixSignature called with non-fixed args!");
     DBUG_ASSERT (((ret_ts == NULL)
                   || (TCcountRets (FUNDEF_RETS (fundef)) == TYgetProductSize (ret_ts))),
@@ -335,10 +338,10 @@ UpdateVarSignature (node *fundef, ntype *arg_ts)
     int i = 0;
     bool ok = TRUE;
 
-    DBUG_ENTER ("UpdateVarSignature");
-    DBUG_ASSERT ((TCcountArgs (FUNDEF_ARGS (fundef)) == TYgetProductSize (arg_ts)),
+    DBUG_ENTER ();
+    DBUG_ASSERT (TCcountArgs (FUNDEF_ARGS (fundef)) == TYgetProductSize (arg_ts),
                  "UpdateVarSignature called with incompatible no of arguments!");
-    DBUG_ASSERT ((TYisProdOfArrayOrFixedAlpha (arg_ts)),
+    DBUG_ASSERT (TYisProdOfArrayOrFixedAlpha (arg_ts),
                  "UpdateVarSignature called with non-fixed args!");
 
     args = FUNDEF_ARGS (fundef);
@@ -384,14 +387,14 @@ checkAndRebuildWrapperType (ntype *type)
 {
     ntype *result;
 
-    DBUG_ENTER ("checkAndRebuildWrapperType");
+    DBUG_ENTER ();
 
     if (TYcontainsAlpha (type)) {
-        DBUG_PRINT ("SPEC", ("wrapper type seems not to be finalized"));
+        DBUG_PRINT ("wrapper type seems not to be finalized");
 
         result = type;
     } else {
-        DBUG_PRINT ("SPEC", ("wrapper type seems to be finalized -- rebuilding"));
+        DBUG_PRINT ("wrapper type seems to be finalized -- rebuilding");
 
         result = TUrebuildWrapperTypeAlphaFix (type);
 
@@ -413,7 +416,7 @@ checkAndRebuildWrapperType (ntype *type)
 static node *
 ResetLaCFlags (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("ResetLaCFlags");
+    DBUG_ENTER ();
 
     FUNDEF_ISLOCAL (arg_node) = TRUE;
     FUNDEF_WASUSED (arg_node) = FALSE;
@@ -434,7 +437,7 @@ ResetLaCFlags (node *arg_node, info *arg_info)
 static node *
 SetLaCNamespace (node *arg_node, namespace_t *ns)
 {
-    DBUG_ENTER ("SetLaCNamespace");
+    DBUG_ENTER ();
 
     FUNDEF_NS (arg_node) = NSfreeNamespace (FUNDEF_NS (arg_node));
     FUNDEF_NS (arg_node) = NSdupNamespace (ns);
@@ -462,11 +465,11 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("DoSpecialize");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("SPEC", tmp_str = TYtype2String (args, FALSE, 0););
-    DBUG_PRINT ("SPEC", ("specializing %s for %s", CTIitemName (fundef), tmp_str));
-    DBUG_EXECUTE ("SPEC", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2String (args, FALSE, 0));
+    DBUG_PRINT ("specializing %s for %s", CTIitemName (fundef), tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     /*
      * in case of a function loaded from a module, the body may be missing, so
@@ -487,7 +490,7 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
         res = AdjustReturnTypesOfSpecialization (res, rets);
     }
 
-    DBUG_ASSERT ((FUNDEF_BODY (res) != NULL), "missing body while trying to specialise!");
+    DBUG_ASSERT (FUNDEF_BODY (res) != NULL, "missing body while trying to specialise!");
 
     /* reset the SYMBOLNAME attribute, as the function is _not_
      * the one referenced by the SYMBOLNAME anymore
@@ -630,7 +633,7 @@ SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args, ntype *rets
     ntype *new_args;
     int i;
 
-    DBUG_ENTER ("HandleDownProjections");
+    DBUG_ENTER ();
 
     while (dft->deriveable != NULL) {
         new_args = SpecializationOracle (wrapper, dft->deriveable, args, dft);
@@ -681,7 +684,7 @@ SPEChandleDownProjections (dft_res *dft, node *wrapper, ntype *args, ntype *rets
 node *
 SPEChandleLacFun (node *fundef, node *assign, ntype *args)
 {
-    DBUG_ENTER ("SPEChandleLacFun");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (FUNDEF_ISLACFUN (fundef), "SPEChandleLacFun called with non LaC fun!");
 
@@ -736,7 +739,7 @@ SPECresetSpecChain (void)
 {
     node *res;
 
-    DBUG_ENTER ("SPECresetSpecChain");
+    DBUG_ENTER ();
 
     res = specialized_fundefs;
     specialized_fundefs = NULL;
@@ -760,12 +763,14 @@ SPECresetSpecChain (void)
 void
 SPECinitSpecChain (void)
 {
-    DBUG_ENTER ("SPECinitSpecChain");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (specialized_fundefs == NULL,
                  "Non-empty spec chain found on initialisation");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /* @} */ /* addtogroup ntc */
+
+#undef DBUG_PREFIX

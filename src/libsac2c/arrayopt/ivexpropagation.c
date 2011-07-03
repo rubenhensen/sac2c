@@ -60,7 +60,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "IVEXP"
+#include "debug.h"
+
 #include "traverse.h"
 #include "free.h"
 #include "tree_basic.h"
@@ -117,7 +120,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -137,7 +140,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -165,12 +168,12 @@ node *
 IVEXPdoIndexVectorExtremaProp (node *arg_node)
 {
     info *arg_info;
-    DBUG_ENTER ("IVEXPdoIndexVectorExtremaProp");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_fundef),
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
                  "IVEXPdoIndexVectorExtremaPropexpected N_fundef");
 
-    DBUG_PRINT ("IVEXP", ("Starting index vector extrema propagation traversal"));
+    DBUG_PRINT ("Starting index vector extrema propagation traversal");
     arg_info = MakeInfo ();
     INFO_ONEFUNDEF (arg_info) = TRUE;
 
@@ -178,7 +181,7 @@ IVEXPdoIndexVectorExtremaProp (node *arg_node)
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
-    DBUG_PRINT ("IVEXP", ("Index vector extrema propagation complete."));
+    DBUG_PRINT ("Index vector extrema propagation complete.");
 
     arg_info = FreeInfo (arg_info);
     DBUG_RETURN (arg_node);
@@ -232,8 +235,8 @@ BuildExtremaNonnegval (node *arg_node, info *arg_info)
     node *zids;
     int shp;
 
-    DBUG_ENTER ("BuildExtremaNonnegval");
-    DBUG_PRINT ("IVEXI", ("completely untested yet"));
+    DBUG_ENTER ();
+    DBUG_PRINT_TAG ("IVEXI", "completely untested yet");
 
     under construction
 
@@ -295,9 +298,9 @@ BuildExtremaShape (node *arg_node, info *arg_info)
     node *neg1;
     shape *shp;
 
-    DBUG_ENTER ("BuildExtremaShape");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXI", ("completely untested yet"));
+    DBUG_PRINT_TAG ("IVEXI", "completely untested yet");
 
     if (!PRF_EXTREMAATTACHED (arg_node)) {
         PRF_EXTREMAATTACHED (arg_node) = TRUE;
@@ -404,9 +407,9 @@ BuildExtremumValLtShape (node *arg_node, info *arg_info)
     node *pids;
     int shp;
 
-    DBUG_ENTER ("BuildExtremumValLtShape");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("IVEXI", ("completely untested yet"));
+    DBUG_PRINT_TAG ("IVEXI", "completely untested yet");
     if (NULL == PRF_ARG3 (arg_node)) { /* Do we already have extrema? */
 
         /* Generate shp */
@@ -474,7 +477,7 @@ makeNarray (node *extrema, info *arg_info, ntype *typ, node *nar)
     node *narr;
     node *zavis = NULL;
 
-    DBUG_ENTER ("makeNarray");
+    DBUG_ENTER ();
 
     if (NULL != extrema) {
         DBUG_ASSERT (N_exprs == NODE_TYPE (extrema), "Expected N_exprs");
@@ -530,50 +533,50 @@ void
 IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup)
 {
 
-    DBUG_ENTER ("IVEXPsetMinvalIfNotNull");
+    DBUG_ENTER ();
 
     if (NULL != src) {
         DBUG_ASSERT (N_id == NODE_TYPE (src), "Expected N_id src");
         if (NULL == AVIS_MIN (snk)) {
             AVIS_MIN (snk) = dup ? TBmakeId (ID_AVIS (src)) : src;
             AVIS_ISMINHANDLED (snk) = TRUE;
-            DBUG_PRINT ("IVEXP", ("AVIS_MIN(%s) set to %s", AVIS_NAME (snk),
-                                  AVIS_NAME (ID_AVIS (src))));
+            DBUG_PRINT ("AVIS_MIN(%s) set to %s", AVIS_NAME (snk),
+                        AVIS_NAME (ID_AVIS (src)));
         } else if ((ID_AVIS (src) != ID_AVIS (AVIS_MIN (snk)))) {
             FREEdoFreeNode (AVIS_MIN (snk));
             AVIS_MIN (snk) = dup ? TBmakeId (ID_AVIS (src)) : src;
             AVIS_ISMINHANDLED (snk) = TRUE;
-            DBUG_PRINT ("IVEXP", ("AVIS_MIN(%s) set to %s", AVIS_NAME (snk),
-                                  AVIS_NAME (ID_AVIS (src))));
+            DBUG_PRINT ("AVIS_MIN(%s) set to %s", AVIS_NAME (snk),
+                        AVIS_NAME (ID_AVIS (src)));
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup)
 {
 
-    DBUG_ENTER ("IVEXPsetMaxvalIfNotNull");
+    DBUG_ENTER ();
 
     if (NULL != src) {
         DBUG_ASSERT (N_id == NODE_TYPE (src), "Expected N_id src");
         if (NULL == AVIS_MAX (snk)) {
             AVIS_MAX (snk) = dup ? TBmakeId (ID_AVIS (src)) : src;
             AVIS_ISMAXHANDLED (snk) = TRUE;
-            DBUG_PRINT ("IVEXP", ("AVIS_MAX(%s) set to %s", AVIS_NAME (snk),
-                                  AVIS_NAME (ID_AVIS (src))));
+            DBUG_PRINT ("AVIS_MAX(%s) set to %s", AVIS_NAME (snk),
+                        AVIS_NAME (ID_AVIS (src)));
         } else if ((ID_AVIS (src) != ID_AVIS (AVIS_MAX (snk)))) {
             FREEdoFreeNode (AVIS_MAX (snk));
             AVIS_MAX (snk) = dup ? TBmakeId (ID_AVIS (src)) : src;
             AVIS_ISMAXHANDLED (snk) = TRUE;
-            DBUG_PRINT ("IVEXP", ("AVIS_MAX(%s) set to %s", AVIS_NAME (snk),
-                                  AVIS_NAME (ID_AVIS (src))));
+            DBUG_PRINT ("AVIS_MAX(%s) set to %s", AVIS_NAME (snk),
+                        AVIS_NAME (ID_AVIS (src)));
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -600,7 +603,7 @@ buildExtremaChain (node *exprs, int minmax)
     node *avis;
     node *m;
 
-    DBUG_ENTER ("buildExtremaChain");
+    DBUG_ENTER ();
     if (NULL != EXPRS_NEXT (exprs)) {
         z = buildExtremaChain (EXPRS_NEXT (exprs), minmax);
     }
@@ -610,7 +613,7 @@ buildExtremaChain (node *exprs, int minmax)
         m = EXPRS_EXPR (exprs);
     }
 
-    DBUG_ASSERT ((NULL != m), "Expected non-NULL m");
+    DBUG_ASSERT (NULL != m, "Expected non-NULL m");
     z = TBmakeExprs (DUPdoDupNode (m), z);
 
     DBUG_RETURN (z);
@@ -640,7 +643,7 @@ isAllNarrayExtremumPresent (node *arg_node, int minmax)
     node *m;
     bool z;
 
-    DBUG_ENTER ("isAllNarrayExtremumPresent");
+    DBUG_ENTER ();
 
     /* Check that we have extrema for all non-constant array elements.
      * All N_array elements must be N_id nodes.
@@ -701,7 +704,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
     node *maxv = NULL;
     node *z;
 
-    DBUG_ENTER ("GenerateNarrayExtrema");
+    DBUG_ENTER ();
 
     lhs = LET_IDS (arg_node);
     lhsavis = IDS_AVIS (lhs);
@@ -785,7 +788,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
         constant *kcon;
         prf op;
 
-        DBUG_ENTER ("IVEXPadjustExtremaBound");
+        DBUG_ENTER ();
 
         if (NULL != arg_node) {
             kavis = IVEXImakeIntScalar (k, vardecs, preassigns);
@@ -835,9 +838,8 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
                 AVIS_ISMAXHANDLED (zavis) = TRUE;
             }
 
-            DBUG_PRINT ("IVEXP",
-                        ("adjustExtremaBound introduced adjustment named: %s for: %s",
-                         AVIS_NAME (zavis), AVIS_NAME (arg_node)));
+            DBUG_PRINT ("adjustExtremaBound introduced adjustment named: %s for: %s",
+                        AVIS_NAME (zavis), AVIS_NAME (arg_node));
             pat = PMfree (pat);
         }
 
@@ -864,7 +866,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
         bool arg1c;
         bool arg2c;
 
-        DBUG_ENTER ("GetMinvalOnNonconstantArg");
+        DBUG_ENTER ();
 
         arg1c = COisConstant (PRF_ARG1 (arg_node));
         arg2c = COisConstant (PRF_ARG2 (arg_node));
@@ -878,8 +880,8 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
         }
 
         if (NULL != z) {
-            DBUG_PRINT ("IVEXP", ("Found minval %s for non-constant argument",
-                                  AVIS_NAME (ID_AVIS (z))));
+            DBUG_PRINT ("Found minval %s for non-constant argument",
+                        AVIS_NAME (ID_AVIS (z)));
         }
 
         DBUG_RETURN (z);
@@ -891,7 +893,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
         bool arg1c;
         bool arg2c;
 
-        DBUG_ENTER ("GetMaxvalNonOnconstantArg");
+        DBUG_ENTER ();
 
         arg1c = COisConstant (PRF_ARG1 (arg_node));
         arg2c = COisConstant (PRF_ARG2 (arg_node));
@@ -905,8 +907,8 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
         }
 
         if (NULL != z) {
-            DBUG_PRINT ("IVEXP", ("Found maxval %s for non-constant argument",
-                                  AVIS_NAME (ID_AVIS (z))));
+            DBUG_PRINT ("Found maxval %s for non-constant argument",
+                        AVIS_NAME (ID_AVIS (z)));
         }
 
         DBUG_RETURN (z);
@@ -922,7 +924,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
     static node *InvokeMonadicFn (node * minmaxavis, node * lhsavis, node * rhs,
                                   info * arg_info)
     {
-        DBUG_ENTER ("InvokeMonadicFn");
+        DBUG_ENTER ();
 
         minmaxavis = TCmakePrf1 (PRF_PRF (rhs), TBmakeId (minmaxavis));
         minmaxavis = AWLFIflattenExpression (minmaxavis, &INFO_VARDECS (arg_info),
@@ -995,7 +997,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
         bool max1;
         bool max2;
 
-        DBUG_ENTER ("GenerateExtremaComputationsDyadicScalarPrf");
+        DBUG_ENTER ();
 
         rhs = LET_EXPR (arg_node);
         lhsavis = IDS_AVIS (LET_IDS (arg_node));
@@ -1254,7 +1256,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
         node *withid;
         prf nprf;
 
-        DBUG_ENTER ("GenerateExtremaComputationsPrf");
+        DBUG_ENTER ();
 
         INFO_MINVAL (arg_info) = NULL;
         INFO_MAXVAL (arg_info) = NULL;
@@ -1467,7 +1469,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
         node *rhs;
         node *lhsavis;
 
-        DBUG_ENTER ("GenerateExtremaComputations");
+        DBUG_ENTER ();
 
         DBUG_ASSERT (N_let == NODE_TYPE (arg_node), "Expected N_let");
         lhsavis = IDS_AVIS (LET_IDS (arg_node));
@@ -1484,14 +1486,14 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
 
         case N_prf:
 #ifdef VERBOSE
-            DBUG_PRINT ("IVEXP", ("Looking at N_prf %s", AVIS_NAME (lhsavis)));
+            DBUG_PRINT ("Looking at N_prf %s", AVIS_NAME (lhsavis));
 #endif // VERBOSE
             arg_node = GenerateExtremaComputationsPrf (arg_node, arg_info);
             break;
 
         case N_array:
 #ifdef VERBOSE
-            DBUG_PRINT ("IVEXP", ("Looking at N_array %s", AVIS_NAME (lhsavis)));
+            DBUG_PRINT ("Looking at N_array %s", AVIS_NAME (lhsavis));
 #endif // VERBOSE
             if ((!CFisFullyConstantNode (rhs)) && (TUisIntVect (AVIS_TYPE (lhsavis)))) {
                 rhs = GenerateNarrayExtrema (arg_node, arg_info);
@@ -1546,7 +1548,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
         node *rhsavis;
         node *withid;
 
-        DBUG_ENTER ("PropagatePrfExtrema");
+        DBUG_ENTER ();
 
         lhsid = LET_IDS (arg_node);
         lhsavis = IDS_AVIS (lhsid);
@@ -1630,7 +1632,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
         node *lhsavis;
         node *rhsavis;
 
-        DBUG_ENTER ("PropagateExtrema");
+        DBUG_ENTER ();
 
         rhs = LET_EXPR (arg_node);
         lhsavis = IDS_AVIS (LET_IDS (arg_node));
@@ -1668,8 +1670,8 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
             break;
 
         default:
-            DBUG_PRINT ("IVEXP", ("IVEXP ISMOP: please fix this RHS for LHS: %s",
-                                  AVIS_NAME (lhsavis)));
+            DBUG_PRINT ("IVEXP ISMOP: please fix this RHS for LHS: %s",
+                        AVIS_NAME (lhsavis));
             break;
         }
 
@@ -1706,7 +1708,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
     {
         node *mypreassigns;
 
-        DBUG_ENTER ("IVEXPassign");
+        DBUG_ENTER ();
 
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -1753,13 +1755,13 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
         node *lhsavis;
         char *lhsname;
 
-        DBUG_ENTER ("IVEXPlet");
+        DBUG_ENTER ();
 
         lhsavis = IDS_AVIS (LET_IDS (arg_node));
 
         lhsname = AVIS_NAME (lhsavis); /* Handy for ddd condition-setting */
 #ifdef VERBOSE
-        DBUG_PRINT ("IVEXP", ("Looking at %s", AVIS_NAME (lhsavis)));
+        DBUG_PRINT ("Looking at %s", AVIS_NAME (lhsavis));
 #endif // VERBOSE
         if (!TYisAKV (AVIS_TYPE (lhsavis))) {
             INFO_LET (arg_info) = arg_node;
@@ -1786,7 +1788,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
     {
         node *oldwith;
 
-        DBUG_ENTER ("IVEXPwith");
+        DBUG_ENTER ();
 
         oldwith = INFO_CURWITH (arg_info);
         INFO_CURWITH (arg_info) = arg_node;
@@ -1807,7 +1809,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
     node *IVEXPpart (node * arg_node, info * arg_info)
     {
 
-        DBUG_ENTER ("IVEXPpart");
+        DBUG_ENTER ();
 
         PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
         PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
@@ -1826,7 +1828,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
     node *IVEXPcond (node * arg_node, info * arg_info)
     {
 
-        DBUG_ENTER ("IVEXPcond");
+        DBUG_ENTER ();
 
         COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
         COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
@@ -1846,7 +1848,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
     node *IVEXPfuncond (node * arg_node, info * arg_info)
     {
 
-        DBUG_ENTER ("IVEXPfuncond");
+        DBUG_ENTER ();
 
         FUNCOND_IF (arg_node) = TRAVdo (FUNCOND_IF (arg_node), arg_info);
         FUNCOND_THEN (arg_node) = TRAVopt (FUNCOND_THEN (arg_node), arg_info);
@@ -1865,7 +1867,7 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
      ******************************************************************************/
     node *IVEXPwhile (node * arg_node, info * arg_info)
     {
-        DBUG_ENTER ("IVEXPwhile");
+        DBUG_ENTER ();
 
         WHILE_COND (arg_node) = TRAVdo (WHILE_COND (arg_node), arg_info);
         WHILE_BODY (arg_node) = TRAVdo (WHILE_BODY (arg_node), arg_info);
@@ -1887,14 +1889,14 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
     {
         bool old_onefundef;
 
-        DBUG_ENTER ("IVEXPfundef");
+        DBUG_ENTER ();
 
-        DBUG_PRINT ("IVEXP", ("IVEXP in %s %s begins",
-                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                              FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("IVEXP in %s %s begins",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                    FUNDEF_NAME (arg_node));
 
         DBUG_ASSERT (INFO_VARDECS (arg_info) == NULL,
-                     ("IVEXPfundef INFO_VARDECS not NULL"));
+                     "IVEXPfundef INFO_VARDECS not NULL");
 
         INFO_FUNDEF (arg_info) = arg_node;
 
@@ -1916,9 +1918,9 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
             INFO_VARDECS (arg_info) = NULL;
         }
 
-        DBUG_PRINT ("IVEXP", ("IVEXP in %s %s ends",
-                              (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                              FUNDEF_NAME (arg_node)));
+        DBUG_PRINT ("IVEXP in %s %s ends",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                    FUNDEF_NAME (arg_node));
 
         if (!INFO_ONEFUNDEF (arg_info)) {
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -1926,3 +1928,5 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
 
         DBUG_RETURN (arg_node);
     }
+
+#undef DBUG_PREFIX

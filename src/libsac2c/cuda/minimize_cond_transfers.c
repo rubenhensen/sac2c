@@ -28,7 +28,10 @@
 #include "str_buffer.h"
 #include "memory.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -98,7 +101,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -124,7 +127,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -150,7 +153,7 @@ node *
 MCTRANdoMinimizeCondTransfers (node *syntax_tree)
 {
     info *info;
-    DBUG_ENTER ("MCTRANdoMinimizeCondTransfers");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     INFO_CUDASTONLY (info) = FALSE;
@@ -175,7 +178,7 @@ node *
 MCTRANdoMinimizeCudastCondTransfers (node *syntax_tree)
 {
     info *info;
-    DBUG_ENTER ("MCTRANdoMinimizeCudastCondTransfers");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     INFO_CUDASTONLY (info) = TRUE;
@@ -214,7 +217,7 @@ MCTRANfundef (node *arg_node, info *arg_info)
 {
     bool old_incondfun;
 
-    DBUG_ENTER ("MCTRANfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
 
@@ -255,7 +258,7 @@ MCTRANfundef (node *arg_node, info *arg_info)
 node *
 MCTRANarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MCTRANarg");
+    DBUG_ENTER ();
 
     ARG_LINKSIGN (arg_node) = INFO_FUNARGNUM (arg_info);
     INFO_FUNARGNUM (arg_info) += 1;
@@ -281,7 +284,7 @@ MCTRANassign (node *arg_node, info *arg_info)
     node *old_preassigns, *old_postassigns;
     node *old_vardecs;
 
-    DBUG_ENTER ("MCTRANassign");
+    DBUG_ENTER ();
 
     INFO_LASTASSIGN (arg_info) = arg_node;
 
@@ -343,7 +346,7 @@ MCTRANassign (node *arg_node, info *arg_info)
 node *
 MCTRANlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MCTRANlet");
+    DBUG_ENTER ();
 
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -363,7 +366,7 @@ MCTRANlet (node *arg_node, info *arg_info)
 node *
 MCTRANcudast (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MCTRANcudast");
+    DBUG_ENTER ();
 
     if (INFO_CUDASTONLY (arg_info)) {
         INFO_INCUDAST (arg_info) = TRUE;
@@ -391,7 +394,7 @@ MCTRANap (node *arg_node, info *arg_info)
     lut_t *old_h2d_lut, *old_d2h_lut;
     bool traverse_cond;
 
-    DBUG_ENTER ("MCTRANap");
+    DBUG_ENTER ();
 
     traverse_cond = (INFO_CUDASTONLY (arg_info) && INFO_INCUDAST (arg_info))
                     || (!INFO_CUDASTONLY (arg_info) && !INFO_INCUDAST (arg_info));
@@ -452,7 +455,7 @@ MCTRANid (node *arg_node, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("MCTRANid");
+    DBUG_ENTER ();
 
     if (INFO_INCONDFUN (arg_info)) {
         /* If this N_id occurs in a place other than the argument list
@@ -488,16 +491,16 @@ MCTRANfuncond (node *arg_node, info *arg_info)
     node *then_avis, *else_avis;
     bool covert_ids = FALSE;
 
-    DBUG_ENTER ("MCTRANfuncond");
+    DBUG_ENTER ();
 
     if (INFO_INCONDFUN (arg_info)) {
         then_id = FUNCOND_THEN (arg_node);
         else_id = FUNCOND_ELSE (arg_node);
         let_ids = INFO_LETIDS (arg_info);
 
-        DBUG_ASSERT ((NODE_TYPE (then_id) == N_id),
+        DBUG_ASSERT (NODE_TYPE (then_id) == N_id,
                      "THEN part of N_funcond must be a N_id node!");
-        DBUG_ASSERT ((NODE_TYPE (else_id) == N_id),
+        DBUG_ASSERT (NODE_TYPE (else_id) == N_id,
                      "ELSE part of N_funcond must be a N_id node!");
 
         then_ssaassign = AVIS_SSAASSIGN (ID_AVIS (then_id));
@@ -561,7 +564,7 @@ MCTRANreturn (node *arg_node, info *arg_info)
     node *ap_ids;
     simpletype simty;
 
-    DBUG_ENTER ("MCTRANreturn");
+    DBUG_ENTER ();
 
     if (INFO_INCONDFUN (arg_info)) {
         /* N_ret nodes of the current do-fun */
@@ -573,7 +576,7 @@ MCTRANreturn (node *arg_node, info *arg_info)
 
         while (ret_exprs != NULL && fun_rets != NULL && ap_ids != NULL) {
             id = EXPRS_EXPR (ret_exprs);
-            DBUG_ASSERT ((NODE_TYPE (id) == N_id), "Return value must be a N_id node!");
+            DBUG_ASSERT (NODE_TYPE (id) == N_id, "Return value must be a N_id node!");
             /* Set the simple type of N_ret to the simple type of the
              * corresponding return value (N_id). */
             simty = TYgetSimpleType (TYgetScalar (AVIS_TYPE (ID_AVIS (id))));
@@ -626,7 +629,7 @@ MCTRANprf (node *arg_node, info *arg_info)
 {
     node *id;
 
-    DBUG_ENTER ("MCTRANprf");
+    DBUG_ENTER ();
 
     if (INFO_INCONDFUN (arg_info)) {
         switch (PRF_PRF (arg_node)) {
@@ -668,7 +671,7 @@ MCTRANprf (node *arg_node, info *arg_info)
                      * finding the N_ap argument at the same position is easy. */
                     node *ap_arg
                       = CUnthApArg (INFO_APARGS (arg_info), ARG_LINKSIGN (arg));
-                    DBUG_ASSERT ((NODE_TYPE (ap_arg) == N_id),
+                    DBUG_ASSERT (NODE_TYPE (ap_arg) == N_id,
                                  "Arguments of N_ap must be N_id nodes!");
 
                     INFO_APPREASSIGNS (arg_info)
@@ -713,3 +716,5 @@ MCTRANprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

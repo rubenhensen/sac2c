@@ -29,7 +29,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -75,7 +78,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -92,7 +95,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -119,7 +122,7 @@ GGTCdoGenerateGenericTypeConversions (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("GGTCdoGenerateGenericTypeConversions");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -163,7 +166,7 @@ BuildTypeConversion (const char *name, const namespace_t *ns, ntype *from, ntype
     node *assign;
     node *block;
 
-    DBUG_ENTER ("BuildTypeConversion");
+    DBUG_ENTER ();
 
     avisarg = TBmakeAvis (STRcpy ("from"), TYcopyType (from));
     AVIS_DECLTYPE (avisarg) = TYcopyType (AVIS_TYPE (avisarg));
@@ -212,11 +215,11 @@ GetInnerTypeName (namespace_t *ns, const char *name)
     ntype *base;
     usertype udt;
 
-    DBUG_ENTER ("GetInnerTypeName");
+    DBUG_ENTER ();
 
     udt = UTfindUserType (name, ns);
 
-    DBUG_ASSERT ((udt != UT_NOT_DEFINED), "cannot find usertype for typedef!");
+    DBUG_ASSERT (udt != UT_NOT_DEFINED, "cannot find usertype for typedef!");
 
     udt = UTgetUnAliasedType (udt);
 
@@ -292,7 +295,7 @@ GetWrapUdtLinkName (namespace_t *ns, const char *name)
 {
     char *result;
 
-    DBUG_ENTER ("GetWrapUdtLinkName");
+    DBUG_ENTER ();
 
     result = STRcat ("SACARGwrapUdt", GetInnerTypeName (ns, name));
 
@@ -312,7 +315,7 @@ GetUnwrapUdtLinkName (namespace_t *ns, const char *name)
 {
     char *result;
 
-    DBUG_ENTER ("GetUnwrapUdtLinkName");
+    DBUG_ENTER ();
 
     result = STRcat ("SACARGunwrapUdt", GetInnerTypeName (ns, name));
 
@@ -343,13 +346,13 @@ BuildWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
     usertype sacargudt;
     ntype *argtype;
 
-    DBUG_ENTER ("BuildWrap");
+    DBUG_ENTER ();
 
     funname = STRcat ("wrap", name);
 
     sacargudt = UTfindUserType (SACARG_NAME, NSgetNamespace (global.preludename));
 
-    DBUG_ASSERT ((sacargudt != UT_NOT_DEFINED), "Cannot find sacarg udt!");
+    DBUG_ASSERT (sacargudt != UT_NOT_DEFINED, "Cannot find sacarg udt!");
 
     sacargret = TBmakeRet (TYmakeAKS (TYmakeUserType (sacargudt), SHmakeShape (0)), NULL);
 
@@ -418,13 +421,13 @@ BuildUnWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
     usertype sacargudt;
     ntype *rettype;
 
-    DBUG_ENTER ("BuildUnWrap");
+    DBUG_ENTER ();
 
     funname = STRcat ("unwrap", name);
 
     sacargudt = UTfindUserType (SACARG_NAME, NSgetNamespace (global.preludename));
 
-    DBUG_ASSERT ((sacargudt != UT_NOT_DEFINED), "Cannot find sacarg udt!");
+    DBUG_ASSERT (sacargudt != UT_NOT_DEFINED, "Cannot find sacarg udt!");
 
     /*
      * we have to ensure that the return is a scalar type for
@@ -483,7 +486,7 @@ BuildUnWrap (ntype *type, namespace_t *ns, const char *name, node **symbols,
 node *
 GGTCmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GGTCmodule");
+    DBUG_ENTER ();
 
     /*
      * load SACarg type if not compiling prelude
@@ -552,12 +555,12 @@ GGTCtypedef (node *arg_node, info *arg_info)
     ntype *tdef_type;
     usertype udt;
 
-    DBUG_ENTER ("GGTCtypedef");
+    DBUG_ENTER ();
 
     if (TYPEDEF_ISLOCAL (arg_node)) {
         udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_NS (arg_node));
 
-        DBUG_ASSERT ((udt != UT_NOT_DEFINED), "Cannot find user type!");
+        DBUG_ASSERT (udt != UT_NOT_DEFINED, "Cannot find user type!");
 
         tdef_type = TYmakeAKS (TYmakeUserType (udt), SHmakeShape (0));
 
@@ -614,7 +617,7 @@ GGTCtypedef (node *arg_node, info *arg_info)
 node *
 GGTCexport (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GGTCexport");
+    DBUG_ENTER ();
 
     if (EXPORT_ALL (arg_node) && (INFO_NOTEXPORTEDSYMBOLS (arg_info) != NULL)) {
         if (EXPORT_SYMBOL (arg_node) == NULL) {
@@ -642,7 +645,7 @@ GGTCexport (node *arg_node, info *arg_info)
 node *
 GGTCprovide (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GGTCprovide");
+    DBUG_ENTER ();
 
     if (PROVIDE_ALL (arg_node) && (INFO_NOTPROVIDEDSYMBOLS (arg_info) != NULL)) {
         if (PROVIDE_SYMBOL (arg_node) == NULL) {
@@ -670,7 +673,7 @@ GGTCprovide (node *arg_node, info *arg_info)
 node *
 GGTCsymbol (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("GGTCsymbol");
+    DBUG_ENTER ();
 
     if (INFO_APPEND (arg_info) != NULL) {
         if (SYMBOL_NEXT (arg_node) == NULL) {
@@ -691,3 +694,5 @@ GGTCsymbol (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

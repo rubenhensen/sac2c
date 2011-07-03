@@ -13,7 +13,10 @@
 #include "str.h"
 #include "memory.h"
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "globals.h"
 #include "type_utils.h"
 #include "LookUpTable.h"
@@ -57,7 +60,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -77,7 +80,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -100,7 +103,7 @@ CUSKCdoSinkCode (node *syntax_tree)
 {
     info *arg_info;
 
-    DBUG_ENTER ("CUSKCdoSinkCode");
+    DBUG_ENTER ();
 
     arg_info = MakeInfo ();
 
@@ -130,7 +133,7 @@ CUSKCfundef (node *arg_node, info *arg_info)
 {
     nodelist *nl;
 
-    DBUG_ENTER ("CUSKCfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -173,7 +176,7 @@ CUSKCblock (node *arg_node, info *arg_info)
     node *old_current_block, *old_sink_code;
     lut_t *old_lut;
 
-    DBUG_ENTER ("CUSKCblock");
+    DBUG_ENTER ();
 
     /* Push info */
     old_current_block = INFO_CURRENT_BLOCK (arg_info);
@@ -216,7 +219,7 @@ CUSKCblock (node *arg_node, info *arg_info)
 node *
 CUSKCwith (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUSKCwith");
+    DBUG_ENTER ();
 
     /* Only look at cudarziable N_with and any N_withs nested inside,
      * since we only sink code into these N_withs */
@@ -251,7 +254,7 @@ CUSKCassign (node *arg_node, info *arg_info)
 {
     node *sunk_assign, *old_dupass, *old_oriass;
 
-    DBUG_ENTER ("CUSKCassign");
+    DBUG_ENTER ();
 
     /* If the traverse mode is normal, we perform a normal top-down traversal */
     if (INFO_TRAVMODE (arg_info) == trav_normal) {
@@ -294,7 +297,7 @@ CUSKCassign (node *arg_node, info *arg_info)
               = TCnodeListAppend (INFO_NLIST (arg_info), arg_node, NULL);
         }
     } else {
-        DBUG_ASSERT ((0), "Unknown traverse mode!");
+        DBUG_ASSERT (0, "Unknown traverse mode!");
     }
 
     DBUG_RETURN (arg_node);
@@ -313,7 +316,7 @@ CUSKCassign (node *arg_node, info *arg_info)
 node *
 CUSKClet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUSKClet");
+    DBUG_ENTER ();
 
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
 
@@ -340,10 +343,10 @@ CUSKCids (node *arg_node, info *arg_info)
 {
     node *avis, *new_avis;
 
-    DBUG_ENTER ("CUSKCids");
+    DBUG_ENTER ();
 
     /* Ensure that we are in backtrace mode */
-    DBUG_ASSERT ((INFO_TRAVMODE (arg_info) == trav_backtrace),
+    DBUG_ASSERT (INFO_TRAVMODE (arg_info) == trav_backtrace,
                  "Traversing N_ids in non-backtrace mode!");
 
     avis = IDS_AVIS (arg_node);
@@ -382,7 +385,7 @@ CUSKCid (node *arg_node, info *arg_info)
     node *ssa, *avis, *new_avis;
     travmode_t old_mode;
 
-    DBUG_ENTER ("CUSKCid");
+    DBUG_ENTER ();
 
     avis = ID_AVIS (arg_node);
     ssa = AVIS_SSAASSIGN (avis);
@@ -458,3 +461,5 @@ CUSKCid (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

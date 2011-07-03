@@ -82,7 +82,8 @@ version="1.0">
 #include "check_attribs.h"
 #include "tree_basic.h"
 #include "traverse.h"
-#include "dbug.h"
+#define DBUG_PREFIX "CHKM"
+#include "debug.h"
 #include "check_mem.h"
 
 #define CHKMTRAV( node, info) (node != NULL) ? TRAVdo( node, info) : node
@@ -101,11 +102,9 @@ version="1.0">
  ******************************************************************************/
 node *CHKMpostfun( node * arg_node, info * arg_info)
 {
-DBUG_ENTER( "CHKMpostfun");
-
-CHKMappendErrorNodes( arg_node, arg_info);
-
-DBUG_RETURN( arg_node);
+  DBUG_ENTER ();
+  CHKMappendErrorNodes( arg_node, arg_info);
+  DBUG_RETURN (arg_node);
 }
   </xsl:text>
   <!-- functions -->
@@ -153,14 +152,7 @@ DBUG_RETURN( arg_node);
     <xsl:value-of select="'int cnt;'" />
   </xsl:if>
   <!-- DBUG_ENTER statement -->
-  <xsl:value-of select="'DBUG_ENTER( &quot;CHKM'"/>
-  <xsl:call-template name="lowercase" >
-    <xsl:with-param name="string" >
-      <xsl:value-of select="@name"/>
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="'&quot;);'"/>
-
+  <xsl:value-of select="'DBUG_ENTER ();'"/>
   <!-- touch the arg_node (this includes the son/attributes, as they are
        allocated as one chunck -->
   <xsl:value-of select="'CHKMtouch( arg_node, arg_info);'"/>
@@ -175,7 +167,7 @@ DBUG_RETURN( arg_node);
   <xsl:apply-templates select="sons/son[not( @name= &quot;Next&quot;)]"/>
 
   <!-- DBUG_RETURN call -->
-  <xsl:value-of select="'DBUG_RETURN( arg_node);'"/>
+  <xsl:value-of select="'DBUG_RETURN (arg_node);'"/>
   <!-- end of body -->
   <xsl:value-of select="'}'"/>
 </xsl:template>

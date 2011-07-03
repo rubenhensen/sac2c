@@ -14,7 +14,10 @@
 #include "type_utils.h"
 #include "shape.h"
 #include "tree_basic.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "RST"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "globals.h"
 #include "namespaces.h"
@@ -28,11 +31,11 @@ RSTntype (ntype *arg_type, info *arg_info)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("RSTntype");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("RST", tmp_str = TYtype2DebugString (arg_type, FALSE, 0););
-    DBUG_PRINT ("RST", ("starting to process type %s", tmp_str));
-    DBUG_EXECUTE ("RST", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2DebugString (arg_type, FALSE, 0));
+    DBUG_PRINT ("starting to process type %s", tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     /*
      * as the TYget functions do not copy the internal type
@@ -68,18 +71,17 @@ RSTntype (ntype *arg_type, info *arg_info)
             CTIerror ("unknown user defined type `%s::%s'.",
                       NSgetName (TYgetNamespace (arg_type)), TYgetName (arg_type));
         } else {
-            DBUG_PRINT ("RST",
-                        ("resolved symbol type %s:%s.",
-                         NSgetName (TYgetNamespace (arg_type)), TYgetName (arg_type)));
+            DBUG_PRINT ("resolved symbol type %s:%s.",
+                        NSgetName (TYgetNamespace (arg_type)), TYgetName (arg_type));
 
             arg_type = TYfreeType (arg_type);
             arg_type = TYmakeUserType (udt);
         }
     }
 
-    DBUG_EXECUTE ("RST", tmp_str = TYtype2DebugString (arg_type, FALSE, 0););
-    DBUG_PRINT ("RST", ("resulting type is %s", tmp_str));
-    DBUG_EXECUTE ("RST", tmp_str = MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYtype2DebugString (arg_type, FALSE, 0));
+    DBUG_PRINT ("resulting type is %s", tmp_str);
+    DBUG_EXECUTE (tmp_str = MEMfree (tmp_str));
 
     DBUG_RETURN (arg_type);
 }
@@ -87,7 +89,7 @@ RSTntype (ntype *arg_type, info *arg_info)
 node *
 RSTmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSTmodule");
+    DBUG_ENTER ();
 
     /*
      * gather udt database
@@ -140,7 +142,7 @@ RSTtypedef (node *arg_node, info *arg_info)
     char *err_str1, *err_str2;
     usertype udt, alias;
 
-    DBUG_ENTER ("RSTtypedef");
+    DBUG_ENTER ();
 
     if (TYPEDEF_ISLOCAL (arg_node)) {
         udt = UTfindUserType (TYPEDEF_NAME (arg_node), TYPEDEF_NS (arg_node));
@@ -173,17 +175,17 @@ RSTtypedef (node *arg_node, info *arg_info)
             err_str2 = MEMfree (err_str2);
         }
 
-        DBUG_EXECUTE ("UDT",
-                      tmp_str = TYtype2String (TYPEDEF_NTYPE (arg_node), FALSE, 0););
+        DBUG_EXECUTE_TAG ("UDT",
+                          tmp_str = TYtype2String (TYPEDEF_NTYPE (arg_node), FALSE, 0));
 
         if (TYPEDEF_ISALIAS (arg_node)) {
-            DBUG_PRINT ("UDT", ("adding user type alias %s for %s",
-                                CTIitemName (arg_node), tmp_str));
+            DBUG_PRINT_TAG ("UDT", "adding user type alias %s for %s",
+                            CTIitemName (arg_node), tmp_str);
 
             DBUG_ASSERT (TYisAKSUdt (TYPEDEF_NTYPE (arg_node)),
                          "invalid type alias found!");
 
-            DBUG_ASSERT ((TYgetDim (TYPEDEF_NTYPE (arg_node)) == 0),
+            DBUG_ASSERT (TYgetDim (TYPEDEF_NTYPE (arg_node)) == 0,
                          "non scalar type as type alias found");
 
             alias = TYgetUserType (TYgetScalar (TYPEDEF_NTYPE (arg_node)));
@@ -192,8 +194,8 @@ RSTtypedef (node *arg_node, info *arg_info)
                         NSdupNamespace (TYPEDEF_NS (arg_node)), alias,
                         NODE_LINE (arg_node), arg_node);
         } else {
-            DBUG_PRINT ("UDT", ("adding user type %s defined as %s",
-                                CTIitemName (arg_node), tmp_str));
+            DBUG_PRINT_TAG ("UDT", "adding user type %s defined as %s",
+                            CTIitemName (arg_node), tmp_str);
 
             UTaddUserType (STRcpy (TYPEDEF_NAME (arg_node)),
                            NSdupNamespace (TYPEDEF_NS (arg_node)),
@@ -201,13 +203,13 @@ RSTtypedef (node *arg_node, info *arg_info)
                            NODE_LINE (arg_node), arg_node);
         }
 
-        DBUG_EXECUTE ("UDT", tmp_str = MEMfree (tmp_str););
+        DBUG_EXECUTE_TAG ("UDT", tmp_str = MEMfree (tmp_str));
     } else {
-        DBUG_EXECUTE ("UDT",
-                      tmp_str = TYtype2String (TYPEDEF_NTYPE (arg_node), FALSE, 0););
-        DBUG_PRINT ("UDT", ("passing user type %s defined as %s", CTIitemName (arg_node),
-                            tmp_str));
-        DBUG_EXECUTE ("UDT", tmp_str = MEMfree (tmp_str););
+        DBUG_EXECUTE_TAG ("UDT",
+                          tmp_str = TYtype2String (TYPEDEF_NTYPE (arg_node), FALSE, 0));
+        DBUG_PRINT_TAG ("UDT", "passing user type %s defined as %s",
+                        CTIitemName (arg_node), tmp_str);
+        DBUG_EXECUTE_TAG ("UDT", tmp_str = MEMfree (tmp_str));
     }
 
     if (TYPEDEF_NEXT (arg_node) != NULL) {
@@ -231,7 +233,7 @@ RSTtypedef (node *arg_node, info *arg_info)
 node *
 RSTobjdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSTobjdef");
+    DBUG_ENTER ();
 
     OBJDEF_TYPE (arg_node) = RSTntype (OBJDEF_TYPE (arg_node), arg_info);
 
@@ -243,7 +245,7 @@ RSTobjdef (node *arg_node, info *arg_info)
 node *
 RSTfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSTfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
@@ -272,7 +274,7 @@ RSTfundef (node *arg_node, info *arg_info)
 node *
 RSTarg (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSTarg");
+    DBUG_ENTER ();
 
     if (ARG_AVIS (arg_node) != NULL) {
         ARG_AVIS (arg_node) = TRAVdo (ARG_AVIS (arg_node), arg_info);
@@ -288,7 +290,7 @@ RSTarg (node *arg_node, info *arg_info)
 node *
 RSTret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSTret");
+    DBUG_ENTER ();
 
     if (RET_TYPE (arg_node) != NULL) {
         RET_TYPE (arg_node) = RSTntype (RET_TYPE (arg_node), arg_info);
@@ -304,7 +306,7 @@ RSTret (node *arg_node, info *arg_info)
 node *
 RSTavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSTavis");
+    DBUG_ENTER ();
 
     if (AVIS_TYPE (arg_node) != NULL) {
         AVIS_TYPE (arg_node) = RSTntype (AVIS_TYPE (arg_node), arg_info);
@@ -322,7 +324,7 @@ RSTavis (node *arg_node, info *arg_info)
 node *
 RSTarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSTarray");
+    DBUG_ENTER ();
 
     if (ARRAY_ELEMTYPE (arg_node) != NULL) {
         ARRAY_ELEMTYPE (arg_node) = RSTntype (ARRAY_ELEMTYPE (arg_node), arg_info);
@@ -336,7 +338,7 @@ RSTarray (node *arg_node, info *arg_info)
 node *
 RSTcast (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSTcast");
+    DBUG_ENTER ();
 
     if (CAST_NTYPE (arg_node) != NULL) {
         CAST_NTYPE (arg_node) = RSTntype (CAST_NTYPE (arg_node), arg_info);
@@ -350,7 +352,7 @@ RSTcast (node *arg_node, info *arg_info)
 node *
 RSTtype (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("RSTtype");
+    DBUG_ENTER ();
 
     TYPE_TYPE (arg_node) = RSTntype (TYPE_TYPE (arg_node), arg_info);
 
@@ -360,7 +362,7 @@ RSTtype (node *arg_node, info *arg_info)
 node *
 RSTdoResolveSymbolTypes (node *syntax_tree)
 {
-    DBUG_ENTER ("RSTdoResolveSymbolTypes");
+    DBUG_ENTER ();
 
     TRAVpush (TR_rst);
 
@@ -368,7 +370,9 @@ RSTdoResolveSymbolTypes (node *syntax_tree)
 
     TRAVpop ();
 
-    DBUG_EXECUTE ("UDT_PRINT", UTprintRepository (stderr););
+    DBUG_EXECUTE_TAG ("UDT_PRINT", UTprintRepository (stderr));
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

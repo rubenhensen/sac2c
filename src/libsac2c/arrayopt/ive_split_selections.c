@@ -13,7 +13,10 @@
 #include "shape.h"
 #include "new_types.h"
 #include "type_utils.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "traverse.h"
 #include "DupTree.h"
 #include "free.h"
@@ -101,7 +104,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -114,7 +117,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -143,9 +146,9 @@ AddVect2Offset (node *iv, node *shpexpr, info *arg_info)
     node *avis, *assign;
     ntype *typ;
 
-    DBUG_ENTER ("AddVect2Offset");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((shpexpr != NULL), "no shape information found!");
+    DBUG_ASSERT (shpexpr != NULL, "no shape information found!");
     DBUG_ASSERT (N_id == NODE_TYPE (iv), "expected N_id iv");
 
     avis
@@ -183,9 +186,9 @@ AddShapeComputation (node *array, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("AddShapeComputation");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (array) == N_id), "non-flattened array found!");
+    DBUG_ASSERT (NODE_TYPE (array) == N_id, "non-flattened array found!");
 
     if (TUdimKnown (AVIS_TYPE (ID_AVIS (array)))) {
         /* AKD or AKD */
@@ -260,7 +263,7 @@ AddShapeComputation (node *array, info *arg_info)
 node *
 IVESPLITfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IVESPLITfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         INFO_VARDECS (arg_info) = BLOCK_VARDEC (FUNDEF_BODY (arg_node));
@@ -293,7 +296,7 @@ IVESPLITassign (node *arg_node, info *arg_info)
 {
     node *new_node;
 
-    DBUG_ENTER ("IVESPLITassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -326,7 +329,7 @@ IVESPLITprf (node *arg_node, info *arg_info)
     node *avis;
     node *array = NULL;
 
-    DBUG_ENTER ("IVESPLITprf");
+    DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
     case F_sel_VxA:
@@ -407,9 +410,9 @@ IVESPLITdoSplitSelections (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("IVEdoSplitSelections");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (syntax_tree) == N_module),
+    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module,
                  "IVESPLIT is intended to run on the entire tree");
 
     info = MakeInfo ();
@@ -426,3 +429,5 @@ IVESPLITdoSplitSelections (node *syntax_tree)
 }
 
 /*@}*/ /* defgroup ive */
+
+#undef DBUG_PREFIX

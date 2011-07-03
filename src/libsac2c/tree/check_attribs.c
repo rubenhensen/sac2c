@@ -15,7 +15,10 @@
 #include "constants.h"
 #include "scheduling.h"
 #include "namespaces.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "check_mem.h"
 
 /** <!--******************************************************************-->
@@ -33,7 +36,7 @@
 char *
 CHKMattribString (char *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribString");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         CHKMtouch (attr, arg_info);
@@ -57,7 +60,7 @@ CHKMattribString (char *attr, info *arg_info)
 char *
 CHKMattribSharedString (char *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribSharedString");
+    DBUG_ENTER ();
 
     /* do nothing */
 
@@ -79,7 +82,7 @@ CHKMattribSharedString (char *attr, info *arg_info)
 types *
 CHKMattribOldType (types *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribOldType");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         CHKMtouch (attr, arg_info); /* problem */
@@ -103,7 +106,7 @@ CHKMattribOldType (types *attr, info *arg_info)
 node *
 CHKMattribNode (node *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribNode");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr = TRAVdo (attr, arg_info);
@@ -127,7 +130,7 @@ CHKMattribNode (node *attr, info *arg_info)
 namespace_t *
 CHKMattribNamespace (namespace_t *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribNamespace");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         NStouchNamespace (attr, arg_info); /* problem */
@@ -151,7 +154,7 @@ CHKMattribNamespace (namespace_t *attr, info *arg_info)
 node *
 CHKMattribLink (node *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribLink");
+    DBUG_ENTER ();
 
     /*
      * NEVER do anything with this kind of attribute
@@ -177,7 +180,7 @@ CHKMattribLink (node *attr, info *arg_info)
 node *
 CHKMattribExtLink (node *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribExtLink");
+    DBUG_ENTER ();
 
     DBUG_RETURN (attr);
 }
@@ -198,7 +201,7 @@ CHKMattribExtLink (node *attr, info *arg_info)
 node *
 CHKMattribCodeLink (node *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribCodeLink");
+    DBUG_ENTER ();
 
     DBUG_RETURN (attr);
 }
@@ -218,7 +221,7 @@ CHKMattribCodeLink (node *attr, info *arg_info)
 lut_t *
 CHKMattribLUT (lut_t *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribLUT");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         LUTtouchLut (attr, arg_info);
@@ -244,7 +247,7 @@ CHKMattribNodeList (nodelist *attr, info *arg_info)
 {
     nodelist *list = attr;
 
-    DBUG_ENTER ("CHKMattribNodeList");
+    DBUG_ENTER ();
 
     while (list != NULL) {
         CHKMtouch (list, arg_info);
@@ -271,7 +274,7 @@ CHKMattribNodeList (nodelist *attr, info *arg_info)
 nodelist *
 CHKMattribSharedNodeList (nodelist *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribSharedNodeList");
+    DBUG_ENTER ();
 
     /* do nothing here */
 
@@ -293,7 +296,7 @@ CHKMattribSharedNodeList (nodelist *attr, info *arg_info)
 dfmask_t *
 CHKMattribDFMask (dfmask_t *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribDFMask");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         DFMtouchMask (attr, arg_info);
@@ -317,7 +320,7 @@ CHKMattribDFMask (dfmask_t *attr, info *arg_info)
 dfmask_base_t *
 CHKMattribDFMaskBase (dfmask_base_t *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribDFMaskBase");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         DFMtouchMaskBase (attr, arg_info);
@@ -341,7 +344,7 @@ CHKMattribDFMaskBase (dfmask_base_t *attr, info *arg_info)
 ntype *
 CHKMattribNewType (ntype *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribNewType");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         TYtouchType (attr, arg_info);
@@ -365,7 +368,7 @@ CHKMattribNewType (ntype *attr, info *arg_info)
 argtab_t *
 CHKMattribArgTab (argtab_t *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribArgTab");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         CHKMtouch (attr->ptr_in, arg_info);
@@ -393,7 +396,7 @@ CHKMattribArgTab (argtab_t *attr, info *arg_info)
 index_info *
 CHKMattribIndexPointer (index_info *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribIndexPointer");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
 
@@ -421,7 +424,7 @@ CHKMattribIndexPointer (index_info *attr, info *arg_info)
 shape *
 CHKMattribShape (shape *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribShape");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         SHtouchShape (attr, arg_info);
@@ -445,7 +448,7 @@ CHKMattribShape (shape *attr, info *arg_info)
 void *
 CHKMattribConstVecPointer (void *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribConstVecPointer");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         CHKMtouch (attr, arg_info);
@@ -471,7 +474,7 @@ CHKMattribAccess (access_t *attr, info *arg_info)
 {
     access_t *tmp = attr;
 
-    DBUG_ENTER ("CHKMattribAccess");
+    DBUG_ENTER ();
 
     while (tmp != NULL) {
 
@@ -499,7 +502,7 @@ CHKMattribAccess (access_t *attr, info *arg_info)
 access_info_t *
 CHKMattribAccessInfo (access_info_t *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribAccessInfo");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr->access = CHKMattribAccess (attr->access, arg_info);
@@ -526,7 +529,7 @@ CHKMattribRc (rc_t *attr, info *arg_info)
 {
     rc_t *tmp = attr;
 
-    DBUG_ENTER ("CHKMattribAccess");
+    DBUG_ENTER ();
 
     while (tmp != NULL) {
         CHKMtouch (tmp, arg_info);
@@ -551,7 +554,7 @@ CHKMattribRc (rc_t *attr, info *arg_info)
 reuse_info_t *
 CHKMattribReuseInfo (reuse_info_t *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribReuseInfo");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         attr->rcs = CHKMattribRc (attr->rcs, arg_info);
@@ -578,7 +581,7 @@ CHKMattribCudaIndex (cuda_index_t *attr, info *arg_info)
 {
     cuda_index_t *tmp = attr;
 
-    DBUG_ENTER ("CHKMattribCudaIndex");
+    DBUG_ENTER ();
 
     while (tmp != NULL) {
         CHKMtouch (tmp, arg_info);
@@ -605,7 +608,7 @@ CHKMattribCudaAccessInfo (cuda_access_info_t *attr, info *arg_info)
 {
     int i;
 
-    DBUG_ENTER ("CHKMattribCudaAccessInfo");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         for (i = 0; i < MAX_REUSE_DIM; i++) {
@@ -634,7 +637,7 @@ CHKMattribCudaAccessInfo (cuda_access_info_t *attr, info *arg_info)
 shpseg *
 CHKMattribShpSeg (shpseg *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribShpSeg");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         SHPSEG_NEXT (attr) = CHKMattribShpSeg (SHPSEG_NEXT (attr), arg_info);
@@ -658,7 +661,7 @@ CHKMattribShpSeg (shpseg *attr, info *arg_info)
 int *
 CHKMattribIntegerPointer (int *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribIntegerPointer");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         CHKMtouch (attr, arg_info);
@@ -682,7 +685,7 @@ CHKMattribIntegerPointer (int *attr, info *arg_info)
 int *
 CHKMattribIntegerPointerArray (int *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribIntegerPointerArray");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         CHKMtouch (attr, arg_info);
@@ -706,7 +709,7 @@ CHKMattribIntegerPointerArray (int *attr, info *arg_info)
 sched_t *
 CHKMattribScheduling (sched_t *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribScheduling");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         SCHtouchScheduling (attr, arg_info);
@@ -730,7 +733,7 @@ CHKMattribScheduling (sched_t *attr, info *arg_info)
 tasksel_t *
 CHKMattribTaskSel (tasksel_t *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribTaskSel");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         SCHtouchTasksel (attr, arg_info);
@@ -754,7 +757,7 @@ CHKMattribTaskSel (tasksel_t *attr, info *arg_info)
 node **
 CHKMattribNodePointer (node **attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribNodePointer");
+    DBUG_ENTER ();
 
     /* TODO: implement node pointer free function */
 
@@ -776,7 +779,7 @@ CHKMattribNodePointer (node **attr, info *arg_info)
 constant *
 CHKMattribConstant (constant *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribConstant");
+    DBUG_ENTER ();
 
     if (attr != NULL) {
         COtouchConstant (attr, arg_info);
@@ -800,7 +803,7 @@ CHKMattribConstant (constant *attr, info *arg_info)
 stringset_t *
 CHKMattribStringSet (stringset_t *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribRCCounter");
+    DBUG_ENTER ();
 
     STRStouch (attr, arg_info);
 
@@ -822,7 +825,7 @@ CHKMattribStringSet (stringset_t *attr, info *arg_info)
 index_info *
 CHKMattribIndexInfo (index_info *attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribIndexInfo");
+    DBUG_ENTER ();
 
     CHKMtouch (attr, arg_info);
 
@@ -844,7 +847,9 @@ CHKMattribIndexInfo (index_info *attr, info *arg_info)
 compinfo **
 CHKMattribCompInfoArr (compinfo **attr, info *arg_info)
 {
-    DBUG_ENTER ("CHKMattribCompInfo");
+    DBUG_ENTER ();
 
     DBUG_RETURN (attr);
 }
+
+#undef DBUG_PREFIX

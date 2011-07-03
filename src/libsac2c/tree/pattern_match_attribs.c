@@ -16,7 +16,9 @@
 #include "pattern_match_attribs.h"
 #include "pattern_match.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "PMA"
+#include "debug.h"
+
 #include "memory.h"
 #include "print.h"
 #include "globals.h"
@@ -101,21 +103,21 @@ PMAmatch (attrib *attr, node *arg)
 bool
 attribGetNode (attrib *attr, node *arg)
 {
-    DBUG_PRINT ("PMA", (PMASTART "PMAgetNode( " F_PTR " ):", PATTR_N1 (attr)));
+    DBUG_PRINT (PMASTART "PMAgetNode( " F_PTR " ):", PATTR_N1 (attr));
 
     if (PATTR_N1 (attr) != NULL) {
         *PATTR_N1 (attr) = arg;
         if (arg != NULL) {
-            DBUG_PRINT ("PMA", (PMARESULT "%s %s%s%s (" F_PTR ").",
-                                global.mdb_nodetype[NODE_TYPE (arg)],
-                                (NODE_TYPE (arg) == N_id ? "\"" : ""),
-                                (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
-                                (NODE_TYPE (arg) == N_id ? "\"" : ""), arg));
+            DBUG_PRINT (PMARESULT "%s %s%s%s (" F_PTR ").",
+                        global.mdb_nodetype[NODE_TYPE (arg)],
+                        (NODE_TYPE (arg) == N_id ? "\"" : ""),
+                        (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
+                        (NODE_TYPE (arg) == N_id ? "\"" : ""), arg);
         } else {
-            DBUG_PRINT ("PMA", (PMARESULT "NULL"));
+            DBUG_PRINT (PMARESULT "NULL");
         }
     } else {
-        DBUG_PRINT ("PMA", (PMARESULT "redundant PMAgetNode attribute!"));
+        DBUG_PRINT (PMARESULT "redundant PMAgetNode attribute!");
     }
     return (TRUE);
 }
@@ -145,10 +147,10 @@ attribIsNode (attrib *attr, node *arg)
 
     DBUG_ASSERT (*PATTR_N1 (attr) != NULL, "node in PMAisNode compared without"
                                            "being set yet!");
-    DBUG_PRINT ("PMA", (PMASTART "PMAisNode( " F_PTR " ):", *PATTR_N1 (attr)));
+    DBUG_PRINT (PMASTART "PMAisNode( " F_PTR " ):", *PATTR_N1 (attr));
 
     res = (arg == *PATTR_N1 (attr));
-    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "fail")));
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "fail"));
 
     return (res);
 }
@@ -177,21 +179,21 @@ PMAisNode (node **match)
 bool
 attribGetNodeOrAvis (attrib *attr, node *arg)
 {
-    DBUG_PRINT ("PMA", (PMASTART "PMAgetNodeOrAvis( " F_PTR " ):", PATTR_N1 (attr)));
+    DBUG_PRINT (PMASTART "PMAgetNodeOrAvis( " F_PTR " ):", PATTR_N1 (attr));
 
     if (PATTR_N1 (attr) != NULL) {
         *PATTR_N1 (attr) = (NODE_TYPE (arg) == N_id ? ID_AVIS (arg) : arg);
         if (arg != NULL) {
-            DBUG_PRINT ("PMA", (PMARESULT "%s %s%s%s (" F_PTR ").",
-                                global.mdb_nodetype[NODE_TYPE (arg)],
-                                (NODE_TYPE (arg) == N_id ? "\"" : ""),
-                                (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
-                                (NODE_TYPE (arg) == N_id ? "\"" : ""), arg));
+            DBUG_PRINT (PMARESULT "%s %s%s%s (" F_PTR ").",
+                        global.mdb_nodetype[NODE_TYPE (arg)],
+                        (NODE_TYPE (arg) == N_id ? "\"" : ""),
+                        (NODE_TYPE (arg) == N_id ? ID_NAME (arg) : ""),
+                        (NODE_TYPE (arg) == N_id ? "\"" : ""), arg);
         } else {
-            DBUG_PRINT ("PMA", (PMARESULT "NULL"));
+            DBUG_PRINT (PMARESULT "NULL");
         }
     } else {
-        DBUG_PRINT ("PMA", (PMARESULT "redundant PMAgetNodeOrAvis attribute!"));
+        DBUG_PRINT (PMARESULT "redundant PMAgetNodeOrAvis attribute!");
     }
     return (TRUE);
 }
@@ -221,11 +223,11 @@ attribIsNodeOrAvis (attrib *attr, node *arg)
 
     DBUG_ASSERT (*PATTR_N1 (attr) != NULL, "node in PMAisNodeOrAvis compared without"
                                            "being set yet!");
-    DBUG_PRINT ("PMA", (PMASTART "PMAisNodeOrAvis( " F_PTR " ):", *PATTR_N1 (attr)));
+    DBUG_PRINT (PMASTART "PMAisNodeOrAvis( " F_PTR " ):", *PATTR_N1 (attr));
 
     arg = (NODE_TYPE (arg) == N_id ? ID_AVIS (arg) : arg);
     res = (arg == *PATTR_N1 (attr));
-    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "fail")));
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "fail"));
 
     return (res);
 }
@@ -258,11 +260,11 @@ attribIsVar (attrib *attr, node *arg)
                                            "being set yet!");
     DBUG_ASSERT (NODE_TYPE (*PATTR_N1 (attr)) == N_id,
                  "var in PMAisVar points to a non N_id node");
-    DBUG_PRINT ("PMA", (PMASTART "PMAisVar( & \"%s\" (" F_PTR ") ):",
-                        ID_NAME (*PATTR_N1 (attr)), *PATTR_N1 (attr)));
+    DBUG_PRINT (PMASTART "PMAisVar( & \"%s\" (" F_PTR ") ):", ID_NAME (*PATTR_N1 (attr)),
+                *PATTR_N1 (attr));
 
     res = ID_AVIS (arg) == ID_AVIS (*PATTR_N1 (attr));
-    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "fail")));
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "fail"));
 
     return (res);
 }
@@ -292,11 +294,11 @@ attribgetSaaShape (attrib *attr, node *arg)
 {
     bool res;
 
-    DBUG_PRINT ("PMA", (PMASTART "PMAgetSaaShape( " F_PTR " ):", PATTR_N1 (attr)));
+    DBUG_PRINT (PMASTART "PMAgetSaaShape( " F_PTR " ):", PATTR_N1 (attr));
 
     *PATTR_N1 (attr) = AVIS_SHAPE (ID_AVIS (arg));
     res = ((*PATTR_N1 (attr)) != NULL);
-    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "fail")));
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "fail"));
 
     return (res);
 }
@@ -324,11 +326,11 @@ attribgetAvis (attrib *attr, node *arg)
 {
     bool res;
 
-    DBUG_PRINT ("PMA", (PMASTART "PMAgetAvis( " F_PTR " ):", PATTR_N1 (attr)));
+    DBUG_PRINT (PMASTART "PMAgetAvis( " F_PTR " ):", PATTR_N1 (attr));
 
     *PATTR_N1 (attr) = ID_AVIS (arg);
     res = ((*PATTR_N1 (attr)) != NULL);
-    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "fail")));
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "fail"));
 
     return (res);
 }
@@ -357,11 +359,11 @@ attribHasAvis (attrib *attr, node *arg)
 {
     bool res;
 
-    DBUG_PRINT ("PMA", (PMASTART "PMAhasAvis( & \"%s\" (" F_PTR ") ):",
-                        AVIS_NAME (*PATTR_N1 (attr)), *PATTR_N1 (attr)));
+    DBUG_PRINT (PMASTART "PMAhasAvis( & \"%s\" (" F_PTR ") ):",
+                AVIS_NAME (*PATTR_N1 (attr)), *PATTR_N1 (attr));
 
     res = ((*PATTR_N1 (attr)) == ID_AVIS (arg));
-    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "fail")));
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "fail"));
 
     return (res);
 }
@@ -396,16 +398,16 @@ attribGetVal (attrib *attr, node *arg)
 #endif
 
     c = PATTR_C1 (attr);
-    DBUG_PRINT ("PMA", (PMASTART "PMAgetVal( " F_PTR " ):", c));
+    DBUG_PRINT (PMASTART "PMAgetVal( " F_PTR " ):", c);
 
     if (*c != NULL) {
-        DBUG_PRINT ("PMA", (PMARESULT "pre-existing constant freed!"));
+        DBUG_PRINT (PMARESULT "pre-existing constant freed!");
         *c = COfreeConstant (*c);
     }
     *c = COaST2Constant (arg);
-    DBUG_EXECUTE ("PMA", co_str = COconstant2String (*c););
-    DBUG_PRINT ("PMA", (PMARESULT "%s in *" F_PTR, co_str, c));
-    DBUG_EXECUTE ("PMA", co_str = MEMfree (co_str););
+    DBUG_EXECUTE (co_str = COconstant2String (*c));
+    DBUG_PRINT (PMARESULT "%s in *" F_PTR, co_str, c);
+    DBUG_EXECUTE (co_str = MEMfree (co_str));
     return (TRUE);
 }
 
@@ -438,13 +440,13 @@ attribIsVal (attrib *attr, node *arg)
 #endif
 
     c = *PATTR_C1 (attr);
-    DBUG_EXECUTE ("PMA", co_str = COconstant2String (c););
-    DBUG_PRINT ("PMA", (PMASTART "PMAisVal( %s in *" F_PTR " ):", co_str, c));
-    DBUG_EXECUTE ("PMA", co_str = MEMfree (co_str););
+    DBUG_EXECUTE (co_str = COconstant2String (c));
+    DBUG_PRINT (PMASTART "PMAisVal( %s in *" F_PTR " ):", co_str, c);
+    DBUG_EXECUTE (co_str = MEMfree (co_str));
     c2 = COaST2Constant (arg);
 
     res = COcompareConstants (c, c2);
-    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "no match"));
     c2 = COfreeConstant (c2);
 
     return (res);
@@ -479,15 +481,15 @@ attribAnyLeVal (attrib *attr, node *arg)
 #endif
 
     c = *PATTR_C1 (attr);
-    DBUG_EXECUTE ("PMA", co_str = COconstant2String (c););
-    DBUG_PRINT ("PMA", (PMASTART "PMAanyLeVal( %s in *" F_PTR " ):", co_str, c));
-    DBUG_EXECUTE ("PMA", co_str = MEMfree (co_str););
+    DBUG_EXECUTE (co_str = COconstant2String (c));
+    DBUG_PRINT (PMASTART "PMAanyLeVal( %s in *" F_PTR " ):", co_str, c);
+    DBUG_EXECUTE (co_str = MEMfree (co_str));
     c2 = COaST2Constant (arg);
     c3 = COle (c, c2, NULL);
 
     res = COisTrue (c3, FALSE);
 
-    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "no match"));
     c2 = COfreeConstant (c2);
     c3 = COfreeConstant (c3);
 
@@ -515,10 +517,10 @@ PMAanyLeVal (constant **c)
 bool
 attribGetIVal (attrib *attr, node *arg)
 {
-    DBUG_PRINT ("PMA", (PMASTART "PMAgetVal( " F_PTR " ):", PATTR_I1 (attr)));
+    DBUG_PRINT (PMASTART "PMAgetVal( " F_PTR " ):", PATTR_I1 (attr));
 
     *PATTR_I1 (attr) = NUM_VAL (arg);
-    DBUG_PRINT ("PMA", (PMARESULT "%d in *" F_PTR, NUM_VAL (arg), PATTR_I1 (attr)));
+    DBUG_PRINT (PMARESULT "%d in *" F_PTR, NUM_VAL (arg), PATTR_I1 (attr));
 
     return (TRUE);
 }
@@ -546,11 +548,10 @@ attribIsIVal (attrib *attr, node *arg)
 {
     bool res;
 
-    DBUG_PRINT ("PMA", (PMASTART "PMAisIVal( %d in *" F_PTR " ):", *PATTR_I1 (attr),
-                        PATTR_I1 (attr)));
+    DBUG_PRINT (PMASTART "PMAisIVal( %d in *" F_PTR " ):", *PATTR_I1 (attr),
+                PATTR_I1 (attr));
     res = *PATTR_I1 (attr) == NUM_VAL (arg);
-    DBUG_PRINT ("PMA",
-                (PMARESULT "%s (%d found)", (res ? "match" : "no match"), NUM_VAL (arg)));
+    DBUG_PRINT (PMARESULT "%s (%d found)", (res ? "match" : "no match"), NUM_VAL (arg));
 
     return (res);
 }
@@ -578,12 +579,11 @@ attribLeIVal (attrib *attr, node *arg)
 {
     bool res;
 
-    DBUG_PRINT ("PMA", (PMASTART "PMAisLEIVal( %d in *" F_PTR " ):", *PATTR_I1 (attr),
-                        PATTR_I1 (attr)));
+    DBUG_PRINT (PMASTART "PMAisLEIVal( %d in *" F_PTR " ):", *PATTR_I1 (attr),
+                PATTR_I1 (attr));
     res = *PATTR_I1 (attr) <= NUM_VAL (arg);
 
-    DBUG_PRINT ("PMA",
-                (PMARESULT "%s (%d found)", (res ? "match" : "no match"), NUM_VAL (arg)));
+    DBUG_PRINT (PMARESULT "%s (%d found)", (res ? "match" : "no match"), NUM_VAL (arg));
 
     return (res);
 }
@@ -609,10 +609,10 @@ PMAleIVal (int *i)
 bool
 attribGetLen (attrib *attr, node *arg)
 {
-    DBUG_PRINT ("PMA", (PMASTART "PMAgetLen( " F_PTR " ):", PATTR_I1 (attr)));
+    DBUG_PRINT (PMASTART "PMAgetLen( " F_PTR " ):", PATTR_I1 (attr));
 
     *PATTR_I1 (attr) = SHgetUnrLen (ARRAY_FRAMESHAPE (arg));
-    DBUG_PRINT ("PMA", (PMARESULT "%d in *" F_PTR, *PATTR_I1 (attr), PATTR_I1 (attr)));
+    DBUG_PRINT (PMARESULT "%d in *" F_PTR, *PATTR_I1 (attr), PATTR_I1 (attr));
 
     return (TRUE);
 }
@@ -640,11 +640,11 @@ attribHasLen (attrib *attr, node *arg)
 {
     bool res;
 
-    DBUG_PRINT ("PMA", (PMASTART "PMAhasLen( %d in *" F_PTR " ):", *PATTR_I1 (attr),
-                        PATTR_I1 (attr)));
+    DBUG_PRINT (PMASTART "PMAhasLen( %d in *" F_PTR " ):", *PATTR_I1 (attr),
+                PATTR_I1 (attr));
     res = *PATTR_I1 (attr) == SHgetUnrLen (ARRAY_FRAMESHAPE (arg));
-    DBUG_PRINT ("PMA", (PMARESULT "%s (length %d found)", (res ? "match" : "no match"),
-                        SHgetUnrLen (ARRAY_FRAMESHAPE (arg))));
+    DBUG_PRINT (PMARESULT "%s (length %d found)", (res ? "match" : "no match"),
+                SHgetUnrLen (ARRAY_FRAMESHAPE (arg)));
     return (res);
 }
 
@@ -674,17 +674,17 @@ attribGetFS (attrib *attr, node *arg)
     char *co_str;
 #endif
 
-    DBUG_PRINT ("PMA", (PMASTART "PMAgetFS( " F_PTR " ):", PATTR_C1 (attr)));
+    DBUG_PRINT (PMASTART "PMAgetFS( " F_PTR " ):", PATTR_C1 (attr));
 
     if (*PATTR_C1 (attr) != NULL) {
-        DBUG_PRINT ("PMA", (PMARESULT "pre-existing frame shape freed!"));
+        DBUG_PRINT (PMARESULT "pre-existing frame shape freed!");
         *PATTR_C1 (attr) = COfreeConstant (*PATTR_C1 (attr));
     }
     *PATTR_C1 (attr) = COmakeConstantFromShape (ARRAY_FRAMESHAPE (arg));
 
-    DBUG_EXECUTE ("PMA", co_str = COconstant2String (*PATTR_C1 (attr)););
-    DBUG_PRINT ("PMA", (PMARESULT "%s in *" F_PTR, co_str, PATTR_C1 (attr)));
-    DBUG_EXECUTE ("PMA", co_str = MEMfree (co_str););
+    DBUG_EXECUTE (co_str = COconstant2String (*PATTR_C1 (attr)));
+    DBUG_PRINT (PMARESULT "%s in *" F_PTR, co_str, PATTR_C1 (attr));
+    DBUG_EXECUTE (co_str = MEMfree (co_str));
 
     return (TRUE);
 }
@@ -716,14 +716,13 @@ attribHasFS (attrib *attr, node *arg)
     char *co_str;
 #endif
 
-    DBUG_EXECUTE ("PMA", co_str = COconstant2String (*PATTR_C1 (attr)););
-    DBUG_PRINT ("PMA",
-                (PMASTART "PMAhasFS( %s in *" F_PTR " ):", co_str, PATTR_C1 (attr)));
-    DBUG_EXECUTE ("PMA", co_str = MEMfree (co_str););
+    DBUG_EXECUTE (co_str = COconstant2String (*PATTR_C1 (attr)));
+    DBUG_PRINT (PMASTART "PMAhasFS( %s in *" F_PTR " ):", co_str, PATTR_C1 (attr));
+    DBUG_EXECUTE (co_str = MEMfree (co_str));
 
     c2 = COmakeConstantFromShape (ARRAY_FRAMESHAPE (arg));
     res = COcompareConstants (c2, *PATTR_C1 (attr));
-    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "no match"));
     c2 = COfreeConstant (c2);
 
     return (res);
@@ -752,9 +751,9 @@ attribIsPrf (attrib *attr, node *arg)
 {
     bool res;
 
-    DBUG_PRINT ("PMA", (PMASTART "PMisPrf( %s)", global.prf_name[PATTR_PRF (attr)]));
+    DBUG_PRINT (PMASTART "PMisPrf( %s)", global.prf_name[PATTR_PRF (attr)]);
     res = PRF_PRF (arg) == PATTR_PRF (attr);
-    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "no match"));
 
     return (res);
 }
@@ -808,7 +807,7 @@ attribHasCountWithop (attrib *attr, node *arg)
     bool res;
 
     res = (TCcountWithops (WITH_OR_WITH2_OR_WITH3_WITHOP (arg)) == *PATTR_I1 (attr));
-    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "no match"));
 
     return (res);
 }
@@ -837,7 +836,7 @@ attribHasCountRange (attrib *attr, node *arg)
     bool res;
 
     res = TCcountRanges (WITH3_RANGES (arg)) == *PATTR_I1 (attr);
-    DBUG_PRINT ("PMA", (PMARESULT "%s", (res ? "match" : "no match")));
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "no match"));
 
     return (res);
 }
@@ -852,3 +851,5 @@ PMAhasCountRange (int *count)
 
     return (res);
 }
+
+#undef DBUG_PREFIX

@@ -58,7 +58,10 @@
 #include "str_buffer.h"
 #include "memory.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "traverse.h"
 #include "free.h"
@@ -136,7 +139,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -157,7 +160,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -187,7 +190,7 @@ IMEMdoInsertMemoryTransfers (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("IMEMdoInsertMemoryTransfers");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -229,7 +232,7 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
     ntype *scalar_type, *dev_type = NULL;
     simpletype sty;
 
-    DBUG_ENTER ("TypeConvert");
+    DBUG_ENTER ();
 
     if (nty == N_id) {
         /* If the N_ids is of known dimension and is not a scalar */
@@ -280,7 +283,7 @@ TypeConvert (ntype *host_type, nodetype nty, info *arg_info)
             }
         }
     } else {
-        DBUG_ASSERT ((0), "Neither N_id nor N_ids found in TypeConvert!");
+        DBUG_ASSERT (0, "Neither N_id nor N_ids found in TypeConvert!");
     }
 
     DBUG_RETURN (dev_type);
@@ -309,7 +312,7 @@ IMEMfundef (node *arg_node, info *arg_info)
 {
     node *old_fundef;
 
-    DBUG_ENTER ("IMEMfundef");
+    DBUG_ENTER ();
 
     /* During the main traversal, we only look at non-lac functions */
     if (!FUNDEF_ISLACFUN (arg_node)) {
@@ -349,7 +352,7 @@ IMEMap (node *arg_node, info *arg_info)
     ntype *dev_type;
     node *fundef;
 
-    DBUG_ENTER ("IMEMap");
+    DBUG_ENTER ();
 
     fundef = AP_FUNDEF (arg_node);
 
@@ -368,9 +371,9 @@ IMEMap (node *arg_node, info *arg_info)
             fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
 
             while (ap_args != NULL) {
-                DBUG_ASSERT ((fundef_args != NULL), "# of Ap args != # of Fundef args!");
+                DBUG_ASSERT (fundef_args != NULL, "# of Ap args != # of Fundef args!");
 
-                DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (ap_args)) == N_id),
+                DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (ap_args)) == N_id,
                              "N_ap argument is not N_id node!");
 
                 id_avis = ID_AVIS (EXPRS_EXPR (ap_args));
@@ -451,7 +454,7 @@ IMEMassign (node *arg_node, info *arg_info)
 {
     node *next;
 
-    DBUG_ENTER ("IMEMassign");
+    DBUG_ENTER ();
 
     /*
      * Here we have to do a top-down traversal for the following reason:
@@ -502,7 +505,7 @@ IMEMassign (node *arg_node, info *arg_info)
 node *
 IMEMlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMEMlet");
+    DBUG_ENTER ();
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     INFO_LETEXPR (arg_info) = LET_EXPR (arg_node);
@@ -523,7 +526,7 @@ IMEMwith (node *arg_node, info *arg_info)
 {
     lut_t *old_lut;
 
-    DBUG_ENTER ("IMEMwith");
+    DBUG_ENTER ();
 
     /* If the N_with is cudarizable */
     if (WITH_CUDARIZABLE (arg_node)) {
@@ -580,7 +583,7 @@ IMEMwith (node *arg_node, info *arg_info)
 node *
 IMEMcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMEMcode");
+    DBUG_ENTER ();
 
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
@@ -603,7 +606,7 @@ IMEMcode (node *arg_node, info *arg_info)
 node *
 IMEMgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMEMgenarray");
+    DBUG_ENTER ();
 
     if (INFO_INCUDAWL (arg_info)) {
         /* Note that we do not traverse N_genarray->shape. This is
@@ -611,7 +614,7 @@ IMEMgenarray (node *arg_node, info *arg_info)
          * <host2device> for it in this case. Therefore, the only son
          * of N_genarray we traverse is the default element. */
         if (GENARRAY_DEFAULT (arg_node) != NULL) {
-            DBUG_ASSERT ((NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id),
+            DBUG_ASSERT (NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id,
                          "Non N_id default element found in N_genarray!");
             GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
         }
@@ -634,10 +637,10 @@ IMEMgenarray (node *arg_node, info *arg_info)
 node *
 IMEMmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("IMEMmodarray");
+    DBUG_ENTER ();
 
     if (INFO_INCUDAWL (arg_info)) {
-        DBUG_ASSERT ((NODE_TYPE (MODARRAY_ARRAY (arg_node)) == N_id),
+        DBUG_ASSERT (NODE_TYPE (MODARRAY_ARRAY (arg_node)) == N_id,
                      "Non N_id modified array found in N_modarray!");
         INFO_IS_MODARR (arg_info) = TRUE;
         MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
@@ -662,7 +665,7 @@ IMEMids (node *arg_node, info *arg_info)
     node *new_avis, *ids_avis;
     ntype *ids_type, *dev_type;
 
-    DBUG_ENTER ("IMEMids");
+    DBUG_ENTER ();
 
     ids_avis = IDS_AVIS (arg_node);
     ids_type = AVIS_TYPE (ids_avis);
@@ -719,7 +722,7 @@ IMEMid (node *arg_node, info *arg_info)
     node *new_avis, *avis, *id_avis;
     ntype *dev_type, *id_type;
 
-    DBUG_ENTER ("IMEMid");
+    DBUG_ENTER ();
 
     id_avis = ID_AVIS (arg_node);
     id_type = AVIS_TYPE (id_avis);
@@ -773,7 +776,7 @@ IMEMid (node *arg_node, info *arg_info)
 static void
 CreateHost2Device (node **id, node *host_avis, node *dev_avis, info *arg_info)
 {
-    DBUG_ENTER ("CreateHost2Device");
+    DBUG_ENTER ();
 
     ID_AVIS (*id) = dev_avis;
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -791,7 +794,7 @@ CreateHost2Device (node **id, node *host_avis, node *dev_avis, info *arg_info)
     /* Insert pair host_avis->dev_avis into lookup table. */
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), host_avis, dev_avis);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -801,3 +804,5 @@ CreateHost2Device (node **id, node *host_avis, node *dev_avis, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

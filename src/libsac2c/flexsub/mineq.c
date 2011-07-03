@@ -20,7 +20,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "str.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "graphtypes.h"
@@ -45,7 +48,7 @@
 node *
 TFMINdoReduceTFGraph (node *syntax_tree)
 {
-    DBUG_ENTER ("TFMINdoReduceGraph");
+    DBUG_ENTER ();
 
     TRAVpush (TR_tfmin);
 
@@ -70,7 +73,7 @@ node *
 TFMINtfspec (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("TFMINtfspec");
+    DBUG_ENTER ();
 
     nodelist *nl;
     int i;
@@ -115,7 +118,7 @@ node *
 TFMINtfvertex (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ("TFMINtfvertex");
+    DBUG_ENTER ();
 
     node *defs, *parents_itr1, *parents_itr2, *edge;
     nodelist *nl_next;
@@ -206,3 +209,5 @@ TFMINtfvertex (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

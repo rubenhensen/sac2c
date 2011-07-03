@@ -10,7 +10,9 @@
 #include "icm2c_std.h"
 #include "icm2c_prf.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "convert.h"
 #include "globals.h"
 #include "print.h"
@@ -49,14 +51,14 @@ ICMCompileND_PRF_SHAPE_A__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
     shape_class_t from_sc = ICUGetShapeClass (from_NT);
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
-    DBUG_ENTER ("ICMCompileND_PRF_SHAPE_A__DATA");
+    DBUG_ENTER ();
 
 #define ND_PRF_SHAPE_A__DATA
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef ND_PRF_SHAPE_A__DATA
 
-    DBUG_ASSERT ((to_hc == C_nhd), "result of F_shape_A must be non-hidden!");
+    DBUG_ASSERT (to_hc == C_nhd, "result of F_shape_A must be non-hidden!");
 
     INDENT;
     fprintf (global.outfile,
@@ -73,7 +75,7 @@ ICMCompileND_PRF_SHAPE_A__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
     case C_aks:
         /* here is no break missing */
     case C_akd:
-        DBUG_ASSERT ((from_dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (from_dim >= 0, "illegal dimension found!");
         for (i = 0; i < from_dim; i++) {
             INDENT; /* is NHD -> no copyfun needed */
             fprintf (global.outfile,
@@ -95,11 +97,11 @@ ICMCompileND_PRF_SHAPE_A__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
+        DBUG_ASSERT (0, "Unknown shape class found!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -118,7 +120,7 @@ ICMCompileND_PRF_SHAPE_A__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
 void
 ICMCompileND_PRF_RESHAPE_VxA__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_RESHAPE_VxA__SHAPE_id");
+    DBUG_ENTER ();
 
 #define ND_PRF_RESHAPE_VxA__SHAPE_id
 #include "icm_comment.c"
@@ -137,7 +139,7 @@ ICMCompileND_PRF_RESHAPE_VxA__SHAPE_id (char *to_NT, int to_sdim, char *shp_NT)
 
     ICMCompileND_SET__SHAPE_id (to_NT, to_sdim, shp_NT);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -159,7 +161,7 @@ ICMCompileND_PRF_RESHAPE_VxA__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_RESHAPE_VxA__SHAPE_arr");
+    DBUG_ENTER ();
 
 #define ND_PRF_RESHAPE_VxA__SHAPE_arr
 #include "icm_comment.c"
@@ -190,7 +192,7 @@ ICMCompileND_PRF_RESHAPE_VxA__SHAPE_arr (char *to_NT, int to_sdim, int shp_size,
 
     ICMCompileND_SET__SHAPE_arr (to_NT, shp_size, shp_ANY);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -217,7 +219,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_id (char *to_NT, int to_sdim, char *from_NT,
     char **shp;
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_SEL_VxA__SHAPE_id");
+    DBUG_ENTER ();
 
 #define ND_PRF_SEL_VxA__SHAPE_id
 #include "icm_comment.c"
@@ -245,7 +247,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_id (char *to_NT, int to_sdim, char *from_NT,
     case C_aks:
         /* here is no break missing */
     case C_akd:
-        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (to_dim >= 0, "illegal dimension found!");
         shp = (char **)MEMmalloc (to_dim * sizeof (char *));
         for (i = 0; i < to_dim; i++) {
             shp[i] = (char *)MEMmalloc ((2 * STRlen (from_NT) + 50) * sizeof (char));
@@ -282,11 +284,11 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_id (char *to_NT, int to_sdim, char *from_NT,
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
+        DBUG_ASSERT (0, "Unknown shape class found!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -314,7 +316,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT,
     char **shp;
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_SEL_VxA__SHAPE_arr");
+    DBUG_ENTER ();
 
 #define ND_PRF_SEL_VxA__SHAPE_arr
 #include "icm_comment.c"
@@ -346,7 +348,7 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT,
     case C_aks:
         /* here is no break missing */
     case C_akd:
-        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (to_dim >= 0, "illegal dimension found!");
         shp = (char **)MEMmalloc (to_dim * sizeof (char *));
         for (i = 0; i < to_dim; i++) {
             shp[i] = (char *)MEMmalloc ((2 * STRlen (from_NT) + 50) * sizeof (char));
@@ -382,11 +384,11 @@ ICMCompileND_PRF_SEL_VxA__SHAPE_arr (char *to_NT, int to_sdim, char *from_NT,
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
+        DBUG_ASSERT (0, "Unknown shape class found!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -414,9 +416,9 @@ PrfSel_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
 #endif
     int from_dim = DIM_NO_OFFSET (from_sdim);
 
-    DBUG_ENTER ("PrfSel_Data");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((to_dim == 0), "Primitive selection can only yield scalar results!");
+    DBUG_ASSERT (to_dim == 0, "Primitive selection can only yield scalar results!");
 
     BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx;");
                    , Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun, idx_read_fun,
@@ -425,7 +427,7 @@ PrfSel_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
                                     "SAC_ND_WRITE_READ_COPY( %s, 0, %s, SAC_idx, %s)\n",
                                     to_NT, from_NT, copyfun););
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -448,7 +450,7 @@ void
 ICMCompileND_PRF_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                                    char *idx_NT, int idx_size, char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_SEL_VxA__DATA_id");
+    DBUG_ENTER ();
 
 #define ND_PRF_SEL_VxA__DATA_id
 #include "icm_comment.c"
@@ -474,7 +476,7 @@ ICMCompileND_PRF_SEL_VxA__DATA_id (char *to_NT, int to_sdim, char *from_NT, int 
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idx_NT, idx_size, SizeId, ReadId,
                  copyfun);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -500,7 +502,7 @@ ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_SEL_VxA__DATA_arr");
+    DBUG_ENTER ();
 
 #define ND_PRF_SEL_VxA__DATA_arr
 #include "icm_comment.c"
@@ -538,7 +540,7 @@ ICMCompileND_PRF_SEL_VxA__DATA_arr (char *to_NT, int to_sdim, char *from_NT,
     PrfSel_Data (to_NT, to_sdim, from_NT, from_sdim, idxs_ANY, idx_size, NULL,
                  ReadConstArray_Str, copyfun);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -566,7 +568,7 @@ PrfModarrayScalarVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdi
 {
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
-    DBUG_ENTER ("PrfModarrayScalarVal_Data");
+    DBUG_ENTER ();
 
     INDENT;
     BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx;");
@@ -584,7 +586,7 @@ PrfModarrayScalarVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdi
                    ReadScalar (val_scalar, NULL, 0);
                    fprintf (global.outfile, " , %s)\n", copyfun););
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -612,7 +614,7 @@ PrfModarrayArrayVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim
 {
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
-    DBUG_ENTER ("PrfModarrayArrayVal_Data");
+    DBUG_ENTER ();
 
     BLOCK_VARDECS (fprintf (global.outfile, "int SAC_i, SAC_j, SAC_idx;");
                    ,
@@ -634,7 +636,7 @@ PrfModarrayArrayVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim
                                       " %s, SAC_i, %s, SAC_j, %s)\n",
                                       to_NT, val_array, copyfun);););
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -658,7 +660,7 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id (char *to_NT, int to_sdim, char *from_N
                                           int from_sdim, char *idx_NT, int idx_size,
                                           char *val_scalar, char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id");
+    DBUG_ENTER ();
 
 #define ND_PRF_MODARRAY_AxVxS__DATA_id
 #include "icm_comment.c"
@@ -687,7 +689,7 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_id (char *to_NT, int to_sdim, char *from_N
     PrfModarrayScalarVal_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idx_NT,
                                idx_size, SizeId, ReadId, val_scalar, copyfun);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -714,7 +716,7 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr (char *to_NT, int to_sdim, char *from_
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr");
+    DBUG_ENTER ();
 
 #define ND_PRF_MODARRAY_AxVxS__DATA_arr
 #include "icm_comment.c"
@@ -750,7 +752,7 @@ ICMCompileND_PRF_MODARRAY_AxVxS__DATA_arr (char *to_NT, int to_sdim, char *from_
     PrfModarrayScalarVal_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idxs_ANY,
                                idx_size, NULL, ReadConstArray_Str, val_scalar, copyfun);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -774,7 +776,7 @@ ICMCompileND_PRF_MODARRAY_AxVxA__DATA_id (char *to_NT, int to_sdim, char *from_N
                                           int from_sdim, char *idx_NT, int idx_size,
                                           char *val_array, char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxA__DATA_id");
+    DBUG_ENTER ();
 
 #define ND_PRF_MODARRAY_AxVxA__DATA_id
 #include "icm_comment.c"
@@ -803,7 +805,7 @@ ICMCompileND_PRF_MODARRAY_AxVxA__DATA_id (char *to_NT, int to_sdim, char *from_N
     PrfModarrayArrayVal_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idx_NT, idx_size,
                               SizeId, ReadId, val_array, copyfun);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -830,7 +832,7 @@ ICMCompileND_PRF_MODARRAY_AxVxA__DATA_arr (char *to_NT, int to_sdim, char *from_
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_MODARRAY_AxVxA__DATA_arr");
+    DBUG_ENTER ();
 
 #define ND_PRF_MODARRAY_AxVxA__DATA_arr
 #include "icm_comment.c"
@@ -868,7 +870,7 @@ ICMCompileND_PRF_MODARRAY_AxVxA__DATA_arr (char *to_NT, int to_sdim, char *from_
     PrfModarrayArrayVal_Data (to_NT, to_sdim, from_NT, from_sdim, FALSE, idxs_ANY,
                               idx_size, NULL, ReadConstArray_Str, val_array, copyfun);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -895,7 +897,7 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
     char **shp;
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_IDX_SEL__SHAPE");
+    DBUG_ENTER ();
 
 #define ND_PRF_IDX_SEL__SHAPE
 #include "icm_comment.c"
@@ -927,7 +929,7 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
     case C_aks:
         /* here is no break missing */
     case C_akd:
-        DBUG_ASSERT ((to_dim >= 0), "illegal dimension found!");
+        DBUG_ASSERT (to_dim >= 0, "illegal dimension found!");
         shp = (char **)MEMmalloc (to_dim * sizeof (char *));
         for (i = 0; i < to_dim; i++) {
             shp[i] = (char *)MEMmalloc ((2 * STRlen (from_NT) + 50) * sizeof (char));
@@ -950,15 +952,15 @@ ICMCompileND_PRF_IDX_SEL__SHAPE (char *to_NT, int to_sdim, char *from_NT, int fr
         /*
          * F_idx_sel works only for arrays with known dimension!
          */
-        DBUG_ASSERT ((0), "F_idx_sel with unknown dimension found!");
+        DBUG_ASSERT (0, "F_idx_sel with unknown dimension found!");
         break;
 
     default:
-        DBUG_ASSERT ((0), "Unknown shape class found!");
+        DBUG_ASSERT (0, "Unknown shape class found!");
         break;
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -982,7 +984,7 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
 {
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
-    DBUG_ENTER ("ICMCompileND_PRF_IDX_SEL__DATA");
+    DBUG_ENTER ();
 
 #define ND_PRF_IDX_SEL__DATA
 #include "icm_comment.c"
@@ -1029,7 +1031,7 @@ ICMCompileND_PRF_IDX_SEL__DATA (char *to_NT, int to_sdim, char *from_NT, int fro
                                    to_NT, from_NT, copyfun););
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1052,7 +1054,7 @@ ICMCompileND_PRF_IDX_SHAPE_SEL__DATA (char *to_NT, int to_sdim, char *from_NT,
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_IDX_SHAPE_SEL__DATA");
+    DBUG_ENTER ();
 
 #define ND_PRF_IDX_SHAPE_SEL__DATA
 #include "icm_comment.c"
@@ -1109,7 +1111,7 @@ ICMCompileND_PRF_IDX_SHAPE_SEL__DATA (char *to_NT, int to_sdim, char *from_NT,
         fprintf (global.outfile, "))\n");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1133,7 +1135,7 @@ ICMCompileND_PRF_IDX_MODARRAY_AxSxS__DATA (char *to_NT, int to_sdim, char *from_
                                            int from_sdim, char *idx_ANY, char *val_scalar,
                                            char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_IDX_MODARRAY_AxSxS__DATA");
+    DBUG_ENTER ();
 
 #define ND_PRF_IDX_MODARRAY_AxSxS__DATA
 #include "icm_comment.c"
@@ -1163,7 +1165,7 @@ ICMCompileND_PRF_IDX_MODARRAY_AxSxS__DATA (char *to_NT, int to_sdim, char *from_
     PrfModarrayScalarVal_Data (to_NT, to_sdim, from_NT, from_sdim, TRUE, idx_ANY, 1, NULL,
                                ReadScalar, val_scalar, copyfun);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1187,7 +1189,7 @@ ICMCompileND_PRF_IDX_MODARRAY_AxSxA__DATA (char *to_NT, int to_sdim, char *from_
                                            int from_sdim, char *idx_ANY, char *val_array,
                                            char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_IDX_MODARRAY_AxSxA__DATA");
+    DBUG_ENTER ();
 
 #define ND_PRF_IDX_MODARRAY_AxSxA__DATA
 #include "icm_comment.c"
@@ -1217,7 +1219,7 @@ ICMCompileND_PRF_IDX_MODARRAY_AxSxA__DATA (char *to_NT, int to_sdim, char *from_
     PrfModarrayArrayVal_Data (to_NT, to_sdim, from_NT, from_sdim, TRUE, idx_ANY, 1, NULL,
                               ReadScalar, val_array, copyfun);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1240,7 +1242,7 @@ ICMCompileND_PRF_TAKE_SxV__SHAPE (char *to_NT, int to_sdim, char *from_NT, int f
 {
     char **shp;
 
-    DBUG_ENTER ("ICMCompileND_PRF_TAKE_SxV__SHAPE");
+    DBUG_ENTER ();
 
 #define ND_PRF_TAKE_SxV__SHAPE
 #include "icm_comment.c"
@@ -1280,7 +1282,7 @@ ICMCompileND_PRF_TAKE_SxV__SHAPE (char *to_NT, int to_sdim, char *from_NT, int f
     shp[0] = MEMfree (shp[0]);
     shp = MEMfree (shp);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1302,7 +1304,7 @@ void
 ICMCompileND_PRF_TAKE_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                                  char *cnt_ANY, char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_TAKE_SxV__DATA");
+    DBUG_ENTER ();
 
 #define ND_PRF_TAKE_SxV__DATA
 #include "icm_comment.c"
@@ -1346,7 +1348,7 @@ ICMCompileND_PRF_TAKE_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int fr
                                                  " %s, SAC_off + SAC_i, %s);\n",
                                                  to_NT, from_NT, copyfun);););
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1369,7 +1371,7 @@ ICMCompileND_PRF_DROP_SxV__SHAPE (char *to_NT, int to_sdim, char *from_NT, int f
 {
     char **shp;
 
-    DBUG_ENTER ("ICMCompileND_PRF_DROP_SxV__SHAPE");
+    DBUG_ENTER ();
 
 #define ND_PRF_DROP_SxV__SHAPE
 #include "icm_comment.c"
@@ -1411,7 +1413,7 @@ ICMCompileND_PRF_DROP_SxV__SHAPE (char *to_NT, int to_sdim, char *from_NT, int f
     shp[0] = MEMfree (shp[0]);
     shp = MEMfree (shp);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1433,7 +1435,7 @@ void
 ICMCompileND_PRF_DROP_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
                                  char *cnt_ANY, char *copyfun)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_DROP_SxV__DATA");
+    DBUG_ENTER ();
 
 #define ND_PRF_DROP_SxV__DATA
 #include "icm_comment.c"
@@ -1479,7 +1481,7 @@ ICMCompileND_PRF_DROP_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int fr
                                                  " %s, SAC_off + SAC_i, %s);\n",
                                                  to_NT, from_NT, copyfun);););
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1502,7 +1504,7 @@ ICMCompileND_PRF_CAT_VxV__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int f
 {
     char **shp;
 
-    DBUG_ENTER ("ICMCompileND_PRF_CAT_VxV__SHAPE");
+    DBUG_ENTER ();
 
 #define ND_PRF_CAT_VxV__SHAPE
 #include "icm_comment.c"
@@ -1536,7 +1538,7 @@ ICMCompileND_PRF_CAT_VxV__SHAPE (char *to_NT, int to_sdim, char *from1_NT, int f
     shp[0] = MEMfree (shp[0]);
     shp = MEMfree (shp);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1557,7 +1559,7 @@ void
 ICMCompileND_PRF_PROP_OBJ_IN (int vararg_cnt, char **vararg)
 {
     int i;
-    DBUG_ENTER ("ICMCompileND_PRF_PROP_OBJ_IN");
+    DBUG_ENTER ();
 
 #define ND_PRF_PROP_OBJ_IN
 #include "icm_comment.c"
@@ -1573,7 +1575,7 @@ ICMCompileND_PRF_PROP_OBJ_IN (int vararg_cnt, char **vararg)
                  vararg[i + 1]);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1594,7 +1596,7 @@ void
 ICMCompileND_PRF_PROP_OBJ_OUT (int vararg_cnt, char **vararg)
 {
     int i;
-    DBUG_ENTER ("ICMCompileND_PRF_PROP_OBJ_OUT");
+    DBUG_ENTER ();
 
 #define ND_PRF_PROP_OBJ_OUT
 #include "icm_comment.c"
@@ -1610,7 +1612,7 @@ ICMCompileND_PRF_PROP_OBJ_OUT (int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "SAC_ND_PROP_OBJ_OUT( )\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1623,7 +1625,7 @@ ICMCompileND_PRF_TYPE_CONSTRAINT_AKS (char *to_NT, char *from_NT, int dim, int *
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_TYPE_CONSTRAINT_AKS");
+    DBUG_ENTER ();
 
     COND1 (
       fprintf (global.outfile, "(SAC_ND_A_DIM(%s) != %d)", from_NT, dim);
@@ -1640,7 +1642,7 @@ ICMCompileND_PRF_TYPE_CONSTRAINT_AKS (char *to_NT, char *from_NT, int dim, int *
     INDENT;
     fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1655,7 +1657,7 @@ ICMCompileND_PRF_SAME_SHAPE (char *to_NT, char *from_NT, int from_sdim, char *fr
     int i;
     int dim = ARRAY_OR_SCALAR;
 
-    DBUG_ENTER ("ICMCompileND_PRF_SAME_SHAPE");
+    DBUG_ENTER ();
 
     if (KNOWN_DIMENSION (from_sdim)) {
         dim = DIM_NO_OFFSET (from_sdim);
@@ -1704,7 +1706,7 @@ ICMCompileND_PRF_SAME_SHAPE (char *to_NT, char *from_NT, int from_sdim, char *fr
     INDENT;
     fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 #if 0
@@ -1716,7 +1718,7 @@ ICMCompileND_PRF_SAME_SHAPE (char *to_NT, char *from_NT, int from_sdim, char *fr
 void ICMCompileND_PRF_SHAPE_MATCHES_DIM( char *to_NT, char *from_NT, 
                                          char *from2_NT)
 {
-  DBUG_ENTER( "ICMCompileND_PRF_SHAPE_MATCHES_DIM");
+  DBUG_ENTER ();
 
   COND1(
     fprintf( global.outfile,
@@ -1732,7 +1734,7 @@ void ICMCompileND_PRF_SHAPE_MATCHES_DIM( char *to_NT, char *from_NT,
   INDENT;
   fprintf( global.outfile, "SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
 
-  DBUG_VOID_RETURN;
+  DBUG_RETURN ();
 }
 #endif
 
@@ -1747,7 +1749,7 @@ ICMCompileND_PRF_VAL_LT_SHAPE_VxA (char *to_NT, char *from_NT, char *from2_NT,
 {
     int i;
 
-    DBUG_ENTER ("ICMCompileND_PRF_VAL_LT_SHAPE_VxA");
+    DBUG_ENTER ();
 
     COND1 (fprintf (global.outfile,
                     "(SAC_ND_A_DIM(%s) != 1) &&"
@@ -1783,7 +1785,7 @@ ICMCompileND_PRF_VAL_LT_SHAPE_VxA (char *to_NT, char *from_NT, char *from2_NT,
     INDENT;
     fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1795,7 +1797,7 @@ void
 ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT, char *from2_NT,
                                           int from2_sdim)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE");
+    DBUG_ENTER ();
 
     BLOCK_VARDECS (
       fprintf (global.outfile, "int SAC_p1 = 1; int SAC_p2 = 1;");
@@ -1828,7 +1830,7 @@ ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT, char *from
     INDENT;
     fprintf (global.outfile, "SAC_ND_A_FIELD( %s) = 1;\n", to_NT);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -1846,7 +1848,7 @@ ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT, char *from
 void
 ICMCompileND_PRF_COND (char *to_NT, char *cond_NT, char *then_NT, char *else_NT)
 {
-    DBUG_ENTER ("ICMCompileND_PRF_COND");
+    DBUG_ENTER ();
 
 #define ND_PRF_COND
 #include "icm_comment.c"
@@ -1870,5 +1872,7 @@ ICMCompileND_PRF_COND (char *to_NT, char *cond_NT, char *then_NT, char *else_NT)
     INDENT;
     fprintf (global.outfile, "}\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

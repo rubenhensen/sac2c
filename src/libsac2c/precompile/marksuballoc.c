@@ -52,7 +52,10 @@
 /*
  * Other includes go here
  */
-#include "dbug.h"
+
+#define DBUG_PREFIX "MSA"
+#include "debug.h"
+
 #include "traverse.h"
 #include "tree_basic.h"
 #include "memory.h"
@@ -74,7 +77,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -86,7 +89,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -112,17 +115,17 @@ MSAdoMarkSubAlloc (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MSAdoMarkSuballoc");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
-    DBUG_PRINT ("MSA", ("Starting mark suballoc traversal."));
+    DBUG_PRINT ("Starting mark suballoc traversal.");
 
     TRAVpush (TR_msa);
     syntax_tree = TRAVdo (syntax_tree, info);
     TRAVpop ();
 
-    DBUG_PRINT ("MSA", ("Mark suballoc traversal complete."));
+    DBUG_PRINT ("Mark suballoc traversal complete.");
 
     info = FreeInfo (info);
 
@@ -161,7 +164,7 @@ MSAdoMarkSubAlloc (node *syntax_tree)
 node *
 MSAlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MSAlet");
+    DBUG_ENTER ();
 
     INFO_IS_SUBALLOC (arg_info) = FALSE;
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -184,7 +187,7 @@ MSAlet (node *arg_node, info *arg_info)
 node *
 MSAids (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MSAids");
+    DBUG_ENTER ();
 
     if (INFO_IS_SUBALLOC (arg_info)) {
         AVIS_TYPE (IDS_AVIS (arg_node))
@@ -206,7 +209,7 @@ MSAids (node *arg_node, info *arg_info)
 node *
 MSAprf (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MSAprf");
+    DBUG_ENTER ();
 
     if (PRF_PRF (arg_node) == F_suballoc) {
         INFO_IS_SUBALLOC (arg_info) = TRUE;
@@ -222,3 +225,5 @@ MSAprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

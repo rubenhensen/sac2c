@@ -4,7 +4,10 @@
 
 #include "traverse.h"
 #include "free.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "MOI"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -33,7 +36,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -46,7 +49,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -61,7 +64,7 @@ ArgsContainAvis (node *args, node *avis)
 {
     bool result;
 
-    DBUG_ENTER ("ArgsContainAvis");
+    DBUG_ENTER ();
 
     if (args == NULL) {
         result = FALSE;
@@ -78,7 +81,7 @@ ArgsContainAvis (node *args, node *avis)
 node *
 MOIassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MOIassign");
+    DBUG_ENTER ();
 
     /*
      * we do it bottom up
@@ -105,7 +108,7 @@ MOIassign (node *arg_node, info *arg_info)
 node *
 MOIid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MOIassign");
+    DBUG_ENTER ();
 
     INFO_DELETE (arg_info)
       = INFO_DELETE (arg_info)
@@ -117,10 +120,10 @@ MOIid (node *arg_node, info *arg_info)
 node *
 MOIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("MOIassign");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISOBJINITFUN (arg_node)) {
-        DBUG_PRINT ("MOI", (">>> entering fundef %s", CTIitemName (arg_node)));
+        DBUG_PRINT (">>> entering fundef %s", CTIitemName (arg_node));
 
         /*
          * this is an init function, so we have to remove all lhs references
@@ -132,7 +135,7 @@ MOIfundef (node *arg_node, info *arg_info)
             INFO_ARGS (arg_info) = NULL;
         }
 
-        DBUG_PRINT ("MOI", ("<<< leaving fundef %s", CTIitemName (arg_node)));
+        DBUG_PRINT ("<<< leaving fundef %s", CTIitemName (arg_node));
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -150,7 +153,7 @@ MOIdoManageObjectInitialisers (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("MOIdoManageObjectInitialisers");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
     TRAVpush (TR_moi);
@@ -162,3 +165,5 @@ MOIdoManageObjectInitialisers (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

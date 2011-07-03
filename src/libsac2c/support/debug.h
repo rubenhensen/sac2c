@@ -17,9 +17,10 @@ extern char *_db_process_;        /* Name of current process */
 extern int _db_keyword_ (char *); /* Accept/reject keyword */
 extern void _db_push_ (char *);   /* Push state, set up new state */
 extern void _db_pop_ (void);      /* Pop previous debug state */
-extern void _db_enter_ (const char *, char *, int, char **, char **,
-                        int *);                         /* New user function entered */
-extern void _db_return_ (int, char **, char **, int *); /* User function return */
+extern void _db_enter_ (const char *, char *, int, const char **, const char **,
+                        int *); /* New user function entered */
+extern void _db_return_ (int, const char **, const char **,
+                         int *);                        /* User function return */
 extern void _db_pargs_ (int, char *);                   /* Remember args for line */
 extern void _db_doprnt_ (char *, ...);                  /* Print debug output */
 extern void _db_doprnt_assert_1_ (char *, int, char *); /* Print debug output */
@@ -44,7 +45,7 @@ extern void _db_longjmp_ (void);                        /* Restore debugger envi
    NOTE if __func__ is declared outside the function then it is
    expanded to empty string and gives a warning.  */
 #define DBUG_ENTER()                                                                     \
-    auto char *_db_func_, *_db_file_;                                                    \
+    const char *_db_func_, *_db_file_;                                                   \
     int _db_level_;                                                                      \
     _db_enter_ (__func__, __FILE__, __LINE__, &_db_func_, &_db_file_, &_db_level_)
 

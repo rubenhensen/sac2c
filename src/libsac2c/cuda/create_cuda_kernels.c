@@ -87,7 +87,9 @@
  *****************************************************************************/
 #include "create_cuda_kernels.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "CUKNL"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "traverse.h"
@@ -180,7 +182,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -221,7 +223,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -248,7 +250,7 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
 {
     info *info;
 
-    DBUG_ENTER ("CUKNLdoCreateCudaKernels");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module, "Illegal argument node!");
 
@@ -290,7 +292,7 @@ SetLinksignInfo (node *args, info *arg_info)
 {
     node *iter;
 
-    DBUG_ENTER ("SetLinksignInfo");
+    DBUG_ENTER ();
 
     iter = args;
 
@@ -303,7 +305,7 @@ SetLinksignInfo (node *args, info *arg_info)
         iter = ARG_NEXT (iter);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -325,7 +327,7 @@ HandleBoundStepWidthExprs (node *expr, node **gridblock_exprs, char *name, info 
     int dim = 0;
     bool is_bound;
 
-    DBUG_ENTER ("HandleBoundStepWidthExprs");
+    DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (expr) == N_array, "Expr in not a N_array!");
 
@@ -335,7 +337,7 @@ HandleBoundStepWidthExprs (node *expr, node **gridblock_exprs, char *name, info 
     elements = ARRAY_AELEMS (expr);
 
     while (elements != NULL) {
-        DBUG_ASSERT ((NODE_TYPE (EXPRS_EXPR (elements)) == N_id),
+        DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (elements)) == N_id,
                      "Should be an array of N_id nodes");
 
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
@@ -378,7 +380,7 @@ CreateCudaKernelDef (node *code, info *arg_info)
     node *allocassigns, *freeassigns;
     node *prfwlids, *prfwlidxs;
 
-    DBUG_ENTER ("CreateCudaKernelDdef");
+    DBUG_ENTER ();
 
     args = INFO_ARGS (arg_info);
     SetLinksignInfo (args, arg_info);
@@ -440,7 +442,7 @@ CreateAllocAndFree (node *avis, info *arg_info)
 {
     node *alloc, *free, *dim, *shape;
 
-    DBUG_ENTER ("CreateAllocAndFree");
+    DBUG_ENTER ();
 
     /*
       if( TUdimKnown( AVIS_TYPE( avis))) {
@@ -452,10 +454,10 @@ CreateAllocAndFree (node *avis, info *arg_info)
       }
     */
 
-    DBUG_ASSERT ((TUdimKnown (AVIS_TYPE (avis))), "Dimension is not known!");
+    DBUG_ASSERT (TUdimKnown (AVIS_TYPE (avis)), "Dimension is not known!");
     dim = TBmakeNum (TYgetDim (AVIS_TYPE (avis)));
 
-    DBUG_ASSERT ((TUdimKnown (AVIS_TYPE (avis))), "Shape is not known!");
+    DBUG_ASSERT (TUdimKnown (AVIS_TYPE (avis)), "Shape is not known!");
     shape = SHshape2Array (TYgetShape (AVIS_TYPE (avis)));
 
     /* Create F_alloc and F_free for N_withid->ids and N_withid->idxs */
@@ -468,7 +470,7 @@ CreateAllocAndFree (node *avis, info *arg_info)
     INFO_FREEASSIGNS (arg_info)
       = TBmakeAssign (TBmakeLet (NULL, free), INFO_FREEASSIGNS (arg_info));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -483,9 +485,9 @@ PreprocessWithid (node *id, info *arg_info)
 {
     node *avis, *new_avis;
 
-    DBUG_ENTER ("PreprocessWithid");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (id) == N_id),
+    DBUG_ASSERT (NODE_TYPE (id) == N_id,
                  "Non N_id node found in N_withid->ids or N_withid->idxs!");
     avis = ID_AVIS (id);
     new_avis = DUPdoDupNode (avis);
@@ -517,7 +519,7 @@ PreprocessWithid (node *id, info *arg_info)
 node *
 CUKNLfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUKNLfundef");
+    DBUG_ENTER ();
 
     if (!FUNDEF_ISCUDAGLOBALFUN (arg_node)) {
         /* Only Non CUDA kernels may contain cudarizable N_with */
@@ -550,7 +552,7 @@ CUKNLassign (node *arg_node, info *arg_info)
 {
     node *next, *new_lastassign;
 
-    DBUG_ENTER ("CUKNLassign");
+    DBUG_ENTER ();
 
     ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -597,7 +599,7 @@ CUKNLassign (node *arg_node, info *arg_info)
 node *
 CUKNLdo (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUKNLdo");
+    DBUG_ENTER ();
 
     /* We do not traverse SKIP son */
     DO_BODY (arg_node) = TRAVopt (DO_BODY (arg_node), arg_info);
@@ -617,7 +619,7 @@ CUKNLdo (node *arg_node, info *arg_info)
 node *
 CUKNLlet (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUKNLlet");
+    DBUG_ENTER ();
 
     /* Save LHS */
     INFO_LETIDS (arg_info) = LET_IDS (arg_node);
@@ -639,7 +641,7 @@ node *
 CUKNLwith (node *arg_node, info *arg_info)
 {
     node *old_with;
-    DBUG_ENTER ("CUKNLwith");
+    DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
         /* Start collecting data flow information */
@@ -680,7 +682,7 @@ CUKNLwith2 (node *arg_node, info *arg_info)
 {
     node *old_with;
 
-    DBUG_ENTER ("CUKNLwith2");
+    DBUG_ENTER ();
 
     old_with = INFO_WITH (arg_info);
     INFO_WITH (arg_info) = arg_node;
@@ -709,7 +711,7 @@ CUKNLpart (node *arg_node, info *arg_info)
     node *cuda_kernel, *cuda_funap;
     node *old_ids, *dup_code;
 
-    DBUG_ENTER ("CUKNLpart");
+    DBUG_ENTER ();
 
     if (INFO_COLLECT (arg_info)) {
         INFO_PART (arg_info) = arg_node;
@@ -806,7 +808,7 @@ CUKNLpart (node *arg_node, info *arg_info)
 node *
 CUKNLgenarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUKNLgenarray");
+    DBUG_ENTER ();
 
     if (INFO_COLLECT (arg_info)) {
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
@@ -837,7 +839,7 @@ CUKNLgenarray (node *arg_node, info *arg_info)
 node *
 CUKNLmodarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUKNLmodarray");
+    DBUG_ENTER ();
 
     if (INFO_COLLECT (arg_info)) {
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
@@ -864,7 +866,7 @@ CUKNLmodarray (node *arg_node, info *arg_info)
 node *
 CUKNLfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUKNLfold");
+    DBUG_ENTER ();
 
     if (INFO_COLLECT (arg_info)) {
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
@@ -900,7 +902,7 @@ CUKNLwithid (node *arg_node, info *arg_info)
     int dim, iter = 0;
     node *prf_wlids, *prf_wlidxs, *prf_wlidxs_args = NULL;
 
-    DBUG_ENTER ("CUKNLwithid");
+    DBUG_ENTER ();
 
     wlids = WITHID_IDS (arg_node);
     wlidxs = WITHID_IDXS (arg_node);
@@ -922,7 +924,7 @@ CUKNLwithid (node *arg_node, info *arg_info)
             }
         } else {
 
-            DBUG_ASSERT ((NODE_TYPE (wlvec) == N_id),
+            DBUG_ASSERT (NODE_TYPE (wlvec) == N_id,
                          "Non N_id node found in N_withid->vec!");
             /* Get the dimentionality of the N_with */
             dim = SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (wlvec))), 0);
@@ -958,11 +960,11 @@ CUKNLwithid (node *arg_node, info *arg_info)
                 CreateAllocAndFree (new_avis, arg_info);
 
                 node *mem_id = WITHOP_MEM (withop);
-                DBUG_ASSERT ((NODE_TYPE (mem_id) == N_id),
+                DBUG_ASSERT (NODE_TYPE (mem_id) == N_id,
                              "Non N_id node found in withop->mem");
                 node *mem_avis = ID_AVIS (mem_id);
                 node *new_mem_avis = LUTsearchInLutPp (INFO_LUT (arg_info), mem_avis);
-                DBUG_ASSERT ((new_mem_avis != mem_avis),
+                DBUG_ASSERT (new_mem_avis != mem_avis,
                              "Withop->mem has not been traversed before!");
 
                 prf_wlidxs_args
@@ -997,7 +999,7 @@ CUKNLwithid (node *arg_node, info *arg_info)
 node *
 CUKNLcode (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUKNLcode");
+    DBUG_ENTER ();
 
     /* We only traverse N_code if we are in collect mode */
     // if( INFO_COLLECT( arg_info)) {
@@ -1025,7 +1027,7 @@ CUKNLcode (node *arg_node, info *arg_info)
 node *
 CUKNLgenerator (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("CUKNLgenerator");
+    DBUG_ENTER ();
 
     node *lower_bound, *upper_bound;
     node *step, *width;
@@ -1075,13 +1077,13 @@ CUKNLid (node *arg_node, info *arg_info)
 {
     node *avis, *new_avis;
 
-    DBUG_ENTER ("CUKNLid");
+    DBUG_ENTER ();
 
     avis = ID_AVIS (arg_node);
 
     new_avis = NULL;
 
-    DBUG_PRINT ("CUKNL", ("ENTER id %s", ID_NAME (arg_node)));
+    DBUG_PRINT ("ENTER id %s", ID_NAME (arg_node));
 
     if (INFO_COLLECT (arg_info)) {
         if (LUTsearchInLutPp (INFO_LUT (arg_info), avis) == avis
@@ -1141,11 +1143,11 @@ CUKNLids (node *arg_node, info *arg_info)
 {
     node *avis, *new_avis;
 
-    DBUG_ENTER ("CUKNLids");
+    DBUG_ENTER ();
 
     avis = IDS_AVIS (arg_node);
 
-    DBUG_PRINT ("CUKNL", ("ENTER ids %s", IDS_NAME (arg_node)));
+    DBUG_PRINT ("ENTER ids %s", IDS_NAME (arg_node));
 
     if (INFO_COLLECT (arg_info)
         && (PART_CUDARIZABLE (INFO_PART (arg_info))
@@ -1166,7 +1168,7 @@ CUKNLids (node *arg_node, info *arg_info)
             INFO_VARDECS (arg_info) = TBmakeVardec (new_avis, INFO_VARDECS (arg_info));
             AVIS_DECL (new_avis) = INFO_VARDECS (arg_info);
             INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
-            DBUG_PRINT ("CUKNL", (">>> ids %s added to LUT", IDS_NAME (arg_node)));
+            DBUG_PRINT (">>> ids %s added to LUT", IDS_NAME (arg_node));
         }
         IDS_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
     }
@@ -1188,7 +1190,7 @@ CUKNLprf (node *arg_node, info *arg_info)
 {
     node *args, *ret_node;
 
-    DBUG_ENTER ("CUKNLprf");
+    DBUG_ENTER ();
 
     if (INFO_COLLECT (arg_info)) {
         switch (PRF_PRF (arg_node)) {
@@ -1266,3 +1268,5 @@ CUKNLprf (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  * @}  <!-- Traversal template -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

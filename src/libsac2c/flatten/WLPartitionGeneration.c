@@ -93,7 +93,10 @@
 #include "DupTree.h"
 #include "ctinfo.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "WLPG"
+#include "debug.h"
+
 #include "traverse.h"
 #include "constants.h"
 #include "wlanalysis.h"
@@ -136,7 +139,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -150,7 +153,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -170,7 +173,7 @@ CreateAvisAndInsertVardec (char *prefix, ntype *ty, info *arg_info)
 {
     node *avis;
 
-    DBUG_ENTER ("CreateAvisAndInsertVardec");
+    DBUG_ENTER ();
     avis = TBmakeAvis (TRAVtmpVarName (prefix), ty);
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
@@ -200,7 +203,7 @@ CreateMaxFrameShapeAvis (node *withop, int fdim, info *arg_info)
     node *res_avis;
     node *shp_avis, *elems_avis, *nshp_avis;
 
-    DBUG_ENTER ("CreateMaxFrameShapeAvis");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (withop)) {
     case N_genarray:
@@ -281,7 +284,7 @@ CreateVarOfHomogeneousIntVect (int fdim, int val, info *arg_info)
     node *exprs;
     int i;
 
-    DBUG_ENTER ("CreateVarOfHomogeneousIntVect");
+    DBUG_ENTER ();
 
     zeros_avis = CreateAvisAndInsertVardec ("zeros",
                                             TYmakeAKS (TYmakeSimpleType (T_int),
@@ -333,7 +336,7 @@ CutSlices (node *min_avis, node *max_avis, int fdim, node *part_lb_avis,
     ntype *bound_type;
     ntype *scalar_type;
 
-    DBUG_ENTER ("CutSlices");
+    DBUG_ENTER ();
 
     for (d = 0; d < fdim; d++) {
         /*
@@ -419,7 +422,7 @@ CompleteGrid (node *lb_avis, node *ub_avis, node *step_avis, node *width_avis, i
     int d;
     ntype *bound_type;
 
-    DBUG_ENTER ("CompleteGrid");
+    DBUG_ENTER ();
 
     maxwidth_avis = step_avis;
     for (d = 0; d < fdim; d++) {
@@ -501,7 +504,7 @@ CreateFullPartition (node *parts, node *withop, info *arg_info)
     node *new_parts;
     int fdim;
 
-    DBUG_ENTER ("CreateFullPartition");
+    DBUG_ENTER ();
 
     /* pointers to parts that are to be recycled: */
     def_withid = PART_WITHID (PART_NEXT (parts));
@@ -551,11 +554,11 @@ CreateFullPartition (node *parts, node *withop, info *arg_info)
 static node *
 RemoveUnusedCodes (node *codes)
 {
-    DBUG_ENTER ("RemoveUnusedCodes");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((codes != NULL), "no codes available!");
+    DBUG_ASSERT (codes != NULL, "no codes available!");
 
-    DBUG_ASSERT ((NODE_TYPE (codes) == N_code), "type of codes is not N_code!");
+    DBUG_ASSERT (NODE_TYPE (codes) == N_code, "type of codes is not N_code!");
 
     if (CODE_NEXT (codes) != NULL) {
         CODE_NEXT (codes) = RemoveUnusedCodes (CODE_NEXT (codes));
@@ -582,9 +585,9 @@ RemoveUnusedCodes (node *codes)
 node *
 WLPGmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLPGmodule");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLPG", ("WLPartitionGeneration module-wise"));
+    DBUG_PRINT ("WLPartitionGeneration module-wise");
 
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
@@ -607,7 +610,7 @@ WLPGfundef (node *arg_node, info *arg_info)
 {
     sub_phase_t old_sph;
 
-    DBUG_ENTER ("WLPGfundef");
+    DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -640,7 +643,7 @@ WLPGfundef (node *arg_node, info *arg_info)
 node *
 WLPGassign (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("WLPGassign");
+    DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -674,7 +677,7 @@ WLPGwith (node *arg_node, info *arg_info)
     node *parts, *withop, *ub_avis, *res;
     int num_parts, fdim;
 
-    DBUG_ENTER ("WLPGwith");
+    DBUG_ENTER ();
 
     /*
      * The CODEs have to be traversed as they may contain further (nested) WLs
@@ -761,9 +764,9 @@ WLPGdoWlPartitionGeneration (node *arg_node)
 {
     info *arg_info;
 
-    DBUG_ENTER ("WLPGdoWlPartitionGeneration");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("WLPG", ("starting WLPGdoWlPartitionGeneration"));
+    DBUG_PRINT ("starting WLPGdoWlPartitionGeneration");
 
     arg_info = MakeInfo ();
 
@@ -786,3 +789,5 @@ WLPGdoWlPartitionGeneration (node *arg_node)
 
     DBUG_RETURN (arg_node);
 }
+
+#undef DBUG_PREFIX

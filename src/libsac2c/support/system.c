@@ -12,7 +12,10 @@
 #include "system.h"
 
 #include "types.h" /* for bool */
-#include "dbug.h"
+
+#define DBUG_PREFIX "SYSCALL"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "globals.h"
 #include "memory.h"
@@ -46,9 +49,9 @@ static bool syscalltrack_active = FALSE;
 void
 SYSstartTracking (void)
 {
-    DBUG_ENTER ("SYSstartTracking");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((syscalltrack == NULL), "tracking has already been enabled!");
+    DBUG_ASSERT (syscalltrack == NULL, "tracking has already been enabled!");
 
     if (syscalltrack_active) {
         syscalltrack = FMGRappendOpen ("%s.sac2c", global.outfilename);
@@ -60,7 +63,7 @@ SYSstartTracking (void)
 
     syscalltrack_active = TRUE;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -76,15 +79,15 @@ SYSstartTracking (void)
 void
 SYSstopTracking (void)
 {
-    DBUG_ENTER ("SYSstopTracking");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((syscalltrack != NULL), "no tracking log open!");
+    DBUG_ASSERT (syscalltrack != NULL, "no tracking log open!");
 
     fclose (syscalltrack);
 
     syscalltrack = NULL;
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -100,13 +103,13 @@ SYSstopTracking (void)
 static void
 TrackSystemCall (const char *call)
 {
-    DBUG_ENTER ("TrackSystemCall");
+    DBUG_ENTER ();
 
     if (syscalltrack != NULL) {
         fprintf (syscalltrack, "%s\n\n", call);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -128,7 +131,7 @@ SYScall (char *format, ...)
     static char syscall[MAX_SYSCALL];
     int exit_code;
 
-    DBUG_ENTER ("SYScall");
+    DBUG_ENTER ();
 
     va_start (arg_p, format);
     vsprintf (syscall, format, arg_p);
@@ -165,7 +168,7 @@ SYScall (char *format, ...)
                   syscall, exit_code);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -186,7 +189,7 @@ SYScallNoErr (char *format, ...)
     va_list arg_p;
     static char syscall[MAX_SYSCALL];
 
-    DBUG_ENTER ("SYScallNoErr");
+    DBUG_ENTER ();
 
     va_start (arg_p, format);
     vsprintf (syscall, format, arg_p);
@@ -224,7 +227,7 @@ SYStest (char *format, ...)
     int exit_code;
     char *extended_format;
 
-    DBUG_ENTER ("SYStest");
+    DBUG_ENTER ();
 
     extended_format = STRcat ("test ", format);
 
@@ -242,7 +245,9 @@ SYStest (char *format, ...)
 
     extended_format = MEMfree (extended_format);
 
-    DBUG_PRINT ("SYSCALL", ("test returns %d", exit_code));
+    DBUG_PRINT ("test returns %d", exit_code);
 
     DBUG_RETURN (exit_code);
 }
+
+#undef DBUG_PREFIX

@@ -28,7 +28,10 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "print.h"
 
 /** <!--********************************************************************-->
@@ -43,7 +46,7 @@
 node *
 SHALprintPreFun (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("SHALprintPreFun");
+    DBUG_ENTER ();
 
     switch (NODE_TYPE (arg_node)) {
     case N_arg:
@@ -83,7 +86,7 @@ SHALprintPreFun (node *arg_node, info *arg_info)
 node *
 SHALactivate (node *syntax_tree)
 {
-    DBUG_ENTER ("SHALactivate");
+    DBUG_ENTER ();
 
     TRAVsetPreFun (TR_prt, SHALprintPreFun);
 
@@ -101,7 +104,7 @@ SHALactivate (node *syntax_tree)
 node *
 SHALdeactivate (node *syntax_tree)
 {
-    DBUG_ENTER ("SHALdeactivate");
+    DBUG_ENTER ();
 
     TRAVsetPreFun (TR_prt, NULL);
 
@@ -111,3 +114,5 @@ SHALdeactivate (node *syntax_tree)
 /** <!--********************************************************************-->
  * @}  <!-- Memory Management -->
  *****************************************************************************/
+
+#undef DBUG_PREFIX

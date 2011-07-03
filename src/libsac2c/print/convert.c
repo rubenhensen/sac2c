@@ -25,7 +25,9 @@ static char *rename_type[] = {
 
 #include "convert.h"
 
-#include "dbug.h"
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "free.h"
@@ -49,7 +51,7 @@ CVfloat2String (float val)
 {
     char *tmp_string;
 
-    DBUG_ENTER ("CVfloat2String");
+    DBUG_ENTER ();
 
     tmp_string = (char *)MEMmalloc (sizeof (char) * 270);
     /*
@@ -82,7 +84,7 @@ CVdouble2String (double val)
 {
     char *tmp_string;
 
-    DBUG_ENTER ("CVdouble2String");
+    DBUG_ENTER ();
 
     tmp_string = (char *)MEMmalloc (sizeof (char) * 270);
     /*
@@ -118,7 +120,7 @@ CVtype2String (types *type, int flag, bool all)
 {
     char *tmp_string;
 
-    DBUG_ENTER ("CVtype2String");
+    DBUG_ENTER ();
 
     tmp_string = (char *)MEMmalloc (sizeof (char) * TYPE_LENGTH);
     tmp_string[0] = '\0';
@@ -250,9 +252,9 @@ CVshpseg2String (int dim, shpseg *shape)
     char num_buffer[20];
     int i;
 
-    DBUG_ENTER ("CVshpseg2String");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((dim <= SHP_SEG_SIZE), " dimension out of range in SetVect()!");
+    DBUG_ASSERT (dim <= SHP_SEG_SIZE, " dimension out of range in SetVect()!");
 
     /*
      * Instead of accurately computing the buffer space to be allocated,
@@ -299,7 +301,7 @@ CVbasetype2String (simpletype type)
 #include "type_info.mac"
     };
 
-    DBUG_ENTER ("CVbasetype2String");
+    DBUG_ENTER ();
 
     res = ctype_string[type];
 
@@ -327,7 +329,7 @@ CVbasetype2ShortString (simpletype type)
 #include "type_info.mac"
     };
 
-    DBUG_ENTER ("CVbasetype2ShortString");
+    DBUG_ENTER ();
 
     res = ctype_string[type];
 
@@ -354,7 +356,7 @@ CVintBytes2String (unsigned int bytes)
     int factor = 1000000000;
     int num;
 
-    DBUG_ENTER ("CVintBytes2String");
+    DBUG_ENTER ();
 
     while ((bytes / factor == 0) && (factor >= 1000)) {
         factor /= 1000;
@@ -376,3 +378,5 @@ CVintBytes2String (unsigned int bytes)
 
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

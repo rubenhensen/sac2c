@@ -5,7 +5,10 @@
  */
 
 #include "libstat.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "LIBSTAT"
+#include "debug.h"
+
 #include "modulemanager.h"
 #include "serialize.h"
 #include "deserialize.h"
@@ -22,41 +25,41 @@
 static void
 PrintLibStatHeader (module_t *module)
 {
-    DBUG_ENTER ("PrintLibStatHeader");
+    DBUG_ENTER ();
 
     printf ("\nLibrary Information for Module `%s':\n\n", MODMgetModuleName (module));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintLibStatDependencies (module_t *module)
 {
-    DBUG_ENTER ("PrintLibStatDependencies");
+    DBUG_ENTER ();
 
     printf ("\n\nModule Dependencies:\n\n");
 
     STRSprint (MODMgetDependencyTable (module));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintLibStatTable (const sttable_t *table)
 {
-    DBUG_ENTER ("PrintLibStatTable");
+    DBUG_ENTER ();
 #ifndef DBUG_OFF
     printf ("\n\nModule Symbols:\n\n");
 
     STprint (table);
 #endif
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintLibStatCodeAddBodies (module_t *module, node *modnode, node *fundef)
 {
-    DBUG_ENTER ("PrintLibStatCodeAddBodies");
+    DBUG_ENTER ();
 #ifndef DBUG_OFF
     if (fundef != NULL) {
 
@@ -71,20 +74,20 @@ PrintLibStatCodeAddBodies (module_t *module, node *modnode, node *fundef)
         PrintLibStatCodeAddBodies (module, modnode, FUNDEF_NEXT (fundef));
     }
 #endif
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
 PrintLibStatCodeReadSymbols (module_t *module, stsymbol_t *symbol, const sttable_t *table)
 {
-    DBUG_ENTER ("PrintLibStatCodeReadSymbols");
+    DBUG_ENTER ();
 
     DSaddSymbolByName (STsymbolName (symbol), SET_wrapperhead,
                        MODMgetModuleName (module));
     DSaddSymbolByName (STsymbolName (symbol), SET_typedef, MODMgetModuleName (module));
     DSaddSymbolByName (STsymbolName (symbol), SET_objdef, MODMgetModuleName (module));
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 static void
@@ -93,7 +96,7 @@ PrintLibStatCode (module_t *module, const sttable_t *table)
     stsymboliterator_t *iterator;
     node *syntax_tree;
 
-    DBUG_ENTER ("PrintLibStatPrintCode");
+    DBUG_ENTER ();
 
     syntax_tree = TBmakeModule (NSgetNamespace (MODMgetModuleName (module)), FT_prog,
                                 NULL, NULL, NULL, NULL, NULL);
@@ -116,7 +119,7 @@ PrintLibStatCode (module_t *module, const sttable_t *table)
 
     syntax_tree = FREEdoFreeTree (syntax_tree);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
@@ -125,34 +128,34 @@ LIBSprintLibStat ()
     module_t *module;
     const sttable_t *table;
 
-    DBUG_ENTER ("LIBSprintLibStat");
+    DBUG_ENTER ();
 
     if (global.libstat) {
-        DBUG_PRINT ("LIBSTAT", ("Loading module `%s'", global.sacfilename));
+        DBUG_PRINT ("Loading module `%s'", global.sacfilename);
 
         module = MODMloadModule (global.sacfilename);
 
-        DBUG_PRINT ("LIBSTAT", ("Getting symbol table"));
+        DBUG_PRINT ("Getting symbol table");
 
         table = MODMgetSymbolTable (module);
 
-        DBUG_PRINT ("LIBSTAT", ("Printing LibStat header\n"));
+        DBUG_PRINT ("Printing LibStat header\n");
 
         PrintLibStatHeader (module);
 
-        DBUG_PRINT ("LIBSTAT", ("Printing table information"));
+        DBUG_PRINT ("Printing table information");
 
         PrintLibStatTable (table);
 
-        DBUG_PRINT ("LIBSTAT", ("Printing dependencies"));
+        DBUG_PRINT ("Printing dependencies");
 
         PrintLibStatDependencies (module);
 
-        DBUG_PRINT ("LIBSTAT", ("Printing code"));
+        DBUG_PRINT ("Printing code");
 
         PrintLibStatCode (module, table);
 
-        DBUG_PRINT ("LIBSTAT", ("Unloading module `%s'", global.sacfilename));
+        DBUG_PRINT ("Unloading module `%s'", global.sacfilename);
 
         module = MODMunLoadModule (module);
 
@@ -164,5 +167,7 @@ LIBSprintLibStat ()
         exit (0);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

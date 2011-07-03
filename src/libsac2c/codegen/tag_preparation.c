@@ -14,7 +14,9 @@
  *
  *****************************************************************************/
 
-#include "dbug.h"
+#define DBUG_PREFIX "TP"
+#include "debug.h"
+
 #include "tag_preparation.h"
 #include "types.h"
 #include "tree_basic.h"
@@ -46,7 +48,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
     INFO_THREAD (result) = FALSE;
@@ -57,7 +59,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -79,10 +81,10 @@ TParg (node *arg_node, info *arg_info)
 {
     ntype *type;
 
-    DBUG_ENTER ("TParg");
+    DBUG_ENTER ();
 
     type = AVIS_TYPE (ARG_AVIS (arg_node));
-    DBUG_ASSERT ((type != NULL), "missing ntype information");
+    DBUG_ASSERT (type != NULL, "missing ntype information");
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -111,11 +113,10 @@ TPfundef (node *arg_node, info *arg_info)
     argtab_t *argtab;
     int i;
 
-    DBUG_ENTER ("TParg");
+    DBUG_ENTER ();
 
-    DBUG_PRINT ("TP",
-                ("taging %s function: %s", FUNDEF_ISTHREADFUN (arg_node) ? "thread" : "",
-                 FUNDEF_NAME (arg_node)));
+    DBUG_PRINT ("taging %s function: %s", FUNDEF_ISTHREADFUN (arg_node) ? "thread" : "",
+                FUNDEF_NAME (arg_node));
 
     INFO_THREAD (arg_info) = FUNDEF_ISTHREADFUN (arg_node);
     arg_node = TRAVcont (arg_node, arg_info);
@@ -158,7 +159,7 @@ TPdoTagPreparation (node *syntax_tree)
 {
     info *arg_info;
 
-    DBUG_ENTER ("PTdoTagPreparation");
+    DBUG_ENTER ();
 
     TRAVpush (TR_tp);
 
@@ -170,3 +171,5 @@ TPdoTagPreparation (node *syntax_tree)
 
     DBUG_RETURN (syntax_tree);
 }
+
+#undef DBUG_PREFIX

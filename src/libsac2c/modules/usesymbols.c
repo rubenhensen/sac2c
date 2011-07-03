@@ -4,7 +4,10 @@
 
 #include "usesymbols.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -39,7 +42,7 @@ MakeInfo ()
 {
     info *result;
 
-    DBUG_ENTER ("MakeInfo");
+    DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
 
@@ -52,7 +55,7 @@ MakeInfo ()
 static info *
 FreeInfo (info *info)
 {
-    DBUG_ENTER ("FreeInfo");
+    DBUG_ENTER ();
 
     info = MEMfree (info);
 
@@ -71,7 +74,7 @@ CheckSymbolVisibility (const namespace_t *ns, const char *symb)
     stsymbol_t *symbol;
     bool result = TRUE;
 
-    DBUG_ENTER ("CheckSymbolVisibility");
+    DBUG_ENTER ();
 
     module = MODMloadModule (NSgetModule (ns));
     table = MODMgetSymbolTable (module);
@@ -95,7 +98,7 @@ static void
 MakeSymbolAvailable (const namespace_t *ns, const char *symb, stentrytype_t type,
                      info *info)
 {
-    DBUG_ENTER ("MakeSymbolAvailable");
+    DBUG_ENTER ();
 
     if (!NSequals (ns, MODULE_NAMESPACE (INFO_USS_MODULE (info)))) {
         if (CheckSymbolVisibility (ns, symb)) {
@@ -103,7 +106,7 @@ MakeSymbolAvailable (const namespace_t *ns, const char *symb, stentrytype_t type
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /*
@@ -115,7 +118,7 @@ USSntype (ntype *arg_ntype, info *arg_info)
 {
     ntype *scalar;
 
-    DBUG_ENTER ("USSntype");
+    DBUG_ENTER ();
 
     /* get scalar base type of type */
     if (TYisArray (arg_ntype)) {
@@ -139,7 +142,7 @@ USSntype (ntype *arg_ntype, info *arg_info)
 node *
 USStypedef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USStypedef");
+    DBUG_ENTER ();
 
     if (TYPEDEF_NTYPE (arg_node) != NULL) {
         TYPEDEF_NTYPE (arg_node) = USSntype (TYPEDEF_NTYPE (arg_node), arg_info);
@@ -155,7 +158,7 @@ USStypedef (node *arg_node, info *arg_info)
 node *
 USSobjdef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSobjdef");
+    DBUG_ENTER ();
 
     if (OBJDEF_TYPE (arg_node) != NULL) {
         OBJDEF_TYPE (arg_node) = USSntype (OBJDEF_TYPE (arg_node), arg_info);
@@ -175,7 +178,7 @@ USSobjdef (node *arg_node, info *arg_info)
 node *
 USSavis (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSavis");
+    DBUG_ENTER ();
 
     if (AVIS_TYPE (arg_node) != NULL) {
         AVIS_TYPE (arg_node) = USSntype (AVIS_TYPE (arg_node), arg_info);
@@ -187,7 +190,7 @@ USSavis (node *arg_node, info *arg_info)
 node *
 USScast (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USScast");
+    DBUG_ENTER ();
 
     if (CAST_NTYPE (arg_node) != NULL) {
         CAST_NTYPE (arg_node) = USSntype (CAST_NTYPE (arg_node), arg_info);
@@ -201,7 +204,7 @@ USScast (node *arg_node, info *arg_info)
 node *
 USSarray (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSarray");
+    DBUG_ENTER ();
 
     if (ARRAY_ELEMTYPE (arg_node) != NULL) {
         ARRAY_ELEMTYPE (arg_node) = USSntype (ARRAY_ELEMTYPE (arg_node), arg_info);
@@ -215,7 +218,7 @@ USSarray (node *arg_node, info *arg_info)
 node *
 USSret (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSret");
+    DBUG_ENTER ();
 
     if (RET_TYPE (arg_node) != NULL) {
         RET_TYPE (arg_node) = USSntype (RET_TYPE (arg_node), arg_info);
@@ -229,7 +232,7 @@ USSret (node *arg_node, info *arg_info)
 node *
 USSspfold (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSspfold");
+    DBUG_ENTER ();
 
     MakeSymbolAvailable (SPFOLD_NS (arg_node), SPFOLD_FUN (arg_node), SET_wrapperhead,
                          arg_info);
@@ -242,7 +245,7 @@ USSspfold (node *arg_node, info *arg_info)
 node *
 USSspap (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSspap");
+    DBUG_ENTER ();
 
     MakeSymbolAvailable (SPAP_NS (arg_node), SPAP_NAME (arg_node), SET_wrapperhead,
                          arg_info);
@@ -255,9 +258,9 @@ USSspap (node *arg_node, info *arg_info)
 node *
 USSspmop (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSspmop");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((INFO_USS_INSIDEMOP (arg_info) == FALSE),
+    DBUG_ASSERT (INFO_USS_INSIDEMOP (arg_info) == FALSE,
                  "illegal stacking of spmop found");
 
     if (SPMOP_OPS (arg_node) != NULL) {
@@ -278,7 +281,7 @@ USSspmop (node *arg_node, info *arg_info)
 node *
 USSspid (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSspid");
+    DBUG_ENTER ();
 
     if (INFO_USS_INSIDEMOP (arg_info) == TRUE) {
 
@@ -297,7 +300,7 @@ USSspid (node *arg_node, info *arg_info)
 node *
 USSmodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("USSmodule");
+    DBUG_ENTER ();
 
     INFO_USS_MODULE (arg_info) = arg_node;
 
@@ -329,7 +332,7 @@ USSdoUseSymbols (node *modul)
 {
     info *info;
 
-    DBUG_ENTER ("USSdoUseSymbols");
+    DBUG_ENTER ();
 
     info = MakeInfo ();
 
@@ -343,3 +346,5 @@ USSdoUseSymbols (node *modul)
 
     DBUG_RETURN (modul);
 }
+
+#undef DBUG_PREFIX

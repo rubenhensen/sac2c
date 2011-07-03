@@ -5,7 +5,10 @@
 #include "tree_basic.h"
 #include "traverse.h"
 #include "globals.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
+
 #include "memory.h"
 #include "tree_compound.h"
 #include "graphtypes.h"
@@ -150,9 +153,9 @@ void
 printDepthAndPre (dynarray *d)
 {
 
-    DBUG_ENTER ("printDepthAndPre");
+    DBUG_ENTER ();
 
-    DBUG_ASSERT ((d != NULL), "Cannot print information for a NULL array");
+    DBUG_ASSERT (d != NULL, "Cannot print information for a NULL array");
 
     int i;
 
@@ -165,14 +168,14 @@ printDepthAndPre (dynarray *d)
 
     printf ("\n----------\n");
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 printPCPTMat (matrix *pcptmat, dynarray *csrc, dynarray *ctar)
 {
 
-    DBUG_ENTER ("printPCPTMat");
+    DBUG_ENTER ();
 
     printf ("\n");
     printf ("PCPT Matrix \n");
@@ -216,14 +219,14 @@ printPCPTMat (matrix *pcptmat, dynarray *csrc, dynarray *ctar)
         printf ("|\n");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 printPCPCMat (matrix *pcpcmat, dynarray *ctar)
 {
 
-    DBUG_ENTER ("printPCPCMat");
+    DBUG_ENTER ();
 
     int i, j;
 
@@ -260,14 +263,14 @@ printPCPCMat (matrix *pcpcmat, dynarray *ctar)
         printf ("|\n");
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 void
 printLubInfo (compinfo *ci)
 {
 
-    DBUG_ENTER ("printLubInfo");
+    DBUG_ENTER ();
 
     lubinfo *linfo;
     int i;
@@ -304,5 +307,7 @@ printLubInfo (compinfo *ci)
         }
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
+
+#undef DBUG_PREFIX

@@ -1,7 +1,10 @@
 /* $Id$ */
 
 #include "ct_fun.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "NTC"
+#include "debug.h"
+
 #include "ctinfo.h"
 #include "str.h"
 #include "memory.h"
@@ -54,16 +57,16 @@ DispatchFunType (node *wrapper, ntype *args)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("DispatchFunType");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, 0, 0););
-    DBUG_PRINT ("NTC", ("dispatching %s for %s", CTIitemName (wrapper), tmp_str));
+    DBUG_EXECUTE (tmp_str = TYtype2String (args, 0, 0));
+    DBUG_PRINT ("dispatching %s for %s", CTIitemName (wrapper), tmp_str);
 
     res = TYdispatchFunType (FUNDEF_WRAPPERTYPE (wrapper), args);
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYdft_res2DebugString (res););
-    DBUG_PRINT ("NTC", ("%s", tmp_str));
-    DBUG_EXECUTE ("NTC", MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYdft_res2DebugString (res));
+    DBUG_PRINT ("%s", tmp_str);
+    DBUG_EXECUTE (MEMfree (tmp_str));
 
     DBUG_RETURN (res);
 }
@@ -82,7 +85,7 @@ TriggerTypeChecking (dft_res *dft)
 {
     int i;
 
-    DBUG_ENTER ("TriggerTypeChecking");
+    DBUG_ENTER ();
 
     /*
      * trigger type checking of the partials:
@@ -100,7 +103,7 @@ TriggerTypeChecking (dft_res *dft)
         dft->def = NTCtriggerTypeCheck (dft->def);
     }
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 /******************************************************************************
@@ -130,16 +133,16 @@ NTCCTdispatchFunType (node *wrapper, ntype *args)
     char *tmp_str;
 #endif
 
-    DBUG_ENTER ("NTCCTdispatchFunType");
+    DBUG_ENTER ();
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYtype2String (args, 0, 0););
-    DBUG_PRINT ("NTC", ("dispatching %s for %s", CTIitemName (wrapper), tmp_str));
+    DBUG_EXECUTE (tmp_str = TYtype2String (args, 0, 0));
+    DBUG_PRINT ("dispatching %s for %s", CTIitemName (wrapper), tmp_str);
 
     res = TYdispatchFunType (FUNDEF_WRAPPERTYPE (wrapper), args);
 
-    DBUG_EXECUTE ("NTC", tmp_str = TYdft_res2DebugString (res););
-    DBUG_PRINT ("NTC", ("%s", tmp_str));
-    DBUG_EXECUTE ("NTC", MEMfree (tmp_str););
+    DBUG_EXECUTE (tmp_str = TYdft_res2DebugString (res));
+    DBUG_PRINT ("%s", tmp_str);
+    DBUG_EXECUTE (MEMfree (tmp_str));
 
     DBUG_RETURN (res);
 }
@@ -174,15 +177,15 @@ NTCCTudf (te_info *info, ntype *args)
     int i;
     bool dispatcherror = FALSE;
 
-    DBUG_ENTER ("NTCCTudf");
-    DBUG_ASSERT ((TYisProdOfArray (args)), "NTCCTudf called with non-fixed args!");
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYisProdOfArray (args), "NTCCTudf called with non-fixed args!");
 
     fundef = TEgetWrapper (info);
     assign = TEgetAssign (info);
 
     old_info_chn = global.act_info_chn;
     global.act_info_chn = info;
-    DBUG_PRINT ("NTC_INFOCHN", ("global.act_info_chn set to %p", info));
+    DBUG_PRINT_TAG ("NTC_INFOCHN", "global.act_info_chn set to %p", info);
 
     if (FUNDEF_ISLACFUN (fundef)) {
         /*
@@ -249,7 +252,7 @@ NTCCTudf (te_info *info, ntype *args)
                 TriggerTypeChecking (dft_res);
 
                 res = TYcopyType (dft_res->type);
-                DBUG_ASSERT ((res != NULL),
+                DBUG_ASSERT (res != NULL,
                              "HandleDownProjections did not return proper return type");
             }
 
@@ -262,8 +265,8 @@ NTCCTudf (te_info *info, ntype *args)
      */
     if (!dispatcherror) {
         global.act_info_chn = old_info_chn;
-        DBUG_PRINT ("NTC_INFOCHN",
-                    ("global.act_info_chn reset to %p", global.act_info_chn));
+        DBUG_PRINT_TAG ("NTC_INFOCHN", "global.act_info_chn reset to %p",
+                        global.act_info_chn);
 
         tmp = TYtype2String (args, FALSE, 0);
         TEhandleError (global.linenum, global.filename, " -- in %s%s@",
@@ -310,7 +313,7 @@ NTCCTudfDispatched (te_info *info, ntype *args)
     node *fundef;
     ntype *res;
 
-    DBUG_ENTER ("NTCCTudfDispatched");
+    DBUG_ENTER ();
 
     fundef = TEgetWrapper (info);
     fundef = NTCtriggerTypeCheck (fundef);
@@ -318,3 +321,5 @@ NTCCTudfDispatched (te_info *info, ntype *args)
 
     DBUG_RETURN (res);
 }
+
+#undef DBUG_PREFIX

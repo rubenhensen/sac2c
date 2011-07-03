@@ -11,7 +11,9 @@
 #include <string.h>
 /* for memcpy */
 
-#include "dbug.h"
+#define DBUG_PREFIX "SBUF"
+#include "debug.h"
+
 #include "memory.h"
 #include "str.h"
 
@@ -26,7 +28,7 @@ SBUFcreate (int size)
 {
     str_buf *res;
 
-    DBUG_ENTER ("SBUFcreate");
+    DBUG_ENTER ();
 
     res = (str_buf *)MEMmalloc (sizeof (str_buf));
     res->buf = (char *)MEMmalloc (size * sizeof (char));
@@ -34,7 +36,7 @@ SBUFcreate (int size)
     res->pos = 0;
     res->size = size;
 
-    DBUG_PRINT ("SBUF", ("allocating buffer size %d : %p", size, res));
+    DBUG_PRINT ("allocating buffer size %d : %p", size, res);
 
     DBUG_RETURN (res);
 }
@@ -45,14 +47,13 @@ EnsureStrBufSpace (str_buf *s, int len)
     int new_size;
     char *new_buf;
 
-    DBUG_ENTER ("EnsureStrBufSpace");
+    DBUG_ENTER ();
 
     if ((len + 1) > (s->size - s->pos)) {
 
         new_size = (len >= s->size ? s->size + 2 * len : 2 * s->size);
 
-        DBUG_PRINT ("SBUF", ("increasing buffer %p from size %d to size %d", s, s->size,
-                             new_size));
+        DBUG_PRINT ("increasing buffer %p from size %d to size %d", s, s->size, new_size);
 
         new_buf = (char *)MEMmalloc (new_size * sizeof (char));
         memcpy (new_buf, s->buf, s->pos + 1);
@@ -69,14 +70,14 @@ SBUFprint (str_buf *s, const char *string)
 {
     int len;
 
-    DBUG_ENTER ("SBUFprint");
+    DBUG_ENTER ();
 
     len = STRlen (string);
 
     s = EnsureStrBufSpace (s, len);
 
     s->pos += sprintf (&s->buf[s->pos], "%s", string);
-    DBUG_PRINT ("SBUF", ("pos of buffer %p now is %d", s, s->pos));
+    DBUG_PRINT ("pos of buffer %p now is %d", s, s->pos);
 
     DBUG_RETURN (s);
 }
@@ -88,7 +89,7 @@ SBUFprintf (str_buf *s, const char *format, ...)
     int len, rem;
     bool ok;
 
-    DBUG_ENTER ("SBUFprintf");
+    DBUG_ENTER ();
 
     ok = FALSE;
 
@@ -117,7 +118,7 @@ SBUFprintf (str_buf *s, const char *format, ...)
 char *
 SBUF2str (str_buf *s)
 {
-    DBUG_ENTER ("SBUF2str");
+    DBUG_ENTER ();
 
     DBUG_RETURN (STRcpy (s->buf));
 }
@@ -125,18 +126,18 @@ SBUF2str (str_buf *s)
 void
 SBUFflush (str_buf *s)
 {
-    DBUG_ENTER ("SBUFflush");
+    DBUG_ENTER ();
 
     s->pos = 0;
-    DBUG_PRINT ("SBUF", ("pos of buffer %p reset to %d", s, s->pos));
+    DBUG_PRINT ("pos of buffer %p reset to %d", s, s->pos);
 
-    DBUG_VOID_RETURN;
+    DBUG_RETURN ();
 }
 
 bool
 SBUFisEmpty (str_buf *s)
 {
-    DBUG_ENTER ("SBUFisEmpty");
+    DBUG_ENTER ();
 
     DBUG_RETURN (s->pos == 0);
 }
@@ -144,10 +145,12 @@ SBUFisEmpty (str_buf *s)
 void *
 SBUFfree (str_buf *s)
 {
-    DBUG_ENTER ("SBUFfree");
+    DBUG_ENTER ();
 
     s->buf = MEMfree (s->buf);
     s = MEMfree (s);
 
     DBUG_RETURN (s);
 }
+
+#undef DBUG_PREFIX

@@ -10,7 +10,9 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "traverse.h"
-#include "dbug.h"
+
+#define DBUG_PREFIX "UNDEFINED"
+#include "debug.h"
 
 /** <!-- ****************************************************************** -->
  * @brief frees the wrapper type from each wrapper in the given fundef
@@ -24,7 +26,7 @@
 node *
 FDIfundef (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FDIfundef");
+    DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -60,7 +62,7 @@ FDIfundef (node *arg_node, info *arg_info)
 node *
 FDImodule (node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ("FDImodule");
+    DBUG_ENTER ();
 
     if (MODULE_FUNS (arg_node) != NULL) {
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -78,7 +80,7 @@ FDIap (node *arg_node, info *arg_info)
 {
     ntype *bottom;
 
-    DBUG_ENTER ("FDIap");
+    DBUG_ENTER ();
 
     if (FUNDEF_ISTYPEERROR (AP_FUNDEF (arg_node))) {
         bottom = TUcombineBottomsFromRets (FUNDEF_RETS (AP_FUNDEF (arg_node)));
@@ -103,7 +105,7 @@ FDIap (node *arg_node, info *arg_info)
 node *
 FDIdoFreeDispatchInformation (node *module)
 {
-    DBUG_ENTER ("FDIdoFreeDispatchInformation");
+    DBUG_ENTER ();
 
     TRAVpush (TR_fdi);
 
@@ -113,3 +115,5 @@ FDIdoFreeDispatchInformation (node *module)
 
     DBUG_RETURN (module);
 }
+
+#undef DBUG_PREFIX
