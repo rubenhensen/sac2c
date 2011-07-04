@@ -200,6 +200,12 @@ int charpos = 0;
 "_reciproc_V_"             { FILTER( PRF_RECIPROC_V); }
 
 "_mesh_VxVxV_"             { FILTER( PRF_MESH_VxVxV); }
+"_mask_VxVxV_"             { FILTER( PRF_MASK_VxVxV); }
+
+"_non_neg_val_S_"          { FILTER( PRF_NON_NEG_VAL_S); }
+"_non_neg_val_V_"          { FILTER( PRF_NON_NEG_VAL_V); }
+"_val_le_val_SxS_"         { FILTER( PRF_VAL_LE_VAL_SxS); }
+"_val_le_val_VxV_"         { FILTER( PRF_VAL_LE_VAL_VxV); }
 
 "_eq_SxS_"                 { FILTER( PRF_EQ_SxS);  }
 "_eq_SxV_"                 { FILTER( PRF_EQ_SxV);  }

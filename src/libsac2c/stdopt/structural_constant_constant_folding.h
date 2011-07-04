@@ -25,6 +25,7 @@ extern node *SCCFprf_take_SxV (node *arg_node, info *arg_info);
 extern node *SCCFprf_drop_SxV (node *arg_node, info *arg_info);
 extern node *SCCFprf_idx_shape_sel (node *arg_node, info *arg_info);
 extern node *SCCFprf_mesh_VxVxV (node *arg_node, info *arg_info);
+extern node *SCCFprf_mask_VxVxV (node *arg_node, info *arg_info);
 
 extern struct_constant *SCCFfreeStructConstant (struct_constant *struc_co);
 extern struct_constant *SCCFexpr2StructConstant (node *expr);
