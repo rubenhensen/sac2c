@@ -539,7 +539,8 @@ PrintMutcOptions (void)
       "    -mutc_rc_places <n>              Number of exclusive places to be used for\n"
       "                                     reference counting operations(1)\n\n"
       "    -mutc_rc_indirect                Perform reference counting operations using\n"
-      "                                     wrapper functions\n\n");
+      "                                     wrapper functions\n\n"
+      "    -mutc_seq_data_parallel          sequentialised data parallel code\n\n");
 
     DBUG_RETURN ();
 }

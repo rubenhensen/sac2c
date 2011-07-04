@@ -195,6 +195,8 @@ PrintGlobalSwitches ()
     fprintf (global.outfile, "#define SAC_MUTC_RC_PLACES  %d\n", global.mutc_rc_places);
     fprintf (global.outfile, "#define SAC_MUTC_RC_INDIRECT  %d\n",
              (global.mutc_rc_indirect) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_MUTC_SEQ_DATA_PARALLEL  %d\n",
+             (global.mutc_seq_data_parallel) ? 1 : 0);
     if (global.mutc_force_spawn_flags != NULL) {
         fprintf (global.outfile, "#define SAC_MUTC_FORCE_SPAWN_FLAGS  %s\n",
                  global.mutc_force_spawn_flags);

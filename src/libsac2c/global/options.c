@@ -202,6 +202,9 @@ OPTcheckOptionConsistency (void)
         if (global.mutc_rc_indirect == TRUE) {
             CTIerror ("-mutc_rc_indirect only works with mutc backend");
         }
+        if (global.mutc_seq_data_parallel == TRUE) {
+            CTIerror ("-mutc_seq_data_parallel only works with mutc backend");
+        }
     }
 
     if (global.runtimecheck.boundary && global.optimize.doap) {
@@ -711,6 +714,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
                global.mutc_suballoc_desc_one_level_up = TRUE);
     ARGS_OPTION ("mutc_rc_places", ARG_NUM (global.mutc_rc_places));
     ARGS_FLAG ("mutc_rc_indirect", global.mutc_rc_indirect = TRUE);
+    ARGS_FLAG ("mutc_seq_data_parallel", global.mutc_seq_data_parallel = TRUE);
 
     /*
      * Options starting with nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn

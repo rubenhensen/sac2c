@@ -1064,6 +1064,7 @@ GLOBAL (char *, mutc_force_spawn_flags, NULL)
 GLOBAL (int, mutc_unroll, 1)
 GLOBAL (int, mutc_rc_places, 1)
 GLOBAL (bool, mutc_rc_indirect, FALSE)
+GLOBAL (bool, mutc_seq_data_parallel, FALSE)
 
 /*
  * CUDA backend options
