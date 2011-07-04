@@ -677,7 +677,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 #ifndef SAC_ND_PRF_2ASYNC__DO
 #define SAC_ND_PRF_2ASYNC__DO(new, array)                                                \
     SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));                \
-    SAC_ND_A_DESC (new) = SAC_ND_GETVAR (array, SAC_ND_A_DESC (array));
+    SAC_ND_A_DESC (new) = SAC_ND_A_DESC (array);
 #endif
 
 #ifndef SAC_MUTC_RC_BARRIER__DESC
