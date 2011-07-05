@@ -331,24 +331,20 @@ OPTcheckOptionConsistency (void)
     /* rc_method checks */
     if (global.rc_method == -1) {
         if (global.backend == BE_mutc) {
-            global.rc_method = 2;
+            global.rc_method = RCM_trimodal_fp;
         } else {
-            global.rc_method = 0;
+            global.rc_method = RCM_sync;
         }
     } else {
         CTIwarn ("If your stdlib is not compiled with the same rc method "
                  "you may get unexpected behavior of your generated program");
     }
 
-    if ((global.rc_method < 0) || (global.rc_method > 4)) {
-        CTIerror ("Unknown reference counting mode");
-    }
-
-    if (((global.rc_method == 2) || (global.rc_method == 3) || (global.rc_method == 4)
-         || (global.rc_method == 5))
+    if (((global.rc_method == RCM_bimodal) || (global.rc_method == RCM_trimodal_fp)
+         || (global.rc_method == RCM_trimodal_dp) || (global.rc_method == RCM_async))
         && global.backend != BE_mutc) {
-        CTIerror ("Current reference counting method is not supported "
-                  "with the current backend");
+        CTIerror ("Specified reference counting method is currently only "
+                  "supported for the backend BE_mutc!");
     }
 
     DBUG_RETURN ();
@@ -801,7 +797,21 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
      */
 
-    ARGS_OPTION ("rc_method", ARG_NUM (global.rc_method));
+    /* -- reference Counting methods -- */
+
+    ARGS_OPTION_BEGIN ("rc_method")
+    {
+        ARG_CHOICE_BEGIN ();
+        ARG_CHOICE ("sync", global.rc_method = RCM_sync);
+        ARG_CHOICE ("norc", global.rc_method = RCM_norc);
+        ARG_CHOICE ("bimodal", global.rc_method = RCM_bimodal);
+        ARG_CHOICE ("async", global.rc_method = RCM_async);
+        ARG_CHOICE ("trimodal_fp", global.rc_method = RCM_trimodal_fp);
+        ARG_CHOICE ("trimodal_dp", global.rc_method = RCM_trimodal_dp);
+        ARG_CHOICE_END ();
+    }
+    ARGS_OPTION_END ("minarrayrep");
+
     /* -- Runtime Specialization -- */
 
     /* Specialization has to be turned of otherwise the compiler will pick the

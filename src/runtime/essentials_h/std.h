@@ -27,6 +27,10 @@
 #define TRUE 1
 #define FALSE 0
 
+#ifndef SAC_RC_METHOD /* required for includes from libsac */
+#define SAC_RC_METHOD -1
+#endif
+
 /*
  * Positional parameters for name tuples (nt):
  *   name,class,unique
@@ -1399,7 +1403,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_A_RC__C99(var_NT) DESC_RC (SAC_ND_A_DESC (var_NT))
 
-#if SAC_RC_METHOD == 0
+#if SAC_RC_METHOD == SAC_RCM_SYNC
 /* Default mode */
 
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc) SAC_ND_INIT__RC__C99 (var_NT, rc)
@@ -1416,7 +1420,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_ND_A_RC__DEFAULT(var_NT) SAC_ND_A_RC__C99 (var_NT)
 #endif
 
-#if SAC_RC_METHOD == 1
+#if SAC_RC_METHOD == SAC_RCM_NORC
 /* No rc */
 #include <stdint.h>
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)

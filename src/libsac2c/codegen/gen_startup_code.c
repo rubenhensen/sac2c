@@ -175,11 +175,26 @@ PrintGlobalSwitches ()
 
     fprintf (global.outfile, "#define SAC_DO_FP  %d\n", (global.fp == 0) ? 0 : 1);
 
-    fprintf (global.outfile, "#define SAC_RC_METHOD %d\n", global.rc_method);
-
     fprintf (global.outfile, "#define SAC_DEBUG_RC %d\n", global.debug_rc ? 1 : 0);
 
-    fprintf (global.outfile, "\n");
+    fprintf (global.outfile, "\n\n"
+                             "/*\n"
+                             " *  Global Settings\n */\n\n");
+
+    fprintf (global.outfile, "/* supported RC modes: */\n");
+    fprintf (global.outfile, "#define SAC_RCM_SYNC %d\n", RCM_sync);
+    fprintf (global.outfile, "#define SAC_RCM_NORC %d\n", RCM_norc);
+    fprintf (global.outfile, "#define SAC_RCM_BIMODAL %d\n", RCM_bimodal);
+    fprintf (global.outfile, "#define SAC_RCM_ASYNC %d\n", RCM_async);
+    fprintf (global.outfile, "#define SAC_RCM_TRIMODAL_FP %d\n", RCM_trimodal_fp);
+    fprintf (global.outfile, "#define SAC_RCM_TRIMODAL_DP %d\n", RCM_trimodal_dp);
+
+    fprintf (global.outfile, "/* actual setting: */\n");
+    fprintf (global.outfile, "#define SAC_RC_METHOD %d\n", global.rc_method);
+
+    fprintf (global.outfile, "\n\n"
+                             "/*\n"
+                             " *  MUTC Backend SPecific Switches\n */\n\n");
 
     /* MUTC Switches */
     fprintf (global.outfile, "#define SAC_MUTC_FUNAP_AS_CREATE  %d\n",

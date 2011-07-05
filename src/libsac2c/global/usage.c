@@ -629,23 +629,32 @@ PrintBackendOptions (void)
 {
     DBUG_ENTER ();
 
-    printf ("\n\nBACKEND OPTIONS:\n"
-            "\n"
-            "    -minarrayrep <class>\n"
-            "                    Specify the minimum array representation class used:\n"
-            "                      s: use all (SCL, AKS, AKD, AUD) representations,\n"
-            "                      d: use SCL, AKD, AUD representations only,\n"
-            "                      +: use SCL, AUD representations only,\n"
-            "                      *: use AUD representation only.\n"
-            "                    (default: s)\n"
-            "\n"
-            "    -rc_method <n>  Change the reference counting mode\n"
-            "                      0         Traditional reference counting\n"
-            "                      1         No reference counting\n"
-            "                      2         FP Multimodal reference counting\n"
-            "                      3         Asynchronous reference counting\n"
-            "                      4         Bimodal (c99+norc) reference counting\n"
-            "                      5         DP Multimodal reference counting\n");
+    printf (
+      "\n\nBACKEND OPTIONS:\n"
+      "\n"
+      "    -minarrayrep <class>\n"
+      "                    Specify the minimum array representation class used:\n"
+      "                      s: use all (SCL, AKS, AKD, AUD) representations,\n"
+      "                      d: use SCL, AKD, AUD representations only,\n"
+      "                      +: use SCL, AUD representations only,\n"
+      "                      *: use AUD representation only.\n"
+      "                    (default: s)\n"
+      "\n"
+      "    -rc_method <n>  Change the reference counting mode\n"
+      "                      sync         Traditional synchronous reference counting.\n"
+      "                                   Exclusive execution of all RC ops.\n"
+      "                      norc         No reference counting at all.\n"
+      "                                   Beware(!) we have no GC yet.\n"
+      "                      async        Asynchronous reference counting.\n"
+      "                                   RC is done through messages to a seperate "
+      "core.\n"
+      "                                   Re-use and freeing implies synchronisation.\n"
+      "                      bimodal      Switches from sync to norc and back.\n"
+      "                                   Implies no re-use or freeing of non-local\n"
+      "                                   vars in a concurrent context.\n"
+      "                      trimodal_fp  Switches from sync to norc or async and back.\n"
+      "                      trimodal_dp  Switches from sync to norc or async and back.\n"
+      "                    (default: sync / trimodal_fp (BE_mutc))\n");
 
     DBUG_RETURN ();
 }

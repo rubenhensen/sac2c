@@ -94,7 +94,7 @@
  * @{
  *
  *****************************************************************************/
-typedef enum { RCM_null, RCM_norc, RCM_async } rcmode_t;
+typedef enum { LRCM_null, LRCM_norc, LRCM_async } rcmode_t;
 
 struct INFO {
     bool with3;
@@ -123,7 +123,7 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_WITH3 (result) = FALSE;
-    INFO_ARGS_2_PRF (result) = RCM_null;
+    INFO_ARGS_2_PRF (result) = LRCM_null;
     INFO_PREASSIGN (result) = NULL;
     INFO_POSTASSIGN (result) = NULL;
     INFO_VARDECS (result) = NULL;
@@ -287,13 +287,13 @@ ARMPap (node *arg_node, info *arg_info)
         /* Could do with check that all args are ids */
 
         stack = INFO_ARGS_2_PRF (arg_info);
-        INFO_ARGS_2_PRF (arg_info) = RCM_norc;
+        INFO_ARGS_2_PRF (arg_info) = LRCM_norc;
         arg_node = TRAVcont (arg_node, arg_info);
         INFO_ARGS_2_PRF (arg_info) = stack;
     } else if (AP_ISSPAWNED (arg_node)) {
         rcmode_t stack = FALSE;
         stack = INFO_ARGS_2_PRF (arg_info);
-        INFO_ARGS_2_PRF (arg_info) = RCM_async;
+        INFO_ARGS_2_PRF (arg_info) = LRCM_async;
         arg_node = TRAVcont (arg_node, arg_info);
         INFO_ARGS_2_PRF (arg_info) = stack;
     }
@@ -316,7 +316,7 @@ ARMPid (node *arg_node, info *arg_info)
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    if (INFO_ARGS_2_PRF (arg_info) == RCM_norc) {
+    if (INFO_ARGS_2_PRF (arg_info) == LRCM_norc) {
         node *postAssign = NULL;
         node *avis = TBmakeAvis (TRAVtmpVar (),
                                  TYmakeAKS (TYmakeSimpleType (T_rc), SHmakeShape (0)));
@@ -359,7 +359,7 @@ ARMPid (node *arg_node, info *arg_info)
               = TCappendAssign (INFO_POSTASSIGN (arg_info), postAssign);
         }
 
-    } else if (INFO_ARGS_2_PRF (arg_info) == RCM_async) {
+    } else if (INFO_ARGS_2_PRF (arg_info) == LRCM_async) {
 
         node *avis
           = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (ID_AVIS (arg_node))));

@@ -207,6 +207,18 @@ typedef enum {
 } min_array_rep_t;
 
 /*
+ * rc-modes
+ */
+typedef enum {
+    RCM_sync = 0,
+    RCM_norc = 1,
+    RCM_bimodal = 2,
+    RCM_async = 3,
+    RCM_trimodal_fp = 4,
+    RCM_trimodal_dp = 5
+} rc_mode_t;
+
+/*
  * enums used by the mutc backend
  */
 

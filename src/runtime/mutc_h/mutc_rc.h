@@ -22,6 +22,10 @@
 #include <stdio.h>
 #define SAC_SL_DETACH() sl_detach ()
 
+#ifndef SAC_RC_METHOD /* required for includes from libsac */
+#define SAC_RC_METHOD -1
+#endif
+
 #if SAC_DEBUG_RC
 #define SAC_MUTC_RC_PRINT(var_NT)                                                        \
     fprintf (stddebug, " ");                                                             \
@@ -64,7 +68,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
            sl_shparm (SAC_ND_DESC_PARENT_BASETYPE, val));
   sl_decl (SAC_inc_parent_count, void, sl_glparm (SAC_ND_DESC_PARENT_TYPE, parent));)
 
-#if SAC_RC_METHOD == 3
+#if SAC_RC_METHOD == SAC_RCM_ASYNC
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
@@ -169,7 +173,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 
 #endif
 
-#if SAC_RC_METHOD == 2
+#if SAC_RC_METHOD == SAC_RCM_TRIMODAL_FP
 
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
     {                                                                                    \
@@ -549,7 +553,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
     }
 #endif
 
-#if SAC_RC_METHOD == 4
+#if SAC_RC_METHOD == SAC_RCM_BIMODAL
 
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
     {                                                                                    \
