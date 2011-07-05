@@ -195,7 +195,7 @@ PrintGlobalSwitches ()
     fprintf (global.outfile, "#define SAC_RCM_LOCAL_PASYNC_NORC_CPY_DESC %d\n",
              RCM_local_pasync_norc_cpy_desc);
     fprintf (global.outfile, "#define SAC_RCM_LOCAL_ASYNC_NORC_PTR %d\n",
-             RCM_local_pasync_norc_ptr);
+             RCM_local_async_norc_ptr);
 
     fprintf (global.outfile, "/* actual setting: */\n");
     fprintf (global.outfile, "#define SAC_RC_METHOD %d\n", global.rc_method);
