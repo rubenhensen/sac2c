@@ -23,6 +23,7 @@
 #ifndef _SAC_STD_H_
 #define _SAC_STD_H_
 #include <stdint.h> /* intptr_t */
+#include <limits.h> /* INT_MAX */
 
 #define TRUE 1
 #define FALSE 0
@@ -132,17 +133,20 @@ typedef intptr_t *SAC_array_descriptor_t;
 /*
  * Access hidden info in desc pointer
  */
-#if (SAC_RC_METHOD == SAC_RCM_LOCAL_NORC_PTR)                                            \
-  || (SAC_RC_METHOD == SAC_RCM_ASYNC_NORC_PTR)                                           \
-  || (SAC_RC_METHOD == SAC_RCM_LOCAL_ASYNC_NORC_PTR)
+#if (SAC_RC_METHOD == SAC_RCM_local_norc_ptr)                                            \
+  || (SAC_RC_METHOD == SAC_RCM_async_norc_ptr)                                           \
+  || (SAC_RC_METHOD == SAC_RCM_local_async_norc_ptr)
 #define SAC_REAL_DESC_POINTER(desc)                                                      \
     ((SAC_array_descriptor_t) (((intptr_t)desc) & SAC_RC_PTR_NEG_MASK))
 #define SAC_DESC_HIDDEN_DATA(desc) (((intptr_t)desc) & SAC_RC_PTR_MASK)
 #define SAC_DESC_SET_HIDDEN_DATA(desc, val)                                              \
     desc = (SAC_array_descriptor_t *)(((intptr_t)desc) & val)
+
 #else
+
 #define SAC_REAL_DESC_POINTER(desc) (desc)
 #define SAC_DESC_HIDDEN_DATA(desc) 0
+
 #endif
 
 #define DESC_RC(desc) SAC_REAL_DESC_POINTER (desc)[DESC_OFFSET_RC]
@@ -1422,7 +1426,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_A_RC__C99(var_NT) DESC_RC (SAC_ND_A_DESC (var_NT))
 
-#if SAC_RC_METHOD == SAC_RCM_LOCAL
+#if SAC_RC_METHOD == SAC_RCM_local
 /* Default mode */
 
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc) SAC_ND_INIT__RC__C99 (var_NT, rc)
@@ -1447,7 +1451,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_ND_INC_RC__NORC(var_NT, rc)
 #define SAC_ND_A_RC__NORC(var_NT) INT_MAX
 
-#if SAC_RC_METHOD == SAC_RCM_NORC
+#if SAC_RC_METHOD == SAC_RCM_norc
 /* No rc */
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc) SAC_ND_INIT__RC__NORC (var_NT, rc)
 #define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \

@@ -77,7 +77,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         SAC_mutc_rc_place_many[address];                                                 \
     })
 
-#if SAC_RC_METHOD == SAC_RCM_ASYNC
+#if SAC_RC_METHOD == SAC_RCM_async
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
@@ -174,7 +174,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 
 #endif
 
-#if SAC_RC_METHOD == SAC_RCM_LOCAL_PASYNC_NORC_CPY_DESC
+#if SAC_RC_METHOD == SAC_RCM_local_pasync_norc_desc
 
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
     {                                                                                    \
@@ -514,7 +514,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
     }
 #endif
 
-#if SAC_RC_METHOD == SAC_RCM_LOCAL_NORC_DESC
+#if SAC_RC_METHOD == SAC_RCM_local_norc_desc
 
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
     {                                                                                    \
@@ -594,7 +594,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 
 #endif
 
-#if SAC_RC_METHOD == SAC_RCM_LOCAL_NORC_PTR
+#if SAC_RC_METHOD == SAC_RCM_local_norc_ptr
 
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
     {                                                                                    \

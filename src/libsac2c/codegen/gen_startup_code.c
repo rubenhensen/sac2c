@@ -181,24 +181,8 @@ PrintGlobalSwitches ()
                              "/*\n"
                              " *  Global Settings\n */\n\n");
 
-    fprintf (global.outfile, "/* supported RC modes: */\n");
-    fprintf (global.outfile, "#define SAC_RCM_LOCAL %d\n", RCM_local);
-    fprintf (global.outfile, "#define SAC_RCM_NORC %d\n", RCM_norc);
-    fprintf (global.outfile, "#define SAC_RCM_ASYNC %d\n", RCM_async);
-    fprintf (global.outfile, "#define SAC_RCM_LOCAL_NORC_DESC %d\n", RCM_local_norc_desc);
-    fprintf (global.outfile, "#define SAC_RCM_LOCAL_NORC_PTR %d\n", RCM_local_norc_ptr);
-    fprintf (global.outfile, "#define SAC_RCM_ASYNC_NORC_COPY_DESC %d\n",
-             RCM_async_norc_copy_desc);
-    fprintf (global.outfile, "#define SAC_RCM_ASYNC_NORC_TWO_DESCS %d\n",
-             RCM_async_norc_two_descs);
-    fprintf (global.outfile, "#define SAC_RCM_ASYNC_NORC_PTR %d\n", RCM_async_norc_ptr);
-    fprintf (global.outfile, "#define SAC_RCM_LOCAL_PASYNC_NORC_CPY_DESC %d\n",
-             RCM_local_pasync_norc_cpy_desc);
-    fprintf (global.outfile, "#define SAC_RCM_LOCAL_ASYNC_NORC_PTR %d\n",
-             RCM_local_async_norc_ptr);
-
-    fprintf (global.outfile, "/* actual setting: */\n");
-    fprintf (global.outfile, "#define SAC_RC_METHOD %d\n", global.rc_method);
+    fprintf (global.outfile, "#define SAC_RC_METHOD SAC_RCM_%s\n",
+             global.config.rc_method);
 
     fprintf (global.outfile, "\n\n"
                              "/*\n"

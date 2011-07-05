@@ -328,29 +328,37 @@ OPTcheckOptionConsistency (void)
         global.num_threads = 1;
     }
 
-    /* rc_method checks */
-    if (global.rc_method == -1) {
-        if (global.backend == BE_mutc) {
-            global.rc_method = RCM_local_pasync_norc_cpy_desc;
-        } else {
-            global.rc_method = RCM_local;
-        }
-    } else {
-        CTIwarn ("If your stdlib is not compiled with the same rc method "
-                 "you may get unexpected behavior of your generated program");
-    }
+    /* validity check of RC_METHOD entry */
 
-    if (((global.rc_method == RCM_local_norc_desc)
-         || (global.rc_method == RCM_async_norc_ptr)
-         || (global.rc_method == RCM_async_norc_copy_desc)
-         || (global.rc_method == RCM_async_norc_two_descs)
-         || (global.rc_method == RCM_async_norc_ptr)
-         || (global.rc_method == RCM_local_pasync_norc_cpy_desc)
-         || (global.rc_method == RCM_local_async_norc_ptr)
-         || (global.rc_method == RCM_async))
-        && global.backend != BE_mutc) {
-        CTIerror ("Specified reference counting method is currently only "
-                  "supported for the backend BE_mutc!");
+    if (STReq (global.config.rc_method, "local")) {
+    } else if (STReq (global.config.rc_method, "norc")) {
+    } else if (STReq (global.config.rc_method, "async")) {
+    } else if (STReq (global.config.rc_method, "local_norc_desc")) {
+        if (global.backend != BE_mutc) {
+            CTIerror ("Specified reference counting method is currently only "
+                      "supported for the backend BE_mutc!");
+        }
+    } else if (STReq (global.config.rc_method, "local_norc_ptr")) {
+        if (global.backend != BE_mutc) {
+            CTIerror ("Specified reference counting method is currently only "
+                      "supported for the backend BE_mutc!");
+        }
+    } else if (STReq (global.config.rc_method, "async_norc_copy_desc")) {
+        CTIerror ("Specified reference counting method is currently not supported!");
+    } else if (STReq (global.config.rc_method, "async_norc_two_descs")) {
+        CTIerror ("Specified reference counting method is currently not supported!");
+    } else if (STReq (global.config.rc_method, "async_norc_ptr")) {
+        CTIerror ("Specified reference counting method is currently not supported!");
+    } else if (STReq (global.config.rc_method, "local_pasync_norc_desc")) {
+        if (global.backend != BE_mutc) {
+            CTIerror ("Specified reference counting method is currently only "
+                      "supported for the backend BE_mutc!");
+        }
+    } else if (STReq (global.config.rc_method, "local_async_norc_ptr")) {
+        CTIerror ("Specified reference counting method is currently not supported!");
+    } else {
+        CTIerror ("Illegal reference counting method specified RC_METHOD == %s !",
+                  global.config.rc_method);
     }
 
     DBUG_RETURN ();
@@ -802,26 +810,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /*
      * Options starting with rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
      */
-
-    /* -- reference Counting methods -- */
-
-    ARGS_OPTION_BEGIN ("rc_method")
-    {
-        ARG_CHOICE_BEGIN ();
-        ARG_CHOICE ("local", global.rc_method = RCM_local);
-        ARG_CHOICE ("norc", global.rc_method = RCM_norc);
-        ARG_CHOICE ("async", global.rc_method = RCM_async);
-        ARG_CHOICE ("local_norc_desc", global.rc_method = RCM_local_norc_desc);
-        ARG_CHOICE ("local_norc_ptr", global.rc_method = RCM_local_norc_ptr);
-        ARG_CHOICE ("async_norc_copy_desc", global.rc_method = RCM_async_norc_copy_desc);
-        ARG_CHOICE ("async_norc_two_descs", global.rc_method = RCM_async_norc_two_descs);
-        ARG_CHOICE ("async_norc_ptr", global.rc_method = RCM_async_norc_ptr);
-        ARG_CHOICE ("local_pasync_norc_cpy_desc",
-                    global.rc_method = RCM_local_pasync_norc_cpy_desc);
-        ARG_CHOICE ("local_async_norc_ptr", global.rc_method = RCM_local_async_norc_ptr);
-        ARG_CHOICE_END ();
-    }
-    ARGS_OPTION_END ("minarrayrep");
 
     /* -- Runtime Specialization -- */
 

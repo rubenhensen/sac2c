@@ -98,6 +98,7 @@ static struct {
   {"CCMTLINK", str, &global.config.ccmtlink},
   {"CCDLLINK", str, &global.config.ccdllink},
   {"CEXT", str, &global.config.cext},
+  {"RC_METHOD", str, &global.config.rc_method},
   {"BACKEND", str, &global.config.backend},
 
   {"TREE_CC", str, &global.config.tree_cc},
@@ -172,11 +173,7 @@ RSCprintConfigEntry (char *config)
     int i = 0;
     DBUG_ENTER ();
 
-    for (i = 0; i < INT_MAX; i++) {
-        if (resource_table[i].tag == 0) {
-            DBUG_ASSERT (0 == 1, "Unknown config entry");
-            break; /* end of list */
-        }
+    for (i = 0; resource_table[i].name[0] != '\0'; i++) {
         if (STReq (resource_table[i].name, config)) {
             switch (resource_table[i].tag) {
             case str:
@@ -191,6 +188,9 @@ RSCprintConfigEntry (char *config)
             }
             break;
         }
+    }
+    if (resource_table[i].name[0] == '\0') {
+        CTIerror ("resource %s unknown", config);
     }
 
     DBUG_RETURN ();
@@ -661,8 +661,8 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
                 } else {
                     if (resource->add_flag) {
                         char *new;
-                        new = STRcatn (3, *((char **)(resource_table[i].store)), " ",
-                                       resource->value_str);
+                        new = STRcat (*((char **)(resource_table[i].store)),
+                                      resource->value_str);
                         MEMfree (*((char **)(resource_table[i].store)));
                         *((char **)(resource_table[i].store)) = new;
                     } else {
@@ -711,13 +711,20 @@ void
 RSCevaluateConfiguration ()
 {
     DBUG_ENTER ();
+    char *target;
 
     ParseResourceFiles ();
 
     EvaluateDefaultTarget (global.target_list);
 
     if (!STReq (global.target_name, "default")) {
-        EvaluateCustomTarget (global.target_name, global.target_list);
+        target = STRtok (global.target_name, ":");
+        while (target != NULL) {
+            if (!STReq (target, "")) { /* allow for multiple colons! */
+                EvaluateCustomTarget (target, global.target_list);
+            }
+            target = STRtok (NULL, ":");
+        }
     }
 
     global.target_list = FreeTargetList (global.target_list);

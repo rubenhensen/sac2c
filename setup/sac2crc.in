@@ -100,6 +100,45 @@
  *
  *  BACKEND         Defines which backend to use for a target. 
  *
+ *  RC_METHOD       Defines which reference counting implementation to use.
+ *                  Currently, the following implementations are supported:
+ *
+ *                  local
+ *                       Traditional reference counting assuming locality.
+ *                  norc
+ *                       No reference counting at all.
+ *                       Be aware that we have no GC yet!
+ *                  async
+ *                       Asynchronous reference counting.
+ *                       RC is done through messages to a seperate core.
+ *                       Re-use and freeing implies synchronisation.
+ *                  local_norc_desc
+ *                       Switches from local to norc and back.
+ *                       Implies no re-use or freeing of non-local
+ *                       vars in a concurrent context.
+ *                       Implements the mode via a flag in the descriptor.
+ *                  local_norc_ptr
+ *                       Same as previous BUT encodes the mode in
+ *                       the lowewst bits of the pointer to the descriptor.
+ *                  async_norc_copy_desc
+ *                       Switches from async to norc and back.
+ *                       Whenever going norc, the descriptor is being copied.
+ *                  async_norc_two_descs
+ *                       Same as previous but instead of copying we always.
+ *                       allocate two descriptors.
+ *                  async_norc_ptr
+ *                       Same as previous but instead of having two descriptors.
+ *                       we encode the mode in the pointer.
+ *                  local_pasync_norc_copy_desc
+ *                       Very similar to local_norc_desc.
+ *                       The only difference is that when spawning a.
+ *                       thread we create a copy of the descriptor and use.
+ *                       the original one as asynchronous parent.
+ *                  local_async_norc_ptr
+ *                       Very similar to async_norc_ptr.
+ *                       The only difference is that we start in local and
+ *                       we try to get back there whenever possible.
+ *
  *  LIB_VARIANT     Gives a tag that will be added to the name of each
  *                  library that result of the compilation of a SAC module
  *                  file. Useful to keep multiple versions of the standard
@@ -260,6 +299,7 @@ TREE_LD          :=  "@CC@ @LD_DYNAMIC@"
 TREE_LD_PATH     :=  "@LD_PATH@"
 TREE_CEXT        :=  "c"
 
+RC_METHOD        :=  "local"
 BACKEND          :=  "C99"
 LIB_VARIANT      :=  ""
  
@@ -339,6 +379,52 @@ CACHE3_WRITEPOL  :=  "default"
 CACHE3_MSCA      :=  0
  
 
+
+/*****************************************************************************
+ * reference counting method targets
+ */
+target rcm_local:
+RC_METHOD        := "local"
+LIB_VARIANT      += "rcm-local"
+
+target rcm_norc:
+RC_METHOD        := "norc"
+LIB_VARIANT      += "rcm-norc"
+
+target rcm_async:
+RC_METHOD        := "async"
+LIB_VARIANT      += "rcm-async"
+
+target rcm_local_norc_desc:
+RC_METHOD        := "local_norc_desc"
+LIB_VARIANT      += "rcm-local_norc_desc"
+
+target rcm_local_norc_ptr:
+RC_METHOD        := "local_norc_ptr"
+LIB_VARIANT      += "rcm-local_norc_ptr"
+
+target rcm_async_norc_copy_desc:
+RC_METHOD        := "async_norc_copy_desc"
+LIB_VARIANT      += "rcm-async_norc_copy_desc"
+
+target rcm_async_norc_two_descs:
+RC_METHOD        := "async_norc_two_descs"
+LIB_VARIANT      += "rcm-async_norc_two_descs"
+
+target rcm_async_norc_ptr:
+RC_METHOD        := "async_norc_ptr"
+LIB_VARIANT      += "rcm-async_norc_ptr"
+
+target rcm_local_pasync_norc_desc:
+RC_METHOD        := "local_pasync_norc_desc"
+LIB_VARIANT      += "rcm-local_pasync_norc_desc"
+
+target rcm_local_async_norc_ptr:
+RC_METHOD        := "local_async_norc_ptr"
+LIB_VARIANT      += "rcm-local_async_norc_ptr"
+
+
+
 /*****************************************************************************
  * sl targets
  */
@@ -365,6 +451,7 @@ IMPPATH          :=  "$SACBASE/stdlib/modules/structures:"
                      "$SACBASE/stdlib/world/mutc:"
                      "$SACBASE/stdlib/world/system:"
                      "$SACBASE/stdlib/classes/random:"
+RC_METHOD        :=  "local_pasync_norc_cpy_desc"
 BACKEND          :=  "MUTC"
 CC               :=  "slc -b seqc"
 CCFLAGS          :=  "-Wall -Wno-unused"
@@ -496,11 +583,11 @@ CCFLAGS        := "-shared-intel -xsse4.2"
 
 target intelcc_sse2::intelcc:
 
-CCFLAGS        += "-msse2"
+CCFLAGS        += " -msse2"
 
 target intelcc_fast::intelcc:
 
-CCFLAGS        += "-fast"
+CCFLAGS        += " -fast"
 
 
 
@@ -574,7 +661,7 @@ CCMTLINK        :=  "-lhoard -lpthread -lthread -lrt"
 
 target ptmalloc:
 
-CCMTLINK        +=  "-lptmalloc"
+CCMTLINK        +=  " -lptmalloc"
 
 
 /*******************************************************************************
@@ -585,7 +672,7 @@ CCMTLINK        +=  "-lptmalloc"
 
 target mtmalloc:
 
-CCMTLINK        +=  "-lmtmalloc"
+CCMTLINK        +=  " -lmtmalloc"
 
 
 /*******************************************************************************
@@ -597,7 +684,7 @@ CCMTLINK        +=  "-lmtmalloc"
 
 target gnumalloc:
 
-CCMTLINK        +=  "-lglib"
+CCMTLINK        +=  " -lglib"
 
 
  
@@ -615,4 +702,4 @@ CCMTLINK        +=  "-lglib"
 @RCMAC@
 
 
-
+   

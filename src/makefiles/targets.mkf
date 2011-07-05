@@ -260,13 +260,13 @@ runtime_extraclean_all    :=
 runtime_extraclean_devel  := 
 runtime_extraclean_prod   := 
 
-runtime_sourcedirs        := essentials_h extras_h mt_h mt_omp_h mt_pth_h phm_h mutc_h cuda_h \
-                             rtspec_h
+runtime_sourcedirs        := essentials_h extras_h mt_h mt_omp_h mt_pth_h \
+                              phm_h mutc_h cuda_h rtspec_h
 
 ###############################################################################
 
-runtime_essentials_h   := types audwl commandline icm prf std std_gen message \
-                          bool errors idx misc wl tuple
+runtime_essentials_h   := rc_methods types audwl commandline icm prf std \
+                          std_gen message bool errors idx misc wl tuple
 
 runtime_extras_h       := cachesim profile runtimecheck trace
 
@@ -372,14 +372,14 @@ libsac_rtspec       := registry reqqueue controller
 ifeq  (MUTC, $(CROSS_BACKEND))
 libsacphm_targets           :=
 else
-libsacphm_targets           := libsac$(CROSS_VARIANT)phm.seq.a \
-                               libsac$(CROSS_VARIANT)phm.seq.so \
-                               libsac$(CROSS_VARIANT)phm.seq.diag.a \
-                               libsac$(CROSS_VARIANT)phm.seq.diag.so \
-                               libsac$(CROSS_VARIANT)phm.mt.a \
-                               libsac$(CROSS_VARIANT)phm.mt.so \
-                               libsac$(CROSS_VARIANT)phm.mt.diag.a \
-                               libsac$(CROSS_VARIANT)phm.mt.diag.so
+libsacphm_targets           := libsacphm$(CROSS_VARIANT).seq.a \
+                               libsacphm$(CROSS_VARIANT).seq.so \
+                               libsacphm$(CROSS_VARIANT).seq.diag.a \
+                               libsacphm$(CROSS_VARIANT).seq.diag.so \
+                               libsacphm$(CROSS_VARIANT).mt.a \
+                               libsacphm$(CROSS_VARIANT).mt.so \
+                               libsacphm$(CROSS_VARIANT).mt.diag.a \
+                               libsacphm$(CROSS_VARIANT).mt.diag.so
 endif
 libsacphm_targetdir         := lib
 
