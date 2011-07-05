@@ -642,7 +642,6 @@ PrintBackendOptions (void)
       "\n"
       "    -rc_method <n>  Change the reference counting mode\n"
       "                      sync         Traditional synchronous reference counting.\n"
-      "                                   Exclusive execution of all RC ops.\n"
       "                      norc         No reference counting at all.\n"
       "                                   Beware(!) we have no GC yet.\n"
       "                      async        Asynchronous reference counting.\n"
@@ -653,7 +652,9 @@ PrintBackendOptions (void)
       "                                   Implies no re-use or freeing of non-local\n"
       "                                   vars in a concurrent context.\n"
       "                      trimodal_fp  Switches from sync to norc or async and back.\n"
+      "                                   Copy descriptor at functional parallelism.\n"
       "                      trimodal_dp  Switches from sync to norc or async and back.\n"
+      "                                   Copy descriptor at data parallelism.\n"
       "                    (default: sync / trimodal_fp (BE_mutc))\n");
 
     DBUG_RETURN ();
