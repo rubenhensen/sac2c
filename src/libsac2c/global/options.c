@@ -341,10 +341,12 @@ OPTcheckOptionConsistency (void)
     }
 
     if (((global.rc_method == RCM_local_norc_desc)
+         || (global.rc_method == RCM_async_norc_ptr)
+         || (global.rc_method == RCM_async_norc_copy_desc)
          || (global.rc_method == RCM_async_norc_two_descs)
          || (global.rc_method == RCM_async_norc_ptr)
          || (global.rc_method == RCM_local_pasync_norc_cpy_desc)
-         || (global.rc_method == RCM_local_pasync_norc_ptr)
+         || (global.rc_method == RCM_local_async_norc_ptr)
          || (global.rc_method == RCM_async))
         && global.backend != BE_mutc) {
         CTIerror ("Specified reference counting method is currently only "
