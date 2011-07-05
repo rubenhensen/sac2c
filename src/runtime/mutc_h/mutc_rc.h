@@ -16,8 +16,6 @@
  *
  ******************************************************************************/
 
-#define MUTC 1
-#if SAC_BACKEND == MUTC
 #include <limits.h>
 #include <stdio.h>
 #define SAC_SL_DETACH() sl_detach ()
@@ -40,6 +38,7 @@
 #define SAC_MUTC_DEBUG_RC(a)
 #endif
 
+#if (SAC_RC_METHOD == SAC_RCM_async) || (SAC_RC_METHOD == SAC_RCM_local_pasync_norc_desc)
 SAC_IF_MUTC_RC_INDIRECT (
   sl_decl (SAC_set_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc));
   sl_decl (SAC_inc_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc));
@@ -68,6 +67,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
   sl_decl (SAC_get_parent_count, void, sl_glparm (SAC_ND_DESC_PARENT_TYPE, parent),
            sl_shparm (SAC_ND_DESC_PARENT_BASETYPE, val));
   sl_decl (SAC_inc_parent_count, void, sl_glparm (SAC_ND_DESC_PARENT_TYPE, parent));)
+#endif
 
 #define SAC_MUTC_GET_RC_PLACE(DESC)                                                      \
     ({                                                                                   \
@@ -695,6 +695,3 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 #ifndef SAC_MUTC_RC_BARRIER__DESC
 #define SAC_MUTC_RC_BARRIER__DESC(var_NT)
 #endif
-
-#endif /* SAC_BACKEND */
-#undef MUTC
