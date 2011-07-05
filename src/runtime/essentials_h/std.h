@@ -119,7 +119,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_DESC_RC_MODE_ASYNC 1
 #define SAC_DESC_RC_MODE_NORC 2
 
-#define SAC_RC_PTR_MASK 0b11
+#define SAC_RC_PTR_MASK (3)
 #define SAC_RC_PTR_NEG_MASK (-1 ^ SAC_RC_PTR_MASK)
 
 #define DESC_OFFSET_RC 0
@@ -136,7 +136,7 @@ typedef intptr_t *SAC_array_descriptor_t;
   || (SAC_RC_METHOD == SAC_RCM_ASYNC_NORC_PTR)                                           \
   || (SAC_RC_METHOD == SAC_RCM_LOCAL_ASYNC_NORC_PTR)
 #define SAC_REAL_DESC_POINTER(desc)                                                      \
-    ((SAC_array_descriptor_t *)(((intptr_t)desc) & SAC_RC_PTR_NEG_MASK))
+    ((SAC_array_descriptor_t) (((intptr_t)desc) & SAC_RC_PTR_NEG_MASK))
 #define SAC_DESC_HIDDEN_DATA(desc) (((intptr_t)desc) & SAC_RC_PTR_MASK)
 #define SAC_DESC_SET_HIDDEN_DATA(desc, val)                                              \
     desc = (SAC_array_descriptor_t *)(((intptr_t)desc) & val)
@@ -1439,15 +1439,23 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_ND_A_RC__DEFAULT(var_NT) SAC_ND_A_RC__C99 (var_NT)
 #endif
 
+#include <stdint.h>
+#define SAC_ND_INIT__RC__NORC(var_NT, rc)
+#define SAC_ND_DEC_RC_FREE__NORC(var_NT, rc, freefun)
+#define SAC_ND_SET__RC__NORC(var_NT, rc)
+#define SAC_ND_DEC_RC__NORC(var_NT, rc)
+#define SAC_ND_INC_RC__NORC(var_NT, rc)
+#define SAC_ND_A_RC__NORC(var_NT) INT_MAX
+
 #if SAC_RC_METHOD == SAC_RCM_NORC
 /* No rc */
-#include <stdint.h>
-#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)
-#define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)
-#define SAC_ND_SET__RC__DEFAULT(var_NT, rc)
-#define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)
-#define SAC_ND_INC_RC__DEFAULT(var_NT, rc)
-#define SAC_ND_A_RC__DEFAULT(var_NT) INT_MAX
+#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc) SAC_ND_INIT__RC__NORC (var_NT, rc)
+#define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \
+    SAC_ND_DEC_RC_FREE__NORC (var_NT, rc, freefun)
+#define SAC_ND_SET__RC__DEFAULT(var_NT, rc) SAC_ND_SET__RC__NORC (var_NT, rc)
+#define SAC_ND_DEC_RC__DEFAULT(var_NT, rc) SAC_ND_DEC_RC__NORC (var_NT, rc)
+#define SAC_ND_INC_RC__DEFAULT(var_NT, rc) SAC_ND_INC_RC__NORC (var_NT, rc)
+#define SAC_ND_A_RC__DEFAULT(var_NT) SAC_ND_A_RC__NORC (var_NT)
 #endif
 
 /******************************************************************************

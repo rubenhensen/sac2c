@@ -69,13 +69,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
            sl_shparm (SAC_ND_DESC_PARENT_BASETYPE, val));
   sl_decl (SAC_inc_parent_count, void, sl_glparm (SAC_ND_DESC_PARENT_TYPE, parent));)
 
-#if SAC_RC_METHOD == SAC_RCM_ASYNC
-#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
-    {                                                                                    \
-        SAC_MUTC_RC_PRINT (var_NT);                                                      \
-        SAC_ND_INIT__RC__C99 (var_NT, rc)                                                \
-    }
-
 #define SAC_MUTC_GET_RC_PLACE(DESC)                                                      \
     ({                                                                                   \
         long int address = (long int)DESC;                                               \
@@ -83,6 +76,13 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         address = (SAC_MUTC_RC_PLACES_VAR - 1) & address;                                \
         SAC_mutc_rc_place_many[address];                                                 \
     })
+
+#if SAC_RC_METHOD == SAC_RCM_ASYNC
+#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
+    {                                                                                    \
+        SAC_MUTC_RC_PRINT (var_NT);                                                      \
+        SAC_ND_INIT__RC__C99 (var_NT, rc)                                                \
+    }
 
 #define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
@@ -183,14 +183,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
     }
 
-#define SAC_MUTC_GET_RC_PLACE(desc)                                                      \
-    ({                                                                                   \
-        long int address = (long int)(DESC_PARENT (desc));                               \
-        address = address >> 6;                                                          \
-        address = (SAC_MUTC_RC_PLACES_VAR - 1) & address;                                \
-        SAC_mutc_rc_place_many[address];                                                 \
-    })
-
 #define SAC_ND_SET__RC__DEFAULT(var_NT, rc)                                              \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
@@ -201,12 +193,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         } else {                                                                         \
             SAC_ND_SET__RC__C99 (var_NT, rc);                                            \
         }                                                                                \
-    }
-
-#define SAC_ND_SET__RC__NORC(var_NT, rc)                                                 \
-    {                                                                                    \
-        SAC_TR_REF_PRINT (("ND_SET__RC__NORC( %s, %d)", NT_STR (var_NT), rc))            \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
 #define SAC_ND_SET__RC__ASYNC_RC(var_NT, rc)                                             \
@@ -235,10 +221,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         } else {                                                                         \
             SAC_ND_INC_RC__C99 (var_NT, rc);                                             \
         }                                                                                \
-    }
-
-#define SAC_ND_INC_RC__NORC(var_NT, rc)                                                  \
-    {                                                                                    \
     }
 
 /*
@@ -350,13 +332,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
     }
 #endif
 
-#define SAC_ND_DEC_RC__NORC(var_NT, rc)                                                  \
-    {                                                                                    \
-        SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
-        SAC_TR_REF_PRINT (("ND_DEC_RC__NORC( %s, %d)", NT_STR (var_NT), rc))             \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
-    }
-
 /*
  * SAC_ND_DEC_RC_FREE implementations (referenced by sac_std_gen.h)
  */
@@ -370,13 +345,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         } else {                                                                         \
             SAC_ND_DEC_RC_FREE__ASYNC_RC (var_NT, rc, freefun);                          \
         }                                                                                \
-    }
-
-#define SAC_ND_DEC_RC_FREE__NORC(var_NT, rc, freefun)                                    \
-    {                                                                                    \
-        SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
-        SAC_TR_REF_PRINT (("ND_DEC_RC_FREE__NORC( %s, %d)", NT_STR (var_NT), rc))        \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
 #define SAC_ND_DEC_RC_FREE__ASYNC_RC(var_NT, rc, freefun)                                \
@@ -419,14 +387,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
             rc = SAC_ND_A_RC__ASYNC_RC (var_NT);                                         \
         }                                                                                \
         (int)rc;                                                                         \
-    })
-
-#define SAC_ND_A_RC__NORC(var_NT)                                                        \
-    ({                                                                                   \
-        SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
-        SAC_TR_REF_PRINT (("ND_A_RC__NORC( %s, %d)", NT_STR (var_NT), rc))               \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
-        (int)INT_MAX;                                                                    \
     })
 
 #define SAC_ND_A_RC__ASYNC_RC(var_NT)                                                    \
@@ -472,7 +432,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
                                (SAC_ND_DESC_PARENT_TYPE)SAC_ND_A_DESC_PARENT (           \
                                  var_NT)));)                                             \
         SAC_IF_NOT_MUTC_RC_INDIRECT (                                                    \
-          sl_create (, SAC_MUTC_GET_RC_PLACE (SAC_ND_A_DESC (var_NT)), 0, 1, 1, ,        \
+          sl_create (, SAC_MUTC_GET_RC_PLACE (SAC_ND_A_DESC_PARENT (var_NT)), 0, 1, 1, , \
                      sl__exclusive, SAC_inc_parent_count,                                \
                      sl_glarg (SAC_ND_DESC_PARENT_TYPE, ,                                \
                                (SAC_ND_DESC_PARENT_TYPE)SAC_ND_A_DESC_PARENT (           \
@@ -492,7 +452,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
           sl_create (, SAC_mutc_rc_place_w, , , , , , SAC_rc_barrier_w,                  \
                      sl_glarg (SAC_ND_DESC_TYPE (var_NT), , SAC_ND_A_DESC (var_NT)));)   \
         SAC_IF_NOT_MUTC_RC_INDIRECT (                                                    \
-          sl_create (, SAC_MUTC_GET_RC_PLACE (SAC_ND_A_DESC (var_NT)), 0, 1, 1, ,        \
+          sl_create (, SAC_MUTC_GET_RC_PLACE (SAC_ND_A_DESC_PARENT (var_NT)), 0, 1, 1, , \
                      sl__exclusive, SAC_rc_barrier,                                      \
                      sl_glarg (SAC_ND_DESC_TYPE (var_NT), , SAC_ND_A_DESC (var_NT)));)   \
         SAC_MUTC_SYNC ();                                                                \
@@ -573,12 +533,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         }                                                                                \
     }
 
-#define SAC_ND_SET__RC__NORC(var_NT, rc)                                                 \
-    {                                                                                    \
-        SAC_TR_REF_PRINT (("ND_SET__RC__NORC( %s, %d)", NT_STR (var_NT), rc))            \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
-    }
-
 #define SAC_ND_INC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
@@ -587,10 +541,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         } else {                                                                         \
             SAC_ND_INC_RC__NORC (var_NT, rc);                                            \
         }                                                                                \
-    }
-
-#define SAC_ND_INC_RC__NORC(var_NT, rc)                                                  \
-    {                                                                                    \
     }
 
 #define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
@@ -603,13 +553,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         }                                                                                \
     }
 
-#define SAC_ND_DEC_RC__NORC(var_NT, rc)                                                  \
-    {                                                                                    \
-        SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
-        SAC_TR_REF_PRINT (("ND_DEC_RC__NORC( %s, %d)", NT_STR (var_NT), rc))             \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
-    }
-
 #define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
@@ -618,13 +561,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         } else {                                                                         \
             SAC_ND_DEC_RC_FREE__NORC (var_NT, rc, freefun);                              \
         }                                                                                \
-    }
-
-#define SAC_ND_DEC_RC_FREE__NORC(var_NT, rc, freefun)                                    \
-    {                                                                                    \
-        SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
-        SAC_TR_REF_PRINT (("ND_DEC_RC_FREE__NORC( %s, %d)", NT_STR (var_NT), rc))        \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
 #define SAC_ND_A_RC__DEFAULT(var_NT)                                                     \
@@ -637,14 +573,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
     rc = SAC_ND_A_RC__NORC( var_NT);                                    \
   }                                                                     \
   (int)rc;                                                                               \
-    })
-
-#define SAC_ND_A_RC__NORC(var_NT)                                                        \
-    ({                                                                                   \
-        SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
-        SAC_TR_REF_PRINT (("ND_A_RC__NORC( %s, %d)", NT_STR (var_NT), rc))               \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
-        (int)INT_MAX;                                                                    \
     })
 
 /*
@@ -671,79 +599,47 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
     {                                                                                    \
         SAC_ND_INIT__RC__C99 (var_NT, rc)                                                \
-        SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (array), SAC_DESC_RC_MODE_NORC);         \
+        SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (var_NT), SAC_DESC_RC_MODE_NORC);        \
     }
 
 #define SAC_ND_SET__RC__DEFAULT(var_NT, rc)                                              \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
-        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT))) == SAC_DESC_RC_MODE_LOCAL)         \
-            {                                                                            \
-                SAC_ND_SET__RC__C99 (var_NT, rc);                                        \
-            }                                                                            \
-        else {                                                                           \
+        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_LOCAL) {   \
+            SAC_ND_SET__RC__C99 (var_NT, rc);                                            \
+        } else {                                                                         \
             SAC_ND_SET__RC__NORC (var_NT, rc);                                           \
         }                                                                                \
-    }
-
-#define SAC_ND_SET__RC__NORC(var_NT, rc)                                                 \
-    {                                                                                    \
-        SAC_TR_REF_PRINT (("ND_SET__RC__NORC( %s, %d)", NT_STR (var_NT), rc))            \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
 #define SAC_ND_INC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
-        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT))) == SAC_DESC_RC_MODE_LOCAL)         \
-            {                                                                            \
-                SAC_ND_INC_RC__C99 (var_NT, rc);                                         \
-            }                                                                            \
-        else {                                                                           \
+        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_LOCAL) {   \
+            SAC_ND_INC_RC__C99 (var_NT, rc);                                             \
+        } else {                                                                         \
             SAC_ND_INC_RC__NORC (var_NT, rc);                                            \
         }                                                                                \
-    }
-
-#define SAC_ND_INC_RC__NORC(var_NT, rc)                                                  \
-    {                                                                                    \
     }
 
 #define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
-        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT))) == SAC_DESC_RC_MODE_LOCAL)         \
-            {                                                                            \
-                SAC_ND_DEC_RC__C99 (var_NT, rc);                                         \
-            }                                                                            \
-        else {                                                                           \
+        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_LOCAL) {   \
+            SAC_ND_DEC_RC__C99 (var_NT, rc);                                             \
+        } else {                                                                         \
             SAC_ND_DEC_RC__NORC (var_NT, rc);                                            \
         }                                                                                \
-    }
-
-#define SAC_ND_DEC_RC__NORC(var_NT, rc)                                                  \
-    {                                                                                    \
-        SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
-        SAC_TR_REF_PRINT (("ND_DEC_RC__NORC( %s, %d)", NT_STR (var_NT), rc))             \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
 #define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
-        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT))) == SAC_DESC_RC_MODE_LOCAL)         \
-            {                                                                            \
-                SAC_ND_DEC_RC_FREE__C99 (var_NT, rc, freefun);                           \
-            }                                                                            \
-        else {                                                                           \
+        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_LOCAL) {   \
+            SAC_ND_DEC_RC_FREE__C99 (var_NT, rc, freefun);                               \
+        } else {                                                                         \
             SAC_ND_DEC_RC_FREE__NORC (var_NT, rc, freefun);                              \
         }                                                                                \
-    }
-
-#define SAC_ND_DEC_RC_FREE__NORC(var_NT, rc, freefun)                                    \
-    {                                                                                    \
-        SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
-        SAC_TR_REF_PRINT (("ND_DEC_RC_FREE__NORC( %s, %d)", NT_STR (var_NT), rc))        \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
 #define SAC_ND_A_RC__DEFAULT(var_NT)                                                     \
@@ -756,14 +652,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
     rc = SAC_ND_A_RC__NORC( var_NT);                                    \
   }                                                                     \
   (int)rc;                                                                               \
-    })
-
-#define SAC_ND_A_RC__NORC(var_NT)                                                        \
-    ({                                                                                   \
-        SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
-        SAC_TR_REF_PRINT (("ND_A_RC__NORC( %s, %d)", NT_STR (var_NT), rc))               \
-        SAC_TR_REF_PRINT_RC (var_NT)                                                     \
-        (int)INT_MAX;                                                                    \
     })
 
 /*
