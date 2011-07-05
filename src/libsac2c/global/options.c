@@ -331,17 +331,21 @@ OPTcheckOptionConsistency (void)
     /* rc_method checks */
     if (global.rc_method == -1) {
         if (global.backend == BE_mutc) {
-            global.rc_method = RCM_trimodal_fp;
+            global.rc_method = RCM_local_pasync_norc_cpy_desc;
         } else {
-            global.rc_method = RCM_sync;
+            global.rc_method = RCM_local;
         }
     } else {
         CTIwarn ("If your stdlib is not compiled with the same rc method "
                  "you may get unexpected behavior of your generated program");
     }
 
-    if (((global.rc_method == RCM_bimodal) || (global.rc_method == RCM_trimodal_fp)
-         || (global.rc_method == RCM_trimodal_dp) || (global.rc_method == RCM_async))
+    if (((global.rc_method == RCM_local_norc_desc)
+         || (global.rc_method == RCM_async_norc_two_descs)
+         || (global.rc_method == RCM_async_norc_ptr)
+         || (global.rc_method == RCM_local_pasync_norc_cpy_desc)
+         || (global.rc_method == RCM_local_pasync_norc_ptr)
+         || (global.rc_method == RCM_async))
         && global.backend != BE_mutc) {
         CTIerror ("Specified reference counting method is currently only "
                   "supported for the backend BE_mutc!");
@@ -802,12 +806,16 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("rc_method")
     {
         ARG_CHOICE_BEGIN ();
-        ARG_CHOICE ("sync", global.rc_method = RCM_sync);
+        ARG_CHOICE ("local", global.rc_method = RCM_local);
         ARG_CHOICE ("norc", global.rc_method = RCM_norc);
-        ARG_CHOICE ("bimodal", global.rc_method = RCM_bimodal);
         ARG_CHOICE ("async", global.rc_method = RCM_async);
-        ARG_CHOICE ("trimodal_fp", global.rc_method = RCM_trimodal_fp);
-        ARG_CHOICE ("trimodal_dp", global.rc_method = RCM_trimodal_dp);
+        ARG_CHOICE ("local_norc_desc", global.rc_method = RCM_local_norc_desc);
+        ARG_CHOICE ("async_norc_two_descs", global.rc_method = RCM_async_norc_two_descs);
+        ARG_CHOICE ("async_norc_ptr", global.rc_method = RCM_async_norc_ptr);
+        ARG_CHOICE ("local_pasync_norc_cpy_desc",
+                    global.rc_method = RCM_local_pasync_norc_cpy_desc);
+        ARG_CHOICE ("local_pasync_norc_ptr",
+                    global.rc_method = RCM_local_pasync_norc_ptr);
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("minarrayrep");

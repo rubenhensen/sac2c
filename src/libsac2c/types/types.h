@@ -210,12 +210,13 @@ typedef enum {
  * rc-modes
  */
 typedef enum {
-    RCM_sync = 0,
+    RCM_local = 0,
     RCM_norc = 1,
-    RCM_bimodal = 2,
-    RCM_async = 3,
-    RCM_trimodal_fp = 4,
-    RCM_trimodal_dp = 5
+    RCM_async = 2,
+    RCM_local_norc_desc = 3,
+    RCM_async_norc_two_descs = 4,
+    RCM_async_norc_ptr = 5 RCM_local_pasync_norc_cpy_desc = 6 RCM_local_pasync_norc_ptr
+    = 7
 } rc_mode_t;
 
 /*
