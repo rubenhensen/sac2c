@@ -81,12 +81,13 @@ extern void _db_longjmp_ (void);                        /* Restore debugger envi
     } while (0)
 
 #define DBUG_ASSERT(cond, ...)                                                           \
-    ((void)(!(cond) ? (fprintf (_db_fp_,                                                 \
-                                "%s:%i Assertion \"%s"                                   \
-                                "\" failed!",                                            \
-                                __FILE__, __LINE__, #cond),                              \
-                       fprintf (_db_fp_, __VA_ARGS__), exit (-1), 0)                     \
-                    : 0))
+    ((void)(!(cond)                                                                      \
+              ? (fprintf (_db_fp_,                                                       \
+                          "%s:%i Assertion \"%s"                                         \
+                          "\" failed!\n",                                                \
+                          __FILE__, __LINE__, #cond),                                    \
+                 fprintf (_db_fp_, __VA_ARGS__), fprintf (_db_fp_, "\n"), exit (-1), 0)  \
+              : 0))
 
 #define DBUG_POP() _db_pop_ ()
 
