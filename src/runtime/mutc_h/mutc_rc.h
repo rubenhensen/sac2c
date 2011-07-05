@@ -564,15 +564,15 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
     }
 
 #define SAC_ND_A_RC__DEFAULT(var_NT)                                                     \
-({                                                                      \
-  int rc;                                                               \
-  SAC_MUTC_RC_PRINT( var_NT);                                           \
-  if ( DESC_RC_MODE( SAC_ND_A_DESC( var_NT)) == SAC_DESC_RC_MODE_LOCAL){  \
-    rc = SAC_ND_A_RC__C99( var_NT);                                     \
-  } else                                                                \
-    rc = SAC_ND_A_RC__NORC( var_NT);                                    \
-  }                                                                     \
-  (int)rc;                                                                               \
+    ({                                                                                   \
+        int rc;                                                                          \
+        SAC_MUTC_RC_PRINT (var_NT);                                                      \
+        if (DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_LOCAL) {           \
+            rc = SAC_ND_A_RC__C99 (var_NT);                                              \
+        } else {                                                                         \
+            rc = SAC_ND_A_RC__NORC (var_NT);                                             \
+        }                                                                                \
+        (int)rc;                                                                         \
     })
 
 /*
