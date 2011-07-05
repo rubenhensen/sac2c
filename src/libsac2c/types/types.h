@@ -217,7 +217,9 @@ typedef enum {
     RCM_local_norc_ptr = 4,
     RCM_async_norc_copy_desc = 5,
     RCM_async_norc_two_descs = 6,
-    RCM_async_norc_ptr = 7 RCM_local_pasync_norc_cpy_desc = 8 RCM_local_async_norc_ptr = 9
+    RCM_async_norc_ptr = 7,
+    RCM_local_pasync_norc_cpy_desc = 8,
+    RCM_local_async_norc_ptr = 9
 } rc_mode_t;
 
 /*
