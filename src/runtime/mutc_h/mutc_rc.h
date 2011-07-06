@@ -38,7 +38,7 @@
 #define SAC_MUTC_DEBUG_RC(a)
 #endif
 
-#if (SAC_RC_METHOD == SAC_RCM_async) || (SAC_RC_METHOD == rcm - async_norc_ptr)          \
+#if (SAC_RC_METHOD == SAC_RCM_async) || (SAC_RC_METHOD == SAC_RCM_async_norc_ptr)        \
   || (SAC_RC_METHOD == SAC_RCM_local_pasync_norc_desc)
 SAC_IF_MUTC_RC_INDIRECT (
   sl_decl (SAC_set_rc_w, void, sl_glparm (int *, desc), sl_glparm (int, rc));
