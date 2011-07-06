@@ -975,6 +975,9 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_A_COPY_DESC(new, old)                                                     \
     SAC_ND_ALLOC__DESC (new, SAC_ND_A_DIM (old));                                        \
+    SAC_ND_A_COPY_OVER_DESC (new, old);
+
+#define SAC_ND_A_COPY_OVER_DESC(new, old)                                                \
     memcpy (SAC_ND_A_DESC (new), SAC_ND_A_DESC (old),                                    \
             BYTE_SIZE_OF_DESC (SAC_ND_A_DIM (old)));
 
