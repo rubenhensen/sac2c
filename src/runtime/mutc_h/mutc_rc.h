@@ -77,14 +77,13 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         SAC_mutc_rc_place_many[address];                                                 \
     })
 
-#if SAC_RC_METHOD == SAC_RCM_async
-#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
+#define SAC_ND_INIT__RC__ASYNC(var_NT, rc)                                               \
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
         SAC_ND_INIT__RC__C99 (var_NT, rc)                                                \
     }
 
-#define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
+#define SAC_ND_DEC_RC__ASYNC(var_NT, rc)                                                 \
     {                                                                                    \
         SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
         SAC_TR_REF_PRINT (("ND_DEC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
@@ -100,7 +99,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
-#define SAC_ND_SET__RC__DEFAULT(var_NT, rc)                                              \
+#define SAC_ND_SET__RC__ASYNC(var_NT, rc)                                                \
     {                                                                                    \
         SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
         SAC_TR_REF_PRINT (("ND_SET__RC( %s, %d)", NT_STR (var_NT), rc))                  \
@@ -116,7 +115,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
-#define SAC_ND_INC_RC__DEFAULT(var_NT, rc)                                               \
+#define SAC_ND_INC_RC__ASYNC(var_NT, rc)                                                 \
     {                                                                                    \
         SAC_TR_REF_PRINT (("ND_INC_RC_ASYNC_RC( %s, %d)", NT_STR (var_NT), rc))          \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
@@ -131,7 +130,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
-#define SAC_ND_A_RC__DEFAULT(var_NT)                                                     \
+#define SAC_ND_A_RC__ASYNC(var_NT)                                                       \
     ({                                                                                   \
         SAC_TR_REF_PRINT (("ND_A_RC( %s)", NT_STR (var_NT)))                             \
         SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT));); \
@@ -150,7 +149,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         (int)sl_geta (val);                                                              \
     })
 
-#define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \
+#define SAC_ND_DEC_RC_FREE__ASYNC(var_NT, rc, freefun)                                   \
     {                                                                                    \
         SAC_TR_REF_PRINT (                                                               \
           ("ND_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))                \
@@ -172,6 +171,14 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
         SAC_SL_DETACH ();                                                                \
     }
 
+#if SAC_RC_METHOD == SAC_RCM_async
+#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc) SAC_ND_INIT__RC__ASYNC (var_NT, rc)
+#define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \
+    SAC_ND_DEC_RC_FREE__ASYNC (var_NT, rc, freefun)
+#define SAC_ND_SET__RC__DEFAULT(var_NT, rc) SAC_ND_SET__RC__ASYNC (var_NT, rc)
+#define SAC_ND_DEC_RC__DEFAULT(var_NT, rc) SAC_ND_DEC_RC__ASYNC (var_NT, rc)
+#define SAC_ND_INC_RC__DEFAULT(var_NT, rc) SAC_ND_INC_RC__ASYNC (var_NT, rc)
+#define SAC_ND_A_RC__DEFAULT(var_NT) SAC_ND_A_RC__ASYNC (var_NT)
 #endif
 
 #if SAC_RC_METHOD == SAC_RCM_local_pasync_norc_desc
@@ -502,7 +509,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
     {                                                                                    \
         SAC_ND_INIT__RC__C99 (var_NT, rc)                                                \
-        SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (var_NT), SAC_DESC_RC_MODE_NORC);        \
+        SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (var_NT), SAC_DESC_RC_MODE_LOCAL);       \
     }
 
 #define SAC_ND_SET__RC__DEFAULT(var_NT, rc)                                              \
@@ -574,6 +581,83 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
     SAC_ND_A_RC_T_MODE (rc) = SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (array));              \
     SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (array), SAC_DESC_RC_MODE_NORC);
 
+#endif
+
+#if SAC_RC_METHOD == SAC_RCM_async_norc_ptr
+#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
+    {                                                                                    \
+        SAC_ND_INIT__RC__C99 (var_NT, rc)                                                \
+        SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (var_NT), SAC_DESC_RC_MODE_ASYNC);       \
+    }
+
+#define SAC_ND_SET__RC__DEFAULT(var_NT, rc)                                              \
+    {                                                                                    \
+        SAC_MUTC_RC_PRINT (var_NT);                                                      \
+        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_ASYNC) {   \
+            SAC_ND_SET__RC__ASYNC (var_NT, rc);                                          \
+        } else {                                                                         \
+            SAC_ND_SET__RC__NORC (var_NT, rc);                                           \
+        }                                                                                \
+    }
+
+#define SAC_ND_INC_RC__DEFAULT(var_NT, rc)                                               \
+    {                                                                                    \
+        SAC_MUTC_RC_PRINT (var_NT);                                                      \
+        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_ASYNC) {   \
+            SAC_ND_INC_RC__ASYNC (var_NT, rc);                                           \
+        } else {                                                                         \
+            SAC_ND_INC_RC__NORC (var_NT, rc);                                            \
+        }                                                                                \
+    }
+
+#define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
+    {                                                                                    \
+        SAC_MUTC_RC_PRINT (var_NT);                                                      \
+        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_ASYNC) {   \
+            SAC_ND_DEC_RC__ASYNC (var_NT, rc);                                           \
+        } else {                                                                         \
+            SAC_ND_DEC_RC__NORC (var_NT, rc);                                            \
+        }                                                                                \
+    }
+
+#define SAC_ND_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                                 \
+    {                                                                                    \
+        SAC_MUTC_RC_PRINT (var_NT);                                                      \
+        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_ASYNC) {   \
+            SAC_ND_DEC_RC_FREE__ASYNC (var_NT, rc, freefun);                             \
+        } else {                                                                         \
+            SAC_ND_DEC_RC_FREE__NORC (var_NT, rc, freefun);                              \
+        }                                                                                \
+    }
+
+#define SAC_ND_A_RC__DEFAULT(var_NT)                                                     \
+    ({                                                                                   \
+        int rc;                                                                          \
+        SAC_MUTC_RC_PRINT (var_NT);                                                      \
+        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_ASYNC) {   \
+            rc = SAC_ND_A_RC__ASYNC (var_NT);                                            \
+        } else {                                                                         \
+            rc = SAC_ND_A_RC__NORC (var_NT);                                             \
+        }                                                                                \
+        (int)rc;                                                                         \
+    })
+
+/*
+ * Access the descriptors rc directly in SAC_ND_PRF_RESTORERC and
+ * SAC_ND_PRF_2NORC so that we do not perform any special reference
+ * counting access.
+ */
+
+#define SAC_ND_PRF_RESTORERC__DO(array, rc)                                              \
+    SAC_MUTC_RC_PRINT (array);                                                           \
+    SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (array), SAC_ND_A_RC_T_MODE (rc));
+
+#define SAC_ND_PRF_RESTORERC__NOOP(array, rc)
+
+#define SAC_ND_PRF_2NORC__DO(rc, array)                                                  \
+    SAC_MUTC_RC_PRINT (array);                                                           \
+    SAC_ND_A_RC_T_MODE (rc) = SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (array));              \
+    SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (array), SAC_DESC_RC_MODE_NORC);
 #endif
 
 #define SAC_ND_PRF_RESTORERC__NOOP(array, rc)
