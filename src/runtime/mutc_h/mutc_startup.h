@@ -2,8 +2,15 @@
 
 #define _SAC_MUTC_STARTUP_H_
 
-#define MUTC 1
-#if SAC_BACKEND == MUTC
+#if SAC_MUTC_RC_INDIRECT == 1
+#define SAC_IF_MUTC_RC_INDIRECT(A) A
+#define SAC_IF_NOT_MUTC_RC_INDIRECT(A)
+#else
+#define SAC_IF_MUTC_RC_INDIRECT(A)
+#define SAC_IF_NOT_MUTC_RC_INDIRECT(A) A
+#endif
+
+#ifdef SAC_BACKEND_MUTC
 #define shutup_cstdlib_h
 #include <stdlib.h>
 #define shutup_cstring_h
@@ -118,14 +125,6 @@
 
 #endif
 
-#if SAC_MUTC_RC_INDIRECT == 1
-#define SAC_IF_MUTC_RC_INDIRECT(A) A
-#define SAC_IF_NOT_MUTC_RC_INDIRECT(A)
-#else
-#define SAC_IF_MUTC_RC_INDIRECT(A)
-#define SAC_IF_NOT_MUTC_RC_INDIRECT(A) A
-#endif
-
 #define SAC_MUTC_RC_PLACES_VAR SAC_mutc_rc_places
 
 #if SAC_DO_COMPILE_MODULE == 1
@@ -149,7 +148,6 @@ void *tls_malloc (size_t arg1);
 void *tlstack_malloc (size_t arg1);
 
 #endif /* SAC_BACKEND */
-#undef MUTC
 
 #if SAC_DO_COMPILE_MODULE
 

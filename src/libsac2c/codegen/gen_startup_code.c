@@ -225,6 +225,7 @@ PrintGlobalSwitches ()
     switch (global.backend) {
     case BE_mutc:
         fprintf (global.outfile, "#define SAC_BACKEND MUTC\n");
+        fprintf (global.outfile, "#define SAC_BACKEND_MUTC\n");
         break;
     case BE_c99:
         fprintf (global.outfile, "#define SAC_BACKEND C99\n");
