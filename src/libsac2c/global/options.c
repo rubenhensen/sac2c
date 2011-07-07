@@ -344,7 +344,10 @@ OPTcheckOptionConsistency (void)
                       "supported for the backend BE_mutc!");
         }
     } else if (STReq (global.config.rc_method, "async_norc_copy_desc")) {
-        CTIerror ("Specified reference counting method is currently not supported!");
+        if (global.backend != BE_mutc) {
+            CTIerror ("Specified reference counting method is currently only "
+                      "supported for the backend BE_mutc!");
+        }
     } else if (STReq (global.config.rc_method, "async_norc_two_descs")) {
         CTIerror ("Specified reference counting method is currently not supported!");
     } else if (STReq (global.config.rc_method, "async_norc_ptr")) {

@@ -3,9 +3,7 @@
 
 #define _SAC_MUTC_H_
 
-#define MUTC 1
-#if SAC_MUTC_MACROS
-
+#ifdef SAC_BACKEND_MUTC
 /*#define bool boolbool*/
 
 #include <svp/perf.h>

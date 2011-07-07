@@ -127,7 +127,7 @@
 
 #define SAC_MUTC_RC_PLACES_VAR SAC_mutc_rc_places
 
-#if SAC_DO_COMPILE_MODULE == 1
+#if (!defined(SAC_DO_COMPILE_MODULE)) || (SAC_DO_COMPILE_MODULE == 1)
 extern const int SAC_MUTC_RC_PLACES_VAR;
 extern sl_place_t SAC_mutc_rc_place_many[];
 extern const sl_place_t SAC_MUTC_main_place;
