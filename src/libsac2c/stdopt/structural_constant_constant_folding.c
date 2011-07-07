@@ -1562,7 +1562,7 @@ SCCFprf_mask_VxVxV (node *arg_node, info *arg_info)
     if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else {
-        pat = PMprf (1, PMAisPrf (F_mesh_VxVxV), 3,
+        pat = PMprf (1, PMAisPrf (F_mask_VxVxV), 3,
                      PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
                      PMarray (2, PMAgetNode (&x), PMAhasFS (&xfs), 1, PMskip (0)),
                      PMarray (2, PMAgetNode (&y), PMAhasFS (&xfs), 1, PMskip (0)));

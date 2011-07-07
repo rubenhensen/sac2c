@@ -211,7 +211,7 @@ inline int[.] partitionIntersectMax( int[.] PWLbound1, int[.] ivmin)
 
   dif  = _sub_VxV_( PWLbound1, ivmin);
   p = _ge_VxS_( dif, 0);
-  z = _mesh_VxVxV_( p, PWLbound1, ivmin);
+  z = _mask_VxVxV_( p, PWLbound1, ivmin);
   return(z);
 }
 
@@ -227,7 +227,7 @@ inline int[.] partitionIntersectMin( int[.] PWLbound2, int[.] ivmax)
 
   dif  = _sub_VxV_( PWLbound2, ivmax);
   p = _le_VxS_( dif, 0);
-  z = _mesh_VxVxV_( p, PWLbound2, ivmax);
+  z = _mask_VxVxV_( p, PWLbound2, ivmax);
   z = _sub_VxS_( z, 1); /* Remove bound2 bias. */
   return(z);
 }
