@@ -31,7 +31,7 @@
 
 #if SAC_MUTC_SEQ_DATA_PARALLEL
 #define SAC_MUTC_CREATE(name, place, lb, ub, st, bl, ap)                                 \
-    sl_create (, place, lb, ub, st, bl, sl_forceseq, ap);
+    sl_create (, place, lb, ub, st, bl, sl__forceseq, ap);
 #else
 #define SAC_MUTC_CREATE(name, place, lb, ub, st, bl, ap)                                 \
     sl_create (, place, lb, ub, st, bl, , ap);

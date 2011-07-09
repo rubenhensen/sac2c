@@ -119,6 +119,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_DESC_RC_MODE_LOCAL 0
 #define SAC_DESC_RC_MODE_ASYNC 1
 #define SAC_DESC_RC_MODE_NORC 2
+#define SAC_DESC_RC_MODE_OTHER 3
 
 #define SAC_RC_PTR_MASK (3)
 #define SAC_RC_PTR_NEG_MASK (-1 ^ SAC_RC_PTR_MASK)
@@ -135,26 +136,45 @@ typedef intptr_t *SAC_array_descriptor_t;
  */
 #if (SAC_RC_METHOD == SAC_RCM_local_norc_ptr)                                            \
   || (SAC_RC_METHOD == SAC_RCM_async_norc_ptr)                                           \
-  || (SAC_RC_METHOD == SAC_RCM_local_async_norc_ptr)
-#define SAC_REAL_DESC_POINTER(desc)                                                      \
-    ((SAC_array_descriptor_t) (((intptr_t)desc) & SAC_RC_PTR_NEG_MASK))
+  || (SAC_RC_METHOD == SAC_RCM_local_async_norc_ptr)                                     \
+  || (SAC_RC_METHOD == SAC_RCM_SAC_local_async_norc_ptr)
+#ifdef __alpha__
+
+#define SAC_READ_DESC_POINTER(desc, offset)                                              \
+    ({                                                                                   \
+        intptr_t result;                                                                 \
+        asm("ldq_u %0, %2(%1)" : "=r"(result) : "r"(desc), "I"(offset * sizeof (*b)));   \
+        result;                                                                          \
+    })
+#define SAC_WRITE_DESC_POINTER(desc, offset, value)                                      \
+    ({ asm("ldq_u %0, %2(%1)" : : "=r"(value), "r"(desc), "I"(offset * sizeof (*b))); })
 #define SAC_DESC_HIDDEN_DATA(desc) (((intptr_t)desc) & SAC_RC_PTR_MASK)
 #define SAC_DESC_SET_HIDDEN_DATA(desc, val)                                              \
     desc = (SAC_array_descriptor_t *)(((intptr_t)desc) & val)
 
+#else /* __alpha__ */
+
+#define SAC_REAL_DESC_POINTER(desc, offset)                                              \
+    ((SAC_array_descriptor_t) (((intptr_t)desc) & SAC_RC_PTR_NEG_MASK))[offset]
+#define SAC_DESC_HIDDEN_DATA(desc) (((intptr_t)desc) & SAC_RC_PTR_MASK)
+#define SAC_DESC_SET_HIDDEN_DATA(desc, val)                                              \
+    desc = (SAC_array_descriptor_t *)(((intptr_t)desc) & val)
+
+#endif
+
 #else
 
-#define SAC_REAL_DESC_POINTER(desc) (desc)
+#define SAC_REAL_DESC_POINTER(desc, offset) (desc[offset])
 #define SAC_DESC_HIDDEN_DATA(desc) 0
 
 #endif
 
-#define DESC_RC(desc) SAC_REAL_DESC_POINTER (desc)[DESC_OFFSET_RC]
-#define DESC_PARENT(desc) SAC_REAL_DESC_POINTER (desc)[DESC_OFFSET_PARENT]
-#define DESC_RC_MODE(desc) SAC_REAL_DESC_POINTER (desc)[DESC_OFFSET_RC_MODE]
-#define DESC_DIM(desc) SAC_REAL_DESC_POINTER (desc)[DESC_OFFSET_DIM]
-#define DESC_SIZE(desc) SAC_REAL_DESC_POINTER (desc)[DESC_OFFSET_SIZE]
-#define DESC_SHAPE(desc, pos) SAC_REAL_DESC_POINTER (desc)[DESC_OFFSET_SHAPE + (pos)]
+#define DESC_RC(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_RC)
+#define DESC_PARENT(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_PARENT)
+#define DESC_RC_MODE(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_RC_MODE)
+#define DESC_DIM(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_DIM)
+#define DESC_SIZE(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_SIZE)
+#define DESC_SHAPE(desc, pos) SAC_REAL_DESC_POINTER (desc, (DESC_OFFSET_SHAPE + (pos)))
 
 /* Overloaded by MUTC */
 #define SAC_ND_DEF_FUN_BEGIN2(name, type, ...)                                           \
