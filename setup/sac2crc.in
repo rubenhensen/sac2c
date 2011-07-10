@@ -327,6 +327,7 @@ CAT              :=  "cat"
 MOVE             :=  "mv"
 RSH              :=  "rsh"
 DUMP_OUTPUT      :=  ">/dev/null 2>&1"
+CUDA_ARCH        :=  "@CUDA_ARCH@"
  
 LIBPATH          :=  "$SAC2CBASE/lib:"
                      "$SACBASE/stdlib/modules/structures/lib:"
@@ -515,7 +516,6 @@ RANLIB           :=  "slranlib utc0"
  */
 target cuda:
 
-CUDA_ARCH        :=  "@CUDA_ARCH@"
 BACKEND          :=  "Cuda"
 CC               :=  "nvcc"
 CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
