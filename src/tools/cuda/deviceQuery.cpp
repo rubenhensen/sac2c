@@ -34,7 +34,7 @@ int main( int argc, const char** argv)
 //  printf("  CUDA Capability Major revision number:         %d\n", deviceProp.major);
 //  printf("  CUDA Capability Minor revision number:         %d\n", deviceProp.minor);
 
-  printf("%d\n",deviceProp.major*10+deviceProp.minor);
+  printf("-arch=sm_%d\n",deviceProp.major*10+deviceProp.minor);
 
   return( 0);
 }
