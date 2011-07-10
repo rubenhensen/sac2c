@@ -20,19 +20,19 @@ int main( int argc, const char** argv)
 
   // This function call returns 0 if there are no CUDA capable devices.
   if (deviceCount == 0) {
-    printf("There is no device supporting CUDA\n");
+    // There is no device supporting CUDA
+    printf("");
+    return(1);
   }
 
   cudaDeviceProp deviceProp;
   cudaGetDeviceProperties(&deviceProp, 0);
 
   if (deviceProp.major == 9999 && deviceProp.minor == 9999) {
-    printf("There is no device supporting CUDA.\n");
+    // There is no device supporting CUDA
+    printf("");
     return(1);
   } 
-
-//  printf("  CUDA Capability Major revision number:         %d\n", deviceProp.major);
-//  printf("  CUDA Capability Minor revision number:         %d\n", deviceProp.minor);
 
   printf("-arch=sm_%d\n",deviceProp.major*10+deviceProp.minor);
 

@@ -100,7 +100,8 @@ InitCudaBlockSizes ()
 {
     DBUG_ENTER ();
 
-    if (STReq (global.config.cuda_arch, "10") || STReq (global.config.cuda_arch, "11")) {
+    if (STReq (global.config.cuda_arch, "-arch=sm_10")
+        || STReq (global.config.cuda_arch, "-arch=sm_11")) {
         global.optimal_threads = 256;
         global.optimal_blocks = 3;
         global.cuda_1d_block_large = 256;
@@ -108,8 +109,8 @@ InitCudaBlockSizes ()
         global.cuda_blocking_factor = 16;
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
-    } else if (STReq (global.config.cuda_arch, "12")
-               || STReq (global.config.cuda_arch, "13")) {
+    } else if (STReq (global.config.cuda_arch, "-arch=sm_12")
+               || STReq (global.config.cuda_arch, "-arch=sm_13")) {
         global.optimal_threads = 256;
         global.optimal_blocks = 4;
         global.cuda_1d_block_large = 256;
@@ -117,7 +118,7 @@ InitCudaBlockSizes ()
         global.cuda_blocking_factor = 16;
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
-    } else if (STReq (global.config.cuda_arch, "20")) {
+    } else if (STReq (global.config.cuda_arch, "-arch=sm_20")) {
         global.optimal_threads = 512;
         global.optimal_blocks = 3;
         global.cuda_1d_block_large = 512;
@@ -132,7 +133,15 @@ InitCudaBlockSizes ()
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
     } else {
-        DBUG_ASSERT (FALSE, "Unknown CUDA architecture");
+        // DBUG_ASSERT (FALSE, "Unknown CUDA architecture");
+        CTIwarn ("CUDA architecture cannot be detected, set to default(1.0)\n");
+        global.optimal_threads = 256;
+        global.optimal_blocks = 3;
+        global.cuda_1d_block_large = 256;
+        global.cuda_1d_block_small = 64;
+        global.cuda_blocking_factor = 16;
+        global.cuda_2d_block_x = 16;
+        global.cuda_2d_block_y = 16;
     }
 
     DBUG_RETURN ();
@@ -308,7 +317,7 @@ ACUWLwith (node *arg_node, info *arg_info)
      * be cudarized and this is indicated when tranvering the withop.
      * however, before we set this flag to the outer wl, we traverse
      * the body first. And when the inner fold wl is traversed, it will
-     * set INFO)CUDARIZABLE to true here. Essentially, this overwrites
+     * set INFO_CUDARIZABLE to true here. Essentially, this overwrites
      * the flag value set previously. So we need to move the following
      * statment into the "if" branch. */
     // INFO_CUDARIZABLE( arg_info) = TRUE;

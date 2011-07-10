@@ -80,9 +80,17 @@ MTRANdoMinimizeTransfers (node *syntax_tree)
         /*********************************************************/
         syntax_tree = AMTRANdoAnnotateMemoryTransfers (syntax_tree);
         syntax_tree = MLTRANdoMinimizeLoopTransfers (syntax_tree);
-        // syntax_tree = LIRdoLoopInvariantRemoval( syntax_tree);
         j++;
     }
+
+    /* We perform loop invariant removal here because we found out
+     * that that there are certained cases that are ignored by our
+     * CUDA specific transfer removal, namely if a transfer is loop
+     * invariant. For an example, plese refer to the transfer with
+     * regard to array "features" in kmeans.sac in the CUDA Rodinia
+     * benchmark suite.
+     */
+    // syntax_tree = LIRdoLoopInvariantRemoval( syntax_tree);
 
     DBUG_RETURN (syntax_tree);
 }

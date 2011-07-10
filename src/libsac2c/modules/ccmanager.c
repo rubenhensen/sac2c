@@ -29,6 +29,10 @@ GetCCCall ()
 
     DBUG_ENTER ();
 
+    if (global.backend == BE_cuda && STReq (global.config.cuda_arch, "")) {
+        CTIwarn ("CUDA architecture cannot be detected, set to default(1.0)\n");
+    }
+
     buffer = SBUFcreate (128);
 
     SBUFprintf (buffer, "%s %s %s %s %s -L%s ", global.config.cc, global.config.ccflags,
