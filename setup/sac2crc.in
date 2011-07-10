@@ -327,7 +327,6 @@ CAT              :=  "cat"
 MOVE             :=  "mv"
 RSH              :=  "rsh"
 DUMP_OUTPUT      :=  ">/dev/null 2>&1"
-CUDA_ARCH        :=  "@CUDA_ARCH@"
  
 LIBPATH          :=  "$SAC2CBASE/lib:"
                      "$SACBASE/stdlib/modules/structures/lib:"
@@ -516,6 +515,7 @@ RANLIB           :=  "slranlib utc0"
  */
 target cuda:
 
+CUDA_ARCH        :=  "@CUDA_ARCH@"
 BACKEND          :=  "Cuda"
 CC               :=  "nvcc"
 CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
@@ -523,7 +523,7 @@ CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
 CC               := "/home/unibench/ctca-cuda.stca.herts.ac.uk/cuda-3.0/cuda/bin/nvcc"
 CCLINK           :=  "-lcutil_i386 -lcudart -lcublas"
 */
-CCFLAGS          :=  "-arch=sm_@CUDA_ARCH@ --maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
+CCFLAGS          :=  "@CUDA_ARCH@ --maxrregcount 20 -Xcompiler -Wall -Xcompiler -Wno-unused "
                      "-Xcompiler -fno-builtin"
 CCDIR            :=  "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/ "
                      "-I$CUTIL -L$CUTIL_LIB"
