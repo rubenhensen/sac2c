@@ -290,6 +290,9 @@ AWLFIdoAlgebraicWithLoopFolding (node *arg_node)
  *              set of optimizations until we reach a fix point
  *              or give up.
  *
+ *              As an example of why this is needed, look at
+ *              apex/iotan/iotan.sac when compiled without it!
+ *
  * @params  arg_node: an N_fundef node.
  *
  * @result: an updated N_fundef node.
@@ -586,6 +589,72 @@ detachNoteintersect (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool isAvisMemberIds( node *arg_node, node *ids)
+ *
+ * @brief: Predicate for checking that an N_avis node is
+ *         a member of an N_ids chain.
+ *
+ * @param: arg_node - an N_avis node.
+ *         ids      - an N_ids chain.
+ *
+ * @result: TRUE if arg_node is a member of the ids chain.
+ *
+ *****************************************************************************/
+static bool
+isAvisMemberIds (node *arg_node, node *ids)
+{
+    bool z = FALSE;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (N_avis == NODE_TYPE (arg_node), "Expected N_avis node");
+    while ((NULL != ids) && (!z)) {
+        z = (arg_node == IDS_AVIS (ids));
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool isIdsMemberPartition( node *arg_node, node *partn)
+ *
+ * @brief: Predicate for checking if arg_node's definition point
+ *         is within a specified WL partition.
+ *
+ * @param: arg_node - a WLINTERSECT1/2 node.
+ *         partn:   - a WL partition. In our case, it is
+ *                    that of the consumerWL.
+ *
+ * @result: TRUE if arg_node is defined within the partition.
+ *
+ * @note: This is required because we can produce an inverse
+ *        projection that can be used for cube slicing ONLY if said
+ *        projection is defined OUTSIDE the current WL.
+ *
+ *****************************************************************************/
+static bool
+isIdsMemberPartition (node *arg_node, node *partn)
+{
+    bool z = FALSE;
+    node *nassgns;
+
+    DBUG_ENTER ();
+
+    if (NULL != partn) {
+        nassgns = BLOCK_INSTR (CODE_CBLOCK (PART_CODE (partn)));
+        while ((NULL != nassgns) && (!z)) {
+            z = isAvisMemberIds (ID_AVIS (arg_node), LET_IDS (ASSIGN_INSTR (nassgns)));
+            nassgns = ASSIGN_NEXT (nassgns);
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool isHasInverseProjection( node *arg_node)
  *
  * @brief: Predicate for presence of inverse projection of arg_node
@@ -604,7 +673,10 @@ isHasInverseProjection (node *arg_node)
 
     DBUG_ENTER ();
 
-#define NOINVERSEPROJECTION -1
+#define NOINVERSEPROJECTION -666
+    /* NOINVERSEPROJECTION is just a highly visible number that
+     * is not a legal index
+     */
     co = COaST2Constant (arg_node);
     if (NULL != co) {
         z = (NOINVERSEPROJECTION != COconst2Int (co));
@@ -1038,6 +1110,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     node *zub = NULL;
     pattern *pat1;
     pattern *pat2;
+    pattern *pat3;
     int numpart;
     int curpart;
     int curelidxlb;
@@ -1046,42 +1119,52 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     bool swaplb = FALSE;
     bool swapub = FALSE;
     node *tmp;
-    node *intr;
+    node *intrlb;
+    node *intrub;
+    node *arrlb;
+    node *arrub;
     node *nlet;
 
     DBUG_ENTER ();
 
     numpart = (TCcountExprs (PRF_ARGS (arg_node)) / WLEPP);
-    pat1 = PMarray (1, PMAgetNode (&intr), 1, PMskip (0));
-    pat2 = PMarray (1, PMAgetNode (&ivprime), 1, PMskip (0));
+    pat1 = PMarray (1, PMAgetNode (&arrlb), 1, PMskip (0));
+    pat2 = PMarray (1, PMAgetNode (&arrub), 1, PMskip (0));
+    pat3 = PMarray (1, PMAgetNode (&ivprime), 1, PMskip (0));
 
-    if (PMmatchFlat (pat2, PRF_ARG1 (arg_node))) {
+    if (PMmatchFlat (pat3, PRF_ARG1 (arg_node))) {
 
         /* Iterate across intersects */
         for (curpart = 0; curpart < numpart; curpart++) {
             curelidxlb = WLPROJECTION1 (curpart);
-            if (!isHasInverseProjection (
-                  TCgetNthExprsExpr (curelidxlb, PRF_ARGS (arg_node)))) {
-                intr = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
-                if (PMmatchFlat (pat1, intr)) {
-                    zlb = BuildInverseProjectionOne (arg_node, arg_info, ivprime, intr);
-                    swaplb = INFO_FINVERSESWAP (arg_info);
-                }
-            }
             curelidxub = WLPROJECTION2 (curpart);
-            if (!isHasInverseProjection (
-                  TCgetNthExprsExpr (curelidxub, PRF_ARGS (arg_node)))) {
-                intr = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
-                intr = IVEXPadjustExtremaBound (ID_AVIS (intr), arg_info, -1,
-                                                &INFO_VARDECS (arg_info),
-                                                &INFO_PREASSIGNSWL (arg_info), "bip1");
-                nlet = TCfilterAssignArg (MatchExpr, AVIS_SSAASSIGN (intr),
-                                          &INFO_PREASSIGNSWL (arg_info));
-                INFO_PREASSIGNSWL (arg_info)
-                  = TCappendAssign (INFO_PREASSIGNSWL (arg_info), nlet);
-                intr = TBmakeId (intr);
-                if (PMmatchFlat (pat1, intr)) {
-                    zub = BuildInverseProjectionOne (arg_node, arg_info, ivprime, intr);
+            if ((!isHasInverseProjection (
+                  TCgetNthExprsExpr (curelidxlb, PRF_ARGS (arg_node))))
+                && (!isHasInverseProjection (
+                     TCgetNthExprsExpr (curelidxub, PRF_ARGS (arg_node))))) {
+                intrlb
+                  = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
+                intrub
+                  = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
+                intrub = IVEXPadjustExtremaBound (ID_AVIS (intrub), arg_info, -1,
+                                                  &INFO_VARDECS (arg_info),
+                                                  &INFO_PREASSIGNSWL (arg_info), "bip1");
+                intrub = TBmakeId (intrub);
+                DBUG_ASSERT (PMmatchFlat (pat2, intrub), "lost the N_array for %s",
+                             AVIS_NAME (ID_AVIS (intrub)));
+
+                if ((PMmatchFlat (pat1, intrlb)) && (PMmatchFlat (pat2, intrub))
+                    && (!isIdsMemberPartition (intrlb, INFO_CONSUMERWLPART (arg_info)))
+                    && (!isIdsMemberPartition (intrub, INFO_CONSUMERWLPART (arg_info)))) {
+                    zlb = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrlb);
+                    swaplb = INFO_FINVERSESWAP (arg_info);
+
+                    nlet
+                      = TCfilterAssignArg (MatchExpr, AVIS_SSAASSIGN (ID_AVIS (intrub)),
+                                           &INFO_PREASSIGNSWL (arg_info));
+                    INFO_PREASSIGNSWL (arg_info)
+                      = TCappendAssign (INFO_PREASSIGNSWL (arg_info), nlet);
+                    zub = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrub);
                     swapub = INFO_FINVERSESWAP (arg_info);
                 }
             }
@@ -1102,12 +1185,16 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                 zub = TBmakeId (zub);
                 PRF_ARGS (arg_node)
                   = TCputNthExprs (curelidxub, PRF_ARGS (arg_node), zub);
+            } else {
+                zlb = (NULL != zlb) ? FREEdoFreeNode (zlb) : NULL;
+                zub = (NULL != zub) ? FREEdoFreeNode (zub) : NULL;
             }
         }
     }
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
 
     DBUG_RETURN (arg_node);
 }
