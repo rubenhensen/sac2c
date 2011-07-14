@@ -138,7 +138,7 @@ typedef intptr_t *SAC_array_descriptor_t;
   || (SAC_RC_METHOD == SAC_RCM_async_norc_ptr)                                           \
   || (SAC_RC_METHOD == SAC_RCM_local_async_norc_ptr)                                     \
   || (SAC_RC_METHOD == SAC_RCM_SAC_local_async_norc_ptr)
-#ifdef __alpha__
+#if 0 /* __alpha__*/
 
 #define SAC_READ_DESC_POINTER(desc, offset)                                              \
     ({                                                                                   \
