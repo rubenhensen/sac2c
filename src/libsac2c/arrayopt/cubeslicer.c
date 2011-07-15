@@ -455,8 +455,8 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     node *producerWLBound2Original;
     node *consumerWLGenerator;
     node *bnd;
-    node *proj1;
-    node *proj2;
+    node *proj1 = NULL;
+    node *proj2 = NULL;
     node *noteint;
     pattern *pat;
     intersect_type_t nullIntersect;
@@ -479,12 +479,9 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
         newb1 = ExtractNthItem (WLINTERSECTION1 (intersectListNo), idx);
         newb2 = ExtractNthItem (WLINTERSECTION2 (intersectListNo), idx);
 
-        bnd = NULL;
-        PMmatchFlat (pat, ExtractNthItem (WLPROJECTION1 (intersectListNo), idx));
-        proj1 = bnd;
-        bnd = NULL;
-        PMmatchFlat (pat, ExtractNthItem (WLPROJECTION2 (intersectListNo), idx));
-        proj2 = bnd;
+        proj1 = ExtractNthItem (WLPROJECTION1 (intersectListNo), idx);
+        proj2 = ExtractNthItem (WLPROJECTION2 (intersectListNo), idx);
+
         if (NULL != arg_info) { /* Different callers! */
             INFO_WLPROJECTION1 (arg_info) = proj1;
             INFO_WLPROJECTION2 (arg_info) = proj2;
@@ -521,6 +518,13 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                 break;
 
             case INTERSECT_notnull:
+                /* FIXME clean up this code to use better PM, ala CF */
+                bnd = NULL;
+                PMmatchFlat (pat, proj1);
+                proj1 = bnd;
+                bnd = NULL;
+                PMmatchFlat (pat, proj2);
+                proj2 = bnd;
                 bnd = NULL;
                 PMmatchFlat (pat, newb1);
                 newb1 = bnd;
@@ -870,6 +874,11 @@ CUBSLwith (node *arg_node, info *arg_info)
  *
  * @brief Traverse each partition of a WL.
  *
+ * In order for slicing to occur, the WL projections must have
+ * been moved out of the WL by LIR. If they have not been moved,
+ * then the projections have some sort of dependence on locals
+ * within the WL.
+ *
  *****************************************************************************/
 node *
 CUBSLpart (node *arg_node, info *arg_info)
@@ -894,7 +903,9 @@ CUBSLpart (node *arg_node, info *arg_info)
       = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
     if ((INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info))
         && (NULL != INFO_WLPROJECTION1 (arg_info))
-        && (NULL != INFO_WLPROJECTION2 (arg_info))) {
+        && (!AWLFIisIdsMemberPartition (INFO_WLPROJECTION1 (arg_info), arg_node))
+        && (NULL != INFO_WLPROJECTION2 (arg_info))
+        && (!AWLFIisIdsMemberPartition (INFO_WLPROJECTION2 (arg_info), arg_node))) {
 
         newparts = PartitionSlicer (arg_node, arg_info, INFO_WLPROJECTION1 (arg_info),
                                     INFO_WLPROJECTION2 (arg_info));

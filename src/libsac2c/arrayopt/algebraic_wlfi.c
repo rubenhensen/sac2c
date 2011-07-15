@@ -125,6 +125,7 @@
 #include "insert_symb_arrayattr.h"
 #include "dispatchfuncalls.h"
 #include "SSACSE.h"
+#include "SSALIR.h"
 #include "cubeslicer.h"
 #include "prfunroll.h"
 
@@ -303,6 +304,7 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 {
     int i;
     int ct;
+    int countLIR = 0;
     int countINL = 0;
     int countCSE = 0;
     int countTUP = 0;
@@ -322,6 +324,10 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
         ct = i;
 
         /* Invoke each opt */
+        if (global.optimize.dolir) {
+            countINL = global.optcounters.lir_expr;
+            arg_node = LIRdoLoopInvariantRemoval (arg_node);
+        }
         if (global.optimize.doinl) {
             countINL = global.optcounters.inl_fun;
             arg_node = INLdoInlining (arg_node);
@@ -379,6 +385,7 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 
         DBUG_PRINT_TAG ("SSE",
                         "INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, AS=%d, AL=%d, DL=%d\n",
+                        (global.optcounters.lir_expr - countLIR),
                         (global.optcounters.inl_fun - countINL),
                         (global.optcounters.cse_expr - countCSE),
                         (global.optcounters.tup_upgrades - countTUP),
@@ -389,7 +396,8 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
                         (global.optcounters.dl_expr - countDL));
 
         if (/* Fix point check */
-            (countINL == global.optcounters.inl_fun)
+            (countLIR == global.optcounters.lir_expr)
+            && (countINL == global.optcounters.inl_fun)
             && (countCSE == global.optcounters.cse_expr)
             && (countTUP == global.optcounters.tup_upgrades)
             && (countCF == global.optcounters.cf_expr)
@@ -618,7 +626,7 @@ isAvisMemberIds (node *arg_node, node *ids)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isIdsMemberPartition( node *arg_node, node *partn)
+ * @fn bool AWLFIisIdsMemberPartition( node *arg_node, node *partn)
  *
  * @brief: Predicate for checking if arg_node's definition point
  *         is within a specified WL partition.
@@ -634,8 +642,8 @@ isAvisMemberIds (node *arg_node, node *ids)
  *        projection is defined OUTSIDE the current WL.
  *
  *****************************************************************************/
-static bool
-isIdsMemberPartition (node *arg_node, node *partn)
+bool
+AWLFIisIdsMemberPartition (node *arg_node, node *partn)
 {
     bool z = FALSE;
     node *nassgns;
@@ -673,7 +681,7 @@ isHasInverseProjection (node *arg_node)
 
     DBUG_ENTER ();
 
-#define NOINVERSEPROJECTION -666
+#define NOINVERSEPROJECTION (-666)
     /* NOINVERSEPROJECTION is just a highly visible number that
      * is not a legal index
      */
@@ -728,6 +736,7 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
 
     DBUG_ENTER ();
 
+    INFO_WITHIDS (arg_info) = NULL;
     if (N_num == NODE_TYPE (fn)) {
         z = DUPdoDupNode (fn);
     } else {
@@ -748,7 +757,7 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                         if (N_num == NODE_TYPE (ivp)) {
                             z = AWLFIflattenExpression (DUPdoDupTree (ivp),
                                                         &INFO_VARDECS (arg_info),
-                                                        &INFO_PREASSIGNSWL (arg_info),
+                                                        &INFO_PREASSIGNS (arg_info),
                                                         TYmakeAKS (TYmakeSimpleType (
                                                                      T_int),
                                                                    SHcreateShape (0)));
@@ -792,8 +801,8 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                                                                      TBmakeId (
                                                                        ID_AVIS (xarg)))),
                                               NULL);
-                            INFO_PREASSIGNSWL (arg_info)
-                              = TCappendAssign (INFO_PREASSIGNSWL (arg_info), assgn);
+                            INFO_PREASSIGNS (arg_info)
+                              = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
                             AVIS_SSAASSIGN (resavis) = assgn;
                             z = BuildInverseProjectionScalar (ivarg, arg_info,
                                                               TBmakeId (resavis));
@@ -843,8 +852,8 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                             assgn = TBmakeAssign (TBmakeLet (ids,
                                                              TCmakePrf2 (nprf, id1, id2)),
                                                   NULL);
-                            INFO_PREASSIGNSWL (arg_info)
-                              = TCappendAssign (INFO_PREASSIGNSWL (arg_info), assgn);
+                            INFO_PREASSIGNS (arg_info)
+                              = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
                             AVIS_SSAASSIGN (resavis) = assgn;
                             z = BuildInverseProjectionScalar (ivarg, arg_info,
                                                               TBmakeId (resavis));
@@ -940,7 +949,7 @@ PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info
     shpids = TCcountIds (ids);
     shpintr = TCcountExprs (intr);
     hole = IVEXImakeIntScalar (NOINVERSEPROJECTION, &INFO_VARDECS (arg_info),
-                               &INFO_PREASSIGNSWL (arg_info));
+                               &INFO_PREASSIGNS (arg_info));
 
     for (i = 0; i < shpids; i++) {
         z = TCputNthExprs (i, z, TBmakeId (hole));
@@ -948,9 +957,12 @@ PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info
 
     for (i = 0; i < shpintr; i++) {
         idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids));
-        DBUG_ASSERT (hole == ID_AVIS (TCgetNthExprsExpr (idx, z)),
-                     "Time to code confluence stuff");
-        z = TCputNthExprs (idx, z, TCgetNthExprsExpr (i, intr));
+        if (-1 != idx) { /* skip places where idx is a constant, etc. */
+                         /* E.g., sel( [ JJ, 2], PWL);                */
+            DBUG_ASSERT (hole == ID_AVIS (TCgetNthExprsExpr (idx, z)),
+                         "Time to code confluence stuff");
+            z = TCputNthExprs (idx, z, TCgetNthExprsExpr (i, intr));
+        }
     }
 
     for (i = 0; i < shpids; i++) {
@@ -1016,6 +1028,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
     ntype *typ;
     pattern *pat;
     int dim;
+    int xrho;
 
     int ivindx;
     DBUG_ENTER ();
@@ -1054,9 +1067,17 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
             zarr = DUPdoDupTree (zarr); /* Make result shape match generator shape */
             z = PermuteIntersectElements (z, zw, ARRAY_AELEMS (zarr), arg_info);
             ARRAY_AELEMS (zarr) = z;
-            typ = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
-            z = AWLFIflattenExpression (zarr, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNSWL (arg_info), TYcopyType (typ));
+
+            if (N_id == NODE_TYPE (lb)) {
+                typ = TYcopyType (AVIS_TYPE (ID_AVIS (lb)));
+            } else {
+                DBUG_ASSERT (N_array == NODE_TYPE (lb),
+                             "Expected N_array or N_id generator");
+                xrho = TCcountExprs (ARRAY_AELEMS (lb));
+                typ = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, xrho));
+                z = AWLFIflattenExpression (zarr, &INFO_VARDECS (arg_info),
+                                            &INFO_PREASSIGNS (arg_info), typ);
+            }
         }
         pat = PMfree (pat);
     }
@@ -1136,6 +1157,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
 
         /* Iterate across intersects */
         for (curpart = 0; curpart < numpart; curpart++) {
+            zlb = NULL;
+            zub = NULL;
             curelidxlb = WLPROJECTION1 (curpart);
             curelidxub = WLPROJECTION2 (curpart);
             if ((!isHasInverseProjection (
@@ -1148,22 +1171,24 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                   = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
                 intrub = IVEXPadjustExtremaBound (ID_AVIS (intrub), arg_info, -1,
                                                   &INFO_VARDECS (arg_info),
-                                                  &INFO_PREASSIGNSWL (arg_info), "bip1");
+                                                  &INFO_PREASSIGNS (arg_info), "bip1");
                 intrub = TBmakeId (intrub);
                 DBUG_ASSERT (PMmatchFlat (pat2, intrub), "lost the N_array for %s",
                              AVIS_NAME (ID_AVIS (intrub)));
 
                 if ((PMmatchFlat (pat1, intrlb)) && (PMmatchFlat (pat2, intrub))
-                    && (!isIdsMemberPartition (intrlb, INFO_CONSUMERWLPART (arg_info)))
-                    && (!isIdsMemberPartition (intrub, INFO_CONSUMERWLPART (arg_info)))) {
+                    && (!AWLFIisIdsMemberPartition (intrlb,
+                                                    INFO_CONSUMERWLPART (arg_info)))
+                    && (!AWLFIisIdsMemberPartition (intrub,
+                                                    INFO_CONSUMERWLPART (arg_info)))) {
                     zlb = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrlb);
                     swaplb = INFO_FINVERSESWAP (arg_info);
 
                     nlet
                       = TCfilterAssignArg (MatchExpr, AVIS_SSAASSIGN (ID_AVIS (intrub)),
-                                           &INFO_PREASSIGNSWL (arg_info));
-                    INFO_PREASSIGNSWL (arg_info)
-                      = TCappendAssign (INFO_PREASSIGNSWL (arg_info), nlet);
+                                           &INFO_PREASSIGNS (arg_info));
+                    INFO_PREASSIGNS (arg_info)
+                      = TCappendAssign (INFO_PREASSIGNS (arg_info), nlet);
                     zub = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrub);
                     swapub = INFO_FINVERSESWAP (arg_info);
                 }
@@ -1181,7 +1206,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                 PRF_ARGS (arg_node)
                   = TCputNthExprs (curelidxlb, PRF_ARGS (arg_node), zlb);
                 zub = IVEXPadjustExtremaBound (zub, arg_info, 1, &INFO_VARDECS (arg_info),
-                                               &INFO_PREASSIGNSWL (arg_info), "bip2");
+                                               &INFO_PREASSIGNS (arg_info), "bip2");
                 zub = TBmakeId (zub);
                 PRF_ARGS (arg_node)
                   = TCputNthExprs (curelidxub, PRF_ARGS (arg_node), zub);
@@ -1586,14 +1611,14 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
             g1 = gen1;
         }
         g1 = WLSflattenBound (DUPdoDupTree (g1), &INFO_VARDECS (arg_info),
-                              &INFO_PREASSIGNSWL (arg_info));
+                              &INFO_PREASSIGNS (arg_info));
 
         g2 = GENERATOR_BOUND2 (PART_GENERATOR (partn));
         if (PMmatchFlatSkipExtrema (pat2, g2)) {
             g2 = gen2;
         }
         g2 = WLSflattenBound (DUPdoDupTree (g2), &INFO_VARDECS (arg_info),
-                              &INFO_PREASSIGNSWL (arg_info));
+                              &INFO_PREASSIGNS (arg_info));
 
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (g1), NULL));
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (g2), NULL));

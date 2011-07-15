@@ -18,6 +18,7 @@ extern bool AWLFIisSingleOpWL (node *arg_node);
 extern node *AWLFIgetWlWith (node *arg_node);
 extern node *AWLFIfindWlId (node *arg_node);
 extern bool AWLFIisHasNoteintersect (node *arg_node);
+extern bool AWLFIisIdsMemberPartition (node *arg_node, node *partn);
 
 extern node *AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
                                      ntype *ztype);
