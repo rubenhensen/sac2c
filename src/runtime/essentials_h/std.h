@@ -158,7 +158,7 @@ typedef intptr_t *SAC_array_descriptor_t;
     ((SAC_array_descriptor_t) (((intptr_t)desc) & SAC_RC_PTR_NEG_MASK))[offset]
 #define SAC_DESC_HIDDEN_DATA(desc) (((intptr_t)desc) & SAC_RC_PTR_MASK)
 #define SAC_DESC_SET_HIDDEN_DATA(desc, val)                                              \
-    desc = (SAC_array_descriptor_t *)(((intptr_t)desc) & val)
+    desc = (SAC_array_descriptor_t *)((((intptr_t)desc) & SAC_RC_PTR_NEG_MASK) | val)
 
 #endif
 
