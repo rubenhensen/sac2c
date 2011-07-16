@@ -627,7 +627,26 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
     {                                                                                    \
         SAC_MUTC_RC_PRINT (var_NT);                                                      \
         if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_ASYNC) {   \
-            SAC_ND_DEC_RC_FREE__ASYNC (var_NT, rc, freefun);                             \
+            SAC_TR_REF_PRINT (                                                           \
+              ("ND_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun));           \
+            SAC_MUTC_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n",                        \
+                                       SAC_REAL_DESC (SAC_ND_A_DESC (var_NT))););        \
+            SAC_MUTC_RC_PRINT (var_NT);                                                  \
+            SAC_IF_MUTC_RC_INDIRECT (                                                    \
+              sl_create (, SAC_mutc_rc_place_w, , , , , , SAC_dec_and_maybeFree_rc_w,    \
+                         sl_glarg (int *, , SAC_REAL_DESC (SAC_ND_A_DESC (var_NT))),     \
+                         sl_glarg (int, val, rc),                                        \
+                         sl_glarg (void *, ,                                             \
+                                   SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT))));)   \
+            SAC_IF_NOT_MUTC_RC_INDIRECT (                                                \
+              sl_create (,                                                               \
+                         SAC_MUTC_GET_RC_PLACE (SAC_REAL_DESC (SAC_ND_A_DESC (var_NT))), \
+                         0, 1, 1, , sl__exclusive, SAC_dec_and_maybeFree_rc,             \
+                         sl_glarg (int *, , SAC_REAL_DESC (SAC_ND_A_DESC (var_NT))),     \
+                         sl_glarg (int, val, rc),                                        \
+                         sl_glarg (void *, ,                                             \
+                                   SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT))));)   \
+            SAC_SL_DETACH ();                                                            \
         } else {                                                                         \
             SAC_ND_DEC_RC_FREE__NORC (var_NT, rc, freefun);                              \
         }                                                                                \

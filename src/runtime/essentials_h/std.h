@@ -154,8 +154,8 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #else /* __alpha__ */
 
-#define SAC_REAL_DESC_POINTER(desc, offset)                                              \
-    ((SAC_array_descriptor_t) (((intptr_t)desc) & SAC_RC_PTR_NEG_MASK))[offset]
+#define SAC_REAL_DESC(desc)                                                              \
+    ((SAC_array_descriptor_t) (((intptr_t)desc) & SAC_RC_PTR_NEG_MASK))
 #define SAC_DESC_HIDDEN_DATA(desc) (((intptr_t)desc) & SAC_RC_PTR_MASK)
 #define SAC_DESC_SET_HIDDEN_DATA(desc, val)                                              \
     desc = (SAC_array_descriptor_t *)((((intptr_t)desc) & SAC_RC_PTR_NEG_MASK) | val)
@@ -164,10 +164,12 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #else
 
-#define SAC_REAL_DESC_POINTER(desc, offset) (desc[offset])
+#define SAC_REAL_DESC(desc) (desc)
 #define SAC_DESC_HIDDEN_DATA(desc) 0
 
 #endif
+
+#define SAC_REAL_DESC_POINTER(desc, offset) (SAC_REAL_DESC (desc)[offset])
 
 #define DESC_RC(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_RC)
 #define DESC_PARENT(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_PARENT)
@@ -1107,7 +1109,7 @@ typedef intptr_t *SAC_array_descriptor_t;
     {                                                                                    \
         SAC_TR_MEM_PRINT (                                                               \
           ("ND_FREE__DESC( %s) at addr: %p", NT_STR (var_NT), SAC_ND_A_DESC (var_NT)))   \
-        SAC_HM_FREE_DESC (SAC_ND_A_DESC (var_NT))                                        \
+        SAC_HM_FREE_DESC (SAC_REAL_DESC (SAC_ND_A_DESC (var_NT)))                        \
     }
 
 /*
