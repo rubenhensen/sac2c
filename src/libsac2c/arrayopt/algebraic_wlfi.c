@@ -663,7 +663,7 @@ AWLFIisIdsMemberPartition (node *arg_node, node *partn)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isHasInverseProjection( node *arg_node)
+ * @fn bool AWLFIisHasInverseProjection( node *arg_node)
  *
  * @brief: Predicate for presence of inverse projection of arg_node
  *
@@ -673,10 +673,10 @@ AWLFIisIdsMemberPartition (node *arg_node, node *partn)
  *          associated with it.
  *
  *****************************************************************************/
-static bool
-isHasInverseProjection (node *arg_node)
+bool
+AWLFIisHasInverseProjection (node *arg_node)
 {
-    bool z = TRUE;
+    bool z = FALSE;
     constant *co;
 
     DBUG_ENTER ();
@@ -685,10 +685,12 @@ isHasInverseProjection (node *arg_node)
     /* NOINVERSEPROJECTION is just a highly visible number that
      * is not a legal index
      */
-    co = COaST2Constant (arg_node);
-    if (NULL != co) {
-        z = (NOINVERSEPROJECTION != COconst2Int (co));
-        co = COfreeConstant (co);
+    if (NULL != arg_node) {
+        co = COaST2Constant (arg_node);
+        if (NULL != co) {
+            z = (NOINVERSEPROJECTION != COconst2Int (co));
+            co = COfreeConstant (co);
+        }
     }
 
     DBUG_RETURN (z);
@@ -730,6 +732,7 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
     node *withidids;
     node *ipavis;
     int tcindex;
+    node *ivp2;
     prf nprf;
 
     pattern *pat;
@@ -740,6 +743,15 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
     if (N_num == NODE_TYPE (fn)) {
         z = DUPdoDupNode (fn);
     } else {
+        if (N_num == NODE_TYPE (ivp)) {
+            ivp2 = AWLFIflattenExpression (DUPdoDupTree (ivp), &INFO_VARDECS (arg_info),
+                                           &INFO_PREASSIGNS (arg_info),
+                                           TYmakeAKS (TYmakeSimpleType (T_int),
+                                                      SHcreateShape (0)));
+        } else {
+            ivp2 = ID_AVIS (ivp);
+        }
+
         if (N_id == NODE_TYPE (fn)) {
             ipavis = ID_AVIS (fn);
             DBUG_PRINT ("Tracing %s", AVIS_NAME (ipavis));
@@ -755,15 +767,7 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                                     AVIS_NAME (ID_AVIS (idx)), AVIS_NAME (ipavis));
                         INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
                         if (N_num == NODE_TYPE (ivp)) {
-                            z = AWLFIflattenExpression (DUPdoDupTree (ivp),
-                                                        &INFO_VARDECS (arg_info),
-                                                        &INFO_PREASSIGNS (arg_info),
-                                                        TYmakeAKS (TYmakeSimpleType (
-                                                                     T_int),
-                                                                   SHcreateShape (0)));
-                        } else {
-                            DBUG_ASSERT (N_id == NODE_TYPE (ivp), "Expected N_id ivp");
-                            z = ID_AVIS (ivp);
+                            z = ivp2;
                         }
                     } else {
                         /* Vanilla variable */
@@ -774,7 +778,6 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                     break;
 
                 case N_prf:
-                    DBUG_ASSERT (N_id == NODE_TYPE (ivp), "Expected N_id ivp");
                     switch (PRF_PRF (idx)) {
                     case F_add_SxS:
                         /* iv' = ( iv + x);   -->  iv = ( iv' - x);
@@ -796,8 +799,7 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                             assgn
                               = TBmakeAssign (TBmakeLet (ids,
                                                          TCmakePrf2 (F_sub_SxS,
-                                                                     TBmakeId (
-                                                                       ID_AVIS (ivp)),
+                                                                     TBmakeId (ivp2),
                                                                      TBmakeId (
                                                                        ID_AVIS (xarg)))),
                                               NULL);
@@ -829,14 +831,14 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                             switch (markiv) {
                             case 1:
                                 nprf = F_add_SxS;
-                                id1 = TBmakeId (ID_AVIS (ivp));
+                                id1 = TBmakeId (ivp2);
                                 id2 = TBmakeId (ID_AVIS (xarg));
                                 break;
 
                             case 2:
                                 nprf = F_sub_SxS;
                                 id1 = TBmakeId (ID_AVIS (xarg));
-                                id2 = TBmakeId (ID_AVIS (ivp));
+                                id2 = TBmakeId (ivp2);
                                 INFO_FINVERSESWAP (arg_info)
                                   = !INFO_FINVERSESWAP (arg_info);
                                 break;
@@ -1157,13 +1159,11 @@ BuildInverseProjections (node *arg_node, info *arg_info)
 
         /* Iterate across intersects */
         for (curpart = 0; curpart < numpart; curpart++) {
-            zlb = NULL;
-            zub = NULL;
             curelidxlb = WLPROJECTION1 (curpart);
             curelidxub = WLPROJECTION2 (curpart);
-            if ((!isHasInverseProjection (
+            if ((!AWLFIisHasInverseProjection (
                   TCgetNthExprsExpr (curelidxlb, PRF_ARGS (arg_node))))
-                && (!isHasInverseProjection (
+                && (!AWLFIisHasInverseProjection (
                      TCgetNthExprsExpr (curelidxub, PRF_ARGS (arg_node))))) {
                 intrlb
                   = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
@@ -1210,10 +1210,9 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                 zub = TBmakeId (zub);
                 PRF_ARGS (arg_node)
                   = TCputNthExprs (curelidxub, PRF_ARGS (arg_node), zub);
-            } else {
-                zlb = (NULL != zlb) ? FREEdoFreeNode (zlb) : NULL;
-                zub = (NULL != zub) ? FREEdoFreeNode (zub) : NULL;
             }
+            zlb = NULL;
+            zub = NULL;
         }
     }
 

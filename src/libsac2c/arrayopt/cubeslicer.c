@@ -903,8 +903,10 @@ CUBSLpart (node *arg_node, info *arg_info)
       = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
     if ((INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info))
         && (NULL != INFO_WLPROJECTION1 (arg_info))
+        && (AWLFIisHasInverseProjection (INFO_WLPROJECTION1 (arg_info)))
         && (!AWLFIisIdsMemberPartition (INFO_WLPROJECTION1 (arg_info), arg_node))
         && (NULL != INFO_WLPROJECTION2 (arg_info))
+        && (AWLFIisHasInverseProjection (INFO_WLPROJECTION2 (arg_info)))
         && (!AWLFIisIdsMemberPartition (INFO_WLPROJECTION2 (arg_info), arg_node))) {
 
         newparts = PartitionSlicer (arg_node, arg_info, INFO_WLPROJECTION1 (arg_info),
