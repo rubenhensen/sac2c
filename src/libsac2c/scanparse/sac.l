@@ -314,6 +314,7 @@ int charpos = 0;
 "linkwith"                 { FILTER( LINKWITH); }
 "linkobj"                  { FILTER( LINKOBJ); }
 "wlcomp"                   { FILTER( WLCOMP); }
+"local"                    { FILTER( LOCAL); }
 "cachesim"                 { FILTER( CACHESIM); }
 "specialize"               { FILTER( SPECIALIZE); }
 "mutcthreadfun"            { FILTER( MUTCTHREADFUN); }

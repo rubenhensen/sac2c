@@ -99,6 +99,7 @@ struct INFO {
     node *fpframe;
     node *withops;
     node *vardec_init;
+    char *with3_dist;
 };
 
 /*
@@ -129,6 +130,7 @@ struct INFO {
 #define INFO_FPFRAME(n) ((n)->fpframe)
 #define INFO_WITHOPS(n) ((n)->withops)
 #define INFO_VARDEC_INIT(n) ((n)->vardec_init)
+#define INFO_WITH3_DIST(n) ((n)->with3_dist)
 /*
  * INFO functions
  */
@@ -164,6 +166,7 @@ MakeInfo ()
     INFO_FPFRAME (result) = NULL;
     INFO_WITHOPS (result) = NULL;
     INFO_VARDEC_INIT (result) = NULL;
+    INFO_WITH3_DIST (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -8975,6 +8978,7 @@ COMPwith3 (node *arg_node, info *arg_info)
     node *pre = NULL;
     node *post = NULL;
     node *ops = NULL;
+    char *with3_dist = NULL;
     DBUG_ENTER ();
 
     if (global.backend == BE_mutc) {
@@ -8984,11 +8988,14 @@ COMPwith3 (node *arg_node, info *arg_info)
 
         ops = INFO_WITHOPS (arg_info);
         INFO_WITHOPS (arg_info) = WITH3_OPERATIONS (arg_node);
+        with3_dist = INFO_WITH3_DIST (arg_info);
+        INFO_WITH3_DIST (arg_info) = WITH3_DIST (arg_node);
 
         COMPwith3AllocDesc (INFO_WITHOPS (arg_info), &pre, &post);
         arg_node = TRAVopt (WITH3_RANGES (arg_node), arg_info);
 
         INFO_WITHOPS (arg_info) = ops;
+        INFO_WITH3_DIST (arg_info) = with3_dist;
 
         if (pre != NULL) {
             arg_node = TCappendAssign (pre, arg_node);
@@ -9064,15 +9071,18 @@ COMPrange (node *arg_node, info *arg_info)
             block = TCmakeIdCopyString ("");
         }
 
-        create = TCmakeAssignIcm7 ("SAC_MUTC_CREATE", TCmakeIdCopyString (familyName),
-                                   TCmakeIdCopyString (
-                                     RANGE_ISGLOBAL (arg_node) ? "" : "PLACE_LOCAL"),
-                                   DUPdoDupTree (RANGE_LOWERBOUND (arg_node)),
-                                   DUPdoDupTree (RANGE_UPPERBOUND (arg_node)),
-                                   (RANGE_CHUNKSIZE (arg_node) == NULL)
-                                     ? TCmakeIdCopyString ("1")
-                                     : DUPdoDupTree (RANGE_CHUNKSIZE (arg_node)),
-                                   block, DUPdoDupTree (ASSIGN_INSTR (thread_fun)), NULL);
+        create
+          = TCmakeAssignIcm7 ("SAC_MUTC_CREATE", TCmakeIdCopyString (familyName),
+                              TCmakeIdCopyString (
+                                INFO_WITH3_DIST (arg_info) != NULL
+                                  ? INFO_WITH3_DIST (arg_info)
+                                  : (RANGE_ISGLOBAL (arg_node) ? "" : "PLACE_LOCAL")),
+                              DUPdoDupTree (RANGE_LOWERBOUND (arg_node)),
+                              DUPdoDupTree (RANGE_UPPERBOUND (arg_node)),
+                              (RANGE_CHUNKSIZE (arg_node) == NULL)
+                                ? TCmakeIdCopyString ("1")
+                                : DUPdoDupTree (RANGE_CHUNKSIZE (arg_node)),
+                              block, DUPdoDupTree (ASSIGN_INSTR (thread_fun)), NULL);
 
         sync = TCmakeAssignIcm1 ("SAC_MUTC_SYNC", TCmakeIdCopyString (familyName), NULL);
 

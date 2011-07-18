@@ -44,6 +44,7 @@
 #include "LookUpTable.h"
 #include "ctinfo.h"
 #include "globals.h"
+#include "str.h"
 
 #define INC 3
 
@@ -2727,6 +2728,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
 {
     node *ranges, *withops;
     node *iv_avis;
+    char *with_dist;
 
     DBUG_ENTER ();
 
@@ -2780,7 +2782,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
          */
         ranges = TRAVdo (WITH2_SEGS (arg_node), arg_info);
         withops = ComputeNewWithops (INFO_WITH2_WITHOPS (arg_info), arg_info);
-
+        with_dist = STRcpy (WITH2_DIST (arg_node));
         /*
          * Build the new with-loop 3
          */
@@ -2788,6 +2790,7 @@ WLSDwith2 (node *arg_node, info *arg_info)
         arg_node = TBmakeWith3 (ranges, withops);
         WITH3_DENSE (arg_node) = INFO_DENSE (arg_info);
         WITH3_ISTOPLEVEL (arg_node) = TRUE;
+        WITH3_DIST (arg_node) = with_dist;
 
         /*
          * reset the info structure, mainly to ease finding bugs and to prevent

@@ -114,7 +114,7 @@ SC  TRUETOKEN  FALSETOKEN  EXTERN  C_KEYWORD  GENERIC
 HASH  PRAGMA  LINKNAME CUDALINKNAME  LINKSIGN  EFFECT MUTCTHREADFUN  REFCOUNTING
 REFCOUNTDOTS NOINLINE
 COPYFUN  FREEFUN  INITFUN  LINKWITH LINKOBJ
-WLCOMP  CACHESIM  SPECIALIZE 
+LOCAL WLCOMP  CACHESIM  SPECIALIZE 
 TARGET  STEP  WIDTH  GENARRAY  MODARRAY  PROPAGATE
 LE  LT  GT LAZYAND LAZYOR
 STAR  PLUS  MINUS  TILDE  EXCL SPAWN RSPAWN
@@ -897,7 +897,6 @@ pragmacachesim: hash_pragma CACHESIM string   { $$ = $3;              }
  * pragmas as needed for external functions
  *  
  */
-
 pragmas: pragmalist
          { $$ = store_pragma;
            store_pragma = NULL;
@@ -1453,10 +1452,15 @@ nostrexpr:
     ;
       
 expr_with: NWITH { $<cint>$ = global.linenum; } with
-      { $$ = $3;
-        NODE_LINE( $$)= $<cint>2;
-      }
-      ;
+           { $$ = $3;
+             NODE_LINE( $$)= $<cint>2;
+           } 
+         | LOCAL NWITH { $<cint>$ = global.linenum; } with /* Used only with mutc */
+           { $$ = $4;
+             NODE_LINE( $$)= $<cint>3;
+             WITH_DIST( $$) = STRcpy( "PLACE_LOCAL");
+           }     
+         ;
 
 with: BRACKET_L generator BRACKET_R wlassignblock withop
       { 

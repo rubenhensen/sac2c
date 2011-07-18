@@ -7567,6 +7567,15 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="wldist" inconstructor="no" >
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+              </target>
+            </targets>
+          </type>
+        </attribute>
        </attributes>
       <flags>
         <flag name="RefcountDots" default="FALSE" />
@@ -8685,6 +8694,18 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="Dist" inconstructor="no" >
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsFoldable" />
@@ -9246,6 +9267,18 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="rci" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Dist" inconstructor="no" >
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
                 </phases>
               </target>
             </targets>
@@ -11314,6 +11347,18 @@ N_tfarg :
                   <phase name="ptc_l2f" />
                   <phase name="cwc_l2f" />
 		  <phase name="pc_lw3" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Dist" inconstructor="no" >
+          <type name="String">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
                 </phases>
               </target>
             </targets>

@@ -2212,6 +2212,8 @@ DUPwith (node *arg_node, info *arg_info)
     WITH_OUT_MASK (new_node) = DupDfmask (WITH_OUT_MASK (arg_node), arg_info);
     WITH_LOCAL_MASK (new_node) = DupDfmask (WITH_LOCAL_MASK (arg_node), arg_info);
 
+    WITH_DIST (new_node) = STRcpy (WITH_DIST (arg_node));
+
     WITH_FLAGSTRUCTURE (new_node) = WITH_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
@@ -2504,6 +2506,8 @@ DUPwith2 (node *arg_node, info *arg_info)
     WITH2_IN_MASK (new_node) = DupDfmask (WITH2_IN_MASK (arg_node), arg_info);
     WITH2_OUT_MASK (new_node) = DupDfmask (WITH2_OUT_MASK (arg_node), arg_info);
     WITH2_LOCAL_MASK (new_node) = DupDfmask (WITH2_LOCAL_MASK (arg_node), arg_info);
+
+    WITH2_DIST (new_node) = STRcpy (WITH2_DIST (arg_node));
 
     WITH2_FLAGSTRUCTURE (new_node) = WITH2_FLAGSTRUCTURE (arg_node);
 
@@ -2951,6 +2955,8 @@ DUPwith3 (node *arg_node, info *arg_info)
 
     new_node = TBmakeWith3 (DUPTRAV (WITH3_RANGES (arg_node)),
                             DUPTRAV (WITH3_OPERATIONS (arg_node)));
+
+    WITH3_DIST (new_node) = STRcpy (WITH3_DIST (arg_node));
 
     WITH3_FLAGSTRUCTURE (new_node) = WITH3_FLAGSTRUCTURE (arg_node);
 

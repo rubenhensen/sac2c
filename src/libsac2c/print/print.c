@@ -4258,6 +4258,11 @@ PRTwith (node *arg_node, info *arg_info)
         fprintf (global.outfile, "/** FOLDABLE (all gen's const) **/\n");
     }
 
+    if (WITH_DIST (arg_node) != NULL) {
+        INDENT;
+        fprintf (global.outfile, "/** WL DIST = \"%s\" **/\n", WITH_DIST (arg_node));
+    }
+
     if (WITH_REFERENCED (arg_node) > 0) {
         INDENT;
         fprintf (global.outfile, "/** REFERENCED: %d (total num refs) **/\n",
@@ -4966,6 +4971,11 @@ PRTwith2 (node *arg_node, info *arg_info)
         fprintf (global.outfile, "/** MT **/\n");
     }
 
+    if (WITH2_DIST (arg_node) != NULL) {
+        INDENT;
+        fprintf (global.outfile, "/** WL DIST = \"%s\" **/\n", WITH2_DIST (arg_node));
+    }
+
     if (WITH2_CUDARIZABLE (arg_node)) {
         INDENT;
         fprintf (global.outfile, "/** CUDA WL **/\n");
@@ -5497,6 +5507,11 @@ PRTwith3 (node *arg_node, info *arg_info)
     if (WITH3_USECONCURRENTRANGES (arg_node)) {
         INDENT;
         fprintf (global.outfile, "/* concurrent */\n");
+    }
+
+    if (WITH3_DIST (arg_node) != NULL) {
+        INDENT;
+        fprintf (global.outfile, "/* WL DIST = \"%s\" */\n", WITH3_DIST (arg_node));
     }
 
     if (WITH3_ISTOPLEVEL (arg_node)) {

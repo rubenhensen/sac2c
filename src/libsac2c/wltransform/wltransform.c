@@ -6578,6 +6578,7 @@ ConvertWith (node *wl, int iter_dims)
     new_node
       = TBmakeWith2 (iter_dims, WITH_WITHID (wl), NULL, WITH_CODE (wl), WITH_WITHOP (wl));
 
+    WITH2_DIST (new_node) = STRcpy (WITH_DIST (wl));
 #if 0
   /*
    * for the time beeing array-placement isn't implemented and further on
