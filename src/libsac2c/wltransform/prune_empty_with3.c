@@ -327,11 +327,7 @@ PEW3range (node *arg_node, info *arg_info)
     RANGE_RESULTS (arg_node) = TRAVdo (RANGE_RESULTS (arg_node), arg_info);
 
     if (INFO_CAN_REMOVE (arg_info)) {
-        node *del;
-        del = arg_node;
-        arg_node = RANGE_NEXT (del);
-        RANGE_NEXT (del) = NULL;
-        del = FREEdoFreeTree (del);
+        arg_node = FREEdoFreeNode (arg_node);
     }
 
     DBUG_RETURN (arg_node);
@@ -352,7 +348,7 @@ PEW3id (node *arg_node, info *arg_info)
     int zero = 0;
     DBUG_ENTER ();
 
-    pat_copy = PMprf (1, PMAisNotPrf (F_wl_assign), 0);
+    pat_copy = PMprf (1, PMAisPrf (F_noop), 0);
     pat_with3 = PMwith3 (1, PMAhasCountRange (&zero), 0);
 
     /*
