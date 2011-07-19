@@ -2573,6 +2573,37 @@ NotImplemented (node *with, info *arg_info)
     DBUG_RETURN (result);
 }
 
+static node *
+ATravCOgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+    DBUG_RETURN (
+      TBmakeIds (GENARRAY_IDX (arg_node), TRAVopt (GENARRAY_NEXT (arg_node), arg_info)));
+}
+
+static node *
+ATravCOmodarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+    DBUG_RETURN (
+      TBmakeIds (MODARRAY_IDX (arg_node), TRAVopt (MODARRAY_NEXT (arg_node), arg_info)));
+}
+
+static node *
+CreateWith2Offsets (node *withops)
+{
+    node *result;
+    anontrav_t atrav[3]
+      = {{N_genarray, &ATravCOgenarray}, {N_modarray, &ATravCOmodarray}, {0, NULL}};
+
+    DBUG_ENTER ();
+    TRAVpushAnonymous (atrav, &TRAVsons);
+    result = TRAVdo (withops, NULL);
+    TRAVpop ();
+
+    DBUG_RETURN (result);
+}
+
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
@@ -2760,6 +2791,8 @@ WLSDwith2 (node *arg_node, info *arg_info)
          */
         WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
 
+        INFO_WITH2_OFFSETS (arg_info) = CreateWith2Offsets (WITH2_WITHOP (arg_node));
+
         /*
          * preset the indices and offset with 0 and compute the length of the
          * dimensions of the results.
@@ -2830,7 +2863,9 @@ WLSDwithid (node *arg_node, info *arg_info)
 
     INFO_WITH2_IVECT (arg_info) = WITHID_VEC (arg_node);
     INFO_WITH2_ISCLS (arg_info) = WITHID_IDS (arg_node);
-    INFO_WITH2_OFFSETS (arg_info) = WITHID_IDXS (arg_node);
+#if 0 /* need this list to be a one2one mapping to the genarray/modarray */
+  INFO_WITH2_OFFSETS( arg_info) = WITHID_IDXS( arg_node);
+#endif
 
     DBUG_RETURN (arg_node);
 }
