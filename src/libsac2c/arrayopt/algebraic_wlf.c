@@ -201,6 +201,7 @@
 #include "wls.h"
 #include "cubeslicer.h"
 #include "ivexcleanup.h"
+#include "deadcoderemoval.h"
 
 /** <!--********************************************************************-->
  *
@@ -540,7 +541,7 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
  *
  * @ fn static node *makeIdxAssigns( node *arg_node, node *ProducerPart)
  *
- * @brief for a prducerWL partition, with generator:
+ * @brief for a producerWL partition, with generator:
  *        (. <= iv=[i,j] < .)
  *        and a consumer _sel_VxA_( idx, producerWL),
  *
@@ -590,8 +591,8 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
         INFO_VARDECS (arg_info) = TBmakeVardec (navis, INFO_VARDECS (arg_info));
 
         lhsavis = populateLut (IDS_AVIS (ids), arg_info, SHcreateShape (0));
-        DBUG_PRINT ("makeIdxAssigns created %s = _sel_VxA_(%d, %s)", AVIS_NAME (lhsavis),
-                    k, AVIS_NAME (ID_AVIS (idxid)));
+        DBUG_PRINT ("created %s = _sel_VxA_(%d, %s)", AVIS_NAME (lhsavis), k,
+                    AVIS_NAME (ID_AVIS (idxid)));
 
         sel = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
                                        TCmakePrf2 (F_sel_VxA, TBmakeId (navis),
@@ -720,6 +721,11 @@ AWLFfundef (node *arg_node, info *arg_info)
 
         INFO_FUNDEF (arg_info) = arg_node;
 
+        /* cubeslicer may leave around old WL. That will confuse
+         * WLNC, which is driven by vardecs, NOT by function body traversal.
+         */
+        arg_node = DCRdoDeadCodeRemoval (arg_node);
+        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_awlfi);
         arg_node = WLNCdoWLNeedCount (arg_node);
         arg_node = WLCCdoWLCostCheck (arg_node);
 

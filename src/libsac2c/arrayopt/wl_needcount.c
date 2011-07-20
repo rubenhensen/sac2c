@@ -347,7 +347,7 @@ WLNCap (node *arg_node, info *arg_info)
  *        consumerWL contributes to the count.
  *        That is the first-past-the-post WL: if more than one WL
  *        tries to contribute, the latter ones will be ignored.
- *        This will cause a mismatch in SWLF between AVIS_NEEDCOUNT
+ *        This will cause a mismatch in AWLF between AVIS_NEEDCOUNT
  *        and AVIS_WL_NEEDCOUNT, properly preventing the folding from
  *        happening.
  *

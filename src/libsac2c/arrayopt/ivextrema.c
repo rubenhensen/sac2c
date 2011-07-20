@@ -616,10 +616,10 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
 
     DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "IVEXItmpVec expected N_avis");
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
-    b1 = WLSflattenBound (DUPdoDupTree (b1), &INFO_VARDECS (arg_info),
+    b1 = WLSflattenBound (DUPdoDupNode (b1), &INFO_VARDECS (arg_info),
                           &INFO_PREASSIGNSWITH (arg_info));
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
-    b2 = WLSflattenBound (DUPdoDupTree (b2), &INFO_VARDECS (arg_info),
+    b2 = WLSflattenBound (DUPdoDupNode (b2), &INFO_VARDECS (arg_info),
                           &INFO_PREASSIGNSWITH (arg_info));
     withids = IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node)));
     avisp = IVEXIattachExtrema (b1, ivavis, &INFO_VARDECS (arg_info),
@@ -667,12 +667,12 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *iavis, int k)
     DBUG_ASSERT (N_avis == NODE_TYPE (iavis), "IVEXItmpIds expected N_avis");
 
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
-    b1f = WLSflattenBound (DUPdoDupTree (b1), &INFO_VARDECS (arg_info),
+    b1f = WLSflattenBound (DUPdoDupNode (b1), &INFO_VARDECS (arg_info),
                            &INFO_PREASSIGNSWITH (arg_info));
     b1 = generateSelect (b1f, arg_info, k);
 
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
-    b2f = WLSflattenBound (DUPdoDupTree (b2), &INFO_VARDECS (arg_info),
+    b2f = WLSflattenBound (DUPdoDupNode (b2), &INFO_VARDECS (arg_info),
                            &INFO_PREASSIGNSWITH (arg_info));
     b2 = generateSelect (b2f, arg_info, k);
 

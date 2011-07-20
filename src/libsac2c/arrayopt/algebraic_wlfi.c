@@ -88,7 +88,6 @@
 #include "traverse.h"
 #include "str.h"
 #include "memory.h"
-#include "inferneedcounters.h"
 #include "compare_tree.h"
 #include "DupTree.h"
 #include "free.h"
@@ -766,9 +765,7 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                         DBUG_PRINT ("Found %s as source of iv'=%s",
                                     AVIS_NAME (ID_AVIS (idx)), AVIS_NAME (ipavis));
                         INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
-                        if (N_num == NODE_TYPE (ivp)) {
-                            z = ivp2;
-                        }
+                        z = ivp2;
                     } else {
                         /* Vanilla variable */
                         rhs = AVIS_SSAASSIGN (ID_AVIS (idx));
@@ -1150,6 +1147,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Building inverse projection for %s",
+                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
     numpart = (TCcountExprs (PRF_ARGS (arg_node)) / WLEPP);
     pat1 = PMarray (1, PMAgetNode (&arrlb), 1, PMskip (0));
     pat2 = PMarray (1, PMAgetNode (&arrub), 1, PMskip (0));
@@ -1215,6 +1214,9 @@ BuildInverseProjections (node *arg_node, info *arg_info)
             zub = NULL;
         }
     }
+
+    DBUG_PRINT ("Done b inverse projection for %s",
+                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
@@ -2026,8 +2028,6 @@ AWLFIfundef (node *arg_node, info *arg_info)
         INFO_ONEFUNDEF (arg_info) = FALSE;
         optctr = global.optcounters.awlfi_expr;
 
-        arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_awlfi);
-
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
@@ -2207,9 +2207,7 @@ AWLFIid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
     /* get the definition assignment via the AVIS_SSAASSIGN backreference */
-#ifdef NOISY
-    DBUG_PRINT ("AWLFIid looking at %s", AVIS_NAME (ID_AVIS (arg_node)));
-#endif // NOISY
+    DBUG_PRINT ("Looking at %s", AVIS_NAME (ID_AVIS (arg_node)));
     p = INFO_CONSUMERWL (arg_info);
     if ((NULL != p) && (NULL == WITH_REFERENCED_CONSUMERWL (p))) {
         /* First reference to this WL. */
@@ -2227,12 +2225,10 @@ AWLFIid (node *arg_node, info *arg_info)
     if ((NULL != p) && (NULL != INFO_CONSUMERWL (arg_info))
         && (WITH_REFERENCED_CONSUMERWL (p) == INFO_CONSUMERWL (arg_info))) {
         (WITH_REFERENCED_FOLD (p))++;
-        DBUG_PRINT ("AWLFIid incrementing WITH_REFERENCED_FOLD(%s) = %d",
+        DBUG_PRINT ("Incrementing WITH_REFERENCED_FOLD(%s) = %d",
                     AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (p));
     } else {
-#ifdef NOISY
-        DBUG_PRINT ("AWLFIid %s is not defined by a WL", AVIS_NAME (ID_AVIS (arg_node)));
-#endif // NOISY
+        DBUG_PRINT ("%s is not defined by a WL", AVIS_NAME (ID_AVIS (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
@@ -2377,6 +2373,7 @@ AWLFIlet (node *arg_node, info *arg_info)
 
     oldconsumerwlname = INFO_CONSUMERWLLHS (arg_info);
     INFO_CONSUMERWLLHS (arg_info) = IDS_AVIS (LET_IDS (arg_node));
+    DBUG_PRINT ("Looking at %s", AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
     oldlet = INFO_LET (arg_info);
     INFO_LET (arg_info) = arg_node;
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);

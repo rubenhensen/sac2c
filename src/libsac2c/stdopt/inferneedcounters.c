@@ -5,7 +5,7 @@
  * and puts the value found into each variable's AVIS_NEEDCOUNT.
  * This information, IN PRINCIPLE, is needed by several optimisations
  * to base the decisions on. Amongst these are, at this time (2009),
- *    AL, DL, SISI, SWLF, and WLPROP.
+ *    AL, DL, SISI, AWLF, and WLPROP.
  * Since some of these optimisations actually would prefer to
  * exclude certain RHS occurances, the entry function takes a further
  * parameter, the traversal table TR_xx itself!
