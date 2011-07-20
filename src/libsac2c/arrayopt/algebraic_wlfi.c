@@ -1408,7 +1408,7 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *           d  = _sub_VxV_( xl, yl);
  *           zero = 0;
  *           p = _gt_VxS_( d, zero);
- *           p0intlo = _mesh_( p, xl, yl);
+ *           p0intlo = _mask_( p, xl, yl);
  *           )
  *
  *          ( Similar treatment for _min_VxV_ as above:
@@ -1417,7 +1417,7 @@ AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *          yh = GENERATOR_BOUND2( producerwlPart);
  *          d'  = _sub_VxV_( xh, yh);
  *          p' = _lt_VxS_( d', zero);
- *          p0inthi = _mesh_( p', xh, yh);
+ *          p0inthi = _mask_( p', xh, yh);
  *          )
  *
  *          iv'' = _noteintersect(iv',

@@ -1939,7 +1939,6 @@ prf: PRF_DIM_A          { $$ = F_dim_A;     }
    | PRF_CAT_VxV        { $$ = F_cat_VxV; }
    | PRF_TAKE_SxV       { $$ = F_take_SxV;}
    | PRF_DROP_SxV       { $$ = F_drop_SxV;}
-   | PRF_MESH_VxVxV     { $$ = F_mesh_VxVxV; }
    | PRF_MASK_VxVxV     { $$ = F_mask_VxVxV; }
    | PRF_NON_NEG_VAL_S  { $$ = F_non_neg_val_S; }
    | PRF_NON_NEG_VAL_V  { $$ = F_non_neg_val_V; }
