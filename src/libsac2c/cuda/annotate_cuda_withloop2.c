@@ -399,6 +399,28 @@ ACUWLfold (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *ACUWLgenarray( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
+node *
+ACUWLgenarray (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /* If there is a genarray in a withloop, the
+     * outer one cannot be cudarized */
+    if (INFO_INWL (arg_info)) {
+        INFO_CUDARIZABLE (arg_info) = FALSE;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *ACUWLbreak( node *arg_node, info *arg_info)
  *
  * @brief

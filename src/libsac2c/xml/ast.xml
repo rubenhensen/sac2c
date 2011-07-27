@@ -513,6 +513,7 @@
           <node name="Fold" />
           <node name="Break" />
           <node name="Propagate" />
+          <node name="Genarray" />
           <node name="Id" />
           <node name="Let" />
         </travuser>
