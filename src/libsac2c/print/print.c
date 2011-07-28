@@ -1899,13 +1899,7 @@ PRTfundef (node *arg_node, info *arg_info)
                 if ((FUNDEF_BODY (arg_node) == NULL)
                     || ((FUNDEF_RETURN (arg_node) != NULL)
                         && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
-                    if (global.backend == BE_cuda && FUNDEF_NS (arg_node) != NULL
-                        && (STReq (NSgetModule (FUNDEF_NS (arg_node)), "String")
-                            || STReq (NSgetModule (FUNDEF_NS (arg_node)), "File"))) {
-                        fprintf (global.outfile, "extern ");
-                    } else {
-                        fprintf (global.outfile, "%s ", PRINT_EXTERN);
-                    }
+                    fprintf (global.outfile, "%s ", PRINT_EXTERN);
 
                     if ((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
                         || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm)) {
