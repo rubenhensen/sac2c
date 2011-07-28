@@ -53,6 +53,11 @@ int charpos = 0;
 %option nounput
 %option noinput
 
+%state YYINITIAL
+%x COMMENT
+
+LINEEND     \n|\r|\r\n
+
 %%
 %{
 
@@ -73,7 +78,11 @@ int charpos = 0;
    }
 %}
 
-
+"//"[^\n\r]*({LINEEND}) { /* Skip a single-line comment.  */
+                             global.linenum++;
+                             charpos = 0;
+                             printf ("Found single-line comment '%s'\n", yytext);
+                           }
 "(||"			   { FILTER( BURGER_L); }
 "||)"			   { FILTER( BURGER_R); }
 "<:"			   { FILTER( SUBTYPE); }
@@ -623,21 +632,10 @@ int charpos = 0;
                              yylval.cdbl=atof(yytext);
                              FILTER( DOUBLE);
                            }
-
-
-"/*"                       { if (commlevel == 1) {
-                               CTIwarnLine( global.linenum, "Nested comment eleminated");
-                             }
-                             commlevel++;
+"/*"                       { 
+                             commlevel = 1;
                              charpos += yyleng;
-                           }
-"*/"                       { charpos += yyleng;
-                             if (commlevel > 0) {
-                               commlevel--;
-                             }
-                             else {
-                               return(SC);
-                             }
+                             BEGIN (COMMENT);
                            }
 
 \n.*                       { global.linenum++;
@@ -719,6 +717,27 @@ int charpos = 0;
 .                          { charpos += yyleng;
                              FILTER( SC);
                            }
+
+<COMMENT>"/*"              { if (commlevel == 1) {
+                               CTIwarnLine( global.linenum, "Nested comment eleminated");
+                             }
+                             commlevel++;
+                             charpos += yyleng;
+                           }
+<COMMENT>"*/"              { charpos += yyleng;
+                             commlevel = 0;
+                             BEGIN (YYINITIAL);
+                             /*if (commlevel > 0) {
+                               commlevel--;
+                               BEGIN (YYINITIAL);
+                             }
+                             else {
+                               BEGIN (YYINITIAL);
+                               return(SC);
+                             }*/
+                           }
+<COMMENT>{LINEEND}         { global.linenum++; charpos = 0;}
+<COMMENT>.                 { charpos++; }
 
 
 %%

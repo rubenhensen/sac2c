@@ -177,6 +177,8 @@ TFTYPEREL SUBTYPE IFF
 %token <id> TFADD TFSUB TFMUL TFDIV
 %token <id> TFLT TFGT TFLE TFGE
 
+/* Fake token to resolve the return conflicts.  */
+%token RET_BRACKET
 /*******************************************************************************
  * SAC programs
  */
@@ -193,7 +195,7 @@ TFTYPEREL SUBTYPE IFF
 %type <node> exprblock  exprblock2  assignsOPTret  assigns  assign 
      let cond optelse  doloop whileloop forloop  assignblock
      lets qual_ext_id qual_ext_ids ids
-%type <node> exprs expr subexpr nostrexpr expr_with expr_ap opt_arguments
+%type <node> returnstmt exprs expr subexpr nostrexpr expr_with expr_ap opt_arguments
      expr_ar expr_sel with generator  steps  width  nwithops nwithop  withop
      wlassignblock  genidx part  parts npart nparts nums returntypes
      returndectypes ntypes varntypes
@@ -259,6 +261,8 @@ GENARRAY MODARRAY ALL AMPERS
 %right MM_OP CAST
 %right SQBR_L BRACKET_L TRIANGLEBR_L
 %right ELSE 
+%left RET_BRACKET
+
 
 %start all
 
@@ -1144,13 +1148,9 @@ assignsOPTret: /*
                /* empty */
                { $$ = TBmakeAssign( TBmakeReturn( NULL), NULL);
                }
-             | RETURN BRACKET_L { $<cint>$ = global.linenum; } exprs BRACKET_R SEMIC
-               { $$ = TBmakeAssign( TBmakeReturn( $4), NULL);
-                 NODE_LINE( $$) = $<cint>3;
-               }
-             | RETURN BRACKET_L { $<cint>$ = global.linenum; } BRACKET_R SEMIC
-               { $$ = TBmakeAssign( TBmakeReturn( NULL), NULL);
-                 NODE_LINE( $$) = $<cint>3;
+             | RETURN { $<cint>$ = global.linenum; } returnstmt SEMIC
+               { $$ = TBmakeAssign (TBmakeReturn ($3), NULL);
+                 NODE_LINE ($$) = $<cint>2;
                }
              | RETURN { $<cint>$ = global.linenum; } SEMIC
                { $$ = TBmakeAssign( TBmakeReturn( NULL), NULL);
@@ -1164,7 +1164,18 @@ assignsOPTret: /*
                   * $1 may be a former for-loop in which case it may point
                   * to an entire chain of assignments.
                   */
-                     }
+               }
+             ;
+
+returnstmt:  BRACKET_L exprs BRACKET_R  
+               { 
+                 $$ = $2;
+               }
+             |%prec BRACKET_L
+             expr
+               {
+                 $$ = TBmakeExprs ($1, NULL);
+               }
              ;
 
 assigns: /* empty */
@@ -1343,10 +1354,16 @@ assignblock: SEMIC
  *********************************************************************
  */
 
+/* Two or more expressions separated with `,'  */
+/*xexprs: expr COMMA xexprs        { $$ = TBmakeExprs ($1, $3); }
+      | expr COMMA expr          { $$ = TBmakeExprs 
+                                          ($1, TBmakeExprs ($3, NULL)); }
+      ;
+*/
+
 exprs: expr COMMA exprs          { $$ = TBmakeExprs( $1, $3);   }
      | expr                      { $$ = TBmakeExprs( $1, NULL); }
      ;
-
 
 expr: DOT                        { $$ = TBmakeDot( 1);        }
     | THREEDOTS                  { $$ = TBmakeDot( 3);        }
