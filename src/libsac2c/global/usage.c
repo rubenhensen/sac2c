@@ -638,6 +638,9 @@ PrintBackendOptions (void)
             "                      +: use SCL, AUD representations only,\n"
             "                      *: use AUD representation only.\n"
             "                    (default: s)\n"
+            "\n"
+            "    -force_desc_size <n>\n"
+            "                    Force the size of the descriptor to n bytes\n"
             "\n");
 
     DBUG_RETURN ();

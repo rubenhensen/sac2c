@@ -184,11 +184,13 @@ PrintGlobalSwitches ()
     fprintf (global.outfile, "#define SAC_RC_METHOD SAC_RCM_%s\n",
              global.config.rc_method);
 
-    fprintf (global.outfile, "\n\n"
-                             "/*\n"
-                             " *  MUTC Backend SPecific Switches\n */\n\n");
+    fprintf (global.outfile, "#define SAC_FORCE_DESC_SIZE %d\n", global.force_desc_size);
 
     /* MUTC Switches */
+    fprintf (global.outfile, "\n\n"
+                             "/*\n"
+                             " *  MUTC Backend Specific Switches\n */\n\n");
+
     fprintf (global.outfile, "#define SAC_MUTC_FUNAP_AS_CREATE  %d\n",
              (global.mutc_fun_as_threads) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_MUTC_THREAD_MALLOC %d\n",

@@ -522,6 +522,8 @@ GLOBAL (char **, spec_mode_str, spec_mode_str_init)
  * Force wlt to work in naive mode
  */
 GLOBAL (bool, force_naive_with2, FALSE)
+/* Force the byte size of the descriptor */
+GLOBAL (int, force_desc_size, -1)
 /*
  * Command line options for specifying particular side conditions
  * for the (new) type inference.

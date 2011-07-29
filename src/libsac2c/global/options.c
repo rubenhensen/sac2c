@@ -361,7 +361,7 @@ OPTcheckOptionConsistency (void)
                       "supported for the backend BE_mutc!");
         }
     } else if (STReq (global.config.rc_method, "local_async_norc_ptr")) {
-        CTIerror ("Specified reference counting method is currently not supported!");
+        CTIwarn ("Specified reference counting method is a work in progress!");
     } else {
         CTIerror ("Illegal reference counting method specified RC_METHOD == %s !",
                   global.config.rc_method);
@@ -567,6 +567,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      */
 
     ARGS_FLAG ("force_naive", global.force_naive_with2 = TRUE);
+    ARGS_OPTION ("force_desc_size", ARG_NUM (global.force_desc_size));
 
     ARGS_FLAG ("fp", global.fp = TRUE);
     ARGS_FLAG ("fpnoopt", global.fpnoopt = TRUE);

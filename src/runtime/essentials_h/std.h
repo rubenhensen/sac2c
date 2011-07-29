@@ -114,7 +114,15 @@ typedef intptr_t *SAC_array_descriptor_t;
 /* size of the descriptor = (FIXED_SIZE_OF_DESC + dim * VAR_SIZE_OF_DESC) */
 #define SIZE_OF_DESC(dim) (FIXED_SIZE_OF_DESC + (dim)*VAR_SIZE_OF_DESC)
 
+#ifndef SAC_FORCE_DESC_SIZE
+#define SAC_FORCE_DESC_SIZE -1
+#endif
+
+#if SAC_FORCE_DESC_SIZE >= 0
+#define BYTE_SIZE_OF_DESC(dim) SAC_FORCE_DESC_SIZE
+#else
 #define BYTE_SIZE_OF_DESC(dim) (SIZE_OF_DESC (dim) * sizeof (intptr_t))
+#endif
 
 #define SAC_DESC_RC_MODE_LOCAL 0
 #define SAC_DESC_RC_MODE_ASYNC 1

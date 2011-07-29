@@ -795,22 +795,22 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
             } else {                                                                     \
                 SAC_ND_DEC_RC_FREE__ASYNC (var_NT, rc, freefun);                         \
             }                                                                            \
-        }
-}
-
-#define SAC_ND_SET__RC__DEFAULT(var_NT, rc)
-{
-    SAC_MUTC_RC_PRINT (var_NT);
-    if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_NORC) {
-        SAC_ND_SET__RC__NORC (var_NT, rc);
-    } else {
-        if (DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_LOCAL) {
-            SAC_ND_SET__RC__C99 (var_NT, rc);
-        } else if (DESC_RC_MODE (SAC_ND_A_DESC (var_NT))) {
-            SAC_ND_SET__RC__ASYNC (var_NT, rc);
-        }
+        }                                                                                \
     }
-}
+
+#define SAC_ND_SET__RC__DEFAULT(var_NT, rc)                                              \
+    {                                                                                    \
+        SAC_MUTC_RC_PRINT (var_NT);                                                      \
+        if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_NORC) {    \
+            SAC_ND_SET__RC__NORC (var_NT, rc);                                           \
+        } else {                                                                         \
+            if (DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_LOCAL) {       \
+                SAC_ND_SET__RC__C99 (var_NT, rc);                                        \
+            } else if (DESC_RC_MODE (SAC_ND_A_DESC (var_NT))) {                          \
+                SAC_ND_SET__RC__ASYNC (var_NT, rc);                                      \
+            }                                                                            \
+        }                                                                                \
+    }
 
 #define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
@@ -860,21 +860,21 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
     })
 
 #define SAC_ND_PRF_RESTORERC__DO(array, rc)                                              \
-    if (((intput_t)rc) == 1) {                                                           \
-        SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (var_NT), SAC_DESC_RC_MODE_OTHER);       \
+    if (((intptr_t)SAC_ND_A_FIELD (rc)) == 1) {                                          \
+        SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (array), SAC_DESC_RC_MODE_OTHER);        \
     }
 
 #define SAC_ND_PRF_2NORC__DO(rc, array)                                                  \
-    if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) != SAC_DESC_RC_MODE_NORC) {        \
-        SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (var_NT), SAC_DESC_RC_MODE_NORC);        \
-        rc = (SAC_referencecount_t)1;                                                    \
+    if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (array)) != SAC_DESC_RC_MODE_NORC) {         \
+        SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (array), SAC_DESC_RC_MODE_NORC);         \
+        SAC_ND_A_FIELD (rc) = (SAC_referencecount_t)1;                                   \
     } else {                                                                             \
-        rc = (SAC_referencecount_t)0;                                                    \
+        SAC_ND_A_FIELD (rc) = (SAC_referencecount_t)0;                                   \
     }
 
 #define SAC_ND_PRF_2ASYNC__DO(new, array)                                                \
-    if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) != SAC_DESC_RC_MODE_NORC) {        \
-        \ DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_ASYNC;                \
+    if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (array)) != SAC_DESC_RC_MODE_NORC) {         \
+        DESC_RC_MODE (SAC_ND_A_DESC (array)) = SAC_DESC_RC_MODE_ASYNC;                   \
     }
 
 #endif

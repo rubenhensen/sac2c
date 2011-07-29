@@ -168,9 +168,9 @@ LocalizeAndMakeSpawnFun (node *arg_node, info *arg_info)
         FUNDEF_NEXT (arg_node) = NULL;
         result = DUPdoDupTree (arg_node);
         if (FUNDEF_ISWRAPPERFUN (arg_node)) {
-            if (FUNDEF_IMPL (temp) != NULL) {
-                FUNDEF_IMPL (temp)
-                  = LocalizeAndMakeSpawnFun (FUNDEF_IMPL (temp), arg_info);
+            if (FUNDEF_IMPL (arg_node) != NULL) {
+                FUNDEF_IMPL (arg_node)
+                  = LocalizeAndMakeSpawnFun (FUNDEF_IMPL (arg_node), arg_info);
             } else {
                 wtype = TYmapFunctionInstances (FUNDEF_WRAPPERTYPE (result),
                                                 LocalizeAndMakeSpawnFun, arg_info);
