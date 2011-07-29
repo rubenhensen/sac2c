@@ -333,6 +333,38 @@ AWLFdoAlgebraicWithLoopFolding (node *arg_node)
  *
  *****************************************************************************/
 
+/******************************************************************************
+ *
+ * function:
+ *   node *CheckForSuperfluousCodes(node *wln)
+ *
+ * description:
+ *   remove all unused N_code nodes of the given WL.
+ *
+ *  This was stolen from SSAWLF. We should move it into tree/somewhere,
+ *  but I am waiting for word back from Clemens and Bodo.
+ *
+ ******************************************************************************/
+
+static node *
+CheckForSuperfluousCodes (node *wln)
+{
+    node **tmp;
+
+    DBUG_ENTER ();
+
+    tmp = &WITH_CODE (wln);
+    while (*tmp) {
+        if (!CODE_USED ((*tmp))) {
+            *tmp = FREEdoFreeNode (*tmp);
+        } else {
+            tmp = &CODE_NEXT ((*tmp));
+        }
+    }
+
+    DBUG_RETURN (wln);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn bool isPrfArg1AttachExtrema( node *arg_node)
@@ -864,6 +896,9 @@ AWLFwith (node *arg_node, info *arg_info)
     }
 #endif // BREAKSDUPLHS
 
+#ifdef FIXME // wrong place?
+    arg_node = CheckForSuperfluousCodes (arg_node);
+#endif // FIXME // wrong place?
     INFO_WL (old_info) = NULL;
     INFO_VARDECS (old_info) = INFO_VARDECS (arg_info);
     INFO_PREASSIGNS (old_info) = INFO_PREASSIGNS (arg_info);

@@ -944,8 +944,11 @@ PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info
     DBUG_ENTER ();
 
     z = zarr;
+    shpz = TCcountExprs (z);
     ids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
     shpids = TCcountIds (ids);
+    DBUG_ASSERT (shpz == shpids, "Wrong boundary intersect shape");
+
     shpintr = TCcountExprs (intr);
     hole = IVEXImakeIntScalar (NOINVERSEPROJECTION, &INFO_VARDECS (arg_info),
                                &INFO_PREASSIGNS (arg_info));
@@ -969,9 +972,6 @@ PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info
         DBUG_ASSERT ((N_id != NODE_TYPE (el)) || (hole != ID_AVIS (el)),
                      "No holes wanted!");
     }
-
-    shpz = TCcountExprs (z);
-    DBUG_ASSERT (shpz == shpids, "Wrong boundary intersect shape");
 
     DBUG_RETURN (z);
 }

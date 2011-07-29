@@ -206,6 +206,38 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
  *
  *****************************************************************************/
 
+/******************************************************************************
+ *
+ * function:
+ *   node *CheckForSuperfluousCodes(node *wln)
+ *
+ * description:
+ *   remove all unused N_code nodes of the given WL.
+ *
+ *  This was stolen from SSAWLF. We should move it into tree/somewhere,
+ *  but I am waiting for word back from Clemens and Bodo.
+ *
+ ******************************************************************************/
+
+static node *
+CheckForSuperfluousCodes (node *wln)
+{
+    node **tmp;
+
+    DBUG_ENTER ();
+
+    tmp = &WITH_CODE (wln);
+    while (*tmp) {
+        if (!CODE_USED ((*tmp))) {
+            *tmp = FREEdoFreeNode (*tmp);
+        } else {
+            tmp = &CODE_NEXT ((*tmp));
+        }
+    }
+
+    DBUG_RETURN (wln);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn bool matchValues( node *fa, node *fb)
@@ -681,6 +713,7 @@ CloneCode (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if ((N_empty == NODE_TYPE (arg_node))) {
+        DBUG_ASSERT (FALSE, "this looks funny.");
         z = NULL;
     } else {
         z = DUPdoDupTreeLutSsa (arg_node, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
@@ -849,22 +882,18 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
     }
 
     /* All cases need partI or original node */
-    if ((CMPT_EQ == CMPTdoCompareTree (ilba, plba))
-        && (CMPT_EQ == CMPTdoCompareTree (iuba, puba))) {
-        partz = DUPdoDupNode (consumerWLpartn); /* No slicing along this axis */
-        DBUG_PRINT ("Copying partition I for %s",
-                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-    } else {
-        DBUG_PRINT ("Constructing partition I for %s",
-                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-        newlb = DUPdoDupNode (lb);
-        newub = DUPdoDupNode (ub);
-        genn
-          = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupNode (step), NULL);
-        clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
-        newpart = TBmakePart (clone, DUPdoDupNode (withid), genn);
-        partz = TCappendPart (partz, newpart);
-    }
+    DBUG_PRINT ("Constructing partition I for %s",
+                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+    newlb = DUPdoDupNode (partlb);
+    ARRAY_AELEMS (newlb)
+      = TCputNthExprs (axis, ARRAY_AELEMS (newlb), DUPdoDupNode (ilba));
+    newub = DUPdoDupNode (partub);
+    ARRAY_AELEMS (newub)
+      = TCputNthExprs (axis, ARRAY_AELEMS (newub), DUPdoDupNode (iuba));
+    genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupNode (step), NULL);
+    clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
+    newpart = TBmakePart (clone, DUPdoDupNode (withid), genn);
+    partz = TCappendPart (partz, newpart);
 
     /* Case alpha, beta need partC */
     if (CMPT_NEQ == CMPTdoCompareTree (iuba, puba)) {
@@ -931,25 +960,24 @@ PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
 
     /* We start with one N_part, but each axis may add more N_parts. */
 
-    /* We have to clone the N_code, or we wipe the arg_node. */
-    curpartn = DUPdoDupNode (arg_node);
-    CODE_DEC_USED (PART_CODE (curpartn)); /* curpartn is just a template */
-
     for (axis = 0; axis < axes; axis++) {
         DBUG_PRINT ("Slicing partition %s on axis %d",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), axis);
+        curpartn = arg_node;
         newpartns = NULL;
         while (NULL != curpartn) {
             p = PartitionSlicerOneAxis (curpartn, lbarr, ubarr, axis, arg_info);
             newpartns = TCappendPart (newpartns, p);
             curpartn = PART_NEXT (curpartn);
         }
-        curpartn = newpartns;
+
+        arg_node = FREEdoFreeTree (arg_node);
+        arg_node = newpartns;
     }
 
     pat = PMfree (pat);
 
-    DBUG_RETURN (newpartns);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -1068,9 +1096,11 @@ CUBSLwith (node *arg_node, info *arg_info)
     oldwithcode = INFO_WITHCODE (arg_info);
     INFO_WITHCODE (arg_info) = WITH_CODE (arg_node);
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
-    WITH_CODE (arg_node) = INFO_WITHCODE (arg_info);
+    DBUG_ASSERT (WITH_CODE (arg_node) == INFO_WITHCODE (arg_info),
+                 "N_code list has been tangled");
     INFO_INTERSECTTYPE (arg_info) = oldintersecttype;
     INFO_WITHCODE (arg_info) = oldwithcode;
+    arg_node = CheckForSuperfluousCodes (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -1090,8 +1120,8 @@ CUBSLwith (node *arg_node, info *arg_info)
 node *
 CUBSLpart (node *arg_node, info *arg_info)
 {
-    node *newparts = NULL;
     node *oldconsumerpart;
+    node *partnext;
     intersect_type_t oldintersecttype;
 
     DBUG_ENTER ();
@@ -1118,12 +1148,11 @@ CUBSLpart (node *arg_node, info *arg_info)
         && (AWLFIisHasInverseProjection (INFO_WLPROJECTION2 (arg_info)))
         && (!AWLFIisIdsMemberPartition (INFO_WLPROJECTION2 (arg_info), arg_node))) {
 
-        newparts = PartitionSlicer (arg_node, arg_info, INFO_WLPROJECTION1 (arg_info),
+        partnext = PART_NEXT (arg_node);
+        PART_NEXT (arg_node) = NULL;
+        arg_node = PartitionSlicer (arg_node, arg_info, INFO_WLPROJECTION1 (arg_info),
                                     INFO_WLPROJECTION2 (arg_info));
-
-        PART_NEXT (newparts) = TCappendPart (PART_NEXT (newparts), PART_NEXT (arg_node));
-        arg_node = FREEdoFreeNode (arg_node);
-        arg_node = newparts;
+        PART_NEXT (arg_node) = TCappendPart (PART_NEXT (arg_node), partnext);
     }
 
     DBUG_PRINT ("Partition %s intersect type is %d",
