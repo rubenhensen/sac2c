@@ -898,8 +898,8 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
 
 /** <!--********************************************************************-->
  *
- * @fn node *PermuteIntersectElements( node *intr, node *zwithids,  node *zarr,
- *                                     info *arg_info)
+ * @fn node *PermuteIntersectElements( node *intr, node *zwithids,
+ *                                     info *arg_info, node *bnd)
  *
  * @brief: Permute and/or merge
  *
@@ -911,10 +911,14 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
  *          intr, comprising the WITHID_IDS related to the
  *          corresponding element of intr.
  *
- *          zarr: a writable copy of the resulting N_array's N_exprs list.
- *
  *          arg_info: your basic arg_info node.
  *
+ *          bnd: The index set bounds for this consumerWL.
+ *          The result is initialized to this value. Any
+ *          elements that are not overwritten by the indexed
+ *          assign will result in axis elements that will
+ *          not be sliced. This is conservative, but should
+ *          work OK.
  *
  * @result: The permuted and/or confluenced N_exprs chain.
  *          Its length matches that of the WITHID_IDS in the
@@ -923,13 +927,13 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
  *          Effectively, this code performs, in the absence
  *          of duplicate zwithids entries:
  *
- *            z[ withidsids iota zwithids] = intr;
+ *            zarr[ withidids iota zwithids] = intr;
  *
  *          If there are duplicates, we insert min/max ops... FIXME
  *
  *****************************************************************************/
 static node *
-PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info)
+PermuteIntersectElements (node *intr, node *zwithids, info *arg_info, node *bnd)
 {
     node *z;
     node *ids;
@@ -938,40 +942,35 @@ PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info
     int shpintr;
     int i;
     int idx;
-    node *hole;
-    node *el;
+    pattern *pat;
+    node *bndarr;
 
     DBUG_ENTER ();
 
-    z = zarr;
+    pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
+    DBUG_ASSERT (PMmatchFlat (pat, bnd), "Expected N_array generator");
+    z = DUPdoDupTree (ARRAY_AELEMS (bndarr)); /* copy of generator bound */
     shpz = TCcountExprs (z);
     ids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
     shpids = TCcountIds (ids);
     DBUG_ASSERT (shpz == shpids, "Wrong boundary intersect shape");
 
     shpintr = TCcountExprs (intr);
-    hole = IVEXImakeIntScalar (NOINVERSEPROJECTION, &INFO_VARDECS (arg_info),
-                               &INFO_PREASSIGNS (arg_info));
-
-    for (i = 0; i < shpids; i++) {
-        z = TCputNthExprs (i, z, TBmakeId (hole));
-    }
 
     for (i = 0; i < shpintr; i++) {
         idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids));
         if (-1 != idx) { /* skip places where idx is a constant, etc. */
                          /* E.g., sel( [ JJ, 2], PWL);                */
-            DBUG_ASSERT (hole == ID_AVIS (TCgetNthExprsExpr (idx, z)),
+            DBUG_ASSERT (CMPT_EQ
+                           == CMPTdoCompareTree (TCgetNthExprsExpr (idx, z),
+                                                 TCgetNthExprsExpr (idx, ARRAY_AELEMS (
+                                                                           bndarr))),
                          "Time to code confluence stuff");
             z = TCputNthExprs (idx, z, TCgetNthExprsExpr (i, intr));
         }
     }
 
-    for (i = 0; i < shpids; i++) {
-        el = TCgetNthExprsExpr (i, z);
-        DBUG_ASSERT ((N_id != NODE_TYPE (el)) || (hole != ID_AVIS (el)),
-                     "No holes wanted!");
-    }
+    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
@@ -980,7 +979,8 @@ PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info
  *
  * @fn node *BuildInverseProjectionOne( node *arg_node, info *arg_info,
  *                                      node( *ivprime,
- *                                      node *intr)
+ *                                      node *intr,
+ *                                      node *bnd)
  *
  * @brief   For a consumerWL with iv as WITHID_IDS,
  *          we have code of the form:
@@ -1001,6 +1001,7 @@ PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info
  * @params: arg_node is an F_noteintersect node.
  *          ivprime: The iv' N_array node.
  *          intr: the WLintersect N_array node for lb or ub.
+ *          bnd: the consumerWL generator N_array node for lb or ub.
  *
  * @result: An N_avis node, which represents the result of
  *          mapping the WLintersect extrema back to consumerWL space,
@@ -1015,7 +1016,8 @@ PermuteIntersectElements (node *intr, node *zwithids, node *zarr, info *arg_info
  *
  *****************************************************************************/
 static node *
-BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *intr)
+BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *intr,
+                           node *bnd)
 {
     node *z = NULL;
     node *zw = NULL;
@@ -1064,7 +1066,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
         pat = PMarray (1, PMAgetNode (&zarr), 1, PMskip (0));
         if (PMmatchFlat (pat, lb)) {
             zarr = DUPdoDupTree (zarr); /* Make result shape match generator shape */
-            z = PermuteIntersectElements (z, zw, ARRAY_AELEMS (zarr), arg_info);
+            z = PermuteIntersectElements (z, zw, arg_info, bnd);
             ARRAY_AELEMS (zarr) = z;
 
             if (N_id == NODE_TYPE (lb)) {
@@ -1144,6 +1146,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     node *arrlb;
     node *arrub;
     node *nlet;
+    node *bnd;
 
     DBUG_ENTER ();
 
@@ -1180,7 +1183,10 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                                                     INFO_CONSUMERWLPART (arg_info)))
                     && (!AWLFIisIdsMemberPartition (intrub,
                                                     INFO_CONSUMERWLPART (arg_info)))) {
-                    zlb = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrlb);
+                    bnd = GENERATOR_BOUND1 (
+                      PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)));
+                    zlb = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrlb,
+                                                     bnd);
                     swaplb = INFO_FINVERSESWAP (arg_info);
 
                     nlet
@@ -1188,7 +1194,10 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                                            &INFO_PREASSIGNS (arg_info));
                     INFO_PREASSIGNS (arg_info)
                       = TCappendAssign (INFO_PREASSIGNS (arg_info), nlet);
-                    zub = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrub);
+                    bnd = GENERATOR_BOUND2 (
+                      PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)));
+                    zub = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrub,
+                                                     bnd);
                     swapub = INFO_FINVERSESWAP (arg_info);
                 }
             }
