@@ -313,8 +313,10 @@ ATravLet (node *arg_node, info *arg_info)
 static node *
 ATravAssign (node *arg_node, info *arg_info)
 {
+    bool stackFound;
     DBUG_ENTER ();
 
+    stackFound = INFO_FOUND_AVIS (arg_info);
     INFO_FOUND_AVIS (arg_info) = FALSE;
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
@@ -335,8 +337,8 @@ ATravAssign (node *arg_node, info *arg_info)
              * no longer put here as now we have moved blockers we may be
              * able to put this assign later
              */
-            INFO_COUNT (arg_info) = 0; /* Do not push any more */
-            arg_node = TRAVopt (arg_node, arg_info);
+            INFO_COUNT (arg_info) = 0;               /* Do not push any more */
+            arg_node = TRAVopt (arg_node, arg_info); /* TRAV self */
         } else {
             ASSIGN_NEXT (INFO_ASSIGN (arg_info)) = arg_node;
             arg_node = INFO_ASSIGN (arg_info);
@@ -348,6 +350,8 @@ ATravAssign (node *arg_node, info *arg_info)
     } else {
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     }
+
+    INFO_FOUND_AVIS (arg_info) = stackFound || INFO_FOUND_AVIS (arg_info);
 
     DBUG_RETURN (arg_node);
 }
