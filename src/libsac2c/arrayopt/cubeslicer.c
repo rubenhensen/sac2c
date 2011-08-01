@@ -855,8 +855,9 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
     pat1 = PMarray (1, PMAgetNode (&partlb), 1, PMskip (0));
     pat2 = PMarray (1, PMAgetNode (&partub), 1, PMskip (0));
 
-    DBUG_ASSERT ((PMmatchFlat (pat1, plb)) && (PMmatchFlat (pat2, pub)),
-                 "Expected N_array generators");
+    if (!((PMmatchFlat (pat1, plb)) && (PMmatchFlat (pat2, pub)))) {
+        DBUG_ASSERT (FALSE, "Expected N_array generators");
+    }
     step = GENERATOR_STEP (PART_GENERATOR (consumerWLpartn));
     width = GENERATOR_WIDTH (PART_GENERATOR (consumerWLpartn));
     withid = PART_WITHID (consumerWLpartn);

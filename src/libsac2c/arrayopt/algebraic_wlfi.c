@@ -948,7 +948,9 @@ PermuteIntersectElements (node *intr, node *zwithids, info *arg_info, node *bnd)
     DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
-    DBUG_ASSERT (PMmatchFlat (pat, bnd), "Expected N_array generator");
+    if (!PMmatchFlat (pat, bnd)) {
+        DBUG_ASSERT (FALSE, "Expected N_array generator");
+    }
     z = DUPdoDupTree (ARRAY_AELEMS (bndarr)); /* copy of generator bound */
     shpz = TCcountExprs (z);
     ids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
@@ -1175,8 +1177,10 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                                                   &INFO_VARDECS (arg_info),
                                                   &INFO_PREASSIGNS (arg_info), "bip1");
                 intrub = TBmakeId (intrub);
-                DBUG_ASSERT (PMmatchFlat (pat2, intrub), "lost the N_array for %s",
-                             AVIS_NAME (ID_AVIS (intrub)));
+                if (!PMmatchFlat (pat2, intrub)) {
+                    DBUG_ASSERT (FALSE, "lost the N_array for %s",
+                                 AVIS_NAME (ID_AVIS (intrub)));
+                }
 
                 if ((PMmatchFlat (pat1, intrlb)) && (PMmatchFlat (pat2, intrub))
                     && (!AWLFIisIdsMemberPartition (intrlb,
