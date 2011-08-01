@@ -784,12 +784,14 @@ GetPredicateData (node *expr, prf *pred, loopc_t *term)
     /* get constant from AST */
     if (!PMmatchFlat (PMconst (0, 0), arg1)) {
         /* first arg is identifier */
-        DBUG_ASSERT (PMmatchFlat (pat, arg2),
-                     "Constant not found where constent expected");
+        if (!PMmatchFlat (pat, arg2)) {
+            DBUG_ASSERT (FALSE, "Constant not found where constant expected");
+        }
     } else {
         /* second arg is identifier */
-        DBUG_ASSERT (PMmatchFlat (pat, arg1),
-                     "Constant not found where constent expected");
+        if (!PMmatchFlat (pat, arg1)) {
+            DBUG_ASSERT (FALSE, "Constant not found where constant expected");
+        }
 
         /* change prf to have normal form cond = id <prf> const */
         switch (*pred) {
