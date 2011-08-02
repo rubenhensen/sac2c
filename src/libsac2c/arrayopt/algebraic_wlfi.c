@@ -1149,6 +1149,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     node *arrub;
     node *nlet;
     node *bnd;
+    ntype *typ;
+    int xrho;
 
     DBUG_ENTER ();
 
@@ -1200,6 +1202,19 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                       = TCappendAssign (INFO_PREASSIGNS (arg_info), nlet);
                     bnd = GENERATOR_BOUND2 (
                       PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)));
+                    if (N_array == NODE_TYPE (bnd)) {
+                        xrho = TCcountExprs (ARRAY_AELEMS (bnd));
+                        typ
+                          = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, xrho));
+                        bnd = AWLFIflattenExpression (DUPdoDupNode (bnd),
+                                                      &INFO_VARDECS (arg_info),
+                                                      &INFO_PREASSIGNS (arg_info), typ);
+                        bnd = TBmakeId (bnd);
+                    }
+                    bnd = IVEXPadjustExtremaBound (ID_AVIS (bnd), arg_info, -1,
+                                                   &INFO_VARDECS (arg_info),
+                                                   &INFO_PREASSIGNS (arg_info), "bip2");
+                    bnd = TBmakeId (bnd);
                     zub = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrub,
                                                      bnd);
                     swapub = INFO_FINVERSESWAP (arg_info);

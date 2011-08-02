@@ -1468,6 +1468,8 @@ SCCFprf_idx_sel (node *arg_node, info *arg_info)
  *   We also do a quick check to see if p is all TRUE or all FALSE.
  *   If so, we don't care if x and y are N_array nodes or not.
  *
+ *   If x and y match, the result is x, regardless of p.
+ *
  *   Otherwise, we do nothing.
  *
  *
