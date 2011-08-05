@@ -898,10 +898,107 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
 
 /** <!--********************************************************************-->
  *
- * @fn node *PermuteIntersectElements( node *intr, node *zwithids,
- *                                     info *arg_info, node *bnd)
+ * @fn node *FlattenScalarNode( node *arg_node, info *arg_info)
  *
- * @brief: Permute and/or merge
+ * @brief: Flatten a scalar node, if not already flattened.
+ *
+ * @params: arg_node: an N_num or N_id node
+ *          arg_info: your basic arg_info node.
+ *
+ * @result:  N_avis for possibly flattened node
+ *
+ *****************************************************************************/
+static node *
+FlattenScalarNode (node *arg_node, info *arg_info)
+{
+    node *z;
+
+    DBUG_ENTER ();
+
+    if (N_num == NODE_TYPE (arg_node)) {
+        z = AWLFIflattenExpression (DUPdoDupTree (arg_node), &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info),
+                                    TYmakeAKS (TYmakeSimpleType (T_int),
+                                               SHcreateShape (0)));
+    } else {
+        z = ID_AVIS (arg_node);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *BuildAxisConfluence( int idx, node *z, node *bndaraelems,
+ *                                int boundnum, info *arg_info)
+ *
+ * @brief: Generate code to perform max/min on WL-intersection of
+ *         two axes that are confluent. E.g., if the CWL is extracting
+ *         the major diagonal from a 2-D PWL with two partitions,
+ *         we may have something like:  _sel_VxA_( [i, i+1], PWL).
+ *
+ *         In that case, we take the maximum of the minimum bound
+ *         and the minimum of the maximum bound.
+ *
+ * @params:
+ *          arg_info: your basic arg_info node.
+ *
+ *          z: xxx
+ *
+ *          bndarraelems: The index set bounds for this consumerWL.
+ *
+ *          boundnum: 0 if we are computing BOUND1,
+ *                    1 if we are computing BOUND2
+ *
+ * @result: zprime as either z[idx], if there is not confluence,
+ *          Max( z[idx, bndarelems[idx]) if 0=boundnum
+ *          Min( z[idx, bndarelems[idx]) if 1=boundnum
+ *
+ *****************************************************************************/
+static node *
+BuildAxisConfluence (int idx, node *z, node *bndaraelems, node *intr, int boundnum,
+                     info *arg_info)
+{
+
+    node *zprime;
+    node *zel;
+    node *bndel;
+    char *fn;
+    node *fncall;
+    node *intrel;
+
+    DBUG_ENTER ();
+
+    zel = TCgetNthExprsExpr (idx, z);
+    bndel = TCgetNthExprsExpr (idx, bndaraelems);
+
+    if (CMPT_EQ == CMPTdoCompareTree (zel, bndel)) {
+        zprime = z;
+    } else {
+        fn = (1 == boundnum) ? "Max" : "Min";
+        zel = FlattenScalarNode (zel, arg_info);
+        intrel = FlattenScalarNode (TCgetNthExprsExpr (idx, intr), arg_info);
+
+        fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fn,
+                                    TCcreateExprsChainFromAvises (2, fn, zel, intrel));
+        zprime = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGNS (arg_info),
+                                         TYmakeAKS (TYmakeSimpleType (T_int),
+                                                    SHcreateShape (0)));
+        zprime = TCputNthExprs (idx, z, TBmakeId (zprime));
+    }
+
+    DBUG_RETURN (zprime);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PermuteIntersectElements( node *intr, node *zwithids,
+ *                                     info *arg_info, node *bnd,
+ *                                     int boundnum)
+ *
+ * @brief: Permute and/or merge inverse intersection elements, to
+ *         construct CUBSL argument.
  *
  * @params: intr: an N_exprs chain of an intersect calculation
  *          Its length matches that of iv in the sel( iv, producerWL)
@@ -920,6 +1017,9 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
  *          not be sliced. This is conservative, but should
  *          work OK.
  *
+ *          boundnum: 0 if we are computing BOUND1,
+ *                    1 if we are computing BOUND2
+ *
  * @result: The permuted and/or confluenced N_exprs chain.
  *          Its length matches that of the WITHID_IDS in the
  *          consumerWL.
@@ -929,11 +1029,13 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
  *
  *            zarr[ withidids iota zwithids] = intr;
  *
- *          If there are duplicates, we insert min/max ops... FIXME
+ *          If there are duplicates, we insert min/max ops to handle
+ *          the axis confluence
  *
  *****************************************************************************/
 static node *
-PermuteIntersectElements (node *intr, node *zwithids, info *arg_info, node *bnd)
+PermuteIntersectElements (node *intr, node *zwithids, info *arg_info, node *bnd,
+                          int boundnum)
 {
     node *z;
     node *ids;
@@ -956,19 +1058,14 @@ PermuteIntersectElements (node *intr, node *zwithids, info *arg_info, node *bnd)
     ids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
     shpids = TCcountIds (ids);
     DBUG_ASSERT (shpz == shpids, "Wrong boundary intersect shape");
-
     shpintr = TCcountExprs (intr);
 
     for (i = 0; i < shpintr; i++) {
         idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids));
         if (-1 != idx) { /* skip places where idx is a constant, etc. */
                          /* E.g., sel( [ JJ, 2], PWL);                */
-            DBUG_ASSERT (CMPT_EQ
-                           == CMPTdoCompareTree (TCgetNthExprsExpr (idx, z),
-                                                 TCgetNthExprsExpr (idx, ARRAY_AELEMS (
-                                                                           bndarr))),
-                         "Time to code confluence stuff");
-            z = TCputNthExprs (idx, z, TCgetNthExprsExpr (i, intr));
+            z = BuildAxisConfluence (idx, z, ARRAY_AELEMS (bndarr), intr, boundnum,
+                                     arg_info);
         }
     }
 
@@ -982,7 +1079,7 @@ PermuteIntersectElements (node *intr, node *zwithids, info *arg_info, node *bnd)
  * @fn node *BuildInverseProjectionOne( node *arg_node, info *arg_info,
  *                                      node( *ivprime,
  *                                      node *intr,
- *                                      node *bnd)
+ *                                      node *bnd, int boundnum)
  *
  * @brief   For a consumerWL with iv as WITHID_IDS,
  *          we have code of the form:
@@ -1001,9 +1098,14 @@ PermuteIntersectElements (node *intr, node *zwithids, info *arg_info, node *bnd)
  *            iv = F_1( iv');
  *
  * @params: arg_node is an F_noteintersect node.
+ *
  *          ivprime: The iv' N_array node.
+ *
  *          intr: the WLintersect N_array node for lb or ub.
+ *
  *          bnd: the consumerWL generator N_array node for lb or ub.
+ *
+ *          boundnum: 0 if computing BOUND1; 1 if computing BOUND2
  *
  * @result: An N_avis node, which represents the result of
  *          mapping the WLintersect extrema back to consumerWL space,
@@ -1019,7 +1121,7 @@ PermuteIntersectElements (node *intr, node *zwithids, info *arg_info, node *bnd)
  *****************************************************************************/
 static node *
 BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *intr,
-                           node *bnd)
+                           node *bnd, int boundnum)
 {
     node *z = NULL;
     node *zw = NULL;
@@ -1068,7 +1170,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
         pat = PMarray (1, PMAgetNode (&zarr), 1, PMskip (0));
         if (PMmatchFlat (pat, lb)) {
             zarr = DUPdoDupTree (zarr); /* Make result shape match generator shape */
-            z = PermuteIntersectElements (z, zw, arg_info, bnd);
+            z = PermuteIntersectElements (z, zw, arg_info, bnd, boundnum);
             ARRAY_AELEMS (zarr) = z;
 
             if (N_id == NODE_TYPE (lb)) {
@@ -1192,7 +1294,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                     bnd = GENERATOR_BOUND1 (
                       PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)));
                     zlb = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrlb,
-                                                     bnd);
+                                                     bnd, 0);
                     swaplb = INFO_FINVERSESWAP (arg_info);
 
                     nlet
@@ -1216,7 +1318,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                                                    &INFO_PREASSIGNS (arg_info), "bip2");
                     bnd = TBmakeId (bnd);
                     zub = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrub,
-                                                     bnd);
+                                                     bnd, 1);
                     swapub = INFO_FINVERSESWAP (arg_info);
                 }
             }
