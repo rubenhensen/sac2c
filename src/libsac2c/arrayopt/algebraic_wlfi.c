@@ -158,6 +158,7 @@ struct INFO {
     bool nofinverse;         /* no intersect to CWL mapping found */
     bool finverseswap;       /* If TRUE, must swp min/max */
     bool finverseintroduced; /* If TRUE, most simplify F-inverse */
+    node *zwithids;          /* zwithds for GENERATOR_BOUNDs */
 };
 
 /**
@@ -180,6 +181,7 @@ struct INFO {
 #define INFO_NOFINVERSE(n) ((n)->nofinverse)
 #define INFO_FINVERSESWAP(n) ((n)->finverseswap)
 #define INFO_FINVERSEINTRODUCED(n) ((n)->finverseintroduced)
+#define INFO_ZWITHIDS(n) ((n)->zwithids)
 
 static info *
 MakeInfo (node *fundef)
@@ -207,6 +209,7 @@ MakeInfo (node *fundef)
     INFO_NOFINVERSE (result) = FALSE;
     INFO_FINVERSESWAP (result) = FALSE;
     INFO_FINVERSEINTRODUCED (result) = FALSE;
+    INFO_ZWITHIDS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -929,7 +932,7 @@ FlattenScalarNode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *BuildAxisConfluence( int idx, node *z, node *bndaraelems,
+ * @fn node *BuildAxisConfluence( int idx, node *intr, node *bndaraelems,
  *                                int boundnum, info *arg_info)
  *
  * @brief: Generate code to perform max/min on WL-intersection of
@@ -943,7 +946,10 @@ FlattenScalarNode (node *arg_node, info *arg_info)
  * @params:
  *          arg_info: your basic arg_info node.
  *
- *          z: xxx
+ *          intr: The inverse intersect, of the shape of the CWL bounds,
+ *          as the ARRAY_AELEMS N_exprs chain.
+ *          Its elements will be overwritten by any confluenced
+ *          elements.
  *
  *          bndarraelems: The index set bounds for this consumerWL.
  *
@@ -994,13 +1000,12 @@ BuildAxisConfluence (int idx, node *z, node *bndaraelems, node *intr, int boundn
 /** <!--********************************************************************-->
  *
  * @fn node *PermuteIntersectElements( node *intr, node *zwithids,
- *                                     info *arg_info, node *bnd,
- *                                     int boundnum)
+ *                                     info *arg_info, int boundnum)
  *
  * @brief: Permute and/or merge inverse intersection elements, to
  *         construct CUBSL argument.
  *
- * @params: intr: an N_exprs chain of an intersect calculation
+ * @params: zelu: an N_exprs chain of an intersect calculation
  *          Its length matches that of iv in the sel( iv, producerWL)
  *          in the consumerWL.
  *
@@ -1010,64 +1015,70 @@ BuildAxisConfluence (int idx, node *z, node *bndaraelems, node *intr, int boundn
  *
  *          arg_info: your basic arg_info node.
  *
- *          bnd: The index set bounds for this consumerWL.
- *          The result is initialized to this value. Any
- *          elements that are not overwritten by the indexed
- *          assign will result in axis elements that will
- *          not be sliced. This is conservative, but should
- *          work OK.
- *
  *          boundnum: 0 if we are computing BOUND1,
  *                    1 if we are computing BOUND2
  *
- * @result: The permuted and/or confluenced N_exprs chain.
- *          Its length matches that of the WITHID_IDS in the
- *          consumerWL.
+ * @result: The permuted and/or confluenced N_avis for an
+ *          N_exprs chain
+ *          whose length matches that of the consumerWL GENERATOR_BOUND.
  *
  *          Effectively, this code performs, in the absence
  *          of duplicate zwithids entries:
  *
- *            zarr[ withidids iota zwithids] = intr;
+ *            zarr[ withidids iota zwithids] = zelu;
  *
  *          If there are duplicates, we insert min/max ops to handle
  *          the axis confluence
  *
  *****************************************************************************/
 static node *
-PermuteIntersectElements (node *intr, node *zwithids, info *arg_info, node *bnd,
-                          int boundnum)
+PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundnum)
 {
-    node *z;
     node *ids;
     int shpz;
     int shpids;
-    int shpintr;
+    int shpzelu;
     int i;
     int idx;
     pattern *pat;
     node *bndarr;
+    node *zarr;
+    node *z;
+    node *b;
+    int xrho;
 
     DBUG_ENTER ();
 
+    b = PART_GENERATOR (INFO_CONSUMERWLPART (arg_info));
+    b = (0 == boundnum) ? GENERATOR_BOUND1 (b) : GENERATOR_BOUND2 (b);
     pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
-    if (!PMmatchFlat (pat, bnd)) {
-        DBUG_ASSERT (FALSE, "Expected N_array generator");
+    z = DUPdoDupNode (b);
+    if (!PMmatchFlat (pat, z)) {
+        DBUG_ASSERT (FALSE, "Expected N_array bounds");
     }
-    z = DUPdoDupTree (ARRAY_AELEMS (bndarr)); /* copy of generator bound */
-    shpz = TCcountExprs (z);
+    DBUG_ASSERT (N_exprs == NODE_TYPE (zelu), "Expected N_exprs zelu");
+
+    zarr = ARRAY_AELEMS (bndarr);
+    shpz = TCcountExprs (zarr);
     ids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
     shpids = TCcountIds (ids);
     DBUG_ASSERT (shpz == shpids, "Wrong boundary intersect shape");
-    shpintr = TCcountExprs (intr);
+    shpzelu = TCcountExprs (zelu);
 
-    for (i = 0; i < shpintr; i++) {
+    for (i = 0; i < shpzelu; i++) {
         idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids));
         if (-1 != idx) { /* skip places where idx is a constant, etc. */
                          /* E.g., sel( [ JJ, 2], PWL);                */
-            z = BuildAxisConfluence (idx, z, ARRAY_AELEMS (bndarr), intr, boundnum,
-                                     arg_info);
+            zarr = BuildAxisConfluence (idx, zarr, ARRAY_AELEMS (bndarr), zelu, boundnum,
+                                        arg_info);
         }
     }
+
+    ARRAY_AELEMS (z) = zarr;
+    xrho = TCcountExprs (zarr);
+    z = AWLFIflattenExpression (z, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
+                                TYmakeAKS (TYmakeSimpleType (T_int),
+                                           SHcreateShape (1, xrho)));
 
     pat = PMfree (pat);
 
@@ -1107,11 +1118,8 @@ PermuteIntersectElements (node *intr, node *zwithids, info *arg_info, node *bnd,
  *
  *          boundnum: 0 if computing BOUND1; 1 if computing BOUND2
  *
- * @result: An N_avis node, which represents the result of
+ * @result: An N_exprs node, which represents the result of
  *          mapping the WLintersect extrema back to consumerWL space,
- *          and performing any axis transposition and/or confluence,
- *          so that said result shape matches the shape of the
- *          consumerWL generators.
  *
  *          If we are unable to compute the inverse, we
  *          return NULL. This may occur if, e.g., we multiply
@@ -1120,20 +1128,14 @@ PermuteIntersectElements (node *intr, node *zwithids, info *arg_info, node *bnd,
  *
  *****************************************************************************/
 static node *
-BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *intr,
-                           node *bnd, int boundnum)
+BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *intr)
 {
     node *z = NULL;
     node *zw = NULL;
     node *iprime;
     node *ziavis;
-    node *zarr;
-    node *lb;
     node *el;
-    ntype *typ;
-    pattern *pat;
     int dim;
-    int xrho;
 
     int ivindx;
     DBUG_ENTER ();
@@ -1166,30 +1168,8 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
     }
 
     if (NULL != z) {
-        lb = GENERATOR_BOUND1 (PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)));
-        pat = PMarray (1, PMAgetNode (&zarr), 1, PMskip (0));
-        if (PMmatchFlat (pat, lb)) {
-            zarr = DUPdoDupTree (zarr); /* Make result shape match generator shape */
-            z = PermuteIntersectElements (z, zw, arg_info, bnd, boundnum);
-            ARRAY_AELEMS (zarr) = z;
-
-            if (N_id == NODE_TYPE (lb)) {
-                typ = TYcopyType (AVIS_TYPE (ID_AVIS (lb)));
-            } else {
-                DBUG_ASSERT (N_array == NODE_TYPE (lb),
-                             "Expected N_array or N_id generator");
-                xrho = TCcountExprs (ARRAY_AELEMS (lb));
-                typ = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, xrho));
-                z = AWLFIflattenExpression (zarr, &INFO_VARDECS (arg_info),
-                                            &INFO_PREASSIGNS (arg_info), typ);
-            }
-        }
-        pat = PMfree (pat);
-    }
-
-    if (NULL != z) {
         global.optcounters.awlfi_expr += 1;
-        DBUG_ASSERT (N_avis == NODE_TYPE (z), "Expected N_avis z");
+        INFO_ZWITHIDS (arg_info) = zw;
     }
 
     DBUG_RETURN (z);
@@ -1250,9 +1230,10 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     node *arrlb;
     node *arrub;
     node *nlet;
-    node *bnd;
-    ntype *typ;
-    int xrho;
+    node *zwlb;
+    node *zwub;
+    node *zel = NULL;
+    node *zeu = NULL;
 
     DBUG_ENTER ();
 
@@ -1277,10 +1258,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                   = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
                 intrub
                   = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
-                intrub = IVEXPadjustExtremaBound (ID_AVIS (intrub), arg_info, -1,
-                                                  &INFO_VARDECS (arg_info),
-                                                  &INFO_PREASSIGNS (arg_info), "bip1");
-                intrub = TBmakeId (intrub);
+
                 if (!PMmatchFlat (pat2, intrub)) {
                     DBUG_ASSERT (FALSE, "lost the N_array for %s",
                                  AVIS_NAME (ID_AVIS (intrub)));
@@ -1291,10 +1269,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                                                     INFO_CONSUMERWLPART (arg_info)))
                     && (!AWLFIisIdsMemberPartition (intrub,
                                                     INFO_CONSUMERWLPART (arg_info)))) {
-                    bnd = GENERATOR_BOUND1 (
-                      PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)));
-                    zlb = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrlb,
-                                                     bnd, 0);
+                    zel = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrlb);
+                    zwlb = INFO_ZWITHIDS (arg_info);
                     swaplb = INFO_FINVERSESWAP (arg_info);
 
                     nlet
@@ -1302,46 +1278,44 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                                            &INFO_PREASSIGNS (arg_info));
                     INFO_PREASSIGNS (arg_info)
                       = TCappendAssign (INFO_PREASSIGNS (arg_info), nlet);
-                    bnd = GENERATOR_BOUND2 (
-                      PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)));
-                    if (N_array == NODE_TYPE (bnd)) {
-                        xrho = TCcountExprs (ARRAY_AELEMS (bnd));
-                        typ
-                          = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, xrho));
-                        bnd = AWLFIflattenExpression (DUPdoDupNode (bnd),
-                                                      &INFO_VARDECS (arg_info),
-                                                      &INFO_PREASSIGNS (arg_info), typ);
-                        bnd = TBmakeId (bnd);
-                    }
-                    bnd = IVEXPadjustExtremaBound (ID_AVIS (bnd), arg_info, -1,
-                                                   &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info), "bip2");
-                    bnd = TBmakeId (bnd);
-                    zub = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrub,
-                                                     bnd, 1);
+
+                    zeu = BuildInverseProjectionOne (arg_node, arg_info, ivprime, arrub);
+                    zwub = INFO_ZWITHIDS (arg_info);
                     swapub = INFO_FINVERSESWAP (arg_info);
                 }
             }
 
             /* If we have both new bounds, update the F_intersect */
-            if ((NULL != zlb) && (NULL != zub)) {
+            if ((NULL != zel) && (NULL != zeu)) {
                 DBUG_ASSERT (swaplb == swapub, "Swap confusion");
+                DBUG_ASSERT (N_exprs == NODE_TYPE (zel), "Expected N_exprs zel");
+                DBUG_ASSERT (N_exprs == NODE_TYPE (zeu), "Expected N_exprs zeu");
                 if (swaplb) {
-                    tmp = zlb;
-                    zlb = zub;
-                    zub = tmp;
+                    tmp = zel;
+                    zel = zeu;
+                    zeu = tmp;
                 }
-                zlb = TBmakeId (zlb);
+
+                zlb = PermuteIntersectElements (zel, zwlb, arg_info, 0);
+
+                zub = PermuteIntersectElements (zeu, zwub, arg_info, 1);
+
+#ifdef BOBBOISCONFUSED // prdreverse.sac zlb=[0]; zub=[50]; weird.
+                if (swaplb) {
+                    zlb = IVEXPadjustExtremaBound (zlb, -1, &INFO_VARDECS (arg_info),
+                                                   &INFO_PREASSIGNS (arg_info), "bip4");
+                    zub = IVEXPadjustExtremaBound (zub, 1, &INFO_VARDECS (arg_info),
+                                                   &INFO_PREASSIGNS (arg_info), "bip5");
+                }
+#endif // BOBBOISCONFUSED // prdreverse.sac zlb=[0]; zub=[50]; weird.
+
                 PRF_ARGS (arg_node)
-                  = TCputNthExprs (curelidxlb, PRF_ARGS (arg_node), zlb);
-                zub = IVEXPadjustExtremaBound (zub, arg_info, 1, &INFO_VARDECS (arg_info),
-                                               &INFO_PREASSIGNS (arg_info), "bip2");
-                zub = TBmakeId (zub);
+                  = TCputNthExprs (curelidxlb, PRF_ARGS (arg_node), TBmakeId (zlb));
                 PRF_ARGS (arg_node)
-                  = TCputNthExprs (curelidxub, PRF_ARGS (arg_node), zub);
+                  = TCputNthExprs (curelidxub, PRF_ARGS (arg_node), TBmakeId (zub));
             }
-            zlb = NULL;
-            zub = NULL;
+            zel = NULL;
+            zeu = NULL;
         }
     }
 
@@ -1796,8 +1770,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
             }
             /* Denormalize AVIS_MAX */
             maxel = EXPRS_EXPR (maxex);
-            maxel = IVEXPadjustExtremaBound (ID_AVIS (maxel), arg_info, 1,
-                                             &INFO_VARDECS (arg_info),
+            maxel = IVEXPadjustExtremaBound (ID_AVIS (maxel), 1, &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGNS (arg_info), "ibb1");
             FREEdoFreeNode (EXPRS_EXPR (maxex));
             EXPRS_EXPR (maxex) = TBmakeId (maxel);

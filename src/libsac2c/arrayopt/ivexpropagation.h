@@ -15,8 +15,8 @@
  *****************************************************************************/
 extern node *IVEXPdoIndexVectorExtremaProp (node *arg_node);
 void IVEXPsetExtremumIfNotNull (node **snk, node *src);
-extern node *IVEXPadjustExtremaBound (node *arg_node, info *arg_info, int k,
-                                      node **vardecs, node **preassigns, char *tagit);
+extern node *IVEXPadjustExtremaBound (node *arg_node, int k, node **vardecs,
+                                      node **preassigns, char *tagit);
 extern bool IVEXPisCheckWithids (node *exprs, node *curwith);
 void IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup);
 void IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup);
