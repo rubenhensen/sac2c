@@ -261,10 +261,11 @@ GENARRAY MODARRAY ALL AMPERS
 %right MM_OP CAST
 %right SQBR_L BRACKET_L TRIANGLEBR_L
 %right ELSE 
-%left RET_BRACKET
+%nonassoc RET_BRACKET
 
 
 %start all
+%expect 1
 
 %{
 
@@ -1171,7 +1172,7 @@ returnstmt:  BRACKET_L exprs BRACKET_R
                { 
                  $$ = $2;
                }
-             |%prec BRACKET_L
+             |
              expr
                {
                  $$ = TBmakeExprs ($1, NULL);
