@@ -930,6 +930,7 @@ FlattenScalarNode (node *arg_node, info *arg_info)
                                     TYmakeAKS (TYmakeSimpleType (T_int),
                                                SHcreateShape (0)));
     } else {
+        DBUG_ASSERT (N_id == NODE_TYPE (arg_node), "Expected N_id");
         z = ID_AVIS (arg_node);
     }
 
@@ -1022,6 +1023,7 @@ BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnu
  * @params: zelu: an N_exprs chain of an intersect calculation
  *          Its length matches that of iv in the sel( iv, producerWL)
  *          in the consumerWL.
+ *          These are in denormalized form.
  *
  *          zwithids: an N_ids chain, of the same shape as
  *          zelu, comprising the WITHID_IDS related to the
@@ -1059,22 +1061,42 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
     node *zarr;
     node *z;
     node *zelnew;
-    node *b;
     int xrho;
     node *bndel;
 
     DBUG_ENTER ();
 
-    b = PART_GENERATOR (INFO_CONSUMERWLPART (arg_info));
-    b = (0 == boundnum) ? GENERATOR_BOUND1 (b) : GENERATOR_BOUND2 (b);
+    z = PART_GENERATOR (INFO_CONSUMERWLPART (arg_info));
+    if (0 == boundnum) {
+        z = GENERATOR_BOUND1 (z);
+    } else {
+        z = GENERATOR_BOUND2 (z);
+    }
+
+    if (N_array == NODE_TYPE (z)) {
+        xrho = SHgetUnrLen (ARRAY_FRAMESHAPE (z));
+        z = AWLFIflattenExpression (DUPdoDupNode (z), &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info),
+                                    TYmakeAKS (TYmakeSimpleType (T_int),
+                                               SHcreateShape (1, xrho)));
+    } else {
+        z = ID_AVIS (z);
+    }
+
+    if (1 == boundnum) { /* Denormalize BOUND2 */
+        z = IVEXPadjustExtremaBound (z, -1, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info), "pie");
+    }
+
+    z = TBmakeId (z);
+
     pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
-    z = DUPdoDupNode (b);
     if (!PMmatchFlat (pat, z)) {
         DBUG_ASSERT (FALSE, "Expected N_array bounds");
     }
     DBUG_ASSERT (N_exprs == NODE_TYPE (zelu), "Expected N_exprs zelu");
 
-    zarr = ARRAY_AELEMS (bndarr);
+    zarr = DUPdoDupTree (ARRAY_AELEMS (bndarr));
 
     shpz = TCcountExprs (zarr);
     ids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
@@ -1088,10 +1110,14 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
                          /* E.g., sel( [ JJ, 2], PWL);                */
             zelnew = TCgetNthExprsExpr (i, zelu);
             bndel = TCgetNthExprsExpr (idx, ARRAY_AELEMS (bndarr));
+#ifdef FIXME // weird crash fault islocation
             zarr = BuildAxisConfluence (zarr, idx, zelnew, bndel, boundnum, arg_info);
+#endif //  FIXME // weird crash fault islocation
         }
     }
 
+    z = DUPdoDupNode (bndarr);
+    FREEdoFreeTree (ARRAY_AELEMS (z));
     ARRAY_AELEMS (z) = zarr;
     xrho = TCcountExprs (zarr);
     z = AWLFIflattenExpression (z, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
