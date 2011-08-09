@@ -708,7 +708,8 @@ AWLFIisHasInverseProjection (node *arg_node)
  * @params:  fn: The current expression we are tracing,
  *           An N_id or an N_num.
  *           arg_info: Your basic arg_info node.
- *           ivp: The current inverse projection, iv'
+ *           lbubel: The current inverse projection, iv'[ k]
+ *                This is normalized, a la WL bounds.
  *
  * @result: An N_avis node that gives the result of the F-inverse mapping
  *          function to take us from iv'->iv, or
@@ -718,7 +719,7 @@ AWLFIisHasInverseProjection (node *arg_node)
  *
  *****************************************************************************/
 static node *
-BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
+BuildInverseProjectionScalar (node *fn, info *arg_info, node *lbubel)
 {
     node *z = NULL;
     int markiv;
@@ -734,7 +735,8 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
     node *withidids;
     node *ipavis;
     int tcindex;
-    node *ivp2;
+    node *lbubelavis;
+    node *resid;
     prf nprf;
 
     pattern *pat;
@@ -745,13 +747,14 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
     if (N_num == NODE_TYPE (fn)) {
         z = DUPdoDupNode (fn);
     } else {
-        if (N_num == NODE_TYPE (ivp)) {
-            ivp2 = AWLFIflattenExpression (DUPdoDupTree (ivp), &INFO_VARDECS (arg_info),
-                                           &INFO_PREASSIGNS (arg_info),
-                                           TYmakeAKS (TYmakeSimpleType (T_int),
-                                                      SHcreateShape (0)));
+        if (N_num == NODE_TYPE (lbubel)) {
+            lbubelavis
+              = AWLFIflattenExpression (DUPdoDupTree (lbubel), &INFO_VARDECS (arg_info),
+                                        &INFO_PREASSIGNS (arg_info),
+                                        TYmakeAKS (TYmakeSimpleType (T_int),
+                                                   SHcreateShape (0)));
         } else {
-            ivp2 = ID_AVIS (ivp);
+            lbubelavis = ID_AVIS (lbubel);
         }
 
         if (N_id == NODE_TYPE (fn)) {
@@ -768,7 +771,7 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                         DBUG_PRINT ("Found %s as source of iv'=%s",
                                     AVIS_NAME (ID_AVIS (idx)), AVIS_NAME (ipavis));
                         INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
-                        z = ivp2;
+                        z = lbubelavis;
                     } else {
                         /* Vanilla variable */
                         rhs = AVIS_SSAASSIGN (ID_AVIS (idx));
@@ -799,15 +802,17 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                             assgn
                               = TBmakeAssign (TBmakeLet (ids,
                                                          TCmakePrf2 (F_sub_SxS,
-                                                                     TBmakeId (ivp2),
+                                                                     TBmakeId (
+                                                                       lbubelavis),
                                                                      TBmakeId (
                                                                        ID_AVIS (xarg)))),
                                               NULL);
                             INFO_PREASSIGNS (arg_info)
                               = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
                             AVIS_SSAASSIGN (resavis) = assgn;
-                            z = BuildInverseProjectionScalar (ivarg, arg_info,
-                                                              TBmakeId (resavis));
+                            resid = TBmakeId (resavis);
+                            z = BuildInverseProjectionScalar (ivarg, arg_info, resid);
+                            resid = FREEdoFreeNode (resid);
                         }
                         break;
 
@@ -831,14 +836,14 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                             switch (markiv) {
                             case 1:
                                 nprf = F_add_SxS;
-                                id1 = TBmakeId (ivp2);
+                                id1 = TBmakeId (lbubelavis);
                                 id2 = TBmakeId (ID_AVIS (xarg));
                                 break;
 
                             case 2:
                                 nprf = F_sub_SxS;
                                 id1 = TBmakeId (ID_AVIS (xarg));
-                                id2 = TBmakeId (ivp2);
+                                id2 = TBmakeId (lbubelavis);
                                 INFO_FINVERSESWAP (arg_info)
                                   = !INFO_FINVERSESWAP (arg_info);
                                 break;
@@ -857,8 +862,9 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *ivp)
                             INFO_PREASSIGNS (arg_info)
                               = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
                             AVIS_SSAASSIGN (resavis) = assgn;
-                            z = BuildInverseProjectionScalar (ivarg, arg_info,
-                                                              TBmakeId (resavis));
+                            resid = TBmakeId (resavis);
+                            z = BuildInverseProjectionScalar (ivarg, arg_info, resid);
+                            resid = FREEdoFreeNode (resid);
                         }
                         break;
 
@@ -932,8 +938,7 @@ FlattenScalarNode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *BuildAxisConfluence( int idx, node *intr, node *bndaraelems,
- *                                int boundnum, info *arg_info)
+ * @fn node *BuildAxisConfluence(...)
  *
  * @brief: Generate code to perform max/min on WL-intersection of
  *         two axes that are confluent. E.g., if the CWL is extracting
@@ -944,54 +949,63 @@ FlattenScalarNode (node *arg_node, info *arg_info)
  *         and the minimum of the maximum bound.
  *
  * @params:
- *          arg_info: your basic arg_info node.
+ *          idx: index into result of this element.
  *
- *          intr: The inverse intersect, of the shape of the CWL bounds,
- *          as the ARRAY_AELEMS N_exprs chain.
- *          Its elements will be overwritten by any confluenced
- *          elements.
+ *          zarr: the N_array result we are overwriting.
  *
- *          bndarraelems: The index set bounds for this consumerWL.
+ *          zeluel: The inverse intersect, of the shape of the CWL bounds,
+ *          as an element of the ARRAY_AELEMS N_exprs chain.
+ *
+ *          bndel: Current element of the generator bound.
+ *                 This is used to determine whether to
+ *                 overwrite current result element or if we need min/max.
  *
  *          boundnum: 0 if we are computing BOUND1,
  *                    1 if we are computing BOUND2
  *
- * @result: zprime as either z[idx], if there is not confluence,
- *          Max( z[idx, bndarelems[idx]) if 0=boundnum
- *          Min( z[idx, bndarelems[idx]) if 1=boundnum
+ *          arg_info: your basic arg_info node.
+ *
+ * @result: If zarr[ idx] is not used yet:
+ *
+ *              zarr[ idx] = zelnew;
+ *
+ *         If zarr[idx] is used, there is confluence, so we have:
+ *
+ *           zarr[ idx] = Max( zarr[ idx], zelnew) if 0=boundnum
+ *           zarr[ idx] = Min( zarr[ idx], zelnew) if 1=boundnum
  *
  *****************************************************************************/
 static node *
-BuildAxisConfluence (int idx, node *z, node *bndaraelems, node *intr, int boundnum,
+BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnum,
                      info *arg_info)
 {
 
     node *zprime;
-    node *zel;
-    node *bndel;
+    node *zelcur;
     char *fn;
     node *fncall;
-    node *intrel;
 
     DBUG_ENTER ();
 
-    zel = TCgetNthExprsExpr (idx, z);
-    bndel = TCgetNthExprsExpr (idx, bndaraelems);
-
-    if (CMPT_EQ == CMPTdoCompareTree (zel, bndel)) {
-        zprime = z;
+    zelcur = TCgetNthExprsExpr (idx, zarr);
+    if (CMPT_EQ == CMPTdoCompareTree (zelcur, bndel)) { /* not used yet */
+        zprime = TCputNthExprs (idx, zarr, TBmakeId (ID_AVIS (zelnew)));
     } else {
-        fn = (1 == boundnum) ? "Max" : "Min";
-        zel = FlattenScalarNode (zel, arg_info);
-        intrel = FlattenScalarNode (TCgetNthExprsExpr (idx, intr), arg_info);
-
-        fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fn,
-                                    TCcreateExprsChainFromAvises (2, fn, zel, intrel));
-        zprime = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
-                                         &INFO_PREASSIGNS (arg_info),
-                                         TYmakeAKS (TYmakeSimpleType (T_int),
-                                                    SHcreateShape (0)));
-        zprime = TCputNthExprs (idx, z, TBmakeId (zprime));
+        if (CMPT_EQ == CMPTdoCompareTree (zelcur, zelnew)) { /* No change */
+            zprime = zarr;
+        } else { /* confluence */
+            fn = (1 == boundnum) ? "Max" : "Min";
+            zelnew = FlattenScalarNode (zelnew, arg_info);
+            zelcur = FlattenScalarNode (zelcur, arg_info);
+            fncall
+              = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fn,
+                                   TCcreateExprsChainFromAvises (2, fn, zelcur, zelnew));
+            zprime = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
+                                             &INFO_PREASSIGNS (arg_info),
+                                             TYmakeAKS (TYmakeSimpleType (T_int),
+                                                        SHcreateShape (0)));
+            zprime = TCputNthExprs (idx, zarr, TBmakeId (zprime));
+        }
     }
 
     DBUG_RETURN (zprime);
@@ -1010,8 +1024,8 @@ BuildAxisConfluence (int idx, node *z, node *bndaraelems, node *intr, int boundn
  *          in the consumerWL.
  *
  *          zwithids: an N_ids chain, of the same shape as
- *          intr, comprising the WITHID_IDS related to the
- *          corresponding element of intr.
+ *          zelu, comprising the WITHID_IDS related to the
+ *          corresponding element of zelu.
  *
  *          arg_info: your basic arg_info node.
  *
@@ -1044,8 +1058,10 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
     node *bndarr;
     node *zarr;
     node *z;
+    node *zelnew;
     node *b;
     int xrho;
+    node *bndel;
 
     DBUG_ENTER ();
 
@@ -1059,6 +1075,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
     DBUG_ASSERT (N_exprs == NODE_TYPE (zelu), "Expected N_exprs zelu");
 
     zarr = ARRAY_AELEMS (bndarr);
+
     shpz = TCcountExprs (zarr);
     ids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
     shpids = TCcountIds (ids);
@@ -1069,8 +1086,9 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
         idx = TClookupIdsNode (ids, TCgetNthIds (i, zwithids));
         if (-1 != idx) { /* skip places where idx is a constant, etc. */
                          /* E.g., sel( [ JJ, 2], PWL);                */
-            zarr = BuildAxisConfluence (idx, zarr, ARRAY_AELEMS (bndarr), zelu, boundnum,
-                                        arg_info);
+            zelnew = TCgetNthExprsExpr (i, zelu);
+            bndel = TCgetNthExprsExpr (idx, ARRAY_AELEMS (bndarr));
+            zarr = BuildAxisConfluence (zarr, idx, zelnew, bndel, boundnum, arg_info);
         }
     }
 
@@ -1112,7 +1130,14 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
  *
  *          ivprime: The iv' N_array node.
  *
- *          intr: the WLintersect N_array node for lb or ub.
+ *          lbub: the WLintersect N_array node for lb or ub.
+ *                This is denormalized, so that ub and lb are
+ *                treated identically. I.e., if we have this WL generator:
+ *                  ( [0] <= iv < [50])
+ *                then we have these bounds:
+ *                                 lb   ub
+ *                  Normalized:    [0]  [50]
+ *                  Denormlized:   [0]  [49]
  *
  *          bnd: the consumerWL generator N_array node for lb or ub.
  *
@@ -1128,30 +1153,30 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
  *
  *****************************************************************************/
 static node *
-BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *intr)
+BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *lbub)
 {
     node *z = NULL;
     node *zw = NULL;
     node *iprime;
     node *ziavis;
-    node *el;
+    node *lbubel;
     int dim;
 
     int ivindx;
     DBUG_ENTER ();
 
     DBUG_ASSERT (N_array == NODE_TYPE (ivprime), "Expected N_array ivprime");
-    DBUG_ASSERT (N_array == NODE_TYPE (intr), "Expected N_array intr");
+    DBUG_ASSERT (N_array == NODE_TYPE (lbub), "Expected N_array lbub");
 
     dim = SHgetUnrLen (ARRAY_FRAMESHAPE (ivprime));
     INFO_WITHIDS (arg_info) = NULL;
 
     for (ivindx = 0; ivindx < dim; ivindx++) {
         iprime = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (ivprime));
-        el = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (intr));
+        lbubel = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (lbub));
 
         INFO_FINVERSESWAP (arg_info) = FALSE;
-        ziavis = BuildInverseProjectionScalar (iprime, arg_info, el);
+        ziavis = BuildInverseProjectionScalar (iprime, arg_info, lbubel);
         if (NULL != ziavis) {
             if (N_avis == NODE_TYPE (ziavis)) {
                 AVIS_FINVERSESWAP (ziavis) = INFO_FINVERSESWAP (arg_info);
@@ -1227,8 +1252,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     node *tmp;
     node *intrlb;
     node *intrub;
-    node *arrlb;
-    node *arrub;
+    node *arrlb; /* Denormalized */
+    node *arrub; /* Denormalized */
     node *nlet;
     node *zwlb;
     node *zwub;
@@ -1258,6 +1283,10 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                   = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
                 intrub
                   = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
+                intrub = IVEXPadjustExtremaBound (ID_AVIS (intrub), -1,
+                                                  &INFO_VARDECS (arg_info),
+                                                  &INFO_PREASSIGNS (arg_info), "bip1");
+                intrub = TBmakeId (intrub);
 
                 if (!PMmatchFlat (pat2, intrub)) {
                     DBUG_ASSERT (FALSE, "lost the N_array for %s",
@@ -1300,14 +1329,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
 
                 zub = PermuteIntersectElements (zeu, zwub, arg_info, 1);
 
-#ifdef BOBBOISCONFUSED // prdreverse.sac zlb=[0]; zub=[50]; weird.
-                if (swaplb) {
-                    zlb = IVEXPadjustExtremaBound (zlb, -1, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info), "bip4");
-                    zub = IVEXPadjustExtremaBound (zub, 1, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info), "bip5");
-                }
-#endif // BOBBOISCONFUSED // prdreverse.sac zlb=[0]; zub=[50]; weird.
+                zub = IVEXPadjustExtremaBound (zub, 1, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info), "bip5");
 
                 PRF_ARGS (arg_node)
                   = TCputNthExprs (curelidxlb, PRF_ARGS (arg_node), TBmakeId (zlb));
