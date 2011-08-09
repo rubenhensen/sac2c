@@ -954,7 +954,7 @@ FlattenScalarNode (node *arg_node, info *arg_info)
  *
  *          zarr: the N_array result we are overwriting.
  *
- *          zeluel: The inverse intersect, of the shape of the CWL bounds,
+ *          zelnew: The inverse intersect, of the shape of the CWL bounds,
  *          as an element of the ARRAY_AELEMS N_exprs chain.
  *
  *          bndel: Current element of the generator bound.
@@ -985,6 +985,8 @@ BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnu
     node *zelcur;
     char *fn;
     node *fncall;
+    node *newavis;
+    node *curavis;
 
     DBUG_ENTER ();
 
@@ -995,12 +997,12 @@ BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnu
         if (CMPT_EQ == CMPTdoCompareTree (zelcur, zelnew)) { /* No change */
             zprime = zarr;
         } else { /* confluence */
-            fn = (1 == boundnum) ? "Max" : "Min";
-            zelnew = FlattenScalarNode (zelnew, arg_info);
-            zelcur = FlattenScalarNode (zelcur, arg_info);
-            fncall
-              = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fn,
-                                   TCcreateExprsChainFromAvises (2, fn, zelcur, zelnew));
+            fn = (0 == boundnum) ? "Max" : "Min";
+            newavis = FlattenScalarNode (zelnew, arg_info);
+            curavis = FlattenScalarNode (zelcur, arg_info);
+            fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fn,
+                                        TCcreateExprsChainFromAvises (2, fn, curavis,
+                                                                      newavis));
             zprime = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGNS (arg_info),
                                              TYmakeAKS (TYmakeSimpleType (T_int),
@@ -1110,9 +1112,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
                          /* E.g., sel( [ JJ, 2], PWL);                */
             zelnew = TCgetNthExprsExpr (i, zelu);
             bndel = TCgetNthExprsExpr (idx, ARRAY_AELEMS (bndarr));
-#ifdef FIXME // weird crash fault islocation
             zarr = BuildAxisConfluence (zarr, idx, zelnew, bndel, boundnum, arg_info);
-#endif //  FIXME // weird crash fault islocation
         }
     }
 
