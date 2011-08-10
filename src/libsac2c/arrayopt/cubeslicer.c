@@ -90,7 +90,6 @@ struct INFO {
     node *fundef;
     node *vardecs;
     node *preassignswith;
-    bool onefundef; /* fundef-based traversal */
     node *lhs;
     node *consumerpart;
     node *wlprojection1;            /* lower bound of WL proj */
@@ -107,7 +106,6 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNSWITH(n) ((n)->preassignswith)
-#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_CONSUMERPART(n) ((n)->consumerpart)
 #define INFO_WLPROJECTION1(n) ((n)->wlprojection1)
@@ -129,7 +127,6 @@ MakeInfo (node *fundef)
     INFO_FUNDEF (result) = fundef;
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNSWITH (result) = NULL;
-    INFO_ONEFUNDEF (result) = FALSE;
     INFO_LHS (result) = NULL;
     INFO_CONSUMERPART (result) = NULL;
     INFO_WLPROJECTION1 (result) = NULL;
@@ -182,7 +179,6 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
                  "CUBSLdoAlgebraicWithLoopFoldingCubeSlicing called for non-fundef");
 
     arg_info = MakeInfo (arg_node);
-    INFO_ONEFUNDEF (arg_info) = TRUE;
     INFO_LUT (arg_info) = LUTgenerateLut ();
 
     TRAVpush (TR_cubsl);
@@ -965,7 +961,6 @@ PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
 node *
 CUBSLfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
 
     DBUG_ENTER ();
 
@@ -974,9 +969,6 @@ CUBSLfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("Algebraic-With-Loop-Folding Cube Slicing in %s %s begins",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                     FUNDEF_NAME (arg_node));
-
-        old_onefundef = INFO_ONEFUNDEF (arg_info);
-        INFO_ONEFUNDEF (arg_info) = FALSE;
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -990,17 +982,11 @@ CUBSLfundef (node *arg_node, info *arg_info)
             }
 
             FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-
-            INFO_ONEFUNDEF (arg_info) = old_onefundef;
         }
 
         DBUG_PRINT ("Algebraic-With-Loop-Folding Cube Slicing in %s %s ends",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                     FUNDEF_NAME (arg_node));
-    }
-
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
