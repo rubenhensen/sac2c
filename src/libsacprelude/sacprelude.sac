@@ -1,12 +1,18 @@
 module sacprelude;
 
+/* Be sure that, for any names you add here, that you also add
+ * them to "addspecialnames.c" in the modules subdirectory,
+ * Otherwise, they won't get inlined, apparently.
+ */
 provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
+         isPartitionIntersectNull, 
+         partitionMin, partitionMax,
+         partitionIntersectMax, partitionIntersectMin,
          SACarg, prod, partitionSlicer, gridFiller
 #define MUTC 1
 #if SAC_BACKEND != MUTC
          , unwrapInt, unwrapBool, unwrapFloat, unwrapDouble, unwrapChar, 
-	   isInt, isBool, isFloat, isDouble, isChar, isUdt, wrap,
-           isPartitionIntersectNull, partitionIntersectMax, partitionIntersectMin
+	   isInt, isBool, isFloat, isDouble, isChar, isUdt, wrap
 #ifdef SANTANU
 	 , unwrapByte, unwrapShort, unwrapInt, unwrapLong, unwrapLonglong,
 	   unwrapUbyte, unwrapUshort, unwrapUint, unwrapUlong, unwrapUlonglong,
@@ -137,7 +143,7 @@ int[*] adjustLacFunParams( bool[*] p, int[*] i, int[.] iv)
 }
 
 inline 
-int Min( int x, int y)
+int partitionMin( int x, int y)
 { /* Function to perform min_SxS_( x, y), but written to 
    * let the optimizers simplify the arguments.
    */
@@ -149,7 +155,7 @@ int Min( int x, int y)
 }
 
 inline 
-int Max( int x, int y)
+int partitionMax( int x, int y)
 { /* Function to perform max_SxS_( x, y), but written to 
    * let the optimizers simplify the arguments.
    */
@@ -165,7 +171,7 @@ int[.], int[.], int[.], int[.]
 partitionSlicer( int[.] min, int[.] max, int axis, int[.] lb, int[.] ub)
 {
   lb_i = _sel_VxA_( [axis], lb);
-  ub_i = Max( lb_i, _sel_VxA_( [axis], ub));
+  ub_i = partitionMax( lb_i, _sel_VxA_( [axis], ub));
   max_lower = _modarray_AxVxS_( max, [axis], lb_i);
   min_upper = _modarray_AxVxS_( min, [axis], ub_i);
 
@@ -179,10 +185,10 @@ inline
 int[.], int[.], int[.]
 gridFiller( int[.] lb, int[.] ub, int[.] wdth, int dim, int[.] maxwidth)
 {
-  l_dim = Min( _add_SxS_( _sel_VxA_( [dim], lb), 
+  l_dim = partitionMin( _add_SxS_( _sel_VxA_( [dim], lb), 
                                 _sel_VxA_( [dim], wdth)),
                      _sel_VxA_( [dim], ub));
-  w_dim = Max( _sub_SxS_( _sel_VxA_( [dim], maxwidth), 
+  w_dim = partitionMax( _sub_SxS_( _sel_VxA_( [dim], maxwidth), 
                           _sel_VxA_( [dim], wdth)),
                      0);
   nlb = _modarray_AxVxS_( lb, [dim], l_dim );
@@ -203,7 +209,8 @@ bool[.] isPartitionIntersectNull( int[.] idxmin, int[.] idxmax,
   return(z);
 }
 
-inline int[.] partitionIntersectMax( int[.] PWLbound1, int[.] ivmin)
+inline 
+int[.] partitionIntersectMax( int[.] PWLbound1, int[.] ivmin)
 { /* compute maximum of producerWL partition bound1
    * and index vector set.
    *  z = max( PWLbound1, ivmin);
@@ -215,7 +222,8 @@ inline int[.] partitionIntersectMax( int[.] PWLbound1, int[.] ivmin)
   return(z);
 }
 
-inline int[.] partitionIntersectMin( int[.] PWLbound2, int[.] ivmax)
+inline 
+int[.] partitionIntersectMin( int[.] PWLbound2, int[.] ivmax)
 { /* Function to perform min( PWLbound2, ivmax), but written to 
    * let the optimizers simplify the arguments.
 

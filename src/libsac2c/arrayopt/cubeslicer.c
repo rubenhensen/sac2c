@@ -380,38 +380,6 @@ isNullIntersect (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn node * ExtractNthItem
- *
- * @brief Extract the Nth item of the intersect information
- *
- * @params itemno: the Nth item number.
- * @params idx: the index vector for the _sel_VxA( idx, producerWL).
- *
- * @result: The item itself, unless index error, in which case we
- *          return NULL.
- *
- *****************************************************************************/
-node *
-ExtractNthItem (int itemno, node *idx)
-{
-    node *bnd;
-    node *dfg;
-    node *val = NULL;
-
-    DBUG_ENTER ();
-
-    dfg = AVIS_SSAASSIGN (ID_AVIS (idx));
-    dfg = LET_EXPR (ASSIGN_INSTR (dfg));
-    DBUG_ASSERT (F_noteintersect == PRF_PRF (dfg),
-                 "Wanted F_noteintersect as idx parent");
-    bnd = TCgetNthExprsExpr (itemno, PRF_ARGS (dfg));
-    val = bnd;
-
-    DBUG_RETURN (val);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn static bool isExactIntersect( node *cbound1, node *intersectb1,
  *                                   node *cbound2, node *intersectb2)
  *
@@ -515,15 +483,15 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     while (((INTERSECT_unknown == z) || (INTERSECT_null == z))
            && (intersectListNo < intersectListLim)) {
 
-        proj1 = ExtractNthItem (WLPROJECTION1 (intersectListNo), idx);
-        proj2 = ExtractNthItem (WLPROJECTION2 (intersectListNo), idx);
+        proj1 = TCgetNthExprsExpr (WLPROJECTION1 (intersectListNo), PRF_ARGS (noteint));
+        proj2 = TCgetNthExprsExpr (WLPROJECTION2 (intersectListNo), PRF_ARGS (noteint));
 
         producerWLBound1Original
-          = ExtractNthItem (WLBOUND1ORIGINAL (intersectListNo), idx);
+          = TCgetNthExprsExpr (WLBOUND1ORIGINAL (intersectListNo), PRF_ARGS (noteint));
         producerWLBound2Original
-          = ExtractNthItem (WLBOUND2ORIGINAL (intersectListNo), idx);
-        nullIntersect
-          = isNullIntersect (ExtractNthItem (WLINTERSECTIONNULL (intersectListNo), idx));
+          = TCgetNthExprsExpr (WLBOUND2ORIGINAL (intersectListNo), PRF_ARGS (noteint));
+        nullIntersect = isNullIntersect (
+          TCgetNthExprsExpr (WLINTERSECTIONNULL (intersectListNo), PRF_ARGS (noteint)));
 
         if ((N_generator == NODE_TYPE (consumerWLGenerator))
             && (N_generator == NODE_TYPE (producerWLGenerator))

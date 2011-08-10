@@ -678,7 +678,7 @@ AWLFIisIdsMemberPartition (node *arg_node, node *partn)
 bool
 AWLFIisHasInverseProjection (node *arg_node)
 {
-    bool z = FALSE;
+    bool z = TRUE;
     constant *co;
 
     DBUG_ENTER ();
@@ -925,7 +925,7 @@ FlattenScalarNode (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (N_num == NODE_TYPE (arg_node)) {
-        z = AWLFIflattenExpression (DUPdoDupTree (arg_node), &INFO_VARDECS (arg_info),
+        z = AWLFIflattenExpression (DUPdoDupNode (arg_node), &INFO_VARDECS (arg_info),
                                     &INFO_PREASSIGNS (arg_info),
                                     TYmakeAKS (TYmakeSimpleType (T_int),
                                                SHcreateShape (0)));
@@ -997,12 +997,12 @@ BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnu
         if (CMPT_EQ == CMPTdoCompareTree (zelcur, zelnew)) { /* No change */
             zprime = zarr;
         } else { /* confluence */
-            fn = (0 == boundnum) ? "Max" : "Min";
+            fn = (0 == boundnum) ? "partitionMax" : "partitionMin";
             newavis = FlattenScalarNode (zelnew, arg_info);
             curavis = FlattenScalarNode (zelcur, arg_info);
-            fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fn,
-                                        TCcreateExprsChainFromAvises (2, fn, curavis,
-                                                                      newavis));
+            fncall
+              = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fn,
+                                   TCcreateExprsChainFromAvises (2, curavis, newavis));
             zprime = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGNS (arg_info),
                                              TYmakeAKS (TYmakeSimpleType (T_int),
@@ -1288,8 +1288,6 @@ BuildInverseProjections (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Building inverse projection for %s",
-                AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
     numpart = (TCcountExprs (PRF_ARGS (arg_node)) / WLEPP);
     pat1 = PMarray (1, PMAgetNode (&arrlb), 1, PMskip (0));
     pat2 = PMarray (1, PMAgetNode (&arrub), 1, PMskip (0));
@@ -1305,6 +1303,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                   TCgetNthExprsExpr (curelidxlb, PRF_ARGS (arg_node))))
                 && (!AWLFIisHasInverseProjection (
                      TCgetNthExprsExpr (curelidxub, PRF_ARGS (arg_node))))) {
+                DBUG_PRINT ("Building inverse projection for %s, partition #%d",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), curpart);
                 intrlb
                   = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
                 intrub
@@ -1351,6 +1351,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                     zeu = tmp;
                 }
 
+                DBUG_PRINT ("Building axis permute and confluence for %s, partition #%d",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), curpart);
                 zlb = PermuteIntersectElements (zel, zwlb, arg_info, 0);
 
                 zub = PermuteIntersectElements (zeu, zwub, arg_info, 1);

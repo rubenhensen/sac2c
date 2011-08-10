@@ -22,7 +22,6 @@ typedef enum {
  *
  *****************************************************************************/
 extern node *CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node);
-extern node *ExtractNthItem (int itemno, node *idx);
 extern node *CUBSLfindMatchingPart (node *arg_node, intersect_type_t *itype,
                                     node *consumerpart, node *producerWL, info *arg_info);
 extern bool matchGeneratorField (node *fa, node *fb);
