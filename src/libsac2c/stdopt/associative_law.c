@@ -127,6 +127,7 @@ struct INFO {
     bool travrhs;
     bool onefundef;
     node *lhs;
+    node *withid;
 };
 
 /*
@@ -138,6 +139,7 @@ struct INFO {
 #define INFO_TRAVRHS(n) ((n)->travrhs)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_LHS(n) ((n)->lhs)
+#define INFO_WITHID(n) ((n)->withid)
 
 /*
  * INFO functions
@@ -156,7 +158,8 @@ MakeInfo ()
     INFO_MODE (result) = MODE_noop;
     INFO_TRAVRHS (result) = FALSE;
     INFO_ONEFUNDEF (result) = FALSE;
-    INFO_LHS (result) = FALSE;
+    INFO_LHS (result) = NULL;
+    INFO_WITHID (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -794,8 +797,9 @@ CollectExprs (prf prf, node *a, bool sclprf)
 
     ID_ISSCLPRF (EXPRS_EXPR (res)) = sclprf;
 
-    if (AVIS_ISACTIVE (ID_AVIS (a))) {
-        AVIS_ISACTIVE (ID_AVIS (a)) = FALSE;
+    if (AVIS_ISDEFINEDINCURRENTBLOCK (ID_AVIS (a))
+        && AVIS_SSAASSIGN (ID_AVIS (a)) != NULL) {
+        AVIS_ISDEFINEDINCURRENTBLOCK (ID_AVIS (a)) = FALSE;
 
         rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (a)));
 
@@ -808,22 +812,10 @@ CollectExprs (prf prf, node *a, bool sclprf)
 
         case N_prf:
             if (compatiblePrf (prf, PRF_PRF (rhs))) {
-
                 left = CollectExprs (prf, PRF_ARG1 (rhs), isArg1Scl (PRF_PRF (rhs)));
                 right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)));
-#if 0
-        if (  !isSingleton( left) || !isSingleton( right) ||
-              !eqClass( EXPRS_EXPR( left), EXPRS_EXPR( right))) {
-          res = FREEdoFreeTree( res);
-          res = TCappendExprs( left, right);
-        } else {
-          left = FREEdoFreeTree( left);
-          right = FREEdoFreeTree( right);
-        }
-#else
                 res = FREEdoFreeTree (res);
                 res = TCappendExprs (left, right);
-#endif
             }
             break;
 
@@ -894,7 +886,9 @@ ALblock (node *arg_node, info *arg_info)
 
     INFO_MODE (arg_info) = MODE_mark;
     DBUG_PRINT ("Traversing assignment chain, mode %d", INFO_MODE (arg_info));
+    INFO_WITHID (arg_info) = TRAVopt (INFO_WITHID (arg_info), arg_info);
     BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    INFO_WITHID (arg_info) = TRAVopt (INFO_WITHID (arg_info), arg_info);
 
     INFO_MODE (arg_info) = old_mode;
 
@@ -948,6 +942,7 @@ ALlet (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_PRINT ("looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
+
     switch (INFO_MODE (arg_info)) {
     case MODE_recurse:
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -978,12 +973,12 @@ ALids (node *arg_node, info *arg_info)
 
     switch (INFO_MODE (arg_info)) {
     case MODE_mark:
-        AVIS_ISACTIVE (IDS_AVIS (arg_node)) = TRUE;
+        AVIS_ISDEFINEDINCURRENTBLOCK (IDS_AVIS (arg_node)) = TRUE;
         break;
     case MODE_transform:
-        if (AVIS_ISACTIVE (IDS_AVIS (arg_node))) {
+        if (AVIS_ISDEFINEDINCURRENTBLOCK (IDS_AVIS (arg_node))) {
             INFO_TRAVRHS (arg_info) = TRUE;
-            AVIS_ISACTIVE (IDS_AVIS (arg_node)) = FALSE;
+            AVIS_ISDEFINEDINCURRENTBLOCK (IDS_AVIS (arg_node)) = FALSE;
         }
         break;
     default:
@@ -991,6 +986,48 @@ ALids (node *arg_node, info *arg_info)
     }
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ALwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    /*
+     * We do not traverse the N_code chain but follow the partitions.
+     */
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ALpart (node *arg_node, info *arg_info)
+{
+    node *keep_withid;
+
+    DBUG_ENTER ();
+
+    keep_withid = INFO_WITHID (arg_info);
+    INFO_WITHID (arg_info) = PART_WITHID (arg_node);
+    PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
+    INFO_WITHID (arg_info) = keep_withid;
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ALcode (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    /*
+     * We do not traverse the N_code chain but follow the partitions.
+     * Hence, we need this function to not follow the next pointer.
+     */
 
     DBUG_RETURN (arg_node);
 }

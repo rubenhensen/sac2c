@@ -1555,6 +1555,9 @@
 	  <node name="Let" />
 	  <node name="Ids" />
 	  <node name="Prf" />
+	  <node name="With" />
+	  <node name="Part" />
+	  <node name="Code" />
 	</travuser>
       </traversal>
       <traversal id="DL" name="Distributive Law Optimization" default="sons" include="distributive_law.h" >
@@ -8311,12 +8314,11 @@ N_tfarg :
                   If true, this (array) variable should be allocated locally on CUDA.
           </description>
         </flag>
-        <flag name="IsActive" default="FALSE">
+        <flag name="IsDefinedInCurrentBlock" default="FALSE">
           <description>
-                  This flags marks AVIS nodes as active in the current context.
-                  This is used in AL to separate identifiers from different assignment
-                  chains and in treecheck to identify AVIS nodes of the currently
-                  processed function.
+                  This flags marks AVIS nodes that are assigned in the current block.
+                  This is used in AL to separate identifiers from different blocks
+                  to confine the effect of AL to single blocks.
           </description>
         </flag>
         <flag name="IsDLActive" default="FALSE">
