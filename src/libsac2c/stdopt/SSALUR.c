@@ -1397,6 +1397,12 @@ GetLoopIdentifiers (node *targetvar, node *predicate, struct prf_expr_queue *sta
                     goto cleanup;
                 }
 
+                /* FIXME: this is a hack, we should do something about
+                   type conversions presented in the form of primitive
+                   functions.  */
+                if (PRF_PRF (new_pred) == F_type_conv)
+                    goto cleanup;
+
                 if (!UpdatePrfStack (new_pred, ptr->var, stack, &ivs)) {
                     DBUG_PRINT ("update_prf_stack failed");
                     goto cleanup;
