@@ -9,6 +9,7 @@
 
 extern bool GDBbreakAtNid (node *arg_node, char *nm);
 extern void GDBwhatIs (char *nm, node *fundef);
+extern void GDBwhatIsNid (node *arg_node, node *fundef);
 extern void GDBprintPrfArgs (node *arg_node, node *fundef);
 extern void GDBprintAvisName (node *avis);
 

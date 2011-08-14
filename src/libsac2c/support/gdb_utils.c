@@ -118,6 +118,39 @@ GDBwhatIs (char *nm, node *fundef)
 
 /******************************************************************************
  *
+ * function: GDBwhatIsNid( node *nid, node *fundef)
+ *
+ * description:
+ *
+ * This function is intended to assist users of ddd/gdb in
+ * making the sac2c compiler display the value of a variable.
+ *
+ * Typical usage:
+ *   GDBwhatIs( arg_node, arg_info->fundef)
+ *
+ ******************************************************************************/
+void
+GDBwhatIsNid (node *arg_node, node *fundef)
+{
+
+    if (NULL != arg_node) {
+        switch (NODE_TYPE (arg_node)) {
+        case N_id:
+            GDBwhatIs (AVIS_NAME (ID_AVIS (arg_node)), fundef);
+            break;
+        case N_avis:
+            GDBwhatIs (AVIS_NAME (arg_node), fundef);
+            break;
+        default:
+            break;
+        }
+    }
+
+    return;
+}
+
+/******************************************************************************
+ *
  * function: GDBprintPrfArgs( node *arg_node, node *fundef)
  *
  * description:
