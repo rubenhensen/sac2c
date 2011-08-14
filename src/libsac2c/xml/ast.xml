@@ -8321,6 +8321,13 @@ N_tfarg :
                   to confine the effect of AL to single blocks.
           </description>
         </flag>
+        <flag name="IsALActive" default="FALSE">
+          <description>
+                  This flags marks AVIS nodes as potential roots of multi-operand
+                  expressions; it is used to avoid starting another go on AL for
+                  any subexpression.
+          </description>
+        </flag>
         <flag name="IsDLActive" default="FALSE">
           <description>
                   This flags marks AVIS nodes as active in the current context.

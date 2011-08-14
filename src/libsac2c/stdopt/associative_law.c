@@ -96,23 +96,22 @@
  *
  *****************************************************************************/
 
+#include "associative_law.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "globals.h"
 #include "new_types.h"
 #include "new_typecheck.h"
 #include "traverse.h"
-
-#define DBUG_PREFIX "AL"
-#include "debug.h"
-
 #include "str.h"
 #include "memory.h"
 #include "free.h"
 #include "DupTree.h"
 #include "pattern_match.h"
 
-#include "associative_law.h"
+#define DBUG_PREFIX "AL"
+#include "debug.h"
 
 /*
  * INFO structure
@@ -124,7 +123,7 @@ struct INFO {
     trav_mode_t mode;
     node *fundef;
     node *preassign;
-    bool travrhs;
+    bool isalcandidate;
     bool onefundef;
     node *lhs;
     node *withid;
@@ -136,7 +135,7 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_PREASSIGN(n) ((n)->preassign)
 #define INFO_MODE(n) ((n)->mode)
-#define INFO_TRAVRHS(n) ((n)->travrhs)
+#define INFO_ISALCANDIDATE(n) ((n)->isalcandidate)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_WITHID(n) ((n)->withid)
@@ -156,7 +155,7 @@ MakeInfo ()
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_MODE (result) = MODE_noop;
-    INFO_TRAVRHS (result) = FALSE;
+    INFO_ISALCANDIDATE (result) = FALSE;
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_LHS (result) = NULL;
     INFO_WITHID (result) = NULL;
@@ -793,20 +792,17 @@ CollectExprs (prf prf, node *a, bool sclprf)
 
     DBUG_ASSERT (NODE_TYPE (a) == N_id, "CollectExprs called with illegal node type");
 
-    res = TBmakeExprs (DUPdoDupNode (a), NULL);
-
-    ID_ISSCLPRF (EXPRS_EXPR (res)) = sclprf;
+    res = NULL;
 
     if (AVIS_ISDEFINEDINCURRENTBLOCK (ID_AVIS (a))
         && AVIS_SSAASSIGN (ID_AVIS (a)) != NULL) {
-        AVIS_ISDEFINEDINCURRENTBLOCK (ID_AVIS (a)) = FALSE;
+        AVIS_ISALACTIVE (ID_AVIS (a)) = FALSE;
 
         rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (a)));
 
         switch (NODE_TYPE (rhs)) {
 
         case N_id:
-            res = FREEdoFreeTree (res);
             res = CollectExprs (prf, rhs, sclprf);
             break;
 
@@ -814,7 +810,6 @@ CollectExprs (prf prf, node *a, bool sclprf)
             if (compatiblePrf (prf, PRF_PRF (rhs))) {
                 left = CollectExprs (prf, PRF_ARG1 (rhs), isArg1Scl (PRF_PRF (rhs)));
                 right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)));
-                res = FREEdoFreeTree (res);
                 res = TCappendExprs (left, right);
             }
             break;
@@ -822,6 +817,11 @@ CollectExprs (prf prf, node *a, bool sclprf)
         default:
             break;
         }
+    }
+
+    if (res == NULL) {
+        res = TBmakeExprs (DUPdoDupNode (a), NULL);
+        ID_ISSCLPRF (EXPRS_EXPR (res)) = sclprf;
     }
 
     DBUG_RETURN (res);
@@ -951,9 +951,9 @@ ALlet (node *arg_node, info *arg_info)
         LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
         break;
     case MODE_transform:
-        INFO_TRAVRHS (arg_info) = FALSE;
+        INFO_ISALCANDIDATE (arg_info) = FALSE;
         LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
-        if (INFO_TRAVRHS (arg_info) && (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)) {
+        if (INFO_ISALCANDIDATE (arg_info) && (NODE_TYPE (LET_EXPR (arg_node)) == N_prf)) {
             INFO_LHS (arg_info) = LET_IDS (arg_node);
             LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
             INFO_LHS (arg_info) = NULL;
@@ -974,11 +974,13 @@ ALids (node *arg_node, info *arg_info)
     switch (INFO_MODE (arg_info)) {
     case MODE_mark:
         AVIS_ISDEFINEDINCURRENTBLOCK (IDS_AVIS (arg_node)) = TRUE;
+        AVIS_ISALACTIVE (IDS_AVIS (arg_node)) = TRUE;
         break;
     case MODE_transform:
-        if (AVIS_ISDEFINEDINCURRENTBLOCK (IDS_AVIS (arg_node))) {
-            INFO_TRAVRHS (arg_info) = TRUE;
+        if (AVIS_ISALACTIVE (IDS_AVIS (arg_node))) {
+            INFO_ISALCANDIDATE (arg_info) = TRUE;
             AVIS_ISDEFINEDINCURRENTBLOCK (IDS_AVIS (arg_node)) = FALSE;
+            AVIS_ISALACTIVE (IDS_AVIS (arg_node)) = FALSE;
         }
         break;
     default:
