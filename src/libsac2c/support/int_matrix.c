@@ -2,7 +2,7 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-#include "matrix.h"
+#include "int_matrix.h"
 
 #include "memory.h"
 
@@ -30,7 +30,7 @@
  *
  *******************************************************************************/
 static void
-MatrixMulAndAddRows (Matrix m, int ixrdest, int ixrsrc, int mplr)
+MatrixMulAndAddRows (IntMatrix m, int ixrdest, int ixrsrc, int mplr)
 {
     int ix;
     int *drow, *srow;
@@ -56,7 +56,7 @@ MatrixMulAndAddRows (Matrix m, int ixrdest, int ixrsrc, int mplr)
  *
  *******************************************************************************/
 static void
-MatrixSwapRows (Matrix m, int rix1, int rix2)
+MatrixSwapRows (IntMatrix m, int rix1, int rix2)
 {
     int *r1, *r2, temp;
     int ix;
@@ -86,7 +86,7 @@ MatrixSwapRows (Matrix m, int rix1, int rix2)
  *
  *******************************************************************************/
 static void
-MatrixNormalizeRow (Matrix m, int rix, int lead)
+MatrixNormalizeRow (IntMatrix m, int rix, int lead)
 {
     int ix;
     int *drow;
@@ -113,7 +113,7 @@ MatrixNormalizeRow (Matrix m, int rix, int lead)
  *
  *******************************************************************************/
 static int
-NumOfZeroRows (Matrix m)
+NumOfZeroRows (IntMatrix m)
 {
     int rows, cols;
     int i, j, count = 0;
@@ -148,11 +148,11 @@ NumOfZeroRows (Matrix m)
  * Return:g
  *
  *******************************************************************************/
-Matrix
+IntMatrix
 NewMatrix (int dim_x, int dim_y)
 {
     int n, i, j;
-    Matrix m;
+    IntMatrix m;
 
     DBUG_ENTER ();
 
@@ -183,11 +183,11 @@ NewMatrix (int dim_x, int dim_y)
  * Return:g
  *
  *******************************************************************************/
-Matrix
-DupMatrix (Matrix m)
+IntMatrix
+DupMatrix (IntMatrix m)
 {
     int n, i, j;
-    Matrix new_m;
+    IntMatrix new_m;
 
     DBUG_ENTER ();
 
@@ -219,7 +219,7 @@ DupMatrix (Matrix m)
  *
  *******************************************************************************/
 void
-FreeMatrix (Matrix m)
+FreeMatrix (IntMatrix m)
 {
     DBUG_ENTER ();
 
@@ -240,7 +240,7 @@ FreeMatrix (Matrix m)
  *
  *******************************************************************************/
 void
-MatrixSetEntry (Matrix m, int x, int y, int elem)
+MatrixSetEntry (IntMatrix m, int x, int y, int elem)
 {
     DBUG_ENTER ();
 
@@ -259,7 +259,7 @@ MatrixSetEntry (Matrix m, int x, int y, int elem)
  *
  *******************************************************************************/
 int
-MatrixGetEntry (Matrix m, int x, int y)
+MatrixGetEntry (IntMatrix m, int x, int y)
 {
     int elem;
 
@@ -280,7 +280,7 @@ MatrixGetEntry (Matrix m, int x, int y)
  *
  *******************************************************************************/
 void
-MatrixToReducedREForm (Matrix m)
+MatrixToReducedREForm (IntMatrix m)
 {
     int lead;
     int rix, iix;
@@ -327,9 +327,9 @@ MatrixToReducedREForm (Matrix m)
  *
  *******************************************************************************/
 int
-MatrixRank (Matrix m)
+MatrixRank (IntMatrix m)
 {
-    Matrix tmp;
+    IntMatrix tmp;
     int rank;
 
     DBUG_ENTER ();
@@ -355,7 +355,7 @@ MatrixRank (Matrix m)
  *
  *******************************************************************************/
 void
-MatrixDisplay (Matrix m, FILE *file)
+MatrixDisplay (IntMatrix m, FILE *file)
 {
     int iy, ix;
     const char *sc;
