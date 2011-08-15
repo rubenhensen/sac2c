@@ -81,7 +81,6 @@ LINEEND     \n|\r|\r\n
 "//"[^\n\r]*({LINEEND}) { /* Skip a single-line comment.  */
                              global.linenum++;
                              charpos = 0;
-                             printf ("Found single-line comment '%s'\n", yytext);
                            }
 "(||"			   { FILTER( BURGER_L); }
 "||)"			   { FILTER( BURGER_R); }
