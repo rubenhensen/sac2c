@@ -1089,7 +1089,7 @@ typedef struct sMtx {
     int dim_x, dim_y;
     int *m_stor;
     int **mtx;
-} * Matrix, sMatrix;
+} * IntMatrix, sMatrix;
 
 /* These two structs are used to annotate reusable arrays
  * in a wl. The info will be attached to N_code node */
@@ -1134,7 +1134,7 @@ typedef struct CUDA_INDEX_T {
 } cuda_index_t;
 
 typedef struct CUDA_ACCESS_INFO_T {
-    Matrix coe_mtx;
+    IntMatrix coe_mtx;
     unsigned int type; /* Type of this access: either reuse or coalescing */
     int dim;
     int nestlevel;
