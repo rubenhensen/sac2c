@@ -40,7 +40,7 @@
 #include "dynmatrix.h"
 #include "graphtypes.h"
 #include "tfprintutils.h"
-#include "matrix.h"
+#include "int_matrix.h"
 
 /*
  * use of arg_info in this file:

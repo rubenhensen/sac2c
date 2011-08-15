@@ -23,7 +23,7 @@
 #include "pattern_match.h"
 #include "pattern_match_attribs.h"
 #include "cuda_utils.h"
-#include "matrix.h"
+#include "int_matrix.h"
 #include "LookUpTable.h"
 #include "str.h"
 

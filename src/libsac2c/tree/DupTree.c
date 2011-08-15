@@ -49,7 +49,7 @@
 #include "namespaces.h"
 #include "vector.h"
 #include "ctinfo.h"
-#include "matrix.h"
+#include "int_matrix.h"
 
 /*
  * INFO structure

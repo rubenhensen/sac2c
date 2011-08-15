@@ -24,7 +24,7 @@
 #include "pattern_match_attribs.h"
 #include "cuda_utils.h"
 #include "LookUpTable.h"
-#include "matrix.h"
+#include "int_matrix.h"
 #include "types.h"
 #include "cuda_utils.h"
 #include "create_lac_fun.h"
