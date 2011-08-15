@@ -669,7 +669,7 @@ AWLFIisIdsMemberPartition (node *arg_node, node *partn)
  *
  * @brief: Predicate for presence of inverse projection of arg_node
  *
- * @param: arg_node - an F_intersect WLPROJECTION1/2 entry.
+ * @param: arg_node - an F_noteintersect WLPROJECTION1/2 entry.
  *
  * @result: TRUE if  arg_node has an inverse projection
  *          associated with it.
@@ -1228,6 +1228,58 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *ivprime, node *
 
 /** <!--********************************************************************-->
  *
+ * @fn node *FindNarray( node *arg_node, info arg_info)
+ *
+ * @brief Given an F_noteintersect node,
+ *        find N_array for _sel_VxA_ or _idx_sel PRF_ARG1
+ *
+ * @params: arg_node: As above.
+ *
+ * @result:
+ *
+ *****************************************************************************/
+static node *
+FindNarray (node *arg_node, info *arg_info)
+{
+    pattern *pat;
+    pattern *pat2;
+    node *z = NULL;
+    node *ids;
+    node *zavis;
+    int len;
+
+    DBUG_ENTER ();
+
+    pat = PMarray (1, PMAgetNode (&z), 1, PMskip (0));
+    pat2 = PMany (1, PMAgetNode (&z), 0);
+
+    if (!PMmatchFlat (pat, PRF_ARG1 (arg_node))) { /* Find for _sel_VxA_() */
+
+        /* Find for _idx_sel() */
+        /* We allow this if the offset (PRF_ARG1) traces back to
+         * a WITHID_IDS element of this WL, and the WL is 1-D.
+         * If so, we return the WITHID_VEC as the N_array */
+        ids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
+        len = TCcountIds (ids);
+        if ((PMmatchFlatSkipExtrema (pat2, PRF_ARG1 (arg_node))) && (1 == len)
+            && (isAvisMemberIds (ID_AVIS (z), ids))) {
+            z = TCcreateArrayFromIds (ids);
+            zavis = AWLFIflattenExpression (z, &INFO_VARDECS (arg_info),
+                                            &INFO_PREASSIGNS (arg_info),
+                                            TYmakeAKS (TYmakeSimpleType (T_int),
+                                                       SHcreateShape (1, len)));
+            DBUG_PRINT ("Generated N_array for offset from WITHID_IDS");
+        }
+    }
+
+    pat = PMfree (pat);
+    pat2 = PMfree (pat2);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *BuildInverseProjections( node *arg_node, info *arg_info)
  *
  * @brief Given an F_noteintersect node,
@@ -1267,7 +1319,6 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     node *zub = NULL;
     pattern *pat1;
     pattern *pat2;
-    pattern *pat3;
     int numpart;
     int curpart;
     int curelidxlb;
@@ -1291,9 +1342,9 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     numpart = (TCcountExprs (PRF_ARGS (arg_node)) / WLEPP);
     pat1 = PMarray (1, PMAgetNode (&arrlb), 1, PMskip (0));
     pat2 = PMarray (1, PMAgetNode (&arrub), 1, PMskip (0));
-    pat3 = PMarray (1, PMAgetNode (&ivprime), 1, PMskip (0));
 
-    if (PMmatchFlat (pat3, PRF_ARG1 (arg_node))) {
+    ivprime = FindNarray (arg_node, arg_info);
+    if (NULL != ivprime) {
 
         /* Iterate across intersects */
         for (curpart = 0; curpart < numpart; curpart++) {
@@ -1340,7 +1391,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                 }
             }
 
-            /* If we have both new bounds, update the F_intersect */
+            /* If we have both new bounds, update the F_noteintersect */
             if ((NULL != zel) && (NULL != zeu)) {
                 DBUG_ASSERT (swaplb == swapub, "Swap confusion");
                 DBUG_ASSERT (N_exprs == NODE_TYPE (zel), "Expected N_exprs zel");
@@ -1368,6 +1419,9 @@ BuildInverseProjections (node *arg_node, info *arg_info)
             zel = NULL;
             zeu = NULL;
         }
+    } else {
+        DBUG_ASSERT (FALSE, "Could not find ivprime for %s",
+                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
     }
 
     DBUG_PRINT ("Done b inverse projection for %s",
@@ -1375,7 +1429,6 @@ BuildInverseProjections (node *arg_node, info *arg_info)
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
-    pat3 = PMfree (pat3);
 
     DBUG_RETURN (arg_node);
 }
@@ -1862,22 +1915,153 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *CreateIvArray( node *arg_node, node **vardecs,
+ *                           node **preassigns)
+ *
+ * @brief: Create an N_array from the index scalars in the N_exprs arg_node.
+ *         Basically, we are temporarily recreating the
+ *         vect2offset index vector argument, to mollify
+ *         those optimizations that need to have an index vector,
+ *         rather than an offset, for indexing analysis.
+ *
+ * @return: the avis node for the new N_array.
+ *
+ *****************************************************************************/
+node *
+CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
+{
+    node *avis;
+    node *ids;
+    node *assgn;
+    node *nlet;
+    node *z;
+    int len;
+
+    DBUG_ENTER ();
+
+    len = TCcountExprs (arg_node);
+    avis = TBmakeAvis (TRAVtmpVar (),
+                       TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, len)));
+    *vardecs = TBmakeVardec (avis, *vardecs);
+
+    ids = TBmakeIds (avis, NULL);
+    assgn
+      = TBmakeAssign (TBmakeLet (ids, TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int),
+                                                              SHcreateShape (0)),
+                                                   SHcreateShape (1, 1),
+                                                   DUPdoDupTree (arg_node))),
+                      NULL);
+    *preassigns = TCappendAssign (*preassigns, assgn);
+    AVIS_SSAASSIGN (avis) = assgn;
+    nlet = ASSIGN_INSTR (assgn);
+    z = IVEXPgenerateNarrayExtrema (nlet, vardecs, preassigns);
+    LET_EXPR (nlet) = z;
+
+    DBUG_RETURN (avis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *AWLFIoffset2Iv( node *arg_node, node **vardecs,
+ *                           node **preassigns, node *cwlpart)
+ *
+ * @brief  We are looking at the N_prf for:
+ *
+ *            iv = [ i, j, k];
+ *            z = _sel_VxA_( iv, producerWL);
+ *
+ *         within the consumerWL, and iv may have extrema attached to it.
+ *
+ *         Alternately, we have
+ *
+ *            poffset = idxs2offset( shape( producerWL), i, j, k...);
+ *            z = _idx_sel_( poffset, producerWL);
+ *
+ *         There are two cases:
+ *
+ *         1. We are doing a _sel_VxA_():  Return iv's avis.
+ *
+ *         2. We are doing idx_sel_(). Find the idxs2offset( pwl, i, j, k...),
+ *            build a flattened N_array from [ i, j, k], and
+ *            return its avis.
+ *
+ * @return: the desired avis node.
+ *          If we can't find one, we return NULL.
+ *
+ *****************************************************************************/
+node *
+AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart)
+{
+    node *z = NULL;
+    pattern *pat;
+    pattern *pat2;
+    node *bndarr = NULL;
+    node *ivprf = NULL;
+    node *expr;
+
+    DBUG_ENTER ();
+
+    pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
+    pat2 = PMany (1, PMAgetNode (&ivprf), 1, PMskip (0));
+
+    if (F_sel_VxA == PRF_PRF (arg_node)) { /* Case 1 */
+        z = ID_AVIS (PRF_ARG1 (arg_node));
+    }
+
+    if ((NULL == z) && (F_idx_sel == PRF_PRF (arg_node))) { /* Case 2 */
+        if (!PMmatchFlatSkipGuards (pat2, PRF_ARG1 (arg_node))) {
+            DBUG_PRINT ("Unable to find iv");
+            DBUG_ASSERT (FALSE, "bye");
+        } else {
+            if ((N_prf == NODE_TYPE (ivprf)) && (F_idxs2offset == PRF_PRF (ivprf))) {
+                z = CreateIvArray (EXPRS_NEXT (PRF_ARGS (arg_node)), vardecs, preassigns);
+            } else {
+                /* We have not have _idxs2offset any more, due to opts.
+                 * This is OK if WL bounds are 1-D
+                 */
+                if (isAvisHasBothExtrema (ID_AVIS (PRF_ARG1 (arg_node)))) {
+                    expr = TBmakeExprs (TBmakeId (ID_AVIS (PRF_ARG1 (arg_node))), NULL);
+                    z = CreateIvArray (expr, vardecs, preassigns);
+                    expr = FREEdoFreeTree (expr);
+                }
+            }
+        }
+    }
+
+    pat = PMfree (pat);
+    pat2 = PMfree (pat2);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *attachIntersectCalc( node *arg_node, info *arg_info)
  *
  * @brief  We are looking at the N_prf for:
  *
+ *            iv = [ i, j, k];
  *            z = _sel_VxA_( iv, producerWL);
- *         within the consumerWL, and idx now has extrema attached to it.
- *         We are now in a position to compute the intersection
- *         between idx's index set and that of the producerWL
+ *
+ *         within the consumerWL, and iv now has extrema attached to it.
+ *
+ *         Alternately, we have
+ *
+ *            offset = idxs2offset( shape( producerWL), i, j, k...);
+ *            z = _idx_sel_( offset, producerWL);
+ *
+ *         and the scalar indices i, j, k have extrema attached to them.
+ *
+ *         If so, we are in a position to compute the intersection
+ *         between iv's index set and that of the producerWL
  *         partitions.
  *
- *         We create new iv' from idx, to hold the result
+ *         We create new iv'/offset' from idx, to hold the result
  *         of the intersect computations that we build here.
  *
  *      See IntersectBoundsBuilderOne for details.
  *
- * @return: The N_avis for the newly created iv' node.
+ * @return: The N_avis for the newly created iv'/offset' node.
  *         If we are unable to compute the inverse mapping function
  *         from the WL intersection to the CWL partition bounds,
  *         we return ivavis.
@@ -1891,30 +2075,35 @@ attachIntersectCalc (node *arg_node, info *arg_info)
     node *ivpavis;
     node *ivassign;
     int ivshape;
-    node *intersectcalc;
+    node *intersectcalc = NULL;
     node *args;
+    ntype *ztype;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Inserting attachextrema computations");
 
-    /* Generate expressions for lower-bound intersection and
-     * upper-bound intersection calculation.
-     */
-    ivavis = ID_AVIS (PRF_ARG1 (arg_node));
-    intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, ivavis);
+    ivavis = AWLFIoffset2Iv (arg_node, &INFO_VARDECS (arg_info),
+                             &INFO_PREASSIGNS (arg_info), INFO_CONSUMERWLPART (arg_info));
+
+    if (NULL != ivavis) {
+        intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, ivavis);
+    }
+
     if (NULL != intersectcalc) {
-        args = TBmakeExprs (TBmakeId (ivavis), NULL);
+        args = TBmakeExprs (TBmakeId (ID_AVIS (PRF_ARG1 (arg_node))), NULL);
         args = TCappendExprs (args, intersectcalc); /* WLINTERSECT1/2 */
 
-        ivshape = SHgetUnrLen (TYgetShape (AVIS_TYPE (ivavis)));
-        ivpavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ivavis)),
-                              TYeliminateAKV (AVIS_TYPE (ivavis)));
+        ztype = AVIS_TYPE (INFO_CONSUMERWLLHS (arg_info));
+        ivshape = SHgetUnrLen (TYgetShape (ztype));
+        ivpavis
+          = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ivavis)), TYeliminateAKV (ztype));
 
         INFO_VARDECS (arg_info) = TBmakeVardec (ivpavis, INFO_VARDECS (arg_info));
         ivassign = TBmakeAssign (TBmakeLet (TBmakeIds (ivpavis, NULL),
                                             TBmakePrf (F_noteintersect, args)),
                                  NULL);
+
         INFO_PREASSIGNS (arg_info)
           = TCappendAssign (INFO_PREASSIGNS (arg_info), ivassign);
         AVIS_SSAASSIGN (ivpavis) = ivassign;
@@ -1922,7 +2111,7 @@ attachIntersectCalc (node *arg_node, info *arg_info)
         PART_ISCONSUMERPART (INFO_CONSUMERWLPART (arg_info)) = TRUE;
         INFO_FINVERSEINTRODUCED (arg_info) = TRUE;
     } else {
-        ivpavis = ivavis;
+        ivpavis = ID_AVIS (PRF_ARG1 (arg_node));
         INFO_PRODUCERWLFOLDABLE (arg_info) = FALSE;
     }
 
@@ -2067,7 +2256,7 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
  *        the consumerWL is acceptable to have something folded into it.
  *
  *        We deem the prf foldable if iv directly from
- *        an _attachintersect_, or if iv has extrema.
+ *        an _noteintersect, or if iv has extrema.
  *        This may not be enough to guarantee foldability, but
  *        without extrema, we're stuck.
  *
@@ -2081,18 +2270,11 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
 static bool
 checkConsumerWLFoldable (node *arg_node, info *arg_info)
 {
-    node *iv = NULL;
-    node *ivavis;
     bool z;
 
     DBUG_ENTER ();
 
-    iv = PRF_ARG1 (arg_node);
-    ivavis = ID_AVIS (iv);
-    /* iv has extrema or F_noteintersect */
-    z = ((NULL != AVIS_MIN (ivavis)) && (NULL != AVIS_MAX (ivavis))
-         && (NULL != INFO_CONSUMERWL (arg_info)))
-        || AWLFIisHasNoteintersect (arg_node);
+    z = (NULL != INFO_CONSUMERWL (arg_info)) || (AWLFIisHasNoteintersect (arg_node));
 
     DBUG_RETURN (z);
 }
@@ -2405,7 +2587,7 @@ AWLFIid (node *arg_node, info *arg_info)
  *   with extrema available on PRF_ARG1, we construct
  *   an intersect computation between the now-available index
  *   set of idx, and each partition of the producerWL.
- *   These are attached to the sel() via an F_attachintersect
+ *   These are attached to the sel() via an F_noteintersect
  *   guard.
  *
  *****************************************************************************/
@@ -2413,18 +2595,22 @@ node *
 AWLFIprf (node *arg_node, info *arg_info)
 {
     node *z;
+    node *iv;
 
     DBUG_ENTER ();
 
-    if ((INFO_CONSUMERWLPART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
+    if ((INFO_CONSUMERWLPART (arg_info) != NULL)
+        && ((PRF_PRF (arg_node) == F_sel_VxA) || ((PRF_PRF (arg_node) == F_idx_sel)))
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
 
+        iv = AWLFIoffset2Iv (arg_node, &INFO_VARDECS (arg_info),
+                             &INFO_PREASSIGNS (arg_info), INFO_CONSUMERWLPART (arg_info));
         INFO_PRODUCERWLLHS (arg_info) = AWLFIfindWlId (PRF_ARG2 (arg_node));
         INFO_PRODUCERWL (arg_info) = AWLFIgetWlWith (INFO_PRODUCERWLLHS (arg_info));
         INFO_PRODUCERWLFOLDABLE (arg_info)
           = checkConsumerWLFoldable (arg_node, arg_info)
-            && checkProducerWLFoldable (arg_node, arg_info)
+            && checkProducerWLFoldable (arg_node, arg_info) && isAvisHasBothExtrema (iv)
             && checkBothFoldable (arg_node, arg_info);
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
@@ -2442,9 +2628,8 @@ AWLFIprf (node *arg_node, info *arg_info)
             if (z != ID_AVIS (PRF_ARG1 (arg_node))) {
                 FREEdoFreeNode (PRF_ARG1 (arg_node));
                 PRF_ARG1 (arg_node) = TBmakeId (z);
-                DBUG_PRINT (
-                  "AWLFIprf inserted F_attachintersect into cwl=%s at _sel_VxA_",
-                  AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
+                DBUG_PRINT ("AWLFIprf inserted F_noteintersect into cwl=%s at _sel_VxA_",
+                            AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
             }
         }
     }

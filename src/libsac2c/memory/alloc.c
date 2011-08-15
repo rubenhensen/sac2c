@@ -1662,6 +1662,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_ge_VxV:
     case F_gt_VxV:
     case F_mask_VxVxV:
+    case F_mask_VxVxS:
         if (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id) {
             als->dim = MakeDimArg (PRF_ARG1 (arg_node));
             als->shape = MakeShapeArg (PRF_ARG1 (arg_node));

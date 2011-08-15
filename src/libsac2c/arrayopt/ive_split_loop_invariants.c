@@ -1078,6 +1078,8 @@ IVESLIfundef (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("<<< done function %s...", CTIitemName (arg_node));
 
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }

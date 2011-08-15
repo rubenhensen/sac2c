@@ -476,6 +476,7 @@ APCprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_sel_VxA:
+    case F_idx_sel:
     case F_dim_A:
     case F_shape_A:
         INFO_APC_UNSUPPORTED (arg_info) = TRUE;

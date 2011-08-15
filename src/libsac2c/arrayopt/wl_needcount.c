@@ -383,6 +383,7 @@ WLNCid (node *arg_node, info *arg_info)
     if ((parent != NULL) && (N_prf == NODE_TYPE (parent))) {
         switch (PRF_PRF (parent)) {
         case F_sel_VxA:
+        case F_idx_sel:
             pat = PMvar (1, PMAgetNode (&producerWL), 0);
             if (PMmatchFlatSkipGuards (pat, PRF_ARG2 (parent))) {
                 avis = ID_AVIS (producerWL);

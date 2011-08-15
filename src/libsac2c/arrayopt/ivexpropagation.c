@@ -463,7 +463,6 @@ BuildExtremumValLtShape (node *arg_node, info *arg_info)
  *              vardec for same.
  *
  * @params:  extrema: an N_exprs chain.
- *           arg_info: Your basic arg_info node.
  *           typ: the N_type for the N_array
  *           nar: The N_array for which we are building extrema.
  * @result:
@@ -472,7 +471,7 @@ BuildExtremumValLtShape (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 static node *
-makeNarray (node *extrema, info *arg_info, ntype *typ, node *nar)
+makeNarray (node *extrema, ntype *typ, node *nar, node **vardecs, node **preassigns)
 {
     node *narr;
     node *zavis = NULL;
@@ -485,29 +484,11 @@ makeNarray (node *extrema, info *arg_info, ntype *typ, node *nar)
         narr = DUPdoDupNode (nar);
         ARRAY_AELEMS (narr) = extrema;
         narr = CFunflattenSimpleScalars (narr);
-        zavis
-          = AWLFIflattenExpression (narr, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info), TYeliminateAKV (typ));
+        zavis = AWLFIflattenExpression (narr, vardecs, preassigns, TYeliminateAKV (typ));
     }
 
     DBUG_RETURN (zavis);
 }
-
-/******************************************************************************
- *
- * function:
- *
- * description: Predicates for determining if an N_avis node have extrema,
- *              and macro for setting extrema.
- *
- * @params  arg_node: an N_avis node.
- * @result: True if the node has desired extrema present.
- *
- ******************************************************************************/
-
-#define isAvisHasMin(avis) (NULL != AVIS_MIN (avis))
-#define isAvisHasMax(avis) (NULL != AVIS_MAX (avis))
-#define isAvisHasBothExtrema(avis) (isAvisHasMin (avis) && isAvisHasMax (avis))
 
 /******************************************************************************
  *
@@ -667,8 +648,7 @@ isAllNarrayExtremumPresent (node *arg_node, int minmax)
 /******************************************************************************
  *
  * function:
- *   node *GenerateNarrayExtrema node *arg_node, info *arg_info)
- *
+ *   node *IVEXPgenerateNarrayExtrema node *arg_node...)
  * description:
  *        Generate N_array extrema.
  *
@@ -694,8 +674,8 @@ isAllNarrayExtremumPresent (node *arg_node, int minmax)
  *          because we would end up with a loop in the AST.
  *
  ******************************************************************************/
-static node *
-GenerateNarrayExtrema (node *arg_node, info *arg_info)
+node *
+IVEXPgenerateNarrayExtrema (node *arg_node, node **vardecs, node **preassigns)
 {
     node *lhs;
     node *lhsavis;
@@ -719,14 +699,16 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
             if ((!AVIS_ISMINHANDLED (IDS_AVIS (lhs)))
                 && (isAllNarrayExtremumPresent (rhs, 0))) {
                 minv = buildExtremaChain (ARRAY_AELEMS (rhs), 0);
-                minv = makeNarray (minv, arg_info, AVIS_TYPE (IDS_AVIS (lhs)), rhs);
+                minv = makeNarray (minv, AVIS_TYPE (IDS_AVIS (lhs)), rhs, vardecs,
+                                   preassigns);
                 IVEXPsetMinvalIfNotNull (lhsavis, TBmakeId (minv), FALSE);
             }
 
             if ((!AVIS_ISMAXHANDLED (IDS_AVIS (lhs)))
                 && (isAllNarrayExtremumPresent (rhs, 1))) {
                 maxv = buildExtremaChain (ARRAY_AELEMS (rhs), 1);
-                maxv = makeNarray (maxv, arg_info, AVIS_TYPE (IDS_AVIS (lhs)), rhs);
+                maxv = makeNarray (maxv, AVIS_TYPE (IDS_AVIS (lhs)), rhs, vardecs,
+                                   preassigns);
                 IVEXPsetMaxvalIfNotNull (lhsavis, TBmakeId (maxv), FALSE);
             }
         }
@@ -1490,7 +1472,8 @@ GenerateNarrayExtrema (node *arg_node, info *arg_info)
             DBUG_PRINT ("Looking at N_array %s", AVIS_NAME (lhsavis));
 #endif // VERBOSE
             if ((!CFisFullyConstantNode (rhs)) && (TUisIntVect (AVIS_TYPE (lhsavis)))) {
-                rhs = GenerateNarrayExtrema (arg_node, arg_info);
+                rhs = IVEXPgenerateNarrayExtrema (arg_node, &INFO_VARDECS (arg_info),
+                                                  &INFO_PREASSIGNS (arg_info));
                 LET_EXPR (arg_node) = rhs;
             }
             break;

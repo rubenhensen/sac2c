@@ -237,7 +237,7 @@ WLCCprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (PRF_PRF (arg_node) == F_sel_VxA) {
+    if ((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel)) {
         INFO_CODE_COST (arg_info) += 1;
     }
 

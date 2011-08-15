@@ -379,7 +379,6 @@ generateAvisWithids (node *withids, info *arg_info, int idx)
     DBUG_RETURN (zavis);
 }
 
-#ifndef DBUG_OFF
 /** <!--********************************************************************-->
  *
  * @fn static bool isSameTypeShape( node *ida, node *idb)
@@ -410,7 +409,6 @@ isSameTypeShape (node *ida, node *idb)
 
     DBUG_RETURN (z);
 }
-#endif //  DBUG_OFF
 
 /** <!--********************************************************************-->
  *
@@ -467,7 +465,10 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
     extid = TBmakeId (extremum);
     /* without this check, length errors between x and extrema
      * break far from here, in a very confusing manner. */
-    DBUG_ASSERT (isSameTypeShape (ivid, extid), "type/shape mismatch: id, extremum");
+    if (!isSameTypeShape (ivid, extid)) {
+        DBUG_PRINT ("WARNING: type/shape mismatch: id=%s, extremum=%s",
+                    AVIS_NAME (ID_AVIS (ivid)), AVIS_NAME (ID_AVIS (extid)));
+    }
 
     lhsavis = TBmakeAvis (TRAVtmpVarName ("ext"), TYeliminateAKV (AVIS_TYPE (ivavis)));
     *vardecs = TBmakeVardec (lhsavis, *vardecs);

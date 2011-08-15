@@ -88,6 +88,7 @@
 struct INFO {
     node *preassigns;
     node *vardecs;
+    bool onefundef;
 };
 
 /**
@@ -95,6 +96,7 @@ struct INFO {
  */
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 /**
  * INFO functions
@@ -110,6 +112,7 @@ MakeInfo ()
 
     INFO_PREASSIGNS (result) = NULL;
     INFO_VARDECS (result) = NULL;
+    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -274,8 +277,9 @@ IVESPLITfundef (node *arg_node, info *arg_info)
         INFO_VARDECS (arg_info) = NULL;
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -399,33 +403,58 @@ IVESPLITprf (node *arg_node, info *arg_info)
 /** <!-- ****************************************************************** -->
  * @brief function triggering the index vector elimination on the
  *        syntax tree. the traversal relies on the information
- *        infered by index vector elimination inference.
+ *        inferred by index vector elimination inference.
  *
  * @param syntax_tree N_module node
+ *       or N_fundef node if OneFundef version
  *
  * @return transformed syntax tree
  ******************************************************************************/
 node *
 IVESPLITdoSplitSelections (node *syntax_tree)
 {
-    info *info;
+    info *arg_info;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_module,
                  "IVESPLIT is intended to run on the entire tree");
 
-    info = MakeInfo ();
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = FALSE;
 
     TRAVpush (TR_ivesplit);
 
-    syntax_tree = TRAVdo (syntax_tree, info);
+    syntax_tree = TRAVdo (syntax_tree, arg_info);
 
     TRAVpop ();
 
-    info = FreeInfo (info);
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (syntax_tree);
+}
+
+node *
+IVESPLITdoSplitSelectionsOneFundef (node *arg_node)
+{
+    info *arg_info;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "Expected N_fundef");
+
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = TRUE;
+
+    TRAVpush (TR_ivesplit);
+
+    arg_node = TRAVdo (arg_node, arg_info);
+
+    TRAVpop ();
+
+    arg_info = FreeInfo (arg_info);
+
+    DBUG_RETURN (arg_node);
 }
 
 /*@}*/ /* defgroup ive */

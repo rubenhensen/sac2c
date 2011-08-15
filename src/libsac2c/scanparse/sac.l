@@ -207,8 +207,8 @@ LINEEND     \n|\r|\r\n
 "_reciproc_S_"             { FILTER( PRF_RECIPROC_S); }
 "_reciproc_V_"             { FILTER( PRF_RECIPROC_V); }
 
-"_mesh_VxVxV_"             { FILTER( PRF_MESH_VxVxV); }
 "_mask_VxVxV_"             { FILTER( PRF_MASK_VxVxV); }
+"_mask_VxVxS_"             { FILTER( PRF_MASK_VxVxS); }
 
 "_non_neg_val_S_"          { FILTER( PRF_NON_NEG_VAL_S); }
 "_non_neg_val_V_"          { FILTER( PRF_NON_NEG_VAL_V); }

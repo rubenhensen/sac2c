@@ -2168,6 +2168,30 @@ TCcreateExprsFromIds (node *ids)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *TCcreateArrayFromIds( node *ids)
+ *
+ * @brief Creates a N_array node containing N_id nodes corresponding to the
+ *        given N_ids chain.
+ *
+ * @param ids N_ids chain
+ *
+ * @return created N_array node
+ ******************************************************************************/
+node *
+TCcreateArrayFromIds (node *ids)
+{
+    node *result;
+
+    DBUG_ENTER ();
+
+    result = TCcreateExprsFromIds (ids);
+    if (NULL != result) {
+        result = TCmakeIntVector (result);
+    }
+
+    DBUG_RETURN (result);
+}
+/** <!-- ****************************************************************** -->
  * @fn node *TCcreateExprsFromArgs( node *args)
  *
  * @brief Creates a N_exprs chain containing N_id nodes corresponding to the

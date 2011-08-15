@@ -265,6 +265,7 @@ RDEPENDprf (node *arg_node, info *arg_info)
 
     switch (PRF_PRF (arg_node)) {
     case F_sel_VxA:
+    case F_idx_sel:
         arg_node = CheckPrfSel (arg_node, arg_info);
         break;
 

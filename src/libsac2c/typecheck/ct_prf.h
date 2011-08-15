@@ -86,7 +86,7 @@ extern ntype *NTCCTprf_int_op_VxV (te_info *info, ntype *args);
 extern ntype *NTCCTprf_drop_SxV (te_info *info, ntype *args);
 extern ntype *NTCCTprf_take_SxV (te_info *info, ntype *args);
 extern ntype *NTCCTprf_cat_VxV (te_info *info, ntype *args);
-extern ntype *NTCCTprf_mesh_VxVxV (te_info *info, ntype *args);
 extern ntype *NTCCTprf_mask_VxVxV (te_info *info, ntype *args);
+extern ntype *NTCCTprf_mask_VxVxS (te_info *info, ntype *args);
 
 #endif /* _SAC_CT_PRF_H_ */

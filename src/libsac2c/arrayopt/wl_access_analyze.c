@@ -940,6 +940,7 @@ WLAAprf (node *arg_node, info *arg_info)
 
             switch (PRF_PRF (arg_node)) {
             case F_sel_VxA:
+            case F_idx_sel:
                 DBUG_PRINT ("primitive function F_sel_VxA");
 
                 if (INFO_WLAA_INDEXDIM (arg_info) != INFO_WLAA_ARRAYDIM (arg_info)) {

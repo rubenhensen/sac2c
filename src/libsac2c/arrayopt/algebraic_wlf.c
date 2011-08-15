@@ -441,6 +441,39 @@ isEmptyPartitionCodeBlock (node *partn)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *BypassNoteintersect( node *arg_node)
+ *
+ * @brief Bypass the  F_noteintersect that must precede the arg_node.
+ *        Actually, we just bypass that node and let DCR do the dirty work.
+ *
+ * @param N_assign for _idx_sel() or _sel_VxA_()
+ * @result Rebuilt arg_node.
+ *
+ *****************************************************************************/
+static node *
+BypassNoteintersect (node *arg_node)
+{
+    node *z = NULL;
+    pattern *pat;
+    node *expr;
+
+    DBUG_ENTER ();
+
+    expr = LET_EXPR (ASSIGN_INSTR (arg_node));
+    pat = PMprf (1, PMAisPrf (F_noteintersect), 2, PMvar (1, PMAgetNode (&z), 0),
+                 PMskip (0));
+    if (PMmatchFlat (pat, PRF_ARG1 (expr))) {
+        PRF_ARG1 (expr) = FREEdoFreeNode (PRF_ARG1 (expr));
+        PRF_ARG1 (expr) = DUPdoDupNode (z);
+    }
+
+    pat = PMfree (pat);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool checkAWLFoldable( node *arg_node, info *arg_info,
  * node *cwlp, int level)
  *
@@ -691,6 +724,8 @@ doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consume
     DBUG_ENTER ();
 
     oldblock = BLOCK_INSTR (CODE_CBLOCK (PART_CODE (producerWLPart)));
+
+    arg_node = BypassNoteintersect (arg_node);
 
     /* Generate iv=[i,j] assigns, then do renames. */
     idxassigns = makeIdxAssigns (arg_node, arg_info, producerWLPart);
@@ -997,7 +1032,8 @@ AWLFprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("Traversing N_prf");
 #endif // VERBOSE
     arg1 = PRF_ARG1 (arg_node);
-    if ((INFO_PART (arg_info) != NULL) && (PRF_PRF (arg_node) == F_sel_VxA)
+    if ((INFO_PART (arg_info) != NULL)
+        && ((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel))
         && (AWLFIisHasNoteintersect (arg_node))) {
         INFO_AWLFOLDABLEPRODUCERWLPART (arg_info)
           = checkAWLFoldable (arg_node, arg_info, INFO_PART (arg_info),

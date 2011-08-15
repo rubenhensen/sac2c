@@ -3369,6 +3369,43 @@ NTCCTprf_cat_VxV (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCCTprf_mask_VxVxS( te_info *info, ntype *elems)
+ *
+ * description:
+ *    _mask_VxVxV_( p, x, y) masks the values of x and y,
+ *     based on the boolean predicate, p. It selects x[i] if
+ *     p[i], else y. First two arguments must be the same shape;
+ *     y must be a scalar.
+ *     This is an internal-use-only primitive, used as part of AWLF.
+ *     It does not survive the optimization phase.
+ *
+ *     The idea below is to make the result have the same type as x,
+ *     but without any AKV-ness. This should work, because x and y
+ *     should have the same types, although not the same ranks.
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_mask_VxVxS (te_info *info, ntype *args)
+{
+    ntype *arg;
+    ntype *res;
+
+    DBUG_ENTER ();
+
+    arg = TYgetProductMember (args, 1);
+    arg = TYeliminateAKV (arg);
+    res = TYcopyType (arg);
+    res = TYmakeProductType (1, res);
+
+    /* FIXME We should check that x and y are the same shape */
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    ntype *NTCCTprf_mask_VxVxV( te_info *info, ntype *elems)
  *
  * description:

@@ -1166,7 +1166,8 @@ CUBSLprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if ((F_sel_VxA == PRF_PRF (arg_node)) && (INFO_CONSUMERPART (arg_info) != NULL)
+    if (((F_sel_VxA == PRF_PRF (arg_node)) || (F_idx_sel == PRF_PRF (arg_node)))
+        && (INFO_CONSUMERPART (arg_info) != NULL)
         && (AWLFIisHasNoteintersect (arg_node))) {
         DBUG_PRINT ("Looking at %s =_sel_VxA_( iv, X)",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));

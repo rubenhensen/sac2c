@@ -209,6 +209,49 @@ bool[.] isPartitionIntersectNull( int[.] idxmin, int[.] idxmax,
   return(z);
 }
 
+inline
+bool[.] isPartitionIntersectNull( int idxmin, int idxmax,
+                                  int[.] bound1, int[.] bound2)
+{ /* Predicate to determine if intersection of index scalar and
+   * partition bounds is null. It requires an assist from 
+   * the compiler to perform the any-reduce on this function's result.
+   */
+
+  z = _or_VxV_( _le_SxV_( idxmax, bound1), _ge_SxV_( idxmin, bound2));
+  return(z);
+}
+
+inline 
+int[.] partitionIntersectMax( int[.] PWLbound1, int ivmin)
+{ /* compute maximum of producerWL partition bound1 scalar
+   * and index vector set.
+   *  z = max( PWLbound1, ivmin);
+   */
+
+  dif  = _sub_VxS_( PWLbound1, ivmin);
+  p = _ge_VxS_( dif, 0);
+  z = _mask_VxVxS_( p, PWLbound1, ivmin);
+  return(z);
+}
+
+inline 
+int[.] partitionIntersectMin( int[.] PWLbound2, int ivmax)
+{ /* Function to perform min( PWLbound2, ivmax), but written to 
+   * let the optimizers simplify the arguments.
+
+   *  z = min( PWLbound2, ivmax);
+   *
+   * The bound2 bias is removed, in case we have to switch
+   * minval and maxval. It will be restored, in any case, later.
+   */
+
+  dif  = _sub_VxS_( PWLbound2, ivmax);
+  p = _le_VxS_( dif, 0);
+  z = _mask_VxVxS_( p, PWLbound2, ivmax);
+  z = _sub_VxS_( z, 1); /* Remove bound2 bias. */
+  return(z);
+}
+
 inline 
 int[.] partitionIntersectMax( int[.] PWLbound1, int[.] ivmin)
 { /* compute maximum of producerWL partition bound1

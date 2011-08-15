@@ -39,6 +39,7 @@ struct INFO {
     node *vardecs;
     node *fundef;
     node *preassigns;
+    bool onefundef;
 };
 
 /**
@@ -49,6 +50,7 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 /**
  * INFO functions
@@ -67,6 +69,7 @@ MakeInfo ()
     INFO_VARDECS (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
+    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -865,7 +868,11 @@ IVERASfundef (node *arg_node, info *arg_info)
                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                 FUNDEF_NAME (arg_node));
 
-    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
+    if (!INFO_ONEFUNDEF (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -875,27 +882,29 @@ IVERASfundef (node *arg_node, info *arg_info)
  *        syntax tree.
  *
  * @param syntax_tree the syntax tree to optimize
+ *        or N_fundef if we are in single function mode
  *
- * @return optimized syntax tree
+ * @return optimized syntax tree/ N_fundef
  ******************************************************************************/
 node *
-IVERASdoWithloopReuseAndOptimisation (node *syntax_tree)
+IVERASdoWithloopReuseAndOptimisation (node *arg_node)
 {
-    info *info;
+    info *arg_info;
 
     DBUG_ENTER ();
 
     TRAVpush (TR_iveras);
 
-    info = MakeInfo ();
+    arg_info = MakeInfo ();
+    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
 
-    syntax_tree = TRAVdo (syntax_tree, info);
+    arg_node = TRAVdo (arg_node, arg_info);
 
-    info = FreeInfo (info);
+    arg_info = FreeInfo (arg_info);
 
     TRAVpop ();
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (arg_node);
 }
 
 #undef DBUG_PREFIX
