@@ -85,7 +85,7 @@ libsac2c_tree        := traverse tree_basic free tree_compound DupTree \
                         pattern_match_build_lut move_assigns
 
 libsac2c_support     := dbug str ptr_buffer str_buffer system math_utils \
-                        gdb_utils matrix
+                        gdb_utils int_matrix
 
 libsac2c_serialize   := serialize_node serialize_attribs deserialize \
                         serialize_buildstack serialize_helper \
