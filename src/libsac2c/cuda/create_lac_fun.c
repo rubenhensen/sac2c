@@ -306,6 +306,7 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
         INFO_VARDECS (arg_info) = TBmakeVardec (recursive_ret, INFO_VARDECS (arg_info));
         recursive_ap = TBmakeAp (*lacfun_p, recursive_args);
         AP_ISRECURSIVEDOFUNCALL (recursive_ap) = TRUE;
+        FUNDEF_LOOPRECURSIVEAP (*lacfun_p) = recursive_ap;
         recursive_ap
           = TBmakeAssign (TBmakeLet (TBmakeIds (recursive_ret, NULL), recursive_ap),
                           NULL);

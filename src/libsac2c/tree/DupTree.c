@@ -1147,6 +1147,21 @@ DUPfundef (node *arg_node, info *arg_info)
     FUNDEF_RETURN (new_node)
       = LUTsearchInLutPp (INFO_LUT (arg_info), FUNDEF_RETURN (arg_node));
 
+    if (FUNDEF_ISDOFUN (new_node)) {
+        DBUG_ASSERT (FUNDEF_ISDOFUN (arg_node),
+                     "Mismatch in copying flag structure of N_fundef node");
+
+        DBUG_ASSERT (FUNDEF_LOOPRECURSIVEAP (arg_node) != NULL,
+                     "Do-fun without link to recursive application found: %s.",
+                     FUNDEF_NAME (arg_node));
+
+        FUNDEF_LOOPRECURSIVEAP (new_node)
+          = LUTsearchInLutPp (INFO_LUT (arg_info), FUNDEF_LOOPRECURSIVEAP (arg_node));
+        DBUG_ASSERT (FUNDEF_LOOPRECURSIVEAP (new_node) != NULL,
+                     "Recursive application not found in LUT: %s.",
+                     FUNDEF_NAME (new_node));
+    }
+
     FUNDEF_IMPL (new_node)
       = LUTsearchInLutPp (INFO_LUT (arg_info), FUNDEF_IMPL (arg_node));
 
@@ -1784,6 +1799,10 @@ DUPap (node *arg_node, info *arg_info)
 
     CopyCommonNodeData (new_node, arg_node);
     AP_FLAGSTRUCTURE (new_node) = AP_FLAGSTRUCTURE (arg_node);
+
+    if (AP_ISRECURSIVEDOFUNCALL (arg_node)) {
+        INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), arg_node, new_node);
+    }
 
     DBUG_RETURN (new_node);
 }

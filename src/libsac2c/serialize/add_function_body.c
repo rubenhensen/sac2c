@@ -25,14 +25,16 @@
  */
 struct INFO {
     node *ret;
+    node *looprecursiveap;
     node *ssacounter;
 };
 
 /*
  * INFO macros
  */
-#define INFO_AFB_RETURN(n) ((n)->ret)
-#define INFO_AFB_SSACOUNTER(n) ((n)->ssacounter)
+#define INFO_RETURN(n) ((n)->ret)
+#define INFO_SSACOUNTER(n) ((n)->ssacounter)
+#define INFO_LOOPRECURSIVEAP(n) ((n)->looprecursiveap)
 
 /*
  * INFO functions
@@ -46,8 +48,9 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_AFB_RETURN (result) = NULL;
-    INFO_AFB_SSACOUNTER (result) = NULL;
+    INFO_RETURN (result) = NULL;
+    INFO_SSACOUNTER (result) = NULL;
+    INFO_LOOPRECURSIVEAP (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -149,8 +152,11 @@ AFBfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /*
-     * infer INFO_AFB_RETURN and INFO_AFB_SSACOUNTER
+     * infer INFO_RETURN, INFO_SSACOUNTER and INFO_LOOPRECURSIVEAP
      */
+    INFO_RETURN (arg_info) = NULL;
+    INFO_LOOPRECURSIVEAP (arg_info) = NULL;
+
     FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
     /*
@@ -163,13 +169,23 @@ AFBfundef (node *arg_node, info *arg_info)
     /*
      * correct FUNDEF_RETURN
      */
-    FUNDEF_RETURN (arg_node) = INFO_AFB_RETURN (arg_info);
+    FUNDEF_RETURN (arg_node) = INFO_RETURN (arg_info);
+    INFO_RETURN (arg_info) = NULL;
+
+    /*
+     * correct FUNDEF_LOOPRECURSIVEAP
+     */
+    FUNDEF_LOOPRECURSIVEAP (arg_node) = INFO_LOOPRECURSIVEAP (arg_info);
+    INFO_LOOPRECURSIVEAP (arg_info) = NULL;
+
+    DBUG_ASSERT (!FUNDEF_ISDOFUN (arg_node) || FUNDEF_LOOPRECURSIVEAP (arg_node) != NULL,
+                 "Loop fun without (detected) recursive call found");
 
     DBUG_RETURN (arg_node);
 }
 
 /**
- * @brief Sets INFO_AFB_RETURN to the current node.
+ * @brief Sets INFO_RETURN to the current node.
  *
  * @param arg_node return node
  * @param arg_info info structure
@@ -181,7 +197,7 @@ AFBreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    INFO_AFB_RETURN (arg_info) = arg_node;
+    INFO_RETURN (arg_info) = arg_node;
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -189,7 +205,7 @@ AFBreturn (node *arg_node, info *arg_info)
 }
 
 /**
- * @brief Saves this blocks SSACounter in INFO_AFB_SSACOUNTER for
+ * @brief Saves this blocks SSACounter in INFO_SSACOUNTER for
  *        further reference.
  *
  * @param arg_node block node
@@ -202,9 +218,9 @@ AFBblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_AFB_SSACOUNTER (arg_info) == NULL) {
+    if (INFO_SSACOUNTER (arg_info) == NULL) {
         /* we are the first block underneath the Fundef node */
-        INFO_AFB_SSACOUNTER (arg_info) = BLOCK_SSACOUNTER (arg_node);
+        INFO_SSACOUNTER (arg_info) = BLOCK_SSACOUNTER (arg_node);
     }
 
     arg_node = TRAVcont (arg_node, arg_info);
@@ -214,7 +230,7 @@ AFBblock (node *arg_node, info *arg_info)
 
 /**
  * @brief restores the args SSACounter based on the information found
- *        in INFO_AFB_SSACOUNTER.
+ *        in INFO_SSACOUNTER.
  *
  * @param arg_node an arg node
  * @param arg_info info structure
@@ -227,7 +243,7 @@ AFBarg (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     AVIS_SSACOUNT (ARG_AVIS (arg_node))
-      = LookUpSSACounter (INFO_AFB_SSACOUNTER (arg_info), arg_node);
+      = LookUpSSACounter (INFO_SSACOUNTER (arg_info), arg_node);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
@@ -253,6 +269,10 @@ AFBap (node *arg_node, info *arg_info)
         && (FUNDEF_BODY (AP_FUNDEF (arg_node)) == NULL)) {
 
         AP_FUNDEF (arg_node) = AFBdoAddFunctionBody (AP_FUNDEF (arg_node));
+    }
+
+    if (AP_ISRECURSIVEDOFUNCALL (arg_node)) {
+        INFO_LOOPRECURSIVEAP (arg_info) = arg_node;
     }
 
     DBUG_RETURN (arg_node);

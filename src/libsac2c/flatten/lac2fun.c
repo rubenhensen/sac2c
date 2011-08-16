@@ -271,6 +271,7 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
             let = DUPdoDupTreeLut (funcall_let, lut);
             AP_FUNDEF (LET_EXPR (let)) = fundef;
             AP_ISRECURSIVEDOFUNCALL (LET_EXPR (let)) = TRUE;
+            FUNDEF_LOOPRECURSIVEAP (fundef) = LET_EXPR (let);
             ass = TBmakeAssign (let, NULL);
             ASSIGN_NEXT (tmp)
               = TBmakeAssign (TBmakeCond (DUPdoDupTreeLut (DO_COND (instr), lut),

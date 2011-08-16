@@ -4931,6 +4931,18 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="LoopRecursiveAp" inconstructor="no">
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Ap" />
+                <phases>
+                  <range from="ptc_l2f" to="final"/>
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="Impl" inconstructor="no">
 	  <description>
       Points to the implementation. In case of a wrapper function this is the
