@@ -1131,10 +1131,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
 
 /** <!--********************************************************************-->
  *
- * @fn node *BuildInverseProjectionOne( node *arg_node, info *arg_info,
- *                                      node( *ivprime,
- *                                      node *intr,
- *                                      node *bnd, int boundnum)
+ * @fn node *BuildInverseProjectionOne(...)
  *
  * @brief   For a consumerWL with iv as WITHID_IDS,
  *          we have code of the form:
@@ -1142,7 +1139,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
  *             iv' = F( iv);
  *             el = producerWL( iv');
  *
- *         We are given iv' lb/ub as the WL intersection
+ *         We are given iv' and lbub as the WL intersection
  *         between a partition of the producerWL and the consumerWL.
  *
  *         This function generates code to compute F_1,
@@ -1164,10 +1161,6 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
  *                                 lb   ub
  *                  Normalized:    [0]  [50]
  *                  Denormlized:   [0]  [49]
- *
- *          bnd: the consumerWL generator N_array node for lb or ub.
- *
- *          boundnum: 0 if computing BOUND1; 1 if computing BOUND2
  *
  * @result: An N_exprs node, which represents the result of
  *          mapping the WLintersect extrema back to consumerWL space,
@@ -1242,45 +1235,34 @@ static node *
 FindNarray (node *arg_node, info *arg_info)
 {
     pattern *pat;
-    pattern *pat2;
     node *z = NULL;
-    node *cids;
     node *pids;
     node *zavis;
-    int clen;
-    int plen;
 
     DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&z), 1, PMskip (0));
-    pat2 = PMany (1, PMAgetNode (&z), 0);
 
     if (!PMmatchFlat (pat, PRF_ARG1 (arg_node))) { /* Find for _sel_VxA_() */
-
         /* Find for _idx_sel() */
         /* We allow this if the offset (PRF_ARG1) traces back to
          * a WITHID_IDS element of this WL, OR if the PWL is 1-D.
-         * If so, we return the WITHID_VEC as the N_array */
-        cids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
-        clen = TCcountIds (cids);
+         * If so, we return [ PRF_ARG1] as the N_array */
         pids = WITHID_IDS (PART_WITHID (WITH_PART (INFO_PRODUCERWL (arg_info))));
-        plen = TCcountIds (pids);
-        if ((1 == plen)
-            || ((PMmatchFlatSkipExtrema (pat2, PRF_ARG1 (arg_node))) && (1 == clen)
-                && (isAvisMemberIds (ID_AVIS (z), cids)))) {
-            z = TCcreateArrayFromIds (cids);
+        if (1 == TCcountIds (pids)) {
+            z = TCmakeIntVector (
+              TBmakeExprs (TBmakeId (ID_AVIS (PRF_ARG1 (arg_node))), NULL));
             zavis = AWLFIflattenExpression (z, &INFO_VARDECS (arg_info),
                                             &INFO_PREASSIGNS (arg_info),
                                             TYmakeAKS (TYmakeSimpleType (T_int),
-                                                       SHcreateShape (1, clen)));
+                                                       SHcreateShape (1, 1)));
             DBUG_PRINT ("Generated %s = [ %s ] for _idx_sel() offset %s",
-                        AVIS_NAME (zavis), AVIS_NAME (IDS_AVIS (cids)),
+                        AVIS_NAME (zavis), AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                         AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
         }
     }
 
     pat = PMfree (pat);
-    pat2 = PMfree (pat2);
 
     DBUG_RETURN (z);
 }
@@ -1367,10 +1349,13 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                   = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
                 intrub
                   = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
+
+#ifdef DEADCODE // Can't do this or end up with code in the CWL partition! */
                 intrub = IVEXPadjustExtremaBound (ID_AVIS (intrub), -1,
                                                   &INFO_VARDECS (arg_info),
                                                   &INFO_PREASSIGNS (arg_info), "bip1");
                 intrub = TBmakeId (intrub);
+#endif // DEADCODE // Can't do this or end up with code in the CWL partition! */
 
                 if (!PMmatchFlat (pat2, intrub)) {
                     DBUG_ASSERT (FALSE, "lost the N_array for %s",
@@ -1845,6 +1830,8 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 
         avismax = IntersectBoundsBuilderOne (arg_node, arg_info, partn, 2,
                                              AVIS_MIN (ivavis), AVIS_MAX (ivavis));
+        /* avismin and avismax are now denormalized */
+
         DBUG_ASSERT (NULL != avismax, "Bobbo is confused. No null, please");
 
         /* Swap (some) elements of avismin and avismax, due to
@@ -1879,18 +1866,23 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
                 EXPRS_EXPR (minex) = maxel;
                 EXPRS_EXPR (maxex) = minel;
             }
+
+#ifdef DEADCODE // Must leave avismax denormalized for BuildInverseProjection
             /* Denormalize AVIS_MAX */
             maxel = EXPRS_EXPR (maxex);
             maxel = IVEXPadjustExtremaBound (ID_AVIS (maxel), 1, &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGNS (arg_info), "ibb1");
             FREEdoFreeNode (EXPRS_EXPR (maxex));
             EXPRS_EXPR (maxex) = TBmakeId (maxel);
+#endif // DEADCODE // Must leave avismax denormalized for BuildInverseProjection
 
             minex = EXPRS_NEXT (minex);
             maxex = EXPRS_NEXT (maxex);
+#ifdef DEADCODE // Must leave avismax denormalized for BuildInverseProjection
             /* We have to move avismax after the normalization computation. */
             INFO_PREASSIGNS (arg_info)
               = TUmoveAssign (avismax, INFO_PREASSIGNS (arg_info));
+#endif // DEADCODE // Must leave avismax denormalized for BuildInverseProjection
         }
 
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (avismin), NULL));

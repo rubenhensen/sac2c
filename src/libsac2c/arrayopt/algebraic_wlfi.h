@@ -50,6 +50,11 @@ extern node *AWLFIavis (node *arg_node, info *arg_info);
 #define WLBOUND2ORIGINAL(partno) (1 + 1 + (WLEPP * partno))
 #define WLINTERSECTION1(partno) (1 + 2 + (WLEPP * partno))
 #define WLINTERSECTION2(partno) (1 + 3 + (WLEPP * partno))
+/*
+ * WLINTERSECTION2 is denormalized, because if BuildInversePartition
+ * denormalized it, that code would end up in CWL block, which
+ * is a no-no.
+ */
 #define WLINTERSECTIONNULL(partno) (1 + 4 + (WLEPP * partno))
 #define WLPROJECTION1(partno) (1 + 5 + (WLEPP * partno))
 #define WLPROJECTION2(partno) (1 + 6 + (WLEPP * partno))
