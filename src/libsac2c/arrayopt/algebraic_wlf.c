@@ -217,7 +217,7 @@ struct INFO {
     /* This is the current consumerWL. */
     int level;
     /* This is the current nesting level of WLs */
-    node *awlfoldableProducerWLpart;
+    node *producerwlpart;
     lut_t *lut;
     /* This is the WITH_ID renaming lut */
     node *vardecs;
@@ -235,7 +235,7 @@ struct INFO {
 #define INFO_PART(n) ((n)->part)
 #define INFO_WL(n) ((n)->wl)
 #define INFO_LEVEL(n) ((n)->level)
-#define INFO_AWLFOLDABLEPRODUCERWLPART(n) ((n)->awlfoldableProducerWLpart)
+#define INFO_PRODUCERWLPART(n) ((n)->producerwlpart)
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
@@ -257,7 +257,7 @@ MakeInfo (node *fundef)
     INFO_PART (result) = NULL;
     INFO_WL (result) = NULL;
     INFO_LEVEL (result) = 0;
-    INFO_AWLFOLDABLEPRODUCERWLPART (result) = NULL;
+    INFO_PRODUCERWLPART (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
@@ -607,7 +607,7 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
 
 /** <!--********************************************************************-->
  *
- * @ fn static node *makeIdxAssigns( node *arg_node, node *ProducerPart)
+ * @ fn static node *makeIdxAssigns( node *arg_node, node *pwlpart)
  *
  * @brief for a producerWL partition, with generator:
  *        (. <= iv=[i,j] < .)
@@ -627,12 +627,12 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
  *
  *****************************************************************************/
 static node *
-makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
+makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
 {
     node *z = NULL;
     node *ids;
     node *narray;
-    node *idxid;
+    node *idxavis;
     node *navis;
     node *nass;
     node *lhsids;
@@ -642,8 +642,12 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
 
     DBUG_ENTER ();
 
-    ids = WITHID_IDS (PART_WITHID (ProducerPart));
-    idxid = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (arg_node)));
+    ids = WITHID_IDS (PART_WITHID (pwlpart));
+    idxavis
+      = AWLFIoffset2Iv (LET_EXPR (ASSIGN_INSTR (arg_node)), &INFO_VARDECS (arg_info),
+                        &INFO_PREASSIGNS (arg_info), INFO_PART (arg_info), pwlpart);
+    DBUG_ASSERT (NULL != idxavis, "Could not rebuild iv for _sel_VxA_(iv, PWL)");
+
     k = 0;
 
     while (NULL != ids) {
@@ -660,11 +664,11 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
 
         lhsavis = populateLut (IDS_AVIS (ids), arg_info, SHcreateShape (0));
         DBUG_PRINT ("created %s = _sel_VxA_(%d, %s)", AVIS_NAME (lhsavis), k,
-                    AVIS_NAME (ID_AVIS (idxid)));
+                    AVIS_NAME (idxavis));
 
         sel = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL),
                                        TCmakePrf2 (F_sel_VxA, TBmakeId (navis),
-                                                   DUPdoDupNode (idxid))),
+                                                   TBmakeId (idxavis))),
                             NULL);
         z = TCappendAssign (z, sel);
         AVIS_SSAASSIGN (lhsavis) = sel;
@@ -673,12 +677,12 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *ProducerPart)
     }
 
     /* Now generate iv = idx; */
-    lhsids = WITHID_VEC (PART_WITHID (ProducerPart));
+    lhsids = WITHID_VEC (PART_WITHID (pwlpart));
     lhsavis = populateLut (IDS_AVIS (lhsids), arg_info, SHcreateShape (1, k));
-    z = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), DUPdoDupNode (idxid)), z);
+    z = TBmakeAssign (TBmakeLet (TBmakeIds (lhsavis, NULL), TBmakeId (idxavis)), z);
     AVIS_SSAASSIGN (lhsavis) = z;
     DBUG_PRINT ("makeIdxAssigns created %s = %s)", AVIS_NAME (lhsavis),
-                AVIS_NAME (ID_AVIS (idxid)));
+                AVIS_NAME (idxavis));
     DBUG_RETURN (z);
 }
 
@@ -851,8 +855,8 @@ AWLFassign (node *arg_node, info *arg_info)
     DBUG_PRINT ("Traversing N_assign");
 #endif // VERBOSE
     ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
-    foldableProducerPart = INFO_AWLFOLDABLEPRODUCERWLPART (arg_info);
-    INFO_AWLFOLDABLEPRODUCERWLPART (arg_info) = NULL;
+    foldableProducerPart = INFO_PRODUCERWLPART (arg_info);
+    INFO_PRODUCERWLPART (arg_info) = NULL;
     DBUG_ASSERT (NULL == INFO_PREASSIGNS (arg_info),
                  "AWLFassign INFO_PREASSIGNS not NULL");
 
@@ -1035,7 +1039,7 @@ AWLFprf (node *arg_node, info *arg_info)
     if ((INFO_PART (arg_info) != NULL)
         && ((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel))
         && (AWLFIisHasNoteintersect (arg_node))) {
-        INFO_AWLFOLDABLEPRODUCERWLPART (arg_info)
+        INFO_PRODUCERWLPART (arg_info)
           = checkAWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
                               INFO_LEVEL (arg_info));
     }

@@ -1244,9 +1244,11 @@ FindNarray (node *arg_node, info *arg_info)
     pattern *pat;
     pattern *pat2;
     node *z = NULL;
-    node *ids;
+    node *cids;
+    node *pids;
     node *zavis;
-    int len;
+    int clen;
+    int plen;
 
     DBUG_ENTER ();
 
@@ -1257,17 +1259,20 @@ FindNarray (node *arg_node, info *arg_info)
 
         /* Find for _idx_sel() */
         /* We allow this if the offset (PRF_ARG1) traces back to
-         * a WITHID_IDS element of this WL, and the WL is 1-D.
+         * a WITHID_IDS element of this WL, OR if the PWL is 1-D.
          * If so, we return the WITHID_VEC as the N_array */
-        ids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
-        len = TCcountIds (ids);
-        if ((PMmatchFlatSkipExtrema (pat2, PRF_ARG1 (arg_node))) && (1 == len)
-            && (isAvisMemberIds (ID_AVIS (z), ids))) {
-            z = TCcreateArrayFromIds (ids);
+        cids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
+        clen = TCcountIds (cids);
+        pids = WITHID_IDS (PART_WITHID (WITH_PART (INFO_PRODUCERWL (arg_info))));
+        plen = TCcountIds (pids);
+        if ((1 == plen)
+            || ((PMmatchFlatSkipExtrema (pat2, PRF_ARG1 (arg_node))) && (1 == clen)
+                && (isAvisMemberIds (ID_AVIS (z), cids)))) {
+            z = TCcreateArrayFromIds (cids);
             zavis = AWLFIflattenExpression (z, &INFO_VARDECS (arg_info),
                                             &INFO_PREASSIGNS (arg_info),
                                             TYmakeAKS (TYmakeSimpleType (T_int),
-                                                       SHcreateShape (1, len)));
+                                                       SHcreateShape (1, clen)));
             DBUG_PRINT ("Generated N_array for offset from WITHID_IDS");
         }
     }
@@ -1984,13 +1989,16 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
  *         2. We are doing idx_sel_(). Find the idxs2offset( pwl, i, j, k...),
  *            build a flattened N_array from [ i, j, k], and
  *            return its avis.
+ *            Ditto if we can not find the idxs2offset, but the
+ *            producerWL generates a vector result.
  *
  * @return: the desired avis node.
  *          If we can't find one, we return NULL.
  *
  *****************************************************************************/
 node *
-AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart)
+AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart,
+                node *pwlpart)
 {
     node *z = NULL;
     pattern *pat;
@@ -2017,9 +2025,10 @@ AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart
                 z = CreateIvArray (EXPRS_NEXT (PRF_ARGS (arg_node)), vardecs, preassigns);
             } else {
                 /* We have not have _idxs2offset any more, due to opts.
-                 * This is OK if WL bounds are 1-D
+                 * This is OK if PWL bounds are 1-D
                  */
-                if (isAvisHasBothExtrema (ID_AVIS (PRF_ARG1 (arg_node)))) {
+                if ((NULL != pwlpart)
+                    && (1 == TCcountIds (WITHID_IDS (PART_WITHID (pwlpart))))) {
                     expr = TBmakeExprs (TBmakeId (ID_AVIS (PRF_ARG1 (arg_node))), NULL);
                     z = CreateIvArray (expr, vardecs, preassigns);
                     expr = FREEdoFreeTree (expr);
@@ -2084,7 +2093,8 @@ attachIntersectCalc (node *arg_node, info *arg_info)
     DBUG_PRINT ("Inserting attachextrema computations");
 
     ivavis = AWLFIoffset2Iv (arg_node, &INFO_VARDECS (arg_info),
-                             &INFO_PREASSIGNS (arg_info), INFO_CONSUMERWLPART (arg_info));
+                             &INFO_PREASSIGNS (arg_info), INFO_CONSUMERWLPART (arg_info),
+                             WITH_PART (INFO_PRODUCERWL (arg_info)));
 
     if (NULL != ivavis) {
         intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, ivavis);
@@ -2604,14 +2614,18 @@ AWLFIprf (node *arg_node, info *arg_info)
         && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
 
-        iv = AWLFIoffset2Iv (arg_node, &INFO_VARDECS (arg_info),
-                             &INFO_PREASSIGNS (arg_info), INFO_CONSUMERWLPART (arg_info));
         INFO_PRODUCERWLLHS (arg_info) = AWLFIfindWlId (PRF_ARG2 (arg_node));
         INFO_PRODUCERWL (arg_info) = AWLFIgetWlWith (INFO_PRODUCERWLLHS (arg_info));
         INFO_PRODUCERWLFOLDABLE (arg_info)
           = checkConsumerWLFoldable (arg_node, arg_info)
-            && checkProducerWLFoldable (arg_node, arg_info) && isAvisHasBothExtrema (iv)
+            && checkProducerWLFoldable (arg_node, arg_info)
             && checkBothFoldable (arg_node, arg_info);
+        if (NULL != INFO_PRODUCERWL (arg_info)) {
+            iv = AWLFIoffset2Iv (arg_node, &INFO_VARDECS (arg_info),
+                                 &INFO_PREASSIGNS (arg_info),
+                                 INFO_CONSUMERWLPART (arg_info),
+                                 WITH_PART (INFO_PRODUCERWL (arg_info)));
+        }
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
@@ -2622,7 +2636,7 @@ AWLFIprf (node *arg_node, info *arg_info)
         }
 
         /* Maybe attach intersect calculations now. */
-        if ((INFO_PRODUCERWLFOLDABLE (arg_info))
+        if ((INFO_PRODUCERWLFOLDABLE (arg_info)) && (isAvisHasBothExtrema (iv))
             && (!AWLFIisHasNoteintersect (arg_node))) {
             z = attachIntersectCalc (arg_node, arg_info);
             if (z != ID_AVIS (PRF_ARG1 (arg_node))) {
