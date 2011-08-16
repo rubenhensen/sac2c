@@ -1273,7 +1273,9 @@ FindNarray (node *arg_node, info *arg_info)
                                             &INFO_PREASSIGNS (arg_info),
                                             TYmakeAKS (TYmakeSimpleType (T_int),
                                                        SHcreateShape (1, clen)));
-            DBUG_PRINT ("Generated N_array for offset from WITHID_IDS");
+            DBUG_PRINT ("Generated %s = [ %s ] for _idx_sel() offset %s",
+                        AVIS_NAME (zavis), AVIS_NAME (IDS_AVIS (cids)),
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
         }
     }
 
@@ -2605,7 +2607,7 @@ node *
 AWLFIprf (node *arg_node, info *arg_info)
 {
     node *z;
-    node *iv;
+    node *iv = NULL;
 
     DBUG_ENTER ();
 
