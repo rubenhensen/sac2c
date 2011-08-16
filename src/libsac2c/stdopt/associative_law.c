@@ -1112,6 +1112,8 @@ ALpart (node *arg_node, info *arg_info)
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
     INFO_WITHID (arg_info) = keep_withid;
 
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -1146,7 +1148,6 @@ ALprf (node *arg_node, info *arg_info)
 
     if ((INFO_MODE (arg_info) == MODE_transform)
         && isAssociativeAndCommutativePrf (prf)) {
-        DBUG_PRINT ("Eligible prf node found: %s", global.prf_name[prf]);
 
         ltype = IDS_NTYPE (INFO_LHS (arg_info));
 
@@ -1154,11 +1155,17 @@ ALprf (node *arg_node, info *arg_info)
             || ((TYgetSimpleType (TYgetScalar (ltype)) != T_float)
                 && (TYgetSimpleType (TYgetScalar (ltype)) != T_double))) {
 
+            DBUG_PRINT ("Eligible start node found: %s", IDS_NAME (INFO_LHS (arg_info)));
+            DBUG_PRINT ("Associative operator used: %s", global.prf_name[prf]);
+
             exprs
               = TCappendExprs (CollectExprs (prf, PRF_ARG1 (arg_node), isArg1Scl (prf)),
                                CollectExprs (prf, PRF_ARG2 (arg_node), isArg2Scl (prf)));
 
             if (EXPRS_EXPRS3 (exprs) == NULL) {
+                DBUG_PRINT ("Giving up, operand set too short:");
+                DBUG_EXECUTE (printOperands (exprs));
+
                 exprs = FREEdoFreeTree (exprs);
                 /*
                  * AL optimization only makes sense if the operand list
@@ -1209,13 +1216,7 @@ ALprf (node *arg_node, info *arg_info)
                     externals = TCappendExprs (scalars_ext, vectors_ext);
                     scalars_ext = NULL;
                     vectors_ext = NULL;
-                } else {
-                    scalars_ext = NULL;
-                    vectors_ext = NULL;
-                    externals = NULL;
-                }
-
-                if (INFO_ISLOOPBODY (arg_info)) {
+                } else if (INFO_ISLOOPBODY (arg_info)) {
                     /*
                      * Here, we try AL to enable loop invariant removal.
                      * At the end, we combine the lists of scalar and vector identifiers
