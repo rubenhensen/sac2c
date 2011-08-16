@@ -1941,8 +1941,8 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
     node *ids;
     node *assgn;
     node *nlet;
-    node *z;
     int len;
+    node *z;
 
     DBUG_ENTER ();
 
@@ -1955,7 +1955,7 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
     assgn
       = TBmakeAssign (TBmakeLet (ids, TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int),
                                                               SHcreateShape (0)),
-                                                   SHcreateShape (1, 1),
+                                                   SHcreateShape (1, len),
                                                    DUPdoDupTree (arg_node))),
                       NULL);
     *preassigns = TCappendAssign (*preassigns, assgn);
@@ -2024,7 +2024,7 @@ AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart
             DBUG_ASSERT (FALSE, "bye");
         } else {
             if ((N_prf == NODE_TYPE (ivprf)) && (F_idxs2offset == PRF_PRF (ivprf))) {
-                z = CreateIvArray (EXPRS_NEXT (PRF_ARGS (arg_node)), vardecs, preassigns);
+                z = CreateIvArray (EXPRS_NEXT (PRF_ARGS (ivprf)), vardecs, preassigns);
             } else {
                 /* We have not have _idxs2offset any more, due to opts.
                  * This is OK if PWL bounds are 1-D
