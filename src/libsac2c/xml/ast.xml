@@ -1550,6 +1550,7 @@
 	<travuser>
 	  <node name="Module" />
 	  <node name="Fundef" />
+	  <node name="Arg" />
 	  <node name="Block" />
 	  <node name="Assign" />
 	  <node name="Let" />
@@ -8338,6 +8339,13 @@ N_tfarg :
                   This flags marks AVIS nodes as potential roots of multi-operand
                   expressions; it is used to avoid starting another go on AL for
                   any subexpression.
+          </description>
+        </flag>
+        <flag name="IsLoopInvariant" default="FALSE">
+          <description>
+                  This flags marks AVIS nodes as loop invariant, i.e. the variable
+                  is a parameter of a do-loop function and appears in the corresponding
+                  argument position of the recursive application.
           </description>
         </flag>
         <flag name="IsDLActive" default="FALSE">

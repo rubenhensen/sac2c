@@ -22,6 +22,8 @@
  *    of the associative operation can be replaced by its neutral element.
  *  - separate vector operations from scalar operations in order to compute
  *    expressions as long as possible on the scalar level.
+ *  - identifying operands that are loop or with-loop invariant and group
+ *    them together to enable (with-)loop invariant removal.
  *
  * Example:
  *
@@ -51,13 +53,11 @@
  *
  * s = +(a,1,c,1,b,d)
  *
- * This is then split into constants, non-constant scalars, and
- * non-constant vectors ( This ordering minimizes the work to
- * compute the final result.):
+ * This is then split into constants, loop-invariant variables, non-constant scalars,
+ * scalars and non-constant vectors. The latter distinction aims at doing computations
+ * as long as possible on the scalar level before switching to vectors.
  *
- * s = +(+(1,1),+(a,b),+(b,d))
- *
- * Finally, this gets transformed back into a piece of AST:
+ * Finally, these 4 sets of variables are transformed back into a piece of AST:
  *
  * const = 1 _add_SxS_ 1;
  * nonconst = a _add_SxS_ b;
@@ -125,8 +125,11 @@ struct INFO {
     node *preassign;
     bool isalcandidate;
     bool onefundef;
+    bool isloopbody;
+    bool iswithloopbody;
     node *lhs;
     node *withid;
+    node *recursiveapargs;
 };
 
 /*
@@ -137,8 +140,11 @@ struct INFO {
 #define INFO_MODE(n) ((n)->mode)
 #define INFO_ISALCANDIDATE(n) ((n)->isalcandidate)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
+#define INFO_ISLOOPBODY(n) ((n)->isloopbody)
+#define INFO_ISWITHLOOPBODY(n) ((n)->iswithloopbody)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_WITHID(n) ((n)->withid)
+#define INFO_RECURSIVEAPARGS(n) ((n)->recursiveapargs)
 
 /*
  * INFO functions
@@ -157,8 +163,11 @@ MakeInfo ()
     INFO_MODE (result) = MODE_noop;
     INFO_ISALCANDIDATE (result) = FALSE;
     INFO_ONEFUNDEF (result) = FALSE;
+    INFO_ISLOOPBODY (result) = FALSE;
+    INFO_ISWITHLOOPBODY (result) = FALSE;
     INFO_LHS (result) = NULL;
     INFO_WITHID (result) = NULL;
+    INFO_RECURSIVEAPARGS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -219,6 +228,21 @@ ALdoAssocLawOptimization (node *arg_node)
  * Helper functions
  *
  *****************************************************************************/
+
+static void
+printOperands (node *exprs)
+{
+    node *tmp = exprs;
+
+    DBUG_ENTER ();
+
+    while (tmp != NULL) {
+        DBUG_PRINT ("%s ", AVIS_NAME (ID_AVIS (EXPRS_EXPR (tmp))));
+        tmp = EXPRS_NEXT (tmp);
+    }
+
+    DBUG_RETURN ();
+}
 
 static prf
 AltPrf (prf op)
@@ -529,6 +553,26 @@ isScalar (node *n)
     }
 
     DBUG_RETURN (res);
+}
+
+static bool
+isNonLocal (node *n)
+{
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (NODE_TYPE (n) == N_id, "Illegal node type detected");
+
+    DBUG_RETURN (!AVIS_ISDEFINEDINCURRENTBLOCK (ID_AVIS (n)));
+}
+
+static bool
+isLoopInvariant (node *n)
+{
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (NODE_TYPE (n) == N_id, "Illegal node type detected");
+
+    DBUG_RETURN (AVIS_ISLOOPINVARIANT (ID_AVIS (n)));
 }
 
 static prf
@@ -850,23 +894,66 @@ ALfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        DBUG_PRINT ("traversing body of (%s) %s",
-                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                    FUNDEF_NAME (arg_node));
+    if (FUNDEF_BODY (arg_node) != NULL && !FUNDEF_ISWRAPPERFUN (arg_node)) {
+        DBUG_PRINT ("");
+        DBUG_PRINT ("traversing body of %s", FUNDEF_NAME (arg_node));
+
+        INFO_ISLOOPBODY (arg_info) = FUNDEF_ISDOFUN (arg_node);
         INFO_FUNDEF (arg_info) = arg_node;
+
+        if (FUNDEF_ISDOFUN (arg_node)) {
+            DBUG_ASSERT (FUNDEF_LOOPRECURSIVEAP (arg_node) != NULL,
+                         "Loop fun found without RecursiveAp set: %s.",
+                         FUNDEF_NAME (arg_node));
+
+            INFO_RECURSIVEAPARGS (arg_info) = AP_ARGS (FUNDEF_LOOPRECURSIVEAP (arg_node));
+            FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+
+            DBUG_ASSERT (INFO_RECURSIVEAPARGS (arg_info) == NULL,
+                         "Arity of loop function does not match arity of recursive call");
+        } else {
+            FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+        }
+
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
-        DBUG_PRINT ("leaving body of (%s) %s",
-                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                    FUNDEF_NAME (arg_node));
+        INFO_ISLOOPBODY (arg_info) = FALSE;
+        DBUG_PRINT ("leaving body of %s", FUNDEF_NAME (arg_node));
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
+    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+ALarg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (INFO_ISLOOPBODY (arg_info)) {
+
+        DBUG_ASSERT (INFO_RECURSIVEAPARGS (arg_info) != NULL,
+                     "Arity of loop function does not match arity of recursive call");
+
+        if (ARG_AVIS (arg_node)
+            == ID_AVIS (EXPRS_EXPR (INFO_RECURSIVEAPARGS (arg_info)))) {
+            AVIS_ISLOOPINVARIANT (ARG_AVIS (arg_node)) = TRUE;
+        } else {
+            AVIS_ISLOOPINVARIANT (ARG_AVIS (arg_node)) = FALSE;
+        }
+
+        INFO_RECURSIVEAPARGS (arg_info) = EXPRS_NEXT (INFO_RECURSIVEAPARGS (arg_info));
+    } else {
+        AVIS_ISLOOPINVARIANT (ARG_AVIS (arg_node)) = FALSE;
+    }
+
+    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -926,7 +1013,6 @@ ALassign (node *arg_node, info *arg_info)
         ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
 
         if (INFO_PREASSIGN (arg_info) != NULL) {
-            DBUG_PRINT ("AL optimisation successful !!.");
             arg_node
               = TCappendAssign (revert (INFO_PREASSIGN (arg_info), NULL), arg_node);
             INFO_PREASSIGN (arg_info) = NULL;
@@ -940,8 +1026,6 @@ node *
 ALlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
-
-    DBUG_PRINT ("looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
 
     switch (INFO_MODE (arg_info)) {
     case MODE_recurse:
@@ -995,12 +1079,23 @@ ALids (node *arg_node, info *arg_info)
 node *
 ALwith (node *arg_node, info *arg_info)
 {
+    bool isloopbody, iswithloopbody;
+
     DBUG_ENTER ();
+
+    isloopbody = INFO_ISLOOPBODY (arg_info);
+    INFO_ISLOOPBODY (arg_info) = FALSE;
+
+    iswithloopbody = INFO_ISWITHLOOPBODY (arg_info);
+    INFO_ISWITHLOOPBODY (arg_info) = TRUE;
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     /*
      * We do not traverse the N_code chain but follow the partitions.
      */
+
+    INFO_ISLOOPBODY (arg_info) = isloopbody;
+    INFO_ISWITHLOOPBODY (arg_info) = iswithloopbody;
 
     DBUG_RETURN (arg_node);
 }
@@ -1040,9 +1135,10 @@ ALprf (node *arg_node, info *arg_info)
     ntype *ltype;
     prf prf;
     node *exprs, *tmp;
-    node *consts, *scalars, *vects;
-    node *consts_id, *scalars_id, *vects_id;
-    node *scalars_inv, *scalars_inv_id, *vects_inv, *vects_inv_id;
+    node *consts, *scalars, *vectors;
+    node *consts_id, *scalars_id, *vectors_id;
+    node *scalars_inv, *scalars_inv_id, *vectors_inv, *vectors_inv_id;
+    node *scalars_ext, *vectors_ext, *externals, *externals_id;
 
     DBUG_ENTER ();
 
@@ -1062,23 +1158,19 @@ ALprf (node *arg_node, info *arg_info)
               = TCappendExprs (CollectExprs (prf, PRF_ARG1 (arg_node), isArg1Scl (prf)),
                                CollectExprs (prf, PRF_ARG2 (arg_node), isArg2Scl (prf)));
 
-            DBUG_PRINT ("Operand set:");
-            DBUG_EXECUTE ({
-                node *tmp = exprs;
-                while (tmp != NULL) {
-                    DBUG_PRINT ("%s ", AVIS_NAME (ID_AVIS (EXPRS_EXPR (tmp))));
-                    tmp = EXPRS_NEXT (tmp);
-                }
-            });
+            if (EXPRS_EXPRS3 (exprs) == NULL) {
+                exprs = FREEdoFreeTree (exprs);
+                /*
+                 * AL optimization only makes sense if the operand list
+                 * consists of more than two elements
+                 */
+            } else {
+                DBUG_PRINT ("Complete operand set:");
+                DBUG_EXECUTE (printOperands (exprs));
 
-            /*
-             * The optimization can only be performed if the combined expression
-             * consists of more than two elements
-             */
-            if (EXPRS_EXPRS3 (exprs) != NULL) {
                 consts = TCfilterExprs (isConst, &exprs);
                 scalars = TCfilterExprs (isNonConstScalar, &exprs);
-                vects = exprs;
+                vectors = exprs;
 
                 scalars_inv = NULL;
 
@@ -1090,18 +1182,76 @@ ALprf (node *arg_node, info *arg_info)
                     }
                 }
 
-                vects_inv = NULL;
+                vectors_inv = NULL;
 
-                if (!isSingletonOrEmpty (vects)) {
+                if (!isSingletonOrEmpty (vectors)) {
                     if (isPrfAdd (prf)) {
-                        vects_inv = identifyInverses (F_neg_S, &vects);
+                        vectors_inv = identifyInverses (F_neg_S, &vectors);
                     } else if (isPrfMul (prf)) {
-                        vects_inv = identifyInverses (F_reciproc_S, &vects);
+                        vectors_inv = identifyInverses (F_reciproc_S, &vectors);
                     }
                 }
 
+                if (INFO_ISWITHLOOPBODY (arg_info)) {
+                    /*
+                     * Here, we try AL to enable with-loop invariant removal.
+                     * At the end, we combine the lists of scalar and vector identifiers
+                     * because loop invariant combinations of scalar and vector
+                     * identifiers are also relevant for optimisation. We capitalise
+                     * on the fact that Exprs2PrfTree used later to construct the tree
+                     * does so element by element starting at the head of the list,
+                     * which means we still combine all the scalar identifiers before
+                     * combine the scalar result with potential further vector
+                     * identifiers.
+                     */
+                    scalars_ext = TCfilterExprs (isNonLocal, &scalars);
+                    vectors_ext = TCfilterExprs (isNonLocal, &vectors);
+                    externals = TCappendExprs (scalars_ext, vectors_ext);
+                    scalars_ext = NULL;
+                    vectors_ext = NULL;
+                } else {
+                    scalars_ext = NULL;
+                    vectors_ext = NULL;
+                    externals = NULL;
+                }
+
+                if (INFO_ISLOOPBODY (arg_info)) {
+                    /*
+                     * Here, we try AL to enable loop invariant removal.
+                     * At the end, we combine the lists of scalar and vector identifiers
+                     * because loop invariant combinations of scalar and vector
+                     * identifiers are also relevant for optimisation. We capitalise
+                     * on the fact that Exprs2PrfTree used later to construct the tree
+                     * does so element by element starting at the head of the list,
+                     * which means we still combine all the scalar identifiers before
+                     * combine the scalar result with potential further vector
+                     * identifiers.
+                     */
+                    scalars_ext = TCfilterExprs (isLoopInvariant, &scalars);
+                    vectors_ext = TCfilterExprs (isLoopInvariant, &vectors);
+                    externals = TCappendExprs (scalars_ext, vectors_ext);
+                    scalars_ext = NULL;
+                    vectors_ext = NULL;
+                } else {
+                    scalars_ext = NULL;
+                    vectors_ext = NULL;
+                    externals = NULL;
+                }
+
+                DBUG_PRINT ("Constant operand set:");
+                DBUG_EXECUTE (printOperands (consts));
+
+                DBUG_PRINT ("(With-)Loop invariant operand set:");
+                DBUG_EXECUTE (printOperands (externals));
+
+                DBUG_PRINT ("Scalar neutralised operand set:");
+                DBUG_EXECUTE (printOperands (scalars_inv));
+
+                DBUG_PRINT ("Vector neutralised operand set:");
+                DBUG_EXECUTE (printOperands (vectors_inv));
+
                 if (!isSingletonOrEmpty (consts) || (scalars_inv != NULL)
-                    || (vects_inv != NULL)) {
+                    || (vectors_inv != NULL) || !isSingletonOrEmpty (externals)) {
 
                     /*
                      * We only rewrite the multi-operand expression if we have
@@ -1111,14 +1261,18 @@ ALprf (node *arg_node, info *arg_info)
                      *    - the vector operands.
                      */
 
+                    DBUG_PRINT ("AL optimisation !!.");
+
                     consts_id = Exprs2PrfTree (prf, consts, arg_info);
                     scalars_id = Exprs2PrfTree (prf, scalars, arg_info);
-                    vects_id = Exprs2PrfTree (prf, vects, arg_info);
+                    vectors_id = Exprs2PrfTree (prf, vectors, arg_info);
+                    externals_id = Exprs2PrfTree (prf, externals, arg_info);
 
                     exprs = NULL;
-                    exprs = TCcombineExprs (vects_id, exprs);
+                    exprs = TCcombineExprs (vectors_id, exprs);
                     exprs = TCcombineExprs (scalars_id, exprs);
                     exprs = TCcombineExprs (consts_id, exprs);
+                    exprs = TCcombineExprs (externals_id, exprs);
 
                     while (scalars_inv != NULL) {
                         tmp = EXPRS_NEXT (EXPRS_NEXT (scalars_inv));
@@ -1128,12 +1282,12 @@ ALprf (node *arg_node, info *arg_info)
                         scalars_inv = tmp;
                     }
 
-                    while (vects_inv != NULL) {
-                        tmp = EXPRS_NEXT (EXPRS_NEXT (vects_inv));
-                        EXPRS_NEXT (EXPRS_NEXT (vects_inv)) = NULL;
-                        vects_inv_id = Exprs2PrfTree (prf, vects_inv, arg_info);
-                        exprs = TCcombineExprs (vects_inv_id, exprs);
-                        vects_inv = tmp;
+                    while (vectors_inv != NULL) {
+                        tmp = EXPRS_NEXT (EXPRS_NEXT (vectors_inv));
+                        EXPRS_NEXT (EXPRS_NEXT (vectors_inv)) = NULL;
+                        vectors_inv_id = Exprs2PrfTree (prf, vectors_inv, arg_info);
+                        exprs = TCcombineExprs (vectors_inv_id, exprs);
+                        vectors_inv = tmp;
                     }
 
                     arg_node = FREEdoFreeNode (arg_node);
@@ -1141,18 +1295,26 @@ ALprf (node *arg_node, info *arg_info)
 
                     global.optcounters.al_expr++;
                 } else {
+                    /*
+                     * We decided not to do any AL transformation, so we need
+                     * to remove the various identifier lists.
+                     */
+
+                    DBUG_PRINT ("No AL optimisation !!.");
+
                     if (consts != NULL) {
                         consts = FREEdoFreeTree (consts);
                     }
                     if (scalars != NULL) {
                         scalars = FREEdoFreeTree (scalars);
                     }
-                    if (vects != NULL) {
-                        vects = FREEdoFreeTree (vects);
+                    if (vectors != NULL) {
+                        vectors = FREEdoFreeTree (vectors);
+                    }
+                    if (externals != NULL) {
+                        externals = FREEdoFreeTree (externals);
                     }
                 }
-            } else {
-                exprs = FREEdoFreeTree (exprs);
             }
         }
     }
