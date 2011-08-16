@@ -126,7 +126,7 @@ GDBwhatIs (char *nm, node *fundef)
  * making the sac2c compiler display the value of a variable.
  *
  * Typical usage:
- *   GDBwhatIs( arg_node, arg_info->fundef)
+ *   GDBwhatIsNid( arg_node, arg_info->fundef)
  *
  ******************************************************************************/
 void
@@ -151,7 +151,7 @@ GDBwhatIsNid (node *arg_node, node *fundef)
 
 /******************************************************************************
  *
- * function: GDBprintPrfArgs( node *arg_node, node *fundef)
+ * function: GDBwhatAreNid( node *arg_node, node *fundef)
  *
  * description:
  *
@@ -159,12 +159,14 @@ GDBwhatIsNid (node *arg_node, node *fundef)
  * making the sac2c compiler display the value of the arguments
  * of an N_prf.
  *
+ * This will display all elements of an N_prf EXPRS chain.
+ *
  * Typical usage:
- *   GDBwhatIs( "foo", arg_info->fundef)
+ *   GDBwhatAre( "foo", arg_info->fundef)
  *
  ******************************************************************************/
 void
-GDBprintPrfArgs (node *arg_node, node *fundef)
+GDBwhatAreNid (node *arg_node, node *fundef)
 {
     node *exprs;
     node *expr;
@@ -179,6 +181,49 @@ GDBprintPrfArgs (node *arg_node, node *fundef)
                 PRTdoPrintNode (expr);
             }
             exprs = EXPRS_NEXT (exprs);
+        }
+    }
+
+    return;
+}
+
+/******************************************************************************
+ *
+ * function: GDBwhatAre( char *nm, node *fundef)
+ *
+ * description: Like GDBwhatAreNid, except it takes a character
+ *              string, instead of an N_id, as PRF_ARG1.
+ *
+ * This will display all elements of an N_prf EXPRS chain.
+ *
+ * Typical usage:
+ *
+ *   GDBwhatAre( "foo", arg_info->fundef)
+ *
+ ******************************************************************************/
+void
+GDBwhatAre (char *nm, node *fundef)
+{
+    node *exprs;
+    node *expr;
+    node *vardec;
+    node *assgn;
+
+    if (NULL != nm) {
+        vardec = TCfindVardec_Name (nm, fundef);
+        assgn = (NULL != vardec) ? AVIS_SSAASSIGN (VARDEC_AVIS (vardec)) : NULL;
+        if (NULL != assgn) {
+            exprs = PRF_ARGS (LET_EXPR (ASSIGN_INSTR (assgn)));
+            while (NULL != exprs) {
+                expr = EXPRS_EXPR (exprs);
+                if ((N_id == NODE_TYPE (expr))
+                    && (NULL != AVIS_SSAASSIGN (ID_AVIS (expr)))) {
+                    PRTdoPrintNode (AVIS_SSAASSIGN (ID_AVIS (expr)));
+                } else {
+                    PRTdoPrintNode (expr);
+                }
+                exprs = EXPRS_NEXT (exprs);
+            }
         }
     }
 
