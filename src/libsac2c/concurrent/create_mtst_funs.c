@@ -445,13 +445,13 @@ MTSTFcond (node *arg_node, info *arg_info)
 
             COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
-            INFO_SPMDASSIGNS (arg_info) = BLOCK_INSTR (COND_ELSE (arg_node));
+            INFO_SPMDASSIGNS (arg_info) = BLOCK_ASSIGNS (COND_ELSE (arg_node));
             /*
              * We store the assignment chain of the else-case (sequential)
              * for subsequent integration into the surrounding assignment chain.
              */
 
-            BLOCK_INSTR (COND_ELSE (arg_node)) = TBmakeEmpty ();
+            BLOCK_ASSIGNS (COND_ELSE (arg_node)) = TBmakeEmpty ();
             /*
              * We must restore a correct conditional node for later de-allocation.
              */

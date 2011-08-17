@@ -223,8 +223,8 @@ EMRCOblock (node *arg_node, info *arg_info)
     INFO_FILLLUT (arg_info) = LUTgenerateLut ();
     INFO_NEXTEXPR (arg_info) = NULL;
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    if (BLOCK_ASSIGNS (arg_node) != NULL) {
+        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
     INFO_FILLLUT (arg_info) = LUTremoveLut (INFO_FILLLUT (arg_info));

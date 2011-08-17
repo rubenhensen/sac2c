@@ -325,21 +325,21 @@ WLDSpart (node *arg_node, info *arg_info)
         lut = LUTremoveLut (lut);
 
         /*
-            if ( NODE_TYPE( BLOCK_INSTR( CODE_CBLOCK( new_code))) == N_empty) {
-              BLOCK_INSTR( CODE_CBLOCK( new_code)) =
-                TCappendAssign( BLOCK_INSTR( CODE_CBLOCK( new_code)), INFO_PREASSIGNS(
+            if ( NODE_TYPE( BLOCK_ASSIGNS( CODE_CBLOCK( new_code))) == N_empty) {
+              BLOCK_ASSIGNS( CODE_CBLOCK( new_code)) =
+                TCappendAssign( BLOCK_ASSIGNS( CODE_CBLOCK( new_code)), INFO_PREASSIGNS(
            arg_info));
             }
             else {
-              BLOCK_INSTR( CODE_CBLOCK( new_code)) =
-                TCappendAssign( INFO_PREASSIGNS( arg_info), BLOCK_INSTR( CODE_CBLOCK(
+              BLOCK_ASSIGNS( CODE_CBLOCK( new_code)) =
+                TCappendAssign( INFO_PREASSIGNS( arg_info), BLOCK_ASSIGNS( CODE_CBLOCK(
            new_code)));
             }
         */
-        if (NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (new_code))) != N_empty) {
-            BLOCK_INSTR (CODE_CBLOCK (new_code))
+        if (NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (new_code))) != N_empty) {
+            BLOCK_ASSIGNS (CODE_CBLOCK (new_code))
               = TCappendAssign (INFO_PREASSIGNS (arg_info),
-                                BLOCK_INSTR (CODE_CBLOCK (new_code)));
+                                BLOCK_ASSIGNS (CODE_CBLOCK (new_code)));
         } else {
             PART_INNERWLIDXASSIGN (arg_node) = NULL;
         }
@@ -439,15 +439,15 @@ node *WLUScode( node *arg_node, info *arg_info)
   if( INFO_CREATE_NEWCODE( arg_info)) {
     new_code = DUPdoDupNode( arg_node);
 
-    if ( NODE_TYPE( BLOCK_INSTR( CODE_CBLOCK( new_code))) == N_empty) {
-      BLOCK_INSTR( CODE_CBLOCK( new_code)) =
-        TCappendAssign( BLOCK_INSTR( CODE_CBLOCK( new_code)),
+    if ( NODE_TYPE( BLOCK_ASSIGNS( CODE_CBLOCK( new_code))) == N_empty) {
+      BLOCK_ASSIGNS( CODE_CBLOCK( new_code)) =
+        TCappendAssign( BLOCK_ASSIGNS( CODE_CBLOCK( new_code)),
                         INFO_PREASSIGNS( arg_info));
     }
     else {
-      BLOCK_INSTR( CODE_CBLOCK( new_code)) =
+      BLOCK_ASSIGNS( CODE_CBLOCK( new_code)) =
         TCappendAssign( INFO_PREASSIGNS( arg_info),
-                         BLOCK_INSTR( CODE_CBLOCK( new_code)));
+                         BLOCK_ASSIGNS( CODE_CBLOCK( new_code)));
     }
 
     innerdim = TCcountIds( WITHID_IDS( INFO_NEWWITHID( arg_info)));

@@ -338,9 +338,9 @@ LINLassign (node *arg_node, info *arg_info)
         global.optcounters.inl_fun++; /* global optimization counter */
 
         if (INFO_VARDECS (arg_info) != NULL) {
-            BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
+            BLOCK_VARDECS (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
               = TCappendVardec (INFO_VARDECS (arg_info),
-                                BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
+                                BLOCK_VARDECS (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
             INFO_VARDECS (arg_info) = NULL;
         }
     }

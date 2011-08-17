@@ -179,7 +179,7 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
     DBUG_ASSERT (NULL != FUNDEF_BODY (fundef), "function with body required");
 
     /* search conditional in do fundef */
-    cond_assign = FindAssignOfType (BLOCK_INSTR (FUNDEF_BODY (fundef)), N_cond);
+    cond_assign = FindAssignOfType (BLOCK_ASSIGNS (FUNDEF_BODY (fundef)), N_cond);
     DBUG_ASSERT (NULL != cond_assign, "fundef with none or multiple conditionals");
 
     /* get condition */
@@ -1622,7 +1622,7 @@ UnrollLoopBody (node *fundef, loopc_t unrolling)
     DBUG_ASSERT (unrolling >= 1, "unsupported unrolling number");
 
     /* separate loop body assignment chain */
-    loop_body = BLOCK_INSTR (FUNDEF_BODY (fundef));
+    loop_body = BLOCK_ASSIGNS (FUNDEF_BODY (fundef));
 
     last = loop_body;
     cond_assign = ASSIGN_NEXT (last);
@@ -1716,7 +1716,7 @@ UnrollLoopBody (node *fundef, loopc_t unrolling)
     new_body = TCappendAssign (new_body, predass);
 
     /* add new body to toplevel block of function */
-    BLOCK_INSTR (FUNDEF_BODY (fundef)) = new_body;
+    BLOCK_ASSIGNS (FUNDEF_BODY (fundef)) = new_body;
 
     DBUG_RETURN (fundef);
 }

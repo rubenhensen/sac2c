@@ -630,22 +630,22 @@ WLFLTblock (node *arg_node, info *arg_info)
     /*
      * Clear left-over information from the AVIS_ISUSED flag.
      */
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    if (BLOCK_VARDECS (arg_node) != NULL) {
+        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
     }
 
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
     /*
      * Clear the AVIS_ISUSED flag, again.
      */
-    if (BLOCK_VARDEC (arg_node) != NULL) {
+    if (BLOCK_VARDECS (arg_node) != NULL) {
 
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
 
         if (INFO_VARDECS (arg_info) != NULL) {
-            BLOCK_VARDEC (arg_node)
-              = TCappendVardec (INFO_VARDECS (arg_info), BLOCK_VARDEC (arg_node));
+            BLOCK_VARDECS (arg_node)
+              = TCappendVardec (INFO_VARDECS (arg_info), BLOCK_VARDECS (arg_node));
             INFO_VARDECS (arg_info) = NULL;
         }
     }

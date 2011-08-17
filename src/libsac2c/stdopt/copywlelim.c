@@ -788,7 +788,7 @@ isAvisShapesMatch (node *arg1, node *arg2)
                         FUNDEF_NAME (arg_node));
 
             dfmask_base = DFMgenMaskBase (FUNDEF_ARGS (arg_node),
-                                          BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+                                          BLOCK_VARDECS (FUNDEF_BODY (arg_node)));
             INFO_DFM (arg_info) = DFMgenMaskClear (dfmask_base);
 
             FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);

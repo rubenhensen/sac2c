@@ -807,9 +807,9 @@ IVEXIfundef (node *arg_node, info *arg_info)
 
     /* If new vardecs were made, append them to the current set */
     if (INFO_VARDECS (arg_info) != NULL) {
-        BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+        BLOCK_VARDECS (FUNDEF_BODY (arg_node))
           = TCappendVardec (INFO_VARDECS (arg_info),
-                            BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+                            BLOCK_VARDECS (FUNDEF_BODY (arg_node)));
         INFO_VARDECS (arg_info) = NULL;
     }
 
@@ -842,7 +842,7 @@ IVEXIblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_PRINT ("Traversing block");
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -983,7 +983,7 @@ IVEXIpart (node *arg_node, info *arg_info)
 
     /* Don't try this on empty code blocks, kids. */
     /* Or default partitions, either! */
-    if ((N_empty != NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (arg_node)))))
+    if ((N_empty != NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node)))))
         && (!CODE_HASEXTREMA (PART_CODE (arg_node)))
         && (N_default != NODE_TYPE (PART_GENERATOR (arg_node)))) {
 
@@ -1023,9 +1023,9 @@ IVEXIpart (node *arg_node, info *arg_info)
         WITH_CODE (INFO_WITH (arg_info)) = newcode;
 
         if (NULL != INFO_PREASSIGNSPART (arg_info)) {
-            BLOCK_INSTR (CODE_CBLOCK (newcode))
+            BLOCK_ASSIGNS (CODE_CBLOCK (newcode))
               = TCappendAssign (INFO_PREASSIGNSPART (arg_info),
-                                BLOCK_INSTR (CODE_CBLOCK (newcode)));
+                                BLOCK_ASSIGNS (CODE_CBLOCK (newcode)));
             INFO_PREASSIGNSPART (arg_info) = NULL;
         }
         CODE_HASEXTREMA (PART_CODE (arg_node)) = TRUE;

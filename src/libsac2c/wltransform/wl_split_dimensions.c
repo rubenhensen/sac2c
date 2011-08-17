@@ -2371,7 +2371,7 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
         old_iv_avis = IDS_AVIS (INFO_INDICES (arg_info));
         IDS_AVIS (INFO_INDICES (arg_info)) = iv_avis;
         lut = PrepareCopyLut (INFO_LUT (arg_info), final_offsets, &preassigns, arg_info);
-        if (NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (*code))) == N_empty) {
+        if (NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (*code))) == N_empty) {
             body = TBmakeBlock (preassigns, NULL);
         } else {
             if (CODE_USED (*code) > 1) {
@@ -2382,7 +2382,7 @@ ProcessGrid (int level, int dim, node *lower, node *upper, node *nextdim, node *
 
                 body = DUPdoDupTreeLut (CODE_CBLOCK (*code), lut);
             }
-            BLOCK_INSTR (body) = TCappendAssign (preassigns, BLOCK_INSTR (body));
+            BLOCK_ASSIGNS (body) = TCappendAssign (preassigns, BLOCK_ASSIGNS (body));
 
             INFO_INDICES (arg_info) = TBmakeIds (iv_avis, INFO_INDICES (arg_info));
             body = Accu2DimIndex (body, arg_info);

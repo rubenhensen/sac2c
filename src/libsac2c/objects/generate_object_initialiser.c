@@ -221,9 +221,9 @@ InsertInitFunCall (node *fun, node *initfun)
 {
     DBUG_ENTER ();
 
-    BLOCK_INSTR (FUNDEF_BODY (fun))
+    BLOCK_ASSIGNS (FUNDEF_BODY (fun))
       = TBmakeAssign (TBmakeLet (NULL, TBmakeAp (initfun, NULL)),
-                      BLOCK_INSTR (FUNDEF_BODY (fun)));
+                      BLOCK_ASSIGNS (FUNDEF_BODY (fun)));
 
     DBUG_RETURN (fun);
 }

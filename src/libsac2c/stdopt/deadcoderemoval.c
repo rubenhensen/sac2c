@@ -422,17 +422,17 @@ DCRblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* traverse assignment chain in block */
-    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
-    if (BLOCK_INSTR (arg_node) == NULL) {
+    if (BLOCK_ASSIGNS (arg_node) == NULL) {
         /* the complete block is empty -> create N_empty node */
-        BLOCK_INSTR (arg_node) = TBmakeEmpty ();
+        BLOCK_ASSIGNS (arg_node) = TBmakeEmpty ();
     }
 
     /*
      * traverse all vardecs in block to remove useless ones
      */
-    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
+    BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

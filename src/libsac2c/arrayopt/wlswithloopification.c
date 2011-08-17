@@ -585,8 +585,8 @@ WLSWcode (node *arg_node, info *arg_info)
                                 NULL);
             AVIS_SSAASSIGN (avis) = ass;
 
-            BLOCK_INSTR (CODE_CBLOCK (arg_node))
-              = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)), ass);
+            BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
+              = TCappendAssign (BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)), ass);
 
             CODE_CEXPRS (arg_node) = FREEdoFreeTree (CODE_CEXPRS (arg_node));
             CODE_CEXPRS (arg_node) = TBmakeExprs (TBmakeId (avis), NULL);
@@ -600,7 +600,7 @@ WLSWcode (node *arg_node, info *arg_info)
         /*
          * 3. Expand inner with-loops ( aggressive behaviour!)
          */
-        if (BLOCK_INSTR (CODE_CBLOCK (arg_node))
+        if (BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
             != AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (arg_node)))) {
 
             node *first, *last;
@@ -614,7 +614,7 @@ WLSWcode (node *arg_node, info *arg_info)
              * Remember it in first
              * the last assignment of that block is given by last
              */
-            first = BLOCK_INSTR (CODE_CBLOCK (arg_node));
+            first = BLOCK_ASSIGNS (CODE_CBLOCK (arg_node));
             last = first;
             DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, last));
             DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, AVIS_SSAASSIGN (ID_AVIS (
@@ -629,7 +629,7 @@ WLSWcode (node *arg_node, info *arg_info)
             /*
              * Make the inner with-loop the first assignment in the current code
              */
-            BLOCK_INSTR (CODE_CBLOCK (arg_node)) = ASSIGN_NEXT (last);
+            BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)) = ASSIGN_NEXT (last);
             ASSIGN_NEXT (last) = NULL;
 
             DBUG_PRINT ("Intermediate code cut out");
@@ -642,31 +642,31 @@ WLSWcode (node *arg_node, info *arg_info)
             /*
              * Insert the code fragment into all inner codes
              */
-            innercode = WITH_CODE (ASSIGN_RHS (BLOCK_INSTR (CODE_CBLOCK (arg_node))));
+            innercode = WITH_CODE (ASSIGN_RHS (BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))));
             while (innercode != NULL) {
                 node *newcode;
 
                 /*
                  * Ensure there is no N_empty node in the inner with-loop
                  */
-                if (NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (innercode))) == N_empty) {
-                    BLOCK_INSTR (CODE_CBLOCK (innercode))
-                      = FREEdoFreeTree (BLOCK_INSTR (CODE_CBLOCK (innercode)));
+                if (NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (innercode))) == N_empty) {
+                    BLOCK_ASSIGNS (CODE_CBLOCK (innercode))
+                      = FREEdoFreeTree (BLOCK_ASSIGNS (CODE_CBLOCK (innercode)));
                 }
 
                 /*
                  * Prepend the inner code with the outer code and
                  * create a duplicate.
                  */
-                ASSIGN_NEXT (last) = BLOCK_INSTR (CODE_CBLOCK (innercode));
-                BLOCK_INSTR (CODE_CBLOCK (innercode)) = first;
+                ASSIGN_NEXT (last) = BLOCK_ASSIGNS (CODE_CBLOCK (innercode));
+                BLOCK_ASSIGNS (CODE_CBLOCK (innercode)) = first;
 
                 newcode = DUPdoDupTreeSsa (innercode, INFO_FUNDEF (arg_info));
 
                 /*
                  * Restore old state of inner code
                  */
-                BLOCK_INSTR (CODE_CBLOCK (innercode)) = ASSIGN_NEXT (last);
+                BLOCK_ASSIGNS (CODE_CBLOCK (innercode)) = ASSIGN_NEXT (last);
                 ASSIGN_NEXT (last) = NULL;
 
                 /*

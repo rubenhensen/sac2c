@@ -240,7 +240,7 @@ MCfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        INFO_VARDECS (arg_info) = BLOCK_VARDEC (FUNDEF_BODY (arg_node));
+        INFO_VARDECS (arg_info) = BLOCK_VARDECS (FUNDEF_BODY (arg_node));
     }
 
     arg_node = TRAVcont (arg_node, arg_info);

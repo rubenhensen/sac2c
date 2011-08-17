@@ -1188,14 +1188,14 @@ APTblock (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("trav block");
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    if (BLOCK_VARDECS (arg_node) != NULL) {
+        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
     } else {
         DBUG_PRINT (" no vardec");
     }
 
-    DBUG_ASSERT (BLOCK_INSTR (arg_node) != NULL, "unexpected empty INSTR!");
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    DBUG_ASSERT (BLOCK_ASSIGNS (arg_node) != NULL, "unexpected empty INSTR!");
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

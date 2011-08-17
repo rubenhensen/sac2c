@@ -145,7 +145,7 @@ MTRMIblock (node *arg_node, info *arg_info)
 
     DBUG_PRINT (">> switched to restore mode: %d", INFO_RESTORE (arg_info));
 
-    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     INFO_RESTORE (arg_info) = restore;
 

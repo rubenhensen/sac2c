@@ -479,12 +479,12 @@ WLIRblock (node *arg_node, info *arg_info)
         INFO_TOPBLOCK (arg_info) = FALSE;
     }
 
-    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
-    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     /* in case of an empty block, insert at least the empty node */
-    if (BLOCK_INSTR (arg_node) == NULL) {
-        BLOCK_INSTR (arg_node) = TBmakeEmpty ();
+    if (BLOCK_ASSIGNS (arg_node) == NULL) {
+        BLOCK_ASSIGNS (arg_node) = TBmakeEmpty ();
     }
 
     /* restore block mode */

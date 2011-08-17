@@ -296,8 +296,8 @@ FLATGfundef (node *arg_node, info *arg_info)
 
     /* Append new vardecs, if any were generated, to existing vardec chain. */
     if (INFO_VARDECS (arg_info) != NULL) {
-        BLOCK_VARDEC (FUNDEF_BODY (arg_node))
-          = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (arg_node)),
+        BLOCK_VARDECS (FUNDEF_BODY (arg_node))
+          = TCappendVardec (BLOCK_VARDECS (FUNDEF_BODY (arg_node)),
                             INFO_VARDECS (arg_info));
         INFO_VARDECS (arg_info) = NULL;
     }

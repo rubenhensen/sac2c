@@ -131,16 +131,16 @@ CONCELfundef (node *arg_node, info *arg_info)
 
     myblock = FUNDEF_BODY (arg_node);
     if (myblock != NULL) {
-        if (NODE_TYPE (BLOCK_INSTR (myblock)) == N_assign) {
-            if (ASSIGN_NEXT (BLOCK_INSTR (myblock)) == NULL) {
+        if (NODE_TYPE (BLOCK_ASSIGNS (myblock)) == N_assign) {
+            if (ASSIGN_NEXT (BLOCK_ASSIGNS (myblock)) == NULL) {
                 /* traverse into the function to get the correct N_assign in
                  *  INFO_CONCEL_XTASSIGN */
                 DBUG_PRINT ("trav into fundef-body");
                 myblock = TRAVdo (myblock, arg_info);
                 DBUG_PRINT ("trav from fundef-body");
 
-                /*BLOCK_INSTR(myblock) = MEMfree(BLOCK_INSTR(myblock));*/
-                /*BLOCK_INSTR(myblock) = INFO_CONCEL_CELLASSIGN(arg_info);*/
+                /*BLOCK_ASSIGNS(myblock) = MEMfree(BLOCK_ASSIGNS(myblock));*/
+                /*BLOCK_ASSIGNS(myblock) = INFO_CONCEL_CELLASSIGN(arg_info);*/
             }
         }
     }
@@ -173,9 +173,9 @@ CONCELex (node *arg_node, info *arg_info)
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_ex, "N_ex expected");
 
     /* store the assignment-chain for reuse in CONCELfundef */
-    INFO_CONCEL_CELLASSIGN (arg_info) = BLOCK_INSTR (EX_REGION (arg_node));
+    INFO_CONCEL_CELLASSIGN (arg_info) = BLOCK_ASSIGNS (EX_REGION (arg_node));
 
-    BLOCK_INSTR (EX_REGION (arg_node)) = NULL;
+    BLOCK_ASSIGNS (EX_REGION (arg_node)) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -199,9 +199,9 @@ CONCELst (node *arg_node, info *arg_info)
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_st, "N_st expected");
 
     /* store the assignment-chain for reuse in CONCELfundef */
-    INFO_CONCEL_CELLASSIGN (arg_info) = BLOCK_INSTR (ST_REGION (arg_node));
+    INFO_CONCEL_CELLASSIGN (arg_info) = BLOCK_ASSIGNS (ST_REGION (arg_node));
 
-    BLOCK_INSTR (ST_REGION (arg_node)) = NULL;
+    BLOCK_ASSIGNS (ST_REGION (arg_node)) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -225,9 +225,9 @@ CONCELmt (node *arg_node, info *arg_info)
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_mt, "N_mt expected");
 
     /* store the assignment-chain for reuse in CONCELfundef */
-    INFO_CONCEL_CELLASSIGN (arg_info) = BLOCK_INSTR (MT_REGION (arg_node));
+    INFO_CONCEL_CELLASSIGN (arg_info) = BLOCK_ASSIGNS (MT_REGION (arg_node));
 
-    BLOCK_INSTR (MT_REGION (arg_node)) = NULL;
+    BLOCK_ASSIGNS (MT_REGION (arg_node)) = NULL;
 
     DBUG_RETURN (arg_node);
 }

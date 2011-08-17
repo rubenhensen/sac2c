@@ -917,8 +917,9 @@ EMDRcode (node *arg_node, info *arg_info)
      * The great moment:
      * check whether CEXPRS perform INPLACE-COPY-OPERATIONS
      */
-    CODE_CBLOCK_INSTR (arg_node)
-      = HandleCodeBlock (CODE_CEXPRS (arg_node), CODE_CBLOCK_INSTR (arg_node), arg_info);
+    CODE_CBLOCK_ASSIGNS (arg_node)
+      = HandleCodeBlock (CODE_CEXPRS (arg_node), CODE_CBLOCK_ASSIGNS (arg_node),
+                         arg_info);
     /*
      * Traverse next code
      */
@@ -955,8 +956,8 @@ EMDRrange (node *arg_node, info *arg_info)
     INFO_WLIIRR (arg_info) = RANGE_IIRR (arg_node);
     INFO_WLIDXS (arg_info) = RANGE_IDXS (arg_node);
 
-    BLOCK_INSTR (RANGE_BODY (arg_node))
-      = HandleCodeBlock (RANGE_RESULTS (arg_node), BLOCK_INSTR (RANGE_BODY (arg_node)),
+    BLOCK_ASSIGNS (RANGE_BODY (arg_node))
+      = HandleCodeBlock (RANGE_RESULTS (arg_node), BLOCK_ASSIGNS (RANGE_BODY (arg_node)),
                          arg_info);
 
     /*

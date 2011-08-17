@@ -370,7 +370,7 @@ ACUPTNpart (node *arg_node, info *arg_info)
     PART_CUDARIZABLE (arg_node) = TRUE;
 
     /*
-      block_instr = BLOCK_INSTR( PART_CBLOCK( arg_node));
+      block_instr = BLOCK_ASSIGNS( PART_CBLOCK( arg_node));
 
       if( INFO_MODE( arg_info) == mark_potential) {
         if( NODE_TYPE( block_instr) == N_empty) {

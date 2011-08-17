@@ -1357,27 +1357,27 @@ PFDpart (node *arg_node, info *arg_info)
     /* Create assignments for CUDA index initialization */
     init_assigns = BuildInitializationAssigns (arg_node, arg_info);
 
-    BLOCK_INSTR (PART_CBLOCK (arg_node))
-      = TCappendAssign (init_assigns, BLOCK_INSTR (PART_CBLOCK (arg_node)));
+    BLOCK_ASSIGNS (PART_CBLOCK (arg_node))
+      = TCappendAssign (init_assigns, BLOCK_ASSIGNS (PART_CBLOCK (arg_node)));
 
     /* Create assignments for loading data into shared memory */
     load_assigns = BuildLoadAssigns (arg_node, arg_info);
 
-    BLOCK_INSTR (PART_CBLOCK (arg_node))
-      = TCappendAssign (BLOCK_INSTR (PART_CBLOCK (arg_node)), load_assigns);
+    BLOCK_ASSIGNS (PART_CBLOCK (arg_node))
+      = TCappendAssign (BLOCK_ASSIGNS (PART_CBLOCK (arg_node)), load_assigns);
 
     /* Create assignments for performing the actual reduction */
     reduce_assigns = BuildReduceAssigns (arg_node, arg_info);
 
-    BLOCK_INSTR (PART_CBLOCK (arg_node))
-      = TCappendAssign (BLOCK_INSTR (PART_CBLOCK (arg_node)), reduce_assigns);
+    BLOCK_ASSIGNS (PART_CBLOCK (arg_node))
+      = TCappendAssign (BLOCK_ASSIGNS (PART_CBLOCK (arg_node)), reduce_assigns);
 
     /* Create assignments for storing the reduction result from
      * shared memory to the partial array in global memory */
     store_assigns = BuildStoreAssigns (arg_node, arg_info);
 
-    BLOCK_INSTR (PART_CBLOCK (arg_node))
-      = TCappendAssign (BLOCK_INSTR (PART_CBLOCK (arg_node)), store_assigns);
+    BLOCK_ASSIGNS (PART_CBLOCK (arg_node))
+      = TCappendAssign (BLOCK_ASSIGNS (PART_CBLOCK (arg_node)), store_assigns);
 
     /* This struct is created in BuildInitializationAssigns and freed here */
     INFO_CIS (arg_info) = MEMfree (INFO_CIS (arg_info));
@@ -1977,7 +1977,7 @@ ATravCode (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    assigns = CODE_CBLOCK_INSTR (arg_node);
+    assigns = CODE_CBLOCK_ASSIGNS (arg_node);
 
     DBUG_ASSERT (assigns != NULL, "Fold withloop body is empty!");
 
@@ -1993,7 +1993,7 @@ ATravCode (node *arg_node, info *arg_info)
 
     ASSIGN_NEXT (prev) = INFO_AT_INNERWITHCODE (arg_info);
 
-    CODE_CBLOCK_INSTR (arg_node)
+    CODE_CBLOCK_ASSIGNS (arg_node)
       = TCappendAssign (INFO_AT_VECASSIGNS (arg_info), assigns);
 
     DBUG_RETURN (arg_node);
@@ -2060,7 +2060,7 @@ ATravPart (node *arg_node, info *arg_info)
             INFO_AT_INNERWITHBOUND1 (arg_info) = WITH_BOUND1 (defining_rhs);
             INFO_AT_INNERWITHBOUND2 (arg_info) = WITH_BOUND2 (defining_rhs);
             INFO_AT_INNERWITHGENWIDTH (arg_info) = WITH_GENWIDTH (defining_rhs);
-            INFO_AT_INNERWITHCODE (arg_info) = BLOCK_INSTR (WITH_CBLOCK (defining_rhs));
+            INFO_AT_INNERWITHCODE (arg_info) = BLOCK_ASSIGNS (WITH_CBLOCK (defining_rhs));
 
             PART_WITHID (arg_node) = TRAVopt (PART_WITHID (arg_node), arg_info);
             PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);

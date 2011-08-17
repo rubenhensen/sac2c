@@ -258,7 +258,7 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
     case N_do:
         FUNDEF_ISDOFUN (fundef) = TRUE;
         FUNDEF_ISCUDALACFUN (fundef) = DO_ISCUDARIZABLE (instr);
-        assigns = DUPdoDupTreeLut (BLOCK_INSTR (DO_BODY (instr)), lut);
+        assigns = DUPdoDupTreeLut (BLOCK_ASSIGNS (DO_BODY (instr)), lut);
 
         /*
          * append conditional with call of loop-function to assignments.

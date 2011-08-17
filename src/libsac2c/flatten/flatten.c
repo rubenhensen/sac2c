@@ -263,8 +263,8 @@ FLATblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    if (BLOCK_ASSIGNS (arg_node) != NULL) {
+        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1055,10 +1055,10 @@ FLATcode (node *arg_node, info *arg_info)
          * Now, we insert the flatten_assignments:
          */
         if (flatten_assignments != NULL) {
-            if (NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (arg_node))) == N_empty) {
-                BLOCK_INSTR (CODE_CBLOCK (arg_node))
-                  = FREEdoFreeTree (BLOCK_INSTR (CODE_CBLOCK (arg_node)));
-                BLOCK_INSTR (CODE_CBLOCK (arg_node)) = flatten_assignments;
+            if (NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))) == N_empty) {
+                BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
+                  = FREEdoFreeTree (BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)));
+                BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)) = flatten_assignments;
             } else {
                 ASSIGN_NEXT (INFO_FLAT_FINALASSIGN (arg_info)) = flatten_assignments;
             }

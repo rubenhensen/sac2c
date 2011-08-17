@@ -433,7 +433,7 @@ CreateNewResult (node *avis, info *arg_info)
 
     /* 6. insert phi-copy-assignments in then and else part of conditional */
     /* search for conditional */
-    tmp = BLOCK_INSTR (FUNDEF_BODY (INFO_FUNDEF (arg_info)));
+    tmp = BLOCK_ASSIGNS (FUNDEF_BODY (INFO_FUNDEF (arg_info)));
     while ((NODE_TYPE (ASSIGN_INSTR (tmp)) != N_cond) && (tmp != NULL)) {
         tmp = ASSIGN_NEXT (tmp);
     }
@@ -554,12 +554,12 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
                     new_avis = TBmakeAvis (TRAVtmpVarName (IDS_NAME (result_chain)),
                                            TYcopyType (IDS_NTYPE (result_chain)));
                     new_vardec
-                      = TBmakeVardec (new_avis, BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)));
+                      = TBmakeVardec (new_avis, BLOCK_VARDECS (FUNDEF_BODY (ext_fundef)));
                     DBUG_PRINT (
                       "AdjustExternalResult created dummy external fn result vardec %s",
                       AVIS_NAME (VARDEC_AVIS (new_vardec)));
 
-                    BLOCK_VARDEC (FUNDEF_BODY (ext_fundef)) = new_vardec;
+                    BLOCK_VARDECS (FUNDEF_BODY (ext_fundef)) = new_vardec;
 
                     /* rename ids */
                     IDS_AVIS (result_chain) = new_avis;
@@ -844,12 +844,12 @@ DLIRblock (node *arg_node, info *arg_info)
         INFO_TOPBLOCK (arg_info) = FALSE;
     }
 
-    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
-    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     /* in case of an empty block, insert at least the empty node */
-    if (BLOCK_INSTR (arg_node) == NULL) {
-        BLOCK_INSTR (arg_node) = TBmakeEmpty ();
+    if (BLOCK_ASSIGNS (arg_node) == NULL) {
+        BLOCK_ASSIGNS (arg_node) = TBmakeEmpty ();
     }
 
     /* restore block mode */
@@ -1436,7 +1436,7 @@ DLIRMOVblock (node *arg_node, info *arg_info)
         INFO_TOPBLOCK (arg_info) = FALSE;
     }
 
-    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     /* restore block mode */
     INFO_TOPBLOCK (arg_info) = old_flag;
@@ -1724,13 +1724,13 @@ DLIRMOVids (node *arg_ids, info *arg_info)
                                TYcopyType (IDS_NTYPE (arg_ids)));
         new_vardec
           = TBmakeVardec (new_avis,
-                          BLOCK_VARDEC (FUNDEF_BODY (INFO_EXTFUNDEF (arg_info))));
+                          BLOCK_VARDECS (FUNDEF_BODY (INFO_EXTFUNDEF (arg_info))));
 
         DBUG_PRINT ("create external vardec %s for %s", (AVIS_NAME (new_avis)),
                     (IDS_NAME (arg_ids)));
 
         /* add vardec to chain of vardecs (ext. fundef) */
-        BLOCK_VARDEC (FUNDEF_BODY (INFO_EXTFUNDEF (arg_info))) = new_vardec;
+        BLOCK_VARDECS (FUNDEF_BODY (INFO_EXTFUNDEF (arg_info))) = new_vardec;
 
         /*
          * setup LUT for later DupTree:

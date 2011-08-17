@@ -391,8 +391,9 @@ ASSrange (node *arg_node, info *arg_info)
 
     arg_node = TRAVcont (arg_node, arg_info);
 
-    BLOCK_INSTR (RANGE_BODY (arg_node)) = AddSyncs (BLOCK_INSTR (RANGE_BODY (arg_node)),
-                                                    RANGE_RESULTS (arg_node), arg_info);
+    BLOCK_ASSIGNS (RANGE_BODY (arg_node))
+      = AddSyncs (BLOCK_ASSIGNS (RANGE_BODY (arg_node)), RANGE_RESULTS (arg_node),
+                  arg_info);
 
     RANGE_RESULTS (arg_node) = INFO_RESULTS (arg_info);
     INFO_RESULTS (arg_info) = NULL;

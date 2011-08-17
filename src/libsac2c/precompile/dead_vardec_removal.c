@@ -127,13 +127,13 @@ DVRblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_RESET (arg_info) = TRUE;
-    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
+    BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
     INFO_RESET (arg_info) = FALSE;
 
-    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     INFO_KILL (arg_info) = TRUE;
-    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
+    BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
     INFO_KILL (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);

@@ -420,12 +420,12 @@ PrfSel_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim, void *idx,
 
     DBUG_ASSERT (to_dim == 0, "Primitive selection can only yield scalar results!");
 
-    BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx;");
-                   , Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun, idx_read_fun,
-                                  from_NT, from_dim);
-                   INDENT; fprintf (global.outfile,
-                                    "SAC_ND_WRITE_READ_COPY( %s, 0, %s, SAC_idx, %s)\n",
-                                    to_NT, from_NT, copyfun););
+    BLOCK_VARDECSS (fprintf (global.outfile, "int SAC_idx;");
+                    , Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun, idx_read_fun,
+                                   from_NT, from_dim);
+                    INDENT; fprintf (global.outfile,
+                                     "SAC_ND_WRITE_READ_COPY( %s, 0, %s, SAC_idx, %s)\n",
+                                     to_NT, from_NT, copyfun););
 
     DBUG_RETURN ();
 }
@@ -571,20 +571,20 @@ PrfModarrayScalarVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdi
     DBUG_ENTER ();
 
     INDENT;
-    BLOCK_VARDECS (fprintf (global.outfile, "int SAC_idx;");
-                   ,
-                   if (idx_unrolled) {
-                       INDENT;
-                       fprintf (global.outfile, "SAC_idx = ");
-                       idx_read_fun (idx, NULL, 0);
-                       fprintf (global.outfile, ";\n");
-                   } else {
-                       Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun, idx_read_fun,
-                                    to_NT, to_dim);
-                   } INDENT;
-                   fprintf (global.outfile, "SAC_ND_WRITE_COPY( %s, SAC_idx, ", to_NT);
-                   ReadScalar (val_scalar, NULL, 0);
-                   fprintf (global.outfile, " , %s)\n", copyfun););
+    BLOCK_VARDECSS (fprintf (global.outfile, "int SAC_idx;");
+                    ,
+                    if (idx_unrolled) {
+                        INDENT;
+                        fprintf (global.outfile, "SAC_idx = ");
+                        idx_read_fun (idx, NULL, 0);
+                        fprintf (global.outfile, ";\n");
+                    } else {
+                        Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun, idx_read_fun,
+                                     to_NT, to_dim);
+                    } INDENT;
+                    fprintf (global.outfile, "SAC_ND_WRITE_COPY( %s, SAC_idx, ", to_NT);
+                    ReadScalar (val_scalar, NULL, 0);
+                    fprintf (global.outfile, " , %s)\n", copyfun););
 
     DBUG_RETURN ();
 }
@@ -616,25 +616,25 @@ PrfModarrayArrayVal_Data (char *to_NT, int to_sdim, char *from_NT, int from_sdim
 
     DBUG_ENTER ();
 
-    BLOCK_VARDECS (fprintf (global.outfile, "int SAC_i, SAC_j, SAC_idx;");
-                   ,
-                   if (idx_unrolled) {
-                       INDENT;
-                       fprintf (global.outfile, "SAC_idx = ");
-                       idx_read_fun (idx, NULL, 0);
-                       fprintf (global.outfile, ";\n");
-                   } else {
-                       Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun, idx_read_fun,
-                                    to_NT, to_dim);
-                   } INDENT;
-                   FOR_LOOP (fprintf (global.outfile, "SAC_i = SAC_idx, SAC_j = 0");
-                             , fprintf (global.outfile, "SAC_j < SAC_ND_A_SIZE( %s)",
-                                        val_array);
-                             , fprintf (global.outfile, "SAC_i++, SAC_j++");, INDENT;
-                             fprintf (global.outfile,
-                                      "SAC_ND_WRITE_READ_COPY("
-                                      " %s, SAC_i, %s, SAC_j, %s)\n",
-                                      to_NT, val_array, copyfun);););
+    BLOCK_VARDECSS (fprintf (global.outfile, "int SAC_i, SAC_j, SAC_idx;");
+                    ,
+                    if (idx_unrolled) {
+                        INDENT;
+                        fprintf (global.outfile, "SAC_idx = ");
+                        idx_read_fun (idx, NULL, 0);
+                        fprintf (global.outfile, ";\n");
+                    } else {
+                        Vect2Offset ("SAC_idx", idx, idx_size, idx_size_fun, idx_read_fun,
+                                     to_NT, to_dim);
+                    } INDENT;
+                    FOR_LOOP (fprintf (global.outfile, "SAC_i = SAC_idx, SAC_j = 0");
+                              , fprintf (global.outfile, "SAC_j < SAC_ND_A_SIZE( %s)",
+                                         val_array);
+                              , fprintf (global.outfile, "SAC_i++, SAC_j++");, INDENT;
+                              fprintf (global.outfile,
+                                       "SAC_ND_WRITE_READ_COPY("
+                                       " %s, SAC_i, %s, SAC_j, %s)\n",
+                                       to_NT, val_array, copyfun);););
 
     DBUG_RETURN ();
 }
@@ -1323,30 +1323,30 @@ ICMCompileND_PRF_TAKE_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int fr
              " (\"ND_PRF_TAKE_SxV__DATA( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
-    BLOCK_VARDECS (fprintf (global.outfile, "int SAC_cnt, SAC_off;");, INDENT;
-                   fprintf (global.outfile, "SAC_cnt = "); ReadScalar (cnt_ANY, NULL, 0);
-                   fprintf (global.outfile, ";\n");
+    BLOCK_VARDECSS (fprintf (global.outfile, "int SAC_cnt, SAC_off;");, INDENT;
+                    fprintf (global.outfile, "SAC_cnt = "); ReadScalar (cnt_ANY, NULL, 0);
+                    fprintf (global.outfile, ";\n");
 
-                   COND2 (fprintf (global.outfile, "("); ReadScalar (cnt_ANY, NULL, 0);
-                          fprintf (global.outfile, " < 0)");, INDENT;
-                          fprintf (global.outfile, "SAC_cnt = - SAC_cnt;\n"); INDENT;
-                          fprintf (global.outfile,
-                                   "SAC_off = SAC_ND_A_SIZE( %s) - SAC_cnt;\n", from_NT);
-                          , INDENT; fprintf (global.outfile, "SAC_off = 0;\n"););
+                    COND2 (fprintf (global.outfile, "("); ReadScalar (cnt_ANY, NULL, 0);
+                           fprintf (global.outfile, " < 0)");, INDENT;
+                           fprintf (global.outfile, "SAC_cnt = - SAC_cnt;\n"); INDENT;
+                           fprintf (global.outfile,
+                                    "SAC_off = SAC_ND_A_SIZE( %s) - SAC_cnt;\n", from_NT);
+                           , INDENT; fprintf (global.outfile, "SAC_off = 0;\n"););
 
-                   ASSURE_TYPE_ASS (fprintf (global.outfile,
-                                             "SAC_cnt <= SAC_ND_A_SIZE( %s)", from_NT);
-                                    , fprintf (global.outfile,
-                                               "1st argument of %s is out of range!",
-                                               global.prf_name[F_take_SxV]););
+                    ASSURE_TYPE_ASS (fprintf (global.outfile,
+                                              "SAC_cnt <= SAC_ND_A_SIZE( %s)", from_NT);
+                                     , fprintf (global.outfile,
+                                                "1st argument of %s is out of range!",
+                                                global.prf_name[F_take_SxV]););
 
-                   FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
-                                        , fprintf (global.outfile, "0");
-                                        , fprintf (global.outfile, "SAC_cnt");, INDENT;
-                                        fprintf (global.outfile,
-                                                 "SAC_ND_WRITE_READ_COPY( %s, SAC_i,"
-                                                 " %s, SAC_off + SAC_i, %s);\n",
-                                                 to_NT, from_NT, copyfun);););
+                    FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
+                                         , fprintf (global.outfile, "0");
+                                         , fprintf (global.outfile, "SAC_cnt");, INDENT;
+                                         fprintf (global.outfile,
+                                                  "SAC_ND_WRITE_READ_COPY( %s, SAC_i,"
+                                                  " %s, SAC_off + SAC_i, %s);\n",
+                                                  to_NT, from_NT, copyfun);););
 
     DBUG_RETURN ();
 }
@@ -1454,32 +1454,32 @@ ICMCompileND_PRF_DROP_SxV__DATA (char *to_NT, int to_sdim, char *from_NT, int fr
              " (\"ND_PRF_DROP_SxV__DATA( %s, %d, %s, %d, %s)\"))\n",
              to_NT, to_sdim, from_NT, from_sdim, cnt_ANY);
 
-    BLOCK_VARDECS (fprintf (global.outfile, "int SAC_cnt, SAC_off;");, INDENT;
-                   fprintf (global.outfile, "SAC_off = "); ReadScalar (cnt_ANY, NULL, 0);
-                   fprintf (global.outfile, ";\n");
+    BLOCK_VARDECSS (fprintf (global.outfile, "int SAC_cnt, SAC_off;");, INDENT;
+                    fprintf (global.outfile, "SAC_off = "); ReadScalar (cnt_ANY, NULL, 0);
+                    fprintf (global.outfile, ";\n");
 
-                   COND2 (fprintf (global.outfile, "("); ReadScalar (cnt_ANY, NULL, 0);
-                          fprintf (global.outfile, " < 0)");, INDENT;
-                          fprintf (global.outfile,
-                                   "SAC_cnt = SAC_ND_A_SIZE( %s) + SAC_off;\n", from_NT);
-                          INDENT; fprintf (global.outfile, "SAC_off = 0;\n");, INDENT;
-                          fprintf (global.outfile,
-                                   "SAC_cnt = SAC_ND_A_SIZE( %s) - SAC_off;\n",
-                                   from_NT););
+                    COND2 (fprintf (global.outfile, "("); ReadScalar (cnt_ANY, NULL, 0);
+                           fprintf (global.outfile, " < 0)");, INDENT;
+                           fprintf (global.outfile,
+                                    "SAC_cnt = SAC_ND_A_SIZE( %s) + SAC_off;\n", from_NT);
+                           INDENT; fprintf (global.outfile, "SAC_off = 0;\n");, INDENT;
+                           fprintf (global.outfile,
+                                    "SAC_cnt = SAC_ND_A_SIZE( %s) - SAC_off;\n",
+                                    from_NT););
 
-                   ASSURE_TYPE_ASS (fprintf (global.outfile,
-                                             "SAC_cnt <= SAC_ND_A_SIZE( %s)", from_NT);
-                                    , fprintf (global.outfile,
-                                               "1st argument of %s is out of range!",
-                                               global.prf_name[F_drop_SxV]););
+                    ASSURE_TYPE_ASS (fprintf (global.outfile,
+                                              "SAC_cnt <= SAC_ND_A_SIZE( %s)", from_NT);
+                                     , fprintf (global.outfile,
+                                                "1st argument of %s is out of range!",
+                                                global.prf_name[F_drop_SxV]););
 
-                   FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
-                                        , fprintf (global.outfile, "0");
-                                        , fprintf (global.outfile, "SAC_cnt");, INDENT;
-                                        fprintf (global.outfile,
-                                                 "SAC_ND_WRITE_READ_COPY( %s, SAC_i,"
-                                                 " %s, SAC_off + SAC_i, %s);\n",
-                                                 to_NT, from_NT, copyfun);););
+                    FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
+                                         , fprintf (global.outfile, "0");
+                                         , fprintf (global.outfile, "SAC_cnt");, INDENT;
+                                         fprintf (global.outfile,
+                                                  "SAC_ND_WRITE_READ_COPY( %s, SAC_i,"
+                                                  " %s, SAC_off + SAC_i, %s);\n",
+                                                  to_NT, from_NT, copyfun);););
 
     DBUG_RETURN ();
 }
@@ -1799,7 +1799,7 @@ ICMCompileND_PRF_PROD_MATCHES_PROD_SHAPE (char *to_NT, char *from_NT, char *from
 {
     DBUG_ENTER ();
 
-    BLOCK_VARDECS (
+    BLOCK_VARDECSS (
       fprintf (global.outfile, "int SAC_p1 = 1; int SAC_p2 = 1;");
       , FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
                              , fprintf (global.outfile, "0");

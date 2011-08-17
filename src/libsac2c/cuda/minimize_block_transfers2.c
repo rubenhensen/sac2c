@@ -163,7 +163,7 @@ MBTRAN2block (node *arg_node, info *arg_info)
     old_block = INFO_CURRENT_BLOCK (arg_info);
     INFO_CURRENT_BLOCK (arg_info) = arg_node;
 
-    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     INFO_CURRENT_BLOCK (arg_info) = old_block;
 

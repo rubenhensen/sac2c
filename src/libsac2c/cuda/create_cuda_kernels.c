@@ -405,15 +405,15 @@ CreateCudaKernelDef (node *code, info *arg_info)
 
     body = CODE_CBLOCK (code);
 
-    BLOCK_INSTR (body) = TCappendAssign (
+    BLOCK_ASSIGNS (body) = TCappendAssign (
       TCappendAssign (TCappendAssign (TCappendAssign (TCappendAssign (allocassigns,
                                                                       prfwlids),
                                                       prfwlidxs),
-                                      BLOCK_INSTR (body)),
+                                      BLOCK_ASSIGNS (body)),
                       freeassigns),
       TBmakeAssign (retur, NULL));
 
-    BLOCK_VARDEC (body) = TCappendVardec (vardecs, BLOCK_VARDEC (body));
+    BLOCK_VARDECS (body) = TCappendVardec (vardecs, BLOCK_VARDECS (body));
 
     cuda_kerneldef = TBmakeFundef (TRAVtmpVarName ("CUDA"),
                                    NSdupNamespace (FUNDEF_NS (INFO_FUNDEF (arg_info))),

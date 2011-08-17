@@ -1634,7 +1634,7 @@ CUDRpart (node *arg_node, info *arg_info)
 
     dim = TCcountIds (PART_IDS (arg_node));
 
-    if (NODE_TYPE (BLOCK_INSTR (PART_CBLOCK (arg_node))) != N_empty) {
+    if (NODE_TYPE (BLOCK_ASSIGNS (PART_CBLOCK (arg_node))) != N_empty) {
         init_assigns = CreateCudaIndexInitCode (arg_node, arg_info);
 
         /* Note here that we don't need to stack N_part because there will
@@ -1646,14 +1646,14 @@ CUDRpart (node *arg_node, info *arg_info)
         INFO_CUWLPART (arg_info) = NULL;
 
         if (INFO_G2S_ASSIGNS (arg_info) != NULL) {
-            BLOCK_INSTR (PART_CBLOCK (arg_node))
+            BLOCK_ASSIGNS (PART_CBLOCK (arg_node))
               = TCappendAssign (INFO_G2S_ASSIGNS (arg_info),
-                                BLOCK_INSTR (PART_CBLOCK (arg_node)));
+                                BLOCK_ASSIGNS (PART_CBLOCK (arg_node)));
             INFO_G2S_ASSIGNS (arg_info) = NULL;
         }
 
-        BLOCK_INSTR (PART_CBLOCK (arg_node))
-          = TCappendAssign (init_assigns, BLOCK_INSTR (PART_CBLOCK (arg_node)));
+        BLOCK_ASSIGNS (PART_CBLOCK (arg_node))
+          = TCappendAssign (init_assigns, BLOCK_ASSIGNS (PART_CBLOCK (arg_node)));
 
         /* This struct is created in CreateCudaIndexInitCode and freed here */
         INFO_CIS (arg_info) = MEMfree (INFO_CIS (arg_info));
@@ -1729,9 +1729,9 @@ CUDRrange (node *arg_node, info *arg_info)
         RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
 
         if (RANGE_G2SINSTRS (arg_node) != NULL) {
-            BLOCK_INSTR (RANGE_BODY (arg_node))
+            BLOCK_ASSIGNS (RANGE_BODY (arg_node))
               = TCappendAssign (RANGE_G2SINSTRS (arg_node),
-                                BLOCK_INSTR (RANGE_BODY (arg_node)));
+                                BLOCK_ASSIGNS (RANGE_BODY (arg_node)));
             RANGE_G2SINSTRS (arg_node) = NULL;
         }
 

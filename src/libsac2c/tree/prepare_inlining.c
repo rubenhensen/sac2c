@@ -249,7 +249,7 @@ PINLblock (node *arg_node, info *arg_info)
 
     INFO_VARDECS (arg_info) = TRAVopt (INFO_VARDECS (arg_info), arg_info);
 
-    INFO_ASSIGNS (arg_info) = DUPdoDupTreeLut (BLOCK_INSTR (arg_node), inline_lut);
+    INFO_ASSIGNS (arg_info) = DUPdoDupTreeLut (BLOCK_ASSIGNS (arg_node), inline_lut);
 
     /*
      * Due to the construction of the LUT, all identifiers' AVIS nodes will

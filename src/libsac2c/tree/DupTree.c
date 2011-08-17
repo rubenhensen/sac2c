@@ -1272,7 +1272,7 @@ DUPblock (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    new_vardecs = DUPTRAV (BLOCK_VARDEC (arg_node));
+    new_vardecs = DUPTRAV (BLOCK_VARDECS (arg_node));
 
 #if DUP_DFMS
     if (INFO_FUNDEF (arg_info) != NULL) {
@@ -1296,7 +1296,7 @@ DUPblock (node *arg_node, info *arg_info)
     }
 #endif
 
-    new_node = TBmakeBlock (DUPTRAV (BLOCK_INSTR (arg_node)), new_vardecs);
+    new_node = TBmakeBlock (DUPTRAV (BLOCK_ASSIGNS (arg_node)), new_vardecs);
     BLOCK_CACHESIM (new_node) = STRcpy (BLOCK_CACHESIM (arg_node));
 
     /*
@@ -1313,7 +1313,7 @@ DUPblock (node *arg_node, info *arg_info)
     // brave enough to rip it out.
 
     /* Have to defer updating extrema until all vardecs in place */
-    v = BLOCK_VARDEC (new_node);
+    v = BLOCK_VARDECS (new_node);
 
     navis = NULL; /* Ensure that we do not reference undefined navis */
     while (NULL != v) {

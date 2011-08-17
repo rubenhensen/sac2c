@@ -732,7 +732,7 @@ CreateThreadFunction (node *block, node *results, node *index, info *arg_info)
 
     retassign = TBmakeAssign (TBmakeReturn (DFMUdfm2ReturnExprs (ret_mask, lut)), NULL);
 
-    assigns = TCappendAssign (DUPdoDupTreeLut (BLOCK_INSTR (block), lut), retassign);
+    assigns = TCappendAssign (DUPdoDupTreeLut (BLOCK_ASSIGNS (block), lut), retassign);
 
     if (BLOCK_SHAREDS (block) != NULL) {
         /* neet to leave a copy but use original because of links*/

@@ -105,10 +105,10 @@ CreateBodyCode (node *partn, node *index, ntype *def_type)
     DBUG_ENTER ();
 
     coden = PART_CODE (partn);
-    if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden)))) {
+    if (N_empty == NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (coden)))) {
         res = NULL;
     } else {
-        res = DUPdoDupTree (BLOCK_INSTR (CODE_CBLOCK (coden)));
+        res = DUPdoDupTree (BLOCK_ASSIGNS (CODE_CBLOCK (coden)));
     }
 
     /* index vector */
@@ -213,7 +213,7 @@ ApplyFold (node *bodycode, node *index, node *partn, node *cexpr, node *lhs)
      * append new last assignment: LHS of current WL = cexpr;
      */
 
-    DBUG_ASSERT (NODE_TYPE (bodycode) != N_empty, "BLOCK_INSTR is empty!");
+    DBUG_ASSERT (NODE_TYPE (bodycode) != N_empty, "BLOCK_ASSIGNS is empty!");
 
     tmp = bodycode;
     while (tmp != NULL) {
@@ -259,7 +259,7 @@ ApplyPropagate (node *bodycode, node *index, node *partn, node *withop, node *ce
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (bodycode) != N_empty, "BLOCK_INSTR is empty!");
+    DBUG_ASSERT (NODE_TYPE (bodycode) != N_empty, "BLOCK_ASSIGNS is empty!");
 
     /*
      * remove affected objects from the expression
@@ -735,10 +735,10 @@ CheckUnrollModarray (node *wln, node *lhs, info *arg_info)
 
         coden = PART_CODE (partn);
 
-        if (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (coden)))) {
+        if (N_empty == NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (coden)))) {
             PART_ISCOPY (partn) = FALSE;
         } else {
-            tmpn = ASSIGN_INSTR (BLOCK_INSTR (CODE_CBLOCK (coden)));
+            tmpn = ASSIGN_INSTR (BLOCK_ASSIGNS (CODE_CBLOCK (coden)));
             exprn = LET_EXPR (tmpn);
             PART_ISCOPY (partn)
               = ((N_let == NODE_TYPE (tmpn))

@@ -104,7 +104,7 @@ UssaInitAvisFlags (node *fundef)
 
     /* process vardecs */
     if (FUNDEF_BODY (fundef) != NULL) {
-        tmp = BLOCK_VARDEC (FUNDEF_BODY (fundef));
+        tmp = BLOCK_VARDECS (FUNDEF_BODY (fundef));
         while (tmp != NULL) {
             AVIS_SUBST (VARDEC_AVIS (tmp)) = NULL;
             tmp = VARDEC_NEXT (tmp);
@@ -157,7 +157,7 @@ USSATfundef (node *arg_node, info *arg_info)
  *  node *USSATblock(node *arg_node, info *arg_info)
  *
  * description:
- *  traverses BLOCK_INSTR and VARDECs
+ *  traverses BLOCK_ASSIGNS and VARDECs
  *
  ******************************************************************************/
 node *
@@ -165,12 +165,12 @@ USSATblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    if (BLOCK_ASSIGNS (arg_node) != NULL) {
+        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    if (BLOCK_VARDECS (arg_node) != NULL) {
+        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -384,8 +384,9 @@ USSATcond (node *arg_node, info *arg_info)
         DBUG_ASSERT (FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)),
                      "Then branch of loop function must not be extended!");
 
-        BLOCK_INSTR (COND_THEN (arg_node))
-          = TCappendAssign (BLOCK_INSTR (COND_THEN (arg_node)), INFO_THENASS (arg_info));
+        BLOCK_ASSIGNS (COND_THEN (arg_node))
+          = TCappendAssign (BLOCK_ASSIGNS (COND_THEN (arg_node)),
+                            INFO_THENASS (arg_info));
         INFO_THENASS (arg_info) = NULL;
     }
 
@@ -396,8 +397,8 @@ USSATcond (node *arg_node, info *arg_info)
     if (FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))) {
         if (INFO_ELSEASS (arg_info) != NULL) {
 
-            BLOCK_INSTR (COND_ELSE (arg_node))
-              = TCappendAssign (BLOCK_INSTR (COND_ELSE (arg_node)),
+            BLOCK_ASSIGNS (COND_ELSE (arg_node))
+              = TCappendAssign (BLOCK_ASSIGNS (COND_ELSE (arg_node)),
                                 INFO_ELSEASS (arg_info));
             INFO_ELSEASS (arg_info) = NULL;
         }

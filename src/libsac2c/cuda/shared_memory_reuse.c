@@ -541,8 +541,8 @@ SHMEMcode (node *arg_node, info *arg_info)
                 rcs = RC_NEXT (rcs);
             }
 
-            CODE_CBLOCK_INSTR (arg_node)
-              = TCappendAssign (all_new_assigns, CODE_CBLOCK_INSTR (arg_node));
+            CODE_CBLOCK_ASSIGNS (arg_node)
+              = TCappendAssign (all_new_assigns, CODE_CBLOCK_ASSIGNS (arg_node));
         }
 
         CODE_IRA_RCS (arg_node) = FreeAllRcs (CODE_IRA_RCS (arg_node));

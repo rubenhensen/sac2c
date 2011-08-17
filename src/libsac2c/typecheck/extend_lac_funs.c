@@ -112,7 +112,7 @@ SearchPredicate (node *ap)
     DBUG_ASSERT (NODE_TYPE (FUNDEF_BODY (AP_FUNDEF (ap))) == N_block,
                  "AP_FUNDEF does not point to a fundef with a block node");
 
-    assign = BLOCK_INSTR (FUNDEF_BODY (AP_FUNDEF (ap)));
+    assign = BLOCK_ASSIGNS (FUNDEF_BODY (AP_FUNDEF (ap)));
 
     pred_avis = ID_AVIS (COND_COND (ASSIGN_INSTR (assign)));
 
@@ -400,9 +400,9 @@ ELFfundef (node *arg_node, info *arg_info)
         }
 
         if (INFO_VARDECS (arg_info) != NULL) {
-            BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+            BLOCK_VARDECS (FUNDEF_BODY (arg_node))
               = TCappendVardec (INFO_VARDECS (arg_info),
-                                BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+                                BLOCK_VARDECS (FUNDEF_BODY (arg_node)));
             INFO_VARDECS (arg_info) = NULL;
         }
     }

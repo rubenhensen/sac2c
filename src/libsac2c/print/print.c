@@ -2416,8 +2416,8 @@ PRTblock (node *arg_node, info *arg_info)
                  BLOCK_CACHESIM (arg_node));
     }
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    if (BLOCK_VARDECS (arg_node) != NULL) {
+        TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
         fprintf (global.outfile, "\n");
     }
 
@@ -2429,8 +2429,8 @@ PRTblock (node *arg_node, info *arg_info)
         fprintf (global.outfile, " */\n");
     });
 
-    if (BLOCK_INSTR (arg_node)) {
-        TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    if (BLOCK_ASSIGNS (arg_node)) {
+        TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
     global.indent--;

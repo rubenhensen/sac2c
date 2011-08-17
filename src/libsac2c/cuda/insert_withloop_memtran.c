@@ -1022,7 +1022,7 @@ AssignInTopBlock (node *assign, info *arg_info)
 
     DBUG_ENTER ();
 
-    assign_chain = BLOCK_INSTR (INFO_TOPBLOCK (arg_info));
+    assign_chain = BLOCK_ASSIGNS (INFO_TOPBLOCK (arg_info));
 
     while (assign_chain != NULL) {
         if (assign_chain == assign) {

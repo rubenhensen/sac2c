@@ -400,11 +400,11 @@ CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
     avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (TYgetProductMember (prod, 0)));
     prod = TYfreeType (prod);
 
-    BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
-      = TBmakeVardec (avis, BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
+    BLOCK_VARDECS (INFO_TOPBLOCK (arg_info))
+      = TBmakeVardec (avis, BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
 
-    BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
-      = ClearDLActiveFlags (BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
+    BLOCK_VARDECS (INFO_TOPBLOCK (arg_info))
+      = ClearDLActiveFlags (BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
 
     assign
       = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), rhs), INFO_PREASSIGN (arg_info));
@@ -873,20 +873,20 @@ DLfundef (node *arg_node, info *arg_info)
         INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
         INFO_FUNARGS (arg_info) = FUNDEF_ARGS (arg_node);
 
-        BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
-          = ClearDLActiveFlags (BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
+        BLOCK_VARDECS (INFO_TOPBLOCK (arg_info))
+          = ClearDLActiveFlags (BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         /* If new vardecs were made, append them to the current set */
         if (INFO_VARDECS (arg_info) != NULL) {
-            BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+            BLOCK_VARDECS (FUNDEF_BODY (arg_node))
               = TCappendVardec (INFO_VARDECS (arg_info),
-                                BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+                                BLOCK_VARDECS (FUNDEF_BODY (arg_node)));
             INFO_VARDECS (arg_info) = NULL;
         }
-        BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
-          = ClearDLActiveFlags (BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
+        BLOCK_VARDECS (INFO_TOPBLOCK (arg_info))
+          = ClearDLActiveFlags (BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
     }
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -907,10 +907,10 @@ DLblock (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    BLOCK_VARDEC (INFO_TOPBLOCK (arg_info))
-      = ClearDLActiveFlags (BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
+    BLOCK_VARDECS (INFO_TOPBLOCK (arg_info))
+      = ClearDLActiveFlags (BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
 
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

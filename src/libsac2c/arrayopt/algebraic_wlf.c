@@ -434,7 +434,7 @@ isEmptyPartitionCodeBlock (node *partn)
 
     DBUG_ENTER ();
 
-    z = (N_empty == NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (partn)))));
+    z = (N_empty == NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (partn)))));
 
     DBUG_RETURN (z);
 }
@@ -727,7 +727,7 @@ doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consume
 
     DBUG_ENTER ();
 
-    oldblock = BLOCK_INSTR (CODE_CBLOCK (PART_CODE (producerWLPart)));
+    oldblock = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (producerWLPart)));
 
     arg_node = BypassNoteintersect (arg_node);
 
@@ -807,9 +807,9 @@ AWLFfundef (node *arg_node, info *arg_info)
 
         /* If new vardecs were made, append them to the current set */
         if (INFO_VARDECS (arg_info) != NULL) {
-            BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+            BLOCK_VARDECS (FUNDEF_BODY (arg_node))
               = TCappendVardec (INFO_VARDECS (arg_info),
-                                BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+                                BLOCK_VARDECS (FUNDEF_BODY (arg_node)));
             INFO_VARDECS (arg_info) = NULL;
         }
 

@@ -269,11 +269,11 @@ IVESPLITfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        INFO_VARDECS (arg_info) = BLOCK_VARDEC (FUNDEF_BODY (arg_node));
+        INFO_VARDECS (arg_info) = BLOCK_VARDECS (FUNDEF_BODY (arg_node));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-        BLOCK_VARDEC (FUNDEF_BODY (arg_node)) = INFO_VARDECS (arg_info);
+        BLOCK_VARDECS (FUNDEF_BODY (arg_node)) = INFO_VARDECS (arg_info);
         INFO_VARDECS (arg_info) = NULL;
     }
 

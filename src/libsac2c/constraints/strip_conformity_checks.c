@@ -239,11 +239,11 @@ SCCblock (node *arg_node, info *arg_info)
     preassigns = INFO_PREASSIGNS (arg_info);
     INFO_PREASSIGNS (arg_info) = NULL;
 
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
     INFO_LHS (arg_info) = oldlhs;
     INFO_PREASSIGNS (arg_info) = preassigns;
 
-    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
+    BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

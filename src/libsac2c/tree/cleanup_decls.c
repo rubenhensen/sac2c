@@ -178,25 +178,25 @@ CUDblock (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
+    if (BLOCK_VARDECS (arg_node) != NULL) {
         DBUG_ASSERT (INFO_CUD_REF (arg_info) == NULL, "(nested) local vardecs found!");
         INFO_CUD_REF (arg_info) = DFMgenMaskClear (INFO_DFMBASE (arg_info));
 
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
     }
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    if (BLOCK_ASSIGNS (arg_node) != NULL) {
+        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
+    if (BLOCK_VARDECS (arg_node) != NULL) {
         mask = INFO_CUD_REF (arg_info);
         INFO_CUD_REF (arg_info) = NULL;
 
         /*
          * remove superfluous vardecs
          */
-        vardec = BLOCK_VARDEC (arg_node);
+        vardec = BLOCK_VARDECS (arg_node);
         while (VARDEC_NEXT (vardec) != NULL) {
             if (DFMtestMaskEntry (mask, NULL, VARDEC_AVIS (VARDEC_NEXT (vardec)))) {
                 DBUG_PRINT ("Variable %s removed in function %s",
@@ -207,11 +207,11 @@ CUDblock (node *arg_node, info *arg_info)
                 vardec = VARDEC_NEXT (vardec);
             }
         }
-        if (DFMtestMaskEntry (mask, NULL, VARDEC_AVIS (BLOCK_VARDEC (arg_node)))) {
+        if (DFMtestMaskEntry (mask, NULL, VARDEC_AVIS (BLOCK_VARDECS (arg_node)))) {
             DBUG_PRINT ("Variable %s removed in function %s",
-                        VARDEC_NAME (BLOCK_VARDEC (arg_node)),
+                        VARDEC_NAME (BLOCK_VARDECS (arg_node)),
                         FUNDEF_NAME (INFO_CUD_FUNDEF (arg_info)));
-            BLOCK_VARDEC (arg_node) = FREEdoFreeNode (BLOCK_VARDEC (arg_node));
+            BLOCK_VARDECS (arg_node) = FREEdoFreeNode (BLOCK_VARDECS (arg_node));
         }
 
         mask = DFMremoveMask (mask);

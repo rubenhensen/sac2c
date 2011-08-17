@@ -157,7 +157,7 @@ MakeAccuAssign (node *code, info *arg_info)
     DBUG_ENTER ();
 
     /* grab assign and get rid of N_empty nodes if one is there */
-    assign = BLOCK_INSTR (CODE_CBLOCK (code));
+    assign = BLOCK_ASSIGNS (CODE_CBLOCK (code));
     if (NODE_TYPE (assign) == N_empty) {
         assign = FREEdoFreeNode (assign);
     }
@@ -184,7 +184,7 @@ MakeAccuAssign (node *code, info *arg_info)
     AVIS_SSAASSIGN (avis) = assign;
 
     /* put back assign */
-    BLOCK_INSTR (CODE_CBLOCK (code)) = assign;
+    BLOCK_ASSIGNS (CODE_CBLOCK (code)) = assign;
 
     DBUG_RETURN (code);
 }

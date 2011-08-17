@@ -346,15 +346,16 @@ IDCblock (node *arg_node, info *arg_info)
     post_assign = INFO_POSTASSIGN (arg_info);
     INFO_POSTASSIGN (arg_info) = NULL;
 
-    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
     if (post_assign != NULL) {
-        if (NODE_TYPE (BLOCK_INSTR (arg_node)) == N_empty) {
-            BLOCK_INSTR (arg_node) = FREEdoFreeNode (BLOCK_INSTR (arg_node));
-            BLOCK_INSTR (arg_node) = post_assign;
+        if (NODE_TYPE (BLOCK_ASSIGNS (arg_node)) == N_empty) {
+            BLOCK_ASSIGNS (arg_node) = FREEdoFreeNode (BLOCK_ASSIGNS (arg_node));
+            BLOCK_ASSIGNS (arg_node) = post_assign;
         } else {
-            BLOCK_INSTR (arg_node) = TCappendAssign (post_assign, BLOCK_INSTR (arg_node));
+            BLOCK_ASSIGNS (arg_node)
+              = TCappendAssign (post_assign, BLOCK_ASSIGNS (arg_node));
         }
         DBUG_PRINT ("...inserting assignments at beginning of N_block");
     }

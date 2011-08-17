@@ -1801,45 +1801,45 @@ ICMCompileND_CREATE__ARRAY__DATA (char *to_NT, int to_sdim, int val_size, char *
         /* 'vals_ANY[i]' is a tagged identifier */
 
         if (val_size > 0) {
-            BLOCK_VARDECS (fprintf (global.outfile, "int SAC_j, SAC_i = 0;");
-                           ,
-                           for (i = 0; i < val_size; i++) {
-                               /* check whether all entries have identical size */
-                               if (i > 0) {
-                                   ASSURE_TYPE_ASS (fprintf (global.outfile,
-                                                             "SAC_ND_A_SIZE( %s) == "
-                                                             "SAC_ND_A_SIZE( %s)",
-                                                             vals_ANY[i], vals_ANY[0]);
-                                                    ,
-                                                    fprintf (global.outfile,
-                                                             "Inconsistent vector found:"
-                                                             " First entry and entry at "
-                                                             "position %d have"
-                                                             " different size!",
-                                                             i););
-                               }
+            BLOCK_VARDECSS (fprintf (global.outfile, "int SAC_j, SAC_i = 0;");
+                            ,
+                            for (i = 0; i < val_size; i++) {
+                                /* check whether all entries have identical size */
+                                if (i > 0) {
+                                    ASSURE_TYPE_ASS (fprintf (global.outfile,
+                                                              "SAC_ND_A_SIZE( %s) == "
+                                                              "SAC_ND_A_SIZE( %s)",
+                                                              vals_ANY[i], vals_ANY[0]);
+                                                     ,
+                                                     fprintf (global.outfile,
+                                                              "Inconsistent vector found:"
+                                                              " First entry and entry at "
+                                                              "position %d have"
+                                                              " different size!",
+                                                              i););
+                                }
 
-                               /* assign values of entry */
-                               FOR_LOOP_INC (fprintf (global.outfile, "SAC_j");
-                                             , fprintf (global.outfile, "0");
-                                             ,
-                                             fprintf (global.outfile,
-                                                      "SAC_ND_A_SIZE( %s)", vals_ANY[i]);
-                                             , INDENT;
-                                             fprintf (global.outfile,
-                                                      "SAC_ND_WRITE_READ_COPY("
-                                                      " %s, SAC_i, %s, SAC_j, %s)\n",
-                                                      to_NT, vals_ANY[i], copyfun);
-                                             INDENT;
-                                             fprintf (global.outfile, "SAC_i++;\n"););
-                           }
+                                /* assign values of entry */
+                                FOR_LOOP_INC (fprintf (global.outfile, "SAC_j");
+                                              , fprintf (global.outfile, "0");
+                                              ,
+                                              fprintf (global.outfile,
+                                                       "SAC_ND_A_SIZE( %s)", vals_ANY[i]);
+                                              , INDENT;
+                                              fprintf (global.outfile,
+                                                       "SAC_ND_WRITE_READ_COPY("
+                                                       " %s, SAC_i, %s, SAC_j, %s)\n",
+                                                       to_NT, vals_ANY[i], copyfun);
+                                              INDENT;
+                                              fprintf (global.outfile, "SAC_i++;\n"););
+                            }
 
-                           ASSURE_TYPE_ASS (fprintf (global.outfile,
-                                                     "SAC_ND_A_SIZE( %s) == SAC_i",
-                                                     to_NT);
-                                            , fprintf (global.outfile,
-                                                       "Assignment with incompatible "
-                                                       "types found!");););
+                            ASSURE_TYPE_ASS (fprintf (global.outfile,
+                                                      "SAC_ND_A_SIZE( %s) == SAC_i",
+                                                      to_NT);
+                                             , fprintf (global.outfile,
+                                                        "Assignment with incompatible "
+                                                        "types found!");););
         }
     }
 

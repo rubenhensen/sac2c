@@ -507,12 +507,12 @@ InsertTempCondVarFor (node *avis_ds, node *dim, node *avis, node *fundef, int th
         AVIS_SSAASSIGN (tmpds) = tmpassign;
 
         if (TRUE == thenelse) {
-            ainstr = COND_THEN (ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef))));
+            ainstr = COND_THEN (ASSIGN_INSTR (BLOCK_ASSIGNS (FUNDEF_BODY (fundef))));
         } else {
-            ainstr = COND_ELSE (ASSIGN_INSTR (BLOCK_INSTR (FUNDEF_BODY (fundef))));
+            ainstr = COND_ELSE (ASSIGN_INSTR (BLOCK_ASSIGNS (FUNDEF_BODY (fundef))));
         }
 
-        BLOCK_INSTR (ainstr) = TCappendAssign (BLOCK_INSTR (ainstr), tmpassign);
+        BLOCK_ASSIGNS (ainstr) = TCappendAssign (BLOCK_ASSIGNS (ainstr), tmpassign);
         retnode = TBmakeId (tmpds);
     } else {
         retnode = DUPdoDupNode (avis_ds);
@@ -1184,7 +1184,7 @@ ISAAap (node *arg_node, info *arg_info)
         /* 5. */
         /* this is rather ugly: we have to search for the N_assign prior to the
          * assign containing the N_return node */
-        retnode = BLOCK_INSTR (FUNDEF_BODY (fun));
+        retnode = BLOCK_ASSIGNS (FUNDEF_BODY (fun));
         while ((NULL != retnode) && (N_return != NODE_TYPE (ASSIGN_INSTR (retnode)))) {
             retprev = retnode;
             retnode = ASSIGN_NEXT (retnode);
@@ -1271,7 +1271,7 @@ ISAAblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1541,16 +1541,18 @@ ISAAcond (node *arg_node, info *arg_info)
     case TM_then:
         COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
-        BLOCK_INSTR (COND_THEN (arg_node))
-          = PrependAssign (INFO_PREBLOCK (arg_info), BLOCK_INSTR (COND_THEN (arg_node)));
+        BLOCK_ASSIGNS (COND_THEN (arg_node))
+          = PrependAssign (INFO_PREBLOCK (arg_info),
+                           BLOCK_ASSIGNS (COND_THEN (arg_node)));
         INFO_PREBLOCK (arg_info) = NULL;
         break;
 
     case TM_else:
         COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
-        BLOCK_INSTR (COND_ELSE (arg_node))
-          = PrependAssign (INFO_PREBLOCK (arg_info), BLOCK_INSTR (COND_ELSE (arg_node)));
+        BLOCK_ASSIGNS (COND_ELSE (arg_node))
+          = PrependAssign (INFO_PREBLOCK (arg_info),
+                           BLOCK_ASSIGNS (COND_ELSE (arg_node)));
         INFO_PREBLOCK (arg_info) = NULL;
         break;
 

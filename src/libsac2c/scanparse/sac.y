@@ -1080,7 +1080,7 @@ exprblock2: ntype ids SEMIC exprblock2
                * The reason for doing so is feasablilty only...
                * In regard to semantics, there should be no difference...
                */
-              vardec_ptr = BLOCK_VARDEC( $4);
+              vardec_ptr = BLOCK_VARDECS( $4);
 
               DBUG_ASSERT( $2 != NULL,
                            "non-terminal ids should not return NULL ptr!");
@@ -1116,14 +1116,14 @@ exprblock2: ntype ids SEMIC exprblock2
                * duplicating it as done in the loop above!
                */
               $$ = $4;
-              BLOCK_VARDEC( $$) = TBmakeVardec( 
+              BLOCK_VARDECS( $$) = TBmakeVardec( 
                                     TBmakeAvis( 
                                       STRcpy( SPIDS_NAME( $2)), $1),
                                                 vardec_ptr);
               /*
                * set the DECL_TYPE for the last vardec!
                */
-              AVIS_DECLTYPE( VARDEC_AVIS( BLOCK_VARDEC( $$))) 
+              AVIS_DECLTYPE( VARDEC_AVIS( BLOCK_VARDECS( $$))) 
                 = TYcopyType( $1);
 
               /* 
@@ -1303,7 +1303,7 @@ forloop:   FOR { $<cint>$ = global.linenum; }
 
              node *while_assign;
              
-             BLOCK_INSTR( $10) = TCappendAssign( BLOCK_INSTR( $10), $8);
+             BLOCK_ASSIGNS( $10) = TCappendAssign( BLOCK_ASSIGNS( $10), $8);
              while_assign = TBmakeAssign( TBmakeWhile( $6, $10), NULL);
              NODE_LINE( while_assign) = $<cint>2;
              NODE_LINE( ASSIGN_INSTR( while_assign)) = $<cint>2;

@@ -255,8 +255,9 @@ INLassign (node *arg_node, info *arg_info)
         DBUG_PRINT ("Inlining code");
 
         ASSIGN_NEXT (arg_node) = TCappendAssign (code, ASSIGN_NEXT (arg_node));
-        BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
-          = TCappendVardec (vardecs, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
+        BLOCK_VARDECS (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
+          = TCappendVardec (vardecs,
+                            BLOCK_VARDECS (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
         arg_node = FREEdoFreeNode (arg_node);
     }
 

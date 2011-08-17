@@ -879,7 +879,7 @@ UW3range (node *arg_node, info *arg_info)
                 node *newcode;
 
                 lut = LUTinsertIntoLutP (lut, ID_AVIS (RANGE_INDEX (arg_node)), newIndex);
-                newcode = DUPdoDupTreeLut (BLOCK_INSTR (RANGE_BODY (arg_node)), lut);
+                newcode = DUPdoDupTreeLut (BLOCK_ASSIGNS (RANGE_BODY (arg_node)), lut);
                 INFO_ASSIGNS (arg_info)
                   = TCappendAssign (INFO_ASSIGNS (arg_info),
                                     Sync2Id (

@@ -5565,7 +5565,7 @@ N_tfarg :
 -->
     <node name="Block">
       <sons>
-        <son name="Instr">
+        <son name="Assigns">
           <targets>
             <target mandatory="yes">
               <node name="Assign" />
@@ -5576,7 +5576,7 @@ N_tfarg :
             </target>
           </targets>
         </son>
-        <son name="Vardec">
+        <son name="Vardecs">
           <targets>
             <target mandatory="no">
               <node name="Vardec" />

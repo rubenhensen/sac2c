@@ -409,8 +409,8 @@ ARMPfundef (node *arg_node, info *arg_info)
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     if (INFO_VARDECS (arg_info) != NULL) {
-        BLOCK_VARDEC (FUNDEF_BODY (arg_node))
-          = TCappendVardec (BLOCK_VARDEC (FUNDEF_BODY (arg_node)),
+        BLOCK_VARDECS (FUNDEF_BODY (arg_node))
+          = TCappendVardec (BLOCK_VARDECS (FUNDEF_BODY (arg_node)),
                             INFO_VARDECS (arg_info));
         INFO_VARDECS (arg_info) = NULL;
     }

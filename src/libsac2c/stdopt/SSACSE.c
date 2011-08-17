@@ -833,13 +833,13 @@ CSEblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* reset AVIS_SUBST for local variables */
-    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
+    BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
 
-    if (NODE_TYPE (BLOCK_INSTR (arg_node)) != N_empty) {
+    if (NODE_TYPE (BLOCK_ASSIGNS (arg_node)) != N_empty) {
         /*
          * start new cse frame
          */
-        assigns = TCcountAssigns (BLOCK_INSTR (arg_node));
+        assigns = TCcountAssigns (BLOCK_ASSIGNS (arg_node));
         INFO_CSE (arg_info) = AddCseInfoLayer (INFO_CSE (arg_info), assigns + 1);
 
         /*
@@ -857,7 +857,7 @@ CSEblock (node *arg_node, info *arg_info)
             }
         }
 
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
         /*
          * remove the fake assignment of the index scalars to the index vector
@@ -875,7 +875,7 @@ CSEblock (node *arg_node, info *arg_info)
         INFO_CSE (arg_info) = RemoveTopCseLayer (INFO_CSE (arg_info));
     }
 
-    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
+    BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

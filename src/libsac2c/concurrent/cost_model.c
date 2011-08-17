@@ -174,8 +174,8 @@ MTCMblock (node *arg_node, info *arg_info)
 
     if (INFO_TOPMOSTBLOCK (arg_info) == arg_node) {
         if (INFO_VARDECS (arg_info) != NULL) {
-            BLOCK_VARDEC (arg_node)
-              = TCappendVardec (BLOCK_VARDEC (arg_node), INFO_VARDECS (arg_info));
+            BLOCK_VARDECS (arg_node)
+              = TCappendVardec (BLOCK_VARDECS (arg_node), INFO_VARDECS (arg_info));
 
             INFO_VARDECS (arg_info) = NULL;
         }

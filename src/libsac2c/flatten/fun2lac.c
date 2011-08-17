@@ -408,8 +408,8 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
     loop_pred = RENdoRenameLut (COND_COND (ASSIGN_INSTR (INFO_COND (arg_info))), f2l_lut);
     COND_COND (ASSIGN_INSTR (INFO_COND (arg_info))) = NULL;
 
-    then_assigns = BLOCK_INSTR (COND_THEN (ASSIGN_INSTR (INFO_COND (arg_info))));
-    BLOCK_INSTR (COND_THEN (ASSIGN_INSTR (INFO_COND (arg_info)))) = NULL;
+    then_assigns = BLOCK_ASSIGNS (COND_THEN (ASSIGN_INSTR (INFO_COND (arg_info))));
+    BLOCK_ASSIGNS (COND_THEN (ASSIGN_INSTR (INFO_COND (arg_info)))) = NULL;
 
     if ((then_assigns != NULL) && (NODE_TYPE (then_assigns) == N_assign)) {
         then_assigns = RENdoRenameLut (then_assigns, f2l_lut);
@@ -417,8 +417,8 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
         then_assigns = NULL;
     }
 
-    else_assigns = BLOCK_INSTR (COND_ELSE (ASSIGN_INSTR (INFO_COND (arg_info))));
-    BLOCK_INSTR (COND_ELSE (ASSIGN_INSTR (INFO_COND (arg_info)))) = NULL;
+    else_assigns = BLOCK_ASSIGNS (COND_ELSE (ASSIGN_INSTR (INFO_COND (arg_info))));
+    BLOCK_ASSIGNS (COND_ELSE (ASSIGN_INSTR (INFO_COND (arg_info)))) = NULL;
 
     if ((else_assigns != NULL) && (NODE_TYPE (else_assigns) == N_assign)) {
         else_assigns = RENdoRenameLut (else_assigns, f2l_lut);

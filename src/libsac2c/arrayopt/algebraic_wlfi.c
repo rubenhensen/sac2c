@@ -653,7 +653,7 @@ AWLFIisIdsMemberPartition (node *arg_node, node *partn)
     DBUG_ENTER ();
 
     if (NULL != partn) {
-        nassgns = BLOCK_INSTR (CODE_CBLOCK (PART_CODE (partn)));
+        nassgns = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (partn)));
         while ((NULL != nassgns) && (!z)) {
             z = isAvisMemberIds (ID_AVIS (arg_node), LET_IDS (ASSIGN_INSTR (nassgns)));
             nassgns = ASSIGN_NEXT (nassgns);
@@ -2373,9 +2373,9 @@ AWLFIfundef (node *arg_node, info *arg_info)
 
             /* If new vardecs were made, append them to the current set */
             if (INFO_VARDECS (arg_info) != NULL) {
-                BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+                BLOCK_VARDECS (FUNDEF_BODY (arg_node))
                   = TCappendVardec (INFO_VARDECS (arg_info),
-                                    BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+                                    BLOCK_VARDECS (FUNDEF_BODY (arg_node)));
                 INFO_VARDECS (arg_info) = NULL;
             }
 
@@ -2742,7 +2742,7 @@ node *
 AWLFIblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
 

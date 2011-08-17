@@ -98,15 +98,15 @@ extern int print_comment; /* bool */
 
 #define BLOCK(ass)                                                                       \
     INDENT;                                                                              \
-    BLOCK_VARDECS (, ass)
+    BLOCK_VARDECSS (, ass)
 
-#define BLOCK_VARDECS(vardecs, ass)                                                      \
+#define BLOCK_VARDECSS(vardecs, ass)                                                     \
     INDENT;                                                                              \
-    BLOCK_VARDECS__NOINDENT (vardecs, ass)
+    BLOCK_VARDECSS__NOINDENT (vardecs, ass)
 
-#define BLOCK__NOINDENT(ass) BLOCK_VARDECS__NOINDENT (, ass)
+#define BLOCK__NOINDENT(ass) BLOCK_VARDECSS__NOINDENT (, ass)
 
-#define BLOCK_VARDECS__NOINDENT(vardecs, ass)                                            \
+#define BLOCK_VARDECSS__NOINDENT(vardecs, ass)                                           \
     fprintf (global.outfile, "{ ");                                                      \
     vardecs fprintf (global.outfile, "\n");                                              \
     global.indent++;                                                                     \
@@ -123,7 +123,7 @@ extern int print_comment; /* bool */
     BLOCK__NOINDENT (ass)
 
 #define FOR_LOOP_VARDECS(vardecs, init, cond, post, ass)                                 \
-    BLOCK_VARDECS (vardecs, FOR_LOOP (init, cond, post, ass);)
+    BLOCK_VARDECSS (vardecs, FOR_LOOP (init, cond, post, ass);)
 
 #define FOR_LOOP_INC(idx_var, start, stop, ass)                                          \
     FOR_LOOP (idx_var fprintf (global.outfile, " = ");                                   \
@@ -131,9 +131,9 @@ extern int print_comment; /* bool */
               stop, idx_var fprintf (global.outfile, "++");, ass)
 
 #define FOR_LOOP_INC_VARDEC(idx_var, start, stop, ass)                                   \
-    BLOCK_VARDECS (fprintf (global.outfile, "int ");                                     \
-                   idx_var fprintf (global.outfile, ";");                                \
-                   , FOR_LOOP_INC (idx_var, start, stop, ass);)
+    BLOCK_VARDECSS (fprintf (global.outfile, "int ");                                    \
+                    idx_var fprintf (global.outfile, ";");                               \
+                    , FOR_LOOP_INC (idx_var, start, stop, ass);)
 
 #define COND1(cond, ass)                                                                 \
     INDENT;                                                                              \

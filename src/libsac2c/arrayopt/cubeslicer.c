@@ -975,9 +975,9 @@ CUBSLfundef (node *arg_node, info *arg_info)
 
             /* If new vardecs were made, append them to the current set */
             if (INFO_VARDECS (arg_info) != NULL) {
-                BLOCK_VARDEC (FUNDEF_BODY (arg_node))
+                BLOCK_VARDECS (FUNDEF_BODY (arg_node))
                   = TCappendVardec (INFO_VARDECS (arg_info),
-                                    BLOCK_VARDEC (FUNDEF_BODY (arg_node)));
+                                    BLOCK_VARDECS (FUNDEF_BODY (arg_node)));
                 INFO_VARDECS (arg_info) = NULL;
             }
 

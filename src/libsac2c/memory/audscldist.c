@@ -536,14 +536,14 @@ ASDcond (node *arg_node, info *arg_info)
     /*
      * insert assignments produced at funconds */
     if (INFO_THENASSIGNS (arg_info) != NULL) {
-        BLOCK_INSTR (COND_THEN (arg_node))
-          = TCappendAssign (BLOCK_INSTR (COND_THEN (arg_node)),
+        BLOCK_ASSIGNS (COND_THEN (arg_node))
+          = TCappendAssign (BLOCK_ASSIGNS (COND_THEN (arg_node)),
                             INFO_THENASSIGNS (arg_info));
         INFO_THENASSIGNS (arg_info) = NULL;
     }
     if (INFO_ELSEASSIGNS (arg_info) != NULL) {
-        BLOCK_INSTR (COND_ELSE (arg_node))
-          = TCappendAssign (BLOCK_INSTR (COND_ELSE (arg_node)),
+        BLOCK_ASSIGNS (COND_ELSE (arg_node))
+          = TCappendAssign (BLOCK_ASSIGNS (COND_ELSE (arg_node)),
                             INFO_ELSEASSIGNS (arg_info));
         INFO_ELSEASSIGNS (arg_info) = NULL;
     }
@@ -775,8 +775,8 @@ ASDcode (node *arg_node, info *arg_info)
                 EXPRS_EXPR (cexprs) = FREEdoFreeNode (EXPRS_EXPR (cexprs));
                 EXPRS_EXPR (cexprs) = TBmakeId (avis);
 
-                BLOCK_INSTR (CODE_CBLOCK (arg_node))
-                  = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)), ass);
+                BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
+                  = TCappendAssign (BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)), ass);
             }
         }
 

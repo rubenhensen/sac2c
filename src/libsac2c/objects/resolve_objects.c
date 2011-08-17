@@ -252,8 +252,8 @@ AddPropObj (node *assign, node *prop, info *arg_info)
                        TYeliminateAKV (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (prop)))));
 
     /* insert vardec */
-    BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
-      = TBmakeVardec (avis, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
+    BLOCK_VARDECS (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
+      = TBmakeVardec (avis, BLOCK_VARDECS (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
 
     /* create <avis> = F_prop_obj_in( <idx-varname>, <object>) */
     assign
@@ -278,8 +278,8 @@ AddPropObj (node *assign, node *prop, info *arg_info)
                        TYeliminateAKV (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (wl_out)))));
 
     /* insert vardec */
-    BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
-      = TBmakeVardec (avis, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
+    BLOCK_VARDECS (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
+      = TBmakeVardec (avis, BLOCK_VARDECS (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
 
     /* create <avis> = F_prop_obj_out( <object>) */
     prop_obj_out
@@ -320,8 +320,8 @@ ModPropObj (node *prop, info *arg_info)
                        TYeliminateAKV (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (prop)))));
 
     /* insert vardec */
-    BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
-      = TBmakeVardec (avis, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
+    BLOCK_VARDECS (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
+      = TBmakeVardec (avis, BLOCK_VARDECS (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
 
     /* adjust the original so that
      * <avis> = F_prop_obj( <idx-varname>, ..., <new-obj> ) */
@@ -340,8 +340,8 @@ ModPropObj (node *prop, info *arg_info)
                        TYeliminateAKV (AVIS_TYPE (ID_AVIS (PROPAGATE_DEFAULT (prop)))));
 
     /* insert vardec */
-    BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
-      = TBmakeVardec (avis, BLOCK_VARDEC (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
+    BLOCK_VARDECS (FUNDEF_BODY (INFO_FUNDEF (arg_info)))
+      = TBmakeVardec (avis, BLOCK_VARDECS (FUNDEF_BODY (INFO_FUNDEF (arg_info))));
 
     /* adjust the original so that
      * <avis> = F_prop_obj_out( ..., <new-obj> ) */
@@ -768,7 +768,7 @@ RSOpropagate (node *arg_node, info *arg_info)
 
     block = CODE_CBLOCK (WITH_CODE (INFO_WL (arg_info)));
     if (INFO_PROPOBJ_IN (arg_info) == NULL) {
-        BLOCK_INSTR (block) = AddPropObj (BLOCK_INSTR (block), arg_node, arg_info);
+        BLOCK_ASSIGNS (block) = AddPropObj (BLOCK_ASSIGNS (block), arg_node, arg_info);
     } else {
         ModPropObj (arg_node, arg_info);
     }

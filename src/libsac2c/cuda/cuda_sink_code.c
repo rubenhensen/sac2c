@@ -187,7 +187,7 @@ CUSKCblock (node *arg_node, info *arg_info)
     INFO_SINK_CODE (arg_info) = NULL;
     INFO_LUT (arg_info) = LUTgenerateLut ();
 
-    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     /* Pop info */
     INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
@@ -196,8 +196,8 @@ CUSKCblock (node *arg_node, info *arg_info)
 
     if (INFO_SINK_CODE (arg_info) != NULL) {
         /* Preppend newly sunk code to the beginning of the current block */
-        BLOCK_INSTR (arg_node)
-          = TCappendAssign (INFO_SINK_CODE (arg_info), BLOCK_INSTR (arg_node));
+        BLOCK_ASSIGNS (arg_node)
+          = TCappendAssign (INFO_SINK_CODE (arg_info), BLOCK_ASSIGNS (arg_node));
     }
 
     INFO_SINK_CODE (arg_info) = old_sink_code;

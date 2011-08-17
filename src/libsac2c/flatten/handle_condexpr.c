@@ -160,8 +160,8 @@ HCEcode (node *arg_node, info *arg_info)
     }
 
     if (INFO_HCE_PREASSIGN (arg_info) != NULL) {
-        CODE_CBLOCK_INSTR (arg_node)
-          = TCappendAssign (CODE_CBLOCK_INSTR (arg_node), INFO_HCE_PREASSIGN (arg_info));
+        CODE_CBLOCK_ASSIGNS (arg_node) = TCappendAssign (CODE_CBLOCK_ASSIGNS (arg_node),
+                                                         INFO_HCE_PREASSIGN (arg_info));
 
         INFO_HCE_PREASSIGN (arg_info) = NULL;
     }

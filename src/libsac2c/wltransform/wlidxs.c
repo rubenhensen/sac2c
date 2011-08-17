@@ -245,8 +245,9 @@ WLIDXwithid (node *arg_node, info *arg_info)
                                        TYmakeAKS (TYmakeSimpleType (T_int),
                                                   SHmakeShape (0)));
 
-                    vardec = TBmakeVardec (avis, BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)));
-                    BLOCK_VARDEC (INFO_TOPBLOCK (arg_info)) = vardec;
+                    vardec
+                      = TBmakeVardec (avis, BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
+                    BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)) = vardec;
 
                     WITHID_IDXS (arg_node)
                       = TCappendIds (WITHID_IDXS (arg_node), TBmakeIds (avis, NULL));

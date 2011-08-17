@@ -723,10 +723,10 @@ TSIblock (node *arg_node, info *arg_info)
 
     DBUG_PRINT_TAG ("TSI", "TSIblock");
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = Trav (BLOCK_INSTR (arg_node), arg_info);
+    if (BLOCK_ASSIGNS (arg_node) != NULL) {
+        BLOCK_ASSIGNS (arg_node) = Trav (BLOCK_ASSIGNS (arg_node), arg_info);
         /*
-         * Nodetype of BLOCK_INSTR(arg_node) is N_assign or N_empty.
+         * Nodetype of BLOCK_ASSIGNS(arg_node) is N_assign or N_empty.
          */
     }
 

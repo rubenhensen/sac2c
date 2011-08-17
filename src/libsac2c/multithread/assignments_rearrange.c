@@ -208,9 +208,9 @@ ASMRAblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_block, "node is not a N_block");
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        if (NODE_TYPE (BLOCK_INSTR (arg_node)) == N_assign) {
-            if (ASSIGN_EXECMODE (BLOCK_INSTR (arg_node)) != MUTH_MULTI_SPECIALIZED) {
+    if (BLOCK_ASSIGNS (arg_node) != NULL) {
+        if (NODE_TYPE (BLOCK_ASSIGNS (arg_node)) == N_assign) {
+            if (ASSIGN_EXECMODE (BLOCK_ASSIGNS (arg_node)) != MUTH_MULTI_SPECIALIZED) {
                 arg_node = CreateNewAssignmentOrder (arg_node);
             }
         }
@@ -218,7 +218,7 @@ ASMRAblock (node *arg_node, info *arg_info)
 
     /* continue traversal */
     DBUG_PRINT ("trav into instruction(s)");
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
     DBUG_PRINT ("trav from instruction(s)");
 
     DBUG_RETURN (arg_node);
@@ -675,7 +675,7 @@ GetNodeWithLowestDistance (struct asmra_cluster_s *cluster, struct asmra_list_s 
  *
  * @param list_of_dfn list of dataflownodes, will be killed afterwards
  * @param arg_node a N_block
- * @return arg_node with a new assignment-chain in BLOCK_INSTR
+ * @return arg_node with a new assignment-chain in BLOCK_ASSIGNS
  *
  ****************************************************************************/
 static int
@@ -719,7 +719,7 @@ GetMinDistanceToFather (node *dfn, struct asmra_list_s *list)
  *
  * @param list_of_dfn list of dataflownodes, will be killed afterwards
  * @param arg_node a N_block
- * @return arg_node with a new assignment-chain in BLOCK_INSTR
+ * @return arg_node with a new assignment-chain in BLOCK_ASSIGNS
  *
  ****************************************************************************/
 static node *
@@ -736,7 +736,7 @@ BuildNewAssignmentChain (struct asmra_list_s *list_of_dfn, node *arg_node)
     /* the first assignment of the block */
     act_dfn = ASMRA_LIST_NODEELEM (list_iterator);
     act_assign = DATAFLOWNODE_ASSIGN (act_dfn);
-    BLOCK_INSTR (arg_node) = act_assign;
+    BLOCK_ASSIGNS (arg_node) = act_assign;
 
     list_iterator = ASMRA_LIST_NEXT (list_iterator);
 

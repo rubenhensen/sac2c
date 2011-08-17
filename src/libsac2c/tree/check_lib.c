@@ -197,8 +197,8 @@ isMemberVardecs (node *arg_node, node *fundef)
     DBUG_ENTER ();
 
     vardecs = FUNDEF_BODY (fundef);
-    if ((NULL != vardecs) && (NULL != BLOCK_VARDEC (vardecs))) {
-        vardecs = BLOCK_VARDEC (vardecs);
+    if ((NULL != vardecs) && (NULL != BLOCK_VARDECS (vardecs))) {
+        vardecs = BLOCK_VARDECS (vardecs);
         while ((!z) && NULL != vardecs) {
             if (arg_node == VARDEC_AVIS (vardecs)) {
                 z = TRUE;
@@ -270,8 +270,8 @@ CHKfundefVardecExtrema (node *arg_node)
     if (NULL != arg_node) {
 
         vardecs = FUNDEF_BODY (arg_node);
-        if ((NULL != vardecs) && (NULL != BLOCK_VARDEC (vardecs))) {
-            vardecs = BLOCK_VARDEC (vardecs);
+        if ((NULL != vardecs) && (NULL != BLOCK_VARDECS (vardecs))) {
+            vardecs = BLOCK_VARDECS (vardecs);
             curvardec = vardecs;
             while (NULL != curvardec) {
                 minmax = AVIS_MIN (VARDEC_AVIS (curvardec));

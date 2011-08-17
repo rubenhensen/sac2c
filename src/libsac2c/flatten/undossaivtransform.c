@@ -222,11 +222,11 @@ USSAIblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* Mark unreferenced variables; look for WL generators  */
-    BLOCK_INSTR (arg_node) = TRAVopt (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
 #ifdef ssaiv
     /* Delete unreferenced vardecs */
-    BLOCK_VARDEC (arg_node) = TRAVopt (BLOCK_VARDEC (arg_node), arg_info);
+    BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
 #endif //  ssaiv
 
     DBUG_RETURN (arg_node);

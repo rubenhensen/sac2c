@@ -401,7 +401,7 @@ IUTCblock (node *arg_node, info *arg_info)
 
     INFO_LEVEL (arg_info)++;
 
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
     INFO_LEVEL (arg_info)--;
 
@@ -429,8 +429,8 @@ IUTCblock (node *arg_node, info *arg_info)
     }
 
     if (INFO_PREASSIGN (arg_info) != NULL) {
-        BLOCK_INSTR (arg_node)
-          = TCappendAssign (INFO_PREASSIGN (arg_info), BLOCK_INSTR (arg_node));
+        BLOCK_ASSIGNS (arg_node)
+          = TCappendAssign (INFO_PREASSIGN (arg_info), BLOCK_ASSIGNS (arg_node));
         INFO_PREASSIGN (arg_info) = NULL;
     }
 

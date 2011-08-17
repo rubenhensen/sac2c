@@ -321,9 +321,9 @@ RCIfundef (node *arg_node, info *arg_info)
                     NLUTincNum (INFO_ENV (info), ARG_AVIS (arg), -1);
                     arg = ARG_NEXT (arg);
                 }
-                BLOCK_INSTR (FUNDEF_BODY (arg_node))
+                BLOCK_ASSIGNS (FUNDEF_BODY (arg_node))
                   = PrependAssignments (MakeRCAssignments (INFO_ENV (info)),
-                                        BLOCK_INSTR (FUNDEF_BODY (arg_node)));
+                                        BLOCK_ASSIGNS (FUNDEF_BODY (arg_node)));
             }
 
             INFO_ENV (info) = NLUTremoveNlut (INFO_ENV (info));
@@ -935,9 +935,9 @@ RCIcode (node *arg_node, info *arg_info)
     /*
      * Prepend block with INC_RC statements
      */
-    BLOCK_INSTR (CODE_CBLOCK (arg_node))
+    BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
       = PrependAssignments (MakeRCAssignments (INFO_ENV (arg_info)),
-                            BLOCK_INSTR (CODE_CBLOCK (arg_node)));
+                            BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)));
 
     INFO_WITHMASK (arg_info) = withmask;
     INFO_ENV (arg_info) = NLUTremoveNlut (INFO_ENV (arg_info));
@@ -995,9 +995,9 @@ RCIrange (node *arg_node, info *arg_info)
     /*
      * Prepend block with INC_RC statements
      */
-    BLOCK_INSTR (RANGE_BODY (arg_node))
+    BLOCK_ASSIGNS (RANGE_BODY (arg_node))
       = PrependAssignments (MakeRCAssignments (INFO_ENV (arg_info)),
-                            BLOCK_INSTR (RANGE_BODY (arg_node)));
+                            BLOCK_ASSIGNS (RANGE_BODY (arg_node)));
 
     INFO_WITHMASK (arg_info) = withmask;
     INFO_ENV (arg_info) = NLUTremoveNlut (INFO_ENV (arg_info));

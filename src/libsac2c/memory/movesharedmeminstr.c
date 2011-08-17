@@ -316,10 +316,10 @@ COSMIblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    if (BLOCK_VARDECS (arg_node) != NULL) {
+        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

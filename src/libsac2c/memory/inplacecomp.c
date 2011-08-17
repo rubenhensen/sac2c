@@ -328,7 +328,7 @@ HandleBlock (node *block, node *rets, info *arg_info)
                  */
                 isinblock = FALSE;
                 if (AVIS_SSAASSIGN (avis) != NULL) {
-                    assigns = BLOCK_INSTR (block);
+                    assigns = BLOCK_ASSIGNS (block);
                     while (assigns != NULL) {
                         if (assigns == AVIS_SSAASSIGN (avis)) {
                             isinblock = TRUE;
@@ -469,7 +469,7 @@ HandleBlock (node *block, node *rets, info *arg_info)
                         /*
                          * Remove old suballoc/fill(copy) combination
                          */
-                        n = BLOCK_INSTR (block);
+                        n = BLOCK_ASSIGNS (block);
                         while (ASSIGN_NEXT (n) != memass) {
                             n = ASSIGN_NEXT (n);
                         }

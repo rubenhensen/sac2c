@@ -1181,8 +1181,8 @@ EMALcode (node *arg_node, info *arg_info)
                                 CODE_CEXPRS (arg_node), arg_info);
 
     if (assign != NULL) {
-        BLOCK_INSTR (CODE_CBLOCK (arg_node))
-          = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)), assign);
+        BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
+          = TCappendAssign (BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)), assign);
     }
 
     CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
@@ -2589,8 +2589,8 @@ EMALrange (node *arg_node, info *arg_info)
         INFO_INDEXVECTOR (arg_info) = FREEdoFreeTree (INFO_INDEXVECTOR (arg_info));
 
         if (assign != NULL) {
-            BLOCK_INSTR (RANGE_BODY (arg_node))
-              = TCappendAssign (BLOCK_INSTR (RANGE_BODY (arg_node)), assign);
+            BLOCK_ASSIGNS (RANGE_BODY (arg_node))
+              = TCappendAssign (BLOCK_ASSIGNS (RANGE_BODY (arg_node)), assign);
         }
     } else {
         DBUG_ASSERT (INFO_RANGEMODE (arg_info) == EA_index, "unknown EA_range mode");

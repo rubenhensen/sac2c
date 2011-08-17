@@ -257,16 +257,16 @@ WLLOSblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_WLLEVEL (arg_info) == 1) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
         if (INFO_INSERT_CHAIN_BL (arg_info) == TRUE) {
             DBUG_PRINT ("Insert ABOVE-Chain (BLOCK)");
-            BLOCK_INSTR (arg_node) = INFO_BEFORE_LOCK (arg_info);
+            BLOCK_ASSIGNS (arg_node) = INFO_BEFORE_LOCK (arg_info);
             INFO_BEFORE_LOCK (arg_info) = NULL;
             INFO_INSERT_CHAIN_BL (arg_info) = FALSE;
         }
     } else if (INFO_WLLEVEL (arg_info) == 0) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

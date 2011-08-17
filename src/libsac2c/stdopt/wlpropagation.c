@@ -186,7 +186,7 @@ GetRecursiveFunctionApplication (node *fundef)
     /**
      * search for recursive fun call
      */
-    chain = BLOCK_INSTR (FUNDEF_BODY (fundef));
+    chain = BLOCK_ASSIGNS (FUNDEF_BODY (fundef));
 
     while ((chain != NULL) && (NODE_TYPE (ASSIGN_INSTR (chain)) != N_cond)) {
         chain = ASSIGN_NEXT (chain);
@@ -616,10 +616,10 @@ WLPROPid (node *arg_node, info *arg_info)
 
                 withvardec
                   = TBmakeVardec (IDS_AVIS (LET_IDS (ASSIGN_INSTR (new_withloop))),
-                                  BLOCK_VARDEC (
+                                  BLOCK_VARDECS (
                                     FUNDEF_BODY (AP_FUNDEF (INFO_AP (arg_info)))));
 
-                BLOCK_VARDEC (FUNDEF_BODY (AP_FUNDEF (INFO_AP (arg_info)))) = withvardec;
+                BLOCK_VARDECS (FUNDEF_BODY (AP_FUNDEF (INFO_AP (arg_info)))) = withvardec;
 
                 /**
                  * change corresponding argument of current id to dummy

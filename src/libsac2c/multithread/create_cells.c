@@ -134,9 +134,9 @@ CRECEblock (node *arg_node, info *arg_info)
     INFO_CRECE_LASTEXECMODE (arg_info) = MUTH_ANY;
 
     /* continue traversal */
-    if (BLOCK_INSTR (arg_node) != NULL) {
+    if (BLOCK_ASSIGNS (arg_node) != NULL) {
         DBUG_PRINT ("trav into instruction(s)");
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
         DBUG_PRINT ("trav from instruction(s)");
     }
 

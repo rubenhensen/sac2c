@@ -2872,9 +2872,9 @@ COMPfundef (node *arg_node, info *arg_info)
              * Add init memory allocator
              */
             if (FUNDEF_NEEDSDYNAMICMEMORY (arg_node)) {
-                BLOCK_INSTR (FUNDEF_BODY (arg_node))
+                BLOCK_ASSIGNS (FUNDEF_BODY (arg_node))
                   = TCappendAssign (TBmakeAssign (TBmakeIcm ("SAC_INIT_LOCAL_MEM", NULL),
-                                                  BLOCK_INSTR (FUNDEF_BODY (arg_node))),
+                                                  BLOCK_ASSIGNS (FUNDEF_BODY (arg_node))),
                                     TBmakeAssign (TBmakeIcm ("SAC_CLEANUP_LOCAL_MEM",
                                                              NULL),
                                                   NULL));
@@ -2885,15 +2885,15 @@ COMPfundef (node *arg_node, info *arg_info)
              */
             if (FUNDEF_CONTAINSSPAWN (arg_node)) {
                 if (FUNDEF_ISSLOWCLONE (arg_node)) {
-                    BLOCK_INSTR (FUNDEF_BODY (arg_node))
+                    BLOCK_ASSIGNS (FUNDEF_BODY (arg_node))
                       = TCappendAssign (MakeIcmFPCases (FUNDEF_NUMSPAWNSYNC (arg_node)),
-                                        BLOCK_INSTR (FUNDEF_BODY (arg_node)));
+                                        BLOCK_ASSIGNS (FUNDEF_BODY (arg_node)));
                 } else {
-                    BLOCK_INSTR (FUNDEF_BODY (arg_node))
+                    BLOCK_ASSIGNS (FUNDEF_BODY (arg_node))
                       = TBmakeAssign (TCmakeIcm1 ("FP_SETUP_FAST",
                                                   TCmakeIdCopyString (FUNDEF_NAME (
                                                     FUNDEF_SLOWCLONE (arg_node)))),
-                                      BLOCK_INSTR (FUNDEF_BODY (arg_node)));
+                                      BLOCK_ASSIGNS (FUNDEF_BODY (arg_node)));
                 }
             }
         }
@@ -2909,8 +2909,8 @@ COMPfundef (node *arg_node, info *arg_info)
             assigns = COMPFundefArgs (arg_node, arg_info);
 
             /* new first assignment of body */
-            BLOCK_INSTR (FUNDEF_BODY (arg_node))
-              = TCappendAssign (assigns, BLOCK_INSTR (FUNDEF_BODY (arg_node)));
+            BLOCK_ASSIGNS (FUNDEF_BODY (arg_node))
+              = TCappendAssign (assigns, BLOCK_ASSIGNS (FUNDEF_BODY (arg_node)));
         }
 
         if (FUNDEF_ISSPMDFUN (arg_node)) {
@@ -3152,13 +3152,14 @@ COMPblock (node *arg_node, info *arg_info)
 
         BLOCK_CACHESIM (arg_node) = MEMfree (BLOCK_CACHESIM (arg_node));
 
-        DBUG_ASSERT (BLOCK_INSTR (arg_node) != NULL, "first instruction of block is NULL"
-                                                     " (should be a N_empty node)");
-        assign = BLOCK_INSTR (arg_node);
+        DBUG_ASSERT (BLOCK_ASSIGNS (arg_node) != NULL,
+                     "first instruction of block is NULL"
+                     " (should be a N_empty node)");
+        assign = BLOCK_ASSIGNS (arg_node);
 
-        BLOCK_INSTR (arg_node)
+        BLOCK_ASSIGNS (arg_node)
           = TCmakeAssignIcm1 ("CS_START", TCmakeIdCopyString (cs_tag),
-                              BLOCK_INSTR (arg_node));
+                              BLOCK_ASSIGNS (arg_node));
 
         while ((ASSIGN_NEXT (assign) != NULL)
                && (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (assign))) != N_return)) {
@@ -3169,17 +3170,17 @@ COMPblock (node *arg_node, info *arg_info)
                                                  ASSIGN_NEXT (assign));
     }
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    if (BLOCK_ASSIGNS (arg_node) != NULL) {
+        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
-    if (BLOCK_VARDEC (arg_node) != NULL) {
-        BLOCK_VARDEC (arg_node) = TRAVdo (BLOCK_VARDEC (arg_node), arg_info);
+    if (BLOCK_VARDECS (arg_node) != NULL) {
+        BLOCK_VARDECS (arg_node) = TRAVdo (BLOCK_VARDECS (arg_node), arg_info);
     }
 
     if (INFO_VARDEC_INIT (arg_info) != NULL) {
-        BLOCK_INSTR (arg_node)
-          = TCappendAssign (INFO_VARDEC_INIT (arg_info), BLOCK_INSTR (arg_node));
+        BLOCK_ASSIGNS (arg_node)
+          = TCappendAssign (INFO_VARDEC_INIT (arg_info), BLOCK_ASSIGNS (arg_node));
         INFO_VARDEC_INIT (arg_info) = NULL;
     }
 
@@ -7868,15 +7869,15 @@ COMPdo (node *arg_node, info *arg_info)
         label_str = DO_LABEL (arg_node);
         DO_LABEL (arg_node) = NULL;
     }
-    BLOCK_INSTR (body)
-      = TCmakeAssignIcm1 ("ND_LABEL", TCmakeIdCopyString (label_str), BLOCK_INSTR (body));
+    BLOCK_ASSIGNS (body) = TCmakeAssignIcm1 ("ND_LABEL", TCmakeIdCopyString (label_str),
+                                             BLOCK_ASSIGNS (body));
 
     /*
      * Insert code from DO_SKIP containing DEC_RCs into body
      */
     if (DO_SKIP (arg_node) != NULL) {
-        BLOCK_INSTR (body)
-          = TCappendAssign (BLOCK_INSTR (DO_SKIP (arg_node)), BLOCK_INSTR (body));
+        BLOCK_ASSIGNS (body)
+          = TCappendAssign (BLOCK_ASSIGNS (DO_SKIP (arg_node)), BLOCK_ASSIGNS (body));
 
         DO_SKIP (arg_node) = NULL;
     }
@@ -8423,7 +8424,7 @@ COMPwith (node *arg_node, info *arg_info)
     DBUG_ASSERT (WITH_CODE (arg_node) != NULL, "missing code in AUD with loop!");
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
-    body_icms = DUPdoDupTree (BLOCK_INSTR (WITH_CBLOCK (arg_node)));
+    body_icms = DUPdoDupTree (BLOCK_ASSIGNS (WITH_CBLOCK (arg_node)));
 
     if (isfold) {
         icm_chain
@@ -8477,7 +8478,7 @@ COMPwith (node *arg_node, info *arg_info)
         }
 
         default_icms
-          = DUPdoDupTree (BLOCK_INSTR (CODE_CBLOCK (CODE_NEXT (WITH_CODE (arg_node)))));
+          = DUPdoDupTree (BLOCK_ASSIGNS (CODE_CBLOCK (CODE_NEXT (WITH_CODE (arg_node)))));
 
         icm_chain
           = TCmakeAssignIcm3 ("AUD_WL_END",
@@ -9189,7 +9190,7 @@ COMPrange (node *arg_node, info *arg_info)
 
         RANGE_BODY (arg_node) = TRAVopt (RANGE_BODY (arg_node), arg_info);
         loopnests = TCappendAssign (loopnests,
-                                    DUPdoDupTree (BLOCK_INSTR (RANGE_BODY (arg_node))));
+                                    DUPdoDupTree (BLOCK_ASSIGNS (RANGE_BODY (arg_node))));
         loopnests
           = TCappendAssign (loopnests,
                             TCmakeAssignIcm1 ("WL3_SCHEDULE__END",
@@ -9738,12 +9739,12 @@ COMPwlgrid (node *arg_node, info *arg_info)
 
             DBUG_ASSERT (WLGRID_CBLOCK (arg_node) != NULL,
                          "no code block found in N_Ncode node");
-            DBUG_ASSERT (WLGRID_CBLOCK_INSTR (arg_node) != NULL,
+            DBUG_ASSERT (WLGRID_CBLOCK_ASSIGNS (arg_node) != NULL,
                          "first instruction of block is NULL"
                          " (should be a N_empty node)");
 
-            if (NODE_TYPE (WLGRID_CBLOCK_INSTR (arg_node)) != N_empty) {
-                node_icms = DUPdoDupTree (WLGRID_CBLOCK_INSTR (arg_node));
+            if (NODE_TYPE (WLGRID_CBLOCK_ASSIGNS (arg_node)) != N_empty) {
+                node_icms = DUPdoDupTree (WLGRID_CBLOCK_ASSIGNS (arg_node));
             }
 
             /* for every ids of wlids (multioperator WL) */

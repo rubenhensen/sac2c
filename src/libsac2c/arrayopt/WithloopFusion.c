@@ -797,8 +797,8 @@ FuseCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
 
     resolveable_dependencies = CODE_HASRESOLVEABLEDEPENDENCIES (PART_CODE (fitting_part));
 
-    fitting_assigns = BLOCK_INSTR (CODE_CBLOCK (fitting_nncode));
-    BLOCK_INSTR (CODE_CBLOCK (fitting_nncode)) = TBmakeEmpty ();
+    fitting_assigns = BLOCK_ASSIGNS (CODE_CBLOCK (fitting_nncode));
+    BLOCK_ASSIGNS (CODE_CBLOCK (fitting_nncode)) = TBmakeEmpty ();
 
     /*
      * vardec of N_blocks which are not the first N_block of
@@ -821,13 +821,14 @@ FuseCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
 
     if (NODE_TYPE (fitting_assigns) != N_empty) {
 
-        if ((NODE_TYPE (BLOCK_INSTR (extendable_block)) != N_empty)
+        if ((NODE_TYPE (BLOCK_ASSIGNS (extendable_block)) != N_empty)
             && both_contain_fold) {
             /*
              *  If both withloops contain fold operators fuse both
              *  accu functions if containing together
              */
-            fitting_assigns = FuseAccu (BLOCK_INSTR (extendable_block), fitting_assigns);
+            fitting_assigns
+              = FuseAccu (BLOCK_ASSIGNS (extendable_block), fitting_assigns);
         }
 
         if ((NODE_TYPE (fitting_assigns) != N_empty) && resolveable_dependencies) {
@@ -841,8 +842,8 @@ FuseCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
                                               fusionable_assign);
         }
 
-        BLOCK_INSTR (extendable_block)
-          = TCappendAssign (BLOCK_INSTR (extendable_block), fitting_assigns);
+        BLOCK_ASSIGNS (extendable_block)
+          = TCappendAssign (BLOCK_ASSIGNS (extendable_block), fitting_assigns);
     }
 
     /*
@@ -1590,8 +1591,8 @@ WLFSblock (node *arg_node, info *arg_info)
     arg_info = MakeInfo ();
     INFO_FUNDEF (arg_info) = INFO_FUNDEF (info_tmp);
 
-    if (BLOCK_INSTR (arg_node) != NULL) {
-        BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    if (BLOCK_ASSIGNS (arg_node) != NULL) {
+        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
     arg_info = FreeInfo (arg_info);

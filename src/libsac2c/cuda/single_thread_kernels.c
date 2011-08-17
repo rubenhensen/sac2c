@@ -201,7 +201,7 @@ STKNLcudast (node *arg_node, info *arg_info)
 
     retassign = TBmakeAssign (TBmakeReturn (DFMUdfm2ReturnExprs (ret_mask, lut)), NULL);
 
-    assigns = TCappendAssign (DUPdoDupTreeLut (BLOCK_INSTR (region), lut), retassign);
+    assigns = TCappendAssign (DUPdoDupTreeLut (BLOCK_ASSIGNS (region), lut), retassign);
 
     st_kernel = TBmakeFundef (TRAVtmpVarName ("CUDAST"),
                               NSdupNamespace (INFO_NS (arg_info)), rets, args,

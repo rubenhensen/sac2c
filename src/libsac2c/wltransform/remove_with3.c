@@ -613,7 +613,7 @@ RW3range (node *arg_node, info *arg_info)
     INFO_RANGES (arg_info) = INFO_RANGES (arg_info) + 1;
     INFO_LOWERBOUND (arg_info) = RANGE_LOWERBOUND (arg_node);
     INFO_RESULTS (arg_info) = RANGE_RESULTS (arg_node);
-    INFO_LOOP_ASSIGNS (arg_info) = BLOCK_INSTR (RANGE_BODY (arg_node));
+    INFO_LOOP_ASSIGNS (arg_info) = BLOCK_ASSIGNS (RANGE_BODY (arg_node));
     INFO_LOOP_INDEX (arg_info) = RANGE_INDEX (arg_node);
 
     clower = COaST2Constant (RANGE_LOWERBOUND (arg_node));

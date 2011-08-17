@@ -832,24 +832,24 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
     if (info->triplepos != 1) {
         leftindex = BuildLeftIndex (args, iv, info);
         leftid = MakeTmpId ("left_index");
-        BLOCK_INSTR (block)
-          = TCappendAssign (BLOCK_INSTR (block),
+        BLOCK_ASSIGNS (block)
+          = TCappendAssign (BLOCK_ASSIGNS (block),
                             MakeAssignLetNV (STRcpy (SPID_NAME (leftid)), leftindex));
     }
 
     if (info->triplepos != 0) {
         middleindex = BuildMiddleIndex (args, iv, info);
         middleid = MakeTmpId ("middle_index");
-        BLOCK_INSTR (block)
-          = TCappendAssign (BLOCK_INSTR (block),
+        BLOCK_ASSIGNS (block)
+          = TCappendAssign (BLOCK_ASSIGNS (block),
                             MakeAssignLetNV (STRcpy (SPID_NAME (middleid)), middleindex));
     }
 
     if ((info->triplepos != 0) && (info->triplepos != info->selcnt)) {
         rightindex = BuildRightIndex (args, iv, info);
         rightid = MakeTmpId ("right_index");
-        BLOCK_INSTR (block)
-          = TCappendAssign (BLOCK_INSTR (block),
+        BLOCK_ASSIGNS (block)
+          = TCappendAssign (BLOCK_ASSIGNS (block),
                             MakeAssignLetNV (STRcpy (SPID_NAME (rightid)), rightindex));
     }
 
@@ -858,8 +858,8 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
 
         tmpid = MakeTmpId ("middle_and_right_index");
 
-        BLOCK_INSTR (block)
-          = TCappendAssign (BLOCK_INSTR (block),
+        BLOCK_ASSIGNS (block)
+          = TCappendAssign (BLOCK_ASSIGNS (block),
                             MakeAssignLetNV (STRcpy (SPID_NAME (tmpid)),
                                              BuildConcat (middleid, rightid)));
 
@@ -876,8 +876,8 @@ BuildIndex (node *args, node *iv, node *block, dotinfo *info)
 
             tmpid = MakeTmpId ("complete_index");
 
-            BLOCK_INSTR (block)
-              = TCappendAssign (BLOCK_INSTR (block),
+            BLOCK_ASSIGNS (block)
+              = TCappendAssign (BLOCK_ASSIGNS (block),
                                 MakeAssignLetNV (STRcpy (SPID_NAME (tmpid)),
                                                  BuildConcat (leftid, middleid)));
 

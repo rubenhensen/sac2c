@@ -547,10 +547,10 @@ RERAblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
-    if (BLOCK_INSTR (arg_node) == NULL) {
-        BLOCK_INSTR (arg_node) = TBmakeEmpty ();
+    if (BLOCK_ASSIGNS (arg_node) == NULL) {
+        BLOCK_ASSIGNS (arg_node) = TBmakeEmpty ();
     }
 
     DBUG_RETURN (arg_node);

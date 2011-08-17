@@ -247,7 +247,7 @@ AllPartsEmpty (node *part)
     DBUG_ENTER ();
 
     result
-      = result && (NODE_TYPE (BLOCK_INSTR (CODE_CBLOCK (PART_CODE (part)))) == N_empty);
+      = result && (NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (part)))) == N_empty);
 
     if (result && (PART_NEXT (part) != NULL)) {
         result = result && AllPartsEmpty (PART_NEXT (part));

@@ -567,15 +567,15 @@ RESOblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    BLOCK_VARDEC (arg_node) = ResetAvisSubst (BLOCK_VARDEC (arg_node));
+    BLOCK_VARDECS (arg_node) = ResetAvisSubst (BLOCK_VARDECS (arg_node));
 
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
-    if (BLOCK_INSTR (arg_node) == NULL) {
-        BLOCK_INSTR (arg_node) = TBmakeEmpty ();
+    if (BLOCK_ASSIGNS (arg_node) == NULL) {
+        BLOCK_ASSIGNS (arg_node) = TBmakeEmpty ();
     }
 
-    BLOCK_VARDEC (arg_node) = DeleteSubstVardecs (BLOCK_VARDEC (arg_node));
+    BLOCK_VARDECS (arg_node) = DeleteSubstVardecs (BLOCK_VARDECS (arg_node));
 
     DBUG_RETURN (arg_node);
 }

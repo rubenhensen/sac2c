@@ -289,8 +289,8 @@ extern node *TCunAliasObjdef (node *objdef);
  *  compound access macros
  */
 
-#define FUNDEF_VARDEC(n) (BLOCK_VARDEC (FUNDEF_BODY (n)))
-#define FUNDEF_INSTR(n) (BLOCK_INSTR (FUNDEF_BODY (n)))
+#define FUNDEF_VARDEC(n) (BLOCK_VARDECS (FUNDEF_BODY (n)))
+#define FUNDEF_INSTR(n) (BLOCK_ASSIGNS (FUNDEF_BODY (n)))
 
 #define FUNDEF_ISLACFUN(n) (FUNDEF_ISCONDFUN (n) || FUNDEF_ISDOFUN (n))
 
@@ -806,8 +806,8 @@ extern node *TCnodeBehindCast (node *arg_node);
 /*
  *  compound access macros
  */
-#define COND_THENINSTR(n) (BLOCK_INSTR (COND_THEN (n)))
-#define COND_ELSEINSTR(n) (BLOCK_INSTR (COND_ELSE (n)))
+#define COND_THENINSTR(n) (BLOCK_ASSIGNS (COND_THEN (n)))
+#define COND_ELSEINSTR(n) (BLOCK_ASSIGNS (COND_ELSE (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -818,7 +818,7 @@ extern node *TCnodeBehindCast (node *arg_node);
 /*
  *  compound access macros
  */
-#define DO_INSTR(n) (BLOCK_INSTR (DO_BODY (n)))
+#define DO_INSTR(n) (BLOCK_ASSIGNS (DO_BODY (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1100,7 +1100,7 @@ extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *a
  *  compound access macros
  */
 
-#define SPMD_VARDEC(n) BLOCK_VARDEC (SPMD_REGION (n))
+#define SPMD_VARDEC(n) BLOCK_VARDECS (SPMD_REGION (n))
 
 /*--------------------------------------------------------------------------*/
 
@@ -1165,7 +1165,7 @@ extern bool TCcontainsDefaultPartition (node *parts);
  ***  N_code :
  ***/
 
-#define CODE_CBLOCK_INSTR(n) (BLOCK_INSTR (CODE_CBLOCK (n)))
+#define CODE_CBLOCK_ASSIGNS(n) (BLOCK_ASSIGNS (CODE_CBLOCK (n)))
 #define CODE_CEXPR(n) (EXPRS_EXPR1 (CODE_CEXPRS (n)))
 
 #define CODE_WLAA_ACCESS(n) (CODE_WLAA_INFO (n)->access)
@@ -1472,7 +1472,7 @@ extern int TCcountWlseg (node *withop);
 #define WLGRID_CBLOCK(n) (CODE_CBLOCK (WLGRID_CODE (n)))
 #define WLGRID_CEXPR(n) (CODE_CEXPR (WLGRID_CODE (n)))
 
-#define WLGRID_CBLOCK_INSTR(n) (BLOCK_INSTR (WLGRID_CBLOCK (n)))
+#define WLGRID_CBLOCK_ASSIGNS(n) (BLOCK_ASSIGNS (WLGRID_CBLOCK (n)))
 
 /*--------------------------------------------------------------------------*/
 

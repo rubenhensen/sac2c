@@ -379,8 +379,8 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
      * insert vardec:
      */
     block = FUNDEF_BODY (INFO_FUNDEF (arg_info));
-    VARDEC_NEXT (vardec) = BLOCK_VARDEC (block);
-    BLOCK_VARDEC (block) = vardec;
+    VARDEC_NEXT (vardec) = BLOCK_VARDECS (block);
+    BLOCK_VARDECS (block) = vardec;
 
     /**
      * create the new arguments arg1, ...., argn
@@ -401,8 +401,8 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
     /**
      * and insert it:
      */
-    ASSIGN_NEXT (assign) = BLOCK_INSTR (block);
-    BLOCK_INSTR (block) = assign;
+    ASSIGN_NEXT (assign) = BLOCK_ASSIGNS (block);
+    BLOCK_ASSIGNS (block) = assign;
 
     DBUG_RETURN (TCappendArgs (new_args, old_args));
 }

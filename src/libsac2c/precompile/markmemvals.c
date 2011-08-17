@@ -195,11 +195,11 @@ MMVblock (node *arg_node, info *arg_info)
     vardecs = INFO_VARDECS (arg_info);
     INFO_VARDECS (arg_info) = NULL;
 
-    BLOCK_INSTR (arg_node) = TRAVdo (BLOCK_INSTR (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
 
     if (INFO_VARDECS (arg_info) != NULL) {
-        BLOCK_VARDEC (arg_node)
-          = TCappendVardec (INFO_VARDECS (arg_info), BLOCK_VARDEC (arg_node));
+        BLOCK_VARDECS (arg_node)
+          = TCappendVardec (INFO_VARDECS (arg_info), BLOCK_VARDECS (arg_node));
         INFO_VARDECS (arg_info) = NULL;
     }
 
@@ -1383,8 +1383,8 @@ MMVcode (node *arg_node, info *arg_info)
 
     while (withop != NULL) {
         if (NODE_TYPE (withop) == N_fold && !FOLD_ISPARTIALFOLD (withop)) {
-            BLOCK_INSTR (CODE_CBLOCK (arg_node))
-              = TCappendAssign (BLOCK_INSTR (CODE_CBLOCK (arg_node)),
+            BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
+              = TCappendAssign (BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)),
                                 TBmakeAssign (TBmakeLet (DUPdoDupNode (wlids),
                                                          DUPdoDupNode (
                                                            EXPRS_EXPR (cexprs))),

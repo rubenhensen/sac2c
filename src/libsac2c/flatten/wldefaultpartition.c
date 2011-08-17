@@ -111,7 +111,7 @@ FreeInfo (info *info)
  *   @param  int  *dim         : dimension of iteration space
  *           node *array_shape : shape and upper bound of WL
  *           simpletype btype  : type of 'expr'
- *           node *expr        : rhs of BLOCK_INSTR
+ *           node *expr        : rhs of BLOCK_ASSIGNS
  *           node *fundef      : N_FUNDEF
  *   @return node *            : N_Nwith
  ******************************************************************************/

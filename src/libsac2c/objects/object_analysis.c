@@ -193,7 +193,7 @@ CreateObjectWrapper (node *wrapper, node *fundef)
                                                  NULL)),
                      NULL);
 
-    BLOCK_VARDEC (block) = vardecs;
+    BLOCK_VARDECS (block) = vardecs;
     FUNDEF_BODY (result) = block;
 
     FUNDEF_ISOBJECTWRAPPER (result) = TRUE;
