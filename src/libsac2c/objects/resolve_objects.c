@@ -325,8 +325,8 @@ ModPropObj (node *prop, info *arg_info)
 
     /* adjust the original so that
      * <avis> = F_prop_obj( <idx-varname>, ..., <new-obj> ) */
-    args = PRF_ARGS (LET_EXPR (ASSIGN_INSTR (INFO_PROPOBJ_IN (arg_info))));
-    lhs = LET_IDS (ASSIGN_INSTR (INFO_PROPOBJ_IN (arg_info)));
+    args = PRF_ARGS (LET_EXPR (ASSIGN_STMT (INFO_PROPOBJ_IN (arg_info))));
+    lhs = LET_IDS (ASSIGN_STMT (INFO_PROPOBJ_IN (arg_info)));
 
     args
       = TCappendExprs (args,
@@ -345,8 +345,8 @@ ModPropObj (node *prop, info *arg_info)
 
     /* adjust the original so that
      * <avis> = F_prop_obj_out( ..., <new-obj> ) */
-    args = PRF_ARGS (LET_EXPR (ASSIGN_INSTR (INFO_PROPOBJ_OUT (arg_info))));
-    lhs = LET_IDS (ASSIGN_INSTR (INFO_PROPOBJ_OUT (arg_info)));
+    args = PRF_ARGS (LET_EXPR (ASSIGN_STMT (INFO_PROPOBJ_OUT (arg_info))));
+    lhs = LET_IDS (ASSIGN_STMT (INFO_PROPOBJ_OUT (arg_info)));
 
     args
       = TCappendExprs (args,

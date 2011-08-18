@@ -159,7 +159,7 @@ EMRCOassign (node *arg_node, info *arg_info)
      * Top-down traversal
      */
     INFO_DOWNTRAV (arg_info) = TRUE;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     secondtrav = INFO_SECONDTRAV (arg_info);
     INFO_SECONDTRAV (arg_info) = FALSE;
@@ -176,7 +176,7 @@ EMRCOassign (node *arg_node, info *arg_info)
      */
     INFO_DOWNTRAV (arg_info) = FALSE;
     INFO_SECONDTRAV (arg_info) = secondtrav;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     INFO_SECONDTRAV (arg_info) = FALSE;
 
     if (INFO_REMNEXT (arg_info)) {

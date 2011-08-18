@@ -183,7 +183,7 @@ WLSCdoCheck (node *with, node *nassign)
 
     arg_info = MakeInfo ();
     INFO_NASSIGN (arg_info) = nassign;
-    lhs = IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_NASSIGN (arg_info))));
+    lhs = IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_NASSIGN (arg_info))));
 
     DBUG_PRINT ("%s: Checking whether with-loop can be scalarized.", AVIS_NAME (lhs));
 
@@ -291,7 +291,7 @@ WLSCblock (node *arg_node, info *arg_info)
 #if 0
       DBUG_EXECUTE (lhs = IDS_AVIS(
                                    LET_IDS(
-                                     ASSIGN_INSTR(
+                                     ASSIGN_STMT(
                                        INFO_NASSIGN( arg_info)))));
 #endif
 
@@ -362,7 +362,7 @@ WLSCcode (node *arg_node, info *arg_info)
     /*
      * The CEXPR must be AKS or better
      */
-    lhs = IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_NASSIGN (arg_info))));
+    lhs = IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_NASSIGN (arg_info))));
     if ((!TYisAKS (ID_NTYPE (CODE_CEXPR (arg_node))))
         && (!TYisAKV (ID_NTYPE (CODE_CEXPR (arg_node))))) {
         INFO_POSSIBLE (arg_info) = FALSE;
@@ -463,7 +463,7 @@ genhelper (node *arg_node, info *arg_info, char *nm)
      * WLS cannot be performed if the bound vectors are neither full nor
      * structural constants
      */
-    lhs = IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_NASSIGN (arg_info))));
+    lhs = IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_NASSIGN (arg_info))));
     pat = PMarray (1, PMAgetNode (&argnarray), 0);
     if ((NULL != arg_node) && (!PMmatchFlatSkipExtrema (pat, arg_node))) {
         INFO_POSSIBLE (arg_info) = FALSE;
@@ -530,7 +530,7 @@ WLSCid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    lhs = IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_NASSIGN (arg_info))));
+    lhs = IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_NASSIGN (arg_info))));
     ids = WITHID_VEC (INFO_OUTERWITHID (arg_info));
     if (ID_AVIS (arg_node) == IDS_AVIS (ids)) {
         INFO_POSSIBLE (arg_info) = FALSE;
@@ -642,7 +642,7 @@ WLSCwith (node *arg_node, info *arg_info)
         /*
          * Outer with-loop must not be a fold with-loop
          */
-        lhs = IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_NASSIGN (arg_info))));
+        lhs = IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_NASSIGN (arg_info))));
         if ((WITH_TYPE (arg_node) != N_genarray)
             && (WITH_TYPE (arg_node) != N_modarray)) {
             INFO_POSSIBLE (arg_info) = FALSE;
@@ -734,7 +734,7 @@ WLSCwithid (node *arg_node, info *arg_info)
             if (TCcountIds (WITHID_IDS (INFO_INNERWITHID (arg_info)))
                 != TCcountIds (WITHID_IDS (arg_node))) {
                 INFO_POSSIBLE (arg_info) = FALSE;
-                lhs = IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_NASSIGN (arg_info))));
+                lhs = IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_NASSIGN (arg_info))));
                 DBUG_PRINT ("%s: Inner with-loops' index vectors differ in length",
                             AVIS_NAME (lhs));
             }
@@ -814,7 +814,7 @@ WLSCfold (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_POSSIBLE (arg_info) = FALSE;
-    lhs = IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_NASSIGN (arg_info))));
+    lhs = IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_NASSIGN (arg_info))));
     DBUG_PRINT ("%s: Inner with-loop is not a genarray or modarray with-loop",
                 AVIS_NAME (lhs));
 
@@ -841,7 +841,7 @@ WLSCpropagate (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_POSSIBLE (arg_info) = FALSE;
-    lhs = IDS_AVIS (LET_IDS (ASSIGN_INSTR (INFO_NASSIGN (arg_info))));
+    lhs = IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_NASSIGN (arg_info))));
     DBUG_PRINT ("Inner with-loop is not a genarray/modarray with-loop", AVIS_NAME (lhs));
 
     DBUG_RETURN (arg_node);

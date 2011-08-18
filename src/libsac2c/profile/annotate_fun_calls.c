@@ -330,7 +330,7 @@ PFassign (node *arg_node, info *arg_info)
      * be signaled by INFO_PF_FUNDEF( arg_info) != NULL which points
      * to the fundef of the function being called.
      */
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_PF_FUNDEF (arg_info) != NULL) {
         /*

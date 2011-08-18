@@ -149,11 +149,11 @@ CheckExpr (node *expr, prf op)
             prfop2 = F_unknown;
         }
 
-        if ((prfop1 != F_unknown) && (N_let == NODE_TYPE (ASSIGN_INSTR (assign)))
-            && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assign))))
-            && ((PRF_PRF (LET_EXPR (ASSIGN_INSTR (assign))) == prfop1)
-                || (PRF_PRF (LET_EXPR (ASSIGN_INSTR (assign))) == prfop2))) {
-            result = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (assign)));
+        if ((prfop1 != F_unknown) && (N_let == NODE_TYPE (ASSIGN_STMT (assign)))
+            && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_STMT (assign))))
+            && ((PRF_PRF (LET_EXPR (ASSIGN_STMT (assign))) == prfop1)
+                || (PRF_PRF (LET_EXPR (ASSIGN_STMT (assign))) == prfop2))) {
+            result = PRF_ARG1 (LET_EXPR (ASSIGN_STMT (assign)));
         } else {
             result = NULL;
         }
@@ -417,13 +417,13 @@ UESDassign (node *arg_node, info *arg_info)
 
     INFO_TOPDOWN (arg_info) = TRUE;
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     INFO_TOPDOWN (arg_info) = FALSE;
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_PREASSIGN (arg_info) != NULL) {
         ASSIGN_NEXT (INFO_PREASSIGN (arg_info)) = arg_node;

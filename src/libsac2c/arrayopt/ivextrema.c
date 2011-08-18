@@ -917,8 +917,8 @@ IVEXIassign (node *arg_node, info *arg_info)
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    if ((N_let == NODE_TYPE (ASSIGN_INSTR (arg_node)))
-        && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))))) {
+    if ((N_let == NODE_TYPE (ASSIGN_STMT (arg_node)))
+        && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_STMT (arg_node))))) {
         old_info = arg_info;
         arg_info = MakeInfo ();
         INFO_FUNDEF (arg_info) = INFO_FUNDEF (old_info);
@@ -928,11 +928,11 @@ IVEXIassign (node *arg_node, info *arg_info)
         INFO_ONEFUNDEF (arg_info) = INFO_ONEFUNDEF (old_info);
     }
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     /* Handle any preassigns generated with this WL */
-    if ((N_let == NODE_TYPE (ASSIGN_INSTR (arg_node)))
-        && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))))
+    if ((N_let == NODE_TYPE (ASSIGN_STMT (arg_node)))
+        && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_STMT (arg_node))))
         && (NULL != INFO_PREASSIGNSWITH (arg_info))) {
         DBUG_PRINT ("Prepending PREASSIGNSWITH");
         arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);

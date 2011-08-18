@@ -247,7 +247,7 @@ CNSTASSassign (node *arg_node, info *arg_info)
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     old_add_assigns = INFO_ADD_ASSIGNS (arg_info);
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_CONSTASSIGNS (arg_info) != NULL && INFO_ADD_ASSIGNS (arg_info)) {
         arg_node = TCappendAssign (INFO_CONSTASSIGNS (arg_info), arg_node);

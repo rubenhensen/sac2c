@@ -138,7 +138,7 @@ TDEPENDassign (node *arg_node, info *arg_info)
          * the next assignment
          */
 
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
         if (ASSIGN_NEXT (arg_node) != NULL) {
             ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -150,13 +150,13 @@ TDEPENDassign (node *arg_node, info *arg_info)
          * instruction
          */
         INFO_TDEPEND_INSIDEWL (arg_info) = TRUE;
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     } else {
         /*
          * We are not inside a WL and we traverse in none, so we only had to
          * traverse in the instruction.
          */
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

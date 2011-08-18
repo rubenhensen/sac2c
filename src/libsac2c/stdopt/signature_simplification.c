@@ -301,7 +301,7 @@ SISIassign (node *arg_node, info *arg_info)
 
     INFO_POSTASSIGN (arg_info) = NULL;
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
     /* integrate post assignments after current assignment */
     ASSIGN_NEXT (arg_node)
       = TCappendAssign (INFO_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));

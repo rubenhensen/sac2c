@@ -856,7 +856,7 @@ SOSSKassign (node *arg_node, info *arg_info)
     }
     INFO_DEMAND (arg_info) = old_demand;
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     DBUG_PRINT_TAG ("SOSSK_PATH", "<<< LEAVE SOSSKassign");
     DBUG_RETURN (arg_node);

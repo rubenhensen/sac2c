@@ -532,12 +532,12 @@ extern node *TCsearchDecl (const char *name, node *decl_node);
  *  compound access macros
  */
 
-#define ASSIGN_INSTRTYPE(n) NODE_TYPE (ASSIGN_INSTR (n))
+#define ASSIGN_STMTTYPE(n) NODE_TYPE (ASSIGN_STMT (n))
 #define ASSIGN_NAME(n) IDS_NAME (ASSIGN_LHS (n))
-#define ASSIGN_LHS(n) LET_IDS (ASSIGN_INSTR (n))
-#define ASSIGN_RHS(n) LET_EXPR (ASSIGN_INSTR (n))
+#define ASSIGN_LHS(n) LET_IDS (ASSIGN_STMT (n))
+#define ASSIGN_RHS(n) LET_EXPR (ASSIGN_STMT (n))
 
-#define ASSIGN_SYNC_LHS(n) LET_SYNC_IDS (ASSIGN_INSTR (n))
+#define ASSIGN_SYNC_LHS(n) LET_SYNC_IDS (ASSIGN_STMT (n))
 #define ASSIGN_SPAWN_LHS(n) ASSIGN_SYNC_LHS (n)
 
 /******************************************************************************

@@ -252,7 +252,7 @@ lastId (node *arg_node, bool ignoreguards)
             DBUG_PRINT ("lastId looking up variable definition for %s.",
                         AVIS_NAME (ID_AVIS (arg_node)));
             newres = arg_node;
-            arg_node = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
+            arg_node = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
         } else {
             if (ignoreguards && isPrfGuard (arg_node)) {
                 newres = PRF_ARG1 (arg_node);
@@ -260,7 +260,7 @@ lastId (node *arg_node, bool ignoreguards)
                             AVIS_NAME (ID_AVIS (newres)));
                 assgn = AVIS_SSAASSIGN (ID_AVIS (newres));
                 if (NULL != assgn) {
-                    arg_node = LET_EXPR (ASSIGN_INSTR (assgn));
+                    arg_node = LET_EXPR (ASSIGN_STMT (assgn));
                 } else {
                     arg_node = NULL;
                 }
@@ -304,8 +304,8 @@ followId (node *arg_node, bool ignoreguards)
     res = lastId (arg_node, ignoreguards);
     if ((NULL != arg_node) && (N_id == NODE_TYPE (res))
         && (NULL != AVIS_SSAASSIGN (ID_AVIS (res)))
-        && (NULL != ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (res))))) {
-        arg_node = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (res))));
+        && (NULL != ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (res))))) {
+        arg_node = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (res))));
     }
     DBUG_RETURN (arg_node);
 }
@@ -879,7 +879,7 @@ PMOshapePrimogenitor (node *arg)
      */
     modarr = AVIS_SSAASSIGN (ID_AVIS (arg));
     if (NULL != modarr) {
-        modarr = LET_EXPR (ASSIGN_INSTR (modarr));
+        modarr = LET_EXPR (ASSIGN_STMT (modarr));
         if ((N_with == NODE_TYPE (modarr))) {
             switch (NODE_TYPE (WITH_WITHOP (modarr))) {
             case N_modarray:

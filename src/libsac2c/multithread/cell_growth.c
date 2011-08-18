@@ -179,7 +179,7 @@ CEGROblock (node *arg_node, info *arg_info)
                          "the executionmode has to be MUTH_ANY");
 
             /* get the EX-/ST-/MT-Cell (to make the code clearer) */
-            xcell = ASSIGN_INSTR (INFO_CEGRO_NEXTCELL (arg_info));
+            xcell = ASSIGN_STMT (INFO_CEGRO_NEXTCELL (arg_info));
 
             if (NODE_TYPE (xcell) == N_ex) {
                 ASSIGN_NEXT (iterator) = BLOCK_ASSIGNS (EX_REGION (xcell));
@@ -245,9 +245,9 @@ CEGROassign (node *arg_node, info *arg_info)
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_assign, "arg_node is no a N_assign");
 
     /* traverse into the instruction - it could be a conditional */
-    if (ASSIGN_INSTR (arg_node) != NULL) {
+    if (ASSIGN_STMT (arg_node) != NULL) {
         DBUG_PRINT ("trav into instruction");
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
         DBUG_PRINT ("trav from instruction");
     }
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -257,17 +257,17 @@ CEGROassign (node *arg_node, info *arg_info)
     }
     /* bottom-up traversal */
 
-    if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_ex)
-        || (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_st)
-        || (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_mt)) {
-        if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_ex) {
-            ASSIGN_NEXT (BLOCK_ASSIGNS (EX_REGION (ASSIGN_INSTR (arg_node))))
+    if ((NODE_TYPE (ASSIGN_STMT (arg_node)) == N_ex)
+        || (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_st)
+        || (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_mt)) {
+        if (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_ex) {
+            ASSIGN_NEXT (BLOCK_ASSIGNS (EX_REGION (ASSIGN_STMT (arg_node))))
               = ASSIGN_NEXT (arg_node);
-        } else if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_st) {
-            ASSIGN_NEXT (BLOCK_ASSIGNS (ST_REGION (ASSIGN_INSTR (arg_node))))
+        } else if (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_st) {
+            ASSIGN_NEXT (BLOCK_ASSIGNS (ST_REGION (ASSIGN_STMT (arg_node))))
               = ASSIGN_NEXT (arg_node);
-        } else if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_mt) {
-            ASSIGN_NEXT (BLOCK_ASSIGNS (MT_REGION (ASSIGN_INSTR (arg_node))))
+        } else if (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_mt) {
+            ASSIGN_NEXT (BLOCK_ASSIGNS (MT_REGION (ASSIGN_STMT (arg_node))))
               = ASSIGN_NEXT (arg_node);
         }
         ASSIGN_NEXT (arg_node) = INFO_CEGRO_NEXTCELL (arg_info);

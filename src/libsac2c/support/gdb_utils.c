@@ -53,7 +53,7 @@ GDBbreakAtNid (node *arg_node, char *nm)
             break;
 
         case N_assign:
-            z = STReq (nm, AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node)))));
+            z = STReq (nm, AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)))));
             break;
 
         case N_let:
@@ -213,7 +213,7 @@ GDBwhatAre (char *nm, node *fundef)
         vardec = TCfindVardec_Name (nm, fundef);
         assgn = (NULL != vardec) ? AVIS_SSAASSIGN (VARDEC_AVIS (vardec)) : NULL;
         if (NULL != assgn) {
-            exprs = PRF_ARGS (LET_EXPR (ASSIGN_INSTR (assgn)));
+            exprs = PRF_ARGS (LET_EXPR (ASSIGN_STMT (assgn)));
             while (NULL != exprs) {
                 expr = EXPRS_EXPR (exprs);
                 if ((N_id == NODE_TYPE (expr))

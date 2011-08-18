@@ -236,8 +236,8 @@ SearchStoreVar (node *avis, node *assigns)
     tmp = assigns;
 
     while (tmp != NULL) {
-        if (avis == ID_AVIS (LET_EXPR (ASSIGN_INSTR (tmp)))) {
-            res = IDS_AVIS (LET_IDS (ASSIGN_INSTR (tmp)));
+        if (avis == ID_AVIS (LET_EXPR (ASSIGN_STMT (tmp)))) {
+            res = IDS_AVIS (LET_IDS (ASSIGN_STMT (tmp)));
             tmp = NULL;
         } else {
             tmp = ASSIGN_NEXT (tmp);
@@ -252,13 +252,13 @@ F2Lassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    switch (NODE_TYPE (ASSIGN_INSTR (arg_node))) {
+    switch (NODE_TYPE (ASSIGN_STMT (arg_node))) {
     case N_return:
         INFO_RETURN (arg_info) = arg_node;
         arg_node = NULL;
         break;
     case N_cond:
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
         DBUG_ASSERT (ASSIGN_NEXT (arg_node) != NULL,
                      "Cond node is last assignment in chain");
@@ -269,10 +269,10 @@ F2Lassign (node *arg_node, info *arg_info)
         break;
     case N_let:
         if (INFO_BELOW_COND (arg_info) && (ASSIGN_NEXT (arg_node) == NULL)) {
-            DBUG_ASSERT (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_ap,
+            DBUG_ASSERT (NODE_TYPE (LET_EXPR (ASSIGN_STMT (arg_node))) == N_ap,
                          "Last assignment in then-part not function call");
 
-            DBUG_ASSERT (AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (arg_node)))
+            DBUG_ASSERT (AP_FUNDEF (LET_EXPR (ASSIGN_STMT (arg_node)))
                            == INFO_FUNDEF (arg_info),
                          "Last assignment in then-part not recursive call");
 
@@ -394,8 +394,7 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
     FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
-        INFO_RECARG (arg_info)
-          = AP_ARGS (LET_EXPR (ASSIGN_INSTR (INFO_RECAP (arg_info))));
+        INFO_RECARG (arg_info) = AP_ARGS (LET_EXPR (ASSIGN_STMT (INFO_RECAP (arg_info))));
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
@@ -405,11 +404,11 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
     return_assign = RENdoRenameLut (INFO_RETURN (arg_info), f2l_lut);
     INFO_RETURN (arg_info) = NULL;
 
-    loop_pred = RENdoRenameLut (COND_COND (ASSIGN_INSTR (INFO_COND (arg_info))), f2l_lut);
-    COND_COND (ASSIGN_INSTR (INFO_COND (arg_info))) = NULL;
+    loop_pred = RENdoRenameLut (COND_COND (ASSIGN_STMT (INFO_COND (arg_info))), f2l_lut);
+    COND_COND (ASSIGN_STMT (INFO_COND (arg_info))) = NULL;
 
-    then_assigns = BLOCK_ASSIGNS (COND_THEN (ASSIGN_INSTR (INFO_COND (arg_info))));
-    BLOCK_ASSIGNS (COND_THEN (ASSIGN_INSTR (INFO_COND (arg_info)))) = NULL;
+    then_assigns = BLOCK_ASSIGNS (COND_THEN (ASSIGN_STMT (INFO_COND (arg_info))));
+    BLOCK_ASSIGNS (COND_THEN (ASSIGN_STMT (INFO_COND (arg_info)))) = NULL;
 
     if ((then_assigns != NULL) && (NODE_TYPE (then_assigns) == N_assign)) {
         then_assigns = RENdoRenameLut (then_assigns, f2l_lut);
@@ -417,8 +416,8 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
         then_assigns = NULL;
     }
 
-    else_assigns = BLOCK_ASSIGNS (COND_ELSE (ASSIGN_INSTR (INFO_COND (arg_info))));
-    BLOCK_ASSIGNS (COND_ELSE (ASSIGN_INSTR (INFO_COND (arg_info)))) = NULL;
+    else_assigns = BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (INFO_COND (arg_info))));
+    BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (INFO_COND (arg_info)))) = NULL;
 
     if ((else_assigns != NULL) && (NODE_TYPE (else_assigns) == N_assign)) {
         else_assigns = RENdoRenameLut (else_assigns, f2l_lut);
@@ -457,7 +456,7 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
 
     FUNDEF_INSTR (arg_node) = TCappendAssign (INFO_NEW_TOPASSIGNS (arg_info), fun_body);
 
-    FUNDEF_RETURN (arg_node) = ASSIGN_INSTR (return_assign);
+    FUNDEF_RETURN (arg_node) = ASSIGN_STMT (return_assign);
 
     INFO_NEW_TOPASSIGNS (arg_info) = NULL;
 

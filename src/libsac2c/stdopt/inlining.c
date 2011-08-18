@@ -238,7 +238,7 @@ INLassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_CODE (arg_info) != NULL) {
         code = INFO_CODE (arg_info);

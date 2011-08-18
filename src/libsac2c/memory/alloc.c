@@ -1116,7 +1116,7 @@ EMALassign (node *arg_node, info *arg_info)
     /*
      * Traverse RHS of assignment
      */
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     /*
      * Allocate missing variables

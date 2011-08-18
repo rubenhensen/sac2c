@@ -318,7 +318,7 @@ ATravAssign (node *arg_node, info *arg_info)
 
     stackFound = INFO_FOUND_AVIS (arg_info);
     INFO_FOUND_AVIS (arg_info) = FALSE;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if ((INFO_FOUND_AVIS (arg_info) || INFO_STOP (arg_info))
         && (INFO_BLOCK (arg_info) || !INFO_IN_BLOCK (arg_info))) {
@@ -397,7 +397,7 @@ moveAssign (node *assign, node *assigns, info *arg_info)
 
     DBUG_ASSERT (ASSIGN_NEXT (assign) == NULL, "Can only move one assign at a time.");
 
-    if ((assign != NULL) && (NODE_TYPE (ASSIGN_INSTR (assign)) == N_let)) {
+    if ((assign != NULL) && (NODE_TYPE (ASSIGN_STMT (assign)) == N_let)) {
         anontrav_t atrav[6] = {{N_assign, &ATravAssign},
                                {N_id, &ATravId},
                                {N_block, &ATravBlock},
@@ -406,12 +406,12 @@ moveAssign (node *assign, node *assigns, info *arg_info)
         info *stack_info = MakeInfoClone (arg_info);
 
         /* Been asked to move a let node.  We should be able to do that */
-        if (LET_IDS (ASSIGN_INSTR (assign)) != NULL) {
+        if (LET_IDS (ASSIGN_STMT (assign)) != NULL) {
             /* Have a let with a lhs so try and move it */
             DBUG_PRINT ("Trying to move %s ...",
-                        AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign)))));
+                        AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (assign)))));
             INFO_ASSIGN (stack_info) = assign;
-            INFO_IDS (stack_info) = LET_IDS (ASSIGN_INSTR (assign));
+            INFO_IDS (stack_info) = LET_IDS (ASSIGN_STMT (assign));
 
             TRAVpushAnonymous (atrav, &TRAVsons);
             assigns = TRAVopt (assigns, stack_info);
@@ -419,11 +419,11 @@ moveAssign (node *assign, node *assigns, info *arg_info)
             if (INFO_ASSIGN (stack_info) != NULL) {
                 CTInote ("Did not find use of lhs placing assign at end of block");
                 DBUG_PRINT ("LHS %s ...",
-                            AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign)))));
+                            AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (assign)))));
                 assigns = TCappendAssign (assigns, INFO_ASSIGN (stack_info));
             } else {
                 DBUG_PRINT ("Moved %s ...",
-                            AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (assign)))));
+                            AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (assign)))));
             }
 
             INFO_ASSIGN (stack_info) = NULL;
@@ -461,7 +461,7 @@ MAassign (node *arg_node, info *arg_info)
     node *next = NULL;
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         info *stack_info = MakeInfoClone (arg_info);

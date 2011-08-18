@@ -207,7 +207,7 @@ EMECassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_PREASSIGN (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_PREASSIGN (arg_info), arg_node);

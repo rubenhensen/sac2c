@@ -516,7 +516,7 @@ WLIRassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (ASSIGN_INSTR (arg_node), "missing instruction in assignment");
+    DBUG_ASSERT (ASSIGN_STMT (arg_node), "missing instruction in assignment");
 
     /* init traversal flags */
     INFO_REMASSIGN (arg_info) = FALSE;
@@ -527,7 +527,7 @@ WLIRassign (node *arg_node, info *arg_info)
     INFO_MAXDEPTH (arg_info) = 0;
 
     /* start traversal of instruction */
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     /* analyse and store results of instruction traversal */
     INFO_ASSIGN (arg_info) = old_assign;
@@ -549,9 +549,9 @@ WLIRassign (node *arg_node, info *arg_info)
      * next opt cycle as standalone expression without dependent preassigns.
      */
     if ((INFO_MAXDEPTH (arg_info) < INFO_WITHDEPTH (arg_info))
-        && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
+        && (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let)
 #ifndef CREATE_UNIQUE_BY_HEAP
-        && (!ForbiddenMovement (LET_IDS (ASSIGN_INSTR (arg_node))))
+        && (!ForbiddenMovement (LET_IDS (ASSIGN_STMT (arg_node))))
 #endif
         && (!((NODE_TYPE (ASSIGN_RHS (arg_node)) == N_with) && (pre_assign != NULL)))) {
         wlir_move_up = INFO_MAXDEPTH (arg_info);

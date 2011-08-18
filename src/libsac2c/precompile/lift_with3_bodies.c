@@ -552,7 +552,7 @@ ATravInitAssign (node *arg_node, info *arg_info)
     node *ret_node;
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     ret_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
     INFO_PREASSIGNS (arg_info) = NULL;
 
@@ -746,7 +746,7 @@ CreateThreadFunction (node *block, node *results, node *index, info *arg_info)
                               TBmakeBlock (assigns, vardecs), INFO_THREADS (arg_info));
     INFO_THREADS (arg_info) = threadfun;
 
-    FUNDEF_RETURN (threadfun) = ASSIGN_INSTR (retassign);
+    FUNDEF_RETURN (threadfun) = ASSIGN_STMT (retassign);
     FUNDEF_ISTHREADFUN (threadfun) = TRUE;
     FUNDEF_WASWITH3BODY (threadfun) = TRUE;
     /*

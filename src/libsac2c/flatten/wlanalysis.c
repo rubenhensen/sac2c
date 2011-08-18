@@ -218,8 +218,8 @@ PropagateConstArrayIdentifier (node *expr)
     if ((NODE_TYPE (expr) == N_id) && (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL)) {
         assign = AVIS_SSAASSIGN (ID_AVIS (expr));
 
-        if (NODE_TYPE (ASSIGN_INSTR (assign)) == N_let) {
-            defexpr = LET_EXPR (ASSIGN_INSTR (assign));
+        if (NODE_TYPE (ASSIGN_STMT (assign)) == N_let) {
+            defexpr = LET_EXPR (ASSIGN_STMT (assign));
 
             if (NODE_TYPE (defexpr) == N_array) {
                 expr = FREEdoFreeTree (expr);

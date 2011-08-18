@@ -416,11 +416,11 @@ CreateNewResult (node *avis, info *arg_info)
 
     /* 5. modify functions signature (AddResult) */
     /* recursive call */
-    letlist = TCnodeListAppend (NULL, ASSIGN_INSTR (INFO_FUNDEFINTASSIGN (arg_info)),
+    letlist = TCnodeListAppend (NULL, ASSIGN_STMT (INFO_FUNDEFINTASSIGN (arg_info)),
                                 new_int_vardec);
 
     /* external call */
-    letlist = TCnodeListAppend (letlist, ASSIGN_INSTR (INFO_FUNDEFEXTASSIGN (arg_info)),
+    letlist = TCnodeListAppend (letlist, ASSIGN_STMT (INFO_FUNDEFEXTASSIGN (arg_info)),
                                 new_ext_vardec);
 
     INFO_FUNDEF (arg_info)
@@ -434,12 +434,12 @@ CreateNewResult (node *avis, info *arg_info)
     /* 6. insert phi-copy-assignments in then and else part of conditional */
     /* search for conditional */
     tmp = BLOCK_ASSIGNS (FUNDEF_BODY (INFO_FUNDEF (arg_info)));
-    while ((NODE_TYPE (ASSIGN_INSTR (tmp)) != N_cond) && (tmp != NULL)) {
+    while ((NODE_TYPE (ASSIGN_STMT (tmp)) != N_cond) && (tmp != NULL)) {
         tmp = ASSIGN_NEXT (tmp);
     }
 
     DBUG_ASSERT (tmp != NULL, "missing conditional in do-loop special function");
-    cond = ASSIGN_INSTR (tmp);
+    cond = ASSIGN_STMT (tmp);
 
     /* create one let assign for then part */
     funcond = TBmakeFuncond (DUPdoDupNode (COND_COND (cond)),
@@ -540,13 +540,13 @@ AdjustExternalResult (node *new_assigns, node *ext_assign, node *ext_fundef)
     /* search for corresponding result ids in external function call */
     do {
         /* get ids result chain of moved assignment */
-        DBUG_ASSERT (NODE_TYPE (ASSIGN_INSTR (new_assigns)) == N_let,
+        DBUG_ASSERT (NODE_TYPE (ASSIGN_STMT (new_assigns)) == N_let,
                      "moved assignments must be let nodes");
 
-        new_ids = LET_IDS (ASSIGN_INSTR (new_assigns));
+        new_ids = LET_IDS (ASSIGN_STMT (new_assigns));
 
         while (new_ids != NULL) {
-            result_chain = LET_IDS (ASSIGN_INSTR (ext_assign));
+            result_chain = LET_IDS (ASSIGN_STMT (ext_assign));
 
             while (result_chain != NULL) {
                 if (IDS_AVIS (new_ids) == IDS_AVIS (result_chain)) {
@@ -606,20 +606,20 @@ GetRecursiveCallAssignment (node *dofun)
     DBUG_ASSERT (FUNDEF_BODY (dofun) != NULL, "Loop function without body!");
 
     ass = FUNDEF_INSTR (dofun);
-    while ((ass != NULL) && (NODE_TYPE (ASSIGN_INSTR (ass)) != N_cond)) {
+    while ((ass != NULL) && (NODE_TYPE (ASSIGN_STMT (ass)) != N_cond)) {
         ass = ASSIGN_NEXT (ass);
     }
 
     DBUG_ASSERT (ass != NULL, "Loop function without conditional!");
 
-    ass = COND_THENINSTR (ASSIGN_INSTR (ass));
+    ass = COND_THENINSTR (ASSIGN_STMT (ass));
 
-    while ((ass != NULL) && (NODE_TYPE (ASSIGN_INSTR (ass)) == N_annotate)) {
+    while ((ass != NULL) && (NODE_TYPE (ASSIGN_STMT (ass)) == N_annotate)) {
         ass = ASSIGN_NEXT (ass);
     }
 
     DBUG_ASSERT ((ass != NULL) && (NODE_TYPE (ass) == N_assign)
-                   && (NODE_TYPE (ASSIGN_INSTR (ass)) == N_let)
+                   && (NODE_TYPE (ASSIGN_STMT (ass)) == N_let)
                    && (NODE_TYPE (ASSIGN_RHS (ass)) == N_ap)
                    && (AP_FUNDEF (ASSIGN_RHS (ass)) == dofun),
                  "No recursive application found in the expected position!");
@@ -877,7 +877,7 @@ DLIRassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (ASSIGN_INSTR (arg_node), "missing instruction in assignment");
+    DBUG_ASSERT (ASSIGN_STMT (arg_node), "missing instruction in assignment");
 
     /* init traversal flags */
     old_assign = INFO_ASSIGN (arg_info);
@@ -886,7 +886,7 @@ DLIRassign (node *arg_node, info *arg_info)
     INFO_POSTASSIGN (arg_info) = NULL;
 
     /* start traversal of instruction */
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     /* analyse and store results of instruction traversal */
     INFO_ASSIGN (arg_info) = old_assign;
@@ -911,11 +911,11 @@ DLIRassign (node *arg_node, info *arg_info)
        So essentially, the body of this conditional will never be executed.
 
       if ((INFO_TOPBLOCK(arg_info) == TRUE)
-          && (NODE_TYPE(ASSIGN_INSTR(arg_node)) == N_let)
+          && (NODE_TYPE(ASSIGN_STMT(arg_node)) == N_let)
           && (NODE_TYPE(ASSIGN_RHS(arg_node)) == N_with)
           && (pre_assign != NULL)) {
-        AVIS_LIRMOVE(IDS_AVIS(LET_IDS(ASSIGN_INSTR(arg_node)))) = LIRMOVE_STAY;
-        LET_LIRFLAG(ASSIGN_INSTR(arg_node)) = LIRMOVE_STAY;
+        AVIS_LIRMOVE(IDS_AVIS(LET_IDS(ASSIGN_STMT(arg_node)))) = LIRMOVE_STAY;
+        LET_LIRFLAG(ASSIGN_STMT(arg_node)) = LIRMOVE_STAY;
       }
     */
     /* insert post-assign code */
@@ -933,7 +933,7 @@ DLIRassign (node *arg_node, info *arg_info)
      * check for complete marked move-down result lists (only in topblock)
      */
     if (INFO_TOPBLOCK (arg_info)) {
-        ASSIGN_INSTR (arg_node) = CheckMoveDownFlag (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = CheckMoveDownFlag (ASSIGN_STMT (arg_node), arg_info);
     }
 
     /*
@@ -1251,7 +1251,7 @@ DLIRreturn (node *arg_node, info *arg_info)
                      "missing link to external calling fundef");
 
         INFO_APRESCHAIN (arg_info)
-          = LET_IDS (ASSIGN_INSTR (INFO_FUNDEFEXTASSIGN (arg_info)));
+          = LET_IDS (ASSIGN_STMT (INFO_FUNDEFEXTASSIGN (arg_info)));
 
         INFO_FLAG (arg_info) = LIR_INRETURN;
     } else {
@@ -1466,15 +1466,15 @@ DLIRMOVassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (ASSIGN_INSTR (arg_node) != NULL, "missing instruction in assignment");
+    DBUG_ASSERT (ASSIGN_STMT (arg_node) != NULL, "missing instruction in assignment");
 
     if (INFO_TOPBLOCK (arg_info)) {
-        if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
-            && (LET_LIRFLAG (ASSIGN_INSTR (arg_node)) & LIRMOVE_UP)) {
+        if ((NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let)
+            && (LET_LIRFLAG (ASSIGN_STMT (arg_node)) & LIRMOVE_UP)) {
             /* adjust identifier AND create new local variables in external fundef */
             INFO_FLAG (arg_info) = LIR_MOVEUP;
-        } else if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
-                   && (LET_LIRFLAG (ASSIGN_INSTR (arg_node)) == LIRMOVE_DOWN)) {
+        } else if ((NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let)
+                   && (LET_LIRFLAG (ASSIGN_STMT (arg_node)) == LIRMOVE_DOWN)) {
             /*
              * adjust identifier, create new local variables in external fundef
              * add movedown results to RESULTMAP nodelist
@@ -1489,7 +1489,7 @@ DLIRMOVassign (node *arg_node, info *arg_info)
     }
 
     /* traverse expression */
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_TOPBLOCK (arg_info)) {
         /*
@@ -1510,7 +1510,7 @@ DLIRMOVassign (node *arg_node, info *arg_info)
                                 DUPdoDupNodeLut (arg_node, move_table));
 
             DBUG_ASSERT (AVIS_SSAASSIGN (IDS_AVIS (
-                           LET_IDS (ASSIGN_INSTR (INFO_EXTPREASSIGN (arg_info)))))
+                           LET_IDS (ASSIGN_STMT (INFO_EXTPREASSIGN (arg_info)))))
                            != NULL,
                          "duptree returned an assign with missing SSAASSIGN in avis");
 
@@ -1773,10 +1773,10 @@ DLIRMOVids (node *arg_ids, info *arg_info)
 
             /* recursive call */
             letlist
-              = TCnodeListAppend (NULL, ASSIGN_INSTR (INFO_FUNDEFINTASSIGN (arg_info)),
+              = TCnodeListAppend (NULL, ASSIGN_STMT (INFO_FUNDEFINTASSIGN (arg_info)),
                                   new_arg_id);
             letlist
-              = TCnodeListAppend (letlist, ASSIGN_INSTR (INFO_FUNDEFEXTASSIGN (arg_info)),
+              = TCnodeListAppend (letlist, ASSIGN_STMT (INFO_FUNDEFEXTASSIGN (arg_info)),
                                   new_vardec_id);
 
             INFO_FUNDEF (arg_info) = CSaddArg (INFO_FUNDEF (arg_info), new_arg, letlist);

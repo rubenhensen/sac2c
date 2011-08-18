@@ -243,7 +243,7 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
                            args, NULL, /* the block is not complete yet */
                            NULL);
 
-    FUNDEF_RETURN (fundef) = ASSIGN_INSTR (ret);
+    FUNDEF_RETURN (fundef) = ASSIGN_STMT (ret);
 
     /*
      * construct the new type for the created function
@@ -458,7 +458,7 @@ L2Fassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

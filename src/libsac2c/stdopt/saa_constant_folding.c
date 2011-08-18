@@ -239,7 +239,7 @@ SAACFprf_shape (node *arg_node, info *arg_info)
         if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
             rhs = AVIS_SSAASSIGN (ID_AVIS (arg1));
             if (NULL != rhs) {
-                rhs = LET_EXPR (ASSIGN_INSTR (rhs));
+                rhs = LET_EXPR (ASSIGN_STMT (rhs));
                 if (PMmatchFlatSkipExtrema (pat2, rhs)) {
                     res = DUPdoDupNode (shp);
                     DBUG_PRINT ("_shape_A(_saabnd(dim,shp,val)) replaced by shp");
@@ -881,7 +881,7 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
         if (NULL != arg1ex) {
             arg1ex = ID_AVIS (arg1ex);
             DBUG_ASSERT (NULL != AVIS_SSAASSIGN (arg1ex), "AVIS_SSAASSIGN missing!");
-            arg1ex = LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (arg1ex)));
+            arg1ex = LET_IDS (ASSIGN_STMT (AVIS_SSAASSIGN (arg1ex)));
             arg1ex = TBmakeExprs (TBmakeId (IDS_AVIS (arg1ex)), NULL);
         }
         arg2c = COaST2Constant (prfarg2);
@@ -1377,7 +1377,7 @@ SAACFprf_saabind (node *arg_node, info *arg_info)
 
     if (PMmatchFlat (pat, arg_node)) {
         arg3rhs = AVIS_SSAASSIGN (ID_AVIS (val));
-        if ((NULL != arg3rhs) && (N_ap != NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg3rhs))))
+        if ((NULL != arg3rhs) && (N_ap != NODE_TYPE (LET_EXPR (ASSIGN_STMT (arg3rhs))))
             && (N_arg != NODE_TYPE (AVIS_DECL (ID_AVIS (val))))) {
 
             DBUG_PRINT ("_saabind_() replaced by assignment");

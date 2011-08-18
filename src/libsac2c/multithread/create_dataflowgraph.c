@@ -294,7 +294,7 @@ CDFGassign (node *arg_node, info *arg_info)
 
     /* continue traversal */
     DBUG_PRINT ("trav into instruction");
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     DBUG_PRINT ("trav from instruction");
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -735,11 +735,11 @@ GetName (node *assign)
     DBUG_ENTER ();
     DBUG_ASSERT (NODE_TYPE (assign) == N_assign, "GetName expects a N_assign");
 
-    instr = ASSIGN_INSTR (assign);
+    instr = ASSIGN_STMT (assign);
     return_value = NULL;
     if (NODE_TYPE (instr) == N_let) {
-        if (LET_IDS (ASSIGN_INSTR (assign)) != NULL) {
-            return_value = IDS_NAME (LET_IDS (ASSIGN_INSTR (assign)));
+        if (LET_IDS (ASSIGN_STMT (assign)) != NULL) {
+            return_value = IDS_NAME (LET_IDS (ASSIGN_STMT (assign)));
         } else {
             return_value = STRcpy ("DF__void");
         }

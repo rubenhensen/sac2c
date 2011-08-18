@@ -344,7 +344,7 @@ WLSIMPassign (node *arg_node, info *arg_info)
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_REPLACE (arg_info)) {
         arg_node = FREEdoFreeNode (arg_node);
@@ -562,7 +562,7 @@ WLSIMPpropagate (node *arg_node, info *arg_info)
       = TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_LHS (arg_info)),
                                  DUPdoDupNode (PROPAGATE_DEFAULT (arg_node))),
                       INFO_PREASSIGN (arg_info));
-    DBUG_ASSERT (IDS_NEXT (LET_IDS (ASSIGN_INSTR (INFO_PREASSIGN (arg_info)))) == NULL,
+    DBUG_ASSERT (IDS_NEXT (LET_IDS (ASSIGN_STMT (INFO_PREASSIGN (arg_info)))) == NULL,
                  " DUPdoDupNode should not copy the IDS_NEXT!");
     AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info))) = INFO_PREASSIGN (arg_info);
 

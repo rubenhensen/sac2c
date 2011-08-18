@@ -588,8 +588,8 @@ COMPgetFoldCode (node *fundef)
     /*
      * remove declaration-ICMs ('ND_DECL_ARG') from code.
      */
-    while ((NODE_TYPE (ASSIGN_INSTR (fold_code)) == N_icm)
-           && (STReq (ICM_NAME (ASSIGN_INSTR (fold_code)), "ND_DECL__MIRROR_PARAM"))) {
+    while ((NODE_TYPE (ASSIGN_STMT (fold_code)) == N_icm)
+           && (STReq (ICM_NAME (ASSIGN_STMT (fold_code)), "ND_DECL__MIRROR_PARAM"))) {
         fold_code = FREEdoFreeNode (fold_code);
     }
 
@@ -602,8 +602,8 @@ COMPgetFoldCode (node *fundef)
     while (ASSIGN_NEXT (ASSIGN_NEXT (tmp)) != NULL) {
         tmp = ASSIGN_NEXT (tmp);
     }
-    DBUG_ASSERT (((NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (tmp))) == N_icm)
-                  && (STReq (ICM_NAME (ASSIGN_INSTR (ASSIGN_NEXT (tmp))), "ND_FUN_RET"))),
+    DBUG_ASSERT (((NODE_TYPE (ASSIGN_STMT (ASSIGN_NEXT (tmp))) == N_icm)
+                  && (STReq (ICM_NAME (ASSIGN_STMT (ASSIGN_NEXT (tmp))), "ND_FUN_RET"))),
                  "no ND_FUN_RET icm found in fold code!");
     ASSIGN_NEXT (tmp) = FREEdoFreeNode (ASSIGN_NEXT (tmp));
 
@@ -3162,7 +3162,7 @@ COMPblock (node *arg_node, info *arg_info)
                               BLOCK_ASSIGNS (arg_node));
 
         while ((ASSIGN_NEXT (assign) != NULL)
-               && (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (assign))) != N_return)) {
+               && (NODE_TYPE (ASSIGN_STMT (ASSIGN_NEXT (assign))) != N_return)) {
             assign = ASSIGN_NEXT (assign);
         }
 
@@ -3192,7 +3192,7 @@ COMPblock (node *arg_node, info *arg_info)
  * @fn  node *COMPassign( node *arg_node, info *arg_info)
  *
  * @brief  Compiles a N_assign node.
- *         Note, that the traversal of ASSIGN_INSTR( arg_node) may return a
+ *         Note, that the traversal of ASSIGN_STMT( arg_node) may return a
  *         N_assign chain instead of an expression.
  *
  ******************************************************************************/
@@ -3205,7 +3205,7 @@ COMPassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_ASSIGN (arg_info) = arg_node;
-    instr = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    instr = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     next = ASSIGN_NEXT (arg_node);
 
     if (NODE_TYPE (instr) == N_assign) {
@@ -3215,7 +3215,7 @@ COMPassign (node *arg_node, info *arg_info)
          */
 
         /* insert head of 'instr' into AST */
-        ASSIGN_INSTR (arg_node) = ASSIGN_INSTR (instr);
+        ASSIGN_STMT (arg_node) = ASSIGN_STMT (instr);
 
         /* insert tail of 'instr' into AST (last element) */
         last = instr;
@@ -3225,14 +3225,14 @@ COMPassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (last) = ASSIGN_NEXT (arg_node);
 
         /* free head of 'instr' */
-        ASSIGN_INSTR (instr) = NULL;
+        ASSIGN_STMT (instr) = NULL;
         instr = FREEdoFreeNode (instr);
 
         /* insert tail of 'instr' into AST (first element) */
         ASSIGN_NEXT (arg_node) = instr;
     } else {
         /* insert 'instr' into AST */
-        ASSIGN_INSTR (arg_node) = instr;
+        ASSIGN_STMT (arg_node) = instr;
     }
 
     if (next != NULL) {
@@ -9125,7 +9125,7 @@ COMPrange (node *arg_node, info *arg_info)
                               (RANGE_CHUNKSIZE (arg_node) == NULL)
                                 ? TCmakeIdCopyString ("1")
                                 : DUPdoDupTree (RANGE_CHUNKSIZE (arg_node)),
-                              block, DUPdoDupTree (ASSIGN_INSTR (thread_fun)), NULL);
+                              block, DUPdoDupTree (ASSIGN_STMT (thread_fun)), NULL);
 
         sync = TCmakeAssignIcm1 ("SAC_MUTC_SYNC", TCmakeIdCopyString (familyName), NULL);
 

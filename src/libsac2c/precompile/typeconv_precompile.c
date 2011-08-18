@@ -305,7 +305,7 @@ TCPassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if ((ASSIGN_NEXT (arg_node) == NULL)
         && (INFO_TCP_ENDBLOCKASSIGNS (arg_info) != NULL)) {

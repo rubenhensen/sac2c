@@ -277,7 +277,7 @@ RCIfundef (node *arg_node, info *arg_info)
                  */
                 node *extlet, *retexprs, *ids;
 
-                extlet = ASSIGN_INSTR (INFO_ASSIGN (arg_info));
+                extlet = ASSIGN_STMT (INFO_ASSIGN (arg_info));
                 retexprs = RETURN_EXPRS (FUNDEF_RETURN (arg_node));
                 ids = LET_IDS (extlet);
 
@@ -299,7 +299,7 @@ RCIfundef (node *arg_node, info *arg_info)
                  */
                 node *extlet, *argexprs, *args;
 
-                extlet = ASSIGN_INSTR (INFO_ASSIGN (arg_info));
+                extlet = ASSIGN_STMT (INFO_ASSIGN (arg_info));
                 args = FUNDEF_ARGS (arg_node);
                 argexprs = AP_ARGS (LET_EXPR (extlet));
 
@@ -362,7 +362,7 @@ RCIassign (node *arg_node, info *arg_info)
     }
 
     INFO_ASSIGN (arg_info) = arg_node;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     ASSIGN_NEXT (arg_node)
       = TCappendAssign (INFO_POSTASSIGN (arg_info), ASSIGN_NEXT (arg_node));

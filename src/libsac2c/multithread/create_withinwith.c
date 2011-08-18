@@ -181,7 +181,7 @@ CRWIWassign (node *arg_node, info *arg_info)
     INFO_CRWIW_ACTASSIGN (arg_info) = arg_node;
 
     DBUG_PRINT ("trav into instruction");
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     DBUG_PRINT ("trav from instruction");
 
     if (ASSIGN_EXECMODE (arg_node) == MUTH_MULTI) {
@@ -247,7 +247,7 @@ CRWIWap (node *arg_node, info *arg_info)
                   = TCappendFundef (DUPgetCopiedSpecialFundefs (), FUNDEF_NEXT (tmp));
             } else {
                 tmp
-                  = AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (INFO_CRWIW_ACTASSIGN (arg_info))));
+                  = AP_FUNDEF (LET_EXPR (ASSIGN_STMT (INFO_CRWIW_ACTASSIGN (arg_info))));
             }
 
             FUNDEF_EXECMODE (tmp) = MUTH_MULTI_SPECIALIZED;

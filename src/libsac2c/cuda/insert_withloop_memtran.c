@@ -35,7 +35,7 @@
  *
  * @ingroup
  *
- * @{ASSIGN_INSTR( arg_node)
+ * @{ASSIGN_STMT( arg_node)
  *
  *****************************************************************************/
 
@@ -542,7 +542,7 @@ IWLMEMassign (node *arg_node, info *arg_info)
      * in a cudarizable N_with. If there is, we don't want to create a
      * host2devcice when we later come across it in the same block of code.
      */
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     /* If we are no longer in a cudarizable N_with, we insert
      * data transfer primitives into the AST */

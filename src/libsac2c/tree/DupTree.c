@@ -1468,14 +1468,14 @@ DUPassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if ((INFO_TYPE (arg_info) != DUP_INLINE)
-        || (NODE_TYPE (ASSIGN_INSTR (arg_node)) != N_return)) {
+        || (NODE_TYPE (ASSIGN_STMT (arg_node)) != N_return)) {
 
         new_node = TBmakeAssign (NULL, NULL);
 
         stacked_assign = INFO_ASSIGN (arg_info);
         INFO_ASSIGN (arg_info) = new_node;
 
-        ASSIGN_INSTR (new_node) = DUPTRAV (ASSIGN_INSTR (arg_node));
+        ASSIGN_STMT (new_node) = DUPTRAV (ASSIGN_STMT (arg_node));
 
         INFO_ASSIGN (arg_info) = stacked_assign;
 

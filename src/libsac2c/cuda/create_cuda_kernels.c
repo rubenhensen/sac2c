@@ -554,7 +554,7 @@ CUKNLassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     /* If we are not in collect mode and the RHS has been
      * lifted as a chain of CUDA kernel applications */

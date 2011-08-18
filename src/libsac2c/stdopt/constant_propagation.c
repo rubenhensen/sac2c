@@ -466,7 +466,7 @@ CPassign (node *arg_node, info *arg_info)
 
     INFO_PROPMODE (arg_info) = PROP_nothing;
     INFO_LHS (arg_info) = arg_node;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     INFO_LHS (arg_info) = NULL;
 
     /* Reset the mode the PROP_nothing because the traverse

@@ -520,7 +520,7 @@ CorrectSSAASSIGNS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    let = ASSIGN_INSTR (arg_node);
+    let = ASSIGN_STMT (arg_node);
     if (N_let == NODE_TYPE (let)) {
         ids = LET_IDS (let);
         while (ids != NULL) {
@@ -725,7 +725,7 @@ CFassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     /* save removal flag for modifications in bottom-up traversal */
     remassign = INFO_REMASSIGN (arg_info);

@@ -333,10 +333,10 @@ ActOnId (node *avis, info *arg_info)
             if (cnst != NULL) {
                 AddIndex (IDX_CONSTANT, COconst2Int (cnst), NULL, 0,
                           INFO_IDXDIM (arg_info), arg_info);
-            } else if (NODE_TYPE (ASSIGN_INSTR (ssa_assign)) == N_let
+            } else if (NODE_TYPE (ASSIGN_STMT (ssa_assign)) == N_let
                        && NODE_TYPE (ASSIGN_RHS (ssa_assign)) == N_prf
                        && PRF_PRF (ASSIGN_RHS (ssa_assign)) == F_idxs2offset) {
-                ASSIGN_INSTR (ssa_assign) = TRAVopt (ASSIGN_INSTR (ssa_assign), arg_info);
+                ASSIGN_STMT (ssa_assign) = TRAVopt (ASSIGN_STMT (ssa_assign), arg_info);
             } else {
                 AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, 0,
                           INFO_IDXDIM (arg_info), arg_info);
@@ -345,7 +345,7 @@ ActOnId (node *avis, info *arg_info)
         /* Otherwise, we start backtracking to collect data access information */
         else {
             printf ("Found id %s with non-constant RHS\n", AVIS_NAME (avis));
-            ASSIGN_INSTR (ssa_assign) = TRAVopt (ASSIGN_INSTR (ssa_assign), arg_info);
+            ASSIGN_STMT (ssa_assign) = TRAVopt (ASSIGN_STMT (ssa_assign), arg_info);
         }
     }
 
@@ -969,12 +969,12 @@ DAAassign (node *arg_node, info *arg_info)
     if (INFO_TRAVMODE (arg_info) == trav_normal) {
         ASSIGN_ACCESS_INFO (arg_node) = NULL;
         ASSIGN_LEVEL (arg_node) = INFO_NEST_LEVEL (arg_info);
-        ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     } else if (INFO_TRAVMODE (arg_info) == trav_collect) {
-        ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
     } else if (INFO_TRAVMODE (arg_info) == trav_recal) {
-        ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     }
 

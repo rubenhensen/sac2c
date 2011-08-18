@@ -865,7 +865,7 @@ NTCassign (node *arg_node, info *arg_info)
     tmp = INFO_LAST_ASSIGN (arg_info);
 
     INFO_LAST_ASSIGN (arg_info) = arg_node;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     INFO_LAST_ASSIGN (arg_info) = tmp;
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);

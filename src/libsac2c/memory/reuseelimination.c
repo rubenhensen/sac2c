@@ -150,7 +150,7 @@ EMREassign (node *arg_node, info *arg_info)
     /*
      * Top-down traversal
      */
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     remassign = INFO_REMASSIGN (arg_info);
     INFO_REMASSIGN (arg_info) = FALSE;

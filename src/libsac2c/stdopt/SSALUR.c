@@ -183,7 +183,7 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
     DBUG_ASSERT (NULL != cond_assign, "fundef with none or multiple conditionals");
 
     /* get condition */
-    condition = COND_COND (ASSIGN_INSTR (cond_assign));
+    condition = COND_COND (ASSIGN_STMT (cond_assign));
     DBUG_ASSERT (NULL != condition, "missing condition in conditional");
 
     /* check for identifier as condition */
@@ -200,11 +200,11 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
     /* get defining assignment */
     predicate_assign = AVIS_SSAASSIGN (ID_AVIS (condition));
     DBUG_ASSERT (NULL != predicate_assign, "missing SSAASSIGN attribute for condition");
-    DBUG_ASSERT (NODE_TYPE (ASSIGN_INSTR (predicate_assign)) == N_let,
+    DBUG_ASSERT (NODE_TYPE (ASSIGN_STMT (predicate_assign)) == N_let,
                  "definition assignment without let");
 
     /* check predicate for having the correct form */
-    predicate = LET_EXPR (ASSIGN_INSTR (predicate_assign));
+    predicate = LET_EXPR (ASSIGN_STMT (predicate_assign));
     if (!IsLURPredicate (predicate)) {
         DBUG_RETURN ((DBUG_PRINT ("predicate has incorrect form"), UNR_NONE));
     }
@@ -215,7 +215,7 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
     }
 
     /* extract recursive call behind cond, skipping N_annotate */
-    then_instr = COND_THENINSTR (ASSIGN_INSTR (cond_assign));
+    then_instr = COND_THENINSTR (ASSIGN_STMT (cond_assign));
     then_instr = FindAssignOfType (then_instr, N_let);
 
     DBUG_ASSERT (NULL != then_instr, "Cannot extract recursive call");
@@ -240,7 +240,7 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
         node *m;
 
         ivtmp->loopvar = GetLoopVariable (ivtmp->var, fundef,
-                                          AP_ARGS (LET_EXPR (ASSIGN_INSTR (then_instr))));
+                                          AP_ARGS (LET_EXPR (ASSIGN_STMT (then_instr))));
 
         if (ivtmp->loopvar == NULL) {
             DBUG_PRINT ("no candidate for loop counter");
@@ -267,12 +267,12 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
         /* If modifier is not on the stack */
         if (m == ivtmp->loopvar) {
             node *p = AVIS_SSAASSIGN (ID_AVIS (ivtmp->loopvar));
-            if (NULL == p || NODE_TYPE (ASSIGN_INSTR (p)) != N_let) {
+            if (NULL == p || NODE_TYPE (ASSIGN_STMT (p)) != N_let) {
                 DBUG_PRINT ("cannot get modifier for variable %s", loopvar_name);
                 goto cleanup;
             }
 
-            p = LET_EXPR (ASSIGN_INSTR (p));
+            p = LET_EXPR (ASSIGN_STMT (p));
             if (!GetLoopIdentifiers (ivtmp->loopvar, p, &stack, &ext_ivs)
                 || !GetModifier (ivtmp->loopvar, &stack, NULL, FALSE, &m)) {
                 if (NULL != m) {
@@ -342,7 +342,7 @@ ATravFilter (node *arg_node, info *arg_info)
     struct local_info *linfo = (struct local_info *)arg_info;
     DBUG_ENTER ();
 
-    if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == linfo->nt) {
+    if (NODE_TYPE (ASSIGN_STMT (arg_node)) == linfo->nt) {
         if (linfo->res == NULL) {
             ((struct local_info *)arg_info)->res = arg_node;
             arg_node = TRAVcont (arg_node, arg_info);
@@ -1386,10 +1386,10 @@ GetLoopIdentifiers (node *targetvar, node *predicate, struct prf_expr_queue *sta
 
             /* If we can get an SSA assignment for variable, get it.  */
             if (AVIS_SSAASSIGN (ID_AVIS (ptr->var))
-                && NODE_TYPE (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (ptr->var))))
+                && NODE_TYPE (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (ptr->var))))
                      == N_let) {
                 node *new_pred;
-                new_pred = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (ptr->var))));
+                new_pred = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (ptr->var))));
 
                 if (!PMmatchFlat (PMprf (0, 0), new_pred)) {
                     DBUG_PRINT ("Loop condition is not a "
@@ -1626,7 +1626,7 @@ UnrollLoopBody (node *fundef, loopc_t unrolling)
 
     last = loop_body;
     cond_assign = ASSIGN_NEXT (last);
-    while ((cond_assign != NULL) && (NODE_TYPE (ASSIGN_INSTR (cond_assign)) != N_cond)) {
+    while ((cond_assign != NULL) && (NODE_TYPE (ASSIGN_STMT (cond_assign)) != N_cond)) {
         last = cond_assign;
         cond_assign = ASSIGN_NEXT (cond_assign);
     }
@@ -1650,10 +1650,10 @@ UnrollLoopBody (node *fundef, loopc_t unrolling)
         /* unrolling */
 
         /* extract recursive call behind cond */
-        then_instr = COND_THENINSTR (ASSIGN_INSTR (cond_assign));
+        then_instr = COND_THENINSTR (ASSIGN_STMT (cond_assign));
         DBUG_ASSERT (NODE_TYPE (then_instr) == N_assign,
                      "cond of loop fun w/o N_assign in then body");
-        DBUG_ASSERT (NODE_TYPE (ASSIGN_INSTR (then_instr)) == N_let,
+        DBUG_ASSERT (NODE_TYPE (ASSIGN_STMT (then_instr)) == N_let,
                      "cond of loop fun w/o N_let in then body");
         DBUG_ASSERT (NODE_TYPE (ASSIGN_RHS (then_instr)) == N_ap,
                      "cond of loop fun w/o N_ap in then body");
@@ -1694,13 +1694,13 @@ UnrollLoopBody (node *fundef, loopc_t unrolling)
     }
 #endif // LETISAADOIT
 
-    COND_COND (ASSIGN_INSTR (cond_assign))
-      = FREEdoFreeTree (COND_COND (ASSIGN_INSTR (cond_assign)));
+    COND_COND (ASSIGN_STMT (cond_assign))
+      = FREEdoFreeTree (COND_COND (ASSIGN_STMT (cond_assign)));
 
-    COND_COND (ASSIGN_INSTR (cond_assign)) = TBmakeId (predavis);
+    COND_COND (ASSIGN_STMT (cond_assign)) = TBmakeId (predavis);
 
     cond_assign = ASSIGN_NEXT (cond_assign);
-    while (NODE_TYPE (ASSIGN_INSTR (cond_assign)) == N_let) {
+    while (NODE_TYPE (ASSIGN_STMT (cond_assign)) == N_let) {
         DBUG_ASSERT (NODE_TYPE (ASSIGN_RHS (cond_assign)) == N_funcond,
                      "All node between COND and RETURN must be FUNCOND");
 
@@ -1848,13 +1848,13 @@ LURassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (ASSIGN_INSTR (arg_node) != NULL, "assign node without instruction");
+    DBUG_ASSERT (ASSIGN_STMT (arg_node) != NULL, "assign node without instruction");
 
     /* stack actual assign */
     old_assign = INFO_ASSIGN (arg_info);
     INFO_ASSIGN (arg_info) = arg_node;
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     pre_assigns = INFO_PREASSIGN (arg_info);
     INFO_PREASSIGN (arg_info) = NULL;

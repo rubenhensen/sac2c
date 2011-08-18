@@ -62,8 +62,8 @@ SANCHKdoSanityChecksPreTraversal (node *arg_node, info *arg_info, void *travstac
         }
 
         if (global.valid_ssaform && (NODE_TYPE (arg_node) == N_assign)
-            && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)) {
-            ids = LET_IDS (ASSIGN_INSTR (arg_node));
+            && (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let)) {
+            ids = LET_IDS (ASSIGN_STMT (arg_node));
 
             while (ids != NULL) {
                 if (AVIS_SSAASSIGN (IDS_AVIS (ids)) == NULL) {
@@ -119,8 +119,8 @@ SANCHKdoSanityChecksPostTraversal (node *arg_node, info *arg_info, void *travsta
     DBUG_ENTER ();
 
     if (global.valid_ssaform && (NODE_TYPE (arg_node) == N_assign)
-        && (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)) {
-        ids = LET_IDS (ASSIGN_INSTR (arg_node));
+        && (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let)) {
+        ids = LET_IDS (ASSIGN_STMT (arg_node));
 
         while (ids != NULL) {
             if (AVIS_SSAASSIGN (IDS_AVIS (ids)) == NULL) {

@@ -154,9 +154,9 @@ CRECEassign (node *arg_node, info *arg_info)
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_assign, "arg_node is not a N_assign");
 
     /* traverse into the instruction - it could be a conditional */
-    if (ASSIGN_INSTR (arg_node) != NULL) {
+    if (ASSIGN_STMT (arg_node) != NULL) {
         DBUG_PRINT ("trav into instruction");
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
         DBUG_PRINT ("trav from instruction");
     }
 

@@ -380,7 +380,7 @@ PEW3assign (node *arg_node, info *arg_info)
     DBUG_ASSERT (INFO_REPLACE_ASSIGNS (arg_info) == NULL,
                  "Should not have any replace assigns until traved assign");
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_REPLACE_ASSIGNS (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_REPLACE_ASSIGNS (arg_info),

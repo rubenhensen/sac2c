@@ -799,12 +799,12 @@ LSassign (node *arg_node, info *arg_info)
         INFO_LASTASSIGN (arg_info) = lastassign;
     }
 
-    if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_cond) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    if (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_cond) {
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
         INFO_PRECONDASSIGN (arg_info) = lastassign;
     } else {
         precondassign = INFO_PRECONDASSIGN (arg_info);
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
         INFO_PRECONDASSIGN (arg_info) = precondassign;
     }
 

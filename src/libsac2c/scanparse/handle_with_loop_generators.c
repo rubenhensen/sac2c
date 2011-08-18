@@ -229,7 +229,7 @@ HWLGdoHandleWithLoops (node *arg_node)
  *
  * @param arg_node N_assign to be traversed
  * @param arg_info INFO_HWLG_LASTASSIGN is preserved but modified during traversal
- *                 of the rhs ASSIGN_INSTR.
+ *                 of the rhs ASSIGN_STMT.
  *
  * @return arg_node
  *
@@ -245,7 +245,7 @@ HWLGassign (node *arg_node, info *arg_info)
     INFO_HWLG_LASTASSIGN (arg_info) = arg_node;
     DBUG_PRINT ("LASTASSIGN set to %08x!", arg_node);
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     /*
      * newly inserted abstractions are prepanded in front of
      * INFO_HWLG_LASTASSIGN(arg_info). To properly insert these nodes,

@@ -201,7 +201,7 @@ ATravAssign (node *arg_node, info *arg_info)
 
     INFO_PRFACCU (arg_info) = FALSE;
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_PRFACCU (arg_info)) {
         DBUG_ASSERT (INFO_LHSOLD (arg_info) != NULL, "_accu without lhs?");

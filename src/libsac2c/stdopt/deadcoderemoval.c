@@ -354,9 +354,9 @@ DCRret (node *arg_node, info *arg_info)
     /*
      * Store the internal and external N_ap nodes
      */
-    extlet = ASSIGN_INSTR (INFO_EXT_ASSIGN (arg_info));
+    extlet = ASSIGN_STMT (INFO_EXT_ASSIGN (arg_info));
     if (INFO_INT_ASSIGN (arg_info) != NULL) {
-        intlet = ASSIGN_INSTR (INFO_INT_ASSIGN (arg_info));
+        intlet = ASSIGN_STMT (INFO_INT_ASSIGN (arg_info));
     }
 
     if (RET_NEXT (arg_node) != NULL) {
@@ -484,12 +484,12 @@ DCRassign (node *arg_node, info *arg_info)
     /* traverse instruction */
     INFO_REMASSIGN (arg_info) = TRUE;
     INFO_ASSIGN (arg_info) = arg_node;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     /* free this assignment if unused anymore */
     if (INFO_REMASSIGN (arg_info)) {
         DBUG_PRINT ("removing assignment for %s",
-                    AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node)))));
+                    AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)))));
         arg_node = FREEdoFreeNode (arg_node);
         global.optcounters.dead_expr++;
     }
@@ -678,7 +678,7 @@ DCRcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_TYPE (ASSIGN_INSTR (ASSIGN_NEXT (INFO_ASSIGN (arg_info)))) != N_return) {
+    if (NODE_TYPE (ASSIGN_STMT (ASSIGN_NEXT (INFO_ASSIGN (arg_info)))) != N_return) {
 
         /* Traverse branches and predicate */
         arg_node = TRAVcont (arg_node, arg_info);

@@ -841,7 +841,7 @@ CSGDassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_PREASSIGNS (arg_info) != NULL) {
         preassigns = INFO_PREASSIGNS (arg_info);

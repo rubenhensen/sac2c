@@ -352,7 +352,7 @@ IUTCassign (node *arg_node, info *arg_info)
          *       the last node. So we have to pick the right chain :)
          */
 
-        chain = (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return)
+        chain = (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_return)
                   ? &INFO_PREASSIGN (arg_info)
                   : &INFO_POSTASSIGN (arg_info);
 
@@ -366,7 +366,7 @@ IUTCassign (node *arg_node, info *arg_info)
                           *chain);
     }
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_POSTASSIGN (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)

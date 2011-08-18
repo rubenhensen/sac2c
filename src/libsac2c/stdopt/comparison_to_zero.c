@@ -484,7 +484,7 @@ CTZassign (node *arg_node, info *arg_info)
 
     INFO_NEWASSIGN (arg_info) = NULL;
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_NEWASSIGN (arg_info) != NULL) {
         // insert 2 new assignment nodes

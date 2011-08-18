@@ -1092,7 +1092,7 @@ PFDassign (node *arg_node, info *arg_info)
     /* LASTASSIGN stores the currently enclosing assignment */
     old_lastassign = INFO_LASTASSIGN (arg_info);
     INFO_LASTASSIGN (arg_info) = arg_node;
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
     INFO_LASTASSIGN (arg_info) = old_lastassign;
 
     /* If we are not in any withloop */
@@ -2028,7 +2028,7 @@ ATravPart (node *arg_node, info *arg_info)
      * to be at most 3D */
     if (!TUisScalar (ID_NTYPE (cexpr)) && cat_dim <= 3 && cat_dim >= 1
         && /* The concatenated dimension is 1 <= dim <= 3 */
-        NODE_TYPE (ASSIGN_INSTR (ssa_assign)) == N_let) {
+        NODE_TYPE (ASSIGN_STMT (ssa_assign)) == N_let) {
         if (NODE_TYPE (defining_rhs) == N_with
             && PART_NEXT (WITH_PART (defining_rhs)) == NULL
             && /* The defining withloop must have only one partition */

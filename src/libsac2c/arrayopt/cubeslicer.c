@@ -464,7 +464,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     intersectListNo = 0;
 
     /* NB. We assume noteintersect immediately precedes idx ! */
-    noteint = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (idx))));
+    noteint = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (idx))));
     DBUG_ASSERT (F_noteintersect == PRF_PRF (noteint), "Expected F_noteintersect");
     intersectListLim = TCcountExprs (PRF_ARGS (noteint));
     intersectListLim = (intersectListLim - 1) / WLEPP;
@@ -619,7 +619,7 @@ CUBSLfindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpa
 
     idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, producerWL) */
     idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
-    idxparent = LET_EXPR (ASSIGN_INSTR (idxassign));
+    idxparent = LET_EXPR (ASSIGN_STMT (idxassign));
 
     producerWLPart = WITH_PART (producerWL);
 
@@ -1009,10 +1009,10 @@ CUBSLassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-    if ((N_let == NODE_TYPE (ASSIGN_INSTR (arg_node)))
-        && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))))
+    if ((N_let == NODE_TYPE (ASSIGN_STMT (arg_node)))
+        && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_STMT (arg_node))))
         && (NULL != INFO_PREASSIGNSWITH (arg_info))) {
         arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);
         INFO_PREASSIGNSWITH (arg_info) = NULL;

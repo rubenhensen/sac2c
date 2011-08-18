@@ -258,7 +258,7 @@ CUSKCassign (node *arg_node, info *arg_info)
 
     /* If the traverse mode is normal, we perform a normal top-down traversal */
     if (INFO_TRAVMODE (arg_info) == trav_normal) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     } else if (INFO_TRAVMODE (arg_info) == trav_backtrace) {
         /* Orginal assign */
@@ -282,7 +282,7 @@ CUSKCassign (node *arg_node, info *arg_info)
         INFO_ORIASSIGN (arg_info) = arg_node;
 
         /* Traverse RHS of the duplicate N_assign in case we need to further backtrace */
-        ASSIGN_INSTR (sunk_assign) = TRAVdo (ASSIGN_INSTR (sunk_assign), arg_info);
+        ASSIGN_STMT (sunk_assign) = TRAVdo (ASSIGN_STMT (sunk_assign), arg_info);
 
         INFO_DUPASSIGN (arg_info) = old_dupass;
         INFO_ORIASSIGN (arg_info) = old_oriass;

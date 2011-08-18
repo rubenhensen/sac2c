@@ -634,8 +634,8 @@ APTassign (node *arg_node, info *arg_info)
 
     INFO_APT_ASSIGNMENTS (arg_info) = NULL;
 
-    DBUG_ASSERT (ASSIGN_INSTR (arg_node) != NULL, "unexpected empty ASSIGN_INSTR");
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    DBUG_ASSERT (ASSIGN_STMT (arg_node) != NULL, "unexpected empty ASSIGN_STMT");
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     /* save new assigments */
     new_assigns = INFO_APT_ASSIGNMENTS (arg_info);

@@ -360,7 +360,7 @@ ASassign (node *arg_node, info *arg_info)
      */
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     while (INFO_PREASSIGN (arg_info) != NULL) {
         node *toprocess = INFO_PREASSIGN (arg_info);

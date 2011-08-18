@@ -3443,7 +3443,7 @@
       </target>
     </nodeset>
 
-    <nodeset name="Instr">
+    <nodeset name="Stmt">
       <target>
         <node name="Let" />
         <node name="Cond" />
@@ -5858,10 +5858,10 @@ N_tfarg :
     <node name="Assign">
     <description>Spine of an N_block</description>
       <sons>
-        <son name="Instr">
+        <son name="Stmt">
           <targets>
             <target mandatory="yes">
-              <set name="Instr" />
+              <set name="Stmt" />
               <phases>
                 <all />
               </phases>

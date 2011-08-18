@@ -320,7 +320,7 @@ HandleBlock (node *block, node *rets, info *arg_info)
                 cval = copyOrArray (val, &depth);
                 avis = ID_AVIS (cval);
                 memass = AVIS_SSAASSIGN (ID_AVIS (mem));
-                memop = LET_EXPR (ASSIGN_INSTR (memass));
+                memop = LET_EXPR (ASSIGN_STMT (memass));
 
                 /*
                  * a must be assigned inside the current block in order to
@@ -805,7 +805,7 @@ EMIPHassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (arg_node != INFO_LASTSAFE (arg_info)) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
         if (ASSIGN_NEXT (arg_node) != NULL) {
             ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);

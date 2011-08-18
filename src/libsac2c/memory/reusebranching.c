@@ -506,12 +506,12 @@ EMRBassign (node *arg_node, info *arg_info)
 
     /*
      * In case this assigment was holding some memory operations for a
-     * with-loop, ASSIGN_INSTR can be empty
+     * with-loop, ASSIGN_STMT can be empty
      */
-    if (ASSIGN_INSTR (arg_node) == NULL) {
+    if (ASSIGN_STMT (arg_node) == NULL) {
         arg_node = FREEdoFreeNode (arg_node);
     } else {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
         if (INFO_BRANCHES (arg_info) != NULL) {
             node *next, *newass, *lastass;
@@ -747,7 +747,7 @@ handleCodeBlock (node *cexprs, info *arg_info)
                     mem = PRF_ARG2 (rhs);
                     if ((NODE_TYPE (val) == N_prf) && (PRF_PRF (val) == F_copy)) {
                         cval = PRF_ARG1 (val);
-                        memop = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (mem))));
+                        memop = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (mem))));
                         if ((PRF_PRF (memop) == F_suballoc)
                             && (DFMtestMaskEntry (INFO_LOCALVARS (arg_info), NULL,
                                                   ID_AVIS (cval)))
@@ -1024,8 +1024,8 @@ StealLet (node *assign)
 
     DBUG_ENTER ();
 
-    let = ASSIGN_INSTR (assign);
-    ASSIGN_INSTR (assign) = NULL;
+    let = ASSIGN_STMT (assign);
+    ASSIGN_STMT (assign) = NULL;
 
     res = TBmakeAssign (let, NULL);
     AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (let))) = res;

@@ -216,7 +216,7 @@ BuildDataFlowHook (node *ids, node *expr, info *arg_info)
     }
     ids = TCappendIds (new_ids, ids);
 
-    ASSIGN_INSTR (assign) = TBmakeLet (ids, expr);
+    ASSIGN_STMT (assign) = TBmakeLet (ids, expr);
 
     /**
      * assign needs to be put at the very end due to potential data
@@ -375,7 +375,7 @@ IDCassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     post_assign = INFO_POSTASSIGN (arg_info);
     INFO_POSTASSIGN (arg_info) = NULL;

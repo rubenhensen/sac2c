@@ -149,7 +149,7 @@ IdIsDefinedByWL (node *arg_node)
 
     tmp = AVIS_SSAASSIGN (ID_AVIS (arg_node));
     if (NULL != tmp) {
-        if (N_with == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (tmp)))) {
+        if (N_with == NODE_TYPE (LET_EXPR (ASSIGN_STMT (tmp)))) {
             result = TRUE;
         }
     }
@@ -188,12 +188,12 @@ GetRecursiveFunctionApplication (node *fundef)
      */
     chain = BLOCK_ASSIGNS (FUNDEF_BODY (fundef));
 
-    while ((chain != NULL) && (NODE_TYPE (ASSIGN_INSTR (chain)) != N_cond)) {
+    while ((chain != NULL) && (NODE_TYPE (ASSIGN_STMT (chain)) != N_cond)) {
         chain = ASSIGN_NEXT (chain);
     }
 
     DBUG_ASSERT (chain != NULL, "Missing conditional in loop!");
-    chain = ASSIGN_RHS (COND_THENINSTR (ASSIGN_INSTR (chain)));
+    chain = ASSIGN_RHS (COND_THENINSTR (ASSIGN_STMT (chain)));
 
     DBUG_RETURN (chain);
 }
@@ -298,7 +298,7 @@ WLPROPassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (NULL != ASSIGN_NEXT (arg_node)) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
@@ -466,8 +466,7 @@ WLPROPid (node *arg_node, info *arg_info)
          * which is loop independent?
          */
         if ((IdIsDefinedByWL (arg_node)) && (AVIS_SSALPINV (ARG_AVIS (correspond_arg)))) {
-            node *withloop
-              = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
+            node *withloop = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
 
             /**
              * Does the with-loop fulfil the required selection
@@ -615,7 +614,7 @@ WLPROPid (node *arg_node, info *arg_info)
                  */
 
                 withvardec
-                  = TBmakeVardec (IDS_AVIS (LET_IDS (ASSIGN_INSTR (new_withloop))),
+                  = TBmakeVardec (IDS_AVIS (LET_IDS (ASSIGN_STMT (new_withloop))),
                                   BLOCK_VARDECS (
                                     FUNDEF_BODY (AP_FUNDEF (INFO_AP (arg_info)))));
 

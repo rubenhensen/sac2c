@@ -233,7 +233,7 @@ RDEPENDassign (node *arg_node, info *arg_info)
 
     INFO_RDEPEND_ASSIGN (arg_info) = arg_node;
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_RDEPEND_RESOLVED (arg_info)) {
         DBUG_PRINT ("selection is resolved:");

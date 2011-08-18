@@ -2502,7 +2502,7 @@ PRTassign (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    instr = ASSIGN_INSTR (arg_node);
+    instr = ASSIGN_STMT (arg_node);
     DBUG_ASSERT (instr != NULL, "instruction of N_assign is NULL");
 
     trav_instr = TRUE;

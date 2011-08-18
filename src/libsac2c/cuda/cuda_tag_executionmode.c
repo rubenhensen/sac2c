@@ -568,19 +568,19 @@ CUTEMassign (node *arg_node, info *arg_info)
     if (INFO_TRAVMODE (arg_info) == cutem_tag) {
         /* Each N_assign is intially tagged to be CUDA_HOST_SINGLE */
         ASSIGN_EXECMODE (arg_node) = CUDA_HOST_SINGLE;
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
         /* If after tagging, the execution mode of this N_assign
          * remains to be CUDA_HOST_SINGLE (i.e. this N_assign must
          * be executed on the host), we update its RHS variables */
         if (ASSIGN_EXECMODE (arg_node) == CUDA_HOST_SINGLE) {
             INFO_TRAVMODE (arg_info) = cutem_update;
-            ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+            ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
         }
         INFO_TRAVMODE (arg_info) = cutem_tag;
     } else if (INFO_TRAVMODE (arg_info) == cutem_untag) {
         old_mode = ASSIGN_EXECMODE (arg_node);
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
         /* If after traversing the RHS, we found that the execution
          * mode of this N_assign has been changed from CUDA_DEVICE_SINGLE
@@ -588,7 +588,7 @@ CUTEMassign (node *arg_node, info *arg_info)
         if (old_mode == CUDA_DEVICE_SINGLE
             && ASSIGN_EXECMODE (arg_node) == CUDA_HOST_SINGLE) {
             INFO_TRAVMODE (arg_info) = cutem_update;
-            ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+            ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
             /* Everytime we see a mode changing from CUDA_DEVICE_SINGLE to
              * CUDA_HOST_SINGLE, we continue the tagging process ( new HOST_SINGLE
@@ -602,7 +602,7 @@ CUTEMassign (node *arg_node, info *arg_info)
          * we are in either a withloop or a conditional body. We continue
          * updating any RHS variables in the body */
         if (INFO_INWITH (arg_info) || INFO_INCOND (arg_info)) {
-            ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+            ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
         } else {
             DBUG_ASSERT (0, "Wrong traverse mode in CUTEMassign!");
         }

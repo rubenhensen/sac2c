@@ -227,16 +227,16 @@ MTCMassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_CONDITION (arg_info) != NULL) {
-        parblock = TBmakeBlock (TBmakeAssign (ASSIGN_INSTR (arg_node), NULL), NULL);
+        parblock = TBmakeBlock (TBmakeAssign (ASSIGN_STMT (arg_node), NULL), NULL);
         BLOCK_ISMTPARALLELBRANCH (parblock) = TRUE;
 
         seqblock = TBmakeBlock (TBmakeAssign (INFO_SEQUENTIAL (arg_info), NULL), NULL);
         BLOCK_ISMTSEQUENTIALBRANCH (seqblock) = TRUE;
 
-        ASSIGN_INSTR (arg_node)
+        ASSIGN_STMT (arg_node)
           = TBmakeCond (INFO_CONDITION (arg_info), parblock, seqblock);
 
         INFO_CONDITION (arg_info) = NULL;

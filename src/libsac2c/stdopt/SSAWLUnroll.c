@@ -738,7 +738,7 @@ CheckUnrollModarray (node *wln, node *lhs, info *arg_info)
         if (N_empty == NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (coden)))) {
             PART_ISCOPY (partn) = FALSE;
         } else {
-            tmpn = ASSIGN_INSTR (BLOCK_ASSIGNS (CODE_CBLOCK (coden)));
+            tmpn = ASSIGN_STMT (BLOCK_ASSIGNS (CODE_CBLOCK (coden)));
             exprn = LET_EXPR (tmpn);
             PART_ISCOPY (partn)
               = ((N_let == NODE_TYPE (tmpn))
@@ -1265,13 +1265,13 @@ WLURassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (ASSIGN_INSTR (arg_node) != NULL, "assign node without instruction");
+    DBUG_ASSERT (ASSIGN_STMT (arg_node) != NULL, "assign node without instruction");
 
     /* stack actual assign */
     old_assign = INFO_ASSIGN (arg_info);
     INFO_ASSIGN (arg_info) = arg_node;
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     pre_assigns = INFO_PREASSIGN (arg_info);
     INFO_PREASSIGN (arg_info) = NULL;

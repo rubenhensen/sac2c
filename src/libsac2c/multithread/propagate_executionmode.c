@@ -199,7 +199,7 @@ PEMfundef (node *arg_node, info *arg_info)
     }
 
     /* set the execmode of the return statement */
-    DBUG_ASSERT (NODE_TYPE (ASSIGN_INSTR (INFO_PEM_RETURN (arg_info))) == N_return,
+    DBUG_ASSERT (NODE_TYPE (ASSIGN_STMT (INFO_PEM_RETURN (arg_info))) == N_return,
                  "N_return as last assignment expected");
     ASSIGN_EXECMODE (INFO_PEM_RETURN (arg_info)) = FUNDEF_EXECMODE (arg_node);
 
@@ -246,7 +246,7 @@ PEMassign (node *arg_node, info *arg_info)
     my_old_execmode = ASSIGN_EXECMODE (arg_node);
 
     DBUG_PRINT ("trav into instruction");
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     DBUG_PRINT ("trav from instruction");
 
     /* if the executionmode of the assignment had changed or we are on our first
@@ -266,7 +266,7 @@ PEMassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
         DBUG_PRINT ("trav from next");
     } else {
-        if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return) {
+        if (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_return) {
             /* store this assignment - it's the last of a function's N_block,
              * PEMfundef will set its executionmode */
             INFO_PEM_RETURN (arg_info) = arg_node;

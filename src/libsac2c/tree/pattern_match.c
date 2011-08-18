@@ -755,7 +755,7 @@ followId (node *expr, node **new_assign)
     if (NODE_TYPE (expr) == N_id) {
         if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
             *new_assign = AVIS_SSAASSIGN (ID_AVIS (expr));
-            expr = LET_EXPR (ASSIGN_INSTR (*new_assign));
+            expr = LET_EXPR (ASSIGN_STMT (*new_assign));
         } else if (follow_lut != NULL) {
             new_id = (node *)LUTsearchInLutP (follow_lut, ID_AVIS (expr));
             expr = (new_id != NULL ? new_id : expr);
@@ -786,7 +786,7 @@ followPrf (prfMatchFun prfInspectFun, node *expr, node *new_assign, node *old_ex
 
     if ((NODE_TYPE (expr) == N_prf) && (prfInspectFun (PRF_PRF (expr)))) {
         if ((NULL != new_assign) && (N_id == NODE_TYPE (old_expr))
-            && (ID_AVIS (old_expr) == IDS_AVIS (LET_IDS (ASSIGN_INSTR (new_assign))))) {
+            && (ID_AVIS (old_expr) == IDS_AVIS (LET_IDS (ASSIGN_STMT (new_assign))))) {
             expr = PRF_ARG1 (expr);
         } else {
             /* Need to pick same_shape() argument that matches result,
@@ -795,7 +795,7 @@ followPrf (prfMatchFun prfInspectFun, node *expr, node *new_assign, node *old_ex
             if ((F_same_shape_AxA == PRF_PRF (expr)) && (NULL != new_assign)
                 && (N_id == NODE_TYPE (old_expr))
                 && (ID_AVIS (old_expr)
-                    == IDS_AVIS (IDS_NEXT (LET_IDS (ASSIGN_INSTR (new_assign)))))) {
+                    == IDS_AVIS (IDS_NEXT (LET_IDS (ASSIGN_STMT (new_assign)))))) {
                 expr = PRF_ARG2 (expr);
                 DBUG_PRINT ("Found _same_shape_AxA");
             }

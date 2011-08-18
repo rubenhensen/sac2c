@@ -169,7 +169,7 @@ AssignIsSpawn (node *assign)
 
     DBUG_ASSERT (NODE_TYPE (assign) == N_assign, "Node must be an N_assign node");
 
-    instr = ASSIGN_INSTR (assign);
+    instr = ASSIGN_STMT (assign);
 
     result = NODE_TYPE (instr) == N_let && NODE_TYPE (LET_EXPR (instr)) == N_ap
              && AP_ISSPAWNED (LET_EXPR (instr));
@@ -198,7 +198,7 @@ AssignIsSync (node *assign)
 
     DBUG_ASSERT (NODE_TYPE (assign) == N_assign, "Node must be an N_assign node");
 
-    instr = ASSIGN_INSTR (assign);
+    instr = ASSIGN_STMT (assign);
 
     result = NODE_TYPE (instr) == N_let && NODE_TYPE (LET_EXPR (instr)) == N_prf
              && PRF_PRF (LET_EXPR (instr)) == F_sync;
@@ -331,7 +331,7 @@ LVAassign (node *arg_node, info *arg_info)
         // TODO: Use anonymous traversal
         if (AssignIsSync (arg_node)) {
             INFO_INSPAWN (arg_info) = TRUE;
-            ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+            ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
             INFO_INSPAWN (arg_info) = FALSE;
         }
 
@@ -345,10 +345,10 @@ LVAassign (node *arg_node, info *arg_info)
             avis = DFMgetMaskEntryAvisSet (NULL);
         }
 
-        LET_LIVEVARS (ASSIGN_INSTR (arg_node)) = livevars;
+        LET_LIVEVARS (ASSIGN_STMT (arg_node)) = livevars;
     } else {
         // only analyse use of variables
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     }
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);

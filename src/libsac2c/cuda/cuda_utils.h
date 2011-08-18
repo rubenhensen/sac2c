@@ -7,7 +7,7 @@
 #define ISHOST2DEVICE(assign)                                                            \
     (assign == NULL                                                                      \
        ? FALSE                                                                           \
-       : (NODE_TYPE (ASSIGN_INSTR (assign)) != N_let                                     \
+       : (NODE_TYPE (ASSIGN_STMT (assign)) != N_let                                      \
             ? FALSE                                                                      \
             : (NODE_TYPE (ASSIGN_RHS (assign)) != N_prf                                  \
                  ? FALSE                                                                 \
@@ -16,7 +16,7 @@
 #define ISDEVICE2HOST(assign)                                                            \
     (assign == NULL                                                                      \
        ? FALSE                                                                           \
-       : (NODE_TYPE (ASSIGN_INSTR (assign)) != N_let                                     \
+       : (NODE_TYPE (ASSIGN_STMT (assign)) != N_let                                      \
             ? FALSE                                                                      \
             : (NODE_TYPE (ASSIGN_RHS (assign)) != N_prf                                  \
                  ? FALSE                                                                 \

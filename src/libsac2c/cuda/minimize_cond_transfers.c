@@ -293,7 +293,7 @@ MCTRANassign (node *arg_node, info *arg_info)
     old_postassigns = INFO_APPOSTASSIGNS (arg_info);
     old_vardecs = INFO_VARDECS (arg_info);
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     /* If the RHS of this N_assign is an N_ap and we have finished traversing
      * the N_ap->N_fundef, add lifted memory transfer instructions (if

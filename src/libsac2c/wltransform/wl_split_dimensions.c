@@ -1925,7 +1925,7 @@ CreateFoldAccumulators (node *index, node *lhs, node *ops, info *arg_info)
     accuLhs = CreateFoldAccumulatorsAvis (assign, lhs, ops, arg_info);
 
     if (accuLhs != NULL) {
-        ASSIGN_INSTR (assign)
+        ASSIGN_STMT (assign)
           = TBmakeLet (accuLhs,
                        TBmakePrf (F_accu,
                                   TBmakeExprs (TBmakeId (IDS_AVIS (index)), NULL)));
@@ -2043,7 +2043,7 @@ MakeRangeBody (node *outerindex, node *contents, node *size, int newdim, node **
     with3 = TBmakeWith3 (ranges, ops);
     WITH3_DENSE (with3) = INFO_DENSE (arg_info);
 
-    ASSIGN_INSTR (INFO_WITH3_ASSIGN (arg_info)) = TBmakeLet (lhs, with3);
+    ASSIGN_STMT (INFO_WITH3_ASSIGN (arg_info)) = TBmakeLet (lhs, with3);
     ASSIGN_NEXT (INFO_WITH3_ASSIGN (arg_info)) = assigns;
     assigns = INFO_WITH3_ASSIGN (arg_info);
     INFO_WITH3_ASSIGN (arg_info) = NULL;
@@ -2666,7 +2666,7 @@ WLSDassign (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (INFO_PREASSIGNS (arg_info) == NULL, "left-over pre-assigns found.");
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_PREASSIGNS (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);

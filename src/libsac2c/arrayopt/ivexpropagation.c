@@ -259,7 +259,7 @@ BuildExtremaNonnegval (node *arg_node, info *arg_info)
         AVIS_SSAASSIGN (zavis) = zass;
 
         /* Keep us from trying to add extrema to the extrema calculations.  */
-        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_INSTR (zass))) = TRUE;
+        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_STMT (zass))) = TRUE;
 
         INFO_PREASSIGNSWITH (arg_info)
           = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), zass);
@@ -320,7 +320,7 @@ BuildExtremaShape (node *arg_node, info *arg_info)
                                                        DUPdoDupNode (shpids))),
                           NULL);
         /* Keep us from trying to add extrema to the extrema calculations.  */
-        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_INSTR (pass))) = TRUE;
+        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_STMT (pass))) = TRUE;
         INFO_PREASSIGNSWITH (arg_info)
           = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), pass);
         AVIS_SSAASSIGN (pavis) = pass;
@@ -338,7 +338,7 @@ BuildExtremaShape (node *arg_node, info *arg_info)
                                                  DUPdoDupNode (PRF_ARG2 (arg_node)))),
                           NULL);
         /* Keep us from trying to add extrema to the extrema calculations.  */
-        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_INSTR (shpass))) = TRUE;
+        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_STMT (shpass))) = TRUE;
         INFO_PREASSIGNSWITH (arg_info)
           = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), shpass);
         AVIS_SSAASSIGN (shpavis) = shpass;
@@ -354,7 +354,7 @@ BuildExtremaShape (node *arg_node, info *arg_info)
                                                        DUPdoDupNode (shpids))),
                           NULL);
         /* Keep us from trying to add extrema to the extrema calculations.  */
-        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_INSTR (pass))) = TRUE;
+        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_STMT (pass))) = TRUE;
         INFO_PREASSIGNSWITH (arg_info)
           = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), pass);
         AVIS_SSAASSIGN (pavis) = pass;
@@ -424,7 +424,7 @@ BuildExtremumValLtShape (node *arg_node, info *arg_info)
                                                  DUPdoDupNode (PRF_ARG2 (arg_node)))),
                           NULL);
         /* Keep us from trying to add extrema to the extrema calculations.  */
-        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_INSTR (shpass))) = TRUE;
+        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_STMT (shpass))) = TRUE;
         INFO_PREASSIGNSWITH (arg_info)
           = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), shpass);
         AVIS_SSAASSIGN (shpavis) = shpass;
@@ -440,7 +440,7 @@ BuildExtremumValLtShape (node *arg_node, info *arg_info)
                                                        DUPdoDupNode (shpids))),
                           NULL);
         /* Keep us from trying to add extrema to the extrema calculations.  */
-        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_INSTR (pass))) = TRUE;
+        PRF_NOEXTREMAWANTED (LET_EXPR (ASSIGN_STMT (pass))) = TRUE;
         INFO_PREASSIGNSWITH (arg_info)
           = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), pass);
         AVIS_SSAASSIGN (pavis) = pass;
@@ -1687,7 +1687,7 @@ IVEXPgenerateNarrayExtrema (node *arg_node, node **vardecs, node **preassigns)
 
         DBUG_ENTER ();
 
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
         /* We want PREASSIGNS ++ arg_node ++ POSTASSIGNS ++ ASSIGN_NEXT */
         if (NULL != INFO_POSTASSIGNS (arg_info)) {

@@ -399,17 +399,17 @@ isPrfArg1AttachExtrema (node *arg_node)
     DBUG_ASSERT (N_id == NODE_TYPE (arg1),
                  "isPrfArg1AttachExtrema expected N_id as PRF_ARG1");
     assgn = AVIS_SSAASSIGN (ID_AVIS (arg1));
-    if ((NULL != assgn) && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assgn))))) {
+    if ((NULL != assgn) && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_STMT (assgn))))) {
 
-        prf = LET_EXPR (ASSIGN_INSTR (assgn));
+        prf = LET_EXPR (ASSIGN_STMT (assgn));
         if ((F_noteminval == PRF_PRF (prf)) || (F_notemaxval == PRF_PRF (prf))) {
             z = TRUE;
         } else {
             assgn2 = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (prf)));
             if ((NULL != assgn)
-                && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assgn2))))) {
-                prf2 = LET_EXPR (ASSIGN_INSTR (assgn2));
-                if ((F_noteintersect == PRF_PRF (LET_EXPR (ASSIGN_INSTR (assgn2))))) {
+                && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_STMT (assgn2))))) {
+                prf2 = LET_EXPR (ASSIGN_STMT (assgn2));
+                if ((F_noteintersect == PRF_PRF (LET_EXPR (ASSIGN_STMT (assgn2))))) {
                     z = TRUE;
                 }
             }
@@ -459,7 +459,7 @@ BypassNoteintersect (node *arg_node)
 
     DBUG_ENTER ();
 
-    expr = LET_EXPR (ASSIGN_INSTR (arg_node));
+    expr = LET_EXPR (ASSIGN_STMT (arg_node));
     pat = PMprf (1, PMAisPrf (F_noteintersect), 2, PMvar (1, PMAgetNode (&z), 0),
                  PMskip (0));
     if (PMmatchFlat (pat, PRF_ARG1 (expr))) {
@@ -643,9 +643,8 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
     DBUG_ENTER ();
 
     ids = WITHID_IDS (PART_WITHID (pwlpart));
-    idxavis
-      = AWLFIoffset2Iv (LET_EXPR (ASSIGN_INSTR (arg_node)), &INFO_VARDECS (arg_info),
-                        &INFO_PREASSIGNS (arg_info), INFO_PART (arg_info), pwlpart);
+    idxavis = AWLFIoffset2Iv (LET_EXPR (ASSIGN_STMT (arg_node)), &INFO_VARDECS (arg_info),
+                              &INFO_PREASSIGNS (arg_info), INFO_PART (arg_info), pwlpart);
     DBUG_ASSERT (NULL != idxavis, "Could not rebuild iv for _sel_VxA_(iv, PWL)");
 
     k = 0;
@@ -752,8 +751,8 @@ doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consume
     /**
      * replace the code
      */
-    FREEdoFreeNode (LET_EXPR (ASSIGN_INSTR (arg_node)));
-    LET_EXPR (ASSIGN_INSTR (arg_node)) = TBmakeId (newavis);
+    FREEdoFreeNode (LET_EXPR (ASSIGN_STMT (arg_node)));
+    LET_EXPR (ASSIGN_STMT (arg_node)) = TBmakeId (newavis);
     if (NULL != newblock) {
         arg_node = TCappendAssign (newblock, arg_node);
     }
@@ -854,7 +853,7 @@ AWLFassign (node *arg_node, info *arg_info)
 #ifdef VERBOSE
     DBUG_PRINT ("Traversing N_assign");
 #endif // VERBOSE
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     foldableProducerPart = INFO_PRODUCERWLPART (arg_info);
     INFO_PRODUCERWLPART (arg_info) = NULL;
     DBUG_ASSERT (NULL == INFO_PREASSIGNS (arg_info),

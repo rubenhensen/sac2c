@@ -507,9 +507,9 @@ InsertTempCondVarFor (node *avis_ds, node *dim, node *avis, node *fundef, int th
         AVIS_SSAASSIGN (tmpds) = tmpassign;
 
         if (TRUE == thenelse) {
-            ainstr = COND_THEN (ASSIGN_INSTR (BLOCK_ASSIGNS (FUNDEF_BODY (fundef))));
+            ainstr = COND_THEN (ASSIGN_STMT (BLOCK_ASSIGNS (FUNDEF_BODY (fundef))));
         } else {
-            ainstr = COND_ELSE (ASSIGN_INSTR (BLOCK_ASSIGNS (FUNDEF_BODY (fundef))));
+            ainstr = COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (FUNDEF_BODY (fundef))));
         }
 
         BLOCK_ASSIGNS (ainstr) = TCappendAssign (BLOCK_ASSIGNS (ainstr), tmpassign);
@@ -577,9 +577,9 @@ PrependSAAInFormalResults (node *returntype, node *returnexpr, node *fundef,
          *
          * For this, we need to look up the predicate and the two choices for our
          * returning value. these are p, fc and sc. */
-        p = FUNCOND_IF (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (avis))));
-        fc = ID_AVIS (FUNCOND_THEN (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (avis)))));
-        sc = ID_AVIS (FUNCOND_ELSE (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (avis)))));
+        p = FUNCOND_IF (LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avis))));
+        fc = ID_AVIS (FUNCOND_THEN (LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avis)))));
+        sc = ID_AVIS (FUNCOND_ELSE (LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avis)))));
 
         thennode = AVIS_DIM (fc);
         elsenode = AVIS_DIM (sc);
@@ -1170,7 +1170,7 @@ ISAAap (node *arg_node, info *arg_info)
              * results. */
             retprev = GenerateExtendedReturns (DUPdoDupTree (FUNDEF_RETS (fun)));
 
-            LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (lhs))))
+            LET_IDS (ASSIGN_STMT (AVIS_SSAASSIGN (IDS_AVIS (lhs))))
               = PrependSAAInConcreteResults (retprev, INFO_LHS (arg_info),
                                              INFO_FUNDEF (arg_info), arg_info);
             retprev = FREEdoFreeTree (retprev);
@@ -1185,27 +1185,27 @@ ISAAap (node *arg_node, info *arg_info)
         /* this is rather ugly: we have to search for the N_assign prior to the
          * assign containing the N_return node */
         retnode = BLOCK_ASSIGNS (FUNDEF_BODY (fun));
-        while ((NULL != retnode) && (N_return != NODE_TYPE (ASSIGN_INSTR (retnode)))) {
+        while ((NULL != retnode) && (N_return != NODE_TYPE (ASSIGN_STMT (retnode)))) {
             retprev = retnode;
             retnode = ASSIGN_NEXT (retnode);
         }
 
         DBUG_ASSERT (((NULL != retnode)
-                      && (N_return == NODE_TYPE (ASSIGN_INSTR (retnode)))),
+                      && (N_return == NODE_TYPE (ASSIGN_STMT (retnode)))),
                      "could not find return node of specified function!");
 
         FUNDEF_RETS (fun)
           = PrependSAAInFormalResults (FUNDEF_RETS (fun),
-                                       RETURN_EXPRS (ASSIGN_INSTR (retnode)), fun,
+                                       RETURN_EXPRS (ASSIGN_STMT (retnode)), fun,
                                        arg_info);
 
-        RETURN_EXPRS (ASSIGN_INSTR (retnode)) = INFO_RETURNEXPR (arg_info);
+        RETURN_EXPRS (ASSIGN_STMT (retnode)) = INFO_RETURNEXPR (arg_info);
         ASSIGN_NEXT (retprev) = TCappendAssign (INFO_POSTASSIGN (arg_info), retnode);
         INFO_POSTASSIGN (arg_info) = NULL;
 
         if (TRUE == FUNDEF_ISCONDFUN (fun)) {
             /* replace the lhs of the application with the new one */
-            LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (lhs))))
+            LET_IDS (ASSIGN_STMT (AVIS_SSAASSIGN (IDS_AVIS (lhs))))
               = PrependSAAInConcreteResults (FUNDEF_RETS (fun), lhs,
                                              INFO_FUNDEF (arg_info), arg_info);
         }
@@ -1227,7 +1227,7 @@ ISAAap (node *arg_node, info *arg_info)
         /* introduce the new results in the inner calling */
         retprev = GenerateExtendedReturns (DUPdoDupTree (FUNDEF_RETS (fun)));
 
-        LET_IDS (ASSIGN_INSTR (AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info)))))
+        LET_IDS (ASSIGN_STMT (AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS (arg_info)))))
           = PrependSAAInConcreteResults (retprev, INFO_LHS (arg_info),
                                          INFO_FUNDEF (arg_info), arg_info);
 
@@ -1289,7 +1289,7 @@ ISAAassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     /*
      * It is essential that no bindings must be introduced inside the

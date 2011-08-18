@@ -379,7 +379,7 @@ PINLassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_return) {
+    if (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_return) {
         arg_node = FREEdoFreeTree (arg_node);
         arg_node = INFO_INSERT (arg_info);
         INFO_INSERT (arg_info) = NULL;

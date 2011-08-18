@@ -1259,7 +1259,7 @@ FoldDecision (node *target_wl, node *subst_wl)
 
     DBUG_ENTER ();
 
-    subst_wl = LET_EXPR (ASSIGN_INSTR (subst_wl));
+    subst_wl = LET_EXPR (ASSIGN_STMT (subst_wl));
 
     result = (!TCcontainsDefaultPartition (WITH_PART (target_wl))
               && !TCcontainsDefaultPartition (WITH_PART (subst_wl))
@@ -1340,7 +1340,7 @@ Modarray2Genarray (node *withop, node *wln, node *substwln)
          * at the moment, substwln points to the assignment of the WL.
          * remove another reference
          */
-        substwln = LET_EXPR (ASSIGN_INSTR (substwln));
+        substwln = LET_EXPR (ASSIGN_STMT (substwln));
         (WITH_REFERENCES_FOLDED (substwln))++;
 
         /*
@@ -1384,7 +1384,7 @@ FreeWLIAssignInfo (node *arg_node, info *arg_info)
         ASSIGN_INDEX (arg_node) = FREEfreeIndexInfo (ASSIGN_INDEX (arg_node));
     }
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
@@ -1478,7 +1478,7 @@ WLFassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_ASSIGN (arg_info) = arg_node;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     switch (wlf_mode) {
     case wlfm_search_WL:
@@ -1504,12 +1504,12 @@ WLFassign (node *arg_node, info *arg_info)
             /* ist there something to insert? */
             if (substn) {
                 last_assign
-                  = TBmakeAssign (ASSIGN_INSTR (arg_node), ASSIGN_NEXT (arg_node));
-                ASSIGN_INSTR (arg_node) = ASSIGN_INSTR (substn);
+                  = TBmakeAssign (ASSIGN_STMT (arg_node), ASSIGN_NEXT (arg_node));
+                ASSIGN_STMT (arg_node) = ASSIGN_STMT (substn);
                 ASSIGN_NEXT (arg_node) = ASSIGN_NEXT (substn);
 
                 /* first assignment node of substn is not needed anymore. */
-                ASSIGN_INSTR (substn) = NULL;
+                ASSIGN_STMT (substn) = NULL;
                 FREEdoFreeNode (substn); /* free only node, not tree! */
 
                 tmpn = arg_node;
@@ -1523,7 +1523,7 @@ WLFassign (node *arg_node, info *arg_info)
             }
 
             /* transform sel(.,array) into Id. */
-            tmpn = ASSIGN_INSTR (tmpn);
+            tmpn = ASSIGN_STMT (tmpn);
             LET_EXPR (tmpn) = FREEdoFreeNode (LET_EXPR (tmpn));
             LET_EXPR (tmpn) = INFO_NEW_ID (arg_info);
             INFO_NEW_ID (arg_info) = NULL;
@@ -1619,7 +1619,7 @@ WLFid (node *arg_node, info *arg_info)
                Remember that iv,i,j,k all are temporary variables, inserted
                in flatten. No name clashes can happen. */
             subst_header = NULL;
-            vectorn = PRF_ARG1 (LET_EXPR (ASSIGN_INSTR (INFO_ASSIGN (arg_info))));
+            vectorn = PRF_ARG1 (LET_EXPR (ASSIGN_STMT (INFO_ASSIGN (arg_info))));
             count = 0;
             /* This ID_WL is used in case (1) here (see header of file) */
             subst_wl_partn = WITH_PART (ASSIGN_RHS (ID_WL (INFO_ID (arg_info))));
@@ -1739,7 +1739,7 @@ WLFlet (node *arg_node, info *arg_info)
             INFO_NCA (arg_info) = ID_WL (idn);
 
             ref_mode_arg_info = arg_info; /* needed in CreateCode() */
-            substwln = LET_EXPR (ASSIGN_INSTR (ID_WL (idn)));
+            substwln = LET_EXPR (ASSIGN_STMT (ID_WL (idn)));
             targetwln = INFO_WL (arg_info);
 
             /* We just traversed the original code in the wlfm_search_ref phase, so

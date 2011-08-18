@@ -1306,7 +1306,7 @@ forloop:   FOR { $<cint>$ = global.linenum; }
              BLOCK_ASSIGNS( $10) = TCappendAssign( BLOCK_ASSIGNS( $10), $8);
              while_assign = TBmakeAssign( TBmakeWhile( $6, $10), NULL);
              NODE_LINE( while_assign) = $<cint>2;
-             NODE_LINE( ASSIGN_INSTR( while_assign)) = $<cint>2;
+             NODE_LINE( ASSIGN_STMT( while_assign)) = $<cint>2;
              $$ = TCappendAssign( $4, while_assign);
            }
          ;

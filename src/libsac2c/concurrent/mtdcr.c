@@ -245,7 +245,7 @@ MTDCRassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_CHECK (arg_info) = TRUE;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     INFO_CHECK (arg_info) = FALSE;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -276,10 +276,10 @@ MTDCRassign (node *arg_node, info *arg_info)
      * Hence, I (cg) chose the solution below.
      */
 
-    if ((NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let)
-        && (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_prf)) {
+    if ((NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let)
+        && (NODE_TYPE (LET_EXPR (ASSIGN_STMT (arg_node))) == N_prf)) {
         INFO_KILL (arg_info) = TRUE;
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
         INFO_KILL (arg_info) = FALSE;
     }
 

@@ -355,7 +355,7 @@ FAassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_FA_PRF_ACCU (arg_info)) {
         node *old = arg_node;
@@ -491,12 +491,12 @@ RW3assign (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (INFO_ASSIGNS (arg_info) == NULL, "leftover assigns found.");
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_SAVED_RESULTS (arg_info) != NULL) {
         /* with3 loop has been removed */
         node *arg_node_original = arg_node;
-        node *let = ASSIGN_INSTR (arg_node);
+        node *let = ASSIGN_STMT (arg_node);
 
         DBUG_PRINT ("Removing with3");
 

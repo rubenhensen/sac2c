@@ -1629,9 +1629,9 @@ WLFSassign (node *arg_node, info *arg_info)
          * or there is no fusionable WL for now.
          */
 
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-        if (ASSIGN_INSTRTYPE (arg_node) == N_let
+        if (ASSIGN_STMTTYPE (arg_node) == N_let
             && NODE_TYPE (ASSIGN_RHS (arg_node)) == N_with) {
 
             if (INFO_WLACTION (arg_info) == WL_fused) {

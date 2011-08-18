@@ -135,7 +135,7 @@ SCUFassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_PREASSIGN (arg_info) != NULL && INFO_TRAVMODE (arg_info) == trav_normal) {
         arg_node = TCappendAssign (INFO_PREASSIGN (arg_info), arg_node);
@@ -241,7 +241,7 @@ SCUFpart (node *arg_node, info *arg_info)
         /* Get the reduction operation of this fold withloop */
         cexpr_avis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (arg_node))));
         cexpr_type = AVIS_TYPE (cexpr_avis);
-        op = PRF_PRF (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (cexpr_avis))));
+        op = PRF_PRF (LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (cexpr_avis))));
 
         if (PART_NEXT (arg_node) != NULL) {
             PART_NEXT (arg_node) = FREEdoFreeTree (PART_NEXT (arg_node));

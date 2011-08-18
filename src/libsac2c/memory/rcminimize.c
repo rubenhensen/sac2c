@@ -172,7 +172,7 @@ ModifyExistingIncRcs (nlut_t *nlut, node *ass)
         ASSIGN_NEXT (ass) = ModifyExistingIncRcs (nlut, ASSIGN_NEXT (ass));
     }
 
-    if ((NODE_TYPE (ASSIGN_INSTR (ass)) == N_let)
+    if ((NODE_TYPE (ASSIGN_STMT (ass)) == N_let)
         && (NODE_TYPE (ASSIGN_RHS (ass)) == N_prf)
         && (PRF_PRF (ASSIGN_RHS (ass)) == F_inc_rc)) {
         node *avis;
@@ -290,7 +290,7 @@ RCMassign (node *arg_node, info *arg_info)
     }
 
     INFO_ASSIGN (arg_info) = arg_node;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_REMASSIGN (arg_info)) {
         arg_node = FREEdoFreeNode (arg_node);
@@ -541,7 +541,7 @@ RCMfundef (node *arg_node, info *arg_info)
                 node *retexprs, *ids;
                 node *args, *argexprs;
 
-                extlet = ASSIGN_INSTR (INFO_ASSIGN (arg_info));
+                extlet = ASSIGN_STMT (INFO_ASSIGN (arg_info));
 
                 retexprs = RETURN_EXPRS (FUNDEF_RETURN (arg_node));
                 ids = LET_IDS (extlet);
@@ -585,7 +585,7 @@ RCMfundef (node *arg_node, info *arg_info)
                 node *extlet;
                 node *args, *argexprs;
 
-                extlet = ASSIGN_INSTR (INFO_ASSIGN (arg_info));
+                extlet = ASSIGN_STMT (INFO_ASSIGN (arg_info));
 
                 args = FUNDEF_ARGS (arg_node);
                 argexprs = AP_ARGS (LET_EXPR (extlet));

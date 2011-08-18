@@ -157,8 +157,8 @@ CHKassignAvisSSAAssign (node *arg_node)
     DBUG_ENTER ();
 
     if (global.valid_ssaform) {
-        if (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let) {
-            ids = LET_IDS (ASSIGN_INSTR (arg_node));
+        if (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let) {
+            ids = LET_IDS (ASSIGN_STMT (arg_node));
             while (ids != NULL) {
                 if (AVIS_SSAASSIGN (IDS_AVIS (ids)) != arg_node) {
                     NODE_ERROR (IDS_AVIS (ids))

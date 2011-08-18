@@ -152,7 +152,7 @@ STKNLassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_AP (arg_info) != NULL) {
         arg_node = FREEdoFreeNode (arg_node);
@@ -209,7 +209,7 @@ STKNLcudast (node *arg_node, info *arg_info)
 
     INFO_ST_KERNELS (arg_info) = st_kernel;
 
-    FUNDEF_RETURN (st_kernel) = ASSIGN_INSTR (retassign);
+    FUNDEF_RETURN (st_kernel) = ASSIGN_STMT (retassign);
     FUNDEF_ISCUDASTGLOBALFUN (st_kernel) = TRUE;
 
     lut = LUTremoveLut (lut);

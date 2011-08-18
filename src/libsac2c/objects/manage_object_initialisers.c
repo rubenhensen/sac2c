@@ -95,7 +95,7 @@ MOIassign (node *arg_node, info *arg_info)
      * the args
      */
     INFO_DELETE (arg_info) = FALSE;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_DELETE (arg_info)) {
         arg_node = FREEdoFreeNode (arg_node);

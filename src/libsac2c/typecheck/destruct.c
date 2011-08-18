@@ -298,7 +298,7 @@ CreateFCAssignChain (node *assign, node *selem)
     node *newfc;
     char *old_name;
 
-    let = ASSIGN_INSTR (assign);
+    let = ASSIGN_STMT (assign);
     DBUG_ASSERT (NODE_TYPE (let) == N_let && NODE_TYPE (LET_EXPR (let)) == N_funcond,
                  "CreateFCAssignChain called with illegal first argument.");
     if (selem == NULL) {
@@ -307,7 +307,7 @@ CreateFCAssignChain (node *assign, node *selem)
 
     newass = DUPdoDupNode (assign);
     /* Change the left-hand side. */
-    newids = LET_IDS (ASSIGN_INSTR (newass));
+    newids = LET_IDS (ASSIGN_STMT (newass));
     /* DUPdoDupNode does not copy the N_avis because it is an attribute. Create a
      * new one for this fresh N_ids. */
     IDS_AVIS (newids) = DUPdoDupNode (IDS_AVIS (newids));
@@ -317,7 +317,7 @@ CreateFCAssignChain (node *assign, node *selem)
     IDS_NAME (newids) = STRcatn (4, "_", old_name, "_", STRUCTELEM_NAME (selem));
     old_name = MEMfree (old_name);
     /* Change the right-hand side. */
-    newfc = LET_EXPR (ASSIGN_INSTR (newass));
+    newfc = LET_EXPR (ASSIGN_STMT (newass));
     FUNCOND_THEN (newfc) = IDstruct2elem (FUNCOND_THEN (newfc), selem);
     FUNCOND_ELSE (newfc) = IDstruct2elem (FUNCOND_ELSE (newfc), selem);
     DBUG_PRINT ("Created new funcond for %s", IDS_NAME (newids));
@@ -798,7 +798,7 @@ DESassign (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (arg_node != NULL, "Empty N_assign in N_funcond.");
     newassign = NULL;
-    instr = ASSIGN_INSTR (arg_node);
+    instr = ASSIGN_STMT (arg_node);
 
     if (instr == NULL) {
         DBUG_PRINT ("N_assign with empty instruction.");

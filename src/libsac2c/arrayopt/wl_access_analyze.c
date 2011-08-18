@@ -557,9 +557,9 @@ WLAAassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = Trav (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    DBUG_ASSERT (ASSIGN_INSTR (arg_node) != NULL, "N_assign node without instruction.");
+    DBUG_ASSERT (ASSIGN_STMT (arg_node) != NULL, "N_assign node without instruction.");
 
-    ASSIGN_INSTR (arg_node) = Trav (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = Trav (ASSIGN_STMT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

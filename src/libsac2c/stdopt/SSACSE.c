@@ -897,11 +897,11 @@ CSEassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (ASSIGN_INSTR (arg_node) != NULL, "assign node without instruction");
+    DBUG_ASSERT (ASSIGN_STMT (arg_node) != NULL, "assign node without instruction");
 
     old_assign = INFO_ASSIGN (arg_info);
     INFO_ASSIGN (arg_info) = arg_node;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     INFO_ASSIGN (arg_info) = old_assign;
 
     /* traverse to next assignment in chain */

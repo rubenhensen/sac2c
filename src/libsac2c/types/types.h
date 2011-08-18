@@ -358,7 +358,7 @@ typedef struct GENERATOR_REL {
  ******************************************************************************/
 
 /* The following struct is only annotated to N_assign nodes which are
-   inside a WL body and which have ASSIGN_INSTRs N_let and N_prf(F_sel_VxA). */
+   inside a WL body and which have ASSIGN_STMTs N_let and N_prf(F_sel_VxA). */
 typedef struct INDEX_INFO {
     int vector;               /* this is an index vector (>0) or a scalar (0)
                                  in case of a vector this number is the

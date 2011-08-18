@@ -6491,12 +6491,11 @@ GetPrfOrFundef (node *assigns)
     DBUG_ASSERT (((assigns != NULL) && (NODE_TYPE (assigns) == N_assign)),
                  "no assignment found!");
 
-    if ((ASSIGN_NEXT (assigns) == NULL)
-        && (NODE_TYPE (ASSIGN_INSTR (assigns)) == N_let)) {
-        if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assigns))) == N_prf) {
-            res = LET_EXPR (ASSIGN_INSTR (assigns));
-        } else if (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (assigns))) == N_ap) {
-            res = AP_FUNDEF (LET_EXPR (ASSIGN_INSTR (assigns)));
+    if ((ASSIGN_NEXT (assigns) == NULL) && (NODE_TYPE (ASSIGN_STMT (assigns)) == N_let)) {
+        if (NODE_TYPE (LET_EXPR (ASSIGN_STMT (assigns))) == N_prf) {
+            res = LET_EXPR (ASSIGN_STMT (assigns));
+        } else if (NODE_TYPE (LET_EXPR (ASSIGN_STMT (assigns))) == N_ap) {
+            res = AP_FUNDEF (LET_EXPR (ASSIGN_STMT (assigns)));
             DBUG_ASSERT (res != NULL, "AP_FUNDEF not found!");
             DBUG_ASSERT (NODE_TYPE (res) == N_fundef, "no N_fundef node found!");
         } else {

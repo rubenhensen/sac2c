@@ -420,7 +420,7 @@ ASDassign (node *arg_node, info *arg_info)
 
     INFO_ASSIGN (arg_info) = arg_node;
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_POSTASSIGNS (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
@@ -579,7 +579,7 @@ ASDcond (node *arg_node, info *arg_info)
             /*
              * Exchange predicate identifier in all subsequent funcond nodes
              */
-            while ((NODE_TYPE (ASSIGN_INSTR (funcond_ass)) == N_let)
+            while ((NODE_TYPE (ASSIGN_STMT (funcond_ass)) == N_let)
                    && (NODE_TYPE (ASSIGN_RHS (funcond_ass)) == N_funcond)) {
                 ID_AVIS (FUNCOND_IF (ASSIGN_RHS (funcond_ass)))
                   = ID_AVIS (COND_COND (arg_node));

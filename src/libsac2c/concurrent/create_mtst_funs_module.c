@@ -490,11 +490,11 @@ MTSTFMODassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_SPMDASSIGNS (arg_info) != NULL) {
         /*
-         * During traversal of ASSIGN_INSTR we have found a special conditional
+         * During traversal of ASSIGN_STMT we have found a special conditional
          * introduced by the cost model that needs to be eliminated now.
          */
         node *further_assigns;
@@ -510,7 +510,7 @@ MTSTFMODassign (node *arg_node, info *arg_info)
     } else {
         if (INFO_SPMDCONDITION (arg_info) != NULL) {
             /*
-             * During traversal of ASSIGN_INSTR we have found a SPMD conditional
+             * During traversal of ASSIGN_STMT we have found a SPMD conditional
              * whose condition is now being flattened.
              */
             node *preassign;

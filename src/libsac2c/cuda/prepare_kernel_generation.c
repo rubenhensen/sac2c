@@ -137,7 +137,7 @@ PKNLGassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_LASTASSIGN (arg_info) = arg_node;
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     if (!INFO_INCUDAWL (arg_info)) {
         next = ASSIGN_NEXT (arg_node);

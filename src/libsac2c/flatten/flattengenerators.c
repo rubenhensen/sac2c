@@ -408,14 +408,14 @@ FLATGassign (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
-    if ((N_let == NODE_TYPE (ASSIGN_INSTR (arg_node)))
-        && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))))) {
+    if ((N_let == NODE_TYPE (ASSIGN_STMT (arg_node)))
+        && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_STMT (arg_node))))) {
         INFO_ASSIGNISNWITH (arg_info) = TRUE;
         DBUG_PRINT ("Traversing N_assign for %s",
-                    AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_INSTR (arg_node)))));
+                    AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)))));
     }
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_ASSIGNISNWITH (arg_info) && (NULL != INFO_PREASSIGNSWITH (arg_info))) {
         arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);

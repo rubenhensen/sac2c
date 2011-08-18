@@ -226,7 +226,7 @@ SYNassign (node *arg_node, info *arg_info)
 
     INFO_NEWASSIGN (arg_info) = NULL;
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_NEWASSIGN (arg_info) != NULL) {
         // insert a new assignment node after the current one

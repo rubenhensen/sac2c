@@ -718,15 +718,15 @@ SSATassign (node *arg_node, info *arg_info)
     INFO_ASSIGN (arg_info) = arg_node;
 
     /* traverse expr */
-    if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    if (ASSIGN_STMT (arg_node) != NULL) {
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     }
 
     /* check for potentially required insertions */
     if (INFO_ASSIGN (arg_info) != arg_node) {
         /* indirectly insert these here and traverse them again */
         arg_node = INFO_ASSIGN (arg_info);
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     }
 
     /* traverse next exprs */

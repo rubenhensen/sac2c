@@ -383,7 +383,7 @@ ACUPTNpart (node *arg_node, info *arg_info)
             PART_CUDARIZABLE( arg_node) = TRUE;
           }
           else {
-            if( NODE_TYPE( ASSIGN_INSTR( block_instr)) == N_let &&
+            if( NODE_TYPE( ASSIGN_STMT( block_instr)) == N_let &&
                 NODE_TYPE( ASSIGN_RHS( block_instr)) == N_prf &&
                 PRF_PRF( ASSIGN_RHS( block_instr)) == F_idx_sel) {
               PART_CUDARIZABLE( arg_node) = FALSE;

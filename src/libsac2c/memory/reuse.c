@@ -180,8 +180,8 @@ EMRIassign (node *arg_node, info *arg_info)
     /*
      * Traverse instruction
      */
-    if (ASSIGN_INSTR (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    if (ASSIGN_STMT (arg_node) != NULL) {
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     }
 
     /*

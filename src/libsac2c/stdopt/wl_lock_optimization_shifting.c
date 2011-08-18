@@ -153,7 +153,7 @@ WLLOSassign (node *arg_node, info *arg_info)
         INFO_IS_PROP_OBJ (arg_info) = TRUE;
 
         /*Traverse into the INSTR to figure out if it is a prop_obj_?*/
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
         INFO_IS_PROP_OBJ (arg_info) = FALSE;
 

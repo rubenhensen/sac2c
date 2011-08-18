@@ -655,7 +655,7 @@ AWLFIisIdsMemberPartition (node *arg_node, node *partn)
     if (NULL != partn) {
         nassgns = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (partn)));
         while ((NULL != nassgns) && (!z)) {
-            z = isAvisMemberIds (ID_AVIS (arg_node), LET_IDS (ASSIGN_INSTR (nassgns)));
+            z = isAvisMemberIds (ID_AVIS (arg_node), LET_IDS (ASSIGN_STMT (nassgns)));
             nassgns = ASSIGN_NEXT (nassgns);
         }
     }
@@ -1839,17 +1839,17 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
          * We have to move down the scalarized version of avismin/avismax
          * as a following swap would otherwise result in value error.
          */
-        minarr = DUPdoDupTree (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (avismin))));
+        minarr = DUPdoDupTree (LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismin))));
         avismin = AWLFIflattenExpression (minarr, &INFO_VARDECS (arg_info),
                                           &INFO_PREASSIGNS (arg_info),
                                           TYcopyType (AVIS_TYPE (avismin)));
-        maxarr = DUPdoDupTree (LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (avismax))));
+        maxarr = DUPdoDupTree (LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismax))));
         avismax = AWLFIflattenExpression (maxarr, &INFO_VARDECS (arg_info),
                                           &INFO_PREASSIGNS (arg_info),
                                           TYcopyType (AVIS_TYPE (avismax)));
 
-        minarr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (avismin)));
-        maxarr = LET_EXPR (ASSIGN_INSTR (AVIS_SSAASSIGN (avismax)));
+        minarr = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismin)));
+        maxarr = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismax)));
         minex = ARRAY_AELEMS (minarr);
         maxex = ARRAY_AELEMS (maxarr);
         while (NULL != minex) {
@@ -1952,7 +1952,7 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
                       NULL);
     *preassigns = TCappendAssign (*preassigns, assgn);
     AVIS_SSAASSIGN (avis) = assgn;
-    nlet = ASSIGN_INSTR (assgn);
+    nlet = ASSIGN_STMT (assgn);
     z = IVEXPgenerateNarrayExtrema (nlet, vardecs, preassigns);
     LET_EXPR (nlet) = z;
 
@@ -2421,14 +2421,14 @@ AWLFIassign (node *arg_node, info *arg_info)
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     INFO_PREASSIGNS (arg_info) = oldpreassigns;
 
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_PREASSIGNS (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
         INFO_PREASSIGNS (arg_info) = NULL;
     }
 
-    let = ASSIGN_INSTR (arg_node);
+    let = ASSIGN_STMT (arg_node);
     if ((N_let == NODE_TYPE (let)) && (N_with == NODE_TYPE (LET_EXPR (let)))
         && (INFO_PREASSIGNSWL (arg_info) != NULL)) {
         arg_node = TCappendAssign (INFO_PREASSIGNSWL (arg_info), arg_node);

@@ -3,7 +3,7 @@
  * @defgroup
  *
  *
- * @{ASSIGN_INSTR( arg_node)
+ * @{ASSIGN_STMT( arg_node)
  *
  *****************************************************************************/
 
@@ -218,7 +218,7 @@ ICSMEMassign (node *arg_node, info *arg_info)
     /*
       ASSIGN_NEXT( arg_node) = TRAVopt( ASSIGN_NEXT( arg_node), arg_info);
 
-      ASSIGN_INSTR( arg_node) = TRAVopt( ASSIGN_INSTR( arg_node), arg_info);
+      ASSIGN_STMT( arg_node) = TRAVopt( ASSIGN_STMT( arg_node), arg_info);
 
       if( INFO_POSTASSIGNS( arg_info) != NULL) {
         assigns = TCappendAssign( INFO_POSTASSIGNS( arg_info), ASSIGN_NEXT( arg_node));
@@ -232,7 +232,7 @@ ICSMEMassign (node *arg_node, info *arg_info)
       }
     */
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     next = ASSIGN_NEXT (arg_node);
     ASSIGN_NEXT (arg_node) = NULL;

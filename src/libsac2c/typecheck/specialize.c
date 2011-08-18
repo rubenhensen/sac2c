@@ -71,11 +71,11 @@ InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
     last_assign = TCgetLastAssign (FUNDEF_INSTR (fundef));
 
     DBUG_ASSERT ((last_assign != NULL)
-                   && (NODE_TYPE (ASSIGN_INSTR (last_assign)) == N_return),
+                   && (NODE_TYPE (ASSIGN_STMT (last_assign)) == N_return),
                  "trying to insert type conv for return type into body "
                  "without return!");
 
-    ret = ASSIGN_INSTR (last_assign);
+    ret = ASSIGN_STMT (last_assign);
     id = TCgetNthExprsExpr (pos_of_ret, RETURN_EXPRS (ret));
     avis = ID_AVIS (id);
 
@@ -90,7 +90,7 @@ InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
      * a traversal here!
      */
 
-    ASSIGN_INSTR (last_assign)
+    ASSIGN_STMT (last_assign)
       = TBmakeLet (TBmakeIds (new_avis, NULL),
                    TCmakePrf2 (F_type_conv, TBmakeType (TYcopyType (spec_type)),
                                TBmakeId (avis)));

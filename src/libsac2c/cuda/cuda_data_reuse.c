@@ -1444,7 +1444,7 @@ ATravAssign (node *arg_node, info *arg_info)
         ASSIGN_ACCESS_INFO (arg_node) = NULL;
     }
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -1574,7 +1574,7 @@ CUDRassign (node *arg_node, info *arg_info)
     old_lastassign = INFO_LASTASSIGN (arg_info);
     INFO_LASTASSIGN (arg_info) = arg_node;
 
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     tmp = arg_node;
     if (INFO_PREASSIGNS (arg_info) != NULL) {

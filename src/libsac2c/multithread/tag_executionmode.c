@@ -193,21 +193,21 @@ TEMassign (node *arg_node, info *arg_info)
             ASSIGN_EXECMODE (arg_node) = MUTH_MULTI;
             /* this assignment will be done MT -> let's mark the allocations as
                single-threaded */
-            DBUG_ASSERT (NODE_TYPE (ASSIGN_INSTR (arg_node)) == N_let,
+            DBUG_ASSERT (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let,
                          "TEMassign expects a N_let here");
-            DBUG_ASSERT (NODE_TYPE (LET_EXPR (ASSIGN_INSTR (arg_node))) == N_with2,
+            DBUG_ASSERT (NODE_TYPE (LET_EXPR (ASSIGN_STMT (arg_node))) == N_with2,
                          "TEMassign expects a N_Nwith2 here");
             /* set the calcparallel-flag */
 
-            WITH2_PARALLELIZE (LET_EXPR (ASSIGN_INSTR (arg_node))) = TRUE;
+            WITH2_PARALLELIZE (LET_EXPR (ASSIGN_STMT (arg_node))) = TRUE;
 
             /* tag the allocations of the withloop */
-            MUTHLIBtagAllocs (LET_EXPR (ASSIGN_INSTR (arg_node)), MUTH_MULTI);
+            MUTHLIBtagAllocs (LET_EXPR (ASSIGN_STMT (arg_node)), MUTH_MULTI);
         } else if (MustExecuteSingle (arg_node, arg_info)) {
             ASSIGN_EXECMODE (arg_node) = MUTH_SINGLE;
         }
     } else {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     }
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -378,7 +378,7 @@ TEMap (node *arg_node, info *arg_info)
         INFO_EXECMODE (arg_info) = MUTH_SINGLE;
     } else { /* do nothing special -> continue traversal */
         if (AP_ARGS (arg_node) != NULL) {
-            ASSIGN_INSTR (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
+            ASSIGN_STMT (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
         }
     }
     DBUG_RETURN (arg_node);
@@ -409,7 +409,7 @@ TEMarray (node *arg_node, info *arg_info)
     }
     /* otherwise continue traversal */
     else if (ARRAY_AELEMS (arg_node) != NULL) {
-        ASSIGN_INSTR (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
+        ASSIGN_STMT (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -651,7 +651,7 @@ MustExecuteExclusive (node *assign, info *arg_info)
     INFO_EXECMODE (arg_info) = MUTH_ANY;
 
     /* traverse into the instruction to analyse it */
-    ASSIGN_INSTR (assign) = TRAVdo (ASSIGN_INSTR (assign), arg_info);
+    ASSIGN_STMT (assign) = TRAVdo (ASSIGN_STMT (assign), arg_info);
 
     exclusive = (INFO_EXECMODE (arg_info) == MUTH_EXCLUSIVE);
 
@@ -689,7 +689,7 @@ CouldExecuteMulti (node *assign, info *arg_info)
     INFO_EXECMODE (arg_info) = MUTH_ANY;
 
     /* traverse into the instruction to analyse it */
-    ASSIGN_INSTR (assign) = TRAVdo (ASSIGN_INSTR (assign), arg_info);
+    ASSIGN_STMT (assign) = TRAVdo (ASSIGN_STMT (assign), arg_info);
 
     multi = (INFO_EXECMODE (arg_info) == MUTH_MULTI);
 
@@ -730,7 +730,7 @@ MustExecuteSingle (node *assign, info *arg_info)
     INFO_EXECMODE (arg_info) = MUTH_ANY;
 
     /* traverse into the instruction to analyse it */
-    ASSIGN_INSTR (assign) = TRAVdo (ASSIGN_INSTR (assign), arg_info);
+    ASSIGN_STMT (assign) = TRAVdo (ASSIGN_STMT (assign), arg_info);
 
     single = (INFO_EXECMODE (arg_info) == MUTH_SINGLE);
 

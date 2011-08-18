@@ -114,7 +114,7 @@ SearchPredicate (node *ap)
 
     assign = BLOCK_ASSIGNS (FUNDEF_BODY (AP_FUNDEF (ap)));
 
-    pred_avis = ID_AVIS (COND_COND (ASSIGN_INSTR (assign)));
+    pred_avis = ID_AVIS (COND_COND (ASSIGN_STMT (assign)));
 
     formal_args = FUNDEF_ARGS (AP_FUNDEF (ap));
     act_args = AP_ARGS (ap);
@@ -431,7 +431,7 @@ ELFassign (node *arg_node, info *arg_info)
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     if (INFO_ASSIGNS (arg_info) != NULL) {
         arg_node = TCappendAssign (INFO_ASSIGNS (arg_info), arg_node);
         INFO_ASSIGNS (arg_info) = NULL;

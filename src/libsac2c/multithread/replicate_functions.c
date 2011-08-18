@@ -307,7 +307,7 @@ REPFUNassign (node *arg_node, info *arg_info)
     INFO_REPFUN_ACTASSIGN (arg_info) = arg_node;
 
     DBUG_PRINT ("trav into instruction");
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     DBUG_PRINT ("trav from instruction");
 
     /* pop info */

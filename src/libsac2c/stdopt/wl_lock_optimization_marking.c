@@ -249,7 +249,7 @@ WLLOMassign (node *arg_node, info *arg_info)
     /*TravDown and therefor !UP-Part*/
 
     /*First traverse into the INSTR*/
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     /*If it is the right WL-level and the INSTR contains variables which depend
      * on an object in the right way, mark assignment as !UP*/
@@ -271,7 +271,7 @@ WLLOMassign (node *arg_node, info *arg_info)
     /*TravUp and therefor !DOWN-Part*/
 
     /*First traverse into the INSTR*/
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     /*If it is the right WL-level and the INSTR contains variables which depend
      * on an object in the right way, mark assignment as !DOWN*/

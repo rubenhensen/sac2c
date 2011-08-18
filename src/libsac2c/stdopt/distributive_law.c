@@ -924,7 +924,7 @@ DLassign (node *arg_node, info *arg_info)
      * Traverse LHS identifiers to mark them as local in the current block
      */
     INFO_DIRECTION (arg_info) = DIR_down;
-    ASSIGN_INSTR (arg_node) = TRAVopt (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
 
     /*
      * Bottom-up traversal
@@ -932,7 +932,7 @@ DLassign (node *arg_node, info *arg_info)
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     INFO_DIRECTION (arg_info) = DIR_up;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_PREASSIGN (arg_info) != NULL) {
         arg_node = TCappendAssign (ReverseAssignChain (INFO_PREASSIGN (arg_info), NULL),

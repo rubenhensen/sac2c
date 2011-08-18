@@ -217,7 +217,7 @@ RERAassign (node *arg_node, info *arg_info)
      * traverse the instruction to check for substitutions
      */
     INFO_DELETE (arg_info) = FALSE;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     delete = INFO_DELETE (arg_info);
     INFO_DELETE (arg_info) = FALSE;
 

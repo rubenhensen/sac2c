@@ -312,7 +312,7 @@ WLSassign (node *arg_node, info *arg_info)
      */
     oldnassign = INFO_NASSIGN (arg_info);
     INFO_NASSIGN (arg_info) = arg_node;
-    ASSIGN_INSTR (arg_node) = TRAVdo (ASSIGN_INSTR (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     INFO_NASSIGN (arg_info) = oldnassign;
 
     if (INFO_PREASSIGNS (arg_info) != NULL) {

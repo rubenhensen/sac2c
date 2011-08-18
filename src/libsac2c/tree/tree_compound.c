@@ -1878,7 +1878,7 @@ TCgetCompoundNode (node *arg_node)
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_assign,
                  "TCgetCompoundNode() can handle N_assign nodes only!");
 
-    arg_node = ASSIGN_INSTR (arg_node);
+    arg_node = ASSIGN_STMT (arg_node);
     switch (NODE_TYPE (arg_node)) {
     case N_cond:
         /* here is no break missing */
