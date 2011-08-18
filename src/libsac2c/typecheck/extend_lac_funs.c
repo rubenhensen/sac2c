@@ -105,7 +105,7 @@ SearchPredicate (node *ap)
 
     DBUG_ASSERT (NODE_TYPE (AP_FUNDEF (ap)) == N_fundef,
                  "AP_FUNDEF does not point to a fundef node");
-    DBUG_ASSERT (FUNDEF_ISCONDFUN (AP_FUNDEF (ap)) || FUNDEF_ISDOFUN (AP_FUNDEF (ap)),
+    DBUG_ASSERT (FUNDEF_ISCONDFUN (AP_FUNDEF (ap)) || FUNDEF_ISLOOPFUN (AP_FUNDEF (ap)),
                  "AP_FUNDEF does not point to a LaC fun fundef node");
     DBUG_ASSERT (FUNDEF_BODY (AP_FUNDEF (ap)) != NULL,
                  "AP_FUNDEF points to a fundef node without body");
@@ -460,7 +460,7 @@ ELFap (node *arg_node, info *arg_info)
         with = CreateWithLoop (arg_node, arg_info);
         arg_node = FREEdoFreeTree (arg_node);
         arg_node = with;
-    } else if (FUNDEF_ISDOFUN (AP_FUNDEF (arg_node))
+    } else if (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))
                && !AP_ISRECURSIVEDOFUNCALL (arg_node)) {
     }
 

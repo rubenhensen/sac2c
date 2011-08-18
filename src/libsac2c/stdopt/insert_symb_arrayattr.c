@@ -1162,7 +1162,7 @@ ISAAap (node *arg_node, info *arg_info)
 
             /* 4. */
             AP_FUNDEF (arg_node) = ISAAretraverse (fun, FALSE, NULL, arg_info);
-        } else if (TRUE == FUNDEF_ISDOFUN (fun)) {
+        } else if (TRUE == FUNDEF_ISLOOPFUN (fun)) {
             DBUG_PRINT ("calling the loop fun %s", FUNDEF_NAME (fun));
 
             /* Create a SAA-augmented version of the N_ret-chain, os we may apply
@@ -1209,7 +1209,7 @@ ISAAap (node *arg_node, info *arg_info)
               = PrependSAAInConcreteResults (FUNDEF_RETS (fun), lhs,
                                              INFO_FUNDEF (arg_info), arg_info);
         }
-    } else if ((TS_args == INFO_TRAVSCOPE (arg_info)) && (TRUE == FUNDEF_ISDOFUN (fun))
+    } else if ((TS_args == INFO_TRAVSCOPE (arg_info)) && (TRUE == FUNDEF_ISLOOPFUN (fun))
                && (fun == INFO_FUNDEF (arg_info))) {
         DBUG_PRINT ("inner application of the loop fun %s", FUNDEF_NAME (fun));
 
@@ -1401,7 +1401,7 @@ ISAAids (node *arg_node, info *arg_info)
               = TCappendAssign (INFO_PREASSIGN (arg_info), preass);
         }
     } else {
-        if (!((FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
+        if (!((FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)))
               && (NODE_TYPE (INFO_RHS (arg_info)) == N_ap)
               && (AP_FUNDEF (INFO_RHS (arg_info)) == INFO_FUNDEF (arg_info)))) {
             INFO_POSTASSIGN (arg_info)

@@ -400,7 +400,7 @@ EMIAfuncond (node *arg_node, info *arg_info)
      * LOOP Functions: Alias of the return value does not depend on
      *                 the recursive application!
      */
-    if (!FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))) {
+    if (!FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
         FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
     }
     FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);

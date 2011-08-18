@@ -791,7 +791,7 @@ CFfuncond (node *arg_node, info *arg_info)
     /* check for constant condition */
     res = arg_node;
     if (TYisAKV (ID_NTYPE (FUNCOND_IF (arg_node)))
-        && ((!FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
+        && ((!FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)))
             || (!COisTrue (TYgetValue (ID_NTYPE (FUNCOND_IF (arg_node))), TRUE)))) {
         if (COisTrue (TYgetValue (ID_NTYPE (FUNCOND_IF (arg_node))), TRUE)) {
             res = DUPdoDupTree (FUNCOND_THEN (arg_node));
@@ -898,7 +898,7 @@ CFcond (node *arg_node, info *arg_info)
         condtrue = COisTrue (TYgetValue (ID_NTYPE (COND_COND (arg_node))), TRUE);
     }
 
-    if (condtrue && FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))) {
+    if (condtrue && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
         /*
          * if this is a do- or while function and the condition is evaluated
          * to true we have an endless loop. We MUST avoid doing CF, as it
@@ -921,7 +921,7 @@ CFcond (node *arg_node, info *arg_info)
          */
         INFO_REMASSIGN (arg_info) = TRUE;
 
-        FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)) = FALSE;
+        FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)) = FALSE;
         FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)) = FALSE;
         FUNDEF_ISLACINLINE (INFO_FUNDEF (arg_info)) = TRUE;
 
@@ -1200,7 +1200,7 @@ CFap (node *arg_node, info *arg_info)
 
     if (!INFO_LACFUNOK (arg_info)
         && (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))
-            || (FUNDEF_ISDOFUN (AP_FUNDEF (arg_node))
+            || (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))
                 && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))))) {
         old_til = INFO_TRAVINLAC (arg_info);
         INFO_TRAVINLAC (arg_info) = TRUE;

@@ -5353,7 +5353,7 @@ N_tfarg :
         <flag name="IsCondFun">
           <description>This is a lifted conditional. The function is only referenced once from the context the conditional was lifted from.</description>
         </flag>
-        <flag name="IsDoFun">
+        <flag name="IsLoopFun">
           <description>This function is a functional representation of a do loop; it is only referenced twice: Once from the context the loop was lifted from and once from the inner recursive application.</description>
         </flag>
         <flag name="IsObjInitFun">

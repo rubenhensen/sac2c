@@ -241,7 +241,7 @@ DCRfundef (node *arg_node, info *arg_info)
                      * Conditional was removed: Convert to regular function
                      */
                     FUNDEF_ISCONDFUN (arg_node) = FALSE;
-                    FUNDEF_ISDOFUN (arg_node) = FALSE;
+                    FUNDEF_ISLOOPFUN (arg_node) = FALSE;
                     FUNDEF_ISLACINLINE (arg_node) = TRUE;
                     DBUG_ASSERT (global.local_funs_grouped == FALSE,
                                  "glf form found during whole-module traversal");

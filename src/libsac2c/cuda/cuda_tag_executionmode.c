@@ -164,7 +164,7 @@ IsIdCudaDefined (node *id, info *arg_info)
      * in any HOST_SINGLE instructions in the loop function
      */
     else if (NODE_TYPE (ID_DECL (id)) == N_arg) {
-        if (FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)) && !TUisScalar (ID_NTYPE (id))
+        if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)) && !TUisScalar (ID_NTYPE (id))
             && !AVIS_ISHOSTREFERENCED (ID_AVIS (id))
             && FUNDEF_WLCOUNT (INFO_FUNDEF (arg_info)) != 0) {
             res = TRUE;
@@ -292,7 +292,7 @@ ATravApCheckCudarizable (node *arg_node, info *arg_info)
             /* If we found a cond lac function, we continues traverse
              * into its body */
             fundef = TRAVdo (fundef, arg_info);
-        } else if (FUNDEF_ISDOFUN (fundef)) {
+        } else if (FUNDEF_ISLOOPFUN (fundef)) {
             /* If we found a loop, the lac function is not cudarizable */
             INFO_AT_ISCUDARIZABLE (arg_info) = FALSE;
         } else {
@@ -637,7 +637,7 @@ CUTEMcond (node *arg_node, info *arg_info)
     /* We do not traverse the conditional in a do-fun, i.e. recursive call. */
     if (INFO_TRAVMODE (arg_info) == cutem_tag
         || INFO_TRAVMODE (arg_info) == cutem_untag) {
-        if (!FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))) {
+        if (!FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
             COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
             COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
             COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
@@ -777,7 +777,7 @@ CUTEMid (node *arg_node, info *arg_info)
          * do-fun, we need to set the flag of the corresponding parameter
          * in the calling context to also TRUE */
         if (NODE_TYPE (ID_DECL (arg_node)) == N_arg && !TUisScalar (ID_NTYPE (arg_node))
-            && FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))) {
+            && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
             param
               = GetApArgFromFundefArg (INFO_APARGS (arg_info), INFO_FUNDEFARGS (arg_info),
                                        ID_DECL (arg_node));
@@ -855,7 +855,7 @@ CUTEMap (node *arg_node, info *arg_info)
         }
         /* If the ap is do-fun, it's tagged as host single and
          * traverse into the loop body */
-        else if (FUNDEF_ISDOFUN (fundef) && fundef != INFO_FUNDEF (arg_info)) {
+        else if (FUNDEF_ISLOOPFUN (fundef) && fundef != INFO_FUNDEF (arg_info)) {
             ASSIGN_EXECMODE (INFO_LASTASSIGN (arg_info)) = CUDA_HOST_SINGLE;
             fundef = TraverseLacFun (fundef, arg_node, arg_info);
         }
@@ -877,7 +877,7 @@ CUTEMap (node *arg_node, info *arg_info)
              * differently. The ISHOSTREFERENCED flag of each array parameter
              * is only set when we traverse the do fun body. So here we only
              * set the flag for non-array parameters, i.e. scalars. */
-            if (FUNDEF_ISDOFUN (fundef)) {
+            if (FUNDEF_ISLOOPFUN (fundef)) {
                 INFO_DOFUNARGS (arg_info) = TRUE;
             }
             AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);

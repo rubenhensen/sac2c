@@ -181,7 +181,7 @@ GetRecursiveFunctionApplication (node *fundef)
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "N_fundef node expected.");
-    DBUG_ASSERT (FUNDEF_ISDOFUN (fundef), "Loop-Function expected.");
+    DBUG_ASSERT (FUNDEF_ISLOOPFUN (fundef), "Loop-Function expected.");
 
     /**
      * search for recursive fun call
@@ -222,7 +222,7 @@ WLPROPdoWithloopPropagation (node *arg_node)
 
     arg_info = MakeInfo ();
 
-    if (!FUNDEF_ISDOFUN (arg_node)) {
+    if (!FUNDEF_ISLOOPFUN (arg_node)) {
 
         TRAVpush (TR_wlprop);
         arg_node = TRAVdo (arg_node, arg_info);
@@ -332,7 +332,7 @@ WLPROPap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if ((FUNDEF_ISDOFUN (AP_FUNDEF (arg_node)))
+    if ((FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
 
         /**

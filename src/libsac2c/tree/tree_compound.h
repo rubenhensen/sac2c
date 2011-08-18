@@ -292,7 +292,7 @@ extern node *TCunAliasObjdef (node *objdef);
 #define FUNDEF_VARDEC(n) (BLOCK_VARDECS (FUNDEF_BODY (n)))
 #define FUNDEF_INSTR(n) (BLOCK_ASSIGNS (FUNDEF_BODY (n)))
 
-#define FUNDEF_ISLACFUN(n) (FUNDEF_ISCONDFUN (n) || FUNDEF_ISDOFUN (n))
+#define FUNDEF_ISLACFUN(n) (FUNDEF_ISCONDFUN (n) || FUNDEF_ISLOOPFUN (n))
 
 extern node *TCfindVardec_Name (char *name, node *fundef);
 extern node *TCfindVardec_Varno (int varno, node *fundef);

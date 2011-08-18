@@ -369,8 +369,8 @@ EBTfundef (node *arg_node, info *arg_info)
             FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-            if (FUNDEF_ISDOFUN (arg_node) && INFO_THENBOTTS (arg_info)) {
-                FUNDEF_ISDOFUN (arg_node) = FALSE;
+            if (FUNDEF_ISLOOPFUN (arg_node) && INFO_THENBOTTS (arg_info)) {
+                FUNDEF_ISLOOPFUN (arg_node) = FALSE;
                 FUNDEF_ISLACINLINE (arg_node) = TRUE;
             }
         }

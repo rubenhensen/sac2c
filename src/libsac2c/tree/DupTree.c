@@ -1147,8 +1147,8 @@ DUPfundef (node *arg_node, info *arg_info)
     FUNDEF_RETURN (new_node)
       = LUTsearchInLutPp (INFO_LUT (arg_info), FUNDEF_RETURN (arg_node));
 
-    if (FUNDEF_ISDOFUN (new_node)) {
-        DBUG_ASSERT (FUNDEF_ISDOFUN (arg_node),
+    if (FUNDEF_ISLOOPFUN (new_node)) {
+        DBUG_ASSERT (FUNDEF_ISLOOPFUN (arg_node),
                      "Mismatch in copying flag structure of N_fundef node");
 
         DBUG_ASSERT (FUNDEF_LOOPRECURSIVEAP (arg_node) != NULL,
@@ -1732,7 +1732,7 @@ DUPap (node *arg_node, info *arg_info)
 
         if (FUNDEF_ISCONDFUN (old_fundef)
             || (FUNDEF_ISLACINLINE (old_fundef) && (!AP_ISRECURSIVEDOFUNCALL (arg_node)))
-            || (FUNDEF_ISDOFUN (old_fundef) && (!AP_ISRECURSIVEDOFUNCALL (arg_node)))) {
+            || (FUNDEF_ISLOOPFUN (old_fundef) && (!AP_ISRECURSIVEDOFUNCALL (arg_node)))) {
             /*
              * Definitions of special functions must be duplicated immediately
              * to retain one-to-one correspondence between application and

@@ -197,7 +197,7 @@ MLTRANfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = arg_node;
 
     /* If the function is not a do-fun, we traverse as normal */
-    if (!FUNDEF_ISDOFUN (arg_node)) {
+    if (!FUNDEF_ISLOOPFUN (arg_node)) {
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     } else {
@@ -349,7 +349,7 @@ MLTRANap (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* If the N_ap->N_fundef is a do-fun */
-    if (FUNDEF_ISDOFUN (AP_FUNDEF (arg_node))) {
+    if (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))) {
         /* If this is NOT a recursive application of the enclosing do-fun */
         if (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info)) {
             /* Traverse the N_ap arguments first */

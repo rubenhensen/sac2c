@@ -236,7 +236,7 @@ DCIfundef (node *arg_node, info *arg_info)
                 fixedpointreached = TRUE;
 
                 if ((INFO_TRAVSCOPE (info) == TS_function)
-                    && (FUNDEF_ISDOFUN (arg_node))) {
+                    && (FUNDEF_ISLOOPFUN (arg_node))) {
                     node *args, *recexprs;
                     args = FUNDEF_ARGS (arg_node);
                     recexprs = AP_ARGS (ASSIGN_RHS (INFO_INT_ASSIGN (info)));

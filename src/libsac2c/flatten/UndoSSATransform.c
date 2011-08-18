@@ -456,7 +456,7 @@ IdGivenByFillOperation (node *idavis)
         } break;
 
         case N_ap: {
-            if (FUNDEF_ISDOFUN (AP_FUNDEF (expr))) {
+            if (FUNDEF_ISLOOPFUN (AP_FUNDEF (expr))) {
                 res = TRUE;
             } else {
                 node *rets = FUNDEF_RETS (AP_FUNDEF (expr));

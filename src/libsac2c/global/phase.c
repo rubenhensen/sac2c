@@ -395,7 +395,7 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
             && !FUNDEF_ISWRAPPERFUN (fundef) && FUNDEF_WASOPTIMIZED (fundef)) {
             CTItell (4, " ");
 
-            if (FUNDEF_ISDOFUN (fundef)) {
+            if (FUNDEF_ISLOOPFUN (fundef)) {
                 CTInote ("****** Optimizing loop function:");
             } else if (FUNDEF_ISCONDFUN (fundef)) {
                 CTInote ("****** Optimizing conditional function:");

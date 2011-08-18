@@ -313,7 +313,7 @@ PMBLarg (node *arg_node, info *arg_info)
     DBUG_ASSERT (INFO_ARGUMENTS (arg_info) != NULL,
                  "ran out of arguments when processing parameters!");
 
-    if (!FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))
+    if (!FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
         || (LUTsearchInLutP (INFO_LUT (arg_info), ARG_AVIS (arg_node)) != NULL)) {
         /* either it is a cond fun or a pass through argument of a loop fun */
 

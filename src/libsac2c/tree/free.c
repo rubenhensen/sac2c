@@ -484,7 +484,7 @@ FREEzombify (node *arg_node)
     FUNDEF_ISSACARGCONVERSION (arg_node) = FALSE;
     FUNDEF_ISNEEDED (arg_node) = FALSE;
     FUNDEF_ISCONDFUN (arg_node) = FALSE;
-    FUNDEF_ISDOFUN (arg_node) = FALSE;
+    FUNDEF_ISLOOPFUN (arg_node) = FALSE;
     FUNDEF_ISSPMDFUN (arg_node) = FALSE;
     FUNDEF_ISMTFUN (arg_node) = FALSE;
     FUNDEF_ISSTFUN (arg_node) = FALSE;

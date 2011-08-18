@@ -655,7 +655,7 @@ LSfundef (node *arg_node, info *arg_info)
                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                 FUNDEF_NAME (arg_node));
     if (!((INFO_LEVEL (arg_info) == 0)
-          && (FUNDEF_ISDOFUN (arg_node) || FUNDEF_ISCONDFUN (arg_node)))) {
+          && (FUNDEF_ISLOOPFUN (arg_node) || FUNDEF_ISCONDFUN (arg_node)))) {
 
         fundef = INFO_FUNDEF (arg_info);
         INFO_FUNDEF (arg_info) = arg_node;
@@ -676,7 +676,7 @@ LSfundef (node *arg_node, info *arg_info)
          */
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-        if (FUNDEF_ISDOFUN (arg_node)) {
+        if (FUNDEF_ISLOOPFUN (arg_node)) {
             /**
              * We should now have both calls in INFO_EXTCALL and
              * INFO_RECCALL, respectively!
@@ -829,13 +829,13 @@ LSap (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if ((AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info))
-        && FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))) {
+        && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
         INFO_RECCALL (arg_info) = arg_node;
     } else {
         if (AP_ARGS (arg_node) != NULL) {
             AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
         }
-        if (FUNDEF_ISDOFUN (AP_FUNDEF (arg_node))
+        if (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))
             || FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
             INFO_LEVEL (arg_info)++;
             external = INFO_EXTCALL (arg_info);

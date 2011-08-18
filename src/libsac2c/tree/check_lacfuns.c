@@ -156,7 +156,7 @@ CHKLACFfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_SPINE (arg_info)) {
-        if (!FUNDEF_ISDOFUN (arg_node) && !FUNDEF_ISCONDFUN (arg_node)) {
+        if (!FUNDEF_ISLOOPFUN (arg_node) && !FUNDEF_ISCONDFUN (arg_node)) {
             INFO_FUNDEF (arg_info) = arg_node;
             INFO_REGULARFUNDEF (arg_info) = arg_node;
             FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -234,7 +234,7 @@ CHKLACFap (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (!AP_ISRECURSIVEDOFUNCALL (arg_node)
-        && (FUNDEF_ISDOFUN (AP_FUNDEF (arg_node))
+        && (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))
             || FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node)))) {
         spine = INFO_SPINE (arg_info);
         INFO_SPINE (arg_info) = FALSE;

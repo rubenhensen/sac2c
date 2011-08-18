@@ -602,7 +602,7 @@ GetRecursiveCallAssignment (node *dofun)
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (dofun) == N_fundef, "Illegal argument!");
-    DBUG_ASSERT (FUNDEF_ISDOFUN (dofun), "Illegal argument!");
+    DBUG_ASSERT (FUNDEF_ISLOOPFUN (dofun), "Illegal argument!");
     DBUG_ASSERT (FUNDEF_BODY (dofun) != NULL, "Loop function without body!");
 
     ass = FUNDEF_INSTR (dofun);
@@ -668,7 +668,7 @@ DLIRfundef (node *arg_node, info *arg_info)
 
         /* build up LUT for vardec move/rename operartions */
         /* also obtain assignment of recursive call */
-        if (FUNDEF_ISDOFUN (arg_node)) {
+        if (FUNDEF_ISLOOPFUN (arg_node)) {
             if (INFO_TRAVSTART (info) == TS_module) {
                 INFO_MOVELUT (info) = LUTgenerateLut ();
                 INFO_FUNDEFINTASSIGN (info) = GetRecursiveCallAssignment (arg_node);
@@ -679,7 +679,7 @@ DLIRfundef (node *arg_node, info *arg_info)
         INFO_RESULTMAP (info) = NULL;
 
         /* save pointer to archain of external function application */
-        if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISDOFUN (arg_node))
+        if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISLOOPFUN (arg_node))
             && (INFO_TRAVSTART (info) == TS_module)) {
             INFO_APARGCHAIN (info) = AP_ARGS (ASSIGN_RHS (INFO_FUNDEFEXTASSIGN (info)));
         }
@@ -997,7 +997,7 @@ DLIRlet (node *arg_node, info *arg_info)
         /* in topblock mark let statement according to the inferred data */
         if ((INFO_NONLIRUSE (arg_info) == 0)
             && (INFO_CONDSTATUS (arg_info) == CONDSTATUS_NOCOND)
-            && (FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
+            && (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)))
             && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_with)
                   && (INFO_PREASSIGN (arg_info) != NULL)))) {
 
@@ -1244,7 +1244,7 @@ DLIRreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info))
+    if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))
         && (INFO_TRAVSTART (arg_info) == TS_module)) {
         /* init INFO_APRESCHAIN with external result chain */
         DBUG_ASSERT (INFO_FUNDEFEXTASSIGN (arg_info) != NULL,

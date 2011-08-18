@@ -1994,7 +1994,7 @@ PRTfundef (node *arg_node, info *arg_info)
                                      FUNDEF_NAME (INFO_NONLOCCALFUN (arg_info)));
                         }
                     }
-                } else if (FUNDEF_ISDOFUN (arg_node)) {
+                } else if (FUNDEF_ISLOOPFUN (arg_node)) {
                     if (INFO_NONLOCCALFUN (arg_info) == NULL) {
                         fprintf (global.outfile, " * Loop function:\n");
                     } else {

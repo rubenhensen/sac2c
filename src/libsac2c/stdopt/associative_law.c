@@ -900,10 +900,10 @@ ALfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("");
         DBUG_PRINT ("traversing body of %s", FUNDEF_NAME (arg_node));
 
-        INFO_ISLOOPBODY (arg_info) = FUNDEF_ISDOFUN (arg_node);
+        INFO_ISLOOPBODY (arg_info) = FUNDEF_ISLOOPFUN (arg_node);
         INFO_FUNDEF (arg_info) = arg_node;
 
-        if (FUNDEF_ISDOFUN (arg_node)) {
+        if (FUNDEF_ISLOOPFUN (arg_node)) {
             DBUG_ASSERT (FUNDEF_LOOPRECURSIVEAP (arg_node) != NULL,
                          "Loop fun found without RecursiveAp set: %s.",
                          FUNDEF_NAME (arg_node));

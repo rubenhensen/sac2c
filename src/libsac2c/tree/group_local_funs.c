@@ -100,7 +100,7 @@ GLFisLocalFun (node *fundef)
      *  hooked functions (zombies or duped ones) should be treated,
      *  we need to make sure these two are still considered "local".
      */
-    is_local_fun = FUNDEF_ISCONDFUN (fundef) || FUNDEF_ISDOFUN (fundef)
+    is_local_fun = FUNDEF_ISCONDFUN (fundef) || FUNDEF_ISLOOPFUN (fundef)
                    || FUNDEF_ISLACINLINE (fundef) || FUNDEF_ISZOMBIE (fundef);
 
     DBUG_RETURN (is_local_fun);

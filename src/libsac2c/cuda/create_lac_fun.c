@@ -255,7 +255,7 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
         *lacfun_p = TBmakeFundef (fundef_name, fundef_ns, fundef_rets, fundef_args,
                                   fundef_body, *lacfun_p);
 
-        FUNDEF_ISDOFUN (*lacfun_p) = TRUE;
+        FUNDEF_ISLOOPFUN (*lacfun_p) = TRUE;
 
         /* Compute the argument list of the recursive function call */
         node *recursive_args = NULL;

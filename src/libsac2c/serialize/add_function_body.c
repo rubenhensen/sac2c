@@ -178,7 +178,8 @@ AFBfundef (node *arg_node, info *arg_info)
     FUNDEF_LOOPRECURSIVEAP (arg_node) = INFO_LOOPRECURSIVEAP (arg_info);
     INFO_LOOPRECURSIVEAP (arg_info) = NULL;
 
-    DBUG_ASSERT (!FUNDEF_ISDOFUN (arg_node) || FUNDEF_LOOPRECURSIVEAP (arg_node) != NULL,
+    DBUG_ASSERT (!FUNDEF_ISLOOPFUN (arg_node)
+                   || FUNDEF_LOOPRECURSIVEAP (arg_node) != NULL,
                  "Loop fun without (detected) recursive call found");
 
     DBUG_RETURN (arg_node);

@@ -363,7 +363,7 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
              * actual type is subtype of formal type -> specialize
              */
             if ((FUNDEF_ISCONDFUN (fundef))
-                || ((FUNDEF_ISDOFUN (fundef))
+                || ((FUNDEF_ISLOOPFUN (fundef))
                     && (AVIS_SSALPINV (ARG_AVIS (act_fun_arg))))) {
 
                 DBUG_PRINT ("type of formal LaC-fun (%s) arg specialized in line %d:"
@@ -393,7 +393,8 @@ PropagateSubst2Args (node *fun_args, node *ap_args, node *fundef)
          * of loop-funs.
          */
         if ((FUNDEF_ISCONDFUN (fundef))
-            || ((FUNDEF_ISDOFUN (fundef)) && (AVIS_SSALPINV (ARG_AVIS (act_fun_arg))))) {
+            || ((FUNDEF_ISLOOPFUN (fundef))
+                && (AVIS_SSALPINV (ARG_AVIS (act_fun_arg))))) {
             found_match = FALSE;
 
             search_fun_arg = fun_args;
@@ -487,7 +488,7 @@ BuildSubstNodelist (node *return_exprs, node *fundef, node *ext_assign)
         avis1 = GetResultArgAvis (EXPRS_EXPR (return_exprs), THENPART);
         avis2 = GetResultArgAvis (EXPRS_EXPR (return_exprs), ELSEPART);
 
-        if (((FUNDEF_ISDOFUN (fundef)) && (avis2 != NULL) && (AVIS_SSALPINV (avis2)))
+        if (((FUNDEF_ISLOOPFUN (fundef)) && (avis2 != NULL) && (AVIS_SSALPINV (avis2)))
             || ((FUNDEF_ISCONDFUN (fundef)) && (avis1 == avis2) && (avis2 != NULL))) {
             /*
              * we get an arg that is result of this fundef,
@@ -541,7 +542,7 @@ PropagateIdenticalReturn2Results (node *ap_fundef, node *ids_chain)
     act_result = ids_chain;
     act_exprs = RETURN_EXPRS (FUNDEF_RETURN (ap_fundef));
 
-    while ((FUNDEF_ISDOFUN (ap_fundef)) && (act_result != NULL)) {
+    while ((FUNDEF_ISLOOPFUN (ap_fundef)) && (act_result != NULL)) {
         /* search the the processed results for identical results */
         search_result = ids_chain;
         search_exprs = RETURN_EXPRS (FUNDEF_RETURN (ap_fundef));
@@ -1079,7 +1080,7 @@ CSEap (node *arg_node, info *arg_info)
      * we set RECFUNAP flag to TRUE, to avoid renamings of
      * loop-independent args that could be replaced otherwise.
      */
-    if ((FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
+    if ((FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)))
         && (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info))) {
         INFO_RECFUNAP (arg_info) = TRUE;
     } else {

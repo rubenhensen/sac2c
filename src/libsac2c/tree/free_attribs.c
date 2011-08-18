@@ -188,7 +188,7 @@ FREEattribExtLink (node *attr, node *parent)
 
     if (attr != NULL) {
         if ((NODE_TYPE (attr) == N_fundef) && (NODE_TYPE (parent) == N_ap)) {
-            if ((FUNDEF_ISCONDFUN (attr) || (FUNDEF_ISDOFUN (attr))
+            if ((FUNDEF_ISCONDFUN (attr) || (FUNDEF_ISLOOPFUN (attr))
                  || (FUNDEF_ISLACINLINE (attr)))
                 && !AP_ISRECURSIVEDOFUNCALL (parent)) {
                 /**

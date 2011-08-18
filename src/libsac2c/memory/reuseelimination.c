@@ -347,7 +347,7 @@ EMREprf (node *arg_node, info *arg_info)
          */
         DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, bavis);
 
-        if ((FUNDEF_ISDOFUN (INFO_FUNDEF (arg_info)))
+        if ((FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)))
             && (AVIS_SSAASSIGN (bavis) == NULL)) {
             /*
              * FIX FOR BUG #128!!!

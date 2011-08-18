@@ -179,7 +179,7 @@ AMTRANfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = arg_node;
 
     /* We only traverse do-fun. */
-    if (FUNDEF_ISDOFUN (arg_node)) {
+    if (FUNDEF_ISLOOPFUN (arg_node)) {
         INFO_INDOFUN (arg_info) = TRUE;
         INFO_NLUT (arg_info)
           = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));

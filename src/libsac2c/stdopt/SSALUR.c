@@ -172,7 +172,7 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
                  __func__);
 
     /* check for do special fundef */
-    if (!FUNDEF_ISDOFUN (fundef)) {
+    if (!FUNDEF_ISLOOPFUN (fundef)) {
         DBUG_RETURN ((DBUG_PRINT ("no do-loop special fundef"), UNR_NONE));
     }
 

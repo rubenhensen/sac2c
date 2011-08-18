@@ -494,9 +494,9 @@ F2Lfundef (node *arg_node, info *arg_info)
          * there is hardly anything to do here.
          */
     } else {
-        if (FUNDEF_ISDOFUN (arg_node)) {
+        if (FUNDEF_ISLOOPFUN (arg_node)) {
             arg_node = TransformIntoDoLoop (arg_node, arg_info);
-            FUNDEF_ISDOFUN (arg_node) = FALSE;
+            FUNDEF_ISLOOPFUN (arg_node) = FALSE;
             FUNDEF_ISLACINLINE (arg_node) = TRUE;
         }
     }

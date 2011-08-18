@@ -194,7 +194,7 @@ EMLRap (node *arg_node, info *arg_info)
     /*
      * Optimize loops
      */
-    if ((FUNDEF_ISDOFUN (AP_FUNDEF (arg_node)))
+    if ((FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
         node *doargs;
         node *apargs;
@@ -405,7 +405,7 @@ EMLROap (node *arg_node, info *arg_info)
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
     }
 
-    if ((FUNDEF_ISDOFUN (AP_FUNDEF (arg_node)))
+    if ((FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info))) {
         /*
          * Clean up reusable arguments
@@ -500,7 +500,7 @@ EMLROfundef (node *arg_node, info *arg_info)
     DBUG_ASSERT (FUNDEF_ISLACFUN (arg_node),
                  "EMLROfundef is only applicable for LAC-functions");
 
-    if (FUNDEF_ISDOFUN (arg_node)) {
+    if (FUNDEF_ISLOOPFUN (arg_node)) {
         info *info;
         node *fundef_next;
         dfmask_base_t *maskbase;
