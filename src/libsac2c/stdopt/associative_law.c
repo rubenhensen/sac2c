@@ -229,6 +229,7 @@ ALdoAssocLawOptimization (node *arg_node)
  *
  *****************************************************************************/
 
+#ifndef DBUG_OFF
 static void
 printOperands (node *exprs)
 {
@@ -243,6 +244,7 @@ printOperands (node *exprs)
 
     DBUG_RETURN ();
 }
+#endif
 
 static prf
 AltPrf (prf op)
