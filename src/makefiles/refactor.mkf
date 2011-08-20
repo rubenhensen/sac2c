@@ -118,5 +118,4 @@ all: $(REFACTOR_TARGETS)
                              "  ($$occur occurrences)" ; \
                      $(SED) 's/$(PATTERN)/$(OUTPUT)/g' < $< > $@ ; \
                      $(MV) $@ $< ; \
-                else echo Skipping file: $(notdir $<) ; \
                 fi
