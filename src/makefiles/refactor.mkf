@@ -108,7 +108,7 @@ all: $(REFACTOR_TARGETS)
               $(ECHO) ""; \
               $(ECHO) "Refactoring files in directory $(PREFIX_LOCAL)$(dir $@)" ; \
          fi
-	$(HIDE) occur=`$(GREP) "$(PATTERN)" $< | $(WC) -l` ; \
+	$(HIDE) occur=`grep "$(PATTERN)" $< | $(WC) -l` ; \
                 if [ "$(COND)" == "" ] ; \
                 then cond=1 ; \
                 else cond=`$(GREP) "$(COND)" $< | $(WC) -l` ; \
@@ -118,4 +118,5 @@ all: $(REFACTOR_TARGETS)
                              "  ($$occur occurrences)" ; \
                      $(SED) 's/$(PATTERN)/$(OUTPUT)/g' < $< > $@ ; \
                      $(MV) $@ $< ; \
+                else echo Skipping file: $(notdir $<) ; \
                 fi
