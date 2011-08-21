@@ -156,11 +156,7 @@ MakeAccuAssign (node *code, info *arg_info)
 
     DBUG_ENTER ();
 
-    /* grab assign and get rid of N_empty nodes if one is there */
     assign = BLOCK_ASSIGNS (CODE_CBLOCK (code));
-    if (NODE_TYPE (assign) == N_empty) {
-        assign = FREEdoFreeNode (assign);
-    }
 
     /* create avis */
     lhs_ids = INFO_FOLD_LHS (arg_info);

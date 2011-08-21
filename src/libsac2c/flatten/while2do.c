@@ -84,7 +84,7 @@ W2Dwhile (node *arg_node, info *arg_info)
     /* create cond-node with do-loop in then-part */
     new_cond = TBmakeCond (DUPdoDupTree (DO_COND (new_do)),
                            TBmakeBlock (TBmakeAssign (new_do, NULL), NULL),
-                           TBmakeBlock (TBmakeEmpty (), NULL));
+                           TBmakeBlock (NULL, NULL));
 
     /* delete links in old while-node */
     WHILE_COND (arg_node) = NULL;

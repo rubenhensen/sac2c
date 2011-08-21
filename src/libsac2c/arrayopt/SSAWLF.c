@@ -1602,11 +1602,7 @@ WLFid (node *arg_node, info *arg_info)
             INFO_NEW_ID (arg_info) = DUPdoDupTree (CODE_CEXPR (coden));
 
             /* Create substitution code. */
-            if (N_empty == NODE_TYPE (CODE_CBLOCK_ASSIGNS (coden))) {
-                substn = NULL;
-            } else {
-                substn = DUPdoDupTree (CODE_CBLOCK_ASSIGNS (coden));
-            }
+            substn = DUPdoDupTree (CODE_CBLOCK_ASSIGNS (coden));
 
             /* create assignments to rename variables which index the array we want
                to replace.

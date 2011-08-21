@@ -198,24 +198,6 @@ MakeRCAssignments (nlut_t *nlut)
     DBUG_RETURN (res);
 }
 
-static node *
-PrependAssignments (node *ass1, node *ass2)
-{
-    DBUG_ENTER ();
-
-    if ((ass2 != NULL) && (NODE_TYPE (ass2) == N_empty)) {
-        ass2 = FREEdoFreeNode (ass2);
-    }
-
-    ass1 = TCappendAssign (ass1, ass2);
-
-    if (ass1 == NULL) {
-        ass1 = TBmakeEmpty ();
-    }
-
-    DBUG_RETURN (ass1);
-}
-
 static bool
 ArgIsInout (node *arg, node *rets)
 {
@@ -322,8 +304,8 @@ RCIfundef (node *arg_node, info *arg_info)
                     arg = ARG_NEXT (arg);
                 }
                 BLOCK_ASSIGNS (FUNDEF_BODY (arg_node))
-                  = PrependAssignments (MakeRCAssignments (INFO_ENV (info)),
-                                        BLOCK_ASSIGNS (FUNDEF_BODY (arg_node)));
+                  = TCappendAssign (MakeRCAssignments (INFO_ENV (info)),
+                                    BLOCK_ASSIGNS (FUNDEF_BODY (arg_node)));
             }
 
             INFO_ENV (info) = NLUTremoveNlut (INFO_ENV (info));
@@ -936,8 +918,8 @@ RCIcode (node *arg_node, info *arg_info)
      * Prepend block with INC_RC statements
      */
     BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
-      = PrependAssignments (MakeRCAssignments (INFO_ENV (arg_info)),
-                            BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)));
+      = TCappendAssign (MakeRCAssignments (INFO_ENV (arg_info)),
+                        BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)));
 
     INFO_WITHMASK (arg_info) = withmask;
     INFO_ENV (arg_info) = NLUTremoveNlut (INFO_ENV (arg_info));
@@ -996,8 +978,8 @@ RCIrange (node *arg_node, info *arg_info)
      * Prepend block with INC_RC statements
      */
     BLOCK_ASSIGNS (RANGE_BODY (arg_node))
-      = PrependAssignments (MakeRCAssignments (INFO_ENV (arg_info)),
-                            BLOCK_ASSIGNS (RANGE_BODY (arg_node)));
+      = TCappendAssign (MakeRCAssignments (INFO_ENV (arg_info)),
+                        BLOCK_ASSIGNS (RANGE_BODY (arg_node)));
 
     INFO_WITHMASK (arg_info) = withmask;
     INFO_ENV (arg_info) = NLUTremoveNlut (INFO_ENV (arg_info));
@@ -1255,7 +1237,7 @@ RCIcond (node *arg_node, info *arg_info)
     INFO_MODE (arg_info) = rc_prfuse;
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THENINSTR (arg_node)
-      = PrependAssignments (INFO_POSTASSIGN (arg_info), COND_THENINSTR (arg_node));
+      = TCappendAssign (INFO_POSTASSIGN (arg_info), COND_THENINSTR (arg_node));
     INFO_POSTASSIGN (arg_info) = NULL;
 
     env = INFO_ENV (arg_info);
@@ -1266,7 +1248,7 @@ RCIcond (node *arg_node, info *arg_info)
     INFO_MODE (arg_info) = rc_prfuse;
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_ELSEINSTR (arg_node)
-      = PrependAssignments (INFO_POSTASSIGN (arg_info), COND_ELSEINSTR (arg_node));
+      = TCappendAssign (INFO_POSTASSIGN (arg_info), COND_ELSEINSTR (arg_node));
     INFO_POSTASSIGN (arg_info) = NULL;
 
     INFO_ENV (arg_info) = env;
@@ -1297,12 +1279,10 @@ RCIcond (node *arg_node, info *arg_info)
 
     nzlut = NLUTremoveNlut (nzlut);
 
-    COND_THENINSTR (arg_node)
-      = PrependAssignments (MakeRCAssignments (INFO_ENV (arg_info)),
-                            COND_THENINSTR (arg_node));
-    COND_ELSEINSTR (arg_node)
-      = PrependAssignments (MakeRCAssignments (INFO_ENV2 (arg_info)),
-                            COND_ELSEINSTR (arg_node));
+    COND_THENINSTR (arg_node) = TCappendAssign (MakeRCAssignments (INFO_ENV (arg_info)),
+                                                COND_THENINSTR (arg_node));
+    COND_ELSEINSTR (arg_node) = TCappendAssign (MakeRCAssignments (INFO_ENV2 (arg_info)),
+                                                COND_ELSEINSTR (arg_node));
 
     INFO_ENV2 (arg_info) = NLUTremoveNlut (INFO_ENV2 (arg_info));
     INFO_ENV (arg_info) = NLUTremoveNlut (INFO_ENV (arg_info));

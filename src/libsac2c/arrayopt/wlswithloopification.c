@@ -647,14 +647,6 @@ WLSWcode (node *arg_node, info *arg_info)
                 node *newcode;
 
                 /*
-                 * Ensure there is no N_empty node in the inner with-loop
-                 */
-                if (NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (innercode))) == N_empty) {
-                    BLOCK_ASSIGNS (CODE_CBLOCK (innercode))
-                      = FREEdoFreeTree (BLOCK_ASSIGNS (CODE_CBLOCK (innercode)));
-                }
-
-                /*
                  * Prepend the inner code with the outer code and
                  * create a duplicate.
                  */

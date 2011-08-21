@@ -157,47 +157,6 @@ IdIsDefinedByWL (node *arg_node)
     DBUG_RETURN (result);
 }
 
-/**<!--*************************************************************-->
- *
- * @fn static node *GetRecursiveFunctionApplication(node *fundef)
- *
- * @brief: returns the N_assign-node containing the
- *         recursive function call of argument 'fundef'
- *
- * The one and only occurrence of a N_cond node in a function
- * representing a do-loop is the corresponding recursive
- * function call. The N_assign node containing this recursive
- * function call is the return value.
- *
- * @param fundef is a N_fundef node, defining a do-function
- *
- * @result
- *
- ********************************************************************/
-static node *
-GetRecursiveFunctionApplication (node *fundef)
-{
-    node *chain;
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "N_fundef node expected.");
-    DBUG_ASSERT (FUNDEF_ISLOOPFUN (fundef), "Loop-Function expected.");
-
-    /**
-     * search for recursive fun call
-     */
-    chain = BLOCK_ASSIGNS (FUNDEF_BODY (fundef));
-
-    while ((chain != NULL) && (NODE_TYPE (ASSIGN_STMT (chain)) != N_cond)) {
-        chain = ASSIGN_NEXT (chain);
-    }
-
-    DBUG_ASSERT (chain != NULL, "Missing conditional in loop!");
-    chain = ASSIGN_RHS (COND_THENINSTR (ASSIGN_STMT (chain)));
-
-    DBUG_RETURN (chain);
-}
-
 /**
  *--Global traversal functions -------------------------------
  */
@@ -514,8 +473,7 @@ WLPROPid (node *arg_node, info *arg_info)
 
                 argchain_applied = FUNDEF_ARGS (AP_FUNDEF (INFO_AP (arg_info)));
                 argchain_applying = AP_ARGS (INFO_AP (arg_info));
-                argchain_recapp
-                  = GetRecursiveFunctionApplication (AP_FUNDEF (INFO_AP (arg_info)));
+                argchain_recapp = FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (INFO_AP (arg_info)));
                 argchain_recapp = AP_ARGS (argchain_recapp);
 
                 while (next != NULL) {

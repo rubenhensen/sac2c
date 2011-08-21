@@ -336,7 +336,7 @@ WLDSpart (node *arg_node, info *arg_info)
            new_code)));
             }
         */
-        if (NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (new_code))) != N_empty) {
+        if (BLOCK_ASSIGNS (CODE_CBLOCK (new_code)) != NULL) {
             BLOCK_ASSIGNS (CODE_CBLOCK (new_code))
               = TCappendAssign (INFO_PREASSIGNS (arg_info),
                                 BLOCK_ASSIGNS (CODE_CBLOCK (new_code)));

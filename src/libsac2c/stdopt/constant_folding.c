@@ -671,12 +671,7 @@ CFblock (node *arg_node, info *arg_info)
         INFO_VARDECS (arg_info) = NULL;
     }
 
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
-
-    if (BLOCK_ASSIGNS (arg_node) == NULL) {
-        /* insert at least the N_empty node in an empty block */
-        BLOCK_ASSIGNS (arg_node) = TBmakeEmpty ();
-    }
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     /* New vardecs go only at top level block */
     if (INFO_TOPBLOCK (arg_info) == arg_node) {
@@ -820,12 +815,15 @@ static node *
 CFcondThen (node *arg_node, info *arg_info)
 {
     node *pre;
+
+    DBUG_ENTER ();
+
     COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
     DBUG_PRINT ("CFcondThen found TRUE condition");
 
     /* select then-part for later insertion in assignment chain */
     pre = BLOCK_ASSIGNS (COND_THEN (arg_node));
-    if (NODE_TYPE (pre) != N_empty) { /* empty code block must not be moved */
+    if (pre != NULL) { /* empty code block must not be moved */
         DBUG_ASSERT (NULL == INFO_PREASSIGN (arg_info), "CFcondThen preassign confusion");
         INFO_PREASSIGN (arg_info) = pre;
         /*
@@ -834,7 +832,8 @@ CFcondThen (node *arg_node, info *arg_info)
          */
         BLOCK_ASSIGNS (COND_THEN (arg_node)) = NULL;
     }
-    return (arg_node);
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -853,12 +852,14 @@ CFcondElse (node *arg_node, info *arg_info)
 {
     node *pre;
 
+    DBUG_ENTER ();
+
     COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
     DBUG_PRINT ("CFcondElse found FALSE condition");
 
     /* select else-part for later insertion in assignment chain */
     pre = BLOCK_ASSIGNS (COND_ELSE (arg_node));
-    if (NODE_TYPE (pre) != N_empty) { /* empty code block must not be moved */
+    if (pre != NULL) { /* empty code block must not be moved */
         DBUG_ASSERT (NULL == INFO_PREASSIGN (arg_info), "CFcondElse preassign confusion");
         INFO_PREASSIGN (arg_info) = pre;
         /*
@@ -867,8 +868,10 @@ CFcondElse (node *arg_node, info *arg_info)
          */
         BLOCK_ASSIGNS (COND_ELSE (arg_node)) = NULL;
     }
-    return (arg_node);
+
+    DBUG_RETURN (arg_node);
 }
+
 /******************************************************************************
  *
  * function:

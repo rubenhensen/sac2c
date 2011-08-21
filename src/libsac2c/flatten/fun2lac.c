@@ -419,17 +419,9 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
     else_assigns = BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (INFO_COND (arg_info))));
     BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (INFO_COND (arg_info)))) = NULL;
 
-    if ((else_assigns != NULL) && (NODE_TYPE (else_assigns) == N_assign)) {
+    if (else_assigns != NULL) {
         else_assigns = RENdoRenameLut (else_assigns, f2l_lut);
-    } else {
-        else_assigns = NULL;
     }
-
-    /*
-     * The above strange code is necessary because empty assign chains are
-     * represented
-     * by the N_empty node rather than a NULL pointer. This should be changed!
-     */
 
     INFO_COND (arg_info) = FREEdoFreeTree (INFO_COND (arg_info));
     INFO_RECAP (arg_info) = FREEdoFreeTree (INFO_RECAP (arg_info));

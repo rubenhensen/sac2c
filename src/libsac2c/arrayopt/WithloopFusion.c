@@ -798,7 +798,7 @@ FuseCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
     resolveable_dependencies = CODE_HASRESOLVEABLEDEPENDENCIES (PART_CODE (fitting_part));
 
     fitting_assigns = BLOCK_ASSIGNS (CODE_CBLOCK (fitting_nncode));
-    BLOCK_ASSIGNS (CODE_CBLOCK (fitting_nncode)) = TBmakeEmpty ();
+    BLOCK_ASSIGNS (CODE_CBLOCK (fitting_nncode)) = NULL;
 
     /*
      * vardec of N_blocks which are not the first N_block of
@@ -819,10 +819,9 @@ FuseCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
      */
     extendable_block = CODE_CBLOCK (PART_CODE (extendable_part));
 
-    if (NODE_TYPE (fitting_assigns) != N_empty) {
+    if (fitting_assigns != NULL) {
 
-        if ((NODE_TYPE (BLOCK_ASSIGNS (extendable_block)) != N_empty)
-            && both_contain_fold) {
+        if (BLOCK_ASSIGNS (extendable_block) != NULL && both_contain_fold) {
             /*
              *  If both withloops contain fold operators fuse both
              *  accu functions if containing together
@@ -831,7 +830,7 @@ FuseCodes (node *extendable_part, node *fitting_part, node *fusionable_assign,
               = FuseAccu (BLOCK_ASSIGNS (extendable_block), fitting_assigns);
         }
 
-        if ((NODE_TYPE (fitting_assigns) != N_empty) && resolveable_dependencies) {
+        if (fitting_assigns != NULL && resolveable_dependencies) {
             /*
              *  Ncode of current WL contains resolveable dependencies -> resolve them
              */
@@ -1592,7 +1591,7 @@ WLFSblock (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = INFO_FUNDEF (info_tmp);
 
     if (BLOCK_ASSIGNS (arg_node) != NULL) {
-        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
     arg_info = FreeInfo (arg_info);

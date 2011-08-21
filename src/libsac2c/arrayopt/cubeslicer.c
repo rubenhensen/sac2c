@@ -676,13 +676,8 @@ CloneCode (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if ((N_empty == NODE_TYPE (arg_node))) {
-        DBUG_ASSERT (FALSE, "this looks funny.");
-        z = NULL;
-    } else {
-        z = DUPdoDupTreeLutSsa (arg_node, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
-        CODE_INC_USED (z); /* DUP gives us Used=0 */
-    }
+    z = DUPdoDupTreeLutSsa (arg_node, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
+    CODE_INC_USED (z); /* DUP gives us Used=0 */
 
     LUTremoveContentLut (INFO_LUT (arg_info));
     z = IVEXCdoIndexVectorExtremaCleanupPartition (z, NULL);

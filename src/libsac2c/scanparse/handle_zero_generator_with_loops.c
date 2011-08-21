@@ -170,7 +170,7 @@ BuildDefault (node *arg_node)
       = TBmakePart (NULL, TBmakeWithid (TBmakeSpids (TRAVtmpVar (), NULL), NULL),
                     TBmakeGenerator (F_wl_le, F_wl_le, TBmakeDot (1), TBmakeDot (1), NULL,
                                      NULL));
-    WITH_CODE (arg_node) = TBmakeCode (TBmakeBlock (TBmakeEmpty (), NULL), NULL);
+    WITH_CODE (arg_node) = TBmakeCode (TBmakeBlock (NULL, NULL), NULL);
 
     PART_CODE (WITH_PART (arg_node)) = WITH_CODE (arg_node);
     CODE_USED (WITH_CODE (arg_node))++;
@@ -246,8 +246,7 @@ AllPartsEmpty (node *part)
 
     DBUG_ENTER ();
 
-    result
-      = result && (NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (part)))) == N_empty);
+    result &= (BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (part))) == NULL);
 
     if (result && (PART_NEXT (part) != NULL)) {
         result = result && AllPartsEmpty (PART_NEXT (part));

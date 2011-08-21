@@ -406,7 +406,7 @@ IMEMap (node *arg_node, info *arg_info)
                          * propogate that information to the traversal of LAC functions */
                         INFO_NOTRAN (arg_info)
                           = LUTinsertIntoLutP (INFO_NOTRAN (arg_info),
-                                               ARG_AVIS (fundef_args), TBmakeEmpty ());
+                                               ARG_AVIS (fundef_args), NULL);
                     }
                 } else {
                     /* If the N_avis has been come across before, replace its
@@ -538,9 +538,8 @@ IMEMwith (node *arg_node, info *arg_info)
         INFO_NOTRAN (arg_info) = LUTgenerateLut ();
 
         /* we do not want to create a host2device for index vector */
-        INFO_NOTRAN (arg_info)
-          = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), IDS_AVIS (WITH_VEC (arg_node)),
-                               TBmakeEmpty ());
+        INFO_NOTRAN (arg_info) = LUTinsertIntoLutP (INFO_NOTRAN (arg_info),
+                                                    IDS_AVIS (WITH_VEC (arg_node)), NULL);
 
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_NOTRAN (arg_info) = old_lut;
@@ -556,9 +555,8 @@ IMEMwith (node *arg_node, info *arg_info)
          * N_with itself is not a cudarizable N_with */
 
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-        INFO_NOTRAN (arg_info)
-          = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), IDS_AVIS (WITH_VEC (arg_node)),
-                               TBmakeEmpty ());
+        INFO_NOTRAN (arg_info) = LUTinsertIntoLutP (INFO_NOTRAN (arg_info),
+                                                    IDS_AVIS (WITH_VEC (arg_node)), NULL);
 
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     } else {
@@ -675,7 +673,7 @@ IMEMids (node *arg_node, info *arg_info)
     if (INFO_INCUDAWL (arg_info)) {
         if (TYisArray (ids_type)) {
             INFO_NOTRAN (arg_info)
-              = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), ids_avis, TBmakeEmpty ());
+              = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), ids_avis, NULL);
         }
     } else {
         if (INFO_CREATE_D2H (arg_info)) {

@@ -129,7 +129,7 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
           = TBmakeAssign (TBmakeCond (TBmakeId (LUTsearchInLutPp (INFO_DUPLUT (arg_info),
                                                                   predicate)),
                                       TBmakeBlock (dup_assigns, NULL),
-                                      TBmakeBlock (TBmakeEmpty (), NULL)),
+                                      TBmakeBlock (NULL, NULL)),
                           NULL);
 
         return_mem
@@ -315,7 +315,7 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
         /* Conditional containing the recursive call */
         cond_ass = TBmakeAssign (TBmakeCond (TBmakeId (comp_predicate),
                                              TBmakeBlock (recursive_ap, NULL),
-                                             TBmakeBlock (TBmakeEmpty (), NULL)),
+                                             TBmakeBlock (NULL, NULL)),
                                  NULL);
 
         return_mem

@@ -2429,9 +2429,7 @@ PRTblock (node *arg_node, info *arg_info)
         fprintf (global.outfile, " */\n");
     });
 
-    if (BLOCK_ASSIGNS (arg_node)) {
-        TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
-    }
+    TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     global.indent--;
     INDENT;
@@ -3041,31 +3039,6 @@ PRTspmop (node *arg_node, info *arg_info)
     if (SPMOP_ISFIXED (arg_node)) {
         fprintf (global.outfile, ")");
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * Function:
- *   node *PRTempty( node *arg_node, info *arg_info)
- *
- * Description:
- *
- *
- ******************************************************************************/
-
-node *
-PRTempty (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
-    }
-
-    INDENT;
-    fprintf (global.outfile, "/* empty */\n");
 
     DBUG_RETURN (arg_node);
 }

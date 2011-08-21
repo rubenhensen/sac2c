@@ -179,7 +179,7 @@ MCSTRANcudast (node *arg_node, info *arg_info)
     INFO_OUT_MASK (arg_info) = BLOCK_OUT_MASK (region);
     INFO_INCUDAST (arg_info) = TRUE;
 
-    BLOCK_ASSIGNS (region) = TRAVdo (BLOCK_ASSIGNS (region), arg_info);
+    BLOCK_ASSIGNS (region) = TRAVopt (BLOCK_ASSIGNS (region), arg_info);
 
     INFO_INCUDAST (arg_info) = FALSE;
     INFO_IN_MASK (arg_info) = NULL;

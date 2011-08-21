@@ -194,19 +194,11 @@ PrependRCMAssignments (nlut_t *nlut, node *ass)
 {
     DBUG_ENTER ();
 
-    if ((ass != NULL) && (NODE_TYPE (ass) == N_empty)) {
-        ass = FREEdoFreeNode (ass);
-    }
-
     if (ass != NULL) {
         ass = ModifyExistingIncRcs (nlut, ass);
     }
 
     ass = TCappendAssign (MakeRCMAssignments (nlut), ass);
-
-    if (ass == NULL) {
-        ass = TBmakeEmpty ();
-    }
 
     DBUG_RETURN (ass);
 }

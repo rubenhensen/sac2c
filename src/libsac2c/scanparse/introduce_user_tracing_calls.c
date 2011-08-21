@@ -401,7 +401,7 @@ IUTCblock (node *arg_node, info *arg_info)
 
     INFO_LEVEL (arg_info)++;
 
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     INFO_LEVEL (arg_info)--;
 

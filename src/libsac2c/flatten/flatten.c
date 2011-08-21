@@ -264,7 +264,7 @@ FLATblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (BLOCK_ASSIGNS (arg_node) != NULL) {
-        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -669,18 +669,18 @@ FLATdo (node *arg_node, info *arg_info)
     DBUG_ASSERT (pred == pred2,
                  "return-node differs from arg_node while flattening an expr!");
     if (final_assign == NULL) {
-        DBUG_ASSERT (NODE_TYPE (DO_INSTR (arg_node)) == N_empty,
+        DBUG_ASSERT (DO_INSTR (arg_node) == NULL,
                      "INFO_FLAT_FINALASSIGN is NULL although do-body is non-empty");
         /*
-         * loop-body ist empty so far!
+         * loop-body is empty so far!
          */
         if (INFO_FLAT_LASTASSIGN (arg_info) != NULL) {
-            DO_INSTR (arg_node) = FREEdoFreeTree (DO_INSTR (arg_node));
             DO_INSTR (arg_node) = INFO_FLAT_LASTASSIGN (arg_info);
         }
     } else {
         ASSIGN_NEXT (final_assign) = INFO_FLAT_LASTASSIGN (arg_info);
     }
+
     DBUG_PRINT ("appending %08x tp %08x!", INFO_FLAT_LASTASSIGN (arg_info), final_assign);
     INFO_FLAT_LASTASSIGN (arg_info) = mem_last_assign;
 
@@ -1055,9 +1055,7 @@ FLATcode (node *arg_node, info *arg_info)
          * Now, we insert the flatten_assignments:
          */
         if (flatten_assignments != NULL) {
-            if (NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))) == N_empty) {
-                BLOCK_ASSIGNS (CODE_CBLOCK (arg_node))
-                  = FREEdoFreeTree (BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)));
+            if (BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)) == NULL) {
                 BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)) = flatten_assignments;
             } else {
                 ASSIGN_NEXT (INFO_FLAT_FINALASSIGN (arg_info)) = flatten_assignments;

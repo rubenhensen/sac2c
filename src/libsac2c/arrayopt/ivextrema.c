@@ -842,7 +842,7 @@ IVEXIblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_PRINT ("Traversing block");
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -983,7 +983,7 @@ IVEXIpart (node *arg_node, info *arg_info)
 
     /* Don't try this on empty code blocks, kids. */
     /* Or default partitions, either! */
-    if ((N_empty != NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node)))))
+    if ((NULL != BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node))))
         && (!CODE_HASEXTREMA (PART_CODE (arg_node)))
         && (N_default != NODE_TYPE (PART_GENERATOR (arg_node)))) {
 

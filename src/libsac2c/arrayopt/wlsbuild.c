@@ -495,13 +495,8 @@ WLSBcode (node *arg_node, info *arg_info)
             /*
              * The new code block must be prepended with the prefix
              */
-            if (NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (new_code))) == N_empty) {
-                BLOCK_ASSIGNS (CODE_CBLOCK (new_code))
-                  = TCappendAssign (BLOCK_ASSIGNS (CODE_CBLOCK (new_code)), prefix);
-            } else {
-                BLOCK_ASSIGNS (CODE_CBLOCK (new_code))
-                  = TCappendAssign (prefix, BLOCK_ASSIGNS (CODE_CBLOCK (new_code)));
-            }
+            BLOCK_ASSIGNS (CODE_CBLOCK (new_code))
+              = TCappendAssign (prefix, BLOCK_ASSIGNS (CODE_CBLOCK (new_code)));
 
             lut = LUTremoveLut (lut);
 

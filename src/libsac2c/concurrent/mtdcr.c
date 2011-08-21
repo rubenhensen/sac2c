@@ -216,7 +216,7 @@ MTDCRblock (node *arg_node, info *arg_info)
     DBUG_PRINT ("DFM BLOCK:");
     DBUG_EXECUTE (DFMprintMask (stderr, "%s ", INFO_DFMBLOCK (arg_info)));
 
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     DBUG_PRINT ("Leaving block");
     DBUG_EXECUTE (PRTdoPrint (arg_node));

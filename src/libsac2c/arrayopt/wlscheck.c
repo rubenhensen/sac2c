@@ -284,7 +284,7 @@ WLSCblock (node *arg_node, info *arg_info)
      * To enhance applicability of WLS, we allow empty code blocks
      * This means that the CEXPR is defined outside the block
      */
-    if (NODE_TYPE (BLOCK_ASSIGNS (arg_node)) != N_empty) {
+    if (BLOCK_ASSIGNS (arg_node) != NULL) {
         wlassign = skipIrrelevantAssigns (BLOCK_ASSIGNS (arg_node));
         if (wlassign != NULL) {
 

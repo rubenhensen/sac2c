@@ -434,7 +434,7 @@ isEmptyPartitionCodeBlock (node *partn)
 
     DBUG_ENTER ();
 
-    z = (N_empty == NODE_TYPE (BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (partn)))));
+    z = (NULL == BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (partn))));
 
     DBUG_RETURN (z);
 }
@@ -738,10 +738,7 @@ doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consume
     /* If producerWL is empty, don't do any code substitutions.
      * Just replace sel(iv, producerWL) by iv.
      */
-    newblock
-      = (N_empty == NODE_TYPE (oldblock))
-          ? NULL
-          : DUPdoDupTreeLutSsa (oldblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
+    newblock = DUPdoDupTreeLutSsa (oldblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
 
     expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (producerWLPart))));
     newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
@@ -1062,8 +1059,8 @@ AWLFcond (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("Traversing N_cond");
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
-    COND_THENINSTR (arg_node) = TRAVdo (COND_THENINSTR (arg_node), arg_info);
-    COND_ELSEINSTR (arg_node) = TRAVdo (COND_ELSEINSTR (arg_node), arg_info);
+    COND_THENINSTR (arg_node) = TRAVopt (COND_THENINSTR (arg_node), arg_info);
+    COND_ELSEINSTR (arg_node) = TRAVopt (COND_ELSEINSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -688,7 +688,7 @@ SSATblock (node *arg_node, info *arg_info)
 
     if (BLOCK_ASSIGNS (arg_node) != NULL) {
         /* there are some instructions */
-        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

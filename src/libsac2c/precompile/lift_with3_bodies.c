@@ -918,7 +918,7 @@ LW3range (node *arg_node, info *arg_info)
       = CreateThreadFunction (RANGE_BODY (arg_node), RANGE_RESULTS (arg_node),
                               ID_AVIS (RANGE_INDEX (arg_node)), arg_info);
 
-    RANGE_BODY (arg_node) = TBmakeBlock (TBmakeEmpty (), NULL);
+    RANGE_BODY (arg_node) = TBmakeBlock (NULL, NULL);
 
     RANGE_NEXT (arg_node) = TRAVopt (RANGE_NEXT (arg_node), arg_info);
 

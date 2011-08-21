@@ -1229,7 +1229,7 @@ InferMasksBlock (node *arg_node, info *arg_info)
     DBUG_EXECUTE (fprintf (stderr, ">>>  %s entered", NODE_TEXT (arg_node));
                   DbugPrintMasks (arg_info));
 
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     DBUG_EXECUTE (fprintf (stderr, "<<<  %s finished\n", NODE_TEXT (arg_node)));
 

@@ -2665,8 +2665,8 @@ AWLFIcond (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
-    COND_THENINSTR (arg_node) = TRAVdo (COND_THENINSTR (arg_node), arg_info);
-    COND_ELSEINSTR (arg_node) = TRAVdo (COND_ELSEINSTR (arg_node), arg_info);
+    COND_THENINSTR (arg_node) = TRAVopt (COND_THENINSTR (arg_node), arg_info);
+    COND_ELSEINSTR (arg_node) = TRAVopt (COND_ELSEINSTR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -2742,7 +2742,7 @@ node *
 AWLFIblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
     DBUG_RETURN (arg_node);
 }
 

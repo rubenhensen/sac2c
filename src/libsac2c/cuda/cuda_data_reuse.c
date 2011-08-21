@@ -1634,7 +1634,7 @@ CUDRpart (node *arg_node, info *arg_info)
 
     dim = TCcountIds (PART_IDS (arg_node));
 
-    if (NODE_TYPE (BLOCK_ASSIGNS (PART_CBLOCK (arg_node))) != N_empty) {
+    if (BLOCK_ASSIGNS (PART_CBLOCK (arg_node)) != NULL) {
         init_assigns = CreateCudaIndexInitCode (arg_node, arg_info);
 
         /* Note here that we don't need to stack N_part because there will

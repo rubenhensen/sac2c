@@ -569,11 +569,7 @@ RESOblock (node *arg_node, info *arg_info)
 
     BLOCK_VARDECS (arg_node) = ResetAvisSubst (BLOCK_VARDECS (arg_node));
 
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
-
-    if (BLOCK_ASSIGNS (arg_node) == NULL) {
-        BLOCK_ASSIGNS (arg_node) = TBmakeEmpty ();
-    }
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     BLOCK_VARDECS (arg_node) = DeleteSubstVardecs (BLOCK_VARDECS (arg_node));
 

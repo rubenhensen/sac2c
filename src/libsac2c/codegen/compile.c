@@ -3152,14 +3152,10 @@ COMPblock (node *arg_node, info *arg_info)
 
         BLOCK_CACHESIM (arg_node) = MEMfree (BLOCK_CACHESIM (arg_node));
 
-        DBUG_ASSERT (BLOCK_ASSIGNS (arg_node) != NULL,
-                     "first instruction of block is NULL"
-                     " (should be a N_empty node)");
-        assign = BLOCK_ASSIGNS (arg_node);
-
         BLOCK_ASSIGNS (arg_node)
           = TCmakeAssignIcm1 ("CS_START", TCmakeIdCopyString (cs_tag),
                               BLOCK_ASSIGNS (arg_node));
+        assign = BLOCK_ASSIGNS (arg_node);
 
         while ((ASSIGN_NEXT (assign) != NULL)
                && (NODE_TYPE (ASSIGN_STMT (ASSIGN_NEXT (assign))) != N_return)) {
@@ -3171,7 +3167,7 @@ COMPblock (node *arg_node, info *arg_info)
     }
 
     if (BLOCK_ASSIGNS (arg_node) != NULL) {
-        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
     if (BLOCK_VARDECS (arg_node) != NULL) {
@@ -9743,9 +9739,7 @@ COMPwlgrid (node *arg_node, info *arg_info)
                          "first instruction of block is NULL"
                          " (should be a N_empty node)");
 
-            if (NODE_TYPE (WLGRID_CBLOCK_ASSIGNS (arg_node)) != N_empty) {
-                node_icms = DUPdoDupTree (WLGRID_CBLOCK_ASSIGNS (arg_node));
-            }
+            node_icms = DUPdoDupTree (WLGRID_CBLOCK_ASSIGNS (arg_node));
 
             /* for every ids of wlids (multioperator WL) */
             tmp_ids = wlids;

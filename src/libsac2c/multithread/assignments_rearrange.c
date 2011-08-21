@@ -218,7 +218,7 @@ ASMRAblock (node *arg_node, info *arg_info)
 
     /* continue traversal */
     DBUG_PRINT ("trav into instruction(s)");
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
     DBUG_PRINT ("trav from instruction(s)");
 
     DBUG_RETURN (arg_node);

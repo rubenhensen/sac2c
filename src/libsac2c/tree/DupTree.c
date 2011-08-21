@@ -1444,22 +1444,6 @@ DUPreturn (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
-DUPempty (node *arg_node, info *arg_info)
-{
-    node *new_node;
-
-    DBUG_ENTER ();
-
-    new_node = TBmakeEmpty ();
-
-    CopyCommonNodeData (new_node, arg_node);
-
-    DBUG_RETURN (new_node);
-}
-
-/******************************************************************************/
-
-node *
 DUPassign (node *arg_node, info *arg_info)
 {
     node *new_node;

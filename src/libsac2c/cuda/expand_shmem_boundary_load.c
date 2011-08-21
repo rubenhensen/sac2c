@@ -193,7 +193,7 @@ Expand (node *prf, info *arg_info)
 
     assign
       = TBmakeAssign (TBmakeCond (DUPdoDupNode (cond), TBmakeBlock (then_assigns, NULL),
-                                  TBmakeBlock (TBmakeEmpty (), NULL)),
+                                  TBmakeBlock (NULL, NULL)),
                       NULL);
 
     FUNDEF_VARDEC (INFO_FUNDEF (arg_info))

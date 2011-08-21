@@ -860,7 +860,6 @@
 		  <node name="Do" />
 		  <node name="Funcond" />
 		  <node name="Exprs" />
-		  <node name="Empty" />
 		  <node name="With" />
 		  <node name="Part" />
 		  <node name="Withid" />
@@ -5567,9 +5566,8 @@ N_tfarg :
       <sons>
         <son name="Assigns">
           <targets>
-            <target mandatory="yes">
+            <target mandatory="no">
               <node name="Assign" />
-              <node name="Empty" />
               <phases>
                 <all />
               </phases>
@@ -7339,16 +7337,6 @@ N_tfarg :
           </targets>
         </son>
       </sons>
-      <attributes></attributes>
-      <flags></flags>
-    </node>
-<!--
-
-  N_empty :
-
--->
-    <node name="Empty">
-      <sons></sons>
       <attributes></attributes>
       <flags></flags>
     </node>

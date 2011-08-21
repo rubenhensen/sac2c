@@ -195,7 +195,7 @@ MMVblock (node *arg_node, info *arg_info)
     vardecs = INFO_VARDECS (arg_info);
     INFO_VARDECS (arg_info) = NULL;
 
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     if (INFO_VARDECS (arg_info) != NULL) {
         BLOCK_VARDECS (arg_node)

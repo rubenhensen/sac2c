@@ -971,12 +971,12 @@ ALblock (node *arg_node, info *arg_info)
 
     INFO_MODE (arg_info) = MODE_recurse;
     DBUG_PRINT ("Traversing assignment chain, mode %d", INFO_MODE (arg_info));
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     INFO_MODE (arg_info) = MODE_mark;
     DBUG_PRINT ("Traversing assignment chain, mode %d", INFO_MODE (arg_info));
     INFO_WITHID (arg_info) = TRAVopt (INFO_WITHID (arg_info), arg_info);
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
     INFO_WITHID (arg_info) = TRAVopt (INFO_WITHID (arg_info), arg_info);
 
     INFO_MODE (arg_info) = old_mode;

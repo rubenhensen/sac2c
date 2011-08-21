@@ -168,7 +168,7 @@ INSTCblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (BLOCK_ASSIGNS (arg_node) != NULL) {
-        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
     if (BLOCK_VARDECS (arg_node) != NULL) {

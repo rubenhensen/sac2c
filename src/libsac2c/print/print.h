@@ -65,7 +65,6 @@ extern node *PRTprf (node *arg_node, info *arg_info);
 extern node *PRTap (node *arg_node, info *arg_info);
 extern node *PRTspap (node *arg_node, info *arg_info);
 extern node *PRTspmop (node *arg_node, info *arg_info);
-extern node *PRTempty (node *arg_node, info *arg_info);
 extern node *PRTarray (node *arg_node, info *arg_info);
 extern node *PRTexprs (node *arg_node, info *arg_info);
 extern node *PRTid (node *arg_node, info *arg_info);

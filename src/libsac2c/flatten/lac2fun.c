@@ -276,7 +276,7 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
             ASSIGN_NEXT (tmp)
               = TBmakeAssign (TBmakeCond (DUPdoDupTreeLut (DO_COND (instr), lut),
                                           TBmakeBlock (ass, NULL),
-                                          TBmakeBlock (TBmakeEmpty (), NULL)),
+                                          TBmakeBlock (NULL, NULL)),
                               ret);
         }
         break;

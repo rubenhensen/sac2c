@@ -763,22 +763,6 @@ ISAAretraverse (node *fun, bool save_args, node *newargs, info *arg_info)
 /*
  * the following static functions assist in the creation of proxies.
  */
-static node *
-PrependAssign (node *prefix, node *rest)
-{
-    DBUG_ENTER ();
-
-    if (prefix != NULL) {
-        if (NODE_TYPE (rest) == N_empty) {
-            rest = FREEdoFreeNode (rest);
-            rest = prefix;
-        } else {
-            rest = TCappendAssign (prefix, rest);
-        }
-    }
-
-    DBUG_RETURN (rest);
-}
 
 static node *
 MakeDTProxy (node *avis, node *postass, info *arg_info)
@@ -936,10 +920,10 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
 
 #if ISAA_USE_AUGMENTED_STYLE || ISAA_USE_EVEN_ANNOTATED_STYLE
         if (NULL != shp_postass) {
-            newass = PrependAssign (shp_postass, newass);
+            newass = TCappendAssign (shp_postass, newass);
         }
         if (NULL != dim_postass) {
-            newass = PrependAssign (dim_postass, newass);
+            newass = TCappendAssign (dim_postass, newass);
         }
 #endif
 
@@ -1271,7 +1255,7 @@ ISAAblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1542,8 +1526,8 @@ ISAAcond (node *arg_node, info *arg_info)
         COND_THEN (arg_node) = TRAVdo (COND_THEN (arg_node), arg_info);
 
         BLOCK_ASSIGNS (COND_THEN (arg_node))
-          = PrependAssign (INFO_PREBLOCK (arg_info),
-                           BLOCK_ASSIGNS (COND_THEN (arg_node)));
+          = TCappendAssign (INFO_PREBLOCK (arg_info),
+                            BLOCK_ASSIGNS (COND_THEN (arg_node)));
         INFO_PREBLOCK (arg_info) = NULL;
         break;
 
@@ -1551,8 +1535,8 @@ ISAAcond (node *arg_node, info *arg_info)
         COND_ELSE (arg_node) = TRAVdo (COND_ELSE (arg_node), arg_info);
 
         BLOCK_ASSIGNS (COND_ELSE (arg_node))
-          = PrependAssign (INFO_PREBLOCK (arg_info),
-                           BLOCK_ASSIGNS (COND_ELSE (arg_node)));
+          = TCappendAssign (INFO_PREBLOCK (arg_info),
+                            BLOCK_ASSIGNS (COND_ELSE (arg_node)));
         INFO_PREBLOCK (arg_info) = NULL;
         break;
 

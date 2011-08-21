@@ -334,7 +334,7 @@ extern node *TCremoveFundef (node *fundef_chain, node *fundef);
 /*
  *  compound access macros
  */
-#define MAKE_EMPTY_BLOCK() TBmakeBlock (TBmakeEmpty (), NULL)
+#define MAKE_EMPTY_BLOCK() TBmakeBlock (NULL, NULL)
 
 /*--------------------------------------------------------------------------*/
 

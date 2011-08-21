@@ -836,7 +836,7 @@ CSEblock (node *arg_node, info *arg_info)
     /* reset AVIS_SUBST for local variables */
     BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
 
-    if (NODE_TYPE (BLOCK_ASSIGNS (arg_node)) != N_empty) {
+    if (BLOCK_ASSIGNS (arg_node) != NULL) {
         /*
          * start new cse frame
          */
@@ -858,7 +858,7 @@ CSEblock (node *arg_node, info *arg_info)
             }
         }
 
-        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
         /*
          * remove the fake assignment of the index scalars to the index vector

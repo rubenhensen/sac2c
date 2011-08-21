@@ -476,7 +476,7 @@ IWLMEMap (node *arg_node, info *arg_info)
                          * propogate that information to the traversal of LAC functions */
                         INFO_NOTRAN (arg_info)
                           = LUTinsertIntoLutP (INFO_NOTRAN (arg_info),
-                                               ARG_AVIS (fundef_args), TBmakeEmpty ());
+                                               ARG_AVIS (fundef_args), NULL);
                     }
                 } else {
                     /* If the N_avis has been come across before, replace its
@@ -733,9 +733,8 @@ IWLMEMwith (node *arg_node, info *arg_info)
 
         /* We do not want to create a host2device for index vector,
          * We store pair N_id->N_empty to signal this. */
-        INFO_NOTRAN (arg_info)
-          = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), IDS_AVIS (WITH_VEC (arg_node)),
-                               TBmakeEmpty ());
+        INFO_NOTRAN (arg_info) = LUTinsertIntoLutP (INFO_NOTRAN (arg_info),
+                                                    IDS_AVIS (WITH_VEC (arg_node)), NULL);
         AVIS_ISCUDALOCAL (IDS_AVIS (WITH_VEC (arg_node))) = TRUE;
 
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -756,9 +755,8 @@ IWLMEMwith (node *arg_node, info *arg_info)
                      "Found cuda withloop in cuda withloop!");
 
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-        INFO_NOTRAN (arg_info)
-          = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), IDS_AVIS (WITH_VEC (arg_node)),
-                               TBmakeEmpty ());
+        INFO_NOTRAN (arg_info) = LUTinsertIntoLutP (INFO_NOTRAN (arg_info),
+                                                    IDS_AVIS (WITH_VEC (arg_node)), NULL);
         AVIS_ISCUDALOCAL (IDS_AVIS (WITH_VEC (arg_node))) = TRUE;
 
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -876,7 +874,7 @@ IWLMEMids (node *arg_node, info *arg_info)
     if (INFO_INCUDAWL (arg_info)) {
         if (/* TYisArray( ids_type) */ !TUisScalar (ids_type)) {
             INFO_NOTRAN (arg_info)
-              = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), ids_avis, TBmakeEmpty ());
+              = LUTinsertIntoLutP (INFO_NOTRAN (arg_info), ids_avis, NULL);
 
             /* If the ids is cuda local and its type is not of shared
              * memory type, we change its base type from host to device */

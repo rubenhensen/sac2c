@@ -257,7 +257,7 @@ WLLOSblock (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_WLLEVEL (arg_info) == 1) {
-        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
         if (INFO_INSERT_CHAIN_BL (arg_info) == TRUE) {
             DBUG_PRINT ("Insert ABOVE-Chain (BLOCK)");
@@ -266,7 +266,7 @@ WLLOSblock (node *arg_node, info *arg_info)
             INFO_INSERT_CHAIN_BL (arg_info) = FALSE;
         }
     } else if (INFO_WLLEVEL (arg_info) == 0) {
-        BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+        BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

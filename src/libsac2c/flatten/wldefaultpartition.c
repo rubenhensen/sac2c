@@ -709,9 +709,6 @@ WLDPpart (node *arg_node, info *arg_info)
         INFO_PROPOBJINARGS (arg_info) = NULL;
     }
 
-    if (nassign == NULL) {
-        nassign = TBmakeEmpty ();
-    }
     code = TBmakeCode (TBmakeBlock (nassign, NULL), idn);
     PART_NEXT (arg_node)
       = TBmakePart (code, INFO_DEFAULTWITHID (arg_info), TBmakeDefault ());

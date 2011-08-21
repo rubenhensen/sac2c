@@ -388,7 +388,7 @@ MTSTFMODcond (node *arg_node, info *arg_info)
              * for subsequent integration into the surrounding assignment chain.
              */
 
-            BLOCK_ASSIGNS (COND_ELSE (arg_node)) = TBmakeEmpty ();
+            BLOCK_ASSIGNS (COND_ELSE (arg_node)) = NULL;
             /*
              * We must restore a correct conditional node for later de-allocation.
              */

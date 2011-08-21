@@ -1108,11 +1108,6 @@ LIRblock (node *arg_node, info *arg_info)
 #endif // FIXME
 #undef FIXME
 
-    /* in case of an empty block, insert at least the empty node */
-    if (BLOCK_ASSIGNS (arg_node) == NULL) {
-        BLOCK_ASSIGNS (arg_node) = TBmakeEmpty ();
-    }
-
     /* restore block mode */
     INFO_TOPBLOCK (arg_info) = old_flag;
 

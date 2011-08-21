@@ -1195,7 +1195,7 @@ APTblock (node *arg_node, info *arg_info)
     }
 
     DBUG_ASSERT (BLOCK_ASSIGNS (arg_node) != NULL, "unexpected empty INSTR!");
-    BLOCK_ASSIGNS (arg_node) = TRAVdo (BLOCK_ASSIGNS (arg_node), arg_info);
+    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

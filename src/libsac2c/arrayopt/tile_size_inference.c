@@ -725,9 +725,6 @@ TSIblock (node *arg_node, info *arg_info)
 
     if (BLOCK_ASSIGNS (arg_node) != NULL) {
         BLOCK_ASSIGNS (arg_node) = Trav (BLOCK_ASSIGNS (arg_node), arg_info);
-        /*
-         * Nodetype of BLOCK_ASSIGNS(arg_node) is N_assign or N_empty.
-         */
     }
 
     DBUG_RETURN (arg_node);
