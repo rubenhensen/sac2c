@@ -129,7 +129,7 @@ CUDfundef (node *arg_node, info *arg_info)
          */
         if (FUNDEF_DFM_BASE (arg_node) == NULL) {
             FUNDEF_DFM_BASE (arg_node)
-              = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+              = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
         }
 
         /*
@@ -144,7 +144,7 @@ CUDfundef (node *arg_node, info *arg_info)
          */
         FUNDEF_DFM_BASE (arg_node)
           = DFMupdateMaskBase (FUNDEF_DFM_BASE (arg_node), FUNDEF_ARGS (arg_node),
-                               FUNDEF_VARDEC (arg_node));
+                               FUNDEF_VARDECS (arg_node));
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {

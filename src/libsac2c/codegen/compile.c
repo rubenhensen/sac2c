@@ -583,7 +583,7 @@ COMPgetFoldCode (node *fundef)
     /*
      * get code of the special fold-fun
      */
-    fold_code = DUPdoDupTree (FUNDEF_INSTR (fundef));
+    fold_code = DUPdoDupTree (FUNDEF_ASSIGNS (fundef));
 
     /*
      * remove declaration-ICMs ('ND_DECL_ARG') from code.
@@ -3394,7 +3394,7 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
     /* regular arguments */
     ret_exprs = RETURN_EXPRS (arg_node);
     ret_cnt = 0;
-    vardecs = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
+    vardecs = FUNDEF_VARDECS (INFO_FUNDEF (arg_info));
 
     for (i = 0; i < argtab->size; i++) {
         if (argtab->ptr_out[i] != NULL) {

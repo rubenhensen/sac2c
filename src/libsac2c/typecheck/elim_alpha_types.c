@@ -273,8 +273,8 @@ EATfundef (node *arg_node, info *arg_info)
                  */
                 INFO_VARDECS (arg_info) = TRAVdo (INFO_VARDECS (arg_info), arg_info);
 
-                FUNDEF_VARDEC (arg_node)
-                  = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDEC (arg_node));
+                FUNDEF_VARDECS (arg_node)
+                  = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDECS (arg_node));
                 INFO_VARDECS (arg_info) = NULL;
             }
         }

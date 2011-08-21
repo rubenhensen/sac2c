@@ -437,11 +437,11 @@ RCMcond (node *arg_node, info *arg_info)
 
     nzlut = NLUTremoveNlut (nzlut);
 
-    COND_THENINSTR (arg_node)
-      = PrependRCMAssignments (INFO_ENV (arg_info), COND_THENINSTR (arg_node));
+    COND_THENASSIGNS (arg_node)
+      = PrependRCMAssignments (INFO_ENV (arg_info), COND_THENASSIGNS (arg_node));
 
-    COND_ELSEINSTR (arg_node)
-      = PrependRCMAssignments (INFO_ENV2 (arg_info), COND_ELSEINSTR (arg_node));
+    COND_ELSEASSIGNS (arg_node)
+      = PrependRCMAssignments (INFO_ENV2 (arg_info), COND_ELSEASSIGNS (arg_node));
 
     INFO_ENV2 (arg_info) = NLUTremoveNlut (INFO_ENV2 (arg_info));
     INFO_ENV (arg_info) = NLUTremoveNlut (INFO_ENV (arg_info));
@@ -520,8 +520,8 @@ RCMfundef (node *arg_node, info *arg_info)
             info = MakeInfo ();
             INFO_FUNDEF (info) = arg_node;
             INFO_ENV (info)
-              = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
-            maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+              = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
+            maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
             INFO_USEDMASK (info) = DFMgenMaskClear (maskbase);
 
             if (FUNDEF_ISCONDFUN (arg_node)) {

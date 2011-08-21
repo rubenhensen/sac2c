@@ -669,13 +669,13 @@ FLATdo (node *arg_node, info *arg_info)
     DBUG_ASSERT (pred == pred2,
                  "return-node differs from arg_node while flattening an expr!");
     if (final_assign == NULL) {
-        DBUG_ASSERT (DO_INSTR (arg_node) == NULL,
+        DBUG_ASSERT (DO_ASSIGNS (arg_node) == NULL,
                      "INFO_FLAT_FINALASSIGN is NULL although do-body is non-empty");
         /*
          * loop-body is empty so far!
          */
         if (INFO_FLAT_LASTASSIGN (arg_info) != NULL) {
-            DO_INSTR (arg_node) = INFO_FLAT_LASTASSIGN (arg_info);
+            DO_ASSIGNS (arg_node) = INFO_FLAT_LASTASSIGN (arg_info);
         }
     } else {
         ASSIGN_NEXT (final_assign) = INFO_FLAT_LASTASSIGN (arg_info);

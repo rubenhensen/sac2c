@@ -373,8 +373,8 @@ CreateSharedMemoryAccessCode (rc_t *rc, info *arg_info)
         RC_SHARRAY (rc) = A_shmem;
 
         // shmem_ids = FREEdoFreeTree( shmem_ids);
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)), vardecs);
     } else {
     }
 
@@ -515,8 +515,8 @@ SHMEMcode (node *arg_node, info *arg_info)
                     sync_exprs = TBmakeExprs (TBmakeId (RC_SHARRAY (rcs)), NULL);
                     avis = TBmakeAvis (TRAVtmpVarName ("shmem"),
                                        TYcopyType (AVIS_TYPE (RC_SHARRAY (rcs))));
-                    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+                      = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
                     RC_SHARRAY (rcs) = avis;
                     sync_ids = TBmakeIds (avis, NULL);
 

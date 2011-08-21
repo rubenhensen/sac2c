@@ -823,7 +823,7 @@ UW3fundef (node *arg_node, info *arg_info)
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        INFO_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
+        INFO_VARDECS (arg_info) = FUNDEF_VARDECS (arg_node);
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         INFO_VARDECS (arg_info) = NULL;
     }

@@ -168,17 +168,17 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                 newavis
                   = TBmakeAvis (TRAVtmpVarName (ARG_NAME (form_arg)), TYcopyType (ctype));
 
-                FUNDEF_INSTR (fundef)
+                FUNDEF_ASSIGNS (fundef)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (ARG_AVIS (form_arg), NULL),
                                              TBmakeId (newavis)),
-                                  FUNDEF_INSTR (fundef));
+                                  FUNDEF_ASSIGNS (fundef));
 
                 if (global.valid_ssaform) {
-                    AVIS_SSAASSIGN (ARG_AVIS (form_arg)) = FUNDEF_INSTR (fundef);
+                    AVIS_SSAASSIGN (ARG_AVIS (form_arg)) = FUNDEF_ASSIGNS (fundef);
                 }
 
-                FUNDEF_VARDEC (fundef)
-                  = TBmakeVardec (ARG_AVIS (form_arg), FUNDEF_VARDEC (fundef));
+                FUNDEF_VARDECS (fundef)
+                  = TBmakeVardec (ARG_AVIS (form_arg), FUNDEF_VARDECS (fundef));
                 if (NULL != AVIS_DIM (ARG_AVIS (form_arg))) {
                     AVIS_DIM (newavis) = DUPdoDupTree (AVIS_DIM (ARG_AVIS (form_arg)));
                 }
@@ -205,18 +205,18 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
 
                 oldavis = ARG_AVIS (form_arg);
 
-                FUNDEF_INSTR (fundef)
+                FUNDEF_ASSIGNS (fundef)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (oldavis, NULL),
                                              TCmakePrf2 (F_type_conv,
                                                          TBmakeType (TYcopyType (ftype)),
                                                          TBmakeId (newavis))),
-                                  FUNDEF_INSTR (fundef));
+                                  FUNDEF_ASSIGNS (fundef));
 
                 if (global.valid_ssaform) {
-                    AVIS_SSAASSIGN (oldavis) = FUNDEF_INSTR (fundef);
+                    AVIS_SSAASSIGN (oldavis) = FUNDEF_ASSIGNS (fundef);
                 }
 
-                FUNDEF_VARDEC (fundef) = TBmakeVardec (oldavis, FUNDEF_VARDEC (fundef));
+                FUNDEF_VARDECS (fundef) = TBmakeVardec (oldavis, FUNDEF_VARDECS (fundef));
 
                 if (NULL != AVIS_DIM (oldavis)) {
                     AVIS_DIM (newavis) = DUPdoDupTree (AVIS_DIM (oldavis));

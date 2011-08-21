@@ -1059,8 +1059,8 @@ AWLFcond (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("Traversing N_cond");
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
-    COND_THENINSTR (arg_node) = TRAVopt (COND_THENINSTR (arg_node), arg_info);
-    COND_ELSEINSTR (arg_node) = TRAVopt (COND_ELSEINSTR (arg_node), arg_info);
+    COND_THENASSIGNS (arg_node) = TRAVopt (COND_THENASSIGNS (arg_node), arg_info);
+    COND_ELSEASSIGNS (arg_node) = TRAVopt (COND_ELSEASSIGNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

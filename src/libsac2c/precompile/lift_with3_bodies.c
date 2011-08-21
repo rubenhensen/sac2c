@@ -166,8 +166,8 @@ ATravFundef (node *arg_node, info *arg_info)
     if (FUNDEF_BODY (arg_node) != NULL) {
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-        FUNDEF_VARDEC (arg_node)
-          = TCappendVardec (FUNDEF_VARDEC (arg_node), INFO_VARDECS (arg_info));
+        FUNDEF_VARDECS (arg_node)
+          = TCappendVardec (FUNDEF_VARDECS (arg_node), INFO_VARDECS (arg_info));
 
         INFO_VARDECS (arg_info) = NULL;
     }

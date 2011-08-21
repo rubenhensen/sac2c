@@ -176,8 +176,8 @@ CreateAvisAndInsertVardec (char *prefix, ntype *ty, info *arg_info)
     DBUG_ENTER ();
     avis = TBmakeAvis (TRAVtmpVarName (prefix), ty);
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     DBUG_RETURN (avis);
 }
@@ -517,10 +517,10 @@ CreateFullPartition (node *parts, node *withop, info *arg_info)
     max_avis = CreateMaxFrameShapeAvis (withop, fdim, arg_info);
 
     lb_avis
-      = WLSflattenBound (PART_BOUND1 (parts), &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+      = WLSflattenBound (PART_BOUND1 (parts), &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                          &INFO_PREASSIGN (arg_info));
     ub_avis
-      = WLSflattenBound (PART_BOUND2 (parts), &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+      = WLSflattenBound (PART_BOUND2 (parts), &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                          &INFO_PREASSIGN (arg_info));
 
     /* create surrounding cuboids */

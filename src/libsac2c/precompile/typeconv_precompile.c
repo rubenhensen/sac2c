@@ -157,7 +157,7 @@ LiftArg (node *arg, node *fundef, ntype *new_type, node **new_assigns)
 
     new_avis = TBmakeAvis (new_name, TYcopyType (new_type));
 
-    FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));
+    FUNDEF_VARDECS (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDECS (fundef));
 
     /*
      * Abstract the given argument out:
@@ -213,7 +213,7 @@ LiftIds (node *ids_arg, node *fundef, ntype *new_type, node **new_assigns)
 
     new_avis = TBmakeAvis (new_name, TYcopyType (new_type));
 
-    FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));
+    FUNDEF_VARDECS (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDECS (fundef));
 
     /*
      * Abstract the found return value out:

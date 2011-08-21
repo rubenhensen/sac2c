@@ -171,7 +171,7 @@ MTDCRfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("Entering function %s.", FUNDEF_NAME (arg_node));
 
         INFO_DFMBASE (arg_info)
-          = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+          = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
 
         INFO_DFMALLOC (arg_info) = DFMgenMaskClear (INFO_DFMBASE (arg_info));
         INFO_DFMFREE (arg_info) = DFMgenMaskClear (INFO_DFMBASE (arg_info));

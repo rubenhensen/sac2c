@@ -931,8 +931,8 @@ UPRFfundef (node *arg_node, info *arg_info)
 
         /* If new vardecs were made, append them to the current set */
         if (INFO_VARDEC (arg_info) != NULL) {
-            FUNDEF_VARDEC (arg_node)
-              = TCappendVardec (INFO_VARDEC (arg_info), FUNDEF_VARDEC (arg_node));
+            FUNDEF_VARDECS (arg_node)
+              = TCappendVardec (INFO_VARDEC (arg_info), FUNDEF_VARDECS (arg_node));
             INFO_VARDEC (arg_info) = NULL;
         }
 

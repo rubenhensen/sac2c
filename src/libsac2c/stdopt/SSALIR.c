@@ -440,10 +440,10 @@ CreateNewResult (node *avis, info *arg_info)
     /* 1. create new vardec in external (calling) fundef */
     new_name = TRAVtmpVarName (AVIS_NAME (avis));
     new_ext_vardec = TBmakeVardec (TBmakeAvis (new_name, TYcopyType (AVIS_TYPE (avis))),
-                                   FUNDEF_VARDEC (INFO_EXTFUNDEF (arg_info)));
+                                   FUNDEF_VARDECS (INFO_EXTFUNDEF (arg_info)));
 
     /* add vardec to chain of vardecs (ext. fundef) */
-    FUNDEF_VARDEC (INFO_EXTFUNDEF (arg_info)) = new_ext_vardec;
+    FUNDEF_VARDECS (INFO_EXTFUNDEF (arg_info)) = new_ext_vardec;
 
     /* 2. add [avis -> new_ext_avis] to RESULTMAP nodelist */
     INFO_RESULTMAP (arg_info)
@@ -455,16 +455,16 @@ CreateNewResult (node *avis, info *arg_info)
     /* 3. create new vardec in local fundef (as result in recursive call) */
     new_int_vardec = TBmakeVardec (TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                                                TYcopyType (AVIS_TYPE (avis))),
-                                   FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                                   FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = new_int_vardec;
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info)) = new_int_vardec;
 
     /* 4. create new vardec in local fundef (as PhiCopyTarget) */
     new_pct_vardec = TBmakeVardec (TBmakeAvis (TRAVtmpVarName (AVIS_NAME (avis)),
                                                TYcopyType (AVIS_TYPE (avis))),
-                                   FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                                   FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = new_pct_vardec;
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info)) = new_pct_vardec;
 
     DBUG_PRINT ("create external vardec %s for %s, local vardec %s, and pct %s", new_name,
                 AVIS_NAME (avis), AVIS_NAME (VARDEC_AVIS (new_int_vardec)),
@@ -773,14 +773,14 @@ GetRecursiveCallAssignment (node *dofun)
     DBUG_ASSERT (FUNDEF_ISLOOPFUN (dofun), "Illegal argument!");
     DBUG_ASSERT (FUNDEF_BODY (dofun) != NULL, "Loop function without body!");
 
-    ass = FUNDEF_INSTR (dofun);
+    ass = FUNDEF_ASSIGNS (dofun);
     while ((ass != NULL) && (NODE_TYPE (ASSIGN_STMT (ass)) != N_cond)) {
         ass = ASSIGN_NEXT (ass);
     }
 
     DBUG_ASSERT (ass != NULL, "Loop function without conditional!");
 
-    ass = COND_THENINSTR (ASSIGN_STMT (ass));
+    ass = COND_THENASSIGNS (ASSIGN_STMT (ass));
 
     while ((ass != NULL) && (NODE_TYPE (ASSIGN_STMT (ass)) == N_annotate)) {
         ass = ASSIGN_NEXT (ass);

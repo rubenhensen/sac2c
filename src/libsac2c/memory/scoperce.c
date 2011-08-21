@@ -132,7 +132,7 @@ SRCEfundef (node *arg_node, info *arg_info)
                 info = MakeInfo ();
                 INFO_FUNDEF (info) = arg_node;
                 INFO_MASKBASE (info)
-                  = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+                  = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
                 INFO_RCMASK (info) = DFMgenMaskClear (INFO_MASKBASE (info));
 
                 if (FUNDEF_ARGS (arg_node) != NULL) {
@@ -251,7 +251,7 @@ SRCEap (node *arg_node, info *arg_info)
         info = MakeInfo ();
         INFO_FUNDEF (info) = AP_FUNDEF (arg_node);
         INFO_MASKBASE (info) = DFMgenMaskBase (FUNDEF_ARGS (AP_FUNDEF (arg_node)),
-                                               FUNDEF_VARDEC (AP_FUNDEF (arg_node)));
+                                               FUNDEF_VARDECS (AP_FUNDEF (arg_node)));
         INFO_RCMASK (info) = DFMgenMaskClear (INFO_MASKBASE (info));
 
         funargs = FUNDEF_ARGS (AP_FUNDEF (arg_node));

@@ -227,17 +227,17 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
         diffavis = TBmakeAvis (TRAVtmpVar (),
                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (diffavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (diffavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         lb = AWLFIflattenExpression (DUPdoDupNode (EXPRS_EXPR (lb_exprs)),
-                                     &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                                     &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                      &INFO_PREASSIGN (arg_info),
                                      TYmakeAKS (TYmakeSimpleType (T_int),
                                                 SHcreateShape (0)));
 
         ub = AWLFIflattenExpression (DUPdoDupNode (EXPRS_EXPR (ub_exprs)),
-                                     &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                                     &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                      &INFO_PREASSIGN (arg_info),
                                      TYmakeAKS (TYmakeSimpleType (T_int),
                                                 SHcreateShape (0)));

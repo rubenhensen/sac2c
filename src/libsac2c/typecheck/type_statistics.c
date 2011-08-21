@@ -246,8 +246,8 @@ TSfundef (node *arg_node, info *arg_info)
         /**
          * count vardecs:
          */
-        if (FUNDEF_VARDEC (arg_node) != NULL) {
-            FUNDEF_VARDEC (arg_node) = TRAVdo (FUNDEF_VARDEC (arg_node), arg_info);
+        if (FUNDEF_VARDECS (arg_node) != NULL) {
+            FUNDEF_VARDECS (arg_node) = TRAVdo (FUNDEF_VARDECS (arg_node), arg_info);
         }
 
         PrintStatistics (arg_node, arg_info);

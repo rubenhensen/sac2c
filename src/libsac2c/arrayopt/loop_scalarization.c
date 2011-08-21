@@ -492,8 +492,8 @@ AdjustRecursiveCall (node *exprs, shape *shp, info *arg_info)
     /**
      * insert vardecs:
      */
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TCappendVardec (new_vardecs, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TCappendVardec (new_vardecs, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     /**
      * insert assignments:
@@ -845,9 +845,9 @@ LSap (node *arg_node, info *arg_info)
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
             if (INFO_EXTVARDECS (arg_info) != NULL) {
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
                   = TCappendVardec (INFO_EXTVARDECS (arg_info),
-                                    FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                                    FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
                 INFO_EXTVARDECS (arg_info) = NULL;
             }
 

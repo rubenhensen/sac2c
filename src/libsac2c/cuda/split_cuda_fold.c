@@ -89,8 +89,8 @@ AppendVardec (node *fundef, node *avis)
 {
     DBUG_ENTER ();
 
-    FUNDEF_VARDEC (fundef)
-      = TCappendVardec (FUNDEF_VARDEC (fundef), TBmakeVardec (avis, NULL));
+    FUNDEF_VARDECS (fundef)
+      = TCappendVardec (FUNDEF_VARDECS (fundef), TBmakeVardec (avis, NULL));
 
     DBUG_RETURN (fundef);
 }

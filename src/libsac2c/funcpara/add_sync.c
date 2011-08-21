@@ -280,8 +280,8 @@ SYNlet (node *arg_node, info *arg_info)
                            TYmakeAKS (TYmakeSimpleType (T_sync), SHmakeShape (0)));
 
         // Create a new vardec node
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         // Create the let node
         let = TBmakeLet (LET_IDS (arg_node),

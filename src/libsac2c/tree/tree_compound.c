@@ -1223,7 +1223,7 @@ TCaddVardecs (node *fundef, node *vardecs)
     /*
      * insert new vardecs into AST
      */
-    FUNDEF_VARDEC (fundef) = TCappendVardec (vardecs, FUNDEF_VARDEC (fundef));
+    FUNDEF_VARDECS (fundef) = TCappendVardec (vardecs, FUNDEF_VARDECS (fundef));
 
     /*
      * we must update FUNDEF_DFM_BASE!!
@@ -1231,7 +1231,7 @@ TCaddVardecs (node *fundef, node *vardecs)
     if (FUNDEF_DFM_BASE (fundef) != NULL) {
         FUNDEF_DFM_BASE (fundef)
           = DFMupdateMaskBase (FUNDEF_DFM_BASE (fundef), FUNDEF_ARGS (fundef),
-                               FUNDEF_VARDEC (fundef));
+                               FUNDEF_VARDECS (fundef));
     }
 
     DBUG_RETURN (fundef);
@@ -3860,7 +3860,7 @@ TCfindVardec_Name (char *name, node *fundef)
     DBUG_ENTER ();
 
     /* Search vardec chain */
-    v = FUNDEF_VARDEC (fundef);
+    v = FUNDEF_VARDECS (fundef);
     if (NULL != v) {
         while ((NULL != v) && (!b)) {
             curv = v;

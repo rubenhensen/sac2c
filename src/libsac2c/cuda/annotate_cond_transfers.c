@@ -141,7 +141,7 @@ ACTRANfundef (node *arg_node, info *arg_info)
         INFO_INCONDFUN (arg_info) = TRUE;
         /* First traversal, collect variable usage information */
         INFO_NLUT (arg_info)
-          = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+          = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
         INFO_TRAVMODE (arg_info) = trav_collect;
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 

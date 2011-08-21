@@ -772,8 +772,8 @@ CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
     avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (TYgetProductMember (prod, 0)));
     prod = TYfreeType (prod);
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     assign
       = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), rhs), INFO_PREASSIGN (arg_info));

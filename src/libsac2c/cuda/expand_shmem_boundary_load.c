@@ -196,8 +196,8 @@ Expand (node *prf, info *arg_info)
                                   TBmakeBlock (NULL, NULL)),
                       NULL);
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)), vardecs);
 
     DBUG_RETURN (assign);
 }

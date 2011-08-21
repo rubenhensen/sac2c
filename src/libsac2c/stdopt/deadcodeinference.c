@@ -223,7 +223,7 @@ DCIfundef (node *arg_node, info *arg_info)
             /*
              * Traverse ARGS and VARDECS to initialize AVIS_ISDEAD
              */
-            FUNDEF_VARDEC (arg_node) = TRAVopt (FUNDEF_VARDEC (arg_node), info);
+            FUNDEF_VARDECS (arg_node) = TRAVopt (FUNDEF_VARDECS (arg_node), info);
             FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), info);
 
             if (FUNDEF_ISLACFUN (arg_node)) {

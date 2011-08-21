@@ -367,7 +367,7 @@ RERAfundef (node *arg_node, info *arg_info)
         /*
          * initialise AVIS_SUBST
          */
-        FUNDEF_VARDEC (arg_node) = InitialiseVardecs (FUNDEF_VARDEC (arg_node));
+        FUNDEF_VARDECS (arg_node) = InitialiseVardecs (FUNDEF_VARDECS (arg_node));
 
         /*
          * remove references to artificials in body
@@ -379,7 +379,7 @@ RERAfundef (node *arg_node, info *arg_info)
         /*
          * remove superflous vardecs
          */
-        FUNDEF_VARDEC (arg_node) = RemoveSubstitutedVardecs (FUNDEF_VARDEC (arg_node));
+        FUNDEF_VARDECS (arg_node) = RemoveSubstitutedVardecs (FUNDEF_VARDECS (arg_node));
     }
 
     /*

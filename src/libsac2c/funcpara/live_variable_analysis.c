@@ -248,7 +248,7 @@ LVAfundef (node *arg_node, info *arg_info)
         // function contains spawn, do analysis
 
         // set up a base mask
-        base = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+        base = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
 
         INFO_BASE (arg_info) = base;
         INFO_LIVE (arg_info) = DFMgenMaskClear (base);

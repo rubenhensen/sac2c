@@ -238,8 +238,8 @@ EMLRap (node *arg_node, info *arg_info)
                 memavis = TBmakeAvis (TRAVtmpVarName (ID_NAME (oldarg)),
                                       TYeliminateAKV (AVIS_TYPE (oldavis)));
 
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (memavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (memavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
                 /*
                  * Create a new value variable
@@ -248,8 +248,8 @@ EMLRap (node *arg_node, info *arg_info)
                 valavis = TBmakeAvis (TRAVtmpVarName (ID_NAME (oldarg)),
                                       TYcopyType (AVIS_TYPE (oldavis)));
 
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (valavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
                 /*
                  * Create fill operation
@@ -513,7 +513,7 @@ EMLROfundef (node *arg_node, info *arg_info)
          */
 
         info = MakeInfo (arg_node);
-        maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+        maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
 
         /*
          * rescue FUNDEF_NEXT
@@ -593,7 +593,7 @@ EMLROfundef (node *arg_node, info *arg_info)
          * Traversal of inner CONDFUN
          */
         info = MakeInfo (arg_node);
-        maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+        maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
         INFO_REUSEMASK (info) = DFMgenMaskClear (maskbase);
 
         /*

@@ -199,8 +199,8 @@ AppendVardec (node *fundef, node *avis)
 {
     DBUG_ENTER ();
 
-    FUNDEF_VARDEC (fundef)
-      = TCappendVardec (FUNDEF_VARDEC (fundef), TBmakeVardec (avis, NULL));
+    FUNDEF_VARDECS (fundef)
+      = TCappendVardec (FUNDEF_VARDECS (fundef), TBmakeVardec (avis, NULL));
 
     DBUG_RETURN (fundef);
 }
@@ -218,7 +218,7 @@ CreatePrfOrConst (bool isprf, char *name, simpletype sty, shape *shp, prf pfun,
           = TBmakeAvis (TRAVtmpVarName (name), TYmakeAKS (TYmakeSimpleType (sty), shp));
 
         //*vardecs_p = TBmakeVardec( avis, *vardecs_p);
-        FUNDEF_VARDEC (fundef) = TBmakeVardec (avis, FUNDEF_VARDEC (fundef));
+        FUNDEF_VARDECS (fundef) = TBmakeVardec (avis, FUNDEF_VARDECS (fundef));
     }
 
     new_assign = TBmakeAssign (TBmakeLet ((avis == NULL) ? avis : TBmakeIds (avis, NULL),
@@ -333,8 +333,8 @@ BuildLoadAssigns (node *part, info *arg_info)
                                        TYgetScalar (AVIS_TYPE (INFO_CEXPR (arg_info)))))),
                                    SHarray2Shape (shmem_shp_array)));
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (shmem, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (shmem, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     /* Arguments for primitives idx_modarray_AxSxS or idx_modarray_AxSxA */
     args
@@ -1929,9 +1929,9 @@ ATravWithid (node *arg_node, info *arg_info)
                     TYmakeAKS (TYmakeSimpleType (T_int),
                                SHcreateShape (1, TCcountIds (WITHID_IDS (arg_node)))));
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
       = TBmakeVardec (IDS_AVIS (WITHID_VEC (arg_node)),
-                      FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                      FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     DBUG_RETURN (arg_node);
 }
@@ -2219,8 +2219,8 @@ PFDwith (node *arg_node, info *arg_info)
         AVIS_TYPE (new_avis) = TYmakeAKS (TYmakeSimpleType (sty),
                                           SHarray2Shape (INFO_PARTIALSHP (arg_info)));
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                             TBmakeVardec (new_avis, NULL));
 
         IDS_AVIS (INFO_LHS (arg_info)) = new_avis;

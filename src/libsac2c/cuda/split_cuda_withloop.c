@@ -262,8 +262,8 @@ SplitWith (node *arg_node, info *arg_info)
         LUTinsertIntoLutP (lut, IDS_AVIS (idxs), new_avis);
         IDS_AVIS (idxs) = new_avis;
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (IDS_AVIS (idxs), FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (IDS_AVIS (idxs), FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         old_code = PART_CODE (part);
         CODE_NEXT (old_code) = NULL;
@@ -389,8 +389,8 @@ SCUWLgenarray (node *arg_node, info *arg_info)
     avis = TBmakeAvis (TRAVtmpVar (),
                        TYcopyType (AVIS_TYPE (IDS_AVIS (INFO_LETIDS (arg_info)))));
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     new_withop = TBmakeModarray (TBmakeId (avis));
     if (GENARRAY_RC (arg_node) != NULL) {
@@ -436,8 +436,8 @@ SCUWLmodarray (node *arg_node, info *arg_info)
     avis = TBmakeAvis (TRAVtmpVar (),
                        TYcopyType (AVIS_TYPE (IDS_AVIS (INFO_LETIDS (arg_info)))));
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     new_withop = TBmakeModarray (TBmakeId (avis));
     if (MODARRAY_RC (arg_node) != NULL) {

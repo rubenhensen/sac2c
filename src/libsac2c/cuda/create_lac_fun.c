@@ -161,8 +161,8 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
         ASSIGN_NEXT (phi_ass) = return_ass;
         ASSIGN_NEXT (cond_ass) = phi_ass;
 
-        FUNDEF_INSTR (*lacfun_p) = cond_ass;
-        FUNDEF_VARDEC (*lacfun_p) = INFO_VARDECS (arg_info);
+        FUNDEF_ASSIGNS (*lacfun_p) = cond_ass;
+        FUNDEF_VARDECS (*lacfun_p) = INFO_VARDECS (arg_info);
         INFO_VARDECS (arg_info) = NULL;
         FUNDEF_RETURN (*lacfun_p) = return_node;
 
@@ -342,8 +342,8 @@ CLACFdoCreateLacFun (bool condfun, /* If true, we create cond fun, otherwise loo
 
         dup_assigns = TCappendAssign (dup_assigns, cond_ass);
 
-        FUNDEF_INSTR (*lacfun_p) = dup_assigns;
-        FUNDEF_VARDEC (*lacfun_p) = INFO_VARDECS (arg_info);
+        FUNDEF_ASSIGNS (*lacfun_p) = dup_assigns;
+        FUNDEF_VARDECS (*lacfun_p) = INFO_VARDECS (arg_info);
         INFO_VARDECS (arg_info) = NULL;
         FUNDEF_RETURN (*lacfun_p) = return_node;
 

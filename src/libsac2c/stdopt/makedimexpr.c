@@ -368,7 +368,7 @@ MDEdoMakeDimExpression (node *expr, node *avis, node *allids, node *fundef)
     info = FreeInfo (info);
 
     if (res != NULL) {
-        FUNDEF_VARDEC (fundef) = TBmakeVardec (dimavis, FUNDEF_VARDEC (fundef));
+        FUNDEF_VARDECS (fundef) = TBmakeVardec (dimavis, FUNDEF_VARDECS (fundef));
     } else {
         AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
         dimavis = FREEdoFreeNode (dimavis);
@@ -460,7 +460,7 @@ MDEarray (node *arg_node, info *arg_info)
 
         framedim
           = IVEXImakeIntScalar (SHgetDim (ARRAY_FRAMESHAPE (arg_node)),
-                                &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), &preassigns);
+                                &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)), &preassigns);
         celldim = AVIS_DIM (ID_AVIS (EXPRS_EXPR (ARRAY_AELEMS (arg_node))));
 
         rhsnode = TCmakePrf2 (F_add_SxS, TBmakeId (framedim), DUPdoDupNode (celldim));
@@ -605,10 +605,10 @@ MDEwith (node *arg_node, info *arg_info)
             AVIS_DIM (fdavis) = TBmakeNum (0);
             AVIS_SHAPE (fdavis) = TCmakeIntVector (NULL);
 
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (fdavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (fdavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-            zer = IVEXImakeIntScalar (0, &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+            zer = IVEXImakeIntScalar (0, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                       &preassigns);
             res = TBmakeAssign (TBmakeLet (TBmakeIds (fdavis, NULL),
                                            TCmakePrf2 (F_idx_shape_sel, TBmakeId (zer),
@@ -620,12 +620,12 @@ MDEwith (node *arg_node, info *arg_info)
             framedim = TBmakeId (fdavis);
         }
         framedim
-          = AWLFIflattenExpression (framedim, &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+          = AWLFIflattenExpression (framedim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                     &preassigns,
                                     TYmakeAKS (TYmakeSimpleType (T_int),
                                                SHmakeShape (0)));
         celldim
-          = AWLFIflattenExpression (celldim, &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+          = AWLFIflattenExpression (celldim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                     &preassigns,
                                     TYmakeAKS (TYmakeSimpleType (T_int),
                                                SHmakeShape (0)));

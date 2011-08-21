@@ -1633,8 +1633,8 @@ WLFid (node *arg_node, info *arg_info)
 
                 arrayn = TCmakeIntVector (TBmakeExprs (TBmakeNum (count), NULL));
                 arrayavisn = TBmakeAvis (TRAVtmpVar (), NTCnewTypeCheck_Expr (arrayn));
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (arrayavisn, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (arrayavisn, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
                 argsn = TBmakeExprs (TBmakeId (arrayavisn),
                                      TBmakeExprs (DUPdoDupTree (vectorn), NULL));

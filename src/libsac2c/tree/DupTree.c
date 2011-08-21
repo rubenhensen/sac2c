@@ -1072,7 +1072,7 @@ DUPfundef (node *arg_node, info *arg_info)
      * All of them can be found in the body of the function.
      * But when we copy the body we must already know the base to create the
      * new masks. On the other hand to create the base we must already have
-     * the new FUNDEF_ARGS and FUNDEF_VARDECS available.
+     * the new FUNDEF_ARGS and FUNDEF_VARDECSS available.
      * Therefore we first create the raw function without the body via
      * MakeFundef(), then we create the base while duplicating the body
      * and finally we attach the body to the fundef.
@@ -1637,8 +1637,8 @@ DUPids (node *arg_node, info *arg_info)
             AVIS_SSAASSIGN (newavis) = INFO_ASSIGN (arg_info);
         }
 
-        FUNDEF_VARDEC (INFO_FUNDEFSSA (arg_info))
-          = TBmakeVardec (newavis, FUNDEF_VARDEC (INFO_FUNDEFSSA (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEFSSA (arg_info))
+          = TBmakeVardec (newavis, FUNDEF_VARDECS (INFO_FUNDEFSSA (arg_info)));
 
         if (IDS_TYPE (arg_node) != NULL) {
             VARDEC_TYPE (AVIS_DECL (newavis)) = DUPdupOneTypes (IDS_TYPE (arg_node));

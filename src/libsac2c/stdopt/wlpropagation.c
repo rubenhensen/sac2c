@@ -519,9 +519,9 @@ WLPROPid (node *arg_node, info *arg_info)
                 new_withloop = TBmakeLet (newids, new_withloop);
                 new_withloop
                   = TBmakeAssign (new_withloop,
-                                  FUNDEF_INSTR (AP_FUNDEF (INFO_AP (arg_info))));
+                                  FUNDEF_ASSIGNS (AP_FUNDEF (INFO_AP (arg_info))));
 
-                FUNDEF_INSTR (AP_FUNDEF (INFO_AP (arg_info))) = new_withloop;
+                FUNDEF_ASSIGNS (AP_FUNDEF (INFO_AP (arg_info))) = new_withloop;
 
                 AVIS_SSAASSIGN (ARG_AVIS (witharg)) = new_withloop;
 

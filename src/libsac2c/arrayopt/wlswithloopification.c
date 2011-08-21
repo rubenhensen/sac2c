@@ -368,13 +368,13 @@ MakeSelParts (shape *maxshp, int unrdim, node *withid, info *arg_info)
 
         lower = SHappendShapes (lower_hd, lower_tl);
         lower_id = WLSflattenBound (SHshape2Array (lower),
-                                    &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                                    &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                     &INFO_PREASSIGNS (arg_info));
         lower_id = TBmakeId (lower_id);
 
         upper = SHappendShapes (upper_hd, upper_tl);
         upper_id = WLSflattenBound (SHshape2Array (upper),
-                                    &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+                                    &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                     &INFO_PREASSIGNS (arg_info));
         upper_id = TBmakeId (upper_id);
 
@@ -530,7 +530,7 @@ WLSWcode (node *arg_node, info *arg_info)
          * Build a maskbase and DEPMASK
          */
         maskbase = DFMgenMaskBase (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
-                                   FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                                   FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
         INFO_DEPMASK (arg_info) = DFMgenMaskClear (maskbase);
 
         /*

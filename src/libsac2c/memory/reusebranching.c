@@ -339,7 +339,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
                 cavis = TBmakeAvis (TRAVtmpVar (),
                                     TYcopyType (AVIS_TYPE (IDS_AVIS (thenids))));
 
-                FUNDEF_VARDEC (condfun) = TBmakeVardec (cavis, FUNDEF_VARDEC (condfun));
+                FUNDEF_VARDECS (condfun) = TBmakeVardec (cavis, FUNDEF_VARDECS (condfun));
 
                 cids = TBmakeIds (cavis, NULL);
 
@@ -381,7 +381,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             /*
              * Put Assignments into function body
              */
-            FUNDEF_INSTR (condfun) = res;
+            FUNDEF_ASSIGNS (condfun) = res;
             FUNDEF_RETURN (condfun) = ret;
             res = NULL;
 
@@ -400,7 +400,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             memavis = TBmakeAvis (TRAVtmpVarName ("mem"),
                                   TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
 
-            FUNDEF_VARDEC (fundef) = TBmakeVardec (memavis, FUNDEF_VARDEC (fundef));
+            FUNDEF_VARDECS (fundef) = TBmakeVardec (memavis, FUNDEF_VARDECS (fundef));
 
             memids = TBmakeIds (memavis, NULL);
 
@@ -410,7 +410,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
             valavis = TBmakeAvis (TRAVtmpVarName ("val"),
                                   TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
 
-            FUNDEF_VARDEC (fundef) = TBmakeVardec (valavis, FUNDEF_VARDEC (fundef));
+            FUNDEF_VARDECS (fundef) = TBmakeVardec (valavis, FUNDEF_VARDECS (fundef));
 
             valids = TBmakeIds (valavis, NULL);
 
@@ -423,7 +423,7 @@ BuildCondTree (node *ass, node *branches, node *memvars, node *fundef, char *roo
 
                 cfavis = TBmakeAvis (TRAVtmpVar (), TYcopyType (RET_TYPE (cfrets)));
 
-                FUNDEF_VARDEC (fundef) = TBmakeVardec (cfavis, FUNDEF_VARDEC (fundef));
+                FUNDEF_VARDECS (fundef) = TBmakeVardec (cfavis, FUNDEF_VARDECS (fundef));
 
                 cfids = TCappendIds (cfids, TBmakeIds (cfavis, NULL));
 
@@ -600,7 +600,7 @@ EMRBfundef (node *arg_node, info *arg_info)
 
         INFO_FUNDEF (arg_info) = arg_node;
         INFO_MASKBASE (arg_info)
-          = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+          = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 

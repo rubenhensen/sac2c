@@ -326,7 +326,7 @@ WLDPfundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("traversing body of function %s", CTIitemName (arg_node));
 
     if (FUNDEF_BODY (arg_node)) {
-        FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
+        FUNDEF_ASSIGNS (arg_node) = TRAVdo (FUNDEF_ASSIGNS (arg_node), arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -579,9 +579,9 @@ WLDPpropagate (node *arg_node, info *arg_info)
     inres = TBmakeAvis (TRAVtmpVar (), TYcopyType (type));
     outres = TBmakeAvis (TRAVtmpVar (), TYcopyType (type));
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
       = TBmakeVardec (inres,
-                      TBmakeVardec (outres, FUNDEF_VARDEC (INFO_FUNDEF (arg_info))));
+                      TBmakeVardec (outres, FUNDEF_VARDECS (INFO_FUNDEF (arg_info))));
 
     INFO_PROPOBJINARGS (arg_info)
       = TBmakeExprs (DUPdoDupTree (PROPAGATE_DEFAULT (arg_node)),

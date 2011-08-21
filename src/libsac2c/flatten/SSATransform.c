@@ -384,7 +384,7 @@ IncSSATCounter ()
         node *vardec;                                                                    \
         node *arg;                                                                       \
                                                                                          \
-        vardec = FUNDEF_VARDEC (fundef);                                                 \
+        vardec = FUNDEF_VARDECS (fundef);                                                \
         while (vardec != NULL) {                                                         \
             VARDEC_AVIS (vardec) = fun (VARDEC_AVIS (vardec));                           \
             vardec = VARDEC_NEXT (vardec);                                               \
@@ -1454,8 +1454,8 @@ SSATids (node *arg_node, info *arg_info)
              */
         }
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (new_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (new_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         DBUG_PRINT ("re-definition, renaming: %s (" F_PTR ") -> %s", AVIS_NAME (avis),
                     avis, AVIS_NAME (new_avis));

@@ -434,9 +434,9 @@ CUSKCid (node *arg_node, info *arg_info)
                 AVIS_NAME (new_avis) = TRAVtmpVar ();
 
                 /* Create new vardec */
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (new_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-                AVIS_DECL (new_avis) = FUNDEF_VARDEC (INFO_FUNDEF (arg_info));
+                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (new_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+                AVIS_DECL (new_avis) = FUNDEF_VARDECS (INFO_FUNDEF (arg_info));
 
                 /* Set the ssaassign to NULL for now. It will be correctly
                  * set to the sunk N_assign in CUSKCids */

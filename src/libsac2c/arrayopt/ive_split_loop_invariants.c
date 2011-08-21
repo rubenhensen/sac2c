@@ -1064,11 +1064,11 @@ IVESLIfundef (node *arg_node, info *arg_info)
         allSetMask = DFMgenMaskSet (FUNDEF_DFM_BASE (arg_node));
         arg_info = EnterLevel (allSetMask, arg_info);
 
-        INFO_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
+        INFO_VARDECS (arg_info) = FUNDEF_VARDECS (arg_node);
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-        FUNDEF_VARDEC (arg_node) = INFO_VARDECS (arg_info);
+        FUNDEF_VARDECS (arg_node) = INFO_VARDECS (arg_info);
 
         arg_info = LeaveLevel (arg_info);
         allSetMask = DFMremoveMask (allSetMask);

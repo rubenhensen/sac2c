@@ -1553,7 +1553,7 @@ WLFSfundef (node *arg_node, info *arg_info)
 
         INFO_FUNDEF (arg_info) = arg_node;
 
-        FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
+        FUNDEF_ASSIGNS (arg_node) = TRAVdo (FUNDEF_ASSIGNS (arg_node), arg_info);
 
         arg_info = FreeInfo (arg_info);
 

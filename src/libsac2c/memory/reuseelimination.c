@@ -267,7 +267,7 @@ EMREfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("Performing Reuse elimination in function %s...",
                     FUNDEF_NAME (arg_node));
 
-        maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+        maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
 
         INFO_MASK (arg_info) = DFMgenMaskClear (maskbase);
         INFO_LUT (arg_info) = LUTgenerateLut ();

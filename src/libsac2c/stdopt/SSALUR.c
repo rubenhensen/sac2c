@@ -215,7 +215,7 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
     }
 
     /* extract recursive call behind cond, skipping N_annotate */
-    then_instr = COND_THENINSTR (ASSIGN_STMT (cond_assign));
+    then_instr = COND_THENASSIGNS (ASSIGN_STMT (cond_assign));
     then_instr = FindAssignOfType (then_instr, N_let);
 
     DBUG_ASSERT (NULL != then_instr, "Cannot extract recursive call");
@@ -1650,7 +1650,7 @@ UnrollLoopBody (node *fundef, loopc_t unrolling)
         /* unrolling */
 
         /* extract recursive call behind cond */
-        then_instr = COND_THENINSTR (ASSIGN_STMT (cond_assign));
+        then_instr = COND_THENASSIGNS (ASSIGN_STMT (cond_assign));
         DBUG_ASSERT (NODE_TYPE (then_instr) == N_assign,
                      "cond of loop fun w/o N_assign in then body");
         DBUG_ASSERT (NODE_TYPE (ASSIGN_STMT (then_instr)) == N_let,
@@ -1681,7 +1681,7 @@ UnrollLoopBody (node *fundef, loopc_t unrolling)
     predavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKV (TYmakeSimpleType (T_bool),
                                                      COmakeFalse (SHmakeShape (0))));
 
-    FUNDEF_VARDEC (fundef) = TBmakeVardec (predavis, FUNDEF_VARDEC (fundef));
+    FUNDEF_VARDECS (fundef) = TBmakeVardec (predavis, FUNDEF_VARDECS (fundef));
 
     predass = TBmakeAssign (TBmakeLet (TBmakeIds (predavis, NULL), TBmakeBool (FALSE)),
                             cond_assign);

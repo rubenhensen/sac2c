@@ -215,8 +215,8 @@ HCEdo (node *arg_node, info *arg_info)
     DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
 
     if (INFO_HCE_PREASSIGN (arg_info) != NULL) {
-        DO_INSTR (arg_node)
-          = TCappendAssign (DO_INSTR (arg_node), INFO_HCE_PREASSIGN (arg_info));
+        DO_ASSIGNS (arg_node)
+          = TCappendAssign (DO_ASSIGNS (arg_node), INFO_HCE_PREASSIGN (arg_info));
 
         INFO_HCE_PREASSIGN (arg_info) = NULL;
     }

@@ -444,8 +444,8 @@ ESDprf (node *arg_node, info *arg_info)
         /*
          * create new vardec
          */
-        vardec = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info)) = vardec;
+        vardec = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info)) = vardec;
 
         /*
          * change current prf

@@ -134,7 +134,7 @@ REUSEdoGetReuseArrays (node *with, node *fundef)
 
     DBUG_ASSERT (NODE_TYPE (with) == N_with, "Illegal Argument!");
 
-    maskbase = DFMgenMaskBase (FUNDEF_ARGS (fundef), FUNDEF_VARDEC (fundef));
+    maskbase = DFMgenMaskBase (FUNDEF_ARGS (fundef), FUNDEF_VARDECS (fundef));
 
     info = MakeInfo ();
 

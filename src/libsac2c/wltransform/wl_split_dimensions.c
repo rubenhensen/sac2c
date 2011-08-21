@@ -2633,8 +2633,8 @@ WLSDfundef (node *arg_node, info *arg_info)
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     if (INFO_VARDECS (arg_info) != NULL) {
-        FUNDEF_VARDEC (arg_node)
-          = TCappendVardec (FUNDEF_VARDEC (arg_node), INFO_VARDECS (arg_info));
+        FUNDEF_VARDECS (arg_node)
+          = TCappendVardec (FUNDEF_VARDECS (arg_node), INFO_VARDECS (arg_info));
         INFO_VARDECS (arg_info) = NULL;
     }
 

@@ -181,8 +181,8 @@ FlattenBoundStepWidthElements (node *exprs, char *suffix, info *arg_info)
                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
             vardec = TBmakeVardec (avis, NULL);
 
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardec);
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)), vardec);
 
             ids = TBmakeIds (avis, NULL);
 

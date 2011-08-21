@@ -776,8 +776,8 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                  */
                 valavis = TBmakeAvis (TRAVtmpVarName ("val"), TYcopyType (crestype));
 
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (valavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
                 /*
                  * Create wl-assign operation
@@ -825,8 +825,8 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                  */
                 memavis = TBmakeAvis (TRAVtmpVarName ("mem"), TYeliminateAKV (crestype));
 
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (memavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (memavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
                 /*
                  * Create a new value variable
@@ -834,8 +834,8 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                  */
                 valavis = TBmakeAvis (TRAVtmpVarName ("val"), TYcopyType (crestype));
 
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (valavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (valavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
                 /*
                  * Create fill operation
@@ -1366,8 +1366,8 @@ EMALlet (node *arg_node, info *arg_info)
               = TBmakeAvis (TRAVtmpVarName (IDS_NAME (LET_IDS (arg_node))),
                             TYeliminateAKV (AVIS_TYPE (IDS_AVIS (LET_IDS (arg_node)))));
 
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
             LET_EXPR (arg_node)
               = TCmakePrf2 (F_fill, LET_EXPR (arg_node), TBmakeId (avis));
@@ -2100,8 +2100,8 @@ EMALgenarray (node *arg_node, info *arg_info)
         wlavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (als->avis)),
                              TYeliminateAKV (AVIS_TYPE (als->avis)));
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (wlavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (wlavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         als->avis = wlavis;
 
@@ -2240,8 +2240,8 @@ EMALmodarray (node *arg_node, info *arg_info)
         wlavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (als->avis)),
                              TYeliminateAKV (AVIS_TYPE (als->avis)));
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (wlavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (wlavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         als->avis = wlavis;
 
@@ -2317,8 +2317,8 @@ EMALbreak (node *arg_node, info *arg_info)
         wlavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (als->avis)),
                              TYeliminateAKV (AVIS_TYPE (als->avis)));
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (wlavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (wlavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         als->avis = wlavis;
 
@@ -2452,8 +2452,8 @@ EMALfold (node *arg_node, info *arg_info)
             wlavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (als->avis)),
                                  TYeliminateAKV (AVIS_TYPE (als->avis)));
 
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (wlavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (wlavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
             als->avis = wlavis;
 

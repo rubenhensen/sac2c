@@ -645,8 +645,8 @@ CTZprf (node *arg_node, info *arg_info)
         AVIS_SSAASSIGN (avis_zero) = ASSIGN_NEXT (INFO_NEWASSIGN (arg_info));
 
         // Create the new vardec nodes
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (avis_sub, TBmakeVardec (avis_zero, FUNDEF_VARDEC (
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis_sub, TBmakeVardec (avis_zero, FUNDEF_VARDECS (
                                                                INFO_FUNDEF (arg_info))));
 
         // Change the current comparison function

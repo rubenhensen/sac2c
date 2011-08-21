@@ -681,8 +681,8 @@ IMEMids (node *arg_node, info *arg_info)
             if (dev_type != NULL) {
                 new_avis = TBmakeAvis (TRAVtmpVarName ("dev"), dev_type);
                 IDS_AVIS (arg_node) = new_avis;
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (new_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (new_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
                 INFO_POSTASSIGNS (arg_info)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (ids_avis, NULL),
@@ -777,8 +777,8 @@ CreateHost2Device (node **id, node *host_avis, node *dev_avis, info *arg_info)
     DBUG_ENTER ();
 
     ID_AVIS (*id) = dev_avis;
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (dev_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (dev_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     INFO_PREASSIGNS (arg_info)
       = TBmakeAssign (TBmakeLet (TBmakeIds (dev_avis, NULL),

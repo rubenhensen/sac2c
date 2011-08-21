@@ -140,7 +140,7 @@ USSATfundef (node *arg_node, info *arg_info)
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
         } else {
-            FUNDEF_VARDEC (arg_node) = TRAVopt (FUNDEF_VARDEC (arg_node), arg_info);
+            FUNDEF_VARDECS (arg_node) = TRAVopt (FUNDEF_VARDECS (arg_node), arg_info);
         }
     }
 

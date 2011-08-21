@@ -204,11 +204,11 @@ INSVDfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        INFO_VARDECS (arg_info) = FUNDEF_VARDEC (arg_node);
+        INFO_VARDECS (arg_info) = FUNDEF_VARDECS (arg_node);
         INFO_ARGS (arg_info) = FUNDEF_ARGS (arg_node);
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-        FUNDEF_VARDEC (arg_node) = INFO_VARDECS (arg_info);
+        FUNDEF_VARDECS (arg_node) = INFO_VARDECS (arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {

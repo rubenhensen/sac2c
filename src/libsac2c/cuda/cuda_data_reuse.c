@@ -692,8 +692,8 @@ ComputeIndexInternal (bool global, /* for global or shared memory access? */
         SG_INFO_SHRIDX_CAL (sg_info) = assigns;
     }
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)), vardecs);
 
     DBUG_RETURN (sg_info);
 }
@@ -829,8 +829,8 @@ CreateCudaIndexInitCode (node *part, info *arg_info)
                                          F_cuda_blockDim_y, NULL, &vardecs, &assigns);
     }
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)), vardecs);
 
     INFO_CIS (arg_info) = cis;
 
@@ -966,8 +966,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
                                              F_lt_SxS, args, &vardecs, &predicate);
                 }
             }
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)), vardecs);
         } else if (INFO_CUWLDIM (arg_info) == 2) {
             /* TODO */
         } else {
@@ -1151,8 +1151,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
             /* We have the add the new vardecs to the fundef here
              * because  function CLACFdoCreateLacFun need to know
              * all the vardecs to work properly. */
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)), vardecs);
 
             /* After this, loop_assigns is the function application of a loop function */
             loop_assigns
@@ -1321,8 +1321,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
                 shr_args = FREEdoFreeTree (shr_args);
                 glb_args = FREEdoFreeTree (glb_args);
             }
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)), vardecs);
         } else {
             /* Do nothing */
         }
@@ -1353,8 +1353,8 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
                           SHarray2Shape (CUAI_SHARRAYSHP_PHY (access_info)),
                           F_syncthreads, args, &vardecs, &assigns);
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)), vardecs);
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)), vardecs);
 
     innermost = GetInnermostRangePair (sg_info);
 
@@ -1412,12 +1412,12 @@ ComputeSharedMemoryOffset (shared_global_info_t *sg_info, cuda_access_info_t *ac
 
     INFO_PREASSIGNS (arg_info) = TCappendAssign (assigns, new_ass);
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                         TBmakeVardec (idx_avis, NULL));
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                         TBmakeVardec (CUAI_SHARRAY (access_info), NULL));
 
     DBUG_RETURN (idx_avis);

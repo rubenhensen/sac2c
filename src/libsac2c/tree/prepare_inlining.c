@@ -165,8 +165,8 @@ PINLfundef (node *arg_node, info *arg_info)
     DBUG_EXECUTE_TAG ("PINL_LUT", LUTprintLut (stderr, inline_lut));
 
     /* Rename some vardec names to calling-site names. */
-    if (FUNDEF_VARDEC (arg_node) != NULL) {
-        INFO_VARDECS (arg_info) = DUPdoDupTreeLut (FUNDEF_VARDEC (arg_node), inline_lut);
+    if (FUNDEF_VARDECS (arg_node) != NULL) {
+        INFO_VARDECS (arg_info) = DUPdoDupTreeLut (FUNDEF_VARDECS (arg_node), inline_lut);
     }
 
     DBUG_EXECUTE_TAG ("PINL_LUT", LUTprintLut (stderr, inline_lut));

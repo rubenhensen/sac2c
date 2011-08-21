@@ -258,7 +258,7 @@ LiftId (node *id, ntype *new_type, node *fundef, node **new_assigns)
     /*
      * Insert vardec for new var
      */
-    FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));
+    FUNDEF_VARDECS (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDECS (fundef));
 
     new_ids = TBmakeIds (new_avis, NULL);
 
@@ -323,7 +323,7 @@ LiftIds (node *ids_arg, ntype *new_type, node *fundef, node **new_assigns,
 
     new_avis = TBmakeAvis (new_name, TYcopyType (new_type));
 
-    FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));
+    FUNDEF_VARDECS (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDECS (fundef));
 
     new_id = TBmakeId (new_avis);
     *new_assigns = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (ids_arg), NULL),
@@ -761,8 +761,8 @@ ASDcode (node *arg_node, info *arg_info)
                 avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (cexavis)),
                                    TYcopyType (restype));
 
-                FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-                  = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+                  = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
                 ass = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
                                                TCmakePrf2 (F_type_conv,

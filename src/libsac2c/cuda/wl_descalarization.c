@@ -370,8 +370,8 @@ WLDSpart (node *arg_node, info *arg_info)
                               SHarray2Shape (inner_shape));
 
         res_avis = TBmakeAvis (TRAVtmpVar (), res_type);
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (res_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (res_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         inner_assign
           = TBmakeAssign (TBmakeLet (TBmakeIds (res_avis, NULL), inner_with), NULL);
@@ -501,8 +501,8 @@ WLDSwithid (node *arg_node, info *arg_info)
         outer_vectype = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 2));
 
         avis = TBmakeAvis (TRAVtmpVarName ("iv"), outer_vectype);
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         WITHID_VEC (arg_node) = TBmakeIds (avis, NULL);
         INFO_NEW_WITHVEC (arg_info) = avis;
@@ -521,16 +521,16 @@ WLDSwithid (node *arg_node, info *arg_info)
     inner_vectype = TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, dim - 2));
 
     avis = TBmakeAvis (TRAVtmpVar (), inner_vectype);
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
     /*
       wlidx_avis = TBmakeAvis( TRAVtmpVarName("wlidx"),
                                TYmakeAKS( TYmakeSimpleType( T_int),
                                           SHmakeShape( 0)));
 
-      FUNDEF_VARDEC( INFO_FUNDEF( arg_info)) =
+      FUNDEF_VARDECS( INFO_FUNDEF( arg_info)) =
           TBmakeVardec( wlidx_avis,
-                        FUNDEF_VARDEC( INFO_FUNDEF( arg_info)));
+                        FUNDEF_VARDECS( INFO_FUNDEF( arg_info)));
 
       WITHID_IDXS( INFO_NEWWITHID( arg_info)) = TBmakeIds( wlidx_avis, NULL);
     */
@@ -545,9 +545,9 @@ WLDSwithid (node *arg_node, info *arg_info)
                                SHcreateShape( 1, 3));
 
       avis = TBmakeAvis( TRAVtmpVarName( "iv"), new_vectype);
-      FUNDEF_VARDEC( INFO_FUNDEF( arg_info)) =
+      FUNDEF_VARDECS( INFO_FUNDEF( arg_info)) =
           TBmakeVardec( avis,
-                        FUNDEF_VARDEC( INFO_FUNDEF( arg_info)));
+                        FUNDEF_VARDECS( INFO_FUNDEF( arg_info)));
 
       INFO_PREASSIGNS( arg_info) = TBmakeAssign( TBmakeLet( TBmakeIds( avis, NULL),
       array), INFO_PREASSIGNS( arg_info));
@@ -562,8 +562,8 @@ WLDSwithid (node *arg_node, info *arg_info)
     inner_wlidx_avis = TBmakeAvis (TRAVtmpVarName ("inner_wlidx"),
                                    TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (inner_wlidx_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (inner_wlidx_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     node *prf = TCmakePrf2 (F_vect2offset,
                             SHshape2Array (
@@ -655,8 +655,8 @@ WLDSgenerator (node *arg_node, info *arg_info)
             INFO_PREASSIGNS (arg_info)
               = TCappendAssign (INFO_PREASSIGNS (arg_info), assign);
 
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (new_ids_avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (new_ids_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
             inner_withids = IDS_NEXT (inner_withids);
             inner_lb_elems = EXPRS_NEXT (inner_lb_elems);

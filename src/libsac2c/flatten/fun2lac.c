@@ -398,8 +398,8 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
         FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
     }
 
-    body_assigns = RENdoRenameLut (FUNDEF_INSTR (arg_node), f2l_lut);
-    FUNDEF_INSTR (arg_node) = NULL;
+    body_assigns = RENdoRenameLut (FUNDEF_ASSIGNS (arg_node), f2l_lut);
+    FUNDEF_ASSIGNS (arg_node) = NULL;
 
     return_assign = RENdoRenameLut (INFO_RETURN (arg_info), f2l_lut);
     INFO_RETURN (arg_info) = NULL;
@@ -446,14 +446,14 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
 
     fun_body = TBmakeAssign (loop, TCappendAssign (else_assigns, return_assign));
 
-    FUNDEF_INSTR (arg_node) = TCappendAssign (INFO_NEW_TOPASSIGNS (arg_info), fun_body);
+    FUNDEF_ASSIGNS (arg_node) = TCappendAssign (INFO_NEW_TOPASSIGNS (arg_info), fun_body);
 
     FUNDEF_RETURN (arg_node) = ASSIGN_STMT (return_assign);
 
     INFO_NEW_TOPASSIGNS (arg_info) = NULL;
 
-    FUNDEF_VARDEC (arg_node)
-      = TCappendVardec (INFO_NEW_VARDECS (arg_info), FUNDEF_VARDEC (arg_node));
+    FUNDEF_VARDECS (arg_node)
+      = TCappendVardec (INFO_NEW_VARDECS (arg_info), FUNDEF_VARDECS (arg_node));
     INFO_NEW_VARDECS (arg_info) = NULL;
 
     INFO_FUNDEF (arg_info) = NULL;

@@ -541,8 +541,8 @@ UESDprf (node *arg_node, info *arg_info)
             }
             INFO_PREASSIGN (arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), exp), NULL);
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
         }
     }
 

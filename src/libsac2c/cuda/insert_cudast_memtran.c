@@ -427,8 +427,8 @@ ICSMEMids (node *arg_node, info *arg_info)
 
         IDS_AVIS (arg_node) = new_avis;
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                             TBmakeVardec (new_avis, NULL));
     }
 
@@ -477,8 +477,8 @@ ICSMEMid (node *arg_node, info *arg_info)
             AVIS_SSAASSIGN (new_avis) = INFO_PREASSIGNS (arg_info);
             ID_AVIS (arg_node) = new_avis;
 
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                 TBmakeVardec (new_avis, NULL));
         } else {
             DBUG_ASSERT (TYisAKS (AVIS_TYPE (avis)),
@@ -498,8 +498,8 @@ ICSMEMid (node *arg_node, info *arg_info)
 
             AVIS_SSAASSIGN (new_avis) = INFO_PREASSIGNS (arg_info);
             ID_AVIS (arg_node) = new_avis;
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                 TBmakeVardec (new_avis, NULL));
         }
     }

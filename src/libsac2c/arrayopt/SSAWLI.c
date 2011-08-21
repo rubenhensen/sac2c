@@ -686,7 +686,7 @@ WLIfundef (node *arg_node, info *arg_info)
     }
 
     if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
+        FUNDEF_ASSIGNS (arg_node) = TRAVdo (FUNDEF_ASSIGNS (arg_node), arg_info);
     }
 
     old_onefundef = INFO_ONEFUNDEF (arg_info);
@@ -765,8 +765,8 @@ WLIcond (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
-    COND_THENINSTR (arg_node) = TRAVopt (COND_THENINSTR (arg_node), arg_info);
-    COND_ELSEINSTR (arg_node) = TRAVopt (COND_ELSEINSTR (arg_node), arg_info);
+    COND_THENASSIGNS (arg_node) = TRAVopt (COND_THENASSIGNS (arg_node), arg_info);
+    COND_ELSEASSIGNS (arg_node) = TRAVopt (COND_ELSEASSIGNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

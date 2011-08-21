@@ -385,7 +385,7 @@ FRCfundef (node *arg_node, info *arg_info)
             oldthen = INFO_THENMASK (arg_info);
             oldelse = INFO_ELSEMASK (arg_info);
 
-            maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+            maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
 
             INFO_USEMASK (arg_info) = DFMgenMaskClear (maskbase);
             INFO_THENMASK (arg_info) = NULL;

@@ -202,8 +202,8 @@ ConsolidateRcs (rc_t *rc_list, info *arg_info)
                                          CUd2shSimpleTypeConversion (TYgetSimpleType (
                                            TYgetScalar (AVIS_TYPE (RC_ARRAY (rc)))))),
                                        SHcreateShape (1, shmem_sz)));
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (RC_SHARRAY (rc), FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (RC_SHARRAY (rc), FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
             RC_SHARRAYSHP (rc)
               = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, dim), shmem_shp);
         } else {

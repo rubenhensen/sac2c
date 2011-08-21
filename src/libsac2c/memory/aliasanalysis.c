@@ -538,7 +538,7 @@ EMAAfundef (node *arg_node, info *arg_info)
 
             info = MakeInfo (arg_node);
 
-            maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+            maskbase = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
 
             INFO_MASK (info) = DFMgenMaskClear (maskbase);
             INFO_LOCALMASK (info) = DFMgenMaskClear (maskbase);

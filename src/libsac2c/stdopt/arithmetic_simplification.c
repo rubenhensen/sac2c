@@ -251,7 +251,7 @@ Negate (node *arg_node, info *info)
     INFO_PREASSIGN (info)
       = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), negexpr), INFO_PREASSIGN (info));
     AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (info);
-    TCappendVardec (FUNDEF_VARDEC (INFO_FUNDEF (info)), TBmakeVardec (avis, NULL));
+    TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (info)), TBmakeVardec (avis, NULL));
     DBUG_PRINT ("Replacing PRF_ARG by _neg_S/V( arg_node");
 
     DBUG_RETURN (TBmakeId (avis));

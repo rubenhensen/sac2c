@@ -248,10 +248,10 @@ RCIfundef (node *arg_node, info *arg_info)
             info = MakeInfo ();
             INFO_FUNDEF (info) = arg_node;
             INFO_MASKBASE (info)
-              = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+              = DFMgenMaskBase (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
 
             INFO_ENV (info)
-              = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+              = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
 
             if (FUNDEF_ISCONDFUN (arg_node)) {
                 /*
@@ -1236,8 +1236,8 @@ RCIcond (node *arg_node, info *arg_info)
 
     INFO_MODE (arg_info) = rc_prfuse;
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
-    COND_THENINSTR (arg_node)
-      = TCappendAssign (INFO_POSTASSIGN (arg_info), COND_THENINSTR (arg_node));
+    COND_THENASSIGNS (arg_node)
+      = TCappendAssign (INFO_POSTASSIGN (arg_info), COND_THENASSIGNS (arg_node));
     INFO_POSTASSIGN (arg_info) = NULL;
 
     env = INFO_ENV (arg_info);
@@ -1247,8 +1247,8 @@ RCIcond (node *arg_node, info *arg_info)
 
     INFO_MODE (arg_info) = rc_prfuse;
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
-    COND_ELSEINSTR (arg_node)
-      = TCappendAssign (INFO_POSTASSIGN (arg_info), COND_ELSEINSTR (arg_node));
+    COND_ELSEASSIGNS (arg_node)
+      = TCappendAssign (INFO_POSTASSIGN (arg_info), COND_ELSEASSIGNS (arg_node));
     INFO_POSTASSIGN (arg_info) = NULL;
 
     INFO_ENV (arg_info) = env;
@@ -1279,10 +1279,11 @@ RCIcond (node *arg_node, info *arg_info)
 
     nzlut = NLUTremoveNlut (nzlut);
 
-    COND_THENINSTR (arg_node) = TCappendAssign (MakeRCAssignments (INFO_ENV (arg_info)),
-                                                COND_THENINSTR (arg_node));
-    COND_ELSEINSTR (arg_node) = TCappendAssign (MakeRCAssignments (INFO_ENV2 (arg_info)),
-                                                COND_ELSEINSTR (arg_node));
+    COND_THENASSIGNS (arg_node) = TCappendAssign (MakeRCAssignments (INFO_ENV (arg_info)),
+                                                  COND_THENASSIGNS (arg_node));
+    COND_ELSEASSIGNS (arg_node)
+      = TCappendAssign (MakeRCAssignments (INFO_ENV2 (arg_info)),
+                        COND_ELSEASSIGNS (arg_node));
 
     INFO_ENV2 (arg_info) = NLUTremoveNlut (INFO_ENV2 (arg_info));
     INFO_ENV (arg_info) = NLUTremoveNlut (INFO_ENV (arg_info));

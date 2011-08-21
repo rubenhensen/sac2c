@@ -68,7 +68,7 @@ InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
 
     DBUG_ENTER ();
 
-    last_assign = TCgetLastAssign (FUNDEF_INSTR (fundef));
+    last_assign = TCgetLastAssign (FUNDEF_ASSIGNS (fundef));
 
     DBUG_ASSERT ((last_assign != NULL)
                    && (NODE_TYPE (ASSIGN_STMT (last_assign)) == N_return),
@@ -99,7 +99,7 @@ InsertTypeConv (node *fundef, int pos_of_ret, ntype *spec_type)
     if (PHisSAAMode ()) {
         AVIS_SSAASSIGN (new_avis) = last_assign;
     }
-    FUNDEF_VARDEC (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDEC (fundef));
+    FUNDEF_VARDECS (fundef) = TBmakeVardec (new_avis, FUNDEF_VARDECS (fundef));
 
     DBUG_RETURN (fundef);
 }

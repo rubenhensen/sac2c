@@ -130,7 +130,7 @@ MakeAssignForIdShape (node *id, node *fundef, node **preass)
     AVIS_DIM (res) = TBmakeNum (1);
     AVIS_SHAPE (res) = GenIntVector (DUPdoDupNode (AVIS_DIM (ID_AVIS (id))));
 
-    FUNDEF_VARDEC (fundef) = TBmakeVardec (res, FUNDEF_VARDEC (fundef));
+    FUNDEF_VARDECS (fundef) = TBmakeVardec (res, FUNDEF_VARDECS (fundef));
 
     newass = TBmakeAssign (TBmakeLet (TBmakeIds (res, NULL),
                                       DUPdoDupNode (AVIS_SHAPE (ID_AVIS (id)))),
@@ -291,8 +291,8 @@ SAAshp_for_take (node *arg_node, info *arg_info)
         AVIS_DIM (absavis) = DUPdoDupNode (AVIS_DIM (idavis));
         AVIS_SHAPE (absavis) = DUPdoDupNode (AVIS_SHAPE (idavis));
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (absavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (absavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         preass = TBmakeAssign (TBmakeLet (TBmakeIds (absavis, NULL),
                                           TCmakePrf1 (F_abs_S, TBmakeId (idavis))),
@@ -335,8 +335,8 @@ SAAshp_for_drop (node *arg_node, info *arg_info)
         AVIS_DIM (absavis) = DUPdoDupNode (AVIS_DIM (idavis));
         AVIS_SHAPE (absavis) = DUPdoDupNode (AVIS_SHAPE (idavis));
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (absavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (absavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         preass = TBmakeAssign (TBmakeLet (TBmakeIds (absavis, NULL),
                                           TCmakePrf1 (F_abs_S, TBmakeId (idavis))),
@@ -526,7 +526,7 @@ MSEdoMakeShapeExpression (node *expr, node *avis, node *allids, node *fundef)
     info = FreeInfo (info);
 
     if (res != NULL) {
-        FUNDEF_VARDEC (fundef) = TBmakeVardec (shpavis, FUNDEF_VARDEC (fundef));
+        FUNDEF_VARDECS (fundef) = TBmakeVardec (shpavis, FUNDEF_VARDECS (fundef));
     } else {
         AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
         shpavis = FREEdoFreeNode (shpavis);
@@ -631,8 +631,8 @@ MSEarray (node *arg_node, info *arg_info)
         AVIS_DIM (fsavis) = TBmakeNum (1);
         AVIS_SHAPE (fsavis) = GenIntVector (TBmakeNum (framedim));
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (fsavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (fsavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         preass = TBmakeAssign (TBmakeLet (TBmakeIds (fsavis, NULL),
                                           SHshape2Array (ARRAY_FRAMESHAPE (arg_node))),
@@ -786,8 +786,8 @@ MSEwith (node *arg_node, info *arg_info)
             AVIS_DIM (csavis) = TBmakeNum (1);
             AVIS_SHAPE (csavis) = GenIntVector (TBmakeNum (SHgetDim (cshp)));
 
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (csavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (csavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
             preass
               = TBmakeAssign (TBmakeLet (TBmakeIds (csavis, NULL), SHshape2Array (cshp)),
@@ -808,8 +808,8 @@ MSEwith (node *arg_node, info *arg_info)
             AVIS_DIM (fsavis) = TBmakeNum (1);
             AVIS_SHAPE (fsavis) = GenIntVector (TBmakeNum (framedim));
 
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (fsavis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (fsavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
             preass
               = TBmakeAssign (TBmakeLet (TBmakeIds (fsavis, NULL), DUPdoDupNode (genshp)),

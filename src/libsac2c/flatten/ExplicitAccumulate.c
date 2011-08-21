@@ -166,8 +166,8 @@ MakeAccuAssign (node *code, info *arg_info)
     INFO_FOLD_ACCU (arg_info) = avis;
 
     /* insert vardec */
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     /* create <avis> = F_accu( <idx-varname>) */
 
@@ -219,8 +219,8 @@ MakeFoldFunAssign (info *arg_info)
     EXPRS_EXPR1 (INFO_FOLD_CEXPR (arg_info)) = TBmakeId (avis);
 
     /* insert vardec */
-    FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+      = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     /* create <avis> = <fun>( <accu>, old_cexpr_id); */
 
@@ -247,8 +247,8 @@ MakeFoldFunAssign (info *arg_info)
         avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (INFO_FOLD_GUARD (arg_info))),
                            TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         fixassign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), eq_funap), NULL);
 
@@ -313,7 +313,7 @@ EAfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = arg_node;
 
     if (FUNDEF_BODY (arg_node)) {
-        FUNDEF_INSTR (arg_node) = TRAVdo (FUNDEF_INSTR (arg_node), arg_info);
+        FUNDEF_ASSIGNS (arg_node) = TRAVdo (FUNDEF_ASSIGNS (arg_node), arg_info);
     }
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -486,8 +486,8 @@ EAfold (node *arg_node, info *arg_info)
         avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (INFO_FOLD_GUARD (arg_info))),
                            TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         AVIS_SSAASSIGN (avis) = AVIS_SSAASSIGN (IDS_AVIS (INFO_LHS_IDS (arg_info)));
 

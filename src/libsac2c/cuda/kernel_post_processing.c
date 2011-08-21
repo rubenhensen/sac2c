@@ -134,12 +134,12 @@ KPPfundef (node *arg_node, info *arg_info)
     if (FUNDEF_ISCUDAGLOBALFUN (arg_node) || FUNDEF_ISCUDASTGLOBALFUN (arg_node)) {
 
         INFO_NLUT (arg_info)
-          = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+          = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-        FUNDEF_VARDEC (arg_node)
-          = RemoveUnusedVardecs (FUNDEF_VARDEC (arg_node), arg_info);
+        FUNDEF_VARDECS (arg_node)
+          = RemoveUnusedVardecs (FUNDEF_VARDECS (arg_node), arg_info);
 
         INFO_NLUT (arg_info) = NLUTremoveNlut (INFO_NLUT (arg_info));
     }

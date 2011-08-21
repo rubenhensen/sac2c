@@ -289,8 +289,8 @@ extern node *TCunAliasObjdef (node *objdef);
  *  compound access macros
  */
 
-#define FUNDEF_VARDEC(n) (BLOCK_VARDECS (FUNDEF_BODY (n)))
-#define FUNDEF_INSTR(n) (BLOCK_ASSIGNS (FUNDEF_BODY (n)))
+#define FUNDEF_VARDECS(n) (BLOCK_VARDECS (FUNDEF_BODY (n)))
+#define FUNDEF_ASSIGNS(n) (BLOCK_ASSIGNS (FUNDEF_BODY (n)))
 
 #define FUNDEF_ISLACFUN(n) (FUNDEF_ISCONDFUN (n) || FUNDEF_ISLOOPFUN (n))
 
@@ -806,8 +806,8 @@ extern node *TCnodeBehindCast (node *arg_node);
 /*
  *  compound access macros
  */
-#define COND_THENINSTR(n) (BLOCK_ASSIGNS (COND_THEN (n)))
-#define COND_ELSEINSTR(n) (BLOCK_ASSIGNS (COND_ELSE (n)))
+#define COND_THENASSIGNS(n) (BLOCK_ASSIGNS (COND_THEN (n)))
+#define COND_ELSEASSIGNS(n) (BLOCK_ASSIGNS (COND_ELSE (n)))
 
 /*--------------------------------------------------------------------------*/
 
@@ -818,7 +818,7 @@ extern node *TCnodeBehindCast (node *arg_node);
 /*
  *  compound access macros
  */
-#define DO_INSTR(n) (BLOCK_ASSIGNS (DO_BODY (n)))
+#define DO_ASSIGNS(n) (BLOCK_ASSIGNS (DO_BODY (n)))
 
 /*--------------------------------------------------------------------------*/
 

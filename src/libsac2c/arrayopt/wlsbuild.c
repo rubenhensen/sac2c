@@ -356,7 +356,7 @@ ConcatVectors (node *vec1, node *vec2, info *arg_info)
     /*
      * Flatten the result
      */
-    res = WLSflattenBound (res, &FUNDEF_VARDEC (INFO_FUNDEF (arg_info)),
+    res = WLSflattenBound (res, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                            &INFO_PREASSIGNS (arg_info));
     res = TBmakeId (res);
 
@@ -439,8 +439,8 @@ WLSBcode (node *arg_node, info *arg_info)
             avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (oldavis)),
                                TYcopyType (AVIS_TYPE (oldavis)));
 
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
             prefix = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), array), NULL);
             AVIS_SSAASSIGN (avis) = prefix;
@@ -465,8 +465,8 @@ WLSBcode (node *arg_node, info *arg_info)
             avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (oldavis)),
                                TYcopyType (AVIS_TYPE (oldavis)));
 
-            FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
             ASSIGN_NEXT (prefix)
               = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), array), NULL);
@@ -791,8 +791,8 @@ WLSBwithid (node *arg_node, info *arg_info)
          */
         avis = TBmakeAvis (TRAVtmpVar (), vectype);
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (avis, FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         /*
          * Create the ids for the new index vector

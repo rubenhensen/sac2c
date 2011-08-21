@@ -310,9 +310,9 @@ MCTRANassign (node *arg_node, info *arg_info)
             arg_node = TCappendAssign (INFO_APPREASSIGNS (arg_info), arg_node);
         }
 
-        FUNDEF_VARDEC (INFO_FUNDEF (arg_info))
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
           = TCappendVardec (INFO_VARDECS (arg_info),
-                            FUNDEF_VARDEC (INFO_FUNDEF (arg_info)));
+                            FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
         /* Pop info */
         INFO_APPOSTASSIGNS (arg_info) = old_postassigns;

@@ -182,7 +182,7 @@ AMTRANfundef (node *arg_node, info *arg_info)
     if (FUNDEF_ISLOOPFUN (arg_node)) {
         INFO_INDOFUN (arg_info) = TRUE;
         INFO_NLUT (arg_info)
-          = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDEC (arg_node));
+          = NLUTgenerateNlut (FUNDEF_ARGS (arg_node), FUNDEF_VARDECS (arg_node));
 
         /* First traversal: collect variable usage information */
         INFO_TRAVMODE (arg_info) = trav_collect;

@@ -220,7 +220,7 @@ CreateScalarAvisFrom (node *source, node *fun)
     AVIS_SHAPE (newavis) = TCmakeIntVector (NULL);
 
     if (NULL != fun) {
-        FUNDEF_VARDEC (fun) = TBmakeVardec (newavis, FUNDEF_VARDEC (fun));
+        FUNDEF_VARDECS (fun) = TBmakeVardec (newavis, FUNDEF_VARDECS (fun));
     }
 
     return (newavis);
@@ -245,7 +245,7 @@ CreateVectorAvisFrom (node *source, node *shape, node *fun)
     AVIS_SHAPE (newavis) = TCmakeIntVector (TBmakeExprs (shape, NULL));
 
     if (NULL != fun) {
-        FUNDEF_VARDEC (fun) = TBmakeVardec (newavis, FUNDEF_VARDEC (fun));
+        FUNDEF_VARDECS (fun) = TBmakeVardec (newavis, FUNDEF_VARDECS (fun));
     }
 
     return (newavis);
@@ -829,7 +829,7 @@ MakeDTProxy (node *avis, node *postass, info *arg_info)
                                     TYcopyType (AVIS_TYPE (avis)));
             AVIS_DIM (proxyavis) = TBmakeId (dimavis);
             AVIS_SHAPE (proxyavis) = TBmakeId (shpavis);
-            FUNDEF_VARDEC (fundef) = TBmakeVardec (proxyavis, FUNDEF_VARDEC (fundef));
+            FUNDEF_VARDECS (fundef) = TBmakeVardec (proxyavis, FUNDEF_VARDECS (fundef));
 
             /* proxyavis = saabind( dimavis, shpavis, avis ); */
             newass = TBmakeAssign (TBmakeLet (TBmakeIds (proxyavis, NULL),
@@ -1003,7 +1003,7 @@ RemoveAvisSubst (node *fundef)
     DBUG_ENTER ();
 
     FUNDEF_ARGS (fundef) = TRAVopt (FUNDEF_ARGS (fundef), NULL);
-    FUNDEF_VARDEC (fundef) = TRAVopt (FUNDEF_VARDEC (fundef), NULL);
+    FUNDEF_VARDECS (fundef) = TRAVopt (FUNDEF_VARDECS (fundef), NULL);
 
     DBUG_RETURN (fundef);
 }
@@ -1077,7 +1077,8 @@ ISAAfundef (node *arg_node, info *arg_info)
 
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
-            FUNDEF_INSTR (arg_node) = TCappendAssign (preblock, FUNDEF_INSTR (arg_node));
+            FUNDEF_ASSIGNS (arg_node)
+              = TCappendAssign (preblock, FUNDEF_ASSIGNS (arg_node));
             INFO_PREBLOCK (arg_info) = NULL;
         }
 

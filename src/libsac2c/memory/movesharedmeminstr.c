@@ -499,7 +499,7 @@ MakeMemArg (node *memavis, node *extfundef, node *extap, node *spmdfun, lut_t *l
     avis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (memavis)),
                        TYcopyType (AVIS_TYPE (memavis)));
 
-    FUNDEF_VARDEC (extfundef) = TBmakeVardec (avis, FUNDEF_VARDEC (extfundef));
+    FUNDEF_VARDECS (extfundef) = TBmakeVardec (avis, FUNDEF_VARDECS (extfundef));
 
     AP_ARGS (extap) = TBmakeExprs (TBmakeId (avis), AP_ARGS (extap));
 
