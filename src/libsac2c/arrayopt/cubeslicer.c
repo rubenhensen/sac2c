@@ -171,22 +171,14 @@ FreeInfo (info *info)
 node *
 CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
 {
-    info *arg_info;
-
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
                  "CUBSLdoAlgebraicWithLoopFoldingCubeSlicing called for non-fundef");
 
-    arg_info = MakeInfo (arg_node);
-    INFO_LUT (arg_info) = LUTgenerateLut ();
-
     TRAVpush (TR_cubsl);
-    arg_node = TRAVdo (arg_node, arg_info);
+    arg_node = TRAVdo (arg_node, NULL);
     TRAVpop ();
-
-    INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
-    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -957,6 +949,8 @@ node *
 CUBSLfundef (node *arg_node, info *arg_info)
 {
 
+    info *oldarginfo;
+
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -964,6 +958,10 @@ CUBSLfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("Algebraic-With-Loop-Folding Cube Slicing in %s %s begins",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                     FUNDEF_NAME (arg_node));
+
+        oldarginfo = arg_info;
+        arg_info = MakeInfo (arg_node);
+        INFO_LUT (arg_info) = LUTgenerateLut ();
 
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -978,6 +976,10 @@ CUBSLfundef (node *arg_node, info *arg_info)
 
             FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
         }
+
+        INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
+        arg_info = FreeInfo (arg_info);
+        arg_info = oldarginfo;
 
         DBUG_PRINT ("Algebraic-With-Loop-Folding Cube Slicing in %s %s ends",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
