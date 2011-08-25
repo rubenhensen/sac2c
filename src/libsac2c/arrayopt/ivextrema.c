@@ -665,7 +665,7 @@ IVEXItmpIds (node *arg_node, info *arg_info, node *iavis, int k)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (N_avis == NODE_TYPE (iavis), "IVEXItmpIds expected N_avis");
+    DBUG_PRINT ("Working on %s", AVIS_NAME (iavis));
 
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
     b1f = WLSflattenBound (DUPdoDupNode (b1), &INFO_VARDECS (arg_info),
@@ -1002,7 +1002,16 @@ IVEXIpart (node *arg_node, info *arg_info)
          * eventually have extrema attached, and those extrema may
          * vary across partitions.
          */
-        if (1 == CODE_USED (PART_CODE (arg_node))) {
+
+        /* FIXME: Notwithstanding the above comment, we end up
+         * with transpose.sac generating huge numbers of partitions,
+         * because AVIS_SSAASSIGN ends up pointing at the arg_node
+         * copy, ont the newcode copy, of the code block.
+         * At the time of DUP(), they point properly to newcode,
+         * but by end-of-phase, they points to the unrenamed
+         * arg_node. Weird....  2010-08-25
+         */
+        if (FALSE && (1 == CODE_USED (PART_CODE (arg_node)))) { /* FIXME */
             newcode = DUPdoDupTreeLut (PART_CODE (arg_node), INFO_LUTVARS (arg_info));
             /* At this point, AVIS_SSAASSIGN nodes are
              * now wrong in the old code block. So, we will

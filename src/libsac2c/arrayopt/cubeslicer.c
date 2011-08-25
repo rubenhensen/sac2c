@@ -1072,6 +1072,8 @@ CUBSLpart (node *arg_node, info *arg_info)
 {
     node *oldconsumerpart;
     node *partnext;
+    node *oldwlprojection1;
+    node *oldwlprojection2;
     intersect_type_t oldintersecttype;
 
     DBUG_ENTER ();
@@ -1085,11 +1087,18 @@ CUBSLpart (node *arg_node, info *arg_info)
 
     oldconsumerpart = INFO_CONSUMERPART (arg_info);
     INFO_CONSUMERPART (arg_info) = arg_node;
+
     oldintersecttype = INFO_INTERSECTTYPE (arg_info);
     INFO_INTERSECTTYPE (arg_info) = INTERSECT_unknown;
 
+    oldwlprojection1 = INFO_WLPROJECTION1 (arg_info);
+    INFO_WLPROJECTION1 (arg_info) = NULL;
+    oldwlprojection2 = INFO_WLPROJECTION2 (arg_info);
+    INFO_WLPROJECTION2 (arg_info) = NULL;
+
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
+
     if ((INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info))
         && (NULL != INFO_WLPROJECTION1 (arg_info))
         && (AWLFIisHasInverseProjection (INFO_WLPROJECTION1 (arg_info)))
@@ -1108,8 +1117,11 @@ CUBSLpart (node *arg_node, info *arg_info)
     DBUG_PRINT ("Partition %s intersect type is %d",
                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
                 INFO_INTERSECTTYPE (arg_info));
+
     INFO_CONSUMERPART (arg_info) = oldconsumerpart;
     INFO_INTERSECTTYPE (arg_info) = oldintersecttype;
+    INFO_WLPROJECTION1 (arg_info) = oldwlprojection1;
+    INFO_WLPROJECTION2 (arg_info) = oldwlprojection2;
 
     DBUG_RETURN (arg_node);
 }

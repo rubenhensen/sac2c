@@ -220,7 +220,7 @@ IVEXCavis (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Cleaning up %s", AVIS_NAME (arg_node));
+    DBUG_PRINT ("Cleaning up N_avis for %s", AVIS_NAME (arg_node));
     AVIS_MIN (arg_node)
       = (NULL != AVIS_MIN (arg_node)) ? FREEdoFreeNode (AVIS_MIN (arg_node)) : NULL;
     AVIS_MAX (arg_node)

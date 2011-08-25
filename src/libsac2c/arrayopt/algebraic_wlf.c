@@ -638,13 +638,15 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
     node *lhsids;
     node *lhsavis;
     node *sel;
+    node *arg1;
     int k;
 
     DBUG_ENTER ();
 
     ids = WITHID_IDS (PART_WITHID (pwlpart));
-    idxavis = AWLFIoffset2Iv (LET_EXPR (ASSIGN_STMT (arg_node)), &INFO_VARDECS (arg_info),
-                              &INFO_PREASSIGNS (arg_info), INFO_PART (arg_info), pwlpart);
+    arg1 = PRF_ARG1 (LET_EXPR (ASSIGN_STMT (arg_node)));
+    idxavis = AWLFIoffset2Iv (arg1, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
+                              INFO_PART (arg_info), pwlpart);
     DBUG_ASSERT (NULL != idxavis, "Could not rebuild iv for _sel_VxA_(iv, PWL)");
 
     k = 0;
@@ -734,11 +736,17 @@ doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consume
     idxassigns = makeIdxAssigns (arg_node, arg_info, producerWLPart);
 
     /* We have to remove extrema from old block and recompute everything */
-    oldblock = IVEXCdoIndexVectorExtremaCleanupPartition (oldblock, arg_info);
-    /* If producerWL is empty, don't do any code substitutions.
+    /* If producerWL code block is empty, don't do any code substitutions.
      * Just replace sel(iv, producerWL) by iv.
      */
-    newblock = DUPdoDupTreeLutSsa (oldblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
+
+    if (NULL != oldblock) {
+        oldblock = IVEXCdoIndexVectorExtremaCleanupPartition (oldblock, arg_info);
+        newblock
+          = DUPdoDupTreeLutSsa (oldblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
+    } else {
+        newblock = NULL;
+    }
 
     expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (producerWLPart))));
     newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
