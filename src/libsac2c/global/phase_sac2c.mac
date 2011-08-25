@@ -453,16 +453,10 @@ FUNBEGIN (saacyc, opt, saacyc)
 CYCLEPHASEFUN (isaa3, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
                global.optimize.dosaa, opt, saacyc)
 
-/* ivesplit and ivesli placed here for no good reason */
+/* ivesplit placed here for no good reason */
 CYCLEPHASEFUN (ivesplit, "Eliminating index vectors (split selections)",
                IVESPLITdoSplitSelectionsOneFundef,
                global.optimize.doive &&global.optimize.doivecyc, opt, saacyc)
-
-CYCLEPHASEFUN (
-  ivesli, "Eliminating index vectors (split loop invariants)",
-  IVESLIdoIVESplitLoopInvariants,
-  global.optimize.doive &&global.optimize.doivesli &&global.optimize.doivecyc, opt,
-  saacyc)
 
 CYCLEPHASEFUN (cse, "Eliminating common subexpressions",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
