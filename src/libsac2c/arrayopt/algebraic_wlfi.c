@@ -2652,7 +2652,9 @@ AWLFIprf (node *arg_node, info *arg_info)
     }
 
     /* Project partitionIntersectMin/Max data back from PWL to CWL */
-    if ((F_noteintersect == PRF_PRF (arg_node)) && (NULL != INFO_PRODUCERWL (arg_info))) {
+    if ((AWLFIisHasNoteintersect (arg_node))
+        && (!isHasValidNoteintersect (arg_node, arg_info))
+        && (NULL != INFO_PRODUCERWL (arg_info))) {
         ivavis
           = AWLFIoffset2Iv (PRF_ARG1 (arg_node), &INFO_VARDECS (arg_info),
                             &INFO_PREASSIGNS (arg_info), INFO_CONSUMERWLPART (arg_info),
