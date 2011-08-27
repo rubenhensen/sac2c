@@ -23,6 +23,8 @@ extern node *PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree);
 
 extern node *PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond);
 
+extern node *PHrunCyclePhaseFunOld (compiler_phase_t cyclephase, node *fundef, bool cond);
+
 extern bool PHisSAAMode ();
 extern bool PHisSSAMode ();
 

@@ -201,3 +201,10 @@
       CYCLEPHASEFUNcond (cond) CYCLEPHASEFUNphase (phase) CYCLEPHASEFUNcycle (cycle)
 #define CYCLEPHASEFUN__defined
 #endif
+
+#ifndef CYCLEPHASEFUNOLD
+#define CYCLEPHASEFUNOLD(name, text, fun, cond, phase, cycle)                            \
+    CYCLEPHASEFUNname (name) CYCLEPHASEFUNtext (text) CYCLEPHASEFUNfun (fun)             \
+      CYCLEPHASEFUNcond (cond) CYCLEPHASEFUNphase (phase) CYCLEPHASEFUNcycle (cycle)
+#define CYCLEPHASEFUNOLD__defined
+#endif

@@ -25,6 +25,7 @@
 #define SUBPHASEfun(fun) extern node *fun (node *syntax_tree);
 #define CYCLEPHASEfun(fun) extern node *fun (node *syntax_tree);
 #define CYCLEPHASEFUNfun(fun) extern node *fun (node *syntax_tree);
+#define CYCLEPHASEFUNOLDfun(fun) extern node *fun (node *syntax_tree);
 
 #include "phase_sac2c.mac"
 #include "phase_sac4c.mac"
@@ -33,6 +34,7 @@
 #undef SUBPHASEfun
 #undef CYCLEPHASEfun
 #undef CYCLEPHASEFUNfun
+#undef CYCLEPHASEFUNOLDfun
 
 /****************************************************************************/
 
@@ -192,6 +194,8 @@ PHIphaseName (compiler_phase_t phase)
 
 #define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle,
 
+#define CYCLEPHASEFUNOLD(name, text, fun, cond, phase, cycle) PH_##phase##_##cycle,
+
 compiler_phase_t
 PHIphaseParent (compiler_phase_t phase)
 {
@@ -214,6 +218,7 @@ PHIphaseParent (compiler_phase_t phase)
 #undef CYCLEPHASE
 #undef FUNBEGIN
 #undef CYCLEPHASEFUN
+#undef CYCLEPHASEFUNOLD
 
 /****************************************************************************/
 
@@ -228,6 +233,8 @@ PHIphaseParent (compiler_phase_t phase)
 #define FUNBEGIN(name, phase, cycle) #phase ":" #cycle ":" #name,
 
 #define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle) #phase ":" #cycle ":" #name,
+
+#define CYCLEPHASEFUNOLD(name, text, fun, cond, phase, cycle) #phase ":" #cycle ":" #name,
 
 const char *
 PHIphaseIdent (compiler_phase_t phase)
@@ -251,6 +258,7 @@ PHIphaseIdent (compiler_phase_t phase)
 #undef CYCLEPHASE
 #undef FUNBEGIN
 #undef CYCLEPHASEFUN
+#undef CYCLEPHASEFUNOLD
 
 /****************************************************************************/
 

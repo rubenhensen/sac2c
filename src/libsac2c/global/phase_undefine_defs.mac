@@ -130,6 +130,11 @@
 #undef CYCLEPHASEFUN__defined
 #endif
 
+#ifdef CYCLEPHASEFUNOLD__defined
+#undef CYCLEPHASEFUNOLD
+#undef CYCLEPHASEFUNOLD__defined
+#endif
+
 #ifdef CYCLEPHASEFUNname__defined
 #undef CYCLEPHASEFUNname
 #undef CYCLEPHASEFUNname__defined

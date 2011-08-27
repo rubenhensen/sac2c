@@ -24,6 +24,9 @@
 #define CYCLEPHASEFUN(name, text, fun, cond, phase, cycle)                               \
     fundef = PHrunCyclePhaseFun (PH_##phase##_##cycle##_##name, fundef, cond);
 
+#define CYCLEPHASEFUNOLD(name, text, fun, cond, phase, cycle)                            \
+    fundef = PHrunCyclePhaseFunOld (PH_##phase##_##cycle##_##name, fundef, cond);
+
 #define FUNEND(name)                                                                     \
     DBUG_RETURN (fundef);                                                                \
     }
@@ -34,6 +37,7 @@
 
 #undef FUNBEGINname
 #undef CYCLEPHASEFUN
+#undef CYCLEPHASEFUNOLD
 #undef FUNEND
 
 /*

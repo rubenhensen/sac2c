@@ -437,6 +437,59 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
 node *
 PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
 {
+    node *fundef_next;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (PHIphaseType (cyclephase) == PHT_cyclephase_fun,
+                 "PHrunCyclePhaseFun called with incompatible phase: %s",
+                 PHIphaseIdent (cyclephase));
+
+    DBUG_ASSERT ((fundef != NULL) && (NODE_TYPE (fundef) == N_fundef),
+                 "PHrunCyclePhaseFun called with wrong node type.");
+
+    global.compiler_cyclephase = cyclephase;
+    global.compiler_anyphase = cyclephase;
+
+#ifndef DBUG_OFF
+    CheckEnableDbug (cyclephase);
+#endif
+
+    if (cond
+        && ((cyclephase <= global.break_after_cyclephase)
+            || (global.cycle_counter < global.break_cycle_specifier))) {
+
+        CTItell (4, "         %s ...", PHIphaseText (cyclephase));
+
+        fundef_next = FUNDEF_NEXT (fundef);
+        FUNDEF_NEXT (fundef) = NULL;
+
+        fundef = PHIphaseFun (cyclephase) (fundef);
+
+        DBUG_ASSERT (FUNDEF_NEXT (fundef) == NULL,
+                     "Fun-based cycle phase returned more than one fundef.");
+        FUNDEF_NEXT (fundef) = fundef_next;
+
+        CTIabortOnError ();
+
+#ifndef DBUG_OFF
+        if (global.check_frequency >= 4) {
+            fundef = RunConsistencyChecks (fundef);
+        }
+        CTIabortOnError ();
+#endif
+    }
+
+#ifndef DBUG_OFF
+    CheckDisableDbug (cyclephase);
+#endif
+
+    DBUG_RETURN (fundef);
+}
+
+node *
+PHrunCyclePhaseFunOld (compiler_phase_t cyclephase, node *fundef, bool cond)
+{
     DBUG_ENTER ();
 
     DBUG_ASSERT (PHIphaseType (cyclephase) == PHT_cyclephase_fun,
