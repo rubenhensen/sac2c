@@ -416,8 +416,8 @@ CYCLEPHASEFUNOLD (esdcse, "Applying common subexpression elimination (esd case)"
 CYCLEPHASEFUNOLD (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
                   global.optimize.doas, opt, cyc)
 
-CYCLEPHASEFUNOLD (al, "Applying associative law", ALdoAssocLawOptimization,
-                  global.optimize.doal, opt, cyc)
+CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimization,
+               global.optimize.doal, opt, cyc)
 
 CYCLEPHASEFUNOLD (dl, "Applying distributive law", DLdoDistributiveLawOptimization,
                   global.optimize.dodl, opt, cyc)

@@ -124,7 +124,6 @@ struct INFO {
     node *fundef;
     node *preassign;
     bool isalcandidate;
-    bool onefundef;
     bool isloopbody;
     bool iswithloopbody;
     node *lhs;
@@ -139,7 +138,6 @@ struct INFO {
 #define INFO_PREASSIGN(n) ((n)->preassign)
 #define INFO_MODE(n) ((n)->mode)
 #define INFO_ISALCANDIDATE(n) ((n)->isalcandidate)
-#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_ISLOOPBODY(n) ((n)->isloopbody)
 #define INFO_ISWITHLOOPBODY(n) ((n)->iswithloopbody)
 #define INFO_LHS(n) ((n)->lhs)
@@ -162,7 +160,6 @@ MakeInfo ()
     INFO_PREASSIGN (result) = NULL;
     INFO_MODE (result) = MODE_noop;
     INFO_ISALCANDIDATE (result) = FALSE;
-    INFO_ONEFUNDEF (result) = FALSE;
     INFO_ISLOOPBODY (result) = FALSE;
     INFO_ISWITHLOOPBODY (result) = FALSE;
     INFO_LHS (result) = NULL;
@@ -202,17 +199,6 @@ ALdoAssocLawOptimization (node *arg_node)
     DBUG_ENTER ();
 
     info = MakeInfo ();
-
-    switch (NODE_TYPE (arg_node)) {
-    case N_module:
-        INFO_ONEFUNDEF (info) = FALSE;
-        break;
-    case N_fundef:
-        INFO_ONEFUNDEF (info) = TRUE;
-        break;
-    default:
-        DBUG_ASSERT (FALSE, "ALdoAssocLawOptimization called with illegal node type.");
-    }
 
     TRAVpush (TR_al);
     arg_node = TRAVdo (arg_node, info);
@@ -923,12 +909,8 @@ ALfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("leaving body of %s", FUNDEF_NAME (arg_node));
     }
 
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
-
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
