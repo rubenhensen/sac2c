@@ -137,11 +137,15 @@ StructOpSel (node *arg_node, info *arg_info)
      */
     pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAgetVal (&con1)),
                   PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
+
+    /* FIXME This pat2 looks fishy: consider the ASSERT below! */
     pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMconst (1, PMAgetVal (&con1)),
                   PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
 
-    if (PMmatchFlatSkipExtrema (pat1, arg_node)
-        || PMmatchFlatSkipExtrema (pat2, arg_node)) {
+    if (PMmatchFlatSkipExtrema (pat1, arg_node) ||
+
+        /* FIXME This pat2 looks fishy: consider the ASSERT below! */
+        (FALSE && PMmatchFlatSkipExtrema (pat2, arg_node))) {
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);
         arg2fs = COfreeConstant (arg2fs);
         iv_len = SHgetUnrLen (COgetShape (con1));
@@ -366,6 +370,62 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
+ * @function:
+ *   node *ModarrayModarray(node *arg_node, info *arg_info)
+ *
+ * @param: arg_node is a _modarray_AxVxS_ N_prf.
+ *
+ * @result: If two consecutive modarray operations modify
+ *      the same array element, then the first modarray
+ *      can safely be removed.
+ *
+ *      This is done merely by marking the first modarray
+ *      for later removal.
+ *
+ * @brief:
+ *
+ *      b = modarray(arr, iv, val1);
+ *      z = modarray(b,   iv, val2);
+ *
+ *      This becomes, eventually:
+ *
+ *      z = modarray(arr, iv, val3);
+ *
+ *****************************************************************************/
+static node *
+ModarrayModarray (node *arg_node, info *arg_info)
+{
+    node *arr = NULL;
+    node *b = NULL;
+    node *iv = NULL;
+    node *prf = NULL;
+    pattern *pat1;
+    pattern *pat2;
+
+    DBUG_ENTER ();
+
+    /* z = _modarray_AxVxS_( b, iv, val2)  */
+    pat1 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMany (1, PMAgetNode (&b), 0),
+                  PMany (1, PMAgetNode (&iv), 0), PMskip (0));
+
+    /* b = _modarray_AxVxS_( arr, iv, val1)  */
+    pat2
+      = PMprf (2, PMAgetNode (&prf), PMAisPrf (F_modarray_AxVxS), 3,
+               PMany (1, PMAgetNode (&arr), 0), PMany (1, PMAisNode (&iv)), PMskip (0));
+
+    if ((PMmatchFlatSkipGuards (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat2, b))) {
+        DBUG_PRINT ("Marked _modarray_AxVxS for $s for removal",
+                    AVIS_NAME (ID_AVIS (PRF_ARG1 (b))));
+        PRF_ISNOP (prf) = TRUE;
+    }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * function:
  *   node *SCCFprf_modarray_AxVxS(node *arg_node, info *arg_info)
  *
@@ -373,11 +433,14 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
  *   Implements modarray for structural constant X.
  *   z = _modarray_AxVxS_(X, iv, val)
  *
+ *   This also removes the N_prf if SelModarray() has
+ *   marked this N_prf as a no-op.
+ *
  *****************************************************************************/
 node *
 SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
 {
-    node *res = NULL;
+    node *z = NULL;
 
     node *X = NULL;
     node *val = NULL;
@@ -415,7 +478,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
 
     if (PMmatchFlatSkipGuards (pat1, arg_node) && (TUisScalar (AVIS_TYPE (ID_AVIS (X))))
         && (TUisScalar (AVIS_TYPE (ID_AVIS (val))))) {
-        res = DUPdoDupNode (val);
+        z = DUPdoDupNode (val);
         DBUG_PRINT ("_modarray_AxVxS (X, [], scalar) eliminated");
     } else {
         /**
@@ -428,8 +491,8 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
             && TUisScalar (AVIS_TYPE (ID_AVIS (val)))
             && (SHcompareShapes (COgetShape (fsX), COgetShape (coiv)))) {
             offset = COvect2offset (fsX, coiv);
-            res = DUPdoDupNode (X);
-            exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
+            z = DUPdoDupNode (X);
+            exprs = TCgetNthExprs (offset, ARRAY_AELEMS (z));
             EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
             EXPRS_EXPR (exprs) = DUPdoDupNode (val);
             DBUG_PRINT ("_modarray_AxVxS (structcon, [..], val) eliminated");
@@ -441,7 +504,13 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     pat2 = PMfree (pat2);
     emptyVec = COfreeConstant (emptyVec);
 
-    DBUG_RETURN (res);
+    arg_node = ModarrayModarray (arg_node, arg_info);
+
+    if ((NULL == z) && (TRUE == PRF_ISNOP (arg_node))) {
+        z = DUPdoDupNode (PRF_ARG1 (arg_node));
+    }
+
+    DBUG_RETURN (z);
 }
 
 /******************************************************************************
@@ -942,7 +1011,7 @@ SelModarray (node *arg_node, info *arg_info)
  * @param: arg_node is a _sel_ N_prf.
  *
  * @result: if the selection can be folded, the result is the
- * val5 from in the earlier modarray. Otherwise, NULL.
+ * val5 from the first modarray. Otherwise, NULL.
  *
  * @brief: Case 2. ivc is a constant:
  *
@@ -1468,10 +1537,9 @@ SCCFprf_idx_sel (node *arg_node, info *arg_info)
  *   We also do a quick check to see if p is all TRUE or all FALSE.
  *   If so, we don't care if x and y are N_array nodes or not.
  *
- *   If x and y match, the result is x, regardless of p.
+ *   Finally, if x and y match, the result is x, regardless of p.
  *
  *   Otherwise, we do nothing.
- *
  *
  *****************************************************************************/
 node *

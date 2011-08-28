@@ -7270,12 +7270,24 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags>
+        <flags>
         <flag name="IsNoteIntersectPresent" default="FALSE" >
           <description>
                   Set by AWLFI for _sel_VxA_(iv, PWL) to
                   indicate that an _noteintersect_ node has been
                   generated for iv.
+          </description>
+        </flag>
+        <flag name="IsNop" default="FALSE" >
+          <description>
+	    Some optimization has decided that this N_prf is
+	    a no-op. I.e., it can be (carefully) removed from
+	    the AST, but is not in a position within the AST
+	    traversal to remove it directly.
+	    At present, the only case where this happens 
+	    is in ixxx. CF performs the actual removal,
+	    typically on a traversal after the one that
+	    has set this flag.
           </description>
         </flag>
       </flags>
