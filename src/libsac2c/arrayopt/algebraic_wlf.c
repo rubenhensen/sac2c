@@ -777,6 +777,7 @@ AWLFfundef (node *arg_node, info *arg_info)
         }
 
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
         DBUG_PRINT ("Algebraic With-Loop folding in %s %s ends",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),

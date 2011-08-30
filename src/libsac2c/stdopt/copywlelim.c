@@ -802,7 +802,6 @@ ivMatchCase4 (node *arg_node, info *arg_info, node *cexpr)
 node *
 CWLEfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
     node *oldfundef;
     dfmask_base_t *dfmask_base = NULL;
 
@@ -830,6 +829,7 @@ CWLEfundef (node *arg_node, info *arg_info)
     }
 
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

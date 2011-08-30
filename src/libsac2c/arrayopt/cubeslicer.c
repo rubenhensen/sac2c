@@ -975,6 +975,7 @@ CUBSLfundef (node *arg_node, info *arg_info)
             }
 
             FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         }
 
         INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
