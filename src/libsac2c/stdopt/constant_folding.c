@@ -137,7 +137,7 @@
 #include "structural_constant_constant_folding.h"
 #include "constant_folding_info.h"
 #include "pattern_match.h"
-#include "algebraic_wlfi.h"
+#include "flattengenerators.h"
 #include "check.h"
 #include "ivexpropagation.h"
 
@@ -566,13 +566,13 @@ InvokeCFprfAndFlattenExtrema (node *arg_node, info *arg_info, travfun_p fn, node
         restype = TYeliminateAKV (restype);
         if ((NULL != res) && (NULL != INFO_AVISMIN (arg_info))) {
             ex
-              = AWLFIflattenExpression (INFO_AVISMIN (arg_info), &INFO_VARDECS (arg_info),
+              = FLATGflattenExpression (INFO_AVISMIN (arg_info), &INFO_VARDECS (arg_info),
                                         &INFO_PREASSIGN (arg_info), restype);
             INFO_AVISMIN (arg_info) = ex;
         }
         if ((NULL != res) && (NULL != INFO_AVISMAX (arg_info))) {
             ex
-              = AWLFIflattenExpression (INFO_AVISMAX (arg_info), &INFO_VARDECS (arg_info),
+              = FLATGflattenExpression (INFO_AVISMAX (arg_info), &INFO_VARDECS (arg_info),
                                         &INFO_PREASSIGN (arg_info), restype);
             INFO_AVISMAX (arg_info) = ex;
         }

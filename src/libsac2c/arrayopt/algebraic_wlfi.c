@@ -127,6 +127,7 @@
 #include "SSALIR.h"
 #include "cubeslicer.h"
 #include "prfunroll.h"
+#include "flattengenerators.h"
 
 /** <!--********************************************************************-->
  *
@@ -747,7 +748,7 @@ BuildInverseProjectionScalar (node *fn, info *arg_info, node *lbubel)
     } else {
         if (N_num == NODE_TYPE (lbubel)) {
             lbubelavis
-              = AWLFIflattenExpression (DUPdoDupTree (lbubel), &INFO_VARDECS (arg_info),
+              = FLATGflattenExpression (DUPdoDupTree (lbubel), &INFO_VARDECS (arg_info),
                                         &INFO_PREASSIGNS (arg_info),
                                         TYmakeAKS (TYmakeSimpleType (T_int),
                                                    SHcreateShape (0)));
@@ -923,7 +924,7 @@ FlattenScalarNode (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (N_num == NODE_TYPE (arg_node)) {
-        z = AWLFIflattenExpression (DUPdoDupNode (arg_node), &INFO_VARDECS (arg_info),
+        z = FLATGflattenExpression (DUPdoDupNode (arg_node), &INFO_VARDECS (arg_info),
                                     &INFO_PREASSIGNS (arg_info),
                                     TYmakeAKS (TYmakeSimpleType (T_int),
                                                SHcreateShape (0)));
@@ -1001,7 +1002,7 @@ BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnu
             fncall
               = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fn,
                                    TCcreateExprsChainFromAvises (2, curavis, newavis));
-            zprime = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
+            zprime = FLATGflattenExpression (fncall, &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGNS (arg_info),
                                              TYmakeAKS (TYmakeSimpleType (T_int),
                                                         SHcreateShape (0)));
@@ -1075,7 +1076,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
 
     if (N_array == NODE_TYPE (z)) {
         xrho = SHgetUnrLen (ARRAY_FRAMESHAPE (z));
-        z = AWLFIflattenExpression (DUPdoDupNode (z), &INFO_VARDECS (arg_info),
+        z = FLATGflattenExpression (DUPdoDupNode (z), &INFO_VARDECS (arg_info),
                                     &INFO_PREASSIGNS (arg_info),
                                     TYmakeAKS (TYmakeSimpleType (T_int),
                                                SHcreateShape (1, xrho)));
@@ -1118,7 +1119,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
     FREEdoFreeTree (ARRAY_AELEMS (z));
     ARRAY_AELEMS (z) = zarr;
     xrho = TCcountExprs (zarr);
-    z = AWLFIflattenExpression (z, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
+    z = FLATGflattenExpression (z, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
                                 TYmakeAKS (TYmakeSimpleType (T_int),
                                            SHcreateShape (1, xrho)));
 
@@ -1251,7 +1252,7 @@ FindNarray (node *arg_node, info *arg_info)
         if (1 == TCcountIds (pids)) {
             z = TCmakeIntVector (
               TBmakeExprs (TBmakeId (ID_AVIS (PRF_ARG1 (arg_node))), NULL));
-            zavis = AWLFIflattenExpression (z, &INFO_VARDECS (arg_info),
+            zavis = FLATGflattenExpression (z, &INFO_VARDECS (arg_info),
                                             &INFO_PREASSIGNS (arg_info),
                                             TYmakeAKS (TYmakeSimpleType (T_int),
                                                        SHcreateShape (1, 1)));
@@ -1532,58 +1533,6 @@ noDefaultPartition (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn node *AWLFIflattenExpression(node *arg_node, node **vardecs,
- *                                  node **preassigns, ntype *restype)
- *
- *   @brief  Flattens the expression at arg_node.
- *           E.g., if the expression is:
- *
- *            _max_VxV_(a, b);
- *
- *          it will look like this on the way out:
- *           TYPETHINGY  TMP;
- *            ...
- *
- *            TMP = _max_VxV_(a, b);
- *            TMP
- *
- *   NB: It is the caller's responsibility to DUP the arg_node,
- *       if required.
- *
- *   @param  node *arg_node: a node to be flattened.
- *           node **vardecs: a pointer to a vardecs chain that
- *                           will have a new vardec appended to it.
- *           node **preassigns: a pointer to a preassigns chain that
- *                           will have a new assign appended to it.
- *           node *restype:  the ntype of TMP.
- *
- *   @return node *node:      N_avis node for flattened node
- *
- ******************************************************************************/
-node *
-AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype *restype)
-{
-    node *avis;
-    node *nas;
-
-    DBUG_ENTER ();
-
-    if (N_id == NODE_TYPE (arg_node)) {
-        avis = ID_AVIS (arg_node);
-    } else {
-        avis = TBmakeAvis (TRAVtmpVar (), restype);
-        *vardecs = TBmakeVardec (avis, *vardecs);
-        nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), arg_node), NULL);
-        *preassigns = TCappendAssign (*preassigns, nas);
-        AVIS_SSAASSIGN (avis) = nas;
-        DBUG_PRINT ("Generated assign for %s", AVIS_NAME (avis));
-    }
-
-    DBUG_RETURN (avis);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *IntersectBoundsBuilderOne( node *arg_node, info *arg_info,
  *                                      node *producerwlPart, int boundnum,
  *                                      node *ivminmax)
@@ -1699,7 +1648,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
 
     fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fun,
                                 TCcreateExprsChainFromAvises (2, gen, mmx));
-    resavis = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
+    resavis = FLATGflattenExpression (fncall, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info),
                                       TYmakeAKS (TYmakeSimpleType (T_int),
                                                  SHcreateShape (1, shp)));
@@ -1750,7 +1699,7 @@ IntersectNullComputationBuilder (node *idxavismin, node *idxavismax, node *bound
                                                               bound1, bound2));
 
     shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (bound1)));
-    resavis = AWLFIflattenExpression (fncall, &INFO_VARDECS (arg_info),
+    resavis = FLATGflattenExpression (fncall, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info),
                                       TYmakeAKS (TYmakeSimpleType (T_bool),
                                                  SHcreateShape (1, shp)));
@@ -1847,11 +1796,11 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
          * as a following swap would otherwise result in value error.
          */
         minarr = DUPdoDupTree (LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismin))));
-        avismin = AWLFIflattenExpression (minarr, &INFO_VARDECS (arg_info),
+        avismin = FLATGflattenExpression (minarr, &INFO_VARDECS (arg_info),
                                           &INFO_PREASSIGNS (arg_info),
                                           TYcopyType (AVIS_TYPE (avismin)));
         maxarr = DUPdoDupTree (LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismax))));
-        avismax = AWLFIflattenExpression (maxarr, &INFO_VARDECS (arg_info),
+        avismax = FLATGflattenExpression (maxarr, &INFO_VARDECS (arg_info),
                                           &INFO_PREASSIGNS (arg_info),
                                           TYcopyType (AVIS_TYPE (avismax)));
 

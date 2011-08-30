@@ -101,6 +101,58 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *FLATGflattenExpression(node *arg_node, node **vardecs,
+ *                                  node **preassigns, ntype *restype)
+ *
+ *   @brief  Flattens the expression at arg_node.
+ *           E.g., if the expression is:
+ *
+ *            _max_VxV_(a, b);
+ *
+ *          it will look like this on the way out:
+ *           TYPETHINGY  TMP;
+ *            ...
+ *
+ *            TMP = _max_VxV_(a, b);
+ *            TMP
+ *
+ *   NB: It is the caller's responsibility to DUP the arg_node,
+ *       if required.
+ *
+ *   @param  node *arg_node: a node to be flattened.
+ *           node **vardecs: a pointer to a vardecs chain that
+ *                           will have a new vardec appended to it.
+ *           node **preassigns: a pointer to a preassigns chain that
+ *                           will have a new assign appended to it.
+ *           node *restype:  the ntype of TMP.
+ *
+ *   @return node *node:      N_avis node for flattened node
+ *
+ ******************************************************************************/
+node *
+FLATGflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype *restype)
+{
+    node *avis;
+    node *nas;
+
+    DBUG_ENTER ();
+
+    if (N_id == NODE_TYPE (arg_node)) {
+        avis = ID_AVIS (arg_node);
+    } else {
+        avis = TBmakeAvis (TRAVtmpVar (), restype);
+        *vardecs = TBmakeVardec (avis, *vardecs);
+        nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), arg_node), NULL);
+        *preassigns = TCappendAssign (*preassigns, nas);
+        AVIS_SSAASSIGN (avis) = nas;
+        DBUG_PRINT ("Generated assign for %s", AVIS_NAME (avis));
+    }
+
+    DBUG_RETURN (avis);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn static node *FLATGflattenBound( node *arg_node, info *arg_info)
  *
  *   @brief  Flattens the WL bound at arg_node.
@@ -640,7 +692,7 @@ FLATGexprs (node *arg_node, info *arg_info)
         if (doflatten) {
             DBUG_PRINT ("Flattening N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-            expr = AWLFIflattenExpression (expr, &INFO_VARDECS (arg_info),
+            expr = FLATGflattenExpression (expr, &INFO_VARDECS (arg_info),
                                            &INFO_PREASSIGNSPRF (arg_info),
                                            TYmakeAUD (TYmakeSimpleType (T_unknown)));
             expr = TBmakeId (expr);

@@ -21,7 +21,7 @@
 #include "DupTree.h"
 #include "free.h"
 #include "ctinfo.h"
-#include "algebraic_wlfi.h"
+#include "flattengenerators.h"
 
 /*
  * OPEN PROBLEMS:
@@ -163,7 +163,7 @@ AddVect2Offset (node *iv, node *shpexpr, info *arg_info)
             ? TYcopyType (AVIS_TYPE (ID_AVIS (shpexpr)))
             : TYmakeAKS (TYmakeSimpleType (T_int),
                          SHcreateShape (1, TCcountExprs (ARRAY_AELEMS (shpexpr))));
-    shpexpr = AWLFIflattenExpression (shpexpr, &INFO_VARDECS (arg_info),
+    shpexpr = FLATGflattenExpression (shpexpr, &INFO_VARDECS (arg_info),
                                       &INFO_PREASSIGNS (arg_info), typ);
     assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
                                       TCmakePrf2 (F_vect2offset, TBmakeId (shpexpr),

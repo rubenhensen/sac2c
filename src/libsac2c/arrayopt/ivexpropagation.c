@@ -74,7 +74,7 @@
 #include "tree_compound.h"
 #include "pattern_match.h"
 #include "ivextrema.h"
-#include "algebraic_wlfi.h"
+#include "flattengenerators.h"
 #include "DupTree.h"
 #include "check.h"
 #include "phase.h"
@@ -480,7 +480,7 @@ makeNarray (node *extrema, ntype *typ, node *nar, node **vardecs, node **preassi
         narr = DUPdoDupNode (nar);
         ARRAY_AELEMS (narr) = extrema;
         narr = CFunflattenSimpleScalars (narr);
-        zavis = AWLFIflattenExpression (narr, vardecs, preassigns, TYeliminateAKV (typ));
+        zavis = FLATGflattenExpression (narr, vardecs, preassigns, TYeliminateAKV (typ));
     }
 
     DBUG_RETURN (zavis);
@@ -903,7 +903,7 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
     DBUG_ENTER ();
 
     minmaxavis = TCmakePrf1 (PRF_PRF (rhs), TBmakeId (minmaxavis));
-    minmaxavis = AWLFIflattenExpression (minmaxavis, &INFO_VARDECS (arg_info),
+    minmaxavis = FLATGflattenExpression (minmaxavis, &INFO_VARDECS (arg_info),
                                          &INFO_PREASSIGNS (arg_info),
                                          TYeliminateAKV (AVIS_TYPE (lhsavis)));
     DBUG_RETURN (minmaxavis);
@@ -1064,14 +1064,14 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
     /* Generate normalized extrema calculation for dyadic primitives */
     if (NULL != minarg1) {
         minv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (minarg1), TBmakeId (minarg2));
-        minv = AWLFIflattenExpression (minv, &INFO_VARDECS (arg_info),
+        minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
                                        &INFO_PREASSIGNS (arg_info),
                                        TYeliminateAKV (AVIS_TYPE (lhsavis)));
     }
 
     if (NULL != maxarg1) {
         maxv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (maxarg1), TBmakeId (maxarg2));
-        maxv = AWLFIflattenExpression (maxv, &INFO_VARDECS (arg_info),
+        maxv = FLATGflattenExpression (maxv, &INFO_VARDECS (arg_info),
                                        &INFO_PREASSIGNS (arg_info),
                                        TYeliminateAKV (AVIS_TYPE (lhsavis)));
     }
@@ -1255,7 +1255,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     && (TYisAKV (AVIS_TYPE (rhsavis)) || TYisAKS (AVIS_TYPE (rhsavis)))) {
                     /* Create zero minimum */
                     zr = SCSmakeZero (PRF_ARG1 (rhs));
-                    minv = AWLFIflattenExpression (zr, &INFO_VARDECS (arg_info),
+                    minv = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info),
                                                    TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     AVIS_ISMINHANDLED (minv) = TRUE;
@@ -1368,7 +1368,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     nprf = (F_neg_S == PRF_PRF (rhs)) ? F_sub_SxS : F_sub_SxV;
                     maxv = TCmakePrf2 (nprf, TBmakeId (maxv),
                                        TBmakeId (ID_AVIS (AVIS_MAX (rhsavis))));
-                    maxv = AWLFIflattenExpression (maxv, &INFO_VARDECS (arg_info),
+                    maxv = FLATGflattenExpression (maxv, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info),
                                                    TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     AVIS_ISMINHANDLED (maxv) = TRUE;

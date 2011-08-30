@@ -41,7 +41,7 @@
 #include "compare_tree.h"
 #include "phase.h"
 #include "ivextrema.h"
-#include "algebraic_wlfi.h"
+#include "flattengenerators.h"
 
 /** <!--********************************************************************-->
  *
@@ -620,12 +620,12 @@ MDEwith (node *arg_node, info *arg_info)
             framedim = TBmakeId (fdavis);
         }
         framedim
-          = AWLFIflattenExpression (framedim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
+          = FLATGflattenExpression (framedim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                     &preassigns,
                                     TYmakeAKS (TYmakeSimpleType (T_int),
                                                SHmakeShape (0)));
         celldim
-          = AWLFIflattenExpression (celldim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
+          = FLATGflattenExpression (celldim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                     &preassigns,
                                     TYmakeAKS (TYmakeSimpleType (T_int),
                                                SHmakeShape (0)));

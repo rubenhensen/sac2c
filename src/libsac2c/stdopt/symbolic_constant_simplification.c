@@ -102,7 +102,7 @@
 #include "pattern_match.h"
 #include "constant_folding_info.h"
 #include "phase.h"
-#include "algebraic_wlfi.h"
+#include "flattengenerators.h"
 
 /* local used helper functions */
 
@@ -1758,7 +1758,7 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
         && (N_num == NODE_TYPE (scalar))) {
         DBUG_PRINT_TAG ("SCS", "Replacing idx_sel by idx_shape_sel");
         typ = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
-        scalar = AWLFIflattenExpression (scalar, &INFO_VARDECS (arg_info),
+        scalar = FLATGflattenExpression (scalar, &INFO_VARDECS (arg_info),
                                          &INFO_PREASSIGN (arg_info), typ);
         typ = TYfreeType (typ);
         res = TCmakePrf2 (F_idx_shape_sel, scalar, DUPdoDupNode (arg2));
@@ -1817,7 +1817,7 @@ SCSprf_sel_VxIA (node *arg_node, info *arg_info)
         && (N_num == NODE_TYPE (scalar))) {
         DBUG_PRINT_TAG ("SCS", "Replacing idx_sel by idx_shape_sel");
         typ = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
-        scalar = AWLFIflattenExpression (scalar, &INFO_VARDECS (arg_info),
+        scalar = FLATGflattenExpression (scalar, &INFO_VARDECS (arg_info),
                                          &INFO_PREASSIGN (arg_info), typ);
         typ = TYfreeType (typ);
         res = TCmakePrf2 (F_idx_shape_sel, scalar, DUPdoDupNode (arg2));
@@ -2724,12 +2724,12 @@ SCSprf_reciproc_S (node *arg_node, info *arg_info)
         } else {
             if (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)) {
                 /* Case 2 */
-                p1 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_S,
+                p1 = FLATGflattenExpression (TCmakePrf1 (F_reciproc_S,
                                                          DUPdoDupNode (arg1p)),
                                              &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGN (arg_info),
                                              TYcopyType ((AVIS_TYPE (ID_AVIS (arg1p)))));
-                p2 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_S,
+                p2 = FLATGflattenExpression (TCmakePrf1 (F_reciproc_S,
                                                          DUPdoDupNode (arg2p)),
                                              &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGN (arg_info),
@@ -2790,12 +2790,12 @@ SCSprf_reciproc_V (node *arg_node, info *arg_info)
         } else {
             if (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)) {
                 /* Case 2 */
-                p1 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_V,
+                p1 = FLATGflattenExpression (TCmakePrf1 (F_reciproc_V,
                                                          DUPdoDupNode (arg1p)),
                                              &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGN (arg_info),
                                              TYcopyType ((AVIS_TYPE (ID_AVIS (arg1p)))));
-                p2 = AWLFIflattenExpression (TCmakePrf1 (F_reciproc_V,
+                p2 = FLATGflattenExpression (TCmakePrf1 (F_reciproc_V,
                                                          DUPdoDupNode (arg2p)),
                                              &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGN (arg_info),
@@ -2854,11 +2854,11 @@ SCSprf_neg_S (node *arg_node, info *arg_info)
         } else {
             if (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)) {
                 /* Case 2 */
-                p1 = AWLFIflattenExpression (TCmakePrf1 (F_neg_S, DUPdoDupNode (arg1p)),
+                p1 = FLATGflattenExpression (TCmakePrf1 (F_neg_S, DUPdoDupNode (arg1p)),
                                              &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGN (arg_info),
                                              TYcopyType ((AVIS_TYPE (ID_AVIS (arg1p)))));
-                p2 = AWLFIflattenExpression (TCmakePrf1 (F_neg_S, DUPdoDupNode (arg2p)),
+                p2 = FLATGflattenExpression (TCmakePrf1 (F_neg_S, DUPdoDupNode (arg2p)),
                                              &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGN (arg_info),
                                              TYcopyType ((AVIS_TYPE (ID_AVIS (arg2p)))));
@@ -2916,11 +2916,11 @@ SCSprf_neg_V (node *arg_node, info *arg_info)
         } else {
             if (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)) {
                 /* Case 2 */
-                p1 = AWLFIflattenExpression (TCmakePrf1 (F_neg_V, DUPdoDupNode (arg1p)),
+                p1 = FLATGflattenExpression (TCmakePrf1 (F_neg_V, DUPdoDupNode (arg1p)),
                                              &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGN (arg_info),
                                              TYcopyType ((AVIS_TYPE (ID_AVIS (arg1p)))));
-                p2 = AWLFIflattenExpression (TCmakePrf1 (F_neg_V, DUPdoDupNode (arg2p)),
+                p2 = FLATGflattenExpression (TCmakePrf1 (F_neg_V, DUPdoDupNode (arg2p)),
                                              &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGN (arg_info),
                                              TYcopyType ((AVIS_TYPE (ID_AVIS (arg2p)))));

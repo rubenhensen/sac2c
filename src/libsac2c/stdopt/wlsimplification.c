@@ -115,7 +115,7 @@
 #include "phase.h"
 #include "ctinfo.h"
 #include "tree_utils.h"
-#include "algebraic_wlfi.h"
+#include "flattengenerators.h"
 
 /**
  * INFO structure
@@ -230,13 +230,13 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
         FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
           = TBmakeVardec (diffavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-        lb = AWLFIflattenExpression (DUPdoDupNode (EXPRS_EXPR (lb_exprs)),
+        lb = FLATGflattenExpression (DUPdoDupNode (EXPRS_EXPR (lb_exprs)),
                                      &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                      &INFO_PREASSIGN (arg_info),
                                      TYmakeAKS (TYmakeSimpleType (T_int),
                                                 SHcreateShape (0)));
 
-        ub = AWLFIflattenExpression (DUPdoDupNode (EXPRS_EXPR (ub_exprs)),
+        ub = FLATGflattenExpression (DUPdoDupNode (EXPRS_EXPR (ub_exprs)),
                                      &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
                                      &INFO_PREASSIGN (arg_info),
                                      TYmakeAKS (TYmakeSimpleType (T_int),

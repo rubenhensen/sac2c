@@ -18,7 +18,7 @@
 #include "compare_tree.h"
 #include "globals.h"
 #include "pattern_match.h"
-#include "algebraic_wlfi.h"
+#include "flattengenerators.h"
 #include "ctinfo.h"
 #ifndef DBUG_OFF
 #include "print.h"
@@ -575,7 +575,7 @@ FlattenEachExprsNode (node *arg_node, info *arg_info)
     exprs = arg_node;
     while (NULL != exprs) {
         typ = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
-        newz = AWLFIflattenExpression (DUPdoDupNode (EXPRS_EXPR (exprs)),
+        newz = FLATGflattenExpression (DUPdoDupNode (EXPRS_EXPR (exprs)),
                                        &INFO_VARDECS (arg_info),
                                        &INFO_PREASSIGNS (arg_info), typ);
         z = TCappendExprs (z, TBmakeExprs (TBmakeId (newz), NULL));

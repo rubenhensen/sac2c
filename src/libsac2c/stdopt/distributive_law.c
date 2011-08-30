@@ -38,7 +38,7 @@
 #include "shape.h"
 #include "print.h"
 #include "pattern_match.h"
-#include "algebraic_wlfi.h"
+#include "flattengenerators.h"
 
 #include "distributive_law.h"
 
@@ -358,7 +358,7 @@ flattenPrfarg (node *arg_node, info *arg_info)
     if (N_id != NODE_TYPE (arg_node)) {
         typ = NTCnodeToType (arg_node);
         res
-          = AWLFIflattenExpression (arg_node, &INFO_VARDECS (arg_info),
+          = FLATGflattenExpression (arg_node, &INFO_VARDECS (arg_info),
                                     &INFO_PREASSIGN (arg_info),
                                     TYmakeAKS (TYmakeSimpleType (typ), SHmakeShape (0)));
         res = TBmakeId (res);
