@@ -585,8 +585,8 @@ CYCLEPHASEFUNOLD (esdcse, "Applying common subexpression elimination (esd case)"
                    && (global.optimize.doal || global.optimize.dodl)),
                   opt, saacyc)
 
-CYCLEPHASEFUNOLD (al, "Applying associative law", ALdoAssocLawOptimization,
-                  global.optimize.doal, opt, saacyc)
+CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimization,
+               global.optimize.doal, opt, saacyc)
 
 CYCLEPHASEFUNOLD (dl, "Applying distributive law", DLdoDistributiveLawOptimization,
                   global.optimize.dodl, opt, saacyc)
