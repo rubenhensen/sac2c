@@ -225,7 +225,6 @@ struct INFO {
     node *idxbound1;
     node *idxbound2;
     intersect_type_t intersecttype;
-    bool onefundef;
 };
 
 /**
@@ -242,7 +241,6 @@ struct INFO {
 #define INFO_IDXBOUND1(n) ((n)->idxbound1)
 #define INFO_IDXBOUND2(n) ((n)->idxbound2)
 #define INFO_INTERSECTTYPE(n) ((n)->intersecttype)
-#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
 MakeInfo (node *fundef)
@@ -264,7 +262,6 @@ MakeInfo (node *fundef)
     INFO_IDXBOUND1 (result) = NULL;
     INFO_IDXBOUND2 (result) = NULL;
     INFO_INTERSECTTYPE (result) = INTERSECT_unknown;
-    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -309,7 +306,6 @@ AWLFdoAlgebraicWithLoopFolding (node *arg_node)
     DBUG_ENTER ();
 
     arg_info = MakeInfo (NULL);
-    INFO_ONEFUNDEF (arg_info) = TRUE;
     INFO_LUT (arg_info) = LUTgenerateLut ();
 
     TRAVpush (TR_awlf);
@@ -332,41 +328,6 @@ AWLFdoAlgebraicWithLoopFolding (node *arg_node)
  * @{
  *
  *****************************************************************************/
-
-#ifdef FIXME
-/******************************************************************************
- *
- * function:
- *   node *CheckForSuperfluousCodes(node *wln)
- *
- * description:
- *   remove all unused N_code nodes of the given WL.
- *
- *  This was stolen from SSAWLF. We should move it into tree/somewhere,
- *  but I am waiting for word back from Clemens and Bodo.
- *
- ******************************************************************************/
-
-static node *
-CheckForSuperfluousCodes (node *wln)
-{
-    node **tmp;
-
-    DBUG_ENTER ();
-
-    tmp = &WITH_CODE (wln);
-    while (*tmp) {
-        if (!CODE_USED ((*tmp))) {
-            *tmp = FREEdoFreeNode (*tmp);
-        } else {
-            tmp = &CODE_NEXT ((*tmp));
-        }
-    }
-
-    DBUG_RETURN (wln);
-}
-
-#endif // FIXME
 
 /** <!--********************************************************************-->
  *
@@ -646,7 +607,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
     ids = WITHID_IDS (PART_WITHID (pwlpart));
     arg1 = PRF_ARG1 (LET_EXPR (ASSIGN_STMT (arg_node)));
     idxavis = AWLFIoffset2Iv (arg1, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
-                              INFO_PART (arg_info), pwlpart);
+                              pwlpart);
     DBUG_ASSERT (NULL != idxavis, "Could not rebuild iv for _sel_VxA_(iv, PWL)");
 
     k = 0;
@@ -787,8 +748,6 @@ doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consume
 node *
 AWLFfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
-
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -817,20 +776,14 @@ AWLFfundef (node *arg_node, info *arg_info)
             INFO_VARDECS (arg_info) = NULL;
         }
 
-        old_onefundef = INFO_ONEFUNDEF (arg_info);
-        INFO_ONEFUNDEF (arg_info) = FALSE;
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-        INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
         DBUG_PRINT ("Algebraic With-Loop folding in %s %s ends",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                     FUNDEF_NAME (arg_node));
     }
-    INFO_FUNDEF (arg_info) = NULL;
 
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    INFO_FUNDEF (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -942,9 +895,6 @@ AWLFwith (node *arg_node, info *arg_info)
     }
 #endif // BREAKSDUPLHS
 
-#ifdef FIXME // wrong place?
-    arg_node = CheckForSuperfluousCodes (arg_node);
-#endif // FIXME // wrong place?
     INFO_WL (old_info) = NULL;
     INFO_VARDECS (old_info) = INFO_VARDECS (arg_info);
     INFO_PREASSIGNS (old_info) = INFO_PREASSIGNS (arg_info);

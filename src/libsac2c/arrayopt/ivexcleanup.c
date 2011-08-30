@@ -61,11 +61,11 @@
 
 /** <!--********************************************************************-->
  *
- * @fn node *IVEXCdoIndexVectorExtremaCleanup( node *arg_node, info *arg_info)
+ * @fn node *IVEXCdoIndexVectorExtremaCleanup( node *arg_node)
  *
  *****************************************************************************/
 node *
-IVEXCdoIndexVectorExtremaCleanup (node *arg_node, info *arg_info)
+IVEXCdoIndexVectorExtremaCleanup (node *arg_node)
 {
 
     DBUG_ENTER ();
@@ -73,7 +73,7 @@ IVEXCdoIndexVectorExtremaCleanup (node *arg_node, info *arg_info)
     DBUG_PRINT ("Extrema cleanup strip traversal starts.");
 
     TRAVpush (TR_ivexc);
-    arg_node = TRAVdo (arg_node, arg_info);
+    arg_node = TRAVdo (arg_node, NULL);
     TRAVpop ();
 
     DBUG_PRINT ("Extrema cleanup traversal complete.");

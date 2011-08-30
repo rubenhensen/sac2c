@@ -13,7 +13,7 @@
  * Prefix: IVEXC
  *
  *****************************************************************************/
-extern node *IVEXCdoIndexVectorExtremaCleanup (node *arg_node, info *arg_info);
+extern node *IVEXCdoIndexVectorExtremaCleanup (node *arg_node);
 extern node *IVEXCdoIndexVectorExtremaCleanupPartition (node *arg_node, info *arg_info);
 
 extern node *IVEXCpart (node *arg_node, info *arg_info);

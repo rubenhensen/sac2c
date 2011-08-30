@@ -169,7 +169,6 @@
  *****************************************************************************/
 
 struct INFO {
-    bool onefundef;
     node *lhs;
     node *fundef;
     node *rhsavis;
@@ -178,7 +177,6 @@ struct INFO {
     dfmask_t *dfm;
 };
 
-#define INFO_ONEFUNDEF(n) (n->onefundef)
 /* The left hand side of the N_let, the array we are copying into */
 #define INFO_LHS(n) (n->lhs)
 /* The right hand side of the N_let, or the array we copy from, respectively */
@@ -202,7 +200,6 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_ONEFUNDEF (result) = FALSE;
     INFO_VALID (result) = FALSE;
     INFO_LHS (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -238,32 +235,30 @@ FreeInfo (info *info)
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node *CWLEdoTemplateTraversal( node *syntax_tree)
+ * @fn node *CWLEdoCopyWithLoopElimination( node *arg_node)
  *
  *****************************************************************************/
 node *
-CWLEdoTemplateTraversal (node *syntax_tree)
+CWLEdoCopyWithLoopElimination (node *arg_node)
 {
     info *info;
 
     DBUG_ENTER ();
 
     info = MakeInfo ();
-    DBUG_ASSERT (NODE_TYPE (syntax_tree) == N_fundef, "CWLE called on non-N_fundef node");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "Called on non-N_fundef node");
 
-    INFO_ONEFUNDEF (info) = TRUE;
-
-    DBUG_PRINT ("Starting template traversal.");
+    DBUG_PRINT ("Copy with-loop elimination traversal started.");
 
     TRAVpush (TR_cwle);
-    syntax_tree = TRAVdo (syntax_tree, info);
+    arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
-    DBUG_PRINT ("Template traversal complete.");
+    DBUG_PRINT ("Copy with-loop elimination traversal ended.");
 
     info = FreeInfo (info);
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -285,15 +280,20 @@ CWLEdoTemplateTraversal (node *syntax_tree)
  * Case 1: if avisshape is an N_array of the form:
  *
  *            shp = _shape_A_( M);
- *            v0 = 0;
+ *            v0 = [0];
  *            s0 = _sel_VxA_( v0, shp);
- *            v1 = 0;
+ *            v1 = [1];
  *            s1 = _sel_VxA_( v1, shp);
- *            v2 = 0;
+ *            v2 = [2];
  *            s2 = _sel_VxA_( v2, shp);
  *            avisshape = [ s0, s1, s2];
  *
  *         then z is shp;
+ *
+ *         The same behavior holds if the selections are of the form:
+ *
+ *            i0 = 0;
+ *            s0 = idx_sel( i0, shp);
  *
  * @return: If avisshape is such an N_array, the result is shp;
  *          else avisshape.
@@ -321,7 +321,9 @@ ShapeFromShape (node *avisshape)
                   PMvar (1, PMAgetNode (&M), 0));
     pat2 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
                   PMvar (1, PMAisNode (&M), 0));
-    b = PMmatchFlatSkipExtrema (patarray, avisshape);
+    b = (PMmatchFlatSkipExtrema (patarray, avisshape) && (NULL != narray)
+         && (NULL != ARRAY_AELEMS (narray))
+         && (NULL != EXPRS_EXPR (ARRAY_AELEMS (narray))));
     if (b) {
         narray = ARRAY_AELEMS (narray);
         n = 0;
@@ -332,6 +334,9 @@ ShapeFromShape (node *avisshape)
          * are ostensibly copying from will have similar guards on its
          * creation.
          */
+        DBUG_ASSERT ((N_prf != NODE_TYPE (EXPRS_EXPR (narray)))
+                       || (F_idx_sel != PRF_PRF (EXPRS_EXPR (narray))),
+                     "Start coding, Mr doivecyc!");
         if (PMmatchFlatSkipGuards (pat1, EXPRS_EXPR (narray))) {
             con = COfreeConstant (con);
             while (b && (NULL != narray)) {
@@ -372,6 +377,9 @@ ShapeFromShape (node *avisshape)
  *
  * @brief: Find the array that was the argument to the
  *         expressions that built shape vector avisshape.
+ *
+ * @param: avsishape is an N_id, hopefully pointing to an N_array,
+ *         or an N_array.
  *
  * Case 1: if avisshape is an N_array of the form:
  *
@@ -418,6 +426,9 @@ arrayFromShape (node *avisshape)
 
     DBUG_ENTER ();
 
+    DBUG_ASSERT ((N_id == NODE_TYPE (avisshape)) || (N_array == NODE_TYPE (avisshape)),
+                 "Expected N_id avisshape");
+
     /* Case 1*/
     patarray = PMarray (1, PMAgetNode (&narray), 0);
     pat1 = PMprf (1, PMAisPrf (F_idx_shape_sel), 2, PMconst (1, PMAisVal (&con)),
@@ -428,7 +439,8 @@ arrayFromShape (node *avisshape)
         narray = ARRAY_AELEMS (narray);
         n = 0;
         con = COmakeConstantFromInt (n);
-        if (PMmatchFlatSkipExtrema (pat1, EXPRS_EXPR (narray))) {
+        if ((NULL != narray) && (NULL != EXPRS_EXPR (narray))
+            && (PMmatchFlatSkipExtrema (pat1, EXPRS_EXPR (narray)))) {
             COfreeConstant (con);
             while (b && (NULL != narray)) {
                 con = COmakeConstantFromInt (n);
@@ -464,8 +476,13 @@ arrayFromShape (node *avisshape)
         pat2 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
                       PMvar (1, PMAisNode (&M), 0));
         pat3 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&shp), 0));
-        if (PMmatchFlatSkipExtrema (patarray, avisshape)) {
+        if ((PMmatchFlatSkipExtrema (patarray, avisshape)) && (NULL != narray)
+            && (NULL != ARRAY_AELEMS (narray))
+            && (NULL != EXPRS_EXPR (ARRAY_AELEMS (narray)))) {
             narray = ARRAY_AELEMS (narray);
+            DBUG_ASSERT ((N_prf != NODE_TYPE (EXPRS_EXPR (narray)))
+                           || (F_idx_sel != PRF_PRF (EXPRS_EXPR (narray))),
+                         "Start coding, Mr doivecyc2!");
             n = 0;
             c = COmakeConstantFromInt (n);
             con = COcopyScalar2OneElementVector (c);
@@ -486,6 +503,7 @@ arrayFromShape (node *avisshape)
                 }
             }
         }
+
         con = (NULL != con) ? COfreeConstant (con) : NULL;
         PMfree (patarray);
         PMfree (pat1);
@@ -504,6 +522,8 @@ arrayFromShape (node *avisshape)
             DBUG_PRINT ("Case 2: AVIS_SHAPE %s not derived from _idx_shape_sel_()", nm1);
         }
     }
+
+    DBUG_ASSERT ((NULL == M) || (N_id == NODE_TYPE (M)), "Result not N_id");
 
     DBUG_RETURN (M);
 }
@@ -560,13 +580,13 @@ isAvisShapesMatch (node *arg1, node *arg2)
 
     DBUG_PRINT ("checking shape match for %s and %s", AVIS_NAME (arg1), AVIS_NAME (arg2));
 
-    /* Case 1: AKS and result shapes match */
+    /* Case 1: See if AKS and result shapes match */
     arg1type = AVIS_TYPE (arg1);
     arg2type = AVIS_TYPE (arg2);
     z = TUshapeKnown (arg1type) && TUshapeKnown (arg2type)
         && TUeqShapes (arg1type, arg2type);
 
-    /* Case 2: AVIS_SHAPEs match */
+    /* Case 2: See if AVIS_SHAPEs match */
     if ((!z) && (NULL != AVIS_SHAPE (arg1)) && (NULL != AVIS_SHAPE (arg2))) {
         z = (CMPT_EQ == CMPTdoCompareTree (AVIS_SHAPE (arg1), AVIS_SHAPE (arg2)));
 
@@ -588,475 +608,479 @@ isAvisShapesMatch (node *arg1, node *arg2)
         }
     }
 
-#ifdef FIXME
-    /* I think the following cases may only be relevant for non-SAA
-     * environments.
-     */
+    if (z) {
+        DBUG_PRINT ("shapes match for %s and %s", AVIS_NAME (arg1), AVIS_NAME (arg2));
+    } else {
+        DBUG_PRINT ("shapes do not match for %s and %s", AVIS_NAME (arg1),
+                    AVIS_NAME (arg2));
+    }
 
-    if (!z) {
-        /* Case 4: genarray of genarray, with scalar default cell */
-        if (TUisScalar (AVIS_TYPE (ID_AVIS (GENARRAY_DEFAULT (arg_node))))) {
+    DBUG_RETURN (z);
+}
 
-            /* Case 5: genarray of modarray, with scalar default cell */
+/** <!--********************************************************************-->
+ *
+ * @fn static node *ivMatchCase1( node *arg_node, info *arg_info,
+ *                                node *cexpr)
+ *
+ * @brief: Attempt to match IV in _sel_VxA_( IV, target)
+ *         directly against WITHID_VEC withid_avis.
+ *
+ * @params: cexprs is the WL result element. We determine if it
+ *          was derived from the above _sel_VxA_ operation.
+ *
+ * @return: target as PRF_ARG2 of _sel_VxA_( IV, target),
+ *          if found, else NULL.
+ *
+ *****************************************************************************/
+static node *
+ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
+{
+    node *target = NULL;
+    node *withid_avis;
+    node *offset = NULL;
+    node *shp = NULL;
+    pattern *pat1;
+    pattern *pat2;
+    pattern *pat3;
 
-            /* Case 6: modarray of genarray */
+    DBUG_ENTER ();
 
-            /* Case 7: modarray of modarray */
+    withid_avis = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMparam (1, PMAhasAvis (&withid_avis)),
+                  PMvar (1, PMAgetAvis (&target), 0));
+
+    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset), 0),
+                  PMvar (1, PMAgetAvis (&target), 0));
+
+    pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
+                  PMvar (1, PMAhasAvis (&withid_avis), 0));
+
+    if (PMmatchFlat (pat1, cexpr)) {
+        DBUG_PRINT ("Case 1: body matches _sel_VxA_(, iv, pwl)");
+    }
+
+    if (NULL == target) {
+        if ((PMmatchFlat (pat2, cexpr)) && (PMmatchFlat (pat3, offset))) {
+            DBUG_PRINT ("Case 1: body matches _idx_sel( offset, pwl) with iv=%s",
+                        AVIS_NAME (target));
         }
-#endif // FIXME
+    }
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+
+    DBUG_RETURN (target);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *ivMatchCase4( node *arg_node, info *arg_info,
+ *                                node *cexpr)
+ *
+ * @brief: Attempt to match [i,j] in _sel_VxA_( [i,j], target)
+ *         against WL_IDS, [i,j]
+ *
+ *         We have to be careful of stuff like:
+ *
+ *              _sel_VxA_( [i], target)
+ *
+ *         in which the full index vector is not used,
+ *         and its converse:
+ *
+ *              _sel_VxA_( [i,notme, k], target)
+ *
+ *         In the case where we have guards present on the index
+ *         vectors, we can safely ignore them, because the
+ *         WL that we are copying will have identical guards
+ *         on its WITH_ID index vector, which are guaranteed
+ *         to be identical to ours. Hence, we ignore both
+ *         guards and extrema on this search. As an example from
+ *         histlp.sac, we have this pattern, sort of:
+ *
+ *           z = with { ...
+ *             ( [0] <= iv < [lim]) {
+ *              iv'  = _noteminval( iv, [0]);
+ *              iv'' = _notemaxval( iv', [lim]);
+ *              iv''', p0 = _val_lt_val_VxV_( iv'', [lim]);
+ *              el = _sel_VxA_( iv''', producerWL);
+ *              el' = _afterguard_( el, p0);
+ *             } : el';
+ *
+ *        We also have to handle the scalar i equivalent of this,
+ *        which is slightly more complex:
+ *
+ *           z = with { ...
+ *             ( [0] <= iv=[i] < [lim]) {
+ *              i'  = _noteminval( i, 0);
+ *              i'' = _notemaxval( i', lim);
+ *              i''', p0 = _val_lt_val_SxS_( i'', lim);
+ *              iv' = [ i'''];
+ *              el = _sel_VxA_( iv', producerWL);
+ *              el' = _afterguard_( el, p0);
+ *             } : el';
+ *
+ *
+ * @params: cexprs is the WL result element. We determine if it
+ *          was derived from the above _sel_VxA_ operation.
+ *
+ * @return: target as PRF_ARG2 of _sel_VxA_( IV, target),
+ *          if found, else NULL.
+ *
+ *****************************************************************************/
+static node *
+ivMatchCase4 (node *arg_node, info *arg_info, node *cexpr)
+{
+    node *target = NULL;
+    node *withid_avis;
+    node *withids;
+    node *narray;
+    node *narrayels;
+    pattern *pat2;
+    pattern *pat3;
+    char *lhs;
+    bool z = TRUE;
+
+    DBUG_ENTER ();
+
+    pat2 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMarray (1, PMAgetNode (&narray), 0),
+                  PMvar (1, PMAgetAvis (&target), 0));
+    pat3 = PMparam (1, PMAhasAvis (&withid_avis));
+
+    withids = WITHID_IDS (INFO_WITHID (arg_info));
+
+    lhs = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))); /* ddd aid */
+    DBUG_ASSERT ((N_prf != NODE_TYPE (cexpr)) || (F_idx_sel != PRF_PRF (cexpr)),
+                 "Start coding, Mr doivecyc4!");
+    if (PMmatchFlatSkipExtremaAndGuards (pat2, cexpr)) {
+        /* Match all elements. If we exhaust elements on either side, no match */
+        narrayels = ARRAY_AELEMS (narray);
+        while (z && (NULL != withids) && (NULL != narrayels)) {
+            withid_avis = IDS_AVIS (withids);
+            z = PMmatchFlatSkipExtremaAndGuards (pat3, EXPRS_EXPR (narrayels));
+            withids = IDS_NEXT (withids);
+            narrayels = EXPRS_NEXT (narrayels);
+        }
+        /* If we didn't exhaust both sides, no match */
+        z = z && (NULL == withids) && (NULL == narrayels);
 
         if (z) {
-            DBUG_PRINT ("shapes match for %s and %s", AVIS_NAME (arg1), AVIS_NAME (arg2));
+            DBUG_PRINT ("Case 4: body matches _sel_VxA_( withid, &target)");
         } else {
-            DBUG_PRINT ("shapes do not match for %s and %s", AVIS_NAME (arg1),
-                        AVIS_NAME (arg2));
+            target = NULL;
         }
+    }
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
 
-        DBUG_RETURN (z);
+    DBUG_RETURN (target);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @name Traversal functions
+ * @{
+ *
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CWLEfundef(node *arg_node, info *arg_info)
+ *
+ * @brief Sets up a DFM and traverses into the function-body.
+ *
+ * Here we do set up a DataFlowMask, which we do need for checking if the
+ *   array that we potentially copy from is already defined before the
+ *   respective with-loop.
+ *
+ * Afterwards we just traverse into the function args (so they can be
+ * marked in our DFM) and body.
+ *
+ *****************************************************************************/
+
+node *
+CWLEfundef (node *arg_node, info *arg_info)
+{
+    bool old_onefundef;
+    node *oldfundef;
+    dfmask_base_t *dfmask_base = NULL;
+
+    DBUG_ENTER ();
+
+    oldfundef = INFO_FUNDEF (arg_info);
+    INFO_FUNDEF (arg_info) = arg_node;
+    if (NULL != FUNDEF_BODY (arg_node)) {
+        DBUG_PRINT ("traversing body of (%s) %s",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                    FUNDEF_NAME (arg_node));
+
+        dfmask_base = DFMgenMaskBase (FUNDEF_ARGS (arg_node),
+                                      BLOCK_VARDECS (FUNDEF_BODY (arg_node)));
+        INFO_DFM (arg_info) = DFMgenMaskClear (dfmask_base);
+
+        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        INFO_DFM (arg_info) = DFMremoveMask (INFO_DFM (arg_info));
+        DFMremoveMaskBase (dfmask_base);
+        DBUG_PRINT ("leaving body of (%s) %s",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                    FUNDEF_NAME (arg_node));
     }
 
-    /** <!--********************************************************************-->
-     *
-     * @fn static node *ivMatchCase1( node *arg_node, info *arg_info,
-     *                                node *cexpr)
-     *
-     * @brief: Attempt to match IV in _sel_VxA_( IV, target)
-     *         directly against WITHID_VEC withid_avis.
-     *
-     * @params: cexprs is the WL result element. We determine if it
-     *          was derived from the above _sel_VxA_ operation.
-     *
-     * @return: target as PRF_ARG2 of _sel_VxA_( IV, target),
-     *          if found, else NULL.
-     *
-     *****************************************************************************/
-    static node *ivMatchCase1 (node * arg_node, info * arg_info, node * cexpr)
-    {
-        node *target = NULL;
-        node *withid_avis;
-        pattern *pat1;
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
-        DBUG_ENTER ();
+    DBUG_RETURN (arg_node);
+}
 
-        withid_avis = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
-        pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMparam (1, PMAhasAvis (&withid_avis)),
-                      PMvar (1, PMAgetAvis (&target), 0));
+/** <!--********************************************************************-->
+ *
+ * @fn node *CWLEarg( node *arg_node, info *arg_info)
+ *
+ * @brief for setting the bitmask in our DFM.
+ *
+ *****************************************************************************/
+node *
+CWLEarg (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
 
-        if (PMmatchFlat (pat1, cexpr)) {
-            DBUG_PRINT ("Case 1: body matches _sel_VxA_( withid, &target)");
-        }
-        pat1 = PMfree (pat1);
+    ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
 
-        DBUG_RETURN (target);
-    }
+    DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, ARG_AVIS (arg_node));
 
-    /** <!--********************************************************************-->
-     *
-     * @fn static node *ivMatchCase4( node *arg_node, info *arg_info,
-     *                                node *cexpr)
-     *
-     * @brief: Attempt to match [i,j] in _sel_VxA_( [i,j], target)
-     *         against WL_IDS, [i,j]
-     *
-     *         We have to be careful of stuff like:
-     *
-     *              _sel_VxA_( [i], target)
-     *
-     *         in which the full index vector is not used,
-     *         and its converse:
-     *
-     *              _sel_VxA_( [i,notme, k], target)
-     *
-     *         In the case where we have guards present on the index
-     *         vectors, we can safely ignore them, because the
-     *         WL that we are copying will have identical guards
-     *         on its WITH_ID index vector, which are guaranteed
-     *         to be identical to ours. Hence, we ignore both
-     *         guards and extrema on this search. As an example from
-     *         histlp.sac, we have this pattern, sort of:
-     *
-     *           z = with { ...
-     *             ( [0] <= iv < [lim]) {
-     *              iv'  = _noteminval( iv, [0]);
-     *              iv'' = _notemaxval( iv', [lim]);
-     *              iv''', p0 = _val_lt_val_VxV_( iv'', [lim]);
-     *              el = _sel_VxA_( iv''', producerWL);
-     *              el' = _afterguard_( el, p0);
-     *             } : el';
-     *
-     *        We also have to handle the scalar i equivalent of this,
-     *        which is slightly more complex:
-     *
-     *           z = with { ...
-     *             ( [0] <= iv=[i] < [lim]) {
-     *              i'  = _noteminval( i, 0);
-     *              i'' = _notemaxval( i', lim);
-     *              i''', p0 = _val_lt_val_SxS_( i'', lim);
-     *              iv' = [ i'''];
-     *              el = _sel_VxA_( iv', producerWL);
-     *              el' = _afterguard_( el, p0);
-     *             } : el';
-     *
-     *
-     * @params: cexprs is the WL result element. We determine if it
-     *          was derived from the above _sel_VxA_ operation.
-     *
-     * @return: target as PRF_ARG2 of _sel_VxA_( IV, target),
-     *          if found, else NULL.
-     *
-     *****************************************************************************/
-    static node *ivMatchCase4 (node * arg_node, info * arg_info, node * cexpr)
-    {
-        node *target = NULL;
-        node *withid_avis;
-        node *withids;
-        node *narray;
-        node *narrayels;
-        pattern *pat2;
-        pattern *pat3;
-        char *lhs;
-        bool z = TRUE;
+    DBUG_RETURN (arg_node);
+}
 
-        DBUG_ENTER ();
+/** <!--********************************************************************-->
+ *
+ * @fn node *CWLElet(node *arg_node, info *arg_info)
+ *
+ * @brief checks for the shape of its LHS and passes it on
+ *
+ * This function checks for the shape of the identifier that is placed
+ *   on its left hand side. We need this information to check if the array
+ *   that we copy from is the same size as the array that we would like
+ *   to copy into.
+ *
+ *****************************************************************************/
 
-        pat2 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMarray (1, PMAgetNode (&narray), 0),
-                      PMvar (1, PMAgetAvis (&target), 0));
-        pat3 = PMparam (1, PMAhasAvis (&withid_avis));
-
-        withids = WITHID_IDS (INFO_WITHID (arg_info));
-
-        lhs = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))); /* ddd aid */
-        if (PMmatchFlatSkipExtremaAndGuards (pat2, cexpr)) {
-            /* Match all elements. If we exhaust elements on either side, no match */
-            narrayels = ARRAY_AELEMS (narray);
-            while (z && (NULL != withids) && (NULL != narrayels)) {
-                withid_avis = IDS_AVIS (withids);
-                z = PMmatchFlatSkipExtremaAndGuards (pat3, EXPRS_EXPR (narrayels));
-                withids = IDS_NEXT (withids);
-                narrayels = EXPRS_NEXT (narrayels);
-            }
-            /* If we didn't exhaust both sides, no match */
-            z = z && (NULL == withids) && (NULL == narrayels);
-
-            if (z) {
-                DBUG_PRINT ("Case 4: body matches _sel_VxA_( withid, &target)");
-            } else {
-                target = NULL;
-            }
-        }
-        pat2 = PMfree (pat2);
-        pat3 = PMfree (pat3);
-
-        DBUG_RETURN (target);
-    }
-
-    /** <!--********************************************************************-->
-     *
-     * @name Traversal functions
-     * @{
-     *
-     *****************************************************************************/
-
-    /** <!--********************************************************************-->
-     *
-     * @fn node *CWLEfundef(node *arg_node, info *arg_info)
-     *
-     * @brief Sets up a DFM and traverses into the function-body.
-     *
-     * Here we do set up a DataFlowMask, which we do need for checking if the
-     *   array that we potentially copy from is already defined before the
-     *   respective with-loop.
-     *
-     * Afterwards we just traverse into the function args (so they can be
-     * marked in our DFM) and body.
-     *
-     *****************************************************************************/
-
-    node *CWLEfundef (node * arg_node, info * arg_info)
-    {
-        bool old_onefundef;
-        node *oldfundef;
-        dfmask_base_t *dfmask_base = NULL;
-
-        DBUG_ENTER ();
-
-        oldfundef = INFO_FUNDEF (arg_info);
-        INFO_FUNDEF (arg_info) = arg_node;
-        if (NULL != FUNDEF_BODY (arg_node)) {
-            DBUG_PRINT ("traversing body of (%s) %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                        FUNDEF_NAME (arg_node));
-
-            dfmask_base = DFMgenMaskBase (FUNDEF_ARGS (arg_node),
-                                          BLOCK_VARDECS (FUNDEF_BODY (arg_node)));
-            INFO_DFM (arg_info) = DFMgenMaskClear (dfmask_base);
-
-            FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-            INFO_DFM (arg_info) = DFMremoveMask (INFO_DFM (arg_info));
-            DFMremoveMaskBase (dfmask_base);
-            DBUG_PRINT ("leaving body of (%s) %s",
-                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                        FUNDEF_NAME (arg_node));
-        }
-
-        old_onefundef = INFO_ONEFUNDEF (arg_info);
-        INFO_ONEFUNDEF (arg_info) = FALSE;
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-        INFO_ONEFUNDEF (arg_info) = old_onefundef;
-        INFO_FUNDEF (arg_info) = oldfundef;
-
-        if (!INFO_ONEFUNDEF (arg_info)) {
-            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-        }
-
-        DBUG_RETURN (arg_node);
-    }
-
-    /** <!--********************************************************************-->
-     *
-     * @fn node *CWLEarg( node *arg_node, info *arg_info)
-     *
-     * @brief for setting the bitmask in our DFM.
-     *
-     *****************************************************************************/
-    node *CWLEarg (node * arg_node, info * arg_info)
-    {
-        DBUG_ENTER ();
-
-        ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
-
-        DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, ARG_AVIS (arg_node));
-
-        DBUG_RETURN (arg_node);
-    }
-
-    /** <!--********************************************************************-->
-     *
-     * @fn node *CWLElet(node *arg_node, info *arg_info)
-     *
-     * @brief checks for the shape of its LHS and passes it on
-     *
-     * This function checks for the shape of the identifier that is placed
-     *   on its left hand side. We need this information to check if the array
-     *   that we copy from is the same size as the array that we would like
-     *   to copy into.
-     *
-     *****************************************************************************/
-
-    node *CWLElet (node * arg_node, info * arg_info)
-    {
-        DBUG_ENTER ();
+node *
+CWLElet (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
 #ifdef VERBOSE
-        DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
+    DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
 #endif // VERBOSE
 
-        INFO_VALID (arg_info) = TRUE;
+    INFO_VALID (arg_info) = TRUE;
 
-        if (NULL != LET_IDS (arg_node)) {
-            LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-            INFO_LHS (arg_info) = LET_IDS (arg_node);
-            LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-        }
-
-        /*
-         * reset to false, because the handling of this case is over, independent
-         * of its success.
-         */
-
-        INFO_VALID (arg_info) = FALSE;
-        INFO_LHS (arg_info) = NULL;
-
-        DBUG_RETURN (arg_node);
+    if (NULL != LET_IDS (arg_node)) {
+        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
+        INFO_LHS (arg_info) = LET_IDS (arg_node);
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     }
 
-    /** <!--********************************************************************-->
-     *
-     * @fn node *CWLEassign( node *arg_node, info *arg_info)
-     *
-     * @brief ensures a top-down traversal
-     *
-     *****************************************************************************/
-    node *CWLEassign (node * arg_node, info * arg_info)
-    {
-        DBUG_ENTER ();
+    /*
+     * reset to false, because the handling of this case is over, independent
+     * of its success.
+     */
 
-        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    INFO_VALID (arg_info) = FALSE;
+    INFO_LHS (arg_info) = NULL;
 
-        DBUG_RETURN (arg_node);
-    }
+    DBUG_RETURN (arg_node);
+}
 
-    /** <!--********************************************************************-->
-     *
-     * @fn node *CWLEids( node *arg_node, info *arg_info)
-     *
-     * @brief sets the bitmask for its bitmask in info_dfm.
-     *
-     *****************************************************************************/
-    node *CWLEids (node * arg_node, info * arg_info)
-    {
-        DBUG_ENTER ();
+/** <!--********************************************************************-->
+ *
+ * @fn node *CWLEassign( node *arg_node, info *arg_info)
+ *
+ * @brief ensures a top-down traversal
+ *
+ *****************************************************************************/
+node *
+CWLEassign (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
 
-        DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, IDS_AVIS (arg_node));
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-        IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
+    DBUG_RETURN (arg_node);
+}
 
-        DBUG_RETURN (arg_node);
-    }
+/** <!--********************************************************************-->
+ *
+ * @fn node *CWLEids( node *arg_node, info *arg_info)
+ *
+ * @brief sets the bitmask for its bitmask in info_dfm.
+ *
+ *****************************************************************************/
+node *
+CWLEids (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
 
-    /** <!--********************************************************************-->
-     *
-     * @fn node *CWLEwith(node *arg_node, info *arg_info)
-     *
-     * @brief traverses the codes and replaces itself with a N_id on success.
-     *
-     * Here we traverse into the codeblocks for checking for nested wls and to
-     *   have a look for some cwle-action.
-     *   If the checks in the codes succeed, we compare the found array we
-     *   apparently copy from with the array we would like to create; if these
-     *   fit (in shape) we may replace ourselves with a N_id node of the array
-     *   found in the codes.
-     *
-     *****************************************************************************/
+    DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, IDS_AVIS (arg_node));
 
-    node *CWLEwith (node * arg_node, info * arg_info)
-    {
-        DBUG_ENTER ();
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
-        DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-        INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    DBUG_RETURN (arg_node);
+}
 
-        /*
-         * if our codes indicate that we are still on the run we have to check
-         *   multiple things:
-         *   1. is this a one-generator-loop?
-         *   2. do we look at a modarray/genarray-loop?
-         *   3. do the shapes of INFO_LHS and INFO_RHS match?
-         */
+/** <!--********************************************************************-->
+ *
+ * @fn node *CWLEwith(node *arg_node, info *arg_info)
+ *
+ * @brief traverses the codes and replaces itself with a N_id on success.
+ *
+ * Here we traverse into the codeblocks for checking for nested wls and to
+ *   have a look for some cwle-action.
+ *   If the checks in the codes succeed, we compare the found array we
+ *   apparently copy from with the array we would like to create; if these
+ *   fit (in shape) we may replace ourselves with a N_id node of the array
+ *   found in the codes.
+ *
+ *****************************************************************************/
 
-        if (INFO_VALID (arg_info) && NULL == WITHOP_NEXT (WITH_WITHOP (arg_node))
-            && (N_genarray == WITH_TYPE (arg_node)
-                || N_modarray == WITH_TYPE (arg_node))) {
+node *
+CWLEwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
 
-            DBUG_PRINT ("Codes OK. Comparing shapes of LHS(%s), RHS(%s)",
+    DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+    INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+    /*
+     * if our codes indicate that we are still on the run we have to check
+     *   multiple things:
+     *   1. is this a one-generator-loop?
+     *   2. do we look at a modarray/genarray-loop?
+     *   3. do the shapes of INFO_LHS and INFO_RHS match?
+     */
+
+    if (INFO_VALID (arg_info) && NULL == WITHOP_NEXT (WITH_WITHOP (arg_node))
+        && (N_genarray == WITH_TYPE (arg_node) || N_modarray == WITH_TYPE (arg_node))) {
+
+        DBUG_PRINT ("Codes OK. Comparing shapes of LHS(%s), RHS(%s)",
+                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                    AVIS_NAME (INFO_RHSAVIS (arg_info)));
+
+        if (isAvisShapesMatch (INFO_RHSAVIS (arg_info), IDS_AVIS (INFO_LHS (arg_info)))) {
+            DBUG_PRINT ("All ok. replacing LHS(%s) WL by %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
                         AVIS_NAME (INFO_RHSAVIS (arg_info)));
+            global.optcounters.cwle_wl++;
 
-            if (isAvisShapesMatch (INFO_RHSAVIS (arg_info),
-                                   IDS_AVIS (INFO_LHS (arg_info)))) {
-                DBUG_PRINT ("All ok. replacing LHS(%s) WL by %s",
-                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
-                            AVIS_NAME (INFO_RHSAVIS (arg_info)));
-                global.optcounters.cwle_wl++;
-
-                /*
-                 * 1. free the with-loop, we do not need it anymore.
-                 * 2. return a brandnew N_id, build from our rhsavis.
-                 */
-                arg_node = FREEdoFreeTree (arg_node);
-                arg_node = TBmakeId (INFO_RHSAVIS (arg_info));
-            }
+            /*
+             * 1. free the with-loop, we do not need it anymore.
+             * 2. return a brandnew N_id, build from our rhsavis.
+             */
+            arg_node = FREEdoFreeTree (arg_node);
+            arg_node = TBmakeId (INFO_RHSAVIS (arg_info));
         }
-
-        DBUG_RETURN (arg_node);
     }
 
-    /** <!--********************************************************************-->
-     *
-     * @fn node *CWLEcode(node *arg_node, info *arg_info)
-     *
-     * @brief checks for a valid case of cwle in this wl and in nested with loops.
-     *
-     * several tasks are done in the N_code nodes:
-     *   1. At first we do check for a case of cwle in this withloop.
-     *   2. Traverse into all succeeding code-blocks, checking if they allow for
-     *      a cwle.
-     *   3. If we had a look into all code blocks, we do mark the WITHID in our
-     *      DFM, so it is available in nested withloops, and traverse into just
-     *      these.
-     *
-     *****************************************************************************/
-    node *CWLEcode (node * arg_node, info * arg_info)
-    {
-        node *cexpr;
-        node *target;
-        char *lhs;
-        info *subinfo;
+    DBUG_RETURN (arg_node);
+}
 
-        DBUG_ENTER ();
+/** <!--********************************************************************-->
+ *
+ * @fn node *CWLEcode(node *arg_node, info *arg_info)
+ *
+ * @brief checks for a valid case of cwle in this wl and in nested with loops.
+ *
+ * several tasks are done in the N_code nodes:
+ *   1. At first we do check for a case of cwle in this withloop.
+ *   2. Traverse into all succeeding code-blocks, checking if they allow for
+ *      a cwle.
+ *   3. If we had a look into all code blocks, we do mark the WITHID in our
+ *      DFM, so it is available in nested withloops, and traverse into just
+ *      these.
+ *
+ *****************************************************************************/
+node *
+CWLEcode (node *arg_node, info *arg_info)
+{
+    node *cexpr;
+    node *target;
+    char *lhs;
+    info *subinfo;
 
-        if (INFO_VALID (arg_info)) {
+    DBUG_ENTER ();
 
-            DBUG_PRINT ("prev nodes and wl signal ok");
-            cexpr = EXPRS_EXPR (CODE_CEXPRS (arg_node));
-            target = ivMatchCase1 (arg_node, arg_info, cexpr);
-            target = (NULL != target) ? target : ivMatchCase4 (arg_node, arg_info, cexpr);
-            lhs = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)));
-            if (NULL == target) {
-                DBUG_PRINT ("body of %s does not match _sel_VxA_( withid, &target)", lhs);
-                INFO_VALID (arg_info) = FALSE;
-            }
-        } else {
-            DBUG_PRINT ("previous nodes signal NOT ok");
+    if (INFO_VALID (arg_info)) {
+
+        DBUG_PRINT ("prev nodes and wl signal ok");
+        cexpr = EXPRS_EXPR (CODE_CEXPRS (arg_node));
+        target = ivMatchCase1 (arg_node, arg_info, cexpr);
+        target = (NULL != target) ? target : ivMatchCase4 (arg_node, arg_info, cexpr);
+        lhs = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)));
+        if (NULL == target) {
+            DBUG_PRINT ("body of %s does not match _sel_VxA_( withid, &target)", lhs);
+            INFO_VALID (arg_info) = FALSE;
         }
-
-        /*
-         * if we have found some avis that meets the requirements, then lets check if
-         * it is the same that we have found before. If we do not have found anything
-         * before, assign it to INFO_RHSAVIS.
-         * At this point we also check the DataFlowMask, to see if our source array
-         * was defined _before_ this wl.
-         */
-        if (INFO_VALID (arg_info)) {
-            DBUG_PRINT ("checking if target is legitimate and known");
-
-            if ((NULL == INFO_RHSAVIS (arg_info) || target == INFO_RHSAVIS (arg_info))
-                && DFMtestMaskEntry (INFO_DFM (arg_info), NULL, target)) {
-                DBUG_PRINT ("target is valid. saving");
-
-                INFO_RHSAVIS (arg_info) = target;
-            } else {
-                DBUG_PRINT ("target is NOT valid. skipping wl");
-
-                INFO_VALID (arg_info) = FALSE;
-                INFO_RHSAVIS (arg_info) = NULL;
-            }
-        }
-
-        /*
-         * if we got another code, traverse it; if we are at the end of all codes,
-         * mark the withid. This ensures that the withid is available inside all
-         * wls which may be nested inside and copy from our withid.
-         */
-        if (NULL != CODE_NEXT (arg_node)) {
-            CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-        } else {
-            INFO_WITHID (arg_info) = TRAVdo (INFO_WITHID (arg_info), arg_info);
-        }
-
-        /*
-         * create a new info-structure for traversing the code-block, traverse, and
-         * release the info-structure. we obviously need to pass it the dfmask, so
-         * we use that from the local info structure.
-         * We need the seperate structure so we do not mess with the current wl.
-         */
-        subinfo = MakeInfo ();
-        INFO_DFM (subinfo) = INFO_DFM (arg_info);
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), subinfo);
-        subinfo = FreeInfo (subinfo);
-
-        DBUG_RETURN (arg_node);
+    } else {
+        DBUG_PRINT ("previous nodes signal NOT ok");
     }
 
-    /** <!--********************************************************************-->
-     * @}  <!-- Traversal functions -->
-     *****************************************************************************/
+    /*
+     * if we have found some avis that meets the requirements, then lets check if
+     * it is the same that we have found before. If we do not have found anything
+     * before, assign it to INFO_RHSAVIS.
+     * At this point we also check the DataFlowMask, to see if our source array
+     * was defined _before_ this wl.
+     */
+    if (INFO_VALID (arg_info)) {
+        DBUG_PRINT ("checking if target is legitimate and known");
 
-    /** <!--********************************************************************-->
-     * @}  <!-- Traversal template -->
-     *****************************************************************************/
+        if ((NULL == INFO_RHSAVIS (arg_info) || target == INFO_RHSAVIS (arg_info))
+            && DFMtestMaskEntry (INFO_DFM (arg_info), NULL, target)) {
+            DBUG_PRINT ("target is valid. saving");
+
+            INFO_RHSAVIS (arg_info) = target;
+        } else {
+            DBUG_PRINT ("target is NOT valid. skipping wl");
+
+            INFO_VALID (arg_info) = FALSE;
+            INFO_RHSAVIS (arg_info) = NULL;
+        }
+    }
+
+    /*
+     * if we got another code, traverse it; if we are at the end of all codes,
+     * mark the withid. This ensures that the withid is available inside all
+     * wls which may be nested inside and copy from our withid.
+     */
+    if (NULL != CODE_NEXT (arg_node)) {
+        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
+    } else {
+        INFO_WITHID (arg_info) = TRAVdo (INFO_WITHID (arg_info), arg_info);
+    }
+
+    /*
+     * create a new info-structure for traversing the code-block, traverse, and
+     * release the info-structure. we obviously need to pass it the dfmask, so
+     * we use that from the local info structure.
+     * We need the seperate structure so we do not mess with the current wl.
+     */
+    subinfo = MakeInfo ();
+    INFO_DFM (subinfo) = INFO_DFM (arg_info);
+    CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), subinfo);
+    subinfo = FreeInfo (subinfo);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal functions -->
+ *****************************************************************************/
+
+/** <!--********************************************************************-->
+ * @}  <!-- Traversal template -->
+ *****************************************************************************/
 
 #undef DBUG_PREFIX

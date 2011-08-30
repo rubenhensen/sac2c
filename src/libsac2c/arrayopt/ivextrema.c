@@ -225,7 +225,6 @@ struct INFO {
     lut_t *lutvars;
     lut_t *lutcodes;
     bool fromap;
-    bool onefundef;
 };
 
 /**
@@ -239,7 +238,6 @@ struct INFO {
 #define INFO_LUTVARS(n) ((n)->lutvars)
 #define INFO_LUTCODES(n) ((n)->lutcodes)
 #define INFO_FROMAP(n) ((n)->fromap)
-#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
 MakeInfo ()
@@ -258,7 +256,6 @@ MakeInfo ()
     INFO_LUTVARS (result) = NULL;
     INFO_LUTCODES (result) = NULL;
     INFO_FROMAP (result) = FALSE;
-    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -294,7 +291,6 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
     arg_info = MakeInfo ();
     INFO_LUTVARS (arg_info) = LUTgenerateLut ();
     INFO_LUTCODES (arg_info) = LUTgenerateLut ();
-    INFO_ONEFUNDEF (arg_info) = TRUE;
 
     DBUG_PRINT ("Traversing body of (%s) %s",
                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
@@ -796,12 +792,10 @@ IVEXIfundef (node *arg_node, info *arg_info)
     INFO_FROMAP (arg_info) = INFO_FROMAP (old_info);
     INFO_LUTVARS (arg_info) = INFO_LUTVARS (old_info);
     INFO_LUTCODES (arg_info) = INFO_LUTCODES (old_info);
-    INFO_ONEFUNDEF (arg_info) = INFO_ONEFUNDEF (old_info);
 
     if (((FUNDEF_ISLACFUN (arg_node)) && (INFO_FROMAP (arg_info)))
         || (!FUNDEF_ISLACFUN (arg_node))) {
         INFO_FROMAP (arg_info) = FALSE;
-
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     }
 
@@ -817,9 +811,6 @@ IVEXIfundef (node *arg_node, info *arg_info)
                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                 FUNDEF_NAME (arg_node));
 
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
     arg_info = FreeInfo (arg_info);
     INFO_FROMAP (old_info) = FALSE;
 
@@ -925,7 +916,6 @@ IVEXIassign (node *arg_node, info *arg_info)
         INFO_VARDECS (arg_info) = INFO_VARDECS (old_info);
         INFO_LUTVARS (arg_info) = INFO_LUTVARS (old_info);
         INFO_LUTCODES (arg_info) = INFO_LUTCODES (old_info);
-        INFO_ONEFUNDEF (arg_info) = INFO_ONEFUNDEF (old_info);
     }
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);

@@ -21,7 +21,7 @@ extern bool AWLFIisHasNoteintersect (node *arg_node);
 extern bool AWLFIisIdsMemberPartition (node *arg_node, node *partn);
 extern bool AWLFIisHasInverseProjection (node *arg_node);
 extern node *AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns,
-                             node *cwlpart, node *pwlpart);
+                             node *pwlpart);
 
 extern node *AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
                                      ntype *ztype);

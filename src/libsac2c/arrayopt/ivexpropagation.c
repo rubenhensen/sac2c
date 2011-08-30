@@ -99,7 +99,6 @@ struct INFO {
     node *vardecs;
     node *curwith;
     node *let;
-    bool onefundef;
 };
 
 /**
@@ -113,7 +112,6 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_CURWITH(n) ((n)->curwith)
 #define INFO_LET(n) ((n)->let)
-#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
 MakeInfo ()
@@ -132,7 +130,6 @@ MakeInfo ()
     INFO_VARDECS (result) = NULL;
     INFO_CURWITH (result) = NULL;
     INFO_LET (result) = NULL;
-    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -175,7 +172,6 @@ IVEXPdoIndexVectorExtremaProp (node *arg_node)
 
     DBUG_PRINT ("Starting index vector extrema propagation traversal");
     arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = TRUE;
 
     TRAVpush (TR_ivexp);
     arg_node = TRAVdo (arg_node, arg_info);
@@ -1859,8 +1855,6 @@ IVEXPwhile (node *arg_node, info *arg_info)
 node *
 IVEXPfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
-
     DBUG_ENTER ();
 
     DBUG_PRINT ("IVEXP in %s %s begins",
@@ -1871,11 +1865,8 @@ IVEXPfundef (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = arg_node;
 
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     INFO_FUNDEF (arg_info) = NULL;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -1892,10 +1883,6 @@ IVEXPfundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("IVEXP in %s %s ends",
                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                 FUNDEF_NAME (arg_node));
-
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
 
     DBUG_RETURN (arg_node);
 }

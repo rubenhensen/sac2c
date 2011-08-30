@@ -154,7 +154,6 @@ struct INFO {
                               */
     bool producerWLFoldable; /* producerWL may be legally foldable. */
                              /* (If index sets prove to be OK)     */
-    bool onefundef;          /* fundef-based traversal */
     bool nofinverse;         /* no intersect to CWL mapping found */
     bool finverseswap;       /* If TRUE, must swp min/max */
     bool finverseintroduced; /* If TRUE, most simplify F-inverse */
@@ -177,7 +176,6 @@ struct INFO {
 #define INFO_WITHIDS(n) ((n)->withids)
 #define INFO_LEVEL(n) ((n)->level)
 #define INFO_PRODUCERWLFOLDABLE(n) ((n)->producerWLFoldable)
-#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_NOFINVERSE(n) ((n)->nofinverse)
 #define INFO_FINVERSESWAP(n) ((n)->finverseswap)
 #define INFO_FINVERSEINTRODUCED(n) ((n)->finverseintroduced)
@@ -205,7 +203,6 @@ MakeInfo (node *fundef)
     INFO_WITHIDS (result) = NULL;
     INFO_LEVEL (result) = 0;
     INFO_PRODUCERWLFOLDABLE (result) = TRUE;
-    INFO_ONEFUNDEF (result) = FALSE;
     INFO_NOFINVERSE (result) = FALSE;
     INFO_FINVERSESWAP (result) = FALSE;
     INFO_FINVERSEINTRODUCED (result) = FALSE;
@@ -251,11 +248,9 @@ AWLFIdoAlgebraicWithLoopFolding (node *arg_node)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
-                 "AWLFIdoAlgebraicWithLoopFoldingOneFunction called for non-fundef");
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "Called for non-fundef node");
 
     arg_info = MakeInfo (arg_node);
-    INFO_ONEFUNDEF (arg_info) = TRUE;
 
     DSinitDeserialize (global.syntax_tree);
 
@@ -1987,18 +1982,24 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
  *            poffset = idxs2offset( shape( producerWL), i, j, k...);
  *            z = _idx_sel_( poffset, producerWL);
  *
- *         There are two cases:
+ *         There are several cases:
  *
- *         1. We are doing a _sel_VxA_():  Return iv's avis.
+ *         1. We are doing _sel_VxA_( iv, ProducerWL):
+ *            Return iv's avis.
  *
- *         2. We are doing idx_sel_(). Find the idxs2offset( pwl, i, j, k...),
+ *         2. We are doing idx_sel_( offset, ProducerWL).
+ *            Find the idxs2offset( pwl, i, j, k...),
  *            build a flattened N_array from [ i, j, k], and
  *            return its avis.
- *            Ditto if we can not find the idxs2offset, but the
+ *
+ *         3  We can not find the idxs2offset, but the
  *            producerWL generates a vector result.
+ *            Return  xxx FIXME.
  *
+ *         4. arg_node is a vect2offset( shape( producerWL), iv);
+ *            Return iv.
  *
- *        This is, admittedly, a kludge. It might make more sense to
+ *        This function is, admittedly, a kludge. It might make more sense to
  *        have IVE generate an intermediate primitive that preserves
  *        the iv. E.g.,:
  *
@@ -2021,8 +2022,7 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
  *
  *****************************************************************************/
 node *
-AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart,
-                node *pwlpart)
+AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *pwlpart)
 {
     node *z = NULL;
     pattern *pat;
@@ -2039,8 +2039,9 @@ AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart
     if (0 != TYgetDim (AVIS_TYPE (ID_AVIS (arg_node)))) { /* _sel_VxA_() case */
         z = ID_AVIS (arg_node);
     } else {
-        if ((PMmatchFlatSkipGuards (pat2, arg_node) && /* Skip the F_noteintersect */
-             (N_prf == NODE_TYPE (ivprf)) && (F_noteintersect == PRF_PRF (ivprf)))) {
+        /* Skip the F_noteintersect */
+        if ((PMmatchFlatSkipGuards (pat2, arg_node) && (N_prf == NODE_TYPE (ivprf))
+             && (F_noteintersect == PRF_PRF (ivprf)))) {
             arg_node = PRF_ARG1 (ivprf);
         }
 
@@ -2059,6 +2060,11 @@ AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart
                 }
             }
         }
+    }
+
+    /* Case 4 */
+    if ((NULL == z) && (NULL != ivprf) && (F_vect2offset == PRF_PRF (ivprf))) {
+        z = ID_AVIS (PRF_ARG2 (ivprf));
     }
 
     pat = PMfree (pat);
@@ -2361,7 +2367,6 @@ checkBothFoldable (node *arg_node, info *arg_info)
 node *
 AWLFIfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
     int optctr;
 
     DBUG_ENTER ();
@@ -2372,8 +2377,6 @@ AWLFIfundef (node *arg_node, info *arg_info)
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                     FUNDEF_NAME (arg_node));
 
-        old_onefundef = INFO_ONEFUNDEF (arg_info);
-        INFO_ONEFUNDEF (arg_info) = FALSE;
         optctr = global.optcounters.awlfi_expr;
 
         if (FUNDEF_BODY (arg_node) != NULL) {
@@ -2394,15 +2397,9 @@ AWLFIfundef (node *arg_node, info *arg_info)
             arg_node = SimplifySymbioticExpression (arg_node, arg_info);
         }
 
-        INFO_ONEFUNDEF (arg_info) = old_onefundef;
-
         DBUG_PRINT ("Algebraic-With-Loop-Folding Inference in %s %s ends",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                     FUNDEF_NAME (arg_node));
-    }
-
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2473,7 +2470,6 @@ AWLFIwith (node *arg_node, info *arg_info)
     INFO_LEVEL (arg_info) = INFO_LEVEL (old_arg_info) + 1;
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_arg_info);
     INFO_CONSUMERWL (arg_info) = arg_node;
-    INFO_ONEFUNDEF (arg_info) = INFO_ONEFUNDEF (old_arg_info);
     INFO_FINVERSEINTRODUCED (arg_info) = INFO_FINVERSEINTRODUCED (old_arg_info);
 
     DBUG_PRINT ("Resetting WITH_REFERENCED_CONSUMERWL, etc.");
@@ -2621,7 +2617,6 @@ AWLFIprf (node *arg_node, info *arg_info)
         if (NULL != INFO_PRODUCERWL (arg_info)) {
             ivavis = AWLFIoffset2Iv (PRF_ARG1 (arg_node), &INFO_VARDECS (arg_info),
                                      &INFO_PREASSIGNS (arg_info),
-                                     INFO_CONSUMERWLPART (arg_info),
                                      WITH_PART (INFO_PRODUCERWL (arg_info)));
         }
 
@@ -2655,10 +2650,9 @@ AWLFIprf (node *arg_node, info *arg_info)
     if ((AWLFIisHasNoteintersect (arg_node))
         && (!isHasValidNoteintersect (arg_node, arg_info))
         && (NULL != INFO_PRODUCERWL (arg_info))) {
-        ivavis
-          = AWLFIoffset2Iv (PRF_ARG1 (arg_node), &INFO_VARDECS (arg_info),
-                            &INFO_PREASSIGNS (arg_info), INFO_CONSUMERWLPART (arg_info),
-                            WITH_PART (INFO_PRODUCERWL (arg_info)));
+        ivavis = AWLFIoffset2Iv (PRF_ARG1 (arg_node), &INFO_VARDECS (arg_info),
+                                 &INFO_PREASSIGNS (arg_info),
+                                 WITH_PART (INFO_PRODUCERWL (arg_info)));
         arg_node = BuildInverseProjections (arg_node, arg_info, ivavis);
     }
 

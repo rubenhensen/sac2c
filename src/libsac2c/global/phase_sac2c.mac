@@ -347,8 +347,8 @@ CYCLEPHASEFUNOLD (wlbsc, "Ensuring structrual constants for with-loop partition 
 CYCLEPHASEFUNOLD (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
                   global.optimize.dowlsimp, opt, cyc)
 
-CYCLEPHASEFUNOLD (cwle, "Eliminate copy with-loops", CWLEdoTemplateTraversal,
-                  global.optimize.docwle, opt, cyc)
+CYCLEPHASEFUN (cwle, "Eliminate copy with-loops", CWLEdoCopyWithLoopElimination,
+               global.optimize.docwle, opt, cyc)
 
 CYCLEPHASEFUNOLD (wli, "Inferring foldable with-loops", WLIdoWLI, global.optimize.dowlf,
                   opt, cyc)
@@ -507,32 +507,32 @@ CYCLEPHASEFUNOLD (wlbsc, "Unflattening WL-partition structural constants",
 CYCLEPHASEFUNOLD (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
                   global.optimize.dowlsimp, opt, saacyc)
 
-CYCLEPHASEFUNOLD (cwle, "Eliminate copy with-loops", CWLEdoTemplateTraversal,
-                  global.optimize.docwle, opt, saacyc)
+CYCLEPHASEFUN (cwle, "Eliminate copy with-loops", CWLEdoCopyWithLoopElimination,
+               global.optimize.docwle, opt, saacyc)
 
 CYCLEPHASEFUNOLD (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
                   IVERASdoWithloopReuseAndOptimisation,
                   global.optimize.doive &&global.optimize.doivecyc, opt, saacyc)
 
-CYCLEPHASEFUNOLD (ivexi, "Inserting index vector extrema",
-                  IVEXIdoInsertIndexVectorExtrema, global.doivext, opt, saacyc)
+CYCLEPHASEFUN (ivexi, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
+               global.doivext, opt, saacyc)
 
-CYCLEPHASEFUNOLD (ivexp, "Propagating index vector extrema",
-                  IVEXPdoIndexVectorExtremaProp, global.optimize.doawlf, opt, saacyc)
+CYCLEPHASEFUN (ivexp, "Propagating index vector extrema", IVEXPdoIndexVectorExtremaProp,
+               global.optimize.doawlf, opt, saacyc)
 
-CYCLEPHASEFUNOLD (awlfi, "Inferring algebraically foldable with-loops",
-                  AWLFIdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
+CYCLEPHASEFUN (awlfi, "Inferring algebraically foldable with-loops",
+               AWLFIdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
 
 /* CUBSL needs this for partition-slicing decisions. */
 CYCLEPHASEFUNOLD (cse2, "Eliminating common subexpressions",
                   CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
 
-CYCLEPHASEFUNOLD (cubsl, "Slicing algebraically foldable with-loops",
-                  CUBSLdoAlgebraicWithLoopFoldingCubeSlicing, global.optimize.doawlf, opt,
-                  saacyc)
+CYCLEPHASEFUN (cubsl, "Slicing algebraically foldable with-loops",
+               CUBSLdoAlgebraicWithLoopFoldingCubeSlicing, global.optimize.doawlf, opt,
+               saacyc)
 
-CYCLEPHASEFUNOLD (awlf, "Applying algebraic with-loop folding",
-                  AWLFdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
+CYCLEPHASEFUN (awlf, "Applying algebraic with-loop folding",
+               AWLFdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
 
 CYCLEPHASEFUNOLD (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
                   opt, saacyc)

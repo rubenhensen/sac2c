@@ -13,7 +13,7 @@
  * Prefix: CWLE
  *
  *****************************************************************************/
-extern node *CWLEdoTemplateTraversal (node *syntax_tree);
+extern node *CWLEdoCopyWithLoopElimination (node *arg_node);
 
 extern node *CWLEfundef (node *arg_node, info *arg_info);
 extern node *CWLEwith (node *arg_node, info *arg_info);
