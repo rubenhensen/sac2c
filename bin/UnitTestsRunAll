@@ -1,0 +1,4 @@
+#!/bin/sh
+UnitTestRunWorks
+#RunWarnings
+UnitTestRunGreps 

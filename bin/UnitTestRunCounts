@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Count number of results. 
+# Arguments are test name, test type (e.g., docf/nocf), greply argument, desired count
+count=$(grep $3 | wc )
+count=${count% [0-9]*}
+count=${count% [0-9]*}
+
+if [ $4 -eq $count ]; then 
+## HUSH	echo Greptest: $1 OK; 
+ junk=0
+else 
+  echo Greptest: $1 $2 failed with $count hits on phrase \"$3\". Wanted $4 hits;
+fi 
+
+

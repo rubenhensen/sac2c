@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Run one test that should cause compiler to terminate.
+
+function getargs
+{
+ grepstr=$1
+ nocfwc=$2
+ docfwc=$3
+ s1=$4
+ s2=$5
+ s3=$6
+ s4=$7
+ s5=$8
+ s6=$9
+}
+
+ # Extract result-checking args from source file
+ args=`grep EXITCODE: $1`
+ args=${args#/* EXITCODE: }
+ args=${args%%\*/}
+ getargs $args
+
+rm -f a.out a.out.c
+sac2c -v0 -O3 $1  &> /dev/null
+z=$?
+
+if [ $grepstr -eq $z ]; then 
+  echo FailTest: $1 OK; 
+else 
+  echo FailTest: $1 failed. sac2c exit code: expected=$grepstr, received=$z
+fi
+rm -f a.out a.out.c

@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Run one test to ensure correct results.
+
+	rm -f a.out a.out.c
+# HUSH echo Starting Worktest for: $1
+echo Starting Worktest for: $1
+sac2c -v0 -O3 $1 -o $1.exe -ecc -extrema -noprfunr -nowlf -doawlf  -check c
+	./$1.exe
+	z=$?
+	if [ 0 -eq $z ]; then 
+# HUSH echo Worktest: $1 OK; 
+          junk=0
+	else 
+          echo Worktest: $1 failed with completion code $z;
+	fi
+	rm -f $1.exe $1.exe.c
