@@ -1,0 +1,62 @@
+#!/bin/bash
+
+
+# Run one unit test on sac source program $1, and check results.
+
+source RunGrep1.config
+
+function getargs
+{
+ grepstr=$1
+ noopt=$2
+ doopt=$3
+ s1=$4
+ s2=$5
+ s3=$6
+ s4=$7
+ s5=$8
+ s6=$9
+}
+ ## HUSH         echo RunGrep1 testing: $1
+        echo RunGrep1 testing: $1
+ # Extract result-checking args from source file
+ args=`grep RESULT: $1`
+ args=${args#/* RESULT: }
+ args=${args%%\*/}
+ getargs $args
+
+ # If user specified FILTER, get its parameter, so we
+ # can extract the relevant function text from the IL file.
+ fil=`grep FILTER: $1`
+ fil=${fil#/* FILTER: }
+ fil=${fil%%\*/}
+ # Ditch trailing blanks
+ fil=${fil%%\ }
+
+ # If no-no filter, keep all code
+ # If no filter, filter main()
+ if [ -n "$fil" ]; then
+         filterop=ExtractFunction\ $fil
+         filter=\"$fil\"
+ else
+         filterop=ExtractFunction\ _MAIN::main 
+         filter=\"$fil\"
+ fi 
+
+ nono='no-no'
+ if [ x$fil =  x$nono ]; then
+         filterop=cat
+         filter=\"$fil\"
+ fi
+ 
+ # Test with opts disabled
+ sac2c $1 -v0 -bopt:uglf $optsoff $s1 $s2 $s3 $s4  $s5 $s6 > crudn.$1.out
+ cat crudn.$1.out | $filterop | RunCounts $1 "$optsoff" $grepstr $noopt
+ cat crudn.$1.out | $filterop > crudn
+ # Test with opts enabled
+ sac2c $1 -v0 -bopt:uglf $optson $s1 $s2 $s3 $s4 $s5 $s6 > crudd.$1.out
+ cat crudd.$1.out | $filterop | RunCounts $1 "$optson" $grepstr $doopt 
+ cat crudd.$1.out | $filterop >crudd
+ # This test leaves crudn.$1 and crudd.$1 around for possible later
+ # inspection by the puzzled programmer.
+

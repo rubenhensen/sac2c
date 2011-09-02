@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Run all unit tests, and check results.
+
+for i in *.sac;
+do
+ RunGrep1 $i
+done;
+ rm -f crudd* crudn*
+
