@@ -77,33 +77,28 @@
  * Case 1:  (shape(iv) == frame_dim(X)):
  *
  *      z = sel([2], X);
- *
- *   CF performs the select, producing:
- *
+ *      --->
  *      z = c;
  *
  * Case 2: (shape(iv) > frame_dim(X)):
  *
  *      z = sel([2,1], X);
- *
- *    CF performs a partial selection:
- *
+ *      --->
  *      tmpX   = c;
- *      tmpiv = [1];
- *      z = sel(tmpiv, tmpX);
+ *      tmpiv = [ 1];
+ *      z = sel( tmpiv, tmpX);
  *
  * Case 3: (shape(iv) < frame_dim(X):
  *
  *    Illegal.
  *
  * Notes:
- *   In order to make iotan.sac work properly, Case 1 has to support:
+ *   In order to make iotan.sac work properly, Case 1 has to
+ *   work across extrema. E.g.:
+ *
  *      x = [a,b,c,...];
  *      x' = _noteminval( x, ...);
  *      z = _sel_VxA_( [0], x');
- *
- *
- * All of above ditto for idx_sel().
  *
  *****************************************************************************/
 
@@ -126,9 +121,8 @@ StructOpSel (node *arg_node, info *arg_info)
     node *tmpXid;
     node *arg2 = NULL;
     pattern *pat1;
-    pattern *pat2;
-
     DBUG_ENTER ();
+
     /**
      *   Match for    _sel_VxA_( constant, N_array)
      *   and bind      con1    to constant
@@ -138,14 +132,8 @@ StructOpSel (node *arg_node, info *arg_info)
     pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAgetVal (&con1)),
                   PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
 
-    /* FIXME This pat2 looks fishy: consider the ASSERT below! */
-    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMconst (1, PMAgetVal (&con1)),
-                  PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
+    if (PMmatchFlat (pat1, arg_node)) {
 
-    if (PMmatchFlatSkipExtrema (pat1, arg_node) ||
-
-        /* FIXME This pat2 looks fishy: consider the ASSERT below! */
-        (FALSE && PMmatchFlatSkipExtrema (pat2, arg_node))) {
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);
         arg2fs = COfreeConstant (arg2fs);
         iv_len = SHgetUnrLen (COgetShape (con1));
@@ -159,13 +147,13 @@ StructOpSel (node *arg_node, info *arg_info)
         tmpXid = DUPdoDupNode (TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
         if (iv_len == X_dim) {
             // Case 1 : Exact selection: do the sel operation now.
-            DBUG_PRINT ("StructOpSel exact selection performed.");
+            DBUG_PRINT ("Exact selection performed.");
             result = tmpXid;
         } else {
             // Case 2: Selection vector has more elements than frame_dim(X):
             // Perform partial selection on X now; build new selection for
             // run-time.
-            DBUG_ASSERT (N_id == NODE_TYPE (tmpXid), "StructOpSel X element not N_id");
+            DBUG_ASSERT (N_id == NODE_TYPE (tmpXid), "X element not N_id");
             con1 = COdrop (take_vec, con1, NULL); // iv suffix
             take_vec = COfreeConstant (take_vec);
             tmpivavis
@@ -180,7 +168,7 @@ StructOpSel (node *arg_node, info *arg_info)
                               INFO_PREASSIGN (arg_info));
 
             AVIS_SSAASSIGN (tmpivavis) = INFO_PREASSIGN (arg_info);
-            DBUG_PRINT ("StructOpSel sel(iv,X) replaced iv: old: %s; new: %s",
+            DBUG_PRINT ("sel(iv,X) replaced iv: old: %s; new: %s",
                         AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), AVIS_NAME (tmpivavis));
 
             // Create new sel() operation  _sel_VxA_(tmpiv, tmpX);
@@ -189,7 +177,64 @@ StructOpSel (node *arg_node, info *arg_info)
         con1 = COfreeConstant (con1);
     }
     pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *StructOpSelAxSxS(node *arg_node, info *arg_info)
+ *
+ * description:
+ *  Like StructOpSel(), but limited due to lack of semantic
+ *  info about PRF_ARG1.
+ *
+ *  For now, we only handle exact sel() on vector frames.
+ *  FIXME: This could be enhanced (ISMOP) by looking for
+ *  the IV that generated the offset.
+ *
+ *****************************************************************************/
+static node *
+StructOpSelAxSxS (node *arg_node, info *arg_info)
+{
+    node *result = NULL;
+
+    int iv_len;
+    int X_dim;
+
+    constant *con1 = NULL;
+    constant *arg2fs = NULL;
+    int offset;
+    node *arg2 = NULL;
+    pattern *pat1;
+
+    DBUG_ENTER ();
+
+    /**
+     *   Match for    _sel_VxA_( constant, N_array)
+     *   and bind      con1    to constant
+     *                 arg2    to N_array-node
+     *                 arg2fs  to the frameshape of N_array
+     */
+
+    pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMconst (1, PMAgetVal (&con1)),
+                  PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
+
+    if (PMmatchFlat (pat1, arg_node)) {
+        X_dim = SHgetExtent (COgetShape (arg2fs), 0);
+        arg2fs = COfreeConstant (arg2fs);
+        iv_len = SHgetUnrLen (COgetShape (con1));
+        DBUG_ASSERT (iv_len >= X_dim, "shape(iv) <  dim(X)");
+        if (iv_len == X_dim) {
+            // Case 1 : Exact selection: do the sel operation now.
+            offset = COconst2Int (con1);
+            result = DUPdoDupNode (TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
+            DBUG_PRINT ("exact selection performed.");
+        }
+        con1 = COfreeConstant (con1);
+    }
+    pat1 = PMfree (pat1);
 
     DBUG_RETURN (result);
 }
@@ -371,7 +416,64 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * @function:
- *   node *ModarrayModarray(node *arg_node, info *arg_info)
+ *   node *ModarrayModarray_AxSxS(node *arg_node, info *arg_info)
+ *
+ * @param: arg_node is a _modarray_AxSxS_ N_prf.
+ *
+ * @result: If two consecutive modarray operations modify
+ *      the same array element, then the first modarray
+ *      can safely be removed.
+ *
+ *      This is done merely by marking the first modarray (b)
+ *      for later removal. This is an easy to preserve the
+ *      guards on the creation of b.
+ *
+ * @brief:
+ *
+ *      b = _modarray_AxSxS_(arr, offset, val1);
+ *      z = _modarray_AxSxS_(b,   offset, val2);
+ *
+ *      This becomes, eventually:
+ *
+ *      z = _modarray_AxSxS_((arr, offset, val3);
+ *
+ *****************************************************************************/
+static node *
+ModarrayModarray_AxSxS (node *arg_node, info *arg_info)
+{
+    node *arr = NULL;
+    node *b = NULL;
+    node *offset = NULL;
+    node *prf = NULL;
+    pattern *pat1;
+    pattern *pat2;
+
+    DBUG_ENTER ();
+
+    /* z = _modarray_AxSxS_( b, offset, val2)  */
+    pat1 = PMprf (1, PMAisPrf (F_idx_modarray_AxSxS), 3, PMany (1, PMAgetNode (&b), 0),
+                  PMany (1, PMAgetNode (&offset), 0), PMskip (0));
+
+    /* b = _modarray_AxSxS_( arr, offset, val1)  */
+    pat2 = PMprf (2, PMAgetNode (&prf), PMAisPrf (F_idx_modarray_AxSxS), 3,
+                  PMany (1, PMAgetNode (&arr), 0), PMany (1, PMAisNode (&offset)),
+                  PMskip (0));
+
+    if ((PMmatchFlatSkipGuards (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat2, b))) {
+        DBUG_PRINT ("Marked _idx_modarray_AxSxS for $s for removal",
+                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
+        PRF_ISNOP (prf) = TRUE;
+    }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * @function:
+ *   node *ModarrayModarray_AxVxS(node *arg_node, info *arg_info)
  *
  * @param: arg_node is a _modarray_AxVxS_ N_prf.
  *
@@ -393,7 +495,7 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 static node *
-ModarrayModarray (node *arg_node, info *arg_info)
+ModarrayModarray_AxVxS (node *arg_node, info *arg_info)
 {
     node *arr = NULL;
     node *b = NULL;
@@ -415,13 +517,57 @@ ModarrayModarray (node *arg_node, info *arg_info)
 
     if ((PMmatchFlatSkipGuards (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat2, b))) {
         DBUG_PRINT ("Marked _modarray_AxVxS for $s for removal",
-                    AVIS_NAME (ID_AVIS (PRF_ARG1 (b))));
+                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
         PRF_ISNOP (prf) = TRUE;
     }
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SCCFprf_idx_modarray_AxSxS(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Implements modarray for structural constant X.
+ *
+ *     z = _modarray_AxSxS_(X, offset, val);
+ *
+ *   Also handles scalar X:
+ *
+ *     z = _modarray_AxSxS_(scalarX, anyoffset, val);
+ *
+ *   becomes val.
+ *
+ *   This also removes the N_prf if SelModarray() has
+ *   marked this N_prf as a no-op.
+ *
+ *****************************************************************************/
+node *
+SCCFprf_idx_modarray_AxSxS (node *arg_node, info *arg_info)
+{
+    node *z = NULL;
+
+    DBUG_ENTER ();
+
+    arg_node = ModarrayModarray_AxSxS (arg_node, arg_info);
+
+    if (TRUE == PRF_ISNOP (arg_node)) {
+        z = DUPdoDupNode (PRF_ARG1 (arg_node));
+        DBUG_PRINT ("NOP _modarray_AxSxS deleted");
+    }
+
+    if ((NULL == z) && (TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
+        && (TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG3 (arg_node)))))) {
+        z = DUPdoDupNode (PRF_ARG3 (arg_node));
+    }
+
+    int morecodingplease; /* need to clone code from next function down */
+
+    DBUG_RETURN (z);
 }
 
 /******************************************************************************
@@ -504,7 +650,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     pat2 = PMfree (pat2);
     emptyVec = COfreeConstant (emptyVec);
 
-    arg_node = ModarrayModarray (arg_node, arg_info);
+    arg_node = ModarrayModarray_AxVxS (arg_node, arg_info);
 
     if ((NULL == z) && (TRUE == PRF_ISNOP (arg_node))) {
         z = DUPdoDupNode (PRF_ARG1 (arg_node));
@@ -969,7 +1115,7 @@ SelModarray (node *arg_node, info *arg_info)
         && PMmatchFlat (pat5, iv2)) {
 
         res = DUPdoDupNode (val);
-        DBUG_PRINT ("SelModArray replaced _sel_VxA_(iv, %s) of modarray by %s",
+        DBUG_PRINT ("replaced _sel_VxA_(iv, %s) of modarray by %s",
                     AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val)));
     } else {
 
@@ -988,9 +1134,8 @@ SelModarray (node *arg_node, info *arg_info)
             res = DUPdoDupNode (Mprime);
             FREEdoFreeNode (PRF_ARG1 (res));
             PRF_ARG1 (res) = DUPdoDupNode (val);
-            DBUG_PRINT (
-              "SelModArray replaced _sel_VxA_(iv, %s) of modarray by guarded %s",
-              AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val)));
+            DBUG_PRINT ("replaced _sel_VxA_(iv, %s) of modarray by guarded %s",
+                        AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val)));
         }
     }
     pat1 = PMfree (pat1);
@@ -1006,31 +1151,87 @@ SelModarray (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * @function:
+ *   node *SelModarrayAxSxS(node *arg_node)
+ *
+ * @param: arg_node is a _sel_ N_prf.
+ *
+ * @brief: Like SelModarray, but works on _idx_sel/_idx_modarray pairs.
+ *         See there for details.
+ *
+ *                  offset = vect2offset( shape(M), iv);
+ *                  X = idx_modarray_AxSxS_( M, offset, val);
+ *                  z = _idx_sel( offset, X);
+ *
+ *         becomes:
+ *                  z = val;
+ *
+ *         The guards on offset remain.
+ *
+ *
+ * @result: If the selection can be folded, val from the modarray.
+ *          Else, NULL.
+ *
+ *****************************************************************************/
+
+static node *
+SelModarrayAxSxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    pattern *pat1;
+    pattern *pat2;
+    node *X = NULL;
+    node *offset = NULL;
+    node *val = NULL;
+
+    DBUG_ENTER ();
+
+    /* z = _idx_sel( offset, X); */
+    pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset), 0),
+                  PMvar (1, PMAgetNode (&X), 0));
+
+    /* _X = idx_modarray_AxSxS_( M, offset, val) */
+    pat2 = PMprf (1, PMAisPrf (F_idx_modarray_AxSxS), 3, PMvar (0, 0),
+                  PMvar (1, PMAisVar (&offset), 0), PMvar (1, PMAgetNode (&val), 0));
+
+    if ((PMmatchFlatSkipGuards (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat2, X))) {
+        res = DUPdoDupNode (val);
+        DBUG_PRINT ("replaced _idx_sel(offset, %s) of modarray by %s",
+                    AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val)));
+    }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @function:
  *   node *SelModarrayCase2(node *arg_node, info *arg_info)
  *
  * @param: arg_node is a _sel_ N_prf.
  *
- * @result: if the selection can be folded, the result is the
- * val5 from the first modarray. Otherwise, NULL.
+ * @brief: Case 2. ivc1, ivc2, ivc3c are constants:
  *
- * @brief: Case 2. ivc is a constant:
- *
- *      ivc = [4];
- *      b = modarray(arr, ivc, val5);
- *      three = [3];
- *      c = modarray(b, three, val3);
- *      two = [2];
- *      d = modarray(c, two, val2);
- *      z = sel(ivc, d)
+ *      ivc1 = [4];
+ *      b = modarray(arr, ivc1, val5);
+ *      ivc2 = [4];
+ *      c = modarray(b, ivc2, val3);
+ *      ivc3 = [4];
+ *      d = modarray(c, ivc3, val2);
+ *      z = sel(ivc3, d)
  *
  *      This becomes:
  *
  *      z = val5;
  *
- *      In the above, if the statements setting c or d contain
- *      non-constants (non-AKV) as ivc, then we must NOT perform the
+ *      In the above, if  any of ivc1, ivc2, or ivc3 are not identical
+ *      constants, then we must NOT perform the
  *      optimization, because we are unable to assert that
- *      the constant ivc is not equal to, e.g, two.
+ *      the constant ivc1 is not equal to, e.g, ivc1.
+ *
+ * @result: if the selection can be folded, the result is the
+ *          val5 from the first modarray. Otherwise, NULL.
  *
  *****************************************************************************/
 static node *
@@ -1057,7 +1258,6 @@ SelModarrayCase2 (node *arg_node, info *arg_info)
 
     if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
         while (PMmatchFlatSkipExtrema (pat2, X)) {
-            /* FIXME: Bodo: Does this need an F_modarray_AxVxA case ?? */
             if (COcompareConstants (ivc1, ivc2)) {
                 break;
             } else { /* Chase the modarray chain */
@@ -1068,8 +1268,83 @@ SelModarrayCase2 (node *arg_node, info *arg_info)
             }
         }
         if (NULL != val) {
-            DBUG_PRINT ("SelModArrayCase2 replaced _sel_VxA_(const, %s) by %s",
-                        AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val)));
+            DBUG_PRINT ("Replaced _sel_VxA_(const, %s) by %s", AVIS_NAME (ID_AVIS (X)),
+                        AVIS_NAME (ID_AVIS (val)));
+            res = DUPdoDupNode (val);
+        }
+    }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @function:
+ *   node *SelModarrayCase2AxSxS(node *arg_node, info *arg_info)
+ *
+ * @param: arg_node is an idx_sel N_prf.
+ *
+ * @brief: Case 2. ivc1, ivc2, ivc3c are constants:
+ *
+ *      ivc1 = [4];
+ *      b = _idx_modarray_AxSxS(arr, ivc1, val5);
+ *      ivc2 = [4];
+ *      c = _idx_modarray_AxSxS(b, ivc2, val3);
+ *      ivc3 = [4];
+ *      d = _idx_modarray_AxSxS(c, ivc3, val2);
+ *      z = _idx_sel(ivc3, d)
+ *
+ *      This becomes:
+ *
+ *      z = val5;
+ *
+ *      In the above, if  any of ivc1, ivc2, or ivc3 are not identical
+ *      constants, then we must NOT perform the
+ *      optimization, because we are unable to assert that
+ *      the constant ivc1 is not equal to, e.g, ivc1.
+ *
+ * @result: if the selection can be folded, the result is the
+ *          val5 from the first modarray. Otherwise, NULL.
+ *
+ *****************************************************************************/
+static node *
+SelModarrayCase2AxSxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    constant *ivc1 = NULL;
+    constant *ivc2 = NULL;
+    node *val = NULL;
+    node *X = NULL;
+    node *X2 = NULL;
+    pattern *pat1;
+    pattern *pat2;
+
+    DBUG_ENTER ();
+
+    /* z = _idx_sel( ivc3, d); */
+    pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMconst (1, PMAgetVal (&ivc1)),
+                  PMvar (1, PMAgetNode (&X), 0));
+
+    /* X = _idx_modarray_AxSxS_( M, ivc2, val)  */
+    pat2 = PMprf (1, PMAisPrf (F_idx_modarray_AxSxS), 3, PMvar (1, PMAgetNode (&X2), 0),
+                  PMconst (1, PMAgetVal (&ivc2)), PMvar (1, PMAgetNode (&val), 0));
+
+    if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
+        while (PMmatchFlatSkipExtrema (pat2, X)) {
+            if (COcompareConstants (ivc1, ivc2)) {
+                break;
+            } else { /* Chase the modarray chain */
+                val = NULL;
+                ivc2 = NULL;
+                X = X2;
+                X2 = NULL;
+            }
+        }
+        if (NULL != val) {
+            DBUG_PRINT ("Replaced _sel_VxA_(const, %s) by %s", AVIS_NAME (ID_AVIS (X)),
+                        AVIS_NAME (ID_AVIS (val)));
             res = DUPdoDupNode (val);
         }
     }
@@ -1446,26 +1721,37 @@ SCCFprf_sel (node *arg_node, info *arg_info)
         res = SelProxyArray (arg_node, arg_info);
     }
 
-#ifdef MEMOFLOWBUG // this gets:
-                   // counter for allocated memory: overflow detected
-                   // in  prd.sac -ecc  -nowlf -doawlf -extrema
-                   // FIXME
+    DBUG_RETURN (res);
+}
 
-    /* Propagate extrema */
-    if ((NULL != res) && (NULL != AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))))) {
-        INFO_AVISMIN (arg_info)
-          = SCSrecurseWithExtrema (arg_node, arg_info, PRF_ARG1 (arg_node),
-                                   AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))),
-                                   &SCCFprf_sel);
-    }
+/******************************************************************************
+ *
+ * function:
+ *   node * SelEmptyScalarAxSxS(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Detects:                  z = _idx_sel( 0, scalar);
+ *     and converts it into:   z = scalar;
+ *
+ *****************************************************************************/
+static node *
+SelEmptyScalarAxSxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    pattern *pat;
+    constant *arg1c = NULL;
 
-    if ((NULL != res) && (NULL != AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))))) {
-        INFO_AVISMAX (arg_info)
-          = SCSrecurseWithExtrema (arg_node, arg_info, PRF_ARG1 (arg_node),
-                                   AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))),
-                                   &SCCFprf_sel);
+    DBUG_ENTER ();
+
+    pat = PMconst (1, PMAgetVal (&arg1c));
+    if ((PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG1 (arg_node)))
+        && (COisZero (arg1c, TRUE))
+        && (TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))) {
+        res = DUPdoDupNode (PRF_ARG2 (arg_node));
+        DBUG_PRINT ("Replaced _idx_sel( 0, Scalar) by Scalar");
     }
-#endif // MEMOFLOWBUG
+    arg1c = (NULL != arg1c) ? COfreeConstant (arg1c) : arg1c;
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
@@ -1477,45 +1763,42 @@ SCCFprf_sel (node *arg_node, info *arg_info)
  *
  * description:
  *   Implements idx_sel(arg1, arg2) for structural constants
- *   At present, this mimics only the operation of StructOpSel.
- *
- *   It differs from StructOpSel in that we are indexing into the
- *   ravel of arg2. For that reason, we limit this to operate
- *   on vector arg2 only today, where arg2 is an N_array.
  *
  *****************************************************************************/
 node *
 SCCFprf_idx_sel (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    pattern *pat;
-    constant *con1 = NULL;
-    node *arg2 = NULL;
-    constant *arg2fs = NULL;
-    int xrho;
-    int offset;
 
     DBUG_ENTER ();
 
-    /**
-     *   Match for    _idx_sel( constant, N_array)
-     *   and bind      con1    to constant
-     *                 arg2    to N_array-node
-     *                 arg2fs  to the frameshape of N_array
-     */
-    pat = PMprf (1, PMAisPrf (F_idx_sel), 2, PMconst (1, PMAgetVal (&con1)),
-                 PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
-
-    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
-        xrho = SHgetUnrLen (COgetShape (arg2fs)); /* prod(shape(arg2)) */
-        offset = COconst2Int (con1);
-        arg2fs = COfreeConstant (arg2fs);
-        con1 = COfreeConstant (con1);
-        if ((offset >= 0) && (offset < xrho)) {
-            res = DUPdoDupNode (TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
-        }
+    if (NULL == res) {
+        res = SelEmptyScalarAxSxS (arg_node, arg_info);
     }
-    pat = PMfree (pat);
+
+    if (NULL == res) {
+        res = SelModarrayAxSxS (arg_node, arg_info);
+    }
+
+    if (NULL == res) {
+        res = SelModarrayCase2AxSxS (arg_node, arg_info);
+    }
+
+    if (NULL == res) {
+        res = StructOpSelAxSxS (arg_node, arg_info);
+    }
+
+    int codingneededhere;
+#ifdef FIXMENOW
+    if (NULL == res) {
+        res = SelArrayOfEqualElementsAxSxS (arg_node, arg_info);
+    }
+
+    if (NULL == res) {
+        res = SelProxyArrayAxSxS (arg_node, arg_info);
+    }
+
+#endif // FIXMENOW
 
     DBUG_RETURN (res);
 }
@@ -1652,6 +1935,40 @@ SCCFprf_mask_VxVxS (node *arg_node, info *arg_info)
         ARRAY_AELEMS (res) = z;
     }
     pat = PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SCCFprf_idxs2offset(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Implements _idxs2offset( shp)
+ *   Case 1: This is the degenerate case, when shp is an empty vector.
+ *   Case 2: Indexing a vector
+ *
+ *   FIXME : temp kludge pending TC/CO fixup!
+ *
+ *****************************************************************************/
+node *
+SCCFprf_idxs2offset (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    int n;
+
+    DBUG_ENTER ();
+
+    n = TCcountExprs (PRF_ARGS (arg_node));
+
+    if ((1 == n) && (SCSmatchConstantZero (PRF_ARG1 (arg_node)))) {
+        res = TBmakeNum (0); /* Case 1 */
+    }
+
+    if (2 == n) { /* Case 2 */
+        res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    }
 
     DBUG_RETURN (res);
 }

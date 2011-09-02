@@ -487,6 +487,33 @@ FindPrfParent2 (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool AWLFIfindNoteintersect( node *arg_node)
+ *
+ * @brief: Search for F_noteintersect on sel() statement.
+ *
+ * @param: arg_node - an F_sel_VxA_ N_prf node.
+ *
+ * @result: N_prf node of F_noteintersect, or NULL, if it
+ *          does not exist.
+ *
+ *****************************************************************************/
+node *
+AWLFIfindNoteintersect (node *arg_node)
+{
+    node *z = NULL;
+    pattern *pat;
+
+    DBUG_ENTER ();
+
+    pat = PMprf (2, PMAisPrf (F_noteintersect), PMAgetNode (&z), 0);
+    PMmatchFlat (pat, PRF_ARG1 (arg_node));
+    pat = PMfree (pat);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool AWLFIisHasNoteintersect( node *arg_node)
  *
  * @brief: Predicate for presence of F_noteintersect on sel() statement.
@@ -499,29 +526,25 @@ FindPrfParent2 (node *arg_node, info *arg_info)
 bool
 AWLFIisHasNoteintersect (node *arg_node)
 {
-    node *prf = NULL;
-    pattern *pat;
     bool z;
 
     DBUG_ENTER ();
 
-    pat = PMprf (1, PMAgetNode (&prf), 0);
-    z = (PMmatchFlat (pat, PRF_ARG1 (arg_node))) && (F_noteintersect == PRF_PRF (prf));
-    pat = PMfree (pat);
+    z = (NULL != AWLFIfindNoteintersect (arg_node));
 
     DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn bool isHasValidNoteintersect( node *arg_node, info *arg_info)
+ * @fn bool isValidNoteintersect()
  *
  * @brief: Predicate for presence of valid F_noteintersect on sel() statement.
  *
- * @param: arg_node - an F_sel_VxA_ N_prf node.
+ * @param: arg_node - an F_noteintersect N_prf node.
  *
- * @result: TRUE if  arg_node has a valid F_noteintersect associated with it.
- *          By "valid", we mean that the PWL and the F_noteintersect
+ * @result: TRUE if arg_node is a valid F_noteintersect.
+ *          By "valid", we SHOULD mean that the PWL and the F_noteintersect
  *          have identical bounds and identical PWL partition counts.
  *          A mismatch can arise when we have a code sequence such as:
  *
@@ -533,31 +556,26 @@ AWLFIisHasNoteintersect (node *arg_node)
  *          This invalidates the F_noteintersect previously generated
  *          within C.
  *
- *          For now, we merely check that the partition count for
+ *          However, for now, we merely check that the partition count for
  *          B (the PWL) matches the partition count for the F_noteintersect
  *          for C (the CWL).
  *
  *****************************************************************************/
 static bool
-isHasValidNoteintersect (node *arg_node, info *arg_info)
+isValidNoteintersect (node *arg_node, node *pwl)
 {
-    node *prf = NULL;
-    pattern *pat;
     bool z;
     int nexprs;
     int npart;
 
     DBUG_ENTER ();
 
-    pat = PMprf (1, PMAgetNode (&prf), 0);
-    z = (PMmatchFlat (pat, PRF_ARG1 (arg_node))) && (F_noteintersect == PRF_PRF (prf));
+    z = (NULL != pwl) && (N_prf == NODE_TYPE (arg_node));
     if (z) {
-        nexprs = (TCcountExprs (PRF_ARGS (prf)) - 1) / WLEPP;
-        npart = TCcountParts (WITH_PART (INFO_PRODUCERWL (arg_info)));
+        nexprs = (TCcountExprs (PRF_ARGS (arg_node)) - WLFIRST) / WLEPP;
+        npart = TCcountParts (WITH_PART (pwl));
         z = (nexprs == npart);
     }
-
-    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
@@ -568,30 +586,21 @@ isHasValidNoteintersect (node *arg_node, info *arg_info)
  *
  * @brief:
  *
- * @param: arg_node - an F_sel_VxA_ N_prf node.
+ * @param: arg_node - an F_noteintersect
  *
- * @result:  same F_sel op, but with PRF_ARG1 replaced.
- *           We also delete all but the first PRF_ARG of the
- *           F_noteintersect, to keep from confusing CUBSL.
+ * @result: PRF_ARG1.
  *
  *****************************************************************************/
 static node *
 detachNoteintersect (node *arg_node)
 {
-    node *prf = NULL;
-    pattern *pat;
+    node *z;
 
     DBUG_ENTER ();
 
-    pat = PMprf (1, PMAgetNode (&prf), 0);
-    if ((PMmatchFlat (pat, PRF_ARG1 (arg_node))) && (F_noteintersect == PRF_PRF (prf))) {
-        FREEdoFreeNode (PRF_ARG1 (arg_node));
-        PRF_ARG1 (arg_node) = DUPdoDupNode (PRF_ARG1 (prf));
-        prf = PRF_ARGS (prf);
-        FREEdoFreeTree (EXPRS_NEXT (prf));
-        EXPRS_NEXT (prf) = NULL;
-    }
-    pat = PMfree (pat);
+    z = DUPdoDupNode (PRF_ARG1 (arg_node));
+    arg_node = FREEdoFreeTree (arg_node);
+    arg_node = z;
 
     DBUG_RETURN (arg_node);
 }
@@ -1279,8 +1288,6 @@ FindNarray (node *arg_node, info *arg_info)
  *        the consumerWL's partition bounds.
  *
  * @params: arg_node, arg_info.
- *          ivavis is either the iv from _sel_VxA_( iv, pwl)
- *          or the rebuilt iv from _idx_sel( offset, pwl).
  *
  * @result: Updated F_noteintersect node.
  *
@@ -1305,7 +1312,7 @@ MatchExpr (node *arg, node *expr)
 }
 
 static node *
-BuildInverseProjections (node *arg_node, info *arg_info, node *ivavis)
+BuildInverseProjections (node *arg_node, info *arg_info)
 {
     node *zlb = NULL;
     node *zub = NULL;
@@ -1333,12 +1340,15 @@ BuildInverseProjections (node *arg_node, info *arg_info, node *ivavis)
 
     DBUG_ENTER ();
 
-    numpart = (TCcountExprs (PRF_ARGS (arg_node)) / WLEPP);
+    numpart = (TCcountExprs (PRF_ARGS (arg_node)) - WLFIRST) / WLEPP;
     pat1 = PMarray (1, PMAgetNode (&arrlb), 1, PMskip (0));
     pat2 = PMarray (1, PMAgetNode (&arrub), 1, PMskip (0));
+
     pat3 = PMarray (1, PMAgetNode (&arriv), 1, PMskip (0));
 
-    ivid = TBmakeId (ivavis);
+    /* ivid is either iv from sel(iv, PWL) or rebuilt value of same */
+    ivid = TCgetNthExprsExpr (WLIVAVIS, PRF_ARGS (arg_node));
+
     if (PMmatchFlat (pat3, ivid)) {
 
         /* Iterate across intersects */
@@ -1411,14 +1421,13 @@ BuildInverseProjections (node *arg_node, info *arg_info, node *ivavis)
             zeu = NULL;
         }
     } else {
-        DBUG_ASSERT (FALSE, "Could not find N_array for ivavis %s",
+        DBUG_ASSERT (FALSE, "Could not find N_array for %s",
                      AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
     }
 
     DBUG_PRINT ("Done b inverse projection for %s",
                 AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
 
-    ivid = FREEdoFreeNode (ivid);
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
@@ -1428,7 +1437,7 @@ BuildInverseProjections (node *arg_node, info *arg_info, node *ivavis)
 
 /** <!--********************************************************************-->
  *
- * @fn node *AWLFIgetWlWith( node *arg_node)
+ * @fn node *AWLFIfindWL( node *arg_node)
  *
  * @brief Given an N_id, return its N_with node, or NULL, if arg_node
  *        was not created by a WL.
@@ -1440,7 +1449,7 @@ BuildInverseProjections (node *arg_node, info *arg_info, node *ivavis)
  *
  *****************************************************************************/
 node *
-AWLFIgetWlWith (node *arg_node)
+AWLFIfindWL (node *arg_node)
 {
     node *wl = NULL;
     node *z = NULL;
@@ -1488,7 +1497,7 @@ AWLFIfindWlId (node *arg_node)
     if (N_id == NODE_TYPE (arg_node)) {
         pat = PMvar (1, PMAgetNode (&wlid), 0);
         if (PMmatchFlatSkipGuards (pat, arg_node)) {
-            wl = AWLFIgetWlWith (wlid);
+            wl = AWLFIfindWL (wlid);
             if (NULL != wl) {
                 DBUG_PRINT ("Found WL:%s: WITH_REFERENCED_FOLD=%d",
                             AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (wl));
@@ -1823,22 +1832,8 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
                 EXPRS_EXPR (maxex) = minel;
             }
 
-#ifdef DEADCODE // Must leave avismax denormalized for BuildInverseProjection
-            /* Denormalize AVIS_MAX */
-            maxel = EXPRS_EXPR (maxex);
-            maxel = IVEXPadjustExtremaBound (ID_AVIS (maxel), 1, &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGNS (arg_info), "ibb1");
-            FREEdoFreeNode (EXPRS_EXPR (maxex));
-            EXPRS_EXPR (maxex) = TBmakeId (maxel);
-#endif // DEADCODE // Must leave avismax denormalized for BuildInverseProjection
-
             minex = EXPRS_NEXT (minex);
             maxex = EXPRS_NEXT (maxex);
-#ifdef DEADCODE // Must leave avismax denormalized for BuildInverseProjection
-            /* We have to move avismax after the normalization computation. */
-            INFO_PREASSIGNS (arg_info)
-              = TUmoveAssign (avismax, INFO_PREASSIGNS (arg_info));
-#endif // DEADCODE // Must leave avismax denormalized for BuildInverseProjection
         }
 
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (avismin), NULL));
@@ -1856,11 +1851,6 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 
         pwlp = PART_NEXT (pwlp);
     }
-#ifdef FIXME // THis is probably garbage */
-    if (INFO_NOFINVERSE (arg_info)) {
-        DBUG_ASSERT (FALSE, "Bobbo has to write nullifier");
-    }
-#endif // FIXME // THis is probably garbage */
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
@@ -2028,7 +2018,7 @@ AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *pwlpart
  *
  * @fn node *attachIntersectCalc( node *arg_node, info *arg_info, node *ivprime)
  *
- * @brief  We are looking at the N_prf for:
+ * @brief  We are looking at the _sel_VxA_ N_prf for:
  *
  *            iv = [ i, j, k];
  *            z = _sel_VxA_( iv, producerWL);
@@ -2045,6 +2035,12 @@ AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *pwlpart
  *         If so, we are in a position to compute the intersection
  *         between iv's index set and that of the producerWL
  *         partitions.
+ *
+ *         We end up with:
+ *
+ *            iv = [ i, j, k];
+ *            iv' = _noteintersect( iv, blah....);
+ *            z = _sel_VxA_( iv', producerWL);
  *
  *         We create new iv'/offset' from idx, to hold the result
  *         of the intersect computations that we build here.
@@ -2080,8 +2076,16 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivprimeavis)
     }
 
     if (NULL != intersectcalc) {
+        /* WLARGNODE */
         args = TBmakeExprs (TBmakeId (ID_AVIS (PRF_ARG1 (arg_node))), NULL);
-        args = TCappendExprs (args, intersectcalc); /* WLINTERSECT1/2 */
+        /* WLPRODUCERWL */
+        args = TCappendExprs (args, TBmakeExprs (TBmakeId (ID_AVIS (
+                                                   INFO_PRODUCERWLLHS (arg_info))),
+                                                 NULL));
+        /* WLIVAVIS */
+        args = TCappendExprs (args, TBmakeExprs (TBmakeId (ivprimeavis), NULL));
+        /* WLINTERSECT1/2 */
+        args = TCappendExprs (args, intersectcalc);
 
         ztype = AVIS_TYPE (INFO_CONSUMERWLLHS (arg_info));
         ivshape = SHgetUnrLen (TYgetShape (ztype));
@@ -2533,7 +2537,7 @@ AWLFIid (node *arg_node, info *arg_info)
  * @fn node *AWLFIprf( node *arg_node, info *arg_info)
  *
  * @brief
- *   Examine all _sel_VxA_(idx, producerWL) primitives to see if
+ *   Examine a _sel_VxA_(idx, producerWL) primitive to see if
  *   we may be able to fold producerWL here, assuming that
  *   the _sel_ is within a potential consumerWL.
  *
@@ -2557,53 +2561,54 @@ AWLFIprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if ((INFO_CONSUMERWLPART (arg_info) != NULL)
-        && ((PRF_PRF (arg_node) == F_sel_VxA) || ((PRF_PRF (arg_node) == F_idx_sel)))
-        && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)) {
+    if ((NULL != INFO_CONSUMERWLPART (arg_info))) {
+        switch (PRF_PRF (arg_node)) {
+        default:
+            break;
 
-        INFO_PRODUCERWLLHS (arg_info) = AWLFIfindWlId (PRF_ARG2 (arg_node));
-        INFO_PRODUCERWL (arg_info) = AWLFIgetWlWith (INFO_PRODUCERWLLHS (arg_info));
+        case F_sel_VxA:
+        case F_idx_sel:
+            INFO_PRODUCERWLLHS (arg_info) = AWLFIfindWlId (PRF_ARG2 (arg_node));
+            INFO_PRODUCERWL (arg_info) = AWLFIfindWL (INFO_PRODUCERWLLHS (arg_info));
+            INFO_PRODUCERWLFOLDABLE (arg_info)
+              = checkConsumerWLFoldable (arg_node, arg_info)
+                && checkProducerWLFoldable (arg_node, arg_info)
+                && checkBothFoldable (arg_node, arg_info);
 
-        if (NULL != INFO_PRODUCERWL (arg_info)) {
-            ivavis = AWLFIoffset2Iv (PRF_ARG1 (arg_node), &INFO_VARDECS (arg_info),
-                                     &INFO_PREASSIGNS (arg_info),
-                                     WITH_PART (INFO_PRODUCERWL (arg_info)));
-        }
+            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
-        INFO_PRODUCERWLFOLDABLE (arg_info)
-          = checkConsumerWLFoldable (arg_node, arg_info)
-            && checkProducerWLFoldable (arg_node, arg_info)
-            && checkBothFoldable (arg_node, arg_info);
-
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-
-        /* Maybe detach invalid intersect calculations now. */
-        if ((INFO_PRODUCERWLFOLDABLE (arg_info)) && (AWLFIisHasNoteintersect (arg_node))
-            && (!isHasValidNoteintersect (arg_node, arg_info))) {
-            arg_node = detachNoteintersect (arg_node);
-        }
-
-        /* Maybe attach intersect calculations now. */
-        if ((INFO_PRODUCERWLFOLDABLE (arg_info)) && (isAvisHasBothExtrema (ivavis))
-            && (!AWLFIisHasNoteintersect (arg_node))) {
-            z = attachIntersectCalc (arg_node, arg_info, ivavis);
-            if (z != ID_AVIS (PRF_ARG1 (arg_node))) {
-                FREEdoFreeNode (PRF_ARG1 (arg_node));
-                PRF_ARG1 (arg_node) = TBmakeId (z);
-                DBUG_PRINT ("AWLFIprf inserted F_noteintersect into cwl=%s at _sel_VxA_",
-                            AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
+            if (NULL != INFO_PRODUCERWL (arg_info)) {
+                ivavis = AWLFIoffset2Iv (PRF_ARG1 (arg_node), &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGNS (arg_info),
+                                         WITH_PART (INFO_PRODUCERWL (arg_info)));
             }
-        }
-    }
 
-    /* Project partitionIntersectMin/Max data back from PWL to CWL */
-    if ((AWLFIisHasNoteintersect (arg_node))
-        && (!isHasValidNoteintersect (arg_node, arg_info))
-        && (NULL != INFO_PRODUCERWL (arg_info))) {
-        ivavis = AWLFIoffset2Iv (PRF_ARG1 (arg_node), &INFO_VARDECS (arg_info),
-                                 &INFO_PREASSIGNS (arg_info),
-                                 WITH_PART (INFO_PRODUCERWL (arg_info)));
-        arg_node = BuildInverseProjections (arg_node, arg_info, ivavis);
+            /* Maybe attach intersect calculations now. */
+            if ((INFO_PRODUCERWLFOLDABLE (arg_info)) && (isAvisHasBothExtrema (ivavis))
+                && (!AWLFIisHasNoteintersect (arg_node))) {
+                z = attachIntersectCalc (arg_node, arg_info, ivavis);
+                if (z != ID_AVIS (PRF_ARG1 (arg_node))) {
+                    FREEdoFreeNode (PRF_ARG1 (arg_node));
+                    PRF_ARG1 (arg_node) = TBmakeId (z);
+                    DBUG_PRINT ("Inserted F_noteintersect into cwl=%s for sel/idx_sel",
+                                AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
+                }
+            }
+            break;
+
+        case F_noteintersect:
+            /* Maybe detach invalid intersect calculations now. */
+            if (!isValidNoteintersect (arg_node, INFO_PRODUCERWL (arg_info))) {
+                arg_node = detachNoteintersect (arg_node);
+                /* arg_node no longer N_prf! */
+            }
+
+            /* Maybe project partitionIntersectMin/Max back from PWL to CWL */
+            if (isValidNoteintersect (arg_node, INFO_PRODUCERWL (arg_info))) {
+                arg_node = BuildInverseProjections (arg_node, arg_info);
+            }
+            break;
+        }
     }
 
     DBUG_RETURN (arg_node);

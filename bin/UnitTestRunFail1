@@ -25,9 +25,7 @@ rm -f a.out a.out.c
 sac2c -v0 -O3 $1  &> /dev/null
 z=$?
 
-if [ $grepstr -eq $z ]; then 
-  echo FailTest: $1 OK; 
-else 
+if [ $grepstr -ne $z ]; then 
   echo FailTest: $1 failed. sac2c exit code: expected=$grepstr, received=$z
 fi
 rm -f a.out a.out.c

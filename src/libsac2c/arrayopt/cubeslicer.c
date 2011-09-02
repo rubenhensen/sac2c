@@ -458,8 +458,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     /* NB. We assume noteintersect immediately precedes idx ! */
     noteint = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (idx))));
     DBUG_ASSERT (F_noteintersect == PRF_PRF (noteint), "Expected F_noteintersect");
-    intersectListLim = TCcountExprs (PRF_ARGS (noteint));
-    intersectListLim = (intersectListLim - 1) / WLEPP;
+    intersectListLim = (TCcountExprs (PRF_ARGS (noteint)) - WLFIRST) / WLEPP;
     pat = PMarray (1, PMAgetNode (&bnd), 1, PMskip (0));
     consumerWLGenerator = PART_GENERATOR (cwlp);
     if (NULL != arg_info) { /* Different callers! */
@@ -1182,7 +1181,7 @@ CUBSLprf (node *arg_node, info *arg_info)
         DBUG_PRINT ("Looking at %s =_sel_VxA_( iv, X)",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
         producerWL = AWLFIfindWlId (PRF_ARG2 (arg_node));
-        producerWL = AWLFIgetWlWith (producerWL);
+        producerWL = AWLFIfindWL (producerWL);
 
         /* producerWL may be entirely gone now, perhaps
          * due to it being copyWL, etc.

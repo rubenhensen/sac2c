@@ -2,9 +2,9 @@
 
 # Run all unit tests, and check results.
 
-for i in *.sac;
+for i in CF*.sac SAACF*.sac SCCF*.sac SCS*.sac;
 do
- RunGrep1 $i
+ UnitTestRunGrep1 $i
 done;
  rm -f crudd* crudn*
 

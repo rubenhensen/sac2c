@@ -10,7 +10,7 @@
  *
  *  Adding this case would be a good thing. At present, WLSIMP
  *  does it, but it really belongs here, according to the
- *  wisdom of the ages.
+ *  wisdom of the ages (aka Bodo).
  */
 
 #include <stdio.h>
@@ -686,8 +686,8 @@ CountElements (node *genn)
  *
  * description:
  *   Checks if this modarray-WL can be unrolled.
- *   Multiple N_Npart nodes, which are not the identity of the base array,
- *   may be unrolled simultaneously. These N_Npart nodes are marked in
+ *   Multiple N_part nodes, which are not the identity of the base array,
+ *   may be unrolled simultaneously. These N_part nodes are marked in
  *   NPART_COPY
  *
  ******************************************************************************/
@@ -721,7 +721,7 @@ CheckUnrollModarray (node *wln, node *lhs, info *arg_info)
          *
          * B = new_with
          *       ([ 0 ] <= __flat_1_iv=[__flat_0_i] < [ 3 ]) {
-         *         __wlt_4 = sel( __flat_1_iv, A );
+         *         __wlt_4 = _sel_VxA_( __flat_1_iv, A );
          *       } : __wlt_4,
          *       ...more parts...
          *     modarray( A);

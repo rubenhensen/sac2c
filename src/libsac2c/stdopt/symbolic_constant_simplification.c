@@ -296,13 +296,13 @@ SCSmakeTrue (node *prfarg)
 
 /** <!--********************************************************************-->
  *
- * @fn bool MatchConstantZero( node *prfarg)
+ * @fn bool SCSmatchConstantZero( node *prfarg)
  * Predicate for PRF_ARG being a constant zero of any rank or type.
  * E.g., 0 or  [0,0] or  genarray([2,3], 0)
  *
  *****************************************************************************/
-static bool
-MatchConstantZero (node *prfarg)
+bool
+SCSmatchConstantZero (node *arg_node)
 {
     constant *argconst = NULL;
     pattern *pat;
@@ -311,7 +311,7 @@ MatchConstantZero (node *prfarg)
     DBUG_ENTER ();
 
     pat = PMconst (1, PMAgetVal (&argconst));
-    if (PMmatchFlatSkipExtremaAndGuards (pat, prfarg)) {
+    if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
         res = COisZero (argconst, TRUE);
         argconst = COfreeConstant (argconst);
     }
@@ -478,10 +478,10 @@ SCSprf_add_SxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (MatchConstantZero (PRF_ARG1 (arg_node))) {
+    if (SCSmatchConstantZero (PRF_ARG1 (arg_node))) {
         /*  Case 2: 0 + X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
-    } else if (MatchConstantZero (PRF_ARG2 (arg_node))) {
+    } else if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) {
         /*  Case 1: X + 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     } else if (MatchNegS (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node))
@@ -512,14 +512,14 @@ SCSprf_add_SxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 + X */
+    if (SCSmatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 + X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
         DBUG_PRINT ("SCSprf_add_SxV replaced 0 + VEC by VEC");
     } else {
         /* SCALAR + [0,0,..., 0] */
         pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
-        if (MatchConstantZero (PRF_ARG2 (arg_node))
+        if (SCSmatchConstantZero (PRF_ARG2 (arg_node))
             && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
 
             res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
@@ -553,10 +553,10 @@ SCSprf_add_VxV (node *arg_node, info *arg_info)
         res = SCSmakeZero (PRF_ARG1 (arg_node));
         DBUG_PRINT ("SCSprf_add_VxV generated zero vector");
     } else {
-        if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X + 0 */
+        if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X + 0 */
             res = DUPdoDupNode (PRF_ARG1 (arg_node));
         } else {
-            if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 + X */
+            if (SCSmatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 + X */
                 res = DUPdoDupNode (PRF_ARG2 (arg_node));
             }
         }
@@ -582,14 +582,14 @@ SCSprf_add_VxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X + 0 */
+    if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X + 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
         DBUG_PRINT ("SCSprf_add_VxS replaced VEC + 0 by VEC");
     } else {
         /* [0,0,..., 0] + X */
         pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
-        if (MatchConstantZero (PRF_ARG1 (arg_node))
+        if (SCSmatchConstantZero (PRF_ARG1 (arg_node))
             && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG1 (arg_node))) {
 
             res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
@@ -622,7 +622,7 @@ SCSprf_sub_SxV (node *arg_node, info *arg_info)
 
     pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
-    if (MatchConstantZero (PRF_ARG2 (arg_node))
+    if (SCSmatchConstantZero (PRF_ARG2 (arg_node))
         && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
 
         res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
@@ -649,7 +649,7 @@ SCSprf_sub (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
+    if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     } else if (MatchPrfargs (arg_node)) { /* X - X */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
@@ -672,7 +672,7 @@ SCSprf_sub_VxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
+    if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     } else if (MatchPrfargs (arg_node)) { /* X - X */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
@@ -702,10 +702,10 @@ SCSprf_mul_SxS (node *arg_node, info *arg_info)
     } else if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 * X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
 
-    } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X * 0 */
+    } else if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X * 0 */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
 
-    } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 * X */
+    } else if (SCSmatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 * X */
         res = SCSmakeZero (PRF_ARG2 (arg_node));
     }
     DBUG_RETURN (res);
@@ -732,11 +732,11 @@ SCSprf_mul_SxV (node *arg_node, info *arg_info)
     /* Scalar constant cases */
     if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 * X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
-    } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 * X */
+    } else if (SCSmatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 * X */
         res = SCSmakeZero (PRF_ARG2 (arg_node));
 
         /* Vector constant cases */
-    } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /*  S * [0,0,...0] */
+    } else if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /*  S * [0,0,...0] */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
         DBUG_PRINT ("SCSprf_mul_SxV replaced  S* [0,0...,0] by [0,0,...0]");
 
@@ -773,12 +773,12 @@ SCSprf_mul_VxS (node *arg_node, info *arg_info)
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
         DBUG_PRINT ("SCSprf_mul_VxS replaced  V * 1 by V");
 
-    } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X * 0 */
+    } else if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X * 0 */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
         DBUG_PRINT ("SCSprf_mul_VxS replaced  V * 0 by [0,0,...0]");
 
         /* Vector constant cases */
-    } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* [0,0,...0] * S */
+    } else if (SCSmatchConstantZero (PRF_ARG1 (arg_node))) { /* [0,0,...0] * S */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
         DBUG_PRINT ("SCSprf_mul_VxS replaced [0,0...,0] * S by [0,0,...0]");
 
@@ -811,9 +811,9 @@ SCSprf_mul_VxV (node *arg_node, info *arg_info)
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     } else if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 * X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
-    } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X * 0 */
+    } else if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X * 0 */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
-    } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 * X */
+    } else if (SCSmatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 * X */
         res = SCSmakeZero (PRF_ARG2 (arg_node));
     }
 
@@ -844,7 +844,7 @@ SCSprf_div_SxX (node *arg_node, info *arg_info)
 
     pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
 
-    if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* S / 0 */
+    if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* S / 0 */
         CTIabortLine (NODE_LINE (arg_node),
                       "SCSprf_div_SxX: Division by zero encountered");
 
@@ -899,7 +899,7 @@ SCSprf_div_XxS (node *arg_node, info *arg_info)
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X / 1 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
 
-    } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X / 0 */
+    } else if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X / 0 */
         CTIabortLine (NODE_LINE (arg_node),
                       "SCSprf_div_XxS: Division by zero encountered");
     }
@@ -944,10 +944,10 @@ SCSprf_or_SxS (node *arg_node, info *arg_info)
     } else if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 | X */
         res = SCSmakeTrue (PRF_ARG2 (arg_node));
 
-    } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X | 0 */
+    } else if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X | 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
 
-    } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 | X */
+    } else if (SCSmatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 | X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
 
         /* S | S */
@@ -973,7 +973,7 @@ SCSprf_or_SxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 | X */
         res = SCSmakeTrue (PRF_ARG2 (arg_node));
-    } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 | X */
+    } else if (SCSmatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 | X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     }
 
@@ -995,7 +995,7 @@ SCSprf_or_VxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X | 1 */
         res = SCSmakeTrue (PRF_ARG1 (arg_node));
-    } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X | 0 */
+    } else if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X | 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -1043,10 +1043,10 @@ SCSprf_and_SxS (node *arg_node, info *arg_info)
     } else if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 & X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
 
-    } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X & 0 */
+    } else if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X & 0 */
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
 
-    } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
+    } else if (SCSmatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
         res = SCSmakeFalse (PRF_ARG2 (arg_node));
 
     } else if (MatchPrfargs (arg_node)) { /* X & X */
@@ -1071,7 +1071,7 @@ SCSprf_and_SxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     if (MatchConstantOne (PRF_ARG1 (arg_node))) { /* 1 & X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
-    } else if (MatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
+    } else if (SCSmatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
         res = SCSmakeFalse (PRF_ARG2 (arg_node));
     }
 
@@ -1093,7 +1093,7 @@ SCSprf_and_VxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     if (MatchConstantOne (PRF_ARG2 (arg_node))) { /* X & 1 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
-    } else if (MatchConstantZero (PRF_ARG2 (arg_node))) { /* X & 0 */
+    } else if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X & 0 */
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
     }
 
@@ -1131,7 +1131,7 @@ SCSprf_mod (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (MatchConstantZero (PRF_ARG2 (arg_node))) {
+    if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) {
         CTIabortLine (NODE_LINE (PRF_ARG2 (arg_node)), "mod(X,0) encountered.");
     }
 

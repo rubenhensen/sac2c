@@ -15,7 +15,7 @@
  *****************************************************************************/
 extern node *AWLFIdoAlgebraicWithLoopFolding (node *arg_node);
 extern bool AWLFIisSingleOpWL (node *arg_node);
-extern node *AWLFIgetWlWith (node *arg_node);
+extern node *AWLFIfindWL (node *arg_node);
 extern node *AWLFIfindWlId (node *arg_node);
 extern bool AWLFIisHasNoteintersect (node *arg_node);
 extern bool AWLFIisIdsMemberPartition (node *arg_node, node *partn);
@@ -46,21 +46,26 @@ extern node *AWLFIavis (node *arg_node, info *arg_info);
  *                                inverseprojectionlo,
  *                                inverseprojectionhi */
 #define WLEPP (7)
-#define WLBOUND1ORIGINAL(partno) (1 + 0 + (WLEPP * partno))
-#define WLBOUND2ORIGINAL(partno) (1 + 1 + (WLEPP * partno))
-#define WLINTERSECTION1(partno) (1 + 2 + (WLEPP * partno))
-#define WLINTERSECTION2(partno) (1 + 3 + (WLEPP * partno))
+#define WLARGNODE (0)
+#define WLPRODUCERWL (1)
+#define WLIVAVIS (2)
+#define WLFIRST (3)
+#define WLBOUND1ORIGINAL(partno) (WLFIRST + 0 + (WLEPP * partno))
+#define WLBOUND2ORIGINAL(partno) (WLFIRST + 1 + (WLEPP * partno))
+#define WLINTERSECTION1(partno) (WLFIRST + 2 + (WLEPP * partno))
+#define WLINTERSECTION2(partno) (WLFIRST + 3 + (WLEPP * partno))
 /*
  * With one exception, these fields are normalized, i.e.,
  * the same as GENERATOR_BOUND1 and GENERATOR_BOUND2.
  *
  * WLINTERSECTION2 is denormalized, because if BuildInversePartition
- * denormalized it, that code would end up in CWL block, which
- * is a no-no.
+ * denormalized it, that denormalization
+ * code would end up in the CWL block, when it must appear
+ * before that block.
  */
-#define WLINTERSECTIONNULL(partno) (1 + 4 + (WLEPP * partno))
-#define WLPROJECTION1(partno) (1 + 5 + (WLEPP * partno))
-#define WLPROJECTION2(partno) (1 + 6 + (WLEPP * partno))
+#define WLINTERSECTIONNULL(partno) (WLFIRST + 4 + (WLEPP * partno))
+#define WLPROJECTION1(partno) (WLFIRST + 5 + (WLEPP * partno))
+#define WLPROJECTION2(partno) (WLFIRST + 6 + (WLEPP * partno))
 #define WLLB 0 /* Lower bound */
 #define WLUB 1 /* Upper bound */
 

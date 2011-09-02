@@ -469,7 +469,7 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
     producerWL = AWLFIfindWlId (PRF_ARG2 (arg_node)); /* Now the N_id */
     if (NULL != producerWL) {
         producerWLavis = ID_AVIS (producerWL);
-        producerWL = AWLFIgetWlWith (producerWL); /* Now the N_with */
+        producerWL = AWLFIfindWL (producerWL); /* Now the N_with */
         if (((AVIS_DEFDEPTH (producerWLavis) + 1) == level)
             && (AWLFIisSingleOpWL (producerWL))) {
             DBUG_PRINT ("producerWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
