@@ -2,6 +2,6 @@
 
 # Run all tests to ensure correct results.
 
-for i in CF*.sac SAACF*.sac SCCF*.sac SCS*.sac; do
+for i in *.sac; do
         UnitTestRunWorks1 $i
 done
