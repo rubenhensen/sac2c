@@ -1,0 +1,26 @@
+#!/usr/bin/perl
+# ExtractFunction fnname:  ignore input lines until we see 
+# fnname argument $1, e.g.:
+#
+#    ExtractFunction _MAIN::main
+#
+# then print the contents of that function.
+#
+  $beg = 0;
+  $end = 0;
+
+  $str = "^ \\* " . $ARGV[0] . ".*body.*";
+  while (<STDIN>) {
+    my $line = $_;
+    $b = ( $line =~ m/$str/);
+    $beg = $beg + $b;
+    if(( $beg > 0) && ( $end < 2)) { 
+      if( $end == 0) { 
+        print $line;
+      }
+      if( $line =~ m/^\}/) {
+        $end = $end + 1;
+      }
+    }
+  }
+
