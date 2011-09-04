@@ -130,6 +130,15 @@ OPTIMIZE ("slpt", slpt, FALSE, FALSE, "CUDA split partition")
 OPTIMIZE ("cts", cts, TRUE, TRUE, "converting comparisons into subtractions")
 OPTIMIZE ("ucts", ucts, TRUE, TRUE, "eliminating subtractions in comparisons")
 
+/* OPTIMIZE entries after this point are intended for
+ * developer use only.
+ */
+OPTIMIZE ("ewlcf", ewlcf, TRUE, TRUE, "enhancing with-loop CF")
+
+/*
+ * End of developer-use-only OPTIMIZE entries.
+ */
+
 OPTCOUNTER (dead_expr, FALSE, "dead assignment(s) removed")
 OPTCOUNTER (dead_var, FALSE, "dead variable declaration(s) removed")
 OPTCOUNTER (dead_fun, FALSE, "dead function(s) removed")

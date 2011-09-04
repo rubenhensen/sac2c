@@ -265,7 +265,8 @@ SUBPHASE (accu, "Introducing explicit accumulators", EAdoExplicitAccumulate, ALW
 
 SUBPHASE (adp, "Adding default partitions", WLDPdoWlDefaultPartition, ALWAYS, ewl)
 
-SUBPHASE (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf, ewl)
+SUBPHASE (cf, "Applying constant folding", CFdoConstantFolding,
+          global.optimize.docf &&global.optimize.doewlcf, ewl)
 
 SUBPHASE (cse, "Applying common subexpression elimination",
           CSEdoCommonSubexpressionElimination, global.optimize.docse, ewl)
