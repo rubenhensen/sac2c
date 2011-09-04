@@ -12,14 +12,12 @@
  * This traversal eliminates with-loops that do nothing more
  * than copy some array, in toto.
  *
- * The checks in function XXX ensure that, in _sel_VxA_( IV, A),
+ * The code ensures that, in _sel_VxA_( IV, A),
  * that IV matches the iv in the WL generator. I.e., there are
  * no offsets, nor transpositions, etc, happening, merely a
  * straight element-by-element copy.
  *
  * WLs matching the above criteria are replaced by A = B, e.g.:
- *
- * Case 1:
  *
  * B = with {
  *       (.<=iv<=.) : A[iv];
@@ -29,87 +27,8 @@
  *
  * B = A;
  *
- * Case 2: ( NOT IMPLEMENTED YET!)
- *
- * In the presence of guards, things get a bit messier, due to
- * the unrolling of guard expressions. We start with something
- * along these lines:
- *
- * ub = shape( A);  NB.   ish
- * lb = 0 * ub;
- *
- * B = with {
- *       (lb <=iv=[i]<= ub) {
- *       imin =    _noteminval( i, lb);
- *       iminmax = _notemaxval( imin, ub);
- *       i',   p0 = _non_neg_val_S( iminmax);
- *       i'',  p1 = _val_lt_val_SxS_( i', ub0);
- *       iv''' = [ i''];
- *       tmp = A[iv'''];
- *       tmp2 = _afterguard_( t, p0, p1);
- *       } : tmp2;
- *     } : genarray( shape(A), n );
- *
- *
- * This should be transformed into:
- *
- * ub = shape( A);  NB.   ish
- * ub0 = ub[0];
- * lb = 0 * ub;
- * lb0 = lb[0];
- * lb0, p0 = _non_neg_val_S_( lb0);
- * ub1, p1 = _val_lt_val_SxS_( ub0, ub0);   NB. PRF_ARG2 validity
- * B = _afterguard( A, p0, p1);
- *
- * Case 3: Like Case 2, but operating on IV, rather than on [i].
- *    NOT IMPLEMENTED YET.
- *
- * Case 4:
- *
- *  This is Case 2 when CF has been able to remove the guards,
- *  we start with:
- *
- * ub = shape( A);
- * lb = 0 * ub;
- * ub0 = ub[0];
- * lb0 = lb[0];
- *
- * B = with {
- *       (lb <=iv=[i]<= ub) {
- *       imin =    _noteminval( i, lb0);
- *       iminmax = _notemaxval( imin, ub0);
- *       iv''' = [ iminmax];
- *       tmp = A[iv'''];
- *       } : tmp;
- *     } : genarray( shape(A), n );
- *
- * This should be transformed into:
- *
- * B = A;
- *
- * Case 5: This is Case 4, but operating on IV, rathern than on [i].
- *    NOT IMPLEMENTED YET.
- *
- * Case 6: This is brought about by the redesign of prfunr to handle
- *         _shape_A_( mat). It previously generated an
- *         array of  _idx_shape_sel() ops:
- *
- *            s0 = idx_shape_sel( 0, M);
- *            s1 = idx_shape_sel( 1, M);
- *            s2 = idx_shape_sel( 2, M);
- *            avisshape = [ s0, s1, s2];
- *
- *         This approach led to performance problems because M
- *         would always be materialized, even if it was no longer
- *         used. The new prfunr code avoids this, and operates
- *         on the shape vector only, in the hope that SAA and
- *         friends will share that shape information:
- *
- *            shp = _shape_A_( M);
- *            s0 = _sel_VxA_( 0, shp);
- *            s1 = _sel_VxA_( 1, shp);
- *            s2 = _sel_VxA_( 2, shp);
- *            avisshape = [ s0, s1, s2];
+ * There are several cases, depending various factors such as
+ * SAACYC vs. CYC, producer-WL as LACFUN parameter, etc.
  *
  * Implementation issues:
  * -----------------------
@@ -126,6 +45,9 @@
  *
  * To detect these cases, we use the DFMs and mark all LHS defined BEFORE
  * entering the WL as such.
+ *
+ * NB: There should a better way to do this than using DFMs, but I'm
+ *     busy...
  *
  * @ingroup opt
  *
@@ -160,6 +82,7 @@
 #include "constants.h"
 #include "shape.h"
 #include "type_utils.h"
+#include "indexvectorutils.h"
 
 /** <!--********************************************************************-->
  *
@@ -171,7 +94,7 @@
 struct INFO {
     node *lhs;
     node *fundef;
-    node *rhsavis;
+    node *pwlavis;
     node *withid;
     bool valid;
     dfmask_t *dfm;
@@ -182,7 +105,7 @@ struct INFO {
 /* The right hand side of the N_let, or the array we copy from, respectively */
 #define INFO_FUNDEF(n) (n->fundef)
 /* The function currently being traversed. This is here to ease debugging */
-#define INFO_RHSAVIS(n) (n->rhsavis)
+#define INFO_PWLAVIS(n) (n->pwlavis)
 /* This is the selection-vector inside our with-loop */
 #define INFO_WITHID(n) (n->withid)
 /* Do we (still) have a valid case of cwle? */
@@ -203,7 +126,7 @@ MakeInfo ()
     INFO_VALID (result) = FALSE;
     INFO_LHS (result) = NULL;
     INFO_FUNDEF (result) = NULL;
-    INFO_RHSAVIS (result) = NULL;
+    INFO_PWLAVIS (result) = NULL;
     INFO_WITHID (result) = NULL;
 
     DBUG_RETURN (result);
@@ -215,7 +138,7 @@ FreeInfo (info *info)
     DBUG_ENTER ();
 
     INFO_LHS (info) = NULL;
-    INFO_RHSAVIS (info) = NULL;
+    INFO_PWLAVIS (info) = NULL;
     INFO_WITHID (info) = NULL;
 
     info = MEMfree (info);
@@ -271,355 +194,6 @@ CWLEdoCopyWithLoopElimination (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn static node *ShapeFromShape( node *avisshape)
- *
- * @brief:  If this shape originated as an N_array
- *          formed from shape vector selections, find
- *          that shape vector.
- *
- * Case 1: if avisshape is an N_array of the form:
- *
- *            shp = _shape_A_( M);
- *            v0 = [0];
- *            s0 = _sel_VxA_( v0, shp);
- *            v1 = [1];
- *            s1 = _sel_VxA_( v1, shp);
- *            v2 = [2];
- *            s2 = _sel_VxA_( v2, shp);
- *            avisshape = [ s0, s1, s2];
- *
- *         then z is shp;
- *
- *         The same behavior holds if the selections are of the form:
- *
- *            i0 = 0;
- *            s0 = idx_sel( i0, shp);
- *
- * @return: If avisshape is such an N_array, the result is shp;
- *          else avisshape.
- *
- *****************************************************************************/
-static node *
-ShapeFromShape (node *avisshape)
-{
-    bool b;
-    pattern *patarray;
-    pattern *pat1;
-    pattern *pat2;
-    node *narray = NULL;
-    constant *con = NULL;
-    constant *c;
-    node *M = NULL;
-    int n;
-    char *nm1;
-    char *nm2;
-
-    DBUG_ENTER ();
-
-    patarray = PMarray (1, PMAgetNode (&narray), 0);
-    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
-                  PMvar (1, PMAgetNode (&M), 0));
-    pat2 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
-                  PMvar (1, PMAisNode (&M), 0));
-    b = (PMmatchFlatSkipExtrema (patarray, avisshape) && (NULL != narray)
-         && (NULL != ARRAY_AELEMS (narray))
-         && (NULL != EXPRS_EXPR (ARRAY_AELEMS (narray))));
-    if (b) {
-        narray = ARRAY_AELEMS (narray);
-        n = 0;
-        c = COmakeConstantFromInt (n);
-        con = COcopyScalar2OneElementVector (c);
-        c = COfreeConstant (c);
-        /* We can safely skip guards here, because the array we
-         * are ostensibly copying from will have similar guards on its
-         * creation.
-         */
-        DBUG_ASSERT ((N_prf != NODE_TYPE (EXPRS_EXPR (narray)))
-                       || (F_idx_sel != PRF_PRF (EXPRS_EXPR (narray))),
-                     "Start coding, Mr doivecyc!");
-        if (PMmatchFlatSkipGuards (pat1, EXPRS_EXPR (narray))) {
-            con = COfreeConstant (con);
-            while (b && (NULL != narray)) {
-                c = COmakeConstantFromInt (n);
-                con = COcopyScalar2OneElementVector (c);
-                c = COfreeConstant (c);
-                b = b && PMmatchFlatSkipGuards (pat2, EXPRS_EXPR (narray));
-                con = COfreeConstant (con);
-                narray = EXPRS_NEXT (narray);
-                n++;
-            }
-        }
-        con = (NULL != con) ? COfreeConstant (con) : NULL;
-    }
-    PMfree (patarray);
-    PMfree (pat1);
-    PMfree (pat2);
-
-    M = b ? M : avisshape;
-
-    nm1 = ((NULL != avisshape) && (N_id == NODE_TYPE (avisshape)))
-            ? AVIS_NAME (ID_AVIS (avisshape))
-            : "( N_array)";
-    nm2
-      = ((NULL != M) && (N_id == NODE_TYPE (M))) ? AVIS_NAME (ID_AVIS (M)) : "( N_array)";
-    if (b) {
-        DBUG_PRINT ("Case 2: AVIS_SHAPE %s is shape(%s)", nm1, nm2);
-    } else {
-        DBUG_PRINT ("Case 2: AVIS_SHAPE %s not derived from _sel_()", nm1);
-    }
-
-    DBUG_RETURN (M);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static node *arrayFromShape( node *avisshape)
- *
- * @brief: Find the array that was the argument to the
- *         expressions that built shape vector avisshape.
- *
- * @param: avsishape is an N_id, hopefully pointing to an N_array,
- *         or an N_array.
- *
- * Case 1: if avisshape is an N_array of the form:
- *
- *            s0 = idx_shape_sel( 0, M);
- *            s1 = idx_shape_sel( 1, M);
- *            s2 = idx_shape_sel( 2, M);
- *            avisshape = [ s0, s1, s2];
- *
- *         then z is M;
- *
- * Case 2: if avisshape is an N_array of the form:
- *
- *            shp = _shape_A_( M);
- *            v0 = 0;
- *            s0 = _sel_VxA_( v0, shp);
- *            v1 = 0;
- *            s1 = _sel_VxA_( v1, shp);
- *            v2 = 0;
- *            s2 = _sel_VxA_( v2, shp);
- *            avisshape = [ s0, s1, s2];
- *
- *         then z is M;
- *
- * @return: If avisshape is such an N_array, the result is M;
- *          else NULL.
- *
- *****************************************************************************/
-static node *
-arrayFromShape (node *avisshape)
-{
-    bool b = TRUE;
-    pattern *patarray;
-    pattern *pat1;
-    pattern *pat2;
-    pattern *pat3;
-    node *narray = NULL;
-    constant *con = NULL;
-    constant *c;
-    node *M = NULL;
-    node *shp = NULL;
-    int n;
-    char *nm1;
-    char *nm2;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT ((N_id == NODE_TYPE (avisshape)) || (N_array == NODE_TYPE (avisshape)),
-                 "Expected N_id avisshape");
-
-    /* Case 1*/
-    patarray = PMarray (1, PMAgetNode (&narray), 0);
-    pat1 = PMprf (1, PMAisPrf (F_idx_shape_sel), 2, PMconst (1, PMAisVal (&con)),
-                  PMvar (1, PMAgetNode (&M), 0));
-    pat2 = PMprf (1, PMAisPrf (F_idx_shape_sel), 2, PMconst (1, PMAisVal (&con)),
-                  PMvar (1, PMAisNode (&M), 0));
-    if (PMmatchFlatSkipExtrema (patarray, avisshape)) {
-        narray = ARRAY_AELEMS (narray);
-        n = 0;
-        con = COmakeConstantFromInt (n);
-        if ((NULL != narray) && (NULL != EXPRS_EXPR (narray))
-            && (PMmatchFlatSkipExtrema (pat1, EXPRS_EXPR (narray)))) {
-            COfreeConstant (con);
-            while (b && (NULL != narray)) {
-                con = COmakeConstantFromInt (n);
-                n++;
-                b = b && PMmatchFlatSkipExtrema (pat2, EXPRS_EXPR (narray));
-                COfreeConstant (con);
-                narray = EXPRS_NEXT (narray);
-            }
-            M = b ? M : NULL;
-        }
-    }
-    PMfree (pat1);
-    PMfree (pat2);
-
-    nm1 = ((NULL != avisshape) && (N_id == NODE_TYPE (avisshape)))
-            ? AVIS_NAME (ID_AVIS (avisshape))
-            : "( N_array)";
-    nm2
-      = ((NULL != M) && (N_id == NODE_TYPE (M))) ? AVIS_NAME (ID_AVIS (M)) : "( N_array)";
-
-    if (b) {
-        DBUG_PRINT ("Case 1: AVIS_SHAPE %s is shape(%s)", nm1, nm2);
-    } else {
-        DBUG_PRINT ("Case 1: AVIS_SHAPE %s not derived from _idx_shape_sel_()", nm1);
-    }
-
-    if (NULL == M) { /* Case 2 */
-        narray = NULL;
-        con = NULL;
-        /* The following patterns match the above, except for PMAisPrf */
-        pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
-                      PMvar (1, PMAgetNode (&M), 0));
-        pat2 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
-                      PMvar (1, PMAisNode (&M), 0));
-        pat3 = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&shp), 0));
-        if ((PMmatchFlatSkipExtrema (patarray, avisshape)) && (NULL != narray)
-            && (NULL != ARRAY_AELEMS (narray))
-            && (NULL != EXPRS_EXPR (ARRAY_AELEMS (narray)))) {
-            narray = ARRAY_AELEMS (narray);
-            DBUG_ASSERT ((N_prf != NODE_TYPE (EXPRS_EXPR (narray)))
-                           || (F_idx_sel != PRF_PRF (EXPRS_EXPR (narray))),
-                         "Start coding, Mr doivecyc2!");
-            n = 0;
-            c = COmakeConstantFromInt (n);
-            con = COcopyScalar2OneElementVector (c);
-            c = COfreeConstant (c);
-            if (PMmatchFlatSkipExtrema (pat1, EXPRS_EXPR (narray))) {
-                con = COfreeConstant (con);
-                while (b && (NULL != narray)) {
-                    c = COmakeConstantFromInt (n);
-                    con = COcopyScalar2OneElementVector (c);
-                    c = COfreeConstant (c);
-                    b = b && PMmatchFlatSkipExtrema (pat2, EXPRS_EXPR (narray));
-                    con = COfreeConstant (con);
-                    narray = EXPRS_NEXT (narray);
-                    n++;
-                }
-                if (b && PMmatchFlatSkipExtrema (pat3, M)) {
-                    M = shp;
-                }
-            }
-        }
-
-        con = (NULL != con) ? COfreeConstant (con) : NULL;
-        PMfree (patarray);
-        PMfree (pat1);
-        PMfree (pat2);
-        PMfree (pat3);
-
-        nm1 = ((NULL != avisshape) && (N_id == NODE_TYPE (avisshape)))
-                ? AVIS_NAME (ID_AVIS (avisshape))
-                : "( N_array)";
-        nm2 = ((NULL != M) && (N_id == NODE_TYPE (M))) ? AVIS_NAME (ID_AVIS (M))
-                                                       : "( N_array)";
-
-        if (b) {
-            DBUG_PRINT ("Case 2: AVIS_SHAPE %s is shape(%s)", nm1, nm2);
-        } else {
-            DBUG_PRINT ("Case 2: AVIS_SHAPE %s not derived from _idx_shape_sel_()", nm1);
-        }
-    }
-
-    DBUG_ASSERT ((NULL == M) || (N_id == NODE_TYPE (M)), "Result not N_id");
-
-    DBUG_RETURN (M);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static bool isAvisShapesMatch( node *arg1, node *arg2)
- *
- * @brief Predicate for matching two N_avis AVIS_SHAPE nodes.
- *
- * Case 1:
- *       A tree compare of the two nodes.
- *
- * Case 2:
- *        A more sophisticated comparison, to handle shapes
- *        that are represented as N_arrays, perhaps as created
- *        by WLBSC or IVESPLIT.
- *
- *        We may have arg1:
- *
- *         s0 = idx_shape_sel( 0, M);
- *         s1 = idx_shape_sel( 1, M);
- *         s2 = idx_shape_sel( 2, M);
- *         arg1 = [ s0, s1, s2];
- *
- * Case 3: We have arg2 (or worse, as an N_arg, where we know nothing):
- *
- *         arg2 = shape_( M);
- *
- * Case 4: arg1 comes into a function as a parameter, with:
- *
- *         shp1 = AVIS_SHAPE( arg1);
- *
- *       and within the function, another array is built with shp1.
- *
- *       For now, we see if one ( e.g., arg1) of the AVIS_SHAPE nodes
- *       is an N_array of the above form, and if so, if M
- *       is the same array as, e.g., arg2.
- *
- * @return: TRUE if the array shapes can be shown to match.
- *
- *****************************************************************************/
-
-static bool
-isAvisShapesMatch (node *arg1, node *arg2)
-{
-    node *M1;
-    node *M2;
-    ntype *arg1type;
-    ntype *arg2type;
-    bool z = FALSE;
-
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("checking shape match for %s and %s", AVIS_NAME (arg1), AVIS_NAME (arg2));
-
-    /* Case 1: See if AKS and result shapes match */
-    arg1type = AVIS_TYPE (arg1);
-    arg2type = AVIS_TYPE (arg2);
-    z = TUshapeKnown (arg1type) && TUshapeKnown (arg2type)
-        && TUeqShapes (arg1type, arg2type);
-
-    /* Case 2: See if AVIS_SHAPEs match */
-    if ((!z) && (NULL != AVIS_SHAPE (arg1)) && (NULL != AVIS_SHAPE (arg2))) {
-        z = (CMPT_EQ == CMPTdoCompareTree (AVIS_SHAPE (arg1), AVIS_SHAPE (arg2)));
-
-        /*  Case 3 :Primogenitor of one shape matches other, or
-         *  both primogenitors match */
-        M1 = arrayFromShape (AVIS_SHAPE (arg1));
-        M2 = arrayFromShape (AVIS_SHAPE (arg2));
-
-        z = z || ((NULL != M1) && (ID_AVIS (M1) == arg2))
-            || ((NULL != M2) && (ID_AVIS (M2) == arg1)) || ((NULL != M1) && (M1 == M2));
-
-        if (!z) { /* This would be simpler if AVIS_SHAPE were always an N_id */
-            M1 = ShapeFromShape (AVIS_SHAPE (arg1));
-            M2 = ShapeFromShape (AVIS_SHAPE (arg2));
-            z = ((NULL != M1) && (NULL != M2)
-                 && ((M1 == M2)
-                     || ((N_id == NODE_TYPE (M1)) && (N_id == NODE_TYPE (M2))
-                         && (ID_AVIS (M1) == ID_AVIS (M2)))));
-        }
-    }
-
-    if (z) {
-        DBUG_PRINT ("shapes match for %s and %s", AVIS_NAME (arg1), AVIS_NAME (arg2));
-    } else {
-        DBUG_PRINT ("shapes do not match for %s and %s", AVIS_NAME (arg1),
-                    AVIS_NAME (arg2));
-    }
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn static node *ivMatchCase1( node *arg_node, info *arg_info,
  *                                node *cexpr)
  *
@@ -640,9 +214,11 @@ ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
     node *withid_avis;
     node *offset = NULL;
     node *shp = NULL;
+    node *ids = NULL;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
+    pattern *pat4;
 
     DBUG_ENTER ();
 
@@ -656,20 +232,31 @@ ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
     pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
                   PMvar (1, PMAhasAvis (&withid_avis), 0));
 
-    if (PMmatchFlat (pat1, cexpr)) {
+    pat4 = PMprf (1, PMAisPrf (F_idxs2offset), 3, PMvar (1, PMAgetNode (&shp), 0),
+                  PMvar (1, PMAgetNode (&ids), 0), PMskip (0));
+
+    if (PMmatchFlatSkipGuards (pat1, cexpr)) {
         DBUG_PRINT ("Case 1: body matches _sel_VxA_(, iv, pwl)");
     }
 
     if (NULL == target) {
-        if ((PMmatchFlat (pat2, cexpr)) && (PMmatchFlat (pat3, offset))) {
-            DBUG_PRINT ("Case 1: body matches _idx_sel( offset, pwl) with iv=%s",
+        if ((PMmatchFlatSkipGuards (pat2, cexpr))
+            && (PMmatchFlatSkipGuards (pat3, offset))) {
+            DBUG_PRINT ("Case 2: body matches _idx_sel( offset, pwl) with iv=%s",
                         AVIS_NAME (target));
         }
     }
 
+    if (NULL == target) {
+        if ((PMmatchFlatSkipGuards (pat2, cexpr))
+            && (PMmatchFlatSkipGuards (pat4, offset))) {
+            DBUG_PRINT ("Case 3: coding time for idxs2offset");
+        }
+    }
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
+    pat4 = PMfree (pat4);
 
     DBUG_RETURN (target);
 }
@@ -948,6 +535,10 @@ CWLEids (node *arg_node, info *arg_info)
 node *
 CWLEwith (node *arg_node, info *arg_info)
 {
+    pattern *pat;
+    node *pwlwith = NULL;
+    node *pwlid;
+
     DBUG_ENTER ();
 
     DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
@@ -962,25 +553,32 @@ CWLEwith (node *arg_node, info *arg_info)
      *   3. do the shapes of INFO_LHS and INFO_RHS match?
      */
 
-    if (INFO_VALID (arg_info) && NULL == WITHOP_NEXT (WITH_WITHOP (arg_node))
+    if ((INFO_VALID (arg_info)) && (NULL == WITHOP_NEXT (WITH_WITHOP (arg_node)))
+        && (NULL == PART_NEXT (WITH_PART (arg_node)))
         && (N_genarray == WITH_TYPE (arg_node) || N_modarray == WITH_TYPE (arg_node))) {
 
         DBUG_PRINT ("Codes OK. Comparing shapes of LHS(%s), RHS(%s)",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
-                    AVIS_NAME (INFO_RHSAVIS (arg_info)));
+                    AVIS_NAME (INFO_PWLAVIS (arg_info)));
 
-        if (isAvisShapesMatch (INFO_RHSAVIS (arg_info), IDS_AVIS (INFO_LHS (arg_info)))) {
+        pat = PMwith (1, PMAgetNode (&pwlwith), 0);
+        pwlid = TBmakeId (INFO_PWLAVIS (arg_info));
+        PMmatchFlatWith (pat, pwlid);
+        pwlid = FREEdoFreeNode (pwlid);
+
+        if (IVUTisWLShapesMatch (INFO_PWLAVIS (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
+                                 arg_node, pwlwith)) {
             DBUG_PRINT ("All ok. replacing LHS(%s) WL by %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
-                        AVIS_NAME (INFO_RHSAVIS (arg_info)));
+                        AVIS_NAME (INFO_PWLAVIS (arg_info)));
             global.optcounters.cwle_wl++;
 
             /*
-             * 1. free the with-loop, we do not need it anymore.
-             * 2. return a brandnew N_id, build from our rhsavis.
+             * 1. free the cwl; we do not need it anymore.
+             * 2. return a brandnew N_id, built from the pwl.
              */
             arg_node = FREEdoFreeTree (arg_node);
-            arg_node = TBmakeId (INFO_RHSAVIS (arg_info));
+            arg_node = TBmakeId (INFO_PWLAVIS (arg_info));
         }
     }
 
@@ -1030,23 +628,23 @@ CWLEcode (node *arg_node, info *arg_info)
     /*
      * if we have found some avis that meets the requirements, then lets check if
      * it is the same that we have found before. If we do not have found anything
-     * before, assign it to INFO_RHSAVIS.
+     * before, assign it to INFO_PWLAVIS.
      * At this point we also check the DataFlowMask, to see if our source array
      * was defined _before_ this wl.
      */
     if (INFO_VALID (arg_info)) {
         DBUG_PRINT ("checking if target is legitimate and known");
 
-        if ((NULL == INFO_RHSAVIS (arg_info) || target == INFO_RHSAVIS (arg_info))
+        if ((NULL == INFO_PWLAVIS (arg_info) || target == INFO_PWLAVIS (arg_info))
             && DFMtestMaskEntry (INFO_DFM (arg_info), NULL, target)) {
             DBUG_PRINT ("target is valid. saving");
 
-            INFO_RHSAVIS (arg_info) = target;
+            INFO_PWLAVIS (arg_info) = target;
         } else {
             DBUG_PRINT ("target is NOT valid. skipping wl");
 
             INFO_VALID (arg_info) = FALSE;
-            INFO_RHSAVIS (arg_info) = NULL;
+            INFO_PWLAVIS (arg_info) = NULL;
         }
     }
 

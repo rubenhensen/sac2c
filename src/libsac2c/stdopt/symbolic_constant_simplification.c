@@ -28,12 +28,6 @@
  *    not(x)        -> TRUE  iFF (FALSE == x), FALSE IFF (TRUE == x)
  *    tob(boolean)  -> Boolean and other coercion identities (int->int, char->char,
  *                     float->float, double->double
- *    _idx_sel(iv, _shape_A_(X)) ->  _idx_shape_sel(iv, X)
- *
- *    _idx_shape_sel(iv, WLmodarrayresult) ->   idx_shape_sel(iv,
- *MODARRAY_ARRAY(WITH_OP(WLmodarray)))
- *     FIXME: We should be able to do the same sort of thing with WLgenarray, when the
- *cell shape is scalar.
  *
  *  Conformability checking CF:
  *
@@ -1716,56 +1710,16 @@ SCSprf_ge_VxS (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_sel_VxA( node *arg_node, info *arg_info)
  *
- * @brief: Replace _sel_VxA_([scalar], _shape_A_(arr)) by
- *                 _idx_shape_sel_SxA_(scalar, arr)
+ * @brief:
  *
  *****************************************************************************/
 node *
 SCSprf_sel_VxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-#ifdef RBEDISABLEDTHIS20100502
-    node *arg2 = NULL;
-    node *scalar = NULL;
-    ntype *typ;
-    pattern *pat1;
-#endif // RBEDISABLEDTHIS20100502
 
     DBUG_ENTER ();
 
-#ifdef RBEDISABLEDTHIS20100502
-    /* I think we want to avoid all idx_shape_sel ops until
-     * post-optimizer time.
-     */
-
-    DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
-                 "SCSprf_sel_VxA expected N_id as PRF_ARG1");
-    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2,
-                  PMarray (0, 1, PMint (1, PMAgetNode (&scalar), 0)),
-                  PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&arg2), 0)));
-
-    if ((PMmatchFlat (pat1, arg_node)) && (N_num == NODE_TYPE (scalar))) {
-        DBUG_PRINT_TAG ("SCS", "Replacing idx_sel by idx_shape_sel");
-        res = TCmakePrf2 (F_idx_shape_sel, DUPdoDupNode (scalar), DUPdoDupNode (arg2));
-    }
-    pat1 = PMfree (pat1);
-
-    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2,
-                  PMarray (0, 1, PMvar (1, PMAgetNode (&scalar), 0)),
-                  PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&arg2), 0)));
-
-    if ((NULL == res) && (PMmatchFlat (pat1, arg_node))
-        && (N_num == NODE_TYPE (scalar))) {
-        DBUG_PRINT_TAG ("SCS", "Replacing idx_sel by idx_shape_sel");
-        typ = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
-        scalar = FLATGflattenExpression (scalar, &INFO_VARDECS (arg_info),
-                                         &INFO_PREASSIGN (arg_info), typ);
-        typ = TYfreeType (typ);
-        res = TCmakePrf2 (F_idx_shape_sel, scalar, DUPdoDupNode (arg2));
-    }
-
-    pat1 = PMfree (pat1);
-#endif //  RBEDISABLEDTHIS20100502
     DBUG_RETURN (res);
 }
 
@@ -1773,58 +1727,17 @@ SCSprf_sel_VxA (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_sel_VxIA( node *arg_node, info *arg_info)
  *
- * @brief: Replace _sel_VxA_([scalar], _shape_A_(arr)) by
- *                 _idx_shape_sel_SxA_(scalar, arr)
+ * @brief:
  *
- * TODO: IMPLEMENT PROPERLY
  *
  *****************************************************************************/
 node *
 SCSprf_sel_VxIA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-#ifdef RBEDISABLEDTHIS20100502
-    node *arg2 = NULL;
-    node *scalar = NULL;
-    ntype *typ;
-    pattern *pat1;
-#endif // RBEDISABLEDTHIS20100502
 
     DBUG_ENTER ();
 
-#ifdef RBEDISABLEDTHIS20100502
-    /* I think we want to avoid all idx_shape_sel ops until
-     * post-optimizer time.
-     */
-
-    DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
-                 "SCSprf_sel_VxA expected N_id as PRF_ARG1");
-    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2,
-                  PMarray (0, 1, PMint (1, PMAgetNode (&scalar), 0)),
-                  PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&arg2), 0)));
-
-    if ((PMmatchFlat (pat1, arg_node)) && (N_num == NODE_TYPE (scalar))) {
-        DBUG_PRINT_TAG ("SCS", "Replacing idx_sel by idx_shape_sel");
-        res = TCmakePrf2 (F_idx_shape_sel, DUPdoDupNode (scalar), DUPdoDupNode (arg2));
-    }
-    pat1 = PMfree (pat1);
-
-    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2,
-                  PMarray (0, 1, PMvar (1, PMAgetNode (&scalar), 0)),
-                  PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&arg2), 0)));
-
-    if ((NULL == res) && (PMmatchFlat (pat1, arg_node))
-        && (N_num == NODE_TYPE (scalar))) {
-        DBUG_PRINT_TAG ("SCS", "Replacing idx_sel by idx_shape_sel");
-        typ = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
-        scalar = FLATGflattenExpression (scalar, &INFO_VARDECS (arg_info),
-                                         &INFO_PREASSIGN (arg_info), typ);
-        typ = TYfreeType (typ);
-        res = TCmakePrf2 (F_idx_shape_sel, scalar, DUPdoDupNode (arg2));
-    }
-
-    pat1 = PMfree (pat1);
-#endif //  RBEDISABLEDTHIS20100502
     DBUG_RETURN (res);
 }
 
@@ -2600,55 +2513,10 @@ SCSprf_shape (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
 #ifdef BUG524
-    /* This code should never have gone live. It absolutely trashes
-     * the performance of MANY benchmarks, by about a factor of 3-4X.
-     *
-     */
-
-    node *avis;
-    node *resid = NULL;
-    node *resavis;
-    node *resassign;
-    int arg1dim;
-    int i;
-
-    DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
-                 "SCSprf_shape_ expected N_id node");
-    /* If AKD, replace the shape() operation by a list of idx_shape_sel() ops */
-    if (TUdimKnown (ID_NTYPE (PRF_ARG1 (arg_node)))) {
-        arg1dim = TYgetDim (ID_NTYPE (PRF_ARG1 (arg_node)));
-        i = arg1dim;
-
-        for (i = arg1dim - 1; i >= 0; i--) {
-            avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (PRF_ARG1 (arg_node))),
-                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-
-            INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
-
-            INFO_PREASSIGN (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                         TCmakePrf2 (F_idx_shape_sel, TBmakeNum (i),
-                                                     DUPdoDupNode (PRF_ARG1 (arg_node)))),
-                              INFO_PREASSIGN (arg_info));
-            AVIS_SSAASSIGN (avis) = INFO_PREASSIGN (arg_info);
-
-            res = TBmakeExprs (TBmakeId (avis), res);
-        }
-        /* At this point, we have an N_exprs chain of idx_shape_sel ops.
-         * Make this an N_array and give it a name.
-         */
-        res = TCmakeIntVector (res);
-        resavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
-                                                        SHcreateShape (1, arg1dim)));
-
-        INFO_VARDECS (arg_info) = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
-
-        resid = TBmakeId (resavis);
-        resassign = TBmakeAssign (TBmakeLet (TBmakeIds (resavis, NULL), res), NULL);
-        INFO_PREASSIGN (arg_info) = TCappendAssign (INFO_PREASSIGN (arg_info), resassign);
-
-        AVIS_SSAASSIGN (resavis) = resassign;
-    }
+/* This code should never have gone live. It absolutely trashes
+ * the performance of MANY benchmarks, by about a factor of 3-4X.
+ *
+ */
 #endif //  BUG524
 
     DBUG_RETURN (res);
@@ -2658,27 +2526,15 @@ SCSprf_shape (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_idx_shape_sel( node *arg_node, info *arg_info)
  *
- * description: This optimization replaces an idx_shape_sel operation
- *              on an array, arr, by the same operation on its shape
- *              primogenitor. See tree/pattern_match.c for definition.
+ * description:
  *
  *****************************************************************************/
 node *
 SCSprf_idx_shape_sel (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *idprimo = NULL;
 
     DBUG_ENTER ();
-
-    idprimo = PMOshapePrimogenitor (PRF_ARG2 (arg_node));
-    if ((ID_AVIS (idprimo) != ID_AVIS (PRF_ARG2 (arg_node)))) {
-        res = DUPdoDupNode (arg_node);
-        DBUG_PRINT ("SCSprf_idx_shape_sel replacing %s by %s",
-                    AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
-                    AVIS_NAME (ID_AVIS (idprimo)));
-        PRF_ARG2 (res) = DUPdoDupNode (idprimo);
-    }
 
     DBUG_RETURN (res);
 }

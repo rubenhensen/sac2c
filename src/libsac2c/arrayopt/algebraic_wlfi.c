@@ -1852,6 +1852,9 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
         pwlp = PART_NEXT (pwlp);
     }
 
+    DBUG_PRINT ("Built bounds intersect computations for consumer-WL %s",
+                AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
+
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
 

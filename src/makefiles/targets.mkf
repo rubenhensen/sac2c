@@ -155,7 +155,7 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         wl_lock_optimization_shifting setfundefwasoptimized \
                         loop_invariant_removal withloop_invariant_removal \
                         comparison_to_zero \
-                        UndoCondZeroCmp
+                        UndoCondZeroCmp indexvectorutils
 
 
 libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \

@@ -107,6 +107,7 @@ exclusionDueToHostTraversal (node *arg_node, info *arg_info)
                 case F_shape_matches_dim_VxA:
                 case F_afterguard:
                 case F_guard:
+                case F_noteintersect:
                     res = TRUE;
                     break;
 
