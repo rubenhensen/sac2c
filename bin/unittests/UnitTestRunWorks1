@@ -5,7 +5,7 @@
 	rm -f a.out a.out.c
 # HUSH echo Starting Worktest for: $1
 echo Starting Worktest for: $1
-sac2c -v0 -O3 $1 -o $1.exe -ecc -extrema -noprfunr -nowlf -doawlf  -check c
+sac2c -v0 -O3 $1 -o $1.exe -nowlf -doawlf
 	./$1.exe
 	z=$?
 	if [ 0 -eq $z ]; then 

@@ -182,5 +182,6 @@ extern constant *COreciproc (constant *a, constant *, constant *);
 // These should go!!! please use COvect2offset instead!!!
 
 extern int Idx2OffsetArray (constant *idx, node *a);
+extern int COidxs2offset (constant *idx, constant *a);
 
 #endif /* _SAC_CONSTANTS_H_ */

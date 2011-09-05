@@ -1651,6 +1651,8 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     fun = (1 == boundnum) ? "partitionIntersectMax" : "partitionIntersectMin";
     mmx = (1 == boundnum) ? ID_AVIS (ivmin) : ID_AVIS (ivmax);
 
+    DBUG_PRINT ("Inserting partitionIntersectMin/Max call for %s", AVIS_NAME (mmx));
+
     DBUG_ASSERT (N_array == NODE_TYPE (gen), "Expected N_array gen");
     gen = WLSflattenBound (DUPdoDupTree (gen), &INFO_VARDECS (arg_info),
                            &INFO_PREASSIGNS (arg_info));
@@ -1912,7 +1914,8 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
  *
  * @fn node *AWLFIoffset2Iv(...)
  *
- * @brief  We are looking at PRF_ARG1 in the _sel_VxA_() or _idx_sel():
+ * @brief  We are looking at PRF_ARG1 in the _sel_VxA_() or _idx_sel(),
+ *         e.g., iv in the following:
  *
  *            iv = [ i, j, k];
  *            z = _sel_VxA_( iv, producerWL);

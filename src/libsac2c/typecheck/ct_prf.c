@@ -3446,6 +3446,10 @@ NTCCTprf_mask_VxVxV (te_info *info, ntype *args)
  *
  * description:
  *
+ *    See COvect2offset for semantics.
+ *    We would like to have a way to check for shape(iv)>shape(shp).
+ *    But, we do not.
+ *
  ******************************************************************************/
 ntype *
 NTCCTprf_vect2offset (te_info *info, ntype *args)
@@ -3470,15 +3474,7 @@ NTCCTprf_vect2offset (te_info *info, ntype *args)
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
-
-        res = TEassureSameShape (TEarg2Obj (1), shp,
-                                 TEprfArg2Obj (TEgetNameStr (info), 2), idx);
-        err_msg = TEfetchErrors ();
-        if (err_msg != NULL) {
-            res = TYmakeBottomType (err_msg);
-        } else {
-            res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
-        }
+        res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
     }
 
     DBUG_RETURN (TYmakeProductType (1, res));

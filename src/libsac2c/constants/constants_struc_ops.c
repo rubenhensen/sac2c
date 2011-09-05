@@ -1041,7 +1041,22 @@ COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem)
  *
  * @fn: int COvect2offset( constant *shp, constant *iv)
  *
- * @brief: implements F_vect2offset !
+ * @brief: implements F_vect2offset
+ *
+ * @semantics: vect2offset accepts an array shape, shp, and an array index vector,
+ *             iv, and returns the offset into the ravel of the array.
+ *             The index vector, iv, may contain fewer elements than shp;
+ *             it is padded with zeros on the right to bring it to the shape
+ *             of shp. This permits abbreviated indexing of higher-rank arrays.
+ *             E.g.: If we have an array of shape [2,3,4], then
+ *                12 == vect2offset( [2,3,4], [1])
+ *             and
+ *                12 == vect2offset( [2,3,4], [1,0,0])
+ *
+ *             The value of the offset is the dot product of the padded
+ *             iv with the weighted shp, or:
+ *
+ *               offset ← +/ iv × ⌽×\⌽(1↓shp),1
  *
  *****************************************************************************/
 int
@@ -1065,21 +1080,75 @@ COvect2offset (constant *shp, constant *iv)
     cvshp = (int *)CONSTANT_ELEMS (shp);
     lenshp = SHgetExtent (CONSTANT_SHAPE (shp), 0);
 
-    DBUG_ASSERT (lenshp >= leniv, "COvect2offset called with incompatible shp/iv");
+    DBUG_ASSERT (lenshp >= leniv, "shape(shp) must be >= shape(iv)");
 
     if (leniv > 0) {
-        DBUG_ASSERT (cviv[0] < cvshp[0], "COvect2offset called with iv out of range");
+        DBUG_ASSERT (cviv[0] < cvshp[0], "Index error: iv[0] >= shp([0]");
         offset = cviv[0];
     } else {
         offset = 0;
     }
     for (i = 1; i < leniv; i++) {
-        DBUG_ASSERT (cviv[i] < cvshp[i], "COvect2offset called with idx out of range");
+        DBUG_ASSERT (cviv[i] < cvshp[i], "Index error: iv[%d] >= shp[%d]", i, i);
+        offset = (offset * cvshp[i]) + cviv[i];
+    }
+    for (; i < lenshp; i++) { /* padding of trailing iv elements */
+        offset *= cvshp[i];
+    }
+
+    DBUG_RETURN (offset);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn: int COidxs2offset( constant *shp, constant *iv)
+ *
+ * @brief: implements F_idxs2offset
+ *
+ *****************************************************************************/
+int
+COidxs2offset (constant *shp, constant *iv)
+{
+    int *cviv, *cvshp;
+    int leniv, lenshp;
+    int i;
+    int offset;
+
+    DBUG_ENTER ();
+
+    offset = Idx2OffsetArray (shp, iv);
+
+#ifdef FIXME
+
+    DBUG_ASSERT (CONSTANT_TYPE (iv) == T_int, "COidxs2offset called with non-int index");
+    DBUG_ASSERT (CONSTANT_DIM (iv) == 1, "COidxs2offset called with non-vector index");
+
+    DBUG_ASSERT (CONSTANT_TYPE (shp) == T_int, "COidxs2offset called with non-int shape");
+    DBUG_ASSERT (CONSTANT_DIM (shp) == 1, "COidxs2offset called with non-vector shape");
+
+    cviv = (int *)CONSTANT_ELEMS (iv);
+    leniv = SHgetExtent (CONSTANT_SHAPE (iv), 0);
+
+    cvshp = (int *)CONSTANT_ELEMS (shp);
+    lenshp = SHgetExtent (CONSTANT_SHAPE (shp), 0);
+
+    DBUG_ASSERT (lenshp >= leniv, "COidxs2offset called with incompatible shp/iv");
+
+    if (leniv > 0) {
+        DBUG_ASSERT (cviv[0] < cvshp[0], "COidxs2offset called with iv out of range");
+        offset = cviv[0];
+    } else {
+        offset = 0;
+    }
+    for (i = 1; i < leniv; i++) {
+        DBUG_ASSERT (cviv[i] < cvshp[i], "COidxs2offset called with idx out of range");
         offset = offset * cvshp[i] + cviv[i];
     }
     for (; i < lenshp; i++) {
         offset *= cvshp[i];
     }
+
+#endif // FIXME
 
     DBUG_RETURN (offset);
 }
