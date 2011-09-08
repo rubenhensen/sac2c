@@ -107,8 +107,14 @@ GDBwhatIs (char *nm, node *fundef)
         vardec = TCfindVardec_Name (nm, fundef);
         if (NULL != vardec) {
             PRTdoPrintNode (vardec);
-            if (NULL != AVIS_SSAASSIGN (VARDEC_AVIS (vardec))) {
-                PRTdoPrintNode (AVIS_SSAASSIGN (VARDEC_AVIS (vardec)));
+            if (N_vardec == NODE_TYPE (vardec)) {
+                if (NULL != AVIS_SSAASSIGN (VARDEC_AVIS (vardec))) {
+                    PRTdoPrintNode (AVIS_SSAASSIGN (VARDEC_AVIS (vardec)));
+                }
+            } else {
+                if (NULL != AVIS_SSAASSIGN (ARG_AVIS (vardec))) {
+                    PRTdoPrintNode (AVIS_SSAASSIGN (ARG_AVIS (vardec)));
+                }
             }
         }
     }
@@ -175,8 +181,8 @@ GDBwhatAreNid (node *arg_node, node *fundef)
         exprs = PRF_ARGS (arg_node);
         while (NULL != exprs) {
             expr = EXPRS_EXPR (exprs);
-            if ((N_id == NODE_TYPE (expr)) && (NULL != AVIS_SSAASSIGN (ID_AVIS (expr)))) {
-                PRTdoPrintNode (AVIS_SSAASSIGN (ID_AVIS (expr)));
+            if ((N_id == NODE_TYPE (expr))) {
+                GDBwhatIsNid (expr, fundef);
             } else {
                 PRTdoPrintNode (expr);
             }
@@ -216,9 +222,8 @@ GDBwhatAre (char *nm, node *fundef)
             exprs = PRF_ARGS (LET_EXPR (ASSIGN_STMT (assgn)));
             while (NULL != exprs) {
                 expr = EXPRS_EXPR (exprs);
-                if ((N_id == NODE_TYPE (expr))
-                    && (NULL != AVIS_SSAASSIGN (ID_AVIS (expr)))) {
-                    PRTdoPrintNode (AVIS_SSAASSIGN (ID_AVIS (expr)));
+                if ((N_id == NODE_TYPE (expr))) {
+                    GDBwhatIsNid (expr, fundef);
                 } else {
                     PRTdoPrintNode (expr);
                 }

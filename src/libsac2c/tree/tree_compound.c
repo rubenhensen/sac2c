@@ -3848,7 +3848,8 @@ TCcountRanges (node *range)
  *
  * @param
  *
- * @return vardec pointer, or NULL
+ * @return N_vardec or N_args pointer, or NULL
+ *
  ******************************************************************************/
 node *
 TCfindVardec_Name (char *name, node *fundef)
@@ -3874,8 +3875,8 @@ TCfindVardec_Name (char *name, node *fundef)
         v = FUNDEF_ARGS (fundef);
         while ((NULL != v) && (!b)) {
             curv = v;
-            b = STReq (name, AVIS_NAME (VARDEC_AVIS (curv)));
-            v = b ? v : VARDEC_NEXT (v);
+            b = STReq (name, AVIS_NAME (ARG_AVIS (curv)));
+            v = b ? v : ARG_NEXT (v);
         }
     }
 
