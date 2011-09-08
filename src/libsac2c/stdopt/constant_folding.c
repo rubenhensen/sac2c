@@ -150,7 +150,6 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_ONEFUNDEF (result) = FALSE;
     INFO_LACFUNOK (result) = TRUE;
     INFO_TRAVINLAC (result) = FALSE;
 
@@ -230,7 +229,6 @@ CFdoConstantFolding (node *arg_node)
     arg_info = MakeInfo ();
 
     if (N_fundef == NODE_TYPE (arg_node)) {
-        INFO_ONEFUNDEF (arg_info) = TRUE;
         INFO_LACFUNOK (arg_info) = FALSE;
     }
 
@@ -365,6 +363,7 @@ CFunflattenSimpleScalars (node *arg_node)
     DBUG_ENTER ();
 
     res = arg_node;
+#ifdef FIXME
     pat = PMconst (1, PMAgetNode (&cons));
 
     if (TUisScalar (ARRAY_ELEMTYPE (arg_node)) && isNarrayHasIdNode (arg_node)
@@ -383,6 +382,7 @@ CFunflattenSimpleScalars (node *arg_node)
         arg_node = FREEdoFreeTree (arg_node);
     }
     pat = PMfree (pat);
+#endif // FIXME
 
     DBUG_RETURN (res);
 }
@@ -503,43 +503,6 @@ CreateAssignsFromIdsExprs (node *ids, node *exprs, ntype *restypes)
     DBUG_RETURN (res);
 }
 
-#ifdef DEADCODE
-/** <!--********************************************************************-->
- *
- * @fn node *CorrectSSAASSIGNs( node *ids, node *exprs)
- *
- * @brief Correct SSAASSIGN of LHS node N_ids.
- *
- *****************************************************************************/
-static node *
-CorrectSSAASSIGNS (node *arg_node, info *arg_info)
-{
-    node *let;
-    node *ids;
-    node *ssa;
-
-    DBUG_ENTER ();
-
-    let = ASSIGN_STMT (arg_node);
-    if (N_let == NODE_TYPE (let)) {
-        ids = LET_IDS (let);
-        while (ids != NULL) {
-            /* DEBUG REMOVE THIS */
-            ssa = AVIS_SSAASSIGN (IDS_AVIS (ids));
-            if ((ssa != NULL) && (ssa != arg_node)) {
-                DBUG_PRINT ("Correcting SSAASSIGN for %s", AVIS_NAME (IDS_AVIS (ids)));
-            }
-            /* DEBUG REMOVE THIS */
-
-            AVIS_SSAASSIGN (IDS_AVIS (ids)) = arg_node;
-            ids = IDS_NEXT (ids);
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-#endif // DEADCODE
-
 /** <!--********************************************************************-->
  *
  * @fn static node *InvokeCFprfAndFlattenExtrema( node *arg_node,
@@ -642,9 +605,9 @@ CFfundef (node *arg_node, info *arg_info)
             RMVdoRemoveVardecsOneFundef (arg_node);
         }
     }
-    if (!INFO_ONEFUNDEF (arg_info) && !INFO_TRAVINLAC (arg_info)
-        && FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+    if (!INFO_TRAVINLAC (arg_info)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -746,14 +709,6 @@ CFassign (node *arg_node, info *arg_info)
         arg_node = FREEdoFreeNode (arg_node);
         INFO_REMASSIGN (arg_info) = FALSE;
     }
-
-#ifdef DEADCODE
-    /* Correct SSAASSIGN. If we do not do this, anything that tries
-     * to follow assign chains can get very confused! Specifically,
-     * CF code in the same traversal!
-     */
-    arg_node = CorrectSSAASSIGNS (arg_node, arg_info);
-#endif // DEADCODE
 
     /**
      *  Then construct the final chain, back to front:

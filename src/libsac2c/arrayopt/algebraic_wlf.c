@@ -202,6 +202,7 @@
 #include "cubeslicer.h"
 #include "ivexcleanup.h"
 #include "deadcoderemoval.h"
+#include "indexvectorutils.h"
 
 /** <!--********************************************************************-->
  *
@@ -606,8 +607,8 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
 
     ids = WITHID_IDS (PART_WITHID (pwlpart));
     arg1 = PRF_ARG1 (LET_EXPR (ASSIGN_STMT (arg_node)));
-    idxavis = AWLFIoffset2Iv (arg1, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
-                              pwlpart);
+    idxavis = IVUToffset2Iv (arg1, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
+                             pwlpart);
     DBUG_ASSERT (NULL != idxavis, "Could not rebuild iv for _sel_VxA_(iv, PWL)");
 
     k = 0;

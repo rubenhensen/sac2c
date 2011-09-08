@@ -36,6 +36,9 @@
 #include "shape.h"
 #include "type_utils.h"
 #include "compare_tree.h"
+#include "new_types.h"
+#include "DupTree.h"
+#include "ivexpropagation.h"
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
@@ -43,7 +46,7 @@
 
 /** <!--********************************************************************-->
  *
- * @fn node *IVUTshapeFromShapeArray( node *iv)
+ * @fn node *IVUTfindProxySel( node *iv)
  *
  * @brief:  If index vector iv originated as an N_array
  *          formed from shape vector selections, find
@@ -60,7 +63,8 @@
  *            s2 = _sel_VxA_( v2, shap);
  *            iv = [ s0, s1, s2];
  *
- *         then z is shap; else iv if an N_array, else ID_AVIS( iv).
+ *         then z is shap, and we define shap as a proxy for iv.
+ *         Otherwise, iv if iv is an N_array, else ID_AVIS( iv).
  *
  * Case 2: Like Case 1, excepf for _idx_sel() instead of _sel_VxA_():
  *         E.g.,:
@@ -75,11 +79,11 @@
  *           we of the restrictions on index vector range.
  *
  * @return: If iv originated as such an N_array, the result is the
- *          shap; else iv.
+ *          shap; else NULL.
  *
  *****************************************************************************/
 static node *
-IVUTshapevectorFromShapeArraySel (node *iv)
+IVUTfindProxySel (node *iv)
 {
     bool b;
     pattern *patarray;
@@ -136,7 +140,7 @@ IVUTshapevectorFromShapeArraySel (node *iv)
         DBUG_PRINT ("Case 2: AVIS_SHAPE %s is shape(%s)", nmin,
                     AVIS_NAME (ID_AVIS (shapid)));
     } else {
-        z = iv;
+        z = NULL;
         DBUG_PRINT ("Case 2: AVIS_SHAPE %s not derived from _sel_()", nmin);
     }
 
@@ -144,7 +148,7 @@ IVUTshapevectorFromShapeArraySel (node *iv)
 }
 
 static node *
-IVUTshapevectorFromShapeArrayIdxsel (node *iv)
+IVUTfindProxyIdxsel (node *iv)
 {
     bool b;
     pattern *patarray;
@@ -195,7 +199,7 @@ IVUTshapevectorFromShapeArrayIdxsel (node *iv)
         z = shapid;
         DBUG_PRINT ("Case 2: AVIS_SHAPE %s is shape(%s)", nmin, AVIS_NAME (ID_AVIS (z)));
     } else {
-        z = iv;
+        z = NULL;
         DBUG_PRINT ("Case 2: AVIS_SHAPE %s not derived from _sel_()", nmin);
     }
 
@@ -203,15 +207,15 @@ IVUTshapevectorFromShapeArrayIdxsel (node *iv)
 }
 
 node *
-IVUTshapevectorFromShapeArray (node *iv)
+IVUTfindProxy (node *iv)
 {
     node *z;
 
     DBUG_ENTER ();
 
-    z = IVUTshapevectorFromShapeArraySel (iv);
-    if (iv == z) {
-        z = IVUTshapevectorFromShapeArrayIdxsel (iv);
+    z = IVUTfindProxySel (iv);
+    if (NULL == z) {
+        z = IVUTfindProxyIdxsel (iv);
     }
 
     DBUG_RETURN (z);
@@ -254,7 +258,7 @@ IVUTarrayFromIv (node *iv)
     DBUG_ENTER ();
 
     pat = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&ARR), 0));
-    sv = IVUTshapevectorFromShapeArray (iv);
+    sv = IVUTfindProxy (iv);
     PMmatchFlatSkipExtremaAndGuards (pat, sv);
 
     pat = PMfree (pat);
@@ -264,85 +268,379 @@ IVUTarrayFromIv (node *iv)
 
 /** <!--********************************************************************-->
  *
- * @fn bool IVUTisWLShapesMatch()
+ * @fn bool IVUTisShapesMatch()
  *
- * @brief Predicate for matching two WL N_avis nodes, a producer-WL (pwl)
- *        and a consumer-WL (cwl); cwlwith is the N_with of the cwl.
- *        We assume that the caller has already ensured that
- *        pwl contains only one N_part,
- *        that it is a modarray or genarray,
- *        and that the generated elements are scalars.
+ * @brief Predicate for matching two N_avis nodes. a producer (pavis)
+ *        and a consumer (cavis), with the help of a shape
+ *        expression for the consumer, cavishape.
  *
- * Case 1: Comparison of the WL result shapes.
+ *        cavisshape may be any expression, thanks to the chaps who thought
+ *        that unflattening GENERATOR_BOUND1/2 and GENARRAY_SHAPE, etc.,
+ *        was a swell idea.
+ *
+ * Case 1: Comparison of the result shapes.
  *         This works if they are both AKS.
  *
  * Case 2: Comparison of AVIS_SHAPE nodes.
- *         This works under circumstances in SAACYC.
+ *         This works under many circumstances in SAACYC,
+ *         if they are both N_id nodes.
  *
- * Case 3: Attempt to find shape( pwl) as a function of GENERATOR_BOUND2( cwl).
+ * Case 3: Attempt to find shape( pavis) as a function of cshape.
+ *         ctshape will match AVIS_SHAPE( clet), but only under
+ *         SAACYC. Otherwise, say in the case of a consumer-WL,
+ *         we have to provide GENARRAY_SHAPE( cavis), or
+ *         GENERATOR_BOUND2( cavis).
  *
- * Case 4: pwl comes into a function as a parameter, with:
+ * Case 4: pavis comes into a function as a parameter, with:
  *
- *         shp1 = AVIS_SHAPE( pwl);
+ *         shp1 = AVIS_SHAPE( pavis);
  *
  *       and within the function, another array is built with shp1.
  *
- *       For now, we see if one ( e.g., pwl) of the AVIS_SHAPE nodes
+ *       For now, we see if one ( e.g., pavis) of the AVIS_SHAPE nodes
  *       is an N_array of the above form, and if so, if M
- *       is the same array as, e.g., cwl.
+ *       is the same array as, e.g., cavis.
+ *
+ * Case 5: In the case where pavis is an N_id and cavis is an N_array,
+ * ...
  *
  * @return: TRUE if the array shapes can be shown to match.
  *
  *****************************************************************************/
 bool
-IVUTisWLShapesMatch (node *pwl, node *cwl, node *cwlwith, node *pwlwith)
+IVUTisShapesMatch (node *pavis, node *cavis, node *cavisshape)
 {
-    node *M1;
-    node *M2;
-    ntype *pwltype;
-    ntype *cwltype;
-    node *bcwl;
+    node *csv;
+    node *psv;
+    ntype *ptype;
+    ntype *ctype;
     node *mcwl;
+    node *shp = NULL;
     bool z = FALSE;
+    pattern *pat1;
+    pattern *pat2;
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("checking shape match for pwl=%s and cwl=%s", AVIS_NAME (pwl),
-                AVIS_NAME (cwl));
+    DBUG_PRINT ("checking shape match for producer=%s and consumer=%s", AVIS_NAME (pavis),
+                AVIS_NAME (cavis));
 
     /* Case 1: See if AKS and result shapes match */
-    pwltype = AVIS_TYPE (pwl);
-    cwltype = AVIS_TYPE (cwl);
-    z = TUshapeKnown (pwltype) && TUshapeKnown (cwltype) && TUeqShapes (pwltype, cwltype);
+    ptype = AVIS_TYPE (pavis);
+    ctype = AVIS_TYPE (cavis);
+    z = TUshapeKnown (ptype) && TUshapeKnown (ctype) && TUeqShapes (ptype, ctype);
 
-    /* Case 3: Attempt to find producerWL from cwl generator shape.
+    /* Case 3: Attempt to find producerWL from clet generator shape.
      */
 
-    /* We can ignore GENERATOR_BOUND2 because it must be zero */
     if (!z) {
-        bcwl = GENERATOR_BOUND2 (PART_GENERATOR (WITH_PART (cwlwith)));
-        mcwl = IVUTarrayFromIv (bcwl);
-        z = ((NULL != mcwl) && (ID_AVIS (mcwl) == pwl));
+        mcwl = IVUTarrayFromIv (cavisshape);
+        z = ((NULL != mcwl) && (ID_AVIS (mcwl) == pavis));
     }
 
     /* Case 2: See if AVIS_SHAPEs match */
-    if ((!z) && (NULL != AVIS_SHAPE (pwl)) && (NULL != AVIS_SHAPE (cwl))) {
-        z = (CMPT_EQ == CMPTdoCompareTree (AVIS_SHAPE (pwl), AVIS_SHAPE (cwl)));
+    if ((!z) && (NULL != AVIS_SHAPE (pavis)) && (NULL != AVIS_SHAPE (cavis))) {
+        pat1 = PMany (1, PMAgetNode (&shp), 0);
+        pat2 = PMany (1, PMAisNode (&shp)), (0);
+        z = (PMmatchFlatSkipExtremaAndGuards (pat1, AVIS_SHAPE (pavis))
+             && PMmatchFlatSkipExtremaAndGuards (pat2, AVIS_SHAPE (cavis)));
+        pat1 = PMfree (pat1);
+        pat2 = PMfree (pat2);
 
-        /* Case 4 */
-        M1 = IVUTshapevectorFromShapeArray (AVIS_SHAPE (pwl));
-        M2 = IVUTshapevectorFromShapeArray (AVIS_SHAPE (cwl));
-        z = ((NULL != M1) && (NULL != M2)
-             && ((M1 == M2)
-                 || ((N_id == NODE_TYPE (M1)) && (N_id == NODE_TYPE (M2))
-                     && (ID_AVIS (M1) == ID_AVIS (M2)))));
+        if (!z) {
+            /* Case 4 */
+            psv = IVUTfindProxy (AVIS_SHAPE (pavis));
+            csv = IVUTfindProxy (AVIS_SHAPE (cavis));
+            z = ((NULL != psv) && (NULL != csv)
+                 && ((psv == csv)
+                     || ((N_id == NODE_TYPE (psv)) && (N_id == NODE_TYPE (csv))
+                         && (ID_AVIS (psv) == ID_AVIS (csv)))));
+        }
     }
 
+    /* Case 5: We have something like (bug871.sac):
+     *
+     *  fifty = 50;
+     *  AVIS_SHAPE( cwl) = [ 50, siz];
+     *  FIXME???
+     *
+     *
+     */
+
     if (z) {
-        DBUG_PRINT ("shapes match for %s and %s", AVIS_NAME (pwl), AVIS_NAME (cwl));
+        DBUG_PRINT ("shapes match for producer=%s and consumer=%s", AVIS_NAME (pavis),
+                    AVIS_NAME (cavis));
     } else {
-        DBUG_PRINT ("shapes do not match for %s and %s", AVIS_NAME (pwl),
-                    AVIS_NAME (cwl));
+        DBUG_PRINT ("shapes do not match for producer=%s and consumer=%s",
+                    AVIS_NAME (pavis), AVIS_NAME (cavis));
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CreateIvArray( node *arg_node, node **vardecs,
+ *                           node **preassigns)
+ *
+ * @brief: Create an N_array from the index scalars in the N_exprs arg_node.
+ *         Basically, we are temporarily recreating the
+ *         vect2offset index vector argument, to mollify
+ *         those optimizations that need to have an index vector,
+ *         rather than an offset, for indexing analysis.
+ *
+ * @return: the avis node for the new N_array.
+ *
+ *****************************************************************************/
+static node *
+CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
+{
+    node *avis;
+    node *ids;
+    node *assgn;
+    node *nlet;
+    int len;
+    node *z;
+
+    DBUG_ENTER ();
+
+    len = TCcountExprs (arg_node);
+    avis = TBmakeAvis (TRAVtmpVar (),
+                       TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, len)));
+    *vardecs = TBmakeVardec (avis, *vardecs);
+
+    ids = TBmakeIds (avis, NULL);
+    assgn
+      = TBmakeAssign (TBmakeLet (ids, TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int),
+                                                              SHcreateShape (0)),
+                                                   SHcreateShape (1, len),
+                                                   DUPdoDupTree (arg_node))),
+                      NULL);
+    *preassigns = TCappendAssign (*preassigns, assgn);
+    AVIS_SSAASSIGN (avis) = assgn;
+    nlet = ASSIGN_STMT (assgn);
+    z = IVEXPgenerateNarrayExtrema (nlet, vardecs, preassigns);
+    LET_EXPR (nlet) = z;
+
+    DBUG_RETURN (avis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IVUToffset2Iv(...)
+ *
+ * @brief  We are looking at PRF_ARG1 in the _sel_VxA_() or _idx_sel(),
+ *         e.g., iv in the following:
+ *
+ *            iv = [ i, j, k];
+ *            z = _sel_VxA_( iv, producerWL);
+ *
+ *         within the consumerWL, and iv may have extrema attached to it.
+ *
+ *         Alternately, we have
+ *
+ *            poffset = idxs2offset( shape( producerWL), i, j, k...);
+ *            z = _idx_sel_( poffset, producerWL);
+ *
+ *         There are several cases:
+ *
+ *         1. We are doing _sel_VxA_( iv, ProducerWL):
+ *            Return iv's avis.
+ *
+ *         2. We are doing idx_sel_( offset, ProducerWL).
+ *            Find the idxs2offset( pwl, i, j, k...),
+ *            build a flattened N_array from [ i, j, k], and
+ *            return its avis.
+ *
+ *            If we find that [i,j,k] match the WITHID_IDS,
+ *            return the WITHID_VEC.
+ *
+ *         3. We can not find the idxs2offset, but the
+ *            producerWL generates a vector result.
+ *            Return  xxx FIXME.
+ *
+ *         4. arg_node is a vect2offset( shape( producerWL), iv);
+ *            Return iv.
+ *
+ *        This function is, admittedly, a kludge. It might make more sense to
+ *        have IVE generate an intermediate primitive that preserves
+ *        the iv. E.g.,:
+ *
+ *            iv = [ i, j, k];
+ *            offset = vect2offset( shp, iv);
+ *
+ *        becomes:
+ *
+ *            offset = idxsiv2offset( shp, iv, i, j, k);
+ *
+ *        This would allow AWLF and WLF to access the index vector
+ *        and its extrema without the sort of heuristic that
+ *        this function represents.
+ *
+ *        Then, idxsiv2offset would be turned into a proper
+ *        idxs2offset by some other, post-SAACYC traversal.
+ *
+ * @return: the desired avis node.
+ *          If we can't find one, we return NULL.
+ *
+ *****************************************************************************/
+node *
+IVUToffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart)
+{
+    node *z = NULL;
+    pattern *pat;
+    pattern *pat2;
+    node *bndarr = NULL;
+    node *ivprf = NULL;
+    node *expr;
+
+    DBUG_ENTER ();
+
+    pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
+    pat2 = PMany (1, PMAgetNode (&ivprf), 1, PMskip (0));
+
+    if (0 != TYgetDim (AVIS_TYPE (ID_AVIS (arg_node)))) { /* _sel_VxA_() case */
+        z = ID_AVIS (arg_node);
+    } else {
+        /* Skip the F_noteintersect */
+        if ((PMmatchFlatSkipGuards (pat2, arg_node) && (N_prf == NODE_TYPE (ivprf))
+             && (F_noteintersect == PRF_PRF (ivprf)))) {
+            arg_node = PRF_ARG1 (ivprf);
+        }
+
+        if (PMmatchFlatSkipGuards (pat2, arg_node)) { /* _idx_sel() case */
+            if ((N_prf == NODE_TYPE (ivprf)) && (F_idxs2offset == PRF_PRF (ivprf))) {
+                z = CreateIvArray (EXPRS_NEXT (PRF_ARGS (ivprf)), vardecs, preassigns);
+            } else {
+                /* We have not have _idxs2offset any more, due to opts.
+                 * This is OK if PWL bounds are 1-D
+                 */
+                if ((NULL != cwlpart)
+                    && (1 == TCcountIds (WITHID_IDS (PART_WITHID (cwlpart))))) {
+                    expr = TBmakeExprs (TBmakeId (ID_AVIS (arg_node)), NULL);
+                    z = CreateIvArray (expr, vardecs, preassigns);
+                    expr = FREEdoFreeTree (expr);
+                }
+            }
+        }
+    }
+
+    /* Case 4 */
+    if ((NULL == z) && (NULL != ivprf) && (F_vect2offset == PRF_PRF (ivprf))) {
+        z = ID_AVIS (PRF_ARG2 (ivprf));
+    }
+
+    pat = PMfree (pat);
+    pat2 = PMfree (pat2);
+
+    DBUG_ASSERT (NULL != z, "Unable to rebuild iv from offset");
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IVUTfindIv(...)
+ *
+ * @brief Try to map arg_node back to the producerWL WITHID_VEC.
+ *
+ * @return: the desired avis node.
+ *
+ *****************************************************************************/
+node *
+IVUTfindIv (node *arg_node, node *cwlpart)
+{
+    node *z = NULL;
+    pattern *pat;
+    pattern *pat2;
+    node *bndarr = NULL;
+    node *ivprf = NULL;
+
+    DBUG_ENTER ();
+
+    pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
+    pat2 = PMany (1, PMAgetNode (&ivprf), 1, PMskip (0));
+
+    if (0 != TYgetDim (AVIS_TYPE (ID_AVIS (arg_node)))) { /* _sel_VxA_() case */
+        z = ID_AVIS (arg_node);
+    } else {
+        /* Skip the F_noteintersect */
+        if ((PMmatchFlatSkipGuards (pat2, arg_node) && (N_prf == NODE_TYPE (ivprf))
+             && (F_noteintersect == PRF_PRF (ivprf)))) {
+            arg_node = PRF_ARG1 (ivprf);
+        }
+
+        if (PMmatchFlatSkipGuards (pat2, arg_node)) { /* _idx_sel() case */
+            if ((N_prf == NODE_TYPE (ivprf)) && (F_idxs2offset == PRF_PRF (ivprf))) {
+                DBUG_PRINT ("look for pwlprat WITHIDS here");
+                z = NULL; /* FIXME */
+            } else {
+                /* We have not have _idxs2offset any more, due to opts.
+                 * This is OK if PWL bounds are 1-D
+                 */
+                if ((NULL != cwlpart)
+                    && (1 == TCcountIds (WITHID_IDS (PART_WITHID (cwlpart))))) {
+                    DBUG_PRINT ("confusion   look for pwlprat WITHIDS here");
+                    z = NULL; /* FIXME */
+                    z = NULL;
+                }
+            }
+        }
+    }
+
+    /* Case 4 */
+    if ((NULL == z) && (NULL != ivprf) && (F_vect2offset == PRF_PRF (ivprf))) {
+        z = ID_AVIS (PRF_ARG2 (ivprf));
+    }
+
+    pat = PMfree (pat);
+    pat2 = PMfree (pat2);
+
+    DBUG_ASSERT (NULL != z, "Unable to locate iv from offset");
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn constant *IVUToffset2Constant(...)
+ *
+ * @brief: arg_node is the offset PRF_ARG1 of an _idx_sel()
+ *         or _idx_modarray_AxSxS().
+ *         If arg_node is a constant, return that constant; else NULL.
+ *
+ *         Case 1: arg_node is an N_num:
+ *
+ *         Case 2: arg_node is the result of a _vect2offset( shp, iv),
+ *         on constants.
+ *
+ *         Case 3: arg_node is the result of an _idxs2offset( shp, i0, i1,...);
+ *         on constants.
+ *
+ *         In the latter two cases, CF could simplify them to case 1.
+ *         However, doing that removes any trace of the iv that
+ *         generated the offset, which makes AWLF and other optimizations
+ *         difficult. So, we compute the same result as would CF on
+ *         those offset-generating functions, but avoid actually replacing
+ *         the computation.
+ *
+ * @return: The offset as a constant, if known, or NULL.
+ *
+ *****************************************************************************/
+node *
+IVUToffset2Constant (node *arg_node)
+{
+    node *z = NULL;
+    pattern *pat1;
+    pattern *pat2;
+
+    DBUG_ENTER ();
+
+    if (N_num == NODE_TYPE (arg_node)) {
+        z = arg_node;
+    }
+
+    if (NULL == z) {
     }
 
     DBUG_RETURN (z);

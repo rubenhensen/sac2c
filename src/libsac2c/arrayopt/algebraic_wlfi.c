@@ -128,6 +128,7 @@
 #include "cubeslicer.h"
 #include "prfunroll.h"
 #include "flattengenerators.h"
+#include "indexvectorutils.h"
 
 /** <!--********************************************************************-->
  *
@@ -1865,163 +1866,6 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CreateIvArray( node *arg_node, node **vardecs,
- *                           node **preassigns)
- *
- * @brief: Create an N_array from the index scalars in the N_exprs arg_node.
- *         Basically, we are temporarily recreating the
- *         vect2offset index vector argument, to mollify
- *         those optimizations that need to have an index vector,
- *         rather than an offset, for indexing analysis.
- *
- * @return: the avis node for the new N_array.
- *
- *****************************************************************************/
-node *
-CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
-{
-    node *avis;
-    node *ids;
-    node *assgn;
-    node *nlet;
-    int len;
-    node *z;
-
-    DBUG_ENTER ();
-
-    len = TCcountExprs (arg_node);
-    avis = TBmakeAvis (TRAVtmpVar (),
-                       TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, len)));
-    *vardecs = TBmakeVardec (avis, *vardecs);
-
-    ids = TBmakeIds (avis, NULL);
-    assgn
-      = TBmakeAssign (TBmakeLet (ids, TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int),
-                                                              SHcreateShape (0)),
-                                                   SHcreateShape (1, len),
-                                                   DUPdoDupTree (arg_node))),
-                      NULL);
-    *preassigns = TCappendAssign (*preassigns, assgn);
-    AVIS_SSAASSIGN (avis) = assgn;
-    nlet = ASSIGN_STMT (assgn);
-    z = IVEXPgenerateNarrayExtrema (nlet, vardecs, preassigns);
-    LET_EXPR (nlet) = z;
-
-    DBUG_RETURN (avis);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *AWLFIoffset2Iv(...)
- *
- * @brief  We are looking at PRF_ARG1 in the _sel_VxA_() or _idx_sel(),
- *         e.g., iv in the following:
- *
- *            iv = [ i, j, k];
- *            z = _sel_VxA_( iv, producerWL);
- *
- *         within the consumerWL, and iv may have extrema attached to it.
- *
- *         Alternately, we have
- *
- *            poffset = idxs2offset( shape( producerWL), i, j, k...);
- *            z = _idx_sel_( poffset, producerWL);
- *
- *         There are several cases:
- *
- *         1. We are doing _sel_VxA_( iv, ProducerWL):
- *            Return iv's avis.
- *
- *         2. We are doing idx_sel_( offset, ProducerWL).
- *            Find the idxs2offset( pwl, i, j, k...),
- *            build a flattened N_array from [ i, j, k], and
- *            return its avis.
- *
- *         3  We can not find the idxs2offset, but the
- *            producerWL generates a vector result.
- *            Return  xxx FIXME.
- *
- *         4. arg_node is a vect2offset( shape( producerWL), iv);
- *            Return iv.
- *
- *        This function is, admittedly, a kludge. It might make more sense to
- *        have IVE generate an intermediate primitive that preserves
- *        the iv. E.g.,:
- *
- *            iv = [ i, j, k];
- *            offset = vect2offset( shp, iv);
- *
- *        becomes:
- *
- *            offset = idxsiv2offset( shp, iv, i, j, k);
- *
- *        This would allow AWLF and WLF to access the index vector
- *        and its extrema without the sort of heuristic that
- *        this function represents.
- *
- *        Then, idxsiv2offset would be turned into a proper
- *        idxs2offset by some other, post-SAACYC traversal.
- *
- * @return: the desired avis node.
- *          If we can't find one, we return NULL.
- *
- *****************************************************************************/
-node *
-AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *pwlpart)
-{
-    node *z = NULL;
-    pattern *pat;
-    pattern *pat2;
-    node *bndarr = NULL;
-    node *ivprf = NULL;
-    node *expr;
-
-    DBUG_ENTER ();
-
-    pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
-    pat2 = PMany (1, PMAgetNode (&ivprf), 1, PMskip (0));
-
-    if (0 != TYgetDim (AVIS_TYPE (ID_AVIS (arg_node)))) { /* _sel_VxA_() case */
-        z = ID_AVIS (arg_node);
-    } else {
-        /* Skip the F_noteintersect */
-        if ((PMmatchFlatSkipGuards (pat2, arg_node) && (N_prf == NODE_TYPE (ivprf))
-             && (F_noteintersect == PRF_PRF (ivprf)))) {
-            arg_node = PRF_ARG1 (ivprf);
-        }
-
-        if (PMmatchFlatSkipGuards (pat2, arg_node)) { /* _idx_sel() case */
-            if ((N_prf == NODE_TYPE (ivprf)) && (F_idxs2offset == PRF_PRF (ivprf))) {
-                z = CreateIvArray (EXPRS_NEXT (PRF_ARGS (ivprf)), vardecs, preassigns);
-            } else {
-                /* We have not have _idxs2offset any more, due to opts.
-                 * This is OK if PWL bounds are 1-D
-                 */
-                if ((NULL != pwlpart)
-                    && (1 == TCcountIds (WITHID_IDS (PART_WITHID (pwlpart))))) {
-                    expr = TBmakeExprs (TBmakeId (ID_AVIS (arg_node)), NULL);
-                    z = CreateIvArray (expr, vardecs, preassigns);
-                    expr = FREEdoFreeTree (expr);
-                }
-            }
-        }
-    }
-
-    /* Case 4 */
-    if ((NULL == z) && (NULL != ivprf) && (F_vect2offset == PRF_PRF (ivprf))) {
-        z = ID_AVIS (PRF_ARG2 (ivprf));
-    }
-
-    pat = PMfree (pat);
-    pat2 = PMfree (pat2);
-
-    DBUG_ASSERT (NULL != z, "Unable to rebuild iv from offset");
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *attachIntersectCalc( node *arg_node, info *arg_info, node *ivprime)
  *
  * @brief  We are looking at the _sel_VxA_ N_prf for:
@@ -2584,9 +2428,9 @@ AWLFIprf (node *arg_node, info *arg_info)
             PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
             if (NULL != INFO_PRODUCERWL (arg_info)) {
-                ivavis = AWLFIoffset2Iv (PRF_ARG1 (arg_node), &INFO_VARDECS (arg_info),
-                                         &INFO_PREASSIGNS (arg_info),
-                                         WITH_PART (INFO_PRODUCERWL (arg_info)));
+                ivavis = IVUToffset2Iv (PRF_ARG1 (arg_node), &INFO_VARDECS (arg_info),
+                                        &INFO_PREASSIGNS (arg_info),
+                                        INFO_CONSUMERWLPART (arg_info));
             }
 
             /* Maybe attach intersect calculations now. */

@@ -479,7 +479,9 @@ makeNarray (node *extrema, ntype *typ, node *nar, node **vardecs, node **preassi
         /* Copy the original array, and overwrite its elements */
         narr = DUPdoDupNode (nar);
         ARRAY_AELEMS (narr) = extrema;
+#ifdef FIXME
         narr = CFunflattenSimpleScalars (narr);
+#endif // ifdef FIXME
         zavis = FLATGflattenExpression (narr, vardecs, preassigns, TYeliminateAKV (typ));
     }
 

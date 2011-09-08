@@ -94,18 +94,17 @@
 struct INFO {
     node *lhs;
     node *fundef;
-    node *pwlavis;
+    node *pavis;
     node *withid;
     bool valid;
     dfmask_t *dfm;
 };
 
-/* The left hand side of the N_let, the array we are copying into */
+/* The left hand side of the N_let for the consumer-WL */
 #define INFO_LHS(n) (n->lhs)
-/* The right hand side of the N_let, or the array we copy from, respectively */
 #define INFO_FUNDEF(n) (n->fundef)
 /* The function currently being traversed. This is here to ease debugging */
-#define INFO_PWLAVIS(n) (n->pwlavis)
+#define INFO_PAVIS(n) (n->pavis)
 /* This is the selection-vector inside our with-loop */
 #define INFO_WITHID(n) (n->withid)
 /* Do we (still) have a valid case of cwle? */
@@ -126,7 +125,7 @@ MakeInfo ()
     INFO_VALID (result) = FALSE;
     INFO_LHS (result) = NULL;
     INFO_FUNDEF (result) = NULL;
-    INFO_PWLAVIS (result) = NULL;
+    INFO_PAVIS (result) = NULL;
     INFO_WITHID (result) = NULL;
 
     DBUG_RETURN (result);
@@ -138,7 +137,7 @@ FreeInfo (info *info)
     DBUG_ENTER ();
 
     INFO_LHS (info) = NULL;
-    INFO_PWLAVIS (info) = NULL;
+    INFO_PAVIS (info) = NULL;
     INFO_WITHID (info) = NULL;
 
     info = MEMfree (info);
@@ -203,7 +202,7 @@ CWLEdoCopyWithLoopElimination (node *arg_node)
  * @params: cexprs is the WL result element. We determine if it
  *          was derived from the above _sel_VxA_ operation.
  *
- * @return: target as PRF_ARG2 of _sel_VxA_( IV, target),
+ * @return: target as N_avis of PRF_ARG2 of _sel_VxA_( IV, target),
  *          if found, else NULL.
  *
  *****************************************************************************/
@@ -535,9 +534,6 @@ CWLEids (node *arg_node, info *arg_info)
 node *
 CWLEwith (node *arg_node, info *arg_info)
 {
-    pattern *pat;
-    node *pwlwith = NULL;
-    node *pwlid;
 
     DBUG_ENTER ();
 
@@ -559,26 +555,26 @@ CWLEwith (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("Codes OK. Comparing shapes of LHS(%s), RHS(%s)",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
-                    AVIS_NAME (INFO_PWLAVIS (arg_info)));
+                    AVIS_NAME (INFO_PAVIS (arg_info)));
 
-        pat = PMwith (1, PMAgetNode (&pwlwith), 0);
-        pwlid = TBmakeId (INFO_PWLAVIS (arg_info));
-        PMmatchFlatWith (pat, pwlid);
-        pwlid = FREEdoFreeNode (pwlid);
-
-        if (IVUTisWLShapesMatch (INFO_PWLAVIS (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
-                                 arg_node, pwlwith)) {
+        if (IVUTisShapesMatch (INFO_PAVIS (arg_info), IDS_AVIS (INFO_LHS (arg_info)),
+                               GENERATOR_BOUND2 (
+                                 PART_GENERATOR (WITH_PART (arg_node))))) {
             DBUG_PRINT ("All ok. replacing LHS(%s) WL by %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
-                        AVIS_NAME (INFO_PWLAVIS (arg_info)));
+                        AVIS_NAME (INFO_PAVIS (arg_info)));
             global.optcounters.cwle_wl++;
 
             /*
-             * 1. free the cwl; we do not need it anymore.
-             * 2. return a brandnew N_id, built from the pwl.
+             * 1. free the consumer; we do not need it anymore.
+             * 2. return a brandnew N_id, built from the producer.
              */
             arg_node = FREEdoFreeTree (arg_node);
-            arg_node = TBmakeId (INFO_PWLAVIS (arg_info));
+            arg_node = TBmakeId (INFO_PAVIS (arg_info));
+        } else {
+            DBUG_PRINT ("Shape mismatch: Unable to replace LHS(%s) WL by RHS(%s)",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                        AVIS_NAME (INFO_PAVIS (arg_info)));
         }
     }
 
@@ -592,9 +588,12 @@ CWLEwith (node *arg_node, info *arg_info)
  * @brief checks for a valid case of cwle in this wl and in nested with loops.
  *
  * several tasks are done in the N_code nodes:
+ *
  *   1. At first we do check for a case of cwle in this withloop.
+ *
  *   2. Traverse into all succeeding code-blocks, checking if they allow for
  *      a cwle.
+ *
  *   3. If we had a look into all code blocks, we do mark the WITHID in our
  *      DFM, so it is available in nested withloops, and traverse into just
  *      these.
@@ -628,23 +627,23 @@ CWLEcode (node *arg_node, info *arg_info)
     /*
      * if we have found some avis that meets the requirements, then lets check if
      * it is the same that we have found before. If we do not have found anything
-     * before, assign it to INFO_PWLAVIS.
+     * before, assign it to INFO_PAVIS.
      * At this point we also check the DataFlowMask, to see if our source array
      * was defined _before_ this wl.
      */
     if (INFO_VALID (arg_info)) {
         DBUG_PRINT ("checking if target is legitimate and known");
 
-        if ((NULL == INFO_PWLAVIS (arg_info) || target == INFO_PWLAVIS (arg_info))
+        if ((NULL == INFO_PAVIS (arg_info) || target == INFO_PAVIS (arg_info))
             && DFMtestMaskEntry (INFO_DFM (arg_info), NULL, target)) {
             DBUG_PRINT ("target is valid. saving");
 
-            INFO_PWLAVIS (arg_info) = target;
+            INFO_PAVIS (arg_info) = target;
         } else {
             DBUG_PRINT ("target is NOT valid. skipping wl");
 
             INFO_VALID (arg_info) = FALSE;
-            INFO_PWLAVIS (arg_info) = NULL;
+            INFO_PAVIS (arg_info) = NULL;
         }
     }
 

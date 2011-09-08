@@ -132,7 +132,7 @@ StructOpSel (node *arg_node, info *arg_info)
     pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAgetVal (&con1)),
                   PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
 
-    if (PMmatchFlat (pat1, arg_node)) {
+    if (PMmatchFlatSkipExtremaAndGuards (pat1, arg_node)) {
 
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);
         arg2fs = COfreeConstant (arg2fs);
@@ -221,7 +221,7 @@ StructOpSelAxSxS (node *arg_node, info *arg_info)
     pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMconst (1, PMAgetVal (&con1)),
                   PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
 
-    if (PMmatchFlat (pat1, arg_node)) {
+    if (PMmatchFlatSkipExtremaAndGuards (pat1, arg_node)) {
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);
         arg2fs = COfreeConstant (arg2fs);
         iv_len = SHgetUnrLen (COgetShape (con1));
@@ -542,8 +542,9 @@ ModarrayModarray_AxVxS (node *arg_node, info *arg_info)
  *
  *   becomes val.
  *
- *   This also removes the N_prf if SelModarray() has
- *   marked this N_prf as a no-op.
+ *   Case 1:
+ *   Case 3: Remove the N_prf if SelModarray() has marked this N_prf as a no-op.
+ *
  *
  *****************************************************************************/
 node *
@@ -555,17 +556,29 @@ SCCFprf_idx_modarray_AxSxS (node *arg_node, info *arg_info)
 
     arg_node = ModarrayModarray_AxSxS (arg_node, arg_info);
 
-    if (TRUE == PRF_ISNOP (arg_node)) {
-        z = DUPdoDupNode (PRF_ARG1 (arg_node));
-        DBUG_PRINT ("NOP _modarray_AxSxS deleted");
-    }
-
+    /*
+     *  Case 1:  z = F_modarray_AxVxS( X, [], val)
+     *           where X and val are both scalars, becomes:
+     *           z = val;
+     */
     if ((NULL == z) && (TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
         && (TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG3 (arg_node)))))) {
         z = DUPdoDupNode (PRF_ARG3 (arg_node));
     }
 
-    int morecodingplease; /* need to clone code from next function down */
+#ifdef FIXME
+    /* need to clone code from next function down.
+     * Also, we have to trace back iv to ensure it is an empty vector,
+     * in Case 1, and
+     */
+
+#endif // FIXME
+
+    /* Case 3 */
+    if (TRUE == PRF_ISNOP (arg_node)) {
+        z = DUPdoDupNode (PRF_ARG1 (arg_node));
+        DBUG_PRINT ("NOP _modarray_AxSxS deleted");
+    }
 
     DBUG_RETURN (z);
 }
@@ -599,7 +612,8 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     int offset;
 
     DBUG_ENTER ();
-    /**
+
+    /*
      * if iv is an empty vector, we simply replace the entire
      * expression by val!
      * Well, not quite!!! This is only valid, iff
@@ -611,9 +625,6 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
      *
      */
 
-    /**
-     *  Case 1:  F_modarray_AxVxS( X, [], val)
-     */
     emptyVec = COmakeConstant (T_int, SHcreateShape (1, 0), NULL);
     pat1 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMvar (1, PMAgetNode (&X), 0),
                   PMconst (1, PMAisVal (&emptyVec)), PMvar (1, PMAgetNode (&val), 0));
@@ -622,13 +633,19 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
                   PMarray (2, PMAgetNode (&X), PMAgetFS (&fsX), 1, PMskip (0)),
                   PMconst (1, PMAgetVal (&coiv)), PMvar (1, PMAgetNode (&val), 0));
 
+    /*
+     *  Case 1:  z = F_modarray_AxVxS( X, [], val)
+     *           where X and val are both scalars, becomes:
+     *           z = val;
+     */
     if (PMmatchFlatSkipGuards (pat1, arg_node) && (TUisScalar (AVIS_TYPE (ID_AVIS (X))))
         && (TUisScalar (AVIS_TYPE (ID_AVIS (val))))) {
         z = DUPdoDupNode (val);
         DBUG_PRINT ("_modarray_AxVxS (X, [], scalar) eliminated");
     } else {
-        /**
-         * Case 2: F_modarray_AxVxS( X = [...], iv = [c0,...,cn], val)
+        /*
+         * Case 2: F_modarray_AxVxS( X = [x0, x1,...xn], iv = [c0,...,cn], val)
+         *         where val is scalar, and the shapes of X and iv match.
          */
         val = NULL;
         X = NULL;
@@ -650,8 +667,10 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     pat2 = PMfree (pat2);
     emptyVec = COfreeConstant (emptyVec);
 
+    /* other Cases */
     arg_node = ModarrayModarray_AxVxS (arg_node, arg_info);
 
+    /* Case 3: Remove nop */
     if ((NULL == z) && (TRUE == PRF_ISNOP (arg_node))) {
         z = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
@@ -1402,6 +1421,8 @@ SelEmptyScalar (node *arg_node, info *arg_info)
  * @param arg_info info structure
  *
  * @return if prf matches the above pattern it returns i
+ *         else NULL
+ *
  ******************************************************************************/
 static node *
 SelArrayOfEqualElements (node *arg_node, info *arg_info)
@@ -1426,7 +1447,7 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
         }
 
         if (matches) {
-            DBUG_PRINT ("SelArrayOfEqualEmements removed sel()");
+            DBUG_PRINT ("Removed sel()");
             res = DUPdoDupTree (elem);
         }
     }
@@ -1434,6 +1455,72 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
     if (frameshape != NULL) {
         frameshape = COfreeConstant (frameshape);
     }
+
+    DBUG_RETURN (res);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn node *SelArrayOfEqualElementsAxSxS( node *arg_node, info *arg_info)
+ *
+ * @brief Matches selections of the following form
+ *
+ *        z = sel( iv, [i, i, i, i, i]);
+ *
+ *        where the length of iv matches the length of the frameshape of
+ *        the array.
+ *
+ *        or
+ *
+ *        z =_idx_sel( offset, [ i, i, i, i, i]);
+ *
+ *
+ * @param arg_node N_prf node of sel
+ * @param arg_info info structure
+ *
+ * @return if prf matches the above pattern it returns i
+ *         else NULL
+ *
+ ******************************************************************************/
+static node *
+SelArrayOfEqualElementsAxSxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *aelems = NULL;
+    node *elem = NULL;
+    node *offset = NULL;
+    constant *frameshape = NULL;
+    bool matches = TRUE;
+    pattern *pat1;
+    pattern *pat2;
+
+    DBUG_ENTER ();
+
+    pat1
+      = PMprf (1, PMAisPrf (F_idx_sel), 2, PMany (1, PMAgetNode (&offset)),
+               PMarray (2, PMAgetNode (&aelems), PMAgetFS (&frameshape), 1, PMskip (0)));
+    pat2 = PMvar (1, PMAisVar (&elem), 0);
+
+    /* FIXME Need to backtrack and find IV from offset to check that
+     * shape(iv) == frameshape. See _sel_() case.
+     */
+
+    if (PMmatchFlat (pat1, arg_node)) {
+        aelems = ARRAY_AELEMS (aelems);
+        elem = EXPRS_EXPR (aelems);
+        while (matches && (NULL != aelems)) {
+            matches = PMmatchFlat (pat2, aelems);
+            aelems = EXPRS_NEXT (aelems);
+        }
+
+        if (matches) {
+            DBUG_PRINT ("Removed idx_sel()");
+            res = DUPdoDupTree (elem);
+        }
+    }
+
+    frameshape = (NULL != frameshape) ? COfreeConstant (frameshape) : NULL;
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
 
     DBUG_RETURN (res);
 }
@@ -1788,17 +1875,19 @@ SCCFprf_idx_sel (node *arg_node, info *arg_info)
         res = StructOpSelAxSxS (arg_node, arg_info);
     }
 
-    int codingneededhere;
-#ifdef FIXMENOW
+    /* SAH claims the next two were needed to make tvd and/or tvd_abstract run
+     * faster. rbe 2011-09-07
+     */
     if (NULL == res) {
         res = SelArrayOfEqualElementsAxSxS (arg_node, arg_info);
     }
 
+#ifdef CODEMENOW
     if (NULL == res) {
         res = SelProxyArrayAxSxS (arg_node, arg_info);
     }
 
-#endif // FIXMENOW
+#endif // CODEMENOW
 
     DBUG_RETURN (res);
 }

@@ -330,8 +330,8 @@ CYCLEPHASEFUNOLD (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropag
 CYCLEPHASEFUNOLD (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
                   global.optimize.dols, opt, cyc)
 
-CYCLEPHASEFUNOLD (cf, "Applying constant folding", CFdoConstantFolding,
-                  global.optimize.docf, opt, cyc)
+CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
+               opt, cyc)
 
 CYCLEPHASEFUNOLD (linl, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, cyc)
@@ -403,10 +403,9 @@ CYCLEPHASEFUNOLD (esd, "Eliminating subtraction and division operators", ESDdoEl
                   global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                   opt, cyc)
 
-CYCLEPHASEFUNOLD (esdcf, "Applying constant folding (esd case)", CFdoConstantFolding,
-                  (global.optimize.docf
-                   && (global.optimize.doal || global.optimize.dodl)),
-                  opt, cyc)
+CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)", CFdoConstantFolding,
+               (global.optimize.docf && (global.optimize.doal || global.optimize.dodl)),
+               opt, cyc)
 
 CYCLEPHASEFUNOLD (esdcse, "Applying common subexpression elimination (esd case)",
                   CSEdoCommonSubexpressionElimination,
@@ -442,13 +441,6 @@ CYCLEPHASE (sisi, "Simplifying function signatures", SISIdoSignatureSimplificati
 CYCLEPHASE (lof, "Lifting optimization flags", LOFdoLiftOptFlags, ALWAYS, opt, cyc)
 
 ENDCYCLE (cyc)
-
-/*************************************************/
-
-SUBPHASE (wlbscnf, "Unflattening WL-partition structural constants",
-          WLBSCdoWlbounds2nonFlatStructConsts, ALWAYS, opt)
-
-/*************************************************/
 
 CYCLE (saacyc, "Symbolic array attribute cycle 2", global.optimize.dosaacyc, opt, RESET)
 
@@ -489,8 +481,8 @@ CYCLEPHASEFUNOLD (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropag
 CYCLEPHASEFUNOLD (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
                   global.optimize.dols, opt, saacyc)
 
-CYCLEPHASEFUNOLD (cf, "Applying constant folding", CFdoConstantFolding,
-                  global.optimize.docf, opt, saacyc)
+CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
+               opt, saacyc)
 
 CYCLEPHASEFUNOLD (linl, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, saacyc)
@@ -575,10 +567,9 @@ CYCLEPHASEFUNOLD (esd, "Eliminating subtraction and division operators", ESDdoEl
 CYCLEPHASEFUNOLD (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
                   global.optimize.doas, opt, saacyc)
 
-CYCLEPHASEFUNOLD (esdcf, "Applying constant folding (esd case)", CFdoConstantFolding,
-                  (global.optimize.docf
-                   && (global.optimize.doal || global.optimize.dodl)),
-                  opt, saacyc)
+CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)", CFdoConstantFolding,
+               (global.optimize.docf && (global.optimize.doal || global.optimize.dodl)),
+               opt, saacyc)
 
 CYCLEPHASEFUNOLD (esdcse, "Applying common subexpression elimination (esd case)",
                   CSEdoCommonSubexpressionElimination,

@@ -20,7 +20,6 @@ struct INFO {
     node *avismax;
     node *let;
     bool remassign;
-    bool onefundef;
     bool lacfunok;
     bool travinlac;
     bool doingextrema;
@@ -40,7 +39,6 @@ struct INFO {
 #define INFO_AVISMAX(n) (n->avismax)
 #define INFO_LET(n) (n->let)
 
-#define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_LACFUNOK(n) (n->lacfunok)
 #define INFO_TRAVINLAC(n) (n->travinlac)
 #define INFO_DOINGEXTREMA(n) (n->doingextrema)
