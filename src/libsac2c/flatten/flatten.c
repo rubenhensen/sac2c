@@ -518,6 +518,7 @@ FLATexprs (node *arg_node, info *arg_info)
              || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_with)
              || (NODE_TYPE (expr) == N_cast));
         break;
+    case CT_array:
     case CT_return:
         abstract
           = ((NODE_TYPE (expr) == N_numbyte) || (NODE_TYPE (expr) == N_numshort)
@@ -536,11 +537,13 @@ FLATexprs (node *arg_node, info *arg_info)
         abstract = ((NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
                     || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast));
         break;
+#ifdef FIXME
     case CT_array:
         abstract = ((NODE_TYPE (expr) == N_str) || (NODE_TYPE (expr) == N_array)
                     || (NODE_TYPE (expr) == N_spap) || (NODE_TYPE (expr) == N_prf)
                     || (NODE_TYPE (expr) == N_with) || (NODE_TYPE (expr) == N_cast));
         break;
+#endif // FIXME
     default:
         DBUG_ASSERT (0, "illegal context !");
         /* the following assignment is used only for convincing the C compiler

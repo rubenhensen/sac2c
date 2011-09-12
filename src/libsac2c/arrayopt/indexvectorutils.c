@@ -46,13 +46,79 @@
 
 /** <!--********************************************************************-->
  *
- * @fn node *IVUTfindProxySel( node *iv)
+ * @fn constant *IVUToffset2Constant(...)
+ *
+ * @brief: arg_node is the offset PRF_ARG1 of an _idx_sel()
+ *         or _idx_modarray_AxSxS().
+ *
+ *         Case 1: arg_node is a constant:
+ *
+ *         Case 2: arg_node is a _vect2offset( shp, iv),
+ *         on constants.
+ *
+ *         Case 3: arg_node is an _idxs2offset( shp, i0, i1,...);
+ *         on constants.
+ *
+ *         In the latter two cases, CF could simplify them to case 1.
+ *         However, doing that would remove any trace of the IV that
+ *         generated the offset, which makes AWLF and other optimizations
+ *         difficult. So, we compute the same result as would CF on
+ *         those offset-generating functions, but avoid actually replacing
+ *         the computation.
+ *
+ * @return: The offset as a constant, if known, or NULL.
+ *
+ *****************************************************************************/
+constant *
+IVUToffset2Constant (node *arg_node)
+{
+    constant *z = NULL;
+    constant *shp = NULL;
+    constant *iv = NULL;
+    pattern *pat1;
+    pattern *pat2;
+
+    DBUG_ENTER ();
+
+    pat1 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMconst (1, PMAgetVal (&shp)),
+                  PMconst (1, PMAgetVal (&iv), 0));
+
+    pat2 = PMprf (1, PMAisPrf (F_vect2offset), 1, PMconst (1, PMAgetVal (&shp)), 1,
+                  PMskip (0));
+
+    if ((N_id == NODE_TYPE (arg_node)) && (TYisAKV (AVIS_TYPE (ID_AVIS (arg_node))))) {
+        z = COaST2Constant (arg_node);
+    }
+
+    if ((NULL == z) && (PMmatchFlat (pat1, arg_node))) {
+        z = COvect2offset (shp, iv);
+        shp = COfreeConstant (shp);
+        iv = COfreeConstant (iv);
+    }
+
+    if ((NULL == z) && (PMmatchFlat (pat2, arg_node))) {
+        shp = COfreeConstant (shp);
+        /* I have no idea how to call COxxx with a variable number of arguments... */
+        /* z = IVUTidxs2offset( arg_node); */
+        DBUG_ASSERT (FALSE, "start coding...");
+    }
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IVUTarrayFromProxySel( node *iv)
+ * @fn node *IVUTarrayFromProxyIdxsel( node *iv)
  *
  * @brief:  If index vector iv originated as an N_array
  *          formed from shape vector selections, find
- *          that shape vector.
+ *          that shape vector, as z.
  *
- * Case 1: if avisshape is an N_array of the form:
+ * Case 1: if iv is an N_array of the form:
  *
  *            shap = _shape_A_( );
  *            v0 = [0];
@@ -63,8 +129,8 @@
  *            s2 = _sel_VxA_( v2, shap);
  *            iv = [ s0, s1, s2];
  *
- *         then z is shap, and we define shap as a proxy for iv.
- *         Otherwise, iv if iv is an N_array, else ID_AVIS( iv).
+ *         then z is shap, and we define iv as a proxy for shap.
+ *         Otherwise, NULL.
  *
  * Case 2: Like Case 1, excepf for _idx_sel() instead of _sel_VxA_():
  *         E.g.,:
@@ -83,7 +149,7 @@
  *
  *****************************************************************************/
 static node *
-IVUTfindProxySel (node *iv)
+IVUTarrayFromProxySel (node *iv)
 {
     bool b;
     pattern *patarray;
@@ -148,7 +214,7 @@ IVUTfindProxySel (node *iv)
 }
 
 static node *
-IVUTfindProxyIdxsel (node *iv)
+IVUTarrayFromProxyIdxsel (node *iv)
 {
     bool b;
     pattern *patarray;
@@ -156,17 +222,19 @@ IVUTfindProxyIdxsel (node *iv)
     pattern *pat2;
     node *narray = NULL;
     constant *con = NULL;
+    constant *ncon = NULL;
     node *z = NULL;
     node *shapid;
     char *nmin;
+    node *offset = NULL;
     int n;
 
     DBUG_ENTER ();
 
     patarray = PMarray (1, PMAgetNode (&narray), 0);
-    pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMconst (1, PMAisVal (&con)),
+    pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset), 0),
                   PMvar (1, PMAgetNode (&shapid), 0));
-    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMconst (1, PMAisVal (&con)),
+    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset), 0),
                   PMvar (1, PMAisNode (&shapid), 0));
     b = (PMmatchFlatSkipExtremaAndGuards (patarray, iv) && (NULL != narray)
          && (NULL != ARRAY_AELEMS (narray))
@@ -174,15 +242,23 @@ IVUTfindProxyIdxsel (node *iv)
     if (b) {
         narray = ARRAY_AELEMS (narray);
         n = 0;
-        con = COmakeConstantFromInt (n);
         if (PMmatchFlatSkipExtremaAndGuards (pat1, EXPRS_EXPR (narray))) {
-            con = COfreeConstant (con);
-            while (b && (NULL != narray)) {
-                con = COmakeConstantFromInt (n);
-                b = b && PMmatchFlatSkipExtremaAndGuards (pat2, EXPRS_EXPR (narray));
-                con = COfreeConstant (con);
-                narray = EXPRS_NEXT (narray);
-                n++;
+            con = IVUToffset2Constant (offset);
+            if ((NULL != con) && COisZero (con, TRUE)) {
+                while (b && (NULL != narray)) {
+                    if (PMmatchFlatSkipExtremaAndGuards (pat2, EXPRS_EXPR (narray))) {
+                        con = COfreeConstant (con);
+                        con = IVUToffset2Constant (offset);
+                        ncon = COmakeConstantFromInt (n);
+                        b = COcompareConstants (con, ncon);
+                        con = COfreeConstant (con);
+                        ncon = COfreeConstant (ncon);
+                        narray = EXPRS_NEXT (narray);
+                        n++;
+                    } else {
+                        b = FALSE;
+                    }
+                }
             }
         } else {
             b = FALSE;
@@ -207,15 +283,15 @@ IVUTfindProxyIdxsel (node *iv)
 }
 
 node *
-IVUTfindProxy (node *iv)
+IVUTarrayFromProxy (node *iv)
 {
     node *z;
 
     DBUG_ENTER ();
 
-    z = IVUTfindProxySel (iv);
+    z = IVUTarrayFromProxySel (iv);
     if (NULL == z) {
-        z = IVUTfindProxyIdxsel (iv);
+        z = IVUTarrayFromProxyIdxsel (iv);
     }
 
     DBUG_RETURN (z);
@@ -258,7 +334,7 @@ IVUTarrayFromIv (node *iv)
     DBUG_ENTER ();
 
     pat = PMprf (1, PMAisPrf (F_shape_A), 1, PMvar (1, PMAgetNode (&ARR), 0));
-    sv = IVUTfindProxy (iv);
+    sv = IVUTarrayFromProxy (iv);
     PMmatchFlatSkipExtremaAndGuards (pat, sv);
 
     pat = PMfree (pat);
@@ -340,8 +416,8 @@ IVUTisShapesMatch (node *pavis, node *cavis, node *cavisshape)
 
     /* Case 2: See if AVIS_SHAPEs match */
     if ((!z) && (NULL != AVIS_SHAPE (pavis)) && (NULL != AVIS_SHAPE (cavis))) {
-        pat1 = PMany (1, PMAgetNode (&shp), 0);
-        pat2 = PMany (1, PMAisNode (&shp)), (0);
+        pat1 = PMvar (1, PMAgetNode (&shp), 0);
+        pat2 = PMvar (1, PMAisNode (&shp), 0);
         z = (PMmatchFlatSkipExtremaAndGuards (pat1, AVIS_SHAPE (pavis))
              && PMmatchFlatSkipExtremaAndGuards (pat2, AVIS_SHAPE (cavis)));
         pat1 = PMfree (pat1);
@@ -349,8 +425,14 @@ IVUTisShapesMatch (node *pavis, node *cavis, node *cavisshape)
 
         if (!z) {
             /* Case 4 */
-            psv = IVUTfindProxy (AVIS_SHAPE (pavis));
-            csv = IVUTfindProxy (AVIS_SHAPE (cavis));
+            psv = IVUTarrayFromProxy (AVIS_SHAPE (pavis));
+            if (NULL == psv) {
+                psv = AVIS_SHAPE (pavis);
+            }
+            csv = IVUTarrayFromProxy (AVIS_SHAPE (cavis));
+            if (NULL == csv) {
+                csv = AVIS_SHAPE (cavis);
+            }
             z = ((NULL != psv) && (NULL != csv)
                  && ((psv == csv)
                      || ((N_id == NODE_TYPE (psv)) && (N_id == NODE_TYPE (csv))
@@ -488,50 +570,56 @@ node *
 IVUToffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart)
 {
     node *z = NULL;
-    pattern *pat;
+    pattern *pat1;
     pattern *pat2;
-    node *bndarr = NULL;
-    node *ivprf = NULL;
+    pattern *pat3;
     node *expr;
+    node *shp = NULL;
+    node *iv = NULL;
+    node *iv0 = NULL;
+    node *arg1 = NULL;
 
     DBUG_ENTER ();
 
-    pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
-    pat2 = PMany (1, PMAgetNode (&ivprf), 1, PMskip (0));
+    pat1 = PMprf (2, PMAisPrf (F_noteintersect), PMAgetNode (&arg1), 0);
+
+    pat2 = PMprf (1, PMAisPrf (F_idxs2offset), 1, PMvar (1, PMAgetNode (&shp), 0), 1,
+                  PMvar (1, PMAgetNode (&iv0), 0), 0);
+
+    pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
+                  PMvar (1, PMAgetNode (&iv), 0));
 
     if (0 != TYgetDim (AVIS_TYPE (ID_AVIS (arg_node)))) { /* _sel_VxA_() case */
         z = ID_AVIS (arg_node);
-    } else {
-        /* Skip the F_noteintersect */
-        if ((PMmatchFlatSkipGuards (pat2, arg_node) && (N_prf == NODE_TYPE (ivprf))
-             && (F_noteintersect == PRF_PRF (ivprf)))) {
-            arg_node = PRF_ARG1 (ivprf);
-        }
-
-        if (PMmatchFlatSkipGuards (pat2, arg_node)) { /* _idx_sel() case */
-            if ((N_prf == NODE_TYPE (ivprf)) && (F_idxs2offset == PRF_PRF (ivprf))) {
-                z = CreateIvArray (EXPRS_NEXT (PRF_ARGS (ivprf)), vardecs, preassigns);
-            } else {
-                /* We have not have _idxs2offset any more, due to opts.
-                 * This is OK if PWL bounds are 1-D
-                 */
-                if ((NULL != cwlpart)
-                    && (1 == TCcountIds (WITHID_IDS (PART_WITHID (cwlpart))))) {
-                    expr = TBmakeExprs (TBmakeId (ID_AVIS (arg_node)), NULL);
-                    z = CreateIvArray (expr, vardecs, preassigns);
-                    expr = FREEdoFreeTree (expr);
-                }
-            }
-        }
     }
 
-    /* Case 4 */
-    if ((NULL == z) && (NULL != ivprf) && (F_vect2offset == PRF_PRF (ivprf))) {
-        z = ID_AVIS (PRF_ARG2 (ivprf));
+    if ((NULL == z) && /* skip any noteintersect */
+        (PMmatchFlatSkipGuards (pat1, arg_node))) {
+        arg_node = PRF_ARG1 (arg1);
     }
 
-    pat = PMfree (pat);
+    if ((NULL == z) && /* vect2offset case */
+        (PMmatchFlatSkipGuards (pat3, arg_node))) {
+        z = ID_AVIS (iv);
+    }
+
+    if ((NULL == z) && (PMmatchFlatSkipGuards (pat2, arg_node))) { /* _idx_sel() case */
+        z = CreateIvArray (iv0, vardecs, preassigns);
+    }
+
+    /* We have not have _idxs2offset any more, due to opts.
+     * This is OK if PWL bounds are 1-D
+     */
+    if ((NULL == z) && (NULL != cwlpart)
+        && (1 == TCcountIds (WITHID_IDS (PART_WITHID (cwlpart))))) {
+        expr = TBmakeExprs (TBmakeId (ID_AVIS (arg_node)), NULL);
+        z = CreateIvArray (expr, vardecs, preassigns);
+        expr = FREEdoFreeTree (expr);
+    }
+
+    pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
 
     DBUG_ASSERT (NULL != z, "Unable to rebuild iv from offset");
 
@@ -559,7 +647,7 @@ IVUTfindIv (node *arg_node, node *cwlpart)
     DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
-    pat2 = PMany (1, PMAgetNode (&ivprf), 1, PMskip (0));
+    pat2 = PMvar (1, PMAgetNode (&ivprf), 1, PMskip (0));
 
     if (0 != TYgetDim (AVIS_TYPE (ID_AVIS (arg_node)))) { /* _sel_VxA_() case */
         z = ID_AVIS (arg_node);
@@ -597,51 +685,6 @@ IVUTfindIv (node *arg_node, node *cwlpart)
     pat2 = PMfree (pat2);
 
     DBUG_ASSERT (NULL != z, "Unable to locate iv from offset");
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn constant *IVUToffset2Constant(...)
- *
- * @brief: arg_node is the offset PRF_ARG1 of an _idx_sel()
- *         or _idx_modarray_AxSxS().
- *         If arg_node is a constant, return that constant; else NULL.
- *
- *         Case 1: arg_node is an N_num:
- *
- *         Case 2: arg_node is the result of a _vect2offset( shp, iv),
- *         on constants.
- *
- *         Case 3: arg_node is the result of an _idxs2offset( shp, i0, i1,...);
- *         on constants.
- *
- *         In the latter two cases, CF could simplify them to case 1.
- *         However, doing that removes any trace of the iv that
- *         generated the offset, which makes AWLF and other optimizations
- *         difficult. So, we compute the same result as would CF on
- *         those offset-generating functions, but avoid actually replacing
- *         the computation.
- *
- * @return: The offset as a constant, if known, or NULL.
- *
- *****************************************************************************/
-node *
-IVUToffset2Constant (node *arg_node)
-{
-    node *z = NULL;
-    pattern *pat1;
-    pattern *pat2;
-
-    DBUG_ENTER ();
-
-    if (N_num == NODE_TYPE (arg_node)) {
-        z = arg_node;
-    }
-
-    if (NULL == z) {
-    }
 
     DBUG_RETURN (z);
 }

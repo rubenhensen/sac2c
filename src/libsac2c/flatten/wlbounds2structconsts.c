@@ -235,7 +235,7 @@ EnsureStructConstant (node *bound, ntype *type, info *arg_info)
         pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
     }
 
-    if (PMmatch (pat, PM_flatSkipExtrema, NULL, bound)) {
+    if (PMmatch (pat, PM_flat, NULL, bound)) {
         /* this is somehow defined as an array */
 
         if (!INFO_GENFLAT (arg_info)) {

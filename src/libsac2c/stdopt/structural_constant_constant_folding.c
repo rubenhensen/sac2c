@@ -57,6 +57,7 @@
 #include "pattern_match.h"
 #include "print.h"
 #include "phase.h"
+#include "indexvectorutils.h"
 
 /******************************************************************************
  *
@@ -132,8 +133,7 @@ StructOpSel (node *arg_node, info *arg_info)
     pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAgetVal (&con1)),
                   PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
 
-    if (PMmatchFlatSkipExtremaAndGuards (pat1, arg_node)) {
-
+    if (PMmatchFlat (pat1, arg_node)) {
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);
         arg2fs = COfreeConstant (arg2fs);
         iv_len = SHgetUnrLen (COgetShape (con1));
@@ -206,22 +206,28 @@ StructOpSelAxSxS (node *arg_node, info *arg_info)
     constant *con1 = NULL;
     constant *arg2fs = NULL;
     int offset;
+    node *arg1 = NULL;
     node *arg2 = NULL;
     pattern *pat1;
 
     DBUG_ENTER ();
 
     /**
-     *   Match for    _sel_VxA_( constant, N_array)
+     *   Match for    _idx_sel( constant, N_array)
      *   and bind      con1    to constant
      *                 arg2    to N_array-node
      *                 arg2fs  to the frameshape of N_array
      */
 
-    pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMconst (1, PMAgetVal (&con1)),
+    pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&arg1), 0),
                   PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
 
-    if (PMmatchFlatSkipExtremaAndGuards (pat1, arg_node)) {
+    con1 = COaST2Constant (PRF_ARG1 (arg_node));
+    if (NULL == con1) {
+        con1 = IVUToffset2Constant (PRF_ARG1 (arg_node));
+    }
+
+    if ((NULL != con1) && PMmatchFlat (pat1, arg_node)) {
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);
         arg2fs = COfreeConstant (arg2fs);
         iv_len = SHgetUnrLen (COgetShape (con1));
@@ -230,7 +236,10 @@ StructOpSelAxSxS (node *arg_node, info *arg_info)
             // Case 1 : Exact selection: do the sel operation now.
             offset = COconst2Int (con1);
             result = DUPdoDupNode (TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
-            DBUG_PRINT ("exact selection performed.");
+            DBUG_PRINT ("Exact selection performed for %s = _idx_sel( %s, %s)",
+                        AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))),
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         }
         con1 = COfreeConstant (con1);
     }
@@ -609,6 +618,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     constant *fsX = NULL;
     pattern *pat1 = NULL;
     pattern *pat2 = NULL;
+    constant *offsetcon;
     int offset;
 
     DBUG_ENTER ();
@@ -643,6 +653,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
         z = DUPdoDupNode (val);
         DBUG_PRINT ("_modarray_AxVxS (X, [], scalar) eliminated");
     } else {
+
         /*
          * Case 2: F_modarray_AxVxS( X = [x0, x1,...xn], iv = [c0,...,cn], val)
          *         where val is scalar, and the shapes of X and iv match.
@@ -653,7 +664,8 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
         if (PMmatchFlatSkipGuards (pat2, arg_node)
             && TUisScalar (AVIS_TYPE (ID_AVIS (val)))
             && (SHcompareShapes (COgetShape (fsX), COgetShape (coiv)))) {
-            offset = COvect2offset (fsX, coiv);
+            offsetcon = COvect2offset (fsX, coiv);
+            offset = COconst2Int (offsetcon);
             z = DUPdoDupNode (X);
             exprs = TCgetNthExprs (offset, ARRAY_AELEMS (z));
             EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
@@ -708,6 +720,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
     pattern *pat2 = NULL;
     pattern *pat3 = NULL;
     pattern *pat4 = NULL;
+    constant *offsetcon;
     int offset;
 
     DBUG_ENTER ();
@@ -793,7 +806,8 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                     ivlen = COmakeConstantFromInt (COgetExtent (coiv, 0));
                     fsX_tail = COdrop (ivlen, fsX, NULL);
                     if (COcompareConstants (fsval, fsX_tail)) {
-                        offset = COvect2offset (fsX, coiv);
+                        offsetcon = COvect2offset (fsX, coiv);
+                        offset = COconst2Int (offsetcon);
                         res = DUPdoDupNode (X);
                         exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
                         val_exprs = ARRAY_AELEMS (val);
@@ -815,7 +829,8 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                  * we only do the simple case (case a above) where V fits neatly
                  * into X as an element.
                  */
-                offset = COvect2offset (fsX, coiv);
+                offsetcon = COvect2offset (fsX, coiv);
+                offset = COconst2Int (offsetcon);
                 res = DUPdoDupNode (X);
                 exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
                 EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
@@ -1435,7 +1450,7 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
     bool matches = TRUE;
 
     DBUG_ENTER ();
-
+    /* FIXME make this a clone of the IVECYC version below, so we can kill PMO */
     if (PMO (PMOexprs (&aelems, PMOarray (&frameshape, NULL,
                                           PMOvar (&iv, PMOprf (F_sel_VxA, arg_node)))))
         && TUshapeKnown (AVIS_TYPE (ID_AVIS (iv)))
@@ -1492,6 +1507,9 @@ SelArrayOfEqualElementsAxSxS (node *arg_node, info *arg_info)
     bool matches = TRUE;
     pattern *pat1;
     pattern *pat2;
+    pattern *pat3;
+    node *iv = NULL;
+    node *shp = NULL;
 
     DBUG_ENTER ();
 
@@ -1500,11 +1518,16 @@ SelArrayOfEqualElementsAxSxS (node *arg_node, info *arg_info)
                PMarray (2, PMAgetNode (&aelems), PMAgetFS (&frameshape), 1, PMskip (0)));
     pat2 = PMvar (1, PMAisVar (&elem), 0);
 
-    /* FIXME Need to backtrack and find IV from offset to check that
+    /* Backtrack and find IV from offset to check that
      * shape(iv) == frameshape. See _sel_() case.
      */
+    pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
+                  PMvar (1, PMAgetNode (&iv), 0));
 
-    if (PMmatchFlat (pat1, arg_node)) {
+    if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat3, offset))
+        && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv))))
+        && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
+            == COgetExtent (frameshape, 0))) {
         aelems = ARRAY_AELEMS (aelems);
         elem = EXPRS_EXPR (aelems);
         while (matches && (NULL != aelems)) {
@@ -1521,6 +1544,7 @@ SelArrayOfEqualElementsAxSxS (node *arg_node, info *arg_info)
     frameshape = (NULL != frameshape) ? COfreeConstant (frameshape) : NULL;
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
 
     DBUG_RETURN (res);
 }
@@ -1603,6 +1627,54 @@ IsProxySel (constant *idx, void *sels, void *template)
 }
 
 static node *
+IsSingleSourceArray (node *aelems_P, prf selop)
+{
+    node *template = NULL;
+    pattern *pat_e1;
+    pattern *pat_en;
+    node *var_A = NULL;
+    node *tmp;
+    bool all_sels = TRUE;
+    ;
+
+    DBUG_ENTER ();
+    /*
+     * before we check that P is a proxy, we check whether it is defined
+     * by sel operations on a single source array. This test is way
+     * cheaper, so testing twice is worth it.
+     */
+    DBUG_PRINT_TAG ("IsSingleSourceArray", "Found matching sel!");
+
+    pat_e1
+      = PMprf (1, PMAisPrf (selop), 2, PMarray (0, 1, PMskip (1, PMAgetNode (&template))),
+               PMvar (1, PMAgetNode (&var_A), 0));
+
+    pat_en = PMprf (1, PMAisPrf (selop), 2, PMarray (0, 1, PMskip (0)),
+                    PMvar (1, PMAisVar (&var_A), 0));
+
+    tmp = aelems_P;
+    all_sels = PMmatchFlat (pat_e1, EXPRS_EXPR (tmp));
+    tmp = EXPRS_NEXT (tmp);
+
+    while (all_sels && (tmp != NULL)) {
+        all_sels = PMmatchFlat (pat_en, EXPRS_EXPR (tmp));
+        tmp = EXPRS_NEXT (tmp);
+    }
+
+    pat_e1 = PMfree (pat_e1);
+    pat_en = PMfree (pat_en);
+
+    if (all_sels) {
+        DBUG_PRINT ("Might have found a proxy=%s", AVIS_NAME (ID_AVIS (template)));
+    } else {
+        DBUG_PRINT ("No proxy found.");
+        template = NULL;
+    }
+
+    DBUG_RETURN (template);
+}
+
+static node *
 SelProxyArray (node *arg_node, info *arg_info)
 {
     node *aelems_iv = NULL;
@@ -1617,9 +1689,8 @@ SelProxyArray (node *arg_node, info *arg_info)
     shape *fs_P_shp;
     shape *iter_shp;
     node *iv_avis;
-    bool all_sels = TRUE;
     int pos, tlen, flen;
-    pattern *pat, *pat_e1, *pat_en;
+    pattern *pat;
 
     node *res = NULL;
 
@@ -1631,34 +1702,8 @@ SelProxyArray (node *arg_node, info *arg_info)
                           PMskip (1, PMAgetNode (&aelems_P))));
 
     if (PMmatchFlatSkipExtrema (pat, arg_node) && (aelems_P != NULL)) {
-        /*
-         * before we check that P is a proxy, we check whether it is defined
-         * by sel operations on a single source array. This test is way
-         * cheaper, so testing twice is worth it.
-         */
-        DBUG_PRINT_TAG ("CF_PROXY", "Found matching sel!");
-
-        pat_e1 = PMprf (1, PMAisPrf (F_sel_VxA), 2,
-                        PMarray (0, 1, PMskip (1, PMAgetNode (&template))),
-                        PMvar (1, PMAgetNode (&var_A), 0));
-
-        pat_en = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMarray (0, 1, PMskip (0)),
-                        PMvar (1, PMAisVar (&var_A), 0));
-
-        tmp = aelems_P;
-        all_sels = PMmatchFlat (pat_e1, EXPRS_EXPR (tmp));
-        tmp = EXPRS_NEXT (tmp);
-
-        while (all_sels && (tmp != NULL)) {
-            all_sels = PMmatchFlat (pat_en, EXPRS_EXPR (tmp));
-            tmp = EXPRS_NEXT (tmp);
-        }
-
-        pat_e1 = PMfree (pat_e1);
-        pat_en = PMfree (pat_en);
-
-        if (all_sels) {
-            DBUG_PRINT_TAG ("CF_PROXY", "Might have found a proxy!");
+        template = IsSingleSourceArray (aelems_P, F_sel_VxA);
+        if (NULL != template) {
 
             /*
              * First of all, we filter out the prefix of indices that correspond
@@ -1763,6 +1808,143 @@ SelProxyArray (node *arg_node, info *arg_info)
             if (fs_P != NULL) {
                 fs_P = COfreeConstant (fs_P);
             }
+        }
+    }
+    pat = PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
+static node *
+SelProxyArrayAxSxS (node *arg_node, info *arg_info)
+{
+    node *aelems_iv = NULL;
+    node *aelems_P = NULL;
+    node *arr_P = NULL;
+    node *tmp;
+    node *filter_iv;
+    node *var_A = NULL;
+    node *template = NULL;
+    constant *fs_P = NULL;
+    shape *fs_P_shp;
+    shape *iter_shp;
+    node *iv_avis;
+    int pos, tlen, flen;
+    pattern *pat;
+    node *offset = NULL;
+
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    pat = PMprf (1, PMAisPrf (F_idx_sel), 2, PMany (1, PMAgetNode (&offset), 0),
+                 PMarray (2, PMAgetFS (&fs_P), PMAgetNode (&arr_P), 1,
+                          PMskip (1, PMAgetNode (&aelems_P))));
+
+    if (PMmatchFlatSkipExtrema (pat, arg_node) && (aelems_P != NULL)) {
+        template = IsSingleSourceArray (aelems_P, F_sel_VxA);
+        if (NULL != template) {
+
+            /* FIXME need aelems_iv */
+            /*
+             * First of all, we filter out the prefix of indices that correspond
+             * to a 1 extent dimension in P and the corresponding elements
+             * from the frameshape of P to get the iteration space over A. This
+             * caters for proxies of the form
+             *
+             * A = ...
+             * P = [[sel(p_iv1, A), ..., [sel(p_ivn, A)]];
+             * r = sel( iv, P);
+             *
+             * where the outer indices of iv have no correspondence in the p_ivx.
+             * Note, however, that this transformation is still correct if the
+             * outer dimension has a correspondence in P_iv, as it will be
+             * identical for all selections.
+             */
+            filter_iv = DUPdoDupTree (aelems_iv);
+            fs_P_shp = ARRAY_FRAMESHAPE (arr_P);
+
+            pos = 0;
+            while ((SHgetExtent (fs_P_shp, pos) == 1) && (filter_iv != NULL)) {
+                filter_iv = FREEdoFreeNode (filter_iv);
+                pos++;
+            }
+
+            DBUG_ASSERT (filter_iv != NULL, "weird selection encountered....");
+
+            flen = TCcountExprs (filter_iv);
+            iter_shp = SHdropFromShape (SHgetDim (fs_P_shp) - flen, fs_P_shp);
+            tlen = TCcountExprs (template);
+
+            /*
+             * If by now we still have not managed to reduce the index used
+             * for selections into the proxy such that it is shorter or
+             * equally long as the selections used to construct the proxy,
+             * we have to give up.
+             */
+            if (tlen >= flen) {
+                /*
+                 * now the final step:
+                 *
+                 * check whether all sels are of the form
+                 *
+                 * sel_VxA( [v1, ..., vn, c1, ..., cn], A)
+                 *
+                 */
+                if (tlen == flen) {
+                    template = NULL; /* no non-index part */
+                } else {
+                    template = DUPdoDupTree (template);
+                    tmp = TCgetNthExprs (tlen - flen - 1, template);
+                    EXPRS_NEXT (tmp) = FREEdoFreeTree (EXPRS_NEXT (tmp));
+                }
+
+                /*
+                 * now we check whether all selections are
+                 *
+                 * template ++ some constants
+                 */
+                tmp
+                  = COcreateAllIndicesAndFold (iter_shp, IsProxySel, aelems_P, template);
+
+                /*
+                 * if that worked out, we can replace the selection by
+                 *
+                 * sel ( [v1, ..., vn, i1, ..., in]], A)
+                 */
+                if (tmp != IPS_FAILED) {
+                    DBUG_PRINT_TAG ("CF_PROXY", "Replacing a proxy sel!");
+                    iv_avis
+                      = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
+                                                              SHcreateShape (1, tlen)));
+                    INFO_VARDECS (arg_info)
+                      = TBmakeVardec (iv_avis, INFO_VARDECS (arg_info));
+                    INFO_PREASSIGN (arg_info)
+                      = TBmakeAssign (TBmakeLet (TBmakeIds (iv_avis, NULL),
+                                                 TCmakeIntVector (
+                                                   TCappendExprs (template, filter_iv))),
+                                      INFO_PREASSIGN (arg_info));
+                    AVIS_SSAASSIGN (iv_avis) = INFO_PREASSIGN (arg_info);
+
+                    res
+                      = TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis), DUPdoDupNode (var_A));
+                } else {
+                    if (template != NULL) {
+                        template = FREEdoFreeTree (template);
+                    }
+                    filter_iv = FREEdoFreeTree (filter_iv);
+                }
+            } else {
+                filter_iv = FREEdoFreeTree (filter_iv);
+            }
+
+            iter_shp = SHfreeShape (iter_shp);
+        }
+
+        fs_P = COfreeConstant (fs_P);
+    } else {
+        if (fs_P != NULL) {
+            fs_P = COfreeConstant (fs_P);
         }
     }
     pat = PMfree (pat);
@@ -1882,12 +2064,9 @@ SCCFprf_idx_sel (node *arg_node, info *arg_info)
         res = SelArrayOfEqualElementsAxSxS (arg_node, arg_info);
     }
 
-#ifdef CODEMENOW
     if (NULL == res) {
         res = SelProxyArrayAxSxS (arg_node, arg_info);
     }
-
-#endif // CODEMENOW
 
     DBUG_RETURN (res);
 }

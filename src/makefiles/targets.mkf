@@ -155,7 +155,7 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         wl_lock_optimization_shifting setfundefwasoptimized \
                         loop_invariant_removal withloop_invariant_removal \
                         comparison_to_zero \
-                        UndoCondZeroCmp indexvectorutils
+                        UndoCondZeroCmp 
 
 
 libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
@@ -168,7 +168,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         algebraic_wlfi algebraic_wlf cubeslicer             \
                         wl_cost_check wl_needcount show_wl_cost             \
                         loop_scalarization withloop_flattening              \
-                        ivextrema ivexpropagation ivexcleanup
+                        ivextrema ivexpropagation ivexcleanup indexvectorutils
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \
                         remove_with3 addSyncs prune_empty_with3 unroll_with3

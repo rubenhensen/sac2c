@@ -1039,7 +1039,7 @@ COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem)
 
 /** <!--********************************************************************-->
  *
- * @fn: int COvect2offset( constant *shp, constant *iv)
+ * @fn: constant *COvect2offset( constant *shp, constant *iv)
  *
  * @brief: implements F_vect2offset
  *
@@ -1058,14 +1058,21 @@ COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem)
  *
  *               offset ← +/ iv × ⌽×\⌽(1↓shp),1
  *
+ * NB. Do NOT place this function in prf_info.mac. At present,
+ *     AWLF, WLF, and several other optimizations rely on the
+ *     ability to find IV ( or I,J,K, in the case of _idxs2offset)
+ *     from a vect2offset call. Optimizing it out of existence
+ *     will make those optimizations fail. Quietly...
+ *
  *****************************************************************************/
-int
+constant *
 COvect2offset (constant *shp, constant *iv)
 {
     int *cviv, *cvshp;
     int leniv, lenshp;
     int i;
     int offset;
+    constant *z = NULL;
 
     DBUG_ENTER ();
     DBUG_ASSERT (CONSTANT_TYPE (iv) == T_int, "COvect2offset called with non-int index");
@@ -1096,29 +1103,32 @@ COvect2offset (constant *shp, constant *iv)
         offset *= cvshp[i];
     }
 
-    DBUG_RETURN (offset);
+    z = COmakeConstantFromInt (offset);
+
+    DBUG_RETURN (z);
 }
+
+#ifdef FIXME
+
+/* How do you write this so it takes an arbitrary number of arguments? */
 
 /** <!--********************************************************************-->
  *
- * @fn: int COidxs2offset( constant *shp, constant *iv)
+ * @fn: constant *COidxs2offset( constant *shp, constant *iv)
  *
  * @brief: implements F_idxs2offset
  *
  *****************************************************************************/
-int
+constant *
 COidxs2offset (constant *shp, constant *iv)
 {
     int *cviv, *cvshp;
     int leniv, lenshp;
     int i;
     int offset;
+    constant *z;
 
     DBUG_ENTER ();
-
-    offset = Idx2OffsetArray (shp, iv);
-
-#ifdef FIXME
 
     DBUG_ASSERT (CONSTANT_TYPE (iv) == T_int, "COidxs2offset called with non-int index");
     DBUG_ASSERT (CONSTANT_DIM (iv) == 1, "COidxs2offset called with non-vector index");
@@ -1148,9 +1158,12 @@ COidxs2offset (constant *shp, constant *iv)
         offset *= cvshp[i];
     }
 
-#endif // FIXME
+    offset = Idx2OffsetArray (shp, iv);
 
-    DBUG_RETURN (offset);
+    z = COmakeConstantFromInt (offset);
+
+    DBUG_RETURN (z);
 }
+#endif // FIXME
 
 #undef DBUG_PREFIX

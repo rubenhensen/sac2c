@@ -7713,7 +7713,7 @@ N_tfarg :
             <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <range from="opt_saacyc_isaa3" to="opt_esaa2" />
+                <range from="opt_saacyc_isaa" to="opt_esaa" />
               </phases>
             </target>
           </targets>
@@ -7731,7 +7731,7 @@ N_tfarg :
             <target mandatory="no">
               <set name="Expr" />
               <phases>
-                <range from="opt_saacyc_isaa3" to="opt_esaa2" />
+                <range from="opt_saacyc_isaa" to="opt_esaa" />
               </phases>
             </target>
           </targets>
@@ -7750,7 +7750,7 @@ N_tfarg :
             <target mandatory="no">
               <node name="Id" />
               <phases>
-                <range from="opt_saacyc" to="opt_esaa2" />
+                <range from="opt_saacyc" to="opt_esaa" />
               </phases>
             </target>
           </targets>
@@ -7768,7 +7768,7 @@ N_tfarg :
               <target mandatory="no">
                 <node name="Id" />
                 <phases>
-                  <range from="opt_saacyc" to="opt_esaa2" />
+                  <range from="opt_saacyc" to="opt_esaa" />
                 </phases>
               </target>
             </targets>
@@ -7982,7 +7982,7 @@ N_tfarg :
                 <any />
                 <phases>
                   <phase name="opt_al" />
-                  <range from="opt_saacyc_isaa3" to="opt_ivexc" />
+                  <range from="opt_saacyc_isaa" to="opt_ivexc" />
                 </phases>
               </target>
             </targets>
@@ -7994,7 +7994,7 @@ N_tfarg :
               <target mandatory="no">
                 <node name="With" />
                 <phases>
-                  <range from="opt_saacyc_isaa3" to="opt_ivexc" />
+                  <range from="opt_saacyc_isaa" to="opt_ivexc" />
                 </phases>
               </target>
             </targets>
@@ -8060,6 +8060,9 @@ N_tfarg :
           </type>
         </attribute>
         <attribute name="SubstLvl" inconstructor="no" >
+          <description>
+	  Used by IDC to mark the nesting level of with-loops.
+          </description>
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -8073,6 +8076,9 @@ N_tfarg :
         </attribute>
         <attribute name="SubstCd" inconstructor="no" >
           <type name="Integer">
+          <description>
+	  Used by IDC to identify the N_code of with-loops.
+          </description>
             <targets>
               <target mandatory="no">
                 <any />

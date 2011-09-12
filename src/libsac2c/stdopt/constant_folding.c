@@ -309,6 +309,7 @@ CFisFullyConstantNode (node *arg_node)
     DBUG_RETURN (res);
 }
 
+#ifdef FIXME
 /** <!--********************************************************************-->
  *
  * @fn bool isNarrayHasIdNode( node *arg_node)
@@ -332,6 +333,7 @@ isNarrayHasIdNode (node *arg_node)
 
     DBUG_RETURN (res);
 }
+#endif // FIXME
 
 /** <!--********************************************************************-->
  *
@@ -354,16 +356,17 @@ isNarrayHasIdNode (node *arg_node)
 node *
 CFunflattenSimpleScalars (node *arg_node)
 {
-    node *el;
-    node *curel;
-    node *cons;
     node *res;
-    pattern *pat;
 
     DBUG_ENTER ();
 
     res = arg_node;
 #ifdef FIXME
+    node *el;
+    node *curel;
+    node *cons;
+    pattern *pat;
+
     pat = PMconst (1, PMAgetNode (&cons));
 
     if (TUisScalar (ARRAY_ELEMTYPE (arg_node)) && isNarrayHasIdNode (arg_node)
@@ -434,6 +437,7 @@ PreventTypePrecisionLoss (node *id, ntype *oldtype)
 
     if ((id != NULL) && (NODE_TYPE (id) == N_id)) {
         if (!TYleTypes (ID_NTYPE (id), oldtype)) {
+            DBUG_PRINT ("Generating type_conv( oldtype, %s", AVIS_NAME (ID_AVIS (id)));
             res = TCmakePrf2 (F_type_conv, TBmakeType (TYcopyType (oldtype)), id);
         } else {
             res = id;

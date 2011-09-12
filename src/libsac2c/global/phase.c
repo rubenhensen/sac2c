@@ -48,8 +48,8 @@ PHisSAAMode (void)
     DBUG_ENTER ();
 
     z = global.optimize.dosaa
-        && ((global.compiler_anyphase > PH_opt_saacyc_isaa3)
-            && (global.compiler_anyphase < PH_opt_esaa2));
+        && ((global.compiler_anyphase > PH_opt_saacyc_isaa)
+            && (global.compiler_anyphase < PH_opt_esaa));
 
     DBUG_RETURN (z);
 }

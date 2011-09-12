@@ -242,7 +242,8 @@ SAACFprf_shape (node *arg_node, info *arg_info)
                 rhs = LET_EXPR (ASSIGN_STMT (rhs));
                 if (PMmatchFlatSkipExtrema (pat2, rhs)) {
                     res = DUPdoDupNode (shp);
-                    DBUG_PRINT ("_shape_A(_saabnd(dim,shp,val)) replaced by shp");
+                    DBUG_PRINT ("_shape_A(_saabnd(dim,shp,val)) replaced by %s",
+                                AVIS_NAME (ID_AVIS (shp)));
                 }
             }
         }
@@ -571,23 +572,22 @@ SAACFprf_same_shape_AxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *arg1 = NULL;
-    node *arg2 = NULL;
-    node *shp = NULL;
+    pattern *pat;
 
     DBUG_ENTER ();
 
-    if (PMO (PMOsaashape (&shp, &arg2,
-                          PMOsaashape (&shp, &arg1,
-                                       PMOvar (&arg2,
-                                               PMOvar (&arg1, PMOprf (F_same_shape_AxA,
-                                                                      arg_node))))))) {
+    pat = PMprf (1, PMAisPrf (F_same_shape_AxA), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                 PMvar (1, PMAisNode (&arg1), 0));
+    if (PMmatchFlat (pat, arg_node)) {
         /* See if saa shapes match */
 
         DBUG_PRINT ("same_shape_AxA guard removed");
         res = TBmakeExprs (DUPdoDupNode (arg1),
-                           TBmakeExprs (DUPdoDupNode (arg2),
+                           TBmakeExprs (DUPdoDupNode (PRF_ARG2 (arg_node)),
                                         TBmakeExprs (TBmakeBool (TRUE), NULL)));
     }
+    pat = PMfree (pat);
+
     DBUG_RETURN (res);
 }
 
@@ -1380,7 +1380,7 @@ SAACFprf_saabind (node *arg_node, info *arg_info)
         if ((NULL != arg3rhs) && (N_ap != NODE_TYPE (LET_EXPR (ASSIGN_STMT (arg3rhs))))
             && (N_arg != NODE_TYPE (AVIS_DECL (ID_AVIS (val))))) {
 
-            DBUG_PRINT ("_saabind_() replaced by assignment");
+            DBUG_PRINT ("_saabind_() replaced by %s", AVIS_NAME (ID_AVIS (val)));
             res = DUPdoDupNode (val);
         }
     }

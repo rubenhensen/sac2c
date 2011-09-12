@@ -999,16 +999,15 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
         case F_sub_SxV:
         case F_sub_VxS:
         case F_sub_VxV:
-            /*  Case 1: minv( z) = A - ( maxv( B) - 1);
-             *  Case 2: minv( z) = minv( A) - B;
-             */
-            if (max2) { /* Case 1 */
+            if (max2) {
+                /*  Case 1: minv( z) = A - ( maxv( B) - 1);  */
                 minarg1 = ID_AVIS (PRF_ARG1 (rhs));
                 minarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
                 minarg2 = IVEXPadjustExtremaBound (/* Normalize maxv */
                                                    minarg2, -1, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info), "dsf1");
-            } else if (min1) { /* Case 2 */
+            } else if (min1) {
+                /*  Case 2: minv( z) = minv( A) - B; */
                 minarg1 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
                 minarg2 = ID_AVIS (PRF_ARG2 (rhs));
             }
@@ -1262,6 +1261,15 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                                                    TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     AVIS_ISMINHANDLED (minv) = TRUE;
                     AVIS_ISMAXHANDLED (minv) = TRUE;
+                    INFO_MINVAL (arg_info) = TBmakeId (minv);
+                }
+                break;
+
+            case F_abs_S: /* AVIS_MIN is now zero */
+                rhsavis = ID_AVIS (PRF_ARG1 (rhs));
+                if ((!isAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
+                    minv = IVEXImakeIntScalar (0, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info));
                     INFO_MINVAL (arg_info) = TBmakeId (minv);
                 }
                 break;

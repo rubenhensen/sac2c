@@ -97,6 +97,7 @@ extern node *COconstant2AST (constant *a);
 extern constant *COaST2Constant (node *a);
 extern bool COisConstant (node *a);
 extern bool COcompareConstants (constant *c1, constant *c2);
+extern constant *COvect2offset (constant *shp, constant *iv);
 
 /* basic value compares, if all==true the condition must hold for all elements */
 extern bool COisZero (constant *a, bool all);
@@ -129,9 +130,6 @@ extern constant *COcat (constant *a, constant *b, constant *);
 /* missing: not yet implemented
 extern constant *  CORotate  ( constant *dim, constant *num, constant *a);
 */
-
-/* special ops */
-extern int COvect2offset (constant *shp, constant *iv);
 
 /***
  ***

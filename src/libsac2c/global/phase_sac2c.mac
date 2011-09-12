@@ -446,8 +446,8 @@ CYCLE (saacyc, "Symbolic array attribute cycle 2", global.optimize.dosaacyc, opt
 
 FUNBEGIN (saacyc, opt, saacyc)
 
-CYCLEPHASEFUNOLD (isaa3, "Inserting symbolic array attributes",
-                  ISAAdoInsertShapeVariables, global.optimize.dosaa, opt, saacyc)
+CYCLEPHASEFUNOLD (isaa, "Inserting symbolic array attributes", ISAAdoInsertShapeVariables,
+                  global.optimize.dosaa, opt, saacyc)
 
 /* ivesplit placed here for no good reason */
 CYCLEPHASEFUN (ivesplit, "Eliminating index vectors (split selections)",
@@ -503,9 +503,11 @@ CYCLEPHASEFUNOLD (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplificati
 CYCLEPHASEFUN (cwle, "Eliminate copy with-loops", CWLEdoCopyWithLoopElimination,
                global.optimize.docwle, opt, saacyc)
 
+#ifdef MISGUIDED // Causes woes in AWLFI inverse projection. Should be post-opt
 CYCLEPHASEFUNOLD (iveras, "Eliminating index vectors (reuse WL-offsets and scalarize)",
                   IVERASdoWithloopReuseAndOptimisation,
                   global.optimize.doive &&global.optimize.doivecyc, opt, saacyc)
+#endif // MISGUIDED
 
 CYCLEPHASEFUN (ivexi, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
                global.doivext, opt, saacyc)
@@ -709,7 +711,7 @@ ENDCYCLE (scyc)
 SUBPHASE (wlflt, "Trying to flatten multi-dimensional withloops",
           WLFLTdoWithloopFlattening, global.optimize.dowlflt, opt)
 
-SUBPHASE (esaa2, "Eliminating symbolic array attributes", ESVdoEliminateShapeVariables,
+SUBPHASE (esaa, "Eliminating symbolic array attributes", ESVdoEliminateShapeVariables,
           global.optimize.dosaa, opt)
 
 SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
