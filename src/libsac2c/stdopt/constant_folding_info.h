@@ -19,6 +19,7 @@ struct INFO {
     node *avismin;
     node *avismax;
     node *let;
+    node *part;
     bool remassign;
     bool lacfunok;
     bool travinlac;
@@ -38,6 +39,7 @@ struct INFO {
 #define INFO_AVISMIN(n) (n->avismin)
 #define INFO_AVISMAX(n) (n->avismax)
 #define INFO_LET(n) (n->let)
+#define INFO_PART(n) (n->part)
 
 #define INFO_LACFUNOK(n) (n->lacfunok)
 #define INFO_TRAVINLAC(n) (n->travinlac)

@@ -37,6 +37,7 @@
 #include "type_utils.h"
 #include "DupTree.h"
 #include "SSAWithloopFolding.h"
+#include "indexvectorutils.h"
 
 #include "SSAWLUnroll.h"
 
@@ -681,6 +682,26 @@ CountElements (node *genn)
 
 /******************************************************************************
  *
+ * function: isWithVec()
+ *
+ * description:
+ *   Predicate for showing that ivoroffset is derived from
+ *   partn's WITHID_VEC.
+ *
+ ******************************************************************************/
+static bool
+isWithidVec (node *ivoroffset, node *partn)
+{
+    bool z;
+    DBUG_ENTER ();
+
+    z = NULL != IVUTfindIvWith (ivoroffset, partn);
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
  * function:
  *   bool CheckUnrollModarray(node *wln, info *arg_info)
  *
@@ -741,9 +762,10 @@ CheckUnrollModarray (node *wln, node *lhs, info *arg_info)
               = ((N_let == NODE_TYPE (tmpn))
                  && (ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (coden)))
                      == IDS_AVIS (LET_IDS (tmpn)))
-                 && (N_prf == NODE_TYPE (exprn)) && (F_sel_VxA == PRF_PRF (exprn))
+                 && (N_prf == NODE_TYPE (exprn))
+                 && ((F_sel_VxA == PRF_PRF (exprn)) || ((F_idx_sel == PRF_PRF (exprn))))
                  && (N_id == NODE_TYPE (PRF_ARG1 (exprn)))
-                 && (IDS_AVIS (PART_VEC (partn)) == ID_AVIS (PRF_ARG1 (exprn)))
+                 && (isWithidVec (PRF_ARG1 (exprn), partn))
                  && (N_id == NODE_TYPE (PRF_ARG2 (exprn)))
                  && (ID_AVIS (MODARRAY_ARRAY (WITH_WITHOP (wln)))
                      == ID_AVIS (PRF_ARG2 (exprn))));
@@ -1353,12 +1375,12 @@ WLURwith (node *arg_node, info *arg_info)
  *   node *WLURdoWithloopUnrolling( node *syntax_tree)
  *
  * description:
- *   Starts the with-loop unrolling traversal for the given syntax tree.
+ *   Starts the with-loop unrolling traversal for the given arg_node.
  *
  ******************************************************************************/
 
 node *
-WLURdoWithloopUnrolling (node *syntax_tree)
+WLURdoWithloopUnrolling (node *arg_node)
 {
     info *info;
 
@@ -1375,13 +1397,13 @@ WLURdoWithloopUnrolling (node *syntax_tree)
      * ssa_transform. Therefore, we adjust the global control flag.
      */
 
-    syntax_tree = TRAVdo (syntax_tree, info);
+    arg_node = TRAVdo (arg_node, info);
 
     FreeInfo (info);
 
     TRAVpop ();
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (arg_node);
 }
 
 #undef DBUG_PREFIX

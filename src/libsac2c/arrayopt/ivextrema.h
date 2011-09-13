@@ -32,5 +32,7 @@ extern node *IVEXIids (node *arg_node, info *arg_info);
 extern node *IVEXIid (node *arg_node, info *arg_info);
 
 extern node *IVEXImakeIntScalar (int k, node **vardecs, node **preassigns);
+extern node *IVEXIwithidsKludge (int offset, node *withidvec, node *curpart,
+                                 node **preassignspart, node **vardecs);
 
 #endif // _SAC_INDEX_VECTOR_EXTREMA_INSERTION_H_

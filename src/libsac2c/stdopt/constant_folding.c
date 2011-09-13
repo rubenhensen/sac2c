@@ -166,6 +166,7 @@ MakeInfo ()
     INFO_AVISMIN (result) = NULL;
     INFO_AVISMAX (result) = NULL;
     INFO_LET (result) = NULL;
+    INFO_PART (result) = NULL;
     INFO_DOINGEXTREMA (result) = FALSE;
 
     DBUG_RETURN (result);
@@ -1251,8 +1252,12 @@ CFpart (node *arg_node, info *arg_info)
 {
     ntype *temp;
     node *n;
+    node *old_part;
 
     DBUG_ENTER ();
+
+    old_part = INFO_PART (arg_info);
+    INFO_PART (arg_info) = arg_node;
 
     PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
 
@@ -1336,6 +1341,8 @@ CFpart (node *arg_node, info *arg_info)
 
         n = IDS_NEXT (n);
     }
+
+    INFO_PART (arg_info) = old_part;
 
     /*
      * Traverse PART_NEXT

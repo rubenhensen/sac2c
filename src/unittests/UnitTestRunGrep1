@@ -50,11 +50,11 @@ function getargs
  fi
  
  # Test with opts disabled
- sac2c $1 -v0 -bopt:uglf $optsoff $s1 $s2 $s3 $s4  $s5 $s6 > crudn.$1.out
+ sac2c $1 -v0 -bopt:ucts $optsoff $s1 $s2 $s3 $s4  $s5 $s6 > crudn.$1.out
  cat crudn.$1.out | $filterop | UnitTestRunCounts $1 "$optsoff" $grepstr $noopt
  cat crudn.$1.out | $filterop > crudn
  # Test with opts enabled
- sac2c $1 -v0 -bopt:uglf $optson $s1 $s2 $s3 $s4 $s5 $s6 > crudd.$1.out
+ sac2c $1 -v0 -bopt:ucts $optson $s1 $s2 $s3 $s4 $s5 $s6 > crudd.$1.out
  cat crudd.$1.out | $filterop | UnitTestRunCounts $1 "$optson" $grepstr $doopt 
  cat crudd.$1.out | $filterop >crudd
  # This test leaves crudn.$1 and crudd.$1 around for possible later

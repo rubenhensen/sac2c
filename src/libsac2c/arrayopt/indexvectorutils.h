@@ -17,7 +17,8 @@ extern node *IVUToffset2Iv (node *arg_node, node **vardecs, node **preassigns,
 extern node *IVUTarrayFromProxy (node *iv);
 extern node *IVUTarrayFromIv (node *iv);
 extern bool IVUTisShapesMatch (node *plet, node *clet, node *cletshap);
-extern node *IVUTfindIv (node *arg_node, node *cwlpart);
-extern constant *IVUToffset2Constant (node *arg_node);
+extern node *IVUTfindIvWith (node *arg_node, node *cwlpart);
+extern constant *IVUTiV2Constant (node *arg_node);
+extern node *IVUTfindOffset2Iv (node *arg_node);
 
 #endif /* _SAC_IVUT_TRAV_H_ */

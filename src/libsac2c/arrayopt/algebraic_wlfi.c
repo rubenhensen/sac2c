@@ -373,7 +373,7 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
             arg_node = CFdoConstantFolding (arg_node);
             countCF = global.optcounters.cf_expr;
         }
-        if (global.optimize.doas) {
+        if (global.optimize.doal) {
             countAL = global.optcounters.al_expr;
             arg_node = ALdoAssocLawOptimization (arg_node);
         }
@@ -619,7 +619,7 @@ detachNoteintersect (node *arg_node)
  * @result: TRUE if arg_node is a member of the ids chain.
  *
  *****************************************************************************/
-static bool
+bool
 isAvisMemberIds (node *arg_node, node *ids)
 {
     bool z = FALSE;

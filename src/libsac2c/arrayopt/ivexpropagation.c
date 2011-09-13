@@ -916,8 +916,6 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
  * Description: Generate extrema computation for commutative
  *              dyadic scalar function.
  *
- *    This function exists only to make the code more readable.
- *
  *    Ideally, we want to compute the extrema between
  *    a constant argument and the extremum of the non-constant
  *    argument. This gives us these cases:
@@ -993,14 +991,14 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
     max2 = isAvisHasMax (ID_AVIS (PRF_ARG2 (rhs)));
 
     /* Compute AVIS_MIN, perhaps */
-    if ((!isAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis)) && (min1 || min2)) {
+    if ((!isAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
         switch (PRF_PRF (rhs)) {
         case F_sub_SxS:
         case F_sub_SxV:
         case F_sub_VxS:
         case F_sub_VxV:
             if (max2) {
-                /*  Case 1: minv( z) = A - ( maxv( B) - 1);  */
+                /*  Case 1: minv( z) = A - denormalize( maxv( B));  */
                 minarg1 = ID_AVIS (PRF_ARG1 (rhs));
                 minarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
                 minarg2 = IVEXPadjustExtremaBound (/* Normalize maxv */
@@ -1010,34 +1008,43 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
                 /*  Case 2: minv( z) = minv( A) - B; */
                 minarg1 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
                 minarg2 = ID_AVIS (PRF_ARG2 (rhs));
+            } else if (max1) {
+                /* Case 3: minv( z) = denormalize( maxv( A)) - B; */
+                minarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
+                minarg1 = IVEXPadjustExtremaBound (/* Normalize maxv */
+                                                   minarg1, -1, &INFO_VARDECS (arg_info),
+                                                   &INFO_PREASSIGNS (arg_info), "dsf5");
+                minarg2 = ID_AVIS (PRF_ARG2 (rhs));
             }
             break;
 
         default:
-            minarg1 = min1 ? ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))))
-                           : ID_AVIS (PRF_ARG1 (rhs));
-            minarg2 = (!min1) ? ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))))
-                              : ID_AVIS (PRF_ARG2 (rhs));
+            if (min1) {
+                minarg1 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
+                minarg2 = ID_AVIS (PRF_ARG2 (rhs));
+            } else if (min2) {
+                minarg1 = ID_AVIS (PRF_ARG1 (rhs));
+                minarg2 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))));
+            }
             break;
         }
     }
 
     /* Compute AVIS_MAX, perhaps */
-    if ((!isAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis)) && (max1 || max2)) {
+    if ((!isAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
         switch (PRF_PRF (rhs)) {
         case F_sub_SxS:
         case F_sub_SxV:
         case F_sub_VxS:
         case F_sub_VxV:
-            /*  Case 1: maxv( z) = 1 + A - minv( B);
-             *  Case 2: maxv( z) = 1 + ( maxv( A) - 1) - B;
-             */
-            if (min2) { /* Case 1 */
+            if (min2) {
+                /*  Case 1: maxv( z) = normalize( A - minv( B)); */
                 maxarg1 = ID_AVIS (PRF_ARG1 (rhs));
                 maxarg2 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))));
-            } else if (max1) { /* Case 2 */
+            } else if (max1) {
+                /*  Case 2: maxv( z) = normalize( denormalize( maxv( A)) - B); */
                 maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
-                maxarg1 = IVEXPadjustExtremaBound (/* Normalize maxv */
+                maxarg1 = IVEXPadjustExtremaBound (/* Denormalize maxv */
                                                    maxarg1, -1, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info), "dsf2");
                 maxarg2 = ID_AVIS (PRF_ARG2 (rhs));
@@ -1047,14 +1054,14 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
         default:
             if (max1) {
                 maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
-                maxarg1 = IVEXPadjustExtremaBound (/* Normalize maxv */
+                maxarg1 = IVEXPadjustExtremaBound (/* Denormalize maxv */
                                                    maxarg1, -1, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info), "dsf3");
                 maxarg2 = ID_AVIS (PRF_ARG2 (rhs));
-            } else {
+            } else if (max2) {
                 maxarg1 = ID_AVIS (PRF_ARG1 (rhs));
                 maxarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
-                maxarg2 = IVEXPadjustExtremaBound (/* Normalize maxv */
+                maxarg2 = IVEXPadjustExtremaBound (/* Denormalize maxv */
                                                    maxarg2, -1, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info), "dsf4");
             }

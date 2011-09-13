@@ -95,6 +95,7 @@
 #include "free.h"
 #include "constants.h"
 #include "pattern_match.h"
+#include "flattengenerators.h"
 
 /** <!--********************************************************************-->
  *
@@ -117,6 +118,7 @@ struct INFO {
     node *newwithop;
     node *preassigns;
     lut_t *codelut;
+    node *vardecs;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
@@ -133,6 +135,7 @@ struct INFO {
 #define INFO_NEWWITHOP(n) (n->newwithop)
 #define INFO_PREASSIGNS(n) (n->preassigns)
 #define INFO_CODELUT(n) (n->codelut)
+#define INFO_VARDECS(n) (n->vardecs)
 
 static info *
 MakeInfo (node *fundef)
@@ -157,6 +160,7 @@ MakeInfo (node *fundef)
     INFO_NEWWITHOP (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_CODELUT (result) = LUTgenerateLut ();
+    INFO_VARDECS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -198,7 +202,7 @@ FreeInfo (info *info)
 node *
 WLSBdoBuild (node *arg_node, node *fundef, node **preassigns)
 {
-    info *info;
+    info *arg_info;
 
     DBUG_ENTER ();
 
@@ -206,20 +210,26 @@ WLSBdoBuild (node *arg_node, node *fundef, node **preassigns)
 
     DBUG_ASSERT (NODE_TYPE (fundef) = N_fundef, "Second parameter must be a fundef");
 
-    info = MakeInfo (fundef);
+    arg_info = MakeInfo (fundef);
 
     DBUG_PRINT ("Building new with-loop...");
 
     TRAVpush (TR_wlsb);
-    arg_node = TRAVdo (arg_node, info);
+    arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
 
-    if (INFO_PREASSIGNS (info) != NULL) {
-        *preassigns = TCappendAssign (*preassigns, INFO_PREASSIGNS (info));
-        INFO_PREASSIGNS (info) = NULL;
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
+        *preassigns = TCappendAssign (*preassigns, INFO_PREASSIGNS (arg_info));
+        INFO_PREASSIGNS (arg_info) = NULL;
     }
 
-    info = FreeInfo (info);
+    if (NULL != INFO_VARDECS (arg_info)) {
+        FUNDEF_VARDECS (fundef)
+          = TCappendVardec (FUNDEF_VARDECS (fundef), INFO_VARDECS (arg_info));
+        INFO_VARDECS (arg_info) = NULL;
+    }
+
+    arg_info = FreeInfo (arg_info);
 
     DBUG_PRINT ("Scalarization complete. New with-loop is:");
     DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
@@ -255,7 +265,7 @@ WLSBdoBuild (node *arg_node, node *fundef, node **preassigns)
  *
  *****************************************************************************/
 static node *
-CreateOneVector (int nr)
+CreateOneVector (int nr, info *arg_info)
 {
     node *res;
     node *temp;
@@ -268,6 +278,10 @@ CreateOneVector (int nr)
 
     while (temp != NULL) {
         NUM_VAL (EXPRS_EXPR (temp)) = 1;
+        EXPRS_EXPR (temp) = TBmakeId (
+          FLATGflattenExpression (EXPRS_EXPR (temp), &INFO_VARDECS (arg_info),
+                                  &INFO_PREASSIGNS (arg_info),
+                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0))));
         temp = EXPRS_NEXT (temp);
     }
 
@@ -561,11 +575,12 @@ WLSBgenerator (node *arg_node, info *arg_info)
         newstep = NULL;
     } else {
         if (GENERATOR_STEP (INFO_OUTERGEN (arg_info)) == NULL) {
-            GENERATOR_STEP (INFO_OUTERGEN (arg_info)) = CreateOneVector (outerdim);
+            GENERATOR_STEP (INFO_OUTERGEN (arg_info))
+              = CreateOneVector (outerdim, arg_info);
         }
 
         if (GENERATOR_STEP (arg_node) == NULL) {
-            GENERATOR_STEP (arg_node) = CreateOneVector (innerdim);
+            GENERATOR_STEP (arg_node) = CreateOneVector (innerdim, arg_info);
         }
 
         newstep = ConcatVectors (GENERATOR_STEP (INFO_OUTERGEN (arg_info)),
@@ -577,11 +592,12 @@ WLSBgenerator (node *arg_node, info *arg_info)
         newwidth = NULL;
     } else {
         if (GENERATOR_WIDTH (INFO_OUTERGEN (arg_info)) == NULL) {
-            GENERATOR_WIDTH (INFO_OUTERGEN (arg_info)) = CreateOneVector (outerdim);
+            GENERATOR_WIDTH (INFO_OUTERGEN (arg_info))
+              = CreateOneVector (outerdim, arg_info);
         }
 
         if (GENERATOR_WIDTH (arg_node) == NULL) {
-            GENERATOR_WIDTH (arg_node) = CreateOneVector (innerdim);
+            GENERATOR_WIDTH (arg_node) = CreateOneVector (innerdim, arg_info);
         }
 
         newwidth = ConcatVectors (GENERATOR_WIDTH (INFO_OUTERGEN (arg_info)),
@@ -635,9 +651,7 @@ WLSBpart (node *arg_node, info *arg_info)
         /*
          * Traverse next part
          */
-        if (PART_NEXT (arg_node) != NULL) {
-            PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-        }
+        PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
     } else {
         /*
          * Traversal of inner part
@@ -680,9 +694,7 @@ WLSBpart (node *arg_node, info *arg_info)
         /*
          * Traverse next part
          */
-        if (PART_NEXT (arg_node) != NULL) {
-            PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-        }
+        PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -766,8 +778,7 @@ WLSBwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (INFO_INNERTRAV (arg_info) == TRUE,
-                 "WLSBwithid only applicable in inner with-loop");
+    DBUG_ASSERT (INFO_INNERTRAV (arg_info) == TRUE, "Only applicable to inner with-loop");
 
     if (INFO_NEWWITHID (arg_info) == NULL) {
         /*
@@ -839,7 +850,7 @@ WLSBgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_INNERTRAV (arg_info) == FALSE,
-                 "WLSBgenarray only applicable for outer with-loop");
+                 "Only applicable to outer with-loop");
 
     /*
      * Compute inner index space
@@ -881,7 +892,7 @@ WLSBmodarray (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_ASSERT (INFO_INNERTRAV (arg_info) == FALSE,
-                 "WLSBmodarray only applicable for outer with-loop");
+                 "Only applicable to outer with-loop");
 
     INFO_NEWWITHOP (arg_info) = DUPdoDupNode (arg_node);
 

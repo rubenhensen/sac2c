@@ -209,6 +209,8 @@
 #include "check.h"
 #include "wls.h"
 #include "ivexpropagation.h"
+#include "flattengenerators.h"
+#include "algebraic_wlfi.h"
 
 /** <!--********************************************************************-->
  *
@@ -350,33 +352,6 @@ IVEXImakeIntScalar (int k, node **vardecs, node **preassigns)
 
 /** <!--********************************************************************-->
  *
- * @fn node *generateAvisWithids( node *iv, info *arg_info)
- *
- * @brief Return N_avis of WITHID_IDS entry for iv=[i,j,k...],
- *          where n is Nth element of iv.
- *
- *   @param: iv: a WITHID node
- *   @param: arg_info - your basic arg_info
- *   @param: idx: the first WITHID_IDS to use.
- *
- *    e.g., with the above example, and idx=1, we would
- *    return j.
- *
- *   @return The N_avis for k
- *
- ******************************************************************************/
-static node *
-generateAvisWithids (node *withids, info *arg_info, int idx)
-{
-    node *zavis;
-
-    DBUG_ENTER ();
-    zavis = TCgetNthIds (idx, WITHID_IDS (withids));
-    DBUG_RETURN (zavis);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn static bool isSameTypeShape( node *ida, node *idb)
  *
  * @brief predicate to see if two N_id nodes have same
@@ -493,84 +468,6 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
 
 /** <!--********************************************************************-->
  *
- * @fn static
- * node *generateSelect( node *arg_node, info *arg_info, int k)
- *
- * @brief:
- * Select the k-th element of a WL generator bound.
- * We start with a N_avis for a generator bound, arg_node:
- *
- *              arg_node = [ I, J ];
- * Create:
- *             kk = k;          NB. Flatten k
- *             k' = [kk];
- *             z = _sel_VxA_([k], arg_node);
- *             and associated vardecs.
- * @params:
- *     arg_node: The N_avis node for a generator bound.
- *     arg_info: Your basic arg_info stuff.
- *     k:        which element of the bound we want to select.
- *
- * @return: The N_avis of the new temp, z.
- *
- *****************************************************************************/
-static node *
-generateSelect (node *arg_node, info *arg_info, int k)
-{
-    node *kavis;
-    node *kid;
-    node *kids;
-    node *kass;
-
-    node *zavis;
-    node *zids;
-    node *zass;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (N_avis == NODE_TYPE (arg_node), "Expected N_avis arg_node");
-
-    /* Create k' = [k]; */
-    kavis = TBmakeAvis (TRAVtmpVar (),
-                        TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, 1)));
-    INFO_VARDECS (arg_info) = TBmakeVardec (kavis, INFO_VARDECS (arg_info));
-
-    kid = TBmakeId (kavis);
-    kids = TBmakeIds (kavis, NULL);
-    kass
-      = TBmakeAssign (TBmakeLet (kids, TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int),
-                                                               SHcreateShape (0)),
-                                                    SHcreateShape (1, 1),
-                                                    TBmakeExprs (TBmakeNum (k), NULL))),
-                      NULL);
-    INFO_PREASSIGNSWITH (arg_info)
-      = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), kass);
-    AVIS_SSAASSIGN (kavis) = kass;
-
-    DBUG_PRINT ("generateSelect flattened k: %s for: %s", AVIS_NAME (kavis),
-                AVIS_NAME (arg_node));
-
-    /* Create z = _sel_VxA_([k], bound);  */
-
-    zavis
-      = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-    INFO_VARDECS (arg_info) = TBmakeVardec (zavis, INFO_VARDECS (arg_info));
-    zids = TBmakeIds (zavis, NULL);
-    zass
-      = TBmakeAssign (TBmakeLet (zids, TCmakePrf2 (F_sel_VxA, kid, TBmakeId (arg_node))),
-                      NULL);
-
-    INFO_PREASSIGNSWITH (arg_info)
-      = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), zass);
-    AVIS_SSAASSIGN (zavis) = zass;
-
-    DBUG_PRINT ("generateSelect introduced temp index variable: %s for: %s",
-                AVIS_NAME (zavis), AVIS_NAME (arg_node));
-    DBUG_RETURN (zavis);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *IVEXItmpVec( node *arg_node, info *arg_info, node* ivavis))
  *
  * @brief:
@@ -641,7 +538,7 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
  *          This is slightly more complex, because we have to
  *          select the appropriate generator elements.
  *
- *     iavis: The N_avis of the name for which we want to build iv'.
+ *     iavis: The N_avis of the WITHID_IDS node for which we want to build iv'.
  *     arg_node: An N_part of the WL.
  *     arg_info: Your basic arg_info stuff.
  *     k:        the index of the scalar in IV, e.g., i=0, j=1, k=2
@@ -649,41 +546,40 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
  *
  *****************************************************************************/
 node *
-IVEXItmpIds (node *arg_node, info *arg_info, node *iavis, int k)
+IVEXItmpIds (node *curpart, node *iavis, int k, node **preassignspart, node **vardecs)
 {
     node *avisp;
     node *avispp;
     node *b1;
     node *b2;
-    node *b1f;
-    node *b2f;
     node *withids;
+    ntype *typ;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Working on %s", AVIS_NAME (iavis));
 
-    b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
-    b1f = WLSflattenBound (DUPdoDupNode (b1), &INFO_VARDECS (arg_info),
-                           &INFO_PREASSIGNSWITH (arg_info));
-    b1 = generateSelect (b1f, arg_info, k);
+    typ = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+    b1 = GENERATOR_BOUND1 (PART_GENERATOR (curpart));
+    b1 = TCgetNthExprsExpr (k, ARRAY_AELEMS (b1));
+    b1 = FLATGflattenExpression (DUPdoDupNode (b1), vardecs, preassignspart, typ);
 
-    b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
-    b2f = WLSflattenBound (DUPdoDupNode (b2), &INFO_VARDECS (arg_info),
-                           &INFO_PREASSIGNSWITH (arg_info));
-    b2 = generateSelect (b2f, arg_info, k);
+    b2 = GENERATOR_BOUND2 (PART_GENERATOR (curpart));
+    b2 = TCgetNthExprsExpr (k, ARRAY_AELEMS (b2));
+    b2 = FLATGflattenExpression (DUPdoDupNode (b2), vardecs, preassignspart, typ);
 
-    withids = generateAvisWithids (PART_WITHID (arg_node), arg_info, k);
-    avisp = IVEXIattachExtrema (b1, iavis, &INFO_VARDECS (arg_info),
-                                &INFO_PREASSIGNSPART (arg_info), F_noteminval, withids);
+    withids = TCgetNthIds (k, WITHID_IDS (PART_WITHID (curpart)));
+
+    avisp
+      = IVEXIattachExtrema (b1, iavis, vardecs, preassignspart, F_noteminval, withids);
     AVIS_ISMINHANDLED (avisp) = TRUE;
 
-    avispp = IVEXIattachExtrema (b2, avisp, &INFO_VARDECS (arg_info),
-                                 &INFO_PREASSIGNSPART (arg_info), F_notemaxval, withids);
+    avispp
+      = IVEXIattachExtrema (b2, avisp, vardecs, preassignspart, F_notemaxval, withids);
     AVIS_ISMAXHANDLED (avisp) = TRUE;
 
-    DBUG_PRINT ("IVEXItmpIds introduced: %s and %s for: %s", AVIS_NAME (avisp),
-                AVIS_NAME (avispp), AVIS_NAME (iavis));
+    DBUG_PRINT ("Introduced: %s and %s for: %s", AVIS_NAME (avisp), AVIS_NAME (avispp),
+                AVIS_NAME (iavis));
 
     DBUG_RETURN (avispp);
 }
@@ -725,7 +621,8 @@ populateLUTVars (node *arg_node, info *arg_info)
     ids = WITHID_IDS (PART_WITHID (arg_node));
     while (ids != NULL) {
         oldavis = IDS_AVIS (ids);
-        navis = IVEXItmpIds (arg_node, arg_info, oldavis, k);
+        navis = IVEXItmpIds (arg_node, oldavis, k, &INFO_PREASSIGNSPART (arg_info),
+                             &INFO_VARDECS (arg_info));
         DBUG_PRINT ("Inserting WITHID_IDS into lut: oldid: %s, newid: %s",
                     AVIS_NAME (oldavis), AVIS_NAME (navis));
         LUTinsertIntoLutP (INFO_LUTVARS (arg_info), oldavis, navis);
@@ -1129,6 +1026,45 @@ IVEXIap (node *arg_node, info *arg_info)
     }
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ *  The following functions are kludges that we require because of
+ *  the duplication of WITHID_VEC and WITHID_IDS names across
+ *  WL N_part nodes. This duplication prevents us from associating
+ *  extrema with those names. Hence, we have to copy the WITHID_IDS/VEC
+ *  to a new name, and associate the extrema with those new names.
+ *
+ *
+ * function:
+ *   node *IVEXIwithidsKludge(int offset, node *withidvec, node *curwith,
+ *                            node **preassigns, node **vardecs)
+ *
+ *
+ * description: Perform z =  withidvec[ offset];
+ *                      z = attachextrema( z);
+ *
+ *              Return the N_avis of z, or NULL.
+ *
+ ******************************************************************************/
+node *
+IVEXIwithidsKludge (int offset, node *withidids, node *curpart, node **preassignspart,
+                    node **vardecs)
+{
+    node *z = NULL;
+    node *ijk;
+
+    DBUG_ENTER ();
+
+    ijk = TCgetNthExprsExpr (offset, ARRAY_AELEMS (withidids));
+    if ((NULL != curpart)
+        && (isAvisMemberIds (ID_AVIS (ijk), WITHID_IDS (PART_WITHID (curpart))))) {
+        z = TCgetNthIds (offset, WITHID_IDS (PART_WITHID (curpart)));
+        z = IVEXItmpIds (curpart, z, offset, preassignspart, vardecs);
+    }
+
+    DBUG_RETURN (z);
 }
 
 #undef DBUG_PREFIX

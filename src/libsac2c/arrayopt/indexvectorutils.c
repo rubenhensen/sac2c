@@ -628,7 +628,7 @@ IVUToffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IVUTfindIv(...)
+ * @fn node *IVUTfindIvWith(...)
  *
  * @brief Try to map arg_node back to the producerWL WITHID_VEC.
  *
@@ -636,7 +636,7 @@ IVUToffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart)
  *
  *****************************************************************************/
 node *
-IVUTfindIv (node *arg_node, node *cwlpart)
+IVUTfindIvWith (node *arg_node, node *cwlpart)
 {
     node *z = NULL;
     pattern *pat;
@@ -660,7 +660,7 @@ IVUTfindIv (node *arg_node, node *cwlpart)
 
         if (PMmatchFlatSkipGuards (pat2, arg_node)) { /* _idx_sel() case */
             if ((N_prf == NODE_TYPE (ivprf)) && (F_idxs2offset == PRF_PRF (ivprf))) {
-                DBUG_PRINT ("look for pwlprat WITHIDS here");
+                DBUG_PRINT ("look for pwlpart WITHIDS here");
                 z = NULL; /* FIXME */
             } else {
                 /* We have not have _idxs2offset any more, due to opts.
@@ -687,6 +687,61 @@ IVUTfindIv (node *arg_node, node *cwlpart)
     DBUG_ASSERT (NULL != z, "Unable to locate iv from offset");
 
     DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IVUTfindOffset2Iv(...)
+ *
+ * @brief arg_node is offset in _idx_sel( offset, X).
+ *        Try to find the vect2offset it came from, and return its
+ *        PRF_ARG2.
+ *
+ * @return: the N_id of the PRF_ARG2 node.
+ *
+ *****************************************************************************/
+node *
+IVUTfindOffset2Iv (node *arg_node)
+{
+    node *z = NULL;
+    node *shp = NULL;
+    node *iv = NULL;
+    pattern *pat;
+
+    DBUG_ENTER ();
+
+    pat = PMprf (1, PMAisPrf (F_vect2offset), 2, PMany (1, PMAgetNode (&shp), 0),
+                 PMany (1, PMAgetNode (&iv), 0));
+
+    PMmatchFlat (pat, arg_node);
+    pat = PMfree (pat);
+
+    DBUG_RETURN (iv);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn constant *IVUTiV2Constant(...)
+ *
+ * @brief arg_node an N_id
+ *
+ * @return: If arg_node is constant, return its value.
+ *
+ *****************************************************************************/
+node *
+IVUTiV2Constant (node *arg_node)
+{
+    constant *iv = NULL;
+    pattern *pat;
+
+    DBUG_ENTER ();
+
+    pat = PMconst (1, PMAgetVal (&iv));
+
+    PMmatchFlat (pat, arg_node);
+    pat = PMfree (pat);
+
+    DBUG_RETURN (iv);
 }
 
 #undef DBUG_PREFIX
