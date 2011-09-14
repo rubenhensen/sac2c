@@ -245,9 +245,9 @@ IVUTarrayFromProxyIdxsel (node *iv)
         if (PMmatchFlatSkipExtremaAndGuards (pat1, EXPRS_EXPR (narray))) {
             con = IVUToffset2Constant (offset);
             if ((NULL != con) && COisZero (con, TRUE)) {
+                con = COfreeConstant (con);
                 while (b && (NULL != narray)) {
                     if (PMmatchFlatSkipExtremaAndGuards (pat2, EXPRS_EXPR (narray))) {
-                        con = COfreeConstant (con);
                         con = IVUToffset2Constant (offset);
                         ncon = COmakeConstantFromInt (n);
                         b = COcompareConstants (con, ncon);

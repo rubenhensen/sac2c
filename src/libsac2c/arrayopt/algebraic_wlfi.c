@@ -730,6 +730,25 @@ AWLFIisHasInverseProjection (node *arg_node)
  *          Side effect: Set INFO_WITHIDS, if possible.
  *
  *****************************************************************************/
+
+static node *
+FlattenLbubel (node *lbubel, info *arg_info)
+{
+    node *lbubelavis;
+
+    DBUG_ENTER ();
+    if (N_num == NODE_TYPE (lbubel)) {
+        lbubelavis
+          = FLATGflattenExpression (DUPdoDupTree (lbubel), &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info),
+                                    TYmakeAKS (TYmakeSimpleType (T_int),
+                                               SHcreateShape (0)));
+    } else {
+        lbubelavis = ID_AVIS (lbubel);
+    }
+    DBUG_RETURN (lbubelavis);
+}
+
 static node *
 BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
 {
@@ -747,7 +766,6 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
     node *withidids;
     node *ipavis;
     int tcindex;
-    node *lbubelavis;
     node *resid;
     prf nprf;
 
@@ -771,16 +789,6 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
         break;
 
     case N_id:
-        if (N_num == NODE_TYPE (lbubel)) {
-            lbubelavis
-              = FLATGflattenExpression (DUPdoDupTree (lbubel), &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNS (arg_info),
-                                        TYmakeAKS (TYmakeSimpleType (T_int),
-                                                   SHcreateShape (0)));
-        } else {
-            lbubelavis = ID_AVIS (lbubel);
-        }
-
         ipavis = ID_AVIS (iprime);
         DBUG_PRINT ("Tracing %s", AVIS_NAME (ipavis));
         pat = PMany (1, PMAgetNode (&idx), 0);
@@ -794,7 +802,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
                     DBUG_PRINT ("Found %s as source of iv'=%s", AVIS_NAME (ID_AVIS (idx)),
                                 AVIS_NAME (ipavis));
                     INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
-                    z = lbubelavis;
+                    z = FlattenLbubel (lbubel, arg_info);
                 } else {
                     /* Vanilla variable */
                     rhs = AVIS_SSAASSIGN (ID_AVIS (idx));
@@ -821,13 +829,12 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
                         INFO_VARDECS (arg_info)
                           = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
                         ids = TBmakeIds (resavis, NULL);
-                        assgn
-                          = TBmakeAssign (TBmakeLet (ids,
-                                                     TCmakePrf2 (F_sub_SxS,
-                                                                 TBmakeId (lbubelavis),
-                                                                 TBmakeId (
-                                                                   ID_AVIS (xarg)))),
-                                          NULL);
+                        assgn = TBmakeAssign (
+                          TBmakeLet (ids, TCmakePrf2 (F_sub_SxS,
+                                                      TBmakeId (
+                                                        FlattenLbubel (lbubel, arg_info)),
+                                                      TBmakeId (ID_AVIS (xarg)))),
+                          NULL);
                         INFO_PREASSIGNS (arg_info)
                           = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
                         AVIS_SSAASSIGN (resavis) = assgn;
@@ -856,14 +863,14 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
                         switch (markiv) {
                         case 1:
                             nprf = F_add_SxS;
-                            id1 = TBmakeId (lbubelavis);
+                            id1 = TBmakeId (FlattenLbubel (lbubel, arg_info)),
                             id2 = TBmakeId (ID_AVIS (xarg));
                             break;
 
                         case 2:
                             nprf = F_sub_SxS;
                             id1 = TBmakeId (ID_AVIS (xarg));
-                            id2 = TBmakeId (lbubelavis);
+                            id2 = TBmakeId (FlattenLbubel (lbubel, arg_info)),
                             INFO_FINVERSESWAP (arg_info) = !INFO_FINVERSESWAP (arg_info);
                             break;
 
