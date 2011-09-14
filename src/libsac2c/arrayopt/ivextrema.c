@@ -411,13 +411,15 @@ isSameTypeShape (node *ida, node *idb)
  *                 in the caller's environment.
  *     vardecs:    The address of an INFO_VARDECS( arg_info) node
  *                 in the caller's environment.
+ *     nprf: FIXME
+ *
  *
  * @return: The N_avis of the new iv'.
  *
  *****************************************************************************/
 static node *
 IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassigns,
-                    prf nprf, node *withids)
+                    prf nprf)
 
 {
     node *nas;
@@ -459,8 +461,8 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
         IVEXPsetMaxvalIfNotNull (lhsavis, extid, TRUE);
     }
 
-    DBUG_PRINT ("IVEXIattachExtrema introduced temp index variable: %s for: %s",
-                AVIS_NAME (lhsavis), AVIS_NAME (ivavis));
+    DBUG_PRINT ("Introduced temp index variable: %s for: %s", AVIS_NAME (lhsavis),
+                AVIS_NAME (ivavis));
     global.optcounters.ivexp_attach++;
 
     DBUG_RETURN (lhsavis);
@@ -504,24 +506,22 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
     node *avispp;
     node *b1;
     node *b2;
-    node *withids;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "IVEXItmpVec expected N_avis");
+    DBUG_ASSERT (N_avis == NODE_TYPE (ivavis), "Expected N_avis");
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (arg_node));
     b1 = WLSflattenBound (DUPdoDupNode (b1), &INFO_VARDECS (arg_info),
                           &INFO_PREASSIGNSWITH (arg_info));
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (arg_node));
     b2 = WLSflattenBound (DUPdoDupNode (b2), &INFO_VARDECS (arg_info),
                           &INFO_PREASSIGNSWITH (arg_info));
-    withids = IDS_AVIS (WITHID_VEC (PART_WITHID (arg_node)));
     avisp = IVEXIattachExtrema (b1, ivavis, &INFO_VARDECS (arg_info),
-                                &INFO_PREASSIGNSPART (arg_info), F_noteminval, withids);
+                                &INFO_PREASSIGNSPART (arg_info), F_noteminval);
     AVIS_ISMINHANDLED (avisp) = TRUE;
 
     avispp = IVEXIattachExtrema (b2, avisp, &INFO_VARDECS (arg_info),
-                                 &INFO_PREASSIGNSPART (arg_info), F_notemaxval, withids);
+                                 &INFO_PREASSIGNSPART (arg_info), F_notemaxval);
     AVIS_ISMAXHANDLED (avisp) = TRUE;
 
     DBUG_RETURN (avispp);
@@ -552,30 +552,25 @@ IVEXItmpIds (node *curpart, node *iavis, int k, node **preassignspart, node **va
     node *avispp;
     node *b1;
     node *b2;
-    node *withids;
-    ntype *typ;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Working on %s", AVIS_NAME (iavis));
 
-    typ = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (curpart));
     b1 = TCgetNthExprsExpr (k, ARRAY_AELEMS (b1));
-    b1 = FLATGflattenExpression (DUPdoDupNode (b1), vardecs, preassignspart, typ);
+    b1 = FLATGflattenExpression (DUPdoDupNode (b1), vardecs, preassignspart,
+                                 TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (curpart));
     b2 = TCgetNthExprsExpr (k, ARRAY_AELEMS (b2));
-    b2 = FLATGflattenExpression (DUPdoDupNode (b2), vardecs, preassignspart, typ);
+    b2 = FLATGflattenExpression (DUPdoDupNode (b2), vardecs, preassignspart,
+                                 TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
-    withids = TCgetNthIds (k, WITHID_IDS (PART_WITHID (curpart)));
-
-    avisp
-      = IVEXIattachExtrema (b1, iavis, vardecs, preassignspart, F_noteminval, withids);
+    avisp = IVEXIattachExtrema (b1, iavis, vardecs, preassignspart, F_noteminval);
     AVIS_ISMINHANDLED (avisp) = TRUE;
 
-    avispp
-      = IVEXIattachExtrema (b2, avisp, vardecs, preassignspart, F_notemaxval, withids);
+    avispp = IVEXIattachExtrema (b2, avisp, vardecs, preassignspart, F_notemaxval);
     AVIS_ISMAXHANDLED (avisp) = TRUE;
 
     DBUG_PRINT ("Introduced: %s and %s for: %s", AVIS_NAME (avisp), AVIS_NAME (avispp),
