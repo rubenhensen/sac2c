@@ -703,7 +703,6 @@ IVUTfindIvWith (node *arg_node, node *cwlpart)
 node *
 IVUTfindOffset2Iv (node *arg_node)
 {
-    node *z = NULL;
     node *shp = NULL;
     node *iv = NULL;
     pattern *pat;
@@ -728,7 +727,7 @@ IVUTfindOffset2Iv (node *arg_node)
  * @return: If arg_node is constant, return its value.
  *
  *****************************************************************************/
-node *
+constant *
 IVUTiV2Constant (node *arg_node)
 {
     constant *iv = NULL;
