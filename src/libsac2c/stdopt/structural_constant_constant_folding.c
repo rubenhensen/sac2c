@@ -1499,17 +1499,26 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
     node *aelems = NULL;
     node *elem = NULL;
     constant *frameshape = NULL;
+    pattern *pat1;
+    pattern *pat2;
     bool matches = TRUE;
 
     DBUG_ENTER ();
-    /* FIXME make this a clone of the IVECYC version below, so we can kill PMO */
-    if (PMO (PMOexprs (&aelems, PMOarray (&frameshape, NULL,
-                                          PMOvar (&iv, PMOprf (F_sel_VxA, arg_node)))))
-        && TUshapeKnown (AVIS_TYPE (ID_AVIS (iv)))
-        && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
-            == COgetExtent (frameshape, 0))) {
-        while (matches && (aelems != NULL)) {
-            matches = PMO (PMOany (&elem, aelems));
+
+    pat1
+      = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
+               PMarray (2, PMAgetNode (&aelems), PMAgetFS (&frameshape), 1, PMskip (0)));
+    pat2 = PMvar (1, PMAisVar (&elem), 0);
+
+    if ((PMmatchFlatSkipGuards (pat1, arg_node))
+        && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv)))
+            && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
+                == COgetExtent (frameshape, 0)))) {
+
+        aelems = ARRAY_AELEMS (aelems);
+        elem = EXPRS_EXPR (aelems);
+        while (matches && (NULL != aelems)) {
+            matches = PMmatchFlat (pat2, aelems);
             aelems = EXPRS_NEXT (aelems);
         }
 
@@ -1522,6 +1531,8 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
     if (frameshape != NULL) {
         frameshape = COfreeConstant (frameshape);
     }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
 
     DBUG_RETURN (res);
 }
@@ -1566,7 +1577,7 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     pat1
-      = PMprf (1, PMAisPrf (F_idx_sel), 2, PMany (1, PMAgetNode (&offset)),
+      = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset), 0),
                PMarray (2, PMAgetNode (&aelems), PMAgetFS (&frameshape), 1, PMskip (0)));
     pat2 = PMvar (1, PMAisVar (&elem), 0);
 
@@ -1576,7 +1587,7 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
     pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
                   PMvar (1, PMAgetNode (&iv), 0));
 
-    if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat3, offset))
+    if ((PMmatchFlatSkipGuards (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat3, offset))
         && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv))))
         && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
             == COgetExtent (frameshape, 0))) {
