@@ -1973,7 +1973,7 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivprimeavis)
         /* WLINTERSECT1/2 */
         args = TCappendExprs (args, intersectcalc);
 
-        ztype = AVIS_TYPE (INFO_CONSUMERWLLHS (arg_info));
+        ztype = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
         ivshape = SHgetUnrLen (TYgetShape (ztype));
         ivpavis
           = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ivprimeavis)), TYeliminateAKV (ztype));
