@@ -221,7 +221,12 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
     int offset;
     constant *con1 = NULL;
     constant *arg2fs = NULL;
+    constant *take_vec;
     node *arg2 = NULL;
+    node *tmpXid;
+    node *tmpivid;
+    node *tmpivavis;
+    node *tmpivval;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
@@ -250,20 +255,48 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
     }
 
     if (NULL != con1) {
-        offset = COconst2Int (con1);
         iv_len = SHgetUnrLen (COgetShape (con1));
-        con1 = COfreeConstant (con1);
         if (PMmatchFlat (pat2, PRF_ARG2 (arg_node))) { /* Get the N_array */
             X_dim = SHgetExtent (COgetShape (arg2fs), 0);
             arg2fs = COfreeConstant (arg2fs);
             DBUG_ASSERT (iv_len >= X_dim, "shape(iv) <  dim(X)");
+            take_vec = COmakeConstantFromInt (X_dim);
+            offset = COconst2Int (con1);
+            tmpXid = DUPdoDupNode (TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
             if (iv_len == X_dim) {
                 // Case 1 : Exact selection: do the sel operation now.
                 result = DUPdoDupNode (TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
+                tmpXid = DUPdoDupNode (TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
                 DBUG_PRINT ("Exact selection performed for %s = _idx_sel( %s, %s)",
                             AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))),
                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+                result = tmpXid;
+            } else {
+                // Case 2: Selection vector has more elements than frame_dim(X):
+                // Perform partial selection on X now; build new selection for
+                // run-time.
+                con1 = COdrop (take_vec, con1, NULL); // iv suffix
+                take_vec = COfreeConstant (take_vec);
+                tmpivavis = TBmakeAvis (TRAVtmpVarName (
+                                          AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
+                                        TYmakeAKS (TYmakeSimpleType (T_int),
+                                                   SHcreateShape (1, iv_len - X_dim)));
+                tmpivval = COconstant2AST (con1);
+                INFO_VARDECS (arg_info)
+                  = TBmakeVardec (tmpivavis, INFO_VARDECS (arg_info));
+                tmpivid = TBmakeId (tmpivavis);
+                INFO_PREASSIGN (arg_info)
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (tmpivavis, NULL), tmpivval),
+                                  INFO_PREASSIGN (arg_info));
+
+                AVIS_SSAASSIGN (tmpivavis) = INFO_PREASSIGN (arg_info);
+                DBUG_PRINT ("sel(iv,X) replaced iv: old: %s; new: %s",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                            AVIS_NAME (tmpivavis));
+
+                // Create new sel() operation  _sel_VxA_(tmpiv, tmpX);
+                result = TCmakePrf2 (F_sel_VxA, tmpivid, tmpXid);
             }
         } else {
             /* Kludge for matching WITHID_IDS:
@@ -278,6 +311,7 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
                 X_dim = TCcountIds (WITHID_IDS (PART_WITHID (INFO_PART (arg_info))));
                 if ((PMmatchFlatSkipExtrema (pat3, PRF_ARG2 (arg_node)))
                     && (N_array == NODE_TYPE (arg2)) && (iv_len == X_dim)) {
+                    offset = COconst2Int (con1);
                     result = IVEXIwithidsKludge (offset, arg2, INFO_PART (arg_info),
                                                  &INFO_PREASSIGN (arg_info),
                                                  &INFO_VARDECS (arg_info));
@@ -285,6 +319,7 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
                 }
             }
         }
+        con1 = COfreeConstant (con1);
     }
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
@@ -1162,16 +1197,20 @@ SelModarray (node *arg_node, info *arg_info)
     node *res = NULL;
     node *iv = NULL;
     node *iv2 = NULL;
+    node *iv3 = NULL;
     node *ivpp = NULL;
     node *X = NULL;
     node *Mprime = NULL;
     node *val = NULL;
+    node *modar = NULL;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
     pattern *pativ;
     pattern *pat5;
+    pattern *pat6;
+    pattern *pat7;
 
     DBUG_ENTER ();
 
@@ -1180,14 +1219,14 @@ SelModarray (node *arg_node, info *arg_info)
                   PMvar (1, PMAgetNode (&X), 0));
 
     /* Chase  iv'' to iv's RHS */
-    pativ = PMany (1, PMAgetNode (&iv), 0);
+    pativ = PMvar (1, PMAgetNode (&iv), 0);
 
     /* _X = modarray_AxVxS_( M, iv, val) */
-    pat2 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMvar (0, 0),
+    pat2 = PMprf (2, PMAgetNode (&modar), PMAisPrf (F_modarray_AxVxS), 3, PMvar (0, 0),
                   PMvar (1, PMAgetNode (&iv2), 0), PMvar (1, PMAgetNode (&val), 0));
 
     /* _X = modarray_AxSxA_( M, iv, val) */
-    pat3 = PMprf (1, PMAisPrf (F_modarray_AxVxA), 3, PMvar (0, 0),
+    pat3 = PMprf (2, PMAgetNode (&modar), PMAisPrf (F_modarray_AxVxA), 3, PMvar (0, 0),
                   PMvar (1, PMAgetNode (&iv2), 0), PMvar (1, PMAgetNode (&val), 0));
 
     /* X' = _afterguard_( X, p0, p1, ... ); */
@@ -1195,6 +1234,9 @@ SelModarray (node *arg_node, info *arg_info)
 
     /* Chase iv' in _modarray(X, iv', val) back to iv */
     pat5 = PMany (1, PMAisNode (&iv), 0);
+    /* Ditto for iv2 in _sel_VxA_( iv2, Mprime) */
+    pat6 = PMany (1, PMAgetNode (&iv3), 0);
+    pat7 = PMany (1, PMAgetNode (&iv), 0);
 
     if (PMmatchFlatSkipGuards (pat1, arg_node) && PMmatchFlatSkipGuards (pativ, ivpp)
         && (PMmatchFlatSkipGuards (pat2, X) || PMmatchFlatSkipGuards (pat3, X))
@@ -1206,20 +1248,18 @@ SelModarray (node *arg_node, info *arg_info)
     } else {
 
         /* Case 4 */
-        /* FIXME: This does not work properly yet. It removes the sel()
-         * correctly, but the afterguards on the modarray hang around,
-         * so we still create that result, even though we may never
-         * use it.
+        /*
+         * Mprime will be the F_afterguard N_prf node.
          */
         if ((NULL != ivpp) && (PMmatchFlatSkipGuards (pativ, ivpp))
             && (PMmatchFlat (pat4, X))
-            && ((PMmatchFlatSkipGuards (pat2, Mprime)
-                 || PMmatchFlatSkipGuards (pat3, Mprime)))
-            && (PMmatchFlat (pat5, iv2))) {
-            /* Preserve the afterguard on X */
-            res = DUPdoDupNode (Mprime);
-            FREEdoFreeNode (PRF_ARG1 (res));
-            PRF_ARG1 (res) = DUPdoDupNode (val);
+            && ((PMmatchFlatSkipGuards (pat2, PRF_ARG1 (Mprime))
+                 || PMmatchFlatSkipGuards (pat3, PRF_ARG1 (Mprime))))
+            && (PMmatchFlatSkipGuards (pat6, iv)) && (PMmatchFlatSkipGuards (pat7, iv2))
+            && (PMmatchFlat (pat5, iv3))) {
+
+            PRF_ISNOP (modar) = TRUE;
+            res = DUPdoDupNode (val);
             DBUG_PRINT ("replaced _sel_VxA_(iv, %s) of modarray by guarded %s",
                         AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val)));
         }
@@ -1230,6 +1270,8 @@ SelModarray (node *arg_node, info *arg_info)
     pat4 = PMfree (pat4);
     pativ = PMfree (pativ);
     pat5 = PMfree (pat5);
+    pat6 = PMfree (pat6);
+    pat7 = PMfree (pat7);
 
     DBUG_RETURN (res);
 }
@@ -1266,23 +1308,28 @@ IdxselModarray (node *arg_node, info *arg_info)
     pattern *pat1;
     pattern *pat2;
     node *X = NULL;
-    node *offset = NULL;
+    node *offset1 = NULL;
+    node *offset2 = NULL;
     node *val = NULL;
+    node *modar = NULL;
 
     DBUG_ENTER ();
 
     /* z = _idx_sel( offset, X); */
-    pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset), 0),
+    pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset1), 0),
                   PMvar (1, PMAgetNode (&X), 0));
 
     /* _X = idx_modarray_AxSxS_( M, offset, val) */
-    pat2 = PMprf (1, PMAisPrf (F_idx_modarray_AxSxS), 3, PMvar (0, 0),
-                  PMvar (1, PMAisVar (&offset), 0), PMvar (1, PMAgetNode (&val), 0));
+    pat2
+      = PMprf (2, PMAisPrf (F_idx_modarray_AxSxS), PMAgetNode (&modar), 3, PMvar (0, 0),
+               PMvar (1, PMAgetNode (&offset2), 0), PMvar (1, PMAgetNode (&val), 0));
 
-    if ((PMmatchFlatSkipGuards (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat2, X))) {
+    if ((PMmatchFlatSkipGuards (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat2, X))
+        && (IVUToffsetMatchesOffset (offset1, offset2))) {
         res = DUPdoDupNode (val);
         DBUG_PRINT ("replaced _idx_sel(offset, %s) of modarray by %s",
                     AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val)));
+        PRF_ISNOP (modar) = TRUE;
     }
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
@@ -1331,16 +1378,18 @@ SelModarrayCase2 (node *arg_node, info *arg_info)
     node *X2 = NULL;
     pattern *pat1;
     pattern *pat2;
+    node *modar = NULL;
 
     DBUG_ENTER ();
 
     /* z = _sel_VxA_( ivc1, X); */
-    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAgetVal (&ivc1)),
-                  PMvar (1, PMAgetNode (&X), 0));
+    pat1 = PMprf (2, PMAisPrf (F_sel_VxA), PMAgetNode (&modar), 2,
+                  PMconst (1, PMAgetVal (&ivc1)), PMvar (1, PMAgetNode (&X), 0));
 
     /* X = _modarray_AxVxS_( M, ivc2, val)  */
-    pat2 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMvar (1, PMAgetNode (&X2), 0),
-                  PMconst (1, PMAgetVal (&ivc2)), PMvar (1, PMAgetNode (&val), 0));
+    pat2 = PMprf (2, PMAisPrf (F_modarray_AxVxS), PMAgetNode (&modar), 3,
+                  PMvar (1, PMAgetNode (&X2), 0), PMconst (1, PMAgetVal (&ivc2)),
+                  PMvar (1, PMAgetNode (&val), 0));
 
     if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
         while (PMmatchFlatSkipExtrema (pat2, X)) {
@@ -1357,6 +1406,7 @@ SelModarrayCase2 (node *arg_node, info *arg_info)
             DBUG_PRINT ("Replaced _sel_VxA_(const, %s) by %s", AVIS_NAME (ID_AVIS (X)),
                         AVIS_NAME (ID_AVIS (val)));
             res = DUPdoDupNode (val);
+            PRF_ISNOP (modar) = TRUE;
         }
     }
     pat1 = PMfree (pat1);
@@ -1406,6 +1456,7 @@ IdxselModarrayCase2 (node *arg_node, info *arg_info)
     node *X2 = NULL;
     pattern *pat1;
     pattern *pat2;
+    node *modar = NULL;
 
     DBUG_ENTER ();
 
@@ -1414,8 +1465,9 @@ IdxselModarrayCase2 (node *arg_node, info *arg_info)
                   PMvar (1, PMAgetNode (&X), 0));
 
     /* X = _idx_modarray_AxSxS_( M, ivc2, val)  */
-    pat2 = PMprf (1, PMAisPrf (F_idx_modarray_AxSxS), 3, PMvar (1, PMAgetNode (&X2), 0),
-                  PMconst (1, PMAgetVal (&ivc2)), PMvar (1, PMAgetNode (&val), 0));
+    pat2 = PMprf (2, PMAisPrf (F_idx_modarray_AxSxS), PMAgetNode (&modar), 3,
+                  PMvar (1, PMAgetNode (&X2), 0), PMconst (1, PMAgetVal (&ivc2)),
+                  PMvar (1, PMAgetNode (&val), 0));
 
     if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
         while (PMmatchFlatSkipExtrema (pat2, X)) {
@@ -1432,6 +1484,7 @@ IdxselModarrayCase2 (node *arg_node, info *arg_info)
             DBUG_PRINT ("Replaced _sel_VxA_(const, %s) by %s", AVIS_NAME (ID_AVIS (X)),
                         AVIS_NAME (ID_AVIS (val)));
             res = DUPdoDupNode (val);
+            PRF_ISNOP (modar) = TRUE;
         }
     }
     pat1 = PMfree (pat1);

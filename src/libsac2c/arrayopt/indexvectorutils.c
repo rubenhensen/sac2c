@@ -712,7 +712,7 @@ IVUTfindOffset2Iv (node *arg_node)
     pat = PMprf (1, PMAisPrf (F_vect2offset), 2, PMany (1, PMAgetNode (&shp), 0),
                  PMany (1, PMAgetNode (&iv), 0));
 
-    PMmatchFlat (pat, arg_node);
+    PMmatchFlatSkipGuards (pat, arg_node);
     pat = PMfree (pat);
 
     DBUG_RETURN (iv);
@@ -737,10 +737,54 @@ IVUTiV2Constant (node *arg_node)
 
     pat = PMconst (1, PMAgetVal (&iv));
 
-    PMmatchFlat (pat, arg_node);
+    PMmatchFlatSkipGuards (pat, arg_node);
     pat = PMfree (pat);
 
     DBUG_RETURN (iv);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool IVUToffsetMatchesOffsetivmatchesIv( node *offset1, node *offset2)
+ *
+ * @brief offset1, offset2 are PRF_ARG1 of an _idx_sel() or
+ *                             PRG_ARG2 of an _idx_modarray....()
+ *
+ * @return: Return TRUE if the offsets can be shown to be
+ *          identical.
+ *
+ *****************************************************************************/
+bool
+IVUToffsetMatchesOffset (node *offset1, node *offset2)
+{
+    bool z;
+    pattern *pat1;
+    pattern *pat2;
+    node *offset;
+    node *iv1;
+    node *iv2;
+
+    DBUG_ENTER ();
+
+    /* Case 1  direct match */
+    pat1 = PMany (1, PMAgetNode (&offset));
+    pat2 = PMany (1, PMAisNode (&offset));
+
+    z = (PMmatchFlatSkipGuards (pat1, offset1))
+        && (PMmatchFlatSkipGuards (pat2, offset2));
+
+    if (!z) {
+        /* Case 2: match through vect2offsets */
+        iv1 = IVUTfindOffset2Iv (offset1);
+        iv2 = IVUTfindOffset2Iv (offset2);
+        z = (NULL != iv1) && (NULL != iv2) && (PMmatchFlatSkipGuards (pat1, iv1))
+            && (PMmatchFlatSkipGuards (pat2, iv2));
+    }
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
+    DBUG_RETURN (z);
 }
 
 #undef DBUG_PREFIX

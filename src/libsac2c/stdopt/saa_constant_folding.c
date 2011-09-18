@@ -879,7 +879,7 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
         pat = PMconst (1, PMAgetVal (&arg1c));
         arg1ex = minmax ? AVIS_MAX (ID_AVIS (prfarg1)) : AVIS_MIN (ID_AVIS (prfarg1));
         if ((NULL != arg1ex) && (N_id == NODE_TYPE (arg1ex))
-            && (NULL != AVIS_SSAASSIGN (arg1ex))) {
+            && (NULL != AVIS_SSAASSIGN (ID_AVIS (arg1ex)))) {
             /* The above check arises from CF unit test aes.sac, where
              * AVIS_MAX( prfarg1) is an N_parm to a LACFUN. I'm not sure
              * how to reproduce that fault easily...
