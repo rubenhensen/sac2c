@@ -1511,7 +1511,7 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
     pat2 = PMvar (1, PMAisVar (&elem), 0);
 
     if ((PMmatchFlatSkipGuards (pat1, arg_node))
-        && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv)))
+        && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv))) && (0 != ARRAY_AELEMS (aelems))
             && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
                 == COgetExtent (frameshape, 0)))) {
 
@@ -1588,7 +1588,7 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
                   PMvar (1, PMAgetNode (&iv), 0));
 
     if ((PMmatchFlatSkipGuards (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat3, offset))
-        && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv))))
+        && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv)))) && (0 != ARRAY_AELEMS (aelems))
         && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
             == COgetExtent (frameshape, 0))) {
         aelems = ARRAY_AELEMS (aelems);
