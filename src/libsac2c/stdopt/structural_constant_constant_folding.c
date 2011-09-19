@@ -548,7 +548,7 @@ ModarrayModarray_AxSxS (node *arg_node, info *arg_info)
                   PMany (1, PMAgetNode (&arr), 0), PMany (1, PMAisNode (&offset)),
                   PMskip (0));
 
-    if ((PMmatchFlatSkipGuards (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat2, b))) {
+    if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat2, b))) {
         DBUG_PRINT ("Marked _idx_modarray_AxSxS for $s for removal",
                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
         PRF_ISNOP (prf) = TRUE;
@@ -604,7 +604,7 @@ ModarrayModarray_AxVxS (node *arg_node, info *arg_info)
       = PMprf (2, PMAgetNode (&prf), PMAisPrf (F_modarray_AxVxS), 3,
                PMany (1, PMAgetNode (&arr), 0), PMany (1, PMAisNode (&iv)), PMskip (0));
 
-    if ((PMmatchFlatSkipGuards (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat2, b))) {
+    if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat2, b))) {
         DBUG_PRINT ("Marked _modarray_AxVxS for %s for removal",
                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
         PRF_ISNOP (prf) = TRUE;
@@ -734,9 +734,9 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
      *           where X and val are both scalars, becomes:
      *           z = val;
      */
-    if (PMmatchFlatSkipGuards (pat1, arg_node) && (TUisScalar (AVIS_TYPE (ID_AVIS (X))))
+    if (PMmatchFlat (pat1, arg_node) && (TUisScalar (AVIS_TYPE (ID_AVIS (X))))
         && (TUisScalar (AVIS_TYPE (ID_AVIS (val))))) {
-        z = DUPdoDupNode (val);
+        z = DUPdoDupNode (PRF_ARG3 (arg_node));
         DBUG_PRINT ("_modarray_AxVxS (X, [], scalar) eliminated");
     }
 
@@ -747,15 +747,14 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
     if (NULL == z) {
         val = NULL;
         X = NULL;
-        if (PMmatchFlatSkipGuards (pat2, arg_node)
-            && TUisScalar (AVIS_TYPE (ID_AVIS (val)))
+        if (PMmatchFlat (pat2, arg_node) && TUisScalar (AVIS_TYPE (ID_AVIS (val)))
             && (SHcompareShapes (COgetShape (fsX), COgetShape (coiv)))) {
             offsetcon = COvect2offset (fsX, coiv);
             offset = COconst2Int (offsetcon);
             z = DUPdoDupNode (X);
             exprs = TCgetNthExprs (offset, ARRAY_AELEMS (z));
             EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
-            EXPRS_EXPR (exprs) = DUPdoDupNode (val);
+            EXPRS_EXPR (exprs) = DUPdoDupNode (PRF_ARG3 (arg_node));
             DBUG_PRINT ("_modarray_AxVxS (structcon, [..], val) eliminated");
         }
     }
@@ -1238,30 +1237,28 @@ SelModarray (node *arg_node, info *arg_info)
     pat6 = PMany (1, PMAgetNode (&iv3), 0);
     pat7 = PMany (1, PMAgetNode (&iv), 0);
 
-    if (PMmatchFlatSkipGuards (pat1, arg_node) && PMmatchFlatSkipGuards (pativ, ivpp)
-        && (PMmatchFlatSkipGuards (pat2, X) || PMmatchFlatSkipGuards (pat3, X))
-        && PMmatchFlat (pat5, iv2)) {
+    if (PMmatchFlat (pat1, arg_node) && PMmatchFlat (pativ, ivpp)
+        && (PMmatchFlat (pat2, X) || PMmatchFlat (pat3, X)) && PMmatchFlat (pat5, iv2)) {
 
-        res = DUPdoDupNode (val);
+        res = DUPdoDupNode (PRF_ARG3 (modar));
         DBUG_PRINT ("replaced _sel_VxA_(iv, %s) of modarray by %s",
-                    AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val)));
+                    AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (PRF_ARG3 (modar))));
     } else {
 
         /* Case 4 */
         /*
          * Mprime will be the F_afterguard N_prf node.
          */
-        if ((NULL != ivpp) && (PMmatchFlatSkipGuards (pativ, ivpp))
-            && (PMmatchFlat (pat4, X))
-            && ((PMmatchFlatSkipGuards (pat2, PRF_ARG1 (Mprime))
-                 || PMmatchFlatSkipGuards (pat3, PRF_ARG1 (Mprime))))
-            && (PMmatchFlatSkipGuards (pat6, iv)) && (PMmatchFlatSkipGuards (pat7, iv2))
+        if ((NULL != ivpp) && (PMmatchFlat (pativ, ivpp)) && (PMmatchFlat (pat4, X))
+            && ((PMmatchFlat (pat2, PRF_ARG1 (Mprime))
+                 || PMmatchFlat (pat3, PRF_ARG1 (Mprime))))
+            && (PMmatchFlat (pat6, iv)) && (PMmatchFlat (pat7, iv2))
             && (PMmatchFlat (pat5, iv3))) {
 
             PRF_ISNOP (modar) = TRUE;
-            res = DUPdoDupNode (val);
+            res = DUPdoDupNode (PRF_ARG3 (modar));
             DBUG_PRINT ("replaced _sel_VxA_(iv, %s) of modarray by guarded %s",
-                        AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val)));
+                        AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (PRF_ARG3 (modar))));
         }
     }
     pat1 = PMfree (pat1);
@@ -1324,11 +1321,11 @@ IdxselModarray (node *arg_node, info *arg_info)
       = PMprf (2, PMAisPrf (F_idx_modarray_AxSxS), PMAgetNode (&modar), 3, PMvar (0, 0),
                PMvar (1, PMAgetNode (&offset2), 0), PMvar (1, PMAgetNode (&val), 0));
 
-    if ((PMmatchFlatSkipGuards (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat2, X))
+    if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat2, X))
         && (IVUToffsetMatchesOffset (offset1, offset2))) {
-        res = DUPdoDupNode (val);
+        res = DUPdoDupNode (PRF_ARG3 (modar));
         DBUG_PRINT ("replaced _idx_sel(offset, %s) of modarray by %s",
-                    AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (val)));
+                    AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (PRF_ARG3 (modar))));
         PRF_ISNOP (modar) = TRUE;
     }
     pat1 = PMfree (pat1);
@@ -1563,7 +1560,7 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
                PMarray (2, PMAgetNode (&aelems), PMAgetFS (&frameshape), 1, PMskip (0)));
     pat2 = PMvar (1, PMAisVar (&elem), 0);
 
-    if ((PMmatchFlatSkipGuards (pat1, arg_node))
+    if ((PMmatchFlat (pat1, arg_node))
         && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv))) && (0 != ARRAY_AELEMS (aelems))
             && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
                 == COgetExtent (frameshape, 0)))) {
@@ -1640,7 +1637,7 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
     pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
                   PMvar (1, PMAgetNode (&iv), 0));
 
-    if ((PMmatchFlatSkipGuards (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat3, offset))
+    if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat3, offset))
         && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv)))) && (0 != ARRAY_AELEMS (aelems))
         && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
             == COgetExtent (frameshape, 0))) {
