@@ -570,7 +570,8 @@ isValidNoteintersect (node *arg_node, node *pwl)
     bool z;
     int nexprs;
     int npart;
-    node *mypwl;
+    node *mypwl = NULL;
+    pattern *pat;
 
     DBUG_ENTER ();
 
@@ -578,10 +579,12 @@ isValidNoteintersect (node *arg_node, node *pwl)
         && (F_noteintersect == PRF_PRF (arg_node));
 
     if (z) {
-        mypwl = TCgetNthExprsExpr (WLPRODUCERWL, PRF_ARGS (arg_node));
+        pat = PMwith (1, PMAgetNode (&mypwl), 0);
+        PMmatchFlatWith (pat, TCgetNthExprsExpr (WLPRODUCERWL, PRF_ARGS (arg_node)));
         nexprs = (TCcountExprs (PRF_ARGS (arg_node)) - WLFIRST) / WLEPP;
         npart = TCcountParts (WITH_PART (pwl));
         z = (nexprs == npart) && (pwl == mypwl);
+        pat = PMfree (pat);
     }
 
     DBUG_RETURN (z);
