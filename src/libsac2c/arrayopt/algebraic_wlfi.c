@@ -531,6 +531,8 @@ AWLFIisHasNoteintersect (node *arg_node)
 
     DBUG_ENTER ();
 
+    DBUG_ASSERT ((F_idx_sel == PRF_PRF (arg_node)) || (F_sel_VxA == PRF_PRF (arg_node)),
+                 "Expected sel/idx_sel");
     z = (NULL != AWLFIfindNoteintersect (arg_node));
 
     DBUG_RETURN (z);
@@ -568,14 +570,18 @@ isValidNoteintersect (node *arg_node, node *pwl)
     bool z;
     int nexprs;
     int npart;
+    node *mypwl;
 
     DBUG_ENTER ();
 
-    z = (NULL != pwl) && (N_prf == NODE_TYPE (arg_node));
+    z = (NULL != pwl) && (N_prf == NODE_TYPE (arg_node))
+        && (F_noteintersect == PRF_PRF (arg_node));
+
     if (z) {
+        mypwl = TCgetNthExprsExpr (WLPRODUCERWL, PRF_ARGS (arg_node));
         nexprs = (TCcountExprs (PRF_ARGS (arg_node)) - WLFIRST) / WLEPP;
         npart = TCcountParts (WITH_PART (pwl));
-        z = (nexprs == npart);
+        z = (nexprs == npart) && (pwl == mypwl);
     }
 
     DBUG_RETURN (z);
@@ -599,8 +605,9 @@ detachNoteintersect (node *arg_node)
 
     DBUG_ENTER ();
 
+    DBUG_ASSERT (F_noteintersect == PRF_PRF (arg_node), "Expected F_intersect");
     z = DUPdoDupNode (PRF_ARG1 (arg_node));
-    arg_node = FREEdoFreeTree (arg_node);
+    arg_node = FREEdoFreeNode (arg_node);
     arg_node = z;
 
     DBUG_RETURN (arg_node);
@@ -1259,56 +1266,6 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *arriv, node *lb
 
     DBUG_RETURN (z);
 }
-
-#ifdef DEADCODE
-/** <!--********************************************************************-->
- *
- * @fn node *FindNarray( node *arg_node, info arg_info)
- *
- * @brief Given an F_noteintersect node,
- *        find N_array for _sel_VxA_ or _idx_sel PRF_ARG1
- *
- * @params: arg_node: As above.
- *
- * @result:
- *
- *****************************************************************************/
-static node *
-FindNarray (node *arg_node, info *arg_info)
-{
-    pattern *pat;
-    node *z = NULL;
-    node *pids;
-    node *zavis;
-
-    DBUG_ENTER ();
-
-    pat = PMarray (1, PMAgetNode (&z), 1, PMskip (0));
-
-    if (!PMmatchFlat (pat, PRF_ARG1 (arg_node))) { /* Find for _sel_VxA_() */
-        /* Find for _idx_sel() */
-        /* We allow this if the offset (PRF_ARG1) traces back to
-         * a WITHID_IDS element of this WL, OR if the PWL is 1-D.
-         * If so, we return [ PRF_ARG1] as the N_array */
-        pids = WITHID_IDS (PART_WITHID (WITH_PART (INFO_PRODUCERWL (arg_info))));
-        if (1 == TCcountIds (pids)) {
-            z = TCmakeIntVector (
-              TBmakeExprs (TBmakeId (ID_AVIS (PRF_ARG1 (arg_node))), NULL));
-            zavis = FLATGflattenExpression (z, &INFO_VARDECS (arg_info),
-                                            &INFO_PREASSIGNS (arg_info),
-                                            TYmakeAKS (TYmakeSimpleType (T_int),
-                                                       SHcreateShape (1, 1)));
-            DBUG_PRINT ("Generated %s = [ %s ] for _idx_sel() offset %s",
-                        AVIS_NAME (zavis), AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
-        }
-    }
-
-    pat = PMfree (pat);
-
-    DBUG_RETURN (z);
-}
-#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *
