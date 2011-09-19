@@ -210,6 +210,7 @@ static node *
 ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
 {
     node *target = NULL;
+    node *z = NULL;
     node *withid_avis;
     node *offset = NULL;
     node *shp = NULL;
@@ -235,6 +236,7 @@ ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
                   PMvar (1, PMAgetNode (&ids), 0), PMskip (0));
 
     if (PMmatchFlatSkipGuards (pat1, cexpr)) {
+        z = target;
         DBUG_PRINT ("Case 1: body matches _sel_VxA_(, iv, pwl)");
     }
 
@@ -243,6 +245,7 @@ ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
             && (PMmatchFlatSkipGuards (pat3, offset))) {
             DBUG_PRINT ("Case 2: body matches _idx_sel( offset, pwl) with iv=%s",
                         AVIS_NAME (target));
+            z = target;
         }
     }
 
@@ -250,6 +253,7 @@ ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
         if ((PMmatchFlatSkipGuards (pat2, cexpr))
             && (PMmatchFlatSkipGuards (pat4, offset))) {
             DBUG_PRINT ("Case 3: coding time for idxs2offset");
+            z = target;
         }
     }
     pat1 = PMfree (pat1);
@@ -257,7 +261,7 @@ ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
     pat3 = PMfree (pat3);
     pat4 = PMfree (pat4);
 
-    DBUG_RETURN (target);
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
