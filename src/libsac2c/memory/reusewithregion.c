@@ -34,11 +34,16 @@
 #include "types.h"
 #include "DataFlowMask.h"
 #include "constants.h"
+#include "system.h"
 
 #define LOWER_BOUND 0
 #define UPPER_BOUND 1
 
 #define MAX_ENTRIES 8
+
+#define MAXLINE 32
+static const char *outfile = ".polyhedral.out";
+static const char *infile = ".result.out";
 
 typedef struct INDEX_EXPRS_T {
     int nr_entries;
@@ -67,8 +72,26 @@ CreateIndexExprs (int nr)
     DBUG_RETURN (res);
 }
 
+static void
+FreeIndexExprs (index_exprs_t *ie)
+{
+    int i;
+    cuda_index_t *exprs;
+
+    DBUG_ENTER ();
+
+    for (i = 0; i < IE_NR_ENTRIES (ie); i++) {
+        exprs = IE_EXPRS (ie, i);
+        exprs = TBfreeCudaIndex (exprs);
+    }
+
+    ie = MEMfree (ie);
+
+    DBUG_RETURN ();
+}
+
 /* Two different traverse modes */
-typedef enum { TR_normal, TR_collect, TR_compute } travmode_t;
+typedef enum { TR_normal, TR_collect } travmode_t;
 
 /*
  * INFO structure
@@ -235,6 +258,24 @@ IdentifyOtherPart (node *with, node *rc)
     DBUG_RETURN (hotpart);
 }
 
+static node *
+AnnotateCopyPart (node *with, node *rc)
+{
+    node *part = WITH_PART (with);
+
+    DBUG_ENTER ();
+
+    while (part != NULL) {
+        if (IsNoopPart (part, rc)) {
+            PART_ISCOPY (part) = TRUE;
+        }
+
+        part = PART_NEXT (part);
+    }
+
+    DBUG_RETURN (with);
+}
+
 /******************************************************************************
  *
  * Offset-aware With-Loop reuse candidate inference (rwr_tab)
@@ -273,7 +314,7 @@ RWRdoRegionAwareReuseCandidateInference (node *with, node *fundef)
             hotpart = IdentifyOtherPart (with, cand);
 
             if (hotpart != NULL) {
-                node *oldnext;
+                node *oldpartnext, *oldcodenext, *hotcode;
                 info *arg_info;
                 dfmask_base_t *maskbase;
 
@@ -288,28 +329,23 @@ RWRdoRegionAwareReuseCandidateInference (node *with, node *fundef)
                 INFO_RC (arg_info) = cand;
                 cand = NULL;
 
-                oldnext = PART_NEXT (hotpart);
+                hotcode = PART_CODE (hotpart);
+                oldcodenext = CODE_NEXT (hotcode);
+                CODE_NEXT (hotcode) = NULL;
+
+                oldpartnext = PART_NEXT (hotpart);
                 PART_NEXT (hotpart) = NULL;
 
                 /* Start traversing the hot partition */
                 TRAVpush (TR_rwr);
                 hotpart = TRAVdo (hotpart, arg_info);
-
-                /*
-                 * After the first traversal, it can be possible that
-                 * we find out the reuse candidate is not actually
-                 * resable. This can be due to the non-affine indices
-                 * of the accesses to this array
-                 */
-                if (INFO_RC (arg_info) != NULL) {
-                    INFO_MODE (arg_info) = TR_compute;
-                    hotpart = TRAVdo (hotpart, arg_info);
-                }
                 TRAVpop ();
 
-                PART_NEXT (hotpart) = oldnext;
+                CODE_NEXT (hotcode) = oldcodenext;
+                PART_NEXT (hotpart) = oldpartnext;
 
                 if (INFO_RC (arg_info) != NULL) {
+                    with = AnnotateCopyPart (with, INFO_RC (arg_info));
                     cand = TBmakeExprs (INFO_RC (arg_info), NULL);
                     INFO_RC (arg_info) = NULL;
                 }
@@ -396,17 +432,20 @@ ActOnId (node *avis, info *arg_info)
                 AddIndex (IDX_CONSTANT, COconst2Int (cnst), NULL, 0, INFO_DIM (arg_info),
                           arg_info);
             } else {
-                /* For an id defined outside the withloop, do we continue
-                 * traversing its rhs ids??? */
-                AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, 0,
-                          INFO_DIM (arg_info), arg_info);
+#if 0
+        /* For an id defined outside the withloop, do we continue 
+         * traversing its rhs ids??? */
+        AddIndex( IDX_EXTID, INFO_COEFFICIENT( arg_info), avis, 
+                  0, INFO_DIM( arg_info), arg_info);  
 
-                /* If this external id has not been come across before */
-                if (!DFMtestMaskEntry (INFO_MASK (arg_info), NULL, avis)) {
-                    DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, avis);
-                    INFO_NR_EXTIDS (arg_info)++;
-                    NLUTsetNum (INFO_NLUT (arg_info), avis, INFO_NR_EXTIDS (arg_info));
-                }
+	/* If this external id has not been come across before */
+	if( !DFMtestMaskEntry( INFO_MASK( arg_info), NULL, avis)) {
+	  DFMsetMaskEntrySet( INFO_MASK( arg_info), NULL, avis);
+	  INFO_NR_EXTIDS( arg_info)++;
+	  NLUTsetNum( INFO_NLUT( arg_info), avis, INFO_NR_EXTIDS( arg_info));
+	}
+#endif
+                ASSIGN_STMT (ssa_assign) = TRAVopt (ASSIGN_STMT (ssa_assign), arg_info);
             }
         }
         /* Otherwise, we start backtracking to collect data access information */
@@ -420,6 +459,24 @@ ActOnId (node *avis, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *RWRwith( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+RWRwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /* We do not traverse WITH_CODE here as the code will be traversed
+     * when the partition is traversed. Do so avoids traversing the code
+     * twice. */
+    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *RWRpart( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
@@ -427,7 +484,7 @@ node *
 RWRpart (node *arg_node, info *arg_info)
 {
     int dim, i;
-    node *ids, *lb, *ub;
+    node *ids_iter, *ids, *lb, *ub;
 
     DBUG_ENTER ();
 
@@ -458,11 +515,12 @@ RWRpart (node *arg_node, info *arg_info)
          * the need to add on to it beforehand
          */
         i = 1;
-        while (ids != NULL) {
-            DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (ids));
+        ids_iter = ids;
+        while (ids_iter != NULL) {
+            DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, IDS_AVIS (ids_iter));
 
             /* store the nest level of the withloop ids */
-            NLUTsetNum (INFO_NLUT (arg_info), IDS_AVIS (ids),
+            NLUTsetNum (INFO_NLUT (arg_info), IDS_AVIS (ids_iter),
                         INFO_NEST_LEVEL (arg_info) + i);
 
             /* Create a new index_exprs struct for each withloop ids */
@@ -472,11 +530,11 @@ RWRpart (node *arg_node, info *arg_info)
             if (COisConstant (EXPRS_EXPR (lb))) {
                 IE_EXPRS (INFO_IE (arg_info), LOWER_BOUND)
                   = TBmakeCudaIndex (IDX_CONSTANT,
-                                     COconst2Int (COaST2Constant (EXPRS_EXPR (lb))), NULL,
-                                     0, IE_EXPRS (INFO_IE (arg_info), LOWER_BOUND));
+                                     -COconst2Int (COaST2Constant (EXPRS_EXPR (lb))),
+                                     NULL, 0, IE_EXPRS (INFO_IE (arg_info), LOWER_BOUND));
             } else {
                 INFO_DIM (arg_info) = LOWER_BOUND;
-                INFO_COEFFICIENT (arg_info) = 1;
+                INFO_COEFFICIENT (arg_info) = -1;
                 ActOnId (ID_AVIS (EXPRS_EXPR (lb)), arg_info);
             }
 
@@ -492,35 +550,42 @@ RWRpart (node *arg_node, info *arg_info)
                 ActOnId (ID_AVIS (EXPRS_EXPR (ub)), arg_info);
             }
 
-            INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids),
-                                                     INFO_IE (arg_info));
+            INFO_LUT (arg_info)
+              = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (ids_iter),
+                                   INFO_IE (arg_info));
             INFO_IE (arg_info) = NULL;
 
-            ids = IDS_NEXT (ids);
+            ids_iter = IDS_NEXT (ids_iter);
             lb = EXPRS_NEXT (lb);
             ub = EXPRS_NEXT (ub);
             i++;
         }
         INFO_MODE (arg_info) = TR_normal;
 
-        INFO_NEST_LEVEL (arg_info) += dim;
-        PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
-        INFO_NEST_LEVEL (arg_info) -= dim;
-        PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
-
-    } else if (INFO_MODE (arg_info) == TR_compute) {
         if (INFO_NEST_LEVEL (arg_info) == 0) {
             INFO_WRITEDIM (arg_info) = dim;
         }
 
         INFO_IVIDS (arg_info)
           = TCappendSet (INFO_IVIDS (arg_info), TBmakeSet (ids, NULL));
+
         INFO_NEST_LEVEL (arg_info) += dim;
         PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
         INFO_NEST_LEVEL (arg_info) -= dim;
 
         INFO_IVIDS (arg_info) = TCdropSet (-1, INFO_IVIDS (arg_info));
-        PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+
+        if (PART_NEXT (arg_node) == NULL) {
+            index_exprs_t *ie;
+            /* last partition of the withloop, we cleanup LUT */
+            while (ids != NULL) {
+                ie = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (ids));
+                FreeIndexExprs (ie);
+                ids = IDS_NEXT (ids);
+            }
+        } else {
+            PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+        }
     } else {
         DBUG_ASSERT ((0), "Wrong traverse mode!");
     }
@@ -544,9 +609,6 @@ RWRassign (node *arg_node, info *arg_info)
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     } else if (INFO_MODE (arg_info) == TR_collect) {
         ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
-    } else if (INFO_MODE (arg_info) == TR_compute) {
-        ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
-        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     } else {
         DBUG_ASSERT (0, "Wrong traverse mode!");
     }
@@ -569,7 +631,8 @@ InitConstraints (IntMatrix constraints, info *arg_info)
     cols = MatrixCols (constraints);
 
     i = 0;
-    while ((ids = SET_MEMBER (ivids)) != NULL) {
+    while (ivids != NULL) {
+        ids = SET_MEMBER (ivids);
         while (ids != NULL) {
             ie = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (ids));
             DBUG_ASSERT (((node *)ie != IDS_AVIS (ids)),
@@ -691,9 +754,7 @@ InitReadFas (IntMatrix fas, int read_dim, node *arr, info *arg_info)
 
     rows = MatrixRows (fas);
     cols = MatrixCols (fas);
-
-    ie = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arr));
-    DBUG_ASSERT (((node *)ie != ID_AVIS (arr)), "Found reuse array with null IE!");
+    ie = INFO_IE (arg_info);
 
     i = 0;
     while (i < IE_NR_ENTRIES (ie)) {
@@ -734,6 +795,32 @@ InitReadFas (IntMatrix fas, int read_dim, node *arr, info *arg_info)
     DBUG_RETURN (fas);
 }
 
+static int
+CheckIntersection (IntMatrix constraints, IntMatrix write_fas, IntMatrix read_fas)
+{
+    int res;
+    FILE *matrix_file, *res_file;
+    char buffer[MAXLINE];
+
+    DBUG_ENTER ();
+
+    matrix_file = fopen (outfile, "w");
+    MatrixToFile (constraints, matrix_file);
+    MatrixToFile (write_fas, matrix_file);
+    MatrixToFile (read_fas, matrix_file);
+    fclose (matrix_file);
+
+    SYScall ("$SAC2CBASE/src/tools/cuda/polyhedral < %s > %s\n", outfile, infile);
+
+    res_file = fopen (infile, "r");
+    res = atoi (fgets (buffer, MAXLINE, res_file));
+    fclose (res_file);
+
+    SYScall ("rm -f %s %s\n", outfile, infile);
+
+    DBUG_RETURN (res);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *RWRprf( node *arg_node, info *arg_info)
@@ -748,77 +835,68 @@ RWRprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* If we are in cuda withloop */
-    if (INFO_NEST_LEVEL (arg_info) > 0) {
-        switch (PRF_PRF (arg_node)) {
-        case F_sel_VxA:
-            if (INFO_MODE (arg_info) == TR_normal) {
-                node *iv = PRF_ARG1 (arg_node);
-                node *arr = PRF_ARG2 (arg_node);
-                node *iv_ssaassign, *ids, *avis;
-                int dim;
+    //  if( INFO_NEST_LEVEL( arg_info) > 0) {
+    switch (PRF_PRF (arg_node)) {
+    case F_sel_VxA:
+        if (INFO_MODE (arg_info) == TR_normal) {
+            IntMatrix constraints, write_fas, read_fas;
+            node *iv = PRF_ARG1 (arg_node);
+            node *arr = PRF_ARG2 (arg_node);
+            node *iv_ssaassign, *ids, *avis;
+            int dim, valid = TRUE;
 
-                DBUG_ASSERT (NODE_TYPE (iv) == N_id,
-                             "Non-id node found in the first argument of F_sel_VxA!");
-                DBUG_ASSERT (NODE_TYPE (arr) == N_id,
-                             "Non-id node found in the second argument of F_sel_VxA!");
+            DBUG_ASSERT (NODE_TYPE (iv) == N_id,
+                         "Non-id node found in the first argument of F_sel_VxA!");
+            DBUG_ASSERT (NODE_TYPE (arr) == N_id,
+                         "Non-id node found in the second argument of F_sel_VxA!");
 
-                iv_ssaassign = ID_SSAASSIGN (iv);
+            iv_ssaassign = ID_SSAASSIGN (iv);
 
-                if (ID_AVIS (arr) == ID_AVIS (INFO_RC (arg_info)) && iv_ssaassign != NULL
-                    && NODE_TYPE (ASSIGN_RHS (iv_ssaassign)) == N_array) {
-                    dim = TYgetDim (ID_NTYPE (arr));
+            if (INFO_RC (arg_info) != NULL
+                && ID_AVIS (arr) == ID_AVIS (INFO_RC (arg_info)) && iv_ssaassign != NULL
+                && NODE_TYPE (ASSIGN_RHS (iv_ssaassign)) == N_array) {
+                dim = TYgetDim (ID_NTYPE (arr));
 
-                    /* Create a new index_exprs struct for the reuse candidate */
-                    INFO_IE (arg_info) = CreateIndexExprs (dim);
+                /* Create a new index_exprs struct for the reuse candidate */
+                INFO_IE (arg_info) = CreateIndexExprs (dim);
 
-                    ids = ARRAY_AELEMS (ASSIGN_RHS (iv_ssaassign));
-                    INFO_DIM (arg_info) = 0;
+                ids = ARRAY_AELEMS (ASSIGN_RHS (iv_ssaassign));
+                INFO_DIM (arg_info) = 0;
 
-                    INFO_MODE (arg_info) = TR_collect;
-                    /* Loop through each index */
-                    while (ids != NULL) {
-                        avis = ID_AVIS (EXPRS_EXPR (ids));
+                INFO_MODE (arg_info) = TR_collect;
+                /* Loop through each index */
+                while (ids != NULL) {
+                    avis = ID_AVIS (EXPRS_EXPR (ids));
 
-                        /*
-                         * Whether the index in the dimension is affine and if
-                         * it it what is the constant coefficient
-                         */
-                        INFO_IS_AFFINE (arg_info) = TRUE;
-                        INFO_COEFFICIENT (arg_info) = 1;
+                    /*
+                     * Whether the index in the dimension is affine and if
+                     * it it what is the constant coefficient
+                     */
+                    INFO_IS_AFFINE (arg_info) = TRUE;
+                    INFO_COEFFICIENT (arg_info) = 1;
 
-                        /* All the magic happens here ;-) */
-                        ActOnId (avis, arg_info);
+                    /* All the magic happens here ;-) */
+                    ActOnId (avis, arg_info);
 
-                        /*
-                         * If any of the index is non-affine, stop examing the rest
-                         * of the indices and assume this access has no reuse
-                         */
-                        if (!INFO_IS_AFFINE (arg_info)) {
-                            /* clean up code needs to be here!!! */
-                            break;
-                        }
-
-                        INFO_DIM (arg_info)++;
-                        ids = EXPRS_NEXT (ids);
+                    /*
+                     * If any of the index is non-affine, stop examing the rest
+                     * of the indices and assume this access has no reuse
+                     */
+                    if (!INFO_IS_AFFINE (arg_info)) {
+                        valid = FALSE;
+                        break;
                     }
-                    INFO_MODE (arg_info) = TR_normal;
-                    INFO_DIM (arg_info) = 0;
 
-                    if (INFO_IS_AFFINE (arg_info)) {
-                        INFO_LUT (arg_info)
-                          = LUTinsertIntoLutP (INFO_LUT (arg_info), ID_AVIS (arr),
-                                               INFO_IE (arg_info));
-                    } else {
-                        /* This array cannot be a reuse candidate */
-                    }
+                    INFO_DIM (arg_info)++;
+                    ids = EXPRS_NEXT (ids);
                 }
-            } else if (INFO_MODE (arg_info) == TR_compute) {
-                IntMatrix constraints, write_fas, read_fas;
-                node *arr = PRF_ARG2 (arg_node);
-                int read_dim, write_dim, level, extids;
+                INFO_MODE (arg_info) = TR_normal;
+                INFO_DIM (arg_info) = 0;
 
-                if (INFO_RC (arg_info) != NULL
-                    && ID_AVIS (arr) == ID_AVIS (INFO_RC (arg_info))) {
+                if (valid) {
+                    int read_dim, write_dim, level, extids;
+                    int intersected;
+
                     read_dim = TYgetDim (ID_NTYPE (arr));
                     write_dim = INFO_WRITEDIM (arg_info);
                     level = INFO_NEST_LEVEL (arg_info);
@@ -832,127 +910,133 @@ RWRprf (node *arg_node, info *arg_info)
                     write_fas = InitWriteFas (write_fas, write_dim, arg_info);
                     read_fas = InitReadFas (read_fas, read_dim, arr, arg_info);
 
-                    printf ("Constraint matrix:\n");
-                    MatrixDisplay (constraints, stdout);
-                    printf ("Write fas matrix:\n");
-                    MatrixDisplay (constraints, stdout);
-                    printf ("Read fas matrix:\n");
-                    MatrixDisplay (constraints, stdout);
-                }
-            }
-            break;
-        case F_add_SxS:
-            if (INFO_MODE (arg_info) == TR_collect) {
-                operand1 = PRF_ARG1 (arg_node);
-                operand2 = PRF_ARG2 (arg_node);
+                    intersected = CheckIntersection (constraints, write_fas, read_fas);
 
-                if (NODE_TYPE (operand1) == N_num) {
-                    AddIndex (IDX_CONSTANT,
-                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand1), NULL, 0,
-                              INFO_DIM (arg_info), arg_info);
-                } else if (NODE_TYPE (operand1) == N_id) {
-                    ActOnId (ID_AVIS (operand1), arg_info);
-                } else {
-                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
+                    if (intersected) {
+                        INFO_RC (arg_info) = FREEdoFreeNode (INFO_RC (arg_info));
+                        INFO_RC (arg_info) = NULL;
+                    }
                 }
 
-                if (NODE_TYPE (operand2) == N_num) {
-                    AddIndex (IDX_CONSTANT,
-                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand2), NULL, 0,
-                              INFO_DIM (arg_info), arg_info);
-                } else if (NODE_TYPE (operand2) == N_id) {
-                    ActOnId (ID_AVIS (operand2), arg_info);
-                } else {
-                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
-                }
+                /* Cleaning up */
+                FreeMatrix (constraints);
+                FreeMatrix (write_fas);
+                FreeMatrix (read_fas);
+                FreeIndexExprs (INFO_IE (arg_info));
+                INFO_IE (arg_info) = NULL;
             }
-            break;
-        case F_sub_SxS:
-            if (INFO_MODE (arg_info) == TR_collect) {
-                operand1 = PRF_ARG1 (arg_node);
-                operand2 = PRF_ARG2 (arg_node);
-
-                if (NODE_TYPE (operand1) == N_num) {
-                    AddIndex (IDX_CONSTANT,
-                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand1), NULL, 0,
-                              INFO_DIM (arg_info), arg_info);
-                } else if (NODE_TYPE (operand1) == N_id) {
-                    ActOnId (ID_AVIS (operand1), arg_info);
-                } else {
-                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
-                }
-
-                if (NODE_TYPE (operand2) == N_num) {
-                    old_coefficient = INFO_COEFFICIENT (arg_info);
-                    INFO_COEFFICIENT (arg_info) *= -1;
-                    AddIndex (IDX_CONSTANT,
-                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand2), NULL, 0,
-                              INFO_DIM (arg_info), arg_info);
-                    INFO_COEFFICIENT (arg_info) = old_coefficient;
-                } else if (NODE_TYPE (operand2) == N_id) {
-                    old_coefficient = INFO_COEFFICIENT (arg_info);
-                    INFO_COEFFICIENT (arg_info) *= -1;
-                    ActOnId (ID_AVIS (operand2), arg_info);
-                    INFO_COEFFICIENT (arg_info) = old_coefficient;
-                } else {
-                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
-                }
-            }
-            break;
-        case F_mul_SxS:
-            if (INFO_MODE (arg_info) == TR_collect) {
-                operand1 = PRF_ARG1 (arg_node);
-                operand2 = PRF_ARG2 (arg_node);
-
-                if (NODE_TYPE (operand1) == N_id && NODE_TYPE (operand2) == N_id) {
-                    /* Currently, multiplication of two ids are treated as non-affine */
-                    INFO_IS_AFFINE (arg_info) = FALSE;
-                } else if (NODE_TYPE (operand1) == N_id
-                           && NODE_TYPE (operand2) == N_num) {
-                    old_coefficient = INFO_COEFFICIENT (arg_info);
-                    INFO_COEFFICIENT (arg_info) *= NUM_VAL (operand2);
-                    ActOnId (ID_AVIS (operand1), arg_info);
-                    INFO_COEFFICIENT (arg_info) = old_coefficient;
-                } else if (NODE_TYPE (operand1) == N_num
-                           && NODE_TYPE (operand2) == N_id) {
-                    old_coefficient = INFO_COEFFICIENT (arg_info);
-                    INFO_COEFFICIENT (arg_info) *= NUM_VAL (operand1);
-                    ActOnId (ID_AVIS (operand2), arg_info);
-                    INFO_COEFFICIENT (arg_info) = old_coefficient;
-                } else {
-                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
-                }
-            }
-            break;
-        case F_neg_S:
-            if (INFO_MODE (arg_info) == TR_collect) {
-                operand1 = PRF_ARG1 (arg_node);
-
-                if (NODE_TYPE (operand1) == N_num) {
-                    old_coefficient = INFO_COEFFICIENT (arg_info);
-                    INFO_COEFFICIENT (arg_info) *= -1;
-                    AddIndex (IDX_CONSTANT,
-                              INFO_COEFFICIENT (arg_info) * NUM_VAL (operand1), NULL, 0,
-                              INFO_DIM (arg_info), arg_info);
-                    INFO_COEFFICIENT (arg_info) = old_coefficient;
-                } else if (NODE_TYPE (operand1) == N_id) {
-                    old_coefficient = INFO_COEFFICIENT (arg_info);
-                    INFO_COEFFICIENT (arg_info) *= -1;
-                    ActOnId (ID_AVIS (operand1), arg_info);
-                    INFO_COEFFICIENT (arg_info) = old_coefficient;
-                } else {
-                    DBUG_ASSERT (0, "Unknown type of node found in operands!");
-                }
-            }
-            break;
-        default:
-            if (INFO_MODE (arg_info) == TR_collect) {
-                /* all other primitives are counted as non-affine */
-                INFO_IS_AFFINE (arg_info) = FALSE;
-            }
-            break;
         }
+        break;
+    case F_add_SxS:
+        if (INFO_MODE (arg_info) == TR_collect) {
+            operand1 = PRF_ARG1 (arg_node);
+            operand2 = PRF_ARG2 (arg_node);
+
+            if (COisConstant (operand1)) {
+                AddIndex (IDX_CONSTANT,
+                          INFO_COEFFICIENT (arg_info)
+                            * COconst2Int (COaST2Constant (operand1)),
+                          NULL, 0, INFO_DIM (arg_info), arg_info);
+            } else {
+                ActOnId (ID_AVIS (operand1), arg_info);
+            }
+
+            if (COisConstant (operand2)) {
+                AddIndex (IDX_CONSTANT,
+                          INFO_COEFFICIENT (arg_info)
+                            * COconst2Int (COaST2Constant (operand2)),
+                          NULL, 0, INFO_DIM (arg_info), arg_info);
+            } else {
+                ActOnId (ID_AVIS (operand2), arg_info);
+            }
+        }
+        break;
+    case F_sub_SxS:
+        if (INFO_MODE (arg_info) == TR_collect) {
+            operand1 = PRF_ARG1 (arg_node);
+            operand2 = PRF_ARG2 (arg_node);
+
+            if (COisConstant (operand1)) {
+                AddIndex (IDX_CONSTANT,
+                          INFO_COEFFICIENT (arg_info)
+                            * COconst2Int (COaST2Constant (operand1)),
+                          NULL, 0, INFO_DIM (arg_info), arg_info);
+            } else {
+                ActOnId (ID_AVIS (operand1), arg_info);
+            }
+
+            if (COisConstant (operand2)) {
+                old_coefficient = INFO_COEFFICIENT (arg_info);
+                INFO_COEFFICIENT (arg_info) *= -1;
+                AddIndex (IDX_CONSTANT,
+                          INFO_COEFFICIENT (arg_info)
+                            * COconst2Int (COaST2Constant (operand2)),
+                          NULL, 0, INFO_DIM (arg_info), arg_info);
+                INFO_COEFFICIENT (arg_info) = old_coefficient;
+            } else {
+                old_coefficient = INFO_COEFFICIENT (arg_info);
+                INFO_COEFFICIENT (arg_info) *= -1;
+                ActOnId (ID_AVIS (operand2), arg_info);
+                INFO_COEFFICIENT (arg_info) = old_coefficient;
+            }
+        }
+        break;
+    case F_mul_SxS:
+        if (INFO_MODE (arg_info) == TR_collect) {
+            operand1 = PRF_ARG1 (arg_node);
+            operand2 = PRF_ARG2 (arg_node);
+
+            if (!COisConstant (operand1) && !COisConstant (operand2)) {
+                /* Currently, multiplication of two non-constants
+                 * are treated as non-affine */
+                INFO_IS_AFFINE (arg_info) = FALSE;
+            } else if (!COisConstant (operand1) && COisConstant (operand2)) {
+                old_coefficient = INFO_COEFFICIENT (arg_info);
+                INFO_COEFFICIENT (arg_info) *= COconst2Int (COaST2Constant (operand2));
+                ActOnId (ID_AVIS (operand1), arg_info);
+                INFO_COEFFICIENT (arg_info) = old_coefficient;
+            } else if (COisConstant (operand1) && !COisConstant (operand2)) {
+                old_coefficient = INFO_COEFFICIENT (arg_info);
+                INFO_COEFFICIENT (arg_info) *= COconst2Int (COaST2Constant (operand1));
+                ActOnId (ID_AVIS (operand2), arg_info);
+                INFO_COEFFICIENT (arg_info) = old_coefficient;
+            } else {
+                AddIndex (IDX_CONSTANT,
+                          INFO_COEFFICIENT (arg_info)
+                            * COconst2Int (COaST2Constant (operand1))
+                            * COconst2Int (COaST2Constant (operand2)),
+                          NULL, 0, INFO_DIM (arg_info), arg_info);
+            }
+        }
+        break;
+    case F_neg_S:
+        if (INFO_MODE (arg_info) == TR_collect) {
+            operand1 = PRF_ARG1 (arg_node);
+
+            if (COisConstant (operand1)) {
+                old_coefficient = INFO_COEFFICIENT (arg_info);
+                INFO_COEFFICIENT (arg_info) *= -1;
+                AddIndex (IDX_CONSTANT,
+                          INFO_COEFFICIENT (arg_info)
+                            * COconst2Int (COaST2Constant (operand1)),
+                          NULL, 0, INFO_DIM (arg_info), arg_info);
+                INFO_COEFFICIENT (arg_info) = old_coefficient;
+            } else {
+                old_coefficient = INFO_COEFFICIENT (arg_info);
+                INFO_COEFFICIENT (arg_info) *= -1;
+                ActOnId (ID_AVIS (operand1), arg_info);
+                INFO_COEFFICIENT (arg_info) = old_coefficient;
+            }
+        }
+        break;
+    default:
+        if (INFO_MODE (arg_info) == TR_collect) {
+            /* all other primitives are counted as non-affine */
+            INFO_IS_AFFINE (arg_info) = FALSE;
+        }
+        break;
     }
+    //  }
 
     DBUG_RETURN (arg_node);
 }
