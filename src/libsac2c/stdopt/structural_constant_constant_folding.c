@@ -1324,12 +1324,13 @@ IdxselModarray (node *arg_node, info *arg_info)
       = PMprf (2, PMAisPrf (F_idx_modarray_AxSxS), PMAgetNode (&modar), 3, PMvar (0, 0),
                PMvar (1, PMAgetNode (&offset2), 0), PMvar (1, PMAgetNode (&val), 0));
 
-    if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat2, X))
+    /* Must skip afterguard on X */
+    if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat2, X))
         && (IVUToffsetMatchesOffset (offset1, offset2))) {
+        PRF_ISNOP (modar) = TRUE;
         res = DUPdoDupNode (PRF_ARG3 (modar));
         DBUG_PRINT ("replaced _idx_sel(offset, %s) of modarray by %s",
                     AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (PRF_ARG3 (modar))));
-        PRF_ISNOP (modar) = TRUE;
     }
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
