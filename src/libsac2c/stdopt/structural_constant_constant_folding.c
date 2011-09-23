@@ -256,7 +256,8 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
 
     if (NULL != con1) {
         iv_len = SHgetUnrLen (COgetShape (con1));
-        if (PMmatchFlat (pat2, PRF_ARG2 (arg_node))) { /* Get the N_array */
+        /* Bug #525 must skip guards. */
+        if (PMmatchFlatSkipGuards (pat2, PRF_ARG2 (arg_node))) { /* Get the N_array */
             X_dim = SHgetExtent (COgetShape (arg2fs), 0);
             arg2fs = COfreeConstant (arg2fs);
             DBUG_ASSERT (iv_len >= X_dim, "shape(iv) <  dim(X)");
