@@ -401,7 +401,7 @@ CheckMoveDownFlag (node *instr, info *arg_info)
              */
             LET_LIRFLAG (instr) = LET_LIRFLAG (instr) | LIRMOVE_DOWN;
             DBUG_PRINT ("whole expression %s marked for move-down",
-                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+                        AVIS_NAME (IDS_AVIS (LET_IDS (instr))));
         }
     }
 
