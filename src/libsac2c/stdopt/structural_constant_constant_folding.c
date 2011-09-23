@@ -1218,7 +1218,7 @@ SelModarray (node *arg_node, info *arg_info)
                   PMvar (1, PMAgetNode (&X), 0));
 
     /* Chase  iv'' to iv's RHS */
-    pativ = PMvar (1, PMAgetNode (&iv), 0);
+    pativ = PMany (1, PMAgetNode (&iv), 0);
 
     /* _X = modarray_AxVxS_( M, iv, val) */
     pat2 = PMprf (2, PMAgetNode (&modar), PMAisPrf (F_modarray_AxVxS), 3, PMvar (0, 0),
@@ -1237,9 +1237,12 @@ SelModarray (node *arg_node, info *arg_info)
     pat6 = PMany (1, PMAgetNode (&iv3), 0);
     pat7 = PMany (1, PMAgetNode (&iv), 0);
 
-    if (PMmatchFlat (pat1, arg_node) && PMmatchFlat (pativ, ivpp)
-        && (PMmatchFlat (pat2, X) || PMmatchFlat (pat3, X)) && PMmatchFlat (pat5, iv2)) {
+    /* Skip guards on iv and afterguard on X */
+    if (PMmatchFlat (pat1, arg_node) && PMmatchFlatSkipGuards (pativ, ivpp)
+        && (PMmatchFlatSkipGuards (pat2, X) || PMmatchFlatSkipGuards (pat3, X))
+        && PMmatchFlatSkipGuards (pat5, iv2)) {
 
+        PRF_ISNOP (modar) = TRUE;
         res = DUPdoDupNode (PRF_ARG3 (modar));
         DBUG_PRINT ("replaced _sel_VxA_(iv, %s) of modarray by %s",
                     AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (PRF_ARG3 (modar))));
