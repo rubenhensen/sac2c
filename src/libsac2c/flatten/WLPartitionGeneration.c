@@ -221,6 +221,7 @@ CreateMaxFrameShapeAvis (node *withop, int fdim, info *arg_info)
                                          DUPdoDupTree (GENARRAY_SHAPE (withop))),
                               INFO_PREASSIGN (arg_info));
             AVIS_SSAASSIGN (shp_avis) = INFO_PREASSIGN (arg_info);
+            res_avis = shp_avis;
         }
         break;
     case N_modarray:
