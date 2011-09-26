@@ -1,8 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 # Run one test to ensure correct results.
 
 rm -f $1.exe $1.exe.c 
+
+source UnitTestRunGrep1.config
 
 # HUSH echo Starting Worktest for: $1
 echo Starting Worktest for: $1

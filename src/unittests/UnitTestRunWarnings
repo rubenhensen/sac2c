@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Run warning tests to ensure correct results.
 # Do not attempt to execute compiled code, as it may have

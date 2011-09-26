@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Count number of results. 
 # Arguments are test name, test type (e.g., docf/nocf), greply argument, desired count

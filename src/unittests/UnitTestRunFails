@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Run tests that should cause compiler to terminate.
 
