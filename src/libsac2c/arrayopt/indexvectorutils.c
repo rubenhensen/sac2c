@@ -828,7 +828,8 @@ IVUTivMatchesWithid (node *iv, node *withid)
             z = TRUE;
             while ((NULL != aelems) && (NULL != ids) && (NULL != EXPRS_EXPR (aelems))
                    && (TRUE == z)
-                   && (PMmatchFlatSkipExtremaAndGuards (pat, EXPRS_EXPR (aelems)))) {
+                   && (PMmatchFlatSkipExtremaAndGuards (pat, EXPRS_EXPR (aelems)))
+                   && (N_id == NODE_TYPE (iv2))) {
                 z = z && (IDS_AVIS (ids) == ID_AVIS (iv2));
                 aelems = EXPRS_NEXT (aelems);
                 ids = IDS_NEXT (ids);
