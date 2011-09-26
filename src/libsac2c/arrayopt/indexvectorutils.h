@@ -21,5 +21,6 @@ extern node *IVUTfindIvWith (node *arg_node, node *cwlpart);
 extern constant *IVUTiV2Constant (node *arg_node);
 extern node *IVUTfindOffset2Iv (node *arg_node);
 extern bool IVUToffsetMatchesOffset (node *iv1, node *iv2);
+extern bool IVUTivMatchesWithid (node *iv, node *withid);
 
 #endif /* _SAC_IVUT_TRAV_H_ */

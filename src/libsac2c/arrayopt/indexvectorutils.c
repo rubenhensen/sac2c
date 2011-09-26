@@ -668,7 +668,7 @@ IVUTfindIvWith (node *arg_node, node *cwlpart)
                  */
                 if ((NULL != cwlpart)
                     && (1 == TCcountIds (WITHID_IDS (PART_WITHID (cwlpart))))) {
-                    DBUG_PRINT ("confusion   look for pwlprat WITHIDS here");
+                    DBUG_PRINT ("confusion   look for pwlpart WITHIDS here");
                     z = NULL; /* FIXME */
                     z = NULL;
                 }
@@ -783,6 +783,61 @@ IVUToffsetMatchesOffset (node *offset1, node *offset2)
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool IVUTivMatchesWithid( node *iv, node *withid);
+ *
+ * @brief iv is an N_id node. withid is an N_withid node.
+ *        We skip guards and extrema in this search.
+ *
+ * @return: TRUE if iv matches the WITHID.
+ *
+ *****************************************************************************/
+bool
+IVUTivMatchesWithid (node *iv, node *withid)
+{
+    bool z = FALSE;
+    pattern *pat;
+    node *iv2 = NULL;
+    node *aelems;
+    node *ids;
+
+    DBUG_ENTER ();
+
+    pat = PMany (1, PMAgetNode (&iv2));
+
+    if (PMmatchFlatSkipExtremaAndGuards (pat, iv)) {
+
+        switch (NODE_TYPE (iv2)) {
+
+        default:
+            break;
+
+        case N_id:
+            z = (IDS_AVIS (WITHID_VEC (withid)) == ID_AVIS (iv2));
+            break;
+
+        case N_array:
+            /* We have to skip over extrema and guards when comparing these items */
+            aelems = ARRAY_AELEMS (iv2);
+            ids = WITHID_IDS (withid);
+            z = TRUE;
+            while ((NULL != aelems) && (NULL != ids) && (NULL != EXPRS_EXPR (aelems))
+                   && (TRUE == z)
+                   && (PMmatchFlatSkipExtremaAndGuards (pat, EXPRS_EXPR (aelems)))) {
+                z = z && (IDS_AVIS (ids) == ID_AVIS (iv2));
+                aelems = EXPRS_NEXT (aelems);
+                ids = IDS_NEXT (ids);
+            }
+            z = z && (NULL == ids) && (NULL == aelems);
+            break;
+        }
+    }
+    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }

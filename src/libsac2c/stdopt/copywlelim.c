@@ -214,48 +214,46 @@ ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
     node *withid_avis;
     node *offset = NULL;
     node *shp = NULL;
-    node *ids = NULL;
+    node *id = NULL;
+    node *iv = NULL;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
 
     DBUG_ENTER ();
-
     withid_avis = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
     pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMparam (1, PMAhasAvis (&withid_avis)),
                   PMvar (1, PMAgetAvis (&target), 0));
 
-    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset), 0),
-                  PMvar (1, PMAgetAvis (&target), 0));
-
-    pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
-                  PMvar (1, PMAhasAvis (&withid_avis), 0));
-
-    pat4 = PMprf (1, PMAisPrf (F_idxs2offset), 3, PMvar (1, PMAgetNode (&shp), 0),
-                  PMvar (1, PMAgetNode (&ids), 0), PMskip (0));
-
-    if (PMmatchFlatSkipGuards (pat1, cexpr)) {
+    if (PMmatchFlatSkipExtremaAndGuards (pat1, cexpr)) {
         z = target;
         DBUG_PRINT ("Case 1: body matches _sel_VxA_(, iv, pwl)");
     }
 
-    if (NULL == target) {
-        if ((PMmatchFlatSkipGuards (pat2, cexpr))
-            && (PMmatchFlatSkipGuards (pat3, offset))) {
-            DBUG_PRINT ("Case 2: body matches _idx_sel( offset, pwl) with iv=%s",
-                        AVIS_NAME (target));
-            z = target;
-        }
+    pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset), 0),
+                  PMvar (1, PMAgetNode (&target), 0));
+
+    pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
+                  PMvar (1, PMAgetNode (&iv), 0));
+
+    if ((NULL == z) && (PMmatchFlatSkipGuards (pat2, cexpr))
+        && (PMmatchFlatSkipExtremaAndGuards (pat3, offset))
+        && (IVUTivMatchesWithid (iv, INFO_WITHID (arg_info)))) {
+        z = ID_AVIS (target);
+        DBUG_PRINT ("Case 2: body matches _idx_sel( offset, pwl) with pwl=%s",
+                    AVIS_NAME (z));
     }
 
-    if (NULL == target) {
-        if ((PMmatchFlatSkipGuards (pat2, cexpr))
-            && (PMmatchFlatSkipGuards (pat4, offset))) {
-            DBUG_PRINT ("Case 3: coding time for idxs2offset");
-            z = target;
-        }
+    pat4 = PMprf (1, PMAisPrf (F_idxs2offset), 3, PMvar (1, PMAgetNode (&shp), 0),
+                  PMvar (1, PMAgetNode (&id), 0), PMskip (0));
+
+    if ((NULL == z) && (PMmatchFlatSkipExtremaAndGuards (pat2, cexpr))
+        && (PMmatchFlatSkipExtremaAndGuards (pat4, offset))) {
+        DBUG_ASSERT (FALSE, "Case 3: coding time for matching WITHID_IDS to ids");
+        z = ID_AVIS (target);
     }
+
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
