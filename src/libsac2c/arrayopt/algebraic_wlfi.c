@@ -114,6 +114,7 @@
 #include "constant_folding.h"
 #include "variable_propagation.h"
 #include "ElimSubDiv.h"
+#include "UndoElimSubDiv.h"
 #include "arithmetic_simplification.h"
 #include "associative_law.h"
 #include "distributive_law.h"
@@ -324,7 +325,7 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 
         /* Invoke each opt */
         if (global.optimize.dolir) {
-            countINL = global.optcounters.lir_expr;
+            countLIR = global.optcounters.lir_expr;
             arg_node = LIRdoLoopInvariantRemoval (arg_node);
         }
         if (global.optimize.doinl) {
@@ -352,26 +353,26 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
             arg_node = DFCdoDispatchFunCalls (arg_node);
         }
         if (global.optimize.docf) {
-            arg_node = CFdoConstantFolding (arg_node);
             countCF = global.optcounters.cf_expr;
+            arg_node = CFdoConstantFolding (arg_node);
         }
         if (global.optimize.dovp) {
-            arg_node = VPdoVarPropagation (arg_node);
             countVP = global.optcounters.vp_expr;
+            arg_node = VPdoVarPropagation (arg_node);
         }
         if (global.optimize.dosde) {
             arg_node = ESDdoElimSubDiv (arg_node);
         }
         if (global.optimize.doas) {
-            arg_node = ASdoArithmeticSimplification (arg_node);
             countAS = global.optcounters.as_expr;
+            arg_node = ASdoArithmeticSimplification (arg_node);
+        }
+        if (global.optimize.docf) {
+            countCF = global.optcounters.cf_expr;
+            arg_node = CFdoConstantFolding (arg_node);
         }
         if (global.optimize.docse) {
             arg_node = CSEdoCommonSubexpressionElimination (arg_node);
-        }
-        if (global.optimize.docf) {
-            arg_node = CFdoConstantFolding (arg_node);
-            countCF = global.optcounters.cf_expr;
         }
         if (global.optimize.doal) {
             countAL = global.optcounters.al_expr;
@@ -381,9 +382,13 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
             countDL = global.optcounters.dl_expr;
             arg_node = DLdoDistributiveLawOptimization (arg_node);
         }
+        if (global.optimize.dosde) {
+            arg_node = UESDdoUndoElimSubDiv (arg_node);
+        }
 
         DBUG_PRINT_TAG ("SSE",
-                        "INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, AS=%d, AL=%d, DL=%d\n",
+                        "LIR= %d, INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, AS=%d, AL=%d, "
+                        "DL=%d\n",
                         (global.optcounters.lir_expr - countLIR),
                         (global.optcounters.inl_fun - countINL),
                         (global.optcounters.cse_expr - countCSE),
@@ -407,7 +412,8 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
             i = global.max_optcycles;
         }
     }
-    DBUG_PRINT_TAG ("SSE", "Stabilized at iteration %d", ct);
+    DBUG_PRINT_TAG ("SSE", "Stabilized at iteration %d for function %s", ct,
+                    FUNDEF_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -611,9 +617,8 @@ detachNoteintersect (node *arg_node)
     DBUG_ASSERT (F_noteintersect == PRF_PRF (arg_node), "Expected F_intersect");
     z = DUPdoDupNode (PRF_ARG1 (arg_node));
     arg_node = FREEdoFreeNode (arg_node);
-    arg_node = z;
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
@@ -1864,7 +1869,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
  *
  * @fn node *attachIntersectCalc( node *arg_node, info *arg_info, node *ivprime)
  *
- * @brief  We are looking at the _sel_VxA_ N_prf for:
+ * @brief  We are looking at a sel() N_prf for:
  *
  *            iv = [ i, j, k];
  *            z = _sel_VxA_( iv, producerWL);
@@ -2408,6 +2413,7 @@ AWLFIprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if ((NULL != INFO_CONSUMERWLPART (arg_info))) {
+
         switch (PRF_PRF (arg_node)) {
         default:
             break;
