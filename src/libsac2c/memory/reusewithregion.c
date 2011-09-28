@@ -36,11 +36,14 @@
 #include "constants.h"
 #include "system.h"
 #include "DupTree.h"
+#include "identify_noop_branch.h"
 
 #define LOWER_BOUND 0
 #define UPPER_BOUND 1
 #define MAX_ENTRIES 8
 #define MAXLINE 32
+
+static int count = 0;
 
 /*
  * This file stores three matrices :
@@ -48,7 +51,7 @@
  *   - A write fas representing the withloop write access matrix;
  *   - A read fas representing a read access matrix.
  */
-static const char *outfile = ".polyhedral.out";
+static const char *outfile = "polyhedral";
 
 /*
  * This file strores the output from the polyhedral utility.
@@ -56,7 +59,7 @@ static const char *outfile = ".polyhedral.out";
  *   1) '1' means that the write and read intersects;
  *   2) '0' means that the write and read does not intersect.
  */
-static const char *infile = ".result.out";
+static const char *infile = "result";
 
 /******************************************************************************
  *
@@ -758,24 +761,29 @@ CheckIntersection (IntMatrix constraints, IntMatrix write_fas, IntMatrix read_fa
     bool res;
     FILE *matrix_file, *res_file;
     char buffer[MAXLINE];
+    char polyhedral_filename[MAXLINE];
+    char result_filename[MAXLINE];
 
     DBUG_ENTER ();
 
-    printf ("hahah, checking intersection...\n");
+    count++;
+    sprintf (polyhedral_filename, "%s%d.out", outfile, count);
+    sprintf (result_filename, "%s%d.out", infile, count);
 
-    matrix_file = fopen (outfile, "w");
+    matrix_file = fopen (polyhedral_filename, "w");
     MatrixToFile (constraints, matrix_file);
     MatrixToFile (write_fas, matrix_file);
     MatrixToFile (read_fas, matrix_file);
     fclose (matrix_file);
 
-    SYScall ("$SAC2CBASE/src/tools/cuda/polyhedral < %s > %s\n", outfile, infile);
+    SYScall ("$SAC2CBASE/src/tools/cuda/polyhedral < %s > %s\n", polyhedral_filename,
+             result_filename);
 
-    res_file = fopen (infile, "r");
+    res_file = fopen (result_filename, "r");
     res = atoi (fgets (buffer, MAXLINE, res_file)) == 0 ? FALSE : TRUE;
     fclose (res_file);
 
-    // SYScall("rm -f %s %s\n", outfile, infile);
+    // SYScall("rm -f *.out\n");
 
     DBUG_RETURN (res);
 }
@@ -853,7 +861,9 @@ RWRdoRegionAwareReuseCandidateInference (node *with, node *fundef)
                     with = AnnotateCopyPart (with, INFO_RC (arg_info));
                     cand = TBmakeExprs (INFO_RC (arg_info), NULL);
                     INFO_RC (arg_info) = NULL;
+                    hotpart = INBdoIdentifyNoopBranch (hotpart);
                 }
+
                 INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
                 INFO_NLUT (arg_info) = NLUTremoveNlut (INFO_NLUT (arg_info));
                 INFO_MASK (arg_info) = DFMremoveMask (INFO_MASK (arg_info));
@@ -1091,9 +1101,6 @@ ComputeElseCondition (index_exprs_t *ie)
         }
     }
 
-    /* The orignial 'then' condition expression can be freed */
-    FreeIndexExprs (ie);
-
     DBUG_RETURN (new_ie);
 }
 
@@ -1106,6 +1113,7 @@ node *
 RWRcond (node *arg_node, info *arg_info)
 {
     node *old_condvar, *condvar, *ext_condvar, *ap;
+    index_exprs_t *then_ie, *else_ie;
 
     DBUG_ENTER ();
 
@@ -1120,12 +1128,6 @@ RWRcond (node *arg_node, info *arg_info)
          * level n is stored in the (n-1)th position in the
          * funap list. */
         ap = GetFunap (INFO_FAP_LIST (arg_info), INFO_LACLEVEL (arg_info) - 1);
-
-        printf ("++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-        printf ("Conditional function %s\n", FUNDEF_NAME (AP_FUNDEF (ap)));
-        printf ("I'm going to look for external var for %s\n",
-                AVIS_NAME (ARG_AVIS (ID_DECL (condvar))));
-        printf ("++++++++++++++++++++++++++++++++++++++++++++++++++\n");
 
         /* Find the conditional variable in the calling context */
         ext_condvar = FindApargFromFunarg (FUNDEF_ARGS (AP_FUNDEF (ap)), AP_ARGS (ap),
@@ -1143,25 +1145,25 @@ RWRcond (node *arg_node, info *arg_info)
             old_condvar = INFO_CONDVAR (arg_info);
             INFO_CONDVAR (arg_info) = condvar;
 
+            then_ie = INFO_IE (arg_info);
+            INFO_IE (arg_info) = NULL;
+
             /* Traverse 'then' branch */
             INFO_LUT (arg_info)
-              = LUTinsertIntoLutP (INFO_LUT (arg_info), ID_AVIS (condvar),
-                                   INFO_IE (arg_info));
+              = LUTinsertIntoLutP (INFO_LUT (arg_info), ID_AVIS (condvar), then_ie);
 
             COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
 
             /* Traverse 'else' branch */
-            /*
-                  INFO_IE( arg_info) = ComputeElseCondition( INFO_IE( arg_info));
-                  INFO_LUT( arg_info) =
-                    LUTinsertIntoLutP( INFO_LUT( arg_info),
-                                       ID_AVIS( condvar),
-                                       INFO_IE( arg_info));
+            else_ie = ComputeElseCondition (then_ie);
+            INFO_LUT (arg_info)
+              = LUTupdateLutP (INFO_LUT (arg_info), ID_AVIS (condvar), else_ie, NULL);
 
-                  COND_ELSE( arg_node) = TRAVopt( COND_ELSE( arg_node), arg_info);
+            COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
 
-                  INFO_CONDVAR( arg_info) = old_condvar;
-            */
+            FreeIndexExprs (then_ie);
+            FreeIndexExprs (else_ie);
+            INFO_CONDVAR (arg_info) = old_condvar;
         } else {
             INFO_RC (arg_info) = FREEdoFreeNode (INFO_RC (arg_info));
             INFO_RC (arg_info) = NULL;
@@ -1169,6 +1171,24 @@ RWRcond (node *arg_node, info *arg_info)
             INFO_IE (arg_info) = NULL;
         }
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RWRfundef( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+RWRfundef (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (FUNDEF_ISCONDFUN (arg_node),
+                 "Only conditional function can be traversed!");
+
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1191,6 +1211,7 @@ RWRap (node *arg_node, info *arg_info)
                                       FUNDEF_ARGS (AP_FUNDEF (arg_node)),
                                       ID_AVIS (INFO_RC (arg_info)));
             if (rc != NULL) {
+
                 /* Push info */
                 INFO_FAP_LIST (arg_info)
                   = InsertFunap (INFO_FAP_LIST (arg_info), arg_node);
@@ -1289,17 +1310,6 @@ RWRprf (node *arg_node, info *arg_info)
                     bool intersected = FALSE;
                     index_exprs_t *ie = NULL;
 
-                    /* If the array access is within a conditional, nr_conds stores
-                     * the number of equalitiy or inequality implied by the conditional
-                     */
-                    if (INFO_CONDVAR (arg_info) != NULL) {
-                        ie = LUTsearchInLutPp (INFO_LUT (arg_info),
-                                               ID_AVIS (INFO_CONDVAR (arg_info)));
-                        DBUG_ASSERT (((node *)ie != ID_AVIS (INFO_CONDVAR (arg_info))),
-                                     "Found condvar with null IE!");
-                        nr_conds = IE_NR_ENTRIES (ie);
-                    }
-
                     read_dim = TYgetDim (ID_NTYPE (arr));
                     write_dim = INFO_WRITEDIM (arg_info);
                     level = INFO_NEST_LEVEL (arg_info);
@@ -1310,43 +1320,68 @@ RWRprf (node *arg_node, info *arg_info)
                     write_fas = InitWriteFas (write_fas, write_dim, arg_info);
                     read_fas = InitReadFas (read_fas, read_dim, arr, arg_info);
 
-                    /* For each equality or inequality, we construct a constraint matrix
-                     * and compute the intersection with the images trasformed by write
-                     * and read access matrix. Only all of them produce no intersection
-                     * can we conclude that there is not intersection. */
-                    if (IE_LOP (ie) == LO_and) {
-                        constraints
-                          = NewMatrix (level + extids + 2, level * 2 + nr_conds);
-                        for (i = 0; i < nr_conds; i++) {
-                            if (i == 0) {
-                                printf ("i == 0\n");
+                    /*
+                     * We only user the contstraints further if the write and read
+                     * access matrices are not equal. If they are equal, this implies
+                     * a one-to-one correspondence between the element read and the
+                     * element written to. Therefore, there cannot be any intersection.
+                     */
+                    if (!MatrixEqual (write_fas, read_fas)) {
+                        /* If the array access is within a conditional, nr_conds stores
+                         * the number of equalitiy or inequality implied by the
+                         * conditional
+                         */
+                        if (INFO_CONDVAR (arg_info) != NULL) {
+                            ie = LUTsearchInLutPp (INFO_LUT (arg_info),
+                                                   ID_AVIS (INFO_CONDVAR (arg_info)));
+                            DBUG_ASSERT (((node *)ie
+                                          != ID_AVIS (INFO_CONDVAR (arg_info))),
+                                         "Found condvar with null IE!");
+                            nr_conds = IE_NR_ENTRIES (ie);
+                        }
+
+                        /* For each equality or inequality, we construct a constraint
+                         * matrix and compute the intersection with the images trasformed
+                         * by write and read access matrix. Only all of them produce no
+                         * intersection can we conclude that there is not intersection. */
+                        if (IE_LOP (ie) == LO_and) {
+                            constraints
+                              = NewMatrix (level + extids + 2, level * 2 + nr_conds);
+                            for (i = 0; i < nr_conds; i++) {
+                                if (i == 0) {
+                                    constraints
+                                      = InitConstraints (constraints, TRUE, ie, level * 2,
+                                                         i, arg_info);
+                                } else {
+                                    constraints
+                                      = InitConstraints (constraints, FALSE, ie,
+                                                         level * 2, i, arg_info);
+                                }
+                            }
+                            intersected
+                              = CheckIntersection (constraints, write_fas, read_fas);
+                            FreeMatrix (constraints);
+                        } else if (IE_LOP (ie) == LO_or) {
+                            for (i = 0; i < nr_conds; i++) {
+                                constraints
+                                  = NewMatrix (level + extids + 2, level * 2 + 1);
                                 constraints = InitConstraints (constraints, TRUE, ie,
                                                                level * 2, i, arg_info);
-                            } else {
-                                printf ("i != 0\n");
-                                constraints = InitConstraints (constraints, FALSE, ie,
-                                                               level * 2, i, arg_info);
+                                intersected
+                                  = (intersected
+                                     || CheckIntersection (constraints, write_fas,
+                                                           read_fas));
+                                FreeMatrix (constraints);
                             }
+                        } else {
                         }
-                        intersected
-                          = CheckIntersection (constraints, write_fas, read_fas);
-                        FreeMatrix (constraints);
-                    } else if (IE_LOP (ie) == LO_or) {
-                        for (i = 0; i < nr_conds; i++) {
-                            constraints = NewMatrix (level + extids + 2, level * 2 + 1);
-                            constraints = InitConstraints (constraints, TRUE, ie,
-                                                           level * 2, i, arg_info);
-                            intersected
-                              = (intersected
-                                 || CheckIntersection (constraints, write_fas, read_fas));
-                            FreeMatrix (constraints);
+
+                        if (intersected) {
+                            INFO_RC (arg_info) = FREEdoFreeNode (INFO_RC (arg_info));
+                            INFO_RC (arg_info) = NULL;
                         }
                     } else {
-                    }
-
-                    if (intersected) {
-                        INFO_RC (arg_info) = FREEdoFreeNode (INFO_RC (arg_info));
-                        INFO_RC (arg_info) = NULL;
+                        PRF_ISINPLACESELECT (arg_node) = TRUE;
                     }
                 }
 
