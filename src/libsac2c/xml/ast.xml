@@ -589,7 +589,14 @@
         <travsons>
           <node name="SSAstack" />
           <node name="Nums" />
-        </travsons>
+	  </travsons>
+
+	  <traversal id="VISUAL" name="Visualize Syntax Tree" default="user" include="visualize.h">
+       <travsons>
+        <node name="SSAstack" />
+        <node name="Nums" />
+      </travsons>
+
       </traversal>
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h">
       </traversal>
