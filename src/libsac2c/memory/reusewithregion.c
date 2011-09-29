@@ -43,19 +43,23 @@
 #define MAX_ENTRIES 8
 #define MAXLINE 32
 
+/* Statistic counter, records the number of polyhedral files generated */
 static int count = 0;
 
 /*
  * This file stores three matrices :
- *   - A constraint matrix derive from the withloop bounds;
- *   - A write fas representing the withloop write access matrix;
- *   - A read fas representing a read access matrix.
+ *   - A constraint matrix derived from the withloop bounds and
+ *     predicates of conditionals;
+ *   - A write access matrix representing the transformation from
+ *     withloop iteration space to the wrtie data space;
+ *   - A read access matrix representing the trasformation from
+ *     withloop iteration space to the read data space.
  */
 static const char *outfile = "polyhedral";
 
 /*
  * This file strores the output from the polyhedral utility.
- * There are two possible results:
+ * There are two possible outcomes:
  *   1) '1' means that the write and read intersects;
  *   2) '0' means that the write and read does not intersect.
  */
@@ -63,15 +67,29 @@ static const char *infile = "result";
 
 /******************************************************************************
  *
- * This structure can be used to store one or more summation
- * of variables. Each variable is of type 'cuda_index_t' and
- * the number of variables is stored in 'nr_entries'. The
- * summation can represent either the lower/upper bound of a
- * withloop index or a subscript expressions of one dimension
- * of an array access. In the former case, the number of entires
- * is always two (lower bound and upper bound). In the latter,
- * it depends on the dimensionality of the accessed array.
- *
+ * The index_exprs_t struct is used to store one or more equalities or
+ * inequalities. The exact number is stored in 'nr_entries'. Note that
+ * if the inequalities represent the withloop lower/upper bounds, the
+ * number will always be exactly 2. For conditional predicates, the
+ * number can vary depending on the exact conditions considered. All
+ * equalities/inequalities are compared against zeros on the rhs. Each
+ * lhs expression represents the summation of one or more variables chained
+ * together with the cuda_index_t structs. The exact relational operator
+ * or each equality/inequality is stored in the 'rops' array. Moreover,
+ * the logical relationship between all equalities/inequalties are stored
+ * in 'lop'. Note that since we use a single variable to store this
+ * relationship, this means we are not allowed to have equalities/inequalities
+ * with mixed logical relationship (TODO: this needs to be generalised
+ * in the future). The reason we need to specify the logical relationship
+ * is because when generating constraint matrix, equalities/inequalities
+ * with 'AND" relationship must be appear in the same matrix while those
+ * with 'OR" relationship can only be appear one at a time, following the
+ * withloop bound constraints.
+ * Note that this struct can also be used to represent subscript expression
+ * of an array access. In this case, the number of entires depends on the
+ * dimensionality of the array. Also, neither 'lop' nor 'rops' are relevant
+ * here can should be set to 'LO_any' and 'RO_any' repectively (means we do
+ * not care).
  */
 
 typedef enum { RO_any, RO_eq, RO_lt, RO_gt, RO_le, RO_ge } relational_op_t;
@@ -81,14 +99,12 @@ typedef enum { LO_any, LO_and, LO_or, LO_not } logical_op_t;
 typedef struct INDEX_EXPRS_T {
     int nr_entries;
     logical_op_t lop;
-    relational_op_t rops[MAX_ENTRIES]; /* Flag indicating whether the exprssion represent
-                                        * an equality or not. If it not an equality, it's
-                                        * automatically assumed to be >= 0 */
+    relational_op_t rops[MAX_ENTRIES];
     cuda_index_t *exprs[MAX_ENTRIES];
 } index_exprs_t;
 
-#define IE_NR_ENTRIES(n) ((n)->nr_entries)
-#define IE_LOP(n) ((n)->lop)
+#define IE_NR_ENTRIES(n) (n->nr_entries)
+#define IE_LOP(n) (n->lop)
 #define IE_ROPS(n, i) ((n->rops)[i])
 #define IE_EXPRS(n, i) ((n->exprs)[i])
 
@@ -132,8 +148,14 @@ FreeIndexExprs (index_exprs_t *ie)
 }
 
 /******************************************************************************/
+
 #define MAX_FUNAP_DEPTH 64
 
+/*
+ * This struct stores a list of function applications. Currently, all
+ * applications are conditional function applications. The number of
+ * stored application is stored in 'count'.
+ */
 typedef struct FUNAP_LIST {
     int count;
     node *aps[MAX_FUNAP_DEPTH];
@@ -211,7 +233,7 @@ RemoveFunap (funap_list_t *list)
 
 /******************************************************************************/
 
-/* Two different traverse modes */
+/* Two different traversal modes */
 typedef enum { TR_normal, TR_collect } travmode_t;
 
 /*
@@ -220,21 +242,21 @@ typedef enum { TR_normal, TR_collect } travmode_t;
 struct INFO {
     travmode_t mode;
     index_exprs_t *ie;
-    int dim;
-    lut_t *lut;
+    int dim; /* Which dimension are we currently traversing? */
+    lut_t
+      *lut; /* Proveide two mappings: 1) part_id->index_exprs_t(lower/upper bound); 2)
+               predicate_id->index_exprs_t( predicate expressions) */
     node *rc;
-    dfmask_t *mask; /* Mask for external ids and withloop ids */
-    nlut_t
-      *nlut; /* Used to provide mapping between withloop ids and its nesting level. */
+    dfmask_t *mask; /* Mask for external N_ids and withloop ids */
+    nlut_t *nlut; /* Used to provide mapping between withloop ids and its nesting level */
     int nest_level;
     int coefficient;
-    int nr_extids;
+    int nr_extids; /* Total number external N_ids found during TR_normal traversal */
     bool is_affine;
-    node *ivids; /* borrow from ReuseWithArray.c ;-) */
-    int writedim;
-    node *fundef;
-    node *apargs;
-    int laclevel;
+    node *ivids;  /* borrow from ReuseWithArray.c ;-) */
+    int writedim; /* This is essentially the dimensionality of the horpart */
+    int laclevel; /* Nesting level of the funap. This can be used to get the actual N_ap
+                     node from the fap_list */
     funap_list_t *fap_list;
     node *condvar;
 };
@@ -255,8 +277,6 @@ struct INFO {
 #define INFO_IS_AFFINE(n) ((n)->is_affine)
 #define INFO_IVIDS(n) ((n)->ivids)
 #define INFO_WRITEDIM(n) ((n)->writedim)
-#define INFO_FUNDEF(n) ((n)->fundef)
-#define INFO_APARGS(n) ((n)->apargs)
 #define INFO_LACLEVEL(n) ((n)->laclevel)
 #define INFO_FAP_LIST(n) ((n)->fap_list)
 #define INFO_CONDVAR(n) ((n)->condvar)
@@ -286,8 +306,6 @@ MakeInfo ()
     INFO_IS_AFFINE (result) = TRUE;
     INFO_IVIDS (result) = NULL;
     INFO_WRITEDIM (result) = 0;
-    INFO_FUNDEF (result) = NULL;
-    INFO_APARGS (result) = NULL;
     INFO_LACLEVEL (result) = 0;
     INFO_FAP_LIST (result) = NULL;
     INFO_CONDVAR (result) = NULL;
@@ -393,6 +411,14 @@ IdentifyOtherPart (node *with, node *rc)
     DBUG_RETURN (hotpart);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *AnnotateCopyPart( node *with, node *rc)
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
 static node *
 AnnotateCopyPart (node *with, node *rc)
 {
@@ -411,6 +437,14 @@ AnnotateCopyPart (node *with, node *rc)
     DBUG_RETURN (with);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
 static node *
 FindFunargFromAparg (node *apargs, node *funargs, node *aparg)
 {
@@ -431,6 +465,14 @@ FindFunargFromAparg (node *apargs, node *funargs, node *aparg)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
 static node *
 FindApargFromFunarg (node *funargs, node *apargs, node *funarg)
 {
@@ -451,6 +493,14 @@ FindApargFromFunarg (node *funargs, node *apargs, node *funarg)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
 static void
 AddIndex (unsigned int type, int coefficient, node *idx, int looplevel, int dim,
           info *arg_info)
@@ -464,6 +514,14 @@ AddIndex (unsigned int type, int coefficient, node *idx, int looplevel, int dim,
     DBUG_RETURN ();
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
 static void
 ActOnId (node *avis, info *arg_info)
 {
@@ -561,6 +619,14 @@ ActOnId (node *avis, info *arg_info)
     DBUG_RETURN ();
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
 static int
 GetColumn (cuda_index_t *idx, int cols, info *arg_info)
 {
@@ -588,6 +654,14 @@ GetColumn (cuda_index_t *idx, int cols, info *arg_info)
     DBUG_RETURN (col);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
 static IntMatrix
 InitConstraints (IntMatrix constraints, bool compute_bound, index_exprs_t *cond_ie,
                  int nr_bounds, int cond_nr, info *arg_info)
@@ -678,6 +752,14 @@ InitConstraints (IntMatrix constraints, bool compute_bound, index_exprs_t *cond_
     DBUG_RETURN (constraints);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn IntMatrix InitWriteFas( IntMatrix fas, int write_dim, info *arg_info)
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
 static IntMatrix
 InitWriteFas (IntMatrix fas, int write_dim, info *arg_info)
 {
@@ -688,12 +770,44 @@ InitWriteFas (IntMatrix fas, int write_dim, info *arg_info)
     rows = MatrixRows (fas);
     cols = MatrixCols (fas);
 
+    /*
+     * Continue with the example given in the call site:
+     *
+     * part1: [i,j]
+     * part2: [k]
+     * Array: A[j,k]
+     * extid: e
+     *
+     *                i  j  k  e  cnst
+     *   part_dim0    0  0  0  0   0
+     *   part_dim1    0  0  0  0   0
+     *   extid        0  0  0  0   0
+     *   cnst         0  0  0  0   0
+     *
+     * Initializing write fas is straightforward. First initilize
+     * each corresponding part_dim to 1 to give:
+     *
+     *                i  j  k  e  cnst
+     *   part_dim0    1  0  0  0   0
+     *   part_dim1    0  1  0  0   0
+     *   extid        0  0  0  0   0
+     *   cnst         0  0  0  0   0
+     */
     i = 0;
     while (i < write_dim) {
         MatrixSetEntry (fas, i, i, 1);
         i++;
     }
 
+    /*
+     * Then initilize each extid and constant to 1 to give:
+     *
+     *                i  j  k  e  cnst
+     *   part_dim0    1  0  0  0   0
+     *   part_dim1    0  1  0  0   0
+     *   extid        0  0  0  1   0
+     *   cnst         0  0  0  0   1
+     */
     j = 0;
     while (j < rows - write_dim) {
         MatrixSetEntry (fas, cols - (rows - write_dim - j), j + write_dim, 1);
@@ -703,6 +817,14 @@ InitWriteFas (IntMatrix fas, int write_dim, info *arg_info)
     DBUG_RETURN (fas);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
 static IntMatrix
 InitReadFas (IntMatrix fas, int read_dim, node *arr, info *arg_info)
 {
@@ -715,6 +837,31 @@ InitReadFas (IntMatrix fas, int read_dim, node *arr, info *arg_info)
     rows = MatrixRows (fas);
     cols = MatrixCols (fas);
     ie = INFO_IE (arg_info);
+
+    /*
+     * Continue with the example given in the call site:
+     *
+     * part1: [i,j]
+     * part2: [k]
+     * Array: A[j,k]
+     * extid: e
+     *
+     *                i  j  k  e  cnst
+     *   arr_dim0     0  0  0  0   0
+     *   arr_dim1     0  0  0  0   0
+     *   extid        0  0  0  0   0
+     *   cnst         0  0  0  0   0
+     *
+     * For each array dimension, we dissect its subscript. Depending
+     * on the type of the variable encountered, we update the corresponding
+     * entry in the matrix. For the give example, we get:
+     *
+     *                i  j  k  e  cnst
+     *   part_dim0    0  1  0  0   0
+     *   part_dim1    0  0  1  0   0
+     *   extid        0  0  0  0   0
+     *   cnst         0  0  0  0   0
+     */
 
     i = 0;
     while (i < IE_NR_ENTRIES (ie)) {
@@ -746,6 +893,16 @@ InitReadFas (IntMatrix fas, int read_dim, node *arr, info *arg_info)
         i++;
     }
 
+    /*
+     * Finally, we need to fill in the corresponding entries for the
+     * entid and constant to give;
+     *
+     *                i  j  k  e  cnst
+     *   part_dim0    0  1  0  0   0
+     *   part_dim1    0  0  1  0   0
+     *   extid        0  0  0  1   0
+     *   cnst         0  0  0  0   1
+     */
     j = 0;
     while (j < rows - read_dim) {
         MatrixSetEntry (fas, cols - (rows - read_dim - j), j + read_dim, 1);
@@ -755,6 +912,14 @@ InitReadFas (IntMatrix fas, int read_dim, node *arr, info *arg_info)
     DBUG_RETURN (fas);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
 static bool
 CheckIntersection (IntMatrix constraints, IntMatrix write_fas, IntMatrix read_fas)
 {
@@ -786,6 +951,72 @@ CheckIntersection (IntMatrix constraints, IntMatrix write_fas, IntMatrix read_fa
     // SYScall("rm -f *.out\n");
 
     DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn
+ *
+ * @brief
+ *
+ *****************************************************************************/
+static index_exprs_t *
+ComputeElseCondition (index_exprs_t *ie)
+{
+    int i;
+    cuda_index_t *idx_exprs;
+    index_exprs_t *new_ie;
+
+    DBUG_ENTER ();
+
+    /* Creare empty IE */
+    new_ie = CreateIndexExprs (0);
+
+    for (i = 0; i < IE_NR_ENTRIES (ie); i++) {
+        switch (IE_ROPS (ie, i)) {
+        case RO_any:
+            break;
+        case RO_eq:
+            break;
+        case RO_lt:
+            break;
+        case RO_gt:
+            break;
+        case RO_le:
+            break;
+        case RO_ge:
+            IE_LOP (new_ie) = LO_or;
+            /*
+             * If we have a condition of the form:
+             *   a1n1+a2n2+...amnm == 0
+             * we generate two inequalities for the
+             * 'else' branch:
+             *   1) a1n1+a2n2+...amnm - 1 >= 0
+             *   2) a1n1+a2n2+...amnm + 1 <= 0
+             * The reason to add '-1' and '+1' in the inequalities is because
+             * we need to ensure the lhs is '>=' (or '<=') zero instead of i'>'
+             * ('<') zero to meet the polylib requirements. For the second case,
+             * we also convert '<=' to '>=' by negating each term on the lhs.
+             * Be careful that the above two inequalities are ORed together so
+             * when creating constraints, they should not apprear in the same matrix.
+             */
+            idx_exprs = DUPCudaIndex (IE_EXPRS (ie, i));
+            idx_exprs = TBmakeCudaIndex (IDX_CONSTANT, 1, NULL, 0, idx_exprs);
+            IE_ROPS (new_ie, IE_NR_ENTRIES (new_ie)) = RO_ge;
+            IE_EXPRS (new_ie, IE_NR_ENTRIES (new_ie)) = idx_exprs;
+            /* Negate all lhs terms */
+            while (idx_exprs != NULL) {
+                CUIDX_COEFFICIENT (idx_exprs) = -CUIDX_COEFFICIENT (idx_exprs);
+                idx_exprs = CUIDX_NEXT (idx_exprs);
+            }
+            IE_NR_ENTRIES (new_ie)++;
+            break;
+        default:
+            break;
+        }
+    }
+
+    DBUG_RETURN (new_ie);
 }
 
 /******************************************************************************
@@ -842,10 +1073,11 @@ RWRdoRegionAwareReuseCandidateInference (node *with, node *fundef)
                 INFO_RC (arg_info) = cand;
                 cand = NULL;
 
+                /* Separte the partition and its code from the
+                 * rest of the partitions/codes */
                 hotcode = PART_CODE (hotpart);
                 oldcodenext = CODE_NEXT (hotcode);
                 CODE_NEXT (hotcode) = NULL;
-
                 oldpartnext = PART_NEXT (hotpart);
                 PART_NEXT (hotpart) = NULL;
 
@@ -854,9 +1086,15 @@ RWRdoRegionAwareReuseCandidateInference (node *with, node *fundef)
                 hotpart = TRAVdo (hotpart, arg_info);
                 TRAVpop ();
 
+                /* Restore the partition and code chain */
                 CODE_NEXT (hotcode) = oldcodenext;
                 PART_NEXT (hotpart) = oldpartnext;
 
+                /*
+                 * If at this point reuse candidate is not NULL,
+                 * then it can actually be reused. We annotate
+                 * copy partitions and noop conditional branch.
+                 */
                 if (INFO_RC (arg_info) != NULL) {
                     with = AnnotateCopyPart (with, INFO_RC (arg_info));
                     cand = TBmakeExprs (INFO_RC (arg_info), NULL);
@@ -864,6 +1102,7 @@ RWRdoRegionAwareReuseCandidateInference (node *with, node *fundef)
                     hotpart = INBdoIdentifyNoopBranch (hotpart);
                 }
 
+                /* Clean up */
                 INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
                 INFO_NLUT (arg_info) = NLUTremoveNlut (INFO_NLUT (arg_info));
                 INFO_MASK (arg_info) = DFMremoveMask (INFO_MASK (arg_info));
@@ -884,15 +1123,19 @@ RWRdoRegionAwareReuseCandidateInference (node *with, node *fundef)
  *
  * @fn node *RWRwith( node *arg_node, info *arg_info)
  *
+ * @brief
+ *
  *****************************************************************************/
 node *
 RWRwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /* We do not traverse WITH_CODE here as the code will be traversed
-     * when the partition is traversed. Do so avoids traversing the code
-     * twice. */
+    /*
+     * We do not traverse WITH_CODE here as the code will be traversed
+     * when the partition is traversed. This avoids traversing the code
+     * twice.
+     */
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -901,6 +1144,8 @@ RWRwith (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *RWRpart( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -1026,6 +1271,8 @@ RWRpart (node *arg_node, info *arg_info)
  *
  * @fn node *RWRassign( node *arg_node, info *arg_info)
  *
+ * @brief
+ *
  *****************************************************************************/
 node *
 RWRassign (node *arg_node, info *arg_info)
@@ -1045,68 +1292,11 @@ RWRassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-static index_exprs_t *
-ComputeElseCondition (index_exprs_t *ie)
-{
-    int i;
-    cuda_index_t *idx_exprs;
-    index_exprs_t *new_ie;
-
-    DBUG_ENTER ();
-
-    /* Creare empty IE */
-    new_ie = CreateIndexExprs (0);
-
-    for (i = 0; i < IE_NR_ENTRIES (ie); i++) {
-        switch (IE_ROPS (ie, i)) {
-        case RO_any:
-            break;
-        case RO_eq:
-            break;
-        case RO_lt:
-            break;
-        case RO_gt:
-            break;
-        case RO_le:
-            break;
-        case RO_ge:
-            IE_LOP (new_ie) = LO_or;
-            /*
-             * If we have a condition of the form:
-             *   a1n1+a2n2+...amnm == 0
-             * we generate two inequalities for the
-             * 'else' branch:
-             *   1) a1n1+a2n2+...amnm - 1 >= 0
-             *   2) a1n1+a2n2+...amnm + 1 <= 0
-             * The reason to add '-1' and '+1' in the inequalities is because
-             * we need to ensure the lhs is '>=' (or '<=') zero instead of i'>'
-             * ('<') zero to meet the polylib requirements. For the second case,
-             * we also convert '<=' to '>=' by negating each term on the lhs.
-             * Be careful that the above two inequalities are ORed together so
-             * when creating constraints, they should not apprear in the same matrix.
-             */
-            idx_exprs = DUPCudaIndex (IE_EXPRS (ie, i));
-            idx_exprs = TBmakeCudaIndex (IDX_CONSTANT, 1, NULL, 0, idx_exprs);
-            IE_ROPS (new_ie, IE_NR_ENTRIES (new_ie)) = RO_ge;
-            IE_EXPRS (new_ie, IE_NR_ENTRIES (new_ie)) = idx_exprs;
-            /* Negate all lhs terms */
-            while (idx_exprs != NULL) {
-                CUIDX_COEFFICIENT (idx_exprs) = -CUIDX_COEFFICIENT (idx_exprs);
-                idx_exprs = CUIDX_NEXT (idx_exprs);
-            }
-            IE_NR_ENTRIES (new_ie)++;
-            break;
-        default:
-            break;
-        }
-    }
-
-    DBUG_RETURN (new_ie);
-}
-
 /** <!--********************************************************************-->
  *
  * @fn node *RWRcond( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -1134,6 +1324,8 @@ RWRcond (node *arg_node, info *arg_info)
                                            ARG_AVIS (ID_DECL (condvar)));
         DBUG_ASSERT ((ext_condvar != NULL), "External conditional variable is NULL!");
 
+        /* Construct the predicate expressions and
+         * see if they are affince */
         INFO_MODE (arg_info) = TR_collect;
         INFO_LACLEVEL (arg_info)--;
         INFO_IS_AFFINE (arg_info) = TRUE;
@@ -1179,6 +1371,8 @@ RWRcond (node *arg_node, info *arg_info)
  *
  * @fn node *RWRfundef( node *arg_node, info *arg_info)
  *
+ * @brief
+ *
  *****************************************************************************/
 node *
 RWRfundef (node *arg_node, info *arg_info)
@@ -1197,6 +1391,8 @@ RWRfundef (node *arg_node, info *arg_info)
  *
  * @fn node *RWRap( node *arg_node, info *arg_info)
  *
+ * @brief
+ *
  *****************************************************************************/
 node *
 RWRap (node *arg_node, info *arg_info)
@@ -1207,11 +1403,12 @@ RWRap (node *arg_node, info *arg_info)
 
     if (INFO_MODE (arg_info) == TR_normal) {
         if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node)) && INFO_RC (arg_info) != NULL) {
+            /* Find the corresponding fundef argument of the reuse
+             * candidate in the calling context */
             rc = FindFunargFromAparg (AP_ARGS (arg_node),
                                       FUNDEF_ARGS (AP_FUNDEF (arg_node)),
                                       ID_AVIS (INFO_RC (arg_info)));
             if (rc != NULL) {
-
                 /* Push info */
                 INFO_FAP_LIST (arg_info)
                   = InsertFunap (INFO_FAP_LIST (arg_info), arg_node);
@@ -1229,6 +1426,8 @@ RWRap (node *arg_node, info *arg_info)
             }
         }
     } else {
+        /* If we encounter a function application during TR_collect,
+         * the current expression we are collecting is not affine */
         INFO_IS_AFFINE (arg_info) = FALSE;
     }
 
@@ -1238,6 +1437,8 @@ RWRap (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *RWRprf( node *arg_node, info *arg_info)
+ *
+ * @brief
  *
  *****************************************************************************/
 node *
@@ -1305,31 +1506,68 @@ RWRprf (node *arg_node, info *arg_info)
                 INFO_MODE (arg_info) = TR_normal;
                 INFO_DIM (arg_info) = 0;
 
+                /* It is only valid if the array subscript expression in
+                 * each dimension is affine. */
                 if (valid) {
                     int i, read_dim, write_dim, level, extids, nr_conds = 0;
                     bool intersected = FALSE;
                     index_exprs_t *ie = NULL;
 
+                    /* Dimension of the accessed array */
                     read_dim = TYgetDim (ID_NTYPE (arr));
+                    /* Dimension of the outermost enclising partition */
                     write_dim = INFO_WRITEDIM (arg_info);
+                    /* Nesting level */
                     level = INFO_NEST_LEVEL (arg_info);
+                    /* Number of external N_ids */
                     extids = INFO_NR_EXTIDS (arg_info);
 
+                    /* For write fas and read fas, the number of columns is the same,
+                     * namely the sum of the nesting level and the number of external
+                     * N_ids (we need to add 1 to account for the 'constant dimension'.
+                     * For write fas, the number of rows is the sum of the dimension
+                     * of the outermost partition dimension and the number of external
+                     * N_ids (we also need to add 1 to account for the 'constant
+                     * dimension'). For read fas the number of rows is the sum of the
+                     * dimension of the accessed array and the number of external N_ids
+                     * (again 1 is added to account for the 'constant dimension'). Suppose
+                     * a 2D array access (e.g. A[j,k]) is enclosed in two partitions, one
+                     * [i,j] and the other [k] (essentially a 1D withloop enclosed inside
+                     * a 2D withloop). Also assume there is one external N_id, e. The
+                     * write matrix would look like (uninitialized):
+                     *
+                     *                i  j  k  e  cnst
+                     *   part_dim0    0  0  0  0   0
+                     *   part_dim1    0  0  0  0   0
+                     *   extid        0  0  0  0   0
+                     *   cnst         0  0  0  0   0
+                     *
+                     * The read matrix would look like (uninitialized):
+                     *
+                     *                i  j  k  e  cnst
+                     *   arr_dim0     0  0  0  0   0
+                     *   arr_dim1     0  0  0  0   0
+                     *   extid        0  0  0  0   0
+                     *   cnst         0  0  0  0   0
+                     *
+                     * Explaination on how these two matrice are initilized can be
+                     * found in functions InitWrtieFas and InitReadFas.
+                     */
                     write_fas = NewMatrix (level + extids + 1, write_dim + extids + 1);
                     read_fas = NewMatrix (level + extids + 1, read_dim + extids + 1);
                     write_fas = InitWriteFas (write_fas, write_dim, arg_info);
                     read_fas = InitReadFas (read_fas, read_dim, arr, arg_info);
 
                     /*
-                     * We only user the contstraints further if the write and read
-                     * access matrices are not equal. If they are equal, this implies
-                     * a one-to-one correspondence between the element read and the
-                     * element written to. Therefore, there cannot be any intersection.
+                     * We only need to construct the contstraint matrix if the write fas
+                     * and read fas are not equal. If they are equal, this implies
+                     * an inplace select/update. Therefore, there cannot be intersection.
                      */
                     if (!MatrixEqual (write_fas, read_fas)) {
-                        /* If the array access is within a conditional, nr_conds stores
-                         * the number of equalitiy or inequality implied by the
-                         * conditional
+                        /*
+                         * If the array access is within a conditional (indicated by a
+                         * non-NULL INFO_CONVAR), nr_conds stores the number of
+                         * equalities/inequalities of this conditional.
                          */
                         if (INFO_CONDVAR (arg_info) != NULL) {
                             ie = LUTsearchInLutPp (INFO_LUT (arg_info),
@@ -1340,11 +1578,20 @@ RWRprf (node *arg_node, info *arg_info)
                             nr_conds = IE_NR_ENTRIES (ie);
                         }
 
-                        /* For each equality or inequality, we construct a constraint
+                        /*
+                         * For each equality or inequality, we construct a constraint
                          * matrix and compute the intersection with the images trasformed
                          * by write and read access matrix. Only all of them produce no
-                         * intersection can we conclude that there is not intersection. */
+                         * intersection can we conclude that there is not intersection.
+                         */
                         if (IE_LOP (ie) == LO_and) {
+                            /*
+                             * If the logical relationship between all
+                             * equlities/inequalities is 'AND', we only need to construct
+                             * ONE contraint matrix, contains equlities and inequalities
+                             * stemed from both withloop bounds and conditional
+                             * predicates.
+                             */
                             constraints
                               = NewMatrix (level + extids + 2, level * 2 + nr_conds);
                             for (i = 0; i < nr_conds; i++) {
@@ -1362,6 +1609,15 @@ RWRprf (node *arg_node, info *arg_info)
                               = CheckIntersection (constraints, write_fas, read_fas);
                             FreeMatrix (constraints);
                         } else if (IE_LOP (ie) == LO_or) {
+                            /*
+                             * If the logical relationship between all
+                             * equlities/inequalities is 'OR', we need to construct one
+                             * contraint matrix for each equalities/inequalities stemed
+                             * from the conditional predicate. The equalities and
+                             * inequalities stemed from the withloop bounds reamin the
+                             * same. Only when all of them produce no intersection can we
+                             * conclude that there is not intersection.
+                             */
                             for (i = 0; i < nr_conds; i++) {
                                 constraints
                                   = NewMatrix (level + extids + 2, level * 2 + 1);
@@ -1373,7 +1629,11 @@ RWRprf (node *arg_node, info *arg_info)
                                                            read_fas));
                                 FreeMatrix (constraints);
                             }
+                        } else if (IE_LOP (ie) == LO_not) {
+                            DBUG_ASSERT (0,
+                                         "Logical operator 'not' is not supported yet!");
                         } else {
+                            DBUG_ASSERT (0, "Unknow logical operator found!");
                         }
 
                         if (intersected) {
@@ -1381,6 +1641,7 @@ RWRprf (node *arg_node, info *arg_info)
                             INFO_RC (arg_info) = NULL;
                         }
                     } else {
+                        /* Equal write fas and read fas, in-place select/update */
                         PRF_ISINPLACESELECT (arg_node) = TRUE;
                     }
                 }
