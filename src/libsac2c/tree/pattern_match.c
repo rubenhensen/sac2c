@@ -275,6 +275,7 @@
 #include "shape.h"
 #include "compare_tree.h"
 #include "LookUpTable.h"
+#include "ivextrema.h"
 
 static char *FAIL = "";
 static int matching_level;
@@ -634,29 +635,6 @@ isInExtrema (prf prfun)
 
 /** <!--*******************************************************************-->
  *
- * @fn static bool isInGuards( node *expr)
- *
- * @brief Predicate for determining that an N_prf is a guard
- *
- * @param N_prf
- * @return True if N_prf is member of the set below.
- *
- *****************************************************************************/
-static bool
-isInGuards (prf prfun)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN ((prfun == F_guard) || (prfun == F_afterguard)
-                 || (prfun == F_type_constraint) || (prfun == F_same_shape_AxA)
-                 || (prfun == F_shape_matches_dim_VxA) || (prfun == F_non_neg_val_S)
-                 || (prfun == F_non_neg_val_V) || (prfun == F_val_lt_shape_VxA)
-                 || (prfun == F_val_le_val_VxV) || (prfun == F_val_le_val_SxS)
-                 || (prfun == F_val_lt_val_SxS)
-                 || (prfun == F_prod_matches_prod_shape_VxA));
-}
-
-/** <!--*******************************************************************-->
- *
  * @fn static bool isAfterguard( node *expr)
  *
  * @brief Predicate for determining that an N_prf is a guard
@@ -687,7 +665,7 @@ static bool
 isInExtremaOrGuards (prf prfun)
 {
     DBUG_ENTER ();
-    DBUG_RETURN (isInExtrema (prfun) || isInGuards (prfun));
+    DBUG_RETURN (isInExtrema (prfun) || IVEXIisInGuards (prfun));
 }
 
 /** <!--*******************************************************************-->
@@ -844,7 +822,7 @@ skipVarDefs (node *expr)
             do {
                 old_expr = expr;
                 expr = followId (old_expr, &new_assign);
-                expr = followPrf (isInGuards, expr, new_assign, old_expr);
+                expr = followPrf (IVEXIisInGuards, expr, new_assign, old_expr);
             } while (expr != old_expr);
             break;
 

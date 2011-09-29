@@ -1062,4 +1062,27 @@ IVEXIwithidsKludge (int offset, node *withidids, node *curpart, node **preassign
     DBUG_RETURN (z);
 }
 
+/** <!--*******************************************************************-->
+ *
+ * @fn  bool isInGuards( node *expr)
+ *
+ * @brief Predicate for determining that an N_prf is a guard
+ *
+ * @param N_prf
+ * @return True if N_prf is member of the set below.
+ *
+ *****************************************************************************/
+bool
+IVEXIisInGuards (prf prfun)
+{
+    DBUG_ENTER ();
+    DBUG_RETURN ((prfun == F_guard) || (prfun == F_afterguard)
+                 || (prfun == F_type_constraint) || (prfun == F_same_shape_AxA)
+                 || (prfun == F_shape_matches_dim_VxA) || (prfun == F_non_neg_val_S)
+                 || (prfun == F_non_neg_val_V) || (prfun == F_val_lt_shape_VxA)
+                 || (prfun == F_val_le_val_VxV) || (prfun == F_val_le_val_SxS)
+                 || (prfun == F_val_lt_val_SxS)
+                 || (prfun == F_prod_matches_prod_shape_VxA));
+}
+
 #undef DBUG_PREFIX

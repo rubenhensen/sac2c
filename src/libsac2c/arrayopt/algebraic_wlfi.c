@@ -470,8 +470,7 @@ FindPrfParent2 (node *arg_node, info *arg_info)
         break;
 
     case N_id:
-        if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node))
-            && (N_id == NODE_TYPE (arg))) {
+        if ((PMmatchFlatSkipExtrema (pat, arg_node)) && (N_id == NODE_TYPE (arg))) {
             tcindex = TClookupIdsNode (withidids, ID_AVIS (arg));
             if (-1 != tcindex) {
                 z = 1;
@@ -807,7 +806,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
         ipavis = ID_AVIS (iprime);
         DBUG_PRINT ("Tracing %s", AVIS_NAME (ipavis));
         pat = PMany (1, PMAgetNode (&idx), 0);
-        if (PMmatchFlatSkipExtremaAndGuards (pat, iprime)) {
+        if (PMmatchFlatSkipExtrema (pat, iprime)) {
             switch (NODE_TYPE (idx)) {
             case N_id:
                 /* Check for WITHID_IDS */
@@ -917,8 +916,14 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
                     break;
 
                 default:
-                    DBUG_ASSERT (FALSE, "N_prf not recognized");
-                    break;
+                    if (!IVEXIisInGuards (PRF_PRF (idx))) {
+                        DBUG_ASSERT (FALSE, "N_prf not recognized");
+                        break;
+                    } else { /* Guard may get removed in later saacyc */
+                        DBUG_PRINT ("Skipping guard N_prf");
+                        z = NULL;
+                        break;
+                    }
                 }
                 break;
 
