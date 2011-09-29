@@ -504,6 +504,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
         ARG_CHOICE ("pab", global.print_after_break = TRUE);
 
+        ARG_CHOICE ("vab", global.visual_after_break = TRUE);
+
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("do");

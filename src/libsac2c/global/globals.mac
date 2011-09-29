@@ -582,6 +582,7 @@ GLOBAL (const arg_encoding_t *, prf_arg_encoding, prf_arg_encoding_init)
  */
 
 GLOBAL (bool, print_after_break, TRUE)
+GLOBAL (bool, visual_after_break, FALSE)
 
 GLOBAL (bool, dotrace, FALSE)
 GLOBAL (bool, dousertrace, FALSE)

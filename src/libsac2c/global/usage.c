@@ -261,12 +261,15 @@ PrintBreakOptions (void)
 
             "    Break options allow you to stop the compilation process\n"
             "    after a particular phase, subphase or cycle optimisation.\n"
-            "    By default the intermediate programm will be printed, \n"
-            "    but this behaviour may be influenced by the following\n"
-            "    compiler options:\n"
+            "    By default the intermediate programm will be printed. You\n"
+            "    can visualize the syntax tree as well, and a new png file \n"
+            "    will be created. But this behaviour may be influenced by \n"
+            "    the following compiler options:\n "
             "\n"
             "    -noPAB          Deactivates printing after break.\n"
             "    -doPAB          Activates printing after break.\n"
+            "    -doVAB          Activates visualization of program after break.\n"
+
             "\n"
             "    -b<spec>        Break after the compilation stage given\n"
             "                    by <spec>, where <spec> follows the pattern\n"

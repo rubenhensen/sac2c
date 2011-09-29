@@ -55,6 +55,7 @@
 #include "memory.h"
 #include "build.h"
 #include "print.h"
+#include "visualize.h"
 #include "convert.h"
 #include "globals.h"
 #include "free.h"
@@ -1132,7 +1133,8 @@ void
 CTIterminateCompilation (node *syntax_tree)
 {
     DBUG_ENTER ();
-
+    char *visual_output;
+    char *shell_command;
     /*
      * Upon premature termination of compilation process show
      * syntax tree if available.
@@ -1144,6 +1146,20 @@ CTIterminateCompilation (node *syntax_tree)
             || (global.break_after_subphase < PHIlastPhase ())
             || (global.break_after_cyclephase < PHIlastPhase ()))) {
         syntax_tree = PRTdoPrintFile (stdout, syntax_tree);
+    }
+
+    if (global.visual_after_break && syntax_tree != NULL) {
+        if (!DOT_FLAG) {
+            CTIwarn ("If you want to visualize syntax tree. Please install dot. \n");
+        } else {
+            visual_output = VISUALdoVisual (syntax_tree);
+            shell_command = STRcatn (5, "dot ", visual_output, " -Tpng -o ",
+                                     global.outfilename, ".png");
+            DBUG_PRINT ("\n %s \n", shell_command);
+            SYScall (shell_command);
+            MEMfree (shell_command);
+            MEMfree (visual_output);
+        }
     }
 
     /*
