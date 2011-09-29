@@ -44,7 +44,7 @@ maketools_hzip              := hzip
 #
 ###############################################################################
 
-libsac2c_targets           := src/html/ast.html lib/libsac2c.so
+libsac2c_targets           := src/doc/ast.html  src/doc/ast.png  lib/libsac2c.so
 libsac2c_targetdir         := 
 
 libsac2c_subtarget_suffix  := .o
@@ -61,7 +61,7 @@ libsac2c_sourcedirs        := global tree support serialize \
                               scanparse flatten constants typecheck types \
                               modules objects stdopt arrayopt wltransform \
                               concurrent multithread profile \
-                              memory precompile codegen print \
+                              memory precompile codegen print visualize\
                               cinterface generics constraints cuda mutc \
                               rtspec funcpara flexsub
 
@@ -224,6 +224,8 @@ libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c_rtspec icm2c_fp icm2c_ia
 
 libsac2c_print       := print convert
+
+libsac2c_visualize   := visualize
 
 libsac2c_cinterface  := load_module_contents construct_bundles \
                         create_c_wrapper_header bundle_to_fundef \

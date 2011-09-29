@@ -197,10 +197,28 @@ $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so: global/build_$(STYLE).$($(STY
 # Building HTML documentation of abstract syntax tree
 #
 
-$(PROJECT_ROOT)/src/html/%.html: xml/%2html.xsl xml/%.xml
+$(PROJECT_ROOT)/src/doc/%.html: xml/%2html.xsl xml/%.xml
 	@$(ECHO) ""
-	@$(ECHO) "Creating $(PREFIX_ROOT)src/html/$(notdir $@)"
+	@$(ECHO) "Creating $(PREFIX_ROOT)src/doc/$(notdir $@)"
 	$(HIDE) $(XSLTENGINE) $^ > $@
+
+
+################################################################################
+#
+# Building PNG documentation of abstract syntax tree
+#
+						
+$(PROJECT_ROOT)/src/doc/%.png: xml/%2png.xsl xml/%.xml
+	@$(ECHO) ""
+	@if [ $(DOT) = "no" ]; \
+			then \
+				$(ECHO) "Can not visualize syntax tree."; \
+			else \
+				$(ECHO) "Creating $(PREFIX_ROOT)src/doc/$(notdir $@)"; \
+				$(XSLTENGINE) $^ > xml/ast.dot; \
+				$(DOT) xml/ast.dot -Tpng -o $@ ;\
+				$(RM)  xml/ast.dot ; \
+			fi		
 
 
 ################################################################################
