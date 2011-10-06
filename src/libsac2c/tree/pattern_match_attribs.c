@@ -36,6 +36,7 @@ typedef bool attribFun (attrib *, node *);
 struct PATTR {
     nodetype nt;
     prf fun;
+    prf *fun_p;
     constant **c_arg1;
     node **n_arg1;
     int *i_arg1;
@@ -45,6 +46,7 @@ struct PATTR {
 
 #define PATTR_NT(p) (p->nt)
 #define PATTR_PRF(p) (p->fun)
+#define PATTR_PRFP(p) (p->fun_p)
 #define PATTR_C1(p) (p->c_arg1)
 #define PATTR_I1(p) (p->i_arg1)
 #define PATTR_I2(p) (p->i_arg2)
@@ -735,6 +737,37 @@ PMAhasFS (constant **fs)
 
     res = makeAttrib (N_array, attribHasFS);
     PATTR_C1 (res) = fs;
+
+    return (res);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn attrib *PMAgetPrf( prf *fun)
+ *
+ * @brief attrib for PMprf extracts the prf
+ *
+ *****************************************************************************/
+bool
+attribGetPrf (attrib *attr, node *arg)
+{
+    bool res;
+
+    DBUG_PRINT (PMASTART "PMgetPrf( " F_PTR " )", PATTR_PRFP (attr));
+    *PATTR_PRFP (attr) = PRF_PRF (arg);
+    res = TRUE;
+    DBUG_PRINT (PMARESULT "%s", (res ? "match" : "no match"));
+
+    return (res);
+}
+
+attrib *
+PMAgetPrf (prf *fun)
+{
+    attrib *res;
+
+    res = makeAttrib (N_prf, attribGetPrf);
+    PATTR_PRFP (res) = fun;
 
     return (res);
 }

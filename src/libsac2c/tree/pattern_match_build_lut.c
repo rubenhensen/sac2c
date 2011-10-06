@@ -81,7 +81,7 @@
  *
  *****************************************************************************/
 struct INFO {
-    pm_mode_t pmmode;
+    pm_mode_t *pmmode;
     node *ap;
     node *fundef;
     lut_t *lut;
@@ -106,7 +106,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_PMMODE (result) = PM_flat;
+    INFO_PMMODE (result) = NULL;
     INFO_AP (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_LUT (result) = NULL;
@@ -141,7 +141,7 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 lut_t *
-PMBLdoBuildPatternMatchingLut (node *fundef, pm_mode_t pmmode)
+PMBLdoBuildPatternMatchingLut (node *fundef, pm_mode_t *pmmode)
 {
     info *info;
     lut_t *lut;
@@ -188,7 +188,7 @@ PMBLdoBuildPatternMatchingLut (node *fundef, pm_mode_t pmmode)
  *
  *****************************************************************************/
 static lut_t *
-TagIdentities (node *args, node *params, lut_t *lut, pm_mode_t pmmode)
+TagIdentities (node *args, node *params, lut_t *lut, pm_mode_t *pmmode)
 {
     pattern *pat;
     node *avis;
@@ -200,8 +200,7 @@ TagIdentities (node *args, node *params, lut_t *lut, pm_mode_t pmmode)
     while (args != NULL) {
         DBUG_ASSERT (params != NULL, "no of args does not match no of params");
 
-        if ((PMmatch (pat, pmmode, NULL, EXPRS_EXPR (args)))
-            && (avis == ARG_AVIS (params))) {
+        if ((PMmatch (pat, pmmode, EXPRS_EXPR (args))) && (avis == ARG_AVIS (params))) {
             /* insert this mapping into lut to remember that it is a pass through */
             lut = LUTinsertIntoLutP (lut, avis, EXPRS_EXPR (args));
         }

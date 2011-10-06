@@ -235,17 +235,17 @@ EnsureStructConstant (node *bound, ntype *type, info *arg_info)
         pat = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
     }
 
-    if (PMmatch (pat, PM_flat, NULL, bound)) {
+    if (PMmatchFlat (pat, bound)) {
         /* this is somehow defined as an array */
 
         if (!INFO_GENFLAT (arg_info)) {
-            if (PMmatch (pat, PM_flat, NULL, bound)) {
+            if (PMmatchFlat (pat, bound)) {
                 /* but maybe flattened */
                 new_bound = array;
 
                 DBUG_PRINT ("...potentially already inline, store" F_PTR, array);
 
-                if (!PMmatch (pat, PM_exact, NULL, bound)) {
+                if (!PMmatchExact (pat, bound)) {
                     /* it is flattened -> de-flatten */
                     DBUG_PRINT ("...was flat, replacing.");
                     bound = FREEdoFreeTree (bound);

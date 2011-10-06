@@ -14,7 +14,7 @@
  *
  *****************************************************************************/
 
-extern lut_t *PMBLdoBuildPatternMatchingLut (node *fundef, pm_mode_t pmmode);
+extern lut_t *PMBLdoBuildPatternMatchingLut (node *fundef, pm_mode_t *pmmode);
 
 extern node *PMBLfundef (node *arg_node, info *arg_info);
 extern node *PMBLap (node *arg_node, info *arg_info);

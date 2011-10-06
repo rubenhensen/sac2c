@@ -619,7 +619,8 @@ SUBPHASE (wlbscnf2, "Unflattening WL-partition structural constants",
 
 SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
 
-SUBPHASE (tup, "Running final type inference", NTCdoNewReTypeCheck, ALWAYS, opt)
+SUBPHASE (tup, "Running final type inference", NTCdoNewReTypeCheckFromScratch, ALWAYS,
+          opt)
 
 SUBPHASE (etv, "Eliminating type variables", EATdoEliminateAlphaTypes, ALWAYS, opt)
 
@@ -724,7 +725,8 @@ SUBPHASE (scc, "Stripping conformity checks and dataflow guards",
  *    that are later removed by LS and LIR and CF.
  */
 
-SUBPHASE (tup2, "Applying type upgrade", NTCdoNewReTypeCheck, global.optimize.dotup, opt)
+SUBPHASE (tup2, "Applying type upgrade", NTCdoNewReTypeCheckFromScratch,
+          global.optimize.dotup, opt)
 
 SUBPHASE (etv2, "Eliminating Type Variables", EATdoEliminateAlphaTypes,
           global.optimize.dotup, opt)
@@ -749,7 +751,7 @@ SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
  * so we start with TC
  */
 
-SUBPHASE (tupls, "Applying type upgrade for LS", NTCdoNewReTypeCheck,
+SUBPHASE (tupls, "Applying type upgrade for LS", NTCdoNewReTypeCheckFromScratch,
           global.optimize.dols &&global.optimize.dotup, opt)
 
 SUBPHASE (etvls, "Eliminating Type Variables for LS", EATdoEliminateAlphaTypes,

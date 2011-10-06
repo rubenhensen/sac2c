@@ -49,6 +49,7 @@ extern attrib *PMAhasFS (constant **fs);
 /**
  * attrib matchers for PMprf:
  */
+extern attrib *PMAgetPrf (prf *fun);
 extern attrib *PMAisPrf (prf fun);
 extern attrib *PMAisNotPrf (prf fun);
 

@@ -8,15 +8,129 @@
  *
  * Prefix: DL
  *
- * This optimization attempts to reorder a chain of operations
- * such as:
+ * This optimization attempts to reduce the number of multiplications by
+ * applying the distributive law, i.e.,  ( a * b) + ( a * c) is transformed
+ * into a * ( b + c).
+ * To have the best possible impact, this optimisation implicitly applies
+ * commutative law if that facilitates further applications.
  *
- *    a * ( b + c)
  *
- * into ( a * b) + ( a * c);
  *
+ * Overall Approach:
+ * ==================
+ *
+ * The overall approach is as follows:
+ * First, compound expressions of the form
+ *
+ *    ( s_1 + ... + s_n)        n >= 2
+ *
+ * where
+ *
+ *    s_i = ( e_1 * ... * e_m_i)  or  f_i = e
+ *
+ * are identified and stored in an optimisation-specific structure.
+ * The function              BuildMopTree
+ * is responsible for this.
+ *
+ * Once such a structure has been created, the function   OptimizeMop
+ * is responsible for converting it into the compound expression with
+ * potentially fewer multiplications. This is done by repeatedly
+ *  1) identifying the most frequently used factor found in ALL summands
+ *     s_1 ... s_n  (MostCommonFactor)
+ *  2) pulling out those summands that contain that very factor and,
+ *     while doing so, applying distributive law to it.
+ * Eventually, the original expression is replaced by a flattened form
+ * of the optimised version (Mop2Ast).
+ *
+ * Example: Assume we have and expression of the form:
+ *
+ *   ( ( a * b * c) + a + ( b * c * d) + ( b * d))
+ *
+ * Internaly, we represent this as
+ *
+ *  ADD{ MUL{a,b,c},
+ *       Mul{a},
+ *       Mul{b,c,d},
+ *       MUL{b,d} }
+ *
+ * round 1:
+ *  The most common factor is b.
+ *  We obtain ADD{ MUL{b, ADD{ MUL{a,c},
+ *                             MUL{c,d},
+ *                             MUL{d}}},
+ *                 MUL{a} }
+ *
+ * round 2:
+ *   The most common factors (per level) are c and d. Inference is bottom
+ *   up, so d is chosen here.
+ *   So, ADD{ MUL{a,c},
+ *            MUL{c,d},
+ *            MUL{d}}
+ *   is replaced by
+ *       ADD{ MUL{d, ADD{ MUL{c},
+ *                        MUL{}}},
+ *            MUL{a,c}}
+ *   equating to
+ *       ADD{ MUL{b, ADD{ MUL{d, ADD{ MUL{c},
+ *                                    MUL{}}},
+ *                        MUL{a,c}}},
+ *            MUL{a}}
+ *   overall.
+ *
+ * NB: The intermediate rounds can be made visible using -#d,DL  !!
+ *
+ *  This yields as result:
+ *
+ *  ( b * ( d * ( c + 1) + ( a * c) ) + a)
+ *
+ * Note here, that c would have been a better choice in round two as it would
+ * have avoided the transformation of ( d * c) + d into ( d * ( c + 1)) and
+ * instead would have gotten rid of one more multiplication.
+ * At the time being (May 2011) I (sbs) do not quite understand why this is
+ * done. It seems that there is no particular reason other than that the
+ * implementation would get more complicated [really???]
+ *
+ *
+ *
+ * Implementation details:
+ * =======================
+ *
+ * - The internal representation of the multi-operand expressions is a bit
+ * weired. All operations are represented as SaC AST prf's with n >= 0
+ * argument expressions. Furthermore, ALL prfs are changed to their SxS
+ * counterparts when creating the lists. After optimisation, the appropriate
+ * versions (potentially VxS, SxV or VxV) are inserted. I assume that the
+ * former is measure of convenience, and that the latter simplifies the
+ * actual optimisation process.
+ *
+ * - The actual transformation is split up between two functions. The main
+ * "work" is done in SplitMop. It separates the summands that do contain
+ * the most common factor from those that do not. While doing so it eliminates
+ * the occurrecnces of the most common factor.
+ * In round 1 of the example above, this transforms
+ *  ADD{ MUL{a,b,c},
+ *       Mul{a},
+ *       Mul{b,c,d},
+ *       MUL{b,d} }
+ *
+ * into
+ *   ADD{ MUL{a,c},
+ *        Mul{c,d},
+ *        MUL{d} }
+ * and
+ *   ADD{ Mul{a}}
+ *
+ * which are subsequenly recombined in OptimizeMop itself into:
+ *   ADD{ MUL{b, ADD{ MUL{a,c},
+ *                    MUL{c,d},
+ *                    MUL{d}}},
+ *        MUL{a} }
  *
  *****************************************************************************/
+
+#define DBUG_PREFIX "DL"
+#include "debug.h"
+
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "globals.h"
@@ -24,10 +138,6 @@
 #include "new_typecheck.h"
 #include "type_utils.h"
 #include "traverse.h"
-
-#define DBUG_PREFIX "DL"
-#include "debug.h"
-
 #include "str.h"
 #include "memory.h"
 #include "free.h"
@@ -49,7 +159,6 @@ struct INFO {
     node *topblock;
     node *funargs;
     node *preassign;
-    enum { DIR_down, DIR_up } direction;
     bool travrhs;
     bool onefundef;
     node *lhs;
@@ -62,7 +171,6 @@ struct INFO {
 #define INFO_TOPBLOCK(n) ((n)->topblock)
 #define INFO_FUNARGS(n) ((n)->funargs)
 #define INFO_PREASSIGN(n) ((n)->preassign)
-#define INFO_DIRECTION(n) ((n)->direction)
 #define INFO_TRAVRHS(n) ((n)->travrhs)
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_LHS(n) ((n)->lhs)
@@ -83,7 +191,6 @@ MakeInfo ()
     INFO_TOPBLOCK (result) = NULL;
     INFO_FUNARGS (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
-    INFO_DIRECTION (result) = DIR_down;
     INFO_TRAVRHS (result) = FALSE;
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_LHS (result) = FALSE;
@@ -147,7 +254,7 @@ DLdoDistributiveLawOptimization (node *arg_node)
  *****************************************************************************/
 
 static node *
-ATravDLavis (node *arg_node, info *arg_info)
+ATravClearDLavis (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
     AVIS_ISDLACTIVE (arg_node) = FALSE;
@@ -157,7 +264,29 @@ ATravDLavis (node *arg_node, info *arg_info)
 static node *
 ClearDLActiveFlags (node *arg_node)
 {
-    anontrav_t ddl_trav[2] = {{N_avis, &ATravDLavis}, {0, NULL}};
+    anontrav_t ddl_trav[2] = {{N_avis, &ATravClearDLavis}, {0, NULL}};
+
+    DBUG_ENTER ();
+
+    TRAVpushAnonymous (ddl_trav, &TRAVsons);
+    arg_node = TRAVopt (arg_node, NULL);
+
+    TRAVpop ();
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+ATravSetDLavis (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+    AVIS_ISDLACTIVE (arg_node) = TRUE;
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+SetDLActiveFlags (node *arg_node)
+{
+    anontrav_t ddl_trav[2] = {{N_avis, &ATravSetDLavis}, {0, NULL}};
 
     DBUG_ENTER ();
 
@@ -194,6 +323,24 @@ normalizePrf (prf prf)
 
     DBUG_RETURN (prf);
 }
+
+static node *
+LocalSkipControl (void *param, node *expr)
+{
+    DBUG_ENTER ();
+    node *avis;
+
+    if (NODE_TYPE (expr) == N_id) {
+        avis = ID_AVIS (expr);
+        if ((AVIS_NEEDCOUNT (avis) != 1) || !AVIS_ISDLACTIVE (avis)) {
+            expr = NULL; /* ABORT skipping !! */
+        }
+    }
+    DBUG_RETURN (expr);
+}
+
+static pm_mode_t dl_pm_mode[3]
+  = {{LocalSkipControl, NULL}, {PMMskipId, NULL}, {NULL, NULL}};
 
 static bool
 compatiblePrf (prf p1, prf p2)
@@ -403,9 +550,6 @@ CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
     BLOCK_VARDECS (INFO_TOPBLOCK (arg_info))
       = TBmakeVardec (avis, BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
 
-    BLOCK_VARDECS (INFO_TOPBLOCK (arg_info))
-      = ClearDLActiveFlags (BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
-
     assign
       = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), rhs), INFO_PREASSIGN (arg_info));
     AVIS_SSAASSIGN (avis) = assign;
@@ -468,72 +612,57 @@ Mop2Ast (node *mop, info *arg_info)
 }
 
 static node *
-CollectExprs (prf prf, node *a, bool is_scalar_arg)
+CollectExprs (prf target_prf, node *a, bool is_scalar_arg)
 {
     node *res = NULL;
-    node *rhs = NULL;
     pattern *pat;
+    prf found_prf;
+    node *arg1;
+    node *arg2;
     node *left;
     node *right;
 
     DBUG_ENTER ();
 
+    DBUG_ASSERT (NODE_TYPE (a) == N_id, "CollectExprs called with non N_id node");
     DBUG_PRINT ("Collecting exprs for %s", AVIS_NAME (ID_AVIS (a)));
-    res = TBmakeExprs (DUPdoDupNode (a), NULL);
-    pat = PMany (1, PMAgetNode (&rhs), 0);
 
-    if (NODE_TYPE (EXPRS_EXPR (res)) == N_id) {
+    pat = PMprf (1, PMAgetPrf (&found_prf), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                 PMvar (1, PMAgetNode (&arg2), 0));
+
+    if (PMmatch (pat, dl_pm_mode, a) && compatiblePrf (target_prf, found_prf)) {
+        /**
+         * Here, we SHOULD set AVIS_ISDLACTIVE( LHS) to FALSE!
+         * Unfortunately, PM does not yet support that feature yet.
+         * This does not impede the correctness of the optimised
+         * code, it just may leed to redundant work during optimisation!
+         */
+        left = CollectExprs (target_prf, arg1, isArg1Scl (found_prf));
+        right = CollectExprs (target_prf, arg2, isArg2Scl (found_prf));
+        res = TCappendExprs (left, right);
+    } else {
+        res = TBmakeExprs (DUPdoDupNode (a), NULL);
         ID_ISSCLPRF (EXPRS_EXPR (res)) = is_scalar_arg;
     }
 
-    if ((NODE_TYPE (a) == N_id) && (PMmatchFlatSkipGuards (pat, a))
-        && (AVIS_ISDLACTIVE (ID_AVIS (a))) && (AVIS_NEEDCOUNT (ID_AVIS (a)) == 1)) {
-
-        switch (NODE_TYPE (rhs)) {
-
-        case N_id:
-            DBUG_PRINT ("Found N_id %s", AVIS_NAME (ID_AVIS (rhs)));
-            res = FREEdoFreeTree (res);
-            res = CollectExprs (prf, rhs, is_scalar_arg);
-            AVIS_NEEDCOUNT (ID_AVIS (a)) = 0;
-            break;
-
-        case N_prf:
-            if (compatiblePrf (prf, PRF_PRF (rhs))) {
-                DBUG_PRINT ("Found N_prf");
-                left = CollectExprs (prf, PRF_ARG1 (rhs), isArg1Scl (PRF_PRF (rhs)));
-                right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)));
-
-                res = FREEdoFreeTree (res);
-                res = TCappendExprs (left, right);
-
-                AVIS_NEEDCOUNT (ID_AVIS (a)) = 0;
-            }
-            break;
-
-        default:
-            DBUG_PRINT ("Nothing found");
-            break;
-        }
-    }
     pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
 
 static node *
-BuildMopTree (node *avis)
+BuildMopTree (node *addition)
 {
     node *tmp, *exprs;
     node *res;
-    node *id;
+    node *left, *right;
     bool sclprf;
 
     DBUG_ENTER ();
 
-    id = TBmakeId (avis);
-    exprs = CollectExprs (F_add_SxS, id, FALSE);
-    FREEdoFreeNode (id);
+    left = CollectExprs (F_add_SxS, PRF_ARG1 (addition), isArg1Scl (PRF_PRF (addition)));
+    right = CollectExprs (F_add_SxS, PRF_ARG2 (addition), isArg2Scl (PRF_PRF (addition)));
+    exprs = TCappendExprs (left, right);
 
     tmp = exprs;
     while (tmp != NULL) {
@@ -791,7 +920,7 @@ OptimizeMop (node *mop)
                     mop = newmop;
                 }
 
-                DBUG_EXECUTE (PRTdoPrintFile (stderr, mop));
+                DBUG_EXECUTE (PRTdoPrintFile (stderr, mop););
                 global.optcounters.dl_expr++;
                 mop = OptimizeMop (mop);
             }
@@ -814,7 +943,7 @@ OptimizeMop (node *mop)
             }
 
             if (optimized) {
-                DBUG_EXECUTE (PRTdoPrintFile (stderr, mop));
+                DBUG_EXECUTE (PRTdoPrintFile (stderr, mop););
                 mop = OptimizeMop (mop);
             }
         }
@@ -857,6 +986,15 @@ EliminateEmptyProducts (node *mop, simpletype st)
  *
  *****************************************************************************/
 
+/******************************************************************************
+ *
+ * function:
+ *    node *DLfundef(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
 node *
 DLfundef (node *arg_node, info *arg_info)
 {
@@ -874,7 +1012,7 @@ DLfundef (node *arg_node, info *arg_info)
         INFO_FUNARGS (arg_info) = FUNDEF_ARGS (arg_node);
 
         BLOCK_VARDECS (INFO_TOPBLOCK (arg_info))
-          = ClearDLActiveFlags (BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
+          = SetDLActiveFlags (BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
@@ -901,19 +1039,34 @@ DLfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *    node *DLblock(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
 node *
 DLblock (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
 
-    BLOCK_VARDECS (INFO_TOPBLOCK (arg_info))
-      = ClearDLActiveFlags (BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
-
     BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *    node *DLassign(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
 
 node *
 DLassign (node *arg_node, info *arg_info)
@@ -921,17 +1074,10 @@ DLassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /*
-     * Traverse LHS identifiers to mark them as local in the current block
-     */
-    INFO_DIRECTION (arg_info) = DIR_down;
-    ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
-
-    /*
      * Bottom-up traversal
      */
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    INFO_DIRECTION (arg_info) = DIR_up;
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_PREASSIGN (arg_info) != NULL) {
@@ -944,43 +1090,66 @@ DLassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *    node *DLlet(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
 node *
 DLlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_DIRECTION (arg_info) == DIR_down) {
-        LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
+    INFO_TRAVRHS (arg_info) = FALSE;
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
+
+    if (INFO_TRAVRHS (arg_info)) {
+        INFO_LHS (arg_info) = LET_IDS (arg_node);
+        DBUG_PRINT ("looking at the definition of %s",
+                    AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     } else {
-        INFO_TRAVRHS (arg_info) = FALSE;
-        LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
-        if (INFO_TRAVRHS (arg_info)) {
-            INFO_LHS (arg_info) = LET_IDS (arg_node);
-            DBUG_PRINT ("looking at %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
-            LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
-        }
+        DBUG_PRINT ("skipping definition of %s",
+                    AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
     }
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *    node *DLids(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
 
 node *
 DLids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_DIRECTION (arg_info) == DIR_down) {
-        AVIS_ISDLACTIVE (IDS_AVIS (arg_node)) = TRUE;
-    } else {
-        if (AVIS_NEEDCOUNT (IDS_AVIS (arg_node)) != 0) {
-            INFO_TRAVRHS (arg_info) = TRUE;
-        }
+    if (AVIS_ISDLACTIVE (IDS_AVIS (arg_node))) {
+        INFO_TRAVRHS (arg_info) = TRUE;
     }
-
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
+
+/******************************************************************************
+ *
+ * function:
+ *    node *DLprf(node *arg_node, info *arg_info)
+ *
+ * description:
+ *
+ ******************************************************************************/
 
 node *
 DLprf (node *arg_node, info *arg_info)
@@ -1008,10 +1177,11 @@ DLprf (node *arg_node, info *arg_info)
             /*
              * Collect operands into multi-operation (sum of products)
              */
-            mop = BuildMopTree (IDS_AVIS (INFO_LHS (arg_info)));
+            mop = BuildMopTree (arg_node);
 
             if (TCcountExprs (PRF_ARGS (mop)) >= 2) {
-                DBUG_EXECUTE (PRTdoPrintFile (stderr, mop));
+                DBUG_PRINT ("identified suitable expression:");
+                DBUG_EXECUTE (PRTdoPrintFile (stderr, mop););
 
                 /*
                  * Optimize multi-operation
@@ -1029,9 +1199,12 @@ DLprf (node *arg_node, info *arg_info)
                     /*
                      * Convert mop back into ast representation
                      */
-                    DBUG_EXECUTE (PRTdoPrintFile (stderr, mop));
+                    DBUG_PRINT ("converted into:");
+                    DBUG_EXECUTE (PRTdoPrintFile (stderr, mop););
                     arg_node = FREEdoFreeNode (arg_node);
                     arg_node = Mop2Ast (mop, arg_info);
+                } else {
+                    DBUG_PRINT ("not converted!");
                 }
             } else {
                 mop = FREEdoFreeNode (mop);

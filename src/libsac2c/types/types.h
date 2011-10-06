@@ -779,16 +779,14 @@ typedef void *dynlib_t;
 typedef void *dynfun_t;
 
 /*
- * moved from pattern_match.h
+ * moved from pattern_match_modes.h
  */
 typedef struct PAT pattern;
-typedef enum {
-    PM_exact,
-    PM_flat,
-    PM_flatSkipExtrema,
-    PM_flatSkipGuards,
-    PM_flatWith,
-    PM_flatSkipExtremaAndGuards
+typedef node *skip_fun_t (void *, node *);
+typedef bool prf_match_fun_t (prf);
+typedef struct {
+    skip_fun_t *fun;
+    void *param;
 } pm_mode_t;
 
 /*

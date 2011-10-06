@@ -15,11 +15,13 @@
 #include "types.h"
 
 #include "pattern_match_attribs.h"
+#include "pattern_match_modes.h"
 
 /**
  * Design of the shiny new pattern matcher:
  */
-extern bool PMmatch (pattern *pat, pm_mode_t pm_mode, lut_t *follow_lut, node *expr);
+extern bool PMmatch (pattern *pat, pm_mode_t *pm_mode, node *expr);
+
 extern bool PMmatchExact (pattern *pat, node *expr);
 extern bool PMmatchFlat (pattern *pat, node *expr);
 extern bool PMmatchFlatSkipExtrema (pattern *pat, node *expr);

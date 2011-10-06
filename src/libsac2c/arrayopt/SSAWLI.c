@@ -322,7 +322,8 @@ Scalar2ArrayIndex (node *arrayn, node *wln, lut_t *pmlut)
             ok = 0;
             iinfo->last[i] = NULL;
             idn = EXPRS_EXPR (arrayn);
-            if (PMmatch (pat1, PM_flatSkipGuards, pmlut, idn)) { /* this is a constant */
+            if (PMmatch (pat1, PMMflatPrfLut (PMMisInGuards, pmlut),
+                         idn)) { /* this is a constant */
                 iinfo->permutation[i] = 0;
                 iinfo->const_arg[i] = cval;
                 ok = 1;
@@ -459,9 +460,11 @@ CreateIndexInfoSxS (node *prfn, info *arg_info)
     /* CF has been done, so we just search for an Id and a constant.
        Since we do not want to practice constant folding here we ignore
        prfs with two constants. */
-    const_second = PMmatch (pat1, PM_flatSkipGuards, INFO_PMLUT (arg_info), prfn);
+    const_second
+      = PMmatch (pat1, PMMflatPrfLut (PMMisInGuards, INFO_PMLUT (arg_info)), prfn);
 
-    if (const_second || PMmatch (pat2, PM_flatSkipGuards, INFO_PMLUT (arg_info), prfn)) {
+    if (const_second
+        || PMmatch (pat2, PMMflatPrfLut (PMMisInGuards, INFO_PMLUT (arg_info)), prfn)) {
 
         /* we found a constant and an Id. If this Id is a vaild Id (i.e.
            it is declared in the generator or it is a valid local Id)
@@ -682,7 +685,7 @@ WLIfundef (node *arg_node, info *arg_info)
     if (!INFO_LOCALFUN (arg_info)) {
         DBUG_ASSERT (INFO_PMLUT (arg_info) == NULL,
                      "left-over pattern matching lut found!");
-        INFO_PMLUT (arg_info) = PMBLdoBuildPatternMatchingLut (arg_node, PM_flat);
+        INFO_PMLUT (arg_info) = PMBLdoBuildPatternMatchingLut (arg_node, PMMflat ());
     }
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -1095,22 +1098,22 @@ WLIgenerator (node *arg_node, info *arg_info)
     INFO_FOLDABLE (arg_info)
       = INFO_FOLDABLE (arg_info)
         && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
-            PMmatch (pat, PM_flat, pmlut, GENERATOR_BOUND1 (arg_node)));
+            PMmatch (pat, PMMflatLut (pmlut), GENERATOR_BOUND1 (arg_node)));
     INFO_FOLDABLE (arg_info)
       = INFO_FOLDABLE (arg_info)
         && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
-            PMmatch (pat, PM_flat, pmlut, GENERATOR_BOUND2 (arg_node)));
+            PMmatch (pat, PMMflatLut (pmlut), GENERATOR_BOUND2 (arg_node)));
 
     if (GENERATOR_STEP (arg_node) != NULL) {
         INFO_FOLDABLE (arg_info)
           = INFO_FOLDABLE (arg_info)
             && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
-                PMmatch (pat, PM_flat, pmlut, GENERATOR_STEP (arg_node)));
+                PMmatch (pat, PMMflatLut (pmlut), GENERATOR_STEP (arg_node)));
         if (GENERATOR_WIDTH (arg_node) != NULL) {
             INFO_FOLDABLE (arg_info)
               = INFO_FOLDABLE (arg_info)
                 && ((global.compiler_subphase != PH_opt_cyc) || /* SWLF */
-                    PMmatch (pat, PM_flat, pmlut, GENERATOR_WIDTH (arg_node)));
+                    PMmatch (pat, PMMflatLut (pmlut), GENERATOR_WIDTH (arg_node)));
         }
     } else {
         DBUG_ASSERT (GENERATOR_WIDTH (arg_node) == NULL,

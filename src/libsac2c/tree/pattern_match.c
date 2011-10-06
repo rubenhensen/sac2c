@@ -258,6 +258,7 @@
 
 #include <stdarg.h>
 #include "pattern_match.h"
+#include "pattern_match_modes.h"
 
 #define DBUG_PREFIX "PM"
 #include "debug.h"
@@ -280,12 +281,9 @@
 static char *FAIL = "";
 static int matching_level;
 
-static pm_mode_t mode;
-
-static lut_t *follow_lut = NULL;
+static pm_mode_t *mmode;
 
 typedef node *matchFun (pattern *, node *);
-typedef bool prfMatchFun (prf);
 
 /** <!--*********************************************************************-->
  *
@@ -617,59 +615,6 @@ range2Set (node *range)
 
 /** <!--*******************************************************************-->
  *
- * @fn static bool isInExtrema( node *expr)
- *
- * @brief Predicate for determining that an N_prf is an extrema node.
- *
- * @param N_prf
- * @return True if N_prf is member of the set below.
- *
- *****************************************************************************/
-static bool
-isInExtrema (prf prfun)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN ((prfun == F_noteminval) || (prfun == F_notemaxval)
-                 || (prfun == F_noteintersect));
-}
-
-/** <!--*******************************************************************-->
- *
- * @fn static bool isAfterguard( node *expr)
- *
- * @brief Predicate for determining that an N_prf is a guard
- *
- * @param N_prf
- * @return True if N_prf is member of the set below.
- *
- *****************************************************************************/
-static bool
-isAfterguard (prf prfun)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN ((prfun == F_afterguard));
-}
-
-/** <!--*******************************************************************-->
- *
- * @fn static bool isInExtremaOrGuards( node *expr)
- *
- * @brief Predicate for determining that an N_prf is an
- *        extrema node or a guard node.
- *
- * @param N_prf
- * @return True if N_prf is member of either set.
- *
- *****************************************************************************/
-static bool
-isInExtremaOrGuards (prf prfun)
-{
-    DBUG_ENTER ();
-    DBUG_RETURN (isInExtrema (prfun) || IVEXIisInGuards (prfun));
-}
-
-/** <!--*******************************************************************-->
- *
  * @fn node *getInner( node *arg_node)
  *
  * @brief returns pointer to expr / N_exprs chain that constitutes a
@@ -709,82 +654,6 @@ getInner (node *arg_node)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *followId( node *expr, node **new_assign)
- *
- * @brief follows Variables to their definitions using SSAASSIGN and the
- *        (potentially empty) LUT
- * @param expr: starting expression
- *        new_assign: where to store N_assign address for caller.
- *
- * @return RHS of definition for the given Id node or the node itself.
- *
- *         We give back the assign chain as a side effect, only
- *         so that our caller can check for _same_shape_AxA,
- *         which has to pick proper argument, based on which
- *         result we are chasing.
- *
- *****************************************************************************/
-static node *
-followId (node *expr, node **new_assign)
-{
-    node *new_id;
-    DBUG_ENTER ();
-
-    if (NODE_TYPE (expr) == N_id) {
-        if (AVIS_SSAASSIGN (ID_AVIS (expr)) != NULL) {
-            *new_assign = AVIS_SSAASSIGN (ID_AVIS (expr));
-            expr = LET_EXPR (ASSIGN_STMT (*new_assign));
-        } else if (follow_lut != NULL) {
-            new_id = (node *)LUTsearchInLutP (follow_lut, ID_AVIS (expr));
-            expr = (new_id != NULL ? new_id : expr);
-        }
-    }
-    DBUG_RETURN (expr);
-}
-
-/** <!--*******************************************************************-->
- *
- * @fn node *followPrf( prfMatchFun prfInspectFun, node *expr,
- *                      node *new_assign, node *old_expr)
- *
- * @brief follows first arg of given prf if the prfInspectFun yields TRUE.
- *        In the case of _same_shape_AxA, it may follow first or second
- *        argument. Never follow predicates past guards.
- *
- * @param starting expression
- *
- * @return first/second arg of given prf node if in expected set;
- *         otherwise the expr itself.
- *
- *****************************************************************************/
-static node *
-followPrf (prfMatchFun prfInspectFun, node *expr, node *new_assign, node *old_expr)
-{
-    DBUG_ENTER ();
-
-    if ((NODE_TYPE (expr) == N_prf) && (prfInspectFun (PRF_PRF (expr)))) {
-        if ((NULL != new_assign) && (N_id == NODE_TYPE (old_expr))
-            && (ID_AVIS (old_expr) == IDS_AVIS (LET_IDS (ASSIGN_STMT (new_assign))))) {
-            expr = PRF_ARG1 (expr);
-        } else {
-            /* Need to pick same_shape() argument that matches result,
-             * and avoid picking ANY predicate.
-             */
-            if ((F_same_shape_AxA == PRF_PRF (expr)) && (NULL != new_assign)
-                && (N_id == NODE_TYPE (old_expr))
-                && (ID_AVIS (old_expr)
-                    == IDS_AVIS (IDS_NEXT (LET_IDS (ASSIGN_STMT (new_assign)))))) {
-                expr = PRF_ARG2 (expr);
-                DBUG_PRINT ("Found _same_shape_AxA");
-            }
-        }
-    }
-
-    DBUG_RETURN (expr);
-}
-
-/** <!--*******************************************************************-->
- *
  * @fn node *skipVarDefs( node *expr)
  *
  * @brief follows Variables to their definitions according to
@@ -796,51 +665,18 @@ static node *
 skipVarDefs (node *expr)
 {
     DBUG_ENTER ();
-    node *old_expr;
-    node *new_assign = NULL;
+    node *old_expr = NULL; /* ensures initial predicate */
+    int i;
 
-    if (expr != NULL) {
-        switch (mode) {
-        case PM_exact:
-            break;
-        case PM_flat:
-            do {
-                old_expr = expr;
-                expr = followId (old_expr, &new_assign);
-            } while (expr != old_expr);
-            break;
-
-        case PM_flatSkipExtrema:
-            do {
-                old_expr = expr;
-                expr = followId (old_expr, &new_assign);
-                expr = followPrf (isInExtrema, expr, new_assign, old_expr);
-            } while (expr != old_expr);
-            break;
-
-        case PM_flatSkipGuards:
-            do {
-                old_expr = expr;
-                expr = followId (old_expr, &new_assign);
-                expr = followPrf (IVEXIisInGuards, expr, new_assign, old_expr);
-            } while (expr != old_expr);
-            break;
-
-        case PM_flatSkipExtremaAndGuards:
-            do {
-                old_expr = expr;
-                expr = followId (old_expr, &new_assign);
-                expr = followPrf (isInExtremaOrGuards, expr, new_assign, old_expr);
-            } while (expr != old_expr);
-            break;
-
-        case PM_flatWith:
-            do {
-                old_expr = expr;
-                expr = followId (old_expr, &new_assign);
-                expr = followPrf (isAfterguard, expr, new_assign, old_expr);
-            } while (expr != old_expr);
-            break;
+    while (expr != old_expr) {
+        old_expr = expr;
+        i = 0;
+        while ((expr != NULL) && (mmode[i].fun != NULL)) {
+            expr = mmode[i].fun (mmode[i].param, expr);
+            i++;
+        }
+        if (expr == NULL) {
+            expr = old_expr;
         }
     }
 
@@ -1652,176 +1488,6 @@ PMfree (pattern *p)
 
 /** <!--*********************************************************************-->
  *
- * @fn bool PMmatch( pattern *pat, pm_mode_t pm_mode, lut_t *f_lut, node *expr)
- *
- * @brief matches pat against expr in the specified mode using the giving
- *        lut when following N_oid nodes (can be NULL).
- * @return success
- *
- *****************************************************************************/
-bool
-PMmatch (pattern *pat, pm_mode_t pm_mode, lut_t *f_lut, node *expr)
-{
-    mode = pm_mode;
-    follow_lut = f_lut;
-    matching_level = 0;
-    bool res;
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("starting match in mode %d", pm_mode);
-    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("match %s!", (res ? "succeeded" : "failed"));
-
-    DBUG_RETURN (res);
-}
-
-/** <!--*********************************************************************-->
- *
- * @fn bool PMmatchExact( pattern *pat, node *expr)
- *
- * @brief matches pat against expr in mode PM_exact
- * @return success
- *
- *****************************************************************************/
-bool
-PMmatchExact (pattern *pat, node *expr)
-{
-    mode = PM_exact;
-    follow_lut = NULL;
-
-    matching_level = 0;
-    bool res;
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("starting exact match");
-    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("exact match %s!", (res ? "succeeded" : "failed"));
-
-    DBUG_RETURN (res);
-}
-
-/** <!--*********************************************************************-->
- *
- * @fn bool PMmatchFlat( pattern *pat, node *expr)
- *
- * @brief matches pat against expr in mode PM_flat
- * @return success
- *
- *****************************************************************************/
-bool
-PMmatchFlat (pattern *pat, node *expr)
-{
-    mode = PM_flat;
-    follow_lut = NULL;
-
-    matching_level = 0;
-    bool res;
-
-    DBUG_PRINT ("starting flat match");
-    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("flat match %s!", (res ? "succeeded" : "failed"));
-
-    return (res);
-}
-
-/** <!--*********************************************************************-->
- *
- * @fn bool PMmatchFlatSkipExtrema( pattern *pat, node *expr)
- *
- * @brief matches pat against expr in mode PM_flatSkipExtrema
- * @return success
- *
- *****************************************************************************/
-bool
-PMmatchFlatSkipExtrema (pattern *pat, node *expr)
-{
-    mode = PM_flatSkipExtrema;
-    follow_lut = NULL;
-
-    matching_level = 0;
-    bool res;
-
-    DBUG_PRINT ("starting flatSkipExtrema match");
-    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("flatSkipExtrema match %s!", (res ? "succeeded" : "failed"));
-
-    return (res);
-}
-
-/** <!--*********************************************************************-->
- *
- * @fn bool PMmatchFlatSkipGuards( pattern *pat, node *expr)
- *
- * @brief matches pat against expr in mode PM_flatSkipGuards
- * @return success
- *
- *****************************************************************************/
-bool
-PMmatchFlatSkipGuards (pattern *pat, node *expr)
-{
-    mode = PM_flatSkipGuards;
-    follow_lut = NULL;
-
-    matching_level = 0;
-    bool res;
-
-    DBUG_PRINT ("starting flatSkipGuards match");
-    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("flatSkipGuards match %s!", (res ? "succeeded" : "failed"));
-
-    return (res);
-}
-
-/** <!--*********************************************************************-->
- *
- * @fn bool PMmatchFlatSkipExtremaAndGuards( pattern *pat, node *expr)
- *
- * @brief matches pat against expr in mode PM_flatSkipExtremaAndGuards
- * @return success
- *
- *****************************************************************************/
-bool
-PMmatchFlatSkipExtremaAndGuards (pattern *pat, node *expr)
-{
-    mode = PM_flatSkipExtremaAndGuards;
-    follow_lut = NULL;
-
-    matching_level = 0;
-    bool res;
-
-    DBUG_PRINT ("starting flatSkipExtremaAndGuards match");
-    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("flatSkipExtremaAndGuards match %s!", (res ? "succeeded" : "failed"));
-
-    return (res);
-}
-
-/** <!--*********************************************************************-->
- *
- * @fn bool PMmatchFlatWith( pattern *pat, node *expr)
- *
- * @brief matches pat against expr in mode PM_flatWith
- * @return success
- *
- *****************************************************************************/
-bool
-PMmatchFlatWith (pattern *pat, node *expr)
-{
-    mode = PM_flatWith;
-    follow_lut = NULL;
-
-    matching_level = 0;
-    bool res;
-
-    DBUG_PRINT ("starting flatWith match");
-    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
-    DBUG_PRINT ("flatWith match %s!", (res ? "succeeded" : "failed"));
-
-    return (res);
-}
-
-/** <!--*********************************************************************-->
- *
  * @fn node *PMmultiExprs( int num_nodes, ...)
  *
  * @brief enables multiple expressions to be matched against at the same time
@@ -1842,6 +1508,71 @@ PMmultiExprs (int num_nodes, ...)
     va_end (ap);
 
     return (stack);
+}
+
+/** <!--*********************************************************************-->
+ *
+ * @fn bool PMmatch( pattern *pat, pm_nmode_t *pm_mode, node *expr)
+ *
+ * @brief matches pat against expr in the specified mode
+ * @return success
+ *
+ *****************************************************************************/
+bool
+PMmatch (pattern *pat, pm_mode_t *pm_mode, node *expr)
+{
+    mmode = pm_mode;
+    matching_level = 0;
+    bool res;
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("starting match in mode NEW");
+    res = (PAT_FUN (pat) (pat, expr) != (node *)FAIL);
+    DBUG_PRINT ("match %s!", (res ? "succeeded" : "failed"));
+
+    DBUG_RETURN (res);
+}
+
+/**
+ *
+ * The following functions are merely conveniences; kept for compatibility
+ * reasons.
+ */
+
+bool
+PMmatchExact (pattern *pat, node *expr)
+{
+    return (PMmatch (pat, PMMexact (), expr));
+}
+
+bool
+PMmatchFlat (pattern *pat, node *expr)
+{
+    return (PMmatch (pat, PMMflat (), expr));
+}
+
+bool
+PMmatchFlatSkipExtrema (pattern *pat, node *expr)
+{
+    return (PMmatch (pat, PMMflatPrf (PMMisInExtrema), expr));
+}
+
+bool
+PMmatchFlatSkipGuards (pattern *pat, node *expr)
+{
+    return (PMmatch (pat, PMMflatPrf (PMMisInGuards), expr));
+}
+
+bool
+PMmatchFlatSkipExtremaAndGuards (pattern *pat, node *expr)
+{
+    return (PMmatch (pat, PMMflatPrf (PMMisInExtremaOrGuards), expr));
+}
+
+bool
+PMmatchFlatWith (pattern *pat, node *expr)
+{
+    return (PMmatch (pat, PMMflatPrf (PMMisAfterguard), expr));
 }
 
 #undef DBUG_PREFIX
