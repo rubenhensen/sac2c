@@ -1100,6 +1100,7 @@ RWRdoRegionAwareReuseCandidateInference (node *with, node *fundef)
                     cand = TBmakeExprs (INFO_RC (arg_info), NULL);
                     INFO_RC (arg_info) = NULL;
                     hotpart = INBdoIdentifyNoopBranch (hotpart);
+                    WITH_HASRC (with) = TRUE;
                 }
 
                 /* Clean up */
@@ -1564,6 +1565,7 @@ RWRprf (node *arg_node, info *arg_info)
                      * an inplace select/update. Therefore, there cannot be intersection.
                      */
                     if (!MatrixEqual (write_fas, read_fas)) {
+                        logical_op_t cond_relation = LO_and;
                         /*
                          * If the array access is within a conditional (indicated by a
                          * non-NULL INFO_CONVAR), nr_conds stores the number of
@@ -1576,6 +1578,7 @@ RWRprf (node *arg_node, info *arg_info)
                                           != ID_AVIS (INFO_CONDVAR (arg_info))),
                                          "Found condvar with null IE!");
                             nr_conds = IE_NR_ENTRIES (ie);
+                            cond_relation = IE_LOP (ie);
                         }
 
                         /*
@@ -1584,7 +1587,7 @@ RWRprf (node *arg_node, info *arg_info)
                          * by write and read access matrix. Only all of them produce no
                          * intersection can we conclude that there is not intersection.
                          */
-                        if (IE_LOP (ie) == LO_and) {
+                        if (cond_relation == LO_and) {
                             /*
                              * If the logical relationship between all
                              * equlities/inequalities is 'AND', we only need to construct
@@ -1592,23 +1595,19 @@ RWRprf (node *arg_node, info *arg_info)
                              * stemed from both withloop bounds and conditional
                              * predicates.
                              */
+                            /* Columns */ /* Rows */
                             constraints
                               = NewMatrix (level + extids + 2, level * 2 + nr_conds);
+                            constraints = InitConstraints (constraints, TRUE, NULL,
+                                                           level * 2, -1, arg_info);
                             for (i = 0; i < nr_conds; i++) {
-                                if (i == 0) {
-                                    constraints
-                                      = InitConstraints (constraints, TRUE, ie, level * 2,
-                                                         i, arg_info);
-                                } else {
-                                    constraints
-                                      = InitConstraints (constraints, FALSE, ie,
-                                                         level * 2, i, arg_info);
-                                }
+                                constraints = InitConstraints (constraints, FALSE, ie,
+                                                               level * 2, i, arg_info);
                             }
                             intersected
                               = CheckIntersection (constraints, write_fas, read_fas);
                             FreeMatrix (constraints);
-                        } else if (IE_LOP (ie) == LO_or) {
+                        } else if (cond_relation == LO_or) {
                             /*
                              * If the logical relationship between all
                              * equlities/inequalities is 'OR', we need to construct one
@@ -1618,18 +1617,19 @@ RWRprf (node *arg_node, info *arg_info)
                              * same. Only when all of them produce no intersection can we
                              * conclude that there is not intersection.
                              */
+                            constraints = NewMatrix (level + extids + 2, level * 2 + 1);
+                            constraints = InitConstraints (constraints, TRUE, NULL,
+                                                           level * 2, -1, arg_info);
                             for (i = 0; i < nr_conds; i++) {
-                                constraints
-                                  = NewMatrix (level + extids + 2, level * 2 + 1);
-                                constraints = InitConstraints (constraints, TRUE, ie,
+                                constraints = InitConstraints (constraints, FALSE, ie,
                                                                level * 2, i, arg_info);
                                 intersected
                                   = (intersected
                                      || CheckIntersection (constraints, write_fas,
                                                            read_fas));
-                                FreeMatrix (constraints);
+                                MatrixClearRow (constraints, level * 2);
                             }
-                        } else if (IE_LOP (ie) == LO_not) {
+                        } else if (cond_relation == LO_not) {
                             DBUG_ASSERT (0,
                                          "Logical operator 'not' is not supported yet!");
                         } else {
