@@ -117,7 +117,7 @@ findCorrespondingArg (node *avis, node *ids, node *exprs)
         exprs = EXPRS_NEXT (exprs);
     }
 
-    if (avis == IDS_AVIS (ids)) {
+    if ((avis == IDS_AVIS (ids)) && (exprs != NULL)) {
         expr = EXPRS_EXPR (exprs);
     } else {
         expr = NULL;
