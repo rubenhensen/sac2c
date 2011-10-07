@@ -544,8 +544,12 @@ IDCavis (node *arg_node, info *arg_info)
         AVIS_SUBST (arg_node) = NULL;
         if (NODE_TYPE (AVIS_DECL (arg_node)) == N_arg) {
             AVIS_POS (arg_node) = INFO_COUNTER (arg_info);
+            INFO_COUNTER (arg_info)++;
             /**
-             * do NOT increment counter here as all args are tagged 1!
+             * Although we do not need to increment the counter here as all args
+             * could just be tagged as 1, we do so in order to make sure that
+             * the first assigned var has a higher number than the args
+             * (see bug 877 as a relevant example).
              */
         }
         break;
