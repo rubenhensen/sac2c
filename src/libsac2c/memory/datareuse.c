@@ -320,6 +320,33 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                             if (ID_AVIS (idx) == ID_AVIS (selidx)) {
                                 inplace = TRUE;
                             }
+
+                            if ((AVIS_SSAASSIGN (ID_AVIS (selidx)) != NULL)
+                                && (NODE_TYPE (
+                                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (selidx))))
+                                    == N_prf)
+                                && (PRF_PRF (
+                                      ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (selidx))))
+                                    == F_fill)) {
+                                node *idxs2offset = PRF_ARG1 (
+                                  ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (selidx))));
+                                if ((NODE_TYPE (idxs2offset) == N_prf)
+                                    && (PRF_PRF (idxs2offset) == F_idxs2offset)) {
+                                    node *withids = INFO_IVIDS (arg_info);
+                                    node *prf_ids = PRF_EXPRS2 (idxs2offset);
+                                    while (withids != NULL) {
+                                        inplace = TRUE;
+                                        if (prf_ids == NULL
+                                            || ID_AVIS (EXPRS_EXPR (withids))
+                                                 != ID_AVIS (EXPRS_EXPR (prf_ids))) {
+                                            inplace = FALSE;
+                                            break;
+                                        }
+                                        withids = EXPRS_NEXT (withids);
+                                        prf_ids = EXPRS_NEXT (prf_ids);
+                                    }
+                                }
+                            }
                         }
 
                         submem = FindSubAllocRoot (INFO_SUBLUT (arg_info), ID_AVIS (mem));
