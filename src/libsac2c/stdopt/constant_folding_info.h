@@ -21,8 +21,6 @@ struct INFO {
     node *let;
     node *part;
     bool remassign;
-    bool lacfunok;
-    bool travinlac;
     bool doingextrema;
 };
 
@@ -41,6 +39,4 @@ struct INFO {
 #define INFO_LET(n) (n->let)
 #define INFO_PART(n) (n->part)
 
-#define INFO_LACFUNOK(n) (n->lacfunok)
-#define INFO_TRAVINLAC(n) (n->travinlac)
 #define INFO_DOINGEXTREMA(n) (n->doingextrema)

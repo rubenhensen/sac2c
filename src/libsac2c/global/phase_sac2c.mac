@@ -694,8 +694,8 @@ CYCLEPHASEFUNOLD (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes,
 CYCLEPHASEFUNOLD (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes,
                   global.optimize.dotup, opt, scyc)
 
-CYCLEPHASEFUNOLD (cf, "Applying constant folding", CFdoConstantFolding,
-                  global.optimize.docf, opt, scyc)
+CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
+               opt, scyc)
 
 CYCLEPHASEFUNOLD (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp,
                   opt, scyc)

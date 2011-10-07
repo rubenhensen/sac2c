@@ -150,9 +150,6 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_LACFUNOK (result) = TRUE;
-    INFO_TRAVINLAC (result) = FALSE;
-
     INFO_NUM_IDS_SOFAR (result) = 0;
 
     INFO_LHSTYPE (result) = NULL;
@@ -228,10 +225,6 @@ CFdoConstantFolding (node *arg_node)
     DBUG_ENTER ();
 
     arg_info = MakeInfo ();
-
-    if (N_fundef == NODE_TYPE (arg_node)) {
-        INFO_LACFUNOK (arg_info) = FALSE;
-    }
 
     TRAVpush (TR_cf);
     arg_node = TRAVdo (arg_node, (info *)arg_info);
@@ -580,10 +573,7 @@ CFfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if ((FUNDEF_BODY (arg_node) != NULL)
-        && (!FUNDEF_ISLACFUN (arg_node) || INFO_LACFUNOK (arg_info)
-            || INFO_TRAVINLAC (arg_info))) {
-
+    if ((FUNDEF_BODY (arg_node) != NULL)) {
         old_fundef = INFO_FUNDEF (arg_info);
         old_topblock = INFO_TOPBLOCK (arg_info);
         old_vardecs = INFO_VARDECS (arg_info);
@@ -610,10 +600,9 @@ CFfundef (node *arg_node, info *arg_info)
             RMVdoRemoveVardecsOneFundef (arg_node);
         }
     }
-    if (!INFO_TRAVINLAC (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    }
+
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1151,31 +1140,6 @@ CFprf (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *CFap( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-CFap (node *arg_node, info *arg_info)
-{
-    bool old_til;
-
-    DBUG_ENTER ();
-
-    if (!INFO_LACFUNOK (arg_info)
-        && (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))
-            || (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))
-                && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))))) {
-        old_til = INFO_TRAVINLAC (arg_info);
-        INFO_TRAVINLAC (arg_info) = TRUE;
-        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-        INFO_TRAVINLAC (arg_info) = old_til;
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *CFwith( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
@@ -1236,7 +1200,6 @@ CFcode (node *arg_node, info *arg_info)
      * Do not traverse CODE_NEXT since codes are traversed through the Parts
      */
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
-
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);

@@ -25,7 +25,6 @@ extern node *CFlet (node *arg_node, info *arg_info);
 extern node *CFids (node *arg_node, info *arg_info);
 extern node *CFarray (node *arg_node, info *arg_info);
 extern node *CFprf (node *arg_node, info *arg_info);
-extern node *CFap (node *arg_node, info *arg_info);
 extern node *CFwith (node *arg_node, info *arg_info);
 extern node *CFpart (node *arg_node, info *arg_info);
 extern node *CFcode (node *arg_node, info *arg_info);
