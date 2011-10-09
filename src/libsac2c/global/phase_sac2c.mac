@@ -336,8 +336,8 @@ CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.opti
 CYCLEPHASEFUNOLD (linl, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, cyc)
 
-CYCLEPHASEFUNOLD (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp,
-                  opt, cyc)
+CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt,
+               cyc)
 
 CYCLEPHASEFUNOLD (wlpg, "Generating full with-loop partitions",
                   WLPGdoWlPartitionGeneration, global.optimize.dowlpg, opt, cyc)
@@ -487,8 +487,8 @@ CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.opti
 CYCLEPHASEFUNOLD (linl, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, saacyc)
 
-CYCLEPHASEFUNOLD (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp,
-                  opt, saacyc)
+CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt,
+               saacyc)
 
 CYCLEPHASEFUNOLD (wlpg, "Generating full with-loop partitions",
                   WLPGdoWlPartitionGeneration, global.optimize.dowlpg, opt, saacyc)
@@ -697,8 +697,8 @@ CYCLEPHASEFUNOLD (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes,
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
                opt, scyc)
 
-CYCLEPHASEFUNOLD (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp,
-                  opt, scyc)
+CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt,
+               scyc)
 
 CYCLEPHASEFUNOLD (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS,
                   opt, scyc)

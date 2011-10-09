@@ -65,13 +65,11 @@
  * INFO structure
  */
 struct INFO {
-    bool onefundef;
 };
 
 /*
  * INFO macros
  */
-#define INFO_ONEFUNDEF(n) (n->onefundef)
 
 /*
  * INFO functions
@@ -84,8 +82,6 @@ MakeInfo ()
     DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (info));
-
-    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -185,8 +181,6 @@ VPassign (node *arg_node, info *arg_info)
 node *
 VPfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
-
     DBUG_ENTER ();
 
     DBUG_PRINT ("traversing body of (%s) %s",
@@ -198,14 +192,8 @@ VPfundef (node *arg_node, info *arg_info)
                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                 FUNDEF_NAME (arg_node));
 
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
-
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -229,8 +217,6 @@ VPdoVarPropagation (node *arg_node)
     DBUG_ENTER ();
 
     arg_info = MakeInfo ();
-
-    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
 
     TRAVpush (TR_vp);
     arg_node = TRAVdo (arg_node, arg_info);
