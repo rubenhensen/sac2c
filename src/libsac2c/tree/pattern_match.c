@@ -668,11 +668,19 @@ skipVarDefs (node *expr)
     node *old_expr = NULL; /* ensures initial predicate */
     int i;
 
+    DBUG_PRINT_TAG ("PMM", PMINDENT "starting skipping");
     while (expr != old_expr) {
         old_expr = expr;
         i = 0;
-        while ((expr != NULL) && (mmode[i].fun != NULL)) {
+        while ((expr != NULL) && (expr == old_expr) && (mmode[i].fun != NULL)) {
+            DBUG_PRINT_TAG ("PMM", PMINDENT "applying aspect %d:", i);
             expr = mmode[i].fun (mmode[i].param, expr);
+            DBUG_PRINT_TAG ("PMM", PMINDENT "outcome: %s",
+                            (expr == NULL
+                               ? "skipping aborted"
+                               : (expr == old_expr ? "no skip" : "new expr:")));
+            DBUG_EXECUTE_TAG ("PMM", if ((expr != NULL) && (expr != old_expr))
+                                       PRTdoPrintNodeFile (stderr, expr););
             i++;
         }
         if (expr == NULL) {
