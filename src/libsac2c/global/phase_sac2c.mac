@@ -413,14 +413,14 @@ CYCLEPHASEFUNOLD (esdcse, "Applying common subexpression elimination (esd case)"
                    && (global.optimize.doal || global.optimize.dodl)),
                   opt, cyc)
 
-CYCLEPHASEFUNOLD (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
-                  global.optimize.doas, opt, cyc)
+CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
+               global.optimize.doas, opt, cyc)
 
 CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimization,
                global.optimize.doal, opt, cyc)
 
-CYCLEPHASEFUNOLD (dl, "Applying distributive law", DLdoDistributiveLawOptimization,
-                  global.optimize.dodl, opt, cyc)
+CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistributiveLawOptimization,
+               global.optimize.dodl, opt, cyc)
 
 CYCLEPHASEFUNOLD (uesd, "Reintroducing subtraction and division operators",
                   UESDdoUndoElimSubDiv,
@@ -566,8 +566,8 @@ CYCLEPHASEFUNOLD (esd, "Eliminating subtraction and division operators", ESDdoEl
                   global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                   opt, saacyc)
 
-CYCLEPHASEFUNOLD (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
-                  global.optimize.doas, opt, saacyc)
+CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
+               global.optimize.doas, opt, saacyc)
 
 CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)", CFdoConstantFolding,
                (global.optimize.docf && (global.optimize.doal || global.optimize.dodl)),
@@ -582,8 +582,8 @@ CYCLEPHASEFUNOLD (esdcse, "Applying common subexpression elimination (esd case)"
 CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimization,
                global.optimize.doal, opt, saacyc)
 
-CYCLEPHASEFUNOLD (dl, "Applying distributive law", DLdoDistributiveLawOptimization,
-                  global.optimize.dodl, opt, saacyc)
+CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistributiveLawOptimization,
+               global.optimize.dodl, opt, saacyc)
 
 CYCLEPHASEFUNOLD (uesd, "Reintroducing subtraction and division operators",
                   UESDdoUndoElimSubDiv,

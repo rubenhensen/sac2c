@@ -59,7 +59,6 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_PREASSIGN(n) ((n)->preassign)
 #define INFO_FUNDEF(n) ((n)->fundef)
 
@@ -75,7 +74,6 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_ONEFUNDEF (result) = FALSE;
     INFO_PREASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
@@ -259,38 +257,6 @@ Negate (node *arg_node, info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ASdoArithmeticSimplificationModule( node *arg_node)
- *
- * @brief starting point of arithmetic simplification for a module.
- *
- * @param arg_node - An N_module
- *
- * @return
- *
- *****************************************************************************/
-node *
-ASdoArithmeticSimplificationModule (node *arg_node)
-{
-    info *arg_info;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module, "AS called on non-N_module node");
-
-    arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = FALSE;
-
-    TRAVpush (TR_as);
-    arg_node = TRAVdo (arg_node, arg_info);
-    TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn node *ASdoArithmeticSimplification( node *arg_node)
  *
  * @brief starting point of arithmetic simplification for a function.
@@ -311,8 +277,6 @@ ASdoArithmeticSimplification (node *arg_node)
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "AS called on non-N_fundef node");
 
-    INFO_ONEFUNDEF (info) = TRUE;
-
     TRAVpush (TR_as);
     arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
@@ -325,7 +289,6 @@ ASdoArithmeticSimplification (node *arg_node)
 node *
 ASfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
 
     DBUG_ENTER ();
 
@@ -335,17 +298,10 @@ ASfundef (node *arg_node, info *arg_info)
                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                 FUNDEF_NAME (arg_node));
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
-    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
-
     INFO_FUNDEF (arg_info) = NULL;
 
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
