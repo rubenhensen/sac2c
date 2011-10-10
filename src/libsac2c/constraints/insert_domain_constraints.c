@@ -465,14 +465,14 @@ IDCwith (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     int rename_stack_pos;
 
+    rename_stack_pos = PBUFpos (INFO_RENAME_STACK (arg_info));
+
     /**
      * part needs to be traversed BEFORE code so that the N_ids of
      * the generator variable obtain the right AVIS_POS, i.e., one
      * that is smaller than any variable defined in the code.
      */
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-
-    rename_stack_pos = PBUFpos (INFO_RENAME_STACK (arg_info));
 
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
