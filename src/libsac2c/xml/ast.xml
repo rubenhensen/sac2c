@@ -8066,36 +8066,6 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="SubstLvl" inconstructor="no" >
-          <description>
-	  Used by IDC to mark the nesting level of with-loops.
-          </description>
-          <type name="Integer">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <phase name="idc" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="SubstCd" inconstructor="no" >
-          <type name="Integer">
-          <description>
-	  Used by IDC to identify the N_code of with-loops.
-          </description>
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <phase name="idc" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="Alt" inconstructor="no" >
           <type name="Link">
             <targets>
