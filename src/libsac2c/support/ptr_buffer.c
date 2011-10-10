@@ -106,6 +106,24 @@ PBUFsize (ptr_buf *s)
     DBUG_RETURN (s->size);
 }
 
+/******************************************************************************
+ *
+ * @fn  int PBUFpos(ptr_buf *s)
+ *
+ *   @brief  retrieve pos of given pointer buffer
+ *
+ *   @param  s
+ *   @return pos of the buffer
+ *
+ ******************************************************************************/
+
+int
+PBUFpos (ptr_buf *s)
+{
+    DBUG_ENTER ();
+    DBUG_RETURN (s->pos);
+}
+
 /*****************************************************************************
  *
  * @fn  void *PBUFptr(ptr_buf *s, int pos)
@@ -148,6 +166,31 @@ PBUFflush (ptr_buf *s)
     DBUG_ENTER ();
 
     s->pos = 0;
+    DBUG_PRINT ("pos of buffer %p reset to %d", s, s->pos);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * @fn  void PBUFflushFrom(ptr_buf *s, int pos)
+ *
+ *   @brief  flushes the given pointer buffer (no deallocation!) starting from
+ *           the position specified. If pos is bigger or equal to size nothing
+ *           happens!
+ *
+ *   @param  s
+ *
+ ******************************************************************************/
+
+void
+PBUFflushFrom (ptr_buf *s, int pos)
+{
+    DBUG_ENTER ();
+
+    if (pos < s->size) {
+        s->pos = pos;
+    }
     DBUG_PRINT ("pos of buffer %p reset to %d", s, s->pos);
 
     DBUG_RETURN ();

@@ -25,6 +25,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "ctinfo.h"
+#include "ptr_buffer.h"
 
 #include "insert_domain_constraints.h"
 
@@ -54,8 +55,7 @@ struct INFO {
     int counter;
     node *post;
     node *vardecs;
-    int level;
-    int code;
+    ptr_buf *ren_stack;
 };
 
 #define INFO_ALL(n) ((n)->all)
@@ -63,8 +63,7 @@ struct INFO {
 #define INFO_COUNTER(n) ((n)->counter)
 #define INFO_POSTASSIGN(n) ((n)->post)
 #define INFO_VARDECS(n) ((n)->vardecs)
-#define INFO_LEVEL(n) ((n)->level)
-#define INFO_CODE(n) ((n)->code)
+#define INFO_RENAME_STACK(n) ((n)->ren_stack)
 
 static info *
 MakeInfo ()
@@ -80,8 +79,7 @@ MakeInfo ()
     INFO_COUNTER (result) = 0;
     INFO_POSTASSIGN (result) = NULL;
     INFO_VARDECS (result) = NULL;
-    INFO_LEVEL (result) = 0;
-    INFO_CODE (result) = 0;
+    INFO_RENAME_STACK (result) = PBUFcreate (50);
 
     DBUG_RETURN (result);
 }
@@ -91,6 +89,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ();
 
+    INFO_RENAME_STACK (info) = PBUFfree (INFO_RENAME_STACK (info));
     info = MEMfree (info);
 
     DBUG_RETURN (info);
@@ -151,10 +150,26 @@ CreateNewVarAndInitiateRenaming (node *id, info *arg_info)
     INFO_VARDECS (arg_info) = TBmakeVardec (avis, INFO_VARDECS (arg_info));
 
     AVIS_SUBST (old_avis) = avis;
-    AVIS_SUBSTLVL (old_avis) = INFO_LEVEL (arg_info);
-    AVIS_SUBSTCD (old_avis) = INFO_CODE (arg_info);
+    INFO_RENAME_STACK (arg_info) = PBUFadd (INFO_RENAME_STACK (arg_info), old_avis);
 
     DBUG_RETURN (avis);
+}
+
+static ptr_buf *
+EraseRenamings (ptr_buf *stack, int pos)
+{
+    DBUG_ENTER ();
+    int i;
+    node *avis;
+
+    for (i = PBUFpos (stack) - 1; i > pos; i--) {
+        avis = (node *)PBUFptr (stack, i);
+        AVIS_SUBST (avis) = NULL;
+    }
+
+    PBUFflushFrom (stack, pos);
+
+    DBUG_RETURN (stack);
 }
 
 static node *
@@ -448,6 +463,7 @@ node *
 IDCwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
+    int rename_stack_pos;
 
     /**
      * part needs to be traversed BEFORE code so that the N_ids of
@@ -455,9 +471,14 @@ IDCwith (node *arg_node, info *arg_info)
      * that is smaller than any variable defined in the code.
      */
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    INFO_LEVEL (arg_info)++;
+
+    rename_stack_pos = PBUFpos (INFO_RENAME_STACK (arg_info));
+
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    INFO_LEVEL (arg_info)--;
+
+    INFO_RENAME_STACK (arg_info)
+      = EraseRenamings (INFO_RENAME_STACK (arg_info), rename_stack_pos);
+
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -465,23 +486,23 @@ IDCwith (node *arg_node, info *arg_info)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *IDCwithid( node *arg_node, info *arg_info)
+ * @fn node *IDCpart( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-IDCwithid (node *arg_node, info *arg_info)
+IDCpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
     /**
      * for proper renaming of upper and lower bounds, we need to make sure
-     * the INFO_LEVEL in the parts need to reflect the outer level.
-     * However, the withid(s) should be traversed with the inner level!!
-     * see bug 417 for details.
+     * that no further constraints are built between them and any withid.
+     * Hence, we traverse the withid(s) AFTER seeing all parts.
+     * See bug 417 for details.
      */
-    INFO_LEVEL (arg_info)++;
-    arg_node = TRAVcont (arg_node, arg_info);
-    INFO_LEVEL (arg_info)--;
+    PART_GENERATOR (arg_node) = TRAVdo (PART_GENERATOR (arg_node), arg_info);
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+    PART_WITHID (arg_node) = TRAVdo (PART_WITHID (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -502,9 +523,7 @@ IDCcode (node *arg_node, info *arg_info)
     CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
 
     if (CODE_NEXT (arg_node) != NULL) {
-        INFO_CODE (arg_info)++;
         CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-        INFO_CODE (arg_info)--;
     }
 
     DBUG_RETURN (arg_node);
@@ -520,9 +539,7 @@ IDCid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    while ((AVIS_SUBST (ID_AVIS (arg_node)) != NULL)
-           && (AVIS_SUBSTLVL (ID_AVIS (arg_node)) <= INFO_LEVEL (arg_info))
-           && (AVIS_SUBSTCD (ID_AVIS (arg_node)) == INFO_CODE (arg_info))) {
+    while (AVIS_SUBST (ID_AVIS (arg_node)) != NULL) {
         ID_AVIS (arg_node) = AVIS_SUBST (ID_AVIS (arg_node));
     }
 

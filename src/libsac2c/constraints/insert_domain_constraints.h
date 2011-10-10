@@ -20,7 +20,7 @@ extern node *IDCassign (node *arg_node, info *arg_info);
 extern node *IDClet (node *arg_node, info *arg_info);
 extern node *IDCids (node *arg_node, info *arg_info);
 extern node *IDCwith (node *arg_node, info *arg_info);
-extern node *IDCwithid (node *arg_node, info *arg_info);
+extern node *IDCpart (node *arg_node, info *arg_info);
 extern node *IDCcode (node *arg_node, info *arg_info);
 extern node *IDCid (node *arg_node, info *arg_info);
 extern node *IDCavis (node *arg_node, info *arg_info);
