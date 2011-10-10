@@ -160,7 +160,6 @@ struct INFO {
     node *funargs;
     node *preassign;
     bool travrhs;
-    bool onefundef;
     node *lhs;
     node *vardecs;
 };
@@ -172,7 +171,6 @@ struct INFO {
 #define INFO_FUNARGS(n) ((n)->funargs)
 #define INFO_PREASSIGN(n) ((n)->preassign)
 #define INFO_TRAVRHS(n) ((n)->travrhs)
-#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_VARDECS(n) ((n)->vardecs)
 
@@ -192,7 +190,6 @@ MakeInfo ()
     INFO_FUNARGS (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_TRAVRHS (result) = FALSE;
-    INFO_ONEFUNDEF (result) = FALSE;
     INFO_LHS (result) = FALSE;
     INFO_VARDECS (result) = NULL;
 
@@ -230,7 +227,6 @@ DLdoDistributiveLawOptimization (node *arg_node)
     DBUG_ENTER ();
 
     arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
 
     TRAVpush (TR_dl);
     arg_node = TRAVdo (arg_node, arg_info);
@@ -998,7 +994,6 @@ EliminateEmptyProducts (node *mop, simpletype st)
 node *
 DLfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
 
     DBUG_ENTER ();
 
@@ -1027,14 +1022,8 @@ DLfundef (node *arg_node, info *arg_info)
           = ClearDLActiveFlags (BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
     }
 
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
-
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
