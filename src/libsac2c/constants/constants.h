@@ -97,7 +97,6 @@ extern node *COconstant2AST (constant *a);
 extern constant *COaST2Constant (node *a);
 extern bool COisConstant (node *a);
 extern bool COcompareConstants (constant *c1, constant *c2);
-extern constant *COvect2offset (constant *shp, constant *iv);
 
 /* basic value compares, if all==true the condition must hold for all elements */
 extern bool COisZero (constant *a, bool all);
@@ -127,6 +126,7 @@ extern constant *COmodarray_AxVxA (constant *a, constant *idx, constant *elem);
 extern constant *COidx_modarray_AxSxS (constant *a, constant *idx, constant *elem);
 extern constant *COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem);
 extern constant *COcat (constant *a, constant *b, constant *);
+extern constant *COvect2offset (constant *shp, constant *iv);
 /* missing: not yet implemented
 extern constant *  CORotate  ( constant *dim, constant *num, constant *a);
 */
@@ -160,6 +160,7 @@ extern constant *COgt (constant *a, constant *b, constant *);
 
 /* unary ops */
 extern constant *COnot (constant *a, constant *, constant *);
+extern constant *COtobool (constant *a, constant *, constant *);
 extern constant *COtob (constant *a, constant *, constant *);
 extern constant *COtos (constant *a, constant *, constant *);
 extern constant *COtoi (constant *a, constant *, constant *);

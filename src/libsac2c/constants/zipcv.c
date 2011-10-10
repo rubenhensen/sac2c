@@ -100,6 +100,23 @@
         DBUG_RETURN ();                                                                  \
     }
 
+#define COzipCvTOBOOLTEMPLATE(fun, fun_ext, arg_t, arg_ext, res_t)                       \
+    void COzipCv##arg_ext##fun_ext (void *arg1, int pos1, void *arg2, int pos2,          \
+                                    void *res, int res_pos)                              \
+    {                                                                                    \
+        DBUG_ENTER ();                                                                   \
+        if (0 == (((arg_t *)arg1)[pos1])) {                                              \
+            ((res_t *)res)[res_pos] = false;                                             \
+        } else {                                                                         \
+            if (1 == (((arg_t *)arg1)[pos1])) {                                          \
+                i ((res_t *)res)[res_pos] = true;                                        \
+            } else {                                                                     \
+                DBUG_ASSERT (FALSE, "tobool() given non-Boolean-valued argument")        \
+                ((res_t *)res)[res_pos] = false;                                         \
+            }                                                                            \
+        }                                                                                \
+        DBUG_RETURN ();                                                                  \
+    }
 /* macro expansion for all basetypes - or dummy if not useful */
 #define MAP_NUMxNUM_NUM(fun, fname)                                                      \
     COzipCvTEMPLATE (fun, fname, unsigned char, UByte, unsigned char)                    \
@@ -362,6 +379,11 @@ MAP_NUMxNUM_NUM (+, Plus)
 
                                                         MAP_ABS_NUM_NUM (NOP, Abs)
 
-                                                          MAP_NUM_NUM (-, Neg)
+#ifdef RBECANTCODE
+                                                          MAP_TOBOOL_NUM_NUM (NOP, (int),
+                                                                              xxx, bool)
+#endif //  RBECANTCODE
+
+                                                            MAP_NUM_NUM (-, Neg)
 
 #undef DBUG_PREFIX

@@ -275,6 +275,14 @@ static const zipcvfunptr zipcv_tos_init[] = {
 #undef TYP_IFzipcv
 };
 
+#ifdef RBECANTCODE
+static const zipcvfunptr zipcv_tobool[] = {
+#define TYP_IFzipcv(fun) fun##Tobool
+#include "type_info.mac"
+#undef TYP_IFzipcv
+};
+#endif // RBECANTCODE
+
 static const zipcvfunptr zipcv_toi_init[] = {
 #define TYP_IFzipcv(fun) fun##Toi
 #include "type_info.mac"

@@ -608,6 +608,29 @@ COtos (constant *a, constant *tmp1, constant *tmp2)
     DBUG_RETURN (res);
 }
 
+#ifdef RBECANTCODE
+/******************************************************************************
+ *
+ * function:
+ *    constant *COtobool( constant *a)
+ *
+ * description:
+ *    returns a constant whose elements are element-wise converted to bool.
+ *
+ ******************************************************************************/
+
+constant *
+COtobool (constant *a, constant *tmp1, constant *tmp2)
+{
+    constant *res;
+
+    DBUG_ENTER ();
+    res = COzipUnary (global.zipcv_tobool, a, T_bool);
+    DBUG_EXECUTE (COINTdbugPrintUnaryOp ("COtobool", a, res));
+    DBUG_RETURN (res);
+}
+#endif // RBECANTCODE
+
 /******************************************************************************
  *
  * function:
