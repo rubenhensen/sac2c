@@ -782,13 +782,6 @@ GLOBAL (int, break_cycle_specifier, 1)
  * a particular (optimization) loop.
  */
 
-GLOBAL (genlib_flags_t, genlib, genlib_init)
-/*
- * Specify interfaces to generate from SAC modules.
- * Init: nothing, but changed to default standard SAC library
- *       if commandline switch is not used.
- */
-
 GLOBAL (int, padding_overhead_limit, 10)
 /*
  * Limit for additional resource allocation due to array padding in

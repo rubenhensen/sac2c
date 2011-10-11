@@ -539,15 +539,6 @@ static runtimecheck_flags_t runtimecheck_none_init = {
 };
 
 /*
- * Initialize library generation flags from flags.mac
- */
-
-static genlib_flags_t genlib_init = {
-#define GENLIBdefault(default) default,
-#include "flags.mac"
-};
-
-/*
  * Initialize  primitive function tables
  */
 

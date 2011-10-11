@@ -719,11 +719,6 @@ FMGRsetFileNames (node *module)
             global.targetdir = "";
         }
     } else {
-        if (global.doprofile && global.genlib.sac) {
-            CTIwarn ("Option -p turned off for module/class compilation");
-            global.doprofile = FALSE;
-        }
-
         if (global.sacfilename != NULL) {
             buffer = STRcat (NSgetName (MODULE_NAMESPACE (module)), ".sac");
 

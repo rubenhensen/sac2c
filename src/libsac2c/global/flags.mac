@@ -173,32 +173,3 @@ RTC (heap, 'h', FALSE)
 #undef RTC
 
 /*************************************************************/
-
-/*
- * Library generation flags
- */
-
-#ifndef GENLIBflag
-#define GENLIBflag(flag)
-#endif
-
-#ifndef GENLIBstr
-#define GENLIBstr(str)
-#endif
-
-#ifndef GENLIBdefault
-#define GENLIBdefault(default)
-#endif
-
-#ifndef GENLIB
-#define GENLIB(flag, str, default)                                                       \
-    GENLIBflag (flag) GENLIBstr (str) GENLIBdefault (default)
-#endif
-
-GENLIB (sac, "sac", FALSE)
-GENLIB (c, "c", FALSE)
-
-#undef GENLIBflag
-#undef GENLIBstr
-#undef GENLIBdefault
-#undef GENLIB

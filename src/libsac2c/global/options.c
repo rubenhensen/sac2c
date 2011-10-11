@@ -257,19 +257,6 @@ OPTcheckOptionConsistency (void)
         CTIerror ("Functional Parallelism only works when MT is enabled");
     }
 
-    /*
-     * commandline switch for library generation not used,
-     * set it to default and generate a standard SAC Library
-     */
-    if (!global.genlib.c && !global.genlib.sac) {
-        global.genlib.sac = TRUE;
-    }
-
-    if (global.genlib.c && (global.mtmode != MT_none)) {
-        CTIerror ("Multithreading is not yet available when compiling for "
-                  "a C-library.");
-    }
-
     if (global.optimize.dosaa && !global.optimize.dodcr) {
         CTIwarn ("Symbolic array attributes (SAA) require dead code"
                  "removal (DCR).\n"
@@ -579,17 +566,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      */
 
     ARGS_FLAG ("g", global.cc_debug = TRUE);
-
-    ARGS_OPTION_BEGIN ("genlib")
-    {
-        ARG_CHOICE_BEGIN ();
-
-#define GENLIB(flag, str, default) ARG_CHOICE (str, global.genlib.flag = default);
-#include "flags.mac"
-
-        ARG_CHOICE_END ();
-    }
-    ARGS_OPTION_END ("genlib");
 
     /*
      * Options starting with hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh
