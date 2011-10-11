@@ -340,8 +340,8 @@ EMLAOfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("Traversing function %s", FUNDEF_NAME (arg_node));
 
         if (FUNDEF_BODY (arg_node) != NULL) {
-            node *old_args;
-            dfmask_base_t *maskbase;
+            node *old_args = NULL;
+            dfmask_base_t *maskbase = NULL;
             info *info;
             info = MakeInfo (arg_node);
 

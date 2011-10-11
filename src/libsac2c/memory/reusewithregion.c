@@ -630,7 +630,7 @@ ActOnId (node *avis, info *arg_info)
 static int
 GetColumn (cuda_index_t *idx, int cols, info *arg_info)
 {
-    int col;
+    int col = -1;
 
     DBUG_ENTER ();
 
@@ -830,7 +830,7 @@ InitReadFas (IntMatrix fas, int read_dim, node *arr, info *arg_info)
 {
     index_exprs_t *ie;
     cuda_index_t *indices;
-    int i, j, rows, cols, x, y;
+    int i, j, rows, cols, x = -1, y;
 
     DBUG_ENTER ();
 
@@ -1453,7 +1453,7 @@ RWRprf (node *arg_node, info *arg_info)
     switch (PRF_PRF (arg_node)) {
     case F_sel_VxA:
         if (INFO_MODE (arg_info) == TR_normal) {
-            IntMatrix constraints, write_fas, read_fas;
+            IntMatrix constraints, write_fas = NULL, read_fas = NULL;
             node *iv = PRF_ARG1 (arg_node);
             node *arr = PRF_ARG2 (arg_node);
             node *iv_ssaassign, *ids, *avis;
