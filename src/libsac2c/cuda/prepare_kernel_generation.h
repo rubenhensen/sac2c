@@ -13,5 +13,6 @@ extern node *PKNLGgenarray (node *arg_node, info *arg_info);
 extern node *PKNLGassign (node *arg_node, info *arg_info);
 extern node *PKNLGlet (node *arg_node, info *arg_info);
 extern node *PKNLGprf (node *arg_node, info *arg_info);
+extern node *PKNLGcond (node *arg_node, info *arg_info);
 
 #endif

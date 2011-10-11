@@ -175,7 +175,7 @@ CreatePrf (char *name, simpletype sty, shape *shp, prf pfun, node *args, node **
         AVIS_SSAASSIGN (avis) = new_assign;
     }
 
-    if (&assigns_p == NULL) {
+    if (*assigns_p == NULL) {
         *assigns_p = new_assign;
     } else {
         *assigns_p = TCappendAssign (*assigns_p, new_assign);

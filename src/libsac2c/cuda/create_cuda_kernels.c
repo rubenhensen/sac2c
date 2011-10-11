@@ -716,7 +716,13 @@ CUKNLpart (node *arg_node, info *arg_info)
     if (INFO_COLLECT (arg_info)) {
         INFO_PART (arg_info) = arg_node;
         /* For each cudarizable partition, we create a CUDA kernel */
-        if (PART_CUDARIZABLE (arg_node)) {
+        /*
+            if( ( !global.optimize.dorwr && PART_CUDARIZABLE( arg_node)) ||
+                ( global.optimize.dorwr && !PART_ISCOPY( arg_node) && PART_CUDARIZABLE(
+           arg_node))) {
+        */
+        if ((!WITH_HASRC (INFO_WITH (arg_info)) || !PART_ISCOPY (arg_node))
+            && PART_CUDARIZABLE (arg_node)) {
             /* We create a lookup table for the traversal of each partition */
             INFO_LUT (arg_info) = LUTgenerateLut ();
 
@@ -788,7 +794,7 @@ CUKNLpart (node *arg_node, info *arg_info)
              * is needed. */
             if (PART_CODE (arg_node) != NULL && INFO_D2DTRANSFER (arg_info) == NULL) {
                 old_ids = INFO_LETIDS (arg_info);
-                PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
+                // PART_CODE( arg_node) = TRAVopt( PART_CODE( arg_node), arg_info);
                 INFO_LETIDS (arg_info) = old_ids;
             }
         }
@@ -967,11 +973,21 @@ CUKNLwithid (node *arg_node, info *arg_info)
                 DBUG_ASSERT (new_mem_avis != mem_avis,
                              "Withop->mem has not been traversed before!");
 
-                prf_wlidxs_args
-                  = TBmakeExprs (TBmakeId (new_mem_avis), DUPdoDupTree (new_wlids));
+                if (TYisAKS (AVIS_TYPE (new_mem_avis))) {
+                    prf_wlidxs_args = TBmakeExprs (SHshape2Array (TYgetShape (
+                                                     AVIS_TYPE (new_mem_avis))),
+                                                   DUPdoDupTree (new_wlids));
 
-                /* Create primitives F_array_idxs2offset */
-                prf_wlidxs = TBmakePrf (F_array_idxs2offset, prf_wlidxs_args);
+                    /* Create primitives F_array_idxs2offset */
+                    prf_wlidxs = TBmakePrf (F_idxs2offset, prf_wlidxs_args);
+                } else {
+                    prf_wlidxs_args
+                      = TBmakeExprs (TBmakeId (new_mem_avis), DUPdoDupTree (new_wlids));
+
+                    /* Create primitives F_array_idxs2offset */
+                    prf_wlidxs = TBmakePrf (F_array_idxs2offset, prf_wlidxs_args);
+                }
+
                 INFO_PRFWLIDXS (arg_info)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL), prf_wlidxs),
                                   INFO_PRFWLIDXS (arg_info));

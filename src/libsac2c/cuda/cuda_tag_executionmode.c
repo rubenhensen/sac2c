@@ -122,13 +122,13 @@ IsIdCudaDefined (node *id, info *arg_info)
 {
     bool res = FALSE;
     node *ssa;
-    ntype *type;
+    // ntype *type;
 
     DBUG_ENTER ();
 
     /* Get the SSAASSIGN of this N_id */
     ssa = ID_SSAASSIGN (id);
-    type = ID_NTYPE (id);
+    // type = ID_NTYPE( id);
 
     /* If this N_id is defined by an N_assign that needs to be
      * executed on CUDA, the N_assign referenced this N_id will

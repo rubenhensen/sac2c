@@ -1123,6 +1123,7 @@ typedef struct REUSE_INFO_T {
 #define IDX_THREADIDX 3
 #define IDX_LOOPIDX 4
 #define IDX_EXTID 5
+#define IDX_WITHIDS 6 /* This type is only used in reusewithregion.c */
 
 #define ACCTY_REUSE 0
 #define ACCTY_COALESCE 1

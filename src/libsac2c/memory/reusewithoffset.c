@@ -32,6 +32,7 @@
 #include "memory.h"
 #include "free.h"
 #include "new_types.h"
+#include "constants.h"
 
 /*
  * INFO structure
@@ -166,6 +167,24 @@ IdentifyOtherPart (node *with, node *rc)
     DBUG_RETURN (hotpart);
 }
 
+static node *
+AnnotateCopyPart (node *with, node *rc)
+{
+    node *part = WITH_PART (with);
+
+    DBUG_ENTER ();
+
+    while (part != NULL) {
+        if (IsNoopPart (part, rc)) {
+            PART_ISCOPY (part) = TRUE;
+        }
+
+        part = PART_NEXT (part);
+    }
+
+    DBUG_RETURN (with);
+}
+
 /******************************************************************************
  *
  * Offset-aware With-Loop reuse candidate inference (rwo_tab)
@@ -228,8 +247,12 @@ RWOdoOffsetAwareReuseCandidateInference (node *with)
                 CODE_NEXT (hotcode) = oldnext;
 
                 if (INFO_RC (arg_info) != NULL) {
+                    if (global.backend == BE_cuda) {
+                        with = AnnotateCopyPart (with, INFO_RC (arg_info));
+                    }
                     cand = TBmakeExprs (INFO_RC (arg_info), NULL);
                     INFO_RC (arg_info) = NULL;
+                    WITH_HASRC (with) = TRUE;
                 }
 
                 arg_info = FreeInfo (arg_info);
@@ -339,9 +362,11 @@ RWOprf (node *arg_node, info *arg_info)
 
                 while (elem != NULL) {
                     if ((NODE_TYPE (EXPRS_EXPR (elem)) == N_id)
-                        && (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (elem))) != NULL)
-                        && (NODE_TYPE (EXPRS_EXPR (gwelem)) == N_num)) {
-                        int gwval = NUM_VAL (EXPRS_EXPR (gwelem));
+                        && (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (elem))) != NULL) &&
+                        // ( NODE_TYPE( EXPRS_EXPR( gwelem)) == N_num)) {
+                        (COisConstant (EXPRS_EXPR (gwelem)))) {
+                        // int gwval = NUM_VAL( EXPRS_EXPR( gwelem));
+                        int gwval = COconst2Int (COaST2Constant (EXPRS_EXPR (gwelem)));
                         rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (elem))));
 
                         if ((NODE_TYPE (rhs) == N_prf)
@@ -350,8 +375,12 @@ RWOprf (node *arg_node, info *arg_info)
 
                             if ((NODE_TYPE (PRF_ARG1 (rhs)) == N_id)
                                 && (ID_AVIS (PRF_ARG1 (rhs)) == IDS_AVIS (ids))
-                                && (NODE_TYPE (PRF_ARG2 (rhs)) == N_num)
-                                && (abs (NUM_VAL (PRF_ARG2 (rhs))) >= gwval)) {
+                                && (((NODE_TYPE (PRF_ARG2 (rhs)) == N_num)
+                                     && (abs (NUM_VAL (PRF_ARG2 (rhs))) >= gwval))
+                                    || ((COisConstant (PRF_ARG2 (rhs)))
+                                        && (abs (COconst2Int (
+                                              COaST2Constant (PRF_ARG2 (rhs))))
+                                            >= gwval)))) {
                                 DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
                                 traverse = FALSE;
                             }

@@ -1053,6 +1053,9 @@ SUBPHASE (frc, "Removing invalid reuse candidates", FRCdoFilterReuseCandidates,
 SUBPHASE (sr, "Static reuse", EMSRdoStaticReuse,
           global.optimize.douip &&global.optimize.dosrf, mem)
 
+SUBPHASE (lao, "Applying loop allocation optimization", EMLAOdoLoopAllocationOptimization,
+          global.optimize.dosrf &&global.optimize.dolao, mem)
+
 SUBPHASE (rb, "Introducing reuse branches", EMRBdoReuseBranching,
           global.optimize.doipc || (global.optimize.douip && global.optimize.dodr), mem)
 

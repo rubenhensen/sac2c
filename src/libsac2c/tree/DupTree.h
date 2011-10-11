@@ -169,6 +169,8 @@ extern node *DUPwlgrid (node *arg_node, info *arg_info);
 extern node *DUPwith3 (node *arg_node, info *arg_info);
 extern node *DUPrange (node *arg_node, info *arg_info);
 
+extern cuda_index_t *DUPCudaIndex (cuda_index_t *index);
+
 /* pre- and post-processing during traversal */
 extern node *DUPtreeTravPre (node *arg_node, info *arg_info);
 extern node *DUPtreeTravPost (node *arg_node, info *arg_info);

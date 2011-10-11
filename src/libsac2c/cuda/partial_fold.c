@@ -229,7 +229,7 @@ CreatePrfOrConst (bool isprf, char *name, simpletype sty, shape *shp, prf pfun,
         AVIS_SSAASSIGN (avis) = new_assign;
     }
 
-    if (&assigns_p == NULL) {
+    if (*assigns_p == NULL) {
         *assigns_p = new_assign;
     } else {
         *assigns_p = TCappendAssign (*assigns_p, new_assign);
@@ -2002,7 +2002,7 @@ ATravCode (node *arg_node, info *arg_info)
 node *
 ATravPart (node *arg_node, info *arg_info)
 {
-    node *lhs_avis, *cexpr, *ssa_assign, *defining_rhs;
+    node *cexpr, *ssa_assign, *defining_rhs;
     int cat_dim;
 
     DBUG_ENTER ();
@@ -2011,7 +2011,6 @@ ATravPart (node *arg_node, info *arg_info)
     DBUG_ASSERT (PART_NEXT (arg_node) == NULL,
                  "Found fold withloop with more than one partition!");
 
-    lhs_avis = IDS_AVIS (INFO_LHS (arg_info));
     cexpr = EXPRS_EXPR (PART_CEXPRS (arg_node));
 
     /* This is the defining assignment of the result elment of

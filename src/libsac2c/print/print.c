@@ -2674,6 +2674,10 @@ PRTcond (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
+    if (global.optimize.dorwr && COND_ISTHENNOOP (arg_node)) {
+        fprintf (global.outfile, "/* Noop branch */\n");
+    }
+
     fprintf (global.outfile, "if ");
 
     fprintf (global.outfile, "(");
@@ -2683,6 +2687,11 @@ PRTcond (node *arg_node, info *arg_info)
     if (COND_THEN (arg_node) != NULL) {
         TRAVdo (COND_THEN (arg_node), arg_info);
         fprintf (global.outfile, "\n");
+    }
+
+    if (global.optimize.dorwr && COND_ISELSENOOP (arg_node)) {
+        INDENT;
+        fprintf (global.outfile, "/* Noop branch */\n");
     }
 
     INDENT;
@@ -4215,6 +4224,11 @@ PRTwith (node *arg_node, info *arg_info)
         fprintf (global.outfile, "/** CUDA WL **/\n");
     }
 
+    if (WITH_CUDARIZABLE (arg_node) && WITH_HASRC (arg_node)) {
+        INDENT;
+        fprintf (global.outfile, "/** WL has reuse candidate **/\n");
+    }
+
     if (WITH_ISFOLDABLE (arg_node)) {
         INDENT;
         fprintf (global.outfile, "/** FOLDABLE (all gen's const) **/\n");
@@ -4533,6 +4547,10 @@ PRTpart (node *arg_node, info *arg_info)
         fprintf (global.outfile, "/*** Thread Block Shape: ");
         PRTarray (PART_THREADBLOCKSHAPE (arg_node), arg_info);
         fprintf (global.outfile, " ***/\n");
+    }
+
+    if (global.backend == BE_cuda && PART_ISCOPY (arg_node)) {
+        fprintf (global.outfile, "/*** Copy Partition ***/\n");
     }
 
     /* print generator */

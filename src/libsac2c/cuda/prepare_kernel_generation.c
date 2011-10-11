@@ -234,6 +234,53 @@ PKNLGwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *PKNLGcond( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
+
+node *
+PKNLGcond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    COND_COND (arg_node) = TRAVopt (COND_COND (arg_node), arg_info);
+
+    /*
+     * TODO:
+     * Note that, replacing the assignment chain of a noop branch
+     * with a kernel terminate statement (essentially 'return') only
+     * works if the conditional is in a CUDA withloop/kernel. Otherwise
+     * it could lead to early termination of programs and causes incorrect
+     * result. However, here we do not check that the conditional is
+     * indeed within a CUDA kernel. Moreover, since noop branch can indeed
+     * occur outside CUDA withloop, a more elborate solution is needed.
+     */
+    if (global.optimize.dorwr && COND_ISTHENNOOP (arg_node)) {
+        printf ("Create kernel terminate for then...\n");
+        COND_THENASSIGNS (arg_node) = FREEdoFreeTree (COND_THENASSIGNS (arg_node));
+        COND_THENASSIGNS (arg_node)
+          = TBmakeAssign (TBmakePrf (F_kernel_terminate, NULL), NULL);
+    } else {
+        COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
+    }
+
+    if (global.optimize.dorwr && COND_ISELSENOOP (arg_node)) {
+        printf ("Create kernel terminate for else...\n");
+        COND_ELSEASSIGNS (arg_node) = FREEdoFreeTree (COND_ELSEASSIGNS (arg_node));
+        COND_ELSEASSIGNS (arg_node)
+          = TBmakeAssign (TBmakePrf (F_kernel_terminate, NULL), NULL);
+    } else {
+        COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *PKNLGwith2( node *arg_node, info *arg_info)
  *
  * @brief

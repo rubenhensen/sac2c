@@ -26,7 +26,7 @@
 static void
 CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
 {
-    int i, j, cnt, dim;
+    int i, j, dim;
     char *basetype;
 
     DBUG_ENTER ();
@@ -39,7 +39,6 @@ CompileCUDA_GLOBALFUN_HEADER (char *funname, int vararg_cnt, char **vararg)
     }
     fprintf (global.outfile, " %s(", funname);
 
-    cnt = 0;
     for (i = 0; i < 4 * vararg_cnt; i += 4) {
         if (STReq (vararg[i + 1], "float_dev")) {
             basetype = "float";
@@ -181,7 +180,7 @@ ICMCompileCUDA_GLOBALFUN_DEF_END (char *funname, int vararg_cnt, char **vararg)
 void
 ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
 {
-    int dim, cnt, i, j;
+    int dim, i, j;
     char *basetype;
 
     DBUG_ENTER ();
@@ -194,7 +193,7 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     INDENT;
     fprintf (global.outfile, "%s<<<grid, block>>>(", funname);
-    cnt = 0;
+
     for (i = 0; i < 4 * vararg_cnt; i += 4) {
         if (STReq (vararg[i + 1], "float_dev")) {
             basetype = "float";
@@ -371,7 +370,7 @@ ICMCompileCUDA_GRID_BLOCK (int bounds_count, char **var_ANY)
 void
 ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
 {
-    int dim, cnt, i, j;
+    int dim, i, j;
     char *basetype;
 
     DBUG_ENTER ();
@@ -394,7 +393,6 @@ ICMCompileCUDA_ST_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     INDENT;
     fprintf (global.outfile, "%s<<<1, 1>>>(", funname);
-    cnt = 0;
     for (i = 0; i < 4 * vararg_cnt; i += 4) {
         if (STReq (vararg[i + 1], "float_dev")) {
             basetype = "float";

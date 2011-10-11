@@ -183,6 +183,8 @@
  */
 #define SAC_CUDA_SYNCTHREADS() syncthreads ();
 
+#define SAC_CUDA_KERNEL_TERMINATE() return;
+
 #define SAC_CUDA_PRF_SYNCIN(to_nt, from_nt) NT_NAME (to_nt) = NT_NAME (from_nt);
 
 #define SAC_CUDA_PRF_SYNCOUT(to_nt, from_nt) NT_NAME (to_nt) = NT_NAME (from_nt);

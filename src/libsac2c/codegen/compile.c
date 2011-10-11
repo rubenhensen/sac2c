@@ -5297,7 +5297,6 @@ static node *
 COMPprfCUDAWLIds (node *arg_node, info *arg_info)
 {
     node *ret_node = NULL;
-    node *args;
     int array_dim, dim_pos;
     node *let_ids;
     node *iv;
@@ -5308,8 +5307,6 @@ COMPprfCUDAWLIds (node *arg_node, info *arg_info)
 
     array_dim = NUM_VAL (PRF_ARG2 (arg_node));
     DBUG_ASSERT (array_dim > 0, "Dimension of result CUDA array must be > 0");
-
-    args = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
 
     iv = PRF_ARG3 (arg_node);
     dim_pos = NUM_VAL (PRF_ARG1 (arg_node));
@@ -7641,6 +7638,18 @@ COMPprfSyncthreads (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm0 ("SAC_CUDA_SYNCTHREADS", NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfKernelTerminate (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    ret_node = TCmakeAssignIcm0 ("SAC_CUDA_KERNEL_TERMINATE", NULL);
 
     DBUG_RETURN (ret_node);
 }

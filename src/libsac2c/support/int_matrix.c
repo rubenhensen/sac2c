@@ -381,4 +381,131 @@ MatrixDisplay (IntMatrix m, FILE *file)
     DBUG_RETURN ();
 }
 
+/*******************************************************************************
+ *
+ * Description:
+ *
+ * Parameters:
+ *
+ * Return:g
+ *
+ *******************************************************************************/
+void
+MatrixToFile (IntMatrix m, FILE *file)
+{
+    int iy, ix;
+
+    DBUG_ENTER ();
+
+    fprintf (file, "%d %d\n", MatrixRows (m), MatrixCols (m));
+    for (iy = 0; iy < m->dim_y; iy++) {
+        for (ix = 0; ix < m->dim_x; ix++) {
+            fprintf (file, "%d ", m->mtx[iy][ix]);
+        }
+        fprintf (file, "\n");
+    }
+
+    DBUG_RETURN ();
+}
+
+/*******************************************************************************
+ *
+ * Description:
+ *
+ * Parameters:
+ *
+ * Return:g
+ *
+ *******************************************************************************/
+int
+MatrixRows (IntMatrix m)
+{
+    int rows;
+
+    DBUG_ENTER ();
+
+    rows = m->dim_y;
+
+    DBUG_RETURN (rows);
+}
+
+/*******************************************************************************
+ *
+ * Description:
+ *
+ * Parameters:
+ *
+ * Return:g
+ *
+ *******************************************************************************/
+int
+MatrixCols (IntMatrix m)
+{
+    int cols;
+
+    DBUG_ENTER ();
+
+    cols = m->dim_x;
+
+    DBUG_RETURN (cols);
+}
+
+/*******************************************************************************
+ *
+ * Description:
+ *
+ * Parameters:
+ *
+ * Return:g
+ *
+ *******************************************************************************/
+bool
+MatrixEqual (IntMatrix m1, IntMatrix m2)
+{
+    int iy, ix;
+    bool equal = TRUE;
+
+    DBUG_ENTER ();
+
+    if ((m1->dim_y != m2->dim_y) || (m2->dim_x != m2->dim_x)) {
+        equal = FALSE;
+    } else {
+        for (iy = 0; iy < m1->dim_y; iy++) {
+            for (ix = 0; ix < m1->dim_x; ix++) {
+                if (m1->mtx[iy][ix] != m2->mtx[iy][ix]) {
+                    equal = FALSE;
+                    break;
+                }
+            }
+            if (!equal)
+                break;
+        }
+    }
+
+    DBUG_RETURN (equal);
+}
+
+/*******************************************************************************
+ *
+ * Description:
+ *
+ * Parameters:
+ *
+ * Return:g
+ *
+ *******************************************************************************/
+void
+MatrixClearRow (IntMatrix m, int row)
+{
+    int ix;
+
+    DBUG_ENTER ();
+
+    for (ix = 0; ix < m->dim_x; ix++) {
+        m->mtx[row][ix] = 0;
+    }
+
+    DBUG_RETURN ();
+}
+
 #undef DBUG_PREFIX

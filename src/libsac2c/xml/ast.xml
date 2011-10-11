@@ -364,6 +364,7 @@
           <node name="Assign" />
           <node name="Let" />
           <node name="Prf" />
+          <node name="Cond" />
         </travuser>
       </traversal>
       <traversal id="ACUPTN" name="Annotate CUDA partitions" default="sons" include="annotate_cuda_partition.h" >
@@ -2377,6 +2378,18 @@
         <node name="Block" />
       </travsons>
     </traversal>
+    <traversal id="EMLAO" name="Loop allocation optimization" default="sons" include="loopallocopt.h">
+      <travuser>
+        <node name="Ap" />
+        <node name="Assign" />
+        <node name="Fundef" />
+        <node name="Arg" />
+        <node name="Modarray" />
+        <node name="Prf" />
+        <node name="With" />
+        <node name="With2" />
+      </travuser>
+    </traversal>
     <traversal id="ASD" name="AUD SCL distinction" 
                default="sons" include="audscldist.h">
       <travuser>
@@ -2627,6 +2640,28 @@
         <node name="Prf" />
         <node name="Id" />
         <node name="Ids" />
+      </travuser>
+    </traversal>
+    <traversal id="RWR" name="Reuse With-loop arrays with regions" default="sons" include="reusewithregion.h">
+      <travuser>
+        <node name="Prf" />
+        <node name="Part" />
+        <node name="Assign" />
+        <node name="With" />
+        <node name="Ap" />
+        <node name="Cond" />
+        <node name="Fundef" />
+      </travuser>
+    </traversal>
+    <traversal id="INB" name="Identify noop conditional branch" default="sons" include="identify_noop_branch.h">
+      <travuser>
+        <node name="Code" />
+        <node name="Part" />
+        <node name="Assign" />
+        <node name="Funcond" />
+        <node name="Ap" />
+        <node name="Cond" />
+        <node name="Fundef" />
       </travuser>
     </traversal>
     <traversal id="REUSE" name="Reuse With Arrays" default="sons" include="ReuseWithArrays.h">
@@ -5910,7 +5945,7 @@ N_tfarg :
             </targets>
           </type>
 	</attribute>
-	<attribute name="Level" inconstructor="no">
+	<attribute name="Level" default="0" inconstructor="no">
 	  <type name="Integer">
             <targets>
               <target mandatory="yes">
@@ -6301,7 +6336,16 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags></flags>
+      <flags>
+        <flag name="IsThenNoop" default="FALSE">
+          <description>
+          </description>
+        </flag>
+        <flag name="IsElseNoop" default="FALSE">
+          <description>
+          </description>
+        </flag>
+      </flags>
     </node>
 <!--
 
@@ -7283,6 +7327,10 @@ N_tfarg :
                   Set by AWLFI for _sel_VxA_(iv, PWL) to
                   indicate that an _noteintersect_ node has been
                   generated for iv.
+          </description>
+        </flag>
+        <flag name="IsInplaceSelect" default="FALSE" >
+          <description>
           </description>
         </flag>
         <flag name="IsNop" default="FALSE" >
@@ -8723,6 +8771,7 @@ N_tfarg :
       <flags>
         <flag name="IsFoldable" />
         <flag name="Cudarizable" default="FALSE" />
+        <flag name="hasRC" default="FALSE" />
         <flag name="IsDependent" />
         <flag name="isAWLFFoldable" default="FALSE" />
         <flag name="containsFunAps" >

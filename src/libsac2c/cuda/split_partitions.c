@@ -292,7 +292,7 @@ CreatePartitionsAndSegs (node *lb, node *ub, node *step, node *width, int dims)
     node *lb_rem_dims = NULL, *ub_rem_dims = NULL;
     node *step_rem_dims = NULL, *width_rem_dims = NULL;
     int opt_seg_ext;
-    int lb_num, ub_num, step_num, width_num;
+    int lb_num, ub_num, step_num; // width_num;
     bool has_step_width = FALSE;
 
     DBUG_ENTER ();
@@ -332,7 +332,7 @@ CreatePartitionsAndSegs (node *lb, node *ub, node *step, node *width, int dims)
                           && NODE_TYPE (EXPRS_EXPR (width_rem_dims)) == N_num),
                          "Non constant found in the elements of step or width!");
             step_num = NUM_VAL (EXPRS_EXPR (step_rem_dims));
-            width_num = NUM_VAL (EXPRS_EXPR (width_rem_dims));
+            // width_num = NUM_VAL( EXPRS_EXPR( width_rem_dims));
             opt_seg_ext = ((int)(opt_seg_ext / step_num)) * step_num;
         }
 

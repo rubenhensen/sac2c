@@ -43,6 +43,9 @@
 #include "type_utils.h"
 #include "shape.h"
 
+#include "types.h"
+#include "vector.h"
+
 /** <!--********************************************************************-->
  *
  * @name INFO structure

@@ -62,7 +62,7 @@ struct INFO {
     int cuwldim;
     node *pragma;
     cuda_access_info_t *access_info;
-    lut_t *lut;
+    lut_t *lut; /* For lac-fun in cuda wl, provide fundef arg->ap arg mappings */
     bool fromap;
     node *cuwlpart;
 };
@@ -163,6 +163,7 @@ PushPartInfo (part_info_t *infos, part_info_t *info)
 {
     DBUG_ENTER ();
 
+    /* New part into is added to the end of the part info list */
     if (infos == NULL) {
         infos = info;
     } else {
@@ -274,7 +275,7 @@ ActOnId (node *avis, info *arg_info)
      *       - If it's a WL ids, we either add a ThreadIdx or a LoopIdx
      *         depending on whether it belongs to outermost cuda WL or
      *         inner WLs. In this case, we also need to update the coefficient
-     *         matrix.
+     *         matrix, i.e. set the appropriate cell to 1.
      *   - If the ssa assign of this id is NOT NULL:
      *       - If the defining assignment is outside of the current cuda
      *         WL, we add it as an external variable to the indices;
@@ -283,37 +284,43 @@ ActOnId (node *avis, info *arg_info)
 
     ssa_assign = AVIS_SSAASSIGN (avis);
     /*
-     * SSAASSIGN is NULL can be in two cases:
-     *  - the id is a function argument;
-     *  - the id is withids.
+     * There are two cases where SSAASSIGN can be:
+     *  - id is a function argument,
+     *  - id is withids.
      */
     if (ssa_assign == NULL) {
         if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
-            printf ("Found function argument %s\n", AVIS_NAME (avis));
             node *new_avis;
             new_avis
               = LUTsearchInLutPp (INFO_LUT (arg_info), ARG_AVIS (AVIS_DECL (avis)));
+            /* If this is a normal function argument, we treat it
+             * as an external index. */
             if (new_avis == ARG_AVIS (AVIS_DECL (avis))) {
                 AddIndex (IDX_EXTID, INFO_COEFFICIENT (arg_info), avis, 0,
                           INFO_IDXDIM (arg_info), arg_info);
-            } else {
+            }
+            /* If this is a LAC function argument, we continue
+             * traversing into the calling context. */
+            else {
                 ActOnId (new_avis, arg_info);
             }
-        } else if ((part_info = SearchIndex (INFO_PART_INFO (arg_info), avis)) != NULL) {
-            printf ("Found loop index or thread index %s  at dimension %d\n",
-                    AVIS_NAME (avis), INFO_IDXDIM (arg_info));
+        }
+        /* This is a withloop ids. We search for the exact ids */
+        else if ((part_info = SearchIndex (INFO_PART_INFO (arg_info), avis)) != NULL) {
             unsigned int type = IDX_LOOPIDX;
             DBUG_ASSERT ((PART_INFO_TYPE (part_info) == IDX_THREADIDX
                           || PART_INFO_TYPE (part_info) == IDX_LOOPIDX),
-                         "Found indices which are neither thread indiex nor loop index!");
+                         "Index is neither thread index nor loop index!");
 
             if (PART_INFO_TYPE (part_info) == IDX_THREADIDX) {
                 type = DecideThreadIdx (PART_INFO_WLIDS (part_info),
                                         PART_INFO_DIM (part_info), avis);
             }
 
-            /* If either LOOPIDX of THREADIDX apprears in this dimension, it's no longer
-             * constant */
+            /*
+             * If either LOOPIDX of THREADIDX apprears in this
+             * dimension, it's no longer constant
+             */
             CUAI_ISCONSTANT (INFO_ACCESS_INFO (arg_info), INFO_IDXDIM (arg_info)) = FALSE;
 
             AddIndex (type, INFO_COEFFICIENT (arg_info), avis,
@@ -322,13 +329,11 @@ ActOnId (node *avis, info *arg_info)
                             PART_INFO_NTH (part_info), INFO_IDXDIM (arg_info),
                             INFO_COEFFICIENT (arg_info));
         } else {
-            DBUG_ASSERT (0, "Found id whose ssaassign is NULL and it is neither an arg "
-                            "or a withids!");
+            DBUG_ASSERT (0, "None N_arg or a withids node with NULL ssaassign!");
         }
     } else {
         /* If this id is defined by an assignment outside the current cuda WL */
         if (ASSIGN_LEVEL (ssa_assign) == 0) {
-            printf ("Found external id %s with constant RHS\n", AVIS_NAME (avis));
             constant *cnst = COaST2Constant (ASSIGN_RHS (ssa_assign));
             if (cnst != NULL) {
                 AddIndex (IDX_CONSTANT, COconst2Int (cnst), NULL, 0,
@@ -344,7 +349,6 @@ ActOnId (node *avis, info *arg_info)
         }
         /* Otherwise, we start backtracking to collect data access information */
         else {
-            printf ("Found id %s with non-constant RHS\n", AVIS_NAME (avis));
             ASSIGN_STMT (ssa_assign) = TRAVopt (ASSIGN_STMT (ssa_assign), arg_info);
         }
     }
@@ -872,6 +876,7 @@ DAApart (node *arg_node, info *arg_info)
         if (outermost_part) {
             ids_type = IDX_THREADIDX;
             INFO_CUWLPART (arg_info) = arg_node;
+            INFO_LUT (arg_info) = LUTgenerateLut ();
         }
         /* If this partition belongs to any inner WLs,
          * its ids are annotated as loop index */
@@ -891,10 +896,6 @@ DAApart (node *arg_node, info *arg_info)
         INFO_PART_INFO (arg_info) = PushPartInfo (INFO_PART_INFO (arg_info), p_info);
         old_wlidx = INFO_WLIDXS (arg_info);
         INFO_WLIDXS (arg_info) = WITHID_IDXS (PART_WITHID (arg_node));
-
-        if (outermost_part) {
-            INFO_LUT (arg_info) = LUTgenerateLut ();
-        }
 
         /* Start traversing the code */
         PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
@@ -976,9 +977,7 @@ DAAassign (node *arg_node, info *arg_info)
     } else if (INFO_TRAVMODE (arg_info) == trav_recal) {
         ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-    }
-
-    else {
+    } else {
         DBUG_ASSERT (0, "Wrong traverse mode!");
     }
 
@@ -1018,29 +1017,36 @@ DAAprf (node *arg_node, info *arg_info)
 
                 dim = TYgetDim (ID_NTYPE (arr));
 
-                /* Currently, we restrict reuse candidates to be either 1D or 2D AKS
-                 * arrays, and the dimentionality must be equal to the outermost
-                 * cudarizable withloop */
+                /*
+                 * Currently, we restrict reuse candidates to be either
+                 * 1D or 2D AKS arrays, and the dimentionality must be
+                 * equal to the outermost cudarizable withloop
+                 */
                 if (TYisAKS (ID_NTYPE (arr)) && (dim == 1 || dim == 2)
                     /*  INFO_CUWLDIM( arg_info) == dim */) {
-                    /* If this index has a defining assigment within the current cuda WL,
-                     * we start to collect access information */
+
+                    /*
+                     * If this index is defined within the current cuda WL,
+                     * we start to collect access information
+                     */
                     if (ID_SSAASSIGN (idx) != NULL
                         && ASSIGN_LEVEL (ID_SSAASSIGN (idx)) != 0) {
 
-                        /* Create access info structure */
+                        /*
+                         * Create access info structure. We set the shape
+                         * information to NULL and it will be inferred later
+                         * during the traversal of F_idxs2offset.
+                         */
                         INFO_ACCESS_INFO (arg_info)
-                          = TBmakeCudaAccessInfo (ID_AVIS (arr),
-                                                  NULL, /* The shape information will be
-                                                           assigned during traversal to
-                                                           idxs2offset */
-                                                  dim, INFO_CUWLDIM (arg_info),
+                          = TBmakeCudaAccessInfo (ID_AVIS (arr), NULL, dim,
+                                                  INFO_CUWLDIM (arg_info),
                                                   INFO_NEST_LEVEL (arg_info));
 
-                        /* Generate an empty coefficient matrix */
-                        printf ("creating coefficient matrix with %d rows and %d cols "
-                                "for array %s\n",
-                                dim, INFO_NEST_LEVEL (arg_info), ID_NAME (arr));
+                        /*
+                         * Generate an empty coefficient matrix. The number of
+                         * rows is the array dimensionality and the number of
+                         * cols is the nest level.
+                         */
                         CUAI_MATRIX (INFO_ACCESS_INFO (arg_info))
                           = NewMatrix (INFO_NEST_LEVEL (arg_info), dim);
 
@@ -1049,7 +1055,7 @@ DAAprf (node *arg_node, info *arg_info)
                         ID_SSAASSIGN (idx) = TRAVopt (ID_SSAASSIGN (idx), arg_info);
                         INFO_TRAVMODE (arg_info) = trav_normal;
 
-                        /* Assign the access information to the F_idx_sel assignment */
+                        /* Attach the access information to the F_idx_sel assignment */
                         if (INFO_ACCESS_INFO (arg_info) != NULL) {
                             ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info))
                               = INFO_ACCESS_INFO (arg_info);
@@ -1058,20 +1064,22 @@ DAAprf (node *arg_node, info *arg_info)
                     }
                 }
             } else if (INFO_TRAVMODE (arg_info) == trav_recal) {
-                if (ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info)) != NULL) {
-                    if (CUAI_TYPE (ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info)))
-                        == ACCTY_REUSE) {
-                        ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info))
-                          = CreateSharedMemoryForReuse (ASSIGN_ACCESS_INFO (
-                                                          INFO_LASTASSIGN (arg_info)),
-                                                        arg_info);
-                    } else if (CUAI_TYPE (ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info)))
-                               == ACCTY_COALESCE) {
-                        ASSIGN_ACCESS_INFO (INFO_LASTASSIGN (arg_info))
-                          = CreateSharedMemoryForCoalescing (ASSIGN_ACCESS_INFO (
-                                                               INFO_LASTASSIGN (
-                                                                 arg_info)),
-                                                             arg_info);
+                cuda_access_info_t *access_info;
+                node *assign;
+
+                assign = INFO_LASTASSIGN (arg_info);
+                if (ASSIGN_ACCESS_INFO (assign) != NULL) {
+                    access_info = ASSIGN_ACCESS_INFO (assign);
+                    if (CUAI_TYPE (access_info) == ACCTY_REUSE) {
+                        /* Use shared memory to exploit data reuse */
+                        ASSIGN_ACCESS_INFO (assign)
+                          = CreateSharedMemoryForReuse (access_info, arg_info);
+                    } else if (CUAI_TYPE (access_info) == ACCTY_COALESCE) {
+                        /* Use shared memory to enable memory access coalescing */
+                        ASSIGN_ACCESS_INFO (assign)
+                          = CreateSharedMemoryForCoalescing (access_info, arg_info);
+                    } else {
+                        DBUG_ASSERT ((0), "Unknow access info type!");
                     }
                 }
             }
@@ -1083,26 +1091,37 @@ DAAprf (node *arg_node, info *arg_info)
 
                 ids = PRF_EXPRS2 (arg_node);
                 shape = PRF_ARG1 (arg_node);
+
+                /* Which dimension of the array are we going to examine */
                 INFO_IDXDIM (arg_info) = 0;
 
                 DBUG_ASSERT ((NODE_TYPE (shape) == N_array && COisConstant (shape)),
                              "Non-AKS reusable array found!");
 
+                /* Save the shape of the array into the access info struct */
                 CUAI_ARRAYSHP (INFO_ACCESS_INFO (arg_info)) = DUPdoDupNode (shape);
 
-                /* We loop through each index in turn */
+                /* Loop through each index */
                 while (ids != NULL) {
                     avis = ID_AVIS (EXPRS_EXPR (ids));
 
+                    /*
+                     * Whether the index in the dimension is affine and if
+                     * it it what is the constant coefficient
+                     */
                     INFO_IS_AFFINE (arg_info) = TRUE;
                     INFO_COEFFICIENT (arg_info) = 1;
+
+                    /* All the magic happens here ;-) */
                     ActOnId (avis, arg_info);
-                    /* If any of the index is non-affine, we break and we
-                     * assume this access has no reuse */
+
+                    /*
+                     * If any of the index is non-affine, stop examing the rest
+                     * of the indices and assume this access has no reuse
+                     */
                     if (!INFO_IS_AFFINE (arg_info)) {
                         INFO_ACCESS_INFO (arg_info)
                           = TBfreeCudaAccessInfo (INFO_ACCESS_INFO (arg_info));
-                        printf ("Setting Access Info to NULL!\n");
                         INFO_ACCESS_INFO (arg_info) = NULL;
                         break;
                     }
@@ -1110,14 +1129,18 @@ DAAprf (node *arg_node, info *arg_info)
                     INFO_IDXDIM (arg_info)++;
                     ids = EXPRS_NEXT (ids);
                 }
-
                 INFO_IDXDIM (arg_info) = 0;
 
+                /* Display the coefficient matrix (debug only) */
                 MatrixDisplay (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)), stdout);
 
+                /* Compute the rank of the coefficient matrix */
                 rank = MatrixRank (CUAI_MATRIX (INFO_ACCESS_INFO (arg_info)));
-                /* If rank of the coefficient matric is less than the nestlevel,
-                 * we have potential data reuse for the accessed array */
+
+                /*
+                 * If rank of the coefficient matrix is less than the nestlevel,
+                 * we have potential data reuse for the accessed array
+                 */
                 if (rank < CUAI_NESTLEVEL (INFO_ACCESS_INFO (arg_info))) {
                     INFO_ACCESS_INFO (arg_info)
                       = CreateSharedMemoryForReuse (INFO_ACCESS_INFO (arg_info),
@@ -1127,6 +1150,7 @@ DAAprf (node *arg_node, info *arg_info)
                       = CreateSharedMemoryForCoalescing (INFO_ACCESS_INFO (arg_info),
                                                          arg_info);
                 } else {
+                    /* Array has neither reuse opportunities nor can be coalesed */
                     INFO_ACCESS_INFO (arg_info)
                       = TBfreeCudaAccessInfo (INFO_ACCESS_INFO (arg_info));
                     INFO_ACCESS_INFO (arg_info) = NULL;

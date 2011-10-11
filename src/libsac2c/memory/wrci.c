@@ -37,6 +37,7 @@
 #include "shape.h"
 #include "ReuseWithArrays.h"
 #include "reusewithoffset.h"
+#include "reusewithregion.h"
 #include "compare_tree.h"
 
 /*
@@ -293,14 +294,29 @@ WRCIwith (node *arg_node, info *arg_info)
      * These are all arrays A that are accessed only by means of selection at
      * A[iv]
      */
-    INFO_RC (arg_info) = REUSEdoGetReuseArrays (arg_node, INFO_FUNDEF (arg_info));
+    if (global.optimize.dorip) {
+        INFO_RC (arg_info) = REUSEdoGetReuseArrays (arg_node, INFO_FUNDEF (arg_info));
+    }
 
     /*
      * Find more complex reuse candidates
      */
-    INFO_RC (arg_info)
-      = TCappendExprs (INFO_RC (arg_info),
-                       RWOdoOffsetAwareReuseCandidateInference (arg_node));
+    if (global.optimize.dorwo) {
+        INFO_RC (arg_info)
+          = TCappendExprs (INFO_RC (arg_info),
+                           RWOdoOffsetAwareReuseCandidateInference (arg_node));
+    }
+
+    if (global.optimize.dorwr) {
+        /*
+         * Find more complex reuse candidates
+         */
+        INFO_RC (arg_info)
+          = TCappendExprs (INFO_RC (arg_info),
+                           RWRdoRegionAwareReuseCandidateInference (arg_node,
+                                                                    INFO_FUNDEF (
+                                                                      arg_info)));
+    }
 
     /*
      * Eliminate duplicates of reuse candidates

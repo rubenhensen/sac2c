@@ -238,7 +238,7 @@ DupTreeOrNodeLutType (bool node_only, node *arg_node, lut_t *lut, int type, node
     DBUG_RETURN (new_node);
 }
 
-static cuda_index_t *
+cuda_index_t *
 DUPCudaIndex (cuda_index_t *index)
 {
     cuda_index_t *tmp, *new_index = NULL;
@@ -1507,6 +1507,9 @@ DUPcond (node *arg_node, info *arg_info)
 
     new_node = TBmakeCond (DUPTRAV (COND_COND (arg_node)), DUPTRAV (COND_THEN (arg_node)),
                            DUPTRAV (COND_ELSE (arg_node)));
+
+    COND_ISTHENNOOP (new_node) = COND_ISTHENNOOP (arg_node);
+    COND_ISELSENOOP (new_node) = COND_ISELSENOOP (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
