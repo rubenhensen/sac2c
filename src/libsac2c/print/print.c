@@ -1567,17 +1567,6 @@ PRTobjdef (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    /* print objinit flag declaration in header.file
-     * this has to placed before the if switch, because the ICM_Trav seems
-     * to leave with no return...
-     */
-    if (global.genlib.c && global.print_objdef_for_header_file) {
-        fprintf (global.outfile,
-                 "/* flag, if object has been initialized */\n"
-                 "%s bool SAC_INIT_FLAG_%s;\n",
-                 PRINT_EXTERN, OBJDEF_NAME (arg_node));
-    }
-
     if ((OBJDEF_ICM (arg_node) == NULL) || (NODE_TYPE (OBJDEF_ICM (arg_node)) != N_icm)) {
         if (!OBJDEF_ISLOCAL (arg_node) || global.print_objdef_for_header_file) {
             fprintf (global.outfile, "external ");

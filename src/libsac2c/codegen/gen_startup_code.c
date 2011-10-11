@@ -249,9 +249,7 @@ PrintGlobalSwitches ()
               || (global.filetype == FT_cmod))
                ? 1
                : 0);
-    if (global.genlib.c) {
-        fprintf (global.outfile, "#define SAC_GENERATE_CLIBRARY\n");
-    }
+
     fprintf (global.outfile, "#define SAC_C_EXTERN           %s\n",
              (global.backend == BE_mutc)
                ? ""
@@ -614,25 +612,20 @@ GSCprintMainBegin ()
 {
     DBUG_ENTER ();
 
-    /* for a C library there is no command line available */
-    if (global.genlib.c) {
-        INDENT;
-        fprintf (global.outfile, "SAC_COMMANDLINE_SET( 0 , NULL);\n\n");
-    } else {
-        INDENT;
-        fprintf (global.outfile, "SAC_MT_SETUP_INITIAL();\n");
-        INDENT;
-        fprintf (global.outfile, "SAC_PF_SETUP();\n");
-        INDENT;
-        fprintf (global.outfile, "SAC_HM_SETUP();\n");
-        INDENT;
-        fprintf (global.outfile, "SAC_MT_SETUP();\n");
-        INDENT;
-        fprintf (global.outfile, "SAC_CS_SETUP();\n");
-        INDENT;
-        if (global.backend != BE_cuda) {
-            fprintf (global.outfile, "SAC_RTSPEC_SETUP();\n");
-        }
+    INDENT;
+    fprintf (global.outfile, "SAC_MT_SETUP_INITIAL();\n");
+    INDENT;
+    fprintf (global.outfile, "SAC_PF_SETUP();\n");
+    INDENT;
+    fprintf (global.outfile, "SAC_HM_SETUP();\n");
+    INDENT;
+    fprintf (global.outfile, "SAC_MT_SETUP();\n");
+    INDENT;
+    fprintf (global.outfile, "SAC_CS_SETUP();\n");
+    INDENT;
+
+    if (global.backend != BE_cuda) {
+        fprintf (global.outfile, "SAC_RTSPEC_SETUP();\n");
     }
 
     DBUG_RETURN ();
