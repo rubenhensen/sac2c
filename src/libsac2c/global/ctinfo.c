@@ -314,7 +314,10 @@ CleanUpInterrupted ()
 {
     int status;
 
-    DBUG_ENTER ();
+    // DBUG_ENTER ();
+    // We do not want to use the DBUG macros here to keep the code as simple
+    // as possible. Note that this is the interrupt handler that is only run
+    // if something has gone terribly wrong before.
 
     if (global.cleanup) {
         global.cleanup = FALSE;
@@ -328,7 +331,10 @@ CleanUpInterrupted ()
         }
     }
 
-    DBUG_RETURN ();
+    // DBUG_RETURN ();
+    // We do not want to use the DBUG macros here to keep the code as simple
+    // as possible. Note that this is the interrupt handler that is only run
+    // if something has gone terribly wrong before.
 }
 
 /** <!--********************************************************************-->
