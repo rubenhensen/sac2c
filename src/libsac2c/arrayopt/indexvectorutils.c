@@ -91,7 +91,7 @@ IVUToffset2Constant (node *arg_node)
     }
 
     if ((NULL == z) && (PMmatchFlat (pat1, arg_node))) {
-        z = COvect2offset (shp, iv);
+        z = COvect2offset (shp, iv, NULL);
         shp = COfreeConstant (shp);
         iv = COfreeConstant (iv);
     }

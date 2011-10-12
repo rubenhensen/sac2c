@@ -1039,7 +1039,7 @@ COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem)
 
 /** <!--********************************************************************-->
  *
- * @fn: constant *COvect2offset( constant *shp, constant *iv)
+ * @fn: constant *COvect2offset( constant *shp, constant *iv, constant *nothing)
  *
  * @brief: implements F_vect2offset
  *
@@ -1066,7 +1066,7 @@ COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem)
  *
  *****************************************************************************/
 constant *
-COvect2offset (constant *shp, constant *iv)
+COvect2offset (constant *shp, constant *iv, constant *nothing)
 {
     int *cviv, *cvshp;
     int leniv, lenshp;

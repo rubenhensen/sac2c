@@ -750,7 +750,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
         X = NULL;
         if (PMmatchFlat (pat2, arg_node) && TUisScalar (AVIS_TYPE (ID_AVIS (val)))
             && (SHcompareShapes (COgetShape (fsX), COgetShape (coiv)))) {
-            offsetcon = COvect2offset (fsX, coiv);
+            offsetcon = COvect2offset (fsX, coiv, NULL);
             offset = COconst2Int (offsetcon);
             z = DUPdoDupNode (X);
             exprs = TCgetNthExprs (offset, ARRAY_AELEMS (z));
@@ -893,7 +893,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                     ivlen = COmakeConstantFromInt (COgetExtent (coiv, 0));
                     fsX_tail = COdrop (ivlen, fsX, NULL);
                     if (COcompareConstants (fsval, fsX_tail)) {
-                        offsetcon = COvect2offset (fsX, coiv);
+                        offsetcon = COvect2offset (fsX, coiv, NULL);
                         offset = COconst2Int (offsetcon);
                         res = DUPdoDupNode (X);
                         exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
@@ -916,7 +916,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                  * we only do the simple case (case a above) where V fits neatly
                  * into X as an element.
                  */
-                offsetcon = COvect2offset (fsX, coiv);
+                offsetcon = COvect2offset (fsX, coiv, NULL);
                 offset = COconst2Int (offsetcon);
                 res = DUPdoDupNode (X);
                 exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));

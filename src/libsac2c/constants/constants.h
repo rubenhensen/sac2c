@@ -126,7 +126,7 @@ extern constant *COmodarray_AxVxA (constant *a, constant *idx, constant *elem);
 extern constant *COidx_modarray_AxSxS (constant *a, constant *idx, constant *elem);
 extern constant *COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem);
 extern constant *COcat (constant *a, constant *b, constant *);
-extern constant *COvect2offset (constant *shp, constant *iv);
+extern constant *COvect2offset (constant *shp, constant *iv, constant *);
 /* missing: not yet implemented
 extern constant *  CORotate  ( constant *dim, constant *num, constant *a);
 */
