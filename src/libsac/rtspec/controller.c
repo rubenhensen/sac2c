@@ -30,7 +30,7 @@
 
 #include "sac.h"
 
-#define TMP_DIR_NAME "/tmp/SACrt_XXXXXX"
+#define TMP_DIR_NAME_PREFIX "SACrt_"
 #define MAX_SYS_CALL 512
 #define MAX_STRING_LENGTH 256
 
@@ -57,7 +57,7 @@ CreateTmpDir (char *dir)
     tmpdir_name = (char *)malloc (sizeof (char) * (strlen (dir) + 16));
 
     strcpy (tmpdir_name, dir);
-    strcat (tmpdir_name, "/SAC_XXXXXX");
+    strcat (tmpdir_name, "/" TMP_DIR_NAME_PREFIX "xxxxxx");
 
     tmpdir_name = mkdtemp (tmpdir_name);
 
@@ -72,7 +72,7 @@ CreateTmpDir (char *dir)
 static char *
 CreateTmpDir (char *dir)
 {
-    tmpdir_name = tempnam (dir, "SAC_");
+    tmpdir_name = tempnam (dir, TMP_DIR_NAME_PREFIX);
 
     if (tmpdir_name != NULL) {
         rtspec_syscall = (char *)malloc (sizeof (char) * (strlen (tmpdir_name) + 16));
