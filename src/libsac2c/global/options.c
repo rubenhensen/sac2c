@@ -115,6 +115,7 @@ OPTcheckOptionConsistency (void)
 
     if (global.printConfig) {
         RSCprintConfigEntry (global.printConfig);
+        FMGRdeleteTmpDir ();
         exit (0);
     }
 
