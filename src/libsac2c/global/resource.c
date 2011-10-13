@@ -167,10 +167,12 @@ static struct {
  *        where the entry is named 'config'
  *
  *****************************************************************************/
+
 void
 RSCprintConfigEntry (char *config)
 {
     int i = 0;
+
     DBUG_ENTER ();
 
     for (i = 0; resource_table[i].name[0] != '\0'; i++) {
@@ -190,7 +192,7 @@ RSCprintConfigEntry (char *config)
         }
     }
     if (resource_table[i].name[0] == '\0') {
-        CTIerror ("resource %s unknown", config);
+        CTIerror ("Resource %s unknown", config);
     }
 
     DBUG_RETURN ();

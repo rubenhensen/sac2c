@@ -113,12 +113,6 @@ OPTcheckOptionConsistency (void)
 {
     DBUG_ENTER ();
 
-    if (global.printConfig) {
-        RSCprintConfigEntry (global.printConfig);
-        FMGRdeleteTmpDir ();
-        exit (0);
-    }
-
     if (STReq (global.config.backend, "MUTC")) {
 
 #if !ENABLE_MUTC

@@ -25,6 +25,27 @@
 #include <locale.h>
 
 /*
+ *  Here we handle special options that do not initiate any
+ *  compilation process.
+ */
+
+static void
+HandleSpecialOptions (void)
+{
+    DBUG_ENTER ();
+
+    if (global.printConfig != NULL) {
+        RSCprintConfigEntry (global.printConfig);
+        CTIterminateCompilationSilent ();
+    } else if (global.libstat) {
+        LIBSprintLibStat ();
+        CTIterminateCompilationSilent ();
+    }
+
+    DBUG_RETURN ();
+}
+
+/*
  *  First, we need to set up the compile infrastructure.
  */
 
@@ -49,8 +70,7 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
     FMGRsetupPaths ();
     FMGRcreateTmpDir ();
 
-    LIBSprintLibStat ();
-
+    HandleSpecialOptions ();
     OPTcheckOptionConsistency ();
 
     CTIabortOnError ();

@@ -39,6 +39,7 @@ extern void CTInote (const char *format, ...);
 extern void CTInoteLine (int line, const char *format, ...);
 extern void CTItell (int level, const char *format, ...);
 extern void CTIterminateCompilation (node *syntax_tree);
+extern void CTIterminateCompilationSilent (void);
 extern const char *CTIitemName (node *item);
 extern const char *CTIfunParams (node *fundef);
 

@@ -130,42 +130,33 @@ LIBSprintLibStat ()
 
     DBUG_ENTER ();
 
-    if (global.libstat) {
-        DBUG_PRINT ("Loading module `%s'", global.sacfilename);
+    DBUG_PRINT ("Loading module `%s'", global.sacfilename);
 
-        module = MODMloadModule (global.sacfilename);
+    module = MODMloadModule (global.sacfilename);
 
-        DBUG_PRINT ("Getting symbol table");
+    DBUG_PRINT ("Getting symbol table");
 
-        table = MODMgetSymbolTable (module);
+    table = MODMgetSymbolTable (module);
 
-        DBUG_PRINT ("Printing LibStat header\n");
+    DBUG_PRINT ("Printing LibStat header\n");
 
-        PrintLibStatHeader (module);
+    PrintLibStatHeader (module);
 
-        DBUG_PRINT ("Printing table information");
+    DBUG_PRINT ("Printing table information");
 
-        PrintLibStatTable (table);
+    PrintLibStatTable (table);
 
-        DBUG_PRINT ("Printing dependencies");
+    DBUG_PRINT ("Printing dependencies");
 
-        PrintLibStatDependencies (module);
+    PrintLibStatDependencies (module);
 
-        DBUG_PRINT ("Printing code");
+    DBUG_PRINT ("Printing code");
 
-        PrintLibStatCode (module, table);
+    PrintLibStatCode (module, table);
 
-        DBUG_PRINT ("Unloading module `%s'", global.sacfilename);
+    DBUG_PRINT ("Unloading module `%s'", global.sacfilename);
 
-        module = MODMunLoadModule (module);
-
-        /*
-         * exit compiler at this point, as we have printed
-         * the libstat information
-         */
-
-        exit (0);
-    }
+    module = MODMunLoadModule (module);
 
     DBUG_RETURN ();
 }

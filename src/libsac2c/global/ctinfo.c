@@ -1220,6 +1220,27 @@ CTIterminateCompilation (node *syntax_tree)
     DBUG_RETURN ();
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn void CTIterminateCompilationSilent()
+ *
+ *   @brief  terminates successful compiler call that did not really initiate
+ *           a compilation process. This is mainly used in connection with
+ *           special options such as -C or -libstat
+ *
+ ******************************************************************************/
+
+void
+CTIterminateCompilationSilent (void)
+{
+    DBUG_ENTER ();
+
+    CleanUp ();
+    exit (0);
+
+    DBUG_RETURN ();
+}
+
 /**
  * @fn const char *CTIitemName(node *item)
  *
