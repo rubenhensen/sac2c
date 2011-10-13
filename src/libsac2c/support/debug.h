@@ -27,8 +27,21 @@ extern void _db_doprnt_assert_1_ (char *, int, char *); /* Print debug output */
 extern void _db_doprnt_assert_2_ (char *, ...);         /* Print debug output */
 extern void _db_setjmp_ (void);                         /* Save debugger environment */
 extern void _db_longjmp_ (void);                        /* Restore debugger environment */
-extern void (*exit_func) (int); /* Custom exit function. Default is
-                                   system `exit'  */
+
+/* Use getter/setter functions for custom exit function used
+   by DBUG_ASSERT macro.  */
+extern void set_debug_exit_function (void (*) (int));
+
+/* Get the pointer on the custom exit function.  */
+extern void (*get_debug_exit_function ()) (int);
+
+/* Wrap the custom exit function.  Used by DBUG_ASSERT macro.  */
+static inline void
+exit_func (int status)
+{
+    void (*func) (int) = get_debug_exit_function ();
+    func (status);
+}
 #endif
 
 #ifdef DBUG_OFF

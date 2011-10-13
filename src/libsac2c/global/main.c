@@ -60,7 +60,7 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
        macro correctly terminate the compilation
        process.  */
 #ifndef DBUG_OFF
-    exit_func = CTIexit;
+    set_debug_exit_function (CTIexit);
 #endif
 
     setlocale (LC_ALL, "en_US");
