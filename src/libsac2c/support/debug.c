@@ -135,6 +135,8 @@ EXPORT char *_db_process_ = "dbug"; /* Pointer to process name; argv[0] */
 EXPORT BOOLEAN _db_on_ = FALSE;     /* TRUE if debugging currently on */
 EXPORT int _db_dummy_;
 
+EXPORT void (*exit_func) (int) = exit;
+
 /*
  *     The user may specify a list of functions to trace or
  *     debug.  These lists are kept in a linear linked list,

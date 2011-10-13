@@ -56,6 +56,13 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
 
     DBUG_ENTER ();
 
+    /* Set custom exit function to make DBUG_ASSERT
+       macro correctly terminate the compilation
+       process.  */
+#ifndef DBUG_OFF
+    exit_func = CTIexit;
+#endif
+
     setlocale (LC_ALL, "en_US");
     CTIinstallInterruptHandlers ();
     OPTcheckPreSetupOptions (argc, argv);

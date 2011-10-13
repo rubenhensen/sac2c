@@ -367,6 +367,15 @@ AbortCompilation ()
     DBUG_RETURN ();
 }
 
+void
+CTIexit (int status)
+{
+    DBUG_ENTER ();
+    CleanUp ();
+    exit (status);
+    DBUG_RETURN ();
+}
+
 /** <!--********************************************************************-->
  *
  * @fn void InternalCompilerErrorBreak( int sig)

@@ -17,6 +17,7 @@
 #include "types.h"
 #include <stdarg.h>
 
+extern void CTIexit (int);
 extern void CTIinstallInterruptHandlers ();
 extern char *CTIgetErrorMessageVA (int line, const char *file, const char *format,
                                    va_list arg_p);
