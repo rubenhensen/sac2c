@@ -3474,7 +3474,11 @@ NTCCTprf_vect2offset (te_info *info, ntype *args)
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
-        res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+        if (TYisAKV (shp) && TYisAKV (idx)) {
+            res = TYmakeAKV (TYmakeSimpleType (T_int), ApplyCF (info, args));
+        } else {
+            res = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
+        }
     }
 
     DBUG_RETURN (TYmakeProductType (1, res));

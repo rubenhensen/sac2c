@@ -128,6 +128,9 @@
  *   name           name of function, used to create enum type
  *   arg_encoding   shape class of arguments
  *   arity          arity as natural number (0 indicates variable arity)
+ *                  For those of you who find "arity" an irritating term,
+ *                  this is the number of arguments to the function, or
+ *                  its valence.
  *   ccode          function symbol used by the code generator (compile)
  *   simd           flag indicating suitability for simd code generation
  *   ntc_fun        function used for type inference
@@ -606,7 +609,7 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
        COMPprfIdxs2Offset, NULL, SCCFprf_idxs2offset, NULL, SAAdim_is_0, SAAshp_is_empty,
        NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
-  PRF (vect2offset, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_vect2offset,
+  PRF (vect2offset, (PA_x, PA_x, PA_x), 2, XXX, NOSIMD, NTCCTprf_vect2offset,
        COvect2offset, COMPprfVect2Offset, NULL, NULL, NULL, SAAdim_is_0, SAAshp_is_empty,
        NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
