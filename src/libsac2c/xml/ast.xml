@@ -5598,6 +5598,9 @@ N_tfarg :
         </flag>	 
         <flag name="IsCudaDefined" default="FALSE" /> 
       </flags>
+    <checks>
+      <check name="CHKisNullSsaassign" />
+    </checks>
     </node>
 <!--
 

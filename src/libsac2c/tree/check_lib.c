@@ -301,4 +301,27 @@ CHKfundefVardecExtrema (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--**********************************************************************-->
+ *
+ * @fn node *CHKisNullSsaassign( node *arg_node)
+ *
+ * @brief: arg_node is an N_arg. It must have a NULL AVIS_SSAASSIGN.
+ *
+ *
+ * @params: arg_node: N_arg.
+ *
+ * @return: VOID;
+ *
+ *****************************************************************************/
+node *
+CHKisNullSsaassign (node *arg_node)
+{
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (NULL == AVIS_SSAASSIGN (ARG_AVIS (arg_node)),
+                 "Non-NULL AVIS_SSAASSIGN in N_arg node");
+    DBUG_RETURN (arg_node);
+}
+
 #undef DBUG_PREFIX
