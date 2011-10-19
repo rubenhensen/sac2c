@@ -37,6 +37,7 @@
 #include "system.h"
 #include "DupTree.h"
 #include "identify_noop_branch.h"
+#include "filemgr.h"
 
 #define LOWER_BOUND 0
 #define UPPER_BOUND 1
@@ -935,18 +936,18 @@ CheckIntersection (IntMatrix constraints, IntMatrix write_fas, IntMatrix read_fa
     sprintf (polyhedral_filename, "%s%d.out", outfile, count);
     sprintf (result_filename, "%s%d.out", infile, count);
 
-    matrix_file = fopen (polyhedral_filename, "w");
+    matrix_file = FMGRwriteOpen (polyhedral_filename, "w");
     MatrixToFile (constraints, matrix_file);
     MatrixToFile (write_fas, matrix_file);
     MatrixToFile (read_fas, matrix_file);
-    fclose (matrix_file);
+    FMGRclose (matrix_file);
 
     SYScall ("$SAC2CBASE/src/tools/cuda/polyhedral < %s > %s\n", polyhedral_filename,
              result_filename);
 
-    res_file = fopen (result_filename, "r");
+    res_file = FMGRwriteOpen (result_filename, "r");
     res = atoi (fgets (buffer, MAXLINE, res_file)) == 0 ? FALSE : TRUE;
-    fclose (res_file);
+    FMGRclose (res_file);
 
     // SYScall("rm -f *.out\n");
 
