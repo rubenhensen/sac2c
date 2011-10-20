@@ -254,12 +254,12 @@ PrintSACLib (const char *name)
 
         if (result != NULL) {
             filename = MEMmalloc (sizeof (char)
-                                  * (STRlen (result) + 5 + /* /lib/ */
-                                     3 +                   /* lib */
-                                     4 +                   /* Tree */
-                                     4 +                   /* .so\0 */
+                                  * (STRlen (result) + 16 + /* $(LIBTARGETDIR)/ */
+                                     3 +                    /* lib */
+                                     4 +                    /* Tree */
+                                     4 +                    /* .so\0 */
                                      1024 + STRlen (global.config.lib_variant)));
-            sprintf (filename, "%slib/lib%sTree%s.so", result, name,
+            sprintf (filename, "%s$(LIBTARGETDIR)/lib%sTree%s.so", result, name,
                      global.config.lib_variant);
 
             result = MEMfree (result);
