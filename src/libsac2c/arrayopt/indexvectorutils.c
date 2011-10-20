@@ -39,6 +39,7 @@
 #include "new_types.h"
 #include "DupTree.h"
 #include "ivexpropagation.h"
+#include "constants.h"
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
@@ -48,8 +49,10 @@
  *
  * @fn constant *IVUToffset2Constant(...)
  *
- * @brief: arg_node is the offset PRF_ARG1 of an _idx_sel()
- *         or _idx_modarray_AxSxS().
+ * @brief: arg_node is the offset PRF_ARG1 of an _idx_sel(, offset, mat)
+ *         or _idx_modarray_AxSxS( mat, offset, val).
+ *
+ *         mat is the array being indexed.
  *
  *         Case 1: arg_node is a constant:
  *
@@ -59,24 +62,23 @@
  *         Case 3: arg_node is an _idxs2offset( shp, i0, i1,...);
  *         on constants.
  *
- *         In the latter two cases, CF could simplify them to case 1.
- *         However, doing that would remove any trace of the IV that
- *         generated the offset, which makes AWLF and other optimizations
- *         difficult. So, we compute the same result as would CF on
- *         those offset-generating functions, but avoid actually replacing
- *         the computation.
- *
  * @return: The offset as a constant, if known, or NULL.
  *
  *****************************************************************************/
 constant *
-IVUToffset2Constant (node *arg_node)
+IVUToffset2Constant (node *arg_node, node *mat)
 {
     constant *z = NULL;
     constant *shp = NULL;
     constant *iv = NULL;
+    node *elems = NULL;
     pattern *pat1;
     pattern *pat2;
+    shape *shpmat;
+    int offset;
+    int i;
+    int len;
+    int el;
 
     DBUG_ENTER ();
 
@@ -86,8 +88,26 @@ IVUToffset2Constant (node *arg_node)
     pat2 = PMprf (1, PMAisPrf (F_vect2offset), 1, PMconst (1, PMAgetVal (&shp)), 1,
                   PMskip (0));
 
-    if ((N_id == NODE_TYPE (arg_node)) && (TYisAKV (AVIS_TYPE (ID_AVIS (arg_node))))) {
+    if ((N_id == NODE_TYPE (arg_node)) && (TYisAKS (AVIS_TYPE (ID_AVIS (mat))))
+        && (TYisAKV (AVIS_TYPE (ID_AVIS (arg_node))))) {
         z = COaST2Constant (arg_node);
+        offset = COconst2Int (z);
+        shpmat = TYgetShape (AVIS_TYPE (ID_AVIS (mat)));
+        len = SHgetDim (shpmat);
+        /* ( shape(mat) represent offset */
+        for (i = len - 1; i >= 0; i--) {
+            el = offset % SHgetExtent (shpmat, i);
+            offset = offset - el; /* Not really needed */
+            offset = offset / SHgetExtent (shpmat, i);
+            elems = TCappendExprs (elems, TBmakeExprs (TBmakeNum (el), NULL));
+        }
+
+        if (NULL != elems) {
+            elems = TBmakeArray (TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)),
+                                 SHcreateShape (1, len), elems);
+            z = COaST2Constant (elems);
+            elems = FREEdoFreeTree (elems);
+        }
     }
 
     if ((NULL == z) && (PMmatchFlat (pat1, arg_node))) {
@@ -98,7 +118,6 @@ IVUToffset2Constant (node *arg_node)
 
     if ((NULL == z) && (PMmatchFlat (pat2, arg_node))) {
         shp = COfreeConstant (shp);
-        /* I have no idea how to call COxxx with a variable number of arguments... */
         /* z = IVUTidxs2offset( arg_node); */
         DBUG_ASSERT (FALSE, "start coding...");
     }
@@ -158,7 +177,7 @@ IVUTarrayFromProxySel (node *iv)
     node *narray = NULL;
     constant *con = NULL;
     constant *c;
-    node *shapid = NULL;
+    node *mat = NULL;
     node *z = NULL;
     int n;
     char *nmin;
@@ -167,9 +186,9 @@ IVUTarrayFromProxySel (node *iv)
 
     patarray = PMarray (1, PMAgetNode (&narray), 0);
     pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
-                  PMvar (1, PMAgetNode (&shapid), 0));
+                  PMvar (1, PMAgetNode (&mat), 0));
     pat2 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAisVal (&con)),
-                  PMvar (1, PMAisNode (&shapid), 0));
+                  PMvar (1, PMAisNode (&mat), 0));
     b = (PMmatchFlatSkipExtremaAndGuards (patarray, iv) && (NULL != narray)
          && (NULL != ARRAY_AELEMS (narray))
          && (NULL != EXPRS_EXPR (ARRAY_AELEMS (narray))));
@@ -202,9 +221,9 @@ IVUTarrayFromProxySel (node *iv)
     nmin = ((NULL != iv) && (N_id == NODE_TYPE (iv))) ? AVIS_NAME (ID_AVIS (iv))
                                                       : "( N_array)";
     if (b) {
-        z = shapid;
+        z = mat;
         DBUG_PRINT ("Case 2: AVIS_SHAPE %s is shape(%s)", nmin,
-                    AVIS_NAME (ID_AVIS (shapid)));
+                    AVIS_NAME (ID_AVIS (mat)));
     } else {
         z = NULL;
         DBUG_PRINT ("Case 2: AVIS_SHAPE %s not derived from _sel_()", nmin);
@@ -224,7 +243,7 @@ IVUTarrayFromProxyIdxsel (node *iv)
     constant *con = NULL;
     constant *ncon = NULL;
     node *z = NULL;
-    node *shapid;
+    node *mat;
     char *nmin;
     node *offset = NULL;
     int n;
@@ -233,9 +252,9 @@ IVUTarrayFromProxyIdxsel (node *iv)
 
     patarray = PMarray (1, PMAgetNode (&narray), 0);
     pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset), 0),
-                  PMvar (1, PMAgetNode (&shapid), 0));
+                  PMvar (1, PMAgetNode (&mat), 0));
     pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset), 0),
-                  PMvar (1, PMAisNode (&shapid), 0));
+                  PMvar (1, PMAisNode (&mat), 0));
     b = (PMmatchFlatSkipExtremaAndGuards (patarray, iv) && (NULL != narray)
          && (NULL != ARRAY_AELEMS (narray))
          && (NULL != EXPRS_EXPR (ARRAY_AELEMS (narray))));
@@ -243,12 +262,12 @@ IVUTarrayFromProxyIdxsel (node *iv)
         narray = ARRAY_AELEMS (narray);
         n = 0;
         if (PMmatchFlatSkipExtremaAndGuards (pat1, EXPRS_EXPR (narray))) {
-            con = IVUToffset2Constant (offset);
+            con = IVUToffset2Constant (offset, mat);
             if ((NULL != con) && COisZero (con, TRUE)) {
                 con = COfreeConstant (con);
                 while (b && (NULL != narray)) {
                     if (PMmatchFlatSkipExtremaAndGuards (pat2, EXPRS_EXPR (narray))) {
-                        con = IVUToffset2Constant (offset);
+                        con = IVUToffset2Constant (offset, mat);
                         ncon = COmakeConstantFromInt (n);
                         b = COcompareConstants (con, ncon);
                         con = COfreeConstant (con);
@@ -272,7 +291,7 @@ IVUTarrayFromProxyIdxsel (node *iv)
     nmin = ((NULL != iv) && (N_id == NODE_TYPE (iv))) ? AVIS_NAME (ID_AVIS (iv))
                                                       : "( N_array)";
     if (b) {
-        z = shapid;
+        z = mat;
         DBUG_PRINT ("Case 2: AVIS_SHAPE %s is shape(%s)", nmin, AVIS_NAME (ID_AVIS (z)));
     } else {
         z = NULL;

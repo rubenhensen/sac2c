@@ -230,7 +230,6 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
-    node *iv;
 
     DBUG_ENTER ();
 
@@ -241,17 +240,16 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
      *                 arg2fs  to the frameshape of N_array
      */
 
-    pat1 = PMprf (1, PMAisPrf (F_idx_sel), 1, PMconst (1, PMAgetVal (&con1)));
+    pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMconst (1, PMAgetVal (&con1)),
+                  PMvar (1, PMAgetNode (&arg2), 0));
 
     pat2 = PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0));
 
     pat3 = PMany (1, PMAgetNode (&arg2), 0);
 
-    if (!PMmatchFlat (pat1, arg_node)) {
-        iv = IVUTfindOffset2Iv (PRF_ARG1 (arg_node));
-        if (NULL != iv) {
-            con1 = IVUTiV2Constant (iv);
-        }
+    if (PMmatchFlat (pat1, arg_node)) {
+        con1 = COfreeConstant (con1);
+        con1 = IVUToffset2Constant (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node));
     }
 
     if (NULL != con1) {
