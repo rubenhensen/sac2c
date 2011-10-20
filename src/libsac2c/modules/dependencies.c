@@ -409,12 +409,10 @@ PrintTargetName (node *tree)
         break;
     case FT_modimp:
     case FT_classimp:
-        printf ("%slib%sTree%s.so %slib%sMod%s.a %slib%sMod%s.so:",
-                FMGRabsolutePathname (global.targetdir),
+        printf ("%slib%sTree%s.so %slib%sMod%s.a %slib%sMod%s.so:", (global.targetdir),
                 NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant,
-                FMGRabsolutePathname (global.targetdir),
-                NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant,
-                FMGRabsolutePathname (global.targetdir),
+                (global.targetdir), NSgetName (MODULE_NAMESPACE (tree)),
+                global.config.lib_variant, (global.targetdir),
                 NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant);
         break;
     default:
