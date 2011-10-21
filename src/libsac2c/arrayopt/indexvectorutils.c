@@ -640,8 +640,6 @@ IVUToffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart)
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
 
-    DBUG_ASSERT (NULL != z, "Unable to rebuild iv from offset");
-
     DBUG_RETURN (z);
 }
 

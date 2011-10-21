@@ -2441,7 +2441,8 @@ AWLFIprf (node *arg_node, info *arg_info)
             }
 
             /* Maybe attach intersect calculations now. */
-            if ((INFO_PRODUCERWLFOLDABLE (arg_info)) && (isAvisHasBothExtrema (ivavis))
+            if ((INFO_PRODUCERWLFOLDABLE (arg_info)) && (NULL != ivavis)
+                && (isAvisHasBothExtrema (ivavis))
                 && (!AWLFIisHasNoteintersect (arg_node))) {
                 z = attachIntersectCalc (arg_node, arg_info, ivavis);
                 if (z != ID_AVIS (PRF_ARG1 (arg_node))) {
