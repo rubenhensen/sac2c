@@ -48,6 +48,26 @@ struct TVAR {
     sig_dep **handles;
 };
 
+/*
+ The TVAR structure stores all the constraints on the type variables.
+
+ For example, if we have the following conditional:
+
+ if(foo) {
+    x = y:int[2];
+ } else {
+    x = z:\alpha;
+ }
+
+ We know that x is at least an int[2].
+ So, int[2] is fed to ntype min pointer.
+
+ However, we also know that the type of x is greater than \alpha.
+ So, \alpha is added to the small linked list of type tvar **.
+
+ We have similar counterparts for the upper limit constraints too.
+
+ */
 #define CHUNK_SIZE 10
 
 #define TVAR_NO(n) (n->no)
