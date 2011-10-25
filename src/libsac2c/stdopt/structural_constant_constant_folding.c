@@ -1743,7 +1743,7 @@ IsProxySel (constant *idx, void *sels, void *template)
 }
 
 static node *
-IsSingleSourceArray (node *aelems_P, prf selop)
+IsSingleSourceArray (node *aelems_P, prf selop, info *arg_info)
 {
     node *template = NULL;
     pattern *pat_e1;
@@ -1758,8 +1758,10 @@ IsSingleSourceArray (node *aelems_P, prf selop)
      * before we check that P is a proxy, we check whether it is defined
      * by sel operations on a single source array. This test is way
      * cheaper, so testing twice is worth it.
+     *
+     * The result is the N_exprs node for the first IV N_array.
      */
-    DBUG_PRINT_TAG ("IsSingleSourceArray", "Found matching sel!");
+    DBUG_PRINT ("Found matching sel!");
 
     pat_e1
       = PMprf (1, PMAisPrf (selop), 2, PMarray (0, 1, PMskip (1, PMAgetNode (&template))),
@@ -1767,7 +1769,6 @@ IsSingleSourceArray (node *aelems_P, prf selop)
 
     pat_en = PMprf (1, PMAisPrf (selop), 2, PMarray (0, 1, PMskip (0)),
                     PMvar (1, PMAisVar (&var_A), 0));
-
     tmp = aelems_P;
     all_sels = PMmatchFlat (pat_e1, EXPRS_EXPR (tmp));
     tmp = EXPRS_NEXT (tmp);
@@ -1781,10 +1782,12 @@ IsSingleSourceArray (node *aelems_P, prf selop)
     pat_en = PMfree (pat_en);
 
     if (all_sels) {
-        DBUG_PRINT ("Might have found a proxy=%s", AVIS_NAME (ID_AVIS (template)));
+        DBUG_PRINT ("Might have found a proxy=%s", AVIS_NAME (ID_AVIS (var_A)));
+        INFO_PROXYARR (arg_info) = var_A;
     } else {
         DBUG_PRINT ("No proxy found.");
         template = NULL;
+        INFO_PROXYARR (arg_info) = NULL;
     }
 
     DBUG_RETURN (template);
@@ -1798,7 +1801,6 @@ SelProxyArray (node *arg_node, info *arg_info)
     node *arr_P = NULL;
     node *tmp;
     node *filter_iv;
-    node *var_A = NULL;
     node *template = NULL;
     constant *fs_iv = NULL;
     constant *fs_P = NULL;
@@ -1818,7 +1820,7 @@ SelProxyArray (node *arg_node, info *arg_info)
                           PMskip (1, PMAgetNode (&aelems_P))));
 
     if (PMmatchFlatSkipExtrema (pat, arg_node) && (aelems_P != NULL)) {
-        template = IsSingleSourceArray (aelems_P, F_sel_VxA);
+        template = IsSingleSourceArray (aelems_P, F_sel_VxA, arg_info);
         if (NULL != template) {
 
             /*
@@ -1901,8 +1903,8 @@ SelProxyArray (node *arg_node, info *arg_info)
                                       INFO_PREASSIGN (arg_info));
                     AVIS_SSAASSIGN (iv_avis) = INFO_PREASSIGN (arg_info);
 
-                    res
-                      = TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis), DUPdoDupNode (var_A));
+                    res = TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis),
+                                      DUPdoDupNode (INFO_PROXYARR (arg_info)));
                 } else {
                     if (template != NULL) {
                         template = FREEdoFreeTree (template);
@@ -1939,7 +1941,6 @@ IdxselProxyArray (node *arg_node, info *arg_info)
     node *arr_P = NULL;
     node *tmp;
     node *filter_iv;
-    node *var_A = NULL;
     node *template = NULL;
     constant *fs_P = NULL;
     shape *fs_P_shp;
@@ -1958,7 +1959,7 @@ IdxselProxyArray (node *arg_node, info *arg_info)
                           PMskip (1, PMAgetNode (&aelems_P))));
 
     if (PMmatchFlatSkipExtrema (pat, arg_node) && (aelems_P != NULL)) {
-        template = IsSingleSourceArray (aelems_P, F_sel_VxA);
+        template = IsSingleSourceArray (aelems_P, F_sel_VxA, arg_info);
         if (NULL != template) {
 
             /* FIXME need aelems_iv */
@@ -2042,8 +2043,8 @@ IdxselProxyArray (node *arg_node, info *arg_info)
                                       INFO_PREASSIGN (arg_info));
                     AVIS_SSAASSIGN (iv_avis) = INFO_PREASSIGN (arg_info);
 
-                    res
-                      = TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis), DUPdoDupNode (var_A));
+                    res = TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis),
+                                      DUPdoDupNode (INFO_PROXYARR (arg_info)));
                 } else {
                     if (template != NULL) {
                         template = FREEdoFreeTree (template);

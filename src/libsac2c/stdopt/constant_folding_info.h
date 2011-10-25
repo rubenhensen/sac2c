@@ -20,6 +20,7 @@ struct INFO {
     node *avismax;
     node *let;
     node *part;
+    node *proxyarr;
     bool remassign;
     bool doingextrema;
 };
@@ -38,5 +39,6 @@ struct INFO {
 #define INFO_AVISMAX(n) (n->avismax)
 #define INFO_LET(n) (n->let)
 #define INFO_PART(n) (n->part)
+#define INFO_PROXYARR(n) (n->proxyarr)
 
 #define INFO_DOINGEXTREMA(n) (n->doingextrema)

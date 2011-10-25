@@ -164,6 +164,7 @@ MakeInfo ()
     INFO_AVISMAX (result) = NULL;
     INFO_LET (result) = NULL;
     INFO_PART (result) = NULL;
+    INFO_PROXYARR (result) = NULL;
     INFO_DOINGEXTREMA (result) = FALSE;
 
     DBUG_RETURN (result);
