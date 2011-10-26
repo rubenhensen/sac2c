@@ -806,7 +806,11 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
         ipavis = ID_AVIS (iprime);
         DBUG_PRINT ("Tracing %s", AVIS_NAME (ipavis));
         pat = PMany (1, PMAgetNode (&idx), 0);
-        if (PMmatchFlatSkipExtrema (pat, iprime)) {
+
+        /* If we want to find withids, we have to skip BOTH extrema
+         * and guards. E.g., in twopartoffsetWLAKD.sac
+         */
+        if (PMmatchFlatSkipExtremaAndGuards (pat, iprime)) {
             switch (NODE_TYPE (idx)) {
             case N_id:
                 /* Check for WITHID_IDS */
@@ -1212,6 +1216,7 @@ PermuteIntersectElements (node *zelu, node *zwithids, info *arg_info, int boundn
  *
  * @result: An N_exprs node, which represents the result of
  *          mapping the WLintersect extrema back to consumerWL space,
+ *          for those elements where we can do so.
  *
  *          If we are unable to compute the inverse, we
  *          return NULL. This may occur if, e.g., we multiply
@@ -1248,15 +1253,18 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *arriv, node *lb
     INFO_WITHIDS (arg_info) = NULL;
 
     for (ivindx = 0; ivindx < dim; ivindx++) {
+        ziavis = NULL;
+        lbubel = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (lbub));
         if (N_array == NODE_TYPE (arriv)) {
             iprime = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (arriv));
         } else {
             iprime = TCgetNthIds (ivindx, arriv);
         }
-        lbubel = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (lbub));
 
         INFO_FINVERSESWAP (arg_info) = FALSE;
-        ziavis = BuildInverseProjectionScalar (iprime, arg_info, lbubel);
+        if (NULL != lbubel) {
+            ziavis = BuildInverseProjectionScalar (iprime, arg_info, lbubel);
+        }
         if (NULL != ziavis) {
             if (N_avis == NODE_TYPE (ziavis)) {
                 AVIS_FINVERSESWAP (ziavis) = INFO_FINVERSESWAP (arg_info);
@@ -1265,10 +1273,6 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *arriv, node *lb
 
             z = TCappendExprs (z, TBmakeExprs (ziavis, NULL));
             zw = TCappendIds (zw, TBmakeIds (INFO_WITHIDS (arg_info), NULL));
-        } else {
-            DBUG_PRINT ("Failed to find inverse map for N_array");
-            ivindx = dim;
-            z = (NULL != z) ? FREEdoFreeTree (z) : z;
         }
     }
 
