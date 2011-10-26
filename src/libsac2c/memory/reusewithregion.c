@@ -945,7 +945,7 @@ CheckIntersection (IntMatrix constraints, IntMatrix write_fas, IntMatrix read_fa
     SYScall ("$SAC2CBASE/src/tools/cuda/polyhedral < %s > %s\n", polyhedral_filename,
              result_filename);
 
-    res_file = FMGRwriteOpen (result_filename, "r");
+    res_file = FMGRreadOpen (result_filename);
     res = atoi (fgets (buffer, MAXLINE, res_file)) == 0 ? FALSE : TRUE;
     FMGRclose (res_file);
 
