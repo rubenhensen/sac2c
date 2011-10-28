@@ -2674,7 +2674,7 @@ PRTcond (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    if (global.optimize.dorwr && COND_ISTHENNOOP (arg_node)) {
+    if (global.optimize.dopra && COND_ISTHENNOOP (arg_node)) {
         fprintf (global.outfile, "/* Noop branch */\n");
     }
 
@@ -2689,7 +2689,7 @@ PRTcond (node *arg_node, info *arg_info)
         fprintf (global.outfile, "\n");
     }
 
-    if (global.optimize.dorwr && COND_ISELSENOOP (arg_node)) {
+    if (global.optimize.dopra && COND_ISELSENOOP (arg_node)) {
         INDENT;
         fprintf (global.outfile, "/* Noop branch */\n");
     }

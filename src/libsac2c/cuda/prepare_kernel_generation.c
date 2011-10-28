@@ -259,7 +259,7 @@ PKNLGcond (node *arg_node, info *arg_info)
      * occur outside CUDA withloop, a more elborate solution is needed.
      */
     /*
-      if( global.optimize.dorwr && COND_ISTHENNOOP( arg_node)) {
+      if( global.optimize.dopra && COND_ISTHENNOOP( arg_node)) {
         printf("Create kernel terminate for then...\n");
         COND_THENASSIGNS( arg_node) = FREEdoFreeTree( COND_THENASSIGNS( arg_node));
         COND_THENASSIGNS( arg_node) =
@@ -269,7 +269,7 @@ PKNLGcond (node *arg_node, info *arg_info)
         COND_THEN( arg_node) = TRAVopt( COND_THEN( arg_node), arg_info);
       }
 
-      if( global.optimize.dorwr && COND_ISELSENOOP( arg_node)) {
+      if( global.optimize.dopra && COND_ISELSENOOP( arg_node)) {
         printf("Create kernel terminate for else...\n");
         COND_ELSEASSIGNS( arg_node) = FREEdoFreeTree( COND_ELSEASSIGNS( arg_node));
         COND_ELSEASSIGNS( arg_node) =

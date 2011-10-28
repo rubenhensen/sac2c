@@ -1,7 +1,7 @@
 
 /**
  *
- * @defgroup rwr Region-Aware With-Loop Reuse Candidate Inference
+ * @defgroup pra Polyhedral based WITH-loop reuse candidate analysis
  *
  * @ingroup mm
  *
@@ -10,11 +10,11 @@
 
 /**
  *
- * @file reusewithregion.c
+ * @file polyhedral_reuse_analysis.c
  *
- * Prefix: RWR
+ * Prefix: PRA
  */
-#include "reusewithregion.h"
+#include "polyhedral_reuse_analysis.h"
 
 #define DBUG_PREFIX "UNDEFINED"
 #include "debug.h"
@@ -1024,14 +1024,13 @@ ComputeElseCondition (index_exprs_t *ie)
 
 /******************************************************************************
  *
- * Region-aware With-Loop reuse candidate inference (rwr)
  *
- * prefix: RWR
+ * prefix: PRA
  *
  *****************************************************************************/
 /** <!--********************************************************************-->
  *
- * @fn node *RWRdoRegionAwareReuseCandidateInference( node *with)
+ * @fn node *PRAdoPolyhedralReuseAnalysis( node *with, node *fundef)
  *
  * @brief
  *
@@ -1041,7 +1040,7 @@ ComputeElseCondition (index_exprs_t *ie)
  *
  *****************************************************************************/
 node *
-RWRdoRegionAwareReuseCandidateInference (node *with, node *fundef)
+PRAdoPolyhedralReuseAnalysis (node *with, node *fundef)
 {
     node *cand = NULL;
 
@@ -1085,7 +1084,7 @@ RWRdoRegionAwareReuseCandidateInference (node *with, node *fundef)
                 PART_NEXT (hotpart) = NULL;
 
                 /* Start traversing the hot partition */
-                TRAVpush (TR_rwr);
+                TRAVpush (TR_pra);
                 hotpart = TRAVdo (hotpart, arg_info);
                 TRAVpop ();
 
@@ -1125,13 +1124,13 @@ RWRdoRegionAwareReuseCandidateInference (node *with, node *fundef)
 
 /** <!--********************************************************************-->
  *
- * @fn node *RWRwith( node *arg_node, info *arg_info)
+ * @fn node *PRAwith( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-RWRwith (node *arg_node, info *arg_info)
+PRAwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -1147,13 +1146,13 @@ RWRwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *RWRpart( node *arg_node, info *arg_info)
+ * @fn node *PRApart( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-RWRpart (node *arg_node, info *arg_info)
+PRApart (node *arg_node, info *arg_info)
 {
     int dim, i;
     node *ids_iter, *ids, *lb, *ub;
@@ -1273,13 +1272,13 @@ RWRpart (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *RWRassign( node *arg_node, info *arg_info)
+ * @fn node *PRAassign( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-RWRassign (node *arg_node, info *arg_info)
+PRAassign (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -1298,13 +1297,13 @@ RWRassign (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *RWRcond( node *arg_node, info *arg_info)
+ * @fn node *PRAcond( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-RWRcond (node *arg_node, info *arg_info)
+PRAcond (node *arg_node, info *arg_info)
 {
     node *old_condvar, *condvar, *ext_condvar, *ap;
     index_exprs_t *then_ie, *else_ie;
@@ -1373,13 +1372,13 @@ RWRcond (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *RWRfundef( node *arg_node, info *arg_info)
+ * @fn node *PRAfundef( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-RWRfundef (node *arg_node, info *arg_info)
+PRAfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
@@ -1393,13 +1392,13 @@ RWRfundef (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *RWRap( node *arg_node, info *arg_info)
+ * @fn node *PRAap( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-RWRap (node *arg_node, info *arg_info)
+PRAap (node *arg_node, info *arg_info)
 {
     node *rc, *old_rc;
 
@@ -1440,13 +1439,13 @@ RWRap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *RWRprf( node *arg_node, info *arg_info)
+ * @fn node *PRAprf( node *arg_node, info *arg_info)
  *
  * @brief
  *
  *****************************************************************************/
 node *
-RWRprf (node *arg_node, info *arg_info)
+PRAprf (node *arg_node, info *arg_info)
 {
     node *operand1, *operand2;
     int old_coefficient;

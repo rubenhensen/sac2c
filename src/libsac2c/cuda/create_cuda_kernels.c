@@ -717,8 +717,8 @@ CUKNLpart (node *arg_node, info *arg_info)
         INFO_PART (arg_info) = arg_node;
         /* For each cudarizable partition, we create a CUDA kernel */
         /*
-            if( ( !global.optimize.dorwr && PART_CUDARIZABLE( arg_node)) ||
-                ( global.optimize.dorwr && !PART_ISCOPY( arg_node) && PART_CUDARIZABLE(
+            if( ( !global.optimize.dopra && PART_CUDARIZABLE( arg_node)) ||
+                ( global.optimize.dopra && !PART_ISCOPY( arg_node) && PART_CUDARIZABLE(
            arg_node))) {
         */
         if ((!WITH_HASRC (INFO_WITH (arg_info)) || !PART_ISCOPY (arg_node))

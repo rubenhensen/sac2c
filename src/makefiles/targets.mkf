@@ -209,7 +209,7 @@ libsac2c_memory      := rcopt filterrc alloc referencecounting \
                         rcminimize NumLookUpTable wrci reusewithoffset \
                         movesharedmeminstr scoperce show_alias \
                         rm_alias_results_cc filter_partial_reuse_candidates \
-                        loopallocopt reusewithregion identify_noop_branch
+                        loopallocopt polyhedral_reuse_analysis identify_noop_branch
 
 libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
                         typeconv_precompile setlinksign dead_vardec_removal \
@@ -217,7 +217,7 @@ libsac2c_precompile  := markmemvals renameidentifiers functionprecompile \
                         resolve_code_sharing lift_with3_bodies \
                         distribute_threads tag_main_fun_thread \
                         dynamic_memory_usage_inference   \
-                        omp_find_private marksuballoc move_const
+                        omp_find_private marksuballoc move_const remove_noop_branch
 
 libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \

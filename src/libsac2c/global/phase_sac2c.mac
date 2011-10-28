@@ -1178,7 +1178,7 @@ SUBPHASE (pknlg, "CUDA Prepare kernel generation", PKNLGdoPrepareKernelGeneratio
 
 SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)
 
-SUBPHASE (rnb, "Remove noop branch", RNBdoRemoveNoopBranch, global.optimize.dorwr, pc)
+SUBPHASE (rnb, "Remove noop branch", RNBdoRemoveNoopBranch, global.optimize.dopra, pc)
 
 SUBPHASE (cuasr, "CUDA Adjust return ids of single threaded kernel",
           CUASRdoAdjustStknlRets, global.backend == BE_cuda && global.optimize.doexpar,

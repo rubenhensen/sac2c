@@ -37,8 +37,8 @@
 #include "shape.h"
 #include "ReuseWithArrays.h"
 #include "reusewithoffset.h"
-#include "reusewithregion.h"
 #include "compare_tree.h"
+#include "polyhedral_reuse_analysis.h"
 
 /*
  * INFO structure
@@ -307,15 +307,14 @@ WRCIwith (node *arg_node, info *arg_info)
                            RWOdoOffsetAwareReuseCandidateInference (arg_node));
     }
 
-    if (global.optimize.dorwr) {
+    if (global.optimize.dopra) {
         /*
          * Find more complex reuse candidates
          */
         INFO_RC (arg_info)
           = TCappendExprs (INFO_RC (arg_info),
-                           RWRdoRegionAwareReuseCandidateInference (arg_node,
-                                                                    INFO_FUNDEF (
-                                                                      arg_info)));
+                           PRAdoPolyhedralReuseAnalysis (arg_node,
+                                                         INFO_FUNDEF (arg_info)));
     }
 
     /*

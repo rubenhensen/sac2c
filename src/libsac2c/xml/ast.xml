@@ -2642,7 +2642,7 @@
         <node name="Ids" />
       </travuser>
     </traversal>
-    <traversal id="RWR" name="Reuse With-loop arrays with regions" default="sons" include="reusewithregion.h">
+    <traversal id="PRA" name="Reuse With-loop arrays based on polyhedral model" default="sons" include="polyhedral_reuse_analysis.h">
       <travuser>
         <node name="Prf" />
         <node name="Part" />
