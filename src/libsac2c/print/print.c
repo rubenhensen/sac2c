@@ -4540,7 +4540,7 @@ PRTpart (node *arg_node, info *arg_info)
     if (PART_CUDARIZABLE (arg_node)) {
         fprintf (global.outfile, "/*** CUDA Partition ***/\n");
     } else {
-        fprintf (global.outfile, "/*** Partition ***/\n");
+        // fprintf (global.outfile, "/*** Partition ***/\n");
     }
 
     if (PART_THREADBLOCKSHAPE (arg_node) != NULL) {
@@ -4549,7 +4549,7 @@ PRTpart (node *arg_node, info *arg_info)
         fprintf (global.outfile, " ***/\n");
     }
 
-    if (global.backend == BE_cuda && PART_ISCOPY (arg_node)) {
+    if (PART_ISCOPY (arg_node)) {
         fprintf (global.outfile, "/*** Copy Partition ***/\n");
     }
 

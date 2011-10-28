@@ -430,6 +430,8 @@ AnnotateCopyPart (node *with, node *rc)
     while (part != NULL) {
         if (IsNoopPart (part, rc)) {
             PART_ISCOPY (part) = TRUE;
+        } else {
+            PART_ISCOPY (part) = FALSE;
         }
 
         part = PART_NEXT (part);

@@ -177,6 +177,8 @@ AnnotateCopyPart (node *with, node *rc)
     while (part != NULL) {
         if (IsNoopPart (part, rc)) {
             PART_ISCOPY (part) = TRUE;
+        } else {
+            PART_ISCOPY (part) = FALSE;
         }
 
         part = PART_NEXT (part);
@@ -247,9 +249,7 @@ RWOdoOffsetAwareReuseCandidateInference (node *with)
                 CODE_NEXT (hotcode) = oldnext;
 
                 if (INFO_RC (arg_info) != NULL) {
-                    if (global.backend == BE_cuda) {
-                        with = AnnotateCopyPart (with, INFO_RC (arg_info));
-                    }
+                    with = AnnotateCopyPart (with, INFO_RC (arg_info));
                     cand = TBmakeExprs (INFO_RC (arg_info), NULL);
                     INFO_RC (arg_info) = NULL;
                     WITH_HASRC (with) = TRUE;

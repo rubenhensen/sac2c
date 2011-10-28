@@ -2664,6 +2664,16 @@
         <node name="Fundef" />
       </travuser>
     </traversal>
+    <traversal id="RNB" name="Remove noop conditional branch" default="sons" include="remove_noop_branch.h">
+      <travuser>
+        <node name="Code" />
+        <node name="Let" />
+        <node name="Assign" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="Cond" />
+      </travuser>
+    </traversal>
     <traversal id="REUSE" name="Reuse With Arrays" default="sons" include="ReuseWithArrays.h">
       <travuser>
         <node name="Let" />
