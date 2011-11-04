@@ -2179,6 +2179,37 @@ TCcreateArrayFromIds (node *ids)
 
     DBUG_RETURN (result);
 }
+
+/** <!-- ****************************************************************** -->
+ * @fn node *TCcreateArrayFromIdsDrop(...)
+ *
+ * @brief Creates a N_array node containing N_id nodes corresponding to the
+ *        given N_ids chain.
+ *
+ * @param ids N_ids chain
+ *        dropcount: number of leading ids entries to ignore
+ *
+ * @return created N_array node
+ ******************************************************************************/
+node *
+TCcreateArrayFromIdsDrop (int dropcount, node *ids)
+{
+    node *result;
+
+    DBUG_ENTER ();
+
+    if (dropcount != 0) {
+        result = TCcreateArrayFromIdsDrop (dropcount - 1, IDS_NEXT (ids));
+    } else {
+        result = TCcreateExprsFromIds (ids);
+        if (NULL != result) {
+            result = TCmakeIntVector (result);
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
 /** <!-- ****************************************************************** -->
  * @fn node *TCcreateExprsFromArgs( node *args)
  *

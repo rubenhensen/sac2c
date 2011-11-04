@@ -318,7 +318,7 @@ IVUTarrayFromProxy (node *iv)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IVUTarrayFromIv( node *iv)
+ * @fn node *IVUTmatFromIv( node *iv)
  *
  * @brief: Find the array that was the argument to the
  *         expressions that built index vector iv.
@@ -344,7 +344,7 @@ IVUTarrayFromProxy (node *iv)
  *
  *****************************************************************************/
 node *
-IVUTarrayFromIv (node *iv)
+IVUTmatFromIv (node *iv)
 {
     pattern *pat;
     node *sv = NULL;
@@ -360,6 +360,29 @@ IVUTarrayFromIv (node *iv)
 
     DBUG_RETURN (ARR);
 }
+
+#ifdef DEADCODE
+/** <!--********************************************************************-->
+ *
+ * @fn node *IVUTnarrayFromIv( node *iv, node *cwlpart)
+ *
+ * @brief: Find
+ *
+ * @param: iv: a vect2offset PRF_ARG2 or an _sel_VxA_( iv, mat) iv.
+ *
+ * @return:
+ *
+ *
+ *****************************************************************************/
+node *
+IVUTnarrayFromIv (node *iv, node *cwlpart)
+{
+
+    DBUG_ENTER ();
+
+    DBUG_RETURN (z);
+}
+#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *
@@ -429,7 +452,7 @@ IVUTisShapesMatch (node *pavis, node *cavis, node *cavisshape)
      */
 
     if (!z) {
-        mcwl = IVUTarrayFromIv (cavisshape);
+        mcwl = IVUTmatFromIv (cavisshape);
         z = ((NULL != mcwl) && (ID_AVIS (mcwl) == pavis));
     }
 
@@ -729,7 +752,8 @@ IVUTfindOffset2Iv (node *arg_node)
     pat = PMprf (1, PMAisPrf (F_vect2offset), 2, PMany (1, PMAgetNode (&shp), 0),
                  PMany (1, PMAgetNode (&iv), 0));
 
-    PMmatchFlatSkipGuards (pat, arg_node);
+    /* Must skip extrema, too: UTReshape.sac */
+    PMmatchFlatSkipExtremaAndGuards (pat, arg_node);
     pat = PMfree (pat);
 
     DBUG_RETURN (iv);

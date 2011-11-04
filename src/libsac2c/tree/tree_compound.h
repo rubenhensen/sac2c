@@ -702,6 +702,7 @@ extern node *TCtakeDropExprs (int takecount, int dropcount, node *exprs);
 
 extern node *TCcreateExprsFromIds (node *ids);
 extern node *TCcreateArrayFromIds (node *ids);
+extern node *TCcreateArrayFromIdsDrop (int dropcount, node *ids);
 
 #define EXPRS_EXPRS1(n) (n)
 #define EXPRS_EXPRS2(n) EXPRS_NEXT (n)

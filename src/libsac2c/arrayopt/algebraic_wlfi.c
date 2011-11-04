@@ -302,7 +302,7 @@ AWLFIdoAlgebraicWithLoopFolding (node *arg_node)
 static node *
 SimplifySymbioticExpression (node *arg_node, info *arg_info)
 {
-    int i;
+    int i = 0;
     int ct;
     int countLIR = 0;
     int countINL = 0;
@@ -1553,6 +1553,50 @@ noDefaultPartition (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @fn AWLFItakeDropIv( ...)
+ *
+ *   @brief Perform take on ivmin/ivmax, iv... This is required
+ *          in the case where the ProducerWL generates non-scalar cells.
+ *
+ *   @param: takect - the result shape/take count
+ *   @param: arg_node - ivmin or ivmax.
+ *   @return  the shortened ivmin/ivmax.
+ *
+ ******************************************************************************/
+node *
+AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
+                 node **preassigns)
+{
+    node *z;
+    node *arr = NULL;
+    node *zavis;
+    pattern *pat;
+
+    DBUG_ENTER ();
+
+    pat = PMarray (1, PMAgetNode (&arr), 0);
+    PMmatchFlatSkipExtrema (pat, arg_node);
+    DBUG_ASSERT (N_array == NODE_TYPE (arr), "Expected N_array ivmin/ivmax");
+
+    if (takect != SHgetUnrLen (ARRAY_FRAMESHAPE (arr))) {
+        z = TCtakeDropExprs (takect, dropct, ARRAY_AELEMS (arr));
+        z = DUPdoDupTree (z);
+        z = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arr)), SHcreateShape (1, takect), z);
+
+        zavis = FLATGflattenExpression (z, vardecs, preassigns,
+                                        TYmakeAKS (TYmakeSimpleType (T_int),
+                                                   SHcreateShape (1, takect)));
+    } else {
+        zavis = ID_AVIS (arg_node);
+    }
+
+    pat = PMfree (pat);
+
+    DBUG_RETURN (zavis);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *IntersectBoundsBuilderOne( node *arg_node, info *arg_info,
  *                                      node *producerwlPart, int boundnum,
  *                                      node *ivminmax)
@@ -1660,11 +1704,15 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     shp = SHgetUnrLen (ARRAY_FRAMESHAPE (gen));
 
     fun = (1 == boundnum) ? "partitionIntersectMax" : "partitionIntersectMin";
-    mmx = (1 == boundnum) ? ID_AVIS (ivmin) : ID_AVIS (ivmax);
+    mmx = (1 == boundnum) ? ivmin : ivmax;
 
-    DBUG_PRINT ("Inserting partitionIntersectMin/Max call for %s", AVIS_NAME (mmx));
+    DBUG_PRINT ("Inserting partitionIntersectMin/Max call for %s",
+                AVIS_NAME (ID_AVIS (mmx)));
 
     DBUG_ASSERT (N_array == NODE_TYPE (gen), "Expected N_array gen");
+    mmx = AWLFItakeDropIv (shp, 0, mmx, &INFO_VARDECS (arg_info),
+                           &INFO_PREASSIGNS (arg_info));
+
     gen = WLSflattenBound (DUPdoDupTree (gen), &INFO_VARDECS (arg_info),
                            &INFO_PREASSIGNS (arg_info));
 
@@ -1692,8 +1740,8 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
  * @brief:  Emit symbiotic expression to determine if intersection
  *          of index vector set and partition bounds is null.
  *
- * @params: idxavismin: AVIS_MIN( consumerWL partition index vector)
- * @params: idxavismax: AVIS_MAX( consumerWL partition index vector)
+ * @params: idxmin: AVIS_MIN( consumerWL partition index vector)
+ * @params: idxmax: AVIS_MAX( consumerWL partition index vector)
  * @params: bound1: N_avis of GENERATOR_BOUND1 of producerWL partition.
  * @params: bound2: N_avis of GENERATOR_BOUND2 of producerWL partition.
  * @params: arg_info: your basic arg_info node
@@ -1703,21 +1751,27 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
  *****************************************************************************/
 
 static node *
-IntersectNullComputationBuilder (node *idxavismin, node *idxavismax, node *bound1,
-                                 node *bound2, info *arg_info)
+IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node *bound2,
+                                 info *arg_info)
 {
     node *fncall;
     node *resavis;
+    node *idxavismin;
+    node *idxavismax;
     int shp;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (N_avis == NODE_TYPE (bound1), "Expected N_avis bound1");
     DBUG_ASSERT (N_avis == NODE_TYPE (bound2), "Expected N_avis bound2");
+    shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (bound1)));
+    idxavismin = AWLFItakeDropIv (shp, 0, idxmin, &INFO_VARDECS (arg_info),
+                                  &INFO_PREASSIGNS (arg_info));
+    idxavismax = AWLFItakeDropIv (shp, 0, idxmax, &INFO_VARDECS (arg_info),
+                                  &INFO_PREASSIGNS (arg_info));
 
     fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), "isPartitionIntersectNull",
-                                TCcreateExprsChainFromAvises (4, ID_AVIS (idxavismin),
-                                                              ID_AVIS (idxavismax),
+                                TCcreateExprsChainFromAvises (4, idxavismin, idxavismax,
                                                               bound1, bound2));
 
     shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (bound1)));

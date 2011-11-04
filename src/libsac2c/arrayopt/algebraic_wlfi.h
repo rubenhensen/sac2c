@@ -26,6 +26,8 @@ extern bool isAvisMemberIds (node *arg_node, node *ids);
 
 extern node *AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
                                      ntype *ztype);
+extern node *AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
+                              node **preassigns);
 extern node *AWLFIfundef (node *arg_node, info *arg_info);
 extern node *AWLFIblock (node *arg_node, info *arg_info);
 extern node *AWLFIassign (node *arg_node, info *arg_info);

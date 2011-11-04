@@ -203,6 +203,8 @@
 #include "ivexcleanup.h"
 #include "deadcoderemoval.h"
 #include "indexvectorutils.h"
+#include "type_utils.h"
+#include "flattengenerators.h"
 
 /** <!--********************************************************************-->
  *
@@ -214,7 +216,7 @@ struct INFO {
     node *fundef;
     node *part;
     /* This is the current partition in the consumerWL. */
-    node *wl;
+    node *cwl;
     /* This is the current consumerWL. */
     int level;
     /* This is the current nesting level of WLs */
@@ -233,7 +235,7 @@ struct INFO {
  */
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_PART(n) ((n)->part)
-#define INFO_WL(n) ((n)->wl)
+#define INFO_CWL(n) ((n)->cwl)
 #define INFO_LEVEL(n) ((n)->level)
 #define INFO_PRODUCERWLPART(n) ((n)->producerwlpart)
 #define INFO_LUT(n) ((n)->lut)
@@ -254,7 +256,7 @@ MakeInfo (node *fundef)
 
     INFO_FUNDEF (result) = fundef;
     INFO_PART (result) = NULL;
-    INFO_WL (result) = NULL;
+    INFO_CWL (result) = NULL;
     INFO_LEVEL (result) = 0;
     INFO_PRODUCERWLPART (result) = NULL;
     INFO_LUT (result) = NULL;
@@ -397,6 +399,97 @@ isEmptyPartitionCodeBlock (node *partn)
     DBUG_ENTER ();
 
     z = (NULL == BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (partn))));
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CreateIvForSel(...)
+ *
+ * @brief The producerWL has a non-scalar cellexpr, and the
+ *        iv in _sel_VxA_( iv, pwl) is the consumerWL WITHID_VEC.
+ *        This code generates a flattened N_array for
+ *        take( [ -dim], WITHID_IDS) and returns its avis.
+ *
+ * @param dim: the desired number of elements in the N_array
+ *        dropct:
+ *        ids: The WITHID_IDS for the consumerWL
+ *        vardecs: pointer to vardecs chain
+ *        preassigns: pointer to preassigns chain
+ *
+ * @result The N_avis for the created N_array.
+ *
+ *****************************************************************************/
+static node *
+CreateIvForSel (int dim, int dropct, node *ids, node **vardecs, node **preassigns)
+{
+    node *zavis;
+    node *narray;
+
+    DBUG_ENTER ();
+
+    narray = TCcreateArrayFromIdsDrop (dropct, ids);
+    DBUG_ASSERT (dim == TCcountExprs (ARRAY_AELEMS (narray)), "dim/dropcount confusion");
+    zavis = FLATGflattenExpression (narray, vardecs, preassigns,
+                                    TYmakeAKS (TYmakeSimpleType (T_int),
+                                               SHcreateShape (1, dim)));
+
+    DBUG_RETURN (zavis);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CreateSelForCell(...)
+ *
+ * @brief if cellexpr is non-scalar, arg_node selects not only the
+ *        cell from the ProducerWL, but also selects a scalar from the
+ *        cell. We alter the sel() to select the scalar only.
+ *
+ * @param arg_node: the _sel_VxA_( iv, producerWL).
+ * @param cellexpr: the CODE_EXPRS from the producerWL
+ *
+ * @result z: if iv=[i,j,k], and the cell is rank-1, then we
+ *         generate: _sel_VxA_( [k], cellexpr)
+ *         The result is the N_prf of the new sel()
+ *         or an N_id of the cellexpr.
+ *
+ *****************************************************************************/
+static node *
+CreateSelForCell (node *arg_node, node *cellexpr, info *arg_info)
+{
+    node *z = NULL;
+    node *ivavis;
+    node *iv;
+    node *ids;
+    int dim;
+    int dropct;
+
+    DBUG_ENTER ();
+
+    if (TUisScalar (AVIS_TYPE (cellexpr))) {
+        z = TBmakeId (cellexpr);
+    } else {
+        dim = TYgetDim (AVIS_TYPE (cellexpr));
+        /* Next lines will need work if we compile with -noivecyc! */
+        iv = IVUTfindOffset2Iv (PRF_ARG1 (LET_EXPR (ASSIGN_STMT (arg_node))));
+        if (N_array == NODE_TYPE (iv)) {
+            dropct = TCcountExprs (ARRAY_AELEMS (iv)) - dim;
+            ivavis = AWLFItakeDropIv (dim, dropct, iv, &INFO_VARDECS (arg_info),
+                                      &INFO_PREASSIGNS (arg_info));
+        } else {
+            ids = WITHID_IDS (PART_WITHID (WITH_PART (INFO_CWL ((arg_info)))));
+            DBUG_ASSERT (N_id == NODE_TYPE (iv), "Expected N_id or N_array");
+            DBUG_ASSERT (ID_AVIS (iv)
+                           == IDS_AVIS (WITHID_VEC (
+                                PART_WITHID (WITH_PART (INFO_CWL (arg_info))))),
+                         "Expected WITHID_VEC");
+            dropct = TCcountIds (ids) - dim;
+            ivavis = CreateIvForSel (dim, dropct, ids, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info));
+        }
+        z = TCmakePrf2 (F_sel_VxA, TBmakeId (ivavis), TBmakeId (cellexpr));
+    }
 
     DBUG_RETURN (z);
 }
@@ -684,9 +777,9 @@ doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consume
 {
     node *oldblock;
     node *newblock;
-    node *newavis;
+    node *newsel;
     node *idxassigns;
-    node *expravis;
+    node *cellexpr;
 
     DBUG_ENTER ();
 
@@ -696,30 +789,30 @@ doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consume
 
     /* Generate iv=[i,j] assigns, then do renames. */
     idxassigns = makeIdxAssigns (arg_node, arg_info, producerWLPart);
-
-    /* We have to remove extrema from old block and recompute everything */
-    /* If producerWL code block is empty, don't do any code substitutions.
-     * Just replace sel(iv, producerWL) by iv.
-     */
+    cellexpr = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (producerWLPart))));
 
     if (NULL != oldblock) {
+        /* Remove extrema from old block and recompute everything */
         oldblock = IVEXCdoIndexVectorExtremaCleanupPartition (oldblock, arg_info);
         newblock
           = DUPdoDupTreeLutSsa (oldblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
     } else {
+        /* If producerWL code block is empty, don't duplicate code block.
+         * If the cell is non-scalar, we still need a _sel_() to pick
+         * the proper cell element.
+         */
         newblock = NULL;
     }
 
-    expravis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (PART_CODE (producerWLPart))));
-    newavis = LUTsearchInLutPp (INFO_LUT (arg_info), expravis);
-
+    cellexpr = LUTsearchInLutPp (INFO_LUT (arg_info), cellexpr);
+    newsel = CreateSelForCell (arg_node, cellexpr, arg_info);
     LUTremoveContentLut (INFO_LUT (arg_info));
 
     /**
      * replace the code
      */
     FREEdoFreeNode (LET_EXPR (ASSIGN_STMT (arg_node)));
-    LET_EXPR (ASSIGN_STMT (arg_node)) = TBmakeId (newavis);
+    LET_EXPR (ASSIGN_STMT (arg_node)) = newsel;
     if (NULL != newblock) {
         arg_node = TCappendAssign (newblock, arg_node);
     }
@@ -858,7 +951,7 @@ AWLFwith (node *arg_node, info *arg_info)
     DBUG_PRINT ("Examining N_with");
     old_info = arg_info;
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
-    INFO_WL (arg_info) = arg_node;
+    INFO_CWL (arg_info) = arg_node;
     INFO_LUT (arg_info) = INFO_LUT (old_info);
     INFO_LEVEL (arg_info) = INFO_LEVEL (old_info) + 1;
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_info);
@@ -897,7 +990,7 @@ AWLFwith (node *arg_node, info *arg_info)
     }
 #endif // BREAKSDUPLHS
 
-    INFO_WL (old_info) = NULL;
+    INFO_CWL (old_info) = NULL;
     INFO_VARDECS (old_info) = INFO_VARDECS (arg_info);
     INFO_PREASSIGNS (old_info) = INFO_PREASSIGNS (arg_info);
     arg_info = FreeInfo (arg_info);
