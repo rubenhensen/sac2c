@@ -2738,44 +2738,24 @@ handle_npart (struct parser *parser)
 
     tok = parser_get_token (parser);
     if (token_is_operator (tok, tv_colon)) {
-        bool comma_expr = false;
+        parser->in_return = true;
+        exprs = handle_expr (parser);
+        parser->in_return = false;
 
-        tok = parser_get_token (parser);
-        loc = token_location (tok);
-
-        /* Make sure, that we do not hit type-cast,
-           otherwise it is a list of operators there.  */
-        if (token_is_operator (tok, tv_lparen)) {
-            comma_expr = true;
-
-            tok = parser_get_token (parser);
-            if (token_is_operator (tok, tv_colon) || is_type (parser))
-                comma_expr = false;
-            parser_unget (parser);
+        if (!exprs) {
+            error_loc (loc, "expression expected");
+            parser_get_until_tval (parser, tv_semicolon);
+            goto error;
         }
 
-        if (comma_expr) {
-            exprs = handle_expr_list (parser);
-            if (exprs == NULL)
-                error_loc (loc, "expression expected");
-            else if (exprs == error_mark_node) {
-                parser_get_until_tval (parser, tv_semicolon);
-                goto error;
-            }
+        if (exprs == error_mark_node) {
+            parser_get_until_tval (parser, tv_semicolon);
+            goto error;
+        }
 
-            if (parser_expect_tval (parser, tv_rparen))
-                parser_get_token (parser);
-            else
-                goto error;
-        } else {
-            parser_unget (parser);
-            exprs = handle_expr (parser);
-            if (exprs == error_mark_node) {
-                parser_get_until_tval (parser, tv_semicolon);
-                goto error;
-            }
+        if (NODE_TYPE (exprs) != N_exprs)
             exprs = TBmakeExprs (exprs, NULL);
-        }
+
     } else
         parser_unget (parser);
 
