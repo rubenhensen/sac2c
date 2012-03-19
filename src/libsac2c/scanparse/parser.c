@@ -2738,9 +2738,23 @@ handle_npart (struct parser *parser)
 
     tok = parser_get_token (parser);
     if (token_is_operator (tok, tv_colon)) {
+        bool comma_expr = false;
+
         tok = parser_get_token (parser);
         loc = token_location (tok);
-        if (token_is_operator (tok, tv_lbrace)) {
+
+        /* Make sure, that we do not hit type-cast,
+           otherwise it is a list of operators there.  */
+        if (token_is_operator (tok, tv_lparen)) {
+            comma_expr = true;
+
+            tok = parser_get_token (parser);
+            if (token_is_operator (tok, tv_colon) || is_type (parser))
+                comma_expr = false;
+            parser_unget (parser);
+        }
+
+        if (comma_expr) {
             exprs = handle_expr_list (parser);
             if (exprs == NULL)
                 error_loc (loc, "expression expected");
@@ -2749,7 +2763,7 @@ handle_npart (struct parser *parser)
                 goto error;
             }
 
-            if (parser_expect_tval (parser, tv_rbrace))
+            if (parser_expect_tval (parser, tv_rparen))
                 parser_get_token (parser);
             else
                 goto error;
@@ -2851,13 +2865,17 @@ handle_withop (struct parser *parser)
         else
             goto error;
 
-        if (error_mark_node == (exp1 = handle_expr (parser)))
+        if (error_mark_node == (exp1 = handle_expr (parser))) {
+            parser_get_until_tval (parser, tv_rparen);
             goto error;
+        }
 
         tok = parser_get_token (parser);
         if (token_is_operator (tok, tv_comma)) {
-            if (error_mark_node == (exp2 = handle_expr (parser)))
+            if (error_mark_node == (exp2 = handle_expr (parser))) {
+                parser_get_until_tval (parser, tv_rparen);
                 goto error;
+            }
         } else
             parser_unget (parser);
 
@@ -2898,6 +2916,7 @@ handle_withop (struct parser *parser)
                 tok = parser_get_token (parser);
                 parser_unget (parser);
                 error_loc (token_location (tok), "binary function expected");
+                parser_get_until_tval (parser, tv_rparen);
                 goto error;
             }
 
@@ -2908,28 +2927,39 @@ handle_withop (struct parser *parser)
             parser_unget (parser);
             error_loc (token_location (tok), "invalid function name `%s' found",
                        token_as_string (tok));
+            parser_get_until_tval (parser, tv_rparen);
             goto error;
         }
 
-        if (exp1 == error_mark_node)
+        if (exp1 == error_mark_node) {
+            parser_get_until_tval (parser, tv_rparen);
             goto error;
+        }
 
         if (parser_expect_tval (parser, tv_comma))
             parser_get_token (parser);
-        else
+        else {
+            parser_get_until_tval (parser, tv_rparen);
             goto error;
+        }
 
-        if (error_mark_node == (exp2 = handle_expr (parser)))
+        if (error_mark_node == (exp2 = handle_expr (parser))) {
+            parser_get_until_tval (parser, tv_rparen);
             goto error;
+        }
 
         if (foldfix_p) {
             if (parser_expect_tval (parser, tv_comma))
                 parser_get_token (parser);
-            else
+            else {
+                parser_get_until_tval (parser, tv_rparen);
                 goto error;
+            }
 
-            if (error_mark_node == (exp3 = handle_expr (parser)))
+            if (error_mark_node == (exp3 = handle_expr (parser))) {
+                parser_get_until_tval (parser, tv_rparen);
                 goto error;
+            }
         }
 
         if (parser_expect_tval (parser, tv_rparen))
@@ -2946,7 +2976,11 @@ handle_withop (struct parser *parser)
             SPFOLD_GUARD (ret) = exp3;
 
         return ret;
-    }
+    } else
+        error_loc (token_location (tok),
+                   "with-loop operation "
+                   "expected, `%s' found",
+                   token_as_string (tok));
 
 error:
     free_node (exp1);
@@ -2959,6 +2993,7 @@ error:
 node *
 handle_with (struct parser *parser)
 {
+    struct token *tok;
     struct location loc;
     node *nparts = error_mark_node;
     node *withop = error_mark_node;
@@ -2995,7 +3030,46 @@ handle_with (struct parser *parser)
     else
         goto error;
 
-    withop = handle_withop (parser);
+    tok = parser_get_token (parser);
+    /* Handle a list of withops.  */
+    if (token_is_operator (tok, tv_lparen)) {
+        bool withop_error = false;
+
+        withop = NULL;
+        while (true) {
+            node *t = handle_withop (parser);
+
+            if (t == error_mark_node)
+                withop_error = true;
+
+            if (!withop_error) {
+                if (!withop)
+                    withop = t;
+                else {
+                    L_WITHOP_NEXT (t, withop);
+                    withop = t;
+                }
+            }
+
+            tok = parser_get_token (parser);
+            if (!token_is_operator (tok, tv_comma)) {
+                parser_unget (parser);
+                break;
+            }
+        }
+
+        if (parser_expect_tval (parser, tv_rparen))
+            parser_get_token (parser);
+        else
+            goto error;
+
+        if (withop_error)
+            goto error;
+    } else {
+        parser_unget (parser);
+        withop = handle_withop (parser);
+    }
+
     if (withop == error_mark_node)
         goto error;
 
@@ -5373,7 +5447,7 @@ parse (struct parser *parser)
 
         parser_unget (parser);
         defs = handle_definitions (parser);
-        if (error_count == 0) {
+        if (error_count == 0 && defs != error_mark_node) {
             MODULE_NAMESPACE (defs) = NSgetRootNamespace ();
             MODULE_FILETYPE (defs) = FT_prog;
             global.syntax_tree = defs;
