@@ -5360,7 +5360,9 @@ parse (struct parser *parser)
         }
     }
 
+#ifndef DBUG_OFF
     printf ("note: finished parsing.\n");
+#endif
     if (error_count != 0)
         printf ("note: %i error(s) found.\n", error_count);
 
