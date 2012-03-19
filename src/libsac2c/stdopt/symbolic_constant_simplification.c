@@ -2489,25 +2489,46 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
  *   shp' = shp;
  *   pred = TRUE;
  *
+ *   Two cases: Case 1: AVIS_SHAPE is an N_id
+ *              Case 2: AVIS_SHAPE is an N_array
+ *
  *****************************************************************************/
 node *
 SCSprf_prod_matches_prod_shape_VxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    pattern *pat;
+    pattern *pat1;
+    pattern *pat2;
     node *shp;
+    node *arr = NULL;
 
     DBUG_ENTER ();
 
+    pat1 = PMprf (1, PMAisPrf (F_prod_matches_prod_shape_VxA), 2,
+                  PMvar (1, PMAisVar (&shp), 0), PMskip (0));
+    pat2 = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
+
     shp = AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)));
     if (NULL != shp) {
-        pat = PMprf (1, PMAisPrf (F_prod_matches_prod_shape_VxA), 2,
-                     PMvar (1, PMAisVar (&shp), 0), PMskip (0));
-        if (PMmatchFlatSkipExtrema (pat, arg_node)) {
-            res = TBmakeExprs (DUPdoDupNode (shp), TBmakeExprs (TBmakeBool (TRUE), NULL));
+        if ((N_id == NODE_TYPE (shp)) && /* Case 1 */
+            (PMmatchFlatSkipExtrema (pat1, arg_node))) {
+            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (TBmakeBool (TRUE), NULL));
+            DBUG_PRINT ("Case 1 Result is %ss",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
+        } else {
+            if ((N_array == NODE_TYPE (shp)) && /* Case 2 */
+                (PMmatchFlatSkipExtrema (pat2, PRF_ARG1 (arg_node)))
+                && (CMPT_EQ == CMPTdoCompareTree (shp, arr))) {
+                res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                                   TBmakeExprs (TBmakeBool (TRUE), NULL));
+                DBUG_PRINT ("Case 2 Result is %ss",
+                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
+            }
         }
-        pat = PMfree (pat);
     }
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
 
     DBUG_RETURN (res);
 }

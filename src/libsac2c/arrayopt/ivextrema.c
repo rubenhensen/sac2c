@@ -977,7 +977,7 @@ IVEXIprf (node *arg_node, info *arg_info)
             && (TUshapeKnown (AVIS_TYPE (lhsavis)))) {
 
             shp = SHcopyShape (TYgetShape (AVIS_TYPE (lhsavis)));
-            con = COmakeZero (SCSgetBasetypeOfExpr (lhsavis), shp);
+            con = COmakeZero (T_int, shp);
             if (NULL != con) {
                 typ = TYmakeAKV (TYmakeSimpleType (T_int), con);
                 minv = COconstant2AST (con);
