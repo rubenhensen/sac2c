@@ -27,7 +27,8 @@
 #include "int_matrix.h"
 #include "types.h"
 #include "cuda_utils.h"
-#include "create_lac_fun.h"
+#include "create_loop_fun.h"
+#include "create_cond_fun.h"
 
 typedef struct CUIDX_SET_T {
     node *tx;
@@ -1155,11 +1156,15 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
               = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)), vardecs);
 
             /* After this, loop_assigns is the function application of a loop function */
+            /*
+                  loop_assigns = CLACFdoCreateLacFun( FALSE, INFO_FUNDEF( arg_info),
+               loop_assigns, NULL, iterator, loop_bound, in_shared_array, CUAI_SHARRAY(
+               access_info), &INFO_LACFUNS( arg_info));
+            */
             loop_assigns
-              = CLACFdoCreateLacFun (FALSE, INFO_FUNDEF (arg_info), loop_assigns, NULL,
-                                     iterator, loop_bound, in_shared_array,
-                                     CUAI_SHARRAY (access_info),
-                                     &INFO_LACFUNS (arg_info));
+              = CLFdoCreateLoopFun (INFO_FUNDEF (arg_info), loop_assigns, iterator,
+                                    loop_bound, in_shared_array,
+                                    CUAI_SHARRAY (access_info), &INFO_LACFUNS (arg_info));
 
             /* This is the final assignment chain used to create the conditional function
              */
@@ -1336,9 +1341,14 @@ InsertGlobal2Shared (shared_global_info_t *sg_info, cuda_access_info_t *access_i
         out_shared_array = CUAI_SHARRAY (access_info);
 
         /* After this, assigns is the function application of a conditional function */
-        assigns = CLACFdoCreateLacFun (TRUE, INFO_FUNDEF (arg_info), assigns, cond, NULL,
-                                       NULL, in_shared_array, out_shared_array,
-                                       &INFO_LACFUNS (arg_info));
+        /*
+            assigns = CLACFdoCreateLacFun( TRUE, INFO_FUNDEF( arg_info), assigns, cond,
+           NULL, NULL, in_shared_array, out_shared_array, &INFO_LACFUNS( arg_info));
+        */
+        assigns = CCFdoCreateCondFun (INFO_FUNDEF (arg_info), assigns, NULL,
+                                      cond, /* Null 'else assigns' */
+                                      in_shared_array, out_shared_array, NULL,
+                                      &INFO_LACFUNS (arg_info));
 
         assigns = TCappendAssign (predicate, assigns);
     }

@@ -22,6 +22,7 @@
 #include "free.h"
 #include "compare_tree.h"
 #include "traverse.h"
+#include "free_lhs_avis_sons.h"
 
 /**
  *
@@ -352,6 +353,30 @@ TULSisFullGenerator (node *generator, node *operator)
 
 /** <!--********************************************************************-->
  *
+ * @fn node TUremoveUnusedCodeBlock(node *arg_node)
+ *
+ *   @brief Free N_code block if unused
+ *
+ *   @param  arg_node: N_code node
+ *   @return arg_node or NULL
+ *
+ ******************************************************************************/
+node *
+TUremoveUnusedCodeBlock (node *arg_node)
+{
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_code, "Expected N_code");
+
+    if (CODE_USED (arg_node) == 0) {
+        arg_node = FLASfreeLhsAvisSons (arg_node);
+        arg_node = FREEdoFreeNode (arg_node);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node TUremoveUnusedCodes(node *codes)
  *
  *   @brief removes all unused N_codes recursively
@@ -366,11 +391,11 @@ TUremoveUnusedCodes (node *codes)
     DBUG_ASSERT (codes != NULL, "no codes available!");
     DBUG_ASSERT (NODE_TYPE (codes) == N_code, "type of codes is not N_code!");
 
-    if (CODE_NEXT (codes) != NULL)
+    if (CODE_NEXT (codes) != NULL) {
         CODE_NEXT (codes) = TUremoveUnusedCodes (CODE_NEXT (codes));
+    }
 
-    if (CODE_USED (codes) == 0)
-        codes = FREEdoFreeNode (codes);
+    codes = TUremoveUnusedCodeBlock (codes);
 
     DBUG_RETURN (codes);
 }

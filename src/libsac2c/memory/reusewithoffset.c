@@ -33,6 +33,7 @@
 #include "free.h"
 #include "new_types.h"
 #include "constants.h"
+#include "copywlelim.h"
 
 /*
  * INFO structure
@@ -84,66 +85,74 @@ FreeInfo (info *info)
  * Helper functions
  *
  *****************************************************************************/
-static node *
-IdentifyNoopArray (node *with)
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *RWOidentifyNoopArray( node *wl)
+ * @brief If ANY partition of this wl is a potential copy-WL,
+ *        return the N_id of the putative source-WL for that partition.
+ *
+ * @param wl: with-loop to search for reusable arrays
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+RWOidentifyNoopArray (node *wl)
 {
     node *res = NULL;
-    node *code = WITH_CODE (with);
-    node *ivavis = IDS_AVIS (WITH_VEC (with));
+    node *ivavis;
+    node *expr;
+    node *withid;
+    node *part;
+    node *srcwl;
 
     DBUG_ENTER ();
 
-    while (code != NULL) {
-        node *cass = AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (code)));
-
-        if ((cass != NULL) && (NODE_TYPE (ASSIGN_RHS (cass)) == N_prf)
-            && (PRF_PRF (ASSIGN_RHS (cass)) == F_sel_VxA)
-            && (NODE_TYPE (PRF_ARG1 (ASSIGN_RHS (cass))) == N_id)
-            && (NODE_TYPE (PRF_ARG2 (ASSIGN_RHS (cass))) == N_id)
-            && (ID_AVIS (PRF_ARG1 (ASSIGN_RHS (cass))) == ivavis)) {
-            res = TBmakeId (ID_AVIS (PRF_ARG2 (ASSIGN_RHS (cass))));
+    ivavis = IDS_AVIS (WITH_VEC (wl));
+    part = WITH_PART (wl);
+    while (part != NULL) {
+        withid = PART_WITHID (part);
+        expr = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (part)));
+        srcwl = CWLEfindCopyPartitionSrcWl (withid, expr);
+        if (NULL != srcwl) {
+            res = TBmakeId (srcwl);
             break;
         }
-
-        code = CODE_NEXT (code);
+        part = PART_NEXT (part);
     }
     DBUG_RETURN (res);
 }
 
-static bool
-IsNoopPart (node *part, node *rc)
+bool
+RWOisNoopPart (node *part, node *rc, node *withid)
 {
     bool res = FALSE;
-    node *code = PART_CODE (part);
-    node *ivavis = IDS_AVIS (PART_VEC (part));
-    node *cass;
+    node *srcwl;
+    node *expr;
 
     DBUG_ENTER ();
 
-    cass = AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (code)));
-
-    if ((cass != NULL) && (NODE_TYPE (ASSIGN_RHS (cass)) == N_prf)
-        && (PRF_PRF (ASSIGN_RHS (cass)) == F_sel_VxA)
-        && (NODE_TYPE (PRF_ARG1 (ASSIGN_RHS (cass))) == N_id)
-        && (NODE_TYPE (PRF_ARG2 (ASSIGN_RHS (cass))) == N_id)
-        && (ID_AVIS (PRF_ARG1 (ASSIGN_RHS (cass))) == ivavis)
-        && (ID_AVIS (PRF_ARG2 (ASSIGN_RHS (cass))) == ID_AVIS (rc))) {
-        res = TRUE;
-    }
+    expr = EXPRS_EXPR (CODE_CEXPRS (PART_CODE (part)));
+    srcwl = CWLEfindCopyPartitionSrcWl (withid, expr);
+    res = (NULL != srcwl);
 
     DBUG_RETURN (res);
 }
 
-static node *
-IdentifyOtherPart (node *with, node *rc)
+node *
+RWOidentifyOtherPart (node *with, node *rc)
 {
     node *hotpart = NULL;
-    node *part = WITH_PART (with);
+    node *part;
+    node *withid;
 
     DBUG_ENTER ();
 
+    part = WITH_PART (with);
     while (part != NULL) {
-        if (!IsNoopPart (part, rc)) {
+        withid = PART_WITHID (part);
+        if (!RWOisNoopPart (part, rc, withid)) {
             if (hotpart == NULL) {
                 hotpart = part;
             } else {
@@ -167,15 +176,18 @@ IdentifyOtherPart (node *with, node *rc)
     DBUG_RETURN (hotpart);
 }
 
-static node *
-AnnotateCopyPart (node *with, node *rc)
+node *
+RWOannotateCopyPart (node *with, node *rc)
 {
-    node *part = WITH_PART (with);
+    node *part;
+    node *withid;
 
     DBUG_ENTER ();
 
+    part = WITH_PART (with);
     while (part != NULL) {
-        if (IsNoopPart (part, rc)) {
+        withid = PART_WITHID (part);
+        if (RWOisNoopPart (part, rc, withid)) {
             PART_ISCOPY (part) = TRUE;
         } else {
             PART_ISCOPY (part) = FALSE;
@@ -209,6 +221,10 @@ node *
 RWOdoOffsetAwareReuseCandidateInference (node *with)
 {
     node *cand = NULL;
+    node *hotpart = NULL;
+    node *hotcode;
+    node *oldnext;
+    info *arg_info;
 
     DBUG_ENTER ();
 
@@ -217,18 +233,15 @@ RWOdoOffsetAwareReuseCandidateInference (node *with)
     if (((NODE_TYPE (WITH_WITHOP (with)) == N_genarray)
          || (NODE_TYPE (WITH_WITHOP (with)) == N_modarray))
         && (WITHOP_NEXT (WITH_WITHOP (with)) == NULL)) {
-        node *hotpart = NULL;
 
-        cand = IdentifyNoopArray (with);
+        cand = RWOidentifyNoopArray (with);
 
         if (cand != NULL) {
             DBUG_PRINT ("Identified RC: %s\n", ID_NAME (cand));
-            hotpart = IdentifyOtherPart (with, cand);
+            hotpart = RWOidentifyOtherPart (with, cand);
 
             if (hotpart != NULL) {
                 DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, hotpart));
-                node *hotcode, *oldnext;
-                info *arg_info;
 
                 arg_info = MakeInfo ();
 
@@ -249,7 +262,7 @@ RWOdoOffsetAwareReuseCandidateInference (node *with)
                 CODE_NEXT (hotcode) = oldnext;
 
                 if (INFO_RC (arg_info) != NULL) {
-                    with = AnnotateCopyPart (with, INFO_RC (arg_info));
+                    with = RWOannotateCopyPart (with, INFO_RC (arg_info));
                     cand = TBmakeExprs (INFO_RC (arg_info), NULL);
                     INFO_RC (arg_info) = NULL;
                     WITH_HASRC (with) = TRUE;

@@ -120,10 +120,4 @@ extern void ICMCompileND_PRF_COND (char *to_NT, char *cond_NT, char *then_NT,
 extern void ICMCompileND_PRF_VAL_LT_VAL_VxV (char *to_NT, char *from_NT, char *from2_NT,
                                              int from2_sdim);
 
-extern void ICMCompileND_PRF_MASK_VxVxV (char *to_NT, char *cond_NT, char *then_NT,
-                                         char *else_NT);
-
-extern void ICMCompileND_PRF_MASK_VxVxS (char *to_NT, char *cond_NT, char *then_NT,
-                                         char *else_NT);
-
 #endif /* _SAC_ICM2C_PRF_H_ */

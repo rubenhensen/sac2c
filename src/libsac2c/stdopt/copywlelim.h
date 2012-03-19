@@ -23,4 +23,6 @@ extern node *CWLEassign (node *arg_node, info *arg_info);
 extern node *CWLEids (node *arg_node, info *arg_info);
 extern node *CWLEarg (node *arg_node, info *arg_info);
 
+extern node *CWLEfindCopyPartitionSrcWl (node *withid, node *cexpr);
+
 #endif /* _SAC_CWLE_TARV_H_ */

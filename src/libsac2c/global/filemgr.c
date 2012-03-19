@@ -742,15 +742,15 @@ FMGRsetFileNames (node *module)
         global.modulename = STRcpy (NSgetName (MODULE_NAMESPACE (module)));
 
         if (global.outfilename == NULL) {
-            global.outfilename = "a.out";
-            if (global.backend != BE_cuda) {
-                global.cfilename = "a.out.c";
+            global.outfilename = STRcpy ("a.out");
+            if (global.backend != BE_cuda && global.backend != BE_cudahybrid) {
+                global.cfilename = STRcpy ("a.out.c");
             } else {
-                global.cfilename = "a.out.cu";
+                global.cfilename = STRcpy ("a.out.cu");
             }
             global.targetdir = "";
         } else {
-            if (global.backend != BE_cuda) {
+            if (global.backend != BE_cuda && global.backend != BE_cudahybrid) {
                 global.cfilename = STRcat (global.outfilename, ".c");
             } else {
                 global.cfilename = STRcat (global.outfilename, ".cu");

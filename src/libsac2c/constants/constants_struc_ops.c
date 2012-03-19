@@ -1019,7 +1019,7 @@ COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem)
 
     DBUG_ENTER ();
     DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "idx to COSel not int!");
-    DBUG_ASSERT (CONSTANT_DIM (idx) == 0, "idx to COidx_modarray_AxSxS not scalar!");
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 0, "idx to COidx_modarray_AxSxA not scalar!");
     DBUG_ASSERT (CONSTANT_TYPE (a) == CONSTANT_TYPE (elem),
                  "mixed types for array and inserted elements");
 
@@ -1027,12 +1027,12 @@ COidx_modarray_AxSxA (constant *a, constant *idx, constant *elem)
     res = COcopyConstant (a);
 
     /* now we copy the modified elements into the target constant vector */
-    COINTcopyElemsFromCVToCV (CONSTANT_TYPE (res),   /* basetype */
-                              CONSTANT_ELEMS (elem), /* from */
-                              0,                     /* offset */
-                              1,                     /* len */
-                              CONSTANT_ELEMS (res),  /* to */
-                              COconst2Int (idx));    /* offset */
+    COINTcopyElemsFromCVToCV (CONSTANT_TYPE (res),                 /* basetype */
+                              CONSTANT_ELEMS (elem),               /* from */
+                              0,                                   /* offset */
+                              SHgetUnrLen (CONSTANT_SHAPE (elem)), /* len */
+                              CONSTANT_ELEMS (res),                /* to */
+                              COconst2Int (idx));                  /* offset */
 
     DBUG_RETURN (res);
 }

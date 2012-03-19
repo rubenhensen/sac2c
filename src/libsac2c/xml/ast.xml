@@ -109,7 +109,14 @@
           <node name="Fundef" />
         </travuser>
       </traversal>
-      <traversal id="CLACF" name="Create lac functions" default="sons" include="create_lac_fun.h">
+      <traversal id="CLF" name="Create loop functions" default="sons" include="create_loop_fun.h">
+        <travuser>
+          <node name="Assign" />
+          <node name="Ids" />
+          <node name="Id" />
+        </travuser>
+      </traversal>
+      <traversal id="CCF" name="Create conditional functions" default="sons" include="create_cond_fun.h">
         <travuser>
           <node name="Assign" />
           <node name="Ids" />
@@ -367,6 +374,16 @@
           <node name="Cond" />
         </travuser>
       </traversal>
+      <traversal id="PFG" name="Prepare for loop generation" default="sons" include="prepare_forloop_generation.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Do" />
+          <node name="Id" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
       <traversal id="ACUPTN" name="Annotate CUDA partitions" default="sons" include="annotate_cuda_partition.h" >
         <travuser>
           <node name="With" />
@@ -509,6 +526,7 @@
       <traversal id="ACUWL" name="Annotate CUDA withloops" default="sons" include="annotate_cuda_withloop2.h" >
         <travuser>
           <node name="With" />
+          <node name="Code" />
           <node name="Fundef" />
           <node name="Ap" />
           <node name="Fold" />
@@ -517,6 +535,19 @@
           <node name="Genarray" />
           <node name="Id" />
           <node name="Let" />
+        </travuser>
+      </traversal>
+      <traversal id="CUCM" name="CUDA cost model" default="sons" include="cuda_cost_model.h" >
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="With" />
+          <node name="Genarray" />
+          <node name="Modarray" />
+          <node name="Fold" />
+          <node name="Part" />
         </travuser>
       </traversal>
       <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
@@ -602,7 +633,8 @@
 
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h">
       </traversal>
-      <traversal id="FREE" name="Free Tree" default="user" include="free_node.h" />
+      <traversal id="FREE" name="Free Tree" default="user" include="free_node.h" >
+      </traversal>
       <traversal id="UWT" name="Update Wrapper Types" default="sons" include="update_wrapper_type.h" >
         <travuser>
           <node name="Fundef" />
@@ -657,6 +689,7 @@
           <node name="While" />
           <node name="Assign" />
           <node name="Let" />
+          <node name="Prf" />
           <node name="With" />
           <node name="Part" />
           <node name="Ap" />
@@ -689,6 +722,11 @@
         <travuser>
           <node name="Module" />
           <node name="Fundef" />
+        </travuser>
+      </traversal> 
+      <traversal id="FLAS" name="Free Lhs Avis Sons" default="sons" include="free_lhs_avis_sons.h" >
+        <travuser>
+          <node name="Ids" />
         </travuser>
       </traversal> 
       <traversal id="PINL" name="Prepare inlining" default="sons" include="prepare_inlining.h" >
@@ -1924,6 +1962,27 @@
   <node name="With" />
   </travuser>
     </traversal>
+    <traversal id="IVEXL" name="Index Vector Extrema Lacfuns Support" default="sons" 
+      include="ivexlacfuns.h" >
+<travuser>
+        <node name="Fundef" />
+  <node name="Avis" />
+  <node name="Block" />
+  <node name="Assign" />
+  <node name="Let" />
+        <node name="Ids" />
+        <node name="Id" />
+        <node name="With" />
+        <node name="Part" />
+        <node name="Code" />
+        <node name="Cond" />
+        <node name="Funcond" />
+        <node name="Ap" />
+  </travuser>
+      <travnone>
+        <node name="Withid" />
+      </travnone>
+    </traversal>     
     <traversal id="ISAA" name="Insert Symbolic Array Attributes" default="sons" 
       include="insert_symb_arrayattr.h" >
 <travuser>
@@ -5480,6 +5539,11 @@ N_tfarg :
             TRUE iff this function is a lac fun that can be executed on the CUDA card.
           </description>
         </flag>
+        <flag name="IsForLoop" default="FALSE">
+          <description>
+            TRUE iff this loop function is generated into for loop in the backend.
+          </description>
+        </flag>
         <flag name="NoInline" default="FALSE">
           <description>
             This function MUST NOT be inlined.  This is set from #pragma noinline.
@@ -6453,11 +6517,52 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="Iterator" inconstructor="no" >
+	  <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Avis" />
+                <phases>
+                  <range from="pc_pfg" to="final" /> 
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Upper_Bound" inconstructor="no" >
+	  <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Avis" />
+                <phases>
+                  <range from="pc_pfg" to="final" /> 
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Relational_Op" inconstructor="no" >
+          <type name="Prf">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="pc_pfg" to="final" /> 
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsCudarizable" default="FALSE">
           <description>
-            TRUE iff this loop can be executed on the CUDA card.
+            TRUE iff this loop can be executed on the GPU.
+          </description>
+        </flag>
+        <flag name="IsForLoop" default="FALSE">
+          <description>
+            TRUE iff this do/while loop is generated into for loop in the backend.
           </description>
         </flag>
       </flags>
@@ -8032,6 +8137,9 @@ N_tfarg :
           </type>
         </attribute>
         <attribute name="NeedCount" inconstructor="no" >
+          <description>
+          xxx
+          </description>
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -8044,6 +8152,12 @@ N_tfarg :
           </type>
         </attribute>
         <attribute name="WL_NeedCount" inconstructor="no" >
+          <description>
+             This is a count of the number of producerWL references
+             that occur in _sel_VxA_(iv, producerWL)
+             and _idxsel_( offset, producerWL) operations within 
+             a consumerWL.
+          </description>
           <type name="Integer">
             <targets>
               <target mandatory="no">
@@ -8314,6 +8428,22 @@ N_tfarg :
         <flag name="HasDTElseProxy" default="FALSE" />
         <flag name="HasSAAArguments" default="FALSE">
           <description>Within the optimisation cycle we may introduce new parameters to functions, representing shape or dimension of other parameters. If this is done for this parameter, we may set this value to TRUE.</description>
+        </flag>
+        <flag name="HasMinvalArg" default="FALSE">
+          <description>
+	  This value has its AVIS_MIN present in LACFUN calls, in
+	  the same manner as AVIS_DIM/SHAPE.
+	  This flag ensures that we do not do repeated insertions of
+	  extrema into LACFUN calls.
+	  </description>
+        </flag>
+        <flag name="HasMaxvalArg" default="FALSE">
+          <description>
+	  This value has its AVIS_MAX present in LACFUN calls,
+	  the same manner as AVIS_DIM/SHAPE.
+	  This flag ensures that we do not do repeated insertions of
+	  extrema into LACFUN calls.
+	  </description>
         </flag>
         <flag name="IsUsed" default="FALSE" >
           <description>Used by Loop Scalarization to determine whether

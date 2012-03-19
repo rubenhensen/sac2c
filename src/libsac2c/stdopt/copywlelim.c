@@ -193,24 +193,30 @@ CWLEdoCopyWithLoopElimination (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn static node *ivMatchCase1( node *arg_node, info *arg_info,
+ * @fn static node *ivMatchCase1( node *withid,
  *                                node *cexpr)
  *
- * @brief: Attempt to match IV in _sel_VxA_( IV, target)
+ * @brief: Attempt to match IV in _sel_VxA_( IV, srcwl)
  *         directly against WITHID_VEC withid_avis.
+ *         We also attempt to match against:
+ *               offset = _vect2offset( shape(target), IV);
+ *               _idx_sel_( offset, srcwl);
  *
- * @params: cexprs is the WL result element. We determine if it
+ * @params: withid is the N_withid of the WL we are trying to
+ *          show is a copy-WL.
+ *          cexprs is the WL result element. We determine if it
  *          was derived from the above _sel_VxA_ operation.
  *
- * @return: target as N_avis of PRF_ARG2 of _sel_VxA_( IV, target),
+ * @return: srcwl as N_avis of srcwl of _sel_VxA_( IV, srcwl),
  *          if found, else NULL.
  *
  *****************************************************************************/
 static node *
-ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
+ivMatchCase1 (node *withid, node *cexpr)
 {
-    node *target = NULL;
+    node *srcwl = NULL;
     node *z = NULL;
+    node *withid_son = NULL;
     node *withid_avis;
     node *offset = NULL;
     node *shp = NULL;
@@ -220,27 +226,32 @@ ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
+    pattern *pat5;
 
     DBUG_ENTER ();
-    withid_avis = IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)));
-    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMparam (1, PMAhasAvis (&withid_avis)),
-                  PMvar (1, PMAgetAvis (&target), 0));
+    withid_avis = IDS_AVIS (WITHID_VEC (withid));
+    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMparam (1, PMAgetNode (&withid_son)),
+                  PMvar (1, PMAgetAvis (&srcwl), 0));
 
-    if (PMmatchFlatSkipExtremaAndGuards (pat1, cexpr)) {
-        z = target;
+    pat5 = PMparam (1, PMAhasAvis (&withid_avis));
+
+    if (PMmatchFlatSkipExtremaAndGuards (pat1, cexpr)
+        && PMmatchFlatSkipExtremaAndGuards (pat5, withid_son)) {
+        /* withid_son may be guarded withid. */
+        z = srcwl;
         DBUG_PRINT ("Case 1: body matches _sel_VxA_(, iv, pwl)");
     }
 
     pat2 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset), 0),
-                  PMvar (1, PMAgetNode (&target), 0));
+                  PMvar (1, PMAgetNode (&srcwl), 0));
 
     pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
                   PMvar (1, PMAgetNode (&iv), 0));
 
     if ((NULL == z) && (PMmatchFlatSkipGuards (pat2, cexpr))
         && (PMmatchFlatSkipExtremaAndGuards (pat3, offset))
-        && (IVUTivMatchesWithid (iv, INFO_WITHID (arg_info)))) {
-        z = ID_AVIS (target);
+        && (IVUTivMatchesWithid (iv, withid))) {
+        z = ID_AVIS (srcwl);
         DBUG_PRINT ("Case 2: body matches _idx_sel( offset, pwl) with pwl=%s",
                     AVIS_NAME (z));
     }
@@ -251,33 +262,34 @@ ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
     if ((NULL == z) && (PMmatchFlatSkipExtremaAndGuards (pat2, cexpr))
         && (PMmatchFlatSkipExtremaAndGuards (pat4, offset))) {
         DBUG_ASSERT (FALSE, "Case 3: coding time for matching WITHID_IDS to ids");
-        z = ID_AVIS (target);
+        z = ID_AVIS (srcwl);
     }
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
     pat4 = PMfree (pat4);
+    pat5 = PMfree (pat5);
 
     DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn static node *ivMatchCase4( node *arg_node, info *arg_info,
+ * @fn static node *ivMatchCase4( node *withid,
  *                                node *cexpr)
  *
- * @brief: Attempt to match [i,j] in _sel_VxA_( [i,j], target)
+ * @brief: Attempt to match [i,j] in _sel_VxA_( [i,j], srcwl)
  *         against WL_IDS, [i,j]
  *
  *         We have to be careful of stuff like:
  *
- *              _sel_VxA_( [i], target)
+ *              _sel_VxA_( [i], srcwl)
  *
  *         in which the full index vector is not used,
  *         and its converse:
  *
- *              _sel_VxA_( [i,notme, k], target)
+ *              _sel_VxA_( [i,notme, k], srcwl)
  *
  *         In the case where we have guards present on the index
  *         vectors, we can safely ignore them, because the
@@ -310,35 +322,36 @@ ivMatchCase1 (node *arg_node, info *arg_info, node *cexpr)
  *             } : el';
  *
  *
- * @params: cexprs is the WL result element. We determine if it
+ * @params: withid is the N_withid of the WL we are trying to
+ *          show is a copy-WL.
+ *
+ *          cexprs is the WL result element. We determine if it
  *          was derived from the above _sel_VxA_ operation.
  *
- * @return: target as PRF_ARG2 of _sel_VxA_( IV, target),
+ * @return: srcwl as PRF_ARG2 of _sel_VxA_( IV, srcwl),
  *          if found, else NULL.
  *
  *****************************************************************************/
 static node *
-ivMatchCase4 (node *arg_node, info *arg_info, node *cexpr)
+ivMatchCase4 (node *withid, node *cexpr)
 {
-    node *target = NULL;
+    node *srcwl = NULL;
     node *withid_avis;
     node *withids;
     node *narray;
     node *narrayels;
     pattern *pat2;
     pattern *pat3;
-    char *lhs;
     bool z = TRUE;
 
     DBUG_ENTER ();
 
     pat2 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMarray (1, PMAgetNode (&narray), 0),
-                  PMvar (1, PMAgetAvis (&target), 0));
+                  PMvar (1, PMAgetAvis (&srcwl), 0));
     pat3 = PMparam (1, PMAhasAvis (&withid_avis));
 
-    withids = WITHID_IDS (INFO_WITHID (arg_info));
+    withids = WITHID_IDS (withid);
 
-    lhs = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))); /* ddd aid */
     DBUG_ASSERT ((N_prf != NODE_TYPE (cexpr)) || (F_idx_sel != PRF_PRF (cexpr)),
                  "Start coding, Mr doivecyc4!");
     if (PMmatchFlatSkipExtremaAndGuards (pat2, cexpr)) {
@@ -354,15 +367,42 @@ ivMatchCase4 (node *arg_node, info *arg_info, node *cexpr)
         z = z && (NULL == withids) && (NULL == narrayels);
 
         if (z) {
-            DBUG_PRINT ("Case 4: body matches _sel_VxA_( withid, &target)");
+            DBUG_PRINT ("Case 4: body matches _sel_VxA_( withid, &srcwl)");
         } else {
-            target = NULL;
+            srcwl = NULL;
         }
     }
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
 
-    DBUG_RETURN (target);
+    DBUG_RETURN (srcwl);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *CWLEfindCopyPartitionSrcWl( node *withid,  node *cexpr)
+ *
+ * @brief: Determine if this partition is a copy partition.
+ *         If it is, return the N_avis of the source WL, else NULL.
+ *
+ * @params: withid: The N_withid of the putative copy partition
+ *          we are examining.
+ *
+ *          cexpr: The result N_id of the current copy partition.
+ *
+ * @result: N_avis of the source WL, if found, else NULL.
+ *
+ *****************************************************************************/
+node *
+CWLEfindCopyPartitionSrcWl (node *withid, node *cexpr)
+{
+    node *srcwl = NULL;
+    DBUG_ENTER ();
+
+    srcwl = ivMatchCase1 (withid, cexpr);
+    srcwl = (NULL != srcwl) ? srcwl : ivMatchCase4 (withid, cexpr);
+
+    DBUG_RETURN (srcwl);
 }
 
 /** <!--********************************************************************-->
@@ -418,6 +458,7 @@ CWLEfundef (node *arg_node, info *arg_info)
 
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    INFO_FUNDEF (arg_info) = oldfundef;
 
     DBUG_RETURN (arg_node);
 }
@@ -605,21 +646,19 @@ node *
 CWLEcode (node *arg_node, info *arg_info)
 {
     node *cexpr;
-    node *target;
+    node *srcwl;
     char *lhs;
     info *subinfo;
 
     DBUG_ENTER ();
 
     if (INFO_VALID (arg_info)) {
-
         DBUG_PRINT ("prev nodes and wl signal ok");
         cexpr = EXPRS_EXPR (CODE_CEXPRS (arg_node));
-        target = ivMatchCase1 (arg_node, arg_info, cexpr);
-        target = (NULL != target) ? target : ivMatchCase4 (arg_node, arg_info, cexpr);
-        lhs = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)));
-        if (NULL == target) {
-            DBUG_PRINT ("body of %s does not match _sel_VxA_( withid, &target)", lhs);
+        srcwl = CWLEfindCopyPartitionSrcWl (INFO_WITHID (arg_info), cexpr);
+        if (NULL == srcwl) {
+            lhs = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)));
+            DBUG_PRINT ("body of %s does not match _sel_VxA_( withid, &srcwl)", lhs);
             INFO_VALID (arg_info) = FALSE;
         }
     } else {
@@ -636,13 +675,13 @@ CWLEcode (node *arg_node, info *arg_info)
     if (INFO_VALID (arg_info)) {
         DBUG_PRINT ("checking if target is legitimate and known");
 
-        if ((NULL == INFO_PAVIS (arg_info) || target == INFO_PAVIS (arg_info))
-            && DFMtestMaskEntry (INFO_DFM (arg_info), NULL, target)) {
-            DBUG_PRINT ("target is valid. saving");
+        if ((NULL == INFO_PAVIS (arg_info) || srcwl == INFO_PAVIS (arg_info))
+            && DFMtestMaskEntry (INFO_DFM (arg_info), NULL, srcwl)) {
+            DBUG_PRINT ("srcwl is valid. saving");
 
-            INFO_PAVIS (arg_info) = target;
+            INFO_PAVIS (arg_info) = srcwl;
         } else {
-            DBUG_PRINT ("target is NOT valid. skipping wl");
+            DBUG_PRINT ("srcwl is NOT valid. skipping wl");
 
             INFO_VALID (arg_info) = FALSE;
             INFO_PAVIS (arg_info) = NULL;
@@ -668,6 +707,7 @@ CWLEcode (node *arg_node, info *arg_info)
      */
     subinfo = MakeInfo ();
     INFO_DFM (subinfo) = INFO_DFM (arg_info);
+    INFO_FUNDEF (subinfo) = INFO_FUNDEF (arg_info);
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), subinfo);
     subinfo = FreeInfo (subinfo);
 

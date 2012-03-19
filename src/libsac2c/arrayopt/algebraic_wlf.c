@@ -220,7 +220,7 @@ struct INFO {
     /* This is the current consumerWL. */
     int level;
     /* This is the current nesting level of WLs */
-    node *producerwlpart;
+    node *producerpart;
     lut_t *lut;
     /* This is the WITH_ID renaming lut */
     node *vardecs;
@@ -237,7 +237,7 @@ struct INFO {
 #define INFO_PART(n) ((n)->part)
 #define INFO_CWL(n) ((n)->cwl)
 #define INFO_LEVEL(n) ((n)->level)
-#define INFO_PRODUCERWLPART(n) ((n)->producerwlpart)
+#define INFO_PRODUCERPART(n) ((n)->producerpart)
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
@@ -258,7 +258,7 @@ MakeInfo (node *fundef)
     INFO_PART (result) = NULL;
     INFO_CWL (result) = NULL;
     INFO_LEVEL (result) = 0;
-    INFO_PRODUCERWLPART (result) = NULL;
+    INFO_PRODUCERPART (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
@@ -403,6 +403,7 @@ isEmptyPartitionCodeBlock (node *partn)
     DBUG_RETURN (z);
 }
 
+#ifdef DEADCODE
 /** <!--********************************************************************-->
  *
  * @fn node *CreateIvForSel(...)
@@ -464,6 +465,8 @@ CreateSelForCell (node *arg_node, node *cellexpr, info *arg_info)
     node *ids;
     int dim;
     int dropct;
+    pattern *pat;
+    node *prf;
 
     DBUG_ENTER ();
 
@@ -471,8 +474,15 @@ CreateSelForCell (node *arg_node, node *cellexpr, info *arg_info)
         z = TBmakeId (cellexpr);
     } else {
         dim = TYgetDim (AVIS_TYPE (cellexpr));
-        /* Next lines will need work if we compile with -noivecyc! */
-        iv = IVUTfindOffset2Iv (PRF_ARG1 (LET_EXPR (ASSIGN_STMT (arg_node))));
+        prf = LET_EXPR (ASSIGN_STMT (arg_node));
+        if (F_sel_VxA == PRF_PRF (prf)) {
+            iv = PRF_ARG1 (prf);
+            pat = PMarray (1, PMAgetNode (&iv), 0);
+            PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG1 (prf));
+            pat = PMfree (pat);
+        } else {
+            iv = IVUTfindOffset2Iv (PRF_ARG1 (prf));
+        }
         if (N_array == NODE_TYPE (iv)) {
             dropct = TCcountExprs (ARRAY_AELEMS (iv)) - dim;
             ivavis = AWLFItakeDropIv (dim, dropct, iv, &INFO_VARDECS (arg_info),
@@ -493,6 +503,7 @@ CreateSelForCell (node *arg_node, node *cellexpr, info *arg_info)
 
     DBUG_RETURN (z);
 }
+#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *
@@ -570,26 +581,43 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
                         AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
                         AVIS_WL_NEEDCOUNT (producerWLavis));
             /* Search for pwlp that intersects cwlp */
-            pwlp = CUBSLfindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info), cwlp,
-                                          producerWL, NULL);
-            if ((INTERSECT_unknown == INFO_INTERSECTTYPE (arg_info))
-                || (INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info))
-                || (INTERSECT_null == INFO_INTERSECTTYPE (arg_info))) {
-                DBUG_PRINT (
-                  "Cube can not be intersected, or null intersect or slice needed");
+            INFO_INTERSECTTYPE (arg_info)
+              = CUBSLfindMatchingPart (arg_node, INTERSECT_exact, cwlp, producerWL, NULL,
+                                       &INFO_PRODUCERPART (arg_info));
+
+            switch (INFO_INTERSECTTYPE (arg_info)) {
+
+            default:
+                DBUG_PRINT ("Should not get here.");
+                DBUG_ASSERT (FALSE, "We are confused");
+                break;
+
+            case INTERSECT_unknown:
+            case INTERSECT_nonexact:
+            case INTERSECT_null:
+                DBUG_PRINT ("Cube can not be intersected exactly");
                 pwlp = NULL;
+                break;
+
+            case INTERSECT_exact:
+                DBUG_PRINT ("Cube can be folded");
+                pwlp = INFO_PRODUCERPART (arg_info);
+                break;
             }
 
             /* Allow fold if needcounts match OR if pwlp
              * has empty code block. This is a crude cost function:
              * We should allow "cheap" producerWL partitions to fold.
-             * E.g., toi(iota(N)), but I'm in a hurry...
+             * E.g., toi(iota(N)).
              */
             if ((NULL != pwlp)
                 && ((AVIS_NEEDCOUNT (producerWLavis)
                      != AVIS_WL_NEEDCOUNT (producerWLavis)))
                 && (!isEmptyPartitionCodeBlock (pwlp))) {
-                DBUG_PRINT ("Cube can not be intersected - NEEDCOUNT mismatch");
+                DBUG_PRINT (
+                  "Can't intersect PWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
+                  AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
+                  AVIS_WL_NEEDCOUNT (producerWLavis));
                 pwlp = NULL;
             }
         } else {
@@ -805,7 +833,7 @@ doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consume
     }
 
     cellexpr = LUTsearchInLutPp (INFO_LUT (arg_info), cellexpr);
-    newsel = CreateSelForCell (arg_node, cellexpr, arg_info);
+    newsel = TBmakeId (cellexpr);
     LUTremoveContentLut (INFO_LUT (arg_info));
 
     /**
@@ -887,8 +915,7 @@ AWLFfundef (node *arg_node, info *arg_info)
  *
  * @fn node AWLFassign( node *arg_node, info *arg_info)
  *
- * @brief performs a top-down traversal.
- *        For a foldable WL, arg_node is x = _sel_VxA_(iv, producerWL).
+ * @brief For a foldable WL, arg_node is x = _sel_VxA_(iv, producerWL).
  *
  *****************************************************************************/
 node *
@@ -898,17 +925,12 @@ AWLFassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    /*
-     * Top-down traversal
-     */
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-
 #ifdef VERBOSE
     DBUG_PRINT ("Traversing N_assign");
 #endif // VERBOSE
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-    foldableProducerPart = INFO_PRODUCERWLPART (arg_info);
-    INFO_PRODUCERWLPART (arg_info) = NULL;
+    foldableProducerPart = INFO_PRODUCERPART (arg_info);
+    INFO_PRODUCERPART (arg_info) = NULL;
     DBUG_ASSERT (NULL == INFO_PREASSIGNS (arg_info),
                  "AWLFassign INFO_PREASSIGNS not NULL");
 
@@ -926,6 +948,8 @@ AWLFassign (node *arg_node, info *arg_info)
         arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
         INFO_PREASSIGNS (arg_info) = NULL;
     }
+
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -970,14 +994,20 @@ AWLFwith (node *arg_node, info *arg_info)
      * blindly replace the modarray by the genarray.
      */
     consumerop = WITH_WITHOP (arg_node);
-#define BREAKSDUPLHS // FIXME
-#ifdef BREAKSDUPLHS
+    //#define BREAKSUPLHS
+    //#ifdef BREAKSDUPLHS
     /* This code is inadequate. The modarray may not have
      * partitions that cover the MODARRAY_ARRAY. SSAWLF somehow
      * manages to handle this, but until I figure out how it does
      * it, let's leave this code disabled. It breaks the awlf/duplhs.sac
      * unit test, by giving wrong answers!
      */
+    if ((N_modarray == NODE_TYPE (consumerop))) {
+        DBUG_PRINT ("consumerop %s has AVIS_NEEDCOUNT=%d",
+                    AVIS_NAME (ID_AVIS (MODARRAY_ARRAY (consumerop))),
+                    AVIS_NEEDCOUNT (ID_AVIS (MODARRAY_ARRAY (consumerop))));
+    }
+
     if ((N_modarray == NODE_TYPE (consumerop))
         && (NULL != AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (consumerop))))
         && (TRUE == AVIS_ISWLFOLDED (ID_AVIS (MODARRAY_ARRAY (consumerop))))) {
@@ -988,7 +1018,7 @@ AWLFwith (node *arg_node, info *arg_info)
         WITH_WITHOP (arg_node) = genop;
         DBUG_PRINT ("Replacing modarray by genarray");
     }
-#endif // BREAKSDUPLHS
+    //                   #endif // BREAKSDUPLHS
 
     INFO_CWL (old_info) = NULL;
     INFO_VARDECS (old_info) = INFO_VARDECS (arg_info);
@@ -1088,7 +1118,7 @@ AWLFprf (node *arg_node, info *arg_info)
     if ((INFO_PART (arg_info) != NULL)
         && ((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel))
         && (AWLFIisHasNoteintersect (arg_node))) {
-        INFO_PRODUCERWLPART (arg_info)
+        INFO_PRODUCERPART (arg_info)
           = checkAWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
                               INFO_LEVEL (arg_info));
     }

@@ -203,6 +203,9 @@ PHOinterpretBreakOption (char *option)
         }
     }
 
+    if (break_subphase)
+        break_subphase = MEMfree (break_subphase);
+
     DBUG_RETURN ();
 }
 

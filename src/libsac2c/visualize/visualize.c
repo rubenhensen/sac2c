@@ -62,12 +62,14 @@ struct INFO {
     FILE *file;
     lut_t *table;
     int node_number;
+    bool draw_attredges; /* enable drawing attribute edges */
 };
 
 /* access macros print */
 #define INFO_NODENUMBER(n) ((n)->node_number)
 #define INFO_FILE(n) ((n)->file)
 #define INFO_TABLE(n) ((n)->table)
+#define INFO_DRAW_ATTREDGES(n) ((n)->draw_attredges)
 
 /******************************************************************************
  *
@@ -90,6 +92,8 @@ MakeInfo ()
     INFO_NODENUMBER (result) = 0;
     INFO_FILE (result) = NULL;
     INFO_TABLE (result) = LUTgenerateLut ();
+    /* TODO: maybe a new command-line option to control the drawing of attribute edges? */
+    INFO_DRAW_ATTREDGES (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -113,6 +117,37 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   static char* giveNodeName (node * arg_node, info * arg_info)
+ *
+ * description:
+ *   returns a string name of the node suitable for output to a dot file.
+ *
+ ******************************************************************************/
+static char *
+giveNodeName (node *arg_node, info *arg_info)
+{
+    /* see if it is already in the table */
+    void **ndname_p = LUTsearchInLutP (INFO_TABLE (arg_info), arg_node);
+
+    if (ndname_p) {
+        /* already generated */
+        return *ndname_p;
+    } else {
+        /* the node was not seen so far; invent a name for it now */
+        char *ndnumber = STRitoa (INFO_NODENUMBER (arg_info)++);
+        char *nodename = STRcat ("node", ndnumber);
+        ndnumber = MEMfree (ndnumber);
+
+        INFO_TABLE (arg_info)
+          = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, nodename);
+        /* NOTE: the new memory in nodename is considered owned in the LUT */
+        return nodename;
+    }
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *VISUALids( node *arg_node, info *arg_info)
@@ -126,21 +161,27 @@ FreeInfo (info *info)
 node *
 VISUALids (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
-
     DBUG_ENTER ();
 
     if (arg_node != NULL) {
-        // add node into table
-        INFO_TABLE (arg_info)
-          = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
+        char *node_name = giveNodeName (arg_node, arg_info);
 
         if (IDS_AVIS (arg_node) != NULL) {
+            if (INFO_DRAW_ATTREDGES (arg_info)) {
+                fprintf (INFO_FILE (arg_info),
+                         "%s[label=\"Ids\" style=filled fillcolor=\"lightblue\"];\n",
+                         node_name);
+            } else {
+                fprintf (INFO_FILE (arg_info),
+                         "%s[label=\"Ids \\n%s\" style=filled "
+                         "fillcolor=\"lightblue\"];\n",
+                         node_name, IDS_NAME (arg_node));
+            }
 
-            fprintf (INFO_FILE (arg_info),
-                     "%s[label=\"Ids \\n%s\" style=filled fillcolor=\"lightblue\"];\n",
-                     node_name, IDS_NAME (arg_node));
+            if (INFO_DRAW_ATTREDGES (arg_info)) {
+                fprintf (INFO_FILE (arg_info), "%s -> %s [style=dashed,color=blue];\n",
+                         node_name, giveNodeName (IDS_AVIS (arg_node), arg_info));
+            }
         }
 
         // traver son nodes
@@ -152,8 +193,6 @@ VISUALids (node *arg_node, info *arg_info)
                                                IDS_NEXT (arg_node)));
         }
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -171,14 +210,9 @@ VISUALids (node *arg_node, info *arg_info)
 node *
 VISUALspids (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     fprintf (INFO_FILE (arg_info),
              "%s[label=\"%s\" style=filled fillcolor=\"lightblue\"];\n", node_name,
@@ -193,8 +227,6 @@ VISUALspids (node *arg_node, info *arg_info)
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Next];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), SPIDS_NEXT (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -214,14 +246,9 @@ VISUALspids (node *arg_node, info *arg_info)
 node *
 VISUALmodule (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (MODULE_INTERFACE (arg_node), arg_info);
@@ -306,8 +333,6 @@ VISUALmodule (node *arg_node, info *arg_info)
                                            MODULE_FPFRAMESTORE (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -327,14 +352,9 @@ VISUALmodule (node *arg_node, info *arg_info)
 node *
 VISUALstructdef (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (STRUCTDEF_STRUCTELEM (arg_node), arg_info);
@@ -354,8 +374,6 @@ VISUALstructdef (node *arg_node, info *arg_info)
                                            STRUCTDEF_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -372,14 +390,9 @@ VISUALstructdef (node *arg_node, info *arg_info)
 node *
 VISUALstructelem (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // output current node
     fprintf (INFO_FILE (arg_info), "%s[label=StructElem];\n", node_name);
@@ -391,8 +404,6 @@ VISUALstructelem (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
                                            STRUCTELEM_NEXT (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -410,14 +421,9 @@ VISUALstructelem (node *arg_node, info *arg_info)
 node *
 VISUALtypedef (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // output current node
     fprintf (INFO_FILE (arg_info), "%s[label=TypeDef];\n", node_name);
@@ -429,8 +435,6 @@ VISUALtypedef (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
                                            TYPEDEF_NEXT (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -448,14 +452,9 @@ VISUALtypedef (node *arg_node, info *arg_info)
 node *
 VISUALobjdef (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (OBJDEF_EXPR (arg_node), arg_info);
@@ -477,8 +476,6 @@ VISUALobjdef (node *arg_node, info *arg_info)
                                            OBJDEF_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -499,14 +496,9 @@ VISUALobjdef (node *arg_node, info *arg_info)
 node *
 VISUALfundef (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (FUNDEF_RETS (arg_node), arg_info);
@@ -570,8 +562,6 @@ VISUALfundef (node *arg_node, info *arg_info)
                                            FUNDEF_LOCALFUNS (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -587,15 +577,10 @@ VISUALfundef (node *arg_node, info *arg_info)
 node *
 VISUALret (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
     char *type_str;
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (RET_NEXT (arg_node), arg_info);
@@ -615,8 +600,6 @@ VISUALret (node *arg_node, info *arg_info)
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Next];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), RET_NEXT (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -652,14 +635,9 @@ VISUALannotate (node *arg_node, info *arg_info)
 node *
 VISUALarg (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (ARG_AVIS (arg_node), arg_info);
@@ -680,8 +658,6 @@ VISUALarg (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), ARG_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -698,14 +674,9 @@ VISUALarg (node *arg_node, info *arg_info)
 node *
 VISUALvardec (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (VARDEC_AVIS (arg_node), arg_info);
@@ -733,8 +704,6 @@ VISUALvardec (node *arg_node, info *arg_info)
                                            VARDEC_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -751,14 +720,9 @@ VISUALvardec (node *arg_node, info *arg_info)
 node *
 VISUALblock (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
@@ -789,8 +753,6 @@ VISUALblock (node *arg_node, info *arg_info)
                                            BLOCK_SHAREDS (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -807,14 +769,9 @@ VISUALblock (node *arg_node, info *arg_info)
 node *
 VISUALreturn (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (RETURN_EXPRS (arg_node), arg_info);
@@ -828,8 +785,6 @@ VISUALreturn (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
                                            RETURN_EXPRS (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -847,14 +802,9 @@ VISUALreturn (node *arg_node, info *arg_info)
 node *
 VISUALassign (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (ASSIGN_STMT (arg_node), arg_info);
@@ -877,8 +827,6 @@ VISUALassign (node *arg_node, info *arg_info)
                                            ASSIGN_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -895,14 +843,9 @@ VISUALassign (node *arg_node, info *arg_info)
 node *
 VISUALdo (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (DO_COND (arg_node), arg_info);
@@ -926,8 +869,6 @@ VISUALdo (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), DO_SKIP (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -944,14 +885,9 @@ VISUALdo (node *arg_node, info *arg_info)
 node *
 VISUALwhile (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (WHILE_COND (arg_node), arg_info);
@@ -967,8 +903,6 @@ VISUALwhile (node *arg_node, info *arg_info)
     // add edge between two nodes with lable
     fprintf (INFO_FILE (arg_info), "%s -> %s [label=Body];\n", node_name,
              (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), WHILE_BODY (arg_node)));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -986,14 +920,9 @@ VISUALwhile (node *arg_node, info *arg_info)
 node *
 VISUALcond (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (COND_COND (arg_node), arg_info);
@@ -1014,8 +943,6 @@ VISUALcond (node *arg_node, info *arg_info)
     fprintf (INFO_FILE (arg_info), "%s -> %s [label=Else];\n", node_name,
              (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), COND_ELSE (arg_node)));
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -1032,14 +959,9 @@ VISUALcond (node *arg_node, info *arg_info)
 node *
 VISUALcast (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (CAST_EXPR (arg_node), arg_info);
@@ -1051,8 +973,6 @@ VISUALcast (node *arg_node, info *arg_info)
     // add edge between two nodes with lable
     fprintf (INFO_FILE (arg_info), "%s -> %s [label=expr];\n", node_name,
              (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), CAST_EXPR (arg_node)));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1070,14 +990,9 @@ VISUALcast (node *arg_node, info *arg_info)
 node *
 VISUALlet (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (LET_IDS (arg_node), arg_info);
@@ -1094,7 +1009,6 @@ VISUALlet (node *arg_node, info *arg_info)
 
     fprintf (INFO_FILE (arg_info), "%s -> %s [label=Expr];\n", node_name,
              (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), LET_EXPR (arg_node)));
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1112,14 +1026,9 @@ VISUALlet (node *arg_node, info *arg_info)
 node *
 VISUALprf (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (PRF_ARGS (arg_node), arg_info);
@@ -1132,8 +1041,6 @@ VISUALprf (node *arg_node, info *arg_info)
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Ids];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), PRF_ARGS (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1151,14 +1058,9 @@ VISUALprf (node *arg_node, info *arg_info)
 node *
 VISUALfuncond (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (FUNCOND_IF (arg_node), arg_info);
@@ -1176,8 +1078,6 @@ VISUALfuncond (node *arg_node, info *arg_info)
     fprintf (INFO_FILE (arg_info), "%s -> %s [label=Else];\n", node_name,
              (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), FUNCOND_ELSE (arg_node)));
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -1194,14 +1094,9 @@ VISUALfuncond (node *arg_node, info *arg_info)
 node *
 VISUALap (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (AP_ARGS (arg_node), arg_info);
@@ -1214,8 +1109,6 @@ VISUALap (node *arg_node, info *arg_info)
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Args];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), AP_ARGS (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1233,14 +1126,9 @@ VISUALap (node *arg_node, info *arg_info)
 node *
 VISUALspap (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (SPAP_ID (arg_node), arg_info);
@@ -1258,8 +1146,6 @@ VISUALspap (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), SPAP_ARGS (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -1276,14 +1162,9 @@ VISUALspap (node *arg_node, info *arg_info)
 node *
 VISUALspmop (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (SPMOP_OPS (arg_node), arg_info);
@@ -1302,8 +1183,6 @@ VISUALspmop (node *arg_node, info *arg_info)
                                            SPMOP_EXPRS (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -1320,19 +1199,12 @@ VISUALspmop (node *arg_node, info *arg_info)
 node *
 VISUALempty (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
 
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
-
     // ouput current node
     fprintf (INFO_FILE (arg_info), "%s[label=Empty];\n", node_name);
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1350,14 +1222,9 @@ VISUALempty (node *arg_node, info *arg_info)
 node *
 VISUALarray (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (ARRAY_AELEMS (arg_node), arg_info);
@@ -1371,8 +1238,6 @@ VISUALarray (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
                                            ARRAY_AELEMS (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1390,14 +1255,9 @@ VISUALarray (node *arg_node, info *arg_info)
 node *
 VISUALexprs (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (EXPRS_EXPR (arg_node), arg_info);
@@ -1415,8 +1275,6 @@ VISUALexprs (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), EXPRS_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -1433,20 +1291,24 @@ VISUALexprs (node *arg_node, info *arg_info)
 node *
 VISUALid (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
 
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
-
     // ouput current node
-    fprintf (INFO_FILE (arg_info), "%s[label=Id style=filled fillcolor=\"lightblue\"];\n",
-             node_name);
+    if (INFO_DRAW_ATTREDGES (arg_info) || (NULL == ID_NAME (arg_node))) {
+        fprintf (INFO_FILE (arg_info),
+                 "%s[label=Id style=filled fillcolor=\"lightblue\"];\n", node_name);
+    } else {
+        fprintf (INFO_FILE (arg_info),
+                 "%s[label=\"Id\\n%s\" style=filled fillcolor=\"lightblue\"];\n",
+                 node_name, ID_NAME (arg_node));
+    }
 
-    number = MEMfree (number);
+    if (ID_AVIS (arg_node) && INFO_DRAW_ATTREDGES (arg_info)) {
+        fprintf (INFO_FILE (arg_info), "%s -> %s[style=dashed,color=blue];\n", node_name,
+                 giveNodeName (ID_AVIS (arg_node), arg_info));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1464,21 +1326,14 @@ VISUALid (node *arg_node, info *arg_info)
 node *
 VISUALspid (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=\"%s\" style=filled fillcolor=\"lightblue\"];\n", node_name,
              SPID_NAME (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1496,14 +1351,9 @@ VISUALspid (node *arg_node, info *arg_info)
 node *
 VISUALglobobj (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
 
@@ -1517,7 +1367,6 @@ VISUALglobobj (node *arg_node, info *arg_info)
      GLOBOBJ_OBJDEF( arg_node)));
 
      */
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1535,14 +1384,9 @@ VISUALglobobj (node *arg_node, info *arg_info)
 node *
 VISUALnum (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
@@ -1565,21 +1409,14 @@ VISUALnum (node *arg_node, info *arg_info)
 node *
 VISUALnumbyte (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=%d style=filled fillcolor=\"lightyellow\"];\n", node_name,
              NUMBYTE_VAL (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1597,21 +1434,14 @@ VISUALnumbyte (node *arg_node, info *arg_info)
 node *
 VISUALnumshort (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=%hd style=filled fillcolor=\"lightyellow\"];\n", node_name,
              NUMSHORT_VAL (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1629,21 +1459,14 @@ VISUALnumshort (node *arg_node, info *arg_info)
 node *
 VISUALnumint (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=%d style=filled fillcolor=\"lightyellow\"];\n", node_name,
              NUMINT_VAL (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1661,21 +1484,14 @@ VISUALnumint (node *arg_node, info *arg_info)
 node *
 VISUALnumlong (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=%ld style=filled fillcolor=\"lightyellow\"];\n", node_name,
              NUMLONG_VAL (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1693,21 +1509,14 @@ VISUALnumlong (node *arg_node, info *arg_info)
 node *
 VISUALnumlonglong (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=%lldLL style=filled fillcolor=\"lightyellow\"];\n", node_name,
              NUMLONGLONG_VAL (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1725,21 +1534,14 @@ VISUALnumlonglong (node *arg_node, info *arg_info)
 node *
 VISUALnumubyte (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=%u style=filled fillcolor=\"lightyellow\"];\n", node_name,
              NUMUBYTE_VAL (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1757,21 +1559,14 @@ VISUALnumubyte (node *arg_node, info *arg_info)
 node *
 VISUALnumushort (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=%hu style=filled fillcolor=\"lightyellow\"];\n", node_name,
              NUMUSHORT_VAL (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1789,21 +1584,14 @@ VISUALnumushort (node *arg_node, info *arg_info)
 node *
 VISUALnumuint (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=%u style=filled fillcolor=\"lightyellow\"];\n", node_name,
              NUMUINT_VAL (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1821,21 +1609,14 @@ VISUALnumuint (node *arg_node, info *arg_info)
 node *
 VISUALnumulong (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=%lu style=filled fillcolor=\"lightyellow\"];\n", node_name,
              NUMULONG_VAL (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1853,21 +1634,14 @@ VISUALnumulong (node *arg_node, info *arg_info)
 node *
 VISUALnumulonglong (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=%lluULL style=filled fillcolor=\"lightyellow\"];\n", node_name,
              NUMULONGLONG_VAL (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1885,15 +1659,11 @@ VISUALnumulonglong (node *arg_node, info *arg_info)
 node *
 VISUALfloat (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
     char *tmp;
 
     DBUG_ENTER ();
 
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
     tmp = CVfloat2String (FLOAT_VAL (arg_node));
 
     // ouput current node
@@ -1901,7 +1671,6 @@ VISUALfloat (node *arg_node, info *arg_info)
              "%s[label=\"%s\" style=filled fillcolor=\"lightyellow\"];\n", node_name,
              tmp);
 
-    number = MEMfree (number);
     tmp = MEMfree (tmp);
 
     DBUG_RETURN (arg_node);
@@ -1920,15 +1689,10 @@ VISUALfloat (node *arg_node, info *arg_info)
 node *
 VISUALdouble (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
     char *tmp;
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     tmp = CVdouble2String (DOUBLE_VAL (arg_node));
 
@@ -1936,7 +1700,6 @@ VISUALdouble (node *arg_node, info *arg_info)
     fprintf (INFO_FILE (arg_info),
              "%s[label=%s style=filled fillcolor=\"lightyellow\"];\n", node_name, tmp);
 
-    number = MEMfree (number);
     tmp = MEMfree (tmp);
 
     DBUG_RETURN (arg_node);
@@ -1955,14 +1718,9 @@ VISUALdouble (node *arg_node, info *arg_info)
 node *
 VISUALbool (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
 
@@ -1973,8 +1731,6 @@ VISUALbool (node *arg_node, info *arg_info)
         fprintf (INFO_FILE (arg_info),
                  "%s[label=true style=filled fillcolor=\"lightyellow\"];\n", node_name);
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -1992,21 +1748,14 @@ VISUALbool (node *arg_node, info *arg_info)
 node *
 VISUALstr (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=\"%s\" style=filled fillcolor=\"lightyellow\"];\n", node_name,
              STR_STRING (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -2024,14 +1773,9 @@ VISUALstr (node *arg_node, info *arg_info)
 node *
 VISUALtype (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     if (NULL != TYPE_TYPE (arg_node)) {
@@ -2039,8 +1783,6 @@ VISUALtype (node *arg_node, info *arg_info)
                  "%s[label=\"%s\" style=filled fillcolor=\"lightyellow\"];\n", node_name,
                  TYtype2String (TYPE_TYPE (arg_node), FALSE, 0));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -2058,14 +1800,9 @@ VISUALtype (node *arg_node, info *arg_info)
 node *
 VISUALdot (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     if (NULL != TYPE_TYPE (arg_node)) {
@@ -2073,8 +1810,6 @@ VISUALdot (node *arg_node, info *arg_info)
                  "%s[label=dot\\n\"%d\" style=filled fillcolor=\"lightyellow\"];\n",
                  node_name, DOT_NUM (arg_node));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -2092,14 +1827,9 @@ VISUALdot (node *arg_node, info *arg_info)
 node *
 VISUALsetwl (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (SETWL_VEC (arg_node), arg_info);
@@ -2114,8 +1844,6 @@ VISUALsetwl (node *arg_node, info *arg_info)
 
     fprintf (INFO_FILE (arg_info), "%s -> %s [label=Expr];\n", node_name,
              (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), SETWL_EXPR (arg_node)));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -2133,21 +1861,14 @@ VISUALsetwl (node *arg_node, info *arg_info)
 node *
 VISUALchar (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // ouput current node
     fprintf (INFO_FILE (arg_info),
              "%s[label=%d style=filled fillcolor=\"lightyellow\"];\n", node_name,
              CHAR_VAL (arg_node));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -2165,14 +1886,9 @@ VISUALchar (node *arg_node, info *arg_info)
 node *
 VISUALicm (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVopt (ICM_ARGS (arg_node), arg_info);
 
@@ -2184,8 +1900,6 @@ VISUALicm (node *arg_node, info *arg_info)
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Args];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), ICM_ARGS (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -2203,14 +1917,9 @@ VISUALicm (node *arg_node, info *arg_info)
 node *
 VISUALpragma (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVopt (PRAGMA_READONLY (arg_node), arg_info);
     TRAVopt (PRAGMA_REFCOUNTING (arg_node), arg_info);
@@ -2245,8 +1954,6 @@ VISUALpragma (node *arg_node, info *arg_info)
                                            PRAGMA_LINKSIGN (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2263,14 +1970,9 @@ VISUALpragma (node *arg_node, info *arg_info)
 node *
 VISUALmt (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVopt (MT_REGION (arg_node), arg_info);
 
@@ -2282,8 +1984,6 @@ VISUALmt (node *arg_node, info *arg_info)
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Region];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), MT_REGION (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -2301,14 +2001,9 @@ VISUALmt (node *arg_node, info *arg_info)
 node *
 VISUALex (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVdo (EX_REGION (arg_node), arg_info);
 
@@ -2318,8 +2013,6 @@ VISUALex (node *arg_node, info *arg_info)
     // generate lable
     fprintf (INFO_FILE (arg_info), "%s -> %s [label=Region];\n", node_name,
              (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), EX_REGION (arg_node)));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -2337,14 +2030,9 @@ VISUALex (node *arg_node, info *arg_info)
 node *
 VISUALst (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVdo (ST_REGION (arg_node), arg_info);
 
@@ -2354,8 +2042,6 @@ VISUALst (node *arg_node, info *arg_info)
     // generate lable
     fprintf (INFO_FILE (arg_info), "%s -> %s [label=Region];\n", node_name,
              (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), ST_REGION (arg_node)));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -2373,14 +2059,9 @@ VISUALst (node *arg_node, info *arg_info)
 node *
 VISUALcudast (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVdo (CUDAST_REGION (arg_node), arg_info);
 
@@ -2390,8 +2071,6 @@ VISUALcudast (node *arg_node, info *arg_info)
     // generate lable
     fprintf (INFO_FILE (arg_info), "%s -> %s [label=Region];\n", node_name,
              (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), CUDAST_REGION (arg_node)));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -2410,14 +2089,9 @@ VISUALcudast (node *arg_node, info *arg_info)
 node *
 VISUALwith (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVdo (WITH_PART (arg_node), arg_info); // phase all, mondatory yes
     TRAVdo (WITH_CODE (arg_node), arg_info); // phase all, mondatory yes
@@ -2439,8 +2113,6 @@ VISUALwith (node *arg_node, info *arg_info)
                                            WITH_WITHOP (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2457,14 +2129,9 @@ VISUALwith (node *arg_node, info *arg_info)
 node *
 VISUALwithid (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVopt (WITHID_VEC (arg_node), arg_info);
     TRAVopt (WITHID_IDS (arg_node), arg_info);
@@ -2490,8 +2157,6 @@ VISUALwithid (node *arg_node, info *arg_info)
                                            WITHID_IDXS (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2510,14 +2175,9 @@ VISUALwithid (node *arg_node, info *arg_info)
 node *
 VISUALgenerator (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVopt (GENERATOR_BOUND1 (arg_node), arg_info);
     TRAVopt (GENERATOR_BOUND2 (arg_node), arg_info);
@@ -2559,8 +2219,6 @@ VISUALgenerator (node *arg_node, info *arg_info)
                                            GENERATOR_GENWIDTH (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2579,15 +2237,9 @@ VISUALgenerator (node *arg_node, info *arg_info)
 node *
 VISUALdefault (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    /*char *node_name =*/giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -2605,14 +2257,9 @@ VISUALdefault (node *arg_node, info *arg_info)
 node *
 VISUALcode (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVopt (CODE_CBLOCK (arg_node), arg_info);
     TRAVopt (CODE_CEXPRS (arg_node), arg_info);
@@ -2639,8 +2286,6 @@ VISUALcode (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), CODE_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2657,14 +2302,9 @@ VISUALcode (node *arg_node, info *arg_info)
 node *
 VISUALpart (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVdo (PART_WITHID (arg_node), arg_info);
     TRAVdo (PART_GENERATOR (arg_node), arg_info);
@@ -2685,8 +2325,6 @@ VISUALpart (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), PART_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2704,14 +2342,9 @@ VISUALpart (node *arg_node, info *arg_info)
 node *
 VISUALgenarray (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
     TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
@@ -2765,8 +2398,6 @@ VISUALgenarray (node *arg_node, info *arg_info)
                                            GENARRAY_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2784,14 +2415,9 @@ VISUALgenarray (node *arg_node, info *arg_info)
 node *
 VISUALmodarray (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
     TRAVopt (MODARRAY_MEM (arg_node), arg_info);
@@ -2827,8 +2453,6 @@ VISUALmodarray (node *arg_node, info *arg_info)
                                            MODARRAY_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2846,14 +2470,9 @@ VISUALmodarray (node *arg_node, info *arg_info)
 node *
 VISUALspfold (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     TRAVdo (SPFOLD_NEUTRAL (arg_node), arg_info);
     TRAVopt (SPFOLD_GUARD (arg_node), arg_info);
@@ -2877,8 +2496,6 @@ VISUALspfold (node *arg_node, info *arg_info)
                                            SPFOLD_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2896,14 +2513,9 @@ VISUALspfold (node *arg_node, info *arg_info)
 node *
 VISUALfold (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
@@ -2938,8 +2550,6 @@ VISUALfold (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), FOLD_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2956,14 +2566,9 @@ VISUALfold (node *arg_node, info *arg_info)
 node *
 VISUALbreak (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVopt (BREAK_MEM (arg_node), arg_info);
@@ -2981,8 +2586,6 @@ VISUALbreak (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), BREAK_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -2999,14 +2602,9 @@ VISUALbreak (node *arg_node, info *arg_info)
 node *
 VISUALpropagate (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVopt (PROPAGATE_DEFAULT (arg_node), arg_info);
@@ -3026,8 +2624,6 @@ VISUALpropagate (node *arg_node, info *arg_info)
                                            PROPAGATE_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3044,14 +2640,9 @@ VISUALpropagate (node *arg_node, info *arg_info)
 node *
 VISUALwith2 (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVdo (WITH2_WITHID (arg_node), arg_info);
@@ -3071,8 +2662,6 @@ VISUALwith2 (node *arg_node, info *arg_info)
     fprintf (INFO_FILE (arg_info), "%s -> %s [label=Withop];\n", node_name,
              (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), WITH2_WITHOP (arg_node)));
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3089,14 +2678,9 @@ VISUALwith2 (node *arg_node, info *arg_info)
 node *
 VISUALwlseg (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVdo (WLSEG_CONTENTS (arg_node), arg_info);
@@ -3151,8 +2735,6 @@ VISUALwlseg (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), WLSEG_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3169,14 +2751,9 @@ VISUALwlseg (node *arg_node, info *arg_info)
 node *
 VISUALwlblock (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVdo (WLBLOCK_BOUND1 (arg_node), arg_info);
@@ -3214,8 +2791,6 @@ VISUALwlblock (node *arg_node, info *arg_info)
                                            WLBLOCK_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3232,14 +2807,9 @@ VISUALwlblock (node *arg_node, info *arg_info)
 node *
 VISUALwlublock (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVdo (WLUBLOCK_BOUND1 (arg_node), arg_info);
@@ -3279,8 +2849,6 @@ VISUALwlublock (node *arg_node, info *arg_info)
                                            WLUBLOCK_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3317,14 +2885,9 @@ VISUALwlsimd (node *arg_node, info *arg_info)
 node *
 VISUALwlstride (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVdo (WLSTRIDE_BOUND1 (arg_node), arg_info);
@@ -3357,8 +2920,6 @@ VISUALwlstride (node *arg_node, info *arg_info)
                                            WLSTRIDE_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3379,14 +2940,9 @@ VISUALwlstride (node *arg_node, info *arg_info)
 node *
 VISUALwlgrid (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVdo (WLGRID_BOUND1 (arg_node), arg_info);
@@ -3415,8 +2971,6 @@ VISUALwlgrid (node *arg_node, info *arg_info)
                                            WLGRID_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3433,14 +2987,9 @@ VISUALwlgrid (node *arg_node, info *arg_info)
 node *
 VISUALssacnt (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVopt (SSACNT_NEXT (arg_node), arg_info);
@@ -3452,8 +3001,6 @@ VISUALssacnt (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
                                            SSACNT_NEXT (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -3471,14 +3018,9 @@ VISUALssacnt (node *arg_node, info *arg_info)
 node *
 VISUALavis (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVopt (AVIS_DIM (arg_node), arg_info);
@@ -3486,7 +3028,10 @@ VISUALavis (node *arg_node, info *arg_info)
     TRAVopt (AVIS_MIN (arg_node), arg_info);
     TRAVopt (AVIS_MAX (arg_node), arg_info);
 
-    fprintf (INFO_FILE (arg_info), "%s[label=Avis];\n", node_name);
+    // fprintf( INFO_FILE( arg_info), "%s[label=Avis];\n",node_name);
+    fprintf (INFO_FILE (arg_info),
+             "%s[label=\"Avis\\n%s\", style=filled fillcolor=\"pink\"];\n", node_name,
+             AVIS_NAME (arg_node));
 
     if (NULL != AVIS_DIM (arg_node)) {
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Dim];\n", node_name,
@@ -3505,8 +3050,6 @@ VISUALavis (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), AVIS_MAX (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3523,14 +3066,9 @@ VISUALavis (node *arg_node, info *arg_info)
 node *
 VISUALconstraint (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVopt (CONSTRAINT_EXPR (arg_node), arg_info);
@@ -3549,8 +3087,6 @@ VISUALconstraint (node *arg_node, info *arg_info)
                                            CONSTRAINT_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3567,14 +3103,9 @@ VISUALconstraint (node *arg_node, info *arg_info)
 node *
 VISUALwith3 (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVopt (WITH3_RANGES (arg_node), arg_info);
@@ -3593,8 +3124,6 @@ VISUALwith3 (node *arg_node, info *arg_info)
                                            WITH3_OPERATIONS (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3612,14 +3141,9 @@ VISUALwith3 (node *arg_node, info *arg_info)
 node *
 VISUALrange (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traverse son node
     TRAVdo (RANGE_INDEX (arg_node), arg_info);
@@ -3671,8 +3195,6 @@ VISUALrange (node *arg_node, info *arg_info)
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Next];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), RANGE_NEXT (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -3747,14 +3269,9 @@ VISUALerror (node *arg_node, info *arg_info)
 node *
 VISUALimport (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (IMPORT_SYMBOL (arg_node), arg_info);
@@ -3776,8 +3293,6 @@ VISUALimport (node *arg_node, info *arg_info)
                                            IMPORT_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3794,14 +3309,9 @@ VISUALimport (node *arg_node, info *arg_info)
 node *
 VISUALexport (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (EXPORT_SYMBOL (arg_node), arg_info);
@@ -3824,8 +3334,6 @@ VISUALexport (node *arg_node, info *arg_info)
                                            EXPORT_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3842,14 +3350,9 @@ VISUALexport (node *arg_node, info *arg_info)
 node *
 VISUALuse (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (USE_SYMBOL (arg_node), arg_info);
@@ -3870,8 +3373,6 @@ VISUALuse (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), USE_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3888,14 +3389,9 @@ VISUALuse (node *arg_node, info *arg_info)
 node *
 VISUALprovide (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (PROVIDE_SYMBOL (arg_node), arg_info);
@@ -3917,8 +3413,6 @@ VISUALprovide (node *arg_node, info *arg_info)
                                            PROVIDE_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -3935,14 +3429,9 @@ VISUALprovide (node *arg_node, info *arg_info)
 node *
 VISUALsymbol (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (SYMBOL_NEXT (arg_node), arg_info);
@@ -3954,8 +3443,6 @@ VISUALsymbol (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
                                            SYMBOL_NEXT (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -3973,14 +3460,9 @@ VISUALsymbol (node *arg_node, info *arg_info)
 node *
 VISUALset (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (SET_NEXT (arg_node), arg_info);
@@ -3991,8 +3473,6 @@ VISUALset (node *arg_node, info *arg_info)
                  node_name, node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), SET_NEXT (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -4010,14 +3490,9 @@ VISUALset (node *arg_node, info *arg_info)
 node *
 VISUALfunbundle (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (FUNBUNDLE_FUNDEF (arg_node), arg_info);
@@ -4038,8 +3513,6 @@ VISUALfunbundle (node *arg_node, info *arg_info)
                                            FUNBUNDLE_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -4057,14 +3530,9 @@ VISUALfunbundle (node *arg_node, info *arg_info)
 node *
 VISUALtfspec (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (TFSPEC_DEFS (arg_node), arg_info);
@@ -4078,8 +3546,6 @@ VISUALtfspec (node *arg_node, info *arg_info)
 
     fprintf (INFO_FILE (arg_info), "%s -> %s [label=Rels];\n", node_name,
              (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), TFSPEC_RELS (arg_node)));
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -4097,14 +3563,9 @@ VISUALtfspec (node *arg_node, info *arg_info)
 node *
 VISUALtfvertex (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVdo (TFVERTEX_CURR (arg_node), arg_info);
@@ -4134,8 +3595,6 @@ VISUALtfvertex (node *arg_node, info *arg_info)
                                            TFVERTEX_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -4152,14 +3611,9 @@ VISUALtfvertex (node *arg_node, info *arg_info)
 node *
 VISUALtfrel (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (TFREL_COND (arg_node), arg_info);
@@ -4177,8 +3631,6 @@ VISUALtfrel (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), TFREL_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -4195,14 +3647,9 @@ VISUALtfrel (node *arg_node, info *arg_info)
 node *
 VISUALtfabs (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (TFABS_ARGS (arg_node), arg_info);
@@ -4214,8 +3661,6 @@ VISUALtfabs (node *arg_node, info *arg_info)
                  node_name, node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), TFABS_ARGS (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -4233,14 +3678,9 @@ VISUALtfabs (node *arg_node, info *arg_info)
 node *
 VISUALtfusr (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (TFUSR_ARGS (arg_node), arg_info);
@@ -4252,8 +3692,6 @@ VISUALtfusr (node *arg_node, info *arg_info)
                  node_name, node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), TFUSR_ARGS (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -4272,14 +3710,9 @@ VISUALtfusr (node *arg_node, info *arg_info)
 node *
 VISUALtfbin (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (TFBIN_ARGS (arg_node), arg_info);
@@ -4291,8 +3724,6 @@ VISUALtfbin (node *arg_node, info *arg_info)
                  node_name, node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), TFBIN_ARGS (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -4310,14 +3741,9 @@ VISUALtfbin (node *arg_node, info *arg_info)
 node *
 VISUALtfedge (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (TFEDGE_COND (arg_node), arg_info);
@@ -4337,8 +3763,6 @@ VISUALtfedge (node *arg_node, info *arg_info)
                                            TFEDGE_NEXT (arg_node)));
     }
 
-    number = MEMfree (number);
-
     DBUG_RETURN (arg_node);
 }
 
@@ -4355,14 +3779,9 @@ VISUALtfedge (node *arg_node, info *arg_info)
 node *
 VISUALtfarg (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (TFARG_NEXT (arg_node), arg_info);
@@ -4374,8 +3793,6 @@ VISUALtfarg (node *arg_node, info *arg_info)
                  node_name, node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), TFARG_NEXT (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }
@@ -4409,14 +3826,9 @@ VISUALtfexpr (node *arg_node, info *arg_info)
 node *
 VISUALlivevars (node *arg_node, info *arg_info)
 {
-    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
-    char *node_name = STRcat ("node", number);
+    char *node_name = giveNodeName (arg_node, arg_info);
 
     DBUG_ENTER ();
-
-    // add node into table
-    INFO_TABLE (arg_info)
-      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
 
     // traver son nodes
     TRAVopt (LIVEVARS_NEXT (arg_node), arg_info);
@@ -4429,8 +3841,6 @@ VISUALlivevars (node *arg_node, info *arg_info)
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
                                            LIVEVARS_NEXT (arg_node)));
     }
-
-    number = MEMfree (number);
 
     DBUG_RETURN (arg_node);
 }

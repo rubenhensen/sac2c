@@ -163,6 +163,10 @@
 
 #define BLOCKDIM_X blockDim.x
 #define BLOCKDIM_Y blockDim.y
+#define BLOCKDIM_Z blockDim.z
+
+#define GRIDDIM_X gridDim.x
+#define GRIDDIM_Y gridDim.y
 
 #define THREADIDX_X threadIdx.x
 #define THREADIDX_Y threadIdx.y
@@ -177,6 +181,9 @@
 #define SAC_CUDA_THREADIDX_X(to_nt) NT_NAME (to_nt) = threadIdx.x;
 #define SAC_CUDA_THREADIDX_Y(to_nt) NT_NAME (to_nt) = threadIdx.y;
 #define SAC_CUDA_THREADIDX_Z(to_nt) NT_NAME (to_nt) = threadIdx.z;
+
+#define SAC_CUDA_GRIDDIM_X(to_nt) NT_NAME (to_nt) = gridDim.x;
+#define SAC_CUDA_GRIDDIM_Y(to_nt) NT_NAME (to_nt) = gridDim.y;
 
 /*
  * CUDA sync thread primitive
@@ -338,5 +345,9 @@
 #define SAC_CUDA_DECL_KERNEL_ARRAY( var_NT, basetype, dim) \
   basetype[dim] SAC_ND_A_FIELD( var_NT);
 */
+
+#define SAC_CUDA_FORLOOP_BEGIN(iterator, upper_bound) for (; iterator < upper_bound;) {
+
+#define SAC_CUDA_FORLOOP_END() }
 
 #endif

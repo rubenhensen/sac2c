@@ -269,6 +269,9 @@ PrintBreakOptions (void)
             "    -noPAB          Deactivates printing after break.\n"
             "    -doPAB          Activates printing after break.\n"
             "    -doVAB          Activates visualization of program after break.\n"
+            "    -fVAB <format>  Output visualization in <format>. Default is PNG.\n"
+            "                    <format> must be supported by your dot installation,\n"
+            "                    run \"dot -Tv\" for a list of available formats.\n"
 
             "\n"
             "    -b<spec>        Break after the compilation stage given\n"

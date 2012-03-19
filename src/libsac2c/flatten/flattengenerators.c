@@ -28,6 +28,7 @@
 #include "phase.h"
 #include "flatten.h"
 #include "algebraic_wlfi.h"
+#include "new_typecheck.h"
 
 /*
  * OPEN PROBLEMS:
@@ -140,6 +141,9 @@ FLATGflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
     if (N_id == NODE_TYPE (arg_node)) {
         avis = ID_AVIS (arg_node);
     } else {
+        if (NULL == restype) {
+            restype = NTCnewTypeCheck_Expr (arg_node);
+        }
         avis = TBmakeAvis (TRAVtmpVar (), restype);
         *vardecs = TBmakeVardec (avis, *vardecs);
         nas = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), arg_node), NULL);

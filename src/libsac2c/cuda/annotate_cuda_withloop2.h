@@ -8,6 +8,7 @@
 extern node *ACUWLdoAnnotateCUDAWL (node *arg_node);
 extern node *ACUWLfundef (node *arg_node, info *arg_info);
 extern node *ACUWLwith (node *arg_node, info *arg_info);
+extern node *ACUWLcode (node *arg_node, info *arg_info);
 extern node *ACUWLid (node *arg_node, info *arg_info);
 extern node *ACUWLap (node *arg_node, info *arg_info);
 extern node *ACUWLlet (node *arg_node, info *arg_info);

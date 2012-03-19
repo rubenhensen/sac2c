@@ -130,6 +130,7 @@
 #include "prfunroll.h"
 #include "flattengenerators.h"
 #include "indexvectorutils.h"
+#include "deadcoderemoval.h"
 
 /** <!--********************************************************************-->
  *
@@ -298,6 +299,9 @@ AWLFIdoAlgebraicWithLoopFolding (node *arg_node)
  *
  * @result: an updated N_fundef node.
  *
+ * I do not like having this function present, but have no better
+ * ideas at present.
+ *
  ******************************************************************************/
 static node *
 SimplifySymbioticExpression (node *arg_node, info *arg_info)
@@ -316,6 +320,8 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+#define DEBUG
+#ifdef DEBUG // rbe
     DBUG_PRINT_TAG ("SSE", "Entering opt micro-cycle for %s %s",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                     FUNDEF_NAME (arg_node));
@@ -385,10 +391,14 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
         if (global.optimize.dosde) {
             arg_node = UESDdoUndoElimSubDiv (arg_node);
         }
+        if (global.optimize.dodcr) {
+            arg_node = DCRdoDeadCodeRemoval (arg_node);
+        }
 
+        /* We do not count DCR, as it's merely for cleanup */
         DBUG_PRINT_TAG ("SSE",
                         "LIR= %d, INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, AS=%d, AL=%d, "
-                        "DL=%d\n",
+                        "DL=%d",
                         (global.optcounters.lir_expr - countLIR),
                         (global.optcounters.inl_fun - countINL),
                         (global.optcounters.cse_expr - countCSE),
@@ -415,6 +425,8 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
     DBUG_PRINT_TAG ("SSE", "Stabilized at iteration %d for function %s", ct,
                     FUNDEF_NAME (arg_node));
 
+#endif // DEBUG // rbe
+#undef DEBUG
     DBUG_RETURN (arg_node);
 }
 
@@ -545,11 +557,12 @@ AWLFIisHasNoteintersect (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isValidNoteintersect()
+ * @fn bool AWLFIisValidNoteintersect()
  *
  * @brief: Predicate for presence of valid F_noteintersect on sel() statement.
  *
- * @param: arg_node - an F_noteintersect N_prf node.
+ * @param: arg_node - a consumerWL F_noteintersect N_prf node.
+ *         pwl - the producer WL referenced by the consumerWL.
  *
  * @result: TRUE if arg_node is a valid F_noteintersect.
  *          By "valid", we SHOULD mean that the PWL and the F_noteintersect
@@ -569,8 +582,8 @@ AWLFIisHasNoteintersect (node *arg_node)
  *          for C (the CWL).
  *
  *****************************************************************************/
-static bool
-isValidNoteintersect (node *arg_node, node *pwl)
+bool
+AWLFIisValidNoteintersect (node *arg_node, node *pwl)
 {
     bool z;
     int nexprs;
@@ -597,17 +610,18 @@ isValidNoteintersect (node *arg_node, node *pwl)
 
 /** <!--********************************************************************-->
  *
- * @fn node *detachNoteintersect( node *arg_node)
+ * @fn node *AWLFIdetachNoteintersect( node *arg_node)
  *
- * @brief:
+ * @brief:  Discard the F_noteintersect. This just bypasses
+ *          it, but DCR will remove it.
  *
  * @param: arg_node - an F_noteintersect
  *
- * @result: PRF_ARG1.
+ * @result: PRF_ARG1 of the F_noteintersect
  *
  *****************************************************************************/
-static node *
-detachNoteintersect (node *arg_node)
+node *
+AWLFIdetachNoteintersect (node *arg_node)
 {
     node *z;
 
@@ -615,7 +629,6 @@ detachNoteintersect (node *arg_node)
 
     DBUG_ASSERT (F_noteintersect == PRF_PRF (arg_node), "Expected F_intersect");
     z = DUPdoDupNode (PRF_ARG1 (arg_node));
-    arg_node = FREEdoFreeNode (arg_node);
 
     DBUG_RETURN (z);
 }
@@ -734,8 +747,10 @@ AWLFIisHasInverseProjection (node *arg_node)
  *
  *           arg_info: Your basic arg_info node.
  *
- *           lbubel: The current inverse projection, iv'[ k]
+ *           lbub[ ivindx]: The current inverse projection.
  *                This is normalized, a la WL bounds.
+ *                If this is a recursive call, lbub is scalar, and
+ *                is an N_avis.
  *
  * @result: An N_avis node that gives the result of the F-inverse mapping
  *          function to take us from iv'->iv, or
@@ -746,25 +761,33 @@ AWLFIisHasInverseProjection (node *arg_node)
  *****************************************************************************/
 
 static node *
-FlattenLbubel (node *lbubel, info *arg_info)
+FlattenLbubel (node *lbub, int ivindx, info *arg_info)
 {
     node *lbubelavis;
+    node *lbubel;
 
     DBUG_ENTER ();
-    if (N_num == NODE_TYPE (lbubel)) {
-        lbubelavis
-          = FLATGflattenExpression (DUPdoDupTree (lbubel), &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info),
-                                    TYmakeAKS (TYmakeSimpleType (T_int),
-                                               SHcreateShape (0)));
+
+    if (N_avis == NODE_TYPE (lbub)) {
+        lbubelavis = lbub;
     } else {
-        lbubelavis = ID_AVIS (lbubel);
+        lbubel = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (lbub));
+        if (N_num == NODE_TYPE (lbubel)) {
+            lbubelavis
+              = FLATGflattenExpression (DUPdoDupTree (lbubel), &INFO_VARDECS (arg_info),
+                                        &INFO_PREASSIGNS (arg_info),
+                                        TYmakeAKS (TYmakeSimpleType (T_int),
+                                                   SHcreateShape (0)));
+        } else {
+            lbubelavis = ID_AVIS (lbubel);
+        }
     }
+
     DBUG_RETURN (lbubelavis);
 }
 
 static node *
-BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
+BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivindx)
 {
     node *z = NULL;
     int markiv;
@@ -780,7 +803,6 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
     node *withidids;
     node *ipavis;
     int tcindex;
-    node *resid;
     prf nprf;
 
     pattern *pat;
@@ -820,7 +842,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
                     DBUG_PRINT ("Found %s as source of iv'=%s", AVIS_NAME (ID_AVIS (idx)),
                                 AVIS_NAME (ipavis));
                     INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
-                    z = FlattenLbubel (lbubel, arg_info);
+                    z = FlattenLbubel (lbub, ivindx, arg_info);
                 } else {
                     /* Vanilla variable */
                     rhs = AVIS_SSAASSIGN (ID_AVIS (idx));
@@ -848,17 +870,17 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
                           = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
                         ids = TBmakeIds (resavis, NULL);
                         assgn = TBmakeAssign (
-                          TBmakeLet (ids, TCmakePrf2 (F_sub_SxS,
-                                                      TBmakeId (
-                                                        FlattenLbubel (lbubel, arg_info)),
-                                                      TBmakeId (ID_AVIS (xarg)))),
+                          TBmakeLet (ids,
+                                     TCmakePrf2 (F_sub_SxS,
+                                                 TBmakeId (FlattenLbubel (lbub, ivindx,
+                                                                          arg_info)),
+                                                 TBmakeId (ID_AVIS (xarg)))),
                           NULL);
                         INFO_PREASSIGNS (arg_info)
                           = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
                         AVIS_SSAASSIGN (resavis) = assgn;
-                        resid = TBmakeId (resavis);
-                        z = BuildInverseProjectionScalar (ivarg, arg_info, resid);
-                        resid = FREEdoFreeNode (resid);
+                        z = BuildInverseProjectionScalar (ivarg, arg_info, resavis,
+                                                          ivindx);
                     }
                     break;
 
@@ -881,14 +903,14 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
                         switch (markiv) {
                         case 1:
                             nprf = F_add_SxS;
-                            id1 = TBmakeId (FlattenLbubel (lbubel, arg_info)),
+                            id1 = TBmakeId (FlattenLbubel (lbub, ivindx, arg_info)),
                             id2 = TBmakeId (ID_AVIS (xarg));
                             break;
 
                         case 2:
                             nprf = F_sub_SxS;
                             id1 = TBmakeId (ID_AVIS (xarg));
-                            id2 = TBmakeId (FlattenLbubel (lbubel, arg_info)),
+                            id2 = TBmakeId (FlattenLbubel (lbub, ivindx, arg_info)),
                             INFO_FINVERSESWAP (arg_info) = !INFO_FINVERSESWAP (arg_info);
                             break;
 
@@ -906,9 +928,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
                         INFO_PREASSIGNS (arg_info)
                           = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
                         AVIS_SSAASSIGN (resavis) = assgn;
-                        resid = TBmakeId (resavis);
-                        z = BuildInverseProjectionScalar (ivarg, arg_info, resid);
-                        resid = FREEdoFreeNode (resid);
+                        z = BuildInverseProjectionScalar (ivarg, arg_info, resavis,
+                                                          ivindx);
                     }
                     break;
 
@@ -921,7 +942,9 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbubel)
 
                 default:
                     if (!IVEXIisInGuards (PRF_PRF (idx))) {
-                        DBUG_ASSERT (FALSE, "N_prf not recognized");
+                        /* idx may be something like an _idx_sel() that
+                         * will disappear soon, due to CF */
+                        DBUG_PRINT ("N_prf not recognized");
                         break;
                     } else { /* Guard may get removed in later saacyc */
                         DBUG_PRINT ("Skipping guard N_prf");
@@ -1231,17 +1254,13 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *arriv, node *lb
     node *zw = NULL;
     node *iprime;
     node *ziavis;
-    node *lbubel;
     int dim;
 
     int ivindx;
     DBUG_ENTER ();
 
-    DBUG_ASSERT (N_array == NODE_TYPE (lbub), "Expected N_array lbub");
-
-    if (N_array == NODE_TYPE (arriv)) {
-        dim = SHgetUnrLen (ARRAY_FRAMESHAPE (arriv));
-    } else {
+    dim = SHgetUnrLen (ARRAY_FRAMESHAPE (lbub));
+    if (N_array != NODE_TYPE (arriv)) {
         DBUG_ASSERT (ID_AVIS (arriv)
                        == IDS_AVIS (
                             WITHID_VEC (PART_WITHID (INFO_CONSUMERWLPART (arg_info)))),
@@ -1254,7 +1273,6 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *arriv, node *lb
 
     for (ivindx = 0; ivindx < dim; ivindx++) {
         ziavis = NULL;
-        lbubel = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (lbub));
         if (N_array == NODE_TYPE (arriv)) {
             iprime = TCgetNthExprsExpr (ivindx, ARRAY_AELEMS (arriv));
         } else {
@@ -1262,9 +1280,7 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *arriv, node *lb
         }
 
         INFO_FINVERSESWAP (arg_info) = FALSE;
-        if (NULL != lbubel) {
-            ziavis = BuildInverseProjectionScalar (iprime, arg_info, lbubel);
-        }
+        ziavis = BuildInverseProjectionScalar (iprime, arg_info, lbub, ivindx);
         if (NULL != ziavis) {
             if (N_avis == NODE_TYPE (ziavis)) {
                 AVIS_FINVERSESWAP (ziavis) = INFO_FINVERSESWAP (arg_info);
@@ -1359,7 +1375,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
     /* ivid is either iv from sel(iv, PWL) or rebuilt value of same */
     ivid = TCgetNthExprsExpr (WLIVAVIS, PRF_ARGS (arg_node));
 
-    if ((PMmatchFlatSkipExtrema (pat3, ivid)) || (PMmatchFlatSkipExtrema (pat4, ivid))) {
+    if ((PMmatchFlatSkipExtremaAndGuards (pat3, ivid))
+        || (PMmatchFlatSkipExtremaAndGuards (pat4, ivid))) {
 
         /* Iterate across intersects */
         for (curpart = 0; curpart < numpart; curpart++) {
@@ -1983,7 +2000,9 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivprimeavis)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Inserting attachextrema computations");
+    DBUG_PRINT ("Inserting attachextrema for producerWL %s into consumerWL %s",
+                AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))),
+                AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
 
     if (NULL != ivprimeavis) {
         intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, ivprimeavis);
@@ -2130,6 +2149,8 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
 {
     node *p;
     bool z;
+    node *cellavis;
+    node *pcode;
 
     DBUG_ENTER ();
 
@@ -2140,7 +2161,9 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
             && (WITHOP_NEXT (WITH_WITHOP (p)) == NULL)
             && ((NODE_TYPE (WITH_WITHOP (p)) == N_genarray)
                 || (NODE_TYPE (WITH_WITHOP (p)) == N_modarray));
-
+        pcode = PART_CODE (WITH_PART (p));
+        cellavis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (pcode)));
+        z = z && (0 == TYgetDim (AVIS_TYPE (cellavis)));
         if (z) {
             DBUG_PRINT ("ProducerWL:%s is suitable for folding; WITH_REFERENCED_FOLD=%d",
                         AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
@@ -2202,6 +2225,10 @@ checkConsumerWLFoldable (node *arg_node, info *arg_info)
 static bool
 checkBothFoldable (node *arg_node, info *arg_info)
 {
+#ifdef FIXME //  this definitely breaks majordiagonal2.sac
+    int lenpwl;
+    int lencwl;
+#endif // FIXME //  this definitely breaks majordiagonal2.sac
     int lev;
     bool z;
 
@@ -2210,6 +2237,17 @@ checkBothFoldable (node *arg_node, info *arg_info)
     /* Both producerWL and consumerWL must be at same nesting level */
     lev = 1 + AVIS_DEFDEPTH (ID_AVIS (INFO_PRODUCERWLLHS (arg_info)));
     z = (lev == INFO_LEVEL (arg_info));
+
+#ifdef FIXME //  this definitely breaks majordiagonal2.sac
+    /* Restrict producerWL to scalar cells, and require that
+     * producerWL and consumerWL have same shape bounds.
+     */
+    lenpwl = SHgetUnrLen (ARRAY_FRAMESHAPE (
+      GENERATOR_BOUND1 (PART_GENERATOR (WITH_PART (INFO_PRODUCERWL (arg_info))))));
+    lencwl = SHgetUnrLen (ARRAY_FRAMESHAPE (
+      GENERATOR_BOUND1 (PART_GENERATOR (INFO_CONSUMERWLPART (arg_info)))));
+    z = z && (lenpwl == lencwl);
+#endif // FIXME //  this definitely breaks majordiagonal2.sac
 
     if (z) {
         DBUG_PRINT ("ProducerWL %s is foldable into consumerWL %s",
@@ -2514,16 +2552,18 @@ AWLFIprf (node *arg_node, info *arg_info)
 
         case F_noteintersect:
             /* Maybe detach invalid intersect calculations now. */
-            if (!isValidNoteintersect (arg_node, INFO_PRODUCERWL (arg_info))) {
-                arg_node = detachNoteintersect (arg_node);
-                /* arg_node no longer N_prf! */
+            if (!AWLFIisValidNoteintersect (arg_node, INFO_PRODUCERWL (arg_info))) {
+                arg_node = AWLFIdetachNoteintersect (arg_node);
+                DBUG_PRINT ("Detached invalid F_noteintersect from cwl=%s",
+                            AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
             }
 
             /* Maybe project partitionIntersectMin/Max back from PWL to CWL */
-            if (isValidNoteintersect (arg_node, INFO_PRODUCERWL (arg_info))) {
+            if (AWLFIisValidNoteintersect (arg_node, INFO_PRODUCERWL (arg_info))) {
                 arg_node = BuildInverseProjections (arg_node, arg_info);
+                DBUG_PRINT ("Building inverse projection for cwl=%s",
+                            AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
             }
-            break;
         }
     }
 
@@ -2623,26 +2663,6 @@ AWLFIblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
     BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *AWLFIavis(node *arg_node, info *arg_info)
- *
- * description:
- *    Zero the AVIS_NEEDCOUNT values before traversing any code.
- *
- ******************************************************************************/
-node *
-AWLFIavis (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    AVIS_NEEDCOUNT (arg_node) = 0;
-    AVIS_ISWLFOLDED (arg_node) = FALSE;
-
     DBUG_RETURN (arg_node);
 }
 

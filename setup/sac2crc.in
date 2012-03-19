@@ -544,6 +544,15 @@ LD_PATH          :=  "-Xlinker -L%path% -Xlinker -rpath=%path%"
 CEXT		 :=  "cu"
 GENPIC           :=  "-Xcompiler -fPIC"
 
+target cuda64::cuda:
+CCLINK           :=  "-lcutil_x86_64 -lcudart -lcublas"
+
+target cudahybrid::cuda:
+BACKEND          :=  "CudaHybrid"
+
+target cudahybrid64::cuda64:
+BACKEND          :=  "CudaHybrid"
+
 /*******************************************************************************
  *******************************************************************************
  *******************************************************************************

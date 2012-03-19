@@ -58,6 +58,7 @@ struct INFO {
     node *letids;
     node *fundef;
     bool from_ap;
+    node *code;
 };
 
 #define INFO_INWL(n) (n->inwl)
@@ -65,6 +66,7 @@ struct INFO {
 #define INFO_LETIDS(n) (n->letids)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_FROM_AP(n) (n->from_ap)
+#define INFO_CODE(n) (n->code)
 
 static info *
 MakeInfo ()
@@ -80,6 +82,7 @@ MakeInfo ()
     INFO_LETIDS (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_FROM_AP (result) = FALSE;
+    INFO_CODE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -122,9 +125,14 @@ InitCudaBlockSizes ()
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
     } else if (STReq (global.config.cuda_arch, "-arch=sm_20")) {
-        global.optimal_threads = 512;
-        global.optimal_blocks = 3;
-        global.cuda_1d_block_large = 512;
+        /*
+            global.optimal_threads = 512;
+            global.optimal_blocks = 3;
+            global.cuda_1d_block_large = 512;
+        */
+        global.optimal_threads = 256;
+        global.optimal_blocks = 6;
+        global.cuda_1d_block_large = 256;
         /*
         1D block size was 512, but to get better performance, it's
         now set to 64 (See above). We need mechanism to automatically
@@ -372,6 +380,32 @@ ACUWLwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *ACUWLcode( node *arg_node, info *arg_info)
+ *
+ * @brief
+ *
+ *
+ *****************************************************************************/
+node *
+ACUWLcode (node *arg_node, info *arg_info)
+{
+    node *old_code;
+
+    DBUG_ENTER ();
+
+    old_code = INFO_CODE (arg_info);
+    INFO_CODE (arg_info) = arg_node;
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+    INFO_CODE (arg_info) = old_code;
+
+    CODE_CEXPRS (arg_node) = TRAVopt (CODE_CEXPRS (arg_node), arg_info);
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *ACUWLfold( node *arg_node, info *arg_info)
  *
  * @brief
@@ -391,9 +425,9 @@ ACUWLfold (node *arg_node, info *arg_info)
          * however, if the fold is within an N_with, we do not signal
          * uncudarizeable to the enclosing N_with. */
         if (!INFO_INWL (arg_info)) {
-            if (!global.optimize.doscuf) {
-                INFO_CUDARIZABLE (arg_info) = FALSE;
-            }
+            // if(!global.optimize.doscuf) {
+            INFO_CUDARIZABLE (arg_info) = FALSE;
+            //}
         }
     }
 
@@ -415,7 +449,9 @@ ACUWLgenarray (node *arg_node, info *arg_info)
 
     /* If there is a genarray in a withloop, the
      * outer one cannot be cudarized */
-    if (INFO_INWL (arg_info)) {
+    if (INFO_INWL (arg_info)
+        && IDS_AVIS (INFO_LETIDS (arg_info))
+             != ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (INFO_CODE (arg_info))))) {
         INFO_CUDARIZABLE (arg_info) = FALSE;
     }
 

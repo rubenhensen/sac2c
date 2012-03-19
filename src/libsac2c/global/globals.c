@@ -407,7 +407,69 @@ static const char *rename_type_init[] = {
 #include "type_info.mac"
 };
 
-static configuration_t config_init;
+/*static configuration_t */
+#define config_init                                                                      \
+    (configuration_t)                                                                    \
+    {                                                                                    \
+        NULL,   /* cc			  */                                                             \
+          NULL, /* ccflags		  */                                                         \
+          NULL, /* ccdir		  */                                                           \
+          NULL, /* ldflags		  */                                                         \
+          NULL, /* cclink		  */                                                          \
+          NULL, /* ccmtlink		  */                                                        \
+          NULL, /* ccdllink		  */                                                        \
+          NULL, /* cext		  */                                                            \
+          NULL, /* rc_method		  */                                                       \
+          NULL, /* backend		  */                                                         \
+          NULL, /* tree_cc		  */                                                         \
+          NULL, /* tree_ld		  */                                                         \
+          NULL, /* tree_ld_path	  */                                                     \
+          NULL, /* lib_variant	  */                                                      \
+          NULL, /* tree_cext		  */                                                       \
+          NULL, /* opt_O0		  */                                                          \
+          NULL, /* opt_O1		  */                                                          \
+          NULL, /* opt_O2		  */                                                          \
+          NULL, /* opt_O3		  */                                                          \
+          NULL, /* opt_g		  */                                                           \
+          NULL, /* opt_D		  */                                                           \
+          NULL, /* opt_I		  */                                                           \
+          NULL, /* cpp_stdin		  */                                                       \
+          NULL, /* cpp_file		  */                                                        \
+          NULL, /* tar_create		  */                                                      \
+          NULL, /* tar_extract	  */                                                      \
+          NULL, /* ar_create		  */                                                       \
+          NULL, /* ld_dynamic		  */                                                      \
+          NULL, /* genpic		  */                                                          \
+          NULL, /* ld_path		  */                                                         \
+          NULL, /* ranlib		  */                                                          \
+          NULL, /* mkdir		  */                                                           \
+          NULL, /* rmdir		  */                                                           \
+          NULL, /* chdir		  */                                                           \
+          NULL, /* cat		  */                                                             \
+          NULL, /* move		  */                                                            \
+          NULL, /* rsh		  */                                                             \
+          NULL, /* dump_output	  */                                                      \
+          NULL, /* cuda_arch		  */                                                       \
+          NULL, /* libpath		  */                                                         \
+          NULL, /* imppath		  */                                                         \
+          NULL, /* extlibpath		  */                                                      \
+          NULL, /* tmpdir		  */                                                          \
+          0,    /* cache1_size	  */                                                      \
+          0,    /* cache1_line	  */                                                      \
+          0,    /* cache1_assoc	  */                                                     \
+          NULL, /* cache1_writepol	  */                                                  \
+          0,    /* cache1_msca_factor	  */                                               \
+          0,    /* cache2_size	  */                                                      \
+          0,    /* cache2_line	  */                                                      \
+          0,    /* cache2_assoc	  */                                                     \
+          NULL, /* cache2_writepol	  */                                                  \
+          0,    /* cache2_msca_factor	  */                                               \
+          0,    /* cache3_size	  */                                                      \
+          0,    /* cache3_line	  */                                                      \
+          0,    /* cache3_assoc	  */                                                     \
+          NULL, /* cache3_writepol	  */                                                  \
+          0,    /* cache3_msca_factor;  */                                               \
+    }
 /*
  * This is only a dirty trick to fake an a-priori initialization
  * of config, Which is not possible otherwise without a major code
@@ -594,9 +656,7 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname)
 {
     DBUG_ENTER ();
 
-#define GLOBALname(name) global.name =
-#define GLOBALinit(init) init;
-
+#define GLOBAL(type, name, val, ...) global.name = val;
 #include "globals.mac"
 
     global.argc = argc;
@@ -630,6 +690,68 @@ GLOBsetupBackend (void)
         CTIabort ("Unknown compiler backend in sac2crc file: %s", global.config.backend);
     }
 
+    DBUG_RETURN ();
+}
+
+#define xfree_dummy(...)
+
+static void
+xfree_char_ptr (char *ptr)
+{
+    if (ptr && !__builtin_constant_p (ptr))
+        MEMfree (ptr);
+}
+
+static void
+xfree_int_ptr (int *ptr)
+{
+    if (ptr && !__builtin_constant_p (ptr))
+        MEMfree (ptr);
+}
+
+static void
+xfree_char_ptr_ptr (char **ptr, size_t size)
+{
+    size_t i;
+    if (!ptr || __builtin_constant_p (ptr))
+        return;
+
+    for (i = 0; i < size; i++)
+        if (ptr[i] && __builtin_constant_p (ptr[i]))
+            MEMfree (ptr[i]);
+    if (ptr)
+        MEMfree (ptr);
+}
+
+static void
+xfree_node (node *node)
+{
+    if (node)
+        FREEdoFreeTree (node);
+}
+
+static void
+xfree_apline (int **ptr, size_t maxfun)
+{
+    size_t i;
+
+    for (i = 0; i < maxfun; i++)
+        if (ptr[i])
+            MEMfree (ptr[i]);
+
+    if (ptr)
+        MEMfree (ptr);
+}
+
+void
+GLOBfinalizeGlobal (void)
+{
+    DBUG_ENTER ();
+
+    xfree_namespace_pool ();
+
+#define GLOBAL(type, name, val, func, ...) func (global.name, ##__VA_ARGS__);
+#include "globals.mac"
     DBUG_RETURN ();
 }
 

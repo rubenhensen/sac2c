@@ -438,6 +438,7 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
     loop = TBmakeDo (loop_pred, TBmakeBlock (body_assigns, NULL));
 
     DO_ISCUDARIZABLE (loop) = FUNDEF_ISCUDALACFUN (arg_node);
+    DO_ISFORLOOP (loop) = FUNDEF_ISFORLOOP (arg_node);
 
     if (then_assigns != NULL) {
         DO_SKIP (loop) = TBmakeBlock (then_assigns, NULL);

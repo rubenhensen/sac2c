@@ -1,14 +1,10 @@
-/*
- * $Id$
- */
+/* $Id$  */
 
 #include <stdio.h>
 
 #include "scnprs.h"
-
 #define DBUG_PREFIX "UNDEFINED"
 #include "debug.h"
-
 #include "ctinfo.h"
 #include "str.h"
 #include "globals.h"
@@ -16,8 +12,6 @@
 #include "filemgr.h"
 #include "handle_dots.h"
 #include "build.h"
-
-#include "sac.tab.h"
 
 static const char *pathname;
 
@@ -69,7 +63,6 @@ SPdoRunPreProcessor (node *syntax_tree)
     DBUG_ENTER ();
 
     global.filename = global.puresacfilename;
-
     define = CreateInfoMacroCommandLine ();
 
     if (pathname == NULL) {
@@ -84,10 +77,8 @@ SPdoRunPreProcessor (node *syntax_tree)
 #endif
     }
 
-    /*
-     * The sed command is needed to remove a pragma that is inserted by the
-     * Apple GCC 3.3 on Panther
-     */
+    /* The sed command is needed to remove a pragma that is inserted by the
+       Apple GCC 3.3 on Panther   */
     tmp = STRcatn (4, cppcallstr, " | sed '/^#pragma GCC set_debug_pwd/d' > ",
                    global.tmp_dirname, "/source");
 
@@ -153,6 +144,9 @@ SPdoScanParse (node *syntax_tree)
     if (err) {
         CTIabort ("Could not delete /tmp-file");
     }
+
+    if (global.syntax_tree == NULL)
+        CTIabort ("Failed to construct a syntax tree for `%s'\n", global.filename);
 
     FMGRsetFileNames (global.syntax_tree);
 

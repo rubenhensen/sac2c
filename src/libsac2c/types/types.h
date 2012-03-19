@@ -188,9 +188,6 @@ typedef enum {
 
 typedef enum { CUDA_HOST_SINGLE, CUDA_DEVICE_SINGLE, CUDA_DEVICE_MULTI } cudaexecmode_t;
 
-/* string sets, see stringset.h */
-typedef struct STRINGSET_T stringset_t;
-
 typedef enum {
 #define PRFname(name) F_##name
 #include "prf_info.mac"
@@ -761,6 +758,13 @@ typedef bool (*php_cmp_fun) (void *elem1, void *elem2);
 typedef enum { STRS_unknown, STRS_saclib, STRS_extlib, STRS_objfile } strstype_t;
 typedef void *(*strsfoldfun_p) (const char *elem, strstype_t kind, void *rest);
 
+/* string sets, see stringset.h */
+typedef struct STRINGSET_T {
+    char *val;
+    strstype_t kind;
+    struct STRINGSET_T *next;
+} stringset_t;
+
 /*
  * moved from filemgr.h
  */
@@ -843,17 +847,6 @@ typedef struct PAD_INFO_T {
 } pad_info_t;
 
 /*
- * moved from modulemanager.h
- */
-
-typedef struct MODULE_T module_t;
-typedef node *(*serfun_p) ();
-typedef union {
-    void *v;
-    node *(*f) ();
-} serfun_u;
-
-/*
  * moved from symboltable.h
  */
 
@@ -874,6 +867,26 @@ typedef struct ST_SYMBOLITERATOR_T stsymboliterator_t;
 typedef struct ST_ENTRYITERATOR_T stentryiterator_t;
 typedef struct ST_SYMBOLTABLE_T sttable_t;
 typedef struct ST_SYMBOL_T stsymbol_t;
+
+/*
+ * moved from modulemanager.h
+ */
+/* typedef struct MODULE_T module_t;*/
+
+typedef struct MODULE_T {
+    char *name;
+    char *sofile;
+    dynlib_t lib;
+    sttable_t *stable;
+    struct MODULE_T *next;
+    int usecount;
+} module_t;
+
+typedef node *(*serfun_p) ();
+typedef union {
+    void *v;
+    node *(*f) ();
+} serfun_u;
 
 /*
  * New types for global
@@ -955,8 +968,7 @@ typedef struct {
  */
 
 typedef struct GLOBAL_T {
-#define GLOBALtype(it_type) it_type
-#define GLOBALname(it_name) it_name;
+#define GLOBAL(type, name, val, ...) type name;
 #include "globals.mac"
 } global_t;
 

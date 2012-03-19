@@ -19,7 +19,7 @@
 #include "tree_basic.h"
 #include "traverse.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "INFNC"
 #include "debug.h"
 
 #include "str.h"
@@ -77,7 +77,7 @@ FreeInfo (info *info)
  * @fn static bool exclusionDueToHostTraversal( node *arg_node, info* arg_info)
  *
  * @brief Don't count references to array descriptors; only count
- *        array value references, IFF in AWLFI.
+ *        array value references, IFF in AWLF.
  *
  * @param arg_node
  *
@@ -259,6 +259,8 @@ INFNCid (node *arg_node, info *arg_info)
 
     if (!exclusionDueToHostTraversal (arg_node, arg_info)) {
         AVIS_NEEDCOUNT (avis) += 1;
+        DBUG_PRINT (" Increasing %s AVIS_NEEDCOUNT to %d", AVIS_NAME (avis),
+                    AVIS_NEEDCOUNT (avis));
     }
 
     AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);

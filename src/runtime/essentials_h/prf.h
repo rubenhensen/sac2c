@@ -341,6 +341,30 @@
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
+#define SAC_ND_PRF_MASK_VxVxS(to_NT, from1_NT, from2_NT, from3_NT)                       \
+    {                                                                                    \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
+            if (SAC_ND_READ (from1_NT, SAC_i)) {                                         \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from2_NT, SAC_i), );       \
+            } else {                                                                     \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from3_NT, 0), );           \
+            }                                                                            \
+        }                                                                                \
+    }
+
+#define SAC_ND_PRF_MASK_VxVxV(to_NT, from1_NT, from2_NT, from3_NT)                       \
+    {                                                                                    \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
+            if (SAC_ND_READ (from1_NT, SAC_i)) {                                         \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from2_NT, SAC_i), );       \
+            } else {                                                                     \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from3_NT, SAC_i), );       \
+            }                                                                            \
+        }                                                                                \
+    }
+
 #define SAC_ND_PRF_SECOND_NODESC(to_NT, second_NT)                                       \
     SAC_ND_A_FIELD (to_NT) = SAC_ND_A_FIELD (second_NT);
 

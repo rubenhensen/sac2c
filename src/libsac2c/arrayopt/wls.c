@@ -20,7 +20,8 @@
  *    These criteria are described in wlscheck.c
  *
  *  - WLSWdoWithloopify modifies a with-loop's codes in order to create
- *    the pattern of perfectly nested with-loops, as seen in the example above.
+ *    the pattern of perfectly nested with-loops, as seen in the example
+ *    below.
  *
  *  - WLSBuild then finally replaces the with-loop nesting with a new,
  *    scalarized version of that with-loop

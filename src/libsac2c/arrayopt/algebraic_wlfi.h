@@ -23,6 +23,9 @@ extern bool AWLFIisHasInverseProjection (node *arg_node);
 extern node *AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns,
                              node *pwlpart);
 extern bool isAvisMemberIds (node *arg_node, node *ids);
+extern bool AWLFIisValidNoteintersect (node *arg_node, node *pwl);
+extern node *AWLFIdetachNoteintersect (node *arg_node);
+extern node *AWLFIfindNoteintersect (node *arg_node);
 
 extern node *AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
                                      ntype *ztype);
@@ -43,7 +46,6 @@ extern node *AWLFImodarray (node *arg_node, info *arg_info);
 extern node *AWLFIgenerator (node *arg_node, info *arg_info);
 extern node *AWLFIids (node *arg_node, info *arg_info);
 extern node *AWLFIprf (node *arg_node, info *arg_info);
-extern node *AWLFIavis (node *arg_node, info *arg_info);
 
 /* expressions per partition are: bound1, bound2, intlo, inthi, intNull,
  *                                inverseprojectionlo,

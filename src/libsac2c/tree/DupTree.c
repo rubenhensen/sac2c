@@ -1309,8 +1309,9 @@ DUPblock (node *arg_node, info *arg_info)
     BLOCK_ISMTSEQUENTIALBRANCH (new_node) = BLOCK_ISMTSEQUENTIALBRANCH (arg_node);
     BLOCK_ISMTPARALLELBRANCH (new_node) = BLOCK_ISMTPARALLELBRANCH (arg_node);
 
-    // I think this entire AVIS_DIM/SHAPE loop is garbage, but I'm not yet
-    // brave enough to rip it out.
+    /* This block of code ensures that the N_vardec son nodes are
+     * updated properly.
+     */
 
     /* Have to defer updating extrema until all vardecs in place */
     v = BLOCK_VARDECS (new_node);
@@ -1338,8 +1339,8 @@ DUPblock (node *arg_node, info *arg_info)
                 nid = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_DIM (avis));
                 if (nid != AVIS_DIM (avis)) { /* nilpotent rename */
                     DBUG_ASSERT (N_id == NODE_TYPE (nid),
-                                 "DUPblock found non-id AVIS_DIM rename target");
-                    DBUG_PRINT ("DUPblock renaming AVIS_DIM from %s to %s",
+                                 "Found non-id AVIS_DIM rename target");
+                    DBUG_PRINT ("renaming AVIS_DIM from %s to %s",
                                 AVIS_NAME (ID_AVIS (AVIS_DIM (avis))),
                                 AVIS_NAME (ID_AVIS (nid)));
                     AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
@@ -1348,7 +1349,7 @@ DUPblock (node *arg_node, info *arg_info)
             } else if (N_num == NODE_TYPE (AVIS_DIM (avis))) {
                 AVIS_DIM (avis) = DUPCONT (AVIS_DIM (avis));
             } else {
-                DBUG_ASSERT (FALSE, "DUPblock found oddball AVIS_DIM node type");
+                DBUG_ASSERT (FALSE, "found oddball AVIS_DIM node type");
             }
         }
 
@@ -1357,8 +1358,8 @@ DUPblock (node *arg_node, info *arg_info)
                 nid = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_SHAPE (avis));
                 if (nid != AVIS_SHAPE (avis)) { /* nilpotent rename */
                     DBUG_ASSERT (N_id == NODE_TYPE (nid),
-                                 "DUPblock found non-id AVIS_SHAPE rename target");
-                    DBUG_PRINT ("DUPblock renaming AVIS_SHAPE from %s to %s",
+                                 "Found non-id AVIS_SHAPE rename target");
+                    DBUG_PRINT ("renaming AVIS_SHAPE from %s to %s",
                                 AVIS_NAME (ID_AVIS (AVIS_SHAPE (avis))),
                                 AVIS_NAME (ID_AVIS (nid)));
                     AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
@@ -1367,7 +1368,49 @@ DUPblock (node *arg_node, info *arg_info)
             } else if (N_array == NODE_TYPE (AVIS_SHAPE (avis))) {
                 AVIS_SHAPE (avis) = DUPCONT (AVIS_SHAPE (avis));
             } else {
-                DBUG_ASSERT (FALSE, "DUPblock found oddball AVIS_SHAPE node type");
+                DBUG_ASSERT (FALSE, "found oddball AVIS_SHAPE node type");
+            }
+        }
+
+        /* AVIS_MIN and AVIS_MAX are restricted to N_id nodes, but
+         * we use clones of the AVIS_DIM/SHAPE code, just to keep them
+         * looking the same.
+         */
+        if (NULL != AVIS_MIN (avis)) {
+            if (N_id == NODE_TYPE (AVIS_MIN (avis))) {
+                nid = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MIN (avis));
+                if (nid != AVIS_MIN (avis)) { /* nilpotent rename */
+                    DBUG_ASSERT (N_id == NODE_TYPE (nid),
+                                 "Found non-id AVIS_MIN rename target");
+                    DBUG_PRINT ("renaming AVIS_MIN from %s to %s",
+                                AVIS_NAME (ID_AVIS (AVIS_MIN (avis))),
+                                AVIS_NAME (ID_AVIS (nid)));
+                    AVIS_MIN (avis) = FREEdoFreeNode (AVIS_MIN (avis));
+                    AVIS_MIN (avis) = TBmakeId (ID_AVIS (nid));
+                }
+            } else if (N_array == NODE_TYPE (AVIS_MIN (avis))) {
+                AVIS_MIN (avis) = DUPCONT (AVIS_MIN (avis));
+            } else {
+                DBUG_ASSERT (FALSE, "found oddball AVIS_MIN node type");
+            }
+        }
+
+        if (NULL != AVIS_MAX (avis)) {
+            if (N_id == NODE_TYPE (AVIS_MAX (avis))) {
+                nid = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MAX (avis));
+                if (nid != AVIS_MAX (avis)) { /* nilpotent rename */
+                    DBUG_ASSERT (N_id == NODE_TYPE (nid),
+                                 "Found non-id AVIS_MAX rename target");
+                    DBUG_PRINT ("renaming AVIS_MAX from %s to %s",
+                                AVIS_NAME (ID_AVIS (AVIS_MAX (avis))),
+                                AVIS_NAME (ID_AVIS (nid)));
+                    AVIS_MAX (avis) = FREEdoFreeNode (AVIS_MAX (avis));
+                    AVIS_MAX (avis) = TBmakeId (ID_AVIS (nid));
+                }
+            } else if (N_array == NODE_TYPE (AVIS_MAX (avis))) {
+                AVIS_MAX (avis) = DUPCONT (AVIS_MAX (avis));
+            } else {
+                DBUG_ASSERT (FALSE, "found oddball AVIS_MAX node type");
             }
         }
 
@@ -1532,6 +1575,7 @@ DUPdo (node *arg_node, info *arg_info)
       = (DO_LABEL (arg_node) != NULL ? TRAVtmpVarName (DO_LABEL (arg_node)) : NULL);
 
     DO_ISCUDARIZABLE (new_node) = DO_ISCUDARIZABLE (arg_node);
+    DO_ISFORLOOP (new_node) = DO_ISFORLOOP (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -2804,6 +2848,8 @@ DUPavis (node *arg_node, info *arg_info)
     /* DEBUG TEMP FIXME  chasing missing info in N_ap */
     AVIS_DIM (new_node) = DUPTRAV (AVIS_DIM (arg_node));
     AVIS_SHAPE (new_node) = DUPTRAV (AVIS_SHAPE (arg_node));
+    AVIS_MIN (new_node) = DUPTRAV (AVIS_MIN (arg_node));
+    AVIS_MAX (new_node) = DUPTRAV (AVIS_MAX (arg_node));
     /* DEBUG TEMP   FIXME chasing missing info in N_ap */
 
     AVIS_FLAGSTRUCTURE (new_node) = AVIS_FLAGSTRUCTURE (arg_node);

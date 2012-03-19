@@ -265,6 +265,8 @@ FLATblock (node *arg_node, info *arg_info)
 
     if (BLOCK_ASSIGNS (arg_node) != NULL) {
         BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
+    } else {
+        INFO_FLAT_FINALASSIGN (arg_info) = NULL; /* fixes bug 919!! */
     }
 
     DBUG_RETURN (arg_node);
@@ -552,8 +554,17 @@ FLATexprs (node *arg_node, info *arg_info)
         abstract = 0;
     }
 
-    DBUG_PRINT ("context: %d, abstract: %d, expr: %s", INFO_FLAT_CONTEXT (arg_info),
-                abstract, NODE_TEXT (expr));
+    DBUG_PRINT ("context: %s, abstract: %s, expr: %s",
+                (INFO_FLAT_CONTEXT (arg_info) == CT_normal
+                   ? "CT_normal"
+                   : (INFO_FLAT_CONTEXT (arg_info) == CT_ap
+                        ? "CT_ap"
+                        : (INFO_FLAT_CONTEXT (arg_info) == CT_array
+                             ? "CT_array"
+                             : (INFO_FLAT_CONTEXT (arg_info) == CT_return
+                                  ? "CT_return"
+                                  : "unknown!!")))),
+                (abstract ? "yes" : "no"), NODE_TEXT (expr));
 
     /*
      * if this is to be abstracted, we abstract and potentially annotate constant
@@ -657,6 +668,7 @@ FLATdo (node *arg_node, info *arg_info)
      */
     DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
     final_assign = INFO_FLAT_FINALASSIGN (arg_info);
+    INFO_FLAT_FINALASSIGN (arg_info) = NULL;
 
     pred = DO_COND (arg_node);
     if (NODE_TYPE (pred) != N_spid) {
@@ -1015,7 +1027,7 @@ FLATgenerator (node *arg_node, info *arg_info)
 node *
 FLATcode (node *arg_node, info *arg_info)
 {
-    node *exprs, *exprs2, *mem_last_assign, *flatten_assignments;
+    node *exprs, *exprs2, *mem_last_assign, *flatten_assignments, *final_assign;
     contextflag old_ctxt;
 
     DBUG_ENTER ();
@@ -1026,6 +1038,8 @@ FLATcode (node *arg_node, info *arg_info)
      */
     DBUG_ASSERT (CODE_CBLOCK (arg_node) != NULL, "no code block found");
     CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
+    final_assign = INFO_FLAT_FINALASSIGN (arg_info);
+    INFO_FLAT_FINALASSIGN (arg_info) = NULL;
 
     /*
      * After traversing the body, we finally flatten the CEXPR!
@@ -1061,7 +1075,7 @@ FLATcode (node *arg_node, info *arg_info)
             if (BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)) == NULL) {
                 BLOCK_ASSIGNS (CODE_CBLOCK (arg_node)) = flatten_assignments;
             } else {
-                ASSIGN_NEXT (INFO_FLAT_FINALASSIGN (arg_info)) = flatten_assignments;
+                ASSIGN_NEXT (final_assign) = flatten_assignments;
             }
         }
     }

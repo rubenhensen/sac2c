@@ -211,6 +211,7 @@
 #include "ivexpropagation.h"
 #include "flattengenerators.h"
 #include "algebraic_wlfi.h"
+#include "symbolic_constant_simplification.h"
 
 /** <!--********************************************************************-->
  *
@@ -226,6 +227,7 @@ struct INFO {
     node *with;
     lut_t *lutvars;
     lut_t *lutcodes;
+    node *lhs;
     bool fromap;
 };
 
@@ -237,6 +239,7 @@ struct INFO {
 #define INFO_PREASSIGNSPART(n) ((n)->preassignspart)
 #define INFO_PREASSIGNSWITH(n) ((n)->preassignswith)
 #define INFO_WITH(n) ((n)->with)
+#define INFO_LHS(n) ((n)->lhs)
 #define INFO_LUTVARS(n) ((n)->lutvars)
 #define INFO_LUTCODES(n) ((n)->lutcodes)
 #define INFO_FROMAP(n) ((n)->fromap)
@@ -255,6 +258,7 @@ MakeInfo ()
     INFO_PREASSIGNSPART (result) = NULL;
     INFO_PREASSIGNSWITH (result) = NULL;
     INFO_WITH (result) = NULL;
+    INFO_LHS (result) = NULL;
     INFO_LUTVARS (result) = NULL;
     INFO_LUTCODES (result) = NULL;
     INFO_FROMAP (result) = FALSE;
@@ -745,15 +749,20 @@ IVEXIblock (node *arg_node, info *arg_info)
 node *
 IVEXIwith (node *arg_node, info *arg_info)
 {
+    node *lastwith;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Traversing with");
+
+    lastwith = INFO_WITH (arg_info);
     INFO_WITH (arg_info) = arg_node;
 
     /* Traverse the partitions, to define new temps. */
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
     WITH_CODE (arg_node) = TUremoveUnusedCodes (WITH_CODE (arg_node));
+
+    INFO_WITH (arg_info) = lastwith;
 
     DBUG_RETURN (arg_node);
 }
@@ -771,7 +780,9 @@ IVEXIlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    INFO_LHS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -812,13 +823,18 @@ IVEXIassign (node *arg_node, info *arg_info)
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-    /* Handle any preassigns generated with this WL */
-    if ((N_let == NODE_TYPE (ASSIGN_STMT (arg_node)))
-        && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_STMT (arg_node))))
-        && (NULL != INFO_PREASSIGNSWITH (arg_info))) {
-        DBUG_PRINT ("Prepending PREASSIGNSWITH");
-        arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);
-        INFO_PREASSIGNSWITH (arg_info) = NULL;
+    /* Handle any preassigns generated with this WL.
+     * If not in a WL, just put the assigns above this assign
+     */
+    if ((NULL == INFO_WITH (arg_info))
+        || ((N_let == NODE_TYPE (ASSIGN_STMT (arg_node)))
+            && (N_with == NODE_TYPE (LET_EXPR (ASSIGN_STMT (arg_node)))))) {
+
+        if ((NULL != INFO_PREASSIGNSWITH (arg_info))) {
+            DBUG_PRINT ("Prepending PREASSIGNSWITH");
+            arg_node = TCappendAssign (INFO_PREASSIGNSWITH (arg_info), arg_node);
+            INFO_PREASSIGNSWITH (arg_info) = NULL;
+        }
     }
 
     if (NULL != old_info) {
@@ -930,6 +946,56 @@ IVEXIpart (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *IVEXIprf(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Insert extrema for primitives.
+ *
+ ******************************************************************************/
+node *
+IVEXIprf (node *arg_node, info *arg_info)
+{
+    node *minv = NULL;
+    node *lhsavis;
+    ntype *typ;
+    constant *con;
+    shape *shp;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Traversing prf");
+
+    switch (PRF_PRF (arg_node)) {
+    default:
+        break;
+
+    case F_shape_A:
+        /* If shape() result is AKD or AKS, we can establish a minval */
+        lhsavis = IDS_AVIS (INFO_LHS (arg_info));
+
+        if ((!isAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))
+            && (TUshapeKnown (AVIS_TYPE (lhsavis)))) {
+
+            shp = SHcopyShape (TYgetShape (AVIS_TYPE (lhsavis)));
+            con = COmakeZero (SCSgetBasetypeOfExpr (lhsavis), shp);
+            if (NULL != con) {
+                typ = TYmakeAKV (TYmakeSimpleType (T_int), con);
+                minv = COconstant2AST (con);
+                minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNSWITH (arg_info), typ);
+                minv = TBmakeId (minv);
+                IVEXPsetMinvalIfNotNull (IDS_AVIS (INFO_LHS (arg_info)), minv, FALSE);
+            }
+        }
+        break;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *IVEXIcond(node *arg_node, info *arg_info)
  *
  * description:
@@ -970,6 +1036,7 @@ IVEXIfuncond (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
 /******************************************************************************
  *
  * function:

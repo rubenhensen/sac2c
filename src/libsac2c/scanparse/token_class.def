@@ -1,0 +1,38 @@
+/* Copyright (c) 2011 Artem Shinkarov <artyom.shinkaroff@gmail.com>
+
+   Permission to use, copy, modify, and distribute this software for any
+   purpose with or without fee is hereby granted, provided that the above
+   copyright notice and this permission notice appear in all copies.
+
+   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+   WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+   MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+   ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+   WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.  */
+
+TOKEN_CLASS (keyword,            "keyword")
+TOKEN_CLASS (id,                 "id")
+TOKEN_CLASS (number,             "number")
+TOKEN_CLASS (number_float,       "number_float")
+TOKEN_CLASS (number_double,      "number_double")
+TOKEN_CLASS (number_byte,        "number_byte")
+TOKEN_CLASS (number_ubyte,       "number_ubyte")
+TOKEN_CLASS (number_short,       "number_short")
+TOKEN_CLASS (number_ushort,      "number_ushort")
+TOKEN_CLASS (number_int,         "number_int")
+TOKEN_CLASS (number_uint,        "number_uint")
+TOKEN_CLASS (number_long,        "number_long")
+TOKEN_CLASS (number_ulong,       "number_ulong")
+TOKEN_CLASS (number_longlong,    "number_longlong")
+TOKEN_CLASS (number_ulonglong,   "number_ulonglong")
+TOKEN_CLASS (string,             "string")
+TOKEN_CLASS (char,               "char")
+TOKEN_CLASS (operator,           "operator")
+TOKEN_CLASS (user_op,			 "user_defined_operator")
+TOKEN_CLASS (whitespace,         "whitespace")
+TOKEN_CLASS (comments,           "comment")
+TOKEN_CLASS (eof,                "eof")
+TOKEN_CLASS (unknown,            "unknown")
+

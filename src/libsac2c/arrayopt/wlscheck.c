@@ -41,7 +41,9 @@
  * - In all other cases, block_i must either be empty or must contain a
  *   perfectly nested with-loop:
  *
- *   - The first (and only) assignment inside each block must have a
+ *   - Leading _noteminval/_notemaxval nodes are ignored, as they
+ *     are eliminated after optimization.
+ *   - The first (and only) remaining assignment inside each block must have a
  *     with-loop on the right hand side.
  *
  *   <pre>
@@ -59,6 +61,24 @@
  *               genarray( shp_j);
  *     }: res_j,
  *   </pre>
+ *
+ *   - The strictures on block_i contents comes from this observation:
+ *     If the outer wl's block contains anything but the inner wl,
+ *     the execution of this code will inevitably be multiplied
+ *     through WLS. Essentially, WLS pushes the code into the inner wl.
+ *     This can of course have very adverse effects on
+ *     performance. Consequently, WLS bails out by default,
+ *     but with -wls-aggressive it is forced to do it no matter
+ *     what the consequences may be.
+ *
+ *     The trouble is that it is generally undecidable whether the
+ *     positive effect of WLS overcomes the negative effect of
+ *     multiplying work. The latter depends very
+ *     much on the code multiplied and likewise on the generator
+ *     of the inner wl, i.e. how often the execution is repeated.
+ *     Last, but not least, the C compiler may or may
+ *     not be able to undo the transformation, as the code remains
+ *     invariant to the for-loops generated for the inner wl.
  *
  *   - Inner with-loops must either be genarray or modarray with-loops
  *
@@ -198,6 +218,7 @@ WLSCdoCheck (node *with, node *nassign)
              * If there is no inner with-loop, the number of scalarizable
              * dimensions is only given by the CEXPRs
              */
+
             res = TYgetDim (ID_NTYPE (INFO_CEXPR (arg_info)));
         } else {
             /*
@@ -230,7 +251,12 @@ WLSCdoCheck (node *with, node *nassign)
  *
  * @brief skips over all those assigns that we consider cheap enough not
  *        to cause any harm by repeated execution
- *        NEEDS FIXING!!! (extreema-stuff!!)
+ *
+ *        In this case, we skip Extrema, because they always disappear
+ *        after optimization.
+ *
+ *        We also skip guards if compiling with -ecc, for the same
+ *        reason.
  *
  * @param arg_node - an N_assign chain.
  * @param arg_info
@@ -241,10 +267,23 @@ WLSCdoCheck (node *with, node *nassign)
 static node *
 skipIrrelevantAssigns (node *arg_node)
 {
+    node *z;
+    node *rhs;
 
     DBUG_ENTER ();
 
-    DBUG_RETURN (arg_node);
+    z = arg_node;
+
+    if (NULL != ASSIGN_NEXT (arg_node)) {
+        rhs = LET_EXPR (ASSIGN_STMT (arg_node));
+        if ((N_prf == NODE_TYPE (rhs))
+            && ((PMMisInExtrema (PRF_PRF (rhs)))
+                || (global.insertconformitychecks && PMMisInGuards (PRF_PRF (rhs))))) {
+            z = skipIrrelevantAssigns (ASSIGN_NEXT (arg_node));
+        }
+    }
+
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->

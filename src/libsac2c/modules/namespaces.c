@@ -9,17 +9,15 @@
  */
 
 #include "namespaces.h"
-
 #define DBUG_PREFIX "NS"
 #include "debug.h"
-
 #include "str_buffer.h"
 #include "str.h"
 #include "memory.h"
 #include "filemgr.h"
 #include "globals.h"
 
-#define BLOCKSIZE 100
+#define BLOCKSIZE 128
 
 struct VIEW {
     char *name;
@@ -64,14 +62,13 @@ EqualsView (view_t *one, view_t *two)
 
     DBUG_ENTER ();
 
-    if ((one == NULL) && (two != NULL)) {
+    if (one == NULL && two != NULL)
         result = FALSE;
-    } else if ((one != NULL) && (two == NULL)) {
+    else if (one != NULL && two == NULL)
         result = FALSE;
-    } else if (one != two) {
-        result = ((one->id == two->id) && (STReq (one->name, two->name))
-                  && (EqualsView (one->next, two->next)));
-    }
+    else if (one != two)
+        result = (one->id == two->id && STReq (one->name, two->name)
+                  && EqualsView (one->next, two->next));
 
     DBUG_RETURN (result);
 }
@@ -100,9 +97,8 @@ PutInPool (namespace_t *ns)
     /*
      * create initial pool if necessary
      */
-    if (pool == NULL) {
+    if (pool == NULL)
         pool = CreatePool ();
-    }
 
     /*
      * go to block
@@ -110,9 +106,8 @@ PutInPool (namespace_t *ns)
     pos = pool;
 
     for (cnt = 0; cnt < (ns->id / BLOCKSIZE); cnt++) {
-        if (pos->next == NULL) {
+        if (pos->next == NULL)
             pos->next = CreatePool ();
-        }
 
         pos = pos->next;
     }
@@ -136,13 +131,24 @@ GetFromPool (int id)
 
     pos = pool;
 
-    for (cnt = 0; cnt < (id / BLOCKSIZE); cnt++) {
+    for (cnt = 0; cnt < (id / BLOCKSIZE); cnt++)
         pos = pos->next;
-    }
 
     result = pos->block[id % BLOCKSIZE];
 
     DBUG_RETURN (result);
+}
+
+static void
+RemoveFromPool (int id)
+{
+    nspool_t *p;
+    size_t i;
+
+    for (p = pool, i = 0; i < id / BLOCKSIZE; i++, p = p->next)
+        ;
+
+    p->block[id % BLOCKSIZE] = NULL;
 }
 
 static namespace_t *
@@ -157,15 +163,16 @@ FindInPool (const char *module, view_t *view)
     pos = pool;
 
     for (cnt = 0; cnt < nextid; cnt++) {
-        if ((STReq (pos->block[cnt % BLOCKSIZE]->module, module))
-            && (EqualsView (pos->block[cnt % BLOCKSIZE]->view, view))) {
-            result = pos->block[cnt % BLOCKSIZE];
+        int idx = cnt % BLOCKSIZE;
+
+        if (pos->block[idx] && STReq (pos->block[idx]->module, module)
+            && EqualsView (pos->block[idx]->view, view)) {
+            result = pos->block[idx];
             break;
         }
 
-        if ((cnt % BLOCKSIZE) == (BLOCKSIZE - 1)) {
+        if ((cnt % BLOCKSIZE) == (BLOCKSIZE - 1))
             pos = pos->next;
-        }
     }
 
     DBUG_RETURN (result);
@@ -181,7 +188,6 @@ BuildNamespaceName (namespace_t *ns)
     DBUG_ENTER ();
 
     buf = SBUFcreate (255);
-
     buf = SBUFprint (buf, ns->module);
 
     view = ns->view;
@@ -205,7 +211,6 @@ AddNamespaceToPool (const char *module, view_t *view)
     DBUG_ENTER ();
 
     new = MEMmalloc (sizeof (namespace_t));
-
     new->module = STRcpy (module);
     new->id = nextid++;
     new->view = view;
@@ -223,11 +228,10 @@ DupView (const view_t *src)
 
     DBUG_ENTER ();
 
-    if (src == NULL) {
+    if (src == NULL)
         result = NULL;
-    } else {
+    else {
         result = MEMmalloc (sizeof (view_t));
-
         result->id = src->id;
         result->name = STRcpy (src->name);
         result->next = DupView (src->next);
@@ -245,7 +249,6 @@ FreeView (view_t *view)
         view->id = 0;
         view->name = MEMfree (view->name);
         view->next = FreeView (view->next);
-
         view = MEMfree (view);
     }
 
@@ -260,7 +263,6 @@ MakeView (const char *name, const view_t *views)
     DBUG_ENTER ();
 
     result = MEMmalloc (sizeof (view_t));
-
     result->name = STRcpy (name);
     result->id = nextviewid++;
     result->next = DupView (views);
@@ -275,19 +277,18 @@ NSgetNamespace (const char *module)
 
     DBUG_ENTER ();
 
-    if (module == NULL) {
+    if (module == NULL)
         /*
          * the empty namespace is mapped to the empty namespace
          * this merly is for convenience
          */
 
         result = NULL;
-    } else {
+    else {
         result = FindInPool (module, NULL);
 
-        if (result == NULL) {
+        if (result == NULL)
             result = AddNamespaceToPool (module, NULL);
-        }
     }
 
     DBUG_RETURN (result);
@@ -296,13 +297,12 @@ NSgetNamespace (const char *module)
 namespace_t *
 NSgetRootNamespace ()
 {
-    static namespace_t *result;
+    static namespace_t *result = NULL;
 
     DBUG_ENTER ();
 
-    if (result == NULL) {
+    if (result == NULL)
         result = NSgetNamespace ("_MAIN");
-    }
 
     DBUG_RETURN (NSdupNamespace (result));
 }
@@ -314,9 +314,8 @@ NSgetInitNamespace ()
 
     DBUG_ENTER ();
 
-    if (initns == NULL) {
+    if (initns == NULL)
         initns = AddNamespaceToPool (global.modulename, MakeView ("_INIT", NULL));
-    }
 
     DBUG_RETURN (NSdupNamespace (initns));
 }
@@ -328,9 +327,8 @@ NSgetCWrapperNamespace ()
 
     DBUG_ENTER ();
 
-    if (result == NULL) {
+    if (result == NULL)
         result = NSgetNamespace ("_CWRAPPER");
-    }
 
     DBUG_RETURN (NSdupNamespace (result));
 }
@@ -347,11 +345,10 @@ NSgetMTNamespace (const namespace_t *orig)
 
     result = FindInPool (orig->name, view);
 
-    if (result != NULL) {
+    if (result != NULL)
         view = FreeView (view);
-    } else {
+    else
         result = AddNamespaceToPool (orig->module, view);
-    }
 
     DBUG_RETURN (result);
 }
@@ -368,11 +365,10 @@ NSgetSTNamespace (const namespace_t *orig)
 
     result = FindInPool (orig->name, view);
 
-    if (result != NULL) {
+    if (result != NULL)
         view = FreeView (view);
-    } else {
+    else
         result = AddNamespaceToPool (orig->module, view);
-    }
 
     DBUG_RETURN (result);
 }
@@ -392,11 +388,21 @@ NSdupNamespace (const namespace_t *ns)
 namespace_t *
 NSfreeNamespace (namespace_t *ns)
 {
+    int id;
+
     DBUG_ENTER ();
 
-    ns = NULL;
+    /* XXX Why it is not being freed properly?  */
+    /* ns = NULL; */
 
-    DBUG_RETURN (ns);
+    /*if (ns)
+      {
+        int id = ns->id;
+        xfree_namespace (ns);
+        RemoveFromPool (id);
+      }*/
+
+    DBUG_RETURN (NULL);
 }
 
 void
@@ -426,11 +432,10 @@ NSgetName (const namespace_t *ns)
 
     DBUG_ENTER ();
 
-    if (ns == NULL) {
+    if (ns == NULL)
         result = "--";
-    } else {
+    else
         result = ns->name;
-    }
 
     DBUG_RETURN (result);
 }
@@ -457,14 +462,13 @@ NSbuildView (const namespace_t *orig)
 
     result = FindInPool (global.modulename, view);
 
-    if (result != NULL) {
+    if (result != NULL)
         /*
          * we reuse the view constructed earlier
          */
         view = FreeView (view);
-    } else {
+    else
         result = AddNamespaceToPool (global.modulename, view);
-    }
 
     DBUG_RETURN (result);
 }
@@ -528,9 +532,8 @@ NSaddMapping (const char *module, view_t *view)
 
     ns = FindInPool (module, view);
 
-    if (ns == NULL) {
+    if (ns == NULL)
         ns = AddNamespaceToPool (module, view);
-    }
 
     result = ns->id;
 
@@ -559,9 +562,8 @@ GenerateNamespaceMapDeclaration (FILE *file)
 
     DBUG_ENTER ();
 
-    for (cnt = 0; cnt < nextid; cnt++) {
+    for (cnt = 0; cnt < nextid; cnt++)
         fprintf (file, "int __%s__nsmap_%d = 0;\n ", global.modulename, cnt);
-    }
 
     DBUG_RETURN ();
 }
@@ -571,9 +573,9 @@ GenerateViewConstructor (FILE *file, view_t *view)
 {
     DBUG_ENTER ();
 
-    if (view == NULL) {
+    if (view == NULL)
         fprintf (file, "NULL");
-    } else {
+    else {
         fprintf (file, "NSdeserializeView( \"%s\", %d, ", view->name, view->id);
 
         GenerateViewConstructor (file, view->next);
@@ -604,9 +606,8 @@ GenerateNamespaceMappingConstructor (FILE *file)
 
         fprintf (file, ");\n");
 
-        if ((cnt % BLOCKSIZE) == (BLOCKSIZE - 1)) {
+        if ((cnt % BLOCKSIZE) == (BLOCKSIZE - 1))
             pos = pos->next;
-        }
     }
 
     fprintf (file, "}\n");
@@ -622,12 +623,10 @@ GenerateNamespaceMappingHeader (FILE *file)
     DBUG_ENTER ();
 
     fprintf (file, "#ifndef _NAMESPACEMAP_H_\n#define _NAMESPACEMAP_H_\n\n");
-
     fprintf (file, "#define MAPNS( x)  __%s__nsmap_##x\n\n", global.modulename);
 
-    for (cnt = 0; cnt < nextid; cnt++) {
+    for (cnt = 0; cnt < nextid; cnt++)
         fprintf (file, "extern int __%s__nsmap_%d;\n ", global.modulename, cnt);
-    }
 
     fprintf (file, "#endif\n");
 
@@ -644,9 +643,7 @@ NSgenerateNamespaceMap ()
     file = FMGRwriteOpen ("%s/namespacemap.c", global.tmp_dirname);
 
     GenerateNamespaceMapHead (file);
-
     GenerateNamespaceMapDeclaration (file);
-
     GenerateNamespaceMappingConstructor (file);
 
     fclose (file);
@@ -658,6 +655,55 @@ NSgenerateNamespaceMap ()
     fclose (file);
 
     DBUG_RETURN ();
+}
+
+void
+xfree_namespace (namespace_t *namespace)
+{
+    view_t *xview;
+
+    if (!namespace)
+        return;
+
+    xview = namespace->view;
+    while (xview) {
+        view_t *t = xview;
+        xview = xview->next;
+        if (t->name)
+            MEMfree (t->name);
+        MEMfree (t);
+    }
+
+    if (namespace->name)
+        MEMfree (namespace->name);
+    if (namespace->module)
+        MEMfree (namespace->module);
+
+    MEMfree (namespace);
+}
+
+void
+xfree_namespace_pool ()
+{
+    size_t i;
+    nspool_t *p = pool;
+
+    for (i = 0; i < nextid; i++) {
+        int idx = i % BLOCKSIZE;
+
+        if (p->block[idx])
+            xfree_namespace (p->block[idx]);
+        p->block[idx] = NULL;
+
+        if (idx == BLOCKSIZE - 1) {
+            nspool_t *t = p;
+            p = p->next;
+            MEMfree (t);
+        }
+    }
+
+    if (p)
+        MEMfree (p);
 }
 
 #undef DBUG_PREFIX

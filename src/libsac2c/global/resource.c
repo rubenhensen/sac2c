@@ -62,7 +62,7 @@
 #include "str.h"
 #include "memory.h"
 
-#include "sac.tab.h"
+//#include "sac.tab.h"
 
 /******************************************************************************
  *
@@ -378,6 +378,7 @@ FreeTargetList (target_list_t *target)
         while (inherit != NULL) {
             tmp_inherit = inherit;
             inherit = inherit->next;
+            tmp_inherit->name = MEMfree (tmp_inherit->name);
             tmp_inherit = MEMfree (tmp_inherit);
         }
 
@@ -399,7 +400,8 @@ FreeTargetList (target_list_t *target)
  *
  ******************************************************************************/
 
-static void
+// static
+void
 PrintResources ()
 {
     int i;
@@ -716,7 +718,6 @@ RSCevaluateConfiguration ()
     char *target;
 
     ParseResourceFiles ();
-
     EvaluateDefaultTarget (global.target_list);
 
     if (!STReq (global.target_name, "default")) {
@@ -729,6 +730,7 @@ RSCevaluateConfiguration ()
         }
     }
 
+    /* PrintResources();  */
     global.target_list = FreeTargetList (global.target_list);
 
     if (global.print_resources) {
@@ -737,6 +739,103 @@ RSCevaluateConfiguration ()
     }
 
     DBUG_RETURN ();
+}
+
+void
+xfree_configuration (configuration_t conf)
+{
+    if (conf.cc)
+        MEMfree (conf.cc);
+    if (conf.ccflags)
+        MEMfree (conf.ccflags);
+    if (conf.ccdir)
+        MEMfree (conf.ccdir);
+    if (conf.ldflags)
+        MEMfree (conf.ldflags);
+    if (conf.cclink)
+        MEMfree (conf.cclink);
+    if (conf.ccmtlink)
+        MEMfree (conf.ccmtlink);
+    if (conf.ccdllink)
+        MEMfree (conf.ccdllink);
+    if (conf.cext)
+        MEMfree (conf.cext);
+    if (conf.rc_method)
+        MEMfree (conf.rc_method);
+    if (conf.backend)
+        MEMfree (conf.backend);
+    if (conf.tree_cc)
+        MEMfree (conf.tree_cc);
+    if (conf.tree_ld)
+        MEMfree (conf.tree_ld);
+    if (conf.tree_ld_path)
+        MEMfree (conf.tree_ld_path);
+    if (conf.lib_variant)
+        MEMfree (conf.lib_variant);
+    if (conf.tree_cext)
+        MEMfree (conf.tree_cext);
+    if (conf.opt_O0)
+        MEMfree (conf.opt_O0);
+    if (conf.opt_O1)
+        MEMfree (conf.opt_O1);
+    if (conf.opt_O2)
+        MEMfree (conf.opt_O2);
+    if (conf.opt_O3)
+        MEMfree (conf.opt_O3);
+    if (conf.opt_g)
+        MEMfree (conf.opt_g);
+    if (conf.opt_D)
+        MEMfree (conf.opt_D);
+    if (conf.opt_I)
+        MEMfree (conf.opt_I);
+    if (conf.cpp_stdin)
+        MEMfree (conf.cpp_stdin);
+    if (conf.cpp_file)
+        MEMfree (conf.cpp_file);
+    if (conf.tar_create)
+        MEMfree (conf.tar_create);
+    if (conf.tar_extract)
+        MEMfree (conf.tar_extract);
+    if (conf.ar_create)
+        MEMfree (conf.ar_create);
+    if (conf.ld_dynamic)
+        MEMfree (conf.ld_dynamic);
+    if (conf.genpic)
+        MEMfree (conf.genpic);
+    if (conf.ld_path)
+        MEMfree (conf.ld_path);
+    if (conf.ranlib)
+        MEMfree (conf.ranlib);
+    if (conf.mkdir)
+        MEMfree (conf.mkdir);
+    if (conf.rmdir)
+        MEMfree (conf.rmdir);
+    if (conf.chdir)
+        MEMfree (conf.chdir);
+    if (conf.cat)
+        MEMfree (conf.cat);
+    if (conf.move)
+        MEMfree (conf.move);
+    if (conf.rsh)
+        MEMfree (conf.rsh);
+    if (conf.dump_output)
+        MEMfree (conf.dump_output);
+    if (conf.cuda_arch)
+        MEMfree (conf.cuda_arch);
+    if (conf.libpath)
+        MEMfree (conf.libpath);
+    if (conf.imppath)
+        MEMfree (conf.imppath);
+    if (conf.extlibpath)
+        MEMfree (conf.extlibpath);
+    if (conf.tmpdir)
+        MEMfree (conf.tmpdir);
+    if (conf.cache1_writepol)
+        MEMfree (conf.cache1_writepol);
+    if (conf.cache2_writepol)
+        MEMfree (conf.cache2_writepol);
+    if (conf.cache3_writepol)
+        MEMfree (conf.cache3_writepol);
 }
 
 #undef DBUG_PREFIX

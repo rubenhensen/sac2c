@@ -15,12 +15,6 @@
  * stringset routines
  */
 
-struct STRINGSET_T {
-    char *val;
-    strstype_t kind;
-    stringset_t *next;
-};
-
 bool
 STRScontains (const char *string, stringset_t *set)
 {

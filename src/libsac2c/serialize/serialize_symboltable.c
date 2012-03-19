@@ -24,8 +24,9 @@ GenerateSerSymbolTableAdd (stsymbol_t *symbol, stentry_t *entry, FILE *file)
 {
     DBUG_ENTER ();
 
-    fprintf (file, "STadd( \"%s\", %d, \"%s\", %d, result);\n", STsymbolName (symbol),
-             STsymbolVisibility (symbol), STentryName (entry), STentryType (entry));
+    fprintf (file, "STadd( \"%s\", %d, \"%s\", %d, result, %d);\n", STsymbolName (symbol),
+             STsymbolVisibility (symbol), STentryName (entry), STentryType (entry),
+             STentryArgc (entry));
 
     DBUG_RETURN ();
 }

@@ -147,6 +147,9 @@ GDBwhatIsNid (node *arg_node, node *fundef)
         case N_avis:
             GDBwhatIs (AVIS_NAME (arg_node), fundef);
             break;
+        case N_prf:
+            GDBwhatIs (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), fundef);
+            break;
         default:
             break;
         }

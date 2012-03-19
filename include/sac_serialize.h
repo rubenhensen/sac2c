@@ -11,6 +11,8 @@
 #define NULL ((void *)0)
 #endif
 
+/* FIXME Why the hell this file is not auto-generated?  */
+
 extern void *SHLPmakeNode (int ntype, int lineno, char *sfile, ...);
 extern void *SHLPfixLink (void *stack, int a, int b, int c);
 extern void *COdeserializeConstant (int type, void *shp, int vlen, char *vec);
@@ -22,7 +24,7 @@ extern void *SERbuildSerStack (void *node);
 extern void *DSlookupFunction (const char *s, const char *t);
 extern void *DSlookupObject (const char *s, const char *t);
 extern void *STinit ();
-extern void STadd (char *s1, int l, char *s2, int i, void *table);
+extern void STadd (char *s1, int l, char *s2, int i, void *table, unsigned);
 extern void *STRSadd (char *s1, int i, void *p);
 extern void *DSfetchArgAvis (int i);
 extern void *NSdeserializeNamespace (int i);

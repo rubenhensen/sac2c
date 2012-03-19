@@ -143,7 +143,7 @@ SCSrecurseWithExtrema (node *arg_node, info *arg_info, node *arg1, node *arg2,
 /******************************************************************************
  *
  * function:
- *   simpletype GetBasetypeOfExpr(node *expr)
+ *   simpletype SCSgetBasetypeOfExpr(node *expr)
  *
  * description:
  *   try to get the basetype of the given expression. this can be a
@@ -151,13 +151,13 @@ SCSrecurseWithExtrema (node *arg_node, info *arg_info, node *arg1, node *arg2,
  *
  *****************************************************************************/
 simpletype
-GetBasetypeOfExpr (node *expr)
+SCSgetBasetypeOfExpr (node *expr)
 {
     simpletype stype;
     ntype *etype;
 
     DBUG_ENTER ();
-    DBUG_ASSERT (expr != NULL, "GetBasetypeOfExpr called with NULL pointer");
+    DBUG_ASSERT (expr != NULL, "Called with NULL pointer");
 
     etype = NTCnewTypeCheck_Expr (expr);
 
@@ -187,7 +187,7 @@ SCSmakeZero (node *prfarg)
     typ = NTCnewTypeCheck_Expr (prfarg);
     if (TUshapeKnown (typ)) {
         shp = TYgetShape (typ);
-        con = COmakeZero (GetBasetypeOfExpr (prfarg), shp);
+        con = COmakeZero (SCSgetBasetypeOfExpr (prfarg), shp);
         if (NULL != con) {
             res = COconstant2AST (con);
             con = COfreeConstant (con);
@@ -1547,6 +1547,9 @@ SCSprf_mod_VxV (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_eq_SxV( node *arg_node, info *arg_info)
  *
+ * @brief: Handle relational where one argument is constant
+ *         and the other has known extrema.
+ *
  *****************************************************************************/
 node *
 SCSprf_eq_SxV (node *arg_node, info *arg_info)
@@ -1554,8 +1557,6 @@ SCSprf_eq_SxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    /* Could be supported with ISMOP */
-    /* I.e., attempt to convert V to constant, then check to see if all(S == ConstantV) */
     DBUG_RETURN (res);
 }
 
@@ -1637,7 +1638,7 @@ SCSprf_le_SxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    /* Could be supported with ISMOP */
+    /* Handled by SAACF */
     DBUG_RETURN (res);
 }
 
@@ -1652,7 +1653,7 @@ SCSprf_le_VxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    /* Could be supported with ISMOP */
+    /* Handled by SAACF */
     DBUG_RETURN (res);
 }
 
@@ -1687,13 +1688,16 @@ SCSprf_ge_SxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    /* Could be supported with ISMOP */
+    /* Handled by SAACF */
     DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_ge_VxS( node *arg_node, info *arg_info)
+ *
+ * @brief: Handle relational where one argument is constant
+ *         and the other has known extrema.
  *
  *****************************************************************************/
 node *
@@ -1702,7 +1706,7 @@ SCSprf_ge_VxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    /* Could be supported with ISMOP */
+    /* Handled by SAACF */
     DBUG_RETURN (res);
 }
 
@@ -1810,19 +1814,22 @@ node *
 SCSprf_afterguard (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *arg2up = NULL;
+    node *arg2up;
+    node *stripd;
 
     DBUG_ENTER ();
-    res = DUPdoDupNode (arg_node); /* Copy N_prf node and operate on the copy */
-    arg2up = EXPRS_NEXT (PRF_ARGS (res));
+    arg2up = DUPdoDupTree (EXPRS_NEXT (PRF_ARGS (arg_node)));
     DBUG_ASSERT (NULL != arg2up, "Some joker caught us off guard with no guard");
-    arg2up = StripTrues (arg2up);
-    EXPRS_NEXT (PRF_ARGS (res)) = arg2up;
-
-    /* If no predicates remain, the afterguard becomes an identity */
-    if (NULL == arg2up) {
-        res = FREEdoFreeNode (res);
-        res = DUPdoDupNode (PRF_ARG1 (arg_node));
+    stripd = StripTrues (arg2up);
+    if ((NULL != stripd) && (CMPT_NEQ == CMPTdoCompareTree (stripd, arg2up))) {
+        res = DUPdoDupNode (arg_node); /* Some, but not all predicates gone */
+        FREEdoFreeTree (EXPRS_NEXT (PRF_ARGS (res)));
+        EXPRS_NEXT (PRF_ARGS (res)) = stripd;
+    } else {
+        if (NULL == stripd) {
+            /* If no predicates remain, the afterguard becomes an identity */
+            res = DUPdoDupNode (PRF_ARG1 (arg_node));
+        }
     }
 
     DBUG_RETURN (res);
@@ -2487,8 +2494,21 @@ node *
 SCSprf_prod_matches_prod_shape_VxA (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    pattern *pat;
+    node *shp;
 
     DBUG_ENTER ();
+
+    shp = AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)));
+    if (NULL != shp) {
+        pat = PMprf (1, PMAisPrf (F_prod_matches_prod_shape_VxA), 2,
+                     PMvar (1, PMAisVar (&shp), 0), PMskip (0));
+        if (PMmatchFlatSkipExtrema (pat, arg_node)) {
+            res = TBmakeExprs (DUPdoDupNode (shp), TBmakeExprs (TBmakeBool (TRUE), NULL));
+        }
+        pat = PMfree (pat);
+    }
+
     DBUG_RETURN (res);
 }
 

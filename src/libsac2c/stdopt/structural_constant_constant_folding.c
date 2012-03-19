@@ -356,7 +356,7 @@ SCCFprf_reshape (node *arg_node, info *arg_info)
     pat = PMprf (1, PMAisPrf (F_reshape_VxA), 2, PMconst (1, PMAgetVal (&con)),
                  PMarray (1, PMAgetNode (&structcon), 1, PMskip (0)));
 
-    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
+    if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
         if (0 == TYgetDim (ARRAY_ELEMTYPE (structcon))) {
             resshape = COconstant2Shape (con);
             prodarg1 = SHgetUnrLen (resshape);
@@ -469,14 +469,15 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
     pat = PMprf (1, PMAisPrf (F_drop_SxV), 2, PMconst (1, PMAgetVal (&con)),
                  PMvar (1, PMAgetNode (&arg2), 0));
 
-    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
+    if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
         dc = COconst2Int (con);
         if (0 == dc) {
             res = DUPdoDupNode (arg2); /* Case 1 */
         } else {
             pat2 = PMarray (1, PMAgetNode (&arg2array), 0);
 
-            if (PMmatchFlatSkipExtrema (pat2, arg2)) { /* Case 2 */
+            /* We have to skip guards for matmulAKD.sac in the awlf unit tests */
+            if (PMmatchFlatSkipExtremaAndGuards (pat2, arg2)) { /* Case 2 */
                 dropcount = (dc < 0) ? 0 : dc;
                 arg2xrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2array));
                 resxrho = arg2xrho - abs (dc);
@@ -550,7 +551,9 @@ ModarrayModarray_AxSxS (node *arg_node, info *arg_info)
     if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat2, b))) {
         DBUG_PRINT ("Marked _idx_modarray_AxSxS for $s for removal",
                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
+#ifdef BUG897
         PRF_ISNOP (prf) = TRUE;
+#endif // BUG897
     }
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
@@ -606,7 +609,9 @@ ModarrayModarray_AxVxS (node *arg_node, info *arg_info)
     if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat2, b))) {
         DBUG_PRINT ("Marked _modarray_AxVxS for %s for removal",
                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
+#ifdef BUG897
         PRF_ISNOP (prf) = TRUE;
+#endif // BUG897
     }
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
@@ -670,7 +675,7 @@ SCCFprf_idx_modarray_AxSxS (node *arg_node, info *arg_info)
     /* Case 3 */
     if (TRUE == PRF_ISNOP (arg_node)) {
         z = DUPdoDupNode (PRF_ARG1 (arg_node));
-        DBUG_PRINT ("NOP _modarray_AxSxS deleted");
+        DBUG_PRINT ("PRF_ISNOP _modarray_AxSxS deleted");
     }
 
     DBUG_RETURN (z);
@@ -769,6 +774,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
 
     /* Case 3: Remove nop */
     if ((NULL == z) && (TRUE == PRF_ISNOP (arg_node))) {
+        DBUG_PRINT ("PRF_ISNOP _modarray_AxVxS deleted");
         z = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -1241,7 +1247,9 @@ SelModarray (node *arg_node, info *arg_info)
         && (PMmatchFlatSkipGuards (pat2, X) || PMmatchFlatSkipGuards (pat3, X))
         && PMmatchFlatSkipGuards (pat5, iv2)) {
 
+#ifdef BUG897
         PRF_ISNOP (modar) = TRUE;
+#endif // BUG897
         res = DUPdoDupNode (PRF_ARG3 (modar));
         DBUG_PRINT ("replaced _sel_VxA_(iv, %s) of modarray by %s",
                     AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (PRF_ARG3 (modar))));
@@ -1257,7 +1265,9 @@ SelModarray (node *arg_node, info *arg_info)
             && (PMmatchFlat (pat6, iv)) && (PMmatchFlat (pat7, iv2))
             && (PMmatchFlat (pat5, iv3))) {
 
+#ifdef BUG897
             PRF_ISNOP (modar) = TRUE;
+#endif // BUG897
             res = DUPdoDupNode (PRF_ARG3 (modar));
             DBUG_PRINT ("replaced _sel_VxA_(iv, %s) of modarray by guarded %s",
                         AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (PRF_ARG3 (modar))));
@@ -1326,7 +1336,9 @@ IdxselModarray (node *arg_node, info *arg_info)
     /* Must skip afterguard on X */
     if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlatSkipGuards (pat2, X))
         && (IVUToffsetMatchesOffset (offset1, offset2))) {
+#ifdef BUG897
         PRF_ISNOP (modar) = TRUE;
+#endif // BUG897
         res = DUPdoDupNode (PRF_ARG3 (modar));
         DBUG_PRINT ("replaced _idx_sel(offset, %s) of modarray by %s",
                     AVIS_NAME (ID_AVIS (X)), AVIS_NAME (ID_AVIS (PRF_ARG3 (modar))));
@@ -1406,7 +1418,9 @@ SelModarrayCase2 (node *arg_node, info *arg_info)
             DBUG_PRINT ("Replaced _sel_VxA_(const, %s) by %s", AVIS_NAME (ID_AVIS (X)),
                         AVIS_NAME (ID_AVIS (val)));
             res = DUPdoDupNode (val);
+#ifdef BUG897
             PRF_ISNOP (modar) = TRUE;
+#endif // BUG897
         }
     }
     pat1 = PMfree (pat1);
@@ -1484,7 +1498,9 @@ IdxselModarrayCase2 (node *arg_node, info *arg_info)
             DBUG_PRINT ("Replaced _sel_VxA_(const, %s) by %s", AVIS_NAME (ID_AVIS (X)),
                         AVIS_NAME (ID_AVIS (val)));
             res = DUPdoDupNode (val);
+#ifdef BUG897
             PRF_ISNOP (modar) = TRUE;
+#endif // BUG897
         }
     }
     pat1 = PMfree (pat1);
@@ -1528,6 +1544,63 @@ SelEmptyScalar (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn bool isAllElemsSame( node *arg_node)
+ *
+ * @brief Predicate for determining that all elements of an N_array
+ *        have the same value, e.g., [ true, true, true] or [ 2, 2, 2, 2]
+ *
+ * @param arg_node, assumed to have at least one element.
+ *
+ * @return TRUE if predicate holds; else FALSE.
+ *
+ ******************************************************************************/
+static bool
+isAllElemsSame (node *arg_node)
+{
+    bool z = FALSE;
+    node *elem = NULL;
+    node *aelems;
+    pattern *pat1;
+    pattern *pat2;
+    pattern *patcon1;
+    pattern *patcon2;
+    constant *con1 = NULL;
+    constant *con2 = NULL;
+    constant *coz;
+
+    DBUG_ENTER ();
+
+    pat1 = PMvar (1, PMAgetNode (&elem), 0);
+    pat2 = PMvar (1, PMAisVar (&elem), 0);
+    patcon1 = PMconst (1, PMAgetVal (&con1));
+    patcon2 = PMconst (1, PMAgetVal (&con2));
+
+    if ((PMmatchFlat (patcon1, arg_node))
+        && (PMmatchFlat (patcon2, EXPRS_EXPR (ARRAY_AELEMS (arg_node))))) {
+        coz = COeq (con1, con2, NULL);
+        z = COisTrue (coz, TRUE);
+        con1 = (NULL != con1) ? COfreeConstant (con1) : NULL;
+        con2 = (NULL != con2) ? COfreeConstant (con2) : NULL;
+        coz = (NULL != coz) ? COfreeConstant (coz) : NULL;
+    } else {
+        z = TRUE;
+        aelems = ARRAY_AELEMS (arg_node);
+        PMmatchFlat (pat1, EXPRS_EXPR (aelems));
+        while (z && (NULL != elem) && (NULL != aelems)) {
+            z = PMmatchFlat (pat2, EXPRS_EXPR (aelems));
+            aelems = EXPRS_NEXT (aelems);
+        }
+    }
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    patcon1 = PMfree (patcon1);
+    patcon2 = PMfree (patcon2);
+
+    DBUG_RETURN (z);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *SelArrayOfEqualElements( node *arg_node, info *arg_info)
  *
  * @brief Matches selections of the following form
@@ -1554,38 +1627,27 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
     constant *frameshape = NULL;
     pattern *pat1;
     pattern *pat2;
-    bool matches = TRUE;
+    pattern *pat3;
 
     DBUG_ENTER ();
 
     pat1
       = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMvar (1, PMAgetNode (&iv), 0),
                PMarray (2, PMAgetNode (&aelems), PMAgetFS (&frameshape), 1, PMskip (0)));
-    pat2 = PMvar (1, PMAisVar (&elem), 0);
+    pat2 = PMany (1, PMAisNodeOrAvis (&elem), 0);
+    pat3 = PMany (1, PMAgetNodeOrAvis (&elem), 0);
 
     if ((PMmatchFlat (pat1, arg_node))
         && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv))) && (0 != ARRAY_AELEMS (aelems))
             && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
                 == COgetExtent (frameshape, 0)))) {
-
-        aelems = ARRAY_AELEMS (aelems);
-        elem = EXPRS_EXPR (aelems);
-        while (matches && (NULL != aelems)) {
-            matches = PMmatchFlat (pat2, aelems);
-            aelems = EXPRS_NEXT (aelems);
-        }
-
-        if (matches) {
+        if (isAllElemsSame (aelems)) {
             DBUG_PRINT ("Removed sel()");
-            res = DUPdoDupTree (elem);
+            res = DUPdoDupTree (EXPRS_EXPR (ARRAY_AELEMS (aelems)));
         }
     }
 
-    if (frameshape != NULL) {
-        frameshape = COfreeConstant (frameshape);
-    }
-    pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
+    frameshape = (NULL != frameshape) ? COfreeConstant (frameshape) : NULL;
 
     DBUG_RETURN (res);
 }
@@ -1617,12 +1679,9 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *aelems = NULL;
-    node *elem = NULL;
     node *offset = NULL;
     constant *frameshape = NULL;
-    bool matches = TRUE;
     pattern *pat1;
-    pattern *pat2;
     pattern *pat3;
     node *iv = NULL;
     node *shp = NULL;
@@ -1632,7 +1691,6 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
     pat1
       = PMprf (1, PMAisPrf (F_idx_sel), 2, PMvar (1, PMAgetNode (&offset), 0),
                PMarray (2, PMAgetNode (&aelems), PMAgetFS (&frameshape), 1, PMskip (0)));
-    pat2 = PMvar (1, PMAisVar (&elem), 0);
 
     /* Backtrack and find IV from offset to check that
      * shape(iv) == frameshape. See _sel_() case.
@@ -1644,22 +1702,14 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
         && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv)))) && (0 != ARRAY_AELEMS (aelems))
         && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
             == COgetExtent (frameshape, 0))) {
-        aelems = ARRAY_AELEMS (aelems);
-        elem = EXPRS_EXPR (aelems);
-        while (matches && (NULL != aelems)) {
-            matches = PMmatchFlat (pat2, aelems);
-            aelems = EXPRS_NEXT (aelems);
-        }
-
-        if (matches) {
+        if (isAllElemsSame (aelems)) {
             DBUG_PRINT ("Removed idx_sel()");
-            res = DUPdoDupTree (elem);
+            res = DUPdoDupTree (EXPRS_EXPR (ARRAY_AELEMS (aelems)));
         }
     }
 
     frameshape = (NULL != frameshape) ? COfreeConstant (frameshape) : NULL;
     pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
 
     DBUG_RETURN (res);
@@ -2292,8 +2342,8 @@ node *
 SCCFprf_mask_VxVxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *p;
-    node *x;
+    node *p = NULL;
+    node *x = NULL;
     constant *xfs = NULL;
     pattern *pat;
     constant *c;
@@ -2303,10 +2353,10 @@ SCCFprf_mask_VxVxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    pat = PMprf (1, PMAisPrf (F_mask_VxVxS), 2,
-                 PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
-                 PMarray (2, PMAgetNode (&x), PMAhasFS (&xfs), 1, PMskip (0)), 1,
-                 PMskip (0));
+    pat
+      = PMprf (1, PMAisPrf (F_mask_VxVxS), 3,
+               PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
+               PMarray (2, PMAgetNode (&x), PMAhasFS (&xfs), 1, PMskip (0)), PMskip (0));
 
     if ((PMmatchFlatSkipExtrema (pat, arg_node)) && COisConstant (p)) {
         DBUG_PRINT ("Replacing mask result by mask of x,y");

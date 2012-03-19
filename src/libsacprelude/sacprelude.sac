@@ -8,16 +8,16 @@ provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          isPartitionIntersectNull, 
          partitionMin, partitionMax,
          partitionIntersectMax, partitionIntersectMin,
-         SACarg, prod, partitionSlicer, gridFiller
+         SACarg, prod, partitionSlicer, gridFiller, ++
 #define MUTC 1
 #if SAC_BACKEND != MUTC
          , unwrapInt, unwrapBool, unwrapFloat, unwrapDouble, unwrapChar, 
-	   isInt, isBool, isFloat, isDouble, isChar, isUdt, wrap
+           isInt, isBool, isFloat, isDouble, isChar, isUdt, wrap
 #ifdef SANTANU
-	 , unwrapByte, unwrapShort, unwrapInt, unwrapLong, unwrapLonglong,
-	   unwrapUbyte, unwrapUshort, unwrapUint, unwrapUlong, unwrapUlonglong,
-	   isByte, isShort, isInt, isLong, isLonglong,
-	   isUbyte, isUshort, isUint, isUlong, isUlonglong
+         , unwrapByte, unwrapShort, unwrapInt, unwrapLong, unwrapLonglong,
+           unwrapUbyte, unwrapUshort, unwrapUint, unwrapUlong, unwrapUlonglong,
+           isByte, isShort, isInt, isLong, isLonglong,
+           isUbyte, isUshort, isUint, isUlong, isUlonglong
 #endif
 #endif
 #undef MUTC
@@ -33,7 +33,7 @@ fun( int)                 \
 fun( float)               \
 fun( double)              \
 fun( bool)                \
-fun( char)		  \
+fun( char)                  \
 fun( byte)                \
 fun( short)               \
 fun( long)                \
@@ -49,7 +49,7 @@ fun( int)                 \
 fun( float)               \
 fun( double)              \
 fun( bool)                \
-fun( char)		  
+fun( char)                  
 #endif
 
 #define SEL_VxA( a)                                                      \
@@ -95,6 +95,11 @@ ZERO( ulong, 0ul)
 ZERO( ulonglong, 0ull)
 #endif
 
+int ++ (int a)
+{
+  return _add_SxS_ (a, 1);
+}
+
 inline
 bool and( bool a, bool b)
 {
@@ -132,14 +137,14 @@ int prod( int[.] v)
 
 int[*] adjustLacFunParamsReshape( bool[*] p, int[*] i, int[.] iv, int[.] shp)
 {
-  return( ( _or_SxS_(_eq_SxS_( _dim_A_(p), 0), _eq_SxS_(_dim_A_(i), 0)) ?
-            i : _reshape_VxA_( shp, i)[iv]));
+  return ((_or_SxS_(_eq_SxS_( _dim_A_(p), 0), _eq_SxS_(_dim_A_(i), 0))
+           ?  i : _reshape_VxA_( shp, i)[iv]));
 }
 
 int[*] adjustLacFunParams( bool[*] p, int[*] i, int[.] iv)
 {
-  return( ( _or_SxS_(_eq_SxS_( _dim_A_(p), 0), _eq_SxS_(_dim_A_(i), 0)) ?
-            i : i[iv]));
+  return ((_or_SxS_(_eq_SxS_( _dim_A_(p), 0), _eq_SxS_(_dim_A_(i), 0)) 
+           ? i : i[iv]));
 }
 
 inline 

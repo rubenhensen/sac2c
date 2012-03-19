@@ -66,6 +66,7 @@ typedef union {
         libname = strcat (libname, library);                                             \
                                                                                          \
         libsac2c = dlopen (libname, DLOPEN_FLAGS);                                       \
+        free (libname);                                                                  \
                                                                                          \
         if (libsac2c == NULL) {                                                          \
             printf ("ERROR: Cannot load shared library '%s'... aborting.\n", libname);   \

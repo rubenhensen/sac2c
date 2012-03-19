@@ -71,6 +71,49 @@
 
 /** <!--********************************************************************-->
  *
+ *
+ * function: constant *ChaseMinMax(node *arg_node, bool minmax)
+ *
+ * description: Chase AVIS_MIN( AVIS_MIN( AVIS_MIN( arg_node)))
+ *              until we find a constant (or don't).
+ *
+ * returns: constant or NULL.
+ *
+ *****************************************************************************/
+
+#define RELMIN FALSE
+#define RELMAX TRUE
+
+static constant *
+ChaseMinMax (node *arg_node, bool minmax)
+{
+    DBUG_ENTER ();
+
+    constant *z = NULL;
+    node *extr;
+    pattern *pat;
+
+    if (NULL != arg_node) {
+        pat = PMconst (1, PMAgetVal (&z));
+        if ((N_id == NODE_TYPE (arg_node))
+            && (NULL != AVIS_SSAASSIGN (ID_AVIS (arg_node)))
+            && (PMmatchFlatSkipExtrema (pat, arg_node))) {
+            /* The AVIS_SSAASSIGN check arises from CF unit test aes.sac, where
+             * AVIS_MAX( prfarg1) is an N_parm to a LACFUN. I'm not sure
+             * how to reproduce that fault easily...
+             */
+        } else {
+            extr = minmax ? AVIS_MAX (ID_AVIS (arg_node)) : AVIS_MIN (ID_AVIS (arg_node));
+            z = ChaseMinMax (extr, minmax);
+        }
+        pat = PMfree (pat);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *SAACF_ids( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
@@ -504,15 +547,13 @@ SAACFprf_non_neg_val_V (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
-    if (NULL != minv) {
-        con = COaST2Constant (minv);
-        if ((NULL != con) && COisNonNeg (con, TRUE)) {
-            DBUG_PRINT ("non_neg_val_V guard removed");
-            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                               TBmakeExprs (TBmakeBool (TRUE), NULL));
-        }
-        con = (NULL != con) ? COfreeConstant (con) : con;
+    con = ChaseMinMax (minv, RELMIN);
+    if ((NULL != con) && COisNonNeg (con, TRUE)) {
+        DBUG_PRINT ("non_neg_val_V guard removed");
+        res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                           TBmakeExprs (TBmakeBool (TRUE), NULL));
     }
+    con = (NULL != con) ? COfreeConstant (con) : con;
 
     DBUG_RETURN (res);
 }
@@ -535,15 +576,13 @@ SAACFprf_non_neg_val_S (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
-    if (NULL != minv) {
-        con = COaST2Constant (minv);
-        if ((NULL != con) && COisNonNeg (con, TRUE)) {
-            DBUG_PRINT ("non_neg_val_S guard removed");
-            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                               TBmakeExprs (TBmakeBool (TRUE), NULL));
-        }
-        con = (NULL != con) ? COfreeConstant (con) : con;
+    con = ChaseMinMax (minv, RELMIN);
+    if ((NULL != con) && COisNonNeg (con, TRUE)) {
+        DBUG_PRINT ("non_neg_val_S guard removed");
+        res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                           TBmakeExprs (TBmakeBool (TRUE), NULL));
     }
+    con = (NULL != con) ? COfreeConstant (con) : con;
 
     DBUG_RETURN (res);
 }
@@ -699,14 +738,12 @@ SAACFprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
                 z = TRUE;
             } else {
                 maxv = AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node)));
-                if (NULL != maxv) {
-                    val2 = COaST2Constant (maxv); /* Case 2 */
-                    if ((NULL != val2) && COle (val2, shp, NULL)) {
-                        /* COle because maxv is 1 greater than its true value */
-                        z = TRUE;
-                    }
-                    val2 = (NULL != val2) ? COfreeConstant (val2) : val2;
+                val2 = ChaseMinMax (maxv, RELMAX);
+                if ((NULL != val2) && COle (val2, shp, NULL)) { /* Case 2 */
+                    /* COle because maxv is 1 greater than its true value */
+                    z = TRUE;
                 }
+                val2 = (NULL != val2) ? COfreeConstant (val2) : val2;
             }
             if (z) {
                 DBUG_PRINT ("val_lt_shape_VxA guard removed");
@@ -803,6 +840,15 @@ SAACFprf_val_lt_val_SxS (node *arg_node, info *arg_info)
  *  FALSE cases, and merge them if they cover the argument.
  *  I have no idea if this is worthwhile in practice.
  *
+ *  Enhancement: Consider a nested WL in which the
+ *  lower bound of an inner WL is the index vector of the outer:
+ *    z = with ... ( [0] <= iv1 < [N1]) ...
+ *            with... ( iv1 <= iv2 < N2)....
+ *
+ *  AVIS_MIN( iv2) is iv1, but iv1 is not constant. However,
+ *  AVIS_MIN( AVIS_MIN( iv2)) IS constant. So, for relationals,
+ *  we can search the extrema chains seeking a constant.
+ *
  *****************************************************************************/
 
 typedef enum { REL_lt, REL_le, REL_ge, REL_gt } relationalfns;
@@ -857,7 +903,6 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
           node *prfargres, bool tf, bool recur)
 {
     node *res = NULL;
-    pattern *pat;
     constant *arg1c = NULL;
     constant *arg1cp = NULL;
     constant *arg2c = NULL;
@@ -868,29 +913,16 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
 
     DBUG_ENTER ();
 
-#define RELMIN FALSE
-#define RELMAX TRUE
-
-    tp = GetBasetypeOfExpr (prfarg1);
+    tp = SCSgetBasetypeOfExpr (prfarg1);
     adj = minmax ? COmakeOne (tp, SHmakeShape (0)) : COmakeZero (tp, SHmakeShape (0));
 
     if (N_id == NODE_TYPE (prfarg1)) {
 
-        pat = PMconst (1, PMAgetVal (&arg1c));
         arg1ex = minmax ? AVIS_MAX (ID_AVIS (prfarg1)) : AVIS_MIN (ID_AVIS (prfarg1));
-        if ((NULL != arg1ex) && (N_id == NODE_TYPE (arg1ex))
-            && (NULL != AVIS_SSAASSIGN (ID_AVIS (arg1ex)))) {
-            /* The above check arises from CF unit test aes.sac, where
-             * AVIS_MAX( prfarg1) is an N_parm to a LACFUN. I'm not sure
-             * how to reproduce that fault easily...
-             */
-            arg1ex = ID_AVIS (arg1ex);
-            arg1ex = LET_IDS (ASSIGN_STMT (AVIS_SSAASSIGN (arg1ex)));
-            arg1ex = TBmakeExprs (TBmakeId (IDS_AVIS (arg1ex)), NULL);
-        }
+        arg1c = ChaseMinMax (arg1ex, minmax);
         arg2c = COaST2Constant (prfarg2);
 
-        if ((PMmatchFlatSkipExtrema (pat, arg1ex)) && (NULL != arg2c)) {
+        if ((NULL != arg1c) && (NULL != arg2c)) {
             arg1cp = COsub (arg1c, adj, NULL); /* Correct AVIS_MAX*/
             b = ((relfn[fna])) (arg1cp, arg2c, NULL);
             if (COisTrue (b, TRUE)) {
@@ -903,8 +935,6 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
         arg1c = (NULL != arg1c) ? COfreeConstant (arg1c) : arg1c;
         arg1cp = (NULL != arg1cp) ? COfreeConstant (arg1cp) : arg1cp;
         arg2c = (NULL != arg2c) ? COfreeConstant (arg2c) : arg2c;
-        arg1ex = (NULL != arg1ex) ? FREEdoFreeTree (arg1ex) : arg1ex;
-        pat = PMfree (pat);
 
         /* If no joy, try again to catch case where y has extrema.
          * E.g., if we are doing _lt_VxS_( V, S)

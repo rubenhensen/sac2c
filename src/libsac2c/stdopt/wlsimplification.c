@@ -347,6 +347,8 @@ WLSIMPassign (node *arg_node, info *arg_info)
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if (INFO_REPLACE (arg_info)) {
+        DBUG_PRINT ("Freeing N_assign for %s",
+                    AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)))));
         arg_node = FREEdoFreeNode (arg_node);
         INFO_REPLACE (arg_info) = FALSE;
     }
@@ -585,9 +587,9 @@ WLSIMPcode (node *arg_node, info *arg_info)
 
     CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
-    if (CODE_USED (arg_node) == 0) {
-        arg_node = FREEdoFreeNode (arg_node);
-    } else {
+    arg_node = TUremoveUnusedCodeBlock (arg_node);
+
+    if (0 != arg_node) {
         CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
     }
 

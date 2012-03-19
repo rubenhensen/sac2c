@@ -1518,7 +1518,7 @@ PRTtypedef (node *arg_node, info *arg_info)
         fprintf (global.outfile, "\n");
     }
 
-    if (global.backend != BE_cuda) {
+    if (global.backend != BE_cuda && global.backend != BE_cudahybrid) {
         if (TYPEDEF_COPYFUN (arg_node) != NULL) {
             fprintf (global.outfile, "\n%s %s %s( %s);\n", PRINT_EXTERN,
                      TYPEDEF_NAME (arg_node), TYPEDEF_COPYFUN (arg_node),
@@ -1878,7 +1878,8 @@ PRTfundef (node *arg_node, info *arg_info)
          * print function declaration
          */
 
-        if (global.backend == BE_cuda && FUNDEF_NS (arg_node) != NULL
+        if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+            && FUNDEF_NS (arg_node) != NULL
             && (STReq (NSgetModule (FUNDEF_NS (arg_node)), "Math")
                 || STReq (FUNDEF_NAME (arg_node), "srandom"))) {
             /* If the function is a math function, we do not print
@@ -2004,6 +2005,10 @@ PRTfundef (node *arg_node, info *arg_info)
                     fprintf (global.outfile, " * CUDA lac function:\n");
                 }
 
+                if (FUNDEF_ISFORLOOP (arg_node)) {
+                    fprintf (global.outfile, " * For loop function:\n");
+                }
+
                 if (FUNDEF_ISTHREADFUN (arg_node)) {
                     fprintf (global.outfile, " * MUTC thread fun\n");
                 }
@@ -2020,7 +2025,7 @@ PRTfundef (node *arg_node, info *arg_info)
                     fprintf (global.outfile, " * SPMD function:\n");
                 }
 
-                if (global.backend == BE_cuda) {
+                if (global.backend == BE_cuda || global.backend == BE_cudahybrid) {
                     fprintf (global.outfile, " * WITH-loop Count: %d\n",
                              FUNDEF_WLCOUNT (arg_node));
                 }
@@ -2521,7 +2526,7 @@ PRTassign (node *arg_node, info *arg_info)
         }
     }
 
-    if (global.backend == BE_cuda) {
+    if (global.backend == BE_cuda || global.backend == BE_cudahybrid) {
         switch (ASSIGN_EXECMODE (arg_node)) {
         case CUDA_HOST_SINGLE:
             // fprintf (global.outfile, "/** Execution Mode: Host Single **/\n");
@@ -2553,7 +2558,8 @@ PRTassign (node *arg_node, info *arg_info)
         fprintf (global.outfile, "\n");
     }
 
-    if (global.backend == BE_cuda && ASSIGN_ACCESS_INFO (arg_node) != NULL) {
+    if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+        && ASSIGN_ACCESS_INFO (arg_node) != NULL) {
         CUAIprintCudaAccessInfo (arg_node, arg_info);
     }
 
@@ -2585,6 +2591,11 @@ PRTdo (node *arg_node, info *arg_info)
 
     if (DO_ISCUDARIZABLE (arg_node)) {
         fprintf (global.outfile, "/********** Cudarizable do loop **********/\n");
+        INDENT;
+    }
+
+    if (DO_ISFORLOOP (arg_node)) {
+        fprintf (global.outfile, "/********** For Loop **********/\n");
         INDENT;
     }
 
@@ -4506,7 +4517,8 @@ PRTcode (node *arg_node, info *arg_info)
         PrintSimdEnd ();
     }
 
-    if (global.backend == BE_cuda && CODE_IRA_INFO (arg_node) != NULL) {
+    if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+        && CODE_IRA_INFO (arg_node) != NULL) {
         IRAprintRcs (arg_node, arg_info);
     }
 
@@ -5443,7 +5455,8 @@ PRTavis (node *arg_node, info *arg_info)
                     : COconstant2String (AVIS_DEMAND (arg_node))));
     }
 
-    if (global.backend == BE_cuda && AVIS_ISCUDALOCAL (arg_node)) {
+    if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+        && AVIS_ISCUDALOCAL (arg_node)) {
         fprintf (global.outfile, " /* CUDA local */");
     }
 

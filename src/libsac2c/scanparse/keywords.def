@@ -1,0 +1,93 @@
+/* Copyright (c) 2011 Artem Shinkarov <artyom.shinkaroff@gmail.com>
+
+   Permission to use, copy, modify, and distribute this software for any
+   purpose with or without fee is hereby granted, provided that the above
+   copyright notice and this permission notice appear in all copies.
+
+   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+   WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+   MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+   ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+   WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.  */
+
+/* This list must be sorted alphabetically to allow
+   bsearch work correctly. */
+
+KEYWORD (TFABSTRACT, "abstract-typedef")
+KEYWORD (ALL, "all")
+KEYWORD (TYPE_BOOL, "bool")
+KEYWORD (TFBUILTIN, "builtin-typedef")
+KEYWORD (TYPE_BYTE, "byte")
+KEYWORD (CACHESIM, "cachesim")
+KEYWORD (TYPE_CHAR, "char")
+KEYWORD (CLASS, "class")
+KEYWORD (CLASSTYPE, "classtype")
+KEYWORD (COPYFUN, "copyfun")
+KEYWORD (CUDALINKNAME, "cudalinkname")
+KEYWORD (DEPRECATED, "deprecated")
+KEYWORD (DO, "do")
+KEYWORD (TYPE_DBL, "double")
+KEYWORD (EFFECT, "effect")
+KEYWORD (ELSE, "else")
+KEYWORD (EXCEPT, "except")
+KEYWORD (EXPORT, "export")
+KEYWORD (EXTERN, "external")
+KEYWORD (FALSETOKEN, "false")
+KEYWORD (TYPE_FLOAT, "float")
+KEYWORD (FOLD, "fold")
+KEYWORD (FOLDFIX, "foldfix")
+KEYWORD (FOR, "for")
+KEYWORD (FREEFUN, "freefun")
+KEYWORD (GENARRAY, "genarray")
+KEYWORD (IF, "if")
+KEYWORD (IFF, "iff")
+KEYWORD (IMPORT, "import")
+KEYWORD (INITFUN, "initfun")
+KEYWORD (INLINE, "inline")
+KEYWORD (TYPE_INT, "int")
+KEYWORD (LINKNAME, "linkname")
+KEYWORD (LINKOBJ, "linkobj")
+KEYWORD (LINKSIGN, "linksign")
+KEYWORD (LINKWITH, "linkwith")
+KEYWORD (LOCAL, "local")
+KEYWORD (TYPE_LONG, "long")
+KEYWORD (TYPE_LONGLONG, "longlong")
+KEYWORD (K_MAIN, "main")
+KEYWORD (MODARRAY, "modarray")
+KEYWORD (MODULE, "module")
+KEYWORD (MUTCTHREADFUN, "mutcthreadfun")
+KEYWORD (NOINLINE, "noinline")
+KEYWORD (OBJDEF, "objdef")
+KEYWORD (PRAGMA, "pragma")
+KEYWORD (PROPAGATE, "propagate")
+KEYWORD (PROVIDE, "provide")
+KEYWORD (REFCOUNTDOTS, "refcountdots")
+KEYWORD (REFCOUNTING, "refcounting")
+KEYWORD (RETURN, "return")
+KEYWORD (RSPAWN, "rspawn")
+KEYWORD (TYPE_SHORT, "short")
+KEYWORD (SPAWN, "spawn")
+KEYWORD (SPECIALIZE, "specialize")
+KEYWORD (STEP, "step")
+KEYWORD (STRUCT, "struct")
+KEYWORD (TARGET, "target")
+KEYWORD (THREAD, "thread")
+KEYWORD (TRUETOKEN, "true")
+KEYWORD (TYPEDEF, "typedef")
+KEYWORD (TFTYPEREL, "typerel")
+KEYWORD (TYPE_UBYTE, "ubyte")
+KEYWORD (TYPE_UINT, "uint")
+KEYWORD (TYPE_ULONG, "ulong")
+KEYWORD (TYPE_ULONGLONG, "ulonglong")
+KEYWORD (TYPE_UNS, "unsigned")
+KEYWORD (USE, "use")
+KEYWORD (TFUSER, "user-typedef")
+KEYWORD (TYPE_USHORT, "ushort")
+KEYWORD (TYPE_VOID, "void")
+KEYWORD (WHILE, "while")
+KEYWORD (WIDTH, "width")
+KEYWORD (NWITH, "with")
+KEYWORD (WLCOMP, "wlcomp")
+

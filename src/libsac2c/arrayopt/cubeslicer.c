@@ -98,6 +98,8 @@ struct INFO {
     intersect_type_t intersecttype; /* intersect type. see enum */
     lut_t *lut;                     /* LUT for renaming */
     node *noteintersect;            /* F_noteintersect node */
+    node *producerpart;             /* PWL part matching CWL */
+    bool cutnow;                    /* This CWL partn should be cut now */
 };
 
 /**
@@ -114,6 +116,8 @@ struct INFO {
 #define INFO_INTERSECTTYPE(n) ((n)->intersecttype)
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_NOTEINTERSECT(n) ((n)->noteintersect)
+#define INFO_PRODUCERPART(n) ((n)->producerpart)
+#define INFO_CUTNOW(n) ((n)->cutnow)
 
 static info *
 MakeInfo (node *fundef)
@@ -135,6 +139,8 @@ MakeInfo (node *fundef)
     INFO_INTERSECTTYPE (result) = INTERSECT_unknown;
     INFO_LUT (result) = NULL;
     INFO_NOTEINTERSECT (result) = NULL;
+    INFO_PRODUCERPART (result) = NULL;
+    INFO_CUTNOW (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -326,9 +332,9 @@ matchGeneratorField (node *fa, node *fb)
 
     if ((NULL != fa) && (NULL != fb)) {
         if (z) {
-            DBUG_PRINT ("matchGeneratorField matched");
+            DBUG_PRINT ("matched");
         } else {
-            DBUG_PRINT ("matchGeneratorField did not match");
+            DBUG_PRINT ("did not match");
         }
     }
 
@@ -544,13 +550,58 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     DBUG_RETURN (z);
 }
 
+#ifndef DEBUG_OFF
+/** <!--********************************************************************-->
+ *
+ * @fn
+ *
+ * @brief Return a string that describes the intersect type
+ *
+ * @params:
+ *
+ * @result: A pointer to a character string constant.
+ *
+ *****************************************************************************/
+static char *
+IntersectTypeName (intersect_type_t itype)
+{
+    char *z;
+
+    DBUG_ENTER ();
+
+    switch (itype) {
+    case INTERSECT_null:
+        z = "INTERSECT_null";
+        break;
+    case INTERSECT_exact:
+        z = "INTERSECT_exact";
+        break;
+    case INTERSECT_nonexact:
+        z = "INTERSECT_nonexact";
+        break;
+    case INTERSECT_notnull:
+        z = "INTERSECT_notnull";
+        break;
+    case INTERSECT_unknown:
+        z = "INTERSECT_unknown";
+        break;
+    default:
+        z = "INTERSECT is confused";
+        break;
+    }
+
+    DBUG_RETURN (z);
+}
+#endif // DEBUG
+
 /** <!--********************************************************************-->
  *
  *
  * @fn node * CUBSLfindMatchingPart(...
  *
  * @brief Search for a producerWL partition that matches the
- *        consumerWLPart index set, or that is a superset thereof.
+ *        consumerWLPart index set, or that is a superset thereof, and
+ *        whose intersect type matches that of itype.
  *
  *        The search comprises two steps:
  *
@@ -585,23 +636,24 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
  *         producerWL: the N_with of the producerWL.
  *         arg_info: Either arg_info or NULL.
  *
- * @result: The address of the matching producerWL partition, if any.
+ * @result: The match we actually found.
  *          NULL if none is found.
+ *          We also set INFO_PRODUCERPART, if a match is found.
  *
  *****************************************************************************/
-node *
-CUBSLfindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpart,
-                       node *producerWL, info *arg_info)
+intersect_type_t
+CUBSLfindMatchingPart (node *arg_node, intersect_type_t itype, node *consumerpart,
+                       node *producerWL, info *arg_info, node **producerpart)
 {
     node *producerWLGenerator;
     node *producerWLPart;
-    node *z = NULL;
+    intersect_type_t z = INTERSECT_unknown;
     node *idx;
     node *idxassign;
     node *idxparent;
     intersect_type_t intersecttype = INTERSECT_unknown;
-    char *typ;
     int producerPartno = 0;
+    char *nm;
 
     DBUG_ENTER ();
     DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "expected N_prf arg_node");
@@ -613,38 +665,31 @@ CUBSLfindMatchingPart (node *arg_node, intersect_type_t *itype, node *consumerpa
     idxparent = LET_EXPR (ASSIGN_STMT (idxassign));
 
     producerWLPart = WITH_PART (producerWL);
+    (*producerpart) = NULL;
 
     /* Find producerWL partition, if any, that matches the extrema of iv */
-    while (((INTERSECT_unknown == intersecttype) || (INTERSECT_null == intersecttype))
-           && (producerWLPart != NULL)) {
+    while ((intersecttype != itype) && (producerWLPart != NULL)) {
         producerWLGenerator = PART_GENERATOR (producerWLPart);
         intersecttype
           = FindIntersection (idx, producerWLGenerator, consumerpart, arg_info);
-
-        switch (intersecttype) {
-        default:
-        case INTERSECT_unknown:
-        case INTERSECT_null:
-            typ = "NULL";
-            break;
-
-        case INTERSECT_exact:
-            typ = "exact";
-            z = producerWLPart;
-            (*itype) = intersecttype;
-            break;
-
-        case INTERSECT_nonexact:
-            typ = "slice needed";
-            z = producerWLPart;
-            (*itype) = intersecttype;
+        if (intersecttype == itype) {
+            (*producerpart) = producerWLPart;
+            z = intersecttype;
             break;
         }
         producerWLPart = PART_NEXT (producerWLPart);
         producerPartno++;
     }
 
-    DBUG_PRINT ("Referent match type is (%s) for producerPartno %d", typ, producerPartno);
+    if (NULL != arg_info) {
+        nm = AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info)));
+    } else {
+        nm = "?";
+    }
+
+    DBUG_PRINT ("match type is (%s) for producerPartno %d of PWL=%s, CWL=%s",
+                IntersectTypeName (z), producerPartno,
+                AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))), nm);
 
     DBUG_RETURN (z);
 }
@@ -926,6 +971,8 @@ PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
         arg_node = newpartns;
     }
 
+    global.optcounters.cubsl_expr++;
+
     pat = PMfree (pat);
 
     DBUG_RETURN (arg_node);
@@ -999,6 +1046,10 @@ CUBSLfundef (node *arg_node, info *arg_info)
  *        Also prepends newly generated WL bounds before the
  *        WL they are associated with.
  *
+ *        Short-circuit further checks of this block if we
+ *        have found a partition to slice.
+ *
+ *
  *****************************************************************************/
 node *
 CUBSLassign (node *arg_node, info *arg_info)
@@ -1016,9 +1067,11 @@ CUBSLassign (node *arg_node, info *arg_info)
     }
 
     /*
-     * Top-down traversal
+     * Top-down traversal, unless we have found a partn to slice.
      */
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    if (!INFO_CUTNOW (arg_info)) {
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1089,17 +1142,24 @@ CUBSLpart (node *arg_node, info *arg_info)
 
     oldconsumerpart = INFO_CONSUMERPART (arg_info);
     INFO_CONSUMERPART (arg_info) = arg_node;
-
     oldintersecttype = INFO_INTERSECTTYPE (arg_info);
     INFO_INTERSECTTYPE (arg_info) = INTERSECT_unknown;
-
     oldwlprojection1 = INFO_WLPROJECTION1 (arg_info);
     INFO_WLPROJECTION1 (arg_info) = NULL;
     oldwlprojection2 = INFO_WLPROJECTION2 (arg_info);
     INFO_WLPROJECTION2 (arg_info) = NULL;
 
+    DBUG_ASSERT (!INFO_CUTNOW (arg_info), "cutnow confusion");
+
+    DBUG_PRINT ("traversing code block for %s",
+                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
     CODE_CBLOCK (PART_CODE (arg_node))
       = TRAVopt (CODE_CBLOCK (PART_CODE (arg_node)), arg_info);
+    DBUG_PRINT ("back from traversing code block for %s",
+                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+    DBUG_PRINT ("CWL partition %s intersect type is %s",
+                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                IntersectTypeName (INFO_INTERSECTTYPE (arg_info)));
 
     if ((INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info))
         && (NULL != INFO_WLPROJECTION1 (arg_info))
@@ -1108,6 +1168,9 @@ CUBSLpart (node *arg_node, info *arg_info)
         && (NULL != INFO_WLPROJECTION2 (arg_info))
         && (AWLFIisHasInverseProjection (INFO_WLPROJECTION2 (arg_info)))
         && (!AWLFIisIdsMemberPartition (INFO_WLPROJECTION2 (arg_info), arg_node))) {
+        DBUG_PRINT ("slicing partition of CWL=%s",
+                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+        DBUG_ASSERT (INFO_CUTNOW (arg_info), "more cutnow confusion");
 
         partnext = PART_NEXT (arg_node);
         PART_NEXT (arg_node) = NULL;
@@ -1116,14 +1179,11 @@ CUBSLpart (node *arg_node, info *arg_info)
         PART_NEXT (arg_node) = TCappendPart (PART_NEXT (arg_node), partnext);
     }
 
-    DBUG_PRINT ("Partition %s intersect type is %d",
-                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
-                INFO_INTERSECTTYPE (arg_info));
-
     INFO_CONSUMERPART (arg_info) = oldconsumerpart;
     INFO_INTERSECTTYPE (arg_info) = oldintersecttype;
     INFO_WLPROJECTION1 (arg_info) = oldwlprojection1;
     INFO_WLPROJECTION2 (arg_info) = oldwlprojection2;
+    INFO_CUTNOW (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -1166,37 +1226,61 @@ CUBSLlet (node *arg_node, info *arg_info)
  * @brief Look for suitable _sel_VxA_( iv, X) nodes in this WL partition.
  *        Leave cube-slicing info in arg_info.
  *
+ *        If we find a suitable node, mark things so that
+ *        we do not look any further into this N_part, but
+ *        instead go off and slice the partition.
+ *
  *****************************************************************************/
 node *
 CUBSLprf (node *arg_node, info *arg_info)
 {
-    node *producerPart;
     node *producerWL;
+    node *pwlid = NULL;
+    node *noteintersect;
 
     DBUG_ENTER ();
 
     if (((F_sel_VxA == PRF_PRF (arg_node)) || (F_idx_sel == PRF_PRF (arg_node)))
         && (INFO_CONSUMERPART (arg_info) != NULL)
         && (AWLFIisHasNoteintersect (arg_node))) {
+
         DBUG_PRINT ("Looking at %s =_sel_VxA_( iv, X)",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-        producerWL = AWLFIfindWlId (PRF_ARG2 (arg_node));
-        producerWL = AWLFIfindWL (producerWL);
+        pwlid = AWLFIfindWlId (PRF_ARG2 (arg_node));
+        producerWL = AWLFIfindWL (pwlid);
+
+        /* If cwl intersect information is stale, due to cubeslicing of
+         * pwl, discard it and start over */
+        noteintersect = AWLFIfindNoteintersect (arg_node);
+        if ((NULL != noteintersect) && (NULL != producerWL)
+            && (!AWLFIisValidNoteintersect (noteintersect, producerWL))) {
+            noteintersect = AWLFIdetachNoteintersect (noteintersect);
+            FREEdoFreeNode (PRF_ARG1 (arg_node));
+            PRF_ARG1 (arg_node) = noteintersect;
+            DBUG_PRINT ("Discarded invalid F_noteintersect for cwl=%s, pwl=%s",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                        AVIS_NAME (ID_AVIS (pwlid)));
+            producerWL = NULL;
+        }
 
         /* producerWL may be entirely gone now, perhaps
          * due to it being copyWL, etc.
          * Or, it may have been sliced, so partition bounds differ from
          * what they were originally.
          *
-         * Side effect of call is to set INFO_CONSUMERPART.
+         * Side effect of call is to set INFO_CONSUMERPART and
+         * INFO_INTERSECTTYPE.
          */
         if (NULL != producerWL) {
-            producerPart
-              = CUBSLfindMatchingPart (arg_node, &INFO_INTERSECTTYPE (arg_info),
-                                       INFO_CONSUMERPART (arg_info), producerWL,
-                                       arg_info);
-            if (NULL != producerPart) {
-                DBUG_PRINT ("CUBSLprf found producerPart");
+            INFO_INTERSECTTYPE (arg_info)
+              = CUBSLfindMatchingPart (arg_node, INTERSECT_nonexact,
+                                       INFO_CONSUMERPART (arg_info), producerWL, arg_info,
+                                       &INFO_PRODUCERPART (arg_info));
+            if (INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info)) {
+                INFO_CUTNOW (arg_info) = TRUE;
+                DBUG_PRINT ("Found producerPart in %s for slicing consumerWL %s",
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
+                            AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             }
         }
     }

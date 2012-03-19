@@ -402,6 +402,9 @@ CheckMoveDownFlag (node *instr, info *arg_info)
             LET_LIRFLAG (instr) = LET_LIRFLAG (instr) | LIRMOVE_DOWN;
             DBUG_PRINT ("whole expression %s marked for move-down",
                         AVIS_NAME (IDS_AVIS (LET_IDS (instr))));
+        } else {
+            DBUG_PRINT ("whole expression %s can not be moved down",
+                        AVIS_NAME (IDS_AVIS (LET_IDS (instr))));
         }
     }
 
@@ -833,45 +836,6 @@ InsListGetFrame (nodelist *il, int depth)
 
 /* traversal functions */
 
-static node *
-foo2 (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_avis, "foo2 expected N_avis node");
-
-    arg_node = TRAVcont (arg_node, arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!-- ****************************************************************** -->
- * @fn node *foo( node *arg_node)
- *
- * @brief
- *
- * @param
- *
- * @return
- ******************************************************************************/
-static node *
-foo (node *arg_node, info *arg_info)
-{
-    anontrav_t freetrav[2] = {{N_avis, &foo2}, {0, NULL}};
-
-    DBUG_ENTER ();
-
-    if (NULL != arg_node) {
-        DBUG_ASSERT (NODE_TYPE (arg_node) == N_vardec, "foo expected N_vardec node");
-
-        TRAVpushAnonymous (freetrav, &TRAVsons);
-        arg_node = TRAVcont (arg_node, arg_info);
-        TRAVpop ();
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
 /******************************************************************************
  *
  * function:
@@ -1056,6 +1020,7 @@ LIRvardec (node *arg_node, info *arg_info)
 
     avis = VARDEC_AVIS (arg_node);
 
+    DBUG_PRINT ("Initializing vardec for %s", AVIS_NAME (avis));
     AVIS_NEEDCOUNT (avis) = 0;
     AVIS_DEFDEPTH (avis) = DD_UNDEFINED;
     AVIS_SSALPINV (avis) = FALSE;
@@ -1098,15 +1063,6 @@ LIRblock (node *arg_node, info *arg_info)
 
     BLOCK_VARDECS (arg_node) = TRAVopt (BLOCK_VARDECS (arg_node), arg_info);
     BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
-
-    /*
-     * thisisprobablywrong;
-     */
-#define FIXME
-#ifdef FIXME
-    BLOCK_VARDECS (arg_node) = foo (BLOCK_VARDECS (arg_node), arg_info);
-#endif // FIXME
-#undef FIXME
 
     /* restore block mode */
     INFO_TOPBLOCK (arg_info) = old_flag;
@@ -1174,6 +1130,8 @@ LIRassign (node *arg_node, info *arg_info)
         && (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let)
         && (NODE_TYPE (ASSIGN_RHS (arg_node)) == N_with) && (pre_assign != NULL)) {
         /* do not move this withloop in this opt cycle */
+        DBUG_PRINT ("Withloop %s marked as LIR_MOVE_STAY",
+                    AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)))));
         AVIS_LIRMOVE (IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)))) = LIRMOVE_STAY;
         LET_LIRFLAG (ASSIGN_STMT (arg_node)) = LIRMOVE_STAY;
     }
@@ -1293,7 +1251,7 @@ LIRlet (node *arg_node, info *arg_info)
 
     oldlir = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = LET_IDS (arg_node);
-    DBUG_PRINT ("LIRlet looking at: %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+    DBUG_PRINT ("Looking at: %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     /*
@@ -1302,6 +1260,7 @@ LIRlet (node *arg_node, info *arg_info)
 
     ids = LET_IDS (arg_node);
     while (ids != NULL) {
+#define xxxFIXME
 #ifdef FIXME
         node *avis = IDS_AVIS (ids);
 
@@ -1316,6 +1275,7 @@ LIRlet (node *arg_node, info *arg_info)
         AVIS_MIN (avis) = TRAVopt (AVIS_MIN (avis), arg_info);
         AVIS_MAX (avis) = TRAVopt (AVIS_MAX (avis), arg_info);
 #endif // FIXME
+#undef FIXME
         ids = IDS_NEXT (ids);
     }
 
@@ -1327,7 +1287,7 @@ LIRlet (node *arg_node, info *arg_info)
             && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_with)
                   && (INFO_PREASSIGN (arg_info) != NULL)))) {
 
-            DBUG_PRINT ("Loop-independent expression %s detected - marked for moving up",
+            DBUG_PRINT ("LIR expression %s marked for moving up",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             /*
              * expression is  not in a condition and uses only LI
@@ -1337,6 +1297,8 @@ LIRlet (node *arg_node, info *arg_info)
             LET_LIRFLAG (arg_node) = LIRMOVE_UP;
             INFO_FLAG (arg_info) = LIR_MOVEUP;
         } else {
+            DBUG_PRINT ("non-LIR expression %s detected - marked for no moving",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             LET_LIRFLAG (arg_node) = LIRMOVE_NONE;
             INFO_FLAG (arg_info) = LIR_NORMAL;
         }
@@ -1411,6 +1373,9 @@ LIRid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    /* Traverse AVIS_DIM and friends */
+    ID_AVIS (arg_node) = TRAVcont (ID_AVIS (arg_node), arg_info);
+
     switch (INFO_FLAG (arg_info)) {
     case LIR_NORMAL:
         /* increment need/uses counter */
@@ -1424,10 +1389,11 @@ LIRid (node *arg_node, info *arg_info)
               || (AVIS_LIRMOVE (ID_AVIS (arg_node)) & LIRMOVE_LOCAL))) {
             INFO_NONLIRUSE (arg_info) = INFO_NONLIRUSE (arg_info) + 1;
 
-            DBUG_PRINT ("non-loop-invariant or non-local id %s",
+            DBUG_PRINT ("id %s is non-loop-invariant or non-local",
                         AVIS_NAME (ID_AVIS (arg_node)));
         } else {
-            DBUG_PRINT ("loop-invariant or local id %s", AVIS_NAME (ID_AVIS (arg_node)));
+            DBUG_PRINT ("id %s is loop-invariant or local",
+                        AVIS_NAME (ID_AVIS (arg_node)));
         }
 
         /*
@@ -1526,7 +1492,7 @@ LIRap (node *arg_node, info *arg_info)
      */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-        DBUG_PRINT ("traverse in special fundef %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
+        DBUG_PRINT ("traverse of lacfun fundef %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
         old_trav = INFO_TRAVINLAC (arg_info);
         INFO_TRAVINLAC (arg_info) = TRUE;
@@ -1536,12 +1502,12 @@ LIRap (node *arg_node, info *arg_info)
 
         INFO_TRAVINLAC (arg_info) = old_trav;
 
-        DBUG_PRINT ("traversal of special fundef %s finished\n",
+        DBUG_PRINT ("traversal of lacfun fundef %s finished\n",
                     FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
     } else {
         /* no traversal into a normal fundef */
-        DBUG_PRINT ("do not traverse in normal fundef %s",
+        DBUG_PRINT ("do not traverse normal fundef %s",
                     FUNDEF_NAME (AP_FUNDEF (arg_node)));
     }
 
@@ -1644,6 +1610,7 @@ LIRwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Looking at WL defining %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
     /* clear current InsertListFrame */
     INFO_INSLIST (arg_info)
       = InsListSetAssigns (INFO_INSLIST (arg_info), NULL, INFO_WITHDEPTH (arg_info));
@@ -1775,6 +1742,7 @@ LIRids (node *arg_ids, info *arg_info)
         break;
 
     case LIR_NORMAL:
+        DBUG_PRINT ("mark: no moving of vardec %s", IDS_NAME (arg_ids));
         AVIS_LIRMOVE (avis) = LIRMOVE_NONE;
         break;
 

@@ -27,7 +27,7 @@
 #include "tree_compound.h"
 #include "traverse.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "MSE"
 #include "debug.h"
 
 #include "str.h"

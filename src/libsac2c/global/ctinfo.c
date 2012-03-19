@@ -1150,6 +1150,7 @@ CTIterminateCompilation (node *syntax_tree)
     DBUG_ENTER ();
     char *visual_output;
     char *shell_command;
+    bool break_found = FALSE;
     /*
      * Upon premature termination of compilation process show
      * syntax tree if available.
@@ -1168,8 +1169,9 @@ CTIterminateCompilation (node *syntax_tree)
             CTIwarn ("If you want to visualize syntax tree. Please install dot. \n");
         } else {
             visual_output = VISUALdoVisual (syntax_tree);
-            shell_command = STRcatn (5, "dot ", visual_output, " -Tpng -o ",
-                                     global.outfilename, ".png");
+            shell_command
+              = STRcatn (8, "dot ", visual_output, " -T", global.visual_format, " -o ",
+                         global.outfilename, ".", global.visual_format);
             DBUG_PRINT ("\n %s \n", shell_command);
             SYScall (shell_command);
             MEMfree (shell_command);
@@ -1200,6 +1202,7 @@ CTIterminateCompilation (node *syntax_tree)
         CTIstate ("** BREAK in pass:  %d\n", global.break_cycle_specifier);
         CTIstate ("** BREAK after:    %s\n",
                   PHIphaseText (global.break_after_cyclephase));
+        break_found = TRUE;
     } else {
         if (global.break_after_subphase < PHIlastPhase ()) {
             CTIstate ("** BREAK during: %s\n", PHIphaseText (global.compiler_phase));
@@ -1209,6 +1212,7 @@ CTIterminateCompilation (node *syntax_tree)
                 CTIstate ("** BREAK after: %s\n", PHIphaseText (global.compiler_phase));
             }
         }
+        break_found = TRUE;
     }
 
 #ifdef SHOW_MALLOC
@@ -1224,7 +1228,9 @@ CTIterminateCompilation (node *syntax_tree)
     CTIstate ("** 0 error(s), %d warning(s)", warnings);
     CTIstate (" ");
 
-    exit (0);
+    GLOBfinalizeGlobal ();
+    if (break_found)
+        exit (0);
 
     DBUG_RETURN ();
 }

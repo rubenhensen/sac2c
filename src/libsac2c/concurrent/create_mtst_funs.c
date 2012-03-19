@@ -28,13 +28,13 @@
  *        - If the current marker is MT, untag the with-loop and leave it
  *          to sequential execution (more precisely replicated parallel
  *          execution due to an outer parallelisation context).
- *     - When we encounter a conditional introduced by the cost model (i.e.
+ *     - When we encounter a conditional introduced by the MT cost model (i.e.
  *       (parallel or sequntial execution of a with-loop depending on data
- *       not available before runtime)
+ *       not available before runtime) or CUDA cost model
  *        - If the current marker is ST, we continue traversing into both
  *          branches.
  *        - If the current marker is MT, we eliminate the conditional and
- *          the parallel branch and continue with the sequential branch.
+ *          the parallel/CUDA branch and continue with the sequential branch.
  *
  *    This algorithm repeats until all functions are marked and thus a fixed
  *    point is reached. Tagged functions are put in the MT subnamespace.
@@ -149,6 +149,40 @@ IsSpmdConditional (node *arg_node)
             || (PRF_PRF (prf) == F_run_mt_fold)) {
             res = TRUE;
         }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * @fn bool IsCudaConditional( node *arg_node)
+ *
+ *  @brief checks for an argument node of type N_cond whether it is one of
+ *    conditionals introduced by the cuda cost model.
+ *
+ *  @param arg_node of type N_cond
+ *
+ *  @return predicate value
+ *
+ *****************************************************************************/
+
+static bool
+IsCudaConditional (node *arg_node)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_cond,
+                 "IsCudaConditional() applied to wrong node type.");
+
+    res = FALSE;
+
+    /* check if condition variable has cuda cost model name prefix */
+    if (NODE_TYPE (COND_COND (arg_node)) == N_id
+        && STReqn (ID_NAME (COND_COND (arg_node)), "_cucm", 5)) {
+        res = TRUE;
     }
 
     DBUG_RETURN (res);
@@ -434,7 +468,7 @@ MTSTFcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (IsSpmdConditional (arg_node)) {
+    if (IsSpmdConditional (arg_node) || IsCudaConditional (arg_node)) {
         if (INFO_MTCONTEXT (arg_info)) {
             /*
              * We are already in an MT context and this is a special conditional

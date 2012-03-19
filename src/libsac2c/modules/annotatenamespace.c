@@ -222,7 +222,7 @@ ANSsymbol (node *arg_node, info *arg_info)
                               INFO_SYMBOLS (arg_info));
     } else {
         STadd (SYMBOL_ID (arg_node), SVT_local, INFO_CURRENT (arg_info), SET_namespace,
-               INFO_SYMBOLS (arg_info));
+               INFO_SYMBOLS (arg_info), 0); /* XXX may be this nees adjustment... */
     }
 
     if (SYMBOL_NEXT (arg_node) != NULL) {

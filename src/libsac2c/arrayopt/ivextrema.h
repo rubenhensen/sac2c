@@ -23,6 +23,7 @@ extern node *IVEXIfuncond (node *arg_node, info *arg_info);
 extern node *IVEXIcond (node *arg_node, info *arg_info);
 extern node *IVEXIwhile (node *arg_node, info *arg_info);
 extern node *IVEXIlet (node *arg_node, info *arg_info);
+extern node *IVEXIprf (node *arg_node, info *arg_info);
 extern node *IVEXIwith (node *arg_node, info *arg_info);
 extern node *IVEXIgenerator (node *arg_node, info *arg_info);
 extern node *IVEXIpart (node *arg_node, info *arg_info);

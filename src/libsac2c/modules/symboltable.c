@@ -18,7 +18,12 @@ struct ST_SYMBOLITERATOR_T {
 
 struct ST_ENTRY_T {
     char *name;
+
     stentrytype_t type;
+
+    /* In case it is a function we keep argument count.  */
+    unsigned argc;
+
     stentry_t *next;
 };
 
@@ -43,7 +48,7 @@ struct ST_SYMBOLTABLE_T {
  */
 
 static stentry_t *
-STentryInit (const char *name, stentrytype_t type)
+STentryInit (const char *name, stentrytype_t type, unsigned argc)
 {
     stentry_t *result;
 
@@ -53,6 +58,7 @@ STentryInit (const char *name, stentrytype_t type)
 
     result->name = STRcpy (name);
     result->type = type;
+    result->argc = argc;
     result->next = NULL;
 
     DBUG_RETURN (result);
@@ -86,6 +92,7 @@ STentryCopy (const stentry_t *entry)
 
         result->name = STRcpy (entry->name);
         result->type = entry->type;
+        result->argc = entry->argc;
         result->next = STentryCopy (entry->next);
     }
 
@@ -101,6 +108,7 @@ STentryEqual (stentry_t *one, stentry_t *two)
 
     result = result && STReq (one->name, two->name);
     result = result && (one->type == two->type);
+    result = result && one->argc == two->argc;
 
     DBUG_RETURN (result);
 }
@@ -287,13 +295,13 @@ STentryInsert (const char *symbolname, stvisibility_t vis, stentry_t *entry,
 
 void
 STadd (const char *symbol, stvisibility_t vis, const char *name, stentrytype_t type,
-       sttable_t *table)
+       sttable_t *table, unsigned argc)
 {
     stentry_t *entry;
 
     DBUG_ENTER ();
 
-    entry = STentryInit (name, type);
+    entry = STentryInit (name, type, argc);
     STentryInsert (symbol, vis, entry, table);
 
     DBUG_RETURN ();
@@ -449,6 +457,22 @@ STsymbolIteratorHasMore (stsymboliterator_t *iterator)
     DBUG_RETURN (iterator->pos != NULL);
 }
 
+bool
+STsymbolIteratorSymbolArityIs (stsymboliterator_t *iterator, unsigned arity)
+{
+    DBUG_ENTER ();
+
+    stentry_t *entry = iterator->pos->head;
+    while (entry) {
+        if (entry->argc == arity)
+            DBUG_RETURN (TRUE);
+
+        entry = entry->next;
+    }
+
+    DBUG_RETURN (FALSE);
+}
+
 /*
  * Functions for stentryiterator_t
  */
@@ -576,6 +600,16 @@ STentryType (stentry_t *entry)
     DBUG_RETURN (entry->type);
 }
 
+stentrytype_t
+STentryArgc (stentry_t *entry)
+{
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (entry != NULL, "STentryType called with NULL argument");
+
+    DBUG_RETURN (entry->argc);
+}
+
 /*
  * functions for printing
  */
@@ -643,4 +677,11 @@ STprint (const sttable_t *table)
     DBUG_RETURN ();
 }
 
+stentrytype_t
+STsymbolGetEntryType (stsymbol_t *symbol)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (symbol->head->type);
+}
 #undef DBUG_PREFIX

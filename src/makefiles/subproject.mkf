@@ -37,7 +37,7 @@
 
 PROJECT_ROOT     := ../..
 
-HIDE             := @
+HIDE             := 
 DEPS             := yes
 
 PREFIX_LOCAL     := 

@@ -1769,6 +1769,8 @@ EMALprf (node *arg_node, info *arg_info)
     case F_cuda_blockDim_x:
     case F_cuda_blockDim_y:
     case F_cuda_blockDim_z:
+    case F_cuda_gridDim_x:
+    case F_cuda_gridDim_y:
         als->dim = TBmakeNum (0);
         als->shape = TCcreateZeroVector (0, T_int);
         break;

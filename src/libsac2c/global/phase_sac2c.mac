@@ -396,8 +396,8 @@ CYCLEPHASEFUNOLD (wlurssa, "Restoring SSA form after withloop unrolling", SSATdo
 CYCLEPHASEFUNOLD (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
                   global.optimize.doetc, opt, cyc)
 
-CYCLEPHASEFUNOLD (cts, "Converting comparisons into subtractions", CTZdoComparisonToZero,
-                  global.optimize.docts, opt, cyc)
+CYCLEPHASEFUNOLD (ctz, "Comparison to zero conversion", CTZdoComparisonToZero,
+                  global.optimize.doctz, opt, cyc)
 
 CYCLEPHASEFUNOLD (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
                   global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
@@ -512,6 +512,9 @@ CYCLEPHASEFUNOLD (iveras, "Eliminating index vectors (reuse WL-offsets and scala
 CYCLEPHASEFUN (ivexi, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
                global.doivext, opt, saacyc)
 
+CYCLEPHASEFUN (ivexl, "Inserting index vector extrema into lacfuns",
+               IVEXLdoIndexVectorExtremaIntoLacfuns, global.doivext, opt, saacyc)
+
 CYCLEPHASEFUN (ivexp, "Propagating index vector extrema", IVEXPdoIndexVectorExtremaProp,
                global.optimize.doawlf, opt, saacyc)
 
@@ -559,8 +562,8 @@ CYCLEPHASEFUNOLD (wlurssa, "Restoring SSA form after withloop unrolling", SSATdo
 CYCLEPHASEFUNOLD (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
                   global.optimize.doetc, opt, saacyc)
 
-CYCLEPHASEFUNOLD (cts, "Converting comparisons into subtractions", CTZdoComparisonToZero,
-                  global.optimize.docts, opt, saacyc)
+CYCLEPHASEFUNOLD (ctz, "Comparison to zero conversion", CTZdoComparisonToZero,
+                  global.optimize.doctz, opt, saacyc)
 
 CYCLEPHASEFUNOLD (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
                   global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
@@ -611,13 +614,16 @@ ENDCYCLE (saacyc)
 SUBPHASE (dfr3, "Removing dead functions", DFRdoDeadFunctionRemoval,
           global.optimize.dodfr, opt)
 
-SUBPHASE (ucts, "Eliminating subtractions in comparisons", UCZCdoUndoCondZeroCmp,
-          global.optimize.doucts, opt)
+SUBPHASE (uctz, "Eliminating comparisons to zero", UCZCdoUndoCondZeroCmp,
+          global.optimize.douctz, opt)
 
 SUBPHASE (wlbscnf2, "Unflattening WL-partition structural constants",
           WLBSCdoWlbounds2nonFlatStructConsts, ALWAYS, opt)
 
 SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
+
+SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCleanup,
+          global.optimize.doawlf, opt)
 
 SUBPHASE (tup, "Running final type inference", NTCdoNewReTypeCheckFromScratch, ALWAYS,
           opt)
@@ -656,9 +662,6 @@ SUBPHASE (wrci, "Inferencing with-loop reuse candidates",
 
 SUBPHASE (wlidx, "Annotating offset variable at with-loops", WLIDXdoAnnotateWithloopIdxs,
           ALWAYS, opt)
-
-SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCleanup,
-          global.optimize.doawlf, opt)
 
 SUBPHASE (ivesplit, "Eliminating index vectors (split selections)",
           IVESPLITdoSplitSelections, global.optimize.doive, opt)
@@ -816,87 +819,82 @@ ENDPHASE (opt)
 
 /******************************************************************************/
 
-PHASE (cuda, "Automatic parallelisation for GPUs", global.backend == BE_cuda)
+PHASE (cuda, "Automatic parallelisation for GPUs",
+       (global.backend == BE_cuda || global.backend == BE_cudahybrid))
 
-SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL,
-          global.backend == BE_cuda, cuda)
+SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL, ALWAYS, cuda)
 
-SUBPHASE (pfd, "CUDA Partial folding", PFDdoPartialFold,
-          global.backend == BE_cuda && global.optimize.dopfd, cuda)
+SUBPHASE (cucm, "CUDA cost model", CUCMdoCUDACostModel, global.backend == BE_cudahybrid,
+          cuda)
+
+SUBPHASE (pfd, "CUDA Partial folding", PFDdoPartialFold, global.optimize.dopfd, cuda)
 
 SUBPHASE (scuf, "CUDA Split CUDA fold withloops", SCUFdoSplitCudaFold,
-          global.backend == BE_cuda && global.optimize.doscuf, cuda)
+          global.optimize.doscuf, cuda)
 
 SUBPHASE (cutem, "CUDA Tag execution mode", CUTEMdoTagExecutionmode,
-          global.backend == BE_cuda && global.optimize.doexpar, cuda)
+          global.optimize.doexpar, cuda)
 
-SUBPHASE (cuskc, "CUDA Sink scalar code", CUSKCdoSinkCode,
-          global.backend == BE_cuda && global.optimize.doexpar, cuda)
+SUBPHASE (cuskc, "CUDA Sink scalar code", CUSKCdoSinkCode, global.optimize.doexpar, cuda)
 
-SUBPHASE (cucc, "CUDA Create cells", CUCCdoCreateCells,
-          global.backend == BE_cuda && global.optimize.doexpar, cuda)
+SUBPHASE (cucc, "CUDA Create cells", CUCCdoCreateCells, global.optimize.doexpar, cuda)
 
 #if 0
 SUBPHASE( scuwl,
           "Split cudarizable withloop",
           SCUWLdoSplitCudaWithloops, 
-          global.backend == BE_cuda,
+          ( global.backend == BE_cuda || global.backend == BE_cudahybrid),
           cuda)
 #endif
 
 SUBPHASE (iwlmem, "CUDA Insert CUDA memory transfer primitives for withloops",
-          IWLMEMdoInsertWithloopMemtran, global.backend == BE_cuda, cuda)
+          IWLMEMdoInsertWithloopMemtran, ALWAYS, cuda)
 
 SUBPHASE (icsmem, "CUDA Insert CUDA memory transfer primitives for cudasts",
-          ICSMEMdoInsertCudastMemtran,
-          global.backend == BE_cuda && global.optimize.doexpar, cuda)
+          ICSMEMdoInsertCudastMemtran, global.optimize.doexpar, cuda)
 
-SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.backend == BE_cuda,
-          cuda)
+SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, ALWAYS, cuda)
 
-SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.backend == BE_cuda,
-          cuda)
+SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, ALWAYS, cuda)
 
 #if 0
 SUBPHASE( ira,
           "CUDA Infer reusable arrays in withloops",
           IRAdoInterReusableArrays, 
-          global.backend == BE_cuda && global.optimize.doshr,
+          ( global.backend == BE_cuda || global.backend == BE_cudahybrid) && global.optimize.doshr,
           cuda)
 
 SUBPHASE( shmem,
           "CUDA Exploiting data reuse with shared memory",
           SHMEMdoSharedMemoryReuse, 
-          global.backend == BE_cuda && global.optimize.doshr,
+          ( global.backend == BE_cuda || global.backend == BE_cudahybrid) && global.optimize.doshr,
           cuda)
 #endif
 
-SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.backend == BE_cuda,
-          cuda)
+SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, ALWAYS, cuda)
 
 SUBPHASE (sptn, "CUDA Split partitions", SPTNdoSplitPartitions,
-          global.backend == BE_cuda
-            && global.optimize.doslpt, /*Comment out for now. A bug in loop18p.sac*/
+          global.optimize.doslpt, /*Comment out for now. A bug in loop18p.sac*/
           cuda)
 
-SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition,
-          global.backend == BE_cuda, cuda)
+SUBPHASE (acuptn, "CUDA Annotate CUDA partitions", ACUPTNdoAnnotateCUDAPartition, ALWAYS,
+          cuda)
 
 SUBPHASE (mtran, "CUDA Minimise the number of device-host data transfers",
-          MTRANdoMinimizeTransfers, global.backend == BE_cuda && global.optimize.domemopt,
+          MTRANdoMinimizeTransfers, global.optimize.domemopt &&global.backend == BE_cuda,
           cuda)
 
 SUBPHASE (daa, "CUDA Data access analysis", DAAdoDataAccessAnalysis,
-          global.backend == BE_cuda && global.optimize.doshr, cuda)
+          global.optimize.doshr, cuda)
 
 SUBPHASE (stknl, "CUDA Create single threaded CUDA kernels", STKNLdoSingleThreadKernels,
-          global.backend == BE_cuda && global.optimize.doexpar, pc)
+          global.optimize.doexpar, cuda)
 
 /*
 SUBPHASE( wlds,
           "Unscalarize cudarizbale withloops",
           WLDSdoWithloopDescalarization,
-          global.backend == BE_cuda,
+          ( global.backend == BE_cuda || global.backend == BE_cudahybrid),
           cuda)
 */
 
@@ -917,40 +915,49 @@ SUBPHASE (wltr, "Transforming with-loop representation", WLTRAdoWlTransform, ALW
 SUBPHASE (wlsd, "Splitting withloops by dimensions", WLSDdoWithLoopSplitDimensions,
           global.optimize.dowlsd
             && ((global.backend == BE_mutc
-                 || (global.backend == BE_cuda && global.optimize.doshr))),
+                 || ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+                     && global.optimize.doshr))),
           wlt)
 
 SUBPHASE (cse, "Applying common subexpression elimination",
           CSEdoCommonSubexpressionElimination,
           global.optimize.docse
             && (global.backend == BE_mutc
-                || (global.backend == BE_cuda && global.optimize.doshr)),
+                || ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+                    && global.optimize.doshr)),
           wlt)
 
 SUBPHASE (rw3, "Remove unneeded With3s", RW3doRemoveWith3,
           (global.backend == BE_mutc
-           || (global.backend == BE_cuda && global.optimize.doshr))
+           || ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+               && global.optimize.doshr))
             && global.optimize.dorw3,
           wlt)
 
 SUBPHASE (ass, "Add syncs", ASdoAddSyncs,
           (global.backend == BE_mutc
-           || (global.backend == BE_cuda && global.optimize.doshr)),
+           || ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+               && global.optimize.doshr)),
           wlt)
 
 SUBPHASE (ms, "Move syncs", MSdoMoveSyncs,
           (global.backend == BE_mutc
-           || (global.backend == BE_cuda && global.optimize.doshr))
+           || ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+               && global.optimize.doshr))
             && global.optimize.doms,
           wlt)
 
 SUBPHASE (cudr, "CUDA Exploiting data reuse with cuda shared memory", CUDRdoCudaDataReuse,
-          global.backend == BE_cuda && global.optimize.doshr, wlt)
+          (global.backend == BE_cuda || global.backend == BE_cudahybrid)
+            && global.optimize.doshr,
+          wlt)
 
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, wlt)
 
 SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation,
-          global.backend == BE_cuda || global.backend == BE_mutc, wlt)
+          (global.backend == BE_cuda || global.backend == BE_cudahybrid)
+            || global.backend == BE_mutc,
+          wlt)
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, wlt)
 
@@ -1017,7 +1024,7 @@ SUBPHASE (simd, "SIMD inference", SIMDdoInferSIMD, global.simd, mem)
 SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.docp, mem)
 
 SUBPHASE (cnstass, "CUDA Flatten generators", CNSTASSdoCUDAconstantAssignment,
-          global.backend == BE_cuda, mem)
+          (global.backend == BE_cuda || global.backend == BE_cudahybrid), mem)
 
 SUBPHASE (asd, "AUD/SCL distinction", ASDdoAudSclDistinction, ALWAYS, mem)
 
@@ -1157,7 +1164,8 @@ PHASE (pc, "Preparing C code generation", ALWAYS)
 
 SUBPHASE (uw3, "Unroll With3", UW3doUnrollWith3,
           (global.backend == BE_mutc
-           || (global.backend == BE_cuda && global.optimize.doshr))
+           || ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+               && global.optimize.doshr))
             && global.optimize.douw3,
           pc)
 
@@ -1174,7 +1182,7 @@ SUBPHASE (dmui, "MUTC Dynamic memory usage inference", DMUIdoDynamicMemoryUsageI
           global.backend == BE_mutc, pc)
 
 SUBPHASE (pknlg, "CUDA Prepare kernel generation", PKNLGdoPrepareKernelGeneration,
-          global.backend == BE_cuda, pc)
+          (global.backend == BE_cuda || global.backend == BE_cudahybrid), pc)
 
 SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)
 
@@ -1182,11 +1190,13 @@ SUBPHASE (rnb, "Remove noop branch", RNBdoRemoveNoopBranch,
           global.optimize.dopra &&global.optimize.dornb, pc)
 
 SUBPHASE (cuasr, "CUDA Adjust return ids of single threaded kernel",
-          CUASRdoAdjustStknlRets, global.backend == BE_cuda && global.optimize.doexpar,
+          CUASRdoAdjustStknlRets,
+          (global.backend == BE_cuda || global.backend == BE_cudahybrid)
+            && global.optimize.doexpar,
           pc)
 
 SUBPHASE (cuknl, "CUDA Create Cuda kernel functions", CUKNLdoCreateCudaKernels,
-          global.backend == BE_cuda, pc)
+          (global.backend == BE_cuda || global.backend == BE_cudahybrid), pc)
 
 SUBPHASE (dvr, "Removing obsolete variable declarations", DVRdoDeadVardecRemoval, ALWAYS,
           pc)
@@ -1234,6 +1244,9 @@ SUBPHASE (ofp, "OpenMP find private variables", OFPdoFindPrivate,
           (global.backend == BE_omp), pc)
 
 SUBPHASE (mc, "Move constants to variable declaration", MCdoMoveConst, ALWAYS, pc)
+
+SUBPHASE (pfg, "CUDA Prepare for loop generation", PFGdoPrepareForloopGeneration,
+          (global.backend == BE_cuda || global.backend == BE_cudahybrid), pc)
 
 ENDPHASE (pc)
 

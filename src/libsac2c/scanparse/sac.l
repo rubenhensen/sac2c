@@ -214,6 +214,7 @@ LINEEND     \n|\r|\r\n
 "_non_neg_val_V_"          { FILTER( PRF_NON_NEG_VAL_V); }
 "_val_le_val_SxS_"         { FILTER( PRF_VAL_LE_VAL_SxS); }
 "_val_le_val_VxV_"         { FILTER( PRF_VAL_LE_VAL_VxV); }
+"_val_lt_shape_VxA_"       { FILTER( PRF_VAL_LT_SHAPE_VxA); }
 
 "_eq_SxS_"                 { FILTER( PRF_EQ_SxS);  }
 "_eq_SxV_"                 { FILTER( PRF_EQ_SxV);  }

@@ -63,7 +63,7 @@ libsac2c_sourcedirs        := global tree support serialize \
                               concurrent multithread profile \
                               memory precompile codegen print visualize\
                               cinterface generics constraints cuda mutc \
-                              rtspec funcpara flexsub
+                              rtspec funcpara flexsub cudahybrid
 
 ###############################################################################
 
@@ -83,7 +83,8 @@ libsac2c_tree        := traverse tree_basic free tree_compound DupTree \
                         pattern_match pattern_match_attribs pattern_match_modes \
                         prf_pvs_info map_avis_trav rename group_local_funs \
                         ungroup_local_funs pattern_match_old tree_utils \
-                        pattern_match_build_lut move_assigns
+                        pattern_match_build_lut move_assigns               \
+                        free_lhs_avis_sons
 
 libsac2c_support     := debug str ptr_buffer str_buffer system math_utils \
                         gdb_utils int_matrix
@@ -94,7 +95,7 @@ libsac2c_serialize   := serialize_node serialize_attribs deserialize \
                         serialize_stack serialize_symboltable \
                         serialize_filenames add_function_body
 
-libsac2c_scanparse   := sac.tab sac.lex scnprs handle_dots resolvepragma \
+libsac2c_scanparse   := trie lex parser scnprs handle_dots resolvepragma \
                         handle_with_loop_generators handle_with_loop_operators \
                         handle_zero_generator_with_loops \
                         introduce_user_tracing_calls hidestructs
@@ -169,6 +170,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize \
                         algebraic_wlfi algebraic_wlf cubeslicer             \
                         wl_cost_check wl_needcount show_wl_cost             \
                         loop_scalarization withloop_flattening              \
+                        ivexlacfuns                                         \
                         ivextrema ivexpropagation ivexcleanup indexvectorutils
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \
@@ -180,12 +182,14 @@ libsac2c_cuda        := annotate_cuda_withloop2 create_constant_assignments \
                         cuda_utils annotate_cond_transfers split_partitions \
                         minimize_block_transfers2 split_cuda_withloop \
                         create_cuda_kernels kernel_post_processing cuda_tag_executionmode \
-                        prepare_kernel_generation cuda_create_cells minimize_cudast_transfers \
-                        single_thread_kernels adjust_stknl_rets cuda_sink_code \
-                        insert_withloop_memtran insert_cudast_memtran \
+                        prepare_kernel_generation prepare_forloop_generation cuda_create_cells \
+                        minimize_cudast_transfers single_thread_kernels adjust_stknl_rets \
+                        cuda_sink_code insert_withloop_memtran insert_cudast_memtran \
                         split_cuda_fold remove_unused_lac infer_reusable_arrays shared_memory_reuse \
                         adjust_shmem_access expand_shmem_boundary_load data_access_analysis \
-                        cuda_data_reuse create_lac_fun partial_fold
+                        cuda_data_reuse create_loop_fun create_cond_fun partial_fold
+                        
+libsac2c_cudahybrid  := cuda_cost_model
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_mtst_funs_module \
                         create_spmd_funs mtdcr scheduling annotate_scheduling \

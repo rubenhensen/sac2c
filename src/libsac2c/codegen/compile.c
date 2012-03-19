@@ -7173,6 +7173,52 @@ COMPprfRunMtFold (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *COMPprfMask_VxVxV( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COMPprfMask_VxVxV (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_VxVxV", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG3 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *COMPprfMask_VxVxS( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COMPprfMask_VxVxS (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_VxVxS", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG3 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *COMPprfGuard( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
@@ -7601,6 +7647,32 @@ COMPprfCUDABlockDimZ (node *arg_node, info *arg_info)
 }
 
 node *
+COMPprfCUDAGridDimX (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+
+    DBUG_ENTER ();
+
+    ret_node = TCmakeAssignIcm1 ("SAC_CUDA_GRIDDIM_X",
+                                 DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfCUDAGridDimY (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+
+    DBUG_ENTER ();
+
+    ret_node = TCmakeAssignIcm1 ("SAC_CUDA_GRIDDIM_Y",
+                                 DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
 COMPprfShmemBoundaryLoad (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
@@ -7834,63 +7906,83 @@ COMPdo (node *arg_node, info *arg_info)
 {
     node *ret_node;
     node *cond, *body;
+    node *forloop_begin, *forloop_end;
     char *label_str = NULL;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (((NODE_TYPE (DO_COND (arg_node)) == N_id)
-                  || (NODE_TYPE (DO_COND (arg_node)) == N_bool)),
-                 "loop condition is neither a N_id nor a N_bool node!");
+    if (!DO_ISFORLOOP (arg_node)) {
+        DBUG_ASSERT (((NODE_TYPE (DO_COND (arg_node)) == N_id)
+                      || (NODE_TYPE (DO_COND (arg_node)) == N_bool)),
+                     "loop condition is neither a N_id nor a N_bool node!");
 
-    INFO_COND (arg_info) = TRUE;
-    DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
-    INFO_COND (arg_info) = FALSE;
+        INFO_COND (arg_info) = TRUE;
+        DO_COND (arg_node) = TRAVdo (DO_COND (arg_node), arg_info);
+        INFO_COND (arg_info) = FALSE;
 
-    DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
-    if (DO_SKIP (arg_node) != NULL) {
-        DO_SKIP (arg_node) = TRAVdo (DO_SKIP (arg_node), arg_info);
-    }
+        DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
+        if (DO_SKIP (arg_node) != NULL) {
+            DO_SKIP (arg_node) = TRAVdo (DO_SKIP (arg_node), arg_info);
+        }
 
-    /*
-     * We will return a N_assign chain!!
-     * Therefore we first build a new N_assign node containing the loop.
-     */
-    cond = DO_COND (arg_node);
-    body = DO_BODY (arg_node);
-    DO_COND (arg_node) = NULL;
-    DO_BODY (arg_node) = NULL;
+        /*
+         * We will return a N_assign chain!!
+         * Therefore we first build a new N_assign node containing the loop.
+         */
+        cond = DO_COND (arg_node);
+        body = DO_BODY (arg_node);
+        DO_COND (arg_node) = NULL;
+        DO_BODY (arg_node) = NULL;
 
-    ret_node = TBmakeAssign (TBmakeDo (cond, body), NULL);
+        ret_node = TBmakeAssign (TBmakeDo (cond, body), NULL);
 
-    /*
-     * Build ND-label-icm before body.
-     *
-     * Needed to avoid the above DEC_RCs in the first pass of a do_loop.
-     * See explanations above.
-     */
-    if (DO_LABEL (arg_node) == 0) {
-        label_str = TRAVtmpVarName (LABEL_POSTFIX);
-    } else {
-        label_str = DO_LABEL (arg_node);
-        DO_LABEL (arg_node) = NULL;
-    }
-    BLOCK_ASSIGNS (body) = TCmakeAssignIcm1 ("ND_LABEL", TCmakeIdCopyString (label_str),
-                                             BLOCK_ASSIGNS (body));
-
-    /*
-     * Insert code from DO_SKIP containing DEC_RCs into body
-     */
-    if (DO_SKIP (arg_node) != NULL) {
+        /*
+         * Build ND-label-icm before body.
+         *
+         * Needed to avoid the above DEC_RCs in the first pass of a do_loop.
+         * See explanations above.
+         */
+        if (DO_LABEL (arg_node) == 0) {
+            label_str = TRAVtmpVarName (LABEL_POSTFIX);
+        } else {
+            label_str = DO_LABEL (arg_node);
+            DO_LABEL (arg_node) = NULL;
+        }
         BLOCK_ASSIGNS (body)
-          = TCappendAssign (BLOCK_ASSIGNS (DO_SKIP (arg_node)), BLOCK_ASSIGNS (body));
+          = TCmakeAssignIcm1 ("ND_LABEL", TCmakeIdCopyString (label_str),
+                              BLOCK_ASSIGNS (body));
 
-        DO_SKIP (arg_node) = NULL;
+        /*
+         * Insert code from DO_SKIP containing DEC_RCs into body
+         */
+        if (DO_SKIP (arg_node) != NULL) {
+            BLOCK_ASSIGNS (body)
+              = TCappendAssign (BLOCK_ASSIGNS (DO_SKIP (arg_node)), BLOCK_ASSIGNS (body));
+
+            DO_SKIP (arg_node) = NULL;
+        }
+
+        /*
+         * Insert GOTO before do-loop.
+         */
+        ret_node = TCmakeAssignIcm1 ("ND_GOTO", TCmakeIdCopyString (label_str), ret_node);
+    } else {
+        DO_BODY (arg_node) = TRAVdo (DO_BODY (arg_node), arg_info);
+        body = DO_BODY (arg_node);
+
+        ret_node = BLOCK_ASSIGNS (body);
+        BLOCK_ASSIGNS (body) = NULL;
+
+        forloop_begin
+          = TCmakeAssignIcm2 ("SAC_CUDA_FORLOOP_BEGIN",
+                              TCmakeIdCopyString (AVIS_NAME (DO_ITERATOR (arg_node))),
+                              TCmakeIdCopyString (AVIS_NAME (DO_UPPER_BOUND (arg_node))),
+                              NULL);
+        forloop_end = TCmakeAssignIcm0 ("SAC_CUDA_FORLOOP_END", NULL);
+
+        ret_node = TCappendAssign (forloop_begin, ret_node);
+        ret_node = TCappendAssign (ret_node, forloop_end);
     }
-
-    /*
-     * Insert GOTO before do-loop.
-     */
-    ret_node = TCmakeAssignIcm1 ("ND_GOTO", TCmakeIdCopyString (label_str), ret_node);
 
     /*
      * The old 'arg_node' can be removed now.

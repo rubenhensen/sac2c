@@ -36,7 +36,8 @@
 #include "shape.h"
 #include "constants.h"
 #include "cuda_utils.h"
-#include "create_lac_fun.h"
+#include "create_loop_fun.h"
+#include "create_cond_fun.h"
 
 typedef struct CUIDX_SET_T {
     node *tx;
@@ -49,6 +50,18 @@ typedef struct CUIDX_SET_T {
 #define CIS_TY(n) (n->ty)
 #define CIS_BX(n) (n->bx)
 #define CIS_BY(n) (n->by)
+
+typedef struct CUDIM_SET_T {
+    node *bdim_x;
+    node *bdim_y;
+    node *gdim_x;
+    node *gdim_y;
+} cudim_set_t;
+
+#define CDS_BDIM_X(n) (n->bdim_x)
+#define CDS_BDIM_Y(n) (n->bdim_y)
+#define CDS_GDIM_X(n) (n->gdim_x)
+#define CDS_GDIM_Y(n) (n->gdim_y)
 
 typedef enum {
     y_reduction,
@@ -82,11 +95,13 @@ struct INFO {
     prf foldop;
     node *cexpr;
     cuidx_set_t *cis;
+    cudim_set_t *cds;
     node *shrarray;
     node *lacfuns;
     node *arrayelems;
     res_def resdef;
 
+    /* Field for anonmous travesal */
     node *at_ids;
     node *at_vec;
     node *at_bound1;
@@ -116,6 +131,7 @@ struct INFO {
 #define INFO_FOLDOP(n) (n->foldop)
 #define INFO_CEXPR(n) (n->cexpr)
 #define INFO_CIS(n) (n->cis)
+#define INFO_CDS(n) (n->cds)
 #define INFO_SHRARRAY(n) (n->shrarray)
 #define INFO_LACFUNS(n) (n->lacfuns)
 #define INFO_ARRAYELEMS(n) (n->arrayelems)
@@ -159,6 +175,7 @@ MakeInfo ()
     INFO_FOLDOP (result) = F_unknown;
     INFO_CEXPR (result) = NULL;
     INFO_CIS (result) = NULL;
+    INFO_CDS (result) = NULL;
     INFO_SHRARRAY (result) = NULL;
     INFO_LACFUNS (result) = NULL;
     INFO_ARRAYELEMS (result) = NULL;
@@ -243,12 +260,14 @@ BuildInitializationAssigns (node *part, info *arg_info)
 {
     int dim;
     cuidx_set_t *cis;
+    cudim_set_t *cds;
     node *assigns = NULL, *fundef;
 
     DBUG_ENTER ();
 
     fundef = INFO_FUNDEF (arg_info);
     cis = MEMmalloc (sizeof (cuidx_set_t));
+    cds = MEMmalloc (sizeof (cudim_set_t));
     dim = TCcountIds (PART_IDS (part));
 
     CIS_TX (cis) = CreatePrfOrConst (TRUE, "tx", T_int, SHmakeShape (0),
@@ -257,17 +276,30 @@ BuildInitializationAssigns (node *part, info *arg_info)
     CIS_BX (cis) = CreatePrfOrConst (TRUE, "bx", T_int, SHmakeShape (0),
                                      F_cuda_blockIdx_x, NULL, &assigns, fundef);
 
+    CDS_BDIM_X (cds) = CreatePrfOrConst (TRUE, "bdim_x", T_int, SHmakeShape (0),
+                                         F_cuda_blockDim_x, NULL, &assigns, fundef);
+
+    CDS_GDIM_X (cds) = CreatePrfOrConst (TRUE, "gdim_x", T_int, SHmakeShape (0),
+                                         F_cuda_gridDim_x, NULL, &assigns, fundef);
+
     if (dim == 2) {
         CIS_TY (cis) = CreatePrfOrConst (TRUE, "ty", T_int, SHmakeShape (0),
                                          F_cuda_threadIdx_y, NULL, &assigns, fundef);
 
         CIS_BY (cis) = CreatePrfOrConst (TRUE, "by", T_int, SHmakeShape (0),
                                          F_cuda_blockIdx_y, NULL, &assigns, fundef);
+
+        CDS_BDIM_Y (cds) = CreatePrfOrConst (TRUE, "bdim_y", T_int, SHmakeShape (0),
+                                             F_cuda_blockDim_y, NULL, &assigns, fundef);
+
+        CDS_GDIM_Y (cds) = CreatePrfOrConst (TRUE, "gdim_y", T_int, SHmakeShape (0),
+                                             F_cuda_gridDim_y, NULL, &assigns, fundef);
     }
 
     /* TODO: what happen for higer dimensionality, such as 3D? */
 
     INFO_CIS (arg_info) = cis;
+    INFO_CDS (arg_info) = cds;
 
     DBUG_RETURN (assigns);
 }
@@ -287,15 +319,20 @@ BuildLoadAssigns (node *part, info *arg_info)
 
     /* Create an array to represent the shape of the shared memory array */
     if (INFO_RESDEF (arg_info) == def_array) {
+        /*
+         * TODO: What if the shared memory array size is larger than
+         * the total amount available?
+         */
         inner_shp = TYgetShape (AVIS_TYPE (INFO_CEXPR (arg_info)));
 
         shmem_shp_array = TCmakeIntVector (
           TCappendExprs (DUPdoDupTree (ARRAY_AELEMS (PART_THREADBLOCKSHAPE (part))),
                          SHshape2Exprs (inner_shp)));
 
-        /* Number of elements for each individual result if it is an array */
+        /* Number of elements of the inner array */
         inner_size = SHgetUnrLen (inner_shp);
     } else {
+        /* TODO: We expect scalar INFO_CEXPR here, but can it also be an array? */
         shmem_shp_array = DUPdoDupNode (PART_THREADBLOCKSHAPE (part));
         inner_size = 0;
     }
@@ -314,12 +351,18 @@ BuildLoadAssigns (node *part, info *arg_info)
         DBUG_ASSERT ((0), "Reduction is only supported for 1D and 2D folds!");
     }
 
-    /* Copmute the offset of each thread within the thread block via F_idxs2offet  */
+    /*
+     * Copmute the offset of each thread within the thread block via F_idxs2offet.
+     *   1D array: offset = _idxs2offset( PART_THREADBLOCKSHAPE, tx);
+     *   2D array: offset = _idxs2offset( PART_THREADBLOCKSHAPE, ty, tx);
+     */
     avis = CreatePrfOrConst (TRUE, "idx_shr", T_int, SHmakeShape (0), F_idxs2offset, args,
                              &assigns, fundef);
 
-    /* If each individual element is itself an array, the offset will need to be
-     * multiplied by the size of the array */
+    /*
+     * If each individual element is itself an array, the offset will need to be
+     * multiplied by the size of the array.
+     */
     if (inner_size != 0) {
         args = TBmakeExprs (TBmakeId (avis), TBmakeExprs (TBmakeNum (inner_size), NULL));
         avis = CreatePrfOrConst (TRUE, "idx_shr", T_int, SHmakeShape (0), F_mul_SxS, args,
@@ -342,14 +385,19 @@ BuildLoadAssigns (node *part, info *arg_info)
                      TBmakeExprs (TBmakeId (avis),
                                   TBmakeExprs (TBmakeId (INFO_CEXPR (arg_info)), NULL)));
 
-    /* Create idx_modarray_AxSxS or idx_modarray_AxSxA depending on whether
-     * the individual result element is itself an array or not */
+    /*
+     * Create idx_modarray_AxSxA or idx_modarray_AxSxS depending on whether
+     * the inner result is an array or a scalar. This
+     * essentially load the WITH-loop result INFO_CEXPR into the shared memory.
+     */
     if (inner_size != 0) {
+        /* Inner result is an array */
         avis = CreatePrfOrConst (TRUE, "shmem",
                                  TYgetSimpleType (TYgetScalar (AVIS_TYPE (shmem))),
                                  SHarray2Shape (shmem_shp_array), F_idx_modarray_AxSxA,
                                  args, &assigns, fundef);
     } else {
+        /* Inner result is a scalar */
         avis = CreatePrfOrConst (TRUE, "shmem",
                                  TYgetSimpleType (TYgetScalar (AVIS_TYPE (shmem))),
                                  SHarray2Shape (shmem_shp_array), F_idx_modarray_AxSxS,
@@ -358,14 +406,16 @@ BuildLoadAssigns (node *part, info *arg_info)
 
     args = TBmakeExprs (TBmakeId (avis), NULL);
 
-    /* syncthreads */
+    /* Synchronize the threads after each load */
     avis = CreatePrfOrConst (TRUE, "shmem",
                              TYgetSimpleType (TYgetScalar (AVIS_TYPE (shmem))),
                              SHarray2Shape (shmem_shp_array), F_syncthreads, args,
                              &assigns, fundef);
 
-    /* This file in the info structure is used to communicate the shared memory
-     * (avis) between different assignment building functions */
+    /*
+     * Store the shared memory avis (after load) into info structure so that
+     * it can be accessed later by other functions (e.g. reduction and store)
+     */
     INFO_SHRARRAY (arg_info) = avis;
 
     shmem_shp_array = FREEdoFreeNode (shmem_shp_array);
@@ -380,16 +430,22 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
 {
     simpletype sty;
     node *assigns = NULL, *fundef, *args = NULL, *avis;
-    node *loop_assigns = NULL, *predicate = NULL, *iterator;
-    node *loop_bound, *cond = NULL;
+    node *predicate = NULL, *iterator;
+    node *loop_bound = NULL, *cond = NULL;
     node *idx1, *idx2, *val1, *val2, *val3;
+
     node *in_shared_array, *out_shared_array;
+    node *out_shared_arrays[2];
+    node *loop_assigns[2] = {NULL, NULL};
+    node *loop_aps[2] = {NULL, NULL};
+
+    node *reduction_assign = NULL;
     node *cond_predicate = NULL;
     node *tx_zero, *ty_zero;
     node *zero_indices = NULL;
     node *shmem_len, *remain_len, *partial_bound;
     node *shape_array;
-    int i;
+    int i, iter, loops_required = 0;
 
     DBUG_ENTER ();
 
@@ -398,40 +454,50 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
     in_shared_array = INFO_SHRARRAY (arg_info);
     fundef = INFO_FUNDEF (arg_info);
 
-    /* shape_array will be used as the 1st argument to all the F_idx2offset
-     * primitives created in this function. Its value depending on whether
-     * the result is define by array or not. If it is, then then shape is
-     * the shape of the share memory. Otherwise, it is the shape of the thread
-     * block. Note that for all the following uses, this variable should be
+    /*
+     * shape_array will be used as the first argument to all the F_idx2offset
+     * primitives created in this function. It is essentially the shaped of the
+     * shared memory. Note that for all the following uses, this variable should be
      * copied with DUPdoDupNode and when this function finishes, it should be
-     * freed.  */
-    if (INFO_RESDEF (arg_info) == def_array) {
-        shape_array = SHshape2Array (TYgetShape (AVIS_TYPE (INFO_SHRARRAY (arg_info))));
-    } else {
-        shape_array = DUPdoDupNode (PART_THREADBLOCKSHAPE (part));
-    }
+     * freed.
+     */
+    shape_array = SHshape2Array (TYgetShape (AVIS_TYPE (INFO_SHRARRAY (arg_info))));
 
     /* Loop iterator, initialized to 1 */
     iterator = CreatePrfOrConst (FALSE, "iterator", T_int, SHmakeShape (0), F_add_SxS,
                                  TBmakeNum (1), &assigns, fundef);
 
-    /* Test if the length of the partition is evenly divisible by
-     * the length of the the shared memory. If not, we need
+    /*
+     * Test if the length of the partition is evenly divisible by
+     * the length of the the shared memory along the same dimension. If not, we need
      * to generate the loop bound in way so that the last thread block
      * does not access out-of-bound elements in the shared memory.
      * If it is evenly dividible, then the loop bound is simply the length of the
-     * of the shared memory.
+     * of corresponding shared memory dimension.
      */
+    shmem_len = CreatePrfOrConst (FALSE, "shmem_len", T_int, SHmakeShape (0), F_unknown,
+                                  TBmakeNum (shmemshp), &assigns, fundef);
+
     if (remain != 0) {
-        shmem_len = CreatePrfOrConst (FALSE, "shmem_len", T_int, SHmakeShape (0),
-                                      F_unknown, TBmakeNum (shmemshp), &assigns, fundef);
+        /* For 1D fold WITH-loop, we do not create two loops for reduction
+         * as the loop will not be unrolled anyway */
+        loops_required = (INFO_DIM (arg_info) == 1 ? 1 : 2);
 
         remain_len = CreatePrfOrConst (FALSE, "remain_len", T_int, SHmakeShape (0),
                                        F_unknown, TBmakeNum (remain), &assigns, fundef);
 
-        partial_bound
-          = CreatePrfOrConst (FALSE, "partial_bound", T_int, SHmakeShape (0), F_unknown,
-                              TBmakeNum (partialshp - 1), &assigns, fundef);
+        if (kind == y_reduction) {
+            args = TBmakeExprs (TBmakeId (CDS_GDIM_Y (INFO_CDS (arg_info))),
+                                TBmakeExprs (TBmakeNum (1), NULL));
+        } else if (kind == x_reduction) {
+            args = TBmakeExprs (TBmakeId (CDS_GDIM_X (INFO_CDS (arg_info))),
+                                TBmakeExprs (TBmakeNum (1), NULL));
+        } else {
+            DBUG_ASSERT (0, "Reduction in unknown dimension!");
+        }
+
+        partial_bound = CreatePrfOrConst (TRUE, "partial_bound", T_int, SHmakeShape (0),
+                                          F_sub_SxS, args, &assigns, fundef);
 
         if (kind == y_reduction) {
             args = TBmakeExprs (TBmakeId (CIS_BY (INFO_CIS (arg_info))),
@@ -447,165 +513,192 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
         cond = CreatePrfOrConst (TRUE, "cond", T_bool, SHmakeShape (0), F_neq_SxS, args,
                                  &assigns, fundef);
 
-        /* The F_cond primitive evaluates its condition (i.e. 1st argument) and
+        /*
+         * The F_cond primitive evaluates its condition (i.e. 1st argument) and
          * the result is the 2nd argument if the condition is true and 3rd argument
          * if the condition is false. So here we check the index of the thread
          * block (either X or Y dimension) and if it is NOT the last block in that
          * dimension, we set the loop bound to shmem_len. Otherwise, we set it
          * to remain_len.
          */
-        args = TBmakeExprs (TBmakeId (cond),
-                            TBmakeExprs (TBmakeId (shmem_len),
-                                         TBmakeExprs (TBmakeId (remain_len), NULL)));
+        if (INFO_DIM (arg_info) == 1) {
+            args = TBmakeExprs (TBmakeId (cond),
+                                TBmakeExprs (TBmakeId (shmem_len),
+                                             TBmakeExprs (TBmakeId (remain_len), NULL)));
 
-        loop_bound = CreatePrfOrConst (TRUE, "loop_bound", T_int, SHmakeShape (0), F_cond,
-                                       args, &assigns, fundef);
+            loop_bound = CreatePrfOrConst (TRUE, "loop_bound", T_int, SHmakeShape (0),
+                                           F_cond, args, &assigns, fundef);
+        }
     } else {
-        loop_bound = CreatePrfOrConst (FALSE, "loop_bound", T_int, SHmakeShape (0),
-                                       F_unknown, TBmakeNum (shmemshp), &assigns, fundef);
+        loops_required = 1;
     }
 
-    /* Now we construct the loop body which performs the actual reduction.
-     * Depending on the dimension, reduction is carried out as following:
-     *   1) y_reduction
-     *        All threads in a block with ty == 0 executes the loop in parallel
-     *        to reduce all elements from [0][tx] to [loop_bound][tx] into [0][tx].
-     *        This is the first step to fold a two dimensional array.
-     *   2) x_reduction
-     *        The only thread in a block with tx == 0 executes the loop
-     *        to reduce all elements from [0][0] to [0][loop_bound] into [0][0].
-     *        This is the second step to fold a two dimensional array.
-     */
-    avis = CreatePrfOrConst (FALSE, "const", T_int, SHmakeShape (0), F_unknown,
-                             TBmakeNum (0), &loop_assigns, fundef);
+    for (iter = 0; iter < loops_required; iter++) {
 
-    if (kind == y_reduction) {
-        args = TBmakeExprs (DUPdoDupNode (shape_array),
-                            TBmakeExprs (TBmakeId (avis),
-                                         TBmakeExprs (TBmakeId (
-                                                        CIS_TX (INFO_CIS (arg_info))),
-                                                      NULL)));
-    } else if (kind == x_reduction) {
-        if (INFO_DIM (arg_info) == 1) {
-            args = TBmakeExprs (DUPdoDupNode (shape_array),
-                                TBmakeExprs (TBmakeId (avis), NULL));
-        } else if (INFO_DIM (arg_info) == 2) {
-            args = TBmakeExprs (DUPdoDupNode (shape_array),
-                                TBmakeExprs (TBmakeId (avis),
-                                             TBmakeExprs (TBmakeId (avis), NULL)));
-        } else {
-            DBUG_ASSERT ((0), "Dimension not supported!");
-        }
-    }
-
-    /* If the inner element is an array instead of a scalar, we need
-     * to first compute the initial offset of the element and then
-     * add the offset within that array to the initial offset. Here
-     * we first construct an exprs list with N 0's where N is the
-     * dimentionalities of the inner element. This exprs list will
-     * be appended to the args computed previously. The final exprs
-     * list will then be used as argument to F_idxs2offset to compute
-     * the initia offset. Finally, inner_offset will be added to the
-     * initial offset to get the offset of the scalar element
-     */
-    for (i = 0; i < INFO_INNERDIM (arg_info); i++) {
+        /* Now we construct the loop body which performs the actual reduction.
+         * Depending on the dimension, reduction is carried out as following:
+         *   1) y_reduction
+         *        All threads in a block with ty == 0 executes the loop in parallel
+         *        to reduce all elements from [0][tx] to [loop_bound][tx] into [0][tx].
+         *        This is the first step to fold a two dimensional array.
+         *   2) x_reduction
+         *        The only thread in a block with tx == 0 executes the loop
+         *        to reduce all elements from [0][0] to [0][loop_bound] into [0][0].
+         *        This is the second step to fold a two dimensional array.
+         */
         avis = CreatePrfOrConst (FALSE, "const", T_int, SHmakeShape (0), F_unknown,
-                                 TBmakeNum (0), &loop_assigns, fundef);
-        if (zero_indices == NULL) {
-            zero_indices = TBmakeExprs (TBmakeId (avis), NULL);
-        } else {
-            zero_indices
-              = TCappendExprs (zero_indices, TBmakeExprs (TBmakeId (avis), NULL));
-        }
-    }
-    args = TCappendExprs (args, zero_indices);
+                                 TBmakeNum (0), &loop_assigns[iter], fundef);
 
-    /* The following idx_sel selects the first element to start the reduction.
-     * for 1D array, this 1st element is at [0] and for 2D array this element
-     * is at either [0][tx] or [0][0] depending on whether it is Y reduction
-     * or X reduction */
-    idx1 = CreatePrfOrConst (TRUE, "offset", T_int, SHmakeShape (0), F_idxs2offset, args,
-                             &loop_assigns, fundef);
-
-    args = TBmakeExprs (TBmakeId (idx1), TBmakeExprs (TBmakeNum (inner_offset), NULL));
-
-    idx1 = CreatePrfOrConst (TRUE, "offset", T_int, SHmakeShape (0), F_add_SxS, args,
-                             &loop_assigns, fundef);
-
-    args = TBmakeExprs (TBmakeId (idx1),
-                        TBmakeExprs (TBmakeId (INFO_SHRARRAY (arg_info)), NULL));
-
-    val1 = CreatePrfOrConst (TRUE, "val", sty, SHmakeShape (0), F_idx_sel, args,
-                             &loop_assigns, fundef);
-
-    if (kind == y_reduction) {
-        args = TBmakeExprs (DUPdoDupNode (shape_array),
-                            TBmakeExprs (TBmakeId (iterator),
-                                         TBmakeExprs (TBmakeId (
-                                                        CIS_TX (INFO_CIS (arg_info))),
-                                                      NULL)));
-    } else if (kind == x_reduction) {
-        if (INFO_DIM (arg_info) == 1) {
-            args = TBmakeExprs (DUPdoDupNode (shape_array),
-                                TBmakeExprs (TBmakeId (iterator), NULL));
-        } else if (INFO_DIM (arg_info) == 2) {
+        if (kind == y_reduction) {
+            /* [0, tx] */
             args = TBmakeExprs (DUPdoDupNode (shape_array),
                                 TBmakeExprs (TBmakeId (avis),
-                                             TBmakeExprs (TBmakeId (iterator), NULL)));
-        } else {
-            DBUG_ASSERT (0, "Dimension not supported!");
+                                             TBmakeExprs (TBmakeId (
+                                                            CIS_TX (INFO_CIS (arg_info))),
+                                                          NULL)));
+        } else if (kind == x_reduction) {
+            if (INFO_DIM (arg_info) == 1) {
+                /* [0] */
+                args = TBmakeExprs (DUPdoDupNode (shape_array),
+                                    TBmakeExprs (TBmakeId (avis), NULL));
+            } else if (INFO_DIM (arg_info) == 2) {
+                /* [0, 0] */
+                args = TBmakeExprs (DUPdoDupNode (shape_array),
+                                    TBmakeExprs (TBmakeId (avis),
+                                                 TBmakeExprs (TBmakeId (avis), NULL)));
+            } else {
+                DBUG_ASSERT ((0), "Dimension not supported!");
+            }
         }
+
+        /* If the inner element is an array instead of a scalar, we need
+         * to first compute the initial offset of the element and then
+         * add the offset within that array to the initial offset. Here
+         * we first construct an exprs list with N 0's where N is the
+         * dimentionalities of the inner element. This exprs list will
+         * be appended to the args computed previously. The final exprs
+         * list will then be used as argument to F_idxs2offset to compute
+         * the initia offset. Finally, inner_offset will be added to the
+         * initial offset to get the offset of the scalar element
+         */
+        /* When the inner element is defined by a withloop, we do NOT need
+         * to add zeros to the list of indices. */
+        if (INFO_RESDEF (arg_info) == def_array) {
+            for (i = 0; i < INFO_INNERDIM (arg_info); i++) {
+                avis
+                  = CreatePrfOrConst (FALSE, "const", T_int, SHmakeShape (0), F_unknown,
+                                      TBmakeNum (0), &loop_assigns[iter], fundef);
+                if (zero_indices == NULL) {
+                    zero_indices = TBmakeExprs (TBmakeId (avis), NULL);
+                } else {
+                    zero_indices
+                      = TCappendExprs (zero_indices, TBmakeExprs (TBmakeId (avis), NULL));
+                }
+            }
+            args = TCappendExprs (args, zero_indices);
+        }
+
+        /*
+         * The following idx_sel selects the initial element to start the reduction.
+         * for 1D array, this 1st element is at [0] and for 2D array this element
+         * is at either [0][tx] or [0][0] depending on whether it is Y reduction
+         * or X reduction
+         */
+        idx1 = CreatePrfOrConst (TRUE, "offset", T_int, SHmakeShape (0), F_idxs2offset,
+                                 args, &loop_assigns[iter], fundef);
+
+        args
+          = TBmakeExprs (TBmakeId (idx1), TBmakeExprs (TBmakeNum (inner_offset), NULL));
+
+        idx1 = CreatePrfOrConst (TRUE, "offset", T_int, SHmakeShape (0), F_add_SxS, args,
+                                 &loop_assigns[iter], fundef);
+
+        args = TBmakeExprs (TBmakeId (idx1),
+                            TBmakeExprs (TBmakeId (INFO_SHRARRAY (arg_info)), NULL));
+
+        /* Select from shared memory */
+        val1 = CreatePrfOrConst (TRUE, "val", sty, SHmakeShape (0), F_idx_sel, args,
+                                 &loop_assigns[iter], fundef);
+
+        if (kind == y_reduction) {
+            args = TBmakeExprs (DUPdoDupNode (shape_array),
+                                TBmakeExprs (TBmakeId (iterator),
+                                             TBmakeExprs (TBmakeId (
+                                                            CIS_TX (INFO_CIS (arg_info))),
+                                                          NULL)));
+        } else if (kind == x_reduction) {
+            if (INFO_DIM (arg_info) == 1) {
+                args = TBmakeExprs (DUPdoDupNode (shape_array),
+                                    TBmakeExprs (TBmakeId (iterator), NULL));
+            } else if (INFO_DIM (arg_info) == 2) {
+                args
+                  = TBmakeExprs (DUPdoDupNode (shape_array),
+                                 TBmakeExprs (TBmakeId (avis),
+                                              TBmakeExprs (TBmakeId (iterator), NULL)));
+            } else {
+                DBUG_ASSERT (0, "Dimension not supported!");
+            }
+        }
+
+        if (zero_indices != NULL) {
+            args = TCappendExprs (args, DUPdoDupTree (zero_indices));
+        }
+
+        /*
+         * The following idx_sel selects an element to perform the reduction.
+         * for 1D array, this element is at [loop_iteratior] and for 2D array
+         * this element is at either [loop_iterator][tx] or [0][loop_iterator]
+         * depending on whether it is Y reduction or X reduction
+         */
+        idx2 = CreatePrfOrConst (TRUE, "offset", T_int, SHmakeShape (0), F_idxs2offset,
+                                 args, &loop_assigns[iter], fundef);
+
+        args
+          = TBmakeExprs (TBmakeId (idx2), TBmakeExprs (TBmakeNum (inner_offset), NULL));
+
+        idx2 = CreatePrfOrConst (TRUE, "offset", T_int, SHmakeShape (0), F_add_SxS, args,
+                                 &loop_assigns[iter], fundef);
+
+        args = TBmakeExprs (TBmakeId (idx2),
+                            TBmakeExprs (TBmakeId (INFO_SHRARRAY (arg_info)), NULL));
+
+        val2 = CreatePrfOrConst (TRUE, "val", sty, SHmakeShape (0), F_idx_sel, args,
+                                 &loop_assigns[iter], fundef);
+
+        /*
+         * Now we perform the fold operation on val1 and val2 to get val3.
+         * The fold operation is stored in INFO_FOLDOP
+         */
+        args = TBmakeExprs (TBmakeId (val1), TBmakeExprs (TBmakeId (val2), NULL));
+
+        val3
+          = CreatePrfOrConst (TRUE, "val", sty, SHmakeShape (0), INFO_FOLDOP (arg_info),
+                              args, &loop_assigns[iter], fundef);
+
+        /*
+         * Next the partial folding result is stored in the initial position
+         * in the shared memory to be ready for the next iteration. The initial
+         * position can be either [0](1D, X reduction), [0][tx](2D, Y reduction)
+         * or [0][0](2D, X reduction).
+         * TODO:
+         *   This approach might be very inefficient since we are storing the
+         *   partial result back into shared memory during each iteration instead
+         *   of keeping it in a register. Not sure whether the nvcc compiler will
+         *   dectect this and optimize it. If not, we will need to do it here.
+         */
+        args = TBmakeExprs (TBmakeId (INFO_SHRARRAY (arg_info)),
+                            TBmakeExprs (TBmakeId (idx1),
+                                         TBmakeExprs (TBmakeId (val3), NULL)));
+
+        out_shared_arrays[iter]
+          = CreatePrfOrConst (TRUE, "shmem", sty,
+                              SHcopyShape (
+                                TYgetShape (AVIS_TYPE (INFO_SHRARRAY (arg_info)))),
+                              F_idx_modarray_AxSxS, args, &loop_assigns[iter], fundef);
     }
 
-    if (zero_indices != NULL) {
-        args = TCappendExprs (args, DUPdoDupTree (zero_indices));
-    }
-
-    /* The following idx_sel selects an element to perform the reduction.
-     * for 1D array, this element is at [loop_iteratior] and for 2D array
-     * this element is at either [loop_iterator][tx] or [0][loop_iterator]
-     * depending on whether it is Y reduction or X reduction */
-    idx2 = CreatePrfOrConst (TRUE, "offset", T_int, SHmakeShape (0), F_idxs2offset, args,
-                             &loop_assigns, fundef);
-
-    args = TBmakeExprs (TBmakeId (idx2), TBmakeExprs (TBmakeNum (inner_offset), NULL));
-
-    idx2 = CreatePrfOrConst (TRUE, "offset", T_int, SHmakeShape (0), F_add_SxS, args,
-                             &loop_assigns, fundef);
-
-    args = TBmakeExprs (TBmakeId (idx2),
-                        TBmakeExprs (TBmakeId (INFO_SHRARRAY (arg_info)), NULL));
-
-    val2 = CreatePrfOrConst (TRUE, "val", sty, SHmakeShape (0), F_idx_sel, args,
-                             &loop_assigns, fundef);
-
-    /* Now we perform the fold operation on val1 and val2 to get val3.
-     * The fold operation is stored in INFO_FOLDOP */
-    args = TBmakeExprs (TBmakeId (val1), TBmakeExprs (TBmakeId (val2), NULL));
-
-    val3 = CreatePrfOrConst (TRUE, "val", sty, SHmakeShape (0), INFO_FOLDOP (arg_info),
-                             args, &loop_assigns, fundef);
-
-    /* Next the partial folding result is stored in the initial position
-     * in the shared memory to be ready for the next iteration. The initial
-     * position can be either [0](1D, X reduction), [0][tx](2D, Y reduction)
-     * or [0][0](2D, X reduction).
-     * TODO:
-     *   This approach might be very inefficient since we are storing the
-     *   partial result back into shared memory during each iteration instead
-     *   of keeping it in a register. Not sure whether the nvcc compiler will
-     *   dectect this and optimize it. If not, we will need to do it here.
-     */
-    args
-      = TBmakeExprs (TBmakeId (INFO_SHRARRAY (arg_info)),
-                     TBmakeExprs (TBmakeId (idx1), TBmakeExprs (TBmakeId (val3), NULL)));
-
-    INFO_SHRARRAY (arg_info)
-      = CreatePrfOrConst (TRUE, "shmem", sty,
-                          SHcopyShape (TYgetShape (AVIS_TYPE (INFO_SHRARRAY (arg_info)))),
-                          F_idx_modarray_AxSxS, args, &loop_assigns, fundef);
-
-    /* The following computes the condition to only allow certain threads to
+    /*
+     * The following computes the condition to only allow certain threads to
      * perform the reduction. Note that we put it here because all the new
      * variables created here need to be added to the function
      * variable declaration list before the CLACdoCreateLacFun can be called.
@@ -648,42 +741,65 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
         }
     }
 
-    /* After this, "loop_assigns" is the function application of a loop function */
-    loop_assigns
-      = CLACFdoCreateLacFun (FALSE, INFO_FUNDEF (arg_info), loop_assigns, NULL, iterator,
-                             loop_bound, in_shared_array, INFO_SHRARRAY (arg_info),
-                             &INFO_LACFUNS (arg_info));
+    INFO_SHRARRAY (arg_info) = out_shared_arrays[0];
 
-    /* If the remainder is 1, no reduction is needed. However,
-     * since loops in SAC are do/while loop, which means that at least one
-     * iteration will be executed and this will cause out-of-bound data to
-     * be accessed. To guard against this case, we need to prevent the loop
-     * from being exectued at all if the remainder is 1. After this, "assigns"
-     * will be the final assignment chain used to create the conditional
-     * function (perform X or Y reduction based on thread indices).
-     */
-    if (remain == 1) {
-        /* If remainder is 1, the loop will only be executed for thread block
-         * which are not the last one. The condition "cond" is computed earlier
-         * to check whether a thread block is the last one or not */
-        node *cond_assign;
-        out_shared_array = INFO_SHRARRAY (arg_info);
-        cond_assign = CLACFdoCreateLacFun (TRUE, INFO_FUNDEF (arg_info), loop_assigns,
-                                           cond, NULL, NULL, in_shared_array,
-                                           out_shared_array, &INFO_LACFUNS (arg_info));
-        assigns = TCappendAssign (assigns, cond_assign);
+    /* After this, "loop_aps[i]" is a loop function application */
+    if (loops_required == 1) {
+        /* If remainder is 0, just one loop is required */
+        reduction_assign
+          = CLFdoCreateLoopFun (INFO_FUNDEF (arg_info), loop_assigns[0], iterator,
+                                (INFO_DIM (arg_info) == 1 ? loop_bound : shmem_len),
+                                in_shared_array, out_shared_arrays[0],
+                                &INFO_LACFUNS (arg_info));
+    } else if (loops_required == 2) {
+        loop_aps[0] = CLFdoCreateLoopFun (INFO_FUNDEF (arg_info), loop_assigns[0],
+                                          iterator, shmem_len, in_shared_array,
+                                          out_shared_arrays[0], &INFO_LACFUNS (arg_info));
+        /*
+         * If the remainder is 1, no reduction is needed. However,
+         * since loops in SAC are do/while loop, which means that at least one
+         * iteration will be executed and this will cause out-of-bound data to
+         * be accessed. To guard against this case, we need to prevent the loop
+         * from being exectued at all if the remainder is 1. After this, "assigns"
+         * will be the final assignment chain used to create the conditional
+         * function (perform X or Y reduction based on thread indices).
+         */
+        if (remain == 1) {
+            /*
+             * If remainder is 1, the loop will only be executed for thread block
+             * which are not the last one. The condition "cond" is computed earlier
+             * to check whether a thread block is the last one or not
+             */
+            reduction_assign
+              = CCFdoCreateCondFun (INFO_FUNDEF (arg_info), loop_aps[0], NULL, cond,
+                                    in_shared_array, out_shared_arrays[0], NULL,
+                                    &INFO_LACFUNS (arg_info));
+            loop_assigns[1] = FREEdoFreeTree (loop_assigns[1]);
+        } else {
+            loop_aps[1]
+              = CLFdoCreateLoopFun (INFO_FUNDEF (arg_info), loop_assigns[1], iterator,
+                                    remain_len, in_shared_array, out_shared_arrays[1],
+                                    &INFO_LACFUNS (arg_info));
+
+            reduction_assign
+              = CCFdoCreateCondFun (INFO_FUNDEF (arg_info), loop_aps[0], loop_aps[1],
+                                    cond, in_shared_array, out_shared_arrays[0],
+                                    out_shared_arrays[1], &INFO_LACFUNS (arg_info));
+        }
     } else {
-        assigns = TCappendAssign (assigns, loop_assigns);
-        loop_assigns = NULL;
+        DBUG_ASSERT ((0), "No more than two loops will be needed!");
     }
+
+    /* Chain up the assigments */
+    assigns = TCappendAssign (assigns, reduction_assign);
 
     /* Now we create the conditional function with body "assigns" */
     out_shared_array = INFO_SHRARRAY (arg_info);
 
     /* After this, "assigns" is the function application of the conditional function */
-    assigns = CLACFdoCreateLacFun (TRUE, INFO_FUNDEF (arg_info), assigns, cond_predicate,
-                                   NULL, NULL, in_shared_array, out_shared_array,
-                                   &INFO_LACFUNS (arg_info));
+    assigns = CCFdoCreateCondFun (INFO_FUNDEF (arg_info), assigns, NULL, cond_predicate,
+                                  in_shared_array, out_shared_array, NULL,
+                                  &INFO_LACFUNS (arg_info));
 
     /* Concatenate the condition evaluation assignments and the conditional function
      * application*/
@@ -714,13 +830,22 @@ BuildReduceAssigns (node *part, info *arg_info)
 
     DBUG_ENTER ();
 
+    /* Outer most fold WITH-loop is 1-dimensional */
     if (INFO_DIM (arg_info) == 1) {
+        /* Shape of the partition */
         partshp_x = NUM_VAL (EXPRS_EXPR1 (ARRAY_AELEMS (INFO_PARTSHP (arg_info))));
+        /* Shape of the partial result array */
         partialshp_x = NUM_VAL (EXPRS_EXPR1 (ARRAY_AELEMS (INFO_PARTIALSHP (arg_info))));
+        /* Shape of the partition thread block */
         shmemshp_x = NUM_VAL (EXPRS_EXPR1 (ARRAY_AELEMS (PART_THREADBLOCKSHAPE (part))));
+
         remain_x = partshp_x % shmemshp_x;
 
         if (INFO_RESDEF (arg_info) == def_array) {
+            /*
+             * Each loop iteration builds up the code to reduce all elements
+             * of the inner array at one position
+             */
             inner_size = SHgetUnrLen (TYgetShape (AVIS_TYPE (INFO_CEXPR (arg_info))));
             for (i = 0; i < inner_size; i++) {
                 if (assigns == NULL) {
@@ -738,14 +863,13 @@ BuildReduceAssigns (node *part, info *arg_info)
                 }
             }
         } else {
+            /* Assume inner elements are scalars */
             assigns
               = BuildReduceAssignsInternal (x_reduction, partshp_x, partialshp_x,
-                                            shmemshp_x, remain_x, -1, part, arg_info);
+                                            shmemshp_x, remain_x, 0, part, arg_info);
         }
     } else if (INFO_DIM (arg_info) == 2) {
 
-        /* TODO: for this case, we also need to make changes similar to the previous case
-         */
         partshp_y = NUM_VAL (EXPRS_EXPR1 (ARRAY_AELEMS (INFO_PARTSHP (arg_info))));
         partshp_x = NUM_VAL (EXPRS_EXPR2 (ARRAY_AELEMS (INFO_PARTSHP (arg_info))));
         partialshp_y = NUM_VAL (EXPRS_EXPR1 (ARRAY_AELEMS (INFO_PARTIALSHP (arg_info))));
@@ -756,17 +880,22 @@ BuildReduceAssigns (node *part, info *arg_info)
         remain_y = partshp_y % shmemshp_y;
         remain_x = partshp_x % shmemshp_x;
 
-        y_reduction_assigns
-          = BuildReduceAssignsInternal (y_reduction, partshp_y, partialshp_y, shmemshp_y,
-                                        remain_y, 0, part, arg_info);
+        if (INFO_RESDEF (arg_info) == def_array) {
+            /* TODO: Similar to the 1D case */
+            assigns = NULL;
+        } else {
+            y_reduction_assigns
+              = BuildReduceAssignsInternal (y_reduction, partshp_y, partialshp_y,
+                                            shmemshp_y, remain_y, 0, part, arg_info);
 
-        if (INFO_INNERDIM (arg_info) == 0) {
-            x_reduction_assigns
-              = BuildReduceAssignsInternal (x_reduction, partshp_x, partialshp_x,
-                                            shmemshp_x, remain_x, 0, part, arg_info);
+            if (INFO_INNERDIM (arg_info) == 0) {
+                x_reduction_assigns
+                  = BuildReduceAssignsInternal (x_reduction, partshp_x, partialshp_x,
+                                                shmemshp_x, remain_x, 0, part, arg_info);
+            }
+
+            assigns = TCappendAssign (y_reduction_assigns, x_reduction_assigns);
         }
-
-        assigns = TCappendAssign (y_reduction_assigns, x_reduction_assigns);
     } else {
         DBUG_ASSERT (0, "Reduction is only supported for 1D and 2D folds!");
     }
@@ -842,7 +971,7 @@ BuildStoreAssigns (node *part, info *arg_info)
 
                 last_arg = avis;
             }
-        } else {
+        } else if (INFO_RESDEF (arg_info) == def_scalar) {
             /*
              * If we are in the else branch, the result must be defined as a
              * a scalar and cannot be a withloop. This is because if it it is
@@ -882,6 +1011,8 @@ BuildStoreAssigns (node *part, info *arg_info)
 
             avis = CreatePrfOrConst (TRUE, "res", sty, SHmakeShape (0), F_cond_wl_assign,
                                      args, &assigns, fundef);
+        } else {
+            DBUG_ASSERT ((0), "Result has wrong defined type!");
         }
     } else if (INFO_DIM (arg_info) == 2) {
 
@@ -1149,10 +1280,12 @@ PFDcode (node *arg_node, info *arg_info)
 
     rhs = ASSIGN_RHS (AVIS_SSAASSIGN (cexpr_avis));
 
-    /* The only case cexpr is NOT a scalar is when it's been
+    /*
+     * The only case cexpr is NOT a scalar is when it's been
      * defined by an array. Note that if it's defined by a
      * genarray/modarray, it will be scalarized and the result
-     * will be either a scalar or an array */
+     * will be either a scalar or an array
+     */
     if (TUisScalar (AVIS_TYPE (cexpr_avis))) {
         INFO_FOLDOP (arg_info) = PRF_PRF (rhs);
     } else {
@@ -1164,8 +1297,9 @@ PFDcode (node *arg_node, info *arg_info)
         DBUG_ASSERT (NODE_TYPE (first_elem) == N_id,
                      "First array element is not an N_id!");
 
-        /* If the result is defined by an array, we need to find out the
-         * operation of the fold withloop by following the ssa
+        /*
+         * If the result is defined by an array, we need to find out the
+         * operation of the fold withloop by following the SSA
          * assign of its elements. Here we choose to start tracing back
          * from the first array elemnt althought any array element will do.
          */
@@ -1198,6 +1332,7 @@ PFDgenerator (node *arg_node, info *arg_info)
     bound1 = GENERATOR_BOUND1 (arg_node);
     bound2 = GENERATOR_BOUND2 (arg_node);
 
+    /* We expect both bounds to be constants */
     DBUG_ASSERT (COisConstant (bound1), "Bound1 is not constant");
     DBUG_ASSERT (COisConstant (bound2), "Bound2 is not constant");
 
@@ -1223,6 +1358,8 @@ PFDwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    /* Work out the dimensionality of the partition and
+     * remember the scalarized partition indices */
     INFO_DIM (arg_info) = TCcountIds (WITHID_IDS (arg_node));
     INFO_WITHIDS (arg_info) = WITHID_IDS (arg_node);
 
@@ -1247,64 +1384,81 @@ PFDpart (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_ASSERT (PART_NEXT (arg_node) == NULL,
-                 "Found fold withloop with more than one partition!");
+                 "Found fold WITH-loop with more than one partition!");
 
-    /* Work out the dimensionality of this part and store it in INFO_DIM.
-     * Also stores the scalarized withloop ids in INFO_WITHIDS  */
+    /*
+     * Work out the dimensionality of this part and store it in INFO_DIM.
+     * Also stores the scalarized WITH-loop indices in INFO_WITHIDS
+     */
     PART_WITHID (arg_node) = TRAVopt (PART_WITHID (arg_node), arg_info);
 
-    /* Work out the shape of this part as the difference between upper
-     * bound and lower bound and store it in INFO_PARTSHP */
+    /*
+     * Work out the shape of this part as the difference between upper
+     * bound and lower bound and store it in INFO_PARTSHP
+     */
     PART_GENERATOR (arg_node) = TRAVopt (PART_GENERATOR (arg_node), arg_info);
 
-    /* Work out the folding operation (i.e. primitive) of this fold withloop
+    /*
+     * Work out the folding operation (i.e. primitive operation) of this fold withloop
      * from the code cexpr and store it in INFO_FOLDOP. Also traverse into
-     * the code block */
+     * the code block.
+     */
     PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
 
-    /* Array elements of the thread block configuration. This has already
-     * been adjusted from its orginal form to reflect the changes made by
-     * withloop scalarization
+    /*
+     * Array elements of the thread block configuration. In cases where WITH-loop
+     * scalarization has been performed, this is changed accordingly.
      */
     tbshp_elems = ARRAY_AELEMS (PART_THREADBLOCKSHAPE (arg_node));
 
     /* Array elements of the partition shape */
     partshp_elems = ARRAY_AELEMS (INFO_PARTSHP (arg_info));
 
-    /* reduce_dim is actually the dimensions we would like the to reduce along.
+    /*
+     * reduce_dim is actually the dimensions we would like the to reduce along.
      * When it comes to create CUDA threads for the fold withloop, these are
      * also the dimensions that we will create threads for.
-     * If the fold with loop result is defined by a withloop, then INFO_DIM is
-     * the sum of the dim of the original outer fold withloop and the original
-     * inner genarray/modarray withloop (due to withloop scalarization)
+     * If the fold with loop result is defined by a WITH-loop, then INFO_DIM is
+     * the sum of the dim of the original outer fold WITH-loop and the original
+     * inner genarray/modarray WITH-loop (because of WITH-loop scalarization)
      * TODO:
      *   What if the fold withloop contains an inner genarray whose result is
      *   defined by an array? Is this def_array or def_withloop?
      */
     if (INFO_RESDEF (arg_info) == def_scalar || INFO_RESDEF (arg_info) == def_array) {
+        /* No WITH-loop scalarization, all orginal fold WITH-loop
+         * dimensions are fodable. */
         reduce_dim = INFO_DIM (arg_info);
     } else if (INFO_RESDEF (arg_info) == def_withloop) {
+        /* WITH-loop scalarization, only original fold WITH-loop
+         * dimensions are foldable but not the newly added inner
+         * WITH-loop dimensions */
         reduce_dim = INFO_DIM (arg_info) - INFO_INNERDIM (arg_info);
     } else {
         DBUG_ASSERT ((0), "Unknown defining assignment type!");
     }
 
+    /*
+     * This loop constructs the array elements (i.e. partialshp_elems) used
+     * create the shape of the partial folded array.
+     */
     dim = 0;
     while (dim < INFO_DIM (arg_info)) {
-        /* This loop constructs the array elements (partialshp_elems) we need to
-         * create the shape for the partial folded array */
         DBUG_ASSERT (tbshp_elems != NULL, "Thread shape is NULL!");
         DBUG_ASSERT (partshp_elems != NULL, "Partition shape is NULL!");
 
+        /* tbshp_len and partshp_len must be of equal length */
         tbshp_len = NUM_VAL (EXPRS_EXPR (tbshp_elems));
         partshp_len = NUM_VAL (EXPRS_EXPR (partshp_elems));
 
-        /* If the dimesnion is the one we would like to perform reduction
+        /*
+         * If the dimesnion is the one we would like to perform reduction
          * along, the length of the corresponding partial array dimesnion
          * is partshp_len/tbshp_len. For example, if the partition is of
-         * shape [128,1024] and the thread block shape is [16,16] and the
+         * shape [128,512] and the thread block shape is [16,16] and the
          * result is scalar defined, then the partial array shape will be
-         * [8,32] */
+         * [8,32]
+         */
         if (dim < reduce_dim) {
             if (partshp_len % tbshp_len == 0) {
                 partialshp_len = partshp_len / tbshp_len;
@@ -1312,12 +1466,15 @@ PFDpart (node *arg_node, info *arg_info)
                 partialshp_len = partshp_len / tbshp_len + 1;
             }
         } else {
-            /* If the partition shape is [128,1024,64] AND the last dimension
-             * is a result of the scalarization AND the thread block shape is
-             * [16,16], then the partial array shape is [8,32,64] */
+            /*
+             * If the partition shape is [128,512,64] and the last dimension
+             * is a result of the scalarization, then the partial array shape
+             * is [8,32,64] given a thread block [16,16]
+             */
             partialshp_len = partshp_len;
         }
 
+        /* Create an N_exprs */
         if (partialshp_elems == NULL) {
             partialshp_elems = TBmakeExprs (TBmakeNum (partialshp_len), NULL);
         } else {
@@ -1332,11 +1489,13 @@ PFDpart (node *arg_node, info *arg_info)
         dim++;
     }
 
+    /* Now we create the N_array to represent the shape of the partial array */
     INFO_PARTIALSHP (arg_info)
       = TBmakeArray (TYmakeSimpleType (T_int), SHcreateShape (1, INFO_DIM (arg_info)),
                      partialshp_elems);
 
-    /* If the result is defined by an N_array, dimensions of the array itself
+    /*
+     * If the result is defined by an N_array, dimensions of the array itself
      * are not appended to partialshp_elems in the previous loop. To construct
      * a correct shape for the partial array, we need to append the inner
      * dimensions to partialshp_elems here.
@@ -2120,8 +2279,8 @@ PFDwith (node *arg_node, info *arg_info)
                            {N_withid, &ATravWithid},
                            {0, NULL}};
 
-    /* Here we travverse the fold withloop and try to scalarize it until no
-     * more scalarization can be done, i.e. CHANGED it 0. The reason we need to
+    /* Here we traverse the fold withloop and try to scalarize it until no
+     * more scalarization can be done, i.e. CHANGED equals to 0. The reason we need to
      * do it iteratively is because the inner
      * withloop defining the result can itself contain
      * withloops so we need to scalarized those withloops
@@ -2137,15 +2296,14 @@ PFDwith (node *arg_node, info *arg_info)
      * the withloop can indeed be scalarized before we actually
      * transform it. But this has not been implemented yet.
      *
-     * After this anonymous traversal, we should be able to expect one and only
-     * only of the following conditions holds:
+     * After this anonymous traversal, onlt one of the following condtions is true:
      *   1) The fold withloop has not been changed at all as its result is
      *      already a scalar.
      *   2) The fold withloop has not been changed at all as its result is
      *      defined by an array.
      *   3) The fold withloop has been scalarized and the new reuslt is now
      *      either a scalar or an array.
-     * The fold withloop may potentially been tag as not cudarizable after the
+     * The fold withloop may potentially been re-tagged as not cudarizable after the
      * check.
      *
      * TODO:
@@ -2175,8 +2333,8 @@ PFDwith (node *arg_node, info *arg_info)
             /* However the result of this withloop is defined? def_scalar,
              * def_array or def_withloop? */
             INFO_RESDEF (arg_info) = INFO_AT_RESDEF (anon_info);
-            /* In case that the result of the withloop is defined by an array
-             * there are the individual array elements */
+            /* In case that the result of the withloop is defined by an array,
+             * here are the individual array elements */
             INFO_ARRAYELEMS (arg_info) = INFO_AT_ARRAYELEMS (anon_info);
 
             anon_info = FreeInfo (anon_info);
@@ -2192,12 +2350,14 @@ PFDwith (node *arg_node, info *arg_info)
         DBUG_ASSERT (FOLD_ISPARTIALFOLD (WITH_WITHOP (arg_node)),
                      "CUDA fold withloop must be partial folding!");
 
-        avis = IDS_AVIS (INFO_LHS (arg_info));
-
-        /* The withop has to be traversed before part. Because we need the
+        /*
+         * The withop has to be traversed before part. Because we need the
          * neutral element during the code traversal (i.e. to replace the
-         * rhs of F_accu with the neutral element). The traversal of the
-         * partition will build all the instructions for:
+         * rhs of F_accu with the neutral element). Traversal of this withop
+         * will remember both the folding function and the neutral element
+         * in INFO_FOLDFUN and INFO_NEUTRAL respectively.
+         * The traversal of the partition will build all the instructions for:
+         *
          *   1) Load data into shared memory.
          *   2) Perform reduction with data in the shared memory.
          *   3) Store reduction result in shared memory back to global memory.
@@ -2208,12 +2368,14 @@ PFDwith (node *arg_node, info *arg_info)
         INFO_LEVEL (arg_info)--;
 
         /******* Create a new variable (new_avis) for the partial folding result ******/
+        avis = IDS_AVIS (INFO_LHS (arg_info));
         new_avis = DUPdoDupNode (avis);
         AVIS_SSAASSIGN (new_avis) = INFO_LASTASSIGN (arg_info);
         AVIS_NAME (new_avis) = MEMfree (AVIS_NAME (new_avis));
         AVIS_NAME (new_avis) = TRAVtmpVar ();
         sty = TYgetSimpleType (TYgetScalar (AVIS_TYPE (new_avis)));
         AVIS_TYPE (new_avis) = TYfreeType (AVIS_TYPE (new_avis));
+
         /* Create a new type with the partial shape */
         AVIS_TYPE (new_avis) = TYmakeAKS (TYmakeSimpleType (sty),
                                           SHarray2Shape (INFO_PARTIALSHP (arg_info)));
@@ -2227,9 +2389,10 @@ PFDwith (node *arg_node, info *arg_info)
 
         /*******************************************************************/
 
-        /* Build a new fold withloop which will be executed on the host and folds
-         * the partial array resulted from the execution of the previous CUDA fold
-         * withloop */
+        /*
+         * Build a new fold withloop which will be executed on the host and folds
+         * the partial array generated from the previous CUDA fold withloop
+         */
         new_fold = BuildFoldWithloop (arg_node, arg_info);
 
         INFO_PARTIALSHP (arg_info) = FREEdoFreeNode (INFO_PARTIALSHP (arg_info));
@@ -2257,7 +2420,7 @@ PFDfold (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /* Store the fold function and its neutral element */
+    /* Remember the folding function and its neutral element */
     INFO_FOLDFUNDEF (arg_info) = FOLD_FUNDEF (arg_node);
     INFO_NEUTRAL (arg_info) = FOLD_NEUTRAL (arg_node);
 
@@ -2279,8 +2442,10 @@ PFDprf (node *arg_node, info *arg_info)
 
     if (INFO_LEVEL (arg_info) == 1) {
         if (PRF_PRF (arg_node) == F_accu) {
-            /* Replace the F_accu assignment of the fold withloop by an
-             * assignment of the neutral element */
+            /*
+             * Replace the F_accu assignment of the outermost fold withloop by an
+             * assignment of the neutral element.
+             */
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = DUPdoDupNode (INFO_NEUTRAL (arg_info));
         }

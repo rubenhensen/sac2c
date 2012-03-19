@@ -38,6 +38,7 @@
 #include "DupTree.h"
 #include "identify_noop_branch.h"
 #include "filemgr.h"
+#include "reusewithoffset.h"
 
 #define LOWER_BOUND 0
 #define UPPER_BOUND 1
@@ -329,116 +330,6 @@ FreeInfo (info *info)
  * Static helper functions
  *
  *****************************************************************************/
-static node *
-IdentifyNoopArray (node *with)
-{
-    node *res = NULL;
-    node *code = WITH_CODE (with);
-    node *ivavis = IDS_AVIS (WITH_VEC (with));
-
-    DBUG_ENTER ();
-
-    while (code != NULL) {
-        node *cass = AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (code)));
-
-        if ((cass != NULL) && (NODE_TYPE (ASSIGN_RHS (cass)) == N_prf)
-            && (PRF_PRF (ASSIGN_RHS (cass)) == F_sel_VxA)
-            && (NODE_TYPE (PRF_ARG1 (ASSIGN_RHS (cass))) == N_id)
-            && (NODE_TYPE (PRF_ARG2 (ASSIGN_RHS (cass))) == N_id)
-            && (ID_AVIS (PRF_ARG1 (ASSIGN_RHS (cass))) == ivavis)) {
-            res = TBmakeId (ID_AVIS (PRF_ARG2 (ASSIGN_RHS (cass))));
-            break;
-        }
-
-        code = CODE_NEXT (code);
-    }
-    DBUG_RETURN (res);
-}
-
-static bool
-IsNoopPart (node *part, node *rc)
-{
-    bool res = FALSE;
-    node *code = PART_CODE (part);
-    node *ivavis = IDS_AVIS (PART_VEC (part));
-    node *cass;
-
-    DBUG_ENTER ();
-
-    cass = AVIS_SSAASSIGN (ID_AVIS (CODE_CEXPR (code)));
-
-    if ((cass != NULL) && (NODE_TYPE (ASSIGN_RHS (cass)) == N_prf)
-        && (PRF_PRF (ASSIGN_RHS (cass)) == F_sel_VxA)
-        && (NODE_TYPE (PRF_ARG1 (ASSIGN_RHS (cass))) == N_id)
-        && (NODE_TYPE (PRF_ARG2 (ASSIGN_RHS (cass))) == N_id)
-        && (ID_AVIS (PRF_ARG1 (ASSIGN_RHS (cass))) == ivavis)
-        && (ID_AVIS (PRF_ARG2 (ASSIGN_RHS (cass))) == ID_AVIS (rc))) {
-        res = TRUE;
-    }
-
-    DBUG_RETURN (res);
-}
-
-static node *
-IdentifyOtherPart (node *with, node *rc)
-{
-    node *hotpart = NULL;
-    node *part = WITH_PART (with);
-
-    DBUG_ENTER ();
-
-    while (part != NULL) {
-        if (!IsNoopPart (part, rc)) {
-            if (hotpart == NULL) {
-                hotpart = part;
-            } else {
-                hotpart = NULL;
-                break;
-            }
-        }
-
-        part = PART_NEXT (part);
-    }
-
-    /*
-     * The hot part must have a known GENWIDTH
-     */
-    if ((hotpart != NULL)
-        && ((NODE_TYPE (PART_GENERATOR (hotpart)) != N_generator)
-            || (GENERATOR_GENWIDTH (PART_GENERATOR (hotpart)) == NULL))) {
-        hotpart = NULL;
-    }
-
-    DBUG_RETURN (hotpart);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *AnnotateCopyPart( node *with, node *rc)
- *
- * @brief
- *
- *
- *****************************************************************************/
-static node *
-AnnotateCopyPart (node *with, node *rc)
-{
-    node *part = WITH_PART (with);
-
-    DBUG_ENTER ();
-
-    while (part != NULL) {
-        if (IsNoopPart (part, rc)) {
-            PART_ISCOPY (part) = TRUE;
-        } else {
-            PART_ISCOPY (part) = FALSE;
-        }
-
-        part = PART_NEXT (part);
-    }
-
-    DBUG_RETURN (with);
-}
 
 /** <!--********************************************************************-->
  *
@@ -1053,10 +944,10 @@ PRAdoPolyhedralReuseAnalysis (node *with, node *fundef)
         && (WITHOP_NEXT (WITH_WITHOP (with)) == NULL)) {
         node *hotpart = NULL;
 
-        cand = IdentifyNoopArray (with);
+        cand = RWOidentifyNoopArray (with);
 
         if (cand != NULL) {
-            hotpart = IdentifyOtherPart (with, cand);
+            hotpart = RWOidentifyOtherPart (with, cand);
 
             if (hotpart != NULL) {
                 node *oldpartnext, *oldcodenext, *hotcode;
@@ -1098,7 +989,7 @@ PRAdoPolyhedralReuseAnalysis (node *with, node *fundef)
                  * copy partitions and noop conditional branch.
                  */
                 if (INFO_RC (arg_info) != NULL) {
-                    with = AnnotateCopyPart (with, INFO_RC (arg_info));
+                    with = RWOannotateCopyPart (with, INFO_RC (arg_info));
                     cand = TBmakeExprs (INFO_RC (arg_info), NULL);
                     INFO_RC (arg_info) = NULL;
                     hotpart = INBdoIdentifyNoopBranch (hotpart);

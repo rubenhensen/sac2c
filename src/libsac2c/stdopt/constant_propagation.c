@@ -332,6 +332,8 @@ CPprf (node *arg_node, info *arg_info)
     case F_hideValue_SxA:
     case F_hideShape_SxA:
     case F_hideDim_SxA:
+    case F_mask_VxVxS:
+    case F_mask_VxVxV:
         /*
          * Only propagate variables here
          *  This can probably be deleted...

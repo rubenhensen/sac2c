@@ -214,6 +214,12 @@ OPTcheckOptionConsistency (void)
                  "Insertion of explicit conformity checks has been enabled.");
     }
 
+    /* turn on default multithreading if using cuda hybrid backend */
+    if (global.backend == BE_cudahybrid && global.mtmode == MT_none) {
+        global.mtmode = MT_startstop;
+        global.num_threads = 0;
+    }
+
 #if !ENABLE_MT
     if (global.mtmode != MT_none) {
         global.mtmode = MT_none;
@@ -277,12 +283,17 @@ OPTcheckOptionConsistency (void)
 
     if (global.optimize.doawlf && (!global.insertconformitychecks)) {
         global.insertconformitychecks = TRUE;
-        CTIwarn ("AWLF is enabled. Therefore, -ecc is set.");
+        CTIwarn ("AWLF is enabled: -ecc enabled.");
     }
 
     if (global.optimize.doawlf && (!global.doivext)) {
         global.doivext = TRUE;
-        CTIwarn ("AWLF is enabled. Therefore, -extrema is set.");
+        CTIwarn ("AWLF is enabled: -extrema enabled.");
+    }
+
+    if (global.optimize.doawlf) {
+        global.max_optcycles = global.max_optcycles * 2;
+        CTIwarn ("AWLF is enabled: -maxoptcyc=%d", global.max_optcycles);
     }
 
 #if !ENABLE_RTSPEC || !ENABLE_MT
@@ -555,6 +566,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("fp", global.fp = TRUE);
     ARGS_FLAG ("fpnoopt", global.fpnoopt = TRUE);
+
+    ARGS_OPTION ("fVAB", global.visual_format = ARG);
 
     /*
      * Options starting with ggggggggggggggggggggggggggggggggggggggggggg

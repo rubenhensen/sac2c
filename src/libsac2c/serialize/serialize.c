@@ -538,9 +538,17 @@ SerializeFundefHead (node *fundef, info *info)
          * visible!
          */
         if (vis != SVT_local) {
+            unsigned argc = 0;
+
+            if (!FUNDEF_HASDOTARGS (fundef) && !FUNDEF_HASDOTRETS (fundef)) {
+                node *args = FUNDEF_ARGS (fundef);
+                while (args)
+                    argc++, args = ARG_NEXT (args);
+            }
+
             STadd (FUNDEF_NAME (fundef), vis, funname,
                    FUNDEF_ISWRAPPERFUN (fundef) ? SET_wrapperhead : SET_funhead,
-                   INFO_SER_TABLE (info));
+                   INFO_SER_TABLE (info), argc);
         }
     }
 
@@ -585,7 +593,7 @@ SerializeTypedef (node *tdef, info *info)
      * table that are visible
      */
     if (vis != SVT_local) {
-        STadd (TYPEDEF_NAME (tdef), vis, funname, SET_typedef, INFO_SER_TABLE (info));
+        STadd (TYPEDEF_NAME (tdef), vis, funname, SET_typedef, INFO_SER_TABLE (info), 0);
     }
 
     GenerateSerFunHead (tdef, SET_typedef, info);
@@ -629,7 +637,7 @@ SerializeObjdef (node *objdef, info *info)
      * that are indeed visible
      */
     if (vis != SVT_local) {
-        STadd (OBJDEF_NAME (objdef), vis, funname, SET_objdef, INFO_SER_TABLE (info));
+        STadd (OBJDEF_NAME (objdef), vis, funname, SET_objdef, INFO_SER_TABLE (info), 0);
     }
 
     GenerateSerFunHead (objdef, SET_objdef, info);
