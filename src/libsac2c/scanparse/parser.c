@@ -966,7 +966,8 @@ to_prf (enum token_kind tkind)
     }
 }
 
-/* Check if token TOK can start an expression.  */
+/* FIXME Check if any token starting an expression is missing.
+   Check if token TOK can start an expression.  */
 bool
 token_starts_expr (struct parser *parser, struct token *tok)
 {
@@ -993,9 +994,9 @@ token_starts_expr (struct parser *parser, struct token *tok)
             return false;
         }
     case tok_keyword:
-        return is_prf (token_value (tok));
+        return is_prf (token_value (tok)) || token_is_reserved (tok);
     default:
-        return false;
+        return token_is_reserved (tok);
     }
 }
 
