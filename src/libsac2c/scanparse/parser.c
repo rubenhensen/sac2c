@@ -4515,6 +4515,8 @@ semi_or_exprs:
         goto pragmas;
     } else if (token_is_operator (tok, tv_lbrace)) {
         parser_unget (parser);
+        fundef_p = true;
+        fundec_p = false;
         body = handle_stmt_list (parser, STMT_BLOCK_FUNCTION_FLAGS);
         if (body == NULL || body == error_mark_node) {
             parse_error = true;
