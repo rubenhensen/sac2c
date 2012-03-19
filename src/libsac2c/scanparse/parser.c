@@ -3465,15 +3465,24 @@ handle_for_stmt (struct parser *parser)
     else
         goto error;
 
-    if (error_mark_node == (cond_exp1 = handle_assign_list (parser)))
-        /* FIXME skip to somewhere...  */
-        goto error;
+    /* Check if we omit the first assignment.  */
+    tok = parser_get_token (parser);
+    if (token_is_operator (tok, tv_semicolon))
+        cond_exp1 = NULL;
+    else {
+        parser_unget (parser);
+        if (error_mark_node == (cond_exp1 = handle_assign_list (parser)))
+            /* FIXME skip to somewhere...  */
+            goto error;
 
-    if (parser_expect_tval (parser, tv_semicolon))
-        parser_get_token (parser);
-    else
-        goto error;
+        if (parser_expect_tval (parser, tv_semicolon))
+            parser_get_token (parser);
+        else
+            goto error;
+    }
 
+    /* We do not allow to miss the middle expression however, as we
+       do not have breaks allowed in the language.  */
     if (error_mark_node == (cond_exp2 = handle_expr (parser)))
         /* FIXME skip to somewhere...  */
         goto error;
@@ -3483,14 +3492,22 @@ handle_for_stmt (struct parser *parser)
     else
         goto error;
 
-    if (error_mark_node == (cond_exp3 = handle_assign_list (parser)))
-        /* FIXME skip to somewhere...  */
-        goto error;
+    /* Here we can have no expression again, it means
+       that we would face ')'  */
+    tok = parser_get_token (parser);
+    if (token_is_operator (tok, tv_rparen))
+        cond_exp3 = NULL;
+    else {
+        parser_unget (parser);
+        if (error_mark_node == (cond_exp3 = handle_assign_list (parser)))
+            /* FIXME skip to somewhere...  */
+            goto error;
 
-    if (parser_expect_tval (parser, tv_rparen))
-        parser_get_token (parser);
-    else
-        goto error;
+        if (parser_expect_tval (parser, tv_rparen))
+            parser_get_token (parser);
+        else
+            goto error;
+    }
 
     stmts = handle_stmt_list (parser, STMT_BLOCK_STMT_FLAGS);
     if (stmts == error_mark_node)
