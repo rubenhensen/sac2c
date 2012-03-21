@@ -3654,8 +3654,11 @@ handle_list_of_stmts (struct parser *parser)
        an error; just avoid constructing a list.  */
     if (res == error_mark_node)
         parse_error = true;
-    else
+    else {
         t = res;
+        while (ASSIGN_NEXT (t))
+            t = ASSIGN_NEXT (t);
+    }
 
     while (true) {
         node *stmt;
@@ -3678,6 +3681,12 @@ handle_list_of_stmts (struct parser *parser)
         if (!parse_error) {
             ASSIGN_NEXT (t) = stmt;
             t = stmt;
+
+            /* ret may be an assignment chain of more than one
+               variables.  So we have to move down to the last
+               element, in order to add things correctly further.  */
+            while (ASSIGN_NEXT (t))
+                t = ASSIGN_NEXT (t);
         }
     }
 
