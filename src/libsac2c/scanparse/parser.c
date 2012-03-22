@@ -2892,13 +2892,14 @@ handle_withop (struct parser *parser)
             goto error;
 
         if (NULL != (id = is_ext_id (parser))) {
-            if (!is_binary (parser, id->namespace, id->id)) {
+            /* if (!is_binary (parser, id->namespace, id->id))
+              {
                 tok = parser_get_token (parser);
                 parser_unget (parser);
                 error_loc (token_location (tok), "binary function expected");
                 parser_get_until_tval (parser, tv_rparen);
                 goto error;
-            }
+              } */
 
             identifier_free (id);
             exp1 = handle_ext_id (parser);
