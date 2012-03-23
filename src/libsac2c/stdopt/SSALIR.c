@@ -182,7 +182,6 @@ typedef enum { TS_fundef, TS_module } travstart;
 
 struct INFO {
     node *fundef;
-    bool remassign;
     node *preassign;
     node *postassign;
     node *assign;
@@ -198,7 +197,7 @@ struct INFO {
     node *apreschain;
     node *extfundef;
     nodelist *resultmap;
-    int maxdepth;
+    bool *depthmask;
     int setdepth;
     nodelist *inslist;
     node *fundefextassign;
@@ -210,9 +209,44 @@ struct INFO {
 
 /*
  * INFO macros
+ *
+ * INFO_FUNDEF              : node* = set in LIRfundef()
+ * INFO_PREASSIGN
+ * INFO_POSTASSIGN
+ * INFO_ASSIGN
+ * INFO_NONLIRUSE
+ * INFO_CONDSTATUS
+ * INFO_WITHDEPTH           : int = with-loop depth level, reset in fundef,
+ inc/decremented in LIRwith
+ * INFO_TOPBLOCK            : bool = flag indicates we're in the function's top-level
+ block
+ * INFO_FLAG                : int {LIR_NORMAL, LIR_MOVEUP, LIR_INRETURN, LIR_MOVELOCAL,
+ LIR_MOVEDOWN} = traverse sub-mode
+ * INFO_EXTPREASSIGN
+ * INFO_EXTPOSTASSIGN
+ * INFO_MOVELUT             : lut_t* = ??
+ * INFO_APARGCHAIN          : node* = in LOOP-fun: fun. arg chain of the parent ap. call;
+                              Consumed in LIRarg() along its passage over fun. args. when
+ they're paired with internal args.
+ * INFO_APRESCHAIN
+ * INFO_EXTFUNDEF           : node* = in LAC-fun: the external calling fundef
+ * INFO_RESULTMAP           : nodelist* = ??
+ * INFO_DEPTHMASK           : bool* = array of [WITHDEPTH+1] bools. Indicates there's a
+ dependecy on a variable defined on a given level of the with-loop nest tree.
+ * INFO_SETDEPTH            : int = the depth to which the avis definition depths
+ (AVIS_DEFDEPTH) shall be set in LIRids. It may be different from INFO_WITHDEPTH in the
+ case the expression is being moved.
+ * INFO_INSLIST             : nodelist* = list of frames (a stack but with arbitrary
+ access to any frame). Frames are pushed/poped when traversing with-loop levels.
+ * INFO_FUNDEFEXTASSIGN     : node* = in LAC-fun: the external assign in the calling
+ fundef
+ * INFO_FUNDEFINTASSIGN     : node* = in LOOP-fun: the internal recursive assignment of
+ the fun. (only for TS_module)
+ * INFO_TRAVSTART           : {TS_fundef, TS_module} = mode
+ * INFO_TRAVINLAC           : bool = set in LIRap() upon entering LAC fundef
+ * INFO_LHS                 : node* = ??
  */
 #define INFO_FUNDEF(n) (n->fundef)
-#define INFO_REMASSIGN(n) (n->remassign)
 #define INFO_PREASSIGN(n) (n->preassign)
 #define INFO_POSTASSIGN(n) (n->postassign)
 #define INFO_ASSIGN(n) (n->assign)
@@ -228,7 +262,7 @@ struct INFO {
 #define INFO_APRESCHAIN(n) (n->apreschain)
 #define INFO_EXTFUNDEF(n) (n->extfundef)
 #define INFO_RESULTMAP(n) (n->resultmap)
-#define INFO_MAXDEPTH(n) (n->maxdepth)
+#define INFO_DEPTHMASK(n) (n->depthmask)
 #define INFO_SETDEPTH(n) (n->setdepth)
 #define INFO_INSLIST(n) (n->inslist)
 #define INFO_FUNDEFEXTASSIGN(n) (n->fundefextassign)
@@ -250,7 +284,6 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
-    INFO_REMASSIGN (result) = FALSE;
     INFO_PREASSIGN (result) = NULL;
     INFO_POSTASSIGN (result) = NULL;
     INFO_ASSIGN (result) = NULL;
@@ -266,7 +299,7 @@ MakeInfo ()
     INFO_APRESCHAIN (result) = NULL;
     INFO_EXTFUNDEF (result) = NULL;
     INFO_RESULTMAP (result) = NULL;
-    INFO_MAXDEPTH (result) = 0;
+    INFO_DEPTHMASK (result) = MEMmalloc (sizeof (bool) * 1);
     INFO_SETDEPTH (result) = 0;
     INFO_INSLIST (result) = NULL;
     INFO_FUNDEFEXTASSIGN (result) = NULL;
@@ -283,9 +316,74 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ();
 
+    MEMfree (INFO_DEPTHMASK (info));
+    INFO_DEPTHMASK (info) = NULL;
+
     info = MEMfree (info);
 
     DBUG_RETURN (info);
+}
+
+/* mark the given level as providing a depency into the current tree */
+static inline void
+depthmask_mark_level (info *inf, int level)
+{
+    DBUG_ASSERT ((level >= 0) && (level <= INFO_WITHDEPTH (inf)),
+                 "cannot have/set dependency on a variable deeper than the current "
+                 "nesting level");
+    INFO_DEPTHMASK (inf)[level] = TRUE;
+}
+
+/* extract INFO_WITHDEPTH as a 64-bit uint, for debug prints only! */
+static uint64_t
+dmask2ui64 (info *inf)
+{
+    uint64_t v = 0;
+    for (int i = 0; i <= INFO_WITHDEPTH (inf); ++i) {
+        if (INFO_DEPTHMASK (inf)[i])
+            v |= (1ULL << i);
+    }
+    return v;
+}
+
+/* find out the deepest level marked */
+/*  0000 -> 0
+ *  0001 -> 0
+ *  001X -> 1
+ *  01XX -> 2, and so on  */
+static int
+depthmask_deepest_level (const info *inf)
+{
+    for (int i = INFO_WITHDEPTH (inf); i >= 0; --i) {
+        if (INFO_DEPTHMASK (inf)[i])
+            return i;
+    }
+    return 0;
+}
+
+/* clear the whole depth-mask */
+static inline void
+clear_dmask (bool *dmask, int wl_depth)
+{
+    for (int i = 0; i <= wl_depth; ++i)
+        dmask[i] = FALSE;
+}
+
+static void
+copy_dmask (bool *dst, bool *src, int wl_depth)
+{
+    for (int i = 0; i <= wl_depth; ++i) {
+        dst[i] = src[i];
+    }
+}
+
+/* merge (OR) depth-mask src into dst */
+static void
+merge_dmask (bool *dst, bool *src, int wl_depth)
+{
+    for (int i = 0; i <= wl_depth; ++i) {
+        dst[i] = dst[i] || src[i];
+    }
 }
 
 /* INFO_CONDSTATUS */
@@ -861,15 +959,17 @@ LIRfundef (node *arg_node, info *arg_info)
         || (!FUNDEF_ISLACFUN (arg_node))) {
         /**
          * only traverse fundef node if fundef is not lacfun, or if traversal
-         * was initialized in ap-node (travinlac == TRUE)
+         * was initialized in ap-node (travinlac == TRUE);
+         * (lacfun = loop or cond fun.)
          */
         info = MakeInfo ();
 
         INFO_TRAVSTART (info) = INFO_TRAVSTART (arg_info);
         INFO_TRAVINLAC (info) = INFO_TRAVINLAC (arg_info);
-        INFO_FUNDEF (info) = arg_node;
+        INFO_FUNDEF (info) = arg_node; // this fundef -> info.fundef
         if (INFO_TRAVINLAC (arg_info)) {
-            INFO_EXTFUNDEF (info) = INFO_FUNDEF (arg_info);
+            INFO_EXTFUNDEF (info)
+              = INFO_FUNDEF (arg_info); // parent fundef -> info.extfundef
             INFO_FUNDEFEXTASSIGN (info) = INFO_ASSIGN (arg_info);
         }
 
@@ -885,7 +985,7 @@ LIRfundef (node *arg_node, info *arg_info)
         /* init empty result map */
         INFO_RESULTMAP (info) = NULL;
 
-        /* save pointer to archain of external function application */
+        /* save pointer to arg-chain of external function application */
         if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISLOOPFUN (arg_node))
             && (INFO_TRAVSTART (info) == TS_module)) {
             INFO_APARGCHAIN (info) = AP_ARGS (ASSIGN_RHS (INFO_FUNDEFEXTASSIGN (info)));
@@ -1087,30 +1187,34 @@ LIRassign (node *arg_node, info *arg_info)
     bool remove_assign;
     node *pre_assign;
     node *tmp;
-    int old_maxdepth;
+    bool *old_dmask;
+    bool new_dmask_buf[INFO_WITHDEPTH (arg_info) + 1];
     node *old_assign;
-    int wlir_move_up;
+    int deepest_lvl;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (ASSIGN_STMT (arg_node), "missing instruction in assignment");
 
     /* init traversal flags */
-    INFO_REMASSIGN (arg_info) = FALSE;
     old_assign = INFO_ASSIGN (arg_info);
-    INFO_ASSIGN (arg_info) = arg_node;
+    INFO_ASSIGN (arg_info) = arg_node; // the N_assign we're in
     INFO_PREASSIGN (arg_info) = NULL;
     INFO_POSTASSIGN (arg_info) = NULL;
-    old_maxdepth = INFO_MAXDEPTH (arg_info);
-    INFO_MAXDEPTH (arg_info) = 0;
+    /* save incomming depth-mask, reset and activate a new one */
+    old_dmask = INFO_DEPTHMASK (arg_info);
+    clear_dmask (new_dmask_buf, INFO_WITHDEPTH (arg_info));
+    INFO_DEPTHMASK (arg_info) = new_dmask_buf;
 
     /* start traversal of instruction */
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
+    /* pick up from sons traversal */
+    deepest_lvl = depthmask_deepest_level (arg_info);
+
     /* analyse and store results of instruction traversal */
     INFO_ASSIGN (arg_info) = old_assign;
-    remove_assign = INFO_REMASSIGN (arg_info);
-    INFO_REMASSIGN (arg_info) = FALSE;
+    remove_assign = FALSE;
 
     pre_assign = INFO_PREASSIGN (arg_info);
     INFO_PREASSIGN (arg_info) = NULL;
@@ -1136,13 +1240,13 @@ LIRassign (node *arg_node, info *arg_info)
         LET_LIRFLAG (ASSIGN_STMT (arg_node)) = LIRMOVE_STAY;
     }
 
-    if ((INFO_MAXDEPTH (arg_info) < INFO_WITHDEPTH (arg_info))
+    if ((deepest_lvl < INFO_WITHDEPTH (arg_info))
         && (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let)
 #ifndef CREATE_UNIQUE_BY_HEAP
         && (!ForbiddenMovement (LET_IDS (ASSIGN_STMT (arg_node))))
 #endif
         && (!((NODE_TYPE (ASSIGN_RHS (arg_node)) == N_with) && (pre_assign != NULL)))) {
-        wlir_move_up = INFO_MAXDEPTH (arg_info);
+        DBUG_PRINT ("assignment is moving to level %d", deepest_lvl);
 
         /*
          * now we add this assignment to the respective insert level chain
@@ -1151,8 +1255,6 @@ LIRassign (node *arg_node, info *arg_info)
          */
         tmp = arg_node;
         arg_node = TBmakeAssign (NULL, ASSIGN_NEXT (arg_node));
-
-        DBUG_ASSERT (remove_assign == FALSE, "wlur expression must not be removed");
 
         remove_assign = TRUE;
         ASSIGN_NEXT (tmp) = NULL;
@@ -1164,19 +1266,19 @@ LIRassign (node *arg_node, info *arg_info)
         /* first the preassign code */
         if (pre_assign != NULL) {
             INFO_INSLIST (arg_info)
-              = InsListAppendAssigns (INFO_INSLIST (arg_info), pre_assign, wlir_move_up);
+              = InsListAppendAssigns (INFO_INSLIST (arg_info), pre_assign, deepest_lvl);
             pre_assign = NULL;
         }
 
         /* append this assignment */
         INFO_INSLIST (arg_info)
-          = InsListAppendAssigns (INFO_INSLIST (arg_info), tmp, wlir_move_up);
+          = InsListAppendAssigns (INFO_INSLIST (arg_info), tmp, deepest_lvl);
 
         /* and now the postassign code */
         if (INFO_POSTASSIGN (arg_info) != NULL) {
             INFO_INSLIST (arg_info)
               = InsListAppendAssigns (INFO_INSLIST (arg_info), INFO_POSTASSIGN (arg_info),
-                                      wlir_move_up);
+                                      deepest_lvl);
             INFO_POSTASSIGN (arg_info) = NULL;
         }
 
@@ -1217,8 +1319,12 @@ LIRassign (node *arg_node, info *arg_info)
         arg_node = TCappendAssign (pre_assign, arg_node);
     }
 
-    /* restore old maxdepth counter */
-    INFO_MAXDEPTH (arg_info) = old_maxdepth;
+    /* Update the parent depth-mask with ours so as to collect the
+     * dependency info. of all the nested expressions.
+     * If we're lifting this assignment up then the current mask still needs to be
+     * collected because it tracks the real dependency in the tree. */
+    merge_dmask (old_dmask, INFO_DEPTHMASK (arg_info), INFO_WITHDEPTH (arg_info));
+    INFO_DEPTHMASK (arg_info) = old_dmask;
 
     DBUG_RETURN (arg_node);
 }
@@ -1241,6 +1347,7 @@ LIRlet (node *arg_node, info *arg_info)
 {
     node *oldlir;
     node *ids;
+    int deepest_lvl;
 
     DBUG_ENTER ();
 
@@ -1305,8 +1412,9 @@ LIRlet (node *arg_node, info *arg_info)
     } else if (INFO_WITHDEPTH (arg_info) > 0) {
         /* in other blocks (with-loops), marks all definitions as local */
         if (INFO_CONDSTATUS (arg_info) == CONDSTATUS_NOCOND) {
-            DBUG_PRINT ("local expression %s detected & marked",
-                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+            DBUG_PRINT ("local expression %s detected & marked; WithDepth=%d",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
+                        INFO_WITHDEPTH (arg_info));
 
             INFO_FLAG (arg_info) = LIR_MOVELOCAL;
         } else {
@@ -1319,21 +1427,34 @@ LIRlet (node *arg_node, info *arg_info)
         LET_LIRFLAG (arg_node) = LIRMOVE_NONE;
     }
 
+    /* pick up from sons traversal */
+    deepest_lvl = depthmask_deepest_level (arg_info);
+
+    /* depedencies on nested variables should have been masked out in N_with */
+    DBUG_ASSERT (deepest_lvl <= INFO_WITHDEPTH (arg_info),
+                 "expression reported to depend on a nested variable");
+
+    DBUG_PRINT ("expression %s on level %d has max. dep. on level %d (dmask=0x%llX)",
+                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), INFO_WITHDEPTH (arg_info),
+                deepest_lvl, dmask2ui64 (arg_info));
+
     /* detect withloop-independent expression, will be moved up */
-    if ((INFO_MAXDEPTH (arg_info) < INFO_WITHDEPTH (arg_info))
+    if ((deepest_lvl < INFO_WITHDEPTH (arg_info))
 #ifndef CREATE_UNIQUE_BY_HEAP
         && (!ForbiddenMovement (LET_IDS (arg_node)))
 #endif
         && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_with)
               && (INFO_PREASSIGN (arg_info) != NULL)))) {
         /* set new target definition depth */
-        INFO_SETDEPTH (arg_info) = INFO_MAXDEPTH (arg_info);
+        INFO_SETDEPTH (arg_info) = deepest_lvl;
         DBUG_PRINT ("moving assignment for %s from depth %d to depth %d",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), INFO_WITHDEPTH (arg_info),
-                    INFO_MAXDEPTH (arg_info));
+                    deepest_lvl);
 
     } else {
         /* set current depth */
+        DBUG_PRINT ("changing SETDEPTH: %d -> %d", INFO_SETDEPTH (arg_info),
+                    INFO_WITHDEPTH (arg_info));
         INFO_SETDEPTH (arg_info) = INFO_WITHDEPTH (arg_info);
     }
 
@@ -1404,9 +1525,15 @@ LIRid (node *arg_node, info *arg_info)
             DBUG_ASSERT (FALSE, "usage of undefined identifier %s",
                          AVIS_NAME (ID_AVIS (arg_node)));
         }
-        if (INFO_MAXDEPTH (arg_info) < AVIS_DEFDEPTH (ID_AVIS (arg_node))) {
-            INFO_MAXDEPTH (arg_info) = AVIS_DEFDEPTH (ID_AVIS (arg_node));
-        }
+
+        /* mark the definition level of this N_id, i.e. AVIS_DEFDEPTH(ID_AVIS(arg_node)),
+         * in the global bitmask that helps us to establish the maximal level used in an
+         * expression */
+        depthmask_mark_level (arg_info, AVIS_DEFDEPTH (ID_AVIS (arg_node)));
+
+        DBUG_PRINT ("id %s: DEFDEPTH=%d; SETDEPTH=%d; dmask=0x%llX",
+                    AVIS_NAME (ID_AVIS (arg_node)), AVIS_DEFDEPTH (ID_AVIS (arg_node)),
+                    INFO_SETDEPTH (arg_info), dmask2ui64 (arg_info));
         break;
 
     case LIR_INRETURN:
@@ -1608,12 +1735,25 @@ LIRreturn (node *arg_node, info *arg_info)
 node *
 LIRwith (node *arg_node, info *arg_info)
 {
+    bool larger_dmask_buf[INFO_WITHDEPTH (arg_info) + 2];
+    bool *old_dmask;
+
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Looking at WL defining %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+    DBUG_PRINT ("At level %d looking at WL defining %s", INFO_WITHDEPTH (arg_info),
+                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
     /* clear current InsertListFrame */
     INFO_INSLIST (arg_info)
       = InsListSetAssigns (INFO_INSLIST (arg_info), NULL, INFO_WITHDEPTH (arg_info));
+
+    /* As WITHDEPTH is being incremented below, we must enlarge the DEPTHMASK
+     * buffer so that its size stays WITHDEPTH+1 even after the increment.
+     * We use a new buffer (larger_dmask_buf) and afterwards we copy its
+     * content back. */
+    old_dmask = INFO_DEPTHMASK (arg_info);
+    copy_dmask (larger_dmask_buf, old_dmask, INFO_WITHDEPTH (arg_info));
+    larger_dmask_buf[INFO_WITHDEPTH (arg_info) + 1] = FALSE;
+    INFO_DEPTHMASK (arg_info) = larger_dmask_buf;
 
     /* increment withdepth counter */
     INFO_WITHDEPTH (arg_info) = INFO_WITHDEPTH (arg_info) + 1;
@@ -1635,6 +1775,13 @@ LIRwith (node *arg_node, info *arg_info)
 
     /* decrement withdepth counter */
     INFO_WITHDEPTH (arg_info) = INFO_WITHDEPTH (arg_info) - 1;
+
+    /* Clear all the nested levels from the depth mask (to detect
+     * with-loop dependencies). Nested levels would be moved along,
+     * therefore they do not constitute a true dependency that prevents a move.
+     * We simply copy back the required number of elements. */
+    copy_dmask (old_dmask, INFO_DEPTHMASK (arg_info), INFO_WITHDEPTH (arg_info));
+    INFO_DEPTHMASK (arg_info) = old_dmask;
 
     /* move the assigns of this depth into PREASSIGN */
     INFO_PREASSIGN (arg_info)
@@ -1661,6 +1808,8 @@ node *
 LIRwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
+    DBUG_PRINT ("setting SETDEPTH: %d -> %d", INFO_SETDEPTH (arg_info),
+                INFO_WITHDEPTH (arg_info));
 
     /* traverse all local definitions to mark their depth in withloops */
     INFO_FLAG (arg_info) = LIR_MOVELOCAL;
@@ -1731,18 +1880,21 @@ LIRids (node *arg_ids, info *arg_info)
     /* propagate the currect FLAG to the ids */
     switch (INFO_FLAG (arg_info)) {
     case LIR_MOVEUP:
-        DBUG_PRINT ("mark: moving up vardec %s", IDS_NAME (arg_ids));
+        DBUG_PRINT ("mark: moving up vardec %s; setting DefDepth=%d", IDS_NAME (arg_ids),
+                    AVIS_DEFDEPTH (avis));
         AVIS_SSALPINV (avis) = TRUE;
         (AVIS_LIRMOVE (avis)) |= LIRMOVE_UP;
         break;
 
     case LIR_MOVELOCAL:
-        DBUG_PRINT ("mark: local vardec %s", IDS_NAME (arg_ids));
+        DBUG_PRINT ("mark: local vardec %s; setting DefDepth=%d", IDS_NAME (arg_ids),
+                    AVIS_DEFDEPTH (avis));
         AVIS_LIRMOVE (avis) = LIRMOVE_LOCAL;
         break;
 
     case LIR_NORMAL:
-        DBUG_PRINT ("mark: no moving of vardec %s", IDS_NAME (arg_ids));
+        DBUG_PRINT ("mark: no moving of vardec %s; setting DefDepth=%d",
+                    IDS_NAME (arg_ids), AVIS_DEFDEPTH (avis));
         AVIS_LIRMOVE (avis) = LIRMOVE_NONE;
         break;
 
@@ -1754,6 +1906,33 @@ LIRids (node *arg_ids, info *arg_info)
     IDS_NEXT (arg_ids) = TRAVopt (IDS_NEXT (arg_ids), arg_info);
 
     DBUG_RETURN (arg_ids);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *LIRcode (node *arg_ids, info *arg_info)
+ *
+ * description:
+ *    Simply traverse our sons. We do it explicitly to be sure of the order:
+ *    it is important to first traverse CBLOCK and then CEXPRS.
+ *
+ *****************************************************************************/
+node *
+LIRcode (node *arg_code, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /* traverse to CBLOCK expression */
+    CODE_CBLOCK (arg_code) = TRAVopt (CODE_CBLOCK (arg_code), arg_info);
+
+    /* traverse to CEXPRS expression */
+    CODE_CEXPRS (arg_code) = TRAVopt (CODE_CEXPRS (arg_code), arg_info);
+
+    /* traverse to next expression */
+    CODE_NEXT (arg_code) = TRAVopt (CODE_NEXT (arg_code), arg_info);
+
+    DBUG_RETURN (arg_code);
 }
 
 /* traversal functions for lirmov_tab */

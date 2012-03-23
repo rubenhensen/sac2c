@@ -63,6 +63,7 @@ extern node *LIRwith (node *arg_node, info *arg_info);
 extern node *LIRwithid (node *arg_node, info *arg_info);
 extern node *LIRexprs (node *arg_node, info *arg_info);
 extern node *LIRids (node *arg_node, info *arg_info);
+extern node *LIRcode (node *arg_node, info *arg_info);
 
 /*****************************************************************************
  *

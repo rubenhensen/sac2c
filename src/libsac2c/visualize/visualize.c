@@ -698,7 +698,8 @@ VISUALvardec (node *arg_node, info *arg_info)
     }
 
     // add edge between two nodes with lable
-    if (NULL != VARDEC_NEXT (arg_node)) {
+    // Do not print it when drawing AttrEdges to ease dot's task
+    if (!INFO_DRAW_ATTREDGES (arg_info) && (NULL != VARDEC_NEXT (arg_node))) {
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Next];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
                                            VARDEC_NEXT (arg_node)));

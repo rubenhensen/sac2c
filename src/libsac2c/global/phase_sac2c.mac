@@ -793,6 +793,10 @@ SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemoval,
             && global.optimize.dodcr,
           opt)
 
+/* TODO: lir maybe should be run in a loop */
+SUBPHASE (lir2, "Applying do-loop/with-loop invariant removal", LIRdoLoopInvariantRemoval,
+          global.optimize.dols &&global.optimize.dolir, opt)
+
 SUBPHASE (fprc, "Filtering partial reuse candidates", FPRCdoFilterPartialReuseCandidates,
           (global.optimize.douip && global.optimize.dopr), opt)
 

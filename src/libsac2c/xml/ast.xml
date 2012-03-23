@@ -1840,6 +1840,7 @@
         <node name="With" />
         <node name="Withid" />
         <node name="Exprs" />
+        <node name="Code" />
 </travuser>
     </traversal>
     <traversal id="DLIR" name="Do-Loop Invariants Traversal" default="sons" include="loop_invariant_removal.h" >
