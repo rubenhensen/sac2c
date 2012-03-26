@@ -1825,10 +1825,10 @@
 	</travuser>
     </traversal>
     <traversal id="LIR" name="Loop Invariants Traversal" default="sons" include="SSALIR.h" >
-<travuser>
-  <node name="Ids" />
-  <node name="Assign" />
-  <node name="Fundef" />
+      <travuser>
+        <node name="Ids" />
+        <node name="Assign" />
+        <node name="Fundef" />
         <node name="Arg" />
         <node name="Vardec" />
         <node name="Block" />
@@ -1841,13 +1841,13 @@
         <node name="Withid" />
         <node name="Exprs" />
         <node name="Code" />
-</travuser>
+      </travuser>
     </traversal>
     <traversal id="DLIR" name="Do-Loop Invariants Traversal" default="sons" include="loop_invariant_removal.h" >
-<travuser>
-  <node name="Ids" />
-  <node name="Assign" />
-  <node name="Fundef" />
+      <travuser>
+        <node name="Ids" />
+        <node name="Assign" />
+        <node name="Fundef" />
         <node name="Arg" />
         <node name="Vardec" />
         <node name="Block" />
@@ -1859,13 +1859,13 @@
         <node name="With" />
         <node name="Withid" />
         <node name="Exprs" />
-</travuser>
+      </travuser>
     </traversal>
     <traversal id="WLIR" name="Loop Invariants Traversal" default="sons" include="withloop_invariant_removal.h" >
-<travuser>
-  <node name="Ids" />
-  <node name="Assign" />
-  <node name="Fundef" />
+      <travuser>
+        <node name="Ids" />
+        <node name="Assign" />
+        <node name="Fundef" />
         <node name="Arg" />
         <node name="Vardec" />
         <node name="Block" />
@@ -1873,27 +1873,27 @@
         <node name="Id" />
         <node name="With" />
         <node name="Withid" />
-</travuser>
+      </travuser>
     </traversal>
     <traversal id="LIRMOV" name="Loop Invariants Move Traversal" default="sons" include="SSALIR.h" >
-<travuser>
-  <node name="Id" />
-  <node name="Withid" />
-  <node name="Assign" />
+      <travuser>
+        <node name="Id" />
+        <node name="Withid" />
+        <node name="Assign" />
         <node name="Block" />
         <node name="Let" />
         <node name="Ids" />
-</travuser>
+      </travuser>
     </traversal>
     <traversal id="DLIRMOV" name="Loop Invariants Move Traversal" default="sons" include="loop_invariant_removal.h" >
-<travuser>
-  <node name="Id" />
-  <node name="Withid" />
-  <node name="Assign" />
+      <travuser>
+        <node name="Id" />
+        <node name="Withid" />
+        <node name="Assign" />
         <node name="Block" />
         <node name="Let" />
         <node name="Ids" />
-</travuser>
+      </travuser>
     </traversal>
     <traversal id="LUR" name="Loop Unrolling Traversal" default="sons" include="SSALUR.h" >
 <travuser>

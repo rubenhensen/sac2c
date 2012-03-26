@@ -154,6 +154,29 @@
  *     Hence, the only way for a LACFUN to end up in LIRfundef
  *     is via the N_ap of its caller.
  *
+ * Remark on With-Loop (WL) independence detection:
+ *   Nested with-loops form scope levels. When considering a WL for lifting
+ *   the variables defined within it (i.e. on WITHDEPTH+1), and all that
+ *   are even deeper, have no impact on the WL's independence.
+ *   These local variables are moved along with the WL, should it be lifted.
+ *   However, other variables on the same or higher levels (0 <= lvl <= WITHDEPTH)
+ *   referenced by expressions in WL (e.g. in definitions of those local
+ *   variables) specify true data dependencies. These dependencies
+ *   must be honoured: a WL can be moved up precisely to the maximal (deepest) level
+ *   on which variables referenced _anywhere_ within it reside.
+ *
+ *   Dependencies are tracked on a nest-level granularity in the DEPTHMASK bool array
+ *   in the info structure. When an N_id is encountered within a WL the flag
+ *   corresponding to the level on which the N_id resides is set.
+ *   The length of the bool array is always WITHDEPTH+1 elements because
+ *   an N_id on the level WITHDEPTH can be seen at the worst.
+ *   When backtracking from N_with node the array is shortened by 1 and the superfluous
+ *   element is simply discarded. The discarded flag belongs to the level that is
+ *sub-local to the parent and thus unimportant to it. In N_assign a clean array is created
+ *for sons traversal. When backtracking the mask obtained from sons is merged using the
+ *logical-OR into the mask returned to parent. This is because the mask in fact represents
+ *data dependencies of the whole subtree, potentially consisting of several assignments.
+ *
  *****************************************************************************/
 #include "SSALIR.h"
 
@@ -211,26 +234,34 @@ struct INFO {
  * INFO macros
  *
  * INFO_FUNDEF              : node* = set in LIRfundef()
- * INFO_PREASSIGN
- * INFO_POSTASSIGN
- * INFO_ASSIGN
- * INFO_NONLIRUSE
- * INFO_CONDSTATUS
+ * INFO_PREASSIGN           : node* = assignments that should be moved just before the
+ current one
+ * INFO_POSTASSIGN          : node* = assignments that should be moved just after the
+ current one
+ * INFO_ASSIGN              : node* = current N_assign node. Transfered to
+ INFO_FUNDEFEXTASSIGN upon entering fundef.
+ * INFO_NONLIRUSE           : int = number of non-LIR N_id. If in top-block and there is
+ none non-LIR in N_let, then the N_let can be moved up.
+ * INFO_CONDSTATUS          : int = {CONDSTATUS_NOCOND, CONDSTATUS_THENPART,
+ CONDSTATUS_ELSEPART}. The segment of the conditional expression in ssa form in LAC fun.
+ that we're traversing.
  * INFO_WITHDEPTH           : int = with-loop depth level, reset in fundef,
  inc/decremented in LIRwith
  * INFO_TOPBLOCK            : bool = flag indicates we're in the function's top-level
  block
  * INFO_FLAG                : int {LIR_NORMAL, LIR_MOVEUP, LIR_INRETURN, LIR_MOVELOCAL,
  LIR_MOVEDOWN} = traverse sub-mode
- * INFO_EXTPREASSIGN
- * INFO_EXTPOSTASSIGN
- * INFO_MOVELUT             : lut_t* = ??
+ * INFO_EXTPREASSIGN        : node* = N_assign's that are being moved out of lac-fun. into
+ parent
+ * INFO_EXTPOSTASSIGN       : node* = N_assign's that are being moved down across lac-fun
+ * INFO_MOVELUT             : lut_t* = LUT between an internal arg and the external vardec
+ pair
  * INFO_APARGCHAIN          : node* = in LOOP-fun: fun. arg chain of the parent ap. call;
                               Consumed in LIRarg() along its passage over fun. args. when
  they're paired with internal args.
- * INFO_APRESCHAIN
+ * INFO_APRESCHAIN          : node* = results chain of the child func.
  * INFO_EXTFUNDEF           : node* = in LAC-fun: the external calling fundef
- * INFO_RESULTMAP           : nodelist* = ??
+ * INFO_RESULTMAP           : nodelist* = local id -> result ids
  * INFO_DEPTHMASK           : bool* = array of [WITHDEPTH+1] bools. Indicates there's a
  dependecy on a variable defined on a given level of the with-loop nest tree.
  * INFO_SETDEPTH            : int = the depth to which the avis definition depths
@@ -244,7 +275,8 @@ struct INFO {
  the fun. (only for TS_module)
  * INFO_TRAVSTART           : {TS_fundef, TS_module} = mode
  * INFO_TRAVINLAC           : bool = set in LIRap() upon entering LAC fundef
- * INFO_LHS                 : node* = ??
+ * INFO_LHS                 : node* = left-hand side, i.e. LET_IDS. Used for debug print
+ purposes.
  */
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_PREASSIGN(n) (n->preassign)
@@ -306,7 +338,7 @@ MakeInfo ()
     INFO_FUNDEFINTASSIGN (result) = NULL;
     INFO_TRAVSTART (result) = TS_fundef;
     INFO_TRAVINLAC (result) = FALSE;
-    INFO_LHS (result) = FALSE;
+    INFO_LHS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -322,68 +354,6 @@ FreeInfo (info *info)
     info = MEMfree (info);
 
     DBUG_RETURN (info);
-}
-
-/* mark the given level as providing a depency into the current tree */
-static inline void
-depthmask_mark_level (info *inf, int level)
-{
-    DBUG_ASSERT ((level >= 0) && (level <= INFO_WITHDEPTH (inf)),
-                 "cannot have/set dependency on a variable deeper than the current "
-                 "nesting level");
-    INFO_DEPTHMASK (inf)[level] = TRUE;
-}
-
-/* extract INFO_WITHDEPTH as a 64-bit uint, for debug prints only! */
-static uint64_t
-dmask2ui64 (info *inf)
-{
-    uint64_t v = 0;
-    for (int i = 0; i <= INFO_WITHDEPTH (inf); ++i) {
-        if (INFO_DEPTHMASK (inf)[i])
-            v |= (1ULL << i);
-    }
-    return v;
-}
-
-/* find out the deepest level marked */
-/*  0000 -> 0
- *  0001 -> 0
- *  001X -> 1
- *  01XX -> 2, and so on  */
-static int
-depthmask_deepest_level (const info *inf)
-{
-    for (int i = INFO_WITHDEPTH (inf); i >= 0; --i) {
-        if (INFO_DEPTHMASK (inf)[i])
-            return i;
-    }
-    return 0;
-}
-
-/* clear the whole depth-mask */
-static inline void
-clear_dmask (bool *dmask, int wl_depth)
-{
-    for (int i = 0; i <= wl_depth; ++i)
-        dmask[i] = FALSE;
-}
-
-static void
-copy_dmask (bool *dst, bool *src, int wl_depth)
-{
-    for (int i = 0; i <= wl_depth; ++i) {
-        dst[i] = src[i];
-    }
-}
-
-/* merge (OR) depth-mask src into dst */
-static void
-merge_dmask (bool *dst, bool *src, int wl_depth)
-{
-    for (int i = 0; i <= wl_depth; ++i) {
-        dst[i] = dst[i] || src[i];
-    }
 }
 
 /* INFO_CONDSTATUS */
@@ -456,6 +426,129 @@ ForbiddenMovement (node *chain)
     DBUG_RETURN (res);
 }
 #endif
+
+/******************************************************************************
+ *
+ * function:
+ *  static inline void depthmask_mark_level(info *inf, int level)
+ *
+ * Mark the given WL level as providing dependency for the current
+ * expression tree. 'Level' can be from 0 (top block) up to and including
+ * INFO_WITHDEPTH, indicating a dependency within the current level.
+ * In the later case the expression is effectively non-WL-invariant
+ * and thus cannot be moved.
+ *
+ *****************************************************************************/
+static inline void
+depthmask_mark_level (info *inf, int level)
+{
+    DBUG_ENTER ();
+    DBUG_ASSERT ((level >= 0) && (level <= INFO_WITHDEPTH (inf)),
+                 "cannot have/set dependency on a variable deeper than the current "
+                 "nesting level");
+
+    INFO_DEPTHMASK (inf)[level] = TRUE;
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  uint64_t dmask2ui64(info *inf)
+ *
+ * Extract INFO_WITHDEPTH as a 64-bit uint.
+ * Use for debug prints only!
+ *
+ *****************************************************************************/
+static uint64_t
+dmask2ui64 (info *inf)
+{
+    DBUG_ENTER ();
+
+    uint64_t v = 0;
+    for (int i = 0; i <= INFO_WITHDEPTH (inf); ++i) {
+        if (INFO_DEPTHMASK (inf)[i])
+            v |= (1ULL << i);
+    }
+
+    DBUG_RETURN (v);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  int depthmask_deepest_level(const info *inf)
+ *
+ * Find out the deepest marked WL level. The deepest level is the level onto
+ * which and expression can be moved while still having all dependencies
+ * satisfied.
+ *
+ * Examples:
+ *  0000 -> 0
+ *  0001 -> 0
+ *  001X -> 1
+ *  01XX -> 2, and so on
+ *
+ *****************************************************************************/
+static int
+depthmask_deepest_level (const info *inf)
+{
+    int result = 0; /* default: depends on top-level */
+
+    DBUG_ENTER ();
+
+    for (int i = INFO_WITHDEPTH (inf); i >= 0; --i) {
+        if (INFO_DEPTHMASK (inf)[i]) {
+            result = i;
+            break;
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * void clear_dmask(bool *dmask, int wl_depth)
+ *    Clear the whole depth-mask.
+ *
+ * void copy_dmask(bool *dst, bool *src, int wl_depth)
+ *    Copy depth-masks.
+ *
+ * void merge_dmask(bool *dst, bool *src, int wl_depth)
+ *    Merge depth-mask src into dst using logical OR.
+ *
+ *****************************************************************************/
+static inline void
+clear_dmask (bool *dmask, int wl_depth)
+{
+    DBUG_ENTER ();
+    for (int i = 0; i <= wl_depth; ++i) {
+        dmask[i] = FALSE;
+    }
+    DBUG_RETURN ();
+}
+
+static void
+copy_dmask (bool *dst, bool *src, int wl_depth)
+{
+    DBUG_ENTER ();
+    for (int i = 0; i <= wl_depth; ++i) {
+        dst[i] = src[i];
+    }
+    DBUG_RETURN ();
+}
+
+static void
+merge_dmask (bool *dst, bool *src, int wl_depth)
+{
+    DBUG_ENTER ();
+    for (int i = 0; i <= wl_depth; ++i) {
+        dst[i] = dst[i] || src[i];
+    }
+    DBUG_RETURN ();
+}
 
 /******************************************************************************
  *
