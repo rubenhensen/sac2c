@@ -18,7 +18,7 @@
  *
  *****************************************************************************/
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "F2L"
 #include "debug.h"
 
 #include "types.h"
@@ -284,8 +284,17 @@ F2Lassign (node *arg_node, info *arg_info)
             }
         }
         break;
+#if 0
+  /* This does not help */
+  case N_annotate:
+    if (ASSIGN_NEXT( arg_node) != NULL) {
+      ASSIGN_NEXT( arg_node) = TRAVdo( ASSIGN_NEXT( arg_node), arg_info);
+    }
+    break;
+#endif
     default:
-        DBUG_ASSERT (FALSE, "Control flow should not reach here");
+        DBUG_ASSERT (FALSE, "Unexpected node type %d in F2Lassign.",
+                     NODE_TYPE (ASSIGN_STMT (arg_node)));
     }
 
     DBUG_RETURN (arg_node);
