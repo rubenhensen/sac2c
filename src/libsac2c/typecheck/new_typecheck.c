@@ -601,6 +601,13 @@ TypeCheckFunctionBody (node *fundef, info *arg_info)
      */
 
     inf_type = INFO_TYPE (arg_info);
+
+    if (!inf_type) {
+        CTIabortLine (NODE_LINE (fundef),
+                      "Could not infer the return type of function \"%s\".",
+                      FUNDEF_NAME (fundef));
+    }
+
     inf_n = TYgetProductSize (inf_type);
 
     DBUG_EXECUTE (tmp_str = TYtype2String (inf_type, FALSE, 0));
