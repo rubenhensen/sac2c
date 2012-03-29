@@ -1076,8 +1076,10 @@ DAAprf (node *arg_node, info *arg_info)
                           = CreateSharedMemoryForReuse (access_info, arg_info);
                     } else if (CUAI_TYPE (access_info) == ACCTY_COALESCE) {
                         /* Use shared memory to enable memory access coalescing */
-                        ASSIGN_ACCESS_INFO (assign)
-                          = CreateSharedMemoryForCoalescing (access_info, arg_info);
+                        if (global.optimize.docoal) {
+                            ASSIGN_ACCESS_INFO (assign)
+                              = CreateSharedMemoryForCoalescing (access_info, arg_info);
+                        }
                     } else {
                         DBUG_ASSERT ((0), "Unknow access info type!");
                     }
@@ -1145,7 +1147,8 @@ DAAprf (node *arg_node, info *arg_info)
                     INFO_ACCESS_INFO (arg_info)
                       = CreateSharedMemoryForReuse (INFO_ACCESS_INFO (arg_info),
                                                     arg_info);
-                } else if (CoalescingNeeded (INFO_ACCESS_INFO (arg_info), arg_info)) {
+                } else if (global.optimize.docoal
+                           && CoalescingNeeded (INFO_ACCESS_INFO (arg_info), arg_info)) {
                     INFO_ACCESS_INFO (arg_info)
                       = CreateSharedMemoryForCoalescing (INFO_ACCESS_INFO (arg_info),
                                                          arg_info);
