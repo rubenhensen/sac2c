@@ -7094,16 +7094,24 @@ COMPprfRunMtGenarray (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *ret_node;
+    node *mem_id, *thresh_num;
 
     DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
+    mem_id = EXPRS_EXPR (PRF_EXPRS1 (arg_node));
+    thresh_num = EXPRS_EXPR (PRF_EXPRS2 (arg_node));
 
-    ret_node = TCmakeAssignIcm1 ("ND_PRF_RUNMT_GENARRAY__DATA",
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_RUNMT_GENARRAY__DATA",
+                                 /* result of the test: bool scalar */
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                               FALSE, TRUE, FALSE, NULL),
-                                 NULL);
-
+                                               FALSE, FALSE, FALSE, NULL),
+                                 /* N_id from GENARRAY_MEM: */
+                                 MakeTypeArgs (ID_NAME (mem_id), ID_TYPE (mem_id), FALSE,
+                                               FALSE, FALSE, NULL),
+                                 /* minimal parallel size.
+                                    This is just global.min_parallel_size */
+                                 DUPdoDupNode (thresh_num), NULL);
     DBUG_RETURN (ret_node);
 }
 
@@ -7126,15 +7134,24 @@ COMPprfRunMtModarray (node *arg_node, info *arg_info)
 {
     node *let_ids;
     node *ret_node;
+    node *mem_id, *thresh_num;
 
     DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
+    mem_id = EXPRS_EXPR (PRF_EXPRS1 (arg_node));
+    thresh_num = EXPRS_EXPR (PRF_EXPRS2 (arg_node));
 
-    ret_node = TCmakeAssignIcm1 ("ND_PRF_RUNMT_MODARRAY__DATA",
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_RUNMT_MODARRAY__DATA",
+                                 /* result of the test: bool scalar */
                                  MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids),
-                                               FALSE, TRUE, FALSE, NULL),
-                                 NULL);
+                                               FALSE, FALSE, FALSE, NULL),
+                                 /* N_id from MODARRAY_MEM: */
+                                 MakeTypeArgs (ID_NAME (mem_id), ID_TYPE (mem_id), FALSE,
+                                               FALSE, FALSE, NULL),
+                                 /* minimal parallel size.
+                                    This is just global.min_parallel_size */
+                                 DUPdoDupNode (thresh_num), NULL);
 
     DBUG_RETURN (ret_node);
 }

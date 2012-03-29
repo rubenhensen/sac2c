@@ -438,7 +438,8 @@ MTCMgenarray (node *arg_node, info *arg_info)
              */
 
             INFO_CONDITION (arg_info)
-              = TCmakePrf1 (F_run_mt_genarray, DUPdoDupNode (GENARRAY_MEM (arg_node)));
+              = TCmakePrf2 (F_run_mt_genarray, DUPdoDupNode (GENARRAY_MEM (arg_node)),
+                            TBmakeNum (global.min_parallel_size));
         }
     }
 
@@ -454,7 +455,6 @@ MTCMgenarray (node *arg_node, info *arg_info)
 node *
 MTCMmodarray (node *arg_node, info *arg_info)
 {
-    node *arg;
     int size;
 
     DBUG_ENTER ();
@@ -499,8 +499,9 @@ MTCMmodarray (node *arg_node, info *arg_info)
          * existing condition.
          */
         if (INFO_CONDITION (arg_info) == NULL) {
-            arg = TBmakeId (ID_AVIS (MODARRAY_ARRAY (arg_node)));
-            INFO_CONDITION (arg_info) = TCmakePrf1 (F_run_mt_modarray, arg);
+            INFO_CONDITION (arg_info)
+              = TCmakePrf2 (F_run_mt_modarray, DUPdoDupNode (MODARRAY_MEM (arg_node)),
+                            TBmakeNum (global.min_parallel_size));
         }
     }
 

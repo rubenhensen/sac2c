@@ -350,11 +350,15 @@
 /*
  * SAC_PRF_RUNMT* primitive functions. These decide whether to execute the
  * following SPMD block sequentially or in parallel.
+ * We compare the number of elements in the result array to a threshold.
+ * In the AKS case the same test is performed statically in sac2c.
  */
 
-#define SAC_ND_PRF_RUNMT_GENARRAY__DATA(var_NT, args) SAC_ND_WRITE (var_NT, 0) = 0;
+#define SAC_ND_PRF_RUNMT_GENARRAY__DATA(var_NT, mem_NT, min_parallel_size)               \
+    SAC_ND_WRITE (var_NT, 0) = (SAC_ND_A_DESC_SIZE (mem_NT) >= (min_parallel_size));
 
-#define SAC_ND_PRF_RUNMT_MODARRAY__DATA(var_NT, args) SAC_ND_WRITE (var_NT, 0) = 0;
+#define SAC_ND_PRF_RUNMT_MODARRAY__DATA(var_NT, mem_NT, min_parallel_size)               \
+    SAC_ND_WRITE (var_NT, 0) = (SAC_ND_A_DESC_SIZE (mem_NT) >= (min_parallel_size));
 
 #define SAC_ND_PRF_RUNMT_FOLD__DATA(var_NT, args) SAC_ND_WRITE (var_NT, 0) = 0;
 
