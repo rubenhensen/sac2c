@@ -417,8 +417,16 @@ PFap (node *arg_node, info *arg_info)
     /*
      * Then we insert the pointer to the function being called into
      * the arg_info node for later usage in PFassign.
+     *
+     * Do NOT place annotations around recursive calls in loop-funs
+     * as it will break the flattening pass in fun2lac.
+     * The flattening pass -and surely many other- expect quite a rigid
+     * structure of loop-funs, namely a recursive application should
+     * be the last assignment in an N_cond true-branch.
      */
-    INFO_PF_FUNDEF (arg_info) = fundef;
+    if (!AP_ISRECURSIVEDOFUNCALL (arg_node)) {
+        INFO_PF_FUNDEF (arg_info) = fundef;
+    }
 
     /*
      * Note here, that we do not need to traverse the arguments here

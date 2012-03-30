@@ -285,7 +285,10 @@ F2Lassign (node *arg_node, info *arg_info)
         }
         break;
 #if 0
-  /* This does not help */
+  /* There (probably) should not be annotations in loop-funs at all as they may break
+   * assumptions about loop-fun structure, e.g. see the elaborate if-conditions
+   * in the N_let case above that checks that a function call is the last assignment
+   * in N_cond's true-branch. */
   case N_annotate:
     if (ASSIGN_NEXT( arg_node) != NULL) {
       ASSIGN_NEXT( arg_node) = TRAVdo( ASSIGN_NEXT( arg_node), arg_info);
@@ -397,10 +400,14 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
     node *body_assigns, *then_assigns, *else_assigns, *return_assign, *loop_pred;
 
     DBUG_ENTER ();
+    DBUG_PRINT ("TransformIntoDoLoop: began '%s'\n", FUNDEF_NAME (arg_node));
 
     INFO_FUNDEF (arg_info) = arg_node;
 
     FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+    DBUG_ASSERT (INFO_RECAP (arg_info),
+                 "Could not find our recursive application in loop-fun '%s'",
+                 FUNDEF_NAME (arg_node));
 
     if (FUNDEF_ARGS (arg_node) != NULL) {
         INFO_RECARG (arg_info) = AP_ARGS (LET_EXPR (ASSIGN_STMT (INFO_RECAP (arg_info))));
@@ -468,6 +475,7 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
 
     INFO_FUNDEF (arg_info) = NULL;
 
+    DBUG_PRINT ("TransformIntoDoLoop: finished '%s'\n", FUNDEF_NAME (arg_node));
     DBUG_RETURN (arg_node);
 }
 
