@@ -97,6 +97,7 @@
 #include "constant_folding_info.h"
 #include "phase.h"
 #include "flattengenerators.h"
+#include "saa_constant_folding.h"
 
 /* local used helper functions */
 
@@ -1961,16 +1962,21 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
     constant *arg1c = NULL;
     constant *scalarp;
     pattern *pat1;
+    bool b;
 
     DBUG_ENTER ();
 
     pat1 = PMconst (1, PMAgetVal (&arg1c));
 
-    if ((PMmatchFlatSkipExtrema (pat1, PRF_ARG1 (arg_node)) && /* Case 1*/
-         COisNonNeg (arg1c, TRUE))
-        || ((NULL != AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))))
-            && PMmatchFlatSkipExtrema (pat1, AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))))
-            && COisNonNeg (arg1c, TRUE))) {
+    /* Case 1*/
+    b = PMmatchFlatSkipExtrema (pat1, PRF_ARG1 (arg_node)) && COisNonNeg (arg1c, TRUE);
+
+    if (!b) {
+        arg1c = SAACFchaseMinMax (PRF_ARG1 (arg_node), SAACFCHASEMIN);
+        b = (NULL != arg1c) && COisNonNeg (arg1c, TRUE);
+    }
+
+    if (b) {
         DBUG_PRINT ("SCSprf_non_neg_val removed guard");
 
         /* Generate   p = TRUE; */
@@ -2106,7 +2112,6 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     node *val2 = NULL;
     node *val3 = NULL;
     node *res2;
-    node *minv;
     constant *con1 = NULL;
     constant *con2 = NULL;
     pattern *pat1;
@@ -2193,8 +2198,7 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
 
     /* Case 5 */
     if (NULL == res) {
-        minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
-        con1 = (NULL != minv) ? COaST2Constant (minv) : NULL;
+        con1 = SAACFchaseMinMax (PRF_ARG1 (arg_node), SAACFCHASEMIN);
         con2 = COaST2Constant (PRF_ARG2 (arg_node));
         if ((NULL != con1) && (NULL != con2) && (COlt (con1, con2, NULL))) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
@@ -2235,7 +2239,7 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
  *         loop fusion/array contraction performance.
  *         We can remove the second guard, on iv''.
  *
- *       Case 5: Constant AVIS_MINVAL( y) <= constant y.
+ *       Case 5: Constant AVIS_MINVAL( x) <= constant y.
  *
  *****************************************************************************/
 node *
@@ -2246,13 +2250,14 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     node *val2 = NULL;
     node *val3 = NULL;
     node *res2;
-    node *minv;
+    node *b;
     constant *con1 = NULL;
     constant *con2 = NULL;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
+    constant *cob = NULL;
 
     DBUG_ENTER ();
 
@@ -2273,9 +2278,9 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
         || (PMmatchFlatSkipExtrema (pat1, arg_node) && (COle (con1, con2, NULL)))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT_TAG ("SCS", "removed guard Case 1( %s, %s)",
-                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+        DBUG_PRINT ("removed guard Case 1( %s, %s)",
+                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                    AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
@@ -2289,9 +2294,9 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
             FREEdoFreeNode (res2);
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT_TAG ("SCS", "removed guard Case 3a( %s, %s)",
-                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+            DBUG_PRINT ("removed guard Case 3a( %s, %s)",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
         }
     }
 
@@ -2310,22 +2315,27 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     if ((NULL == res) && (PMmatchFlatSkipExtrema (pat3, arg_node))
         && (PMmatchFlatSkipExtrema (pat4, val))) {
         res = TBmakeExprs (DUPdoDupNode (val3), TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT_TAG ("SCS", "removed guard Case 4( %s -> %s)",
-                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                        AVIS_NAME (ID_AVIS (val3)));
+        DBUG_PRINT ("removed guard Case 4( %s -> %s)",
+                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                    AVIS_NAME (ID_AVIS (val3)));
     }
 
     /* Case 5 */
     if (NULL == res) {
-        minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
-        con1 = (NULL != minv) ? COaST2Constant (minv) : NULL;
-        con2 = COaST2Constant (PRF_ARG2 (arg_node));
-        if ((NULL != con1) && (NULL != con2) && (COle (con1, con2, NULL))) {
-            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                               TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT_TAG ("SCS", "removed guard Case 5( %s, %s)",
+        b = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
+                      SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+        if (NULL != b) {
+            /* The right fix is to change saarelat semantics... */
+            cob = COaST2Constant (b);
+            if (COisTrue (cob, TRUE)) {
+                res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                                   TBmakeExprs (TBmakeBool (TRUE), NULL));
+                DBUG_PRINT ("removed guard Case 5( %s, %s)",
                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+            }
+            cob = (NULL != cob) ? COfreeConstant (cob) : cob;
+            b = (NULL != b) ? FREEdoFreeNode (b) : b;
         }
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
@@ -2353,6 +2363,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
  *         iv'', p' =_val_lt_val_SxS_( iv', y);
  *
  *       Case 5: Constant AVIS_MINVAL( y) <= constant y.
+ *               Or, AVIS_MINVAL(... AVIS_MINVAL( y)) <= constant y.
  *
  *****************************************************************************/
 node *
@@ -2363,9 +2374,10 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
     node *val2 = NULL;
     node *val3 = NULL;
     node *res2;
-    node *minv;
+    node *b;
     constant *con1 = NULL;
     constant *con2 = NULL;
+    constant *cob = NULL;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
@@ -2452,17 +2464,20 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
 
     /* Case 5 */
     if (NULL == res) {
-        minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
-        con1 = (NULL != minv) ? COaST2Constant (minv) : NULL;
-        con2 = COaST2Constant (PRF_ARG2 (arg_node));
-        if ((NULL != con1) && (NULL != con2)
-            && (COgetExtent (con1, 0) == COgetExtent (con2, 0))
-            && (COle (con1, con2, NULL))) {
-            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                               TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT_TAG ("SCS", "removed guard Case 5( %s, %s)",
+        b = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
+                      SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+        if (NULL != b) {
+            /* The right fix is to change saarelat semantics... */
+            cob = COaST2Constant (b);
+            if (COisTrue (cob, TRUE)) {
+                res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                                   TBmakeExprs (TBmakeBool (TRUE), NULL));
+                DBUG_PRINT ("removed guard Case 5( %s, %s)",
                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+            }
+            cob = (NULL != cob) ? COfreeConstant (cob) : cob;
+            b = (NULL != b) ? FREEdoFreeNode (b) : b;
         }
     }
 

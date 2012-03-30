@@ -72,7 +72,7 @@
 /** <!--********************************************************************-->
  *
  *
- * function: constant *ChaseMinMax(node *arg_node, bool minmax)
+ * function: constant *SAACFchaseMinMax(node *arg_node, bool minmax)
  *
  * description: Chase AVIS_MIN( AVIS_MIN( AVIS_MIN( arg_node)))
  *              until we find a constant (or don't).
@@ -80,12 +80,8 @@
  * returns: constant or NULL.
  *
  *****************************************************************************/
-
-#define RELMIN FALSE
-#define RELMAX TRUE
-
-static constant *
-ChaseMinMax (node *arg_node, bool minmax)
+constant *
+SAACFchaseMinMax (node *arg_node, bool minmax)
 {
     DBUG_ENTER ();
 
@@ -104,7 +100,7 @@ ChaseMinMax (node *arg_node, bool minmax)
              */
         } else {
             extr = minmax ? AVIS_MAX (ID_AVIS (arg_node)) : AVIS_MIN (ID_AVIS (arg_node));
-            z = ChaseMinMax (extr, minmax);
+            z = SAACFchaseMinMax (extr, minmax);
         }
         pat = PMfree (pat);
     }
@@ -547,7 +543,7 @@ SAACFprf_non_neg_val_V (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
-    con = ChaseMinMax (minv, RELMIN);
+    con = SAACFchaseMinMax (minv, SAACFCHASEMIN);
     if ((NULL != con) && COisNonNeg (con, TRUE)) {
         DBUG_PRINT ("non_neg_val_V guard removed");
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
@@ -576,7 +572,7 @@ SAACFprf_non_neg_val_S (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
-    con = ChaseMinMax (minv, RELMIN);
+    con = SAACFchaseMinMax (minv, SAACFCHASEMIN);
     if ((NULL != con) && COisNonNeg (con, TRUE)) {
         DBUG_PRINT ("non_neg_val_S guard removed");
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
@@ -738,7 +734,7 @@ SAACFprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
                 z = TRUE;
             } else {
                 maxv = AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node)));
-                val2 = ChaseMinMax (maxv, RELMAX);
+                val2 = SAACFchaseMinMax (maxv, SAACFCHASEMAX);
                 if ((NULL != val2) && COle (val2, shp, NULL)) { /* Case 2 */
                     /* COle because maxv is 1 greater than its true value */
                     z = TRUE;
@@ -851,14 +847,12 @@ SAACFprf_val_lt_val_SxS (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 
-typedef enum { REL_lt, REL_le, REL_ge, REL_gt } relationalfns;
-
 static constant *(*relfn[]) (constant *, constant *, constant *)
   = {COlt, COle, COge, COgt};
 
 /** <!--********************************************************************-->
  *
- * @fn static node *saarelat( node *prfarg1, node *prfarg2, info *arg_info,
+ * @fn node *saarelat( node *prfarg1, node *prfarg2, info *arg_info,
  *                         node* ( *fn)( node *, node *),
  *                         bool minmax,
  *                         node *prfargres,
@@ -894,11 +888,11 @@ static constant *(*relfn[]) (constant *, constant *, constant *)
  * @params: recur: Recur once with recur FALSE, if recur is TRUE &&
  *          res still NULL.
  *
- * @result: NULL, or a Boolean of the same shape as prfargres, of
+ * @result: NULL, or a Boolean ast constant of the same shape as prfargres, of
  *          all TRUE or FALSE.
  *
  *****************************************************************************/
-static node *
+node *
 saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool minmax,
           node *prfargres, bool tf, bool recur)
 {
@@ -919,7 +913,7 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
     if (N_id == NODE_TYPE (prfarg1)) {
 
         arg1ex = minmax ? AVIS_MAX (ID_AVIS (prfarg1)) : AVIS_MIN (ID_AVIS (prfarg1));
-        arg1c = ChaseMinMax (arg1ex, minmax);
+        arg1c = SAACFchaseMinMax (arg1ex, minmax);
         arg2c = COaST2Constant (prfarg2);
 
         if ((NULL != arg1c) && (NULL != arg2c)) {
@@ -995,7 +989,7 @@ SAACFprf_lt_SxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
-                    RELMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1021,7 +1015,7 @@ SAACFprf_lt_SxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
-                    RELMAX, PRF_ARG2 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMAX, PRF_ARG2 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1047,7 +1041,7 @@ SAACFprf_lt_VxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
-                    RELMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1073,7 +1067,7 @@ SAACFprf_lt_VxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
-                    RELMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1099,7 +1093,7 @@ SAACFprf_le_SxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
-                    RELMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1125,7 +1119,7 @@ SAACFprf_le_SxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
-                    RELMAX, PRF_ARG2 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMAX, PRF_ARG2 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1151,7 +1145,7 @@ SAACFprf_le_VxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
-                    RELMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1177,7 +1171,7 @@ SAACFprf_le_VxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
-                    RELMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1203,7 +1197,7 @@ SAACFprf_ge_SxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_ge, REL_le,
-                    RELMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1227,7 +1221,7 @@ SAACFprf_ge_SxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_ge, REL_le,
-                    RELMIN, PRF_ARG2 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMIN, PRF_ARG2 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1251,7 +1245,7 @@ SAACFprf_ge_VxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_ge, REL_le,
-                    RELMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1277,7 +1271,7 @@ SAACFprf_ge_VxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_ge, REL_le,
-                    RELMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1303,7 +1297,7 @@ SAACFprf_gt_SxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_gt, REL_lt,
-                    RELMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1329,7 +1323,7 @@ SAACFprf_gt_SxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_gt, REL_lt,
-                    RELMIN, PRF_ARG2 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMIN, PRF_ARG2 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1355,7 +1349,7 @@ SAACFprf_gt_VxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_gt, REL_lt,
-                    RELMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }
@@ -1381,7 +1375,7 @@ SAACFprf_gt_VxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_gt, REL_lt,
-                    RELMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
+                    SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     DBUG_RETURN (res);
 }

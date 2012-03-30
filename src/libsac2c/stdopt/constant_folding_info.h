@@ -2,6 +2,8 @@
  * $Id constant_folding_info.h rbe $
  */
 
+#ifndef _SAC__CONSTANTFOLDING_H_
+#define _SAC__CONSTANTFOLDING_H_
 /** <!--********************************************************************-->
  *
  * @name INFO structure
@@ -42,3 +44,7 @@ struct INFO {
 #define INFO_PROXYARR(n) (n->proxyarr)
 
 #define INFO_DOINGEXTREMA(n) (n->doingextrema)
+
+typedef enum { REL_lt, REL_le, REL_ge, REL_gt } relationalfns;
+
+#endif //  _SAC__CONSTANTFOLDING_H_

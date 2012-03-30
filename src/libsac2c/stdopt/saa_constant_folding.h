@@ -52,4 +52,11 @@ extern node *SAACFprf_gt_SxV (node *arg_node, info *arg_info);
 extern node *SAACFprf_gt_VxS (node *arg_node, info *arg_info);
 extern node *SAACFprf_gt_VxV (node *arg_node, info *arg_info);
 
+extern constant *SAACFchaseMinMax (node *arg_node, bool minmax);
+#define SAACFCHASEMIN FALSE
+#define SAACFCHASEMAX TRUE
+
+node *saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb,
+                bool minmax, node *prfargres, bool tf, bool recur);
+
 #endif /* _SAC_saa_constantfolding_h_ */
