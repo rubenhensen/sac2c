@@ -2112,8 +2112,10 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     node *val2 = NULL;
     node *val3 = NULL;
     node *res2;
+    node *b = NULL;
     constant *con1 = NULL;
     constant *con2 = NULL;
+    constant *cob = NULL;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
@@ -2198,14 +2200,20 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
 
     /* Case 5 */
     if (NULL == res) {
-        con1 = SAACFchaseMinMax (PRF_ARG1 (arg_node), SAACFCHASEMIN);
-        con2 = COaST2Constant (PRF_ARG2 (arg_node));
-        if ((NULL != con1) && (NULL != con2) && (COlt (con1, con2, NULL))) {
-            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                               TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT_TAG ("SCS", "removed guard Case 5( %s, %s)",
+        b = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
+                      SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+        if (NULL != b) {
+            /* The right fix is to change saarelat semantics... */
+            cob = COaST2Constant (b);
+            if (COisTrue (cob, TRUE)) {
+                res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                                   TBmakeExprs (TBmakeBool (TRUE), NULL));
+                DBUG_PRINT ("removed guard Case 5( %s, %s)",
                             AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+            }
+            cob = (NULL != cob) ? COfreeConstant (cob) : cob;
+            b = (NULL != b) ? FREEdoFreeNode (b) : b;
         }
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
