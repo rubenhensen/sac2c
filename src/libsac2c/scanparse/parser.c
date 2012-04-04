@@ -1207,7 +1207,7 @@ is_id (struct parser *parser)
     struct identifier *res = NULL;
 
     if (token_class (tok) == tok_id)
-        res = identifier_new (NULL, strdup (token_as_string (tok)));
+        res = identifier_new (NULL, strdup (token_as_string (tok)), false);
 
     parser_unget (parser);
     return res;
@@ -1265,16 +1265,22 @@ is_ext_id (struct parser *parser)
             tok = parser_get_namespace_token (parser, modname);
             parser_unget3 (parser);
             if (token_is_reserved (tok) || token_class (tok) == tok_user_op)
-                return identifier_new (strdup (modname), strdup (token_as_string (tok)));
+                return identifier_new (strdup (modname), strdup (token_as_string (tok)),
+                                       /* if something is not a c-identifier,
+                                          assume it is an operation.  */
+                                       token_class (tok) == tok_operator
+                                         || token_class (tok) == tok_user_op);
             else
                 return NULL;
         } else {
             parser_unget2 (parser);
-            return identifier_new (NULL, strdup (token_as_string (tok)));
+            return identifier_new (NULL, strdup (token_as_string (tok)), false);
         }
     } else if (token_class (tok) == tok_user_op || token_is_reserved (tok)) {
         parser_unget (parser);
-        return identifier_new (NULL, strdup (token_as_string (tok)));
+        return identifier_new (NULL, strdup (token_as_string (tok)),
+                               token_class (tok) == tok_operator
+                                 || token_class (tok) == tok_user_op);
     } else {
         parser_unget (parser);
         return NULL;
@@ -2083,7 +2089,7 @@ handle_unary_expr (struct parser *parser)
     }
 
     /* Any unary operation can be used as prefix operation.  */
-    if (!is_unary (parser, id->namespace, id->id))
+    if (!is_unary (parser, id->namespace, id->id) || !id->is_operation)
         goto out;
 
     if (id->namespace)
@@ -2226,7 +2232,10 @@ get_binary_op (struct pre_post_expr *e)
 
     v = SPAP_ID (t);
     id = identifier_new (SPID_NS (v) ? strdup (NSgetModule (SPID_NS (v))) : NULL,
-                         strdup (SPID_NAME (v)));
+                         strdup (SPID_NAME (v)),
+                         /* it was considered as an operation
+                            when parsing, so it should stay.  */
+                         true);
 
     EXPRS_EXPR (e->parent_exprs) = DUPdoDupTree (EXPRS_EXPR (SPAP_ARGS (t)));
 
@@ -2326,6 +2335,14 @@ handle_binary_expr (struct parser *parser, bool no_relop)
         if (NULL == (id = is_ext_id (parser))
             || !is_binary (parser, id->namespace, id->id))
             goto out;
+        else if (!id->is_operation) {
+            error_loc (loc, "`%s' cannot be used as a binary operation", id->id);
+            identifier_free (id);
+            while (sp >= 0)
+                free_tree (stack[sp--].expr.expr);
+
+            return error_mark_node;
+        } // namespace =id->namespace?NSgetNamespace(id->namespace):NULL;
         else if (!strcmp (id->id, "++") || !strcmp (id->id, "--")) {
             parser_get_token (parser);
             if (id->namespace)
@@ -2826,6 +2843,8 @@ error:
    fold '(' expr ',' expr ')'
    |
    foldfix '(' expr ',' expr ',' expr ')'
+   |
+   propagate '(' expr ')'
 */
 node *
 handle_withop (struct parser *parser)
@@ -2880,6 +2899,21 @@ handle_withop (struct parser *parser)
             goto error;
 
         return TBmakeModarray (exp1);
+    } else if (token_is_keyword (tok, PROPAGATE)) {
+        if (parser_expect_tval (parser, tv_lparen))
+            parser_get_token (parser);
+        else
+            goto error;
+
+        if (error_mark_node == (exp1 = handle_expr (parser)))
+            goto error;
+
+        if (parser_expect_tval (parser, tv_rparen))
+            parser_get_token (parser);
+        else
+            goto error;
+
+        return TBmakePropagate (exp1);
     } else if (token_is_keyword (tok, FOLD) || token_is_keyword (tok, FOLDFIX)) {
         bool foldfix_p = token_value (tok) == FOLDFIX;
         struct token *tok;
@@ -3015,6 +3049,7 @@ handle_with (struct parser *parser)
     /* Handle a list of withops.  */
     if (token_is_operator (tok, tv_lparen)) {
         bool withop_error = false;
+        node *withop_end = NULL;
 
         withop = NULL;
         while (true) {
@@ -3025,10 +3060,10 @@ handle_with (struct parser *parser)
 
             if (!withop_error) {
                 if (!withop)
-                    withop = t;
+                    withop_end = withop = t;
                 else {
-                    L_WITHOP_NEXT (t, withop);
-                    withop = t;
+                    L_WITHOP_NEXT (withop_end, t);
+                    withop_end = t;
                 }
             }
 
@@ -3797,8 +3832,9 @@ handle_vardecl_list (struct parser *parser)
         return ret;
 }
 
-/* return ::= 'return' expr
-              | 'return' '(' expr-list ')'
+/* return ::= 'return' expr ';'
+              | 'return' '(' expr-list ')' ';'
+              | 'return' ';'
 */
 node *
 handle_return (struct parser *parser)
@@ -3811,6 +3847,12 @@ handle_return (struct parser *parser)
 
     if (token_is_keyword (tok, RETURN)) {
         node *exprs;
+
+        tok = parser_get_token (parser);
+        if (token_is_operator (tok, tv_semicolon))
+            return TBmakeAssign (TBmakeReturn (NULL), NULL);
+        else
+            parser_unget (parser);
 
         parser->in_return = true;
         exprs = handle_expr (parser);
@@ -4155,14 +4197,14 @@ handle_pragmas (struct parser *parser, enum pragma_type ptype)
             parse_error = true;                                                          \
             error_loc (loc, "pragma `%s' is not allowed here",                           \
                        token_kind_as_string (pname));                                    \
-            continue;                                                                    \
+            goto again;                                                                  \
         }                                                                                \
                                                                                          \
         if (cond_exists) {                                                               \
             parse_error = true;                                                          \
             error_loc (loc, "conflicting definitions of pragma `%s'",                    \
                        token_kind_as_string (pname));                                    \
-            continue;                                                                    \
+            goto again;                                                                  \
         }                                                                                \
     } while (0)
 
@@ -4181,6 +4223,10 @@ handle_pragmas (struct parser *parser, enum pragma_type ptype)
     while (true) {
         struct location loc;
 
+    /* NOTE: we use label here, to make sure that CHECK_PRAGMA body
+       can jump here.  We cannot use continue inside the macro, as
+       it is wrapped in do { ... } while (0).  */
+    again:
         tok = parser_get_token (parser);
         loc = token_location (tok);
 

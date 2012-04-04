@@ -690,6 +690,64 @@ lexer_read_escape_char (struct lexer *lex, bool *error)
     return c;
 }
 
+/* One may want to come-up with a nicer
+   formulation of the very same function.  */
+static inline void
+lexer_skip_comments (struct lexer *lex)
+{
+    char c;
+    bool ret = false;
+
+    do {
+        c = lexer_getch (lex);
+        if (isspace (c)) {
+            while (isspace (c))
+                c = lexer_getch (lex);
+            lexer_ungetch (lex, c);
+            ret = true;
+        } else if (c == '/') {
+            char c1 = lexer_getch (lex);
+            char prev = '\0';
+
+            ret = true;
+            if (c1 == '*')
+                while (true) {
+                    char c2 = lexer_getch (lex);
+                    if (c2 == EOF) {
+                        error_loc (lex->loc, "unexpected end of file in the "
+                                             "middle of comment");
+                        return;
+                    }
+
+                    if (c2 == '/' && prev == '*')
+                        break;
+
+                    prev = c2;
+                }
+            else if (c1 == '/')
+                while (true) {
+                    char c2 = lexer_getch (lex);
+                    if (c2 == EOF) {
+                        error_loc (lex->loc, "unexpected end of file in the "
+                                             "middle of line comment");
+                        return;
+                    }
+
+                    if (c2 == '\n')
+                        break;
+                }
+            else {
+                lexer_ungetch (lex, c1);
+                lexer_ungetch (lex, c);
+                ret = false;
+            }
+        } else {
+            lexer_ungetch (lex, c);
+            ret = false;
+        }
+    } while (ret);
+}
+
 /* Internal function to read until the end of string/char ignoring
    escape sequences.  */
 static inline enum token_class
@@ -754,9 +812,10 @@ lexer_read_string (struct lexer *lex, char **buf, size_t *size, char c)
                 buffer_add_char (buf, &index, size, c);
             }
 
-            /* skip whitespaces  */
-            while (isspace ((c = lexer_getch (lex))))
-                ;
+            /* skip whitespaces and comments */
+            lexer_skip_comments (lex);
+
+            c = lexer_getch (lex);
 
             if (c != stop) {
                 lexer_ungetch (lex, c);
@@ -1050,7 +1109,10 @@ lexer_get_token (struct lexer *lex)
             tval_tok_init (tok, tok_operator, tv_hash);
             goto return_token;
         }
-        c = lexer_getch (lex);
+
+        do
+            c = lexer_getch (lex);
+        while (isspace (c));
     }
 
     /* XXX do we want to return whitespace here as well?  */

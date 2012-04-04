@@ -133,20 +133,25 @@ enum interface_kind { int_import, int_use, int_export, int_provide };
 /* When one checks if variable-name is at the parser's state,
    it may be useful to pass the namespace and the name of
    the variable as a result.  In order to do that structure
-   identifier is used.  */
+   identifier is used.
+
+   is_operation field should be set on, when the identifier
+   can be used as unary or binay operation.  */
 
 struct identifier {
     char *namespace;
     char *id;
+    bool is_operation;
 };
 
 static inline struct identifier *
-identifier_new (char *namespace, char *id)
+identifier_new (char *namespace, char *id, bool op)
 {
     struct identifier *ret;
     ret = (struct identifier *)malloc (sizeof (struct identifier));
     ret->namespace = namespace;
     ret->id = id;
+    ret->is_operation = op;
 
     return ret;
 }
