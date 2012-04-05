@@ -1234,7 +1234,17 @@ token_is_reserved (struct token *tok)
                && (token_is_keyword (tok, GENARRAY) || token_is_keyword (tok, MODARRAY)
                    || token_is_keyword (tok, FOLD) || token_is_keyword (tok, FOLDFIX)
                    || token_is_keyword (tok, PROPAGATE) || token_is_keyword (tok, ALL)
-                   || token_is_keyword (tok, EXCEPT)))
+                   || token_is_keyword (tok, EXCEPT)
+                   || token_is_keyword (tok, CUDALINKNAME)
+                   || token_is_keyword (tok, LINKWITH) || token_is_keyword (tok, LINKOBJ)
+                   || token_is_keyword (tok, LINKSIGN)
+                   || token_is_keyword (tok, REFCOUNTING)
+                   || token_is_keyword (tok, REFCOUNTDOTS)
+                   || token_is_keyword (tok, EFFECT)
+                   || token_is_keyword (tok, MUTCTHREADFUN)
+                   || token_is_keyword (tok, NOINLINE) || token_is_keyword (tok, COPYFUN)
+                   || token_is_keyword (tok, FREEFUN) || token_is_keyword (tok, WLCOMP)
+                   || token_is_keyword (tok, TARGET)))
            || (token_class (tok) == tok_operator
                && (token_is_operator (tok, tv_not) || token_is_operator (tok, tv_compl)
                    || token_is_operator (tok, tv_and) || token_is_operator (tok, tv_or)
@@ -3012,11 +3022,11 @@ handle_with (struct parser *parser)
     struct location loc;
     node *nparts = error_mark_node;
     node *withop = error_mark_node;
+    node *pragma_expr = NULL;
 
     loc = token_location (parser_get_token (parser));
     parser_unget (parser);
 
-    /* FIXME add pragma handling here.  */
     /* `with'  */
     if (parser_expect_tval (parser, NWITH))
         parser_get_token (parser);
@@ -3028,6 +3038,31 @@ handle_with (struct parser *parser)
         parser_get_token (parser);
     else
         goto error;
+
+    /* check for '#' 'pragma' 'wlcomp'   */
+    tok = parser_get_token (parser);
+    if (token_is_operator (tok, tv_hash)) {
+        node *t = error_mark_node;
+
+        if (parser_expect_tval (parser, PRAGMA))
+            parser_get_token (parser);
+        else
+            goto error;
+
+        if (parser_expect_tval (parser, WLCOMP))
+            parser_get_token (parser);
+        else
+            goto error;
+
+        pragma_expr = handle_function_call (parser);
+        if (pragma_expr == error_mark_node)
+            goto error;
+
+        t = TBmakePragma ();
+        PRAGMA_WLCOMP_APS (t) = TBmakeExprs (pragma_expr, NULL);
+        pragma_expr = t;
+    } else
+        parser_unget (parser);
 
     nparts = handle_nparts (parser);
     if (nparts == error_mark_node)
@@ -3090,6 +3125,7 @@ handle_with (struct parser *parser)
         goto error;
 
     WITH_WITHOP (nparts) = withop;
+    WITH_PRAGMA (nparts) = pragma_expr;
     return nparts;
 
 error:
