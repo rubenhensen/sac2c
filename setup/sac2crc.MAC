@@ -40,13 +40,16 @@ target MBair_32bit :
 
   CCDIR :
   = "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/ "
-    "-I/Developer/GPU\ Computing/C/common/inc "
-    "-L/Developer/GPU\ Computing/C/lib" CCLINK :
+    "-I'/Developer/GPU Computing/C/common/inc' "
+    "-L'/Developer/GPU Computing/C/lib' "
+    "-I\"$CUTIL\" -L\"$CUTIL_LIB\"" CCLINK :
   = "-lcutil_x86_64 -lcudart -lcublas" LD_PATH :
   = "-Xlinker -L%path% -Xlinker '-rpath %path%'"
 
-  target MBpro_cudaHybrid::MBpro_cuda::cudahybrid64 : LD_PATH :
-  = "-Xlinker -L%path% -Xlinker '-rpath %path%'"
+  target MBpro_cudaHybrid::cudahybrid64::MBpro_cuda :
+
+  BACKEND :
+  = "CudaHybrid"
 
   target mpc7450 :
 

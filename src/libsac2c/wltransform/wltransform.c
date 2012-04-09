@@ -3916,7 +3916,8 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
      */
     if (pragma != NULL) {
         aps = PRAGMA_WLCOMP_APS (pragma);
-        while (aps != NULL) {
+        // last parameter of wlcomp pragma is a spid (Default)
+        while (NODE_TYPE (EXPRS_EXPR (aps)) != N_spid) {
 
 #define WLP(fun, str, ieee)                                                              \
     if (STReq (SPAP_NAME (EXPRS_EXPR (aps)), str)) {                                     \
@@ -3945,7 +3946,11 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
                              SPAP_NAME (EXPRS_EXPR (aps)), fun_names);
             }
 
-            aps = EXPRS_NEXT (aps);
+            /* get arguments of current function */
+            aps = SPAP_ARGS (EXPRS_EXPR (aps));
+            /* next function will be the last argument */
+            while (EXPRS_NEXT (aps) != NULL)
+                aps = EXPRS_NEXT (aps);
         }
     }
 
