@@ -1,0 +1,19 @@
+#define OPTIMIZE(str, abbrv, devel, prod, desc) \
+@item str <br>\
+desc <br>\
+COMMENT_##devel##_##prod
+
+#define COMMENT_FALSE_FALSE \
+[@i{Inactive by default}]
+#define COMMENT_TRUE_TRUE \
+[@i{Active by default}]
+#define COMMENT_TRUE_FALSE \
+[@i{Active within a developer's version}]
+#define COMMENT_FALSE_TRUE \
+[@i{Active within a product version}]
+
+@table @i
+#include "optimize.mac"
+@end table
+
+

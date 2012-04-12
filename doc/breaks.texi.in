@@ -1,0 +1,29 @@
+#define PHASE(a,b,c)  \
+@item @samp{a} -- b <br>\
+@table @i
+
+
+#define ENDPHASE(a) \ 
+@end table
+
+#define SUBPHASE(a,b,c,d,e) \
+@item a <br>\
+b
+
+#define CYCLE(a,b,c,d,e) \
+@item @var{cycle} @samp{a} -- b
+
+#define FUNBEGIN(a,b,c) \
+@table @i
+
+#define ENDCYCLE(a) \
+@end table
+
+#define CYCLEPHASEFUNOLD(a,b,c,d,e,f) \
+@item a<br>\
+b
+
+
+@enumerate
+#include "phase_sac2c.mac"
+@end enumerate

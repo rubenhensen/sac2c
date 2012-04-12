@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: trav_template.h 15657 2007-11-13 13:57:30Z cg $
  */
 #ifndef _SAC_TRAVTEMPLATE_H_
 #define _SAC_TRAVTEMPLATE_H_

@@ -1,0 +1,1134 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename sac.info
+@include macros.texi
+@settitle Using the Single Assignment C (@sac{})
+@c %**end of header
+
+@copying
+@c man begin COPYRIGHT
+Copyright @copyright{} 2011, 2012 Artem Shinkarov 
+@email{artyom.shinkaroff@@gmail.com}
+
+Permission to use, copy, modify, and distribute this document for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+@c man end
+@end copying
+
+@titlepage
+@title Using the Single Assignment C (@sac{})
+@author Artem Shinkarov
+
+@page
+@vskip 0pt plus 1filll
+
+@c Published by ...
+@end titlepage
+
+@c This is a raw html options to control the generated html with jquery.
+@html
+<script src="jquery.js"></script>
+<script src="fixes.js"></script>
+@end html
+
+
+@c So the toc is printed at the start.
+@contents
+
+@node Top, SaC philosophy
+@top Introduction
+
+This manual describes how to use @sac{} compiler and tools, their
+features and incompatibilities.
+
+@menu
+* SaC philosophy::   SaC uses C syntax staying functional.
+* Language specification:: SaC programming language specification.
+* Compiler usage::   Compiling progrmans with sac2c.
+* Standard library:: Description of the standard library.
+* Implementation details::  Anatomy of the compiler.
+* Known problems::   Problems with SaC compiler.
+* Reporting bugs::   How to report a bug.
+* Getting help::     How to get help regarding SaC.
+* Contributing to SaC:: How to contribute to the project.
+* Keyword index::    Index of symbol names.
+* Option index::     Index of the options of the compiler.
+@end menu
+
+@node SaC philosophy
+@chapter SaC philosophincal backgrounds
+
+@cindex SaC
+@cindex functional language
+@sac{} is a functional language which bases its syntax on the C language.
+On the contrary to the C, @sac{} aims to provide implicit models for
+memory management, concurrency and compilation to the heterogeneous
+systems.
+
+@sac{} is mainly focused on the needs of numerical applications.
+Emphasis is laid on efficient support for array processing. Efficiency
+concerns are essentially twofold. On the one hand, efficiency in
+program development is to be improved by the opportunity to specify
+array operations on a high level of abstraction. On the other hand,
+efficiency in program execution, i.e. the runtime performance of
+programs, in time and memory consumption, is still to be achieved by
+sophisticated compilation schemes. Only as far as the latter succeeds,
+the high-level style of specifications can actually be called useful.
+
+
+@ignore
+@c man begin SYNOPSIS
+@sactoc{} [@option{-help}] [@option{-I}@var{dir}@dots{}]
+
+The most useful options are listed here; see below for the remainder.
+@c man end
+
+@c man begin SEEALSO
+gcc(1) cpp(1) ld(1) as(1)
+@c man end
+
+@c man begin BUGS
+For more details on reporting bugs, see
+@w{@uref{http://sac-home.org/bugs}}
+@c man end BUGS
+
+@c man begin AUTHOR
+See @w{@uref{http://sac-home.org/contributors}} for full list
+of people contributing to @sac{}@.
+@c man end AUTHOR
+@end ignore
+
+
+
+@node Language specification
+@chapter Language specification
+
+@fixme{Describe sac syntax and semantics}
+
+
+@node Compiler usage
+@chapter Compiling with @sactoc{}
+
+@menu
+* Option Summary::	Summarizes the options available.
+* Overall options::	General options to set-up compilation environment.
+* Break options::	Options to break the compiler.
+* Special options::	Special options.
+* Type inference options::	Options for the type inference system.
+* Optimization options::   Options to tweak certain optimization parameters.
+* Multi-threaded options::  Options for multi-threaded execution.
+* Mutc options::	Options for the mutc backend.
+* Backend options::     Options to control backend-specific parameters.
+* Irregular array options::  Options to support inhomogeneous arrays.
+* Debug options::	Options to check consistency and debug a program.
+* Runtime options::	Options to tweak runtime behaviour.
+* C compiler options::  Options related with the C compiler.
+* Customization options::  Options to change the target of the compiler.
+@end menu
+
+@c man begin DESCRIPTION
+The @sactoc{} compiler transforms @sac{} source code into executable
+programs (@sac{} programs) or into a @sac{} specific library format
+(@sac{} module and class implementations), respectively.
+
+The compilation process is performed in 4 separate stages:
+@enumerate
+@item
+@sactoc{} uses any C preprocessor to preprocess the given @sac{} source;
+@item
+@sactoc{} itself transforms preprocessed @sac{} source code into C code;
+@item
+@sactoc{} uses any C compiler to generate target machine code;
+@item
+@sactoc{} uses any C linker to create an executable program or 
+@sactoc{} itself creates a @sac{} library file.
+@end enumerate
+
+When compiling a @sac{} program, @sactoc{} stores the corresponding
+intermediate C code either in the file @file{a.out.c} in the current
+directory (default) or in the file @file{<file>.c} if @var{file} is
+specified using the @option{-o} option. Here, any absolute or relative
+path name may be used.  The executable program is either written to
+the file a.out or to any file specified using the @option{-o} option.
+
+However, when compiling a @sac{} module/class implementation, the
+resulting @sac{} library is stored in the files @file{<mod/class
+name>.a} and  @file{<mod/class name>.so} in the current directory.  In
+this case, the @option{-o} option may be used to specify a different
+directory but not a different file name.
+@c man end
+
+
+@c man begin OPTIONS
+@node Option Summary
+@section Option Summary
+
+@table @emph
+@item Overall options
+@xref{Overall options,,General options}.
+@optlist{-L @var{path}  -I @var{path}  -E @var{path}  -o @var{name}  -c @gol
+-D @var{var}  -D @var{var}=@var{val}  -cppI @var{path}  -v @var{num}} 
+
+@item Special options
+@xref{Special options}.
+@optlist{-h@r{[}elp@r{]}  -copyright  -V  -VV  -libstat @var{name} -prsc @gol
+-M  -Mlib  -C @var{name}  -ccflags @var{flags} }
+
+@item Break options
+@xref{Break options}.
+@optlist{-noPAB  -doPAB  -doVAB  -fVAB @var{format}  -b @var{spec}}
+
+@item Type inference options
+@xref{Type inference options}.
+@optlist{-specmode @var{start}  -maxspec}
+
+@item Optimization options
+@xref{Optimization options}.
+@optlist{-enforceIEEE  -noreuse  -iveo @var{n}  -ssaiv  -extrema  @gol
+-no @var{opt}  -do @var{opt}  -maxoptcyc @var{n}  -maxlur @var{n}  @gol
+-maxwlur @var{n}  -maxprffun @var{n}  -maxae @var{n}  -initmheap @var{n} @gol
+-initwheap @var{n}  -inituheap @var{n}  -aplimit @var{n}  -apdiag  @gol
+-apdiagsize @var{n}  -wls_agressive  -maxwls @var{n}  -dofoldfusion @gol
+-nofoldfusion  -maxnewgens @var{n}  -sigspec @var{start}  -force_naive}
+
+@item Multi-threaded options
+@xref{Multi-threaded options}.
+@optlist{-mt  -mtmode @var{n}  -numthreads @var{n}  -maxthreads @var{n} @gol
+-dofoldparallel  -nofoldparallel  -minmtsize @var{n}  -maxrepsize @var{n}}
+
+@item Mutc options
+@xref{Mutc options}.
+@optlist{-mutc_fun_threads  -mutc_thread_mem  -mutc_disable_thread_mem @gol
+-mutc_benchmark  -mutc_static_resource_management  -mutc_force_block_size @var{n} @gol 
+-mutc_force_spawn_flags @var{s}  -mutc_distribute @var{mode}  -mutc_distribute_arg @gol
+-mutc_unroll @var{n}  -mutc_suballoc_desc_one_level_up  -mutc_rc_places @var{n} @gol
+-mutc_rc_indirect -mutc_seq_data_parallel}
+
+@item Irregular array options
+@xref{Irregular array options}.
+@optlist{-irr_array}
+
+
+@item Backend options
+@xref{Backend options}.
+@optlist{-minarrayrep @var{class}  -force_desc_size @var{n}}
+
+
+@item Debug options
+All the @option{-d} @var{param} options could be written without the space
+in between.  @fixme{Is it true?}
+
+@xref{Debug options}.
+@optlist{-debug_rc  -d treecheck  -d memcheck  -d sancheck  @gol
+-d lacfuncheck  -d nolacinline  -d efence  -d nocleanup  @gol
+-d syscall  -d cccall  -chckfreq @var{n}  @gol
+@gol
+-# t  -# d  -# d,@var{tag} -# @var{start-phase}/@var{end-phase}/@var{option}}
+
+
+@item Runtime options
+@xref{Runtime options}.
+@optlist{-ecc  -check @r{[}@var{a c t b m e h}@r{]+}  
+-trace @r{[}@var{a m r f p w s t c}@r{]+}  @gol
+-utrace  -profile @r{[}@var{a f i l w}@r{]+}}
+
+
+@item C compiler options
+@xref{C compiler options}.
+@optlist{-linksetsize @var{n}  -noprelude  -g  -O @var{n}}
+
+@item Customization options
+@xref{Customization options}.
+@optlist{-target @var{name}  -t @var{name}}
+
+@end table
+
+
+
+@node Overall options
+@section General options
+
+These are options mainly used to set-up the environment of the compilation
+process --- where to find the libraries and source-files.
+
+@cindex environment pathes
+@table @tabopt
+
+@item -E
+@opindex E
+Specify additional C library file path.
+
+@item -L
+@opindex L
+Specify additional @sac{} library file path.
+
+@item -I
+@opindex I
+Specify additional @sac{} library source file path.
+
+@item -o @var{name}
+@opindex o
+For compilation of programs -- write executable to specified file.
+
+For compilation of module/class implementations -- write library to
+specified directory.
+
+@item -c
+@opindex c
+Terinate compilation after the file is being generated.
+
+@item -D @var{var}
+@item -D @var{var}=@var{val}
+@opindex D
+Define a prepocessor macro and, possibly, set it with value @var{val}.
+
+
+@item -v @var{num}
+@opindex v
+Specify verbosity level.  Mainly the following values of @var{num} can
+be used.
+@enumerate 0
+@item
+Error messages only;
+@item
+Error messages and warnings;
+@item
+Basic compile time information;
+@item
+Full compile time information;
+@item
+Even more compile-time information;
+@end enumerate
+The default level is @var{0} for product version and @var{3} for developer's.
+@end table
+
+
+@node Special options
+@section Special options
+When one of the following options is being called @sactoc{} does not
+perform any compilation steps. 
+
+@table @tabopt
+
+@item -h
+@itemx -help
+@opindex h
+@opindex help
+Display the help-message.
+
+@item -copyright
+@opindex copyright
+Display the copyright. @i{This option is deprecated and should be removed
+from help}.
+
+@item -V
+@itemx -VV
+@opindex V
+@opindex VV
+Display a version of the @sactoc{}.  In case of @option{-VV}, the version
+information is more verbose.
+
+@item -libstat @var{name}
+@opindex libstat
+Print the status information of the given module called @var{name}.
+The status information includes a table of imported symbols and the
+representation of the source-code stored in the compiled module.
+
+
+@item -prsc
+@itemx -C @var{name}
+@opindex C
+@opindex prsc
+Option @option{-prsc} is used to print whole resource settings; and @option{-C}
+prints a single configuration parameter called @var{name}. For more information 
+please refer to section XXX.
+
+
+@item -M
+@opindex M
+Similarly to GCC @option{-M} option @sactoc{} prints dependencies from
+imported/used modules and classe in the make-file suitable way.
+
+@item -Mlib
+@opindex Mlib
+Same as @option{-M} except that the output format is suitable for 
+makefiles used by the standard library building process.
+
+@end table
+
+
+@node Break options
+@section Break options
+Break options allow you to stop the compilation process after a
+particular phase, sub-phase or cycle optimisation.  By default the
+intermediate program will be printed. You can visualize the syntax
+tree as well, and a new @i{*.png} file will be created. But this
+behaviour may be influenced by the following compiler options.
+
+@cindex break options
+@table @tabopt
+
+@item -noPAB
+@opindex noPAB
+Deactivates printing after break.
+
+@item -doPAB
+@opindex doPAB
+Activates printing after break.
+
+@item -noVAB
+@opindex noVAB
+Activates visualization of program after break
+
+@item -fVAB @var{format}
+
+@opindex fVAB 
+Output visualization in @var{format}. Default is PNG.  @var{format}
+must be supported by your dot installation, run @code{dot -Tv} for a
+list of available formats.
+
+@item -b @var{spec}
+@opindex b
+Break after the compilation stage given by @var{spec}, where @var{spec} follows
+the pattern @var{phase}:@var{subphase}:@var{cyclephase}:@var{pass}.  The first
+three are from the list of encodings below. The last one is a natural number.
+Alternatively, a number can be used for the phase, as well.
+@include breaks.texi
+@end table
+
+
+
+@node Type inference options
+@section Type inference options
+
+
+@cindex type inference options
+@table @tabopt
+
+@item -specmode @var{start}
+@opindex specmode
+Specify function specialization strategy
+
+@itemize @w{}
+@item @i{aks}
+try to infer all shapes statically,
+@item @i{akd}
+try to infer all ranks statically,
+@item @i{aud}
+do not specialize at all.
+@end itemize
+Default choice is @var{aks}.
+
+@item -maxspec @var{n}
+@opindex maxspec
+Individual functions will be specialized at most @var{n} times.
+@fixme{Need more reasonable description}.
+
+@end table
+
+
+
+
+
+@node Optimization options
+@section Optimization options
+@cindex optimization options
+@table @tabopt
+
+@item -enforceIEEE
+@opindex enforceIEEE
+Treat floating point arithmetic as defined in the IEEE-754 standard.
+In particular, this means
+@itemize @minus
+@item
+disable some algebraic optimizations
+@item
+disable segmentation and tiling of fold-with-loops
+@item
+disable parallel execution of fold-with-loops
+@end itemize
+Currently implemented for associative law optimization and
+segmentation and tiling of fold-with-loops.
+
+
+@item -noreuse
+@opindex noreuse
+Disable reuse inference in emm.
+@fixme{Add more text}.
+
+
+@item -iveo @var{n}
+@opindex iveo
+Enable or disable certain index vector optimisations
+@var{n} is a bitmask consisting of the following bits
+@itemize
+@item @b{1}
+enable the usage of withloop offsets where possible
+@item @b{2}
+scalarise vect2offset operations where possible
+@item @b{3} 
+try to optimise computations on index vectors
+@item @b{4}
+try to reuse offsets once computed
+@end itemize
+
+The @option{iveo} option to for testing, and is to be removed.
+@fixme{We need either to remove it, or to explain more precisely how do
+we count bits.  Current description is a little bit ambiguous.}
+
+@item -ssaiv
+@opindex ssaiv
+This option, if enabled, forces all with-loop generator variables to
+be unique (SSA form). (This is a prerequisite for MINVAL/MAXVAL work.)
+
+If disabled (the default setting), all with-loop generators use the
+same index vector variables.
+@fixme{This description does not make any sense.}
+
+@item -extrema
+@opindex extrema
+This option, if enabled, allows the compiler to use optimizations
+based on index variable extrema; i.e., the minimum and maximum value
+that index variables may take on. This option requires that 
+@option{-ssaiv} is also enabled.
+
+
+@item -no @var{opt}
+@itemx -do @var{opt}
+@opindex do
+@opindex no
+Enable or disable an optimization called @var{opt}.  Currently the 
+following optimizations are supported within the option:
+@include optimizations.texi
+
+Note, by passing @option{-no opt} or @option{-do opt} one can disable
+or enable all optimizations at once.  This two options can be used to
+invert subsequent do/no options.  For example, the following option
+combination @option{-no opt -do inl} would disable everything except
+inlining.  The evaluation order of the do/no options is from left to
+right, so @option{-do inl -no opt} would disable all the optimisations.
+
+Note, upper case letters may be used to indicate optimization techniques.
+@fixme{I have no clue what does this phrase mean.}
+@end table
+
+@subsection Optimization parameters
+Some of the optimization techniques are parameterized by additional side
+conditions. They are controlled by the set of options listed further down.
+
+
+@table @tabopt
+
+@item -maxoptcyc @var{n}
+@opindex maxoptcyc
+Repeat optimization cycle max @var{n} times. After @var{n} cycles all
+optimisations except for type upgrade and function dispatch are
+disabled.  [@var{n} = 10 by default]
+
+@item -maxrecinl @var{n}
+@opindex maxrecinl
+Inline recursive function applications at most @var{n} times.
+[@var{n} = 0 by default]
+
+@item -maxlur @var{n}
+@opindex maxlur
+Unroll loops having at most @var{n} iterations.  [@var{n} = 0 by default]
+
+@item -maxwlur @var{n}
+@opindex maxwlur
+Unroll with-loops having at most @var{n} iterations.
+[@var{n} = 9 by default]
+
+@item -maxprfur @var{n}
+@opindex maxprfur
+Unroll built-in vector operations with at most @var{n} elements
+generator set size.  [@var{n} = 6 by default]
+
+@item -maxae @var{n}
+@opindex maxae
+Try to eliminate arrays with at most @var{n} elements.
+[@var{n} = 4 by default]
+
+@item -initmheap @var{n}
+@opindex initmheap
+At program startup initially request @var{n} KB of heap memory
+for master thread.  [@var{n} = 1024 by default]
+
+@item -initwheap @var{n}
+@opindex initwheap
+At program startup initially request @var{n} KB of heap memory
+for each worker thread.  [@var{n} = 64 by default]
+
+@item -inituheap @var{n}
+@opindex inituheap
+At program startup initially request @var{n} KB of heap memory
+for usage by all threads.  [@var{n} = 0 by default]
+@fixme{The heap options should be explained in a separate section.}
+
+@item -aplimit @var{n}
+@opindex aplimit
+Set the array padding resource allocation overhead limit
+to @var{n} %.  [@var{n} = 10 by default]
+
+@item -apdiag
+@opindex apdiag
+Print additional information for array padding to file
+@file{<outfile>.ap}, where @var{outfile} is the name specified via the
+@option{-o} option.
+
+@item -apdiagsize @var{n}
+@opindex apdiagsize
+Limit the amount of information written to the diagnostic
+output file created via the @option{-apdiag} option to 
+approximately @var{n} lines.  [@var{n} = 20000 by default]
+@fixme{again, some more details would be nice.}
+
+@item -wls_aggressive
+@opindex wls_aggressive
+Set WLS optimization level to aggressive.  WARNING: Aggressive
+with-loop scalarization may have the opposite effect as with-loop
+invariant removal and cause duplication of code execution.
+@fixme{poor explanation.}
+
+@item -maxwls @var{n}
+@opindex maxwls
+Set the maximum number of inner with-loop elements for which
+aggressive behaviour will be used even if @option{-wls_aggressive}
+is not given.  [@var{n} = 1 by default]
+
+@item -dofoldfusion 
+@opindex dofoldfusion   
+Enable fusion of with-loops with fold operator (default).
+
+@item -nofoldfusion 
+@opindex nofoldfusion   
+Disable fusion of with-loops with fold operator.
+
+@item -maxnewgens
+@opindex maxnewgens   
+Set the maximum number of new created generators while intersection of
+generator-sets from two with-loops in with-loop fusion to @var{n}.
+[@var{n} = 100 by default]
+
+@item -sigspec @var{start}
+@opindex sigspec
+Specify strategy for specialization of function sigantures:
+@itemize @w{}
+@item @i{akv}
+try to infer all values statically,
+@item @i{aks}
+try to infer all shapes statically,
+@item @i{akd}
+try to infer all ranks statically,
+@item @i{aud}
+do not specialize at all.
+@end itemize
+[default @var{start} is aks]
+
+@item -force_naive
+@opindex force_naive
+Make wlt always run in naive mode
+
+@end table
+
+
+
+@node Multi-threaded options
+@section Multi-threaded options
+@cindex multi-threaded options
+@table @tabopt
+
+@item -mt
+@opindex mt
+Compile program for multi-threaded execution, e.g. implicitly
+parallelize the code for non-sequential execution on shared memory
+multiprocessors.
+
+Note, the number of threads to be used can either be specified
+statically using the option @option{-numthreads} or dynamically upon
+application startup using the generic command line option 
+@option{-mt} @var{n}.
+
+@item -mtmode @var{n}
+@opindex mtmode
+Enable a explicit organization scheme for multi-threaded program
+execution.  Legal values:
+@enumerate
+@item
+with thread creation/termination
+@item
+with start/stop barriers
+@item
+with magical new techniques, @strong{warning: under construction}.
+@end enumerate
+[@var{n} = 2 by default]
+
+@item -numthreads @var{n}
+@opindex numthreads
+Specify at compile time the exact number of threads to be used for
+parallel execution.  @fixme{Clarification is needed.}
+
+@item -maxthreads @var{n}
+@opindex maxthreads
+Specify at compile time only an upper bound on the number of threads
+to be used for parallel execution when exact number is determined at
+runtime.  [@var{n} = 32 by default]
+
+@item -dofoldparallel
+@opindex dofoldparallel
+Enable parallelization of fold with-loops.  [enabled by default]
+
+@item -nofoldparallel
+@opindex nofoldparallel
+Disable parallelization of fold with-loops.
+
+@item -minmtsize @var{n}
+@opindex inmtsize
+Specify minimum generator set size for parallel execution of
+with-loops.  [@var{n} = 250 by default]
+@fixme{What is the unit of the size?}
+
+@item -minmtsize @var{n}
+@opindex inmtsize
+Specify maximum size for arrays to be replicated as private data of
+multiple threads.  [@var{n} = 250 by default]
+
+Option applies to @option{-mtn} style parallelization only.
+@fixme{what the hell does the last remark mean?}
+@end table
+
+
+@node Mutc options
+@section Mutc options
+@cindex mutc options
+
+@fixme{All the option descriptions further down have to be extended, as currently
+most of the current descriptions do not explain anything.}
+
+@table @tabopt
+@item -mutc_fun_threads
+@opindex mutc_fun_threads
+Convert all functions to thread functions and use singleton creates
+
+@item -mutc_thread_mem
+@opindex mutc_thread_mem
+Use thread local memory every where not global memory
+
+@item -mutc_disable_thread_mem
+@opindex mutc_disable_thread_mem
+Disable creation of thread local memory
+    
+@item -mutc_benchmark
+@opindex mutc_benchmark
+Enable mutc benchmarking support
+
+@item -mutc_static_resource_management 
+@opindex mutc_static_resource_management 
+Staticly manage resources
+
+@item -mutc_force_block_size @var{n}
+@opindex mutc_force_block_size 
+Force the block size to @var{n} for all creates.
+
+@item -mutc_force_spawn_flags @var{s} 
+@opindex mutc_force_spawn_flags
+Force the flags to @var{s} for all spawns.
+
+@item -mutc_distribute @var{mode}
+@opindex mutc_distribute
+Select a mode for distributing threads across cores. Possible modes
+are:
+@itemize @w{}
+@item @b{toplevel}
+only distribute the top-evel create of a with3 nesting
+@item @b{bounded}
+distribute threads globally until at least @var{n} threads have been
+distributed. @var{n} is specified using the @option{-mutc_distribute_arg} option.
+@end itemize
+
+@item  -mutc_distribute_arg
+@opindex mutc_distribute_arg             
+Numerical argument for distribution modes.
+
+@item -mutc_unroll @var{n}
+@opindex mutc_unroll
+Maximum @b{with3} size to unroll(1).
+@fixme{WTF is that?}
+
+
+@item -mutc_suballoc_desc_one_level_up
+@opindex mutc_suballoc_desc_one_level_up
+Allocate discs one level higher than they are used.
+@fixme{WTF are discs??}
+
+@item -mutc_rc_places @var{n}
+@opindex mutc_rc_places
+Number of exclusive places to be used for reference counting
+operations(1).
+
+@item -mutc_rc_indirect
+@opindex mutc_rc_indirect
+Perform reference counting operations using wrapper functions.
+
+@item -mutc_seq_data_parallel
+@opindex mutc_seq_data_parallel 
+Sequentialised data parallel code.
+@end table
+
+
+
+@node Irregular array options
+@section Irregular array options
+@cindex irregular array options
+
+Irregular arrays allows for shapes of any dimension (>=1) to contain
+elements of different size and dimension.  For example a 2x2 matrix
+could consist of three elements that are just a number but the fourth
+element is 3x3 matrix.
+
+@table @tabopt
+@item -irr_array
+@opindex irr_array
+Enable the use of irregular arrays.
+@end table
+
+
+@node Backend options
+@section Backend options
+@cindex backend options
+
+@fixme{Say something about the backends, and applicability of the further options.}
+
+@table @tabopt
+@item -minarrayrep @var{class}
+@opindex minarrayrep
+Specify the minimum array representation class used:
+@itemize @w{}
+@item @b{s}
+use all (SCL, AKS, AKD, AUD) representations,
+@item @b{d}
+use SCL, AKD, AUD representations only,
+@item @b{+}
+use SCL, AUD representations only,
+@item @b{*}
+use AUD representation only.
+@end itemize
+[default @var{class} is @b{s}]
+
+@item -force_desc_size @var{n}
+@opindex force_desc_size
+Force the size of the descriptor to @var{n} bytes.
+@end table
+
+
+@node Debug options
+@section Debug options
+@cindex debug options
+
+@table @tabopt
+
+@item -debug_rc
+@opindex debug_rc
+Enable reference counting debuging features
+
+@item -d treecheck
+@opindex dtreecheck
+Check syntax tree for consistency with xml specification.
+
+@item -d memcheck
+@opindex dmemcheck
+Check syntax tree for memory consistency.
+
+@item -d sancheck
+@opindex dsancheck
+Check syntax tree for structural consistency.
+
+@item -d lacfuncheck
+@opindex dlackfuncheck
+Check syntax tree for single call property of LaC functions.
+
+@item -d nolacinline
+@opindex dnolacinline 
+Do not inline loop and conditional functions.
+
+@item -d efence
+@opindex defence 
+Link executable with ElectricFence (malloc debugger).
+
+@item -d nocleanup
+@opindex dnocleanup
+Do not remove temporary files and directories.
+
+@item -d syscall
+@opindex dsyscall
+Show all system calls during compilation.
+
+@item -d cccall
+@opindex dcccall
+Generate shell script @file{*.sac2c} that contains C compiler
+invocation.  This implies option @option{-d nocleanup}.
+
+@item -chkfreq @var{n}
+@opindex chkfreq
+
+Frequency of treecheck and lacfuncheck:
+@enumerate 0
+@item
+no checks
+@item
+after each phase
+@item 
+after each subphase
+@item
+after each optimisation
+@item
+after each function-based optimisation
+@end enumerate
+[@var{n} = 2 by default]
+@end table
+
+@subsection Fred Fish debugging system
+@cindex fred fish
+Fred Fish is a crazy library which is used in @sac{} to control things like
+function-calls, debugging-prints, etc.  The following options are available
+only within the developer's version of the compiler.
+
+@fixme{Proper description of how does Fred Fish works.}
+
+@table @tabopt
+
+@item -# t
+@opindex #t
+Display trace information.  Each function entry and exit during
+program execution is printed on the screen.
+
+@item -# d
+@itemx -# d,@var{tag}
+@opindex #d
+Display debug output information.  Each DBUG_PRINT macro in the code
+will be executed.  Each DBUG_EXECUTE macro in the code will be
+executed.
+
+In case the option is passed with @var{tag} the output of the option
+is restricted to DBUG_PRINT / DBUG_EXECUTE macros which are tagged
+with the string @var{tag} (no quotes).
+
+@item -# @var{f}/@var{t}/@var{o}
+@opindex #
+Restrict the effect of any Fred Fish DBUG package option @var{o} to
+the range @var{f} to @var{t} of @sactoc{} compiler phases.  [default:
+@var{f} = first compiler phase, @var{t} = last compiler phase] 
+
+All kinds of phases can be specified using a syntax analogous to that
+of the @option{-b} option.
+@end table
+
+
+
+@node Runtime options
+@section Runtime options
+@cindex runtime options
+
+@table @tabopt
+
+@item -ecc
+@opindex ecc
+Insert explicit conformity checks at compile time.
+
+@item -check @var{flags}
+@opindex check
+Incorporate runtime checks into executable program.
+The @var{falgs} is a string of the following letters written without spaces:
+@itemize @w{}
+@item @b{a}
+Incorporate all available runtime checks.
+@item @b{c}
+Perform conformity checks.
+@item @b{t}
+Check assignments for type violations.
+@item @b{b}
+Check array accesses for boundary violations.
+@item @b{m}
+Check success of memory allocations.
+@item @b{e}
+Check @i{errno} variable upon applications of external functions.
+@item @b{h}
+Use diagnostic heap manager.
+@end itemize
+
+@item -trace @var{flags}
+@opindex trace
+Incorporate trace output generation into executable program.
+The @var{falgs} is a string of the following letters written without spaces:
+@itemize @w{}
+@item @b{a}
+Trace all (same as mrfpowt).
+@item @b{m}
+Trace memory operations.
+@item @b{r}
+Trace reference counting operations.
+@item @b{f}
+Trace user-defined function calls.
+@item @b{p}
+Trace primitive function calls.
+@item @b{w}
+Trace with-loop execution.
+@item @b{s}
+Trace array accesses.
+@item @b{t}
+Trace multi-threading specific operations.
+@item @b{c}
+Trace runtime enviroment init/exit when using SAC libraries in C
+programs.
+@end itemize
+
+@item -utrace
+@opindex utrace
+Introduce user tracing calls.
+
+@item -profile @var{flags}
+@opindex profile
+Incorporate profiling analysis into executable program.
+The @var{falgs} is a string of the following letters written without spaces:
+@itemize @w{}
+@item @b{a}
+Analyse all (same as filw).
+@item @b{f}
+Analyse time spent in non-inline functions.
+@item @b{i}
+Analyse time spent in inline functions.
+@item @b{l}
+Analyse time spent in library functions.
+@item @b{w}
+Analyse time spent in with-loops.
+@end itemize
+@end table
+
+
+
+@node C compiler options
+@section C compiler options
+@cindex c compiler options
+
+@table @tabopt
+
+@item -linksetsize @var{n}
+@opindex linksetsize
+Specify how many compiled C functions are stored within a single C
+source file for further compilation and linking.  A large number here
+means that potentially many functions need to be linked to an
+executable that are actually never called.  However, setting the
+linksetsize to 1 considerably slows down the compilation of large @sac{}
+modules/classes.  [@var{n} = 10 by default]
+
+Note, a @option{-linksetsize 0} means all functions are stored in a a
+single file.
+
+@item -noprelude
+@opindex noprelude
+Do not load the standard prelude library @i{sacprelude}.
+
+@item -g
+@opindex g
+Include debug information into object code.
+
+
+@item -O @var{n}
+@opindex O
+Specify  the C compiler level of optimization.
+@enumerate 0
+@item
+no C compiler optimizations.
+@item 
+minor C compiler optimizations.
+@item
+medium C compiler optimizations.
+@item 
+full C compiler optimizations.
+@end enumerate
+Note, the actual effects of these options are specific to the C
+compiler used for code generation. Both the choice of a C compiler as
+well as the mapping of these generic options to compiler-specific
+optimization options are are determined via the @file{sac2crc} configuration
+file.  For details concerning @file{sac2crc} files 
+@xref{Customization options}.
+@end table
+
+
+@node Customization options
+@section Customization options
+@cindex customization options
+
+@table @tabopt
+
+@item -target @var{name}
+@opindex target
+Specify a particular compilation target.
+
+@item -t
+@opindex t
+Compilation targets are used to customize @sactoc{} for various target
+architectures, operating systems, and C compilers.
+
+The target description is either read from the installation specific
+file @file{$SACBASE/runtime/sac2crc} or from a file named @file{.sac2crc}
+within the user's home directory.
+
+Standard targets include the choice of a compiler backend:
+@table @b
+@item c99       
+default backend to produce C99 code
+@item mutc      
+backend to produce muTC code
+@item cuda
+backend to produce Cuda code
+@end table
+
+@end table
+
+@c man end
+
+
+@node Standard library
+@chapter Standard library
+
+
+@node Implementation details
+@chapter Implementation details
+
+
+@node Known problems
+@chapter Known problems
+
+
+@node Reporting bugs
+@chapter Reporting bugs
+
+
+@node Getting help
+@chapter Getting help
+
+
+@node Contributing to SaC
+@chapter Contributing to SaC
+
+
+@node Keyword index
+@unnumbered Keyword index
+@printindex cp
+
+
+@node Option index
+@unnumbered Option index
+@printindex op
+
+@bye
