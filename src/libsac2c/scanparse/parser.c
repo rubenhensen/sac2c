@@ -1562,6 +1562,7 @@ handle_primary_expr (struct parser *parser)
     node *res = NULL;
     struct token *tok = parser_get_token (parser);
     enum token_class tclass = token_class (tok);
+    struct location loc = token_location (tok);
     struct token *tok1;
 
 #define ADD_TOK_NUMBER_INT(type, tok, ret, convert, make_node)                           \
@@ -1586,7 +1587,6 @@ handle_primary_expr (struct parser *parser)
             return error_mark_node;                                                      \
         }                                                                                \
         ret = make_node (num);                                                           \
-        NODE_LINE (ret) = token_location (tok).line;                                     \
     } while (0)
 
     /* ::= const-number
@@ -1624,11 +1624,9 @@ handle_primary_expr (struct parser *parser)
     else if (tclass == tok_number_float) {
         float val = (float)atof (token_as_string (tok));
         res = TBmakeFloat (val);
-        NODE_LINE (res) = token_location (tok).line;
     } else if (tclass == tok_number_double) {
         double val = atof (token_as_string (tok));
         res = TBmakeDouble (val);
-        NODE_LINE (res) = token_location (tok).line;
     }
     /* ::= const-string
        Constant quoted string.  */
@@ -1639,19 +1637,16 @@ handle_primary_expr (struct parser *parser)
            resulting C program.  */
         char *qs = quote_string (token_as_string (tok), NULL, 0);
         res = STRstring2Array (qs);
-        NODE_LINE (res) = token_location (tok).line;
     }
     /*  ::= const-char
         Constant quoted character.  */
     else if (tclass == tok_char) {
         res = TBmakeChar (token_as_string (tok)[0]);
-        NODE_LINE (res) = token_location (tok).line;
     }
     /* ::= id | function-call
        Identifier or a function call.  */
     else if (tclass == tok_id || tclass == tok_user_op) {
         struct identifier *id;
-        struct location loc = token_location (tok);
 
         parser_unget (parser);
         if (is_function_call (parser))
@@ -1672,7 +1667,6 @@ handle_primary_expr (struct parser *parser)
            A function-call prefexid with SPAWN and placement.  */
         if (token_value (tok) == SPAWN || token_value (tok) == RSPAWN) {
             enum token_kind tkind = token_value (tok);
-            struct location loc = token_location (tok);
             char *place = NULL;
 
             tok1 = parser_get_token (parser);
@@ -1701,7 +1695,24 @@ handle_primary_expr (struct parser *parser)
                 if (place)
                     SPAP_SPAWNPLACE (res) = place;
             }
-            NODE_LINE (res) = loc.line;
+        }
+        /* ::= with-loop  */
+        else if (token_is_keyword (tok, NWITH)) {
+            parser_unget (parser);
+            res = handle_with (parser);
+        }
+        /* ::= local with-loop  */
+        else if (token_is_keyword (tok, LOCAL)) {
+            tok1 = parser_get_token (parser);
+            if (token_is_keyword (tok1, NWITH)) {
+                parser_unget (parser);
+                res = handle_with (parser);
+                if (res != NULL && res != error_mark_node)
+                    WITH_DIST (res) = strdup ("PLACE_LOCAL");
+            } else {
+                error_loc (loc, "`local' not followed by `with' found");
+                return error_mark_node;
+            }
         }
         /* ::= prf-call
            Primitive function call.  */
@@ -1713,13 +1724,11 @@ handle_primary_expr (struct parser *parser)
            Boolean TRUE constant.  */
         else if (token_is_keyword (tok, TRUETOKEN)) {
             res = TBmakeBool (1);
-            NODE_LINE (res) = token_location (tok).line;
         }
         /* ::= false
            Boolean FALSE constant.  */
         else if (token_is_keyword (tok, FALSETOKEN)) {
             res = TBmakeBool (0);
-            NODE_LINE (res) = token_location (tok).line;
         }
         /* ::= function-call
            Function call where the name of the function is a
@@ -1786,7 +1795,6 @@ handle_primary_expr (struct parser *parser)
 
         case tv_lsquare: {
             /* Constant array.  */
-            struct location loc = token_location (tok);
             bool saw_colon = false;
 
             tok = parser_get_token (parser);
@@ -1803,10 +1811,8 @@ handle_primary_expr (struct parser *parser)
                     error_loc (loc, "Empty array with non-constant "
                                     "shape found.");
                     res = error_mark_node;
-                } else {
+                } else
                     res = TCmakeVector (type, NULL);
-                    NODE_LINE (res) = loc.line;
-                }
             }
             /* ::= '[' expr-list ']'
                    | '[' ']'
@@ -1826,7 +1832,6 @@ handle_primary_expr (struct parser *parser)
                     ntype *type;
                     type = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
                     res = TCmakeVector (type, NULL);
-                    NODE_LINE (res) = loc.line;
                 } else {
                     els = handle_expr_list (parser);
                     if (els == error_mark_node)
@@ -1836,7 +1841,6 @@ handle_primary_expr (struct parser *parser)
                         type = TYmakeAKS (TYmakeSimpleType (T_unknown), SHmakeShape (0));
 
                         res = TCmakeVector (type, els);
-                        NODE_LINE (res) = loc.line;
                     }
                 }
             }
@@ -1849,7 +1853,6 @@ handle_primary_expr (struct parser *parser)
 
         /*  ::= '<' expr-list '>'  */
         case tv_lt: {
-            struct location loc = token_location (tok);
             node *els;
 
             els = handle_expr_list (parser);
@@ -1860,7 +1863,6 @@ handle_primary_expr (struct parser *parser)
                 type = TYmakeAKS (TYmakeSimpleType (T_unknown), SHmakeShape (0));
 
                 res = TCmakeVector (type, els);
-                NODE_LINE (res) = loc.line;
                 ARRAY_ISIRREGULAR (res) = TRUE;
             }
 
@@ -1876,8 +1878,6 @@ handle_primary_expr (struct parser *parser)
            Axis notation.  */
         /* FIXME do a propper skipping to the right brace.  */
         case tv_lbrace: {
-            struct location loc = token_location (tok);
-
             tok = parser_get_token (parser);
             parser_unget (parser);
 
@@ -1918,7 +1918,6 @@ handle_primary_expr (struct parser *parser)
                 if (expr != error_mark_node && parser_expect_tval (parser, tv_rbrace)) {
                     parser_get_token (parser);
                     res = TBmakeSetwl (exprs, expr);
-                    NODE_LINE (res) = loc.line;
                 } else {
                     free_tree (expr);
                     free_tree (exprs);
@@ -1946,7 +1945,6 @@ handle_primary_expr (struct parser *parser)
                 if (expr != error_mark_node && parser_expect_tval (parser, tv_rbrace)) {
                     parser_get_token (parser);
                     res = TBmakeSetwl (id, expr);
-                    NODE_LINE (res) = loc.line;
                 } else {
                     free_tree (id);
                     free_tree (expr);
@@ -1968,6 +1966,11 @@ handle_primary_expr (struct parser *parser)
     } else
         error_loc (token_location (tok), "token %s cannot start an expression.",
                    token_as_string (tok));
+
+    /* Initialize the location of the RES node.  */
+    if (res != NULL && res != error_mark_node)
+        NODE_LINE (res) = loc.line;
+
     return res;
 }
 
@@ -1982,14 +1985,17 @@ node *
 handle_postfix_expr (struct parser *parser)
 {
     struct token *tok;
+    struct location loc;
     node *res;
+
+    tok = parser_get_token (parser);
+    loc = token_location (tok);
+    parser_unget (parser);
 
     res = handle_primary_expr (parser);
 
-    if (res == error_mark_node)
-        return error_mark_node;
-    else if (res == NULL)
-        return NULL;
+    if (res == error_mark_node || res == NULL)
+        return res;
 
     tok = parser_get_token (parser);
     while (true) {
@@ -2006,6 +2012,9 @@ handle_postfix_expr (struct parser *parser)
                 struct_id = STRcat (STRUCT_GET, struct_id);
                 id_node = TBmakeSpid (NULL, struct_id);
                 res = TBmakeSpap (id_node, TBmakeExprs (res, NULL));
+
+                /* Set location for every internal function-call.  */
+                NODE_LINE (res) = loc.line;
             } else {
                 parser_unget (parser);
                 return error_mark_node;
@@ -2035,6 +2044,9 @@ handle_postfix_expr (struct parser *parser)
                 vec = TCmakeVector (type, args);
                 res = TCmakeSpap2 (NULL, strdup ("sel"), vec, res);
             }
+
+            /* Set location for every internal function-call.  */
+            NODE_LINE (res) = loc.line;
         } else {
             parser_unget (parser);
             goto out;
@@ -2073,6 +2085,7 @@ handle_postfix_expr (struct parser *parser)
     }
 
 out:
+    NODE_LINE (res) = loc.line;
     return res;
 }
 
@@ -3134,42 +3147,12 @@ error:
     return error_mark_node;
 }
 
-/* expr ::= with-loop
-            | 'local' with-loop
-            | conditional-expr
-*/
-node *
+/* expr ::= conditional-expr
+ */
+inline node *
 handle_expr (struct parser *parser)
 {
-    struct token *tok;
-    struct location loc;
-    node *ret;
-
-    tok = parser_get_token (parser);
-    loc = token_location (tok);
-
-    if (token_is_keyword (tok, NWITH)) {
-        parser_unget (parser);
-        ret = handle_with (parser);
-    } else if (token_is_keyword (tok, LOCAL)) {
-        tok = parser_get_token (parser);
-        if (token_is_keyword (tok, NWITH)) {
-            parser_unget (parser);
-            ret = handle_with (parser);
-            WITH_DIST (ret) = strdup ("PLACE_LOCAL");
-        } else {
-            error_loc (loc, "`local' not followed by `with' found");
-            return error_mark_node;
-        }
-    } else {
-        parser_unget (parser);
-        ret = handle_conditional_expr (parser, false);
-    }
-
-    if (ret != NULL && ret != error_mark_node)
-        NODE_LINE (ret) = loc.line;
-
-    return ret;
+    return handle_conditional_expr (parser, false);
 }
 
 /*
@@ -3406,6 +3389,9 @@ handle_assign (struct parser *parser)
         error_loc (token_location (tok), "assignment operator expected");
         goto out;
     }
+
+    if (ret != NULL && ret != error_mark_node)
+        NODE_LINE (ret) = loc.line;
 
     return ret;
 
@@ -3885,9 +3871,10 @@ handle_return (struct parser *parser)
         node *exprs;
 
         tok = parser_get_token (parser);
-        if (token_is_operator (tok, tv_semicolon))
-            return TBmakeAssign (TBmakeReturn (NULL), NULL);
-        else
+        if (token_is_operator (tok, tv_semicolon)) {
+            exprs = TBmakeAssign (TBmakeReturn (NULL), NULL);
+            NODE_LINE (exprs) = loc.line;
+        } else
             parser_unget (parser);
 
         parser->in_return = true;
@@ -4744,6 +4731,7 @@ pragmas:
             *ftype = fun_extern_fundec;
     }
 
+    NODE_LINE (ret) = loc.line;
     return ret;
 }
 
