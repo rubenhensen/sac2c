@@ -32,7 +32,7 @@ extern void SHtouchShape (shape *shp, info *arg_info);
 
 extern int SHgetDim (shape *shp);
 extern int SHgetExtent (shape *shp, int dim);
-extern int SHgetUnrLen (shape *shp);
+extern long long SHgetUnrLen (shape *shp);
 
 extern int SHsubarrayDim (shape *shp, int n);
 

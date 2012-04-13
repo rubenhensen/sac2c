@@ -830,7 +830,7 @@ static bool
 CheckUnrollGenarray (node *wln, node *lhs, info *arg_info)
 {
     bool ok;
-    int length;
+    long long length;
 
     DBUG_ENTER ();
 

@@ -321,10 +321,11 @@ SHgetExtent (shape *shp, int dim)
  * @brief return the length of a vector if shp was to be unrolled
  *
  ******************************************************************************/
-int
+long long
 SHgetUnrLen (shape *shp)
 {
-    int i, length;
+    int i;
+    long long length;
 
     DBUG_ENTER ();
     DBUG_ASSERT (shp != NULL, "SHgetUnrLen called with NULL shape!");
