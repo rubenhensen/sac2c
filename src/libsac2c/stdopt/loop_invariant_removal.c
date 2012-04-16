@@ -117,7 +117,7 @@
  *****************************************************************************/
 #include "loop_invariant_removal.h"
 
-#define DBUG_PREFIX "LIR"
+#define DBUG_PREFIX "DLIR"
 #include "debug.h"
 
 #include "tree_basic.h"
@@ -142,7 +142,6 @@ typedef enum { TS_fundef, TS_module } travstart;
 
 struct INFO {
     node *fundef;
-    bool remassign;
     node *preassign;
     node *postassign;
     node *assign;
@@ -163,13 +162,58 @@ struct INFO {
     node *fundefintassign;
     travstart travstart;
     bool travinlac;
+    node *lhs; // TODO: could be removed
 };
 
 /*
  * INFO macros
+ *
+ * INFO_FUNDEF              : node* = set in LIRfundef()
+ * INFO_PREASSIGN           : node* = assignments that should be moved just before the
+ current one
+ * INFO_POSTASSIGN          : node* = assignments that should be moved just after the
+ current one
+ * INFO_ASSIGN              : node* = current N_assign node. Transfered to
+ INFO_FUNDEFEXTASSIGN upon entering fundef.
+ * INFO_NONLIRUSE           : int = number of non-LIR N_id. If in top-block and there is
+ none non-LIR in N_let, then the N_let can be moved up.
+ * INFO_CONDSTATUS          : int = {CONDSTATUS_NOCOND, CONDSTATUS_THENPART,
+ CONDSTATUS_ELSEPART}. The segment of the conditional expression in ssa form in LAC fun.
+ that we're traversing.
+ * INFO_WITHDEPTH           : int = with-loop depth level, reset in fundef,
+ inc/decremented in LIRwith
+ * INFO_TOPBLOCK            : bool = flag indicates we're in the function's top-level
+ block
+ * INFO_FLAG                : int {LIR_NORMAL, LIR_MOVEUP, LIR_INRETURN, LIR_MOVELOCAL,
+ LIR_MOVEDOWN} = traverse sub-mode
+ * INFO_EXTPREASSIGN        : node* = N_assign's that are being moved out of lac-fun. into
+ parent
+ * INFO_EXTPOSTASSIGN       : node* = N_assign's that are being moved down across lac-fun
+ * INFO_MOVELUT             : lut_t* = LUT between an internal arg and the external vardec
+ pair
+ * INFO_APARGCHAIN          : node* = in LOOP-fun: fun. arg chain of the parent ap. call;
+                              Consumed in LIRarg() along its passage over fun. args. when
+ they're paired with internal args.
+ * INFO_APRESCHAIN          : node* = results chain of the child func.
+ * INFO_EXTFUNDEF           : node* = in LAC-fun: the external calling fundef
+ * INFO_RESULTMAP           : nodelist* = local id -> result ids
+ * INFO_DEPTHMASK           : bool* = array of [WITHDEPTH+1] bools. Indicates there's a
+ dependecy on a variable defined on a given level of the with-loop nest tree.
+ * INFO_SETDEPTH            : int = the depth to which the avis definition depths
+ (AVIS_DEFDEPTH) shall be set in LIRids. It may be different from INFO_WITHDEPTH in the
+ case the expression is being moved.
+ * INFO_INSLIST             : nodelist* = list of frames (a stack but with arbitrary
+ access to any frame). Frames are pushed/poped when traversing with-loop levels.
+ * INFO_FUNDEFEXTASSIGN     : node* = in LAC-fun: the external assign in the calling
+ fundef
+ * INFO_FUNDEFINTASSIGN     : node* = in LOOP-fun: the internal recursive assignment of
+ the fun. (only for TS_module)
+ * INFO_TRAVSTART           : {TS_fundef, TS_module} = mode
+ * INFO_TRAVINLAC           : bool = set in LIRap() upon entering LAC fundef
+ * INFO_LHS                 : node* = left-hand side, i.e. LET_IDS. Used for debug print
+ purposes.
  */
 #define INFO_FUNDEF(n) (n->fundef)
-#define INFO_REMASSIGN(n) (n->remassign)
 #define INFO_PREASSIGN(n) (n->preassign)
 #define INFO_POSTASSIGN(n) (n->postassign)
 #define INFO_ASSIGN(n) (n->assign)
@@ -190,6 +234,7 @@ struct INFO {
 #define INFO_FUNDEFINTASSIGN(n) (n->fundefintassign)
 #define INFO_TRAVSTART(n) (n->travstart)
 #define INFO_TRAVINLAC(n) (n->travinlac)
+#define INFO_LHS(n) (n->lhs)
 
 /*
  * INFO functions
@@ -204,7 +249,6 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
-    INFO_REMASSIGN (result) = FALSE;
     INFO_PREASSIGN (result) = NULL;
     INFO_POSTASSIGN (result) = NULL;
     INFO_ASSIGN (result) = NULL;
@@ -225,6 +269,7 @@ MakeInfo ()
     INFO_FUNDEFINTASSIGN (result) = NULL;
     INFO_TRAVSTART (result) = TS_fundef;
     INFO_TRAVINLAC (result) = FALSE;
+    INFO_LHS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -345,7 +390,11 @@ CheckMoveDownFlag (node *instr, info *arg_info)
              * be moved down
              */
             LET_LIRFLAG (instr) = LET_LIRFLAG (instr) | LIRMOVE_DOWN;
-            DBUG_PRINT ("whole expression marked for move-down");
+            DBUG_PRINT ("whole expression %s marked for move-down",
+                        AVIS_NAME (IDS_AVIS (LET_IDS (instr))));
+        } else {
+            DBUG_PRINT ("whole expression %s can not be moved down",
+                        AVIS_NAME (IDS_AVIS (LET_IDS (instr))));
         }
     }
 
@@ -452,12 +501,12 @@ CreateNewResult (node *avis, info *arg_info)
 
     AVIS_SSAASSIGN (VARDEC_AVIS (new_pct_vardec)) = ASSIGN_NEXT (tmp);
 
-#ifdef LETISAADOIT
+    // #ifdef LETISAADOIT           not is SSALIR
     if (PHisSAAMode ()) {
         /* FIXME should set AVIS_DIM/SHAPE here */
         CTIwarn ("CreateNewResult could not set AVIS_SHAPE/AVIS_DIM");
     }
-#endif // LETISAADOIT
+    // #endif // LETISAADOIT
 
     DBUG_RETURN ();
 }
@@ -646,23 +695,25 @@ DLIRfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT_TAG ("DLIR", "do-loop-invariant removal in fundef %s",
-                    FUNDEF_NAME (arg_node));
+    DBUG_PRINT ("Starting do-loop-invariant removal in fundef %s",
+                FUNDEF_NAME (arg_node));
 
     if (((FUNDEF_ISLACFUN (arg_node))
          && ((INFO_TRAVINLAC (arg_info)) || (INFO_TRAVSTART (arg_info) == TS_fundef)))
         || (!FUNDEF_ISLACFUN (arg_node))) {
         /**
          * only traverse fundef node if fundef is not lacfun, or if traversal
-         * was initialized in ap-node (travinlac == TRUE)
+         * was initialized in ap-node (travinlac == TRUE);
+         * (lacfun = loop or cond fun.)
          */
         info = MakeInfo ();
 
         INFO_TRAVSTART (info) = INFO_TRAVSTART (arg_info);
         INFO_TRAVINLAC (info) = INFO_TRAVINLAC (arg_info);
-        INFO_FUNDEF (info) = arg_node;
+        INFO_FUNDEF (info) = arg_node; // this fundef -> info.fundef
         if (INFO_TRAVINLAC (arg_info)) {
-            INFO_EXTFUNDEF (info) = INFO_FUNDEF (arg_info);
+            INFO_EXTFUNDEF (info)
+              = INFO_FUNDEF (arg_info); // parent fundef -> info.extfundef
             INFO_FUNDEFEXTASSIGN (info) = INFO_ASSIGN (arg_info);
         }
 
@@ -678,14 +729,14 @@ DLIRfundef (node *arg_node, info *arg_info)
         /* init empty result map */
         INFO_RESULTMAP (info) = NULL;
 
-        /* save pointer to archain of external function application */
+        /* save pointer to arg-chain of external function application */
         if ((FUNDEF_ARGS (arg_node) != NULL) && (FUNDEF_ISLOOPFUN (arg_node))
             && (INFO_TRAVSTART (info) == TS_module)) {
             INFO_APARGCHAIN (info) = AP_ARGS (ASSIGN_RHS (INFO_FUNDEFEXTASSIGN (info)));
         }
 
         /* traverse args */
-        DBUG_PRINT_TAG ("DLIR", "Traversing FUNDEF_ARGS for %s", FUNDEF_NAME (arg_node));
+        DBUG_PRINT ("Traversing FUNDEF_ARGS for %s", FUNDEF_NAME (arg_node));
         FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), info);
 
         /* top level (not [directly] contained in any withloop) */
@@ -693,8 +744,7 @@ DLIRfundef (node *arg_node, info *arg_info)
 
         /* traverse function body */
         if (FUNDEF_BODY (arg_node) != NULL) {
-            DBUG_PRINT_TAG ("DLIR", "Traversing FUNDEF_BODY for %s",
-                            FUNDEF_NAME (arg_node));
+            DBUG_PRINT ("Traversing FUNDEF_BODY for %s", FUNDEF_NAME (arg_node));
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
 
             if (INFO_TRAVSTART (arg_info) == TS_module) {
@@ -730,6 +780,8 @@ DLIRfundef (node *arg_node, info *arg_info)
             FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         }
     }
+
+    DBUG_PRINT ("Ended loop-invariant removal in fundef %s", FUNDEF_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -805,6 +857,7 @@ DLIRvardec (node *arg_node, info *arg_info)
 
     avis = VARDEC_AVIS (arg_node);
 
+    DBUG_PRINT ("Initializing vardec for %s", AVIS_NAME (avis));
     AVIS_NEEDCOUNT (avis) = 0;
     AVIS_SSALPINV (avis) = FALSE;
     AVIS_LIRMOVE (avis) = LIRMOVE_NONE;
@@ -913,6 +966,12 @@ DLIRassign (node *arg_node, info *arg_info)
         LET_LIRFLAG(ASSIGN_STMT(arg_node)) = LIRMOVE_STAY;
       }
     */
+    DBUG_ASSERT (!((INFO_TOPBLOCK (arg_info) == TRUE)
+                   && (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let)
+                   && (NODE_TYPE (ASSIGN_RHS (arg_node)) == N_with)
+                   && (pre_assign != NULL)),
+                 "Should never happen; see comment above");
+
     /* insert post-assign code */
     if (INFO_POSTASSIGN (arg_info) != NULL) {
         ASSIGN_NEXT (arg_node)
@@ -958,6 +1017,7 @@ DLIRassign (node *arg_node, info *arg_info)
 node *
 DLIRlet (node *arg_node, info *arg_info)
 {
+    node *oldlhs;
     node *ids;
 
     DBUG_ENTER ();
@@ -967,7 +1027,9 @@ DLIRlet (node *arg_node, info *arg_info)
         INFO_NONLIRUSE (arg_info) = 0;
     }
 
-    DBUG_PRINT ("LIRlet looking at: %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
+    oldlhs = INFO_LHS (arg_info);
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    DBUG_PRINT ("DLIRlet looking at: %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
     /*
@@ -984,7 +1046,10 @@ DLIRlet (node *arg_node, info *arg_info)
 
     AVIS_DIM( avis) = TRAVopt( AVIS_DIM( avis), arg_info);
     AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
+    AVIS_MIN (avis) = TRAVopt (AVIS_MIN (avis), arg_info);
+    AVIS_MAX (avis) = TRAVopt (AVIS_MAX (avis), arg_info);
 #endif // FIXME
+#undef FIXME
     ids = IDS_NEXT (ids);
     }
 
@@ -996,7 +1061,8 @@ DLIRlet (node *arg_node, info *arg_info)
             && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_with)
                   && (INFO_PREASSIGN (arg_info) != NULL)))) {
 
-            DBUG_PRINT ("loop-independent expression detected - mark it for moving up");
+            DBUG_PRINT ("DLIR expression %s detected - mark it for moving up",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             /*
              * expression is  not in a condition and uses only LI
              * arguments -> mark expression for move up in front of loop
@@ -1005,13 +1071,16 @@ DLIRlet (node *arg_node, info *arg_info)
             LET_LIRFLAG (arg_node) = LIRMOVE_UP;
             INFO_FLAG (arg_info) = LIR_MOVEUP;
         } else {
+            DBUG_PRINT ("non-LIR expression %s detected - marked for no moving",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
             LET_LIRFLAG (arg_node) = LIRMOVE_NONE;
             INFO_FLAG (arg_info) = LIR_NORMAL;
         }
     } else if (INFO_WITHDEPTH (arg_info) > 0) {
         /* in other blocks (with-loops), marks all definitions as local */
         if (INFO_CONDSTATUS (arg_info) == CONDSTATUS_NOCOND) {
-            DBUG_PRINT ("local expression detected - mark it");
+            DBUG_PRINT ("local expression %s detected - mark it",
+                        AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
             INFO_FLAG (arg_info) = LIR_MOVELOCAL;
         } else {
@@ -1029,6 +1098,7 @@ DLIRlet (node *arg_node, info *arg_info)
 
     /* step back to normal mode */
     INFO_FLAG (arg_info) = LIR_NORMAL;
+    INFO_LHS (arg_info) = oldlhs;
 
     DBUG_RETURN (arg_node);
 }
@@ -1058,6 +1128,9 @@ DLIRid (node *arg_node, info *arg_info)
     node *id;
 
     DBUG_ENTER ();
+
+    /* Traverse AVIS_DIM and friends */
+    ID_AVIS (arg_node) = TRAVcont (ID_AVIS (arg_node), arg_info);
 
     switch (INFO_FLAG (arg_info)) {
     case LIR_NORMAL:
@@ -1163,7 +1236,7 @@ DLIRap (node *arg_node, info *arg_info)
      */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-        DBUG_PRINT ("traverse in special fundef %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
+        DBUG_PRINT ("traverse of lacfun fundef %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
         old_trav = INFO_TRAVINLAC (arg_info);
         INFO_TRAVINLAC (arg_info) = TRUE;
@@ -1173,12 +1246,12 @@ DLIRap (node *arg_node, info *arg_info)
 
         INFO_TRAVINLAC (arg_info) = old_trav;
 
-        DBUG_PRINT ("traversal of special fundef %s finished\n",
+        DBUG_PRINT ("traversal of lacfun fundef %s finished\n",
                     FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
     } else {
         /* no traversal into a normal fundef */
-        DBUG_PRINT ("do not traverse in normal fundef %s",
+        DBUG_PRINT ("do not traverse normal fundef %s",
                     FUNDEF_NAME (AP_FUNDEF (arg_node)));
     }
 
@@ -1513,7 +1586,7 @@ DLIRMOVassign (node *arg_node, info *arg_info)
             move_table = LUTremoveLut (move_table);
 
             /* one loop invarinant expression removed */
-            global.optcounters.lir_expr++;
+            global.optcounters.dlir_expr++;
 
             /* move up expression can be removed - no further references */
             remove_assignment = TRUE;
@@ -1541,7 +1614,7 @@ DLIRMOVassign (node *arg_node, info *arg_info)
             move_table = LUTremoveLut (move_table);
 
             /* one loop invarinant expression moved */
-            global.optcounters.lir_expr++;
+            global.optcounters.dlir_expr++;
 
             /*
              * move down expressions cannot be removed - due to further references
@@ -1707,7 +1780,7 @@ DLIRMOVids (node *arg_ids, info *arg_info)
 
     DBUG_ENTER ();
 
-    if ((INFO_FLAG (arg_info) == LIR_MOVEUP) || (INFO_FLAG (arg_info) == LIR_MOVEUP)
+    if ((INFO_FLAG (arg_info) == LIR_MOVEUP) || (INFO_FLAG (arg_info) == LIR_MOVEDOWN)
         || (INFO_FLAG (arg_info) == LIR_MOVELOCAL)) {
         /*
          * create new vardec in ext fundef
@@ -1846,19 +1919,22 @@ FreeLIRInformation (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node* LIRdoLoopInvariantRemoval(node *arg_node
+ *   node* DLIRdoLoopInvariantRemoval(node *arg_node)
  *
  * description:
  *   starts the loop invariant removal for module/fundef nodes.
  *
  *****************************************************************************/
+
 node *
 DLIRdoLoopInvariantRemoval (node *arg_node)
 {
-
     info *arg_info;
 
     DBUG_ENTER ();
+
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
+                 "DLIRdoLoopInvariantRemoval called with non-module/non-fundef node");
 
     arg_info = MakeInfo ();
 

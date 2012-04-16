@@ -48,7 +48,6 @@
  *
  *****************************************************************************/
 extern node *WLIRdoLoopInvariantRemoval (node *fundef);
-extern node *WLIRdoLoopInvariantRemovalOneFundef (node *fundef);
 
 extern node *WLIRfundef (node *arg_node, info *arg_info);
 extern node *WLIRarg (node *arg_node, info *arg_info);

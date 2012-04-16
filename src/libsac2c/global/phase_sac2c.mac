@@ -293,8 +293,12 @@ SUBPHASE (dfr2, "Removing dead functions", DFRdoDeadFunctionRemoval,
 
 SUBPHASE (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, opt)
 
-SUBPHASE (lir, "Applying do-loop/with-loop invariant removal", LIRdoLoopInvariantRemoval,
-          FALSE, // global.optimize.dolir,
+SUBPHASE (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
+          FALSE, // global.optimize.dodlir,
+          opt)
+
+SUBPHASE (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
+          FALSE, // global.optimize.dowlir,
           opt)
 
 SUBPHASE (glf, "Grouping local functions", GLFdoGroupLocalFuns, ALWAYS, opt)
@@ -372,8 +376,11 @@ CYCLEPHASEFUNOLD (dcr, "Applying dead code removal", DCRdoDeadCodeRemoval,
 CYCLEPHASEFUNOLD (linl2, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, cyc)
 
-CYCLEPHASEFUNOLD (lir, "Applying do-loop/with-loop invariant removal",
-                  LIRdoLoopInvariantRemoval, global.optimize.dolir, opt, cyc)
+CYCLEPHASEFUNOLD (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
+                  global.optimize.dodlir, opt, cyc)
+
+CYCLEPHASEFUNOLD (wlir, "Applying with-loop invariant removal",
+                  WLIRdoLoopInvariantRemoval, global.optimize.dowlir, opt, cyc)
 
 CYCLEPHASEFUNOLD (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                   global.optimize.dowls, opt, cyc)
@@ -538,8 +545,11 @@ CYCLEPHASEFUNOLD (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimi
 CYCLEPHASEFUNOLD (linl2, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, saacyc)
 
-CYCLEPHASEFUNOLD (lir, "Applying do-loop/with-loop invariant removal",
-                  LIRdoLoopInvariantRemoval, global.optimize.dolir, opt, saacyc)
+CYCLEPHASEFUNOLD (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
+                  global.optimize.dodlir, opt, saacyc)
+
+CYCLEPHASEFUNOLD (wlir, "Applying with-loop invariant removal",
+                  WLIRdoLoopInvariantRemoval, global.optimize.dowlir, opt, saacyc)
 
 CYCLEPHASEFUNOLD (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                   global.optimize.dowls, opt, saacyc)
@@ -766,8 +776,11 @@ SUBPHASE (ebtls, "Eliminating Bottom Types for LS", EBTdoEliminateBottomTypes,
 SUBPHASE (cfls, "Applying constant folding for LS", CFdoConstantFolding,
           global.optimize.dols &&global.optimize.docf, opt)
 
-SUBPHASE (lirls, "Applying do-loop/with-loop invariant removal for LS",
-          LIRdoLoopInvariantRemoval, global.optimize.dols &&global.optimize.dolir, opt)
+SUBPHASE (dlirls, "Applying do-loop invariant removal for LS", DLIRdoLoopInvariantRemoval,
+          global.optimize.dols &&global.optimize.dodlir, opt)
+
+SUBPHASE (wlirls, "Applying with-loop invariant removal for LS",
+          WLIRdoLoopInvariantRemoval, global.optimize.dols &&global.optimize.dowlir, opt)
 
 SUBPHASE (ussai, "Undo SSAIV Transform", USSAIdoUndoSSAivTransform, global.ssaiv, opt)
 
@@ -794,8 +807,11 @@ SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemoval,
           opt)
 
 /* TODO: lir maybe should be run in a loop */
-SUBPHASE (lir2, "Applying do-loop/with-loop invariant removal", LIRdoLoopInvariantRemoval,
-          global.optimize.dols &&global.optimize.dolir, opt)
+SUBPHASE (dlir2, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
+          global.optimize.dols &&global.optimize.dodlir, opt)
+
+SUBPHASE (wlir2, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
+          global.optimize.dols &&global.optimize.dowlir, opt)
 
 SUBPHASE (fprc, "Filtering partial reuse candidates", FPRCdoFilterPartialReuseCandidates,
           (global.optimize.douip && global.optimize.dopr), opt)

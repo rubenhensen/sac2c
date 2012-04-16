@@ -2139,7 +2139,7 @@ LIRMOVassign (node *arg_node, info *arg_info)
             move_table = LUTremoveLut (move_table);
 
             /* one loop invarinant expression removed */
-            global.optcounters.lir_expr++;
+            global.optcounters.dlir_expr++;
 
             /* move up expression can be removed - no further references */
             remove_assignment = TRUE;
@@ -2167,7 +2167,7 @@ LIRMOVassign (node *arg_node, info *arg_info)
             move_table = LUTremoveLut (move_table);
 
             /* one loop invarinant expression moved */
-            global.optcounters.lir_expr++;
+            global.optcounters.dlir_expr++;
 
             /*
              * move down expressions cannot be removed - due to further references
@@ -2478,34 +2478,36 @@ FreeLIRInformation (node *arg_node)
  *   starts the loop invariant removal for module/fundef nodes.
  *
  *****************************************************************************/
-node *
-LIRdoLoopInvariantRemoval (node *arg_node)
+#if 0
+#error SSALIR is obsolete, use DLIR or WLIR!
+node* LIRdoLoopInvariantRemoval(node *arg_node)
 {
-    info *arg_info;
+  info *arg_info;
 
-    DBUG_ENTER ();
+  DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
-                 "LIRdoLoopInvariantRemoval called with non-module/non-fundef node");
+  DBUG_ASSERT ((NODE_TYPE(arg_node) == N_module) ||
+               (NODE_TYPE(arg_node) == N_fundef),
+               "LIRdoLoopInvariantRemoval called with non-module/non-fundef node");
 
-    arg_info = MakeInfo ();
+  arg_info = MakeInfo();
 
-    INFO_TRAVSTART (arg_info)
-      = (N_fundef == NODE_TYPE (arg_node)) ? TS_fundef : TS_module;
+  INFO_TRAVSTART( arg_info) = ( N_fundef == NODE_TYPE( arg_node)) ?
+                              TS_fundef : TS_module;
 
-    TRAVpush (TR_lir);
-    arg_node = TRAVdo (arg_node, arg_info);
-    TRAVpop ();
+  TRAVpush(TR_lir);    
+  arg_node = TRAVdo( arg_node, arg_info);
+  TRAVpop();
+  
+  arg_info = FreeInfo( arg_info);
 
-    arg_info = FreeInfo (arg_info);
-
-    /*
-     * we free the information gathered by LIR here as it is no longer
-     * used after this transformation
-     */
-    arg_node = FreeLIRInformation (arg_node);
-
-    DBUG_RETURN (arg_node);
+  /*
+   * we free the information gathered by LIR here as it is no longer
+   * used after this transformation                                               
+   */
+  arg_node  = FreeLIRInformation( arg_node);
+  DBUG_RETURN (arg_node);
 }
+#endif
 
 #undef DBUG_PREFIX

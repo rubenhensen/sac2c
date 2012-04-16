@@ -125,7 +125,8 @@
 #include "insert_symb_arrayattr.h"
 #include "dispatchfuncalls.h"
 #include "SSACSE.h"
-#include "SSALIR.h"
+#include "loop_invariant_removal.h"
+#include "withloop_invariant_removal.h"
 #include "cubeslicer.h"
 #include "prfunroll.h"
 #include "flattengenerators.h"
@@ -308,7 +309,8 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 {
     int i = 0;
     int ct;
-    int countLIR = 0;
+    int countDLIR = 0;
+    int countWLIR = 0;
     int countINL = 0;
     int countCSE = 0;
     int countTUP = 0;
@@ -330,9 +332,13 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
         ct = i;
 
         /* Invoke each opt */
-        if (global.optimize.dolir) {
-            countLIR = global.optcounters.lir_expr;
-            arg_node = LIRdoLoopInvariantRemoval (arg_node);
+        if (global.optimize.dodlir) {
+            countDLIR = global.optcounters.dlir_expr;
+            arg_node = DLIRdoLoopInvariantRemoval (arg_node);
+        }
+        if (global.optimize.dowlir) {
+            countWLIR = global.optcounters.wlir_expr;
+            arg_node = WLIRdoLoopInvariantRemoval (arg_node);
         }
         if (global.optimize.doinl) {
             countINL = global.optcounters.inl_fun;
@@ -397,9 +403,10 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 
         /* We do not count DCR, as it's merely for cleanup */
         DBUG_PRINT_TAG ("SSE",
-                        "LIR= %d, INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, AS=%d, AL=%d, "
-                        "DL=%d",
-                        (global.optcounters.lir_expr - countLIR),
+                        "DLIR= %d, WLIR= %d, INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, "
+                        "AS=%d, AL=%d, DL=%d",
+                        (global.optcounters.dlir_expr - countDLIR),
+                        (global.optcounters.wlir_expr - countWLIR),
                         (global.optcounters.inl_fun - countINL),
                         (global.optcounters.cse_expr - countCSE),
                         (global.optcounters.tup_upgrades - countTUP),
@@ -410,7 +417,8 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
                         (global.optcounters.dl_expr - countDL));
 
         if (/* Fix point check */
-            (countLIR == global.optcounters.lir_expr)
+            (countDLIR == global.optcounters.dlir_expr)
+            && (countWLIR == global.optcounters.wlir_expr)
             && (countINL == global.optcounters.inl_fun)
             && (countCSE == global.optcounters.cse_expr)
             && (countTUP == global.optcounters.tup_upgrades)

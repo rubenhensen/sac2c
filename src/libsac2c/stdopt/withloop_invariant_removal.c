@@ -50,6 +50,28 @@
  *   assignments because it can lead to wrong code, when we move code together
  *   with the moved withloop do another level.
  *
+ * Remark on With-Loop independence detection:
+ *   Nested with-loops (WL) form scope levels. When considering a WL for lifting,
+ *   those variables defined within it (i.e. on WITHDEPTH+1) and all that
+ *   are even deeper, have no impact on the WL's independence.
+ *   These local variables are moved along with the WL, should it be lifted.
+ *   However, other variables on the same or higher levels (0 <= lvl <= WITHDEPTH)
+ *   that are referenced by expressions in WL (e.g. in definitions of those local
+ *   variables) constitute true data dependencies. These dependencies
+ *   must be honoured: a WL can be moved up precisely to the maximal (deepest) level
+ *   on which variables referenced _anywhere_ within it currently reside.
+ *
+ *   Dependencies are tracked on a nest-level granularity in a bool array called DEPTHMASK
+ *   in an info structure. When an N_id is encountered within a WL a flag
+ *   corresponding to a level on which the N_id resides is set.
+ *   The length of the bool array is always WITHDEPTH+1 elements because
+ *   an N_id on the level WITHDEPTH can be seen at the worst.
+ *   When backtracking from N_with node the array is shortened by 1 and the superfluous
+ *   element is simply discarded. The discarded flag belongs to the level that is
+ *sub-local to the parent and thus unimportant to it. In N_assign a clean array is created
+ *for sons traversal. When backtracking, the mask obtained from sons is merged using a
+ *logical-OR into a mask returned to parent. This is because the mask in fact represents
+ *data dependencies of the whole subtree, potentially consisting of several assignments.
  *
  *****************************************************************************/
 #include "withloop_invariant_removal.h"
@@ -79,14 +101,11 @@ typedef enum { TS_fundef, TS_module } travstart;
 
 struct INFO {
     node *fundef;
-    bool remassign;
     node *preassign;
-    node *postassign;
-    node *assign;
-    node *lhsavis;
+    node *lhsavis; // was lhs:N_ids in SSALIR, here it's N_avis
     int withdepth;
     bool topblock;
-    int maxdepth;
+    bool *depthmask;
     int setdepth;
     nodelist *inslist;
     travstart travstart;
@@ -94,17 +113,33 @@ struct INFO {
 
 /*
  * INFO macros
+ *
+ * INFO_FUNDEF              : node* = set in LIRfundef()
+ * INFO_PREASSIGN           : node* = assignments that should be moved just before the
+ current one
+ * INFO_LHSAVIS             : node* = N_avis on the left-hand side, used mainly for debug
+ prints
+ * INFO_WITHDEPTH           : int = with-loop depth level, reset in fundef,
+ inc/decremented in LIRwith
+ * INFO_TOPBLOCK            : bool = flag indicates we're in the function's top-level
+ block
+ * INFO_DEPTHMASK           : bool* = array of [WITHDEPTH+1] bools. Indicates there's a
+ dependecy on a variable defined on a given level of the with-loop nest tree.
+ * INFO_SETDEPTH            : int = the depth to which the avis definition depths
+ (AVIS_DEFDEPTH) shall be set in LIRids. It may be different from INFO_WITHDEPTH in the
+ case the expression is being moved.
+ * INFO_INSLIST             : nodelist* = list of frames (a stack but with arbitrary
+ access to any frame). Frames are pushed/poped when traversing with-loop levels.
+ * INFO_TRAVSTART           : {TS_fundef, TS_module} = mode
+ *
  */
 #define INFO_FUNDEF(n) (n->fundef)
-#define INFO_REMASSIGN(n) (n->remassign)
 #define INFO_PREASSIGN(n) (n->preassign)
-#define INFO_ASSIGN(n) (n->assign)
 #define INFO_LHSAVIS(n) (n->lhsavis)
 #define INFO_WITHDEPTH(n) (n->withdepth)
 #define INFO_TOPBLOCK(n) (n->topblock)
-#define INFO_RESULTMAP(n) (n->resultmap)
-#define INFO_MAXDEPTH(n) (n->maxdepth)
 #define INFO_SETDEPTH(n) (n->setdepth)
+#define INFO_DEPTHMASK(n) (n->depthmask)
 #define INFO_INSLIST(n) (n->inslist)
 #define INFO_TRAVSTART(n) (n->travstart)
 
@@ -121,13 +156,11 @@ MakeInfo ()
     result = MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
-    INFO_REMASSIGN (result) = FALSE;
     INFO_PREASSIGN (result) = NULL;
-    INFO_ASSIGN (result) = NULL;
     INFO_LHSAVIS (result) = NULL;
     INFO_WITHDEPTH (result) = 0;
     INFO_TOPBLOCK (result) = FALSE;
-    INFO_MAXDEPTH (result) = 0;
+    INFO_DEPTHMASK (result) = MEMmalloc (sizeof (bool) * 1);
     INFO_SETDEPTH (result) = 0;
     INFO_INSLIST (result) = NULL;
     INFO_TRAVSTART (result) = TS_fundef;
@@ -139,6 +172,9 @@ static info *
 FreeInfo (info *info)
 {
     DBUG_ENTER ();
+
+    MEMfree (INFO_DEPTHMASK (info));
+    INFO_DEPTHMASK (info) = NULL;
 
     info = MEMfree (info);
 
@@ -197,6 +233,129 @@ ForbiddenMovement (node *chain)
 /******************************************************************************
  *
  * function:
+ *  static inline void depthmask_mark_level(info *inf, int level)
+ *
+ * Mark the given WL level as providing dependency for the current
+ * expression tree. 'Level' can be from 0 (top block) up to and including
+ * INFO_WITHDEPTH, indicating a dependency within the current level.
+ * In the later case the expression is effectively non-WL-invariant
+ * and thus cannot be moved.
+ *
+ *****************************************************************************/
+static inline void
+depthmask_mark_level (info *inf, int level)
+{
+    DBUG_ENTER ();
+    DBUG_ASSERT ((level >= 0) && (level <= INFO_WITHDEPTH (inf)),
+                 "cannot have/set dependency on a variable deeper than the current "
+                 "nesting level");
+
+    INFO_DEPTHMASK (inf)[level] = TRUE;
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  uint64_t dmask2ui64(info *inf)
+ *
+ * Extract INFO_WITHDEPTH as a 64-bit uint.
+ * Use for debug prints only!
+ *
+ *****************************************************************************/
+static uint64_t
+dmask2ui64 (info *inf)
+{
+    DBUG_ENTER ();
+
+    uint64_t v = 0;
+    for (int i = 0; i <= INFO_WITHDEPTH (inf); ++i) {
+        if (INFO_DEPTHMASK (inf)[i])
+            v |= (1ULL << i);
+    }
+
+    DBUG_RETURN (v);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *  int depthmask_deepest_level(const info *inf)
+ *
+ * Find out the deepest marked WL level. The deepest level is the level onto
+ * which and expression can be moved while still having all dependencies
+ * satisfied.
+ *
+ * Examples:
+ *  0000 -> 0
+ *  0001 -> 0
+ *  001X -> 1
+ *  01XX -> 2, and so on
+ *
+ *****************************************************************************/
+static int
+depthmask_deepest_level (const info *inf)
+{
+    int result = 0; /* default: depends on top-level */
+
+    DBUG_ENTER ();
+
+    for (int i = INFO_WITHDEPTH (inf); i >= 0; --i) {
+        if (INFO_DEPTHMASK (inf)[i]) {
+            result = i;
+            break;
+        }
+    }
+
+    DBUG_RETURN (result);
+}
+
+/******************************************************************************
+ *
+ * void clear_dmask(bool *dmask, int wl_depth)
+ *    Clear the whole depth-mask.
+ *
+ * void copy_dmask(bool *dst, bool *src, int wl_depth)
+ *    Copy depth-masks.
+ *
+ * void merge_dmask(bool *dst, bool *src, int wl_depth)
+ *    Merge depth-mask src into dst using logical OR.
+ *
+ *****************************************************************************/
+static void
+clear_dmask (bool *dmask, int wl_depth)
+{
+    DBUG_ENTER ();
+    for (int i = 0; i <= wl_depth; ++i) {
+        dmask[i] = FALSE;
+    }
+    DBUG_RETURN ();
+}
+
+static void
+copy_dmask (bool *dst, bool *src, int wl_depth)
+{
+    DBUG_ENTER ();
+    for (int i = 0; i <= wl_depth; ++i) {
+        dst[i] = src[i];
+    }
+    DBUG_RETURN ();
+}
+
+static void
+merge_dmask (bool *dst, bool *src, int wl_depth)
+{
+    DBUG_ENTER ();
+    for (int i = 0; i <= wl_depth; ++i) {
+        dst[i] = dst[i] || src[i];
+    }
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
  *   nodelist *InsListPushFrame(nodelist *il)
  *
  * description:
@@ -239,7 +398,7 @@ InsListPopFrame (nodelist *il)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (il != NULL, "tried to pop of empty insert list");
+    DBUG_ASSERT (il != NULL, "tried to pop off empty insert list");
 
     il = FREEfreeNodelistNode (il);
 
@@ -502,33 +661,31 @@ WLIRblock (node *arg_node, info *arg_info)
 node *
 WLIRassign (node *arg_node, info *arg_info)
 {
-    bool remove_assign;
+    bool remove_assign = FALSE;
     node *pre_assign;
     node *tmp;
-    int old_maxdepth;
-    node *old_assign;
-    int wlir_move_up;
+    bool *old_dmask;
+    bool new_dmask_buf[INFO_WITHDEPTH (arg_info) + 1];
+    int deepest_lvl;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (ASSIGN_STMT (arg_node), "missing instruction in assignment");
 
     /* init traversal flags */
-    INFO_REMASSIGN (arg_info) = FALSE;
-    old_assign = INFO_ASSIGN (arg_info);
-    INFO_ASSIGN (arg_info) = arg_node;
     INFO_PREASSIGN (arg_info) = NULL;
-    old_maxdepth = INFO_MAXDEPTH (arg_info);
-    INFO_MAXDEPTH (arg_info) = 0;
+    /* save incomming depth-mask, reset and activate a new one */
+    old_dmask = INFO_DEPTHMASK (arg_info);
+    clear_dmask (new_dmask_buf, INFO_WITHDEPTH (arg_info));
+    INFO_DEPTHMASK (arg_info) = new_dmask_buf;
 
     /* start traversal of instruction */
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-    /* analyse and store results of instruction traversal */
-    INFO_ASSIGN (arg_info) = old_assign;
-    remove_assign = INFO_REMASSIGN (arg_info);
-    INFO_REMASSIGN (arg_info) = FALSE;
+    /* pick up from sons traversal */
+    deepest_lvl = depthmask_deepest_level (arg_info);
 
+    /* analyse and store results of instruction traversal */
     pre_assign = INFO_PREASSIGN (arg_info);
     INFO_PREASSIGN (arg_info) = NULL;
 
@@ -543,13 +700,13 @@ WLIRassign (node *arg_node, info *arg_info)
      * so we let this withloop at its current level and try to move it in the
      * next opt cycle as standalone expression without dependent preassigns.
      */
-    if ((INFO_MAXDEPTH (arg_info) < INFO_WITHDEPTH (arg_info))
+    if ((deepest_lvl < INFO_WITHDEPTH (arg_info))
         && (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let)
 #ifndef CREATE_UNIQUE_BY_HEAP
         && (!ForbiddenMovement (LET_IDS (ASSIGN_STMT (arg_node))))
 #endif
         && (!((NODE_TYPE (ASSIGN_RHS (arg_node)) == N_with) && (pre_assign != NULL)))) {
-        wlir_move_up = INFO_MAXDEPTH (arg_info);
+        DBUG_PRINT ("assignment is moving to level %d", deepest_lvl);
 
         /*
          * now we add this assignment to the respective insert level chain
@@ -571,13 +728,13 @@ WLIRassign (node *arg_node, info *arg_info)
         /* first the preassign code */
         if (pre_assign != NULL) {
             INFO_INSLIST (arg_info)
-              = InsListAppendAssigns (INFO_INSLIST (arg_info), pre_assign, wlir_move_up);
+              = InsListAppendAssigns (INFO_INSLIST (arg_info), pre_assign, deepest_lvl);
             pre_assign = NULL;
         }
 
         /* append this assignment */
         INFO_INSLIST (arg_info)
-          = InsListAppendAssigns (INFO_INSLIST (arg_info), tmp, wlir_move_up);
+          = InsListAppendAssigns (INFO_INSLIST (arg_info), tmp, deepest_lvl);
 
         /* increment optimize statistics counter */
         global.optcounters.wlir_expr++;
@@ -603,8 +760,12 @@ WLIRassign (node *arg_node, info *arg_info)
         arg_node = TCappendAssign (pre_assign, arg_node);
     }
 
-    /* restore old maxdepth counter */
-    INFO_MAXDEPTH (arg_info) = old_maxdepth;
+    /* Update the parent depth-mask with ours so as to collect the
+     * dependency info. of all the nested expressions.
+     * If we're lifting this assignment up then the current mask still needs to be
+     * collected because it tracks the real dependency in the tree. */
+    merge_dmask (old_dmask, INFO_DEPTHMASK (arg_info), INFO_WITHDEPTH (arg_info));
+    INFO_DEPTHMASK (arg_info) = old_dmask;
 
     DBUG_RETURN (arg_node);
 }
@@ -625,6 +786,7 @@ WLIRassign (node *arg_node, info *arg_info)
 node *
 WLIRlet (node *arg_node, info *arg_info)
 {
+    int deepest_lvl;
 
     DBUG_ENTER ();
 
@@ -632,20 +794,33 @@ WLIRlet (node *arg_node, info *arg_info)
     DBUG_PRINT ("looking at %s", AVIS_NAME (INFO_LHSAVIS (arg_info)));
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
+    /* pick up from sons traversal */
+    deepest_lvl = depthmask_deepest_level (arg_info);
+
+    /* depedencies on nested variables should have been masked out in N_with */
+    DBUG_ASSERT (deepest_lvl <= INFO_WITHDEPTH (arg_info),
+                 "expression reported to depend on a nested variable");
+
+    DBUG_PRINT ("expression %s on level %d has max. dep. on level %d (dmask=0x%llX)",
+                AVIS_NAME (INFO_LHSAVIS (arg_info)), INFO_WITHDEPTH (arg_info),
+                deepest_lvl, dmask2ui64 (arg_info));
+
     /* detect withloop-independent expression, will be moved up */
-    if ((INFO_MAXDEPTH (arg_info) < INFO_WITHDEPTH (arg_info))
+    if ((deepest_lvl < INFO_WITHDEPTH (arg_info))
 #ifndef CREATE_UNIQUE_BY_HEAP
         && (!ForbiddenMovement (LET_IDS (arg_node)))
 #endif
         && (!((NODE_TYPE (LET_EXPR (arg_node)) == N_with)
               && (INFO_PREASSIGN (arg_info) != NULL)))) {
         /* set new target definition depth */
-        INFO_SETDEPTH (arg_info) = INFO_MAXDEPTH (arg_info);
+        INFO_SETDEPTH (arg_info) = deepest_lvl;
         DBUG_PRINT ("moving assignment from depth %d to depth %d",
-                    INFO_WITHDEPTH (arg_info), INFO_MAXDEPTH (arg_info));
+                    INFO_WITHDEPTH (arg_info), deepest_lvl);
 
     } else {
         /* set current depth */
+        DBUG_PRINT ("changing SETDEPTH: %d -> %d", INFO_SETDEPTH (arg_info),
+                    INFO_WITHDEPTH (arg_info));
         INFO_SETDEPTH (arg_info) = INFO_WITHDEPTH (arg_info);
     }
 
@@ -662,17 +837,7 @@ WLIRlet (node *arg_node, info *arg_info)
  *   node* WLIRid(node *arg_node, info *arg_info)
  *
  * description:
- *   normal mode:
- *     checks identifier for being loop invariant or increments nonliruse
- *     counter always increments the needed counter.
- *
- *   inreturn mode:
- *     checks for move down assignments and set flag in avis node
- *     creates a mapping between local vardec/avis/name and external result
- *     vardec/avis/name for later code movement with LUT. because we do not
- *     want this modification when we move up expressions, we cannot store
- *     these mapping in LUT directly. therefore we save the inferred information
- *     in a nodelist RESULTMAP for later access on move_down operations.
+ *   note the with-loop definition depth of the id
  *
  *****************************************************************************/
 node *
@@ -686,9 +851,15 @@ WLIRid (node *arg_node, info *arg_info)
      */
     DBUG_ASSERT (AVIS_DEFDEPTH (ID_AVIS (arg_node)) != DD_UNDEFINED,
                  "usage of undefined identifier");
-    if (INFO_MAXDEPTH (arg_info) < AVIS_DEFDEPTH (ID_AVIS (arg_node))) {
-        INFO_MAXDEPTH (arg_info) = AVIS_DEFDEPTH (ID_AVIS (arg_node));
-    }
+
+    /* mark the definition level of this N_id, i.e. AVIS_DEFDEPTH(ID_AVIS(arg_node)),
+     * in the global bitmask that helps us to establish the maximal level used in an
+     * expression */
+    depthmask_mark_level (arg_info, AVIS_DEFDEPTH (ID_AVIS (arg_node)));
+
+    DBUG_PRINT ("id %s: DEFDEPTH=%d; SETDEPTH=%d; dmask=0x%llX",
+                AVIS_NAME (ID_AVIS (arg_node)), AVIS_DEFDEPTH (ID_AVIS (arg_node)),
+                INFO_SETDEPTH (arg_info), dmask2ui64 (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -709,12 +880,24 @@ WLIRid (node *arg_node, info *arg_info)
 node *
 WLIRwith (node *arg_node, info *arg_info)
 {
+    bool larger_dmask_buf[INFO_WITHDEPTH (arg_info) + 2];
+    bool *old_dmask;
+
     DBUG_ENTER ();
 
     DBUG_PRINT ("Looking at %s=with...", AVIS_NAME (INFO_LHSAVIS (arg_info)));
     /* clear current InsertListFrame */
     INFO_INSLIST (arg_info)
       = InsListSetAssigns (INFO_INSLIST (arg_info), NULL, INFO_WITHDEPTH (arg_info));
+
+    /* As WITHDEPTH is being incremented below, we must enlarge the DEPTHMASK
+     * buffer so that its size stays WITHDEPTH+1 even after the increment.
+     * We use a new buffer (larger_dmask_buf) and afterwards we copy its
+     * content back. */
+    old_dmask = INFO_DEPTHMASK (arg_info);
+    copy_dmask (larger_dmask_buf, old_dmask, INFO_WITHDEPTH (arg_info));
+    larger_dmask_buf[INFO_WITHDEPTH (arg_info) + 1] = FALSE;
+    INFO_DEPTHMASK (arg_info) = larger_dmask_buf;
 
     /* increment withdepth counter */
     INFO_WITHDEPTH (arg_info) = INFO_WITHDEPTH (arg_info) + 1;
@@ -736,6 +919,13 @@ WLIRwith (node *arg_node, info *arg_info)
 
     /* decrement withdepth counter */
     INFO_WITHDEPTH (arg_info) = INFO_WITHDEPTH (arg_info) - 1;
+
+    /* Clear all the nested levels from the depth mask (to detect
+     * with-loop dependencies). Nested levels would be moved along,
+     * therefore they do not constitute a true dependency that prevents a move.
+     * We simply copy back the required number of elements. */
+    copy_dmask (old_dmask, INFO_DEPTHMASK (arg_info), INFO_WITHDEPTH (arg_info));
+    INFO_DEPTHMASK (arg_info) = old_dmask;
 
     /* move the assigns of this depth into PREASSIGN */
     INFO_PREASSIGN (arg_info)
@@ -762,6 +952,8 @@ node *
 WLIRwithid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
+    DBUG_PRINT ("setting SETDEPTH: %d -> %d", INFO_SETDEPTH (arg_info),
+                INFO_WITHDEPTH (arg_info));
 
     /* traverse all local definitions to mark their depth in withloops */
     INFO_SETDEPTH (arg_info) = INFO_WITHDEPTH (arg_info);
@@ -808,27 +1000,28 @@ WLIRids (node *arg_ids, info *arg_info)
  *   starts the do-loop/with-loop invariant removal for fundef nodes.
  *
  *****************************************************************************/
-node *
-WLIRdoLoopInvariantRemovalOneFundef (node *fundef)
+#if 0
+node* WLIRdoLoopInvariantRemovalOneFundef(node* fundef)
 {
-    info *info;
-    DBUG_ENTER ();
+  info *info;
+  DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
-                 "LIRdoLoopInvariantRemovalOneFundef called for non-fundef node");
+  DBUG_ASSERT (NODE_TYPE(fundef) == N_fundef,
+               "LIRdoLoopInvariantRemovalOneFundef called for non-fundef node");
+  
+  info = MakeInfo();
 
-    info = MakeInfo ();
+  INFO_TRAVSTART( info) = TS_fundef;
+    
+  TRAVpush(TR_wlir);    
+  fundef = TRAVdo( fundef, info);
+  TRAVpop();
 
-    INFO_TRAVSTART (info) = TS_fundef;
+  info = FreeInfo( info);
 
-    TRAVpush (TR_wlir);
-    fundef = TRAVdo (fundef, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (fundef);
+  DBUG_RETURN (fundef);
 }
+#endif
 
 /******************************************************************************
  *
@@ -840,30 +1033,26 @@ WLIRdoLoopInvariantRemovalOneFundef (node *fundef)
  *
  *****************************************************************************/
 node *
-WLIRdoLoopInvariantRemoval (node *module)
+WLIRdoLoopInvariantRemoval (node *arg_node)
 {
-    int movedsofar;
-
     info *info;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (module) == N_module,
-                 "WLIRdoLoopInvariantRemoval called for non-module node");
-
-    movedsofar = global.optcounters.lir_expr;
+    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
+                 "WLIRdoLoopInvariantRemoval called with non-module/non-fundef node");
 
     info = MakeInfo ();
 
-    INFO_TRAVSTART (info) = TS_module;
+    INFO_TRAVSTART (info) = (N_fundef == NODE_TYPE (arg_node)) ? TS_fundef : TS_module;
 
     TRAVpush (TR_wlir);
-    module = TRAVdo (module, info);
+    arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
     info = FreeInfo (info);
 
-    DBUG_RETURN (module);
+    DBUG_RETURN (arg_node);
 }
 
 #undef DBUG_PREFIX
