@@ -44,6 +44,9 @@
 #include "structural_constant_constant_folding.h"
 #include "saa_constant_folding.h"
 #include "ctinfo.h"
+#include "free.h"
+#include "namespaces.h"
+#include "resource.h"
 
 #include <limits.h>
 

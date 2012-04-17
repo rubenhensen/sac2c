@@ -39,6 +39,7 @@ extern global_t global;
 
 extern void GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname);
 extern void GLOBsetupBackend (void);
+extern void GLOBfinalizeGlobal (void);
 
 #define PARSE_RC 10
 #define PARSE_PRG 20

@@ -99,6 +99,7 @@ extern stvisibility_t STsymbolVisibility (stsymbol_t *symbol);
  */
 extern const char *STentryName (stentry_t *entry);
 extern stentrytype_t STentryType (stentry_t *entry);
+extern stentrytype_t STentryArgc (stentry_t *entry);
 
 /*
  * Functions to print symbol tables

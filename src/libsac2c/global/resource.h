@@ -47,4 +47,6 @@ extern target_list_t *RSCaddTargetList (target_list_t *list1, target_list_t *lis
 
 extern void RSCevaluateConfiguration ();
 
+extern void xfree_configuration (configuration_t conf);
+
 #endif /* _SAC_RESOURCE_H_ */

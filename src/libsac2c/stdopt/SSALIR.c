@@ -461,7 +461,7 @@ depthmask_mark_level (info *inf, int level)
  * Use for debug prints only!
  *
  *****************************************************************************/
-static uint64_t
+__attribute__ ((unused)) static uint64_t
 dmask2ui64 (info *inf)
 {
     DBUG_ENTER ();
@@ -2437,36 +2437,38 @@ FreeLIRSubstInfo (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#if 0
+#error SSALIR is obsolete, use DLIR or WLIR!
 /** <!-- ****************************************************************** -->
  * @fn node *FreeLIRInformation( node *arg_node)
  *
- * @brief Clears the AVIS_SUBST information from all N_avis nodes within a
+ * @brief Clears the AVIS_SUBST information from all N_avis nodes within a 
  *        function/module.
- *
+ * 
  * @param arg_node N_fundef node of function to be cleared or
  *               N_module node of module to be cleared.
- *
+ * 
  * @return modified N_fundef node or N_module node.
  ******************************************************************************/
-static node *
-FreeLIRInformation (node *arg_node)
+static
+node *FreeLIRInformation(node* arg_node)
 {
-    anontrav_t freetrav[2] = {{N_avis, &FreeLIRSubstInfo}, {0, NULL}};
+  anontrav_t freetrav[2] = { {N_avis, &FreeLIRSubstInfo},
+                             {0, NULL}};
 
-    DBUG_ENTER ();
+  DBUG_ENTER ();
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
-                 "FreeLIRInformation called with non-module/non-fundef node");
+  DBUG_ASSERT ((NODE_TYPE(arg_node) == N_module)||(NODE_TYPE(arg_node) == N_fundef), "FreeLIRInformation called with non-module/non-fundef node");
 
-    TRAVpushAnonymous (freetrav, &TRAVsons);
-    if (NODE_TYPE (arg_node) == N_module) {
-        MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), NULL);
-    } else {
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), NULL);
-    }
-    TRAVpop ();
+  TRAVpushAnonymous( freetrav, &TRAVsons); 
+  if ( NODE_TYPE( arg_node) == N_module){
+    MODULE_FUNS( arg_node) = TRAVopt( MODULE_FUNS( arg_node), NULL); 
+  }else {
+    FUNDEF_BODY( arg_node) = TRAVopt( FUNDEF_BODY( arg_node), NULL); 
+  }
+  TRAVpop();
 
-    DBUG_RETURN (arg_node);
+  DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -2478,8 +2480,6 @@ FreeLIRInformation (node *arg_node)
  *   starts the loop invariant removal for module/fundef nodes.
  *
  *****************************************************************************/
-#if 0
-#error SSALIR is obsolete, use DLIR or WLIR!
 node* LIRdoLoopInvariantRemoval(node *arg_node)
 {
   info *arg_info;

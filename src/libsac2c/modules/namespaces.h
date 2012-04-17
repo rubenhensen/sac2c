@@ -36,4 +36,7 @@ extern namespace_t *NSdeserialzeNamespace (int id);
 extern view_t *NSdeserializeView (const char *module, int id, view_t *next);
 
 extern void NSgenerateNamespaceMap ();
+
+extern void xfree_namespace_pool ();
+
 #endif /* _SAC_NAMESPACES_H_ */
