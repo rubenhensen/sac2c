@@ -786,10 +786,12 @@ WLIRassign (node *arg_node, info *arg_info)
 node *
 WLIRlet (node *arg_node, info *arg_info)
 {
+    node *old_lhsavis;
     int deepest_lvl;
 
     DBUG_ENTER ();
 
+    old_lhsavis = INFO_LHSAVIS (arg_info);
     INFO_LHSAVIS (arg_info) = IDS_AVIS (LET_IDS (arg_node));
     DBUG_PRINT ("looking at %s", AVIS_NAME (INFO_LHSAVIS (arg_info)));
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
@@ -826,7 +828,7 @@ WLIRlet (node *arg_node, info *arg_info)
 
     /* traverse ids to mark them as loop-invariant/local or normal */
     LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
-    INFO_LHSAVIS (arg_info) = NULL;
+    INFO_LHSAVIS (arg_info) = old_lhsavis;
 
     DBUG_RETURN (arg_node);
 }
