@@ -1045,7 +1045,8 @@ is_type (struct parser *parser)
             parser_unget (parser);
 
         ret = false;
-        if (saw_dcolon) {
+        if (saw_dcolon
+            && !(parser->in_module && !strcmp (parser->current_module, tval))) {
             struct used_module *mod;
             struct known_symbol *symb;
 
@@ -1182,6 +1183,8 @@ parser_get_namespace_token (struct parser *parser, const char *modname)
     struct used_module *mod;
     struct token *tok;
 
+    /* Do not cache the module in case it is the module
+       we are currently parsing.  */
     if (parser->in_module && !strcmp (parser->current_module, modname))
         return parser_get_token (parser);
 
@@ -4743,8 +4746,12 @@ cache_module (struct parser *parser, const char *modname)
     sttable_t *table;
     stsymboliterator_t *iterator;
 
-    HASH_FIND_STR (parser->used_modules, modname, used_module);
+    /* Do not cache the module in case it is the
+       module we are parsing right now.  */
+    if (parser->in_module && !strcmp (parser->current_module, modname))
+        return;
 
+    HASH_FIND_STR (parser->used_modules, modname, used_module);
     if (used_module)
         return;
 
@@ -4932,6 +4939,14 @@ handle_interface (struct parser *parser, enum interface_kind interface)
         }
 
         modname = strdup (token_as_string (tok));
+
+        /* Do not allow to import or use self.  */
+        if (parser->in_module && !strcmp (parser->current_module, modname)) {
+            error_loc (token_location (tok), "attempt to use/import the "
+                                             "module which is being currently parsed");
+            goto skip_error;
+        }
+
         /* cache module symbol-table and trie in parser->used_modules.  */
         cache_module (parser, modname);
 
