@@ -2786,6 +2786,7 @@ handle_npart (struct parser *parser)
         parser->in_return = false;
 
         if (!exprs) {
+            /* FIXME: loc is used uninitialized! */ memset (&loc, 0, sizeof (loc));
             error_loc (loc, "expression expected");
             parser_get_until_tval (parser, tv_semicolon);
             goto error;

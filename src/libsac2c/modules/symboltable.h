@@ -87,6 +87,7 @@ extern stentryiterator_t *STentryIteratorRelease (stentryiterator_t *iterator);
 extern stentry_t *STentryIteratorNext (stentryiterator_t *iterator);
 extern void STentryIteratorReset (stentryiterator_t *iterator);
 extern int STentryIteratorHasMore (stentryiterator_t *iterator);
+extern bool STsymbolIteratorSymbolArityIs (stsymboliterator_t *iterator, unsigned arity);
 
 /*
  * Functions to access table symbols

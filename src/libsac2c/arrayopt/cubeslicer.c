@@ -550,7 +550,6 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     DBUG_RETURN (z);
 }
 
-#ifndef DEBUG_OFF
 /** <!--********************************************************************-->
  *
  * @fn
@@ -562,7 +561,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
  * @result: A pointer to a character string constant.
  *
  *****************************************************************************/
-static char *
+static __attribute__ ((unused)) char *
 IntersectTypeName (intersect_type_t itype)
 {
     char *z;
@@ -592,7 +591,6 @@ IntersectTypeName (intersect_type_t itype)
 
     DBUG_RETURN (z);
 }
-#endif // DEBUG
 
 /** <!--********************************************************************-->
  *

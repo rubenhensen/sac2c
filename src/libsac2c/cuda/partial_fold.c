@@ -443,7 +443,7 @@ BuildReduceAssignsInternal (reduction_kind kind, int partshp, int partialshp,
     node *cond_predicate = NULL;
     node *tx_zero, *ty_zero;
     node *zero_indices = NULL;
-    node *shmem_len, *remain_len, *partial_bound;
+    node *shmem_len, *remain_len = NULL, *partial_bound;
     node *shape_array;
     int i, iter, loops_required = 0;
 

@@ -139,17 +139,19 @@ GetFromPool (int id)
     DBUG_RETURN (result);
 }
 
+#if 0
 static void
 RemoveFromPool (int id)
 {
-    nspool_t *p;
-    size_t i;
+  nspool_t *  p;
+  size_t i;
 
-    for (p = pool, i = 0; i < id / BLOCKSIZE; i++, p = p->next)
-        ;
+  for (p = pool, i = 0; i < id / BLOCKSIZE; i++, p = p->next)
+    ;
 
-    p->block[id % BLOCKSIZE] = NULL;
+  p->block[id % BLOCKSIZE] = NULL;
 }
+#endif
 
 static namespace_t *
 FindInPool (const char *module, view_t *view)
@@ -388,7 +390,7 @@ NSdupNamespace (const namespace_t *ns)
 namespace_t *
 NSfreeNamespace (namespace_t *ns)
 {
-    int id;
+    /* int id; */
 
     DBUG_ENTER ();
 

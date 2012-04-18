@@ -2415,7 +2415,9 @@ LIRMOVids (node *arg_ids, info *arg_info)
     DBUG_RETURN (arg_ids);
 }
 
-/** <!-- ****************************************************************** -->
+#if 0
+#error SSALIR is obsolete, use DLIR or WLIR!
+/** <!-- ****************************************************************** --> 
  * @fn node *FreeLIRSubstInfo( node *arg_node, info *arg_info)
  *
  * @brief Frees the AVIS_SUBST attribute of an N_AVIS node after the LIR phase
@@ -2425,20 +2427,18 @@ LIRMOVids (node *arg_ids, info *arg_info)
  *
  * @return modified N_avis node
  ******************************************************************************/
-static node *
-FreeLIRSubstInfo (node *arg_node, info *arg_info)
+static 
+node *FreeLIRSubstInfo(node *arg_node, info *arg_info)
 {
-    DBUG_ENTER ();
+   DBUG_ENTER ();
 
-    if (AVIS_SUBST (arg_node) != NULL) {
-        AVIS_SUBST (arg_node) = NULL;
-    }
-
-    DBUG_RETURN (arg_node);
+   if (AVIS_SUBST( arg_node) != NULL) {
+     AVIS_SUBST (arg_node) = NULL;
+   } 
+   
+   DBUG_RETURN (arg_node); 
 }
 
-#if 0
-#error SSALIR is obsolete, use DLIR or WLIR!
 /** <!-- ****************************************************************** -->
  * @fn node *FreeLIRInformation( node *arg_node)
  *
