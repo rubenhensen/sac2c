@@ -1637,6 +1637,7 @@
           <node name="Assign" />
           <node name="Let" />
           <node name="Ids" />
+          <node name="Cond" />
           <node name="With" />
           <node name="Part" />
           <node name="Code" />

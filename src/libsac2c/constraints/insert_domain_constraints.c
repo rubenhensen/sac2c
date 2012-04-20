@@ -7,6 +7,44 @@
  *
  * @file insert_domain_constraints.c
  *
+ * This file provides a helper traversal for ICC. While ICC identifies
+ * the constraints that are needed, this traversal is responsible for
+ * inserting them at the right position. For a more detailled description
+ * of the relation between ICC and IDC and why they need to be separate
+ * in the first place, see the comments in ICC.
+ * Here, we only describe the API that IDC provides to ICC.
+ *
+ * In essence, IDC needs to be called three times:
+ *
+ * 1 First it needs to be initialised on functin level using
+ *     IDCinitialize(...)
+ *
+ * 2 Then, constraints can be added "asynchronously" by calling
+ *   either
+ *     node *IDCaddTypeConstraint( ntype *type, node *avis))
+ *   or
+ *     node *IDCaddFunConstraint( node * expr)
+ *   Both add constraints in an abstract way, ie the constraints
+ *   are only aggregated in the avis nodes but not yet inserted
+ *   into the data-flow. In case of IDCaddTypeConstraint expr
+ *   can either be an application of a prf or a udf! As the
+ *   prf/udf constraints typically relate to more than one avis
+ *   the avis that is defined last wrt the data-flow is being chosen.
+ *   For convenience, both these functions return a pointer to the
+ *   avis of a freshly generated variable that, later, will contain
+ *   the boolean obtained from the check.
+ *
+ *   The actual code insertion is being done through a call of
+ *     IDCinsertConstraints(...)
+ *   which happens on fundef level again.
+ *
+ * 3 Finally, IDC needs to perform some cleaning up which happens
+ *   through a call to
+ *     IDCfinalize(...)
+ *
+ *
+ * Implementation notes:
+ * =====================
  */
 
 #define DBUG_PREFIX "IDC"
@@ -450,6 +488,38 @@ IDCids (node *arg_node, info *arg_info)
     }
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *IDCcond( node *arg_node, info *arg_info)
+ *
+ * @brief The sole purpose of this code is to make sure
+ *        renamings are confined to the branch where there are
+ *        initiated! (cf. bug 944 for details)
+ *
+ *****************************************************************************/
+node *
+IDCcond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+    int rename_stack_pos;
+
+    rename_stack_pos = PBUFpos (INFO_RENAME_STACK (arg_info));
+
+    COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
+
+    COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
+
+    INFO_RENAME_STACK (arg_info)
+      = EraseRenamings (INFO_RENAME_STACK (arg_info), rename_stack_pos);
+
+    COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
+
+    INFO_RENAME_STACK (arg_info)
+      = EraseRenamings (INFO_RENAME_STACK (arg_info), rename_stack_pos);
 
     DBUG_RETURN (arg_node);
 }
