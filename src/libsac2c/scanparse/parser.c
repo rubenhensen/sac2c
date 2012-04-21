@@ -2765,7 +2765,6 @@ node *
 handle_npart (struct parser *parser)
 {
     struct token *tok;
-    struct location loc;
     node *generator = error_mark_node;
     node *block = error_mark_node;
     node *exprs = NULL;
@@ -2786,8 +2785,7 @@ handle_npart (struct parser *parser)
         parser->in_return = false;
 
         if (!exprs) {
-            /* FIXME: loc is used uninitialized! */ memset (&loc, 0, sizeof (loc));
-            error_loc (loc, "expression expected");
+            error_loc (token_location (tok), "expression expected");
             parser_get_until_tval (parser, tv_semicolon);
             goto error;
         }
@@ -3153,7 +3151,7 @@ error:
 
 /* expr ::= conditional-expr
  */
-inline node *
+node *
 handle_expr (struct parser *parser)
 {
     return handle_conditional_expr (parser, false);
@@ -3769,14 +3767,6 @@ handle_var_id_list (struct parser *parser)
     while (is_id (parser)) {
         struct token *tok = parser_get_token (parser);
 
-        if (is_unary (parser, NULL, token_as_string (tok))) {
-            error_loc (token_location (tok),
-                       "variable `%s' is called "
-                       "the same as unary function",
-                       token_as_string (tok));
-            goto error;
-        }
-
         if (!head && !tail) {
             tail = TBmakeSpids (strdup (token_as_string (tok)), NULL);
             head = tail;
@@ -3792,10 +3782,6 @@ handle_var_id_list (struct parser *parser)
     }
 
     return head;
-
-error:
-    free_tree (head);
-    return error_mark_node;
 }
 
 /* vardecl-list ::= ( type id-list ';')*  */
@@ -3878,6 +3864,7 @@ handle_return (struct parser *parser)
         if (token_is_operator (tok, tv_semicolon)) {
             exprs = TBmakeAssign (TBmakeReturn (NULL), NULL);
             NODE_LINE (exprs) = loc.line;
+            return exprs;
         } else
             parser_unget (parser);
 
