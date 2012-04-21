@@ -3861,10 +3861,26 @@ handle_return (struct parser *parser)
         node *exprs;
 
         tok = parser_get_token (parser);
+        /* return ';'  */
         if (token_is_operator (tok, tv_semicolon)) {
             exprs = TBmakeAssign (TBmakeReturn (NULL), NULL);
             NODE_LINE (exprs) = loc.line;
             return exprs;
+        }
+        /* return '(' ')'  */
+        else if (token_is_operator (tok, tv_lparen)) {
+            tok = parser_get_token (parser);
+            if (token_is_operator (tok, tv_rparen)) {
+                if (!parser_expect_tval (parser, tv_semicolon))
+                    return error_mark_node;
+
+                /* eat-up ';'  */
+                parser_get_token (parser);
+                exprs = TBmakeAssign (TBmakeReturn (NULL), NULL);
+                NODE_LINE (exprs) = loc.line;
+                return exprs;
+            } else
+                parser_unget2 (parser);
         } else
             parser_unget (parser);
 
