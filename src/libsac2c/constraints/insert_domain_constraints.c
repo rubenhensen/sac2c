@@ -94,6 +94,10 @@ struct INFO {
     node *post;
     node *vardecs;
     ptr_buf *ren_stack;
+    node *args;
+    node *branch;
+    bool iuib_res;
+    node *iuib_avis;
 };
 
 #define INFO_ALL(n) ((n)->all)
@@ -102,6 +106,10 @@ struct INFO {
 #define INFO_POSTASSIGN(n) ((n)->post)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_RENAME_STACK(n) ((n)->ren_stack)
+#define INFO_FUNARGS(n) ((n)->args)
+#define INFO_CONDBRANCH(n) ((n)->branch)
+#define INFO_IUIB_RES(n) ((n)->iuib_res)
+#define INFO_IUIB_AVIS(n) ((n)->iuib_avis)
 
 static info *
 MakeInfo ()
@@ -118,6 +126,10 @@ MakeInfo ()
     INFO_POSTASSIGN (result) = NULL;
     INFO_VARDECS (result) = NULL;
     INFO_RENAME_STACK (result) = PBUFcreate (50);
+    INFO_FUNARGS (result) = NULL;
+    INFO_CONDBRANCH (result) = NULL;
+    INFO_IUIB_RES (result) = FALSE;
+    INFO_IUIB_AVIS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -136,6 +148,36 @@ FreeInfo (info *info)
 /** <!--********************************************************************-->
  * @}  <!-- INFO structure -->
  *****************************************************************************/
+
+static node *
+ATravIUIBid (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+    DBUG_PRINT_TAG ("IDC_IUIB", "   ...found %s", ID_NAME (arg_node));
+    INFO_IUIB_RES (arg_info)
+      = (INFO_IUIB_RES (arg_info) || (ID_AVIS (arg_node) == INFO_IUIB_AVIS (arg_info)));
+    DBUG_RETURN (arg_node);
+}
+
+static bool
+IsUsedInBranch (node *avis, info *arg_info)
+{
+    anontrav_t iuib_trav[2] = {{N_id, &ATravIUIBid}, {0, NULL}};
+    DBUG_ENTER ();
+
+    TRAVpushAnonymous (iuib_trav, &TRAVsons);
+
+    INFO_IUIB_RES (arg_info) = FALSE;
+    INFO_IUIB_AVIS (arg_info) = avis;
+
+    DBUG_PRINT_TAG ("IDC_IUIB", "looking for %s:", AVIS_NAME (avis));
+
+    INFO_CONDBRANCH (arg_info) = TRAVopt (INFO_CONDBRANCH (arg_info), arg_info);
+
+    TRAVpop ();
+
+    DBUG_RETURN (INFO_IUIB_RES (arg_info));
+}
 
 static node *
 FindAvisOfLastDefinition (node *exprs)
@@ -320,12 +362,19 @@ HandleConstraints (node *avis, info *arg_info)
     DBUG_ENTER ();
 
     if (AVIS_CONSTRTYPE (avis) != NULL) {
-        expr = TCmakePrf2 (F_type_constraint, TBmakeType (AVIS_CONSTRTYPE (avis)),
-                           TBmakeId (avis));
-        expr = TRAVdo (expr, arg_info);
-        arg_info = BuildPrfConstraint (AVIS_CONSTRVAR (avis), expr, arg_info);
-        AVIS_CONSTRVAR (avis) = NULL;
-        AVIS_CONSTRTYPE (avis) = NULL;
+        DBUG_PRINT ("Handling constraint on %s:", AVIS_NAME (avis));
+        if ((INFO_CONDBRANCH (arg_info) == NULL)
+            || IsUsedInBranch (AVIS_CONSTRVAR (avis), arg_info)) {
+            expr = TCmakePrf2 (F_type_constraint, TBmakeType (AVIS_CONSTRTYPE (avis)),
+                               TBmakeId (avis));
+            expr = TRAVdo (expr, arg_info);
+            arg_info = BuildPrfConstraint (AVIS_CONSTRVAR (avis), expr, arg_info);
+            AVIS_CONSTRVAR (avis) = NULL;
+            AVIS_CONSTRTYPE (avis) = NULL;
+            DBUG_PRINT ("    ...inserted");
+        } else {
+            DBUG_PRINT ("    ...wrong branch");
+        }
     }
 
     if (AVIS_CONSTRSET (avis) != NULL) {
@@ -335,17 +384,30 @@ HandleConstraints (node *avis, info *arg_info)
 
         arg_info = HandleConstraints (avis, arg_info);
 
-        CONSTRAINT_EXPR (constraint) = TRAVdo (CONSTRAINT_EXPR (constraint), arg_info);
-        if (NODE_TYPE (CONSTRAINT_EXPR (constraint)) == N_prf) {
-            arg_info = BuildPrfConstraint (CONSTRAINT_PREDAVIS (constraint),
-                                           CONSTRAINT_EXPR (constraint), arg_info);
+        DBUG_PRINT ("Handling constraint on %s:", AVIS_NAME (avis));
+        if ((INFO_CONDBRANCH (arg_info) == NULL)
+            || IsUsedInBranch (CONSTRAINT_PREDAVIS (constraint), arg_info)) {
+            CONSTRAINT_EXPR (constraint)
+              = TRAVdo (CONSTRAINT_EXPR (constraint), arg_info);
+            if (NODE_TYPE (CONSTRAINT_EXPR (constraint)) == N_prf) {
+                arg_info = BuildPrfConstraint (CONSTRAINT_PREDAVIS (constraint),
+                                               CONSTRAINT_EXPR (constraint), arg_info);
+            } else {
+                arg_info = BuildUdfConstraint (CONSTRAINT_PREDAVIS (constraint),
+                                               CONSTRAINT_EXPR (constraint), arg_info);
+            }
+            CONSTRAINT_PREDAVIS (constraint) = NULL;
+            CONSTRAINT_EXPR (constraint) = NULL;
+            constraint = FREEdoFreeNode (constraint);
+            DBUG_PRINT ("    ...inserted");
         } else {
-            arg_info = BuildUdfConstraint (CONSTRAINT_PREDAVIS (constraint),
-                                           CONSTRAINT_EXPR (constraint), arg_info);
+            /*
+             * re-insert the constraint!
+             */
+            CONSTRAINT_NEXT (constraint) = AVIS_CONSTRSET (avis);
+            AVIS_CONSTRSET (avis) = constraint;
+            DBUG_PRINT ("    ...wrong branch");
         }
-        CONSTRAINT_PREDAVIS (constraint) = NULL;
-        CONSTRAINT_EXPR (constraint) = NULL;
-        constraint = FREEdoFreeNode (constraint);
     }
     DBUG_RETURN (arg_info);
 }
@@ -367,8 +429,15 @@ IDCfundef (node *arg_node, info *arg_info)
 
     INFO_COUNTER (arg_info) = 1;
 
-    if (FUNDEF_ARGS (arg_node) != NULL) {
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
+    if ((INFO_MODE (arg_info) == IDC_insert) && FUNDEF_ISCONDFUN (arg_node)) {
+        /*
+         * in Cond-Funs, we need to insert argument constraints in the corres
+         * ponding branches (see bug 944 for details). Hence, we deal with the
+         * arguments within the individual branches in IDCcond !
+         */
+        INFO_FUNARGS (arg_info) = FUNDEF_ARGS (arg_node);
+    } else {
+        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
     }
 
     FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
@@ -511,10 +580,36 @@ IDCcond (node *arg_node, info *arg_info)
 
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
 
+    if (INFO_FUNARGS (arg_info) != NULL) {
+        /*
+         * we are in a CondFun and we are inserting now. Therefore, we have to
+         * deal with the constraints of arguments that are required for this
+         * branch, right now! (cf bug 944)
+         * In order to be able to identify those required in this branch
+         * we keep a pointer to the branch in arg_info:
+         */
+        INFO_CONDBRANCH (arg_info) = COND_THEN (arg_node);
+        INFO_FUNARGS (arg_info) = TRAVopt (INFO_FUNARGS (arg_info), arg_info);
+        INFO_CONDBRANCH (arg_info) = NULL;
+    }
+
     COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
 
     INFO_RENAME_STACK (arg_info)
       = EraseRenamings (INFO_RENAME_STACK (arg_info), rename_stack_pos);
+
+    if (INFO_FUNARGS (arg_info) != NULL) {
+        /*
+         * we are in a CondFun and we are inserting now. Therefore, we have to
+         * deal with the constraints of arguments that are required for this
+         * branch, right now! (cf bug 944)
+         * In order to be able to identify those required in this branch
+         * we keep a pointer to the branch in arg_info:
+         */
+        INFO_CONDBRANCH (arg_info) = COND_ELSE (arg_node);
+        INFO_FUNARGS (arg_info) = TRAVopt (INFO_FUNARGS (arg_info), arg_info);
+        INFO_CONDBRANCH (arg_info) = NULL;
+    }
 
     COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
 
