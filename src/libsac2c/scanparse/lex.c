@@ -43,8 +43,8 @@ const char *token_class_name[] = {
 #define first_keyword PRF_ABS_S
 
 /* This is a pointer to the first token from keywords.def  */
-static const char **keywords = &token_kind_name[(int)first_keyword];
-static size_t keywords_length = tok_kind_length - first_keyword;
+/*static const char **  keywords = &token_kind_name[(int) first_keyword];
+static size_t keywords_length = tok_kind_length  - first_keyword;  */
 static size_t operators_length = (size_t)first_keyword;
 
 /* Variables for error and warning macros.  */

@@ -93,7 +93,8 @@ static node *GetLoopVariable (node *, node *, node *);
 static bool GetModifier (node *, struct prf_expr_queue *, struct idx_vector_queue *, bool,
                          node **);
 
-static loopc_t CalcUnrolling (node *, node *, struct idx_vector_queue *);
+loopc_t CalcUnrolling (node *, node *, struct idx_vector_queue *);
+static void set_extrema (node *, node *, struct idx_vector_queue *);
 
 #ifndef DBUG_OFF
 static void print_idx_queue (struct idx_vector_queue *);
@@ -103,8 +104,8 @@ static void print_prf_queue (struct prf_expr_queue *);
 static bool CheckPredicateNF (node *, int *, int *);
 static bool Newton (struct idx_vector_queue *, prf, loopc_t, double, double, int,
                     double *);
-static bool IsOnIdxQueue (struct idx_vector_queue *, node *);
-static bool IsLoopvarOnIdxQueue (struct idx_vector_queue *, node *);
+static struct idx_vector *IsOnIdxQueue (struct idx_vector_queue *, node *);
+static struct idx_vector *IsLoopvarOnIdxQueue (struct idx_vector_queue *, node *);
 static bool UpdatePrfStack (node *, node *, struct prf_expr_queue *,
                             struct idx_vector_queue *);
 static node *FindAssignOfType (node *, nodetype);
@@ -166,6 +167,8 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
     TAILQ_INIT (&stack);
     TAILQ_INIT (&ext_ivs);
 
+    bool error = FALSE;
+
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "%s called for non-fundef node",
@@ -222,7 +225,7 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
     DBUG_ASSERT (NODE_TYPE (ASSIGN_RHS (then_instr)) == N_ap,
                  "cond of loop fun w/o N_ap in then body");
     DBUG_ASSERT (AP_FUNDEF (ASSIGN_RHS (then_instr)) == fundef,
-                 "cond of loop fun w/o recursiv call in then body");
+                 "cond of loop fun w/o recursive call in then body");
 
     DBUG_EXECUTE ({
         print_idx_queue (&ext_ivs);
@@ -239,6 +242,9 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
         const char *loopvar_name = "?";
         node *m;
 
+        /* Assume that we have inital value.  */
+        ivtmp->init_value_set = TRUE;
+
         ivtmp->loopvar = GetLoopVariable (ivtmp->var, fundef,
                                           AP_ARGS (LET_EXPR (ASSIGN_STMT (then_instr))));
 
@@ -249,23 +255,34 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
 
         loopvar_name = AVIS_NAME (ID_AVIS (ivtmp->var));
 
-        /* check that loop entrance identifier is an external constant  */
+        /* check that loop entrance identifier is an external constant.  */
         if (!GetConstantArg (ivtmp->var, fundef, ext_assign, &(ivtmp->init_value))) {
             DBUG_PRINT ("cannot get value for variable %s", var_name);
-            goto cleanup;
+            /*goto cleanup;*/
+            error = TRUE;
+
+            /* We don't have initial value.  */
+            ivtmp->init_value_set = FALSE;
         }
+
+        /* copy init_value for later potential usage in set_extremas.  */
+        if (ivtmp->init_value_set)
+            ivtmp->extrema_init_value = ivtmp->init_value;
 
         if (!GetModifier (ivtmp->loopvar, &stack, NULL, FALSE, &m)) {
             if (NULL != m) {
                 m = FREEdoFreeNode (m);
+                m = NULL;
             }
 
             DBUG_PRINT ("cannot get modifier for variable %s", var_name);
-            goto cleanup;
+            /*goto cleanup;*/
+            error = TRUE;
         }
 
         /* If modifier is not on the stack */
-        if (m == ivtmp->loopvar) {
+        if (ID_AVIS (ivtmp->var) != ID_AVIS (ivtmp->loopvar) && NODE_TYPE (m) == N_id
+            && ID_AVIS (m) == ID_AVIS (ivtmp->loopvar)) {
             node *p = AVIS_SSAASSIGN (ID_AVIS (ivtmp->loopvar));
             if (NULL == p || NODE_TYPE (ASSIGN_STMT (p)) != N_let) {
                 DBUG_PRINT ("cannot get modifier for variable %s", loopvar_name);
@@ -278,27 +295,52 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
                 if (NULL != m) {
                     m = FREEdoFreeNode (m);
                 }
+                goto cleanup;
             }
-
-            goto cleanup;
         }
 
         /* This is an implementation of IsLURModifier */
-        if (!IsLURModifier (m, ivtmp))
+        if (ID_AVIS (ivtmp->var) != ID_AVIS (ivtmp->loopvar) && !IsLURModifier (m, ivtmp))
             goto cleanup;
 
         m = FREEdoFreeNode (m);
     }
 
+    /* All the modifiers for loop index variables are constructed.
+       Now we need to construct an expression for the comparison
+       of the recursive call.  Before doing that we mark all the
+       loop variables as "un-seen" to avoid possible recursion
+       and multiple usage of the same variable in the comparison
+       expression.  */
+    TAILQ_FOREACH (ivtmp, &ext_ivs, entries)
+    {
+        ivtmp->seen = FALSE;
+    }
+
     /* First variable would be always loop conditional variable */
-    modifier_assign = TAILQ_NEXT (TAILQ_FIRST (&stack), entries)->lhs;
+    if (!TAILQ_FIRST (&stack) || TAILQ_FIRST (&stack)->arg1.is_int) {
+        DBUG_PRINT ("invalid loop predicate variable stack");
+        goto cleanup;
+    }
+
+    modifier_assign = TAILQ_FIRST (&stack)->arg1.value.var;
     if (!GetModifier (modifier_assign, &stack, &ext_ivs, TRUE, &modifier)) {
         DBUG_PRINT ("cannot evaluate loop modifier");
         goto cleanup;
     }
 
+    DBUG_EXECUTE ({
+        print_idx_queue (&ext_ivs);
+        print_prf_queue (&stack);
+    });
+
     /* Turn the condition into normal form.  */
-    unroll = CalcUnrolling (predicate, modifier, &ext_ivs);
+    if (!error)
+        unroll = CalcUnrolling (predicate, modifier, &ext_ivs);
+
+    if (unroll == UNR_NONE)
+        set_extrema (predicate, modifier, &ext_ivs);
+
     DBUG_PRINT ("predicate unrollable returned %i", unroll);
 
 cleanup:
@@ -325,6 +367,268 @@ cleanup:
     }
 
     DBUG_RETURN (unroll);
+}
+
+/* Helpers for set_extrema.  */
+enum arg_sign { arg_plus, arg_minus };
+
+struct addition {
+    enum arg_sign sign;
+    node *arg;
+    TAILQ_ENTRY (addition) entries;
+};
+
+TAILQ_HEAD (addition_queue, addition);
+
+#define flip_sign(sign) (sign == arg_plus ? arg_minus : arg_plus)
+
+/*  This function converts a nested addition/substraction expression
+    of numbers and variables, creating a list of elements with the
+    sign.  For example:
+      a + b - (3 - (c + d))  will be transformed into:
+      [+ a], [+ b], [- 3], [+ c], [+ d]
+
+    In case one of the variables of the list is VAR or LOOPVAR,
+    VAR_FOUND or LOOPVAR_FOUND is set on, the variable is not
+    included in the list, but the sign of the variable is saved
+    in the SIGN argument.  */
+bool
+make_additions (node *target, node *var, bool *var_found, node *loopvar,
+                bool *loopvar_found, enum arg_sign *var_or_loopvar_sign,
+                enum arg_sign sign, struct addition_queue *q)
+{
+    if (NODE_TYPE (target) == N_num) {
+        struct addition *add;
+        add = MEMmalloc (sizeof (struct addition));
+        add->sign = sign;
+        add->arg = DUPdoDupTree (target);
+        TAILQ_INSERT_TAIL (q, add, entries);
+        return TRUE;
+    }
+
+    if (NODE_TYPE (target) == N_id) {
+        if (ID_AVIS (target) == ID_AVIS (var))
+            *var_found = TRUE, *var_or_loopvar_sign = sign;
+        else if (ID_AVIS (target) == ID_AVIS (loopvar))
+            *loopvar_found = TRUE, *var_or_loopvar_sign = sign;
+        else {
+            struct addition *add;
+            add = MEMmalloc (sizeof (struct addition));
+            add->sign = sign;
+            add->arg = DUPdoDupTree (target);
+            TAILQ_INSERT_TAIL (q, add, entries);
+        }
+
+        return TRUE;
+    }
+
+    if (NODE_TYPE (target) == N_prf) {
+        enum arg_sign s1, s2;
+        node *arg1, *arg2;
+        bool b1, b2;
+
+        if (PRF_PRF (target) == F_add_SxS)
+            s1 = arg_plus, s2 = arg_plus;
+        else if (PRF_PRF (target) == F_sub_SxS)
+            s1 = arg_plus, s2 = arg_minus;
+        else
+            return FALSE;
+
+        arg1 = PRF_ARG1 (target);
+        arg2 = PRF_ARG2 (target);
+
+        b1 = make_additions (arg1, var, var_found, loopvar, loopvar_found,
+                             var_or_loopvar_sign, sign == arg_minus ? flip_sign (s1) : s1,
+                             q);
+        b2 = make_additions (arg2, var, var_found, loopvar, loopvar_found,
+                             var_or_loopvar_sign, sign == arg_minus ? flip_sign (s2) : s2,
+                             q);
+        if (b1 && b2)
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+static void
+set_extrema (node *predicate, node *modifier, struct idx_vector_queue *ivs)
+{
+    struct idx_vector *ivtmp, *ivptr = NULL;
+    unsigned var_count = 0;
+    struct addition_queue addq;
+    struct addition *add;
+    bool var_found = FALSE, loopvar_found = FALSE;
+    enum arg_sign var_or_loopvar_sign = arg_plus;
+
+    DBUG_ENTER ();
+
+    TAILQ_INIT (&addq);
+
+    /* Check that we have a loop with a single index-variable and
+       the modifier of this variable is:
+          i = i + const   or    i = i - const.  */
+    TAILQ_FOREACH (ivtmp, ivs, entries)
+    {
+        if (ID_AVIS (ivtmp->var) != ID_AVIS (ivtmp->loopvar)) {
+            var_count += 1;
+
+            /* Fail if we there are several indexes in the loop.  */
+            if (var_count > 1) {
+                DBUG_PRINT ("multi-index loop found, cannot set extremas");
+                DBUG_RETURN ();
+            }
+
+            /* Fail in case modifier has incorrect form.  */
+            if (ivtmp->mfunc.a != 1) {
+                DBUG_PRINT ("unsupported modifier for variable `%s'",
+                            AVIS_NAME (ID_AVIS (ivtmp->var)));
+                DBUG_RETURN ();
+            }
+
+            ivptr = ivtmp;
+        }
+    }
+
+    if (NODE_TYPE (predicate) != N_prf || !ivptr) {
+        DBUG_PRINT ("unsupported predicate");
+        DBUG_RETURN ();
+    }
+
+#if 0
+  /* This is a case when we have an intial value, and we set an extrema.  */
+  if (ivptr->init_value_set)
+    {
+      if (ivptr->mfunc.b > 0)
+	AVIS_MIN (ID_AVIS (ivptr->var))
+	  = TBmakeNum (ivptr->extrema_init_value);
+      else
+	AVIS_MAX (ID_AVIS (ivptr->var))
+	  = TBmakeNum (ivptr->extrema_init_value + 1);
+    }
+#endif
+
+    if (make_additions (modifier, ivptr->var, &var_found, ivptr->loopvar, &loopvar_found,
+                        &var_or_loopvar_sign, arg_plus, &addq)) {
+        node *expr = NULL;
+        node *t = NULL;
+
+        DBUG_PRINT ("extrema from the comparison is extracted");
+
+        /* As experience suggests, in case we have VAR_FOUND, we
+           will have to reverse-apply the modifier, as some
+           smart-ass optimization applied it before and ruined
+           the extrema.  In case LOOP_VAR is found, the extrema
+           would be just the sum of ADDQ.  */
+        if (loopvar_found && var_found) {
+            DBUG_PRINT ("loop modifier is too complicated for extrema");
+            goto cleanup;
+        }
+
+        /* Adding reveres-application of the modifier.  */
+        if (var_found) {
+            struct addition *t;
+            t = MEMmalloc (sizeof (struct addition));
+            if (var_or_loopvar_sign == arg_minus)
+                t->sign = arg_plus;
+            else
+                t->sign = arg_minus;
+
+            t->arg = TBmakeNum (ivptr->mfunc.b);
+            TAILQ_INSERT_TAIL (&addq, t, entries);
+        }
+
+        /* convert the addq back into an expression.  */
+        expr = TBmakeNum (0);
+        TAILQ_FOREACH (add, &addq, entries)
+        {
+            expr = TCmakePrf2 (F_add_SxS, expr,
+                               add->sign == arg_minus ? TCmakePrf1 (F_neg_S, (add->arg))
+                                                      : add->arg);
+        }
+
+        /* Check predicate if stride is positive, and:
+              -i + expr >	 t  ===>  i <   expr - t;  extrema_max =  expr - t;
+              -i + expr >= t  ===>  i <=  expr - t;  extrema_max =  expr - t + 1;
+               i + expr <  t  ===>  i <  -expr + t;  extrema_max = -expr + t;
+               i + expr <= t  ===>  i <= -expr + t;  extrema_max = -expr + t + 1;
+            In case stride is negative:
+              -i + expr <  t  ===>  i >   expr - t;  extrema_min =  expr - t;
+              -i + expr <= t  ===>  i >=  expr - t;  extrema_min =  expr - t - 1;
+               i + expr >  t  ===>  i >  -expr + t;  extrema_min = -expr + t;
+               i + expr >= t  ===>  i >= -expr + t;  extrema_min = -expr + t - 1;  */
+
+        t = PRF_ARG1 (predicate);
+
+#if 0
+      /* This is a case when we set an extrema using
+	 information from the loop modifier.  */
+      if (ivptr->mfunc.b > 0)
+	{
+	  /* Stride is positive.  */
+	  if (var_or_loopvar_sign == arg_minus)
+	    {
+	      if (PRF_PRF (predicate) == F_lt_SxS)
+		AVIS_MAX (ID_AVIS (ivptr->var))
+		  = TCmakePrf2 (F_sub_SxS, expr, t);
+	      else if (PRF_PRF (predicate) == F_le_SxS)
+		AVIS_MAX (ID_AVIS (ivptr->var))
+		  = TCmakePrf2 (F_add_SxS, TCmakePrf2 (F_sub_SxS, expr, t),
+				TBmakeNum (1));
+	    }
+	  else if (var_or_loopvar_sign == arg_plus)
+	    {
+	      if (PRF_PRF (predicate) == F_lt_SxS)
+		AVIS_MAX (ID_AVIS (ivptr->var))
+		  = TCmakePrf2 (F_sub_SxS, t, expr);
+	      else if (PRF_PRF (predicate) == F_le_SxS)
+		AVIS_MAX (ID_AVIS (ivptr->var))
+		  = TCmakePrf2 (F_add_SxS, TCmakePrf2 (F_sub_SxS, t, expr),
+				TBmakeNum (1));
+	    }
+	}
+      else
+	{
+	  /* Stride is negative.  */
+	  if (var_or_loopvar_sign == arg_minus)
+	    {
+	      if (PRF_PRF (predicate) == F_gt_SxS)
+		AVIS_MIN (ID_AVIS (ivptr->var))
+		  = TCmakePrf2 (F_sub_SxS, expr, t);
+	      else if (PRF_PRF (predicate) == F_ge_SxS)
+		AVIS_MIN (ID_AVIS (ivptr->var))
+		  = TCmakePrf2 (F_sub_SxS, TCmakePrf2 (F_sub_SxS, expr, t),
+				TBmakeNum (1));
+	    }
+	  else if (var_or_loopvar_sign == arg_plus)
+	    {
+	      if (PRF_PRF (predicate) == F_gt_SxS)
+		AVIS_MIN (ID_AVIS (ivptr->var))
+		  = TCmakePrf2 (F_sub_SxS, t, expr);
+	      else if (PRF_PRF (predicate) == F_ge_SxS)
+		AVIS_MIN (ID_AVIS (ivptr->var))
+		  = TCmakePrf2 (F_sub_SxS, TCmakePrf2 (F_sub_SxS, t, expr),
+				TBmakeNum (1));
+	    }
+
+	}
+#endif
+    } else
+        DBUG_PRINT ("cannot extract extrema from the loop comparison");
+
+cleanup:
+    if (!TAILQ_EMPTY (&addq)) {
+        struct addition *ptr, *tmpptr;
+        ptr = TAILQ_FIRST (&addq);
+        while (ptr != NULL) {
+            tmpptr = TAILQ_NEXT (ptr, entries);
+            if (ptr) {
+                MEMfree (ptr);
+                ptr = tmpptr;
+            }
+        }
+    }
+
+    DBUG_RETURN ();
 }
 
 /* Structure for the Anonymous traversal.  */
@@ -433,13 +737,14 @@ IsLURPredicate (node *predicate)
  *        x0 + x1 + ... + c,  where
  *           xi -- variable
  *           c  -- const
- *        Functoin saves c value in CST_VALUE.
+ *        Function saves c value in CST_VALUE.
  *
  ******************************************************************************/
 static bool
 CheckPredicateNF (node *expr, int *cst_count, int *cst_value)
 {
     DBUG_ENTER ();
+
     switch (NODE_TYPE (expr)) {
     case N_prf:
         if (PRF_PRF (expr) == F_add_SxS) {
@@ -460,6 +765,65 @@ CheckPredicateNF (node *expr, int *cst_count, int *cst_value)
     default:
         DBUG_RETURN (FALSE);
     }
+}
+
+static double
+f (struct m_func mfunc, loopc_t init, double iter)
+{
+    if (mfunc.a == 1)
+        return init + mfunc.b * iter;
+
+    else if (mfunc.func == F_mul_SxS) {
+        double alpha = init;
+        double beta = mfunc.a;
+        double gamma = mfunc.b;
+
+        return gamma / (1. - beta)
+               + (alpha - gamma - beta * alpha) / (1. - beta) * exp (iter * log (beta));
+    } else if (mfunc.func == F_div_SxS) {
+        double alpha = init;
+        double beta = mfunc.a;
+        double gamma = mfunc.b;
+
+        return gamma * beta / (beta - 1.)
+               + (alpha * beta - gamma * beta - alpha)
+                   / ((beta - 1.) * exp (iter * log (beta)));
+    } else
+        DBUG_ASSERT (FALSE, "Unreachable situation");
+
+    return NAN;
+}
+
+static double
+f_prime (struct m_func mfunc, loopc_t init, double iter)
+{
+    if (mfunc.a == 1)
+        /* iff f(x) = bx, then f'(x) = b  */
+        return mfunc.b;
+
+    else if (mfunc.func == F_mul_SxS) {
+        double alpha = init;
+        double beta = mfunc.a;
+        double gamma = mfunc.b;
+
+        /* iff f(x) = k1 + k2 * beta^x, then f'(x) = k2 * beta^x * ln (beta)  */
+        return (alpha - gamma - beta * alpha) / (1. - beta) * exp (iter * log (beta))
+               * log (beta);
+    } else if (mfunc.func == F_div_SxS) {
+        double alpha = init;
+        double beta = mfunc.a;
+        double gamma = mfunc.b;
+
+        /* iff f(x) = k1 + k2 * 1 / beta^x, then
+               f(x) = k1 + k2 * beta^(-x), then
+               f'(x) = -k2 * beta^(-x) * ln (beta)  */
+        return -gamma * beta / (beta - 1.)
+               + (alpha * beta - gamma * beta - alpha)
+                   / ((beta - 1.) * exp (iter * log (beta))) * log (beta);
+    } else
+        DBUG_ASSERT (FALSE, "Unreachable situation");
+
+    return NAN;
 }
 
 /** <!--********************************************************************-->
@@ -518,26 +882,15 @@ Newton (struct idx_vector_queue *ivs, prf loop_pred, loopc_t term, double x0, do
          * as f (k) - term <op> 0  */
         f_prev = (double)-term;
 
-        /* f (perv) - term */
+        /* f (prev) - term */
         TAILQ_FOREACH (ivtmp, ivs, entries)
         {
-            if (ivtmp->mfunc.a == 1)
-                f_prev += ivtmp->init_value + ivtmp->mfunc.b * prev;
-
-            /* a ^ prev * init_value + b * prev  */
-            else if (ivtmp->mfunc.func == F_mul_SxS)
-                f_prev += ivtmp->init_value * exp (prev * log (ivtmp->mfunc.a))
-                          + ivtmp->mfunc.b * prev;
-            /* init_value / a ^ prev + b * prev  */
-            else if (ivtmp->mfunc.func == F_div_SxS)
-                f_prev += ivtmp->init_value / exp (prev * log (ivtmp->mfunc.a))
-                          + ivtmp->mfunc.b * prev;
-            else
-                DBUG_ASSERT (FALSE, "unreachable situation");
+            f_prev += f (ivtmp->mfunc, ivtmp->init_value, prev);
         }
 
         /* for the first iteration we check if loop
          * comparison is correct in this situation  */
+
         if (iter == 1)
             if ((f_prev < 0 && loop_pred != F_le_SxS)
                 || (f_prev > 0 && loop_pred != F_ge_SxS))
@@ -548,24 +901,7 @@ Newton (struct idx_vector_queue *ivs, prf loop_pred, loopc_t term, double x0, do
 
         TAILQ_FOREACH (ivtmp, ivs, entries)
         {
-            /* (b * prev)' = b  */
-            if (ivtmp->mfunc.a == 1)
-                f_prime_prev += ivtmp->mfunc.b;
-            /* (init_value * a ^ prev + b * prev)'
-             * == init_value * a ^ prev * ln (a) + b  */
-            else if (ivtmp->mfunc.func == F_mul_SxS)
-                f_prime_prev += ivtmp->init_value * exp (prev * log (ivtmp->mfunc.a))
-                                  * log (ivtmp->mfunc.a)
-                                + ivtmp->mfunc.b;
-            /* x / y ^ z == x * y ^ (-z)
-             * (init_value * a ^ (-prev) + b * prev)'
-             * == - init_value * a ^ (-prev) * ln (a) + b  */
-            else if (ivtmp->mfunc.func == F_div_SxS)
-                f_prime_prev += -ivtmp->init_value / exp (prev * log (ivtmp->mfunc.a))
-                                  * log (ivtmp->mfunc.a)
-                                + ivtmp->mfunc.b;
-            else
-                DBUG_ASSERT (FALSE, "unreachable situation");
+            f_prime_prev += f_prime (ivtmp->mfunc, ivtmp->init_value, prev);
         }
 
         x = prev - f_prev / f_prime_prev;
@@ -585,7 +921,7 @@ Newton (struct idx_vector_queue *ivs, prf loop_pred, loopc_t term, double x0, do
  *         and returns the number of iterations or UNR_NONE.
  *
  ******************************************************************************/
-static loopc_t
+loopc_t
 CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
 {
     struct idx_vector *ivtmp;
@@ -598,7 +934,7 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
 
     /* Check the form of predicate.  */
     if (!CheckPredicateNF (expr, &cst_count, &cst_value)) {
-        DBUG_RETURN ((DBUG_PRINT ("un-unrollable predicate form"), FALSE));
+        DBUG_RETURN ((DBUG_PRINT ("un-unrollable predicate form"), UNR_NONE));
     }
 
     GetPredicateData (predicate, &loop_pred, &term);
@@ -654,6 +990,9 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
             c_sum += ivtmp->init_value;
         }
         c_sum += cst_value;
+
+        /* fprintf (stderr, "-- term = %i, b_sum = %i, c_sum = %i\n",
+                         term, b_sum, c_sum);*/
 
         if (b_sum == 0) {
             DBUG_RETURN (UNR_NONE);
@@ -744,11 +1083,46 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
         }
 
     } else {
-        int max_iter = 10;
-        double res, tol = 0.00001;
+        int max_iter = 100;
+        double res, tol = 0.001;
 
-        if (Newton (ivs, loop_pred, term, 0, tol, max_iter, &res) && res > 0)
-            DBUG_RETURN (floor (res) + 1);
+        if (Newton (ivs, loop_pred, term - cst_value, 0, tol, max_iter, &res)
+            && res > 0) {
+            loopc_t iter_count = floor (res) + 1;
+            loopc_t res_val = 0;
+
+            /* Numerical methods are great of course, but we have to check
+               if the floating-point arithmetics do not poop into our
+               glorious results.  */
+            for (loopc_t i = 0; i < iter_count; ++i) {
+                if (i == 0)
+                    TAILQ_FOREACH (ivtmp, ivs, entries)
+                ivtmp->value = ivtmp->init_value;
+                else TAILQ_FOREACH (ivtmp, ivs, entries)
+                {
+                    if (ivtmp->mfunc.func == F_mul_SxS) {
+                        ivtmp->value = ivtmp->value * ivtmp->mfunc.a;
+                        ivtmp->value += ivtmp->mfunc.b;
+                    } else if (ivtmp->mfunc.func == F_div_SxS) {
+                        ivtmp->value = ivtmp->value / ivtmp->mfunc.a;
+                        ivtmp->value += ivtmp->mfunc.b;
+                    } else
+                        DBUG_ASSERT (FALSE, "Unreachable situation");
+                }
+            }
+
+            TAILQ_FOREACH (ivtmp, ivs, entries)
+            {
+                res_val += ivtmp->value;
+                ivtmp->value = 0;
+            }
+            res_val += cst_value;
+
+            if (loop_pred == F_le_SxS)
+                DBUG_RETURN (res_val <= term ? iter_count : UNR_NONE);
+            else if (loop_pred == F_ge_SxS)
+                DBUG_RETURN (res_val >= term ? iter_count : UNR_NONE);
+        }
     }
 
     DBUG_RETURN (UNR_NONE);
@@ -925,19 +1299,23 @@ IsLURModifier (node *m, struct idx_vector *iv)
  *  @brief Checks if variable can be found in IVS
  *
  ******************************************************************************/
-static bool
+static struct idx_vector *
 IsOnIdxQueue (struct idx_vector_queue *ivs, node *var)
 {
     struct idx_vector *iv;
 
     DBUG_ENTER ();
+
+    if (ivs == NULL)
+        DBUG_RETURN (NULL);
+
     TAILQ_FOREACH (iv, ivs, entries)
     {
         if (iv->var && ID_AVIS (iv->var) == ID_AVIS (var))
-            DBUG_RETURN (TRUE);
+            DBUG_RETURN (iv);
     }
 
-    DBUG_RETURN (FALSE);
+    DBUG_RETURN (NULL);
 }
 
 /** <!--********************************************************************-->
@@ -948,19 +1326,23 @@ IsOnIdxQueue (struct idx_vector_queue *ivs, node *var)
  *  @brief Checks if loop variable can be found in IVS
  *
  ******************************************************************************/
-static bool
+static struct idx_vector *
 IsLoopvarOnIdxQueue (struct idx_vector_queue *ivs, node *var)
 {
     struct idx_vector *iv;
 
     DBUG_ENTER ();
+
+    if (ivs == NULL)
+        DBUG_RETURN (NULL);
+
     TAILQ_FOREACH (iv, ivs, entries)
     {
         if (iv->loopvar && ID_AVIS (iv->loopvar) == ID_AVIS (var))
-            DBUG_RETURN (TRUE);
+            DBUG_RETURN (iv);
     }
 
-    DBUG_RETURN (FALSE);
+    DBUG_RETURN (NULL);
 }
 
 /** <!--********************************************************************-->
@@ -1162,7 +1544,7 @@ evaluate_i_p_prf (prf function, int arg1, node *m, node **res)
      * consider looking in (x <op> c)?  */
 
     *res = TCmakePrf2 (function, TBmakeNum (arg1), m);
-    return TRUE;
+    DBUG_RETURN (TRUE);
 }
 
 /** <!--********************************************************************-->
@@ -1188,22 +1570,82 @@ GetModifier (node *var, struct prf_expr_queue *stack, struct idx_vector_queue *e
              bool loopvars, node **res)
 {
     struct prf_expr *pe;
+    struct idx_vector *iv;
+
+    DBUG_ENTER ();
 
     /* If variable is not on the stack, assume it is external.  */
     if (NULL == (pe = PrfExprFind (stack, var))) {
+
+        /* In case we are inside the loop-comparison expression, check
+           that the variable can be found on the EXT_IVS queue and mark
+           it as seen.  In case the variable cannot be found, throw an
+           error message and return FALSE.  */
+        if (loopvars) {
+            if (NULL == (iv = IsOnIdxQueue (ext_ivs, var))) {
+                DBUG_PRINT ("External variable found in the loop modifier");
+                DBUG_RETURN (FALSE);
+            }
+
+            if (iv->seen) {
+                DBUG_PRINT ("Loop index-variable `%s' is used more than once "
+                            "in the comparison of the loop",
+                            AVIS_NAME (ID_AVIS (var)));
+                DBUG_RETURN (FALSE);
+            }
+
+            iv->seen = TRUE;
+
+            if (ID_AVIS (iv->var) != ID_AVIS (iv->loopvar)) {
+                /* XXX In this case we make an assumption that if we found an
+                   external variable inside the loop condition, then it means
+                   that we compare the variable the same variable after the first
+                   iteration, and in order to get the correct initial value
+                   we need to undo the first iteration.  In case this assumption
+                   does not hold anymore, the loop unrolling will return WRONG
+                   RESULTS.  */
+                if (iv->init_value - iv->mfunc.b == 0 && iv->mfunc.a != 1) {
+                    DBUG_PRINT ("Cannot reverse apply modifier expression for %s",
+                                AVIS_NAME (ID_AVIS (var)));
+                    DBUG_RETURN (FALSE);
+                } else
+                    DBUG_PRINT ("reverse-applying modifier for variable %s",
+                                AVIS_NAME (ID_AVIS (var)));
+
+                if (iv->mfunc.func == F_div_SxS)
+                    iv->init_value = (iv->init_value - iv->mfunc.b) * iv->mfunc.a;
+                else
+                    iv->init_value = (iv->init_value - iv->mfunc.b) / iv->mfunc.a;
+            }
+        }
+
         /* *res = var; */
         *res = TBmakeId (ID_AVIS (var));
-        return TRUE;
+        DBUG_RETURN (TRUE);
     }
 
-    if (loopvars && ext_ivs && IsLoopvarOnIdxQueue (ext_ivs, var)) {
-        /* *res = var; */
-        *res = TBmakeId (ID_AVIS (var));
-        return TRUE;
+    if (loopvars) {
+
+        if (NULL != (iv = IsLoopvarOnIdxQueue (ext_ivs, var))) {
+
+            if (iv->seen) {
+                DBUG_PRINT ("Loop index-variable `%s' is used more than once "
+                            "in the comparison of the loop",
+                            AVIS_NAME (ID_AVIS (iv->var)));
+                DBUG_RETURN (FALSE);
+            }
+
+            iv->seen = TRUE;
+
+            /* *res = iv->var; */
+            *res = TBmakeId (ID_AVIS (var));
+            DBUG_RETURN (TRUE);
+        }
     }
 
     if (pe->arg1.is_int && pe->arg2.is_int) {
-        return evaluate_i_i_prf (pe->func, pe->arg1.value.num, pe->arg2.value.num, res);
+        DBUG_RETURN (
+          evaluate_i_i_prf (pe->func, pe->arg1.value.num, pe->arg2.value.num, res));
     }
 
     /* If we can, we should swap the arguments in order to put a
@@ -1243,7 +1685,7 @@ GetModifier (node *var, struct prf_expr_queue *stack, struct idx_vector_queue *e
          * x) */
         if (!GetModifier (pe->arg2.value.var, stack, ext_ivs, loopvars, &m)) {
             *res = m;
-            return FALSE;
+            DBUG_RETURN (FALSE);
         }
 
         switch (NODE_TYPE (m)) {
@@ -1253,17 +1695,17 @@ GetModifier (node *var, struct prf_expr_queue *stack, struct idx_vector_queue *e
             node *v;
             if (!evaluate_i_p_prf (pe->func, pe->arg1.value.num, m, &v)) {
                 *res = m;
-                return FALSE;
+                DBUG_RETURN (FALSE);
             }
             *res = v;
-            return TRUE;
+            DBUG_RETURN (TRUE);
         }
 
         default:
             break;
         }
         *res = TCmakePrf2 (pe->func, TBmakeNum (pe->arg1.value.num), m);
-        return TRUE;
+        DBUG_RETURN (TRUE);
     }
     /* No constant in arguments, or constant cannot be placed on the
      * first position. Anyway we create now just a prf.  */
@@ -1273,21 +1715,21 @@ GetModifier (node *var, struct prf_expr_queue *stack, struct idx_vector_queue *e
             a1 = TBmakeNum (pe->arg1.value.num);
         else if (!GetModifier (pe->arg1.value.var, stack, ext_ivs, loopvars, &a1)) {
             *res = a1;
-            return FALSE;
+            DBUG_RETURN (FALSE);
         }
 
         if (pe->arg2.is_int)
             a2 = TBmakeNum (pe->arg2.value.num);
         else if (!GetModifier (pe->arg2.value.var, stack, ext_ivs, loopvars, &a2)) {
             *res = a2;
-            return FALSE;
+            DBUG_RETURN (FALSE);
         }
 
         *res = TCmakePrf2 (pe->func, a1, a2);
-        return TRUE;
+        DBUG_RETURN (TRUE);
     }
 
-    return FALSE;
+    DBUG_RETURN (FALSE);
 }
 
 #ifndef DBUG_OFF
@@ -1300,7 +1742,11 @@ print_idx_queue (struct idx_vector_queue *ivs)
     DBUG_ENTER ();
     DBUG_PRINT ("------ Ext variable stack -------");
     TAILQ_FOREACH (ivtmp, ivs, entries)
-    DBUG_PRINT ("%s ", AVIS_NAME (ID_AVIS (ivtmp->var)));
+    DBUG_PRINT ("var = %s, loopvar= %s, modif= (%s %i * i + %i), init=%i",
+                AVIS_NAME (ID_AVIS (ivtmp->var)),
+                ivtmp->loopvar ? AVIS_NAME (ID_AVIS (ivtmp->loopvar)) : "NULL",
+                global.prf_name[ivtmp->mfunc.func], ivtmp->mfunc.a, ivtmp->mfunc.b,
+                (int)ivtmp->init_value);
 
     DBUG_RETURN ();
 }
@@ -1389,19 +1835,41 @@ GetLoopIdentifiers (node *targetvar, node *predicate, struct prf_expr_queue *sta
                 && NODE_TYPE (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (ptr->var))))
                      == N_let) {
                 node *new_pred;
-                new_pred = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (ptr->var))));
+                node *var = ptr->var;
 
-                if (!PMmatchFlat (PMprf (0, 0), new_pred)) {
-                    DBUG_PRINT ("Loop condition is not a "
-                                "primitive function composition");
-                    goto cleanup;
+                /* This loop is used to handle stupid type-conversions
+                   inserted everywhere in the cyc:lur code.  */
+                while (TRUE) {
+                    new_pred = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (var))));
+
+                    if (!PMmatchFlat (PMprf (0, 0), new_pred)) {
+                        DBUG_PRINT ("Loop condition is not a "
+                                    "primitive function composition");
+                        goto cleanup;
+                    }
+
+                    /* FIXME: this is a hack, we should do something about
+                       type conversions presented in the form of primitive
+                       functions.  */
+                    if (PRF_PRF (new_pred) == F_type_conv) {
+                        if (TYeqTypes (TYPE_TYPE (ID_AVIS (var)),
+                                       ID_NTYPE (PRF_ARG2 (new_pred)))
+                            && TYeqTypes (ID_NTYPE (PRF_ARG2 (new_pred)),
+                                          TYPE_TYPE (PRF_ARG1 (new_pred)))) {
+                            node *n;
+
+                            DBUG_PRINT ("Useless conversion found");
+                            var = PRF_ARG2 (new_pred);
+                            if (NULL != (n = AVIS_SSAASSIGN (ID_AVIS (var)))
+                                && NODE_TYPE (ASSIGN_STMT (n)) == N_let)
+                                continue;
+                            else
+                                goto cleanup;
+                        }
+                    }
+
+                    break;
                 }
-
-                /* FIXME: this is a hack, we should do something about
-                   type conversions presented in the form of primitive
-                   functions.  */
-                if (PRF_PRF (new_pred) == F_type_conv)
-                    goto cleanup;
 
                 if (!UpdatePrfStack (new_pred, ptr->var, stack, &ivs)) {
                     DBUG_PRINT ("update_prf_stack failed");
@@ -1464,7 +1932,7 @@ GetConstantArg (node *id, node *fundef, node *ext_assign, loopc_t *init_counter)
 
     /* check if id is an arg of this fundef */
     if (NODE_TYPE (AVIS_DECL (ID_AVIS (id))) != N_arg) {
-        DBUG_PRINT ("identifier %s is no fundef argument", AVIS_NAME (ID_AVIS (id)));
+        DBUG_PRINT ("identifier %s is not fundef argument", AVIS_NAME (ID_AVIS (id)));
         DBUG_RETURN (FALSE);
     }
 

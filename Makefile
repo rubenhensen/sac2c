@@ -42,7 +42,7 @@
 
 PROJECT_ROOT := .
 
-HIDE := 
+HIDE := @
 DEPS := yes
 
 CLEAN_MAKE_TOOLS := "yes"

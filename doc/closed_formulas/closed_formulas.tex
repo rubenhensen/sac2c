@@ -1,0 +1,140 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{listings}
+
+\author{Artem Shinkarov}
+\date{\today}
+\title{Closed formula for $a_{n} = \beta a_{n-1} + \gamma$ expression}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+In this documet we are going to find the closed formula for the recuurent
+expression of the following forms.
+\par\noindent
+\begin{tabular}{p{.48\textwidth}p{.48\textwidth}}
+\begin{eqnarray*}
+  a_0 &=& \alpha \\
+  a_n &=& \beta a_{n-1} + \gamma, \forall n \geq 1
+\end{eqnarray*}
+&
+\begin{eqnarray*}
+  a_0 &=& \alpha \\
+  a_n &=& \dfrac{1}{\beta} a_{n-1} + \gamma, \forall n \geq 1
+\end{eqnarray*}
+\end{tabular}
+
+\par\noindent
+We are going to build a closed representation using generating functions.
+
+\section{First case}
+First, we will consider the case with multiplication, find a closed formula
+and use the different coefficient. We are going to use ordinary generating
+function
+\begin{equation}
+  G(z) = \sum\limits_{n = 0}^{\infty} {a_n z^n} \label{eq:genfunc}
+\end{equation}
+
+We start with multiplying every equation with $z^n$ and then adding them
+together.
+
+\begin{eqnarray*}
+  z^0 a_0 &=& z^0 \alpha \\
+  z^n a_n &=& z^n \left(\beta a_{n-1} + \gamma\right), \forall n \geq 1 \\
+  G(z) &=& \alpha + \beta\sum\limits_{n = 1}^{\infty}{a_{n-1}z^n} + 
+	   \gamma\sum\limits_{n=1}^{\infty}z^n
+\end{eqnarray*}
+
+Now we are going to use the following facts.
+\begin{equation}
+  \sum\limits_{n=1}^{\infty}{a_{n-1}z^n} 
+    = z\sum\limits_{n=1}^{\infty}{a_{n-1}z^{n-1}}
+    = z\sum\limits_{n=0}^{\infty}{a_n z^n} 
+    \label{eq:fact1}
+\end{equation}
+
+and 
+
+\begin{equation}
+  \sum\limits_{n=0}^{\infty}{z^n} = \dfrac{1}{1 - z} 
+  = 1 + z + z^2 + \cdots
+  \label{eq:fact2}
+\end{equation}
+
+Using facts (\ref{eq:fact1}) and (\ref{eq:fact2}) we would rewrite the 
+formulas in the following way.
+\begin{eqnarray*}
+  G(z) &=& \alpha + \beta z G(z) + 
+	   \gamma \left(\dfrac{1}{1-z} - 1\right) \\
+  G(z) &=& \beta z G(z) + \dfrac{\gamma}{1-z} + \alpha - \gamma \\
+  G(z)(1 - \beta z) &=& \dfrac{\gamma}{1-z} + \alpha - \gamma \\
+  G(z) &=& \dfrac{\gamma}{(1-z)(1 -\beta z)} + \dfrac{\alpha}{1 - \beta z}
+	   - \dfrac{\gamma}{1 - \beta z} \\
+  G(z) &=& \dfrac{\gamma}{1 - \beta} 
+	   \left(\dfrac{1}{1-z} + \dfrac{-\beta}{1 - \beta z}\right)
+	   + \left(\alpha - \gamma\right) \dfrac{1}{1 - \beta z}
+\end{eqnarray*}
+
+Now we will use the following fact to find the closed representation.
+\begin{equation}
+  \dfrac{1}{1 - \alpha z} = \sum\limits_{n = 0}^{\infty}{\alpha^n z^n}
+  \label{eq:fact3}
+\end{equation}
+
+Applying (\ref{eq:fact3}) to the $G(z)$ formula we get the following.
+$$
+  G(z) = \sum\limits_{n=0}^{\infty}{a_n z^n} =
+	 \dfrac{\gamma}{1 - \beta} 
+	 \left(\sum\limits_{n=0}^{\infty}{z^n}
+	       - \beta\sum\limits_{n=0}^{\infty}{\beta^n z^n} \right)
+	 + \left(\alpha - \gamma\right) 
+	   \sum\limits_{n=0}^{\infty}{\beta^n z^n}
+$$
+
+Now the closed formula for $a_n$ is the following.
+
+$$
+  a_n = \dfrac{\gamma}{1 - \beta}
+	   \left(1^n -\beta\beta^n\right)
+	   + \left(\alpha - \gamma\right) \beta^n
+$$
+
+After some transformations:
+
+\begin{equation}
+  a_n = \dfrac{\gamma}{1 - \beta} 
+	+ \dfrac{\alpha - \gamma - \alpha\beta}{1 - \beta} \beta^n
+  \label{eq:mult}
+\end{equation}
+
+\section{Second case}
+The second case can be expressed in terms of the first case by 
+replacing $\beta$ with $\dfrac{1}{\beta_1}$. We are going to make
+this substitution with (\ref{eq:mult}).
+
+$$
+  a_n = \dfrac{\gamma}{1 - \frac{1}{\beta_1}} 
+	+ \left(\dfrac{\alpha - \gamma - \frac{\alpha}{\beta_1}}
+		{1 - \frac{1}{\beta_1}}\right) \frac{1}{\beta_1^n}
+$$
+
+After trivial transformations we get the following closed formula
+for the second case.
+
+\begin{equation}
+  a_n = \dfrac{\gamma\beta_1}{\beta_1 - 1}
+	+ \dfrac{\gamma\beta_1 - \gamma\beta_1 - \alpha}{\beta_1 - 1}
+	  \dfrac{1}{\beta_1^n}
+  \label{eq:div}
+\end{equation}
+
+Original expression can be matched by replacing $\beta_1$ with 
+$\beta$.
+
+\section{Test the formulas}
+Here is a python script to test the formulas. It mainly can be used to
+avoid copy-pasting errors.
+
+\lstinputlisting[language=python]{closed_formulas.py}
+\end{document}
