@@ -1128,6 +1128,10 @@ TransformationRangeCheck (index_info *transformations, node *substwln,
     result = 0;
     dim = target_ig->shape;
     while (!result && target_ig) {
+        DBUG_ASSERT ((dim - 1 < 0)
+                       || (target_ig->l && target_ig->u && whole_ig->l && whole_ig->u),
+                     "OOOOOOOPS: I seem to be missing something here!");
+
         for (i = dim - 1; i >= 0; i--) {
             if (target_ig->l[i] < whole_ig->l[i] || target_ig->u[i] > whole_ig->u[i]) {
                 result = i + 1;

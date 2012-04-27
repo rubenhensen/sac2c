@@ -109,6 +109,7 @@ struct INFO {
     int setdepth;
     nodelist *inslist;
     travstart travstart;
+    bool travinlac;
 };
 
 /*
@@ -131,7 +132,7 @@ struct INFO {
  * INFO_INSLIST             : nodelist* = list of frames (a stack but with arbitrary
  access to any frame). Frames are pushed/poped when traversing with-loop levels.
  * INFO_TRAVSTART           : {TS_fundef, TS_module} = mode
- *
+ * INFO_TRAVINLAC           : bool = set in LIRap() upon entering LAC fundef
  */
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_PREASSIGN(n) (n->preassign)
@@ -142,6 +143,7 @@ struct INFO {
 #define INFO_DEPTHMASK(n) (n->depthmask)
 #define INFO_INSLIST(n) (n->inslist)
 #define INFO_TRAVSTART(n) (n->travstart)
+#define INFO_TRAVINLAC(n) (n->travinlac)
 
 /*
  * INFO functions
@@ -164,6 +166,7 @@ MakeInfo ()
     INFO_SETDEPTH (result) = 0;
     INFO_INSLIST (result) = NULL;
     INFO_TRAVSTART (result) = TS_fundef;
+    INFO_TRAVINLAC (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -525,8 +528,11 @@ WLIRfundef (node *arg_node, info *arg_info)
      * only traverse fundef node if fundef is not lacfun, or if traversal
      * was initialized in ap-node (travinlac == TRUE)
      */
+    /* create new info struct */
     info = MakeInfo ();
 
+    INFO_TRAVSTART (info) = INFO_TRAVSTART (arg_info);
+    INFO_TRAVINLAC (info) = INFO_TRAVINLAC (arg_info);
     INFO_FUNDEF (info) = arg_node;
 
     /* traverse args */
@@ -549,8 +555,9 @@ WLIRfundef (node *arg_node, info *arg_info)
 
     /**
      * traverse only in next fundef if traversal started in module node
+     * and this fundef was not reached from an ap node.
      */
-    if (INFO_TRAVSTART (arg_info) == TS_module) {
+    if ((INFO_TRAVSTART (arg_info) == TS_module) && !INFO_TRAVINLAC (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -862,6 +869,58 @@ WLIRid (node *arg_node, info *arg_info)
     DBUG_PRINT ("id %s: DEFDEPTH=%d; SETDEPTH=%d; dmask=0x%llX",
                 AVIS_NAME (ID_AVIS (arg_node)), AVIS_DEFDEPTH (ID_AVIS (arg_node)),
                 INFO_SETDEPTH (arg_info), dmask2ui64 (arg_info));
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node* WLIRap(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   traverses in dependent special function and integrates pre/post-assignment
+ *   code.
+ *
+ *   We never traverse from any function into a normal function,
+ *   because we do not know the number of call points, and things
+ *   would generally get nasty.
+ *
+ *****************************************************************************/
+node *
+WLIRap (node *arg_node, info *arg_info)
+{
+    bool old_trav;
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (AP_FUNDEF (arg_node) != NULL, "missing fundef in ap-node");
+
+    /*
+     * Always traverse LACFUNs, but avoid the recursive loopfun call
+     */
+    if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
+        DBUG_PRINT ("traverse of lacfun fundef %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
+
+        old_trav = INFO_TRAVINLAC (arg_info);
+        INFO_TRAVINLAC (arg_info) = TRUE;
+
+        /* start traversal of special fundef */
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+
+        INFO_TRAVINLAC (arg_info) = old_trav;
+
+        DBUG_PRINT ("traversal of lacfun fundef %s finished\n",
+                    FUNDEF_NAME (AP_FUNDEF (arg_node)));
+
+    } else {
+        /* no traversal into a normal fundef */
+        DBUG_PRINT ("do not traverse normal fundef %s",
+                    FUNDEF_NAME (AP_FUNDEF (arg_node)));
+    }
+
+    /* traverse args of function application */
+    AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

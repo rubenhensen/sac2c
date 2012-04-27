@@ -61,6 +61,8 @@ TRAVdo (node *arg_node, info *arg_info)
     }
 #endif
 
+    DBUG_ASSERT (arg_node, "OOOOOOOPS: TRAVdo() called with a NULL node!");
+
     /*
      * Make sure the line-number will be set
      * correctly in case MakeXxx is called.
