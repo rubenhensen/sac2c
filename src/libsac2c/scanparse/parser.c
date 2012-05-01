@@ -2055,32 +2055,32 @@ handle_postfix_expr (struct parser *parser)
             goto out;
 
 #if 0
-	  /* NOTE this is a code to deal with user-defined postfix
-	     operators, so we will keep it commented in case we would
-	     want to reconsider the idea later.  */
+          /* NOTE this is a code to deal with user-defined postfix
+             operators, so we will keep it commented in case we would
+             want to reconsider the idea later.  */
 
-	  struct identifier *  id;
+          struct identifier *  id;
 
-	  parser_unget (parser);
+          parser_unget (parser);
 
-	  if (is_function_call (parser))
-	    goto out;
+          if (is_function_call (parser))
+            goto out;
 
-	  id = is_ext_id (parser);
-	  if (!id)
-	    goto out;
+          id = is_ext_id (parser);
+          if (!id)
+            goto out;
 
-	  if (!is_unary (parser, id->namespace, id->id))
-	    goto out;
+          if (!is_unary (parser, id->namespace, id->id))
+            goto out;
 
-	  parser_get_token (parser);
-	  if (id->namespace)
-	    parser_get_token (parser), parser_get_token (parser);
+          parser_get_token (parser);
+          if (id->namespace)
+            parser_get_token (parser), parser_get_token (parser);
 
-	  res = TCmakeSpap1 (id->namespace
-			     ? NSgetNamespace (id->namespace) : NULL,
-			     id->id, res);
-	  free (id);
+          res = TCmakeSpap1 (id->namespace
+                             ? NSgetNamespace (id->namespace) : NULL,
+                             id->id, res);
+          free (id);
 #endif
         }
 
@@ -2322,40 +2322,40 @@ handle_binary_expr (struct parser *parser, bool no_relop)
 
 #if 0
       /* The following code adds a chance to support user-defined
-	 postfix operations.  Keep it here in case we may
-	 decide to support it.  */
+         postfix operations.  Keep it here in case we may
+         decide to support it.  */
       prev_expr_binary_op = token_starts_expr (parser, tok)
-			    && ends_with_binary (parser, t);
+                            && ends_with_binary (parser, t);
 
       /* Always give a priority to the potential function-call.  */
       if (is_function_call (parser) && prev_expr_binary_op)
-	{
-	  id = get_binary_op (&stack[sp].expr);
-	  namespace = id->namespace ? NSgetNamespace (id->namespace) : NULL;
-	}
+        {
+          id = get_binary_op (&stack[sp].expr);
+          namespace = id->namespace ? NSgetNamespace (id->namespace) : NULL;
+        }
       else
-	{
-	  id = is_ext_id (parser);
+        {
+          id = is_ext_id (parser);
 
           /* Avoid the case when the binary operation is eaten-up
-	     by postfix handler, in case operation can be applied
-	     both ways.  */
-	  if (!id || !is_binary (parser, id->namespace, id->id))
-	    {
-	      if (prev_expr_binary_op)
-		{
-		  id = get_binary_op (&stack[sp].expr);
-		  namespace = id->namespace ? NSgetNamespace (id->namespace) : NULL;
-		}
-	      else
-		goto out;
-	    }
-	  else
-	    {
-	      namespace = id->namespace ? NSgetNamespace (id->namespace) : NULL;
-	      need_parser_shift = true;
-	    }
-	}
+             by postfix handler, in case operation can be applied
+             both ways.  */
+          if (!id || !is_binary (parser, id->namespace, id->id))
+            {
+              if (prev_expr_binary_op)
+                {
+                  id = get_binary_op (&stack[sp].expr);
+                  namespace = id->namespace ? NSgetNamespace (id->namespace) : NULL;
+                }
+              else
+                goto out;
+            }
+          else
+            {
+              namespace = id->namespace ? NSgetNamespace (id->namespace) : NULL;
+              need_parser_shift = true;
+            }
+        }
 #endif
 
         if (NULL == (id = is_ext_id (parser))
@@ -3079,15 +3079,21 @@ handle_with (struct parser *parser)
     } else
         parser_unget (parser);
 
-    nparts = handle_nparts (parser);
-    if (nparts == error_mark_node)
-        goto error;
+    /* If '}' then the body is empty.  */
+    tok = parser_get_token (parser);
+    if (!token_is_operator (tok, tv_rbrace)) {
+        parser_unget (parser);
+        nparts = handle_nparts (parser);
+        if (nparts == error_mark_node)
+            goto error;
 
-    /* '}'  */
-    if (parser_expect_tval (parser, tv_rbrace))
-        parser_get_token (parser);
-    else
-        goto error;
+        /* '}'  */
+        if (parser_expect_tval (parser, tv_rbrace))
+            parser_get_token (parser);
+        else
+            goto error;
+    } else
+        nparts = TBmakeWith (NULL, NULL, NULL);
 
     /* ':'  */
     if (parser_expect_tval (parser, tv_colon))

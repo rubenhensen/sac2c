@@ -391,7 +391,7 @@ TAILQ_HEAD (addition_queue, addition);
     In case one of the variables of the list is VAR or LOOPVAR,
     VAR_FOUND or LOOPVAR_FOUND is set on, the variable is not
     included in the list, but the sign of the variable is saved
-    in the SIGN argument.  */
+    in the VAR_OR_LOOPVAR_SIGN argument.  */
 bool
 make_additions (node *target, node *var, bool *var_found, node *loopvar,
                 bool *loopvar_found, enum arg_sign *var_or_loopvar_sign,
