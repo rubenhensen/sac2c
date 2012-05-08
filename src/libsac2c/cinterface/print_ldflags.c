@@ -24,7 +24,7 @@ PLDFdoPrintLDFlags (node *syntax_tree)
     DBUG_ENTER ();
 
     flags = CCMgetLinkerFlags (syntax_tree);
-    printf ("%s -l%s", flags, global.outfilename);
+    printf ("-l%s %s", global.outfilename, flags);
     flags = MEMfree (flags);
 
     CTIterminateCompilation (syntax_tree);
