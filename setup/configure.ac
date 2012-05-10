@@ -225,7 +225,7 @@ if [ test "$XSLT" = "!fail" ]; then
 fi
 
 dnl search for dot
-AC_CHECK_PROG(DOT, dot, "yes", "no"])
+AC_CHECK_PROG(DOT, dot, "yes", "no")
 
 if [ test "$DOT" = "no" ]; then
   AC_MSG_NOTICE( [Cannot find a usable dot.])
