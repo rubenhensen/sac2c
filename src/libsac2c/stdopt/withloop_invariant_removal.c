@@ -861,6 +861,9 @@ WLIRid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    /* Traverse AVIS_DIM and friends */
+    ID_AVIS (arg_node) = TRAVcont (ID_AVIS (arg_node), arg_info);
+
     /*
      * calc the maximum definition depth of all identifiers in the
      * current assignment
