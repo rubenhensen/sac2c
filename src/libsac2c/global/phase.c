@@ -102,8 +102,8 @@ CheckDisableDbug (compiler_phase_t phase)
     DBUG_RETURN ();
 }
 
-static node *
-RunConsistencyChecks (node *arg_node)
+node *
+PHrunConsistencyChecks (node *arg_node)
 {
     DBUG_ENTER ();
 
@@ -156,7 +156,7 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 
 #ifndef DBUG_OFF
         if (global.check_frequency == 1) {
-            syntax_tree = RunConsistencyChecks (syntax_tree);
+            syntax_tree = PHrunConsistencyChecks (syntax_tree);
         }
 #endif
 
@@ -212,7 +212,7 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
 
 #ifndef DBUG_OFF
         if (global.check_frequency >= 2) {
-            syntax_tree = RunConsistencyChecks (syntax_tree);
+            syntax_tree = PHrunConsistencyChecks (syntax_tree);
         }
 #endif
 
@@ -277,7 +277,7 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
 
 #ifndef DBUG_OFF
             if (global.check_frequency >= 2) {
-                syntax_tree = RunConsistencyChecks (syntax_tree);
+                syntax_tree = PHrunConsistencyChecks (syntax_tree);
             }
 #endif
 
@@ -356,7 +356,7 @@ PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
 
 #ifndef DBUG_OFF
         if (global.check_frequency == 3) {
-            syntax_tree = RunConsistencyChecks (syntax_tree);
+            syntax_tree = PHrunConsistencyChecks (syntax_tree);
         }
 #endif
     }
@@ -474,7 +474,7 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
 
 #ifndef DBUG_OFF
         if (global.check_frequency >= 4) {
-            fundef = RunConsistencyChecks (fundef);
+            fundef = PHrunConsistencyChecks (fundef);
         }
         CTIabortOnError ();
 #endif
@@ -518,7 +518,7 @@ PHrunCyclePhaseFunOld (compiler_phase_t cyclephase, node *fundef, bool cond)
 
 #ifndef DBUG_OFF
         if (global.check_frequency >= 4) {
-            fundef = RunConsistencyChecks (fundef);
+            fundef = PHrunConsistencyChecks (fundef);
         }
         CTIabortOnError ();
 #endif

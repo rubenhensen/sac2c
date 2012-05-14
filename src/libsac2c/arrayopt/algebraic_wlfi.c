@@ -331,75 +331,60 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
     for (i = 0; i < global.max_optcycles; i++) {
         ct = i;
 
+        DBUG_PRINT_TAG ("SSE", "Cycle interation %d (fun %s %s) begins.", i,
+                        (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                        FUNDEF_NAME (arg_node));
+
+        if (global.check_frequency >= 4) {
+            arg_node = PHrunConsistencyChecks (arg_node);
+        }
+
         /* Invoke each opt */
-        if (global.optimize.dodlir) {
-            countDLIR = global.optcounters.dlir_expr;
-            arg_node = DLIRdoLoopInvariantRemoval (arg_node);
-        }
-        if (global.optimize.dowlir) {
-            countWLIR = global.optcounters.wlir_expr;
-            arg_node = WLIRdoLoopInvariantRemoval (arg_node);
-        }
-        if (global.optimize.doinl) {
-            countINL = global.optcounters.inl_fun;
-            arg_node = INLdoInlining (arg_node);
-        }
-        if (global.optimize.dosaa) {
-            arg_node = ISAAdoInsertShapeVariables (arg_node);
-        }
-        if (global.optimize.docse) {
-            countCSE = global.optcounters.cse_expr;
-            arg_node = CSEdoCommonSubexpressionElimination (arg_node);
-        }
-        if (global.optimize.dotup) {
-            countTUP = global.optcounters.tup_upgrades;
-            arg_node = NTCdoNewTypeCheck (arg_node);
-        }
-        if (global.optimize.dotup) {
-            arg_node = EATdoEliminateAlphaTypes (arg_node);
-        }
-        if (global.optimize.dotup) {
-            arg_node = EBTdoEliminateBottomTypes (arg_node);
-        }
-        if (TRUE) {
-            arg_node = DFCdoDispatchFunCalls (arg_node);
-        }
-        if (global.optimize.docf) {
-            countCF = global.optcounters.cf_expr;
-            arg_node = CFdoConstantFolding (arg_node);
-        }
-        if (global.optimize.dovp) {
-            countVP = global.optcounters.vp_expr;
-            arg_node = VPdoVarPropagation (arg_node);
-        }
-        if (global.optimize.dosde) {
-            arg_node = ESDdoElimSubDiv (arg_node);
-        }
-        if (global.optimize.doas) {
-            countAS = global.optcounters.as_expr;
-            arg_node = ASdoArithmeticSimplification (arg_node);
-        }
-        if (global.optimize.docf) {
-            countCF = global.optcounters.cf_expr;
-            arg_node = CFdoConstantFolding (arg_node);
-        }
-        if (global.optimize.docse) {
-            arg_node = CSEdoCommonSubexpressionElimination (arg_node);
-        }
-        if (global.optimize.doal) {
-            countAL = global.optcounters.al_expr;
-            arg_node = ALdoAssocLawOptimization (arg_node);
-        }
-        if (global.optimize.dodl) {
-            countDL = global.optcounters.dl_expr;
-            arg_node = DLdoDistributiveLawOptimization (arg_node);
-        }
-        if (global.optimize.dosde) {
-            arg_node = UESDdoUndoElimSubDiv (arg_node);
-        }
-        if (global.optimize.dodcr) {
-            arg_node = DCRdoDeadCodeRemoval (arg_node);
-        }
+
+#define RUNOPT(Name, Cond, CntStmt, PassFun)                                             \
+    if (Cond) {                                                                          \
+        DBUG_PRINT_TAG ("SSE", "Cycle interation %d: running " #Name, i);                \
+        CntStmt;                                                                         \
+        arg_node = PassFun (arg_node);                                                   \
+        if (global.check_frequency >= 4) {                                               \
+            DBUG_PRINT_TAG ("SSE", "Cycle interation %d: running post-" #Name " check",  \
+                            i);                                                          \
+            arg_node = PHrunConsistencyChecks (arg_node);                                \
+        }                                                                                \
+    }
+
+        RUNOPT (DLIR, global.optimize.dodlir, countDLIR = global.optcounters.dlir_expr,
+                DLIRdoLoopInvariantRemoval);
+        RUNOPT (WLIR, global.optimize.dowlir, countWLIR = global.optcounters.wlir_expr,
+                WLIRdoLoopInvariantRemoval);
+        RUNOPT (INL, global.optimize.doinl, countINL = global.optcounters.inl_fun,
+                INLdoInlining);
+        RUNOPT (ISAA, global.optimize.dosaa, , ISAAdoInsertShapeVariables);
+        RUNOPT (CSE, global.optimize.docse, countCSE = global.optcounters.cse_expr,
+                CSEdoCommonSubexpressionElimination);
+        RUNOPT (NTC, global.optimize.dotup, countTUP = global.optcounters.tup_upgrades,
+                NTCdoNewTypeCheck);
+        RUNOPT (EAT, global.optimize.dotup, , EATdoEliminateAlphaTypes);
+        RUNOPT (EBT, global.optimize.dotup, , EBTdoEliminateBottomTypes);
+        RUNOPT (DFC, TRUE, , DFCdoDispatchFunCalls);
+        RUNOPT (CF, global.optimize.docf, countCF = global.optcounters.cf_expr,
+                CFdoConstantFolding);
+        RUNOPT (VP, global.optimize.dovp, countVP = global.optcounters.vp_expr,
+                VPdoVarPropagation);
+        RUNOPT (ESD, global.optimize.dosde, , ESDdoElimSubDiv);
+        RUNOPT (AS, global.optimize.doas, countAS = global.optcounters.as_expr,
+                ASdoArithmeticSimplification);
+        RUNOPT (CF, global.optimize.docf, countCF = global.optcounters.cf_expr,
+                CFdoConstantFolding);
+        RUNOPT (CSE, global.optimize.docse, , CSEdoCommonSubexpressionElimination);
+        RUNOPT (AL, global.optimize.doal, countAL = global.optcounters.al_expr,
+                ALdoAssocLawOptimization);
+        RUNOPT (DL, global.optimize.dodl, countDL = global.optcounters.dl_expr,
+                DLdoDistributiveLawOptimization);
+        RUNOPT (UESD, global.optimize.dosde, , UESDdoUndoElimSubDiv);
+        RUNOPT (DCR, global.optimize.dodcr, , DCRdoDeadCodeRemoval);
+
+#undef RUNOPT
 
         /* We do not count DCR, as it's merely for cleanup */
         DBUG_PRINT_TAG ("SSE",

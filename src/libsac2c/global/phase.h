@@ -28,4 +28,6 @@ extern node *PHrunCyclePhaseFunOld (compiler_phase_t cyclephase, node *fundef, b
 extern bool PHisSAAMode ();
 extern bool PHisSSAMode ();
 
+extern node *PHrunConsistencyChecks (node *arg_node);
+
 #endif /* _SAC_PHASE_H_ */
