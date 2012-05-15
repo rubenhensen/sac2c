@@ -216,7 +216,7 @@ $(PROJECT_ROOT)/src/doc/%.png: xml/%2png.xsl xml/%.xml
 			else \
 				$(ECHO) "Creating $(PREFIX_ROOT)src/doc/$(notdir $@)"; \
 				$(XSLTENGINE) $^ > xml/ast.dot; \
-				$(DOT) xml/ast.dot -Tpng -o $@ ;\
+				dot xml/ast.dot -Tpng -o $@ ;\
 				$(RM)  xml/ast.dot ; \
 			fi		
 
