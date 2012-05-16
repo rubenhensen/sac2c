@@ -123,6 +123,17 @@ PHrunConsistencyChecks (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+#else /* DBUG_OFF */
+/* production version */
+
+node *
+PHrunConsistencyChecks (node *arg_node)
+{
+    DBUG_ENTER ();
+    /* nothing in production version */
+    DBUG_RETURN (arg_node);
+}
+
 #endif /* DBUG_OFF */
 
 node *

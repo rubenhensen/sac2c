@@ -335,22 +335,32 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                         FUNDEF_NAME (arg_node));
 
+#ifndef DBUG_OFF
         if (global.check_frequency >= 4) {
             arg_node = PHrunConsistencyChecks (arg_node);
         }
+#endif
 
         /* Invoke each opt */
+
+#ifndef DBUG_OFF
+        /* debug compiler */
+#define RUNCHECK(Name)                                                                   \
+    if (global.check_frequency >= 4) {                                                   \
+        DBUG_PRINT_TAG ("SSE", "Cycle interation %d: running post-" #Name " check", i);  \
+        arg_node = PHrunConsistencyChecks (arg_node);                                    \
+    }
+#else
+        /* production compiler does not have PHrunConsistencyChecks() */
+#define RUNCHECK(Name) /*empty*/
+#endif
 
 #define RUNOPT(Name, Cond, CntStmt, PassFun)                                             \
     if (Cond) {                                                                          \
         DBUG_PRINT_TAG ("SSE", "Cycle interation %d: running " #Name, i);                \
         CntStmt;                                                                         \
         arg_node = PassFun (arg_node);                                                   \
-        if (global.check_frequency >= 4) {                                               \
-            DBUG_PRINT_TAG ("SSE", "Cycle interation %d: running post-" #Name " check",  \
-                            i);                                                          \
-            arg_node = PHrunConsistencyChecks (arg_node);                                \
-        }                                                                                \
+        RUNCHECK (Name)                                                                  \
     }
 
         RUNOPT (DLIR, global.optimize.dodlir, countDLIR = global.optcounters.dlir_expr,
@@ -385,6 +395,7 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
         RUNOPT (DCR, global.optimize.dodcr, , DCRdoDeadCodeRemoval);
 
 #undef RUNOPT
+#undef RUNCHECK
 
         /* We do not count DCR, as it's merely for cleanup */
         DBUG_PRINT_TAG ("SSE",
