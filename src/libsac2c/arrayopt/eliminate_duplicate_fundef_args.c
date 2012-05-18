@@ -196,9 +196,10 @@ IsLoopFunInvariant (node *arg_node, node *argavis, node *rca)
  *           CC --> CA
  *           CE --> CA
  *
- *        The function header and call are not modified at
- *        this time, but the LACFUN body no longer references
- *        the duplicate parameters.
+ *
+ *    When this function completes, the function header and call
+ *    are not yet modified, but the LACFUN body no longer references
+ *    the duplicate parameters.
  *
  ******************************************************************************/
 static node *
@@ -260,7 +261,7 @@ FindAndRenameDups (node *arg_node, info *arg_info)
         FUNDEF_ARGS (arg_node)
           = DUPdoDupTreeLut (FUNDEF_ARGS (arg_node), INFO_LUTRENAMES (arg_info));
         FUNDEF_BODY (arg_node)
-          = DUPdoDupTreeLut (FUNDEF_BODY (arg_node), INFO_LUTRENAMES (arg_info));
+          = DUPdoDupNodeLut (FUNDEF_BODY (arg_node), INFO_LUTRENAMES (arg_info));
     }
     LUTremoveContentLut (INFO_LUTARGS (arg_info));
     LUTremoveContentLut (INFO_LUTRENAMES (arg_info));
