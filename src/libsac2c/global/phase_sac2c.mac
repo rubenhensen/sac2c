@@ -612,6 +612,9 @@ CYCLEPHASEFUNOLD (dcr2, "Removing dead code", DCRdoDeadCodeRemoval, global.optim
 CYCLEPHASEFUNOLD (linl3, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, saacyc)
 
+CYCLEPHASEFUNOLD (edfa, "Eliminating duplicate lacfun arguments",
+                  EDFAdoEliminateDuplicateFundefArgs, global.optimize.doedfa, opt, saacyc)
+
 CYCLEPHASEFUNOLD (sisi, "Simplifying function signatures", SISIdoSignatureSimplification,
                   global.optimize.dosisi &&global.optimize.dodcr, opt, saacyc)
 

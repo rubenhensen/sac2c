@@ -1957,6 +1957,12 @@
   <node name="Module" />
   </travuser>
     </traversal>
+    <traversal id="EDFA" name="Eliminate Duplicate Fundef Args" default="sons" include="eliminate_duplicate_fundef_args.h" >
+<travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+  </travuser>
+    </traversal>
     <traversal id="TDEPEND" name="Tag Dependencies" default="sons" include="tagdependencies.h" >
 <travuser>
   <node name="Assign" />
@@ -5045,6 +5051,8 @@ N_tfarg :
           </type>
         </attribute>
         <attribute name="LoopRecursiveAp" inconstructor="no">
+          <description>In a LOOPFUN, this is the N_ap that is the recursive
+	   call within the LOOPFUN.</description>
           <type name="Link">
             <targets>
               <target mandatory="no">
@@ -5346,6 +5354,23 @@ N_tfarg :
                 <node name="Fundef" />
                 <phases>
                   <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Callap" default="NULL" inconstructor="no">
+          <description>
+	  If this function is a LACFUN, this attribute points to
+	  the N_ap node that invokes it from outside the
+	  LACFUN. Valid only during EDFA.
+          </description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Ap" />
+                <phases>
+                  <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
                 </phases>
               </target>
             </targets>
