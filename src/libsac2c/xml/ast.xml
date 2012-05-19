@@ -5597,7 +5597,7 @@ N_tfarg :
 -->
     <node name="Arg">
       <description>
-      One argument of a defined function definition.
+      One formal argument of a defined function definition.
       </description>
       <sons>
         <son name="Avis">
@@ -5696,6 +5696,19 @@ N_tfarg :
 	<flag name="IsInUse" default="FALSE" >
 	  <description> Used to mark unused function arguments in DeadCodeRemoval. Marked arguments are removed in signature simplification.
 	  </description>
+                <phases>
+                  <range from="" to="final" />
+                </phases>
+        </flag>	 
+	<flag name="IsDuplicate" default="FALSE" >
+	  <description> Used to mark duplicated function arguments in
+	    EDFA. Marked arguments are removed by EDFA, but this
+	    flag allows us to simplify outer-level calls in a cleaner
+	    fashion.
+	  </description>
+          <phases>
+            <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
+          </phases>
         </flag>	 
         <flag name="IsCudaDefined" default="FALSE" /> 
       </flags>
