@@ -374,9 +374,9 @@ node *CHKdoTreeCheck( node *arg_node)
         <xsl:if test="../../../type/@name = 'Node'">
           <xsl:call-template name="correcttype_attribute"/>
         </xsl:if>
-        <xsl:if test="not(./any)">      <!-- jsa: This -if- used to be disabled... -->
+        <!-- <xsl:if test="not(./any)">
           <xsl:call-template name="correcttype_attribute"/>
-        </xsl:if>
+        </xsl:if> -->
         <xsl:value-of select="'}'"/>
         <xsl:value-of select="'else '"/>
   </xsl:template>
