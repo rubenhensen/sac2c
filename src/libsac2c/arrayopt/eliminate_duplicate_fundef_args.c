@@ -225,6 +225,62 @@ SimplifyFunctionHeader (node *arg_node, info *arg_info)
 
 /**<!--***********************************************************************-->
  *
+ * @fn node *RenameArgs( node *arg_node, lut_t *lutrenames)
+ *
+ * @brief: Update the fundef's N_arg chain, renaming AVIS sons according to
+ *         the LUT.
+ *
+ *         We must not use DUPdoDupTreeLut because that would
+ *         copy the N_avis nodes, and give us ugly problems such
+ *         as multiple N_avis nodes with the same AVIS_NAME.
+ *
+ *         This is REALLY ugly, and I would like to burn this code...
+ *
+ * @param arg_node: N_arg node for the fundef
+ *
+ * @result: The DUP'd N_arg chain with renames performed.
+ *
+ ******************************************************************************/
+static node *
+RenameArgs (node *arg_node, lut_t *lutrenames)
+{
+    node *avis;
+    node *son;
+    node *curarg;
+
+    DBUG_ENTER ();
+
+    curarg = arg_node;
+    while (NULL != curarg) {
+        avis = ARG_AVIS (curarg);
+        if ((NULL != AVIS_DIM (avis)) && (N_id == NODE_TYPE (AVIS_DIM (avis)))) {
+            son = DUPdoDupNodeLut (AVIS_DIM (avis), lutrenames);
+            FREEdoFreeNode (AVIS_DIM (avis));
+            AVIS_DIM (avis) = son;
+        }
+        if ((NULL != AVIS_SHAPE (avis)) && (N_id == NODE_TYPE (AVIS_SHAPE (avis)))) {
+            son = DUPdoDupNodeLut (AVIS_SHAPE (avis), lutrenames);
+            FREEdoFreeNode (AVIS_SHAPE (avis));
+            AVIS_SHAPE (avis) = son;
+        }
+        if ((NULL != AVIS_MIN (avis)) && (N_id == NODE_TYPE (AVIS_MIN (avis)))) {
+            son = DUPdoDupNodeLut (AVIS_MIN (avis), lutrenames);
+            FREEdoFreeNode (AVIS_MIN (avis));
+            AVIS_MIN (avis) = son;
+        }
+        if ((NULL != AVIS_MAX (avis)) && (N_id == NODE_TYPE (AVIS_MAX (avis)))) {
+            son = DUPdoDupNodeLut (AVIS_MAX (avis), lutrenames);
+            FREEdoFreeNode (AVIS_MAX (avis));
+            AVIS_MAX (avis) = son;
+        }
+        curarg = ARG_NEXT (curarg);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/**<!--***********************************************************************-->
+ *
  * @fn node *MarkDupsAndRenameBody( node *arg_node, info *arg_info)
  *
  * @brief Mark those LACFUN FUNDEF_ARGS arguments appearing more than once
@@ -331,7 +387,7 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
     if (lutnonempty) {
         DBUG_PRINT ("Performing renames for LACFUN %s", FUNDEF_NAME (arg_node));
         FUNDEF_ARGS (arg_node)
-          = DUPdoDupTreeLut (FUNDEF_ARGS (arg_node), INFO_LUTRENAMES (arg_info));
+          = RenameArgs (FUNDEF_ARGS (arg_node), INFO_LUTRENAMES (arg_info));
 
         FUNDEF_BODY (arg_node)
           = DUPdoDupNodeLut (FUNDEF_BODY (arg_node), INFO_LUTRENAMES (arg_info));
