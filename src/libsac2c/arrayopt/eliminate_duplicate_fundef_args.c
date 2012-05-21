@@ -205,6 +205,8 @@ SimplifyCall (node *arg_node, info *arg_info)
         if (!ARG_ISDUPLICATE (lacfunparms)) {
             newargs = TCappendExprs (newargs, args);
         } else {
+            DBUG_PRINT ("Removing dup LACFUN arg: %s called from: %s",
+                        AVIS_NAME (EXPRS_EXPR (args)), FUNDEF_NAME (arg_node));
             args = FREEdoFreeNode (args);
         }
         args = next;
@@ -379,54 +381,56 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("Examining LACFUN %s", FUNDEF_NAME (arg_node));
 
-    LUTremoveContentLut (INFO_LUTARGS (arg_info));
-    LUTremoveContentLut (INFO_LUTRENAMES (arg_info));
+    if (NULL != FUNDEF_CALLAP (arg_node)) { /* did not find call ap yet */
+        LUTremoveContentLut (INFO_LUTARGS (arg_info));
+        LUTremoveContentLut (INFO_LUTRENAMES (arg_info));
 
-    apargs = AP_ARGS (FUNDEF_CALLAP (arg_node)); /* outer call */
-    fundefargs = FUNDEF_ARGS (arg_node);         /* formal parameters */
-    /* recursive callargs */
-    rca = FUNDEF_LOOPRECURSIVEAP (arg_node);
-    rca = (NULL != rca) ? AP_ARGS (rca) : NULL;
+        apargs = AP_ARGS (FUNDEF_CALLAP (arg_node)); /* outer call */
+        fundefargs = FUNDEF_ARGS (arg_node);         /* formal parameters */
+        /* recursive callargs */
+        rca = FUNDEF_LOOPRECURSIVEAP (arg_node);
+        rca = (NULL != rca) ? AP_ARGS (rca) : NULL;
 
-    while (NULL != apargs) {
-        argid = EXPRS_EXPR (apargs);
-        argavis = ID_AVIS (argid);
-        if (IsLoopFunInvariant (arg_node, fundefargs, rca)) {
-            lutitem = (node **)LUTsearchInLutP (INFO_LUTARGS (arg_info), argavis);
-            if (NULL == lutitem) {
-                /* Entry not in LUT. This is a new argument.
-                 * Insert avis for set membership.
-                 * Also, insert for renaming to corresponding name inside lacfun.
-                 */
-                INFO_LUTARGS (arg_info)
-                  = LUTinsertIntoLutP (INFO_LUTARGS (arg_info), argavis,
-                                       ARG_AVIS (fundefargs));
-                DBUG_PRINT ("Non-duplicate argument %s found", AVIS_NAME (argavis));
-            } else {
-                /* This argument is a loop-invariant dup */
-                ARG_ISDUPLICATE (fundefargs) = TRUE;
-                formalargavis = *lutitem;
-                DBUG_PRINT ("Duplicate arg %s renamed to %s in LACFUN %s",
-                            AVIS_NAME (argavis), AVIS_NAME (formalargavis),
-                            FUNDEF_NAME (arg_node));
-                INFO_LUTRENAMES (arg_info)
-                  = LUTinsertIntoLutP (INFO_LUTRENAMES (arg_info), ARG_AVIS (fundefargs),
-                                       formalargavis);
-                lutnonempty = TRUE;
+        while (NULL != apargs) {
+            argid = EXPRS_EXPR (apargs);
+            argavis = ID_AVIS (argid);
+            if (IsLoopFunInvariant (arg_node, fundefargs, rca)) {
+                lutitem = (node **)LUTsearchInLutP (INFO_LUTARGS (arg_info), argavis);
+                if (NULL == lutitem) {
+                    /* Entry not in LUT. This is a new argument.
+                     * Insert avis for set membership.
+                     * Also, insert for renaming to corresponding name inside lacfun.
+                     */
+                    INFO_LUTARGS (arg_info)
+                      = LUTinsertIntoLutP (INFO_LUTARGS (arg_info), argavis,
+                                           ARG_AVIS (fundefargs));
+                    DBUG_PRINT ("Non-duplicate argument %s found", AVIS_NAME (argavis));
+                } else {
+                    /* This argument is a loop-invariant dup */
+                    ARG_ISDUPLICATE (fundefargs) = TRUE;
+                    formalargavis = *lutitem;
+                    DBUG_PRINT ("Duplicate arg %s renamed to %s in LACFUN %s",
+                                AVIS_NAME (argavis), AVIS_NAME (formalargavis),
+                                FUNDEF_NAME (arg_node));
+                    INFO_LUTRENAMES (arg_info)
+                      = LUTinsertIntoLutP (INFO_LUTRENAMES (arg_info),
+                                           ARG_AVIS (fundefargs), formalargavis);
+                    lutnonempty = TRUE;
+                }
             }
+            apargs = EXPRS_NEXT (apargs);
+            fundefargs = ARG_NEXT (fundefargs);
+            rca = (NULL != rca) ? EXPRS_NEXT (rca) : NULL;
         }
-        apargs = EXPRS_NEXT (apargs);
-        fundefargs = ARG_NEXT (fundefargs);
-        rca = (NULL != rca) ? EXPRS_NEXT (rca) : NULL;
-    }
 
-    if (lutnonempty) {
-        DBUG_PRINT ("Performing renames for LACFUN %s", FUNDEF_NAME (arg_node));
-        FUNDEF_ARGS (arg_node)
-          = RenameArgs (FUNDEF_ARGS (arg_node), INFO_LUTRENAMES (arg_info));
+        if (lutnonempty) {
+            DBUG_PRINT ("Performing renames for LACFUN %s", FUNDEF_NAME (arg_node));
+            FUNDEF_ARGS (arg_node)
+              = RenameArgs (FUNDEF_ARGS (arg_node), INFO_LUTRENAMES (arg_info));
 
-        FUNDEF_BODY (arg_node)
-          = DUPdoDupNodeLut (FUNDEF_BODY (arg_node), INFO_LUTRENAMES (arg_info));
+            FUNDEF_BODY (arg_node)
+              = DUPdoDupNodeLut (FUNDEF_BODY (arg_node), INFO_LUTRENAMES (arg_info));
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -551,13 +555,13 @@ EDFAfundef (node *arg_node, info *arg_info)
         arg_node = SimplifyFunctionHeader (arg_node, arg_info);
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+        FUNDEF_CALLAP (arg_node) = NULL;
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
-    FUNDEF_CALLAP (arg_node) = NULL;
     arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
@@ -601,6 +605,8 @@ EDFAap (node *arg_node, info *arg_info)
     }
 
     if ((simplifycalls == INFO_PHASE (arg_info)) && (FUNDEF_ISLACFUN (calledfn))) {
+        DBUG_PRINT ("Simplifying call to LACFUN: %s from: %s", FUNDEF_NAME (calledfn),
+                    FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         arg_node = SimplifyCall (arg_node, arg_info);
 
         /* Correct pointer to recursive call in the LOOPFUN */
