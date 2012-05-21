@@ -16,10 +16,9 @@ extern constant *IVUToffset2Constant (node *arg_node, node *mat);
 extern node *IVUToffset2Iv (node *arg_node, node **vardecs, node **preassigns,
                             node *cwlpart);
 extern node *IVUTarrayFromProxy (node *iv);
+extern node *IVUTarrayFromProxySel (node *iv);
+extern node *IVUTarrayFromProxyIdxsel (node *iv);
 extern node *IVUTmatFromIv (node *iv);
-#ifdef DEADCODE
-extern node *IVUTnarrayFromIv (node *iv, node *cwlpart);
-#endif // DEADCODE
 extern bool IVUTisShapesMatch (node *plet, node *clet, node *cletshap);
 extern node *IVUTfindIvWith (node *arg_node, node *cwlpart);
 extern constant *IVUTiV2Constant (node *arg_node);

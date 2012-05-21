@@ -62,7 +62,7 @@
  *         Case 3: arg_node is an _idxs2offset( shp, i0, i1,...);
  *         on constants.
  *
- * @return: The offset as a constant, if known, or NULL.
+ * @return: The offset as a scalar constant, if known, or NULL.
  *
  *****************************************************************************/
 constant *
@@ -71,26 +71,32 @@ IVUToffset2Constant (node *arg_node, node *mat)
     constant *z = NULL;
     constant *shp = NULL;
     constant *iv = NULL;
-    node *elems = NULL;
     pattern *pat1;
     pattern *pat2;
+#ifdef DEADCODE // fishy
+    node *elems = NULL;
     shape *shpmat;
     int offset;
     int i;
     int len;
     int el;
+#endif // DEADCODE // fishy
 
     DBUG_ENTER ();
 
     pat1 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMconst (1, PMAgetVal (&shp)),
                   PMconst (1, PMAgetVal (&iv), 0));
 
-    pat2 = PMprf (1, PMAisPrf (F_vect2offset), 1, PMconst (1, PMAgetVal (&shp)), 1,
+    pat2 = PMprf (1, PMAisPrf (F_idxs2offset), 1, PMconst (1, PMAgetVal (&shp)), 1,
                   PMskip (0));
 
     if ((N_id == NODE_TYPE (arg_node)) && (TYisAKS (AVIS_TYPE (ID_AVIS (mat))))
         && (TYisAKV (AVIS_TYPE (ID_AVIS (arg_node))))) {
         z = COaST2Constant (arg_node);
+
+#ifdef DEADCODE // this all looks very fishy, if we are going to
+                // return a scalar!
+
         offset = COconst2Int (z);
         shpmat = TYgetShape (AVIS_TYPE (ID_AVIS (mat)));
         len = SHgetDim (shpmat);
@@ -108,6 +114,7 @@ IVUToffset2Constant (node *arg_node, node *mat)
             z = COaST2Constant (elems);
             elems = FREEdoFreeTree (elems);
         }
+#endif // DEADCODE
     }
 
     if ((NULL == z) && (PMmatchFlat (pat1, arg_node))) {
@@ -116,9 +123,9 @@ IVUToffset2Constant (node *arg_node, node *mat)
         iv = COfreeConstant (iv);
     }
 
+    /* z = IVUTidxs2offset( arg_node); */
     if ((NULL == z) && (PMmatchFlat (pat2, arg_node))) {
         shp = COfreeConstant (shp);
-        /* z = IVUTidxs2offset( arg_node); */
         DBUG_ASSERT (FALSE, "start coding...");
     }
 
@@ -167,7 +174,7 @@ IVUToffset2Constant (node *arg_node, node *mat)
  *          shap; else NULL.
  *
  *****************************************************************************/
-static node *
+node *
 IVUTarrayFromProxySel (node *iv)
 {
     bool b;
@@ -232,7 +239,7 @@ IVUTarrayFromProxySel (node *iv)
     DBUG_RETURN (z);
 }
 
-static node *
+node *
 IVUTarrayFromProxyIdxsel (node *iv)
 {
     bool b;
@@ -360,29 +367,6 @@ IVUTmatFromIv (node *iv)
 
     DBUG_RETURN (ARR);
 }
-
-#ifdef DEADCODE
-/** <!--********************************************************************-->
- *
- * @fn node *IVUTnarrayFromIv( node *iv, node *cwlpart)
- *
- * @brief: Find
- *
- * @param: iv: a vect2offset PRF_ARG2 or an _sel_VxA_( iv, mat) iv.
- *
- * @return:
- *
- *
- *****************************************************************************/
-node *
-IVUTnarrayFromIv (node *iv, node *cwlpart)
-{
-
-    DBUG_ENTER ();
-
-    DBUG_RETURN (z);
-}
-#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *
