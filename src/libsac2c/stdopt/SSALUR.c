@@ -84,6 +84,7 @@ static bool IsLURPredicate (node *);
 static bool GetLoopIdentifiers (node *, node *, struct prf_expr_queue *,
                                 struct idx_vector_queue *);
 static bool IsLURModifier (node *, struct idx_vector *);
+static node *GetCallArg (node *, node *, node *);
 static bool GetConstantArg (node *, node *, node *, loopc_t *);
 static void GetPredicateData (node *, prf *, loopc_t *);
 static node *UnrollLoopBody (node *, loopc_t);
@@ -94,7 +95,7 @@ static bool GetModifier (node *, struct prf_expr_queue *, struct idx_vector_queu
                          node **);
 
 loopc_t CalcUnrolling (node *, node *, struct idx_vector_queue *);
-static void set_extrema (node *, node *, struct idx_vector_queue *);
+static void set_extrema (node *, node *, struct idx_vector_queue *, node *, node *);
 
 #ifndef DBUG_OFF
 static void print_idx_queue (struct idx_vector_queue *);
@@ -339,7 +340,7 @@ GetLoopUnrolling (node *fundef, node *ext_assign)
         unroll = CalcUnrolling (predicate, modifier, &ext_ivs);
 
     if (unroll == UNR_NONE)
-        set_extrema (predicate, modifier, &ext_ivs);
+        set_extrema (predicate, modifier, &ext_ivs, fundef, ext_assign);
 
     DBUG_PRINT ("predicate unrollable returned %i", unroll);
 
@@ -451,7 +452,8 @@ make_additions (node *target, node *var, bool *var_found, node *loopvar,
 }
 
 static void
-set_extrema (node *predicate, node *modifier, struct idx_vector_queue *ivs)
+set_extrema (node *predicate, node *modifier, struct idx_vector_queue *ivs, node *fundef,
+             node *ext_assign)
 {
     struct idx_vector *ivtmp, *ivptr = NULL;
     unsigned var_count = 0;
@@ -504,6 +506,15 @@ set_extrema (node *predicate, node *modifier, struct idx_vector_queue *ivs)
       else
 	AVIS_MAX (ID_AVIS (ivptr->var))
 	  = TBmakeNum (ivptr->extrema_init_value + 1);
+    }
+  else
+    {
+      node * ex = GetCallArg (ivptr->var, fundef, ext_assign);
+      if (ivptr->mfunc.b > 0)
+	AVIS_MIN (ID_AVIS (ivptr->var)) = ex;
+      else
+	AVIS_MAX (ID_AVIS (ivptr->var))
+	  = TCmakePrf2 (F_add_SxS, ex, TBmakeNum (1));
     }
 #endif
 
@@ -1906,6 +1917,46 @@ cleanup:
     DBUG_RETURN (ret);
 }
 
+static node *
+GetCallArg (node *id, node *fundef, node *ext_assign)
+{
+    node *arg_chain;
+    node *param_chain;
+    node *param;
+    int pos;
+    int i;
+
+    DBUG_ENTER ();
+
+    /* Check if id is an arg of this fundef */
+    if (NODE_TYPE (AVIS_DECL (ID_AVIS (id))) != N_arg) {
+        DBUG_PRINT ("identifier %s is not fundef argument", AVIS_NAME (ID_AVIS (id)));
+        DBUG_RETURN (NULL);
+    }
+
+    /* Get argument position in fundef arg chain */
+    arg_chain = FUNDEF_ARGS (fundef);
+    pos = 1;
+    while ((arg_chain != NULL) && (arg_chain != AVIS_DECL (ID_AVIS (id)))) {
+        arg_chain = ARG_NEXT (arg_chain);
+        pos++;
+    }
+
+    DBUG_ASSERT (arg_chain != NULL, "arg not found in fundef arg chain");
+
+    /* Get matching parameter expr-node */
+    param_chain = AP_ARGS (ASSIGN_RHS (ext_assign));
+
+    for (i = 1; i < pos; i++) {
+        param_chain = EXPRS_NEXT (param_chain);
+    }
+
+    DBUG_ASSERT (param_chain != NULL, "missing matching parameter");
+    param = EXPRS_EXPR (param_chain);
+
+    DBUG_RETURN (param);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn bool GetConstantArg(node *id, node *fundef, node *ext_assign,
@@ -1920,41 +1971,13 @@ cleanup:
 static bool
 GetConstantArg (node *id, node *fundef, node *ext_assign, loopc_t *init_counter)
 {
-    node *arg_chain;
-    node *param_chain;
     node *param;
-    int pos;
-    int i;
     constant *co;
     node *num;
 
     DBUG_ENTER ();
 
-    /* check if id is an arg of this fundef */
-    if (NODE_TYPE (AVIS_DECL (ID_AVIS (id))) != N_arg) {
-        DBUG_PRINT ("identifier %s is not fundef argument", AVIS_NAME (ID_AVIS (id)));
-        DBUG_RETURN (FALSE);
-    }
-
-    /* get argument position in fundef arg chain */
-    arg_chain = FUNDEF_ARGS (fundef);
-    pos = 1;
-    while ((arg_chain != NULL) && (arg_chain != AVIS_DECL (ID_AVIS (id)))) {
-        arg_chain = ARG_NEXT (arg_chain);
-        pos++;
-    }
-
-    DBUG_ASSERT (arg_chain != NULL, "arg not found in fundef arg chain");
-
-    /* get matching parameter expr-node */
-    param_chain = AP_ARGS (ASSIGN_RHS (ext_assign));
-
-    for (i = 1; i < pos; i++) {
-        param_chain = EXPRS_NEXT (param_chain);
-    }
-
-    DBUG_ASSERT (param_chain != NULL, "missing matching parameter");
-    param = EXPRS_EXPR (param_chain);
+    param = GetCallArg (id, fundef, ext_assign);
 
     /* check parameter to be constant */
     if (!(COisConstant (param))) {
