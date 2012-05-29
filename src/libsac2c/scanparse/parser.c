@@ -5539,11 +5539,17 @@ parse (struct parser *parser)
         }
     }
 
+#if 0
+  // The code below (as large parts of this parser ignore the SAC coding
+  // guidelines and compiler infrastructure. The code below is obsolete
+  // as the phase mechanism is responsible for notification of passes and
+  // the cti module for any output produced by the compiler.
 #ifndef DBUG_OFF
-    printf ("note: finished parsing.\n");
+  printf ("note: finished parsing.\n");
 #endif
-    if (error_count != 0)
-        printf ("note: %i error(s) found.\n", error_count);
+  if (error_count != 0)
+    printf ("note: %i error(s) found.\n", error_count);
+#endif
 
     return 0;
 }
