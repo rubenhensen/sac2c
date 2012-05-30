@@ -1963,6 +1963,14 @@
         <node name="Ap" />
   </travuser>
     </traversal>
+    <traversal id="PETL" name="Propagate Extrema Thru Lacfuns" default="sons" include="propagate_extrema_thru_lacfuns.h" >
+<travuser>
+        <node name="Fundef" />
+        <node name="Ap" />
+        <node name="Block" />
+        <node name="Cond" />
+  </travuser>
+    </traversal>
     <traversal id="TDEPEND" name="Tag Dependencies" default="sons" include="tagdependencies.h" >
 <travuser>
   <node name="Assign" />
@@ -5708,6 +5716,24 @@ N_tfarg :
 	  </description>
           <phases>
             <range from="opt_saacyc_edfa" to="opt_saacyc_edfa" />
+          </phases>
+        </flag>	 
+	<flag name="IsNeedsMin" default="FALSE" >
+	  <description> Used to mark LACFUN arguments that have a
+	  non-NULL AVIS_MIN in the calling environment, but not (yet)
+	  in the local environment. This flag is used only in PETL.
+	  </description>
+          <phases>
+            <range from="opt_saacyc_petl" to="opt_saacyc_petl" />
+          </phases>
+        </flag>	 
+	<flag name="IsNeedsMax" default="FALSE" >
+	  <description> Used to mark LACFUN arguments that have a
+	  non-NULL AVIS_MAX in the calling environment, but not (yet)
+	  in the local environment. This flag is used only in PETL.
+	  </description>
+          <phases>
+            <range from="opt_saacyc_petl" to="opt_saacyc_petl" />
           </phases>
         </flag>	 
         <flag name="IsCudaDefined" default="FALSE" /> 
