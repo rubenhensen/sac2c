@@ -210,6 +210,7 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
                 typ = AVIS_TYPE (ID_AVIS (callarg));
                 newavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (callarg))),
                                       TYcopyType (typ));
+                AVIS_MIN (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
                 DBUG_PRINT ("Adding AVIS_MIN(%s) for formal parameter %s",
                             AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
                 INFO_NEWARGS (arg_info) = TBmakeArg (newavis, INFO_NEWARGS (arg_info));
@@ -227,6 +228,7 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
                 typ = AVIS_TYPE (ID_AVIS (callarg));
                 newavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (callarg))),
                                       TYcopyType (typ));
+                AVIS_MAX (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
                 DBUG_PRINT ("Adding AVIS_MAX(%s) for formal parameter %s",
                             AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
                 INFO_NEWARGS (arg_info) = TBmakeArg (newavis, INFO_NEWARGS (arg_info));
@@ -242,6 +244,14 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
         apargs = EXPRS_NEXT (apargs);
         lacfunargs = ARG_NEXT (lacfunargs);
         rca = (NULL != rca) ? EXPRS_NEXT (rca) : NULL;
+    }
+
+    if ((NULL != INFO_NEWRECURSIVEAPARGS (arg_info)) && (FUNDEF_ISLOOPFUN (arg_node))) {
+        DBUG_PRINT ("Replacing recursive call to LACFUN: %s", FUNDEF_NAME (arg_node));
+        reccall = FUNDEF_LOOPRECURSIVEAP (arg_node);
+        AP_ARGS (reccall)
+          = TCappendExprs (INFO_NEWRECURSIVEAPARGS (arg_info), AP_ARGS (reccall));
+        INFO_NEWRECURSIVEAPARGS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -316,7 +326,8 @@ EnhanceLacfunBody (node *arg_node, info *arg_info)
     while (NULL != apargs) {
         callarg = EXPRS_EXPR (apargs);
         argavis = ID_AVIS (callarg);
-        if (EDFAisLoopFunInvariant (arg_node, lacfunargs, rca)) {
+#ifdef FIXME // to be coded
+        if (EDFAisLoopFunInvariant (INFO_FUNDEF (arg_info), lacfunargs, rca)) {
             if ((NULL == AVIS_MIN (ARG_AVIS (lacfunargs)))
                 && (NULL != AVIS_MIN (argavis))) {
                 minmax = AVIS_MIN (ID_AVIS (callarg));
@@ -334,6 +345,7 @@ EnhanceLacfunBody (node *arg_node, info *arg_info)
                 newargs = TBmakeArg (newavis, newargs);
             }
         }
+#endif FIXME // to be coded
         apargs = EXPRS_NEXT (apargs);
         lacfunargs = ARG_NEXT (lacfunargs);
     }
@@ -433,6 +445,7 @@ PETLfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = arg_node;
     if (NULL == INFO_LACFUN (arg_info)) { /* Vanilla traversal */
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     } else {
         if (arg_node == INFO_LACFUN (arg_info)) {
             DBUG_PRINT ("Looking at lacfun: %s", FUNDEF_NAME (arg_node));
@@ -446,8 +459,6 @@ PETLfundef (node *arg_node, info *arg_info)
             INFO_NEWARGS (arg_info) = NULL;
         }
     }
-
-    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -485,6 +496,7 @@ PETLblock (node *arg_node, info *arg_info)
         } else {                                      /* This is a loopfun */
             DBUG_ASSERT (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)), "Expected LOOPFUN");
             arg_node = EnhanceLacfunBody (arg_node, arg_info);
+            arg_node = TRAVcont (arg_node, arg_info); /* Fix recursive and outer calls */
         }
     } else {
         arg_node = TRAVcont (arg_node, arg_info);
@@ -531,25 +543,28 @@ PETLap (node *arg_node, info *arg_info)
         FUNDEF_LOCALFUNS (INFO_FUNDEF (arg_info))
           = TRAVdo (FUNDEF_LOCALFUNS (INFO_FUNDEF (arg_info)), arg_info);
 
-        /* Append new outer call arguments */
+        /* Append new outer call arguments if the LACFUN generated them for us */
         if (NULL != INFO_NEWOUTERAPARGS (arg_info)) {
+            DBUG_PRINT ("Appending new arguments to call of %s from %s",
+                        FUNDEF_NAME (calledfn), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
             AP_ARGS (arg_node)
               = TCappendExprs (INFO_NEWOUTERAPARGS (arg_info), AP_ARGS (arg_node));
             INFO_NEWOUTERAPARGS (arg_info) = NULL;
         }
     }
 
-    if ((calledfn == INFO_FUNDEF (arg_info))
-        && (NULL != INFO_NEWRECURSIVEAPARGS (arg_info))
-        && (FUNDEF_ISLOOPFUN (calledfn))) {
+#ifdef FIXME // broken
+    if ((FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))
+        && (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) && /* Recursive call */
+        (NULL != INFO_NEWRECURSIVEAPARGS (arg_info))) {
         DBUG_PRINT ("Replacing recursive call to LACFUN: %s",
                     FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         AP_ARGS (arg_node)
           = TCappendExprs (INFO_NEWRECURSIVEAPARGS (arg_info), AP_ARGS (arg_node));
-        /* Correct pointer to recursive call in the LOOPFUN */
-        FUNDEF_LOOPRECURSIVEAP (calledfn) = arg_node;
         INFO_NEWRECURSIVEAPARGS (arg_info) = NULL;
+        FUNDEF_LOOPRECURSIVEAP (INFO_FUNDEF (arg_info)) = arg_node;
     }
+#endif FIXME // broken
 
     DBUG_RETURN (arg_node);
 }
@@ -562,7 +577,7 @@ PETLap (node *arg_node, info *arg_info)
  *        generate F_noteminval/maxval statements for the
  *        THEN and ELSE paths.
  *
- *        Otherwise, do nothing.
+ *        Otherwise, this is a normal traversal.
  *
  * @param arg_node N_cond node
  * @param arg_info
@@ -578,9 +593,9 @@ PETLcond (node *arg_node, info *arg_info)
     if ((NULL != INFO_NEWARGS (arg_info))) {
         COND_THEN (arg_node) = EnhanceLacfunBody (COND_THEN (arg_node), arg_info);
         COND_ELSE (arg_node) = EnhanceLacfunBody (COND_ELSE (arg_node), arg_info);
+    } else {
+        arg_node = TRAVcont (arg_node, arg_info);
     }
-
-    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
