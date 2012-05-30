@@ -526,7 +526,10 @@ CYCLEPHASEFUN (ivexl, "Inserting index vector extrema into lacfuns",
                IVEXLdoIndexVectorExtremaIntoLacfuns, global.doivext, opt, saacyc)
 
 CYCLEPHASEFUN (ivexp, "Propagating index vector extrema", IVEXPdoIndexVectorExtremaProp,
-               global.optimize.doawlf, opt, saacyc)
+               global.doivext, opt, saacyc)
+
+CYCLEPHASEFUN (petl, "Propagate extrema thru lacfuns", PETLdoPropagateExtremaThruLacfuns,
+               global.optimize.dopetl, opt, saacyc)
 
 CYCLEPHASEFUN (awlfi, "Inferring algebraically foldable with-loops",
                AWLFIdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)

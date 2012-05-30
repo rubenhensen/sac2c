@@ -109,13 +109,13 @@ FreeInfo (info *info)
 
 /**<!--***********************************************************************-->
  *
- * @fn bool IsLoopFunInvariant( node *arg_node, node *argid,
+ * @fn bool EDFAisLoopFunInvariant( node *arg_node, node *argid,
  *                              node *rca)
  *
  * @brief true if arg_node is not a LOOPFUN.
  *        true if arg_node IS a LOOPFUN, and argid (the current
- *        outer N_ap element) is the same as recursivecallavis
- *        (the current inner N_ap recursive call element).
+ *        outer N_ap element) is the same as rca (recursivecallavis),
+ *        the current inner N_ap recursive call element.
  *
  * @param arg_node: N_fundef in question
  *        argid: The current argument to the outer call of
@@ -141,8 +141,8 @@ FreeInfo (info *info)
  *            This code recognizes that iv' and inneriv are the same.
  *
  ******************************************************************************/
-static bool
-IsLoopFunInvariant (node *arg_node, node *argid, node *rca)
+bool
+EDFAisLoopFunInvariant (node *arg_node, node *argid, node *rca)
 {
     bool z = TRUE;
     node *proxy;
@@ -206,8 +206,10 @@ SimplifyCall (node *arg_node, info *arg_info)
             newargs = TCappendExprs (newargs, args);
         } else {
             DBUG_PRINT ("Removing dup LACFUN arg: %s called from: %s",
-                        AVIS_NAME (EXPRS_EXPR (args)), FUNDEF_NAME (arg_node));
+                        AVIS_NAME (ID_AVIS (EXPRS_EXPR (args))),
+                        FUNDEF_NAME (INFO_FUNDEF (arg_info)));
             args = FREEdoFreeNode (args);
+            global.optcounters.edfa_expr++;
         }
         args = next;
         lacfunparms = ARG_NEXT (lacfunparms);
@@ -394,7 +396,7 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
         while (NULL != apargs) {
             argid = EXPRS_EXPR (apargs);
             argavis = ID_AVIS (argid);
-            if (IsLoopFunInvariant (arg_node, fundefargs, rca)) {
+            if (EDFAisLoopFunInvariant (arg_node, fundefargs, rca)) {
                 lutitem = (node **)LUTsearchInLutP (INFO_LUTARGS (arg_info), argavis);
                 if (NULL == lutitem) {
                     /* Entry not in LUT. This is a new argument.

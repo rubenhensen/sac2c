@@ -13,6 +13,7 @@
 #include "types.h"
 
 node *EDFAdoEliminateDuplicateFundefArgs (node *arg_node);
+bool EDFAisLoopFunInvariant (node *arg_node, node *argid, node *rca);
 
 node *EDFAmodule (node *arg_node, info *arg_info);
 node *EDFAfundef (node *arg_node, info *arg_info);
