@@ -542,6 +542,7 @@ PETLap (node *arg_node, info *arg_info)
         /* This is really a traversal only into the LACFUN */
         FUNDEF_LOCALFUNS (INFO_FUNDEF (arg_info))
           = TRAVdo (FUNDEF_LOCALFUNS (INFO_FUNDEF (arg_info)), arg_info);
+        INFO_LACFUN (arg_info) = NULL; /* Back to normal traversal */
 
         /* Append new outer call arguments if the LACFUN generated them for us */
         if (NULL != INFO_NEWOUTERAPARGS (arg_info)) {
@@ -553,7 +554,6 @@ PETLap (node *arg_node, info *arg_info)
         }
     }
 
-#ifdef FIXME // broken
     if ((FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))
         && (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) && /* Recursive call */
         (NULL != INFO_NEWRECURSIVEAPARGS (arg_info))) {
@@ -564,7 +564,6 @@ PETLap (node *arg_node, info *arg_info)
         INFO_NEWRECURSIVEAPARGS (arg_info) = NULL;
         FUNDEF_LOOPRECURSIVEAP (INFO_FUNDEF (arg_info)) = arg_node;
     }
-#endif FIXME // broken
 
     DBUG_RETURN (arg_node);
 }
