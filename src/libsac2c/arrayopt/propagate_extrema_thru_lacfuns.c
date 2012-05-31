@@ -301,6 +301,8 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
 static node *
 EnhanceLacfunBody (node *arg_node, info *arg_info)
 {
+    DBUG_ENTER ();
+#ifdef FIXME // to be coded
     node *apargs;
     node *lacfunargs;
     node *newargs = NULL;
@@ -310,8 +312,6 @@ EnhanceLacfunBody (node *arg_node, info *arg_info)
     node *argavis;
     node *rca;
     ntype *typ;
-
-    DBUG_ENTER ();
 
     DBUG_PRINT ("Enhancing LACFUN %s body", FUNDEF_NAME (INFO_FUNDEF (arg_info)));
     DBUG_ASSERT (N_block == NODE_TYPE (arg_node), "Expected N_block");
@@ -326,7 +326,6 @@ EnhanceLacfunBody (node *arg_node, info *arg_info)
     while (NULL != apargs) {
         callarg = EXPRS_EXPR (apargs);
         argavis = ID_AVIS (callarg);
-#ifdef FIXME // to be coded
         if (EDFAisLoopFunInvariant (INFO_FUNDEF (arg_info), lacfunargs, rca)) {
             if ((NULL == AVIS_MIN (ARG_AVIS (lacfunargs)))
                 && (NULL != AVIS_MIN (argavis))) {
@@ -345,13 +344,13 @@ EnhanceLacfunBody (node *arg_node, info *arg_info)
                 newargs = TBmakeArg (newavis, newargs);
             }
         }
-#endif FIXME // to be coded
         apargs = EXPRS_NEXT (apargs);
         lacfunargs = ARG_NEXT (lacfunargs);
     }
     /* Rename block references to old N_arg names */
     arg_node = DUPdoDupNodeLut (arg_node, INFO_LUTRENAMES (arg_info));
 
+#endif //  FIXME // to be coded
     DBUG_RETURN (arg_node);
 }
 /** <!--********************************************************************-->
