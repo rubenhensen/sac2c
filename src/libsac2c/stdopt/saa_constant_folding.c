@@ -91,9 +91,13 @@ SAACFchaseMinMax (node *arg_node, bool minmax)
 
     if (NULL != arg_node) {
         pat = PMconst (1, PMAgetVal (&z));
-        if ((N_id == NODE_TYPE (arg_node))
-            && (NULL != AVIS_SSAASSIGN (ID_AVIS (arg_node)))
-            && (PMmatchFlatSkipExtrema (pat, arg_node))) {
+        if ((N_id == NODE_TYPE (arg_node)) &&
+#ifdef FIXME // causes PETL unit test LoopFunAKD.sac to miss
+             // removal of non_neg_val(funarg) when funarg has
+             // AVIS_MINVAL==0.
+            (NULL != AVIS_SSAASSIGN (ID_AVIS (arg_node))) &&
+#endif FIXME
+            (PMmatchFlatSkipExtrema (pat, arg_node))) {
             /* The AVIS_SSAASSIGN check arises from CF unit test aes.sac, where
              * AVIS_MAX( prfarg1) is an N_parm to a LACFUN. I'm not sure
              * how to reproduce that fault easily...
