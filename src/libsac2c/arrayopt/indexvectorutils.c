@@ -62,7 +62,8 @@
  *         Case 3: arg_node is an _idxs2offset( shp, i0, i1,...);
  *         on constants.
  *
- * @return: The offset as a scalar constant, if known, or NULL.
+ * @return: The offset converted back to its
+ *          IV form, as a vector constant, if known, or NULL.
  *
  *****************************************************************************/
 constant *
@@ -73,14 +74,12 @@ IVUToffset2Constant (node *arg_node, node *mat)
     constant *iv = NULL;
     pattern *pat1;
     pattern *pat2;
-#ifdef DEADCODE // fishy
     node *elems = NULL;
     shape *shpmat;
     int offset;
     int i;
     int len;
     int el;
-#endif // DEADCODE // fishy
 
     DBUG_ENTER ();
 
@@ -93,9 +92,6 @@ IVUToffset2Constant (node *arg_node, node *mat)
     if ((N_id == NODE_TYPE (arg_node)) && (TYisAKS (AVIS_TYPE (ID_AVIS (mat))))
         && (TYisAKV (AVIS_TYPE (ID_AVIS (arg_node))))) {
         z = COaST2Constant (arg_node);
-
-#ifdef DEADCODE // this all looks very fishy, if we are going to
-                // return a scalar!
 
         offset = COconst2Int (z);
         shpmat = TYgetShape (AVIS_TYPE (ID_AVIS (mat)));
@@ -114,7 +110,6 @@ IVUToffset2Constant (node *arg_node, node *mat)
             z = COaST2Constant (elems);
             elems = FREEdoFreeTree (elems);
         }
-#endif // DEADCODE
     }
 
     if ((NULL == z) && (PMmatchFlat (pat1, arg_node))) {

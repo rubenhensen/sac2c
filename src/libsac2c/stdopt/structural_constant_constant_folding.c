@@ -215,11 +215,7 @@ static node *
 IdxselStructOpSel (node *arg_node, info *arg_info)
 {
 
-    DBUG_ENTER ();
-#ifdef FIXME // dies on idxsel( vect2offset(shp, [0,1 ]), [ vec0, vec1, vec2]);
-             // As noted above, partial indexing is needed!
     node *result = NULL;
-
     int iv_len;
     int X_dim;
     int offset;
@@ -329,9 +325,6 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
     pat3 = PMfree (pat3);
 
     DBUG_RETURN (result);
-#else  // FIXME
-    DBUG_RETURN (NULL);
-#endif // FIXME
 }
 
 /******************************************************************************

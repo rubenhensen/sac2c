@@ -2155,6 +2155,7 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
     bool z;
     node *cellavis;
     node *pcode;
+    ntype *typ;
 
     DBUG_ENTER ();
 
@@ -2167,7 +2168,8 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
                 || (NODE_TYPE (WITH_WITHOP (p)) == N_modarray));
         pcode = PART_CODE (WITH_PART (p));
         cellavis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (pcode)));
-        z = z && (0 == TYgetDim (AVIS_TYPE (cellavis)));
+        typ = AVIS_TYPE (cellavis); /* Cell must be scalar */
+        z = z && (!TYisAUD (typ)) && (0 == TYgetDim (typ));
         if (z) {
             DBUG_PRINT ("ProducerWL:%s is suitable for folding; WITH_REFERENCED_FOLD=%d",
                         AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
