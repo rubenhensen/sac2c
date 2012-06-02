@@ -3450,6 +3450,16 @@
         <node name="Vardec" />
       </travuser>
     </traversal>
+    <traversal id="CTZG" name="Comparison to Zero for Guards" default="sons"
+               include="comparison_to_zero_guards.h" >
+      <travuser>
+        <node name="Block" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Prf" />
+        <node name="Fundef" />
+      </travuser>
+    </traversal>
     <traversal id="CTZ" name="Comparison to Zero" default="sons"
                include="comparison_to_zero.h" >
       <travuser>
