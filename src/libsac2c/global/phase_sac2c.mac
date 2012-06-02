@@ -406,8 +406,8 @@ CYCLEPHASEFUNOLD (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
 CYCLEPHASEFUNOLD (wlurssa, "Restoring SSA form after withloop unrolling", SSATdoTransform,
                   global.optimize.dowlur, opt, cyc)
 
-CYCLEPHASEFUNOLD (ctzg, "Comparison to zero conversion", CTZGdoComparisonToZeroGuards,
-                  global.optimize.doctzg, opt, cyc)
+CYCLEPHASEFUNOLD (ctzg, "Comparison to zero conversion for guards",
+                  CTZGdoComparisonToZeroGuards, global.optimize.doctzg, opt, cyc)
 
 CYCLEPHASEFUNOLD (ctz, "Comparison to zero conversion", CTZdoComparisonToZero,
                   global.optimize.doctz, opt, cyc)
@@ -581,8 +581,8 @@ CYCLEPHASEFUNOLD (wlurssa, "Restoring SSA form after withloop unrolling", SSATdo
 CYCLEPHASEFUNOLD (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
                   global.optimize.doetc, opt, saacyc)
 
-CYCLEPHASEFUNOLD (ctzg, "Comparison to zero conversion", CTZGdoComparisonToZeroGuards,
-                  global.optimize.doctzg, opt, saacyc)
+CYCLEPHASEFUNOLD (ctzg, "Comparison to zero conversion for guards",
+                  CTZGdoComparisonToZeroGuards, global.optimize.doctzg, opt, saacyc)
 
 CYCLEPHASEFUNOLD (ctz, "Comparison to zero conversion", CTZdoComparisonToZero,
                   global.optimize.doctz, opt, saacyc)
