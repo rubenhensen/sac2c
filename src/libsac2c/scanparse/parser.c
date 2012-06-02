@@ -2825,12 +2825,16 @@ handle_nparts (struct parser *parser)
     struct token *tok;
     node *npart;
     node *nparts;
+    node *wptmp;
+    node *wctmp;
 
     npart = handle_npart (parser);
     if (npart == error_mark_node)
         goto error;
 
     nparts = npart;
+    wptmp = WITH_PART (npart);
+    wctmp = WITH_CODE (npart);
     while (true) {
         node *next;
 
@@ -2844,14 +2848,19 @@ handle_nparts (struct parser *parser)
         if (next == error_mark_node)
             goto error;
 
-        PART_NEXT (WITH_PART (npart)) = WITH_PART (next);
-        CODE_NEXT (WITH_CODE (npart)) = WITH_CODE (next);
+        /* Linked list standard addition.  WPTMP and WCTMP are
+           pointers at the tail of the list.  */
+        PART_NEXT (wptmp) = WITH_PART (next);
+        CODE_NEXT (wctmp) = WITH_CODE (next);
+
+        wptmp = PART_NEXT (wptmp);
+        wctmp = CODE_NEXT (wctmp);
+
+        /* The node containing pointers to the WITH_CODE and
+           WITH_PART is being freed.  */
         WITH_CODE (next) = NULL;
         WITH_PART (next) = NULL;
         free_tree (next);
-
-        WITH_PART (npart) = PART_NEXT (WITH_PART (npart));
-        WITH_CODE (npart) = CODE_NEXT (WITH_CODE (npart));
     }
 
     return nparts;
