@@ -427,6 +427,9 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
             if (FUNDEF_WASOPTIMIZED (fundef)) {
                 STATaddCounters (&oc_pass, &global.optcounters);
                 STATclearCounters (&global.optcounters);
+                DBUG_PRINT ("Function %s was optimized", FUNDEF_NAME (fundef));
+            } else {
+                DBUG_PRINT ("Function %s was not optimized", FUNDEF_NAME (fundef));
             }
 
             DBUG_EXECUTE (STATprint (&global.optcounters));
@@ -475,6 +478,7 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
         fundef_next = FUNDEF_NEXT (fundef);
         FUNDEF_NEXT (fundef) = NULL;
 
+        DBUG_PRINT ("Calling phase for function: %s", FUNDEF_NAME (fundef));
         fundef = PHIphaseFun (cyclephase) (fundef);
 
         DBUG_ASSERT (FUNDEF_NEXT (fundef) == NULL,

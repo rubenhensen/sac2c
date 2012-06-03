@@ -37,7 +37,7 @@
 bool
 GDBbreakAtNid (node *arg_node, char *nm)
 {
-    bool z;
+    bool z = FALSE;
 
     if (NULL == arg_node) {
         z = FALSE;
@@ -73,7 +73,9 @@ GDBbreakAtNid (node *arg_node, char *nm)
             break;
 
         case N_prf:
-            z = STReq (nm, AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
+            if (N_id == NODE_TYPE (PRF_ARG1 (arg_node))) { /* eschew type_conv */
+                z = STReq (nm, AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
+            }
             break;
 
         default:
