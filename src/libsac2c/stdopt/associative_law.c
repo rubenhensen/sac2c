@@ -232,6 +232,39 @@ printOperands (node *exprs)
 }
 #endif
 
+/*
+ * The classification of primitive functions should rather be
+ * derived from corresponding information in prf_info.mac for
+ * use here as well as in other compiler modules.
+ * cg currently lacks the time to implement this.
+ */
+static bool
+IsGuardPrf (prf op)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    switch (op) {
+    case F_guard:
+    case F_same_shape_AxA:
+    case F_shape_matches_dim_VxA:
+    case F_non_neg_val_S:
+    case F_non_neg_val_V:
+    case F_val_lt_shape_VxA:
+    case F_val_lt_val_SxS:
+    case F_val_le_val_SxS:
+    case F_val_le_val_VxV:
+    case F_prod_matches_prod_shape_VxA:
+        res = TRUE;
+        break;
+    default:
+        res = FALSE;
+    }
+
+    DBUG_RETURN (res);
+}
+
 static prf
 AltPrf (prf op)
 {
@@ -819,6 +852,7 @@ CollectExprs (prf prf, node *a, bool sclprf)
 {
     node *res, *rhs;
     node *left, *right;
+    node *ids, *exprs;
 
     DBUG_ENTER ();
 
@@ -843,6 +877,22 @@ CollectExprs (prf prf, node *a, bool sclprf)
                 left = CollectExprs (prf, PRF_ARG1 (rhs), isArg1Scl (PRF_PRF (rhs)));
                 right = CollectExprs (prf, PRF_ARG2 (rhs), isArg2Scl (PRF_PRF (rhs)));
                 res = TCappendExprs (left, right);
+            } else if (IsGuardPrf (PRF_PRF (rhs))) {
+                ids = LET_IDS (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (a))));
+                exprs = PRF_ARGS (rhs);
+                while (IDS_AVIS (ids) != ID_AVIS (a)) {
+                    ids = IDS_NEXT (ids);
+                    exprs = EXPRS_NEXT (exprs);
+                    DBUG_ASSERT (ids != NULL,
+                                 "Syntax tree broken: "
+                                 "AVIS must be found within IDS of AVIS_SSAASSIGN");
+                    DBUG_ASSERT (exprs != NULL,
+                                 "Syntax tree broken: "
+                                 "Left hand side of prf guard application must be longer "
+                                 "than argument list");
+                }
+                DBUG_PRINT ("Ignoring guard: %s", global.prf_name[PRF_PRF (rhs)]);
+                res = CollectExprs (prf, EXPRS_EXPR (exprs), sclprf);
             }
             break;
 
