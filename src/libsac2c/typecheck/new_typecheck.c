@@ -193,6 +193,7 @@ TagAsUnchecked (node *fundef, info *info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Function: %s marked as unchecked", FUNDEF_NAME (fundef));
     FUNDEF_TCSTAT (fundef) = NTC_not_checked;
 
     DBUG_RETURN (fundef);
@@ -228,6 +229,7 @@ NTCdoNewTypeCheckOneFunction (node *arg_node)
         /*
          * Apply typechecker
          */
+        DBUG_PRINT ("Untagging function: %s", FUNDEF_NAME (arg_node));
         MCGdoMapCallGraph (arg_node, TagAsUnchecked, NULL, MCGcontLacFun, NULL);
         arg_node = TagAsUnchecked (arg_node, NULL);
 
