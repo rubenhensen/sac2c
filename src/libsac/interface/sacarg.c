@@ -2,6 +2,7 @@
 
 #include "sacarg.h"
 #include "sac.h"
+#include <stdio.h>
 
 #include "string.h"
 
@@ -24,6 +25,18 @@ struct SAC_SACARG {
 #define SACARG_SHAPE(n, p) DESC_SHAPE (SACARG_DESC (n), p)
 #define SACARG_DATA(n) ((n)->data)
 #define SACARG_BTYPE(n) ((n)->basetype)
+
+/**
+ *
+ * Hidden debug stuff
+ */
+
+void
+SACARGprint (SACarg *arg)
+{
+    printf ("descriptor at #%08x: RC: %d\ndata at #%08x\n", SACARG_DESC (arg),
+            SACARG_RC (arg), SACARG_DATA (arg));
+}
 
 /*
  * basetype to size conversion
