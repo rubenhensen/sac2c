@@ -467,7 +467,7 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
 
     DBUG_PRINT ("Introduced temp index variable: %s for: %s", AVIS_NAME (lhsavis),
                 AVIS_NAME (ivavis));
-    global.optcounters.ivexp_attach++;
+    global.optcounters.ivexp_expr++;
 
     DBUG_RETURN (lhsavis);
 }

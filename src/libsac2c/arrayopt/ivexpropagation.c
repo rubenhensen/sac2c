@@ -77,6 +77,7 @@
 #include "flattengenerators.h"
 #include "DupTree.h"
 #include "check.h"
+#include "globals.h"
 #include "phase.h"
 #include "shape.h"
 #include "symbolic_constant_simplification.h"
@@ -521,12 +522,14 @@ IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup)
             AVIS_ISMINHANDLED (snk) = TRUE;
             DBUG_PRINT ("AVIS_MIN(%s) set to %s", AVIS_NAME (snk),
                         AVIS_NAME (ID_AVIS (src)));
+            global.optcounters.ivexp_expr++;
         } else if ((ID_AVIS (src) != ID_AVIS (AVIS_MIN (snk)))) {
             FREEdoFreeNode (AVIS_MIN (snk));
             AVIS_MIN (snk) = dup ? TBmakeId (ID_AVIS (src)) : src;
             AVIS_ISMINHANDLED (snk) = TRUE;
             DBUG_PRINT ("AVIS_MIN(%s) set to %s", AVIS_NAME (snk),
                         AVIS_NAME (ID_AVIS (src)));
+            global.optcounters.ivexp_expr++;
         }
     }
 
@@ -546,12 +549,14 @@ IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup)
             AVIS_ISMAXHANDLED (snk) = TRUE;
             DBUG_PRINT ("AVIS_MAX(%s) set to %s", AVIS_NAME (snk),
                         AVIS_NAME (ID_AVIS (src)));
+            global.optcounters.ivexp_expr++;
         } else if ((ID_AVIS (src) != ID_AVIS (AVIS_MAX (snk)))) {
             FREEdoFreeNode (AVIS_MAX (snk));
             AVIS_MAX (snk) = dup ? TBmakeId (ID_AVIS (src)) : src;
             AVIS_ISMAXHANDLED (snk) = TRUE;
             DBUG_PRINT ("AVIS_MAX(%s) set to %s", AVIS_NAME (snk),
                         AVIS_NAME (ID_AVIS (src)));
+            global.optcounters.ivexp_expr++;
         }
     }
 

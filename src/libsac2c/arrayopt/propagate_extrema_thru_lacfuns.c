@@ -89,7 +89,6 @@ struct INFO {
     lut_t *lutrenames;
     node *newargs;
     node *newouterapargs;
-    node *newrecursiveapargs;
     node *outerfunap;
     node *lacfun;
 };
@@ -99,7 +98,6 @@ struct INFO {
 #define INFO_LUTRENAMES(n) (n->lutrenames)
 #define INFO_NEWARGS(n) (n->newargs)
 #define INFO_NEWOUTERAPARGS(n) (n->newouterapargs)
-#define INFO_NEWRECURSIVEAPARGS(n) (n->newrecursiveapargs)
 #define INFO_OUTERFUNAP(n) (n->outerfunap)
 #define INFO_LACFUN(n) (n->lacfun)
 
@@ -116,7 +114,6 @@ MakeInfo ()
     INFO_LUTRENAMES (result) = NULL;
     INFO_NEWARGS (result) = NULL;
     INFO_NEWOUTERAPARGS (result) = NULL;
-    INFO_NEWRECURSIVEAPARGS (result) = NULL;
     INFO_OUTERFUNAP (result) = NULL;
     INFO_LACFUN (result) = NULL;
 
@@ -146,7 +143,7 @@ FreeInfo (info *info)
  *
  * @brief Add N_arg nodes for new extrema.
  *
- * @param N_fundef lacfun arg_node to be traversed
+ * @param N_fundef lacfun arg_node to be modified
  *
  * @result: updated N_fundef node
  *
@@ -171,7 +168,8 @@ FreeInfo (info *info)
  *
  *        At the same time, we build N_ap argument chains for
  *        the outer call to the LACFUN and the recursive (if any) call.
- *        They are dealt with later on.
+ *        The former is dealt with later on; the recursive
+ *        is replaced here.
  *
  ******************************************************************************/
 static node *
@@ -188,13 +186,13 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
     node *outercall;
     node *reccall;
     node *newarg;
+    node *newrecursiveapargs = NULL;
+    ;
 
     DBUG_ENTER ();
-    DBUG_PRINT ("Enhancing LACFUN %s header", FUNDEF_NAME (arg_node));
-
+    DBUG_PRINT ("Attempting to enhance LACFUN %s header", FUNDEF_NAME (arg_node));
     INFO_NEWARGS (arg_info) = NULL;
     INFO_NEWOUTERAPARGS (arg_info) = NULL;
-    INFO_NEWRECURSIVEAPARGS (arg_info) = NULL;
 
     apargs = AP_ARGS (INFO_OUTERFUNAP (arg_info)); /* outer call */
     lacfunargs = FUNDEF_ARGS (arg_node);           /* formal parameters */
@@ -222,8 +220,7 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
                   = TCappendExprs (INFO_NEWOUTERAPARGS (arg_info), outercall);
                 if (FUNDEF_ISLOOPFUN (arg_node)) {
                     reccall = TBmakeExprs (TBmakeId (newavis), NULL);
-                    INFO_NEWRECURSIVEAPARGS (arg_info)
-                      = TCappendExprs (INFO_NEWRECURSIVEAPARGS (arg_info), reccall);
+                    newrecursiveapargs = TCappendExprs (newrecursiveapargs, reccall);
                 }
             }
 
@@ -242,8 +239,7 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
                   = TCappendExprs (INFO_NEWOUTERAPARGS (arg_info), outercall);
                 if (FUNDEF_ISLOOPFUN (arg_node)) {
                     reccall = TBmakeExprs (TBmakeId (newavis), NULL);
-                    INFO_NEWRECURSIVEAPARGS (arg_info)
-                      = TCappendExprs (INFO_NEWRECURSIVEAPARGS (arg_info), reccall);
+                    newrecursiveapargs = TCappendExprs (newrecursiveapargs, reccall);
                 }
             }
         }
@@ -252,12 +248,11 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
         rca = (NULL != rca) ? EXPRS_NEXT (rca) : NULL;
     }
 
-    if ((NULL != INFO_NEWRECURSIVEAPARGS (arg_info)) && (FUNDEF_ISLOOPFUN (arg_node))) {
+    if ((NULL != newrecursiveapargs) && (FUNDEF_ISLOOPFUN (arg_node))) {
         DBUG_PRINT ("Replacing recursive call to LACFUN: %s", FUNDEF_NAME (arg_node));
         reccall = FUNDEF_LOOPRECURSIVEAP (arg_node);
-        AP_ARGS (reccall)
-          = TCappendExprs (INFO_NEWRECURSIVEAPARGS (arg_info), AP_ARGS (reccall));
-        INFO_NEWRECURSIVEAPARGS (arg_info) = NULL;
+        AP_ARGS (reccall) = TCappendExprs (newrecursiveapargs, AP_ARGS (reccall));
+        global.optcounters.petl_expr++;
     }
 
     DBUG_RETURN (arg_node);
@@ -449,20 +444,20 @@ PETLfundef (node *arg_node, info *arg_info)
     oldfundef = INFO_FUNDEF (arg_info);
     INFO_FUNDEF (arg_info) = arg_node;
     if (NULL == INFO_LACFUN (arg_info)) { /* Vanilla traversal */
+        DBUG_PRINT ("Normal traversal of: %s", FUNDEF_NAME (arg_node));
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     } else {
-        if (arg_node == INFO_LACFUN (arg_info)) {
-            DBUG_PRINT ("Looking at lacfun: %s", FUNDEF_NAME (arg_node));
-            arg_node = EnhanceLacfunHeader (arg_node, arg_info);
-            /* Traverse body to find where to insert F_noteminval/maxval */
-            FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-            /* Prepend new N_arg elements to lacfun header. This
-             * can not be done until we finish messing with the function body. */
-            FUNDEF_ARGS (arg_node)
-              = TCappendArgs (INFO_NEWARGS (arg_info), FUNDEF_ARGS (arg_node));
-            INFO_NEWARGS (arg_info) = NULL;
-        }
+        DBUG_ASSERT (arg_node == INFO_LACFUN (arg_info), "Expected LACFUN");
+        DBUG_PRINT ("Looking at lacfun: %s", FUNDEF_NAME (arg_node));
+        arg_node = EnhanceLacfunHeader (arg_node, arg_info);
+        /* Traverse body to find where to insert F_noteminval/maxval */
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+        /* Prepend new N_arg elements to lacfun header. This
+         * can not be done until we finish messing with the function body. */
+        FUNDEF_ARGS (arg_node)
+          = TCappendArgs (INFO_NEWARGS (arg_info), FUNDEF_ARGS (arg_node));
+        INFO_NEWARGS (arg_info) = NULL;
     }
 
     if (!INFO_ONEFUNDEF (arg_info)) {
@@ -495,16 +490,16 @@ PETLblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if ((NULL != INFO_NEWARGS (arg_info))) {
+    if ((NULL != INFO_LACFUN (arg_info))) {
         if (FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))) {
-            arg_node = TRAVcont (arg_node, arg_info); /* We have to dig deeper */
+            arg_node = TRAVcont (arg_node, arg_info); /* Dig deeper for then/else */
         } else {                                      /* This is a loopfun */
             DBUG_ASSERT (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)), "Expected LOOPFUN");
             arg_node = EnhanceLacfunBody (arg_node, arg_info);
-            arg_node = TRAVcont (arg_node, arg_info); /* Fix recursive and outer calls */
+            arg_node = TRAVcont (arg_node, arg_info); /* Fix outer call */
         }
     } else {
-        arg_node = TRAVcont (arg_node, arg_info);
+        arg_node = TRAVcont (arg_node, arg_info); /* Vanilla traversal */
     }
 
     DBUG_RETURN (arg_node);
@@ -536,18 +531,18 @@ PETLap (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     calledfn = AP_FUNDEF (arg_node);
-    if ((FUNDEF_ISLACFUN (calledfn)) &&         /* Ignore non-lacfun call */
+    DBUG_ASSERT (NULL == INFO_NEWOUTERAPARGS (arg_info), "outer apargs wrong");
+    if ((NULL == INFO_LACFUN (arg_info)) &&     /* Vanilla traversal */
+        (FUNDEF_ISLACFUN (calledfn)) &&         /* Ignore non-lacfun call */
         (calledfn != INFO_FUNDEF (arg_info))) { /* Ignore recursive call */
-        DBUG_PRINT ("Found LACFUN: %s call from: %s", FUNDEF_NAME (calledfn),
-                    FUNDEF_NAME (INFO_FUNDEF (arg_info)));
-        INFO_LACFUN (arg_info) = calledfn;     /* The called lacfun */
+        DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
+                    FUNDEF_NAME (calledfn), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         INFO_OUTERFUNAP (arg_info) = arg_node; /* The calling N_ap */
-
         INFO_NEWOUTERAPARGS (arg_info) = NULL;
         /* Traverse into the LACFUN */
+        INFO_LACFUN (arg_info) = calledfn; /* The called lacfun */
         calledfn = TRAVdo (calledfn, arg_info);
         INFO_LACFUN (arg_info) = NULL; /* Back to normal traversal */
-
         /* Append new outer call arguments if the LACFUN generated them for us */
         if (NULL != INFO_NEWOUTERAPARGS (arg_info)) {
             DBUG_PRINT ("Appending new arguments to call of %s from %s",
@@ -558,15 +553,8 @@ PETLap (node *arg_node, info *arg_info)
         }
     }
 
-    if ((FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))
-        && (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) && /* Recursive call */
-        (NULL != INFO_NEWRECURSIVEAPARGS (arg_info))) {
-        DBUG_PRINT ("Replacing recursive call to LACFUN: %s",
-                    FUNDEF_NAME (INFO_FUNDEF (arg_info)));
-        AP_ARGS (arg_node)
-          = TCappendExprs (INFO_NEWRECURSIVEAPARGS (arg_info), AP_ARGS (arg_node));
-        INFO_NEWRECURSIVEAPARGS (arg_info) = NULL;
-        FUNDEF_LOOPRECURSIVEAP (INFO_FUNDEF (arg_info)) = arg_node;
+    if ((NULL == INFO_LACFUN (arg_info))) { /* Vanilla traversal */
+        arg_node = TRAVcont (arg_node, arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -593,11 +581,38 @@ PETLcond (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if ((NULL != INFO_NEWARGS (arg_info))) {
+    if ((NULL != INFO_LACFUN (arg_info))) {
         COND_THEN (arg_node) = EnhanceLacfunBody (COND_THEN (arg_node), arg_info);
         COND_ELSE (arg_node) = EnhanceLacfunBody (COND_ELSE (arg_node), arg_info);
     } else {
-        arg_node = TRAVcont (arg_node, arg_info);
+        arg_node = TRAVcont (arg_node, arg_info); /* Vanilla traversal */
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PETLfuncond( node *arg_node, info *arg_info)
+ *
+ * @brief Essentially identical to cond.
+ *
+ * @param arg_node N_funcond node
+ * @param arg_info
+ *
+ * @result arg_node, updated
+ *
+ *****************************************************************************/
+node *
+PETLfuncond (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if ((NULL != INFO_LACFUN (arg_info))) {
+        FUNCOND_THEN (arg_node) = EnhanceLacfunBody (FUNCOND_THEN (arg_node), arg_info);
+        FUNCOND_ELSE (arg_node) = EnhanceLacfunBody (FUNCOND_ELSE (arg_node), arg_info);
+    } else {
+        arg_node = TRAVcont (arg_node, arg_info); /* Vanilla traversal */
     }
 
     DBUG_RETURN (arg_node);
