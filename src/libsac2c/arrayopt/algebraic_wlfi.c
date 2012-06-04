@@ -100,7 +100,6 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "tree_utils.h"
-#include "shape.h"
 #include "check.h"
 #include "ivextrema.h"
 #include "phase.h"

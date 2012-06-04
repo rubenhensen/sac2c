@@ -18,11 +18,11 @@
  *
  *   This can not be optimized any further.
  *   But if we rewrite it this way, using a relational
- *   (which will itself be rewritten to compare to zero), then
- *   AS/AS/DL/CF will be able to optimize it:
+ *   (which will itself be rewritten by CTZ into a comparison to zero),
+ *   then AS/AS/DL/CF may be able to optimize it:
  *
- *
- *   FIXME
+ *      p = _le_VxV_( iv, iv2);
+ *      iv' = _guard( iv, p);
  *
  *   This change is the only operation this module does.
  *
@@ -44,6 +44,7 @@
 #define DBUG_PREFIX "CTZG"
 #include "debug.h"
 
+#include "globals.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "memory.h"
@@ -52,6 +53,10 @@
 #include "new_typecheck.h"
 #include "constants.h"
 #include "type_utils.h"
+#include "flattengenerators.h"
+#include "free.h"
+#include "shape.h"
+#include "DupTree.h"
 
 /** <!--********************************************************************-->
  *
@@ -63,14 +68,16 @@
 struct INFO {
     bool onefundef;
     node *fundef;
-    node *newassign;
-    node *lhs;
+    node *preassigns;
+    node *vardecs;
+    node *let;
 };
 
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_FUNDEF(n) ((n)->fundef)
-#define INFO_LHS(n) ((n)->lhs)
-#define INFO_NEWASSIGN(n) ((n)->newassign)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_LET(n) ((n)->let)
 
 static info *
 MakeInfo ()
@@ -83,8 +90,9 @@ MakeInfo ()
 
     INFO_ONEFUNDEF (result) = TRUE;
     INFO_FUNDEF (result) = NULL;
-    INFO_LHS (result) = NULL;
-    INFO_NEWASSIGN (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
+    INFO_VARDECS (result) = NULL;
+    INFO_LET (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -148,243 +156,62 @@ CTZGdoComparisonToZeroGuards (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn static bool IsComparisonOperator( prf op)
+ * @fn static bool IsSuitableGuard( prf op)
  *
- * @brief Returns whether or not the given operator is a comparison operator
+ * @brief Predicate for whether the prf is one of the guards we want to
+ *        rewrite.
  *
- * @param op primitive operator
+ * @param op PRF_PRF
  *
- * @return is given operator a comparison operator
+ * @return TRUE if op is member of the desired set.
  *
  *****************************************************************************/
 static bool
-IsComparisonOperator (prf op)
+IsSuitableGuard (prf op)
 {
-    bool result;
+    bool z;
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Looking for comparison operator");
+    z = (op == F_val_lt_val_SxS || op == F_val_le_val_VxV || op == F_val_le_val_SxS);
 
-    result = (op == F_eq_SxS || op == F_eq_SxV || op == F_eq_VxS || op == F_eq_VxV
-              || op == F_neq_SxS || op == F_neq_SxV || op == F_neq_VxS || op == F_neq_VxV
-              || op == F_le_SxS || op == F_le_SxV || op == F_le_VxS || op == F_le_VxV
-              || op == F_lt_SxS || op == F_lt_SxV || op == F_lt_VxS || op == F_lt_VxV
-              || op == F_ge_SxS || op == F_ge_SxV || op == F_ge_VxS || op == F_ge_VxV
-              || op == F_gt_SxS || op == F_gt_SxV || op == F_gt_VxS || op == F_gt_VxV);
-
-    if (result) {
-        DBUG_PRINT ("Comparison operator found");
-    } else {
-        DBUG_PRINT ("Comparison operator NOT found");
-    }
-
-    DBUG_RETURN (result);
+    DBUG_RETURN (z);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn static bool IsNodeLiteralZero( node *node)
+ * @fn static prf GetRelationalPrimitive( prf op)
  *
- * @brief This function checks if the given node is a literal 0.
+ * @brief This function returns the relational primitive to use
+ *        with the rewritten guard.
  *
- * @param node
+ * @param prf guard
  *
- * @return is given node a 0
- *
- *****************************************************************************/
-static bool
-IsNodeLiteralZero (node *node)
-{
-    constant *argconst;
-    bool res = FALSE;
-
-    DBUG_ENTER ();
-    DBUG_PRINT ("Comparing to zero");
-
-    argconst = COaST2Constant (node);
-
-    if (NULL != argconst) {
-        res = COisZero (argconst, TRUE);
-        argconst = COfreeConstant (argconst);
-    }
-
-    if (res) {
-        DBUG_PRINT ("Zero found");
-    } else {
-        DBUG_PRINT ("Zero not found");
-    }
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static bool HasSuitableType(node *node)
- *
- * @brief This function checks to see of the given argument node has a
- *        suitable type. A suitable types is int, double or float.
- *
- * @param node *node must be an N_id node
- *
- * @return whether node is of type int, double or float
- *
- *****************************************************************************/
-static bool
-HasSuitableType (node *node)
-{
-    ntype *type;
-    simpletype simple;
-    bool result;
-
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("Checking for suitable type");
-
-    DBUG_ASSERT (NODE_TYPE (node) == N_id, "Node must be an N_id node");
-
-    type = AVIS_TYPE (ID_AVIS (node));
-
-    if (TYisArray (type)) {
-        type = TYgetScalar (type);
-    }
-
-    simple = TYgetSimpleType (type);
-
-    result = simple == T_int || simple == T_byte || simple == T_short || simple == T_long
-             || simple == T_longlong || simple == T_ubyte || simple == T_ushort
-             || simple == T_uint || simple == T_ulong || simple == T_ulonglong
-             || simple == T_double || simple == T_float;
-
-    if (result) {
-        DBUG_PRINT ("Suitable type found");
-    } else {
-        DBUG_PRINT ("Suitable type not found");
-    }
-
-    DBUG_RETURN (result);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static prf ToScalarComparison( prf op)
- *
- * @brief If the given operator is a comparison operator in which the second
- *        argument is a vector, this function returns the same comparison
- *        operator, but the second argument is now a scalar.
- *
- * @param op primitive operator
- *
- * @return comparison operator with second argument a scalar
+ * @return relational prf
  *
  *****************************************************************************/
 static prf
-ToScalarComparison (prf op)
-{
-    DBUG_ENTER ();
-
-    switch (op) {
-    case F_eq_SxV:
-        op = F_eq_VxS;
-        break;
-    case F_eq_VxV:
-        op = F_eq_VxS;
-        break;
-    case F_neq_SxV:
-        op = F_neq_VxS;
-        break;
-    case F_neq_VxV:
-        op = F_neq_VxS;
-        break;
-    case F_le_SxV:
-        op = F_le_VxS;
-        break;
-    case F_le_VxV:
-        op = F_le_VxS;
-        break;
-    case F_lt_SxV:
-        op = F_lt_VxS;
-        break;
-    case F_lt_VxV:
-        op = F_lt_VxS;
-        break;
-    case F_ge_SxV:
-        op = F_ge_VxS;
-        break;
-    case F_ge_VxV:
-        op = F_ge_VxS;
-        break;
-    case F_gt_SxV:
-        op = F_gt_VxS;
-        break;
-    case F_gt_VxV:
-        op = F_gt_VxS;
-        break;
-    default:
-        break;
-    }
-
-    DBUG_RETURN (op);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static prf GetSubtractionOperator( prf op)
- *
- * @brief This function returns the subtraction operator with the same
- *        argument types as the given comparison operator.
- *
- * @param prf comparison operator
- *
- * @return subtraction operator
- *
- *****************************************************************************/
-static prf
-GetSubtractionOperator (prf op)
+GetRelationalPrimitive (prf op)
 {
     prf result;
 
     DBUG_ENTER ();
 
     switch (op) {
-    case F_eq_SxS:
-    case F_neq_SxS:
-    case F_le_SxS:
-    case F_lt_SxS:
-    case F_ge_SxS:
-    case F_gt_SxS:
-        result = F_sub_SxS;
+    case F_val_lt_val_SxS:
+        result = F_lt_SxS;
         break;
 
-    case F_eq_SxV:
-    case F_neq_SxV:
-    case F_le_SxV:
-    case F_lt_SxV:
-    case F_ge_SxV:
-    case F_gt_SxV:
-        result = F_sub_SxV;
+    case F_val_le_val_VxV:
+        result = F_le_VxV;
         break;
 
-    case F_eq_VxS:
-    case F_neq_VxS:
-    case F_le_VxS:
-    case F_lt_VxS:
-    case F_ge_VxS:
-    case F_gt_VxS:
-        result = F_sub_VxS;
-        break;
-
-    case F_eq_VxV:
-    case F_neq_VxV:
-    case F_le_VxV:
-    case F_lt_VxV:
-    case F_ge_VxV:
-    case F_gt_VxV:
-        result = F_sub_VxV;
+    case F_val_le_val_SxS:
+        result = F_le_SxS;
         break;
 
     default:
-        DBUG_ASSERT (0, "Illegal argument, must be a comparison operator");
+        DBUG_ASSERT (0, "Illegal argument.");
         result = F_unknown;
     }
 
@@ -429,6 +256,14 @@ CTZGfundef (node *arg_node, info *arg_info)
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
+    /* If new vardecs were made, append them to the current set */
+    if (INFO_VARDECS (arg_info) != NULL) {
+        BLOCK_VARDECS (FUNDEF_BODY (arg_node))
+          = TCappendVardec (INFO_VARDECS (arg_info),
+                            BLOCK_VARDECS (FUNDEF_BODY (arg_node)));
+        INFO_VARDECS (arg_info) = NULL;
+    }
+
     old_onefundef = INFO_ONEFUNDEF (arg_info);
     INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
@@ -437,28 +272,6 @@ CTZGfundef (node *arg_node, info *arg_info)
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CTZGblock(node *arg_node, info *arg_info)
- *
- * @brief
- *
- * @param arg_node
- * @param arg_info
- *
- * @return
- *
- *****************************************************************************/
-node *
-CTZGblock (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -482,16 +295,14 @@ CTZGassign (node *arg_node, info *arg_info)
 
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-    INFO_NEWASSIGN (arg_info) = NULL;
-
     ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
+    if (INFO_PREASSIGNS (arg_info) != NULL) {
 
-    if (INFO_NEWASSIGN (arg_info) != NULL) {
-        // insert 2 new assignment nodes
-        ASSIGN_NEXT (ASSIGN_NEXT (INFO_NEWASSIGN (arg_info))) = arg_node;
-        arg_node = INFO_NEWASSIGN (arg_info);
+        /* CTZGlet corrupted this */
+        AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)))) = arg_node;
 
-        INFO_NEWASSIGN (arg_info) = NULL;
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
     }
 
     DBUG_RETURN (arg_node);
@@ -501,12 +312,23 @@ CTZGassign (node *arg_node, info *arg_info)
  *
  * @fn node *CTZGlet(node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Traverse into the LET_EXPR.
+ *        When we return, if we were able to rewrite the
+ *        guard( if is it one), then adjust the result of
+ *        the guard from, e.g.:
+ *
+ *           iv', p = val_lt_val(iv, jv);
+ *
+ *        to:
+ *
+ *           iv' = guard( iv, p);
+ *
+ *        The computation of p will be in the preassigns by then.
  *
  * @param arg_node
  * @param arg_info
  *
- * @return
+ * @return Possibly updated N_let node.
  *
  *****************************************************************************/
 node *
@@ -514,9 +336,12 @@ CTZGlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    INFO_LET (arg_info) = arg_node;
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
-    INFO_LHS (arg_info) = NULL;
+    if (NULL != INFO_PREASSIGNS (arg_info)) {
+        IDS_NEXT (LET_IDS (arg_node)) = FREEdoFreeNode (IDS_NEXT (LET_IDS (arg_node)));
+    }
+    INFO_LET (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -525,8 +350,8 @@ CTZGlet (node *arg_node, info *arg_info)
  *
  * @fn node *CTZGprf(node *arg_node, info *arg_info)
  *
- * @brief This function looks for suitable comparisons, applies the
- *        ptimization and creates the new structure.
+ * @brief This function looks for suitable guards, applies the
+ *        optimization.
  *
  * @param arg_node
  * @param arg_info
@@ -537,126 +362,44 @@ CTZGlet (node *arg_node, info *arg_info)
 node *
 CTZGprf (node *arg_node, info *arg_info)
 {
-    ntype *type_zero;
-    ntype *type_sub;
-
-    node *f_sub;
-    node *n_zero;
-    node *avis_sub;
-    node *avis_zero;
+    node *relop;
+    node *relopavis;
+    node *passign;
+    node *pavis;
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+    DBUG_PRINT ("Looking at prf for %s",
+                AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
 
-    // Check for comparisons that don't already use a literal zero
-    if (IsComparisonOperator (PRF_PRF (arg_node))
-        && !IsNodeLiteralZero (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))
-        && HasSuitableType (EXPRS_EXPR (PRF_ARGS (arg_node)))) {
-        DBUG_PRINT ("Found suitable comparison function");
+    if (IsSuitableGuard (PRF_PRF (arg_node))) {
+        DBUG_PRINT ("Guard replaced");
 
-        // Create the new subtraction assignment with same arguments as comparison
-        f_sub = TBmakePrf (GetSubtractionOperator (PRF_PRF (arg_node)),
-                           TBmakeExprs (EXPRS_EXPR (PRF_ARGS (arg_node)),
-                                        TBmakeExprs (EXPRS_EXPR (
-                                                       EXPRS_NEXT (PRF_ARGS (arg_node))),
+        relop = TBmakePrf (GetRelationalPrimitive (PRF_PRF (arg_node)),
+                           TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                                        TBmakeExprs (DUPdoDupNode (PRF_ARG2 (arg_node)),
                                                      NULL)));
 
-        type_zero = NTCnewTypeCheck_Expr (f_sub);
-        type_zero = TYgetProductMember (type_zero, 0);
+        relopavis = FLATGflattenExpression (relop, &INFO_VARDECS (arg_info),
+                                            &INFO_PREASSIGNS (arg_info),
+                                            TYmakeAKS (TYmakeSimpleType (T_bool),
+                                                       SHcreateShape (0)));
+        pavis = IDS_AVIS (IDS_NEXT (LET_IDS (INFO_LET (arg_info))));
+        passign = TBmakeAssign (TBmakeLet (TBmakeIds (pavis, NULL), TBmakeId (relopavis)),
+                                NULL);
+        AVIS_SSAASSIGN (pavis) = passign;
+        INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), passign);
 
-        // Create avis node for subtraction
-        avis_sub = TBmakeAvis (TRAVtmpVar (), TYcopyType (type_zero));
+        // Change the guard expression.
+        PRF_PRF (arg_node) = F_guard;
+        // PRF_ARG1( arg_node) is still iv
+        PRF_ARG2 (arg_node) = TBmakeId (relopavis);
 
-        // Create new zero node where type is based on type of the subtraction
-        type_sub = AVIS_TYPE (avis_sub);
-
-        if (TYisArray (type_sub)) {
-            type_sub = TYgetScalar (type_sub);
-        }
-
-        n_zero = NULL;
-        switch (TYgetSimpleType (type_sub)) {
-        case T_byte:
-            DBUG_PRINT ("Type is byte");
-            n_zero = TBmakeNumbyte (0);
-            break;
-        case T_short:
-            DBUG_PRINT ("Type is short");
-            n_zero = TBmakeNumshort (0);
-            break;
-        case T_int:
-            DBUG_PRINT ("Type is int");
-            n_zero = TBmakeNum (0);
-            break;
-        case T_long:
-            DBUG_PRINT ("Type is long");
-            n_zero = TBmakeNumlong (0);
-            break;
-        case T_longlong:
-            DBUG_PRINT ("Type is longlong");
-            n_zero = TBmakeNumlonglong (0);
-            break;
-        case T_ubyte:
-            DBUG_PRINT ("Type is ubyte");
-            n_zero = TBmakeNumubyte (0);
-            break;
-        case T_ushort:
-            DBUG_PRINT ("Type is ushort");
-            n_zero = TBmakeNumushort (0);
-            break;
-        case T_uint:
-            DBUG_PRINT ("Type is uint");
-            n_zero = TBmakeNumuint (0);
-            break;
-        case T_ulong:
-            DBUG_PRINT ("Type is ulong");
-            n_zero = TBmakeNumulong (0);
-            break;
-        case T_ulonglong:
-            DBUG_PRINT ("Type is ulonglong");
-            n_zero = TBmakeNumulonglong (0);
-            break;
-        case T_double:
-            DBUG_PRINT ("Type is double");
-            n_zero = TBmakeDouble (0);
-            break;
-        case T_float:
-            DBUG_PRINT ("Type is float");
-            n_zero = TBmakeFloat (0);
-            break;
-
-        default:
-            DBUG_ASSERT (0, "Type is unknown, must be int, double or float");
-        }
-
-        // Avis node for zero
-        avis_zero = TBmakeAvis (TRAVtmpVar (), TYcopyType (type_zero));
-
-        type_zero = TYfreeType (type_zero);
-
-        // Add the nodes to the instruction list
-        INFO_NEWASSIGN (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (avis_sub, NULL), f_sub),
-                          TBmakeAssign (TBmakeLet (TBmakeIds (avis_zero, NULL), n_zero),
-                                        NULL));
-
-        AVIS_SSAASSIGN (avis_sub) = INFO_NEWASSIGN (arg_info);
-        AVIS_SSAASSIGN (avis_zero) = ASSIGN_NEXT (INFO_NEWASSIGN (arg_info));
-
-        // Create the new vardec nodes
-        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (avis_sub, TBmakeVardec (avis_zero, FUNDEF_VARDECS (
-                                                               INFO_FUNDEF (arg_info))));
-
-        // Change the current comparison function
-        PRF_PRF (arg_node) = ToScalarComparison (PRF_PRF (arg_node));
-        PRF_ARG1 (arg_node) = TBmakeId (avis_sub);
-        PRF_ARG2 (arg_node) = TBmakeId (avis_zero);
-
-    } // end IsComparisonOperator...
+        global.optcounters.ctzg_expr += 1;
+    }
 
     DBUG_PRINT ("Leaving prf");
+
     DBUG_RETURN (arg_node);
 }
 

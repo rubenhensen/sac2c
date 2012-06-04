@@ -186,6 +186,8 @@ OPTCOUNTER (wlprop_expr, TRUE, "withloop(s) propagated")
 OPTCOUNTER (cwle_wl, TRUE, "copy-with-loop(s) eliminated")
 OPTCOUNTER (prfunr_prf, TRUE, "primitive function(s) unrolled")
 OPTCOUNTER (wlsimp_wl, TRUE, "with-loop(s) simplified")
+OPTCOUNTER (ctz_expr, TRUE, "comparisons to zero")
+OPTCOUNTER (ctzg_expr, TRUE, "comparisons to zero for guards")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr

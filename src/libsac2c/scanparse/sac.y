@@ -148,6 +148,7 @@ PRF_TOUB_S PRF_TOUS_S PRF_TOUI_S PRF_TOUL_S PRF_TOULL_S
 PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
 PRF_MASK_VxVxS PRF_MASK_VxVxV
 PRF_NON_NEG_VAL_S PRF_NON_NEG_VAL_V
+PRF_VAL_LT_VAL_SxS PRF_GUARD
 PRF_VAL_LE_VAL_SxS PRF_VAL_LE_VAL_VxV
 PRF_VAL_LT_SHAPE_VxA
 
@@ -1962,8 +1963,10 @@ prf: PRF_DIM_A          { $$ = F_dim_A;     }
    | PRF_NON_NEG_VAL_S  { $$ = F_non_neg_val_S; }
    | PRF_NON_NEG_VAL_V  { $$ = F_non_neg_val_V; }
    | PRF_VAL_LE_VAL_SxS { $$ = F_val_le_val_SxS; }
+   | PRF_VAL_LT_VAL_SxS { $$ = F_val_lt_val_SxS; }
    | PRF_VAL_LE_VAL_VxV { $$ = F_val_le_val_VxV; }
    | PRF_VAL_LT_SHAPE_VxA { $$ = F_val_lt_shape_VxA; }
+   | PRF_GUARD            { $$ = F_guard; }
    ;
 
 qual_ext_ids: qual_ext_id COMMA qual_ext_ids

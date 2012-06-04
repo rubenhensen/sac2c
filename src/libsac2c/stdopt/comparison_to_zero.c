@@ -49,6 +49,7 @@
 #include "new_typecheck.h"
 #include "constants.h"
 #include "type_utils.h"
+#include "globals.h"
 
 /** <!--********************************************************************-->
  *
@@ -653,7 +654,7 @@ CTZprf (node *arg_node, info *arg_info)
         PRF_PRF (arg_node) = ToScalarComparison (PRF_PRF (arg_node));
         PRF_ARG1 (arg_node) = TBmakeId (avis_sub);
         PRF_ARG2 (arg_node) = TBmakeId (avis_zero);
-
+        global.optcounters.ctz_expr += 1;
     } // end IsComparisonOperator...
 
     DBUG_PRINT ("Leaving prf");

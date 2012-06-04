@@ -210,6 +210,7 @@ LINEEND     \n|\r|\r\n
 "_mask_VxVxV_"             { FILTER( PRF_MASK_VxVxV); }
 "_mask_VxVxS_"             { FILTER( PRF_MASK_VxVxS); }
 
+"_guard_"                  { FILTER( PRF_GUARD_); }
 "_non_neg_val_S_"          { FILTER( PRF_NON_NEG_VAL_S); }
 "_non_neg_val_V_"          { FILTER( PRF_NON_NEG_VAL_V); }
 "_val_le_val_SxS_"         { FILTER( PRF_VAL_LE_VAL_SxS); }
