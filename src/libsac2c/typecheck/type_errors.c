@@ -1711,14 +1711,4 @@ TEassureShpMatchesInt (char *obj, ntype *shp, int len)
     DBUG_RETURN ();
 }
 
-/******************************************************************************
- *
- * function:
- *    void TEassureBoolS( char *obj, ntype *type)
- *
- * description:
- *
- *
- ******************************************************************************/
-
 #undef DBUG_PREFIX

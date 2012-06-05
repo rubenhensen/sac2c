@@ -104,7 +104,6 @@ extern bool COisOne (constant *a, bool all);
 extern bool COisTrue (constant *a, bool all);
 extern bool COisFalse (constant *a, bool all);
 extern bool COisNonNeg (constant *a, bool all);
-
 extern bool COisEmptyVect (constant *a);
 
 /***
@@ -176,6 +175,9 @@ extern constant *COtod (constant *a, constant *, constant *);
 extern constant *COabs (constant *a, constant *, constant *);
 extern constant *COneg (constant *a, constant *, constant *);
 extern constant *COreciproc (constant *a, constant *, constant *);
+
+/* guards */
+extern constant *COguard (constant *a, constant *b);
 
 // Not sure where this stuff belongs, really. Neither fish nor fowl
 // These should go!!! please use COvect2offset instead!!!

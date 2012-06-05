@@ -1791,7 +1791,12 @@ SCSprf_reshape (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_guard( node *arg_node, info *arg_info)
  *
- * FIXME: I think TC should handle all of these cases.
+ * TC can't handle this unless BOTH arguments are AKV.
+ *
+ *   X' = guard( X, pred);
+ *
+ *   If pred is TRUE, then result is X.
+ *
  *****************************************************************************/
 node *
 SCSprf_guard (node *arg_node, info *arg_info)
@@ -1799,6 +1804,11 @@ SCSprf_guard (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
+
+    if (MatchConstantOne (PRF_ARG2 (arg_node))) {
+        res = DUPdoDupNode (PRF_ARG1 (arg_node));
+    }
+
     DBUG_RETURN (res);
 }
 

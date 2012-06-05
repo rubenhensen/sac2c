@@ -392,40 +392,35 @@ NTCCTprf_dispatch_error (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_guard( te_info *info, ntype *elems)
  *
- * description:
+ * description: X' = guard( X, pred);
+ *             pred is Boolean scalar or array
+ *             X is anything.
+ *             If( all( pred)), X' = X;
+ *             else error.
  *
  ******************************************************************************/
 
 ntype *
 NTCCTprf_guard (te_info *info, ntype *args)
 {
-    ntype *res, *pred;
+    ntype *res;
     char *err_msg;
-    int i;
-    bool guard_true;
+    ntype *pred;
 
     DBUG_ENTER ();
 
-    pred = TYgetProductMember (args, 0);
+    pred = TYgetProductMember (args, 1);
 
-    TEassureBoolS ("requires expression", pred);
+    TEassureBoolA ("predicate (second argument of guard())", pred);
     err_msg = TEfetchErrors ();
-
-    res = TYmakeEmptyProductType (TYgetProductSize (args) - 1);
-    guard_true = TYisAKV (pred) && COisTrue (TYgetValue (pred), TRUE);
-    for (i = 1; i < TYgetProductSize (args); i++) {
-        if (err_msg != NULL) {
-            TYsetProductMember (res, i - 1, TYmakeBottomType (err_msg));
-        } else {
-            if (guard_true) {
-                TYsetProductMember (res, i - 1,
-                                    TYcopyType (TYgetProductMember (args, i)));
-            } else {
-                TYsetProductMember (res, i - 1,
-                                    TYeliminateAKV (TYgetProductMember (args, i)));
-            }
-        }
+    if (err_msg != NULL) {
+        CTIabort (err_msg);
     }
+
+    res = TYgetProductMember (args, 0);
+    res = TYcopyType (res);
+    res = TYeliminateAKV (res);
+    res = TYmakeProductType (1, res);
 
     DBUG_RETURN (res);
 }

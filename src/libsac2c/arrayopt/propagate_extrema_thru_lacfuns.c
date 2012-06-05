@@ -448,7 +448,7 @@ PETLfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     } else {
-        DBUG_ASSERT (arg_node == INFO_LACFUN (arg_info), "Expected LACFUN");
+        DBUG_ASSERT (arg_node == INFO_LACFUN (arg_info), "Wrong LACFUN");
         DBUG_PRINT ("Looking at lacfun: %s", FUNDEF_NAME (arg_node));
         arg_node = EnhanceLacfunHeader (arg_node, arg_info);
         /* Traverse body to find where to insert F_noteminval/maxval */
@@ -531,10 +531,10 @@ PETLap (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     calledfn = AP_FUNDEF (arg_node);
-    DBUG_ASSERT (NULL == INFO_NEWOUTERAPARGS (arg_info), "outer apargs wrong");
     if ((NULL == INFO_LACFUN (arg_info)) &&     /* Vanilla traversal */
         (FUNDEF_ISLACFUN (calledfn)) &&         /* Ignore non-lacfun call */
         (calledfn != INFO_FUNDEF (arg_info))) { /* Ignore recursive call */
+        DBUG_ASSERT (NULL == INFO_NEWOUTERAPARGS (arg_info), "outer apargs wrong");
         DBUG_PRINT ("Found LACFUN: %s non-recursive call from: %s",
                     FUNDEF_NAME (calledfn), FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         INFO_OUTERFUNAP (arg_info) = arg_node; /* The calling N_ap */

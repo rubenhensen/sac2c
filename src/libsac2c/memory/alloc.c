@@ -1706,13 +1706,10 @@ EMALprf (node *arg_node, info *arg_info)
 
     case F_guard:
         /*
-         * v1,...,vn = guard(p,a1,...,an)
-         * - consumes p
-         * - each v_i is an alias of a_i
+         * X' = guard( X, p);
          */
-        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
-        INFO_MUSTFILL (arg_info) = FALSE;
+        als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
 
     case F_afterguard:
@@ -1737,13 +1734,17 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = TCcreateZeroVector (0, T_int);
         break;
 
+    case F_val_le_val_SxS:
+        als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        break;
+
     case F_same_shape_AxA:
     case F_shape_matches_dim_VxA:
     case F_non_neg_val_S:
     case F_non_neg_val_V:
     case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:
-    case F_val_le_val_SxS:
     case F_val_lt_val_SxS:
     case F_prod_matches_prod_shape_VxA:
         /*
