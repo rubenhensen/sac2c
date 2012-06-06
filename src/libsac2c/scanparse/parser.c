@@ -57,6 +57,14 @@
 #define error_mark_node ((node *)0x1)
 #define error_type_node ((ntype *)0x2)
 
+/* FIXME: This is a hack, as for the time being tokens and
+          AST nodes use a different location structures.
+          AST one should be extended.  */
+#define CONVERT_LOC(node)                                                                \
+    (struct location){.fname = NODE_FILE (node),                                         \
+                      .line = (size_t)NODE_LINE (node),                                  \
+                      .col = 0};
+
 node *MakeIncDecLet (node *, char *);
 ntype *Exprs2NType (ntype *, node *);
 int CountDotsInExprs (node *);
@@ -86,17 +94,21 @@ Exprs2NType (ntype *basetype, node *exprs)
     int dots = 0;
     shape *shp;
     ntype *result = NULL;
+    struct location loc;
 
     DBUG_ENTER ();
 
     n = TCcountExprs (exprs);
 
+    /* FIXME: This is a hack, store a propre location in AST.  */
+    loc = CONVERT_LOC (EXPRS_EXPR1 (exprs));
+
     switch (NODE_TYPE (EXPRS_EXPR1 (exprs))) {
     case N_spid:
         if (SPID_NS (EXPRS_EXPR1 (exprs)) != NULL)
-            error ("illegal shape specification");
+            error_loc (loc, "illegal shape specification");
         else if (SPID_NAME (EXPRS_EXPR1 (exprs))[1] != '\0')
-            error ("illegal shape specification");
+            error_loc (loc, "illegal shape specification");
         else {
             switch (SPID_NAME (EXPRS_EXPR1 (exprs))[0]) {
             case '*':
@@ -106,7 +118,7 @@ Exprs2NType (ntype *basetype, node *exprs)
                 result = TYmakeAUDGZ (basetype);
                 break;
             default:
-                error ("illegal shape specification");
+                error_loc (loc, "illegal shape specification");
                 break;
             }
         }
@@ -114,7 +126,7 @@ Exprs2NType (ntype *basetype, node *exprs)
     case N_dot:
         dots = CountDotsInExprs (exprs);
         if (dots != n)
-            error ("illegal shape specification");
+            error_loc (loc, "illegal shape specification");
         else
             result = TYmakeAKD (basetype, dots, SHmakeShape (0));
         break;
@@ -123,10 +135,10 @@ Exprs2NType (ntype *basetype, node *exprs)
         if (shp != NULL)
             result = TYmakeAKS (basetype, shp);
         else
-            error ("illegal shape specification");
+            error_loc (loc, "illegal shape specification");
         break;
     default:
-        error ("illegal shape specification");
+        error_loc (loc, "illegal shape specification");
         break;
     }
 
@@ -498,11 +510,9 @@ static node *
 handle_type_subscript_expr (struct parser *parser)
 {
     struct token *tok;
-    struct location loc;
     node *t;
 
     tok = parser_get_token (parser);
-    loc = token_location (tok);
 
     if (token_is_operator (tok, tv_dot))
         t = TBmakeDot (1);
@@ -519,6 +529,8 @@ handle_type_subscript_expr (struct parser *parser)
         error_loc (token_location (tok), "invalid type dimension expression");
         return error_mark_node;
     }
+
+    NODE_LINE (t) = token_location (tok).line;
 
     return t;
 }
