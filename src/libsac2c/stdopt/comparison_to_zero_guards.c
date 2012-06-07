@@ -14,17 +14,23 @@
  *
  *     iv  = q + [4];
  *     iv2 = q + [10];
- *     iv', p = _val_le_val_VxV_( iv, iv2);
+ *     iv', p = _val_le_val_SxS_( iv, iv2);
  *
  *   This can not be optimized any further.
  *   But if we rewrite it this way, using a relational
  *   (which will itself be rewritten by CTZ into a comparison to zero),
  *   then AS/AS/DL/CF may be able to optimize it:
  *
- *      p = _le_VxV_( iv, iv2);
+ *      p = _le_SxS_( iv, iv2);
  *      iv' = _guard( iv, p);
  *
  *   This change is the only operation this module does.
+ *
+ *   Unfortunately, the clever lad who wrote this failed to
+ *   observe that, for VxV guards, p will be a vector,
+ *   and we require a scalar. Hence, VxV is disabled for the nonce.
+ *   This should not be a serious drawback, as we are moving
+ *   toward complete scalarization of such arrays, anyway.
  *
  * @ingroup opt
  *
@@ -173,7 +179,9 @@ IsSuitableGuard (prf op)
 
     DBUG_ENTER ();
 
-    z = (op == F_val_lt_val_SxS || op == F_val_le_val_VxV || op == F_val_le_val_SxS);
+    z = (op == F_val_lt_val_SxS ||
+         //       disabled. See comments at top of doc        op == F_val_le_val_VxV ||
+         op == F_val_le_val_SxS);
 
     DBUG_RETURN (z);
 }
