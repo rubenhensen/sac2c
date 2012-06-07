@@ -944,7 +944,7 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
                     break;
 
                 default:
-                    if (!IVEXIisInGuards (PRF_PRF (idx))) {
+                    if (!PMMisInGuards (PRF_PRF (idx))) {
                         /* idx may be something like an _idx_sel() that
                          * will disappear soon, due to CF */
                         DBUG_PRINT ("N_prf not recognized");

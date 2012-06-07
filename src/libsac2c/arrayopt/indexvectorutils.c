@@ -412,10 +412,13 @@ IVUTisShapesMatch (node *pavis, node *cavis, node *cavisshape)
     ntype *ptype;
     ntype *ctype;
     node *mcwl;
-    node *shp = NULL;
     bool z = FALSE;
-    pattern *pat1;
-    pattern *pat2;
+    pattern *patp;
+    pattern *patc;
+    pattern *patm1;
+    pattern *patm2;
+    node *shpp = NULL;
+    node *shpc = NULL;
 
     DBUG_ENTER ();
 
@@ -437,12 +440,18 @@ IVUTisShapesMatch (node *pavis, node *cavis, node *cavisshape)
 
     /* Case 2: See if AVIS_SHAPEs match */
     if ((!z) && (NULL != AVIS_SHAPE (pavis)) && (NULL != AVIS_SHAPE (cavis))) {
-        pat1 = PMvar (1, PMAgetNode (&shp), 0);
-        pat2 = PMvar (1, PMAisNode (&shp), 0);
-        z = (PMmatchFlatSkipExtremaAndGuards (pat1, AVIS_SHAPE (pavis))
-             && PMmatchFlatSkipExtremaAndGuards (pat2, AVIS_SHAPE (cavis)));
-        pat1 = PMfree (pat1);
-        pat2 = PMfree (pat2);
+        patp = PMany (1, PMAgetNode (&shpp), 0);
+        patc = PMany (1, PMAgetNode (&shpc), 0);
+        patm1 = PMany (1, PMAisNode (&shpp), 0);
+        patm2 = PMany (1, PMAisNode (&shpc), 0);
+        z = ((PMmatchFlatSkipExtremaAndGuards (patp, AVIS_SHAPE (pavis)))
+             && (PMmatchFlatSkipExtremaAndGuards (patc, AVIS_SHAPE (cavis)))
+             && (CMPT_EQ == CMPTdoCompareTree (shpp, shpc)));
+
+        patp = PMfree (patp);
+        patc = PMfree (patc);
+        patm1 = PMfree (patm1);
+        patm2 = PMfree (patm2);
 
         if (!z) {
             /* Case 4 */
