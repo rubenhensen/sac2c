@@ -246,7 +246,8 @@ IsGuardPrf (prf op)
     DBUG_ENTER ();
 
     switch (op) {
-    case F_guard:
+        //  case F_guard:
+        //  disbabled until the format of F_guard has been decided upon.
     case F_same_shape_AxA:
     case F_shape_matches_dim_VxA:
     case F_non_neg_val_S:
@@ -880,19 +881,17 @@ CollectExprs (prf prf, node *a, bool sclprf)
             } else if (IsGuardPrf (PRF_PRF (rhs))) {
                 ids = LET_IDS (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (a))));
                 exprs = PRF_ARGS (rhs);
-                while (IDS_AVIS (ids) != ID_AVIS (a)) {
+                while (IDS_AVIS (ids) != ID_AVIS (a) && exprs != NULL) {
                     ids = IDS_NEXT (ids);
                     exprs = EXPRS_NEXT (exprs);
                     DBUG_ASSERT (ids != NULL,
                                  "Syntax tree broken: "
                                  "AVIS must be found within IDS of AVIS_SSAASSIGN");
-                    DBUG_ASSERT (exprs != NULL,
-                                 "Syntax tree broken: "
-                                 "Left hand side of prf guard application must be longer "
-                                 "than argument list");
                 }
-                DBUG_PRINT ("Ignoring guard: %s", global.prf_name[PRF_PRF (rhs)]);
-                res = CollectExprs (prf, EXPRS_EXPR (exprs), sclprf);
+                if (exprs != NULL) {
+                    DBUG_PRINT ("Ignoring guard: %s", global.prf_name[PRF_PRF (rhs)]);
+                    res = CollectExprs (prf, EXPRS_EXPR (exprs), sclprf);
+                }
             }
             break;
 
