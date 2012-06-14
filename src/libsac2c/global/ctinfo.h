@@ -18,23 +18,23 @@
 #include <stdarg.h>
 
 extern void CTIexit (int);
-extern void CTIinstallInterruptHandlers ();
+extern void CTIinstallInterruptHandlers (void);
 extern char *CTIgetErrorMessageVA (int line, const char *file, const char *format,
                                    va_list arg_p);
 extern void CTIerror (const char *format, ...);
 extern void CTIerrorLine (int line, const char *format, ...);
 extern void CTIerrorContinued (const char *format, ...);
 extern void CTIerrorInternal (const char *format, ...);
-extern int CTIgetErrorMessageLineLength ();
+extern int CTIgetErrorMessageLineLength (void);
 extern void CTIabortOnBottom (char *err_msg);
 extern void CTIabort (const char *format, ...);
 extern void CTIabortLine (int line, const char *format, ...);
 extern void CTIabortOutOfMemory (unsigned int request);
-extern void CTIabortOnError ();
+extern void CTIabortOnError (void);
 extern void CTIwarn (const char *format, ...);
 extern void CTIwarnLine (int line, const char *format, ...);
 extern void CTIwarnContinued (const char *format, ...);
-extern int CTIgetWarnMessageLineLength ();
+extern int CTIgetWarnMessageLineLength (void);
 extern void CTIstate (const char *format, ...);
 extern void CTInote (const char *format, ...);
 extern void CTInoteLine (int line, const char *format, ...);

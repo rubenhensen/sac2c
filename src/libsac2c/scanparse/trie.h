@@ -15,6 +15,9 @@
 #ifndef __TRIE_H__
 #define __TRIE_H__
 
+#ifndef LEXER_BINARY
+#  include "compat.h"
+#endif
 
 #if !defined (true) || !defined (false) || defined (TRIE_MAIN)
   typedef int bool;
@@ -59,7 +62,7 @@ struct trie
 };
 
 __BEGIN_DECLS
-struct trie *  trie_new ();
+struct trie *  trie_new (void);
 void trie_add_word (struct trie *, const char *, size_t, ssize_t);
 void trie_print (struct trie *);
 void trie_free (struct trie *);

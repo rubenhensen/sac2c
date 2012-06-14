@@ -24,10 +24,8 @@
 #include "tree_compound.h"
 #include "str.h"
 #include "memory.h"
-
 #define DBUG_PREFIX "PARSE"
 #include "debug.h"
-
 #include "DupTree.h"
 #include "ctinfo.h"
 #include "free.h"
@@ -46,13 +44,10 @@
 #include "modulemanager.h"
 #include "symboltable.h"
 
-#define malloc(x) MEMmalloc (x)
-#define free(x) MEMfree (x)
-#define strdup(x) STRcpy (x)
-
 #include "uthash.h"
 #include "lex.h"
 #include "parser.h"
+#include "compat.h"
 
 #define error_mark_node ((node *)0x1)
 #define error_type_node ((ntype *)0x2)
@@ -593,6 +588,7 @@ parser_get_token (struct parser *parser)
                  || token_class (tok) == tok_comments);
     } else {
         ssize_t s;
+        size_t idx;
 
         do {
             /* Return a token from the buffer.  */
@@ -600,10 +596,10 @@ parser_get_token (struct parser *parser)
                     "parser buffer holds only up to %i values.", parser->buf_size);
 
             s = parser->buf_end - parser->unget_idx;
-            s = s < 0 ? parser->buf_size + s : s;
+            idx = s < 0 ? (size_t) (parser->buf_size + s) : (size_t)s;
             parser->unget_idx--;
 
-            tok = parser->token_buffer[s];
+            tok = parser->token_buffer[idx];
         } while (token_class (tok) == tok_whitespace
                  || token_class (tok) == tok_comments);
     }
@@ -642,6 +638,7 @@ void
 parser_unget (struct parser *parser)
 {
     ssize_t s;
+    size_t idx;
     struct token *tok;
 
     tok = parser->token_buffer[buf_idx_inc (parser->buf_end, -1, parser->buf_size)];
@@ -675,8 +672,8 @@ parser_unget (struct parser *parser)
         assert (parser->unget_idx < parser->buf_size,
                 "parser buffer holds only up to %i values.", parser->buf_size);
         s = parser->buf_end - parser->unget_idx;
-        s = s < 0 ? parser->buf_size + s : s;
-        tok = parser->token_buffer[s];
+        idx = s < 0 ? (size_t) (parser->buf_size + s) : (size_t)s;
+        tok = parser->token_buffer[idx];
     } while (token_class (tok) == tok_whitespace || token_class (tok) == tok_comments);
 }
 
@@ -2749,12 +2746,10 @@ node *
 handle_wl_assign_block (struct parser *parser)
 {
     struct token *tok;
-    struct location loc;
     node *block = NULL;
 
     tok = parser_get_token (parser);
     parser_unget (parser);
-    loc = token_location (tok);
 
     if (token_is_operator (tok, tv_lbrace)) {
         block = handle_stmt_list (parser, STMT_BLOCK_STMT_FLAGS);
@@ -2896,13 +2891,11 @@ node *
 handle_withop (struct parser *parser)
 {
     struct token *tok;
-    struct location loc;
     node *exp1 = NULL;
     node *exp2 = NULL;
     node *exp3 = NULL;
 
     tok = parser_get_token (parser);
-    loc = token_location (tok);
 
     if (token_is_keyword (tok, GENARRAY)) {
         if (parser_expect_tval (parser, tv_lparen))
@@ -3055,13 +3048,9 @@ node *
 handle_with (struct parser *parser)
 {
     struct token *tok;
-    struct location loc;
     node *nparts = error_mark_node;
     node *withop = error_mark_node;
     node *pragma_expr = NULL;
-
-    loc = token_location (parser_get_token (parser));
-    parser_unget (parser);
 
     /* `with'  */
     if (parser_expect_tval (parser, NWITH))
@@ -4077,13 +4066,11 @@ node *
 handle_rettypes (struct parser *parser, bool vaargs, bool *three_dots_p)
 {
     struct token *tok;
-    struct location loc;
     node *ret;
 
     *three_dots_p = false;
 
     tok = parser_get_token (parser);
-    loc = token_location (tok);
     parser_unget (parser);
 
     if (token_is_keyword (tok, TYPE_VOID)) {
@@ -5278,7 +5265,6 @@ node *
 handle_definitions (struct parser *parser)
 {
     struct token *tok;
-    struct location loc;
     bool parse_error = false;
     enum parsed_ftype ftype;
 
@@ -5289,7 +5275,6 @@ handle_definitions (struct parser *parser)
     node *interfaces_tail = NULL;
 
     tok = parser_get_token (parser);
-    loc = token_location (tok);
     parser_unget (parser);
 
 #define INTERFACE_ADD(exp, interfaces, interfaces_tail)                                  \
@@ -5727,7 +5712,7 @@ parse_rcfile (struct parser *parser)
 }
 
 int
-SPmyYyparse ()
+SPmyYyparse (void)
 {
     struct lexer *lex = (struct lexer *)malloc (sizeof (struct lexer));
     struct parser *parser = (struct parser *)malloc (sizeof (struct parser));

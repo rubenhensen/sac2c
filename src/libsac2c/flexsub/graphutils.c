@@ -25,6 +25,7 @@
 #include "graphtypes.h"
 #include "graphutils.h"
 
+/* FIXME: What the hell is that?  Why it is not in the memory routines?  */
 void *
 MEMrealloc (void *src, int allocsize, int oldsize)
 {

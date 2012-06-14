@@ -26,9 +26,9 @@ extern bool STRsub (const char *sub, const char *str);
 extern int STRlen (const char *str);
 extern char *STRonNull (char *alt, char *str);
 extern char *STRsubStr (const char *string, int start, int len);
-extern char *STRnull ();
+extern char *STRnull (void);
 
-extern int STRsizeInt ();
+extern int STRsizeInt (void);
 
 extern char *STRitoa (int number);
 extern char *STRitoa_oct (int number);

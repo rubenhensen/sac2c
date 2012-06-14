@@ -8,7 +8,7 @@
 #include "types.h"
 
 #ifdef SHOW_MALLOC
-extern void CHKMdeinitialize ();
+extern void CHKMdeinitialize (void);
 
 extern node *CHKMdoMemCheck (node *syntax_tree);
 extern void CHKMtouch (void *shifted_ptr, info *arg_info);

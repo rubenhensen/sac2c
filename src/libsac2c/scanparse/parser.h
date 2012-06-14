@@ -17,6 +17,7 @@
 
 #include "trie.h"
 #include "uthash.h"
+#include "compat.h"
 
 #define F_SYMBOL_IS_TYPE (1 << 0)
 #define F_SYMBOL_IS_UNARY (1 << 1)

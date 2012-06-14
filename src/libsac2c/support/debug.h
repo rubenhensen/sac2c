@@ -33,7 +33,7 @@ extern void _db_longjmp_ (void);                        /* Restore debugger envi
 extern void set_debug_exit_function (void (*) (int));
 
 /* Get the pointer on the custom exit function.  */
-extern void (*get_debug_exit_function ()) (int);
+extern void (*get_debug_exit_function (void)) (int);
 
 /* Wrap the custom exit function.  Used by DBUG_ASSERT macro.  */
 static inline void

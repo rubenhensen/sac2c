@@ -45,7 +45,7 @@ extern target_list_t *RSCmakeTargetListEntry (char *target,
 
 extern target_list_t *RSCaddTargetList (target_list_t *list1, target_list_t *list2);
 
-extern void RSCevaluateConfiguration ();
+extern void RSCevaluateConfiguration (void);
 
 extern void xfree_configuration (configuration_t conf);
 

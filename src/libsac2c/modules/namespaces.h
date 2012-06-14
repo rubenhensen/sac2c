@@ -14,9 +14,9 @@
 #include "types.h"
 
 extern namespace_t *NSgetNamespace (const char *module);
-extern namespace_t *NSgetRootNamespace ();
-extern namespace_t *NSgetInitNamespace ();
-extern namespace_t *NSgetCWrapperNamespace ();
+extern namespace_t *NSgetRootNamespace (void);
+extern namespace_t *NSgetInitNamespace (void);
+extern namespace_t *NSgetCWrapperNamespace (void);
 extern namespace_t *NSgetMTNamespace (const namespace_t *orig);
 extern namespace_t *NSgetSTNamespace (const namespace_t *orig);
 
@@ -35,8 +35,8 @@ extern void NSserializeNamespace (FILE *file, const namespace_t *ns);
 extern namespace_t *NSdeserialzeNamespace (int id);
 extern view_t *NSdeserializeView (const char *module, int id, view_t *next);
 
-extern void NSgenerateNamespaceMap ();
+extern void NSgenerateNamespaceMap (void);
 
-extern void xfree_namespace_pool ();
+extern void xfree_namespace_pool (void);
 
 #endif /* _SAC_NAMESPACES_H_ */

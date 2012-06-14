@@ -34,7 +34,7 @@ extern usertype UTaddAlias (char *name, namespace_t *ns, usertype alias, int lin
                             node *tdef);
 extern usertype UTfindUserType (const char *name, const namespace_t *ns);
 
-extern int UTgetNumberOfUserTypes ();
+extern int UTgetNumberOfUserTypes (void);
 
 extern const namespace_t *UTgetNamespace (usertype t1);
 extern char *UTgetName (usertype t1);

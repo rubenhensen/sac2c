@@ -15,15 +15,17 @@
 #ifndef __LEX_H__
 #define __LEX_H__
 
-//#define __USE_BSD
+#ifdef LEXER_BINARY
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
+#endif
 
 #ifndef LEXER_BINARY
 #include "types.h"
+#include "compat.h"
 #else
 typedef int bool;
 #endif
@@ -238,11 +240,11 @@ extern const char *token_kind_name[];
 
 /* Safely increment or decrement index of character buffer. Make
 sure that negative index equals to size - idx. */
-static inline size_t
+static inline ssize_t
 buf_idx_inc (const size_t idx, const ssize_t inc, const size_t size)
 {
     ssize_t diff = ((ssize_t)idx + inc) % size;
-    return diff < 0 ? size - diff : diff;
+    return diff < (ssize_t)0 ? (ssize_t) (size - diff) : diff;
 }
 
 static inline const char *

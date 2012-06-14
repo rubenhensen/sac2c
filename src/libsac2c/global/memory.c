@@ -129,6 +129,25 @@ MEMmallocAt (int size, char *file, int line)
     DBUG_RETURN (pointer);
 }
 
+/* FIXME:  This is a very bad implemenation of realloc, however the good one
+   requires touching freaking check_mem and dealing with their pointer
+   arithmetics.  */
+void *
+__MEMrealloc (void *ptr, int size)
+{
+    int ptr_size = CHKMgetSize (ptr);
+    void *ret = NULL;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (size > 0, "%s called with negative size", __func__);
+
+    ret = MEMmalloc (size);
+    memcpy (ret, ptr, ptr_size);
+    MEMfree (ptr);
+
+    DBUG_RETURN (ret);
+}
+
 #ifdef NOFREE
 
 void *
@@ -260,6 +279,23 @@ MEMfree (void *address)
     }
 
     DBUG_RETURN (address);
+}
+
+void *
+__MEMrealloc (void *ptr, int size)
+{
+    void *ret = NULL;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (size > 0, "%s called with negative size", __func__);
+
+    ret = realloc (ptr, size);
+    /* FIXME: Is it appropriate for realloc?  */
+    if (ret == NULL) {
+        CTIabortOutOfMemory (size);
+    }
+
+    DBUG_RETURN (ret);
 }
 
 #endif /* SHOW_MALLOC */

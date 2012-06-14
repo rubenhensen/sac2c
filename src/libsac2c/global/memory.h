@@ -7,7 +7,7 @@
 
 #ifdef SHOW_MALLOC
 
-extern void MEMdbugMemoryLeakCheck ();
+extern void MEMdbugMemoryLeakCheck (void);
 extern void *MEMmallocAt (int size, char *file, int line);
 #define MEMmalloc(size) MEMmallocAt (size, __FILE__, __LINE__)
 
@@ -20,5 +20,7 @@ extern void *MEMmalloc (int size);
 extern void *MEMfree (void *address);
 
 extern void *MEMcopy (int size, void *mem);
+
+extern void *__MEMrealloc (void *, int);
 
 #endif /* _SAC_MEMORY_H_ */
