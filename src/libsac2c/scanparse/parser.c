@@ -4153,7 +4153,7 @@ handle_argument (struct parser *parser)
     if (is_unary (parser, NULL, token_as_string (tok))) {
         error_loc (token_location (tok),
                    "argument `%s' is called the "
-                   "smae as unary function",
+                   "same as the unary function",
                    token_as_string (tok));
         goto error;
     }
