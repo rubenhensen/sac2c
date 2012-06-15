@@ -1032,6 +1032,9 @@ is_type (struct parser *parser)
         case TYPE_BOOL:
         case TYPE_CHAR:
         case TYPE_DBL:
+        /* FIXME: We may want to check that the structure was
+           defined before it can be used as a type.  */
+        case STRUCT:
             ret = true;
             break;
 
@@ -1136,9 +1139,15 @@ handle_type (struct parser *parser)
 
     tok = parser_get_token (parser);
 
-    if (token_class (tok) == tok_keyword)
-        type = make_simple_type (token_value (tok));
-    else {
+    if (token_class (tok) == tok_keyword) {
+        if (token_is_keyword (tok, STRUCT)) {
+            /* FIXME: we can have some more checking when we
+               know how exactly do we want to handle structs.  */
+            tok = parser_get_token (parser);
+            type = TYmakeSymbType (STRcat (STRUCT_TYPE, token_as_string (tok)), NULL);
+        } else
+            type = make_simple_type (token_value (tok));
+    } else {
         char *name = NULL;
         char *ns = NULL;
 
@@ -5160,6 +5169,117 @@ error:
     return error_mark_node;
 }
 
+node *
+handle_struct_def (struct parser *parser)
+{
+    struct token *tok;
+    struct identifier *id;
+    bool parse_error = false;
+    node *ret = NULL;
+    node *ret_tail = NULL;
+
+    if (parser_expect_tval (parser, STRUCT))
+        parser_get_token (parser);
+    else
+        goto error;
+
+    id = is_id (parser);
+    tok = parser_get_token (parser);
+
+    if (!id) {
+        error_loc (token_location (tok), "identifier expected, `%s' found",
+                   token_as_string (tok));
+        parser_unget (parser);
+        goto error;
+    }
+
+    if (parser_expect_tval (parser, tv_lbrace))
+        parser_get_token (parser);
+    else
+        goto error;
+
+    while (true) {
+        if (is_type (parser)) {
+            ntype *type;
+            node *ids = error_mark_node;
+            struct location loc;
+
+            type = handle_type (parser);
+
+            loc = token_location (parser_get_token (parser));
+            parser_unget (parser);
+
+            if (type != NULL && type != error_type_node
+                && (error_mark_node != (ids = handle_var_id_list (parser)))) {
+                if (parser_expect_tval (parser, tv_semicolon))
+                    parser_get_token (parser);
+                else {
+                    parse_error = true;
+                    continue;
+                }
+
+                if (ids == NULL) {
+                    error_loc (loc, "at least one identifier expected in "
+                                    "structure definition.");
+                    parse_error = true;
+                    continue;
+                }
+
+                /* This code is taken from sac.y  */
+                do {
+                    node *se;
+                    node *ids_tmp;
+
+                    se = TBmakeStructelem (strdup (SPIDS_NAME (ids)), TYcopyType (type),
+                                           NULL);
+                    if (ret == NULL) {
+                        ret = se;
+                        ret_tail = ret;
+                    } else {
+                        STRUCTELEM_NEXT (ret_tail) = se;
+                        ret_tail = se;
+                    }
+
+                    ids_tmp = SPIDS_NEXT (ids);
+                    free_node (ids);
+                    ids = ids_tmp;
+                } while (ids != NULL);
+                continue;
+            } else
+                parse_error = true;
+
+            /* In case there was an error in type or identifiers.  */
+            parser_get_until_tval (parser, tv_semicolon);
+            free_type (type);
+            free_node (ids);
+            continue;
+        } else
+            break;
+    }
+
+    if (parser_expect_tval (parser, tv_rbrace))
+        parser_get_token (parser);
+    else
+        goto error;
+
+    if (parser_expect_tval (parser, tv_semicolon))
+        parser_get_token (parser);
+    else
+        goto error;
+
+    if (parse_error)
+        goto error;
+
+    ret = TBmakeStructdef (id->id, ret, NULL);
+    free (id);
+    return ret;
+
+error:
+    /* FIXME: try to skip until the ';'?  */
+    free_node (ret);
+    return error_mark_node;
+}
+
 /* 'extern' 'objdef' type ';'
    |
    'objdef' type '=' fun`ction-call ';'
@@ -5315,6 +5435,15 @@ handle_definitions (struct parser *parser)
             parse_error = true;                                                          \
     } while (0)
 
+#define STRUCTDEF_ADD(ret, exp)                                                          \
+    do {                                                                                 \
+        if (exp != error_mark_node && exp != NULL) {                                     \
+            STRUCTDEF_NEXT (exp) = MODULE_STRUCTS (ret);                                 \
+            MODULE_STRUCTS (ret) = exp;                                                  \
+        } else                                                                           \
+            parse_error = true;                                                          \
+    } while (0)
+
 #define OBJDEF_ADD(ret, exp)                                                             \
     do {                                                                                 \
         if (exp != error_mark_node && exp != NULL) {                                     \
@@ -5378,8 +5507,27 @@ handle_definitions (struct parser *parser)
             exp = handle_objdef (parser);
             OBJDEF_ADD (ret, exp);
         } else {
-            exp = handle_function (parser, &ftype);
-            ADD_FUNCTION (ret, exp, ftype);
+            enum function_or_struct { function, structure } f = function;
+
+            /* We may have a structure definition or a function
+               which has a structure as a return type.  */
+            if (token_is_keyword (tok, STRUCT)) {
+                parser_get_token (parser); /* eat-up	`struct'  */
+                parser_get_token (parser); /* eat-up `<id>'  */
+
+                if (token_is_operator (parser_get_token (parser), tv_lbrace))
+                    f = structure;
+
+                parser_unget3 (parser);
+            }
+
+            if (f == structure) {
+                exp = handle_struct_def (parser);
+                STRUCTDEF_ADD (ret, exp);
+            } else {
+                exp = handle_function (parser, &ftype);
+                ADD_FUNCTION (ret, exp, ftype);
+            }
         }
 
         /* fprintf (stdout, "--- parse_error = %i\n", parse_error);  */

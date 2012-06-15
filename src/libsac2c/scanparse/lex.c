@@ -244,7 +244,7 @@ lexer_getch (struct lexer *lex)
 /* Put character back on the stream of the lexer.
    Consequent lexer_getch should return exactly this character.  */
 static inline void
-lexer_ungetch (struct lexer *lex, char ch)
+lexer_ungetch (struct lexer *lex, char ch __attribute__ ((unused)))
 {
     ssize_t s;
 
@@ -377,7 +377,6 @@ lexer_read_user_op (struct lexer *lex, struct token *tok, char **buf, size_t *si
     char *index = *buf;
     int i = 0;
     ssize_t search;
-    struct location loc;
     char c;
 
     assert (lex->is_read_user_op, "One has to set-up lexer in the "
@@ -400,8 +399,6 @@ lexer_read_user_op (struct lexer *lex, struct token *tok, char **buf, size_t *si
 
     for (i = 0;; i++) {
         char c = lexer_getch (lex);
-        if (i == 0)
-            loc = lex->loc;
 
         if (isspace (c) || c == ')' || c == '(' || c == ',' || c == '{' || c == '}'
             || c == ';' || c == EOF) {
@@ -441,14 +438,14 @@ lexer_read_user_op (struct lexer *lex, struct token *tok, char **buf, size_t *si
             trie_add_word (lex->trie, *buf, strlen (*buf), TRIE_USEROP);
     } else if (search != TRIE_USEROP) {
         if (is_normal_id (*buf))
-            return tok->tok_class = tok_keyword;
-        else {
+            tval_tok_init (tok, tok_keyword, (enum token_kind)search);
+        else
             tval_tok_init (tok, tok_operator, (enum token_kind)search);
-            if (*buf)
-                free (*buf);
-            *buf = NULL;
-            return tok->tok_class;
-        }
+
+        if (*buf)
+            free (*buf);
+        *buf = NULL;
+        return tok->tok_class;
     }
 
     return tok_user_op;
