@@ -1198,6 +1198,7 @@
 		  <node name="Module" />
 		  <node name="Fundef" />
 		  <node name="SPAp" />
+		  <node name="SPFold" />
 		  <node name="SPId" />
 		  <node name="SPIds" />
 		  <node name="With" />
@@ -9854,6 +9855,16 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="Fn" default="NULL">
+            <targets>
+              <target mandatory="no">
+                <node name="SPId" />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+        </son>
         <son name="Args" default="NULL">
           <targets>
             <target mandatory="no">
@@ -9876,18 +9887,6 @@ N_tfarg :
         </son>
       </sons>
       <attributes>
-        <attribute name="Fn" default="NULL" inconstructor="no">
-          <type name="Link">
-            <targets>
-              <target mandatory="yes">
-                <node name="SPId" />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="SPEXPR" inconstructor="no">
           <description> Used in sac.y only in order to ship the WL body result
                         into the N_code!

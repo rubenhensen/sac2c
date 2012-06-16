@@ -48,6 +48,7 @@ extern node *INSVDdoInsertVardec (node *syntaxtree);
 extern node *INSVDmodule (node *arg_node, info *arg_info);
 extern node *INSVDfundef (node *arg_node, info *arg_info);
 extern node *INSVDspap (node *arg_node, info *arg_info);
+extern node *INSVDspfold (node *arg_node, info *arg_info);
 extern node *INSVDspid (node *arg_node, info *arg_info);
 extern node *INSVDspids (node *arg_node, info *arg_info);
 extern node *INSVDwith (node *arg_node, info *arg_info);
