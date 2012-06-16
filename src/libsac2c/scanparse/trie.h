@@ -19,8 +19,11 @@
 #  include "compat.h"
 #endif
 
-#if !defined (true) || !defined (false) || defined (TRIE_MAIN)
+#ifdef TRIE_MAIN
   typedef int bool;
+#endif
+
+#if !defined (true) || !defined (false)
 # define true (!0)
 # define false 0
 #endif
