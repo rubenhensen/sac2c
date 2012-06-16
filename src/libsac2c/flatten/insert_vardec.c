@@ -284,6 +284,7 @@ INSVDspfold (node *arg_node, info *arg_info)
     /* Do NOT traverse SPFOLD_FN */
 
     SPFOLD_NEUTRAL (arg_node) = TRAVdo (SPFOLD_NEUTRAL (arg_node), arg_info);
+    SPFOLD_ARGS (arg_node) = TRAVopt (SPFOLD_ARGS (arg_node), arg_info);
     SPFOLD_GUARD (arg_node) = TRAVopt (SPFOLD_GUARD (arg_node), arg_info);
     SPFOLD_NEXT (arg_node) = TRAVopt (SPFOLD_NEXT (arg_node), arg_info);
 

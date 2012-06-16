@@ -826,6 +826,7 @@ node *
 FLATspfold (node *arg_node, info *arg_info)
 {
     node *expr, *expr2;
+    contextflag old_ctxt;
 
     DBUG_ENTER ();
 
@@ -845,6 +846,13 @@ FLATspfold (node *arg_node, info *arg_info)
 
         DBUG_ASSERT (expr == expr2,
                      "return-node differs from arg_node while flattening an expr!");
+    }
+
+    if (SPFOLD_ARGS (arg_node) != NULL) {
+        old_ctxt = INFO_FLAT_CONTEXT (arg_info);
+        INFO_FLAT_CONTEXT (arg_info) = CT_ap;
+        SPFOLD_ARGS (arg_node) = TRAVdo (SPFOLD_ARGS (arg_node), arg_info);
+        INFO_FLAT_CONTEXT (arg_info) = old_ctxt;
     }
 
     if (SPFOLD_NEXT (arg_node) != NULL) {

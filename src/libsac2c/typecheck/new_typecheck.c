@@ -2310,13 +2310,6 @@ NTCfold (node *arg_node, info *arg_info)
     INFO_TYPE (arg_info) = NULL;
 
     /*
-     * Followed by an inference of optional partial arguments:
-     */
-    FOLD_ARGS (arg_node) = TRAVdo (FOLD_ARGS (arg_node), arg_info);
-    pargs = INFO_TYPE (arg_info);
-    INFO_TYPE (arg_info) = NULL;
-
-    /*
      * Then, we compute the type of the elements to be folded:
      */
     args = TYmakeProductType (3, gen, neutr, body);
@@ -2368,15 +2361,28 @@ NTCfold (node *arg_node, info *arg_info)
         ok = SSInewTypeRel (neutr, acc);
         DBUG_ASSERT (ok, "initialization of fold-fun in fold-wl went wrong");
 
-        /* construct args from partial args, acc, and elems: */
-        num_pargs = TYgetProductSize (pargs);
-        args = TYmakeEmptyProductType (num_pargs + 2);
-        for (i = 0; i < num_pargs; i++) {
-            TYsetProductMember (args, i, TYgetProductMember (pargs, i));
+        /*
+         * We have to create the arguments from potentially existing partial
+         * arguments and then add the types of acc and elems:
+         */
+        if (FOLD_ARGS (arg_node) != NULL) {
+            INFO_NUM_EXPRS_SOFAR (arg_info) = 0;
+            FOLD_ARGS (arg_node) = TRAVdo (FOLD_ARGS (arg_node), arg_info);
+            pargs = INFO_TYPE (arg_info);
+            INFO_TYPE (arg_info) = NULL;
+
+            num_pargs = TYgetProductSize (pargs);
+            args = TYmakeEmptyProductType (num_pargs + 2);
+            for (i = 0; i < num_pargs; i++) {
+                TYsetProductMember (args, i, TYgetProductMember (pargs, i));
+            }
+            TYsetProductMember (args, i++, acc);
+            TYsetProductMember (args, i++, elems);
+
+            pargs = TYfreeTypeConstructor (pargs);
+        } else {
+            args = TYmakeProductType (2, acc, elems);
         }
-        TYsetProductMember (args, i++, acc);
-        TYsetProductMember (args, i++, elems);
-        pargs = TYfreeTypeConstructor (pargs);
 
         wrapper = FOLD_FUNDEF (arg_node);
         info = TEmakeInfoUdf (global.linenum, global.filename, TE_foldf,
