@@ -2967,6 +2967,9 @@ handle_withop (struct parser *parser)
         struct token *tok;
         struct identifier *id;
         node *ret;
+        /* In case of partial application, we may have a function-call
+           instead of just a function-name, which we store in SPFOLD_ARGS.  */
+        node *args = NULL;
 
         if (parser_expect_tval (parser, tv_lparen))
             parser_get_token (parser);
@@ -2985,6 +2988,19 @@ handle_withop (struct parser *parser)
 
             identifier_free (id);
             exp1 = handle_ext_id (parser);
+
+            /* Check if we have a partial application of the function.  */
+            tok = parser_get_token (parser);
+            parser_unget (parser);
+
+            if (token_is_operator (tok, tv_lparen)) {
+                args = handle_funcall_args (parser);
+                if (args == error_mark_node) {
+                    parser_get_until_tval (parser, tv_comma);
+                    parser_get_until_tval (parser, tv_rparen);
+                    goto error;
+                }
+            }
         } else {
             tok = parser_get_token (parser);
             parser_unget (parser);
@@ -3032,6 +3048,7 @@ handle_withop (struct parser *parser)
 
         ret = TBmakeSpfold (exp2);
         SPFOLD_FN (ret) = exp1;
+        SPFOLD_ARGS (ret) = args;
 
         if (foldfix_p)
             SPFOLD_GUARD (ret) = exp3;
