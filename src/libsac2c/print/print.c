@@ -4745,11 +4745,15 @@ PRTspfold (node *arg_node, info *arg_info)
      * udf-case prior to TC!
      */
     if (SPFOLD_NS (arg_node) == NULL) {
-        fprintf (global.outfile, "fold/*udf-symb*/( %s, ", SPFOLD_FUN (arg_node));
+        fprintf (global.outfile, "fold/*udf-symb*/( %s(", SPFOLD_FUN (arg_node));
     } else {
-        fprintf (global.outfile, "fold/*udf-symb*/( %s::%s, ",
+        fprintf (global.outfile, "fold/*udf-symb*/( %s::%s(",
                  NSgetName (SPFOLD_NS (arg_node)), SPFOLD_FUN (arg_node));
     }
+    if (SPFOLD_ARGS (arg_node)) {
+        TRAVdo (SPFOLD_ARGS (arg_node), arg_info);
+    }
+    fprintf (global.outfile, "), ");
     TRAVdo (SPFOLD_NEUTRAL (arg_node), arg_info);
 
     fprintf (global.outfile, ")");
