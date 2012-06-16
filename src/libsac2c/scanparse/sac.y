@@ -1819,16 +1819,12 @@ nwithop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
          }
        | FOLD BRACKET_L qual_ext_id COMMA expr BRACKET_R
          { $$ = TBmakeSpfold( $5);
-           SPFOLD_FUN( $$) = STRcpy( SPID_NAME( $3));
-           SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
-           $3 = FREEdoFreeTree( $3);
+           SPFOLD_FN( $$) = $3;
          }
        | FOLDFIX BRACKET_L qual_ext_id COMMA expr COMMA expr BRACKET_R
          { $$ = TBmakeSpfold( $5);
-           SPFOLD_FUN( $$) = STRcpy( SPID_NAME( $3));
-           SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
+           SPFOLD_FN( $$) = $3;
            SPFOLD_GUARD( $$) = $7;
-           $3 = FREEdoFreeTree( $3);
          }
        | PROPAGATE BRACKET_L expr BRACKET_R
          { $$ = TBmakePropagate( $3);
@@ -1849,16 +1845,12 @@ withop: GENARRAY BRACKET_L expr COMMA expr BRACKET_R
         }
       | FOLD BRACKET_L qual_ext_id COMMA expr COMMA expr BRACKET_R
         { $$ = TBmakeSpfold( $5);
-          SPFOLD_FUN( $$) = STRcpy( SPID_NAME( $3));
-          SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
-          $3 = FREEdoFreeTree( $3);
+          SPFOLD_FN( $$) = $3;
           SPFOLD_SPEXPR( $$) = $7;
         }
       | FOLDFIX BRACKET_L qual_ext_id COMMA expr COMMA expr COMMA expr BRACKET_R
         { $$ = TBmakeSpfold( $5);
-          SPFOLD_FUN( $$) = STRcpy( SPID_NAME( $3));
-          SPFOLD_NS( $$) = NSdupNamespace( SPID_NS( $3));
-          $3 = FREEdoFreeTree( $3);
+          SPFOLD_FN( $$) = $3;
           SPFOLD_GUARD( $$) = $7;
           SPFOLD_SPEXPR( $$) = $9;
         }

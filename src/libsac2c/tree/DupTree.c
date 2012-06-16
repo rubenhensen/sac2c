@@ -2366,8 +2366,7 @@ DUPspfold (node *arg_node, info *arg_info)
 
     SPFOLD_GUARD (new_node) = DUPTRAV (SPFOLD_GUARD (arg_node));
 
-    SPFOLD_FUN (new_node) = STRcpy (SPFOLD_FUN (arg_node));
-    SPFOLD_NS (new_node) = NSdupNamespace (SPFOLD_NS (arg_node));
+    SPFOLD_FN (new_node) = DUPspid (SPFOLD_FN (arg_node), arg_info);
 
     SPFOLD_NEXT (new_node) = DUPCONT (SPFOLD_NEXT (arg_node));
 

@@ -22,6 +22,7 @@
 #include "traverse.h"
 #include "namespaces.h"
 #include "globals.h"
+#include "tree_compound.h"
 
 /*
  * INFO structure

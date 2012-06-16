@@ -3031,9 +3031,7 @@ handle_withop (struct parser *parser)
             goto error;
 
         ret = TBmakeSpfold (exp2);
-        SPFOLD_FUN (ret) = strdup (SPID_NAME (exp1));
-        SPFOLD_NS (ret) = NSdupNamespace (SPID_NS (exp1));
-        exp1 = free_tree (exp1);
+        SPFOLD_FN (ret) = exp1;
 
         if (foldfix_p)
             SPFOLD_GUARD (ret) = exp3;

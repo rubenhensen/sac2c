@@ -1106,6 +1106,19 @@ extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *a
 /*--------------------------------------------------------------------------*/
 
 /***
+ ***  N_spfold :
+ ***/
+
+/*
+ *  compound access macros
+ */
+
+#define SPFOLD_FUN(n) SPID_NAME (SPFOLD_FN (n))
+#define SPFOLD_NS(n) SPID_NS (SPFOLD_FN (n))
+
+/*--------------------------------------------------------------------------*/
+
+/***
  ***  N_with :
  ***/
 
