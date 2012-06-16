@@ -740,18 +740,19 @@ CRTWRPspfold (node *arg_node, info *arg_info)
 
     SPFOLD_NEUTRAL (arg_node) = TRAVdo (SPFOLD_NEUTRAL (arg_node), arg_info);
 
-    num_args = 2;
-    wrapper = FindWrapper (SPFOLD_NS (arg_node), SPFOLD_FUN (arg_node), 2, 1,
+    num_args = 2 + TCcountExprs (SPFOLD_ARGS (arg_node));
+    wrapper = FindWrapper (SPFOLD_NS (arg_node), SPFOLD_FUN (arg_node), num_args, 1,
                            INFO_WRAPPERFUNS (arg_info));
 
     if (wrapper == NULL) {
         CTIabortLine (NODE_LINE (arg_node),
                       "No definition found for a function \"%s::%s\" that expects"
-                      " 2 arguments and yields 1 return value",
-                      NSgetName (SPFOLD_NS (arg_node)), SPFOLD_FUN (arg_node));
+                      " %d arguments and yields 1 return value",
+                      NSgetName (SPFOLD_NS (arg_node)), SPFOLD_FUN (arg_node), num_args);
     } else {
         new_node = TBmakeFold (wrapper, SPFOLD_NEUTRAL (arg_node));
         FOLD_GUARD (new_node) = SPFOLD_GUARD (arg_node);
+        FOLD_ARGS (new_node) = SPFOLD_ARGS (arg_node);
 
         /*
          * pick up remaining withops, i.e., propagate.
@@ -762,6 +763,7 @@ CRTWRPspfold (node *arg_node, info *arg_info)
 
         SPFOLD_NEUTRAL (arg_node) = NULL;
         SPFOLD_GUARD (arg_node) = NULL;
+        SPFOLD_ARGS (arg_node) = NULL;
         arg_node = FREEdoFreeNode (arg_node);
     }
 

@@ -9923,6 +9923,16 @@ N_tfarg :
             </target>
           </targets>
         </son>
+        <son name="Args" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="Exprs" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="Guard" default="NULL">
           <targets>
             <target mandatory="no">
