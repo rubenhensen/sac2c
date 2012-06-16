@@ -9856,6 +9856,8 @@ N_tfarg :
           </targets>
         </son>
         <son name="Fn" default="NULL">
+          <description>The reduction function.
+          </description>
             <targets>
               <target mandatory="no">
                 <node name="SPId" />
@@ -9866,6 +9868,9 @@ N_tfarg :
             </targets>
         </son>
         <son name="Args" default="NULL">
+          <description>Relatively free arguments to the reduction function
+                       in case of the partial application.
+          </description>
           <targets>
             <target mandatory="no">
               <node name="Exprs" />
