@@ -888,8 +888,19 @@ CollectExprs (prf prf, node *a, bool sclprf)
                                  "Syntax tree broken: "
                                  "AVIS must be found within IDS of AVIS_SSAASSIGN");
                 }
-                if (exprs != NULL) {
+                if (exprs != NULL && IDS_NEXT (ids) != NULL) {
+                    /*
+                     * we only continue through guards if we are in the transparent
+                     * data flow through the guard, i.e. there is a right hand side
+                     * corresponding expression and this is not the last left hand
+                     * side identifier, i.e. not the guard's predicate.
+                     */
                     DBUG_PRINT ("Ignoring guard: %s", global.prf_name[PRF_PRF (rhs)]);
+                    DBUG_ASSERT (TYeqTypes (IDS_NTYPE (ids),
+                                            ID_NTYPE (EXPRS_EXPR (exprs))),
+                                 "Bug in guards: result id '%s' and arg id '%s' do have "
+                                 "different types",
+                                 IDS_NAME (ids), ID_NAME (EXPRS_EXPR (exprs)));
                     res = CollectExprs (prf, EXPRS_EXPR (exprs), sclprf);
                 }
             }
