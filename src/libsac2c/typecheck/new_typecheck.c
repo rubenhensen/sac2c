@@ -2282,7 +2282,9 @@ node *
 NTCfold (node *arg_node, info *arg_info)
 {
     ntype *gen, *body, *res, *elems, *acc;
-    ntype *neutr, *args;
+    ntype *neutr, *args, *pargs;
+    int num_pargs;
+    int i;
     node *wrapper;
     te_info *info;
     bool ok;
@@ -2305,6 +2307,13 @@ NTCfold (node *arg_node, info *arg_info)
     }
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
     neutr = INFO_TYPE (arg_info);
+    INFO_TYPE (arg_info) = NULL;
+
+    /*
+     * Followed by an inference of optional partial arguments:
+     */
+    FOLD_ARGS (arg_node) = TRAVdo (FOLD_ARGS (arg_node), arg_info);
+    pargs = INFO_TYPE (arg_info);
     INFO_TYPE (arg_info) = NULL;
 
     /*
@@ -2336,12 +2345,12 @@ NTCfold (node *arg_node, info *arg_info)
          *   {
          *      a = accu( ...);
          *      e = ....;
-         *      val = fun( a, e);
+         *      val = fun( p1, ..., pn, a, e);     [ N >= 0 ]
          *   } : val;
-         * Therefore, it suffices to take the alpha type of a (from
+         * Therefore, it suffices to take the alpha type of 'a' (from
          * INFO_EXP_ACCU( arg_info)), make the neutral element a
          * subtype of it (which triggers the initial approximation for
-         * fun( a, e) ), and then make the type of val a subtype of
+         * fun( a, e) ), and then make the type of 'val' a subtype of
          * the alpha type again in order to ensure the fix-point calculation.
          */
         acc = TYcopyType (INFO_EXP_ACCU (arg_info));
@@ -2359,7 +2368,16 @@ NTCfold (node *arg_node, info *arg_info)
         ok = SSInewTypeRel (neutr, acc);
         DBUG_ASSERT (ok, "initialization of fold-fun in fold-wl went wrong");
 
-        args = TYmakeProductType (2, acc, elems);
+        /* construct args from partial args, acc, and elems: */
+        num_pargs = TYgetProductSize (pargs);
+        args = TYmakeEmptyProductType (num_pargs + 2);
+        for (i = 0; i < num_pargs; i++) {
+            TYsetProductMember (args, i, TYgetProductMember (pargs, i));
+        }
+        TYsetProductMember (args, i++, acc);
+        TYsetProductMember (args, i++, elems);
+        pargs = TYfreeTypeConstructor (pargs);
+
         wrapper = FOLD_FUNDEF (arg_node);
         info = TEmakeInfoUdf (global.linenum, global.filename, TE_foldf,
                               NSgetName (FUNDEF_NS (wrapper)), FUNDEF_NAME (wrapper),

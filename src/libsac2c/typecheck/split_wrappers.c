@@ -681,17 +681,32 @@ SWRfold (node *arg_node, info *arg_info)
 {
     ntype *neutr_type, *body_type;
     ntype *arg_type, *arg_types;
+    node *arg;
+    int num_args;
+    int i;
 
     DBUG_ENTER ();
 
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
+    FOLD_ARGS (arg_node) = TRAVdo (FOLD_ARGS (arg_node), arg_info);
 
     neutr_type = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
     body_type = TYfixAndEliminateAlpha (
       AVIS_TYPE (ID_AVIS (EXPRS_EXPR (INFO_CEXPRS (arg_info)))));
 
+    num_args = TCcountExprs (FOLD_ARGS (arg_node));
+    arg_types = TYmakeEmptyProductType (num_args + 2);
+
+    arg = FOLD_ARGS (arg_node);
+    for (i = 0; i < num_args; i++) {
+        arg_type = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (EXPRS_EXPR (arg))));
+        arg_types = TYsetProductMember (arg_types, i, arg_type);
+        arg = EXPRS_NEXT (arg);
+    }
+
     arg_type = TYlubOfTypes (neutr_type, body_type);
-    arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
+    arg_types = TYsetProductMember (arg_types, i++, arg_type);
+    arg_types = TYsetProductMember (arg_types, i++, TYcopyType (arg_type));
 
     FOLD_FUNDEF (arg_node) = CorrectFundefPointer (FOLD_FUNDEF (arg_node), arg_types);
     arg_types = TYfreeType (arg_types);
