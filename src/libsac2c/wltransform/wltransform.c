@@ -3900,7 +3900,10 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
 {
     node *aps;
     node *segs;
+    node *tasksel = NULL;
+    node *schedul = NULL;
     char *fun_names;
+    char *param_name;
 
     DBUG_ENTER ();
 
@@ -3918,9 +3921,9 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
         aps = PRAGMA_WLCOMP_APS (pragma);
         // last parameter of wlcomp pragma is a spid (Default)
         while (NODE_TYPE (EXPRS_EXPR (aps)) != N_spid) {
-
+            param_name = SPAP_NAME (EXPRS_EXPR (aps));
 #define WLP(fun, str, ieee)                                                              \
-    if (STReq (SPAP_NAME (EXPRS_EXPR (aps)), str)) {                                     \
+    if (STReq (param_name, str)) {                                                       \
         if ((!fold_float) || (!global.enforce_ieee) || ieee) {                           \
             segs = fun (segs, SPAP_ARGS (EXPRS_EXPR (aps)), cubes, iter_dims,            \
                         global.linenum);                                                 \
@@ -3946,11 +3949,35 @@ SetSegs (node *pragma, node *cubes, int iter_dims, bool fold_float)
                              SPAP_NAME (EXPRS_EXPR (aps)), fun_names);
             }
 
+            /* save pointer to scheduler and task selector node */
+            if (STReq (param_name, "Scheduling")) {
+                schedul = SPAP_ARG1 (EXPRS_EXPR (aps));
+            } else if (STReq (param_name, "Tasksel")) {
+                tasksel = EXPRS_EXPR (aps);
+            }
+
             /* get arguments of current function */
             aps = SPAP_ARGS (EXPRS_EXPR (aps));
             /* next function will be the last argument */
             while (EXPRS_NEXT (aps) != NULL)
                 aps = EXPRS_NEXT (aps);
+        }
+    }
+
+    /* check if there is a scheduler that needs a task selector */
+    if (schedul != NULL) {
+        char *scheduler_name = SPID_NAME (SPAP_ID (schedul));
+        if (STReq (scheduler_name, "Static") || STReq (scheduler_name, "Self")) {
+            if (tasksel == NULL) {
+                CTIabortLine (global.linenum, "The Scheduler %s requires a Task Selector",
+                              scheduler_name);
+            }
+        } else if (STReq (scheduler_name, "Affinity")) {
+            if (tasksel == NULL
+                || !STReq (SPID_NAME (SPAP_ID (SPAP_ARG1 (tasksel))), "Even")) {
+                CTIabortLine (global.linenum, "Please use Affinity only with Taskselector"
+                                              " Even");
+            }
         }
     }
 

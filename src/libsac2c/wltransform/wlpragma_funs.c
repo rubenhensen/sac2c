@@ -828,6 +828,8 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *arg;
     node *seg = segs;
+    char *strategy;
+    char *name;
 
     DBUG_ENTER ();
 
@@ -858,6 +860,21 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
             }
             WLSEG_SCHEDULING (seg) = SCHmakeSchedulingByPragma (arg, line);
 
+            /* check dimension of task selector */
+            name = SPID_NAME (SPAP_ID (arg));
+            if (STReq (name, "Self")) {
+
+                /* check if Self scheduler argument is valid */
+                strategy = SPID_NAME (SPAP_ARG1 (arg));
+                if (!STReq (strategy, "FirstStatic") && !STReq (strategy, "FirstDynamic")
+                    && !STReq (strategy, "FirstAutomatic")) {
+                    CTIabortLine (line,
+                                  "Scheduler Self needs one of the following strategies"
+                                  " for his first task: FirstStatic, FirstDynamic,"
+                                  " FirstAutomatic");
+                }
+            }
+
             seg = WLSEG_NEXT (seg);
             if (EXPRS_NEXT (parms) != NULL) {
                 parms = EXPRS_NEXT (parms);
@@ -884,6 +901,8 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
 {
     node *arg;
     node *seg = segs;
+    int dim;
+    char *name;
 
     DBUG_ENTER ();
 
@@ -915,6 +934,21 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
             }
 
             WLSEG_TASKSEL (seg) = SCHmakeTaskselByPragma (arg, line);
+
+            /* check dimension of task selector */
+            name = SPID_NAME (SPAP_ID (arg));
+            if (STReq (name, "Even") || STReq (name, "Factoring")) {
+                dim = NUM_VAL (SPAP_ARG1 (arg));
+
+                // negative numbers don't get parsed apparently, so not checking for that
+                if (dim >= dims) {
+                    CTIabortLine (line,
+                                  "Task Distribution Dimension should be between 0 and"
+                                  " the dimension of the withloop");
+                }
+
+                /* check tasks_per_thread too? */
+            }
 
             seg = WLSEG_NEXT (seg);
 
