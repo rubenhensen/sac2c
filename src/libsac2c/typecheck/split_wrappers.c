@@ -688,7 +688,7 @@ SWRfold (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
-    FOLD_ARGS (arg_node) = TRAVdo (FOLD_ARGS (arg_node), arg_info);
+    FOLD_ARGS (arg_node) = TRAVopt (FOLD_ARGS (arg_node), arg_info);
 
     neutr_type = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
     body_type = TYfixAndEliminateAlpha (
