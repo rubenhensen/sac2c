@@ -5816,18 +5816,6 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="Scheduler_Init" inconstructor="no">
-          <type name="Link">
-            <targets>
-              <target mandatory="yes">
-                <node name="Assign" />
-                <phases>
-                  <phase name="comp" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
         <attribute name="SSACounter" inconstructor="no">
           <type name="Node">
             <targets>

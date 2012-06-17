@@ -9370,6 +9370,22 @@ COMPwlseg (node *arg_node, info *arg_info)
         next_icms = TRAVdo (WLSEG_NEXT (arg_node), arg_info);
     }
 
+    ret_node
+      = TCmakeAssigns4 (SCHcompileSchedulingWithTaskselBegin (INFO_SCHEDULERID (arg_info),
+                                                              wlids,
+                                                              WLSEG_SCHEDULING (arg_node),
+                                                              WLSEG_TASKSEL (arg_node),
+                                                              arg_node),
+                        MakeIcm_WL_INIT_OFFSET (arg_node,
+                                                TRAVdo (WLSEG_CONTENTS (arg_node),
+                                                        arg_info)),
+                        SCHcompileSchedulingWithTaskselEnd (INFO_SCHEDULERID (arg_info),
+                                                            wlids,
+                                                            WLSEG_SCHEDULING (arg_node),
+                                                            WLSEG_TASKSEL (arg_node),
+                                                            arg_node),
+                        next_icms);
+
     /*
      * Collect initialization ICMs for schedulers.
      * This is only done for 'real' schedulers, not for the pseudo schedulers
@@ -9388,22 +9404,6 @@ COMPwlseg (node *arg_node, info *arg_info)
 
         (INFO_SCHEDULERID (arg_info))++;
     }
-
-    ret_node
-      = TCmakeAssigns4 (SCHcompileSchedulingWithTaskselBegin (INFO_SCHEDULERID (arg_info),
-                                                              wlids,
-                                                              WLSEG_SCHEDULING (arg_node),
-                                                              WLSEG_TASKSEL (arg_node),
-                                                              arg_node),
-                        MakeIcm_WL_INIT_OFFSET (arg_node,
-                                                TRAVdo (WLSEG_CONTENTS (arg_node),
-                                                        arg_info)),
-                        SCHcompileSchedulingWithTaskselEnd (INFO_SCHEDULERID (arg_info),
-                                                            wlids,
-                                                            WLSEG_SCHEDULING (arg_node),
-                                                            WLSEG_TASKSEL (arg_node),
-                                                            arg_node),
-                        next_icms);
 
     /*
      * pop 'wlseg'.
