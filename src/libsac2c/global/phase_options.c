@@ -115,7 +115,157 @@ PHOinterpretBreakFunName (char *option)
 
     global.break_fun_name = option;
 
-    DBUG_RETURN (0);
+    DBUG_RETURN ();
+}
+
+/*
+ * Handles the option from the -printphasefun option
+ * Which looks something like this:
+ *
+ * -printphasefun 10:aaa:aaa/11:bbb:bbb/foo
+ *
+ * But will also accept something like this:
+ *
+ * -printphasefun 10/11:bbb/foo
+ *
+ * And various other combinations.
+ */
+void
+PHOinterpretPrintPhaseFunOption (char *option)
+{
+    char *start_tok;
+    char *end_tok;
+    char *fun_tok;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Interpreting printphasefun option: %s", option);
+
+    /* get the start token which needs splitting up by : for phase levels */
+    start_tok = STRtok (option, "/");
+    /* get the end token which needs splitting up by : like start_tok */
+    end_tok = STRtok (NULL, "/");
+    /* get the function name token */
+    fun_tok = STRtok (NULL, "/");
+
+    /* check that a start phase is specified */
+    if (start_tok == NULL || end_tok == NULL || fun_tok == NULL) {
+        CTIerror (
+          "Illegal compiler phase or fun specification in printphasefun option: \n"
+          "  -b %s\n"
+          "See %s -h for a list of legal break options.",
+          option, global.toolname);
+    } else {
+        /* assign the start point */
+        InterpretPrintPhaseFunStartOptions (start_tok);
+        // printf( "start token: %s\n", start_tok);
+
+        /* assign the end point */
+        PHOinterpretBreakOption (end_tok);
+        // printf( "end token: %s\n", end_tok);
+
+        /* assign the function name */
+        PHOinterpretBreakFunName (fun_tok);
+        // printf( "fun token: %s\n", fun_tok);
+    }
+
+    /* free tokens */
+    MEMfree (start_tok);
+    MEMfree (end_tok);
+    MEMfree (fun_tok);
+
+    DBUG_RETURN ();
+}
+
+/*
+ * Assigns the correct phase values to the global variables:
+ * - prtphafun_start_phase
+ * - prtphafun_start_subphase
+ * - prtphafun_start_cycle
+ */
+void
+InterpretPrintPhaseFunStartOptions (char *option)
+{
+    compiler_phase_t phase;
+    compiler_phase_t subphase;
+    compiler_phase_t cyclephase;
+    char *break_phase;
+    char *break_subphase;
+    char *break_cyclephase;
+    char *rest;
+    int num;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Interpreting phase option: %s", option);
+
+    break_phase = STRtok (option, ":");
+
+    num = strtol (break_phase, &rest, 10);
+
+    if (rest == break_phase) {
+        /*
+         * The phase spec is not a number.
+         */
+        phase = SearchPhaseByName (break_phase);
+    } else if (rest[0] == '\0') {
+        /*
+         * The phase spec is a number.
+         */
+        phase = SearchPhaseByNumber (num);
+    } else {
+        phase = PHIlastPhase ();
+    }
+
+    if (phase == PHIlastPhase ()) {
+        CTIerror ("Illegal compiler phase specification in break option: \n"
+                  "  -b %s\n"
+                  "See %s -h for a list of legal break options.",
+                  option, global.toolname);
+    } else {
+        global.prtphafun_start_phase = phase;
+    }
+
+    break_phase = MEMfree (break_phase);
+
+    break_subphase = STRtok (NULL, ":");
+
+    if (break_subphase != NULL) {
+        subphase = SearchSubPhase (phase, break_subphase);
+
+        if (subphase == PHIlastPhase ()) {
+            CTIerror ("Illegal compiler subphase specification in break option:\n"
+                      "  -b %s\n"
+                      "See sac2c -h for a list of legal break options.",
+                      option);
+        } else {
+            global.prtphafun_start_subphase = subphase;
+        }
+
+        break_subphase = MEMfree (break_subphase);
+
+        break_cyclephase = STRtok (NULL, ":");
+
+        if (break_cyclephase != NULL) {
+            cyclephase = SearchCyclePhase (subphase, break_cyclephase);
+
+            if (cyclephase == PHIlastPhase ()) {
+                CTIerror ("Illegal compiler cycle phase specification in break option: \n"
+                          "  -b %s\n"
+                          "See sac2c -h for a list of legal break options.",
+                          option);
+            } else {
+                global.prtphafun_start_cycle = cyclephase;
+            }
+
+            break_cyclephase = MEMfree (break_cyclephase);
+        }
+    }
+
+    if (break_subphase)
+        break_subphase = MEMfree (break_subphase);
+
+    DBUG_RETURN ();
 }
 
 void

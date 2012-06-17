@@ -774,6 +774,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with ppppppppppppppppppppppppppppppppppppppppppp
      */
 
+    ARGS_OPTION ("printphasefun", PHOinterpretPrintPhaseFunOption (ARG));
+
     /*selective printing implementation*/
     ARGS_OPTION ("printfun", PHOinterpretBreakFunName (ARG));
 
