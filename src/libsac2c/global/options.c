@@ -406,7 +406,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
      * Options starting with bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
      */
 
-    ARGS_OPTION ("b", PHOinterpretBreakOption (ARG))
+    ARGS_OPTION ("b", PHOinterpretBreakOption (ARG));
 
     /*
      * Options starting with ccccccccccccccccccccccccccccccccccccccccccc
@@ -773,6 +773,9 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     /*
      * Options starting with ppppppppppppppppppppppppppppppppppppppppppp
      */
+
+    /*selective printing implementation*/
+    ARGS_OPTION ("printfun", PHOinterpretBreakFunName (ARG));
 
     ARGS_FLAG ("prsc", global.print_resources = TRUE);
 

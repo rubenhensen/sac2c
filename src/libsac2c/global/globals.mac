@@ -48,6 +48,11 @@ GLOBAL (node *, syntax_tree, NULL, xfree_dummy)
 GLOBAL (int, start_token, 0, xfree_dummy)
 
 /*
+ *  break_fun_name for finding function information during a break and print
+ */
+GLOBAL (char *, break_fun_name, NULL, xfree_dummy)
+
+/*
  *  Version control
  */
 

@@ -779,13 +779,17 @@ PrintPrintingOptions (void)
 
     printf (
       "\n\nPRINTING OPTIONS:\n\n"
-
       "    -print [adv]+\n"
       "               Add internal AST information as comments to the program output.\n"
       "               The following flags are supported:\n"
       "                 a: Print all (same as dv).\n"
       "                 d: Print specialization demand.\n"
-      "                 v: Print avis information.\n");
+      "                 v: Print avis information.\n"
+      "    -printfun <fun_name>\n"
+      "               Uses <fun_name> as a compare token to selectively print only\n"
+      "               functions that match the <fun_name>. \n"
+      "               Use in conjunction with -b \n"
+      "                 Example usage: -b 5:goi -printfun foo\n");
 
     DBUG_RETURN ();
 }

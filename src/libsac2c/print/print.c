@@ -1852,57 +1852,231 @@ PRTfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+    /*
+     *if break_fun_name is set then selective printing is occuring
+     *default option prints all functions
+     */
 
-    if (NODE_ERROR (arg_node) != NULL) {
-        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    bool fun_print = TRUE;
+
+    if (global.break_fun_name != NULL) {
+        if (STReq (global.break_fun_name, FUNDEF_NAME (arg_node)) == TRUE) {
+            fun_print = TRUE;
+        } else {
+            fun_print = FALSE;
+        }
     }
 
-    /*
-     * needed for the introduction of PROFILE_... MACROS in the
-     *  function body.
-     */
-    INFO_FUNDEF (arg_info) = arg_node;
-    /*
-      if (FUNDEF_OBJECTS( arg_node) != NULL) {
-        FUNDEF_OBJECTS( arg_node) = TRAVdo( FUNDEF_OBJECTS( arg_node), arg_info);
-      }
-    */
-    if (INFO_SPECIALIZATION (arg_info)) {
-        fprintf (global.outfile, "specialize ");
-        PrintFunctionHeader (arg_node, arg_info, FALSE);
-        fprintf (global.outfile, ";\n\n");
-    } else if (INFO_PROTOTYPE (arg_info)) {
+    if (fun_print == TRUE) {
+
+        DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+
+        if (NODE_ERROR (arg_node) != NULL) {
+            NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+        }
 
         /*
-         * print function declaration
+         * needed for the introduction of PROFILE_... MACROS in the
+         *  function body.
          */
+        INFO_FUNDEF (arg_info) = arg_node;
+        /*
+          if (FUNDEF_OBJECTS( arg_node) != NULL) {
+            FUNDEF_OBJECTS( arg_node) = TRAVdo( FUNDEF_OBJECTS( arg_node), arg_info);
+          }
+        */
+        if (INFO_SPECIALIZATION (arg_info)) {
+            fprintf (global.outfile, "specialize ");
+            PrintFunctionHeader (arg_node, arg_info, FALSE);
+            fprintf (global.outfile, ";\n\n");
+        } else if (INFO_PROTOTYPE (arg_info)) {
 
-        if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
-            && FUNDEF_NS (arg_node) != NULL
-            && (STReq (NSgetModule (FUNDEF_NS (arg_node)), "Math")
-                || STReq (FUNDEF_NAME (arg_node), "srandom"))) {
-            /* If the function is a math function, we do not print
-             * it's declaration as CUDA has already provided that. */
+            /*
+             * print function declaration
+             */
+
+            if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+                && FUNDEF_NS (arg_node) != NULL
+                && (STReq (NSgetModule (FUNDEF_NS (arg_node)), "Math")
+                    || STReq (FUNDEF_NAME (arg_node), "srandom"))) {
+                /* If the function is a math function, we do not print
+                 * it's declaration as CUDA has already provided that. */
+            } else {
+                if (!FUNDEF_ISZOMBIE (arg_node)) {
+                    if ((FUNDEF_BODY (arg_node) == NULL)
+                        || ((FUNDEF_RETURN (arg_node) != NULL)
+                            && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
+                        fprintf (global.outfile, "%s ", PRINT_EXTERN);
+
+                        if ((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
+                            || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm)) {
+                            PrintFunctionHeader (arg_node, arg_info, FALSE);
+                        } else {
+                            /* print N_icm ND_FUN_DEC */
+                            fprintf (global.outfile, "\n");
+                            TRAVdo (FUNDEF_ICMDECL (arg_node), arg_info);
+                        }
+
+                        if (!((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
+                              || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm))) {
+                            fprintf (global.outfile, ";\n");
+                        }
+
+                        if ((global.compiler_subphase != PH_cg_prt)
+                            && (global.compiler_subphase != PH_ccg_prt)) {
+                            if (FUNDEF_PRAGMA (arg_node) != NULL) {
+                                TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
+                            }
+                        }
+
+                        fprintf (global.outfile, "\n");
+                    }
+                }
+            }
         } else {
-            if (!FUNDEF_ISZOMBIE (arg_node)) {
-                if ((FUNDEF_BODY (arg_node) == NULL)
-                    || ((FUNDEF_RETURN (arg_node) != NULL)
-                        && (NODE_TYPE (FUNDEF_RETURN (arg_node)) == N_icm))) {
-                    fprintf (global.outfile, "%s ", PRINT_EXTERN);
+            /*
+             * print function definition
+             */
+
+            if (FUNDEF_ISZOMBIE (arg_node)) {
+                if ((global.compiler_subphase != PH_cg_prt)
+                    && (global.compiler_subphase != PH_ccg_prt)) {
+                    fprintf (global.outfile, "/*\n");
+                    INDENT;
+                    fprintf (global.outfile, " * zombie function:\n");
+                    INDENT;
+                    fprintf (global.outfile, " *   ");
+                    PrintFunctionHeader (arg_node, arg_info, FALSE);
+                    fprintf (global.outfile, "\n");
+                    INDENT;
+                    fprintf (global.outfile, " */\n\n");
+                } else {
+                    /*
+                     * do not print zombie code in header files,
+                     * do not generate separate files
+                     */
+                }
+            } else {
+                /*
+                 * we only print functions with bodies here, as we
+                 * already have printed headers for all other functions
+                 * earlier!
+                 */
+
+                if (FUNDEF_BODY (arg_node) != NULL) {
+
+                    if (INFO_SEPARATE (arg_info) && (INFO_FUNCOUNTER (arg_info) == 0)) {
+                        global.outfile = FMGRwriteOpen ("%s/fun%d.%s", global.tmp_dirname,
+                                                        INFO_FILECOUNTER (arg_info),
+                                                        global.config.cext);
+                        INFO_FILECOUNTER (arg_info) += 1;
+                        fprintf (global.outfile, "#include \"header.h\"\n\n");
+                        TRAVopt (INFO_SPMDSTORE (arg_info), arg_info);
+                    }
+
+                    fprintf (global.outfile, "\n\n"
+                                             "/******************************************"
+                                             "**********************************\n");
+
+                    INFO_FUNCOUNTER (arg_info) += 1;
+
+                    if (FUNDEF_ISWRAPPERFUN (arg_node)) {
+                        fprintf (global.outfile, " * Wrapper function:\n");
+                    } else if (FUNDEF_ISINDIRECTWRAPPERFUN (arg_node)) {
+                        fprintf (global.outfile, " * Indirect wrapper function: ");
+                    } else if (FUNDEF_ISWRAPPERENTRYFUN (arg_node)) {
+                        fprintf (global.outfile, " * Wrapper entry function: ");
+                    } else if (FUNDEF_ISCONDFUN (arg_node)) {
+                        if (INFO_NONLOCCALFUN (arg_info) == NULL) {
+                            fprintf (global.outfile, " * Cond function:\n");
+                        } else {
+                            fprintf (global.outfile, " * Cond function of ");
+                            if (FUNDEF_NS (INFO_NONLOCCALFUN (arg_info)) != NULL) {
+                                fprintf (global.outfile, "%s::",
+                                         NSgetName (
+                                           FUNDEF_NS (INFO_NONLOCCALFUN (arg_info))));
+                            }
+                            if (FUNDEF_NAME (arg_node) != NULL) {
+                                fprintf (global.outfile, "%s(...):\n",
+                                         FUNDEF_NAME (INFO_NONLOCCALFUN (arg_info)));
+                            }
+                        }
+                    } else if (FUNDEF_ISLOOPFUN (arg_node)) {
+                        if (INFO_NONLOCCALFUN (arg_info) == NULL) {
+                            fprintf (global.outfile, " * Loop function:\n");
+                        } else {
+                            fprintf (global.outfile, " * Loop function of ");
+                            if (FUNDEF_NS (INFO_NONLOCCALFUN (arg_info)) != NULL) {
+                                fprintf (global.outfile, "%s::",
+                                         NSgetName (
+                                           FUNDEF_NS (INFO_NONLOCCALFUN (arg_info))));
+                            }
+                            if (FUNDEF_NAME (arg_node) != NULL) {
+                                fprintf (global.outfile, "%s(...):\n",
+                                         FUNDEF_NAME (INFO_NONLOCCALFUN (arg_info)));
+                            }
+                        }
+                    }
+
+                    if (FUNDEF_ISCUDALACFUN (arg_node)) {
+                        fprintf (global.outfile, " * CUDA lac function:\n");
+                    }
+
+                    if (FUNDEF_ISFORLOOP (arg_node)) {
+                        fprintf (global.outfile, " * For loop function:\n");
+                    }
+
+                    if (FUNDEF_ISTHREADFUN (arg_node)) {
+                        fprintf (global.outfile, " * MUTC thread fun\n");
+                    }
+
+                    if (FUNDEF_ISSPAWNFUN (arg_node)) {
+                        fprintf (global.outfile, " * MUTC spawn fun\n");
+                    }
+
+                    if (FUNDEF_ISMTFUN (arg_node)) {
+                        fprintf (global.outfile, " * MT function:\n");
+                    } else if (FUNDEF_ISSTFUN (arg_node)) {
+                        fprintf (global.outfile, " * ST function:\n");
+                    } else if (FUNDEF_ISSPMDFUN (arg_node)) {
+                        fprintf (global.outfile, " * SPMD function:\n");
+                    }
+
+                    if (global.backend == BE_cuda || global.backend == BE_cudahybrid) {
+                        fprintf (global.outfile, " * WITH-loop Count: %d\n",
+                                 FUNDEF_WLCOUNT (arg_node));
+                    }
+
+                    fprintf (global.outfile, " * ");
+                    if (FUNDEF_NS (arg_node) != NULL) {
+                        fprintf (global.outfile,
+                                 "%s::", NSgetName (FUNDEF_NS (arg_node)));
+                    }
+
+                    fprintf (global.outfile,
+                             "%s(...) [ %s ]\n"
+                             " **********************************************************"
+                             "******************/\n",
+                             FUNDEF_NAME (arg_node),
+                             (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "body"));
 
                     if ((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
                         || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm)) {
                         PrintFunctionHeader (arg_node, arg_info, FALSE);
                     } else {
-                        /* print N_icm ND_FUN_DEC */
-                        fprintf (global.outfile, "\n");
-                        TRAVdo (FUNDEF_ICMDECL (arg_node), arg_info);
+                        TRAVdo (FUNDEF_ICMDEFBEGIN (arg_node), arg_info);
                     }
 
-                    if (!((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
-                          || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm))) {
-                        fprintf (global.outfile, ";\n");
+                    fprintf (global.outfile, "\n");
+
+                    /*
+                     * The following conditional is a cruel hack to get sac2tex
+                     * going; a much better solution should be adopted once print.c
+                     * is rewritten!!!! (sbs)
+                     */
+                    if (global.tool != TOOL_sac2tex) {
+                        /* traverse function body */
+                        TRAVdo (FUNDEF_BODY (arg_node), arg_info);
                     }
 
                     if ((global.compiler_subphase != PH_cg_prt)
@@ -1913,186 +2087,32 @@ PRTfundef (node *arg_node, info *arg_info)
                     }
 
                     fprintf (global.outfile, "\n");
+
+                    if (!((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
+                          || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm))) {
+                        TRAVdo (FUNDEF_ICMDEFEND (arg_node), arg_info);
+                    }
+
+                    fprintf (global.outfile, "\n");
+
+                    if (INFO_SEPARATE (arg_info)
+                        && (INFO_FUNCOUNTER (arg_info) >= global.linksetsize)
+                        && ((FUNDEF_NEXT (arg_node) == NULL)
+                            || !FUNDEF_ISSPMDFUN (FUNDEF_NEXT (arg_node)))) {
+                        fclose (global.outfile);
+                        global.outfile = NULL;
+                        INFO_FUNCOUNTER (arg_info) = 0;
+                    }
+
+                    if (FUNDEF_LOCALFUNS (arg_node) != NULL) {
+                        INFO_NONLOCCALFUN (arg_info) = arg_node;
+                        TRAVdo (FUNDEF_LOCALFUNS (arg_node), arg_info);
+                        INFO_NONLOCCALFUN (arg_info) = NULL;
+                    }
                 }
             }
         }
-    } else {
-        /*
-         * print function definition
-         */
-
-        if (FUNDEF_ISZOMBIE (arg_node)) {
-            if ((global.compiler_subphase != PH_cg_prt)
-                && (global.compiler_subphase != PH_ccg_prt)) {
-                fprintf (global.outfile, "/*\n");
-                INDENT;
-                fprintf (global.outfile, " * zombie function:\n");
-                INDENT;
-                fprintf (global.outfile, " *   ");
-                PrintFunctionHeader (arg_node, arg_info, FALSE);
-                fprintf (global.outfile, "\n");
-                INDENT;
-                fprintf (global.outfile, " */\n\n");
-            } else {
-                /*
-                 * do not print zombie code in header files,
-                 * do not generate separate files
-                 */
-            }
-        } else {
-            /*
-             * we only print functions with bodies here, as we
-             * already have printed headers for all other functions
-             * earlier!
-             */
-
-            if (FUNDEF_BODY (arg_node) != NULL) {
-
-                if (INFO_SEPARATE (arg_info) && (INFO_FUNCOUNTER (arg_info) == 0)) {
-                    global.outfile
-                      = FMGRwriteOpen ("%s/fun%d.%s", global.tmp_dirname,
-                                       INFO_FILECOUNTER (arg_info), global.config.cext);
-                    INFO_FILECOUNTER (arg_info) += 1;
-                    fprintf (global.outfile, "#include \"header.h\"\n\n");
-                    TRAVopt (INFO_SPMDSTORE (arg_info), arg_info);
-                }
-
-                fprintf (global.outfile, "\n\n"
-                                         "/**********************************************"
-                                         "******************************\n");
-
-                INFO_FUNCOUNTER (arg_info) += 1;
-
-                if (FUNDEF_ISWRAPPERFUN (arg_node)) {
-                    fprintf (global.outfile, " * Wrapper function:\n");
-                } else if (FUNDEF_ISINDIRECTWRAPPERFUN (arg_node)) {
-                    fprintf (global.outfile, " * Indirect wrapper function: ");
-                } else if (FUNDEF_ISWRAPPERENTRYFUN (arg_node)) {
-                    fprintf (global.outfile, " * Wrapper entry function: ");
-                } else if (FUNDEF_ISCONDFUN (arg_node)) {
-                    if (INFO_NONLOCCALFUN (arg_info) == NULL) {
-                        fprintf (global.outfile, " * Cond function:\n");
-                    } else {
-                        fprintf (global.outfile, " * Cond function of ");
-                        if (FUNDEF_NS (INFO_NONLOCCALFUN (arg_info)) != NULL) {
-                            fprintf (global.outfile, "%s::",
-                                     NSgetName (
-                                       FUNDEF_NS (INFO_NONLOCCALFUN (arg_info))));
-                        }
-                        if (FUNDEF_NAME (arg_node) != NULL) {
-                            fprintf (global.outfile, "%s(...):\n",
-                                     FUNDEF_NAME (INFO_NONLOCCALFUN (arg_info)));
-                        }
-                    }
-                } else if (FUNDEF_ISLOOPFUN (arg_node)) {
-                    if (INFO_NONLOCCALFUN (arg_info) == NULL) {
-                        fprintf (global.outfile, " * Loop function:\n");
-                    } else {
-                        fprintf (global.outfile, " * Loop function of ");
-                        if (FUNDEF_NS (INFO_NONLOCCALFUN (arg_info)) != NULL) {
-                            fprintf (global.outfile, "%s::",
-                                     NSgetName (
-                                       FUNDEF_NS (INFO_NONLOCCALFUN (arg_info))));
-                        }
-                        if (FUNDEF_NAME (arg_node) != NULL) {
-                            fprintf (global.outfile, "%s(...):\n",
-                                     FUNDEF_NAME (INFO_NONLOCCALFUN (arg_info)));
-                        }
-                    }
-                }
-
-                if (FUNDEF_ISCUDALACFUN (arg_node)) {
-                    fprintf (global.outfile, " * CUDA lac function:\n");
-                }
-
-                if (FUNDEF_ISFORLOOP (arg_node)) {
-                    fprintf (global.outfile, " * For loop function:\n");
-                }
-
-                if (FUNDEF_ISTHREADFUN (arg_node)) {
-                    fprintf (global.outfile, " * MUTC thread fun\n");
-                }
-
-                if (FUNDEF_ISSPAWNFUN (arg_node)) {
-                    fprintf (global.outfile, " * MUTC spawn fun\n");
-                }
-
-                if (FUNDEF_ISMTFUN (arg_node)) {
-                    fprintf (global.outfile, " * MT function:\n");
-                } else if (FUNDEF_ISSTFUN (arg_node)) {
-                    fprintf (global.outfile, " * ST function:\n");
-                } else if (FUNDEF_ISSPMDFUN (arg_node)) {
-                    fprintf (global.outfile, " * SPMD function:\n");
-                }
-
-                if (global.backend == BE_cuda || global.backend == BE_cudahybrid) {
-                    fprintf (global.outfile, " * WITH-loop Count: %d\n",
-                             FUNDEF_WLCOUNT (arg_node));
-                }
-
-                fprintf (global.outfile, " * ");
-                if (FUNDEF_NS (arg_node) != NULL) {
-                    fprintf (global.outfile, "%s::", NSgetName (FUNDEF_NS (arg_node)));
-                }
-
-                fprintf (global.outfile,
-                         "%s(...) [ %s ]\n"
-                         " **************************************************************"
-                         "**************/\n",
-                         FUNDEF_NAME (arg_node),
-                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "body"));
-
-                if ((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
-                    || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm)) {
-                    PrintFunctionHeader (arg_node, arg_info, FALSE);
-                } else {
-                    TRAVdo (FUNDEF_ICMDEFBEGIN (arg_node), arg_info);
-                }
-
-                fprintf (global.outfile, "\n");
-
-                /*
-                 * The following conditional is a cruel hack to get sac2tex
-                 * going; a much better solution should be adopted once print.c
-                 * is rewritten!!!! (sbs)
-                 */
-                if (global.tool != TOOL_sac2tex) {
-                    /* traverse function body */
-                    TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-                }
-
-                if ((global.compiler_subphase != PH_cg_prt)
-                    && (global.compiler_subphase != PH_ccg_prt)) {
-                    if (FUNDEF_PRAGMA (arg_node) != NULL) {
-                        TRAVdo (FUNDEF_PRAGMA (arg_node), arg_info);
-                    }
-                }
-
-                fprintf (global.outfile, "\n");
-
-                if (!((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
-                      || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm))) {
-                    TRAVdo (FUNDEF_ICMDEFEND (arg_node), arg_info);
-                }
-
-                fprintf (global.outfile, "\n");
-
-                if (INFO_SEPARATE (arg_info)
-                    && (INFO_FUNCOUNTER (arg_info) >= global.linksetsize)
-                    && ((FUNDEF_NEXT (arg_node) == NULL)
-                        || !FUNDEF_ISSPMDFUN (FUNDEF_NEXT (arg_node)))) {
-                    fclose (global.outfile);
-                    global.outfile = NULL;
-                    INFO_FUNCOUNTER (arg_info) = 0;
-                }
-
-                if (FUNDEF_LOCALFUNS (arg_node) != NULL) {
-                    INFO_NONLOCCALFUN (arg_info) = arg_node;
-                    TRAVdo (FUNDEF_LOCALFUNS (arg_node), arg_info);
-                    INFO_NONLOCCALFUN (arg_info) = NULL;
-                }
-            }
-        }
+        /**end selective print**/
     }
 
     DBUG_ASSERT (global.indent == old_indent,

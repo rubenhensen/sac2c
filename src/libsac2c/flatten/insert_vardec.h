@@ -56,5 +56,6 @@ extern node *INSVDpart (node *arg_node, info *arg_info);
 extern node *INSVDcode (node *arg_node, info *arg_info);
 extern node *INSVDlet (node *arg_node, info *arg_info);
 extern node *INSVDdo (node *arg_node, info *arg_info);
+extern node *INSVDspfold (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INSERT_VARDEC_H_ */

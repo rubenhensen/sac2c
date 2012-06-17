@@ -105,6 +105,19 @@ SearchCyclePhase (compiler_phase_t cycle, char *name)
     DBUG_RETURN (cyclephase);
 }
 
+/*
+ *global assignment for printfun option
+ */
+void
+PHOinterpretBreakFunName (char *option)
+{
+    DBUG_ENTER ();
+
+    global.break_fun_name = option;
+
+    DBUG_RETURN (0);
+}
+
 void
 PHOinterpretBreakOption (char *option)
 {
