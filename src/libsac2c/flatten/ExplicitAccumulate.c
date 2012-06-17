@@ -197,8 +197,6 @@ MakeAccuAssign (node *code, info *arg_info)
 static node *
 MakeFoldFunAssign (info *arg_info)
 {
-    node *old_cexpr_id, *avis, *assign, *args, *eq_funap, *fixassign;
-
     DBUG_ENTER ();
 
     /*
@@ -211,9 +209,9 @@ MakeFoldFunAssign (info *arg_info)
      */
 
     /* create new cexpr id: */
-    old_cexpr_id = EXPRS_EXPR1 (INFO_FOLD_CEXPR (arg_info));
-    avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (old_cexpr_id)),
-                       TYcopyType (AVIS_TYPE (INFO_FOLD_ACCU (arg_info))));
+    node *old_cexpr_id = EXPRS_EXPR1 (INFO_FOLD_CEXPR (arg_info));
+    node *avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (old_cexpr_id)),
+                             TYcopyType (AVIS_TYPE (INFO_FOLD_ACCU (arg_info))));
 
     /* replace old_cexpr_id with new one: */
     EXPRS_EXPR1 (INFO_FOLD_CEXPR (arg_info)) = TBmakeId (avis);
@@ -223,12 +221,27 @@ MakeFoldFunAssign (info *arg_info)
       = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     /* create <avis> = <fun>( <accu>, old_cexpr_id); */
+    node *assign;
 
-    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                      TCmakeAp2 (FOLD_FUNDEF (INFO_FOLD (arg_info)),
-                                                 TBmakeId (INFO_FOLD_ACCU (arg_info)),
-                                                 old_cexpr_id)),
-                           NULL);
+    if (FOLD_ARGS (INFO_FOLD (arg_info))) {
+        /* Partial ap. */
+        /* duplicate the partial args exprs from FOLD_ARGS */
+        node *args = DUPdoDupTree (FOLD_ARGS (INFO_FOLD (arg_info)));
+        /* and append the two automatic args to it: acc, val */
+        EXPRS_NEXT (args) = TBmakeExprs (TBmakeId (INFO_FOLD_ACCU (arg_info)),
+                                         TBmakeExprs (old_cexpr_id, NULL));
+        /* construct the ap node and then the assignment */
+        node *ap = TBmakeAp (FOLD_FUNDEF (INFO_FOLD (arg_info)), args);
+
+        assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), ap), NULL);
+    } else {
+        /* Full ap. */
+        assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
+                                          TCmakeAp2 (FOLD_FUNDEF (INFO_FOLD (arg_info)),
+                                                     TBmakeId (INFO_FOLD_ACCU (arg_info)),
+                                                     old_cexpr_id)),
+                               NULL);
+    }
 
     /* set correct backref to defining assignment */
     AVIS_SSAASSIGN (avis) = assign;
@@ -237,11 +250,12 @@ MakeFoldFunAssign (info *arg_info)
         /*
          * create an assignment <fixbool> = sacprelude::eq( <avis>, fixval);
          */
-        args
+        node *args
           = TBmakeExprs (TBmakeId (avis),
                          TBmakeExprs (DUPdoDupNode (INFO_FOLD_GUARD (arg_info)), NULL));
 
-        eq_funap = DSdispatchFunCall (NSgetNamespace (global.preludename), "eq", args);
+        node *eq_funap
+          = DSdispatchFunCall (NSgetNamespace (global.preludename), "eq", args);
         DBUG_ASSERT (eq_funap != NULL, "%s::eq not found", global.preludename);
 
         avis = TBmakeAvis (TRAVtmpVarName (ID_NAME (INFO_FOLD_GUARD (arg_info))),
@@ -250,7 +264,8 @@ MakeFoldFunAssign (info *arg_info)
         FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
           = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-        fixassign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), eq_funap), NULL);
+        node *fixassign
+          = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), eq_funap), NULL);
 
         AVIS_SSAASSIGN (avis) = fixassign;
         ASSIGN_NEXT (assign) = fixassign;
