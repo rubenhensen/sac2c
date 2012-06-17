@@ -733,7 +733,8 @@ ICMCompileMT_SCHEDULER_Affinity_BEGIN (int sched_id, char *ts_name, int ts_dims,
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Affinity_BEGIN
 
-    DBUG_ASSERT (ts_args != NULL, "Please use Affinity only with Taskselector Even");
+    DBUG_ASSERT (STReq (ts_name, "Even"),
+                 "Please use Affinity only with Taskselector Even");
 
     INDENT;
     fprintf (global.outfile, "int SAC_MT_taskid, "
@@ -790,6 +791,9 @@ ICMCompileMT_SCHEDULER_Affinity_INIT (int sched_id, char *ts_name, int ts_dims,
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SCHEDULER_Affinity_INIT
+
+    DBUG_ASSERT (STReq (ts_name, "Even"),
+                 "Please use Affinity only with Taskselector Even");
 
     INDENT;
     fprintf (global.outfile, "SAC_MT_SCHEDULER_Affinity_INIT(%d,%d);\n", sched_id,
