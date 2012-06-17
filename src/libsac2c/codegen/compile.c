@@ -2861,8 +2861,22 @@ COMPfundef (node *arg_node, info *arg_info)
                          "left-over postfun icms found!");
             /*
              * Store collected scheduler information.
+             *
+             * comment by msd:
+             * Why do we store this in the first place? This BLOCK_SCHEDULER_INIT
+             * property is only set here and never read. I'm commenting this out and
+             * storing the assignments directly in the fundef_body.
              */
-            BLOCK_SCHEDULER_INIT (FUNDEF_BODY (arg_node)) = INFO_SCHEDULERINIT (arg_info);
+            /*BLOCK_SCHEDULER_INIT( FUNDEF_BODY( arg_node))
+              = INFO_SCHEDULERINIT( arg_info);*/
+
+            if (INFO_SCHEDULERINIT (arg_info) != NULL) {
+                BLOCK_ASSIGNS (FUNDEF_BODY (arg_node))
+                  = TCappendAssign (INFO_SCHEDULERINIT (arg_info),
+                                    BLOCK_ASSIGNS (FUNDEF_BODY (arg_node)));
+
+                INFO_SCHEDULERINIT (arg_info) = NULL;
+            }
 
             if (INFO_SCHEDULERID (arg_info) > global.max_schedulers) {
                 global.max_schedulers = INFO_SCHEDULERID (arg_info);
