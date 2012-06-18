@@ -28,7 +28,7 @@ extern const char *FMGRfindFilePath (pathkind_t p, const char *name);
 extern void *FMGRmapPath (pathkind_t p, void *(*mapfun) (const char *, void *),
                           void *neutral);
 extern void FMGRappendPath (pathkind_t p, const char *path);
-extern void FMGRsetupPaths ();
+extern void FMGRsetupPaths (void);
 extern const char *FMGRabsolutePathname (const char *path);
 extern FILE *FMGRwriteOpen (const char *format, ...);
 extern FILE *FMGRreadOpen (const char *format, ...);
@@ -39,8 +39,8 @@ extern bool FMGRcheckExistFile (const char *dir, const char *name);
 extern bool FMGRcheckExistDir (const char *dir);
 extern bool FMGRcheckSystemLibrary (const char *name);
 extern void FMGRsetFileNames (node *module);
-extern void FMGRdeleteTmpDir ();
-extern void FMGRcreateTmpDir ();
+extern void FMGRdeleteTmpDir (void);
+extern void FMGRcreateTmpDir (void);
 extern void FMGRforEach (const char *path, const char *fileexpr, void *funargs,
                          void(const char *path, const char *file, void *params));
 extern const char *FMGRdirname (const char *path);

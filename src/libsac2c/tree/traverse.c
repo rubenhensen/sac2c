@@ -362,7 +362,7 @@ TRAVpushAnonymous (anontrav_t *anontraversal, travfun_p deffun)
 }
 
 trav_t
-TRAVpop ()
+TRAVpop (void)
 {
     travstack_t *tmp;
     trav_t result;
@@ -386,7 +386,7 @@ TRAVpop ()
 #ifdef DO_NOT_ADD_SUFFIX_IN_ANONYMOUS_TRAVERSAL
 
 const char *
-TRAVgetName ()
+TRAVgetName (void)
 {
     const char *result;
 
@@ -549,13 +549,13 @@ TRAVtmpVarName (char *postfix)
 
 #ifndef DBUG_OFF
 /** <!-- ****************************************************************** -->
- * @fn void TRAVprintStack()
+ * @fn void TRAVprintStack( void)
  *
  * @brief Prints the current traversal stack, iff -#d,TRAVSTACK is set.
  *        Mainly useful in debuggers...
  ******************************************************************************/
 void
-TRAVprintStack ()
+TRAVprintStack (void)
 {
     travstack_t *tmp = travstack;
 
