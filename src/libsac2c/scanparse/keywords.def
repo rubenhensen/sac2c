@@ -12,13 +12,13 @@
    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.  */
 
-/* This list must be sorted alphabetically to allow
-   bsearch work correctly. */
+/*KEYWORD (TFABSTRACT, "abstract-typedef")
+KEYWORD (TFBUILTIN, "builtin-typedef")
+KEYWORD (TFUSER, "user-typedef")*/
 
-KEYWORD (TFABSTRACT, "abstract-typedef")
+KEYWORD (BUILTIN, "builtin")
 KEYWORD (ALL, "all")
 KEYWORD (TYPE_BOOL, "bool")
-KEYWORD (TFBUILTIN, "builtin-typedef")
 KEYWORD (TYPE_BYTE, "byte")
 KEYWORD (CACHESIM, "cachesim")
 KEYWORD (TYPE_CHAR, "char")
@@ -83,7 +83,6 @@ KEYWORD (TYPE_ULONG, "ulong")
 KEYWORD (TYPE_ULONGLONG, "ulonglong")
 KEYWORD (TYPE_UNS, "unsigned")
 KEYWORD (USE, "use")
-KEYWORD (TFUSER, "user-typedef")
 KEYWORD (TYPE_USHORT, "ushort")
 KEYWORD (TYPE_VOID, "void")
 KEYWORD (WHILE, "while")

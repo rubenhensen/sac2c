@@ -25,8 +25,8 @@ extern node *PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool
 
 extern node *PHrunCyclePhaseFunOld (compiler_phase_t cyclephase, node *fundef, bool cond);
 
-extern bool PHisSAAMode ();
-extern bool PHisSSAMode ();
+extern bool PHisSAAMode (void);
+extern bool PHisSSAMode (void);
 
 extern node *PHrunConsistencyChecks (node *arg_node);
 

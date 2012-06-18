@@ -1042,7 +1042,7 @@ is_type (struct parser *parser)
             ret = false;
             break;
         }
-    /* Check if we meth this user-defined type earlier.  */
+    /* Check if we met this user-defined type earlier.  */
     else if (token_class (tok) == tok_id) {
         bool saw_dcolon = false;
         const char *tval = token_as_string (tok);

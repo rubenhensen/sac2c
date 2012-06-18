@@ -50,7 +50,7 @@
 
 /* INFO functions */
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -2256,6 +2256,17 @@ CreateCopyAssigns (node *arg_chain, node *rec_chain)
 }
 
 /* traversal functions for SSALUR travsersal */
+
+node *
+LURmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *LURfundef(node *arg_node, info *arg_info)
@@ -2270,15 +2281,10 @@ node *
 LURfundef (node *arg_node, info *arg_info)
 {
     loopc_t unrolling;
-    int start_wlunr_expr;
-    int start_lunr_expr;
 
     DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
-    /* save start values of opt counters */
-    start_wlunr_expr = global.optcounters.wlunr_expr;
-    start_lunr_expr = global.optcounters.lunr_expr;
 
     /*
      * traverse body to get wlur (and special fundefs unrolled)
@@ -2318,6 +2324,11 @@ LURfundef (node *arg_node, info *arg_info)
                  */
             }
         }
+    }
+
+    /* In case the optimisation is called from the module.  */
+    if (!FUNDEF_ISLACFUN (arg_node)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -2412,9 +2423,9 @@ LURap (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node* SSALoopUnrolling(node* fundef)
+ * @fn node *  LURdoLoopUnrolling (node *  fundef)
  *
- * @brief starts the LoopUnrolling traversal for the given fundef.
+ * @brief Starts the LoopUnrolling traversal for the given fundef.
  *        Does not start in special fundefs.
  *
  ******************************************************************************/
@@ -2427,23 +2438,19 @@ LURdoLoopUnrolling (node *fundef)
 
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "SSALUR called for non-fundef node");
 
-    global.valid_ssaform = FALSE;
-    /*
-     * Wrapper code is created in non-SSA form and later on transformed into
+    /* Wrapper code is created in non-SSA form and later on transformed into
      * SSA form using the standard transformation modules lac2fun and
      * ssa_transform. Therefore, we adjust the global control flag.
      */
+    global.valid_ssaform = FALSE;
 
-    /* do not start traversal in special functions */
-    if (!(FUNDEF_ISLACFUN (fundef))) {
-        arg_info = MakeInfo ();
+    arg_info = MakeInfo ();
 
-        TRAVpush (TR_lur);
-        fundef = TRAVdo (fundef, arg_info);
-        TRAVpop ();
+    TRAVpush (TR_lur);
+    fundef = TRAVdo (fundef, arg_info);
+    TRAVpop ();
 
-        arg_info = FreeInfo (arg_info);
-    }
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (fundef);
 }

@@ -394,8 +394,8 @@ CYCLEPHASEFUN (xetc, "Eliminating typeconv primitives", ETCdoEliminateTypeConver
 CYCLEPHASEFUN (xvp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp,
                opt, cyc)
 
-CYCLEPHASEFUNOLD (lur, "Applying loop unrolling", LURdoLoopUnrolling,
-                  global.optimize.dolur, opt, cyc)
+CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
+               opt, cyc)
 
 CYCLEPHASEFUNOLD (lurssa, "Restoring SSA form after loop unrolling", SSATdoTransform,
                   global.optimize.dolur, opt, cyc)
@@ -565,8 +565,8 @@ CYCLEPHASEFUNOLD (wls, "Applying with-loop scalarization", WLSdoWithloopScalariz
 CYCLEPHASEFUNOLD (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
                   global.optimize.doprfunr, opt, saacyc)
 
-CYCLEPHASEFUNOLD (lur, "Applying loop unrolling", LURdoLoopUnrolling,
-                  global.optimize.dolur, opt, saacyc)
+CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
+               opt, saacyc)
 
 CYCLEPHASEFUNOLD (lurssa, "Restoring SSA form after loop unrolling", SSATdoTransform,
                   global.optimize.dolur, opt, saacyc)

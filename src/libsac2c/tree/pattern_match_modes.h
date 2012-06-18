@@ -32,8 +32,8 @@ extern bool PMMisAfterguard (prf prfun);
  *
  * statically pre-defined modes:
  */
-extern pm_mode_t *PMMexact ();
-extern pm_mode_t *PMMflat ();
+extern pm_mode_t *PMMexact (void);
+extern pm_mode_t *PMMflat (void);
 extern pm_mode_t *PMMflatLut (lut_t *f_lut);
 extern pm_mode_t *PMMflatPrf (prf_match_fun_t *prfInspectFun);
 extern pm_mode_t *PMMflatPrfLut (prf_match_fun_t *prfInspectFun, lut_t *f_lut);
