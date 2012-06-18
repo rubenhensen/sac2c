@@ -55,7 +55,6 @@ struct INFO {
     node *fundef;
     node *nassigns;
     ntype *idxtype;
-    bool onefundef;
     bool genflat;
 };
 
@@ -70,7 +69,6 @@ struct INFO {
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_PREASSIGN(n) (n->nassigns)
 #define INFO_IV_TYPE(n) (n->idxtype)
-#define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_GENFLAT(n) (n->genflat)
 
 /**
@@ -88,7 +86,6 @@ MakeInfo (bool flat)
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_IV_TYPE (result) = NULL;
-    INFO_ONEFUNDEF (result) = FALSE;
     INFO_GENFLAT (result) = flat;
 
     DBUG_RETURN (result);
@@ -309,22 +306,15 @@ WLBSCmodule (node *arg_node, info *arg_info)
 node *
 WLBSCfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
-
     DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     INFO_FUNDEF (arg_info) = NULL;
 
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -478,14 +468,6 @@ Wlbounds2structConsts (node *arg_node, bool flat)
     DBUG_ENTER ();
 
     arg_info = MakeInfo (flat);
-
-    if (NODE_TYPE (arg_node) == N_module) {
-        INFO_ONEFUNDEF (arg_info) = FALSE;
-    } else if (NODE_TYPE (arg_node) == N_fundef) {
-        INFO_ONEFUNDEF (arg_info) = TRUE;
-    } else {
-        DBUG_ASSERT (FALSE, "Illegal call to WLBSCdoWlbounds2structConsts!");
-    }
 
     TRAVpush (TR_wlbsc);
     arg_node = TRAVdo (arg_node, arg_info);
