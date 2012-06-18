@@ -1704,6 +1704,7 @@
       </traversal>
       <traversal id="CSE" name="Common Subexpression Elimination" default="sons" include="SSACSE.h" >
 	<travuser>
+	  <node name="Module" />
 	  <node name="Fundef" />
           <node name="Avis" />
 	  <node name="Block" />

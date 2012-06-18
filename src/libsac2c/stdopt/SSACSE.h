@@ -23,6 +23,7 @@
 
 extern node *CSEdoCommonSubexpressionElimination (node *arg_node);
 
+extern node *CSEmodule (node *arg_node, info *arg_info);
 extern node *CSEfundef (node *arg_node, info *arg_info);
 extern node *CSEavis (node *arg_node, info *arg_info);
 extern node *CSEblock (node *arg_node, info *arg_info);

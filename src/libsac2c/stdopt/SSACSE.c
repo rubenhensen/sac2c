@@ -735,6 +735,26 @@ GetApAvisOfArgAvis (node *arg_avis, node *fundef, node *ext_assign)
 /******************************************************************************
  *
  * function:
+ *   node *CSEmodule(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   prunes the syntax tree by only going into function defintions
+ *
+ *****************************************************************************/
+
+node *
+CSEmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *CSEfundef(node *arg_node, info *arg_info)
  *
  * description:
@@ -750,25 +770,21 @@ CSEfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_PRINT ("traversing (%s) %s",
-                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                FUNDEF_NAME (arg_node));
-
     INFO_FUNDEF (arg_info) = arg_node;
     INFO_RESULTARG (arg_info) = NULL;
 
-    if ((FUNDEF_ARGS (arg_node) != NULL) && (!(FUNDEF_ISLACFUN (arg_node)))) {
-        /*
-         * traverse args of fundef to init the AVIS_SUBST attribute. this is done
-         * here only for normal fundefs. in special fundefs that are traversed via
-         * CSEap() we do a substitution information propagation (see
-         * CSEPropagateSubst2Args() ) that sets the correct AVIS_SUBST
-         * attributes for all args.
-         */
-        FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-    }
-
     if (FUNDEF_BODY (arg_node) != NULL) {
+        if (!FUNDEF_ISLACFUN (arg_node)) {
+            /*
+             * traverse args of fundef to init the AVIS_SUBST attribute. this is done
+             * here only for normal fundefs. in special fundefs that are traversed via
+             * CSEap() we do a substitution information propagation (see
+             * CSEPropagateSubst2Args() ) that sets the correct AVIS_SUBST
+             * attributes for all args.
+             */
+            FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+        }
+
         node *n;
 
         /* traverse block of fundef */
@@ -783,9 +799,10 @@ CSEfundef (node *arg_node, info *arg_info)
             n = ARG_NEXT (n);
         }
     }
-    DBUG_PRINT ("leaving (%s) %s",
-                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
-                FUNDEF_NAME (arg_node));
+
+    if (!FUNDEF_ISLACFUN (arg_node)) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -1266,61 +1283,27 @@ CSEcode (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node* CSEdoCommonSubexpressionEliminationOneFundef(node *fundef)
+ *   node* CSEdoCommonSubexpressionElimination(node *node)
  *
  * description:
- *   Starts the traversal for a given fundef.
- *   Starting fundef must not be a special fundef (do, while, cond) created by
- *   lac2fun transformation. These "inline" functions will be traversed in
- *   their order of usage.
+ *   Starts the traversal either module or function based
  *
  *****************************************************************************/
-static node *
-CSEdoCommonSubexpressionEliminationOneFundef (node *arg_node)
+
+node *
+CSEdoCommonSubexpressionElimination (node *arg_node)
 {
     info *arg_info;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "CSE called for non-fundef node");
+    arg_info = MakeInfo ();
 
-    /* do not start traversal in special functions */
-    if (!(FUNDEF_ISLACFUN (arg_node))) {
+    TRAVpush (TR_cse);
+    arg_node = TRAVdo (arg_node, arg_info);
+    TRAVpop ();
 
-        arg_info = MakeInfo ();
-
-        TRAVpush (TR_cse);
-        arg_node = TRAVdo (arg_node, arg_info);
-        TRAVpop ();
-
-        arg_info = FreeInfo (arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CSEdoCommonSubexpressionElimination( node *arg_node)
- *
- *****************************************************************************/
-static node *
-WrapCSECall (node *arg_node, info *arg_info)
-{
-    return (CSEdoCommonSubexpressionEliminationOneFundef (arg_node));
-}
-
-node *
-CSEdoCommonSubexpressionElimination (node *arg_node)
-{
-    DBUG_ENTER ();
-
-    if (N_module == NODE_TYPE (arg_node)) {
-        MODULE_FUNS (arg_node)
-          = MFTdoMapFunTrav (MODULE_FUNS (arg_node), NULL, WrapCSECall);
-    } else {
-        arg_node = CSEdoCommonSubexpressionEliminationOneFundef (arg_node);
-    }
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -307,8 +307,8 @@ CYCLE (cyc, "Optimization cycle", global.optimize.docyc, opt, RESET)
 
 FUNBEGIN (cyc, opt, cyc)
 
-CYCLEPHASEFUNOLD (cse, "Applying common subexpression elimination",
-                  CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, cyc)
+CYCLEPHASEFUN (cse, "Applying common subexpression elimination",
+               CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, cyc)
 
 CYCLEPHASEFUNOLD (ili, "Inferring loop invariant variables",
                   IIPIdoIterationInvariantParameterInference, ALWAYS, opt, cyc)
@@ -420,11 +420,10 @@ CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)", CFdoConstantFoldin
                (global.optimize.docf && (global.optimize.doal || global.optimize.dodl)),
                opt, cyc)
 
-CYCLEPHASEFUNOLD (esdcse, "Applying common subexpression elimination (esd case)",
-                  CSEdoCommonSubexpressionElimination,
-                  (global.optimize.docse
-                   && (global.optimize.doal || global.optimize.dodl)),
-                  opt, cyc)
+CYCLEPHASEFUN (esdcse, "Applying common subexpression elimination (esd case)",
+               CSEdoCommonSubexpressionElimination,
+               (global.optimize.docse && (global.optimize.doal || global.optimize.dodl)),
+               opt, cyc)
 
 CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
                global.optimize.doas, opt, cyc)
@@ -467,8 +466,8 @@ CYCLEPHASEFUN (ivesplit, "Eliminating index vectors (split selections)",
                IVESPLITdoSplitSelections,
                global.optimize.doive &&global.optimize.doivecyc, opt, saacyc)
 
-CYCLEPHASEFUNOLD (cse, "Eliminating common subexpressions",
-                  CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
+CYCLEPHASEFUN (cse, "Eliminating common subexpressions",
+               CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
 
 CYCLEPHASEFUNOLD (ili, "Inferring loop invariant variables",
                   IIPIdoIterationInvariantParameterInference, ALWAYS, opt, saacyc)
@@ -538,8 +537,8 @@ CYCLEPHASEFUN (awlfi, "Inferring algebraically foldable with-loops",
                AWLFIdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
 
 /* CUBSL needs this for partition-slicing decisions. */
-CYCLEPHASEFUNOLD (cse2, "Eliminating common subexpressions",
-                  CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
+CYCLEPHASEFUN (cse2, "Eliminating common subexpressions",
+               CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
 
 CYCLEPHASEFUN (cubsl, "Slicing algebraically foldable with-loops",
                CUBSLdoAlgebraicWithLoopFoldingCubeSlicing, global.optimize.doawlf, opt,
@@ -598,11 +597,10 @@ CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)", CFdoConstantFoldin
                (global.optimize.docf && (global.optimize.doal || global.optimize.dodl)),
                opt, saacyc)
 
-CYCLEPHASEFUNOLD (esdcse, "Applying common subexpression elimination (esd case)",
-                  CSEdoCommonSubexpressionElimination,
-                  (global.optimize.docse
-                   && (global.optimize.doal || global.optimize.dodl)),
-                  opt, saacyc)
+CYCLEPHASEFUN (esdcse, "Applying common subexpression elimination (esd case)",
+               CSEdoCommonSubexpressionElimination,
+               (global.optimize.docse && (global.optimize.doal || global.optimize.dodl)),
+               opt, saacyc)
 
 CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimization,
                global.optimize.doal, opt, saacyc)
