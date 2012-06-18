@@ -316,8 +316,8 @@ CYCLEPHASEFUNOLD (ili, "Inferring loop invariant variables",
 CYCLEPHASEFUNOLD (tup, "Applying type upgrade", NTCdoNewTypeCheck, global.optimize.dotup,
                   opt, cyc)
 
-CYCLEPHASEFUNOLD (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes,
-                  global.optimize.dotup, opt, cyc)
+CYCLEPHASEFUN (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes,
+               global.optimize.dotup, opt, cyc)
 
 CYCLEPHASEFUN (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes,
                global.optimize.dotup, opt, cyc)
@@ -475,8 +475,8 @@ CYCLEPHASEFUNOLD (ili, "Inferring loop invariant variables",
 CYCLEPHASEFUNOLD (tup, "Applying type upgrade", NTCdoNewTypeCheck, global.optimize.dotup,
                   opt, saacyc)
 
-CYCLEPHASEFUNOLD (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
-                  global.optimize.dotup, opt, saacyc)
+CYCLEPHASEFUN (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
+               global.optimize.dotup, opt, saacyc)
 
 CYCLEPHASEFUN (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
                global.optimize.dotup, opt, saacyc)
@@ -714,8 +714,8 @@ FUNBEGIN (scyc, opt, scyc)
 CYCLEPHASEFUNOLD (tup, "Applying type upgrade", NTCdoNewTypeCheck, global.optimize.dotup,
                   opt, scyc)
 
-CYCLEPHASEFUNOLD (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes,
-                  global.optimize.dotup, opt, scyc)
+CYCLEPHASEFUN (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes,
+               global.optimize.dotup, opt, scyc)
 
 CYCLEPHASEFUN (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes,
                global.optimize.dotup, opt, scyc)

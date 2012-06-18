@@ -132,6 +132,7 @@
  *
  *   INFO_THENBOTTS   - at least one bottom in then branch found
  *   INFO_ELSEBOTTS   - at least one bottom in else branch found
+ *   INFO_FROMAP      - fundef traversal called from N_AP
  *   INFO_FUNDEF      - pointer to current fundef to prevent infinite recursion
  *   INFO_TYPEERROR   - indicates that the rhs of a let is to be transformed
  *                      into this type error
@@ -145,6 +146,7 @@
 struct INFO {
     bool then_botts;
     bool else_botts;
+    bool fromap;
     node *fundef;
     node *type_error;
     bool dropassign;
@@ -155,6 +157,7 @@ struct INFO {
  */
 #define INFO_THENBOTTS(n) ((n)->then_botts)
 #define INFO_ELSEBOTTS(n) ((n)->else_botts)
+#define INFO_FROMAP(n) ((n)->fromap)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_TYPEERROR(n) ((n)->type_error)
 #define INFO_DROPASSIGN(n) ((n)->dropassign)
@@ -173,6 +176,7 @@ MakeInfo ()
 
     INFO_THENBOTTS (result) = FALSE;
     INFO_ELSEBOTTS (result) = FALSE;
+    INFO_FROMAP (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_TYPEERROR (result) = NULL;
     INFO_DROPASSIGN (result) = FALSE;
@@ -288,7 +292,7 @@ EBTfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (!FUNDEF_ISLACFUN (arg_node)) {
+    if (!FUNDEF_ISLACFUN (arg_node) || INFO_FROMAP (arg_info)) {
         INFO_FUNDEF (arg_info) = arg_node;
 
         DBUG_PRINT ("----> Processing function %s\n", CTIitemName (arg_node));
@@ -331,7 +335,7 @@ EBTfundef (node *arg_node, info *arg_info)
         INFO_ELSEBOTTS (arg_info) = FALSE;
     }
 
-    if (!FUNDEF_ISLACFUN (arg_node)) {
+    if (!INFO_FROMAP (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -556,6 +560,7 @@ EBTap (node *arg_node, info *arg_info)
             && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
             DBUG_PRINT ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node)));
             info *new_info = MakeInfo ();
+            INFO_FROMAP (new_info) = TRUE;
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
             new_info = FreeInfo (new_info);
         }

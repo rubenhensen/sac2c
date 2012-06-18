@@ -60,7 +60,7 @@
  *   INFO_THENBOTTS  -   type_error let
  *   INFO_ELSEBOTTS  -   type_error let
  *   INFO_LHS        -   left hand side of current let node
- *   INFO_ONEFUNCTION - traverse one function only (and associated lacfuns)
+ *   INFO_FROMAP     - fundef traversal called from N_AP
  *   INFO_FUNDEF     - pointer to current fundef to prevent infinite recursion
  *   INFO_VARDECMODE -   M_fix / M_filter
  *   INFO_DELLACFUN  -   indicates that a call to a lacfun has been deleted
@@ -73,7 +73,7 @@ struct INFO {
     node *vardecs;
     node *wlids;
     node *lhs;
-    bool onefunction;
+    bool fromap;
     node *fundef;
 };
 
@@ -83,7 +83,7 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_WLIDS(n) ((n)->wlids)
 #define INFO_LHS(n) ((n)->lhs)
-#define INFO_ONEFUNCTION(n) ((n)->onefunction)
+#define INFO_FROMAP(n) ((n)->fromap)
 #define INFO_FUNDEF(n) ((n)->fundef)
 
 /**
@@ -101,7 +101,7 @@ MakeInfo ()
     INFO_VARDECS (result) = NULL;
     INFO_WLIDS (result) = NULL;
     INFO_LHS (result) = NULL;
-    INFO_ONEFUNCTION (result) = FALSE;
+    INFO_FROMAP (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
 
     DBUG_RETURN (result);
@@ -136,11 +136,7 @@ EATdoEliminateAlphaTypes (node *arg_node)
 
     TRAVpush (TR_eat);
 
-    DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
-                 "EATdoEliminateAlphaTypes expected N_fundef or N_module");
-
     arg_info = MakeInfo ();
-    INFO_ONEFUNCTION (arg_info) = (N_fundef == NODE_TYPE (arg_node));
     arg_node = TRAVdo (arg_node, arg_info);
     arg_info = FreeInfo (arg_info);
 
@@ -199,7 +195,7 @@ EATfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (!FUNDEF_ISLACFUN (arg_node) || INFO_ONEFUNCTION (arg_info)) {
+    if (!FUNDEF_ISLACFUN (arg_node) || INFO_FROMAP (arg_info)) {
         INFO_FUNDEF (arg_info) = arg_node;
 
         DBUG_PRINT ("----> Processing function %s\n", CTIitemName (arg_node));
@@ -280,7 +276,7 @@ EATfundef (node *arg_node, info *arg_info)
         }
     }
 
-    if (!INFO_ONEFUNCTION (arg_info)) {
+    if (!INFO_FROMAP (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -309,7 +305,7 @@ EATap (node *arg_node, info *arg_info)
         DBUG_PRINT ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node)));
         if (bottom == NULL) {
             info *new_info = MakeInfo ();
-            INFO_ONEFUNCTION (new_info) = TRUE;
+            INFO_FROMAP (new_info) = TRUE;
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
             new_info = FreeInfo (new_info);
         }
