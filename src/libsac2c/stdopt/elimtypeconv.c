@@ -23,14 +23,10 @@
 /*
  * INFO structure
  */
-struct INFO {
-    bool onefundef;
-};
 
 /*
  * INFO macros
  */
-#define INFO_ONEFUNDEF(n) (n->onefundef)
 
 /*
  INFO functions
@@ -43,9 +39,7 @@ MakeInfo ()
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
-
-    INFO_ONEFUNDEF (result) = FALSE;
+    result = NULL;
 
     DBUG_RETURN (result);
 }
@@ -55,42 +49,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ();
 
-    info = MEMfree (info);
-
     DBUG_RETURN (info);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *ETCdoEliminateTypeConversionsModule( node *arg_node)
- *
- * @brief starting point of F_type_conv elimination
- *        This is non-GLF traversal.
- *
- * @param arg_node - N_module
- *
- * @return
- *
- *****************************************************************************/
-node *
-ETCdoEliminateTypeConversionsModule (node *arg_node)
-{
-    info *arg_info;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module, "ETC expected N_module");
-
-    arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = FALSE;
-
-    TRAVpush (TR_etc);
-    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
-    TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
-
-    DBUG_RETURN (arg_node);
 }
 
 /** <!--********************************************************************-->
@@ -111,10 +70,7 @@ ETCdoEliminateTypeConversions (node *arg_node)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "ETC expected N_fundef");
-
     arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = TRUE;
 
     TRAVpush (TR_etc);
     arg_node = TRAVdo (arg_node, arg_info);
@@ -167,6 +123,29 @@ CompareDTypes (node *avis, node *dim, node *shape)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *ETCmodule(node *arg_node, info *arg_info)
+ *
+ * @brief Traverses only functions of the module, skipping all the rest for
+ *        performance reasons.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+ETCmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * Typeconv Elimination traversal (etc_tab)
@@ -177,8 +156,6 @@ CompareDTypes (node *avis, node *dim, node *shape)
 node *
 ETCfundef (node *arg_node, info *arg_info)
 {
-    bool one_fundef;
-
     DBUG_ENTER ();
 
     DBUG_PRINT ("traversing body of (%s) %s",
@@ -186,14 +163,8 @@ ETCfundef (node *arg_node, info *arg_info)
                 FUNDEF_NAME (arg_node));
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-    one_fundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = one_fundef;
-
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

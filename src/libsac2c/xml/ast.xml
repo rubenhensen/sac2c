@@ -1572,10 +1572,11 @@
         </travuser>
       </traversal>
       <traversal id="ETC" name="TypeConv Elimination" default="sons" include="elimtypeconv.h" >
-	<travuser>
-	  <node name="Fundef" />
-	  <node name="Prf" />
-	</travuser>
+        <travuser>
+          <node name="Module" />
+          <node name="Fundef" />
+          <node name="Prf" />
+        </travuser>
       </traversal>
       <traversal id="INFNC" name="NeedCounter Inference" default="sons" include="inferneedcounters.h" >
 	<travuser>

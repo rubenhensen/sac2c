@@ -388,8 +388,8 @@ CYCLEPHASEFUNOLD (wls, "Applying with-loop scalarization", WLSdoWithloopScalariz
 CYCLEPHASEFUNOLD (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
                   global.optimize.doprfunr, opt, cyc)
 
-CYCLEPHASEFUNOLD (xetc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
-                  global.optimize.doetc, opt, cyc)
+CYCLEPHASEFUN (xetc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
+               global.optimize.doetc, opt, cyc)
 
 CYCLEPHASEFUN (xvp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp,
                opt, cyc)
