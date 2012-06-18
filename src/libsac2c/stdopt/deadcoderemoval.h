@@ -27,5 +27,6 @@ extern node *DCRcond (node *arg_node, info *arg_info);
 extern node *DCRreturn (node *arg_node, info *arg_info);
 extern node *DCRap (node *arg_node, info *arg_info);
 extern node *DCRcode (node *arg_node, info *arg_info);
+extern node *DCRmodule (node *arg_node, info *arg_info);
 
 #endif /* SAC_DEADCODEREMOVAL_H_ */

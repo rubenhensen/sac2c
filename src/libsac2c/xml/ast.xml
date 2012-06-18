@@ -1753,21 +1753,22 @@
         </travuser>
       </traversal>
     <traversal id="DCR" name="Dead Code Removal" default="sons" include="deadcoderemoval.h" >
-	<travuser>
-	  <node name="Fundef" />
-	  <node name="Arg" />
-	  <node name="Ret" />
-	  <node name="Vardec" />
-	  <node name="Block" />
-	  <node name="Assign" />
-	  <node name="Annotate" />
-	  <node name="Let" />
-	  <node name="Ids" />
-	  <node name="Code" />
-	  <node name="Cond" />
-	  <node name="Ap" />
-	  <node name="Return" />
-	</travuser>
+       <travuser>
+          <node name="Fundef" />
+          <node name="Arg" />
+          <node name="Ret" />
+          <node name="Vardec" />
+          <node name="Block" />
+          <node name="Assign" />
+          <node name="Annotate" />
+          <node name="Let" />
+          <node name="Ids" />
+          <node name="Code" />
+          <node name="Cond" />
+          <node name="Ap" />
+          <node name="Return" />
+          <node name="Module" />
+        </travuser>
       </traversal>
     <traversal id="DCI" name="Dead Code Inference" default="sons" include="deadcodeinference.h" >
 	<travuser>
@@ -9247,7 +9248,19 @@ N_tfarg :
             </target>
           </targets>
           <description>
-            GENWIDTH contains a vector resulting from subtracting BOUND1 from BOUND2. GENWIDTH is introduced by wlsimplification which puts the operations performing the subtraction in front of the loop. In many cases, the partial evaluation infrastructure can determine a value for GENWIDTH although the bounds are not known at compile time. Example: BOUND1 = [a], BOUND2 = [b], where b = a + [1] => GENWIDTH = [1]. GENWIDTH then serves three purposes: First, it is used by wlsimplicition to identify empty generators which can then be eliminated. Second, it is used in constant folding to propagate static index vector knowledge for one-element generators. Finally, it is used by the with-loop reuse candidate inference mechanism to identify further reuse candidates in situations where a WL A performs mainly B[iv] except in exactly one generator where B[iv+off] is selected. If off >= GENWIDTH, then B is a reuse candidate for A. All GENWIDTH annotations are removed by wrci, the remaining computations are removed by dcr.
+            GENWIDTH contains a vector resulting from subtracting BOUND1 from BOUND2. 
+            GENWIDTH is introduced by wlsimplification which puts the operations performing the subtraction 
+            in front of the loop. In many cases, the partial evaluation infrastructure can determine 
+            a value for GENWIDTH although the bounds are not known at compile time.
+            Example: BOUND1 = [a], BOUND2 = [b], where b = a + [1] => GENWIDTH = [1].
+             GENWIDTH then serves three purposes: First, it is used by wlsimplicition to identify 
+             empty generators which can then be eliminated. Second, it is used in constant folding 
+             to propagate static index vector knowledge for one-element generators. 
+             Finally, it is used by the with-loop reuse candidate inference mechanism 
+             to identify further reuse candidates in situations where a WL A performs 
+             mainly B[iv] except in exactly one generator where B[iv+off] is selected.
+             If off >= GENWIDTH, then B is a reuse candidate for A. 
+             All GENWIDTH annotations are removed by wrci, the remaining computations are removed by dcr.
           </description>
         </son>
       </sons>

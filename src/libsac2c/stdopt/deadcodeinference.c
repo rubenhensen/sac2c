@@ -21,7 +21,12 @@
  * INFO structure
  */
 struct INFO {
-    enum { TS_function, TS_fundef } travscope;
+    /* TODO: completely remove TS_fundef and simplify the code,
+     * if DCIdoDeadCodeInferenceOneFundef() is not indeed needed */
+    enum {
+        TS_function,
+        /*TS_fundef*/
+    } travscope;
     node *assign;
     node *fundef;
     node *int_assign;
@@ -45,7 +50,7 @@ struct INFO {
  * INFO functions
  */
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -53,7 +58,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_TRAVSCOPE (result) = TS_fundef;
+    INFO_TRAVSCOPE (result) = TS_function;
     INFO_ASSIGN (result) = NULL;
     INFO_FUNDEF (result) = NULL;
     INFO_INT_ASSIGN (result) = NULL;
@@ -83,27 +88,28 @@ FreeInfo (info *info)
  *   starting point of dead code inference for one fundef
  *
  *****************************************************************************/
-node *
-DCIdoDeadCodeInferenceOneFundef (node *fundef)
+#if 0
+node *DCIdoDeadCodeInferenceOneFundef(node *fundef)
 {
-    info *info;
+  info *info;
 
-    DBUG_ENTER ();
+  DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
-                 "DCIdoDeadCodeInferenceOneFunction called for non-fundef node");
+  DBUG_ASSERT (NODE_TYPE(fundef) == N_fundef,
+               "DCIdoDeadCodeInferenceOneFunction called for non-fundef node");
 
-    info = MakeInfo ();
-    INFO_TRAVSCOPE (info) = TS_fundef;
+  info = MakeInfo();
+  INFO_TRAVSCOPE( info) = TS_fundef;
 
-    TRAVpush (TR_dci);
-    fundef = TRAVdo (fundef, info);
-    TRAVpop ();
+  TRAVpush( TR_dci);
+  fundef = TRAVdo( fundef, info);
+  TRAVpop();
 
-    info = FreeInfo (info);
+  info = FreeInfo( info);
 
-    DBUG_RETURN (fundef);
+  DBUG_RETURN (fundef);
 }
+#endif
 
 /******************************************************************************
  *
@@ -206,10 +212,9 @@ DCIfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_BODY (arg_node) != NULL) {
 
-        if ((INFO_TRAVSCOPE (arg_info) == TS_fundef)
-            || ((INFO_TRAVSCOPE (arg_info) == TS_function)
-                && (((!FUNDEF_ISLACFUN (arg_node))
-                     || (INFO_FUNDEF (arg_info) != NULL))))) {
+        if (/*(INFO_TRAVSCOPE( arg_info) == TS_fundef) ||*/
+            ((INFO_TRAVSCOPE (arg_info) == TS_function)
+             && (((!FUNDEF_ISLACFUN (arg_node)) || (INFO_FUNDEF (arg_info) != NULL))))) {
             info *info;
             bool fixedpointreached = FALSE;
 

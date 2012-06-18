@@ -370,8 +370,8 @@ CYCLEPHASEFUNOLD (shwlc, "Activating display of WL-Cost information", SHWLCactiv
 CYCLEPHASEFUNOLD (unshwlc, "Deactivating display of WL-Cost information", SHWLCdeactivate,
                   global.optimize.doawlf, opt, cyc)
 
-CYCLEPHASEFUNOLD (dcr, "Applying dead code removal", DCRdoDeadCodeRemoval,
-                  global.optimize.dodcr, opt, cyc)
+CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemoval,
+               global.optimize.dodcr, opt, cyc)
 
 CYCLEPHASEFUNOLD (linl2, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, cyc)
@@ -439,8 +439,8 @@ CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
                global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, cyc)
 
-CYCLEPHASEFUNOLD (dcr2, "Applying dead code removal", DCRdoDeadCodeRemoval,
-                  global.optimize.dodcr, opt, cyc)
+CYCLEPHASEFUN (dcr2, "Applying dead code removal", DCRdoDeadCodeRemoval,
+               global.optimize.dodcr, opt, cyc)
 
 CYCLEPHASEFUNOLD (linl3, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, cyc)
@@ -546,8 +546,8 @@ CYCLEPHASEFUN (cubsl, "Slicing algebraically foldable with-loops",
 CYCLEPHASEFUN (awlf, "Applying algebraic with-loop folding",
                AWLFdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)
 
-CYCLEPHASEFUNOLD (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
-                  opt, saacyc)
+CYCLEPHASEFUN (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
+               opt, saacyc)
 
 CYCLEPHASEFUNOLD (linl2, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, saacyc)
@@ -612,8 +612,8 @@ CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
                global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, saacyc)
 
-CYCLEPHASEFUNOLD (dcr2, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
-                  opt, saacyc)
+CYCLEPHASEFUN (dcr2, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
+               opt, saacyc)
 
 CYCLEPHASEFUNOLD (linl3, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, saacyc)
