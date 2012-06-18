@@ -785,11 +785,18 @@ PrintPrintingOptions (void)
       "                 a: Print all (same as dv).\n"
       "                 d: Print specialization demand.\n"
       "                 v: Print avis information.\n"
+      "\n"
       "    -printfun <fun_name>\n"
       "               Uses <fun_name> as a compare token to selectively print only\n"
       "               functions that match the <fun_name>. \n"
       "               Use in conjunction with -b \n"
-      "                 Example usage: -b 5:goi -printfun foo\n");
+      "                 Example usage: -b 5:goi -printfun foo\n"
+      "\n"
+      "    -printphasefun <start>/<end>/<fun_name> \n"
+      "               Displays the state of functions that match the name <fun_name>\n"
+      "               at each step between the <start> and after <end> phases.\n"
+      "               <start> and <end> phases can be expressed: \n"
+      "                 <phase>:<subphase>:<cyclephase>\n");
 
     DBUG_RETURN ();
 }

@@ -5,7 +5,8 @@
 #ifndef _PHASE_OPTIONS_H_
 #define _PHASE_OPTIONS_H_
 
-extern void InterpretPrintPhaseFunStartOptions (char *option);
+void InterpretPrintPhaseFunStartOptions (char *option);
+
 extern void PHOinterpretPrintPhaseFunOption (char *option);
 extern void PHOinterpretBreakOption (char *option);
 extern void PHOinterpretDbugOption (char *option);

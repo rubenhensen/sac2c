@@ -158,21 +158,20 @@ PHOinterpretPrintPhaseFunOption (char *option)
     } else {
         /* assign the start point */
         InterpretPrintPhaseFunStartOptions (start_tok);
-        // printf( "start token: %s\n", start_tok);
+        printf ("start token: %s\n", start_tok);
 
         /* assign the end point */
         PHOinterpretBreakOption (end_tok);
-        // printf( "end token: %s\n", end_tok);
+        printf ("end token: %s\n", end_tok);
 
         /* assign the function name */
         PHOinterpretBreakFunName (fun_tok);
-        // printf( "fun token: %s\n", fun_tok);
+        printf ("fun token: %s\n", fun_tok);
     }
 
     /* free tokens */
     MEMfree (start_tok);
     MEMfree (end_tok);
-    MEMfree (fun_tok);
 
     DBUG_RETURN ();
 }
@@ -218,8 +217,8 @@ InterpretPrintPhaseFunStartOptions (char *option)
     }
 
     if (phase == PHIlastPhase ()) {
-        CTIerror ("Illegal compiler phase specification in break option: \n"
-                  "  -b %s\n"
+        CTIerror ("Illegal compiler phase specification in option: \n"
+                  "  -printphasefun %s\n"
                   "See %s -h for a list of legal break options.",
                   option, global.toolname);
     } else {
@@ -234,8 +233,8 @@ InterpretPrintPhaseFunStartOptions (char *option)
         subphase = SearchSubPhase (phase, break_subphase);
 
         if (subphase == PHIlastPhase ()) {
-            CTIerror ("Illegal compiler subphase specification in break option:\n"
-                      "  -b %s\n"
+            CTIerror ("Illegal compiler subphase specification in option:\n"
+                      "  -printphasefun %s\n"
                       "See sac2c -h for a list of legal break options.",
                       option);
         } else {
@@ -250,8 +249,8 @@ InterpretPrintPhaseFunStartOptions (char *option)
             cyclephase = SearchCyclePhase (subphase, break_cyclephase);
 
             if (cyclephase == PHIlastPhase ()) {
-                CTIerror ("Illegal compiler cycle phase specification in break option: \n"
-                          "  -b %s\n"
+                CTIerror ("Illegal compiler cycle phase specification in option: \n"
+                          "  -printphasefun %s\n"
                           "See sac2c -h for a list of legal break options.",
                           option);
             } else {
