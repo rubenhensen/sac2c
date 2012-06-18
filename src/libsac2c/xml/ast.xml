@@ -2,6 +2,12 @@
 <!-- $Id$ -->
 <definition>
   <attributetypes>
+    <type name="IdagFun" ctype="idag_fun_t*" init="NULL"
+    copy="function" />
+    <type name="Vertex" ctype="vertex*" init="NULL"
+    copy="function" />
+    <type name="Dag" ctype="dag*" init="NULL"
+    copy="function" />
     <type name="String" ctype="char*" init="NULL"
     copy="function" />
     <type name="SharedString" ctype="char*" init="NULL"
@@ -621,17 +627,34 @@
         <travsons>
           <node name="SSAstack" />
           <node name="Nums" />
-		</travsons>
-	  </traversal>
+          <node name="Idag" />
+          <node name="IdagVFam" />
+          <node name="IdagEFam" />
+          <node name="IdagEFams" />
+          <node name="IdagVertices" />
+        </travsons>
+      </traversal>
 
-	  <traversal id="VISUAL" name="Visualize Syntax Tree" default="user" include="visualize.h">
-		<travsons>
-		  <node name="SSAstack" />
+      <traversal id="VISUAL" name="Visualize Syntax Tree" default="user" include="visualize.h">
+	<travsons>
+	  <node name="SSAstack" />
           <node name="Nums" />
-		</travsons>
-	  </traversal>
+          <node name="Idag" />
+          <node name="IdagVFam" />
+          <node name="IdagEFam" />
+          <node name="IdagEFams" />
+          <node name="IdagVertices" />
+	</travsons>
+      </traversal>
 
       <traversal id="DUP" name="Tree duplication" default="user" include="DupTree.h">
+	<travsons>
+          <node name="Idag" />
+          <node name="IdagVFam" />
+          <node name="IdagEFam" />
+          <node name="IdagEFams" />
+          <node name="IdagVertices" />
+	</travsons>
       </traversal>
       <traversal id="FREE" name="Free Tree" default="user" include="free_node.h" >
       </traversal>
@@ -11846,6 +11869,249 @@ N_tfarg :
 	  <description>True iff this range needs to be unrolled by the CUDA compiler</description>
 	</flag>
       </flags>
+    </node>
+<!--
+
+  N_idag :
+
+-->
+    <node name="Idag">
+      <description>
+        Node to represent infinite graphs as needed for the subtyping relation
+        of the array shape type component
+      </description>
+      <sons>
+        <son name="VFams">
+          <targets>
+            <target mandatory="no">
+              <node name="Idagvfam" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="EFams">
+          <targets>
+            <target mandatory="no">
+              <node name="Idagefam" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+        <attribute name="Dag">
+          <type name="Dag">
+            <targets>
+              <target mandatory="yes">
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_idagvfam :
+
+-->
+    <node name="IdagVFam">
+      <description>
+        represents the head entry of a vertex family chain
+      </description>
+      <sons>
+        <son name="Vertices" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="IdagVertices" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Froms" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="IdagEFams" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Tos" default="NULL">
+          <targets>
+            <target mandatory="no">
+              <node name="IdagEFams" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="IdagVFam" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+        <attribute name="Cmpfun" inconstructor="yes">
+          <type name="IdagFun">
+            <targets>
+              <target mandatory="yes">
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_idagefam :
+
+-->
+    <node name="IdagEFam">
+      <description>
+        represents the head entry of a edge family chain
+      </description>
+      <sons>
+        <son name="From">
+          <targets>
+            <target mandatory="yes">
+              <node name="IdagVFam" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="To">
+          <targets>
+            <target mandatory="yes">
+              <node name="IdagVFam" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="IdagEFam" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+        <attribute name="Checkfun">
+          <type name="IdagFun">
+            <targets>
+              <target mandatory="yes">
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_idagvertices :
+
+-->
+    <node name="IdagVertices">
+      <description>
+        a simple chain of links to vertices
+      </description>
+      <sons>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="Idagvertices" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+        <attribute name="Vertex" inconstructor="yes">
+          <type name="Vertex">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
+    </node>
+<!--
+
+  N_idagefams :
+
+-->
+    <node name="IdagEFams">
+      <description>
+        a simple chain of links to edge family entries
+      </description>
+      <sons>
+        <son name="Next">
+          <targets>
+            <target mandatory="no">
+              <node name="Idagefams" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <attributes>
+        <attribute name="EFam" inconstructor="yes" >
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="yes">
+                <node name="Idagefam" />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <flags></flags>
     </node>
   </syntaxtree>
 </definition>

@@ -23,6 +23,72 @@
 
 /** <!--******************************************************************-->
  *
+ * @fn CHKMattribIdagFun
+ *
+ * @brief do nothing
+ *
+ * @param attr to process
+ * @param arg_info arg_info structure
+ *
+ * @return NULL
+ *
+ ***************************************************************************/
+idag_fun_t *
+CHKMattribIdagFun (idag_fun_t *attr, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /* do nothing */
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn CHKMattribVertex
+ *
+ * @brief do nothing
+ *
+ * @param attr to process
+ * @param arg_info arg_info structure
+ *
+ * @return NULL
+ *
+ ***************************************************************************/
+vertex *
+CHKMattribVertex (vertex *attr, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /* do nothing */
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn CHKMattribDag
+ *
+ * @brief do nothing
+ *
+ * @param attr to process
+ * @param arg_info arg_info structure
+ *
+ * @return NULL
+ *
+ ***************************************************************************/
+dag *
+CHKMattribDag (dag *attr, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /* do nothing */
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn CHKMattribString
  *
  * @brief Touch String attribute

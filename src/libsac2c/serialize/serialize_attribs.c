@@ -41,6 +41,66 @@
 
 /** <!--******************************************************************-->
  *
+ * @fn SATserializeIdagFun
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeIdagFun (info *info, idag_fun_t *attr, node *parent)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN ();
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeDag
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeDag (info *info, dag *attr, node *parent)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN ();
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn SATserializeVertex
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeVertex (info *info, vertex *attr, node *parent)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN ();
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn SATserializeString
  *
  * @brief generates code to serialize the given attribute

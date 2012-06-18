@@ -24,6 +24,66 @@
 
 /** <!--******************************************************************-->
  *
+ * @fn FREEattribIdagFun
+ *
+ * @brief Frees IdagFun attribute
+ *
+ * @param attr to process
+ * @param parent node
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+idag_fun_t *
+FREEattribIdagFun (idag_fun_t *attr, node *parent)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN ((idag_fun_t *)NULL);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn FREEattribVertex
+ *
+ * @brief Frees Vertex attribute
+ *
+ * @param attr to process
+ * @param parent node
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+vertex *
+FREEattribVertex (vertex *attr, node *parent)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN ((vertex *)NULL);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn FREEattribDag
+ *
+ * @brief Frees Dag attribute
+ *
+ * @param attr to process
+ * @param parent node
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+dag *
+FREEattribDag (dag *attr, node *parent)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN ((dag *)NULL);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn FREEattribString
  *
  * @brief Frees String attribute
