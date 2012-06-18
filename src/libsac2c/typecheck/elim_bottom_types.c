@@ -132,7 +132,6 @@
  *
  *   INFO_THENBOTTS   - at least one bottom in then branch found
  *   INFO_ELSEBOTTS   - at least one bottom in else branch found
- *   INFO_ONEFUNCTION - traverse one function only (and associated lacfuns)
  *   INFO_FUNDEF      - pointer to current fundef to prevent infinite recursion
  *   INFO_TYPEERROR   - indicates that the rhs of a let is to be transformed
  *                      into this type error
@@ -146,7 +145,6 @@
 struct INFO {
     bool then_botts;
     bool else_botts;
-    bool onefunction;
     node *fundef;
     node *type_error;
     bool dropassign;
@@ -157,7 +155,6 @@ struct INFO {
  */
 #define INFO_THENBOTTS(n) ((n)->then_botts)
 #define INFO_ELSEBOTTS(n) ((n)->else_botts)
-#define INFO_ONEFUNCTION(n) ((n)->onefunction)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_TYPEERROR(n) ((n)->type_error)
 #define INFO_DROPASSIGN(n) ((n)->dropassign)
@@ -176,7 +173,6 @@ MakeInfo ()
 
     INFO_THENBOTTS (result) = FALSE;
     INFO_ELSEBOTTS (result) = FALSE;
-    INFO_ONEFUNCTION (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_TYPEERROR (result) = NULL;
     INFO_DROPASSIGN (result) = FALSE;
@@ -228,46 +224,6 @@ TransformIntoTypeError (node *fundef)
 /******************************************************************************
  *
  * function:
- *   node *EBTdoEliminateBottomTypesOneFunction( node *arg_node)
- *
- * description:
- *
- *
- ******************************************************************************/
-static node *
-EBTdoEliminateBottomTypesOneFunction (node *arg_node)
-{
-    info *info_node;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef,
-                 "EBTdoEliminateBottomTypesOneFunction can only be applied to fundefs");
-
-    if (!FUNDEF_ISLACFUN (arg_node)) {
-        TRAVpush (TR_ebt);
-
-        info_node = MakeInfo ();
-        INFO_ONEFUNCTION (info_node) = TRUE;
-        arg_node = TRAVdo (arg_node, info_node);
-        info_node = FreeInfo (info_node);
-
-        TRAVpop ();
-
-        if (global.local_funs_grouped) {
-            /**
-             *   we may have transformed a lac function into a lacinline!
-             */
-            arg_node = LINLdoLACInliningOneFundef (arg_node);
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
  *   node *EBTdoEliminateBottomTypes( node *arg_node)
  *
  * description:
@@ -281,17 +237,13 @@ EBTdoEliminateBottomTypes (node *arg_node)
 
     DBUG_ENTER ();
 
-    if (N_module == NODE_TYPE (arg_node)) {
-        TRAVpush (TR_ebt);
+    TRAVpush (TR_ebt);
 
-        info_node = MakeInfo ();
-        arg_node = TRAVdo (arg_node, info_node);
-        info_node = FreeInfo (info_node);
+    info_node = MakeInfo ();
+    arg_node = TRAVdo (arg_node, info_node);
+    info_node = FreeInfo (info_node);
 
-        TRAVpop ();
-    } else {
-        arg_node = EBTdoEliminateBottomTypesOneFunction (arg_node);
-    }
+    TRAVpop ();
 
     DBUG_RETURN (arg_node);
 }
@@ -336,7 +288,7 @@ EBTfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (!FUNDEF_ISLACFUN (arg_node) || INFO_ONEFUNCTION (arg_info)) {
+    if (!FUNDEF_ISLACFUN (arg_node)) {
         INFO_FUNDEF (arg_info) = arg_node;
 
         DBUG_PRINT ("----> Processing function %s\n", CTIitemName (arg_node));
@@ -379,7 +331,7 @@ EBTfundef (node *arg_node, info *arg_info)
         INFO_ELSEBOTTS (arg_info) = FALSE;
     }
 
-    if (!INFO_ONEFUNCTION (arg_info)) {
+    if (!FUNDEF_ISLACFUN (arg_node)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -604,7 +556,6 @@ EBTap (node *arg_node, info *arg_info)
             && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
             DBUG_PRINT ("lacfun %s found...", CTIitemName (AP_FUNDEF (arg_node)));
             info *new_info = MakeInfo ();
-            INFO_ONEFUNCTION (new_info) = TRUE;
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_info);
             new_info = FreeInfo (new_info);
         }

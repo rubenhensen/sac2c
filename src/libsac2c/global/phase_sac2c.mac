@@ -319,8 +319,8 @@ CYCLEPHASEFUNOLD (tup, "Applying type upgrade", NTCdoNewTypeCheck, global.optimi
 CYCLEPHASEFUNOLD (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes,
                   global.optimize.dotup, opt, cyc)
 
-CYCLEPHASEFUNOLD (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes,
-                  global.optimize.dotup, opt, cyc)
+CYCLEPHASEFUN (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes,
+               global.optimize.dotup, opt, cyc)
 
 CYCLEPHASEFUNOLD (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS,
                   opt, cyc)
@@ -478,8 +478,8 @@ CYCLEPHASEFUNOLD (tup, "Applying type upgrade", NTCdoNewTypeCheck, global.optimi
 CYCLEPHASEFUNOLD (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
                   global.optimize.dotup, opt, saacyc)
 
-CYCLEPHASEFUNOLD (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
-                  global.optimize.dotup, opt, saacyc)
+CYCLEPHASEFUN (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
+               global.optimize.dotup, opt, saacyc)
 
 CYCLEPHASEFUNOLD (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS,
                   opt, saacyc)
@@ -717,8 +717,8 @@ CYCLEPHASEFUNOLD (tup, "Applying type upgrade", NTCdoNewTypeCheck, global.optimi
 CYCLEPHASEFUNOLD (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes,
                   global.optimize.dotup, opt, scyc)
 
-CYCLEPHASEFUNOLD (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes,
-                  global.optimize.dotup, opt, scyc)
+CYCLEPHASEFUN (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes,
+               global.optimize.dotup, opt, scyc)
 
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
                opt, scyc)
