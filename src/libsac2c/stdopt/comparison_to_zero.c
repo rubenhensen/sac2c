@@ -397,6 +397,29 @@ GetSubtractionOperator (prf op)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *CTZmodule(node *arg_node, info *arg_info)
+ *
+ * @brief Traverses only functions of the module, skipping all the rest for
+ *        performance reasons.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+CTZmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *CTZfundef(node *arg_node, info *arg_info)
  *
  * @brief Traverses into fundef local LAC functions, then function

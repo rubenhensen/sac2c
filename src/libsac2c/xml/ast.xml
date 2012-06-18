@@ -1799,6 +1799,7 @@
 	  <node name="Let" />
 	  <node name="Prf" />
 	  <node name="Fundef" />
+	  <node name="Module" />
 	</travuser>
       </traversal>
       <traversal id="IIPI" name="Iteration Invariant Parameter Inference" default="sons" include="iteration_invariant_parameter_inference.h" >
@@ -3469,6 +3470,7 @@
         <node name="Let" />
         <node name="Prf" />
         <node name="Fundef" />
+        <node name="Module" />
       </travuser>
     </traversal>
     <traversal id="UCZC" name="UndoCondZeroCmp" default="sons" include="UndoCondZeroCmp.h" >

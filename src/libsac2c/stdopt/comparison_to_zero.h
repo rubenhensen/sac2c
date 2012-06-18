@@ -20,5 +20,6 @@ extern node *CTZassign (node *arg_node, info *arg_info);
 extern node *CTZlet (node *arg_node, info *arg_info);
 extern node *CTZprf (node *arg_node, info *arg_info);
 extern node *CTZfundef (node *arg_node, info *arg_info);
+extern node *CTZmodule (node *arg_node, info *arg_info);
 
 #endif /* _SAC_COMPARISON_TO_ZERO_H_ */

@@ -412,9 +412,9 @@ CYCLEPHASEFUNOLD (ctzg, "Comparison to zero conversion for guards",
 CYCLEPHASEFUN (ctz, "Comparison to zero conversion", CTZdoComparisonToZero,
                global.optimize.doctz, opt, cyc)
 
-CYCLEPHASEFUNOLD (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
-                  global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
-                  opt, cyc)
+CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
+               global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
+               opt, cyc)
 
 CYCLEPHASEFUN (esdcf, "Applying constant folding (esd case)", CFdoConstantFolding,
                (global.optimize.docf && (global.optimize.doal || global.optimize.dodl)),
@@ -587,9 +587,9 @@ CYCLEPHASEFUNOLD (ctzg, "Comparison to zero conversion for guards",
 CYCLEPHASEFUN (ctz, "Comparison to zero conversion", CTZdoComparisonToZero,
                global.optimize.doctz, opt, saacyc)
 
-CYCLEPHASEFUNOLD (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
-                  global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
-                  opt, saacyc)
+CYCLEPHASEFUN (esd, "Eliminating subtraction and division operators", ESDdoElimSubDiv,
+               global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
+               opt, saacyc)
 
 CYCLEPHASEFUN (as, "Arithmetic Simplification", ASdoArithmeticSimplification,
                global.optimize.doas, opt, saacyc)

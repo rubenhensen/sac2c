@@ -18,5 +18,6 @@ extern node *ESDassign (node *, info *);
 extern node *ESDlet (node *, info *);
 extern node *ESDprf (node *, info *);
 extern node *ESDfundef (node *, info *);
+extern node *ESDmodule (node *, info *);
 
 #endif /* _SAC_ELIMSUBDIV_H_ */

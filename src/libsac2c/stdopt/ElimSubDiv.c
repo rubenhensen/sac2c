@@ -209,34 +209,25 @@ InversionPrf (prf op, simpletype stype)
     DBUG_RETURN (inv_prf);
 }
 
-/**<!--**************************************************************-->
+/** <!--********************************************************************-->
  *
- * @fn node *ESDdoElimSubDivModule(node *arg_node)
+ * @fn node *ESDmodule(node *arg_node, info *arg_info)
  *
- * @brief start function for traversal
+ * @brief Traverses only functions of the module, skipping all the rest for
+ *        performance reasons.
  *
- * @param fundef N_module node
+ * @param arg_node
+ * @param arg_info
  *
  * @return
  *
- **********************************************************************/
+ *****************************************************************************/
 node *
-ESDdoElimSubDivModule (node *arg_node)
+ESDmodule (node *arg_node, info *arg_info)
 {
-    info *info;
     DBUG_ENTER ();
 
-    info = MakeInfo ();
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module, "ESD called on non-N_module node");
-
-    INFO_ONEFUNDEF (info) = FALSE;
-
-    TRAVpush (TR_esd);
-    arg_node = TRAVdo (arg_node, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -261,8 +252,6 @@ ESDdoElimSubDiv (node *arg_node)
     info = MakeInfo ();
 
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "ESD called on non-N_fundef node");
-
-    INFO_ONEFUNDEF (info) = TRUE;
 
     TRAVpush (TR_esd);
     arg_node = TRAVdo (arg_node, info);
@@ -291,8 +280,6 @@ ESDdoElimSubDiv (node *arg_node)
 node *
 ESDfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
-
     DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
@@ -302,14 +289,9 @@ ESDfundef (node *arg_node, info *arg_info)
                 FUNDEF_NAME (arg_node));
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
