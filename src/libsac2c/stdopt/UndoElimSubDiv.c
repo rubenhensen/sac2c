@@ -58,7 +58,6 @@
  */
 struct INFO {
     node *fundef;
-    bool onefundef;
     node *preassign;
     node *lhs;
     bool topdown;
@@ -67,7 +66,6 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_PREASSIGN(n) (n->preassign)
 #define INFO_LHS(n) (n->lhs)
@@ -283,39 +281,6 @@ TogglePrfSwap (prf op)
 
 /**<!--****************************************************************-->
  *
- * @fn node *UESDdoUndoElimSubDivModule(node *arg_node)
- *
- * @brief starting function of UndoElimSubDiv for modules
- *
- * @param fundef
- *
- * @return
- *
- ************************************************************************/
-node *
-UESDdoUndoElimSubDivModule (node *arg_node)
-{
-    info *info;
-
-    DBUG_ENTER ();
-
-    info = MakeInfo ();
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module, "WLI called on non-N_module node");
-
-    INFO_ONEFUNDEF (info) = FALSE;
-
-    TRAVpush (TR_uesd);
-    arg_node = TRAVdo (arg_node, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/**<!--****************************************************************-->
- *
  * @fn node *UESDdoUndoElimSubDiv(node *arg_node)
  *
  * @brief starting function of UndoElimSubDiv
@@ -334,15 +299,34 @@ UESDdoUndoElimSubDiv (node *arg_node)
 
     info = MakeInfo ();
 
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "WLI called on nonN_fundef node");
-
-    INFO_ONEFUNDEF (info) = TRUE;
-
     TRAVpush (TR_uesd);
     arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
     info = FreeInfo (info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *UESDmodule(node *arg_node, info *arg_info)
+ *
+ * @brief Traverses only functions of the module, skipping all the rest for
+ *        performance reasons.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+UESDmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -355,8 +339,6 @@ UESDdoUndoElimSubDiv (node *arg_node)
 node *
 UESDfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
-
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -364,14 +346,9 @@ UESDfundef (node *arg_node, info *arg_info)
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
 
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

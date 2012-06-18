@@ -2119,11 +2119,12 @@
     </traversal>
     <traversal id="UESD" name="UndoElimSubDiv" default="sons" include="UndoElimSubDiv.h" >
       <travuser>
-  <node name="Fundef" />
-  <node name="Block" />
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="Block" />
         <node name="Let" />
-  <node name="Assign" />
-  <node name="Prf" />
+        <node name="Assign" />
+        <node name="Prf" />
       </travuser>
     </traversal>
     <traversal id="WLI" name="With-Loop-Interference" default="sons" include="SSAWLI.h" >

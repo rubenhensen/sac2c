@@ -434,10 +434,10 @@ CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimization,
 CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistributiveLawOptimization,
                global.optimize.dodl, opt, cyc)
 
-CYCLEPHASEFUNOLD (uesd, "Reintroducing subtraction and division operators",
-                  UESDdoUndoElimSubDiv,
-                  global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
-                  opt, cyc)
+CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
+               UESDdoUndoElimSubDiv,
+               global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
+               opt, cyc)
 
 CYCLEPHASEFUNOLD (dcr2, "Applying dead code removal", DCRdoDeadCodeRemoval,
                   global.optimize.dodcr, opt, cyc)
@@ -608,10 +608,10 @@ CYCLEPHASEFUN (al, "Applying associative law", ALdoAssocLawOptimization,
 CYCLEPHASEFUN (dl, "Applying distributive law", DLdoDistributiveLawOptimization,
                global.optimize.dodl, opt, saacyc)
 
-CYCLEPHASEFUNOLD (uesd, "Reintroducing subtraction and division operators",
-                  UESDdoUndoElimSubDiv,
-                  global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
-                  opt, saacyc)
+CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
+               UESDdoUndoElimSubDiv,
+               global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
+               opt, saacyc)
 
 CYCLEPHASEFUNOLD (dcr2, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
                   opt, saacyc)

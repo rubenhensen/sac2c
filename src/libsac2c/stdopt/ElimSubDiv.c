@@ -251,8 +251,6 @@ ESDdoElimSubDiv (node *arg_node)
 
     info = MakeInfo ();
 
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "ESD called on non-N_fundef node");
-
     TRAVpush (TR_esd);
     arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
