@@ -364,12 +364,6 @@ CYCLEPHASEFUN (wlf, "Applying with-loop folding", WLFdoWLF, global.optimize.dowl
 CYCLEPHASEFUNOLD (wlfssa, "Restoring SSA form after with-loop folding", SSATdoTransform,
                   global.optimize.dowlf, opt, cyc)
 
-CYCLEPHASEFUNOLD (shwlc, "Activating display of WL-Cost information", SHWLCactivate,
-                  global.optimize.doawlf, opt, cyc)
-
-CYCLEPHASEFUNOLD (unshwlc, "Deactivating display of WL-Cost information", SHWLCdeactivate,
-                  global.optimize.doawlf, opt, cyc)
-
 CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemoval,
                global.optimize.dodcr, opt, cyc)
 
