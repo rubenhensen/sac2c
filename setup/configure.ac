@@ -569,12 +569,12 @@ case "$target_os" in
     AC_SUBST(ENABLE_PHM, no)
     RANLIB="$RANLIB -c"
     case "$target_os" in
-      *darwin10\.*)
+      *darwin1[0-1]\.*)
         OSFLAGS=["-no-cpp-precomp -D_DARWIN_C_SOURCE"]
         LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
         LD_PATH=["-L%path% -Wl,-rpath,%path%"]
         LD_FLAGS=""
-        AC_MSG_RESULT([darwin 10.x settings])
+        AC_MSG_RESULT([darwin 10.x/11.x settings])
         ;;
       *darwin9\.*)
         OSFLAGS=["-no-cpp-precomp -Wno-long-double -D_DARWIN_C_SOURCE"]
