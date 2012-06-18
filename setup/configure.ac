@@ -569,7 +569,7 @@ case "$target_os" in
     AC_SUBST(ENABLE_PHM, no)
     RANLIB="$RANLIB -c"
     case "$target_os" in
-      *darwin1[0-1]\.*)
+      [*darwin1[0-1]\.*)]
         OSFLAGS=["-no-cpp-precomp -D_DARWIN_C_SOURCE"]
         LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
         LD_PATH=["-L%path% -Wl,-rpath,%path%"]
