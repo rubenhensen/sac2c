@@ -94,6 +94,13 @@
  * just give up and leave the code as is.
  *
  *
+ * A note on guards:
+ *
+ * The collection of expressions transparently traverses through guards in
+ * the data flow. This creates the largest possible optimisation context.
+ * The guards nonetheless will stay within the code as long as they are
+ * captured by the after guard.
+ *
  *****************************************************************************/
 
 #include "associative_law.h"
@@ -181,11 +188,11 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ALdoAssocLawOptimizationModule( node *arg_node)
+ * @fn node *ALdoAssocLawOptimization( node *arg_node)
  *
  * @brief starting point of associativity optimization
  *
- * @param arg_node: An N_module node
+ * @param arg_node: N_module or N_fundef node
  *
  * @return
  *
