@@ -175,6 +175,9 @@ FreeInfo (info *info)
     DBUG_RETURN (info);
 }
 
+/* msd 18/06/2012 : could not find where UPRFdoUnrollPRFsPrf is used,
+ *                  commenting out for now */
+
 /** <!--********************************************************************-->
  *
  * @fn node *UPRFdoUnrollPRFsPrf( node *arg_node, node *vardecs, node *preassigns, node
@@ -190,29 +193,31 @@ FreeInfo (info *info)
  * @return updated arg_node, items added to vardecs and preassigns
  *
  *****************************************************************************/
-node *
-UPRFdoUnrollPRFsPrf (node *arg_node, node **vardecs, node **preassigns, node *lhs)
-{
-    info *arg_info;
+// node *UPRFdoUnrollPRFsPrf( node *arg_node, node **vardecs,
+//                           node **preassigns, node *lhs)
+//{
+//  info *arg_info;
+//
+//  DBUG_ENTER ();
+//
+//  DBUG_ASSERT (N_prf == NODE_TYPE( arg_node), "Expected N_prf");
+//
+//  arg_info = MakeInfo();
+//  INFO_LHS( arg_info) = lhs;
+//
+//  TRAVpush( TR_uprf);
+//  arg_node = TRAVdo( arg_node, arg_info);
+//  TRAVpop();
+//
+//  *vardecs = TCappendVardec( INFO_VARDEC( arg_info), *vardecs);
+//  *preassigns = TCappendAssign( *preassigns, INFO_PREASSIGN( arg_info));
+//
+//  arg_info = FreeInfo( arg_info);
+//
+//  DBUG_RETURN (arg_node);
+//
+//}
 
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "Expected N_prf");
-
-    arg_info = MakeInfo ();
-    INFO_LHS (arg_info) = lhs;
-
-    TRAVpush (TR_uprf);
-    arg_node = TRAVdo (arg_node, arg_info);
-    TRAVpop ();
-
-    *vardecs = TCappendVardec (INFO_VARDEC (arg_info), *vardecs);
-    *preassigns = TCappendAssign (*preassigns, INFO_PREASSIGN (arg_info));
-
-    arg_info = FreeInfo (arg_info);
-
-    DBUG_RETURN (arg_node);
-}
 /** <!--********************************************************************-->
  *
  * @fn node *UPRFdoUnrollPRFs( node *fundef)
@@ -240,37 +245,6 @@ UPRFdoUnrollPRFs (node *fundef)
     info = FreeInfo (info);
 
     DBUG_RETURN (fundef);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *UPRFdoUnrollPRFsModule( node *syntax_tree)
- *
- * @brief starting point of prf unrolling
- *
- * @param syntax_tree
- *
- * @return syntax_tree
- *
- *****************************************************************************/
-node *
-UPRFdoUnrollPRFsModule (node *syntax_tree)
-{
-    info *info;
-
-    DBUG_ENTER ();
-
-    info = MakeInfo ();
-
-    INFO_ONEFUNDEF (info) = FALSE;
-
-    TRAVpush (TR_uprf);
-    syntax_tree = TRAVdo (syntax_tree, info);
-    TRAVpop ();
-
-    info = FreeInfo (info);
-
-    DBUG_RETURN (syntax_tree);
 }
 
 /******************************************************************************
@@ -912,13 +886,35 @@ MakeFoldOp (node *ids, node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *UPRFmodule(node *arg_node, info *arg_info)
+ *
+ * @brief Traverses only functions of the module, skipping all the rest for
+ *        performance reasons.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+UPRFmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *UPRFfundef( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
 UPRFfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -941,16 +937,10 @@ UPRFfundef (node *arg_node, info *arg_info)
                     FUNDEF_NAME (arg_node));
     }
 
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     INFO_FUNDEF (arg_info) = NULL;
 
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
-
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

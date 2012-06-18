@@ -37,7 +37,6 @@
  *
  *****************************************************************************/
 extern node *UESDdoUndoElimSubDiv (node *arg_node);
-extern node *UESDdoUndoElimSubDivModule (node *arg_node);
 
 extern node *UESDmodule (node *, info *);
 extern node *UESDfundef (node *, info *);

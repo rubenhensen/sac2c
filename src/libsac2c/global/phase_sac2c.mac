@@ -385,8 +385,8 @@ CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariant
 CYCLEPHASEFUNOLD (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                   global.optimize.dowls, opt, cyc)
 
-CYCLEPHASEFUNOLD (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
-                  global.optimize.doprfunr, opt, cyc)
+CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
+               global.optimize.doprfunr, opt, cyc)
 
 CYCLEPHASEFUN (xetc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
                global.optimize.doetc, opt, cyc)
@@ -562,8 +562,8 @@ CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariant
 CYCLEPHASEFUNOLD (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                   global.optimize.dowls, opt, saacyc)
 
-CYCLEPHASEFUNOLD (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
-                  global.optimize.doprfunr, opt, saacyc)
+CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
+               global.optimize.doprfunr, opt, saacyc)
 
 CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
                opt, saacyc)

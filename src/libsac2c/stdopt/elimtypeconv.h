@@ -17,7 +17,6 @@
  *
  *****************************************************************************/
 extern node *ETCdoEliminateTypeConversions (node *arg_node);
-extern node *ETCdoEliminateTypeConversionsModule (node *arg_node);
 
 extern node *ETCmodule (node *arg_node, info *arg_info);
 extern node *ETCfundef (node *arg_node, info *arg_info);
