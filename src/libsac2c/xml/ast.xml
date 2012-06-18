@@ -2104,11 +2104,11 @@
   </travuser>
     </traversal>     
     <traversal id="WLPROP" name="With-Loop Propagation" default="sons" include="wlpropagation.h" >
-<travuser>
-  <node name="Assign" />
+      <travuser>
+        <node name="Assign" />
         <node name="Fundef" />
-  <node name="Ap" />
-  <node name="Exprs" /> 
+        <node name="Ap" />
+        <node name="Exprs" /> 
         <node name="Id" />
       </travuser>
     </traversal>

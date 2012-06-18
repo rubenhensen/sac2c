@@ -328,8 +328,8 @@ CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, AL
 CYCLEPHASEFUNOLD (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt,
                   cyc)
 
-CYCLEPHASEFUNOLD (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
-                  global.optimize.dowlprop, opt, cyc)
+CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
+               global.optimize.dowlprop, opt, cyc)
 
 CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
                global.optimize.dols, opt, cyc)
@@ -487,8 +487,8 @@ CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, AL
 CYCLEPHASEFUNOLD (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt,
                   saacyc)
 
-CYCLEPHASEFUNOLD (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
-                  global.optimize.dowlprop, opt, saacyc)
+CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
+               global.optimize.dowlprop, opt, saacyc)
 
 CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
                global.optimize.dols, opt, saacyc)
