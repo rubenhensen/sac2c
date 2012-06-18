@@ -2228,6 +2228,7 @@
     </traversal>
     <traversal id="WLSIMP" name="With-Loop Simplification" default="sons" include="wlsimplification.h">
       <travuser>
+        <node name="Module" />
         <node name="Fundef" />
         <node name="Assign" />
         <node name="Let" />

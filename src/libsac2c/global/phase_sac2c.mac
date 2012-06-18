@@ -349,8 +349,8 @@ CYCLEPHASEFUNOLD (wlpg, "Generating full with-loop partitions",
 CYCLEPHASEFUN (wlbsc, "Ensuring structrual constants for with-loop partition bounds",
                WLBSCdoWlbounds2structConsts, global.optimize.dowlpg, opt, cyc)
 
-CYCLEPHASEFUNOLD (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
-                  global.optimize.dowlsimp, opt, cyc)
+CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
+               global.optimize.dowlsimp, opt, cyc)
 
 CYCLEPHASEFUN (cwle, "Eliminate copy with-loops", CWLEdoCopyWithLoopElimination,
                global.optimize.docwle, opt, cyc)
@@ -508,8 +508,8 @@ CYCLEPHASEFUNOLD (wlpg, "Generating full with-loop partitions",
 CYCLEPHASEFUN (wlbsc, "Unflattening WL-partition structural constants",
                WLBSCdoWlbounds2nonFlatStructConsts, global.optimize.dowlpg, opt, saacyc)
 
-CYCLEPHASEFUNOLD (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
-                  global.optimize.dowlsimp, opt, saacyc)
+CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
+               global.optimize.dowlsimp, opt, saacyc)
 
 CYCLEPHASEFUN (cwle, "Eliminate copy with-loops", CWLEdoCopyWithLoopElimination,
                global.optimize.docwle, opt, saacyc)

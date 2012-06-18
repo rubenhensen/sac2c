@@ -135,7 +135,6 @@ struct INFO {
     int num_genparts;
     bool zerotrip;
     bool replace;
-    bool onefundef;
 };
 
 /**
@@ -149,7 +148,6 @@ struct INFO {
 
 #define INFO_ZEROTRIP(n) ((n)->zerotrip)
 #define INFO_REPLACE(n) ((n)->replace)
-#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 /**
  * INFO functions
@@ -169,7 +167,6 @@ MakeInfo ()
     INFO_NUM_GENPARTS (result) = 0;
     INFO_ZEROTRIP (result) = FALSE;
     INFO_REPLACE (result) = FALSE;
-    INFO_ONEFUNDEF (result) = TRUE;
 
     DBUG_RETURN (result);
 }
@@ -277,8 +274,6 @@ WLSIMPdoWithloopSimplification (node *arg_node)
 
     arg_info = MakeInfo ();
 
-    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
-
     TRAVpush (TR_wlsimp);
     arg_node = TRAVdo (arg_node, arg_info);
     TRAVpop ();
@@ -294,6 +289,29 @@ WLSIMPdoWithloopSimplification (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *WLSIMPmodule(node *arg_node, info *arg_info)
+ *
+ * @brief Traverses only functions of the module, skipping all the rest for
+ *        performance reasons.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+WLSIMPmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WLSIMPfundef( node *arg_node, info *arg_info)
  *
  * @brief LaC-funs: - does NOT follow N_ap at all!
@@ -305,7 +323,6 @@ WLSIMPdoWithloopSimplification (node *arg_node)
 node *
 WLSIMPfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
@@ -314,14 +331,9 @@ WLSIMPfundef (node *arg_node, info *arg_info)
         INFO_FUNDEF (arg_info) = NULL;
     }
 
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
