@@ -128,19 +128,17 @@
  *
  *****************************************************************************/
 struct INFO {
-    bool onefundef;
     node *fundef;
     node *preassigns;
     node *nassign; /* for DBUG_PRINT clarification only */
 };
 
-#define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_PREASSIGNS(n) (n->preassigns)
 #define INFO_NASSIGN(n) (n->nassign)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -148,7 +146,6 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_ONEFUNDEF (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_NASSIGN (result) = NULL;
@@ -265,7 +262,6 @@ WLSdoWithloopScalarization (node *fundef)
                  "WLSdoWithloopScalarization called for non-fundef/module node");
 
     arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (fundef));
 
     TRAVpush (TR_wls);
     fundef = TRAVdo (fundef, arg_info);
@@ -337,7 +333,6 @@ node *
 WLSfundef (node *arg_node, info *arg_info)
 {
     node *old_fundef;
-    bool old_onefundef;
 
     DBUG_ENTER ();
 
@@ -351,19 +346,14 @@ WLSfundef (node *arg_node, info *arg_info)
     }
 
     old_fundef = INFO_FUNDEF (arg_info);
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
 
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
     INFO_FUNDEF (arg_info) = old_fundef;
 
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        old_fundef = INFO_FUNDEF (arg_info);
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-        INFO_FUNDEF (arg_info) = old_fundef;
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    INFO_FUNDEF (arg_info) = old_fundef;
 
     DBUG_RETURN (arg_node);
 }
@@ -418,6 +408,23 @@ WLSwith (node *arg_node, info *arg_info)
         arg_node
           = WLSBdoBuild (arg_node, INFO_FUNDEF (arg_info), &INFO_PREASSIGNS (arg_info));
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLSmodule(node *arg_node, info *arg_info)
+ *
+ * @brief Traverse only funs in the module.
+ *
+ *****************************************************************************/
+node *
+WLSmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

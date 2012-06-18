@@ -2257,6 +2257,7 @@
       <travuser>
         <node name="Assign" />
         <node name="Fundef" />
+        <node name="Module" />
         <node name="With" />
       </travuser>
     </traversal>

@@ -382,8 +382,8 @@ CYCLEPHASEFUNOLD (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvarian
 CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
                global.optimize.dowlir, opt, cyc)
 
-CYCLEPHASEFUNOLD (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
-                  global.optimize.dowls, opt, cyc)
+CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
+               global.optimize.dowls, opt, cyc)
 
 CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
                global.optimize.doprfunr, opt, cyc)
@@ -559,8 +559,8 @@ CYCLEPHASEFUNOLD (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvarian
 CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
                global.optimize.dowlir, opt, saacyc)
 
-CYCLEPHASEFUNOLD (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
-                  global.optimize.dowls, opt, saacyc)
+CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
+               global.optimize.dowls, opt, saacyc)
 
 CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
                global.optimize.doprfunr, opt, saacyc)

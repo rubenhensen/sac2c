@@ -19,6 +19,7 @@ extern node *WLSassign (node *arg_node, info *arg_info);
 extern node *WLSfundef (node *arg_node, info *arg_info);
 extern node *WLSwith (node *arg_node, info *arg_info);
 extern node *WLSflattenBound (node *arg_node, node **vardecs, node **preassigns);
+extern node *WLSmodule (node *arg_node, info *arg_info);
 
 /******************************************************************************
  *
