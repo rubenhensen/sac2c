@@ -97,8 +97,6 @@
  * INFO structure
  */
 
-typedef enum { TS_fundef, TS_module } travstart;
-
 struct INFO {
     node *fundef;
     node *preassign;
@@ -108,8 +106,6 @@ struct INFO {
     bool *depthmask;
     int setdepth;
     nodelist *inslist;
-    travstart travstart;
-    bool travlocalfuns;
 };
 
 /*
@@ -131,8 +127,6 @@ struct INFO {
  case the expression is being moved.
  * INFO_INSLIST             : nodelist* = list of frames (a stack but with arbitrary
  access to any frame). Frames are pushed/poped when traversing with-loop levels.
- * INFO_TRAVSTART           : {TS_fundef, TS_module} = mode
- * INFO_TRAVLOCALFUNS       : bool = traversing LOCALFUNS chains
  *
  */
 #define INFO_FUNDEF(n) (n->fundef)
@@ -143,14 +137,12 @@ struct INFO {
 #define INFO_SETDEPTH(n) (n->setdepth)
 #define INFO_DEPTHMASK(n) (n->depthmask)
 #define INFO_INSLIST(n) (n->inslist)
-#define INFO_TRAVSTART(n) (n->travstart)
-#define INFO_TRAVLOCALFUNS(n) (n->travlocalfuns)
 
 /*
  * INFO functions
  */
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -166,8 +158,6 @@ MakeInfo ()
     INFO_DEPTHMASK (result) = MEMmalloc (sizeof (bool) * 1);
     INFO_SETDEPTH (result) = 0;
     INFO_INSLIST (result) = NULL;
-    INFO_TRAVSTART (result) = TS_fundef;
-    INFO_TRAVLOCALFUNS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -508,6 +498,26 @@ InsListGetFrame (nodelist *il, int depth)
 }
 
 /* traversal functions */
+
+/******************************************************************************
+ *
+ * function:
+ *   node* WLIRmodule(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Traverse only funs in the module.
+ *
+ *****************************************************************************/
+node *
+WLIRmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:
@@ -547,26 +557,9 @@ WLIRfundef (node *arg_node, info *arg_info)
 
     info = FreeInfo (info);
 
-    /**
-     * Traverse the chain of local funs (LAC funs), if it is present.
-     * In doing so set a flag INFO_TRAVLOCALFUNS to ensure the chain
-     * is traversed even when the WLIR opt. was started on a single fundef.
-     */
-    if (FUNDEF_LOCALFUNS (arg_node)) {
-        bool old_travloc = INFO_TRAVLOCALFUNS (arg_info);
-        INFO_TRAVLOCALFUNS (arg_info) = TRUE;
-        /* traverse */
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-        INFO_TRAVLOCALFUNS (arg_info) = old_travloc;
-    }
-
-    /**
-     * traverse only in next fundef if traversal started in module node,
-     * or we are in the LOCALFUNS chain.
-     */
-    if ((INFO_TRAVSTART (arg_info) == TS_module) || INFO_TRAVLOCALFUNS (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    /* traverse local funs and next */
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1062,8 +1055,6 @@ WLIRdoLoopInvariantRemoval (node *arg_node)
                  "WLIRdoLoopInvariantRemoval called with non-module/non-fundef node");
 
     info = MakeInfo ();
-
-    INFO_TRAVSTART (info) = (N_fundef == NODE_TYPE (arg_node)) ? TS_fundef : TS_module;
 
     TRAVpush (TR_wlir);
     arg_node = TRAVdo (arg_node, info);

@@ -379,8 +379,8 @@ CYCLEPHASEFUNOLD (linl2, "Inlining degenerated LaC functions", LINLdoLACInlining
 CYCLEPHASEFUNOLD (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
                   global.optimize.dodlir, opt, cyc)
 
-CYCLEPHASEFUNOLD (wlir, "Applying with-loop invariant removal",
-                  WLIRdoLoopInvariantRemoval, global.optimize.dowlir, opt, cyc)
+CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
+               global.optimize.dowlir, opt, cyc)
 
 CYCLEPHASEFUNOLD (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                   global.optimize.dowls, opt, cyc)
@@ -556,8 +556,8 @@ CYCLEPHASEFUNOLD (linl2, "Inlining degenerated LaC functions", LINLdoLACInlining
 CYCLEPHASEFUNOLD (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
                   global.optimize.dodlir, opt, saacyc)
 
-CYCLEPHASEFUNOLD (wlir, "Applying with-loop invariant removal",
-                  WLIRdoLoopInvariantRemoval, global.optimize.dowlir, opt, saacyc)
+CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
+               global.optimize.dowlir, opt, saacyc)
 
 CYCLEPHASEFUNOLD (wls, "Applying with-loop scalarization", WLSdoWithloopScalarization,
                   global.optimize.dowls, opt, saacyc)

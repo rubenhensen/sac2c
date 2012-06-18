@@ -1875,6 +1875,7 @@
         <node name="Vardec" />
         <node name="Block" />
         <node name="Let" />
+        <node name="Module" />
         <node name="Id" />
         <node name="With" />
         <node name="Withid" />
