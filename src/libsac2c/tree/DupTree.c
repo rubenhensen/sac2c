@@ -1263,7 +1263,6 @@ DUPblock (node *arg_node, info *arg_info)
     node *new_node;
     node *v;
     node *avis;
-    node *navis;
     node *nid;
 
 #if DUP_DFMS
@@ -1316,7 +1315,6 @@ DUPblock (node *arg_node, info *arg_info)
     /* Have to defer updating extrema until all vardecs in place */
     v = BLOCK_VARDECS (new_node);
 
-    navis = NULL; /* Ensure that we do not reference undefined navis */
     while (NULL != v) {
         avis = VARDEC_AVIS (v);
         DBUG_PRINT ("DUPblock vardec scan looking at %s", AVIS_NAME (avis));
@@ -2331,6 +2329,8 @@ DUPfold (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     new_node = TBmakeFold (FOLD_FUNDEF (arg_node), DUPTRAV (FOLD_NEUTRAL (arg_node)));
+
+    FOLD_ARGS (new_node) = DUPTRAV (FOLD_ARGS (arg_node));
 
     FOLD_GUARD (new_node) = DUPTRAV (FOLD_GUARD (arg_node));
 

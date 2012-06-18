@@ -228,8 +228,12 @@ MakeFoldFunAssign (info *arg_info)
         /* duplicate the partial args exprs from FOLD_ARGS */
         node *args = DUPdoDupTree (FOLD_ARGS (INFO_FOLD (arg_info)));
         /* and append the two automatic args to it: acc, val */
-        EXPRS_NEXT (args) = TBmakeExprs (TBmakeId (INFO_FOLD_ACCU (arg_info)),
-                                         TBmakeExprs (old_cexpr_id, NULL));
+        node *last_arg = args;
+        while (EXPRS_NEXT (last_arg)) {
+            last_arg = EXPRS_NEXT (last_arg);
+        }
+        EXPRS_NEXT (last_arg) = TBmakeExprs (TBmakeId (INFO_FOLD_ACCU (arg_info)),
+                                             TBmakeExprs (old_cexpr_id, NULL));
         /* construct the ap node and then the assignment */
         node *ap = TBmakeAp (FOLD_FUNDEF (INFO_FOLD (arg_info)), args);
 
