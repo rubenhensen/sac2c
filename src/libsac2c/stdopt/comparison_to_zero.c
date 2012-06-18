@@ -59,13 +59,11 @@
  *****************************************************************************/
 
 struct INFO {
-    bool onefundef;
     node *fundef;
     node *newassign;
     node *lhs;
 };
 
-#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_NEWASSIGN(n) ((n)->newassign)
@@ -79,7 +77,6 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_ONEFUNDEF (result) = TRUE;
     INFO_FUNDEF (result) = NULL;
     INFO_LHS (result) = NULL;
     INFO_NEWASSIGN (result) = NULL;
@@ -121,8 +118,6 @@ CTZdoComparisonToZero (node *argnode)
     DBUG_ENTER ();
 
     info = MakeInfo ();
-
-    INFO_ONEFUNDEF (info) = TRUE;
 
     TRAVpush (TR_ctz);
     argnode = TRAVdo (argnode, info);
@@ -418,8 +413,6 @@ GetSubtractionOperator (prf op)
 node *
 CTZfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
-
     DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
@@ -430,14 +423,8 @@ CTZfundef (node *arg_node, info *arg_info)
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
-
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -527,7 +514,7 @@ CTZlet (node *arg_node, info *arg_info)
  * @fn node *CTZprf(node *arg_node, info *arg_info)
  *
  * @brief This function looks for suitable comparisons, applies the
- *        ptimization and creates the new structure.
+ *        optimization and creates the new structure.
  *
  * @param arg_node
  * @param arg_info
