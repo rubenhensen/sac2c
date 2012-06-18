@@ -126,8 +126,6 @@ ENDPHASE (ptc)
 
 PHASE (uds, "Incorporating user-defined subtyping hierarchy", ALWAYS)
 
-SUBPHASE (bdg, "Building user defined subtyping graph", TFBDGdoBuildTFGraph, ALWAYS, uds)
-
 SUBPHASE (top, "Topologically sorting subtyping graph", TFTOPdoTopoSort, ALWAYS, uds)
 
 SUBPHASE (min, "Computing the minimum equivalent of the graph", TFMINdoReduceTFGraph,

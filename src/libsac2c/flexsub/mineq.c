@@ -151,8 +151,8 @@ TFMINtfvertex (node *arg_node, info *arg_info)
         if (inlist) {
 
             CTIwarn ("Removing superfluous edge between %s and %s.\n",
-                     TFVERTEX_TAG (TFVERTEX_CURR (TFEDGE_TARGET (parents_itr1))),
-                     TFVERTEX_TAG (TFVERTEX_CURR (arg_node)));
+                     TFVERTEX_PRE (TFEDGE_TARGET (parents_itr1)),
+                     TFVERTEX_PRE (arg_node));
             edge = parents_itr1;
             parents_itr1 = TFEDGE_NEXT (parents_itr1);
             GUremoveEdge (TFEDGE_TARGET (edge), arg_node);

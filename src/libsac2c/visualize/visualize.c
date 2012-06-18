@@ -3569,16 +3569,11 @@ VISUALtfvertex (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     // traver son nodes
-    TRAVdo (TFVERTEX_CURR (arg_node), arg_info);
     TRAVopt (TFVERTEX_PARENTS (arg_node), arg_info);
     TRAVopt (TFVERTEX_CHILDREN (arg_node), arg_info);
     TRAVopt (TFVERTEX_NEXT (arg_node), arg_info);
 
     // add edge between two nodes with lable
-
-    fprintf (INFO_FILE (arg_info), "%s[label=Tfvertex];\n%s -> %s [label=Curr];\n",
-             node_name, node_name,
-             (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), TFVERTEX_CURR (arg_node)));
 
     if (NULL != TFVERTEX_PARENTS (arg_node)) {
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Parents];\n", node_name,
@@ -3747,17 +3742,9 @@ VISUALtfedge (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     // traver son nodes
-    TRAVopt (TFEDGE_COND (arg_node), arg_info);
     TRAVopt (TFEDGE_NEXT (arg_node), arg_info);
 
     // add edge between two nodes with lable
-
-    if (NULL != TFEDGE_COND (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s[label=Tfedge];\n%s -> %s [label=Cond];\n",
-                 node_name, node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
-                                           TFEDGE_COND (arg_node)));
-    }
     if (NULL != TFEDGE_NEXT (arg_node)) {
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Next];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),

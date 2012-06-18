@@ -1,18 +1,18 @@
 /*****************************************************************************
  *
- * file:   graphinterface.h
+ * file:   query.h
  *
  * description:
- *   header file for graphinterface.c
+ *   header file for query.c
  *
  *****************************************************************************/
 
-#ifndef _GRAPHINTERFACE_H_
-#define _GRAPHINTERFACE_H_
+#ifndef _QUERY_H_
+#define _QUERY_H_
 
 #include "types.h"
 
 node *GINlcaFromNodes (node *n1, node *n2, compinfo *ci);
 int GINisReachable (node *n1, node *n2, compinfo *ci);
 
-#endif /* _GRAPHINTERFACE_H_ */
+#endif /* _QUERY_H_ */

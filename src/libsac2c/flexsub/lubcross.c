@@ -30,7 +30,7 @@
 #include "lubtree.h"
 #include "lubcross.h"
 #include "binheap.h"
-#include "graphinterface.h"
+#include "query.h"
 
 typedef struct POSTINFO {
     int iscsrc;

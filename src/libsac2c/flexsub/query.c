@@ -35,7 +35,7 @@
 #include "lubtree.h"
 #include "lubcross.h"
 #include "binheap.h"
-#include "graphinterface.h"
+#include "query.h"
 
 int
 GINisReachable (node *n1, node *n2, compinfo *ci)

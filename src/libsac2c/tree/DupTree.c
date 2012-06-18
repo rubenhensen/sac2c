@@ -3616,8 +3616,7 @@ DUPtfvertex (node *arg_node, info *arg_info)
 
     node *new_node;
 
-    new_node = TBmakeTfvertex (DUPTRAV (TFVERTEX_CURR (arg_node)),
-                               DUPTRAV (TFVERTEX_PARENTS (arg_node)),
+    new_node = TBmakeTfvertex (DUPTRAV (TFVERTEX_PARENTS (arg_node)),
                                DUPTRAV (TFVERTEX_CHILDREN (arg_node)),
                                DUPCONT (TFVERTEX_NEXT (arg_node)));
 
@@ -3739,8 +3738,7 @@ DUPtfedge (node *arg_node, info *arg_info)
 
     node *new_node;
 
-    new_node = TBmakeTfedge (TFEDGE_TARGET (arg_node), DUPTRAV (TFEDGE_COND (arg_node)),
-                             DUPCONT (TFEDGE_NEXT (arg_node)));
+    new_node = TBmakeTfedge (TFEDGE_TARGET (arg_node), DUPCONT (TFEDGE_NEXT (arg_node)));
 
     DBUG_RETURN (new_node);
 }

@@ -6355,11 +6355,7 @@ PRTtfvertex (node *arg_node, info *arg_info)
      * By default, the first time we output the node info in dot format
      */
 
-    if (TFVERTEX_CURR (arg_node) != NULL) {
-
-        fprintf (global.outfile, "<%s/> [label=\"%s\\n",
-                 TFVERTEX_TAG (TFVERTEX_CURR (arg_node)),
-                 TFVERTEX_TAG (TFVERTEX_CURR (arg_node)));
+    if (arg_node != NULL) {
 
         fprintf (global.outfile, "pre=[%d,", TFVERTEX_PRE (arg_node));
 
@@ -6396,7 +6392,6 @@ PRTtfvertex (node *arg_node, info *arg_info)
         }
 
         fprintf (global.outfile, "\"];\n");
-        TRAVdo (TFVERTEX_CURR (arg_node), arg_info);
     }
 
     children = TFVERTEX_CHILDREN (arg_node);
@@ -6486,19 +6481,13 @@ PRTtfedge (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (TFEDGE_EDGETYPE (arg_node) == edgecross) {
-        fprintf (global.outfile, "<%s/>-><%s/> [style=dotted]",
-                 TFVERTEX_TAG (TFVERTEX_CURR (INFO_TFSUPERNODE (arg_info))),
-                 TFVERTEX_TAG (TFVERTEX_CURR (TFEDGE_TARGET (arg_node))));
+        fprintf (global.outfile, "<%d/>-><%d/> [style=dotted]",
+                 TFVERTEX_PRE (INFO_TFSUPERNODE (arg_info)),
+                 TFVERTEX_PRE (TFEDGE_TARGET (arg_node)));
     } else {
-        fprintf (global.outfile, "<%s/>-><%s/>",
-                 TFVERTEX_TAG (TFVERTEX_CURR (INFO_TFSUPERNODE (arg_info))),
-                 TFVERTEX_TAG (TFVERTEX_CURR (TFEDGE_TARGET (arg_node))));
-    }
-
-    if (TFEDGE_COND (arg_node) != NULL) {
-        INFO_TFSTRINGEXPR (arg_info) = NULL;
-        TRAVdo (TFEDGE_COND (arg_node), arg_info);
-        fprintf (global.outfile, "\t[label=\"%s\"]", INFO_TFSTRINGEXPR (arg_info));
+        fprintf (global.outfile, "<%d/>-><%d/>",
+                 TFVERTEX_PRE (INFO_TFSUPERNODE (arg_info)),
+                 TFVERTEX_PRE (TFEDGE_TARGET (arg_node)));
     }
 
     fprintf (global.outfile, ";\n");

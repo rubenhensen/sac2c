@@ -136,12 +136,6 @@
           <node name="Arg" />
         </travuser>
       </traversal>
-      <traversal id="TFBDG" name="Build dependency graph for type families" default="sons" include="dagbuilder.h" >
-        <travuser>
-          <node name="Tfspec" />
-          <node name="Tfvertex" />
-        </travuser>
-      </traversal>
       <traversal id="TFTOP" name="Do a topological sort of the subtyping hierarchy" default="sons" include="topo.h" >
         <travuser>
           <node name="Tfspec" />
@@ -4169,16 +4163,6 @@ N_tfvertex :
         </attribute>
       </attributes>
       <sons>
-        <son name="Curr">
-          <targets>
-            <target mandatory="yes">
-              <set name="Tfdefunion" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
         <son name="Parents">
           <targets>
             <target mandatory="no">
@@ -4484,16 +4468,6 @@ N_tfedge :
         </attribute>
       </attributes>
       <sons>
-        <son name="Cond">
-          <targets>
-            <target mandatory="no">
-              <node name="Tfexpr" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
         <son name="Next">
           <targets>
             <target mandatory="no">

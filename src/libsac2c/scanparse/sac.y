@@ -2031,11 +2031,11 @@ tfspec: tfdefs tfrels
 
 tfdefs: tfdef tfdefs
 	{
-	  $$=TBmakeTfvertex($1,NULL,NULL,$2);
+	  $$=TBmakeTfvertex(NULL,NULL,$2);
 	}
 	|tfdef
 	{
-	  $$=TBmakeTfvertex($1,NULL,NULL,NULL);
+	  $$=TBmakeTfvertex(NULL,NULL,NULL);
 	}
 	;
 tfrels: tfrel tfrels
