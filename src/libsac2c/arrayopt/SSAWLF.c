@@ -102,7 +102,6 @@ struct INFO {
 /*
  * INFO macros
  */
-#define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_NEXT(n) (n->next)
 #define INFO_SUBST(n) (n->subst)
 #define INFO_WL(n) (n->wl)
@@ -126,7 +125,6 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
-    INFO_ONEFUNDEF (result) = FALSE;
     INFO_NEXT (result) = NULL;
     INFO_SUBST (result) = NULL;
     INFO_WL (result) = NULL;
@@ -1428,6 +1426,29 @@ FreeWLIInformation (node *fundef)
  *
  ******************************************************************************/
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLFmodule(node *arg_node, info *arg_info)
+ *
+ * @brief Traverses only functions of the module, skipping all the rest for
+ *        performance reasons.
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+WLFmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:
@@ -1440,8 +1461,6 @@ FreeWLIInformation (node *fundef)
 node *
 WLFfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
-
     DBUG_ENTER ();
 
     DBUG_PRINT ("entering %s for WLF", FUNDEF_NAME (arg_node));
@@ -1452,15 +1471,9 @@ WLFfundef (node *arg_node, info *arg_info)
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
-
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1971,10 +1984,6 @@ WLFdoWLF (node *arg_node)
     DBUG_ENTER ();
 
     info = MakeInfo ();
-
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "WLFdoWLF called on non-fundef node");
-
-    INFO_ONEFUNDEF (info) = TRUE;
 
 #ifdef SHOW_MALLOC
     DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",

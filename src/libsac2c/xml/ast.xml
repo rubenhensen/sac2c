@@ -2170,14 +2170,15 @@
 </travuser>
     </traversal>
    <traversal id="WLF" name="With-Loop-Folding" default="sons" include="SSAWLF.h" >
-<travuser>
-  <node name="Fundef" />
-  <node name="Assign" />
-  <node name="Id" />
-        <node name="Let" />
-  <node name="With" />
-        <node name="Code" />
-</travuser>
+     <travuser>
+       <node name="Module" />
+       <node name="Fundef" />
+       <node name="Assign" />
+       <node name="Id" />
+       <node name="Let" />
+       <node name="With" />
+       <node name="Code" />
+     </travuser>
    </traversal>
    <traversal id="AWLFI" name="Algebraic With-Loop-Folding Inference" default="sons" include="algebraic_wlfi.h" >
      <travuser>
