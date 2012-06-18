@@ -10,6 +10,7 @@
 
 extern node *LSdoLoopScalarization (node *arg_node);
 
+extern node *LSmodule (node *arg_node, info *arg_info);
 extern node *LSfundef (node *arg_node, info *arg_info);
 extern node *LSarg (node *arg_node, info *arg_info);
 extern node *LSassign (node *arg_node, info *arg_info);

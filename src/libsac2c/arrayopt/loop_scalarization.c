@@ -290,7 +290,6 @@ struct INFO {
     node *vardecs;
     node *lastassign;
     node *precond;
-    bool onefundef;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -301,7 +300,6 @@ struct INFO {
 #define INFO_RECCALL(n) ((n)->reccall)
 #define INFO_LASTASSIGN(n) ((n)->lastassign)
 #define INFO_PRECONDASSIGN(n) ((n)->precond)
-#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
 MakeInfo ()
@@ -320,7 +318,6 @@ MakeInfo ()
     INFO_RECCALL (result) = NULL;
     INFO_LASTASSIGN (result) = NULL;
     INFO_PRECONDASSIGN (result) = NULL;
-    INFO_ONEFUNDEF (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -638,6 +635,26 @@ CreateAssigns (constant *idx, void *accu, void *local_info)
     return (accu);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node *LSmodule(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   prunes the syntax tree by only going into function defintions
+ *
+ *****************************************************************************/
+
+node *
+LSmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--*******************************************************************-->
  *
  * @fn node *LSfundef( node *arg_node, info *arg_info)
@@ -700,12 +717,9 @@ LSfundef (node *arg_node, info *arg_info)
     }
     DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
 
-    if ((!INFO_ONEFUNDEF (arg_info)) && (INFO_LEVEL (arg_info) == 0)) {
+    if (INFO_LEVEL (arg_info) == 0) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    } else {
-        if ((INFO_ONEFUNDEF (arg_info)) && (INFO_LEVEL (arg_info) == 0)) {
-            FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-        }
+        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -903,7 +917,7 @@ LSid (node *arg_node, info *arg_info)
  *
  *   @brief This traversal eliminates arrays within loops for one function
  *          or module.
- *   @param N_fundef or N_module
+ *   @param arg_node
  *   @return modified AST.
  *
  *****************************************************************************/
@@ -914,18 +928,13 @@ LSdoLoopScalarization (node *arg_node)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Starting Loop Scalarization");
+    arg_info = MakeInfo ();
 
     TRAVpush (TR_ls);
-
-    arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
     arg_node = TRAVdo (arg_node, arg_info);
-
-    arg_info = FreeInfo (arg_info);
     TRAVpop ();
 
-    DBUG_PRINT ("Loop Scalarization done!");
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }

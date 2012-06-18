@@ -331,8 +331,8 @@ CYCLEPHASEFUNOLD (inl, "Applying inlining", INLdoInlining, global.optimize.doinl
 CYCLEPHASEFUNOLD (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
                   global.optimize.dowlprop, opt, cyc)
 
-CYCLEPHASEFUNOLD (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
-                  global.optimize.dols, opt, cyc)
+CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
+               global.optimize.dols, opt, cyc)
 
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
                opt, cyc)
@@ -490,8 +490,8 @@ CYCLEPHASEFUNOLD (inl, "Applying inlining", INLdoInlining, global.optimize.doinl
 CYCLEPHASEFUNOLD (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
                   global.optimize.dowlprop, opt, saacyc)
 
-CYCLEPHASEFUNOLD (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
-                  global.optimize.dols, opt, saacyc)
+CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
+               global.optimize.dols, opt, saacyc)
 
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
                opt, saacyc)
