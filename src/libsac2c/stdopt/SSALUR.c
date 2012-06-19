@@ -1379,8 +1379,8 @@ UpdatePrfStack (node *predicate, node *var, struct prf_expr_queue *stack,
     node *arg1, *arg2;
 
     DBUG_ENTER ();
-    if (!predicate || !PRF_ARGS (predicate) || !EXPRS_NEXT (PRF_ARGS (predicate))
-        || NULL == (arg1 = PRF_ARG1 (predicate))
+    if (!predicate || NODE_TYPE (predicate) != N_prf || !PRF_ARGS (predicate)
+        || !EXPRS_NEXT (PRF_ARGS (predicate)) || NULL == (arg1 = PRF_ARG1 (predicate))
         || NULL == (arg2 = PRF_ARG2 (predicate))) {
         DBUG_RETURN (
           (DBUG_PRINT ("%s expected prf with two arguments", __func__), FALSE));
