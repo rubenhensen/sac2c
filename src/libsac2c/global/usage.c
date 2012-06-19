@@ -805,13 +805,13 @@ PrintPrintingOptions (void)
       "\n"
       "    -printstart <phase_id> [-printstop <phase_id>]\n"
       "               Will report end of phase output to files in the format\n"
-      "               a.out.<phase_id> unless -o <outfilename> option is specified"
+      "               a.out.<phase_id> unless -o <outfilename> option is specified\n"
       "               in which case the output file format will be\n"
       "               <outfilename>.<phase_id>\n"
       "\n"
       "     -printstop <phase_id> "
-      "               if this option is used printing will stop at this"
-      "               phase whilst compilation will continue until completion"
+      "               if this option is used printing will stop at this\n"
+      "               phase whilst compilation will continue until completion\n"
       "               unless -b is used.\n");
 
     DBUG_RETURN ();
