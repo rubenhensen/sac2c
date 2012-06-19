@@ -6500,11 +6500,11 @@ PRTtfedge (node *arg_node, info *arg_info)
 }
 
 node *
-PRTtfarg (node *arg_node, info *arg_info)
+PRTtypecomponentarg (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
-
+    /* do nothing  */
     DBUG_RETURN (arg_node);
 }
 

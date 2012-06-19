@@ -23,6 +23,7 @@
 #include "traverse.h"
 #include "ctinfo.h"
 #include "free.h"
+#include "DupTree.h"
 
 #define DBUG_PREFIX "DS"
 #include "debug.h"
@@ -85,7 +86,7 @@ struct INFO {
  * INFO functions
  */
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -260,7 +261,7 @@ InsertIntoState (node *item)
 }
 
 static node *
-getCurrentFundefHead ()
+getCurrentFundefHead (void)
 {
     DBUG_ENTER ();
 
@@ -376,7 +377,7 @@ updateContextInformation (node *entry)
  */
 
 static void
-initAliasingLut ()
+initAliasingLut (void)
 {
     DBUG_ENTER ();
 
@@ -901,10 +902,10 @@ DSimportTypedefByName (const char *name, const char *module)
          * In all three cases create a new user alias. Otherwise
          * the existing typedef will do.
          */
-        if ((exist_tdef == NULL) || (!TYPEDEF_ISALIAS (exist_tdef))
-            || (UTgetUnAliasedType (
-                  TYgetUserType (TYgetScalar (TYPEDEF_NTYPE (exist_tdef))))
-                != UTgetUnAliasedType (orig_udt))) {
+        if (exist_tdef == NULL || !TYPEDEF_ISALIAS (exist_tdef)
+            || UTgetUnAliasedType (
+                 TYgetUserType (TYgetScalar (TYPEDEF_NTYPE (exist_tdef))))
+                 != UTgetUnAliasedType (orig_udt)) {
             /*
              * as this is an alias, we set the declared type to
              * the original type.
@@ -914,15 +915,19 @@ DSimportTypedefByName (const char *name, const char *module)
             /*
              * construct the new typedef and mark it as an alias
              */
-            new_tdef
-              = TBmakeTypedef (STRcpy (TYPEDEF_NAME (orig_tdef)),
-                               NSdupNamespace (global.modulenamespace), alias, NULL);
+            new_tdef = TBmakeTypedef (STRcpy (TYPEDEF_NAME (orig_tdef)),
+                                      NSdupNamespace (global.modulenamespace),
+                                      STRcpy (TYPEDEF_COMPONENT (orig_tdef)), alias,
+                                      DUPdoDupTree (TYPEDEF_ARGS (orig_tdef)), NULL);
             TYPEDEF_ISALIAS (new_tdef) = TRUE;
 
             /*
              * we have to propagate the uniqueness property as well
              */
             TYPEDEF_ISUNIQUE (new_tdef) = TYPEDEF_ISUNIQUE (orig_tdef);
+
+            TYPEDEF_ISABSTRACT (new_tdef) = TYPEDEF_ISABSTRACT (orig_tdef);
+            TYPEDEF_ISBUILTIN (new_tdef) = TYPEDEF_ISBUILTIN (orig_tdef);
 
             /*
              * insert it into the state. we cannot use InsertIntoState here, as we

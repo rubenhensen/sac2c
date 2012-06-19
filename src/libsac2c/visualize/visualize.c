@@ -3631,100 +3631,6 @@ VISUALtfrel (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn node *VISUALtfrel (node *arg_node, info *arg_info)
- *
- * @brief visualise a tfrel
- *
- * @param arg_node tfrel node
- * @param arg_info info structure
- *
- * @return unmodified node
- ******************************************************************************/
-node *
-VISUALtfabs (node *arg_node, info *arg_info)
-{
-    char *node_name = giveNodeName (arg_node, arg_info);
-
-    DBUG_ENTER ();
-
-    // traver son nodes
-    TRAVopt (TFABS_ARGS (arg_node), arg_info);
-
-    // add edge between two nodes with lable
-
-    if (NULL != TFABS_ARGS (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s[label=Tfabs];\n%s -> %s [label=Args];\n",
-                 node_name, node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), TFABS_ARGS (arg_node)));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!-- ****************************************************************** -->
- * @fn node *VISUALtfusr (node *arg_node, info *arg_info)
- *
- * @brief visualise a tfusr
- *
- * @param arg_node tfusr node
- * @param arg_info info structure
- *
- * @return unmodified node
- ******************************************************************************/
-node *
-VISUALtfusr (node *arg_node, info *arg_info)
-{
-    char *node_name = giveNodeName (arg_node, arg_info);
-
-    DBUG_ENTER ();
-
-    // traver son nodes
-    TRAVopt (TFUSR_ARGS (arg_node), arg_info);
-
-    // add edge between two nodes with lable
-
-    if (NULL != TFUSR_ARGS (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s[label=Tfusr];\n%s -> %s [label=Args];\n",
-                 node_name, node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), TFUSR_ARGS (arg_node)));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!-- ****************************************************************** -->
- * @fn node *VISUALtfbin (node *arg_node, info *arg_info)
- *
- * @brief visualise a tfbin
- *
- * @param arg_node tfbin node
- * @param arg_info info structure
- *
- * @return unmodified node
- ******************************************************************************/
-
-node *
-VISUALtfbin (node *arg_node, info *arg_info)
-{
-    char *node_name = giveNodeName (arg_node, arg_info);
-
-    DBUG_ENTER ();
-
-    // traver son nodes
-    TRAVopt (TFBIN_ARGS (arg_node), arg_info);
-
-    // add edge between two nodes with lable
-
-    if (NULL != TFBIN_ARGS (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s[label=Tfbin];\n%s -> %s [label=Args];\n",
-                 node_name, node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), TFBIN_ARGS (arg_node)));
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!-- ****************************************************************** -->
  * @fn node *VISUALtfedge (node *arg_node, info *arg_info)
  *
  * @brief visualise a tfedge
@@ -3745,6 +3651,7 @@ VISUALtfedge (node *arg_node, info *arg_info)
     TRAVopt (TFEDGE_NEXT (arg_node), arg_info);
 
     // add edge between two nodes with lable
+
     if (NULL != TFEDGE_NEXT (arg_node)) {
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Next];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
@@ -3765,22 +3672,27 @@ VISUALtfedge (node *arg_node, info *arg_info)
  * @return unmodified node
  ******************************************************************************/
 node *
-VISUALtfarg (node *arg_node, info *arg_info)
+VISUALtypecomponentarg (node *arg_node, info *arg_info)
 {
-    char *node_name = giveNodeName (arg_node, arg_info);
-
     DBUG_ENTER ();
 
-    // traver son nodes
-    TRAVopt (TFARG_NEXT (arg_node), arg_info);
+#if 0
+  char *node_name = giveNodeName(arg_node, arg_info);
 
-    // add edge between two nodes with lable
+  //traver son nodes
+  TRAVopt( TFARG_NEXT (arg_node), arg_info);
 
-    if (NULL != TFARG_NEXT (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s[label=Tfarg];\n%s -> %s [label=Next];\n",
-                 node_name, node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), TFARG_NEXT (arg_node)));
-    }
+  //add edge between two nodes with lable
+
+  if (NULL != TFARG_NEXT (arg_node)){
+    fprintf( INFO_FILE( arg_info),
+            "%s[label=Tfarg];\n%s -> %s [label=Next];\n", node_name,
+            node_name, (char*) *LUTsearchInLutP( INFO_TABLE( arg_info),
+                                                TFARG_NEXT( arg_node)));
+  }
+#endif
+
+    fprintf (INFO_FILE (arg_info), "Typcomponent argument printing NOT IMPLEMENTED!\n");
 
     DBUG_RETURN (arg_node);
 }

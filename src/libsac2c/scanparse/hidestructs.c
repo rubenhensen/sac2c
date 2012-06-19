@@ -174,10 +174,11 @@ HSstructdef (node *arg_node, info *arg_info)
     /* Leaving the last arg as NULL for now is important because this node is
      * also copied by the getter/setter fundecs.
      */
-    typedef_ = TBmakeTypedef (STRcpy (sname), NULL,
-                              TYmakeAKS (TYmakeHiddenSimpleType (UT_NOT_DEFINED),
-                                         SHmakeShape (0)),
-                              NULL);
+    typedef_
+      = TBmakeTypedef (STRcpy (sname), NULL, STRcpy (global.default_component_name),
+                       TYmakeAKS (TYmakeHiddenSimpleType (UT_NOT_DEFINED),
+                                  SHmakeShape (0)),
+                       NULL, NULL);
     /* Store a reference to this structdef in the typedef. */
     TYPEDEF_STRUCTDEF (typedef_) = arg_node;
     /* Push the typedef on the module's typedef stack. */
@@ -283,7 +284,8 @@ HSstructelem (node *arg_node, info *arg_info)
     STRUCTELEM_TYPEDEF (arg_node)
       = TBmakeTypedef (STRcatn (4, STRUCT_ELEM, STRUCTDEF_NAME (structdef), "_",
                                 STRUCTELEM_NAME (arg_node)),
-                       NULL, TYcopyType (STRUCTELEM_TYPE (arg_node)),
+                       NULL, STRcpy (global.default_component_name),
+                       TYcopyType (STRUCTELEM_TYPE (arg_node)), NULL,
                        MODULE_TYPES (module));
     /* Store a pointer to this elem's structdef. */
     TYPEDEF_STRUCTDEF (STRUCTELEM_TYPEDEF (arg_node)) = structdef;

@@ -1004,12 +1004,16 @@ node *
 DUPtypedef (node *arg_node, info *arg_info)
 {
     node *new_node;
+    node *new_args;
 
     DBUG_ENTER ();
 
+    new_args = DUPTRAV (TYPEDEF_ARGS (arg_node));
+
     new_node = TBmakeTypedef (STRcpy (TYPEDEF_NAME (arg_node)),
                               NSdupNamespace (TYPEDEF_NS (arg_node)),
-                              TYcopyType (TYPEDEF_NTYPE (arg_node)),
+                              STRcpy (TYPEDEF_NAME (arg_node)),
+                              TYcopyType (TYPEDEF_NTYPE (arg_node)), new_args,
                               DUPCONT (TYPEDEF_NEXT (arg_node)));
 
     TYPEDEF_FLAGSTRUCTURE (new_node) = TYPEDEF_FLAGSTRUCTURE (arg_node);
@@ -3659,78 +3663,6 @@ DUPtfrel (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
-DUPtfabs (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ();
-
-    node *new_node;
-
-    new_node
-      = TBmakeTfabs (STRcpy (TFABS_TAG (arg_node)), DUPTRAV (TFABS_ARGS (arg_node)));
-
-    DBUG_RETURN (new_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *DUPtf( node *arg_node, info *arg_info)
- *
- *   @brief
- *
- *   @return
- *
- *****************************************************************************/
-
-node *
-DUPtfusr (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ();
-
-    node *new_node;
-
-    new_node
-      = TBmakeTfusr (STRcpy (TFUSR_TAG (arg_node)), DUPTRAV (TFUSR_ARGS (arg_node)));
-
-    DBUG_RETURN (new_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *DUPtf( node *arg_node, info *arg_info)
- *
- *   @brief
- *
- *   @return
- *
- *****************************************************************************/
-
-node *
-DUPtfbin (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ();
-
-    node *new_node;
-
-    new_node
-      = TBmakeTfbin (STRcpy (TFBIN_TAG (arg_node)), DUPTRAV (TFBIN_ARGS (arg_node)));
-
-    DBUG_RETURN (new_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *DUPtf( node *arg_node, info *arg_info)
- *
- *   @brief
- *
- *   @return
- *
- *****************************************************************************/
-
-node *
 DUPtfedge (node *arg_node, info *arg_info)
 {
 
@@ -3744,14 +3676,15 @@ DUPtfedge (node *arg_node, info *arg_info)
 }
 
 node *
-DUPtfarg (node *arg_node, info *arg_info)
+DUPtypecomponentarg (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
 
     node *new_node;
-    new_node = TBmakeTfarg (TFARG_TAG (arg_node), TFARG_TAGTYPE (arg_node),
-                            DUPCONT (TFARG_NEXT (arg_node)));
+    new_node = TBmakeTypecomponentarg (TYPECOMPONENTARG_TAG (arg_node),
+                                       TYPECOMPONENTARG_TAGTYPE (arg_node),
+                                       DUPCONT (TYPECOMPONENTARG_NEXT (arg_node)));
 
     DBUG_RETURN (new_node);
 }

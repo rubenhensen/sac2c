@@ -122,11 +122,8 @@ extern node *VISUALtfspec (node *arg_node, info *arg_info);
 extern node *VISUALtfcomponent (node *arg_node, info *arg_info);
 extern node *VISUALtfvertex (node *arg_node, info *arg_info);
 extern node *VISUALtfrel (node *arg_node, info *arg_info);
-extern node *VISUALtfabs (node *arg_node, info *arg_info);
-extern node *VISUALtfusr (node *arg_node, info *arg_info);
-extern node *VISUALtfbin (node *arg_node, info *arg_info);
 extern node *VISUALtfedge (node *arg_node, info *arg_info);
-extern node *VISUALtfarg (node *arg_node, info *arg_info);
+extern node *VISUALtypecomponentarg (node *arg_node, info *arg_info);
 extern node *VISUALtfexpr (node *arg_node, info *arg_info);
 //#endif
 

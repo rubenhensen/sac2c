@@ -3650,15 +3650,7 @@
       </target>
      </nodeset>
 
-     <nodeset name="Tfdefunion">
-      <target>
-        <node name="Tfusr" />
-        <node name="Tfbin" />
-        <node name="Tfabs" />
-      </target>
-     </nodeset>
-
-  </nodesets>
+   </nodesets>
   <syntaxtree version="1.0">
 <!--
 
@@ -4331,111 +4323,6 @@ N_tfexpr :
     </node>
 <!--
 
-N_tfabs :
-
--->
-    <node name="Tfabs">
-      <description>Abstract type family</description>
-      <attributes>
-        <attribute name="tag" default="NULL" inconstructor="yes">
-          <type name="String">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-      </attributes>
-      <sons>
-        <son name="Args">
-          <targets>
-            <target mandatory="no">
-              <node name="Tfarg" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-      </sons>
-      <flags/>
-    </node>
-<!--
-
-N_tfusr :
-
--->
-    <node name="Tfusr">
-      <description>User type family</description>
-      <attributes>
-        <attribute name="tag" default="NULL" inconstructor="yes">
-          <type name="String">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-      </attributes>
-      <sons>
-        <son name="Args">
-          <targets>
-            <target mandatory="no">
-              <node name="Tfarg" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-      </sons>
-      <flags/>
-    </node>
-<!--
-
-N_tfbin :
-
--->
-    <node name="Tfbin">
-      <description>Builtin type family</description>
-      <attributes>
-        <attribute name="tag" default="NULL" inconstructor="yes">
-          <type name="String">
-            <targets>
-              <target mandatory="yes">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-      </attributes>
-      <sons>
-        <son name="Args">
-          <targets>
-            <target mandatory="no">
-              <node name="Tfarg" />
-              <phases>
-                <all />
-              </phases>
-            </target>
-          </targets>
-        </son>
-      </sons>
-      <flags/>
-    </node>
-<!--
-
 N_tfedge :
 
 -->
@@ -4488,7 +4375,7 @@ N_tfedge :
 N_tfarg :
 
 -->
-    <node name="Tfarg">
+    <node name="TypeComponentArg">
       <description>Arguments to type families</description>
       <attributes>
         <attribute name="tag" default="NULL" inconstructor="yes">
@@ -4520,7 +4407,7 @@ N_tfarg :
         <son name="Next">
           <targets>
             <target mandatory="no">
-              <node name="Tfarg" />
+              <node name="TypeComponentArg" />
               <phases>
                 <all />
               </phases>
@@ -4538,6 +4425,16 @@ N_tfarg :
     <node name="Typedef">
       <description>definition of a user defined type</description>
       <sons>
+        <son name="Args">
+          <targets>
+            <target mandatory="no">
+              <node name="TypeComponentArg" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
         <son name="Next">
           <targets>
             <target mandatory="no">
@@ -4576,6 +4473,18 @@ N_tfarg :
                 <any />
                 <phases>
                   <range from="mod_ans" to="pc_rid" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+	<attribute name="Component" inconstructor="yes">
+          <type name="String">
+            <targets>
+              <target mandatory="yes">
+                <any />
+                <phases>
+                  <all />
                 </phases>
               </target>
             </targets>
@@ -4679,6 +4588,8 @@ N_tfarg :
         </attribute>
       </attributes>
       <flags>
+        <flag name="IsAbstract" />
+        <flag name="IsBuiltin" />
         <flag name="IsExported" />
         <flag name="IsProvided" />
         <flag name="IsLocal" default="TRUE"/>

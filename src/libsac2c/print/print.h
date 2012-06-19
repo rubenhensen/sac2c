@@ -159,7 +159,7 @@ extern node *PRTtfabs (node *arg_node, info *arg_info);
 extern node *PRTtfusr (node *arg_node, info *arg_info);
 extern node *PRTtfbin (node *arg_node, info *arg_info);
 extern node *PRTtfedge (node *arg_node, info *arg_info);
-extern node *PRTtfarg (node *arg_node, info *arg_info);
+extern node *PRTtypecomponentarg (node *arg_node, info *arg_info);
 extern node *PRTtfexpr (node *arg_node, info *arg_info);
 //#endif
 

@@ -179,6 +179,9 @@ GLOBAL (char *, target_name, "default", xfree_dummy)
  * name of target architecture selected by -target option
  */
 
+/* Default component name of the typedef node.  */
+GLOBAL (const char const *, default_component_name, "element", xfree_dummy)
+
 /*
  * Backend option
  */
@@ -419,8 +422,8 @@ GLOBAL (bool, cc_debug, FALSE, xfree_dummy)
 GLOBAL (int, cc_optimize, 3, xfree_dummy)
 #else  /* PRODUCTION */
 GLOBAL (int, cc_optimize, 0, xfree_dummy)
-#endif /* PRODUCTION */
-/* C compiler level of optimization */
+#endif /* PRODUCTION                                                                     \
+          C compiler level of optimization */
 
 /*
  * Optimization counters
@@ -677,9 +680,9 @@ GLOBAL (bool, sancheck, FALSE, xfree_dummy)
 #else  /* PRODUCTION */
 GLOBAL (bool, sancheck, FALSE, xfree_dummy)
 #endif /* PRODUCTION */
-/*
- * check syntax tree for structural consistency
- */
+       /*
+        * check syntax tree for structural consistency
+        */
 
 #ifdef SHOW_MALLOC
 GLOBAL (bool, memcheck, global.memcheck, xfree_dummy)
@@ -827,9 +830,9 @@ GLOBAL (int, verbose_level, 1, xfree_dummy)
 #else  /* PRODUCTION */
 GLOBAL (int, verbose_level, 3, xfree_dummy)
 #endif /* PRODUCTION */
-/*
- * Verbosity of compile time output
- */
+       /*
+        * Verbosity of compile time output
+        */
 
 GLOBAL (compiler_phase_t, compiler_phase, PH_initial, xfree_dummy)
 /*

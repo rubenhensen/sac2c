@@ -192,7 +192,8 @@ SetClassType (node *module, ntype *type, node *pragmas)
     DBUG_ENTER ();
 
     tdef = TBmakeTypedef (STRcpy (NSgetModule (MODULE_NAMESPACE (module))),
-                          NSdupNamespace (MODULE_NAMESPACE (module)), type,
+                          NSdupNamespace (MODULE_NAMESPACE (module)),
+                          STRcpy (global.default_component_name), type, NULL,
                           MODULE_TYPES (module));
 
     TYPEDEF_ISUNIQUE (tdef) = TRUE;
@@ -308,6 +309,21 @@ id_constructor (node *id, node *next)
     return TBmakeSpids (name, next);
 }
 #define handle_id_list(parser) handle_generic_list (parser, handle_id, id_constructor)
+
+/* Handle list of type components.  */
+static node *
+type_component_constructor (node *id, node *next)
+{
+    char *name;
+
+    assert (id && NODE_TYPE (id) == N_spid, 0);
+    name = strdup (SPID_NAME (id));
+    id = free_tree (id);
+
+    return TBmakeTypecomponentarg (name, NULL, next);
+}
+#define handle_typecomponent_list(parser)                                                \
+    handle_generic_list (parser, handle_id, id_constructor)
 
 /* Handle list of assigns.  */
 static node *
@@ -5096,24 +5112,40 @@ skip_error:
     return error_mark_node;
 }
 
-/* 'extern' 'typedef' id ';'
+/* 'extern' 'typedef' ( '[' id ']' )? id ';' ( pragmas )?     // External user-defined
+   type
    |
-   'typedef' type id ';'
+   'typedef' ( '[' id ']' )? type id ';'                      // User-defined type
+   |
+   'builtin' 'typedef' ( '[' id ']' )?  id ( id-list )?       // Component with params
+   |
+   'typedef' ( '[' id ']' )? id ';'                           // Abstract type definition.
 */
 node *
 handle_typedef (struct parser *parser)
 {
     struct token *tok;
     bool extern_p = false;
+    bool builtin_p = false;
     node *ret = error_mark_node;
     ntype *type = error_type_node;
     node *pragmas = NULL;
+    node *args = NULL;
     char *name = NULL;
+    char *component_name = NULL;
     struct known_symbol *ks;
 
     tok = parser_get_token (parser);
     if (token_is_keyword (tok, EXTERN)) {
         extern_p = true;
+        if (parser_expect_tval (parser, TYPEDEF))
+            parser_get_token (parser);
+        else {
+            parser_unget (parser);
+            goto skip_error;
+        }
+    } else if (token_is_keyword (tok, BUILTIN)) {
+        builtin_p = true;
         if (parser_expect_tval (parser, TYPEDEF))
             parser_get_token (parser);
         else {
@@ -5130,7 +5162,28 @@ handle_typedef (struct parser *parser)
         goto skip_error;
     }
 
-    if (!extern_p) {
+    /* Check if component name specified.  */
+    tok = parser_get_token (parser);
+    if (token_is_operator (tok, tv_lsquare)) {
+        if (parser_expect_tclass (parser, tok_id))
+            component_name = strdup (token_as_string (parser_get_token (parser)));
+        else {
+            parser_unget (parser);
+            goto skip_error;
+        }
+
+        if (parser_expect_tval (parser, tv_rsquare))
+            parser_get_token (parser);
+        else {
+            parser_unget (parser);
+            goto skip_error;
+        }
+    } else {
+        parser_unget (parser);
+        component_name = strdup (global.default_component_name);
+    }
+
+    if (!extern_p && !builtin_p && is_type (parser)) {
         type = handle_type (parser);
         if (type == error_type_node)
             goto skip_error;
@@ -5143,6 +5196,22 @@ handle_typedef (struct parser *parser)
     } else
         name = strdup (token_as_string (tok));
 
+    if (builtin_p) {
+        tok = parser_get_token (parser);
+        if (token_is_operator (tok, tv_lbrace)) {
+            parser_get_token (parser);
+            args = handle_typecomponent_list (parser);
+            if (args == error_mark_node)
+                goto skip_error;
+
+            if (parser_expect_tval (parser, tv_rbrace))
+                parser_get_token (parser);
+            else
+                goto skip_error;
+        } else
+            parser_unget (parser);
+    }
+
     if (parser_expect_tval (parser, tv_semicolon))
         parser_get_token (parser);
     else
@@ -5154,24 +5223,37 @@ handle_typedef (struct parser *parser)
             goto error;
     }
 
-    HASH_FIND_STR (parser->known_symbols, name, ks);
-    if (!ks) {
-        ks = (struct known_symbol *)malloc (sizeof (struct known_symbol));
-        ks->name = strdup (name);
-        ks->flags = 0;
-        symbol_set_type (ks);
-        HASH_ADD_KEYPTR (hh, parser->known_symbols, ks->name, strlen (ks->name), ks);
-    } else
-        symbol_set_type (ks);
+    /* If we have a typedef on default component, it should
+       be recognized as a valid type in the program.  */
+    if (!strcmp (component_name, global.default_component_name)) {
+        HASH_FIND_STR (parser->known_symbols, name, ks);
+        if (!ks) {
+            ks = (struct known_symbol *)malloc (sizeof (struct known_symbol));
+            ks->name = strdup (name);
+            ks->flags = 0;
+            symbol_set_type (ks);
+            HASH_ADD_KEYPTR (hh, parser->known_symbols, ks->name, strlen (ks->name), ks);
+        } else
+            symbol_set_type (ks);
+    }
 
     if (extern_p) {
         ntype *tt;
 
         tt = TYmakeAKS (TYmakeHiddenSimpleType (UT_NOT_DEFINED), SHmakeShape (0));
-        ret = TBmakeTypedef (name, NULL, tt, NULL);
+        ret = TBmakeTypedef (name, NULL, component_name, tt, NULL, NULL);
         TYPEDEF_PRAGMA (ret) = pragmas;
-    } else
-        ret = TBmakeTypedef (name, NULL, type, NULL);
+    } else {
+        ret = TBmakeTypedef (name, NULL, component_name, type, NULL, NULL);
+
+        if (builtin_p) {
+            TYPEDEF_ARGS (ret) = args;
+            TYPEDEF_ISBUILTIN (ret) = true;
+        }
+
+        if (type == NULL)
+            TYPEDEF_ISABSTRACT (ret) = true;
+    }
 
     return ret;
 
@@ -5179,8 +5261,13 @@ skip_error:
     parser_get_until_tval (parser, tv_semicolon);
 error:
     if (name)
-        MEMfree (name);
+        free (name);
+    if (component_name)
+        free (component_name);
+
     free_type (type);
+    free_tree (args);
+    free_tree (pragmas);
     return error_mark_node;
 }
 
