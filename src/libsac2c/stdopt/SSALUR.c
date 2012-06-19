@@ -86,7 +86,7 @@ static bool GetLoopIdentifiers (node *, node *, struct prf_expr_queue *,
 static bool IsLURModifier (node *, struct idx_vector *);
 static node *GetCallArg (node *, node *, node *);
 static bool GetConstantArg (node *, node *, node *, loopc_t *);
-static void GetPredicateData (node *, prf *, loopc_t *);
+static bool GetPredicateData (node *, prf *, loopc_t *);
 static node *UnrollLoopBody (node *, loopc_t);
 static node *CreateCopyAssigns (node *, node *);
 
@@ -945,10 +945,12 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
 
     /* Check the form of predicate.  */
     if (!CheckPredicateNF (expr, &cst_count, &cst_value)) {
-        DBUG_RETURN ((DBUG_PRINT ("un-unrollable predicate form"), UNR_NONE));
+        DBUG_RETURN ((DBUG_PRINT ("un-unrollable predicate expression"), UNR_NONE));
     }
 
-    GetPredicateData (predicate, &loop_pred, &term);
+    if (!GetPredicateData (predicate, &loop_pred, &term)) {
+        DBUG_RETURN ((DBUG_PRINT ("un-unrollable predicate"), UNR_NONE));
+    }
 
     switch (loop_pred) {
     case F_lt_SxS:
@@ -1141,14 +1143,14 @@ CalcUnrolling (node *predicate, node *expr, struct idx_vector_queue *ivs)
 
 /** <!--********************************************************************-->
  *
- * @fn static voidb GetPredicateData (node * expr, prf * pred, loopc_t * term)
+ * @fn static bool GetPredicateData (node * expr, prf * pred, loopc_t * term)
  *
  * @brief get prf and const from expression and adjust prf to the form:
  *              id <prf> const
  *        by inverting the comparison function if necessary.
  *
  ******************************************************************************/
-static void
+static bool
 GetPredicateData (node *expr, prf *pred, loopc_t *term)
 {
     node *arg1;
@@ -1170,12 +1172,14 @@ GetPredicateData (node *expr, prf *pred, loopc_t *term)
     if (!PMmatchFlat (PMconst (0, 0), arg1)) {
         /* first arg is identifier */
         if (!PMmatchFlat (pat, arg2)) {
-            DBUG_ASSERT (FALSE, "Constant not found where constant expected");
+            DBUG_PRINT ("Constant not found where constant expected");
+            DBUG_RETURN (FALSE);
         }
     } else {
         /* second arg is identifier */
         if (!PMmatchFlat (pat, arg1)) {
-            DBUG_ASSERT (FALSE, "Constant not found where constant expected");
+            DBUG_PRINT ("Constant not found where constant expected");
+            DBUG_RETURN (FALSE);
         }
 
         /* change prf to have normal form cond = id <prf> const */
@@ -1202,7 +1206,7 @@ GetPredicateData (node *expr, prf *pred, loopc_t *term)
 
     *term = (loopc_t)local_term;
 
-    DBUG_RETURN ();
+    DBUG_RETURN (TRUE);
 }
 
 /** <!--********************************************************************-->

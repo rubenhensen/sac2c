@@ -1994,7 +1994,6 @@
         <node name="Ap" />
         <node name="Block" />
         <node name="Cond" />
-        <node name="Funcond" />
   </travuser>
     </traversal>
     <traversal id="TDEPEND" name="Tag Dependencies" default="sons" include="tagdependencies.h" >
