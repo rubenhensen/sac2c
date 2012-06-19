@@ -1169,7 +1169,6 @@ typedef struct CUDA_ACCESS_INFO_T {
 
 typedef struct DAG dag;
 typedef struct VERTEX vertex;
-typedef struct EDGE edge;
 typedef bool (*idag_fun_t) (void *, void *);
 
 /******************************************************************************

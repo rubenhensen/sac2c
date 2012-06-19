@@ -10,7 +10,6 @@ typedef node idag;
 typedef node ivertex_fam;
 typedef node iedge_fam;
 typedef vertex ivertex;
-typedef edge iedge;
 
 extern idag *IDAGgenInfiniteGraph ();
 
@@ -22,10 +21,10 @@ extern ivertex_fam *IDAGaddVertexFamily (idag *g, idag_fun_t cmpfun);
 
 extern ivertex *IDAGregisterVertexFamilyMember (idag *g, ivertex_fam *vfam, void *param);
 
-extern iedge *IDAGaddEdge (idag *g, ivertex *from, ivertex *to);
+extern void IDAGaddEdge (idag *g, ivertex *from, ivertex *to);
 
-extern iedge_fam *IDAGaddEdgeFamily (idag *g, ivertex_fam *from, ivertex_fam *to,
-                                     idag_fun_t checkfun);
+extern void IDAGaddEdgeFamily (idag *g, ivertex_fam *from, ivertex_fam *to,
+                               idag_fun_t checkfun);
 
 extern ivertex *IDAGgetLub (idag *g, ivertex *from, ivertex *to);
 

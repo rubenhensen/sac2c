@@ -153,7 +153,7 @@ IDAGgetVertexAnnotation (idag *g, ivertex *from)
     DBUG_RETURN (DAGgetVertexAnnotation (IDAG_DAG (g), from));
 }
 
-iedge *
+void
 IDAGaddEdge (idag *g, ivertex *from, ivertex *to)
 {
     DBUG_ENTER ();
@@ -186,7 +186,6 @@ AddEdgesFrom (dag *g, vertex *from, node *from_efams)
     node *to_vs;
     vertex *to;
     idag_fun_t checkfun;
-    edge *e;
 
     DBUG_ENTER ();
 
@@ -197,7 +196,7 @@ AddEdgesFrom (dag *g, vertex *from, node *from_efams)
             to = IDAGVERTICES_VERTEX (to_vs);
             if (checkfun (DAGgetVertexAnnotation (g, from),
                           DAGgetVertexAnnotation (g, to))) {
-                e = DAGaddEdge (g, from, to);
+                DAGaddEdge (g, from, to);
             }
             to_vs = IDAGVERTICES_NEXT (to_vs);
         }
@@ -213,7 +212,6 @@ AddEdgesTo (dag *g, node *to_efams, vertex *to)
     node *from_vs;
     vertex *from;
     idag_fun_t checkfun;
-    edge *e;
 
     DBUG_ENTER ();
 
@@ -224,7 +222,7 @@ AddEdgesTo (dag *g, node *to_efams, vertex *to)
             from = IDAGVERTICES_VERTEX (from_vs);
             if (checkfun (DAGgetVertexAnnotation (g, from),
                           DAGgetVertexAnnotation (g, to))) {
-                e = DAGaddEdge (g, from, to);
+                DAGaddEdge (g, from, to);
             }
             from_vs = IDAGVERTICES_NEXT (from_vs);
         }
@@ -264,7 +262,6 @@ AddEdgesBetween (dag *g, node *froms, node *tos, idag_fun_t checkfun)
 {
     node *to_vs;
     vertex *from, *to;
-    edge *e;
 
     DBUG_ENTER ();
 
@@ -275,7 +272,7 @@ AddEdgesBetween (dag *g, node *froms, node *tos, idag_fun_t checkfun)
             to = IDAGVERTICES_VERTEX (to_vs);
             if (checkfun (DAGgetVertexAnnotation (g, from),
                           DAGgetVertexAnnotation (g, to))) {
-                e = DAGaddEdge (g, from, to);
+                DAGaddEdge (g, from, to);
             }
             to_vs = IDAGVERTICES_NEXT (to_vs);
         }
@@ -285,7 +282,7 @@ AddEdgesBetween (dag *g, node *froms, node *tos, idag_fun_t checkfun)
     DBUG_RETURN ();
 }
 
-iedge_fam *
+void
 IDAGaddEdgeFamily (idag *g, ivertex_fam *from, ivertex_fam *to, idag_fun_t checkfun)
 {
     node *efam;
@@ -303,5 +300,5 @@ IDAGaddEdgeFamily (idag *g, ivertex_fam *from, ivertex_fam *to, idag_fun_t check
     AddEdgesBetween (IDAG_DAG (g), IDAGVFAM_VERTICES (from), IDAGVFAM_VERTICES (to),
                      checkfun);
 
-    DBUG_RETURN (efam);
+    DBUG_RETURN ();
 }

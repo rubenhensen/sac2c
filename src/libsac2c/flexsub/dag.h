@@ -12,8 +12,7 @@ extern dag *DAGgenGraph ();
 extern vertex *DAGaddVertex (dag *g, void *annotation);
 extern void *DAGgetVertexAnnotation (dag *g, vertex *from);
 
-extern edge *DAGaddEdge (dag *g, vertex *from, vertex *to);
-extern void *DAGgetEdgeAnnotation (edge *e);
+extern void DAGaddEdge (dag *g, vertex *from, vertex *to);
 
 extern vertex *DAGgetLub (dag *g, vertex *from, vertex *to);
 
