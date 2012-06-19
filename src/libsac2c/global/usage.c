@@ -794,6 +794,7 @@ PrintPrintingOptions (void)
       "\n"
       "   -prtfunsets [aiudwp]+\n"
       "               Select different categories of funcion to print.\n"
+      "               Use in conjunction with -b \n"
       "               The following flags are supported:\n"
       "                 a: Print all function(same as iudwp).\n"
       "                 i: Print functions introduced by import statement.\n"
