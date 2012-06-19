@@ -202,7 +202,7 @@ struct INFO {
  * INFO functions
  */
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -773,6 +773,9 @@ CSEfundef (node *arg_node, info *arg_info)
     INFO_FUNDEF (arg_info) = arg_node;
     INFO_RESULTARG (arg_info) = NULL;
 
+    DBUG_PRINT ("Begin traversing %s %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                FUNDEF_NAME (arg_node));
     if (FUNDEF_BODY (arg_node) != NULL) {
         if (!FUNDEF_ISLACFUN (arg_node)) {
             /*
@@ -799,6 +802,10 @@ CSEfundef (node *arg_node, info *arg_info)
             n = ARG_NEXT (n);
         }
     }
+
+    DBUG_PRINT ("Done traversing %s %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                FUNDEF_NAME (arg_node));
 
     if (!FUNDEF_ISLACFUN (arg_node)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
