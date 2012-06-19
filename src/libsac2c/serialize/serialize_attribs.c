@@ -52,7 +52,7 @@
  ***************************************************************************/
 
 void
-SATserializeIdagFun (info *info, idag_fun_t *attr, node *parent)
+SATserializeIdagFun (info *info, idag_fun_t attr, node *parent)
 {
     DBUG_ENTER ();
 

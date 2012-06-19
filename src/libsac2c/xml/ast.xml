@@ -2,7 +2,7 @@
 <!-- $Id$ -->
 <definition>
   <attributetypes>
-    <type name="IdagFun" ctype="idag_fun_t*" init="NULL"
+    <type name="IdagFun" ctype="idag_fun_t " init="NULL"
     copy="function" />
     <type name="Vertex" ctype="vertex*" init="NULL"
     copy="function" />
@@ -11878,7 +11878,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes>
-        <attribute name="Dag">
+        <attribute name="Dag" inconstructor="yes">
           <type name="Dag">
             <targets>
               <target mandatory="yes">
@@ -12000,7 +12000,7 @@ N_tfarg :
         </son>
       </sons>
       <attributes>
-        <attribute name="Checkfun">
+        <attribute name="Checkfun" inconstructor="yes">
           <type name="IdagFun">
             <targets>
               <target mandatory="yes">

@@ -33,8 +33,8 @@
  * @return NULL
  *
  ***************************************************************************/
-idag_fun_t *
-CHKMattribIdagFun (idag_fun_t *attr, info *arg_info)
+idag_fun_t
+CHKMattribIdagFun (idag_fun_t attr, info *arg_info)
 {
     DBUG_ENTER ();
 
