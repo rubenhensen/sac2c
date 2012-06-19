@@ -802,18 +802,17 @@ PrintPrintingOptions (void)
       "                 d: Print local-defined functions.\n"
       "                 w: Print wrapper functions.\n"
       "                 p: Print prelude functions.\n"
-
       "\n"
-      "    -printphasefun <start>/<end>/<fun_name> \n"
-      "               Displays the state of functions that match the name <fun_name>\n"
-      "               at each step between the <start> and after <end> phases.\n"
-      "               <start> and <end> phases can be expressed: \n"
-      "                 <phase>:<subphase>:<cyclephase>\n"
-      "               At the current stage of implementation files will be generated\n"
-      "               in the form a.out.<phase> unless the user specifies -o <filename>\n"
-      "               in which case the files will be <filename>.<phase>\n"
-      "               this also means the user can specify a sub-directory for these "
-      "files i.e. -o foo/bar\n");
+      "    -printstart <phase_id> [-printstop <phase_id>]\n"
+      "               Will report end of phase output to files in the format\n"
+      "               a.out.<phase_id> unless -o <outfilename> option is specified"
+      "               in which case the output file format will be\n"
+      "               <outfilename>.<phase_id>\n"
+      "\n"
+      "     -printstop <phase_id> "
+      "               if this option is used printing will stop at this"
+      "               phase whilst compilation will continue until completion"
+      "               unless -b is used.\n");
 
     DBUG_RETURN ();
 }
