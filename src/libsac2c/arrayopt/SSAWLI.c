@@ -675,7 +675,6 @@ CreateIndexInfoA (node *prfn, info *arg_info)
 node *
 WLIfundef (node *arg_node, info *arg_info)
 {
-    bool old_onefundef;
     bool old_localfun;
     DBUG_ENTER ();
 
@@ -692,22 +691,17 @@ WLIfundef (node *arg_node, info *arg_info)
         FUNDEF_ASSIGNS (arg_node) = TRAVdo (FUNDEF_ASSIGNS (arg_node), arg_info);
     }
 
-    old_onefundef = INFO_ONEFUNDEF (arg_info);
-    INFO_ONEFUNDEF (arg_info) = FALSE;
     old_localfun = INFO_LOCALFUN (arg_info);
     INFO_LOCALFUN (arg_info) = TRUE;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     INFO_LOCALFUN (arg_info) = old_localfun;
-    INFO_ONEFUNDEF (arg_info) = old_onefundef;
 
     if (!INFO_LOCALFUN (arg_info)) {
         DBUG_ASSERT (INFO_PMLUT (arg_info) != NULL, "pattern matching lut got lost!");
         INFO_PMLUT (arg_info) = LUTremoveLut (INFO_PMLUT (arg_info));
     }
 
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
