@@ -19,6 +19,5 @@ node *PETLfundef (node *arg_node, info *arg_info);
 node *PETLap (node *arg_node, info *arg_info);
 node *PETLblock (node *arg_node, info *arg_info);
 node *PETLcond (node *arg_node, info *arg_info);
-node *PETLfuncond (node *arg_node, info *arg_info);
 
 #endif /* _SAC_PROPAGATE_EXTREMA_THRU_LACFUNS_H_ */

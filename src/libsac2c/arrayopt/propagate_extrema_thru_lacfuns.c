@@ -79,6 +79,7 @@
 #include "indexvectorutils.h"
 #include "propagate_extrema_thru_lacfuns.h"
 #include "eliminate_duplicate_fundef_args.h"
+#include "ivextrema.h"
 
 /*
  * INFO structure
@@ -91,6 +92,8 @@ struct INFO {
     node *newouterapargs;
     node *outerfunap;
     node *lacfun;
+    node *vardecs;
+    node *preassigns;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
@@ -100,9 +103,11 @@ struct INFO {
 #define INFO_NEWOUTERAPARGS(n) (n->newouterapargs)
 #define INFO_OUTERFUNAP(n) (n->outerfunap)
 #define INFO_LACFUN(n) (n->lacfun)
+#define INFO_VARDECS(n) (n->vardecs)
+#define INFO_PREASSIGNS(n) (n->preassigns)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -116,6 +121,8 @@ MakeInfo ()
     INFO_NEWOUTERAPARGS (result) = NULL;
     INFO_OUTERFUNAP (result) = NULL;
     INFO_LACFUN (result) = NULL;
+    INFO_VARDECS (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -260,13 +267,20 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
 
 /**<!--***********************************************************************-->
  *
- * @fn node *EnhanceLacfunBody( node *arg_node, info *arg_info)
+ * @fn node *EnhanceLacfunBody( node *arg_node, info *arg_info, bool markhas)
  *
  * @brief Add F_noteminval/maxval for affected arguments.
  *        Perform renames in code block for noteminval/maxval'd arguments.
  *
  * @param  arg_node: N_block in lacfun that will have notes
  *         prepended to it.
+ *         arg_info: as usual
+ *         markhas: Conditional marking of FUNDEF_ARG avis nodes having
+ *                  desired extrema. This is needed because we
+ *                  have to traverse both branches of conditionals,
+ *                  and we need a way to tell which FUNDEF_ARG nodes
+ *                  need to be dealt with.
+ *
  *
  * @result: updated N_block node
  *
@@ -298,60 +312,70 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
  *        by the need to introduce noteminval/maxval in both legs of a CONDFUN,
  *        with different (SSA) lhs names.
  *
+ *   We make a pass over the formal arguments to the LACFUN,
+ *   and operate on those elements that have non-NULL extrema,
+ *   due to insertion by EnhanceLacfunHeader, but are not yet
+ *   marked as having extrema..
+ *
  ******************************************************************************/
 static node *
-EnhanceLacfunBody (node *arg_node, info *arg_info)
+EnhanceLacfunBody (node *arg_node, info *arg_info, bool markhas)
 {
     DBUG_ENTER ();
-#ifdef FIXME // to be coded
-    node *apargs;
     node *lacfunargs;
-    node *newargs = NULL;
-    node *newavis;
-    node *callarg;
-    node *minmax;
     node *argavis;
-    node *rca;
-    ntype *typ;
+    node *avisp;
+    node *minmax;
+    node *lacfun;
 
     DBUG_PRINT ("Enhancing LACFUN %s body", FUNDEF_NAME (INFO_FUNDEF (arg_info)));
     DBUG_ASSERT (N_block == NODE_TYPE (arg_node), "Expected N_block");
 
+    DBUG_ASSERT (NULL == INFO_PREASSIGNS (arg_info), "PREASSIGNS not NULL!");
     LUTremoveContentLut (INFO_LUTRENAMES (arg_info));
-    apargs = AP_ARGS (INFO_OUTERFUNAP (arg_info));         /* outer call */
-    lacfunargs = FUNDEF_ARGS (INFO_FUNDEF (arg_info));     /* lacfun formal parameters */
-    rca = FUNDEF_LOOPRECURSIVEAP (INFO_FUNDEF (arg_info)); /* recursive call args */
-    rca = (NULL != rca) ? AP_ARGS (rca) : NULL;
+    lacfunargs = FUNDEF_ARGS (INFO_FUNDEF (arg_info));
+    /* Build new assigns to formally attached extrema to args */
+    while (NULL != lacfunargs) {
+        argavis = ARG_AVIS (lacfunargs);
 
-    /* Build new assigns */
-    while (NULL != apargs) {
-        callarg = EXPRS_EXPR (apargs);
-        argavis = ID_AVIS (callarg);
-        if (EDFAisLoopFunInvariant (INFO_FUNDEF (arg_info), lacfunargs, rca)) {
-            if ((NULL == AVIS_MIN (ARG_AVIS (lacfunargs)))
-                && (NULL != AVIS_MIN (argavis))) {
-                minmax = AVIS_MIN (ID_AVIS (callarg));
-                typ = AVIS_TYPE (ID_AVIS (callarg));
-                newavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (callarg))),
-                                      TYcopyType (typ));
-                newargs = TBmakeArg (newavis, newargs);
-            }
-            if ((NULL == AVIS_MAX (ARG_AVIS (lacfunargs)))
-                && (NULL != AVIS_MAX (argavis))) {
-                minmax = AVIS_MAX (ID_AVIS (callarg));
-                typ = AVIS_TYPE (ID_AVIS (callarg));
-                newavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (callarg))),
-                                      TYcopyType (typ));
-                newargs = TBmakeArg (newavis, newargs);
-            }
+        if ((NULL != AVIS_MIN (argavis)) && /* Insert AVIS_MIN */
+            (!AVIS_HASMINVALARG (argavis))) {
+            minmax = ID_AVIS (AVIS_MIN (argavis));
+            avisp = IVEXIattachExtrema (minmax, argavis, &INFO_VARDECS (arg_info),
+                                        &INFO_PREASSIGNS (arg_info), F_noteminval);
+            LUTinsertIntoLutP (INFO_LUTRENAMES (arg_info), argavis, avisp);
+            DBUG_PRINT ("Adding AVIS_MIN(%s)=%s to formal parameter %s",
+                        AVIS_NAME (avisp), AVIS_NAME (minmax), AVIS_NAME (argavis));
+            AVIS_HASMINVALARG (argavis) = markhas;
         }
-        apargs = EXPRS_NEXT (apargs);
+
+        if ((NULL != AVIS_MAX (argavis)) && /* Insert AVIS_MAX */
+            (!AVIS_HASMAXVALARG (argavis))) {
+            minmax = ID_AVIS (AVIS_MAX (argavis));
+            avisp = IVEXIattachExtrema (minmax, argavis, &INFO_VARDECS (arg_info),
+                                        &INFO_PREASSIGNS (arg_info), F_notemaxval);
+            LUTinsertIntoLutP (INFO_LUTRENAMES (arg_info), argavis, avisp);
+            DBUG_PRINT ("Adding AVIS_MAX(%s)=%s to formal parameter %s",
+                        AVIS_NAME (avisp), AVIS_NAME (minmax), AVIS_NAME (argavis));
+            AVIS_HASMAXVALARG (argavis) = markhas;
+        }
         lacfunargs = ARG_NEXT (lacfunargs);
     }
-    /* Rename block references to old N_arg names */
-    arg_node = DUPdoDupNodeLut (arg_node, INFO_LUTRENAMES (arg_info));
 
-#endif //  FIXME // to be coded
+    /* Rename block references from old N_arg names to new ones */
+    arg_node = DUPdoDupNodeLut (arg_node, INFO_LUTRENAMES (arg_info));
+    BLOCK_ASSIGNS (arg_node)
+      = TCappendAssign (INFO_PREASSIGNS (arg_info), BLOCK_ASSIGNS (arg_node));
+    INFO_PREASSIGNS (arg_info) = NULL;
+    lacfun = INFO_FUNDEF (arg_info);
+    if (FUNDEF_ISLOOPFUN (lacfun)) {
+        FUNDEF_LOOPRECURSIVEAP (lacfun)
+          = LUTsearchInLutPp (INFO_LUTRENAMES (arg_info),
+                              FUNDEF_LOOPRECURSIVEAP (lacfun));
+    }
+
+    LUTremoveContentLut (INFO_LUTRENAMES (arg_info));
+
     DBUG_RETURN (arg_node);
 }
 /** <!--********************************************************************-->
@@ -460,6 +484,12 @@ PETLfundef (node *arg_node, info *arg_info)
         INFO_NEWARGS (arg_info) = NULL;
     }
 
+    if (NULL != INFO_VARDECS (arg_info)) {
+        FUNDEF_VARDECS (arg_node)
+          = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDECS (arg_node));
+        INFO_VARDECS (arg_info) = NULL;
+    }
+
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
@@ -495,7 +525,7 @@ PETLblock (node *arg_node, info *arg_info)
             arg_node = TRAVcont (arg_node, arg_info); /* Dig deeper for then/else */
         } else {                                      /* This is a loopfun */
             DBUG_ASSERT (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)), "Expected LOOPFUN");
-            arg_node = EnhanceLacfunBody (arg_node, arg_info);
+            arg_node = EnhanceLacfunBody (arg_node, arg_info, TRUE);
             arg_node = TRAVcont (arg_node, arg_info); /* Fix outer call */
         }
     } else {
@@ -582,35 +612,8 @@ PETLcond (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if ((NULL != INFO_LACFUN (arg_info))) {
-        COND_THEN (arg_node) = EnhanceLacfunBody (COND_THEN (arg_node), arg_info);
-        COND_ELSE (arg_node) = EnhanceLacfunBody (COND_ELSE (arg_node), arg_info);
-    } else {
-        arg_node = TRAVcont (arg_node, arg_info); /* Vanilla traversal */
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *PETLfuncond( node *arg_node, info *arg_info)
- *
- * @brief Essentially identical to cond.
- *
- * @param arg_node N_funcond node
- * @param arg_info
- *
- * @result arg_node, updated
- *
- *****************************************************************************/
-node *
-PETLfuncond (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if ((NULL != INFO_LACFUN (arg_info))) {
-        FUNCOND_THEN (arg_node) = EnhanceLacfunBody (FUNCOND_THEN (arg_node), arg_info);
-        FUNCOND_ELSE (arg_node) = EnhanceLacfunBody (FUNCOND_ELSE (arg_node), arg_info);
+        COND_THEN (arg_node) = EnhanceLacfunBody (COND_THEN (arg_node), arg_info, FALSE);
+        COND_ELSE (arg_node) = EnhanceLacfunBody (COND_ELSE (arg_node), arg_info, TRUE);
     } else {
         arg_node = TRAVcont (arg_node, arg_info); /* Vanilla traversal */
     }
