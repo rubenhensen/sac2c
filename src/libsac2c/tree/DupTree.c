@@ -3613,6 +3613,28 @@ DUPtfspec (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 node *
+DUPtfdag (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ();
+
+    node *new_node;
+    new_node = TBmakeTfdag (DUPTRAV (TFSPEC_DEFS (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *DUPtf( node *arg_node, info *arg_info)
+ *
+ *   @brief
+ *
+ *   @return
+ *
+ *****************************************************************************/
+
+node *
 DUPtfvertex (node *arg_node, info *arg_info)
 {
 

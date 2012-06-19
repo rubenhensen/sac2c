@@ -122,7 +122,7 @@ TFRCHdoReachabilityAnalysis (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TFRCHtfspec( node *arg_node, info *arg_info)
+ * @fn node *TFRCHtfdag( node *arg_node, info *arg_info)
  *
  *   @brief
  *   We loop through the defs in the type family specifications to
@@ -136,40 +136,26 @@ TFRCHdoReachabilityAnalysis (node *syntax_tree)
  *****************************************************************************/
 
 node *
-TFRCHtfspec (node *arg_node, info *arg_info)
+TFRCHtfdag (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
 
     node *defs;
+    compinfo *ci;
 
-    int component = 0;
+    ci = TFDAG_INFO (arg_node);
+    defs = TFDAG_DEFS (arg_node);
 
-    defs = TFSPEC_DEFS (arg_node);
+    if (ci != NULL && COMPINFO_TLTABLE (ci) != NULL) {
 
-    while (defs != NULL) {
+        INFO_TOTALCOLS (arg_info) = DYNARRAY_TOTALELEMS (COMPINFO_CSRC (ci));
+        INFO_CSRC (arg_info) = COMPINFO_CSRC (ci);
+        INFO_CTAR (arg_info) = COMPINFO_CTAR (ci);
+        INFO_ESTACK (arg_info) = MEMmalloc (sizeof (elemstack *));
+        INFO_COLLABEL (arg_info) = 0;
 
-        if (TFVERTEX_PARENTS (defs) == NULL) {
-
-            component++;
-
-            if (TFSPEC_INFO (arg_node)[component - 1] != NULL
-                && COMPINFO_TLTABLE (TFSPEC_INFO (arg_node)[component - 1]) != NULL) {
-
-                INFO_TOTALCOLS (arg_info) = DYNARRAY_TOTALELEMS (
-                  COMPINFO_CSRC (TFSPEC_INFO (arg_node)[component - 1]));
-                INFO_CSRC (arg_info)
-                  = COMPINFO_CSRC (TFSPEC_INFO (arg_node)[component - 1]);
-                INFO_CTAR (arg_info)
-                  = COMPINFO_CTAR (TFSPEC_INFO (arg_node)[component - 1]);
-                INFO_ESTACK (arg_info) = MEMmalloc (sizeof (elemstack *));
-                INFO_COLLABEL (arg_info) = 0;
-
-                TRAVdo (defs, arg_info);
-            }
-        }
-
-        defs = TFVERTEX_NEXT (defs);
+        TRAVdo (TFDAG_ROOT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);

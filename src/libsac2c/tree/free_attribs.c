@@ -917,13 +917,13 @@ FREEattribIndexInfo (index_info *attr, node *parent)
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
-compinfo **
-FREEattribCompInfoArr (compinfo **attr, node *parent)
+compinfo *
+FREEattribCompInfo (compinfo *attr, node *parent)
 {
 
     DBUG_ENTER ();
 
-    attr = freeCompInfoArr (attr, TFSPEC_NUMCOMP (parent));
+    attr = freeCompInfo (attr);
 
     DBUG_RETURN (attr);
 }

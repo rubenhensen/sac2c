@@ -13,7 +13,7 @@
 #include "types.h"
 
 extern node *TFCTRdoCrossClosure (node *arg_node);
-extern node *TFCTRtfspec (node *arg_node, info *arg_info);
+extern node *TFCTRtfdag (node *arg_node, info *arg_info);
 extern node *TFCTRtfvertex (node *arg_node, info *arg_info);
 
 #endif

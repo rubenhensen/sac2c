@@ -85,7 +85,7 @@
     copy="literal" persist="yes" />
     <type name="CompilerPhase" ctype="compiler_phase_t" init="PH_initial"
     copy="literal" />
-    <type name="CompInfoArr" ctype="compinfo**" init="NULL"
+    <type name="CompInfo" ctype="compinfo*" init="NULL"
     copy="function" />
     <type name="OmpOP" ctype="omp_reduction_op" init="OMP_REDUCTION_NONE"
     copy="literal" />
@@ -138,37 +138,37 @@
       </traversal>
       <traversal id="TFTOP" name="Do a topological sort of the subtyping hierarchy" default="sons" include="topo.h" >
         <travuser>
-          <node name="Tfspec" />
+          <node name="Tfdag" />
           <node name="Tfvertex" />
         </travuser>
       </traversal>
       <traversal id="TFMIN" name="Computing the minimum equivalent graph" default="sons" include="mineq.h" >
         <travuser>
-          <node name="Tfspec" />
+          <node name="Tfdag" />
           <node name="Tfvertex" />
         </travuser>
       </traversal>
       <traversal id="TFDFW" name="Do a depth first walk of the subtyping hierarchy" default="sons" include="dfwalk.h" >
         <travuser>
-          <node name="Tfspec" />
+          <node name="Tfdag" />
           <node name="Tfvertex" />
         </travuser>
       </traversal>
       <traversal id="TFCTR" name="Classify edges and build cross-edge based reachability information" default="sons" include="ctransitive.h" >
         <travuser>
-          <node name="Tfspec" />
+          <node name="Tfdag" />
           <node name="Tfvertex" />
         </travuser>
       </traversal>
       <traversal id="TFRCH" name="Build link count matrix and label vertices for reachability analysis" default="sons" include="reachlabel.h" >
         <travuser>
-          <node name="Tfspec" />
+          <node name="Tfdag" />
           <node name="Tfvertex" />
         </travuser>
       </traversal>
       <traversal id="TFPLB" name="Preprocess subtyping graph for LUB queries" default="sons" include="lub.h" >
         <travuser>
-          <node name="Tfspec" />
+          <node name="Tfdag" />
           <node name="Tfvertex" />
         </travuser>
       </traversal>
@@ -3903,30 +3903,6 @@ N_tfspec :
       Declaration of type families and relations
       </description>
       <attributes>
-        <attribute name="NumComp" inconstructor="no">
-          <type name="Integer">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
-        <attribute name="Info" default="NULL" inconstructor="no">
-          <type name="CompInfoArr">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <all />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
       </attributes>
       <sons>
         <son name="Defs">
@@ -3943,6 +3919,55 @@ N_tfspec :
           <targets>
             <target mandatory="yes">
               <node name="Tfrel" />
+              <phases>
+                <all />
+              </phases>
+            </target>
+          </targets>
+        </son>
+      </sons>
+      <flags/>
+    </node>
+<!--
+
+N_tfdag :
+
+-->
+    <node name="Tfdag">
+      <description>
+      Type hierarchy DAG
+      </description>
+      <attributes>
+        <attribute name="Root" default="NULL" inconstructor="no">
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <node name="Tfvertex" />
+                <phases>
+                  <all/>
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Info" default="NULL" inconstructor="no">
+          <type name="CompInfo">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+      </attributes>
+      <sons>
+        <son name="Defs">
+          <targets>
+            <target mandatory="yes">
+              <node name="Tfvertex" />
               <phases>
                 <all />
               </phases>

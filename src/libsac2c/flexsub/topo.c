@@ -107,7 +107,7 @@ TFTOPdoTopoSort (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TFTOPtfspec( node *arg_node, info *arg_info)
+ * @fn node *TFTOPtfdag( node *arg_node, info *arg_info)
  *
  *   @brief
  *   We loop through the defs in the type family specifications to
@@ -122,67 +122,13 @@ TFTOPdoTopoSort (node *syntax_tree)
  *
  *****************************************************************************/
 node *
-TFTOPtfspec (node *arg_node, info *arg_info)
+TFTOPtfdag (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
 
-    node *defs;
-
-    int currsize;
-
-    defs = TFSPEC_DEFS (arg_node);
-
-    /*
-     * First label nodes for tree reachability
-     */
-
-    while (defs != NULL) {
-        if (TFVERTEX_PARENTS (defs) == NULL) {
-            /*
-             * Here could be the start of a potentially new type
-             * component since we have multiple components in a type.
-             *
-             * For example, \alpha and [*] both require a fresh depth first
-             * walk.
-             *
-             * TODO: Ensure that there are no multi-head DAGs
-             */
-
-            currsize = ++TFSPEC_NUMCOMP (arg_node);
-
-            void *_cinfo
-              = MEMrealloc (TFSPEC_INFO (arg_node), currsize * sizeof (compinfo *),
-                            (currsize - 1) * sizeof (compinfo *));
-
-            if (!_cinfo) {
-                CTIabort (
-                  "Memory reallocation error in transitive link table construction!\n");
-            }
-
-            MEMfree (TFSPEC_INFO (arg_node));
-
-            TFSPEC_INFO (arg_node) = (compinfo **)_cinfo;
-            TFSPEC_INFO (arg_node)[currsize - 1] = MEMmalloc (sizeof (compinfo));
-
-            if (INFO_TOPO (arg_info) != 1) {
-                INFO_TOPO (arg_info) = 1;
-            }
-
-            TRAVdo (defs, arg_info);
-
-            /*
-             * Store the topologically sorted list in the Tfspec node now.
-             */
-
-            COMPINFO_TOPOLIST (TFSPEC_INFO (arg_node)[currsize - 1])
-              = INFO_HEAD (arg_info);
-
-            INFO_HEAD (arg_info) = NULL;
-        }
-
-        defs = TFVERTEX_NEXT (defs);
-    }
+    TRAVdo (TFDAG_ROOT (arg_node), arg_info);
+    COMPINFO_TOPOLIST (TFDAG_INFO (arg_node)) = INFO_HEAD (arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -3518,6 +3518,37 @@ VISUALfunbundle (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *VISUALtfdag (node *arg_node, info *arg_info)
+ *
+ * @brief visualise a tfdag
+ *
+ * @param arg_node Ltfdag node
+ * @param arg_info info structure
+ *
+ * @return unmodified node
+ ******************************************************************************/
+
+node *
+VISUALtfdag (node *arg_node, info *arg_info)
+{
+    char *node_name = giveNodeName (arg_node, arg_info);
+
+    DBUG_ENTER ();
+
+    // traver son nodes
+    TRAVdo (TFSPEC_DEFS (arg_node), arg_info);
+    TRAVdo (TFSPEC_RELS (arg_node), arg_info);
+
+    // add edge between two nodes with lable
+
+    fprintf (INFO_FILE (arg_info), "%s[label=Tfdag];\n%s -> %s [label=Defs];\n",
+             node_name, node_name,
+             (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), TFSPEC_DEFS (arg_node)));
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *VISUALtfspec (node *arg_node, info *arg_info)
  *
  * @brief visualise a tfsepc

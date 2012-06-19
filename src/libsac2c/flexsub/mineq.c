@@ -59,7 +59,7 @@ TFMINdoReduceTFGraph (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TFMINtfspec( node *arg_node, info *arg_info)
+ * @fn node *TFMINtfdag( node *arg_node, info *arg_info)
  *
  *   @brief  For each vertex sorted in topological order, run the TFMINtfvertex
  *   function
@@ -70,29 +70,19 @@ TFMINdoReduceTFGraph (node *syntax_tree)
  *
  *****************************************************************************/
 node *
-TFMINtfspec (node *arg_node, info *arg_info)
+TFMINtfdag (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
 
     nodelist *nl;
-    int i;
+    compinfo *ci = TFDAG_INFO (arg_node);
 
-    if (TFSPEC_INFO (arg_node) != NULL) {
-
-        for (i = 0; i < TFSPEC_NUMCOMP (arg_node); i++) {
-
-            if (TFSPEC_INFO (arg_node)[i] != NULL) {
-
-                if (COMPINFO_TOPOLIST (TFSPEC_INFO (arg_node)[i]) != NULL) {
-                    nl = COMPINFO_TOPOLIST (TFSPEC_INFO (arg_node)[i]);
-
-                    while (nl != NULL) {
-                        TRAVdo (NODELIST_NODE (nl), arg_info);
-                        nl = NODELIST_NEXT (nl);
-                    }
-                }
-            }
+    if (ci != NULL) {
+        nl = COMPINFO_TOPOLIST (ci);
+        while (nl != NULL) {
+            TRAVdo (NODELIST_NODE (nl), arg_info);
+            nl = NODELIST_NEXT (nl);
         }
     }
 

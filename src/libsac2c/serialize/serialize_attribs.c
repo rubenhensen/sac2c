@@ -1272,7 +1272,7 @@ SATserializeCompilerPhase (info *info, compiler_phase_t attr, node *parent)
 
 /** <!--******************************************************************-->
  *
- * @fn SATserializeCompInfoArr
+ * @fn SATserializeCompInfo
  *
  * @brief generates code to serialize the given attribute
  *
@@ -1283,7 +1283,7 @@ SATserializeCompilerPhase (info *info, compiler_phase_t attr, node *parent)
  ***************************************************************************/
 
 void
-SATserializeCompInfoArr (info *info, compinfo **attr, node *parent)
+SATserializeCompInfo (info *info, compinfo *attr, node *parent)
 {
     DBUG_ENTER ();
 

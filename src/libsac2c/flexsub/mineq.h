@@ -13,7 +13,7 @@
 #include "types.h"
 
 extern node *TFMINdoReduceTFGraph (node *arg_node);
-extern node *TFMINtfspec (node *arg_node, info *arg_info);
+extern node *TFMINtfdag (node *arg_node, info *arg_info);
 extern node *TFMINtfvertex (node *arg_node, info *arg_info);
 
 #endif /* _MINEQ_H_ */

@@ -177,6 +177,7 @@ extern node *DUPtreeTravPost (node *arg_node, info *arg_info);
 
 //#ifdef NTFSANTANU
 extern node *DUPtfspec (node *arg_node, info *arg_info);
+extern node *DUPtfdag (node *arg_node, info *arg_info);
 extern node *DUPtfcomponent (node *arg_node, info *arg_info);
 extern node *DUPtfvertex (node *arg_node, info *arg_info);
 extern node *DUPtfrel (node *arg_node, info *arg_info);

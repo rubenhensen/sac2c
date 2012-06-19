@@ -78,7 +78,7 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TFCTRdoClassifyEdges( node *syntax_tree)
+ * @fn node *TFCTRdoClassifyEdges( node *dag)
  *
  *   @brief  Inits the traversal for this phase
  *
@@ -87,7 +87,7 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 node *
-TFCTRdoCrossClosure (node *syntax_tree)
+TFCTRdoCrossClosure (node *dag)
 {
     info *arg_info;
 
@@ -97,20 +97,18 @@ TFCTRdoCrossClosure (node *syntax_tree)
 
     TRAVpush (TR_tfctr);
 
-    syntax_tree = TRAVdo (syntax_tree, arg_info);
+    dag = TRAVdo (dag, arg_info);
 
     arg_info = FreeInfo (arg_info);
 
-    DBUG_RETURN (syntax_tree);
+    DBUG_RETURN (dag);
 }
 
 /** <!--********************************************************************-->
  *
- * @fn node *TFCTRtfspec( node *arg_node, info *arg_info)
+ * @fn node *TFCTRtfdag( node *arg_node, info *arg_info)
  *
  *   @brief
- *   We loop through the defs in the type family specifications to
- *   identify any potential apex nodes.
  *
  *   @param arg_node
  *   @param arg_info
@@ -119,72 +117,46 @@ TFCTRdoCrossClosure (node *syntax_tree)
  *
  *****************************************************************************/
 node *
-TFCTRtfspec (node *arg_node, info *arg_info)
+TFCTRtfdag (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
-
-    node *defs;
-    int compidx = 0;
     compinfo *ci;
 
-    defs = TFSPEC_DEFS (arg_node);
+    TRAVdo (TFDAG_ROOT (arg_node), arg_info);
 
-    while (defs != NULL) {
+    /*
+     * Do the following if we have at least one cross edge in the DAG.
+     */
 
-        if (TFVERTEX_PARENTS (defs) == NULL) {
+    if (INFO_TLTABLE (arg_info) != NULL) {
+        /*
+         * We maintain a list of all cross edge sources and all cross edge
+         * targets in a DAG.
+         */
+        ci = TFDAG_INFO (arg_node);
+        setSrcTarArrays (INFO_TLTABLE (arg_info), &(COMPINFO_CSRC (ci)),
+                         &(COMPINFO_CTAR (ci)));
 
-            TRAVdo (defs, arg_info);
+        /*
+         * For each cross edge source, compute all the source edge targets that
+         * it can potentially reach transitively. This will add a few more
+         * entries in the transitive link table.
+         */
 
+        if (DYNARRAY_TOTALELEMS (INFO_TLTABLE (arg_info)) > 0) {
+            COMPINFO_TLTABLE (ci) = INFO_TLTABLE (arg_info);
             /*
-             * Do the following if we have at least one cross edge in the DAG.
+             * The transitive link table and cross closure are two different
+             * things.
              */
-
-            if (INFO_TLTABLE (arg_info) != NULL) {
-
-                /*
-                 * We maintain a list of all cross edge sources and all cross edge
-                 * targets in a DAG.
-                 */
-
-                ci = TFSPEC_INFO (arg_node)[compidx];
-
-                setSrcTarArrays (INFO_TLTABLE (arg_info), &(COMPINFO_CSRC (ci)),
-                                 &(COMPINFO_CTAR (ci)));
-
-                /*
-                 * For each cross edge source, compute all the source edge targets that
-                 * it can potentially reach transitively. This will add a few more
-                 * entries in the transitive link table.
-                 */
-
-                if (DYNARRAY_TOTALELEMS (INFO_TLTABLE (arg_info)) > 0) {
-
-                    COMPINFO_TLTABLE (ci) = INFO_TLTABLE (arg_info);
-
-                    /*
-                     * The transitive link table and cross closure are two different
-                     * things.
-                     */
-
-                    buildTransitiveLinkTable (COMPINFO_TLTABLE (ci));
-
-                    COMPINFO_TLC (ci)
-                      = computeTLCMatrix (INFO_TLTABLE (arg_info), COMPINFO_CSRC (ci),
-                                          COMPINFO_CTAR (ci));
-                }
-
-                // freeDynarray( INFO_TLTABLE( arg_info));
-
-                INFO_TLTABLE (arg_info) = NULL;
-
-                compidx++;
-            }
+            buildTransitiveLinkTable (COMPINFO_TLTABLE (ci));
+            COMPINFO_TLC (ci) = computeTLCMatrix (INFO_TLTABLE (arg_info),
+                                                  COMPINFO_CSRC (ci), COMPINFO_CTAR (ci));
         }
 
-        defs = TFVERTEX_NEXT (defs);
+        // freeDynarray( INFO_TLTABLE( arg_info));
     }
-
     DBUG_RETURN (arg_node);
 }
 

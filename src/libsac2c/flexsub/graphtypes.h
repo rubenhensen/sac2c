@@ -23,7 +23,7 @@
 #define LUBINFO_PCPTMAT(n) ((n)->pcptmat)
 #define LUBINFO_PCPCMAT(n) ((n)->pcpcmat)
 
-extern compinfo **freeCompInfoArr (compinfo **cia, int n);
+extern compinfo *freeCompInfo (compinfo *ci);
 extern lubinfo *freeLubInfo (lubinfo *linfo);
 
 #endif

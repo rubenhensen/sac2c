@@ -108,11 +108,9 @@ TFDFWdoDFWalk (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *TFDFWtfspec( node *arg_node, info *arg_info)
+ * @fn node *TFDFWtfdag( node *arg_node, info *arg_info)
  *
  *   @brief
- *   We loop through the defs in the type family specifications to
- *   identify any potential root nodes and start a depth first walk if we find one.
  *
  *   TODO: Ensure that DAG is a DAG by adding a top vertex if required.
  *
@@ -123,51 +121,20 @@ TFDFWdoDFWalk (node *syntax_tree)
  *
  *****************************************************************************/
 node *
-TFDFWtfspec (node *arg_node, info *arg_info)
+TFDFWtfdag (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
-
-    node *defs;
-    int comp = 0;
-
-    defs = TFSPEC_DEFS (arg_node);
 
     /*
      * First label nodes for tree reachability
      */
 
-    while (defs != NULL) {
-        if (TFVERTEX_PRE (defs) == 0 && TFVERTEX_PARENTS (defs) == NULL) {
-            /*
-             * Here could be the start of a potentially new type
-             * component since we have multiple components in a type.
-             *
-             * For example, \alpha and [*] both require a fresh depth first
-             * walk.
-             *
-             * TODO: Ensure that there are no multi-head DAGs
-             */
+    INFO_PREARR (arg_info) = NULL;
 
-            if (INFO_PRE (arg_info) != 1) {
-                INFO_PRE (arg_info) = 1;
-            }
+    TRAVdo (TFDAG_ROOT (arg_node), arg_info);
 
-            if (INFO_POST (arg_info) != 1) {
-                INFO_POST (arg_info) = 1;
-            }
-
-            TFVERTEX_ISCOMPROOT (defs) = 1;
-
-            INFO_PREARR (arg_info) = NULL;
-
-            TRAVdo (defs, arg_info);
-
-            COMPINFO_PREARR (TFSPEC_INFO (arg_node)[comp++]) = INFO_PREARR (arg_info);
-        }
-
-        defs = TFVERTEX_NEXT (defs);
-    }
+    COMPINFO_PREARR (TFDAG_INFO (arg_node)) = INFO_PREARR (arg_info);
 
     DBUG_RETURN (arg_node);
 }

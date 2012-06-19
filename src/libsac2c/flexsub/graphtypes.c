@@ -62,71 +62,61 @@ freeLubInfo (lubinfo *linfo)
     DBUG_RETURN (result);
 }
 
-compinfo **
-freeCompInfoArr (compinfo **cia, int n)
+compinfo *
+freeCompInfo (compinfo *ci)
 {
 
     DBUG_ENTER ();
 
-    int i;
-    compinfo **result;
+    compinfo *result = NULL;
     nodelist *nl;
 
-    if (cia != NULL) {
+    if (ci != NULL) {
 
-        for (i = 0; i < n; i++) {
-
-            if (cia[i] != NULL) {
-
-                if (COMPINFO_CSRC (cia[i]) != NULL) {
-                    freeDynarray (COMPINFO_CSRC (cia[i]));
-                }
-
-                if (COMPINFO_CTAR (cia[i]) != NULL) {
-                    freeDynarray (COMPINFO_CTAR (cia[i]));
-                }
-
-                if (COMPINFO_TLTABLE (cia[i]) != NULL) {
-                    freeDynarray (COMPINFO_TLTABLE (cia[i]));
-                }
-
-                if (COMPINFO_PREARR (cia[i]) != NULL) {
-                    // freeDynarray( COMPINFO_PREARR( cia[i]));
-                }
-
-                if (COMPINFO_EULERTOUR (cia[i]) != NULL) {
-                    freeDynarray (COMPINFO_EULERTOUR (cia[i]));
-                }
-
-                if (COMPINFO_CROSSCLOS (cia[i]) != NULL) {
-                    freeMatrix (COMPINFO_CROSSCLOS (cia[i]));
-                }
-
-                if (COMPINFO_TLC (cia[i]) != NULL) {
-                    freeMatrix (COMPINFO_TLC (cia[i]));
-                }
-
-                if (COMPINFO_LUB (cia[i]) != NULL) {
-                    freeLubInfo (COMPINFO_LUB (cia[i]));
-                }
-
-                if (COMPINFO_DIST (cia[i]) != NULL) {
-                    freeMatrix (COMPINFO_DIST (cia[i]));
-                }
-
-                while (COMPINFO_TOPOLIST (cia[i]) != NULL) {
-                    nl = COMPINFO_TOPOLIST (cia[i]);
-                    COMPINFO_TOPOLIST (cia[i])
-                      = NODELIST_NEXT (COMPINFO_TOPOLIST (cia[i]));
-                    MEMfree (nl);
-                }
-
-                cia[i] = MEMfree (cia[i]);
-            }
+        if (COMPINFO_CSRC (ci) != NULL) {
+            freeDynarray (COMPINFO_CSRC (ci));
         }
-    }
 
-    result = MEMfree (cia);
+        if (COMPINFO_CTAR (ci) != NULL) {
+            freeDynarray (COMPINFO_CTAR (ci));
+        }
+
+        if (COMPINFO_TLTABLE (ci) != NULL) {
+            freeDynarray (COMPINFO_TLTABLE (ci));
+        }
+
+        if (COMPINFO_PREARR (ci) != NULL) {
+            // freeDynarray( COMPINFO_PREARR( ci));
+        }
+
+        if (COMPINFO_EULERTOUR (ci) != NULL) {
+            freeDynarray (COMPINFO_EULERTOUR (ci));
+        }
+
+        if (COMPINFO_CROSSCLOS (ci) != NULL) {
+            freeMatrix (COMPINFO_CROSSCLOS (ci));
+        }
+
+        if (COMPINFO_TLC (ci) != NULL) {
+            freeMatrix (COMPINFO_TLC (ci));
+        }
+
+        if (COMPINFO_LUB (ci) != NULL) {
+            freeLubInfo (COMPINFO_LUB (ci));
+        }
+
+        if (COMPINFO_DIST (ci) != NULL) {
+            freeMatrix (COMPINFO_DIST (ci));
+        }
+
+        while (COMPINFO_TOPOLIST (ci) != NULL) {
+            nl = COMPINFO_TOPOLIST (ci);
+            COMPINFO_TOPOLIST (ci) = NODELIST_NEXT (COMPINFO_TOPOLIST (ci));
+            MEMfree (nl);
+        }
+
+        result = MEMfree (ci);
+    }
 
     DBUG_RETURN (result);
 }

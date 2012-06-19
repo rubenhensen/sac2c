@@ -910,8 +910,8 @@ CHKMattribIndexInfo (index_info *attr, info *arg_info)
  * @return entire attribute
  *
  ***************************************************************************/
-compinfo **
-CHKMattribCompInfoArr (compinfo **attr, info *arg_info)
+compinfo *
+CHKMattribCompInfo (compinfo *attr, info *arg_info)
 {
     DBUG_ENTER ();
 

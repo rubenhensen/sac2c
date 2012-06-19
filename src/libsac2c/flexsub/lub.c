@@ -146,40 +146,42 @@ testPriorityQueue ()
         freeDynarray (q);
     }
 }
+/*
+void testlubtree( node * arg_node){
 
-void
-testlubtree (node *arg_node)
-{
+  dynarray *prearr;
+  int i, j, nodecount;
+  int testpre[2];
+  node *n1, *n2, *result;
 
-    dynarray *prearr;
-    int i, j, nodecount;
-    int testpre[2];
-    node *n1, *n2, *result;
+  unsigned int iseed = (unsigned int)time(NULL);
+  srand (iseed);
 
-    unsigned int iseed = (unsigned int)time (NULL);
-    srand (iseed);
+  for( i = 0; i < TFSPEC_NUMCOMP( arg_node); i++){
+    prearr = COMPINFO_PREARR( TFSPEC_INFO( arg_node)[i]);
+    nodecount = DYNARRAY_TOTALELEMS( prearr);
+    printDepthAndPre(COMPINFO_EULERTOUR( TFSPEC_INFO( arg_node)[i]));
+    printLubInfo( TFSPEC_INFO(arg_node)[i]);
 
-    for (i = 0; i < TFSPEC_NUMCOMP (arg_node); i++) {
-        prearr = COMPINFO_PREARR (TFSPEC_INFO (arg_node)[i]);
-        nodecount = DYNARRAY_TOTALELEMS (prearr);
-        printDepthAndPre (COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[i]));
-        printLubInfo (TFSPEC_INFO (arg_node)[i]);
+    for( j = 0; j < nodecount; j++){
+      randNumGen( nodecount, testpre);
+      n1 = (node *) ELEM_DATA( DYNARRAY_ELEMS_POS( prearr, testpre[0]));
+      n2 = (node *) ELEM_DATA( DYNARRAY_ELEMS_POS( prearr, testpre[1]));
+      printf("lub(%d,%d) = ", TFVERTEX_PRE( n1), TFVERTEX_PRE( n2));
+      result = LUBtreeLCAfromNodes( n1, n2, TFSPEC_INFO( arg_node)[i]);
+      printf("Result = %d \n", TFVERTEX_PRE( result));
+      fflush(stdout);
 
-        for (j = 0; j < nodecount; j++) {
-            randNumGen (nodecount, testpre);
-            n1 = (node *)ELEM_DATA (DYNARRAY_ELEMS_POS (prearr, testpre[0]));
-            n2 = (node *)ELEM_DATA (DYNARRAY_ELEMS_POS (prearr, testpre[1]));
-            printf ("lub(%d,%d) = ", TFVERTEX_PRE (n1), TFVERTEX_PRE (n2));
-            result = LUBtreeLCAfromNodes (n1, n2, TFSPEC_INFO (arg_node)[i]);
-            printf ("Result = %d \n", TFVERTEX_PRE (result));
-            fflush (stdout);
-        }
     }
+
+  }
+
 }
+*/
 
 /** <!--********************************************************************-->
  *
- * @fn node *TFPLBtfspec( node *arg_node, info *arg_info)
+ * @fn node *TFPLBtfdag( node *arg_node, info *arg_info)
  *
  *   @brief
  *
@@ -191,40 +193,30 @@ testlubtree (node *arg_node)
  *
  *****************************************************************************/
 node *
-TFPLBtfspec (node *arg_node, info *arg_info)
+TFPLBtfdag (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
 
     node *defs;
-    int comp = 0;
     compinfo *ci;
 
-    defs = TFSPEC_DEFS (arg_node);
+    defs = TFDAG_DEFS (arg_node);
 
     /*
      * First label nodes for tree reachability
      */
 
-    while (defs != NULL) {
+    INFO_EULER (arg_info) = NULL;
 
-        if (TFVERTEX_ISCOMPROOT (defs)) {
+    TRAVdo (TFDAG_ROOT (defs), arg_info);
 
-            INFO_EULER (arg_info) = NULL;
+    ci = TFDAG_INFO (arg_node);
 
-            TRAVdo (defs, arg_info);
+    COMPINFO_EULERTOUR (ci) = INFO_EULER (arg_info);
+    COMPINFO_LUB (ci) = LUBcreatePartitions (COMPINFO_EULERTOUR (ci));
 
-            COMPINFO_EULERTOUR (TFSPEC_INFO (arg_node)[comp++]) = INFO_EULER (arg_info);
-
-            ci = TFSPEC_INFO (arg_node)[comp - 1];
-
-            COMPINFO_LUB (ci) = LUBcreatePartitions (COMPINFO_EULERTOUR (ci));
-
-            LUBincorporateCrossEdges (ci);
-        }
-
-        defs = TFVERTEX_NEXT (defs);
-    }
+    LUBincorporateCrossEdges (ci);
 
     // testlubtree( arg_node);
     // testPriorityQueue();

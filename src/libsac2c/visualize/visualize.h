@@ -118,6 +118,7 @@ extern node *VISUALset (node *arg_node, info *arg_info);
 extern node *VISUALfunbundle (node *arg_node, info *arg_info);
 
 //#ifdef NTFSANTANU
+extern node *VISUALtfdag (node *arg_node, info *arg_info);
 extern node *VISUALtfspec (node *arg_node, info *arg_info);
 extern node *VISUALtfcomponent (node *arg_node, info *arg_info);
 extern node *VISUALtfvertex (node *arg_node, info *arg_info);

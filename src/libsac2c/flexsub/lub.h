@@ -13,7 +13,7 @@
 #include "types.h"
 
 extern node *TFPLBdoLUBPreprocessing (node *arg_node);
-extern node *TFPLBtfspec (node *arg_node, info *arg_info);
+extern node *TFPLBtfdag (node *arg_node, info *arg_info);
 extern node *TFPLBtfvertex (node *arg_node, info *arg_info);
 
 #endif /* _LUB_H_ */

@@ -6247,11 +6247,10 @@ PRTfunbundle (node *arg_node, info *arg_info)
 }
 
 node *
-PRTtfspec (node *arg_node, info *arg_info)
+PRTtfdag (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
-
     node *defs;
     int i = 0;
 
@@ -6259,7 +6258,7 @@ PRTtfspec (node *arg_node, info *arg_info)
      * Print the component subtyping graphs
      */
 
-    defs = TFSPEC_DEFS (arg_node);
+    defs = TFDAG_DEFS (arg_node);
 
     fprintf (global.outfile, "\n/*\nType family specifications\n");
     fprintf (global.outfile, "The following output is in dot format.\n");
@@ -6267,56 +6266,20 @@ PRTtfspec (node *arg_node, info *arg_info)
     fprintf (global.outfile, "\ndigraph typespecs{\n");
 
     while (defs != NULL) {
-        if (TFVERTEX_ISCOMPROOT (defs)) {
+        if (TFVERTEX_PARENTS (defs) == NULL) {
 
             fprintf (global.outfile, "subgraph cluster_%d{\n", i);
             fprintf (global.outfile, "node [shape=record];\n");
 
-            if (TFSPEC_INFO (arg_node) != NULL && (TFSPEC_INFO (arg_node)[i]) != NULL) {
+            if (TFDAG_INFO (arg_node) != NULL) {
 
-                if (COMPINFO_TLC (TFSPEC_INFO (arg_node)[i]) != NULL) {
-                    printMatrixInDotFormat (COMPINFO_TLC (TFSPEC_INFO (arg_node)[i]));
+                if (COMPINFO_TLC (TFDAG_INFO (arg_node)) != NULL) {
+                    printMatrixInDotFormat (COMPINFO_TLC (TFDAG_INFO (arg_node)));
                 }
-
-                /*
-
-                if ( COMPINFO_LUBPOS( (TFSPEC_INFO( arg_node)[i]), 0) != NULL){
-                  printMatrixInDotFormat( COMPINFO_LUBPOS( TFSPEC_INFO( arg_node)[i], 0));
+                if (COMPINFO_DIST (TFDAG_INFO (arg_node)) != NULL) {
+                    printMatrixInDotFormat (COMPINFO_DIST (TFDAG_INFO (arg_node)));
                 }
-
-                if ( COMPINFO_LUBPOS( TFSPEC_INFO( arg_node)[i], 1) != NULL){
-                  printMatrixInDotFormat( COMPINFO_LUBPOS( TFSPEC_INFO( arg_node)[i], 1));
-                }
-
-                if ( COMPINFO_LUBPOS( TFSPEC_INFO( arg_node)[i], 2) != NULL){
-                  printMatrixInDotFormat( COMPINFO_LUBPOS( TFSPEC_INFO( arg_node)[i], 2));
-                }
-                */
-
-                if (COMPINFO_DIST (TFSPEC_INFO (arg_node)[i]) != NULL) {
-                    printMatrixInDotFormat (COMPINFO_DIST (TFSPEC_INFO (arg_node)[i]));
-                }
-
-                /*
-
-                if( COMPINFO_EULERTOUR( TFSPEC_INFO( arg_node)[i]) != NULL){
-
-                  dynarray *d = COMPINFO_EULERTOUR( TFSPEC_INFO( arg_node)[i]);
-                  int i;
-
-                  fprintf(global.outfile,"Euler Tour: ");
-
-                  for( i = 0; i < DYNARRAY_TOTALELEMS(d); i++) {
-                    fprintf(global.outfile,"%d,", ELEM_IDX( DYNARRAY_ELEMS_POS( d, i)));
-                  }
-
-                  fprintf(global.outfile,"\n");
-
-                }
-                */
             }
-
-            i++;
 
             fprintf (global.outfile, "node [shape=box];\n");
 
@@ -6330,7 +6293,14 @@ PRTtfspec (node *arg_node, info *arg_info)
 
     fprintf (global.outfile, "};\n");
     fprintf (global.outfile, "*/\n");
+    DBUG_RETURN (arg_node);
+}
 
+node *
+PRTtfspec (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ();
     DBUG_RETURN (arg_node);
 }
 
