@@ -802,6 +802,20 @@ GLOBAL (compiler_phase_t, prtphafun_start_cycle, PH_undefined, xfree_dummy)
  * Start printing the specific function at this cycle.
  */
 
+GLOBAL (compiler_phase_t, prtphafun_stop_phase, PH_undefined, xfree_dummy)
+/*
+ * Start printing the specific function at this phase.
+ */
+
+GLOBAL (compiler_phase_t, prtphafun_stop_subphase, PH_undefined, xfree_dummy)
+/*
+ * Start printing the specific function at this subphase.
+ */
+GLOBAL (compiler_phase_t, prtphafun_stop_cycle, PH_undefined, xfree_dummy)
+/*
+ * Start printing the specific function at this cycle.
+ */
+
 GLOBAL (int, padding_overhead_limit, 10, xfree_dummy)
 /*
  * Limit for additional resource allocation due to array padding in

@@ -118,72 +118,43 @@ PHOinterpretBreakFunName (char *option)
     DBUG_RETURN ();
 }
 
-/*
- * Handles the option from the -printphasefun option
- * Which looks something like this:
- *
- * -printphasefun 10:aaa:aaa/11:bbb:bbb/foo
- *
- * But will also accept something like this:
- *
- * -printphasefun 10/11:bbb/foo
- *
- * And various other combinations.
- */
+/* interpret the start phase for the printfun option */
 void
-PHOinterpretPrintPhaseFunOption (char *option)
+PHOinterpretStartPhase (char *option)
 {
-    char *start_tok;
-    char *end_tok;
-    char *fun_tok;
-
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Interpreting printphasefun option: %s", option);
+    /* call this function with TRUE to determine start */
+    InterpretPrintOptionPhase (option, 1);
 
-    /* get the start token which needs splitting up by : for phase levels */
-    start_tok = STRtok (option, "/");
-    /* get the end token which needs splitting up by : like start_tok */
-    end_tok = STRtok (NULL, "/");
-    /* get the function name token */
-    fun_tok = STRtok (NULL, "/");
+    DBUG_RETURN ();
+}
 
-    /* check that a start phase is specified */
-    if (start_tok == NULL || end_tok == NULL || fun_tok == NULL) {
-        CTIerror (
-          "Illegal compiler phase or fun specification in printphasefun option: \n"
-          "  -b %s\n"
-          "See %s -h for a list of legal break options.",
-          option, global.toolname);
-    } else {
-        /* assign the start point */
-        InterpretPrintPhaseFunStartOptions (start_tok);
-        printf ("start token: %s\n", start_tok);
+/* interpret the stop phase for the printfun option */
+void
+PHOinterpretStopPhase (char *option)
+{
+    DBUG_ENTER ();
 
-        /* assign the end point */
-        PHOinterpretBreakOption (end_tok);
-        printf ("end token: %s\n", end_tok);
-
-        /* assign the function name */
-        PHOinterpretBreakFunName (fun_tok);
-        printf ("fun token: %s\n", fun_tok);
-    }
-
-    /* free tokens */
-    MEMfree (start_tok);
-    MEMfree (end_tok);
+    /* call this function with FALSE to determine stop */
+    InterpretPrintOptionPhase (option, 0);
 
     DBUG_RETURN ();
 }
 
 /*
- * Assigns the correct phase values to the global variables:
+ * Parses the option: <phase>:<subphase>:<cycle>
+ *
+ * isstart indicates to set the start global variables
+ * otherwise the stop global variables are set.
+ *
+ * Assigns the phase values to the global variables:
  * - prtphafun_start_phase
  * - prtphafun_start_subphase
  * - prtphafun_start_cycle
  */
 void
-InterpretPrintPhaseFunStartOptions (char *option)
+InterpretPrintOptionPhase (char *option, int isstart)
 {
     compiler_phase_t phase;
     compiler_phase_t subphase;
@@ -222,7 +193,13 @@ InterpretPrintPhaseFunStartOptions (char *option)
                   "See %s -h for a list of legal break options.",
                   option, global.toolname);
     } else {
-        global.prtphafun_start_phase = phase;
+        if (isstart == 1) {
+            /* in this case set the start phase */
+            global.prtphafun_start_phase = phase;
+        } else {
+            /* in this case set the stop phase */
+            global.prtphafun_stop_phase = phase;
+        }
     }
 
     break_phase = MEMfree (break_phase);
@@ -238,7 +215,13 @@ InterpretPrintPhaseFunStartOptions (char *option)
                       "See sac2c -h for a list of legal break options.",
                       option);
         } else {
-            global.prtphafun_start_subphase = subphase;
+            if (isstart == 1) {
+                /* in this case set the start phase */
+                global.prtphafun_start_subphase = subphase;
+            } else {
+                /* in this case set the stop phase */
+                global.prtphafun_stop_subphase = subphase;
+            }
         }
 
         break_subphase = MEMfree (break_subphase);
@@ -254,7 +237,12 @@ InterpretPrintPhaseFunStartOptions (char *option)
                           "See sac2c -h for a list of legal break options.",
                           option);
             } else {
-                global.prtphafun_start_cycle = cyclephase;
+                if (isstart == 1) {
+                    global.prtphafun_start_cycle = cyclephase;
+                } else {
+                    /* in this case set the stop phase */
+                    global.prtphafun_stop_cycle = cyclephase;
+                }
             }
 
             break_cyclephase = MEMfree (break_cyclephase);
