@@ -868,7 +868,7 @@ WLCOMP_Scheduling (node *segs, node *parms, node *cubes, int dims, int line)
                 strategy = SPID_NAME (SPAP_ARG1 (arg));
                 if (!STReq (strategy, "FirstStatic") && !STReq (strategy, "FirstDynamic")
                     && !STReq (strategy, "FirstAutomatic")) {
-                    CTIabortLine (line,
+                    CTIerrorLine (line,
                                   "Scheduler Self needs one of the following strategies"
                                   " for his first task: FirstStatic, FirstDynamic,"
                                   " FirstAutomatic");
@@ -942,7 +942,7 @@ WLCOMP_Tasksel (node *segs, node *parms, node *cubes, int dims, int line)
 
                 // negative numbers don't get parsed apparently, so not checking for that
                 if (dim >= dims) {
-                    CTIabortLine (line,
+                    CTIerrorLine (line,
                                   "Task Distribution Dimension should be between 0 and"
                                   " the dimension of the withloop");
                 }
