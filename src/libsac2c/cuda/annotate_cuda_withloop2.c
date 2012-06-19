@@ -144,8 +144,11 @@ InitCudaBlockSizes ()
         global.cuda_2d_block_x = 16;
         global.cuda_2d_block_y = 16;
     } else {
-        // DBUG_ASSERT (FALSE, "Unknown CUDA architecture");
-        CTIwarn ("CUDA architecture cannot be detected, set to default(1.0)\n");
+        CTIwarn ("CUDA architecture cannot be detected, setting to default(1.0)\n");
+        CTIwarn ("Please edit the CUDA_ARCH variable in sac2crc and set it to "
+                 "-arch=sm_xx where xx is the capability version of your CUDA card"
+                 " (ex. -arch=sm_20).\n");
+        global.config.cuda_arch = STRcpy ("-arch=sm_10");
         global.optimal_threads = 256;
         global.optimal_blocks = 3;
         global.cuda_1d_block_large = 256;
