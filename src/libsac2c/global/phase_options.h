@@ -7,6 +7,7 @@
 
 void InterpretPrintPhaseFunStartOptions (char *option);
 
+extern void PHOinterpretBreakFunName (char *option);
 extern void PHOinterpretPrintPhaseFunOption (char *option);
 extern void PHOinterpretBreakOption (char *option);
 extern void PHOinterpretDbugOption (char *option);

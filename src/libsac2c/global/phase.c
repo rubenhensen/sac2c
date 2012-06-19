@@ -7,6 +7,9 @@
 #define DBUG_PREFIX "OPT"
 #include "debug.h"
 
+#include "print.h"
+
+#include "filemgr.h"
 #include "ctinfo.h"
 #include "globals.h"
 #include "str.h"
@@ -187,6 +190,19 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 #endif
 
     CTIabortOnError ();
+
+    /*
+     *Print code for range printing...
+     *TODO: ensure start phase <= end phase
+     *Get subphase id??
+     */
+
+    if ((global.prtphafun_start_phase != PH_undefined && global.prt_cycle_range == TRUE)
+        || global.prtphafun_start_phase == phase) {
+        global.prt_cycle_range = TRUE;
+        PRTdoPrintFile (FMGRwriteOpen ("%s.%d", global.outfilename, phase_num),
+                        syntax_tree);
+    }
 
     if (global.break_after_phase == phase) {
         CTIterminateCompilation (syntax_tree);

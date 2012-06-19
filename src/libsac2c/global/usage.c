@@ -796,7 +796,12 @@ PrintPrintingOptions (void)
       "               Displays the state of functions that match the name <fun_name>\n"
       "               at each step between the <start> and after <end> phases.\n"
       "               <start> and <end> phases can be expressed: \n"
-      "                 <phase>:<subphase>:<cyclephase>\n");
+      "                 <phase>:<subphase>:<cyclephase>\n"
+      "               At the current stage of implementation files will be generated\n"
+      "               in the form a.out.<phase> unless the user specifies -o <filename>\n"
+      "               in which case the files will be <filename>.<phase>\n"
+      "               this also means the user can specify a sub-directory for these "
+      "files i.e. -o foo/bar\n");
 
     DBUG_RETURN ();
 }

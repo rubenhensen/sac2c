@@ -1857,17 +1857,8 @@ PRTfundef (node *arg_node, info *arg_info)
      *default option prints all functions
      */
 
-    bool fun_print = TRUE;
-
-    if (global.break_fun_name != NULL) {
-        if (STReq (global.break_fun_name, FUNDEF_NAME (arg_node)) == TRUE) {
-            fun_print = TRUE;
-        } else {
-            fun_print = FALSE;
-        }
-    }
-
-    if (fun_print == TRUE) {
+    if (global.break_fun_name == NULL
+        || STReq (global.break_fun_name, FUNDEF_NAME (arg_node)) == TRUE) {
 
         DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
 
