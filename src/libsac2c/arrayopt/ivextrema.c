@@ -387,7 +387,7 @@ isSameTypeShape (node *ida, node *idb)
 
 /** <!--********************************************************************-->
  *
- * @fn static node *IVEXIattachExtrema( node *extremum, node *id,
+ * @fn node *IVEXIattachExtrema( node *extremum, node *id,
  *                                      node **vardecs, node **preassigns,
  *                                      prf nprf)
  *
@@ -409,8 +409,8 @@ isSameTypeShape (node *ida, node *idb)
  *           int[.] iv';
  *
  * @params:
- *     ivavis: The N_avis of iv, the name for which we want to build iv'.
  *     extremum: the N_avis of an AVIS_MIN/AVIS_MAX to be attached to iv'.
+ *     ivavis: The N_avis of iv, the name for which we want to build iv'.
  *     preassigns: The address of an INFO_PREASSIGNS( arg_info) node
  *                 in the caller's environment.
  *     vardecs:    The address of an INFO_VARDECS( arg_info) node
@@ -421,7 +421,7 @@ isSameTypeShape (node *ida, node *idb)
  * @return: The N_avis of the new iv'.
  *
  *****************************************************************************/
-static node *
+node *
 IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassigns,
                     prf nprf)
 
@@ -522,11 +522,9 @@ IVEXItmpVec (node *arg_node, info *arg_info, node *ivavis)
                           &INFO_PREASSIGNSWITH (arg_info));
     avisp = IVEXIattachExtrema (b1, ivavis, &INFO_VARDECS (arg_info),
                                 &INFO_PREASSIGNSPART (arg_info), F_noteminval);
-    AVIS_ISMINHANDLED (avisp) = TRUE;
 
     avispp = IVEXIattachExtrema (b2, avisp, &INFO_VARDECS (arg_info),
                                  &INFO_PREASSIGNSPART (arg_info), F_notemaxval);
-    AVIS_ISMAXHANDLED (avisp) = TRUE;
 
     DBUG_RETURN (avispp);
 }
@@ -572,10 +570,8 @@ IVEXItmpIds (node *curpart, node *iavis, int k, node **preassignspart, node **va
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
     avisp = IVEXIattachExtrema (b1, iavis, vardecs, preassignspart, F_noteminval);
-    AVIS_ISMINHANDLED (avisp) = TRUE;
 
     avispp = IVEXIattachExtrema (b2, avisp, vardecs, preassignspart, F_notemaxval);
-    AVIS_ISMAXHANDLED (avisp) = TRUE;
 
     DBUG_PRINT ("Introduced: %s and %s for: %s", AVIS_NAME (avisp), AVIS_NAME (avispp),
                 AVIS_NAME (iavis));
