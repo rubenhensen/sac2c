@@ -108,15 +108,12 @@
 #include "namespaces.h"
 #include "wls.h"
 
-typedef enum { SP_mod, SP_func } sub_phase_t;
-
 /**
  * INFO structure
  */
 struct INFO {
     node *fundef;
     node *nassigns;
-    sub_phase_t subphase;
 };
 
 /*******************************************************************************
@@ -129,7 +126,6 @@ struct INFO {
  ******************************************************************************/
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_PREASSIGN(n) (n->nassigns)
-#define INFO_SUBPHASE(n) (n->subphase)
 
 /**
  * INFO functions
@@ -145,7 +141,6 @@ MakeInfo ()
 
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
-    INFO_SUBPHASE (result) = SP_mod;
 
     DBUG_RETURN (result);
 }
@@ -609,22 +604,15 @@ WLPGmodule (node *arg_node, info *arg_info)
 node *
 WLPGfundef (node *arg_node, info *arg_info)
 {
-    sub_phase_t old_sph;
-
     DBUG_ENTER ();
 
     INFO_FUNDEF (arg_info) = arg_node;
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     INFO_FUNDEF (arg_info) = NULL;
 
-    old_sph = INFO_SUBPHASE (arg_info);
-    INFO_SUBPHASE (arg_info) = SP_mod;
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    INFO_SUBPHASE (arg_info) = old_sph;
 
-    if (INFO_SUBPHASE (arg_info) == SP_mod) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -727,6 +715,7 @@ WLPGwith (node *arg_node, info *arg_info)
         } else if (num_parts == 2) {
             DBUG_ASSERT (NODE_TYPE (PART_GENERATOR (PART_NEXT (parts))) == N_default,
                          "default part expected to be the last part");
+
             if (!TULSisFullGenerator (PART_GENERATOR (parts), withop)) {
                 /*
                  * In case it was full, there is no replacement needed for the default
@@ -772,13 +761,6 @@ WLPGdoWlPartitionGeneration (node *arg_node)
     arg_info = MakeInfo ();
 
     DSinitDeserialize (global.syntax_tree);
-    if (NODE_TYPE (arg_node) == N_module) {
-        INFO_SUBPHASE (arg_info) = SP_mod;
-    } else if (NODE_TYPE (arg_node) == N_fundef) {
-        INFO_SUBPHASE (arg_info) = SP_func;
-    } else {
-        DBUG_ASSERT (FALSE, "Illegal call to WLPGdoWlPartitionGeneration!");
-    }
 
     TRAVpush (TR_wlpg);
     arg_node = TRAVdo (arg_node, arg_info);

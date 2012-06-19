@@ -341,8 +341,8 @@ CYCLEPHASEFUNOLD (linl, "Inlining degenerated LaC functions", LINLdoLACInlining,
 CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt,
                cyc)
 
-CYCLEPHASEFUNOLD (wlpg, "Generating full with-loop partitions",
-                  WLPGdoWlPartitionGeneration, global.optimize.dowlpg, opt, cyc)
+CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
+               global.optimize.dowlpg, opt, cyc)
 
 CYCLEPHASEFUN (wlbsc, "Ensuring structrual constants for with-loop partition bounds",
                WLBSCdoWlbounds2structConsts, global.optimize.dowlpg, opt, cyc)
@@ -494,8 +494,8 @@ CYCLEPHASEFUNOLD (linl, "Inlining degenerated LaC functions", LINLdoLACInlining,
 CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt,
                saacyc)
 
-CYCLEPHASEFUNOLD (wlpg, "Generating full with-loop partitions",
-                  WLPGdoWlPartitionGeneration, global.optimize.dowlpg, opt, saacyc)
+CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
+               global.optimize.dowlpg, opt, saacyc)
 
 CYCLEPHASEFUN (wlbsc, "Unflattening WL-partition structural constants",
                WLBSCdoWlbounds2nonFlatStructConsts, global.optimize.dowlpg, opt, saacyc)
