@@ -778,6 +778,22 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("printstop", PHOinterpretStopPhase (ARG))
 
+    ARGS_OPTION_BEGIN ("printfunsets")
+    {
+        global.doprintfunsets = FALSE;
+
+        ARG_FLAGMASK_BEGIN ();
+        ARG_FLAGMASK ('a', global.printfunsets = global.printfunsets_all;
+                      global.doprintfunsets = TRUE);
+
+#define PRINTFUNSETS(flag, char, default)                                                \
+    ARG_FLAGMASK (char, global.printfunsets.flag = TRUE;);
+#include "flags.mac"
+
+        ARG_FLAGMASK_END ();
+    }
+    ARGS_OPTION_END ("printfunsets");
+
     /*selective printing implementation*/
     ARGS_OPTION ("printfun", PHOinterpretBreakFunName (ARG));
 

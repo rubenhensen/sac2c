@@ -919,6 +919,11 @@ typedef struct TRACE_FLAGS_T {
 #include "flags.mac"
 } trace_flags_t;
 
+typedef struct PRINTFUNSETS_FLAGS_T {
+#define PRINTFUNSETSflag(flag) unsigned int flag : 1;
+#include "flags.mac"
+} printfunsets_flags_t;
+
 typedef struct PRINT_FLAGS_T {
 #define PRINTflag(flag) unsigned int flag : 1;
 #include "flags.mac"

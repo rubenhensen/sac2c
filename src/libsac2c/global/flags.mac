@@ -42,6 +42,40 @@ TRACE (cenv, 'c', FALSE)
 /*************************************************************/
 
 /*
+ * Printfunsets flags
+ */
+
+#ifndef PRINTFUNSETSflag
+#define PRINTFUNSETSflag(flag)
+#endif
+
+#ifndef PRINTFUNSETSchar
+#define PRINTFUNSETSchar(char)
+#endif
+
+#ifndef PRINTFUNSETSdefault
+#define PRINTFUNSETSdefault(default)
+#endif
+
+#ifndef PRINTFUNSETS
+#define PRINTFUNSETS(flag, char, default)                                                \
+    PRINTFUNSETSflag (flag) PRINTFUNSETSchar (char) PRINTFUNSETSdefault (default)
+#endif
+
+PRINTFUNSETS (imp, 'i', FALSE)
+PRINTFUNSETS (use, 'u', FALSE)
+PRINTFUNSETS (def, 'd', FALSE)
+PRINTFUNSETS (wrp, 'w', FALSE)
+PRINTFUNSETS (pre, 'p', FALSE)
+
+#undef PRINTFUNSETSflag
+#undef PRINTFUNSETSchar
+#undef PRINTFUNSETSdefault
+#undef PRINTFUNSETS
+
+/*************************************************************/
+
+/*
  * Print flags
  */
 

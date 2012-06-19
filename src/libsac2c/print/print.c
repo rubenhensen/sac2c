@@ -85,6 +85,9 @@ struct INFO {
     node *tfsupernode;
     char *tfstringexpr;
     dot_output_mode dotmode;
+
+    /*record name space*/
+    char *namesapce;
 };
 
 /* access macros print */
@@ -108,6 +111,7 @@ struct INFO {
 #define INFO_TFSUPERNODE(n) ((n)->tfsupernode)
 #define INFO_TFSTRINGEXPR(n) ((n)->tfstringexpr)
 #define INFO_DOTMODE(n) ((n)->dotmode)
+#define INFO_NAMESPACE(n) ((n)->namesapce)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
@@ -242,6 +246,8 @@ MakeInfo ()
     INFO_TFSUPERNODE (result) = NULL;
     INFO_TFSTRINGEXPR (result) = NULL;
     INFO_DOTMODE (result) = vertices;
+
+    INFO_NAMESPACE (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1100,6 +1106,8 @@ PRTmodule (node *arg_node, info *arg_info)
 
     DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
 
+    INFO_NAMESPACE (arg_info) = STRcpy (NSgetName (MODULE_NAMESPACE (arg_node)));
+
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
@@ -1313,7 +1321,9 @@ PRTmodule (node *arg_node, info *arg_info)
             GSCprintDefines ();
         }
 
-        if (MODULE_FUNDECS (arg_node) != NULL) {
+        if ((MODULE_FUNDECS (arg_node) != NULL)
+            && (global.doprintfunsets || global.printfunsets.imp
+                || global.printfunsets.use)) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  prototypes for externals (FUNDECS)\n"
@@ -1351,7 +1361,9 @@ PRTmodule (node *arg_node, info *arg_info)
                 TRAVdo (MODULE_THREADFUNS (arg_node), arg_info);
                 INFO_PROTOTYPE (arg_info) = FALSE;
             }
-            if (MODULE_FUNS (arg_node) != NULL) {
+            if ((MODULE_FUNS (arg_node) != NULL
+                 && (global.doprintfunsets || global.printfunsets.imp
+                     || global.printfunsets.use || global.printfunsets.pre))) {
                 fprintf (global.outfile, "\n\n"
                                          "/*\n"
                                          " *  prototypes for locals (FUNDEFS)\n"
@@ -1363,7 +1375,7 @@ PRTmodule (node *arg_node, info *arg_info)
             }
         }
 
-        if (MODULE_OBJS (arg_node) != NULL) {
+        if ((MODULE_OBJS (arg_node) != NULL) && global.doprintfunsets) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  global objects\n"
@@ -1372,7 +1384,7 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_OBJS (arg_node), arg_info);
         }
 
-        if (MODULE_SPMDSTORE (arg_node) != NULL) {
+        if ((MODULE_SPMDSTORE (arg_node) != NULL) && global.doprintfunsets) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  SPMD infrastructure\n"
@@ -1380,7 +1392,7 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_SPMDSTORE (arg_node), arg_info);
         }
 
-        if (MODULE_THREADFUNS (arg_node) != NULL) {
+        if ((MODULE_THREADFUNS (arg_node) != NULL) && global.doprintfunsets) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  function definitions (THREADFUNS)\n"
@@ -1389,7 +1401,9 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_THREADFUNS (arg_node), arg_info);
         }
 
-        if (MODULE_FUNS (arg_node) != NULL) {
+        if ((MODULE_FUNS (arg_node) != NULL)
+            && (global.doprintfunsets || global.printfunsets.def
+                || global.printfunsets.wrp)) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  function definitions (FUNDEFS)\n"
@@ -1850,6 +1864,8 @@ PRTfundef (node *arg_node, info *arg_info)
     int old_indent = global.indent;
 #endif
 
+    bool is_userdefined_function = FALSE;
+
     DBUG_ENTER ();
 
     /*
@@ -1880,7 +1896,11 @@ PRTfundef (node *arg_node, info *arg_info)
             fprintf (global.outfile, "specialize ");
             PrintFunctionHeader (arg_node, arg_info, FALSE);
             fprintf (global.outfile, ";\n\n");
-        } else if (INFO_PROTOTYPE (arg_info)) {
+        } else if (INFO_PROTOTYPE (arg_info)
+                   && (global.doprintfunsets
+                       || (global.printfunsets.pre && FUNDEF_ISSTICKY (arg_node))
+                       || (global.printfunsets.imp && FUNDEF_WASIMPORTED (arg_node))
+                       || (global.printfunsets.use && FUNDEF_WASUSED (arg_node)))) {
 
             /*
              * print function declaration
@@ -1954,7 +1974,14 @@ PRTfundef (node *arg_node, info *arg_info)
                  * earlier!
                  */
 
-                if (FUNDEF_BODY (arg_node) != NULL) {
+                is_userdefined_function
+                  = STReq (NSgetName (FUNDEF_NS (arg_node)), INFO_NAMESPACE (arg_info));
+
+                if ((FUNDEF_BODY (arg_node) != NULL)
+                    && (global.doprintfunsets
+                        || (global.printfunsets.def && FUNDEF_ISLOCAL (arg_node)
+                            && is_userdefined_function)
+                        || (global.printfunsets.wrp && FUNDEF_ISWRAPPERFUN (arg_node)))) {
 
                     if (INFO_SEPARATE (arg_info) && (INFO_FUNCOUNTER (arg_info) == 0)) {
                         global.outfile = FMGRwriteOpen ("%s/fun%d.%s", global.tmp_dirname,

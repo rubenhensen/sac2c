@@ -547,6 +547,25 @@ static cachesim_flags_t cachesim_none_init = {
 };
 
 /*
+ * Initialize printfunsets flags from flags.mac
+ */
+
+static printfunsets_flags_t printfunsets_init = {
+#define PRINTFUNSETSdefault(default) default,
+#include "flags.mac"
+};
+
+static printfunsets_flags_t printfunsets_all_init = {
+#define PRINTFUNSETSdefault(default) TRUE,
+#include "flags.mac"
+};
+
+static printfunsets_flags_t printfunsets_none_init = {
+#define PRINTFUNSETSdefault(default) FALSE,
+#include "flags.mac"
+};
+
+/*
  * Initialize print flags from flags.mac
  */
 
