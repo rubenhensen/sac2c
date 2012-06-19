@@ -202,6 +202,9 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
         global.prt_cycle_range = TRUE;
         PRTdoPrintFile (FMGRwriteOpen ("%s.%d", global.outfilename, phase_num),
                         syntax_tree);
+        if (global.prtphafun_stop_phase == phase) {
+            global.prt_cycle_range = FALSE;
+        }
     }
 
     if (global.break_after_phase == phase) {

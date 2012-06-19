@@ -1169,6 +1169,7 @@ CTIterminateCompilation (node *syntax_tree)
                                         && global.printfunsets.pre;
             }
 
+            /*maybe remove this line now that printing through compilation works!*/
             syntax_tree = PRTdoPrintFile (stdout, syntax_tree);
         }
     }
