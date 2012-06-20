@@ -1172,6 +1172,15 @@ typedef struct CUDA_ACCESS_INFO_T {
                                        only IDX_CONSTANT and IDX_EXTID indeices*/
 } cuda_access_info_t;
 
+struct DAG {
+    node *gnode;
+};
+
+struct VERTEX {
+    node *vnode;
+    void *annotation;
+};
+
 typedef struct DAG dag;
 typedef struct VERTEX vertex;
 typedef bool (*idag_fun_t) (void *, void *);

@@ -907,6 +907,30 @@ FREEattribIndexInfo (index_info *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
+ * @fn FREEattribVertexWrapper
+ *
+ * @brief Frees VertexWrapper attribute which is a pointer to a
+ * vertex in the type DAG. We dont need to free the pointer because
+ * this pointer is shared.
+ *
+ * @param attr VertexWrapper attribute to process
+ * @param parent parent node
+ *
+ * @return result of Free call, usually NULL
+ *
+ ***************************************************************************/
+vertex *
+FREEattribVertexWrapper (vertex *attr, node *parent)
+{
+    DBUG_ENTER ();
+
+    /* nothing to do here */
+
+    DBUG_RETURN (attr);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn compinfo** FREEattribCompInfo (compinfo** attr, node *parent)
  *
  * @brief Frees Info attribute in N_tfvertex

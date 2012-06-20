@@ -117,7 +117,7 @@ GINreorderVerticesInDAG (node *n1, node *n2)
 }
 
 node *
-GINlcaFromVertices (node *n1, node *n2, compinfo *ci)
+GINlcaFromNodes (node *n1, node *n2, compinfo *ci)
 {
 
     DBUG_ENTER ();

@@ -146,38 +146,34 @@ testPriorityQueue ()
         freeDynarray (q);
     }
 }
-/*
-void testlubtree( node * arg_node){
 
-  dynarray *prearr;
-  int i, j, nodecount;
-  int testpre[2];
-  node *n1, *n2, *result;
+void
+testlubtree (node *arg_node)
+{
 
-  unsigned int iseed = (unsigned int)time(NULL);
-  srand (iseed);
+    dynarray *prearr;
+    int j, nodecount;
+    int testpre[2];
+    node *n1, *n2, *result;
 
-  for( i = 0; i < TFSPEC_NUMCOMP( arg_node); i++){
-    prearr = COMPINFO_PREARR( TFSPEC_INFO( arg_node)[i]);
-    nodecount = DYNARRAY_TOTALELEMS( prearr);
-    printDepthAndPre(COMPINFO_EULERTOUR( TFSPEC_INFO( arg_node)[i]));
-    printLubInfo( TFSPEC_INFO(arg_node)[i]);
+    unsigned int iseed = (unsigned int)time (NULL);
+    srand (iseed);
 
-    for( j = 0; j < nodecount; j++){
-      randNumGen( nodecount, testpre);
-      n1 = (node *) ELEM_DATA( DYNARRAY_ELEMS_POS( prearr, testpre[0]));
-      n2 = (node *) ELEM_DATA( DYNARRAY_ELEMS_POS( prearr, testpre[1]));
-      printf("lub(%d,%d) = ", TFVERTEX_PRE( n1), TFVERTEX_PRE( n2));
-      result = LUBtreeLCAfromNodes( n1, n2, TFSPEC_INFO( arg_node)[i]);
-      printf("Result = %d \n", TFVERTEX_PRE( result));
-      fflush(stdout);
+    prearr = COMPINFO_PREARR (TFDAG_INFO (arg_node));
+    nodecount = DYNARRAY_TOTALELEMS (prearr);
+    printDepthAndPre (COMPINFO_EULERTOUR (TFDAG_INFO (arg_node)));
+    printLubInfo (TFDAG_INFO (arg_node));
 
+    for (j = 0; j < nodecount; j++) {
+        randNumGen (nodecount, testpre);
+        n1 = (node *)ELEM_DATA (DYNARRAY_ELEMS_POS (prearr, testpre[0]));
+        n2 = (node *)ELEM_DATA (DYNARRAY_ELEMS_POS (prearr, testpre[1]));
+        printf ("lub(%d,%d) = ", TFVERTEX_PRE (n1), TFVERTEX_PRE (n2));
+        result = LUBtreeLCAfromNodes (n1, n2, TFDAG_INFO (arg_node));
+        printf ("Result = %d \n", TFVERTEX_PRE (result));
+        fflush (stdout);
     }
-
-  }
-
 }
-*/
 
 /** <!--********************************************************************-->
  *

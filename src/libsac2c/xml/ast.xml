@@ -87,6 +87,8 @@
     copy="literal" />
     <type name="CompInfo" ctype="compinfo*" init="NULL"
     copy="function" />
+    <type name="VertexWrapper" ctype="vertex*" init="NULL"
+    copy="function" />
     <type name="OmpOP" ctype="omp_reduction_op" init="OMP_REDUCTION_NONE"
     copy="literal" />
   </attributetypes>
@@ -4172,6 +4174,18 @@ N_tfvertex :
                 <any />
                 <phases>
                   <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="wrapperlink" default="NULL" inconstructor="no">
+          <type name="VertexWrapper">
+            <targets>
+              <target mandatory="yes">
+                <node name="vertex" />
+                <phases>
+                  <all/>
                 </phases>
               </target>
             </targets>

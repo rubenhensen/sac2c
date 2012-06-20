@@ -1294,6 +1294,28 @@ SATserializeCompInfo (info *info, compinfo *attr, node *parent)
 
 /** <!--******************************************************************-->
  *
+ * @fn SATserializeVertexWrapper
+ *
+ * @brief generates code to serialize the given attribute
+ *
+ * @param info   info structure of serialize traversal
+ * @param attr   the attribute itself
+ * @param parent the parent node
+ *
+ ***************************************************************************/
+
+void
+SATserializeVertexWrapper (info *info, vertex *attr, node *parent)
+{
+    DBUG_ENTER ();
+
+    fprintf (INFO_SER_FILE (info), "NULL");
+
+    DBUG_RETURN ();
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn SATserializeMatrices
  *
  * @brief generates code to serialize the given attribute

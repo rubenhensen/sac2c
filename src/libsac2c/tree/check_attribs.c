@@ -918,4 +918,24 @@ CHKMattribCompInfo (compinfo *attr, info *arg_info)
     DBUG_RETURN (attr);
 }
 
+/** <!--******************************************************************-->
+ *
+ * @fn CHKMattribVertexWrapper
+ *
+ * @brief Touch VertexWrapper attribute
+ *
+ * @param attr Info in N_tfvertex
+ * @param arg_info arg_info structure
+ *
+ * @return entire attribute
+ *
+ ***************************************************************************/
+vertex *
+CHKMattribVertexWrapper (vertex *attr, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (attr);
+}
+
 #undef DBUG_PREFIX
