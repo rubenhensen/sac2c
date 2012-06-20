@@ -30,6 +30,11 @@
 #include "dynmatrix.h"
 #include "graphtypes.h"
 #include "dfwalk.h"
+#include "topo.h"
+#include "mineq.h"
+#include "ctransitive.h"
+#include "reachlabel.h"
+#include "lub.h"
 #include "tfprintutils.h"
 #include "lubtree.h"
 #include "lubcross.h"
@@ -98,6 +103,7 @@ DAGgenGraph ()
     DBUG_ENTER ();
     dag *g = MEMmalloc (sizeof (dag));
     g->gnode = TBmakeTfdag (NULL);
+    TFDAG_DIRTY (g->gnode) = 1;
     DBUG_RETURN (g);
 }
 
@@ -110,6 +116,8 @@ DAGaddVertex (dag *g, void *annotation)
     TFVERTEX_WRAPPERLINK (v->vnode) = v;
     TFDAG_DEFS (g->gnode) = v->vnode;
     v->annotation = annotation;
+    if (!TFDAG_DIRTY (g->gnode))
+        TFDAG_DIRTY (g->gnode) = 1;
     DBUG_RETURN (v);
 }
 
@@ -135,14 +143,31 @@ DAGaddEdge (dag *g, vertex *from, vertex *to)
         CTIerror ("Source or target vertex non-existant in the graph");
     } else {
         addEdge (from->vnode, to->vnode);
+        if (!TFDAG_DIRTY (g->gnode))
+            TFDAG_DIRTY (g->gnode) = 1;
     }
     DBUG_RETURN ();
+}
+
+static node *
+preprocessDAG (node *gnode)
+{
+    DBUG_ENTER ();
+    TFTOPdoTopoSort (gnode);
+    TFMINdoReduceTFGraph (gnode);
+    TFDFWdoDFWalk (gnode);
+    TFCTRdoCrossClosure (gnode);
+    TFRCHdoReachabilityAnalysis (gnode);
+    TFPLBdoLUBPreprocessing (gnode);
+    DBUG_RETURN (gnode);
 }
 
 vertex *
 DAGgetLub (dag *g, vertex *from, vertex *to)
 {
     DBUG_ENTER ();
+    if (TFDAG_DIRTY (g->gnode))
+        g->gnode = preprocessDAG (g->gnode);
     vertex *res = NULL;
     node *n = GINlcaFromNodes (from->vnode, to->vnode, TFDAG_INFO (g->gnode));
     res = TFVERTEX_WRAPPERLINK (n);

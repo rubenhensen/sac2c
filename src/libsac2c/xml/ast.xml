@@ -3964,6 +3964,18 @@ N_tfdag :
             </targets>
           </type>
         </attribute>
+        <attribute name="Dirty" inconstructor="no">
+          <type name="Int">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <sons>
         <son name="Defs">

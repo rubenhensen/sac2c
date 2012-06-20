@@ -124,28 +124,6 @@ ENDPHASE (ptc)
 
 /******************************************************************************/
 
-PHASE (uds, "Incorporating user-defined subtyping hierarchy", ALWAYS)
-
-SUBPHASE (top, "Topologically sorting subtyping graph", TFTOPdoTopoSort, ALWAYS, uds)
-
-SUBPHASE (min, "Computing the minimum equivalent of the graph", TFMINdoReduceTFGraph,
-          ALWAYS, uds)
-
-SUBPHASE (dfw, "Depth first walk of the subtyping graph", TFDFWdoDFWalk, ALWAYS, uds)
-
-SUBPHASE (ctr, "Classify edges and compute reachability over crossedges",
-          TFCTRdoCrossClosure, ALWAYS, uds)
-
-SUBPHASE (rch, "Build link count matrix and label vertices for reachability query",
-          TFRCHdoReachabilityAnalysis, ALWAYS, uds)
-
-SUBPHASE (plb, "Preprocessing graph for answering LUB queries", TFPLBdoLUBPreprocessing,
-          ALWAYS, uds)
-
-ENDPHASE (uds)
-
-/******************************************************************************/
-
 PHASE (tc, "Running type inference system", ALWAYS)
 
 SUBPHASE (esp, "Enforcing Specializations", ESPdoEnforceSpecialization, ALWAYS, tc)
