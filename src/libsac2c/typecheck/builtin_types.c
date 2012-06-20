@@ -6,9 +6,8 @@
 #include "shape.h"
 #include "constants.h"
 
-typedef int BITint;
-typedef shape *BITshp;
-typedef const *BITval;
+#define DBUG_PREFIX "BIT"
+#include "debug.h"
 
 bool
 BITeqIntInt (BITint a, BITint b)
@@ -46,14 +45,14 @@ BITeqValVal (BITval a, BITval b)
 }
 
 bool
-BITakvaks (BITint dim, BITshape shp, BITconst val, BITint dim2, BITshape shp2)
+BITakvaks (BITint dim, BITshp shp, BITval val, BITint dim2, BITshp shp2)
 {
     DBUG_ENTER ();
     DBUG_RETURN (BITeqIntInt (dim, dim2) && BITeqShpShp (shp, shp2));
 }
 
 bool
-BITaksakd (BITint dim, BITshape shp, BITint dim2)
+BITaksakd (BITint dim, BITshp shp, BITint dim2)
 {
     DBUG_ENTER ();
     DBUG_RETURN (BITeqIntInt (dim, dim2));
