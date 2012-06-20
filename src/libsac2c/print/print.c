@@ -1869,12 +1869,17 @@ PRTfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /*
-     *if break_fun_name is set then selective printing is occuring
-     *default option prints all functions
+     *if the break_fun_name is null then always print
+     *if the break_fun_name equals the current FUNDEF node then print
+     *if the break_fun_name is not null (selective printing is used) AND
+     *break_after_phase (-b option) is not set AND the PRTfundef function was not
+     *called during a prt_cycle_range event, then print.
      */
 
     if (global.break_fun_name == NULL
-        || STReq (global.break_fun_name, FUNDEF_NAME (arg_node)) == TRUE) {
+        || STReq (global.break_fun_name, FUNDEF_NAME (arg_node))
+        || (global.break_fun_name != NULL && global.break_after_phase == PH_undefined
+            && global.prt_cycle_range == FALSE)) {
 
         DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
 

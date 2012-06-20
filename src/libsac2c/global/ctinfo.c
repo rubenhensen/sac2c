@@ -1161,17 +1161,12 @@ CTIterminateCompilation (node *syntax_tree)
         && ((global.break_after_phase < PHIlastPhase ())
             || (global.break_after_subphase < PHIlastPhase ())
             || (global.break_after_cyclephase < PHIlastPhase ()))) {
-        if (global.prtphafun_start_phase == PH_undefined) {
-            if (!global.doprintfunsets) {
-                global.doprintfunsets = global.printfunsets.imp && global.printfunsets.use
-                                        && global.printfunsets.def
-                                        && global.printfunsets.wrp
-                                        && global.printfunsets.pre;
-            }
-
-            /*maybe remove this line now that printing through compilation works!*/
-            syntax_tree = PRTdoPrintFile (stdout, syntax_tree);
+        if (!global.doprintfunsets) {
+            global.doprintfunsets = global.printfunsets.imp && global.printfunsets.use
+                                    && global.printfunsets.def && global.printfunsets.wrp
+                                    && global.printfunsets.pre;
         }
+        syntax_tree = PRTdoPrintFile (stdout, syntax_tree);
     }
 
     if (global.visual_after_break && syntax_tree != NULL) {

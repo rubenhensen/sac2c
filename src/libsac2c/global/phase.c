@@ -142,7 +142,6 @@ PHrunConsistencyChecks (node *arg_node)
 node *
 PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 {
-    static int phase_num = 0;
 
     DBUG_ENTER ();
 
@@ -154,7 +153,7 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 
     global.compiler_phase = phase;
     global.compiler_anyphase = phase;
-    phase_num += 1;
+    global.phase_num = global.phase_num + 1;
 
 #ifndef DBUG_OFF
     CheckEnableDbug (phase);
@@ -163,7 +162,7 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
     CTInote (" ");
 
     if (cond) {
-        CTIstate ("** %2d: %s ...", phase_num, PHIphaseText (phase));
+        CTIstate ("** %2d: %s ...", global.phase_num, PHIphaseText (phase));
         syntax_tree = PHIphaseFun (phase) (syntax_tree);
 
         CTIabortOnError ();
@@ -182,7 +181,7 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
         }
 #endif
     } else {
-        CTIstate ("** %2d: %s skipped.", phase_num, PHIphaseText (phase));
+        CTIstate ("** %2d: %s skipped.", global.phase_num, PHIphaseText (phase));
     }
 
 #ifndef DBUG_OFF
@@ -191,22 +190,20 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 
     CTIabortOnError ();
 
-    /*
-     *Print code for range printing...
-     *TODO: ensure start phase <= end phase
-     *Get subphase id??
-     */
-
-    if ((global.prtphafun_start_phase != PH_undefined && global.prt_cycle_range == TRUE)
-        || global.prtphafun_start_phase == phase) {
-        global.prt_cycle_range = TRUE;
-        PRTdoPrintFile (FMGRwriteOpen ("%s.%d", global.outfilename, phase_num),
-                        syntax_tree);
-        if (global.prtphafun_stop_phase == phase) {
-            global.prt_cycle_range = FALSE;
+    /*if prtrange_stepping_specificer == 0*/
+    if (global.prtrange_stepping_specifier == 0
+        || global.prtrange_stepping_specifier == 1) {
+        if ((global.prtphafun_start_phase != PH_undefined
+             && global.prt_cycle_range == TRUE)
+            || global.prtphafun_start_phase == phase) {
+            global.prt_cycle_range = TRUE;
+            PRTdoPrintFile (FMGRwriteOpen ("%s.%d", global.outfilename, global.phase_num),
+                            syntax_tree);
+            if (global.prtphafun_stop_phase == phase) {
+                global.prt_cycle_range = FALSE;
+            }
         }
     }
-
     if (global.break_after_phase == phase) {
         CTIterminateCompilation (syntax_tree);
     }
@@ -258,6 +255,21 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
 #endif
 
     CTIabortOnError ();
+
+    if (global.prtrange_stepping_specifier == 1) {
+        if ((global.prtphafun_start_phase != PH_undefined
+             && global.prt_cycle_range == TRUE)
+            || global.prtphafun_start_subphase == subphase) {
+            global.prt_cycle_range = TRUE;
+            PRTdoPrintFile (FMGRwriteOpen ("%s.%d.%s", global.outfilename,
+                                           global.phase_num, PHIphaseIdent (subphase)),
+                            syntax_tree);
+
+            if (global.prtphafun_stop_subphase == subphase) {
+                global.prt_cycle_range = FALSE;
+            }
+        }
+    }
 
     if (global.break_after_subphase == subphase) {
         CTIterminateCompilation (syntax_tree);

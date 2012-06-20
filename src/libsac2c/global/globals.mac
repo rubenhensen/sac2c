@@ -761,6 +761,11 @@ GLOBAL (bool, lacinline, TRUE, xfree_dummy)
  * Inline LAC functions
  */
 
+GLOBAL (int, phase_num, 0, xfree_dummy)
+/*
+ * Stop compilation process after given phase.
+ */
+
 GLOBAL (compiler_phase_t, break_after_phase, PH_undefined, xfree_dummy)
 /*
  * Stop compilation process after given phase.
