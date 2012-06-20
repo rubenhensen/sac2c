@@ -327,6 +327,7 @@ EnhanceLacfunBody (node *arg_node, info *arg_info, bool markhas)
     node *avisp;
     node *minmax;
     node *lacfun;
+    bool changed = FALSE;
 
     DBUG_PRINT ("Enhancing LACFUN %s body", FUNDEF_NAME (INFO_FUNDEF (arg_info)));
     DBUG_ASSERT (N_block == NODE_TYPE (arg_node), "Expected N_block");
@@ -347,6 +348,7 @@ EnhanceLacfunBody (node *arg_node, info *arg_info, bool markhas)
             DBUG_PRINT ("Adding AVIS_MIN(%s)=%s to formal parameter %s",
                         AVIS_NAME (avisp), AVIS_NAME (minmax), AVIS_NAME (argavis));
             AVIS_HASMINVALARG (argavis) = markhas;
+            changed = TRUE;
         }
 
         if ((NULL != AVIS_MAX (argavis)) && /* Insert AVIS_MAX */
@@ -358,23 +360,26 @@ EnhanceLacfunBody (node *arg_node, info *arg_info, bool markhas)
             DBUG_PRINT ("Adding AVIS_MAX(%s)=%s to formal parameter %s",
                         AVIS_NAME (avisp), AVIS_NAME (minmax), AVIS_NAME (argavis));
             AVIS_HASMAXVALARG (argavis) = markhas;
+            changed = TRUE;
         }
         lacfunargs = ARG_NEXT (lacfunargs);
     }
 
     /* Rename block references from old N_arg names to new ones */
-    arg_node = DUPdoDupNodeLut (arg_node, INFO_LUTRENAMES (arg_info));
-    BLOCK_ASSIGNS (arg_node)
-      = TCappendAssign (INFO_PREASSIGNS (arg_info), BLOCK_ASSIGNS (arg_node));
-    INFO_PREASSIGNS (arg_info) = NULL;
-    lacfun = INFO_FUNDEF (arg_info);
-    if (FUNDEF_ISLOOPFUN (lacfun)) {
-        FUNDEF_LOOPRECURSIVEAP (lacfun)
-          = LUTsearchInLutPp (INFO_LUTRENAMES (arg_info),
-                              FUNDEF_LOOPRECURSIVEAP (lacfun));
-    }
+    if (changed) {
+        arg_node = DUPdoDupNodeLut (arg_node, INFO_LUTRENAMES (arg_info));
+        BLOCK_ASSIGNS (arg_node)
+          = TCappendAssign (INFO_PREASSIGNS (arg_info), BLOCK_ASSIGNS (arg_node));
+        INFO_PREASSIGNS (arg_info) = NULL;
+        lacfun = INFO_FUNDEF (arg_info);
+        if (FUNDEF_ISLOOPFUN (lacfun)) {
+            FUNDEF_LOOPRECURSIVEAP (lacfun)
+              = LUTsearchInLutPp (INFO_LUTRENAMES (arg_info),
+                                  FUNDEF_LOOPRECURSIVEAP (lacfun));
+        }
 
-    LUTremoveContentLut (INFO_LUTRENAMES (arg_info));
+        LUTremoveContentLut (INFO_LUTRENAMES (arg_info));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -475,13 +480,17 @@ PETLfundef (node *arg_node, info *arg_info)
         DBUG_ASSERT (arg_node == INFO_LACFUN (arg_info), "Wrong LACFUN");
         DBUG_PRINT ("Looking at lacfun: %s", FUNDEF_NAME (arg_node));
         arg_node = EnhanceLacfunHeader (arg_node, arg_info);
+
         /* Traverse body to find where to insert F_noteminval/maxval */
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+
         /* Prepend new N_arg elements to lacfun header. This
          * can not be done until we finish messing with the function body. */
-        FUNDEF_ARGS (arg_node)
-          = TCappendArgs (INFO_NEWARGS (arg_info), FUNDEF_ARGS (arg_node));
-        INFO_NEWARGS (arg_info) = NULL;
+        if (NULL != INFO_NEWARGS (arg_info)) {
+            FUNDEF_ARGS (arg_node)
+              = TCappendArgs (INFO_NEWARGS (arg_info), FUNDEF_ARGS (arg_node));
+            INFO_NEWARGS (arg_info) = NULL;
+        }
     }
 
     if (NULL != INFO_VARDECS (arg_info)) {
@@ -612,7 +621,9 @@ PETLcond (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if ((NULL != INFO_LACFUN (arg_info))) {
+        DBUG_PRINT ("Looking at COND_THEN for %s", INFO_FUNDEF (arg_info));
         COND_THEN (arg_node) = EnhanceLacfunBody (COND_THEN (arg_node), arg_info, FALSE);
+        DBUG_PRINT ("Looking at COND_ELSE for %s", INFO_FUNDEF (arg_info));
         COND_ELSE (arg_node) = EnhanceLacfunBody (COND_ELSE (arg_node), arg_info, TRUE);
     } else {
         arg_node = TRAVcont (arg_node, arg_info); /* Vanilla traversal */
