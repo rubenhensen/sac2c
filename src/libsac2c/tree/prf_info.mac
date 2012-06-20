@@ -784,7 +784,7 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
    * Functions for implementing conformability constraints:
    */
 
-  PRF (guard, (PA_x, PA_x, PA_x), 2, XXX, NOSIMD, NTCCTprf_guard, COguard, COMPprfGuard,
+  PRF (guard, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_guard, NULL, COMPprfGuard,
        SCSprf_guard, NULL, NULL, SAAdim_guard, SAAshp_guard, NULL, 0, NULL, NULL,
        TEnMinusOne, NULL, NULL),
 

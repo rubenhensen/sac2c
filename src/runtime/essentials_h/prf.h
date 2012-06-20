@@ -261,10 +261,17 @@
     SAC_TR_PRF_PRINT (("ND_PRF_SINGLETHREAD__...( %s, %d)\n", NT_STR (to_NT), to_sdim)); \
     SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_MT_not_yet_parallel)
 
-#define SAC_ND_PRF_GUARD(scl)                                                            \
-    if (!scl)                                                                            \
-        SAC_RuntimeError ("Conditions not met at guard in " __FILE__                     \
-                          ":" TO_STR (__LINE__) ".");
+#define SAC_ND_PRF_GUARD(to_NT, from_NT)                                                 \
+    {                                                                                    \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < (SAC_ND_A_SIZE (from_NT) - 1); SAC_i++) {                \
+            SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from_NT, SAC_i), );            \
+        }                                                                                \
+        if (!SAC_ND_READ (from_NT, SAC_i)) {                                             \
+            SAC_RuntimeError ("Guard failed in " __FILE__ ":" TO_STR (__LINE__) ".");    \
+        }                                                                                \
+        SAC_ND_A_FIELD (to_NT) = 1;                                                      \
+    }
 
 #define SAC_ND_PRF_TYPE_CONSTRAINT_AKD(to_NT, from_NT, scl)                              \
     if (SAC_ND_A_DIM (from_NT) != scl)                                                   \

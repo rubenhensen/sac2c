@@ -176,9 +176,6 @@ extern constant *COabs (constant *a, constant *, constant *);
 extern constant *COneg (constant *a, constant *, constant *);
 extern constant *COreciproc (constant *a, constant *, constant *);
 
-/* guards */
-extern constant *COguard (constant *a, constant *b);
-
 // Not sure where this stuff belongs, really. Neither fish nor fowl
 // These should go!!! please use COvect2offset instead!!!
 

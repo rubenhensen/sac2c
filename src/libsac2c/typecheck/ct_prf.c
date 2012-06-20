@@ -392,10 +392,10 @@ NTCCTprf_dispatch_error (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_guard( te_info *info, ntype *elems)
  *
- * description: X' = guard( X, pred);
- *             pred is Boolean scalar or array
- *             X is anything.
- *             If( all( pred)), X' = X;
+ * description: X', Y', Z'... = guard( X, Y, Z, ..., pred);
+ *             pred is Boolean scalar
+ *             X, Y, Z... are anything.
+ *             If( pred), X' = X; Y' = Y; Z' = Z; ...
  *             else error.
  *
  ******************************************************************************/
@@ -406,21 +406,23 @@ NTCCTprf_guard (te_info *info, ntype *args)
     ntype *res;
     char *err_msg;
     ntype *pred;
+    int num_rets;
+    int i;
 
     DBUG_ENTER ();
 
-    pred = TYgetProductMember (args, 1);
-
-    TEassureBoolA ("predicate (second argument of guard())", pred);
+    num_rets = TYgetProductSize (args) - 1;
+    pred = TYgetProductMember (args, num_rets);
+    TEassureBoolS ("predicate (last argument of guard())", pred);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         CTIabort (err_msg);
     }
 
-    res = TYgetProductMember (args, 0);
-    res = TYcopyType (res);
-    res = TYeliminateAKV (res);
-    res = TYmakeProductType (1, res);
+    res = TYmakeEmptyProductType (num_rets);
+    for (i = 0; i < num_rets; i++) {
+        TYsetProductMember (res, i, TYcopyType (TYgetProductMember (args, i)));
+    }
 
     DBUG_RETURN (res);
 }

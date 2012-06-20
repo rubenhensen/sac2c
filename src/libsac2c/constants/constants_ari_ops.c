@@ -909,30 +909,4 @@ COreciproc (constant *a, constant *tmp1, constant *tmp2)
     DBUG_RETURN (res);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn constant *COguard( constant *a, constant *b)
- *
- *   @brief If b is true, then result is a; else error
- *
- *   @param a result if b is true
- *   @return a or error.
- *
- ******************************************************************************/
-
-constant *
-COguard (constant *a, constant *b)
-{
-    constant *res = NULL;
-
-    DBUG_ENTER ();
-    if (COisFalse (b, TRUE)) {
-        DBUG_ASSERT (FALSE, "guard failed");
-    } else {
-        res = COcopyConstant (a);
-    }
-
-    DBUG_RETURN (res);
-}
-
 #undef DBUG_PREFIX
