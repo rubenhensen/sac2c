@@ -493,9 +493,6 @@ CYCLEPHASEFUNOLD (iveras, "Eliminating index vectors (reuse WL-offsets and scala
 CYCLEPHASEFUN (ivexi, "Inserting index vector extrema", IVEXIdoInsertIndexVectorExtrema,
                global.doivext, opt, saacyc)
 
-CYCLEPHASEFUN (ivexl, "Inserting index vector extrema into lacfuns",
-               IVEXLdoIndexVectorExtremaIntoLacfuns, global.doivext, opt, saacyc)
-
 CYCLEPHASEFUN (ivexp, "Propagating index vector extrema", IVEXPdoIndexVectorExtremaProp,
                global.doivext, opt, saacyc)
 

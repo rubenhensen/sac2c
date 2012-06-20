@@ -2005,27 +2005,6 @@
   <node name="With" />
   </travuser>
     </traversal>
-    <traversal id="IVEXL" name="Index Vector Extrema Lacfuns Support" default="sons" 
-      include="ivexlacfuns.h" >
-<travuser>
-        <node name="Fundef" />
-  <node name="Avis" />
-  <node name="Block" />
-  <node name="Assign" />
-  <node name="Let" />
-        <node name="Ids" />
-        <node name="Id" />
-        <node name="With" />
-        <node name="Part" />
-        <node name="Code" />
-        <node name="Cond" />
-        <node name="Funcond" />
-        <node name="Ap" />
-  </travuser>
-      <travnone>
-        <node name="Withid" />
-      </travnone>
-    </traversal>     
     <traversal id="ISAA" name="Insert Symbolic Array Attributes" default="sons" 
       include="insert_symb_arrayattr.h" >
 <travuser>
