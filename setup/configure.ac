@@ -445,7 +445,7 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
   AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin -std=c99"])
-  AC_SUBST(MKCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -pedantic -g -O1 -std=c99"])
+  AC_SUBST(MKCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -pedantic -g -std=c99"])
   AC_SUBST(PDCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -pedantic -O3 -std=c99"])
   AC_SUBST(GENPIC, ["-fPIC -DPIC"])
   AC_SUBST(DEPSFLAG, ["-M"])
