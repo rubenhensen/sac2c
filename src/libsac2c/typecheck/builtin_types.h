@@ -11,14 +11,15 @@ typedef int BITint;
 typedef shape *BITshp;
 typedef const *BITval;
 
-extern Bool BITeqIntInt (BITint a, BITint b);
-extern Bool BITleIntInt (BITint a, BITint b);
-extern Bool BITgeIntInt (BITint a, BITint b);
-extern Bool BITeqShpShp (BITshp a, BITshp b);
-extern Bool BITeqValVal (BITval a, BITval b);
+extern bool BITeqIntInt (BITint a, BITint b);
+extern bool BITleIntInt (BITint a, BITint b);
+extern bool BITgeIntInt (BITint a, BITint b);
+extern bool BITeqShpShp (BITshp a, BITshp b);
+extern bool BITeqValVal (BITval a, BITval b);
 
-extern Bool BITakvaks (BITint dim, BITshape shp, BITconst val, BITint dim, BITshape shp);
-extern Bool BITaksakd (BITint dim, BITshape shp, BITint dim);
-extern Bool BITakdaudge (BITint dim, BITint dim);
+extern bool BITakvaks (BITint dim, BITshape shp, BITconst val, BITint dim, BITshape shp);
+extern bool BITaksakd (BITint dim, BITshape shp, BITint dim);
+extern bool BITakdaudge (BITint dim, BITint dim);
+extern bool BITaudgeaudge (BITint dim, BITint dim);
 
 #endif /* _SAC_BIT_H_ */
