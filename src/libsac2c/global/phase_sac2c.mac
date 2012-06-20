@@ -310,6 +310,9 @@ CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagati
 CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
                global.optimize.dols, opt, cyc)
 
+CYCLEPHASEFUN (lacs, "Applying Loop and Conditional Scalarization",
+               LACSdoLoopAndCondScalarization, global.optimize.dolacs, opt, cyc)
+
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
                opt, cyc)
 
@@ -462,6 +465,9 @@ CYCLEPHASEFUN (wlpr, "Applying with-loop propagation", WLPROPdoWithloopPropagati
 
 CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
                global.optimize.dols, opt, saacyc)
+
+CYCLEPHASEFUN (lacs, "Applying Loop and Conditional Scalarization",
+               LACSdoLoopAndCondScalarization, global.optimize.dolacs, opt, saacyc)
 
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
                opt, saacyc)
@@ -731,6 +737,9 @@ SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp,
 SUBPHASE (ls, "Applying Loop Scalarization", LSdoLoopScalarization, global.optimize.dols,
           opt)
 
+SUBPHASE (lacs, "Applying Loop and Conditional Scalarization",
+          LACSdoLoopAndCondScalarization, global.optimize.dolacs, opt)
+
 /* Some WL generators are resolved to degeneracy too late for
  * SAACYC to remove them.
  */
@@ -743,27 +752,27 @@ SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
  * so we start with TC
  */
 
-SUBPHASE (tupls, "Applying type upgrade for LS", NTCdoNewReTypeCheckFromScratch,
+SUBPHASE (tupls, "Applying type upgrade for LS/LACS", NTCdoNewReTypeCheckFromScratch,
           global.optimize.dols &&global.optimize.dotup, opt)
 
-SUBPHASE (etvls, "Eliminating Type Variables for LS", EATdoEliminateAlphaTypes,
+SUBPHASE (etvls, "Eliminating Type Variables for LS/LACS", EATdoEliminateAlphaTypes,
           global.optimize.dols &&global.optimize.dotup, opt)
 
-SUBPHASE (ebtls, "Eliminating Bottom Types for LS", EBTdoEliminateBottomTypes,
+SUBPHASE (ebtls, "Eliminating Bottom Types for LS/LACS", EBTdoEliminateBottomTypes,
           global.optimize.dols &&global.optimize.dotup, opt)
 
-SUBPHASE (cfls, "Applying constant folding for LS", CFdoConstantFolding,
+SUBPHASE (cfls, "Applying constant folding for LS/LACS", CFdoConstantFolding,
           global.optimize.dols &&global.optimize.docf, opt)
 
-SUBPHASE (dlirls, "Applying do-loop invariant removal for LS", DLIRdoLoopInvariantRemoval,
-          global.optimize.dols &&global.optimize.dodlir, opt)
+SUBPHASE (dlirls, "Applying do-loop invariant removal for LS/LACS",
+          DLIRdoLoopInvariantRemoval, global.optimize.dols &&global.optimize.dodlir, opt)
 
-SUBPHASE (wlirls, "Applying with-loop invariant removal for LS",
+SUBPHASE (wlirls, "Applying with-loop invariant removal for LS/LACS",
           WLIRdoLoopInvariantRemoval, global.optimize.dols &&global.optimize.dowlir, opt)
 
 SUBPHASE (ussai, "Undo SSAIV Transform", USSAIdoUndoSSAivTransform, global.ssaiv, opt)
 
-SUBPHASE (vpls, "Propagating variables for LS", VPdoVarPropagation,
+SUBPHASE (vpls, "Propagating variables for LS/LACS", VPdoVarPropagation,
           global.optimize.dols &&global.optimize.dovp, opt)
 
 SUBPHASE (cpive, "Propagating constants for IVE", CPdoConstantPropagation,

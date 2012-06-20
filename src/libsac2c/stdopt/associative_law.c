@@ -990,7 +990,7 @@ ALarg (node *arg_node, info *arg_info)
     if (INFO_ISLOOPBODY (arg_info)) {
 
         DBUG_ASSERT (INFO_RECURSIVEAPARGS (arg_info) != NULL,
-                     "Arity of loop function does not match arity of recursive call");
+                     "Arity of loop function does not match that of recursive call");
 
         if (ARG_AVIS (arg_node)
             == ID_AVIS (EXPRS_EXPR (INFO_RECURSIVEAPARGS (arg_info)))) {
