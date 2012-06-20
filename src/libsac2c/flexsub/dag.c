@@ -153,6 +153,22 @@ static node *
 preprocessDAG (node *gnode)
 {
     DBUG_ENTER ();
+    int root_count = 0;
+
+    /* Assign a root node for the DAG */
+    node *defs = TFDAG_DEFS (gnode);
+    while (defs != NULL) {
+        if (TFVERTEX_PARENTS (defs) == NULL)
+            root_count++;
+        if (root_count > 1)
+            CTIerror ("DAG has multiple roots");
+        else
+            TFDAG_ROOT (gnode) = defs;
+        defs = TFVERTEX_NEXT (defs);
+    }
+
+    /* preprocess the dag */
+
     TFTOPdoTopoSort (gnode);
     TFMINdoReduceTFGraph (gnode);
     TFDFWdoDFWalk (gnode);
