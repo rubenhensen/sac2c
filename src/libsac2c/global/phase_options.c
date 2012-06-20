@@ -106,6 +106,34 @@ SearchCyclePhase (compiler_phase_t cycle, char *name)
 }
 
 /*
+ * Interprets the step option for use with -printstart and -printstop.
+ * assigns the result to the stepping specifier.
+ * p = phase stepping
+ * s = sub-phase stepping
+ * c = cycle stepping
+ */
+void
+PHOinterpretStep (char *option)
+{
+    DBUG_ENTER ();
+
+    if (STReq (option, "p")) {
+        global.prtrange_stepping_specifier = 0;
+    } else if (STReq (option, "s")) {
+        global.prtrange_stepping_specifier = 1;
+    } else if (STReq (option, "c")) {
+        global.prtrange_stepping_specifier = 2;
+    } else {
+        CTIerror ("Illegal step specification in option: \n"
+                  "  -printstep %s\n"
+                  "See %s -h for a list of legal step options.",
+                  option, global.toolname);
+    }
+
+    DBUG_RETURN ();
+}
+
+/*
  *global assignment for printfun option
  */
 void
@@ -124,8 +152,9 @@ PHOinterpretStartPhase (char *option)
 {
     DBUG_ENTER ();
 
+    enum phase_mode_t mode = START;
     /* call this function with TRUE to determine start */
-    InterpretPrintOptionPhase (option, 1);
+    InterpretPrintOptionPhase (option, mode);
 
     DBUG_RETURN ();
 }
@@ -136,8 +165,9 @@ PHOinterpretStopPhase (char *option)
 {
     DBUG_ENTER ();
 
+    enum phase_mode_t mode = STOP;
     /* call this function with FALSE to determine stop */
-    InterpretPrintOptionPhase (option, 0);
+    InterpretPrintOptionPhase (option, mode);
 
     DBUG_RETURN ();
 }
@@ -154,7 +184,7 @@ PHOinterpretStopPhase (char *option)
  * - prtphafun_start_cycle
  */
 void
-InterpretPrintOptionPhase (char *option, int isstart)
+InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
 {
     compiler_phase_t phase;
     compiler_phase_t subphase;
@@ -188,17 +218,30 @@ InterpretPrintOptionPhase (char *option, int isstart)
     }
 
     if (phase == PHIlastPhase ()) {
-        CTIerror ("Illegal compiler phase specification in option: \n"
-                  "  -printphasefun %s\n"
-                  "See %s -h for a list of legal break options.",
-                  option, global.toolname);
+        switch (mode) {
+        case START:
+            CTIerror ("Illegal compiler phase specification in option: \n"
+                      "  -printstart %s\n"
+                      "See %s -h for a list of legal break options.",
+                      option, global.toolname);
+            break;
+        case STOP:
+            CTIerror ("Illegal compiler phase specification in option: \n"
+                      "  -printstop %s\n"
+                      "See %s -h for a list of legal break options.",
+                      option, global.toolname);
+            break;
+        }
     } else {
-        if (isstart == 1) {
+        switch (mode) {
+        case START:
             /* in this case set the start phase */
             global.prtphafun_start_phase = phase;
-        } else {
+            break;
+        case STOP:
             /* in this case set the stop phase */
             global.prtphafun_stop_phase = phase;
+            break;
         }
     }
 
@@ -210,15 +253,27 @@ InterpretPrintOptionPhase (char *option, int isstart)
         subphase = SearchSubPhase (phase, break_subphase);
 
         if (subphase == PHIlastPhase ()) {
-            CTIerror ("Illegal compiler subphase specification in option:\n"
-                      "  -printphasefun %s\n"
-                      "See sac2c -h for a list of legal break options.",
-                      option);
+            switch (mode) {
+            case START:
+                CTIerror ("Illegal compiler phase specification in option: \n"
+                          "  -printstart %s\n"
+                          "See %s -h for a list of legal break options.",
+                          option, global.toolname);
+                break;
+            case STOP:
+                CTIerror ("Illegal compiler phase specification in option: \n"
+                          "  -printstop %s\n"
+                          "See %s -h for a list of legal break options.",
+                          option, global.toolname);
+                break;
+            }
         } else {
-            if (isstart == 1) {
+            switch (mode) {
+            case START:
                 /* in this case set the start phase */
                 global.prtphafun_start_subphase = subphase;
-            } else {
+                break;
+            case STOP:
                 /* in this case set the stop phase */
                 global.prtphafun_stop_subphase = subphase;
             }
@@ -232,16 +287,28 @@ InterpretPrintOptionPhase (char *option, int isstart)
             cyclephase = SearchCyclePhase (subphase, break_cyclephase);
 
             if (cyclephase == PHIlastPhase ()) {
-                CTIerror ("Illegal compiler cycle phase specification in option: \n"
-                          "  -printphasefun %s\n"
-                          "See sac2c -h for a list of legal break options.",
-                          option);
+                switch (mode) {
+                case START:
+                    CTIerror ("Illegal compiler phase specification in option: \n"
+                              "  -printstart %s\n"
+                              "See %s -h for a list of legal break options.",
+                              option, global.toolname);
+                    break;
+                case STOP:
+                    CTIerror ("Illegal compiler phase specification in option: \n"
+                              "  -printstop %s\n"
+                              "See %s -h for a list of legal break options.",
+                              option, global.toolname);
+                    break;
+                }
             } else {
-                if (isstart == 1) {
+                switch (mode) {
+                case START:
                     global.prtphafun_start_cycle = cyclephase;
-                } else {
-                    /* in this case set the stop phase */
+                    break;
+                case STOP:
                     global.prtphafun_stop_cycle = cyclephase;
+                    break;
                 }
             }
 

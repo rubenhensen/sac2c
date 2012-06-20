@@ -5,7 +5,15 @@
 #ifndef _PHASE_OPTIONS_H_
 #define _PHASE_OPTIONS_H_
 
-void InterpretPrintOptionPhase (char *option, int isstart);
+/*
+ * enum to pass to InterpretPrintOptionPhase to detirmine which global phase
+ * to assign.
+ */
+enum phase_mode_t { START, STOP };
+
+void InterpretPrintOptionPhase (char *option, enum phase_mode_t mode);
+
+extern void PHOinterpretStep (char *option);
 
 extern void PHOinterpretStartPhase (char *option);
 extern void PHOinterpretStopPhase (char *option);

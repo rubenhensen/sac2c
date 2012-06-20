@@ -809,10 +809,20 @@ PrintPrintingOptions (void)
       "               in which case the output file format will be\n"
       "               <outfilename>.<phase_id>\n"
       "\n"
-      "     -printstop <phase_id> "
+      "    -printstop <phase_id> \n"
       "               if this option is used printing will stop at this\n"
       "               phase whilst compilation will continue until completion\n"
-      "               unless -b is used.\n");
+      "               unless -b is used.\n"
+      "\n"
+      "    -printstep <n>\n"
+      "               Select different stepping modes for use in conjunction\n"
+      "               -printstart, -printstop, and -printfun.\n"
+      "               Stepping is set to print after each phase when this\n"
+      "               option is not used.\n"
+      "               The following stepping modes are supported:\n"
+      "                 p: print after each phase. \n"
+      "                 s: print after each sub-phase.\n"
+      "                 c: print after each cycle.\n");
 
     DBUG_RETURN ();
 }

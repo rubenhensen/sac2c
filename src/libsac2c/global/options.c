@@ -778,6 +778,8 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("printstop", PHOinterpretStopPhase (ARG))
 
+    ARGS_OPTION ("printstep", PHOinterpretStep (ARG))
+
     ARGS_OPTION_BEGIN ("printfunsets")
     {
         global.doprintfunsets = FALSE;
