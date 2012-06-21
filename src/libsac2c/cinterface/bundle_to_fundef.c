@@ -68,7 +68,7 @@ struct INFO {
 #define INFO_CODE(n) ((n)->code)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

@@ -47,7 +47,7 @@ struct INFO {
 #define INFO_BUNDLES(n) (n->bundles)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

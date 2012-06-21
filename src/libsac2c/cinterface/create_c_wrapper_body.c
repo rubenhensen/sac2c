@@ -51,7 +51,7 @@ struct INFO {
 #define INFO_FILE(n) ((n)->file)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
