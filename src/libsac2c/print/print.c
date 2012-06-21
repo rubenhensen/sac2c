@@ -1102,6 +1102,8 @@ PRTspids (node *arg_node, info *arg_info)
 node *
 PRTmodule (node *arg_node, info *arg_info)
 {
+    bool allow_non_fun = TRUE;
+
     DBUG_ENTER ();
 
     DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
@@ -1274,41 +1276,63 @@ PRTmodule (node *arg_node, info *arg_info)
             break;
         }
 
-        if (MODULE_INTERFACE (arg_node) != NULL) {
+        /*
+         * if this is false header comments and non fun code is filtered out.
+         * This is for the sake of the printstart, printstop, printfun options.
+         * (mhs)
+         */
+        /*    allow_non_fun = (( global.break_fun_name == NULL ||
+                                 (global.compiler_phase > global.prtphafun_stop_phase)) ||
+                                 (global.break_fun_name != NULL &&
+                                 global.break_after_phase == PH_undefined));
+        */
+        allow_non_fun
+          = ((global.break_fun_name == NULL)
+             || (global.break_fun_name != NULL && global.break_after_phase == PH_undefined
+                 && global.prt_cycle_range == FALSE
+                 && (global.compiler_phase > global.prtphafun_stop_phase
+                     || global.prtphafun_stop_phase == PH_undefined)));
+
+        if (allow_non_fun && (MODULE_INTERFACE (arg_node) != NULL)) {
             fprintf (global.outfile, "\n");
+
             /* print import-list */
             TRAVdo (MODULE_INTERFACE (arg_node), arg_info);
         }
 
-        if (NULL != MODULE_TYPEFAMILIES (arg_node)) {
+        if (allow_non_fun && (NULL != MODULE_TYPEFAMILIES (arg_node))) {
             fprintf (global.outfile, "\n\n");
+
             /* print typefamilies */
             TRAVdo (MODULE_TYPEFAMILIES (arg_node), arg_info);
         }
 
-        if (MODULE_STRUCTS (arg_node) != NULL) {
+        if (allow_non_fun && (MODULE_STRUCTS (arg_node) != NULL)) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  struct definitions\n"
                                      " */\n\n");
+
             /* print structdefs */
             TRAVdo (MODULE_STRUCTS (arg_node), arg_info);
         }
 
-        if (MODULE_TYPES (arg_node) != NULL) {
+        if (allow_non_fun && (MODULE_TYPES (arg_node) != NULL)) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  type definitions\n"
                                      " */\n\n");
+
             /* print typedefs */
             TRAVdo (MODULE_TYPES (arg_node), arg_info);
         }
 
-        if (MODULE_FPFRAMESTORE (arg_node) != NULL) {
+        if (allow_non_fun && (MODULE_FPFRAMESTORE (arg_node) != NULL)) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  FP Frame infrastructure\n"
                                      " */\n\n");
+
             TRAVdo (MODULE_FPFRAMESTORE (arg_node), arg_info);
         }
 
@@ -1317,28 +1341,32 @@ PRTmodule (node *arg_node, info *arg_info)
          * going; a much better solution should be adopted once print.c
          * is rewritten!!!! (sbs)
          */
-        if (global.tool != TOOL_sac2tex) {
+        if (global.tool != TOOL_sac2tex && allow_non_fun) {
             GSCprintDefines ();
         }
 
-        if ((MODULE_FUNDECS (arg_node) != NULL)
-            && (global.doprintfunsets || global.printfunsets.imp
-                || global.printfunsets.use)) {
+        if (allow_non_fun
+            && ((MODULE_FUNDECS (arg_node) != NULL)
+                && (global.doprintfunsets || global.printfunsets.imp
+                    || global.printfunsets.use))) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  prototypes for externals (FUNDECS)\n"
                                      " */\n\n");
+
             INFO_PROTOTYPE (arg_info) = TRUE;
             /* print function declarations */
             TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
             INFO_PROTOTYPE (arg_info) = FALSE;
         }
 
-        if (MODULE_FUNSPECS (arg_node) != NULL) {
+        if (allow_non_fun && (MODULE_FUNSPECS (arg_node) != NULL)) {
+
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  user requested specialisations (FUNSPECS)\n"
                                      " */\n\n");
+
             INFO_SPECIALIZATION (arg_info) = TRUE;
             /* print function declarations */
             TRAVdo (MODULE_FUNSPECS (arg_node), arg_info);
@@ -1350,12 +1378,13 @@ PRTmodule (node *arg_node, info *arg_info)
          * going; a much better solution should be adopted once print.c
          * is rewritten!!!! (sbs)
          */
-        if (global.tool != TOOL_sac2tex) {
+        if (allow_non_fun && (global.tool != TOOL_sac2tex)) {
             if (MODULE_THREADFUNS (arg_node) != NULL) {
                 fprintf (global.outfile, "\n\n"
                                          "/*\n"
                                          " *  prototypes for threads (THREADFUNS)\n"
                                          " */\n\n");
+
                 INFO_PROTOTYPE (arg_info) = TRUE;
                 /* print function declarations */
                 TRAVdo (MODULE_THREADFUNS (arg_node), arg_info);
@@ -1364,10 +1393,12 @@ PRTmodule (node *arg_node, info *arg_info)
             if ((MODULE_FUNS (arg_node) != NULL
                  && (global.doprintfunsets || global.printfunsets.imp
                      || global.printfunsets.use || global.printfunsets.pre))) {
+
                 fprintf (global.outfile, "\n\n"
                                          "/*\n"
                                          " *  prototypes for locals (FUNDEFS)\n"
                                          " */\n\n");
+
                 INFO_PROTOTYPE (arg_info) = TRUE;
                 /* print function declarations */
                 TRAVdo (MODULE_FUNS (arg_node), arg_info);
@@ -1375,28 +1406,34 @@ PRTmodule (node *arg_node, info *arg_info)
             }
         }
 
-        if ((MODULE_OBJS (arg_node) != NULL) && global.doprintfunsets) {
+        if (allow_non_fun
+            && ((MODULE_OBJS (arg_node) != NULL) && global.doprintfunsets)) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  global objects\n"
                                      " */\n\n");
+
             /* print objdefs */
             TRAVdo (MODULE_OBJS (arg_node), arg_info);
         }
 
-        if ((MODULE_SPMDSTORE (arg_node) != NULL) && global.doprintfunsets) {
+        if (allow_non_fun
+            && ((MODULE_SPMDSTORE (arg_node) != NULL) && global.doprintfunsets)) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  SPMD infrastructure\n"
                                      " */\n\n");
+
             TRAVdo (MODULE_SPMDSTORE (arg_node), arg_info);
         }
 
-        if ((MODULE_THREADFUNS (arg_node) != NULL) && global.doprintfunsets) {
+        if (allow_non_fun
+            && ((MODULE_THREADFUNS (arg_node) != NULL) && global.doprintfunsets)) {
             fprintf (global.outfile, "\n\n"
                                      "/*\n"
                                      " *  function definitions (THREADFUNS)\n"
                                      " */\n\n");
+
             /* print function definitions */
             TRAVdo (MODULE_THREADFUNS (arg_node), arg_info);
         }
@@ -1404,15 +1441,18 @@ PRTmodule (node *arg_node, info *arg_info)
         if ((MODULE_FUNS (arg_node) != NULL)
             && (global.doprintfunsets || global.printfunsets.def
                 || global.printfunsets.wrp)) {
-            fprintf (global.outfile, "\n\n"
-                                     "/*\n"
-                                     " *  function definitions (FUNDEFS)\n"
-                                     " */\n\n");
+
+            if (allow_non_fun) {
+                fprintf (global.outfile, "\n\n"
+                                         "/*\n"
+                                         " *  function definitions (FUNDEFS)\n"
+                                         " */\n\n");
+            }
+
             /* print function definitions */
             TRAVdo (MODULE_FUNS (arg_node), arg_info);
         }
     }
-
     DBUG_RETURN (arg_node);
 }
 
@@ -1880,7 +1920,6 @@ PRTfundef (node *arg_node, info *arg_info)
         || STReq (global.break_fun_name, FUNDEF_NAME (arg_node))
         || (global.break_fun_name != NULL && global.break_after_phase == PH_undefined
             && global.prt_cycle_range == FALSE)) {
-
         DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
 
         if (NODE_ERROR (arg_node) != NULL) {
