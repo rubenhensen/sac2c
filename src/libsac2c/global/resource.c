@@ -402,7 +402,7 @@ FreeTargetList (target_list_t *target)
 
 // static
 void
-PrintResources ()
+PrintResources (void)
 {
     int i;
 
@@ -481,7 +481,7 @@ RSCparseResourceFile (char *buffer)
  ******************************************************************************/
 
 static void
-ParseResourceFiles ()
+ParseResourceFiles (void)
 {
     char *filename;
     char *envvar;

@@ -43,9 +43,9 @@
  * Prefix: USG
  *
  *****************************************************************************/
-extern void USGprintUsage ();
-extern void USGprintCopyright ();
-extern void USGprintVersion ();
-extern void USGprintVersionVerbose ();
+extern void USGprintUsage (void);
+extern void USGprintCopyright (void);
+extern void USGprintVersion (void);
+extern void USGprintVersionVerbose (void);
 
 #endif /* _SAC_USAGE_H_ */

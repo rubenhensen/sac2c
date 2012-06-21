@@ -285,7 +285,7 @@ PrintMessage (const char *header, const char *format, va_list arg_p)
  ******************************************************************************/
 
 static void
-CleanUp ()
+CleanUp (void)
 {
     DBUG_ENTER ();
 
@@ -310,7 +310,7 @@ CleanUp ()
  ******************************************************************************/
 
 static void
-CleanUpInterrupted ()
+CleanUpInterrupted (void)
 {
     int status;
 
@@ -346,7 +346,7 @@ CleanUpInterrupted ()
  ******************************************************************************/
 
 static void
-AbortCompilation ()
+AbortCompilation (void)
 {
     int ecode = (int)global.compiler_phase;
     DBUG_ENTER ();
