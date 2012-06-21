@@ -82,7 +82,7 @@ struct INFO {
 #define INFO_SPAWNSTORE(n) ((n)->spawnstore)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

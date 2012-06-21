@@ -114,7 +114,7 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
