@@ -438,10 +438,8 @@ LINLdoLACInlining (node *arg_node)
 
     DBUG_ENTER ();
 
-#ifdef SHOW_MALLOC
     DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
                     global.current_allocated_mem);
-#endif
 
     arg_info = MakeInfo ();
 
@@ -451,10 +449,8 @@ LINLdoLACInlining (node *arg_node)
 
     FreeInfo (arg_info);
 
-#ifdef SHOW_MALLOC
     DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
                     global.current_allocated_mem);
-#endif
 
     DBUG_RETURN (arg_node);
 }

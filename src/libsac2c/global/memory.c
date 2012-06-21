@@ -34,8 +34,6 @@
  *
  ******************************************************************************/
 
-#ifdef SHOW_MALLOC
-
 /*
  * These types are only used to compute malloc_align_step.
  *
@@ -70,39 +68,44 @@ MEMmalloc (int size)
     DBUG_ASSERT (malloc_align_step > 0, "malloc_align_step not set");
 
     if (size > 0) {
+        int alloc_size = global.memcheck ? size + malloc_align_step : size;
 
         /*
          * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
          * we do complain for ((NULL == tmp) && (size > 0)) only!!
          */
-        orig_ptr = malloc (size + malloc_align_step);
+        orig_ptr = malloc (alloc_size);
 
         if (orig_ptr == NULL) {
             CTIabortOutOfMemory (size);
         }
 
-        shifted_ptr = CHKMregisterMem (size, orig_ptr);
+        if (global.memcheck) {
+            shifted_ptr = CHKMregisterMem (size, orig_ptr);
 
-        if (global.current_allocated_mem + size < global.current_allocated_mem) {
+            if (global.current_allocated_mem + size < global.current_allocated_mem) {
 
-            DBUG_ASSERT (0, "counter for allocated memory: overflow detected");
-        }
-        global.current_allocated_mem += size;
-        if (global.max_allocated_mem < global.current_allocated_mem) {
-            global.max_allocated_mem = global.current_allocated_mem;
-        }
+                DBUG_ASSERT (0, "counter for allocated memory: overflow detected");
+            }
+            global.current_allocated_mem += size;
+            if (global.max_allocated_mem < global.current_allocated_mem) {
+                global.max_allocated_mem = global.current_allocated_mem;
+            }
 
-        DBUG_PRINT ("Alloc memory: %d Bytes at adress: " F_PTR, size, shifted_ptr);
+            DBUG_PRINT ("Alloc memory: %d Bytes at adress: " F_PTR, size, shifted_ptr);
 
-        DBUG_PRINT_TAG ("MEM_TOTAL", "Currently allocated memory: %u",
-                        global.current_allocated_mem);
+            DBUG_PRINT_TAG ("MEM_TOTAL", "Currently allocated memory: %u",
+                            global.current_allocated_mem);
 
 #ifdef CLEANMEM
-        /*
-         * Initialize memory
-         */
-        shifted_ptr = memset (shifted_ptr, 0, size);
+            /*
+             * Initialize memory
+             */
+            shifted_ptr = memset (shifted_ptr, 0, size);
 #endif
+        } else {
+            shifted_ptr = orig_ptr;
+        }
 
     } else {
         shifted_ptr = NULL;
@@ -129,22 +132,32 @@ MEMmallocAt (int size, char *file, int line)
     DBUG_RETURN (pointer);
 }
 
-/* FIXME:  This is a very bad implemenation of realloc, however the good one
-   requires touching freaking check_mem and dealing with their pointer
-   arithmetics.  */
 void *
 __MEMrealloc (void *ptr, int size)
 {
-    int ptr_size = CHKMgetSize (ptr);
+    int ptr_size;
     void *ret = NULL;
 
     DBUG_ENTER ();
     DBUG_ASSERT (size > 0, "%s called with negative size", __func__);
 
-    ret = MEMmalloc (size);
-    memcpy (ret, ptr, ptr_size);
-    MEMfree (ptr);
+    if (global.memcheck) {
+        /* FIXME:  This is a very bad implemenation of realloc, however the good one
+         requires touching freaking check_mem and dealing with their pointer
+         arithmetics.  */
 
+        ptr_size = CHKMgetSize (ptr);
+
+        ret = MEMmalloc (size);
+        memcpy (ret, ptr, ptr_size);
+        MEMfree (ptr);
+    } else {
+        ret = realloc (ptr, size);
+        /* FIXME: Is it appropriate for realloc?  */
+        if (ret == NULL) {
+            CTIabortOutOfMemory (size);
+        }
+    }
     DBUG_RETURN (ret);
 }
 
@@ -173,30 +186,34 @@ MEMfree (void *shifted_ptr)
     DBUG_ASSERT (malloc_align_step > 0, "malloc_align_step not set");
 
     if (shifted_ptr != NULL) {
-        size = CHKMgetSize (shifted_ptr);
+        if (global.memcheck) {
+            size = CHKMgetSize (shifted_ptr);
 
-        DBUG_ASSERT (size >= 0, "illegal size found!");
-        DBUG_PRINT ("Free memory: %d Bytes at adress: " F_PTR, size, shifted_ptr);
+            DBUG_ASSERT (size >= 0, "illegal size found!");
+            DBUG_PRINT ("Free memory: %d Bytes at adress: " F_PTR, size, shifted_ptr);
 
-        if (global.current_allocated_mem < global.current_allocated_mem - size) {
-            DBUG_ASSERT (0, "counter for allocated memory: overflow detected");
-        }
-        global.current_allocated_mem -= size;
+            if (global.current_allocated_mem < global.current_allocated_mem - size) {
+                DBUG_ASSERT (0, "counter for allocated memory: overflow detected");
+            }
+            global.current_allocated_mem -= size;
 
-        DBUG_PRINT_TAG ("MEM_TOTAL", "Currently allocated memory: %u",
-                        global.current_allocated_mem);
+            DBUG_PRINT_TAG ("MEM_TOTAL", "Currently allocated memory: %u",
+                            global.current_allocated_mem);
 
 #ifdef CLEANMEM
-        /*
-         * this code overwrites the memory prior to freeing it. This
-         * is very useful when watching a memory address in gdb, as
-         * one gets notified as soon as it is freed. Needs SHOW_MALLOC
-         * to get the size of the freed memory chunk.
-         */
-        shifted_ptr = memset (shifted_ptr, 0, size);
+            /*
+             * this code overwrites the memory prior to freeing it. This
+             * is very useful when watching a memory address in gdb, as
+             * one gets notified as soon as it is freed. Needs memcheck
+             * to get the size of the freed memory chunk.
+             */
+            shifted_ptr = memset (shifted_ptr, 0, size);
 #endif /* CLEANMEM */
 
-        orig_ptr = CHKMunregisterMem (shifted_ptr);
+            orig_ptr = CHKMunregisterMem (shifted_ptr);
+        } else {
+            orig_ptr = shifted_ptr;
+        }
         free (orig_ptr);
         orig_ptr = NULL;
     }
@@ -239,66 +256,6 @@ MEMdbugMemoryLeakCheck (void)
 
     DBUG_RETURN ();
 }
-
-#else /*SHOW_MALLOC */
-
-void *
-MEMmalloc (int size)
-{
-    void *ptr;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (size >= 0, "MEMmalloc called with negative size!");
-
-    if (size > 0) {
-        /*
-         * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
-         * we do complain for ((NULL == tmp) && (size > 0)) only!!
-         */
-        ptr = malloc (size);
-
-        if (ptr == NULL) {
-            CTIabortOutOfMemory (size);
-        }
-    } else {
-        ptr = NULL;
-    }
-
-    DBUG_RETURN (ptr);
-}
-
-void *
-MEMfree (void *address)
-{
-    DBUG_ENTER ();
-
-    if (address != NULL) {
-        free (address);
-        address = NULL;
-    }
-
-    DBUG_RETURN (address);
-}
-
-void *
-__MEMrealloc (void *ptr, int size)
-{
-    void *ret = NULL;
-
-    DBUG_ENTER ();
-    DBUG_ASSERT (size > 0, "%s called with negative size", __func__);
-
-    ret = realloc (ptr, size);
-    /* FIXME: Is it appropriate for realloc?  */
-    if (ret == NULL) {
-        CTIabortOutOfMemory (size);
-    }
-
-    DBUG_RETURN (ret);
-}
-
-#endif /* SHOW_MALLOC */
 
 /******************************************************************************
  *

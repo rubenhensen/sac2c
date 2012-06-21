@@ -1985,10 +1985,8 @@ WLFdoWLF (node *arg_node)
 
     info = MakeInfo ();
 
-#ifdef SHOW_MALLOC
     DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
                     global.current_allocated_mem);
-#endif
 
     global.valid_ssaform = FALSE;
     /*
@@ -2001,10 +1999,8 @@ WLFdoWLF (node *arg_node)
     arg_node = TRAVdo (arg_node, info);
     TRAVpop ();
 
-#ifdef SHOW_MALLOC
     DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
                     global.current_allocated_mem);
-#endif
 
     info = FreeInfo (info);
 

@@ -883,10 +883,8 @@ CTIabortOutOfMemory (unsigned int request)
              "%s %u bytes requested\n",
              abort_message_header, abort_message_header, request);
 
-#ifdef SHOW_MALLOC
     fprintf (stderr, "%s %u bytes already allocated\n", abort_message_header,
              global.current_allocated_mem);
-#endif
 
     errors++;
 
@@ -1231,14 +1229,14 @@ CTIterminateCompilation (node *syntax_tree)
         break_found = TRUE;
     }
 
-#ifdef SHOW_MALLOC
-    CHKMdeinitialize ();
+    if (global.memcheck) {
+        CHKMdeinitialize ();
 
-    CTIstate ("** Maximum allocated memory (bytes):   %s",
-              CVintBytes2String (global.max_allocated_mem));
-    CTIstate ("** Currently allocated memory (bytes): %s",
-              CVintBytes2String (global.current_allocated_mem));
-#endif
+        CTIstate ("** Maximum allocated memory (bytes):   %s",
+                  CVintBytes2String (global.max_allocated_mem));
+        CTIstate ("** Currently allocated memory (bytes): %s",
+                  CVintBytes2String (global.current_allocated_mem));
+    }
 
     CTIstate ("** Exit code 0");
     CTIstate ("** 0 error(s), %d warning(s)", warnings);

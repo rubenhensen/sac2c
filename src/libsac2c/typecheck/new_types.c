@@ -1387,10 +1387,8 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
 #endif
 
     DBUG_ENTER ();
-#ifdef SHOW_MALLOC
     DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on entering TYmakeFunType: %u",
                     global.current_allocated_mem);
-#endif
 
     res = MakeNtype (TC_ires, 1);
 
@@ -1497,10 +1495,8 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     DBUG_PRINT ("fun type built: %s\n", tmp);
     DBUG_EXECUTE (tmp = MEMfree (tmp));
 
-#ifdef SHOW_MALLOC
     DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on leaving  TYmakeFunType: %u",
                     global.current_allocated_mem);
-#endif
 
     DBUG_RETURN (fun);
 }
@@ -4632,9 +4628,7 @@ TYcopyType (ntype *type)
 
     DBUG_ENTER ();
 
-#ifdef SHOW_MALLOC
     DBUG_EXECUTE_TAG ("NTY_MEM", mem_entry = global.current_allocated_mem);
-#endif
 
     res = CopyTypeConstructor (type, tv_id);
     if (res != NULL) {
@@ -4645,10 +4639,8 @@ TYcopyType (ntype *type)
         }
     }
 
-#ifdef SHOW_MALLOC
     DBUG_PRINT_TAG ("NTY_MEM", "size of type copied by TYcopyType: %u",
                     global.current_allocated_mem - mem_entry);
-#endif
 
     if (res != NULL) {
         res = TYsetMutcScope (res, TYgetMutcScope (type));

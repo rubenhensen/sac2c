@@ -69,9 +69,7 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("d")
     {
         ARG_CHOICE_BEGIN ();
-#ifdef SHOW_MALLOC
         ARG_CHOICE ("memcheck", global.memcheck = TRUE);
-#endif
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("d");
@@ -526,9 +524,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         ARG_CHOICE ("treecheck", global.treecheck = TRUE);
         ARG_CHOICE ("lacfuncheck", global.lacfuncheck = TRUE);
         ARG_CHOICE ("sancheck", global.sancheck = TRUE);
-#ifdef SHOW_MALLOC
         ARG_CHOICE ("memcheck", global.memcheck = TRUE);
-#endif
         ARG_CHOICE ("efence", global.use_efence = TRUE);
         ARG_CHOICE ("nolacinline", global.lacinline = FALSE);
         ARG_CHOICE ("nocleanup", global.cleanup = FALSE);

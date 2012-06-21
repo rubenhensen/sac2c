@@ -35,12 +35,9 @@ CHKinsertError (node *arg_node, char *string)
          * not be used to print the error string when the memcheck mechanism
          * is active
          */
-#ifdef SHOW_MALLOC
         if (global.memcheck) {
             fprintf (stderr, "WARNING: %s\n", string);
-        } else
-#endif /* SHOW_MALLOC */
-        {
+        } else {
             CTIwarn ("%s", string);
         }
 

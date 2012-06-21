@@ -60,8 +60,6 @@ version="1.0">
       Part for Memorycheck START 
    -->
   <xsl:call-template name="newline" />
-  <xsl:value-of select="'#ifdef SHOW_MALLOC'"/>
-  <xsl:call-template name="newline" />
   <xsl:value-of select="'nodealloc = (struct NODE_ALLOC_N_'" />
   <xsl:call-template name="uppercase" >
     <xsl:with-param name="string">
@@ -69,25 +67,12 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="' *) MEMmallocAt( size, file, line);'" />
-  <xsl:value-of select="'#else '" />
-  <xsl:call-template name="newline" />
-  <xsl:value-of select="'nodealloc = (struct NODE_ALLOC_N_'" />
-  <xsl:call-template name="uppercase" >
-    <xsl:with-param name="string">
-      <xsl:value-of select="@name" />
-    </xsl:with-param>
-  </xsl:call-template>
-  <xsl:value-of select="' *) MEMmalloc( size);'" />
-  <xsl:call-template name="newline" />
-  <xsl:value-of select="'#endif /* SHOW_MALLOC */'" />
   <xsl:call-template name="newline" />
   <!-- 
       Part for Memorycheck END 
    -->
   <!-- set node structure -->
   <xsl:value-of select="'this = (node *) &amp;(nodealloc->nodestructure);'" />
-  <xsl:call-template name="newline" />
-  <xsl:value-of select="'#ifdef SHOW_MALLOC'"/>
   <xsl:call-template name="newline" />
   <xsl:value-of select="'CHKMsetNodeType(this, N_'" />
   <xsl:call-template name="lowercase" >
@@ -96,8 +81,6 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="');'" />
-  <xsl:call-template name="newline" />
-  <xsl:value-of select="'#endif /* SHOW_MALLOC */'" />
   <xsl:call-template name="newline" />
   <!-- set sons and attribs pointer -->
   <!-- only set sons if we have sons -->

@@ -143,11 +143,7 @@ version="1.0">
   <xsl:value-of select="'NODE_FILE( this) = sfile;'" />
   <xsl:value-of select="'NODE_ERROR( this) = NULL;'" />
   <xsl:call-template name="newline" />
-  <xsl:value-of select="'#ifdef SHOW_MALLOC'" />
-  <xsl:call-template name="newline" />
   <xsl:value-of select="'CHKMsetNodeType (this, node_type);'" />
-  <xsl:call-template name="newline" />
-  <xsl:value-of select="'#endif /* SHOW_MALLOC */'" />
   <xsl:call-template name="newline" />
   <!-- set sons and attribs types -->
   <xsl:if test="sons/son">

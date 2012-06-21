@@ -700,9 +700,7 @@ PrintDebugOptions (void)
             "    -debug_rc       Enable reference counting debuging features\n"
             "    -d treecheck    Check syntax tree for consistency with xml "
             "specification.\n"
-#ifdef SHOW_MALLOC
             "    -d memcheck     Check syntax tree for memory consistency.\n"
-#endif
             "    -d sancheck     Check syntax tree for structural consistency.\n"
             "    -d lacfuncheck  Check syntax tree for single call property of LaC "
             "functions.\n"
@@ -1105,7 +1103,8 @@ PrintAuthors (void)
             "      Zheng Zhangzheng\n"
             "      Aram Visser\n"
             "      Tim van Deurzen\n"
-            "      Roeland Douma\n");
+            "      Roeland Douma\n"
+            "      Miguel Diogo\n");
 
     DBUG_RETURN ();
 }

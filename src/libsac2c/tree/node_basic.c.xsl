@@ -70,11 +70,7 @@ version="1.0">
  *****************************************************************************/
 
   </xsl:text>
-  <xsl:apply-templates select="." mode="make-head-checkmem-ifdef"/>
   <xsl:apply-templates select="." mode="make-head-checkmem"/>
-  <xsl:apply-templates select="." mode="make-head-checkmem-else"/>
-  <xsl:apply-templates select="." mode="make-head"/>
-  <xsl:apply-templates select="." mode="make-head-checkmem-endif"/>
   <xsl:apply-templates select="." mode="make-body"/>
 </xsl:template>
 

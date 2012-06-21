@@ -171,9 +171,7 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
         if (global.check_frequency == 1) {
             syntax_tree = PHrunConsistencyChecks (syntax_tree);
         }
-#endif
 
-#ifdef SHOW_MALLOC
         DBUG_EXECUTE_TAG ("MEM_LEAK", MEMdbugMemoryLeakCheck ());
 
         if (global.memcheck && (syntax_tree != NULL)) {
@@ -241,9 +239,7 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
         if (global.check_frequency >= 2) {
             syntax_tree = PHrunConsistencyChecks (syntax_tree);
         }
-#endif
 
-#ifdef SHOW_MALLOC
         if (global.memcheck && (syntax_tree != NULL)) {
             syntax_tree = CHKMdoMemCheck (syntax_tree);
         }
@@ -321,9 +317,7 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
             if (global.check_frequency >= 2) {
                 syntax_tree = PHrunConsistencyChecks (syntax_tree);
             }
-#endif
 
-#ifdef SHOW_MALLOC
             if (global.memcheck) {
                 syntax_tree = CHKMdoMemCheck (syntax_tree);
             }

@@ -118,16 +118,10 @@ node *NBMacroMatchesType( node *node, nodetype type)
   <xsl:apply-templates select="sons" mode="accessor-macros"/>
   <xsl:apply-templates select="attributes" mode="accessor-macros"/>
   <xsl:apply-templates select="flags" mode="accessor-macros"/>
-  <xsl:apply-templates select="." mode="make-head-checkmem-ifdef"/>
   <xsl:value-of select="'extern '"/>
   <xsl:apply-templates select="." mode="make-head-checkmem"/>
   <xsl:value-of select="';'"/>
   <xsl:apply-templates select="." mode="make-head-checkmem-define"/>
-  <xsl:apply-templates select="." mode="make-head-checkmem-else"/>
-  <xsl:value-of select="'extern '"/>
-  <xsl:apply-templates select="." mode="make-head"/>
-  <xsl:value-of select="';'"/>
-  <xsl:apply-templates select="." mode="make-head-checkmem-endif"/>
 </xsl:template>
 
 

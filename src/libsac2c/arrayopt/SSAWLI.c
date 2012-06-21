@@ -1166,10 +1166,8 @@ WLIdoWLI (node *arg_node)
 
     INFO_ONEFUNDEF (info) = TRUE;
 
-#ifdef SHOW_MALLOC
     DBUG_PRINT_TAG ("OPTMEM", "mem currently allocated: %d bytes",
                     global.current_allocated_mem);
-#endif
 
     TRAVpush (TR_wli);
     arg_node = TRAVdo (arg_node, info);

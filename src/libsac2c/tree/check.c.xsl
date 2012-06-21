@@ -64,7 +64,7 @@ version="1.0">
     <!-- includes -->
 
     <xsl:text>
-#ifdef SHOW_MALLOC
+#ifndef DBUG_OFF
 
 #include "check.h"
 #include "globals.h"
@@ -152,11 +152,11 @@ node *CHKdoTreeCheck( node *arg_node)
     </xsl:apply-templates>
     <xsl:value-of select="'} attr_list;'"/>
     <xsl:value-of select="$newline"/>
-    <xsl:value-of select="'#else  /* SHOW_MALLOC */'"/>
+    <xsl:value-of select="'#else  /* !DBUG_OFF */'"/>
     <xsl:value-of select="$newline"/>
     <xsl:value-of select="'int _dummy_check_c; /* C99 does not allow for empty files. */'"/>
     <xsl:value-of select="$newline"/>
-    <xsl:value-of select="'#endif /* SHOW_MALLOC */'"/>
+    <xsl:value-of select="'#endif /* !DBUG_OFF */'"/>
     <xsl:value-of select="$newline"/>
   </xsl:template>
 

@@ -111,25 +111,6 @@ version="1.0">
 </xsl:template>
 
 
-<xsl:template match="node" mode="make-head-checkmem-ifdef">
-  <xsl:value-of select="$newline"/>
-  <xsl:text>#ifdef SHOW_MALLOC</xsl:text>
-  <xsl:value-of select="$newline"/>
-</xsl:template>
-
-<xsl:template match="node" mode="make-head-checkmem-else">
-  <xsl:value-of select="$newline"/>
-  <xsl:text>#else</xsl:text>
-  <xsl:value-of select="$newline"/>
-</xsl:template>
-
-<xsl:template match="node" mode="make-head-checkmem-endif">
-  <xsl:value-of select="$newline"/>
-  <xsl:text>#endif /* SHOW_MALLOC */</xsl:text>
-  <xsl:value-of select="$newline"/>
-</xsl:template>
-
-
 <!-- generate a son argument -->
 <xsl:template match="son" mode="make-head-checkmem">
   <xsl:if test="position() != 1">

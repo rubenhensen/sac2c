@@ -23,10 +23,8 @@
  * Memory allocation
  */
 
-#ifdef SHOW_MALLOC
 GLOBAL (unsigned int, current_allocated_mem, 0, xfree_dummy)
 GLOBAL (unsigned int, max_allocated_mem, 0, xfree_dummy)
-#endif
 
 /*
  * Tool type
@@ -695,7 +693,6 @@ GLOBAL (bool, sancheck, FALSE, xfree_dummy)
         * check syntax tree for structural consistency
         */
 
-#ifdef SHOW_MALLOC
 GLOBAL (bool, memcheck, global.memcheck, xfree_dummy)
 /*
  * check syntaxtree for memoryproblems with xml specification
@@ -707,7 +704,6 @@ GLOBAL (bool, memcheck, global.memcheck, xfree_dummy)
  * global.memcheck to its existing value here for purely technical
  * reasons.
  */
-#endif /* SHOW_MALLOC */
 
 GLOBAL (bool, use_efence, FALSE, xfree_dummy)
 /*
