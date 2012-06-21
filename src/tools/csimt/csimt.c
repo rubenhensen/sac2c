@@ -8,7 +8,7 @@
 #include "sac.h"
 
 int
-main ()
+main (void)
 {
     int i;
     long base;
