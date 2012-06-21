@@ -298,8 +298,8 @@ CYCLEPHASEFUN (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes,
 CYCLEPHASEFUN (ebt, "Eliminating Bottom Types", EBTdoEliminateBottomTypes,
                global.optimize.dotup, opt, cyc)
 
-CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS, opt,
-               cyc)
+CYCLEPHASEFUNOLD (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS,
+                  opt, cyc)
 
 CYCLEPHASEFUNOLD (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt,
                   cyc)
@@ -454,8 +454,8 @@ CYCLEPHASEFUN (etv, "Eliminating type variables", EATdoEliminateAlphaTypes,
 CYCLEPHASEFUN (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes,
                global.optimize.dotup, opt, saacyc)
 
-CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS, opt,
-               saacyc)
+CYCLEPHASEFUNOLD (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS,
+                  opt, saacyc)
 
 CYCLEPHASEFUNOLD (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt,
                   saacyc)
@@ -698,8 +698,8 @@ CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.opti
 CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt,
                scyc)
 
-CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS, opt,
-               scyc)
+CYCLEPHASEFUNOLD (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS,
+                  opt, scyc)
 
 FUNEND (scyc)
 

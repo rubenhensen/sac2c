@@ -30,6 +30,7 @@
  * INFO structure
  */
 struct INFO {
+    bool onefundef;
     bool dispatched;
     node *fundef;
     node *cexprs;
@@ -40,6 +41,7 @@ struct INFO {
 /**
  * INFO macros
  */
+#define INFO_ONEFUNDEF(n) ((n)->onefundef)
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_DISPATCHED(n) ((n)->dispatched)
 #define INFO_CEXPRS(n) ((n)->cexprs)
@@ -58,6 +60,7 @@ MakeInfo ()
 
     result = MEMmalloc (sizeof (info));
 
+    INFO_ONEFUNDEF (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_DISPATCHED (result) = FALSE;
     INFO_CEXPRS (result) = NULL;
@@ -309,22 +312,15 @@ DFCfundef (node *arg_node, info *arg_info)
      * (cf DFCap). This choice became necessary to be able to tag the correct
      * callgraph for LaCfuns as FUNDEF_ISINLINECOMPLETED( arg_node) = FALSE
      * which is required for a proper inlining in fundef mode.
-     *
-     * NB: onefundef mode is removed because of the new CYCLEPHASEFUN
-     * implementation. (DEVCAMP 2012)
      */
     if (!FUNDEF_ISWRAPPERFUN (arg_node)
-        && ((INFO_FUNDEF (arg_info) != NULL) || !FUNDEF_ISLACFUN (arg_node))) {
-
+        && ((INFO_ONEFUNDEF (arg_info) && (INFO_FUNDEF (arg_info) != NULL))
+            || !FUNDEF_ISLACFUN (arg_node) || !INFO_ONEFUNDEF (arg_info))) {
         DBUG_PRINT ("traversing function body of %s", CTIitemName (arg_node));
-
         old_fundef = INFO_FUNDEF (arg_info);
         INFO_FUNDEF (arg_info) = arg_node;
-
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-
         INFO_FUNDEF (arg_info) = old_fundef;
-
         DBUG_PRINT ("leaving function body of %s", CTIitemName (arg_node));
 
         if (INFO_DISPATCHED (arg_info)) {
@@ -334,8 +330,7 @@ DFCfundef (node *arg_node, info *arg_info)
         }
     }
 
-    /* check for lacfuns */
-    if (!FUNDEF_ISLACFUN (arg_node)) {
+    if (!INFO_ONEFUNDEF (arg_info)) {
         INFO_DISPATCHED (arg_info) = FALSE;
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
@@ -373,9 +368,8 @@ DFCap (node *arg_node, info *arg_info)
                 NSgetName (AP_NS (arg_node)), AP_NAME (arg_node), AP_FUNDEF (arg_node));
     arg_types = TYfreeType (arg_types);
 
-    if (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
+    if (INFO_ONEFUNDEF (arg_info) && FUNDEF_ISLACFUN (AP_FUNDEF (arg_node))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
-
         old_dispatched = INFO_DISPATCHED (arg_info);
         INFO_DISPATCHED (arg_info) = FALSE;
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
@@ -571,6 +565,43 @@ DFClet (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * Function:
+ *   node *DFCdoDispatchFunCallsOneFundef( node *ast)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+static node *
+DFCdoDispatchFunCallsOneFundef (node *fundef)
+{
+    info *info_node;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
+                 "DFCdoDispatchFunCallsOneFundef not called with N_fundef!");
+
+    info_node = MakeInfo ();
+    INFO_ONEFUNDEF (info_node) = TRUE;
+
+    TRAVpush (TR_dfc);
+
+    fundef = TRAVdo (fundef, info_node);
+
+    TRAVpop ();
+
+    if (INFO_FOLDFUNS (info_node) != NULL) {
+        fundef = TCappendFundef (fundef, INFO_FOLDFUNS (info_node));
+    }
+
+    info_node = FreeInfo (info_node);
+
+    DBUG_RETURN (fundef);
+}
+
+/******************************************************************************
+ *
+ * Function:
  *   node *DFCdoDispatchFunCalls( node *ast)
  *
  * Description:
@@ -585,13 +616,17 @@ DFCdoDispatchFunCalls (node *arg_node)
 
     DBUG_ENTER ();
 
-    arg_info = MakeInfo ();
+    if (N_module == NODE_TYPE (arg_node)) {
 
-    TRAVpush (TR_dfc);
-    arg_node = TRAVdo (arg_node, arg_info);
-    TRAVpop ();
+        arg_info = MakeInfo ();
+        TRAVpush (TR_dfc);
+        arg_node = TRAVdo (arg_node, arg_info);
+        TRAVpop ();
+        arg_info = FreeInfo (arg_info);
 
-    arg_info = FreeInfo (arg_info);
+    } else {
+        arg_node = DFCdoDispatchFunCallsOneFundef (arg_node);
+    }
 
     DBUG_RETURN (arg_node);
 }
