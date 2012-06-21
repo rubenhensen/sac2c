@@ -267,7 +267,7 @@ struct INFO {
  * INFO functions:
  */
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -327,7 +327,7 @@ static int ssat_renamings = 0;
  *        traversals of SSA transform.
  ******************************************************************************/
 static void
-CheckSSATCounter ()
+CheckSSATCounter (void)
 {
     DBUG_ENTER ();
 
@@ -348,7 +348,7 @@ CheckSSATCounter ()
  * @brief Increases the global SSAT renaming counter.
  ******************************************************************************/
 static void
-IncSSATCounter ()
+IncSSATCounter (void)
 {
     DBUG_ENTER ();
 

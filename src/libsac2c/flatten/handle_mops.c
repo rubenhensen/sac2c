@@ -93,7 +93,7 @@ FreePrec (prec_t *prec)
  ******************************************************************************/
 
 static lut_t *
-InitPrecLut ()
+InitPrecLut (void)
 {
     lut_t *res;
 
