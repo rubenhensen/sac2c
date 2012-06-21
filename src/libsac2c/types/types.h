@@ -882,10 +882,12 @@ typedef struct MODULE_T {
     int usecount;
 } module_t;
 
+// Do not add "void" in parameter area in the following function definatio.
 typedef node *(*serfun_p) ();
+
 typedef union {
     void *v;
-    node *(*f) ();
+    node *(*f) (void);
 } serfun_u;
 
 /*
@@ -949,10 +951,12 @@ typedef struct RUNTIMECHECK_FLAGS_T {
 #include "flags.mac"
 } runtimecheck_flags_t;
 
+/*
 typedef struct GENLIB_FLAGS_T {
-#define GENLIBflag(flag) unsigned int flag : 1;
-#include "flags.mac"
+  #define GENLIBflag( flag) unsigned int flag : 1;
+  #include "flags.mac"
 } genlib_flags_t;
+*/
 
 typedef enum {
 #define BACKENDtype(type) type,
