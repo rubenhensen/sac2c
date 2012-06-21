@@ -69,7 +69,7 @@ struct INFO {
 #define INFO_CEXPRS(n) ((n)->cexprs)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

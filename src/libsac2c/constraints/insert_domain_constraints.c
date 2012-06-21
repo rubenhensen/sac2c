@@ -112,7 +112,7 @@ struct INFO {
 #define INFO_IUIB_AVIS(n) ((n)->iuib_avis)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

@@ -62,7 +62,7 @@ struct INFO {
 #define INFO_SCRAPASSIGN(n) ((n)->scrapassign)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
