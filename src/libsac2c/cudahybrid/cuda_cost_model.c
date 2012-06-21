@@ -108,7 +108,7 @@ struct INFO {
 #define INFO_ELSEAVIS(n) (n->elseavis)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
