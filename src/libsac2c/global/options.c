@@ -66,6 +66,7 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
 
     ARGS_BEGIN (argc, argv);
 
+#ifndef DBUG_OFF
     ARGS_OPTION_BEGIN ("d")
     {
         ARG_CHOICE_BEGIN ();
@@ -74,6 +75,7 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("d");
+#endif /* DBUG_OFF */
 
     ARGS_END ();
 
