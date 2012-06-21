@@ -79,7 +79,7 @@ struct INFO {
 #define INFO_NEGMASK(n) ((n)->negmask)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

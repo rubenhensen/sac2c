@@ -74,7 +74,7 @@ struct INFO {
 #define INFO_POSTASSIGN(n) ((n)->postassign)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

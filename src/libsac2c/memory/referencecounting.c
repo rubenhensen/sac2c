@@ -75,7 +75,7 @@ struct INFO {
 #define INFO_MUSTCOUNT(n) (n->mustcount)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

@@ -63,7 +63,7 @@ struct INFO {
 #define INFO_REMASSIGN(n) (n->remassign)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

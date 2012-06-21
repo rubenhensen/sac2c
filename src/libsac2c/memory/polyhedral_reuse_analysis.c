@@ -167,7 +167,7 @@ typedef struct FUNAP_LIST {
 #define FAP_LIST_FUNAP(n, i) ((n->aps)[i])
 
 static funap_list_t *
-CreateFunapList ()
+CreateFunapList (void)
 {
     funap_list_t *res;
     int i;
@@ -287,7 +287,7 @@ struct INFO {
  * INFO functions
  */
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

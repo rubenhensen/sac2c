@@ -66,7 +66,7 @@ struct INFO {
 #define INFO_TEMP(n) (n->temp)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

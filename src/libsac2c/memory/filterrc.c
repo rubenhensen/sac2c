@@ -56,7 +56,7 @@ struct INFO {
 #define INFO_CONDARGS(n) (n->condargs)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

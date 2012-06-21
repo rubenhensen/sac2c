@@ -97,7 +97,7 @@ struct INFO {
 #define INFO_CEXTYPES(n) ((n)->cextypes)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
