@@ -3,6 +3,8 @@
  *
  */
 
+#ifndef DBUG_OFF
+
 /******************************************************************************
  * $Id$ check_mem.c
  *
@@ -748,5 +750,11 @@ MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
 
     DBUG_RETURN (str);
 }
+
+#else /* DBUG_OFF */
+
+int _dummy_check_mem_c; /* C99 does not allow for empty files. */
+
+#endif /* DBUG_OFF */
 
 #undef DBUG_PREFIX

@@ -7,6 +7,7 @@
 
 #include "types.h"
 
+#ifndef DBUG_OFF
 extern void CHKMdeinitialize (void);
 
 extern node *CHKMdoMemCheck (node *syntax_tree);
@@ -24,5 +25,17 @@ extern void CHKMsetTraversal (node *shifted_ptr, trav_t *traversal);
 extern void CHKMdoNotReport (void *shifted_ptr);
 
 extern int CHKMgetSize (node *shifted_ptr);
+
+#else
+#define CHKMdeinitialize()
+#define CHKMregisterMem(size, orig_ptr) orig_ptr
+#define CHKMsetLocation(shifted_ptr, file, line)
+#define CHKMsetNodeType(shifted_ptr, newnodetype) ;
+#define CHKMgetSize(shifted_ptr) 0
+#define CHKMunregisterMem(shifted_ptr) shifted_ptr
+#define CHKMappendErrorNodes(arg_node, arg_info)
+#define CHKMtouch(shifted_ptr, arg_info)
+#define CHKMdoNotReport(shifter_ptr)
+#endif /* DBUG_OFF */
 
 #endif /* _SAC_CHECK_MEM_H_ */

@@ -69,8 +69,8 @@ OPTcheckPreSetupOptions (int argc, char *argv[])
     ARGS_OPTION_BEGIN ("d")
     {
         ARG_CHOICE_BEGIN ();
-        ARG_CHOICE ("noclean", global.memclean = FALSE);
         ARG_CHOICE ("memcheck", global.memcheck = TRUE);
+        ARG_CHOICE ("noclean", global.memclean = FALSE);
         ARG_CHOICE_END ();
     }
     ARGS_OPTION_END ("d");

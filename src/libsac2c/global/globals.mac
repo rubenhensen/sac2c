@@ -693,7 +693,7 @@ GLOBAL (bool, sancheck, FALSE, xfree_dummy)
         * check syntax tree for structural consistency
         */
 
-GLOBAL (bool, memcheck, FALSE, xfree_dummy)
+GLOBAL (bool, memcheck, global.memcheck, xfree_dummy)
 GLOBAL (bool, nofree, FALSE, xfree_dummy)
 GLOBAL (bool, memclean, TRUE, xfree_dummy)
 /*
