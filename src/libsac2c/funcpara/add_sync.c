@@ -68,7 +68,7 @@ struct INFO {
 #define INFO_NEWASSIGN(n) ((n)->newassign)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

@@ -75,7 +75,7 @@ struct INFO {
 #define INFO_INSPAWN(n) ((n)->inspawn)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
