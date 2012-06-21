@@ -73,7 +73,7 @@ struct INFO {
 #define INFO_IS_SUBALLOC(n) (n->isSuballoc)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

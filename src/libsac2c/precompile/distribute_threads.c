@@ -97,7 +97,7 @@ struct INFO {
 #define INFO_GLOBALS(n) ((n)->globals)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

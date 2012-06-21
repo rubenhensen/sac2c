@@ -91,7 +91,7 @@ struct INFO {
 #define INFO_DEAD_ASSIGN(n) (n->dead_assign)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

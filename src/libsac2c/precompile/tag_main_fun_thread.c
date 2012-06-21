@@ -64,7 +64,7 @@ struct INFO {
 #define INFO_FOUND(n) (n->found)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

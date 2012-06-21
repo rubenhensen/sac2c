@@ -73,7 +73,7 @@ struct INFO {
 #define INFO_NEEDS_DYNAMIC_MEMORY(n) (n->needsDynamicMemory)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
