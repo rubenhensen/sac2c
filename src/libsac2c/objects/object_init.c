@@ -34,7 +34,7 @@ struct INFO {
 #define INFO_FUNDEFS(n) ((n)->fundefs)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
