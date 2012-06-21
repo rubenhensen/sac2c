@@ -114,7 +114,7 @@ struct INFO {
 #define INFO_DFM(n) (n->dfm)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

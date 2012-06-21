@@ -96,7 +96,7 @@ struct INFO {
 #define INFO_ARGNUM(n) (n->argnum)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

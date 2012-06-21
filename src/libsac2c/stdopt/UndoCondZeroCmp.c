@@ -53,7 +53,7 @@ struct INFO {
  * INFO functions
  */
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

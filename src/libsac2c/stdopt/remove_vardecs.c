@@ -49,7 +49,7 @@ struct INFO {
 #define INFO_TRAVMODE(n) ((n)->travmode)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

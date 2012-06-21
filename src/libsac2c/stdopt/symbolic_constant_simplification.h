@@ -13,8 +13,8 @@
  * prefix: SCS
  *
  *****************************************************************************/
-extern void SCSinitSymbolicConstantSimplification ();
-extern void SCSfinalizeSymbolicConstantSimplification ();
+extern void SCSinitSymbolicConstantSimplification (void);
+extern void SCSfinalizeSymbolicConstantSimplification (void);
 extern node *SCSmakeTrue (node *prfarg);
 extern node *SCSmakeFalse (node *prfarg);
 extern node *SCSmakeZero (node *prfarg);

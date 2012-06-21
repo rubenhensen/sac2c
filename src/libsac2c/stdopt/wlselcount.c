@@ -82,7 +82,7 @@ struct INFO {
 #define INFO_ISWLCODE(n) (n->iswlcode)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

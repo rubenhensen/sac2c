@@ -122,7 +122,7 @@ struct INFO {
 #define INFO_RETURNEXPR(n) ((n)->returnexpr)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

@@ -60,7 +60,7 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

@@ -142,7 +142,7 @@
 #include "ivexpropagation.h"
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

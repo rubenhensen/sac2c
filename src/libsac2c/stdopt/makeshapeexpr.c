@@ -60,7 +60,7 @@ struct INFO {
 #define INFO_PREASS(n) ((n)->preass)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
