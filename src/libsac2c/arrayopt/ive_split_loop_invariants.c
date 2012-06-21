@@ -400,7 +400,7 @@ struct INFO {
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

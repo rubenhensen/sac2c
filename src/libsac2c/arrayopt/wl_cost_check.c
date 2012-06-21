@@ -76,7 +76,7 @@ struct INFO {
 #define INFO_CODE_COST(n) ((n)->code_cost)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

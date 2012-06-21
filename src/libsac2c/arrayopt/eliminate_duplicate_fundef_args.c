@@ -74,7 +74,7 @@ struct INFO {
 #define INFO_PHASE(n) (n->phase)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

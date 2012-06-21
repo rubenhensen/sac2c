@@ -140,7 +140,7 @@ struct INFO {
 #define INFO_LHS(n) ((n)->lhs)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

@@ -177,7 +177,7 @@ typedef enum { ARRAY_aks, ARRAY_akd, ARRAY_unknown } array_types_t;
  * INFO functions
  */
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -290,7 +290,7 @@ FreeInfo (info *info)
  * GRIDINFO functions
  */
 static gridinfo *
-MakeGridInfo ()
+MakeGridInfo (void)
 {
     gridinfo *result;
 

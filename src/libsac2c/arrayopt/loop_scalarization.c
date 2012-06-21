@@ -302,7 +302,7 @@ struct INFO {
 #define INFO_PRECONDASSIGN(n) ((n)->precond)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

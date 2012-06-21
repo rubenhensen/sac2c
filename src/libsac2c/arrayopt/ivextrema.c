@@ -245,7 +245,7 @@ struct INFO {
 #define INFO_FROMAP(n) ((n)->fromap)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

@@ -115,7 +115,7 @@ struct INFO {
 #define INFO_LET(n) ((n)->let)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

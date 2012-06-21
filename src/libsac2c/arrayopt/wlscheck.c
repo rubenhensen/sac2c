@@ -140,7 +140,7 @@ struct INFO {
 #define INFO_NASSIGN(n) (n->nassign)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
