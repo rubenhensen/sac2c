@@ -42,6 +42,41 @@ TRACE (cenv, 'c', FALSE)
 /*************************************************************/
 
 /*
+ * Visualizefunsets flags
+ */
+
+#ifndef VISUALIZEFUNSETSflag
+#define VISUALIZEFUNSETSflag(flag)
+#endif
+
+#ifndef VISUALIZEFUNSETSchar
+#define VISUALIZEFUNSETSchar(char)
+#endif
+
+#ifndef VISUALIZEFUNSETSdefault
+#define VISUALIZEFUNSETSdefault(default)
+#endif
+
+#ifndef VISUALIZEFUNSETS
+#define VISUALIZEFUNSETS(flag, char, default)                                            \
+    VISUALIZEFUNSETSflag (flag) VISUALIZEFUNSETSchar (char)                              \
+      VISUALIZEFUNSETSdefault (default)
+#endif
+
+VISUALIZEFUNSETS (imp, 'i', FALSE)
+VISUALIZEFUNSETS (use, 'u', FALSE)
+VISUALIZEFUNSETS (def, 'd', FALSE)
+VISUALIZEFUNSETS (wrp, 'w', FALSE)
+VISUALIZEFUNSETS (pre, 'p', FALSE)
+
+#undef VISUALIZEFUNSETSflag
+#undef VISUALIZEFUNSETSchar
+#undef VISUALIZEFUNSETSdefault
+#undef VISUALIZEFUNSETS
+
+/*************************************************************/
+
+/*
  * Printfunsets flags
  */
 

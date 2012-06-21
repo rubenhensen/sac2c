@@ -566,6 +566,25 @@ static printfunsets_flags_t printfunsets_none_init = {
 };
 
 /*
+ * Initialize visualizefunsets flags from flags.mac
+ */
+
+static visualizefunsets_flags_t visualizefunsets_init = {
+#define VISUALIZEFUNSETSdefault(default) default,
+#include "flags.mac"
+};
+
+static visualizefunsets_flags_t visualizefunsets_all_init = {
+#define VISUALIZEFUNSETSdefault(default) TRUE,
+#include "flags.mac"
+};
+
+static visualizefunsets_flags_t visualizefunsets_none_init = {
+#define VISUALIZEFUNSETSdefault(default) FALSE,
+#include "flags.mac"
+};
+
+/*
  * Initialize print flags from flags.mac
  */
 

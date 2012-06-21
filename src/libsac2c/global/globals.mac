@@ -618,6 +618,13 @@ GLOBAL (runtimecheck_flags_t, runtimecheck, runtimecheck_init, xfree_dummy)
 GLOBAL (runtimecheck_flags_t, runtimecheck_all, runtimecheck_all_init, xfree_dummy)
 GLOBAL (runtimecheck_flags_t, runtimecheck_none, runtimecheck_none_init, xfree_dummy)
 
+GLOBAL (bool, dovisualizefunsets, FALSE, xfree_dummy)
+GLOBAL (visualizefunsets_flags_t, visualizefunsets, visualizefunsets_init, xfree_dummy)
+GLOBAL (visualizefunsets_flags_t, visualizefunsets_all, visualizefunsets_all_init,
+        xfree_dummy)
+GLOBAL (visualizefunsets_flags_t, visualizefunsets_none, visualizefunsets_none_init,
+        xfree_dummy)
+
 GLOBAL (bool, doprint, FALSE, xfree_dummy)
 GLOBAL (bool, doprintfunsets, TRUE, xfree_dummy)
 GLOBAL (printfunsets_flags_t, printfunsets, printfunsets_init, xfree_dummy)

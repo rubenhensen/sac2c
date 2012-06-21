@@ -63,6 +63,18 @@ struct INFO {
     lut_t *table;
     int node_number;
     bool draw_attredges; /* enable drawing attribute edges */
+
+    /*The following variables are used for dedicated visualization*/
+    char *namespaces;
+    bool findmodule_fun;
+    bool finmodule_fundec;
+    bool findfundeffun;
+    bool isfrommodulefun;
+    bool isfrommodulefundec;
+
+    node *module_fundec;
+    node *module_fun;
+    node *fundef_fun;
 };
 
 /* access macros print */
@@ -70,6 +82,17 @@ struct INFO {
 #define INFO_FILE(n) ((n)->file)
 #define INFO_TABLE(n) ((n)->table)
 #define INFO_DRAW_ATTREDGES(n) ((n)->draw_attredges)
+#define INFO_NAMESPACE(n) ((n)->namespaces)
+
+#define INFO_FINDMODULEFUN(n) ((n)->findmodule_fun)
+#define INFO_FINDMODULEFUNDEC(n) ((n)->finmodule_fundec)
+#define INFO_FINDFUNDEFFUN(n) ((n)->findfundeffun)
+#define INFO_ISFROMMODULEFUN(n) ((n)->findfundeffun)
+#define INFO_ISFROMMODULEFUNDEC(n) ((n)->isfrommodulefundec)
+
+#define INFO_MODULE_FUN(n) ((n)->module_fun)
+#define INFO_MODULE_FUNDEC(n) ((n)->module_fundec)
+#define INFO_FUNDEF_FUN(n) ((n)->fundef_fun)
 
 /******************************************************************************
  *
@@ -94,6 +117,18 @@ MakeInfo ()
     INFO_TABLE (result) = LUTgenerateLut ();
     /* TODO: maybe a new command-line option to control the drawing of attribute edges? */
     INFO_DRAW_ATTREDGES (result) = TRUE;
+
+    INFO_NAMESPACE (result) = NULL;
+
+    INFO_FINDMODULEFUNDEC (result) = FALSE;
+    INFO_FINDMODULEFUN (result) = FALSE;
+    INFO_FINDFUNDEFFUN (result) = FALSE;
+    INFO_ISFROMMODULEFUN (result) = FALSE;
+    INFO_ISFROMMODULEFUNDEC (result) = FALSE;
+
+    INFO_MODULE_FUN (result) = NULL;
+    INFO_MODULE_FUNDEC (result) = NULL;
+    INFO_FUNDEF_FUN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -248,6 +283,8 @@ VISUALmodule (node *arg_node, info *arg_info)
 {
     char *node_name = giveNodeName (arg_node, arg_info);
 
+    INFO_NAMESPACE (arg_info) = STRcpy (NSgetName (MODULE_NAMESPACE (arg_node)));
+
     DBUG_ENTER ();
 
     // traver son nodes
@@ -256,9 +293,7 @@ VISUALmodule (node *arg_node, info *arg_info)
     TRAVopt (MODULE_STRUCTS (arg_node), arg_info);
     TRAVopt (MODULE_TYPES (arg_node), arg_info);
     TRAVopt (MODULE_OBJS (arg_node), arg_info);
-    TRAVopt (MODULE_FUNS (arg_node), arg_info);
     TRAVopt (MODULE_THREADFUNS (arg_node), arg_info);
-    TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
     TRAVopt (MODULE_FUNSPECS (arg_node), arg_info);
     TRAVopt (MODULE_SPMDSTORE (arg_node), arg_info);
     TRAVopt (MODULE_FPFRAMESTORE (arg_node), arg_info);
@@ -297,22 +332,10 @@ VISUALmodule (node *arg_node, info *arg_info)
                                            MODULE_OBJS (arg_node)));
     }
 
-    if (NULL != MODULE_FUNS (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s -> %s [label=Funs];\n", node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
-                                           MODULE_FUNS (arg_node)));
-    }
-
     if (NULL != MODULE_THREADFUNS (arg_node)) {
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Threadfuns];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
                                            MODULE_THREADFUNS (arg_node)));
-    }
-
-    if (NULL != MODULE_FUNDECS (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s -> %s [label=Fundecs];\n", node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
-                                           MODULE_FUNDECS (arg_node)));
     }
 
     if (NULL != MODULE_FUNSPECS (arg_node)) {
@@ -331,6 +354,38 @@ VISUALmodule (node *arg_node, info *arg_info)
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=FPFrameStore];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
                                            MODULE_FPFRAMESTORE (arg_node)));
+    }
+
+    /* choose function to visualize */
+    if ((MODULE_FUNDECS (arg_node) != NULL)
+        && (global.dovisualizefunsets || global.visualizefunsets.imp
+            || global.visualizefunsets.use)) {
+
+        INFO_ISFROMMODULEFUNDEC (arg_info) = TRUE;
+        TRAVopt (MODULE_FUNDECS (arg_node), arg_info);
+        INFO_ISFROMMODULEFUNDEC (arg_info) = FALSE;
+
+        if (INFO_MODULE_FUNDEC (arg_info) != NULL) {
+            fprintf (INFO_FILE (arg_info), "%s -> %s [label=Fundecs];\n", node_name,
+                     (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                               INFO_MODULE_FUNDEC (arg_info)));
+        }
+    }
+
+    if ((MODULE_FUNS (arg_node) != NULL)
+        && (global.dovisualizefunsets || global.visualizefunsets.def
+            || global.visualizefunsets.wrp || global.visualizefunsets.pre
+            || global.visualizefunsets.use)) {
+
+        INFO_ISFROMMODULEFUN (arg_info) = TRUE;
+        TRAVopt (MODULE_FUNS (arg_node), arg_info);
+        INFO_ISFROMMODULEFUN (arg_info) = FALSE;
+
+        if (INFO_MODULE_FUN (arg_info) != NULL) {
+            fprintf (INFO_FILE (arg_info), "%s -> %s [label=Funs];\n", node_name,
+                     (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                               INFO_MODULE_FUN (arg_info)));
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -497,69 +552,176 @@ node *
 VISUALfundef (node *arg_node, info *arg_info)
 {
     char *node_name = giveNodeName (arg_node, arg_info);
+    bool is_userdefined_function = FALSE;
 
     DBUG_ENTER ();
 
-    // traver son nodes
-    TRAVopt (FUNDEF_RETS (arg_node), arg_info);
-    TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
-    TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-    TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    TRAVopt (FUNDEF_OBJECTS (arg_node), arg_info);
-    TRAVopt (FUNDEF_AFFECTEDOBJECTS (arg_node), arg_info);
-    TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    if (global.dovisualizefunsets) {
 
-    // ouput current node
-    fprintf (INFO_FILE (arg_info), "%s[label=\"Fundef\\n%s\" \
-          style=filled fillcolor=\"lightblue\"];\n", node_name,
-             FUNDEF_NAME (arg_node));
+        // traver son nodes
+        TRAVopt (FUNDEF_RETS (arg_node), arg_info);
+        TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+        TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+        TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        TRAVopt (FUNDEF_OBJECTS (arg_node), arg_info);
+        TRAVopt (FUNDEF_AFFECTEDOBJECTS (arg_node), arg_info);
+        TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
-    // add edge between two nodes with lable
-    if (NULL != FUNDEF_RETS (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s -> %s [label=Rets];\n", node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
-                                           FUNDEF_RETS (arg_node)));
-    }
+        // ouput current node
+        fprintf (INFO_FILE (arg_info), "%s[label=\"Fundef\\n%s\" \
+            style=filled fillcolor=\"lightblue\"];\n", node_name,
+                 FUNDEF_NAME (arg_node));
 
-    // add edge between two nodes with lable
-    if (NULL != FUNDEF_ARGS (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s -> %s [label=Args];\n", node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
-                                           FUNDEF_ARGS (arg_node)));
-    }
-    // add edge between two nodes with lable
-    if (NULL != FUNDEF_BODY (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s -> %s [label=Body];\n", node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
-                                           FUNDEF_BODY (arg_node)));
-    }
+        // add edge between two nodes with lable
+        if (NULL != FUNDEF_RETS (arg_node)) {
+            fprintf (INFO_FILE (arg_info), "%s -> %s [label=Rets];\n", node_name,
+                     (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                               FUNDEF_RETS (arg_node)));
+        }
 
-    // add edge between two nodes with lable
-    if (NULL != FUNDEF_NEXT (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s -> %s [label=Next];\n", node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
-                                           FUNDEF_NEXT (arg_node)));
-    }
+        // add edge between two nodes with lable
+        if (NULL != FUNDEF_ARGS (arg_node)) {
+            fprintf (INFO_FILE (arg_info), "%s -> %s [label=Args];\n", node_name,
+                     (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                               FUNDEF_ARGS (arg_node)));
+        }
+        // add edge between two nodes with lable
+        if (NULL != FUNDEF_BODY (arg_node)) {
+            fprintf (INFO_FILE (arg_info), "%s -> %s [label=Body];\n", node_name,
+                     (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                               FUNDEF_BODY (arg_node)));
+        }
 
-    // add edge between two nodes with lable
-    if (NULL != FUNDEF_OBJECTS (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s -> %s [label=Objects];\n", node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
-                                           FUNDEF_OBJECTS (arg_node)));
-    }
+        // add edge between two nodes with lable
+        if (NULL != FUNDEF_OBJECTS (arg_node)) {
+            fprintf (INFO_FILE (arg_info), "%s -> %s [label=Objects];\n", node_name,
+                     (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                               FUNDEF_OBJECTS (arg_node)));
+        }
 
-    // add edge between two nodes with lable
-    if (NULL != FUNDEF_AFFECTEDOBJECTS (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s -> %s [label=AffectedObjects];\n", node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
-                                           FUNDEF_AFFECTEDOBJECTS (arg_node)));
-    }
+        // add edge between two nodes with lable
+        if (NULL != FUNDEF_AFFECTEDOBJECTS (arg_node)) {
+            fprintf (INFO_FILE (arg_info), "%s -> %s [label=AffectedObjects];\n",
+                     node_name,
+                     (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                               FUNDEF_AFFECTEDOBJECTS (arg_node)));
+        }
+        // add edge between two nodes with lable
+        if (NULL != FUNDEF_LOCALFUNS (arg_node)) {
+            fprintf (INFO_FILE (arg_info), "%s -> %s [label=LocalFuns];\n", node_name,
+                     (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                               FUNDEF_LOCALFUNS (arg_node)));
+        }
+        // add edge between two nodes with lable
+        if (NULL != FUNDEF_NEXT (arg_node)) {
+            fprintf (INFO_FILE (arg_info), "%s -> %s [label=Next];\n", node_name,
+                     (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                               FUNDEF_NEXT (arg_node)));
+        }
 
-    // add edge between two nodes with lable
-    if (NULL != FUNDEF_LOCALFUNS (arg_node)) {
-        fprintf (INFO_FILE (arg_info), "%s -> %s [label=LocalFuns];\n", node_name,
-                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
-                                           FUNDEF_LOCALFUNS (arg_node)));
+    } else {
+
+        is_userdefined_function
+          = STReq (NSgetName (FUNDEF_NS (arg_node)), INFO_NAMESPACE (arg_info));
+
+        // check whether user-defined functions
+        if (((global.visualizefunsets.def && FUNDEF_ISLOCAL (arg_node)
+              && is_userdefined_function)
+             || (global.visualizefunsets.wrp && FUNDEF_ISWRAPPERFUN (arg_node)
+                 && FUNDEF_BODY (arg_node))
+             || (global.visualizefunsets.pre && FUNDEF_ISSTICKY (arg_node))
+             || (global.visualizefunsets.imp && FUNDEF_WASIMPORTED (arg_node))
+             || (global.visualizefunsets.use && FUNDEF_WASUSED (arg_node)))) {
+
+            // did not find connection yet,now find
+            if (!INFO_FINDMODULEFUN (arg_info) && INFO_ISFROMMODULEFUN (arg_info)
+                && ((global.visualizefunsets.def && FUNDEF_ISLOCAL (arg_node)
+                     && is_userdefined_function)
+                    || (global.visualizefunsets.wrp && FUNDEF_ISWRAPPERFUN (arg_node))
+                    || (global.visualizefunsets.pre && FUNDEF_ISSTICKY (arg_node))
+                    || (global.visualizefunsets.use && FUNDEF_WASUSED (arg_node)))) {
+                INFO_MODULE_FUN (arg_info) = arg_node;
+                INFO_FINDMODULEFUN (arg_info) = TRUE;
+            }
+
+            if (!INFO_FINDMODULEFUNDEC (arg_info) && INFO_ISFROMMODULEFUNDEC (arg_info)
+                && ((global.visualizefunsets.imp && FUNDEF_WASIMPORTED (arg_node))
+                    || (global.visualizefunsets.use && FUNDEF_WASUSED (arg_node)))) {
+                INFO_MODULE_FUNDEC (arg_info) = arg_node;
+                INFO_FINDMODULEFUNDEC (arg_info) = TRUE;
+            }
+
+            // traver son nodes
+            TRAVopt (FUNDEF_RETS (arg_node), arg_info);
+            TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+            TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+            TRAVopt (FUNDEF_OBJECTS (arg_node), arg_info);
+            TRAVopt (FUNDEF_AFFECTEDOBJECTS (arg_node), arg_info);
+            TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
+            INFO_FINDFUNDEFFUN (arg_info) = FALSE;
+            TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+            // ouput current node
+            fprintf (INFO_FILE (arg_info), "%s[label=\"Fundef\\n%s\" \
+              style=filled fillcolor=\"lightblue\"];\n", node_name,
+                     FUNDEF_NAME (arg_node));
+
+            // add edge between two nodes with lable
+            if (NULL != FUNDEF_RETS (arg_node)) {
+                fprintf (INFO_FILE (arg_info), "%s -> %s [label=Rets];\n", node_name,
+                         (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                                   FUNDEF_RETS (arg_node)));
+            }
+
+            // add edge between two nodes with lable
+            if (NULL != FUNDEF_ARGS (arg_node)) {
+                fprintf (INFO_FILE (arg_info), "%s -> %s [label=Args];\n", node_name,
+                         (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                                   FUNDEF_ARGS (arg_node)));
+            }
+            // add edge between two nodes with lable
+            if (NULL != FUNDEF_BODY (arg_node)) {
+                fprintf (INFO_FILE (arg_info), "%s -> %s [label=Body];\n", node_name,
+                         (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                                   FUNDEF_BODY (arg_node)));
+            }
+
+            // add edge between two nodes with lable
+            if (NULL != FUNDEF_OBJECTS (arg_node)) {
+                fprintf (INFO_FILE (arg_info), "%s -> %s [label=Objects];\n", node_name,
+                         (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                                   FUNDEF_OBJECTS (arg_node)));
+            }
+
+            // add edge between two nodes with lable
+            if (NULL != FUNDEF_AFFECTEDOBJECTS (arg_node)) {
+                fprintf (INFO_FILE (arg_info), "%s -> %s [label=AffectedObjects];\n",
+                         node_name,
+                         (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                                   FUNDEF_AFFECTEDOBJECTS (arg_node)));
+            }
+            // add edge between two nodes with lable
+            if (NULL != FUNDEF_LOCALFUNS (arg_node)) {
+                fprintf (INFO_FILE (arg_info), "%s -> %s [label=LocalFuns];\n", node_name,
+                         (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                                   FUNDEF_LOCALFUNS (arg_node)));
+            }
+            // add edge between two nodes with lable
+            if (NULL != FUNDEF_NEXT (arg_node)) {
+                if ((INFO_FUNDEF_FUN (arg_info) != arg_node)
+                    && INFO_FINDFUNDEFFUN (arg_info)) {
+                    fprintf (INFO_FILE (arg_info), "%s -> %s [label=Next];\n", node_name,
+                             (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                                       INFO_FUNDEF_FUN (arg_info)));
+                }
+            }
+
+            INFO_FUNDEF_FUN (arg_info) = arg_node;
+            INFO_FINDFUNDEFFUN (arg_info) = TRUE;
+        } else {
+            TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+        }
     }
 
     DBUG_RETURN (arg_node);
