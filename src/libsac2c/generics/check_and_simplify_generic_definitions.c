@@ -107,7 +107,7 @@ struct INFO {
 #define INFO_SHAPEDEFINED(n) ((n)->shapedefined)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

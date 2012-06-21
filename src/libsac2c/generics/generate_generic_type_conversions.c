@@ -74,7 +74,7 @@ struct INFO {
 #define INFO_APPEND(n) ((n)->append)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
