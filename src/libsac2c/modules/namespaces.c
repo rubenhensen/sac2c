@@ -74,7 +74,7 @@ EqualsView (view_t *one, view_t *two)
 }
 
 static nspool_t *
-CreatePool ()
+CreatePool (void)
 {
     nspool_t *result;
 

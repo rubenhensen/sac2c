@@ -15,6 +15,6 @@
  *
  *****************************************************************************/
 
-extern void LIBSprintLibStat ();
+extern void LIBSprintLibStat (void);
 
 #endif /* _SAC_LIBSTAT_H_ */

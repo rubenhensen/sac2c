@@ -32,7 +32,7 @@
  * Prefix: LIBM
  *
  *****************************************************************************/
-extern const char *LIBMgetError ();
+extern const char *LIBMgetError (void);
 extern dynlib_t LIBMloadLibrary (const char *name);
 extern dynlib_t LIBMunLoadLibrary (dynlib_t lib);
 extern dynfun_t LIBMgetLibraryFunction (const char *name, dynlib_t lib);

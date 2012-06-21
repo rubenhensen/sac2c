@@ -27,7 +27,7 @@ struct INFO {
 #define INFO_IMP_CURRENT(n) ((n)->current)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

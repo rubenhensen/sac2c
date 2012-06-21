@@ -16,7 +16,7 @@
 static char LIBMerror[LIBM_ERROR_MAXLEN] = "";
 
 static const char *
-LibManagerError ()
+LibManagerError (void)
 {
     const char *error;
 
@@ -48,7 +48,7 @@ setError (const char *format, ...)
 }
 
 const char *
-LIBMgetError ()
+LIBMgetError (void)
 {
     DBUG_ENTER ();
 

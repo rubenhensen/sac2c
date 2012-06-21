@@ -22,7 +22,7 @@
 #include "filemgr.h"
 
 static char *
-GetCCCall ()
+GetCCCall (void)
 {
     str_buf *buffer;
     char *result;
@@ -84,7 +84,7 @@ AddDebugFlag (str_buf *buffer)
 }
 
 static char *
-GetCCFlags ()
+GetCCFlags (void)
 {
     str_buf *buffer;
     char *result;
@@ -203,7 +203,7 @@ AddEfenceLib (str_buf *buffer)
 }
 
 static char *
-GetLibs ()
+GetLibs (void)
 {
     str_buf *buffer;
     char *result;
@@ -238,7 +238,7 @@ AddLibPath (const char *path, str_buf *buf)
 }
 
 static char *
-GetLibPath ()
+GetLibPath (void)
 {
     char *result;
     str_buf *buffer = SBUFcreate (255);
