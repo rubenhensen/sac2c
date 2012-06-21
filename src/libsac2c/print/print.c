@@ -215,7 +215,7 @@ static node *last_assignment_icm = NULL;
  *
  ******************************************************************************/
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -272,7 +272,7 @@ FreeInfo (info *info)
 }
 
 static void
-PrintSimdBegin ()
+PrintSimdBegin (void)
 {
     DBUG_ENTER ();
 
@@ -284,7 +284,7 @@ PrintSimdBegin ()
 }
 
 static void
-PrintSimdEnd ()
+PrintSimdEnd (void)
 {
     DBUG_ENTER ();
 
