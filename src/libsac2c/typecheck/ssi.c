@@ -623,7 +623,7 @@ SSIinitAssumptionSystem (tvar_ass_handle_fun HandleContra, tvar_ass_handle_fun H
  * @return true is SSI has been initialized
  ******************************************************************************/
 bool
-SSIassumptionSystemIsInitialized ()
+SSIassumptionSystemIsInitialized (void)
 {
     DBUG_ENTER ();
 

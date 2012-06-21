@@ -64,11 +64,11 @@ extern int TEnMinusOne (ntype *args);
 extern int TEn (ntype *args);
 extern int TEval (ntype *args);
 
-extern void TEfreeAllTypeErrorInfos ();
+extern void TEfreeAllTypeErrorInfos (void);
 
 extern void TEhandleError (int line, const char *file, const char *format, ...);
-extern char *TEfetchErrors ();
-extern void TEextendedAbort ();
+extern char *TEfetchErrors (void);
+extern void TEextendedAbort (void);
 extern int TEgetLine (te_info *info);
 extern const char *TEgetFile (te_info *info);
 extern char *TEgetKindStr (te_info *info);

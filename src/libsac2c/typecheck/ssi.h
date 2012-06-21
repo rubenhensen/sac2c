@@ -28,8 +28,8 @@
 
 #include "types.h"
 
-extern tvar *SSImakeVariable ();
-extern void SSIfreeAllTvars ();
+extern tvar *SSImakeVariable (void);
+extern void SSIfreeAllTvars (void);
 
 extern bool SSInewMax (tvar *var, ntype *cmax);
 extern bool SSInewMin (tvar *var, ntype *cmin);
@@ -38,7 +38,7 @@ extern bool SSInewTypeRel (ntype *small, ntype *big);
 
 extern bool SSIinitAssumptionSystem (tvar_ass_handle_fun HandleContra,
                                      tvar_ass_handle_fun HandleFix);
-extern bool SSIassumptionSystemIsInitialized ();
+extern bool SSIassumptionSystemIsInitialized (void);
 
 extern bool SSIassumeLow (tvar *var, sig_dep *handle);
 extern bool SSIfixLow (tvar *var);

@@ -16,7 +16,7 @@
 
 extern ntype *SDcreateSignatureDependency (ct_funptr CtFun, te_info *info, ntype *args,
                                            bool strict);
-extern void SDfreeAllSignatureDependencies ();
+extern void SDfreeAllSignatureDependencies (void);
 extern bool SDhandleContradiction (sig_dep *fun_sig);
 extern bool SDhandleElimination (sig_dep *fun_sig);
 
