@@ -151,7 +151,7 @@ struct INFO {
 #define INFO_AT_RESDEF(n) (n->at_resdef)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

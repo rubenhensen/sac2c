@@ -79,7 +79,7 @@ struct INFO {
 #define INFO_LETIDS(n) (n->letids)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

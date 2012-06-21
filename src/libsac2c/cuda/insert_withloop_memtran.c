@@ -144,7 +144,7 @@ struct INFO {
 #define INFO_AT_NLUT(n) (n->at_nlut)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

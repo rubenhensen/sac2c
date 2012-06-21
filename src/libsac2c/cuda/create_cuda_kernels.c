@@ -179,7 +179,7 @@ struct INFO {
 #define INFO_PART_TBSHP(n) (n->part_tbshp)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

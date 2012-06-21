@@ -50,7 +50,7 @@ struct INFO {
 #define INFO_ADD_ASSIGNS(n) (n->add_assigns)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

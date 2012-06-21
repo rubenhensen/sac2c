@@ -69,7 +69,7 @@ struct INFO {
 #define INFO_CODE(n) (n->code)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -102,7 +102,7 @@ FreeInfo (info *info)
  *****************************************************************************/
 
 static void
-InitCudaBlockSizes ()
+InitCudaBlockSizes (void)
 {
     DBUG_ENTER ();
 

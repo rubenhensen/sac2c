@@ -211,7 +211,7 @@ DeqRangeInfo (range_set_t *set, node *range)
 }
 
 static range_set_t *
-CreateRangeSet ()
+CreateRangeSet (void)
 {
     range_set_t *res;
 
@@ -545,7 +545,7 @@ struct INFO {
  *
  *****************************************************************************/
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

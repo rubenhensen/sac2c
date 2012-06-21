@@ -97,7 +97,7 @@ struct INFO {
 #define INFO_RECURSIVEAPARGS(n) (n->recursiveapargs)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

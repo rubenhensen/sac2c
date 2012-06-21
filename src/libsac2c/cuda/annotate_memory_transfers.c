@@ -74,7 +74,7 @@ struct INFO {
 #define INFO_INFUNCOND(n) (n->infuncond)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

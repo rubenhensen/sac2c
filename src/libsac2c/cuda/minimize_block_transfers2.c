@@ -71,7 +71,7 @@ struct INFO {
 #define INFO_LASTASSIGN(n) (n->lastassign)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

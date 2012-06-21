@@ -70,7 +70,7 @@ struct INFO {
 #define INFO_TRAV_IDS(n) (n->trav_ids)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

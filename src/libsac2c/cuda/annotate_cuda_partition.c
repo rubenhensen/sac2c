@@ -91,7 +91,7 @@ struct INFO {
 #define INFO_MAXARRAYAVIS(n) (n->maxarrayavis)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
