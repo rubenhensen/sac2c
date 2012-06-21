@@ -594,13 +594,12 @@ CYCLEPHASEFUNOLD (linl3, "Inlining degenerated LaC functions", LINLdoLACInlining
 CYCLEPHASEFUNOLD (edfa, "Eliminating duplicate lacfun arguments",
                   EDFAdoEliminateDuplicateFundefArgs, global.optimize.doedfa, opt, saacyc)
 
-CYCLEPHASEFUNOLD (sisi, "Simplifying function signatures", SISIdoSignatureSimplification,
-                  global.optimize.dosisi &&global.optimize.dodcr, opt, saacyc)
-
-CYCLEPHASEFUNOLD (lof, "Lifting optimization flags", LOFdoLiftOptFlags, ALWAYS, opt,
-                  saacyc)
-
 FUNEND (saacyc)
+
+CYCLEPHASE (sisi, "Simplifying function signatures", SISIdoSignatureSimplification,
+            global.optimize.dosisi &&global.optimize.dodcr, opt, saacyc)
+
+CYCLEPHASE (lof, "Lifting optimization flags", LOFdoLiftOptFlags, ALWAYS, opt, saacyc)
 
 ENDCYCLE (saacyc)
 

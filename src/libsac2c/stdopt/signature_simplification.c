@@ -1,5 +1,6 @@
 /*
  *
+ * $Id$
  *
  */
 
@@ -9,13 +10,13 @@
  *
  * This module based optimization removes all unused input arguments of
  * non-exported, non-provided and non-lac functions of a module.
- * Also all constant and scalar return types of that functions are removed
+ * Also, all constant and scalar return types of that functions are removed
  * from the function signature and inserted directly in the calling context.
  *
- * First while traversal through the function body all unused function
+ * First, while traversing through the function body, all unused function
  * arguments are removed from the signature of the calling contexts and
  * constant scalar return values are inserted in the calling context.
- * Finally constant scalar return values are removed from the
+ * Finally, constant scalar return values are removed from the
  * return-exprs-chain.
  * After modifying all function bodies, all function signatures (args and rets)
  * are modified.
@@ -77,7 +78,7 @@ struct INFO {
 #define INFO_ONEFUNDEF(n) (n->onefundef)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -156,11 +157,9 @@ SISImodule (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_TRAVPHASE (arg_info) = infer;
-
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     INFO_TRAVPHASE (arg_info) = simplify;
-
     MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -187,6 +186,9 @@ SISIfundef (node *arg_node, info *arg_info)
         arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_sisi);
     } else if (INFO_TRAVPHASE (arg_info) == simplify) {
         INFO_FUNDEF (arg_info) = arg_node;
+        DBUG_PRINT ("Begin %s %s",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                    FUNDEF_NAME (arg_node));
 
         INFO_RETS (arg_info) = FUNDEF_RETS (arg_node);
 
@@ -212,6 +214,9 @@ SISIfundef (node *arg_node, info *arg_info)
     } else {
         DBUG_ASSERT (FALSE, "Unexpected traversal phase!");
     }
+    DBUG_PRINT ("End %s %s", (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                FUNDEF_NAME (arg_node));
+
     DBUG_RETURN (arg_node);
 }
 
@@ -233,6 +238,8 @@ SISIfundef (node *arg_node, info *arg_info)
 node *
 SISIarg (node *arg_node, info *arg_info)
 {
+    node *tmp;
+
     DBUG_ENTER ();
 
     ARG_NEXT (arg_node) = TRAVopt (ARG_NEXT (arg_node), arg_info);
@@ -241,14 +248,14 @@ SISIarg (node *arg_node, info *arg_info)
      * now bottom-up traversal
      */
 
+    DBUG_PRINT ("arg_chain element %s has AVIS_NEEDCOUNT=%d",
+                AVIS_NAME (ARG_AVIS ((arg_node))), AVIS_NEEDCOUNT (ARG_AVIS (arg_node)));
     if (AVIS_NEEDCOUNT (ARG_AVIS (arg_node)) == 0) {
-
-        node *tmp;
-
         /*
          * we are dealing with an unused argument
          * delete argument from chain
          */
+        DBUG_PRINT ("Removing arg_chain element %s", AVIS_NAME (ARG_AVIS ((arg_node))));
         tmp = ARG_NEXT (arg_node);
         ARG_NEXT (arg_node) = NULL;
         arg_node = FREEdoFreeNode (arg_node);
@@ -390,6 +397,8 @@ SISIap (node *arg_node, info *arg_info)
                  */
 
                 tmp = curr_args;
+                DBUG_PRINT ("Removing AP_ARG %s",
+                            AVIS_NAME (ID_AVIS (EXPRS_EXPR (curr_args))));
                 curr_args = EXPRS_NEXT (curr_args);
                 EXPRS_NEXT (tmp) = NULL;
                 tmp = FREEdoFreeNode (tmp);
@@ -426,7 +435,6 @@ SISIids (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_IDSLET (arg_info)) {
-
         ret = INFO_APFUNRETS (arg_info);
         if (RET_NEXT (INFO_APFUNRETS (arg_info)) != NULL) {
             INFO_APFUNRETS (arg_info) = RET_NEXT (INFO_APFUNRETS (arg_info));
@@ -466,6 +474,7 @@ SISIids (node *arg_node, info *arg_info)
             /*
              * Remove current ids
              */
+            DBUG_PRINT ("Removing %s", AVIS_NAME (IDS_AVIS (arg_node)));
             succ = IDS_NEXT (arg_node);
             IDS_NEXT (arg_node) = NULL;
             arg_node = FREEdoFreeNode (arg_node);
@@ -526,15 +535,16 @@ SISIreturn (node *arg_node, info *arg_info)
 node *
 SISIret (node *arg_node, info *arg_info)
 {
+    node *tmp;
+
     DBUG_ENTER ();
 
     RET_NEXT (arg_node) = TRAVopt (RET_NEXT (arg_node), arg_info);
+
     /*
      * remove bottom-up rets
      */
-
     if (RET_WASREMOVED (arg_node)) {
-        node *tmp;
         tmp = RET_NEXT (arg_node);
         RET_NEXT (arg_node) = NULL;
         arg_node = FREEdoFreeNode (arg_node);
@@ -562,6 +572,8 @@ SISIexprs (node *arg_node, info *arg_info)
 {
     bool remove;
     node *ret;
+    node *tmp;
+
     DBUG_ENTER ();
 
     if (INFO_RETURNEXPRS (arg_info) == TRUE) {
@@ -583,7 +595,6 @@ SISIexprs (node *arg_node, info *arg_info)
          */
 
         if (remove) {
-            node *tmp;
             tmp = EXPRS_NEXT (arg_node);
             EXPRS_EXPR (arg_node) = NULL;
             arg_node = FREEdoFreeNode (arg_node);
