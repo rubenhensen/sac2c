@@ -693,7 +693,9 @@ GLOBAL (bool, sancheck, FALSE, xfree_dummy)
         * check syntax tree for structural consistency
         */
 
-GLOBAL (bool, memcheck, global.memcheck, xfree_dummy)
+GLOBAL (bool, memcheck, FALSE, xfree_dummy)
+GLOBAL (bool, nofree, FALSE, xfree_dummy)
+GLOBAL (bool, memclean, TRUE, xfree_dummy)
 /*
  * check syntaxtree for memoryproblems with xml specification
  *

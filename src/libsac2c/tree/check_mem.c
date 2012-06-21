@@ -713,7 +713,6 @@ int
 CHKMgetSize (node *shifted_ptr)
 {
     memobj *ptr_to_memobj;
-    int *ptr_to_size;
     int size;
 
     DBUG_ENTER ();

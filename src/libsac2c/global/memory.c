@@ -97,16 +97,16 @@ MEMmalloc (int size)
             DBUG_PRINT_TAG ("MEM_TOTAL", "Currently allocated memory: %u",
                             global.current_allocated_mem);
 
-#ifdef CLEANMEM
-            /*
-             * Initialize memory
-             */
-            shifted_ptr = memset (shifted_ptr, 0, size);
-#endif
         } else {
             shifted_ptr = orig_ptr;
         }
 
+        if (global.memclean) {
+            /*
+             * Initialize memory
+             */
+            shifted_ptr = memset (shifted_ptr, 0, size);
+        }
     } else {
         shifted_ptr = NULL;
     }
@@ -161,20 +161,6 @@ __MEMrealloc (void *ptr, int size)
     DBUG_RETURN (ret);
 }
 
-#ifdef NOFREE
-
-void *
-MEMfree (void *address)
-{
-    DBUG_ENTER ();
-
-    address = NULL;
-
-    DBUG_RETURN (address);
-}
-
-#else /* NOFREE */
-
 void *
 MEMfree (void *shifted_ptr)
 {
@@ -185,7 +171,7 @@ MEMfree (void *shifted_ptr)
 
     DBUG_ASSERT (malloc_align_step > 0, "malloc_align_step not set");
 
-    if (shifted_ptr != NULL) {
+    if (!global.nofree && shifted_ptr != NULL) {
         if (global.memcheck) {
             size = CHKMgetSize (shifted_ptr);
 
@@ -200,15 +186,15 @@ MEMfree (void *shifted_ptr)
             DBUG_PRINT_TAG ("MEM_TOTAL", "Currently allocated memory: %u",
                             global.current_allocated_mem);
 
-#ifdef CLEANMEM
-            /*
-             * this code overwrites the memory prior to freeing it. This
-             * is very useful when watching a memory address in gdb, as
-             * one gets notified as soon as it is freed. Needs memcheck
-             * to get the size of the freed memory chunk.
-             */
-            shifted_ptr = memset (shifted_ptr, 0, size);
-#endif /* CLEANMEM */
+            if (global.memclean) {
+                /*
+                 * this code overwrites the memory prior to freeing it. This
+                 * is very useful when watching a memory address in gdb, as
+                 * one gets notified as soon as it is freed. Needs memcheck
+                 * to get the size of the freed memory chunk.
+                 */
+                shifted_ptr = memset (shifted_ptr, 0, size);
+            }
 
             orig_ptr = CHKMunregisterMem (shifted_ptr);
         } else {
@@ -220,8 +206,6 @@ MEMfree (void *shifted_ptr)
 
     DBUG_RETURN (orig_ptr);
 }
-
-#endif /* NOFREE */
 
 /******************************************************************************
  *

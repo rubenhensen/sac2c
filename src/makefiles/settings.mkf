@@ -23,7 +23,7 @@ SETTINGS_DEVEL         := -DSANITYCHECKS \
                           -DAE_DEACTIVATED \
                           -DTSI_DEACTIVATED \
                           -DPADT_DEACTIVATED \
-                          -DCLEANMEM -DCHECK_NODE_ACCESS \
+                          -DCHECK_NODE_ACCESS \
                           -DINLINE_MACRO_CHECKS 
 
 SETTINGS_PROD          := -DDBUG_OFF \
