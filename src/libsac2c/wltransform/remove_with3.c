@@ -132,7 +132,7 @@ struct INFO {
 #define INFO_FA_LHS(info) (info->fa_lhs)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

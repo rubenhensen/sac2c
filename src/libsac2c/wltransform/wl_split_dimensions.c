@@ -158,7 +158,7 @@ struct INFO {
 #define INFO_NIP_ARG(n) ((n)->nip_arg)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

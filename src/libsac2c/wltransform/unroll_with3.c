@@ -117,7 +117,7 @@ struct INFO {
 #define INFO_SI_OPS_INIT(info) (info->si_ops_init)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

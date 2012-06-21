@@ -105,7 +105,7 @@ struct INFO {
 #define INFO_REPLACE_ASSIGNS(n) (n->replaceAssigns)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

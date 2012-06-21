@@ -72,7 +72,7 @@ struct INFO {
 #define INFO_RESULTS(n) ((n)->results)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
