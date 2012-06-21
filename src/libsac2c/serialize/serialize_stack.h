@@ -14,7 +14,7 @@
 
 #define SERSTACK_NOT_FOUND -1
 
-extern serstack_t *SSinit ();
+extern serstack_t *SSinit (void);
 extern serstack_t *SSdestroy (serstack_t *stack);
 extern void SSpush (node *val, serstack_t *stack);
 extern node *SSpop (serstack_t *stack);

@@ -13,6 +13,6 @@
 
 extern int SFNgetId (const char *filename);
 
-extern void SFNgenerateFilenameTable ();
+extern void SFNgenerateFilenameTable (void);
 
 #endif

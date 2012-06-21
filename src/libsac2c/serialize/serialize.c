@@ -34,7 +34,7 @@
  */
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
