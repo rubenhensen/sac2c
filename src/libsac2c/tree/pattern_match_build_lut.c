@@ -98,7 +98,7 @@ struct INFO {
 #define INFO_ARGUMENTS(n) ((n)->arguments)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

@@ -127,7 +127,7 @@ struct INFO {
 #define INFO_STOP(n) (n->stop)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

@@ -37,7 +37,7 @@ static constant *pv_0233 = NULL;
  ******************************************************************************/
 
 void
-PPIinitializePVs ()
+PPIinitializePVs (void)
 {
     DBUG_ENTER ();
 

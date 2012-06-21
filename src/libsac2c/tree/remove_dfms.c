@@ -25,7 +25,7 @@ struct INFO {
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

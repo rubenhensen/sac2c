@@ -3,7 +3,7 @@
 
 #include "types.h"
 
-extern void PPIinitializePVs ();
+extern void PPIinitializePVs (void);
 extern constant *PPIgetPVId (int n);
 extern constant *PPIgetPVIdxId (int n);
 extern constant *PPIgetPVS (int n);

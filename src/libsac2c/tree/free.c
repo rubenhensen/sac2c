@@ -27,7 +27,7 @@ static int num_zombies = 0;
  */
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
