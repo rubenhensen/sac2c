@@ -75,7 +75,7 @@ struct INFO {
  */
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

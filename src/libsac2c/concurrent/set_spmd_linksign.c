@@ -64,7 +64,7 @@ struct INFO {
  */
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     DBUG_ENTER ();
 

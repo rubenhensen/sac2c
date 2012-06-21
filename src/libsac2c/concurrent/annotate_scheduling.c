@@ -52,7 +52,7 @@ struct INFO {
  */
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -122,7 +122,7 @@ MTASdoAnnotateScheduling (node *syntax_tree)
  ******************************************************************************/
 
 static sched_t *
-MakeDefaultSchedulingConstSegment ()
+MakeDefaultSchedulingConstSegment (void)
 {
     sched_t *sched;
 
@@ -134,7 +134,7 @@ MakeDefaultSchedulingConstSegment ()
 }
 
 static sched_t *
-MakeDefaultSchedulingVarSegment ()
+MakeDefaultSchedulingVarSegment (void)
 {
     sched_t *sched;
 
