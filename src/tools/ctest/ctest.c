@@ -95,7 +95,7 @@ PrintCache (cache_ptr Cache)
 
 #define HEADER "   "
 void
-Usage ()
+Usage (void)
 {
     printf ("ctest\n");
     printf (HEADER "-h              print this help mesage.\n");
