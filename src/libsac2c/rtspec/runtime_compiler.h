@@ -19,6 +19,6 @@
 
 #include "types.h"
 
-extern node *RTsetupRuntimeCompiler ();
+extern node *RTsetupRuntimeCompiler (void);
 
 #endif /* _SAC_RUNTIME_COMPILER_H_ */
