@@ -98,7 +98,7 @@ vlookup (dag *g, vertex *v)
 }
 
 dag *
-DAGgenGraph ()
+DAGgenGraph (void)
 {
     DBUG_ENTER ();
     dag *g = MEMmalloc (sizeof (dag));

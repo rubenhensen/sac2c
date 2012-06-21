@@ -56,7 +56,7 @@ struct INFO {
  * INFO functions
  */
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
@@ -114,7 +114,7 @@ randNumGen (int max, int *testpre)
 }
 
 void
-testPriorityQueue ()
+testPriorityQueue (void)
 {
 
     int i, j, random, totalelements;
