@@ -82,7 +82,7 @@ CalcMasterclass (int num_threads)
  ******************************************************************************/
 
 static void
-PrintGlobalSwitches ()
+PrintGlobalSwitches (void)
 {
     DBUG_ENTER ();
 
@@ -270,7 +270,7 @@ PrintGlobalSwitches ()
  ******************************************************************************/
 
 static void
-PrintProfileData ()
+PrintProfileData (void)
 {
     int i, j;
 
@@ -495,7 +495,7 @@ PrintGlobalSettings (node *syntax_tree)
  ******************************************************************************/
 
 static void
-PrintIncludes ()
+PrintIncludes (void)
 {
     DBUG_ENTER ();
 
@@ -536,7 +536,7 @@ PrintIncludes ()
  ******************************************************************************/
 
 static void
-PrintDefines ()
+PrintDefines (void)
 {
     DBUG_ENTER ();
 
@@ -588,7 +588,7 @@ GSCprintFileHeader (node *syntax_tree)
  ******************************************************************************/
 
 void
-GSCprintDefines ()
+GSCprintDefines (void)
 {
     DBUG_ENTER ();
 
@@ -608,7 +608,7 @@ GSCprintDefines ()
  ******************************************************************************/
 
 void
-GSCprintMainBegin ()
+GSCprintMainBegin (void)
 {
     DBUG_ENTER ();
 
@@ -642,7 +642,7 @@ GSCprintMainBegin ()
  ******************************************************************************/
 
 void
-GSCprintMainEnd ()
+GSCprintMainEnd (void)
 {
     DBUG_ENTER ();
 
@@ -674,7 +674,7 @@ GSCprintMainEnd ()
  ******************************************************************************/
 
 static void
-GSCprintMainC99 ()
+GSCprintMainC99 (void)
 {
     char *res_NT;
     types *tmp_type;
@@ -737,7 +737,7 @@ GSCprintMainC99 ()
 }
 
 static void
-GSCprintMainMuTC ()
+GSCprintMainMuTC (void)
 {
 #if 0
   char *res_NT;
@@ -780,7 +780,7 @@ GSCprintMainMuTC ()
 }
 
 void
-GSCprintMain ()
+GSCprintMain (void)
 {
     DBUG_ENTER ();
 
@@ -809,7 +809,7 @@ GSCprintMain ()
  *        when compiling programs to circumvent linker errors.
  ******************************************************************************/
 void
-GSCprintSACargCopyFreeStubs ()
+GSCprintSACargCopyFreeStubs (void)
 {
     DBUG_ENTER ();
 

@@ -20,10 +20,10 @@
 
 extern void GSCprintFileHeader (node *syntax_tree);
 extern void GSCprintInternalInitFileHeader (node *syntax_tree);
-extern void GSCprintDefines ();
-extern void GSCprintMain ();
-extern void GSCprintMainBegin ();
-extern void GSCprintMainEnd ();
-extern void GSCprintSACargCopyFreeStubs ();
+extern void GSCprintDefines (void);
+extern void GSCprintMain (void);
+extern void GSCprintMainBegin (void);
+extern void GSCprintMainEnd (void);
+extern void GSCprintSACargCopyFreeStubs (void);
 
 #endif /* _SAC_GEN_STARTUP_CODE_H_ */
