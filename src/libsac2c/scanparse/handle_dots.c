@@ -155,7 +155,7 @@ struct INFO {
  * @return new info structure
  */
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

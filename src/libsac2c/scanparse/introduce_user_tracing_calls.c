@@ -68,7 +68,7 @@ struct INFO {
 #define INFO_FUNNAME(n) ((n)->funname)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 

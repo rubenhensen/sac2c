@@ -16,6 +16,6 @@ extern node *SPdoLocateSource (node *syntax_tree);
 extern node *SPdoRunPreProcessor (node *syntax_tree);
 extern node *SPdoScanParse (node *syntax_tree);
 
-extern int SPmyYyparse ();
+extern int SPmyYyparse (void);
 
 #endif /* _SAC_SCNPRS_H_ */
