@@ -1167,19 +1167,19 @@ CTIterminateCompilation (node *syntax_tree)
         syntax_tree = PRTdoPrintFile (stdout, syntax_tree);
     }
 
-    if ((global.dovisualizefunsets || global.visualizefunsets.imp
-         || global.visualizefunsets.use || global.visualizefunsets.def
-         || global.visualizefunsets.wrp || global.visualizefunsets.pre)
-        && (syntax_tree != NULL)) {
+    if (global.visual_after_break && (syntax_tree != NULL)) {
         if (!DOT_FLAG) {
             CTIwarn ("If you want to visualize syntax tree. Please install dot. \n");
         } else {
-
             if (!global.dovisualizefunsets) {
                 global.dovisualizefunsets
                   = global.visualizefunsets.imp && global.visualizefunsets.use
                     && global.visualizefunsets.def && global.visualizefunsets.wrp
                     && global.visualizefunsets.pre;
+            }
+
+            if (!global.dovisualizefunsets) {
+                global.dovisualizefunsets = TRUE;
             }
 
             visual_output = VISUALdoVisual (syntax_tree);

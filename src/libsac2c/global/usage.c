@@ -793,7 +793,7 @@ PrintPrintingOptions (void)
       "               Use in conjunction with -b \n"
       "                 Example usage: -b 5:goi -printfun foo\n"
       "\n"
-      "    -prtfunsets [aiudwp]+\n"
+      "    -printfunsets [aiudwp]+\n"
       "                Select different categories of funcion to print or visualize\n"
       "                (if using -doVAB when break).\n"
       "               Use in conjunction with -b \n"

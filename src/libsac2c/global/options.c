@@ -486,21 +486,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_FLAG ("dofoldparallel", global.no_fold_parallel = FALSE);
 
-    ARGS_OPTION_BEGIN ("doVAB")
-    {
-        global.dovisualizefunsets = FALSE;
-        ARG_FLAGMASK_BEGIN ();
-        ARG_FLAGMASK ('a', global.visualizefunsets = global.visualizefunsets_all;
-                      global.dovisualizefunsets = TRUE);
-
-#define VISUALIZEFUNSETS(flag, char, default)                                            \
-    ARG_FLAGMASK (char, global.visualizefunsets.flag = TRUE;);
-#include "flags.mac"
-
-        ARG_FLAGMASK_END ();
-    }
-    ARGS_OPTION_END ("doVAB");
-
     ARGS_OPTION_BEGIN ("do")
     {
         ARG_CHOICE_BEGIN ();
@@ -806,6 +791,17 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
 #define PRINTFUNSETS(flag, char, default)                                                \
     ARG_FLAGMASK (char, global.printfunsets.flag = TRUE;);
+#include "flags.mac"
+
+        ARG_FLAGMASK_END ();
+
+        global.dovisualizefunsets = FALSE;
+        ARG_FLAGMASK_BEGIN ();
+        ARG_FLAGMASK ('a', global.visualizefunsets = global.visualizefunsets_all;
+                      global.dovisualizefunsets = TRUE);
+
+#define VISUALIZEFUNSETS(flag, char, default)                                            \
+    ARG_FLAGMASK (char, global.visualizefunsets.flag = TRUE;);
 #include "flags.mac"
 
         ARG_FLAGMASK_END ();
