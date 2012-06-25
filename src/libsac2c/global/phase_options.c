@@ -12,8 +12,6 @@
 
 #include "phase_options.h"
 
-#include "types.h"
-
 #define DBUG_PREFIX "PHO"
 #include "debug.h"
 
@@ -153,8 +151,10 @@ PHOinterpretStartPhase (char *option)
     DBUG_ENTER ();
 
     enum phase_mode_t mode = START;
-    /* call this function with TRUE to determine start */
+
     InterpretPrintOptionPhase (option, mode);
+
+    CheckStartStopPhase ();
 
     DBUG_RETURN ();
 }
@@ -166,8 +166,46 @@ PHOinterpretStopPhase (char *option)
     DBUG_ENTER ();
 
     enum phase_mode_t mode = STOP;
-    /* call this function with FALSE to determine stop */
+
     InterpretPrintOptionPhase (option, mode);
+
+    CheckStartStopPhase ();
+
+    DBUG_RETURN ();
+}
+
+/* checks to ensure phasestart and phasestop are valid */
+void
+CheckStartStopPhase (void)
+{
+    DBUG_ENTER ();
+
+    /* checks that phasestart does not occur before phasestop */
+    if (global.prtphafun_start_phase != PH_undefined
+        && global.prtphafun_stop_phase != PH_undefined) {
+        if (global.prtphafun_start_phase > global.prtphafun_stop_phase) {
+
+            CTIerror ("Illegal compiler phase specification in options: \n"
+                      "  -printstart and -printstop\n"
+                      "Start phase occurs after stop phase.",
+                      global.toolname);
+        } else if (global.prtphafun_start_phase == global.prtphafun_stop_phase) {
+            if (global.prtphafun_start_subphase > global.prtphafun_stop_subphase) {
+                CTIerror ("Illegal compiler phase specification in options: \n"
+                          "  -printstart and -printstop\n"
+                          "Start subphase occurs after stop subphase.",
+                          global.toolname);
+            } else if (global.prtphafun_start_subphase
+                       == global.prtphafun_stop_subphase) {
+                if (global.prtphafun_start_cycle > global.prtphafun_stop_cycle) {
+                    CTIerror ("Illegal compiler phase specification in options: \n"
+                              "  -printstart and -printstop\n"
+                              "Start cycle occurs after stop cycle.",
+                              global.toolname);
+                }
+            }
+        }
+    }
 
     DBUG_RETURN ();
 }
@@ -175,13 +213,7 @@ PHOinterpretStopPhase (char *option)
 /*
  * Parses the option: <phase>:<subphase>:<cycle>
  *
- * isstart indicates to set the start global variables
- * otherwise the stop global variables are set.
- *
- * Assigns the phase values to the global variables:
- * - prtphafun_start_phase
- * - prtphafun_start_subphase
- * - prtphafun_start_cycle
+ * for the specified mode: i.e: start,stop
  */
 void
 InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)

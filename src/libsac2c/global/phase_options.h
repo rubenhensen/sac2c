@@ -2,6 +2,8 @@
  * $Id$
  */
 
+#include "types.h"
+
 #ifndef _PHASE_OPTIONS_H_
 #define _PHASE_OPTIONS_H_
 
@@ -12,6 +14,7 @@
 enum phase_mode_t { START, STOP };
 
 void InterpretPrintOptionPhase (char *option, enum phase_mode_t mode);
+void CheckStartStopPhase (void);
 
 extern void PHOinterpretStep (char *option);
 
@@ -25,4 +28,4 @@ extern void PHOinterpretDbugOption (char *option);
 extern void PHOprintPhasesSac2c (void);
 extern void PHOprintPhasesSac4c (void);
 
-#endif
+#endif //_PHASE_OPTIONS_H_
