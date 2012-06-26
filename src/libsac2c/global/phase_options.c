@@ -7,6 +7,8 @@
  * This file contains functions to interpret command line options related
  * to the phase mechanism, in particular the break option -b and the dbug
  * option -#.
+ * It also contains the functions to interpret -printfun, -printstart,
+ * -printstop and -printstep.
  *
  *****************************************************************************/
 
@@ -202,6 +204,15 @@ CheckStartStopPhase (void)
                               "  -printstart and -printstop\n"
                               "Start cycle occurs after stop cycle.",
                               global.toolname);
+                } else if (global.prtphafun_start_cycle_specifier
+                           == global.prtphafun_stop_cycle_specifier) {
+                    if (global.prtphafun_start_cycle_specifier
+                        > global.prtphafun_stop_cycle_specifier) {
+                        CTIerror ("Illegal compiler phase specification in options: \n"
+                                  "  -printstart and -printstop\n"
+                                  "Start cycle pass occurs after stop cycle pass.",
+                                  global.toolname);
+                    }
                 }
             }
         }
@@ -359,10 +370,10 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
                 if ((rest[0] == '\0') && (num >= 1)) {
                     switch (mode) {
                     case START:
-                        global.prntphafun_start_cycle_specifier = num;
+                        global.prtphafun_start_cycle_specifier = num;
                         break;
                     case STOP:
-                        global.prntphafun_start_cycle_specifier = num;
+                        global.prtphafun_start_cycle_specifier = num;
                         break;
                     }
                 } else {
