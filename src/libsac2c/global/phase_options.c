@@ -224,6 +224,7 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
     char *break_phase;
     char *break_subphase;
     char *break_cyclephase;
+    char *break_cyclepass;
     char *rest;
     int num;
 
@@ -231,6 +232,7 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
 
     DBUG_PRINT ("Interpreting phase option: %s", option);
 
+    /*PHASE */
     break_phase = STRtok (option, ":");
 
     num = strtol (break_phase, &rest, 10);
@@ -279,6 +281,7 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
 
     break_phase = MEMfree (break_phase);
 
+    /* SUBPHASE */
     break_subphase = STRtok (NULL, ":");
 
     if (break_subphase != NULL) {
@@ -313,6 +316,7 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
 
         break_subphase = MEMfree (break_subphase);
 
+        /* CYCLEPHASE */
         break_cyclephase = STRtok (NULL, ":");
 
         if (break_cyclephase != NULL) {
@@ -345,6 +349,43 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
             }
 
             break_cyclephase = MEMfree (break_cyclephase);
+
+            /* CYCLEPASS */
+            break_cyclepass = STRtok (NULL, ":");
+
+            if (break_cyclepass != NULL) {
+                num = strtol (break_cyclepass, &rest, 10);
+
+                if ((rest[0] == '\0') && (num >= 1)) {
+                    switch (mode) {
+                    case START:
+                        global.prntphafun_start_cycle_specifier = num;
+                        break;
+                    case STOP:
+                        global.prntphafun_start_cycle_specifier = num;
+                        break;
+                    }
+                } else {
+                    switch (mode) {
+                    case START:
+                        CTIerror (
+                          "Illegal compiler cycle pass specification in break option: \n"
+                          "  -printstart %s\n"
+                          "See %s -h for a list of legal break options.",
+                          option, global.toolname);
+                        break;
+                    case STOP:
+                        CTIerror (
+                          "Illegal compiler cycle pass specification in break option: \n"
+                          "  -printstop %s\n"
+                          "See %s -h for a list of legal break options.",
+                          option, global.toolname);
+                        break;
+                    }
+                }
+
+                break_cyclepass = MEMfree (break_cyclepass);
+            }
         }
     }
 

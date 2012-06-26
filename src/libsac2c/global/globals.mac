@@ -825,6 +825,11 @@ GLOBAL (compiler_phase_t, prtphafun_start_cycle, PH_undefined, xfree_dummy)
  * Start printing the specific function at this cycle.
  */
 
+GLOBAL (int, prntphafun_start_cycle_specifier, 1, xfree_dummy)
+/*
+ * Specifies the the start pass to print within a specific cyclephase loop.
+ */
+
 GLOBAL (compiler_phase_t, prtphafun_stop_phase, PH_undefined, xfree_dummy)
 /*
  * Start printing the specific function at this phase.
@@ -837,6 +842,11 @@ GLOBAL (compiler_phase_t, prtphafun_stop_subphase, PH_undefined, xfree_dummy)
 GLOBAL (compiler_phase_t, prtphafun_stop_cycle, PH_undefined, xfree_dummy)
 /*
  * Start printing the specific function at this cycle.
+ */
+
+GLOBAL (int, prntphafun_stop_cycle_specifier, 1, xfree_dummy)
+/*
+ * Specifies the the stop pass to print within a specific cyclephase loop.
  */
 
 GLOBAL (int, padding_overhead_limit, 10, xfree_dummy)

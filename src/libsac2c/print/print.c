@@ -1909,18 +1909,31 @@ PRTfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /*
+      if( INFO_NONLOCCALFUN( arg_info) != NULL){
+        printf( "FOUND LOCAL FUN OF %s: %s\n", FUNDEF_NAME( INFO_NONLOCCALFUN( arg_info))
+      ,FUNDEF_NAME(arg_node));
+      }
+    */
+    /*
      *if the break_fun_name is null then always print
      *if the break_fun_name equals the current FUNDEF node then print
      *if the break_fun_name is not null (selective printing is used) AND
      *break_after_phase (-b option) is not set AND the PRTfundef function was not
      *called during a prt_cycle_range event, then print.
+     *
+     *OR if the fundef has local fundefs. (mhs)
      */
 
     if (global.break_fun_name == NULL
         || STReq (global.break_fun_name, FUNDEF_NAME (arg_node))
         || (global.break_fun_name != NULL && global.break_after_phase == PH_undefined
-            && global.prt_cycle_range == FALSE)) {
+            && global.prt_cycle_range == FALSE)
+        || INFO_NONLOCCALFUN (arg_info) != NULL) {
+
         DBUG_PRINT ("%s " F_PTR, NODE_TEXT (arg_node), arg_node);
+
+        //    if( INFO_NONLOCCALFUN( arg_info) != NULL) {
+        //    }
 
         if (NODE_ERROR (arg_node) != NULL) {
             NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
@@ -2167,6 +2180,23 @@ PRTfundef (node *arg_node, info *arg_info)
                     }
 
                     if (FUNDEF_LOCALFUNS (arg_node) != NULL) {
+
+                        /*
+                         * if the printfun option is specified this will print above the
+                         * list of local fundefs. This is related to the -printfun option.
+                         */
+                        if (global.break_fun_name != NULL) {
+                            fprintf (global.outfile,
+                                     "\n"
+                                     "/**************************************************"
+                                     "**************************\n"
+                                     " * Local fundefs of %s:\n"
+                                     " **************************************************"
+                                     "**************************/"
+                                     "\n",
+                                     FUNDEF_NAME (arg_node));
+                        }
+
                         INFO_NONLOCCALFUN (arg_info) = arg_node;
                         TRAVdo (FUNDEF_LOCALFUNS (arg_node), arg_info);
                         INFO_NONLOCCALFUN (arg_info) = NULL;
