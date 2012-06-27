@@ -188,20 +188,17 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 
     CTIabortOnError ();
 
-    /*if prtrange_stepping_specificer == 0*/
-    if (global.prtrange_stepping_specifier == 0
-        || global.prtrange_stepping_specifier == 1) {
-        if ((global.prtphafun_start_phase != PH_undefined
-             && global.prt_cycle_range == TRUE)
-            || global.prtphafun_start_phase == phase) {
-            global.prt_cycle_range = TRUE;
-            PRTdoPrintFile (FMGRwriteOpen ("%s.%d", global.outfilename, global.phase_num),
-                            syntax_tree);
-            if (global.prtphafun_stop_phase == phase) {
-                global.prt_cycle_range = FALSE;
-            }
+    if ((global.prtphafun_start_phase != PH_undefined && global.prt_cycle_range == TRUE)
+        || (global.prtphafun_start_phase == phase
+            && global.prtphafun_start_subphase == PH_undefined)) {
+        global.prt_cycle_range = TRUE;
+        PRTdoPrintFile (FMGRwriteOpen ("%s.%d", global.outfilename, global.phase_num),
+                        syntax_tree);
+        if (global.prtphafun_stop_phase == phase) {
+            global.prt_cycle_range = FALSE;
         }
     }
+
     if (global.break_after_phase == phase) {
         CTIterminateCompilation (syntax_tree);
     }
@@ -252,18 +249,15 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
 
     CTIabortOnError ();
 
-    if (global.prtrange_stepping_specifier == 1) {
-        if ((global.prtphafun_start_phase != PH_undefined
-             && global.prt_cycle_range == TRUE)
-            || global.prtphafun_start_subphase == subphase) {
-            global.prt_cycle_range = TRUE;
-            PRTdoPrintFile (FMGRwriteOpen ("%s.%d.%s", global.outfilename,
-                                           global.phase_num, PHIphaseIdent (subphase)),
-                            syntax_tree);
-
-            if (global.prtphafun_stop_subphase == subphase) {
-                global.prt_cycle_range = FALSE;
-            }
+    if ((global.prtphafun_start_subphase != PH_undefined
+         && global.prt_cycle_range == TRUE)
+        || global.prtphafun_start_subphase == subphase) {
+        global.prt_cycle_range = TRUE;
+        PRTdoPrintFile (FMGRwriteOpen ("%s.%d.%s", global.outfilename, global.phase_num,
+                                       PHIphaseIdent (subphase)),
+                        syntax_tree);
+        if (global.prtphafun_stop_subphase == subphase) {
+            global.prt_cycle_range = FALSE;
         }
     }
 
@@ -334,6 +328,20 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
                 CTInote (" ");
             }
 
+            if ((global.prtphafun_start_cycle != PH_undefined
+                 && global.prt_cycle_range == TRUE)
+                || (global.prtphafun_start_subphase == cycle
+                    && global.prtphafun_start_cycle == PH_undefined)) {
+                global.prt_cycle_range = TRUE;
+                PRTdoPrintFile (FMGRwriteOpen ("%s.%d.%s.%d", global.outfilename,
+                                               global.phase_num, PHIphaseIdent (cycle),
+                                               global.cycle_counter),
+                                syntax_tree);
+                if (global.prtphafun_stop_subphase == cycle) {
+                    global.prt_cycle_range = FALSE;
+                }
+            }
+
             global.cycle_counter += 1;
 
         } while (go_on && (global.cycle_counter <= global.max_optcycles)
@@ -402,6 +410,18 @@ PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
 #endif
 
     CTIabortOnError ();
+
+    if ((global.prtphafun_start_cycle != PH_undefined && global.prt_cycle_range == TRUE)
+        || global.prtphafun_start_cycle == cyclephase) {
+        global.prt_cycle_range = TRUE;
+        PRTdoPrintFile (FMGRwriteOpen ("%s.%d.%s.%d", global.outfilename,
+                                       global.phase_num, PHIphaseIdent (cyclephase),
+                                       global.cycle_counter),
+                        syntax_tree);
+        if (global.prtphafun_stop_cycle == cyclephase) {
+            global.prt_cycle_range = FALSE;
+        }
+    }
 
     DBUG_RETURN (syntax_tree);
 }
@@ -512,11 +532,30 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
 
         CTIabortOnError ();
 
+        if ((global.prtphafun_start_cycle != PH_undefined
+             && global.prt_cycle_range == TRUE)
+            || global.prtphafun_start_cycle == cyclephase) {
+            global.prt_cycle_range = TRUE;
+            if (global.break_fun_name == NULL
+                || STReq (FUNDEF_NAME (fundef), global.break_fun_name)) {
+                PRTdoPrintNodeFile (FMGRwriteOpen ("%s.%d.%s.%d.%s", global.outfilename,
+                                                   global.phase_num,
+                                                   PHIphaseIdent (cyclephase),
+                                                   global.cycle_counter,
+                                                   FUNDEF_NAME (fundef)),
+                                    fundef);
+            }
+            if (global.prtphafun_stop_cycle == cyclephase) {
+                global.prt_cycle_range = FALSE;
+            }
+        }
+
 #ifndef DBUG_OFF
         if (global.check_frequency >= 4) {
             fundef = PHrunConsistencyChecks (fundef);
         }
         CTIabortOnError ();
+
 #endif
     }
 
