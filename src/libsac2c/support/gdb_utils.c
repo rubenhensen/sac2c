@@ -78,6 +78,10 @@ GDBbreakAtNid (node *arg_node, char *nm)
             }
             break;
 
+        case N_exprs:
+            z = GDBbreakAtNid (EXPRS_EXPR (arg_node), nm);
+            break;
+
         default:
             z = FALSE;
             break;
