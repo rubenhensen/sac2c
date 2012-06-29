@@ -270,7 +270,7 @@ IsGuardPrf (prf op)
         res = FALSE;
     }
 
-    DBUG_RETURN (res);
+    DBUG_RETURN (FALSE);
 }
 
 static prf
