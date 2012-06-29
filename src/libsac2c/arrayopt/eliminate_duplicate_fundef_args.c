@@ -54,6 +54,7 @@
 #include "DupTree.h"
 #include "indexvectorutils.h"
 #include "eliminate_duplicate_fundef_args.h"
+#include "lacfun_utilities.h"
 
 typedef enum { markdups, simplifycalls, simplifylacfun } travphases;
 /*
@@ -109,68 +110,6 @@ FreeInfo (info *info)
 
 /**<!--***********************************************************************-->
  *
- * @fn bool EDFAisLoopFunInvariant( node *arg_node, node *argid,
- *                              node *rca)
- *
- * @brief true if arg_node is not a LOOPFUN.
- *        true if arg_node IS a LOOPFUN, and argid (the current
- *        outer N_ap element) is the same as rca (recursivecallavis),
- *        the current inner N_ap recursive call element.
- *
- * @param arg_node: N_fundef in question
- *        argid: The current argument to the outer call of
- *               arg_node.
- *        rca:   The current N_exprs chain of arguments to the
- *               recursive call of arg_node.
- *
- * @result: True if the above brief holds.
- *
- * @comment: The match check on the elements is somewhat
- *           subtle, because of the possibility of a selproxy
- *           being in the way. E.g., we may have this:
- *
- *             outer call:   Loop( outeriv...)
- *
- *             int Loop( inneriv...)
- *                ...
- *               s0 = inneriv[0];
- *               s1 = inneriv[1];
- *               iv' = [ s0, s1];
- *               Loop( iv'...);
- *
- *            This code recognizes that iv' and inneriv are the same.
- *
- ******************************************************************************/
-bool
-EDFAisLoopFunInvariant (node *arg_node, node *argid, node *rca)
-{
-    bool z = TRUE;
-    node *proxy;
-
-    DBUG_ENTER ();
-
-    if (FUNDEF_ISLOOPFUN (arg_node)) {
-        z = ARG_AVIS (argid) == ID_AVIS (EXPRS_EXPR (rca));
-        if (!z) {
-            proxy = IVUTarrayFromProxySel (EXPRS_EXPR (rca));
-            if (NULL != proxy) {
-                z = ARG_AVIS (argid) == ID_AVIS (proxy);
-            }
-        }
-
-        if (!z) {
-            proxy = IVUTarrayFromProxyIdxsel (EXPRS_EXPR (rca));
-            if (NULL != proxy) {
-                z = ARG_AVIS (argid) == ID_AVIS (proxy);
-            }
-        }
-    }
-
-    DBUG_RETURN (z);
-}
-
-/**<!--***********************************************************************-->
- *
  * @fn node *SimplifyCall( node *arg_node, info *arg_info)
  *
  * @brief Remove any duplicate parameters from a call to a LACFUN.
@@ -221,7 +160,7 @@ SimplifyCall (node *arg_node, info *arg_info)
 
 /**<!--***********************************************************************-->
  *
- * @fn node *SimplifyFunctionHeader( node *arg_node, info *arg_info)
+ * @fn node *SimplifyFunctionHeader( node *arg_node)
  *
  * @brief Eliminate any duplicate parameters from the LACFUN function
  *        header.
@@ -232,7 +171,7 @@ SimplifyCall (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 static node *
-SimplifyFunctionHeader (node *arg_node, info *arg_info)
+SimplifyFunctionHeader (node *arg_node)
 {
     node *args;
     node *newargs = NULL;
@@ -396,7 +335,7 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
         while (NULL != apargs) {
             argid = EXPRS_EXPR (apargs);
             argavis = ID_AVIS (argid);
-            if (EDFAisLoopFunInvariant (arg_node, fundefargs, rca)) {
+            if (LFUisLoopFunInvariant (arg_node, fundefargs, rca)) {
                 lutitem = (node **)LUTsearchInLutP (INFO_LUTARGS (arg_info), argavis);
                 if (NULL == lutitem) {
                     /* Entry not in LUT. This is a new argument.
@@ -554,7 +493,7 @@ EDFAfundef (node *arg_node, info *arg_info)
 
     if ((simplifylacfun == INFO_PHASE (arg_info))) {
         DBUG_PRINT ("Simplifying header in: %s", FUNDEF_NAME (arg_node));
-        arg_node = SimplifyFunctionHeader (arg_node, arg_info);
+        arg_node = SimplifyFunctionHeader (arg_node);
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
         FUNDEF_CALLAP (arg_node) = NULL;

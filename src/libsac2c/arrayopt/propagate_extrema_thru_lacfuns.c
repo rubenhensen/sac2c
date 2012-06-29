@@ -80,6 +80,7 @@
 #include "propagate_extrema_thru_lacfuns.h"
 #include "eliminate_duplicate_fundef_args.h"
 #include "ivextrema.h"
+#include "lacfun_utilities.h"
 
 /*
  * INFO structure
@@ -190,9 +191,7 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
     node *argavis;
     node *rca;
     ntype *typ;
-    node *outercall;
     node *reccall;
-    node *newarg;
     node *newrecursiveapargs = NULL;
     ;
 
@@ -210,44 +209,26 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
     while (NULL != apargs) {
         callarg = EXPRS_EXPR (apargs);
         argavis = ID_AVIS (callarg);
-        if (EDFAisLoopFunInvariant (arg_node, lacfunargs, rca)) {
+        if (LFUisLoopFunInvariant (arg_node, lacfunargs, rca)) {
             typ = AVIS_TYPE (argavis);
             if ((NULL == AVIS_MIN (ARG_AVIS (lacfunargs))) && (!TYisAKV (typ))
                 && (NULL != AVIS_MIN (argavis))) {
                 minmax = AVIS_MIN (argavis);
-                newavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (callarg))),
-                                      TYcopyType (typ));
+                newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
+                                                     &INFO_NEWOUTERAPARGS (arg_info));
                 AVIS_MIN (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
                 DBUG_PRINT ("Adding AVIS_MIN(%s) for formal parameter %s",
                             AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
-                newarg = TBmakeArg (newavis, NULL);
-                INFO_NEWARGS (arg_info) = TCappendArgs (INFO_NEWARGS (arg_info), newarg);
-                outercall = TBmakeExprs (TBmakeId (ID_AVIS (AVIS_MIN (argavis))), NULL);
-                INFO_NEWOUTERAPARGS (arg_info)
-                  = TCappendExprs (INFO_NEWOUTERAPARGS (arg_info), outercall);
-                if (FUNDEF_ISLOOPFUN (arg_node)) {
-                    reccall = TBmakeExprs (TBmakeId (newavis), NULL);
-                    newrecursiveapargs = TCappendExprs (newrecursiveapargs, reccall);
-                }
             }
 
             if ((NULL == AVIS_MAX (ARG_AVIS (lacfunargs))) && (!TYisAKV (typ))
                 && (NULL != AVIS_MAX (argavis))) {
                 minmax = AVIS_MAX (argavis);
-                newavis
-                  = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (argavis)), TYcopyType (typ));
+                newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
+                                                     &INFO_NEWOUTERAPARGS (arg_info));
                 AVIS_MAX (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
                 DBUG_PRINT ("Adding AVIS_MAX(%s) for formal parameter %s",
                             AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
-                newarg = TBmakeArg (newavis, NULL);
-                INFO_NEWARGS (arg_info) = TCappendArgs (INFO_NEWARGS (arg_info), newarg);
-                outercall = TBmakeExprs (TBmakeId (ID_AVIS (AVIS_MAX (argavis))), NULL);
-                INFO_NEWOUTERAPARGS (arg_info)
-                  = TCappendExprs (INFO_NEWOUTERAPARGS (arg_info), outercall);
-                if (FUNDEF_ISLOOPFUN (arg_node)) {
-                    reccall = TBmakeExprs (TBmakeId (newavis), NULL);
-                    newrecursiveapargs = TCappendExprs (newrecursiveapargs, reccall);
-                }
             }
         }
         apargs = EXPRS_NEXT (apargs);
@@ -488,7 +469,7 @@ PETLfundef (node *arg_node, info *arg_info)
          * can not be done until we finish messing with the function body. */
         if (NULL != INFO_NEWARGS (arg_info)) {
             FUNDEF_ARGS (arg_node)
-              = TCappendArgs (INFO_NEWARGS (arg_info), FUNDEF_ARGS (arg_node));
+              = TCappendArgs (FUNDEF_ARGS (arg_node), INFO_NEWARGS (arg_info));
             INFO_NEWARGS (arg_info) = NULL;
         }
     }
