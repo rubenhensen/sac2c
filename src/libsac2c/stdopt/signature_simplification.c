@@ -182,13 +182,13 @@ SISIfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Begin %s %s",
+                (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                FUNDEF_NAME (arg_node));
     if (INFO_TRAVPHASE (arg_info) == infer) {
         arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_sisi);
     } else if (INFO_TRAVPHASE (arg_info) == simplify) {
         INFO_FUNDEF (arg_info) = arg_node;
-        DBUG_PRINT ("Begin %s %s",
-                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                    FUNDEF_NAME (arg_node));
 
         INFO_RETS (arg_info) = FUNDEF_RETS (arg_node);
 
@@ -627,6 +627,8 @@ SISIid (node *arg_node, info *arg_info)
         && (0 == TYgetDim (AVIS_TYPE (ID_AVIS (arg_node))))) {
 
         INFO_REMOVEEXPRS (arg_info) = TRUE;
+        DBUG_PRINT ("Marking scalar constant %s for removal",
+                    AVIS_NAME (ID_AVIS (arg_node)));
     }
 
     DBUG_RETURN (arg_node);

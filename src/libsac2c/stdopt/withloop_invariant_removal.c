@@ -862,7 +862,7 @@ WLIRid (node *arg_node, info *arg_info)
      * current assignment
      */
     DBUG_ASSERT (AVIS_DEFDEPTH (ID_AVIS (arg_node)) != DD_UNDEFINED,
-                 "usage of undefined identifier");
+                 "reference to undefined identifier %s", AVIS_NAME (ID_AVIS (arg_node)));
 
     /* mark the definition level of this N_id, i.e. AVIS_DEFDEPTH(ID_AVIS(arg_node)),
      * in the global bitmask that helps us to establish the maximal level used in an

@@ -480,8 +480,8 @@ BuildSubstNodelist (node *return_exprs, node *fundef, node *ext_assign)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (FUNDEF_ISLACFUN (fundef),
-                 "BuildSubstNodelist called for non special fundef");
+    DBUG_ASSERT (FUNDEF_ISLACFUN (fundef), "Expected LACFUN, but got %s",
+                 FUNDEF_NAME (fundef));
 
     if (return_exprs != NULL) {
         /* check for arg as result */
@@ -1098,9 +1098,10 @@ CSEap (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_ASSERT (AP_FUNDEF (arg_node) != NULL, "missing fundef in ap-node");
+    DBUG_ASSERT (NULL != INFO_ASSIGN (arg_info), "Expected non-NULL INFO_ASSIGN");
 
     /*
-     * when traversing the recursive ap of a special loop fundef,
+     * when traversing the recursive ap of a LOOPFUN fundef,
      * we set RECFUNAP flag to TRUE, to avoid renamings of
      * loop-independent args that could be replaced otherwise.
      */
@@ -1116,7 +1117,7 @@ CSEap (node *arg_node, info *arg_info)
     /* reset traversal flag */
     INFO_RECFUNAP (arg_info) = FALSE;
 
-    /* traverse special fundef without recursion */
+    /* traverse lacfun without recursion */
     if ((FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
         DBUG_PRINT ("traverse in special fundef %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
@@ -1135,10 +1136,10 @@ CSEap (node *arg_node, info *arg_info)
           = PropagateSubst2Args (FUNDEF_ARGS (AP_FUNDEF (arg_node)), AP_ARGS (arg_node),
                                  AP_FUNDEF (arg_node));
 
-        /* start traversal of special fundef */
+        /* start traversal of lacfun */
         AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), new_arg_info);
 
-        DBUG_PRINT ("traversal of special fundef %s finished\n",
+        DBUG_PRINT ("traversal of lacfun %s finished\n",
                     FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
         /*
@@ -1149,6 +1150,7 @@ CSEap (node *arg_node, info *arg_info)
 
         new_arg_info = FreeInfo (new_arg_info);
     }
+    DBUG_ASSERT (NULL != INFO_ASSIGN (arg_info), "Expected non-NULL INFO_ASSIGN");
 
     DBUG_RETURN (arg_node);
 }
