@@ -165,6 +165,16 @@ TYP_IF (T_double_shmem, "double_shmem", "double_shmem", "dsh", COcv2Double, COcv
         COcv2StrDouble, sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT,
         unused)
 
+TYP_IF (T_float_dist, "float_dist", "float_dist", "fdi", COcv2Float, COcv2CvFloat,
+        COcv2StrFloat, sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused)
+
+TYP_IF (T_int_dist, "int_dist", "int_dist", "idi", COcv2Num, COcv2CvInt, COcv2StrInt,
+        sizeof (int), COzipCvInt, CObaseCvInt, MUTC_SC_INT, unused)
+
+TYP_IF (T_double_dist, "double_dist", "double_dist", "ddi", COcv2Double, COcv2CvDouble,
+        COcv2StrDouble, sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT,
+        unused)
+
 TYP_IF (T_sync, "sync", "SAC_sync", "syn", COcv2ScalarDummy, COcv2CvHidden, COcv2StrDummy,
         sizeof (void *), COzipCvDummy, CObaseCvDummy, MUTC_SC_INT, unused)
 

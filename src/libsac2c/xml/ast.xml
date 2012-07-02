@@ -552,6 +552,13 @@
           <node name="Part" />
         </travuser>
       </traversal>
+    <traversal id="CADT" name="Change arrays to distributed type" default="sons" include="change_arrays_to_dist.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Ret" />
+        <node name="Avis" />
+      </travuser>
+    </traversal>
       <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
         <travuser>
           <node name="Ap" />

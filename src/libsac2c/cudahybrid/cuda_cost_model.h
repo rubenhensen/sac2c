@@ -13,7 +13,7 @@
  * Prefix: CUCM
  *
  *****************************************************************************/
-extern node *CUCMdoTemplateTraversal (node *syntax_tree);
+extern node *CUCMdoCUDACostModel (node *syntax_tree);
 
 extern node *CUCMfundef (node *arg_node, info *arg_info);
 extern node *CUCMmodule (node *arg_node, info *arg_info);

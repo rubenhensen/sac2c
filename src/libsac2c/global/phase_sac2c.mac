@@ -831,6 +831,9 @@ PHASE (cuda, "Automatic parallelisation for GPUs",
 
 SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL, ALWAYS, cuda)
 
+SUBPHASE (cadt, "Change arrays to distributed type", CADTdoChangeArraysToDistributedType,
+          global.backend == BE_cudahybrid, cuda)
+
 SUBPHASE (cucm, "CUDA cost model", CUCMdoCUDACostModel, global.backend == BE_cudahybrid,
           cuda)
 
