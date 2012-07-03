@@ -194,7 +194,7 @@ libsac2c_cuda        := annotate_cuda_withloop2 create_constant_assignments \
                         adjust_shmem_access expand_shmem_boundary_load data_access_analysis \
                         cuda_data_reuse create_loop_fun create_cond_fun partial_fold
                         
-libsac2c_cudahybrid  := cuda_cost_model change_arrays_to_dist
+libsac2c_cudahybrid  := cuda_cost_model change_arrays_to_dist insert_memtrans_dist
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_mtst_funs_module \
                         create_spmd_funs mtdcr scheduling annotate_scheduling \

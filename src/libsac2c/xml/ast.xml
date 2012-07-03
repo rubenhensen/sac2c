@@ -559,6 +559,22 @@
         <node name="Avis" />
       </travuser>
     </traversal>
+    <traversal id="IMEMDIST" name="Insert memory transfer primitives for distributed variables" default="sons" include="insert_memtrans_dist.h" >
+      <travuser>
+        <node name="Let" />
+        <node name="Assign" />
+        <node name="With" />
+        <node name="Id" />
+        <node name="Ids" />
+        <node name="Fundef" />
+        <node name="Ap" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+        <node name="Code" />
+        <node name="Funcond" />
+        <node name="Return" />
+      </travuser>
+    </traversal>
       <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
         <travuser>
           <node name="Ap" />

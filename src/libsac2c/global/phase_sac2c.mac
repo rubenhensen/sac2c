@@ -858,10 +858,14 @@ SUBPHASE( scuwl,
 #endif
 
 SUBPHASE (iwlmem, "CUDA Insert CUDA memory transfer primitives for withloops",
-          IWLMEMdoInsertWithloopMemtran, ALWAYS, cuda)
+          IWLMEMdoInsertWithloopMemtran, global.backend == BE_cuda, cuda)
+
+SUBPHASE (imemdist, "Insert memory transfer primitives for distributed variables",
+          IMEMDISTdoInsertMemtranDist, global.backend == BE_cudahybrid, cuda)
 
 SUBPHASE (icsmem, "CUDA Insert CUDA memory transfer primitives for cudasts",
-          ICSMEMdoInsertCudastMemtran, global.optimize.doexpar, cuda)
+          ICSMEMdoInsertCudastMemtran,
+          (global.optimize.doexpar && global.backend == BE_cuda), cuda)
 
 SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, ALWAYS, cuda)
 
