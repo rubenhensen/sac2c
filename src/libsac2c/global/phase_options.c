@@ -106,34 +106,6 @@ SearchCyclePhase (compiler_phase_t cycle, char *name)
 }
 
 /*
- * Interprets the step option for use with -printstart and -printstop.
- * assigns the result to the stepping specifier.
- * p = phase stepping
- * s = sub-phase stepping
- * c = cycle stepping
- */
-void
-PHOinterpretStep (char *option)
-{
-    DBUG_ENTER ();
-
-    if (STReq (option, "p")) {
-        global.prtrange_stepping_specifier = 0;
-    } else if (STReq (option, "s")) {
-        global.prtrange_stepping_specifier = 1;
-    } else if (STReq (option, "c")) {
-        global.prtrange_stepping_specifier = 2;
-    } else {
-        CTIerror ("Illegal step specification in option: \n"
-                  "  -printstep %s\n"
-                  "See %s -h for a list of legal step options.",
-                  option, global.toolname);
-    }
-
-    DBUG_RETURN ();
-}
-
-/*
  *global assignment for printfun option
  */
 void

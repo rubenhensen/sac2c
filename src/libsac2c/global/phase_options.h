@@ -16,8 +16,6 @@ enum phase_mode_t { START, STOP };
 void InterpretPrintOptionPhase (char *option, enum phase_mode_t mode);
 void CheckStartStopPhase (void);
 
-extern void PHOinterpretStep (char *option);
-
 extern void PHOinterpretStartPhase (char *option);
 extern void PHOinterpretStopPhase (char *option);
 extern void PHOinterpretPrintPhaseFunOption (char *option);
