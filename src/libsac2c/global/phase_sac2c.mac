@@ -286,8 +286,8 @@ FUNBEGIN (cyc, opt, cyc)
 CYCLEPHASEFUN (cse, "Applying common subexpression elimination",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, cyc)
 
-CYCLEPHASEFUNOLD (ili, "Inferring loop invariant variables",
-                  IIPIdoIterationInvariantParameterInference, ALWAYS, opt, cyc)
+CYCLEPHASEFUN (ili, "Inferring loop invariant variables",
+               IIPIdoIterationInvariantParameterInference, ALWAYS, opt, cyc)
 
 CYCLEPHASEFUNOLD (tup, "Applying type upgrade", NTCdoNewTypeCheck, global.optimize.dotup,
                   opt, cyc)
@@ -442,8 +442,8 @@ CYCLEPHASEFUN (ivesplit, "Eliminating index vectors (split selections)",
 CYCLEPHASEFUN (cse, "Eliminating common subexpressions",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
 
-CYCLEPHASEFUNOLD (ili, "Inferring loop invariant variables",
-                  IIPIdoIterationInvariantParameterInference, ALWAYS, opt, saacyc)
+CYCLEPHASEFUN (ili, "Inferring loop invariant variables",
+               IIPIdoIterationInvariantParameterInference, ALWAYS, opt, saacyc)
 
 CYCLEPHASEFUNOLD (tup, "Applying type upgrade", NTCdoNewTypeCheck, global.optimize.dotup,
                   opt, saacyc)
