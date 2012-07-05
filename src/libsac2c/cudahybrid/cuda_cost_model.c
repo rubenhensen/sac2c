@@ -68,7 +68,8 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "memory.h"
-#include "create_cond_fun.h"
+#include "lac2fun.h"
+#include "SSATransform.h"
 
 /** <!--********************************************************************-->
  *
@@ -86,13 +87,11 @@ struct INFO {
     /* id of the condition variable */
     node *condition;
     /* uncudarized duplicate of a withloop */
-    node *host;
-    /* new conditional functions */
-    node *lacfuns;
+    node *hostwl;
     /* assignment of the condition variable */
     node *preassigns;
-    /* avis of the host branch withloop */
-    node *elseavis;
+    /* whether the current function will need to be converted to ssa again*/
+    bool needsssa;
 };
 
 /**
@@ -102,10 +101,9 @@ struct INFO {
 #define INFO_LETIDS(n) (n->letids)
 #define INFO_ISWORTH(n) (n->isworth)
 #define INFO_CONDITION(n) (n->condition)
-#define INFO_HOST(n) (n->host)
-#define INFO_LACFUNS(n) (n->lacfuns)
+#define INFO_HOSTWL(n) (n->hostwl)
 #define INFO_PREASSIGNS(n) (n->preassigns)
-#define INFO_ELSEAVIS(n) (n->elseavis)
+#define INFO_NEEDSSSA(n) (n->needsssa)
 
 static info *
 MakeInfo (void)
@@ -120,10 +118,9 @@ MakeInfo (void)
     INFO_LETIDS (result) = NULL;
     INFO_ISWORTH (result) = FALSE;
     INFO_CONDITION (result) = NULL;
-    INFO_HOST (result) = NULL;
-    INFO_LACFUNS (result) = NULL;
+    INFO_HOSTWL (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
-    INFO_ELSEAVIS (result) = NULL;
+    INFO_NEEDSSSA (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -183,7 +180,7 @@ CUCMdoCUDACostModel (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node *ApplySizeCriterion(node *arg_node, info *arg_info)
+ * @fn node *ApplySizeCriterion(ntype *array_type)
  *
  * @brief Checks whether an array has the minimum shape size to be run on CUDA.
  *
@@ -224,6 +221,47 @@ ApplySizeCriterion (ntype *array_type)
 }
 
 /** <!--********************************************************************-->
+ *
+ * @fn node *CreateConditionVariable(node *arg_node, info *arg_info)
+ *
+ * @brief Creates the condition variable if a withloop is worth cudarizing.
+ *
+ *   @param arg_info  info structure
+ *   @return            FALSE if shape is not big enough, TRUE otherwise
+ *
+ *****************************************************************************/
+static void
+CreateConditionVariable (info *arg_info)
+{
+    node *new_avis, *new_rhs, *new_assign;
+    static int counter = 0;
+
+    DBUG_ENTER ();
+
+    /* flag set by helper function above */
+    if (INFO_ISWORTH (arg_info) && (INFO_CONDITION (arg_info) == NULL)) {
+        /* create avis of new condition variable */
+        new_avis = TBmakeAvis (TRAVtmpVarName (""),
+                               TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
+        /* add new avis to variable declarations */
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+          = TBmakeVardec (new_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+
+        new_rhs = TBmakePrf (F_is_cuda_thread, TBmakeExprs (TBmakeNum (counter), NULL));
+        counter++;
+
+        /* create assignment of new condition variable */
+        new_assign = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL), new_rhs), NULL);
+        INFO_PREASSIGNS (arg_info) = new_assign;
+        AVIS_SSAASSIGN (new_avis) = new_assign; // SSA property
+
+        INFO_CONDITION (arg_info) = new_avis;
+    }
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
 
@@ -250,34 +288,15 @@ CUCMfundef (node *arg_node, info *arg_info)
     /* During the main traversal, we only look at non-prelude functions */
     if (!FUNDEF_ISSTICKY (arg_node) && FUNDEF_BODY (arg_node) != NULL) {
         INFO_FUNDEF (arg_info) = arg_node;
+        INFO_NEEDSSSA (arg_info) = FALSE;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
+
+        if (INFO_NEEDSSSA (arg_info)) {
+            arg_node = L2FdoLac2Fun (arg_node);
+        }
     }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CUCMmodule(node *arg_node, info *arg_info)
- *
- * @brief Appends newly created conditional functions to current module.
- *
- *****************************************************************************/
-node *
-CUCMmodule (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
-
-    /* Append all newly created lac functions to the module */
-    if (INFO_LACFUNS (arg_info) != NULL) {
-        MODULE_FUNS (arg_node)
-          = TCappendFundef (MODULE_FUNS (arg_node), INFO_LACFUNS (arg_info));
-        INFO_LACFUNS (arg_info) = NULL;
-    }
 
     DBUG_RETURN (arg_node);
 }
@@ -295,7 +314,7 @@ CUCMmodule (node *arg_node, info *arg_info)
 node *
 CUCMassign (node *arg_node, info *arg_info)
 {
-    node *host_assign, *cuda_assign, *assign_next, *preassign;
+    node *cond_stmt, *cond_assign, *assign_next, *cuda_branch, *host_branch;
 
     DBUG_ENTER ();
 
@@ -303,43 +322,34 @@ CUCMassign (node *arg_node, info *arg_info)
 
     if (INFO_CONDITION (arg_info) != NULL) {
         DBUG_PRINT ("Introducing conditional");
-
-        host_assign = TBmakeAssign (INFO_HOST (arg_info), NULL);
-        cuda_assign = TBmakeAssign (ASSIGN_STMT (arg_node), NULL);
-
-        /* Probably will need to mark each branch in the future... */
-        // BLOCK_ISCUDABRANCH( cuda_assign) = TRUE;
-        // BLOCK_ISHOSTBRANCH( host_assign) = TRUE;
-
         assign_next = ASSIGN_NEXT (arg_node);
-        /* Am I using this function right? Not much documentation... */
-        arg_node
-          = CCFdoCreateCondFun (INFO_FUNDEF (arg_info), cuda_assign, host_assign,
-                                INFO_CONDITION (arg_info),
-                                IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node))),
-                                IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node))),
-                                INFO_ELSEAVIS (arg_info), &INFO_LACFUNS (arg_info));
-        ASSIGN_NEXT (arg_node) = assign_next;
+        ASSIGN_NEXT (arg_node) = NULL;
 
-        /*
-         * if condition variable needs prior assignments,
-         * insert them before new conditional
-         */
-        if (INFO_PREASSIGNS (arg_info) != NULL) {
-            /* find end of assignments */
-            for (preassign = INFO_PREASSIGNS (arg_info); ASSIGN_NEXT (preassign) != NULL;
-                 preassign = ASSIGN_NEXT (preassign))
-                ;
-            ASSIGN_NEXT (preassign) = arg_node;
-            arg_node = INFO_PREASSIGNS (arg_info);
-        }
+        /* Create blocks for the cuda and host branches.
+         Probably will need to mark each branch in the future... */
+        cuda_branch = TBmakeBlock (arg_node, NULL);
+        host_branch
+          = TBmakeBlock (TBmakeAssign (TBmakeLet (DUPdoDupNode (INFO_LETIDS (arg_info)),
+                                                  INFO_HOSTWL (arg_info)),
+                                       NULL),
+                         NULL);
+
+        cond_stmt
+          = TBmakeCond (TBmakeId (INFO_CONDITION (arg_info)), cuda_branch, host_branch);
+
+        cond_assign = TBmakeAssign (cond_stmt, assign_next);
+
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), cond_assign);
 
         INFO_CONDITION (arg_info) = NULL;
-        INFO_HOST (arg_info) = NULL;
         INFO_PREASSIGNS (arg_info) = NULL;
-    }
+        INFO_NEEDSSSA (arg_info) = TRUE;
 
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+        assign_next = TRAVopt (assign_next, arg_info);
+
+    } else {
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -360,8 +370,6 @@ CUCMlet (node *arg_node, info *arg_info)
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    INFO_LETIDS (arg_info) = NULL;
-
     DBUG_RETURN (arg_node);
 }
 
@@ -378,8 +386,6 @@ CUCMlet (node *arg_node, info *arg_info)
 node *
 CUCMwith (node *arg_node, info *arg_info)
 {
-    node *host_with, *dup_ids;
-
     DBUG_ENTER ();
 
     if (WITH_CUDARIZABLE (arg_node)) {
@@ -390,19 +396,17 @@ CUCMwith (node *arg_node, info *arg_info)
 
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
-        if (INFO_ISWORTH (arg_info)) {
-            host_with = DUPdoDupTreeSsa (arg_node, INFO_FUNDEF (arg_info));
-            /* unmark with-loop and each partition */
-            WITH_CUDARIZABLE (host_with) = FALSE;
-            WITH_PART (host_with) = TRAVopt (WITH_PART (host_with), arg_info);
-
-            dup_ids = DUPdoDupTreeSsa (INFO_LETIDS (arg_info), INFO_FUNDEF (arg_info));
-            INFO_ELSEAVIS (arg_info) = IDS_AVIS (dup_ids);
-            INFO_HOST (arg_info) = TBmakeLet (dup_ids, host_with);
-        } else {
-            WITH_CUDARIZABLE (arg_node) = FALSE;
-            WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
+        /*
+         * if there is a condition in the info structure, then we are going to
+         * create two versions of this with-loop. We create a duplicate to run on
+         * the host here.
+         */
+        if (INFO_CONDITION (arg_info) != NULL) {
+            INFO_HOSTWL (arg_info) = DUPdoDupNode (arg_node);
+            /* unmark duplicate for cudarization */
+            WITH_CUDARIZABLE (INFO_HOSTWL (arg_info)) = FALSE;
         }
+        WITH_CUDARIZABLE (arg_node) = INFO_ISWORTH (arg_info);
 
     } else {
         DBUG_PRINT ("Found non-cudarizable with-loop.");
@@ -446,36 +450,13 @@ CUCMpart (node *arg_node, info *arg_info)
 node *
 CUCMgenarray (node *arg_node, info *arg_info)
 {
-    node *new_avis, *new_rhs;
-
     DBUG_ENTER ();
 
     if (INFO_LETIDS (arg_info) != NULL) {
 
         INFO_ISWORTH (arg_info) = ApplySizeCriterion (IDS_NTYPE (INFO_LETIDS (arg_info)));
 
-        /* flag set by helper function above */
-        if (INFO_ISWORTH (arg_info) && (INFO_CONDITION (arg_info) == NULL)) {
-            /* create avis of new condition variable */
-            new_avis
-              = TBmakeAvis (TRAVtmpVarName ("cucm"),
-                            TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
-            /* add new avis to variable declarations */
-            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (new_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
-
-            /*********
-             * TODO: *
-             *********
-             * implement a dynamic cudarization criterion, using just TRUE for now
-             **/
-            new_rhs = TBmakeBool (TRUE);
-
-            /* create assignment of new condition variable */
-            INFO_PREASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL), new_rhs), NULL);
-            INFO_CONDITION (arg_info) = new_avis;
-        }
+        CreateConditionVariable (arg_info);
     }
 
     /* check next operation, although this probably breaks stuff... */
@@ -497,36 +478,13 @@ CUCMgenarray (node *arg_node, info *arg_info)
 node *
 CUCMmodarray (node *arg_node, info *arg_info)
 {
-    node *new_avis, *new_rhs;
-
     DBUG_ENTER ();
 
     if (INFO_LETIDS (arg_info) != NULL) {
 
         INFO_ISWORTH (arg_info) = ApplySizeCriterion (IDS_NTYPE (INFO_LETIDS (arg_info)));
 
-        /* flag set by helper function above */
-        if (INFO_ISWORTH (arg_info) && (INFO_CONDITION (arg_info) == NULL)) {
-            /* create avis of new condition variable */
-            new_avis
-              = TBmakeAvis (TRAVtmpVarName ("cucm"),
-                            TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
-            /* add new avis to variable declarations */
-            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (new_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
-
-            /*********
-             * TODO: *
-             *********
-             * implement a dynamic cudarization criterion, using just TRUE for now
-             **/
-            new_rhs = TBmakeBool (TRUE);
-
-            /* create assignment of new condition variable */
-            INFO_PREASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL), new_rhs), NULL);
-            INFO_CONDITION (arg_info) = new_avis;
-        }
+        CreateConditionVariable (arg_info);
     }
 
     /* check next operation, although this probably breaks stuff... */
@@ -548,7 +506,6 @@ CUCMmodarray (node *arg_node, info *arg_info)
 node *
 CUCMfold (node *arg_node, info *arg_info)
 {
-    node *new_avis, *new_rhs;
 
     DBUG_ENTER ();
 
@@ -558,28 +515,9 @@ CUCMfold (node *arg_node, info *arg_info)
           later on */
         INFO_ISWORTH (arg_info) = TRUE;
 
-        /* flag set by helper function above */
-        if (INFO_ISWORTH (arg_info) && (INFO_CONDITION (arg_info) == NULL)) {
-            /* create avis of new condition variable */
-            new_avis
-              = TBmakeAvis (TRAVtmpVarName ("cucm"),
-                            TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
-            /* add new avis to variable declarations */
-            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (new_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
-
-            /*********
-             * TODO: *
-             *********
-             * implement a dynamic cudarization criterion, using just TRUE for now
-             **/
-            new_rhs = TBmakeBool (TRUE);
-
-            /* create assignment of new condition variable */
-            INFO_PREASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL), new_rhs), NULL);
-            INFO_CONDITION (arg_info) = new_avis;
-        }
+        /* I could not make fold with-loops work heterogeneously, so these will be
+         run on the first CUDA card only. */
+        // CreateConditionVariable(arg_info);
     }
 
     /* check next operation, although this probably breaks stuff... */

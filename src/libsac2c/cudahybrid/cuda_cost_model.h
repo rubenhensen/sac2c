@@ -16,7 +16,6 @@
 extern node *CUCMdoCUDACostModel (node *syntax_tree);
 
 extern node *CUCMfundef (node *arg_node, info *arg_info);
-extern node *CUCMmodule (node *arg_node, info *arg_info);
 extern node *CUCMpart (node *arg_node, info *arg_info);
 extern node *CUCMassign (node *arg_node, info *arg_info);
 extern node *CUCMlet (node *arg_node, info *arg_info);

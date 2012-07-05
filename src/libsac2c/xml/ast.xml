@@ -541,7 +541,6 @@
       </traversal>
       <traversal id="CUCM" name="CUDA cost model" default="sons" include="cuda_cost_model.h" >
         <travuser>
-          <node name="Module" />
           <node name="Fundef" />
           <node name="Assign" />
           <node name="Let" />

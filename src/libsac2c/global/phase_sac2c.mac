@@ -837,6 +837,9 @@ SUBPHASE (cadt, "Change arrays to distributed type", CADTdoChangeArraysToDistrib
 SUBPHASE (cucm, "CUDA cost model", CUCMdoCUDACostModel, global.backend == BE_cudahybrid,
           cuda)
 
+SUBPHASE (ssa, "Re-establishing static single assignment form", SSATdoTransform,
+          global.backend == BE_cudahybrid, cuda)
+
 SUBPHASE (pfd, "CUDA Partial folding", PFDdoPartialFold, global.optimize.dopfd, cuda)
 
 SUBPHASE (scuf, "CUDA Split CUDA fold withloops", SCUFdoSplitCudaFold,
