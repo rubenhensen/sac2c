@@ -831,9 +831,6 @@ PHASE (cuda, "Automatic parallelisation for GPUs",
 
 SUBPHASE (acuwl, "CUDA Annotate CUDA withloops", ACUWLdoAnnotateCUDAWL, ALWAYS, cuda)
 
-SUBPHASE (cadt, "Change arrays to distributed type", CADTdoChangeArraysToDistributedType,
-          global.backend == BE_cudahybrid, cuda)
-
 SUBPHASE (cucm, "CUDA cost model", CUCMdoCUDACostModel, global.backend == BE_cudahybrid,
           cuda)
 
@@ -860,11 +857,14 @@ SUBPHASE( scuwl,
           cuda)
 #endif
 
-SUBPHASE (iwlmem, "CUDA Insert CUDA memory transfer primitives for withloops",
-          IWLMEMdoInsertWithloopMemtran, global.backend == BE_cuda, cuda)
+SUBPHASE (cadt, "Change arrays to distributed type", CADTdoChangeArraysToDistributedType,
+          global.backend == BE_cudahybrid, cuda)
 
 SUBPHASE (imemdist, "Insert memory transfer primitives for distributed variables",
           IMEMDISTdoInsertMemtranDist, global.backend == BE_cudahybrid, cuda)
+
+SUBPHASE (iwlmem, "CUDA Insert CUDA memory transfer primitives for withloops",
+          IWLMEMdoInsertWithloopMemtran, global.backend == BE_cuda, cuda)
 
 SUBPHASE (icsmem, "CUDA Insert CUDA memory transfer primitives for cudasts",
           ICSMEMdoInsertCudastMemtran,

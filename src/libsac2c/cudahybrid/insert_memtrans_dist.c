@@ -457,7 +457,7 @@ Createdist2conc (node **id, node *host_avis, node *dev_avis, info *arg_info)
     /* Maintain SSA property */
     AVIS_SSAASSIGN (dev_avis) = INFO_PREASSIGNS (arg_info);
 
-    /* Insert pair host_avis->dev_avis into lookup table. */
+    /* Insert pair dist_avis->conc_avis into lookup table. */
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), host_avis, dev_avis);
 
     DBUG_RETURN ();
@@ -1098,40 +1098,41 @@ IMEMDISTid (node *arg_node, info *arg_info)
      * N_id and we here simply need to set it's avis to the device variable
      * avis. (This is fix to the bug discovered in compiling tvd2d.sac) */
 
-    if (avis == id_avis) {
-        /* Definition of the N_id must not be in the same block as
-         * reference of the N_id. Otherwise, no dist2conc will be
-         * created. e.g.
-         *
-         * a = with
-         *     {
-         *       b = [x, y, z];
-         *       ...
-         *       ... = prf( b);
-         *     }:genarray();
-         *
-         * We do not create b_dev = dist2conc( b) in this case.
-         */
+    // if( avis == id_avis) {
+    /* Definition of the N_id must not be in the same block as
+     * reference of the N_id. Otherwise, no dist2conc will be
+     * created. e.g.
+     *
+     * a = with
+     *     {
+     *       b = [x, y, z];
+     *       ...
+     *       ... = prf( b);
+     *     }:genarray();
+     *
+     * We do not create b_dev = dist2conc( b) in this case.
+     */
 
-        ssaassign = AVIS_SSAASSIGN (avis);
+    ssaassign = AVIS_SSAASSIGN (avis);
 
-        if (((INFO_IN_CEXPRS (arg_info) && ssaassign != NULL
-              && AssignInTopBlock (ssaassign, arg_info))
-             || !INFO_IN_CEXPRS (arg_info))
-            && !CUisShmemTypeNew (id_type)
-            && LUTsearchInLutPp (INFO_NOTRAN (arg_info), id_avis) == id_avis) {
-            conc_type = TypeConvert (id_type, NODE_TYPE (arg_node), arg_info);
-            if (conc_type != NULL) {
-                tmpVarName = INFO_CUDARIZABLE (arg_info) ? "dev" : "host";
-                new_avis = TBmakeAvis (TRAVtmpVarName (tmpVarName), conc_type);
-                Createdist2conc (&arg_node, id_avis, new_avis, arg_info);
-            }
+    if (((INFO_IN_CEXPRS (arg_info) && ssaassign != NULL
+          && AssignInTopBlock (ssaassign, arg_info))
+         || !INFO_IN_CEXPRS (arg_info))
+        && !CUisShmemTypeNew (id_type)
+        && LUTsearchInLutPp (INFO_NOTRAN (arg_info), id_avis) == id_avis) {
+        conc_type = TypeConvert (id_type, NODE_TYPE (arg_node), arg_info);
+        if (conc_type != NULL) {
+            tmpVarName = INFO_CUDARIZABLE (arg_info) ? "dev" : "host";
+            new_avis = TBmakeAvis (TRAVtmpVarName (tmpVarName), conc_type);
+            Createdist2conc (&arg_node, id_avis, new_avis, arg_info);
         }
-    } else {
-        /* If the N_avis has been come across before, replace its
-         * N_avis by the device N_avis */
-        ID_AVIS (arg_node) = avis;
     }
+    /*    }
+        else {
+          / * If the N_avis has been come across before, replace its
+           * N_avis by the device N_avis * /
+          ID_AVIS( arg_node) = avis;
+        }*/
     //}
     DBUG_RETURN (arg_node);
 }
