@@ -924,6 +924,9 @@ AWLFassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    /* top-down traversal */
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
 #ifdef VERBOSE
     DBUG_PRINT ("Traversing N_assign");
 #endif // VERBOSE
@@ -945,8 +948,6 @@ AWLFassign (node *arg_node, info *arg_info)
         arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
         INFO_PREASSIGNS (arg_info) = NULL;
     }
-
-    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
