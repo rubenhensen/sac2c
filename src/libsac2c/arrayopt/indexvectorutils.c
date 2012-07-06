@@ -40,6 +40,8 @@
 #include "DupTree.h"
 #include "ivexpropagation.h"
 #include "constants.h"
+#include "flattengenerators.h"
+#include "new_typecheck.h"
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
@@ -101,7 +103,7 @@ IVUToffset2Constant (node *arg_node, node *mat)
             el = offset % SHgetExtent (shpmat, i);
             offset = offset - el; /* Not really needed */
             offset = offset / SHgetExtent (shpmat, i);
-            elems = TCappendExprs (elems, TBmakeExprs (TBmakeNum (el), NULL));
+            elems = TCappendExprs (TBmakeExprs (TBmakeNum (el), NULL), elems);
         }
 
         if (NULL != elems) {
@@ -539,15 +541,16 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IVUToffset2Iv(...)
+ * @fn node *IVUToffset2Vect(...)
  *
- * @brief  We are looking at PRF_ARG1 in the _sel_VxA_() or _idx_sel(),
- *         e.g., iv in the following:
+ * @brief  Produce a flattened N_array iv for arg_node, an N_prf that is
+ *         a _sel_VxA_() or _idx_sel().
+ *         E.g., in the following:
  *
  *            iv = [ i, j, k];
  *            z = _sel_VxA_( iv, producerWL);
  *
- *         within the consumerWL, and iv may have extrema attached to it.
+ *         ( iv may have extrema attached to it). Return iv.
  *
  *         Alternately, we have
  *
@@ -556,7 +559,7 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
  *
  *         There are several cases:
  *
- *         1. We are doing _sel_VxA_( iv, ProducerWL):
+ *         1. We are doing _sel_VxA_( iv, ProducerWL), where iv is an N_array.
  *            Return iv's avis.
  *
  *         2. We are doing idx_sel_( offset, ProducerWL).
@@ -569,10 +572,12 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
  *
  *         3. We can not find the idxs2offset, but the
  *            producerWL generates a vector result.
- *            Return  xxx FIXME.
+ *            Return an N_array containing iv if the PWL is a vector.
+ *            If not, and offset is constant, and PWL is AKD,
+ *            construct a flattened N_array from the offset.
  *
  *         4. arg_node is a vect2offset( shape( producerWL), iv);
- *            Return iv.
+ *            Return a flattened N_array if iv is an N_array.
  *
  *        This function is, admittedly, a kludge. It might make more sense to
  *        have IVE generate an intermediate primitive that preserves
@@ -592,24 +597,36 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
  *        Then, idxsiv2offset would be turned into a proper
  *        idxs2offset by some other, post-SAACYC traversal.
  *
- * @return: the desired avis node.
+ * @return: the desired avis node, pointing to a vector N_array.
  *          If we can't find one, we return NULL.
+ *
+ *          We have to return an extant N_avis, when possible,
+ *          because we require extrema or an AKV value.
  *
  *****************************************************************************/
 node *
-IVUToffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart)
+IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpart)
 {
     node *z = NULL;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
+    pattern *pat4;
+    pattern *pat5;
     node *expr;
     node *shp = NULL;
     node *iv = NULL;
+    node *iv2 = NULL;
     node *iv0 = NULL;
-    node *arg1 = NULL;
+    node *arg1;
+    constant *ivc = NULL;
+    int dim = -1;
+    node *narr = NULL;
 
     DBUG_ENTER ();
+
+    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "Expected N_prf");
+    arg1 = PRF_ARG1 (arg_node);
 
     pat1 = PMprf (2, PMAisPrf (F_noteintersect), PMAgetNode (&arg1), 0);
 
@@ -619,37 +636,75 @@ IVUToffset2Iv (node *arg_node, node **vardecs, node **preassigns, node *cwlpart)
     pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
                   PMvar (1, PMAgetNode (&iv), 0));
 
-    if (0 != TYgetDim (AVIS_TYPE (ID_AVIS (arg_node)))) { /* _sel_VxA_() case */
-        z = ID_AVIS (arg_node);
-    }
+    pat4 = PMany (1, PMAgetNode (&iv2), 0);
+
+    pat5 = PMarray (1, PMAgetNode (&narr), 1, PMskip (0));
 
     if ((NULL == z) && /* skip any noteintersect */
-        (PMmatchFlatSkipGuards (pat1, arg_node))) {
-        arg_node = PRF_ARG1 (arg1);
+        (PMmatchFlat (pat1, arg1))) {
+        arg1 = PRF_ARG1 (arg1);
+    }
+
+    /* If we have an N_array, we are done. Return its LHS */
+    if (PMmatchFlat (pat5, arg1)) {
+        z = ID_AVIS (arg1);
     }
 
     if ((NULL == z) && /* vect2offset case */
-        (PMmatchFlatSkipGuards (pat3, arg_node))) {
+        (PMmatchFlat (pat3, arg1)) && (PMmatchFlat (pat5, iv))) {
         z = ID_AVIS (iv);
     }
 
-    if ((NULL == z) && (PMmatchFlatSkipGuards (pat2, arg_node))) { /* _idx_sel() case */
+#ifdef DEADCODE
+    if ((NULL == z)
+        && (PMmatchFlatSkipExtremaAndGuards (pat2, arg1))) { /* _idx_sel() case */
         z = CreateIvArray (iv0, vardecs, preassigns);
     }
 
     /* We have not have _idxs2offset any more, due to opts.
-     * This is OK if PWL bounds are 1-D
+     * Case 1: If the dim of the PWL is 1, then the offset is PRF_ARG1.
+     * Case 2: If the offset is constant, we can compute the IV.
+     *
+     * For future work: If PWL is AKD, then we could compute
+     * IV symbolically, perhaps via a sacprelude offset2Vect.
+     *
      */
-    if ((NULL == z) && (NULL != cwlpart)
-        && (1 == TCcountIds (WITHID_IDS (PART_WITHID (cwlpart))))) {
-        expr = TBmakeExprs (TBmakeId (ID_AVIS (arg_node)), NULL);
+    if (NULL != cwlpart) {
+        dim = TCcountIds (WITHID_IDS (PART_WITHID (cwlpart)));
+    }
+
+    if ((NULL == z) && /* Case 1 */
+        ((NULL != cwlpart) && (1 == dim))) {
+        expr = TBmakeExprs (TBmakeId (ID_AVIS (arg1)), NULL);
         z = CreateIvArray (expr, vardecs, preassigns);
         expr = FREEdoFreeTree (expr);
+    }
+
+#endif DEADCODE
+
+    /* Constant iv */
+    if ((NULL == z) && /* Case 2 */
+        (TYisAKS (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node)))))
+        && (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))) {
+        ivc = IVUToffset2Constant (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node));
+        DBUG_ASSERT (NULL != ivc, "failed to convert offset to constant");
+        z = COconstant2AST (ivc);
+        ivc = COfreeConstant (ivc);
+        DBUG_ASSERT (N_array == NODE_TYPE (z), "Confusion3");
     }
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
+    pat4 = PMfree (pat4);
+    pat5 = PMfree (pat5);
+
+    DBUG_ASSERT (NULL != z, "oops");
+
+    if ((NULL != z) && (N_avis != NODE_TYPE (z))) {
+        DBUG_ASSERT (N_array == NODE_TYPE (z), "Expected N_array");
+        z = FLATGflattenExpression (DUPdoDupTree (z), vardecs, preassigns, NULL);
+    }
 
     DBUG_RETURN (z);
 }

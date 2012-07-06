@@ -360,8 +360,7 @@ isPrfArg1AttachExtrema (node *arg_node)
     DBUG_ENTER ();
 
     arg1 = PRF_ARG1 (arg_node);
-    DBUG_ASSERT (N_id == NODE_TYPE (arg1),
-                 "isPrfArg1AttachExtrema expected N_id as PRF_ARG1");
+    DBUG_ASSERT (N_id == NODE_TYPE (arg1), "expected N_id as PRF_ARG1");
     assgn = AVIS_SSAASSIGN (ID_AVIS (arg1));
     if ((NULL != assgn) && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_STMT (assgn))))) {
 
@@ -575,14 +574,16 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
     if (NULL != producerWL) {
         producerWLavis = ID_AVIS (producerWL);
         producerWL = AWLFIfindWL (producerWL); /* Now the N_with */
-        if (((AVIS_DEFDEPTH (producerWLavis) + 1) == level)
+
+        /* Allow naked _sel_() of WL */
+        if (((AVIS_DEFDEPTH (producerWLavis) + 1) >= level)
             && (AWLFIisSingleOpWL (producerWL))) {
             DBUG_PRINT ("producerWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
                         AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
                         AVIS_WL_NEEDCOUNT (producerWLavis));
             /* Search for pwlp that intersects cwlp */
             INFO_INTERSECTTYPE (arg_info)
-              = CUBSLfindMatchingPart (arg_node, INTERSECT_exact, cwlp, producerWL, NULL,
+              = CUBSLfindMatchingPart (arg_node, cwlp, producerWL, NULL,
                                        &INFO_PRODUCERPART (arg_info));
 
             switch (INFO_INTERSECTTYPE (arg_info)) {
@@ -593,7 +594,7 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
                 break;
 
             case INTERSECT_unknown:
-            case INTERSECT_nonexact:
+            case INTERSECT_sliceneeded:
             case INTERSECT_null:
                 DBUG_PRINT ("Cube can not be intersected exactly");
                 pwlp = NULL;
@@ -706,6 +707,8 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
  *
  *        Then, iv, i, j will all be SSA-renamed by the caller.
  *
+ * @params arg_node: An N_assign node.
+ *
  * @result: an N_assign chain as above.
  *
  *****************************************************************************/
@@ -721,15 +724,15 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
     node *lhsids;
     node *lhsavis;
     node *sel;
-    node *arg1;
+    node *args;
     int k;
 
     DBUG_ENTER ();
 
     ids = WITHID_IDS (PART_WITHID (pwlpart));
-    arg1 = PRF_ARG1 (LET_EXPR (ASSIGN_STMT (arg_node)));
-    idxavis = IVUToffset2Iv (arg1, &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
-                             pwlpart);
+    args = LET_EXPR (ASSIGN_STMT (arg_node));
+    idxavis = IVUToffset2Vect (args, &INFO_VARDECS (arg_info),
+                               &INFO_PREASSIGNS (arg_info), pwlpart);
     DBUG_ASSERT (NULL != idxavis, "Could not rebuild iv for _sel_VxA_(iv, PWL)");
 
     k = 0;
@@ -793,15 +796,11 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
  *
  * @params
  *    arg_node: N_assign for the sel()
- *    fundef: N_fundef node, so we can insert new avis node for
- *            temp assign being made here.
  *    producerWLPart: N_part node of producerWL.
  *
- *    consumerWLPart: N_part node of consumer WL.
  *****************************************************************************/
 static node *
-doAWLFreplace (node *arg_node, node *fundef, node *producerWLPart, node *consumerWLPart,
-               info *arg_info)
+doAWLFreplace (node *arg_node, node *producerWLPart, info *arg_info)
 {
     node *oldblock;
     node *newblock;
@@ -938,9 +937,7 @@ AWLFassign (node *arg_node, info *arg_info)
      * Append the new cloned block
      */
     if (NULL != foldableProducerPart) {
-        arg_node = doAWLFreplace (arg_node, INFO_FUNDEF (arg_info), foldableProducerPart,
-                                  INFO_PART (arg_info), arg_info);
-
+        arg_node = doAWLFreplace (arg_node, foldableProducerPart, arg_info);
         global.optcounters.awlf_expr += 1;
     }
 
@@ -1107,16 +1104,13 @@ AWLFids (node *arg_node, info *arg_info)
 node *
 AWLFprf (node *arg_node, info *arg_info)
 {
-    node *arg1;
 
     DBUG_ENTER ();
 
 #ifdef VERBOSE
     DBUG_PRINT ("Traversing N_prf");
 #endif // VERBOSE
-    arg1 = PRF_ARG1 (arg_node);
-    if ((INFO_PART (arg_info) != NULL)
-        && ((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel))
+    if (((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel))
         && (AWLFIisHasNoteintersect (arg_node))) {
         INFO_PRODUCERPART (arg_info)
           = checkAWLFoldable (arg_node, arg_info, INFO_PART (arg_info),

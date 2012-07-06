@@ -13,8 +13,8 @@
  *****************************************************************************/
 
 extern constant *IVUToffset2Constant (node *arg_node, node *mat);
-extern node *IVUToffset2Iv (node *arg_node, node **vardecs, node **preassigns,
-                            node *cwlpart);
+extern node *IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns,
+                              node *cwlpart);
 extern node *IVUTarrayFromProxy (node *iv);
 extern node *IVUTarrayFromProxySel (node *iv);
 extern node *IVUTarrayFromProxyIdxsel (node *iv);

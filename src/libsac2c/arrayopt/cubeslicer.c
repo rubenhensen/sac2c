@@ -79,6 +79,7 @@
 #include "compare_tree.h"
 #include "check.h"
 #include "gdb_utils.h"
+#include "symbolic_constant_simplification.h"
 
 /** <!--********************************************************************-->
  *
@@ -374,8 +375,8 @@ isNullIntersect (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn static bool isExactIntersect( node *cbound1, node *intersectb1,
- *                                   node *cbound2, node *intersectb2)
+ * @fn static intersect_type_t isExactIntersect( node *cbound1, node *intersectb1,
+ *                                               node *cbound2, node *intersectb2)
  *
  * @brief Predicate for exact partition intersection.
  *
@@ -390,7 +391,7 @@ isNullIntersect (node *arg_node)
  *          we know the intersect is non-NULL.
  *
  *****************************************************************************/
-static bool
+static intersect_type_t
 isExactIntersect (node *cbound1, node *intersectb1, node *cbound2, node *intersectb2)
 {
     pattern *pat;
@@ -417,7 +418,7 @@ isExactIntersect (node *cbound1, node *intersectb1, node *cbound2, node *interse
     if ((NULL != c1) && (NULL != c2) && (NULL != i1) && (NULL != i2)) {
         z = (matchGeneratorField (c1, i1)) && (matchGeneratorField (c2, i2))
               ? INTERSECT_exact
-              : INTERSECT_nonexact;
+              : INTERSECT_sliceneeded;
     }
     pat = PMfree (pat);
 
@@ -434,7 +435,7 @@ isExactIntersect (node *cbound1, node *intersectb1, node *cbound2, node *interse
  *
  * @params idx: N_id node of _noteintersect() list.
  *         producerWLGenerator: PART_GENERATOR of producerWL
- *         cwlp: consumer WL partition.
+ *         cwlp: consumer WL partition, or NULL if naked consumer
  *         arg_info: Your basic arg_info
  *
  * @result: Type of WL intersection between cwlp and
@@ -447,7 +448,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     intersect_type_t z = INTERSECT_unknown;
     node *producerWLBound1Original;
     node *producerWLBound2Original;
-    node *consumerWLGenerator;
+    node *cwlpg;
     node *bnd;
     node *proj1 = NULL;
     node *proj2 = NULL;
@@ -456,6 +457,10 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     intersect_type_t nullIntersect;
     int intersectListNo;
     int intersectListLim;
+    node *cwlpb1;
+    node *cwlpb2;
+    bool cwlpstepok;
+    bool cwlpwidthok;
 
     DBUG_ENTER ();
 
@@ -466,7 +471,25 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     DBUG_ASSERT (F_noteintersect == PRF_PRF (noteint), "Expected F_noteintersect");
     intersectListLim = (TCcountExprs (PRF_ARGS (noteint)) - WLFIRST) / WLEPP;
     pat = PMarray (1, PMAgetNode (&bnd), 1, PMskip (0));
-    consumerWLGenerator = PART_GENERATOR (cwlp);
+    if (NULL != cwlp) { /* support for naked consumer - no CWL */
+        cwlpg = PART_GENERATOR (cwlp);
+        cwlpb1 = GENERATOR_BOUND1 (cwlpg);
+        cwlpb2 = GENERATOR_BOUND2 (cwlpg);
+        cwlpstepok = matchGeneratorField (GENERATOR_STEP (producerWLGenerator),
+                                          GENERATOR_STEP (cwlpg));
+        cwlpwidthok = matchGeneratorField (GENERATOR_WIDTH (producerWLGenerator),
+                                           GENERATOR_WIDTH (cwlpg));
+    } else { /* For naked consumer with constant or extrema'd iv,
+              * STEP and WIDTH are 1, and any non-null intersect is good.
+              */
+        cwlpb1 = NULL;
+        cwlpb2 = NULL;
+        cwlpstepok = (NULL == GENERATOR_STEP (producerWLGenerator))
+                     || (SCSmatchConstantOne (GENERATOR_STEP (producerWLGenerator)));
+        cwlpwidthok = (NULL == GENERATOR_WIDTH (producerWLGenerator))
+                      || (SCSmatchConstantOne (GENERATOR_WIDTH (producerWLGenerator)));
+    }
+
     if (NULL != arg_info) { /* Different callers! */
         INFO_WLPROJECTION1 (arg_info) = NULL;
         INFO_WLPROJECTION2 (arg_info) = NULL;
@@ -486,16 +509,11 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
         nullIntersect = isNullIntersect (
           TCgetNthExprsExpr (WLINTERSECTIONNULL (intersectListNo), PRF_ARGS (noteint)));
 
-        if ((N_generator == NODE_TYPE (consumerWLGenerator))
-            && (N_generator == NODE_TYPE (producerWLGenerator))
-            && (matchGeneratorField (producerWLBound1Original,
-                                     GENERATOR_BOUND1 (producerWLGenerator)))
+        if ((matchGeneratorField (producerWLBound1Original,
+                                  GENERATOR_BOUND1 (producerWLGenerator)))
             && (matchGeneratorField (producerWLBound2Original,
                                      GENERATOR_BOUND2 (producerWLGenerator)))
-            && (matchGeneratorField (GENERATOR_STEP (producerWLGenerator),
-                                     GENERATOR_STEP (consumerWLGenerator)))
-            && (matchGeneratorField (GENERATOR_WIDTH (producerWLGenerator),
-                                     GENERATOR_WIDTH (consumerWLGenerator)))) {
+            && (cwlpstepok && cwlpwidthok)) {
             DBUG_PRINT ("All generator fields match");
             switch (nullIntersect) {
 
@@ -525,10 +543,14 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                     INFO_NOTEINTERSECT (arg_info) = noteint;
                 }
 
-                z = isExactIntersect (GENERATOR_BOUND1 (consumerWLGenerator), proj1,
-                                      GENERATOR_BOUND2 (consumerWLGenerator), proj2);
+                if (NULL != cwlpb1) {
+                    z = isExactIntersect (cwlpb1, proj1, cwlpb2, proj2);
+                } else {
+                    z = INTERSECT_exact; /* Naked consumer  */
+                }
+
                 if (INTERSECT_exact == z) {
-                    DBUG_PRINT ("Intersect suitable for exact AWLF");
+                    DBUG_PRINT ("Intersect suitable for non-sliced AWLF");
                 } else {
                     DBUG_PRINT ("Intersect suitable for sliced AWLF");
                 }
@@ -575,8 +597,8 @@ IntersectTypeName (intersect_type_t itype)
     case INTERSECT_exact:
         z = "INTERSECT_exact";
         break;
-    case INTERSECT_nonexact:
-        z = "INTERSECT_nonexact";
+    case INTERSECT_sliceneeded:
+        z = "INTERSECT_sliceneeded";
         break;
     case INTERSECT_notnull:
         z = "INTERSECT_notnull";
@@ -597,9 +619,8 @@ IntersectTypeName (intersect_type_t itype)
  *
  * @fn node * CUBSLfindMatchingPart(...
  *
- * @brief Search for a producerWL partition that matches the
- *        consumerWLPart index set, or that is a superset thereof, and
- *        whose intersect type matches that of itype.
+ * @brief Search for a producerWL partition that is the best
+ *        match to the consumerWLPart index set.
  *
  *        The search comprises two steps:
  *
@@ -640,8 +661,8 @@ IntersectTypeName (intersect_type_t itype)
  *
  *****************************************************************************/
 intersect_type_t
-CUBSLfindMatchingPart (node *arg_node, intersect_type_t itype, node *consumerpart,
-                       node *producerWL, info *arg_info, node **producerpart)
+CUBSLfindMatchingPart (node *arg_node, node *consumerpart, node *producerWL,
+                       info *arg_info, node **producerpart)
 {
     node *producerWLGenerator;
     node *producerWLPart;
@@ -656,7 +677,6 @@ CUBSLfindMatchingPart (node *arg_node, intersect_type_t itype, node *consumerpar
     DBUG_ENTER ();
     DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "expected N_prf arg_node");
     DBUG_ASSERT (N_with == NODE_TYPE (producerWL), "expected N_with producerWL");
-    DBUG_ASSERT (N_part == NODE_TYPE (consumerpart), "expected N_part consumerpart");
 
     idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, producerWL) */
     idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
@@ -666,14 +686,13 @@ CUBSLfindMatchingPart (node *arg_node, intersect_type_t itype, node *consumerpar
     (*producerpart) = NULL;
 
     /* Find producerWL partition, if any, that matches the extrema of iv */
-    while ((intersecttype != itype) && (producerWLPart != NULL)) {
+    while (producerWLPart != NULL) {
         producerWLGenerator = PART_GENERATOR (producerWLPart);
         intersecttype
           = FindIntersection (idx, producerWLGenerator, consumerpart, arg_info);
-        if (intersecttype == itype) {
-            (*producerpart) = producerWLPart;
+        if (intersecttype > z) {
+            (*producerpart) = producerWLPart; /* Note best match */
             z = intersecttype;
-            break;
         }
         producerWLPart = PART_NEXT (producerWLPart);
         producerPartno++;
@@ -1159,7 +1178,7 @@ CUBSLpart (node *arg_node, info *arg_info)
                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
                 IntersectTypeName (INFO_INTERSECTTYPE (arg_info)));
 
-    if ((INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info))
+    if ((INTERSECT_sliceneeded == INFO_INTERSECTTYPE (arg_info))
         && (NULL != INFO_WLPROJECTION1 (arg_info))
         && (AWLFIisHasInverseProjection (INFO_WLPROJECTION1 (arg_info)))
         && (!AWLFIisIdsMemberPartition (INFO_WLPROJECTION1 (arg_info), arg_node))
@@ -1271,10 +1290,9 @@ CUBSLprf (node *arg_node, info *arg_info)
          */
         if (NULL != producerWL) {
             INFO_INTERSECTTYPE (arg_info)
-              = CUBSLfindMatchingPart (arg_node, INTERSECT_nonexact,
-                                       INFO_CONSUMERPART (arg_info), producerWL, arg_info,
-                                       &INFO_PRODUCERPART (arg_info));
-            if (INTERSECT_nonexact == INFO_INTERSECTTYPE (arg_info)) {
+              = CUBSLfindMatchingPart (arg_node, INFO_CONSUMERPART (arg_info), producerWL,
+                                       arg_info, &INFO_PRODUCERPART (arg_info));
+            if (INTERSECT_sliceneeded == INFO_INTERSECTTYPE (arg_info)) {
                 INFO_CUTNOW (arg_info) = TRUE;
                 DBUG_PRINT ("Found producerPart in %s for slicing consumerWL %s",
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),

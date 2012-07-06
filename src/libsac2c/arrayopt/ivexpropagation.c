@@ -586,6 +586,8 @@ buildExtremaChain (node *exprs, int minmax)
     node *z = NULL;
     node *avis;
     node *m;
+    constant *con;
+    constant *kcon;
 
     DBUG_ENTER ();
     if (NULL != EXPRS_NEXT (exprs)) {
@@ -595,6 +597,14 @@ buildExtremaChain (node *exprs, int minmax)
     m = (0 == minmax) ? AVIS_MIN (avis) : AVIS_MAX (avis);
     if ((0 == m) && COisConstant (EXPRS_EXPR (exprs))) {
         m = EXPRS_EXPR (exprs);
+        if (1 == minmax) { /* Normalize AVIS_MAX */
+            con = COaST2Constant (m);
+            kcon = COmakeConstantFromInt (1);
+            con = COadd (con, kcon, NULL);
+            m = COconstant2AST (con); /* May have to flatten this */
+            con = COfreeConstant (con);
+            kcon = COfreeConstant (kcon);
+        }
     }
 
     DBUG_ASSERT (NULL != m, "Expected non-NULL m");
