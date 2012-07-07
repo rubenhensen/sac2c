@@ -74,6 +74,10 @@ int dummy_mt_pth;
 #undef SAC_DO_COMPILE_MODULE
 #undef SAC_SET_NUM_SCHEDULERS
 
+#if ENABLE_HWLOC
+#include <../runtime/mt_h/hwloc_data.h>
+#endif
+
 SAC_MT_DEFINE ()
 
 #if 0
@@ -176,6 +180,17 @@ ThreadControl (void *arg)
         }
     }
 
+#if ENABLE_HWLOC
+    if (SAC_HWLOC_topology) {
+        int ret;
+        ret = hwloc_set_cpubind (SAC_HWLOC_topology, SAC_HWLOC_cpu_sets[my_thread_id],
+                                 HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
+        if (ret == -1) {
+            SAC_RuntimeError (("Could not bind thread"));
+        }
+    }
+#endif
+
     for (;;) {
         SAC_TR_PRINT (("Worker thread #%u ready.", my_thread_id));
 
@@ -230,6 +245,17 @@ ThreadControlInitialWorker (void *arg)
                               i);
         }
     }
+
+#if ENABLE_HWLOC
+    if (SAC_HWLOC_topology) {
+        int ret;
+        ret = hwloc_set_cpubind (SAC_HWLOC_topology, SAC_HWLOC_cpu_sets[my_thread_id],
+                                 HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
+        if (ret == -1) {
+            SAC_RuntimeError (("Could not bind thread"));
+        }
+    }
+#endif
 
     for (;;) {
         SAC_TR_PRINT (("Worker thread #1 ready."));
@@ -379,6 +405,18 @@ SAC_MT_Setup (int num_schedulers)
                                (void *(*)(void *))ThreadControlInitialWorker, NULL)) {
             SAC_RuntimeError ("Unable to create (initial) worker thread #1");
         }
+
+#if ENABLE_HWLOC
+        if (SAC_HWLOC_topology) {
+            int ret;
+            ret = hwloc_set_cpubind (SAC_HWLOC_topology,
+                                     SAC_HWLOC_cpu_sets[SAC_MT_master_id],
+                                     HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
+            if (ret == -1) {
+                SAC_RuntimeError (("Could not bind thread"));
+            }
+        }
+#endif
     }
 }
 
