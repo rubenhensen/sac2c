@@ -125,7 +125,7 @@ SAC_HM_FreeDesc (SAC_HM_header_t *addr)
 }
 
 void
-SAC_HM_ShowDiagnostics ()
+SAC_HM_ShowDiagnostics (void)
 {
 }
 

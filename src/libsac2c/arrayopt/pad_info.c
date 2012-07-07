@@ -366,7 +366,7 @@ RemovePatternElement (pattern_t *element)
  *****************************************************************************/
 
 static void
-SortAccesses ()
+SortAccesses (void)
 {
 
     array_type_t *at_ptr;
@@ -453,7 +453,7 @@ SortAccesses ()
  *****************************************************************************/
 
 static void
-RemoveSingleAccessPatterns ()
+RemoveSingleAccessPatterns (void)
 {
 
     array_type_t *at_ptr;
@@ -525,7 +525,7 @@ RemoveSingleAccessPatterns ()
  *****************************************************************************/
 
 static void
-RemoveDuplicateAccesses ()
+RemoveDuplicateAccesses (void)
 {
 
     array_type_t *at_ptr;
@@ -585,7 +585,7 @@ RemoveDuplicateAccesses ()
  *****************************************************************************/
 
 static void
-RemoveIdenticalConflictGroups ()
+RemoveIdenticalConflictGroups (void)
 {
 
     array_type_t *at_ptr;

@@ -680,7 +680,7 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
         expr = FREEdoFreeTree (expr);
     }
 
-#endif DEADCODE
+#endif /*DEADCODE*/
 
     /* Constant iv */
     if ((NULL == z) && /* Case 2 */

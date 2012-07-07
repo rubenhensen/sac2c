@@ -334,7 +334,7 @@ SAC_C_EXTERN void SAC_HM_FreeTopArena_at (SAC_HM_header_t *addr);
 
 SAC_C_EXTERN void SAC_HM_FreeDesc (SAC_HM_header_t *addr);
 
-SAC_C_EXTERN void SAC_HM_ShowDiagnostics ();
+SAC_C_EXTERN void SAC_HM_ShowDiagnostics (void);
 SAC_C_EXTERN void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 
 SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
@@ -859,7 +859,7 @@ SAC_C_EXTERN void *SAC_HM_MallocCheck (unsigned int);
 #define SAC_HM_DEFINE_THREAD_STATUS(status)
 
 #if !SAC_MUTC_MACROS
-SAC_C_EXTERN void SAC_HM_ShowDiagnostics ();
+SAC_C_EXTERN void SAC_HM_ShowDiagnostics (void);
 #endif
 
 #endif /* SAC_DO_PHM */

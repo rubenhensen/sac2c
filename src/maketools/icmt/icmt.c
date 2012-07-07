@@ -305,7 +305,7 @@ ProcessCFile (char *prefix, int use_shp, int use_hid, int use_unq)
 }
 
 char *
-CreateTmpFileName ()
+CreateTmpFileName (void)
 {
     char *tmp_file;
 
@@ -344,7 +344,7 @@ CreateTmpFileName ()
 }
 
 int
-main ()
+main (void)
 {
     int use_shp, use_hid, use_unq;
     char *tmpfileprefix;

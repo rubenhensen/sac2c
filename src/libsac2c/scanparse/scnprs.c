@@ -39,7 +39,7 @@ SPdoLocateSource (node *syntax_tree)
 }
 
 static char *
-CreateInfoMacroCommandLine ()
+CreateInfoMacroCommandLine (void)
 {
     char *res;
 

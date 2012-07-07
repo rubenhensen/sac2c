@@ -17,46 +17,46 @@
 
 static module_t *modulepool = NULL;
 
-typedef sttable_t *(*symtabfun_p) ();
+typedef sttable_t *(*symtabfun_p) (void);
 typedef union {
     void *v;
-    sttable_t *(*f) ();
+    sttable_t *(*f) (void);
 } symtabfun_u;
 
-typedef stringset_t *(*deptabfun_p) ();
+typedef stringset_t *(*deptabfun_p) (void);
 typedef union {
     void *v;
-    stringset_t *(*f) ();
+    stringset_t *(*f) (void);
 } deptabfun_u;
 
 typedef union {
     void *v;
-    const char *(*f) ();
+    const char *(*f) (void);
 } astversionfun_u;
 
 typedef union {
     void *v;
-    const char *(*f) ();
+    const char *(*f) (void);
 } mixedcasenamefun_u;
 
 typedef union {
     void *v;
-    int (*f) ();
+    int (*f) (void);
 } serversionfun_u;
 
 typedef union {
     void *v;
-    int (*f) ();
+    int (*f) (void);
 } flagfun_u;
 
 typedef union {
     void *v;
-    const char *(*f) ();
+    const char *(*f) (void);
 } deprecatedfun_u;
 
 typedef union {
     void *v;
-    void (*f) ();
+    void (*f) (void);
 } nsmapfun_u;
 
 static void
@@ -429,7 +429,7 @@ MODMgetDeSerializeFunction (const char *name, module_t *module)
 
     result.v = LIBMgetLibraryFunction (name, module->lib);
 
-    DBUG_RETURN (result.f);
+    DBUG_RETURN ((serfun_p)result.f);
 }
 
 #undef DBUG_PREFIX
