@@ -776,8 +776,10 @@ CSEfundef (node *arg_node, info *arg_info)
     DBUG_PRINT ("Begin traversing %s %s",
                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                 FUNDEF_NAME (arg_node));
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        if (!FUNDEF_ISLACFUN (arg_node)) {
+
+    if ((INFO_EXT_ASSIGN (arg_info) != NULL)
+        || ((!FUNDEF_ISLACFUN (arg_node)) && (FUNDEF_BODY (arg_node) != NULL))) {
+        if (INFO_EXT_ASSIGN (arg_info) == NULL) {
             /*
              * traverse args of fundef to init the AVIS_SUBST attribute. this is done
              * here only for normal fundefs. in special fundefs that are traversed via
@@ -788,15 +790,13 @@ CSEfundef (node *arg_node, info *arg_info)
             FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         }
 
-        node *n;
-
         /* traverse block of fundef */
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
         /*
          * Reset AVIS_SUBST
          */
-        n = FUNDEF_ARGS (arg_node);
+        node *n = FUNDEF_ARGS (arg_node);
         while (n != NULL) {
             AVIS_SUBST (ARG_AVIS (n)) = NULL;
             n = ARG_NEXT (n);
@@ -807,7 +807,7 @@ CSEfundef (node *arg_node, info *arg_info)
                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                 FUNDEF_NAME (arg_node));
 
-    if (!FUNDEF_ISLACFUN (arg_node)) {
+    if (INFO_EXT_ASSIGN (arg_info) == NULL) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
@@ -1095,6 +1095,7 @@ node *
 CSEap (node *arg_node, info *arg_info)
 {
     info *new_arg_info;
+
     DBUG_ENTER ();
 
     DBUG_ASSERT (AP_FUNDEF (arg_node) != NULL, "missing fundef in ap-node");
