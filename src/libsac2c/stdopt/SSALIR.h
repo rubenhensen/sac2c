@@ -36,6 +36,11 @@
 
 #include "types.h"
 
+/**
+ * WARNING: SSALIR is obsolete.
+ * Use DLIR or WLIR instead.
+ */
+
 /*****************************************************************************
  *
  * Loop invariants removal ( ssalir_tab)
@@ -47,7 +52,9 @@
  *   traversal functions to infer loop invariant expressions
  *
  *****************************************************************************/
-extern node *LIRdoLoopInvariantRemoval (node *arg_node);
+#if 0
+extern node* LIRdoLoopInvariantRemoval( node *arg_node);
+#endif
 
 extern node *LIRfundef (node *arg_node, info *arg_info);
 extern node *LIRarg (node *arg_node, info *arg_info);

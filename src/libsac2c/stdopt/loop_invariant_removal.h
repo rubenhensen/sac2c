@@ -63,6 +63,7 @@ extern node *DLIRwith (node *arg_node, info *arg_info);
 extern node *DLIRwithid (node *arg_node, info *arg_info);
 extern node *DLIRexprs (node *arg_node, info *arg_info);
 extern node *DLIRids (node *arg_node, info *arg_info);
+extern node *DLIRmodule (node *arg_node, info *arg_info);
 
 /*****************************************************************************
  *
@@ -79,4 +80,4 @@ extern node *DLIRMOVblock (node *arg_node, info *arg_info);
 extern node *DLIRMOVassign (node *arg_node, info *arg_info);
 extern node *DLIRMOVlet (node *arg_node, info *arg_info);
 extern node *DLIRMOVids (node *arg_node, info *arg_info);
-#endif /* _SAC_SSALIR_H_ */
+#endif /* _SAC_LOOP_INVARIANT_REMOVEL_H_ */

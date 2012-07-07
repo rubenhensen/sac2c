@@ -349,8 +349,8 @@ CYCLEPHASEFUN (dcr, "Applying dead code removal", DCRdoDeadCodeRemoval,
 CYCLEPHASEFUNOLD (linl2, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, cyc)
 
-CYCLEPHASEFUNOLD (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
-                  global.optimize.dodlir, opt, cyc)
+CYCLEPHASEFUN (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
+               global.optimize.dodlir, opt, cyc)
 
 CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
                global.optimize.dowlir, opt, cyc)
@@ -525,8 +525,8 @@ CYCLEPHASEFUN (dcr, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.
 CYCLEPHASEFUNOLD (linl2, "Inlining degenerated LaC functions", LINLdoLACInlining,
                   global.lacinline, opt, saacyc)
 
-CYCLEPHASEFUNOLD (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
-                  global.optimize.dodlir, opt, saacyc)
+CYCLEPHASEFUN (dlir, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
+               global.optimize.dodlir, opt, saacyc)
 
 CYCLEPHASEFUN (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
                global.optimize.dowlir, opt, saacyc)
@@ -793,7 +793,7 @@ SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemoval,
             && global.optimize.dodcr,
           opt)
 
-/* TODO: lir maybe should be run in a loop */
+/* TODO: lir perhaps should be run in a loop */
 SUBPHASE (dlir2, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
           global.optimize.dols &&global.optimize.dodlir, opt)
 

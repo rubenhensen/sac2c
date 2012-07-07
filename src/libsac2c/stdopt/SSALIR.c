@@ -197,6 +197,11 @@
 #include "phase.h"
 #include "ctinfo.h"
 
+/**
+ * WARNING: SSALIR is obsolete.
+ * Use DLIR or WLIR instead.
+ */
+
 /*
  * INFO structure
  */

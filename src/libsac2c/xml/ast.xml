@@ -1887,7 +1887,7 @@
 	  <node name="Ap" />
 	</travuser>
     </traversal>
-    <traversal id="LIR" name="Loop Invariants Traversal" default="sons" include="SSALIR.h" >
+    <traversal id="LIR" name="[OBSOLETE]: Loop Invariants Traversal" default="sons" include="SSALIR.h" >
       <travuser>
         <node name="Ids" />
         <node name="Assign" />
@@ -1922,6 +1922,7 @@
         <node name="With" />
         <node name="Withid" />
         <node name="Exprs" />
+        <node name="Module" />
       </travuser>
     </traversal>
     <traversal id="WLIR" name="Loop Invariants Traversal" default="sons" include="withloop_invariant_removal.h" >

@@ -114,6 +114,15 @@
  *     Hence, the only way for a LACFUN to end up in LIRfundef
  *     is via the N_ap of its caller.
  *
+ * Remark from jsa:
+ *   I do not understand the meaning of INFO_TRAVSTART in this traversal.
+ *   It looks to me that the DLIR does different things to a normal fundef when
+ *   the fundef is (a) reached from a module spine (the DLIR is invoked on
+ *   a module), or (b) the DLIR is directly invoked on that normal fundef.
+ *   Whether this is a desirable behaviour or a bug I cannot tell.
+ *   And, to complicate the matters more, the DLIR may be also invoked directly
+ *   on lacfuns in the AWLFI's SimplifySymbioticExpression().
+ *
  *****************************************************************************/
 #include "loop_invariant_removal.h"
 
@@ -691,22 +700,20 @@ GetRecursiveCallAssignment (node *dofun)
 node *
 DLIRfundef (node *arg_node, info *arg_info)
 {
-    info *info;
-
     DBUG_ENTER ();
 
     DBUG_PRINT ("Starting do-loop-invariant removal in fundef %s",
                 FUNDEF_NAME (arg_node));
 
-    if (((FUNDEF_ISLACFUN (arg_node))
-         && ((INFO_TRAVINLAC (arg_info)) || (INFO_TRAVSTART (arg_info) == TS_fundef)))
+    if ((FUNDEF_ISLACFUN (arg_node)
+         && (INFO_TRAVINLAC (arg_info) || (INFO_TRAVSTART (arg_info) == TS_fundef)))
         || (!FUNDEF_ISLACFUN (arg_node))) {
         /**
          * only traverse fundef node if fundef is not lacfun, or if traversal
          * was initialized in ap-node (travinlac == TRUE);
          * (lacfun = loop or cond fun.)
          */
-        info = MakeInfo ();
+        info *info = MakeInfo ();
 
         INFO_TRAVSTART (info) = INFO_TRAVSTART (arg_info);
         INFO_TRAVINLAC (info) = INFO_TRAVINLAC (arg_info);
@@ -772,13 +779,13 @@ DLIRfundef (node *arg_node, info *arg_info)
 
         info = FreeInfo (info);
     }
+
     /**
-     * traverse only in next fundef if traversal started in module node
+     * traverse only in next fundef if we've came here from a non-function subtree,
+     * i.e. from the module chain.
      */
-    if (INFO_TRAVSTART (arg_info) == TS_module) {
-        if (INFO_FUNDEF (arg_info) == NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-        }
+    if (INFO_FUNDEF (arg_info) == NULL) {
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_PRINT ("Ended loop-invariant removal in fundef %s", FUNDEF_NAME (arg_node));
@@ -1475,6 +1482,25 @@ DLIRids (node *arg_ids, info *arg_info)
     DBUG_RETURN (arg_ids);
 }
 
+/******************************************************************************
+ *
+ * function:
+ *   node* DLIRmodule(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Traverse only funs in the module.
+ *
+ *****************************************************************************/
+node *
+DLIRmodule (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    MODULE_FUNS (arg_node) = TRAVopt (MODULE_FUNS (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /* traversal functions for lirmov_tab */
 /******************************************************************************
  *
@@ -1929,14 +1955,16 @@ FreeLIRInformation (node *arg_node)
 node *
 DLIRdoLoopInvariantRemoval (node *arg_node)
 {
-    info *arg_info;
-
     DBUG_ENTER ();
-
     DBUG_ASSERT ((NODE_TYPE (arg_node) == N_module) || (NODE_TYPE (arg_node) == N_fundef),
                  "DLIRdoLoopInvariantRemoval called with non-module/non-fundef node");
+    DBUG_PRINT ("DLIR invoked on %s %s",
+                ((NODE_TYPE (arg_node) == N_module)
+                   ? "module"
+                   : (FUNDEF_ISLACFUN (arg_node) ? "lacfun" : "normal fun")),
+                ((NODE_TYPE (arg_node) == N_module) ? "" : FUNDEF_NAME (arg_node)));
 
-    arg_info = MakeInfo ();
+    info *arg_info = MakeInfo ();
 
     INFO_TRAVSTART (arg_info)
       = (N_module == NODE_TYPE (arg_node)) ? TS_module : TS_fundef;
@@ -1953,6 +1981,7 @@ DLIRdoLoopInvariantRemoval (node *arg_node)
      */
     arg_node = FreeLIRInformation (arg_node);
 
+    DBUG_PRINT ("DLIR finished");
     DBUG_RETURN (arg_node);
 }
 
