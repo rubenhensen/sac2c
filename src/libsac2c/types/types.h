@@ -882,8 +882,8 @@ typedef struct MODULE_T {
     int usecount;
 } module_t;
 
-// Do not add "void" in parameter area in the following function definatio.
-typedef node *(*serfun_p) ();
+typedef node *(*serfun_p) (void *);
+typedef node *(*serfun0_p) (void);
 
 typedef union {
     void *v;

@@ -733,7 +733,7 @@ AddSymbolById (const char *symbid, const char *module, bool resetimport)
 
     DBUG_ASSERT (fun != NULL, "requested symbol does not exist!");
 
-    entryp = fun ();
+    entryp = ((serfun0_p)fun) ();
 
     /* add to ast */
     InsertIntoState (entryp);
@@ -1013,7 +1013,7 @@ DSloadFunctionBody (node *fundef)
                  "deserializer not found. module seems to be inconsistent!");
 
     global.valid_ssaform = FALSE;
-    result = serfun ();
+    result = ((serfun0_p)serfun) ();
     global.valid_ssaform = TRUE;
 
     SetCurrentFundefHead (NULL);
