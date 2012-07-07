@@ -42,6 +42,7 @@
 #include "constants.h"
 #include "flattengenerators.h"
 #include "new_typecheck.h"
+#include "indexvectorutils.h"
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
@@ -650,9 +651,19 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
         z = ID_AVIS (arg1);
     }
 
-    if ((NULL == z) && /* vect2offset case */
-        (PMmatchFlat (pat3, arg1)) && (PMmatchFlat (pat5, iv))) {
-        z = ID_AVIS (iv);
+    if ((NULL == z) && /* G((G( vect2offset))) case */
+        (PMmatchFlat (pat3, arg1))) {
+        if (PMmatchFlatSkipExtremaAndGuards (pat5, iv)) {
+            /* Skipping extrema & guards dictated by
+             * CF unit test xxx
+             */
+            z = DUPdoDupTree (narr);
+        } else { /* May be withid_vec. If so, get withid_ids */
+            if (IVUTivMatchesWithid (iv, PART_WITHID (cwlpart))) {
+                z = TCconvertIds2Exprs (WITHID_IDS (PART_WITHID (cwlpart)));
+                z = CreateIvArray (z, vardecs, preassigns);
+            }
+        }
     }
 
 #ifdef DEADCODE
@@ -693,13 +704,13 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
         DBUG_ASSERT (N_array == NODE_TYPE (z), "Confusion3");
     }
 
+    DBUG_ASSERT (NULL != z, "oops");
+
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
     pat4 = PMfree (pat4);
     pat5 = PMfree (pat5);
-
-    DBUG_ASSERT (NULL != z, "oops");
 
     if ((NULL != z) && (N_avis != NODE_TYPE (z))) {
         DBUG_ASSERT (N_array == NODE_TYPE (z), "Expected N_array");
