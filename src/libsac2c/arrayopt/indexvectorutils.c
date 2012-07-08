@@ -614,14 +614,12 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
     pattern *pat3;
     pattern *pat4;
     pattern *pat5;
-    node *expr;
     node *shp = NULL;
     node *iv = NULL;
     node *iv2 = NULL;
     node *iv0 = NULL;
     node *arg1;
     constant *ivc = NULL;
-    int dim = -1;
     node *narr = NULL;
 
     DBUG_ENTER ();
@@ -667,6 +665,8 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
     }
 
 #ifdef DEADCODE
+    int dim = -1;
+    node *expr;
     if ((NULL == z)
         && (PMmatchFlatSkipExtremaAndGuards (pat2, arg1))) { /* _idx_sel() case */
         z = CreateIvArray (iv0, vardecs, preassigns);
