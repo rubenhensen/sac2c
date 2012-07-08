@@ -63,6 +63,7 @@
 #include "free.h"
 #include "shape.h"
 #include "DupTree.h"
+#include "ivexpropagation.h"
 
 /** <!--********************************************************************-->
  *
@@ -380,8 +381,10 @@ CTZGprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("Looking at prf for %s",
                 AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
 
-    if (IsSuitableGuard (PRF_PRF (arg_node))) {
-        DBUG_PRINT ("Guard replaced");
+    if ((IsSuitableGuard (PRF_PRF (arg_node)))
+        && (IVEXPisAvisHasBothExtrema (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))))) {
+        DBUG_PRINT ("Replacing guard on %s",
+                    AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
 
         relop = TBmakePrf (GetRelationalPrimitive (PRF_PRF (arg_node)),
                            TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),

@@ -6,16 +6,6 @@
 
 #include "types.h"
 
-/******************************************************************************
- *
- * description: Predicates for determining if an N_avis node have extrema,
- *              and macro for setting extrema.
- *
- * @params  arg_node: an N_avis node.
- * @result: True if the node has desired extrema present.
- *
- ******************************************************************************/
-
 #define isAvisHasMin(avis) ((NULL != avis) && NULL != AVIS_MIN (avis))
 #define isAvisHasMax(avis) ((NULL != avis) && NULL != AVIS_MAX (avis))
 #define isAvisHasBothExtrema(avis) (isAvisHasMin (avis) && isAvisHasMax (avis))
@@ -36,6 +26,9 @@ void IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup);
 void IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup);
 extern node *IVEXPgenerateNarrayExtrema (node *arg_node, node **vardecs,
                                          node **preassigns);
+extern bool IVEXPisAvisHasMin (node *avis);
+extern bool IVEXPisAvisHasMax (node *avis);
+extern bool IVEXPisAvisHasBothExtrema (node *avis);
 
 extern node *IVEXPmodule (node *arg_node, info *arg_info);
 extern node *IVEXPfundef (node *arg_node, info *arg_info);

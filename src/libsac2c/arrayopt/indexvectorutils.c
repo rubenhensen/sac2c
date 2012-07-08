@@ -657,7 +657,7 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
             /* Skipping extrema & guards dictated by
              * CF unit test xxx
              */
-            z = DUPdoDupTree (narr);
+            z = ID_AVIS (iv);
         } else { /* May be withid_vec. If so, get withid_ids */
             if (IVUTivMatchesWithid (iv, PART_WITHID (cwlpart))) {
                 z = TCconvertIds2Exprs (WITHID_IDS (PART_WITHID (cwlpart)));

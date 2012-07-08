@@ -452,6 +452,45 @@ BuildExtremumValLtShape (node *arg_node, info *arg_info)
 
 /******************************************************************************
  *
+ * description: Predicates for determining if an N_avis node have extrema,
+ *              and macro for setting extrema.
+ *
+ * @params  arg_node: an N_avis node.
+ * @result: True if the node has desired extrema present.
+ *
+ ******************************************************************************/
+bool
+IVEXPisAvisHasMin (node *avis)
+{
+    bool z;
+
+    DBUG_ENTER ();
+    z = ((NULL != avis) && NULL != AVIS_MIN (avis));
+    DBUG_RETURN (z);
+}
+
+bool
+IVEXPisAvisHasMax (node *avis)
+{
+    bool z;
+
+    DBUG_ENTER ();
+    z = ((NULL != avis) && NULL != AVIS_MAX (avis));
+    DBUG_RETURN (z);
+}
+
+bool
+IVEXPisAvisHasBothExtrema (node *avis)
+{
+    bool z;
+
+    DBUG_ENTER ();
+    z = IVEXPisAvisHasMin (avis) && IVEXPisAvisHasMax (avis);
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
  * function: node *makeNarray( node *extrema, info *arg_info, ntype *typ,
  *                             node *nar)
  *
@@ -1000,13 +1039,13 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
      * PRF_ARGs with N_num nodes.
      */
 
-    min1 = isAvisHasMin (ID_AVIS (PRF_ARG1 (rhs)));
-    max1 = isAvisHasMax (ID_AVIS (PRF_ARG1 (rhs)));
-    min2 = isAvisHasMin (ID_AVIS (PRF_ARG2 (rhs)));
-    max2 = isAvisHasMax (ID_AVIS (PRF_ARG2 (rhs)));
+    min1 = IVEXPisAvisHasMin (ID_AVIS (PRF_ARG1 (rhs)));
+    max1 = IVEXPisAvisHasMax (ID_AVIS (PRF_ARG1 (rhs)));
+    min2 = IVEXPisAvisHasMin (ID_AVIS (PRF_ARG2 (rhs)));
+    max2 = IVEXPisAvisHasMax (ID_AVIS (PRF_ARG2 (rhs)));
 
     /* Compute AVIS_MIN, perhaps */
-    if ((!isAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
+    if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
         switch (PRF_PRF (rhs)) {
         case F_sub_SxS:
         case F_sub_SxV:
@@ -1046,7 +1085,7 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
     }
 
     /* Compute AVIS_MAX, perhaps */
-    if ((!isAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
+    if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
         switch (PRF_PRF (rhs)) {
         case F_sub_SxS:
         case F_sub_SxV:
@@ -1340,7 +1379,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
     withid = (NULL != withid) ? PART_WITHID (WITH_PART (withid)) : NULL;
     lhsavis = IDS_AVIS (LET_IDS (arg_node));
     rhs = LET_EXPR (arg_node);
-    if ((!isAvisHasBothExtrema (lhsavis))
+    if ((!IVEXPisAvisHasBothExtrema (lhsavis))
         && (TUisIntScalar (AVIS_TYPE (lhsavis)) || TUisIntVect (AVIS_TYPE (lhsavis)))
         && (!TYisAKV (AVIS_TYPE (lhsavis)))) {
 
@@ -1360,7 +1399,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_non_neg_val_V:
             case F_non_neg_val_S:
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
-                if ((!isAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))
+                if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))
                     && (TYisAKV (AVIS_TYPE (arg1avis))
                         || TYisAKS (AVIS_TYPE (arg1avis)))) {
                     /* Create zero minimum */
@@ -1376,7 +1415,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
 
             case F_abs_S: /* AVIS_MIN is now zero */
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
-                if ((!isAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
+                if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
                     minv = IVEXImakeIntScalar (0, &INFO_VARDECS (arg_info),
                                                &INFO_PREASSIGNS (arg_info));
                     INFO_MINVAL (arg_info) = TBmakeId (minv);
@@ -1398,7 +1437,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                  * Case 2: min( constant, nonconstant-with-maxval):
                  *         We conservatively estimate the extremum as the maxval.
                  */
-                if ((!isAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
+                if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
                     arg1avis = ID_AVIS (PRF_ARG1 (rhs));
                     nca = GetMaxvalOnNonconstantArg (rhs, arg_info);
 
@@ -1430,7 +1469,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                 }
 
                 /* min( constant, non-constant with constant minval) */
-                if ((!isAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
+                if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
                     nca = GetMinvalOnNonconstantArg (rhs, arg_info);
                     minv = GetMinvalForMin (PRF_ARG1 (rhs), nca, lhsavis, arg_info);
                     if (NULL == minv) {
@@ -1456,7 +1495,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                  * Case 2: max( constant, nonconstant-with-minval):
                  *         We conservatively estimate the extremum as the minval.
                  */
-                if ((!isAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
+                if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
                     arg1avis = ID_AVIS (PRF_ARG1 (rhs));
                     nca = GetMinvalOnNonconstantArg (rhs, arg_info);
 
@@ -1476,7 +1515,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                 }
 
                 /* max( constant, non-constant with constant maxval) */
-                if ((!isAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
+                if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
                     nca = GetMaxvalOnNonconstantArg (rhs, arg_info);
                     maxv = GetMaxvalForMax (PRF_ARG1 (rhs), nca, lhsavis, arg_info);
                     if (NULL == maxv) {
@@ -1492,8 +1531,8 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_neg_V:
                 /* Min becomes max and vice versa */
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
-                if ((!isAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))
-                    && (isAvisHasMin (arg1avis))) {
+                if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))
+                    && (IVEXPisAvisHasMin (arg1avis))) {
                     minv = InvokeMonadicFn (ID_AVIS (AVIS_MIN (arg1avis)), lhsavis, rhs,
                                             arg_info);
                     minv = IVEXPadjustExtremaBound (minv, +1, &INFO_VARDECS (arg_info),
@@ -1501,8 +1540,8 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     INFO_MAXVAL (arg_info) = TBmakeId (minv);
                 }
 
-                if ((!isAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))
-                    && (isAvisHasMax (arg1avis))) {
+                if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))
+                    && (IVEXPisAvisHasMax (arg1avis))) {
                     /* Instead of generating (-(AVIS_MAX(arg1avis)-1)),
                      * we generate           (1-AVIS_MAX(arg1avis)).
                      */
@@ -1546,8 +1585,9 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_sel_VxA:
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
                 arg2avis = ID_AVIS (PRF_ARG2 (rhs));
-                if ((!isAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))
-                    && (isAvisHasMin (arg2avis)) && (COisConstant (PRF_ARG1 (rhs)))) {
+                if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))
+                    && (IVEXPisAvisHasMin (arg2avis))
+                    && (COisConstant (PRF_ARG1 (rhs)))) {
                     /* select from AVIS_MIN */
                     minv = DUPdoDupNode (rhs);
                     FREEdoFreeNode (PRF_ARG2 (minv));
@@ -1561,8 +1601,9 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     INFO_MINVAL (arg_info) = TBmakeId (minv);
                 }
 
-                if ((!isAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))
-                    && (isAvisHasMax (arg2avis)) && (COisConstant (PRF_ARG1 (rhs)))) {
+                if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))
+                    && (IVEXPisAvisHasMax (arg2avis))
+                    && (COisConstant (PRF_ARG1 (rhs)))) {
                     /* select from AVIS_MAX */
                     maxv = DUPdoDupNode (rhs);
                     FREEdoFreeNode (PRF_ARG2 (maxv));
@@ -1689,6 +1730,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     node *rhs;
     node *rhsavis;
     node *withid;
+    node *maxv;
 
     DBUG_ENTER ();
 
@@ -1720,7 +1762,11 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
         IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE);
         if (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (rhs))))) {
             IVEXPsetMinvalIfNotNull (lhsavis, PRF_ARG1 (rhs), TRUE);
-            /* We could generate a maxval, too, but we'd have to add 1 to the value */
+            if (NULL == AVIS_MAX (lhsavis)) {
+                maxv = IVEXPadjustExtremaBound (rhsavis, 1, &INFO_VARDECS (arg_info),
+                                                &INFO_PREASSIGNS (arg_info), "dsf9");
+                IVEXPsetMaxvalIfNotNull (lhsavis, TBmakeId (maxv), FALSE);
+            }
         }
         break;
 

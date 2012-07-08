@@ -969,7 +969,7 @@ IVEXIprf (node *arg_node, info *arg_info)
         /* If shape() result is AKD or AKS, we can establish a minval */
         lhsavis = IDS_AVIS (INFO_LHS (arg_info));
 
-        if ((!isAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))
+        if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))
             && (TUshapeKnown (AVIS_TYPE (lhsavis)))) {
 
             shp = SHcopyShape (TYgetShape (AVIS_TYPE (lhsavis)));
