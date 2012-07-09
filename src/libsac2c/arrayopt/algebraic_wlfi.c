@@ -314,15 +314,18 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
     int i = 0;
     int ct;
     int countDLIR = 0;
-    int countWLIR = 0;
+    int countWLIR = global.optcounters.wlir_expr;
     int countINL = 0;
-    int countCSE = 0;
+    int countCSE = global.optcounters.cse_expr;
     int countTUP = 0;
     int countCF = 0;
     int countVP = 0;
     int countAS = 0;
     int countAL = 0;
     int countDL = 0;
+    int countESD = global.optcounters.esd_expr;
+    int countUESD = 0;
+    int countDCR = 0;
 
     DBUG_ENTER ();
 
@@ -385,7 +388,8 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
                 CFdoConstantFolding);
         RUNOPT (VP, global.optimize.dovp, countVP = global.optcounters.vp_expr,
                 VPdoVarPropagation);
-        RUNOPT (ESD, global.optimize.dosde, , ESDdoElimSubDiv);
+        RUNOPT (ESD, global.optimize.dosde, countESD = global.optcounters.esd_expr,
+                ESDdoElimSubDiv);
         RUNOPT (AS, global.optimize.doas, countAS = global.optcounters.as_expr,
                 ASdoArithmeticSimplification);
         RUNOPT (CF, global.optimize.docf, countCF = global.optcounters.cf_expr,
@@ -395,8 +399,11 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
                 ALdoAssocLawOptimization);
         RUNOPT (DL, global.optimize.dodl, countDL = global.optcounters.dl_expr,
                 DLdoDistributiveLawOptimization);
-        RUNOPT (UESD, global.optimize.dosde, , UESDdoUndoElimSubDiv);
-        RUNOPT (DCR, global.optimize.dodcr, , DCRdoDeadCodeRemoval);
+        RUNOPT (UESD, global.optimize.dosde, countUESD = global.optcounters.uesd_expr,
+                UESDdoUndoElimSubDiv);
+        RUNOPT (DCR, global.optimize.dodcr,
+                countDCR = global.optcounters.dead_var + global.optcounters.dead_expr,
+                DCRdoDeadCodeRemoval);
 
 #undef RUNOPT
 #undef RUNCHECK
@@ -404,7 +411,8 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
         /* We do not count DCR, as it's merely for cleanup */
         DBUG_PRINT_TAG ("SSE",
                         "DLIR= %d, WLIR= %d, INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, "
-                        "AS=%d, AL=%d, DL=%d",
+                        "AS=%d, AL=%d, DL=%d, "
+                        "ESD=%d, UESD=%d, DCR=%d",
                         (global.optcounters.dlir_expr - countDLIR),
                         (global.optcounters.wlir_expr - countWLIR),
                         (global.optcounters.inl_fun - countINL),
@@ -414,7 +422,13 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
                         (global.optcounters.vp_expr - countVP),
                         (global.optcounters.as_expr - countAS),
                         (global.optcounters.al_expr - countAL),
-                        (global.optcounters.dl_expr - countDL));
+                        (global.optcounters.dl_expr - countDL),
+                        /* The following are not for some reason in the fixpoint check
+                           below: */
+                        (global.optcounters.esd_expr - countESD),
+                        (global.optcounters.uesd_expr - countUESD),
+                        ((global.optcounters.dead_var + global.optcounters.dead_expr)
+                         - countDCR));
 
         if (/* Fix point check */
             (countDLIR == global.optcounters.dlir_expr)

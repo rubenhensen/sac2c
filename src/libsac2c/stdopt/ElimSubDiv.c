@@ -434,6 +434,8 @@ ESDprf (node *arg_node, info *arg_info)
         PRF_PRF (arg_node) = TogglePrf (PRF_PRF (arg_node));
 
         DBUG_PRINT ("replacing prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+
+        ++global.optcounters.esd_expr;
     }
 
     DBUG_RETURN (arg_node);

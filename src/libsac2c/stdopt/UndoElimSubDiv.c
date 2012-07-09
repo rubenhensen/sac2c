@@ -520,6 +520,8 @@ UESDprf (node *arg_node, info *arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), exp), NULL);
             FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
               = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+
+            ++global.optcounters.uesd_expr;
         }
     }
 

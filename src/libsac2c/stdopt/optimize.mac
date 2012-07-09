@@ -190,6 +190,8 @@ OPTCOUNTER (prfunr_prf, TRUE, "primitive function(s) unrolled")
 OPTCOUNTER (wlsimp_wl, TRUE, "with-loop(s) simplified")
 OPTCOUNTER (ctz_expr, TRUE, "comparisons to zero")
 OPTCOUNTER (ctzg_expr, TRUE, "comparisons to zero for guards")
+OPTCOUNTER (esd_expr, TRUE, "eliminated sub/div expression(s)")
+OPTCOUNTER (uesd_expr, TRUE, "undo-eliminated sub/div expression(s)")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr
