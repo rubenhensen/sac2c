@@ -716,6 +716,13 @@ EMAAprf (node *arg_node, info *arg_info)
         MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
         break;
 
+    case F_unshare:
+        /* new_accu = unshare( old_accu, iv);
+         * The output is always an alias of the first argument.
+         */
+        MarkIdAliasing (PRF_ARG1 (arg_node), INFO_MASK (arg_info));
+        break;
+
     case F_type_conv:
         MarkAllIdsAliasing (INFO_LHS (arg_info), INFO_MASK (arg_info));
         MarkIdAliasing (PRF_ARG2 (arg_node), INFO_MASK (arg_info));

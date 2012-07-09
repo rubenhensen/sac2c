@@ -479,23 +479,33 @@ DFCmodarray (node *arg_node, info *arg_info)
 node *
 DFCfold (node *arg_node, info *arg_info)
 {
-    ntype *neutr_type, *body_type;
-    ntype *arg_type, *arg_types;
-
     DBUG_ENTER ();
-
-    DBUG_ASSERT (FOLD_FUNDEF (arg_node) != NULL, "fold-wl inconsistency");
-
-    DBUG_ASSERT (FOLD_FUNDEF (arg_node) != NULL, "missinf FOLD_FUNDEF");
+    DBUG_ASSERT (FOLD_FUNDEF (arg_node) != NULL, "missing FOLD_FUNDEF");
 
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
-    neutr_type = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
-    body_type = TYfixAndEliminateAlpha (
+    ntype *neutr_type
+      = TYfixAndEliminateAlpha (AVIS_TYPE (ID_AVIS (FOLD_NEUTRAL (arg_node))));
+    ntype *body_type = TYfixAndEliminateAlpha (
       AVIS_TYPE (ID_AVIS (EXPRS_EXPR (INFO_CEXPRS (arg_info)))));
 
-    arg_type = TYlubOfTypes (neutr_type, body_type);
-    arg_types = TYmakeProductType (2, arg_type, TYcopyType (arg_type));
+    /* create an array of types: length = 2 + number of partial args */
+    ntype *arg_types = TYmakeEmptyProductType (TCcountExprs (FOLD_ARGS (arg_node)) + 2);
+
+    /* fill the positions in the array, first from the FOLD_ARGS chain */
+    int a_pos = 0;
+    for (node *pa_arg = FOLD_ARGS (arg_node); pa_arg != NULL;
+         pa_arg = EXPRS_NEXT (pa_arg)) {
+        arg_types = TYsetProductMember (arg_types, a_pos++,
+                                        TYfixAndEliminateAlpha ((ntype *)AVIS_TYPE (
+                                          ID_AVIS (EXPRS_EXPR (pa_arg)))));
+    }
+
+    /* ...and then twice the neutral type */
+    ntype *arg_type = TYlubOfTypes (neutr_type, body_type);
+    /* the last two args have the same type */
+    arg_types = TYsetProductMember (arg_types, a_pos++, arg_type);
+    arg_types = TYsetProductMember (arg_types, a_pos++, TYcopyType (arg_type));
 
     FOLD_FUNDEF (arg_node)
       = DispatchFunCall (FOLD_FUNDEF (arg_node), arg_types, arg_info);

@@ -1485,7 +1485,8 @@ ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT, int from_s
  ******************************************************************************/
 
 void
-ICMCompileND_COPY (char *to_NT, int to_sdim, char *from_NT, int from_sdim, char *copyfun)
+ICMCompileND_COPY (char *to_NT, int to_sdim, char *from_NT, int from_sdim, char *basetype,
+                   char *copyfun)
 {
     DBUG_ENTER ();
 
@@ -1496,15 +1497,15 @@ ICMCompileND_COPY (char *to_NT, int to_sdim, char *from_NT, int from_sdim, char 
 
     /* allocate descriptor */
     INDENT;
-    fprintf (global.outfile, "SAC_ND_ALLOC_BEGIN( %s, 1, SAC_ND_A_DIM( %s))\n", to_NT,
-             from_NT);
+    fprintf (global.outfile, "SAC_ND_ALLOC_BEGIN( %s, 1, SAC_ND_A_DIM( %s), %s)\n", to_NT,
+             from_NT, basetype);
 
     /* copy descriptor entries and non-constant part of mirror */
     ICMCompileND_COPY__SHAPE (to_NT, to_sdim, from_NT, from_sdim);
 
     INDENT;
-    fprintf (global.outfile, "SAC_ND_ALLOC_END( %s, 1, SAC_ND_A_DIM( %s))\n", to_NT,
-             from_NT);
+    fprintf (global.outfile, "SAC_ND_ALLOC_END( %s, 1, SAC_ND_A_DIM( %s), %s)\n", to_NT,
+             from_NT, basetype);
 
     INDENT;
     fprintf (global.outfile, "SAC_ND_COPY__DATA( %s, %s, %s)\n", to_NT, from_NT, copyfun);
@@ -1559,7 +1560,7 @@ ICMCompileND_COPY__SHAPE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
 
 void
 ICMCompileND_MAKE_UNIQUE (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                          char *copyfun)
+                          char *basetype, char *copyfun)
 {
     DBUG_ENTER ();
 
@@ -1585,7 +1586,7 @@ ICMCompileND_MAKE_UNIQUE (char *to_NT, int to_sdim, char *from_NT, int from_sdim
     INDENT;
     fprintf (global.outfile, "SAC_IS_LASTREF__BLOCK_ELSE( %s)\n", from_NT);
     global.indent++;
-    ICMCompileND_COPY (to_NT, to_sdim, from_NT, from_sdim, copyfun);
+    ICMCompileND_COPY (to_NT, to_sdim, from_NT, from_sdim, basetype, copyfun);
     INDENT;
     fprintf (global.outfile, "SAC_ND_DEC_RC( %s, 1)\n", from_NT);
     global.indent--;
@@ -2078,6 +2079,55 @@ ICMCompileND_ARRAY_VECT2OFFSET_id (char *off_NT, int from_size, char *from_NT,
 
     Vect2Offset2 (off_NT, from_NT, from_size, SizeId, ReadId, arr_NT, arr_dim, NULL,
                   ShapeId);
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileND_UNSHARE( char *to_NT, int to_sdim,
+ *                                  char *from_NT, int from_sdim,
+ *                                  char *basetype,
+ *                                  char *copyfun)
+ *
+ * description:
+ *   implements the compilation of the following ICM:
+ *
+ *   ND_UNSHARE( va_NT, va_sdim, viv_NT, viv_sdim, basetype, copyfun)
+ *
+ ******************************************************************************/
+
+void
+ICMCompileND_UNSHARE (char *va_NT, int va_sdim, char *viv_NT, int viv_sdim,
+                      char *basetype, char *copyfun)
+{
+    DBUG_ENTER ();
+
+#define ND_UNSHARE
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef ND_UNSHARE
+
+    if (va_sdim == viv_sdim) {
+        INDENT;
+        fprintf (global.outfile, "SAC_IS_SHARED__BLOCK_BEGIN( %s, %d, %s, %d)\n", va_NT,
+                 va_sdim, viv_NT, viv_sdim);
+
+        global.indent++;
+        ICMCompileND_COPY (viv_NT, viv_sdim, va_NT, va_sdim, basetype, copyfun);
+        INDENT;
+        fprintf (global.outfile, "SAC_ND_DEC_RC( %s, 1)\n", va_NT);
+        global.indent--;
+
+        INDENT;
+        fprintf (global.outfile, "SAC_IS_SHARED__BLOCK_END( %s, %d, %s, %d)\n", va_NT,
+                 va_sdim, viv_NT, viv_sdim);
+    } else {
+        /* va_sdim != viv_sdim, hence cannot ever share */
+        INDENT;
+        fprintf (global.outfile, "SAC_NOOP()\n");
+    }
 
     DBUG_RETURN ();
 }

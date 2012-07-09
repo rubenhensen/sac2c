@@ -1693,8 +1693,10 @@ EMALprf (node *arg_node, info *arg_info)
     case F_type_error:
     case F_type_conv:
     case F_dispatch_error:
+    case F_unshare:
         /*
          * a,... = accu( iv, n, ...) (and prop_obj)
+         * v = unshare( a, iv1,...,ivn)   (v is aliases a)
          * v,... = _type_error_( ...)
          * require a special treatment as
          * none of its return value must be allocated

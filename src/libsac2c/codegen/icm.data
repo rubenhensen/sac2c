@@ -334,8 +334,9 @@ ICM_DEF( ND_COPY, ICM_TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
   ICM_INT( from_sdim)
+  ICM_ID( basetype)
   ICM_ID( copyfun)
-ICM_END( ND_COPY, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
+ICM_END( ND_COPY, (to_NT, to_sdim, from_NT, from_sdim, basetype, copyfun))
 #endif
 
 #if defined(ND_COPY__SHAPE) || defined(ICM_ALL)
@@ -355,8 +356,9 @@ ICM_DEF( ND_MAKE_UNIQUE, ICM_TRACE_NONE)
   ICM_INT( to_sdim)
   ICM_NT( from_NT)
   ICM_INT( from_sdim)
+  ICM_ID( basetype)
   ICM_ID( copyfun)
-ICM_END( ND_MAKE_UNIQUE, (to_NT, to_sdim, from_NT, from_sdim, copyfun))
+ICM_END( ND_MAKE_UNIQUE, (to_NT, to_sdim, from_NT, from_sdim, basetype, copyfun))
 #endif
 
 
@@ -1507,3 +1509,13 @@ ICM_DEF( ND_PRF_COND, ICM_TRACE_NONE)
 ICM_END( ND_PRF_COND, ( to_NT, cond_NT, then_NT, else_NT))
 #endif
 
+#if defined(ND_UNSHARE) || defined(ICM_ALL)
+ICM_DEF( ND_UNSHARE, ICM_TRACE_NONE)
+  ICM_NT( va_NT)
+  ICM_INT( va_sdim)
+  ICM_NT( viv_NT)
+  ICM_INT( viv_sdim)
+  ICM_ID( basetype)
+  ICM_ID( copyfun)
+ICM_END( ND_UNSHARE, (va_NT, va_sdim, viv_NT, viv_sdim, basetype, copyfun))
+#endif

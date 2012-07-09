@@ -1960,6 +1960,17 @@
         <node name="Ids" />
       </travuser>
     </traversal>
+    <traversal id="UFIV" name="Unshare index vectors in WL-folds" default="sons" include="unshare_fold_iv.h" >
+      <travuser>
+        <node name="Code" />
+        <node name="Fundef" />
+        <node name="Module" />
+        <node name="With" />
+        <node name="With2" />
+        <node name="Part" />
+        <node name="Exprs" />
+      </travuser>
+    </traversal>
     <traversal id="LUR" name="Loop Unrolling Traversal" default="sons" include="SSALUR.h" >
 <travuser>
   <node name="Ap" />

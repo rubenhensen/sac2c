@@ -70,13 +70,13 @@ extern void ICMCompileND_UPDATE__MIRROR (char *to_NT, int to_sdim, char *from_NT
                                          int from_sdim);
 
 extern void ICMCompileND_COPY (char *to_NT, int to_sdim, char *from_NT, int from_sdim,
-                               char *copyfun);
+                               char *basetype, char *copyfun);
 
 extern void ICMCompileND_COPY__SHAPE (char *to_NT, int to_sdim, char *from_NT,
                                       int from_sdim);
 
 extern void ICMCompileND_MAKE_UNIQUE (char *to_NT, int to_sdim, char *from_NT,
-                                      int from_sdim, char *copyfun);
+                                      int from_sdim, char *basetype, char *copyfun);
 
 extern void ICMCompileND_CREATE__ARRAY__SHAPE (char *to_NT, int to_sdim, int dim,
                                                int *shp, int val_size, char **vals_ANY,
@@ -103,5 +103,8 @@ extern void ICMCompileND_ARRAY_IDXS2OFFSET_id (char *off_NT, int idxs_size,
 
 extern void ICMCompileND_ARRAY_VECT2OFFSET_id (char *off_NT, int from_size, char *from_NT,
                                                int arr_dim, char *arr_NT);
+
+extern void ICMCompileND_UNSHARE (char *va_NT, int va_sdim, char *viv_NT, int viv_sdim,
+                                  char *basetype, char *copyfun);
 
 #endif /* _SAC_ICM2C_STD_H_ */

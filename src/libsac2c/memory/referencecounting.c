@@ -678,6 +678,18 @@ RCIprf (node *arg_node, info *arg_info)
          */
         break;
 
+    case F_unshare:
+        /*
+         * v = unshare( a, iv1,...,ivn)
+         *
+         * - Traverse a like app since a is aliased into v
+         * - Do not traverse iv.
+         */
+        INFO_MODE (arg_info) = rc_apuse;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        INFO_MODE (arg_info) = rc_prfuse;
+        break;
+
     case F_suballoc:
         /*
          * a_mem = suballoc( mem, idx)

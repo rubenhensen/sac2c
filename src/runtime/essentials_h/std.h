@@ -1578,4 +1578,21 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_INITGLOBALOBJECT_END() SAC_NOTHING ()
 #endif
 
+/******************************************************************************
+ *
+ * ICMs for the F_unshare primitive fun
+ * ====================================
+ *
+ * SAC_IS_SHARED__BLOCK_BEGIN( va_NT, va_sdim, viv_NT, viv_sdim)
+ * SAC_IS_SHARED__BLOCK_END( ...)
+ *
+ * Note: ND_UNSHARE(...) is a C-ICM.
+ ******************************************************************************/
+
+#define SAC_IS_SHARED__BLOCK_BEGIN(va_NT, va_sdim, viv_NT, viv_sdim)                     \
+    if ((SAC_ND_A_DESC_NULL (va_NT) != NULL) && (SAC_ND_A_DESC_NULL (viv_NT) != NULL)    \
+        && (SAC_ND_A_DESC_NULL (va_NT) == SAC_ND_A_DESC_NULL (viv_NT))) {
+
+#define SAC_IS_SHARED__BLOCK_END(va_NT, va_sdim, viv_NT, viv_sdim) }
+
 #endif /* _SAC_STD_H_ */

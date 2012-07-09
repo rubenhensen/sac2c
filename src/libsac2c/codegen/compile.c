@@ -4204,7 +4204,7 @@ COMPprfToUnq (node *arg_node, info *arg_info)
      * No RC manipulation requires as MAKE_UNIQUE always yields rc == 1
      */
     ret_node
-      = TCmakeAssignIcm2 ("ND_MAKE_UNIQUE", icm_args,
+      = TCmakeAssignIcm3 ("ND_MAKE_UNIQUE", icm_args, MakeBasetypeArg (lhs_type),
                           TCmakeIdCopyString (GenericFun (GF_copy, rhs_type)), NULL);
 
     DBUG_RETURN (ret_node);
@@ -6923,6 +6923,55 @@ COMPprfNoop (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     ret_node = TCmakeAssignIcm0 ("NOOP", NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfUnshare( node *arg_node, info *arg_info)
+ *
+ * @brief  Compile the F_unshare primitive function.
+ *
+ *  Input:
+ *      v = unshare( a, iv1,...,ivn);
+ *
+ *  is compiled into (approx):
+ *      ND_UNSHARE( a, ivn);
+ *      ...
+ *      ND_UNSHARE( a, iv1);
+ *      ND_ASSIGN( v, a);
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfUnshare (node *arg_node, info *arg_info)
+{
+    node *ret_node = NULL;
+
+    DBUG_ENTER ();
+
+    /* generate the assignment ND_ASSIGN( v, a); */
+    ret_node = RhsId (PRF_ARG1 (arg_node), arg_info);
+
+    node *accu_id = PRF_ARG1 (arg_node);
+
+    /* walk over the args2..n and generate ND_UNSHARE icm nodes */
+    for (node *prfargs = PRF_EXPRS2 (arg_node); prfargs != NULL;
+         prfargs = EXPRS_NEXT (prfargs)) {
+        /* get the indev-vector id */
+        node *iv_id = EXPRS_EXPR (prfargs);
+
+        ret_node
+          = TCmakeAssignIcm4 ("ND_UNSHARE", /* C-ICM */
+                              MakeTypeArgs (ID_NAME (accu_id), ID_TYPE (accu_id), FALSE,
+                                            TRUE, FALSE, NULL),
+                              MakeTypeArgs (ID_NAME (iv_id), ID_TYPE (iv_id), FALSE, TRUE,
+                                            FALSE, NULL),
+                              MakeBasetypeArg (ID_TYPE (iv_id)),
+                              TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (iv_id))),
+                              ret_node);
+    }
 
     DBUG_RETURN (ret_node);
 }
