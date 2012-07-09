@@ -704,8 +704,6 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
         DBUG_ASSERT (N_array == NODE_TYPE (z), "Confusion3");
     }
 
-    DBUG_ASSERT (NULL != z, "oops");
-
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);

@@ -983,7 +983,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
     }
 
     DBUG_PRINT ("Finished building inverse projection scalar");
-    DBUG_ASSERT ((NULL == z) || N_avis == NODE_TYPE (z), "failed to gen inverse");
+    DBUG_ASSERT ((NULL == z) || (N_avis == NODE_TYPE (z)) || (N_num == NODE_TYPE (z)),
+                 "failed to gen inverse");
     DBUG_RETURN (z);
 }
 
