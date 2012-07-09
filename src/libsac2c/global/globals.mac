@@ -802,15 +802,6 @@ GLOBAL (char *, break_fun_name, NULL, xfree_dummy)
  *  break_fun_name for finding function information during a break and print
  */
 
-GLOBAL (int, prtrange_stepping_specifier, 0, xfree_dummy)
-/*
- * Specifies the step at which each print is done when -printstart and
- * -printstop options are used:
- * 0 = phase stepping
- * 1 = sub-phase stepping
- * 2 = cycle stepping
- */
-
 GLOBAL (compiler_phase_t, prtphafun_start_phase, PH_undefined, xfree_dummy)
 /*
  * Start printing the specific function at this phase.
@@ -844,7 +835,7 @@ GLOBAL (compiler_phase_t, prtphafun_stop_cycle, PH_undefined, xfree_dummy)
  * Start printing the specific function at this cycle.
  */
 
-GLOBAL (int, prtphafun_stop_cycle_specifier, 1, xfree_dummy)
+GLOBAL (int, prtphafun_stop_cycle_specifier, 0, xfree_dummy)
 /*
  * Specifies the the stop pass to print within a specific cyclephase loop.
  */

@@ -448,22 +448,21 @@ PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
     /*
      *cyclephase printing
      */
-    if ((global.prtphafun_start_cycle != PH_undefined && global.prt_cycle_range == TRUE)
-        || global.prtphafun_start_cycle == cyclephase) {
+    if ((global.prtphafun_start_cycle == cyclephase
+         && global.prtphafun_start_cycle_specifier <= global.cycle_counter
+         && global.prtphafun_stop_cycle_specifier >= global.cycle_counter)
+        || (global.prtphafun_start_cycle == cyclephase
+            && global.prtphafun_stop_cycle_specifier == 0)) {
         if (global.prtphafun_stop_phase == PH_undefined) {
             CTIerror (
               "Please use both -printstart <phase_id> and -printstop <phase_id>\n"
               "If it is only one phase/subphase/cyclephase you want reported\n"
               "\nthen the -printstart and -printstop options will be indentical.\n");
         } else {
-            global.prt_cycle_range = TRUE;
             PRTdoPrintFile (FMGRwriteOpen ("%s.%d.%s.%d", global.outfilename,
                                            global.phase_num, PHIphaseIdent (cyclephase),
                                            global.cycle_counter),
                             syntax_tree);
-            if (global.prtphafun_stop_cycle == cyclephase) {
-                global.prt_cycle_range = FALSE;
-            }
         }
     }
 
@@ -579,16 +578,17 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
         /*
          *fundef cyclephase printing
          */
-        if ((global.prtphafun_start_cycle != PH_undefined
-             && global.prt_cycle_range == TRUE)
-            || global.prtphafun_start_cycle == cyclephase) {
+        if ((global.prtphafun_start_cycle == cyclephase
+             && global.prtphafun_start_cycle_specifier <= global.cycle_counter
+             && global.prtphafun_stop_cycle_specifier >= global.cycle_counter)
+            || (global.prtphafun_start_cycle == cyclephase
+                && global.prtphafun_stop_cycle_specifier == 0)) {
             if (global.prtphafun_stop_phase == PH_undefined) {
                 CTIerror (
                   "Please use both -printstart <phase_id> and -printstop <phase_id>\n"
                   "If it is only one phase/subphase/cyclephase you want reported\n"
                   "\nthen the -printstart and -printstop options will be indentical.\n");
             } else {
-                global.prt_cycle_range = TRUE;
                 if (global.break_fun_name == NULL
                     || STReq (FUNDEF_NAME (fundef), global.break_fun_name)) {
                     PRTdoPrintNodeFile (FMGRwriteOpen ("%s.%d.%s.%d.%s",
@@ -598,9 +598,6 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
                                                        global.cycle_counter,
                                                        FUNDEF_NAME (fundef)),
                                         fundef);
-                }
-                if (global.prtphafun_stop_cycle == cyclephase) {
-                    global.prt_cycle_range = FALSE;
                 }
             }
         }

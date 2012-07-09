@@ -194,7 +194,7 @@ CheckStartStopPhase (void)
                 } else {
                     /* CYCLE PASS */
                     if (global.prtphafun_start_cycle_specifier
-                        > global.prtphafun_stop_cycle_specifier) {
+                        > global.prtphafun_stop_cycle_specifier + 1) {
                         CTIerror ("Illegal compiler phase specification in options: \n"
                                   "  -printstart and -printstop\n"
                                   "Start cycle pass occurs after stop cycle pass.",
@@ -360,7 +360,7 @@ InterpretPrintOptionPhase (char *option, enum phase_mode_t mode)
                         global.prtphafun_start_cycle_specifier = num;
                         break;
                     case STOP:
-                        global.prtphafun_start_cycle_specifier = num;
+                        global.prtphafun_stop_cycle_specifier = num;
                         break;
                     }
                 } else {
