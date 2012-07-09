@@ -1701,8 +1701,6 @@ GenerateExtremaComputations (node *arg_node, info *arg_info)
         break;
 
     default:
-        /* We descend into the depths here */
-        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
         break;
     }
 
@@ -1931,7 +1929,8 @@ IVEXPassign (node *arg_node, info *arg_info)
  *
  *    0. If result (LHS) is AKV, do nothing.
  *
- *    1. Propagate iv extrema from RHS to LHS.
+ *    1. Propagate iv extrema from RHS to LHS, but only for
+ *       integer scalars and vectors.
  *
  *    2. If extrema exist for one argument, and other argument is
  *       AKV, introduce code to compute extrema for this LHS.
@@ -1944,6 +1943,7 @@ IVEXPlet (node *arg_node, info *arg_info)
 {
     node *lhsavis;
     char *lhsname;
+    ntype *typ;
 
     DBUG_ENTER ();
 
@@ -1953,12 +1953,16 @@ IVEXPlet (node *arg_node, info *arg_info)
 #ifdef VERBOSE
     DBUG_PRINT ("Looking at %s", AVIS_NAME (lhsavis));
 #endif // VERBOSE
-    if (!TYisAKV (AVIS_TYPE (lhsavis))) {
+    typ = AVIS_TYPE (lhsavis);
+    if ((!TYisAKV (typ)) && (TUisIntScalar (typ) || TUisIntVect (typ))) {
+
         INFO_LET (arg_info) = arg_node;
         arg_node = GenerateExtremaComputations (arg_node, arg_info);
         arg_node = PropagateExtrema (arg_node, arg_info);
         INFO_LET (arg_info) = NULL;
     }
+
+    LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
