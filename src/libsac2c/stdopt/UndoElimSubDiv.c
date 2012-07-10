@@ -51,6 +51,8 @@
 #include "free.h"
 #include "DupTree.h"
 
+#include "globals.h"
+
 #include "UndoElimSubDiv.h"
 
 /*
