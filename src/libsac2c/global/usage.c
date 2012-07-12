@@ -147,11 +147,6 @@ PrintFeatureSet (void)
     printf ("    MuTC support:                       disabled\n");
 #endif
 
-#if ENABLE_HWLOC
-    printf ("    hwloc thread binding:                enabled\n");
-#else
-    printf ("    hwloc thread binding:               disabled\n");
-#endif
     DBUG_RETURN ();
 }
 
@@ -594,9 +589,7 @@ PrintMultithreadOptions (void)
             "dynamically\n"
             "                    upon application startup using the generic command "
             "line\n"
-            "                    option \"-mt <n>\" or by setting the SAC_PARALLEL "
-            "environment\n"
-            "                    variable.\n"
+            "                    option \"-mt <n>\".\n"
             "\n"
             "    -mtmode <n>     Enable a explicit organization scheme for "
             "multi-threaded program\n"
@@ -1074,13 +1067,6 @@ PrintEnvironmentVariables (void)
       "\n"
       "    SACBASE         Base directory of SAC standard lib installation.\n"
       "    SAC2CBASE       Base directory of SAC installation.\n"
-      "    SAC_PARALLEL    (optional) specifies the number of threads to use.\n"
-      "    SAC_NUM_SOCKETS (optional) specifies the number of sockets to use.\n"
-      "    SAC_NUM_CORES   (optional) specifies the number of cores per socket to use.\n"
-      "    SAC_NUM_PUS     (optional) specifies the number of processing units (e.g\n"
-      "                    hardware threads) per core to use.\n"
-      "                    If SAC_NUM_SOCKETS, SAC_NUM_CORES or SAC_NUM_PUS are not\n"
-      "                    set or set to 0, threads will not be bound."
       "\n");
 
     DBUG_RETURN ();
@@ -1125,7 +1111,6 @@ PrintAuthors (void)
             "      Aram Visser\n"
             "      Tim van Deurzen\n"
             "      Roeland Douma\n"
-            "      Oscar Leijendekker\n"
             "      Miguel Diogo\n");
 
     DBUG_RETURN ();
