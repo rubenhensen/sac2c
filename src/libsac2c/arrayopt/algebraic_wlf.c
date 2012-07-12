@@ -9,10 +9,10 @@
  * @terminology:
  *        ProducerWL: The WL that will no longer
  *        exist after this phase completes. In the example
- *        below, A is the producerWL.
+ *        below, A is the PWL.
  *
  *        ConsumerWL: the WL that will absorb the block(s) from
- *        the producerWL. In the example below, B is the consumerWL.
+ *        the PWL. In the example below, B is the consumerWL.
  *
  * @brief Algebraic With-Loop Folding
  *        This performs WLF on AKD arrays, not foldable by WLF.
@@ -22,43 +22,43 @@
  *            - Ability to fold arrays whose shapes are not
  *              known statically. Specifically, if the index
  *              set of the consumerWL is known to be identical to,
- *              or a subset of, the index set of the producerWL,
+ *              or a subset of, the index set of the PWL,
  *              folding will occur.
  *
- *           - the producerWL must have an SSAASSIGN.
+ *           - the PWL must have an SSAASSIGN.
  *
- *           - the producerWL must have an empty code block (so that the cost
+ *           - the PWL must have an empty code block (so that the cost
  *             must have of duplicating it is zero), or it must have
  *             a NEEDCOUNT of 1.
- *             There must be no other references to the producerWL.
+ *             There must be no other references to the PWL.
  *             If CVP and friends have done their job, this should
  *             not be a severe restriction.
  *
  *             This code includes a little trick to convert a
- *             modarray( producerWL) into a genarray( shape( producerWL)).
+ *             modarray( PWL) into a genarray( shape( PWL)).
  *             This happens after any folding is performed.
  *             Hence, there is a kludge to
  *             allow a NEEDCOUNT of 2 if there is a modarray consumerWL
  *             present.
  *
- *           - the producerWL must have a DEPDEPTH value of 1??
+ *           - the PWL must have a DEPDEPTH value of 1??
  *             I think the idea here is to ensure that we do not
- *             pull a producerWL inside a loop, which could cause
+ *             pull a PWL inside a loop, which could cause
  *             increased computation.
  *
- *           - The consumerWL must refer to the producerWL via
- *              _sel_VxA_(idx, producerWL)
+ *           - The consumerWL must refer to the PWL via
+ *              _sel_VxA_(idx, PWL)
  *             and idx must be the consumerWL's WITHID, or a
  *             linear function thereof.
  *
- *           - The producerWL operator is a genarray or modarray
+ *           - The PWL operator is a genarray or modarray
  *             (NO folds, please).
  *
  *           - The WL is a single-operator WL. (These should have been
  *             eliminated by phase 10, I think.)
  *
  *           - The index set of the consumerWL's partition matches
- *             the generator of the producerWL, or is a subset
+ *             the generator of the PWL, or is a subset
  *             of it. Note that this implies that
  *             the WL-bounds are the same length, which
  *             may not be the case. Consider this example:
@@ -120,8 +120,8 @@
  *
  *  TODO:
  *   1. At present, AWLF does not occur unless ALL references
- *      to the producerWL are in the consumerWL, or unless the
- *      producerWL has an empty code block. Here is a possible extension
+ *      to the PWL are in the consumerWL, or unless the
+ *      PWL has an empty code block. Here is a possible extension
  *      to allow small computations to be folded into several
  *      consumerWL:
  *
@@ -141,16 +141,16 @@
  *      in each WL. Hmm. The cost must be associated with the
  *      WL-partition.
  *
- *      If the producerWL is otherwise ripe for folding, we allow
+ *      If the PWL is otherwise ripe for folding, we allow
  *      the fold to occur if the cost is less than some threshold,
- *      even if the references to the producerWL occur in several
+ *      even if the references to the PWL occur in several
  *      consumerWL.
  *
  *   2. Permit WLF through reshape operations.
- *      The idea here is that, if the consumerWL and producerWL
+ *      The idea here is that, if the consumerWL and PWL
  *      operating in wlidx mode, then
  *      the folding can be done, because neither WL cares about
- *      the shape of the producerWL result, just that they have
+ *      the shape of the PWL result, just that they have
  *      identical element counts.
  *
  *      A bit more thought here might give a nice way to
@@ -407,7 +407,7 @@ isEmptyPartitionCodeBlock (node *partn)
  *
  * @fn node *CreateIvForSel(...)
  *
- * @brief The producerWL has a non-scalar cellexpr, and the
+ * @brief The PWL has a non-scalar cellexpr, and the
  *        iv in _sel_VxA_( iv, pwl) is the consumerWL WITHID_VEC.
  *        This code generates a flattened N_array for
  *        take( [ -dim], WITHID_IDS) and returns its avis.
@@ -446,8 +446,8 @@ CreateIvForSel (int dim, int dropct, node *ids, node **vardecs, node **preassign
  *        cell from the ProducerWL, but also selects a scalar from the
  *        cell. We alter the sel() to select the scalar only.
  *
- * @param arg_node: the _sel_VxA_( iv, producerWL).
- * @param cellexpr: the CODE_EXPRS from the producerWL
+ * @param arg_node: the _sel_VxA_( iv, PWL).
+ * @param cellexpr: the CODE_EXPRS from the PWL
  *
  * @result z: if iv=[i,j,k], and the cell is rank-1, then we
  *         generate: _sel_VxA_( [k], cellexpr)
@@ -542,48 +542,51 @@ BypassNoteintersect (node *arg_node)
  * @fn bool checkAWLFoldable( node *arg_node, info *arg_info,
  * node *cwlp, int level)
  *
- * @brief check if _sel_VxA_(idx, producerWL), appearing in
+ * @brief check if _sel_VxA_(idx, PWL), appearing in
  *        consumer WL partition cwlp, is foldable into cwlp.
  *        Most checks have already been made by AWLFI.
  *
  *        We have to be careful, because (See Bug #652) the
- *        producerWL may have changed underfoot, due to CWLE
+ *        PWL may have changed underfoot, due to CWLE
  *        and the like. Specifically, the copy-WL that was
- *        the producerWL may not exist any more, or it may
+ *        the PWL may not exist any more, or it may
  *        have been replaced by a multi-op WL, which would
  *        be equally unpleasant.
  *
- * @param _sel_VxA_( idx, producerWL)
+ * @param _sel_VxA_( idx, PWL)
  * @param cwlp: The partition into which we would like to
- *        fold this sel().
+ *        fold this sel(). Will become NULL, if this is a naked consumer.
  * @param level
- * @result If the producerWL is foldable into the consumerWL, return the
- *         N_part of the producerWL that should be used for the fold; else NULL.
+ * @result If the PWL is foldable into the consumerWL, return the
+ *         N_part of the PWL that should be used for the fold; else NULL.
  *
  *****************************************************************************/
 static node *
 checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
 {
     node *producerWLavis;
-    node *producerWL;
+    node *PWL;
     node *pwlp = NULL;
 
     DBUG_ENTER ();
 
-    producerWL = AWLFIfindWlId (PRF_ARG2 (arg_node)); /* Now the N_id */
-    if (NULL != producerWL) {
-        producerWLavis = ID_AVIS (producerWL);
-        producerWL = AWLFIfindWL (producerWL); /* Now the N_with */
+    PWL = AWLFIfindWlId (PRF_ARG2 (arg_node)); /* Now the N_id */
+    if (NULL != PWL) {
+        producerWLavis = ID_AVIS (PWL);
+        PWL = AWLFIfindWL (PWL); /* Now the N_with */
 
         /* Allow naked _sel_() of WL */
+        if (AVIS_DEFDEPTH (producerWLavis) == level) {
+            cwlp = NULL; /* cwlp was a lie anyway, in this case */
+        }
         if (((AVIS_DEFDEPTH (producerWLavis) + 1) >= level)
-            && (AWLFIisSingleOpWL (producerWL))) {
-            DBUG_PRINT ("producerWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
+            && (AWLFIisSingleOpWL (PWL))) {
+            DBUG_PRINT ("PWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
                         AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
                         AVIS_WL_NEEDCOUNT (producerWLavis));
             /* Search for pwlp that intersects cwlp */
             INFO_INTERSECTTYPE (arg_info)
-              = CUBSLfindMatchingPart (arg_node, cwlp, producerWL, NULL,
+              = CUBSLfindMatchingPart (arg_node, cwlp, PWL, NULL,
                                        &INFO_PRODUCERPART (arg_info));
 
             switch (INFO_INTERSECTTYPE (arg_info)) {
@@ -608,7 +611,7 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
 
             /* Allow fold if needcounts match OR if pwlp
              * has empty code block. This is a crude cost function:
-             * We should allow "cheap" producerWL partitions to fold.
+             * We should allow "cheap" PWL partitions to fold.
              * E.g., toi(iota(N)).
              */
             if ((NULL != pwlp)
@@ -622,16 +625,16 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
                 pwlp = NULL;
             }
         } else {
-            DBUG_PRINT ("producerWL %s will never fold. AVIS_DEFDEPTH: %d, level: %d",
+            DBUG_PRINT ("PWL %s will never fold. AVIS_DEFDEPTH: %d, level: %d",
                         AVIS_NAME (producerWLavis), AVIS_DEFDEPTH (producerWLavis),
                         level);
         }
 
         if (NULL != pwlp) {
             AVIS_ISWLFOLDED (producerWLavis) = TRUE;
-            DBUG_PRINT ("producerWL %s will be folded.", AVIS_NAME (producerWLavis));
+            DBUG_PRINT ("PWL %s will be folded.", AVIS_NAME (producerWLavis));
         } else {
-            DBUG_PRINT ("producerWLs %s can not be folded, at present.",
+            DBUG_PRINT ("PWL %s can not be folded, at present.",
                         AVIS_NAME (producerWLavis));
         }
     }
@@ -648,18 +651,18 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
  *        said name and its original, which we will use
  *        to do renames in the copied WL code block.
  *        See caller for description. Basically,
- *        we have a producerWL with generator of this form:
+ *        we have a PWL with generator of this form:
  *
- *    producerWL = with {
+ *    PWL = with {
  *         ( . <= iv=[i,j] <= .) : _sel_VxA_( iv, AAA);
  *
- *        We want to perform renames in the producerWL code block as follows:
+ *        We want to perform renames in the PWL code block as follows:
  *
  *        iv --> iv'
  *        i  --> i'
  *        j  --> j'
  *
- * @param: arg_node: one N_avis node of the producerWL generator (e.g., iv),
+ * @param: arg_node: one N_avis node of the PWL generator (e.g., iv),
  *                   to serve as iv for above assigns.
  *         arg_info: your basic arg_info.
  *         shp:      the shape descriptor of the new LHS.
@@ -693,9 +696,9 @@ populateLut (node *arg_node, info *arg_info, shape *shp)
  *
  * @ fn static node *makeIdxAssigns( node *arg_node, node *pwlpart)
  *
- * @brief for a producerWL partition, with generator:
+ * @brief for a PWL partition, with generator:
  *        (. <= iv=[i,j] < .)
- *        and a consumer _sel_VxA_( idx, producerWL),
+ *        and a consumer _sel_VxA_( idx, PWL),
  *
  *        generate an N_assigns chain of this form:
  *
@@ -779,24 +782,24 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
  *
  * @brief
  *   In
- *    producerWL = with...  elb = _sel_VxA_(iv=[i,j], AAA) ...
- *    consumerWL = with...  elc = _sel_VxA_(idx, producerWL) ...
+ *    PWL = with...  elb = _sel_VxA_(iv=[i,j], AAA) ...
+ *    consumerWL = with...  elc = _sel_VxA_(idx, PWL) ...
  *
  *   Replace, in the consumerWL:
- *     elc = _sel_VxA_( idx, producerWL)
+ *     elc = _sel_VxA_( idx, PWL)
  *   by
  *     iv = idx;
  *     i = _sel_VxA_([0], idx);
  *     j = _sel_VxA_([1], idx);
  *
- *     {code block from producerWL, with SSA renames}
+ *     {code block from PWL, with SSA renames}
  *
- *     tmp = producerWL)
+ *     tmp = PWL)
  *     elc = tmp;
  *
  * @params
  *    arg_node: N_assign for the sel()
- *    producerWLPart: N_part node of producerWL.
+ *    PWL: N_part node of PWL.
  *
  *****************************************************************************/
 static node *
@@ -824,7 +827,7 @@ doAWLFreplace (node *arg_node, node *producerWLPart, info *arg_info)
         newblock
           = DUPdoDupTreeLutSsa (oldblock, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
     } else {
-        /* If producerWL code block is empty, don't duplicate code block.
+        /* If PWL code block is empty, don't duplicate code block.
          * If the cell is non-scalar, we still need a _sel_() to pick
          * the proper cell element.
          */
@@ -914,7 +917,7 @@ AWLFfundef (node *arg_node, info *arg_info)
  *
  * @fn node AWLFassign( node *arg_node, info *arg_info)
  *
- * @brief For a foldable WL, arg_node is x = _sel_VxA_(iv, producerWL).
+ * @brief For a foldable WL, arg_node is x = _sel_VxA_(iv, PWL).
  *
  *****************************************************************************/
 node *
@@ -982,13 +985,13 @@ AWLFwith (node *arg_node, info *arg_info)
     WITH_REFERENCED_CONSUMERWL (arg_node) = NULL;
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
-    /* Try to replace modarray(producerWL) by genarray(shape(producerWL)).
-     * This has no effect on the producerWL itself, but is needed to
-     * eliminate the reference to producerWL, so it can be removed by DCR.
+    /* Try to replace modarray(PWL) by genarray(shape(PWL)).
+     * This has no effect on the PWL itself, but is needed to
+     * eliminate the reference to PWL, so it can be removed by DCR.
      *
-     * If the producerWL has been folded, its result will have
+     * If the PWL has been folded, its result will have
      * AVIS_FOLDED set. Since there are, by the definition of
-     * folding, no other references to the producerWL, we can
+     * folding, no other references to the PWL, we can
      * blindly replace the modarray by the genarray.
      */
     consumerop = WITH_WITHOP (arg_node);
@@ -1092,10 +1095,10 @@ AWLFids (node *arg_node, info *arg_info)
  * @fn node *AWLFprf( node *arg_node, info *arg_info)
  *
  * @brief
- *   Examine all _sel_VxA_( idx, producerWL)  primitives to see if
+ *   Examine all _sel_VxA_( idx, PWL)  primitives to see if
  *   the _sel_VxA_ is contained inside a WL, and that idx has
  *   intersect information attached to it.
- *   If so, producerWL may be a candidate for folding into this WL.
+ *   If so, PWL may be a candidate for folding into this WL.
  *
  *   If idx does not have an SSAASSIGN, it means idx is a WITHID.
  *   If so, we will visit here again, after extrema have been

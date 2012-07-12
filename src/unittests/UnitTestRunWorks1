@@ -14,6 +14,7 @@ sac2c -v0 -O3 $1 -o $1.exe $optson
           # HUSH echo Worktest: $1 OK; 
           junk=0
 	else 
-           echo Worktest: $1 failed with completion code $z;
+           echo -e '\a\a'
+           echo Worktest: $1 failed with completion code $z; 
 	fi
 rm -f $1.exe $1.exe.c

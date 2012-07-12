@@ -204,7 +204,7 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
 /******************************************************************************
  *
  * function:
- *   node *CheckForSuperfluousCodes(node *wln)
+ *   node *RemoveSuperfluousCodes(node *wln)
  *
  * description:
  *   remove all unused N_code nodes of the given WL.
@@ -215,7 +215,7 @@ CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node)
  ******************************************************************************/
 
 static node *
-CheckForSuperfluousCodes (node *wln)
+RemoveSuperfluousCodes (node *wln)
 {
     node **tmp;
 
@@ -619,17 +619,17 @@ IntersectTypeName (intersect_type_t itype)
  *
  * @fn node * CUBSLfindMatchingPart(...
  *
- * @brief Search for a producerWL partition that is the best
+ * @brief Search for a pwl partition that is the best
  *        match to the consumerWLPart index set.
  *
  *        The search comprises two steps:
  *
- *        1. Find a partition in the producerWL that has bounds
+ *        1. Find a partition in the pwl that has bounds
  *           that match those in the F_noteintersect bounds, if
  *           such still exists.
  *           This search is required because other optimizations
  *           may have split a partition, reordered partitions
- *           within the producerWL, or deleted the partition
+ *           within the pwl, or deleted the partition
  *           entirely.
  *
  *           If we are unable to find a matching partition, we
@@ -641,18 +641,19 @@ IntersectTypeName (intersect_type_t itype)
  *
  *            a. Null - no intersection, so no folding is possible.
  *
- *            b. ConsumerWL index set is subset of producerWL,
+ *            b. ConsumerWL index set is subset of pwl,
  *               or matches exactly.
  *               Folding is trivial, using the intersect data in
  *               the _noteintersect.
  *
- *            c. ConsumerWL index set is superset of producerWL.
+ *            c. ConsumerWL index set is superset of pwl.
  *               Folding is possible, but the ConsumerWL partition
  *               must be split into two or three partitions.
  *
- * @params arg_node: the N_prf of the sel(idx, producerWL).
- *         consumerpart: the consumerWL partition containing arg_node.
- *         producerWL: the N_with of the producerWL.
+ * @params arg_node: the N_prf of the sel(idx, pwl).
+ *         cwlp: the consumerWL partition containing arg_node,
+ *           or NULL, if we have a naked consumer.
+ *         pwl: the N_with of the pwl.
  *         arg_info: Either arg_info or NULL.
  *
  * @result: The match we actually found.
@@ -661,8 +662,8 @@ IntersectTypeName (intersect_type_t itype)
  *
  *****************************************************************************/
 intersect_type_t
-CUBSLfindMatchingPart (node *arg_node, node *consumerpart, node *producerWL,
-                       info *arg_info, node **producerpart)
+CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
+                       node **producerpart)
 {
     node *producerWLGenerator;
     node *producerWLPart;
@@ -676,20 +677,19 @@ CUBSLfindMatchingPart (node *arg_node, node *consumerpart, node *producerWL,
 
     DBUG_ENTER ();
     DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "expected N_prf arg_node");
-    DBUG_ASSERT (N_with == NODE_TYPE (producerWL), "expected N_with producerWL");
+    DBUG_ASSERT (N_with == NODE_TYPE (pwl), "expected N_with pwl");
 
-    idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, producerWL) */
+    idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, pwl) */
     idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
     idxparent = LET_EXPR (ASSIGN_STMT (idxassign));
 
-    producerWLPart = WITH_PART (producerWL);
+    producerWLPart = WITH_PART (pwl);
     (*producerpart) = NULL;
 
-    /* Find producerWL partition, if any, that matches the extrema of iv */
+    /* Find pwl partition, if any, that matches the extrema of iv */
     while (producerWLPart != NULL) {
         producerWLGenerator = PART_GENERATOR (producerWLPart);
-        intersecttype
-          = FindIntersection (idx, producerWLGenerator, consumerpart, arg_info);
+        intersecttype = FindIntersection (idx, producerWLGenerator, cwlp, arg_info);
         if (intersecttype > z) {
             (*producerpart) = producerWLPart; /* Note best match */
             z = intersecttype;
@@ -1122,7 +1122,7 @@ CUBSLwith (node *arg_node, info *arg_info)
                  "N_code list has been tangled");
     INFO_INTERSECTTYPE (arg_info) = oldintersecttype;
     INFO_WITHCODE (arg_info) = oldwithcode;
-    arg_node = CheckForSuperfluousCodes (arg_node);
+    arg_node = RemoveSuperfluousCodes (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -1251,46 +1251,42 @@ CUBSLlet (node *arg_node, info *arg_info)
 node *
 CUBSLprf (node *arg_node, info *arg_info)
 {
-    node *producerWL;
+    node *pwl = NULL;
     node *pwlid = NULL;
-    node *noteintersect;
+    node *noteintersect = NULL;
 
     DBUG_ENTER ();
 
-    if (((F_sel_VxA == PRF_PRF (arg_node)) || (F_idx_sel == PRF_PRF (arg_node)))
-        && (INFO_CONSUMERPART (arg_info) != NULL)
-        && (AWLFIisHasNoteintersect (arg_node))) {
-
+    if ((F_sel_VxA == PRF_PRF (arg_node)) || (F_idx_sel == PRF_PRF (arg_node))) {
+        noteintersect = AWLFIfindNoteintersect (arg_node);
         DBUG_PRINT ("Looking at %s =_sel_VxA_( iv, X)",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
         pwlid = AWLFIfindWlId (PRF_ARG2 (arg_node));
-        producerWL = AWLFIfindWL (pwlid);
+        pwl = AWLFIfindWL (pwlid);
+    }
 
-        /* If cwl intersect information is stale, due to cubeslicing of
-         * pwl, discard it and start over */
-        noteintersect = AWLFIfindNoteintersect (arg_node);
-        if ((NULL != noteintersect) && (NULL != producerWL)
-            && (!AWLFIisValidNoteintersect (noteintersect, producerWL))) {
+    /* If cwl intersect information is stale, due to cubeslicing of
+     * pwl, discard it and start over */
+    if ((NULL != noteintersect) && (NULL != pwl)) {
+        if (!AWLFIisValidNoteintersect (noteintersect, pwlid)) {
             noteintersect = AWLFIdetachNoteintersect (noteintersect);
             FREEdoFreeNode (PRF_ARG1 (arg_node));
             PRF_ARG1 (arg_node) = noteintersect;
             DBUG_PRINT ("Discarded invalid F_noteintersect for cwl=%s, pwl=%s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
                         AVIS_NAME (ID_AVIS (pwlid)));
-            producerWL = NULL;
-        }
-
-        /* producerWL may be entirely gone now, perhaps
-         * due to it being copyWL, etc.
-         * Or, it may have been sliced, so partition bounds differ from
-         * what they were originally.
-         *
-         * Side effect of call is to set INFO_CONSUMERPART and
-         * INFO_INTERSECTTYPE.
-         */
-        if (NULL != producerWL) {
+            pwl = NULL;
+        } else {
+            /* producerWL may be entirely gone now, perhaps
+             * due to it being copyWL, etc.
+             * Or, it may have been sliced, so partition bounds differ from
+             * what they were originally.
+             *
+             * Side effect of call is to set INFO_CONSUMERPART and
+             * INFO_INTERSECTTYPE.
+             */
             INFO_INTERSECTTYPE (arg_info)
-              = CUBSLfindMatchingPart (arg_node, INFO_CONSUMERPART (arg_info), producerWL,
+              = CUBSLfindMatchingPart (arg_node, INFO_CONSUMERPART (arg_info), pwl,
                                        arg_info, &INFO_PRODUCERPART (arg_info));
             if (INTERSECT_sliceneeded == INFO_INTERSECTTYPE (arg_info)) {
                 INFO_CUTNOW (arg_info) = TRUE;

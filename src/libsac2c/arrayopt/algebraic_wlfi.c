@@ -8,19 +8,17 @@
  * @defgroup awlfi Algebraic With-Loop Folding Inference
  *
  * @terminology:
- *        ProducerWL:
- *        The WL that will no longer
- *        exist after this phase completes. In the example
+ *        PWL:
+ *        The WL that will no longer exist after AWLF completes. In the example
  *        below, A is the producerWL.
  *
- *        ConsumerWL:
+ *        CWL:
  *        the WL that will absorb the block(s) from
- *        the producerWL. In the example below, B is the ConsumerWL.
+ *        the producerWL. In the example below, B is the CWL.
  *
  *        We also allow the consumer sel() not to be a WL,
  *        so that expressions such as:  (iota(1000000)[42] will
- *        not generate array temps. In this case, we require that
- *        iv either be constant or have known extrema.
+ *        not generate array temps. This is the "nake consumer" case.
  *
  *        Intersection expression: the expression that
  *        specifies the set of index vectors in one WL partition
@@ -150,7 +148,7 @@ struct INFO {
     node *preassignswl;      /* These go above the consumerWL */
     node *consumerwlpart;    /* The current consumerWL partition */
     node *consumerwl;        /* The current consumerWL N_with */
-    node *consumerwllhs;     /* The current consumerWL LHS */
+    node *consumerwlids;     /* The current consumerWL N_ids */
     node *producerwl;        /* The producerWL N_with for this PWL */
     node *producerwllhs;     /* The producerWL LHS for this consumerWL */
     node *let;               /* The N_let node */
@@ -178,7 +176,7 @@ struct INFO {
 #define INFO_PREASSIGNSWL(n) ((n)->preassignswl)
 #define INFO_CONSUMERWLPART(n) ((n)->consumerwlpart)
 #define INFO_CONSUMERWL(n) ((n)->consumerwl)
-#define INFO_CONSUMERWLLHS(n) ((n)->consumerwllhs)
+#define INFO_CONSUMERWLIDS(n) ((n)->consumerwlids)
 #define INFO_PRODUCERWL(n) ((n)->producerwl)
 #define INFO_PRODUCERWLLHS(n) ((n)->producerwllhs)
 #define INFO_LET(n) ((n)->let)
@@ -205,7 +203,7 @@ MakeInfo (node *fundef)
     INFO_PREASSIGNSWL (result) = NULL;
     INFO_CONSUMERWLPART (result) = NULL;
     INFO_CONSUMERWL (result) = NULL;
-    INFO_CONSUMERWLLHS (result) = NULL;
+    INFO_CONSUMERWLIDS (result) = NULL;
     INFO_PRODUCERWL (result) = NULL;
     INFO_PRODUCERWLLHS (result) = NULL;
     INFO_LET (result) = NULL;
@@ -584,7 +582,7 @@ AWLFIisHasNoteintersect (node *arg_node)
  * @brief: Predicate for presence of valid F_noteintersect on sel() statement.
  *
  * @param: arg_node - a consumerWL F_noteintersect N_prf node.
- *         pwl - the producer WL referenced by the consumerWL.
+ *         pwld - the producer WL N_id referenced by the consumerWL.
  *
  * @result: TRUE if arg_node is a valid F_noteintersect.
  *          By "valid", we SHOULD mean that the PWL and the F_noteintersect
@@ -599,32 +597,32 @@ AWLFIisHasNoteintersect (node *arg_node)
  *          This invalidates the F_noteintersect previously generated
  *          within C.
  *
- *          However, for now, we merely check that the partition count for
+ *          However, for now, we check that the partition count for
  *          B (the PWL) matches the partition count for the F_noteintersect
  *          for C (the CWL).
  *
+ *          We also check that the pwlid is, in fact, the WL referred to
+ *          by the F_noteintersect.
+ *
  *****************************************************************************/
 bool
-AWLFIisValidNoteintersect (node *arg_node, node *pwl)
+AWLFIisValidNoteintersect (node *arg_node, node *pwlid)
 {
     bool z;
     int nexprs;
     int npart;
-    node *mypwl = NULL;
-    pattern *pat;
 
     DBUG_ENTER ();
 
-    z = (NULL != pwl) && (N_prf == NODE_TYPE (arg_node))
-        && (F_noteintersect == PRF_PRF (arg_node));
+    z = ((NULL != pwlid) && (N_prf == NODE_TYPE (arg_node))
+         && (F_noteintersect == PRF_PRF (arg_node))
+         && (ID_AVIS (pwlid)
+             == ID_AVIS (TCgetNthExprsExpr (WLPRODUCERWL, PRF_ARGS (arg_node)))));
 
     if (z) {
-        pat = PMwith (1, PMAgetNode (&mypwl), 0);
-        PMmatchFlatWith (pat, TCgetNthExprsExpr (WLPRODUCERWL, PRF_ARGS (arg_node)));
         nexprs = (TCcountExprs (PRF_ARGS (arg_node)) - WLFIRST) / WLEPP;
-        npart = TCcountParts (WITH_PART (pwl));
-        z = (nexprs == npart) && (pwl == mypwl);
-        pat = PMfree (pat);
+        npart = TCcountParts (WITH_PART (AWLFIfindWL (pwlid)));
+        z = (nexprs == npart);
     }
 
     DBUG_RETURN (z);
@@ -679,6 +677,36 @@ isAvisMemberIds (node *arg_node, node *ids)
     while ((NULL != ids) && (!z)) {
         z = (arg_node == IDS_AVIS (ids));
         ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool
+ *
+ * @brief: Predicate for checking that consumer sel() is a naked consumer.
+ *
+ * @param: arg_info: as usual
+ *
+ * @result: TRUE if consumer sel() is at same level as PWL,
+ *          i.e., is a naked consumer.
+ *
+ *****************************************************************************/
+bool
+isNakedConsumer (info *arg_info)
+{
+    bool z;
+
+    DBUG_ENTER ();
+
+    z = INFO_LEVEL (arg_info) == AVIS_DEFDEPTH (ID_AVIS (INFO_PRODUCERWLLHS (arg_info)));
+
+    if (z) {
+        DBUG_PRINT ("CWL %s is naked consumer of PWL %s",
+                    AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))),
+                    AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))));
     }
 
     DBUG_RETURN (z);
@@ -1512,7 +1540,6 @@ BuildInverseProjections (node *arg_node, info *arg_info)
  *
  * @brief Given an N_id, return its N_with node, or NULL, if arg_node
  *        was not created by a WL.
- *        This skips over, e.g., afterguards in the way.
  *
  * @params: arg_node, perhaps
  * @result: The N_with node of the WL
@@ -1616,7 +1643,7 @@ noDefaultPartition (node *arg_node)
  * @fn AWLFItakeDropIv( ...)
  *
  *   @brief Perform take on ivmin/ivmax, iv... This is required
- *          in the case where the ProducerWL generates non-scalar cells.
+ *          in the case where the PWL generates non-scalar cells.
  *
  *   @param: takect - the result shape/take count
  *   @param: arg_node - ivmin or ivmax.
@@ -1895,6 +1922,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     constant *ivmaxco;
     constant *kcon;
     node *ivminmax = NULL;
+    node *ivid;
 
     DBUG_ENTER ();
 
@@ -1905,7 +1933,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     /* Handle constant iv: make N_array nodes */
     DBUG_ASSERT (NULL != ivavis, "Should always have non-NULL ivavis");
     if ((NULL == ivavis) || TYisAKV (AVIS_TYPE (ivavis))) {
-        DBUG_ASSERT (NULL != ivavis, "more confusion ");
+        DBUG_ASSERT (NULL != ivavis, "more confusion -- not really dead code");
         ivminco = COaST2Constant (ivavis);
         ivmin = COconstant2AST (ivminco);
 
@@ -1922,7 +1950,19 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
         }
 
         if (PMmatchFlat (pat3, AVIS_MAX (ivavis))) {
-            ivmax = DUPdoDupTree (ivminmax);
+            if (isNakedConsumer (arg_info)) {
+                /* Fake up value:  ivmax = AVIS_MIN( ivavis) + 1 */
+                PMmatchFlat (pat3, AVIS_MIN (ivavis)); /* Check for N_array */
+                ivmax = IVEXPadjustExtremaBound (ID_AVIS (AVIS_MIN (ivavis)), 1,
+                                                 &INFO_VARDECS (arg_info),
+                                                 &INFO_PREASSIGNS (arg_info), "nakedcon");
+                ivid = TBmakeId (ivmax); /* N_avis --> Nid --> N_array */
+                PMmatchFlat (pat3, ivid);
+                ivmax = ivminmax;
+                ivid = FREEdoFreeNode (ivid);
+            } else {
+                ivmax = DUPdoDupTree (ivminmax); /* normal AWLF */
+            }
         } else {
             DBUG_ASSERT (FALSE, "Expected N_array ivmax");
         }
@@ -2010,7 +2050,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     }
 
     DBUG_PRINT ("Built bounds intersect computations for consumer-WL %s",
-                AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
+                AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))));
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
@@ -2077,8 +2117,8 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivprimeavis)
 
     DBUG_ENTER ();
 
-    nm = (NULL != INFO_CONSUMERWLLHS (arg_info))
-           ? AVIS_NAME (INFO_CONSUMERWLLHS (arg_info))
+    nm = (NULL != INFO_CONSUMERWLIDS (arg_info))
+           ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
            : "(no consumer WL)";
     DBUG_PRINT ("Inserting attachextrema for producerWL %s into consumerWL %s",
                 AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))), nm);
@@ -2173,41 +2213,49 @@ AWLFIisSingleOpWL (node *arg_node)
  *
  * @fn bool checkProducerWLFoldable( node *arg_node, info *arg_info)
  *
- * @brief We are looking at _sel_VxA_(idx, producerWL), contained
- *        within a consumerWL. We want to determine if
- *        producerWL is a WL that is a possible candidate for having some
+ * @brief We are looking at an N_id, arg_node, that may point to a WL, p.
+ *        We want to determine if p is a WL that is a
+ *        potential candidate for having some
  *        partition of itself folded into the consumerWL that
- *        contains the _sel_ expression.
+ *        contains the _sel_ expression that we were called from.
  *
  *        This function concerns itself only with the characteristics
- *        of the entire producerWL: partition-dependent characteristics
+ *        of the entire p: partition-dependent characteristics
  *        are determined by the AWLF phase later on.
  *
  *        The requirements for folding are:
  *
- *           - producerWL is the result of a WL.
+ *           - p is the result of a WL.
  *
- *           - producerWL operator is a genarray or modarray.
+ *           - p operator is a genarray or modarray.
  *
- *           - producerWL is a single-operator WL.
+ *           - p is a single-operator WL.
  *
- *           - producerWL has an SSAASSIGN (means that WITH_IDs are NOT legal),
+ *           - p has an SSAASSIGN (means that WITH_IDs are NOT legal),
  *
- *           - producerWL is referenced only by the consumerWL.
+ *           - p is referenced only by the consumerWL.
  *             This is not strictly needed; it is only there
  *             to avoid potentially computing the same
  *             producerWL element more than once. FIXME: wl_needcount.c
  *             changes will relax this and restriction and base it
- *             on producerWL element computation cost.
+ *             on p element computation cost.
  *
- *           - producerWL has a DEFDEPTH value (which I don't understand yet).
+ *           - p and the consumer(WL)  have a DEFDEPTH value,
+ *             which the number of levels of WLs in which they are
+ *             contained. AWLFI can proceed in these two cases:
  *
- *           - consumerWL and producerWL generator bounds are
+ *                AVIS_DEPTH( cwl) == ( 1 + AVIS_DEPTH( pwl))
+ *                 This is the normal case of composition,
+ *
+ *                AVIS_DEPTH( cwl) == (     AVIS_DEPTH( pwl))
+ *                 This is the "naked consumer" case.
+ *
+ *           - consumerWL and p generator bounds are
  *             the same shape.
  *
  *        There is an added requirement, that the index set of
- *        the consumerWL partition match, or be a subset, of the
- *        producerWL partition index set.
+ *        the consumerWL partition match, or be a subset, of
+ *        p's partition index set.
  *
  *        The expressions hanging from the attachextrema inserted
  *        by attachExtremaCalc are intended to determine if this
@@ -2217,42 +2265,43 @@ AWLFIisSingleOpWL (node *arg_node)
  *        set requirements are met.
  *
  *
- * @param _sel_VxA_( idx, producerWL)
- * @result If some partition of the producerWL may be a legal
- *         candidate for folding into the consumerWL, return true.
+ * @param  an N_id
+ *
+ * @result If any partition of p may be a legal
+ *         candidate for folding into a consumerWL, return true.
  *         Else false.
  *
  *****************************************************************************/
 static bool
 checkProducerWLFoldable (node *arg_node, info *arg_info)
 {
-    node *p;
-    bool z;
+    bool z = FALSE;
     node *cellavis;
     node *pcode;
     ntype *typ;
+    node *p;
+    char *nm;
 
     DBUG_ENTER ();
 
-    p = INFO_PRODUCERWL (arg_info);
-    z = NULL != p;
-    if (z) {
-        z = (AWLFIisSingleOpWL (p)) && (noDefaultPartition (p))
-            && (WITHOP_NEXT (WITH_WITHOP (p)) == NULL)
-            && ((NODE_TYPE (WITH_WITHOP (p)) == N_genarray)
-                || (NODE_TYPE (WITH_WITHOP (p)) == N_modarray));
+    p = AWLFIfindWL (arg_node);
+    if ((NULL != p) && (AWLFIisSingleOpWL (p)) && (noDefaultPartition (p))
+        && (WITHOP_NEXT (WITH_WITHOP (p)) == NULL)
+        && ((NODE_TYPE (WITH_WITHOP (p)) == N_genarray)
+            || (NODE_TYPE (WITH_WITHOP (p)) == N_modarray))) {
+
         pcode = PART_CODE (WITH_PART (p));
         cellavis = ID_AVIS (EXPRS_EXPR (CODE_CEXPRS (pcode)));
         typ = AVIS_TYPE (cellavis); /* Cell must be scalar */
-        z = z && (!TYisAUD (typ)) && (0 == TYgetDim (typ));
-        if (z) {
-            DBUG_PRINT ("ProducerWL:%s is suitable for folding; WITH_REFERENCED_FOLD=%d",
-                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
-                        WITH_REFERENCED_FOLD (p));
-        } else {
-            DBUG_PRINT ("ProducerWL %s is not suitable for folding.",
-                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
-        }
+        z = (!TYisAUD (typ)) && (0 == TYgetDim (typ));
+    }
+
+    if (z) {
+        DBUG_PRINT ("PWL %s is OK for folding; WITH_REFERENCED_FOLD=%d",
+                    AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (p));
+    } else {
+        nm = (NULL != p) ? AVIS_NAME (ID_AVIS (arg_node)) : "(not a WL";
+        DBUG_PRINT ("PWL %s is not OK for folding", nm);
     }
 
     DBUG_RETURN (z);
@@ -2294,7 +2343,7 @@ checkConsumerWLFoldable (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn bool checkBothFoldable( node *arg_node, info *arg_info)
+ * @fn bool checkBothFoldable( node *pwlid, node *cwlavis, int cwllevel)
  *
  * @brief Make any early checks we can that may show that
  *        the producerWL and consumerWL are not foldable.
@@ -2308,27 +2357,32 @@ checkConsumerWLFoldable (node *arg_node, info *arg_info)
  *       If we do not fold this, then the entire PWL array is generated,
  *       which we deem A Bad Idea.
  *
- * @param arg_node: ignored
+ * @param  pwlid: N_id of PWL
+ *         cwlids: N_ids of CWL or naked sel(), or NULL.
+ *         cwllevel: INFO_LEVEL of CWL (or naked sel())
  *
- * @result True if the consumerWL and producerWL
+ * @result True if the consumerWL and PWL
  *         shapes are conformable for folding.
  *
  *****************************************************************************/
 static bool
-checkBothFoldable (node *arg_node, info *arg_info)
+checkBothFoldable (node *pwlid, node *cwlids, int cwllevel)
 {
 #ifdef FIXME //  this definitely breaks majordiagonal2.sac
     int lenpwl;
     int lencwl;
 #endif // FIXME //  this definitely breaks majordiagonal2.sac
-    int lev;
+    int plev;
     bool z;
+    char *nmc;
+    char *nmp;
 
     DBUG_ENTER ();
 
-    /* Both producerWL and consumerWL must be at same nesting level */
-    lev = 1 + AVIS_DEFDEPTH (ID_AVIS (INFO_PRODUCERWLLHS (arg_info)));
-    z = (lev >= INFO_LEVEL (arg_info));
+    /* Composition-style AWLF: CWL sel() one level deeper than PWL */
+    /* Naked consumer AWLF: PWL and CWL sel() at same nesting level */
+    plev = AVIS_DEFDEPTH (ID_AVIS (pwlid));
+    z = (plev <= cwllevel);
 
 #ifdef FIXME //  this definitely breaks majordiagonal2.sac
     /* Restrict producerWL to scalar cells, and require that
@@ -2341,14 +2395,14 @@ checkBothFoldable (node *arg_node, info *arg_info)
     z = z && (lenpwl == lencwl);
 #endif // FIXME //  this definitely breaks majordiagonal2.sac
 
+    nmp = (NULL != pwlid) ? AVIS_NAME (ID_AVIS (pwlid)) : "(not a WL";
+    nmc = (NULL != cwlids) ? AVIS_NAME (IDS_AVIS (cwlids)) : "(not a WL";
+
     if (z) {
-        DBUG_PRINT ("ProducerWL %s is foldable into consumerWL %s",
-                    AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))),
-                    AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
+        DBUG_PRINT ("PWL %s foldable into CWL %s", nmp, nmc);
     } else {
-        DBUG_PRINT ("ProducerWL %s is not foldable into consumerWL %s",
-                    AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))),
-                    AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
+        DBUG_PRINT ("PWL %s not foldable into CWL %s. DEFDEPTHs=%d, %d", nmp, nmc, plev,
+                    cwllevel);
     }
 
     DBUG_RETURN (z);
@@ -2463,12 +2517,15 @@ AWLFIwith (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     old_arg_info = arg_info;
-
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
+
     INFO_LEVEL (arg_info) = INFO_LEVEL (old_arg_info) + 1;
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_arg_info);
-    INFO_CONSUMERWL (arg_info) = arg_node;
     INFO_FINVERSEINTRODUCED (arg_info) = INFO_FINVERSEINTRODUCED (old_arg_info);
+
+    INFO_CONSUMERWL (arg_info) = arg_node;
+    INFO_CONSUMERWLIDS (arg_info) = LET_IDS (INFO_LET (old_arg_info));
+    DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))));
 
     DBUG_PRINT ("Resetting WITH_REFERENCED_CONSUMERWL, etc.");
     WITH_REFERENCED_FOLD (arg_node) = 0;
@@ -2522,6 +2579,8 @@ AWLFIids (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_LEVEL (arg_info);
+    DBUG_PRINT ("%s DEFDEPTH set to %i", AVIS_NAME (IDS_AVIS (arg_node)),
+                AVIS_DEFDEPTH (IDS_AVIS (arg_node)));
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -2603,64 +2662,64 @@ AWLFIprf (node *arg_node, info *arg_info)
 {
     node *z;
     node *ivavis = NULL;
+    node *pwlid;
 
     DBUG_ENTER ();
 
-    if (TRUE || (NULL != INFO_CONSUMERWLPART (arg_info))) {
+    switch (PRF_PRF (arg_node)) {
+    default:
+        break;
 
-        switch (PRF_PRF (arg_node)) {
-        default:
-            break;
+    case F_sel_VxA:
+    case F_idx_sel:
+        pwlid = AWLFIfindWlId (PRF_ARG2 (arg_node));
+        INFO_PRODUCERWLLHS (arg_info) = pwlid;
+        INFO_PRODUCERWL (arg_info) = AWLFIfindWL (pwlid);
+        INFO_PRODUCERWLFOLDABLE (arg_info)
+          = checkConsumerWLFoldable (PRF_ARG2 (arg_node), arg_info)
+            && checkProducerWLFoldable (pwlid, arg_info)
+            && checkBothFoldable (pwlid, INFO_CONSUMERWLIDS (arg_info),
+                                  INFO_LEVEL (arg_info));
 
-        case F_sel_VxA:
-        case F_idx_sel:
-            INFO_PRODUCERWLLHS (arg_info) = AWLFIfindWlId (PRF_ARG2 (arg_node));
-            INFO_PRODUCERWL (arg_info) = AWLFIfindWL (INFO_PRODUCERWLLHS (arg_info));
-            INFO_PRODUCERWLFOLDABLE (arg_info)
-              = checkConsumerWLFoldable (arg_node, arg_info)
-                && checkProducerWLFoldable (arg_node, arg_info)
-                && checkBothFoldable (arg_node, arg_info);
+        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
-            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+        /* Maybe attach intersect calculations now. */
+        if ((INFO_PRODUCERWLFOLDABLE (arg_info))
+            && (!AWLFIisHasNoteintersect (arg_node))) {
 
-            /* Maybe attach intersect calculations now. */
-            if ((INFO_PRODUCERWLFOLDABLE (arg_info))
-                && (!AWLFIisHasNoteintersect (arg_node))) {
+            ivavis = IVUToffset2Vect (arg_node, &INFO_VARDECS (arg_info),
+                                      &INFO_PREASSIGNS (arg_info),
+                                      INFO_CONSUMERWLPART (arg_info));
 
-                ivavis = IVUToffset2Vect (arg_node, &INFO_VARDECS (arg_info),
-                                          &INFO_PREASSIGNS (arg_info),
-                                          INFO_CONSUMERWLPART (arg_info));
+            if (((TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
+                 || ((NULL != ivavis) && (isAvisHasBothExtrema (ivavis))))) {
 
-                if (((TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
-                     || ((NULL != ivavis) && (isAvisHasBothExtrema (ivavis))))) {
-
-                    z = attachIntersectCalc (arg_node, arg_info, ivavis);
-                    if (z != ID_AVIS (PRF_ARG1 (arg_node))) {
-                        FREEdoFreeNode (PRF_ARG1 (arg_node));
-                        PRF_ARG1 (arg_node) = TBmakeId (z);
-                        DBUG_PRINT (
-                          "Inserted F_noteintersect into cwl=%s for sel/idx_sel",
-                          AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
-                    }
+                z = attachIntersectCalc (arg_node, arg_info, ivavis);
+                if (z != ID_AVIS (PRF_ARG1 (arg_node))) {
+                    FREEdoFreeNode (PRF_ARG1 (arg_node));
+                    PRF_ARG1 (arg_node) = TBmakeId (z);
+                    DBUG_PRINT ("Inserted F_noteintersect into cwl=%s for sel/idx_sel",
+                                AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))));
                 }
             }
-            break;
-
-        case F_noteintersect:
-            /* Maybe detach invalid intersect calculations now. */
-            if (!AWLFIisValidNoteintersect (arg_node, INFO_PRODUCERWL (arg_info))) {
-                arg_node = AWLFIdetachNoteintersect (arg_node);
-                DBUG_PRINT ("Detached invalid F_noteintersect from cwl=%s",
-                            AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
-            }
-
-            /* Maybe project partitionIntersectMin/Max back from PWL to CWL */
-            if (AWLFIisValidNoteintersect (arg_node, INFO_PRODUCERWL (arg_info))) {
-                arg_node = BuildInverseProjections (arg_node, arg_info);
-                DBUG_PRINT ("Building inverse projection for cwl=%s",
-                            AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
-            }
         }
+        break;
+
+    case F_noteintersect:
+        /* Maybe detach invalid intersect calculations now. */
+        if (!AWLFIisValidNoteintersect (arg_node, INFO_PRODUCERWLLHS (arg_info))) {
+            arg_node = AWLFIdetachNoteintersect (arg_node);
+            DBUG_PRINT ("Detached invalid F_noteintersect from cwl=%s",
+                        AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))));
+        }
+
+        /* Maybe project partitionIntersectMin/Max back from PWL to CWL */
+        if (AWLFIisValidNoteintersect (arg_node, INFO_PRODUCERWLLHS (arg_info))) {
+            arg_node = BuildInverseProjections (arg_node, arg_info);
+            DBUG_PRINT ("Building inverse projection for cwl=%s",
+                        AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))));
+        }
+        break;
     }
 
     DBUG_RETURN (arg_node);
@@ -2723,25 +2782,21 @@ AWLFImodarray (node *arg_node, info *arg_info)
  * function:
  *   node *AWLFIlet(node *arg_node, info *arg_info)
  *
- * description:
+ * description: Descend to get set AVIS_DEPTH and to handle the expr.
  *
  ******************************************************************************/
 node *
 AWLFIlet (node *arg_node, info *arg_info)
 {
     node *oldlet;
-    node *oldconsumerwlname;
 
     DBUG_ENTER ();
 
-    oldconsumerwlname = INFO_CONSUMERWLLHS (arg_info);
-    INFO_CONSUMERWLLHS (arg_info) = IDS_AVIS (LET_IDS (arg_node));
-    DBUG_PRINT ("Looking at %s", AVIS_NAME (INFO_CONSUMERWLLHS (arg_info)));
     oldlet = INFO_LET (arg_info);
     INFO_LET (arg_info) = arg_node;
+    LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
     INFO_LET (arg_info) = oldlet;
-    INFO_CONSUMERWLLHS (arg_info) = oldconsumerwlname;
 
     DBUG_RETURN (arg_node);
 }

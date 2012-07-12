@@ -10,6 +10,7 @@ if [ $4 -eq $count ]; then
 ## HUSH	echo Greptest: $1 OK; 
  junk=0
 else 
+  echo -e '\a \a'
   echo Greptest: $1 $2 failed with $count hits on phrase \"$3\". Wanted $4 hits;
 fi 
 
