@@ -541,8 +541,8 @@ SAC_C_EXTERN void SAC_MT_TR_ReleaseHive (struct sac_hive_common_t *h);
 SAC_C_EXTERN void SAC_MT_AttachHive (struct sac_hive_common_t *h);
 SAC_C_EXTERN void SAC_MT_TR_AttachHive (struct sac_hive_common_t *h);
 
-SAC_C_EXTERN struct sac_hive_common_t *SAC_MT_DetachHive ();
-SAC_C_EXTERN struct sac_hive_common_t *SAC_MT_TR_DetachHive ();
+SAC_C_EXTERN struct sac_hive_common_t *SAC_MT_DetachHive (void);
+SAC_C_EXTERN struct sac_hive_common_t *SAC_MT_TR_DetachHive (void);
 
 SAC_C_EXTERN void SAC_MT_ReleaseQueen (void);
 SAC_C_EXTERN void SAC_MT_TR_ReleaseQueen (void);
@@ -557,7 +557,7 @@ SAC_C_EXTERN int SAC_MT_AssignBeeGlobalId (struct sac_bee_common_t *bee);
 
 SAC_C_EXTERN int SAC_MT_ReleaseBeeGlobalId (struct sac_bee_common_t *bee);
 
-SAC_C_EXTERN unsigned int SAC_MT_BeesGrandTotal ();
+SAC_C_EXTERN unsigned int SAC_MT_BeesGrandTotal (void);
 
 SAC_C_EXTERN struct sac_hive_common_t *
 SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
@@ -570,7 +570,7 @@ SAC_C_EXTERN void SAC_MT_Generic_AttachHive (struct sac_hive_common_t *hive,
 SAC_C_EXTERN struct sac_hive_common_t *
 SAC_MT_Generic_DetachHive (struct sac_bee_common_t *queen);
 
-SAC_C_EXTERN struct sac_bee_common_t *SAC_MT_CurrentBee ();
+SAC_C_EXTERN struct sac_bee_common_t *SAC_MT_CurrentBee (void);
 
 /**
  * In mt_autothid.c : Automatic Thread Registry
