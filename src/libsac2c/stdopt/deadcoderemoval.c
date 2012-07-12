@@ -186,50 +186,55 @@ DCRfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_PRINT ("\nStarting dead code removal in %s %s",
-                (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "function"),
+                (FUNDEF_ISWRAPPERFUN (arg_node)
+                   ? "wrapper"
+                   : (FUNDEF_ISLACFUN (arg_node) ? "lacfun" : "function")),
                 CTIitemName (arg_node));
 
-    if ((!FUNDEF_ISLACFUN (arg_node)) || (INFO_FUNDEF (arg_info) != NULL)) {
-
-        if (FUNDEF_BODY (arg_node) != NULL) {
-            info *info;
-
-            /*
-             * Infer dead variables
-             */
-
-            if (!FUNDEF_ISLACFUN (arg_node)) {
-                arg_node = DCIdoDeadCodeInferenceOneFunction (arg_node);
+    if (FUNDEF_BODY (arg_node) != NULL) {
+        /*
+         * Infer dead variables
+         */
+        if (!FUNDEF_ISLACFUN (arg_node)) {
+            /* normal fun: go through the lacfuns as well */
+            arg_node = DCIdoDeadCodeInferenceOneFunction (arg_node);
+        } else {
+            /* do DCI in lacfuns only when the DCR was directly invoked on this lacfun */
+            if (INFO_FUNDEF (arg_info) == NULL) {
+                /* lacfun: confine the DCI to the single fundef only */
+                arg_node = DCIdoDeadCodeInferenceOneFundef (arg_node);
             }
-
-            info = MakeInfo ();
-            INFO_FUNDEF (info) = arg_node;
-
-            FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
-
-            if (FUNDEF_ISLACFUN (arg_node)) {
-                /*
-                 * traverse args and rets to remove unused ones from signature
-                 */
-                INFO_EXT_ASSIGN (info) = INFO_ASSIGN (arg_info);
-                FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), info);
-
-                FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), info);
-
-                if (INFO_CONDREMOVED (arg_info)) {
-                    /*
-                     * Conditional was removed: Convert to regular function
-                     */
-                    FUNDEF_ISCONDFUN (arg_node) = FALSE;
-                    FUNDEF_ISLOOPFUN (arg_node) = FALSE;
-                    FUNDEF_ISLACINLINE (arg_node) = TRUE;
-                    DBUG_ASSERT (global.local_funs_grouped == FALSE,
-                                 "glf form found during whole-module traversal");
-                }
-            }
-
-            info = FreeInfo (info);
         }
+
+        info *info = MakeInfo ();
+        INFO_FUNDEF (info) = arg_node;
+
+        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), info);
+
+        if (FUNDEF_ISLACFUN (arg_node) && (INFO_FUNDEF (arg_info) != NULL)) {
+            /*
+             * traverse args and rets to remove unused ones from signature,
+             * only when this is a lacfun and we have come into it from
+             * a parent fun (i.e. the DCR is *not* run directly on the lacfun)
+             */
+            INFO_EXT_ASSIGN (info) = INFO_ASSIGN (arg_info);
+            FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), info);
+
+            FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), info);
+
+            if (INFO_CONDREMOVED (arg_info)) {
+                /*
+                 * Conditional was removed: Convert to regular function
+                 */
+                FUNDEF_ISCONDFUN (arg_node) = FALSE;
+                FUNDEF_ISLOOPFUN (arg_node) = FALSE;
+                FUNDEF_ISLACINLINE (arg_node) = TRUE;
+                DBUG_ASSERT (global.local_funs_grouped == FALSE,
+                             "glf form found during whole-module traversal");
+            }
+        }
+
+        info = FreeInfo (info);
     }
 
     /* Traverse to the next function in the chain only when on the main spine,

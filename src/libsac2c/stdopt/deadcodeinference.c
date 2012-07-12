@@ -21,12 +21,7 @@
  * INFO structure
  */
 struct INFO {
-    /* TODO: completely remove TS_fundef and simplify the code,
-     * if DCIdoDeadCodeInferenceOneFundef() is not indeed needed */
-    enum {
-        TS_function,
-        /*TS_fundef*/
-    } travscope;
+    enum { TS_function, TS_fundef } travscope;
     node *assign;
     node *fundef;
     node *int_assign;
@@ -37,6 +32,8 @@ struct INFO {
 
 /*
  * INFO macros
+ * INFO_TRAVSCOPE           TS_function = normal fun, including its lacfuns
+ *                          TS_fundef = only the single given lacfun
  */
 #define INFO_TRAVSCOPE(n) (n->travscope)
 #define INFO_ASSIGN(n) (n->assign)
@@ -52,11 +49,9 @@ struct INFO {
 static info *
 MakeInfo (void)
 {
-    info *result;
-
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    info *result = MEMmalloc (sizeof (info));
 
     INFO_TRAVSCOPE (result) = TS_function;
     INFO_ASSIGN (result) = NULL;
@@ -85,31 +80,29 @@ FreeInfo (info *info)
  *   node *DCIdoDeadCodeInferenceOneFundef(node *fundef)
  *
  * description:
- *   starting point of dead code inference for one fundef
+ *   starting point of dead code inference for one fundef.
+ *   lacfuns are not traversed.
+ *   This is suitable if the fundef itself is a lacfun.
  *
  *****************************************************************************/
-#if 0
-node *DCIdoDeadCodeInferenceOneFundef(node *fundef)
+node *
+DCIdoDeadCodeInferenceOneFundef (node *fundef)
 {
-  info *info;
+    DBUG_ENTER ();
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
+                 "DCIdoDeadCodeInferenceOneFunction called for non-fundef node");
 
-  DBUG_ENTER ();
+    info *info = MakeInfo ();
+    INFO_TRAVSCOPE (info) = TS_fundef;
 
-  DBUG_ASSERT (NODE_TYPE(fundef) == N_fundef,
-               "DCIdoDeadCodeInferenceOneFunction called for non-fundef node");
+    TRAVpush (TR_dci);
+    fundef = TRAVdo (fundef, info);
+    TRAVpop ();
 
-  info = MakeInfo();
-  INFO_TRAVSCOPE( info) = TS_fundef;
+    info = FreeInfo (info);
 
-  TRAVpush( TR_dci);
-  fundef = TRAVdo( fundef, info);
-  TRAVpop();
-
-  info = FreeInfo( info);
-
-  DBUG_RETURN (fundef);
+    DBUG_RETURN (fundef);
 }
-#endif
 
 /******************************************************************************
  *
@@ -123,14 +116,11 @@ node *DCIdoDeadCodeInferenceOneFundef(node *fundef)
 node *
 DCIdoDeadCodeInferenceOneFunction (node *fundef)
 {
-    info *info;
-
     DBUG_ENTER ();
-
     DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
                  "DCIdoDeadCodeInferenceOneFunction called for non-fundef node");
 
-    info = MakeInfo ();
+    info *info = MakeInfo ();
     INFO_TRAVSCOPE (info) = TS_function;
 
     TRAVpush (TR_dci);
@@ -212,9 +202,10 @@ DCIfundef (node *arg_node, info *arg_info)
 
     if (FUNDEF_BODY (arg_node) != NULL) {
 
-        if (/*(INFO_TRAVSCOPE( arg_info) == TS_fundef) ||*/
-            ((INFO_TRAVSCOPE (arg_info) == TS_function)
-             && (((!FUNDEF_ISLACFUN (arg_node)) || (INFO_FUNDEF (arg_info) != NULL))))) {
+        if ((INFO_TRAVSCOPE (arg_info) == TS_fundef)
+            || ((INFO_TRAVSCOPE (arg_info) == TS_function)
+                && (((!FUNDEF_ISLACFUN (arg_node))
+                     || (INFO_FUNDEF (arg_info) != NULL))))) {
             info *info;
             bool fixedpointreached = FALSE;
 

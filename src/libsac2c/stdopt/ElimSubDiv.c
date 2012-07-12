@@ -433,7 +433,8 @@ ESDprf (node *arg_node, info *arg_info)
         EXPRS_NEXT (PRF_ARGS (arg_node)) = TBmakeExprs (TBmakeId (avis), NULL);
         PRF_PRF (arg_node) = TogglePrf (PRF_PRF (arg_node));
 
-        DBUG_PRINT ("replacing prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+        DBUG_PRINT ("replacing prf for %s with %s",
+                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), AVIS_NAME (avis));
 
         ++global.optcounters.esd_expr;
     }
