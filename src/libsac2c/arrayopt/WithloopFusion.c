@@ -1546,7 +1546,7 @@ WLFSfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (FUNDEF_BODY (arg_node)) {
+    if (FUNDEF_BODY (arg_node) != NULL) {
         DBUG_PRINT ("Fusing With-Loops in function %s", FUNDEF_NAME (arg_node));
 
         arg_info = MakeInfo ();
