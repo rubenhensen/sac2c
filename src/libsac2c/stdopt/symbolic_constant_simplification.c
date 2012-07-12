@@ -1832,7 +1832,8 @@ SCSprf_afterguard (node *arg_node, info *arg_info)
     arg2up = DUPdoDupTree (EXPRS_NEXT (PRF_ARGS (arg_node)));
     DBUG_ASSERT (NULL != arg2up, "Some joker caught us off guard with no guard");
     stripd = StripTrues (arg2up);
-    if ((NULL != stripd) && (CMPT_NEQ == CMPTdoCompareTree (stripd, arg2up))) {
+    if ((NULL != stripd)
+        && (CMPT_NEQ == CMPTdoCompareTree (stripd, EXPRS_NEXT (PRF_ARGS (arg_node))))) {
         res = DUPdoDupNode (arg_node); /* Some, but not all predicates gone */
         FREEdoFreeTree (EXPRS_NEXT (PRF_ARGS (res)));
         EXPRS_NEXT (PRF_ARGS (res)) = stripd;
