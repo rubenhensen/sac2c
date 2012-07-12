@@ -75,6 +75,10 @@ int dummy_mt_pth;
 #undef SAC_DO_COMPILE_MODULE
 #undef SAC_SET_NUM_SCHEDULERS
 
+#if ENABLE_HWLOC
+#include <../runtime/mt_h/hwloc_data.h>
+#endif
+
 #if TRACE
 #define __ReleaseHive SAC_MT_TR_ReleaseHive
 #define __AllocHive SAC_MT_TR_AllocHive
@@ -278,6 +282,18 @@ ThreadControl (void *arg)
         }
     }
 
+#if ENABLE_HWLOC
+    if (SAC_HWLOC_topology) {
+        int ret;
+        ret = hwloc_set_cpubind (SAC_HWLOC_topology,
+                                 SAC_HWLOC_cpu_sets[SAC_MT_self->c.global_id],
+                                 HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
+        if (ret == -1) {
+            SAC_RuntimeError (("Could not bind thread"));
+        }
+    }
+#endif
+
     ThreadServeLoop (SAC_MT_self);
     return SAC_MT_self;
 }
@@ -330,6 +346,18 @@ ThreadControlInitialWorker (void *arg)
                               i);
         }
     }
+
+#if ENABLE_HWLOC
+    if (SAC_HWLOC_topology) {
+        int ret;
+        ret = hwloc_set_cpubind (SAC_HWLOC_topology,
+                                 SAC_HWLOC_cpu_sets[SAC_MT_self->c.global_id],
+                                 HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
+        if (ret == -1) {
+            SAC_RuntimeError (("Could not bind thread"));
+        }
+    }
+#endif
 
     ThreadServeLoop (SAC_MT_self);
     return SAC_MT_self;
@@ -646,6 +674,17 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
         }
     }
 
+#if ENABLE_HWLOC
+    if (SAC_HWLOC_topology) {
+        int ret;
+        ret = hwloc_set_cpubind (SAC_HWLOC_topology, SAC_HWLOC_cpu_sets[0],
+                                 HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
+        if (ret == -1) {
+            SAC_RuntimeError (("Could not bind thread"));
+        }
+    }
+#endif
+
     return &hive->c;
 }
 
@@ -915,6 +954,19 @@ void SAC_MT1_Setup( int num_schedulers)
                           "to be executed in \n"
                           "parallel, but in time-sharing mode.");
     }
+
+#if ENABLE_HWLOC
+  if (SAC_HWLOC_topology)
+  {
+    int ret;
+    ret = hwloc_set_cpubind(SAC_HWLOC_topology, SAC_HWLOC_cpu_sets[SAC_MT_master_id], HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
+    if (ret == -1)
+    {
+      SAC_RuntimeError(("Could not bind thread"));
+    }
+  }
+#endif
+
   }
 }
 
