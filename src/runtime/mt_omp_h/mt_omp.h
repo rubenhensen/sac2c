@@ -35,7 +35,9 @@ SAC_C_EXTERN void SAC_OMP_SetupInitial (int argc, char *argv[], unsigned int num
 #define SAC_MT_SETUP_INITIAL()                                                           \
     SAC_OMP_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);
 
-#define SAC_OMP_SET_NUM_THREADS() omp_set_num_threads (SAC_MT_THREADS ())
+#define SAC_OMP_SET_NUM_THREADS() omp_set_num_threads (SAC_MT_GLOBAL_THREADS ())
+
+#define SAC_MT_HM_AUX_THREADS() 0
 
 #define SAC_OMP_SET_MAX_ACTIVE_LEVEL()                                                   \
     omp_set_max_active_levels (SAC_OMP_MAX_ACTIVE_LEVEL ())
@@ -46,7 +48,9 @@ SAC_C_EXTERN void SAC_OMP_SetupInitial (int argc, char *argv[], unsigned int num
 
 #define SAC_MT_DEFINE()
 
-SAC_C_EXTERN unsigned int SAC_Get_ThreadID (pthread_key_t SAC_MT_threadid_key);
+#define SAC_MT_FINALIZE()
+
+SAC_C_EXTERN unsigned int SAC_Get_Global_ThreadID (void);
 
 #endif /* SAC_DO_MT_OMP */
 

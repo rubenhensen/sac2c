@@ -273,8 +273,8 @@ SAC_C_EXTERN void (*SAC_CS_Stop) (void);
                                &cachesize3, &cachelinesize3, &associativity3,            \
                                &writepolicy3);                                           \
                                                                                          \
-        SAC_CS_Initialize (SAC_MT_THREADS (), profilinglevel, cs_global, cshost, csfile, \
-                           csdir, cachesize1, cachelinesize1, associativity1,            \
+        SAC_CS_Initialize (SAC_MT_GLOBAL_THREADS (), profilinglevel, cs_global, cshost,  \
+                           csfile, csdir, cachesize1, cachelinesize1, associativity1,    \
                            writepolicy1, cachesize2, cachelinesize2, associativity2,     \
                            writepolicy2, cachesize3, cachelinesize3, associativity3,     \
                            writepolicy3);                                                \

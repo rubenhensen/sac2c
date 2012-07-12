@@ -170,4 +170,117 @@ EXTERN_DECL (unsigned int, Uint)
 EXTERN_DECL (unsigned long, Ulong)
 EXTERN_DECL (unsigned long long, Ulonglong)
 
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_InitRuntimeSystem ( void);
+ *
+ * @brief Runtime initialization. Currently implemented only for MT.
+ *
+ *****************************************************************************/
+extern void SAC_InitRuntimeSystem (void);
+
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_FreeRuntimeSystem (void);
+ *
+ * @brief Runtime freeing.
+ *
+ *****************************************************************************/
+extern void SAC_FreeRuntimeSystem (void);
+
+/**
+ * SAChive is an opaque type used to construct typed pointers.
+ * A *hive* is a collection of bees, i.e. PTH threads or LPEL tasks,
+ * depending on the threading backend.
+ */
+typedef struct SAC_SAChive SAChive;
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAChive *SAC_AllocHive( unsigned int num_bees, int num_schedulers,
+ *                            const int *places)
+ *
+ * @brief Allocates a new hive and returns a handle to it.
+ *        The hive is initially detached.
+ *        The hive will contain new (num_bees-1) bees, because the calling context
+ *        is used in the computations as well.
+ *
+ * @param num_bees        Number of bees in a hive, including the calling bee.
+ * @param num_schedulers  Number of WL-task schedulers.
+ *                        FIXME: Task schedulers are currently broken, hence
+ *                        this may change....
+ * @param places          An optional array of int[num_bees] size, specifying
+ *                        placement for the bees. If NULL, a default placement
+ *                        is used.
+ *                        Note that places[0] corresponds to the queen bee
+ *                        and hence probably won't be used.
+ *                        PTH backend ignores the placement information.
+ *                        LPEL backed uses it as a worker ID for the new tasks.
+ * @param thdata          Backend-specific data.
+ *
+ * @return A handle to a new hive.
+ *
+ *****************************************************************************/
+extern SAChive *SAC_AllocHive (unsigned int num_bees, int num_schedulers,
+                               const int *places, void *thdata);
+
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_ReleaseHive(SAChive *h);
+ *
+ * @brief Releases a hive, terminating all its bees and freeing all memory.
+ *
+ * @param hive            Handle to a *detached* hive to be freed.
+ *                        The handle is invalid after the call.
+ *
+ *****************************************************************************/
+extern void SAC_ReleaseHive (SAChive *hive);
+
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_AttachHive(SAChive *h);
+ *
+ * @brief Attach a hive to the calling bee (thread/task).
+ * If this is the first attach in this thread or task context a queen-bee
+ * stub for the context is automatically allocated and stored in the corresponding
+ * Thread Local Storage (PTH) or Task User Data (LPEL) facility.
+ * Before terminating this thread/task the stub context has to be released
+ * using SAC_ReleaseQueen().
+ * Only a single hive can be attached to a given context at a time.
+ *
+ * @param hive            Handle to a hive that shall be attached to the calling
+ *                        context (thread or task).
+ *
+ *****************************************************************************/
+extern void SAC_AttachHive (SAChive *hive);
+
+/** <!--********************************************************************-->
+ *
+ * @fn SAChive *SAC_DetachHive(void);
+ *
+ * @brief Detach a hive from the calling context (thread or task) and return
+ *        a handle to it. This is an inverse of SAC_AttachHive(), but the
+ *        calling context's queen-bee stub is *not* released. That must
+ *        be done using SAC_ReleaseQueen().
+ *
+ * @return Handle to a hive originally attached to the calling context.
+ *         The hive can be re-attached to a different context or released.
+ *
+ *****************************************************************************/
+extern SAChive *SAC_DetachHive (void);
+
+/** <!--********************************************************************-->
+ *
+ * @fn void SAC_ReleaseQueen(void);
+ *
+ * @brief Release the queen-bee stub of the calling context (thread or task).
+ *        A hive still attached to the context will be detached and released
+ *        as well.
+ *        The Thread Local Storage / Task User Data slot of the calling context
+ *        will be cleared. Subsequent call to SAC_AttachHive() in the context
+ *        will create a new stub.
+ *
+ *****************************************************************************/
+extern void SAC_ReleaseQueen (void);
+
 #endif /* _SAC_SACINTERFACE_H_ */

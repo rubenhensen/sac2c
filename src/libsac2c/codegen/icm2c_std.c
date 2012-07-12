@@ -130,8 +130,20 @@ ICMCompileND_FUN_DEF_BEGIN (char *name, char *rettype_NT, int vararg_cnt, char *
     fprintf (global.outfile, "{\n");
     global.indent++;
 
+    /* The ND_FUN_DEF ICM is used for SEQ and ST functions.
+     * The SEQ functions are assumed always running in the single-threaded context (hence
+     * the HM annotation), and they do not contain any SPMD invocations. The ST functions
+     * are also assumed always running in the single-threaded context, but they may
+     * contain an SPMD invocation. They are used only in stand-alone programs, i.e. not
+     * from external calls. The SAC_MT_DEFINE_ST_SELF() defines the SAC_MT_self local
+     * variable. In SEQ it will be ultimately NULL, while in ST it shall point to the
+     * global singleton queen-bee.
+     */
     INDENT;
     fprintf (global.outfile, "SAC_HM_DEFINE_THREAD_STATUS( SAC_HM_single_threaded)\n");
+
+    INDENT;
+    fprintf (global.outfile, "SAC_MT_DEFINE_ST_SELF()\n");
 
     DBUG_RETURN ();
 }

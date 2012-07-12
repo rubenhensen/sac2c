@@ -2113,6 +2113,10 @@ PRTfundef (node *arg_node, info *arg_info)
                         fprintf (global.outfile, " * MT function:\n");
                     } else if (FUNDEF_ISSTFUN (arg_node)) {
                         fprintf (global.outfile, " * ST function:\n");
+                    } else if (FUNDEF_ISXTFUN (arg_node)) {
+                        fprintf (global.outfile, " * XT function:\n");
+                    } else if (FUNDEF_ISXTSPMDFUN (arg_node)) {
+                        fprintf (global.outfile, " * XT SPMD function:\n");
                     } else if (FUNDEF_ISSPMDFUN (arg_node)) {
                         fprintf (global.outfile, " * SPMD function:\n");
                     }

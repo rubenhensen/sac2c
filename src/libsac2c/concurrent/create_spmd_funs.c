@@ -57,6 +57,7 @@ struct INFO {
     bool collect;
     bool lift;
     bool withid;
+    bool isxtfun;
 };
 
 /**
@@ -74,6 +75,7 @@ struct INFO {
 #define INFO_COLLECT(n) ((n)->collect)
 #define INFO_LIFT(n) ((n)->lift)
 #define INFO_WITHID(n) ((n)->withid)
+#define INFO_ISXTFUN(n) ((n)->isxtfun)
 
 /**
  * INFO functions
@@ -99,6 +101,7 @@ MakeInfo (void)
     INFO_COLLECT (result) = FALSE;
     INFO_LIFT (result) = FALSE;
     INFO_WITHID (result) = FALSE;
+    INFO_ISXTFUN (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -222,7 +225,10 @@ CreateSpmdFundef (node *arg_node, info *arg_info)
       = TBmakeFundef (TRAVtmpVarName (FUNDEF_NAME (fundef)),
                       NSdupNamespace (FUNDEF_NS (fundef)), rets, args, body, NULL);
 
-    FUNDEF_ISSPMDFUN (spmd_fundef) = TRUE;
+    /* TODO: We create two SPMD funs: one for the ST caller and one for the XT caller.
+     * But they are identical inside and could be shared. */
+    FUNDEF_ISXTSPMDFUN (spmd_fundef) = INFO_ISXTFUN (arg_info);
+    FUNDEF_ISSPMDFUN (spmd_fundef) = !INFO_ISXTFUN (arg_info);
     FUNDEF_RETURN (spmd_fundef) = retur;
 
     DBUG_RETURN (spmd_fundef);
@@ -263,9 +269,10 @@ MTSPMDFfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (FUNDEF_ISSTFUN (arg_node) && (FUNDEF_BODY (arg_node) != NULL)) {
+    if ((FUNDEF_ISSTFUN (arg_node) || FUNDEF_ISXTFUN (arg_node))
+        && (FUNDEF_BODY (arg_node) != NULL)) {
         /*
-         * Only ST funs may contain parallel with-loops.
+         * ST and XT funs may contain parallel with-loops.
          * Hence, we constrain our search accordingly.
          */
         INFO_FUNDEF (arg_info) = arg_node;

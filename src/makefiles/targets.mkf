@@ -199,7 +199,8 @@ libsac2c_cudahybrid  := cuda_cost_model change_arrays_to_dist insert_memtrans_di
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_mtst_funs_module \
                         create_spmd_funs mtdcr scheduling annotate_scheduling \
-                        set_spmd_linksign restore_mem_instr remove_propagates
+                        set_spmd_linksign restore_mem_instr restore_mtst_funs \
+                        remove_propagates
 
 libsac2c_multithread := multithread_lib tag_executionmode \
                         propagate_executionmode create_cells \
@@ -274,8 +275,8 @@ runtime_extraclean_all    :=
 runtime_extraclean_devel  := 
 runtime_extraclean_prod   := 
 
-runtime_sourcedirs        := essentials_h extras_h mt_h mt_omp_h mt_pth_h \
-                              phm_h mutc_h cuda_h rtspec_h
+runtime_sourcedirs        := essentials_h extras_h mt_h mt_omp_h mt_beehive_h mt_pth_h \
+                              mt_lpel_h phm_h mutc_h cuda_h rtspec_h
 
 ###############################################################################
 
@@ -288,7 +289,11 @@ runtime_phm_h          := phm
 
 runtime_mt_h           := mt
 
-runtime_mt_pth_h       := mt_pth mt_gen schedule fp fp_gen
+runtime_mt_beehive_h   := schedule mt_beehive mt_gen
+
+runtime_mt_pth_h       := mt_pth fp fp_gen
+
+runtime_mt_lpel_h      := mt_lpel
 
 runtime_mt_omp_h       := mt_omp
 
@@ -338,6 +343,8 @@ libsac_targets             := libsac$(CROSS_VARIANT).seq.a     \
                               libsac$(CROSS_VARIANT).seq.so    \
                               libsac$(CROSS_VARIANT).mt.pth.a  \
                               libsac$(CROSS_VARIANT).mt.pth.so \
+                              libsac$(CROSS_VARIANT).mt.lpel.a  \
+                              libsac$(CROSS_VARIANT).mt.lpel.so \
                               libsac$(CROSS_VARIANT).mt.omp.a  \
                               libsac$(CROSS_VARIANT).mt.omp.so
 endif
@@ -354,20 +361,24 @@ libsac_extraclean_prod     :=
 ifeq  (MUTC, $(CROSS_BACKEND))
 libsac_sourcedirs          := essentials interface mutc phm
 else
-libsac_sourcedirs          := essentials mt mt_omp mt_pth phm cachesim interface rtspec
+libsac_sourcedirs          := essentials mt mt_omp mt_beehive mt_pth mt_lpel phm cachesim interface rtspec
 endif
 
 ###############################################################################
 
 libsac_essentials   := commandline message misc profile trace
 
-libsac_interface    := sacarg sacargconvert
+libsac_interface    := sacarg sacargconvert sacmt
 
 libsac_mutc         := reference_counting
 
 libsac_mt           := mt
 
+libsac_mt_beehive   := mt_beehive mt_autothid
+
 libsac_mt_pth       := mt_pth_std mt_pth_trace
+
+libsac_mt_lpel      := mt_lpel_std mt_lpel_trace
 
 libsac_mt_omp       := mt_omp
 

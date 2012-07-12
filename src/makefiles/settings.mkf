@@ -37,6 +37,8 @@ SETTINGS_MT            := -DMT
 
 SETTINGS_PTH           := -DPTH
 
+SETTINGS_LPEL          := -DLPEL
+
 SETTINGS_OMP           := -DOMP 
 
 SETTINGS_DIAG          := -DDIAG

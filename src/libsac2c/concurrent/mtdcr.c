@@ -163,9 +163,10 @@ MTDCRfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (FUNDEF_ISSTFUN (arg_node) && (FUNDEF_BODY (arg_node) != NULL)) {
+    if ((FUNDEF_ISSTFUN (arg_node) || FUNDEF_ISXTFUN (arg_node))
+        && (FUNDEF_BODY (arg_node) != NULL)) {
         /*
-         * Only ST funs may have contained parallel with-loops.
+         * Only ST and XT funs may have contained parallel with-loops.
          * Hence, we constrain our activity accordingly.
          */
         DBUG_PRINT ("Entering function %s.", FUNDEF_NAME (arg_node));

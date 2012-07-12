@@ -123,6 +123,12 @@ PrintFeatureSet (void)
     printf ("    Posix Thread based parallelization: disabled\n");
 #endif
 
+#if ENABLE_MT_LPEL
+    printf ("    LPEL based parallelization:          enabled\n");
+#else
+    printf ("    LPEL based parallelization:         disabled\n");
+#endif
+
 #if ENABLE_OMP
     printf ("    OpenMP based parallelization:        enabled\n");
 #else
@@ -175,7 +181,6 @@ PrintSpecialOptions (void)
       "                    process.\n"
       "\n"
       "    -C <name>       Print out a configuration parameter\n"
-      "    -ccflag<flags>  Extra flags to give to C compiler\n"
       "\n"
       "    NOTE:\n"
       "    When called with one of these options, sac2c does not perform\n"
@@ -232,6 +237,7 @@ PrintGeneralOptions (void)
             "    -L <path>       Specify additional SAC library file path.\n"
             "    -I <path>       Specify additional SAC library source file path.\n"
             "    -E <path>       Specify additional C library file path.\n"
+            "    -ccflag<flags>  Extra flags to give to C compiler.\n"
             "\n"
             "    -o <name>       For compilation of programs:\n"
             "                      Write executable to specified file.\n"
@@ -599,6 +605,7 @@ PrintMultithreadOptions (void)
             "                      2: with start/stop barriers\n"
             "                      3: with magical new techniques, WARNING: UNDER "
             "CONSTRUCTION!!!\n"
+            "                      4: via the LPEL library from S-Net\n"
             "                      (default: %d)\n"
             "\n"
             "    -numthreads <n> Specify at compile time the exact number of threads to "
@@ -1111,7 +1118,8 @@ PrintAuthors (void)
             "      Aram Visser\n"
             "      Tim van Deurzen\n"
             "      Roeland Douma\n"
-            "      Miguel Diogo\n");
+            "      Miguel Diogo\n"
+            "      Jaroslav Sykora\n");
 
     DBUG_RETURN ();
 }

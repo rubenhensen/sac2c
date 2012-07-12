@@ -3018,7 +3018,13 @@
         <node name="Fold" />
       </travuser>
     </traversal>
-     <traversal id="MTSPMDF" name="Create SPMD functions" default="sons" include="create_spmd_funs.h">
+    <traversal id="RMTSTF" name="Restore ST/MT/XT functions (modules)" default="sons" include="restore_mtst_funs.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+      </travuser>
+    </traversal>
+    <traversal id="MTSPMDF" name="Create SPMD functions" default="sons" include="create_spmd_funs.h">
       <travuser>
         <node name="Module" />
         <node name="Fundef" />
@@ -5216,6 +5222,19 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="XTCompanion" inconstructor="no">
+          <description>This link points to the XT companion function of the current function. This is used in the module version of create MT/ST/XT functions (MTSTFMOD).</description>
+          <type name="ExtLink">
+            <targets>
+              <target mandatory="no">
+                <node name="Fundef" />
+                <phases>
+                  <phase name="mt_mtstf"/>
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
         <attribute name="MTCompanion" inconstructor="no">
           <description>This link points to the MT companion function of the current function. This is used in the module version of create MT/ST functions (MTSTFMOD).</description>
           <type name="ExtLink">
@@ -5520,11 +5539,17 @@ N_tfarg :
         <flag name="IsSpmdfun">
           <description>This function is a lifted region (usually one withloop) from a SPMD-block; it is only called once from within the region it was lifted from. From a backend perspective, the SPMD function is the transition from sequential to parallel execution. It is called while in sequential mode, its body is exectuted in parallel by multiple threads and it syncronizes on the return.</description>
         </flag>
+        <flag name="IsXtSpmdfun">
+          <description>Same as IsSpmdFun, will be TRUE for XT SPMD functions.</description>
+        </flag>
         <flag name="IsMtfun">
           <description>This is (potentially) a copy of the original function that will be executed in parallel by multiple threads during runtime. Note that all functions called from such a function need to be MT-funs, as well. If the function is only used in parallel context, this may in fact be the original function that has been reused.</description>
         </flag>
         <flag name="IsStfun">
           <description>This is (potentially) a copy of the original function that will be executed sequentially by a single thread during runtime. If the function is only used in sequential context, this may in fact be the original function that has been reused.</description>
+        </flag>
+        <flag name="IsXtfun">
+          <description>This is (potentially) a copy of the original function that will be executed in a multi-threaded context and might go parallel.</description>
         </flag>
         <flag name="IsCudastGlobalfun" default="FALSE">
           <description>This is a single threaded cuda global kernel function.</description>
@@ -11567,6 +11592,16 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
+      <flags>
+        <flag name="IsXtBundle">
+          <description>Used to tack a funbundle as an XT version of another
+            bundler</description>
+        </flag>
+        <flag name="IsStBundle">
+          <description>Used to tack a funbundle as an ST version of another
+            bundler</description>
+        </flag>
+      </flags>
     </node>
 <!--
 

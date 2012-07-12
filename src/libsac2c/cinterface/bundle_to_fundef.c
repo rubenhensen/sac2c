@@ -695,6 +695,8 @@ BTFfunbundle (node *arg_node, info *arg_info)
 
     FUNDEF_LINKNAME (result) = STRcat (CWRAPPER_PREFIX, FUNBUNDLE_EXTNAME (arg_node));
     FUNDEF_RETURN (result) = retassign;
+    FUNDEF_ISXTFUN (result) = FUNBUNDLE_ISXTBUNDLE (arg_node);
+    FUNDEF_ISSTFUN (result) = FUNBUNDLE_ISSTBUNDLE (arg_node);
 
     FUNBUNDLE_FUNDEF (arg_node) = NULL;
 

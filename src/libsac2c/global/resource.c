@@ -15,13 +15,15 @@
  *  architectures including their operating system pecularities as well
  *  as their different C compilers.
  *
- *  The concrete behaviour of sac2c may be configured by using two different
+ *  The concrete behaviour of sac2c may be configured by using three different
  *  configuration files. There is an installation specific configuration
  *  file as well as a user specific on. While the former is mandatory, the
  *  latter is optional. The installation specific configuration file is
- *    $SAC2CBASE/include/sac2crc ,
+ *    $SAC2CBASE/sac2crc ,
  *  the user specific configuration file must be called .sac2crc and ought
  *  to reside in the user's home directory.
+ *  Finally the environment variable SAC2CRC can optionally specify
+ *  the configuration file.
  *
  *  Each configuration file defines a sequence of target configuration or
  *  targets for short. A special target named 'default' is required which
@@ -523,6 +525,16 @@ ParseResourceFiles (void)
         filename = STRcat (envvar, "/.sac2crc");
         ok = RSCparseResourceFile (filename);
         MEMfree (filename);
+    }
+
+    /*
+     * Finally, the environment variable $SAC2CRC is read.
+     */
+
+    envvar = getenv ("SAC2CRC");
+
+    if (envvar != NULL) {
+        ok = RSCparseResourceFile (envvar);
     }
 
     global.filename = global.puresacfilename; /* What is this good for ? */

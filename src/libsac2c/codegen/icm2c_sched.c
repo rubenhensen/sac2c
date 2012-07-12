@@ -668,14 +668,15 @@ ICMCompileMT_SCHEDULER_Self_INIT (int sched_id, char *first_task, char *ts_name,
     if (STReq (first_task, "SACl_FirstAutomatic")) {
         if (sched_id == 0) {
             INDENT;
-            fprintf (global.outfile, "SAC_MT_TASK(%d,0)=SAC_MT_THREADS();\n", sched_id);
+            fprintf (global.outfile, "SAC_MT_TASK(%d,0)=SAC_MT_LOCAL_THREADS();\n",
+                     sched_id);
         } else {
             fprintf (global.outfile, "SAC_MT_SCHEDULER_SET_TASKS(%d,0);\n", sched_id);
         }
     }
     if (STReq (first_task, "SACl_FirstStatic") == 0) {
         INDENT;
-        fprintf (global.outfile, "SAC_MT_TASK(%d,0)=SAC_MT_THREADS();\n", sched_id);
+        fprintf (global.outfile, "SAC_MT_TASK(%d,0)=SAC_MT_LOCAL_THREADS();\n", sched_id);
     }
 
     TaskSelectorInit (sched_id, ts_name, ts_dims, ts_arg_num, ts_args, dim, vararg);

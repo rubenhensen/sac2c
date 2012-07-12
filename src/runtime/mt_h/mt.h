@@ -26,6 +26,8 @@
 
 /*****************************************************************************/
 
+#define SAC_MT_INVALID_GLOBAL_ID 0xdeadbeef
+
 #if SAC_DO_MULTITHREAD
 
 /***
@@ -98,17 +100,6 @@ extern void *memcpy (void *dest, const void *src, size_t n);
 
 /*****************************************************************************/
 
-/*
- * Macros for implementing the SPMD frame used to move data into SPMD function
- *
- * SAC MT FRAME, used to pass in and inout arguments to SPMD functions.
- * Defined as a union of structs, one struct for every SPMD function.
- */
-
-#define SAC_MT_MYTHREAD() SAC_MT_mythread
-
-#define SAC_MT_MYTHREAD_PARAM() const unsigned int SAC_MT_mythread
-
 #if SAC_DO_THREADS_STATIC
 
 /***
@@ -116,7 +107,9 @@ extern void *memcpy (void *dest, const void *src, size_t n);
  ***   of threads is known statically.
  ***/
 
-#define SAC_MT_THREADS() SAC_SET_THREADS
+#define SAC_MT_GLOBAL_THREADS() SAC_SET_THREADS
+
+#define SAC_MT_HM_AUX_THREADS() 0
 
 #else /* SAC_DO_THREADS_STATIC */
 
@@ -125,37 +118,42 @@ extern void *memcpy (void *dest, const void *src, size_t n);
  ***   of threads is determined dynamically.
  ***/
 
-#define SAC_MT_THREADS() SAC_MT_threads
+// #define SAC_MT_THREADS()
+#define SAC_MT_GLOBAL_THREADS() SAC_MT_global_threads
+
+#define SAC_MT_HM_AUX_THREADS() SAC_MT_hm_aux_threads
 
 #endif /* SAC_DO_THREADS_STATIC */
 
-SAC_C_EXTERN unsigned int SAC_MT_threads;
-SAC_C_EXTERN volatile unsigned int SAC_MT_not_yet_parallel;
-SAC_C_EXTERN pthread_key_t SAC_MT_threadid_key;
+/* number of total threads in the environment */
+SAC_C_EXTERN unsigned int SAC_MT_global_threads;
+
+/* number of additional hidden (auxiliary) threads that the
+ * heap manager has to deal with */
+SAC_C_EXTERN unsigned int SAC_MT_hm_aux_threads;
+
+/* Only a single thread in the environment?
+ * Used for PHM optimizations.
+ */
+SAC_C_EXTERN unsigned int SAC_MT_globally_single;
 
 SAC_C_EXTERN void SAC_COMMON_MT_SetupInitial (int argc, char *argv[],
                                               unsigned int num_threads,
                                               unsigned int max_threads);
-/*
- * REMARK:
- *
- * no volatile for the function return value here, as volatile has
- * no effect for rvalues! And a function return value is a rvalue.
- */
 
 /*****************************************************************************/
 
 #else /* SAC_DO_MULTITHREAD */
 
-SAC_C_EXTERN volatile unsigned int SAC_MT_not_yet_parallel;
+/* only a single thread in the environment? */
+SAC_C_EXTERN unsigned int SAC_MT_globally_single;
 
 /***
  ***   Definitions and declarations for sequential execution (dummies)
  ***/
 
-#define SAC_MT_THREADS() 1
-
-#define SAC_MT_MYTHREAD() 0
+/* total number of threads in the environment */
+#define SAC_MT_GLOBAL_THREADS() 1
 
 #define SAC_MT_SETUP()
 #define SAC_MT_SETUP_INITIAL()
@@ -178,6 +176,10 @@ SAC_C_EXTERN volatile unsigned int SAC_MT_not_yet_parallel;
 
 #define SAC_ND_PROP_OBJ_BOX(boxed, unboxed)                                              \
     SAC_ND_A_FIELD (boxed) = SAC_ND_A_FIELD (unboxed);
+
+#define SAC_MT_FINALIZE()
+
+#define SAC_INVOKE_MAIN_FUN(fname, arg) fname (arg)
 
 /*****************************************************************************/
 

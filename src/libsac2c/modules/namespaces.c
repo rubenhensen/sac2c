@@ -376,6 +376,27 @@ NSgetSTNamespace (const namespace_t *orig)
 }
 
 namespace_t *
+NSgetXTNamespace (const namespace_t *orig)
+{
+    namespace_t *result;
+    view_t *view;
+
+    DBUG_ENTER ();
+
+    view = MakeView ("_XT", orig->view);
+
+    result = FindInPool (orig->name, view);
+
+    if (result != NULL) {
+        view = FreeView (view);
+    } else {
+        result = AddNamespaceToPool (orig->module, view);
+    }
+
+    DBUG_RETURN (result);
+}
+
+namespace_t *
 NSdupNamespace (const namespace_t *ns)
 {
     namespace_t *result;

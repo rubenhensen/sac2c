@@ -144,14 +144,24 @@ AddSacLib (str_buf *buffer)
     SBUFprint (buffer, "-lsac");
     SBUFprint (buffer, global.config.lib_variant);
 
-    if (global.mtmode == MT_none) {
+    switch (global.mtmode) {
+    case MT_none:
         if (global.backend == BE_omp) {
             SBUFprint (buffer, ".mt.omp ");
         } else {
             SBUFprint (buffer, ".seq ");
         }
-    } else {
+        break;
+
+    case MT_createjoin: /* PThreads */
+    case MT_startstop:  /* PThreads, default */
+    case MT_mtstblock:  /* ?? */
         SBUFprint (buffer, ".mt.pth ");
+        break;
+
+    case MT_lpel: /* threading via LPEL library from S-Net; requires pthreads */
+        SBUFprint (buffer, ".mt.lpel -llpel");
+        break;
     }
 
     DBUG_RETURN ();

@@ -263,6 +263,22 @@ AC_CHECK_HEADERS(malloc.h)
 dnl check for mkdtemp
 AC_CHECK_FUNCS(mkdtemp)
 
+
+dnl Get LPEL library and include locations
+AC_ARG_WITH([lpel-include-path],
+  [AS_HELP_STRING([--with-lpel-include-path],
+    [location of the LPEL headers, defaults to ''])],
+  [LPEL_CFLAGS="-I$withval"; CFLAGS="${CFLAGS} ${LPEL_CFLAGS}"],
+  [LPEL_CFLAGS=''])
+AC_SUBST([LPEL_CFLAGS])
+
+dnl AC_ARG_WITH([lpel-lib-path],
+dnl   [AS_HELP_STRING([--with-lpel-lib-path], [location of the LPEL libraries])],
+dnl   [LPEL_LIBS="-L$withval -llpel"],
+dnl   [LPEL_LIBS='-llpel'])
+dnl AC_SUBST([LPEL_LIBS])
+
+
 dnl search for pthread.h
 AC_CHECK_HEADER(pthread.h,[
 
@@ -270,6 +286,26 @@ dnl if found, enable multi threading
 AC_DEFINE(HAVE_PTHREAD_H, 1, set to 1 because you have the <pthread.h> header file)
 AC_DEFINE(ENABLE_MT, 1, set to 1 to enable multi threading)
 AC_SUBST(ENABLE_MT, yes)
+
+  dnl search for lpel.h
+  AC_CHECK_HEADER(lpel.h,[
+  dnl if found, enable multi threading over lpel
+  AC_DEFINE(HAVE_LPEL_H, 1, set to 1 because you have the <lpel.h> header file)
+  AC_DEFINE(ENABLE_MT_LPEL, 1, set to 1 to enable multi threading via LPEL)
+  AC_SUBST(ENABLE_MT_LPEL, yes)
+  AC_DEFINE(MT_CFLAGS_LPEL, , cc flags for LPEL)
+  AC_SUBST(MT_CFLAGS_LPEL, ${LPEL_CFLAGS})
+  
+  ],[
+  
+  dnl otherwise disable multithreading via LPEL
+  AC_DEFINE(HAVE_LPEL_H, 0, set to 0 because you do not have the <lpel.h> header file)
+  AC_DEFINE(ENABLE_MT_LPEL, 0, set to 0 to disable multi threading via LPEL)
+  AC_SUBST(ENABLE_MT_LPEL, no)
+  AC_DEFINE(MT_CFLAGS_LPEL, , cc flags for LPEL)
+  AC_SUBST(MT_CFLAGS_LPEL, '')
+  
+  ], AC_INCLUDES_DEFAULT)
 
 ],[
 

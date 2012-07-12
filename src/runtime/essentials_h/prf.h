@@ -257,9 +257,11 @@
 #define SAC_ND_PRF_IS_REUSED__AUD(to_NT, from_NT, from2_NT)                              \
     SAC_ND_PRF_IS_REUSED__AKS (to_NT, from_NT, from2_NT)
 
+#if 0 /* seemingly not used any more */
 #define SAC_ND_PRF_SINGLETHREAD__DATA(to_NT, to_sdim)                                    \
     SAC_TR_PRF_PRINT (("ND_PRF_SINGLETHREAD__...( %s, %d)\n", NT_STR (to_NT), to_sdim)); \
-    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_MT_not_yet_parallel)
+    SAC_ND_CREATE__SCALAR__DATA (to_NT, SAC_MT_NOT_LOCALLY_PARALLEL ())
+#endif
 
 #define SAC_ND_PRF_GUARD(to_NT, from_NT)                                                 \
     {                                                                                    \

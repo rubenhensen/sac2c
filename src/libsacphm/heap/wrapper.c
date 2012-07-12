@@ -24,7 +24,7 @@
 
 #include "heapmgr.h"
 
-SAC_C_EXTERN unsigned int SAC_Get_ThreadID (pthread_key_t SAC_MT_threadid_key);
+SAC_C_EXTERN unsigned int SAC_Get_Global_ThreadID (void);
 
 /******************************************************************************
  *
@@ -212,7 +212,7 @@ SAC_HM_MallocAnyChunk_at (SAC_HM_size_byte_t size, unsigned int thread_id)
     SAC_HM_size_unit_t units;
     void *mem;
     /* unsigned int thread_id; */
-    const int multi_threaded = !SAC_MT_not_yet_parallel;
+    const int multi_threaded = !SAC_MT_globally_single;
 
 #if 0
   if (multi_threaded && (size <= SAC_HM_ARENA_7_MAXCS_BYTES)) {
@@ -316,7 +316,7 @@ SAC_HM_MallocSmallChunk_at (SAC_HM_size_unit_t units, int arena_num)
 {
     unsigned int thread_id;
 
-    if (SAC_MT_not_yet_parallel) {
+    if (SAC_MT_globally_single) {
         return (SAC_HM_MallocSmallChunk (units, &(SAC_HM_arenas[0][arena_num])));
     } else {
         /*
@@ -327,7 +327,7 @@ SAC_HM_MallocSmallChunk_at (SAC_HM_size_unit_t units, int arena_num)
          *
         thread_id = *((unsigned int *) pthread_getspecific(SAC_MT_threadid_key));
         */
-        thread_id = SAC_Get_ThreadID (SAC_MT_threadid_key);
+        thread_id = SAC_Get_Global_ThreadID ();
         return (SAC_HM_MallocSmallChunk (units, &(SAC_HM_arenas[thread_id][arena_num])));
     }
 }
@@ -368,7 +368,7 @@ SAC_HM_MallocLargeChunk_at (SAC_HM_size_unit_t units, int arena_num)
 {
     unsigned int thread_id;
 
-    if (SAC_MT_not_yet_parallel) {
+    if (SAC_MT_globally_single) {
         return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[0][arena_num])));
     } else {
         /*
@@ -379,7 +379,7 @@ SAC_HM_MallocLargeChunk_at (SAC_HM_size_unit_t units, int arena_num)
          *
         thread_id = *((unsigned int *) pthread_getspecific(SAC_MT_threadid_key));
         */
-        thread_id = SAC_Get_ThreadID (SAC_MT_threadid_key);
+        thread_id = SAC_Get_Global_ThreadID ();
         return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[thread_id][arena_num])));
     }
 }
@@ -420,7 +420,7 @@ SAC_HM_MallocTopArena_at (SAC_HM_size_unit_t units)
 {
     void *mem;
 
-    if (SAC_MT_not_yet_parallel) {
+    if (SAC_MT_globally_single) {
         return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA])));
     } else {
         SAC_MT_ACQUIRE_LOCK (SAC_HM_top_arena_lock);
@@ -566,7 +566,7 @@ SAC_HM_FreeTopArena_at (SAC_HM_header_t *addr)
 {
     SAC_HM_arena_t *arena = &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]);
     SAC_HM_header_t *freep = addr - 2;
-    const int multi_threaded = !SAC_MT_not_yet_parallel;
+    const int multi_threaded = !SAC_MT_globally_single;
 
     if (multi_threaded) {
         SAC_MT_ACQUIRE_LOCK (SAC_HM_top_arena_lock);

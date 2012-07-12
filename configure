@@ -10,6 +10,6 @@
 #
 
 cd setup
-./configure
+./configure $@
 cp sac2crc ..
 

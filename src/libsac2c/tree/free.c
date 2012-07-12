@@ -488,6 +488,7 @@ FREEzombify (node *arg_node)
     FUNDEF_ISSPMDFUN (arg_node) = FALSE;
     FUNDEF_ISMTFUN (arg_node) = FALSE;
     FUNDEF_ISSTFUN (arg_node) = FALSE;
+    FUNDEF_ISXTFUN (arg_node) = FALSE;
     FUNDEF_ISWRAPPERFUN (arg_node) = FALSE;
     FUNDEF_ISEXTERN (arg_node) = FALSE;
     FUNDEF_ISGENERIC (arg_node) = FALSE;

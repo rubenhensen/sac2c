@@ -129,6 +129,8 @@ GenerateFunbundleName (char *name, namespace_t *ns, int arity)
     buffer = SBUFprintf (buffer, "%s__%s%d", safens, safename, arity);
     result = SBUF2str (buffer);
 
+    DBUG_PRINT ("generated name '%s'", result);
+
     buffer = SBUFfree (buffer);
 
     DBUG_RETURN (result);
@@ -156,9 +158,13 @@ InsertIntoBundles (node *fundef, int arity, node *bundles)
                                    GenerateFunbundleName (FUNDEF_NAME (fundef),
                                                           FUNDEF_NS (fundef), arity),
                                    arity, fundef, NULL);
+        FUNBUNDLE_ISXTBUNDLE (bundles) = FUNDEF_ISXTFUN (fundef);
+        FUNBUNDLE_ISSTBUNDLE (bundles) = FUNDEF_ISSTFUN (fundef);
+        DBUG_PRINT ("Funbundle created: %s.\n", FUNBUNDLE_NAME (bundles));
     } else {
-        if ((arity == FUNBUNDLE_ARITY (bundles))
-            && NSequals (FUNDEF_NS (fundef), FUNBUNDLE_NS (bundles))
+        if ((arity == FUNBUNDLE_ARITY (bundles)) &&
+            // NSequals( FUNDEF_NS( fundef), FUNBUNDLE_NS( bundles)) &&
+            STReq (NSgetName (FUNDEF_NS (fundef)), NSgetName (FUNBUNDLE_NS (bundles)))
             && STReq (FUNDEF_NAME (fundef), FUNBUNDLE_NAME (bundles))) {
             FUNBUNDLE_FUNDEF (bundles)
               = TCappendFundef (FUNBUNDLE_FUNDEF (bundles), fundef);

@@ -2927,14 +2927,18 @@ COMPfundef (node *arg_node, info *arg_info)
               = TCappendAssign (assigns, BLOCK_ASSIGNS (FUNDEF_BODY (arg_node)));
         }
 
-        if (FUNDEF_ISSPMDFUN (arg_node)) {
+        if (FUNDEF_ISSPMDFUN (arg_node) || FUNDEF_ISXTSPMDFUN (arg_node)) {
+            /* TODO: SPMD funs and XT-SPMD funs are identical and should be merged */
             icm_args = MakeFunctionArgsSpmd (arg_node);
             FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("MT_SPMDFUN_DECL", icm_args);
             FUNDEF_ICMDEFBEGIN (arg_node)
               = TBmakeIcm ("MT_SPMDFUN_DEF_BEGIN", DUPdoDupTree (icm_args));
             FUNDEF_ICMDEFEND (arg_node)
               = TBmakeIcm ("MT_SPMDFUN_DEF_END", DUPdoDupTree (icm_args));
-        } else if (FUNDEF_ISMTFUN (arg_node)) {
+        } else if (FUNDEF_ISMTFUN (arg_node) || FUNDEF_ISXTFUN (arg_node)) {
+            /* The MT ICMs are used for both the MT and XT funs because the interface is
+             * the same. However, internally the difference is that XT funs may do an SPMD
+             * invocation, while the MT funs cannot. */
             icm_args = MakeFunctionArgs (arg_node);
             FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("MT_MTFUN_DECL", icm_args);
             FUNDEF_ICMDEFBEGIN (arg_node)
@@ -2977,6 +2981,7 @@ COMPfundef (node *arg_node, info *arg_info)
             FUNDEF_ICMDEFEND (arg_node)
               = TBmakeIcm ("WE_FUN_DEF_END", DUPdoDupTree (icm_args));
         } else {
+            /* ST and SEQ functions */
             icm_args = MakeFunctionArgs (arg_node);
             FUNDEF_ICMDECL (arg_node) = TBmakeIcm ("ND_FUN_DECL", icm_args);
             FUNDEF_ICMDEFBEGIN (arg_node)
@@ -3443,6 +3448,8 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
                 foldfun_name = TCmakeIdCopyString (FUNDEF_NAME (foldfun));
                 if (FUNDEF_ISMTFUN (foldfun)) {
                     foldfun_tag = TCmakeIdCopyString ("MT");
+                } else if (FUNDEF_ISXTFUN (foldfun)) {
+                    foldfun_tag = TCmakeIdCopyString ("XT");
                 } else {
                     foldfun_tag = TCmakeIdCopyString ("ND");
                 }
@@ -3495,9 +3502,9 @@ COMPreturn (node *arg_node, info *arg_info)
 
     fundef = INFO_FUNDEF (arg_info);
 
-    if (FUNDEF_ISSPMDFUN (fundef)) {
+    if (FUNDEF_ISSPMDFUN (fundef) || FUNDEF_ISXTSPMDFUN (fundef)) {
         icm = TBmakeIcm ("MT_SPMDFUN_RET", MakeFunRetArgsSpmd (arg_node, arg_info));
-    } else if (FUNDEF_ISMTFUN (fundef)) {
+    } else if (FUNDEF_ISMTFUN (fundef) || FUNDEF_ISXTFUN (fundef)) {
         icm = TBmakeIcm ("MT_MTFUN_RET", MakeFunRetArgs (arg_node, arg_info));
     } else if (FUNDEF_ISTHREADFUN (fundef)) {
         icm = TBmakeIcm ("MUTC_THREADFUN_RET", MakeFunRetArgs (arg_node, arg_info));
@@ -3763,7 +3770,8 @@ COMPap (node *arg_node, info *arg_info)
 
     if (FUNDEF_ISSPMDFUN (fundef)) {
         icm = TBmakeIcm ("MT_SPMDFUN_AP", icm_args);
-    } else if (FUNDEF_ISMTFUN (fundef)) {
+    } else if (FUNDEF_ISMTFUN (fundef) || FUNDEF_ISXTFUN (fundef)) {
+        /* The interface of the MT and XT funs is the same, hence use the same ICM. */
         icm = TBmakeIcm ("MT_MTFUN_AP", icm_args);
     } else if (FUNDEF_ISTHREADFUN (fundef)) {
         if (AP_ISSPAWNED (arg_node)) {

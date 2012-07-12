@@ -69,7 +69,7 @@ static const SAC_HM_size_unit_t min_chunk_size[]
  *   an appropriate error message indicating that the internal data structures
  *   of the heap manager are corrupted.
  *
- *   The arena´s number is only provided for an improved error message.
+ *   The arenaï¿½s number is only provided for an improved error message.
  *
  ******************************************************************************/
 
@@ -103,7 +103,7 @@ SAC_HM_CheckAllocDiagPattern (SAC_HM_size_unit_t diag, int arena_num)
  *   an appropriate error message indicating that the internal data structures
  *   of the heap manager are corrupted.
  *
- *   The arena´s number is only provided for an improved error message.
+ *   The arenaï¿½s number is only provided for an improved error message.
  *
  ******************************************************************************/
 
@@ -368,7 +368,7 @@ SAC_HM_ShowDiagnostics ()
     unsigned int num_threads;
 
 #ifdef MT
-    num_threads = SAC_MT_threads;
+    num_threads = SAC_MT_global_threads;
 #else
     num_threads = 1;
 #endif

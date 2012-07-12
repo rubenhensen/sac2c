@@ -144,7 +144,7 @@ FMGRcheckSystemLibrary (const char *name)
 
     DBUG_ENTER ();
 
-    /* remove trailing 'lib' */
+    /* remove leading 'lib' */
     name += 3;
 
     /* create a dummy C program to compile and link against */
@@ -153,9 +153,11 @@ FMGRcheckSystemLibrary (const char *name)
     SYScall ("echo \"int main(){return(0);}\" >%s/SAC_XX_syslibtest.c",
              global.tmp_dirname);
 
-    result = SYScallNoErr ("%s %s %s -l%s -o %s/SAC_XX_syslibtest %s/SAC_XX_syslibtest.c",
-                           global.config.cc, global.config.ccflags, global.config.ldflags,
-                           name, global.tmp_dirname, global.tmp_dirname);
+    result
+      = SYScallNoErr ("%s %s %s %s -l%s -o %s/SAC_XX_syslibtest %s/SAC_XX_syslibtest.c",
+                      global.config.cc, global.config.ccflags, global.ccflags,
+                      global.config.ldflags, name, global.tmp_dirname,
+                      global.tmp_dirname);
 
     /* reverse result, because a result of 0 means true here. */
 

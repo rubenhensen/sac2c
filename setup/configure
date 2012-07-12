@@ -626,7 +626,10 @@ ENABLE_PHM
 ENABLE_RTSPEC
 ENABLE_DL
 ENABLE_OMP
+MT_CFLAGS_LPEL
+ENABLE_MT_LPEL
 ENABLE_MT
+LPEL_CFLAGS
 SLC_PATH
 ENABLE_MUTC
 M4
@@ -712,6 +715,7 @@ RCALPHA
 RCMAC'
 ac_user_opts='
 enable_option_checking
+with_lpel_include_path
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1335,6 +1339,12 @@ if test -n "$ac_init_help"; then
      short | recursive ) echo "Configuration of sac2c svn:";;
    esac
   cat <<\_ACEOF
+
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-lpel-include-path
+                          location of the LPEL headers, defaults to ''
 
 Some influential environment variables:
   CC          C compiler command
@@ -4213,6 +4223,19 @@ fi
 done
 
 
+
+
+# Check whether --with-lpel-include-path was given.
+if test "${with_lpel_include_path+set}" = set; then :
+  withval=$with_lpel_include_path; LPEL_CFLAGS="-I$withval"; CFLAGS="${CFLAGS} ${LPEL_CFLAGS}"
+else
+  LPEL_CFLAGS=''
+fi
+
+
+
+
+
 ac_fn_c_check_header_mongrel "$LINENO" "pthread.h" "ac_cv_header_pthread_h" "$ac_includes_default"
 if test "x$ac_cv_header_pthread_h" = xyes; then :
 
@@ -4224,6 +4247,47 @@ $as_echo "#define HAVE_PTHREAD_H 1" >>confdefs.h
 $as_echo "#define ENABLE_MT 1" >>confdefs.h
 
 ENABLE_MT=yes
+
+
+    ac_fn_c_check_header_compile "$LINENO" "lpel.h" "ac_cv_header_lpel_h" "$ac_includes_default
+"
+if test "x$ac_cv_header_lpel_h" = xyes; then :
+
+
+$as_echo "#define HAVE_LPEL_H 1" >>confdefs.h
+
+
+$as_echo "#define ENABLE_MT_LPEL 1" >>confdefs.h
+
+  ENABLE_MT_LPEL=yes
+
+
+$as_echo "#define MT_CFLAGS_LPEL /**/" >>confdefs.h
+
+  MT_CFLAGS_LPEL=${LPEL_CFLAGS}
+
+
+
+else
+
+
+
+$as_echo "#define HAVE_LPEL_H 0" >>confdefs.h
+
+
+$as_echo "#define ENABLE_MT_LPEL 0" >>confdefs.h
+
+  ENABLE_MT_LPEL=no
+
+
+$as_echo "#define MT_CFLAGS_LPEL /**/" >>confdefs.h
+
+  MT_CFLAGS_LPEL=''
+
+
+
+fi
+
 
 
 

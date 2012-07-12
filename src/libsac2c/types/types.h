@@ -175,7 +175,13 @@ typedef enum {
 
 typedef enum { SSP_akv, SSP_aks, SSP_akd, SSP_aud } sigspec_mode_t;
 
-typedef enum { MT_none = 0, MT_createjoin, MT_startstop, MT_mtstblock } mtmode_t;
+typedef enum {
+    MT_none = 0,
+    MT_createjoin = 1, /* PThreads */
+    MT_startstop = 2,  /* PThreads, default */
+    MT_mtstblock = 3,  /* ?? */
+    MT_lpel = 4        /* threading via LPEL library from S-Net; requires pthreads */
+} mtmode_t;
 
 /* the possible executiomodes of mtmode 3 (mtstblock) */
 typedef enum {

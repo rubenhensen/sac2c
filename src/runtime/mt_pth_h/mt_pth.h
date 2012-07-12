@@ -20,288 +20,191 @@
 #define _SAC_MT_PTH_H_
 
 #ifndef SAC_SIMD_COMPILATION
+#if SAC_DO_MULTITHREAD && SAC_DO_MT_PTHREAD
 
 /*****************************************************************************/
 
-#if SAC_DO_MULTITHREAD
+/* Global TLS key to retrieve the Thread Self Bee Ptr.
+ * Defined in mt_pth.c */
+SAC_C_EXTERN pthread_key_t SAC_MT_self_bee_key;
 
-#if SAC_DO_MT_PTHREAD
+/* forwards */
+struct sac_bee_pth_t;
+struct sac_hive_pth_t;
 
-#define SAC_MT_SPMD_FRAME_BEGIN() static volatile union {
+/**
+ * Low-latency mutex/semaphore types, i.e. spinlocks.
+ * The implementation is simplistic and assumes only a single locker and single unlocker,
+ * which is all we need.
+ * These locks are used in latency-critical code: the stopping barrier.
+ */
+struct sac_pth_llmutex_t {
+    /* 0 = unlocked, 1 = locked */
+    volatile unsigned flag;
+};
 
-#define SAC_MT_SPMD_FRAME_END()                                                          \
-    int dummy; /* C99 does not allow empty structs or unions */                          \
-    }                                                                                    \
-    SAC_spmd_frame;
+/* Release the lock. */
+static inline void
+SAC_MT_PTH_release_lck (struct sac_pth_llmutex_t *const lck)
+{
+    lck->flag = 0;
+}
 
-#define SAC_MT_SPMD_FRAME_ELEMENT_BEGIN(spmdfun) struct {
+/* Acquire the lock. Busy-wait until the lock is ready. */
+static inline void
+SAC_MT_PTH_acquire_lck (struct sac_pth_llmutex_t *const lck)
+{
+    /* WARNING: THIS IS *NOT* ATOMIC AND WILL FAIL IF MORE THAN ONE THREAD ATTEMPTS TO
+     * LOCK AT THE SAME TIME ! */
+    while (lck->flag != 0)
+        ;
+    lck->flag = 1;
+}
 
-#define SAC_MT_SPMD_FRAME_ELEMENT_END(spmdfun)                                           \
-    int _dummy; /* C99 does not allow empty structs/unions */                            \
-    }                                                                                    \
-    spmdfun;
+/* Test if the lock is unlocked. */
+static inline int
+SAC_MT_PTH_may_acquire_lck (struct sac_pth_llmutex_t *const lck)
+{
+    return (lck->flag == 0);
+}
 
-#define SAC_MT_FRAME_ELEMENT_in__NODESC(name, num, basetype, var_NT)                     \
-    SAC_ND_TYPE (var_NT, basetype) in_##num;
+/* Initialize the lock. */
+static inline void
+SAC_MT_PTH_init_lck (struct sac_pth_llmutex_t *const lck, int locked)
+{
+    lck->flag = locked;
+}
 
-#define SAC_MT_FRAME_ELEMENT_in__DESC(name, num, basetype, var_NT)                       \
-    SAC_ND_TYPE (var_NT, basetype) in_##num;                                             \
-    SAC_ND_DESC_TYPE (var_NT) in_##num##_desc;
+/* Release the lock. */
+static inline void
+SAC_MT_PTH_destroy_lck (struct sac_pth_llmutex_t *const lck)
+{
+    /* nop */
+}
 
-#define SAC_MT_FRAME_ELEMENT_inout__NODESC(name, num, basetype, var_NT)                  \
-    SAC_ND_TYPE (var_NT, basetype) * in_##num;
-
-#define SAC_MT_FRAME_ELEMENT_inout__DESC(name, num, basetype, var_NT)                    \
-    SAC_ND_TYPE (var_NT, basetype) * in_##num;                                           \
-    SAC_ND_DESC_TYPE (var_NT) * in_##num##_desc;
-
-#define SAC_MT_FRAME_ELEMENT__NOOP(name, num, basetype, var_NT)
-
-/*****************************************************************************/
-
-/*
- * Macros for sending data to the SPMD frame
+/**
+ * Barrier synchronisation: one signals and many are released.
+ * This is used in the starting barrier.
  */
 
-#define SAC_MT_SEND_PARAM_in__NODESC(spmdfun, num, var_NT)                               \
-    SAC_spmd_frame.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);
+static inline void
+SAC_MT_PTH_wait_on_barrier (unsigned *locfl, volatile unsigned *sharedfl)
+{
+    const unsigned old_fl = *locfl;
+    unsigned new_fl;
 
-#define SAC_MT_SEND_PARAM_in__DESC_AKD(spmdfun, num, var_NT)                             \
-    DESC_DIM (SAC_ND_A_DESC (var_NT)) = SAC_ND_A_DIM (var_NT);                           \
-    SAC_spmd_frame.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);                           \
-    SAC_spmd_frame.spmdfun.in_##num##_desc = SAC_ND_A_DESC (var_NT);
+    /* wait until the value in the sharedfl changes compared to what
+     * we remember from the last synchro. */
+    do {
+        new_fl = *sharedfl;
+    } while (new_fl == old_fl);
 
-#define SAC_MT_SEND_PARAM_in__DESC_AUD(spmdfun, num, var_NT)                             \
-    SAC_spmd_frame.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);                           \
-    SAC_spmd_frame.spmdfun.in_##num##_desc = SAC_ND_A_DESC (var_NT);
+    /* remember the new value locally */
+    *locfl = new_fl;
+}
 
-#define SAC_MT_SEND_PARAM_inout__NODESC(spmdfun, num, var_NT)                            \
-    SAC_spmd_frame.spmdfun.in_##num = &SAC_ND_A_FIELD (var_NT);
+static inline void
+SAC_MT_PTH_signal_barrier (unsigned *locfl, volatile unsigned *sharedfl)
+{
+    /* Read the current shared flag, invert it, and store back.
+     * We are guaranteed to be the only writer, hence this is safe */
+    unsigned new_fl = ~(*sharedfl);
+    *sharedfl = new_fl;
 
-#define SAC_MT_SEND_PARAM_inout__DESC_AKD(spmdfun, num, var_NT)                          \
-    DESC_DIM (SAC_ND_A_DESC (var_NT)) = SAC_ND_A_DIM (var_NT);                           \
-    SAC_spmd_frame.spmdfun.in_##num = &SAC_ND_A_FIELD (var_NT);                          \
-    SAC_spmd_frame.spmdfun.in_##num##_desc = &SAC_ND_A_DESC (var_NT);
+    if (locfl != NULL) {
+        *locfl = new_fl;
+    }
+}
 
-#define SAC_MT_SEND_PARAM_inout__DESC_AUD(spmdfun, num, var_NT)                          \
-    SAC_spmd_frame.spmdfun.in_##num = &SAC_ND_A_FIELD (var_NT);                          \
-    SAC_spmd_frame.spmdfun.in_##num##_desc = &SAC_ND_A_DESC (var_NT);
+/** ------------------------------------------------------------------------- */
 
-#define SAC_MT_SEND_PARAM__NOOP(spmdfun, num, var_NT) SAC_NOOP ()
+/* Signature of all SPMD functions. Must match that used in wrapper code. */
+#define SAC_MT_SPMDFUN_REAL_PARAM_LIST() struct sac_bee_pth_t *SAC_MT_self
 
-/*****************************************************************************/
+/* inserted by compiler in MT */
+#define SAC_MT_MYTHREAD_PARAM() struct sac_bee_pth_t *SAC_MT_self
 
-/*
- * Macros for receiving data from the SPMD frame
+/* The spmd function a hive will execute concurrently. */
+typedef SAC_MT_SPMDFUN_REAL_RETTYPE () (*volatile sac_hive_spmd_fun_pth_t) (
+  struct sac_bee_pth_t *SAC_MT_self);
+
+/**
+ * The PTH-specific bee type structure.
+ * Inherits common stuff from mt_beehive.h.
  */
+struct sac_bee_pth_t {
+    /* Common stuff. Must be the first field in the record. */
+    struct sac_bee_common_t c;
 
-#define SAC_MT_RECEIVE_PARAM_in__NODESC(spmdfun, num, basetype, var_NT)                  \
-    SAC_ND_TYPE (var_NT, basetype)                                                       \
-    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;
+    /** pth-specific: */
+    /* pth: pthreads handle to the worker thread.
+     * Empty in the first bee. */
+    pthread_t pth;
+    /* start_barr_locfl: starting barrier local flag */
+    unsigned start_barr_locfl;
+    /* stop_lck: stop-barrier synchro lock */
+    struct sac_pth_llmutex_t stop_lck;
+};
 
-#define SAC_MT_RECEIVE_PARAM_in__NODESC__FAKERC(spmdfun, num, basetype, var_NT)          \
-    SAC_ND_TYPE (var_NT, basetype)                                                       \
-    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;                           \
-    SAC_ND_DESC_TYPE (var_NT)                                                            \
-    SAC_ND_A_DESC (var_NT) = (SAC_ND_DESC_TYPE (var_NT))alloca (BYTE_SIZE_OF_DESC (0));  \
-    DESC_RC (SAC_ND_A_DESC (var_NT)) = 2;
-
-#define SAC_MT_RECEIVE_PARAM_in__DESC(spmdfun, num, basetype, var_NT)                    \
-    SAC_ND_TYPE (var_NT, basetype)                                                       \
-    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;                           \
-    SAC_ND_DESC_TYPE (var_NT)                                                            \
-    SAC_ND_A_DESC (var_NT) = (SAC_ND_DESC_TYPE (var_NT))alloca (                         \
-      BYTE_SIZE_OF_DESC (DESC_DIM (SAC_spmd_frame.spmdfun.in_##num##_desc)));            \
-    memcpy (SAC_ND_A_DESC (var_NT), SAC_spmd_frame.spmdfun.in_##num##_desc,              \
-            BYTE_SIZE_OF_DESC (DESC_DIM (SAC_spmd_frame.spmdfun.in_##num##_desc)));
-
-#define SAC_MT_RECEIVE_PARAM_in__NEWDESC(spmdfun, num, basetype, var_NT)                 \
-    SAC_ND_TYPE (var_NT, basetype)                                                       \
-    SAC_ND_A_FIELD (var_NT) = SAC_spmd_frame.spmdfun.in_##num;                           \
-    SAC_ND_DESC_TYPE (var_NT)                                                            \
-    SAC_ND_A_DESC (var_NT)                                                               \
-      = (SAC_ND_DESC_TYPE (var_NT))alloca (SIZE_OF_DESC (0) * sizeof (int));             \
-    DESC_RC (SAC_ND_A_DESC (var_NT)) = 2;
-
-#define SAC_MT_RECEIVE_PARAM_inout__NODESC(spmdfun, num, basetype, var_NT)               \
-    SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
-      = SAC_spmd_frame.spmdfun.in_##num;
-
-#define SAC_MT_RECEIVE_PARAM_inout__DESC(spmdfun, num, basetype, var_NT)                 \
-    SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
-      = SAC_spmd_frame.spmdfun.in_##num;                                                 \
-    SAC_ND_DESC_TYPE (var_NT)                                                            \
-    CAT0 (SAC_ND_A_DESC (var_NT), __s) = (SAC_ND_DESC_TYPE (var_NT))alloca (             \
-      BYTE_SIZE_OF_DESC (DESC_DIM (*SAC_spmd_frame.spmdfun.in_##num##_desc)));           \
-    memcpy (CAT0 (SAC_ND_A_DESC (var_NT), __s), *SAC_spmd_frame.spmdfun.in_##num##_desc, \
-            BYTE_SIZE_OF_DESC (DESC_DIM (*SAC_spmd_frame.spmdfun.in_##num##_desc)));     \
-    SAC_ND_DESC_TYPE (var_NT) * SAC_NAMEP (SAC_ND_A_DESC (var_NT))                       \
-      = &CAT0 (SAC_ND_A_DESC (var_NT), __s);
-
-#define SAC_MT_RECEIVE_PARAM_inout__NODESC__FAKERC(spmdfun, num, basetype, var_NT)       \
-    SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
-      = SAC_spmd_frame.spmdfun.in_##num;                                                 \
-    SAC_ND_DESC_TYPE (var_NT)                                                            \
-    CAT0 (SAC_ND_A_DESC (var_NT), __s)                                                   \
-      = (SAC_ND_DESC_TYPE (var_NT))alloca (FIXED_SIZE_OF_DESC * sizeof (int));           \
-    memset (CAT0 (SAC_ND_A_DESC (var_NT), __s), '\0',                                    \
-            FIXED_SIZE_OF_DESC * sizeof (int));                                          \
-    SAC_ND_DESC_TYPE (var_NT) * SAC_NAMEP (SAC_ND_A_DESC (var_NT))                       \
-      = &CAT0 (SAC_ND_A_DESC (var_NT), __s);
-
-#define SAC_MT_RECEIVE_PARAM__NOOP(spmdfun, num, basetype, var_NT) SAC_NOOP ()
-
-/*****************************************************************************/
-
-/*
- * Macros for establishing a fake descriptor for AKS SPMD function arguments
+/**
+ * The PTH-specific hive type structure.
+ * Inherits common stuff from mt_beehive.h.
  */
+struct sac_hive_pth_t {
+    /* Common stuff. Must be the first field in the record. */
+    struct sac_hive_common_t c;
+    /* spmd_fun: the function the hive shall execute in the SPMD fashion */
+    sac_hive_spmd_fun_pth_t spmd_fun;
+    /* start_barr_sharedfl: starting barrier shared flag */
+    volatile unsigned start_barr_sharedfl;
+};
 
-#define SAC_MT_DECL__MIRROR_PARAM__DESC(var_NT, dim)                                     \
-    SAC_ND_DESC_TYPE (var_NT) SAC_ND_A_DESC (var_NT) = alloca (BYTE_SIZE_OF_DESC (dim)); \
-    DESC_DIM (SAC_ND_A_DESC (var_NT)) = 2;
+/* Up-cast a pointer from struct sac_bee_common_t to sac_bee_pth_t.
+ * An inline fun is used to ensure the argument is of a proper type. */
+static inline struct sac_bee_pth_t *
+CAST_BEE_COMMON_TO_PTH (struct sac_bee_common_t *cp)
+{
+    return (struct sac_bee_pth_t *)cp;
+}
 
-#define SAC_MT_DECL__MIRROR_PARAM__NODESC(var_NT, dim) SAC_NOOP ()
+/* Up-cast a pointer from struct sac_hive_common_t to sac_hive_pth_t.
+ * An inline fun is used to ensure the argument is of a proper type. */
+static inline struct sac_hive_pth_t *
+CAST_HIVE_COMMON_TO_PTH (struct sac_hive_common_t *cp)
+{
+    return (struct sac_hive_pth_t *)cp;
+}
 
-/*****************************************************************************/
-
-/*
- * Macros for defining the synchronisation barrier
- *
- * SAC MT BARRIER, used to pass out parameters out of SPMD functions.
- * Defined as a union of structs, one struct for every SPMD function.
- * We provide dummy entries on each level in case a program does not
- * contain a single SPMD function or an SPMD function has no arguments.
- */
-
-#define SAC_MT_SPMD_BARRIER_BEGIN()                                                      \
-    static volatile struct {                                                             \
-        int ready;                                                                       \
-        union {                                                                          \
-            struct {                                                                     \
-                char                                                                     \
-                  cache_align_buffer[SAC_MAX (SAC_MT_CACHE_LINE_MAX () - sizeof (int),   \
-                                              1)];                                       \
-            } _dummy;
-
-#define SAC_MT_SPMD_BARRIER_ELEMENT_BEGIN(spmdfun) struct {
-
-#define SAC_MT_BARRIER_ELEMENT__NOOP(name, num, basetype, var_NT)
-
-#define SAC_MT_BARRIER_ELEMENT_out__NODESC(name, num, basetype, var_NT)                  \
-    SAC_ND_TYPE (var_NT, basetype) in_##num;
-
-#define SAC_MT_BARRIER_ELEMENT_out__DESC(name, num, basetype, var_NT)                    \
-    SAC_ND_TYPE (var_NT, basetype) in_##num;                                             \
-    SAC_ND_DESC_TYPE (var_NT) in_##num##_desc;
-
-#define SAC_MT_SPMD_BARRIER_ELEMENT_END(spmdfun)                                         \
-    int _dummy; /* C99 does not allow empty structs/unions */                            \
-    }                                                                                    \
-    spmdfun;
-
-#define SAC_MT_SPMD_BARRIER_END()                                                        \
-    }                                                                                    \
-    data;                                                                                \
-    }                                                                                    \
-    SAC_spmd_barrier[SAC_SET_THREADS_MAX + 1];
+/* Inserted at the beginning of the ST and SEQ functions to define SAC_MT_self.
+ * In SEQ the value will not be used and shall be NULL.
+ * In ST the value should point to the single global queen-bee created for the
+ * standalone program execution. */
+#define SAC_MT_DEFINE_ST_SELF()                                                          \
+    struct sac_bee_pth_t *const SAC_MT_self = SAC_MT_singleton_queen;
 
 /*****************************************************************************/
 
 /*
  *  Macros for setting and clearing the synchronisation barrier
+ *  These are tigthly related to the code in mt_beehive.h
  */
+/* similar to lock */
+#define SAC_MT_CLEAR_BARRIER(spmdfun, loc_id)                                            \
+    SAC_MT_PTH_acquire_lck (                                                             \
+      &CAST_BEE_COMMON_TO_PTH (SAC_MT_self->c.hive->bees[loc_id])->stop_lck);
 
-#define SAC_MT_CLEAR_BARRIER(spmdfun, thread) SAC_spmd_barrier[thread].ready = 0;
+/* similar to unlock */
+#define SAC_MT_SET_BARRIER(spmdfun, loc_id)                                              \
+    SAC_MT_PTH_release_lck (                                                             \
+      &CAST_BEE_COMMON_TO_PTH (SAC_MT_self->c.hive->bees[loc_id])->stop_lck);
 
-#define SAC_MT_SET_BARRIER(spmdfun, thread) SAC_spmd_barrier[thread].ready = 1;
+/* similar to is-unlocked */
+#define SAC_MT_CHECK_BARRIER(spmdfun, loc_id)                                            \
+    SAC_MT_PTH_may_acquire_lck (                                                         \
+      &CAST_BEE_COMMON_TO_PTH (SAC_MT_self->c.hive->bees[loc_id])->stop_lck)
 
-#define SAC_MT_CHECK_BARRIER(spmdfun, thread) (SAC_spmd_barrier[thread].ready)
-
-/*****************************************************************************/
-
-/*
- *  Macros for sending data to the synchronisation barrier
- */
-
-#define SAC_MT_SEND_RESULT__NOOP(spmdfun, thread, num, var_NT) SAC_NOOP ()
-
-#define SAC_MT_SEND_RESULT_out__NODESC(spmdfun, thread, num, var_NT)                     \
-    SAC_spmd_barrier[thread].data.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);
-
-#define SAC_MT_SEND_RESULT_out__DESC(spmdfun, thread, num, var_NT)                       \
-    SAC_spmd_barrier[thread].data.spmdfun.in_##num = SAC_ND_A_FIELD (var_NT);            \
-    SAC_spmd_barrier[thread].data.spmdfun.in_##num##_desc = SAC_ND_A_DESC (var_NT);
-
-/*****************************************************************************/
-
-/*
- *  Macros for receiving data from the synchronisation barrier
- */
-
-#define SAC_MT_RECEIVE_RESULT__NOOP(spmdfun, thread, num, var_NT) SAC_NOOP ()
-
-#define SAC_MT_RECEIVE_RESULT_out__NODESC(spmdfun, thread, num, var_NT)                  \
-    SAC_ND_A_FIELD (var_NT) = SAC_spmd_barrier[thread].data.spmdfun.in_##num;
-
-#define SAC_MT_RECEIVE_RESULT_out__DESC(spmdfun, thread, num, var_NT)                    \
-    SAC_ND_A_FIELD (var_NT) = SAC_spmd_barrier[thread].data.spmdfun.in_##num;            \
-    SAC_ND_A_DESC (var_NT) = SAC_spmd_barrier[thread].data.spmdfun.in_##num##_desc;
-
-/*****************************************************************************/
-
-/*
- * Macros for implementing the barrier synchronisation
- */
-
-#define SAC_MT_SYNC_BEGIN(spmdfun)                                                       \
-    {                                                                                    \
-        unsigned int SAC_MT_ready_count = SAC_MT_MYWORKERCLASS ();                       \
-        unsigned int SAC_MT_son_id;                                                      \
-        unsigned int SAC_MT_i;                                                           \
-                                                                                         \
-        while (SAC_MT_ready_count > 0) {                                                 \
-            SAC_MT_i = SAC_MT_MYWORKERCLASS ();                                          \
-                                                                                         \
-            do {                                                                         \
-                SAC_MT_son_id = SAC_MT_MYTHREAD () + SAC_MT_i;                           \
-                                                                                         \
-                if (SAC_MT_CHECK_BARRIER (spmdfun, SAC_MT_son_id)) {
-
-#define SAC_MT_SYNC_CONT(spmdfun)                                                        \
-    SAC_MT_CLEAR_BARRIER (spmdfun, SAC_MT_son_id)                                        \
-    SAC_MT_ready_count >>= 1;                                                            \
-    if (SAC_MT_ready_count == 0) {                                                       \
-        break;                                                                           \
-    }                                                                                    \
-    }                                                                                    \
-    }                                                                                    \
-    while (SAC_MT_i >>= 1)                                                               \
-        ;                                                                                \
-    }
-
-#define SAC_MT_SYNC_END(spmdfun)                                                         \
-    SAC_MT_SET_BARRIER (spmdfun, SAC_MT_MYTHREAD ())                                     \
-    }
-
-#define SAC_MT_SYNC_FOLD__NOOP(spmdfun, num, accu_NT, val_NT, basetype, tag, foldfun)    \
-    SAC_NOOP ()
-
-#define SAC_MT_SYNC_FOLD_out__NODESC(spmdfun, num, accu_NT, val_NT, basetype, tag,       \
-                                     foldfun)                                            \
-    SAC_MT_RECEIVE_RESULT_out__NODESC (spmdfun, SAC_MT_son_id, num, val_NT);             \
-    SAC_##tag##_FUNAP2 (foldfun, SAC_ND_ARG_out (accu_NT, basetype),                     \
-                        SAC_ND_ARG_in (accu_NT, basetype),                               \
-                        SAC_ND_ARG_in (val_NT, basetype));
-
-#define SAC_MT_SYNC_FOLD_out__DESC(spmdfun, num, accu_NT, val_NT, basetype, tag,         \
-                                   foldfun)                                              \
-    SAC_MT_RECEIVE_RESULT_out__DESC (spmdfun, SAC_MT_son_id, num, val_NT);               \
-    SAC_##tag##_FUNAP2 (foldfun, SAC_ND_ARG_out (accu_NT, basetype),                     \
-                        SAC_ND_ARG_in (accu_NT, basetype),                               \
-                        SAC_ND_ARG_in (val_NT, basetype));
-
-#define SAC_MT_FUNAP2(name, ...) name (SAC_MT_MYTHREAD (), __VA_ARGS__);
+/* init stop_lck in a bee in a locked state */
+#define SAC_MT_INIT_BARRIER(bee) SAC_MT_PTH_init_lck (&bee->stop_lck, 1)
 
 /*****************************************************************************/
 
@@ -311,56 +214,41 @@
 
 #define SAC_MT_SPMD_EXECUTE(name)                                                        \
     {                                                                                    \
-        SAC_TR_MT_PRINT (("Parallel execution of spmd-block %s started.", #name));       \
-        SAC_MT_spmd_function = &name;                                                    \
-        SAC_MT_not_yet_parallel = 0;                                                     \
-        SAC_MT_START_WORKERS ()                                                          \
-        name (0, SAC_MT_MASTERCLASS (), 0);                                              \
-        SAC_MT_not_yet_parallel = 1;                                                     \
+        SAC_TR_MT_PRINT (("Parallel PTH execution of spmd-block %s started.", #name));   \
+        CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive)->spmd_fun = &name;                 \
+        SAC_MT_self->c.hive->framedata = frame;                                          \
+        SAC_MT_self->c.hive->retdata = rdata;                                            \
+        SAC_MT_PTH_do_spmd_execute (SAC_MT_self);                                        \
         SAC_TR_MT_PRINT (("Parallel execution of spmd-block %s finished.", #name));      \
     }
 
-#define SAC_MT_START_WORKERS() SAC_MT_master_flag = 1 - SAC_MT_master_flag;
-
-#define SAC_MT_WORKER_WAIT()                                                             \
-    {                                                                                    \
-        while (SAC_MT_worker_flag == SAC_MT_master_flag)                                 \
-            ;                                                                            \
-        SAC_MT_worker_flag = SAC_MT_master_flag;                                         \
+/* This is used in SAC_MT_SPMD_EXECUTE() to wake up bees in the hive
+ * and make them execute the SPMD function. The queen bee follows the suit. */
+static inline void
+SAC_MT_PTH_do_spmd_execute (struct sac_bee_pth_t *const SAC_MT_self)
+{
+    /* we're not single thread any more */
+    if (SAC_MT_globally_single) {
+        SAC_MT_globally_single = 0;
     }
+    /* start all the slave bees by signaling the start-barrier */
+    SAC_MT_PTH_signal_barrier (&SAC_MT_self->start_barr_locfl,
+                               &CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive)
+                                  ->start_barr_sharedfl);
+    /* run ourself */
+    CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive)->spmd_fun (SAC_MT_self);
+    /* clean up */
+    CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive)->spmd_fun = NULL;
+    SAC_MT_self->c.hive->framedata = NULL;
+    SAC_MT_self->c.hive->retdata = NULL;
+    /* restore global single thread mode only if we're the only hive */
+    if (SAC_MT_global_num_hives == 1) {
+        SAC_MT_globally_single = 1;
+    }
+}
 
-#define SAC_MT_SPMDFUN_REAL_PARAM_LIST()                                                 \
-    const unsigned int SAC_MT_mythread, const unsigned int SAC_MT_myworkerclass,         \
-      unsigned int SAC_MT_worker_flag
-
-#define SAC_MT_SPMDFUN_REAL_RETURN() return (SAC_MT_worker_flag);
-
-#define SAC_MT_SPMDFUN_REAL_RETTYPE() unsigned int
-
-#define SAC_MT_MYWORKERCLASS() SAC_MT_myworkerclass
-
-#define SAC_MT_DECL_MYTHREAD() const unsigned int SAC_MT_mythread = 0;
-
-#define SAC_MT_DETERMINE_THREAD_ID()
-
-#define SAC_MT_MASTERCLASS() SAC_MT_masterclass
-
-/*****************************************************************************/
-
-/*
- * SAC_PRF_RUNMT* primitive functions. These decide whether to execute the
- * following SPMD block sequentially or in parallel.
- * We compare the number of elements in the result array to a threshold.
- * In the AKS case the same test is performed statically in sac2c.
- */
-
-#define SAC_ND_PRF_RUNMT_GENARRAY__DATA(var_NT, mem_NT, min_parallel_size)               \
-    SAC_ND_WRITE (var_NT, 0) = (SAC_ND_A_DESC_SIZE (mem_NT) >= (min_parallel_size));
-
-#define SAC_ND_PRF_RUNMT_MODARRAY__DATA(var_NT, mem_NT, min_parallel_size)               \
-    SAC_ND_WRITE (var_NT, 0) = (SAC_ND_A_DESC_SIZE (mem_NT) >= (min_parallel_size));
-
-#define SAC_ND_PRF_RUNMT_FOLD__DATA(var_NT, args) SAC_ND_WRITE (var_NT, 0) = 0;
+/* Certainly no relaxation during barrier sync for PTHREADS! */
+#define SAC_MT_SYNC_RELAX() /* empty */
 
 /******************************************************************************/
 
@@ -373,88 +261,55 @@
 #define SAC_MT_SETUP_INITIAL()                                                           \
     SAC_MT_TR_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);
 
-#define SAC_MT_SETUP() SAC_MT_TR_Setup (SAC_SET_NUM_SCHEDULERS);
+#define SAC_MT_SETUP() SAC_MT_PTH_TR_SetupStandalone (SAC_SET_NUM_SCHEDULERS);
+
+#define SAC_MT_FINALIZE()                                                                \
+    SAC_MT_TR_ReleaseHive (SAC_MT_TR_DetachHive ());                                     \
+    SAC_MT_TR_ReleaseQueen ();
 
 #else /* SAC_DO_TRACE_MT */
 
 #define SAC_MT_SETUP_INITIAL()                                                           \
     SAC_MT_SetupInitial (__argc, __argv, SAC_SET_THREADS, SAC_SET_THREADS_MAX);
 
-#define SAC_MT_SETUP() SAC_MT_Setup (SAC_SET_NUM_SCHEDULERS);
+#define SAC_MT_SETUP() SAC_MT_PTH_SetupStandalone (SAC_SET_NUM_SCHEDULERS);
+
+#define SAC_MT_FINALIZE()                                                                \
+    SAC_MT_ReleaseHive (SAC_MT_DetachHive ());                                           \
+    SAC_MT_ReleaseQueen ();                                                              \
+    SAC_MT_singleton_queen = NULL;
 
 #endif
 
+#define SAC_INVOKE_MAIN_FUN(fname, arg) fname (arg)
+
 /*****************************************************************************/
 
-/*
- *  Macros for object access synchronisation within SPMD functions
+/**
+ *  Declarations of global variables and functions defined in libsac/mt.c
  */
+
+/* pthreads default thread attributes (const after init) */
+SAC_C_EXTERN pthread_attr_t SAC_MT_thread_attribs;
+
+/** Functions **/
 
 SAC_C_EXTERN void SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                                        unsigned int max_threads);
-
 SAC_C_EXTERN void SAC_MT_TR_SetupInitial (int argc, char *argv[],
                                           unsigned int num_threads,
                                           unsigned int max_threads);
 
-#define SAC_ND_PROP_OBJ_IN() SAC_MT_ACQUIRE_LOCK (SAC_MT_propagate_lock);
+SAC_C_EXTERN void SAC_MT_PTH_SetupStandalone (int num_schedulers);
+SAC_C_EXTERN void SAC_MT_PTH_TR_SetupStandalone (int num_schedulers);
 
-#define SAC_ND_PROP_OBJ_OUT() SAC_MT_RELEASE_LOCK (SAC_MT_propagate_lock);
+SAC_C_EXTERN void SAC_MT_TR_SetupAsLibraryInitial (void);
+SAC_C_EXTERN void SAC_MT_SetupAsLibraryInitial (void);
 
-#define SAC_ND_PROP_OBJ_UNBOX(unboxed, boxed)                                            \
-    SAC_ND_A_FIELD (unboxed) = *SAC_NAMEP (SAC_ND_A_FIELD (boxed));
+SAC_C_EXTERN unsigned int SAC_Get_Global_ThreadID (void);
+SAC_C_EXTERN unsigned int SAC_Get_CurrentBee_GlobalID (void);
 
-#define SAC_ND_PROP_OBJ_BOX(boxed, unboxed)                                              \
-    *SAC_NAMEP (SAC_ND_A_FIELD (boxed)) = SAC_ND_A_FIELD (unboxed);
-
-/*****************************************************************************/
-
-/*
- *  Declarations of global variables and functions defined in libsac/mt.c
- */
-
-SAC_C_EXTERN pthread_attr_t SAC_MT_thread_attribs;
-
-SAC_C_EXTERN volatile unsigned int SAC_MT_master_flag;
-
-SAC_C_EXTERN unsigned int SAC_MT_masterclass;
-
-SAC_C_EXTERN pthread_t *SAC_MT1_internal_id;
-
-/*
- * REMARK:
- *
- * no volatile for the function return value here, as volatile has
- * no effect for rvalues! And a function return value is a rvalue.
- */
-SAC_C_EXTERN unsigned int (*SAC_MT_spmd_function) (const unsigned int, const unsigned int,
-                                                   unsigned int);
-
-SAC_C_EXTERN void SAC_MT_Setup (int num_schedulers);
-
-SAC_C_EXTERN void SAC_MT_TR_Setup (int num_schedulers);
-
-SAC_C_EXTERN pthread_key_t SAC_MT_threadid_key;
-
-SAC_C_EXTERN unsigned int SAC_MT_master_id;
-
-SAC_MT_DECLARE_LOCK (SAC_MT_propagate_lock)
-
-SAC_MT_DECLARE_LOCK (SAC_MT_output_lock)
-
-SAC_MT_DECLARE_LOCK (SAC_MT_init_lock)
-
-SAC_C_EXTERN void SAC_MT1_TR_Setup (int num_schedulers);
-
-SAC_C_EXTERN void SAC_MT1_Setup (int num_schedulers);
-
-SAC_C_EXTERN unsigned int SAC_Get_ThreadID (pthread_key_t SAC_MT_threadid_key);
-
-#endif /* SAC_DO_MT_PTHREAD */
-
-/*****************************************************************************/
-
-#endif /* SAC_DO_MULTITHREAD */
+#endif /* SAC_DO_MULTITHREAD && SAC_DO_MULTITHREAD && SAC_DO_MT_PTHREAD */
 
 #endif /* SAC_SIMD_COMPILATION */
 

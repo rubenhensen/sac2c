@@ -12,6 +12,9 @@ SUBPHASE (pccf, "Printing CC Flags", PCCFdoPrintCCFlags, global.printccflags, am
 
 SUBPHASE (lm, "Loading module contents", LMCdoLoadModuleContents, ALWAYS, ami)
 
+SUBPHASE (rmtstf, "Restoring ST and XT functions", RMTSTFdoCreateMtFuns,
+          (global.mtmode != MT_none), ami)
+
 SUBPHASE (uwt, "Updating dispatch information", EWTdoExtendWrapperTypes, ALWAYS, ami)
 
 SUBPHASE (etv, "Eliminating Type Variables", EATdoEliminateAlphaTypes, ALWAYS, ami)

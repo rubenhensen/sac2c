@@ -53,7 +53,7 @@
  *
  ******************************************************************************/
 
-SAC_C_EXTERN unsigned int SAC_Get_ThreadID (pthread_key_t SAC_MT_threadid_key);
+SAC_C_EXTERN unsigned int SAC_Get_Global_ThreadID (void);
 static int not_yet_initialized = 1;
 
 /******************************************************************************
@@ -79,7 +79,7 @@ malloc (size_t sz)
 #ifdef MT
     /* unsigned int thread_id, *thread_id_ptr; */
     unsigned int thread_id;
-    const int multi_threaded = !SAC_MT_not_yet_parallel;
+    const int multi_threaded = !SAC_MT_globally_single;
 #else  /* MT */
     const unsigned int thread_id = 0;
 #endif /* MT */
@@ -106,7 +106,7 @@ malloc (size_t sz)
           thread_id = *thread_id_ptr;
         }
         */
-        thread_id = SAC_Get_ThreadID (SAC_MT_threadid_key);
+        thread_id = SAC_Get_Global_ThreadID ();
     } else {
         thread_id = 0;
     }

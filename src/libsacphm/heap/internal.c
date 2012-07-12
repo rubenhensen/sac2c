@@ -127,7 +127,7 @@ SAC_HM_AllocateNewBinInArenaOfArenas (SAC_HM_size_unit_t units, SAC_HM_arena_t *
      */
 
 #ifdef MT
-    if (SAC_MT_not_yet_parallel) {
+    if (SAC_MT_globally_single) {
         freep = (SAC_HM_header_t *)
           SAC_HM_MallocLargeChunk (arena->binsize + 2,
                                    &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
@@ -166,7 +166,7 @@ SAC_HM_AllocateNewBinInArenaOfArenas (SAC_HM_size_unit_t units, SAC_HM_arena_t *
  *
  * description:
  *
- *   This function allows to extend the top arena´s wilderness chunk by
+ *   This function allows to extend the top arenaï¿½s wilderness chunk by
  *   "fresh" memory obtained from the operating system.
  *
  *

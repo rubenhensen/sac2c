@@ -164,18 +164,26 @@ PrintGlobalSwitches (void)
     fprintf (global.outfile, "#define SAC_DO_MULTITHREAD     %d\n",
              (global.num_threads == 1) ? 0 : 1);
 
-    fprintf (global.outfile, "#define SAC_DO_MT_PTHREAD  %d\n",
-             (global.mtmode == MT_none) ? 0 : 1);
+    fprintf (global.outfile, "#define SAC_DO_MT_PTHREAD      %d\n",
+             ((global.mtmode == MT_none) || (global.mtmode == MT_lpel)) ? 0 : 1);
 
-    fprintf (global.outfile, "#define SAC_DO_MT_OMP  %d\n",
+    fprintf (global.outfile, "#define SAC_DO_MT_LPEL         %d\n",
+             (global.mtmode == MT_lpel) ? 1 : 0);
+
+    fprintf (global.outfile, "#define SAC_DO_MT_OMP          %d\n",
              (global.backend == BE_omp) ? 1 : 0);
 
     fprintf (global.outfile, "#define SAC_DO_THREADS_STATIC  %d\n",
              (global.num_threads == 0) ? 0 : 1);
 
-    fprintf (global.outfile, "#define SAC_DO_FP  %d\n", (global.fp == 0) ? 0 : 1);
+    fprintf (global.outfile, "#define SAC_DO_FP              %d\n",
+             (global.fp == 0) ? 0 : 1);
 
-    fprintf (global.outfile, "#define SAC_DEBUG_RC %d\n", global.debug_rc ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_MT_CREATE_JOIN  %d\n",
+             (global.mtmode == MT_createjoin) ? 1 : 0);
+
+    fprintf (global.outfile, "#define SAC_DEBUG_RC           %d\n",
+             global.debug_rc ? 1 : 0);
 
     fprintf (global.outfile, "\n\n"
                              "/*\n"
@@ -654,6 +662,8 @@ GSCprintMainEnd (void)
     INDENT;
     fprintf (global.outfile, "SAC_CS_FINALIZE();\n");
     INDENT;
+    fprintf (global.outfile, "SAC_MT_FINALIZE();\n");
+    INDENT;
     fprintf (global.outfile, "SAC_HM_PRINT();\n\n");
     INDENT;
     if (global.backend != BE_cuda) {
@@ -678,15 +688,16 @@ GSCprintMainC99 (void)
 {
     char *res_NT;
     types *tmp_type;
-    bool print_thread_id, run_mt, run_mt_pthread, run_mt_omp;
+    bool print_thread_id, run_mt, run_mt_pthread, run_mt_lpel, run_mt_omp;
 
     DBUG_ENTER ();
 
     run_mt_pthread = (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop);
+    run_mt_lpel = (global.mtmode == MT_lpel);
     run_mt_omp = (global.backend == BE_omp);
-    run_mt = run_mt_pthread || run_mt_omp;
+    run_mt = run_mt_pthread || run_mt_omp || run_mt_lpel;
 
-    print_thread_id = run_mt_pthread && global.optimize.dophm;
+    print_thread_id = (run_mt_pthread || run_mt_lpel) && global.optimize.dophm;
 
     INDENT;
     fprintf (global.outfile, "int main( int __argc, char *__argv[])\n");
@@ -719,12 +730,14 @@ GSCprintMainC99 (void)
 
     INDENT;
     fprintf (global.outfile, "SAC_COMMANDLINE_SET( __argc, __argv);\n\n");
+
     INDENT;
-    fprintf (global.outfile, "SACf_%s_%s_main( ", NSgetName (NSgetRootNamespace ()),
-             run_mt ? "CL_ST_" : "");
+    fprintf (global.outfile, "SAC_INVOKE_MAIN_FUN( SACf_%s_%s_main, ",
+             NSgetName (NSgetRootNamespace ()), run_mt ? "CL_ST_" : "");
 
     fprintf (global.outfile, "SAC_ND_ARG_out( %s, int)", res_NT);
     fprintf (global.outfile, ");\n\n");
+
     GSCprintMainEnd ();
     INDENT;
     fprintf (global.outfile, "return( SAC_ND_READ( %s, 0));\n", res_NT);

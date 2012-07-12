@@ -229,6 +229,14 @@ OPTcheckOptionConsistency (void)
                   " yet available for " ARCH " running " OS ".");
     }
 #endif
+#if !ENABLE_MT_LPEL
+    if (global.mtmode == MT_lpel) {
+        global.mtmode = MT_none;
+        global.num_threads = 1;
+        CTIerror ("Code generation for LPEL-base multi-threaded program execution not"
+                  " configured during compiler build.");
+    }
+#endif
 
 #if !ENABLE_PHM
     if (global.optimize.dophm) {
@@ -646,7 +654,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("mtmode")
     {
-        ARG_RANGE (store_mtmode, MT_createjoin, MT_mtstblock);
+        ARG_RANGE (store_mtmode, MT_createjoin, MT_lpel);
         if (global.mtmode != MT_none)
             global.mtmode = store_mtmode;
     }
@@ -999,6 +1007,9 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 static void
 AnalyseCommandlineSac4c (int argc, char *argv[])
 {
+    int store_num_threads = 0;
+    mtmode_t store_mtmode = MT_none;
+
     DBUG_ENTER ();
 
     ARGS_BEGIN (argc, argv);
@@ -1018,6 +1029,10 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      */
 
     ARGS_FLAG ("ccflags", global.printccflags = TRUE;);
+
+    /* it is very unfortunate to have two similalrly named but different options
+     * ccflags and ccflag. Can I do something about it? */
+    ARGS_OPTION ("ccflag", strncpy (global.ccflags, ARG, MAX_FILE_NAME - 1));
 
     ARGS_FLAG ("copyright", USGprintCopyright (); exit (0));
 
@@ -1095,9 +1110,40 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
      * Options starting with mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
      */
 
+    ARGS_FLAG ("mt", {
+        if (store_mtmode == MT_none) {
+            global.mtmode = MT_startstop; /*default*/
+        } else {
+            global.mtmode = store_mtmode;
+        }
+
+        if (store_num_threads > 0) {
+            global.num_threads = store_num_threads;
+        } else {
+            global.num_threads = 0;
+        }
+    });
+
+    ARGS_OPTION_BEGIN ("mtmode")
+    {
+        ARG_RANGE (store_mtmode, MT_createjoin, MT_lpel);
+        if (global.mtmode != MT_none)
+            global.mtmode = store_mtmode;
+    }
+    ARGS_OPTION_END ("mtmode");
+
     /*
      * Options starting with nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn
      */
+
+    ARGS_OPTION_BEGIN ("numthreads")
+    {
+        ARG_RANGE (store_num_threads, 1, global.max_threads);
+        if (global.mtmode != MT_none) {
+            global.num_threads = store_num_threads;
+        }
+    }
+    ARGS_OPTION_END ("numthreads");
 
     /*
      * Options starting with ooooooooooooooooooooooooooooooooooooooooooo

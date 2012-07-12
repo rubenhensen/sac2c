@@ -70,6 +70,11 @@ SAC_C_EXTERN void free (void *addr);
 #define SAC_FREE(x) free (x)
 #endif
 
+/* calloc() = like malloc(), but initializes the memory to zero */
+#ifndef SAC_CALLOC
+#define SAC_CALLOC(nmemb, size) calloc (nmemb, size)
+#endif
+
 #if SAC_DO_PHM
 
 /*
@@ -276,6 +281,7 @@ typedef struct arena_t {
  *   state for allocation and de-allocation purposes. This trick allows to leave
  *   the code generator almost untouched when integrating multi-threaded heap
  *   management into sac2c.
+ *  FIXME: This is probably no longer correct when we have multi-instance environment.
  */
 
 typedef enum {
@@ -347,7 +353,7 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #if SAC_DO_MULTITHREAD
 #define SAC_HM_SETUP()                                                                   \
     {                                                                                    \
-        SAC_HM_Setup (SAC_MT_THREADS ());                                                \
+        SAC_HM_Setup (SAC_MT_GLOBAL_THREADS () + SAC_MT_HM_AUX_THREADS ());              \
     }
 #else /* SAC_DO_MULTITHREAD */
 #define SAC_HM_SETUP()                                                                   \
@@ -358,15 +364,15 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 
 #if SAC_DO_COMPILE_MODULE
 #define SAC_HM_DEFINE()                                                                  \
-    SAC_C_EXTERN SAC_HM_arena_t SAC_HM_arenas[][SAC_HM_NUM_ARENAS + 2];                  \
-    static const unsigned int SAC_MT_mythread = 0;
+    SAC_C_EXTERN SAC_HM_arena_t SAC_HM_arenas[][SAC_HM_NUM_ARENAS + 2];
+//   static const unsigned int SAC_MT_mythread = 0;
 #else
 
 #ifdef __cplusplus
 #define SAC_HM_DEFINE()                                                                  \
     SAC_HM_arena_t SAC_HM_arenas[SAC_SET_THREADS_MAX][SAC_HM_NUM_ARENAS + 2]             \
       = SAC_HM_SETUP_ARENAS ();                                                          \
-    static const unsigned int SAC_MT_mythread = 0;                                       \
+    /*static const unsigned int SAC_MT_mythread = 0;*/                                   \
     extern const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size           \
       = SAC_SET_INITIAL_MASTER_HEAPSIZE;                                                 \
     extern const SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size           \
@@ -378,7 +384,7 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #define SAC_HM_DEFINE()                                                                  \
     SAC_HM_arena_t SAC_HM_arenas[SAC_SET_THREADS_MAX][SAC_HM_NUM_ARENAS + 2]             \
       = SAC_HM_SETUP_ARENAS ();                                                          \
-    static const unsigned int SAC_MT_mythread = 0;                                       \
+    /*static const unsigned int SAC_MT_mythread = 0; */                                  \
     const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size                  \
       = SAC_SET_INITIAL_MASTER_HEAPSIZE;                                                 \
     const SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size                  \
@@ -396,6 +402,8 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
  * variable but which is guaranteed to be executed only if SAC_MT_mythread
  * is set correctly. However, to suit the C compiler SAC_MT_mythread must
  * nevertheless exist.
+ *
+ * The above comment is no longer correct.
  */
 
 #if SAC_DO_CHECK_HEAP
@@ -417,10 +425,10 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
             var = (basetype *)SAC_HM_MallocAnyChunk_st (size);                           \
             break;                                                                       \
         case SAC_HM_multi_threaded:                                                      \
-            var = (basetype *)SAC_HM_MallocAnyChunk_mt (size, SAC_MT_MYTHREAD ());       \
+            var = (basetype *)SAC_HM_MallocAnyChunk_mt (size, SAC_MT_SELF_THREAD_ID ()); \
             break;                                                                       \
         case SAC_HM_any_threaded:                                                        \
-            var = (basetype *)SAC_HM_MallocAnyChunk_at (size, SAC_MT_MYTHREAD ());       \
+            var = (basetype *)SAC_HM_MallocAnyChunk_at (size, SAC_MT_SELF_THREAD_ID ()); \
             break;                                                                       \
         }                                                                                \
     }
@@ -432,10 +440,10 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
             var = (basetype)SAC_HM_MallocAnyChunk_st (size);                             \
             break;                                                                       \
         case SAC_HM_multi_threaded:                                                      \
-            var = (basetype)SAC_HM_MallocAnyChunk_mt (size, SAC_MT_MYTHREAD ());         \
+            var = (basetype)SAC_HM_MallocAnyChunk_mt (size, SAC_MT_SELF_THREAD_ID ());   \
             break;                                                                       \
         case SAC_HM_any_threaded:                                                        \
-            var = (basetype)SAC_HM_MallocAnyChunk_at (size, SAC_MT_MYTHREAD ());         \
+            var = (basetype)SAC_HM_MallocAnyChunk_at (size, SAC_MT_SELF_THREAD_ID ());   \
             break;                                                                       \
         }                                                                                \
     }
@@ -451,14 +459,14 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
             break;                                                                       \
         case SAC_HM_multi_threaded:                                                      \
             var = (basetype *)                                                           \
-              SAC_HM_MallocSmallChunk (units,                                            \
-                                       &(SAC_HM_arenas[SAC_MT_MYTHREAD ()][arena_num])); \
+              SAC_HM_MallocSmallChunk (units, &(SAC_HM_arenas[SAC_MT_SELF_THREAD_ID ()]  \
+                                                             [arena_num]));              \
             break;                                                                       \
         case SAC_HM_any_threaded:                                                        \
             /* var = SAC_HM_MallocSmallChunk_at(units, arena_num); */                    \
             var = (basetype *)                                                           \
-              SAC_HM_MallocSmallChunk (units,                                            \
-                                       &(SAC_HM_arenas[SAC_MT_MYTHREAD ()][arena_num])); \
+              SAC_HM_MallocSmallChunk (units, &(SAC_HM_arenas[SAC_MT_SELF_THREAD_ID ()]  \
+                                                             [arena_num]));              \
             break;                                                                       \
         }                                                                                \
     }
@@ -472,14 +480,14 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
             break;                                                                       \
         case SAC_HM_multi_threaded:                                                      \
             var = (basetype *)                                                           \
-              SAC_HM_MallocLargeChunk (units,                                            \
-                                       &(SAC_HM_arenas[SAC_MT_MYTHREAD ()][arena_num])); \
+              SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[SAC_MT_SELF_THREAD_ID ()]  \
+                                                             [arena_num]));              \
             break;                                                                       \
         case SAC_HM_any_threaded:                                                        \
             /* var = SAC_HM_MallocLargeChunk_at(units, arena_num);  */                   \
             var = (basetype *)                                                           \
-              SAC_HM_MallocLargeChunk (units,                                            \
-                                       &(SAC_HM_arenas[SAC_MT_MYTHREAD ()][arena_num])); \
+              SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[SAC_MT_SELF_THREAD_ID ()]  \
+                                                             [arena_num]));              \
             break;                                                                       \
         }                                                                                \
     }

@@ -2,7 +2,7 @@
 
 #include "extend_wrapper_types.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "EWT"
 #include "debug.h"
 
 #include "traverse.h"

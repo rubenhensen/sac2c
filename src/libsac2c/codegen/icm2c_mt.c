@@ -197,6 +197,9 @@ ICMCompileMT_SPMDFUN_AP (char *funname, int vararg_cnt, char **vararg)
 #include "icm_trace.c"
 #undef MT_SPMDFUN_AP
 
+    INDENT;
+    fprintf (global.outfile, "SAC_MT_BEGIN_SPMD_INVOCATION( %s);\n", funname);
+
     cnt = 0;
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
         INDENT;
@@ -205,7 +208,7 @@ ICMCompileMT_SPMDFUN_AP (char *funname, int vararg_cnt, char **vararg)
     }
 
     INDENT;
-    fprintf (global.outfile, "\nSAC_MT_SPMD_EXECUTE( %s);\n", funname);
+    fprintf (global.outfile, "SAC_MT_SPMD_EXECUTE( %s);\n", funname);
 
     cnt = 0;
     for (i = 0; i < 3 * vararg_cnt; i += 3) {
@@ -213,6 +216,10 @@ ICMCompileMT_SPMDFUN_AP (char *funname, int vararg_cnt, char **vararg)
         fprintf (global.outfile, "SAC_MT_RECEIVE_RESULT_%s( %s, 0, %d, %s)\n", vararg[i],
                  funname, cnt++, vararg[i + 2]);
     }
+
+    INDENT;
+    fprintf (global.outfile, "SAC_MT_END_SPMD_INVOCATION( %s);\n", funname);
+
     DBUG_RETURN ();
 }
 
@@ -269,8 +276,8 @@ ICMCompileMT_SPMDFUN_RET (char *funname, int vararg_cnt, char **vararg)
     for (i = 0; i < 6 * vararg_cnt; i += 6) {
         INDENT;
         fprintf (global.outfile,
-                 "SAC_MT_SEND_RESULT_%s( %s, SAC_MT_MYTHREAD(), %d, %s);\n", vararg[i],
-                 funname, cnt, vararg[i + 1]);
+                 "SAC_MT_SEND_RESULT_%s( %s, SAC_MT_SELF_LOCAL_ID(), %d, %s);\n",
+                 vararg[i], funname, cnt, vararg[i + 1]);
         cnt += 1;
     }
     global.indent--;
@@ -380,7 +387,7 @@ ICMCompileMT_MTFUN_DEF_BEGIN (char *funname, char *rettype_NT, int vararg_cnt,
     fprintf (global.outfile, ")\n");
 
     INDENT;
-    fprintf (global.outfile, "{");
+    fprintf (global.outfile, "{\n");
     global.indent++;
 
     INDENT;

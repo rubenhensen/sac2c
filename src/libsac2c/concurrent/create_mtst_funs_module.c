@@ -8,7 +8,7 @@
  *
  * description:
  *
- *   This file implements a program traversal that creates MT and ST-variants of
+ *   This file implements a program traversal that creates XT, MT and ST-variants of
  *   all functions in a module or class definition. Note that we deal with three
  *   dfferent classes of functions wrt multithreaded execution:
  *
@@ -17,10 +17,13 @@
  *          parallelised with-loops.
  *    MT  : These functions will be called in a replicated manner in
  *          multithreaded contexts.
+ *    XT  : These functions are called in multi-threaded context and may
+ *          contain parallelized with-loops.
  *
  *    We distinguish between such functions within this module through the
- *    flags FUNDEF_ISSTFUN and FUNDEF_ISMTFUN and later on through the name
- *    spaces ST and MT. Sequential functions stay in the standard name space.
+ *    flags FUNDEF_ISSTFUN, FUNDEF_ISMTFUN and FUNDEF_ISXTFUN and later on
+ *    through the name spaces ST, MT and XT. Sequential functions stay in the
+ *    standard name space.
  *
  *    We use this specialised version for modules and classes because we
  *    do not want to trace the static call graph of functions in this trivial
@@ -50,13 +53,14 @@
  * INFO structure
  */
 
-typedef enum { SEQ, ST, MT } context_t;
+typedef enum { SEQ, ST, MT, XT } context_t;
 
 struct INFO {
     context_t context;
     node *vardecs;
     node *stcompanions;
     node *mtcompanions;
+    node *xtcompanions;
     node *spmdassigns;
     node *spmdcondition;
 };
@@ -69,6 +73,7 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_STCOMPANIONS(n) ((n)->stcompanions)
 #define INFO_MTCOMPANIONS(n) ((n)->mtcompanions)
+#define INFO_XTCOMPANIONS(n) ((n)->xtcompanions)
 #define INFO_SPMDASSIGNS(n) ((n)->spmdassigns)
 #define INFO_SPMDCONDITION(n) ((n)->spmdcondition)
 
@@ -89,6 +94,7 @@ MakeInfo (void)
     INFO_VARDECS (result) = NULL;
     INFO_STCOMPANIONS (result) = NULL;
     INFO_MTCOMPANIONS (result) = NULL;
+    INFO_XTCOMPANIONS (result) = NULL;
     INFO_SPMDASSIGNS (result) = NULL;
     INFO_SPMDCONDITION (result) = NULL;
 
@@ -181,6 +187,15 @@ HandleApFold (node *callee, info *arg_info)
             callee = FUNDEF_MTCOMPANION (callee);
         }
         break;
+    case XT:
+        if (FUNDEF_XTCOMPANION (callee) != NULL) {
+            DBUG_ASSERT (FUNDEF_ISXTFUN (FUNDEF_XTCOMPANION (callee)),
+                         "XT companion of function %s is no XT function",
+                         FUNDEF_NAME (callee));
+
+            callee = FUNDEF_XTCOMPANION (callee);
+        }
+        break;
     }
 
     DBUG_RETURN (callee);
@@ -271,7 +286,7 @@ MTSTFMODfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (!FUNDEF_ISMTFUN (arg_node) && !FUNDEF_ISSTFUN (arg_node)
-        && !FUNDEF_ISEXTERN (arg_node)) {
+        && !FUNDEF_ISXTFUN (arg_node) && !FUNDEF_ISEXTERN (arg_node)) {
 
         /*
          * Create the ST companion:
@@ -306,11 +321,28 @@ MTSTFMODfundef (node *arg_node, info *arg_info)
 
         FUNDEF_NEXT (companion) = INFO_MTCOMPANIONS (arg_info);
         INFO_MTCOMPANIONS (arg_info) = companion;
+
+        /*
+         * Create the XT companion:
+         */
+
+        companion = DUPdoDupNode (arg_node);
+
+        FUNDEF_ISXTFUN (companion) = TRUE;
+
+        old_namespace = FUNDEF_NS (companion);
+        FUNDEF_NS (companion) = NSgetXTNamespace (old_namespace);
+        old_namespace = NSfreeNamespace (old_namespace);
+
+        FUNDEF_XTCOMPANION (arg_node) = companion;
+
+        FUNDEF_NEXT (companion) = INFO_XTCOMPANIONS (arg_info);
+        INFO_XTCOMPANIONS (arg_info) = companion;
     }
 
     /*
      * Recursively traverse through fundef chain.
-     * Append ST and MT companions from info structure as created so far.
+     * Append ST, MT, XT companions from info structure as created so far.
      */
 
     if (FUNDEF_NEXT (arg_node) != NULL) {
@@ -327,6 +359,13 @@ MTSTFMODfundef (node *arg_node, info *arg_info)
 
             if (FUNDEF_NEXT (arg_node) != NULL) {
                 FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+            } else {
+                FUNDEF_NEXT (arg_node) = INFO_XTCOMPANIONS (arg_info);
+                INFO_XTCOMPANIONS (arg_info) = NULL;
+
+                if (FUNDEF_NEXT (arg_node) != NULL) {
+                    FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
+                }
             }
         }
     }
@@ -341,6 +380,8 @@ MTSTFMODfundef (node *arg_node, info *arg_info)
             INFO_CONTEXT (arg_info) = MT;
         } else if (FUNDEF_ISSTFUN (arg_node)) {
             INFO_CONTEXT (arg_info) = ST;
+        } else if (FUNDEF_ISXTFUN (arg_node)) {
+            INFO_CONTEXT (arg_info) = XT;
         } else {
             INFO_CONTEXT (arg_info) = SEQ;
         }
@@ -438,7 +479,7 @@ MTSTFMODwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (INFO_CONTEXT (arg_info) == ST) {
+    if (INFO_CONTEXT (arg_info) == ST || INFO_CONTEXT (arg_info) == XT) {
         /*
          * We are not yet in a parallel context. Hence, we traverse the SPMD
          * region in MT context and the optional sequential alternative of a
@@ -448,10 +489,11 @@ MTSTFMODwith2 (node *arg_node, info *arg_info)
          */
 
         if (WITH2_PARALLELIZE (arg_node)) {
+            context_t ctx = INFO_CONTEXT (arg_info);
             INFO_CONTEXT (arg_info) = MT;
             WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
             WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
-            INFO_CONTEXT (arg_info) = ST;
+            INFO_CONTEXT (arg_info) = ctx;
         } else {
             WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
             WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);

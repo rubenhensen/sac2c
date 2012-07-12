@@ -3,7 +3,7 @@
 /* set to the architecture */
 #undef ARCH
 
-/* set to 0 to disable visualization */
+/* set to 1 to enable visualization */
 #undef DOT_FLAG
 
 /* set to 0 to disable cuda */
@@ -14,6 +14,9 @@
 
 /* set to 0 to disable multi threading */
 #undef ENABLE_MT
+
+/* set to 0 to disable multi threading via LPEL */
+#undef ENABLE_MT_LPEL
 
 /* set to 0 to disable mutc */
 #undef ENABLE_MUTC
@@ -32,6 +35,9 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* set to 0 because you do not have the <lpel.h> header file */
+#undef HAVE_LPEL_H
 
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
@@ -101,6 +107,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION

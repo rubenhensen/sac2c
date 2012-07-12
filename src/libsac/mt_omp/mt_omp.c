@@ -76,7 +76,7 @@ SAC_OMP_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 }
 
 unsigned int
-SAC_Get_ThreadID (pthread_key_t SAC_MT_threadid_key)
+SAC_Get_Global_ThreadID (void)
 {
     /* return omp_get_thread_num(); */
     return 0;

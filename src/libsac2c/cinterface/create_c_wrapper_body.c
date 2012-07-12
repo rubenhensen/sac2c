@@ -33,6 +33,8 @@
 #include "globals.h"
 #include "bundle_to_fundef.h"
 #include "build.h"
+#include "str.h"
+#include "namespaces.h"
 #include "tree_compound.h"
 
 /** <!--********************************************************************-->
@@ -196,56 +198,85 @@ CCWBfunbundle (node *arg_node, info *arg_info)
     noargs = FUNBUNDLE_ARITY (arg_node);
     norets = TCcountRets (FUNDEF_RETS (FUNBUNDLE_FUNDEF (arg_node)));
 
-    /*
-     * function header
-     */
-    fprintf (INFO_FILE (arg_info), "void %s(", FUNBUNDLE_EXTNAME (arg_node));
+    /* we only use non-{x,s}t funbundle here and manually do a dispatch between
+       the versions to call */
+    if (!FUNBUNDLE_ISXTBUNDLE (arg_node) && !FUNBUNDLE_ISSTBUNDLE (arg_node)) {
+        /*
+         * function header
+         */
+        fprintf (INFO_FILE (arg_info), "void %s(", FUNBUNDLE_EXTNAME (arg_node));
 
-    for (pos = 0; pos < norets; pos++) {
-        fprintf (INFO_FILE (arg_info), "void **ret%d%s", pos,
-                 (norets - pos + noargs > 1) ? ", " : "");
-    }
-    for (pos = 0; pos < noargs; pos++) {
-        fprintf (INFO_FILE (arg_info), "void *arg%d%s", pos,
-                 (noargs - pos > 1) ? ", " : "");
-    }
+        //     if ( global.xtmode) {
+        //       fprintf( INFO_FILE( arg_info), "SAC_XT_RESOURCE_ARG()");
+        //       fprintf( INFO_FILE( arg_info), ( norets + noargs > 0) ? ", " : "");
+        //     }
 
-    fprintf (INFO_FILE (arg_info), ") {");
+        for (pos = 0; pos < norets; pos++) {
+            fprintf (INFO_FILE (arg_info), "void **ret%d%s", pos,
+                     (norets - pos + noargs > 1) ? ", " : "");
+        }
+        for (pos = 0; pos < noargs; pos++) {
+            fprintf (INFO_FILE (arg_info), "void *arg%d%s", pos,
+                     (noargs - pos > 1) ? ", " : "");
+        }
 
-    /*
-     * allocate arg descriptors and declare ret descriptors
-     */
-    for (pos = 0; pos < noargs; pos++) {
-        fprintf (INFO_FILE (arg_info),
-                 "SAC_array_descriptor_t arg%d_desc = makeScalarDesc();\n", pos);
-    }
-    for (pos = 0; pos < norets; pos++) {
-        fprintf (INFO_FILE (arg_info), "SAC_array_descriptor_t ret%d_desc;\n", pos);
-    }
+        fprintf (INFO_FILE (arg_info), ")\n{\n");
 
-    /*
-     * call SAC fun
-     */
-    fprintf (INFO_FILE (arg_info), "%s%s( ", CWRAPPER_PREFIX,
-             FUNBUNDLE_EXTNAME (arg_node));
-    for (pos = 0; pos < norets; pos++) {
-        fprintf (INFO_FILE (arg_info), "ret%d, &ret%d_desc%s", pos, pos,
-                 (norets - pos + noargs > 1) ? ", " : "");
-    }
-    for (pos = 0; pos < noargs; pos++) {
-        fprintf (INFO_FILE (arg_info), "arg%d, arg%d_desc%s", pos, pos,
-                 (noargs - pos > 1) ? ", " : "");
-    }
-    fprintf (INFO_FILE (arg_info), ");\n");
+        /*
+         * allocate arg descriptors and declare ret descriptors
+         */
+        for (pos = 0; pos < noargs; pos++) {
+            fprintf (INFO_FILE (arg_info),
+                     "  SAC_array_descriptor_t arg%d_desc = makeScalarDesc();\n", pos);
+        }
+        for (pos = 0; pos < norets; pos++) {
+            fprintf (INFO_FILE (arg_info), "  SAC_array_descriptor_t ret%d_desc;\n", pos);
+        }
 
-    /*
-     * free return descs
-     */
-    for (pos = 0; pos < norets; pos++) {
-        fprintf (INFO_FILE (arg_info), "freeScalarDesc( ret%d_desc);\n", pos);
-    }
+        /*
+         * call SAC fun
+         */
+        if (global.mtmode != MT_none) {
+            /* MT-mode: insert XT function */
+            char *fun_name = FUNDEF_NAME (FUNBUNDLE_FUNDEF (arg_node));
 
-    fprintf (INFO_FILE (arg_info), "}\n\n");
+            /* TODO: optionally call SEQ?? if there is no hive attached */
+            fprintf (INFO_FILE (arg_info), "  void *self = SAC_MT_CurrentBee();\n");
+            fprintf (INFO_FILE (arg_info),
+                     "  if (!self) { SAC_RuntimeError("
+                     "\"In %s: there is no hive attached to the calling thread!\"); }\n",
+                     FUNBUNDLE_EXTNAME (arg_node));
+            fprintf (INFO_FILE (arg_info), "  %s%s(self, ", CWRAPPER_PREFIX,
+                     STRsubstToken (FUNBUNDLE_EXTNAME (arg_node), STRcat ("__", fun_name),
+                                    STRcat ("_CL_XT__", fun_name)));
+        } else {
+            /* SEQ-mode */
+            fprintf (INFO_FILE (arg_info), "  %s%s(", CWRAPPER_PREFIX,
+                     FUNBUNDLE_EXTNAME (arg_node));
+        }
+
+        /* print function's arguments */
+        for (pos = 0; pos < norets; pos++) {
+            fprintf (INFO_FILE (arg_info), "ret%d, &ret%d_desc%s", pos, pos,
+                     (norets - pos + noargs > 1) ? ", " : "");
+        }
+
+        for (pos = 0; pos < noargs; pos++) {
+            fprintf (INFO_FILE (arg_info), "arg%d, arg%d_desc%s", pos, pos,
+                     (noargs - pos > 1) ? ", " : "");
+        }
+
+        fprintf (INFO_FILE (arg_info), ");\n");
+
+        /*
+         * free return descs
+         */
+        for (pos = 0; pos < norets; pos++) {
+            fprintf (INFO_FILE (arg_info), "  freeScalarDesc( ret%d_desc);\n", pos);
+        }
+
+        fprintf (INFO_FILE (arg_info), "}\n\n");
+    }
 
     if (FUNBUNDLE_NEXT (arg_node) != NULL) {
         FUNBUNDLE_NEXT (arg_node) = TRAVdo (FUNBUNDLE_NEXT (arg_node), arg_info);

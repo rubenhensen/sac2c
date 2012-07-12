@@ -222,40 +222,51 @@ CCWHfunbundle (node *arg_node, info *arg_info)
 
     DBUG_ASSERT (FUNBUNDLE_FUNDEF (arg_node) != NULL, "empty funbundle found!");
 
-    /*
-     * first print the descriptive comment
-     */
-    INFO_COMMENT (arg_info) = TRUE;
+    /* we only use non-{x,s}t funbundle here and manually do a dispatch between
+       the versions to call */
+    if (!FUNBUNDLE_ISXTBUNDLE (arg_node) && !FUNBUNDLE_ISSTBUNDLE (arg_node)) {
+        /*
+         * first print the descriptive comment
+         */
+        INFO_COMMENT (arg_info) = TRUE;
 
-    fprintf (INFO_FILE (arg_info),
-             "/**************************************************************************"
-             "***\n"
-             " * C declaration of function %s.\n"
-             " *\n"
-             " * defined instances:\n"
-             " *\n",
-             CTIitemName (FUNBUNDLE_FUNDEF (arg_node)));
+        fprintf (INFO_FILE (arg_info),
+                 "/**********************************************************************"
+                 "*******\n"
+                 " * C declaration of function %s.\n"
+                 " *\n"
+                 " * defined instances:\n"
+                 " *\n",
+                 CTIitemName (FUNBUNDLE_FUNDEF (arg_node)));
 
-    FUNBUNDLE_FUNDEF (arg_node) = TRAVdo (FUNBUNDLE_FUNDEF (arg_node), arg_info);
+        FUNBUNDLE_FUNDEF (arg_node) = TRAVdo (FUNBUNDLE_FUNDEF (arg_node), arg_info);
 
-    fprintf (INFO_FILE (arg_info), " ****************************************************"
-                                   "*************************/\n"
-                                   "\n");
-    INFO_COMMENT (arg_info) = FALSE;
+        fprintf (INFO_FILE (arg_info), " ************************************************"
+                                       "*****************************/\n"
+                                       "\n");
+        INFO_COMMENT (arg_info) = FALSE;
 
-    /*
-     * next the function declaration
-     */
-    INFO_DECL (arg_info) = TRUE;
+        /*
+         * next the function declaration
+         */
+        INFO_DECL (arg_info) = TRUE;
 
-    fprintf (INFO_FILE (arg_info), "extern void %s(", FUNBUNDLE_EXTNAME (arg_node));
+        fprintf (INFO_FILE (arg_info), "extern void %s(", FUNBUNDLE_EXTNAME (arg_node));
 
-    FUNBUNDLE_FUNDEF (arg_node) = TRAVdo (FUNBUNDLE_FUNDEF (arg_node), arg_info);
+        //     if ( global.xtmode) {
+        //       fprintf( INFO_FILE( arg_info), "SAC_XT_RESOURCE_ARG()");
+        //       fprintf( INFO_FILE( arg_info),
+        //                ((FUNDEF_RETS( FUNBUNDLE_FUNDEF( arg_node)) != NULL) ||
+        //                 (FUNDEF_ARGS( FUNBUNDLE_FUNDEF( arg_node)) != NULL))
+        //                ? ", " : "");
+        //     }
+        FUNBUNDLE_FUNDEF (arg_node) = TRAVdo (FUNBUNDLE_FUNDEF (arg_node), arg_info);
 
-    fprintf (INFO_FILE (arg_info), ");\n\n");
+        fprintf (INFO_FILE (arg_info), ");\n\n");
 
-    INFO_DECL (arg_info) = FALSE;
-    INFO_INBUNDLE (arg_info) = FALSE;
+        INFO_DECL (arg_info) = FALSE;
+        INFO_INBUNDLE (arg_info) = FALSE;
+    }
 
     if (FUNBUNDLE_NEXT (arg_node) != NULL) {
         FUNBUNDLE_NEXT (arg_node) = TRAVdo (FUNBUNDLE_NEXT (arg_node), arg_info);
