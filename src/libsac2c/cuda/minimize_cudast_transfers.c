@@ -85,7 +85,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_INCUDAST (result) = FALSE;
     INFO_LIFT (result) = FALSE;

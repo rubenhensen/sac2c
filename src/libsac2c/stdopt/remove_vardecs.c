@@ -40,9 +40,11 @@
  * @{
  *
  *****************************************************************************/
+enum travmode_t { TM_init, TM_delete };
+
 struct INFO {
     bool onefundef;
-    enum { TM_init, TM_delete } travmode;
+    enum travmode_t travmode;
 };
 
 #define INFO_ONEFUNDEF(n) ((n)->onefundef)
@@ -55,7 +57,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_TRAVMODE (result) = TM_init;

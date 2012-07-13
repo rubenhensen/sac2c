@@ -112,7 +112,7 @@ SATserializeVertex (info *info, vertex *attr, node *parent)
  ***************************************************************************/
 
 void
-SATserializeString (info *info, char *attr, node *parent)
+SATserializeString (info *info, const char *attr, node *parent)
 {
     char *tmp;
 
@@ -146,7 +146,7 @@ SATserializeString (info *info, char *attr, node *parent)
  ***************************************************************************/
 
 void
-SATserializeSharedString (info *info, char *attr, node *parent)
+SATserializeSharedString (info *info, const char *attr, node *parent)
 {
     DBUG_ENTER ();
 

@@ -67,9 +67,9 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
-    INFO_PRF_CNT (result) = MEMmalloc (sizeof (int) * NUM_CONSTRAINT_PRFS);
+    INFO_PRF_CNT (result) = (int *)MEMmalloc (sizeof (int) * NUM_CONSTRAINT_PRFS);
     result = InitCounters (result);
 
     INFO_ALL_GONE (result) = TRUE;

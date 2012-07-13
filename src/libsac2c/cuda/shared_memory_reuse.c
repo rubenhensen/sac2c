@@ -62,7 +62,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_LEVEL (result) = 0;
     INFO_WITHIDS (result) = NULL;
@@ -633,7 +633,8 @@ SHMEMprf (node *arg_node, info *arg_info)
                         DBUG_ASSERT (NODE_TYPE (id) == N_id,
                                      "Non N_id node found in nodelist!");
 
-                        avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (id));
+                        avis
+                          = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (id));
                         if (avis != ID_AVIS (id)) {
                             ID_AVIS (id) = avis;
                         }

@@ -148,14 +148,14 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
     INFO_LHSAVIS (result) = NULL;
     INFO_WITHDEPTH (result) = 0;
     INFO_TOPBLOCK (result) = FALSE;
-    INFO_DEPTHMASK (result) = MEMmalloc (sizeof (bool) * 1);
+    INFO_DEPTHMASK (result) = (bool *)MEMmalloc (sizeof (bool) * 1);
     INFO_SETDEPTH (result) = 0;
     INFO_INSLIST (result) = NULL;
 
@@ -1020,12 +1020,12 @@ node* WLIRdoLoopInvariantRemovalOneFundef(node* fundef)
 
   DBUG_ASSERT (NODE_TYPE(fundef) == N_fundef,
                "LIRdoLoopInvariantRemovalOneFundef called for non-fundef node");
-  
+
   info = MakeInfo();
 
   INFO_TRAVSTART( info) = TS_fundef;
-    
-  TRAVpush(TR_wlir);    
+
+  TRAVpush(TR_wlir);
   fundef = TRAVdo( fundef, info);
   TRAVpop();
 

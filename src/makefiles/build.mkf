@@ -85,22 +85,14 @@ GENERATED_INCLUDE_FILES := $(patsubst %.xsl,%,\
                                $(wildcard $(dir)/*.h.xsl))) \
                            $(patsubst %.xsl,%,\
                              $(foreach dir,$(MAKE_DIRS),\
-                               $(wildcard $(dir)/*.mac.xsl))) \
-                           $(patsubst %.y,%.tab.h,\
-                             $(foreach dir,$(MAKE_DIRS),\
-                               $(wildcard $(dir)/*.y)))
+                               $(wildcard $(dir)/*.mac.xsl)))
 
 GENERATED_SOURCE_FILES := $(patsubst %.xsl,%,\
                             $(foreach dir,$(MAKE_DIRS),\
-                              $(wildcard $(dir)/*.c.xsl))) \
-                          $(patsubst %.y,%.tab.c,\
-                            $(foreach dir,$(MAKE_DIRS),\
-                              $(wildcard $(dir)/*.y))) \
-                          $(patsubst %.l,%.lex.c,\
-                            $(foreach dir,$(MAKE_DIRS),\
-                              $(wildcard $(dir)/*.l))) \
+                              $(wildcard $(dir)/*.c.xsl)))
 
-GENERATED_FILES  := $(GENERATED_INCLUDE_FILES) $(GENERATED_SOURCE_FILES)
+GENERATED_FILES  := $(GENERATED_INCLUDE_FILES) $(GENERATED_SOURCE_FILES) \
+		    codegen/fancy_icm_vars.c
 
 DEPENDENCY_FILES := $(addsuffix .d,\
                       $(foreach file,$(SUBTARGETS_RAW),\
@@ -359,7 +351,9 @@ global/build_$(STYLE).c: $(SUBTARGETS) $(PROJECT_ROOT)/.revision.txt
 	@$(ECHO) "char build_ast[]   = \"`cat .fingerprint`\";"                                >> $@
 	@$(CLOCK_SKEW_ELIMINATION)  
 
-
+# Create an icm_vars file, which could be used by both C and C++ compilers
+codegen/fancy_icm_vars.c: codegen/icm_vars.c
+	cpp -P $^ -DICM_ALL | sort | uniq > $@
 
 ###############################################################################
 #

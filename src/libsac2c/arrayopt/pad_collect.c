@@ -61,7 +61,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_APC_UNSUPPORTED (result) = 0;
     INFO_APC_COUNT_CHANGES (result) = 0;
@@ -145,7 +145,7 @@ APCdoCollect (node *arg_node)
  *****************************************************************************/
 
 static shpseg *
-AccessClass2Group (accessclass_t class, int dim)
+AccessClass2Group (accessclass_t xclass, int dim)
 {
 
     shpseg *vector;
@@ -154,7 +154,7 @@ AccessClass2Group (accessclass_t class, int dim)
 
     DBUG_ENTER ();
 
-    switch (class) {
+    switch (xclass) {
     case ACL_offset:
         element = 1;
         break;
@@ -582,7 +582,7 @@ APCgenarray (node *arg_node, info *arg_info)
   simpletype basetype;
 
 
-  DBUG_PRINT ("withop-node detected"); 
+  DBUG_PRINT ("withop-node detected");
 
   DBUG_PRINT (" genarray-loop");
   if (INFO_APC_UNSUPPORTED(arg_info)) {

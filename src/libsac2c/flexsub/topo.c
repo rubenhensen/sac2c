@@ -60,7 +60,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
     INFO_TOPO (result) = 1;
     INFO_HEAD (result) = NULL;
     INFO_LIST (result) = NULL;
@@ -169,14 +169,14 @@ TFTOPtfvertex (node *arg_node, info *arg_info)
          * processing here.
          */
 
-        INFO_HEAD (arg_info) = MEMmalloc (sizeof (nodelist));
+        INFO_HEAD (arg_info) = (nodelist *)MEMmalloc (sizeof (nodelist));
         INFO_LIST (arg_info) = INFO_HEAD (arg_info);
 
         NODELIST_NODE (INFO_HEAD (arg_info)) = arg_node;
 
     } else if (NODELIST_NEXT (INFO_LIST (arg_info)) == NULL) {
 
-        NODELIST_NEXT (INFO_LIST (arg_info)) = MEMmalloc (sizeof (nodelist));
+        NODELIST_NEXT (INFO_LIST (arg_info)) = (nodelist *)MEMmalloc (sizeof (nodelist));
         INFO_LIST (arg_info) = NODELIST_NEXT (INFO_LIST (arg_info));
         NODELIST_NODE (INFO_LIST (arg_info)) = arg_node;
         NODELIST_NEXT (INFO_LIST (arg_info)) = NULL;

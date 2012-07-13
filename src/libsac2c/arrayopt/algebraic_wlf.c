@@ -252,7 +252,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = fundef;
     INFO_PART (result) = NULL;
@@ -834,7 +834,7 @@ doAWLFreplace (node *arg_node, node *producerWLPart, info *arg_info)
         newblock = NULL;
     }
 
-    cellexpr = LUTsearchInLutPp (INFO_LUT (arg_info), cellexpr);
+    cellexpr = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), cellexpr);
     newsel = TBmakeId (cellexpr);
     LUTremoveContentLut (INFO_LUT (arg_info));
 

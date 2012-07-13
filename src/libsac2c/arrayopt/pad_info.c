@@ -1561,7 +1561,7 @@ void
 PInoteResults ()
 {
     pad_info_t *pi_ptr;
-    char *basetype, *old, *new, *pad;
+    char *basetype, *old, *xnew, *pad;
     int overhead;
 
     DBUG_ENTER ();
@@ -1571,16 +1571,16 @@ PInoteResults ()
     while (pi_ptr != NULL) {
         basetype = CVbasetype2String (PI_TYPE (pi_ptr));
         old = CVshpseg2String (PI_DIM (pi_ptr), PI_OLD_SHAPE (pi_ptr));
-        new = CVshpseg2String (PI_DIM (pi_ptr), PI_NEW_SHAPE (pi_ptr));
+        xnew = CVshpseg2String (PI_DIM (pi_ptr), PI_NEW_SHAPE (pi_ptr));
         pad = CVshpseg2String (PI_DIM (pi_ptr), PI_PADDING (pi_ptr));
         overhead = PIpaddingOverhead (PI_DIM (pi_ptr), PI_OLD_SHAPE (pi_ptr),
                                       PI_PADDING (pi_ptr));
 
         CTInote ("%s%s  by  %s", basetype, old, pad);
-        CTInote ("   ->  %s%s    <= %d%% overhead", basetype, new, overhead);
+        CTInote ("   ->  %s%s    <= %d%% overhead", basetype, xnew, overhead);
 
         old = MEMfree (old);
-        new = MEMfree (new);
+        xnew = MEMfree (xnew);
         pad = MEMfree (pad);
 
         pi_ptr = PI_NEXT (pi_ptr);

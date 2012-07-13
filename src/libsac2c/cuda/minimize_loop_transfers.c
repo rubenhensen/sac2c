@@ -103,7 +103,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_INDOFUN (result) = FALSE;
     INFO_LETIDS (result) = NULL;
@@ -424,7 +424,7 @@ MLTRANid (node *arg_node, info *arg_info)
          * the device variable is passed to the do-fun as an argument
          * instead of a locally declared/defined variable. */
         if (!INFO_ISRECURSIVEAPARGS (arg_info)) {
-            avis = LUTsearchInLutPp (INFO_H2DLUT (arg_info), ID_AVIS (arg_node));
+            avis = (node *)LUTsearchInLutPp (INFO_H2DLUT (arg_info), ID_AVIS (arg_node));
             if (avis != ID_AVIS (arg_node)) {
                 ID_AVIS (arg_node) = avis;
             }
@@ -437,7 +437,8 @@ MLTRANid (node *arg_node, info *arg_info)
                 && !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (ssaassign)) {
                 /* If the SSA of this argument is <device2host>, and this
                  * <device2host> can be moved out of the do-fun. */
-                avis = LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (arg_node));
+                avis
+                  = (node *)LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (arg_node));
                 ID_AVIS (arg_node) = avis;
             }
 
@@ -517,7 +518,7 @@ MLTRANfuncond (node *arg_node, info *arg_info)
         if ((ISDEVICE2HOST (ssaassign)
              && !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (ssaassign))) {
 
-            avis = LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (else_id));
+            avis = (node *)LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (else_id));
             if (avis != ID_AVIS (else_id)) {
 
                 /* If the 'else' part is a host variable defined by <device2host>,

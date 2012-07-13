@@ -14,7 +14,7 @@
 
 #include "config.h"
 
-int _dummy_mt_beehive;
+static int _dummy_mt_beehive;
 
 #if ENABLE_MT
 
@@ -118,7 +118,8 @@ SAC_MT_AssignBeeGlobalId (struct sac_bee_common_t *bee)
     /* enlarge the array by 2X */
     unsigned int new_bs = 2 * SAC_MT_beehive_registry.ab_size;
     struct sac_bee_common_t **new_arr
-      = realloc (SAC_MT_beehive_registry.all_bees, sizeof (void *) * new_bs);
+      = (struct sac_bee_common_t **)realloc (SAC_MT_beehive_registry.all_bees,
+                                             sizeof (void *) * new_bs);
     if (!new_arr) {
         /* cannot enlarge the array; fail */
         pthread_mutex_unlock (&SAC_MT_beehive_registry.lock);
@@ -209,7 +210,8 @@ SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
                                 unsigned sizeof_hive, unsigned sizeof_bee)
 {
     /* allocate the Hive struct */
-    struct sac_hive_common_t *hive = SAC_CALLOC (1, sizeof_hive);
+    struct sac_hive_common_t *hive
+      = (struct sac_hive_common_t *)SAC_CALLOC (1, sizeof_hive);
     if (!hive) {
         SAC_RuntimeError ("Could not allocate memory for a hive.");
     }
@@ -217,7 +219,7 @@ SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
 
     /* allocate an array of pointers to bees */
     hive->num_bees = num_bees;
-    hive->bees = SAC_CALLOC (num_bees, sizeof (void *));
+    hive->bees = (struct sac_bee_common_t **)SAC_CALLOC (num_bees, sizeof (void *));
     if (!hive->bees) {
         SAC_RuntimeError ("Could not allocate memory for an array of ptrs to bees.");
     }
@@ -226,15 +228,17 @@ SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
     // SAC_TR_PRINT( ("Initializing Tasklocks."));
     if (num_schedulers > 0) {
         /* allocate scheduler's data structures in the hive */
-        hive->SAC_MT_Tasklock
-          = SAC_MALLOC (num_bees * num_schedulers * sizeof (pthread_mutex_t));
-        hive->SAC_MT_Task = SAC_CALLOC (num_bees * num_schedulers, sizeof (int));
-        hive->SAC_MT_LAST_Task = SAC_CALLOC (num_bees * num_schedulers, sizeof (int));
-        hive->SAC_MT_rest_iterations = SAC_CALLOC (num_schedulers, sizeof (int));
-        hive->SAC_MT_act_tasksize = SAC_CALLOC (num_schedulers, sizeof (int));
-        hive->SAC_MT_last_taskend = SAC_CALLOC (num_schedulers, sizeof (int));
-        hive->SAC_MT_TS_Tasklock = SAC_MALLOC (num_schedulers * sizeof (pthread_mutex_t));
-        hive->SAC_MT_Taskcount = SAC_CALLOC (num_schedulers, sizeof (int));
+        hive->SAC_MT_Tasklock = (pthread_mutex_t *)SAC_MALLOC (
+          num_bees * num_schedulers * sizeof (pthread_mutex_t));
+        hive->SAC_MT_Task = (int *)SAC_CALLOC (num_bees * num_schedulers, sizeof (int));
+        hive->SAC_MT_LAST_Task
+          = (int *)SAC_CALLOC (num_bees * num_schedulers, sizeof (int));
+        hive->SAC_MT_rest_iterations = (int *)SAC_CALLOC (num_schedulers, sizeof (int));
+        hive->SAC_MT_act_tasksize = (int *)SAC_CALLOC (num_schedulers, sizeof (int));
+        hive->SAC_MT_last_taskend = (int *)SAC_CALLOC (num_schedulers, sizeof (int));
+        hive->SAC_MT_TS_Tasklock
+          = (pthread_mutex_t *)SAC_MALLOC (num_schedulers * sizeof (pthread_mutex_t));
+        hive->SAC_MT_Taskcount = (int *)SAC_CALLOC (num_schedulers, sizeof (int));
 
         /* check success */
         if (!hive->SAC_MT_Tasklock || !hive->SAC_MT_Task || !hive->SAC_MT_LAST_Task
@@ -273,7 +277,8 @@ SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
     for (unsigned i = 1; i < num_bees; ++i) {
         /* NOTE: the index below is (i-1) because other_bees[] contains only slave bees,
          * not the queen bee itself */
-        struct sac_bee_common_t *b = other_bees + sizeof_bee * (i - 1);
+        struct sac_bee_common_t *b
+          = (struct sac_bee_common_t *)other_bees + sizeof_bee * (i - 1);
         /* put a bee into hive */
         hive->bees[i] = b;
         /* set b->c.global_id */
@@ -425,7 +430,8 @@ SAC_MT_BEEHIVE_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                              unsigned int max_threads)
 {
     /* allocate the array, clear it, and initialize the lock */
-    SAC_MT_beehive_registry.all_bees = SAC_CALLOC (max_threads, sizeof (void *));
+    SAC_MT_beehive_registry.all_bees
+      = (struct sac_bee_common_t **)SAC_CALLOC (max_threads, sizeof (void *));
     if (!SAC_MT_beehive_registry.all_bees) {
         SAC_RuntimeError ("Could not allocate memory for the global array of bee ptrs.");
     }

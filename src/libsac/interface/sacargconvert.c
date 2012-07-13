@@ -51,7 +51,7 @@
         ctype *data;                                                                     \
         SACarg *result;                                                                  \
                                                                                          \
-        data = SAC_MALLOC (sizeof (ctype));                                              \
+        data = (ctype *)SAC_MALLOC (sizeof (ctype));                                     \
         *data = value;                                                                   \
                                                                                          \
         result = SACARGconvertFrom##name##Pointer (data, 0);                             \
@@ -101,7 +101,8 @@ SACARGconvertFromVoidPointer (int btype, void *data)
 {
     SACarg *result;
 
-    result = SACARGmakeSacArg (btype, SACARGmakeDescriptorVect (0, (int *)0), data);
+    result
+      = SACARGmakeSacArg ((basetype)btype, SACARGmakeDescriptorVect (0, (int *)0), data);
 
     return (result);
 }

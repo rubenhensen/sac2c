@@ -93,7 +93,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_DDEPEND_FUSIONABLE_WL (result) = NULL;
     INFO_DDEPEND_REFERENCES_FUSIONABLE (result) = NULL;

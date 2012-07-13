@@ -42,7 +42,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_OPTFLAG (result) = FALSE;
     INFO_ONEFUNDEF (result) = FALSE;

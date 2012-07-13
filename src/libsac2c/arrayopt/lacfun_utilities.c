@@ -323,11 +323,14 @@ ATravFilter (node *arg_node, info *arg_info)
 node *
 LFUfindAssignOfType (node *assigns, nodetype n)
 {
-    struct local_info linfo = {.res = NULL, .nt = n};
+    struct local_info linfo;
 
     DBUG_ENTER ();
 
-    TRAVpushAnonymous ((anontrav_t[]){{N_assign, &ATravFilter}, {0, NULL}}, &TRAVsons);
+    linfo.res = NULL, linfo.nt = n;
+
+    TRAVpushAnonymous ((anontrav_t[]){{N_assign, &ATravFilter}, {(nodetype)0, NULL}},
+                       &TRAVsons);
     assigns = TRAVopt (assigns, (info *)(void *)&linfo);
     TRAVpop ();
 

@@ -115,6 +115,15 @@
 #include <stdlib.h>
 #include <ctype.h> /* for tolower() */
 
+/* This trick makes compilation possible with C++ compiler
+   but uses non-standard __typeof feature.  So for now on
+   we use it only in case __cplusplus is enabled.  */
+#ifdef __cplusplus
+#define CONVERT_TO_TYPEOF(x) (__typeof(x))
+#else
+#define CONVERT_TO_TYPEOF(x)
+#endif
+
 #define ARGS_BEGIN(argc, argv)                                                           \
     {                                                                                    \
         int ARGS_i = 1;                                                                  \
@@ -220,7 +229,7 @@
         if (ARG != NULL) {                                                               \
             ARGS_tmp = strtol (ARG, &ARGS_str, 10);                                      \
             if ((ARGS_str[0] == '\0') && (ARGS_tmp >= 0)) {                              \
-                id = (__typeof(id))ARGS_tmp;                                             \
+                id = CONVERT_TO_TYPEOF (id) ARGS_tmp;                                    \
             } else {                                                                     \
                 ARGS_ERROR ("Number argument expected for option");                      \
             }                                                                            \
@@ -237,7 +246,7 @@
         if (ARG != NULL) {                                                               \
             ARGS_tmp = strtol (ARG, &ARGS_str, 10);                                      \
             if (ARGS_str[0] == '\0') {                                                   \
-                id = (__typeof(id))ARGS_tmp;                                             \
+                id = CONVERT_TO_TYPEOF (id) ARGS_tmp;                                    \
             } else {                                                                     \
                 ARGS_ERROR ("Integer argument expected for option");                     \
             }                                                                            \
@@ -255,7 +264,7 @@
             ARGS_tmp = strtol (ARG, &ARGS_str, 10);                                      \
             if (ARGS_str[0] == '\0') {                                                   \
                 if ((ARGS_tmp >= min) && (ARGS_tmp <= max)) {                            \
-                    id = (__typeof(id))ARGS_tmp;                                         \
+                    id = CONVERT_TO_TYPEOF (id) ARGS_tmp;                                \
                 } else {                                                                 \
                     ARGS_ERROR ("Argument out of range for option");                     \
                 }                                                                        \

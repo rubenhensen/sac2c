@@ -62,6 +62,15 @@ version="1.0">
   <xsl:if test="@size">
     <xsl:value-of select="' int, '" />
   </xsl:if>
+
+  <!-- This is a hack for C++ compilers, to resolve constant
+       parameter passing from SharedString to String.  
+       
+       FIXME: During the seriliazation all the parameters may 
+       become constant as serialization should not change 
+       them.  -->
+  <xsl:if test="@name = 'String'">const </xsl:if>
+  
   <xsl:value-of select="@ctype"/>
   <xsl:value-of select="', node* );'"/>
 </xsl:template>

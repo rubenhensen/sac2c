@@ -49,7 +49,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_DUPLUT (result) = NULL;
     INFO_VARDECS (result) = NULL;
@@ -122,16 +122,14 @@ CLFdoCreateLoopFun (node *fundef, node *assigns,
                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
     INFO_VARDECS (arg_info) = TBmakeVardec (new_iterator, INFO_VARDECS (arg_info));
-    inc_ass
-      = TBmakeAssign (TBmakeLet (TBmakeIds (new_iterator, NULL),
-                                 TBmakePrf (F_add_SxS,
-                                            TBmakeExprs (TBmakeId (
-                                                           LUTsearchInLutPp (INFO_DUPLUT (
+    inc_ass = TBmakeAssign (
+      TBmakeLet (TBmakeIds (new_iterator, NULL),
+                 TBmakePrf (F_add_SxS,
+                            TBmakeExprs (TBmakeId ((node *)LUTsearchInLutPp (INFO_DUPLUT (
                                                                                arg_info),
                                                                              iterator)),
-                                                         TBmakeExprs (TBmakeNum (1),
-                                                                      NULL)))),
-                      NULL);
+                                         TBmakeExprs (TBmakeNum (1), NULL)))),
+      NULL);
     AVIS_SSAASSIGN (new_iterator) = inc_ass;
 
     comp_val = TBmakeAvis (TRAVtmpVarName ("comp_val"),
@@ -142,9 +140,10 @@ CLFdoCreateLoopFun (node *fundef, node *assigns,
                  TBmakePrf (F_sub_SxS,
                             TBmakeExprs (TBmakeId (new_iterator),
                                          TBmakeExprs (TBmakeId (
-                                                        LUTsearchInLutPp (INFO_DUPLUT (
-                                                                            arg_info),
-                                                                          loop_bound)),
+                                                        (node *)
+                                                          LUTsearchInLutPp (INFO_DUPLUT (
+                                                                              arg_info),
+                                                                            loop_bound)),
                                                       NULL)))),
       NULL);
     AVIS_SSAASSIGN (new_iterator) = sub_ass;
@@ -186,12 +185,14 @@ CLFdoCreateLoopFun (node *fundef, node *assigns,
             if (recursive_args == NULL) {
                 recursive_args
                   = TBmakeExprs (TBmakeId (
-                                   LUTsearchInLutPp (INFO_DUPLUT (arg_info), out_mem)),
+                                   (node *)LUTsearchInLutPp (INFO_DUPLUT (arg_info),
+                                                             out_mem)),
                                  NULL);
             } else {
                 recursive_args
                   = TCappendExprs (recursive_args,
-                                   TBmakeExprs (TBmakeId (LUTsearchInLutPp (INFO_DUPLUT (
+                                   TBmakeExprs (TBmakeId (
+                                                  (node *)LUTsearchInLutPp (INFO_DUPLUT (
                                                                               arg_info),
                                                                             out_mem)),
                                                 NULL));
@@ -242,7 +243,8 @@ CLFdoCreateLoopFun (node *fundef, node *assigns,
       = TBmakeAssign (TBmakeLet (TBmakeIds (return_mem, NULL),
                                  TBmakeFuncond (TBmakeId (comp_predicate),
                                                 TBmakeId (recursive_ret),
-                                                TBmakeId (LUTsearchInLutPp (INFO_DUPLUT (
+                                                TBmakeId (
+                                                  (node *)LUTsearchInLutPp (INFO_DUPLUT (
                                                                               arg_info),
                                                                             out_mem)))),
                       NULL);

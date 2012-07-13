@@ -80,7 +80,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_NLUT (result) = NULL;
     INFO_TRAVMODE (result) = trav_collect;

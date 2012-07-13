@@ -7624,10 +7624,11 @@ TYserializeType (FILE *file, ntype *type)
  **/
 
 ntype *
-TYdeserializeType (typeconstr con, ...)
+TYdeserializeType (int _con, ...)
 {
     ntype *result = NULL;
     int cnt;
+    typeconstr con = (typeconstr)_con;
     va_list args;
     simpletype st;
 

@@ -138,7 +138,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
     INFO_ASSIGNS (result) = NULL;
     INFO_RESULTS (result) = NULL;
     INFO_LOWERBOUND (result) = NULL;
@@ -412,7 +412,7 @@ ReplaceAccu (node *tree, node *ops)
                          {N_prf, &FAprf},      {N_fold, &FAfold},
 
                          {N_with, &TRAVnone},  {N_with2, &TRAVnone},
-                         {N_with3, &TRAVnone}, {0, NULL}};
+                         {N_with3, &TRAVnone}, {(nodetype)0, NULL}};
     DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);

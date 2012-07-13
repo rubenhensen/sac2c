@@ -37,7 +37,7 @@
  * For this reason a dummy variable is declared.
  *
  ******************************************************************************/
-int dummy_mt_pth;
+static int dummy_mt_pth;
 
 /*
  * In case we do not have mt available, we have to make sure this file
@@ -133,7 +133,7 @@ pthread_key_t SAC_MT_self_bee_key;
 static inline struct sac_bee_pth_t *
 SAC_MT_PTH_determine_self ()
 {
-    return pthread_getspecific (SAC_MT_self_bee_key);
+    return (struct sac_bee_pth_t *)pthread_getspecific (SAC_MT_self_bee_key);
 }
 
 /******************************************************************************
@@ -182,7 +182,7 @@ tls_destroy_self_bee_key (void *data)
      * cleanup. */
     pthread_setspecific (SAC_MT_self_bee_key, data);
 
-    struct sac_bee_pth_t *self = data;
+    struct sac_bee_pth_t *self = (struct sac_bee_pth_t *)data;
 
     /* slave bees should be cleaned up via spmd_kill_pth_bee */
     assert (self->c.local_id == 0);
@@ -245,7 +245,7 @@ static void *
 ThreadControl (void *arg)
 {
     /* This is executed in the bee >1 of a new hive */
-    struct sac_bee_pth_t *const SAC_MT_self = arg;
+    struct sac_bee_pth_t *const SAC_MT_self = (struct sac_bee_pth_t *)arg;
     assert (SAC_MT_self && SAC_MT_self->c.hive);
     assert (SAC_MT_self->c.local_id >= 2);
 
@@ -317,7 +317,7 @@ static void *
 ThreadControlInitialWorker (void *arg)
 {
     /* This is executed in the bee #1 of a new hive */
-    struct sac_bee_pth_t *const SAC_MT_self = arg;
+    struct sac_bee_pth_t *const SAC_MT_self = (struct sac_bee_pth_t *)arg;
     assert (SAC_MT_self && SAC_MT_self->c.hive);
     assert (SAC_MT_self->c.local_id == 1);
 
@@ -513,7 +513,7 @@ EnsureThreadHasBee (void)
     }
 
     /* allocate the bee structure */
-    self = SAC_CALLOC (1, sizeof (struct sac_bee_pth_t));
+    self = (struct sac_bee_pth_t *)SAC_CALLOC (1, sizeof (struct sac_bee_pth_t));
     if (!self) {
         SAC_RuntimeError ("Could not allocate memory for the first bee.");
     }
@@ -894,7 +894,7 @@ SAC_Get_CurrentBee_GlobalID (void)
  *   void SAC_MT1_TR_Setup( int num_schedulers)
  *
  * description:
- * 
+ *
  *   This function initializes the runtime system for multi-threaded
  *   program execution. The basic steps performed are
  *   - Initialisation of the Scheduler Mutexlocks SAC_MT_TASKLOCKS
@@ -920,8 +920,8 @@ void SAC_MT1_Setup( int num_schedulers)
   }
 
   SAC_TR_PRINT( ("Computing thread class of master thread."));
-  
-  for (SAC_MT_masterclass = 1; 
+
+  for (SAC_MT_masterclass = 1;
        SAC_MT_masterclass < SAC_MT_threads;
        SAC_MT_masterclass <<= 1);
 
@@ -933,17 +933,17 @@ void SAC_MT1_Setup( int num_schedulers)
   if (SAC_MT_threads > 1) {
 
     SAC_MT1_internal_id = (pthread_t*)SAC_MALLOC( SAC_MT_threads * sizeof(pthread_t));
-    
+
     if (SAC_MT1_internal_id == NULL) {
       SAC_RuntimeError( "Unable to allocate memory for internal thread identifiers");
     }
-    
+
     SAC_TR_PRINT( ("Setting up POSIX thread attributes"));
-  
+
     if (0 != pthread_attr_init( &SAC_MT_thread_attribs)) {
-      SAC_RuntimeError( "Unable to initialize POSIX thread attributes");        
+      SAC_RuntimeError( "Unable to initialize POSIX thread attributes");
     }
-    
+
     if (0 != pthread_attr_setscope( &SAC_MT_thread_attribs,
                                     PTHREAD_SCOPE_SYSTEM)) {
       SAC_RuntimeWarning( "Unable to set POSIX thread attributes to "
@@ -972,12 +972,12 @@ void SAC_MT1_Setup( int num_schedulers)
 
 #if !TRACE
 
-static 
+static
 void ThreadControl_MT1(void *arg)
 {
   const unsigned int my_thread_id = (unsigned long int) arg;
   volatile unsigned int worker_flag = 0;
-  
+
   pthread_setspecific(SAC_MT_threadid_key, &my_thread_id);
 
   worker_flag = (*SAC_MT_spmd_function)(my_thread_id, 0, worker_flag);
@@ -987,13 +987,13 @@ void ThreadControl_MT1(void *arg)
 void SAC_MT1_StartWorkers()
 {
   unsigned long int i;
-  
+
   for (i=1; i<SAC_MT_threads; i++) {
     if (0 != pthread_create( &SAC_MT1_internal_id[i],
                              &SAC_MT_thread_attribs,
                              (void *(*) (void *)) ThreadControl_MT1,
                              (void *) (i))) {
-      
+
       SAC_RuntimeError("Master thread failed to create worker thread #%u", i);
     }
   }

@@ -37,7 +37,9 @@ typedef int boolbool;
 #elif SAC_CUDA_MACROS
 typedef int boolboolbool;
 #else
+#ifndef __cplusplus
 typedef int bool;
+#endif
 #endif
 #endif
 

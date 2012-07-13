@@ -157,7 +157,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_LHS (result) = NULL;
     INFO_LEVEL (result) = 0;
@@ -266,8 +266,8 @@ BuildInitializationAssigns (node *part, info *arg_info)
     DBUG_ENTER ();
 
     fundef = INFO_FUNDEF (arg_info);
-    cis = MEMmalloc (sizeof (cuidx_set_t));
-    cds = MEMmalloc (sizeof (cudim_set_t));
+    cis = (cuidx_set_t *)MEMmalloc (sizeof (cuidx_set_t));
+    cds = (cudim_set_t *)MEMmalloc (sizeof (cudim_set_t));
     dim = TCcountIds (PART_IDS (part));
 
     CIS_TX (cis) = CreatePrfOrConst (TRUE, "tx", T_int, SHmakeShape (0),
@@ -2277,7 +2277,7 @@ PFDwith (node *arg_node, info *arg_info)
                            {N_code, &ATravCode},
                            {N_generator, &ATravGenerator},
                            {N_withid, &ATravWithid},
-                           {0, NULL}};
+                           {(nodetype)0, NULL}};
 
     /* Here we traverse the fold withloop and try to scalarize it until no
      * more scalarization can be done, i.e. CHANGED equals to 0. The reason we need to

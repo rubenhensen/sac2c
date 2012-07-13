@@ -63,7 +63,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_RCS (result) = NULL;
     INFO_COUNT (result) = 0;
@@ -339,7 +339,7 @@ IRAcode (node *arg_node, info *arg_info)
     if (INFO_RCS (arg_info) != NULL) {
         INFO_RCS (arg_info) = ConsolidateRcs (INFO_RCS (arg_info), arg_info);
 
-        CODE_IRA_INFO (arg_node) = MEMmalloc (sizeof (reuse_info_t));
+        CODE_IRA_INFO (arg_node) = (reuse_info_t *)MEMmalloc (sizeof (reuse_info_t));
         CODE_IRA_RCCOUNT (arg_node) = INFO_COUNT (arg_info);
         CODE_IRA_RCS (arg_node) = INFO_RCS (arg_info);
 

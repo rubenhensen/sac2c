@@ -201,7 +201,7 @@ SAC_MT_InitThreadRegistry (unsigned int num_threads)
     memset (r, 0, sizeof (struct sac_phm_thread_registry_t));
 
     /* alloc an array of ids */
-    r->th_numbers = SAC_MALLOC (sizeof (unsigned) * num_threads);
+    r->th_numbers = (unsigned *)SAC_MALLOC (sizeof (unsigned) * num_threads);
     if (!r->th_numbers) {
         SAC_RuntimeError ("Could not allocate memory for the thread registry array.");
     }
@@ -243,7 +243,7 @@ SAC_MT_UnusedThreadRegistry (void)
     memset (r, 0, sizeof (struct sac_phm_thread_registry_t));
 
     /* alloc an array of ids */
-    r->th_numbers = SAC_MALLOC (sizeof (unsigned) * 1);
+    r->th_numbers = (unsigned *)SAC_MALLOC (sizeof (unsigned) * 1);
     if (!r->th_numbers) {
         SAC_RuntimeError ("Could not allocate memory for the thread registry array.");
     }

@@ -82,7 +82,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_CONTEXT (result) = AA_undef;
     INFO_FUNDEF (result) = fundef;

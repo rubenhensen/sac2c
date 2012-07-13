@@ -69,7 +69,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
     INFO_COLLABEL (result) = 0;
     INFO_TOTALCOLS (result) = 0;
     INFO_CSRC (result) = NULL;
@@ -151,7 +151,7 @@ TFRCHtfdag (node *arg_node, info *arg_info)
         INFO_TOTALCOLS (arg_info) = DYNARRAY_TOTALELEMS (COMPINFO_CSRC (ci));
         INFO_CSRC (arg_info) = COMPINFO_CSRC (ci);
         INFO_CTAR (arg_info) = COMPINFO_CTAR (ci);
-        INFO_ESTACK (arg_info) = MEMmalloc (sizeof (elemstack *));
+        INFO_ESTACK (arg_info) = (elemstack **)MEMmalloc (sizeof (elemstack *));
         INFO_COLLABEL (arg_info) = 0;
 
         TRAVdo (TFDAG_ROOT (arg_node), arg_info);
@@ -204,7 +204,7 @@ TFRCHtfvertex (node *arg_node, info *arg_info)
 
         if (TFEDGE_EDGETYPE (parents) == edgecross) {
 
-            elem *e = MEMmalloc (sizeof (elem));
+            elem *e = (elem *)MEMmalloc (sizeof (elem));
             ELEM_DATA (e) = NULL;
 
             /*

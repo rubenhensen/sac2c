@@ -135,7 +135,7 @@ LUBcomputeIntraTable (dynarray *eulertour, int start, int end)
                  "Incompatible arguments passed to LUBcomputeIntraTable");
 
     int i, j, minvalue, minindex, currdepth;
-    matrix *result = MEMmalloc (sizeof (matrix));
+    matrix *result = (matrix *)MEMmalloc (sizeof (matrix));
 
     for (i = 0; i <= end - start + 1; i++) {
 
@@ -187,7 +187,7 @@ LUBcomputePerBlockMin (dynarray *eulertour, int blocksize)
     int mindepth, currdepth, minindex, i, j;
     elem *e;
 
-    result = MEMmalloc (sizeof (dynarray));
+    result = (dynarray *)MEMmalloc (sizeof (dynarray));
 
     for (i = 0; i < DYNARRAY_TOTALELEMS (eulertour); i = i + blocksize) {
 
@@ -207,7 +207,7 @@ LUBcomputePerBlockMin (dynarray *eulertour, int blocksize)
             }
         }
 
-        e = MEMmalloc (sizeof (elem));
+        e = (elem *)MEMmalloc (sizeof (elem));
         ELEM_IDX (e) = mindepth;
         ELEM_DATA (e) = MEMmalloc (sizeof (int));
 
@@ -229,7 +229,7 @@ LUBprocessBlockMinArray (dynarray *a)
                  "Incompatible arguments passed to LUBprocessBlockMinArray");
 
     int i, j, halfstep, fullstep, totalelems;
-    matrix *m = MEMmalloc (sizeof (matrix));
+    matrix *m = (matrix *)MEMmalloc (sizeof (matrix));
 
     totalelems = DYNARRAY_TOTALELEMS (a);
 
@@ -306,7 +306,7 @@ LUBcreatePartitions (dynarray *eulertour)
     DBUG_ENTER ();
 
     int i, j, totalelems, blocksize, oldsize, index;
-    lubinfo *lub = MEMmalloc (sizeof (lubinfo));
+    lubinfo *lub = (lubinfo *)MEMmalloc (sizeof (lubinfo));
 
     totalelems = DYNARRAY_TOTALELEMS (eulertour);
 

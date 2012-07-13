@@ -113,7 +113,7 @@ MakeInfo (void)
     info *result;
 
     DBUG_ENTER ();
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_ONEFUNDEF (result) = TRUE;
@@ -355,8 +355,8 @@ EnhanceLacfunBody (node *arg_node, info *arg_info, bool markhas)
         lacfun = INFO_FUNDEF (arg_info);
         if (FUNDEF_ISLOOPFUN (lacfun)) {
             FUNDEF_LOOPRECURSIVEAP (lacfun)
-              = LUTsearchInLutPp (INFO_LUTRENAMES (arg_info),
-                                  FUNDEF_LOOPRECURSIVEAP (lacfun));
+              = (node *)LUTsearchInLutPp (INFO_LUTRENAMES (arg_info),
+                                          FUNDEF_LOOPRECURSIVEAP (lacfun));
         }
 
         LUTremoveContentLut (INFO_LUTRENAMES (arg_info));

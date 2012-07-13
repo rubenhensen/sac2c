@@ -753,7 +753,7 @@ MemobjToErrorMessage (char *kind_of_error, memobj *ptr_to_memobj)
 
 #else /* DBUG_OFF */
 
-int _dummy_check_mem_c; /* C99 does not allow for empty files. */
+static int _dummy_check_mem_c; /* C99 does not allow for empty files. */
 
 #endif /* DBUG_OFF */
 

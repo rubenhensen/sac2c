@@ -65,6 +65,18 @@
  * @{
  *
  *****************************************************************************/
+enum csgd_mode_t {
+    CSGD_normal,
+    CSGD_checkarg,
+    CSGD_checkret,
+    CSGD_checkcast,
+    CSGD_checkavis,
+    CSGD_renest,
+    CSGD_denest,
+    CSGD_bindshape,
+    CSGD_strip
+};
+
 struct INFO {
     node *args;
     node *rets;
@@ -72,17 +84,7 @@ struct INFO {
     node *current;
     node *preassigns;
     node *retexprs;
-    enum {
-        CSGD_normal,
-        CSGD_checkarg,
-        CSGD_checkret,
-        CSGD_checkcast,
-        CSGD_checkavis,
-        CSGD_renest,
-        CSGD_denest,
-        CSGD_bindshape,
-        CSGD_strip
-    } mode;
+    enum csgd_mode_t mode;
     bool isgeneric;
     int retno;
     bool outerdefined;
@@ -113,7 +115,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ARGS (result) = NULL;
     INFO_RETS (result) = NULL;

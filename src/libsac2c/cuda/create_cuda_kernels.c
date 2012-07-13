@@ -185,7 +185,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_CUDAKERNELS (result) = NULL;
     INFO_CUDAAPS (result) = NULL;
@@ -828,7 +828,7 @@ CUKNLgenarray (node *arg_node, info *arg_info)
             GENARRAY_MEM (arg_node) = TRAVopt (GENARRAY_MEM (arg_node), arg_info);
             GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
             GENARRAY_IDX (arg_node)
-              = LUTsearchInLutPp (INFO_LUT (arg_info), GENARRAY_IDX (arg_node));
+              = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), GENARRAY_IDX (arg_node));
         } else {
             GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
             INFO_TRAVMEM (arg_info) = TRUE;
@@ -856,7 +856,7 @@ CUKNLmodarray (node *arg_node, info *arg_info)
         if (INFO_IN_CUDA_PARTITION (arg_info)) {
             MODARRAY_MEM (arg_node) = TRAVopt (MODARRAY_MEM (arg_node), arg_info);
             MODARRAY_IDX (arg_node)
-              = LUTsearchInLutPp (INFO_LUT (arg_info), MODARRAY_IDX (arg_node));
+              = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), MODARRAY_IDX (arg_node));
         } else {
             INFO_TRAVMEM (arg_info) = TRUE;
             MODARRAY_MEM (arg_node) = TRAVopt (MODARRAY_MEM (arg_node), arg_info);
@@ -974,7 +974,8 @@ CUKNLwithid (node *arg_node, info *arg_info)
                 DBUG_ASSERT (NODE_TYPE (mem_id) == N_id,
                              "Non N_id node found in withop->mem");
                 node *mem_avis = ID_AVIS (mem_id);
-                node *new_mem_avis = LUTsearchInLutPp (INFO_LUT (arg_info), mem_avis);
+                node *new_mem_avis
+                  = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), mem_avis);
                 DBUG_ASSERT (new_mem_avis != mem_avis,
                              "Withop->mem has not been traversed before!");
 
@@ -1145,7 +1146,7 @@ CUKNLid (node *arg_node, info *arg_info)
 
             INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
         } else {
-            ID_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
+            ID_AVIS (arg_node) = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), avis);
         }
     }
 
@@ -1191,7 +1192,7 @@ CUKNLids (node *arg_node, info *arg_info)
             INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), avis, new_avis);
             DBUG_PRINT (">>> ids %s added to LUT", IDS_NAME (arg_node));
         }
-        IDS_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
+        IDS_AVIS (arg_node) = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), avis);
     }
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);

@@ -67,9 +67,12 @@
  * for each ICM!
  */
 
-#define ICM_ALL
-#include "icm_vars.c"
-#undef ICM_ALL
+//#define ICM_ALL
+//#include "icm_vars.c"
+//#undef ICM_ALL
+
+// The rule to make this file is in makefiles/build.mkf
+#include "fancy_icm_vars.c"
 
 /*
  * Now, we can create ALL Print-functions by a single include!!!

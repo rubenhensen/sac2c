@@ -56,7 +56,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
     INFO_ASSIGN (result) = NULL;
     INFO_EXT_ASSIGN (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -400,7 +400,7 @@ make_additions (node *target, node *var, bool *var_found, node *loopvar,
 {
     if (NODE_TYPE (target) == N_num) {
         struct addition *add;
-        add = MEMmalloc (sizeof (struct addition));
+        add = (struct addition *)MEMmalloc (sizeof (struct addition));
         add->sign = sign;
         add->arg = DUPdoDupTree (target);
         TAILQ_INSERT_TAIL (q, add, entries);
@@ -414,7 +414,7 @@ make_additions (node *target, node *var, bool *var_found, node *loopvar,
             *loopvar_found = TRUE, *var_or_loopvar_sign = sign;
         else {
             struct addition *add;
-            add = MEMmalloc (sizeof (struct addition));
+            add = (struct addition *)MEMmalloc (sizeof (struct addition));
             add->sign = sign;
             add->arg = DUPdoDupTree (target);
             TAILQ_INSERT_TAIL (q, add, entries);
@@ -538,7 +538,7 @@ set_extrema (node *predicate, node *modifier, struct idx_vector_queue *ivs, node
         /* Adding reveres-application of the modifier.  */
         if (var_found) {
             struct addition *t;
-            t = MEMmalloc (sizeof (struct addition));
+            t = (struct addition *)MEMmalloc (sizeof (struct addition));
             if (var_or_loopvar_sign == arg_minus)
                 t->sign = arg_plus;
             else
@@ -678,10 +678,14 @@ ATravFilter (node *arg_node, info *arg_info)
 static node *
 FindAssignOfType (node *assigns, nodetype n)
 {
-    struct local_info linfo = {.res = NULL, .nt = n};
+    struct local_info linfo;
+
     DBUG_ENTER ();
 
-    TRAVpushAnonymous ((anontrav_t[]){{N_assign, &ATravFilter}, {0, NULL}}, &TRAVsons);
+    linfo.res = NULL, linfo.nt = n;
+
+    TRAVpushAnonymous ((anontrav_t[]){{N_assign, &ATravFilter}, {(nodetype)0, NULL}},
+                       &TRAVsons);
     assigns = TRAVopt (assigns, (info *)(void *)&linfo);
     TRAVpop ();
 
@@ -1392,7 +1396,7 @@ UpdatePrfStack (node *predicate, node *var, struct prf_expr_queue *stack,
 
     /* Parse the prf function, convert const to int, if it is int, put
      * the assignment on the stack.  */
-    expr = MEMmalloc (sizeof (struct prf_expr));
+    expr = (struct prf_expr *)MEMmalloc (sizeof (struct prf_expr));
     expr->lhs = var;
     expr->func = PRF_PRF (predicate);
 
@@ -1405,7 +1409,7 @@ UpdatePrfStack (node *predicate, node *var, struct prf_expr_queue *stack,
         expr->arg1.value.var = arg1;
         if (!IsOnIdxQueue (ivs, arg1)) {
             struct idx_vector *idxv;
-            idxv = MEMmalloc (sizeof (struct idx_vector));
+            idxv = (struct idx_vector *)MEMmalloc (sizeof (struct idx_vector));
             idxv->var = arg1;
             idxv->loopvar = NULL;
             TAILQ_INSERT_TAIL (ivs, idxv, entries);
@@ -1421,7 +1425,7 @@ UpdatePrfStack (node *predicate, node *var, struct prf_expr_queue *stack,
 
         if (!IsOnIdxQueue (ivs, arg2)) {
             struct idx_vector *idxv;
-            idxv = MEMmalloc (sizeof (struct idx_vector));
+            idxv = (struct idx_vector *)MEMmalloc (sizeof (struct idx_vector));
             idxv->var = arg2;
             idxv->loopvar = NULL;
             TAILQ_INSERT_TAIL (ivs, idxv, entries);

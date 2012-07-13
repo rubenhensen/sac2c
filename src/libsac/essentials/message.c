@@ -213,7 +213,7 @@ SAC_PrintShape (SAC_array_descriptor_t desc)
 
     snprintf (to, MAX_SHAPE_SIZE, "%s]", from);
 
-    res = malloc (strlen (to) + 1);
+    res = (char *)malloc (strlen (to) + 1);
     strcpy (res, to);
 
     return (res);

@@ -53,7 +53,7 @@ typedef union {
                                                                                          \
         sac2cbase = getenv (SAC2CBASEENV);                                               \
                                                                                          \
-        libname = malloc (                                                               \
+        libname = (char *)malloc (                                                       \
           sizeof (char)                                                                  \
           * (strlen (library) + ((sac2cbase == NULL) ? 0 : strlen (sac2cbase)) + 1));    \
                                                                                          \

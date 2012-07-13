@@ -74,7 +74,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_INBUNDLE (result) = FALSE;
     INFO_FILE (result) = NULL;
@@ -177,7 +177,8 @@ PrintFileHeader (info *arg_info)
     DBUG_ENTER ();
 
     buffer = SBUFcreate (100);
-    buffer = STRSfold ((strsfoldfun_p)PrintModuleNames, global.exported_modules, buffer);
+    buffer = (str_buf *)STRSfold ((strsfoldfun_p)PrintModuleNames,
+                                  global.exported_modules, buffer);
     modules = SBUF2str (buffer);
     buffer = SBUFfree (buffer);
 
@@ -319,10 +320,10 @@ CCWHfundef (node *arg_node, info *arg_info)
             buffer = SBUFcreate (255);
 
             if (TYisFun (FUNDEF_WRAPPERTYPE (arg_node))) {
-                buffer
-                  = TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (arg_node),
-                                             (void *(*)(node *, void *))FunctionToComment,
-                                             buffer);
+                buffer = (str_buf *)
+                  TYfoldFunctionInstances (FUNDEF_WRAPPERTYPE (arg_node),
+                                           (void *(*)(node *, void *))FunctionToComment,
+                                           buffer);
 
             } else {
                 buffer = FunctionToComment (FUNDEF_IMPL (arg_node), buffer);

@@ -37,7 +37,7 @@
 reg_obj_t *
 SAC_registrate (char *module, void *func_ptr)
 {
-    reg_obj_t *entry = malloc (sizeof (reg_obj_t));
+    reg_obj_t *entry = (reg_obj_t *)malloc (sizeof (reg_obj_t));
 
     if (entry == NULL) {
         fprintf (stderr, "ERROR -- \t [registry.c: create_registry()] Can't "

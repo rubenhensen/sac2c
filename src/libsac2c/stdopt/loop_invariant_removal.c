@@ -169,7 +169,7 @@ struct INFO {
     nodelist *inslist;
     node *fundefextassign;
     node *fundefintassign;
-    travstart travstart;
+    travstart mtravstart;
     bool travinlac;
     node *lhs; // TODO: could be removed
 };
@@ -241,7 +241,7 @@ struct INFO {
 #define INFO_INSLIST(n) (n->inslist)
 #define INFO_FUNDEFEXTASSIGN(n) (n->fundefextassign)
 #define INFO_FUNDEFINTASSIGN(n) (n->fundefintassign)
-#define INFO_TRAVSTART(n) (n->travstart)
+#define INFO_TRAVSTART(n) (n->mtravstart)
 #define INFO_TRAVINLAC(n) (n->travinlac)
 #define INFO_LHS(n) (n->lhs)
 
@@ -255,7 +255,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
@@ -1924,7 +1924,7 @@ FreeLIRSubstInfo (node *arg_node, info *arg_info)
 static node *
 FreeLIRInformation (node *arg_node)
 {
-    anontrav_t freetrav[2] = {{N_avis, &FreeLIRSubstInfo}, {0, NULL}};
+    anontrav_t freetrav[2] = {{N_avis, &FreeLIRSubstInfo}, {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
 

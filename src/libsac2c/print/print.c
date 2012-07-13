@@ -221,7 +221,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     /* initialise own fields. remember to update dependent phases
      * as well!
@@ -2295,8 +2295,8 @@ node *
 PRTarg (node *arg_node, info *arg_info)
 {
     char *type_str;
-    char *minmk;
-    char *maxmk;
+    const char *minmk;
+    const char *maxmk;
 
     DBUG_ENTER ();
 
@@ -2384,8 +2384,8 @@ node *
 PRTvardec (node *arg_node, info *arg_info)
 {
     char *type_str;
-    char *minmk;
-    char *maxmk;
+    const char *minmk;
+    const char *maxmk;
 
     DBUG_ENTER ();
 
@@ -5459,7 +5459,7 @@ PRTwlcode (node *arg_node, info *arg_info)
 node *
 PRTwlgrid (node *arg_node, info *arg_info)
 {
-    char *str = (WLGRID_ISDYNAMIC (arg_node)) ? "=" : "-";
+    const char *str = (WLGRID_ISDYNAMIC (arg_node)) ? "=" : "-";
 
     DBUG_ENTER ();
 

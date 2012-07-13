@@ -179,7 +179,7 @@ TFMINtfvertex (node *arg_node, info *arg_info)
                           TFVERTEX_ANCESTORS (TFEDGE_TARGET (parents_itr1)));
 
         nl_next = TFVERTEX_ANCESTORS (arg_node);
-        TFVERTEX_ANCESTORS (arg_node) = MEMmalloc (sizeof (nodelist));
+        TFVERTEX_ANCESTORS (arg_node) = (nodelist *)MEMmalloc (sizeof (nodelist));
         NODELIST_NODE (TFVERTEX_ANCESTORS (arg_node)) = TFEDGE_TARGET (parents_itr1);
         NODELIST_NEXT (TFVERTEX_ANCESTORS (arg_node)) = nl_next;
 

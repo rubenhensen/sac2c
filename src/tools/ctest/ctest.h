@@ -8,7 +8,7 @@ typedef struct CACHE_T {
     int cachesize[3];
     int linesize[3];
     int associativity[3];
-    char *policy[3];
+    const char *policy[3];
 } cache_t, *cache_ptr;
 
 extern int mintime;

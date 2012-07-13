@@ -61,7 +61,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_CRECE_LASTCELLID (result) = 0;
     INFO_CRECE_LASTEXECMODE (result) = MUTH_ANY;

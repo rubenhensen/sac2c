@@ -92,7 +92,7 @@ CreateRangeInfo (node *range, bool toplevel)
 
     DBUG_ENTER ();
 
-    res = MEMmalloc (sizeof (range_info_t));
+    res = (range_info_t *)MEMmalloc (sizeof (range_info_t));
 
     RI_RANGE (res) = range;
     RI_TOPLEVEL (res) = toplevel;
@@ -217,7 +217,7 @@ CreateRangeSet (void)
 
     DBUG_ENTER ();
 
-    res = MEMmalloc (sizeof (range_set_t));
+    res = (range_set_t *)MEMmalloc (sizeof (range_set_t));
 
     RS_LAST_BLOCKED_RANGE (res) = NULL;
     RS_LAST_NONBLOCKED_RANGE (res) = NULL;
@@ -438,7 +438,7 @@ GetNthRangePair (int nth)
                 nonblocked = RI_NEXT (RI_NEXT (nonblocked));
                 cnt++;
             }
-            pair = MEMmalloc (sizeof (range_pair_t));
+            pair = (range_pair_t *)MEMmalloc (sizeof (range_pair_t));
             RP_OUTER (pair) = RI_RANGE (blocked);
             RP_INNER (pair) = RI_RANGE (nonblocked);
             RP_OUTERLEVEL (pair) = old_nth;
@@ -465,7 +465,7 @@ CreateSharedGlobalInfo (shared_global_info_t **sg_infos)
     DBUG_ENTER ();
 
     /* Append new sg_info to the prev_sg_infos */
-    res = MEMmalloc (sizeof (shared_global_info_t));
+    res = (shared_global_info_t *)MEMmalloc (sizeof (shared_global_info_t));
 
     SG_INFO_SHRIDX_CAL (res) = NULL;
     SG_INFO_GLBIDX_CAL (res) = NULL;
@@ -551,7 +551,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_LEVEL (result) = 0;
     INFO_FUNDEF (result) = NULL;
@@ -813,7 +813,7 @@ CreateCudaIndexInitCode (node *part, info *arg_info)
 
     DBUG_ENTER ();
 
-    cis = MEMmalloc (sizeof (cuidx_set_t));
+    cis = (cuidx_set_t *)MEMmalloc (sizeof (cuidx_set_t));
     dim = TCcountIds (PART_IDS (part));
 
     CIS_TX (cis) = CreatePrfOrConst (TRUE, "tx", T_int, SHmakeShape (0),
@@ -1616,7 +1616,7 @@ CUDRwith (node *arg_node, info *arg_info)
         WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
 
         /************ Anonymous Traversal ************/
-        anontrav_t atrav[2] = {{N_assign, &ATravAssign}, {0, NULL}};
+        anontrav_t atrav[2] = {{N_assign, &ATravAssign}, {(nodetype)0, NULL}};
 
         TRAVpushAnonymous (atrav, &TRAVsons);
         WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), NULL);

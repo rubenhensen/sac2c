@@ -115,7 +115,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_THREADS (result) = NULL;
     INFO_THREADNO (result) = 0;
@@ -179,7 +179,7 @@ ATravFundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 #if 0
-/** <!-- ****************************************************************** -->                                                                                             
+/** <!-- ****************************************************************** -->
  * @fn node *AddVardec2DFM( node *arg_node, info *arg_info)
  *
  * @brief Add chain of vardecs to dfm in
@@ -193,7 +193,7 @@ void AddVardec2DFM( dfmask_t *mask, node *vardec)
     DFMsetMaskEntrySet( mask, NULL, VARDEC_AVIS( vardec));
     AddVardec2DFM( mask, VARDEC_NEXT( vardec));
   }
-  
+
   DBUG_RETURN ();
 }
 #endif
@@ -523,7 +523,7 @@ addShareds (node *syntax_tree, info *arg_info)
     anontrav_t atrav[9]
       = {{N_prf, &ATravPrf},     {N_range, &ATravRange}, {N_fundef, &ATravFundef},
          {N_block, &ATravBlock}, {N_let, &ATravLet},     {N_with, &TRAVnone},
-         {N_with2, &TRAVnone},   {N_with3, &ATravWith3}, {0, NULL}};
+         {N_with2, &TRAVnone},   {N_with3, &ATravWith3}, {(nodetype)0, NULL}};
     info *anon_info;
 
     DBUG_ENTER ();
@@ -622,7 +622,7 @@ InitFolds (node *syntax_tree)
     anontrav_t atrav[4] = {{N_with3, &ATravInitWith3},
                            {N_let, &ATravInitLet},
                            {N_assign, &ATravInitAssign},
-                           {0, NULL}};
+                           {(nodetype)0, NULL}};
     DBUG_ENTER ();
 
     TRAVpushAnonymous (atrav, &TRAVsons);

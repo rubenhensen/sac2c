@@ -85,6 +85,14 @@ SetupCompiler (int argc, char *argv[], tool_t tool, char *toolname)
     DBUG_RETURN (syntax_tree);
 }
 
+#ifdef __cplusplus
+extern "C" {
+int SACrunSac2c (int argc, char *argv[]);
+int SACrunSac4c (int argc, char *argv[]);
+int SACrunSac2tex (int argc, char *argv[]);
+}
+#endif
+
 /*
  *  And now, the main function which triggers the whole compilation.
  */

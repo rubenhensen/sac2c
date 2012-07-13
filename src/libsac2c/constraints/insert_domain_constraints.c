@@ -118,7 +118,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ALL (result) = FALSE;
     INFO_MODE (result) = IDC_init;
@@ -139,7 +139,7 @@ FreeInfo (info *info)
 {
     DBUG_ENTER ();
 
-    INFO_RENAME_STACK (info) = PBUFfree (INFO_RENAME_STACK (info));
+    INFO_RENAME_STACK (info) = (ptr_buf *)PBUFfree (INFO_RENAME_STACK (info));
     info = MEMfree (info);
 
     DBUG_RETURN (info);
@@ -162,7 +162,7 @@ ATravIUIBid (node *arg_node, info *arg_info)
 static bool
 IsUsedInBranch (node *avis, info *arg_info)
 {
-    anontrav_t iuib_trav[2] = {{N_id, &ATravIUIBid}, {0, NULL}};
+    anontrav_t iuib_trav[2] = {{N_id, &ATravIUIBid}, {(nodetype)0, NULL}};
     DBUG_ENTER ();
 
     TRAVpushAnonymous (iuib_trav, &TRAVsons);

@@ -22,9 +22,9 @@
 #define realloc(x, y) __MEMrealloc (x, y)
 
 #ifdef __cplusplus
-#define free(x) (void)__MEMfree<void *> ((void *)x)
+#define free(x) __MEMfree ((void *)x)
 #else
-#define free(x) MEMfree (x)
+#define free(x) __MEMfree (x)
 #endif
 
 #define strdup(x) STRcpy (x)

@@ -91,9 +91,14 @@
  * @{
  *
  *****************************************************************************/
+
+enum travscope_t { TS_module, TS_fundef, TS_args };
+
+enum travmode_t { TM_all, TM_then, TM_else };
+
 struct INFO {
-    enum { TS_module, TS_fundef, TS_args } travscope;
-    enum { TM_all, TM_then, TM_else } travmode;
+    enum travscope_t travscope;
+    enum travmode_t travmode;
     node *preassign;
     node *postassign;
     node *fundef;
@@ -128,7 +133,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_TRAVSCOPE (result) = TS_module;
     INFO_TRAVMODE (result) = TM_all;
@@ -715,8 +720,8 @@ GenerateExtendedReturns (node *funret)
 static node *
 ISAAretraverse (node *fun, bool save_args, node *newargs, info *arg_info)
 {
-    int travscope;
-    int travmode;
+    enum travscope_t travscope;
+    enum travmode_t travmode;
     node *preblock;
     node *preassign;
     node *postassign;

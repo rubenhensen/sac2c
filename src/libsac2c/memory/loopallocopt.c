@@ -88,7 +88,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_CONTEXT (result) = LAO_undef;
     INFO_PREASSIGN (result) = NULL;

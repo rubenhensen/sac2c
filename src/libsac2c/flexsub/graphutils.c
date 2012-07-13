@@ -77,12 +77,12 @@ GUmergeLists (nodelist *nla, nodelist *nlb)
 
             if (nlx == NULL) {
 
-                nlx = MEMmalloc (sizeof (nodelist));
+                nlx = (nodelist *)MEMmalloc (sizeof (nodelist));
                 itr_nlx = nlx;
 
             } else {
 
-                NODELIST_NEXT (itr_nlx) = MEMmalloc (sizeof (nodelist));
+                NODELIST_NEXT (itr_nlx) = (nodelist *)MEMmalloc (sizeof (nodelist));
                 itr_nlx = NODELIST_NEXT (itr_nlx);
             }
 
@@ -103,12 +103,12 @@ GUmergeLists (nodelist *nla, nodelist *nlb)
 
         if (nlx == NULL) {
 
-            nlx = MEMmalloc (sizeof (nodelist));
+            nlx = (nodelist *)MEMmalloc (sizeof (nodelist));
             itr_nlx = nlx;
 
         } else {
 
-            NODELIST_NEXT (itr_nlx) = MEMmalloc (sizeof (nodelist));
+            NODELIST_NEXT (itr_nlx) = (nodelist *)MEMmalloc (sizeof (nodelist));
             itr_nlx = NODELIST_NEXT (itr_nlx);
         }
 

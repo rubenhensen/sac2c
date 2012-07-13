@@ -381,7 +381,11 @@ PrintGlobalSettings (node *syntax_tree)
     fprintf (global.outfile, "\n\n/*\n *  Global Settings\n */\n\n");
 
     fprintf (global.outfile, "#ifndef NULL\n"
-                             "#define NULL                      (void*) 0\n"
+                             "#  ifdef __cplusplus\n"
+                             "#    define NULL         0\n"
+                             "#  else\n"
+                             "#    define NULL         (void*) 0\n"
+                             "#  endif\n"
                              "#endif\n\n");
 
     fprintf (global.outfile, "#define SAC_SET_TMPDIR              \"%s\"\n",

@@ -50,7 +50,7 @@ MakeInfo (info *arg_info)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ARGSFOUND (result) = 0;
     INFO_MODULE (result) = NULL;

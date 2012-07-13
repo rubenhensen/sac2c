@@ -201,7 +201,7 @@ MakeInfo (void)
 {
     DBUG_ENTER ();
 
-    info *result = MEMmalloc (sizeof (info));
+    info *result = (info *)MEMmalloc (sizeof (info));
 
     INFO_CBLOCK (result) = NULL;
     INFO_WITHID (result) = NULL;

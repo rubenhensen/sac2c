@@ -79,7 +79,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = fundef;
     INFO_LHS (result) = NULL;
@@ -344,8 +344,9 @@ HandleBlock (node *block, node *rets, info *arg_info)
                      */
                     node *def = AVIS_SSAASSIGN (ID_AVIS (cval));
                     INFO_LASTSAFE (arg_info) = NULL;
-                    INFO_NOUSE (arg_info) = LUTsearchInLutPp (INFO_REUSELUT (arg_info),
-                                                              ID_AVIS (PRF_ARG1 (memop)));
+                    INFO_NOUSE (arg_info)
+                      = (node *)LUTsearchInLutPp (INFO_REUSELUT (arg_info),
+                                                  ID_AVIS (PRF_ARG1 (memop)));
                     if (INFO_NOUSE (arg_info) == ID_AVIS (PRF_ARG1 (memop))) {
                         INFO_NOUSE (arg_info) = NULL;
                     }

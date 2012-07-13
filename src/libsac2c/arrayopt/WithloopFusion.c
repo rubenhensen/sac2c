@@ -31,6 +31,20 @@
 #include "math_utils.h"
 #include "tree_utils.h"
 
+typedef enum { WOT_gen_mod, WOT_fold, WOT_gen_mod_fold, WOT_unknown } wo_type_t;
+
+typedef enum { WL_fused, WL_2fuse, WL_travback, WL_nothing } wl_action_t;
+
+typedef enum {
+    GEN_equal,
+    GEN_equal_var,
+    GEN_constant,
+    GEN_variable,
+    GEN_diffdim
+} gen_property_t;
+
+typedef enum { ARRAY_aks, ARRAY_akd, ARRAY_unknown } array_types_t;
+
 /**
  * INFO structure
  */
@@ -41,7 +55,7 @@ struct INFO {
     node *lhs_wl;
     int wlaction;
     int genproperty;
-    int wl_wotype;
+    wo_type_t wl_wotype;
     bool wl_lb_is_zero;
     bool wldependent;
     int wl_array_type;
@@ -159,20 +173,6 @@ typedef struct GRIDINFO {
         gen_prob = GEN_variable;                                                         \
     }
 
-typedef enum { WOT_gen_mod, WOT_fold, WOT_gen_mod_fold, WOT_unknown } wo_type_t;
-
-typedef enum { WL_fused, WL_2fuse, WL_travback, WL_nothing } wl_action_t;
-
-typedef enum {
-    GEN_equal,
-    GEN_equal_var,
-    GEN_constant,
-    GEN_variable,
-    GEN_diffdim
-} gen_property_t;
-
-typedef enum { ARRAY_aks, ARRAY_akd, ARRAY_unknown } array_types_t;
-
 /**
  * INFO functions
  */
@@ -183,7 +183,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_WL (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -296,7 +296,7 @@ MakeGridInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (gridinfo));
+    result = (gridinfo *)MEMmalloc (sizeof (gridinfo));
 
     GRIDINFO_NEW_LB (result) = NULL;
     GRIDINFO_NEW_UB (result) = NULL;

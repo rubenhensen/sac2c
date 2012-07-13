@@ -69,7 +69,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ENV (result) = NULL;
     INFO_USEDMASK (result) = NULL;

@@ -69,7 +69,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_LUT (result) = NULL;
     INFO_LETIDS (result) = NULL;
@@ -497,7 +497,7 @@ CUASRreturn (node *arg_node, info *arg_info)
             /************ Anonymous Traversal ************/
             anontrav_t atrav[6]
               = {{N_fundef, &ATravFundef}, {N_assign, &ATravAssign}, {N_let, &ATravLet},
-                 {N_id, &ATravId},         {N_return, &TRAVnone},    {0, NULL}};
+                 {N_id, &ATravId},         {N_return, &TRAVnone},    {(nodetype)0, NULL}};
 
             TRAVpushAnonymous (atrav, &TRAVsons);
 
@@ -594,7 +594,7 @@ CUASRid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    new_avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
+    new_avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
 
     if (new_avis != ID_AVIS (arg_node)) {
         ID_AVIS (arg_node) = new_avis;
@@ -620,7 +620,7 @@ CUASRids (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    new_avis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
+    new_avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
 
     if (new_avis != IDS_AVIS (arg_node)) {
         IDS_AVIS (arg_node) = new_avis;

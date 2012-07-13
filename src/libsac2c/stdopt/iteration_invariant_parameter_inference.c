@@ -81,7 +81,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_EXPRCHAIN (result) = NULL;
@@ -173,7 +173,7 @@ IIPIfundef (node *arg_node, info *arg_info)
                               {N_block, &TRAVsons},
                               {N_arg, &TRAVsons},
                               {N_vardec, &TRAVsons},
-                              {0, NULL}};
+                              {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
 

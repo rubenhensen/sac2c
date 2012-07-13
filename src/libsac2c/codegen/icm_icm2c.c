@@ -17,7 +17,7 @@
 #include "debug.h"
 
 #define ICM_DEF(prf, trf)                                                                \
-    void Print##prf (node *exprs, node *arg_info)                                        \
+    void Print##prf (node *exprs, info *arg_info)                                        \
     {                                                                                    \
         DBUG_ENTER ();
 
@@ -248,7 +248,7 @@ GetNextString (char **ret, node *exprs)
     expr = EXPRS_EXPR (exprs);
 
     DBUG_ASSERT (NODE_TYPE (expr) == N_str, "wrong icm-arg: N_str expected");
-    (*ret) = MEMmalloc (STRlen (STR_STRING (expr)) + 3);
+    (*ret) = (char *)MEMmalloc (STRlen (STR_STRING (expr)) + 3);
     sprintf ((*ret), "\"%s\"", STR_STRING (expr));
 
     DBUG_PRINT ("icm-arg found: %s", (*ret));

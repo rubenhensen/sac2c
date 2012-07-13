@@ -32,7 +32,7 @@ buildTransitiveLinkTable (dynarray *arrayd)
     elem *e;
     matrix *adjmat;
 
-    adjmat = MEMmalloc (sizeof (matrix));
+    adjmat = (matrix *)MEMmalloc (sizeof (matrix));
     initMatrix (adjmat);
 
     for (i = 0; i < DYNARRAY_TOTALELEMS (arrayd); i++) {
@@ -82,7 +82,7 @@ buildTransitiveLinkTable (dynarray *arrayd)
         for (j = 0; j < DYNARRAY_TOTALELEMS (MATRIX_ARRAY2D (adjmat)[i]); j++) {
 
             if (i != j && getMatrixValue (adjmat, i, j) == 1) {
-                e = MEMmalloc (sizeof (elem));
+                e = (elem *)MEMmalloc (sizeof (elem));
                 ELEM_IDX (e) = ELEM_IDX (DYNARRAY_ELEMS_POS (arrayd, i));
                 ELEM_DATA (e) = MEMrealloc (ELEM_DATA (DYNARRAY_ELEMS_POS (arrayd, j)),
                                             2 * sizeof (int), 2 * sizeof (int));
@@ -102,22 +102,22 @@ setSrcTarArrays (dynarray *arrayd, dynarray **arrX, dynarray **arrY)
     elem *e;
     dynarray *arraydX, *arraydY;
 
-    arraydX = MEMmalloc (sizeof (dynarray));
+    arraydX = (dynarray *)MEMmalloc (sizeof (dynarray));
     initDynarray (arraydX);
-    arraydY = MEMmalloc (sizeof (dynarray));
+    arraydY = (dynarray *)MEMmalloc (sizeof (dynarray));
     initDynarray (arraydY);
 
     for (a = 0; a < DYNARRAY_TOTALELEMS (arrayd); a++) {
 
         if (!indexExistsInArray (arraydX, ELEM_IDX (DYNARRAY_ELEMS_POS (arrayd, a)))) {
-            e = MEMmalloc (sizeof (elem));
+            e = (elem *)MEMmalloc (sizeof (elem));
             ELEM_IDX (e) = ELEM_IDX (DYNARRAY_ELEMS_POS (arrayd, a));
             addToArray (arraydX, e);
         }
 
         if (!indexExistsInArray (arraydY,
                                  *((int *)ELEM_DATA (DYNARRAY_ELEMS_POS (arrayd, a))))) {
-            e = MEMmalloc (sizeof (elem));
+            e = (elem *)MEMmalloc (sizeof (elem));
             ELEM_IDX (e) = *((int *)ELEM_DATA (DYNARRAY_ELEMS_POS (arrayd, a)));
             ELEM_DATA (e) = MEMmalloc (sizeof (int));
             *((int *)ELEM_DATA (e)) = 0;
@@ -141,7 +141,7 @@ computeTLCMatrix (dynarray *arrayd, dynarray *arrX, dynarray *arrY)
     matrix *tlc;
     int a, b;
 
-    tlc = MEMmalloc (sizeof (matrix));
+    tlc = (matrix *)MEMmalloc (sizeof (matrix));
     initMatrix (tlc);
 
     arraydX = arrX;

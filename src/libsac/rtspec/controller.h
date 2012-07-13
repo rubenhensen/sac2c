@@ -28,7 +28,7 @@ typedef struct list {
 
 extern void SAC_setupController (char *dir);
 
-extern void *SAC_runController (void);
+extern void *SAC_runController (void *);
 
 extern void SAC_handleRequest (queue_node_t *);
 

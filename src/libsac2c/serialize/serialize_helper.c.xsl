@@ -92,7 +92,8 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="/" mode="gen-make-fun">
-  <xsl:value-of select="'node *SHLPmakeNode( nodetype node_type, int lineno, char* sfile, ...) {'" />
+  <xsl:value-of select="'node *SHLPmakeNode( int _node_type, int lineno, char* sfile, ...) {'" />
+  <xsl:value-of select="'nodetype node_type = (nodetype)_node_type;'" />
   <xsl:value-of select="'node *xthis = NULL;'" />
   <xsl:value-of select="'va_list args;'" />
   <xsl:if test="key(&quot;arraytypes&quot;, //syntaxtree//type/@name)">

@@ -184,7 +184,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_TOPBLOCK (result) = NULL;
     INFO_FUNARGS (result) = NULL;
@@ -260,7 +260,7 @@ ATravClearDLavis (node *arg_node, info *arg_info)
 static node *
 ClearDLActiveFlags (node *arg_node)
 {
-    anontrav_t ddl_trav[2] = {{N_avis, &ATravClearDLavis}, {0, NULL}};
+    anontrav_t ddl_trav[2] = {{N_avis, &ATravClearDLavis}, {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
 
@@ -282,7 +282,7 @@ ATravSetDLavis (node *arg_node, info *arg_info)
 static node *
 SetDLActiveFlags (node *arg_node)
 {
-    anontrav_t ddl_trav[2] = {{N_avis, &ATravSetDLavis}, {0, NULL}};
+    anontrav_t ddl_trav[2] = {{N_avis, &ATravSetDLavis}, {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
 

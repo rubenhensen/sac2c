@@ -1759,7 +1759,7 @@ TCmakeAssigns9 (node *part1, node *part2, node *part3, node *part4, node *part5,
  ******************************************************************************/
 
 node *
-TCmakeAssignIcm0 (char *name, node *next)
+TCmakeAssignIcm0 (const char *name, node *next)
 {
     node *assigns;
 
@@ -1771,7 +1771,7 @@ TCmakeAssignIcm0 (char *name, node *next)
 }
 
 node *
-TCmakeAssignIcm1 (char *name, node *arg1, node *next)
+TCmakeAssignIcm1 (const char *name, node *arg1, node *next)
 {
     node *assigns;
 
@@ -1783,7 +1783,7 @@ TCmakeAssignIcm1 (char *name, node *arg1, node *next)
 }
 
 node *
-TCmakeAssignIcm2 (char *name, node *arg1, node *arg2, node *next)
+TCmakeAssignIcm2 (const char *name, node *arg1, node *arg2, node *next)
 {
     node *assigns;
 
@@ -1795,7 +1795,7 @@ TCmakeAssignIcm2 (char *name, node *arg1, node *arg2, node *next)
 }
 
 node *
-TCmakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3, node *next)
+TCmakeAssignIcm3 (const char *name, node *arg1, node *arg2, node *arg3, node *next)
 {
     node *assigns;
 
@@ -1807,7 +1807,8 @@ TCmakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3, node *next)
 }
 
 node *
-TCmakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *next)
+TCmakeAssignIcm4 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                  node *next)
 {
     node *assigns;
 
@@ -1819,8 +1820,8 @@ TCmakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
 }
 
 node *
-TCmakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
-                  node *next)
+TCmakeAssignIcm5 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                  node *arg5, node *next)
 {
     node *assigns;
 
@@ -1832,8 +1833,8 @@ TCmakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
 }
 
 node *
-TCmakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
-                  node *arg6, node *next)
+TCmakeAssignIcm6 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                  node *arg5, node *arg6, node *next)
 {
     node *assigns;
 
@@ -1845,8 +1846,8 @@ TCmakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
 }
 
 node *
-TCmakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
-                  node *arg6, node *arg7, node *next)
+TCmakeAssignIcm7 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                  node *arg5, node *arg6, node *arg7, node *next)
 {
     node *assigns;
 
@@ -3225,7 +3226,7 @@ TCmakeSpap3 (namespace_t *ns, char *name, node *arg1, node *arg2, node *arg3)
  ******************************************************************************/
 
 node *
-TCmakeIcm0 (char *name)
+TCmakeIcm0 (const char *name)
 {
     node *icm;
 
@@ -3237,7 +3238,7 @@ TCmakeIcm0 (char *name)
 }
 
 node *
-TCmakeIcm1 (char *name, node *arg1)
+TCmakeIcm1 (const char *name, node *arg1)
 {
     node *icm;
 
@@ -3250,7 +3251,7 @@ TCmakeIcm1 (char *name, node *arg1)
 }
 
 node *
-TCmakeIcm2 (char *name, node *arg1, node *arg2)
+TCmakeIcm2 (const char *name, node *arg1, node *arg2)
 {
     node *icm;
 
@@ -3262,7 +3263,7 @@ TCmakeIcm2 (char *name, node *arg1, node *arg2)
 }
 
 node *
-TCmakeIcm3 (char *name, node *arg1, node *arg2, node *arg3)
+TCmakeIcm3 (const char *name, node *arg1, node *arg2, node *arg3)
 {
     node *icm;
 
@@ -3275,7 +3276,7 @@ TCmakeIcm3 (char *name, node *arg1, node *arg2, node *arg3)
 }
 
 node *
-TCmakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4)
+TCmakeIcm4 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4)
 {
     node *icm;
 
@@ -3291,7 +3292,7 @@ TCmakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4)
 }
 
 node *
-TCmakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5)
+TCmakeIcm5 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5)
 {
     node *icm;
 
@@ -3308,7 +3309,7 @@ TCmakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *ar
 }
 
 node *
-TCmakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
+TCmakeIcm6 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
             node *arg6)
 {
     node *icm;
@@ -3327,7 +3328,7 @@ TCmakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *ar
 }
 
 node *
-TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
+TCmakeIcm7 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
             node *arg6, node *arg7)
 {
     node *icm;

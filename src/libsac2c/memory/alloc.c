@@ -112,7 +112,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ALLOCLIST (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -166,7 +166,7 @@ MakeALS (alloclist_struct *als, node *avis, node *dim, node *shape)
 
     DBUG_ENTER ();
 
-    res = MEMmalloc (sizeof (alloclist_struct));
+    res = (alloclist_struct *)MEMmalloc (sizeof (alloclist_struct));
 
     res->avis = avis;
     res->dim = dim;

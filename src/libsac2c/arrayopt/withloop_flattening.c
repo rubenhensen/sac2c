@@ -146,7 +146,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_GENARRAYS (result) = 0;
     INFO_SHAPE (result) = NULL;
@@ -726,7 +726,7 @@ WLFLTwith (node *arg_node, info *arg_info)
         anontrav_t modtrav[4] = {{N_generator, &WLFLTMgenerator},
                                  {N_genarray, &WLFLTMgenarray},
                                  {N_withid, &WLFLTMwithid},
-                                 {0, NULL}};
+                                 {(nodetype)0, NULL}};
 
         DBUG_PRINT ("Found victim!");
 

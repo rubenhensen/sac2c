@@ -81,7 +81,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_MODE (result) = rc_prfuse;
     INFO_ENV (result) = NULL;

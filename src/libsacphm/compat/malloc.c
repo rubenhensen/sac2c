@@ -39,6 +39,12 @@
 
 #include "heapmgr.h"
 
+#ifdef __cplusplus
+#define __throw throw ()
+#else
+#define __throw
+#endif
+
 /******************************************************************************
  *
  * global variable:
@@ -71,7 +77,7 @@ static int not_yet_initialized = 1;
  ******************************************************************************/
 
 void *
-malloc (size_t sz)
+malloc (size_t sz) __throw
 {
     const SAC_HM_size_byte_t size = (SAC_HM_size_byte_t)sz;
     SAC_HM_size_unit_t units;
@@ -211,18 +217,18 @@ free (void *addr)
             DIAG_INC (arena->cnt_free_var_size);
 
             if (arena->num < SAC_HM_NUM_SMALLCHUNK_ARENAS) {
-                SAC_HM_FreeSmallChunk (addr, arena);
+                SAC_HM_FreeSmallChunk ((SAC_HM_header_t *)addr, arena);
                 return;
             }
 
 #ifdef MT
             if (arena->num < SAC_HM_TOP_ARENA) {
-                SAC_HM_FreeLargeChunk (addr, arena);
+                SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr, arena);
             } else {
-                SAC_HM_FreeTopArena_at (addr);
+                SAC_HM_FreeTopArena_at ((SAC_HM_header_t *)addr);
             }
 #else  /* MT */
-            SAC_HM_FreeLargeChunk (addr, arena);
+            SAC_HM_FreeLargeChunk ((SAC_HM_header_t *)addr, arena);
 #endif /* MT */
         }
     }

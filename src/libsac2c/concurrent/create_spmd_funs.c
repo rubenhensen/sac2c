@@ -88,7 +88,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_SPMDFUNS (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -160,7 +160,8 @@ ATravCAVid (node *arg_node, info *arg_info)
 static node *
 CreateAuxiliaryVardecsFromRetExprs (node *retexprs)
 {
-    anontrav_t cav_trav[3] = {{N_exprs, &ATravCAVexprs}, {N_id, &ATravCAVid}, {0, NULL}};
+    anontrav_t cav_trav[3]
+      = {{N_exprs, &ATravCAVexprs}, {N_id, &ATravCAVid}, {(nodetype)0, NULL}};
     node *vardecs;
 
     DBUG_ENTER ();
@@ -272,7 +273,11 @@ MTSPMDFfundef (node *arg_node, info *arg_info)
     if ((FUNDEF_ISSTFUN (arg_node) || FUNDEF_ISXTFUN (arg_node))
         && (FUNDEF_BODY (arg_node) != NULL)) {
         /*
+    <<<<<<< HEAD
          * ST and XT funs may contain parallel with-loops.
+    =======
+         * Only ST funs may contain parallel with-loops.
+    >>>>>>> Second part of compiling with C++.
          * Hence, we constrain our search accordingly.
          */
         INFO_FUNDEF (arg_info) = arg_node;
@@ -429,7 +434,7 @@ MTSPMDFids (node *arg_node, info *arg_info)
              * If INFO_LIFT is true, we are on the LHS of the assignment which has the
              * MT-Withloop on the RHS.
              */
-            new_avis = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
+            new_avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), avis);
 
             if (new_avis == avis) {
                 new_avis = DUPdoDupNode (avis);

@@ -65,7 +65,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_REMASSIGN (result) = FALSE;
     INFO_LHS (result) = NULL;
@@ -402,7 +402,8 @@ EMREprf (node *arg_node, info *arg_info)
         /*
          * Replace memory variable with reused variable
          */
-        avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (PRF_ARG2 (arg_node)));
+        avis
+          = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (PRF_ARG2 (arg_node)));
 
         if (avis != ID_AVIS (PRF_ARG2 (arg_node))) {
             PRF_ARG2 (arg_node) = FREEdoFreeNode (PRF_ARG2 (arg_node));
@@ -414,7 +415,8 @@ EMREprf (node *arg_node, info *arg_info)
         /*
          * Replace memory variable with reused variable
          */
-        avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (PRF_ARG5 (arg_node)));
+        avis
+          = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (PRF_ARG5 (arg_node)));
 
         if (avis != ID_AVIS (PRF_ARG5 (arg_node))) {
             PRF_ARG5 (arg_node) = FREEdoFreeNode (PRF_ARG5 (arg_node));
@@ -426,7 +428,8 @@ EMREprf (node *arg_node, info *arg_info)
         /*
          * Replace memory variable with reused variable
          */
-        avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)));
+        avis
+          = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)));
 
         if (avis != ID_AVIS (PRF_ARG1 (arg_node))) {
 
@@ -503,7 +506,8 @@ EMREgenarray (node *arg_node, info *arg_info)
     /*
      * replace memory variables with reused variables
      */
-    avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (GENARRAY_MEM (arg_node)));
+    avis
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (GENARRAY_MEM (arg_node)));
 
     if (avis != ID_AVIS (GENARRAY_MEM (arg_node))) {
         GENARRAY_MEM (arg_node) = FREEdoFreeNode (GENARRAY_MEM (arg_node));
@@ -538,7 +542,8 @@ EMREmodarray (node *arg_node, info *arg_info)
     /*
      * replace memory variables with reused variables
      */
-    avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (MODARRAY_MEM (arg_node)));
+    avis
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (MODARRAY_MEM (arg_node)));
 
     if (avis != ID_AVIS (MODARRAY_MEM (arg_node))) {
         MODARRAY_MEM (arg_node) = FREEdoFreeNode (MODARRAY_MEM (arg_node));

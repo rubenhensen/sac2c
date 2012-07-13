@@ -83,14 +83,14 @@ typedef enum { S_undef, S_withloop_prop } travstate;
  */
 struct INFO {
     node *fundef;
-    travstate travstate;
+    travstate mtravstate;
     node *ap;
     node *corr;
     int argnum;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
-#define INFO_TRAVSTATE(n) (n->travstate)
+#define INFO_TRAVSTATE(n) (n->mtravstate)
 #define INFO_AP(n) (n->ap)
 #define INFO_CORRESPONDINGFUNARG(n) (n->corr)
 #define INFO_ARGNUM(n) (n->argnum)
@@ -102,7 +102,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_TRAVSTATE (result) = S_undef;

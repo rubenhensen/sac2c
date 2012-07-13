@@ -78,7 +78,7 @@ ICUGetShapeClass (char *var_NT)
     z = C_unknowns;
     while ((i != C_unknowns) && (z == C_unknowns)) {
         if (STReqn (var_NT + nc, global.nt_shape_string[i], 3)) {
-            z = i;
+            z = (shape_class_t)i;
         }
         i++;
     }
@@ -111,7 +111,7 @@ ICUGetHiddenClass (char *var_NT)
     z = C_unknownh;
     while ((i != C_unknownh) && (z == C_unknownh)) {
         if (STReqn (var_NT + nc, global.nt_hidden_string[i], 3)) {
-            z = i;
+            z = (hidden_class_t)i;
         }
         i++;
     }
@@ -144,7 +144,7 @@ ICUGetUniqueClass (char *var_NT)
     z = C_unknownu;
     while ((i != C_unknownu) && (z == C_unknownu)) {
         if (STReqn (var_NT + nc, global.nt_unique_string[i], 3)) {
-            z = i;
+            z = (unique_class_t)i;
         }
         i++;
     }

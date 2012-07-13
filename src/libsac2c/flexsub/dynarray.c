@@ -150,7 +150,7 @@ merge (elem **elems, int lower, int upper, int desc)
     lr = upper - mid;
     left = elems + lower;
     right = elems + mid + 1;
-    result = MEMmalloc ((ll + lr) * sizeof (elem *));
+    result = (elem **)MEMmalloc ((ll + lr) * sizeof (elem *));
 
     while (ll > 0 && lr > 0) {
 

@@ -120,7 +120,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_WITH3 (result) = FALSE;
     INFO_ARGS_2_PRF (result) = LRCM_null;
@@ -289,9 +289,9 @@ ARMPap (node *arg_node, info *arg_info)
         stack = INFO_ARGS_2_PRF (arg_info);
         INFO_ARGS_2_PRF (arg_info) = LRCM_norc;
         arg_node = TRAVcont (arg_node, arg_info);
-        INFO_ARGS_2_PRF (arg_info) = stack;
+        INFO_ARGS_2_PRF (arg_info) = (rcmode_t)stack;
     } else if (AP_ISSPAWNED (arg_node)) {
-        rcmode_t stack = FALSE;
+        rcmode_t stack = (rcmode_t)FALSE;
         stack = INFO_ARGS_2_PRF (arg_info);
         INFO_ARGS_2_PRF (arg_info) = LRCM_async;
         arg_node = TRAVcont (arg_node, arg_info);

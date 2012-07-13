@@ -63,7 +63,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_WLLEVEL (result) = 0;
     INFO_IS_PROP_OBJ (result) = FALSE;

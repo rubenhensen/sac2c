@@ -62,7 +62,7 @@ PQinsert (int x, dynarray *q)
 
     elem *e;
 
-    e = MEMmalloc (sizeof (elem));
+    e = (elem *)MEMmalloc (sizeof (elem));
     ELEM_DATA (e) = NULL;
     ELEM_IDX (e) = x;
 

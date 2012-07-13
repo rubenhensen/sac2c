@@ -153,7 +153,7 @@ TaskSelector (int sched_id, char *ts_name, int ts_dims, int ts_arg_num, char **t
 
     DBUG_ENTER ();
 
-    tasks_on_dim = MEMmalloc (ts_dims * sizeof (int));
+    tasks_on_dim = (int *)MEMmalloc (ts_dims * sizeof (int));
 
     pos = 0;
     for (i = 0; i < dim; i++) {

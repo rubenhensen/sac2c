@@ -1757,10 +1757,10 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
  *
  * @return retargeted sel if possible
  ******************************************************************************/
-static void *IPS_FAILED = "";
+static void *IPS_FAILED = (void *)0x1;
 
 static void *
-IsProxySel (constant *idx, void *sels, void *template)
+IsProxySel (constant *idx, void *sels, void *xtemplate)
 {
     node *index;
 
@@ -1777,7 +1777,7 @@ IsProxySel (constant *idx, void *sels, void *template)
 
         if (!PMO (
               PMOexprs (&ARRAY_AELEMS (index),
-                        PMOpartExprs ((node *)template,
+                        PMOpartExprs ((node *)xtemplate,
                                       PMOarray (NULL, NULL,
                                                 PMOprf (F_sel_VxA,
                                                         EXPRS_EXPR ((node *)sels))))))) {
@@ -1795,7 +1795,7 @@ IsProxySel (constant *idx, void *sels, void *template)
 static node *
 IsSingleSourceArray (node *aelems_P, prf selop, info *arg_info)
 {
-    node *template = NULL;
+    node *xtemplate = NULL;
     pattern *pat_e1;
     pattern *pat_en;
     node *var_A = NULL;
@@ -1813,9 +1813,9 @@ IsSingleSourceArray (node *aelems_P, prf selop, info *arg_info)
      */
     DBUG_PRINT ("Found matching sel!");
 
-    pat_e1
-      = PMprf (1, PMAisPrf (selop), 2, PMarray (0, 1, PMskip (1, PMAgetNode (&template))),
-               PMvar (1, PMAgetNode (&var_A), 0));
+    pat_e1 = PMprf (1, PMAisPrf (selop), 2,
+                    PMarray (0, 1, PMskip (1, PMAgetNode (&xtemplate))),
+                    PMvar (1, PMAgetNode (&var_A), 0));
 
     pat_en = PMprf (1, PMAisPrf (selop), 2, PMarray (0, 1, PMskip (0)),
                     PMvar (1, PMAisVar (&var_A), 0));
@@ -1836,11 +1836,11 @@ IsSingleSourceArray (node *aelems_P, prf selop, info *arg_info)
         INFO_PROXYARR (arg_info) = var_A;
     } else {
         DBUG_PRINT ("No proxy found.");
-        template = NULL;
+        xtemplate = NULL;
         INFO_PROXYARR (arg_info) = NULL;
     }
 
-    DBUG_RETURN (template);
+    DBUG_RETURN (xtemplate);
 }
 
 static node *
@@ -1851,7 +1851,7 @@ SelProxyArray (node *arg_node, info *arg_info)
     node *arr_P = NULL;
     node *tmp;
     node *filter_iv;
-    node *template = NULL;
+    node *xtemplate = NULL;
     constant *fs_iv = NULL;
     constant *fs_P = NULL;
     shape *fs_P_shp;
@@ -1870,8 +1870,8 @@ SelProxyArray (node *arg_node, info *arg_info)
                           PMskip (1, PMAgetNode (&aelems_P))));
 
     if (PMmatchFlatSkipExtrema (pat, arg_node) && (aelems_P != NULL)) {
-        template = IsSingleSourceArray (aelems_P, F_sel_VxA, arg_info);
-        if (NULL != template) {
+        xtemplate = IsSingleSourceArray (aelems_P, F_sel_VxA, arg_info);
+        if (NULL != xtemplate) {
 
             /*
              * First of all, we filter out the prefix of indices that correspond
@@ -1901,7 +1901,7 @@ SelProxyArray (node *arg_node, info *arg_info)
 
             flen = TCcountExprs (filter_iv);
             iter_shp = SHdropFromShape (SHgetDim (fs_P_shp) - flen, fs_P_shp);
-            tlen = TCcountExprs (template);
+            tlen = TCcountExprs (xtemplate);
 
             /*
              * If by now we still have not managed to reduce the index used
@@ -1919,20 +1919,20 @@ SelProxyArray (node *arg_node, info *arg_info)
                  *
                  */
                 if (tlen == flen) {
-                    template = NULL; /* no non-index part */
+                    xtemplate = NULL; /* no non-index part */
                 } else {
-                    template = DUPdoDupTree (template);
-                    tmp = TCgetNthExprs (tlen - flen - 1, template);
+                    xtemplate = DUPdoDupTree (xtemplate);
+                    tmp = TCgetNthExprs (tlen - flen - 1, xtemplate);
                     EXPRS_NEXT (tmp) = FREEdoFreeTree (EXPRS_NEXT (tmp));
                 }
 
                 /*
                  * now we check whether all selections are
                  *
-                 * template ++ some constants
+                 * xtemplate ++ some constants
                  */
-                tmp
-                  = COcreateAllIndicesAndFold (iter_shp, IsProxySel, aelems_P, template);
+                tmp = (node *)COcreateAllIndicesAndFold (iter_shp, IsProxySel, aelems_P,
+                                                         xtemplate);
 
                 /*
                  * if that worked out, we can replace the selection by
@@ -1949,15 +1949,15 @@ SelProxyArray (node *arg_node, info *arg_info)
                     INFO_PREASSIGN (arg_info)
                       = TBmakeAssign (TBmakeLet (TBmakeIds (iv_avis, NULL),
                                                  TCmakeIntVector (
-                                                   TCappendExprs (template, filter_iv))),
+                                                   TCappendExprs (xtemplate, filter_iv))),
                                       INFO_PREASSIGN (arg_info));
                     AVIS_SSAASSIGN (iv_avis) = INFO_PREASSIGN (arg_info);
 
                     res = TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis),
                                       DUPdoDupNode (INFO_PROXYARR (arg_info)));
                 } else {
-                    if (template != NULL) {
-                        template = FREEdoFreeTree (template);
+                    if (xtemplate != NULL) {
+                        xtemplate = FREEdoFreeTree (xtemplate);
                     }
                     filter_iv = FREEdoFreeTree (filter_iv);
                 }
@@ -1991,7 +1991,7 @@ IdxselProxyArray (node *arg_node, info *arg_info)
     node *arr_P = NULL;
     node *tmp;
     node *filter_iv;
-    node *template = NULL;
+    node *xtemplate = NULL;
     constant *fs_P = NULL;
     shape *fs_P_shp;
     shape *iter_shp;
@@ -2009,8 +2009,8 @@ IdxselProxyArray (node *arg_node, info *arg_info)
                           PMskip (1, PMAgetNode (&aelems_P))));
 
     if (PMmatchFlatSkipExtrema (pat, arg_node) && (aelems_P != NULL)) {
-        template = IsSingleSourceArray (aelems_P, F_sel_VxA, arg_info);
-        if (NULL != template) {
+        xtemplate = IsSingleSourceArray (aelems_P, F_sel_VxA, arg_info);
+        if (NULL != xtemplate) {
 
             /* FIXME need aelems_iv */
             /*
@@ -2041,7 +2041,7 @@ IdxselProxyArray (node *arg_node, info *arg_info)
 
             flen = TCcountExprs (filter_iv);
             iter_shp = SHdropFromShape (SHgetDim (fs_P_shp) - flen, fs_P_shp);
-            tlen = TCcountExprs (template);
+            tlen = TCcountExprs (xtemplate);
 
             /*
              * If by now we still have not managed to reduce the index used
@@ -2059,20 +2059,20 @@ IdxselProxyArray (node *arg_node, info *arg_info)
                  *
                  */
                 if (tlen == flen) {
-                    template = NULL; /* no non-index part */
+                    xtemplate = NULL; /* no non-index part */
                 } else {
-                    template = DUPdoDupTree (template);
-                    tmp = TCgetNthExprs (tlen - flen - 1, template);
+                    xtemplate = DUPdoDupTree (xtemplate);
+                    tmp = TCgetNthExprs (tlen - flen - 1, xtemplate);
                     EXPRS_NEXT (tmp) = FREEdoFreeTree (EXPRS_NEXT (tmp));
                 }
 
                 /*
                  * now we check whether all selections are
                  *
-                 * template ++ some constants
+                 * xtemplate ++ some constants
                  */
-                tmp
-                  = COcreateAllIndicesAndFold (iter_shp, IsProxySel, aelems_P, template);
+                tmp = (node *)COcreateAllIndicesAndFold (iter_shp, IsProxySel, aelems_P,
+                                                         xtemplate);
 
                 /*
                  * if that worked out, we can replace the selection by
@@ -2089,15 +2089,15 @@ IdxselProxyArray (node *arg_node, info *arg_info)
                     INFO_PREASSIGN (arg_info)
                       = TBmakeAssign (TBmakeLet (TBmakeIds (iv_avis, NULL),
                                                  TCmakeIntVector (
-                                                   TCappendExprs (template, filter_iv))),
+                                                   TCappendExprs (xtemplate, filter_iv))),
                                       INFO_PREASSIGN (arg_info));
                     AVIS_SSAASSIGN (iv_avis) = INFO_PREASSIGN (arg_info);
 
                     res = TCmakePrf2 (F_sel_VxA, TBmakeId (iv_avis),
                                       DUPdoDupNode (INFO_PROXYARR (arg_info)));
                 } else {
-                    if (template != NULL) {
-                        template = FREEdoFreeTree (template);
+                    if (xtemplate != NULL) {
+                        xtemplate = FREEdoFreeTree (xtemplate);
                     }
                     filter_iv = FREEdoFreeTree (filter_iv);
                 }

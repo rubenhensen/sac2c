@@ -97,7 +97,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_VARDECS (result) = NULL;
     INFO_DEAD_ASSIGN (result) = FALSE;
@@ -141,7 +141,7 @@ ATravIds (node *arg_node, info *arg_info)
 static node *
 CountLhsUsage (node *syntax_tree)
 {
-    anontrav_t trav[2] = {{N_ids, &ATravIds}, {0, NULL}};
+    anontrav_t trav[2] = {{N_ids, &ATravIds}, {(nodetype)0, NULL}};
     DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);

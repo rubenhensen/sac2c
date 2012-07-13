@@ -219,7 +219,7 @@ node *
 RTsetupRuntimeCompiler (node *syntax_tree)
 {
     node *import;
-    node *export;
+    node *xexport;
     node *args;
 
     DBUG_ENTER ();
@@ -250,8 +250,8 @@ RTsetupRuntimeCompiler (node *syntax_tree)
     /*
      * Export all instances.
      */
-    export = TBmakeExport (import, NULL);
-    EXPORT_ALL (export) = TRUE;
+    xexport = TBmakeExport (import, NULL);
+    EXPORT_ALL (xexport) = TRUE;
 
     /*
      * Create a syntax tree with just a module definition, import definition and
@@ -262,7 +262,7 @@ RTsetupRuntimeCompiler (node *syntax_tree)
     syntax_tree = TBmakeModule (NSgetNamespace (global.rt_new_module), FT_modimp, NULL,
                                 NULL, NULL, NULL, NULL);
 
-    MODULE_INTERFACE (syntax_tree) = export;
+    MODULE_INTERFACE (syntax_tree) = xexport;
 
     /*
      * Make sure the relevant global values are filled in. This is normally done

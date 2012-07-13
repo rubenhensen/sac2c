@@ -62,7 +62,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
     INFO_EULER (result) = NULL;
     DBUG_RETURN (result);
 }
@@ -124,7 +124,7 @@ testPriorityQueue (void)
 
     for (j = 0; j < 10; j++) {
 
-        q = MEMmalloc (sizeof (dynarray));
+        q = (dynarray *)MEMmalloc (sizeof (dynarray));
         initDynarray (q);
 
         for (i = 0; i < 10; i++) {
@@ -246,11 +246,11 @@ TFPLBtfvertex (node *arg_node, info *arg_info)
     children = TFVERTEX_CHILDREN (defs);
 
     if (INFO_EULER (arg_info) == NULL) {
-        INFO_EULER (arg_info) = MEMmalloc (sizeof (dynarray));
+        INFO_EULER (arg_info) = (dynarray *)MEMmalloc (sizeof (dynarray));
         initDynarray (INFO_EULER (arg_info));
     }
 
-    e = MEMmalloc (sizeof (elem));
+    e = (elem *)MEMmalloc (sizeof (elem));
     ELEM_IDX (e) = TFVERTEX_DEPTH (defs);
 
     /*
@@ -276,7 +276,7 @@ TFPLBtfvertex (node *arg_node, info *arg_info)
              * We add the parent vertex once again upon return from the traversal.
              */
 
-            e = MEMmalloc (sizeof (elem));
+            e = (elem *)MEMmalloc (sizeof (elem));
             ELEM_IDX (e) = TFVERTEX_DEPTH (defs);
 
             ELEM_DATA (e) = MEMmalloc (2 * sizeof (int));

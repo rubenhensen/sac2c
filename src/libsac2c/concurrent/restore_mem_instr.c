@@ -65,7 +65,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_ALLOCASSIGNS (result) = NULL;
@@ -77,13 +77,13 @@ MakeInfo (void)
 }
 
 static info *
-FreeInfo (info *info)
+FreeInfo (info *xinfo)
 {
     DBUG_ENTER ();
 
-    info = MEMfree (info);
+    xinfo = MEMfree (xinfo);
 
-    DBUG_RETURN (info);
+    DBUG_RETURN (xinfo);
 }
 
 /** <!--********************************************************************-->

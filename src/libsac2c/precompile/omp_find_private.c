@@ -53,7 +53,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_NUM_WITH_LOOP (result) = 0;
     INFO_IN_WITH_LOOP_ID (result) = FALSE;

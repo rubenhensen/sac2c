@@ -141,7 +141,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_MODUL (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -1637,7 +1637,7 @@ MakeArgNode (int idx, types *arg_type, bool thread)
         TYPES_MUTC_USAGE (type) = MUTC_US_FUNPARAM;
     }
 
-    name = MEMmalloc (20 * sizeof (char));
+    name = (char *)MEMmalloc (20 * sizeof (char));
     sprintf (name, "SAC_arg_%d", idx);
 
     if (type != NULL) {
@@ -2516,8 +2516,9 @@ AnnotateDescParamsAp (node *arg_node, info *arg_info)
 static node *
 AnnotateDescParams (node *syntax_tree)
 {
-    anontrav_t trav[]
-      = {{N_with3, &AnnotateDescParamsWith3}, {N_ap, &AnnotateDescParamsAp}, {0, NULL}};
+    anontrav_t trav[] = {{N_with3, &AnnotateDescParamsWith3},
+                         {N_ap, &AnnotateDescParamsAp},
+                         {(nodetype)0, NULL}};
     info *info;
     DBUG_ENTER ();
 
@@ -3423,8 +3424,8 @@ MakeFunRetArgsSpmd (node *arg_node, info *arg_info)
             DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (ret_exprs)) == N_id,
                          "no N_id node found!");
 
-            foldfun = LUTsearchInLutPp (INFO_FOLDLUT (arg_info),
-                                        ID_AVIS (EXPRS_EXPR (ret_exprs)));
+            foldfun = (node *)LUTsearchInLutPp (INFO_FOLDLUT (arg_info),
+                                                ID_AVIS (EXPRS_EXPR (ret_exprs)));
 
             if (foldfun == ID_AVIS (EXPRS_EXPR (ret_exprs))) {
                 foldfun = NULL;
@@ -3775,9 +3776,9 @@ COMPap (node *arg_node, info *arg_info)
         icm = TBmakeIcm ("MT_MTFUN_AP", icm_args);
     } else if (FUNDEF_ISTHREADFUN (fundef)) {
         if (AP_ISSPAWNED (arg_node)) {
-            char *place = AP_SPAWNPLACE (arg_node) == NULL
-                            ? (AP_ISREMOTE (arg_node) ? "" : "PLACE_LOCAL")
-                            : AP_SPAWNPLACE (arg_node);
+            const char *place = AP_SPAWNPLACE (arg_node) == NULL
+                                  ? (AP_ISREMOTE (arg_node) ? "" : "PLACE_LOCAL")
+                                  : AP_SPAWNPLACE (arg_node);
             icm_args = TBmakeExprs (TCmakeIdCopyString (place), icm_args);
             icm_args = TBmakeExprs (DUPdupIdsIdNt (INFO_LASTIDS (arg_info)), icm_args);
             icm = TBmakeIcm ("MUTC_SPAWNFUN_AP", icm_args);
@@ -9828,7 +9829,7 @@ COMPwlstride (node *arg_node, info *arg_info)
     int level, dim;
     bool mt_active, offset_needed;
     node *ret_node;
-    char *icm_name_begin = NULL;
+    const char *icm_name_begin = NULL;
     char *icm_name_end = NULL;
     node *begin_icm = NULL;
     node *end_icm = NULL;

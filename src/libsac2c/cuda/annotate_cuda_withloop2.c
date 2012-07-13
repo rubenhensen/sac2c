@@ -75,7 +75,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_INWL (result) = FALSE;
     INFO_CUDARIZABLE (result) = TRUE;
@@ -360,7 +360,7 @@ ACUWLwith (node *arg_node, info *arg_info)
         }
 
         if (WITH_CUDARIZABLE (arg_node)) {
-            anontrav_t atrav[2] = {{N_part, &ATravPart}, {0, NULL}};
+            anontrav_t atrav[2] = {{N_part, &ATravPart}, {(nodetype)0, NULL}};
 
             TRAVpushAnonymous (atrav, &TRAVsons);
             WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), NULL);

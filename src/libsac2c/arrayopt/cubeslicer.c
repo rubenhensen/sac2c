@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: cubeslicer.c 18066 2012-07-12 20:01:56Z rbe $
  */
 
 /** <!--********************************************************************-->
@@ -127,7 +127,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = fundef;
     INFO_VARDECS (result) = NULL;

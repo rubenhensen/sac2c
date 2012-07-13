@@ -501,10 +501,11 @@ TRAVtmpVar (void)
  ******************************************************************************/
 
 char *
-TRAVtmpVarName (char *postfix)
+TRAVtmpVarName (const char *postfix)
 {
     const char *tmp;
-    char *new_postfix, *result, *prefix;
+    const char *new_postfix;
+    char *result, *prefix;
 
     DBUG_ENTER ();
 

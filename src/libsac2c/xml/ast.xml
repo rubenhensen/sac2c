@@ -10,7 +10,7 @@
     copy="function" />
     <type name="String" ctype="char*" init="NULL"
     copy="function" />
-    <type name="SharedString" ctype="char*" init="NULL"
+    <type name="SharedString" ctype="const char*" init="NULL"
     copy="function" />
     <type name="Namespace" ctype="namespace_t*" init="NULL"
     copy="function" />
@@ -6085,7 +6085,7 @@ N_tfarg :
       </sons>
       <attributes>
 	<attribute name="ExecMode" inconstructor="no">
-	  <type name="Integer">
+	  <type name="MTExecMode">
             <targets>
               <target mandatory="no">
                 <any />

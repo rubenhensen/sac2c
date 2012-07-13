@@ -69,8 +69,8 @@
 struct INFO {
     node *iv;
     node *ivids;
-    void *mask;
-    void *negmask;
+    dfmask_t *mask;
+    dfmask_t *negmask;
 };
 
 #define INFO_IV(n) ((n)->iv)
@@ -85,7 +85,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_IV (result) = NULL;
     INFO_IVIDS (result) = NULL;

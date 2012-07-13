@@ -46,11 +46,11 @@ NLUTgenerateNlut (node *args, node *vardecs)
     DBUG_ASSERT ((vardecs == NULL) || (NODE_TYPE (vardecs) == N_vardec),
                  "Second argument of NLUTgenerateNlut must be NULL or N_vardec");
 
-    nlut = MEMmalloc (sizeof (nlut_t));
+    nlut = (nlut_t *)MEMmalloc (sizeof (nlut_t));
 
     NLUT_SIZE (nlut) = TCcountArgs (args) + TCcountVardecs (vardecs);
-    NLUT_NUMS (nlut) = MEMmalloc (NLUT_SIZE (nlut) * sizeof (int));
-    NLUT_AVIS (nlut) = MEMmalloc (NLUT_SIZE (nlut) * sizeof (node *));
+    NLUT_NUMS (nlut) = (int *)MEMmalloc (NLUT_SIZE (nlut) * sizeof (int));
+    NLUT_AVIS (nlut) = (node **)MEMmalloc (NLUT_SIZE (nlut) * sizeof (node *));
 
     c = 0;
     tmp = args;
@@ -91,11 +91,11 @@ NLUTgenerateNlutFromNlut (nlut_t *nlut)
 
     DBUG_ENTER ();
 
-    newnlut = MEMmalloc (sizeof (nlut_t));
+    newnlut = (nlut_t *)MEMmalloc (sizeof (nlut_t));
 
     NLUT_SIZE (newnlut) = NLUT_SIZE (nlut);
-    NLUT_NUMS (newnlut) = MEMmalloc (NLUT_SIZE (nlut) * sizeof (int));
-    NLUT_AVIS (newnlut) = MEMmalloc (NLUT_SIZE (nlut) * sizeof (node *));
+    NLUT_NUMS (newnlut) = (int *)MEMmalloc (NLUT_SIZE (nlut) * sizeof (int));
+    NLUT_AVIS (newnlut) = (node **)MEMmalloc (NLUT_SIZE (nlut) * sizeof (node *));
 
     for (i = 0; i < NLUT_SIZE (nlut); i++) {
         NLUT_NUMS (newnlut)[i] = 0;
@@ -122,11 +122,11 @@ NLUTduplicateNlut (nlut_t *nlut)
 
     DBUG_ENTER ();
 
-    newnlut = MEMmalloc (sizeof (nlut_t));
+    newnlut = (nlut_t *)MEMmalloc (sizeof (nlut_t));
 
     NLUT_SIZE (newnlut) = NLUT_SIZE (nlut);
-    NLUT_NUMS (newnlut) = MEMmalloc (NLUT_SIZE (nlut) * sizeof (int));
-    NLUT_AVIS (newnlut) = MEMmalloc (NLUT_SIZE (nlut) * sizeof (node *));
+    NLUT_NUMS (newnlut) = (int *)MEMmalloc (NLUT_SIZE (nlut) * sizeof (int));
+    NLUT_AVIS (newnlut) = (node **)MEMmalloc (NLUT_SIZE (nlut) * sizeof (node *));
 
     for (i = 0; i < NLUT_SIZE (nlut); i++) {
         NLUT_NUMS (newnlut)[i] = NLUT_NUMS (nlut)[i];

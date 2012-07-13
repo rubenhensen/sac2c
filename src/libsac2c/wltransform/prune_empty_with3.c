@@ -111,7 +111,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_MEMVARS (result) = NULL;
     INFO_CAN_REMOVE (result) = FALSE;
@@ -253,13 +253,10 @@ ATRAVmodarray (node *arg_node, info *arg_info)
 static node *
 getMemvars (node *withops, info *arg_info)
 { // N_genarrayN_modarrayN_spfoldN_foldN_breakN_propagate
-    anontrav_t trav[] = {{N_modarray, &ATRAVmodarray},
-                         {N_genarray, &ATRAVgenarray},
-                         {N_spfold, &TRAVerror},
-                         {N_fold, &TRAVerror},
-                         {N_break, &TRAVerror},
-                         {N_propagate, &TRAVerror},
-                         {0, NULL}};
+    anontrav_t trav[] = {{N_modarray, &ATRAVmodarray}, {N_genarray, &ATRAVgenarray},
+                         {N_spfold, &TRAVerror},       {N_fold, &TRAVerror},
+                         {N_break, &TRAVerror},        {N_propagate, &TRAVerror},
+                         {(nodetype)0, NULL}};
     DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);

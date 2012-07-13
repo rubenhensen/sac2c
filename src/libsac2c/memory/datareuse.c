@@ -79,7 +79,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = fundef;
     INFO_LHS (result) = NULL;
@@ -177,7 +177,7 @@ FindSubAllocRoot (lut_t *sublut, node *avis)
 
     DBUG_ENTER ();
 
-    found = LUTsearchInLutPp (sublut, avis);
+    found = (node *)LUTsearchInLutPp (sublut, avis);
     DBUG_PRINT ("checking root of %s, found %s", AVIS_NAME (avis),
                 (found == NULL) ? "--" : AVIS_NAME (found));
 
@@ -481,19 +481,19 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
 #if 0
           pattern *with3fill;
           int pos=0, n=1, one=1;
-          with3fill = 
-            PMprf( 1, 
+          with3fill =
+            PMprf( 1,
                    PMAisPrf( F_fill),
-                   2, 
+                   2,
                    PMretryAll( &pos, &n,
                                1,
-                               PMarray( 1, 
+                               PMarray( 1,
                                         PMAgetLen( &n),
-                                        1, 
+                                        1,
                                         PMskipN( &pos, 0, 0)),
-                               PMprf( 1, 
+                               PMprf( 1,
                                       PMAisPrf( F_suballoc),
-                                      3, 
+                                      3,
                                       PMskipN( 1, 0, 0),
                                       PMvar( 1, PMAisVar( &mem), 0),
                                       PMskipN( 1, 0, 0)));

@@ -67,7 +67,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ASSIGN (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
@@ -613,18 +613,18 @@ CountElements (node *genn)
     DBUG_ENTER ();
 
     const_l = COaST2Constant (GENERATOR_BOUND1 (genn));
-    l = COgetDataVec (const_l);
+    l = (int *)COgetDataVec (const_l);
     DBUG_ASSERT (COgetDim (const_l) == 1, "inconsistant wl bounds found!");
     dim = SHgetExtent (COgetShape (const_l), 0);
 
     const_u = COaST2Constant (GENERATOR_BOUND2 (genn));
-    u = COgetDataVec (const_u);
+    u = (int *)COgetDataVec (const_u);
     DBUG_ASSERT (SHgetExtent (COgetShape (const_u), 0) == dim,
                  "inconsistant wl bounds found!");
 
     if (GENERATOR_STEP (genn) != NULL) {
         const_s = COaST2Constant (GENERATOR_STEP (genn));
-        s = COgetDataVec (const_s);
+        s = (int *)COgetDataVec (const_s);
         DBUG_ASSERT (SHgetExtent (COgetShape (const_s), 0) == dim,
                      "inconsistant wl bounds found!");
     } else {
@@ -634,7 +634,7 @@ CountElements (node *genn)
 
     if (GENERATOR_WIDTH (genn) != NULL) {
         const_w = COaST2Constant (GENERATOR_WIDTH (genn));
-        w = COgetDataVec (const_w);
+        w = (int *)COgetDataVec (const_w);
         DBUG_ASSERT (SHgetExtent (COgetShape (const_w), 0) == dim,
                      "inconsistant wl bounds found!");
     } else {

@@ -195,7 +195,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = fundef;
     INFO_VARDECS (result) = NULL;
@@ -1108,7 +1108,7 @@ BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnu
 
     node *zprime;
     node *zelcur;
-    char *fn;
+    const char *fn;
     node *fncall;
     node *newavis;
     node *curavis;
@@ -1776,7 +1776,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     node *gen = NULL;
     node *mmx;
     node *z;
-    char *fun;
+    const char *fun;
     int shp;
 
     DBUG_ENTER ();
@@ -2113,7 +2113,7 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivprimeavis)
     node *intersectcalc = NULL;
     node *args;
     ntype *ztype;
-    char *nm;
+    const char *nm;
 
     DBUG_ENTER ();
 
@@ -2280,7 +2280,7 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
     node *pcode;
     ntype *typ;
     node *p;
-    char *nm;
+    const char *nm;
 
     DBUG_ENTER ();
 
@@ -2374,8 +2374,8 @@ checkBothFoldable (node *pwlid, node *cwlids, int cwllevel)
 #endif // FIXME //  this definitely breaks majordiagonal2.sac
     int plev;
     bool z;
-    char *nmc;
-    char *nmp;
+    const char *nmc;
+    const char *nmp;
 
     DBUG_ENTER ();
 

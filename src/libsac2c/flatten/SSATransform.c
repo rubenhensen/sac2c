@@ -235,7 +235,7 @@ struct INFO {
     node *assign;
     node *condstmt;
     bool funcond_found;
-    rename_t rename;
+    enum rename_t rename;
     node *withid;
     node *first_withid;
     int nestlevel;

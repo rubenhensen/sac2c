@@ -62,7 +62,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_REPFUN_ACTASSIGN (result) = NULL;
     INFO_REPFUN_EXECMODE (result) = MUTH_ANY;
@@ -408,10 +408,10 @@ REPFUNap (node *arg_node, info *arg_info)
         /*
          * This way copies of special functions are made, but as they are
          * inserted in the beginning of the fundef chain, they will never
-         * be traversed. 
+         * be traversed.
          * Does that make sense?
          */
-        INFO_REPFUN_MODULE(arg_info) 
+        INFO_REPFUN_MODULE(arg_info)
           = DUPcheckAndDupSpecialFundef(INFO_REPFUN_MODULE(arg_info),
                                         my_fundef,
                                         INFO_REPFUN_ACTASSIGN(arg_info));

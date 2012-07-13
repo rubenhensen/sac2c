@@ -129,9 +129,21 @@ GenerateSerFileHead (FILE *file, node *module)
     fprintf (file, "#include \"namespacemap.h\"\n");
     fprintf (file, "#include \"filenames.h\"\n\n");
 
+    fprintf (file, "#ifdef __cplusplus\n"
+                   "extern \"C\" {\n"
+                   "#endif\n\n");
+
     fprintf (file, "#define DROP( x, y) y\n");
 
     DBUG_RETURN ();
+}
+
+static void
+GenerateSerFileFooter (FILE *file)
+{
+    fprintf (file, "#ifdef __cplusplus\n"
+                   "} /* extern C  */\n"
+                   "#endif\n\n");
 }
 
 static void
@@ -690,6 +702,8 @@ SERdoSerialize (node *module)
     TRAVdo (module, info);
 
     TRAVpop ();
+
+    GenerateSerFileFooter (INFO_SER_FILE (info));
 
     fclose (INFO_SER_FILE (info));
     INFO_SER_FILE (info) = NULL;

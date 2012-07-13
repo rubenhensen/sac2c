@@ -25,6 +25,15 @@
 #include "type_utils.h"
 #include "new_types.h"
 
+// The macros here being cudaexecmode_t are assigned to
+// ASSIGN_EXECMODE (assign) which has a type mtexecmode_t
+// So in order to make type-conversions happy, and as
+// this is used intirely in cuda setting we would perform
+// a conversion macro-conversion from one type to another
+#define CUDA_HOST_SINGLE (mtexecmode_t) CUDA_HOST_SINGLE
+#define CUDA_DEVICE_SINGLE (mtexecmode_t) CUDA_DEVICE_SINGLE
+#define CUDA_DEVICE_MULTI (mtexecmode_t) CUDA_DEVICE_MULTI
+
 static bool CHANGED = FALSE;
 static int ITERATION = 1;
 
@@ -71,7 +80,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_LASTASSIGN (result) = NULL;
@@ -430,8 +439,9 @@ CUTEMfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /************ Anonymous Traversal ************/
-    anontrav_t atrav[3]
-      = {{N_fundef, &ATravFundefWLCount}, {N_with, &ATravWithWLCount}, {0, NULL}};
+    anontrav_t atrav[3] = {{N_fundef, &ATravFundefWLCount},
+                           {N_with, &ATravWithWLCount},
+                           {(nodetype)0, NULL}};
 
     TRAVpushAnonymous (atrav, &TRAVsons);
 
@@ -579,7 +589,7 @@ CUTEMassign (node *arg_node, info *arg_info)
         }
         INFO_TRAVMODE (arg_info) = cutem_tag;
     } else if (INFO_TRAVMODE (arg_info) == cutem_untag) {
-        old_mode = ASSIGN_EXECMODE (arg_node);
+        old_mode = (cudaexecmode_t)ASSIGN_EXECMODE (arg_node);
         ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
         /* If after traversing the RHS, we found that the execution
@@ -826,7 +836,7 @@ CUTEMap (node *arg_node, info *arg_info)
                 anontrav_t atrav[4] = {{N_fundef, &ATravFundefCheckCudarizable},
                                        {N_ap, &ATravApCheckCudarizable},
                                        {N_with, &ATravWithCheckCudarizable},
-                                       {0, NULL}};
+                                       {(nodetype)0, NULL}};
 
                 TRAVpushAnonymous (atrav, &TRAVsons);
 

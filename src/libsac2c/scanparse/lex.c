@@ -1,17 +1,3 @@
-/* Copyright (c) 2011, 2012 Artem Shinkarov <artyom.shinkaroff@gmail.com>
-
-   Permission to use, copy, modify, and distribute this software for any
-   purpose with or without fee is hereby granted, provided that the above
-   copyright notice and this permission notice appear in all copies.
-
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-   WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-   MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-   ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-   WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.  */
-
 #include <sys/param.h>
 
 #include <stdio.h>
@@ -1252,26 +1238,6 @@ lexer_unget_token (struct lexer *lex, struct token *tok)
     lex->unget_idx = i + 1;
 }
 
-/* If the value of the token needs a character buffer or it is
-   stored as an enum token_kind variable.  */
-inline bool
-token_uses_buf (enum token_class tclass)
-{
-    switch (tclass) {
-    case tok_id:
-    CASE_TOK_NUMBER:
-    case tok_comments:
-    case tok_whitespace:
-    case tok_string:
-    case tok_char:
-    case tok_user_op:
-    case tok_unknown:
-        return true;
-    default:
-        return false;
-    }
-}
-
 /* String representation of the token TOK.  */
 const char *
 token_as_string (struct token *tok)
@@ -1309,6 +1275,24 @@ token_free (struct token *tok)
     if (token_uses_buf (token_class (tok)) && tok->value.cval)
         free (tok->value.cval);
     free (tok);
+}
+
+bool
+token_uses_buf (enum token_class tclass)
+{
+    switch (tclass) {
+    case tok_id:
+    CASE_TOK_NUMBER:
+    case tok_comments:
+    case tok_whitespace:
+    case tok_string:
+    case tok_char:
+    case tok_user_op:
+    case tok_unknown:
+        return true;
+    default:
+        return false;
+    }
 }
 
 /* Main function if you want to test lexer part only.  */

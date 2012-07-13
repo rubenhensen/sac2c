@@ -101,7 +101,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_DFMBASE (result) = NULL;
     INFO_DFMALLOC (result) = NULL;

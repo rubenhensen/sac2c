@@ -43,7 +43,7 @@ void
 pushElemstack (elemstack **s, elem *e)
 {
 
-    elemstack *top = MEMmalloc (sizeof (elemstack));
+    elemstack *top = (elemstack *)MEMmalloc (sizeof (elemstack));
     ELEMSTACK_CURR (top) = e;
     ELEMSTACK_NEXT (top) = *s;
     *s = top;

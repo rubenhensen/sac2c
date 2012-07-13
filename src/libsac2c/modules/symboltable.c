@@ -294,10 +294,13 @@ STentryInsert (const char *symbolname, stvisibility_t vis, stentry_t *entry,
 }
 
 void
-STadd (const char *symbol, stvisibility_t vis, const char *name, stentrytype_t type,
-       sttable_t *table, unsigned argc)
+STadd (const char *symbol, int _vis, const char *name, int _type, void *_table,
+       unsigned argc)
 {
     stentry_t *entry;
+    stvisibility_t vis = (stvisibility_t)_vis;
+    stentrytype_t type = (stentrytype_t)_type;
+    sttable_t *table = (sttable_t *)_table;
 
     DBUG_ENTER ();
 

@@ -310,10 +310,10 @@ FreeDotInfo (dotinfo *node)
     while (node->left != NULL) {
         dotlist *tmp = node->left;
         node->left = node->left->next;
-        MEMfree (tmp);
+        tmp = MEMfree (tmp);
     }
 
-    MEMfree (node);
+    node = (dotinfo *)MEMfree ((void *)node);
 
     DBUG_RETURN ();
 }

@@ -84,14 +84,14 @@ WLFcreateIndex (int vector)
     index_info *pindex;
     DBUG_ENTER ();
 
-    pindex = MEMmalloc (sizeof (index_info));
+    pindex = (index_info *)MEMmalloc (sizeof (index_info));
     pindex->vector = vector;
 
     if (!vector)
         vector = 1;
-    pindex->permutation = MEMmalloc (sizeof (int) * vector);
-    pindex->last = MEMmalloc (sizeof (index_info *) * vector);
-    pindex->const_arg = MEMmalloc (sizeof (int) * vector);
+    pindex->permutation = (int *)MEMmalloc (sizeof (int) * vector);
+    pindex->last = (index_info **)MEMmalloc (sizeof (index_info *) * vector);
+    pindex->const_arg = (int *)MEMmalloc (sizeof (int) * vector);
 
     pindex->arg_no = 0;
 
@@ -110,24 +110,24 @@ WLFcreateIndex (int vector)
 index_info *
 WLFduplicateIndexInfo (index_info *iinfo)
 {
-    index_info *new;
+    index_info *xnew;
     int i, to;
     DBUG_ENTER ();
     DBUG_ASSERT (iinfo, "parameter NULL");
 
-    new = WLFcreateIndex (iinfo->vector);
+    xnew = WLFcreateIndex (iinfo->vector);
 
     to = iinfo->vector ? iinfo->vector : 1;
     for (i = 0; i < to; i++) {
-        new->permutation[i] = iinfo->permutation[i];
-        new->last[i] = iinfo->last[i];
-        new->const_arg[i] = iinfo->const_arg[i];
+        xnew->permutation[i] = iinfo->permutation[i];
+        xnew->last[i] = iinfo->last[i];
+        xnew->const_arg[i] = iinfo->const_arg[i];
     }
 
-    new->prf = iinfo->prf;
-    new->arg_no = iinfo->arg_no;
+    xnew->mprf = iinfo->mprf;
+    xnew->arg_no = iinfo->arg_no;
 
-    DBUG_RETURN (new);
+    DBUG_RETURN (xnew);
 }
 
 /******************************************************************************
@@ -198,9 +198,9 @@ WLFdbugIndexInfo (index_info *iinfo)
                 if (tmpii->arg_no) {
                     if (1 == tmpii->arg_no)
                         printf ("|   %d%s. ", tmpii->const_arg[sel],
-                                global.prf_name[tmpii->prf]);
+                                global.prf_name[tmpii->mprf]);
                     else
-                        printf ("|   .%s%d ", global.prf_name[tmpii->prf],
+                        printf ("|   .%s%d ", global.prf_name[tmpii->mprf],
                                 tmpii->const_arg[sel]);
                 } else
                     printf ("|   no prf ");
@@ -215,9 +215,11 @@ WLFdbugIndexInfo (index_info *iinfo)
         sel = 0;
         if (tmpii->arg_no) {
             if (1 == tmpii->arg_no)
-                printf ("|   %d%s. ", tmpii->const_arg[sel], global.prf_name[tmpii->prf]);
+                printf ("|   %d%s. ", tmpii->const_arg[sel],
+                        global.prf_name[tmpii->mprf]);
             else
-                printf ("|   %s%d. ", global.prf_name[tmpii->prf], tmpii->const_arg[sel]);
+                printf ("|   %s%d. ", global.prf_name[tmpii->mprf],
+                        tmpii->const_arg[sel]);
             printf ("|(p:%d, v:%d)\n", tmpii->permutation[sel], tmpii->vector);
         }
     }
@@ -314,16 +316,16 @@ WLFcreateInternGen (int shape, int stepwidth)
 
     DBUG_ENTER ();
 
-    ig = MEMmalloc (sizeof (intern_gen));
+    ig = (intern_gen *)MEMmalloc (sizeof (intern_gen));
     ig->shape = shape;
     ig->code = NULL;
     ig->next = NULL;
 
-    ig->l = MEMmalloc (sizeof (int) * shape);
-    ig->u = MEMmalloc (sizeof (int) * shape);
+    ig->l = (int *)MEMmalloc (sizeof (int) * shape);
+    ig->u = (int *)MEMmalloc (sizeof (int) * shape);
     if (stepwidth) {
-        ig->step = MEMmalloc (sizeof (int) * shape);
-        ig->width = MEMmalloc (sizeof (int) * shape);
+        ig->step = (int *)MEMmalloc (sizeof (int) * shape);
+        ig->width = (int *)MEMmalloc (sizeof (int) * shape);
     } else {
         ig->step = NULL;
         ig->width = NULL;
@@ -492,7 +494,7 @@ WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
     DBUG_ASSERT (iarray != NULL, "no iarray found!");
 
     if (*iarray == NULL) {
-        *iarray = MEMmalloc (shape * sizeof (int));
+        *iarray = (int *)MEMmalloc (shape * sizeof (int));
     }
 
     if (arrayn == NULL) {
@@ -502,7 +504,7 @@ WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
     } else if (NODE_TYPE (arrayn) == N_array) {
         tmp_co = COaST2Constant (arrayn);
         if (tmp_co != NULL) {
-            tmp = COgetDataVec (tmp_co);
+            tmp = (int *)COgetDataVec (tmp_co);
             for (i = 0; i < shape; i++) {
                 (*iarray)[i] = tmp[i];
             }
@@ -514,7 +516,7 @@ WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
         DBUG_ASSERT (NODE_TYPE (arrayn) == N_id, "wrong arrayn");
 
         if (TYisAKV (ID_NTYPE (arrayn))) {
-            tmp = COgetDataVec (TYgetValue (ID_NTYPE (arrayn)));
+            tmp = (int *)COgetDataVec (TYgetValue (ID_NTYPE (arrayn)));
             for (i = 0; i < shape; i++) {
                 (*iarray)[i] = tmp[i];
             }

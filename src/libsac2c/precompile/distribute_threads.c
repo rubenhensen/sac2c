@@ -69,10 +69,12 @@
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 
+enum travmode_t { DST_findmain, DST_follow, DST_clean };
+
 struct INFO {
     int down;
     int up;
-    enum { DST_findmain, DST_follow, DST_clean } travmode;
+    enum travmode_t travmode;
     node *main;
     int width;
     int avail;
@@ -103,7 +105,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_DOWN (result) = UNKNOWN;
     INFO_UP (result) = UNKNOWN;
@@ -167,13 +169,13 @@ DSTdoDistributeThreads (node *syntax_tree)
 
 #if 0
 /** <!--********************************************************************-->
- * 
+ *
  * @name Static helper funcions
  * @{
  *
  *****************************************************************************/
 
-                    
+
 /** <!--********************************************************************-->
  *
  * @fn node *DummyStaticHelper(node *arg_node)
@@ -181,7 +183,7 @@ DSTdoDistributeThreads (node *syntax_tree)
  * @brief A dummy static helper functions used only in your traversal
  *
  *****************************************************************************/
-static 
+static
 node *DummyStaticHelper(node *arg_node)
 {
   DBUG_ENTER ();

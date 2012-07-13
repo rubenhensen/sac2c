@@ -71,7 +71,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_DOWNTRAV (result) = FALSE;
     INFO_SECONDTRAV (result) = FALSE;
@@ -393,8 +393,8 @@ EMRCOprf (node *arg_node, info *arg_info)
             break;
 
         case F_inc_rc:
-            avis
-              = LUTsearchInLutPp (INFO_FILLLUT (arg_info), ID_AVIS (PRF_ARG1 (arg_node)));
+            avis = (node *)LUTsearchInLutPp (INFO_FILLLUT (arg_info),
+                                             ID_AVIS (PRF_ARG1 (arg_node)));
 
             if ((avis != ID_AVIS (PRF_ARG1 (arg_node)))
                 && (AVIS_SSAASSIGN (avis) != NULL)) {

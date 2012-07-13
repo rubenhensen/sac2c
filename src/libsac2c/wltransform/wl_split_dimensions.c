@@ -164,7 +164,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_WITH2_IVECT (result) = NULL;
     INFO_WITH2_ISCLS (result) = NULL;
@@ -764,19 +764,19 @@ ComputeNewBounds (node *upper, node *lower, node *step, node **nupper, node **as
 
 #if 0 /* not needed at the moment */
 /** <!-- ****************************************************************** -->
- * @fn node *ComputeSize( node *lower, node *upper, node **assigns, 
+ * @fn node *ComputeSize( node *lower, node *upper, node **assigns,
  *                        info *arg_info)
  *
  * @brief Returns a node that denotes the size (or length) of the given range.
  *        If the range is fully static, an N_num node will be returned. For
  *        dynamic ranges, code for computing the length at runtime is added to
  *        assigns and an N_id node is returned.
- * 
+ *
  * @param lower ast node denoting lower bound
  * @param upper ast node denoting upper bound
  * @param *assigns assignment chain to append the runtime code if necessary
  * @param arg_info info structure
- * 
+ *
  * @return N_num or N_id node representing the length of the range
  ******************************************************************************/
 static
@@ -843,7 +843,7 @@ MakeSel (int n, node *vec, info *arg_info)
 /** <!-- **************************************************************** -->
  * @fn node *MakeModarrayShape( node *array, info *arg_info)
  *
- * @brief 
+ * @brief
  *
  * @param array    The array that we want the shape of
  * @param arg_info State of the traversal
@@ -855,18 +855,18 @@ node *MakeModarrayShape( node *array, info *arg_info)
   DBUG_ENTER ();
 
   DBUG_ASSERT ( NODE_TYPE( array) == N_id, "ID expected");
-  
-  shapeAvis = 
-    TBmakeAvis( TRAVtmpVar(), 
-                TYmakeAKS( 
+
+  shapeAvis =
+    TBmakeAvis( TRAVtmpVar(),
+                TYmakeAKS(
                   TYmakeSimpleType( T_int),
-                  SHcreateShape( 1, 
+                  SHcreateShape( 1,
                                  TYgetDim( AVIS_TYPE( ID_AVIS( array))))));
-  
-  INFO_VARDECS( arg_info) = TBmakeVardec( shapeAvis, 
+
+  INFO_VARDECS( arg_info) = TBmakeVardec( shapeAvis,
                                           INFO_VARDECS( arg_info));
-  
-  INFO_PREASSIGNS( arg_info) = 
+
+  INFO_PREASSIGNS( arg_info) =
     TBmakeAssign( TBmakeLet( TBmakeIds( shapeAvis, NULL),
                              TBmakePrf( F_shape_A,
                                         TBmakeExprs( DUPdoDupTree( array),
@@ -1122,7 +1122,7 @@ ComputeNewWithops (node *withops, info *arg_info)
     anontrav_t cnw_trav[6]
       = {{N_genarray, &ATravCNWgenarray}, {N_modarray, &ATravCNWmodarray},
          {N_fold, &ATravCNWfold},         {N_propagate, &TRAVerror},
-         {N_break, &TRAVerror},           {0, NULL}};
+         {N_break, &TRAVerror},           {(nodetype)0, NULL}};
     node *ops;
 
     DBUG_ENTER ();
@@ -1176,7 +1176,7 @@ ATravCNLgenOrModArray (node *arg_node, info *arg_info)
 
 #if 0
   /*
-   * This can not work! What about the shape of the rest of the array if 
+   * This can not work! What about the shape of the rest of the array if
    * there is more array?
    */
   if ( INFO_CURRENT_SIZE( arg_info) != NULL){
@@ -1288,7 +1288,7 @@ ComputeNewLhs (node *withops, info *arg_info)
                               {N_fold, &ATravCNLfold},
                               {N_propagate, &TRAVerror},
                               {N_break, &TRAVerror},
-                              {0, NULL}};
+                              {(nodetype)0, NULL}};
     node *lhs;
 
     DBUG_ENTER ();
@@ -1613,7 +1613,7 @@ ComputeLengths (node *withops, info *arg_info)
     anontrav_t len_trav[4] = {{N_genarray, &ATravCDLgenarray},
                               {N_modarray, &ATravCDLmodarray},
                               {N_fold, &ATravCDLfold},
-                              {0, NULL}};
+                              {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
 
@@ -2282,7 +2282,7 @@ Accu2DimIndex (node *assigns, info *arg_info)
                           {N_with, &TRAVnone},
                           {N_with2, &TRAVnone},
                           {N_with3, &TRAVnone},
-                          {0, NULL}};
+                          {(nodetype)0, NULL}};
     DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);
@@ -2521,7 +2521,7 @@ ATravNIfold (node *arg_node, info *arg_info)
   if ( TYisAKS( AVIS_TYPE( IDS_AVIS( INFO_NIP_LHS( arg_info)))) ||
        TYisAKV( AVIS_TYPE( IDS_AVIS( INFO_NIP_LHS( arg_info))))){
     INFO_NIP_LHS( arg_info) = IDS_NEXT( INFO_NIP_LHS( arg_info));
-    FOLD_NEXT( arg_node) = TRAVopt( FOLD_NEXT( arg_node), arg_info);    
+    FOLD_NEXT( arg_node) = TRAVopt( FOLD_NEXT( arg_node), arg_info);
   } else {
     INFO_NIP_RESULT( arg_info) = TRUE;
   }
@@ -2541,8 +2541,9 @@ NotImplemented (node *with, info *arg_info)
     anontrav_t nip_trav[6]
       = {{N_genarray, &ATravNIgenarray}, {N_modarray, &ATravNImodarray},
          {N_fold, &ATravNIfold},         {N_break, &ATravNIfail},
-         {N_propagate, &ATravNIfail},    {0, NULL}};
-    anontrav_t nap_trav[3] = {{N_ap, &ATravNIap}, {N_arg, &ATravNIarg}, {0, NULL}};
+         {N_propagate, &ATravNIfail},    {(nodetype)0, NULL}};
+    anontrav_t nap_trav[3]
+      = {{N_ap, &ATravNIap}, {N_arg, &ATravNIarg}, {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
 
@@ -2593,8 +2594,9 @@ static node *
 CreateWith2Offsets (node *withops)
 {
     node *result;
-    anontrav_t atrav[3]
-      = {{N_genarray, &ATravCOgenarray}, {N_modarray, &ATravCOmodarray}, {0, NULL}};
+    anontrav_t atrav[3] = {{N_genarray, &ATravCOgenarray},
+                           {N_modarray, &ATravCOmodarray},
+                           {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
     TRAVpushAnonymous (atrav, &TRAVsons);

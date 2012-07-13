@@ -123,7 +123,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_NEXT (result) = NULL;
     INFO_SUBST (result) = NULL;
@@ -177,7 +177,7 @@ typedef enum {
 typedef struct CODE_CONSTRUCTION {
     node *target;
     node *subst;
-    node *new;
+    node *mnew;
     struct CODE_CONSTRUCTION *next;
 } code_constr_type;
 
@@ -231,10 +231,10 @@ AddCC (node *targetn, node *substn, node *resultn)
 
     DBUG_ENTER ();
 
-    cc = MEMmalloc (sizeof (code_constr_type));
+    cc = (code_constr_type *)MEMmalloc (sizeof (code_constr_type));
     cc->target = targetn;
     cc->subst = substn;
-    cc->new = resultn;
+    cc->mnew = resultn;
     cc->next = code_constr;
     code_constr = cc;
 
@@ -522,7 +522,7 @@ LinearTransformationsScalar (intern_gen *ig, index_info *transformations, int di
     if (transformations->arg_no)
         /* valid prf. */
         while (actig) { /* all igs */
-            newig = LinearTransformationsHelp (actig, dim, transformations->prf,
+            newig = LinearTransformationsHelp (actig, dim, transformations->mprf,
                                                transformations->arg_no,
                                                transformations->const_arg[0]);
 
@@ -571,7 +571,7 @@ LinearTransformationsVector (intern_gen *ig, index_info *transformations)
             if (transformations->permutation[act_dim]) {
                 while (actig) { /* all igs */
                     newig
-                      = LinearTransformationsHelp (actig, act_dim, transformations->prf,
+                      = LinearTransformationsHelp (actig, act_dim, transformations->mprf,
                                                    transformations->arg_no,
                                                    transformations->const_arg[act_dim]);
                     if (newig) {
@@ -630,8 +630,8 @@ FinalTransformations (intern_gen *substig, index_info *transformations, int targ
        subst array A[42,i,k]
        help: [2,0,3] */
     i = sizeof (int) * target_dim;
-    help = MEMmalloc (i);
-    help = memset (help, 0, i);
+    help = (int *)MEMmalloc (i);
+    help = (int *)memset (help, 0, i);
     for (i = 0; i < transformations->vector; i++) {
         if (transformations->permutation[i]) {
             help[transformations->permutation[i] - 1] = i + 1;
@@ -822,7 +822,7 @@ IntersectGrids (int dim)
                     /* add craetes code to code_constr list and to new_codes. */
                     cc = SearchCC (intersect_grids_tig->code, intersect_grids_sig->code);
                     if (cc) {
-                        ig->code = cc->new;
+                        ig->code = cc->mnew;
                     } else {
                         coden = CreateCode (intersect_grids_tig->code,
                                             intersect_grids_sig->code);
@@ -956,7 +956,7 @@ IntersectInternGen (intern_gen *target_ig, intern_gen *subst_ig)
                     /* craete new code and add it to code_constr list and to new_codes. */
                     cc = SearchCC (target_ig->code, sig->code);
                     if (cc) {
-                        new_gen->code = cc->new;
+                        new_gen->code = cc->mnew;
                     } else {
                         coden = CreateCode (target_ig->code, sig->code);
                         new_gen->code = coden;
@@ -1008,8 +1008,8 @@ RemoveDoubleIndexVectors (intern_gen *subst_ig, index_info *transformations)
     DBUG_ENTER ();
 
     i = sizeof (int) * SHP_SEG_SIZE; /* max number of dimensions */
-    found = MEMmalloc (i);
-    found = memset (found, 0, i);
+    found = (int *)MEMmalloc (i);
+    found = (int *)memset (found, 0, i);
 
     for (act_dim = 0; act_dim < transformations->vector; act_dim++)
         if (transformations->permutation[act_dim] != 0) { /* ==0: constant */
@@ -1207,7 +1207,7 @@ Fold (node *idn, index_info *transformations, node *targetwln, node *substwln)
 
     /* results are in intersect_ig. At the moment, just append to new_ig. */
 #if 0
-  /* 
+  /*
    * Is this assertion actually required???
    * See bug #124 for a program that does not compile with this assertion.
    */
@@ -1406,7 +1406,7 @@ FreeWLIAssignInfo (node *arg_node, info *arg_info)
 static node *
 FreeWLIInformation (node *fundef)
 {
-    anontrav_t freetrav[2] = {{N_assign, &FreeWLIAssignInfo}, {0, NULL}};
+    anontrav_t freetrav[2] = {{N_assign, &FreeWLIAssignInfo}, {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
 
@@ -1839,8 +1839,8 @@ WLFwith (node *arg_node, info *arg_info)
             new_codes = NULL;
 
             dim = SHgetUnrLen (TYgetShape (IDS_NTYPE (WITH_VEC (arg_node))));
-            intersect_grids_ot = MEMmalloc (sizeof (int) * dim);
-            intersect_grids_os = MEMmalloc (sizeof (int) * dim);
+            intersect_grids_ot = (int *)MEMmalloc (sizeof (int) * dim);
+            intersect_grids_os = (int *)MEMmalloc (sizeof (int) * dim);
 
             DBUG_PRINT ("=> found something to fold in WL in line %d",
                         NODE_LINE (arg_node));

@@ -68,7 +68,7 @@ LoadModule (const char *name, strstype_t kind, node *syntax_tree)
 node *
 LMCdoLoadModuleContents (node *syntax_tree)
 {
-    anontrav_t checktypes[2] = {{N_objdef, &CheckForObjdefs}, {0, NULL}};
+    anontrav_t checktypes[2] = {{N_objdef, &CheckForObjdefs}, {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
 
@@ -81,8 +81,8 @@ LMCdoLoadModuleContents (node *syntax_tree)
 
     DSinitDeserialize (syntax_tree);
 
-    syntax_tree
-      = STRSfold ((strsfoldfun_p)&LoadModule, global.exported_modules, syntax_tree);
+    syntax_tree = (node *)STRSfold ((strsfoldfun_p)&LoadModule, global.exported_modules,
+                                    syntax_tree);
 
     DSfinishDeserialize (syntax_tree);
 

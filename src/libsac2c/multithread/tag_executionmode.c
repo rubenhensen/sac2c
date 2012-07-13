@@ -80,7 +80,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_LETLHS (result) = NULL;
     INFO_EXECMODE (result) = MUTH_ANY;

@@ -62,7 +62,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_CURRENT_BLOCK (result) = NULL;
     INFO_SINK_CODE (result) = NULL;
@@ -274,7 +274,7 @@ CUSKCassign (node *arg_node, info *arg_info)
          * duplicate this assign and sink the duplicate. */
         sunk_assign = DUPdoDupNode (arg_node);
         ASSIGN_NEXT (sunk_assign) = NULL;
-        ASSIGN_EXECMODE (sunk_assign) = CUDA_HOST_SINGLE;
+        ASSIGN_EXECMODE (sunk_assign) = (mtexecmode_t)CUDA_HOST_SINGLE;
 
         /* Both DUPASSIGN and ORIASSIGN will be used in CUSKCids to set
          * the SSA links correctly */
@@ -356,7 +356,7 @@ CUSKCids (node *arg_node, info *arg_info)
      * Therefore, we need to set it back to the original N_assign. */
 
     /* In backtrace mode, we look at the LHS of the assign to be sunk. */
-    new_avis = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
+    new_avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), avis);
     if (new_avis != avis) { // && AVIS_SSAASSIGN( new_avis) == NULL) {
         /* Set the ssa assign of the old lhs to the original assign */
         AVIS_SSAASSIGN (avis) = INFO_ORIASSIGN (arg_info);
@@ -397,8 +397,8 @@ CUSKCid (node *arg_node, info *arg_info)
         /* If the N_id is scalar (we only sink scalar operaions) and
          * its ssaassign is tagged as CUDA_DEVICE_SINGLE */
         if (TUisScalar (AVIS_TYPE (avis)) && ssa != NULL
-            && ASSIGN_EXECMODE (ssa) == CUDA_DEVICE_SINGLE) {
-            new_avis = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
+            && ASSIGN_EXECMODE (ssa) == (mtexecmode_t)CUDA_DEVICE_SINGLE) {
+            new_avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), avis);
             /*
              * What this code does can be explained by the
              * following example:

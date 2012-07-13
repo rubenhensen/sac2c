@@ -34,12 +34,12 @@
  * @return result of Free call, usually NULL
  *
  ***************************************************************************/
-idag_fun_t *
-FREEattribIdagFun (idag_fun_t *attr, node *parent)
+idag_fun_t
+FREEattribIdagFun (idag_fun_t attr, node *parent)
 {
     DBUG_ENTER ();
 
-    DBUG_RETURN ((idag_fun_t *)NULL);
+    DBUG_RETURN ((idag_fun_t)NULL);
 }
 
 /** <!--******************************************************************-->
@@ -120,7 +120,7 @@ FREEattribString (char *attr, node *parent)
  *
  ***************************************************************************/
 char *
-FREEattribSharedString (char *attr, node *parent)
+FREEattribSharedString (const char *attr, node *parent)
 {
     DBUG_ENTER ();
 
@@ -374,7 +374,7 @@ FREEattribSharedNodeList (nodelist *attr, node *parent)
  *
  ***************************************************************************/
 dfmask_t *
-FREEattribDFMask (dfmask_t *attr)
+FREEattribDFMask (dfmask_t *attr, node *parent)
 {
     DBUG_ENTER ();
 

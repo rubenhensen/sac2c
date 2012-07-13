@@ -140,7 +140,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_LUT (result) = LUTgenerateLut ();
     INFO_A2A_LUT (result) = LUTgenerateLut ();
@@ -249,7 +249,7 @@ MMVdo (node *arg_node, info *arg_info)
 node *
 MMVfundef (node *arg_node, info *arg_info)
 {
-    anontrav_t anon[2] = {{N_ids, &MMVids}, {0, NULL}};
+    anontrav_t anon[2] = {{N_ids, &MMVids}, {(nodetype)0, NULL}};
     DBUG_ENTER ();
 
     /*
@@ -347,10 +347,10 @@ MMVids (node *arg_node, info *arg_info)
      * WLs on the RHS, we can get renaming chains! Therefore, we have
      * to rename until we have reached the final renaming.
      */
-    newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
+    newavis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
     while (newavis != IDS_AVIS (arg_node)) {
         IDS_AVIS (arg_node) = newavis;
-        newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
+        newavis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
     }
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -383,12 +383,12 @@ MMVid (node *arg_node, info *arg_info)
      * need to keep renaming until we reach a fixpoint.
      */
 
-    newavis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
+    newavis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
 
     while (newavis != ID_AVIS (arg_node)) {
         ID_AVIS (arg_node) = newavis;
 
-        newavis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
+        newavis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -662,15 +662,16 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
             node *newavis;
 
             if (global.mutc_suballoc_desc_one_level_up) {
-                newavis
-                  = LUTsearchInLutPp (INFO_LUT (arg_info),
-                                      LUTsearchInLutPp (INFO_A2A_LUT (arg_info),
-                                                        LUTsearchInLutPp (INFO_LUT (
-                                                                            arg_info),
-                                                                          IDS_AVIS (
-                                                                            ids_wl))));
+                newavis = (node *)
+                  LUTsearchInLutPp (INFO_LUT (arg_info),
+                                    LUTsearchInLutPp (INFO_A2A_LUT (arg_info),
+                                                      LUTsearchInLutPp (INFO_LUT (
+                                                                          arg_info),
+                                                                        IDS_AVIS (
+                                                                          ids_wl))));
             } else {
-                newavis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (ids_wl));
+                newavis
+                  = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (ids_wl));
             }
 
             if ((newavis == ID_AVIS (PRF_ARG1 (arg_node)))

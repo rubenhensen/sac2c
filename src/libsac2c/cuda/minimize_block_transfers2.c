@@ -77,7 +77,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_CURRENT_BLOCK (result) = NULL;
     INFO_LASTASSIGN (result) = NULL;

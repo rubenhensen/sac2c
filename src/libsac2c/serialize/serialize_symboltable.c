@@ -40,6 +40,10 @@ GenerateSerSymbolTableHead (node *module, FILE *file)
 
     fprintf (file, "#include \"sac_serialize.h\"\n\n");
 
+    fprintf (file, "#ifdef __cplusplus\n"
+                   "extern \"C\"\n"
+                   "#endif\n");
+
     fprintf (file, "void *__%s__SYMTAB()\n", NSgetName (MODULE_NAMESPACE (module)));
 
     fprintf (file, "{\nvoid *result;\n");

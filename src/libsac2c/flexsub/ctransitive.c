@@ -60,7 +60,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
     INFO_TLTABLE (result) = NULL;
 
     DBUG_RETURN (result);
@@ -255,7 +255,7 @@ TFCTRtfvertex (node *arg_node, info *arg_info)
                  */
 
                 if (INFO_TLTABLE (arg_info) == NULL) {
-                    INFO_TLTABLE (arg_info) = MEMmalloc (sizeof (dynarray));
+                    INFO_TLTABLE (arg_info) = (dynarray *)MEMmalloc (sizeof (dynarray));
                     initDynarray (INFO_TLTABLE (arg_info));
                 }
 
@@ -267,7 +267,7 @@ TFCTRtfvertex (node *arg_node, info *arg_info)
                  * "b" increased by 1. Hence, the open interval ")".
                  */
 
-                elem *e = MEMmalloc (sizeof (elem));
+                elem *e = (elem *)MEMmalloc (sizeof (elem));
                 ELEM_DATA (e) = MEMmalloc (2 * sizeof (int));
                 ELEM_IDX (e) = pre_parent;
                 *((int *)ELEM_DATA (e)) = pre_child;

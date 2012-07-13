@@ -123,7 +123,7 @@ MakeInfo (node *fundef, int innerdims)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = fundef;
     INFO_INNERDIMS (result) = innerdims;

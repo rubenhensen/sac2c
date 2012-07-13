@@ -119,7 +119,7 @@ SAC_setupController (char *dir)
         SAC_RuntimeError ("Runtime specialization controller could not be launched");
     }
 
-    processed = malloc (sizeof (list_t));
+    processed = (list_t *)malloc (sizeof (list_t));
 }
 
 /** <!--*******************************************************************-->
@@ -137,7 +137,7 @@ SAC_setupController (char *dir)
  *
  ****************************************************************************/
 void *
-SAC_runController (void)
+SAC_runController (void *param)
 {
     queue_node_t *current;
 
@@ -316,29 +316,29 @@ wasProcessed (char *function, char *shape_info)
 static void
 addProcessed (char *function, char *shape_info)
 {
-    list_t *new;
+    list_t *xnew;
     char request[256];
 
     sprintf (request, "%s_%s", function, shape_info);
 
-    new = malloc (sizeof (list_t));
+    xnew = (list_t *)malloc (sizeof (list_t));
 
-    if (new == NULL) {
+    if (xnew == NULL) {
         fprintf (stderr, "Could not allocate new processed request node!");
 
         exit (EXIT_FAILURE);
     }
 
-    strcpy (new->request, request);
+    strcpy (xnew->request, request);
 
     /* Add the new processed request at the beginning of the list, this is
      * cheaper than at the end.
      */
     if (strlen (processed->request) != 0) {
-        new->next = processed;
+        xnew->next = processed;
     }
 
-    processed = new;
+    processed = xnew;
 }
 
 /** <!--*******************************************************************-->

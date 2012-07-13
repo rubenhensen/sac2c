@@ -69,7 +69,7 @@ MakeInfo (void)
     DBUG_ENTER ();
 
     info *result;
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_LETIDS (result) = NULL;
     INFO_FUN_RETS (result) = NULL;
@@ -111,7 +111,7 @@ SSPMDLSarg (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    nret = LUTsearchInLutPp (INFO_LUT (arg_info), ARG_AVIS (arg_node));
+    nret = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ARG_AVIS (arg_node));
 
     if (nret != ARG_AVIS (arg_node)) {
         /*
@@ -190,7 +190,7 @@ SSPMDLSid (node *arg_node, info *arg_info)
          * the LUT.
          */
         DBUG_PRINT ("Looking up arg for retexpr %s", AVIS_NAME (ID_AVIS (arg_node)));
-        avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
+        avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
 
         DBUG_PRINT ("...found %s", AVIS_NAME (avis));
 

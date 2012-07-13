@@ -91,7 +91,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_PROPMODE (result) = PROP_nothing;
     INFO_ONEFUNDEF (result) = FALSE;

@@ -48,7 +48,7 @@ SAC_initializeQueue (void)
         SAC_freeReqqueue (request_queue->first);
     }
 
-    request_queue = malloc (sizeof (reqqueue_t));
+    request_queue = (reqqueue_t *)malloc (sizeof (reqqueue_t));
 
     if (request_queue == NULL) {
         fprintf (stderr, "ERROR -- \t "
@@ -86,22 +86,22 @@ queue_node_t *
 SAC_createNode (char *func_name, char *module, char *types, int *shapes,
                 reg_obj_t *registry)
 {
-    queue_node_t *new = malloc (sizeof (queue_node_t));
+    queue_node_t *xnew = (queue_node_t *)malloc (sizeof (queue_node_t));
 
-    if (new == NULL) {
+    if (xnew == NULL) {
         fprintf (stderr, "ERROR -- \t [reqqueue.c: SAC_createNode()] malloc().");
 
         return NULL;
     }
 
-    strcpy (new->func_name, func_name);
-    strcpy (new->module_name, module);
-    strcpy (new->type_info, types);
-    new->shape_info = shapes;
-    new->reg_obj = registry;
-    new->next = NULL;
+    strcpy (xnew->func_name, func_name);
+    strcpy (xnew->module_name, module);
+    strcpy (xnew->type_info, types);
+    xnew->shape_info = shapes;
+    xnew->reg_obj = registry;
+    xnew->next = NULL;
 
-    return new;
+    return xnew;
 }
 
 /** <!--*******************************************************************-->
@@ -160,10 +160,10 @@ SAC_enqueueRequest (char *func_name, char *module, char *types, int *shapes,
 {
     pthread_mutex_lock (&queue_mutex);
 
-    queue_node_t *new = SAC_createNode (func_name, module, types, shapes, registry);
+    queue_node_t *xnew = SAC_createNode (func_name, module, types, shapes, registry);
 
     /* Exit on error. */
-    if (new == NULL) {
+    if (xnew == NULL) {
         fprintf (stderr, "ERROR -- \t [reqqueue.c: enqueue_request()] "
                          "Couldn't create node, exiting.");
 
@@ -173,14 +173,14 @@ SAC_enqueueRequest (char *func_name, char *module, char *types, int *shapes,
 
     if (request_queue->first == NULL) {
         /* Insert the first element. */
-        request_queue->first = new;
+        request_queue->first = xnew;
 
         /* The only element in the queue is both first and last. */
         request_queue->last = request_queue->first;
 
     } else {
         /* Insert the new node after the last node in the queue. */
-        request_queue->last->next = new;
+        request_queue->last->next = xnew;
 
         /* Move the pointer to the last object to the newly inserted node. */
         request_queue->last = request_queue->last->next;

@@ -145,7 +145,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_NEXT (result) = NULL;
@@ -312,7 +312,7 @@ Scalar2ArrayIndex (node *arrayn, node *wln, lut_t *pmlut)
         arrayn = ARRAY_AELEMS (arrayn);
 
         iinfo = WLFcreateIndex (elts);
-        valid_permutation = MEMmalloc (sizeof (int) * elts);
+        valid_permutation = (int *)MEMmalloc (sizeof (int) * elts);
         for (i = 0; i < elts;) {
             valid_permutation[i++] = 0;
         }
@@ -489,7 +489,7 @@ CreateIndexInfoSxS (node *prfn, info *arg_info)
                 iinfo->permutation[0] = iinfo->last[0]->permutation[0];
             }
 
-            iinfo->prf = SimplifyFun (PRF_PRF (prfn));
+            iinfo->mprf = SimplifyFun (PRF_PRF (prfn));
             iinfo->const_arg[0] = cval;
             iinfo->arg_no = const_second ? 2 : 1;
         }
@@ -564,7 +564,7 @@ CreateIndexInfoA (node *prfn, info *arg_info)
     }
 
     if (constn != NULL) {
-        const_elems = COgetDataVec (constn);
+        const_elems = (int *)COgetDataVec (constn);
 
         /* Is idn an Id of an index vector (or transformation)? */
         if (NODE_TYPE (idn) == N_id) {
@@ -584,7 +584,7 @@ CreateIndexInfoA (node *prfn, info *arg_info)
                 ASSIGN_INDEX (assignn) = iinfo; /* make this N_assign valid */
 
                 iinfo->arg_no = (constn == const1) ? 1 : 2;
-                iinfo->prf = SimplifyFun (PRF_PRF (prfn));
+                iinfo->mprf = SimplifyFun (PRF_PRF (prfn));
 
                 for (i = 0; i < elts; i++) {
                     val = (COgetDim (constn) == 0) ? const_elems[0] : const_elems[i];
@@ -630,7 +630,7 @@ CreateIndexInfoA (node *prfn, info *arg_info)
                 ASSIGN_INDEX (assignn) = iinfo;
 
                 iinfo->arg_no = (constn == const1) ? 1 : 2;
-                iinfo->prf = SimplifyFun (PRF_PRF (prfn));
+                iinfo->mprf = SimplifyFun (PRF_PRF (prfn));
 
                 for (i = 0; i < elts; i++) {
                     val = (COgetDim (constn) == 0) ? const_elems[0] : const_elems[i];

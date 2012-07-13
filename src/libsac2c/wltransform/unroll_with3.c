@@ -123,7 +123,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
     INFO_ASSIGNS (result) = NULL;
     INFO_RESULTS (result) = NULL;
     INFO_RANGES (result) = 0;
@@ -248,10 +248,10 @@ ATravRangeResult (node *exprs)
     pat = PMarray (0, 1, PMvar (1, PMAgetNode (&id), 0));
 
     if (PMmatchFlat (pat, EXPRS_EXPR (exprs))) {
-        node *new = DUPdoDupNode (id);
+        node *xnew = DUPdoDupNode (id);
 
         EXPRS_EXPR (exprs) = FREEdoFreeTree (EXPRS_EXPR (exprs));
-        EXPRS_EXPR (exprs) = new;
+        EXPRS_EXPR (exprs) = xnew;
     }
 
     DBUG_RETURN (exprs);
@@ -300,7 +300,7 @@ ATravRange (node *arg_node, info *arg_info)
 static node *
 RemoveArrayIndirection (node *syntax_tree)
 {
-    anontrav_t trav[2] = {{N_range, &ATravRange}, {0, NULL}};
+    anontrav_t trav[2] = {{N_range, &ATravRange}, {(nodetype)0, NULL}};
     DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);
@@ -363,12 +363,12 @@ JoinIdsExprs (node *arg_ids, node *exprs)
     shape *shape = TYgetShape( AVIS_TYPE( IDS_AVIS( ids)));
     node *shapeNode = SHshape2Array( shape);
     node *dimNode = TBmakeNum( SHgetDim( shape));
-    rhs = 
-      TBmakePrf( F_reshape_VxA, 
+    rhs =
+      TBmakePrf( F_reshape_VxA,
                  TBmakeExprs( TBmakeNum( 1),
                             TBmakeExprs( dimNode,
                                          TBmakeExprs( shapeNode,
-                                                      TBmakeExprs( rhs, 
+                                                      TBmakeExprs( rhs,
                                                                    NULL)))));
   }
 #else
@@ -536,7 +536,7 @@ ReplaceAccu (node *tree, node *ops)
                          {N_prf, &FAprf},      {N_fold, &FAfold},
 
                          {N_with, &TRAVnone},  {N_with2, &TRAVnone},
-                         {N_with3, &TRAVnone}, {0, NULL}};
+                         {N_with3, &TRAVnone}, {(nodetype)0, NULL}};
     DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);
@@ -595,7 +595,7 @@ Sync2Id (node *arg_node)
                          {N_with, &TRAVnone},
                          {N_with2, &TRAVnone},
                          {N_with3, &TRAVnone},
-                         {0, NULL}};
+                         {(nodetype)0, NULL}};
     DBUG_ENTER ();
 
     TRAVpushAnonymous (trav, &TRAVsons);
@@ -677,13 +677,10 @@ SetInitials (node *ops, node *opsInitial)
     info *info;
     DBUG_ENTER ();
 
-    anontrav_t trav[] = {{N_fold, &SIfold},
-                         {N_genarray, &SInext},
-                         {N_modarray, &SInext},
-                         {N_propagate, &SInext},
-                         {N_spfold, &SInext},
-                         {N_break, &SInext},
-                         {0, NULL}};
+    anontrav_t trav[]
+      = {{N_fold, &SIfold},      {N_genarray, &SInext}, {N_modarray, &SInext},
+         {N_propagate, &SInext}, {N_spfold, &SInext},   {N_break, &SInext},
+         {(nodetype)0, NULL}};
 
     TRAVpushAnonymous (trav, &TRAVsons);
 

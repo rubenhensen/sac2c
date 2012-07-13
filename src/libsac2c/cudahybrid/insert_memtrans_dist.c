@@ -150,7 +150,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_INWL (result) = FALSE;
@@ -550,7 +550,7 @@ IMEMDISTap (node *arg_node, info *arg_info)
     node *avis, *id_avis, *new_avis, *dup_avis;
     ntype *conc_type;
     node *fundef, *old_apids;
-    char *tmpVarName;
+    const char *tmpVarName;
 
     DBUG_ENTER ();
 
@@ -581,7 +581,7 @@ IMEMDISTap (node *arg_node, info *arg_info)
                              "N_ap argument is not N_id node!");
 
                 id_avis = ID_AVIS (EXPRS_EXPR (ap_args));
-                avis = LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
+                avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
 
                 /* If the avis has NOT been come across before */
                 if (avis == id_avis) {
@@ -751,7 +751,7 @@ IMEMDISTfuncond (node *arg_node, info *arg_info)
     node *ids, *apids;
     ntype *then_sclty, *else_sclty, *ids_sclty;
     node *ret_st, *ret_exprs, *fundef_ret;
-    char *tmpVarName;
+    const char *tmpVarName;
 
     DBUG_ENTER ();
 
@@ -851,7 +851,7 @@ IMEMDISTwith (node *arg_node, info *arg_info)
         anontrav_t atrav[4] = {{N_with, &ATravWith},
                                {N_genarray, &ATravGenarray},
                                {N_id, &ATravId},
-                               {0, NULL}};
+                               {(nodetype)0, NULL}};
 
         TRAVpushAnonymous (atrav, &TRAVsons);
 
@@ -1004,7 +1004,7 @@ IMEMDISTids (node *arg_node, info *arg_info)
 {
     node *new_avis, *ids_avis;
     ntype *ids_type, *conc_type;
-    char *tmpVarName;
+    const char *tmpVarName;
     prf conc2dist;
     simpletype conc_simple_type, dist_simple_type;
 
@@ -1076,7 +1076,7 @@ IMEMDISTid (node *arg_node, info *arg_info)
     node *new_avis, *avis, *id_avis;
     ntype *conc_type, *id_type;
     node *ssaassign;
-    char *tmpVarName;
+    const char *tmpVarName;
 
     DBUG_ENTER ();
 
@@ -1085,7 +1085,7 @@ IMEMDISTid (node *arg_node, info *arg_info)
 
     /* if we are in a N_with */
     // if( INFO_INWL( arg_info)) {
-    avis = LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
+    avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
 
     /* If the N_avis node hasn't been come across before AND the id is
      * NOT in cexprs. This is because we don't want to create a dist2conc

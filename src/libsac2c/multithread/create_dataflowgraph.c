@@ -98,7 +98,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_CDFG_CURRENTDFG (result) = NULL;
     INFO_CDFG_OUTERMOSTDFG (result) = NULL;
@@ -122,7 +122,7 @@ static node *UpdateDependency (node *dfn_assign, node *outer_graph, node *curren
 
 #if 0
 /*
- * Note, this function is currently not used and hence its definition causes 
+ * Note, this function is currently not used and hence its definition causes
  * a compiler warning.
  */
 static
@@ -441,7 +441,7 @@ UpdateDependency (node *dfn_assign, node *outer_graph, node *current_node)
 #if 0
 
 /*
- * Note, this function is currently not used and hence its definition causes 
+ * Note, this function is currently not used and hence its definition causes
  * a compiler warning.
  */
 
@@ -486,16 +486,16 @@ node *FindAssignCorrespondingNode(node *graph, node *dfn_assign)
       if(DATAFLOWNODE_DFGTHEN(NODELIST_NODE(member_iterator)) != NULL) {
         result = FindAssignCorrespondingNode(DATAFLOWNODE_DFGTHEN(NODELIST_NODE(member_iterator)), dfn_assign);
         /* or within the else-branch? */
-        if((result == NULL) && 
+        if((result == NULL) &&
            (DATAFLOWNODE_DFGELSE(NODELIST_NODE(member_iterator)) != NULL)) {
           result = FindAssignCorrespondingNode(DATAFLOWNODE_DFGELSE(NODELIST_NODE(member_iterator)), dfn_assign);
         }
       }
     } /* else */
-    
+
     member_iterator = NODELIST_NEXT(member_iterator);
   } /* while */
-  
+
   DBUG_RETURN (result);
 }
 

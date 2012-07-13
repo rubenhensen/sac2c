@@ -527,10 +527,11 @@ NSdeserializeNamespace (int id)
     DBUG_RETURN (result);
 }
 
-view_t *
-NSdeserializeView (const char *name, int id, view_t *next)
+void *
+NSdeserializeView (const char *name, int id, void *_next)
 {
     view_t *result;
+    view_t *next = (view_t *)_next;
 
     DBUG_ENTER ();
 
@@ -544,9 +545,10 @@ NSdeserializeView (const char *name, int id, view_t *next)
 }
 
 int
-NSaddMapping (const char *module, view_t *view)
+NSaddMapping (const char *module, void *_view)
 {
     namespace_t *ns;
+    view_t *view = (view_t *)_view;
     int result;
 
     DBUG_ENTER ();
@@ -574,6 +576,12 @@ GenerateNamespaceMapHead (FILE *file)
              global.version_id);
     fprintf (file, "#include \"sac_serialize.h\"\n\n");
     fprintf (file, "#include \"namespacemap.h\"\n\n");
+
+    fprintf (file, "#ifdef __cplusplus\n"
+                   "#  define EXTERNC extern \"C\"\n"
+                   "#else\n"
+                   "#  define EXTERNC \n"
+                   "#endif\n\n");
 
     DBUG_RETURN ();
 }
@@ -619,7 +627,7 @@ GenerateNamespaceMappingConstructor (FILE *file)
 
     pos = pool;
 
-    fprintf (file, "void __%s__MapConstructor() {\n", global.modulename);
+    fprintf (file, "EXTERNC void __%s__MapConstructor() {\n", global.modulename);
 
     for (cnt = 0; cnt < nextid; cnt++) {
         fprintf (file, "MAPNS(%d) = NSaddMapping( \"%s\",", cnt,

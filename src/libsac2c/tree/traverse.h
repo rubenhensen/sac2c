@@ -33,6 +33,6 @@ extern void TRAVprintStack (void);
 #endif
 
 extern char *TRAVtmpVar (void);
-extern char *TRAVtmpVarName (char *postfix);
+extern char *TRAVtmpVarName (const char *postfix);
 
 #endif /* _SAC_TRAVERSE_H_ */

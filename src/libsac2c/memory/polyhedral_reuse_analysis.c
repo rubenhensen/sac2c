@@ -293,7 +293,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_MODE (result) = TR_normal;
     INFO_IE (result) = NULL;
@@ -489,10 +489,10 @@ ActOnId (node *avis, info *arg_info)
                           arg_info);
             } else {
 #if 0
-        /* For an id defined outside the withloop, do we continue 
+        /* For an id defined outside the withloop, do we continue
          * traversing its rhs ids??? */
-        AddIndex( IDX_EXTID, INFO_COEFFICIENT( arg_info), avis, 
-                  0, INFO_DIM( arg_info), arg_info);  
+        AddIndex( IDX_EXTID, INFO_COEFFICIENT( arg_info), avis,
+                  0, INFO_DIM( arg_info), arg_info);
 
 	/* If this external id has not been come across before */
 	if( !DFMtestMaskEntry( INFO_MASK( arg_info), NULL, avis)) {
@@ -576,7 +576,8 @@ InitConstraints (IntMatrix constraints, bool compute_bound, index_exprs_t *cond_
         while (ivids != NULL) {
             ids = SET_MEMBER (ivids);
             while (ids != NULL) {
-                ie = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (ids));
+                ie = (index_exprs_t *)LUTsearchInLutPp (INFO_LUT (arg_info),
+                                                        IDS_AVIS (ids));
                 DBUG_ASSERT (((node *)ie != IDS_AVIS (ids)),
                              "Found withloop ids with null IE!");
 
@@ -1147,7 +1148,8 @@ PRApart (node *arg_node, info *arg_info)
             index_exprs_t *ie;
             /* last partition of the withloop, we cleanup LUT */
             while (ids != NULL) {
-                ie = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (ids));
+                ie = (index_exprs_t *)LUTsearchInLutPp (INFO_LUT (arg_info),
+                                                        IDS_AVIS (ids));
                 FreeIndexExprs (ie);
                 ids = IDS_NEXT (ids);
             }
@@ -1465,8 +1467,9 @@ PRAprf (node *arg_node, info *arg_info)
                          * equalities/inequalities of this conditional.
                          */
                         if (INFO_CONDVAR (arg_info) != NULL) {
-                            ie = LUTsearchInLutPp (INFO_LUT (arg_info),
-                                                   ID_AVIS (INFO_CONDVAR (arg_info)));
+                            ie = (index_exprs_t *)
+                              LUTsearchInLutPp (INFO_LUT (arg_info),
+                                                ID_AVIS (INFO_CONDVAR (arg_info)));
                             DBUG_ASSERT (((node *)ie
                                           != ID_AVIS (INFO_CONDVAR (arg_info))),
                                          "Found condvar with null IE!");

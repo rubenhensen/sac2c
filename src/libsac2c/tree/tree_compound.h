@@ -581,19 +581,20 @@ extern node *TCmakeAssigns9 (node *part1, node *part2, node *part3, node *part4,
  *
  ******************************************************************************/
 
-extern node *TCmakeAssignIcm0 (char *name, node *next);
-extern node *TCmakeAssignIcm1 (char *name, node *arg1, node *next);
-extern node *TCmakeAssignIcm2 (char *name, node *arg1, node *arg2, node *next);
-extern node *TCmakeAssignIcm3 (char *name, node *arg1, node *arg2, node *arg3,
+extern node *TCmakeAssignIcm0 (const char *name, node *next);
+extern node *TCmakeAssignIcm1 (const char *name, node *arg1, node *next);
+extern node *TCmakeAssignIcm2 (const char *name, node *arg1, node *arg2, node *next);
+extern node *TCmakeAssignIcm3 (const char *name, node *arg1, node *arg2, node *arg3,
                                node *next);
-extern node *TCmakeAssignIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+extern node *TCmakeAssignIcm4 (const char *name, node *arg1, node *arg2, node *arg3,
+                               node *arg4, node *next);
+extern node *TCmakeAssignIcm5 (const char *name, node *arg1, node *arg2, node *arg3,
+                               node *arg4, node *arg5, node *next);
+extern node *TCmakeAssignIcm6 (const char *name, node *arg1, node *arg2, node *arg3,
+                               node *arg4, node *arg5, node *arg6, node *next);
+extern node *TCmakeAssignIcm7 (const char *name, node *arg1, node *arg2, node *arg3,
+                               node *arg4, node *arg5, node *arg6, node *arg7,
                                node *next);
-extern node *TCmakeAssignIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                               node *arg5, node *next);
-extern node *TCmakeAssignIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                               node *arg5, node *arg6, node *next);
-extern node *TCmakeAssignIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
-                               node *arg5, node *arg6, node *arg7, node *next);
 
 /******************************************************************************
  *
@@ -1073,16 +1074,17 @@ extern node *TCmakeSpap5 (namespace_t *ns, char *name, node *arg1, node *arg2, n
  *
  ******************************************************************************/
 
-extern node *TCmakeIcm0 (char *name);
-extern node *TCmakeIcm1 (char *name, node *arg1);
-extern node *TCmakeIcm2 (char *name, node *arg1, node *arg2);
-extern node *TCmakeIcm3 (char *name, node *arg1, node *arg2, node *arg3);
-extern node *TCmakeIcm4 (char *name, node *arg1, node *arg2, node *arg3, node *arg4);
-extern node *TCmakeIcm5 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+extern node *TCmakeIcm0 (const char *name);
+extern node *TCmakeIcm1 (const char *name, node *arg1);
+extern node *TCmakeIcm2 (const char *name, node *arg1, node *arg2);
+extern node *TCmakeIcm3 (const char *name, node *arg1, node *arg2, node *arg3);
+extern node *TCmakeIcm4 (const char *name, node *arg1, node *arg2, node *arg3,
+                         node *arg4);
+extern node *TCmakeIcm5 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4,
                          node *arg5);
-extern node *TCmakeIcm6 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+extern node *TCmakeIcm6 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4,
                          node *arg5, node *arg6);
-extern node *TCmakeIcm7 (char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+extern node *TCmakeIcm7 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4,
                          node *arg5, node *arg6, node *arg7);
 
 /*--------------------------------------------------------------------------*/

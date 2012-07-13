@@ -37,8 +37,23 @@ AC_SUBST(OS,$target_os)
 AC_DEFINE_UNQUOTED(ARCH,"$target_cpu",set to the architecture)
 AC_SUBST(ARCH,$target_cpu)
 
+
+AC_ARG_ENABLE(cplusplus,
+[AS_HELP_STRING([[--enable-cplusplus[=ARG]]],
+                [Compile sources with C++ compiler @<:@ARG={yes,no}@:>@])],
+ENABLE_CPLUSPLUS=$enableval,
+ENABLE_CPLUSPLUS=no)
+enable_cplusplus=
+if test "${ENABLE_CPLUSPLUS}" = "yes" ; then
+  enable_cplusplus=yes
+fi
+
+
 dnl search for a C compiler
 AC_PROG_CC(gcc cc)
+AC_PROG_CXX(g++ c++ cxx gxx)
+
+
 
 dnl
 dnl check whether its suns cc
@@ -70,6 +85,9 @@ DECC=yes,
 AC_MSG_RESULT(no)
 DECC=no
 )
+
+
+
 
 
 dnl
@@ -555,6 +573,29 @@ else
   AC_MSG_RESULT([none found])
 fi   
 
+# This is a special case for building sac2c with c++ compiler.
+if [[ "$GXX" = yes -a "$enable_cplusplus" = yes ]]; then
+  AC_SUBST(SAC2C_CC, ["g++"])
+  AC_SUBST(OPT_O0, [""])
+  AC_SUBST(OPT_O1, [-O1])
+  AC_SUBST(OPT_O2, [-O2])
+  AC_SUBST(OPT_O3, [-O3])
+  AC_SUBST(OPT_g, [-g])
+  AC_SUBST(RCLDFLAGS, [""])
+  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin -std=c99"])
+  AC_SUBST(SAC2C_MKCCFLAGS, ["-Wno-write-strings -g -std=c++98"])
+  AC_SUBST(SAC2C_PDCCFLAGS, ["-Wno-write-strings -O3 -std=c++98"])
+  AC_SUBST(GENPIC, ["-fPIC -DPIC"])
+  AC_SUBST(DEPSFLAG, ["-M"])
+  AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
+  AC_SUBST(CCMTLINK, [$GCC_PTHREADS])
+  AC_SUBST(CCDLLINK, ["-ldl"])
+  AC_MSG_RESULT([gcc settings])
+else
+  AC_SUBST(SAC2C_CC, ["$CC"])
+  AC_SUBST(SAC2C_MKCCFLAGS, ["$MKCCFLAGS"])
+  AC_SUBST(SAC2C_PDCCFLAGS, ["$PDCCFLAGS"])
+fi
 
 dnl 
 dnl append platform specific files to sac2crc

@@ -31,7 +31,7 @@ struct INFO {
     node *interface;
     int filetype;
     namespace_t *mnamespace;
-    symbmode_t symbmode;
+    enum symbmode_t symbmode;
 };
 
 /*

@@ -77,7 +77,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_WL_LHS (result) = NULL;
 
@@ -1330,7 +1330,7 @@ Internal representation in the abstract syntax tree:
     }
 
 /* forward declaration */
-static int CompareWlNode (node *node1, node *node2, int outline);
+static int CompareWlNode (node *node1, node *node2, bool outline);
 
 /**
  ** internal functions
@@ -2151,7 +2151,7 @@ GenerateNodeForGap (node *wlnode, node *bound1, node *bound2, bool is_noop)
  *                      bool is_noop)
  *
  * Description:
- *   
+ *
  *
  ******************************************************************************/
 

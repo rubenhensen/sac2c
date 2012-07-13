@@ -7,6 +7,5 @@
  *
  */
 
-#define NULL ((void *)0)
-char **SAC_commandline_argv = NULL;
+char **SAC_commandline_argv = (char **)0;
 int SAC_commandline_argc = 0;

@@ -78,7 +78,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_POSTASSIGN (result) = NULL;
     INFO_PRFACCU (result) = FALSE;
@@ -326,13 +326,10 @@ createSyncOut (node *rets, node *ops, info *arg_info)
 static node *
 AddSyncs (node *assign, node *rets, info *arg_info)
 {
-    anontrav_t insert[7] = {{N_assign, &ATravAssign},
-                            {N_let, &ATravLet},
-                            {N_prf, &ATravPrf},
-                            {N_with, &TRAVnone},
-                            {N_with2, &TRAVnone},
-                            {N_with3, &TRAVnone},
-                            {0, NULL}};
+    anontrav_t insert[7]
+      = {{N_assign, &ATravAssign}, {N_let, &ATravLet},   {N_prf, &ATravPrf},
+         {N_with, &TRAVnone},      {N_with2, &TRAVnone}, {N_with3, &TRAVnone},
+         {(nodetype)0, NULL}};
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (assign) == N_assign, "Node not an assign");

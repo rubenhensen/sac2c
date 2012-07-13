@@ -60,7 +60,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
@@ -325,7 +325,7 @@ PKNLGgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     avis = ID_AVIS (GENARRAY_MEM (arg_node));
-    alloc_assign = LUTsearchInLutPp (INFO_LUT (arg_info), avis);
+    alloc_assign = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), avis);
 
     if (alloc_assign != avis) {
         scalar_type = TYgetScalar (AVIS_TYPE (avis));

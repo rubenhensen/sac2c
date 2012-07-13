@@ -13,6 +13,8 @@
 
 #include "types.h"
 
+extern int NSaddMapping (const char *module, void *_view);
+
 extern namespace_t *NSgetNamespace (const char *module);
 extern namespace_t *NSgetRootNamespace (void);
 extern namespace_t *NSgetInitNamespace (void);
@@ -34,7 +36,7 @@ extern namespace_t *NSbuildView (const namespace_t *orig);
 
 extern void NSserializeNamespace (FILE *file, const namespace_t *ns);
 extern namespace_t *NSdeserialzeNamespace (int id);
-extern view_t *NSdeserializeView (const char *module, int id, view_t *next);
+extern void *NSdeserializeView (const char *module, int id, void *_next);
 
 extern void NSgenerateNamespaceMap (void);
 

@@ -110,7 +110,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_NODENUMBER (result) = 0;
     INFO_FILE (result) = NULL;
@@ -169,7 +169,7 @@ giveNodeName (node *arg_node, info *arg_info)
 
     if (ndname_p) {
         /* already generated */
-        return *ndname_p;
+        return (char *)*ndname_p;
     } else {
         /* the node was not seen so far; invent a name for it now */
         char *ndnumber = STRitoa (INFO_NODENUMBER (arg_info)++);

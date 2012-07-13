@@ -120,7 +120,7 @@ CreateCacheSpec (int size, int line_size, int assoc, int el_size)
         cache = NULL;
     } else {
 
-        cache = MEMmalloc (sizeof (cache_t));
+        cache = (cache_t *)MEMmalloc (sizeof (cache_t));
 
         cache->assoc = assoc;
         cache->size = size / el_size;
@@ -218,7 +218,7 @@ SetVect (int dim, shpseg *pv, int val)
 }
 
 static void
-CopyVect (int dim, shpseg *new, shpseg *old)
+CopyVect (int dim, shpseg *xnew, shpseg *old)
 {
     int i;
 
@@ -227,7 +227,7 @@ CopyVect (int dim, shpseg *new, shpseg *old)
     DBUG_ASSERT (dim <= SHP_SEG_SIZE, " dimension out of range in CopyVect()!");
 
     for (i = 0; i < dim; i++) {
-        SHPSEG_SHAPE (new, i) = SHPSEG_SHAPE (old, i);
+        SHPSEG_SHAPE (xnew, i) = SHPSEG_SHAPE (old, i);
     }
 
     DBUG_RETURN ();
@@ -770,7 +770,7 @@ ComputeTemporalReuse (int rows, cache_util_t *cache_util, cache_t *cache, int di
  *   static int SelectPaddim(int min, int max, shpseg* shape)
  *
  * description
- *   
+ *
  *   This function selects one dimension from a non-empty range of dimensions
  *   found suitable for padding. It selects the outermost dimension with
  *   maximal shape extent. The first criterion moves padding overhead
@@ -779,20 +779,20 @@ ComputeTemporalReuse (int rows, cache_util_t *cache_util, cache_t *cache, int di
  *
  ******************************************************************************/
 
-static int SelectPaddim(int min, int max, shpseg* shape) 
+static int SelectPaddim(int min, int max, shpseg* shape)
 {
   int d, res;
-  
+
   DBUG_ENTER ();
 
   res = min;
-  
+
   for (d=min+1; d<=max; d++) {
     if (SHPSEG_SHAPE(shape,d) > SHPSEG_SHAPE(shape,res)) {
       res = d;
     }
   }
-  
+
   DBUG_RETURN (res);
 }
 
@@ -806,24 +806,24 @@ static int SelectPaddim(int min, int max, shpseg* shape)
  *                                           shpseg* shape)
  *
  * description
- *   
+ *
  *   This function determines the padding dimension for the elimination of
  *   temporal reuse conflicts. If padding is not useful -1 is returned.
  *
  ******************************************************************************/
 
-static int ChoosePaddimForTemporalReuse(int rows, 
-                                        cache_util_t *cache_util, 
-                                        cache_t *cache, 
+static int ChoosePaddimForTemporalReuse(int rows,
+                                        cache_util_t *cache_util,
+                                        cache_t *cache,
                                         shpseg* shape) {
 
   int res, a, minpaddim, maxpaddim;
-  
+
   DBUG_ENTER ();
 
   minpaddim = -1;
   maxpaddim = -1;
-  
+
   for (a=0; a<rows-1; a++) {
     if (cache_util[a].tr_potflag
         && (cache_util[a].tr_conflicts >= cache->assoc)) {
@@ -848,11 +848,11 @@ static int ChoosePaddimForTemporalReuse(int rows,
       }
     }
   }
-  
+
   res = SelectPaddim(minpaddim, maxpaddim, shape);
-    
+
   if (res==0) res=1;
-  
+
   DBUG_RETURN (res);
 }
 
@@ -861,12 +861,12 @@ static int ChoosePaddimForTemporalReuse(int rows,
  *
  * function:
  *   static int ChoosePaddimForSpatialReuse(int rows,
- *                                          cache_util_t *cache_util, 
+ *                                          cache_util_t *cache_util,
  *                                          cache_t *cache,
  *                                          shpseg* shape)
  *
  * description
- *   
+ *
  *   This function determines the padding dimension for the elimination of
  *   spatial reuse conflicts. If padding is not useful -1 is returned.
  *
@@ -875,15 +875,15 @@ static int ChoosePaddimForTemporalReuse(int rows,
 static int ChoosePaddimForSpatialReuse(int rows,
                                        cache_util_t *cache_util,
                                        cache_t *cache,
-                                       shpseg* shape) 
+                                       shpseg* shape)
 {
   int res, a, minpaddim, maxpaddim;
-  
+
   DBUG_ENTER ();
 
   minpaddim = -1;
   maxpaddim = -1;
-  
+
   for (a=0; a<rows-1; a++) {
     if (cache_util[a].sr_conflicts >= cache->assoc) {
       /* a real conflict occurs */
@@ -907,9 +907,9 @@ static int ChoosePaddimForSpatialReuse(int rows,
       }
     }
   }
-  
+
   res = SelectPaddim(minpaddim, maxpaddim, shape);
-    
+
   DBUG_RETURN (res);
 }
 

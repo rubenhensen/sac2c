@@ -144,7 +144,7 @@ MakeInfo (node *fundef)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = fundef;
     INFO_INNERTRAV (result) = FALSE;
@@ -425,7 +425,8 @@ WLSBcode (node *arg_node, info *arg_info)
         /*
          * Try to find a hashed version of the needed code
          */
-        INFO_NEWCODE (arg_info) = LUTsearchInLutPp (INFO_CODELUT (arg_info), arg_node);
+        INFO_NEWCODE (arg_info)
+          = (node *)LUTsearchInLutPp (INFO_CODELUT (arg_info), arg_node);
         if (INFO_NEWCODE (arg_info) != arg_node) {
             DBUG_PRINT ("Code can be reused!");
         } else {

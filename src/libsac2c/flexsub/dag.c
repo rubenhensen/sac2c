@@ -101,7 +101,7 @@ dag *
 DAGgenGraph (void)
 {
     DBUG_ENTER ();
-    dag *g = MEMmalloc (sizeof (dag));
+    dag *g = (dag *)MEMmalloc (sizeof (dag));
     g->gnode = TBmakeTfdag (NULL);
     TFDAG_DIRTY (g->gnode) = 1;
     DBUG_RETURN (g);
@@ -111,7 +111,7 @@ vertex *
 DAGaddVertex (dag *g, void *annotation)
 {
     DBUG_ENTER ();
-    vertex *v = MEMmalloc (sizeof (vertex));
+    vertex *v = (vertex *)MEMmalloc (sizeof (vertex));
     v->vnode = TBmakeTfvertex (NULL, NULL, TFDAG_DEFS (g->gnode));
     TFVERTEX_WRAPPERLINK (v->vnode) = v;
     TFDAG_DEFS (g->gnode) = v->vnode;

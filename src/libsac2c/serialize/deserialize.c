@@ -650,8 +650,7 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
                              "module is inconsistent. cannot find function referenced in"
                              "symbol table");
 
-                // FIXME: Is it ok to leave the argument? entryp = serfun( DSstate);
-                entryp = serfun ();
+                entryp = serfun (DSstate);
                 /* add to ast */
                 InsertIntoState (entryp);
 
@@ -812,8 +811,7 @@ DSimportInstancesByName (const char *name, const char *module)
              *                even imported.
              */
 
-            // FIXME Is it ok to ommit the arg?  entryp = serfun( DSstate);
-            entryp = serfun ();
+            entryp = serfun (DSstate);
 
             /*
              * free object wrappers: a wrapper may point to object wrappers which

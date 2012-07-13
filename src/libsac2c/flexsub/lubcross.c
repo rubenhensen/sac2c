@@ -74,7 +74,7 @@ LUBcreateReachMat (compinfo *ci)
     node *srcvert, *tarvert;
     elem *e;
 
-    result = MEMmalloc (sizeof (matrix));
+    result = (matrix *)MEMmalloc (sizeof (matrix));
     initMatrix (result);
 
     csrc = COMPINFO_CSRC (ci);
@@ -119,10 +119,10 @@ LUBcreatePCPTMat (matrix *reachmat, compinfo *ci)
     int i, j;
     int prev_lower = -1;
 
-    stk = MEMmalloc (sizeof (elemstack));
+    stk = (elemstack *)MEMmalloc (sizeof (elemstack));
     initElemstack (stk);
 
-    pcptmat = MEMmalloc (sizeof (matrix));
+    pcptmat = (matrix *)MEMmalloc (sizeof (matrix));
 
     for (i = 0; i < DYNARRAY_TOTALELEMS (ctar); i++) {
 
@@ -147,7 +147,7 @@ LUBcreatePCPTMat (matrix *reachmat, compinfo *ci)
                 prev_lower = ELEM_IDX (DYNARRAY_ELEMS_POS (csrc, j));
             }
 
-            e = MEMmalloc (sizeof (elem));
+            e = (elem *)MEMmalloc (sizeof (elem));
             ELEM_IDX (e) = j;
             ELEM_DATA (e) = MEMmalloc (2 * sizeof (int));
             ((int *)ELEM_DATA (e))[0] = prev_lower;
@@ -212,12 +212,12 @@ LUBsortInPostorder (compinfo *ci)
     DBUG_ASSERT ((prearr != NULL && csrc != NULL),
                  "Incompatible arguments passed to LUBsortInPostorder");
 
-    result = MEMmalloc (sizeof (dynarray));
+    result = (dynarray *)MEMmalloc (sizeof (dynarray));
     initDynarray (result);
 
     for (i = 0; i < DYNARRAY_TOTALELEMS (csrc); i++) {
 
-        e = MEMmalloc (sizeof (elem));
+        e = (elem *)MEMmalloc (sizeof (elem));
 
         prenum = ELEM_IDX (DYNARRAY_ELEMS_POS (csrc, i));
         vertex = (node *)ELEM_DATA (DYNARRAY_ELEMS_POS (prearr, prenum - 1));
@@ -303,7 +303,7 @@ LUBrearrangeCsrcOnTopo (dynarray *csrc, dynarray *prearr)
     int i;
     elem *e, *currpre, *currcsrc;
 
-    result = MEMmalloc (sizeof (dynarray));
+    result = (dynarray *)MEMmalloc (sizeof (dynarray));
     initDynarray (result);
 
     for (i = 0; i < DYNARRAY_TOTALELEMS (csrc); i++) {
@@ -312,7 +312,7 @@ LUBrearrangeCsrcOnTopo (dynarray *csrc, dynarray *prearr)
         currpre = DYNARRAY_ELEMS_POS (prearr, ELEM_IDX (currcsrc) - 1);
         vertex = (node *)ELEM_DATA (currpre);
 
-        e = MEMmalloc (sizeof (elem));
+        e = (elem *)MEMmalloc (sizeof (elem));
         ELEM_IDX (e) = TFVERTEX_TOPO (vertex);
         ELEM_DATA (e) = MEMmalloc (sizeof (topoinfo));
 
@@ -338,7 +338,7 @@ LUBrearrangeNoncsrcOnTopo (dynarray *noncsrc)
     elem *e1, *e2;
     node *vertex;
 
-    result = MEMmalloc (sizeof (dynarray));
+    result = (dynarray *)MEMmalloc (sizeof (dynarray));
     initDynarray (result);
 
     for (i = 0; i < DYNARRAY_TOTALELEMS (noncsrc); i++) {
@@ -346,7 +346,7 @@ LUBrearrangeNoncsrcOnTopo (dynarray *noncsrc)
         e1 = DYNARRAY_ELEMS_POS (noncsrc, i);
         vertex = POSTINFO_VERTEX ((postinfo *)ELEM_DATA (e1));
 
-        e2 = MEMmalloc (sizeof (elem));
+        e2 = (elem *)MEMmalloc (sizeof (elem));
         ELEM_IDX (e2) = TFVERTEX_TOPO (vertex);
         ELEM_DATA (e2) = MEMmalloc (sizeof (topoinfo));
 
@@ -378,7 +378,7 @@ LUBcomputeMaximalWitness (pcpcinfo *ppi)
 
     csrc = PCPCINFO_CSRC (ppi);
     csrcmat = PCPCINFO_CSRCMAT (ppi);
-    csrcmax = MEMmalloc (sizeof (matrix));
+    csrcmax = (matrix *)MEMmalloc (sizeof (matrix));
     initMatrix (csrcmax);
 
     for (i = 0; i < MATRIX_TOTALROWS (csrcmat); i++) {
@@ -399,7 +399,7 @@ LUBcomputeMaximalWitness (pcpcinfo *ppi)
 
     noncsrc = PCPCINFO_NONCSRC (ppi);
     noncsrcmat = PCPCINFO_NONCSRCMAT (ppi);
-    noncsrcmax = MEMmalloc (sizeof (matrix));
+    noncsrcmax = (matrix *)MEMmalloc (sizeof (matrix));
     initMatrix (noncsrcmax);
 
     for (i = 0; i < MATRIX_TOTALROWS (noncsrcmat); i++) {
@@ -431,7 +431,7 @@ LUBcomputeMaximalWitness (pcpcinfo *ppi)
                   && MATRIX_TOTALCOLS (csrcmax) == MATRIX_TOTALCOLS (noncsrcmax)),
                  "Matrix shape mismatch while bulding PC-PC matrix.");
 
-    result = MEMmalloc (sizeof (matrix));
+    result = (matrix *)MEMmalloc (sizeof (matrix));
     initMatrix (result);
 
     for (i = 0; i < MATRIX_TOTALROWS (csrcmax); i++) {
@@ -468,7 +468,7 @@ LUBrearrangeMatOnTopo (dynarray *topoarr, matrix *mat)
     topoinfo *ti;
     int i, j, value;
 
-    result = MEMmalloc (sizeof (matrix));
+    result = (matrix *)MEMmalloc (sizeof (matrix));
 
     for (i = 0; i < DYNARRAY_TOTALELEMS (topoarr); i++) {
 
@@ -523,9 +523,9 @@ LUBcreatePCPCMat (matrix *reachmat, dynarray *postarr, compinfo *ci)
              */
             if (noncsrc == NULL) {
 
-                noncsrc = MEMmalloc (sizeof (dynarray));
+                noncsrc = (dynarray *)MEMmalloc (sizeof (dynarray));
                 initDynarray (noncsrc);
-                currmat = MEMmalloc (sizeof (matrix));
+                currmat = (matrix *)MEMmalloc (sizeof (matrix));
                 initMatrix (currmat);
             }
 
@@ -540,9 +540,9 @@ LUBcreatePCPCMat (matrix *reachmat, dynarray *postarr, compinfo *ci)
 
             if (!indexExistsInArray (q, TFVERTEX_POST (treelca))) {
 
-                e = MEMmalloc (sizeof (elem));
+                e = (elem *)MEMmalloc (sizeof (elem));
                 ELEM_IDX (e) = TFVERTEX_POST (treelca);
-                pi = MEMmalloc (sizeof (postinfo));
+                pi = (postinfo *)MEMmalloc (sizeof (postinfo));
                 POSTINFO_ISCSRC (pi) = 0;
                 POSTINFO_COLIDX (pi) = colidx++;
                 POSTINFO_VERTEX (pi) = treelca;
@@ -572,7 +572,7 @@ LUBcreatePCPCMat (matrix *reachmat, dynarray *postarr, compinfo *ci)
     if (noncsrc != NULL) {
         // printDynarray( noncsrc);
         // printMatrix( currmat);
-        ppi = MEMmalloc (sizeof (pcpcinfo));
+        ppi = (pcpcinfo *)MEMmalloc (sizeof (pcpcinfo));
 
         PCPCINFO_CSRC (ppi)
           = LUBrearrangeCsrcOnTopo (COMPINFO_CSRC (ci), COMPINFO_PREARR (ci));

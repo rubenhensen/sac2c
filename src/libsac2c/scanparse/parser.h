@@ -1,17 +1,3 @@
-/* Copyright (c) 2011, 2012 Artem Shinkarov <artyom.shinkaroff@gmail.com>
-
-   Permission to use, copy, modify, and distribute this software for any
-   purpose with or without fee is hereby granted, provided that the above
-   copyright notice and this permission notice appear in all copies.
-
-   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-   WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-   MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-   ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-   WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.  */
-
 #ifndef __PARSER_H__
 #define __PARSER_H__
 
@@ -171,17 +157,6 @@ identifier_free (struct identifier *id)
     }
 }
 
-#if 0
-/* Safely increment or decrement index of token buffer. Make
-sure that negative index equals to size - idx. */
-static inline size_t
-buf_idx_inc (const size_t idx, const ssize_t inc, const size_t size)
-{
-  ssize_t diff = ((ssize_t) idx + inc) % size;
-  return diff < 0 ? size - diff : diff;
-}
-#endif
-
 /* This structure is used to pass an expression after prefix and
    postfix parts were processed.  As postfix part has a higher priority
    than the infix one, an expression  "+ - a ! $" will be parsed
@@ -195,9 +170,5 @@ struct pre_post_expr {
     node *expr;
     node *parent_exprs;
 };
-
-__BEGIN_DECLS
-
-__END_DECLS
 
 #endif /* __PARSER_H__  */

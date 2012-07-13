@@ -6,13 +6,17 @@
 
 #include "string.h"
 
+#ifdef __cplusplus
+#define va_copy(a, b) __builtin_va_copy (a, b)
+#endif
+
 /**
  * SACarg structure
  */
 struct SAC_SACARG {
     SAC_array_descriptor_t desc;
     void *data;
-    basetype basetype;
+    basetype mbasetype;
 };
 
 /**
@@ -24,7 +28,7 @@ struct SAC_SACARG {
 #define SACARG_SIZE(n) DESC_SIZE (SACARG_DESC (n))
 #define SACARG_SHAPE(n, p) DESC_SHAPE (SACARG_DESC (n), p)
 #define SACARG_DATA(n) ((n)->data)
-#define SACARG_BTYPE(n) ((n)->basetype)
+#define SACARG_BTYPE(n) ((n)->mbasetype)
 
 /**
  *
@@ -311,7 +315,7 @@ SACARGunwrapUdt (void **data, SAC_array_descriptor_t *desc, SACarg *arg,
     void SACARGunwrapUdt##name (ctype **data, SAC_array_descriptor_t *desc, SACarg *arg, \
                                 SAC_array_descriptor_t arg_desc)                         \
     {                                                                                    \
-        SACARGunwrapUdt ((void *)data, desc, arg, arg_desc);                             \
+        SACARGunwrapUdt ((void **)data, desc, arg, arg_desc);                            \
     }
 
 UNWRAPWRAPPER (Int, int)

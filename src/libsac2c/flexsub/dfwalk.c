@@ -60,7 +60,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
     INFO_PRE (result) = 1;
     INFO_POST (result) = 1;
     INFO_PREARR (result) = NULL;
@@ -170,11 +170,11 @@ TFDFWtfvertex (node *arg_node, info *arg_info)
     TFVERTEX_PRE (defs) = INFO_PRE (arg_info)++;
 
     if (INFO_PREARR (arg_info) == NULL) {
-        INFO_PREARR (arg_info) = MEMmalloc (sizeof (dynarray));
+        INFO_PREARR (arg_info) = (dynarray *)MEMmalloc (sizeof (dynarray));
         initDynarray (INFO_PREARR (arg_info));
     }
 
-    e = MEMmalloc (sizeof (elem));
+    e = (elem *)MEMmalloc (sizeof (elem));
     ELEM_IDX (e) = TFVERTEX_PRE (defs);
     ELEM_DATA (e) = arg_node;
     addToArray (INFO_PREARR (arg_info), e);

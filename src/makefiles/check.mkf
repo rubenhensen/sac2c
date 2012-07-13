@@ -84,20 +84,22 @@ $(PROJECT_ROOT)/.revision.txt.PHONY:
 # Use indirect phony and non mod time changing rule ( when version unchanged)
 # to prevent needless rebuilds of the compiler.
 $(PROJECT_ROOT)/.revision.txt: $(PROJECT_ROOT)/.revision.txt.PHONY
-	@ if [ ! -f $@ ];     \
-	  then                \
-	    echo "?????" >$@; \
+	@ if [ ! -f $@ ];                        \
+	  then                                   \
+	    echo "?????" >$@;                    \
 	  fi
-	@ if which svnversion > /dev/null;                          \
-	  then                                                      \
-	    svnversion $(PROJECT_ROOT) | sed -e 's/M/:MODIFIED/g'   \
-              | sed -e 's/S/:SWITCHED/g' > $@.new ;           \
-	    if which diff >/dev/null;         \
-	    then                              \
-        if diff $@ $@.new >/dev/null;   \
-	        then rm $@.new;               \
-	        else mv $@.new $@;            \
-         fi	                            \
-      else rm $@.new;                   \
-      fi                                \
-    fi          
+	@ if which svnversion > /dev/null; then  \
+            svnversion $(PROJECT_ROOT)           \
+            | sed -e 's/[ \t\n]/_/g'             \
+            | sed -e 's/M/:MODIFIED/g'           \
+            | sed -e 's/S/:SWITCHED/g' > $@.new; \
+            if which diff >/dev/null; then       \
+              if diff $@ $@.new >/dev/null; then \
+                rm $@.new;                       \
+              else                               \
+                mv $@.new $@;                    \
+              fi                                 \
+            else                                 \
+              rm $@.new;                         \
+            fi                                   \
+          fi          

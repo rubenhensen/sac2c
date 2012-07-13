@@ -103,7 +103,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_INCONDFUN (result) = FALSE;
     INFO_LETIDS (result) = NULL;
@@ -464,7 +464,7 @@ MCTRANid (node *arg_node, info *arg_info)
          * a <host2device> is lifted out of the cond-fun, and therefore
          * the device variable is passed to the cond-fun as an argument
          * instead of a locally declared/defined variable. */
-        avis = LUTsearchInLutPp (INFO_H2DLUT (arg_info), ID_AVIS (arg_node));
+        avis = (node *)LUTsearchInLutPp (INFO_H2DLUT (arg_info), ID_AVIS (arg_node));
         if (avis != ID_AVIS (arg_node)) {
             ID_AVIS (arg_node) = avis;
         }
@@ -510,8 +510,10 @@ MCTRANfuncond (node *arg_node, info *arg_info)
             && !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (then_ssaassign)
             && ISDEVICE2HOST (else_ssaassign)
             && !ASSIGN_ISNOTALLOWEDTOBEMOVEDDOWN (else_ssaassign)) {
-            then_avis = LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (then_id));
-            else_avis = LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (else_id));
+            then_avis
+              = (node *)LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (then_id));
+            else_avis
+              = (node *)LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (else_id));
             ID_AVIS (then_id) = then_avis;
             ID_AVIS (else_id) = else_avis;
             covert_ids = TRUE;
@@ -520,7 +522,8 @@ MCTRANfuncond (node *arg_node, info *arg_info)
             DBUG_ASSERT (NODE_TYPE (AVIS_DECL (ID_AVIS (else_id))) == N_arg,
                          "Non N_arg node found!");
             ID_AVIS (else_id) = ARG_AVIS (AVIS_DECL (ID_AVIS (else_id)));
-            then_avis = LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (then_id));
+            then_avis
+              = (node *)LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (then_id));
             ID_AVIS (then_id) = then_avis;
             covert_ids = TRUE;
         } else if (ISDEVICE2HOST (else_ssaassign)
@@ -528,7 +531,8 @@ MCTRANfuncond (node *arg_node, info *arg_info)
             DBUG_ASSERT (NODE_TYPE (AVIS_DECL (ID_AVIS (then_id))) == N_arg,
                          "Non N_arg node found!");
             ID_AVIS (then_id) = ARG_AVIS (AVIS_DECL (ID_AVIS (then_id)));
-            else_avis = LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (else_id));
+            else_avis
+              = (node *)LUTsearchInLutPp (INFO_D2HLUT (arg_info), ID_AVIS (else_id));
             ID_AVIS (else_id) = else_avis;
             covert_ids = TRUE;
         } else {

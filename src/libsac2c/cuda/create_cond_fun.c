@@ -49,7 +49,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_DUPLUT (result) = NULL;
     INFO_VARDECS (result) = NULL;
@@ -134,7 +134,8 @@ CCFdoCreateCondFun (node *fundef, node *then_assigns, node *else_assigns,
 
     cond_ass
       = TBmakeAssign (TBmakeCond (TBmakeId (
-                                    LUTsearchInLutPp (INFO_DUPLUT (arg_info), predicate)),
+                                    (node *)LUTsearchInLutPp (INFO_DUPLUT (arg_info),
+                                                              predicate)),
                                   TBmakeBlock (then_dup_assigns, NULL),
                                   TBmakeBlock (else_dup_assigns, NULL)),
                       NULL);
@@ -143,22 +144,20 @@ CCFdoCreateCondFun (node *fundef, node *then_assigns, node *else_assigns,
 
     INFO_VARDECS (arg_info) = TBmakeVardec (return_mem, INFO_VARDECS (arg_info));
 
-    phi_ass
-      = TBmakeAssign (TBmakeLet (TBmakeIds (return_mem, NULL),
-                                 TBmakeFuncond (TBmakeId (LUTsearchInLutPp (INFO_DUPLUT (
-                                                                              arg_info),
-                                                                            predicate)),
-                                                TBmakeId (
-                                                  LUTsearchInLutPp (INFO_DUPLUT (
-                                                                      arg_info),
-                                                                    then_out_mem)),
-                                                TBmakeId (
-                                                  LUTsearchInLutPp (INFO_DUPLUT (
-                                                                      arg_info),
-                                                                    (else_assigns == NULL
-                                                                       ? in_mem
-                                                                       : else_out_mem))))),
-                      NULL);
+    phi_ass = TBmakeAssign (
+      TBmakeLet (TBmakeIds (return_mem, NULL),
+                 TBmakeFuncond (TBmakeId (
+                                  (node *)LUTsearchInLutPp (INFO_DUPLUT (arg_info),
+                                                            predicate)),
+                                TBmakeId (
+                                  (node *)LUTsearchInLutPp (INFO_DUPLUT (arg_info),
+                                                            then_out_mem)),
+                                TBmakeId (
+                                  (node *)LUTsearchInLutPp (INFO_DUPLUT (arg_info),
+                                                            (else_assigns == NULL
+                                                               ? in_mem
+                                                               : else_out_mem))))),
+      NULL);
     AVIS_SSAASSIGN (return_mem) = phi_ass;
 
     return_node = TBmakeReturn (TBmakeExprs (TBmakeId (return_mem), NULL));

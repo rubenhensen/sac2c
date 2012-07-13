@@ -87,7 +87,7 @@ MakeInfo (void)
     info *result;
 
     DBUG_ENTER ();
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_WLSELSMAX (result) = 0;
     INFO_WLSELS (result) = 0;

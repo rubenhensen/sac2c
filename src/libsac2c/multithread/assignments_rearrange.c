@@ -49,7 +49,7 @@ struct asmra_cluster_s {
 };
 
 struct asmra_list_s {
-    node *node;
+    node *mnode;
     struct asmra_cluster_s *cluster;
     struct asmra_list_s *next;
 };
@@ -71,7 +71,7 @@ struct INFO {
 #define ASMRA_CLUSTER_DFN(n) (n->dfn)
 #define ASMRA_CLUSTER_DISTANCE(n) (n->distance)
 #define ASMRA_CLUSTER_NEXT(n) (n->next)
-#define ASMRA_LIST_NODEELEM(n) (n->node)
+#define ASMRA_LIST_NODEELEM(n) (n->mnode)
 #define ASMRA_LIST_CLUSTERELEM(n) (n->cluster)
 #define ASMRA_LIST_NEXT(n) (n->next)
 
@@ -91,7 +91,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ASMRA_NEXT (result) = NULL;
 
@@ -141,7 +141,7 @@ static struct asmra_cluster_s *ClusterRefUpdate (struct asmra_cluster_s *cluster
 
 #if 0
 /*
- * Note, this function is currently not used and hence its definition causes 
+ * Note, this function is currently not used and hence its definition causes
  * a compiler warning.
  */
 static
@@ -773,7 +773,7 @@ MakeCluster (node *dfn)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (struct asmra_cluster_s));
+    result = (struct asmra_cluster_s *)MEMmalloc (sizeof (struct asmra_cluster_s));
 
     ASMRA_CLUSTER_DFN (result) = dfn;
     ASMRA_CLUSTER_DISTANCE (result) = 0;
@@ -907,7 +907,7 @@ ClusterRefUpdate (struct asmra_cluster_s *cluster)
 #if 0
 
 /*
- * Note, this function is currently not used and hence its definition causes 
+ * Note, this function is currently not used and hence its definition causes
  * a compiler warning.
  */
 
@@ -920,11 +920,11 @@ ClusterRefUpdate (struct asmra_cluster_s *cluster)
  * @param cluster
  *
  ****************************************************************************/
-static 
-void PrintCluster(struct asmra_cluster_s *cluster) 
+static
+void PrintCluster(struct asmra_cluster_s *cluster)
 {
   DBUG_ENTER ();
-  
+
   if (cluster != NULL) {
     fprintf(stdout,"%s dist:%i execm:%s; ",
             DATAFLOWNODE_NAME(ASMRA_CLUSTER_DFN(cluster)),
@@ -933,7 +933,7 @@ void PrintCluster(struct asmra_cluster_s *cluster)
     PrintCluster(ASMRA_CLUSTER_NEXT(cluster));
     fflush(stdout);
   }
-  DBUG_RETURN ();  
+  DBUG_RETURN ();
 }
 
 #endif
@@ -986,7 +986,8 @@ ListAppend (struct asmra_list_s *list, node *node, struct asmra_cluster_s *clust
         while (ASMRA_LIST_NEXT (iter) != NULL) {
             iter = ASMRA_LIST_NEXT (iter);
         }
-        ASMRA_LIST_NEXT (iter) = MEMmalloc (sizeof (struct asmra_list_s));
+        ASMRA_LIST_NEXT (iter)
+          = (struct asmra_list_s *)MEMmalloc (sizeof (struct asmra_list_s));
         if (node != NULL) {
             ASMRA_LIST_NODEELEM (ASMRA_LIST_NEXT (iter)) = node;
         } else {
@@ -995,7 +996,7 @@ ListAppend (struct asmra_list_s *list, node *node, struct asmra_cluster_s *clust
         ASMRA_LIST_NEXT (ASMRA_LIST_NEXT (iter)) = NULL;
     } else {
 
-        list = MEMmalloc (sizeof (struct asmra_list_s));
+        list = (struct asmra_list_s *)MEMmalloc (sizeof (struct asmra_list_s));
         if (node != NULL) {
             ASMRA_LIST_NODEELEM (ASMRA_LIST_NEXT (list)) = node;
         } else {

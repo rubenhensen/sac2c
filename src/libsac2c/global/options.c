@@ -652,11 +652,9 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
         }
     });
 
-#define _T(a, b) a, b
     ARGS_OPTION_BEGIN ("mtmode")
     {
-        ARG_RANGE (_T (store_mtmode = (__typeof(store_mtmode))store_mtmode, store_mtmode),
-                   (int)MT_createjoin, (int)MT_mtstblock);
+        ARG_RANGE (store_mtmode, (int)MT_createjoin, (int)MT_mtstblock);
         if (global.mtmode != MT_none)
             global.mtmode = store_mtmode;
     }

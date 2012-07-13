@@ -215,7 +215,7 @@ NewIndexVector (node *value, bool inverse, indexvector_t *next)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (indexvector_t));
+    result = (indexvector_t *)MEMmalloc (sizeof (indexvector_t));
 
     INDEXVECTOR_VALUE (result) = value;
     INDEXVECTOR_INVERSE (result) = inverse;
@@ -231,7 +231,7 @@ NewIndexScalar (node *value, bool inverse, indexscalar_t *next)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (indexscalar_t));
+    result = (indexscalar_t *)MEMmalloc (sizeof (indexscalar_t));
 
     INDEXSCALAR_VALUE (result) = value;
     INDEXSCALAR_INVERSE (result) = inverse;
@@ -247,7 +247,7 @@ NewIndexChain (indexscalar_t *current, indexchain_t *next)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (indexchain_t));
+    result = (indexchain_t *)MEMmalloc (sizeof (indexchain_t));
 
     INDEXCHAIN_CURRENT (result) = current;
     INDEXCHAIN_NEXT (result) = next;
@@ -406,7 +406,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_VARDECS (result) = NULL;
@@ -485,17 +485,17 @@ IVESLIdoIVESplitLoopInvariants (node *syntax_tree)
 static info *
 EnterLevel (dfmask_t *locals, info *arg_info)
 {
-    maskchain_t *new;
+    maskchain_t *xnew;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("   >>> new level");
 
-    new = MEMmalloc (sizeof (maskchain_t));
+    xnew = (maskchain_t *)MEMmalloc (sizeof (maskchain_t));
 
-    MASKCHAIN_LOCALS (new) = locals;
-    MASKCHAIN_NEXT (new) = INFO_LOCALS (arg_info);
-    INFO_LOCALS (arg_info) = new;
+    MASKCHAIN_LOCALS (xnew) = locals;
+    MASKCHAIN_NEXT (xnew) = INFO_LOCALS (arg_info);
+    INFO_LOCALS (arg_info) = xnew;
 
     DBUG_RETURN (arg_info);
 }
@@ -557,7 +557,7 @@ MaskChainToIndexLevels (maskchain_t *masks)
     DBUG_ENTER ();
 
     if (masks != NULL) {
-        result = MEMmalloc (sizeof (indexlevel_t));
+        result = (indexlevel_t *)MEMmalloc (sizeof (indexlevel_t));
 
         INDEXLEVEL_VECTOR (result) = NULL;
         INDEXLEVEL_SCALARS (result) = NULL;
@@ -915,10 +915,10 @@ SimplifyLevels (indexlevel_t *levels, int pad, info *arg_info)
         if ((INDEXLEVEL_VECTOR (levels) == NULL)
             && (INDEXLEVEL_SCALARS (levels) == NULL)) {
             /* empty level => discard */
-            indexlevel_t *this = levels;
+            indexlevel_t *xthis = levels;
             levels = INDEXLEVEL_NEXT (levels);
-            INDEXLEVEL_NEXT (this) = NULL;
-            this = FreeIndexLevel (this);
+            INDEXLEVEL_NEXT (xthis) = NULL;
+            xthis = FreeIndexLevel (xthis);
         }
     }
 

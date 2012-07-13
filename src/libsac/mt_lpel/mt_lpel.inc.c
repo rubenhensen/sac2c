@@ -14,7 +14,7 @@
 
 #include "config.h"
 
-int dummy_mt_lpel;
+static void dummy_mt_lpel (){};
 
 #if ENABLE_MT && ENABLE_MT_LPEL
 

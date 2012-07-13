@@ -123,8 +123,8 @@ CHKMattribString (char *attr, info *arg_info)
  * @return NULL
  *
  ***************************************************************************/
-char *
-CHKMattribSharedString (char *attr, info *arg_info)
+const char *
+CHKMattribSharedString (const char *attr, info *arg_info)
 {
     DBUG_ENTER ();
 

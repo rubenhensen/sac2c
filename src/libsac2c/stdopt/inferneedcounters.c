@@ -53,7 +53,7 @@ MakeInfo (trav_t trav)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_PRF (result) = NULL;
     INFO_ONEFUNDEF (result) = FALSE;

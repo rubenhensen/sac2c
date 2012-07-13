@@ -82,7 +82,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_PART (result) = NULL;
     INFO_NEW_PARTS (result) = NULL;
@@ -153,7 +153,7 @@ MakeSeg (seg_t *seg, int offset, int extent)
 
     DBUG_ENTER ();
 
-    new_seg = MEMmalloc (sizeof (seg_t));
+    new_seg = (seg_t *)MEMmalloc (sizeof (seg_t));
 
     new_seg->offset = offset;
     new_seg->extent = extent;
@@ -204,7 +204,7 @@ MakePartition (int segs_cnt)
 
     DBUG_ENTER ();
 
-    new_part = MEMmalloc (sizeof (partition_t));
+    new_part = (partition_t *)MEMmalloc (sizeof (partition_t));
 
     new_part->segs_cnt = segs_cnt;
 

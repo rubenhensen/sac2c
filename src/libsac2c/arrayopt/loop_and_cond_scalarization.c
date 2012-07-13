@@ -350,7 +350,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_LEVEL (result) = 0;
@@ -444,14 +444,14 @@ CreateAssigns (constant *idx, void *accu, void *local_info)
                                     TCmakePrf2 (F_sel_VxA, TBmakeId (avis),
                                                 TBmakeId (array_avis))),
                          (node *)accu);
-    AVIS_SSAASSIGN (scal_avis) = accu;
+    AVIS_SSAASSIGN (scal_avis) = (node *)accu;
 
     /**
      * create the assignment of the constant index:
      */
     accu = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), COconstant2AST (idx)),
                          (node *)accu);
-    AVIS_SSAASSIGN (avis) = accu;
+    AVIS_SSAASSIGN (avis) = (node *)accu;
 
     l_info->exprs = EXPRS_NEXT (l_info->exprs);
 

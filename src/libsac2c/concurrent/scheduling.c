@@ -97,7 +97,7 @@ typedef struct {
 
 struct SCHED_T {
     char *discipline;
-    sched_class_t class;
+    sched_class_t mclass;
     int line;
     int num_args;
     sched_arg_t *args;
@@ -138,7 +138,7 @@ struct SCHED_T {
 
 static struct {
     char *discipline;
-    sched_class_t class;
+    sched_class_t mclass;
     int adjust_flag;
     int max_sched_dim;
     int num_args;
@@ -308,7 +308,7 @@ SCHmakeScheduling (char *discipline, ...)
     sched = (sched_t *)MEMmalloc (sizeof (sched_t));
 
     sched->discipline = scheduler_table[disc_no].discipline;
-    sched->class = scheduler_table[disc_no].class;
+    sched->mclass = scheduler_table[disc_no].mclass;
     sched->line = -1;
 
     sched->num_args = scheduler_table[disc_no].num_args;
@@ -405,7 +405,7 @@ SCHmakeSchedulingByPragma (node *ap_node, int line)
          * Because sched is an object of an abstract data type, we may share it
          * inside this module.
          */
-        sched->class = scheduler_table[i].class;
+        sched->mclass = scheduler_table[i].mclass;
         sched->num_args = scheduler_table[i].num_args;
         if (sched->num_args == 0) {
             sched->args = NULL;
@@ -552,7 +552,7 @@ SCHcopyScheduling (sched_t *sched)
      * to the respective entry of the scheduler table.
      */
 
-    new_sched->class = sched->class;
+    new_sched->mclass = sched->mclass;
     new_sched->line = sched->line;
     new_sched->num_args = sched->num_args;
 
@@ -732,7 +732,7 @@ SCHcheckSuitabilityConstSeg (sched_t *sched)
 {
     DBUG_ENTER ();
 
-    if ((sched->class != SC_const_seg) && (sched->class != SC_var_seg)) {
+    if ((sched->mclass != SC_const_seg) && (sched->mclass != SC_var_seg)) {
         CTIerrorLine (sched->line,
                       "Scheduling discipline '%s` is not suitable for "
                       "constant segments",
@@ -747,7 +747,7 @@ SCHcheckSuitabilityVarSeg (sched_t *sched)
 {
     DBUG_ENTER ();
 
-    if (sched->class != SC_var_seg) {
+    if (sched->mclass != SC_var_seg) {
         CTIerrorLine (sched->line,
                       "Scheduling discipline '%s` is not suitable for "
                       "variable segments",
@@ -762,7 +762,7 @@ SCHcheckSuitabilityWithloop (sched_t *sched)
 {
     DBUG_ENTER ();
 
-    if (sched->class != SC_withloop) {
+    if (sched->mclass != SC_withloop) {
         CTIerrorLine (sched->line,
                       "Scheduling discipline '%s` is not suitable for "
                       "with-loops",

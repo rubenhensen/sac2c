@@ -109,7 +109,7 @@ setMatrixElem (matrix *m, int x, int y, elem *element)
     }
 
     for (i = oldlength; i < MATRIX_TOTALROWS (m); i++) {
-        MATRIX_ARRAY2D (m)[i] = MEMmalloc (sizeof (dynarray));
+        MATRIX_ARRAY2D (m)[i] = (dynarray *)MEMmalloc (sizeof (dynarray));
         initDynarray (MATRIX_ARRAY2D (m)[i]);
         addToArrayAtPos (MATRIX_ARRAY2D (m)[i], NULL, MATRIX_TOTALCOLS (m) - 1);
     }
@@ -121,7 +121,7 @@ void
 setMatrixValue (matrix *m, int x, int y, int value)
 {
 
-    elem *element = MEMmalloc (sizeof (elem));
+    elem *element = (elem *)MEMmalloc (sizeof (elem));
     ELEM_IDX (element) = value;
     ELEM_DATA (element) = NULL;
 

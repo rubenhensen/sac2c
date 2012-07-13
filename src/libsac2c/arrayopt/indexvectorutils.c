@@ -185,7 +185,7 @@ IVUTarrayFromProxySel (node *iv)
     node *mat = NULL;
     node *z = NULL;
     int n;
-    char *nmin;
+    const char *nmin;
 
     DBUG_ENTER ();
 
@@ -249,7 +249,7 @@ IVUTarrayFromProxyIdxsel (node *iv)
     constant *ncon = NULL;
     node *z = NULL;
     node *mat;
-    char *nmin;
+    const char *nmin;
     node *offset = NULL;
     int n;
 

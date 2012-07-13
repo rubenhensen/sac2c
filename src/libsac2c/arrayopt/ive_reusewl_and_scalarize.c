@@ -34,7 +34,7 @@ typedef struct IVINFO ivinfo;
  * INFO structure
  */
 struct INFO {
-    ivinfo *ivinfo;
+    ivinfo *mivinfo;
     node *lhs;
     node *vardecs;
     node *fundef;
@@ -45,7 +45,7 @@ struct INFO {
 /**
  * INFO macros
  */
-#define INFO_IVINFO(n) ((n)->ivinfo)
+#define INFO_IVINFO(n) ((n)->mivinfo)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_FUNDEF(n) ((n)->fundef)
@@ -62,7 +62,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_IVINFO (result) = NULL;
     INFO_LHS (result) = NULL;
@@ -196,7 +196,7 @@ GenOffsetInfo (node *lhs, node *withops)
             DBUG_PRINT_TAG ("IVEO", "adding offset %s and lhs id %s",
                             WITHOP_IDX (withops), AVIS_NAME (IDS_AVIS (lhs)));
 
-            result = MEMmalloc (sizeof (offsetinfo));
+            result = (offsetinfo *)MEMmalloc (sizeof (offsetinfo));
 
             WITHOFFSET_SHAPEEXPR (result) = AVIS_SHAPE (IDS_AVIS (lhs));
             WITHOFFSET_AVIS (result) = WITHOP_IDX (withops);
@@ -257,7 +257,7 @@ PushIV (ivinfo *info, node *withid, node *lhs, node *withops)
 
     DBUG_PRINT ("adding WL withid %s", AVIS_NAME (IDS_AVIS (WITHID_VEC (withid))));
 
-    result = MEMmalloc (sizeof (ivinfo));
+    result = (ivinfo *)MEMmalloc (sizeof (ivinfo));
 
     if (global.ssaiv) { /* Fill in WITHIV at N_part node */
         WITHIV_IV (result) = NULL;
@@ -298,7 +298,7 @@ PopIV (ivinfo *info)
     WITHIV_OFFSETS (info) = FreeOffsetInfo (WITHIV_OFFSETS (info));
     WITHIV_LOCALOFFSETS (info) = FreeOffsetInfo (WITHIV_LOCALOFFSETS (info));
 
-    info = MEMfree (info);
+    info = (ivinfo *)MEMfree ((void *)info);
 
     DBUG_RETURN (result);
 }
@@ -324,7 +324,7 @@ PushLocalOffset (ivinfo *ivinfo, node *avis, node *shapeexpr)
 
     DBUG_ENTER ();
 
-    newinfo = MEMmalloc (sizeof (offsetinfo));
+    newinfo = (offsetinfo *)MEMmalloc (sizeof (offsetinfo));
 
     WITHOFFSET_SHAPEEXPR (newinfo) = shapeexpr;
     WITHOFFSET_AVIS (newinfo) = avis;

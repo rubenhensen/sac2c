@@ -106,7 +106,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_NEST_LEVEL (result) = 0;
     INFO_TRAVMODE (result) = trav_normal;
@@ -145,7 +145,7 @@ CreatePartInfo (int dim, int type, node *wlids, node *step, node *width)
 
     DBUG_ENTER ();
 
-    info = MEMmalloc (sizeof (part_info_t));
+    info = (part_info_t *)MEMmalloc (sizeof (part_info_t));
 
     PART_INFO_DIM (info) = dim;
     PART_INFO_TYPE (info) = type;
@@ -291,8 +291,8 @@ ActOnId (node *avis, info *arg_info)
     if (ssa_assign == NULL) {
         if (NODE_TYPE (AVIS_DECL (avis)) == N_arg) {
             node *new_avis;
-            new_avis
-              = LUTsearchInLutPp (INFO_LUT (arg_info), ARG_AVIS (AVIS_DECL (avis)));
+            new_avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info),
+                                                 ARG_AVIS (AVIS_DECL (avis)));
             /* If this is a normal function argument, we treat it
              * as an external index. */
             if (new_avis == ARG_AVIS (AVIS_DECL (avis))) {
