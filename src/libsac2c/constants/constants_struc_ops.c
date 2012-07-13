@@ -487,7 +487,7 @@ COoverSel (constant *idx, constant *a, constant *tmp1)
     DBUG_ASSERT (idx_dim > 0, "overSel: idx scalar!");
     DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "overSel: idx not T_int!");
 
-    int *idx_elems = CONSTANT_ELEMS (idx);
+    int *idx_elems = (int *)CONSTANT_ELEMS (idx);
 
     /* Calculate the length of the IV*/
     int iv_len = SHgetExtent (idx_shape, (idx_dim - 1));

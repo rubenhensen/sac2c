@@ -55,7 +55,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_SPINE (result) = TRUE;
     INFO_FUNDEF (result) = NULL;
@@ -111,8 +111,9 @@ ATravCHKLACFCfundef (node *arg_node, info *arg_info)
 static node *
 ClearCallSiteLinks (node *arg_node)
 {
-    anontrav_t dfrc_trav[4]
-      = {{N_module, &ATravCHKLACFCmodule}, {N_fundef, &ATravCHKLACFCfundef}, {0, NULL}};
+    anontrav_t dfrc_trav[4] = {{N_module, &ATravCHKLACFCmodule},
+                               {N_fundef, &ATravCHKLACFCfundef},
+                               {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
 

@@ -78,7 +78,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_WL (result) = NULL;
     INFO_FUNDEF (result) = NULL;
@@ -798,15 +798,15 @@ WLAgenerator (node *arg_node, info *arg_info)
 #if 0
   if (check_stepwidth){
     /* normalize step and width */
-    switch (WLPGnormalizeStepWidth( &GENERATOR_STEP( arg_node), 
+    switch (WLPGnormalizeStepWidth( &GENERATOR_STEP( arg_node),
                                     &GENERATOR_WIDTH( arg_node))) {
-    case 1: 
+    case 1:
       CTIabortLine( NODE_LINE(wln), "Component of width greater than step");
       break;
-    case 2: 
+    case 2:
       CTIabortLine( NODE_LINE(wln), "Component of width less than zero");
       break;
-    case 3: 
+    case 3:
       CTIabortLine( NODE_LINE(wln), "Width vector without step vector");
       break;
     }

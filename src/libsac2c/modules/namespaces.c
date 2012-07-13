@@ -80,7 +80,7 @@ CreatePool (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (nspool_t));
+    result = (nspool_t *)MEMmalloc (sizeof (nspool_t));
     result->next = NULL;
 
     DBUG_RETURN (result);
@@ -208,19 +208,19 @@ BuildNamespaceName (namespace_t *ns)
 static namespace_t *
 AddNamespaceToPool (const char *module, view_t *view)
 {
-    namespace_t *new;
+    namespace_t *xnew;
 
     DBUG_ENTER ();
 
-    new = MEMmalloc (sizeof (namespace_t));
-    new->module = STRcpy (module);
-    new->id = nextid++;
-    new->view = view;
-    new->name = BuildNamespaceName (new);
+    xnew = (namespace_t *)MEMmalloc (sizeof (namespace_t));
+    xnew->module = STRcpy (module);
+    xnew->id = nextid++;
+    xnew->view = view;
+    xnew->name = BuildNamespaceName (xnew);
 
-    PutInPool (new);
+    PutInPool (xnew);
 
-    DBUG_RETURN (new);
+    DBUG_RETURN (xnew);
 }
 
 static view_t *
@@ -233,7 +233,7 @@ DupView (const view_t *src)
     if (src == NULL)
         result = NULL;
     else {
-        result = MEMmalloc (sizeof (view_t));
+        result = (view_t *)MEMmalloc (sizeof (view_t));
         result->id = src->id;
         result->name = STRcpy (src->name);
         result->next = DupView (src->next);
@@ -264,7 +264,7 @@ MakeView (const char *name, const view_t *views)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (view_t));
+    result = (view_t *)MEMmalloc (sizeof (view_t));
     result->name = STRcpy (name);
     result->id = nextviewid++;
     result->next = DupView (views);
@@ -534,7 +534,7 @@ NSdeserializeView (const char *name, int id, view_t *next)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (view_t));
+    result = (view_t *)MEMmalloc (sizeof (view_t));
 
     result->name = STRcpy (name);
     result->id = id;
@@ -681,14 +681,14 @@ NSgenerateNamespaceMap ()
 }
 
 void
-xfree_namespace (namespace_t *namespace)
+xfree_namespace (namespace_t *xnamespace)
 {
     view_t *xview;
 
-    if (!namespace)
+    if (!xnamespace)
         return;
 
-    xview = namespace->view;
+    xview = xnamespace->view;
     while (xview) {
         view_t *t = xview;
         xview = xview->next;
@@ -697,12 +697,12 @@ xfree_namespace (namespace_t *namespace)
         MEMfree (t);
     }
 
-    if (namespace->name)
-        MEMfree (namespace->name);
-    if (namespace->module)
-        MEMfree (namespace->module);
+    if (xnamespace->name)
+        MEMfree (xnamespace->name);
+    if (xnamespace->module)
+        MEMfree (xnamespace->module);
 
-    MEMfree (namespace);
+    MEMfree (xnamespace);
 }
 
 void

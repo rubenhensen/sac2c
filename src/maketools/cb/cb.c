@@ -11,7 +11,9 @@
 #include "getoptions.h"
 
 /* boolean */
+#ifndef __cplusplus
 typedef int bool;
+#endif
 #define FALSE 0
 #define TRUE 1
 
@@ -158,7 +160,7 @@ indent_puts (int indent, bool use_tabs)
 
 /* search table for character string and return index number */
 static bool
-lookup (char *tab[])
+lookup (const char *tab[])
 {
     char r;
     int l, kk, k, i;
@@ -225,9 +227,8 @@ gotelse (void)
 static void
 putcoms (int indent, bool use_tabs)
 {
-    int i, save_s_flg;
+    int i;
 
-    save_s_flg = s_flg;
     if (pos > 0) {
         if (s_flg) {
             p_tabs (indent, use_tabs);
@@ -378,11 +379,11 @@ process_file (FILE *infile, int indent, bool remove_newlines, bool use_tabs)
     int nl_flag = 0;
     char l_char = '\0';
 
-    char *w_if_[] = {"if", NULL};
-    char *w_else[] = {"else", NULL};
-    char *w_for[] = {"for", NULL};
-    char *w_ds[] = {"case", "default", NULL};
-    char *w_cpp_comment[] = {"//", NULL};
+    const char *w_if_[] = {"if", NULL};
+    const char *w_else[] = {"else", NULL};
+    const char *w_for[] = {"for", NULL};
+    const char *w_ds[] = {"case", "default", NULL};
+    const char *w_cpp_comment[] = {"//", NULL};
 
     while ((c = getchr (infile)) != 032) {
         if ((c != ' ') && (c != '\t') && (c != '\n')) {

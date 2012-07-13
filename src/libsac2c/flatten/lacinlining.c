@@ -51,7 +51,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
@@ -135,7 +135,7 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
             DBUG_EXECUTE (tmp_str = MEMfree (tmp_str); tmp_str2 = MEMfree (tmp_str2));
 
 #if 0
-      /* 
+      /*
        * The simplified coercion below seems to be like a good idea at first
        * glance, but in fact it is not: The AKV variable in the calling context
        * may have many uses, e.g. it could even be used in another argument
@@ -154,7 +154,7 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
 
         AVIS_TYPE( ID_AVIS( EXPRS_EXPR( conc_arg))) =
           TYfreeType( AVIS_TYPE( ID_AVIS( EXPRS_EXPR( conc_arg))));
-        AVIS_TYPE( ID_AVIS( EXPRS_EXPR( conc_arg))) = 
+        AVIS_TYPE( ID_AVIS( EXPRS_EXPR( conc_arg))) =
           TYcopyType( ftype);
       }
       else

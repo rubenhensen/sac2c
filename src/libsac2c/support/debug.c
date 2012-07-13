@@ -572,7 +572,7 @@ _db_enter_ (const char *_func_, char *_file_, int _line_, const char **_sfunc_,
         fprintf (_db_fp_, "WARNING: dbug-maxdepth %d too low\n", stack->maxdepth);
 #if 0
       /**
-       * automatic tracing is a good idea for detecting the reason for the 
+       * automatic tracing is a good idea for detecting the reason for the
        * overflow, but it sometimes kills the masterrun. Therefore, we decided
        * NOT to automatically trace anymore.....
        */
@@ -869,7 +869,7 @@ LOCAL struct link *
 ListParse (char *ctlp)
 {
     REGISTER char *start;
-    REGISTER struct link *new;
+    REGISTER struct link *xnew;
     REGISTER struct link *head;
 
     head = NULL;
@@ -881,10 +881,10 @@ ListParse (char *ctlp)
         if (*ctlp == ',') {
             *ctlp++ = EOS;
         }
-        new = (struct link *)DbugMalloc (sizeof (struct link));
-        new->string = StrDup (start);
-        new->next_link = head;
-        head = new;
+        xnew = (struct link *)DbugMalloc (sizeof (struct link));
+        xnew->string = StrDup (start);
+        xnew->next_link = head;
+        head = xnew;
     }
     return (head);
 }
@@ -957,27 +957,27 @@ InList (struct link *linkp, const char *cp)
 
 LOCAL VOID PushState (VOID)
 {
-    REGISTER struct state *new;
+    REGISTER struct state *xnew;
 
-    new = (struct state *)DbugMalloc (sizeof (struct state));
-    new->flags = 0;
-    new->delay = 0;
-    new->maxdepth = MAXDEPTH;
+    xnew = (struct state *)DbugMalloc (sizeof (struct state));
+    xnew->flags = 0;
+    xnew->delay = 0;
+    xnew->maxdepth = MAXDEPTH;
     if (stack != NULL) {
-        new->level = stack->level;
+        xnew->level = stack->level;
     } else {
-        new->level = 0;
+        xnew->level = 0;
     }
 #ifndef STDERR_IS_CONSTANT
     if (_db_fp_ == NULL)
         _db_fp_ = stderr; /* can't do it as initializer */
 #endif
-    new->out_file = stderr;
-    new->functions = NULL;
-    new->keywords = NULL;
-    new->processes = NULL;
-    new->next_state = stack;
-    stack = new;
+    xnew->out_file = stderr;
+    xnew->functions = NULL;
+    xnew->keywords = NULL;
+    xnew->processes = NULL;
+    xnew->next_state = stack;
+    stack = xnew;
     init_done = TRUE;
 }
 
@@ -1159,11 +1159,11 @@ FreeList (struct link *linkp)
 LOCAL char *
 StrDup (char *string)
 {
-    REGISTER char *new;
+    REGISTER char *xnew;
 
-    new = DbugMalloc (strlen (string) + 1);
-    (VOID) strcpy (new, string);
-    return (new);
+    xnew = DbugMalloc (strlen (string) + 1);
+    (VOID) strcpy (xnew, string);
+    return (xnew);
 }
 
 /*
@@ -1349,13 +1349,13 @@ DbugExit (char *why)
 LOCAL char *
 DbugMalloc (int size)
 {
-    register char *new;
+    register char *xnew;
 
-    new = malloc ((unsigned int)size);
-    if (new == NULL) {
+    xnew = (char *)malloc ((unsigned int)size);
+    if (xnew == NULL) {
         DbugExit ("out of memory");
     }
-    return (new);
+    return (xnew);
 }
 
 /*
@@ -1526,7 +1526,7 @@ strrchr (char *s, char c)
  *     harmless).
  *
  */
- 
+
 LOCAL VOID ChangeOwner (char *pathname)
 {
 #ifdef unix

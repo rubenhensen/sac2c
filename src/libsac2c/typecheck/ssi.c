@@ -121,18 +121,18 @@ IsIn (tvar *var, int num, tvar **list)
 static void
 AddBigger (tvar *small, tvar *big)
 {
-    tvar **new;
+    tvar **xnew;
     int i;
 
     DBUG_ENTER ();
     if (TVAR_MBIG (small) == TVAR_NBIG (small)) {
         TVAR_MBIG (small) += CHUNK_SIZE;
-        new = (tvar **)MEMmalloc (sizeof (tvar *) * TVAR_MBIG (small));
+        xnew = (tvar **)MEMmalloc (sizeof (tvar *) * TVAR_MBIG (small));
         for (i = 0; i < TVAR_MBIG (small) - CHUNK_SIZE; i++) {
-            new[i] = TVAR_BIG (small, i);
+            xnew[i] = TVAR_BIG (small, i);
         }
         MEMfree (TVAR_BIGS (small));
-        TVAR_BIGS (small) = new;
+        TVAR_BIGS (small) = xnew;
     }
     /*
      * Now, we know that TVAR_NBIG( small) < TVAR_MBIG( small) !!
@@ -146,18 +146,18 @@ AddBigger (tvar *small, tvar *big)
 static void
 AddSmaller (tvar *big, tvar *small)
 {
-    tvar **new;
+    tvar **xnew;
     int i;
 
     DBUG_ENTER ();
     if (TVAR_MSMALL (big) == TVAR_NSMALL (big)) {
         TVAR_MSMALL (big) += CHUNK_SIZE;
-        new = (tvar **)MEMmalloc (sizeof (tvar *) * TVAR_MSMALL (big));
+        xnew = (tvar **)MEMmalloc (sizeof (tvar *) * TVAR_MSMALL (big));
         for (i = 0; i < TVAR_MSMALL (big) - CHUNK_SIZE; i++) {
-            new[i] = TVAR_SMALL (big, i);
+            xnew[i] = TVAR_SMALL (big, i);
         }
         MEMfree (TVAR_SMALLS (big));
-        TVAR_SMALLS (big) = new;
+        TVAR_SMALLS (big) = xnew;
     }
     /*
      * Now, we know that TVAR_NSMALL( big) < TVAR_MSMALL( big) !!
@@ -171,18 +171,18 @@ AddSmaller (tvar *big, tvar *small)
 static void
 AddHandle (tvar *var, sig_dep *handle)
 {
-    sig_dep **new;
+    sig_dep **xnew;
     int i;
 
     DBUG_ENTER ();
     if (TVAR_MASS (var) == TVAR_NASS (var)) {
         TVAR_MASS (var) += CHUNK_SIZE;
-        new = (sig_dep **)MEMmalloc (sizeof (sig_dep *) * TVAR_MASS (var));
+        xnew = (sig_dep **)MEMmalloc (sizeof (sig_dep *) * TVAR_MASS (var));
         for (i = 0; i < TVAR_MASS (var) - CHUNK_SIZE; i++) {
-            new[i] = TVAR_HAND (var, i);
+            xnew[i] = TVAR_HAND (var, i);
         }
         MEMfree (TVAR_HANDS (var));
-        TVAR_HANDS (var) = new;
+        TVAR_HANDS (var) = xnew;
     }
     /*
      * Now, we know that TVAR_NASS( var) < TVAR_MASS( var) !!

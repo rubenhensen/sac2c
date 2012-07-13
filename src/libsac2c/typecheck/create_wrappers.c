@@ -58,7 +58,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_WRAPPERFUNS (result) = NULL;
     INFO_EXPRETS (result) = 0;
@@ -433,8 +433,8 @@ CRTWRPmodule (node *arg_node, info *arg_info)
      * Finally, we insert the wrapper functions into the fundef chain:
      */
     MODULE_FUNS (arg_node)
-      = LUTfoldLutS (INFO_WRAPPERFUNS (arg_info), MODULE_FUNS (arg_node),
-                     (void *(*)(void *, void *))ConsFundefs);
+      = (node *)LUTfoldLutS (INFO_WRAPPERFUNS (arg_info), MODULE_FUNS (arg_node),
+                             (void *(*)(void *, void *))ConsFundefs);
 
     DBUG_RETURN (arg_node);
 }

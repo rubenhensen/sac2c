@@ -127,8 +127,9 @@ TUrebuildWrapperTypeAlphaFix (ntype *type)
     DBUG_ASSERT (TYisFun (type), "TUrebuildWrapperType called on non-fun type!");
 
     new_type
-      = TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildWrapperAlphaFix,
-                                 NULL);
+      = (ntype *)TYfoldFunctionInstances (type,
+                                          (void *(*)(node *, void *))buildWrapperAlphaFix,
+                                          NULL);
 
     DBUG_RETURN (new_type);
 }
@@ -176,8 +177,9 @@ TUrebuildWrapperTypeAlpha (ntype *type)
     DBUG_ASSERT (TYisFun (type), "TUrebuildWrapperType called on non-fun type!");
 
     new_type
-      = TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildWrapperAlpha,
-                                 NULL);
+      = (ntype *)TYfoldFunctionInstances (type,
+                                          (void *(*)(node *, void *))buildWrapperAlpha,
+                                          NULL);
 
     DBUG_RETURN (new_type);
 }
@@ -397,7 +399,7 @@ TUargtypes2unknownAUD (node *args)
 ntype *
 TUtype2alphaMax (ntype *type)
 {
-    ntype *new, *scalar;
+    ntype *xnew, *scalar;
     tvar *tv;
 
     DBUG_ENTER ();
@@ -405,24 +407,25 @@ TUtype2alphaMax (ntype *type)
     if (TYisAlpha (type)) {
         tv = TYgetAlpha (type);
         if (SSIgetMax (tv) != NULL) {
-            new = TYmakeAlphaType (TYcopyType (SSIgetMax (tv)));
+            xnew = TYmakeAlphaType (TYcopyType (SSIgetMax (tv)));
         } else if (SSIgetMin (tv) != NULL) {
-            new = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMin (tv)))));
+            xnew
+              = TYmakeAlphaType (TYmakeAUD (TYcopyType (TYgetScalar (SSIgetMin (tv)))));
         } else {
-            new = TYmakeAlphaType (NULL);
+            xnew = TYmakeAlphaType (NULL);
         }
     } else if (TYisBottom (type)) {
-        new = TYmakeAlphaType (TYcopyType (type));
+        xnew = TYmakeAlphaType (TYcopyType (type));
     } else {
         scalar = TYgetScalar (type);
         if ((TYisSimple (scalar) && (TYgetSimpleType (scalar) == T_unknown))) {
-            new = TYmakeAlphaType (NULL);
+            xnew = TYmakeAlphaType (NULL);
         } else {
-            new = TYmakeAlphaType (TYcopyType (type));
+            xnew = TYmakeAlphaType (TYcopyType (type));
         }
     }
 
-    DBUG_RETURN (new);
+    DBUG_RETURN (xnew);
 }
 
 /** <!--********************************************************************-->
@@ -438,7 +441,7 @@ TUtype2alphaMax (ntype *type)
 ntype *
 TUtype2alphaAUDMax (ntype *type)
 {
-    ntype *new, *scalar;
+    ntype *xnew, *scalar;
 #ifndef DBUG_OFF
     tvar *tv;
 #endif
@@ -446,7 +449,7 @@ TUtype2alphaAUDMax (ntype *type)
     DBUG_ENTER ();
 
     if (TYisAlpha (type)) {
-        new = TYcopyType (type);
+        xnew = TYcopyType (type);
 #ifndef DBUG_OFF
         tv = TYgetAlpha (type);
 #endif
@@ -455,17 +458,17 @@ TUtype2alphaAUDMax (ntype *type)
         DBUG_ASSERT (TYisAUD (SSIgetMax (tv)),
                      "trying to TUtype2alphaAUDMax alpha with non-AUD max!");
     } else if (TYisBottom (type)) {
-        new = TYmakeAlphaType (TYcopyType (type));
+        xnew = TYmakeAlphaType (TYcopyType (type));
     } else {
         scalar = TYgetScalar (type);
         if ((TYisSimple (scalar) && (TYgetSimpleType (scalar) == T_unknown))) {
-            new = TYmakeAlphaType (NULL);
+            xnew = TYmakeAlphaType (NULL);
         } else {
-            new = TYmakeAlphaType (TYmakeAUD (TYcopyType (scalar)));
+            xnew = TYmakeAlphaType (TYmakeAUD (TYcopyType (scalar)));
         }
     }
 
-    DBUG_RETURN (new);
+    DBUG_RETURN (xnew);
 }
 
 /** <!--********************************************************************-->
@@ -482,16 +485,16 @@ node *
 TUrettypes2alphaAUDMax (node *rets)
 {
     node *tmp = rets;
-    ntype *new;
+    ntype *xnew;
 
     DBUG_ENTER ();
 
     while (tmp != NULL) {
 
-        new = TUtype2alphaAUDMax (RET_TYPE (tmp));
+        xnew = TUtype2alphaAUDMax (RET_TYPE (tmp));
 
         RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
-        RET_TYPE (tmp) = new;
+        RET_TYPE (tmp) = xnew;
         tmp = RET_NEXT (tmp);
     }
 
@@ -512,16 +515,16 @@ node *
 TUrettypes2alphaMax (node *rets)
 {
     node *tmp = rets;
-    ntype *new;
+    ntype *xnew;
 
     DBUG_ENTER ();
 
     while (tmp != NULL) {
 
-        new = TUtype2alphaMax (RET_TYPE (tmp));
+        xnew = TUtype2alphaMax (RET_TYPE (tmp));
 
         RET_TYPE (tmp) = TYfreeType (RET_TYPE (tmp));
-        RET_TYPE (tmp) = new;
+        RET_TYPE (tmp) = xnew;
         tmp = RET_NEXT (tmp);
     }
 
@@ -569,7 +572,7 @@ node *
 TUrettypes2alphaFix (node *rets)
 {
     node *tmp = rets;
-    ntype *new, *scalar;
+    ntype *xnew, *scalar;
 
     DBUG_ENTER ();
 
@@ -585,10 +588,10 @@ TUrettypes2alphaFix (node *rets)
                           || (TYgetSimpleType (scalar) != T_unknown)),
                          "TUrettypes2alphaFix applied to rettype with T_unknown");
 
-            new = TYmakeAlphaType (TYcopyType (RET_TYPE (tmp)));
-            SSInewMin (TYgetAlpha (new), RET_TYPE (tmp));
+            xnew = TYmakeAlphaType (TYcopyType (RET_TYPE (tmp)));
+            SSInewMin (TYgetAlpha (xnew), RET_TYPE (tmp));
 
-            RET_TYPE (tmp) = new;
+            RET_TYPE (tmp) = xnew;
         } else {
             DBUG_ASSERT (TYisFixedAlpha (RET_TYPE (tmp)),
                          "TUrettypes2alphaFix applied to rettype with non-fix alpha");

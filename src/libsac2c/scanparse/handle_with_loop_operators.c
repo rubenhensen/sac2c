@@ -219,7 +219,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_HWLO_LASTASSIGN (result) = NULL;
     INFO_HWLO_NUM_STD_OPS (result) = 0;

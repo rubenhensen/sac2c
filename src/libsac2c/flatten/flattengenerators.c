@@ -78,7 +78,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNSWITH (result) = NULL;

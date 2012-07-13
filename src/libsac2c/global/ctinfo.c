@@ -67,6 +67,8 @@
 #include "stringset.h"
 #include "new_types.h" /* for TYtype2String */
 
+#include "cppcompat.h"
+
 static char *message_buffer = NULL;
 static int message_buffer_size = 0;
 static int message_line_length = 76;

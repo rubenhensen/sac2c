@@ -111,7 +111,7 @@ MakeInfo (node *fundef, node *letids, node *apargs)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = fundef;
     INFO_LETIDS (result) = letids;
@@ -432,7 +432,7 @@ PINLid (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("Return id is local var: %s", AVIS_NAME (ID_AVIS (arg_node)));
 
-        new_avis = LUTsearchInLutPp (inline_lut, ID_AVIS (arg_node));
+        new_avis = (node *)LUTsearchInLutPp (inline_lut, ID_AVIS (arg_node));
         /*
          * new_avis points to copy of original avis.
          */
@@ -514,7 +514,7 @@ PINLid (node *arg_node, info *arg_info)
 
         DBUG_PRINT ("Return id is parameter of inline function");
 
-        old_id = TBmakeId (LUTsearchInLutPp (inline_lut, ID_AVIS (arg_node)));
+        old_id = TBmakeId ((node *)LUTsearchInLutPp (inline_lut, ID_AVIS (arg_node)));
         INFO_INSERT (arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (IDS_AVIS (INFO_LETIDS (arg_info)), NULL),
                                      old_id),
@@ -563,7 +563,7 @@ PINLids (node *arg_node, info *arg_info)
 
     if (global.valid_ssaform) {
         old_ssaassign = AVIS_SSAASSIGN (IDS_AVIS (arg_node));
-        new_ssaassign = LUTsearchInLutPp (inline_lut, old_ssaassign);
+        new_ssaassign = (node *)LUTsearchInLutPp (inline_lut, old_ssaassign);
 
         if (new_ssaassign != old_ssaassign) {
             DBUG_PRINT ("AVIS_SSAASSIGN corrected for %s.\n",

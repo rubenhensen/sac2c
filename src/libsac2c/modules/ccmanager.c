@@ -276,18 +276,18 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 
     switch (kind) {
     case STRS_saclib:
-        result = MEMmalloc (sizeof (char)
-                            * (STRlen (lib) + 6 + STRlen (global.config.lib_variant)));
+        result = (char *)MEMmalloc (
+          sizeof (char) * (STRlen (lib) + 6 + STRlen (global.config.lib_variant)));
         sprintf (result, "-l%sMod%s", lib, global.config.lib_variant);
 
         break;
     case STRS_extlib:
-        result = MEMmalloc (sizeof (char) * (STRlen (lib) + 3));
+        result = (char *)MEMmalloc (sizeof (char) * (STRlen (lib) + 3));
         sprintf (result, "-l%s", lib);
 
         break;
     case STRS_objfile:
-        result = MEMmalloc (sizeof (char) * (STRlen (lib) + 3));
+        result = (char *)MEMmalloc (sizeof (char) * (STRlen (lib) + 3));
         sprintf (result, "%s", lib);
         break;
     default:
@@ -296,8 +296,8 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
     }
 
     if (rest != NULL) {
-        char *temp
-          = MEMmalloc (sizeof (char) * (STRlen ((char *)rest) + STRlen (result) + 2));
+        char *temp = (char *)MEMmalloc (sizeof (char)
+                                        * (STRlen ((char *)rest) + STRlen (result) + 2));
 
         sprintf (temp, "%s %s", (char *)rest, result);
 

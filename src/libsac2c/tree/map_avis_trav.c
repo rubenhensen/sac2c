@@ -41,7 +41,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_MAPTRAV (result) = NULL;
     INFO_EXTINFO (result) = NULL;

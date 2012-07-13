@@ -230,7 +230,7 @@ struct INFO {
     nodelist *inslist;
     node *fundefextassign;
     node *fundefintassign;
-    travstart travstart;
+    travstart mtravstart;
     bool travinlac;
     node *lhs;
 };
@@ -304,7 +304,7 @@ struct INFO {
 #define INFO_INSLIST(n) (n->inslist)
 #define INFO_FUNDEFEXTASSIGN(n) (n->fundefextassign)
 #define INFO_FUNDEFINTASSIGN(n) (n->fundefintassign)
-#define INFO_TRAVSTART(n) (n->travstart)
+#define INFO_TRAVSTART(n) (n->mtravstart)
 #define INFO_TRAVINLAC(n) (n->travinlac)
 #define INFO_LHS(n) (n->lhs)
 
@@ -318,7 +318,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_PREASSIGN (result) = NULL;
@@ -336,7 +336,7 @@ MakeInfo (void)
     INFO_APRESCHAIN (result) = NULL;
     INFO_EXTFUNDEF (result) = NULL;
     INFO_RESULTMAP (result) = NULL;
-    INFO_DEPTHMASK (result) = MEMmalloc (sizeof (bool) * 1);
+    INFO_DEPTHMASK (result) = (bool *)MEMmalloc (sizeof (bool) * 1);
     INFO_SETDEPTH (result) = 0;
     INFO_INSLIST (result) = NULL;
     INFO_FUNDEFEXTASSIGN (result) = NULL;
@@ -2422,7 +2422,7 @@ LIRMOVids (node *arg_ids, info *arg_info)
 
 #if 0
 #error SSALIR is obsolete, use DLIR or WLIR!
-/** <!-- ****************************************************************** --> 
+/** <!-- ****************************************************************** -->
  * @fn node *FreeLIRSubstInfo( node *arg_node, info *arg_info)
  *
  * @brief Frees the AVIS_SUBST attribute of an N_AVIS node after the LIR phase
@@ -2432,27 +2432,27 @@ LIRMOVids (node *arg_ids, info *arg_info)
  *
  * @return modified N_avis node
  ******************************************************************************/
-static 
+static
 node *FreeLIRSubstInfo(node *arg_node, info *arg_info)
 {
    DBUG_ENTER ();
 
    if (AVIS_SUBST( arg_node) != NULL) {
      AVIS_SUBST (arg_node) = NULL;
-   } 
-   
-   DBUG_RETURN (arg_node); 
+   }
+
+   DBUG_RETURN (arg_node);
 }
 
 /** <!-- ****************************************************************** -->
  * @fn node *FreeLIRInformation( node *arg_node)
  *
- * @brief Clears the AVIS_SUBST information from all N_avis nodes within a 
+ * @brief Clears the AVIS_SUBST information from all N_avis nodes within a
  *        function/module.
- * 
+ *
  * @param arg_node N_fundef node of function to be cleared or
  *               N_module node of module to be cleared.
- * 
+ *
  * @return modified N_fundef node or N_module node.
  ******************************************************************************/
 static
@@ -2465,11 +2465,11 @@ node *FreeLIRInformation(node* arg_node)
 
   DBUG_ASSERT ((NODE_TYPE(arg_node) == N_module)||(NODE_TYPE(arg_node) == N_fundef), "FreeLIRInformation called with non-module/non-fundef node");
 
-  TRAVpushAnonymous( freetrav, &TRAVsons); 
+  TRAVpushAnonymous( freetrav, &TRAVsons);
   if ( NODE_TYPE( arg_node) == N_module){
-    MODULE_FUNS( arg_node) = TRAVopt( MODULE_FUNS( arg_node), NULL); 
+    MODULE_FUNS( arg_node) = TRAVopt( MODULE_FUNS( arg_node), NULL);
   }else {
-    FUNDEF_BODY( arg_node) = TRAVopt( FUNDEF_BODY( arg_node), NULL); 
+    FUNDEF_BODY( arg_node) = TRAVopt( FUNDEF_BODY( arg_node), NULL);
   }
   TRAVpop();
 
@@ -2500,15 +2500,15 @@ node* LIRdoLoopInvariantRemoval(node *arg_node)
   INFO_TRAVSTART( arg_info) = ( N_fundef == NODE_TYPE( arg_node)) ?
                               TS_fundef : TS_module;
 
-  TRAVpush(TR_lir);    
+  TRAVpush(TR_lir);
   arg_node = TRAVdo( arg_node, arg_info);
   TRAVpop();
-  
+
   arg_info = FreeInfo( arg_info);
 
   /*
    * we free the information gathered by LIR here as it is no longer
-   * used after this transformation                                               
+   * used after this transformation
    */
   arg_node  = FreeLIRInformation( arg_node);
   DBUG_RETURN (arg_node);

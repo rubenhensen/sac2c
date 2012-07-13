@@ -32,7 +32,9 @@
 
 #endif /* __bool_true_false_are_defined */
 
+#ifndef __cplusplus
 typedef int bool;
+#endif
 
 #define FALSE 0
 #define TRUE 1
@@ -97,11 +99,12 @@ typedef /* unsigned */ int feature_t;
 #define FEATURE_COND 1024    /* conditional containing array accesses */
 #define FEATURE_UNKNOWN 2048 /* no special features but offset not inferable */
 
-typedef enum {
+enum simpletype_t {
 #define TYP_IFname(name) name
 #include "type_info.mac"
 #undef TYP_IFname
-} simpletype;
+};
+typedef enum simpletype_t simpletype;
 
 /*
  * usertype is used in the new type representation only!!!
@@ -293,13 +296,13 @@ typedef struct ACCESS_INFO_T {
 } access_info_t;
 
 typedef struct TYPES {
-    simpletype simpletype;
+    simpletype msimpletype;
     char *name;         /* only used for T_user !! */
     char *name_mod;     /* name of modul belonging to 'name' */
     struct NODE *tdef;  /* typedef of user-defined type */
     int dim;            /* if (dim == 0) => simpletype */
     bool poly;          /* only needed for type templates (newTC !) */
-    shpseg *shpseg;     /* pointer to shape specification */
+    shpseg *mshpseg;    /* pointer to shape specification */
     struct TYPES *next; /* only needed for fun-results  */
                         /* and implementation of implicit types */
     /* mutc backend */
@@ -384,7 +387,7 @@ typedef struct INDEX_INFO {
                                  Point to last transformations */
 
     /* the next 3 components describe the executed transformation */
-    prf prf;        /* prf +,-,* or / */
+    prf mprf;       /* prf +,-,* or / */
     int *const_arg; /* the constant arg has to be an integer.
                        For every element of a vector there is an
                        own constant arg.

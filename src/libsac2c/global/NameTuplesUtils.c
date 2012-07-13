@@ -31,7 +31,7 @@
 static mutcStorageClass
 simpletype2mutcStorageClass (simpletype st)
 {
-    mutcStorageClass ret = 0;
+    mutcStorageClass ret = (mutcStorageClass)0;
 
     DBUG_ENTER ();
 

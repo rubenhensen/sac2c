@@ -220,7 +220,7 @@
         if (ARG != NULL) {                                                               \
             ARGS_tmp = strtol (ARG, &ARGS_str, 10);                                      \
             if ((ARGS_str[0] == '\0') && (ARGS_tmp >= 0)) {                              \
-                id = ARGS_tmp;                                                           \
+                id = (__typeof(id))ARGS_tmp;                                             \
             } else {                                                                     \
                 ARGS_ERROR ("Number argument expected for option");                      \
             }                                                                            \
@@ -237,7 +237,7 @@
         if (ARG != NULL) {                                                               \
             ARGS_tmp = strtol (ARG, &ARGS_str, 10);                                      \
             if (ARGS_str[0] == '\0') {                                                   \
-                id = ARGS_tmp;                                                           \
+                id = (__typeof(id))ARGS_tmp;                                             \
             } else {                                                                     \
                 ARGS_ERROR ("Integer argument expected for option");                     \
             }                                                                            \
@@ -255,7 +255,7 @@
             ARGS_tmp = strtol (ARG, &ARGS_str, 10);                                      \
             if (ARGS_str[0] == '\0') {                                                   \
                 if ((ARGS_tmp >= min) && (ARGS_tmp <= max)) {                            \
-                    id = ARGS_tmp;                                                       \
+                    id = (__typeof(id))ARGS_tmp;                                         \
                 } else {                                                                 \
                     ARGS_ERROR ("Argument out of range for option");                     \
                 }                                                                        \
@@ -326,8 +326,9 @@
  *
  ******************************************************************************/
 
-static int
-CheckOption (char *pattern, char *argv1, char *argv2, char **option, char **argument)
+static inline int
+CheckOption (const char *pattern, char *argv1, char *argv2, char **option,
+             char **argument)
 {
     static char *buffer = NULL;
     static int buffer_size = 0;
@@ -425,8 +426,8 @@ CheckOption (char *pattern, char *argv1, char *argv2, char **option, char **argu
  *
  ******************************************************************************/
 
-static int
-StringEqual (char *s1, char *s2, int case_sensitive)
+static inline int
+StringEqual (const char *s1, const char *s2, int case_sensitive)
 {
     int i;
 

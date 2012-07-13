@@ -60,7 +60,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_TS_AKS (result) = 0;
     INFO_TS_AKD (result) = 0;

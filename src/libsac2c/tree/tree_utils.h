@@ -8,7 +8,7 @@
 #include "types.h"
 
 extern bool TULSisZeroTripGenerator (node *lb, node *ub, node *width);
-extern bool TULSisFullGenerator (node *generator, node *operator);
+extern bool TULSisFullGenerator (node *generator, node *op);
 extern node *TUremoveUnusedCodes (node *arg_node);
 extern node *TUremoveUnusedCodeBlock (node *arg_node);
 extern node *TUmakeIntVec (int i, node **preassign, node **vardec);

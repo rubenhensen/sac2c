@@ -161,10 +161,11 @@ __MEMrealloc (void *ptr, int size)
     DBUG_RETURN (ret);
 }
 
-void *
-MEMfree (void *shifted_ptr)
+template <typename T>
+T
+__MEMfree (T shifted_ptr)
 {
-    void *orig_ptr = NULL;
+    T orig_ptr = NULL;
     int size;
 
     DBUG_ENTER ();

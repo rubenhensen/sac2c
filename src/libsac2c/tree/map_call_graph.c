@@ -19,7 +19,7 @@
 struct INFO {
     travfun_p mapfundown;
     travfun_p mapfunup;
-    info *info;
+    info *minfo;
     node *current;
     int level;
     int laclevel;
@@ -31,7 +31,7 @@ struct INFO {
  */
 #define INFO_MAPFUNDOWN(n) ((n)->mapfundown)
 #define INFO_MAPFUNUP(n) ((n)->mapfunup)
-#define INFO_INFO(n) ((n)->info)
+#define INFO_INFO(n) ((n)->minfo)
 #define INFO_CURRENT(n) ((n)->current)
 #define INFO_LEVEL(n) ((n)->level)
 #define INFO_LACLEVEL(n) ((n)->laclevel)
@@ -47,7 +47,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_MAPFUNDOWN (result) = NULL;
     INFO_MAPFUNUP (result) = NULL;

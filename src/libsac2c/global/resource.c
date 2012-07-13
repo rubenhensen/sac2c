@@ -86,9 +86,11 @@
  *
  ******************************************************************************/
 
+enum tag_t { num, str };
+
 static struct {
     char name[20];
-    enum { num, str } tag;
+    enum tag_t tag;
     void *store;
 } resource_table[] = {
 
@@ -158,7 +160,7 @@ static struct {
   {"CACHE3_WRITEPOL", str, &global.config.cache3_writepol},
   {"CACHE3_MSCA", num, &global.config.cache3_msca_factor},
 
-  {"", 0, NULL},
+  {"", (enum tag_t)0, NULL},
 };
 
 /** <!--********************************************************************-->
@@ -216,16 +218,16 @@ RSCprintConfigEntry (char *config)
 inheritence_list_t *
 RSCmakeInheritenceListEntry (char *name, inheritence_list_t *next)
 {
-    inheritence_list_t *new;
+    inheritence_list_t *new_list;
 
     DBUG_ENTER ();
 
-    new = (inheritence_list_t *)MEMmalloc (sizeof (inheritence_list_t));
+    new_list = (inheritence_list_t *)MEMmalloc (sizeof (inheritence_list_t));
 
-    new->name = name;
-    new->next = next;
+    new_list->name = name;
+    new_list->next = next;
 
-    DBUG_RETURN (new);
+    DBUG_RETURN (new_list);
 }
 
 /*****************************************************************************
@@ -676,11 +678,11 @@ EvaluateCustomTarget (char *target, target_list_t *target_list)
                              target, resource->name);
                 } else {
                     if (resource->add_flag) {
-                        char *new;
-                        new = STRcat (*((char **)(resource_table[i].store)),
-                                      resource->value_str);
+                        char *new_res;
+                        new_res = STRcat (*((char **)(resource_table[i].store)),
+                                          resource->value_str);
                         MEMfree (*((char **)(resource_table[i].store)));
-                        *((char **)(resource_table[i].store)) = new;
+                        *((char **)(resource_table[i].store)) = new_res;
                     } else {
                         MEMfree (*((char **)(resource_table[i].store)));
                         *((char **)(resource_table[i].store))

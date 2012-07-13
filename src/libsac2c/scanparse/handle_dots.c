@@ -161,7 +161,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_HD_DOTSHAPE (result) = NULL;
     INFO_HD_TRAVSTATE (result) = HD_sel;
@@ -231,7 +231,7 @@ BuildDotList (node *tree, dotinfo *info)
         info->selcnt++;
 
         if (NODE_TYPE (handle) == N_dot) {
-            dotlist *newdot = MEMmalloc (sizeof (dotlist));
+            dotlist *newdot = (dotlist *)MEMmalloc (sizeof (dotlist));
 
             info->dotcnt++;
             newdot->position = info->selcnt;
@@ -1042,7 +1042,7 @@ BuildIdTable (node *ids, idtable *appendto)
     if (NODE_TYPE (ids) == N_exprs) {
         while (ids != NULL) {
             node *id = EXPRS_EXPR (ids);
-            idtable *newtab = MEMmalloc (sizeof (idtable));
+            idtable *newtab = (idtable *)MEMmalloc (sizeof (idtable));
 
             if (NODE_TYPE (id) != N_spid) {
                 CTIerrorLine (global.linenum, "Found non-id as index in WL set notation");
@@ -1063,7 +1063,7 @@ BuildIdTable (node *ids, idtable *appendto)
     } else if (NODE_TYPE (ids) == N_spid)
 #ifdef HD_SETWL_VECTOR
     {
-        idtable *newtab = MEMmalloc (sizeof (idtable));
+        idtable *newtab = (idtable *)MEMmalloc (sizeof (idtable));
         newtab->id = STRcpy (SPID_NAME (ids));
         newtab->type = ID_vector;
         newtab->shapes = NULL;
@@ -1193,7 +1193,7 @@ ScanVector (node *vector, node *array, info *arg_info)
                                           TBmakePrf (F_shape_A,
                                                      TBmakeExprs (DUPdoDupTree (array),
                                                                   NULL)));
-                        chain = MEMmalloc (sizeof (shpchain));
+                        chain = (shpchain *)MEMmalloc (sizeof (shpchain));
 
                         chain->shape = shape;
                         chain->next = handle->shapes;
@@ -1246,7 +1246,7 @@ ScanId (node *id, node *array, info *arg_info)
             if (ids->type == ID_vector) {
                 node *shape
                   = TBmakePrf (F_shape_A, TBmakeExprs (DUPdoDupTree (array), NULL));
-                shpchain *chain = MEMmalloc (sizeof (shpchain));
+                shpchain *chain = (shpchain *)MEMmalloc (sizeof (shpchain));
 
                 chain->shape = shape;
                 chain->next = ids->shapes;

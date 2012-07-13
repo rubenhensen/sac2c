@@ -106,7 +106,7 @@ AddCseInfoLayer (cseinfo *nextlayer, int entries)
     res->nextlayer = nextlayer;
     res->entries = entries;
     res->current = 0;
-    res->lets = MEMmalloc (entries * sizeof (node *));
+    res->lets = (node **)MEMmalloc (entries * sizeof (node *));
 
     DBUG_RETURN (res);
 }
@@ -208,7 +208,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_EXT_ASSIGN (result) = NULL;

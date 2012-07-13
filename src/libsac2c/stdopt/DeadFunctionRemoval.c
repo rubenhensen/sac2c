@@ -42,7 +42,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_SPINE (result) = FALSE;
     INFO_LOCALFUNS (result) = FALSE;
@@ -107,7 +107,7 @@ ClearIsNeededFlags (node *syntax_tree)
     anontrav_t dfrc_trav[4] = {{N_module, &ATravDFRCmodule},
                                {N_fundef, &ATravDFRCfundef},
                                {N_objdef, &ATravDFRCobjdef},
-                               {0, NULL}};
+                               {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
 

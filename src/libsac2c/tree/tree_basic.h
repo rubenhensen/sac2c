@@ -12,7 +12,7 @@
  *   --------------------
  */
 
-#define NODE_TYPE(n) ((n)->nodetype)
+#define NODE_TYPE(n) ((n)->mnodetype)
 #define NODE_LINE(n) ((n)->lineno)
 #define NODE_FILE(n) ((n)->src_file)
 #define NODE_ERROR(n) ((n)->error)
@@ -96,10 +96,10 @@ extern types *TBmakeTypes1 (simpletype btype);
 extern types *TBmakeTypes (simpletype btype, int dim, shpseg *shpseg, char *name,
                            char *mod);
 
-#define TYPES_BASETYPE(t) (t->simpletype)
+#define TYPES_BASETYPE(t) (t->msimpletype)
 #define TYPES_DIM(t) (t->dim)
 #define TYPES_POLY(t) (t->poly)
-#define TYPES_SHPSEG(t) (t->shpseg)
+#define TYPES_SHPSEG(t) (t->mshpseg)
 #define TYPES_NAME(t) (t->name)
 #define TYPES_MOD(t) (t->name_mod)
 #define TYPES_TDEF(t) (t->tdef)
@@ -171,8 +171,8 @@ extern argtab_t *TBmakeArgtab (int size);
  ***    access_t*     NEXT    (O)
  ***/
 
-extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
-                               accessdir_t direction, access_t *next);
+extern access_t *TBmakeAccess (node *array, node *iv, accessclass_t mclass,
+                               shpseg *offset, accessdir_t direction, access_t *next);
 
 #define ACCESS_ARRAY(a) (a->array_vardec)
 #define ACCESS_IV(a) (a->iv_vardec)
@@ -259,7 +259,7 @@ extern cuda_access_info_t *TBfreeCudaAccessInfo (cuda_access_info_t *access_info
 #include "attribs.h"
 
 struct NODE {
-    nodetype nodetype;         /* type of node */
+    nodetype mnodetype;        /* type of node */
     int lineno;                /* line number in source code */
     char *src_file;            /* pointer to filename or source code */
     node *error;               /* error node */

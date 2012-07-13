@@ -751,12 +751,12 @@ static inline enum token_class
 lexer_read_string (struct lexer *lex, char **buf, size_t *size, char c)
 {
     char *index = *buf;
-    enum token_kind tok_kind;
+    enum token_class tok_class;
     const char stop = c;
 
     assert (stop == '"' || stop == '\'',
             "inapproriate starting symbol for string or char");
-    tok_kind = stop == '"' ? tok_string : tok_char;
+    tok_class = stop == '"' ? tok_string : tok_char;
 
     if (stop == '\'') {
         c = lexer_getch (lex);
@@ -773,7 +773,7 @@ lexer_read_string (struct lexer *lex, char **buf, size_t *size, char c)
                 buffer_add_char (buf, &index, size, (char)res);
         } else if (c == '\'') {
             buffer_add_char (buf, &index, size, 0);
-            return tok_kind;
+            return tok_class;
         } else
             buffer_add_char (buf, &index, size, c);
 
@@ -821,7 +821,7 @@ lexer_read_string (struct lexer *lex, char **buf, size_t *size, char c)
         }
 
     buffer_add_char (buf, &index, size, 0);
-    return tok_kind;
+    return tok_class;
 
 return_unknown:
     buffer_add_char (buf, &index, size, 0);

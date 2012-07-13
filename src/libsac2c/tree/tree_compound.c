@@ -176,22 +176,22 @@ TCequalShpseg (int dim, shpseg *shape2, shpseg *shape1)
 shpseg *
 TCmergeShpseg (shpseg *first, int dim1, shpseg *second, int dim2)
 {
-    shpseg *new;
+    shpseg *xnew;
     int i;
 
     DBUG_ENTER ();
 
-    new = TBmakeShpseg (NULL);
+    xnew = TBmakeShpseg (NULL);
 
     for (i = 0; i < dim1; i++) {
-        SHPSEG_SHAPE (new, i) = SHPSEG_SHAPE (first, i);
+        SHPSEG_SHAPE (xnew, i) = SHPSEG_SHAPE (first, i);
     }
 
     for (i = 0; i < dim2; i++) {
-        SHPSEG_SHAPE (new, i + dim1) = SHPSEG_SHAPE (second, i);
+        SHPSEG_SHAPE (xnew, i + dim1) = SHPSEG_SHAPE (second, i);
     }
 
-    DBUG_RETURN (new);
+    DBUG_RETURN (xnew);
 }
 
 /*****************************************************************************
@@ -954,7 +954,7 @@ TCnodeListAppend (nodelist *nl, node *newnode, void *attrib)
     DBUG_ENTER ();
 
     nl = TBmakeNodelistNode (newnode, nl);
-    NODELIST_ATTRIB2 (nl) = attrib;
+    NODELIST_ATTRIB2 (nl) = (node *)attrib;
 
     DBUG_RETURN (nl);
 }

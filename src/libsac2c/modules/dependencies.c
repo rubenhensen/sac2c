@@ -76,7 +76,7 @@ GenerateDependencyTableEntries (stringset_t *deps, FILE *file)
 
     buffer = SBUFcreate (4096);
 
-    buffer = STRSfold (&TableEntriesFoldFun, deps, buffer);
+    buffer = (str_buf *)STRSfold (&TableEntriesFoldFun, deps, buffer);
 
     string = SBUF2str (buffer);
 
@@ -139,7 +139,7 @@ BuildDependencyClosure (stringset_t *deps)
 
     DBUG_ENTER ();
 
-    result = STRSfold (&BuildDepClosFoldFun, deps, NULL);
+    result = (stringset_t *)STRSfold (&BuildDepClosFoldFun, deps, NULL);
 
     if (result != NULL) {
         /**
@@ -167,7 +167,7 @@ PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
         char *libname;
         char *libfile;
 
-        libname = MEMmalloc (sizeof (char) * (STRlen (entry) + 5));
+        libname = (char *)MEMmalloc (sizeof (char) * (STRlen (entry) + 5));
         sprintf (libname, "%s.sac", entry);
 
         libfile = STRcpy (FMGRfindFile (PK_imp_path, libname));
@@ -232,8 +232,8 @@ PrintSACLib (const char *name)
      * first try to find the .so file
      */
 
-    filename = MEMmalloc (sizeof (char)
-                          * (STRlen (name) + 11 + STRlen (global.config.lib_variant)));
+    filename = (char *)MEMmalloc (
+      sizeof (char) * (STRlen (name) + 11 + STRlen (global.config.lib_variant)));
     sprintf (filename, "lib%sTree%s.so", name, global.config.lib_variant);
 
     result = STRcpy (FMGRfindFile (PK_lib_path, filename));
@@ -245,7 +245,7 @@ PrintSACLib (const char *name)
          * now try to find the .sac file
          */
 
-        filename = MEMmalloc (sizeof (char) * (STRlen (name) + 5));
+        filename = (char *)MEMmalloc (sizeof (char) * (STRlen (name) + 5));
         sprintf (filename, "%s.sac", name);
 
         result = STRcpy (FMGRdirname (FMGRfindFile (PK_imp_path, filename)));
@@ -253,12 +253,12 @@ PrintSACLib (const char *name)
         filename = MEMfree (filename);
 
         if (result != NULL) {
-            filename = MEMmalloc (sizeof (char)
-                                  * (STRlen (result) + 16 + /* $(LIBTARGETDIR)/ */
-                                     3 +                    /* lib */
-                                     4 +                    /* Tree */
-                                     4 +                    /* .so\0 */
-                                     1024 + STRlen (global.config.lib_variant)));
+            filename = (char *)MEMmalloc (sizeof (char)
+                                          * (STRlen (result) + 16 + /* $(LIBTARGETDIR)/ */
+                                             3 +                    /* lib */
+                                             4 +                    /* Tree */
+                                             4 +                    /* .so\0 */
+                                             1024 + STRlen (global.config.lib_variant)));
             sprintf (filename, "%s$(LIBTARGETDIR)/lib%sTree%s.so", result, name,
                      global.config.lib_variant);
 
@@ -273,8 +273,8 @@ PrintSACLib (const char *name)
          * otherwise use the pure filename
          */
 
-        result = MEMmalloc (sizeof (char)
-                            * (STRlen (name) + 11 + STRlen (global.config.lib_variant)));
+        result = (char *)MEMmalloc (
+          sizeof (char) * (STRlen (name) + 11 + STRlen (global.config.lib_variant)));
         sprintf (result, "lib%sTree%s.so", name, global.config.lib_variant);
     }
 
@@ -295,22 +295,22 @@ static void PrintSACLibInclude( const char *name)
 
   filename = MEMmalloc( sizeof( char) * ( STRlen( name) + 5));
   sprintf( filename, "%s.sac", name);
-  
+
   dir = FMGRdirname( FMGRfindFile( PK_imp_path, filename));
-  
+
   filename = MEMfree( filename);
 
   if (dir == NULL) {
     dir = cwd;
   }
 
-  printf( "FILE_%s%s%s_d := yes\n", 
-          FMGRfile2id( dir), 
-          name, 
+  printf( "FILE_%s%s%s_d := yes\n",
+          FMGRfile2id( dir),
+          name,
           global.config.lib_variant);
-  printf( "ifneq ($(FILE_%s%s%s_d),yes)\n", 
-          FMGRfile2id( dir), 
-          name, 
+  printf( "ifneq ($(FILE_%s%s%s_d),yes)\n",
+          FMGRfile2id( dir),
+          name,
           global.config.lib_variant);
   printf( "-include %s.%s%s.d\n", dir, name, global.config.lib_variant);
   printf( "endif\n");

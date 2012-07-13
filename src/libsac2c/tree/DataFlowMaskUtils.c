@@ -176,7 +176,7 @@ DFMUdfm2ReturnExprs (dfmask_t *mask, lut_t *lut)
 
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
-        newavis = LUTsearchInLutPp (lut, avis);
+        newavis = (node *)LUTsearchInLutPp (lut, avis);
 
         DBUG_ASSERT (newavis != avis, "No mapping for avis found in LUT");
 
@@ -211,7 +211,7 @@ DFMUdfm2ApArgs (dfmask_t *mask, lut_t *lut)
 
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
-        newavis = LUTsearchInLutPp (lut, avis);
+        newavis = (node *)LUTsearchInLutPp (lut, avis);
 
         id = TBmakeId (newavis);
         exprs = TBmakeExprs (id, exprs);
@@ -244,7 +244,7 @@ DFMUdfm2LetIds (dfmask_t *mask, lut_t *lut)
 
     avis = DFMgetMaskEntryAvisSet (mask);
     while (avis != NULL) {
-        newavis = LUTsearchInLutPp (lut, avis);
+        newavis = (node *)LUTsearchInLutPp (lut, avis);
 
         ids = TBmakeIds (newavis, ids);
 

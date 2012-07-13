@@ -317,8 +317,8 @@ extern ntype *TYcopyType (ntype *type);
 extern ntype *TYcopyTypeConstructor (ntype *type);
 extern ntype *TYcopyFixedType (ntype *type);
 extern ntype *TYderiveSubtype (ntype *type);
-extern char *TYtype2String (ntype *new, bool multiline, int offset);
-extern char *TYtype2DebugString (ntype *new, bool multiline, int offset);
+extern char *TYtype2String (ntype *mnew, bool multiline, int offset);
+extern char *TYtype2DebugString (ntype *mnew, bool multiline, int offset);
 extern char *TYargs2FunTypeString (node *args, ntype *rettype);
 extern ntype *TYnestTypes (ntype *outer, ntype *inner);
 extern ntype *TYdeNestTypeFromInner (ntype *nested, ntype *inner);
@@ -326,7 +326,7 @@ extern ntype *TYdeNestTypeFromOuter (ntype *nested, ntype *outer);
 
 extern ntype *TYoldType2ScalarType (types *old);
 extern ntype *TYoldType2Type (types *old);
-extern types *TYtype2OldType (ntype *new);
+extern types *TYtype2OldType (ntype *mnew);
 extern ntype *TYoldTypes2ProdType (types *old);
 
 /*

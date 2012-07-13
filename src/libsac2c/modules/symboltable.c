@@ -607,7 +607,7 @@ STentryArgc (stentry_t *entry)
 
     DBUG_ASSERT (entry != NULL, "STentryType called with NULL argument");
 
-    DBUG_RETURN (entry->argc);
+    DBUG_RETURN ((stentrytype_t)entry->argc);
 }
 
 /*

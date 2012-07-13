@@ -23,6 +23,17 @@
 #include "memory.h"
 #include "phase_info.h"
 
+#ifdef __cplusplus
+static inline void
+incphase (compiler_phase_t &p)
+{
+    int t = static_cast<int> (p);
+    p = static_cast<compiler_phase_t> (++t);
+}
+#else
+#define incphase(p) p++
+#endif
+
 static compiler_phase_t
 SearchPhaseByName (char *name)
 {
@@ -33,7 +44,7 @@ SearchPhaseByName (char *name)
     phase = PHIfirstPhase ();
 
     do {
-        phase++;
+        incphase (phase);
     } while (
       (phase < PHIlastPhase ())
       && ((PHIphaseType (phase) != PHT_phase) || !STReq (PHIphaseName (phase), name)));
@@ -53,7 +64,7 @@ SearchPhaseByNumber (int num)
     cnt = 0;
 
     do {
-        phase++;
+        incphase (phase);
         if (PHIphaseType (phase) == PHT_phase)
             cnt++;
     } while ((phase < PHIlastPhase ()) && (cnt < num));
@@ -72,7 +83,7 @@ SearchSubPhase (compiler_phase_t phase, char *name)
 
     do {
         do {
-            subphase++;
+            incphase (subphase);
         } while (PHIphaseType (subphase) > PHT_cycle);
     } while ((PHIphaseParent (subphase) == phase)
              && !STReq (PHIphaseName (subphase), name));
@@ -94,7 +105,7 @@ SearchCyclePhase (compiler_phase_t cycle, char *name)
     cyclephase = cycle;
 
     do {
-        cyclephase++;
+        incphase (cyclephase);
     } while ((PHIphaseParent (cyclephase) == cycle)
              && !STReq (PHIphaseName (cyclephase), name));
 
@@ -509,7 +520,7 @@ SearchPhaseIdent (char *ident)
     phase = PHIfirstPhase ();
 
     do {
-        phase++;
+        incphase (phase);
     } while ((phase < PHIlastPhase ()) && !STReq (PHIphaseIdent (phase), ident));
 
     DBUG_RETURN (phase);

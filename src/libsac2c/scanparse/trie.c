@@ -51,8 +51,8 @@ trie_search_child (struct trie *trie, int symb)
         return NULL;
 
     s.symb = symb;
-    return bsearch (&s, trie->children, trie->children_count, sizeof (struct child),
-                    cmp_children);
+    return (struct child *)bsearch (&s, trie->children, trie->children_count,
+                                    sizeof (struct child), cmp_children);
 }
 
 /* Add a word to the trie.  */

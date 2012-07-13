@@ -65,7 +65,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_MODE (result) = CU_MODE_NORMAL;
     INFO_WITHLOOPLEVEL (result) = 0;

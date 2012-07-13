@@ -38,7 +38,7 @@ SSinit ()
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (serstack_t));
+    result = (serstack_t *)MEMmalloc (sizeof (serstack_t));
 
     result->head = NULL;
 
@@ -69,7 +69,7 @@ SSpush (node *val, serstack_t *stack)
 
     DBUG_ENTER ();
 
-    tmp = MEMmalloc (sizeof (serentry_t));
+    tmp = (serentry_t *)MEMmalloc (sizeof (serentry_t));
 
     tmp->val = val;
     tmp->next = stack->head;

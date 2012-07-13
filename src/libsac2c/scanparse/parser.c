@@ -55,12 +55,17 @@
 /* FIXME: This is a hack, as for the time being tokens and
           AST nodes use a different location structures.
           AST one should be extended.  */
-#define CONVERT_LOC(node)                                                                \
-    (struct location){.fname = NODE_FILE (node),                                         \
-                      .line = (size_t)NODE_LINE (node),                                  \
-                      .col = 0};
+static inline struct location
+CONVERT_LOC (node *n) {
+    struct location loc;
+    loc.fname = NODE_FILE (n);
+    loc.line = (size_t)NODE_LINE (n);
+    loc.col = 0;
+    return loc;
+}
 
-node *MakeIncDecLet (node *, char *);
+node *
+MakeIncDecLet (node *, char *);
 ntype *Exprs2NType (ntype *, node *);
 int CountDotsInExprs (node *);
 shape *Exprs2Shape (node *);
@@ -1353,7 +1358,7 @@ is_function_call (struct parser *parser)
     if (!id)
         return false;
 
-    if (id->namespace) {
+    if (id->xnamespace) {
         bool ret = false;
         parser_get_token (parser), parser_get_token (parser), parser_get_token (parser);
         ret = token_is_operator (parser_get_token (parser), tv_lparen);
@@ -1364,7 +1369,7 @@ is_function_call (struct parser *parser)
         return ret;
     }
 
-    if (!id->namespace && id->id) {
+    if (!id->xnamespace && id->id) {
         bool ret = false;
         parser_get_token (parser);
         ret = token_is_operator (parser_get_token (parser), tv_lparen);
@@ -1378,18 +1383,18 @@ is_function_call (struct parser *parser)
 }
 
 static inline bool
-is_unary (struct parser *parser, const char *namespace, const char *id)
+is_unary (struct parser *parser, const char *xnamespace, const char *id)
 {
     struct known_symbol *symb;
 
-    if (namespace == NULL
-        || (parser->in_module && !strcmp (namespace, parser->current_module))) {
+    if (xnamespace == NULL
+        || (parser->in_module && !strcmp (xnamespace, parser->current_module))) {
         HASH_FIND_STR (parser->known_symbols, id, symb);
         if (!symb)
             return false;
     } else {
         struct used_module *mod;
-        HASH_FIND_STR (parser->used_modules, namespace, mod);
+        HASH_FIND_STR (parser->used_modules, xnamespace, mod);
         if (!mod)
             return false;
 
@@ -1402,18 +1407,18 @@ is_unary (struct parser *parser, const char *namespace, const char *id)
 }
 
 static inline bool
-is_binary (struct parser *parser, const char *namespace, const char *id)
+is_binary (struct parser *parser, const char *xnamespace, const char *id)
 {
     struct known_symbol *symb;
 
-    if (namespace == NULL
-        || (parser->in_module && !strcmp (namespace, parser->current_module))) {
+    if (xnamespace == NULL
+        || (parser->in_module && !strcmp (xnamespace, parser->current_module))) {
         HASH_FIND_STR (parser->known_symbols, id, symb);
         if (!symb)
             return false;
     } else {
         struct used_module *mod;
-        HASH_FIND_STR (parser->used_modules, namespace, mod);
+        HASH_FIND_STR (parser->used_modules, xnamespace, mod);
         if (!mod)
             return false;
 
@@ -1426,17 +1431,17 @@ is_binary (struct parser *parser, const char *namespace, const char *id)
 }
 
 static inline bool
-is_known (struct parser *parser, const char *namespace, const char *id)
+is_known (struct parser *parser, const char *xnamespace, const char *id)
 {
     struct known_symbol *symb;
 
-    if (namespace == NULL
-        || (parser->in_module && !strcmp (namespace, parser->current_module))) {
+    if (xnamespace == NULL
+        || (parser->in_module && !strcmp (xnamespace, parser->current_module))) {
         HASH_FIND_STR (parser->known_symbols, id, symb);
         return !!symb;
     } else {
         struct used_module *mod;
-        HASH_FIND_STR (parser->used_modules, namespace, mod);
+        HASH_FIND_STR (parser->used_modules, xnamespace, mod);
         if (!mod)
             return false;
 
@@ -1483,15 +1488,15 @@ handle_ext_id (struct parser *parser)
         return error_mark_node;
     }
 
-    if (id->namespace) {
-        node *ret = TBmakeSpid (NSgetNamespace (id->namespace), id->id);
+    if (id->xnamespace) {
+        node *ret = TBmakeSpid (NSgetNamespace (id->xnamespace), id->id);
         parser_get_token (parser), parser_get_token (parser), parser_get_token (parser);
         free (id);
 
         return ret;
     }
 
-    if (!id->namespace && id->id) {
+    if (!id->xnamespace && id->id) {
         node *ret = TBmakeSpid (NULL, id->id);
         parser_get_token (parser);
         free (id);
@@ -1689,9 +1694,9 @@ handle_primary_expr (struct parser *parser)
         if (is_function_call (parser))
             res = handle_function_call (parser);
         else if (NULL != (id = is_ext_id (parser))) {
-            if (id->namespace && !is_known (parser, id->namespace, id->id))
+            if (id->xnamespace && !is_known (parser, id->xnamespace, id->id))
                 error ("symbol `%s' cannot be found in module `%s'", id->id,
-                       id->namespace);
+                       id->xnamespace);
 
             res = handle_ext_id (parser);
             free (id);
@@ -2104,15 +2109,15 @@ handle_postfix_expr (struct parser *parser)
           if (!id)
             goto out;
 
-          if (!is_unary (parser, id->namespace, id->id))
+          if (!is_unary (parser, id->xnamespace, id->id))
             goto out;
 
           parser_get_token (parser);
-          if (id->namespace)
+          if (id->xnamespace)
             parser_get_token (parser), parser_get_token (parser);
 
-          res = TCmakeSpap1 (id->namespace
-                             ? NSgetNamespace (id->namespace) : NULL,
+          res = TCmakeSpap1 (id->xnamespace
+                             ? NSgetNamespace (id->xnamespace) : NULL,
                              id->id, res);
           free (id);
 #endif
@@ -2149,12 +2154,12 @@ handle_unary_expr (struct parser *parser)
     }
 
     /* Any unary operation can be used as prefix operation.  */
-    if (!is_unary (parser, id->namespace, id->id) || !id->is_operation)
+    if (!is_unary (parser, id->xnamespace, id->id) || !id->is_operation)
         goto out;
 
-    if (id->namespace)
+    if (id->xnamespace)
         parser_get_token (parser), parser_get_token (parser), parser_get_token (parser);
-    else if (!id->namespace && id->id)
+    else if (!id->xnamespace && id->id)
         parser_get_token (parser);
     else
         unreachable ("identifier structure with empty id field");
@@ -2166,7 +2171,7 @@ handle_unary_expr (struct parser *parser)
     if (token_is_operator (parser_get_token (parser), tv_lparen)) {
         if (!is_type (parser)) {
             parser_unget2 (parser);
-            if (id->namespace)
+            if (id->xnamespace)
                 parser_unget2 (parser);
 
             identifier_free (id);
@@ -2181,7 +2186,7 @@ handle_unary_expr (struct parser *parser)
     if (res.expr == error_mark_node || res.expr == NULL)
         goto error_return;
 
-    res.expr = TCmakeSpap1 (id->namespace ? NSgetNamespace (id->namespace) : NULL,
+    res.expr = TCmakeSpap1 (id->xnamespace ? NSgetNamespace (id->xnamespace) : NULL,
                             strdup (id->id), res.expr);
 
     /* Set the argument once, and leave it untouched
@@ -2329,7 +2334,7 @@ handle_binary_expr (struct parser *parser, bool no_relop)
         struct pre_post_expr expr;
         enum prec prec;
         char *op;
-        namespace_t *namespace;
+        namespace_t *xnamespace;
     } stack[num_precs];
 
     int sp = 0;
@@ -2340,13 +2345,13 @@ handle_binary_expr (struct parser *parser, bool no_relop)
 
     stack[0].expr = t;
     stack[0].prec = prec_none;
-    stack[0].namespace = NULL;
+    stack[0].xnamespace = NULL;
     stack[0].op = NULL;
 
     while (true) {
         enum prec oprec;
         struct location loc;
-        namespace_t *namespace = NULL;
+        namespace_t *xnamespace = NULL;
         bool need_parser_shift = false;
         struct identifier *id;
 
@@ -2365,7 +2370,7 @@ handle_binary_expr (struct parser *parser, bool no_relop)
       if (is_function_call (parser) && prev_expr_binary_op)
         {
           id = get_binary_op (&stack[sp].expr);
-          namespace = id->namespace ? NSgetNamespace (id->namespace) : NULL;
+          xnamespace = id->xnamespace ? NSgetNamespace (id->xnamespace) : NULL;
         }
       else
         {
@@ -2374,26 +2379,26 @@ handle_binary_expr (struct parser *parser, bool no_relop)
           /* Avoid the case when the binary operation is eaten-up
              by postfix handler, in case operation can be applied
              both ways.  */
-          if (!id || !is_binary (parser, id->namespace, id->id))
+          if (!id || !is_binary (parser, id->xnamespace, id->id))
             {
               if (prev_expr_binary_op)
                 {
                   id = get_binary_op (&stack[sp].expr);
-                  namespace = id->namespace ? NSgetNamespace (id->namespace) : NULL;
+                  xnamespace = id->xnamespace ? NSgetNamespace (id->xnamespace) : NULL;
                 }
               else
                 goto out;
             }
           else
             {
-              namespace = id->namespace ? NSgetNamespace (id->namespace) : NULL;
+              xnamespace = id->xnamespace ? NSgetNamespace (id->xnamespace) : NULL;
               need_parser_shift = true;
             }
         }
 #endif
 
         if (NULL == (id = is_ext_id (parser))
-            || !is_binary (parser, id->namespace, id->id))
+            || !is_binary (parser, id->xnamespace, id->id))
             goto out;
         else if (!id->is_operation) {
             error_loc (loc, "`%s' cannot be used as a binary operation", id->id);
@@ -2402,16 +2407,15 @@ handle_binary_expr (struct parser *parser, bool no_relop)
                 free_tree (stack[sp--].expr.expr);
 
             return error_mark_node;
-        } // namespace =id->namespace?NSgetNamespace(id->namespace):NULL;
-        else if (!strcmp (id->id, "++") || !strcmp (id->id, "--")) {
+        } else if (!strcmp (id->id, "++") || !strcmp (id->id, "--")) {
             parser_get_token (parser);
-            if (id->namespace)
+            if (id->xnamespace)
                 parser_get_token (parser), parser_get_token (parser);
 
             /* Assume that this is a postfix ++ or -- used in the assignment.  */
             if (!token_starts_expr (parser, parser_get_token (parser))) {
                 parser_unget2 (parser);
-                if (id->namespace)
+                if (id->xnamespace)
                     parser_unget2 (parser);
 
                 identifier_free (id);
@@ -2419,9 +2423,9 @@ handle_binary_expr (struct parser *parser, bool no_relop)
             } else
                 parser_unget (parser);
 
-            namespace = id->namespace ? NSgetNamespace (id->namespace) : NULL;
+            xnamespace = id->xnamespace ? NSgetNamespace (id->xnamespace) : NULL;
         } else {
-            namespace = id->namespace ? NSgetNamespace (id->namespace) : NULL;
+            xnamespace = id->xnamespace ? NSgetNamespace (id->xnamespace) : NULL;
             need_parser_shift = true;
         }
 
@@ -2478,7 +2482,7 @@ handle_binary_expr (struct parser *parser, bool no_relop)
            can be used as a binary operation.  */
         if (need_parser_shift) {
             parser_get_token (parser);
-            if (id->namespace)
+            if (id->xnamespace)
                 parser_get_token (parser), parser_get_token (parser);
         }
 
@@ -2497,7 +2501,7 @@ handle_binary_expr (struct parser *parser, bool no_relop)
                 args = TBmakeExprs (stack[sp - 1].expr.expr,
                                     TBmakeExprs (stack[sp].expr.expr, NULL));
                 stack[sp - 1].expr.expr
-                  = TBmakeSpap (TBmakeSpid (stack[sp].namespace, stack[sp].op), args);
+                  = TBmakeSpap (TBmakeSpid (stack[sp].xnamespace, stack[sp].op), args);
             }
             sp--;
         }
@@ -2518,7 +2522,7 @@ handle_binary_expr (struct parser *parser, bool no_relop)
         stack[sp].expr = t;
         stack[sp].prec = oprec;
         stack[sp].op = id->id;
-        stack[sp].namespace = namespace;
+        stack[sp].xnamespace = xnamespace;
         free (id);
     }
 
@@ -2536,7 +2540,7 @@ out:
             args = TBmakeExprs (stack[sp - 1].expr.expr,
                                 TBmakeExprs (stack[sp].expr.expr, NULL));
             stack[sp - 1].expr.expr
-              = TBmakeSpap (TBmakeSpid (stack[sp].namespace, stack[sp].op), args);
+              = TBmakeSpap (TBmakeSpid (stack[sp].xnamespace, stack[sp].op), args);
         }
         sp--;
     }
@@ -2993,7 +2997,7 @@ handle_withop (struct parser *parser)
             goto error;
 
         if (NULL != (id = is_ext_id (parser))) {
-            /* if (!is_binary (parser, id->namespace, id->id))
+            /* if (!is_binary (parser, id->xnamespace, id->id))
               {
                 tok = parser_get_token (parser);
                 parser_unget (parser);
@@ -4764,8 +4768,10 @@ pragmas:
         }
 
         /* Set update flags if it is unary/binary.  */
-        argc == 1 ? symbol_set_unary (ks) : (void)0;
-        argc == 2 ? symbol_set_binary (ks) : (void)0;
+        if (argc == 1)
+            symbol_set_unary (ks);
+        if (argc == 2)
+            symbol_set_binary (ks);
     }
 
     ret = TBmakeFundef (NULL, NULL, NULL, NULL, NULL, NULL);
@@ -4851,16 +4857,22 @@ cache_module (struct parser *parser, const char *modname)
         HASH_FIND_STR (used_module->symbols, symbol_name, ks);
         if (ks) {
             warning ("module `%s' imports symbol `%s' twice", modname, symbol_name);
-            arity1 ? symbol_set_unary (ks) : (void)0;
-            arity2 ? symbol_set_binary (ks) : (void)0;
-            istype ? symbol_set_type (ks) : (void)0;
+            if (arity1)
+                symbol_set_unary (ks);
+            if (arity2)
+                symbol_set_binary (ks);
+            if (istype)
+                symbol_set_type (ks);
         } else {
             ks = (struct known_symbol *)malloc (sizeof (struct known_symbol));
             ks->name = strdup (symbol_name);
             ks->flags = 0;
-            arity1 ? symbol_set_unary (ks) : (void)0;
-            arity2 ? symbol_set_binary (ks) : (void)0;
-            istype ? symbol_set_type (ks) : (void)0;
+            if (arity1)
+                symbol_set_unary (ks);
+            if (arity2)
+                symbol_set_binary (ks);
+            if (istype)
+                symbol_set_type (ks);
             HASH_ADD_KEYPTR (hh, used_module->symbols, ks->name, strlen (ks->name), ks);
         }
     }

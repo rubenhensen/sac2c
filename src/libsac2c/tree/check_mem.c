@@ -80,7 +80,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ERROR (result) = NULL;
 
@@ -100,7 +100,7 @@ FreeInfo (info *info)
 typedef struct MEMOBJ {
     int size;
     void *ptr;
-    nodetype nodetype;
+    nodetype mnodetype;
     char *file;
     int line;
     compiler_phase_t anyphase;
@@ -114,7 +114,7 @@ typedef struct MEMOBJ {
 
 #define MEMOBJ_SIZE(n) ((n)->size)
 #define MEMOBJ_PTR(n) ((n)->ptr)
-#define MEMOBJ_NODETYPE(n) ((n)->nodetype)
+#define MEMOBJ_NODETYPE(n) ((n)->mnodetype)
 #define MEMOBJ_FILE(n) ((n)->file)
 #define MEMOBJ_LINE(n) ((n)->line)
 #define MEMOBJ_ANYPHASE(n) ((n)->anyphase)
@@ -330,7 +330,7 @@ CHKMregisterMem (int size, void *orig_ptr)
                     newindex++;
                 }
             }
-            memtab = FreeMemtab (memtab, memtabsize);
+            memtab = (memobj *)FreeMemtab (memtab, memtabsize);
             memtab = newtab;
             memindex = newindex;
             memfreeslots = newtabsize - newindex;
@@ -612,7 +612,7 @@ CHKManalyzeMemtab (memobj *arg_memtab, int arg_memindex)
         }
     }
 
-    copy_memtab = FreeMemtab (copy_memtab, copy_index);
+    copy_memtab = (memobj *)FreeMemtab (copy_memtab, copy_index);
 
     if (((cnt_node_spaceleaks != 0) || (cnt_sharedmem != 0) || (cnt_non_node_spaceleaks))
         && ((cnt_node_spaceleaks + cnt_sharedmem + cnt_non_node_spaceleaks)
@@ -688,7 +688,7 @@ CHKMsetNodeType (node *shifted_ptr, nodetype newnodetype)
  *
  *****************************************************************************/
 void
-CHKMsetLocation (node *shifted_ptr, char *file, int line)
+CHKMsetLocation (void *shifted_ptr, char *file, int line)
 {
     memobj *ptr_to_memobj;
 
@@ -712,7 +712,7 @@ CHKMsetLocation (node *shifted_ptr, char *file, int line)
  *
  *****************************************************************************/
 int
-CHKMgetSize (node *shifted_ptr)
+CHKMgetSize (void *shifted_ptr)
 {
     memobj *ptr_to_memobj;
     int size;

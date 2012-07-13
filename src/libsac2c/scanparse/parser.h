@@ -140,17 +140,17 @@ enum interface_kind { int_import, int_use, int_export, int_provide };
    can be used as unary or binay operation.  */
 
 struct identifier {
-    char *namespace;
+    char *xnamespace;
     char *id;
     bool is_operation;
 };
 
 static inline struct identifier *
-identifier_new (char *namespace, char *id, bool op)
+identifier_new (char *xnamespace, char *id, bool op)
 {
     struct identifier *ret;
     ret = (struct identifier *)malloc (sizeof (struct identifier));
-    ret->namespace = namespace;
+    ret->xnamespace = xnamespace;
     ret->id = id;
     ret->is_operation = op;
 
@@ -161,8 +161,8 @@ static inline void
 identifier_free (struct identifier *id)
 {
     if (id) {
-        if (id->namespace)
-            free (id->namespace);
+        if (id->xnamespace)
+            free (id->xnamespace);
 
         if (id->id)
             free (id->id);

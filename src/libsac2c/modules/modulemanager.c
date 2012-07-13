@@ -67,7 +67,7 @@ checkMixedCasesCorrect (module_t *module)
 
     DBUG_ENTER ();
 
-    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 17));
+    name = (char *)MEMmalloc (sizeof (char) * (STRlen (module->name) + 17));
     sprintf (name, "__%s_MIXEDCASENAME", module->name);
 
     STRtoupper (name, 2, 2 + STRlen (module->name));
@@ -99,7 +99,7 @@ checkHasSameASTVersion (module_t *module)
 
     DBUG_ENTER ();
 
-    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 14));
+    name = (char *)MEMmalloc (sizeof (char) * (STRlen (module->name) + 14));
     sprintf (name, "__%s_ASTVERSION", module->name);
 
     astverfun.v = LIBMgetLibraryFunction (name, module->lib);
@@ -143,7 +143,7 @@ checkWasBuildUsingSameFlags (module_t *module)
 
     DBUG_ENTER ();
 
-    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 13));
+    name = (char *)MEMmalloc (sizeof (char) * (STRlen (module->name) + 13));
     sprintf (name, "__%s_USEDFLAGS", module->name);
 
     flagfun.v = LIBMgetLibraryFunction (name, module->lib);
@@ -175,7 +175,7 @@ checkWhetherDeprecated (module_t *module)
 
     DBUG_ENTER ();
 
-    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 14));
+    name = (char *)MEMmalloc (sizeof (char) * (STRlen (module->name) + 14));
     sprintf (name, "__%s_DEPRECATED", module->name);
 
     dfun.v = LIBMgetLibraryFunction (name, module->lib);
@@ -201,7 +201,7 @@ addNamespaceMappings (module_t *module)
 
     DBUG_ENTER ();
 
-    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 19));
+    name = (char *)MEMmalloc (sizeof (char) * (STRlen (module->name) + 19));
     sprintf (name, "__%s__MapConstructor", module->name);
 
     mapfun.v = LIBMgetLibraryFunction (name, module->lib);
@@ -247,10 +247,10 @@ AddModuleToPool (const char *name)
 
     DBUG_PRINT ("Start loading module '%s'.", name);
 
-    result = MEMmalloc (sizeof (module_t));
+    result = (module_t *)MEMmalloc (sizeof (module_t));
 
-    tmp = MEMmalloc (sizeof (char)
-                     * (STRlen (name) + STRlen (global.config.lib_variant) + 11));
+    tmp = (char *)MEMmalloc (sizeof (char)
+                             * (STRlen (name) + STRlen (global.config.lib_variant) + 11));
     sprintf (tmp, "lib%sTree%s.so", name, global.config.lib_variant);
 
     result->sofile = STRcpy (FMGRfindFile (PK_lib_path, tmp));
@@ -353,7 +353,7 @@ GetSymbolTableFunction (module_t *module)
 
     DBUG_ENTER ();
 
-    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 11));
+    name = (char *)MEMmalloc (sizeof (char) * (STRlen (module->name) + 11));
     sprintf (name, "__%s__SYMTAB", module->name);
 
     result.v = LIBMgetLibraryFunction (name, module->lib);
@@ -391,7 +391,7 @@ GetDependencyTableFunction (module_t *module)
 
     DBUG_ENTER ();
 
-    name = MEMmalloc (sizeof (char) * (STRlen (module->name) + 11));
+    name = (char *)MEMmalloc (sizeof (char) * (STRlen (module->name) + 11));
     sprintf (name, "__%s__DEPTAB", module->name);
 
     result.v = LIBMgetLibraryFunction (name, module->lib);

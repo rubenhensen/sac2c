@@ -278,6 +278,8 @@
 #include "LookUpTable.h"
 #include "ivextrema.h"
 
+#include "cppcompat.h"
+
 static char *FAIL = "";
 static int matching_level;
 

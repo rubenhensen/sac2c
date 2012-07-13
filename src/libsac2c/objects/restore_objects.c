@@ -17,14 +17,14 @@
  * INFO structure
  */
 struct INFO {
-    bool delete;
+    bool mdelete;
     bool dospmd;
 };
 
 /*
  * INFO macros
  */
-#define INFO_DELETE(n) ((n)->delete)
+#define INFO_DELETE(n) ((n)->mdelete)
 #define INFO_DOSPMD(n) ((n)->dospmd)
 
 /*
@@ -37,7 +37,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_DELETE (result) = FALSE;
     INFO_DOSPMD (result) = FALSE;
@@ -542,20 +542,20 @@ RESOlet (node *arg_node, info *arg_info)
 node *
 RESOassign (node *arg_node, info *arg_info)
 {
-    bool delete;
+    bool xdelete;
 
     DBUG_ENTER ();
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-    delete = INFO_DELETE (arg_info);
+    xdelete = INFO_DELETE (arg_info);
     INFO_DELETE (arg_info) = FALSE;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
         ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
     }
 
-    if (delete) {
+    if (xdelete) {
         arg_node = FREEdoFreeNode (arg_node);
     }
 

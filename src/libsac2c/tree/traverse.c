@@ -187,7 +187,7 @@ TRAVlacNewInfo (bool lacfunok)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (lac_info_t));
+    result = (lac_info_t *)MEMmalloc (sizeof (lac_info_t));
 
     LAC_INFO_LACFUNOK (result) = lacfunok;
     LAC_INFO_BLOCKLEVEL (result) = 0;
@@ -314,17 +314,17 @@ TRAVlacOpt (node *arg_node, info *arg_info, lac_info_t *lac_info)
 void
 TRAVpush (trav_t traversal)
 {
-    travstack_t *new;
+    travstack_t *xnew;
 
     DBUG_ENTER ();
 
-    new = MEMmalloc (sizeof (travstack_t));
+    xnew = (travstack_t *)MEMmalloc (sizeof (travstack_t));
 
-    new->next = travstack;
-    new->traversal = traversal;
-    new->funs = travtables[traversal];
+    xnew->next = travstack;
+    xnew->traversal = traversal;
+    xnew->funs = travtables[traversal];
 
-    travstack = new;
+    travstack = xnew;
 
     DBUG_RETURN ();
 }
@@ -333,14 +333,14 @@ void
 TRAVpushAnonymous (anontrav_t *anontraversal, travfun_p deffun)
 {
     travfun_p *travmap;
-    travstack_t *new;
+    travstack_t *xnew;
     int pos;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (anontraversal != NULL, "empty anonymous traversal!");
 
-    travmap = MEMmalloc (sizeof (travfun_p) * (MAX_NODES + 1));
+    travmap = (travfun_p *)MEMmalloc (sizeof (travfun_p) * (MAX_NODES + 1));
 
     for (pos = 0; pos <= MAX_NODES; pos++) {
         travmap[pos] = deffun;
@@ -350,13 +350,13 @@ TRAVpushAnonymous (anontrav_t *anontraversal, travfun_p deffun)
         travmap[anontraversal[pos].node] = anontraversal[pos].travfun;
     }
 
-    new = MEMmalloc (sizeof (travstack_t));
+    xnew = (travstack_t *)MEMmalloc (sizeof (travstack_t));
 
-    new->next = travstack;
-    new->traversal = TR_anonymous;
-    new->funs = travmap;
+    xnew->next = travstack;
+    xnew->traversal = TR_anonymous;
+    xnew->funs = travmap;
 
-    travstack = new;
+    travstack = xnew;
 
     DBUG_RETURN ();
 }

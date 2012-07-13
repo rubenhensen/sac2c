@@ -39,7 +39,7 @@ version="1.0">
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="' *nodealloc;'" />
-  <xsl:value-of select="'node *this;'" />
+  <xsl:value-of select="'node *xthis;'" />
   <xsl:value-of select="'int size;'" />
   <!-- counter for for-loops -->
   <xsl:if test="attributes/attribute/type[key( &quot;arraytypes&quot;, @name)]" >
@@ -47,7 +47,7 @@ version="1.0">
   </xsl:if>
   <!-- DBUG_ENTER call -->
   <xsl:value-of select="'DBUG_ENTER ();'"/>
-  <!-- allocate new node this -->
+  <!-- allocate new node xthis -->
   <xsl:value-of select="'DBUG_PRINT (&quot;allocating node structure&quot;);'"/>
   <xsl:value-of select="'size = sizeof( struct NODE_ALLOC_N_'" />
   <xsl:call-template name="uppercase" >
@@ -72,9 +72,9 @@ version="1.0">
       Part for Memorycheck END 
    -->
   <!-- set node structure -->
-  <xsl:value-of select="'this = (node *) &amp;(nodealloc->nodestructure);'" />
+  <xsl:value-of select="'xthis = (node *) &amp;(nodealloc->nodestructure);'" />
   <xsl:call-template name="newline" />
-  <xsl:value-of select="'CHKMsetNodeType(this, N_'" />
+  <xsl:value-of select="'CHKMsetNodeType(xthis, N_'" />
   <xsl:call-template name="lowercase" >
     <xsl:with-param name="string" >
       <xsl:value-of select="@name" />
@@ -85,7 +85,7 @@ version="1.0">
   <!-- set sons and attribs pointer -->
   <!-- only set sons if we have sons -->
   <xsl:if test="sons/son">
-    <xsl:value-of select="'this->sons.'"/>
+    <xsl:value-of select="'xthis->sons.'"/>
     <xsl:call-template name="name-to-nodeenum" >
       <xsl:with-param name="name" select="@name"/>
     </xsl:call-template>
@@ -97,7 +97,7 @@ version="1.0">
   </xsl:if>
   <!-- only set attributes/flags if we have some -->
   <xsl:if test="attributes/attribute | flags/flag">
-    <xsl:value-of select="'this->attribs.'"/>
+    <xsl:value-of select="'xthis->attribs.'"/>
     <xsl:call-template name="name-to-nodeenum" >
       <xsl:with-param name="name" select="@name"/>
     </xsl:call-template>
@@ -107,7 +107,7 @@ version="1.0">
     </xsl:call-template>
     <xsl:value-of select="' *) &amp;(nodealloc->attributestructure);'" />
   </xsl:if>
-  <xsl:value-of select="'NODE_TYPE( this) = N_'" />
+  <xsl:value-of select="'NODE_TYPE( xthis) = N_'" />
   <xsl:call-template name="lowercase" >
     <xsl:with-param name="string" >
       <xsl:value-of select="@name" />
@@ -115,10 +115,10 @@ version="1.0">
   </xsl:call-template>
   <xsl:value-of select="';'" />
 
-  <xsl:value-of select="'DBUG_PRINT (&quot;address: &quot;F_PTR, this);'"/>
+  <xsl:value-of select="'DBUG_PRINT (&quot;address: &quot;F_PTR, xthis);'"/>
   <!-- set node type -->
   <xsl:value-of select="'DBUG_PRINT (&quot;setting node type&quot;);'"/>
-  <xsl:value-of select="'NODE_TYPE(this) = '" />
+  <xsl:value-of select="'NODE_TYPE(xthis) = '" />
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="@name" />
@@ -127,11 +127,11 @@ version="1.0">
   <xsl:value-of select="';'" />
   <!-- set lineno -->
   <xsl:value-of select="'DBUG_PRINT (&quot;setting lineno to %d&quot;, global.linenum);'"/>
-  <xsl:value-of select="'NODE_LINE( this) = global.linenum;'" />
-  <xsl:value-of select="'NODE_ERROR( this) = NULL;'" />
+  <xsl:value-of select="'NODE_LINE( xthis) = global.linenum;'" />
+  <xsl:value-of select="'NODE_ERROR( xthis) = NULL;'" />
   <!-- set filename -->
   <xsl:value-of select="'DBUG_PRINT (&quot;setting filename to %s&quot;, global.filename);'"/>
-  <xsl:value-of select="'NODE_FILE( this) = global.filename;'" />
+  <xsl:value-of select="'NODE_FILE( xthis) = global.filename;'" />
   <!-- assign sons and attributes a value -->
   <xsl:apply-templates select="sons/son" mode="make-body"/>
   <xsl:apply-templates select="attributes/attribute" mode="make-body"/>
@@ -144,13 +144,13 @@ version="1.0">
   <xsl:value-of select="'DBUG_PRINT (&quot;doing son target checks&quot;);'"/>
   <!-- generate warning messages -->
   <xsl:apply-templates select="sons/son[not( @default)]" mode="make-assertion-target">
-    <xsl:with-param name="self"><xsl:value-of select="'this'"/></xsl:with-param>
+    <xsl:with-param name="self"><xsl:value-of select="'xthis'"/></xsl:with-param>
   </xsl:apply-templates>
   <xsl:call-template name="newline" />
   <xsl:value-of select="'#endif /* DBUG_OFF */'" />
   <xsl:call-template name="newline" />
   <!-- DBUG_RETURN call -->
-  <xsl:value-of select="'DBUG_RETURN (this);'"/>
+  <xsl:value-of select="'DBUG_RETURN (xthis);'"/>
   <xsl:value-of select="'}'"/>
 </xsl:template>
 
@@ -170,7 +170,7 @@ version="1.0">
   <xsl:value-of select="');'"/>
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
-      <xsl:value-of select="'this'" />
+      <xsl:value-of select="'xthis'" />
     </xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name" />
@@ -195,7 +195,7 @@ version="1.0">
     <xsl:value-of select="'if ( '" />
     <xsl:call-template name="node-access">
       <xsl:with-param name="node">
-        <xsl:value-of select="'this'" />
+        <xsl:value-of select="'xthis'" />
       </xsl:with-param>
       <xsl:with-param name="nodetype">
         <xsl:value-of select="../../@name" />
@@ -209,7 +209,7 @@ version="1.0">
       <xsl:with-param name="node">
         <xsl:call-template name="node-access">
           <xsl:with-param name="node">
-            <xsl:value-of select="'this'" />
+            <xsl:value-of select="'xthis'" />
           </xsl:with-param>
           <xsl:with-param name="nodetype">
             <xsl:value-of select="../../@name" />
@@ -226,7 +226,7 @@ version="1.0">
         <xsl:value-of select="'Decl'" />
       </xsl:with-param>
     </xsl:call-template>
-    <xsl:value-of select="'= this; }'"/>
+    <xsl:value-of select="'= xthis; }'"/>
     <xsl:call-template name="newline" />
   </xsl:if>
 </xsl:template>
@@ -242,7 +242,7 @@ version="1.0">
   <!-- left side of assignment -->
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
-      <xsl:value-of select="'this'" />
+      <xsl:value-of select="'xthis'" />
     </xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name" />
@@ -267,7 +267,7 @@ version="1.0">
   </xsl:if>
 </xsl:template> 
 
-<!-- a default value implies that this attribute is not 
+<!-- a default value implies that xthis attribute is not 
      passed as an argument to the make function, thus the r-value
      of the assignment is its default -->
 <xsl:template match="@name[../@default]" mode="make-body">
@@ -285,7 +285,7 @@ version="1.0">
 </xsl:template>
 
 <!-- no default and beeing a temporary attribute implies using the
-     init value for this attributes type -->
+     init value for xthis attributes type -->
 <xsl:template match="@name" mode="make-body">
   <xsl:value-of select="key(&quot;types&quot;, ../type/@name)/@init"/>
 </xsl:template>
@@ -293,7 +293,7 @@ version="1.0">
 <xsl:template match="flag[@default]" mode="make-body">
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
-      <xsl:value-of select="'this'" />
+      <xsl:value-of select="'xthis'" />
     </xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name" />
@@ -310,7 +310,7 @@ version="1.0">
 <xsl:template match="flag" mode="make-body">
   <xsl:call-template name="node-access">
     <xsl:with-param name="node">
-      <xsl:value-of select="'this'" />
+      <xsl:value-of select="'xthis'" />
     </xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name" />

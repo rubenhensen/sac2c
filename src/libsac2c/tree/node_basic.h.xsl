@@ -74,7 +74,7 @@ node *NBMacroMatchesType( node *node, nodetype type)
     const char *ndtp_name = ((node->nodetype &lt;= MAX_NODES))
                             ? global.mdb_nodetype[node->nodetype] : "!invalid!";
     printf( "TRAVERSE ERROR: node of type %d:%s found where %d:%s was expected!\n\n",
-            node->nodetype, ndtp_name,
+            node->mnodetype, ndtp_name,
             type, global.mdb_nodetype[type]);
     fflush(stdout);
     *((int *) 0) = 1; /* segfault */

@@ -21,6 +21,8 @@
 /*
  * INFO structure
  */
+enum symbmode_t { SYM_filter, SYM_check };
+
 struct INFO {
     char *symbol;
     bool exported;
@@ -28,8 +30,8 @@ struct INFO {
     bool result;
     node *interface;
     int filetype;
-    namespace_t *namespace;
-    enum { SYM_filter, SYM_check } symbmode;
+    namespace_t *mnamespace;
+    symbmode_t symbmode;
 };
 
 /*
@@ -41,7 +43,7 @@ struct INFO {
 #define INFO_RESULT(n) ((n)->result)
 #define INFO_INTERFACE(n) ((n)->interface)
 #define INFO_FILETYPE(n) ((n)->filetype)
-#define INFO_NAMESPACE(n) ((n)->namespace)
+#define INFO_NAMESPACE(n) ((n)->mnamespace)
 #define INFO_SYMBMODE(n) ((n)->symbmode)
 
 /*
@@ -54,7 +56,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_SYMBOL (result) = NULL;
     INFO_EXPORTED (result) = FALSE;

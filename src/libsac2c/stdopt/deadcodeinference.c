@@ -20,8 +20,11 @@
 /*
  * INFO structure
  */
+/* TODO: completely remove TS_fundef and simplify the code,
+ * if DCIdoDeadCodeInferenceOneFundef() is not indeed needed */
+enum travscop_t { TS_function, TS_fundef };
 struct INFO {
-    enum { TS_function, TS_fundef } travscope;
+    travscop_t travscope;
     node *assign;
     node *fundef;
     node *int_assign;
@@ -51,7 +54,7 @@ MakeInfo (void)
 {
     DBUG_ENTER ();
 
-    info *result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_TRAVSCOPE (result) = TS_function;
     INFO_ASSIGN (result) = NULL;

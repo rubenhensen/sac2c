@@ -39,7 +39,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_NS (result) = NULL;
     INFO_DEPS (result) = NULL;
@@ -127,14 +127,14 @@ static node *
 AddInitFunDependencies (node *objlist)
 {
     node *pos;
-    node *new;
+    node *xnew;
     int changes;
 
     DBUG_ENTER ();
 
     if (objlist != NULL) {
         do {
-            new = DUPdoDupTree (objlist);
+            xnew = DUPdoDupTree (objlist);
             pos = objlist;
             changes = 0;
 
@@ -146,14 +146,14 @@ AddInitFunDependencies (node *objlist)
                  */
                 if (OBJDEF_INITFUN (SET_MEMBER (pos)) != NULL) {
                     changes
-                      += TCsetUnion (&new,
+                      += TCsetUnion (&xnew,
                                      FUNDEF_OBJECTS (OBJDEF_INITFUN (SET_MEMBER (pos))));
                 }
                 pos = SET_NEXT (pos);
             }
 
             objlist = FREEdoFreeTree (objlist);
-            objlist = new;
+            objlist = xnew;
         } while (changes != 0);
     }
 

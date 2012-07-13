@@ -88,7 +88,7 @@
  *
  *****************************************************************************/
 struct INFO {
-    pattern *pattern;
+    pattern *mpattern;
     pattern *stopPattern;
     bool block;
     int count;
@@ -114,7 +114,7 @@ struct INFO {
  * IN_BLOCK     are we in a block in the anon trav
  * STOP         we should stop moveing as reached stop pattern
  */
-#define INFO_PATTERN(n) (n->pattern)
+#define INFO_PATTERN(n) (n->mpattern)
 #define INFO_STOP_PATTERN(n) (n->stopPattern)
 #define INFO_BLOCK(n) (n->block)
 #define INFO_COUNT(n) (n->count)
@@ -133,7 +133,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_PATTERN (result) = NULL;
     INFO_STOP_PATTERN (result) = NULL;
@@ -402,7 +402,7 @@ moveAssign (node *assign, node *assigns, info *arg_info)
                                {N_id, &ATravId},
                                {N_block, &ATravBlock},
                                {N_let, &ATravLet},
-                               {0, NULL}};
+                               {(nodetype)0, NULL}};
         info *stack_info = MakeInfoClone (arg_info);
 
         /* Been asked to move a let node.  We should be able to do that */

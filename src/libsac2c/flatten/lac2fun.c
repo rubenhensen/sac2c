@@ -70,7 +70,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
     INFO_FUNS (result) = NULL;
@@ -212,7 +212,7 @@ MakeL2fFundef (char *funname, namespace_t *ns, node *instr, node *funcall_let,
      */
     tmp = args;
 
-#if 0  
+#if 0
   /*
    * as we do not annotate uniqueness to avises anymore,
    * this code is no longer needed. It just remains here for the

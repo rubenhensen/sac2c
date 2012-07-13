@@ -142,7 +142,7 @@ SBUFisEmpty (str_buf *s)
     DBUG_RETURN (s->pos == 0);
 }
 
-void *
+str_buf *
 SBUFfree (str_buf *s)
 {
     DBUG_ENTER ();

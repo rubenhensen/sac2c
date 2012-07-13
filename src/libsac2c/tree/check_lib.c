@@ -86,7 +86,7 @@ CHKexistAttribute (void *attribute, node *arg_node, char *string)
         NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), string);
     }
 
-    DBUG_RETURN (attribute);
+    DBUG_RETURN ((node *)attribute);
 }
 
 /** <!--**********************************************************************-->
@@ -105,7 +105,7 @@ CHKnotExist (void *son_attribute, node *arg_node, char *string)
         NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), string);
     }
 
-    DBUG_RETURN (son_attribute);
+    DBUG_RETURN ((node *)son_attribute);
 }
 
 /** <!--********************************************************************-->
@@ -123,7 +123,7 @@ CHKnotExistAttribute (void *attribute, node *arg_node, char *string)
         NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), string);
     }
 
-    DBUG_RETURN (attribute);
+    DBUG_RETURN ((node *)attribute);
 }
 
 /** <!--**********************************************************************-->

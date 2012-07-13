@@ -63,7 +63,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_TRAVNO (result) = 0;
     INFO_WRAPPERFUNS (result) = NULL;

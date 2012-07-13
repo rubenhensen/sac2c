@@ -50,7 +50,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_GDP_DEPS (result) = NULL;
     INFO_GDP_MODULE (result) = NULL;

@@ -161,7 +161,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_HWLG_LASTASSIGN (result) = NULL;
     INFO_HWLG_LHS (result) = NULL;

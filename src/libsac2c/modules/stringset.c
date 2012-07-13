@@ -41,15 +41,15 @@ STRSadd (const char *string, strstype_t kind, stringset_t *set)
     DBUG_ENTER ();
 
     if (!STRScontains (string, set)) {
-        stringset_t *new = MEMmalloc (sizeof (stringset_t));
+        stringset_t *xnew = (stringset_t *)MEMmalloc (sizeof (stringset_t));
 
         DBUG_PRINT ("adding %s.", string);
 
-        new->val = STRcpy (string);
-        new->kind = kind;
-        new->next = set;
+        xnew->val = STRcpy (string);
+        xnew->kind = kind;
+        xnew->next = set;
 
-        set = new;
+        set = xnew;
     }
 
     DBUG_RETURN (set);
@@ -151,7 +151,7 @@ STRSduplicate (stringset_t *src)
     DBUG_ENTER ();
 
     if (src != NULL) {
-        result = MEMmalloc (sizeof (stringset_t));
+        result = (stringset_t *)MEMmalloc (sizeof (stringset_t));
 
         result->val = STRcpy (src->val);
         result->kind = src->kind;

@@ -83,7 +83,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FLAT_CONTEXT (result) = 0;
     INFO_FLAT_LASTASSIGN (result) = NULL;
@@ -374,7 +374,7 @@ FLATarray (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (ARRAY_AELEMS (arg_node) != NULL) {
-        old_context = INFO_FLAT_CONTEXT (arg_info);
+        old_context = (contextflag)INFO_FLAT_CONTEXT (arg_info);
         INFO_FLAT_CONTEXT (arg_info) = CT_array;
         ARRAY_AELEMS (arg_node) = TRAVdo (ARRAY_AELEMS (arg_node), arg_info);
         INFO_FLAT_CONTEXT (arg_info) = old_context;
@@ -406,7 +406,7 @@ FLATspap (node *arg_node, info *arg_info)
     DBUG_PRINT ("flattening application of %s:", SPAP_NAME (arg_node));
 
     if (SPAP_ARGS (arg_node) != NULL) {
-        old_ctxt = INFO_FLAT_CONTEXT (arg_info);
+        old_ctxt = (contextflag)INFO_FLAT_CONTEXT (arg_info);
         INFO_FLAT_CONTEXT (arg_info) = CT_ap;
         SPAP_ARGS (arg_node) = TRAVdo (SPAP_ARGS (arg_node), arg_info);
         INFO_FLAT_CONTEXT (arg_info) = old_ctxt;
@@ -441,7 +441,7 @@ FLATprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("flattening application of %s:", global.prf_name[PRF_PRF (arg_node)]);
 
     if (PRF_ARGS (arg_node) != NULL) {
-        old_ctxt = INFO_FLAT_CONTEXT (arg_info);
+        old_ctxt = (contextflag)INFO_FLAT_CONTEXT (arg_info);
         INFO_FLAT_CONTEXT (arg_info) = CT_ap;
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
         INFO_FLAT_CONTEXT (arg_info) = old_ctxt;
@@ -471,7 +471,7 @@ FLATreturn (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (RETURN_EXPRS (arg_node) != NULL) {
-        old_ctxt = INFO_FLAT_CONTEXT (arg_info);
+        old_ctxt = (contextflag)INFO_FLAT_CONTEXT (arg_info);
         INFO_FLAT_CONTEXT (arg_info) = CT_return;
         RETURN_EXPRS (arg_node) = TRAVdo (RETURN_EXPRS (arg_node), arg_info);
         INFO_FLAT_CONTEXT (arg_info) = old_ctxt;
@@ -849,7 +849,7 @@ FLATspfold (node *arg_node, info *arg_info)
     }
 
     if (SPFOLD_ARGS (arg_node) != NULL) {
-        old_ctxt = INFO_FLAT_CONTEXT (arg_info);
+        old_ctxt = (contextflag)INFO_FLAT_CONTEXT (arg_info);
         INFO_FLAT_CONTEXT (arg_info) = CT_ap;
         SPFOLD_ARGS (arg_node) = TRAVdo (SPFOLD_ARGS (arg_node), arg_info);
         INFO_FLAT_CONTEXT (arg_info) = old_ctxt;
@@ -1060,7 +1060,7 @@ FLATcode (node *arg_node, info *arg_info)
          */
         mem_last_assign = INFO_FLAT_LASTASSIGN (arg_info);
         INFO_FLAT_LASTASSIGN (arg_info) = NULL;
-        old_ctxt = INFO_FLAT_CONTEXT (arg_info);
+        old_ctxt = (contextflag)INFO_FLAT_CONTEXT (arg_info);
         INFO_FLAT_CONTEXT (arg_info) = CT_return;
 
         exprs2 = TRAVdo (exprs, arg_info);

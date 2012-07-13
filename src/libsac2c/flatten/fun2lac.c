@@ -198,7 +198,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_BELOW_COND (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
@@ -365,16 +365,18 @@ F2Larg (node *arg_node, info *arg_info)
                           INFO_NEW_TOPASSIGNS (arg_info));
 
         if (needs_aux_assign) {
-            tmp_avis = SearchStoreVar (LUTsearchInLutPp (f2l_lut, ID_AVIS (recarg)),
-                                       INFO_NEW_AUXASSIGNS (arg_info));
+            tmp_avis
+              = SearchStoreVar ((node *)LUTsearchInLutPp (f2l_lut, ID_AVIS (recarg)),
+                                INFO_NEW_AUXASSIGNS (arg_info));
 
             if (tmp_avis == NULL) {
                 tmp_avis = Arg2Var (arg_node, arg_info);
                 INFO_NEW_AUXASSIGNS (arg_info)
                   = TBmakeAssign (TBmakeLet (TBmakeIds (tmp_avis, NULL),
                                              TBmakeId (
-                                               LUTsearchInLutPp (f2l_lut,
-                                                                 ID_AVIS (recarg)))),
+                                               (node *)LUTsearchInLutPp (f2l_lut,
+                                                                         ID_AVIS (
+                                                                           recarg)))),
                                   INFO_NEW_AUXASSIGNS (arg_info));
             }
 
@@ -385,7 +387,8 @@ F2Larg (node *arg_node, info *arg_info)
             INFO_NEW_BOTASSIGNS (arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL),
                                          TBmakeId (
-                                           LUTsearchInLutPp (f2l_lut, ID_AVIS (recarg)))),
+                                           (node *)LUTsearchInLutPp (f2l_lut,
+                                                                     ID_AVIS (recarg)))),
                               INFO_NEW_BOTASSIGNS (arg_info));
         }
     }

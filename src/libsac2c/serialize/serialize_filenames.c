@@ -58,12 +58,12 @@ SFNgetId (const char *filename)
         }
 
         if (!found) {
-            filenamedb_t *new = (filenamedb_t *)MEMmalloc (sizeof (filenamedb_t));
+            filenamedb_t *xnew = (filenamedb_t *)MEMmalloc (sizeof (filenamedb_t));
 
-            new->name = filename;
-            new->next = NULL;
+            xnew->name = filename;
+            xnew->next = NULL;
 
-            names->next = new;
+            names->next = xnew;
             result++;
         }
     }

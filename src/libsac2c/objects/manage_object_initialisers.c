@@ -19,14 +19,14 @@
  */
 struct INFO {
     node *args;
-    bool delete;
+    bool mdelete;
 };
 
 /*
  * INFO macros
  */
 #define INFO_ARGS(n) ((n)->args)
-#define INFO_DELETE(n) ((n)->delete)
+#define INFO_DELETE(n) ((n)->mdelete)
 
 /*
  * INFO functions
@@ -38,7 +38,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ARGS (result) = NULL;
     INFO_DELETE (result) = FALSE;

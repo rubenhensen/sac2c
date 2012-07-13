@@ -126,7 +126,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_TYPE (result) = NULL;
     INFO_GEN_TYPE (result) = NULL;
@@ -1476,8 +1476,9 @@ NTCarray (node *arg_node, info *arg_info)
         /**
          * Now, we built the resulting (AKS-)type type from the product type found:
          */
-        info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf,
-                              "array-constructor", 0, 1, ARRAY_ISIRREGULAR (arg_node));
+        info
+          = TEmakeInfoPrf (global.linenum, global.filename, TE_prf, "array-constructor",
+                           (prf)0, 1, ARRAY_ISIRREGULAR (arg_node));
 
         if (ARRAY_ISIRREGULAR (arg_node)) {
             /* Do something */
@@ -1787,8 +1788,8 @@ NTCcast (node *arg_node, info *arg_info)
     }
     cast_t = CAST_NTYPE (arg_node);
 
-    info
-      = TEmakeInfoPrf (global.linenum, global.filename, TE_prf, "type-cast", 0, 1, FALSE);
+    info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf, "type-cast", (prf)0, 1,
+                          FALSE);
     type = NTCCTcomputeType (NTCCTprf_cast, info, TYmakeProductType (2, cast_t, expr_t));
 
     INFO_TYPE (arg_info) = TYgetProductMember (type, 0);

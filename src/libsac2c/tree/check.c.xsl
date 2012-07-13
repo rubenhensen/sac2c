@@ -479,7 +479,7 @@ node *CHKdoTreeCheck( node *arg_node)
       <xsl:value-of select="key(&quot;types&quot;, ../../../type/@name)/@size"/>
       <xsl:value-of select="'; cnt++) { '" />
     </xsl:if>
-    <xsl:value-of select="'CHKexistAttribute( '"/>
+    <xsl:value-of select="'CHKexistAttribute( (void *)'"/>
     <xsl:call-template name="node-access">
       <xsl:with-param name="node">arg_node</xsl:with-param>
       <xsl:with-param name="nodetype">
@@ -585,7 +585,7 @@ node *CHKdoTreeCheck( node *arg_node)
       <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size"/>
       <xsl:value-of select="'; cnt++) { '" />
     </xsl:if>
-    <xsl:value-of select="'CHKnotExist( '"/>
+    <xsl:value-of select="'CHKnotExist( (void *)'"/>
     <xsl:call-template name="node-access">
       <xsl:with-param name="node">arg_node</xsl:with-param>
       <xsl:with-param name="nodetype">

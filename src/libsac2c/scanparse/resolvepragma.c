@@ -23,10 +23,13 @@
 /*
  * INFO structure
  */
+
+enum travmode_t { RSP_default, RSP_refcnt, RSP_linksign };
+
 struct INFO {
     node *nums;
     int counter;
-    enum { RSP_default, RSP_refcnt, RSP_linksign } travmode;
+    enum travmode_t travmode;
 };
 
 /*
@@ -46,7 +49,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_NUMS (result) = NULL;
     INFO_COUNTER (result) = 0;

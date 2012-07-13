@@ -35,7 +35,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FINALISE (result) = FALSE;
 
@@ -105,7 +105,8 @@ ExtendWrapperType (ntype *type)
     DBUG_ASSERT (TYisFun (type), "ExtendWrapperType called on non-fun type!");
 
     new_type
-      = TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildWrapper, NULL);
+      = (ntype *)TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildWrapper,
+                                          NULL);
 
     DBUG_RETURN (new_type);
 }
@@ -154,7 +155,9 @@ WrapperType2ProductType (ntype *type)
     DBUG_ASSERT (TYisFun (type), "WrapperType2ProductType called on non-fun type!");
 
     new_type
-      = TYfoldFunctionInstances (type, (void *(*)(node *, void *))buildProductType, NULL);
+      = (ntype *)TYfoldFunctionInstances (type,
+                                          (void *(*)(node *, void *))buildProductType,
+                                          NULL);
 
     DBUG_RETURN (new_type);
 }

@@ -469,7 +469,7 @@ const char *
 FMGRdirname (const char *path)
 {
     static char buffer[MAX_PATH_LEN];
-    char *last = NULL;
+    const char *last = NULL;
 
     DBUG_ENTER ();
 

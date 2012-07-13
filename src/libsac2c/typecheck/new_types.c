@@ -172,9 +172,9 @@ typedef union {
  */
 
 struct NTYPE {
-    typeconstr typeconstr;
+    typeconstr mtypeconstr;
     int arity;
-    typeattr typeattr;
+    typeattr mtypeattr;
     mutcScope mutcscope;
     mutcUsage mutcusage;
     bool unique;
@@ -188,7 +188,7 @@ struct NTYPE {
  * First, we define some basic ntype-access-macros:
  */
 
-#define NTYPE_CON(n) (n->typeconstr)
+#define NTYPE_CON(n) (n->mtypeconstr)
 #define NTYPE_ARITY(n) (n->arity)
 #define NTYPE_SONS(n) (n->sons)
 #define NTYPE_SON(n, i) (n->sons[i])
@@ -198,36 +198,36 @@ struct NTYPE {
 /*
  * Macros for accessing the attributes...
  */
-#define SIMPLE_TYPE(n) (n->typeattr.a_simple.simple)
-#define SIMPLE_HIDDEN_UDT(n) (n->typeattr.a_simple.udt)
-#define SYMBOL_NS(n) (n->typeattr.a_symbol.mod)
-#define SYMBOL_NAME(n) (n->typeattr.a_symbol.name)
-#define USER_TYPE(n) (n->typeattr.a_user)
-#define AKV_CONST(n) (n->typeattr.a_akv)
-#define AKS_SHP(n) (n->typeattr.a_aks)
-#define AKD_SHP(n) (n->typeattr.a_akd.shp)
-#define AKD_DOTS(n) (n->typeattr.a_akd.dots)
+#define SIMPLE_TYPE(n) (n->mtypeattr.a_simple.simple)
+#define SIMPLE_HIDDEN_UDT(n) (n->mtypeattr.a_simple.udt)
+#define SYMBOL_NS(n) (n->mtypeattr.a_symbol.mod)
+#define SYMBOL_NAME(n) (n->mtypeattr.a_symbol.name)
+#define USER_TYPE(n) (n->mtypeattr.a_user)
+#define AKV_CONST(n) (n->mtypeattr.a_akv)
+#define AKS_SHP(n) (n->mtypeattr.a_aks)
+#define AKD_SHP(n) (n->mtypeattr.a_akd.shp)
+#define AKD_DOTS(n) (n->mtypeattr.a_akd.dots)
 
-#define IBASE_BASE(n) (n->typeattr.a_ibase)
-#define IDIM_DIM(n) (n->typeattr.a_idim)
-#define ISHAPE_SHAPE(n) (n->typeattr.a_ishape)
-#define IRES_NUMFUNS(n) (n->typeattr.a_ires.num_funs)
-#define IRES_FUNDEFS(n) (n->typeattr.a_ires.fundefs)
-#define IRES_FUNDEF(n, i) (n->typeattr.a_ires.fundefs[i])
-#define IRES_POSS(n) (n->typeattr.a_ires.poss)
-#define IRES_POS(n, i) (n->typeattr.a_ires.poss[i])
+#define IBASE_BASE(n) (n->mtypeattr.a_ibase)
+#define IDIM_DIM(n) (n->mtypeattr.a_idim)
+#define ISHAPE_SHAPE(n) (n->mtypeattr.a_ishape)
+#define IRES_NUMFUNS(n) (n->mtypeattr.a_ires.num_funs)
+#define IRES_FUNDEFS(n) (n->mtypeattr.a_ires.fundefs)
+#define IRES_FUNDEF(n, i) (n->mtypeattr.a_ires.fundefs[i])
+#define IRES_POSS(n) (n->mtypeattr.a_ires.poss)
+#define IRES_POS(n, i) (n->mtypeattr.a_ires.poss[i])
 
-#define ALPHA_SSI(n) (n->typeattr.a_alpha)
+#define ALPHA_SSI(n) (n->mtypeattr.a_alpha)
 
-#define BOTTOM_MSG(n) (n->typeattr.a_bottom)
+#define BOTTOM_MSG(n) (n->mtypeattr.a_bottom)
 
-#define POLY_NAME(n) (n->typeattr.a_poly)
+#define POLY_NAME(n) (n->mtypeattr.a_poly)
 
-#define POLYUSER_OUTER(n) (n->typeattr.a_polyuser.outer)
-#define POLYUSER_INNER(n) (n->typeattr.a_polyuser.inner)
-#define POLYUSER_SHAPE(n) (n->typeattr.a_polyuser.shape)
-#define POLYUSER_DENEST(n) (n->typeattr.a_polyuser.denest)
-#define POLYUSER_RENEST(n) (n->typeattr.a_polyuser.renest)
+#define POLYUSER_OUTER(n) (n->mtypeattr.a_polyuser.outer)
+#define POLYUSER_INNER(n) (n->mtypeattr.a_polyuser.inner)
+#define POLYUSER_SHAPE(n) (n->mtypeattr.a_polyuser.shape)
+#define POLYUSER_DENEST(n) (n->mtypeattr.a_polyuser.denest)
+#define POLYUSER_RENEST(n) (n->mtypeattr.a_polyuser.renest)
 
 /*
  * Macros for accessing the sons...
@@ -1644,7 +1644,7 @@ FilterFundefs (ntype *fun, int num_kills, node **kill_list)
  ******************************************************************************/
 
 static ntype *
-ProjDown (ntype *ires, ntype *template)
+ProjDown (ntype *ires, ntype *xtemplate)
 {
     int i;
     int new_numfuns = 0;
@@ -1677,9 +1677,9 @@ ProjDown (ntype *ires, ntype *template)
         for (i = 0; i < IRES_NUMFUNS (res); i++) {
             IRES_POS (res, i) = IRES_POS (res, i) - 1;
         }
-        if (NTYPE_CON (template) != TC_ires) {
+        if (NTYPE_CON (xtemplate) != TC_ires) {
             tmp = res;
-            res = TYcopyTypeConstructor (template);
+            res = TYcopyTypeConstructor (xtemplate);
             NTYPE_ARITY (res) = 1;
             NTYPE_SONS (res) = (ntype **)MEMmalloc (sizeof (ntype *) * NTYPE_ARITY (res));
             NTYPE_SON (res, 0) = tmp;
@@ -2046,8 +2046,8 @@ MakeOverloadedFunType (ntype *fun1, ntype *fun2)
                 res = TYcopyType (fun1);
                 fun2 = TYfreeTypeConstructor (fun2);
             } else {
-                old_alpha
-                  = LUTsearchInLutPp (overload_luts[overload_pos], ALPHA_SSI (fun2));
+                old_alpha = (tvar *)LUTsearchInLutPp (overload_luts[overload_pos],
+                                                      ALPHA_SSI (fun2));
                 if (old_alpha != ALPHA_SSI (fun2)) { /* found! */
                     res = MakeNtype (TC_alpha, 0);
                     ALPHA_SSI (res) = old_alpha;
@@ -5954,7 +5954,7 @@ TYoldTypes2ProdType (types *old)
  ******************************************************************************/
 
 static types *
-Type2OldType (ntype *new)
+Type2OldType (ntype *xnew)
 {
     types *res = NULL;
     types *tmp = NULL;
@@ -5962,68 +5962,68 @@ Type2OldType (ntype *new)
 
     DBUG_ENTER ();
 
-    switch (NTYPE_CON (new)) {
+    switch (NTYPE_CON (xnew)) {
     case TC_alpha:
-        DBUG_ASSERT (TYcmpTypes (SSIgetMin (TYgetAlpha (new)),
-                                 SSIgetMax (TYgetAlpha (new)))
+        DBUG_ASSERT (TYcmpTypes (SSIgetMin (TYgetAlpha (xnew)),
+                                 SSIgetMax (TYgetAlpha (xnew)))
                        == TY_eq,
                      "Type2OldType applied to non-unique alpha type");
-        res = Type2OldType (SSIgetMin (TYgetAlpha (new)));
+        res = Type2OldType (SSIgetMin (TYgetAlpha (xnew)));
         break;
     case TC_prod:
-        if (NTYPE_ARITY (new) == 0) {
+        if (NTYPE_ARITY (xnew) == 0) {
             res = TBmakeTypes1 (T_void);
         } else {
-            for (i = NTYPE_ARITY (new) - 1; i >= 0; i--) {
-                res = Type2OldType (PROD_MEMBER (new, i));
+            for (i = NTYPE_ARITY (xnew) - 1; i >= 0; i--) {
+                res = Type2OldType (PROD_MEMBER (xnew, i));
                 TYPES_NEXT (res) = tmp;
                 tmp = res;
             }
         }
         break;
     case TC_akv:
-        res = Type2OldType (AKS_BASE (new));
-        TYPES_DIM (res) = TYgetDim (new);
-        TYPES_SHPSEG (res) = SHshape2OldShpseg (TYgetShape (new));
+        res = Type2OldType (AKS_BASE (xnew));
+        TYPES_DIM (res) = TYgetDim (xnew);
+        TYPES_SHPSEG (res) = SHshape2OldShpseg (TYgetShape (xnew));
         TYPES_AKV (res) = TRUE;
         break;
     case TC_aks:
-        res = Type2OldType (AKS_BASE (new));
-        TYPES_DIM (res) = SHgetDim (AKS_SHP (new));
-        TYPES_SHPSEG (res) = SHshape2OldShpseg (AKS_SHP (new));
+        res = Type2OldType (AKS_BASE (xnew));
+        TYPES_DIM (res) = SHgetDim (AKS_SHP (xnew));
+        TYPES_SHPSEG (res) = SHshape2OldShpseg (AKS_SHP (xnew));
         break;
     case TC_akd:
-        res = Type2OldType (AKD_BASE (new));
-        TYPES_DIM (res) = KNOWN_DIM_OFFSET - AKD_DOTS (new);
+        res = Type2OldType (AKD_BASE (xnew));
+        TYPES_DIM (res) = KNOWN_DIM_OFFSET - AKD_DOTS (xnew);
         break;
     case TC_audgz:
-        res = Type2OldType (AUDGZ_BASE (new));
+        res = Type2OldType (AUDGZ_BASE (xnew));
         TYPES_DIM (res) = UNKNOWN_SHAPE;
         break;
     case TC_aud:
-        res = Type2OldType (AUD_BASE (new));
+        res = Type2OldType (AUD_BASE (xnew));
         TYPES_DIM (res) = ARRAY_OR_SCALAR;
         break;
     case TC_simple:
-        if ((SIMPLE_TYPE (new) == T_hidden)
-            && (SIMPLE_HIDDEN_UDT (new) != UT_NOT_DEFINED)) {
+        if ((SIMPLE_TYPE (xnew) == T_hidden)
+            && (SIMPLE_HIDDEN_UDT (xnew) != UT_NOT_DEFINED)) {
             res = TBmakeTypes (T_user, 0, NULL,
-                               STRcpy (UTgetName (SIMPLE_HIDDEN_UDT (new))),
-                               STRcpy ((UTgetNamespace (SIMPLE_HIDDEN_UDT (new)) == NULL)
+                               STRcpy (UTgetName (SIMPLE_HIDDEN_UDT (xnew))),
+                               STRcpy ((UTgetNamespace (SIMPLE_HIDDEN_UDT (xnew)) == NULL)
                                          ? NULL
                                          : NSgetName (
-                                             UTgetNamespace (SIMPLE_HIDDEN_UDT (new)))));
-            TYPES_TDEF (res) = UTgetTdef (SIMPLE_HIDDEN_UDT (new));
+                                             UTgetNamespace (SIMPLE_HIDDEN_UDT (xnew)))));
+            TYPES_TDEF (res) = UTgetTdef (SIMPLE_HIDDEN_UDT (xnew));
         } else {
-            res = TBmakeTypes (SIMPLE_TYPE (new), 0, NULL, NULL, NULL);
+            res = TBmakeTypes (SIMPLE_TYPE (xnew), 0, NULL, NULL, NULL);
         }
         break;
     case TC_user:
-        res = TBmakeTypes (T_user, 0, NULL, STRcpy (UTgetName (USER_TYPE (new))),
-                           STRcpy ((UTgetNamespace (USER_TYPE (new)) == NULL)
+        res = TBmakeTypes (T_user, 0, NULL, STRcpy (UTgetName (USER_TYPE (xnew))),
+                           STRcpy ((UTgetNamespace (USER_TYPE (xnew)) == NULL)
                                      ? NULL
-                                     : NSgetName (UTgetNamespace (USER_TYPE (new)))));
-        TYPES_TDEF (res) = UTgetTdef (USER_TYPE (new));
+                                     : NSgetName (UTgetNamespace (USER_TYPE (xnew)))));
+        TYPES_TDEF (res) = UTgetTdef (USER_TYPE (xnew));
         break;
     default:
         DBUG_ASSERT (0, "Type2OldType not yet entirely implemented!");
@@ -6031,10 +6031,10 @@ Type2OldType (ntype *new)
         break;
     }
 
-    if (res != NULL && new != NULL) {
-        TYPES_MUTC_SCOPE (res) = NTYPE_MUTC_SCOPE (new);
-        TYPES_MUTC_USAGE (res) = NTYPE_MUTC_USAGE (new);
-        if (TYisUnique (new)) {
+    if (res != NULL && xnew != NULL) {
+        TYPES_MUTC_SCOPE (res) = NTYPE_MUTC_SCOPE (xnew);
+        TYPES_MUTC_USAGE (res) = NTYPE_MUTC_USAGE (xnew);
+        if (TYisUnique (xnew)) {
             TYPES_UNIQUE (res) = TRUE;
         }
     }
@@ -6043,7 +6043,7 @@ Type2OldType (ntype *new)
 }
 
 types *
-TYtype2OldType (ntype *new)
+TYtype2OldType (ntype *xnew)
 {
     types *res;
 #ifndef DBUG_OFF
@@ -6052,10 +6052,10 @@ TYtype2OldType (ntype *new)
 
     DBUG_ENTER ();
 
-    DBUG_EXECUTE (tmp_str = TYtype2DebugString (new, FALSE, 0));
+    DBUG_EXECUTE (tmp_str = TYtype2DebugString (xnew, FALSE, 0));
     DBUG_PRINT ("converting %s", tmp_str);
 
-    res = Type2OldType (new);
+    res = Type2OldType (xnew);
 
     DBUG_EXECUTE (tmp_str2 = CVtype2String (res, 0, TRUE));
     DBUG_PRINT ("... result is %s", tmp_str2);
@@ -7123,8 +7123,8 @@ TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardecs)
                      "wrapper function with ... argument found!");
 
         tmp = TUtypeSignature2String (fundef);
-        funsig = MEMmalloc (sizeof (char)
-                            * (STRlen (CTIitemName (fundef)) + STRlen (tmp) + 5));
+        funsig = (char *)MEMmalloc (sizeof (char)
+                                    * (STRlen (CTIitemName (fundef)) + STRlen (tmp) + 5));
         sprintf (funsig, "%s :: %s", CTIitemName (fundef), tmp);
 
         assigns = CreateWrapperCode (FUNDEF_WRAPPERTYPE (fundef), NULL, 0, funsig,
@@ -7644,7 +7644,7 @@ TYdeserializeType (typeconstr con, ...)
 
         va_start (args, con);
 
-        st = va_arg (args, int);
+        st = (simpletype)va_arg (args, int);
         has_hidden = (bool)va_arg (args, int);
 
         if (has_hidden) {
@@ -7841,8 +7841,9 @@ TYdeserializeType (typeconstr con, ...)
             IRES_FUNDEFS (result) = NULL;
             IRES_POSS (result) = NULL;
         } else {
-            IRES_FUNDEFS (result) = MEMmalloc (sizeof (node *) * IRES_NUMFUNS (result));
-            IRES_POSS (result) = MEMmalloc (sizeof (int) * IRES_NUMFUNS (result));
+            IRES_FUNDEFS (result)
+              = (node **)MEMmalloc (sizeof (node *) * IRES_NUMFUNS (result));
+            IRES_POSS (result) = (int *)MEMmalloc (sizeof (int) * IRES_NUMFUNS (result));
 
             for (cnt = 0; cnt < IRES_NUMFUNS (result); cnt++) {
                 IRES_FUNDEF (result, cnt) = va_arg (args, node *);

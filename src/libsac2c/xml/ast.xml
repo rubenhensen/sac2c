@@ -43,7 +43,7 @@
     <type name="FileType" ctype="file_type" init="FT_unknown"
     copy="literal" />
     <type name="LUT" ctype="lut_t*" init="NULL" copy="function" persist="no" />
-    <type name="Prf" ctype="prf" init="0" copy="literal" />
+    <type name="Prf" ctype="prf" init="(prf)0" copy="literal" />
     <type name="NodeList" ctype="nodelist*" init="NULL"
     copy="function" />
     <type name="DFMask" ctype="dfmask_t*" init="NULL"
@@ -10017,7 +10017,7 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
-        <attribute name="OmpReductionOp" default="0" inconstructor="no">
+        <attribute name="OmpReductionOp" default="(omp_reduction_op)0" inconstructor="no">
           <description>
             This attribute indicates the type of OpenMP reducation operator.
           </description>

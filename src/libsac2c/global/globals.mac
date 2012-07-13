@@ -178,7 +178,7 @@ GLOBAL (char *, target_name, "default", xfree_dummy)
  */
 
 /* Default component name of the typedef node.  */
-GLOBAL (const char const *, default_component_name, "element", xfree_dummy)
+GLOBAL (const char *, default_component_name, "element", xfree_dummy)
 
 /*
  * Backend option

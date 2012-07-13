@@ -157,12 +157,12 @@ NewMatrix (int dim_x, int dim_y)
 
     DBUG_ENTER ();
 
-    m = MEMmalloc (sizeof (sMatrix));
+    m = (IntMatrix)MEMmalloc (sizeof (sMatrix));
     n = dim_x * dim_y;
     m->dim_x = dim_x;
     m->dim_y = dim_y;
-    m->m_stor = MEMmalloc (n * sizeof (int));
-    m->mtx = MEMmalloc (m->dim_y * sizeof (int *));
+    m->m_stor = (int *)MEMmalloc (n * sizeof (int));
+    m->mtx = (int **)MEMmalloc (m->dim_y * sizeof (int *));
     for (n = 0; n < dim_y; n++) {
         m->mtx[n] = m->m_stor + n * dim_x;
     }
@@ -192,12 +192,12 @@ DupMatrix (IntMatrix m)
 
     DBUG_ENTER ();
 
-    new_m = MEMmalloc (sizeof (sMatrix));
+    new_m = (IntMatrix)MEMmalloc (sizeof (sMatrix));
     n = m->dim_x * m->dim_y;
     new_m->dim_x = m->dim_x;
     new_m->dim_y = m->dim_y;
-    new_m->m_stor = MEMmalloc (n * sizeof (int));
-    new_m->mtx = MEMmalloc (new_m->dim_y * sizeof (int *));
+    new_m->m_stor = (int *)MEMmalloc (n * sizeof (int));
+    new_m->mtx = (int **)MEMmalloc (new_m->dim_y * sizeof (int *));
     for (n = 0; n < new_m->dim_y; n++) {
         new_m->mtx[n] = new_m->m_stor + n * new_m->dim_x;
     }

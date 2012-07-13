@@ -131,7 +131,7 @@ TBmakeNodelistNode (node *node, nodelist *next)
 /*--------------------------------------------------------------------------*/
 
 access_t *
-TBmakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
+TBmakeAccess (node *array, node *iv, accessclass_t mclass, shpseg *offset,
               accessdir_t direction, access_t *next)
 {
     access_t *tmp;
@@ -142,7 +142,7 @@ TBmakeAccess (node *array, node *iv, accessclass_t class, shpseg *offset,
 
     ACCESS_ARRAY (tmp) = array;
     ACCESS_IV (tmp) = iv;
-    ACCESS_CLASS (tmp) = class;
+    ACCESS_CLASS (tmp) = mclass;
     ACCESS_OFFSET (tmp) = offset;
     ACCESS_DIR (tmp) = direction;
     ACCESS_NEXT (tmp) = next;
@@ -278,9 +278,9 @@ TBmakeArgtab (int size)
     argtab = (argtab_t *)MEMmalloc (sizeof (argtab_t));
 
     argtab->size = size;
-    argtab->ptr_in = MEMmalloc (argtab->size * sizeof (node *));
-    argtab->ptr_out = MEMmalloc (argtab->size * sizeof (types *));
-    argtab->tag = MEMmalloc (argtab->size * sizeof (argtag_t));
+    argtab->ptr_in = (node **)MEMmalloc (argtab->size * sizeof (node *));
+    argtab->ptr_out = (node **)MEMmalloc (argtab->size * sizeof (types *));
+    argtab->tag = (argtag_t *)MEMmalloc (argtab->size * sizeof (argtag_t));
 
     for (i = 0; i < argtab->size; i++) {
         argtab->ptr_in[i] = NULL;

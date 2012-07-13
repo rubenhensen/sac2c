@@ -100,7 +100,7 @@ LIBBcreateLibrary (node *syntax_tree)
         SYSstartTracking ();
     }
 
-    deplibs = STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
+    deplibs = (char *)STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
 
     CTInote ("Creating static SAC library `lib%sMod%s.a'", global.modulename,
              global.config.lib_variant);
@@ -176,7 +176,7 @@ LIBBcreateWrapperLibrary (node *syntax_tree)
         SYSstartTracking ();
     }
 
-    deplibs = STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
+    deplibs = (char *)STRSfold (&BuildDepLibsStringMod, deps, STRcpy (""));
 
     CTInote ("Creating static wrapper library `lib%s.a'", global.outfilename);
 

@@ -143,9 +143,9 @@ STRsubStr (const char *string, int start, int len)
     if (start > len) {
         ret = STRnull ();
     } else {
-        ret = memcpy (MEMmalloc (sizeof (char) * (len + 1)),
-                      string + start, /* move to start of sub string */
-                      len);
+        ret = (char *)memcpy (MEMmalloc (sizeof (char) * (len + 1)),
+                              string + start, /* move to start of sub string */
+                              len);
         ret[len] = '\0';
     }
 
@@ -165,7 +165,7 @@ STRnull ()
     char *ret = NULL;
     DBUG_ENTER ();
 
-    ret = MEMmalloc (sizeof (char) * 1);
+    ret = (char *)MEMmalloc (sizeof (char) * 1);
     ret[0] = '\0';
 
     DBUG_RETURN (ret);
@@ -906,7 +906,7 @@ STRbytes2Hex (int len, unsigned char *array)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc ((1 + len * 2) * sizeof (char));
+    result = (char *)MEMmalloc ((1 + len * 2) * sizeof (char));
 
     for (pos = 0; pos < len; pos++) {
         low = array[pos] % 16;
@@ -945,7 +945,7 @@ STRreplaceSpecialCharacters (const char *name)
         new_name = NULL;
     } else {
 
-        new_name = MEMmalloc (1 + (3 * STRlen (name)) * sizeof (char));
+        new_name = (char *)MEMmalloc (1 + (3 * STRlen (name)) * sizeof (char));
         new_name[0] = '\0';
 
         for (i = 0, j = 0; (size_t)i < STRlen (name); i++, j++) {
@@ -1111,7 +1111,7 @@ STRstring2SafeCEncoding (const char *string)
     } else {
         len = STRlen (string);
 
-        result = MEMmalloc (len * 2 + 1);
+        result = (char *)MEMmalloc (len * 2 + 1);
         tmp = result;
 
         for (i = 0; i < len; i++) {
@@ -1278,8 +1278,8 @@ STRsubstToken (const char *str, const char *token, const char *subst)
     }
 
     /* Make substitutions */
-    result = MEMmalloc ((STRlen (str) + (occurrences * (STRlen (subst) - tlen)) + 1)
-                        * sizeof (char));
+    result = (char *)MEMmalloc (
+      (STRlen (str) + (occurrences * (STRlen (subst) - tlen)) + 1) * sizeof (char));
 
     pos = result;
     while (*str != '\0') {

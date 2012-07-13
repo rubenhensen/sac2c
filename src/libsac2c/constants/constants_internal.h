@@ -35,7 +35,7 @@
 
 struct CONSTANT {
     simpletype type;
-    shape *shape;
+    shape *mshape;
     void *elems;
     int vlen;
 };
@@ -46,7 +46,7 @@ struct CONSTANT {
  */
 
 #define CONSTANT_TYPE(c) (c->type)
-#define CONSTANT_SHAPE(c) (c->shape)
+#define CONSTANT_SHAPE(c) (c->mshape)
 #define CONSTANT_ELEMS(c) (c->elems)
 #define CONSTANT_VLEN(c) (c->vlen)
 

@@ -180,7 +180,7 @@ struct LUT_T {
 };
 
 typedef hash_key_t (*hash_key_fun_t) (void *);
-typedef bool (*is_equal_fun_t) (void *, void *);
+typedef bool (*is_equal_fun_t) (const void *, const void *);
 
 /*
  * static functions
@@ -271,7 +271,7 @@ GetHashKey_String (void *data)
  ******************************************************************************/
 
 static bool
-IsEqual_Pointer (void *data1, void *data2)
+IsEqual_Pointer (const void *data1, const void *data2)
 {
     bool ret;
 
@@ -293,11 +293,11 @@ IsEqual_Pointer (void *data1, void *data2)
  ******************************************************************************/
 
 static bool
-IsEqual_String (void *data1, void *data2)
+IsEqual_String (const void *data1, const void *data2)
 {
     DBUG_ENTER ();
 
-    DBUG_RETURN (STReq (data1, data2));
+    DBUG_RETURN (STReq ((const char *)data1, (const char *)data2));
 }
 
 #ifndef DBUG_OFF
@@ -417,7 +417,7 @@ SearchInLUT_ (lut_size_t size, lut_size_t i, void **entry, void *old_item,
         entry += 2;
         if ((i + 1) % (LUT_SIZE) == 0) {
             /* last table entry is reached -> enter next table of the chain */
-            entry = *entry;
+            entry = (void **)*entry;
         }
     }
 
@@ -544,7 +544,7 @@ SearchInLUT_state (lut_t *lut, void *old_item, hash_key_t hash_key,
                 store_entry += 2;
                 if ((store_i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
-                    store_entry = *store_entry;
+                    store_entry = (void **)*store_entry;
                 }
                 store_i++;
 
@@ -594,7 +594,7 @@ InsertIntoLUT_noDBUG (lut_t *lut, void *old_item, void *new_item, hash_key_t has
         DBUG_PRINT ("new LUT segment created: " F_PTR, lut[hash_key].next);
 
         /* move 'next' to the first entry of the new table */
-        lut[hash_key].next = *lut[hash_key].next;
+        lut[hash_key].next = (void **)*lut[hash_key].next;
     }
 
     DBUG_RETURN (lut);
@@ -672,7 +672,7 @@ UpdateLUT (lut_t *lut, void *old_item, void *new_item, hash_key_t hash_key,
     if (found_item_p == NULL) {
         lut = InsertIntoLUT (lut,
                              (hash_key < (HASH_KEYS_POINTER)) ? old_item
-                                                              : STRcpy (old_item),
+                                                              : STRcpy ((char *)old_item),
                              new_item, hash_key, old_format, new_format);
 
         if (found_item != NULL) {
@@ -729,7 +729,7 @@ MapLUT (lut_t *lut, void *(*fun) (void *), hash_key_t start, hash_key_t stop)
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
-                    tmp = *tmp;
+                    tmp = (void **)*tmp;
                 }
             }
         }
@@ -774,7 +774,7 @@ FoldLUT (lut_t *lut, void *init, void *(*fun) (void *, void *), hash_key_t start
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
-                    tmp = *tmp;
+                    tmp = (void **)*tmp;
                 }
             }
         }
@@ -858,7 +858,7 @@ LUTduplicateLut (lut_t *lut)
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
-                    tmp = *tmp;
+                    tmp = (void **)*tmp;
                 }
             }
         }
@@ -871,7 +871,7 @@ LUTduplicateLut (lut_t *lut)
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
-                    tmp = *tmp;
+                    tmp = (void **)*tmp;
                 }
             }
         }
@@ -914,7 +914,7 @@ LUTremoveContentLut (lut_t *lut)
             /* remove all but the first collision table fragments */
             for (i = 1; i <= lut[k].size / (LUT_SIZE); i++) {
                 tmp = lut[k].first;
-                lut[k].first = lut[k].first[2 * (LUT_SIZE)];
+                lut[k].first = (void **)lut[k].first[2 * (LUT_SIZE)];
                 tmp = MEMfree (tmp);
             }
             lut[k].next = lut[k].first;
@@ -931,7 +931,7 @@ LUTremoveContentLut (lut_t *lut)
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
-                    tmp = *tmp;
+                    tmp = (void **)*tmp;
                     first = MEMfree (first);
                     first = tmp;
                 }
@@ -1017,7 +1017,7 @@ LUTtouchContentLut (lut_t *lut, info *arg_info)
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
-                    tmp = *tmp;
+                    tmp = (void **)*tmp;
                 }
             }
         }
@@ -1031,7 +1031,7 @@ LUTtouchContentLut (lut_t *lut, info *arg_info)
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
-                    tmp = *tmp;
+                    tmp = (void **)*tmp;
                 }
             }
         }
@@ -1535,7 +1535,7 @@ LUTprintLut (FILE *handle, lut_t *lut)
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
-                    tmp = *tmp;
+                    tmp = (void **)*tmp;
                 }
             }
             fprintf (handle, "number of entries: %i\n", lut[k].size);
@@ -1550,7 +1550,7 @@ LUTprintLut (FILE *handle, lut_t *lut)
                 tmp += 2;
                 if ((i + 1) % (LUT_SIZE) == 0) {
                     /* last table entry is reached -> enter next table of the chain */
-                    tmp = *tmp;
+                    tmp = (void **)*tmp;
                 }
             }
             fprintf (handle, "number of entries: %i\n", lut[k].size);

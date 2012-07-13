@@ -55,9 +55,10 @@
   </xsl:template>
 
   <xsl:template match="syntaxtree" >
-    <xsl:value-of select="'typedef enum { N_undefined = 0'" />
+    <xsl:value-of select="'enum nodetype_t { N_undefined = 0'" />
     <xsl:apply-templates select="node" />
-    <xsl:value-of select="'} nodetype; '" />
+    <xsl:value-of select="'}; '" />
+    <xsl:value-of select="'typedef enum nodetype_t nodetype; '" />
   </xsl:template>
 
   <xsl:template match="node" >

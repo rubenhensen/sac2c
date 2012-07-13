@@ -20,7 +20,7 @@ struct INFO {
     node *lhs;
     node *args;
     node *preassigns;
-    bool delete;
+    bool mdelete;
 };
 
 /*
@@ -29,7 +29,7 @@ struct INFO {
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_ARGS(n) ((n)->args)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
-#define INFO_DELETE(n) ((n)->delete)
+#define INFO_DELETE(n) ((n)->mdelete)
 
 /*
  * INFO functions
@@ -41,7 +41,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_LHS (result) = NULL;
     INFO_ARGS (result) = NULL;
@@ -210,7 +210,7 @@ RemoveSubstitutedVardecs (node *vardecs)
 node *
 RERAassign (node *arg_node, info *arg_info)
 {
-    bool delete;
+    bool xdelete;
     DBUG_ENTER ();
 
     /*
@@ -218,7 +218,7 @@ RERAassign (node *arg_node, info *arg_info)
      */
     INFO_DELETE (arg_info) = FALSE;
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-    delete = INFO_DELETE (arg_info);
+    xdelete = INFO_DELETE (arg_info);
     INFO_DELETE (arg_info) = FALSE;
 
     if (ASSIGN_NEXT (arg_node) != NULL) {
@@ -228,7 +228,7 @@ RERAassign (node *arg_node, info *arg_info)
     /*
      * if this assignment is superflouus, delete it
      */
-    if (delete) {
+    if (xdelete) {
         arg_node = FREEdoFreeNode (arg_node);
     }
 

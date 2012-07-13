@@ -87,7 +87,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_TYPE (result) = 0;
     INFO_CONT (result) = NULL;
@@ -511,8 +511,8 @@ DupNodelist (nodelist *nl, info *arg_info)
     DBUG_ENTER ();
 
     if (nl != NULL) {
-        new_nl = TBmakeNodelistNode (LUTsearchInLutPp (INFO_LUT (arg_info),
-                                                       NODELIST_NODE (nl)),
+        new_nl = TBmakeNodelistNode ((node *)LUTsearchInLutPp (INFO_LUT (arg_info),
+                                                               NODELIST_NODE (nl)),
                                      DupNodelist (NODELIST_NEXT (nl), arg_info));
         NODELIST_STATUS (new_nl) = NODELIST_STATUS (nl);
     } else {
@@ -547,11 +547,11 @@ DupArgtab (argtab_t *argtab, info *arg_info)
             new_argtab->tag[i] = argtab->tag[i];
             new_argtab->ptr_in[i]
               = (argtab->ptr_in[i] != NULL)
-                  ? LUTsearchInLutPp (INFO_LUT (arg_info), argtab->ptr_in[i])
+                  ? (node *)LUTsearchInLutPp (INFO_LUT (arg_info), argtab->ptr_in[i])
                   : NULL;
             new_argtab->ptr_out[i]
               = (argtab->ptr_out[i] != NULL)
-                  ? LUTsearchInLutPp (INFO_LUT (arg_info), argtab->ptr_out[i])
+                  ? (node *)LUTsearchInLutPp (INFO_LUT (arg_info), argtab->ptr_out[i])
                   : NULL;
         }
     } else {
@@ -893,7 +893,7 @@ DUPid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    avis = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
+    avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
     new_node = TBmakeId (avis);
 
     if (INFO_TYPE (arg_info) == DUP_WLF) {
@@ -1143,13 +1143,13 @@ DUPfundef (node *arg_node, info *arg_info)
 
 #if DUP_DFMS
     FUNDEF_DFM_BASE (new_node)
-      = LUTsearchInLutPp (INFO_LUT (arg_info), FUNDEF_DFM_BASE (arg_node));
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), FUNDEF_DFM_BASE (arg_node));
 #else
     FUNDEF_DFM_BASE (new_node) = NULL;
 #endif
 
     FUNDEF_RETURN (new_node)
-      = LUTsearchInLutPp (INFO_LUT (arg_info), FUNDEF_RETURN (arg_node));
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), FUNDEF_RETURN (arg_node));
 
     if (FUNDEF_ISLOOPFUN (new_node)) {
         DBUG_ASSERT (FUNDEF_ISLOOPFUN (arg_node),
@@ -1160,14 +1160,15 @@ DUPfundef (node *arg_node, info *arg_info)
                      FUNDEF_NAME (arg_node));
 
         FUNDEF_LOOPRECURSIVEAP (new_node)
-          = LUTsearchInLutPp (INFO_LUT (arg_info), FUNDEF_LOOPRECURSIVEAP (arg_node));
+          = (node *)LUTsearchInLutPp (INFO_LUT (arg_info),
+                                      FUNDEF_LOOPRECURSIVEAP (arg_node));
         DBUG_ASSERT (FUNDEF_LOOPRECURSIVEAP (new_node) != NULL,
                      "Recursive application not found in LUT: %s.",
                      FUNDEF_NAME (new_node));
     }
 
     FUNDEF_IMPL (new_node)
-      = LUTsearchInLutPp (INFO_LUT (arg_info), FUNDEF_IMPL (arg_node));
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), FUNDEF_IMPL (arg_node));
 
     if (FUNDEF_WRAPPERTYPE (arg_node) != NULL) {
         FUNDEF_WRAPPERTYPE (new_node) = TYcopyType (FUNDEF_WRAPPERTYPE (arg_node));
@@ -1338,7 +1339,7 @@ DUPblock (node *arg_node, info *arg_info)
          */
         if (NULL != AVIS_DIM (avis)) {
             if (N_id == NODE_TYPE (AVIS_DIM (avis))) {
-                nid = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_DIM (avis));
+                nid = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_DIM (avis));
                 if (nid != AVIS_DIM (avis)) { /* nilpotent rename */
                     DBUG_ASSERT (N_id == NODE_TYPE (nid),
                                  "Found non-id AVIS_DIM rename target");
@@ -1357,7 +1358,7 @@ DUPblock (node *arg_node, info *arg_info)
 
         if (NULL != AVIS_SHAPE (avis)) {
             if (N_id == NODE_TYPE (AVIS_SHAPE (avis))) {
-                nid = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_SHAPE (avis));
+                nid = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_SHAPE (avis));
                 if (nid != AVIS_SHAPE (avis)) { /* nilpotent rename */
                     DBUG_ASSERT (N_id == NODE_TYPE (nid),
                                  "Found non-id AVIS_SHAPE rename target");
@@ -1380,7 +1381,7 @@ DUPblock (node *arg_node, info *arg_info)
          */
         if (NULL != AVIS_MIN (avis)) {
             if (N_id == NODE_TYPE (AVIS_MIN (avis))) {
-                nid = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MIN (avis));
+                nid = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MIN (avis));
                 if (nid != AVIS_MIN (avis)) { /* nilpotent rename */
                     DBUG_ASSERT (N_id == NODE_TYPE (nid),
                                  "Found non-id AVIS_MIN rename target");
@@ -1399,7 +1400,7 @@ DUPblock (node *arg_node, info *arg_info)
 
         if (NULL != AVIS_MAX (avis)) {
             if (N_id == NODE_TYPE (AVIS_MAX (avis))) {
-                nid = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MAX (avis));
+                nid = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_MAX (avis));
                 if (nid != AVIS_MAX (avis)) { /* nilpotent rename */
                     DBUG_ASSERT (N_id == NODE_TYPE (nid),
                                  "Found non-id AVIS_MAX rename target");
@@ -1477,7 +1478,7 @@ DUPreturn (node *arg_node, info *arg_info)
     new_node = TBmakeReturn (DUPTRAV (RETURN_EXPRS (arg_node)));
 
     RETURN_CRET (new_node)
-      = LUTsearchInLutPp (INFO_LUT (arg_info), RETURN_CRET (arg_node));
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), RETURN_CRET (arg_node));
 
     CopyCommonNodeData (new_node, arg_node);
 
@@ -1697,7 +1698,7 @@ DUPids (node *arg_node, info *arg_info)
           = LUTinsertIntoLutP (INFO_LUT (arg_info), IDS_AVIS (arg_node), newavis);
     }
 
-    avis = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
+    avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
 
     AVIS_ISALIAS (avis) = AVIS_ISALIAS (IDS_AVIS (arg_node));
     AVIS_HASDTTHENPROXY (avis) = AVIS_HASDTTHENPROXY (IDS_AVIS (arg_node));
@@ -1744,7 +1745,7 @@ DUPap (node *arg_node, info *arg_info)
     node *old_fundef, *new_fundef;
     node *new_node;
     node *fundef;
-    char *funname;
+    const char *funname;
 
     DBUG_ENTER ();
 
@@ -1757,7 +1758,7 @@ DUPap (node *arg_node, info *arg_info)
     old_fundef = AP_FUNDEF (arg_node);
 
     if (old_fundef != NULL) {
-        new_fundef = LUTsearchInLutPp (INFO_LUT (arg_info), old_fundef);
+        new_fundef = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), old_fundef);
 
         DBUG_ASSERT (((AP_ISRECURSIVEDOFUNCALL (arg_node))
                       || (!FUNDEF_ISLACFUN (old_fundef) || (new_fundef == old_fundef))),
@@ -1815,7 +1816,7 @@ DUPap (node *arg_node, info *arg_info)
             DBUG_PRINT_TAG ("DUPSF", "Added to DupTree special function hook:\n %s( %s)",
                             CTIitemName (new_fundef), CTIfunParams (new_fundef));
         } else {
-            new_fundef = LUTsearchInLutPp (INFO_LUT (arg_info), old_fundef);
+            new_fundef = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), old_fundef);
         }
     } else {
         /*
@@ -2059,7 +2060,7 @@ DUPset (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    link = LUTsearchInLutPp (INFO_LUT (arg_info), SET_MEMBER (arg_node));
+    link = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), SET_MEMBER (arg_node));
 
     if (link == NULL) {
         link = SET_MEMBER (arg_node);
@@ -2109,7 +2110,7 @@ DUPglobobj (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    link = LUTsearchInLutPp (INFO_LUT (arg_info), GLOBOBJ_OBJDEF (arg_node));
+    link = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), GLOBOBJ_OBJDEF (arg_node));
 
     if (link == NULL) {
         link = GLOBOBJ_OBJDEF (arg_node);
@@ -2291,7 +2292,7 @@ DUPgenarray (node *arg_node, info *arg_info)
     GENARRAY_DEFSHAPEEXPR (new_node) = DUPTRAV (GENARRAY_DEFSHAPEEXPR (arg_node));
 
     GENARRAY_IDX (new_node)
-      = LUTsearchInLutPp (INFO_LUT (arg_info), GENARRAY_IDX (arg_node));
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), GENARRAY_IDX (arg_node));
 
     GENARRAY_NEXT (new_node) = DUPCONT (GENARRAY_NEXT (arg_node));
 
@@ -2315,7 +2316,7 @@ DUPmodarray (node *arg_node, info *arg_info)
     MODARRAY_RC (new_node) = DUPTRAV (MODARRAY_RC (arg_node));
 
     MODARRAY_IDX (new_node)
-      = LUTsearchInLutPp (INFO_LUT (arg_info), MODARRAY_IDX (arg_node));
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), MODARRAY_IDX (arg_node));
 
     MODARRAY_NEXT (new_node) = DUPCONT (MODARRAY_NEXT (arg_node));
 
@@ -2341,7 +2342,7 @@ DUPfold (node *arg_node, info *arg_info)
     FOLD_ISPARTIALFOLD (new_node) = FOLD_ISPARTIALFOLD (arg_node);
 
     FOLD_FUNDEF (new_node)
-      = LUTsearchInLutPp (INFO_LUT (arg_info), FOLD_FUNDEF (arg_node));
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), FOLD_FUNDEF (arg_node));
 
     FOLD_NEXT (new_node) = DUPCONT (FOLD_NEXT (arg_node));
 
@@ -2424,9 +2425,10 @@ DUPpart (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     DBUG_ASSERT (PART_CODE (arg_node), "N_part node has no valid PART_CODE");
 
-    new_node = TBmakePart (LUTsearchInLutPp (INFO_LUT (arg_info), PART_CODE (arg_node)),
-                           DUPTRAV (PART_WITHID (arg_node)),
-                           DUPTRAV (PART_GENERATOR (arg_node)));
+    new_node
+      = TBmakePart ((node *)LUTsearchInLutPp (INFO_LUT (arg_info), PART_CODE (arg_node)),
+                    DUPTRAV (PART_WITHID (arg_node)),
+                    DUPTRAV (PART_GENERATOR (arg_node)));
 
     CODE_INC_USED (PART_CODE (new_node));
     PART_NEXT (new_node) = DUPCONT (PART_NEXT (arg_node));
@@ -2705,13 +2707,13 @@ DUPwlgrid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    new_node
-      = TBmakeWlgrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node),
-                      LUTsearchInLutPp (INFO_LUT (arg_info), WLGRID_CODE (arg_node)),
-                      DUPTRAV (WLGRID_BOUND1 (arg_node)),
-                      DUPTRAV (WLGRID_BOUND2 (arg_node)),
-                      DUPTRAV (WLGRID_NEXTDIM (arg_node)),
-                      DUPCONT (WLGRID_NEXT (arg_node)));
+    new_node = TBmakeWlgrid (WLGRID_LEVEL (arg_node), WLGRID_DIM (arg_node),
+                             (node *)LUTsearchInLutPp (INFO_LUT (arg_info),
+                                                       WLGRID_CODE (arg_node)),
+                             DUPTRAV (WLGRID_BOUND1 (arg_node)),
+                             DUPTRAV (WLGRID_BOUND2 (arg_node)),
+                             DUPTRAV (WLGRID_NEXTDIM (arg_node)),
+                             DUPCONT (WLGRID_NEXT (arg_node)));
 
     if (WLGRID_CODE (new_node) != NULL) {
         CODE_INC_USED (WLGRID_CODE (new_node));
@@ -2828,10 +2830,10 @@ DUPavis (node *arg_node, info *arg_info)
     DBUG_PRINT ("DUPavis will map %s to %s", AVIS_NAME (arg_node), AVIS_NAME (new_node));
 
     AVIS_SSACOUNT (new_node)
-      = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_SSACOUNT (arg_node));
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_SSACOUNT (arg_node));
 
     AVIS_SSAASSIGN (new_node)
-      = LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_SSAASSIGN (arg_node));
 
     AVIS_DECLTYPE (new_node) = TYcopyType (AVIS_DECLTYPE (arg_node));
     AVIS_CONSTRTYPE (new_node) = TYcopyType (AVIS_CONSTRTYPE (arg_node));

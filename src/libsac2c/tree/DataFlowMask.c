@@ -458,7 +458,7 @@ DFMgenMaskClear (mask_base_t *mask_base)
 
     DBUG_ASSERT (mask_base != NULL, "DFMgenMaskClear() called with mask_base NULL");
 
-    new_mask = MEMmalloc (sizeof (mask_t));
+    new_mask = (mask_t *)MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask_base->num_bitfields;
 
@@ -484,7 +484,7 @@ DFMgenMaskSet (mask_base_t *mask_base)
 
     DBUG_ASSERT (mask_base != NULL, "DFMgenMaskSet() called with mask_base NULL");
 
-    new_mask = MEMmalloc (sizeof (mask_t));
+    new_mask = (mask_t *)MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask_base->num_bitfields;
 
@@ -512,7 +512,7 @@ DFMgenMaskCopy (mask_t *mask)
 
     CHECK_MASK (mask);
 
-    new_mask = MEMmalloc (sizeof (mask_t));
+    new_mask = (mask_t *)MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask->num_bitfields;
 
@@ -540,7 +540,7 @@ DFMgenMaskInv (mask_t *mask)
 
     CHECK_MASK (mask);
 
-    new_mask = MEMmalloc (sizeof (mask_t));
+    new_mask = (mask_t *)MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask->num_bitfields;
 
@@ -572,7 +572,7 @@ DFMgenMaskAnd (mask_t *mask1, mask_t *mask2)
     CHECK_MASK (mask1);
     CHECK_MASK (mask2);
 
-    new_mask = MEMmalloc (sizeof (mask_t));
+    new_mask = (mask_t *)MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask1->num_bitfields;
 
@@ -604,7 +604,7 @@ DFMgenMaskOr (mask_t *mask1, mask_t *mask2)
     CHECK_MASK (mask1);
     CHECK_MASK (mask2);
 
-    new_mask = MEMmalloc (sizeof (mask_t));
+    new_mask = (mask_t *)MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask1->num_bitfields;
 
@@ -636,7 +636,7 @@ DFMgenMaskMinus (mask_t *mask1, mask_t *mask2)
     CHECK_MASK (mask1);
     CHECK_MASK (mask2);
 
-    new_mask = MEMmalloc (sizeof (mask_t));
+    new_mask = (mask_t *)MEMmalloc (sizeof (mask_t));
 
     new_mask->num_bitfields = mask1->num_bitfields;
 
@@ -867,7 +867,7 @@ DFMtest2Masks (mask_t *mask1, mask_t *mask2)
 
     res = 0;
 
-#if 0  
+#if 0
   this old version only tests whether any bit is set,
   the new version really counts
 

@@ -222,6 +222,8 @@ static node *PopSsastackElse (node *avis);
  */
 /*@{*/
 
+enum rename_t { RN_top, RN_then, RN_else };
+
 struct INFO {
     int singlefundef;
     bool allow_gos;
@@ -233,7 +235,7 @@ struct INFO {
     node *assign;
     node *condstmt;
     bool funcond_found;
-    enum { RN_top, RN_then, RN_else } rename;
+    rename_t rename;
     node *withid;
     node *first_withid;
     int nestlevel;
@@ -273,7 +275,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_SINGLEFUNDEF (result) = 0;
     INFO_ALLOW_GOS (result) = FALSE;

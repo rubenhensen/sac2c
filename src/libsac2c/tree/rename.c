@@ -52,7 +52,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_LUT (result) = NULL;
 
@@ -82,7 +82,8 @@ RENarg (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    ARG_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), ARG_AVIS (arg_node));
+    ARG_AVIS (arg_node)
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ARG_AVIS (arg_node));
 
     if (ARG_NEXT (arg_node) != NULL) {
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
@@ -97,7 +98,7 @@ RENvardec (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     VARDEC_AVIS (arg_node)
-      = LUTsearchInLutPp (INFO_LUT (arg_info), VARDEC_AVIS (arg_node));
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), VARDEC_AVIS (arg_node));
 
     if (VARDEC_NEXT (arg_node) != NULL) {
         VARDEC_NEXT (arg_node) = TRAVdo (VARDEC_NEXT (arg_node), arg_info);
@@ -111,7 +112,8 @@ RENid (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    ID_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
+    ID_AVIS (arg_node)
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ID_AVIS (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -121,7 +123,8 @@ RENids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    IDS_AVIS (arg_node) = LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
+    IDS_AVIS (arg_node)
+      = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), IDS_AVIS (arg_node));
 
     if (IDS_NEXT (arg_node) != NULL) {
         IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);

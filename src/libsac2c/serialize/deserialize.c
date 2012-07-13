@@ -92,7 +92,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_RETURN (result) = NULL;
     INFO_SSACOUNTER (result) = NULL;
@@ -162,7 +162,7 @@ makeAliasing (node *target, ds_aliasing_t *next)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (ds_aliasing_t));
+    result = (ds_aliasing_t *)MEMmalloc (sizeof (ds_aliasing_t));
 
     result->alias = target;
     result->next = next;
@@ -550,7 +550,7 @@ FindSymbolInAst (const char *symbol)
     anontrav_t searchtrav[4] = {{N_fundef, FindSymbolInFundefChain},
                                 {N_typedef, FindSymbolInTypedefChain},
                                 {N_objdef, FindSymbolInObjdefChain},
-                                {0, NULL}};
+                                {(nodetype)0, NULL}};
     info *local_info;
 
     DBUG_ENTER ();
@@ -650,7 +650,8 @@ AddEntryToAst (stentry_t *entry, stentrytype_t type, module_t *module)
                              "module is inconsistent. cannot find function referenced in"
                              "symbol table");
 
-                entryp = serfun (DSstate);
+                // FIXME: Is it ok to leave the argument? entryp = serfun( DSstate);
+                entryp = serfun ();
                 /* add to ast */
                 InsertIntoState (entryp);
 
@@ -810,7 +811,9 @@ DSimportInstancesByName (const char *name, const char *module)
              *                as we have set INFO_IMPORTMODE, those will be
              *                even imported.
              */
-            entryp = serfun (DSstate);
+
+            // FIXME Is it ok to ommit the arg?  entryp = serfun( DSstate);
+            entryp = serfun ();
 
             /*
              * free object wrappers: a wrapper may point to object wrappers which
@@ -1055,7 +1058,7 @@ doDispatchFunCall (node *fundefs, const namespace_t *ns, const char *name,
 {
     node *result = NULL;
     info *local_info;
-    anontrav_t searchtrav[2] = {{N_fundef, &FindFunction}, {0, NULL}};
+    anontrav_t searchtrav[2] = {{N_fundef, &FindFunction}, {(nodetype)0, NULL}};
 
     DBUG_ENTER ();
 

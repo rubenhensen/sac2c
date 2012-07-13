@@ -68,7 +68,7 @@ struct INFO {
     node *postassign;
     node *lhs;
     node *newres;
-    bool delete;
+    bool xdelete;
     bool exprpos;
     traversal_mode_t withop_traversal_mode;
 };
@@ -80,7 +80,7 @@ struct INFO {
 #define INFO_POSTASSIGN(n) ((n)->postassign)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_NEWRES(n) ((n)->newres)
-#define INFO_DELETE(n) ((n)->delete)
+#define INFO_DELETE(n) ((n)->xdelete)
 #define INFO_EXPRPOS(n) ((n)->exprpos)
 #define INFO_MODE(n) ((n)->withop_traversal_mode)
 
@@ -94,7 +94,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_PREASSIGN (result) = NULL;
     INFO_POSTASSIGN (result) = NULL;

@@ -25,7 +25,7 @@
 
 #ifndef LEXER_BINARY
 #include "types.h"
-#include "compat.h"
+//#  include "compat.h"
 #else
 typedef int bool;
 #endif
@@ -33,8 +33,8 @@ typedef int bool;
 #define true 1
 #define false 0
 
-#include "trie.h"
 #include "uthash.h"
+#include "trie.h"
 
 #define LEXER_BUFFER 8192
 

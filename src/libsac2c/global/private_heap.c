@@ -152,25 +152,25 @@ void *
 PHPfindElem (heap *private_heap, php_cmp_fun fun, void *elem)
 {
     bool found = FALSE;
-    void *this = NULL;
+    void *current = NULL;
     int i = 0;
 
     DBUG_ENTER ();
 
     while ((i < HEAP_NUM_ELEMS (private_heap)) && !found) {
-        this = (void *)(HEAP_DATA (private_heap) + HEAP_ELEM_SIZE (private_heap) * i);
-        found = fun (this, elem);
+        current = (void *)(HEAP_DATA (private_heap) + HEAP_ELEM_SIZE (private_heap) * i);
+        found = fun (current, elem);
         i++;
     }
     if (!found) {
         if (HEAP_NEXT (private_heap) == NULL) {
-            this = NULL;
+            current = NULL;
         } else {
-            this = PHPfindElem (HEAP_NEXT (private_heap), fun, elem);
+            current = PHPfindElem (HEAP_NEXT (private_heap), fun, elem);
         }
     }
 
-    DBUG_RETURN (this);
+    DBUG_RETURN (current);
 }
 
 /** <!--********************************************************************-->

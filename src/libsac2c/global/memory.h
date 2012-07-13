@@ -9,7 +9,8 @@ extern void MEMdbugMemoryLeakCheck (void);
 extern void *MEMmallocAt (int size, char *file, int line);
 #define MEMmalloc(size) MEMmallocAt (size, __FILE__, __LINE__)
 
-extern void *MEMfree (void *address);
+template <typename T> T __MEMfree (T address);
+#define MEMfree(x) __MEMfree<__typeof(x)> (x)
 
 extern void *MEMcopy (int size, void *mem);
 

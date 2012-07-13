@@ -53,15 +53,19 @@
 
    The benefit of the structure is that with the same complexity one can
    get all the possible endings of a certain prefix.  */
+struct trie;
+struct child
+{
+  int symb;
+  ssize_t last;
+  struct trie *  next;
+};
+
 struct trie
 {
   unsigned int children_size;
   unsigned int children_count;
-  struct child {
-    int symb;
-    ssize_t last;
-    struct trie *  next;
-  } *  children;
+  struct child *  children;
 };
 
 __BEGIN_DECLS

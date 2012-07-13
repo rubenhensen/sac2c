@@ -93,7 +93,7 @@ version="1.0">
 
 <xsl:template match="/" mode="gen-make-fun">
   <xsl:value-of select="'node *SHLPmakeNode( nodetype node_type, int lineno, char* sfile, ...) {'" />
-  <xsl:value-of select="'node *this = NULL;'" />
+  <xsl:value-of select="'node *xthis = NULL;'" />
   <xsl:value-of select="'va_list args;'" />
   <xsl:if test="key(&quot;arraytypes&quot;, //syntaxtree//type/@name)">
     <xsl:value-of select="'int cnt, max;'" />
@@ -103,7 +103,7 @@ version="1.0">
   <xsl:value-of select="'default: /* error */ '" />
   <xsl:value-of select="'break;'" />
   <xsl:value-of select="'} '" />
-  <xsl:value-of select="'return(this);}'" />
+  <xsl:value-of select="'return(xthis);}'" />
 </xsl:template>
 
 <xsl:template match="node" mode="gen-case">
@@ -121,56 +121,50 @@ version="1.0">
 
 <xsl:template match="node" mode="gen-alloc-fun">
   <!-- temp variable -->
+  <xsl:variable name="uppername">
+    <xsl:call-template name="uppercase" >
+      <xsl:with-param name="string" >
+	<xsl:value-of select="@name" />
+      </xsl:with-param>
+    </xsl:call-template>
+  </xsl:variable>
+
   <xsl:value-of select="'struct NODE_ALLOC_N_'" />
-  <xsl:call-template name="uppercase" >
-    <xsl:with-param name="string" >
-      <xsl:value-of select="@name" />
-    </xsl:with-param>
-  </xsl:call-template>
+  <xsl:value-of select="$uppername" />
   <xsl:value-of select="' *nodealloc; '" />
   <!-- allocate structure -->
-  <xsl:value-of select="'nodealloc = MEMmalloc( sizeof( struct NODE_ALLOC_N_'" />
-  <xsl:call-template name="uppercase" >
-    <xsl:with-param name="string" >
-      <xsl:value-of select="@name" />
-    </xsl:with-param>
-  </xsl:call-template>
+  <xsl:value-of select="'nodealloc = (struct NODE_ALLOC_N_'" />
+  <xsl:value-of select="$uppername" />
+  <xsl:value-of select="' *) MEMmalloc( sizeof( struct NODE_ALLOC_N_'" />
+  <xsl:value-of select="$uppername" />
   <xsl:value-of select="'));'" />
   <!-- set basic info -->
-  <xsl:value-of select="'this = (node *) &amp;(nodealloc->nodestructure);'" />
-  <xsl:value-of select="'NODE_TYPE( this) = node_type;'" />
-  <xsl:value-of select="'NODE_LINE( this) = lineno;'" />
-  <xsl:value-of select="'NODE_FILE( this) = sfile;'" />
-  <xsl:value-of select="'NODE_ERROR( this) = NULL;'" />
+  <xsl:value-of select="'xthis = (node *) &amp;(nodealloc->nodestructure);'" />
+  <xsl:value-of select="'NODE_TYPE( xthis) = node_type;'" />
+  <xsl:value-of select="'NODE_LINE( xthis) = lineno;'" />
+  <xsl:value-of select="'NODE_FILE( xthis) = sfile;'" />
+  <xsl:value-of select="'NODE_ERROR( xthis) = NULL;'" />
   <xsl:call-template name="newline" />
-  <xsl:value-of select="'CHKMsetNodeType (this, node_type);'" />
+  <xsl:value-of select="'CHKMsetNodeType (xthis, node_type);'" />
   <xsl:call-template name="newline" />
   <!-- set sons and attribs types -->
   <xsl:if test="sons/son">
-    <xsl:value-of select="'this->sons.'" />
+    <xsl:value-of select="'xthis->sons.'" />
     <xsl:call-template name="name-to-nodeenum" >
       <xsl:with-param name="name" select="@name" />
     </xsl:call-template>
     <xsl:value-of select="' = (struct SONS_N_'" />
-    <xsl:call-template name="uppercase" >
-      <xsl:with-param name="string" >
-        <xsl:value-of select="@name" />
-      </xsl:with-param>
-    </xsl:call-template>
+    <xsl:value-of select="$uppername" />
     <xsl:value-of select="' *) &amp;(nodealloc->sonstructure); '"/>
   </xsl:if>
   <xsl:if test="attributes/attribute | flags/flag">
-    <xsl:value-of select="'this->attribs.'" />
+    <xsl:value-of select="'xthis->attribs.'" />
     <xsl:call-template name="name-to-nodeenum" >
       <xsl:with-param name="name" select="@name" />
     </xsl:call-template>
     <xsl:value-of select="' = (struct ATTRIBS_N_'" />
-    <xsl:call-template name="uppercase" >
-      <xsl:with-param name="string" >
-        <xsl:value-of select="@name" />
-      </xsl:with-param>
-    </xsl:call-template>
-    <xsl:value-of select="' *) &amp;(nodealloc->attributestructure);'" />
+    <xsl:value-of select="$uppername" />
+        <xsl:value-of select="' *) &amp;(nodealloc->attributestructure);'" />
   </xsl:if>
 </xsl:template>
 
@@ -194,7 +188,7 @@ version="1.0">
     <xsl:value-of select="'for( cnt=0; cnt &lt; max; cnt++) {'" />
   </xsl:if>
   <xsl:call-template name="node-access">
-    <xsl:with-param name="node">this</xsl:with-param>
+    <xsl:with-param name="node">xthis</xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name"/>
     </xsl:with-param>
@@ -226,7 +220,7 @@ version="1.0">
     <xsl:value-of select="'for( cnt=0; cnt &lt; max; cnt++) {'" />
   </xsl:if>
   <xsl:call-template name="node-access">
-    <xsl:with-param name="node">this</xsl:with-param>
+    <xsl:with-param name="node">xthis</xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name"/>
     </xsl:with-param>
@@ -267,7 +261,7 @@ version="1.0">
 
 <xsl:template match="son" mode="gen-fill-fun">
   <xsl:call-template name="node-access">
-    <xsl:with-param name="node">this</xsl:with-param>
+    <xsl:with-param name="node">xthis</xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name"/>
     </xsl:with-param>
@@ -280,7 +274,7 @@ version="1.0">
 
 <xsl:template match="flags/flag" mode="gen-fill-fun" >
   <xsl:call-template name="node-access">
-    <xsl:with-param name="node">this</xsl:with-param>
+    <xsl:with-param name="node">xthis</xsl:with-param>
     <xsl:with-param name="nodetype">
       <xsl:value-of select="../../@name"/>
     </xsl:with-param>

@@ -20,7 +20,13 @@
 
 #define malloc(x) MEMmalloc (x)
 #define realloc(x, y) __MEMrealloc (x, y)
+
+#ifdef __cplusplus
+#define free(x) (void)__MEMfree<void *> ((void *)x)
+#else
 #define free(x) MEMfree (x)
+#endif
+
 #define strdup(x) STRcpy (x)
 #define exit(x) CTIexit (x)
 

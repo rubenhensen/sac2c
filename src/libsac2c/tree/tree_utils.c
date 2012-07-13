@@ -270,7 +270,7 @@ checkBoundShape (node *arg1, node *arg2)
  *****************************************************************************/
 
 bool
-TULSisFullGenerator (node *generator, node *operator)
+TULSisFullGenerator (node *generator, node *op)
 {
     bool z;
     bool z2 = FALSE;
@@ -291,7 +291,7 @@ TULSisFullGenerator (node *generator, node *operator)
     patub = PMarray (1, PMAgetNode (&ub), 0);
     patarr = PMarray (1, PMAgetNode (&arr), 0);
 
-    switch (NODE_TYPE (operator)) {
+    switch (NODE_TYPE (op)) {
 
     case N_spfold:
     case N_break:
@@ -307,7 +307,7 @@ TULSisFullGenerator (node *generator, node *operator)
     case N_genarray:
         z = PMmatchFlatSkipGuards (patlb, GENERATOR_BOUND1 (generator))
             && COisZero (lb, TRUE)
-            && checkBoundShape (GENERATOR_BOUND2 (generator), GENARRAY_SHAPE (operator))
+            && checkBoundShape (GENERATOR_BOUND2 (generator), GENARRAY_SHAPE (op))
             && checkStepWidth (generator);
         break;
 
@@ -316,7 +316,7 @@ TULSisFullGenerator (node *generator, node *operator)
             && COisZero (lb, TRUE) && checkStepWidth (generator);
 
         if (PMmatchFlatSkipGuards (patub, GENERATOR_BOUND2 (generator))
-            && PMmatchFlatSkipGuards (patarr, MODARRAY_ARRAY (operator))) {
+            && PMmatchFlatSkipGuards (patarr, MODARRAY_ARRAY (op))) {
 
             /* Check for matching frame shapes */
             shpgen = SHgetUnrLen (ARRAY_FRAMESHAPE (ub));
@@ -332,7 +332,7 @@ TULSisFullGenerator (node *generator, node *operator)
         DBUG_ASSERT (N_id == NODE_TYPE (GENERATOR_BOUND2 (generator)),
                      "TULSisFullGenerator wants N_id GENERATOR_BOUND");
 
-        modarrshp = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (operator)));
+        modarrshp = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (op)));
         DBUG_ASSERT ((NULL == modarrshp) || (N_id == NODE_TYPE (modarrshp)),
                      "TULSisFullGenerator AVIS_SHAPE not flattened");
 

@@ -73,7 +73,7 @@ MakeInfo (void)
 
     DBUG_ENTER ();
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_WL (result) = NULL;
     INFO_MODULE (result) = NULL;
@@ -220,13 +220,13 @@ CreateZeros (ntype *array_type, node *fundef)
 #if 0
 /** <!--********************************************************************-->
  *
- * @fn node *CreateArraySel( node *sel_vec, node *sel_array, info *arg_info)  
+ * @fn node *CreateArraySel( node *sel_vec, node *sel_array, info *arg_info)
  *
  *   @brief creates an scalar or vector-wise reference on 'sel_array'
  *
  *   @param  node *sel_vec   : N_WITHID_VEC of current WL
- *           node *sel_array : 
- *           info *arg_info  : 
+ *           node *sel_array :
+ *           info *arg_info  :
  *   @return node *          : N_ap or N_prf
  ******************************************************************************/
 static
@@ -234,7 +234,7 @@ node *CreateArraySel( node *sel_vec, node *sel_array, info *arg_info)
 {
   node *sel;
   int len_index, dim_array;
-  
+
   DBUG_ENTER ();
 
   DBUG_ASSERT (NODE_TYPE( sel_array) == N_id, "no N_id node found!");
@@ -257,21 +257,21 @@ node *CreateArraySel( node *sel_vec, node *sel_array, info *arg_info)
   else {   /* (len_index < dim_array) */
 
     if (INFO_SELWRAPPER( arg_info) == NULL){
-      
+
       DSinitDeserialize(INFO_MODULE( arg_info));
-      
+
       INFO_SELWRAPPER( arg_info) = DSaddSymbolByName( "sel",
-                                                      SET_wrapperhead, 
+                                                      SET_wrapperhead,
                                                       global.preludename);
       DSfinishDeserialize( INFO_MODULE( arg_info));
     }
-    
+
     DBUG_ASSERT (INFO_SELWRAPPER( arg_info) != NULL, "Function %s::sel not found", global.preludename);
 
-    sel = TCmakeAp2( INFO_SELWRAPPER( arg_info), 
-                     DUPdupIdsId( sel_vec), DUPdoDupNode( sel_array)); 
+    sel = TCmakeAp2( INFO_SELWRAPPER( arg_info),
+                     DUPdupIdsId( sel_vec), DUPdoDupNode( sel_array));
   }
-  
+
   DBUG_RETURN (sel);
 }
 #endif
@@ -518,7 +518,7 @@ WLDPmodarray (node *arg_node, info *arg_info)
     sel_vec = WITHID_VEC (INFO_DEFAULTWITHID (arg_info));
     sel_array = MODARRAY_ARRAY (arg_node);
 
-#if 0  
+#if 0
   if ( ( TYisAKV(IDS_NTYPE( sel_vec)) ||
          TYisAKS(IDS_NTYPE( sel_vec))) &&
        ( TYisAKV(ID_NTYPE( sel_array)) ||

@@ -81,7 +81,7 @@ MakeInfo (void)
     DBUG_ENTER ();
     DBUG_PRINT_TAG ("SOSSK_PATH", ">>> ENTER MakeInfo");
 
-    result = MEMmalloc (sizeof (info));
+    result = (info *)MEMmalloc (sizeof (info));
 
     INFO_ITERATION_ROUND (result) = 0;
     INFO_NUM_RETS (result) = 0;
@@ -99,7 +99,7 @@ MakeInfo (void)
     INFO_AP_FOUND (result) = FALSE;
     INFO_AP_CALL (result) = FALSE;
     INFO_EXT_FUN (result) = FALSE;
-    INFO_PRF_NAME (result) = 0;
+    INFO_PRF_NAME (result) = (prf)0;
 
     DBUG_PRINT_TAG ("SOSSK_PATH", "<<< LEAVE MakeInfo");
     DBUG_RETURN (result);
@@ -616,7 +616,7 @@ getReturnDemand (constant *demand, int row)
     constant *res_row = COsel (idx, demand, NULL);
     constant *res = NULL;
 
-    int *res_row_int = COgetDataVec (res_row);
+    int *res_row_int = (int *)COgetDataVec (res_row);
     int num_rets = SHgetExtent (COgetShape (demand), 0);
     int dim = SHgetDim (COgetShape (demand));
     int new_shape[2] = {num_rets, 4};
@@ -1432,28 +1432,28 @@ SOSSKprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     DBUG_PRINT_TAG ("SOSSK_PATH", ">>> ENTER SOSSKprf");
 
-    prf prf;
+    prf xprf;
 
-    prf = PRF_PRF (arg_node);
+    xprf = PRF_PRF (arg_node);
 
-    DBUG_PRINT_TAG ("SOSSK_FCT", ">>>> enter PRF: %s", PRF_NAME (prf));
+    DBUG_PRINT_TAG ("SOSSK_FCT", ">>>> enter PRF: %s", PRF_NAME (xprf));
 
     /* If there exists a demand-function for this prf, compute the demands*/
-    if (prf_shape_oracle_funtab[prf] != NULL) {
+    if (prf_shape_oracle_funtab[xprf] != NULL) {
 
-        INFO_PRF_NAME (arg_info) = prf;
+        INFO_PRF_NAME (arg_info) = xprf;
         INFO_POS_PRF_ARG (arg_info) = 0;
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
         INFO_POS_PRF_ARG (arg_info) = -1;
-        INFO_PRF_NAME (arg_info) = 0;
+        INFO_PRF_NAME (arg_info) = (prf)0;
     } else {
         DBUG_PRINT_TAG ("SOSSK", "Points to NULL!");
         arg_node = TRAVcont (arg_node, arg_info);
     }
 
-    DBUG_PRINT_TAG ("SOSSK_FCT", "<<<< leave PRF: %s", PRF_NAME (prf));
+    DBUG_PRINT_TAG ("SOSSK_FCT", "<<<< leave PRF: %s", PRF_NAME (xprf));
     DBUG_PRINT_TAG ("SOSSK_PATH", "<<< LEAVE SOSSKprf");
     DBUG_RETURN (arg_node);
 }
