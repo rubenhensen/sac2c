@@ -233,9 +233,7 @@ WLPROPfundef (node *arg_node, info *arg_info)
     /**
      * do actual traversal
      */
-    if (FUNDEF_BODY (arg_node) != NULL) {
-        FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-    }
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -258,10 +256,7 @@ WLPROPassign (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-
-    if (NULL != ASSIGN_NEXT (arg_node)) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -376,9 +371,7 @@ WLPROPexprs (node *arg_node, info *arg_info)
         INFO_ARGNUM (arg_info) = INFO_ARGNUM (arg_info) + 1;
     }
 
-    if (EXPRS_NEXT (arg_node) != NULL) {
-        EXPRS_NEXT (arg_node) = TRAVdo (EXPRS_NEXT (arg_node), arg_info);
-    }
+    EXPRS_NEXT (arg_node) = TRAVopt (EXPRS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -529,22 +522,20 @@ WLPROPid (node *arg_node, info *arg_info)
                  * move the AVIS_DIM and AVIS_SHAPE annotations to the
                  * current context
                  */
-                if (PHisSAAMode ()) {
-                    if (AVIS_DIM (ARG_AVIS (witharg)) != NULL) {
-                        AVIS_DIM (ARG_AVIS (witharg))
-                          = FREEdoFreeTree (AVIS_DIM (ARG_AVIS (witharg)));
-                    }
-
-                    if (AVIS_SHAPE (ARG_AVIS (witharg)) != NULL) {
-                        AVIS_SHAPE (ARG_AVIS (witharg))
-                          = FREEdoFreeTree (AVIS_SHAPE (ARG_AVIS (witharg)));
-                    }
-
+                if (AVIS_DIM (ARG_AVIS (witharg)) != NULL) {
                     AVIS_DIM (ARG_AVIS (witharg))
-                      = DUPdoDupTreeLut (AVIS_DIM (ID_AVIS (arg_node)), lut);
-                    AVIS_SHAPE (ARG_AVIS (witharg))
-                      = DUPdoDupTreeLut (AVIS_SHAPE (ID_AVIS (arg_node)), lut);
+                      = FREEdoFreeTree (AVIS_DIM (ARG_AVIS (witharg)));
                 }
+
+                if (AVIS_SHAPE (ARG_AVIS (witharg)) != NULL) {
+                    AVIS_SHAPE (ARG_AVIS (witharg))
+                      = FREEdoFreeTree (AVIS_SHAPE (ARG_AVIS (witharg)));
+                }
+
+                AVIS_DIM (ARG_AVIS (witharg))
+                  = DUPdoDupTreeLut (AVIS_DIM (ID_AVIS (arg_node)), lut);
+                AVIS_SHAPE (ARG_AVIS (witharg))
+                  = DUPdoDupTreeLut (AVIS_SHAPE (ID_AVIS (arg_node)), lut);
 
                 if (AVIS_MIN (ARG_AVIS (witharg)) != NULL) {
                     AVIS_MIN (ARG_AVIS (witharg))
