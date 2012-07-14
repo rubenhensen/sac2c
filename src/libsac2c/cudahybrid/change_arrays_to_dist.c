@@ -161,14 +161,17 @@ CADTfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (FUNDEF_BODY (arg_node) != NULL)
-        FUNDEF_VARDECS (arg_node) = TRAVopt (FUNDEF_VARDECS (arg_node), arg_info);
+    if (!FUNDEF_ISSTICKY (arg_node)) {
+        if (FUNDEF_BODY (arg_node) != NULL) {
+            FUNDEF_VARDECS (arg_node) = TRAVopt (FUNDEF_VARDECS (arg_node), arg_info);
+        }
 
-    FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
+        FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
 
-    FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
+        FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
 
-    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 

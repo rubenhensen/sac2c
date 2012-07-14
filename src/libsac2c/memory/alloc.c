@@ -1760,6 +1760,10 @@ EMALprf (node *arg_node, info *arg_info)
 
     case F_host2device:
     case F_device2host:
+    case F_device2dist:
+    case F_host2dist_st:
+    case F_host2dist_spmd:
+    case F_dist2conc:
         als->dim = MakeDimArg (PRF_ARG1 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
@@ -1800,6 +1804,17 @@ EMALprf (node *arg_node, info *arg_info)
     case F_syncthreads:
         als->dim = MakeDimArg (PRF_ARG1 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        break;
+
+    case F_is_cuda_thread:
+        /*
+         * result is boolean
+         *
+         * a = shape_sel( idx, A)
+         * alloc( 0, []);
+         */
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_bool);
         break;
 
     case F_alloc:
