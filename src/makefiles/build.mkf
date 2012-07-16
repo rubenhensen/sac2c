@@ -181,7 +181,7 @@ $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so: global/build_$(STYLE).$($(STY
 	@$(TOUCH) $(FINGERPRINT_FILE)
 	$(HIDE) $(subst %libname%,$(notdir $@),$(LD_DYNAMIC)) -o $@ \
                 $(SUBTARGETS) $^ \
-                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS) $(LIBS_LEX)
+                $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
 
 
 ################################################################################
@@ -353,7 +353,7 @@ global/build_$(STYLE).c: $(SUBTARGETS) $(PROJECT_ROOT)/.revision.txt
 
 # Create an icm_vars file, which could be used by both C and C++ compilers
 codegen/fancy_icm_vars.c: codegen/icm_vars.c
-	cpp -P $^ -DICM_ALL | sort | uniq > $@
+	gcc -E -P $^ -DICM_ALL | sort | uniq > $@
 
 ###############################################################################
 #
