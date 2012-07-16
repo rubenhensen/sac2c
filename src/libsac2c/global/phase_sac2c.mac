@@ -361,7 +361,7 @@ CYCLEPHASEFUN (wls, "Applying with-loop scalarization", WLSdoWithloopScalarizati
 CYCLEPHASEFUN (prfunr, "Applying prf unrolling", UPRFdoUnrollPRFs,
                global.optimize.doprfunr, opt, cyc)
 
-CYCLEPHASEFUN (xetc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
+CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
                global.optimize.doetc, opt, cyc)
 
 CYCLEPHASEFUN (xvp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp,
@@ -549,8 +549,8 @@ CYCLEPHASEFUNOLD (wlur, "Applying withloop unrolling", WLURdoWithloopUnrolling,
 CYCLEPHASEFUNOLD (wlurssa, "Restoring SSA form after withloop unrolling", SSATdoTransform,
                   global.optimize.dowlur, opt, saacyc)
 
-CYCLEPHASEFUNOLD (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
-                  global.optimize.doetc, opt, saacyc)
+CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConversions,
+               global.optimize.doetc, opt, saacyc)
 
 CYCLEPHASEFUNOLD (ctzg, "Comparison to zero conversion for guards",
                   CTZGdoComparisonToZeroGuards, global.optimize.doctzg, opt, saacyc)
