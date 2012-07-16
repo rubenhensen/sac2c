@@ -1038,7 +1038,7 @@ IMEMDISTid (node *arg_node, info *arg_info)
         conc_type = TypeConvert (id_type, NODE_TYPE (arg_node), arg_info);
         /* if we can convert */
         if (conc_type != NULL) {
-            avis = LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
+            avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
             if (avis != id_avis) {
                 /* If the N_avis has been come across before, replace its
                  * N_avis by the device N_avis */
