@@ -235,6 +235,19 @@ if [ test "$LEX" != "lex" -a "$LEX" != "flex" ]; then
    AC_MSG_ERROR([Cannot find usable flex/lex.])
 fi
 
+dnl Check that sort and uniq are available.  Should be the case
+dnl for any half-decent unix system.
+AC_CHECK_PROG(SORT, sort, "sort", "no")
+AC_CHECK_PROG(UNIQ, uniq, "uniq", "no")
+
+if [ test "$SORT" = "no" ]; then
+  AC_MSG_ERROR([Cannot find sort utility.])
+fi
+
+if [ test "$UNIQ" = "no" ]; then
+  AC_MSG_ERROR([Cannot find uniq utility.])
+fi
+
 dnl search for xlst engine
 AC_CHECK_PROGS(XSLT, [xsltproc sabcmd], [!fail])
 
@@ -243,7 +256,7 @@ if [ test "$XSLT" = "!fail" ]; then
 fi
 
 dnl search for dot
-AC_CHECK_PROG(DOT, dot, "yes", "no")
+AC_CHECK_PROG(DOT, dot, "dot", "no")
 
 if [ test "$DOT" = "no" ]; then
   AC_MSG_NOTICE( [Cannot find a usable dot.])
@@ -504,6 +517,7 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(GENPIC, ["-fPIC -DPIC"])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
+  AC_SUBST(CPP, ["gcc -E -P -x c"])
   AC_SUBST(CCMTLINK, [$GCC_PTHREADS])
   AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([gcc settings])
@@ -520,6 +534,7 @@ elif [ test "$SUNC" = yes ]; then
   AC_SUBST(GENPIC, ["-KPIC"])
   AC_SUBST(DEPSFLAG, ["-xM"])
   AC_SUBST(CPPFILE, ["cpp -E -C -x c"])
+  AC_SUBST(CPP, ["cpp -E -P -x c"])
   AC_SUBST(CCMTLINK, ["-lpthread"])
   AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Sun cc settings])
@@ -536,6 +551,7 @@ elif [ test "$DECC" = yes ]; then
   AC_SUBST(GENPIC, [""])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cc -E -C -x c"])
+  AC_SUBST(CPP, ["cc -E -P -x c"])
   AC_SUBST(CCMTLINK, ["-pthread"])
   AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Compaq/DEC cc settings])
@@ -552,6 +568,7 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(GENPIC, [""])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
+  AC_SUBST(CPP, ["gcc -E -P -x c"])
   AC_SUBST(CCMTLINK, [""])
   AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Apple cc settings])
@@ -568,6 +585,7 @@ else
   AC_SUBST(GENPIC, [""])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cpp -C"])
+  AC_SUBST(CPP, ["cpp -P"])
   AC_SUBST(CCMTLINK, [""])
   AC_SUBST(CCDLLINK, [""])
   AC_MSG_RESULT([none found])
@@ -588,6 +606,7 @@ if [[ "$GXX" = yes -a "$enable_cplusplus" = yes ]]; then
   AC_SUBST(GENPIC, ["-fPIC -DPIC"])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
+  AC_SUBST(CPP, ["gcc -E -P -x c"])
   AC_SUBST(CCMTLINK, [$GCC_PTHREADS])
   AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([gcc settings])

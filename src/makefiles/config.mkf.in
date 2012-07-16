@@ -60,6 +60,9 @@ DOT		:= @DOT@
 M4PROC          := @M4@
 CODE_BEAUTIFIER := @CB@
 SLC_PATH        := @SLC_PATH@
+CPP		:= @CPP@
+SORT		:= @SORT@
+UNIQ		:= @UNIQ@
 
 
 ################################################################################

@@ -353,7 +353,7 @@ global/build_$(STYLE).c: $(SUBTARGETS) $(PROJECT_ROOT)/.revision.txt
 
 # Create an icm_vars file, which could be used by both C and C++ compilers
 codegen/fancy_icm_vars.c: codegen/icm_vars.c
-	gcc -E -P $^ -DICM_ALL | sort | uniq > $@
+	$(CPP) $^ -DICM_ALL | $(SORT) | $(UNIQ) > $@
 
 ###############################################################################
 #

@@ -51,12 +51,15 @@ libsac2c_subtarget_suffix  := .o
 libsac2c_defaultstyle      := devel
 
 libsac2c_extraclean_all    := src/libsac2c/global/build_devel.c \
-                              src/libsac2c/global/build_prod.c
+                              src/libsac2c/global/build_prod.c \
+			      src/libsac2c/codegen/fancy_icm_vars.c
 
-libsac2c_extraclean_devel  := src/libsac2c/global/build_devel.c
+libsac2c_extraclean_devel  := src/libsac2c/global/build_devel.c \
+			      src/libsac2c/codegen/fancy_icm_vars.c
 
-libsac2c_extraclean_prod   := src/libsac2c/global/build_prod.c
-
+libsac2c_extraclean_prod   := src/libsac2c/global/build_prod.c \
+			      src/libsac2c/codegen/fancy_icm_vars.c
+	  
 libsac2c_sourcedirs        := global tree support serialize \
                               scanparse flatten constants typecheck types \
                               modules objects stdopt arrayopt wltransform \
