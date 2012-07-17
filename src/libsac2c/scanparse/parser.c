@@ -2806,9 +2806,16 @@ handle_npart (struct parser *parser)
 
     tok = parser_get_token (parser);
     if (token_is_operator (tok, tv_colon)) {
+        /* We share `in_return' parser flag to avoid creating N_exprs
+           for a single expr.  However, as with-loop can be inside the
+           return expression, we cannot turn off the `in_return' flag.
+           Instead we save its state, and restore it after the expression
+           list was handled.  */
+        bool old_return_state = parser->in_return;
+
         parser->in_return = true;
         exprs = handle_expr (parser);
-        parser->in_return = false;
+        parser->in_return = old_return_state;
 
         if (!exprs) {
             error_loc (token_location (tok), "expression expected");
