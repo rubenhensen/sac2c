@@ -1,5 +1,7 @@
 /* $Id$ */
 
+#ifdef SAC_BACKEND_MUTC
+
 /******************************************************************************
  *
  * ICMs for refcounting data objects
@@ -412,7 +414,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
                 SAC_MUTC_DEBUG_RC (printf ("alloced parent at %p in %p\n",               \
                                            (void *)SAC_ND_A_DESC_PARENT (array),         \
                                            SAC_ND_A_DESC (array));)                      \
-                SAC_DESC_PARENT_T_CHILDREN (SAC_ND_A_DESC_PARENT (array)) = 2;           \
+                PARDESC_NCHILD (SAC_ND_A_DESC_PARENT (array)) = 2;                       \
             } else {                                                                     \
                 SAC_MUTC_RC_PARENT_INC_SYNC (array);                                     \
             }                                                                            \
@@ -900,4 +902,6 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
 
 #ifndef SAC_MUTC_RC_BARRIER__DESC
 #define SAC_MUTC_RC_BARRIER__DESC(var_NT)
+#endif
+
 #endif

@@ -81,7 +81,7 @@ typedef void *SAC_hidden;
 typedef intptr_t SAC_referencecount_t;
 /*
  *  array descriptor parent:
- *  [0]      -> child descriptors
+ *  [0]      -> number of child descriptors
  */
 typedef intptr_t *SAC_array_descriptor_parent_t;
 /*
@@ -105,7 +105,8 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_DESC_PARENT_T_SIZE (1 * sizeof (intptr_t))
 
-#define SAC_DESC_PARENT_T_CHILDREN(desc_parent) ((desc_parent)[0])
+// #define SAC_DESC_PARENT_T_CHILDREN( desc_parent)
+//   ((desc_parent) [0])
 
 /* size of dimension-independent parts of the descriptor */
 #define FIXED_SIZE_OF_DESC 5
@@ -124,14 +125,21 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define BYTE_SIZE_OF_DESC(dim) (SIZE_OF_DESC (dim) * sizeof (intptr_t))
 #endif
 
+/** reference counter (RC) modes */
+/* LOCAL: count locally without any lock */
 #define SAC_DESC_RC_MODE_LOCAL 0
+/* ASYNC: the async parent, has to use atomic operations */
 #define SAC_DESC_RC_MODE_ASYNC 1
+/* NORC: rc disabled; e.g. used for the relatively free vars in SPMD execution */
 #define SAC_DESC_RC_MODE_NORC 2
+/* OTHER: ? */
 #define SAC_DESC_RC_MODE_OTHER 3
 
+/* bitmask for storing the RC mode in the descriptor pointer LSB */
 #define SAC_RC_PTR_MASK (3)
 #define SAC_RC_PTR_NEG_MASK (-1 ^ SAC_RC_PTR_MASK)
 
+/* offsets inside the descriptor */
 #define DESC_OFFSET_RC 0
 #define DESC_OFFSET_PARENT 1
 #define DESC_OFFSET_RC_MODE 2
@@ -139,8 +147,14 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define DESC_OFFSET_SIZE 4
 #define DESC_OFFSET_SHAPE FIXED_SIZE_OF_DESC
 
+/* offsets in the parent descriptor */
+#define PARDESC_OFFSET_NCHILD 0
+
 /*
- * Access hidden info in desc pointer
+ * Access hidden info in desc pointer.
+ * The hidden data is stored in the lowest bits of the descriptor pointer.
+ * They are typically used to store the RC mode, hence this is enabled only
+ * for a subset of rc modes.
  */
 #if (SAC_RC_METHOD == SAC_RCM_local_norc_ptr)                                            \
   || (SAC_RC_METHOD == SAC_RCM_async_norc_ptr)                                           \
@@ -166,7 +180,7 @@ typedef intptr_t *SAC_array_descriptor_t;
     ((SAC_array_descriptor_t) (((intptr_t)desc) & SAC_RC_PTR_NEG_MASK))
 #define SAC_DESC_HIDDEN_DATA(desc) (((intptr_t)desc) & SAC_RC_PTR_MASK)
 #define SAC_DESC_SET_HIDDEN_DATA(desc, val)                                              \
-    desc = (SAC_array_descriptor_t *)((((intptr_t)desc) & SAC_RC_PTR_NEG_MASK) | val)
+    desc = (SAC_array_descriptor_t) ((((intptr_t)desc) & SAC_RC_PTR_NEG_MASK) | val)
 
 #endif
 
@@ -185,6 +199,9 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define DESC_DIM(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_DIM)
 #define DESC_SIZE(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_SIZE)
 #define DESC_SHAPE(desc, pos) SAC_REAL_DESC_POINTER (desc, (DESC_OFFSET_SHAPE + (pos)))
+
+/* parent descriptor */
+#define PARDESC_NCHILD(desc) ((desc)[PARDESC_OFFSET_NCHILD])
 
 /* Overloaded by MUTC */
 #define SAC_ND_DEF_FUN_BEGIN2(name, type, ...)                                           \

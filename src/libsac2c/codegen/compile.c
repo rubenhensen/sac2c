@@ -4767,7 +4767,7 @@ COMPprfDecRC (node *arg_node, info *arg_info)
  *
  * @fn  node COMPprfRestorerc( node *arg_node, info *arg_info)
  *
- * @brief  Compiles N_prf node of type F_restorrc.
+ * @brief  Compiles N_prf node of type F_restorerc.
  *   The return value is a N_assign chain of ICMs.
  *   Note, that the old 'arg_node' is removed by COMPLet.
  *

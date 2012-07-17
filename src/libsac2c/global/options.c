@@ -359,8 +359,7 @@ OPTcheckOptionConsistency (void)
         }
     } else if (STReq (global.config.rc_method, "local_pasync_norc_desc")) {
         if (global.backend != BE_mutc) {
-            CTIerror ("Specified reference counting method is currently only "
-                      "supported for the backend BE_mutc!");
+            CTIwarn ("Specified reference counting method is experimental!");
         }
     } else if (STReq (global.config.rc_method, "local_async_norc_ptr")) {
         CTIwarn ("Specified reference counting method is a work in progress!");
