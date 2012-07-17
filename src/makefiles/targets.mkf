@@ -284,7 +284,7 @@ runtime_sourcedirs        := essentials_h extras_h mt_h mt_omp_h mt_beehive_h mt
 ###############################################################################
 
 runtime_essentials_h   := rc_methods types audwl commandline icm prf std \
-                          std_gen rc_impl message bool errors idx misc wl tuple
+                          std_gen rc_impl rc_impl_gen message bool errors idx misc wl tuple
 
 runtime_extras_h       := cachesim profile runtimecheck trace
 

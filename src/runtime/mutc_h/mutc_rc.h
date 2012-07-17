@@ -414,7 +414,7 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
                 SAC_MUTC_DEBUG_RC (printf ("alloced parent at %p in %p\n",               \
                                            (void *)SAC_ND_A_DESC_PARENT (array),         \
                                            SAC_ND_A_DESC (array));)                      \
-                PARDESC_NCHILD (SAC_ND_A_DESC_PARENT (array)) = 2;                       \
+                PARENT_DESC_NCHILD (SAC_ND_A_DESC_PARENT (array)) = 2;                   \
             } else {                                                                     \
                 SAC_MUTC_RC_PARENT_INC_SYNC (array);                                     \
             }                                                                            \

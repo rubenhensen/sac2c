@@ -201,7 +201,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define DESC_SHAPE(desc, pos) SAC_REAL_DESC_POINTER (desc, (DESC_OFFSET_SHAPE + (pos)))
 
 /* parent descriptor */
-#define PARDESC_NCHILD(desc) ((desc)[PARDESC_OFFSET_NCHILD])
+#define PARENT_DESC_NCHILD(desc) ((desc)[PARDESC_OFFSET_NCHILD])
 
 /* Overloaded by MUTC */
 #define SAC_ND_DEF_FUN_BEGIN2(name, type, ...)                                           \

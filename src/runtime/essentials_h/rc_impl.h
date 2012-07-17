@@ -136,23 +136,19 @@
  * SAC_RCM_local_pasync_norc_desc method
  * The descriptor can be in one of the three modes:
  *  LOCAL = perform updates locally (descriptor not shared).
- *  NORC = do not update the ref. count.
- *
- * There may be an asynchronous parent descriptor. The reference counter
- * in the parent descriptor counts the number of child descriptors, and it
- * must by updated atomically.
- * When the local descriptor is the only child of the parent, we try to get
- * rid of the parent (in SAC_ND_A_PARENT_ASYNC_RC).
+ *  NORC = do not update the ref. count. (descriptor shared in SPMD)
+ *  ASYNC = Hierarchical mode, multiple descriptors with the common parent.
+ *          The reference counter in the parent descriptor counts the number of child
+ * descriptors, and it must by updated atomically. When the local descriptor is the only
+ * child of the parent, we try to get rid of the parent (in SAC_ND_A_PARENT_ASYNC_RC).
  */
 
 #if SAC_RC_METHOD == SAC_RCM_local_pasync_norc_desc
 
-#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
-    {                                                                                    \
-        SAC_ND_INIT__RC__C99 (var_NT, rc)                                                \
-        DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_LOCAL;                  \
-        DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
-    }
+#define SAC_ND_INIT__RC__DEFAULT(var_NT, rc) SAC_ND_INIT__RC__C99 (var_NT, rc)
+
+//   DESC_RC_MODE( SAC_ND_A_DESC( var_NT)) = SAC_DESC_RC_MODE_LOCAL;
+//   DESC_PARENT( SAC_ND_A_DESC( var_NT)) = 0;
 
 #define SAC_ND_SET__RC__DEFAULT(var_NT, rc)                                              \
     {                                                                                    \
@@ -229,11 +225,13 @@
     }
 
 /* the decrement is perfomed on the parent asynchronous descriptor,
- * hence it must be done with an atomic operation */
+ * hence it must be done with an atomic operation.
+ * This is called when the child is going away.
+ * Free the parent when it was the last child. */
 #define SAC_DEC_FREE_PARENT__ASYNC_RC(var_NT)                                            \
     {                                                                                    \
         SAC_ND_DESC_PARENT_TYPE parent = SAC_ND_A_DESC_PARENT (var_NT);                  \
-        if (__sync_sub_and_fetch (&PARDESC_NCHILD (parent), 1) == 0) {                   \
+        if (__sync_sub_and_fetch (&PARENT_DESC_NCHILD (parent), 1) == 0) {               \
             free (parent);                                                               \
         }                                                                                \
     }
@@ -258,6 +256,7 @@
 
 /*
  * While getting the parent count if it is 1 then change mode back to local.
+ * FIXME: release the parent?
  */
 #define SAC_ND_A_PARENT_ASYNC_RC(var_NT)                                                 \
     ({                                                                                   \
@@ -265,10 +264,16 @@
         SAC_IF_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););   \
                                                                                          \
         SAC_ND_DESC_PARENT_TYPE parent = SAC_ND_A_DESC_PARENT (var_NT);                  \
-        if (PARDESC_NCHILD (parent) == 1) {                                              \
+        int rc;                                                                          \
+        if (PARENT_DESC_NCHILD (parent) == 1) {                                          \
             DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_LOCAL;              \
+            free (parent);                                                               \
+            DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                    \
+            rc = SAC_ND_A_RC__C99 (var_NT);                                              \
+        } else {                                                                         \
+            rc = PARENT_DESC_NCHILD (parent);                                            \
         }                                                                                \
-        PARDESC_NCHILD (parent);                                                         \
+        rc;                                                                              \
     })
 
 /* Increment the number of children in the parent descriptor.
@@ -277,11 +282,32 @@
     {                                                                                    \
         SAC_IF_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););   \
         SAC_TR_REF_PRINT (("RC_PARENT_INC( %s)", NT_STR (var_NT)))                       \
-        __sync_add_and_fetch (&PARDESC_NCHILD (                                          \
+        __sync_add_and_fetch (&PARENT_DESC_NCHILD (                                      \
                                 (SAC_ND_DESC_PARENT_TYPE)SAC_ND_A_DESC_PARENT (var_NT)), \
                               1);                                                        \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
+
+/* SAC_ND_RC_TO_NORC( var_NT) is generated in m4 */
+#define SAC_ND_RC_TO_NORC__NODESC(var_NT) /* noop */
+
+#define SAC_ND_RC_TO_NORC__DESC(var_NT)                                                  \
+    DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_NORC;
+
+/* SAC_ND_RC_FROM_NORC( var_NT) is generated in m4 */
+
+#define SAC_ND_RC_FROM_NORC__NODESC(var_NT) /* noop */
+
+#define SAC_ND_RC_FROM_NORC__DESC(var_NT)                                                \
+    {                                                                                    \
+        if (SAC_ND_A_DESC_PARENT (var_NT) != 0) {                                        \
+            DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_ASYNC;              \
+        } else {                                                                         \
+            DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_LOCAL;              \
+        }                                                                                \
+    }
+
+// #define SAC_ND_RC_LOCAL_TO_ASYNC
 
 #if 0
 /*
@@ -295,6 +321,7 @@
     }
 #endif
 
+#if 0
 /*
  * Access the descriptors rc directly in SAC_ND_PRF_RESTORERC and
  * SAC_ND_PRF_2NORC so that we do not perform any special reference
@@ -311,8 +338,10 @@
     SAC_RC_PRINT (array);                                                                \
     SAC_ND_A_RC_T_MODE (rc) = SAC_ND_A_DESC_RC_MODE (array);                             \
     SAC_ND_A_DESC_RC_MODE (array) = SAC_DESC_RC_MODE_NORC;
+#endif
 
-/*
+#if 0
+/* 
  * Need to do the inc in sync not detached as the queue must be
  * flushed before the spawn else order maybe lost.
  *
@@ -336,7 +365,7 @@
                 SAC_DEBUG_RC (printf ("alloced parent at %p in %p\n",                    \
                                       (void *)SAC_ND_A_DESC_PARENT (array),              \
                                       SAC_ND_A_DESC (array));)                           \
-                PARDESC_NCHILD (SAC_ND_A_DESC_PARENT (array)) = 2;                       \
+                PARENT_DESC_NCHILD (SAC_ND_A_DESC_PARENT (array)) = 2;                   \
             } else {                                                                     \
                 SAC_RC_PARENT_INC_SYNC (array);                                          \
             }                                                                            \
@@ -349,6 +378,8 @@
             SAC_RC_PRINT (new);                                                          \
         }                                                                                \
     }
+#endif
+
 #endif
 
 /** =========================================================================== */
