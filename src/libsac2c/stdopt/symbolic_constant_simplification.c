@@ -367,6 +367,24 @@ MatchPrfargs (node *arg_node)
 
     DBUG_RETURN (res);
 }
+/** <!--********************************************************************-->
+ *
+ * @fn bool MatchPrShapes( node *arg_node)
+ * Predicate for shape( PRF_ARG1) matching shape( PRF_ARG2)
+ *
+ *****************************************************************************/
+static bool
+MatchPrfShapes (node *arg_node)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    res = TUeqShapes (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node))),
+                      AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))));
+
+    DBUG_RETURN (res);
+}
 
 /** <!--********************************************************************-->
  *
@@ -682,7 +700,6 @@ SCSprf_sub_VxV (node *arg_node, info *arg_info)
  * 1 * X -> X
  * X * 0 -> 0 of shape(X)
  * 0 * X -> 0 of shape(X)
- * can't handle VxV because we need length error check
  *
  *****************************************************************************/
 node *
@@ -1000,7 +1017,11 @@ SCSprf_or_VxS (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_or_VxV( node *arg_node, info *arg_info)
- * X | X  -> X
+ *    X     | X      --> X
+ *    X     | FALSE  --> X
+ *    X     | TRUE   --> TRUE
+ *    FALSE | X      --> X
+ *    TRUE  | X      --> TRUE
  *
  *****************************************************************************/
 node *
@@ -1011,6 +1032,8 @@ SCSprf_or_VxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     if (MatchPrfargs (arg_node)) { /*  X | X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    } else if (MatchPrfShapes (arg_node)) {
+        res = SCSprf_or_SxS (arg_node, arg_info);
     }
 
     DBUG_RETURN (res);
@@ -1109,6 +1132,8 @@ SCSprf_and_VxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     if (MatchPrfargs (arg_node)) { /*  X & X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    } else if (MatchPrfShapes (arg_node)) {
+        res = SCSprf_and_SxS (arg_node, arg_info);
     }
 
     DBUG_RETURN (res);
