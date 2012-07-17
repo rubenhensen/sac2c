@@ -38,14 +38,15 @@
 
 #define SAC_ASSERT_RC(a, b)
 
-// __sync_synchronize();
+/** =========================================================================== */
 
 /**
  * Functions for the SAC_RCM_async method.
- * They are also used for some other combined rc methods, hence the special names.
- * We use the gcc atomic operations:
+ * They are also used for some other combined rc methods, hence they are always defined.
+ * We use the following gcc atomic operations:
  *  __sync_sub_and_fetch
  *  __sync_add_and_fetch
+ *  __sync_synchronize()
  */
 
 /* Initialize the RC method.
@@ -116,6 +117,8 @@
 
 /**
  * SAC_RCM_async method.
+ * Presumes the descriptor is shared.
+ * Performs all RC updates using special atomic operations.
  */
 #if SAC_RC_METHOD == SAC_RCM_async
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc) SAC_ND_INIT__RC__ASYNC (var_NT, rc)
@@ -131,6 +134,15 @@
 
 /**
  * SAC_RCM_local_pasync_norc_desc method
+ * The descriptor can be in one of the three modes:
+ *  LOCAL = perform updates locally (descriptor not shared).
+ *  NORC = do not update the ref. count.
+ *
+ * There may be an asynchronous parent descriptor. The reference counter
+ * in the parent descriptor counts the number of child descriptors, and it
+ * must by updated atomically.
+ * When the local descriptor is the only child of the parent, we try to get
+ * rid of the parent (in SAC_ND_A_PARENT_ASYNC_RC).
  */
 
 #if SAC_RC_METHOD == SAC_RCM_local_pasync_norc_desc
@@ -202,6 +214,8 @@
         }                                                                                \
     }
 
+/* the decrement is perfomed on the local copy, hence it does not have to
+ * be atomic. */
 #define SAC_ND_DEC_RC_FREE__ASYNC_RC(var_NT, rc, freefun)                                \
     {                                                                                    \
         SAC_RC_PRINT (var_NT);                                                           \
@@ -214,6 +228,8 @@
         }                                                                                \
     }
 
+/* the decrement is perfomed on the parent asynchronous descriptor,
+ * hence it must be done with an atomic operation */
 #define SAC_DEC_FREE_PARENT__ASYNC_RC(var_NT)                                            \
     {                                                                                    \
         SAC_ND_DESC_PARENT_TYPE parent = SAC_ND_A_DESC_PARENT (var_NT);                  \
@@ -241,8 +257,7 @@
                                     : SAC_ND_A_RC__C99 (var_NT))
 
 /*
- * While getting the parent count if it is 1 then change mode back to
- * seq
+ * While getting the parent count if it is 1 then change mode back to local.
  */
 #define SAC_ND_A_PARENT_ASYNC_RC(var_NT)                                                 \
     ({                                                                                   \
@@ -256,6 +271,8 @@
         PARDESC_NCHILD (parent);                                                         \
     })
 
+/* Increment the number of children in the parent descriptor.
+ * Must use the atomic operation. */
 #define SAC_RC_PARENT_INC_SYNC(var_NT)                                                   \
     {                                                                                    \
         SAC_IF_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););   \
@@ -266,6 +283,7 @@
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
+#if 0
 /*
  * SAC_MUTC_RC_BARRIER implementation (referenced from mutc_rc_gen.h)
  */
@@ -275,6 +293,7 @@
         SAC_TR_REF_PRINT (("RC_BARRIER( %s)", NT_STR (var_NT)))                          \
         __sync_synchronize ();                                                           \
     }
+#endif
 
 /*
  * Access the descriptors rc directly in SAC_ND_PRF_RESTORERC and
@@ -336,6 +355,14 @@
 
 /**
  * SAC_RCM_local_async_norc_ptr method.
+ * The descriptor can be in one of the three modes:
+ *  LOCAL = perform updates locally (descriptor not shared).
+ *  ASYNC = perform updates using special atomic operations (descriptor is shared).
+ *  NORC = do not update the ref. count.
+ *
+ * The mode is stored in the descriptor and also in the LSB bits of the descriptor
+ * pointer.
+ *
  */
 #if SAC_RC_METHOD == SAC_RCM_local_async_norc_ptr
 
@@ -417,7 +444,8 @@
 
 /* Return the current value of the reference counter.
  * Call the appropriate macro according to the current mode.
- *
+ * In the ASYNC mode check the reference count and if it is one,
+ * switch back to the LOCAL mode.
  */
 #define SAC_ND_A_RC__DEFAULT(var_NT)                                                     \
     ({                                                                                   \

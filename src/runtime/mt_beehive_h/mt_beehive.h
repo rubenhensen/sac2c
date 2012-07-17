@@ -101,7 +101,10 @@ struct sac_hive_common_t {
  * Defined as a union of structs, one struct for every SPMD function.
  */
 
+/* The single global frame variable. */
 // #define SAC_DO_MT_GLOBAL_FRAME         1
+/* The Fork-Join mode: create a new hive for each SPMD call, then destroy
+ * it immediatelly afterwards */
 // #define SAC_DO_MT_CREATE_JOIN          1
 
 /* irrespective of SAC_DO_MT_GLOBAL_FRAME, we always define a global
@@ -192,10 +195,12 @@ struct sac_hive_common_t {
 
 #define SAC_MT_SELF_FRAME(spmdfun) ((struct spmdfun##_FT *)SAC_MT_self->c.hive->framedata)
 
+/* no descriptor */
 #define SAC_MT_RECEIVE_PARAM_in__NODESC(spmdfun, num, basetype, var_NT)                  \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
     SAC_ND_A_FIELD (var_NT) = SAC_MT_SELF_FRAME (spmdfun)->in_##num;
 
+/* (not used) create a new but fake descriptor */
 #define SAC_MT_RECEIVE_PARAM_in__NODESC__FAKERC(spmdfun, num, basetype, var_NT)          \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
     SAC_ND_A_FIELD (var_NT) = SAC_MT_SELF_FRAME (spmdfun)->in_##num;                     \
@@ -203,6 +208,7 @@ struct sac_hive_common_t {
     SAC_ND_A_DESC (var_NT) = (SAC_ND_DESC_TYPE (var_NT))alloca (BYTE_SIZE_OF_DESC (0));  \
     DESC_RC (SAC_ND_A_DESC (var_NT)) = 2;
 
+/* create a local copy of the incomming descriptor on stack */
 #define SAC_MT_RECEIVE_PARAM_in__DESC(spmdfun, num, basetype, var_NT)                    \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
     SAC_ND_A_FIELD (var_NT) = SAC_MT_SELF_FRAME (spmdfun)->in_##num;                     \
@@ -213,6 +219,7 @@ struct sac_hive_common_t {
             BYTE_SIZE_OF_DESC (                                                          \
               DESC_DIM (SAC_MT_SELF_FRAME (spmdfun)->in_##num##_desc)));
 
+/* SCL & HID: create a new descriptor on stack */
 #define SAC_MT_RECEIVE_PARAM_in__NEWDESC(spmdfun, num, basetype, var_NT)                 \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
     SAC_ND_A_FIELD (var_NT) = SAC_MT_SELF_FRAME (spmdfun)->in_##num;                     \
@@ -221,10 +228,12 @@ struct sac_hive_common_t {
       = (SAC_ND_DESC_TYPE (var_NT))alloca (SIZE_OF_DESC (0) * sizeof (int));             \
     DESC_RC (SAC_ND_A_DESC (var_NT)) = 2;
 
+/* no descriptor */
 #define SAC_MT_RECEIVE_PARAM_inout__NODESC(spmdfun, num, basetype, var_NT)               \
     SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
       = SAC_MT_SELF_FRAME (spmdfun)->in_##num;
 
+/* create a local copy of the incomming descriptor on stack */
 #define SAC_MT_RECEIVE_PARAM_inout__DESC(spmdfun, num, basetype, var_NT)                 \
     SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
       = SAC_MT_SELF_FRAME (spmdfun)->in_##num;                                           \
@@ -238,6 +247,7 @@ struct sac_hive_common_t {
     SAC_ND_DESC_TYPE (var_NT) * SAC_NAMEP (SAC_ND_A_DESC (var_NT))                       \
       = &CAT0 (SAC_ND_A_DESC (var_NT), __s);
 
+/* SCL & HID: create a new descriptor on stack */
 #define SAC_MT_RECEIVE_PARAM_inout__NODESC__FAKERC(spmdfun, num, basetype, var_NT)       \
     SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
       = SAC_MT_SELF_FRAME (spmdfun)->in_##num;                                           \
