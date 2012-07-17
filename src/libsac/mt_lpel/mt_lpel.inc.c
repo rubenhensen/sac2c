@@ -14,7 +14,8 @@
 
 #include "config.h"
 
-static void dummy_mt_lpel (){};
+/* ensure the file is not empty when mt lpel is disabled */
+static int dummy_mt_lpel;
 
 #if ENABLE_MT && ENABLE_MT_LPEL
 
@@ -91,7 +92,7 @@ extern int SAC_MT_hopefully_under_lpel;
  *
  ******************************************************************************/
 static inline struct sac_bee_lpel_t *
-SAC_MT_LPEL_determine_self ()
+SAC_MT_LPEL_determine_self (void)
 {
     return LpelGetUserData (LpelTaskSelf ());
 }

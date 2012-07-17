@@ -99,10 +99,20 @@ SAC_MT_AssignBeeGlobalId (struct sac_bee_common_t *bee)
      * but it will work fine as long as the pointer itself is always updated
      * atomically, i.e. there must not be any transient NULL states even when
      * the lock is held. */
-    assert (SAC_MT_beehive_registry.all_bees
-            && "The global SAC_MT_beehive_registry was not properly initialized.");
+    //   assert(SAC_MT_beehive_registry.all_bees
+    //         && "The global SAC_MT_beehive_registry was not properly initialized.");
 
     pthread_mutex_lock (&SAC_MT_beehive_registry.lock);
+
+    if (SAC_MT_beehive_registry.all_bees == NULL) {
+        /* perform late memory alloc/init */
+        SAC_MT_beehive_registry.all_bees
+          = SAC_CALLOC (SAC_MT_beehive_registry.ab_size, sizeof (void *));
+        if (!SAC_MT_beehive_registry.all_bees) {
+            SAC_RuntimeError (
+              "Could not allocate memory for the global array of bee ptrs.");
+        }
+    }
 
     for (unsigned i = 0; i < SAC_MT_beehive_registry.ab_size; ++i) {
         if (SAC_MT_beehive_registry.all_bees[i] == NULL) {
@@ -178,9 +188,12 @@ SAC_MT_BeesGrandTotal ()
     pthread_mutex_lock (&SAC_MT_beehive_registry.lock);
 
     unsigned cnt = 0;
-    for (unsigned i = 0; i < SAC_MT_beehive_registry.ab_size; ++i) {
-        if (SAC_MT_beehive_registry.all_bees[i]) {
-            ++cnt;
+
+    if (SAC_MT_beehive_registry.all_bees != NULL) {
+        for (unsigned i = 0; i < SAC_MT_beehive_registry.ab_size; ++i) {
+            if (SAC_MT_beehive_registry.all_bees[i]) {
+                ++cnt;
+            }
         }
     }
 
@@ -250,10 +263,10 @@ SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
         }
 
         /* initialize the mutexes in the scheduler's data */
-        for (int n = 0; n < num_schedulers; ++n) {
+        for (unsigned n = 0; n < num_schedulers; ++n) {
             /* init pthread_mutex_t
              * SAC_MT_Tasklock[SAC_SET_THREADS_MAX*SAC_SET_NUM_SCHEDULERS]; */
-            for (int i = 0; (unsigned int)i < num_bees; ++i) {
+            for (unsigned i = 0; i < num_bees; ++i) {
                 pthread_mutex_init (&(SAC_MT_TASKLOCK_INIT (hive, n, i, num_schedulers)),
                                     NULL);
                 // pthread_mutex_init( &(hive->SAC_MT_Tasklock[n + num_schedulers * i]),
@@ -429,13 +442,15 @@ void
 SAC_MT_BEEHIVE_SetupInitial (int argc, char *argv[], unsigned int num_threads,
                              unsigned int max_threads)
 {
-    /* allocate the array, clear it, and initialize the lock */
-    SAC_MT_beehive_registry.all_bees
-      = (struct sac_bee_common_t **)SAC_CALLOC (max_threads, sizeof (void *));
-    if (!SAC_MT_beehive_registry.all_bees) {
-        SAC_RuntimeError ("Could not allocate memory for the global array of bee ptrs.");
-    }
+    /* do not perform any mem allocs here as it may interfere with the heap manager */
+    /* XXX allocate the array, clear it, and initialize the lock */
+    //   SAC_MT_beehive_registry.all_bees = (struct sac_bee_common_t **)
+    //   SAC_CALLOC(max_threads, sizeof(void*)); if (!SAC_MT_beehive_registry.all_bees) {
+    //     SAC_RuntimeError( "Could not allocate memory for the global array of bee
+    //     ptrs.");
+    //   }
     // memset(SAC_MT_beehive_registry.all_bees, 0, sizeof(void*) * max_threads);
+    SAC_MT_beehive_registry.all_bees = NULL; /* will perform late init */
     SAC_MT_beehive_registry.ab_size = max_threads;
     pthread_mutex_init (&SAC_MT_beehive_registry.lock, NULL);
 }

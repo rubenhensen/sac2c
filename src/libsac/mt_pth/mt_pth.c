@@ -131,7 +131,7 @@ pthread_key_t SAC_MT_self_bee_key;
  *
  ******************************************************************************/
 static inline struct sac_bee_pth_t *
-SAC_MT_PTH_determine_self ()
+SAC_MT_PTH_determine_self (void)
 {
     return (struct sac_bee_pth_t *)pthread_getspecific (SAC_MT_self_bee_key);
 }

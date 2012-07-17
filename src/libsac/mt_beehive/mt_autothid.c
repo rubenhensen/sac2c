@@ -191,6 +191,9 @@ SAC_MT_AutoAssignThreadId (void)
 void
 SAC_MT_InitThreadRegistry (unsigned int num_threads)
 {
+    /* FIXME: aaah, cannot perform any malloc() before the phm is initialized! */
+    static unsigned prealloc_th_numbers[1024];
+
     SAC_TR_PRINT (("Initializing automatic thread registry, expecting max. %d threads.",
                    num_threads));
 
@@ -201,7 +204,8 @@ SAC_MT_InitThreadRegistry (unsigned int num_threads)
     memset (r, 0, sizeof (struct sac_phm_thread_registry_t));
 
     /* alloc an array of ids */
-    r->th_numbers = (unsigned *)SAC_MALLOC (sizeof (unsigned) * num_threads);
+    //   r->th_numbers = (unsigned *) SAC_MALLOC(sizeof(unsigned) * num_threads);
+    r->th_numbers = prealloc_th_numbers;
     if (!r->th_numbers) {
         SAC_RuntimeError ("Could not allocate memory for the thread registry array.");
     }
@@ -210,7 +214,7 @@ SAC_MT_InitThreadRegistry (unsigned int num_threads)
     r->last_pos = 0;
     pthread_mutex_init (&r->lock, NULL);
 
-    for (int i = 0; i < num_threads; ++i) {
+    for (unsigned i = 0; i < num_threads; ++i) {
         r->th_numbers[i] = SAC_PHM_THREADID_INVALID;
     }
 

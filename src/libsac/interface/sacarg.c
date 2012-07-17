@@ -38,8 +38,8 @@ struct SAC_SACARG {
 void
 SACARGprint (SACarg *arg)
 {
-    printf ("descriptor at #%08x: RC: %d\ndata at #%08x\n", SACARG_DESC (arg),
-            SACARG_RC (arg), SACARG_DATA (arg));
+    printf ("descriptor at 0x%08lx: RC: %d\ndata at 0x%08lx\n", (long)SACARG_DESC (arg),
+            SACARG_RC (arg), (long)SACARG_DATA (arg));
 }
 
 /*
