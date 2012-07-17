@@ -454,4 +454,33 @@ LFUfindLoopInductionVariable (node *arg_node)
     DBUG_RETURN (zavis);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool LFUisAvisMemberIds( node *arg_node, node *ids)
+ *
+ * @brief: Predicate for checking that an N_avis node is
+ *         a member of an N_ids chain.
+ *
+ * @param: arg_node - an N_avis node.
+ *         ids      - an N_ids chain.
+ *
+ * @result: TRUE if arg_node is a member of the ids chain.
+ *
+ *****************************************************************************/
+bool
+LFUisAvisMemberIds (node *arg_node, node *ids)
+{
+    bool z = FALSE;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (N_avis == NODE_TYPE (arg_node), "Expected N_avis node");
+    while ((NULL != ids) && (!z)) {
+        z = (arg_node == IDS_AVIS (ids));
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN (z);
+}
+
 #undef DBUG_PREFIX

@@ -1,12 +1,12 @@
 module sacprelude;
 
-/* Be sure that, for any names you add here, that you also add
+/* NB: Be SURE that, for any names you add here, that you also add
  * them to "addspecialnames.c" in the modules subdirectory,
  * Otherwise, they won't get inlined, apparently.
  */
 provide {sel, zero, eq, adjustLacFunParams, adjustLacFunParamsReshape,
          isPartitionIntersectNull, 
-         partitionMin, partitionMax,
+         partitionMin, partitionMax, isPartitionIntersect1Part,
          partitionIntersectMax, partitionIntersectMin,
          SACarg, prod, partitionSlicer, gridFiller, ++
 #define MUTC 1
@@ -223,6 +223,34 @@ bool[.] isPartitionIntersectNull( int idxmin, int idxmax,
    */
 
   z = _or_VxV_( _le_SxV_( idxmax, bound1), _ge_SxV_( idxmin, bound2));
+  return(z);
+}
+
+inline
+bool[.] isPartitionIntersect1Part( int[.] idxmin, int[.] idxmax,
+                                   int[.] bound1, int[.] bound2)
+{ /* Predicate to determine if intersection of CWL index scalar and
+   * PWL partition bounds lays entirely within the PWL partition.
+   * If so, then AWLF can be performed with no slicing of the CWL.
+   * This function requires an assist from 
+   * the compiler to perform the all-reduce on this function's result.
+   */
+
+  z = _and_VxV_( _ge_VxV_( idxmin, bound1), _le_VxV_( idxmax, bound2));
+  return(z);
+}
+
+inline
+bool[.] isPartitionIntersect1Part( int idxmin, int idxmax,
+                                   int[.] bound1, int[.] bound2)
+{ /* Predicate to determine if intersection of CWL index scalar and
+   * PWL partition bounds lays entirely within the PWL partition.
+   * If so, then AWLF can be performed with no slicing of the CWL.
+   * This function requires an assist from 
+   * the compiler to perform the all-reduce on this function's result.
+   */
+
+  z = _and_VxV_( _ge_SxV_( idxmin, bound1), _le_SxV_( idxmax, bound2));
   return(z);
 }
 

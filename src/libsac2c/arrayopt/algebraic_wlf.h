@@ -14,8 +14,6 @@
  *
  *****************************************************************************/
 extern node *AWLFdoAlgebraicWithLoopFolding (node *arg_node);
-extern bool isPrfArg1AttachExtrema (node *arg_node);
-extern bool isPrfArg1AttachIntersect (node *arg_node);
 
 extern node *AWLFfundef (node *arg_node, info *arg_info);
 extern node *AWLFassign (node *arg_node, info *arg_info);

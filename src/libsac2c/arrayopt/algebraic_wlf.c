@@ -205,6 +205,7 @@
 #include "indexvectorutils.h"
 #include "type_utils.h"
 #include "flattengenerators.h"
+#include "with_loop_utilities.h"
 
 /** <!--********************************************************************-->
  *
@@ -331,76 +332,6 @@ AWLFdoAlgebraicWithLoopFolding (node *arg_node)
  * @{
  *
  *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @fn bool isPrfArg1AttachExtrema( node *arg_node)
- *
- * @brief Predicate to check if arg1 of this N_prf is an F_noteintersect op
- *  OR if arg1 is an F_noteintersect, and its PRF_ARG1 is an F_noteextrema.
- *  This is VERY brittle code, and we should find a more robust way
- *  to do this. FIXME.
- *  Like a PM of some sort...
- *
- * @param arg_node: an N_prf
- *
- * @return Boolean TRUE if PRF_ARG2 is an F_attachextrema.
- *
- *****************************************************************************/
-bool
-isPrfArg1AttachExtrema (node *arg_node)
-{
-    node *arg1;
-    node *assgn;
-    node *assgn2;
-    node *prf;
-    node *prf2;
-    bool z = FALSE;
-
-    DBUG_ENTER ();
-
-    arg1 = PRF_ARG1 (arg_node);
-    DBUG_ASSERT (N_id == NODE_TYPE (arg1), "expected N_id as PRF_ARG1");
-    assgn = AVIS_SSAASSIGN (ID_AVIS (arg1));
-    if ((NULL != assgn) && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_STMT (assgn))))) {
-
-        prf = LET_EXPR (ASSIGN_STMT (assgn));
-        if ((F_noteminval == PRF_PRF (prf)) || (F_notemaxval == PRF_PRF (prf))) {
-            z = TRUE;
-        } else {
-            assgn2 = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (prf)));
-            if ((NULL != assgn)
-                && (N_prf == NODE_TYPE (LET_EXPR (ASSIGN_STMT (assgn2))))) {
-                prf2 = LET_EXPR (ASSIGN_STMT (assgn2));
-                if ((F_noteintersect == PRF_PRF (LET_EXPR (ASSIGN_STMT (assgn2))))) {
-                    z = TRUE;
-                }
-            }
-        }
-    }
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn bool isEmptyPartitionCodeBlock( node *partn)
- *
- * @brief Predicate for finding N_part node with no code block.
- * @param N_part
- * @result TRUE if code block is empty
- *
- *****************************************************************************/
-static bool
-isEmptyPartitionCodeBlock (node *partn)
-{
-    bool z;
-
-    DBUG_ENTER ();
-
-    z = (NULL == BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (partn))));
-
-    DBUG_RETURN (z);
-}
 
 #ifdef DEADCODE
 /** <!--********************************************************************-->
@@ -617,7 +548,7 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
             if ((NULL != pwlp)
                 && ((AVIS_NEEDCOUNT (producerWLavis)
                      != AVIS_WL_NEEDCOUNT (producerWLavis)))
-                && (!isEmptyPartitionCodeBlock (pwlp))) {
+                && (!WLUTisEmptyPartitionCodeBlock (pwlp))) {
                 DBUG_PRINT (
                   "Can't intersect PWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
                   AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),

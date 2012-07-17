@@ -212,6 +212,7 @@
 #include "flattengenerators.h"
 #include "algebraic_wlfi.h"
 #include "symbolic_constant_simplification.h"
+#include "lacfun_utilities.h"
 
 /** <!--********************************************************************-->
  *
@@ -1117,7 +1118,7 @@ IVEXIwithidsKludge (int offset, node *withidids, node *curpart, node **preassign
 
     ijk = TCgetNthExprsExpr (offset, ARRAY_AELEMS (withidids));
     if ((NULL != curpart)
-        && (isAvisMemberIds (ID_AVIS (ijk), WITHID_IDS (PART_WITHID (curpart))))) {
+        && (LFUisAvisMemberIds (ID_AVIS (ijk), WITHID_IDS (PART_WITHID (curpart))))) {
         z = TCgetNthIds (offset, WITHID_IDS (PART_WITHID (curpart)));
         z = IVEXItmpIds (curpart, z, offset, preassignspart, vardecs);
     }

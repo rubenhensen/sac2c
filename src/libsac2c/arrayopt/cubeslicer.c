@@ -1,5 +1,5 @@
 /*
- * $Id: cubeslicer.c 18066 2012-07-12 20:01:56Z rbe $
+ * $Id$
  */
 
 /** <!--********************************************************************-->
@@ -78,6 +78,7 @@
 #include "ivexcleanup.h"
 #include "compare_tree.h"
 #include "check.h"
+#include "with_loop_utilities.h"
 #include "gdb_utils.h"
 #include "symbolic_constant_simplification.h"
 
@@ -98,7 +99,6 @@ struct INFO {
     node *withcode;                 /* WITH_CODE from N_with */
     intersect_type_t intersecttype; /* intersect type. see enum */
     lut_t *lut;                     /* LUT for renaming */
-    node *noteintersect;            /* F_noteintersect node */
     node *producerpart;             /* PWL part matching CWL */
     bool cutnow;                    /* This CWL partn should be cut now */
 };
@@ -116,7 +116,6 @@ struct INFO {
 #define INFO_WITHCODE(n) ((n)->withcode)
 #define INFO_INTERSECTTYPE(n) ((n)->intersecttype)
 #define INFO_LUT(n) ((n)->lut)
-#define INFO_NOTEINTERSECT(n) ((n)->noteintersect)
 #define INFO_PRODUCERPART(n) ((n)->producerpart)
 #define INFO_CUTNOW(n) ((n)->cutnow)
 
@@ -139,7 +138,6 @@ MakeInfo (node *fundef)
     INFO_WITHCODE (result) = NULL;
     INFO_INTERSECTTYPE (result) = INTERSECT_unknown;
     INFO_LUT (result) = NULL;
-    INFO_NOTEINTERSECT (result) = NULL;
     INFO_PRODUCERPART (result) = NULL;
     INFO_CUTNOW (result) = FALSE;
 
@@ -375,6 +373,36 @@ isNullIntersect (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @fn static void SetWLProjections( node *noteint, int intersectListNo,
+ *                                   info *arg_info)
+ *
+ * @brief Side-effect setter for findIntersection
+ *
+ * @params noteint: An F_noteintersect N_prf node
+ *         intersectListNo: which PWL partition number we are looking at
+ *         arg_info: your basic arg_info
+ *
+ * @result:
+ *
+ *****************************************************************************/
+static void
+SetWLProjections (node *noteint, int intersectListNo, info *arg_info)
+{
+
+    DBUG_ENTER ();
+
+    if (NULL != arg_info) {
+        INFO_WLPROJECTION1 (arg_info)
+          = TCgetNthExprsExpr (WLPROJECTION1 (intersectListNo), PRF_ARGS (noteint));
+        INFO_WLPROJECTION2 (arg_info)
+          = TCgetNthExprsExpr (WLPROJECTION2 (intersectListNo), PRF_ARGS (noteint));
+    }
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn static intersect_type_t isExactIntersect( node *cbound1, node *intersectb1,
  *                                               node *cbound2, node *intersectb2)
  *
@@ -454,21 +482,20 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     node *proj2 = NULL;
     node *noteint;
     pattern *pat;
-    intersect_type_t nullIntersect;
     int intersectListNo;
     int intersectListLim;
     node *cwlpb1;
     node *cwlpb2;
     bool cwlpstepok;
     bool cwlpwidthok;
+    node *intersect1Part;
 
     DBUG_ENTER ();
 
     intersectListNo = 0;
 
     /* NB. We assume noteintersect immediately precedes idx ! */
-    noteint = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (idx))));
-    DBUG_ASSERT (F_noteintersect == PRF_PRF (noteint), "Expected F_noteintersect");
+    noteint = AWLFIfindNoteintersect (idx);
     intersectListLim = (TCcountExprs (PRF_ARGS (noteint)) - WLFIRST) / WLEPP;
     pat = PMarray (1, PMAgetNode (&bnd), 1, PMskip (0));
     if (NULL != cwlp) { /* support for naked consumer - no CWL */
@@ -490,12 +517,6 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                       || (SCSmatchConstantOne (GENERATOR_WIDTH (producerWLGenerator)));
     }
 
-    if (NULL != arg_info) { /* Different callers! */
-        INFO_WLPROJECTION1 (arg_info) = NULL;
-        INFO_WLPROJECTION2 (arg_info) = NULL;
-        INFO_NOTEINTERSECT (arg_info) = NULL;
-    }
-
     while (((INTERSECT_unknown == z) || (INTERSECT_null == z))
            && (intersectListNo < intersectListLim)) {
 
@@ -506,8 +527,10 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
           = TCgetNthExprsExpr (WLBOUND1ORIGINAL (intersectListNo), PRF_ARGS (noteint));
         producerWLBound2Original
           = TCgetNthExprsExpr (WLBOUND2ORIGINAL (intersectListNo), PRF_ARGS (noteint));
-        nullIntersect = isNullIntersect (
+        z = isNullIntersect (
           TCgetNthExprsExpr (WLINTERSECTIONNULL (intersectListNo), PRF_ARGS (noteint)));
+        intersect1Part
+          = TCgetNthExprsExpr (WLINTERSECTION1PART (intersectListNo), PRF_ARGS (noteint));
 
         if ((matchGeneratorField (producerWLBound1Original,
                                   GENERATOR_BOUND1 (producerWLGenerator)))
@@ -515,16 +538,23 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                                      GENERATOR_BOUND2 (producerWLGenerator)))
             && (cwlpstepok && cwlpwidthok)) {
             DBUG_PRINT ("All generator fields match");
-            switch (nullIntersect) {
 
-            default:
-                DBUG_ASSERT (FALSE, "null intersect confusion");
+            if (SCSmatchConstantOne (intersect1Part)) {
+                z = INTERSECT_exact; /* CWL entirely within PWL  */
+                DBUG_PRINT ("Intersect is entirely in PWL partn");
+            }
+
+            switch (z) {
+
+            case INTERSECT_exact:
+                DBUG_PRINT ("Exact intersect");
+                SetWLProjections (noteint, intersectListNo, arg_info);
                 break;
 
-            case INTERSECT_null:
-                z = INTERSECT_null;
-                DBUG_PRINT ("Null intersect");
-                break;
+            case INTERSECT_sliceneeded:
+                DBUG_PRINT ("slice needed");
+                SetWLProjections (noteint, intersectListNo, arg_info);
+                // break; intentionally elided.
 
             case INTERSECT_notnull:
 #ifdef FIXME // This is bad. N_array elements might be local to WL */
@@ -537,28 +567,22 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                 proj2 = bnd;
 #endif //  FIXME // This is bad. N_array elements might be local to WL */
 
-                if (NULL != arg_info) { /* Different callers! */
-                    INFO_WLPROJECTION1 (arg_info) = proj1;
-                    INFO_WLPROJECTION2 (arg_info) = proj2;
-                    INFO_NOTEINTERSECT (arg_info) = noteint;
-                }
-
                 if (NULL != cwlpb1) {
                     z = isExactIntersect (cwlpb1, proj1, cwlpb2, proj2);
                 } else {
                     z = INTERSECT_exact; /* Naked consumer  */
                 }
 
-                if (INTERSECT_exact == z) {
-                    DBUG_PRINT ("Intersect suitable for non-sliced AWLF");
-                } else {
-                    DBUG_PRINT ("Intersect suitable for sliced AWLF");
-                }
+                SetWLProjections (noteint, intersectListNo, arg_info);
                 break;
 
             case INTERSECT_unknown:
                 DBUG_PRINT ("intersection unknown");
                 z = INTERSECT_unknown;
+                break;
+
+            case INTERSECT_null:
+                DBUG_PRINT ("Null intersect");
                 break;
             }
         } else {
@@ -674,14 +698,20 @@ CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
     intersect_type_t intersecttype = INTERSECT_unknown;
     int producerPartno = 0;
     char *nm;
+    node *noteint;
 
     DBUG_ENTER ();
     DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "expected N_prf arg_node");
     DBUG_ASSERT (N_with == NODE_TYPE (pwl), "expected N_with pwl");
 
     idx = PRF_ARG1 (arg_node); /* idx of _sel_VxA_( idx, pwl) */
+    noteint = AWLFIfindNoteintersect (idx);
     idxassign = AVIS_SSAASSIGN (ID_AVIS (idx));
     idxparent = LET_EXPR (ASSIGN_STMT (idxassign));
+    if (NULL != arg_info) {
+        INFO_WLPROJECTION1 (arg_info) = NULL;
+        INFO_WLPROJECTION2 (arg_info) = NULL;
+    }
 
     producerWLPart = WITH_PART (pwl);
     (*producerpart) = NULL;
@@ -1126,7 +1156,6 @@ CUBSLwith (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
-
 /** <!--********************************************************************-->
  *
  * @fn node *CUBSLpart( node *arg_node, info *arg_info)
@@ -1181,10 +1210,10 @@ CUBSLpart (node *arg_node, info *arg_info)
     if ((INTERSECT_sliceneeded == INFO_INTERSECTTYPE (arg_info))
         && (NULL != INFO_WLPROJECTION1 (arg_info))
         && (AWLFIisHasInverseProjection (INFO_WLPROJECTION1 (arg_info)))
-        && (!AWLFIisIdsMemberPartition (INFO_WLPROJECTION1 (arg_info), arg_node))
+        && (!WLUTisIdsMemberPartition (INFO_WLPROJECTION1 (arg_info), arg_node))
         && (NULL != INFO_WLPROJECTION2 (arg_info))
         && (AWLFIisHasInverseProjection (INFO_WLPROJECTION2 (arg_info)))
-        && (!AWLFIisIdsMemberPartition (INFO_WLPROJECTION2 (arg_info), arg_node))) {
+        && (!WLUTisIdsMemberPartition (INFO_WLPROJECTION2 (arg_info), arg_node))) {
         DBUG_PRINT ("slicing partition of CWL=%s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
         DBUG_ASSERT (INFO_CUTNOW (arg_info), "more cutnow confusion");
@@ -1194,6 +1223,7 @@ CUBSLpart (node *arg_node, info *arg_info)
         arg_node = PartitionSlicer (arg_node, arg_info, INFO_WLPROJECTION1 (arg_info),
                                     INFO_WLPROJECTION2 (arg_info));
         PART_NEXT (arg_node) = TCappendPart (PART_NEXT (arg_node), partnext);
+        INFO_CUTNOW (arg_info) = FALSE;
     }
 
     INFO_CONSUMERPART (arg_info) = oldconsumerpart;
@@ -1253,12 +1283,12 @@ CUBSLprf (node *arg_node, info *arg_info)
 {
     node *pwl = NULL;
     node *pwlid = NULL;
-    node *noteintersect = NULL;
+    node *noteint = NULL;
 
     DBUG_ENTER ();
 
     if ((F_sel_VxA == PRF_PRF (arg_node)) || (F_idx_sel == PRF_PRF (arg_node))) {
-        noteintersect = AWLFIfindNoteintersect (arg_node);
+        noteint = AWLFIfindNoteintersect (PRF_ARG1 (arg_node));
         DBUG_PRINT ("Looking at %s =_sel_VxA_( iv, X)",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
         pwlid = AWLFIfindWlId (PRF_ARG2 (arg_node));
@@ -1267,11 +1297,11 @@ CUBSLprf (node *arg_node, info *arg_info)
 
     /* If cwl intersect information is stale, due to cubeslicing of
      * pwl, discard it and start over */
-    if ((NULL != noteintersect) && (NULL != pwl)) {
-        if (!AWLFIisValidNoteintersect (noteintersect, pwlid)) {
-            noteintersect = AWLFIdetachNoteintersect (noteintersect);
+    if ((NULL != noteint) && (NULL != pwl)) {
+        if (!AWLFIisValidNoteintersect (noteint, pwlid)) {
+            noteint = AWLFIdetachNoteintersect (noteint);
             FREEdoFreeNode (PRF_ARG1 (arg_node));
-            PRF_ARG1 (arg_node) = noteintersect;
+            PRF_ARG1 (arg_node) = noteint;
             DBUG_PRINT ("Discarded invalid F_noteintersect for cwl=%s, pwl=%s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
                         AVIS_NAME (ID_AVIS (pwlid)));

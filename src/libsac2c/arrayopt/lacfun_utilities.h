@@ -20,5 +20,6 @@ extern node *LFUgetLoopVariable (node *var, node *fundef, node *params);
 extern node *LFUfindAssignBeforeCond (node *arg_node);
 extern node *LFUfindAssignOfType (node *assigns, nodetype n);
 extern bool LFUisLURPredicate (node *arg_node);
+extern bool LFUisAvisMemberIds (node *arg_node, node *ids);
 
 #endif /* _SAC_LACFUN_UTILITIES_H_ */

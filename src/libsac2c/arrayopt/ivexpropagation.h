@@ -6,10 +6,6 @@
 
 #include "types.h"
 
-#define isAvisHasMin(avis) ((NULL != avis) && NULL != AVIS_MIN (avis))
-#define isAvisHasMax(avis) ((NULL != avis) && NULL != AVIS_MAX (avis))
-#define isAvisHasBothExtrema(avis) (isAvisHasMin (avis) && isAvisHasMax (avis))
-
 /** <!--********************************************************************-->
  *
  * Template traversal ( ivexp_tab)

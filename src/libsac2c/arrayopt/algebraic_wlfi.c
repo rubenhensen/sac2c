@@ -134,6 +134,7 @@
 #include "flattengenerators.h"
 #include "indexvectorutils.h"
 #include "deadcoderemoval.h"
+#include "with_loop_utilities.h"
 
 /** <!--********************************************************************-->
  *
@@ -447,6 +448,7 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 
 #endif // DEBUG // rbe
 #undef DEBUG
+
     DBUG_RETURN (arg_node);
 }
 
@@ -527,9 +529,9 @@ FindPrfParent2 (node *arg_node, info *arg_info)
  *
  * @fn bool AWLFIfindNoteintersect( node *arg_node)
  *
- * @brief: Search for F_noteintersect on sel() statement.
+ * @brief: Search for F_noteintersect on the iv of a sel(iv, X) function.
  *
- * @param: arg_node - an F_sel_VxA_ N_prf node.
+ * @param: arg_node - a PRF_ARG node.
  *
  * @result: N_prf node of F_noteintersect, or NULL, if it
  *          does not exist.
@@ -544,7 +546,7 @@ AWLFIfindNoteintersect (node *arg_node)
     DBUG_ENTER ();
 
     pat = PMprf (2, PMAisPrf (F_noteintersect), PMAgetNode (&z), 0);
-    PMmatchFlat (pat, PRF_ARG1 (arg_node));
+    PMmatchFlat (pat, arg_node);
     pat = PMfree (pat);
 
     DBUG_RETURN (z);
@@ -570,7 +572,7 @@ AWLFIisHasNoteintersect (node *arg_node)
 
     DBUG_ASSERT ((F_idx_sel == PRF_PRF (arg_node)) || (F_sel_VxA == PRF_PRF (arg_node)),
                  "Expected sel/idx_sel");
-    z = (NULL != AWLFIfindNoteintersect (arg_node));
+    z = (NULL != AWLFIfindNoteintersect (PRF_ARG1 (arg_node)));
 
     DBUG_RETURN (z);
 }
@@ -655,35 +657,6 @@ AWLFIdetachNoteintersect (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isAvisMemberIds( node *arg_node, node *ids)
- *
- * @brief: Predicate for checking that an N_avis node is
- *         a member of an N_ids chain.
- *
- * @param: arg_node - an N_avis node.
- *         ids      - an N_ids chain.
- *
- * @result: TRUE if arg_node is a member of the ids chain.
- *
- *****************************************************************************/
-bool
-isAvisMemberIds (node *arg_node, node *ids)
-{
-    bool z = FALSE;
-
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (N_avis == NODE_TYPE (arg_node), "Expected N_avis node");
-    while ((NULL != ids) && (!z)) {
-        z = (arg_node == IDS_AVIS (ids));
-        ids = IDS_NEXT (ids);
-    }
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn bool
  *
  * @brief: Predicate for checking that consumer sel() is a naked consumer.
@@ -707,43 +680,6 @@ isNakedConsumer (info *arg_info)
         DBUG_PRINT ("CWL %s is naked consumer of PWL %s",
                     AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))),
                     AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))));
-    }
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn bool AWLFIisIdsMemberPartition( node *arg_node, node *partn)
- *
- * @brief: Predicate for checking if arg_node's definition point
- *         is within a specified WL partition.
- *
- * @param: arg_node - a WLINTERSECT1/2 node.
- *         partn:   - a WL partition. In our case, it is
- *                    that of the consumerWL.
- *
- * @result: TRUE if arg_node is defined within the partition.
- *
- * @note: This is required because we can produce an inverse
- *        projection that can be used for cube slicing ONLY if said
- *        projection is defined OUTSIDE the current WL.
- *
- *****************************************************************************/
-bool
-AWLFIisIdsMemberPartition (node *arg_node, node *partn)
-{
-    bool z = FALSE;
-    node *nassgns;
-
-    DBUG_ENTER ();
-
-    if (NULL != partn) {
-        nassgns = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (partn)));
-        while ((NULL != nassgns) && (!z)) {
-            z = isAvisMemberIds (ID_AVIS (arg_node), LET_IDS (ASSIGN_STMT (nassgns)));
-            nassgns = ASSIGN_NEXT (nassgns);
-        }
     }
 
     DBUG_RETURN (z);
@@ -1468,10 +1404,10 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                 }
 
                 if ((PMmatchFlat (pat1, intrlb)) && (PMmatchFlat (pat2, intrub))
-                    && (!AWLFIisIdsMemberPartition (intrlb,
-                                                    INFO_CONSUMERWLPART (arg_info)))
-                    && (!AWLFIisIdsMemberPartition (intrub,
-                                                    INFO_CONSUMERWLPART (arg_info)))) {
+                    && (!WLUTisIdsMemberPartition (intrlb,
+                                                   INFO_CONSUMERWLPART (arg_info)))
+                    && (!WLUTisIdsMemberPartition (intrub,
+                                                   INFO_CONSUMERWLPART (arg_info)))) {
                     zel = BuildInverseProjectionOne (arg_node, arg_info, arriv, arrlb);
                     zwlb = INFO_ZWITHIDS (arg_info);
                     swaplb = INFO_FINVERSESWAP (arg_info);
@@ -1866,6 +1802,62 @@ IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node 
 
     DBUG_RETURN (resavis);
 }
+/** <!--********************************************************************-->
+ *
+ * @fn node *Intersect1PartBuilder( node *idxavismin,
+ *                                  node *idxavismax,
+ *                                  node *bound1, node *bound2,
+ *                                  info *arg_info)
+ *
+ * @brief:  Emit symbiotic expression predicate to determine if intersection
+ *          between index vector set and partition bounds is
+ *          restricted to a single producerWL partition.
+ *          If so, then we can blindly perform the AWLF for
+ *          this partition.
+ *
+ *
+ * @params: idxmin: AVIS_MIN( consumerWL partition index vector)
+ * @params: idxmax: AVIS_MAX( consumerWL partition index vector)
+ * @params: bound1: N_avis of GENERATOR_BOUND1 of producerWL partition.
+ * @params: bound2: N_avis of GENERATOR_BOUND2 of producerWL partition.
+ * @params: arg_info: your basic arg_info node
+ *
+ * @result: N_avis node of generated computation's boolean result.
+ *
+ *****************************************************************************/
+static node *
+Intersect1PartBuilder (node *idxmin, node *idxmax, node *bound1, node *bound2,
+                       info *arg_info)
+{
+    node *fncall;
+    node *resavis;
+    node *idxavismin;
+    node *idxavismax;
+    int shp;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (N_avis == NODE_TYPE (bound1), "Expected N_avis bound1");
+    DBUG_ASSERT (N_avis == NODE_TYPE (bound2), "Expected N_avis bound2");
+    shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (bound1)));
+    idxavismin = AWLFItakeDropIv (shp, 0, idxmin, &INFO_VARDECS (arg_info),
+                                  &INFO_PREASSIGNS (arg_info));
+    idxavismax = AWLFItakeDropIv (shp, 0, idxmax, &INFO_VARDECS (arg_info),
+                                  &INFO_PREASSIGNS (arg_info));
+
+    fncall
+      = DSdispatchFunCall (NSgetNamespace ("sacprelude"), "isPartitionIntersect1Part",
+                           TCcreateExprsChainFromAvises (4, idxavismin, idxavismax,
+                                                         bound1, bound2));
+
+    shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (bound1)));
+    resavis = FLATGflattenExpression (fncall, &INFO_VARDECS (arg_info),
+                                      &INFO_PREASSIGNS (arg_info),
+                                      TYmakeAKS (TYmakeSimpleType (T_bool),
+                                                 SHcreateShape (1, shp)));
+
+    DBUG_RETURN (resavis);
+}
 
 /** <!--********************************************************************-->
  *
@@ -2038,6 +2030,9 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 
         curavis
           = IntersectNullComputationBuilder (ivmin, ivmax, pwlpb1, pwlpb2, arg_info);
+        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
+
+        curavis = Intersect1PartBuilder (ivmin, ivmax, pwlpb1, pwlpb2, arg_info);
         expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
 
         /* Reserve room for inverse projections */
@@ -2691,9 +2686,11 @@ AWLFIprf (node *arg_node, info *arg_info)
                                       &INFO_PREASSIGNS (arg_info),
                                       INFO_CONSUMERWLPART (arg_info));
 
+            /* We need both extrema or constant index vector */
             if (((TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
-                 || ((NULL != ivavis) && (isAvisHasBothExtrema (ivavis))))) {
-
+                 || ((NULL != ivavis)
+                     && ((TYisAKV (AVIS_TYPE (ivavis)))
+                         || (IVEXPisAvisHasBothExtrema (ivavis)))))) {
                 z = attachIntersectCalc (arg_node, arg_info, ivavis);
                 if (z != ID_AVIS (PRF_ARG1 (arg_node))) {
                     FREEdoFreeNode (PRF_ARG1 (arg_node));
