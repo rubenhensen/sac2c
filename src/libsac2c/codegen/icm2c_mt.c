@@ -187,9 +187,6 @@ ICMCompileMT_SPMDFUN_DEF_END (char *funname, int vararg_cnt, char **vararg)
 void
 ICMCompileMT_SPMDFUN_AP (char *funname, int vararg_cnt, char **vararg)
 {
-    int i;
-    int cnt;
-
     DBUG_ENTER ();
 
 #define MT_SPMDFUN_AP
@@ -200,8 +197,14 @@ ICMCompileMT_SPMDFUN_AP (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "SAC_MT_BEGIN_SPMD_INVOCATION( %s);\n", funname);
 
-    cnt = 0;
-    for (i = 0; i < 3 * vararg_cnt; i += 3) {
+    /* switch descriptors to the NORC mode */
+    for (int i = 0; i < 3 * vararg_cnt; i += 3) {
+        INDENT;
+        fprintf (global.outfile, "SAC_ND_RC_TO_NORC( %s)\n", vararg[i + 2]);
+    }
+    /* send variables to the frame */
+    int cnt = 0;
+    for (int i = 0; i < 3 * vararg_cnt; i += 3) {
         INDENT;
         fprintf (global.outfile, "SAC_MT_SEND_PARAM_%s( %s, %d, %s)\n", vararg[i],
                  funname, cnt++, vararg[i + 2]);
@@ -210,11 +213,17 @@ ICMCompileMT_SPMDFUN_AP (char *funname, int vararg_cnt, char **vararg)
     INDENT;
     fprintf (global.outfile, "SAC_MT_SPMD_EXECUTE( %s);\n", funname);
 
+    /* receive results via the frame */
     cnt = 0;
-    for (i = 0; i < 3 * vararg_cnt; i += 3) {
+    for (int i = 0; i < 3 * vararg_cnt; i += 3) {
         INDENT;
         fprintf (global.outfile, "SAC_MT_RECEIVE_RESULT_%s( %s, 0, %d, %s)\n", vararg[i],
                  funname, cnt++, vararg[i + 2]);
+    }
+    /* switch all the descriptors back from the NORC mode */
+    for (int i = 0; i < 3 * vararg_cnt; i += 3) {
+        INDENT;
+        fprintf (global.outfile, "SAC_ND_RC_FROM_NORC( %s)\n", vararg[i + 2]);
     }
 
     INDENT;

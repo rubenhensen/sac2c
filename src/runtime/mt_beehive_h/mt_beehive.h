@@ -157,15 +157,6 @@ struct sac_hive_common_t {
 
 /*****************************************************************************/
 
-#if SAC_RC_METHOD == SAC_RCM_local_pasync_norc_desc
-#else
-/* The selected RC method cannot do the NORC mode to save us copying the descriptors.
- * Define the missing macros as empty. */
-#define SAC_ND_RC_TO_NORC(var_NT)   /* not used */
-#define SAC_ND_RC_FROM_NORC(var_NT) /* not used */
-
-#endif
-
 /*
  * Macros for sending data to the SPMD frame
  */
@@ -176,13 +167,11 @@ struct sac_hive_common_t {
 #define SAC_MT_SEND_PARAM_in__DESC_AKD(spmdfun, num, var_NT)                             \
     DESC_DIM (SAC_ND_A_DESC (var_NT)) = SAC_ND_A_DIM (var_NT);                           \
     frame->in_##num = SAC_ND_A_FIELD (var_NT);                                           \
-    frame->in_##num##_desc = SAC_ND_A_DESC (var_NT);                                     \
-    SAC_ND_RC_TO_NORC (var_NT);
+    frame->in_##num##_desc = SAC_ND_A_DESC (var_NT);
 
 #define SAC_MT_SEND_PARAM_in__DESC_AUD(spmdfun, num, var_NT)                             \
     frame->in_##num = SAC_ND_A_FIELD (var_NT);                                           \
-    frame->in_##num##_desc = SAC_ND_A_DESC (var_NT);                                     \
-    SAC_ND_RC_TO_NORC (var_NT);
+    frame->in_##num##_desc = SAC_ND_A_DESC (var_NT);
 
 #define SAC_MT_SEND_PARAM_inout__NODESC(spmdfun, num, var_NT)                            \
     frame->in_##num = &SAC_ND_A_FIELD (var_NT);
@@ -190,13 +179,11 @@ struct sac_hive_common_t {
 #define SAC_MT_SEND_PARAM_inout__DESC_AKD(spmdfun, num, var_NT)                          \
     DESC_DIM (SAC_ND_A_DESC (var_NT)) = SAC_ND_A_DIM (var_NT);                           \
     frame->in_##num = &SAC_ND_A_FIELD (var_NT);                                          \
-    frame->in_##num##_desc = &SAC_ND_A_DESC (var_NT);                                    \
-    SAC_ND_RC_TO_NORC (var_NT);
+    frame->in_##num##_desc = &SAC_ND_A_DESC (var_NT);
 
 #define SAC_MT_SEND_PARAM_inout__DESC_AUD(spmdfun, num, var_NT)                          \
     frame->in_##num = &SAC_ND_A_FIELD (var_NT);                                          \
-    frame->in_##num##_desc = &SAC_ND_A_DESC (var_NT);                                    \
-    SAC_ND_RC_TO_NORC (var_NT);
+    frame->in_##num##_desc = &SAC_ND_A_DESC (var_NT);
 
 #define SAC_MT_SEND_PARAM__NOOP(spmdfun, num, var_NT) SAC_NOOP ()
 
@@ -224,7 +211,7 @@ struct sac_hive_common_t {
 #endif
 
 #if SAC_RC_METHOD == SAC_RCM_local_pasync_norc_desc
-/* the RC method supports the NORC mode, hence we may just take the descriptor from the
+/* the RC method supports the NORC mode, hence we can just take the descriptor from the
  * frame */
 #define SAC_MT_RECEIVE_PARAM_in__DESC(spmdfun, num, basetype, var_NT)                    \
     SAC_ND_TYPE (var_NT, basetype)                                                       \
@@ -260,7 +247,7 @@ struct sac_hive_common_t {
       = SAC_MT_SELF_FRAME (spmdfun)->in_##num;
 
 #if SAC_RC_METHOD == SAC_RCM_local_pasync_norc_desc
-/* the RC method supports the NORC mode, hence we may just take the descriptor from the
+/* the RC method supports the NORC mode, hence we can just take the descriptor from the
  * frame */
 #define SAC_MT_RECEIVE_PARAM_inout__DESC(spmdfun, num, basetype, var_NT)                 \
     SAC_ND_TYPE (var_NT, basetype) * SAC_NAMEP (SAC_ND_A_FIELD (var_NT))                 \
@@ -384,8 +371,7 @@ struct sac_hive_common_t {
 
 #define SAC_MT_RECEIVE_RESULT_out__DESC(spmdfun, local_id, num, var_NT)                  \
     SAC_ND_A_FIELD (var_NT) = rdata[local_id].in_##num;                                  \
-    SAC_ND_A_DESC (var_NT) = rdata[local_id].in_##num##_desc;                            \
-    SAC_ND_RC_FROM_NORC (var_NT);
+    SAC_ND_A_DESC (var_NT) = rdata[local_id].in_##num##_desc;
 
 /*****************************************************************************/
 

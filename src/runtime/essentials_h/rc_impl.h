@@ -36,7 +36,10 @@
 #define SAC_IF_DEBUG_RC(a)
 #endif
 
-#define SAC_ASSERT_RC(a, b)
+#define SAC_ASSERT_RC(cond, ...)                                                         \
+    if (!(cond)) {                                                                       \
+        SAC_RuntimeError (__VA_ARGS__);                                                  \
+    }
 
 /** =========================================================================== */
 
@@ -64,7 +67,6 @@
         SAC_IF_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););   \
         SAC_TR_REF_PRINT (("ND_DEC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
         SAC_RC_PRINT (var_NT);                                                           \
-        SAC_ASSERT_RC (DESC_RC (SAC_ND_A_DESC (var_NT)), SAC_ND_A_DESC (var_NT));        \
         __sync_sub_and_fetch (&DESC_RC (SAC_ND_A_DESC (var_NT)), rc);                    \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
@@ -106,7 +108,6 @@
           ("ND_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))                \
         SAC_IF_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););   \
         SAC_RC_PRINT (var_NT);                                                           \
-        SAC_ASSERT_RC (DESC_RC (SAC_ND_A_DESC (var_NT)), SAC_ND_A_DESC (var_NT));        \
         if (__sync_sub_and_fetch (&DESC_RC (SAC_ND_A_DESC (var_NT)), rc) == 0) {         \
             free (SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT)));                      \
             free (SAC_ND_A_DESC (var_NT));                                               \
@@ -288,18 +289,29 @@
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
     }
 
-/* SAC_ND_RC_TO_NORC( var_NT) is generated in m4 */
+/* SAC_ND_RC_TO_NORC( var_NT) is generated in m4.
+ * It switches the descriptor from the mode LOCAL or ASYNC into NORC.
+ */
+
 #define SAC_ND_RC_TO_NORC__NODESC(var_NT) /* noop */
 
 #define SAC_ND_RC_TO_NORC__DESC(var_NT)                                                  \
+    SAC_ASSERT_RC (DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) != SAC_DESC_RC_MODE_NORC,       \
+                   "SAC_ND_RC_TO_NORC__DESC: already in the NORC mode!");                \
     DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_NORC;
 
-/* SAC_ND_RC_FROM_NORC( var_NT) is generated in m4 */
+/* SAC_ND_RC_FROM_NORC( var_NT) is generated in m4.
+ * It switches the descriptor from mode NORC back to the original LOCAL or ASYNC.
+ * The original mode is recognized based on the presence of the PARENT descriptor.
+ * Hence, LOCAL-mode descriptors must not keep the parent field non-null!
+ */
 
 #define SAC_ND_RC_FROM_NORC__NODESC(var_NT) /* noop */
 
 #define SAC_ND_RC_FROM_NORC__DESC(var_NT)                                                \
     {                                                                                    \
+        SAC_ASSERT_RC (DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_NORC,   \
+                       "SAC_ND_RC_FROM_NORC__DESC: not in the NORC mode!");              \
         if (SAC_ND_A_DESC_PARENT (var_NT) != 0) {                                        \
             DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_ASYNC;              \
         } else {                                                                         \
@@ -307,7 +319,54 @@
         }                                                                                \
     }
 
-// #define SAC_ND_RC_LOCAL_TO_ASYNC
+/* SAC_ND_RC_GIVE_ASYNC is generated in m4.
+ * It *consumes* a single reference from the input descriptor and returns
+ * a (possibly new) descriptor that can be accessed asynchronously to
+ * the original one.
+ *
+ * The input descriptor must NOT be in the NORC mode.
+ * If the current reference count of the input descriptor is one, we do not
+ * create a new descriptor but set the new to the old. This works irrespective
+ * of the mode.
+ * Otherwise we create a new child descriptor, possibly allocating the parent as well,
+ * and return the new child, decrementing the ref.count. of the original descriptor.
+ */
+
+#define SAC_ND_RC_GIVE_ASYNC__NODESC(new, array)                                         \
+    SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));
+
+#define SAC_ND_RC_GIVE_ASYNC__DESC(new, array)                                           \
+    {                                                                                    \
+        SAC_ASSERT_RC ((DESC_RC_MODE (SAC_ND_A_DESC (array)) == SAC_DESC_RC_MODE_NORC),  \
+                       "SAC_RCM_local_pasync_norc_desc::SAC_ND_RC_GIVE_ASYNC__DESC: "    \
+                       "called on NORC descriptor!");                                    \
+        SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));            \
+        if (DESC_RC (SAC_ND_A_DESC (array)) == 1) {                                      \
+            SAC_ND_A_DESC (new) = SAC_ND_A_DESC (array);                                 \
+        } else {                                                                         \
+            SAC_RC_PRINT (array);                                                        \
+            if (DESC_RC_MODE (SAC_ND_A_DESC (array)) == SAC_DESC_RC_MODE_LOCAL) {        \
+                SAC_ND_A_DESC_RC_MODE (array) = SAC_DESC_RC_MODE_ASYNC;                  \
+            }                                                                            \
+            if (SAC_ND_A_DESC_PARENT (array) == NULL) {                                  \
+                SAC_ND_ALLOC__DESC__PARENT (array, SAC_ND_A_DIM (array));                \
+                SAC_DEBUG_RC (printf ("alloced parent at %p in %p\n",                    \
+                                      (void *)SAC_ND_A_DESC_PARENT (array),              \
+                                      SAC_ND_A_DESC (array));)                           \
+                PARENT_DESC_NCHILD (SAC_ND_A_DESC_PARENT (array)) = 2;                   \
+            } else {                                                                     \
+                SAC_RC_PARENT_INC_SYNC (array);                                          \
+            }                                                                            \
+            SAC_ND_A_COPY_DESC (new, array);                                             \
+            DESC_RC (SAC_ND_A_DESC (new)) = 0;                                           \
+            SAC_ND_DEC_RC__DEFAULT (array, 1);                                           \
+            SAC_IF_DEBUG_RC (printf ("copy from %p to %p\n",                             \
+                                     SAC_ND_GETVAR (array, SAC_ND_A_DESC (array)),       \
+                                     SAC_ND_A_DESC (new)););                             \
+            SAC_RC_PRINT (array);                                                        \
+            SAC_RC_PRINT (new);                                                          \
+        }                                                                                \
+    }
 
 #if 0
 /*
@@ -520,6 +579,24 @@
         DESC_RC_MODE (SAC_ND_A_DESC (array)) = SAC_DESC_RC_MODE_ASYNC;                   \
     }
 #endif
+
+#endif
+
+/** =========================================================================== */
+
+#if SAC_RC_METHOD != SAC_RCM_local_pasync_norc_desc
+/* Stub SAC_ND_RC_TO_NORC / SAC_ND_RC_FROM_NORC
+ * The selected RC method cannot do the NORC mode to save us copying the descriptors
+ * in SPMD functions.
+ * Define the missing macros as empty, and do copy descriptors in SPMD frame code. */
+
+#define SAC_ND_RC_TO_NORC__NODESC(var_NT) /* not used */
+
+#define SAC_ND_RC_TO_NORC__DESC(var_NT) /* not used */
+
+#define SAC_ND_RC_FROM_NORC__NODESC(var_NT) /* not used */
+
+#define SAC_ND_RC_FROM_NORC__DESC(var_NT) /* not used */
 
 #endif
 
