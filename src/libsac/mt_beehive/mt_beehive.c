@@ -280,7 +280,9 @@ SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
 
     /* allocate array of bees; one less than the total number of bees because
      * the bee #0 is the queen */
-    void *other_bees = SAC_CALLOC ((num_bees - 1), sizeof_bee);
+    /* use char* here because C++ doesn't like void* arithmetics but we want
+     * do to byte-size pointer additions... */
+    char *other_bees = SAC_CALLOC ((num_bees - 1), sizeof_bee);
     if (!other_bees) {
         SAC_RuntimeError ("Could not allocate memory for an array of bees.");
     }
@@ -291,7 +293,7 @@ SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
         /* NOTE: the index below is (i-1) because other_bees[] contains only slave bees,
          * not the queen bee itself */
         struct sac_bee_common_t *b
-          = (struct sac_bee_common_t *)other_bees + sizeof_bee * (i - 1);
+          = (struct sac_bee_common_t *)(other_bees + sizeof_bee * (i - 1));
         /* put a bee into hive */
         hive->bees[i] = b;
         /* set b->c.global_id */
