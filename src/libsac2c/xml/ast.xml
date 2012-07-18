@@ -574,6 +574,21 @@
         <node name="Return" />
       </travuser>
     </traversal>
+    <traversal id="MTDSPMDF" name="Create Distributed SPMD functions" default="sons" include="create_dist_spmd_funs.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="With2" />
+        <node name="With" />
+        <node name="Let" />
+        <node name="Id" />
+        <node name="Ids" />
+        <node name="Assign" />
+        <node name="Withid" />
+        <node name="Cond" />
+        <node name="Prf" />
+      </travuser>
+    </traversal>
       <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
         <travuser>
           <node name="Ap" />

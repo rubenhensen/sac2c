@@ -273,11 +273,7 @@ MTSPMDFfundef (node *arg_node, info *arg_info)
     if ((FUNDEF_ISSTFUN (arg_node) || FUNDEF_ISXTFUN (arg_node))
         && (FUNDEF_BODY (arg_node) != NULL)) {
         /*
-    <<<<<<< HEAD
          * ST and XT funs may contain parallel with-loops.
-    =======
-         * Only ST funs may contain parallel with-loops.
-    >>>>>>> Second part of compiling with C++.
          * Hence, we constrain our search accordingly.
          */
         INFO_FUNDEF (arg_info) = arg_node;
@@ -507,7 +503,7 @@ MTSPMDFwith2 (node *arg_node, info *arg_info)
         } else {
             /*
              * If we do not want to parallise this with-loop and we have no outer
-             * parallelised with-loop, than we are currently still looking for a
+             * parallelised with-loop, then we are currently still looking for a
              * with-loop to be parallelised. This may only occur in the code subtree.
              */
             WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
