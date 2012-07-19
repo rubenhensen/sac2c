@@ -467,9 +467,9 @@ MDEarray (node *arg_node, info *arg_info)
     }
 
     res = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL), rhsnode), NULL);
-    res = TCappendAssign (preassigns, res);
-
     AVIS_SSAASSIGN (dimavis) = res;
+
+    res = TCappendAssign (preassigns, res);
 
     DBUG_RETURN (res);
 }
