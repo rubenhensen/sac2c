@@ -200,7 +200,8 @@ libsac2c_cuda        := annotate_cuda_withloop2 create_constant_assignments \
                         cuda_data_reuse create_loop_fun create_cond_fun partial_fold
                         
 libsac2c_cudahybrid  := cuda_cost_model change_arrays_to_dist \
-                        insert_memtrans_dist create_dist_spmd_funs
+                        insert_memtrans_dist create_dist_spmd_funs \
+                        lift_memops_dist_spmd
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_mtst_funs_module \
                         create_spmd_funs mtdcr scheduling annotate_scheduling \

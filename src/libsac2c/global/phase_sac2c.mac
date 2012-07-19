@@ -1157,6 +1157,10 @@ SUBPHASE (mtcm, "Running multithreading cost model", MTCMdoRunCostModel, ALWAYS,
 
 SUBPHASE (mtstf, "Creating MT and ST functions", MTSTFdoCreateMtStFuns, ALWAYS, mt)
 
+SUBPHASE (mtlmofc, "Lifting memory operations from distributed conditional",
+          MTLMOFCdoLiftMemoryOperationsFromConditional, (global.backend == BE_cudahybrid),
+          mt)
+
 SUBPHASE (mtdspmdf, "Creating Distributed SPMD functions",
           MTDSPMDFdoCreateDistributedSpmdFuns, (global.backend == BE_cudahybrid), mt)
 

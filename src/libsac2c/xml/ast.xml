@@ -574,6 +574,19 @@
         <node name="Return" />
       </travuser>
     </traversal>
+    <traversal id="MTLMOFC" name="Lift memory operations from distributed conditional" default="sons" include="lift_memops_dist_spmd.h">
+      <travuser>
+        <node name="Module" />
+        <node name="Fundef" />
+        <node name="With2" />
+        <node name="With" />
+        <node name="Assign" />
+        <node name="Cond" />
+        <node name="Prf" />
+        <node name="Let" />
+        <node name="Ids" />
+      </travuser>
+    </traversal>
     <traversal id="MTDSPMDF" name="Create Distributed SPMD functions" default="sons" include="create_dist_spmd_funs.h">
       <travuser>
         <node name="Module" />

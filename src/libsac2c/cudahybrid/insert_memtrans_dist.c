@@ -998,7 +998,9 @@ IMEMDISTids (node *arg_node, info *arg_info)
               = TBmakeAssign (TBmakeLet (TBmakeIds (ids_avis, NULL),
                                          TBmakePrf (conc2dist,
                                                     TBmakeExprs (TBmakeId (new_avis),
-                                                                 NULL))),
+                                                                 TBmakeExprs (TBmakeId (
+                                                                                ids_avis),
+                                                                              NULL)))),
                               INFO_POSTASSIGNS (arg_info));
             /* Maintain SSA property */
             AVIS_SSAASSIGN (new_avis) = AVIS_SSAASSIGN (ids_avis);
