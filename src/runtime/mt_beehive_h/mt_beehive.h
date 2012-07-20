@@ -167,11 +167,13 @@ struct sac_hive_common_t {
 #define SAC_MT_SEND_PARAM_in__DESC_AKD(spmdfun, num, var_NT)                             \
     DESC_DIM (SAC_ND_A_DESC (var_NT)) = SAC_ND_A_DIM (var_NT);                           \
     frame->in_##num = SAC_ND_A_FIELD (var_NT);                                           \
-    frame->in_##num##_desc = SAC_ND_A_DESC (var_NT);
+    frame->in_##num##_desc = SAC_ND_A_DESC (var_NT);                                     \
+    SAC_ND_RC_TO_NORC (var_NT);
 
 #define SAC_MT_SEND_PARAM_in__DESC_AUD(spmdfun, num, var_NT)                             \
     frame->in_##num = SAC_ND_A_FIELD (var_NT);                                           \
-    frame->in_##num##_desc = SAC_ND_A_DESC (var_NT);
+    frame->in_##num##_desc = SAC_ND_A_DESC (var_NT);                                     \
+    SAC_ND_RC_TO_NORC (var_NT);
 
 #define SAC_MT_SEND_PARAM_inout__NODESC(spmdfun, num, var_NT)                            \
     frame->in_##num = &SAC_ND_A_FIELD (var_NT);
@@ -179,11 +181,13 @@ struct sac_hive_common_t {
 #define SAC_MT_SEND_PARAM_inout__DESC_AKD(spmdfun, num, var_NT)                          \
     DESC_DIM (SAC_ND_A_DESC (var_NT)) = SAC_ND_A_DIM (var_NT);                           \
     frame->in_##num = &SAC_ND_A_FIELD (var_NT);                                          \
-    frame->in_##num##_desc = &SAC_ND_A_DESC (var_NT);
+    frame->in_##num##_desc = &SAC_ND_A_DESC (var_NT);                                    \
+    SAC_ND_RC_TO_NORC (var_NT);
 
 #define SAC_MT_SEND_PARAM_inout__DESC_AUD(spmdfun, num, var_NT)                          \
     frame->in_##num = &SAC_ND_A_FIELD (var_NT);                                          \
-    frame->in_##num##_desc = &SAC_ND_A_DESC (var_NT);
+    frame->in_##num##_desc = &SAC_ND_A_DESC (var_NT);                                    \
+    SAC_ND_RC_TO_NORC (var_NT);
 
 #define SAC_MT_SEND_PARAM__NOOP(spmdfun, num, var_NT) SAC_NOOP ()
 
@@ -365,6 +369,12 @@ struct sac_hive_common_t {
 
 #define SAC_MT_RECEIVE_RESULT__NOOP(spmdfun, local_id, num, var_NT) SAC_NOOP ()
 
+#define SAC_MT_RECEIVE_RESULT_in__DESC(spmdfun, local_id, num, var_NT)                   \
+    SAC_ND_RC_FROM_NORC (var_NT);
+
+#define SAC_MT_RECEIVE_RESULT_inout__DESC(spmdfun, local_id, num, var_NT)                \
+    SAC_ND_RC_FROM_NORC (var_NT);
+
 #define SAC_MT_RECEIVE_RESULT_out__NODESC(spmdfun, local_id, num, var_NT)                \
     SAC_ND_A_FIELD (var_NT) = rdata[local_id].in_##num;
 
@@ -420,6 +430,7 @@ struct sac_hive_common_t {
                         SAC_ND_ARG_in (accu_NT, basetype),                               \
                         SAC_ND_ARG_in (val_NT, basetype));
 
+/* there must not be a norc switch here! */
 #define SAC_MT_SYNC_FOLD_out__DESC(spmdfun, num, accu_NT, val_NT, basetype, tag,         \
                                    foldfun)                                              \
     SAC_MT_RECEIVE_RESULT_out__DESC (spmdfun, SAC_MT_son_id, num, val_NT);               \
