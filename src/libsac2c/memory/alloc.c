@@ -1814,6 +1814,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_host2dist_st:
     case F_host2dist_spmd:
     case F_dist2conc:
+    case F_dist_alloc:
         /* we don't want to allocate these */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
 

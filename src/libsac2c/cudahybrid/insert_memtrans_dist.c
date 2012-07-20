@@ -87,6 +87,7 @@ struct INFO {
     lut_t *lut;
     node *idxavis;
 
+    node *dist_avis;
     node *let_expr;
     bool is_modarr;
     bool in_cexprs;
@@ -128,6 +129,7 @@ struct INFO {
 #define INFO_LUT(n) (n->lut)
 #define INFO_IDXAVIS(n) (n->idxavis)
 
+#define INFO_DISTAVIS(n) (n->dist_avis)
 #define INFO_LETEXPR(n) (n->let_expr)
 #define INFO_IS_MODARR(n) (n->is_modarr)
 #define INFO_IN_CEXPRS(n) (n->in_cexprs)
@@ -153,6 +155,7 @@ MakeInfo (void)
     INFO_LUT (result) = NULL;
     INFO_IDXAVIS (result) = NULL;
 
+    INFO_DISTAVIS (result) = NULL;
     INFO_IS_MODARR (result) = FALSE;
     INFO_IN_CEXPRS (result) = FALSE;
     INFO_FROM_AP (result) = FALSE;
@@ -182,7 +185,7 @@ static bool CUisDistributedType (ntype *ty);
 static bool CUisConcreteTypeNew (ntype *ty);
 static ntype *DISTNtypeConversion (ntype *dist_type, bool to_dev_type);
 static ntype *TypeConvert (ntype *dist_type, nodetype nty, info *arg_info);
-static void Createdist2conc (node **id, node *host_avis, node *dev_avis, info *arg_info);
+static void Createdist2conc (node *id, node *host_avis, node *dev_avis, info *arg_info);
 // static void Createdistcont( node *dist_avis, info *arg_info);
 static node *ATravWith (node *arg_node, info *arg_info);
 static node *ATravId (node *arg_node, info *arg_info);
@@ -373,19 +376,19 @@ TypeConvert (ntype *dist_type, nodetype nty, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node* Createdist2conc( node **id, node *dist_avis,
+ * @fn node* Createdist2conc( node *id, node *dist_avis,
  *                           node *conc_avis, info *arg_info)
  *
  * @brief Create distributed to concrete convertion primitive function
  *
  *****************************************************************************/
 static void
-Createdist2conc (node **id, node *dist_avis, node *conc_avis, info *arg_info)
+Createdist2conc (node *id, node *dist_avis, node *conc_avis, info *arg_info)
 {
 
     DBUG_ENTER ();
 
-    ID_AVIS (*id) = conc_avis;
+    ID_AVIS (id) = conc_avis;
     FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
       = TBmakeVardec (conc_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
@@ -591,7 +594,7 @@ IMEMDISTap (node *arg_node, info *arg_info)
                     if (conc_type != NULL) {
                         tmpVarName = INFO_CUDARIZABLE (arg_info) ? "dev" : "host";
                         new_avis = TBmakeAvis (TRAVtmpVarName (tmpVarName), conc_type);
-                        Createdist2conc (&EXPRS_EXPR (ap_args), id_avis, new_avis,
+                        Createdist2conc (EXPRS_EXPR (ap_args), id_avis, new_avis,
                                          arg_info);
 
                         dup_avis = DUPdoDupNode (new_avis);
@@ -973,37 +976,71 @@ IMEMDISTmodarray (node *arg_node, info *arg_info)
 node *
 IMEMDISTids (node *arg_node, info *arg_info)
 {
-    node *new_avis, *ids_avis;
+    node *new_conc_avis, *new_dist_avis, *ids_avis;
     ntype *ids_type, *conc_type;
     const char *tmpVarName;
     prf conc2dist;
+    static int counter;
 
     DBUG_ENTER ();
 
     ids_avis = IDS_AVIS (arg_node);
     ids_type = AVIS_TYPE (ids_avis);
 
-    /* We check if not in WL, because DCR removes some AVIS but not the N_prf*/
-    if (CUisDistributedType (ids_type) && !INFO_INWL (arg_info)) {
+    /* check if ids is of a distributed type we want to convert */
+    if (CUisDistributedType (ids_type)) {
         conc_type = TypeConvert (ids_type, NODE_TYPE (arg_node), arg_info);
         if (conc_type != NULL) {
-            tmpVarName = INFO_CUDARIZABLE (arg_info) ? "dev" : "host";
-            new_avis = TBmakeAvis (TRAVtmpVarName (tmpVarName), conc_type);
-            IDS_AVIS (arg_node) = new_avis;
-            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-              = TBmakeVardec (new_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+            /* we can convert this ids */
 
+            // get a new distributed avis
+            if (INFO_DISTAVIS (arg_info) != NULL) {
+                /* in sequential section, re-use a distributed avis found on the RHS */
+                new_dist_avis = INFO_DISTAVIS (arg_info);
+                INFO_DISTAVIS (arg_info) = NULL;
+            } else {
+                /* create new distributed avis's */
+                new_dist_avis
+                  = TBmakeAvis (TRAVtmpVarName ("dist"), TYcopyType (ids_type));
+                /* add new vardec */
+                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+                  = TCappendVardec (TBmakeVardec (new_dist_avis, NULL),
+                                    FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+                /* add distributed variable allocation */
+                INFO_PREASSIGNS (arg_info)
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (new_dist_avis, NULL),
+                                             TBmakePrf (F_dist_alloc,
+                                                        TBmakeExprs (TBmakeNum (
+                                                                       counter++),
+                                                                     NULL))),
+                                  INFO_PREASSIGNS (arg_info));
+                /* Maintain SSA property */
+                AVIS_SSAASSIGN (new_dist_avis) = INFO_PREASSIGNS (arg_info);
+            }
+
+            /* create new concrete avis's */
+            tmpVarName = INFO_CUDARIZABLE (arg_info) ? "dev" : "host";
+            new_conc_avis = TBmakeAvis (TRAVtmpVarName (tmpVarName), conc_type);
+
+            /* change current avis*/
+            IDS_AVIS (arg_node) = new_conc_avis;
+
+            /* add new vardec */
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TCappendVardec (TBmakeVardec (new_conc_avis, NULL),
+                                FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+
+            /* add concrete to distributed transfer */
             conc2dist = INFO_CUDARIZABLE (arg_info) ? F_device2dist : F_host2dist_st;
-            INFO_POSTASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (ids_avis, NULL),
-                                         TBmakePrf (conc2dist,
-                                                    TBmakeExprs (TBmakeId (new_avis),
-                                                                 TBmakeExprs (TBmakeId (
-                                                                                ids_avis),
-                                                                              NULL)))),
-                              INFO_POSTASSIGNS (arg_info));
+            INFO_POSTASSIGNS (arg_info) = TBmakeAssign (
+              TBmakeLet (TBmakeIds (ids_avis, NULL),
+                         TBmakePrf (conc2dist,
+                                    TBmakeExprs (TBmakeId (new_conc_avis),
+                                                 TBmakeExprs (TBmakeId (new_dist_avis),
+                                                              NULL)))),
+              INFO_POSTASSIGNS (arg_info));
             /* Maintain SSA property */
-            AVIS_SSAASSIGN (new_avis) = AVIS_SSAASSIGN (ids_avis);
+            AVIS_SSAASSIGN (new_conc_avis) = AVIS_SSAASSIGN (ids_avis);
             AVIS_SSAASSIGN (ids_avis) = INFO_POSTASSIGNS (arg_info);
         }
     }
@@ -1049,7 +1086,10 @@ IMEMDISTid (node *arg_node, info *arg_info)
                 /* Otherwise, create transfer */
                 tmpVarName = INFO_CUDARIZABLE (arg_info) ? "dev" : "host";
                 new_avis = TBmakeAvis (TRAVtmpVarName (tmpVarName), conc_type);
-                Createdist2conc (&arg_node, id_avis, new_avis, arg_info);
+                Createdist2conc (arg_node, id_avis, new_avis, arg_info);
+
+                if (!INFO_INWL (arg_info))
+                    INFO_DISTAVIS (arg_info) = id_avis;
             }
             /* create distributed continous blocks function for with-loops * /
             if( INFO_INWL(arg_info) / *&& INFO_CUDARIZABLE(arg_info)* /) {

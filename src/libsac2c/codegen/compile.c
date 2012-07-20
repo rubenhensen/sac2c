@@ -7931,6 +7931,24 @@ COMPprfDevice2Dist (node *arg_node, info *arg_info)
 }
 
 node *
+COMPprfDistAlloc (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("DIST_MEM_INIT", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                 TCmakeIdCopyString ("dist_alloc"), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
 COMPprfDist2Conc (node *arg_node, info *arg_info)
 {
     node *ret_node;
