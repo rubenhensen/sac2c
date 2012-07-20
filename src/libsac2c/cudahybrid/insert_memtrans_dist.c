@@ -524,6 +524,7 @@ IMEMDISTfundef (node *arg_node, info *arg_info)
         old_fundef = INFO_FUNDEF (arg_info);
         old_topblock = INFO_TOPBLOCK (arg_info);
         INFO_FUNDEF (arg_info) = arg_node;
+        INFO_DISTAVIS (arg_info) = NULL;
         /* Traversal of lac functions are initiated from the calling site */
         INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
@@ -571,6 +572,24 @@ IMEMDISTap (node *arg_node, info *arg_info)
 
         if (!INFO_INWL (arg_info)) {
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+
+            /* we have allocated a distributed variable in the conditional, we have to
+             pass it as a parameter now */
+            if (INFO_DISTAVIS (arg_info) != NULL) {
+                /* create new local variable and add to vardecs */
+                INFO_DISTAVIS (arg_info)
+                  = TBmakeAvis (TRAVtmpVarName ("dist"),
+                                TYcopyType (AVIS_TYPE (INFO_DISTAVIS (arg_info))));
+                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+                  = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
+                                    TBmakeVardec (INFO_DISTAVIS (arg_info), NULL));
+
+                /* add new local variable as argument to ap */
+                AP_ARGS (arg_node)
+                  = TCappendExprs (AP_ARGS (arg_node),
+                                   TBmakeExprs (TBmakeId (INFO_DISTAVIS (arg_info)),
+                                                NULL));
+            }
         } else {
             ap_args = AP_ARGS (arg_node);
             fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
@@ -662,6 +681,7 @@ node *
 IMEMDISTassign (node *arg_node, info *arg_info)
 {
     node *next;
+    static int counter;
 
     DBUG_ENTER ();
 
@@ -687,6 +707,27 @@ IMEMDISTassign (node *arg_node, info *arg_info)
         if (INFO_PREASSIGNS (arg_info) != NULL) {
             arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
             INFO_PREASSIGNS (arg_info) = NULL;
+        }
+
+        /* add distributed variable allocations before the conditional. */
+        if (INFO_DISTAVIS (arg_info) != NULL
+            && NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let
+            && NODE_TYPE (ASSIGN_RHS (arg_node)) == N_ap) {
+            DBUG_ASSERT (FUNDEF_ISCONDFUN (AP_FUNDEF (ASSIGN_RHS (arg_node))),
+                         "We have not placed the distributed variable allocation, but "
+                         "found ap to non-condfun!");
+
+            /* add distributed variable allocation */
+            arg_node = TCappendAssign (
+              TBmakeAssign (TBmakeLet (TBmakeIds (INFO_DISTAVIS (arg_info), NULL),
+                                       TBmakePrf (F_dist_alloc,
+                                                  TBmakeExprs (TBmakeNum (counter++),
+                                                               NULL))),
+                            NULL),
+              arg_node);
+            /* Maintain SSA property */
+            AVIS_SSAASSIGN (INFO_DISTAVIS (arg_info)) = arg_node;
+            INFO_DISTAVIS (arg_info) = NULL;
         }
 
         node *last_assign = arg_node;
@@ -980,7 +1021,6 @@ IMEMDISTids (node *arg_node, info *arg_info)
     ntype *ids_type, *conc_type;
     const char *tmpVarName;
     prf conc2dist;
-    static int counter;
 
     DBUG_ENTER ();
 
@@ -997,25 +1037,16 @@ IMEMDISTids (node *arg_node, info *arg_info)
             if (INFO_DISTAVIS (arg_info) != NULL) {
                 /* in sequential section, re-use a distributed avis found on the RHS */
                 new_dist_avis = INFO_DISTAVIS (arg_info);
-                INFO_DISTAVIS (arg_info) = NULL;
             } else {
                 /* create new distributed avis's */
                 new_dist_avis
                   = TBmakeAvis (TRAVtmpVarName ("dist"), TYcopyType (ids_type));
-                /* add new vardec */
-                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-                  = TCappendVardec (TBmakeVardec (new_dist_avis, NULL),
-                                    FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
-                /* add distributed variable allocation */
-                INFO_PREASSIGNS (arg_info)
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (new_dist_avis, NULL),
-                                             TBmakePrf (F_dist_alloc,
-                                                        TBmakeExprs (TBmakeNum (
-                                                                       counter++),
-                                                                     NULL))),
-                                  INFO_PREASSIGNS (arg_info));
-                /* Maintain SSA property */
-                AVIS_SSAASSIGN (new_dist_avis) = INFO_PREASSIGNS (arg_info);
+                /* add argument to function */
+                FUNDEF_ARGS (INFO_FUNDEF (arg_info))
+                  = TCappendArgs (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
+                                  TBmakeArg (new_dist_avis, NULL));
+
+                INFO_DISTAVIS (arg_info) = new_dist_avis;
             }
 
             /* create new concrete avis's */
@@ -1088,6 +1119,8 @@ IMEMDISTid (node *arg_node, info *arg_info)
                 new_avis = TBmakeAvis (TRAVtmpVarName (tmpVarName), conc_type);
                 Createdist2conc (arg_node, id_avis, new_avis, arg_info);
 
+                /*if not in with-loop, we are in a sequential section. The source
+                 distributed variable, which we'll replace, is most likely this one*/
                 if (!INFO_INWL (arg_info))
                     INFO_DISTAVIS (arg_info) = id_avis;
             }
