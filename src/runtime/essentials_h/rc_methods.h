@@ -23,5 +23,6 @@
 #define SAC_RCM_async_norc_ptr 7
 #define SAC_RCM_local_pasync_norc_desc 8
 #define SAC_RCM_local_async_norc_ptr 9
+#define SAC_RCM_local_pasync 10
 
 #endif /* _SAC_RC_METHODS_H */

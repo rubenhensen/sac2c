@@ -363,6 +363,8 @@ OPTcheckOptionConsistency (void)
         }
     } else if (STReq (global.config.rc_method, "local_async_norc_ptr")) {
         CTIwarn ("Specified reference counting method is a work in progress!");
+    } else if (STReq (global.config.rc_method, "local_pasync")) {
+        CTIwarn ("Specified reference counting method is a work in progress!");
     } else {
         CTIerror ("Illegal reference counting method specified RC_METHOD == %s !",
                   global.config.rc_method);
