@@ -423,6 +423,9 @@ target rcm_local_async_norc_ptr:
 RC_METHOD        := "local_async_norc_ptr"
 LIB_VARIANT      += "rcm-local_async_norc_ptr"
 
+target rcm_local_pasync:
+RC_METHOD        := "local_pasync"
+LIB_VARIANT      += "rcm-local_pasync"
 
 
 /*****************************************************************************
