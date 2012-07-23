@@ -3,6 +3,8 @@
  * This header implements reference counting schemes in ICMs
  * in the C99 backend. The mutc backend has its own definitions
  * in mutc_rc.h
+ * For the list of the reference counting methods
+ * see the file doc/ref-counting-methods.txt
  */
 
 /******************************************************************************

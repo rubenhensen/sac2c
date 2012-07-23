@@ -101,43 +101,8 @@
  *  BACKEND         Defines which backend to use for a target. 
  *
  *  RC_METHOD       Defines which reference counting implementation to use.
- *                  Currently, the following implementations are supported:
- *
- *                  local
- *                       Traditional reference counting assuming locality.
- *                  norc
- *                       No reference counting at all.
- *                       Be aware that we have no GC yet!
- *                  async
- *                       Asynchronous reference counting.
- *                       RC is done through messages to a seperate core.
- *                       Re-use and freeing implies synchronisation.
- *                  local_norc_desc
- *                       Switches from local to norc and back.
- *                       Implies no re-use or freeing of non-local
- *                       vars in a concurrent context.
- *                       Implements the mode via a flag in the descriptor.
- *                  local_norc_ptr
- *                       Same as previous BUT encodes the mode in
- *                       the lowewst bits of the pointer to the descriptor.
- *                  async_norc_copy_desc
- *                       Switches from async to norc and back.
- *                       Whenever going norc, the descriptor is being copied.
- *                  async_norc_two_descs
- *                       Same as previous but instead of copying we always.
- *                       allocate two descriptors.
- *                  async_norc_ptr
- *                       Same as previous but instead of having two descriptors.
- *                       we encode the mode in the pointer.
- *                  local_pasync_norc_copy_desc
- *                       Very similar to local_norc_desc.
- *                       The only difference is that when spawning a.
- *                       thread we create a copy of the descriptor and use.
- *                       the original one as asynchronous parent.
- *                  local_async_norc_ptr
- *                       Very similar to async_norc_ptr.
- *                       The only difference is that we start in local and
- *                       we try to get back there whenever possible.
+ *                  For the list of the reference counting methods
+ *                  see the file doc/ref-counting-methods.txt
  *
  *  LIB_VARIANT     Gives a tag that will be added to the name of each
  *                  library that result of the compilation of a SAC module

@@ -1,0 +1,140 @@
+============================
+Reference Counting in SaC
+============================
+
+:Author: Jaroslav Sykora (jsa)
+
+
+A reference counting method can be selected via the target mechanism:
+pass the --target rcm_<method-name> option to the sac2c compiler
+(e.g. sac2c --target rcm_local_pasync ).
+
+The standard library and the prelude module must be compiled for the selected RCM target as well.
+This can be achived easily by passing the CROSS=rcm_<method-name> option on the 'make' command lines.
+
+
+.. table:: List of the existing reference counting methods
+
+   ========================   =====  ======
+   Name (RCM)                  C99    MUTC
+   ========================   =====  ======
+   local                       yes    yes
+   norc                        no?    yes
+   async                       yes    yes
+   local_norc_desc             no     yes
+   local_norc_ptr              no     yes
+   async_norc_copy_desc        no     yes
+   async_norc_two_descs        no     yes
+   async_norc_ptr              no     yes
+   local_pasync_norc_desc      yes*   yes
+   local_async_norc_ptr        yes*   yes
+   local_pasync                yes*   no
+   ========================   =====  ======
+
+
+NOTE: * requires gcc's builtins for atomic memory accesses (__sync_add_and_fetch, __sync_sub_and_fetch).
+
+
+RCM local
+------------
+**Backends:** C99, MUTC.
+
+Traditional reference counting assuming locality.
+
+SPMD functions:
+Fake copies of all incomming descriptors are created locally on threads' stacks.
+The copies have an elevated initial RC, hence they can happily be ref-counted upon
+as usual and will never be freed.
+
+
+RCM norc
+-----------
+**Backends:** MUTC.
+
+No reference counting at all.
+Be aware that we have no GC yet!
+
+
+RCM async
+-------------
+**Backends:** C99, MUTC.
+
+Asynchronous reference counting.
+In C99 backend the RC is done through atomic locked operations using gcc builtin primitives.
+In MUTC backend the RC is done through messages to a seperate core (an 'exclusive place', if I remember the terminology correctly).
+Re-use and freeing implies synchronisation.
+
+
+RCM local_norc_desc
+--------------------
+**Backends:** MUTC.
+
+Switches from local to norc and back.
+Implies no re-use or freeing of non-local vars in a concurrent context.
+Implements the mode via a flag in the descriptor.
+
+
+RCM local_norc_ptr
+-----------------------
+**Backends:** MUTC.
+
+Same as previous (local_norc_desc) BUT encodes the mode in
+the lowewest bits of the pointer to the descriptor.
+In MUTC this has the advantage of not requiring asynchronous messages to a separate core.
+
+
+RCM async_norc_copy_desc
+--------------------------
+**Backends:** MUTC.
+
+Switches from async to norc and back.
+Whenever going norc, the descriptor is being copied (because the original descriptor is still asynchronously
+used from other threads).
+
+RCM async_norc_two_descs
+--------------------------
+**Backends:** MUTC.
+
+Same as previous (async_norc_copy_desc) but instead of copying we always
+allocate two descriptors.
+
+
+RCM async_norc_ptr
+--------------------
+**Backends:** MUTC.
+
+Switches from async to norc and back.
+The norc mode is encoded in the pointer's least significant bits (instead of having multiple descriptors).
+
+
+RCM local_pasync_norc_desc
+---------------------------------
+**Backends:** C99, MUTC.
+
+When giving out the first asynchronous copy we create a shared parent descriptor.
+Normal RC is done locally on the local descriptor. 
+Only when the ref. count has reached zero we do an atomic (locked) decrement on the shared parent descriptor,
+and possibly deallocate the memory if we're the only child.
+The norc mode for SPMD functions is implemented via the mode flag in the local descriptor.
+
+
+RCM local_async_norc_ptr
+----------------------------
+**Backends:** C99, MUTC.
+
+Only single descriptor is used; it can be either in the local or asynchronous mode.
+In the asynchronous mode all normal inc/dec is performed using atomic (locked) operations.
+The norc mode for SPMD functions is implemented via a flag stored in the least significant
+bits of the descriptor pointer.
+
+
+RCM local_pasync
+--------------------
+**Backends:** C99.
+
+When giving out the first asynchronous copy we create a shared parent descriptor.
+Normal RC is done locally on the local descriptor. 
+Only when the ref. count has reached zero we do an atomic (locked) decrement on the shared parent descriptor,
+and possibly deallocate the memory if we're the only child.
+The SPMD functions create a fake copy of the descriptor on their stacks.
+
