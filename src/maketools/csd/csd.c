@@ -23,7 +23,7 @@ print_time (char *msg, time_t tp)
 #endif
 
 int
-main ()
+main (void)
 {
     struct stat *buf;
     int clock_screw;

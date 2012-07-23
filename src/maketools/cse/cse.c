@@ -17,7 +17,7 @@
 
 #define HEADER "   "
 void
-Usage ()
+Usage (void)
 {
     printf ("cse file [file]*\n");
     printf (HEADER "-h              print this help mesage.\n");

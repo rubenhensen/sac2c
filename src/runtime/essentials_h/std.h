@@ -132,7 +132,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_DESC_RC_MODE_ASYNC 1
 /* NORC: rc disabled; e.g. used for the relatively free vars in SPMD execution */
 #define SAC_DESC_RC_MODE_NORC 2
-/* OTHER: ? */
+/* OTHER: LOCAL or ASYNC */
 #define SAC_DESC_RC_MODE_OTHER 3
 
 /* bitmask for storing the RC mode in the descriptor pointer LSB */

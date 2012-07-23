@@ -12,7 +12,7 @@
 #define BUFSIZE 1024
 
 int
-main ()
+main (void)
 {
     md5_state_t state;
     md5_byte_t buffer[BUFSIZE];

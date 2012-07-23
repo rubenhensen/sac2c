@@ -13,20 +13,25 @@
  */
 #if SAC_RC_METHOD == SAC_RCM_local_async_norc_ptr
 
-/* Initialize. The mode is LOCAL. */
+/* We use the 'hidden data' feature to store the NORC or OTHER modes.
+ * In the NORC mode the descriptor itself may be ASYNC, hence we cannot
+ * simply put the NORC mode in the descriptor as it is shared. */
+
+/* Initialize. The mode in descriptor is LOCAL. The mode in the hidden data
+ * (LSB of the desc ptr) is OTHER because the real mode is in the desc. */
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc)                                             \
     {                                                                                    \
         SAC_ND_INIT__RC__C99 (var_NT, rc)                                                \
         DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_LOCAL;                  \
-        SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (var_NT), SAC_DESC_RC_MODE_LOCAL);       \
+        SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (var_NT), SAC_DESC_RC_MODE_OTHER);       \
     }
 
 /* Check the reference count and if it is one,
- * switch back to the LOCAL mode. */
+ * switch back to the LOCAL mode from the ASYNC. */
+/* called from SAC_ND_INC_RC__ASYNC */
 #define SAC_ND_TRY_LOCALIZE_RC__ASYNC(var_NT)                                            \
     if (SAC_ND_A_RC__ASYNC (var_NT) == 1) {                                              \
         DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_LOCAL;                  \
-        SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (var_NT), SAC_DESC_RC_MODE_LOCAL);       \
     }
 
 /* Decrement and may free.
@@ -136,11 +141,14 @@
 
 #define SAC_ND_RC_FROM_NORC__NODESC(var_NT) /* noop */
 
+/* Sets the hidden data to NORC, but does not touch the descriptor itself.
+ * The descriptor may be in the ASYNC mode */
 #define SAC_ND_RC_TO_NORC__DESC(var_NT)                                                  \
     if (SAC_DESC_HIDDEN_DATA (SAC_ND_A_DESC (var_NT)) != SAC_DESC_RC_MODE_NORC) {        \
         SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (var_NT), SAC_DESC_RC_MODE_NORC);        \
     }
 
+/* Restore the mode in the hidden data from the descriptor. */
 #define SAC_ND_RC_FROM_NORC__DESC(var_NT)                                                \
     SAC_DESC_SET_HIDDEN_DATA (SAC_ND_A_DESC (var_NT),                                    \
                               DESC_RC_MODE (SAC_ND_A_DESC (var_NT)));

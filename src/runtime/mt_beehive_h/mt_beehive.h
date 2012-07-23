@@ -161,33 +161,35 @@ struct sac_hive_common_t {
  * Macros for sending data to the SPMD frame
  */
 
+/* NORC: first switch, then ship. Because the mode may be stored in the pointer LSBs! */
+
 #define SAC_MT_SEND_PARAM_in__NODESC(spmdfun, num, var_NT)                               \
     frame->in_##num = SAC_ND_A_FIELD (var_NT);
 
 #define SAC_MT_SEND_PARAM_in__DESC_AKD(spmdfun, num, var_NT)                             \
+    SAC_ND_RC_TO_NORC (var_NT);                                                          \
     DESC_DIM (SAC_ND_A_DESC (var_NT)) = SAC_ND_A_DIM (var_NT);                           \
     frame->in_##num = SAC_ND_A_FIELD (var_NT);                                           \
-    frame->in_##num##_desc = SAC_ND_A_DESC (var_NT);                                     \
-    SAC_ND_RC_TO_NORC (var_NT);
+    frame->in_##num##_desc = SAC_ND_A_DESC (var_NT);
 
 #define SAC_MT_SEND_PARAM_in__DESC_AUD(spmdfun, num, var_NT)                             \
+    SAC_ND_RC_TO_NORC (var_NT);                                                          \
     frame->in_##num = SAC_ND_A_FIELD (var_NT);                                           \
-    frame->in_##num##_desc = SAC_ND_A_DESC (var_NT);                                     \
-    SAC_ND_RC_TO_NORC (var_NT);
+    frame->in_##num##_desc = SAC_ND_A_DESC (var_NT);
 
 #define SAC_MT_SEND_PARAM_inout__NODESC(spmdfun, num, var_NT)                            \
     frame->in_##num = &SAC_ND_A_FIELD (var_NT);
 
 #define SAC_MT_SEND_PARAM_inout__DESC_AKD(spmdfun, num, var_NT)                          \
+    SAC_ND_RC_TO_NORC (var_NT);                                                          \
     DESC_DIM (SAC_ND_A_DESC (var_NT)) = SAC_ND_A_DIM (var_NT);                           \
     frame->in_##num = &SAC_ND_A_FIELD (var_NT);                                          \
-    frame->in_##num##_desc = &SAC_ND_A_DESC (var_NT);                                    \
-    SAC_ND_RC_TO_NORC (var_NT);
+    frame->in_##num##_desc = &SAC_ND_A_DESC (var_NT);
 
 #define SAC_MT_SEND_PARAM_inout__DESC_AUD(spmdfun, num, var_NT)                          \
+    SAC_ND_RC_TO_NORC (var_NT);                                                          \
     frame->in_##num = &SAC_ND_A_FIELD (var_NT);                                          \
-    frame->in_##num##_desc = &SAC_ND_A_DESC (var_NT);                                    \
-    SAC_ND_RC_TO_NORC (var_NT);
+    frame->in_##num##_desc = &SAC_ND_A_DESC (var_NT);
 
 #define SAC_MT_SEND_PARAM__NOOP(spmdfun, num, var_NT) SAC_NOOP ()
 
