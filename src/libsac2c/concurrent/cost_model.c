@@ -326,6 +326,31 @@ MTCMwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *MTCMwiths( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+MTCMwiths (node *arg_node, info *arg_info)
+{
+    node *letids;
+
+    DBUG_ENTER ();
+
+    /* Traversing through a with-loop resets the letids. We need them for the next
+     with-loop in the chain, so we save the letids from info here. */
+    letids = INFO_LETIDS (arg_info);
+
+    WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
+
+    INFO_LETIDS (arg_info) = letids;
+    WITHS_NEXT (arg_node) = TRAVopt (WITHS_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *MTCMfold( node *arg_node, info *arg_info)
  *
  *****************************************************************************/

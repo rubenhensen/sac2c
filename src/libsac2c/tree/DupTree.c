@@ -2994,6 +2994,29 @@ DUPlivevars (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn node *DUPwiths( node *arg_node, info *arg_info)
+ *
+ * @brief Duplicates a withs node.
+ *
+ * @param arg_node withs node
+ * @param arg_info info structure
+ *
+ * @return copy of withs node
+ ******************************************************************************/
+node *
+DUPwiths (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ();
+
+    new_node
+      = TBmakeWiths (DUPTRAV (WITHS_WITH (arg_node)), DUPTRAV (WITHS_NEXT (arg_node)));
+
+    DBUG_RETURN (new_node);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *DUPwith3( node *arg_node, info *arg_info)
  *
  * @brief Duplicates a with3 node.

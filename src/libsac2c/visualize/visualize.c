@@ -3290,6 +3290,40 @@ VISUALwith3 (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   node *VISUALwiths( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+VISUALwiths (node *arg_node, info *arg_info)
+{
+    char *node_name = giveNodeName (arg_node, arg_info);
+
+    DBUG_ENTER ();
+
+    // traver son nodes
+    TRAVdo (WITHS_WITH (arg_node), arg_info);
+    TRAVopt (WITHS_NEXT (arg_node), arg_info);
+
+    // ouput current node
+    fprintf (INFO_FILE (arg_info), "%s[label=Withs];\n", node_name);
+
+    // add edge between two nodes with lable
+    fprintf (INFO_FILE (arg_info), "%s -> %s [label=With];\n", node_name,
+             (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), WITHS_WITH (arg_node)));
+    // add edge between two nodes with lable
+    fprintf (INFO_FILE (arg_info), "%s -> %s [label=Next];\n", node_name,
+             (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), WITHS_NEXT (arg_node)));
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!-- ****************************************************************** -->
  * @fn node *VISUALrange( node *arg_node, node *arg_info)
  *

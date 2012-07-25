@@ -5599,6 +5599,38 @@ PRTconstraint (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * Function:
+ *   node *PRTwiths( node *arg_node, info *arg_info)
+ *
+ * Description:
+ *
+ *
+ ******************************************************************************/
+
+node *
+PRTwiths (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, " /* Distributed With-Loop */ {\n");
+    global.indent++;
+    INDENT;
+    TRAVdo (WITHS_WITH (arg_node), arg_info);
+    INDENT;
+    fprintf (global.outfile, "} / \n");
+
+    global.indent--;
+    TRAVopt (WITHS_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!-- ****************************************************************** -->
  * @fn node *PRTwith3( node *arg_node, node *arg_info)
  *

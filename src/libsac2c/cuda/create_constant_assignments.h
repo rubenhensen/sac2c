@@ -16,6 +16,7 @@ extern node *CNSTASSdoCUDAconstantAssignment (node *syntax_tree);
 extern node *CNSTASSfundef (node *arg_node, info *arg_info);
 extern node *CNSTASSassign (node *arg_node, info *arg_info);
 extern node *CNSTASSwith (node *arg_node, info *arg_info);
+extern node *CNSTASSwiths (node *arg_node, info *arg_info);
 extern node *CNSTASSgenerator (node *arg_node, info *arg_info);
 
 #endif /* _SAC_CREATE_SPMD_FUNS_H_ */

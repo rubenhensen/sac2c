@@ -45,6 +45,7 @@ extern node *EMALpropagate (node *arg_node, info *arg_info);
 extern node *EMALwith (node *arg_node, info *arg_info);
 extern node *EMALwith2 (node *arg_node, info *arg_info);
 extern node *EMALwithid (node *arg_node, info *arg_info);
+extern node *EMALwiths (node *arg_node, info *arg_info);
 extern node *EMALwith3 (node *arg_node, info *arg_info);
 extern node *EMALrange (node *arg_node, info *arg_info);
 

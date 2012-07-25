@@ -297,6 +297,35 @@ CNSTASSwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *CNSTASSwiths( node *arg_node, info *arg_info)
+ *
+ * @brief We have to traverse all the distributed with-loops before adding the
+ * assignments. We save the decision and reset before traversing the next
+ * with-loop.
+ *
+ *
+ *****************************************************************************/
+node *
+CNSTASSwiths (node *arg_node, info *arg_info)
+{
+    bool add_assigns;
+
+    DBUG_ENTER ();
+
+    WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
+
+    add_assigns = INFO_ADD_ASSIGNS (arg_info);
+    INFO_ADD_ASSIGNS (arg_info) = FALSE;
+
+    WITHS_NEXT (arg_node) = TRAVopt (WITHS_NEXT (arg_node), arg_info);
+
+    INFO_ADD_ASSIGNS (arg_info) = add_assigns;
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *CNSTASSgenerator( node *arg_node, info *arg_info)
  *
  * @brief

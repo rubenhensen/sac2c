@@ -215,6 +215,28 @@ FreeALS (alloclist_struct *als)
 
 /** <!--******************************************************************-->
  *
+ * @fn alloclist_struct *DupAls( node *ids)
+ *
+ *  @brief Duplicates an alloclist.
+ *
+ *  @param als The alloclist to be duplicated
+ *
+ ***************************************************************************/
+static alloclist_struct *
+DupAls (alloclist_struct *als)
+{
+    alloclist_struct *res = NULL;
+
+    if (als != NULL) {
+        res = MEMcopy (sizeof (alloclist_struct), als);
+        res->next = DupAls (res->next);
+    }
+
+    return (res);
+}
+
+/** <!--******************************************************************-->
+ *
  * @fn alloclist_struct *Ids2ALS( node *ids)
  *
  *  @brief Converts a list of N_ids nodes to an alloclist.
@@ -2079,6 +2101,53 @@ EMALwithid (node *arg_node, info *arg_info)
     if (WITHID_IDXS (arg_node) != NULL) {
         WITHID_IDXS (arg_node) = FREEdoFreeTree (WITHID_IDXS (arg_node));
         WITHID_IDXS (arg_node) = expr;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--******************************************************************-->
+ *
+ * @fn node *EMALwiths( node *arg_node, info *arg_info)
+ *
+ *  @brief
+ *
+ *  @param arg_node with-loop
+ *  @param arg_info
+ *
+ *  @return with-loop
+ *
+ ***************************************************************************/
+node *
+EMALwiths (node *arg_node, info *arg_info)
+{
+    alloclist_struct *ids, *als, *end;
+
+    DBUG_ENTER ();
+
+    /* save the start of the allocation list for the LHS of the let. */
+    ids = DupAls (INFO_ALLOCLIST (arg_info));
+
+    /* get allocation list for this with-loop */
+    WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
+
+    if (WITHS_NEXT (arg_node) != NULL) {
+        /* for the next with-loop, we want to reset the allocation list to its
+         initial state, that is, with only the element corresponding to the LHS of
+         the let.
+         It is ok to have the LHS shapes set multiple times, as all with-loops have
+         the same shapes. */
+        als = INFO_ALLOCLIST (arg_info);
+        INFO_ALLOCLIST (arg_info) = ids;
+
+        WITHS_NEXT (arg_node) = TRAVdo (WITHS_NEXT (arg_node), arg_info);
+
+        /* to restore the ALS, we go through the resulting list until we find the
+         elements corresponding to the ids. We then replace them with the saved
+         allocation list, which also contains the ids elements in its tail */
+        for (end = INFO_ALLOCLIST (arg_info); end->next != NULL; end = end->next)
+            ;
+        end->next = als;
     }
 
     DBUG_RETURN (arg_node);

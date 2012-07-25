@@ -97,6 +97,7 @@ extern node *VISUALwlstride (node *arg_node, info *arg_info);
 extern node *VISUALwlgrid (node *arg_node, info *arg_info);
 extern node *VISUALwlublock (node *arg_node, info *arg_info);
 extern node *VISUALwlblock (node *arg_node, info *arg_info);
+extern node *VISUALwiths (node *arg_node, info *arg_info);
 
 /* with-loop (mutc) */
 extern node *VISUALwith3 (node *arg_node, info *arg_info);

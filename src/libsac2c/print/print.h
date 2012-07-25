@@ -130,6 +130,7 @@ extern node *PRTwlstride (node *arg_node, info *arg_info);
 extern node *PRTwlgrid (node *arg_node, info *arg_info);
 extern node *PRTwlublock (node *arg_node, info *arg_info);
 extern node *PRTwlblock (node *arg_node, info *arg_info);
+extern node *PRTwiths (node *arg_node, info *arg_info);
 
 /* with-loop (mutc) */
 extern node *PRTwith3 (node *arg_node, info *arg_info);

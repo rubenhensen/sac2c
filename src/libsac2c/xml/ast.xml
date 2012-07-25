@@ -102,7 +102,7 @@
            error TravError
          include the include file needed for the traversal
     -->
-      <traversal id="ARMP" name="Add RC Mode PRF" default="sons" include="add_rc_mode_prf.h">
+    <traversal id="ARMP" name="Add RC Mode PRF" default="sons" include="add_rc_mode_prf.h">
         <travuser>
           <node name="With3" />
           <node name="Assign" />
@@ -491,6 +491,7 @@
         <travuser>
           <node name="Assign" />
           <node name="With" />
+          <node name="Withs" />
           <node name="Fundef" />
           <node name="Generator" />
         </travuser>
@@ -542,7 +543,6 @@
       <traversal id="CUCM" name="CUDA cost model" default="sons" include="cuda_cost_model.h" >
         <travuser>
           <node name="Fundef" />
-          <node name="Assign" />
           <node name="Let" />
           <node name="With" />
           <node name="Genarray" />
@@ -592,12 +592,10 @@
         <node name="Module" />
         <node name="Fundef" />
         <node name="With2" />
-        <node name="With" />
         <node name="Let" />
         <node name="Id" />
         <node name="Ids" />
         <node name="Assign" />
-        <node name="Withid" />
         <node name="Cond" />
         <node name="Prf" />
       </travuser>
@@ -2605,6 +2603,7 @@
         <node name="With" />
         <node name="With2" />
         <node name="Withid" />
+        <node name="Withs" />
         <node name="With3" />
         <node name="Range" />
       </travuser>
@@ -3019,6 +3018,7 @@
         <node name="Let" />
         <node name="With2" />
         <node name="With" />
+        <node name="Withs" />
         <node name="Fold" />
         <node name="Genarray" />
         <node name="Modarray" />
@@ -3711,6 +3711,13 @@
         <node name="Id" />
       </target>
      </nodeset>
+
+    <nodeset name="Withloop">
+      <target>
+        <node name="With" />
+        <node name="With2" />
+      </target>
+    </nodeset>
 
    </nodesets>
   <syntaxtree version="1.0">
@@ -12139,6 +12146,42 @@ N_tfarg :
       </attributes>
       <flags></flags>
     </node>
+        <!--
+         
+         N_withs :
+         
+         -->
+        <node name="Withs">
+          <description>
+            a simple chain of with-loops, used by distributed backend to support
+            different transformations of with-loop code for each target architecture.
+          </description>
+          <sons>
+            <son name="With">
+              <targets>
+                <target mandatory="yes">
+                  <set name="Withloop" />
+                  <phases>
+                    <all />
+                  </phases>
+                </target>
+              </targets>
+            </son>
+            <son name="Next">
+              <targets>
+                <target mandatory="no">
+                  <node name="Withs" />
+                  <phases>
+                    <all />
+                  </phases>
+                </target>
+              </targets>
+            </son>
+          </sons>
+          <attributes>
+          </attributes>
+          <flags></flags>
+        </node>
   </syntaxtree>
 </definition>
 

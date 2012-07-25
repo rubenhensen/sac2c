@@ -22,6 +22,7 @@ extern node *MTCMassign (node *arg_node, info *arg_info);
 extern node *MTCMlet (node *arg_node, info *arg_info);
 extern node *MTCMwith2 (node *arg_node, info *arg_info);
 extern node *MTCMwith (node *arg_node, info *arg_info);
+extern node *MTCMwiths (node *arg_node, info *arg_info);
 extern node *MTCMfold (node *arg_node, info *arg_info);
 extern node *MTCMgenarray (node *arg_node, info *arg_info);
 extern node *MTCMmodarray (node *arg_node, info *arg_info);

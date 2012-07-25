@@ -164,6 +164,7 @@ extern node *DUPwlublock (node *arg_node, info *arg_info);
 extern node *DUPwlsimd (node *arg_node, info *arg_info);
 extern node *DUPwlstride (node *arg_node, info *arg_info);
 extern node *DUPwlgrid (node *arg_node, info *arg_info);
+extern node *DUPwiths (node *arg_node, info *arg_info);
 
 /* with-loop (mutc) */
 extern node *DUPwith3 (node *arg_node, info *arg_info);
