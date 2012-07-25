@@ -96,7 +96,7 @@ dnl
 
 AC_MSG_CHECKING(whether cc is a Apple compiler)
 AC_TRY_COMPILE(,
-[#ifndef __APPLE__
+[#ifndef __APPLE_CC__
   choke me
   #endif],
   AC_MSG_RESULT(yes)
@@ -666,14 +666,14 @@ case "$target_os" in
     RANLIB="$RANLIB -c"
     case "$target_os" in
       [*darwin1[0-1]\.*)]
-        OSFLAGS=["-no-cpp-precomp -D_DARWIN_C_SOURCE"]
+        OSFLAGS=["-D_DARWIN_C_SOURCE"]
         LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
         LD_PATH=["-L%path% -Wl,-rpath,%path%"]
         LD_FLAGS=""
         AC_MSG_RESULT([darwin 10.x/11.x settings])
         ;;
       *darwin9\.*)
-        OSFLAGS=["-no-cpp-precomp -Wno-long-double -D_DARWIN_C_SOURCE"]
+        OSFLAGS=["-Wno-long-double -D_DARWIN_C_SOURCE"]
         LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
         LD_PATH=["-L%path% -Wl,-rpath,%path%"]
         LD_FLAGS=""
