@@ -655,7 +655,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("mtmode")
     {
-        ARG_RANGE (store_mtmode, (int)MT_createjoin, (int)MT_mtstblock);
+        ARG_RANGE (store_mtmode, (int)MT_createjoin, (int)MT_lpel);
         if (global.mtmode != MT_none)
             global.mtmode = store_mtmode;
     }
@@ -1165,6 +1165,9 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     /*
      * Options starting with ttttttttttttttttttttttttttttttttttttttttttt
      */
+
+    ARGS_OPTION ("target", global.target_name = ARG);
+    ARGS_OPTION ("t", global.target_name = ARG);
 
     /*
      * Options starting with vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv

@@ -240,12 +240,29 @@ CCWBfunbundle (node *arg_node, info *arg_info)
             /* MT-mode: insert XT function */
             char *fun_name = FUNDEF_NAME (FUNBUNDLE_FUNDEF (arg_node));
 
-            /* TODO: optionally call SEQ?? if there is no hive attached */
-            fprintf (INFO_FILE (arg_info), "  void *self = SAC_MT_CurrentBee();\n");
+#if 0
+      fprintf( INFO_FILE( arg_info) , "  void *self = SAC_MT_CurrentBee();\n");
+      fprintf( INFO_FILE( arg_info) , "  if (!self) { SAC_RuntimeError("
+                "\"In %s: there is no hive attached to the calling thread!\"); }\n",
+                FUNBUNDLE_EXTNAME( arg_node) );
+#endif
             fprintf (INFO_FILE (arg_info),
-                     "  if (!self) { SAC_RuntimeError("
-                     "\"In %s: there is no hive attached to the calling thread!\"); }\n",
+                     "  void *self = SAC_MT_CurrentBee();\n"
+                     "  SAChive *stub_hive = NULL;\n"
+                     "  if (!self) {\n"
+                     "    static int was_warned = 0;\n"
+                     "    if (!was_warned) {\n"
+                     "      SAC_RuntimeWarning (\"In %s: there was no hive attached to "
+                     "the calling thread!\\nCreating a stub. This warning will not be "
+                     "repeated.\");\n"
+                     "      was_warned = 1;\n"
+                     "    }\n"
+                     "    stub_hive = SAC_AllocHive(1, 2, NULL, NULL);\n"
+                     "    SAC_AttachHive(stub_hive);\n"
+                     "    self = SAC_MT_CurrentBee();\n"
+                     "  }\n",
                      FUNBUNDLE_EXTNAME (arg_node));
+
             fprintf (INFO_FILE (arg_info), "  %s%s(self, ", CWRAPPER_PREFIX,
                      STRsubstToken (FUNBUNDLE_EXTNAME (arg_node), STRcat ("__", fun_name),
                                     STRcat ("_CL_XT__", fun_name)));
@@ -267,6 +284,13 @@ CCWBfunbundle (node *arg_node, info *arg_info)
         }
 
         fprintf (INFO_FILE (arg_info), ");\n");
+
+        if (global.mtmode != MT_none) {
+            fprintf (INFO_FILE (arg_info), "  if (stub_hive) {\n"
+                                           "    stub_hive = SAC_DetachHive();\n"
+                                           "    SAC_ReleaseHive(stub_hive);\n"
+                                           "  }\n");
+        }
 
         /*
          * free return descs

@@ -279,11 +279,11 @@ SACARGgetBasetype (SACarg *arg)
         }                                                                                \
     }
 
-UNWRAP (Int, int, T_int)
-UNWRAP (Bool, bool, T_bool)
-UNWRAP (Float, float, T_float)
-UNWRAP (Double, double, T_double)
-UNWRAP (Char, char, T_char)
+UNWRAP (Int, int, T_int)          /* SACARGwrapInt */
+UNWRAP (Bool, bool, T_bool)       /* SACARGwrapBool */
+UNWRAP (Float, float, T_float)    /* SACARGwrapFloat */
+UNWRAP (Double, double, T_double) /* SACARGwrapDouble */
+UNWRAP (Char, char, T_char)       /* SACARGwrapChar */
 
 void
 SACARGunwrapUdt (void **data, SAC_array_descriptor_t *desc, SACarg *arg,
