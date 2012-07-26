@@ -85,7 +85,7 @@ struct INFO {
     bool isworth;
     /* Lookup table storing pairs of old<->duplicated code nodes for the host
      with-loops */
-    node *hostlut;
+    lut_t *hostlut;
     /* uncudarized duplicate of a withloop */
     node *hostwl;
     /* assignment of the condition variable */
