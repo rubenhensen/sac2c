@@ -709,13 +709,10 @@ IMEMDISTassign (node *arg_node, info *arg_info)
             INFO_PREASSIGNS (arg_info) = NULL;
         }
 
-        /* add distributed variable allocations before the conditional. */
+        /* add distributed variable allocations before the withs. */
         if (INFO_DISTAVIS (arg_info) != NULL
             && NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let
-            && NODE_TYPE (ASSIGN_RHS (arg_node)) == N_ap) {
-            DBUG_ASSERT (FUNDEF_ISCONDFUN (AP_FUNDEF (ASSIGN_RHS (arg_node))),
-                         "We have not placed the distributed variable allocation, but "
-                         "found ap to non-condfun!");
+            && NODE_TYPE (ASSIGN_RHS (arg_node)) == N_withs) {
 
             /* add distributed variable allocation */
             arg_node = TCappendAssign (

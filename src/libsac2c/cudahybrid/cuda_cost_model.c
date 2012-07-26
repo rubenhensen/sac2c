@@ -68,6 +68,7 @@
 #include "new_types.h"
 #include "type_utils.h"
 #include "memory.h"
+#include "LookUpTable.h"
 
 /** <!--********************************************************************-->
  *
@@ -82,8 +83,9 @@ struct INFO {
     node *letids;
     /* is current withloop worth cudarization? */
     bool isworth;
-    /* id of the condition variable */
-    node *condition;
+    /* Lookup table storing pairs of old<->duplicated code nodes for the host
+     with-loops */
+    node *hostlut;
     /* uncudarized duplicate of a withloop */
     node *hostwl;
     /* assignment of the condition variable */
@@ -96,7 +98,7 @@ struct INFO {
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_LETIDS(n) (n->letids)
 #define INFO_ISWORTH(n) (n->isworth)
-#define INFO_CONDITION(n) (n->condition)
+#define INFO_HOSTLUT(n) (n->hostlut)
 #define INFO_HOSTWL(n) (n->hostwl)
 #define INFO_PREASSIGNS(n) (n->preassigns)
 
@@ -112,7 +114,7 @@ MakeInfo (void)
     INFO_FUNDEF (result) = NULL;
     INFO_LETIDS (result) = NULL;
     INFO_ISWORTH (result) = FALSE;
-    INFO_CONDITION (result) = NULL;
+    INFO_HOSTLUT (result) = NULL;
     INFO_HOSTWL (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
 
@@ -293,56 +295,6 @@ CUCMfundef (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-///** <!--********************************************************************-->
-// *
-// * @fn node *CUCMassign(node *arg_node, info *arg_info)
-// *
-// * @brief For each withloop, create the conditional function with data from
-// *        info structure and replace assignment with application of new
-// *        function. If the condition requires some pre-assignment statements,
-// *        these are inserted before the withloop let.
-// *
-// *****************************************************************************/
-// node *CUCMassign( node *arg_node, info *arg_info)
-//{
-//  node *cond_stmt, *cond_assign, *assign_next, *cuda_branch, *host_branch;
-//
-//  DBUG_ENTER ();
-//
-//  ASSIGN_STMT( arg_node) = TRAVdo( ASSIGN_STMT( arg_node), arg_info);
-//
-//  if (INFO_CONDITION( arg_info) != NULL) {
-//    DBUG_PRINT("Introducing conditional");
-//    assign_next = ASSIGN_NEXT(arg_node);
-//    ASSIGN_NEXT(arg_node) = NULL;
-//
-//    /* Create blocks for the cuda and host branches.
-//     Probably will need to mark each branch in the future... */
-//    cuda_branch = TBmakeBlock(arg_node, NULL);
-//    host_branch =
-//    TBmakeBlock(TBmakeAssign(TBmakeLet(DUPdoDupNode(INFO_LETIDS(arg_info)),
-//                                                     INFO_HOSTWL(arg_info)),
-//                                          NULL), NULL);
-//
-//    cond_stmt = TBmakeCond(TBmakeId(INFO_CONDITION(arg_info)), cuda_branch,
-//                           host_branch);
-//
-//    cond_assign = TBmakeAssign( cond_stmt, assign_next);
-//
-//    arg_node = TCappendAssign(INFO_PREASSIGNS(arg_info), cond_assign);
-//
-//    INFO_CONDITION( arg_info)  = NULL;
-//    INFO_PREASSIGNS( arg_info) = NULL;
-//
-//    assign_next = TRAVopt(assign_next, arg_info);
-//
-//  } else {
-//    ASSIGN_NEXT( arg_node) = TRAVopt( ASSIGN_NEXT( arg_node), arg_info);
-//  }
-//
-//  DBUG_RETURN (arg_node);
-//}
-
 /** <!--********************************************************************-->
  *
  * @fn node *CUCMlet(node *arg_node, info *arg_info)
@@ -381,7 +333,8 @@ CUCMlet (node *arg_node, info *arg_info)
 node *
 CUCMwith (node *arg_node, info *arg_info)
 {
-    node *hostwl;
+    node *hostwl, *hostcode;
+    lut_t *hostlut;
 
     DBUG_ENTER ();
 
@@ -389,7 +342,6 @@ CUCMwith (node *arg_node, info *arg_info)
         DBUG_PRINT ("Found cudarizable with-loop.");
 
         INFO_ISWORTH (arg_info) = FALSE;
-        INFO_CONDITION (arg_info) = NULL;
 
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
@@ -399,12 +351,23 @@ CUCMwith (node *arg_node, info *arg_info)
          * the host here.
          */
         if (INFO_ISWORTH (arg_info)) {
-            hostwl = DUPdoDupNodeSsa (arg_node, INFO_FUNDEF (arg_info));
-            /* unmark duplicate for cudarization */
-            WITH_CUDARIZABLE (hostwl) = FALSE;
-            WITH_PART (hostwl) = TRAVdo (WITH_PART (hostwl), arg_info);
+            /* first, we duplicate the code chain in SSA form, keeping the old<->new
+             pairs in a LUT */
+            hostlut = LUTgenerateLut ();
+            hostcode = DUPdoDupTreeLutSsa (WITH_CODE (arg_node), hostlut,
+                                           INFO_FUNDEF (arg_info));
+
+            /* we then traverse the partitions. These will be duplicated and the code
+             pointers are replaced with the new ones from the LUT. */
+            INFO_HOSTLUT (arg_info) = hostlut;
+            hostwl = TBmakeWith (TRAVdo (WITH_PART (arg_node), arg_info), hostcode,
+                                 DUPdoDupTree (WITH_WITHOP (arg_node)));
+            WITH_REFERENCED (hostwl) = WITH_REFERENCED (arg_node);
+            WITH_ISFOLDABLE (hostwl) = WITH_ISFOLDABLE (arg_node);
+
             INFO_HOSTWL (arg_info) = hostwl;
             INFO_ISWORTH (arg_info) = FALSE;
+            INFO_HOSTLUT (arg_info) = LUTremoveLut (hostlut);
         } else {
             WITH_CUDARIZABLE (arg_node) = FALSE;
         }
@@ -424,21 +387,30 @@ CUCMwith (node *arg_node, info *arg_info)
  *
  * @fn node *CUCMpart(node *arg_node, info *arg_info)
  *
- * @brief Clears the thread block shape property of non-cudarizable withloops'
- *        partitions.
+ * @brief Returns a identical copy of the node, but with a new CODE pointer from
+ *        the LUT.
  *
  *****************************************************************************/
 node *
 CUCMpart (node *arg_node, info *arg_info)
 {
+    node *new_part, *new_code, *old_code;
     DBUG_ENTER ();
 
-    FREEdoFreeTree (PART_THREADBLOCKSHAPE (arg_node));
-    PART_THREADBLOCKSHAPE (arg_node) = NULL;
+    old_code = PART_CODE (arg_node);
+    /* get new pointer for the code node */
+    new_code = LUTsearchInLutPp (INFO_HOSTLUT (arg_info), old_code);
+    DBUG_ASSERT (new_code != old_code, "New code block not found in LUT!");
 
-    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+    /* create new part node */
+    new_part = TBmakePart (new_code, DUPdoDupTree (PART_WITHID (arg_node)),
+                           DUPdoDupTree (PART_GENERATOR (arg_node)));
 
-    DBUG_RETURN (arg_node);
+    CODE_USED (new_code) = CODE_USED (old_code);
+
+    PART_NEXT (new_part) = TRAVopt (PART_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (new_part);
 }
 
 /** <!--********************************************************************-->
@@ -454,10 +426,7 @@ CUCMgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_LETIDS (arg_info) != NULL) {
-
         INFO_ISWORTH (arg_info) = ApplySizeCriterion (IDS_NTYPE (INFO_LETIDS (arg_info)));
-
-        //    CreateConditionVariable(arg_info);
     }
 
     /* check next operation, although this probably breaks stuff... */
@@ -482,10 +451,7 @@ CUCMmodarray (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_LETIDS (arg_info) != NULL) {
-
         INFO_ISWORTH (arg_info) = ApplySizeCriterion (IDS_NTYPE (INFO_LETIDS (arg_info)));
-
-        //    CreateConditionVariable(arg_info);
     }
 
     /* check next operation, although this probably breaks stuff... */
@@ -511,14 +477,9 @@ CUCMfold (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (INFO_LETIDS (arg_info) != NULL) {
-
         /* Fold loops marked as cudarizable have size criteria applied implicitly
           later on */
         INFO_ISWORTH (arg_info) = TRUE;
-
-        /* I could not make fold with-loops work heterogeneously, so these will be
-         run on the first CUDA card only. */
-        // CreateConditionVariable(arg_info);
     }
 
     /* check next operation, although this probably breaks stuff... */
