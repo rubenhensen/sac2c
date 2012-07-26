@@ -7,6 +7,19 @@
  * see the file doc/ref-counting-methods.txt
  */
 
+/*
+ * The following ICMs are used in sacarg interface code when accessing
+ * objects via explicit descriptors.
+ * The macros take the descriptor pointer as an argument, not the long var_NT
+ * tagged symbol.
+ * SAC_DESC_A_RC
+ * SAC_DESC_INIT_RC
+ * SAC_DESC_INC_RC
+ * SAC_DESC_RC_GIVE_ASYNC
+ * SAC_DESC_DEC_RC_FREE
+ * SAC_DESC_DEC_RC
+ */
+
 /******************************************************************************
  *
  * ICMs for refcounting data objects

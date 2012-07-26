@@ -16,6 +16,8 @@
 
 #define SAC_ND_INIT__RC__DEFAULT(var_NT, rc) SAC_ND_INIT__RC__C99 (var_NT, rc)
 
+#define SAC_DESC_INIT_RC(desc, rc) SAC_DESC_INIT__RC__C99 (desc, rc)
+
 /* Check if the child count in the parent is one and that case switch
  * back to the LOCAL mode. Otherwise do nothing.
  * We deallocate and clean the pointer to the parent because the parent's
@@ -55,6 +57,7 @@
 /*
  * SAC_ND_INC_RC implementations (referenced by sac_std_gen.h)
  */
+/* An attempt is made to try to switch back from the ASYNC into the LOCAL mode. */
 #define SAC_ND_INC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
         SAC_RC_PRINT (var_NT);                                                           \
@@ -63,11 +66,22 @@
         } else if (DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_NORC) {     \
             SAC_ND_INC_RC__NORC (var_NT, rc);                                            \
         } else {                                                                         \
+            SAC_ND_TRY_LOCALIZE_RC__ASYNC (var_NT);                                      \
             SAC_ND_INC_RC__C99 (var_NT, rc);                                             \
         }                                                                                \
     }
 
-/* An attempt is made to try to switch back from the ASYNC into the LOCAL mode. */
+#define SAC_DESC_INC_RC(desc, rc)                                                        \
+    {                                                                                    \
+        if (DESC_RC_MODE (desc) == SAC_DESC_RC_MODE_LOCAL) {                             \
+            SAC_DESC_INC_RC__C99 (desc, rc);                                             \
+        } else if (DESC_RC_MODE (desc) == SAC_DESC_RC_MODE_NORC) {                       \
+            SAC_DESC_INC_RC__NORC (desc, rc);                                            \
+        } else {                                                                         \
+            SAC_DESC_INC_RC__C99 (desc, rc);                                             \
+        }                                                                                \
+    }
+
 #define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
         SAC_RC_PRINT (var_NT);                                                           \
@@ -77,7 +91,17 @@
             SAC_ND_DEC_RC__NORC (var_NT, rc);                                            \
         } else {                                                                         \
             SAC_ND_DEC_RC__C99 (var_NT, rc);                                             \
-            SAC_ND_TRY_LOCALIZE_RC__ASYNC (var_NT);                                      \
+        }                                                                                \
+    }
+
+#define SAC_DESC_DEC_RC(desc, rc)                                                        \
+    {                                                                                    \
+        if (DESC_RC_MODE (desc) == SAC_DESC_RC_MODE_LOCAL) {                             \
+            SAC_DESC_DEC_RC__C99 (desc, rc);                                             \
+        } else if (DESC_RC_MODE (desc) == SAC_DESC_RC_MODE_NORC) {                       \
+            SAC_DESC_DEC_RC__NORC (desc, rc);                                            \
+        } else {                                                                         \
+            SAC_DESC_DEC_RC__C99 (desc, rc);                                             \
         }                                                                                \
     }
 
@@ -96,6 +120,17 @@
         }                                                                                \
     }
 
+#define SAC_DESC_DEC_RC_FREE(desc, rc, q_waslast)                                        \
+    {                                                                                    \
+        if (DESC_RC_MODE (desc) == SAC_DESC_RC_MODE_LOCAL) {                             \
+            SAC_DESC_DEC_RC_FREE__C99 (desc, rc, q_waslast);                             \
+        } else if (DESC_RC_MODE (desc) == SAC_DESC_RC_MODE_NORC) {                       \
+            SAC_DESC_DEC_RC_FREE__NORC (desc, rc, q_waslast);                            \
+        } else {                                                                         \
+            SAC_DESC_DEC_RC_FREE__ASYNC_RC (desc, rc, q_waslast);                        \
+        }                                                                                \
+    }
+
 /* The decrement is perfomed on the local copy, hence it does not have to be atomic.
  * An attempt is made to try to switch back from the ASYNC into the LOCAL mode.
  */
@@ -107,8 +142,18 @@
             SAC_DEC_FREE_PARENT__ASYNC_RC (var_NT)                                       \
             SAC_ND_FREE (var_NT, freefun)                                                \
         } else {                                                                         \
-            SAC_ND_TRY_LOCALIZE_RC__ASYNC (var_NT);                                      \
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
+        }                                                                                \
+    }
+
+#define SAC_DESC_DEC_RC_FREE__ASYNC_RC(desc, rc, q_waslast)                              \
+    {                                                                                    \
+        if ((DESC_RC (desc) -= rc) == 0) {                                               \
+            SAC_DESC_DEC_FREE_PARENT__ASYNC_RC (desc)                                    \
+            SAC_FREE (desc);                                                             \
+            q_waslast = 1;                                                               \
+        } else {                                                                         \
+            q_waslast = 0;                                                               \
         }                                                                                \
     }
 
@@ -124,6 +169,14 @@
         }                                                                                \
     }
 
+#define SAC_DESC_DEC_FREE_PARENT__ASYNC_RC(desc)                                         \
+    {                                                                                    \
+        SAC_ND_DESC_PARENT_TYPE parent = (SAC_ND_DESC_PARENT_TYPE)DESC_PARENT (desc);    \
+        if (__sync_sub_and_fetch (&PARENT_DESC_NCHILD (parent), 1) == 0) {               \
+            free (parent);                                                               \
+        }                                                                                \
+    }
+
 #define SAC_ND_A_RC__DEFAULT(var_NT)                                                     \
     (DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_LOCAL                     \
        ? SAC_ND_A_RC__C99 (var_NT)                                                       \
@@ -131,28 +184,25 @@
             ? SAC_ND_A_RC__NORC (var_NT)                                                 \
             : SAC_ND_A_RC__ASYNC_RC (var_NT)))
 
-#if 0
-#define SAC_ND_A_RC__DEFAULT(var_NT)                                                     \
-    ({                                                                                   \
-        int rc;                                                                          \
-        SAC_RC_PRINT (var_NT);                                                           \
-        if (DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_LOCAL) {           \
-            rc = SAC_ND_A_RC__C99 (var_NT);                                              \
-        } else if (DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_NORC) {     \
-            rc = SAC_ND_A_RC__NORC (var_NT);                                             \
-        } else {                                                                         \
-            rc = SAC_ND_A_RC__ASYNC_RC (var_NT);                                         \
-        }                                                                                \
-        (int)rc;                                                                         \
-    })
-#endif
+#define SAC_DESC_A_RC(desc)                                                              \
+    (DESC_RC_MODE (desc) == SAC_DESC_RC_MODE_LOCAL                                       \
+       ? SAC_DESC_A_RC__C99 (desc)                                                       \
+       : (DESC_RC_MODE (desc) == SAC_DESC_RC_MODE_NORC                                   \
+            ? SAC_DESC_A_RC__NORC (desc)                                                 \
+            : SAC_DESC_A_RC__ASYNC_RC (desc)))
 
 #define SAC_ND_A_RC__ASYNC_RC(var_NT)                                                    \
     (SAC_ND_A_RC__C99 (var_NT) <= 1 ? SAC_ND_A_PARENT_ASYNC_RC (var_NT)                  \
                                     : SAC_ND_A_RC__C99 (var_NT))
 
+#define SAC_DESC_A_RC__ASYNC_RC(desc)                                                    \
+    (SAC_DESC_A_RC__C99 (desc) <= 1 ? SAC_DESC_A_PARENT_ASYNC_RC (desc)                  \
+                                    : SAC_DESC_A_RC__C99 (desc))
+
 #define SAC_ND_A_PARENT_ASYNC_RC(var_NT)                                                 \
     PARENT_DESC_NCHILD (SAC_ND_A_DESC_PARENT (var_NT))
+
+#define SAC_DESC_A_PARENT_ASYNC_RC(desc) PARENT_DESC_NCHILD (DESC_PARENT (desc))
 
 #if 0
 /*
@@ -187,6 +237,13 @@
                                 (SAC_ND_DESC_PARENT_TYPE)SAC_ND_A_DESC_PARENT (var_NT)), \
                               1);                                                        \
         SAC_TR_REF_PRINT_RC (var_NT)                                                     \
+    }
+
+#define SAC_DESC_RC_PARENT_INC_SYNC(desc)                                                \
+    {                                                                                    \
+        __sync_add_and_fetch (&PARENT_DESC_NCHILD (                                      \
+                                (SAC_ND_DESC_PARENT_TYPE)DESC_PARENT (desc)),            \
+                              1);                                                        \
     }
 
 /* SAC_ND_RC_TO_NORC( var_NT) is generated in m4.
@@ -234,7 +291,7 @@
  * Otherwise we create a new child descriptor, possibly allocating the parent as well,
  * and return the new child, decrementing the ref.count. of the original descriptor.
  */
-
+#if 0
 #define SAC_ND_RC_GIVE_ASYNC__NODESC(new, array)                                         \
     SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));
 
@@ -253,9 +310,9 @@
             }                                                                            \
             if (SAC_ND_A_DESC_PARENT (array) == NULL) {                                  \
                 SAC_ND_ALLOC__DESC__PARENT (array, SAC_ND_A_DIM (array));                \
-                SAC_DEBUG_RC (printf ("alloced parent at %p in %p\n",                    \
-                                      (void *)SAC_ND_A_DESC_PARENT (array),              \
-                                      SAC_ND_A_DESC (array));)                           \
+                SAC_IF_DEBUG_RC (printf ("alloced parent at %p in %p\n",                 \
+                                         (void *)SAC_ND_A_DESC_PARENT (array),           \
+                                         SAC_ND_A_DESC (array));)                        \
                 PARENT_DESC_NCHILD (SAC_ND_A_DESC_PARENT (array)) = 2;                   \
             } else {                                                                     \
                 SAC_RC_PARENT_INC_SYNC (array);                                          \
@@ -268,6 +325,33 @@
                                      SAC_ND_A_DESC (new)););                             \
             SAC_RC_PRINT (array);                                                        \
             SAC_RC_PRINT (new);                                                          \
+        }                                                                                \
+    }
+#endif
+
+#define SAC_DESC_RC_GIVE_ASYNC(newd, arrayd)                                             \
+    {                                                                                    \
+        SAC_ASSERT_RC (DESC_RC_MODE (arrayd) != SAC_DESC_RC_MODE_NORC,                   \
+                       "SAC_RCM_local_pasync_norc_desc::SAC_DESC_RC_GIVE_ASYNC: called " \
+                       "on NORC descriptor!");                                           \
+        if (DESC_RC (arrayd) == 1) {                                                     \
+            newd = arrayd;                                                               \
+        } else {                                                                         \
+            if (DESC_RC_MODE (arrayd) == SAC_DESC_RC_MODE_LOCAL) {                       \
+                DESC_RC_MODE (arrayd) = SAC_DESC_RC_MODE_ASYNC;                          \
+            }                                                                            \
+            if (DESC_PARENT (arrayd) == 0) {                                             \
+                SAC_DESC_ALLOC_PARENT (arrayd, DESC_DIM (arrayd));                       \
+                SAC_IF_DEBUG_RC (printf ("alloced parent at %p in %p\n",                 \
+                                         (void *)DESC_PARENT (arrayd), arrayd);)         \
+                PARENT_DESC_NCHILD (DESC_PARENT (arrayd)) = 2;                           \
+            } else {                                                                     \
+                SAC_DESC_RC_PARENT_INC_SYNC (arrayd);                                    \
+            }                                                                            \
+            SAC_DESC_COPY_DESC (newd, arrayd);                                           \
+            DESC_RC (newd) = 0;                                                          \
+            SAC_DESC_DEC_RC (arrayd, 1);                                                 \
+            SAC_IF_DEBUG_RC (printf ("copy from %p to %p\n", arrayd, newd););            \
         }                                                                                \
     }
 
