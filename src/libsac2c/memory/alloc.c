@@ -85,6 +85,7 @@ struct INFO {
     node *withops;
     node *indexvector;
     bool mustfill;
+    bool inwiths;
     ea_withopmode withopmode;
     ea_rangemode rangemode;
 };
@@ -97,6 +98,7 @@ struct INFO {
 #define INFO_WITHOPS(n) ((n)->withops)
 #define INFO_INDEXVECTOR(n) ((n)->indexvector)
 #define INFO_MUSTFILL(n) ((n)->mustfill)
+#define INFO_INWITHS(n) ((n)->inwiths)
 #define INFO_WITHOPMODE(n) ((n)->withopmode)
 #define INFO_RANGEMODE(n) ((n)->rangemode)
 
@@ -119,6 +121,7 @@ MakeInfo (void)
     INFO_WITHOPS (result) = NULL;
     INFO_INDEXVECTOR (result) = NULL;
     INFO_MUSTFILL (result) = FALSE;
+    INFO_INWITHS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -1935,37 +1938,49 @@ EMALwith (node *arg_node, info *arg_info)
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     /*
-     * Allocate memory for the index vector
-     * and replace WITH_VEC ids with id
+     * For all with-loops in WITHS nodes but the first, we only traverse the code.
      */
-    INFO_ALLOCLIST (arg_info)
-      = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (WITH_VEC (arg_node)), TBmakeNum (1),
-                 MakeShapeArg (WITH_BOUND1 (arg_node)));
+    if (!INFO_INWITHS (arg_info)) {
+        /*
+         * Allocate memory for the index vector
+         * and replace WITH_VEC ids with id
+         */
+        INFO_ALLOCLIST (arg_info)
+          = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (WITH_VEC (arg_node)),
+                     TBmakeNum (1), MakeShapeArg (WITH_BOUND1 (arg_node)));
 
-    expr = TBmakeId (IDS_AVIS (WITH_VEC (arg_node)));
-    WITH_VEC (arg_node) = FREEdoFreeTree (WITH_VEC (arg_node));
-    WITH_VEC (arg_node) = expr;
+        expr = TBmakeId (IDS_AVIS (WITH_VEC (arg_node)));
+        WITH_VEC (arg_node) = FREEdoFreeTree (WITH_VEC (arg_node));
+        WITH_VEC (arg_node) = expr;
 
-    /*
-     * Traverse first withid to allocate memory for offset scalars
-     */
-    WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
+        /*
+         * Traverse first withid to allocate memory for offset scalars
+         */
+        WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
 
-    /*
-     * Duplicate withid for the second part
-     */
-    /*
-      if( PART_NEXT( WITH_PART( arg_node)) != NULL) {
-        node *nextpart = PART_NEXT( WITH_PART( arg_node));
-        PART_WITHID( nextpart) = FREEdoFreeNode( PART_WITHID( nextpart));
-        PART_WITHID( nextpart) = DUPdoDupNode( WITH_WITHID( arg_node));
-      }
-    */
-    node *nextpart = PART_NEXT (WITH_PART (arg_node));
-    while (nextpart != NULL) {
-        PART_WITHID (nextpart) = FREEdoFreeNode (PART_WITHID (nextpart));
-        PART_WITHID (nextpart) = DUPdoDupNode (WITH_WITHID (arg_node));
-        nextpart = PART_NEXT (nextpart);
+        /*
+         * Duplicate withid for the second part
+         */
+        /*
+         if( PART_NEXT( WITH_PART( arg_node)) != NULL) {
+         node *nextpart = PART_NEXT( WITH_PART( arg_node));
+         PART_WITHID( nextpart) = FREEdoFreeNode( PART_WITHID( nextpart));
+         PART_WITHID( nextpart) = DUPdoDupNode( WITH_WITHID( arg_node));
+         }
+         */
+        node *nextpart = PART_NEXT (WITH_PART (arg_node));
+        while (nextpart != NULL) {
+            PART_WITHID (nextpart) = FREEdoFreeNode (PART_WITHID (nextpart));
+            PART_WITHID (nextpart) = DUPdoDupNode (WITH_WITHID (arg_node));
+            nextpart = PART_NEXT (nextpart);
+        }
+    } else {
+        /*
+         * Only replace WITH_VEC ids with id
+         */
+        expr = TBmakeId (IDS_AVIS (WITH_VEC (arg_node)));
+        WITH_VEC (arg_node) = FREEdoFreeTree (WITH_VEC (arg_node));
+        WITH_VEC (arg_node) = expr;
     }
 
     DBUG_RETURN (arg_node);
@@ -1986,6 +2001,8 @@ EMALwith (node *arg_node, info *arg_info)
 node *
 EMALwith2 (node *arg_node, info *arg_info)
 {
+    node *expr;
+
     DBUG_ENTER ();
 
     /*
@@ -2020,28 +2037,43 @@ EMALwith2 (node *arg_node, info *arg_info)
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
     /*
-     * Allocate memory for the index vector
-     * and replace WITH2_VEC ids with id
-     *
-     * In Nwith2, shape of the index vector is always known!
+     * For all with-loops in WITHS nodes but the first, we only traverse the code.
      */
-    if (WITH2_VEC (arg_node) != NULL) {
-        node *expr;
-        INFO_ALLOCLIST (arg_info)
-          = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (WITH2_VEC (arg_node)),
-                     TBmakeNum (1),
-                     SHshape2Array (TYgetShape (
-                       AVIS_TYPE (IDS_AVIS (WITHID_VEC (WITH2_WITHID (arg_node)))))));
+    if (!INFO_INWITHS (arg_info)) {
+        /*
+         * Allocate memory for the index vector
+         * and replace WITH2_VEC ids with id
+         *
+         * In Nwith2, shape of the index vector is always known!
+         */
+        if (WITH2_VEC (arg_node) != NULL) {
+            INFO_ALLOCLIST (arg_info)
+              = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (WITH2_VEC (arg_node)),
+                         TBmakeNum (1),
+                         SHshape2Array (TYgetShape (
+                           AVIS_TYPE (IDS_AVIS (WITHID_VEC (WITH2_WITHID (arg_node)))))));
 
-        expr = TBmakeId (IDS_AVIS (WITH2_VEC (arg_node)));
-        WITH2_VEC (arg_node) = FREEdoFreeTree (WITH2_VEC (arg_node));
-        WITH2_VEC (arg_node) = expr;
+            expr = TBmakeId (IDS_AVIS (WITH2_VEC (arg_node)));
+            WITH2_VEC (arg_node) = FREEdoFreeTree (WITH2_VEC (arg_node));
+            WITH2_VEC (arg_node) = expr;
+        }
+
+        /*
+         * Traverse withid to allocate memory for the index scalars
+         */
+        WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+    } else {
+        /*
+         * Only replace WITH2_VEC ids with id
+         *
+         * In Nwith2, shape of the index vector is always known!
+         */
+        if (WITH2_VEC (arg_node) != NULL) {
+            expr = TBmakeId (IDS_AVIS (WITH2_VEC (arg_node)));
+            WITH2_VEC (arg_node) = FREEdoFreeTree (WITH2_VEC (arg_node));
+            WITH2_VEC (arg_node) = expr;
+        }
     }
-
-    /*
-     * Traverse withid to allocate memory for the index scalars
-     */
-    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -2110,7 +2142,8 @@ EMALwithid (node *arg_node, info *arg_info)
  *
  * @fn node *EMALwiths( node *arg_node, info *arg_info)
  *
- *  @brief
+ *  @brief Traverse first with-loop, then set flag in info so that for the
+ *         next with-loops we only look at the code nodes.
  *
  *  @param arg_node with-loop
  *  @param arg_info
@@ -2125,29 +2158,35 @@ EMALwiths (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    /* save the start of the allocation list for the LHS of the let. */
-    ids = DupAls (INFO_ALLOCLIST (arg_info));
-
-    /* get allocation list for this with-loop */
-    WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
-
     if (WITHS_NEXT (arg_node) != NULL) {
-        /* for the next with-loop, we want to reset the allocation list to its
-         initial state, that is, with only the element corresponding to the LHS of
-         the let.
-         It is ok to have the LHS shapes set multiple times, as all with-loops have
-         the same shapes. */
+        /* save the start of the allocation list for the LHS of the let. */
+        ids = DupAls (INFO_ALLOCLIST (arg_info));
+
+        /* get allocation list for this with-loop */
+        WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
+
+        /*
+         * for the next with-loop, we want to reset the allocation list to its
+         * initial state, that is, with only the element corresponding to the LHS of
+         * the let. This will create a different memory allocation for each withloop
+         */
         als = INFO_ALLOCLIST (arg_info);
         INFO_ALLOCLIST (arg_info) = ids;
+        INFO_INWITHS (arg_info) = TRUE;
 
         WITHS_NEXT (arg_node) = TRAVdo (WITHS_NEXT (arg_node), arg_info);
 
         /* to restore the ALS, we go through the resulting list until we find the
-         elements corresponding to the ids. We then replace them with the saved
-         allocation list, which also contains the ids elements in its tail */
+         * last element. We then append the saved allocation list, which also
+         * contains the ids elements in its tail */
         for (end = INFO_ALLOCLIST (arg_info); end->next != NULL; end = end->next)
             ;
         end->next = als;
+    } else {
+        /* get allocation list for this with-loop */
+        WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
+
+        INFO_INWITHS (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
