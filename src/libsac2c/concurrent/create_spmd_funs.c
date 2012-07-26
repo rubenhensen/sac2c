@@ -58,6 +58,7 @@ struct INFO {
     bool lift;
     bool withid;
     bool isxtfun;
+    bool inwiths;
 };
 
 /**
@@ -76,6 +77,7 @@ struct INFO {
 #define INFO_LIFT(n) ((n)->lift)
 #define INFO_WITHID(n) ((n)->withid)
 #define INFO_ISXTFUN(n) ((n)->isxtfun)
+#define INFO_INWITHS(n) ((n)->inwiths)
 
 /**
  * INFO functions
@@ -102,6 +104,7 @@ MakeInfo (void)
     INFO_LIFT (result) = FALSE;
     INFO_WITHID (result) = FALSE;
     INFO_ISXTFUN (result) = FALSE;
+    INFO_INWITHS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -460,6 +463,39 @@ MTSPMDFids (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *MTSPMDFwiths( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   lifts a parallelised with-loop into a function.
+ *
+ ******************************************************************************/
+
+node *
+MTSPMDFwiths (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    /*
+     * Start collecting data flow information
+     */
+    INFO_INWITHS (arg_info) = TRUE;
+    INFO_COLLECT (arg_info) = TRUE;
+
+    WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
+    WITHS_NEXT (arg_node) = TRAVopt (WITHS_NEXT (arg_node), arg_info);
+
+    INFO_COLLECT (arg_info) = FALSE;
+    /*
+     * Stop collecting data flow information
+     */
+    INFO_LIFT (arg_info) = TRUE;
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *MTSPMDFwith2( node *arg_node, info *arg_info)
  *
  * description:
@@ -472,7 +508,13 @@ MTSPMDFwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (WITH2_PARALLELIZE (arg_node)) {
+    /*
+     * to start collecting data flow information, this with-loop must
+     * not only be parallelizable, but also not part of a distributed
+     * with-loop. In the latter case, the WITHS node starts the data flow
+     * collecting.
+     */
+    if (WITH2_PARALLELIZE (arg_node) && !INFO_INWITHS (arg_info)) {
         /*
          * Start collecting data flow information
          */
@@ -508,6 +550,42 @@ MTSPMDFwith2 (node *arg_node, info *arg_info)
              */
             WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
         }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MTSPMDFwith( node *arg_node, info *arg_info)
+ *
+ * description:
+ *   lifts a parallelised with-loop into a function.
+ *
+ ******************************************************************************/
+
+node *
+MTSPMDFwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (INFO_COLLECT (arg_info)) {
+        /*
+         * If we are already in the collect mode, we currently gather the data
+         * flow information. Hence, we must traverse all sons.
+         */
+        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    } else {
+        /*
+         * If we have no outer parallelised with-loop or this is not part of a
+         * distributed with-loop, then we are currently still looking for a
+         * with-loop to be parallelised. This may only occur in the code subtree.
+         */
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
