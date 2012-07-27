@@ -210,11 +210,6 @@ CCWBfunbundle (node *arg_node, info *arg_info)
          */
         fprintf (INFO_FILE (arg_info), "void %s(", FUNBUNDLE_EXTNAME (arg_node));
 
-        //     if ( global.xtmode) {
-        //       fprintf( INFO_FILE( arg_info), "SAC_XT_RESOURCE_ARG()");
-        //       fprintf( INFO_FILE( arg_info), ( norets + noargs > 0) ? ", " : "");
-        //     }
-
         for (pos = 0; pos < norets; pos++) {
             fprintf (INFO_FILE (arg_info), "void **ret%d%s", pos,
                      (norets - pos + noargs > 1) ? ", " : "");
@@ -244,12 +239,6 @@ CCWBfunbundle (node *arg_node, info *arg_info)
             /* MT-mode: insert XT function */
             char *fun_name = FUNDEF_NAME (FUNBUNDLE_FUNDEF (arg_node));
 
-#if 0
-      fprintf( INFO_FILE( arg_info) , "  void *self = SAC_MT_CurrentBee();\n");
-      fprintf( INFO_FILE( arg_info) , "  if (!self) { SAC_RuntimeError("
-                "\"In %s: there is no hive attached to the calling thread!\"); }\n",
-                FUNBUNDLE_EXTNAME( arg_node) );
-#endif
             fprintf (INFO_FILE (arg_info),
                      "  void *self = SAC_MT_CurrentBee();\n"
                      "  SAChive *stub_hive = NULL;\n"

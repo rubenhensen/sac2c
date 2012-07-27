@@ -252,24 +252,6 @@ SACARGextractData (SACarg *arg)
     /* in any case the SACarg itself is released because it has been consumed. */
     SAC_FREE (arg);
 
-#if 0
-  if (SAC_DESC_A_RC( SACARG_DESC( arg)) == 1) {
-    result = SACARG_DATA( arg);
-    SAC_FREE( SACARG_DESC( arg));
-    SAC_FREE( arg);
-  } else {
-    if (!BTYPE_ISINTERNAL(SACARG_BTYPE( arg))) {
-      result = SACARGcopyDataUdt( SACARG_BTYPE( arg), SACARG_SIZE( arg),
-                                  SACARG_DATA( arg));
-    } else {
-      result = SACARGcopyDataInternal( SACARG_BTYPE( arg), SACARG_SIZE( arg),
-                                       SACARG_DATA( arg));
-    }
-
-    SACARGfree( arg);
-  }
-#endif
-
     return (result);
 }
 
@@ -300,7 +282,7 @@ SACARGgetBasetype (SACarg *arg)
 
 static inline void
 SACARG_common_unwrap (void **data, SAC_array_descriptor_t *desc, SACarg *arg,
-                      SAC_array_descriptor_t arg_desc, basetype btype)
+                      SAC_array_descriptor_t arg_desc)
 {
     /*
      * we create a new reference to the data here, so we need to
@@ -332,7 +314,7 @@ SACARG_common_unwrap (void **data, SAC_array_descriptor_t *desc, SACarg *arg,
     void SACARGunwrap##name (void **data, SAC_array_descriptor_t *desc, SACarg *arg,     \
                              SAC_array_descriptor_t arg_desc)                            \
     {                                                                                    \
-        SACARG_common_unwrap (data, desc, arg, arg_desc, btype);                         \
+        SACARG_common_unwrap (data, desc, arg, arg_desc);                                \
     }
 
 UNWRAP (Int, int, T_int)          /* SACARGwrapInt */
@@ -345,27 +327,7 @@ void
 SACARGunwrapUdt (void **data, SAC_array_descriptor_t *desc, SACarg *arg,
                  SAC_array_descriptor_t arg_desc)
 {
-    /*
-     * we create a new reference to the data here, so we need to
-     * increment its reference counter!
-     */
-    SAC_DESC_INC_RC (SACARG_DESC (arg), 1);
-
-    *data = SACARG_DATA (arg);
-    *desc = SACARG_DESC (arg);
-
-    /*
-     * we consume one reference to the outer shell. If that counter drops
-     * to 0, we can free it! (ONLY the outer shell)
-     * Note that this removes one reference to the inner data!
-     */
-    int q_waslast;
-    SAC_DESC_DEC_RC_FREE (arg_desc, 1, q_waslast);
-
-    if (q_waslast) {
-        SAC_DESC_DEC_RC (SACARG_DESC (arg), 1); /* paired with the incref above */
-        SAC_FREE (arg);
-    }
+    SACARG_common_unwrap (data, desc, arg, arg_desc);
 }
 
 #define UNWRAPWRAPPER(name, ctype)                                                       \
@@ -382,8 +344,8 @@ UNWRAPWRAPPER (Double, double)
 UNWRAPWRAPPER (Char, char)
 
 static inline void
-SACARG_common_wrap (SACarg **arg, SAC_array_descriptor_t *desc, void *data,
-                    SAC_array_descriptor_t data_desc, basetype btype)
+SACARG_common_wrap (SACarg **arg, SAC_array_descriptor_t *desc, basetype btype,
+                    void *data, SAC_array_descriptor_t data_desc)
 {
     /*
      * we simply wrap it. As we consume one reference, we have
@@ -408,7 +370,7 @@ SACARG_common_wrap (SACarg **arg, SAC_array_descriptor_t *desc, void *data,
     void SACARGwrap##name (SACarg **arg, SAC_array_descriptor_t *desc, void *data,       \
                            SAC_array_descriptor_t data_desc)                             \
     {                                                                                    \
-        SACARG_common_wrap (arg, desc, data, data_desc, btype);                          \
+        SACARG_common_wrap (arg, desc, btype, data, data_desc);                          \
     }
 
 WRAP (Int, int, T_int)
@@ -421,22 +383,7 @@ void
 SACARGwrapUdt (SACarg **arg, SAC_array_descriptor_t *desc, basetype btype, void *data,
                SAC_array_descriptor_t data_desc)
 {
-    /*
-     * we simply wrap it. As we consume one reference, we have
-     * to decrement the rc. However, SACARGmakeSacArg holds a
-     * new reference, so the RC cannot be 0.
-     */
-    *arg = SACARGmakeSacArg (btype, data_desc, data);
-    int q_waslast;
-    SAC_DESC_DEC_RC_FREE (data_desc, 1, q_waslast);
-    assert (!q_waslast);
-    /*
-     * now we need a descriptor! As SACargs use standard SAC descriptors,
-     * we can use those functions to build one. However, we have to
-     * manually increment the RC by 1!
-     */
-    *desc = SACARGmakeDescriptorVect (0, NULL);
-    SAC_DESC_INC_RC ((*desc), 1);
+    SACARG_common_wrap (arg, desc, btype, data, data_desc);
 }
 
 #define WRAPWRAPPER(name, ctype)                                                         \
@@ -522,13 +469,3 @@ SACARGisUdt (basetype btype, SACarg *arg)
 {
     return (SACARG_BTYPE (arg) == btype);
 }
-
-#if 0
-#if SAC_RC_METHOD == SAC_RCM_local
-#error ok, it is local
-#endif
-
-#if SAC_RC_METHOD == SAC_RCM_local_pasync_norc_desc
-#error ok, it is SAC_RCM_local_pasync_norc_desc
-#endif
-#endif
