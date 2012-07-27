@@ -35,7 +35,6 @@
 #include "minimize_loop_transfers.h"
 #include "minimize_cond_transfers.h"
 #include "minimize_cudast_transfers.h"
-#include "SSALIR.h"
 #include "globals.h"
 #include "wl_descalarization.h"
 

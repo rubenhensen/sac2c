@@ -143,7 +143,7 @@ libsac2c_generics    := remove_generic_definitions \
                         generate_generic_type_conversions
 
 libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
-                        deadcoderemoval SSACSE SSALIR \
+                        deadcoderemoval SSACSE \
                         SSALUR iteration_invariant_parameter_inference \
                         SSAWLUnroll rmcasts \
                         ElimSubDiv wlpropagation UndoElimSubDiv \

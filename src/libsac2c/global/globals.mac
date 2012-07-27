@@ -582,7 +582,7 @@ GLOBAL (bool, dousertrace, FALSE, xfree_dummy)
  * We eventually want to do WL IV renaming all the time.
  * However, we expect problems from doing this, including:
  *   - code generator assumes no renaming
- *   - other optimizations (e.g., SSALIR) make the assumption
+ *   - other optimizations (e.g., DLIR??) make the assumption
  *     that all partitions in WL have identical IV names.
  */
 GLOBAL (bool, ssaiv, FALSE, xfree_dummy)

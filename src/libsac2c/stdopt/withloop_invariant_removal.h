@@ -61,4 +61,4 @@ extern node *WLIRwith (node *arg_node, info *arg_info);
 extern node *WLIRwithid (node *arg_node, info *arg_info);
 extern node *WLIRids (node *arg_node, info *arg_info);
 
-#endif /* _SAC_SSALIR_H_ */
+#endif /* _SAC_WITHLOOP_INVARIANT_REMOVAL_H_ */
