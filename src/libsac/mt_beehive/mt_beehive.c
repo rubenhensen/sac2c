@@ -278,32 +278,35 @@ SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
         }
     }
 
-    /* allocate array of bees; one less than the total number of bees because
-     * the bee #0 is the queen */
-    /* use char* here because C++ doesn't like void* arithmetics but we want
-     * do to byte-size pointer additions... */
-    char *other_bees = SAC_CALLOC ((num_bees - 1), sizeof_bee);
-    if (!other_bees) {
-        SAC_RuntimeError ("Could not allocate memory for an array of bees.");
-    }
-    // memset(other_bees, 0, sizeof_bee * (num_bees - 1));
-
-    /* setup common info in bees */
-    for (unsigned i = 1; i < num_bees; ++i) {
-        /* NOTE: the index below is (i-1) because other_bees[] contains only slave bees,
-         * not the queen bee itself */
-        struct sac_bee_common_t *b
-          = (struct sac_bee_common_t *)(other_bees + sizeof_bee * (i - 1));
-        /* put a bee into hive */
-        hive->bees[i] = b;
-        /* set b->c.global_id */
-        if (SAC_MT_AssignBeeGlobalId (b)) {
-            SAC_RuntimeError ("Could not assign a bee global ID.");
+    if (num_bees > 1) {
+        /* allocate array of bees; one less than the total number of bees because
+         * the bee #0 is the queen */
+        /* use char* here because C++ doesn't like void* arithmetics but we want
+         * do to byte-size pointer additions... */
+        char *other_bees = SAC_CALLOC ((num_bees - 1), sizeof_bee);
+        if (!other_bees) {
+            SAC_RuntimeError ("Could not allocate memory for an array of bees.");
         }
-        /* set bee's data */
-        b->local_id = i;
-        b->thread_id = SAC_PHM_THREADID_INVALID; /* must be assigned within the thread! */
-        b->hive = hive;
+        // memset(other_bees, 0, sizeof_bee * (num_bees - 1));
+
+        /* setup common info in bees */
+        for (unsigned i = 1; i < num_bees; ++i) {
+            /* NOTE: the index below is (i-1) because other_bees[] contains only slave
+             * bees, not the queen bee itself */
+            struct sac_bee_common_t *b
+              = (struct sac_bee_common_t *)(other_bees + sizeof_bee * (i - 1));
+            /* put a bee into hive */
+            hive->bees[i] = b;
+            /* set b->c.global_id */
+            if (SAC_MT_AssignBeeGlobalId (b)) {
+                SAC_RuntimeError ("Could not assign a bee global ID.");
+            }
+            /* set bee's data */
+            b->local_id = i;
+            b->thread_id
+              = SAC_PHM_THREADID_INVALID; /* must be assigned within the thread! */
+            b->hive = hive;
+        }
     }
 
     /* Computing task class of the queen bee. */
@@ -328,10 +331,12 @@ SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
 void
 SAC_MT_Helper_FreeHiveCommons (struct sac_hive_common_t *hive)
 {
-    /* the other_bees ptr below is equal to the identically-named variable in
-     * SAC_MT_Helper_AllocHiveCommons() */
-    struct sac_bee_common_t *other_bees = hive->bees[1];
-    SAC_FREE (other_bees);
+    if (hive->num_bees > 1) {
+        /* the other_bees ptr below is equal to the identically-named variable in
+         * SAC_MT_Helper_AllocHiveCommons() */
+        struct sac_bee_common_t *other_bees = hive->bees[1];
+        SAC_FREE (other_bees);
+    }
 
     /* free the array of pointers */
     SAC_FREE (hive->bees);

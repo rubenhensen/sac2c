@@ -3,6 +3,7 @@
 #include "sacarg.h"
 #include "sac.h"
 #include <stdio.h>
+#include <assert.h>
 
 #include "string.h"
 
@@ -17,6 +18,14 @@
 #if SAC_RC_METHOD == -1
 #error SAC_RC_METHOD is defined to an invalid value!
 #endif
+
+#undef SAC_FREE
+#define SAC_FREE(x) SAC_FREE_dbg (x, sizeof (*(x)))
+#define SAC_FREE_dbg(x, siz)                                                             \
+    {                                                                                    \
+        memset ((x), 0, (siz));                                                          \
+        free ((x));                                                                      \
+    }
 
 /**
  * SACarg structure
@@ -153,7 +162,7 @@ extern void SACARGfreeDataUdt (basetype btype, void *data);
 void
 SACARGfree (SACarg *arg)
 {
-    /*
+    /* Release/free the SACarg structure.
      * We will free one reference to the array, so decrement its RC.
      * The q_waslast flag will indicate if the data should be freed as well.
      */
@@ -218,13 +227,19 @@ extern void *SACARGcopyDataUdt (basetype btype, int size, void *data);
 void *
 SACARGextractData (SACarg *arg)
 {
-    void *result;
+    assert (SAC_DESC_A_RC (SACARG_DESC (arg)) > 0);
 
-    if (SAC_DESC_A_RC (SACARG_DESC (arg)) == 1) {
+    void *result;
+    int q_waslast;
+    SAC_DESC_DEC_RC_FREE (SACARG_DESC (arg), 1, q_waslast);
+
+    if (q_waslast) {
+        /* it was the last reference to the SACarg.
+         * Hence the data may be moved */
         result = SACARG_DATA (arg);
-        SAC_FREE (SACARG_DESC (arg));
-        SAC_FREE (arg);
     } else {
+        /* There are still some references left to the SACarg.
+         * Hence the data must be copied. */
         if (!BTYPE_ISINTERNAL (SACARG_BTYPE (arg))) {
             result = SACARGcopyDataUdt (SACARG_BTYPE (arg), SACARG_SIZE (arg),
                                         SACARG_DATA (arg));
@@ -232,9 +247,28 @@ SACARGextractData (SACarg *arg)
             result = SACARGcopyDataInternal (SACARG_BTYPE (arg), SACARG_SIZE (arg),
                                              SACARG_DATA (arg));
         }
-
-        SACARGfree (arg);
     }
+
+    /* in any case the SACarg itself is released because it has been consumed. */
+    SAC_FREE (arg);
+
+#if 0
+  if (SAC_DESC_A_RC( SACARG_DESC( arg)) == 1) {
+    result = SACARG_DATA( arg);
+    SAC_FREE( SACARG_DESC( arg));
+    SAC_FREE( arg);
+  } else {
+    if (!BTYPE_ISINTERNAL(SACARG_BTYPE( arg))) {
+      result = SACARGcopyDataUdt( SACARG_BTYPE( arg), SACARG_SIZE( arg),
+                                  SACARG_DATA( arg));
+    } else {
+      result = SACARGcopyDataInternal( SACARG_BTYPE( arg), SACARG_SIZE( arg),
+                                       SACARG_DATA( arg));
+    }
+
+    SACARGfree( arg);
+  }
+#endif
 
     return (result);
 }
@@ -289,7 +323,7 @@ SACARG_common_unwrap (void **data, SAC_array_descriptor_t *desc, SACarg *arg,
         /* It was the last ref to the arg_desc, and it is now gone.
          * Remove the SACarg as well, but don't forget to dec.ref. the data also.
          */
-        SAC_DESC_DEC_RC (SACARG_DESC (arg), 1);
+        SAC_DESC_DEC_RC (SACARG_DESC (arg), 1); /* paired with the incref above */
         SAC_FREE (arg);
     }
 }
@@ -329,7 +363,7 @@ SACARGunwrapUdt (void **data, SAC_array_descriptor_t *desc, SACarg *arg,
     SAC_DESC_DEC_RC_FREE (arg_desc, 1, q_waslast);
 
     if (q_waslast) {
-        SAC_DESC_DEC_RC (SACARG_DESC (arg), 1);
+        SAC_DESC_DEC_RC (SACARG_DESC (arg), 1); /* paired with the incref above */
         SAC_FREE (arg);
     }
 }
@@ -353,18 +387,21 @@ SACARG_common_wrap (SACarg **arg, SAC_array_descriptor_t *desc, void *data,
 {
     /*
      * we simply wrap it. As we consume one reference, we have
-     * to decrement the rc. However, SACARGmakeSacArg holds a
-     * new reference, so the RC cannot be 0.
+     * to decrement the rc.
+     * SACARGmakeSacArg holds a new reference, but it is potentially
+     * an asynchronous copy, hence we need to use the full dec.ref. operation.
      */
     *arg = SACARGmakeSacArg (btype, data_desc, data);
-    SAC_DESC_DEC_RC (data_desc, 1);
+    int q_waslast;
+    SAC_DESC_DEC_RC_FREE (data_desc, 1, q_waslast);
+    assert (!q_waslast);
     /*
      * now we need a descriptor! As SACargs use standard SAC descriptors,
      * we can use those functions to build one. However, we have to
      * manually increment the RC by 1!
      */
     *desc = SACARGmakeDescriptorVect (0, NULL);
-    SAC_DESC_INIT_RC ((*desc), 1);
+    SAC_DESC_INC_RC ((*desc), 1);
 }
 
 #define WRAP(name, ctype, btype)                                                         \
@@ -390,7 +427,9 @@ SACARGwrapUdt (SACarg **arg, SAC_array_descriptor_t *desc, basetype btype, void 
      * new reference, so the RC cannot be 0.
      */
     *arg = SACARGmakeSacArg (btype, data_desc, data);
-    SAC_DESC_DEC_RC (data_desc, 1);
+    int q_waslast;
+    SAC_DESC_DEC_RC_FREE (data_desc, 1, q_waslast);
+    assert (!q_waslast);
     /*
      * now we need a descriptor! As SACargs use standard SAC descriptors,
      * we can use those functions to build one. However, we have to

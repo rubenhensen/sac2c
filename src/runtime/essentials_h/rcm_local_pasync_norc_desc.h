@@ -85,6 +85,8 @@
 #define SAC_ND_DEC_RC__DEFAULT(var_NT, rc)                                               \
     {                                                                                    \
         SAC_RC_PRINT (var_NT);                                                           \
+        SAC_ASSERT_RC (DESC_RC (SAC_ND_A_DESC (var_NT)) > 1,                             \
+                       "SAC_ND_DEC_RC called but RC is <= 1");                           \
         if (DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_LOCAL) {           \
             SAC_ND_DEC_RC__C99 (var_NT, rc);                                             \
         } else if (DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) == SAC_DESC_RC_MODE_NORC) {     \
@@ -96,6 +98,7 @@
 
 #define SAC_DESC_DEC_RC(desc, rc)                                                        \
     {                                                                                    \
+        SAC_ASSERT_RC (DESC_RC (desc) > 1, "SAC_DESC_DEC_RC called but RC is <= 1");     \
         if (DESC_RC_MODE (desc) == SAC_DESC_RC_MODE_LOCAL) {                             \
             SAC_DESC_DEC_RC__C99 (desc, rc);                                             \
         } else if (DESC_RC_MODE (desc) == SAC_DESC_RC_MODE_NORC) {                       \
@@ -139,8 +142,7 @@
         SAC_RC_PRINT (var_NT);                                                           \
         if ((SAC_ND_A_RC__C99 (var_NT) -= rc) == 0) {                                    \
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
-            SAC_DEC_FREE_PARENT__ASYNC_RC (var_NT)                                       \
-            SAC_ND_FREE (var_NT, freefun)                                                \
+            SAC_DEC_FREE_PARENT__ASYNC_RC (var_NT, freefun)                              \
         } else {                                                                         \
             SAC_TR_REF_PRINT_RC (var_NT)                                                 \
         }                                                                                \
@@ -149,9 +151,7 @@
 #define SAC_DESC_DEC_RC_FREE__ASYNC_RC(desc, rc, q_waslast)                              \
     {                                                                                    \
         if ((DESC_RC (desc) -= rc) == 0) {                                               \
-            SAC_DESC_DEC_FREE_PARENT__ASYNC_RC (desc)                                    \
-            SAC_FREE (desc);                                                             \
-            q_waslast = 1;                                                               \
+            SAC_DESC_DEC_FREE_PARENT__ASYNC_RC (desc, q_waslast);                        \
         } else {                                                                         \
             q_waslast = 0;                                                               \
         }                                                                                \
@@ -160,20 +160,25 @@
 /* the decrement is perfomed on the parent asynchronous descriptor,
  * hence it must be done with an atomic operation.
  * This is called when the child is going away.
- * Free the parent when it was the last child. */
-#define SAC_DEC_FREE_PARENT__ASYNC_RC(var_NT)                                            \
+ * Free the parent and data when it was the last child. */
+#define SAC_DEC_FREE_PARENT__ASYNC_RC(var_NT, freefun)                                   \
     {                                                                                    \
         SAC_ND_DESC_PARENT_TYPE parent = SAC_ND_A_DESC_PARENT (var_NT);                  \
         if (__sync_sub_and_fetch (&PARENT_DESC_NCHILD (parent), 1) == 0) {               \
+            SAC_ND_FREE (var_NT, freefun)                                                \
             free (parent);                                                               \
         }                                                                                \
     }
 
-#define SAC_DESC_DEC_FREE_PARENT__ASYNC_RC(desc)                                         \
+#define SAC_DESC_DEC_FREE_PARENT__ASYNC_RC(desc, q_waslast)                              \
     {                                                                                    \
         SAC_ND_DESC_PARENT_TYPE parent = (SAC_ND_DESC_PARENT_TYPE)DESC_PARENT (desc);    \
         if (__sync_sub_and_fetch (&PARENT_DESC_NCHILD (parent), 1) == 0) {               \
             free (parent);                                                               \
+            SAC_FREE (desc);                                                             \
+            q_waslast = 1;                                                               \
+        } else {                                                                         \
+            q_waslast = 0;                                                               \
         }                                                                                \
     }
 
@@ -318,7 +323,7 @@
                 SAC_RC_PARENT_INC_SYNC (array);                                          \
             }                                                                            \
             SAC_ND_A_COPY_DESC (new, array);                                             \
-            DESC_RC (SAC_ND_A_DESC (new)) = 0;                                           \
+            DESC_RC (SAC_ND_A_DESC (new)) = 1;                                           \
             SAC_ND_DEC_RC__DEFAULT (array, 1);                                           \
             SAC_IF_DEBUG_RC (printf ("copy from %p to %p\n",                             \
                                      SAC_ND_GETVAR (array, SAC_ND_A_DESC (array)),       \
@@ -349,7 +354,7 @@
                 SAC_DESC_RC_PARENT_INC_SYNC (arrayd);                                    \
             }                                                                            \
             SAC_DESC_COPY_DESC (newd, arrayd);                                           \
-            DESC_RC (newd) = 0;                                                          \
+            DESC_RC (newd) = 1;                                                          \
             SAC_DESC_DEC_RC (arrayd, 1);                                                 \
             SAC_IF_DEBUG_RC (printf ("copy from %p to %p\n", arrayd, newd););            \
         }                                                                                \

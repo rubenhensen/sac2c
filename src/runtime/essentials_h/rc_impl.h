@@ -37,6 +37,7 @@
  ******************************************************************************/
 
 #if SAC_DEBUG_RC
+/** debug builds: sac2c -debug_rc */
 #include <stdio.h>
 #define SAC_RC_PRINT(var_NT)                                                             \
     fprintf (stddebug, " ");                                                             \
@@ -46,15 +47,19 @@
             (void *)SAC_ND_A_DESC (var_NT)[1], (int)SAC_ND_A_DESC (var_NT)[2]);
 
 #define SAC_IF_DEBUG_RC(a) a
-#else /* SAC_DEBUG_RC */
-#define SAC_RC_PRINT(var_NT)
-#define SAC_IF_DEBUG_RC(a)
-#endif /* SAC_DEBUG_RC */
 
 #define SAC_ASSERT_RC(cond, ...)                                                         \
     if (!(cond)) {                                                                       \
         SAC_RuntimeError (__VA_ARGS__);                                                  \
     }
+
+#else /* SAC_DEBUG_RC */
+/** normal builds */
+#define SAC_RC_PRINT(var_NT)
+#define SAC_IF_DEBUG_RC(a)
+#define SAC_ASSERT_RC(cond, ...)
+
+#endif /* SAC_DEBUG_RC */
 
 /** =========================================================================== */
 
