@@ -42,6 +42,7 @@ struct INFO {
     node *freeassigns;
     bool allocneeded;
     bool restore;
+    bool inwiths;
 };
 
 /**
@@ -53,6 +54,7 @@ struct INFO {
 #define INFO_FREEASSIGNS(n) ((n)->freeassigns)
 #define INFO_ALLOCNEEDED(n) ((n)->allocneeded)
 #define INFO_RESTORE(n) ((n)->restore)
+#define INFO_INWITHS(n) ((n)->inwiths)
 
 /**
  * INFO functions
@@ -72,6 +74,7 @@ MakeInfo (void)
     INFO_FREEASSIGNS (result) = NULL;
     INFO_ALLOCNEEDED (result) = FALSE;
     INFO_RESTORE (result) = FALSE;
+    INFO_INWITHS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -201,8 +204,56 @@ MTRMIassign (node *arg_node, info *arg_info)
         }
     });
 
-    ASSIGN_NEXT (arg_node) = TCappendAssign (free_assigns, ASSIGN_NEXT (arg_node));
-    arg_node = TCappendAssign (alloc_assigns, arg_node);
+    if (!INFO_INWITHS (arg_info)) {
+        ASSIGN_NEXT (arg_node) = TCappendAssign (free_assigns, ASSIGN_NEXT (arg_node));
+        arg_node = TCappendAssign (alloc_assigns, arg_node);
+    } else {
+        INFO_ALLOCASSIGNS (arg_info) = alloc_assigns;
+        INFO_FREEASSIGNS (arg_info) = free_assigns;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *MTRMIwiths( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+MTRMIwiths (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
+
+    if (WITHS_NEXT (arg_node) != NULL) {
+        INFO_INWITHS (arg_info) = TRUE;
+        WITHS_NEXT (arg_node) = TRAVdo (WITHS_NEXT (arg_node), arg_info);
+    } else {
+        INFO_INWITHS (arg_info) = FALSE;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *MTRMIwith( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+
+node *
+MTRMIwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+
+    if (!INFO_INWITHS (arg_info)) {
+        WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -219,7 +270,10 @@ MTRMIwith2 (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
-    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+
+    if (!INFO_INWITHS (arg_info)) {
+        WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

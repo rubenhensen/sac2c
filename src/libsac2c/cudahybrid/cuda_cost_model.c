@@ -313,7 +313,7 @@ CUCMlet (node *arg_node, info *arg_info)
 
     if (INFO_HOSTWL (arg_info) != NULL) {
         LET_EXPR (arg_node)
-          = TBmakeWiths (LET_EXPR (arg_node), TBmakeWiths (INFO_HOSTWL (arg_info), NULL));
+          = TBmakeWiths (INFO_HOSTWL (arg_info), TBmakeWiths (LET_EXPR (arg_node), NULL));
         INFO_HOSTWL (arg_info) = NULL;
     }
 
