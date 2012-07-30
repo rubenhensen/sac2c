@@ -179,7 +179,14 @@ AddPhmLib (str_buf *buffer)
         if ((global.mtmode == MT_none) && (global.backend != BE_omp)) {
             SBUFprint (buffer, ".seq");
         } else {
-            SBUFprint (buffer, ".mt");
+            /* multithreaded */
+            if (global.tool == TOOL_sac2c) {
+                /* standalone; classical mt phm */
+                SBUFprint (buffer, ".mt");
+            } else {
+                /* possibly externally multithreaded (xt) */
+                SBUFprint (buffer, ".xt");
+            }
         }
 
         if (global.runtimecheck.heap) {

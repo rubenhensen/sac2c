@@ -1148,6 +1148,10 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     }
     ARGS_OPTION_END ("numthreads");
 
+    /* only the "-nophm" optimization option is supported in sac4c,
+     * hence parse it manually here */
+    ARGS_FLAG ("nophm", global.optimize.dophm = FALSE;);
+
     /*
      * Options starting with ooooooooooooooooooooooooooooooooooooooooooo
      */
@@ -1224,7 +1228,6 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
     if (global.outfilename == NULL) {
         global.outfilename = STRcpy ("cwrapper");
     }
-    global.optimize.dophm = FALSE;
     global.filetype = FT_cmod;
     if (global.printldflags || global.printccflags) {
         global.verbose_level = 0;
@@ -1236,6 +1239,11 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     if (global.printldflags && global.printccflags) {
         CTIabort ("-ldflags and -ccflags cannot be used simultaneously.");
+    }
+
+    if (global.optimize.dophm) {
+        CTIwarn (
+          "Private Heap Manager in sac4c is experimental! Use -nophm to disable it.");
     }
 
     DBUG_RETURN ();
