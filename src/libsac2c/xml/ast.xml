@@ -574,6 +574,16 @@
         <node name="Return" />
       </travuser>
     </traversal>
+    <traversal id="DISTCOND" name="Create distributed with-loop conditional" default="sons" include="create_dist_wl_cond.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Let" />
+        <node name="Withs" />
+        <node name="With" />
+        <node name="With2" />
+      </travuser>
+    </traversal>
       <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
         <travuser>
           <node name="Ap" />
@@ -3064,6 +3074,7 @@
         <node name="Modarray" />
         <node name="Break" />
         <node name="With2" />
+        <node name="Withs" />
         <node name="Let" />
         <node name="Ret" />
         <node name="Fundef" />

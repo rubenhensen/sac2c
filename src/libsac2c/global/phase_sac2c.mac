@@ -1184,6 +1184,9 @@ SUBPHASE (sspmdls, "Applying SPMD linksign pragma", SSPMDLSdoSetSpmdLinksign,
            || (global.mtmode == MT_lpel)),
           mt)
 
+SUBPHASE (distcond, "Creating distributed with-loop conditionals",
+          DISTCONDdoCreateDistWlCond, global.backend == BE_cudahybrid, mt)
+
 ENDPHASE (mt)
 
 /******************************************************************************/

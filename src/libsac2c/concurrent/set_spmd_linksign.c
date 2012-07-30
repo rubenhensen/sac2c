@@ -451,6 +451,30 @@ SSPMDLSwith2 (node *arg_node, info *arg_info)
 
 /** <!-- ****************************************************************** -->
  *
+ * @fn node *SSPMDLSwiths(node *arg_node, info *arg_info)
+ *
+ *    @brief This function just traverses further into the first with-loop, as
+ *           as all we are only interested in the withops, which are identicall
+ *           among all of them.
+ *
+ *    @param arg_node N_withs node
+ *    @param arg_info INFO structure
+ *
+ *    @return unchanged N_withs node
+ ******************************************************************************/
+
+node *
+SSPMDLSwiths (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!-- ****************************************************************** -->
+ *
  * @fn node *SSPMDLSlet(node *arg_node, info *arg_info)
  *
  *    @brief This function keeps the LHS of the let in the INFO structure just

@@ -18,6 +18,7 @@ extern node *SSPMDLSgenarray (node *arg_node, info *arg_info);
 extern node *SSPMDLSmodarray (node *arg_node, info *arg_info);
 extern node *SSPMDLSbreak (node *arg_node, info *arg_info);
 extern node *SSPMDLSwith2 (node *arg_node, info *arg_info);
+extern node *SSPMDLSwiths (node *arg_node, info *arg_info);
 extern node *SSPMDLSlet (node *arg_node, info *arg_info);
 extern node *SSPMDLSret (node *arg_node, info *arg_info);
 extern node *SSPMDLSfundef (node *arg_node, info *arg_info);
