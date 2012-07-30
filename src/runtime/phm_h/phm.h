@@ -281,12 +281,11 @@ typedef struct arena_t {
  *   state for allocation and de-allocation purposes. This trick allows to leave
  *   the code generator almost untouched when integrating multi-threaded heap
  *   management into sac2c.
- *  FIXME: This is probably no longer correct when we have multi-instance environment.
  */
 
 typedef enum {
-    SAC_HM_single_threaded,
-    SAC_HM_multi_threaded,
+    SAC_HM_single_threaded, /* ST functions */
+    SAC_HM_multi_threaded,  /* MT, XT, SPMD functions */
     SAC_HM_any_threaded
 } SAC_HM_thread_status_t;
 
@@ -365,14 +364,12 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #if SAC_DO_COMPILE_MODULE
 #define SAC_HM_DEFINE()                                                                  \
     SAC_C_EXTERN SAC_HM_arena_t SAC_HM_arenas[][SAC_HM_NUM_ARENAS + 2];
-//   static const unsigned int SAC_MT_mythread = 0;
 #else
 
 #ifdef __cplusplus
 #define SAC_HM_DEFINE()                                                                  \
     SAC_HM_arena_t SAC_HM_arenas[SAC_SET_THREADS_MAX][SAC_HM_NUM_ARENAS + 2]             \
       = SAC_HM_SETUP_ARENAS ();                                                          \
-    /*static const unsigned int SAC_MT_mythread = 0;*/                                   \
     extern const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size           \
       = SAC_SET_INITIAL_MASTER_HEAPSIZE;                                                 \
     extern const SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size           \
@@ -384,7 +381,6 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 #define SAC_HM_DEFINE()                                                                  \
     SAC_HM_arena_t SAC_HM_arenas[SAC_SET_THREADS_MAX][SAC_HM_NUM_ARENAS + 2]             \
       = SAC_HM_SETUP_ARENAS ();                                                          \
-    /*static const unsigned int SAC_MT_mythread = 0; */                                  \
     const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size                  \
       = SAC_SET_INITIAL_MASTER_HEAPSIZE;                                                 \
     const SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size                  \
@@ -394,17 +390,6 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
     const unsigned int SAC_HM_max_worker_threads = SAC_SET_THREADS_MAX - 1;
 #endif /*  __cplusplus */
 #endif
-/*
- * The above definition of SAC_MT_mythread is only done to assure that
- * this variable is always declared. Whenever it is really used to determine
- * the thread ID, this global variable is shadowed by a local identifier.
- * Unfortunately, the heap manager inserts code that references this
- * variable but which is guaranteed to be executed only if SAC_MT_mythread
- * is set correctly. However, to suit the C compiler SAC_MT_mythread must
- * nevertheless exist.
- *
- * The above comment is no longer correct.
- */
 
 #if SAC_DO_CHECK_HEAP
 #define SAC_HM_PRINT() SAC_HM_ShowDiagnostics ();
@@ -557,6 +542,7 @@ SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
 
 #endif /*  0  */
 
+/* APS: arena preselection, enabled by default */
 #if SAC_DO_APS
 
 #if SAC_DO_MSCA

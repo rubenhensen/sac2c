@@ -73,7 +73,7 @@ SAC_MT_DEFINE_LOCK (SAC_HM_diag_counter_lock)
  *
  * description:
  *
- *   This function pre-allocates heap memory for the master thread´s
+ *   This function pre-allocates heap memory for the master thread's
  *   arena of arenas as well as the top arena and initializes
  *   the corresponding data structures.
  *
@@ -85,20 +85,15 @@ SAC_MT_DEFINE_LOCK (SAC_HM_diag_counter_lock)
 void
 SAC_HM_SetupMaster ()
 {
-    SAC_HM_size_byte_t offset, initial_heap_size;
-    SAC_HM_size_byte_t initial_top_arena_size, pagesize;
-    SAC_HM_header_t *freep;
-    char *mem;
-
     /*
      * Prepare initial request for memory from operating system.
      */
 
-    pagesize = getpagesize ();
-    mem = (char *)SBRK (0);
+    SAC_HM_size_byte_t pagesize = getpagesize ();
+    char *mem = (char *)SBRK (0);
     /* Determine heap origin. */
 
-    offset = ((SAC_HM_size_byte_t)mem) % pagesize;
+    SAC_HM_size_byte_t offset = ((SAC_HM_size_byte_t)mem) % pagesize;
     /* Determine offset of heap origin from last memory page boundary. */
 
     if (offset != 0) {
@@ -107,12 +102,12 @@ SAC_HM_SetupMaster ()
     }
 
     /* Compute initial top arena size upon setup time. */
-    initial_top_arena_size
+    SAC_HM_size_byte_t initial_top_arena_size
       = SAC_HM_initial_worker_arena_of_arenas_size * SAC_HM_max_worker_threads
         + SAC_HM_initial_top_arena_size;
 
     /* Compute initial heap size to be requested from operating system. */
-    initial_heap_size
+    SAC_HM_size_byte_t initial_heap_size
       = offset + SAC_HM_initial_master_arena_of_arenas_size + initial_top_arena_size;
 
     mem = (char *)SBRK (initial_heap_size);
@@ -126,11 +121,11 @@ SAC_HM_SetupMaster ()
     DIAG_SET (SAC_HM_heapsize, initial_heap_size);
 
     /*
-     * Allocate master thread´s arena of arenas.
+     * Allocate master thread's arena of arenas.
      */
 
     if (SAC_HM_initial_master_arena_of_arenas_size > 0) {
-        freep = (SAC_HM_header_t *)mem;
+        SAC_HM_header_t *freep = (SAC_HM_header_t *)mem;
 
         SAC_HM_SMALLCHUNK_SIZE (freep)
           = SAC_HM_initial_master_arena_of_arenas_size / SAC_HM_UNIT_SIZE;
@@ -156,7 +151,7 @@ SAC_HM_SetupMaster ()
      */
 
     if (initial_top_arena_size > 0) {
-        freep = (SAC_HM_header_t *)mem;
+        SAC_HM_header_t *freep = (SAC_HM_header_t *)mem;
 
         SAC_HM_LARGECHUNK_SIZE (freep) = initial_top_arena_size / SAC_HM_UNIT_SIZE;
         SAC_HM_LARGECHUNK_ARENA (freep) = &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]);
@@ -179,12 +174,10 @@ SAC_HM_SetupMaster ()
 
 #ifdef DIAG
     {
-        int i;
-
-        for (i = 0; i < SAC_HM_NUM_SMALLCHUNK_ARENAS; i++) {
+        for (int i = 0; i < SAC_HM_NUM_SMALLCHUNK_ARENAS; i++) {
             DIAG_SET_FREEPATTERN_SMALLCHUNK (SAC_HM_arenas[0][i].freelist);
         }
-        for (i = SAC_HM_NUM_SMALLCHUNK_ARENAS; i <= SAC_HM_TOP_ARENA; i++) {
+        for (int i = SAC_HM_NUM_SMALLCHUNK_ARENAS; i <= SAC_HM_TOP_ARENA; i++) {
             DIAG_SET_FREEPATTERN_LARGECHUNK (SAC_HM_arenas[0][i].freelist);
         }
     }
@@ -215,17 +208,12 @@ SAC_HM_SetupMaster ()
 void
 SAC_HM_SetupWorkers (unsigned int num_threads)
 {
-    SAC_HM_size_unit_t units_total, units_per_thread;
-    SAC_HM_header_t *freep;
-    char *mem;
-    int i, t;
-
     /*
      * Initialize worker thread entries in global array of arenas.
      */
 
-    for (t = 1; (unsigned int)t < num_threads; t++) {
-        for (i = 0; i < SAC_HM_NUM_SMALLCHUNK_ARENAS; i++) {
+    for (unsigned t = 1; t < num_threads; t++) {
+        for (int i = 0; i < SAC_HM_NUM_SMALLCHUNK_ARENAS; i++) {
             SAC_HM_arenas[t][i].num = i;
             SAC_HM_arenas[t][i].freelist[0].data1.size = 0;
             SAC_HM_arenas[t][i].freelist[0].data1.arena = &(SAC_HM_arenas[t][i]);
@@ -239,7 +227,7 @@ SAC_HM_SetupWorkers (unsigned int num_threads)
             SAC_HM_ClearDiagCounters (&(SAC_HM_arenas[t][i]));
 #endif
         }
-        for (i = SAC_HM_NUM_SMALLCHUNK_ARENAS; i < SAC_HM_NUM_ARENAS - 1; i++) {
+        for (int i = SAC_HM_NUM_SMALLCHUNK_ARENAS; i < SAC_HM_NUM_ARENAS - 1; i++) {
             SAC_HM_arenas[t][i].num = i;
             SAC_HM_arenas[t][i].freelist[0].data3.prevsize = -1;
             SAC_HM_arenas[t][i].freelist[1].data1.arena = &(SAC_HM_arenas[t][i]);
@@ -260,15 +248,17 @@ SAC_HM_SetupWorkers (unsigned int num_threads)
      */
 
     if (SAC_HM_initial_worker_arena_of_arenas_size > 0) {
-        units_per_thread = SAC_HM_initial_worker_arena_of_arenas_size / SAC_HM_UNIT_SIZE;
+        SAC_HM_size_unit_t units_per_thread
+          = SAC_HM_initial_worker_arena_of_arenas_size / SAC_HM_UNIT_SIZE;
 
-        units_total = units_per_thread * SAC_HM_max_worker_threads + 4;
+        SAC_HM_size_unit_t units_total = units_per_thread * SAC_HM_max_worker_threads + 4;
 
-        mem = (char *)SAC_HM_MallocLargeChunk (units_total,
-                                               &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
+        char *mem
+          = (char *)SAC_HM_MallocLargeChunk (units_total,
+                                             &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
 
-        for (t = 1; (unsigned int)t < num_threads; t++) {
-            freep = (SAC_HM_header_t *)mem;
+        for (unsigned t = 1; t < num_threads; t++) {
+            SAC_HM_header_t *freep = (SAC_HM_header_t *)mem;
 
             SAC_HM_SMALLCHUNK_SIZE (freep) = units_per_thread;
 
@@ -285,7 +275,7 @@ SAC_HM_SetupWorkers (unsigned int num_threads)
             mem += SAC_HM_initial_worker_arena_of_arenas_size;
         }
     } else {
-        for (t = 1; (unsigned int)t < num_threads; t++) {
+        for (unsigned t = 1; t < num_threads; t++) {
             DIAG_SET (SAC_HM_arenas[t][SAC_HM_ARENA_OF_ARENAS].size, 0);
             DIAG_SET (SAC_HM_arenas[t][SAC_HM_ARENA_OF_ARENAS].cnt_bins, 0);
         }
