@@ -240,15 +240,15 @@ CCWBfunbundle (node *arg_node, info *arg_info)
             char *fun_name = FUNDEF_NAME (FUNBUNDLE_FUNDEF (arg_node));
 
             fprintf (INFO_FILE (arg_info),
-                     "  void *self = SAC_MT_CurrentBee();\n"
+                     "  struct sac_bee_common_t *self = SAC_MT_CurrentBee();\n"
                      "  SAChive *stub_hive = NULL;\n"
-                     "  if (!self) {\n"
+                     "  if (!self || !self->hive) {\n"
                      "    static int was_warned = 0;\n"
                      "    if (!was_warned) {\n"
                      "      SAC_RuntimeWarning (\"In %s: there was no hive attached to "
                      "the calling thread!\\n"
-                     "Fixed by creating a one-bee hive. The warning will not be repeated "
-                     "for this function.\");\n"
+                     "    Created a temporary hive of one. The warning will not be "
+                     "repeated for this function.\");\n"
                      "      was_warned = 1;\n"
                      "    }\n"
                      "    stub_hive = SAC_AllocHive(1, 2, NULL, NULL);\n"
@@ -257,7 +257,7 @@ CCWBfunbundle (node *arg_node, info *arg_info)
                      "  }\n",
                      FUNBUNDLE_EXTNAME (arg_node));
 
-            fprintf (INFO_FILE (arg_info), "  %s%s(self, ", CWRAPPER_PREFIX,
+            fprintf (INFO_FILE (arg_info), "  %s%s((void*)self, ", CWRAPPER_PREFIX,
                      STRsubstToken (FUNBUNDLE_EXTNAME (arg_node), STRcat ("__", fun_name),
                                     STRcat ("_CL_XT__", fun_name)));
         } else {
