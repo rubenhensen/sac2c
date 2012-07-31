@@ -60,8 +60,8 @@ unsigned int SAC_MT_hm_aux_threads = 0;
 /* Only a single thread in the environment?
  * This is used to optimize the PHM; when executing ST it does not have
  * to take so many precautions (locks).
- * FIXME: Probably not correct for SAC-as-library MT. But PHM is not used
- *        in that case anyway.
+ * This is True (1) only during parts of execution in stand-alone applications.
+ * In library applications after initialization this is always False (0).
  */
 unsigned int SAC_MT_globally_single = 1;
 
@@ -153,6 +153,21 @@ SAC_COMMON_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
 
 #else /* MT */
 /* !MT */
+
+/******************************************************************************
+ * function:
+ *   unsigned int SAC_MT_Internal_CurrentThreadId(void)
+ *
+ * description:
+ *  Return the Thread ID of the current thread.
+ *  Called from PHM if it does not maintain its own thread ids.
+ ******************************************************************************/
+unsigned int
+SAC_MT_Internal_CurrentThreadId (void)
+{
+    /* this actually won't be used, but satisfy the linker */
+    return 0;
+}
 
 /* global (maximal) number of threads in the environment */
 unsigned int SAC_MT_global_threads = 0;

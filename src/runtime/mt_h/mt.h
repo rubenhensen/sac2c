@@ -141,6 +141,9 @@ SAC_C_EXTERN void SAC_COMMON_MT_SetupInitial (int argc, char *argv[],
                                               unsigned int num_threads,
                                               unsigned int max_threads);
 
+/*  Called from PHM if it does not maintain its own thread ids. */
+SAC_C_EXTERN unsigned int SAC_MT_Internal_CurrentThreadId (void);
+
 /*****************************************************************************/
 
 #else /* SAC_DO_MULTITHREAD */

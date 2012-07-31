@@ -38,6 +38,7 @@ static int dummy_mt_lpel;
 // #define SAC_DO_THREADS_STATIC 1
 #define SAC_DO_COMPILE_MODULE 1
 #define SAC_SET_NUM_SCHEDULERS 10
+#define SAC_DO_PHM 1
 
 #undef SAC_DO_MT_PTHREAD
 #undef SAC_DO_THREADS_STATIC
@@ -199,7 +200,8 @@ ThreadControl (void *arg)
     /* set self bee ptr */
     LpelSetUserData (LpelTaskSelf (), SAC_MT_self);
     /* no destructor for userdata in a slave bee */
-    SAC_MT_self->c.thread_id = SAC_MT_CurrentThreadId ();
+    SAC_MT_self->c.thread_id
+      = (SAC_HM_DiscoversThreads ()) ? SAC_HM_CurrentThreadId () : SAC_MT_self->worker_id;
 
     /* correct worker class */
     while ((SAC_MT_self->c.local_id + SAC_MT_self->c.b_class)
@@ -268,7 +270,8 @@ ThreadControlInitialWorker (void *arg)
     /* set self bee ptr */
     LpelSetUserData (LpelTaskSelf (), SAC_MT_self);
     /* no destructor for userdata in a slave bee */
-    SAC_MT_self->c.thread_id = SAC_MT_CurrentThreadId ();
+    SAC_MT_self->c.thread_id
+      = (SAC_HM_DiscoversThreads ()) ? SAC_HM_CurrentThreadId () : SAC_MT_self->worker_id;
 
     SAC_TR_PRINT (("This is bee G:%d, L:1 with class 0 at LPEL worker W:%d.",
                    SAC_MT_self->c.global_id, SAC_MT_self->worker_id));
@@ -344,16 +347,6 @@ SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
     /* common setup: determine the actual number of threads (cmd line/env var)
      * and set SAC_MT_global_threads */
     SAC_COMMON_MT_SetupInitial (argc, argv, num_threads, max_threads);
-
-    /* init thread-id assignment array, after we know the number of threads. */
-    /* In LPEL we have SAC_MT_global_threads number of workers, plus the main thread.
-     * The main thread layes dormant, the queen is a task running on one of the workers.
-     * Hence, we have (SAC_MT_global_threads+1) threads in total visible to PHM,
-     * but only SAC_MT_global_threads workers/bees.
-     */
-    /* NOTE: SAC_MT_hm_aux_threads used also in the SAC_HM_SETUP() macro */
-    SAC_MT_hm_aux_threads = 1;
-    SAC_MT_InitThreadRegistry (SAC_MT_global_threads + SAC_MT_hm_aux_threads);
 }
 
 /******************************************************************************
@@ -386,10 +379,8 @@ SAC_MT_SetupAsLibraryInitial (void)
      * and set SAC_MT_global_threads */
     SAC_COMMON_MT_SetupInitial (0, NULL, 1024, 1024);
 
-    /* do not initialize the heap manager here */
-    /* mark the thread registry as unused: SAC_MT_CurrentThreadId() will always return 0.
-     * The thread_id field in bees will be invalid (always zero). */
-    SAC_MT_UnusedThreadRegistry ();
+    /* In a library we're never alone. */
+    SAC_MT_globally_single = 0;
 }
 
 /******************************************************************************
@@ -426,9 +417,10 @@ EnsureThreadHasBee (void)
 
     /* set bee's data */
     self->c.local_id = 0;
-    self->c.thread_id = SAC_MT_CurrentThreadId ();
-    self->tsk = LpelTaskSelf ();
     self->worker_id = LpelTaskGetWorkerId (self->tsk);
+    self->c.thread_id
+      = (SAC_HM_DiscoversThreads ()) ? SAC_HM_CurrentThreadId () : self->worker_id;
+    self->tsk = LpelTaskSelf ();
     /* init locks */
     SAC_MT_INIT_START_LCK (self);
     SAC_MT_INIT_BARRIER (self);
@@ -548,8 +540,6 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
 
     /* increment the number of hives in the system */
     if (__sync_add_and_fetch (&SAC_MT_global_num_hives, 1) > 1) {
-        /* we're not single thread any more */
-        SAC_MT_globally_single = 0;
     }
 
     struct sac_hive_lpel_t *hive = CAST_HIVE_COMMON_TO_LPEL (
@@ -728,7 +718,7 @@ SAC_MT_CurrentBee ()
 
 /******************************************************************************
  * function:
- *   unsigned int SAC_Get_Global_ThreadID(void)
+ *   unsigned int SAC_MT_Internal_CurrentThreadId(void)
  *
  * description:
  *  Return the Global Thread ID of the current thread.
@@ -736,9 +726,13 @@ SAC_MT_CurrentBee ()
  *
  ******************************************************************************/
 unsigned int
-SAC_Get_Global_ThreadID (void)
+SAC_MT_Internal_CurrentThreadId (void)
 {
-    return SAC_MT_CurrentThreadId ();
+    if (!SAC_MT_hopefully_under_lpel) {
+        SAC_RuntimeError ("SAC_MT_Internal_CurrentThreadId: called while not in LPEL!");
+    }
+
+    return SAC_MT_CurrentBee ()->thread_id;
 }
 
 /******************************************************************************

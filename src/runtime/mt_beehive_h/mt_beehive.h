@@ -625,14 +625,11 @@ SAC_C_EXTERN struct sac_bee_common_t *SAC_MT_CurrentBee (void);
  * In mt_autothid.c : Automatic Thread Registry
  */
 
-/* Invalid Thread ID */
-#define SAC_PHM_THREADID_INVALID (0xDeadBeef)
+// SAC_C_EXTERN void SAC_MT_InitThreadRegistry(unsigned int num_threads);
+// SAC_C_EXTERN void SAC_MT_UnusedThreadRegistry(void);
 
-SAC_C_EXTERN void SAC_MT_InitThreadRegistry (unsigned int num_threads);
-SAC_C_EXTERN void SAC_MT_UnusedThreadRegistry (void);
-
-SAC_C_EXTERN unsigned int SAC_Get_CurrentBee_GlobalID (void);
-SAC_C_EXTERN unsigned int SAC_MT_CurrentThreadId (void);
+// SAC_C_EXTERN unsigned int SAC_Get_CurrentBee_GlobalID(void);
+// SAC_C_EXTERN unsigned int SAC_MT_CurrentThreadId(void);
 
 /** -- */
 

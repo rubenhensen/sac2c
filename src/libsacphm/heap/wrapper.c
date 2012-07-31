@@ -24,8 +24,6 @@
 
 #include "heapmgr.h"
 
-SAC_C_EXTERN unsigned int SAC_Get_Global_ThreadID (void);
-
 /******************************************************************************
  *
  * function:
@@ -327,7 +325,7 @@ SAC_HM_MallocSmallChunk_at (SAC_HM_size_unit_t units, int arena_num)
          *
         thread_id = *((unsigned int *) pthread_getspecific(SAC_MT_threadid_key));
         */
-        thread_id = SAC_Get_Global_ThreadID ();
+        thread_id = SAC_HM_CurrentThreadId ();
         return (SAC_HM_MallocSmallChunk (units, &(SAC_HM_arenas[thread_id][arena_num])));
     }
 }
@@ -379,7 +377,7 @@ SAC_HM_MallocLargeChunk_at (SAC_HM_size_unit_t units, int arena_num)
          *
         thread_id = *((unsigned int *) pthread_getspecific(SAC_MT_threadid_key));
         */
-        thread_id = SAC_Get_Global_ThreadID ();
+        thread_id = SAC_HM_CurrentThreadId ();
         return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[thread_id][arena_num])));
     }
 }

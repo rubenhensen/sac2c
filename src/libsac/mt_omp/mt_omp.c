@@ -75,8 +75,9 @@ SAC_OMP_SetupInitial (int argc, char *argv[], unsigned int num_threads,
     SAC_COMMON_MT_SetupInitial (argc, argv, num_threads, max_threads);
 }
 
+/* called from PHM if it does not maintain its own thread ids */
 unsigned int
-SAC_Get_Global_ThreadID (void)
+SAC_MT_Internal_CurrentThreadId (void)
 {
     /* return omp_get_thread_num(); */
     return 0;

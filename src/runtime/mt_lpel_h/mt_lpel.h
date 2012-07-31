@@ -186,6 +186,7 @@ static inline void
 SAC_MT_LPEL_do_spmd_execute (struct sac_bee_lpel_t *const SAC_MT_self)
 {
     /* we're not single thread any more */
+    unsigned old_globally_single = SAC_MT_globally_single;
     if (SAC_MT_globally_single) {
         SAC_MT_globally_single = 0;
     }
@@ -201,7 +202,7 @@ SAC_MT_LPEL_do_spmd_execute (struct sac_bee_lpel_t *const SAC_MT_self)
     SAC_MT_self->c.hive->framedata = NULL;
     SAC_MT_self->c.hive->retdata = NULL;
     /* restore global single thread mode only if we're the only hive */
-    if (SAC_MT_global_num_hives == 1) {
+    if (old_globally_single) {
         SAC_MT_globally_single = 1;
     }
 }
@@ -266,7 +267,6 @@ SAC_C_EXTERN void SAC_MT_LPEL_TR_SetupAndRunStandalone (SAC_main_fun_t main_fn,
                                                         int num_schedulers);
 
 SAC_C_EXTERN unsigned int SAC_Get_CurrentBee_GlobalID (void);
-SAC_C_EXTERN unsigned int SAC_Get_Global_ThreadID (void);
 
 #endif /* SAC_DO_MULTITHREAD && SAC_DO_MT_LPEL */
 #endif /* ndef SAC_SIMD_COMPILATION */

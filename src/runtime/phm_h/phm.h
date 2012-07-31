@@ -345,6 +345,13 @@ SAC_C_EXTERN void SAC_HM_CheckAllocPatternAnyChunk (SAC_HM_header_t *addr);
 SAC_C_EXTERN void *SAC_HM_PlaceArray (void *alloc, void *base, long int offset,
                                       long int cache_size);
 
+/* Discovering threads */
+/* Invalid Thread ID */
+#define SAC_HM_THREADID_INVALID (0xDeadBeef)
+
+SAC_C_EXTERN unsigned int SAC_HM_CurrentThreadId (void);
+SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
+
 /*
  * Definition of general macros.
  */

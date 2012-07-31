@@ -50,8 +50,6 @@ SAC_C_EXTERN void SAC_OMP_SetupInitial (int argc, char *argv[], unsigned int num
 
 #define SAC_MT_FINALIZE()
 
-SAC_C_EXTERN unsigned int SAC_Get_Global_ThreadID (void);
-
 #endif /* SAC_DO_MT_OMP */
 
 /*****************************************************************************/

@@ -36,6 +36,7 @@ static int _dummy_mt_beehive;
 #define SAC_DO_COMPILE_MODULE 1
 #define SAC_SET_NUM_SCHEDULERS 10 /* ?? */
 #define SAC_DO_MT_BEEHIVE 1
+#define SAC_DO_PHM 1
 
 // #define SAC_DO_THREADS_STATIC 1      /* ?? */
 
@@ -51,6 +52,7 @@ static int _dummy_mt_beehive;
 // #undef SAC_SET_NUM_SCHEDULERS
 #undef SAC_DO_MT_BEEHIVE
 
+/* TODO remove global ids, they are useless */
 /**
  * Global array of ptrs to all bees in the environment.
  * This is required mainly to keep track which global_id's
@@ -73,6 +75,7 @@ SAC_MT_DEFINE_LOCK (SAC_MT_output_lock)
 
 /* Global number of hives in the environment;
  * ATOMIC ACCESSES ONLY! */
+/* TODO remove */
 unsigned int SAC_MT_global_num_hives = 0;
 
 /* The global singleton queen-bee, used in ST functions in stand-alone programs.
@@ -304,7 +307,7 @@ SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
             /* set bee's data */
             b->local_id = i;
             b->thread_id
-              = SAC_PHM_THREADID_INVALID; /* must be assigned within the thread! */
+              = SAC_HM_THREADID_INVALID; /* must be assigned within the thread! */
             b->hive = hive;
         }
     }

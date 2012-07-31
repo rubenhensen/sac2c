@@ -257,9 +257,23 @@
 #define SAC_DO_MULTITHREAD 1
 #define SAC_DO_THREADS_STATIC 1
 
-#else
+#ifdef PHM_XT
+/* MT and PHM_XT */
+#define SAC_DO_HM_LAZY_FREE 1
+#define SAC_DO_HM_DISCOVER_THREADS 1
+
+#else /* PHM_XT */
+/* MT but not PHM_XT */
+#define SAC_DO_HM_LAZY_FREE 0
+#define SAC_DO_HM_DISCOVER_THREADS 0
+
+#endif /* PHM_XT */
+
+#else /* MT */
 
 #define SAC_DO_MULTITHREAD 0
+#define SAC_DO_HM_LAZY_FREE 0
+#define SAC_DO_HM_DISCOVER_THREADS 0
 
 #endif /*  MT  */
 

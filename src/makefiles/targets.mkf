@@ -381,7 +381,7 @@ libsac_mutc         := reference_counting
 
 libsac_mt           := mt
 
-libsac_mt_beehive   := mt_beehive mt_autothid
+libsac_mt_beehive   := mt_beehive
 
 libsac_mt_pth       := mt_pth_std mt_pth_trace
 
@@ -411,7 +411,11 @@ libsacphm_targets           := libsacphm$(CROSS_VARIANT).seq.a \
                                libsacphm$(CROSS_VARIANT).mt.a \
                                libsacphm$(CROSS_VARIANT).mt.so \
                                libsacphm$(CROSS_VARIANT).mt.diag.a \
-                               libsacphm$(CROSS_VARIANT).mt.diag.so
+                               libsacphm$(CROSS_VARIANT).mt.diag.so \
+                               libsacphm$(CROSS_VARIANT).xt.a \
+                               libsacphm$(CROSS_VARIANT).xt.so \
+                               libsacphm$(CROSS_VARIANT).xt.diag.a \
+                               libsacphm$(CROSS_VARIANT).xt.diag.so
 endif
 libsacphm_targetdir         := lib
 
@@ -426,7 +430,7 @@ libsacphm_sourcedirs        := heap diag opt compat
 
 ###############################################################################
 
-libsacphm_heap      := internal setup wrapper small_chunks large_chunks
+libsacphm_heap      := internal setup wrapper small_chunks large_chunks thread_ids
 
 libsacphm_diag      := diagnostics
 

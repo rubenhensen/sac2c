@@ -384,7 +384,7 @@ codegen/fancy_icm_vars.c: codegen/icm_vars.c
 	@$(ECHO) "  Compiling externally multithreaded diagnostic $($(STYLE)_long) code:  $(notdir $<)"
 	$(HIDE) $(CC_$($(STYLE)_cap)) \
                   $(CC_FLAGS_$($(STYLE)_cap)) $(SETTINGS_$($(STYLE)_cap)) \
-                  $(CC_FLAGS_MT) $(SETTINGS_MT) $(SETTINGS_PTH) $(SETTINGS_DIAG) \
+                  $(CC_FLAGS_MT) $(SETTINGS_XT) $(SETTINGS_PTH) $(SETTINGS_DIAG) \
                   $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
@@ -423,7 +423,7 @@ codegen/fancy_icm_vars.c: codegen/icm_vars.c
 	@$(ECHO) "  Compiling externally multithreaded $($(STYLE)_long) code:  $(notdir $<)"
 	$(HIDE) $(CC_$($(STYLE)_cap)) \
                   $(CC_FLAGS_$($(STYLE)_cap)) $(SETTINGS_$($(STYLE)_cap)) \
-                  $(CC_FLAGS_MT) $(SETTINGS_MT) $(SETTINGS_PTH) \
+                  $(CC_FLAGS_MT) $(SETTINGS_XT) $(SETTINGS_PTH) \
                   $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
@@ -522,7 +522,7 @@ ifneq ($(CROSS_VARIANT),)
 	@$(ECHO) "  Compiling externally multithreaded diagnostic $($(STYLE)_long) code:  $(notdir $<)"
 	$(HIDE) $(CROSS_CC) \
                   $(CC_FLAGS_$($(STYLE)_cap)) $(SETTINGS_$($(STYLE)_cap)) \
-                  $(CC_FLAGS_MT) $(SETTINGS_MT) $(SETTINGS_DIAG) \
+                  $(CC_FLAGS_MT) $(SETTINGS_XT) $(SETTINGS_DIAG) \
                   $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 
@@ -561,7 +561,7 @@ ifneq ($(CROSS_VARIANT),)
 	@$(ECHO) "  Compiling externally multithreaded $($(STYLE)_long) code:  $(notdir $<)"
 	$(HIDE) $(CROSS_CC) \
                   $(CC_FLAGS_$($(STYLE)_cap)) $(SETTINGS_$($(STYLE)_cap)) \
-                  $(CC_FLAGS_MT) $(SETTINGS_MT) \
+                  $(CC_FLAGS_MT) $(SETTINGS_XT) \
                   $(INCDIRS) -o $@ -c $<
 	@$(CLOCK_SKEW_ELIMINATION) 
 

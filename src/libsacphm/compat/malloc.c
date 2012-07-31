@@ -59,7 +59,7 @@
  *
  ******************************************************************************/
 
-SAC_C_EXTERN unsigned int SAC_Get_Global_ThreadID (void);
+SAC_C_EXTERN unsigned int SAC_HM_CurrentThreadId (void);
 static int not_yet_initialized = 1;
 
 /******************************************************************************
@@ -112,7 +112,7 @@ malloc (size_t sz) __throw
           thread_id = *thread_id_ptr;
         }
         */
-        thread_id = SAC_Get_Global_ThreadID ();
+        thread_id = SAC_HM_CurrentThreadId ();
     } else {
         thread_id = 0;
     }

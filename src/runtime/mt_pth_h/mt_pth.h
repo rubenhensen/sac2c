@@ -228,6 +228,7 @@ static inline void
 SAC_MT_PTH_do_spmd_execute (struct sac_bee_pth_t *const SAC_MT_self)
 {
     /* we're not single thread any more */
+    unsigned old_globally_single = SAC_MT_globally_single;
     if (SAC_MT_globally_single) {
         SAC_MT_globally_single = 0;
     }
@@ -241,8 +242,8 @@ SAC_MT_PTH_do_spmd_execute (struct sac_bee_pth_t *const SAC_MT_self)
     CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive)->spmd_fun = NULL;
     SAC_MT_self->c.hive->framedata = NULL;
     SAC_MT_self->c.hive->retdata = NULL;
-    /* restore global single thread mode only if we're the only hive */
-    if (SAC_MT_global_num_hives == 1) {
+    /* restore global single thread mode */
+    if (old_globally_single) {
         SAC_MT_globally_single = 1;
     }
 }
@@ -306,7 +307,6 @@ SAC_C_EXTERN void SAC_MT_PTH_TR_SetupStandalone (int num_schedulers);
 SAC_C_EXTERN void SAC_MT_TR_SetupAsLibraryInitial (void);
 SAC_C_EXTERN void SAC_MT_SetupAsLibraryInitial (void);
 
-SAC_C_EXTERN unsigned int SAC_Get_Global_ThreadID (void);
 SAC_C_EXTERN unsigned int SAC_Get_CurrentBee_GlobalID (void);
 
 #endif /* SAC_DO_MULTITHREAD && SAC_DO_MULTITHREAD && SAC_DO_MT_PTHREAD */

@@ -66,6 +66,7 @@ static int dummy_mt_pth;
 #define SAC_DO_THREADS_STATIC 1
 #define SAC_DO_COMPILE_MODULE 1
 #define SAC_SET_NUM_SCHEDULERS 10
+#define SAC_DO_PHM 1
 
 #include "sac.h"
 
@@ -250,7 +251,8 @@ ThreadControl (void *arg)
     assert (SAC_MT_self->c.local_id >= 2);
 
     pthread_setspecific (SAC_MT_self_bee_key, SAC_MT_self);
-    SAC_MT_self->c.thread_id = SAC_MT_CurrentThreadId ();
+    SAC_MT_self->c.thread_id = (SAC_HM_DiscoversThreads ()) ? SAC_HM_CurrentThreadId ()
+                                                            : SAC_MT_self->c.local_id;
 
     /* correct worker class */
     while ((SAC_MT_self->c.local_id + SAC_MT_self->c.b_class)
@@ -323,7 +325,8 @@ ThreadControlInitialWorker (void *arg)
 
     pthread_setspecific (SAC_MT_self_bee_key, SAC_MT_self);
     SAC_MT_self->c.b_class = 0;
-    SAC_MT_self->c.thread_id = SAC_MT_CurrentThreadId ();
+    SAC_MT_self->c.thread_id = (SAC_HM_DiscoversThreads ()) ? SAC_HM_CurrentThreadId ()
+                                                            : SAC_MT_self->c.local_id;
 
     SAC_TR_PRINT (("This is worker thread L:1, G:%d, T:%d with class 0.",
                    SAC_MT_self->c.global_id, SAC_MT_self->c.thread_id));
@@ -453,9 +456,6 @@ SAC_MT_SetupInitial (int argc, char *argv[], unsigned int num_threads,
     /* common setup: determine the actual number of threads (cmd line/env var)
      * and set SAC_MT_global_threads */
     SAC_COMMON_MT_SetupInitial (argc, argv, num_threads, max_threads);
-
-    /* init thread-id assignment array, after we know the number of threads. */
-    SAC_MT_InitThreadRegistry (SAC_MT_global_threads);
 }
 
 /******************************************************************************
@@ -486,9 +486,8 @@ SAC_MT_SetupAsLibraryInitial (void)
      * and set SAC_MT_global_threads */
     SAC_COMMON_MT_SetupInitial (0, NULL, 1024, 1024);
 
-    /* mark the thread registry as unused: SAC_MT_CurrentThreadId() will always return 0.
-     * The thread_id field in bees will be invalid (always zero). */
-    SAC_MT_UnusedThreadRegistry ();
+    /* In a library we're never alone. */
+    SAC_MT_globally_single = 0;
 }
 
 /******************************************************************************
@@ -523,7 +522,8 @@ EnsureThreadHasBee (void)
 
     /* set bee's data */
     self->c.local_id = 0;
-    self->c.thread_id = SAC_MT_CurrentThreadId ();
+    self->c.thread_id
+      = (SAC_HM_DiscoversThreads ()) ? SAC_HM_CurrentThreadId () : self->c.local_id;
     /* init locks */
     // SAC_MT_INIT_START_LCK(self);
     SAC_MT_INIT_BARRIER (self);
@@ -644,8 +644,6 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
 
     /* increment the number of hives in the system */
     if (__sync_add_and_fetch (&SAC_MT_global_num_hives, 1) > 1) {
-        /* we're not single thread any more */
-        SAC_MT_globally_single = 0;
     }
 
     struct sac_hive_pth_t *hive = CAST_HIVE_COMMON_TO_PTH (
@@ -848,18 +846,22 @@ SAC_MT_CurrentBee ()
 /******************************************************************************
  *
  * function:
- *   unsigned int SAC_Get_Global_ThreadID(void)
+ *   unsigned int SAC_MT_Internal_CurrentThreadId(void)
  *
  * description:
  *
- *  Return the Global Thread ID of the current thread.
- *  Used in PHM.
+ *  Return the Thread ID of the current thread.
+ *  Called from PHM if it does not maintain its own thread ids.
  *
  ******************************************************************************/
 unsigned int
-SAC_Get_Global_ThreadID (void)
+SAC_MT_Internal_CurrentThreadId (void)
 {
-    return SAC_MT_CurrentThreadId ();
+    if (SAC_MT_globally_single) {
+        return 0;
+    } else {
+        return SAC_MT_CurrentBee ()->thread_id;
+    }
 }
 
 /******************************************************************************
