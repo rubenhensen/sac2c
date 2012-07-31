@@ -368,35 +368,36 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
     }
 #endif /* SAC_DO_MULTITHREAD */
 
+/* Pleasing both the C99 and C++ compiler is tiresome. */
+#ifdef __cplusplus
+#define SAC_EXTERN_IF_CPP extern
+#else
+#define SAC_EXTERN_IF_CPP
+#endif
+
+#define SAC_HM_DEFINE__IMPL()                                                            \
+    SAC_HM_arena_t SAC_HM_arenas[SAC_SET_THREADS_MAX][SAC_HM_NUM_ARENAS + 2]             \
+      = SAC_HM_SETUP_ARENAS ();                                                          \
+    SAC_EXTERN_IF_CPP const SAC_HM_size_byte_t                                           \
+      SAC_HM_initial_master_arena_of_arenas_size                                         \
+      = SAC_SET_INITIAL_MASTER_HEAPSIZE;                                                 \
+    SAC_EXTERN_IF_CPP const SAC_HM_size_byte_t                                           \
+      SAC_HM_initial_worker_arena_of_arenas_size                                         \
+      = SAC_SET_INITIAL_WORKER_HEAPSIZE;                                                 \
+    SAC_EXTERN_IF_CPP const SAC_HM_size_byte_t SAC_HM_initial_top_arena_size             \
+      = SAC_SET_INITIAL_UNIFIED_HEAPSIZE;                                                \
+    SAC_EXTERN_IF_CPP const unsigned int SAC_HM_max_worker_threads                       \
+      = SAC_SET_THREADS_MAX - 1;
+
 #if SAC_DO_COMPILE_MODULE
 #define SAC_HM_DEFINE()                                                                  \
     SAC_C_EXTERN SAC_HM_arena_t SAC_HM_arenas[][SAC_HM_NUM_ARENAS + 2];
-#else
 
-#ifdef __cplusplus
-#define SAC_HM_DEFINE()                                                                  \
-    SAC_HM_arena_t SAC_HM_arenas[SAC_SET_THREADS_MAX][SAC_HM_NUM_ARENAS + 2]             \
-      = SAC_HM_SETUP_ARENAS ();                                                          \
-    extern const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size           \
-      = SAC_SET_INITIAL_MASTER_HEAPSIZE;                                                 \
-    extern const SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size           \
-      = SAC_SET_INITIAL_WORKER_HEAPSIZE;                                                 \
-    extern const SAC_HM_size_byte_t SAC_HM_initial_top_arena_size                        \
-      = SAC_SET_INITIAL_UNIFIED_HEAPSIZE;                                                \
-    extern const unsigned int SAC_HM_max_worker_threads = SAC_SET_THREADS_MAX - 1;
-#else /*  __cplusplus */
-#define SAC_HM_DEFINE()                                                                  \
-    SAC_HM_arena_t SAC_HM_arenas[SAC_SET_THREADS_MAX][SAC_HM_NUM_ARENAS + 2]             \
-      = SAC_HM_SETUP_ARENAS ();                                                          \
-    const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size                  \
-      = SAC_SET_INITIAL_MASTER_HEAPSIZE;                                                 \
-    const SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size                  \
-      = SAC_SET_INITIAL_WORKER_HEAPSIZE;                                                 \
-    const SAC_HM_size_byte_t SAC_HM_initial_top_arena_size                               \
-      = SAC_SET_INITIAL_UNIFIED_HEAPSIZE;                                                \
-    const unsigned int SAC_HM_max_worker_threads = SAC_SET_THREADS_MAX - 1;
-#endif /*  __cplusplus */
-#endif
+#else /* SAC_DO_COMPILE_MODULE */
+
+#define SAC_HM_DEFINE() SAC_HM_DEFINE__IMPL ()
+
+#endif /* SAC_DO_COMPILE_MODULE */
 
 #if SAC_DO_CHECK_HEAP
 #define SAC_HM_PRINT() SAC_HM_ShowDiagnostics ();

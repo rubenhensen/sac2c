@@ -41,13 +41,7 @@
 
 #include "heapmgr.h"
 
-int _dummy_thread_ids;
-
 #if SAC_DO_HM_DISCOVER_THREADS
-
-/* Maximal number of threads.
- * Statically compiled in to enable static memory alloc. */
-#define SAC_HM_THREADID_MAX 1024
 
 /**
  * Thread ID Registry structure
@@ -175,8 +169,8 @@ void
 SAC_HM_InitThreadRegistry (void)
 {
     /* We cannot perform (don't want) any malloc() before the phm is initialized! */
-    unsigned int num_threads = SAC_HM_THREADID_MAX;
-    static unsigned prealloc_th_numbers[SAC_HM_THREADID_MAX];
+    unsigned int num_threads = SAC_HM_ASSUME_THREADS_MAX;
+    static unsigned prealloc_th_numbers[SAC_HM_ASSUME_THREADS_MAX];
 
     SAC_TR_PRINT (
       ("Initializing thread registry, expecting max. %d threads.", num_threads));
@@ -297,7 +291,8 @@ SAC_HM_DiscoversThreads (void)
 }
 
 #else /* SAC_DO_HM_DISCOVER_THREADS */
-/** ---------------------------------------------------------------------------- */
+
+/** ****************************************************************************** */
 
 /* non-XT variant: The thread registry is not used. Rely on the MT library to provide
  * its own thread ids. */

@@ -259,23 +259,37 @@
 
 #ifdef PHM_XT
 /* MT and PHM_XT */
-#define SAC_DO_HM_LAZY_FREE 1
+/* The free()'ing thread may not be the same as the malloc()'ing thread. */
+#define SAC_DO_HM_XTHR_FREE 1
+/* There may be other threads in the process than those created by SAC runtime.
+ * Discover and assign IDs autonomously. */
 #define SAC_DO_HM_DISCOVER_THREADS 1
+/* Initialize the library on its own, no dependencies on the other SAC runtime. */
+#define SAC_DO_HM_AUTONOMOUS 1
 
 #else /* PHM_XT */
 /* MT but not PHM_XT */
-#define SAC_DO_HM_LAZY_FREE 0
+#define SAC_DO_HM_XTHR_FREE 0
 #define SAC_DO_HM_DISCOVER_THREADS 0
+#define SAC_DO_HM_AUTONOMOUS 0
 
 #endif /* PHM_XT */
 
 #else /* MT */
 
 #define SAC_DO_MULTITHREAD 0
-#define SAC_DO_HM_LAZY_FREE 0
+#define SAC_DO_HM_XTHR_FREE 0
 #define SAC_DO_HM_DISCOVER_THREADS 0
+#define SAC_DO_HM_AUTONOMOUS 0
 
 #endif /*  MT  */
+
+#if SAC_DO_HM_DISCOVER_THREADS || SAC_DO_HM_AUTONOMOUS
+/* Assumed number of threads: this is only used in sac4c XT variant.
+ * Statically compiled in to enable static memory alloc. */
+#define SAC_HM_ASSUME_THREADS_MAX 512
+
+#endif /* SAC_DO_HM_DISCOVER_THREADS || SAC_DO_HM_AUTONOMOUS */
 
 #define SAC_DO_PHM 1
 #define SAC_COMPILE_SACLIB

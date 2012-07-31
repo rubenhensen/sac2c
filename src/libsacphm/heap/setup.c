@@ -44,6 +44,8 @@ static const SAC_HM_size_unit_t binsize[]
      SAC_HM_ARENA_3_BINSIZE, SAC_HM_ARENA_4_BINSIZE, SAC_HM_ARENA_5_BINSIZE,
      SAC_HM_ARENA_6_BINSIZE, SAC_HM_ARENA_7_BINSIZE, SAC_HM_ARENA_8_BINSIZE};
 
+void SAC_HM_SetupWorkers (unsigned int num_threads);
+
 #endif
 
 /*
@@ -57,6 +59,21 @@ extern const SAC_HM_size_byte_t SAC_HM_initial_master_arena_of_arenas_size;
 extern const SAC_HM_size_byte_t SAC_HM_initial_worker_arena_of_arenas_size;
 extern const SAC_HM_size_byte_t SAC_HM_initial_top_arena_size;
 extern const unsigned int SAC_HM_max_worker_threads;
+
+#if SAC_DO_HM_AUTONOMOUS
+/* sac4c XT variant of the PHM library:
+ * we're on our own, nobody will tell us the parameters nor initialize us.
+ */
+
+#define SAC_SET_THREADS_MAX SAC_HM_ASSUME_THREADS_MAX
+#define SAC_SET_INITIAL_MASTER_HEAPSIZE (1024 * 1024)
+#define SAC_SET_INITIAL_WORKER_HEAPSIZE (1024 * 1024)
+#define SAC_SET_INITIAL_UNIFIED_HEAPSIZE (1024 * 1024)
+
+/* instantiate the global variables right here and now */
+SAC_HM_DEFINE__IMPL ()
+
+#endif /* SAC_DO_HM_AUTONOMOUS */
 
 /*
  * Locks for synchronisation of multi-threaded accesses to global
@@ -187,8 +204,17 @@ SAC_HM_SetupMaster ()
     /*
      * Mark heap manager as initialised.
      * This function call also enforces linking with the standard heap
-     * mangement API compatibility mayer.
+     * mangement API compatibility layer.
      */
+
+#if SAC_DO_HM_AUTONOMOUS
+    /* sac4c XT variant of the PHM library;
+     * This removes the need to call SAC_HM_Setup() in a library */
+
+    /* initialize for the maximal number of threads in the process */
+    SAC_HM_SetupWorkers (SAC_HM_ASSUME_THREADS_MAX);
+
+#endif /* SAC_DO_HM_AUTONOMOUS */
 }
 
 /******************************************************************************
@@ -311,6 +337,15 @@ SAC_HM_ShowDiagnostics ()
 void
 SAC_HM_Setup (unsigned int threads)
 {
+#if SAC_DO_HM_AUTONOMOUS
+    /* sac4c xt variant */
+    SAC_RuntimeWarning (
+      "This PHM variant is autonomous, hence do not call SAC_HM_Setup().\n"
+      "    Statically configured for %d threads.",
+      SAC_HM_ASSUME_THREADS_MAX);
+
+#else /* SAC_DO_HM_AUTONOMOUS */
+    /* normal code */
     if (SAC_HM_GetInitialized ()) {
         SAC_HM_SetupMaster ();
     }
@@ -320,4 +355,5 @@ SAC_HM_Setup (unsigned int threads)
         SAC_HM_SetupWorkers (threads);
     }
 #endif /* MT */
+#endif /* SAC_DO_HM_AUTONOMOUS */
 }

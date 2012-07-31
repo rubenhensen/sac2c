@@ -283,6 +283,7 @@ CCWBfunbundle (node *arg_node, info *arg_info)
             fprintf (INFO_FILE (arg_info), "  if (stub_hive) {\n"
                                            "    stub_hive = SAC_DetachHive();\n"
                                            "    SAC_ReleaseHive(stub_hive);\n"
+                                           "    SAC_ReleaseQueen();\n"
                                            "  }\n");
         }
 
