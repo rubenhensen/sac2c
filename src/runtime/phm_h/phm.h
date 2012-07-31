@@ -148,7 +148,17 @@ typedef struct arena_t {
     SAC_HM_header_t *wilderness;
     SAC_HM_size_unit_t binsize;        /* in units */
     SAC_HM_size_unit_t min_chunk_size; /* in units */
-    unsigned long int size;            /* in bytes */
+
+    /* The list of chunks that are no longer used and ready to be freed.
+     * All updates to the pointer must be atomic; it is accessed asynchronously
+     * in different threads!!
+     * This is only used when SAC_DO_HM_XTHR_FREE is enabled, but the field
+     * is always in the structure to preserve binary compatibility
+     * of the API between different PHM variants (MT, XT). */
+    volatile SAC_HM_header_t *unused_list;
+
+    /* diagnostic info */
+    unsigned long int size; /* in bytes */
     unsigned long int cnt_bins;
     unsigned long int cnt_alloc;
     unsigned long int cnt_alloc_var_size;
@@ -191,13 +201,13 @@ typedef struct arena_t {
 #define SAC_HM_ARENA_OF_SMALL_CHUNKS(n, binsize, mincs)                                  \
     {                                                                                    \
         n, SAC_HM_SMALL_ARENA_FREELIST_BASE (n), SAC_HM_arenas[0][n].freelist, binsize,  \
-          mincs, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0                                \
+          mincs, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0                          \
     }
 
 #define SAC_HM_ARENA_OF_LARGE_CHUNKS(n, binsize, mincs)                                  \
     {                                                                                    \
         n, SAC_HM_LARGE_ARENA_FREELIST_BASE (n), SAC_HM_arenas[0][n].freelist, binsize,  \
-          mincs, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0                                \
+          mincs, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0                          \
     }
 
 #define SAC_HM_SETUP_ARENAS()                                                            \
@@ -781,6 +791,11 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
 #define SAC_DO_INLINE_FREE 0
 
 #if SAC_DO_INLINE_FREE
+
+#if SAC_DO_HM_XTHR_FREE
+#error SAC_DO_INLINE_FREE is incompatible with SAC_DO_HM_XTHR_FREE !
+/* and SAC_DO_INLINE_FREE is a folly anyways */
+#endif
 
 #define SAC_HM_FreeLargeChunk(addr, arena)                                               \
     {                                                                                    \

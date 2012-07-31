@@ -20,8 +20,11 @@
  *****************************************************************************/
 
 #include <stdlib.h>
+#include <assert.h>
 
 #include "heapmgr.h"
+
+static inline void do_free_large_unused_chunks (SAC_HM_arena_t *arena);
 
 /******************************************************************************
  *
@@ -62,6 +65,9 @@ SAC_HM_MallocLargeChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
     SAC_HM_header_t *prevp;
 
     SAC_HM_size_unit_t split_threshold;
+
+    /* SAC_DO_HM_XTHR_FREE: free all the unused chunks */
+    do_free_large_unused_chunks (arena);
 
     DIAG_INC (arena->cnt_alloc);
 
@@ -156,7 +162,7 @@ SAC_HM_MallocLargeChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
          * The wilderness chunk is sufficiently large, so split the requested
          * amount of memory from the bottom of the wilderness chunk.
          * This technique is slightly less efficient than splitting from the top.
-         * However, in the case of the top arena´s wilderness chunk this allows
+         * However, in the case of the top arena's wilderness chunk this allows
          * to extend the wilderness subsequently without unnecessary fragmentation.
          */
 
@@ -337,6 +343,27 @@ SAC_HM_MallocLargeChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
     }
 }
 
+#if SAC_DO_HM_XTHR_FREE
+/* Internal helper function */
+/* Atomically prepend the freep header at the beginning of the unused list
+ * in the arena. */
+static inline void
+push_largechunk_to_arena_unused_list (SAC_HM_header_t *freep, SAC_HM_arena_t *arena)
+{
+    SAC_HM_header_t *their_list;
+    do {
+        /* get the current head of the list */
+        their_list = (SAC_HM_header_t *)arena->unused_list;
+        /* freep becomes the new first element of the list */
+        SAC_HM_LARGECHUNK_NEXTFREE (freep) = their_list;
+        /* atomically swap the old list head (their_list) with the new head (freep).
+         * The __sync function returns false if the swap has been unsuccessful,
+         * indicating an interference from other thread, hence re-try in the case. */
+    } while (!__sync_bool_compare_and_swap (&arena->unused_list, their_list, freep));
+}
+
+#endif
+
 /******************************************************************************
  *
  * function:
@@ -356,6 +383,21 @@ SAC_HM_MallocLargeChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
 
 #define ARRAY_PLACEMENT
 
+/* precondition: current thread == arena thread */
+static inline void
+do_free_large_chunk (SAC_HM_header_t *freep, SAC_HM_arena_t *arena)
+{
+    DIAG_CHECK_ALLOCPATTERN_LARGECHUNK (freep, arena->num);
+    DIAG_SET_FREEPATTERN_LARGECHUNK (freep);
+    DIAG_INC (arena->cnt_free);
+
+    SAC_HM_LARGECHUNK_PREVSIZE (freep + SAC_HM_LARGECHUNK_SIZE (freep))
+      = SAC_HM_LARGECHUNK_SIZE (freep);
+
+    SAC_HM_LARGECHUNK_NEXTFREE (freep) = SAC_HM_LARGECHUNK_NEXTFREE (arena->freelist);
+    SAC_HM_LARGECHUNK_NEXTFREE (arena->freelist) = freep;
+}
+
 void
 SAC_HM_FreeLargeChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
 {
@@ -371,20 +413,63 @@ SAC_HM_FreeLargeChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
         arena = SAC_HM_ADDR_ARENA (addr);
     }
 
-#endif
+#endif /* ARRAY_PLACEMENT */
 
     freep = addr - 2;
 
-    DIAG_CHECK_ALLOCPATTERN_LARGECHUNK (freep, arena->num);
-    DIAG_SET_FREEPATTERN_LARGECHUNK (freep);
-    DIAG_INC (arena->cnt_free);
-
-    SAC_HM_LARGECHUNK_PREVSIZE (freep + SAC_HM_LARGECHUNK_SIZE (freep))
-      = SAC_HM_LARGECHUNK_SIZE (freep);
-
-    SAC_HM_LARGECHUNK_NEXTFREE (freep) = SAC_HM_LARGECHUNK_NEXTFREE (arena->freelist);
-    SAC_HM_LARGECHUNK_NEXTFREE (arena->freelist) = freep;
+#if SAC_DO_HM_XTHR_FREE
+    /* note: current thread is not necessarily the arena thread */
+    /* push the chunk to the unused list */
+    push_largechunk_to_arena_unused_list (freep, arena);
+#else  /* SAC_DO_HM_XTHR_FREE */
+    /* precondition: current thread == arena thread */
+    /* directly free the chunk */
+    do_free_large_chunk (freep, arena);
+#endif /* SAC_DO_HM_XTHR_FREE */
 }
+
+/******************************************************************************
+ *
+ * function:
+ *   void do_free_large_unused_chunks(SAC_HM_arena_t *arena)
+ *
+ * description:
+ *
+ *   Free all chunks in the unused list of the arena.
+ *
+ ******************************************************************************/
+
+#if SAC_DO_HM_XTHR_FREE
+
+/* precondition: current thread == arena thread */
+static inline void
+do_free_large_unused_chunks (SAC_HM_arena_t *arena)
+{
+    SAC_HM_header_t *unused = remove_arena_unused_list (arena);
+
+    while (unused) {
+        /* remember the next in the list as the pointer will be overwriten in the freeing
+         * process */
+        SAC_HM_header_t *next = SAC_HM_LARGECHUNK_NEXTFREE (unused);
+        /* free the unused chunk */
+        do_free_large_chunk (unused, arena);
+        /* move on */
+        unused = next;
+    }
+}
+
+#else
+
+static inline void
+do_free_large_unused_chunks (SAC_HM_arena_t *arena)
+{
+    /* nothing */
+    assert (!arena->unused_list
+            && "arena->unused_list shouldn't be used. "
+               "(Have you tried recompiling the stdlib and your code?)");
+}
+
+#endif
 
 /******************************************************************************
  *

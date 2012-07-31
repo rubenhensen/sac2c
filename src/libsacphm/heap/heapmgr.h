@@ -338,6 +338,27 @@ extern void SAC_HM_SetInitialized (void);
 extern int SAC_HM_GetInitialized (void);
 extern void SAC_HM_SetupMaster (void);
 
+#if SAC_DO_HM_XTHR_FREE
+
+/* Internal helper function */
+/* Atomically pop all elements from the unused list of the arena.
+ * Returns pointer to the head of the list which may be traversed subsequently
+ * using local operations only. */
+static inline SAC_HM_header_t *
+remove_arena_unused_list (SAC_HM_arena_t *arena)
+{
+    SAC_HM_header_t *their_list;
+    do {
+        /* get the current head of the list */
+        their_list = (SAC_HM_header_t *)arena->unused_list;
+        /* swap the head with NULL, thus atomically disconnecting the list
+         * from the unused list of the arena */
+    } while (!__sync_bool_compare_and_swap (&arena->unused_list, their_list, NULL));
+    return their_list;
+}
+
+#endif
+
 #ifdef DIAG
 extern unsigned long int SAC_HM_call_sbrk;
 extern unsigned long int SAC_HM_call_malloc;

@@ -248,6 +248,7 @@ SAC_HM_SetupWorkers (unsigned int num_threads)
             SAC_HM_arenas[t][i].wilderness = SAC_HM_arenas[t][i].freelist;
             SAC_HM_arenas[t][i].binsize = binsize[i];
             SAC_HM_arenas[t][i].min_chunk_size = min_chunk_size[i];
+            SAC_HM_arenas[t][i].unused_list = NULL;
 #ifdef DIAG
             DIAG_SET_FREEPATTERN_SMALLCHUNK (SAC_HM_arenas[t][i].freelist);
             SAC_HM_ClearDiagCounters (&(SAC_HM_arenas[t][i]));
@@ -262,6 +263,7 @@ SAC_HM_SetupWorkers (unsigned int num_threads)
             SAC_HM_arenas[t][i].wilderness = SAC_HM_arenas[t][i].freelist;
             SAC_HM_arenas[t][i].binsize = binsize[i];
             SAC_HM_arenas[t][i].min_chunk_size = min_chunk_size[i];
+            SAC_HM_arenas[t][i].unused_list = NULL;
 #ifdef DIAG
             DIAG_SET_FREEPATTERN_LARGECHUNK (SAC_HM_arenas[t][i].freelist);
             SAC_HM_ClearDiagCounters (&(SAC_HM_arenas[t][i]));

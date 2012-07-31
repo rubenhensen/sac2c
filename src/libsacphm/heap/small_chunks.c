@@ -21,8 +21,11 @@
  *****************************************************************************/
 
 #include <stdlib.h>
+#include <assert.h>
 
 #include "heapmgr.h"
+
+static inline void do_free_small_unused_chunks (SAC_HM_arena_t *arena);
 
 /******************************************************************************
  *
@@ -47,6 +50,9 @@ void *
 SAC_HM_MallocSmallChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
 {
     SAC_HM_header_t *freep, *wilderness;
+
+    /* SAC_DO_HM_XTHR_FREE: free all the unused chunks */
+    do_free_small_unused_chunks (arena);
 
     DIAG_INC (arena->cnt_alloc);
 
@@ -74,7 +80,7 @@ SAC_HM_MallocSmallChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
 
     /*
      * There has been no entry in the free list,
-     * so try to split memory from the arena큦 wilderness chunk.
+     * so try to split memory from the arena's wilderness chunk.
      */
 
     wilderness = arena->wilderness;
@@ -114,7 +120,7 @@ SAC_HM_MallocSmallChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
     /*
      * There has also been not enough space in the wilderness chunk,
      * so we have to allocate a new bin for the given arena and use this as
-     * the arena큦 new wilderness chunk.
+     * the arena's new wilderness chunk.
      * Afterwards, the reqired chunk of memory is cut from the top of the
      * new wilderness chunk and returned to the calling context.
      */
@@ -136,10 +142,31 @@ SAC_HM_MallocSmallChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
     return ((void *)(freep + 1));
 }
 
+#if SAC_DO_HM_XTHR_FREE
+/* Internal helper function */
+/* Atomically prepend the freep header at the beginning of the unused list
+ * in the arena. */
+static inline void
+push_smallchunk_to_arena_unused_list (SAC_HM_header_t *freep, SAC_HM_arena_t *arena)
+{
+    SAC_HM_header_t *their_list;
+    do {
+        /* get the current head of the list */
+        their_list = (SAC_HM_header_t *)arena->unused_list;
+        /* freep becomes the new first element of the list */
+        SAC_HM_SMALLCHUNK_NEXTFREE (freep) = their_list;
+        /* atomically swap the old list head (their_list) with the new head (freep).
+         * The __sync function returns false if the swap has been unsuccessful,
+         * indicating an interference from other thread, hence re-try in the case. */
+    } while (!__sync_bool_compare_and_swap (&arena->unused_list, their_list, freep));
+}
+
+#endif
+
 /******************************************************************************
  *
  * function:
- *   void SAC_HM_FreeSmallChunk(SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
+ *   void do_free_small_chunk(SAC_HM_header_t *freep, SAC_HM_arena_t *arena)
  *
  * description:
  *
@@ -152,13 +179,10 @@ SAC_HM_MallocSmallChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
  *
  ******************************************************************************/
 
-void
-SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
+/* precondition: current thread == arena thread */
+static inline void
+do_free_small_chunk (SAC_HM_header_t *freep, SAC_HM_arena_t *arena)
 {
-    SAC_HM_header_t *freep;
-
-    freep = addr - 1;
-
     DIAG_CHECK_ALLOCPATTERN_SMALLCHUNK (freep, arena->num);
     DIAG_SET_FREEPATTERN_SMALLCHUNK (freep);
     DIAG_INC (arena->cnt_free);
@@ -166,6 +190,69 @@ SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
     SAC_HM_SMALLCHUNK_NEXTFREE (freep) = SAC_HM_SMALLCHUNK_NEXTFREE (arena->freelist);
     SAC_HM_SMALLCHUNK_NEXTFREE (arena->freelist) = freep;
 }
+
+void
+SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
+{
+    /* addr points at the first user byte of the chunk ("returned pointer").
+     * freep points at the proper header start of the small chunks.
+     * nextfree is a field already in the user part, hence we may overwrite/reuse
+     * it here at will. */
+    SAC_HM_header_t *freep = addr - 1;
+
+#if SAC_DO_HM_XTHR_FREE
+    /* note: current thread is not necessarily the arena thread */
+    /* push the chunk to the unused list */
+    push_smallchunk_to_arena_unused_list (freep, arena);
+#else  /* SAC_DO_HM_XTHR_FREE */
+    /* precondition: current thread == arena thread */
+    /* directly free the chunk */
+    do_free_small_chunk (freep, arena);
+#endif /* SAC_DO_HM_XTHR_FREE */
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void do_free_small_unused_chunks(SAC_HM_arena_t *arena)
+ *
+ * description:
+ *
+ *   Free all chunks in the unused list of the arena.
+ *
+ ******************************************************************************/
+
+#if SAC_DO_HM_XTHR_FREE
+
+/* precondition: current thread == arena thread */
+static inline void
+do_free_small_unused_chunks (SAC_HM_arena_t *arena)
+{
+    SAC_HM_header_t *unused = remove_arena_unused_list (arena);
+
+    while (unused) {
+        /* remember the next in the list as the pointer will be overwriten in the freeing
+         * process */
+        SAC_HM_header_t *next = SAC_HM_SMALLCHUNK_NEXTFREE (unused);
+        /* free the unused chunk */
+        do_free_small_chunk (unused, arena);
+        /* move on */
+        unused = next;
+    }
+}
+
+#else
+
+static inline void
+do_free_small_unused_chunks (SAC_HM_arena_t *arena)
+{
+    /* nothing */
+    assert (!arena->unused_list
+            && "arena->unused_list shouldn't be used. "
+               "(Have you tried recompiling the stdlib and your code?)");
+}
+
+#endif
 
 /******************************************************************************
  *
@@ -227,7 +314,7 @@ void *SAC_HM_MallocSmallChunkPresplit( size_unit_t units,
 
   /* 
    * There has been no entry in the free list, 
-   * so try to split memory from the arena큦 wilderness chunk.
+   * so try to split memory from the arena's wilderness chunk.
    */
 
   wilderness = arena->wilderness;
@@ -279,7 +366,7 @@ void *SAC_HM_MallocSmallChunkPresplit( size_unit_t units,
 
   /*
    * Maybe the wilderness chunk is empty after pre-splitting; in this
-   * case, it is removed from the arena큦 representation.
+   * case, it is removed from the arena's representation.
    */
 
   if (firstfreep == wilderness) {
