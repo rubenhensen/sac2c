@@ -1,0 +1,186 @@
+=================================================================
+Using the Private Heap Manager in a foreign code (PHM-XT)
+=================================================================
+
+:Author: Jaroslav Sykora (jsa)
+
+This document describes the XT variant of the SAC Private Heap Manager (PHM).
+The XT variant of the PHM library enables the heap manager to run in a general multithreaded environment.
+The XT variant is *only* used in sac4c-related code: i.e. when the SAC code is linked as a library
+to a foreign C code. The classical standalone SAC applications continue to use the original MT variant
+of the PHM library.
+
+.. important::
+  The PHM code used in SAC standalone multithreaded apps is exactly the same as used to.
+  Hence certain people don't have to get annoyed.
+  The new code is used only when compiling for external use via sac4c.
+  This is a completely new feature which improves on the state of the matter,
+  as previously there was no PHM in sac4c code at all.
+
+
+The sac2c build system compiles the following variants of the PHM library: **SEQ**, **MT**, **XT**.
+For each of them there is a **production** build and a **diagnostic** (diag) build.
+
+.. table:: List of the PHM variants
+
+   ========  =============================  ================  ==================
+   Variant   Description                    Standalone apps   External [sac4c]
+   ========  =============================  ================  ==================
+   SEQ       Purely sequential              yes [no change]   no
+   MT        Standalone multithreaded       yes [no change]   no!
+   XT        Externally multithreaded       if needed         yes!
+   ========  =============================  ================  ==================
+
+
+Physically, the following files are created:
+
+.. code::
+
+  libsacphm$(TARGET).seq.[so|a]
+  libsacphm$(TARGET).seq.diag.[so|a]
+  libsacphm$(TARGET).mt.[so|a]
+  libsacphm$(TARGET).mt.diag.[so|a]
+  libsacphm$(TARGET).xt.[so|a]
+  libsacphm$(TARGET).xt.diag.[so|a]
+
+
+
+Modifications
+---------------
+
+The normal standalone **MT** variant of the PHM library makes the following assumptions about the runtime environment:
+
+1. Only SAC MT runtime ever creates new threads.
+2. Memory allocated in thread X will be eventually freed by the **same** thread X.
+3. The PHM library is explicitly initialised prior to creating any threads.
+
+The assumptions listed above no longer hold when the PHM library is used in a general environment.
+
+The PHM-XT variant enables the following new features in the code to overcome the problematic
+assumptions:
+
+1. **SAC_DO_HM_DISCOVER_THREADS=1**
+    There may be other threads in the process than those created by SAC runtime.
+    Discover and assign IDs autonomously.
+2. **SAC_DO_HM_XTHR_FREE=1**
+    The free()'ing thread may not be the same as the malloc()'ing thread.
+3. **SAC_DO_HM_AUTONOMOUS=1**
+    Initialise the library on its own, no dependencies on the other SAC runtime.
+
+The new features are orthogonal and therefore will be described separately.
+
+
+SAC_DO_HM_DISCOVER_THREADS: Discover and assign thread IDs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The PHM requires that each concurrent thread has its own set of memory pools ('*arenas*').
+This allows threads to allocate and free memory in their arenas without any interference
+from other threads (which would imply synchronisation via locking).
+On start up a set of arenas for a given maximal number of threads is created.
+When any thread later requires a memory allocation via an malloc() call the PHM library must use
+the set of arenas reserved for that particular thread.
+
+Threads are automatically assigned unique ID numbers in the range 0 to max_threads-1,
+where max_threads is given on library initialisation and it must be sufficiently large.
+When threads terminate their unique IDs are released and may be reused later.
+
+The PHM library provides the function in libsacphm/heap/thread_ids.c
+
+.. code:: c
+
+  unsigned int SAC_HM_CurrentThreadId(void)
+
+to determine the unique thread ID for the current thread.
+The function uses the Thread Local Storage (TLS) facility from the pthread library
+to store the thread ID of the current thread.
+If this is the first call in the given thread the value in the TLS slot will be NULL,
+and hence a fresh thread ID is assigned and stored in the TLS slot of the thread.
+Later calls in the given thread will return the same ID.
+When thread terminates a destructor hook function for the TLS slot is executed,
+allowing the PHM library to release the thread ID.
+
+Thread IDs are needed for every memory allocation (but not for memory freeing).
+Code using the legacy malloc() interface cannot directly provide the thread ID,
+hence the TLS slot is used to determine it automatically.
+In native SAC code the thread ID is redundantly kept in thread's contextual data structure (the 'bees')
+and passed directly to the PHM on every call as a normal parameter,
+thus avoiding the TLS overhead.
+
+When the SAC_DO_HM_DISCOVER_THREADS feature is disabled, such as in the PHM-MT variant,
+the SAC MT layer which normally creates the worker threads (bees) also directly assigns
+them the thread IDs.
+
+
+SAC_DO_HM_XTHR_FREE: Cross-thread free()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The normal PHM-MT variant assumes that calls to free() are executed in the same thread
+as the corresponding malloc() that has obtained the memory.
+This assumption allows the heap manager to manipulate the arena data structures 
+of the memory block directly, without any locking.
+
+This limitation is overcome in the PHM-XT variant by splitting the memory freeing procedure into two steps:
+
+1. The memory being freed by the application is marked as 'unused' in its arena.
+   As the target arena may be foreign to the current thread, this operation
+   requires an atomic instruction, but is otherwise cheap.
+
+2. Later on when a potentially different thread that owns the arena tries to allocate in it
+   the unused blocks of the arena are reintegrated into the free list.
+
+
+Technically, the arena structure is extended with a pointer to the list of unused blocks:
+
+.. code:: c
+
+  typedef struct arena_t {
+    ...
+    volatile SAC_HM_header_t *unused_list;
+    ...
+  };
+
+The 'unused_list' is a linked list of blocks that were released by free().
+The blocks are linked via the 'nextfree' field in the SAC_HM_header_t structure.
+As the 'unused_list' field is potentially accessed asynchronously from different threads,
+the linked list must be manipulated using only atomic operations (this is the only field
+in the arena structure which entertains asynchronous accesses).
+Luckily, we only need two simple atomic operations on the list: to push a new element
+at the beginning of the list, and to grab the whole list for a local processing.
+Both operations can be efficiently implemented by the compare-and-swap atomic instruction
+that is built in the gcc [see `gcc atomic instructions`_, function __sync_bool_compare_and_swap()].
+
+The pertinent functions to look for in the code are:
+do_free_small_unused_chunks(), do_free_large_unused_chunks(),
+push_smallchunk_to_arena_unused_list(), push_largechunk_to_arena_unused_list(),
+grab_arena_unused_list().
+
+.. _`gcc atomic instructions`: http://gcc.gnu.org/onlinedocs/gcc-4.1.1/gcc/Atomic-Builtins.html
+
+
+SAC_DO_HM_AUTONOMOUS: Autonomous initialisation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The normal PHM-MT variant requires that the initialisation routine SAC_HM_Setup(int num_threads) be run
+by the application prior to creating any threads.
+Furthermore, a couple of constant global variables must be defined in the main program
+to communicate other parameters that are required by the PHM even before the SAC_HM_Setup() call may be made.
+
+Both the above requirements are technically unpleasant in a general use.
+For the time being we got away with them by simply statically hard-coding the parameters in the source code.
+Simply put:
+  
+.. code:: c
+
+  #if SAC_DO_HM_DISCOVER_THREADS || SAC_DO_HM_AUTONOMOUS
+  /* Assumed number of threads: this is only used in sac4c XT variant.
+   * Statically compiled in to allow static memory allocs. */
+  #define SAC_HM_ASSUME_THREADS_MAX             512
+  
+  #define SAC_SET_INITIAL_MASTER_HEAPSIZE       (1024*1024)
+  #define SAC_SET_INITIAL_WORKER_HEAPSIZE       (1024*1024)
+  #define SAC_SET_INITIAL_UNIFIED_HEAPSIZE      (1024*1024)
+  
+  #endif
+
+
+

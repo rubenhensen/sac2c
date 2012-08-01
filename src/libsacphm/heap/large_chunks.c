@@ -445,7 +445,7 @@ SAC_HM_FreeLargeChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
 static inline void
 do_free_large_unused_chunks (SAC_HM_arena_t *arena)
 {
-    SAC_HM_header_t *unused = remove_arena_unused_list (arena);
+    SAC_HM_header_t *unused = grab_arena_unused_list (arena);
 
     while (unused) {
         /* remember the next in the list as the pointer will be overwriten in the freeing

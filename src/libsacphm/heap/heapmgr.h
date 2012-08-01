@@ -345,7 +345,7 @@ extern void SAC_HM_SetupMaster (void);
  * Returns pointer to the head of the list which may be traversed subsequently
  * using local operations only. */
 static inline SAC_HM_header_t *
-remove_arena_unused_list (SAC_HM_arena_t *arena)
+grab_arena_unused_list (SAC_HM_arena_t *arena)
 {
     SAC_HM_header_t *their_list;
     do {
