@@ -214,7 +214,6 @@ ThreadServeLoop (struct sac_bee_pth_t *SAC_MT_self)
 
         /* wait on start lock: the queen will release it when all is ready
          * for an SPMD execution */
-        // SAC_MT_PTH_acquire_lck(&SAC_MT_self->start_lck);
         SAC_MT_PTH_wait_on_barrier (&SAC_MT_self->start_barr_locfl,
                                     &CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive)
                                        ->start_barr_sharedfl);
@@ -517,9 +516,6 @@ EnsureThreadHasBee (void)
         SAC_RuntimeError ("Could not allocate memory for the first bee.");
     }
 
-    /* init */
-    // memset(self, 0, sizeof(struct sac_bee_pth_t));
-
     /* set bee's data */
     self->c.local_id = 0;
     self->c.thread_id
@@ -527,11 +523,6 @@ EnsureThreadHasBee (void)
     /* init locks */
     // SAC_MT_INIT_START_LCK(self);
     SAC_MT_INIT_BARRIER (self);
-
-    //   if (SAC_MT_AssignBeeGlobalId(&self->c)) {
-    //     /* oops! */
-    //     SAC_RuntimeError( "Could not register the bee!");
-    //   }
 
     /* set key value in this thread */
     if (0 != pthread_setspecific (SAC_MT_self_bee_key, self)) {
@@ -585,11 +576,6 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
     /* start slave bees */
     SAC_MT_PTH_signal_barrier (NULL, &hive->start_barr_sharedfl);
 
-    //   for (unsigned i = 1; i < hive->c.num_bees; ++i) {
-    //     struct sac_bee_pth_t *b = CAST_BEE_COMMON_TO_PTH(hive->c.bees[i]);
-    //     SAC_MT_RELEASE_START_LCK(b);
-    //   }
-
     /* wait on bees until done */
     for (unsigned i = 1; i < hive->c.num_bees; ++i) {
         pthread_join (CAST_BEE_COMMON_TO_PTH (hive->c.bees[i])->pth, NULL);
@@ -597,9 +583,6 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
 
     /* now, all slave bees should be dead; release data */
     for (unsigned i = 1; i < hive->c.num_bees; ++i) {
-        //     SAC_MT_ReleaseBeeGlobalId(hive->c.bees[i]);
-
-        // SAC_MT_PTH_destroy_lck(&CAST_BEE_COMMON_TO_PTH(hive->c.bees[i])->start_lck);
         SAC_MT_PTH_destroy_lck (&CAST_BEE_COMMON_TO_PTH (hive->c.bees[i])->stop_lck);
     }
 
@@ -649,7 +632,6 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
     for (unsigned i = 1; i < hive->c.num_bees; ++i) {
         struct sac_bee_pth_t *b = CAST_BEE_COMMON_TO_PTH (hive->c.bees[i]);
         /* init locks */
-        // SAC_MT_INIT_START_LCK(b);
         SAC_MT_INIT_BARRIER (b);
     }
 
@@ -723,8 +705,6 @@ SAC_MT_ReleaseQueen (void)
     assert (self->c.hive == NULL);
 
     /* release the queen bee structure associated with this thread */
-    //   SAC_MT_ReleaseBeeGlobalId(&self->c);
-    // SAC_MT_PTH_destroy_lck(&self->start_lck);
     SAC_MT_PTH_destroy_lck (&self->stop_lck);
     SAC_FREE (self);
 
@@ -861,143 +841,6 @@ SAC_MT_Internal_CurrentThreadId (void)
     }
 }
 
-/******************************************************************************
- * function:
- *   unsigned int SAC_Get_CurrentBee_GlobalID(void)
- *
- * description:
- *
- *   Return the Global Bee ID of the current thread, if possible.
- *   This is only used for trace prints.
- *
- ******************************************************************************/
-// unsigned int SAC_Get_CurrentBee_GlobalID(void)
-// {
-//   unsigned int result = SAC_MT_INVALID_GLOBAL_ID;
-//   struct sac_bee_pth_t *self = SAC_MT_PTH_determine_self();
-//
-//   if (self) {
-//     result = self->c.global_id;
-//   }
-//
-//   return result;
-// }
-#endif
-
-#if 0
-/******************************************************************************
- *
- * function:
- *   void SAC_MT1_Setup( int num_schedulers)
- *   void SAC_MT1_TR_Setup( int num_schedulers)
- *
- * description:
- *
- *   This function initializes the runtime system for multi-threaded
- *   program execution. The basic steps performed are
- *   - Initialisation of the Scheduler Mutexlocks SAC_MT_TASKLOCKS
- *   - determining the thread class of the master thread,
- *   - creation and initialization of POSIX thread attributes,
- *
- ******************************************************************************/
-#if TRACE
-void SAC_MT1_TR_Setup( int num_schedulers)
-#else
-void SAC_MT1_Setup( int num_schedulers)
-#endif
-{
-  int i,n;
-
-  SAC_TR_PRINT( ("Initializing Tasklocks."));
-
-  for (n=0;n< num_schedulers;n++){
-    pthread_mutex_init( &(SAC_MT_TS_TASKLOCK(n)),NULL);
-    for (i = 0; (unsigned int)i < SAC_MT_threads; i++) {
-      pthread_mutex_init( &(SAC_MT_TASKLOCK_INIT( n, i,num_schedulers)), NULL);
-    }
-  }
-
-  SAC_TR_PRINT( ("Computing thread class of master thread."));
-
-  for (SAC_MT_masterclass = 1;
-       SAC_MT_masterclass < SAC_MT_threads;
-       SAC_MT_masterclass <<= 1);
-
-  SAC_MT_masterclass >>= 1;
-
-  SAC_TR_PRINT( ("Thread class of master thread is %d.",
-                (int) SAC_MT_masterclass));
-
-  if (SAC_MT_threads > 1) {
-
-    SAC_MT1_internal_id = (pthread_t*)SAC_MALLOC( SAC_MT_threads * sizeof(pthread_t));
-
-    if (SAC_MT1_internal_id == NULL) {
-      SAC_RuntimeError( "Unable to allocate memory for internal thread identifiers");
-    }
-
-    SAC_TR_PRINT( ("Setting up POSIX thread attributes"));
-
-    if (0 != pthread_attr_init( &SAC_MT_thread_attribs)) {
-      SAC_RuntimeError( "Unable to initialize POSIX thread attributes");
-    }
-
-    if (0 != pthread_attr_setscope( &SAC_MT_thread_attribs,
-                                    PTHREAD_SCOPE_SYSTEM)) {
-      SAC_RuntimeWarning( "Unable to set POSIX thread attributes to "
-                          "PTHREAD_SCOPE_SYSTEM.\n"
-                          "Probably, your PTHREAD implementation does "
-                          "not support system \n"
-                          "scope threads, i.e. threads are likely not "
-                          "to be executed in \n"
-                          "parallel, but in time-sharing mode.");
-    }
-
-#if ENABLE_HWLOC
-  if (SAC_HWLOC_topology)
-  {
-    int ret;
-    ret = hwloc_set_cpubind(SAC_HWLOC_topology, SAC_HWLOC_cpu_sets[SAC_MT_master_id], HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
-    if (ret == -1)
-    {
-      SAC_RuntimeError(("Could not bind thread"));
-    }
-  }
-#endif
-
-  }
-}
-
-#if !TRACE
-
-static
-void ThreadControl_MT1(void *arg)
-{
-  const unsigned int my_thread_id = (unsigned long int) arg;
-  volatile unsigned int worker_flag = 0;
-
-  pthread_setspecific(SAC_MT_threadid_key, &my_thread_id);
-
-  worker_flag = (*SAC_MT_spmd_function)(my_thread_id, 0, worker_flag);
-}
-
-
-void SAC_MT1_StartWorkers()
-{
-  unsigned long int i;
-
-  for (i=1; i<SAC_MT_threads; i++) {
-    if (0 != pthread_create( &SAC_MT1_internal_id[i],
-                             &SAC_MT_thread_attribs,
-                             (void *(*) (void *)) ThreadControl_MT1,
-                             (void *) (i))) {
-
-      SAC_RuntimeError("Master thread failed to create worker thread #%u", i);
-    }
-  }
-}
-
-#endif
 #endif
 
 #else /* MT */

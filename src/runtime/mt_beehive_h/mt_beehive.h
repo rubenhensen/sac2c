@@ -30,8 +30,6 @@ struct sac_hive_common_t;
  * Bees are worker threads or tasks that can execute an SPMD function.
  */
 struct sac_bee_common_t {
-    /* global_id: a unique bee global ID */
-    //   unsigned            global_id;
     /* local_id: a local (L:) bee ID within its bee-hive.
      * The bee L:0 is always the queen-bee (the master) in the hive. */
     unsigned local_id;
@@ -601,12 +599,6 @@ SAC_C_EXTERN void SAC_MT_BEEHIVE_SetupInitial (int argc, char *argv[],
                                                unsigned int num_threads,
                                                unsigned int max_threads);
 
-// SAC_C_EXTERN int SAC_MT_AssignBeeGlobalId(struct sac_bee_common_t *bee);
-
-// SAC_C_EXTERN int SAC_MT_ReleaseBeeGlobalId(struct sac_bee_common_t *bee);
-
-// SAC_C_EXTERN unsigned int SAC_MT_BeesGrandTotal(void);
-
 SAC_C_EXTERN struct sac_hive_common_t *
 SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,
                                 unsigned sizeof_hive, unsigned sizeof_bee);
@@ -619,16 +611,6 @@ SAC_C_EXTERN struct sac_hive_common_t *
 SAC_MT_Generic_DetachHive (struct sac_bee_common_t *queen);
 
 SAC_C_EXTERN struct sac_bee_common_t *SAC_MT_CurrentBee (void);
-
-/**
- * In mt_autothid.c : Automatic Thread Registry
- */
-
-// SAC_C_EXTERN void SAC_MT_InitThreadRegistry(unsigned int num_threads);
-// SAC_C_EXTERN void SAC_MT_UnusedThreadRegistry(void);
-
-// SAC_C_EXTERN unsigned int SAC_Get_CurrentBee_GlobalID(void);
-// SAC_C_EXTERN unsigned int SAC_MT_CurrentThreadId(void);
 
 /** -- */
 

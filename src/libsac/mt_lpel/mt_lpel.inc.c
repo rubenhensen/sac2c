@@ -426,11 +426,6 @@ EnsureThreadHasBee (void)
     SAC_MT_INIT_START_LCK (self);
     SAC_MT_INIT_BARRIER (self);
 
-    //   if (SAC_MT_AssignBeeGlobalId(&self->c)) {
-    //     /* oops! */
-    //     SAC_RuntimeError( "Could not register the bee!");
-    //   }
-
     SAC_TR_PRINT (
       ("The queen bee is registered as H:%p, W:%d.", self->c.hive, self->worker_id));
 
@@ -497,7 +492,6 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
 
     /* now, all slave bees should be dead; release data */
     for (unsigned i = 1; i < hive->c.num_bees; ++i) {
-        //     SAC_MT_ReleaseBeeGlobalId(hive->c.bees[i]);
 
         LpelBiSemaDestroy (&CAST_BEE_COMMON_TO_LPEL (hive->c.bees[i])->start_lck);
         LpelBiSemaDestroy (&CAST_BEE_COMMON_TO_LPEL (hive->c.bees[i])->stop_lck);
@@ -626,7 +620,6 @@ SAC_MT_ReleaseQueen (void)
     assert (self->c.hive == NULL);
 
     /* release the queen bee structure associated with this thread */
-    //   SAC_MT_ReleaseBeeGlobalId(&self->c);
     LpelBiSemaDestroy (&self->start_lck);
     LpelBiSemaDestroy (&self->stop_lck);
     SAC_FREE (self);
@@ -733,32 +726,6 @@ SAC_MT_Internal_CurrentThreadId (void)
     return SAC_MT_CurrentBee ()->thread_id;
 }
 
-/******************************************************************************
- * function:
- *   unsigned int SAC_Get_CurrentBee_GlobalID(void)
- *
- * description:
- *   Return the Global Bee ID of the current thread, if possible.
- *   This is only used for trace prints.
- *
- ******************************************************************************/
-// unsigned int SAC_Get_CurrentBee_GlobalID(void)
-// {
-//   /* We need to determine the self bee, but cannot simply call
-//   SAC_MT_LPEL_determine_self(),
-//    * because if we're actually not in a LPEL task context, it will segfault.
-//    * Hence we must first check if SAC execution has been already moved under LPEL. */
-//   unsigned int result = SAC_MT_INVALID_GLOBAL_ID;
-//
-//   if (SAC_MT_hopefully_under_lpel) {
-//     struct sac_bee_lpel_t *self = SAC_MT_LPEL_determine_self();
-//     if (self) {
-//       result = self->c.global_id;
-//     }
-//   }
-//
-//   return result;
-// }
 #endif
 
 /** =====================================================================================
