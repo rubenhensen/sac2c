@@ -209,7 +209,7 @@ static void
 ThreadServeLoop (struct sac_bee_pth_t *SAC_MT_self)
 {
     for (;;) {
-        SAC_TR_PRINT (("Worker thread G:%d, L:%d ready.", SAC_MT_self->c.global_id,
+        SAC_TR_PRINT (("Worker thread H:%p, L:%d ready.", SAC_MT_self->c.hive,
                        SAC_MT_self->c.local_id));
 
         /* wait on start lock: the queen will release it when all is ready
@@ -260,9 +260,9 @@ ThreadControl (void *arg)
         SAC_MT_self->c.b_class >>= 1;
     }
 
-    SAC_TR_PRINT (("This is worker thread G:%u, L:%u, T:%u with class %u.",
-                   SAC_MT_self->c.global_id, SAC_MT_self->c.local_id,
-                   SAC_MT_self->c.thread_id, SAC_MT_self->c.b_class));
+    SAC_TR_PRINT (("This is worker thread H:%p, L:%u, T:%u with class %u.",
+                   SAC_MT_self->c.hive, SAC_MT_self->c.local_id, SAC_MT_self->c.thread_id,
+                   SAC_MT_self->c.b_class));
 
     struct sac_hive_pth_t *const hive = CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive);
 
@@ -288,7 +288,7 @@ ThreadControl (void *arg)
     if (SAC_HWLOC_topology) {
         int ret;
         ret = hwloc_set_cpubind (SAC_HWLOC_topology,
-                                 SAC_HWLOC_cpu_sets[SAC_MT_self->c.global_id],
+                                 SAC_HWLOC_cpu_sets[SAC_MT_self->c.local_id],
                                  HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
         if (ret == -1) {
             SAC_RuntimeError (("Could not bind thread"));
@@ -328,8 +328,8 @@ ThreadControlInitialWorker (void *arg)
     SAC_MT_self->c.thread_id = (SAC_HM_DiscoversThreads ()) ? SAC_HM_CurrentThreadId ()
                                                             : SAC_MT_self->c.local_id;
 
-    SAC_TR_PRINT (("This is worker thread L:1, G:%d, T:%d with class 0.",
-                   SAC_MT_self->c.global_id, SAC_MT_self->c.thread_id));
+    SAC_TR_PRINT (("This is worker thread L:1, H:%p, T:%d with class 0.",
+                   SAC_MT_self->c.hive, SAC_MT_self->c.thread_id));
 
     /* start creating other bees */
     struct sac_hive_pth_t *const hive = CAST_HIVE_COMMON_TO_PTH (SAC_MT_self->c.hive);
@@ -354,7 +354,7 @@ ThreadControlInitialWorker (void *arg)
     if (SAC_HWLOC_topology) {
         int ret;
         ret = hwloc_set_cpubind (SAC_HWLOC_topology,
-                                 SAC_HWLOC_cpu_sets[SAC_MT_self->c.global_id],
+                                 SAC_HWLOC_cpu_sets[SAC_MT_self->c.local_id],
                                  HWLOC_CPUBIND_THREAD | HWLOC_CPUBIND_STRICT);
         if (ret == -1) {
             SAC_RuntimeError (("Could not bind thread"));
@@ -528,10 +528,10 @@ EnsureThreadHasBee (void)
     // SAC_MT_INIT_START_LCK(self);
     SAC_MT_INIT_BARRIER (self);
 
-    if (SAC_MT_AssignBeeGlobalId (&self->c)) {
-        /* oops! */
-        SAC_RuntimeError ("Could not register the bee!");
-    }
+    //   if (SAC_MT_AssignBeeGlobalId(&self->c)) {
+    //     /* oops! */
+    //     SAC_RuntimeError( "Could not register the bee!");
+    //   }
 
     /* set key value in this thread */
     if (0 != pthread_setspecific (SAC_MT_self_bee_key, self)) {
@@ -540,6 +540,9 @@ EnsureThreadHasBee (void)
     }
 
     assert (SAC_MT_PTH_determine_self () == self);
+
+    /* increment the number of queens */
+    __sync_add_and_fetch (&SAC_MT_cnt_queen_bees, 1);
 
     return self;
 }
@@ -594,7 +597,7 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
 
     /* now, all slave bees should be dead; release data */
     for (unsigned i = 1; i < hive->c.num_bees; ++i) {
-        SAC_MT_ReleaseBeeGlobalId (hive->c.bees[i]);
+        //     SAC_MT_ReleaseBeeGlobalId(hive->c.bees[i]);
 
         // SAC_MT_PTH_destroy_lck(&CAST_BEE_COMMON_TO_PTH(hive->c.bees[i])->start_lck);
         SAC_MT_PTH_destroy_lck (&CAST_BEE_COMMON_TO_PTH (hive->c.bees[i])->stop_lck);
@@ -602,11 +605,6 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
 
     /* release the memory */
     SAC_MT_Helper_FreeHiveCommons (&hive->c);
-
-    /* decrement the number of hives in the environment */
-    /* FIXME: in a library sac setting we probably don't want to decrement the number of
-     * hives anytime */
-    __sync_sub_and_fetch (&SAC_MT_global_num_hives, 1);
 }
 
 /******************************************************************************
@@ -641,10 +639,6 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
     }
 
     assert (num_bees >= 1);
-
-    /* increment the number of hives in the system */
-    if (__sync_add_and_fetch (&SAC_MT_global_num_hives, 1) > 1) {
-    }
 
     struct sac_hive_pth_t *hive = CAST_HIVE_COMMON_TO_PTH (
       SAC_MT_Helper_AllocHiveCommons (num_bees, num_schedulers,
@@ -729,13 +723,16 @@ SAC_MT_ReleaseQueen (void)
     assert (self->c.hive == NULL);
 
     /* release the queen bee structure associated with this thread */
-    SAC_MT_ReleaseBeeGlobalId (&self->c);
+    //   SAC_MT_ReleaseBeeGlobalId(&self->c);
     // SAC_MT_PTH_destroy_lck(&self->start_lck);
     SAC_MT_PTH_destroy_lck (&self->stop_lck);
     SAC_FREE (self);
 
     /* set self bee ptr */
     pthread_setspecific (SAC_MT_self_bee_key, NULL);
+
+    /* decrement the number of queens */
+    __sync_sub_and_fetch (&SAC_MT_cnt_queen_bees, 1);
 }
 
 /******************************************************************************
@@ -874,18 +871,17 @@ SAC_MT_Internal_CurrentThreadId (void)
  *   This is only used for trace prints.
  *
  ******************************************************************************/
-unsigned int
-SAC_Get_CurrentBee_GlobalID (void)
-{
-    unsigned int result = SAC_MT_INVALID_GLOBAL_ID;
-    struct sac_bee_pth_t *self = SAC_MT_PTH_determine_self ();
-
-    if (self) {
-        result = self->c.global_id;
-    }
-
-    return result;
-}
+// unsigned int SAC_Get_CurrentBee_GlobalID(void)
+// {
+//   unsigned int result = SAC_MT_INVALID_GLOBAL_ID;
+//   struct sac_bee_pth_t *self = SAC_MT_PTH_determine_self();
+//
+//   if (self) {
+//     result = self->c.global_id;
+//   }
+//
+//   return result;
+// }
 #endif
 
 #if 0

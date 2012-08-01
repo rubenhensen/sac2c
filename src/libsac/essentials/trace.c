@@ -35,11 +35,14 @@
 #define SAC_DO_MULTITHREAD 0
 #endif /*  MT  */
 
+#define SAC_DO_PHM 1
+
 #include "sac.h"
 
 #undef SAC_DO_MULTITHREAD
 #undef SAC_DO_MT_PTHREAD
 #undef SAC_DO_THREADS_STATIC
+#undef SAC_DO_PHM
 
 int SAC_TR_array_memcnt = 0;
 int SAC_TR_hidden_memcnt = 0;
@@ -73,12 +76,12 @@ SAC_TR_Print (char *format, ...)
     unsigned int thread_id;
 
     // thread_id_ptr = (unsigned int *) pthread_getspecific( SAC_MT_threadid_key);
-    // thread_id = SAC_Get_Global_ThreadID();
-    thread_id = SAC_Get_CurrentBee_GlobalID ();
+    thread_id = SAC_HM_CurrentThreadId ();
+    //   thread_id = SAC_Get_CurrentBee_GlobalID();
 
     SAC_MT_ACQUIRE_LOCK (SAC_MT_output_lock);
 
-    if (thread_id == SAC_MT_INVALID_GLOBAL_ID) {
+    if (thread_id == SAC_HM_THREADID_INVALID) {
         fprintf (stderr, "TR:??:-> ");
     } else {
         fprintf (stderr, "TR:%2u:-> ", thread_id);

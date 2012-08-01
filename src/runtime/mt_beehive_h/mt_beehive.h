@@ -31,7 +31,7 @@ struct sac_hive_common_t;
  */
 struct sac_bee_common_t {
     /* global_id: a unique bee global ID */
-    unsigned global_id;
+    //   unsigned            global_id;
     /* local_id: a local (L:) bee ID within its bee-hive.
      * The bee L:0 is always the queen-bee (the master) in the hive. */
     unsigned local_id;
@@ -547,7 +547,9 @@ struct sac_hive_common_t {
 
 /* Global number of hives in the environment;
  * Atomic variable! */
-SAC_C_EXTERN unsigned int SAC_MT_global_num_hives;
+SAC_C_EXTERN volatile unsigned int SAC_MT_cnt_hives;
+SAC_C_EXTERN volatile unsigned int SAC_MT_cnt_worker_bees;
+SAC_C_EXTERN volatile unsigned int SAC_MT_cnt_queen_bees;
 
 /* The global singleton queen-bee, used in ST functions in stand-alone programs.
  * In SEQ-only programs and when SAC is initialized as a library for external calls
@@ -560,9 +562,6 @@ SAC_MT_DECLARE_LOCK (SAC_MT_propagate_lock)
 
 /* for message prints */
 SAC_MT_DECLARE_LOCK (SAC_MT_output_lock)
-
-// TODO: is this ever used?
-// SAC_MT_DECLARE_LOCK( SAC_MT_init_lock)
 
 /** Public Functions **/
 /* NOTE: these are in fact defined in specific threading libs (LPEL, PTH) */
@@ -602,11 +601,11 @@ SAC_C_EXTERN void SAC_MT_BEEHIVE_SetupInitial (int argc, char *argv[],
                                                unsigned int num_threads,
                                                unsigned int max_threads);
 
-SAC_C_EXTERN int SAC_MT_AssignBeeGlobalId (struct sac_bee_common_t *bee);
+// SAC_C_EXTERN int SAC_MT_AssignBeeGlobalId(struct sac_bee_common_t *bee);
 
-SAC_C_EXTERN int SAC_MT_ReleaseBeeGlobalId (struct sac_bee_common_t *bee);
+// SAC_C_EXTERN int SAC_MT_ReleaseBeeGlobalId(struct sac_bee_common_t *bee);
 
-SAC_C_EXTERN unsigned int SAC_MT_BeesGrandTotal (void);
+// SAC_C_EXTERN unsigned int SAC_MT_BeesGrandTotal(void);
 
 SAC_C_EXTERN struct sac_hive_common_t *
 SAC_MT_Helper_AllocHiveCommons (unsigned num_bees, unsigned num_schedulers,

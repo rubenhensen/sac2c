@@ -33,15 +33,6 @@ void
 SAC_InitRuntimeSystem (void)
 {
     SAC_MT_SetupAsLibraryInitial ();
-
-#if 0
-  /* FIXME: PHM should be handled orthogonally from SAC_InitRuntimeSystem()
-   *
-   * PHM (Private heap manager) in sac4c setting is disabled because there are assumption
-   * in the generated code about PHM and single-threadeness of a program.
-   */
-  SAC_HM_Setup( SAC_MT_global_threads + SAC_MT_hm_aux_threads);
-#endif
 }
 
 /** <!--********************************************************************-->
@@ -55,10 +46,14 @@ void
 SAC_FreeRuntimeSystem (void)
 {
     /* check there are no hives/bees left behind */
-    unsigned orphans = SAC_MT_BeesGrandTotal ();
-    if (orphans) {
-        SAC_RuntimeWarning ("SAC_FreeRuntimeSystem: There are %u bees still alive!",
-                            orphans);
+    unsigned orphan_hives = SAC_MT_cnt_hives;
+    unsigned orphan_queens = SAC_MT_cnt_queen_bees;
+    unsigned orphan_worker = SAC_MT_cnt_worker_bees;
+
+    if (orphan_hives || orphan_queens || orphan_worker) {
+        SAC_RuntimeWarning ("SAC_FreeRuntimeSystem: There are orphans left behind: %u "
+                            "hives, %u queens, %u workers.",
+                            orphan_hives, orphan_queens, orphan_worker);
     }
 }
 

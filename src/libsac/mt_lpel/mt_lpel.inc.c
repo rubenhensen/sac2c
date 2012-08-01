@@ -111,7 +111,7 @@ SAC_MT_LPEL_determine_self (void)
 static unsigned int
 spmd_kill_lpel_bee (struct sac_bee_lpel_t *const SAC_MT_self)
 {
-    SAC_TR_PRINT (("Bee G:%d, L:%d, W:%d is terminating.", SAC_MT_self->c.global_id,
+    SAC_TR_PRINT (("Bee H:%p, L:%d, W:%d is terminating.", SAC_MT_self->c.hive,
                    SAC_MT_self->c.local_id, SAC_MT_self->worker_id));
     LpelBiSemaSignal (&SAC_MT_self->stop_lck);
     LpelSetUserData (SAC_MT_self->tsk, NULL);
@@ -158,7 +158,7 @@ static
 #endif
 {
     for (;;) {
-        SAC_TR_PRINT (("LPEL-based bee G:%d, L:%d, W:%d ready.", SAC_MT_self->c.global_id,
+        SAC_TR_PRINT (("LPEL-based bee H:%p, L:%d, W:%d ready.", SAC_MT_self->c.hive,
                        SAC_MT_self->c.local_id, SAC_MT_self->worker_id));
 
         /* wait on start lock: the queen will release it when all is ready
@@ -209,9 +209,9 @@ ThreadControl (void *arg)
         SAC_MT_self->c.b_class >>= 1;
     }
 
-    SAC_TR_PRINT (("This is bee G:%u, L:%u with class %u at LPEL worker W:%d.",
-                   SAC_MT_self->c.global_id, SAC_MT_self->c.local_id,
-                   SAC_MT_self->c.b_class, SAC_MT_self->worker_id));
+    SAC_TR_PRINT (("This is bee H:%p, L:%u with class %u at LPEL worker W:%d.",
+                   SAC_MT_self->c.hive, SAC_MT_self->c.local_id, SAC_MT_self->c.b_class,
+                   SAC_MT_self->worker_id));
 
     struct sac_hive_lpel_t *const hive = CAST_HIVE_COMMON_TO_LPEL (SAC_MT_self->c.hive);
 
@@ -273,8 +273,8 @@ ThreadControlInitialWorker (void *arg)
     SAC_MT_self->c.thread_id
       = (SAC_HM_DiscoversThreads ()) ? SAC_HM_CurrentThreadId () : SAC_MT_self->worker_id;
 
-    SAC_TR_PRINT (("This is bee G:%d, L:1 with class 0 at LPEL worker W:%d.",
-                   SAC_MT_self->c.global_id, SAC_MT_self->worker_id));
+    SAC_TR_PRINT (("This is bee H:%p, L:1 with class 0 at LPEL worker W:%d.",
+                   SAC_MT_self->c.hive, SAC_MT_self->worker_id));
     SAC_MT_self->c.b_class = 0;
 
     /* start creating other bees */
@@ -426,13 +426,13 @@ EnsureThreadHasBee (void)
     SAC_MT_INIT_START_LCK (self);
     SAC_MT_INIT_BARRIER (self);
 
-    if (SAC_MT_AssignBeeGlobalId (&self->c)) {
-        /* oops! */
-        SAC_RuntimeError ("Could not register the bee!");
-    }
+    //   if (SAC_MT_AssignBeeGlobalId(&self->c)) {
+    //     /* oops! */
+    //     SAC_RuntimeError( "Could not register the bee!");
+    //   }
 
     SAC_TR_PRINT (
-      ("The queen bee is registered as G:%d, W:%d.", self->c.global_id, self->worker_id));
+      ("The queen bee is registered as H:%p, W:%d.", self->c.hive, self->worker_id));
 
     /* set self bee ptr, and destructor */
     LpelSetUserData (LpelTaskSelf (), self);
@@ -440,6 +440,9 @@ EnsureThreadHasBee (void)
 
     /* postcondition */
     assert (SAC_MT_LPEL_determine_self () == self);
+
+    /* increment the number of queens */
+    __sync_add_and_fetch (&SAC_MT_cnt_queen_bees, 1);
 
     return self;
 }
@@ -494,7 +497,7 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
 
     /* now, all slave bees should be dead; release data */
     for (unsigned i = 1; i < hive->c.num_bees; ++i) {
-        SAC_MT_ReleaseBeeGlobalId (hive->c.bees[i]);
+        //     SAC_MT_ReleaseBeeGlobalId(hive->c.bees[i]);
 
         LpelBiSemaDestroy (&CAST_BEE_COMMON_TO_LPEL (hive->c.bees[i])->start_lck);
         LpelBiSemaDestroy (&CAST_BEE_COMMON_TO_LPEL (hive->c.bees[i])->stop_lck);
@@ -502,11 +505,6 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
 
     /* release the memory */
     SAC_MT_Helper_FreeHiveCommons (&hive->c);
-
-    /* decrement the number of hives in the environment */
-    /* FIXME: in a library sac setting we probably don't want to decrement the number of
-     * hives anytime */
-    __sync_sub_and_fetch (&SAC_MT_global_num_hives, 1);
 }
 
 /******************************************************************************
@@ -538,10 +536,6 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
 
     SAC_TR_PRINT (("Allocating a hive with %d bees.", num_bees));
     assert (num_bees >= 1);
-
-    /* increment the number of hives in the system */
-    if (__sync_add_and_fetch (&SAC_MT_global_num_hives, 1) > 1) {
-    }
 
     struct sac_hive_lpel_t *hive = CAST_HIVE_COMMON_TO_LPEL (
       SAC_MT_Helper_AllocHiveCommons (num_bees, num_schedulers,
@@ -632,7 +626,7 @@ SAC_MT_ReleaseQueen (void)
     assert (self->c.hive == NULL);
 
     /* release the queen bee structure associated with this thread */
-    SAC_MT_ReleaseBeeGlobalId (&self->c);
+    //   SAC_MT_ReleaseBeeGlobalId(&self->c);
     LpelBiSemaDestroy (&self->start_lck);
     LpelBiSemaDestroy (&self->stop_lck);
     SAC_FREE (self);
@@ -640,6 +634,9 @@ SAC_MT_ReleaseQueen (void)
     /* set self bee ptr */
     LpelSetUserData (LpelTaskSelf (), NULL);
     LpelSetUserDataDestructor (LpelTaskSelf (), NULL);
+
+    /* decrement the number of queens */
+    __sync_sub_and_fetch (&SAC_MT_cnt_queen_bees, 1);
 }
 
 /******************************************************************************
@@ -745,24 +742,23 @@ SAC_MT_Internal_CurrentThreadId (void)
  *   This is only used for trace prints.
  *
  ******************************************************************************/
-unsigned int
-SAC_Get_CurrentBee_GlobalID (void)
-{
-    /* We need to determine the self bee, but cannot simply call
-     * SAC_MT_LPEL_determine_self(), because if we're actually not in a LPEL task context,
-     * it will segfault. Hence we must first check if SAC execution has been already moved
-     * under LPEL. */
-    unsigned int result = SAC_MT_INVALID_GLOBAL_ID;
-
-    if (SAC_MT_hopefully_under_lpel) {
-        struct sac_bee_lpel_t *self = SAC_MT_LPEL_determine_self ();
-        if (self) {
-            result = self->c.global_id;
-        }
-    }
-
-    return result;
-}
+// unsigned int SAC_Get_CurrentBee_GlobalID(void)
+// {
+//   /* We need to determine the self bee, but cannot simply call
+//   SAC_MT_LPEL_determine_self(),
+//    * because if we're actually not in a LPEL task context, it will segfault.
+//    * Hence we must first check if SAC execution has been already moved under LPEL. */
+//   unsigned int result = SAC_MT_INVALID_GLOBAL_ID;
+//
+//   if (SAC_MT_hopefully_under_lpel) {
+//     struct sac_bee_lpel_t *self = SAC_MT_LPEL_determine_self();
+//     if (self) {
+//       result = self->c.global_id;
+//     }
+//   }
+//
+//   return result;
+// }
 #endif
 
 /** =====================================================================================
