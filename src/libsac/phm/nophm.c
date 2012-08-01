@@ -143,3 +143,20 @@ SAC_HM_MallocCheck (SAC_HM_size_byte_t size)
 
     return (tmp);
 }
+
+unsigned int
+SAC_HM_CurrentThreadId (void)
+{
+    /* This should never be called as no PHM is installed and the MT should assign ID
+     * itself. */
+    SAC_RuntimeError ("SAC_HM_CurrentThreadId: in -nophm this should not be called!");
+}
+
+int
+SAC_HM_DiscoversThreads (void)
+{
+    /* This informs the MT layer that it has to assign threads IDs to its threads.
+     * The downside is that no other threads than those created by the SAC runtime
+     * are allowed in the environment. */
+    return 0;
+}
