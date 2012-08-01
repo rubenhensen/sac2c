@@ -417,10 +417,11 @@ EnsureThreadHasBee (void)
 
     /* set bee's data */
     self->c.local_id = 0;
+    self->tsk = LpelTaskSelf ();
     self->worker_id = LpelTaskGetWorkerId (self->tsk);
+    /* thread_id: ask the HM or use the worker id */
     self->c.thread_id
       = (SAC_HM_DiscoversThreads ()) ? SAC_HM_CurrentThreadId () : self->worker_id;
-    self->tsk = LpelTaskSelf ();
     /* init locks */
     SAC_MT_INIT_START_LCK (self);
     SAC_MT_INIT_BARRIER (self);

@@ -21,6 +21,7 @@
 
 #undef SAC_FREE
 #define SAC_FREE(x) SAC_FREE_dbg (x, sizeof (*(x)))
+#define SAC_FREE_nrm(x) free ((x));
 #define SAC_FREE_dbg(x, siz)                                                             \
     {                                                                                    \
         memset ((x), 0, (siz));                                                          \
@@ -151,7 +152,7 @@ SACARGmakeSacArg (basetype btype, SAC_array_descriptor_t desc, void *data)
 void
 SACARGfreeDataInternal (basetype btype, void *data)
 {
-    SAC_FREE (data);
+    SAC_FREE_nrm (data);
 }
 
 /*

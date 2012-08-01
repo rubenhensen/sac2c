@@ -172,8 +172,8 @@ SAC_HM_InitThreadRegistry (void)
     unsigned int num_threads = SAC_HM_ASSUME_THREADS_MAX;
     static unsigned prealloc_th_numbers[SAC_HM_ASSUME_THREADS_MAX];
 
-    SAC_TR_PRINT (
-      ("Initializing thread registry, expecting max. %d threads.", num_threads));
+    //   SAC_TR_PRINT( ("Initializing thread registry, expecting max. %d threads.",
+    //                 num_threads));
 
     struct sac_phm_thread_registry_t *const r = &SAC_HM_threads;
     assert (!r->th_numbers && "Thread registry has been already initialized!");
