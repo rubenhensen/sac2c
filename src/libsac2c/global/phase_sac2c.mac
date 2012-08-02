@@ -1033,7 +1033,8 @@ ENDPHASE (fp)
 
 PHASE (mem, "Introducing memory management instructions", ALWAYS)
 
-SUBPHASE (ufiv, "Unshare index vectors in WL-folds", UFIVdoUnshareFoldIV, ALWAYS, mem)
+SUBPHASE (ufiv, "Unshare index vectors in WL-folds", UFIVdoUnshareFoldIV,
+          (global.backend == BE_c99), mem)
 
 SUBPHASE (simd, "SIMD inference", SIMDdoInferSIMD, global.simd, mem)
 
