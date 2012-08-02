@@ -671,14 +671,18 @@ bool
 isNakedConsumer (info *arg_info)
 {
     bool z;
+    char *cwlnm;
 
     DBUG_ENTER ();
+
+    cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
+              ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
+              : "(naked consumer)";
 
     z = INFO_LEVEL (arg_info) == AVIS_DEFDEPTH (ID_AVIS (INFO_PRODUCERWLLHS (arg_info)));
 
     if (z) {
-        DBUG_PRINT ("CWL %s is naked consumer of PWL %s",
-                    AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))),
+        DBUG_PRINT ("CWL %s is naked consumer of PWL %s", cwlnm,
                     AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))));
     }
 
@@ -1815,6 +1819,9 @@ IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node 
  *          If so, then we can blindly perform the AWLF for
  *          this partition.
  *
+ *          This predicate is:
+ *
+ *            z = ( idxavisminbound1 >= bound1) && ( idxavismax <= bound2)
  *
  * @params: idxmin: AVIS_MIN( consumerWL partition index vector)
  * @params: idxmax: AVIS_MAX( consumerWL partition index vector)
@@ -1915,6 +1922,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     constant *kcon;
     node *ivminmax = NULL;
     node *ivid;
+    char *cwlnm;
 
     DBUG_ENTER ();
 
@@ -2044,8 +2052,10 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
         pwlp = PART_NEXT (pwlp);
     }
 
-    DBUG_PRINT ("Built bounds intersect computations for consumer-WL %s",
-                AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))));
+    cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
+              ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
+              : "(naked consumer)";
+    DBUG_PRINT ("Built bounds intersect computations for consumer-WL %s", cwlnm);
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
@@ -2658,8 +2668,13 @@ AWLFIprf (node *arg_node, info *arg_info)
     node *z;
     node *ivavis = NULL;
     node *pwlid;
+    char *cwlnm;
 
     DBUG_ENTER ();
+
+    cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
+              ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
+              : "(naked consumer)";
 
     switch (PRF_PRF (arg_node)) {
     default:
@@ -2696,7 +2711,7 @@ AWLFIprf (node *arg_node, info *arg_info)
                     FREEdoFreeNode (PRF_ARG1 (arg_node));
                     PRF_ARG1 (arg_node) = TBmakeId (z);
                     DBUG_PRINT ("Inserted F_noteintersect into cwl=%s for sel/idx_sel",
-                                AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))));
+                                cwlnm);
                 }
             }
         }
@@ -2706,15 +2721,13 @@ AWLFIprf (node *arg_node, info *arg_info)
         /* Maybe detach invalid intersect calculations now. */
         if (!AWLFIisValidNoteintersect (arg_node, INFO_PRODUCERWLLHS (arg_info))) {
             arg_node = AWLFIdetachNoteintersect (arg_node);
-            DBUG_PRINT ("Detached invalid F_noteintersect from cwl=%s",
-                        AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))));
+            DBUG_PRINT ("Detached invalid F_noteintersect from cwl=%s", cwlnm);
         }
 
         /* Maybe project partitionIntersectMin/Max back from PWL to CWL */
         if (AWLFIisValidNoteintersect (arg_node, INFO_PRODUCERWLLHS (arg_info))) {
             arg_node = BuildInverseProjections (arg_node, arg_info);
-            DBUG_PRINT ("Building inverse projection for cwl=%s",
-                        AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))));
+            DBUG_PRINT ("Building inverse projection for cwl=%s", cwlnm);
         }
         break;
     }
