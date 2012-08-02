@@ -66,11 +66,8 @@
 #include "types.h"
 #include "type_utils.h"
 #include "cuda_utils.h"
-#include "DataFlowMask.h"
-#include "DataFlowMaskUtils.h"
-#include "remove_dfms.h"
-#include "infer_dfms.h"
-#include "NumLookUpTable.h"
+#include "shape.h"
+#include "infer_memory_accesses.h"
 
 /** <!--********************************************************************-->
  *
@@ -81,21 +78,17 @@
 struct INFO {
     node *fundef;
     bool in_wl;
+    bool in_kernel;
     bool cudarizable;
     node *postassigns;
     node *preassigns;
     lut_t *lut;
     node *idxavis;
+    lut_t *access;
 
     node *dist_avis;
-    node *let_expr;
-    bool is_modarr;
-    bool in_cexprs;
-    bool from_ap;
+    nodetype let_expr_ntype;
     node *letids;
-    node *apids;
-    node *topblock;
-    nlut_t *at_nlut;
 };
 
 /*
@@ -103,6 +96,9 @@ struct INFO {
  *
  * INFO_INWL          Flag indicating whether the code currently being
  *                    traversed is in a N_with
+ *
+ * INFO_INKERNEL      Flag indicating whether the code currently being
+ *                    traversed is in a cuda kernel N_fundef
  *
  * INFO_CUDARIZABLE   Flag indicating whether the code currently being
  *                    traversed is in a cudarizable N_with
@@ -119,25 +115,23 @@ struct INFO {
  *
  * INFO_IDXAVIS       Avis of the index vector
  *
+ * INFO_ACCESS        Lookup table with memory access information for each
+ *                    withloop (from IMA subphase).
+ *
  */
 
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_INWL(n) (n->in_wl)
+#define INFO_INKERNEL(n) (n->in_kernel)
 #define INFO_CUDARIZABLE(n) (n->cudarizable)
 #define INFO_POSTASSIGNS(n) (n->postassigns)
 #define INFO_PREASSIGNS(n) (n->preassigns)
 #define INFO_LUT(n) (n->lut)
 #define INFO_IDXAVIS(n) (n->idxavis)
+#define INFO_ACCESS(n) (n->access)
 
 #define INFO_DISTAVIS(n) (n->dist_avis)
-#define INFO_LETEXPR(n) (n->let_expr)
-#define INFO_IS_MODARR(n) (n->is_modarr)
-#define INFO_IN_CEXPRS(n) (n->in_cexprs)
-#define INFO_FROM_AP(n) (n->from_ap)
-#define INFO_LETIDS(n) (n->letids)
-#define INFO_APIDS(n) (n->apids)
-#define INFO_TOPBLOCK(n) (n->topblock)
-#define INFO_AT_NLUT(n) (n->at_nlut)
+#define INFO_LETEXPRNTYPE(n) (n->let_expr_ntype)
 
 static info *
 MakeInfo (void)
@@ -150,19 +144,15 @@ MakeInfo (void)
 
     INFO_FUNDEF (result) = NULL;
     INFO_INWL (result) = FALSE;
+    INFO_INKERNEL (result) = FALSE;
     INFO_POSTASSIGNS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_IDXAVIS (result) = NULL;
+    INFO_ACCESS (result) = NULL;
 
     INFO_DISTAVIS (result) = NULL;
-    INFO_IS_MODARR (result) = FALSE;
-    INFO_IN_CEXPRS (result) = FALSE;
-    INFO_FROM_AP (result) = FALSE;
-    INFO_LETIDS (result) = NULL;
-    INFO_APIDS (result) = NULL;
-    INFO_TOPBLOCK (result) = NULL;
-    INFO_AT_NLUT (result) = NULL;
+    INFO_LETEXPRNTYPE (result) = N_undefined;
 
     DBUG_RETURN (result);
 }
@@ -182,14 +172,11 @@ FreeInfo (info *info)
  *****************************************************************************/
 
 static bool CUisDistributedType (ntype *ty);
-static bool CUisConcreteTypeNew (ntype *ty);
+// static bool CUisConcreteTypeNew( ntype* ty);
 static ntype *DISTNtypeConversion (ntype *dist_type, bool to_dev_type);
 static ntype *TypeConvert (ntype *dist_type, nodetype nty, info *arg_info);
 static void Createdist2conc (node *id, node *host_avis, node *dev_avis, info *arg_info);
 // static void Createdistcont( node *dist_avis, info *arg_info);
-static node *ATravWith (node *arg_node, info *arg_info);
-static node *ATravId (node *arg_node, info *arg_info);
-static node *ATravGenarray (node *arg_node, info *arg_info);
 
 /** <!--********************************************************************-->
  *
@@ -253,28 +240,28 @@ CUisDistributedType (ntype *ty)
     DBUG_RETURN (res);
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node* CUisConcreteTypeNew( ntype* ty)
- *
- * @brief Returns whether ty is a concrete type or not
- *
- *****************************************************************************/
-static bool
-CUisConcreteTypeNew (ntype *ty)
-{
-    bool res;
-    simpletype conc_type;
-
-    DBUG_ENTER ();
-    conc_type = TYgetSimpleType (TYgetScalar (ty));
-
-    res = (conc_type == T_float_dev || conc_type == T_int_dev || conc_type == T_double_dev
-           || conc_type == T_float || conc_type == T_int || conc_type == T_double);
-
-    DBUG_RETURN (res);
-}
-
+///** <!--********************************************************************-->
+// *
+// * @fn node* CUisConcreteTypeNew( ntype* ty)
+// *
+// * @brief Returns whether ty is a concrete type or not
+// *
+// *****************************************************************************/
+// static bool CUisConcreteTypeNew( ntype* ty)
+//{
+//  bool res;
+//  simpletype conc_type;
+//
+//  DBUG_ENTER ();
+//  conc_type = TYgetSimpleType( TYgetScalar( ty));
+//
+//  res = (conc_type == T_float_dev || conc_type == T_int_dev ||
+//         conc_type == T_double_dev || conc_type == T_float ||
+//         conc_type == T_int || conc_type == T_double);
+//
+//  DBUG_RETURN (res);
+//}
+//
 /** <!--********************************************************************-->
  *
  * @fn node* DISTNtypeConversion( ntype *dist_type, bool to_dev_type)
@@ -360,11 +347,11 @@ TypeConvert (ntype *dist_type, nodetype nty, info *arg_info)
      * LHS of a let
      */
     else if (nty == N_ids) {
-        letexpr_ntype = NODE_TYPE (INFO_LETEXPR (arg_info));
+        letexpr_ntype = INFO_LETEXPRNTYPE (arg_info);
         /* We convert the LHS if the RHS of the let is a withloop or a primitive
          * function
          */
-        if ((letexpr_ntype == N_with || letexpr_ntype == N_prf)) {
+        if ((letexpr_ntype == N_with2 || letexpr_ntype == N_prf)) {
             conc_type = DISTNtypeConversion (dist_type, INFO_CUDARIZABLE (arg_info));
         }
     } else {
@@ -385,6 +372,9 @@ TypeConvert (ntype *dist_type, nodetype nty, info *arg_info)
 static void
 Createdist2conc (node *id, node *dist_avis, node *conc_avis, info *arg_info)
 {
+    offset_t *offset;
+    void **lut_pointer;
+    int extent;
 
     DBUG_ENTER ();
 
@@ -392,11 +382,28 @@ Createdist2conc (node *id, node *dist_avis, node *conc_avis, info *arg_info)
     FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
       = TBmakeVardec (conc_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-    INFO_PREASSIGNS (arg_info)
-      = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
-                                 TBmakePrf (F_dist2conc,
-                                            TBmakeExprs (TBmakeId (dist_avis), NULL))),
-                      INFO_PREASSIGNS (arg_info));
+    if (INFO_INWL (arg_info)
+        && (lut_pointer = LUTsearchInLutP (INFO_ACCESS (arg_info), dist_avis)) != NULL) {
+        offset = (offset_t *)*lut_pointer;
+        INFO_PREASSIGNS (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
+                                     TCmakePrf4 (F_dist2conc, TBmakeId (dist_avis),
+                                                 TBmakeNum (offset->min),
+                                                 TBmakeNum (offset->max),
+                                                 TBmakeBool (
+                                                   INFO_CUDARIZABLE (arg_info)))),
+                          INFO_PREASSIGNS (arg_info));
+    } else {
+        extent = SHgetExtent (TYgetShape (AVIS_TYPE (dist_avis)), 0);
+        INFO_PREASSIGNS (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
+                                     TCmakePrf4 (F_dist2conc, TBmakeId (dist_avis),
+                                                 TBmakeNum (-extent + 1),
+                                                 TBmakeNum (extent),
+                                                 TBmakeBool (
+                                                   INFO_CUDARIZABLE (arg_info)))),
+                          INFO_PREASSIGNS (arg_info));
+    }
 
     /* Maintain SSA property */
     AVIS_SSAASSIGN (conc_avis) = INFO_PREASSIGNS (arg_info);
@@ -406,86 +413,34 @@ Createdist2conc (node *id, node *dist_avis, node *conc_avis, info *arg_info)
     DBUG_RETURN ();
 }
 
-/** <!--********************************************************************-->
- *
- * @fn node* Createdistcont( node *dist_avis, info *arg_info)
- *
- * @brief Create distributed continuous blocks primitive function
- *
- ***************************************************************************** /
-static void Createdistcont( node *dist_avis, info *arg_info)
-{
-  node *cont_avis;
-
-  DBUG_ENTER ();
-
-  cont_avis = TBmakeAvis(TRAVtmpVarName("cont_block"),
-                         TYmakeAKS(TYmakeSimpleType(T_int), SHmakeShape( 0)));
-
-  FUNDEF_VARDECS( INFO_FUNDEF( arg_info)) =
-  TBmakeVardec( cont_avis,  FUNDEF_VARDECS( INFO_FUNDEF( arg_info)));
-
-  INFO_PREASSIGNS( arg_info) =
-  TBmakeAssign( TBmakeLet( TBmakeIds( cont_avis, NULL),
-                          TBmakePrf( F_dist_cont_block,
-                                    TBmakeExprs( TBmakeId( dist_avis),
-                                                NULL))),
-               INFO_PREASSIGNS( arg_info));
-
-  / * Maintain SSA property * /
-  AVIS_SSAASSIGN( cont_avis) = INFO_PREASSIGNS( arg_info);
-
-  DBUG_RETURN ();
-}*/
-
-/** <!--********************************************************************-->
- *
- * Anonymous traversal functions
- *
- *****************************************************************************/
-
-static node *
-ATravWith (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
-    WITH_CODE (arg_node) = TRAVopt (WITH_CODE (arg_node), arg_info);
-    WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-static node *
-ATravId (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    NLUTincNum (INFO_AT_NLUT (arg_info), ID_AVIS (arg_node), 1);
-
-    DBUG_RETURN (arg_node);
-}
-
-static node *
-ATravGenarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (GENARRAY_DEFAULT (arg_node) != NULL
-        && NLUTgetNum (INFO_AT_NLUT (arg_info), ID_AVIS (GENARRAY_DEFAULT (arg_node)))
-             == 0) {
-        DBUG_ASSERT (NODE_TYPE (GENARRAY_DEFAULT (arg_node)),
-                     "Default element of genarray is not N_id!");
-        GENARRAY_DEFAULT (arg_node) = FREEdoFreeNode (GENARRAY_DEFAULT (arg_node));
-        GENARRAY_DEFAULT (arg_node) = NULL;
-    }
-
-    GENARRAY_RC (arg_node) = TRAVopt (GENARRAY_RC (arg_node), arg_info);
-    GENARRAY_PRC (arg_node) = TRAVopt (GENARRAY_PRC (arg_node), arg_info);
-    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
+///** <!--********************************************************************-->
+// *
+// * @fn node* Createdistcont( node *dist_avis, info *arg_info)
+// *
+// * @brief Create distributed continuous blocks primitive function
+// *
+// *****************************************************************************/
+// static void Createdistcont( node *dist_avis, info *arg_info)
+//{
+//  node *cont_avis;
+//
+//  DBUG_ENTER ();
+//
+//  cont_avis = TBmakeAvis(TRAVtmpVarName("cont_block"),
+//                         TYmakeAKS(TYmakeSimpleType(T_int), SHmakeShape( 0)));
+//
+//  FUNDEF_VARDECS( INFO_FUNDEF( arg_info)) =
+//  TBmakeVardec( cont_avis,  FUNDEF_VARDECS( INFO_FUNDEF( arg_info)));
+//
+//  INFO_PREASSIGNS( arg_info) =
+//  TBmakeAssign( TBmakeLet( TBmakeIds( cont_avis, NULL),
+//                          TBmakePrf( F_dist_cont_block,
+//                                    TBmakeExprs( TBmakeId( dist_avis),
+//                                                NULL))),
+//               INFO_PREASSIGNS( arg_info));
+//
+//  DBUG_RETURN ();
+//}
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
@@ -508,28 +463,14 @@ ATravGenarray (node *arg_node, info *arg_info)
 node *
 IMEMDISTfundef (node *arg_node, info *arg_info)
 {
-    node *old_fundef;
-    node *old_topblock;
-
     DBUG_ENTER ();
 
-    /* During the main traversal, we only look at non-lac functions */
-    if (!FUNDEF_ISLACFUN (arg_node) && !FUNDEF_ISSTICKY (arg_node)) {
+    /* During the main traversal, we only look at non-kernel functions */
+    if (!FUNDEF_ISCUDAGLOBALFUN (arg_node) || INFO_INKERNEL (arg_info)) {
         INFO_FUNDEF (arg_info) = arg_node;
-        INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         INFO_FUNDEF (arg_info) = NULL;
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    } else if (INFO_FROM_AP (arg_info)) {
-        old_fundef = INFO_FUNDEF (arg_info);
-        old_topblock = INFO_TOPBLOCK (arg_info);
-        INFO_FUNDEF (arg_info) = arg_node;
-        INFO_DISTAVIS (arg_info) = NULL;
-        /* Traversal of lac functions are initiated from the calling site */
-        INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-        INFO_FUNDEF (arg_info) = old_fundef;
-        INFO_TOPBLOCK (arg_info) = old_topblock;
     } else {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
@@ -547,123 +488,19 @@ IMEMDISTfundef (node *arg_node, info *arg_info)
 node *
 IMEMDISTap (node *arg_node, info *arg_info)
 {
-    bool traverse_lac_fun, old_from_ap;
-    node *ap_args, *fundef_args;
-    node *avis, *id_avis, *new_avis, *dup_avis;
-    ntype *conc_type;
-    node *fundef, *old_apids;
-    const char *tmpVarName;
+    node *old_fundef;
 
     DBUG_ENTER ();
 
-    fundef = AP_FUNDEF (arg_node);
+    if (FUNDEF_ISCUDAGLOBALFUN (AP_FUNDEF (arg_node))) {
+        AP_FUNDEF (arg_node) = IMAdoInferMemoryAccesses (AP_FUNDEF (arg_node));
+        INFO_ACCESS (arg_info) = FUNDEF_ACCESS (AP_FUNDEF (arg_node));
 
-    /* For us to traverse a function from calling site, it must be a
-     * condictional function or a loop function and must not be the
-     * recursive function call in the loop function. */
-    traverse_lac_fun = (FUNDEF_ISLACFUN (fundef) && fundef != INFO_FUNDEF (arg_info));
-
-    if (traverse_lac_fun) {
-        old_from_ap = INFO_FROM_AP (arg_info);
-        INFO_FROM_AP (arg_info) = TRUE;
-
-        old_apids = INFO_APIDS (arg_info);
-        INFO_APIDS (arg_info) = INFO_LETIDS (arg_info);
-
-        if (!INFO_INWL (arg_info)) {
-            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-
-            /* we have allocated a distributed variable in the conditional, we have to
-             pass it as a parameter now */
-            if (INFO_DISTAVIS (arg_info) != NULL) {
-                /* create new local variable and add to vardecs */
-                INFO_DISTAVIS (arg_info)
-                  = TBmakeAvis (TRAVtmpVarName ("dist"),
-                                TYcopyType (AVIS_TYPE (INFO_DISTAVIS (arg_info))));
-                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-                  = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
-                                    TBmakeVardec (INFO_DISTAVIS (arg_info), NULL));
-
-                /* add new local variable as argument to ap */
-                AP_ARGS (arg_node)
-                  = TCappendExprs (AP_ARGS (arg_node),
-                                   TBmakeExprs (TBmakeId (INFO_DISTAVIS (arg_info)),
-                                                NULL));
-            }
-        } else {
-            ap_args = AP_ARGS (arg_node);
-            fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
-
-            while (ap_args != NULL) {
-                DBUG_ASSERT (fundef_args != NULL, "# of Ap args != # of Fundef args!");
-
-                DBUG_ASSERT (NODE_TYPE (EXPRS_EXPR (ap_args)) == N_id,
-                             "N_ap argument is not N_id node!");
-
-                id_avis = ID_AVIS (EXPRS_EXPR (ap_args));
-                avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
-
-                /* If the avis has NOT been come across before */
-                if (avis == id_avis) {
-                    DBUG_PRINT ("fundef %s, id %s\n", FUNDEF_NAME (AP_FUNDEF (arg_node)),
-                                AVIS_NAME (avis));
-                    DBUG_PRINT ("There will be transfer for %s\n", AVIS_NAME (id_avis));
-                    conc_type = TypeConvert (AVIS_TYPE (id_avis), N_id, arg_info);
-
-                    if (conc_type != NULL) {
-                        tmpVarName = INFO_CUDARIZABLE (arg_info) ? "dev" : "host";
-                        new_avis = TBmakeAvis (TRAVtmpVarName (tmpVarName), conc_type);
-                        Createdist2conc (EXPRS_EXPR (ap_args), id_avis, new_avis,
-                                         arg_info);
-
-                        dup_avis = DUPdoDupNode (new_avis);
-                        AVIS_SSAASSIGN (dup_avis) = NULL;
-
-                        INFO_LUT (arg_info)
-                          = LUTinsertIntoLutP (INFO_LUT (arg_info),
-                                               ARG_AVIS (fundef_args), dup_avis);
-                        ARG_AVIS (fundef_args) = dup_avis;
-                        AVIS_DECL (dup_avis) = fundef_args;
-                    }
-                } else {
-                    /* If the N_avis has been come across before, replace its
-                     * N_avis by the device N_avis */
-                    ID_AVIS (EXPRS_EXPR (ap_args)) = avis;
-                    dup_avis = DUPdoDupNode (avis);
-                    AVIS_SSAASSIGN (dup_avis) = NULL;
-
-                    /* Insert the pair of N_avis(fun arg)->N_avis(device variable)
-                     * into the lookup table, so that when we later traverse the
-                     * body of the fundef, old reference to the arg will be replaced
-                     * by the new device varaible.  */
-                    INFO_LUT (arg_info)
-                      = LUTinsertIntoLutP (INFO_LUT (arg_info), ARG_AVIS (fundef_args),
-                                           dup_avis);
-
-                    /* Change N_avis of the fun arg to the device variable */
-                    ARG_AVIS (fundef_args) = dup_avis;
-                    AVIS_DECL (dup_avis) = fundef_args;
-                }
-
-                /* make sure the based type of the ap id and the fundef arg is the same
-                 */
-                if (TYgetSimpleType (TYgetScalar (ID_NTYPE (EXPRS_EXPR (ap_args))))
-                    != TYgetSimpleType (
-                         TYgetScalar (AVIS_TYPE (ARG_AVIS (fundef_args))))) {
-                    TYsetSimpleType (TYgetScalar (AVIS_TYPE (ARG_AVIS (fundef_args))),
-                                     TYgetSimpleType (
-                                       TYgetScalar (ID_NTYPE (EXPRS_EXPR (ap_args)))));
-                }
-
-                ap_args = EXPRS_NEXT (ap_args);
-                fundef_args = ARG_NEXT (fundef_args);
-            } // wnd of while loop
-
-            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-        }
-
-        INFO_FROM_AP (arg_info) = old_from_ap;
-        INFO_APIDS (arg_info) = old_apids;
+        INFO_INKERNEL (arg_info) = TRUE;
+        old_fundef = INFO_FUNDEF (arg_info);
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
+        INFO_FUNDEF (arg_info) = old_fundef;
+        INFO_INKERNEL (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -681,7 +518,7 @@ node *
 IMEMDISTassign (node *arg_node, info *arg_info)
 {
     node *next;
-    static int counter;
+    //  static int counter;
 
     DBUG_ENTER ();
 
@@ -694,8 +531,8 @@ IMEMDISTassign (node *arg_node, info *arg_info)
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     /* If we are no longer in a N_with, we insert
-     * data transfer primitives into the AST */
-    if (!INFO_INWL (arg_info)) {
+     * data transfer primitives into the syntax tree */
+    if (!INFO_INWL (arg_info) && !INFO_INKERNEL (arg_info)) {
         next = ASSIGN_NEXT (arg_node);
         ASSIGN_NEXT (arg_node) = NULL;
 
@@ -709,23 +546,24 @@ IMEMDISTassign (node *arg_node, info *arg_info)
             INFO_PREASSIGNS (arg_info) = NULL;
         }
 
-        /* add distributed variable allocations before the withs. */
-        if (INFO_DISTAVIS (arg_info) != NULL
-            && NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let
-            && NODE_TYPE (ASSIGN_RHS (arg_node)) == N_withs) {
-
-            /* add distributed variable allocation */
-            arg_node = TCappendAssign (
-              TBmakeAssign (TBmakeLet (TBmakeIds (INFO_DISTAVIS (arg_info), NULL),
-                                       TBmakePrf (F_dist_alloc,
-                                                  TBmakeExprs (TBmakeNum (counter++),
-                                                               NULL))),
-                            NULL),
-              arg_node);
-            /* Maintain SSA property */
-            AVIS_SSAASSIGN (INFO_DISTAVIS (arg_info)) = arg_node;
-            INFO_DISTAVIS (arg_info) = NULL;
-        }
+        //    /* add distributed variable allocations before the withs. */
+        //    if (INFO_DISTAVIS(arg_info) != NULL
+        //        && NODE_TYPE(ASSIGN_STMT(arg_node)) == N_let
+        //        && NODE_TYPE(ASSIGN_RHS(arg_node)) == N_withs) {
+        //
+        //      /* add distributed variable allocation */
+        //      arg_node = TCappendAssign(TBmakeAssign( TBmakeLet( TBmakeIds(
+        //      INFO_DISTAVIS( arg_info),
+        //                                                                   NULL),
+        //                                                        TCmakePrf1(
+        //                                                        F_dist_alloc,
+        //                                                                   TBmakeNum(
+        //                                                                   counter++))),
+        //                                             NULL), arg_node);
+        //      /* Maintain SSA property */
+        //      AVIS_SSAASSIGN( INFO_DISTAVIS( arg_info)) = arg_node;
+        //      INFO_DISTAVIS( arg_info) = NULL;
+        //    }
 
         node *last_assign = arg_node;
         while (ASSIGN_NEXT (last_assign) != NULL) {
@@ -753,10 +591,9 @@ IMEMDISTlet (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    INFO_LETIDS (arg_info) = LET_IDS (arg_node);
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-    INFO_LETEXPR (arg_info) = LET_EXPR (arg_node);
+    INFO_LETEXPRNTYPE (arg_info) = NODE_TYPE (LET_EXPR (arg_node));
     LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -764,241 +601,41 @@ IMEMDISTlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *IMEMDISTfuncond( node *arg_node, info *arg_info)
+ * @fn node *IMEMDISTwith2( node *arg_node, info *arg_info)
  *
- * @brief
- *
- *****************************************************************************/
-node *
-IMEMDISTfuncond (node *arg_node, info *arg_info)
-{
-    node *then_id, *else_id;
-    node *ids, *apids;
-    ntype *then_sclty, *else_sclty, *ids_sclty;
-    node *ret_st, *ret_exprs, *fundef_ret;
-    const char *tmpVarName;
-
-    DBUG_ENTER ();
-
-    if (INFO_INWL (arg_info)) {
-        FUNCOND_THEN (arg_node) = TRAVdo (FUNCOND_THEN (arg_node), arg_info);
-        FUNCOND_ELSE (arg_node) = TRAVdo (FUNCOND_ELSE (arg_node), arg_info);
-
-        then_id = FUNCOND_THEN (arg_node);
-        else_id = FUNCOND_ELSE (arg_node);
-        ids = INFO_LETIDS (arg_info);
-
-        if (TYisArray (IDS_NTYPE (ids))) {
-            then_sclty = TYgetScalar (ID_NTYPE (then_id));
-            else_sclty = TYgetScalar (ID_NTYPE (else_id));
-            ids_sclty = TYgetScalar (IDS_NTYPE (ids));
-
-            if (TYgetSimpleType (then_sclty) != TYgetSimpleType (else_sclty)) {
-                apids = INFO_APIDS (arg_info);
-                tmpVarName = INFO_CUDARIZABLE (arg_info) ? "dev" : "host";
-
-                if (CUisConcreteTypeNew (ID_NTYPE (then_id))
-                    && !CUisConcreteTypeNew (ID_NTYPE (else_id))) {
-                    TYsetSimpleType (else_sclty, TYgetSimpleType (then_sclty));
-                    AVIS_ISCUDALOCAL (ID_AVIS (else_id)) = TRUE;
-                    ID_NAME (else_id) = MEMfree (ID_NAME (else_id));
-                    ID_NAME (else_id) = TRAVtmpVarName (tmpVarName);
-                    TYsetSimpleType (ids_sclty, TYgetSimpleType (then_sclty));
-                    IDS_NAME (ids) = MEMfree (IDS_NAME (ids));
-                    IDS_NAME (ids) = TRAVtmpVarName (tmpVarName);
-                } else if (CUisConcreteTypeNew (ID_NTYPE (else_id))
-                           && !CUisConcreteTypeNew (ID_NTYPE (then_id))) {
-                    TYsetSimpleType (then_sclty, TYgetSimpleType (else_sclty));
-                    AVIS_ISCUDALOCAL (ID_AVIS (then_id)) = TRUE;
-                    ID_NAME (then_id) = MEMfree (ID_NAME (then_id));
-                    ID_NAME (then_id) = TRAVtmpVarName (tmpVarName);
-                    TYsetSimpleType (ids_sclty, TYgetSimpleType (else_sclty));
-                    IDS_NAME (ids) = MEMfree (IDS_NAME (ids));
-                    IDS_NAME (ids) = TRAVtmpVarName (tmpVarName);
-                } else {
-                    // .... TODO ...
-                    DBUG_ASSERT (0, "Found arrays of unequal types while not one"
-                                    " distributed type and one concrete type!");
-                }
-
-                AVIS_ISCUDALOCAL (IDS_AVIS (ids)) = TRUE;
-
-                ret_st = FUNDEF_RETURN (INFO_FUNDEF (arg_info));
-                DBUG_ASSERT (ret_st != NULL, "N_return is null for lac fun!");
-                ret_exprs = RETURN_EXPRS (ret_st);
-                fundef_ret = FUNDEF_RETS (INFO_FUNDEF (arg_info));
-
-                while (ret_exprs != NULL && fundef_ret != NULL && apids != NULL) {
-                    if (ID_AVIS (EXPRS_EXPR (ret_exprs)) == IDS_AVIS (ids)) {
-                        TYsetSimpleType (TYgetScalar (RET_TYPE (fundef_ret)),
-                                         TYgetSimpleType (ids_sclty));
-                        TYsetSimpleType (TYgetScalar (IDS_NTYPE (apids)),
-                                         TYgetSimpleType (ids_sclty));
-                        AVIS_ISCUDALOCAL (IDS_AVIS (apids)) = TRUE;
-                        IDS_NAME (apids) = MEMfree (IDS_NAME (apids));
-                        IDS_NAME (apids) = TRAVtmpVarName (tmpVarName);
-                    }
-                    ret_exprs = EXPRS_NEXT (ret_exprs);
-                    fundef_ret = RET_NEXT (fundef_ret);
-                    apids = IDS_NEXT (apids);
-                }
-            }
-        }
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *IMEMDISTwith( node *arg_node, info *arg_info)
- *
- * @brief Traverse both withop and N_code of a cudarizable N_with
+ * @brief Traverse both withop and N_code of a N_with2
  *
  *****************************************************************************/
 node *
-IMEMDISTwith (node *arg_node, info *arg_info)
+IMEMDISTwith2 (node *arg_node, info *arg_info)
 {
-    info *anon_info;
-    node *idxvec_avis;
-    ntype *idxvec_type;
-
     DBUG_ENTER ();
 
     /* If we are not already in a withloop */
-    if (!INFO_INWL (arg_info)) {
-        INFO_CUDARIZABLE (arg_info) = WITH_CUDARIZABLE (arg_node);
+    if (!INFO_INWL (arg_info) && !INFO_INKERNEL (arg_info)) {
+        INFO_CUDARIZABLE (arg_info) = FALSE;
 
-        /************ Anonymous Traversal ************/
-        /* This anon traversal remove all default elements in genarray
-         * that are not used in the withloop body at all. */
-        anontrav_t atrav[4] = {{N_with, &ATravWith},
-                               {N_genarray, &ATravGenarray},
-                               {N_id, &ATravId},
-                               {(nodetype)0, NULL}};
-
-        TRAVpushAnonymous (atrav, &TRAVsons);
-
-        anon_info = MakeInfo ();
-
-        INFO_AT_NLUT (anon_info)
-          = NLUTgenerateNlut (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
-                              FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
-        arg_node = TRAVdo (arg_node, anon_info);
-
-        INFO_AT_NLUT (anon_info) = NLUTremoveNlut (INFO_AT_NLUT (anon_info));
-
-        anon_info = FreeInfo (anon_info);
-        TRAVpop ();
-        /*********************************************/
+        arg_node = IMAdoInferMemoryAccesses (arg_node);
 
         INFO_LUT (arg_info) = LUTgenerateLut ();
-
         INFO_INWL (arg_info) = TRUE;
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        INFO_ACCESS (arg_info) = WITH2_ACCESS (arg_node);
 
-        /* We do not want to create a dist2conc for index vector,
-         * We store pair N_id->N_empty to signal this. */
-        idxvec_avis = IDS_AVIS (WITH_VEC (arg_node));
-        if (WITH_CUDARIZABLE (arg_node)) {
-            AVIS_ISCUDALOCAL (idxvec_avis) = TRUE;
-        }
-        // change the index vector back to host type
-        idxvec_type = AVIS_TYPE (idxvec_avis);
-        AVIS_TYPE (idxvec_avis) = DISTNtypeConversion (idxvec_type, FALSE);
-        TYfreeType (idxvec_type);
-        INFO_IDXAVIS (arg_info) = idxvec_avis;
+        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+        INFO_IDXAVIS (arg_info) = ID_AVIS (WITH2_VEC (arg_node));
+
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
 
         /* Cleanup */
         INFO_INWL (arg_info) = FALSE;
         INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
+        INFO_ACCESS (arg_info) = NULL;
     } else {
 
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
-        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *IMEMDISTcode( node *arg_node, info *arg_info)
- *
- * @brief Traverse the code block
- *
- *****************************************************************************/
-node *
-IMEMDISTcode (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
-
-    INFO_IN_CEXPRS (arg_info) = TRUE;
-    CODE_CEXPRS (arg_node) = TRAVopt (CODE_CEXPRS (arg_node), arg_info);
-    INFO_IN_CEXPRS (arg_info) = FALSE;
-
-    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *IMEMDISTgenarray( node *arg_node, info *arg_info)
- *
- * @brief Traverse default element of a N_genarray
- *
- *****************************************************************************/
-node *
-IMEMDISTgenarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (INFO_INWL (arg_info)) {
-        /* Note that we do not traverse N_genarray->shape. This is
-         * because it can be an N_id node and we do not want to insert
-         * <dist2conc> for it in this case. Therefore, the only sons
-         * of N_genarray we traverse are the default element and the
-         * potential reuse candidates. */
-        if (GENARRAY_DEFAULT (arg_node) != NULL) {
-            DBUG_ASSERT (NODE_TYPE (GENARRAY_DEFAULT (arg_node)) == N_id,
-                         "Non N_id default element found in N_genarray!");
-            GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-        }
-
-        GENARRAY_RC (arg_node) = TRAVopt (GENARRAY_RC (arg_node), arg_info);
-
-        GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *IMEMDISTmodarray( node *arg_node, info *arg_info)
- *
- * @brief Traverse default element of a N_modarray
- *
- *****************************************************************************/
-node *
-IMEMDISTmodarray (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-    if (INFO_INWL (arg_info)) {
-        DBUG_ASSERT (NODE_TYPE (MODARRAY_ARRAY (arg_node)) == N_id,
-                     "Non N_id modified array found in N_modarray!");
-        INFO_IS_MODARR (arg_info) = TRUE;
-        MODARRAY_ARRAY (arg_node) = TRAVdo (MODARRAY_ARRAY (arg_node), arg_info);
-        INFO_IS_MODARR (arg_info) = FALSE;
-        MODARRAY_RC (arg_node) = TRAVopt (MODARRAY_RC (arg_node), arg_info);
-        MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
+        WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
@@ -1016,7 +653,7 @@ IMEMDISTids (node *arg_node, info *arg_info)
 {
     node *new_conc_avis, *new_dist_avis, *ids_avis;
     ntype *ids_type, *conc_type;
-    const char *tmpVarName;
+    const char *suffix;
     prf conc2dist;
 
     DBUG_ENTER ();
@@ -1037,7 +674,8 @@ IMEMDISTids (node *arg_node, info *arg_info)
             } else {
                 /* create new distributed avis's */
                 new_dist_avis
-                  = TBmakeAvis (TRAVtmpVarName ("dist"), TYcopyType (ids_type));
+                  = TBmakeAvis (TRAVtmpVarName (STRcat (IDS_NAME (arg_node), "_dist")),
+                                TYcopyType (ids_type));
                 /* add argument to function */
                 FUNDEF_ARGS (INFO_FUNDEF (arg_info))
                   = TCappendArgs (FUNDEF_ARGS (INFO_FUNDEF (arg_info)),
@@ -1047,8 +685,10 @@ IMEMDISTids (node *arg_node, info *arg_info)
             }
 
             /* create new concrete avis's */
-            tmpVarName = INFO_CUDARIZABLE (arg_info) ? "dev" : "host";
-            new_conc_avis = TBmakeAvis (TRAVtmpVarName (tmpVarName), conc_type);
+            suffix = INFO_CUDARIZABLE (arg_info) ? "_cuda" : "_host";
+            new_conc_avis
+              = TBmakeAvis (TRAVtmpVarName (STRcat (IDS_NAME (arg_node), suffix)),
+                            conc_type);
 
             /* change current avis*/
             IDS_AVIS (arg_node) = new_conc_avis;
@@ -1060,16 +700,11 @@ IMEMDISTids (node *arg_node, info *arg_info)
 
             /* add concrete to distributed transfer */
             conc2dist = INFO_CUDARIZABLE (arg_info) ? F_device2dist : F_host2dist_st;
-            INFO_POSTASSIGNS (arg_info) = TBmakeAssign (
-              TBmakeLet (TBmakeIds (ids_avis, NULL),
-                         TBmakePrf (conc2dist,
-                                    TBmakeExprs (TBmakeId (new_conc_avis),
-                                                 TBmakeExprs (TBmakeId (new_dist_avis),
-                                                              NULL)))),
-              INFO_POSTASSIGNS (arg_info));
-            /* Maintain SSA property */
-            AVIS_SSAASSIGN (new_conc_avis) = AVIS_SSAASSIGN (ids_avis);
-            AVIS_SSAASSIGN (ids_avis) = INFO_POSTASSIGNS (arg_info);
+            INFO_POSTASSIGNS (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (ids_avis, NULL),
+                                         TCmakePrf2 (conc2dist, TBmakeId (new_conc_avis),
+                                                     TBmakeId (new_dist_avis))),
+                              INFO_POSTASSIGNS (arg_info));
         }
     }
 
@@ -1093,7 +728,7 @@ IMEMDISTid (node *arg_node, info *arg_info)
 {
     node *new_avis, *avis, *id_avis;
     ntype *conc_type, *id_type;
-    const char *tmpVarName;
+    const char *suffix;
 
     DBUG_ENTER ();
 
@@ -1112,8 +747,10 @@ IMEMDISTid (node *arg_node, info *arg_info)
                 ID_AVIS (arg_node) = avis;
             } else {
                 /* Otherwise, create transfer */
-                tmpVarName = INFO_CUDARIZABLE (arg_info) ? "dev" : "host";
-                new_avis = TBmakeAvis (TRAVtmpVarName (tmpVarName), conc_type);
+                suffix = INFO_CUDARIZABLE (arg_info) ? "_cuda" : "_host";
+                new_avis
+                  = TBmakeAvis (TRAVtmpVarName (STRcat (ID_NAME (arg_node), suffix)),
+                                conc_type);
                 Createdist2conc (arg_node, id_avis, new_avis, arg_info);
 
                 /*if not in with-loop, we are in a sequential section. The source
@@ -1121,10 +758,10 @@ IMEMDISTid (node *arg_node, info *arg_info)
                 if (!INFO_INWL (arg_info))
                     INFO_DISTAVIS (arg_info) = id_avis;
             }
-            /* create distributed continous blocks function for with-loops * /
-            if( INFO_INWL(arg_info) / *&& INFO_CUDARIZABLE(arg_info)* /) {
-              Createdistcont( id_avis, arg_info );
-            }*/
+            //      /* create distributed continous blocks function for with-loops */
+            //      if( INFO_INWL(arg_info) / *&& INFO_CUDARIZABLE(arg_info)* /) {
+            //        Createdistcont( id_avis, arg_info );
+            //      }
         }
     }
 

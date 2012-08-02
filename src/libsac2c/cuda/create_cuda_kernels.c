@@ -268,10 +268,6 @@ CUKNLdoCreateCudaKernels (node *syntax_tree)
     syntax_tree = KPPdoKernelPostProcessing (syntax_tree);
     syntax_tree = ESBLdoExpandShmemBoundaryLoad (syntax_tree);
 
-    /* Change backend to standard CUDA for the rest of code generation */
-    if (global.backend == BE_cudahybrid)
-        global.backend = BE_cuda;
-
     DBUG_RETURN (syntax_tree);
 }
 

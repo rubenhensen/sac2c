@@ -540,17 +540,25 @@
           <node name="Let" />
         </travuser>
       </traversal>
-      <traversal id="CUCM" name="CUDA cost model" default="sons" include="cuda_cost_model.h" >
-        <travuser>
-          <node name="Fundef" />
-          <node name="Let" />
-          <node name="With" />
-          <node name="Genarray" />
-          <node name="Modarray" />
-          <node name="Fold" />
-          <node name="Part" />
-        </travuser>
-      </traversal>
+    <traversal id="IMA" name="Infer memory accesses" default="sons" include="infer_memory_accesses.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Let" />
+        <node name="With2" />
+        <node name="Prf" />
+      </travuser>
+    </traversal>
+    <traversal id="CUCM" name="CUDA cost model" default="sons" include="cuda_cost_model.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Let" />
+        <node name="With" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+        <node name="Fold" />
+        <node name="Part" />
+      </travuser>
+    </traversal>
     <traversal id="CADT" name="Change arrays to distributed type" default="sons" include="change_arrays_to_dist.h" >
       <travuser>
         <node name="Fundef" />
@@ -562,15 +570,11 @@
       <travuser>
         <node name="Let" />
         <node name="Assign" />
-        <node name="With" />
+        <node name="With2" />
         <node name="Id" />
         <node name="Ids" />
         <node name="Fundef" />
         <node name="Ap" />
-        <node name="Genarray" />
-        <node name="Modarray" />
-        <node name="Code" />
-        <node name="Funcond" />
         <node name="Return" />
       </travuser>
     </traversal>
@@ -5489,6 +5493,22 @@ N_tfarg :
             </target>
           </type>
         </attribute>
+        <attribute name="Access" inconstructor="no" >
+          <description>
+            A LUT containing information about the memory access patterns of
+            relatively free arrays, for the distributed backend.
+          </description>
+          <type name="LUT">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="pc_ima" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
       <flags>
         <flag name="IsMain">
@@ -9579,6 +9599,22 @@ N_tfarg :
                 <any />
                 <phases>
                   <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Access" inconstructor="no" >
+          <description>
+            A LUT containing information about the memory access patterns of
+            relatively free arrays, for the Distributed backend.
+          </description>
+          <type name="LUT">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="pc_ima" />
                 </phases>
               </target>
             </targets>

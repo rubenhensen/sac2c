@@ -333,11 +333,37 @@ CUCMlet (node *arg_node, info *arg_info)
 node *
 CUCMwith (node *arg_node, info *arg_info)
 {
-    node *hostwl, *hostcode;
+    node *hostwl, *hostcode, *idxvec_avis;
     lut_t *hostlut;
+    ntype *scalar_type, *idxvec_type = NULL;
+    simpletype scalar_simple_type, res;
 
     DBUG_ENTER ();
 
+    /* change the index vector back to host type */
+    idxvec_avis = IDS_AVIS (WITH_VEC (arg_node));
+    idxvec_type = AVIS_TYPE (idxvec_avis);
+    scalar_type = TYgetScalar (idxvec_type);
+    scalar_simple_type = TYgetSimpleType (scalar_type);
+    /* Get the corresponding device simple type e.g. int_dev, float_dev...*/
+    switch (scalar_simple_type) {
+    case T_int_dist:
+        res = T_int;
+        break;
+    case T_float_dist:
+        res = T_float;
+        break;
+    case T_double_dist:
+        res = T_double;
+        break;
+    default:
+        res = scalar_simple_type;
+    }
+    scalar_type = TYsetSimpleType (scalar_type, res);
+
+    /* for cudarizable with-loops, we need to figure out if cudarization is
+     worthwhile. If so, we duplicate the with-loop so we can also get a host
+     version */
     if (WITH_CUDARIZABLE (arg_node)) {
         DBUG_PRINT ("Found cudarizable with-loop.");
 
@@ -351,13 +377,13 @@ CUCMwith (node *arg_node, info *arg_info)
          * the host here.
          */
         if (INFO_ISWORTH (arg_info)) {
-            /* first, we duplicate the code chain in SSA form, keeping the old<->new
+            /* duplicate the code chain in SSA form, keeping the old<->new
              pairs in a LUT */
             hostlut = LUTgenerateLut ();
             hostcode = DUPdoDupTreeLutSsa (WITH_CODE (arg_node), hostlut,
                                            INFO_FUNDEF (arg_info));
 
-            /* we then traverse the partitions. These will be duplicated and the code
+            /* Traverse the partitions. These will be duplicated and the code
              pointers are replaced with the new ones from the LUT. */
             INFO_HOSTLUT (arg_info) = hostlut;
             hostwl = TBmakeWith (TRAVdo (WITH_PART (arg_node), arg_info), hostcode,
@@ -368,6 +394,11 @@ CUCMwith (node *arg_node, info *arg_info)
             INFO_HOSTWL (arg_info) = hostwl;
             INFO_ISWORTH (arg_info) = FALSE;
             INFO_HOSTLUT (arg_info) = LUTremoveLut (hostlut);
+
+            /* set iscudalocal flag on the index vector */
+            if (WITH_CUDARIZABLE (arg_node)) {
+                AVIS_ISCUDALOCAL (idxvec_avis) = TRUE;
+            }
         } else {
             WITH_CUDARIZABLE (arg_node) = FALSE;
         }

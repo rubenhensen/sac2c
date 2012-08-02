@@ -857,9 +857,6 @@ SUBPHASE( scuwl,
 SUBPHASE (cadt, "Change arrays to distributed type", CADTdoChangeArraysToDistributedType,
           global.backend == BE_cudahybrid, cuda)
 
-SUBPHASE (imemdist, "Insert memory transfer primitives for distributed variables",
-          IMEMDISTdoInsertMemtranDist, global.backend == BE_cudahybrid, cuda)
-
 SUBPHASE (iwlmem, "CUDA Insert CUDA memory transfer primitives for withloops",
           IWLMEMdoInsertWithloopMemtran, global.backend == BE_cuda, cuda)
 
@@ -1229,6 +1226,9 @@ SUBPHASE (cuasr, "CUDA Adjust return ids of single threaded kernel",
 
 SUBPHASE (cuknl, "CUDA Create Cuda kernel functions", CUKNLdoCreateCudaKernels,
           (global.backend == BE_cuda || global.backend == BE_cudahybrid), pc)
+
+SUBPHASE (imemdist, "Insert memory transfer primitives for distributed variables",
+          IMEMDISTdoInsertMemtranDist, global.backend == BE_cudahybrid, pc)
 
 SUBPHASE (dvr, "Removing obsolete variable declarations", DVRdoDeadVardecRemoval, ALWAYS,
           pc)

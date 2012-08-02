@@ -1938,49 +1938,42 @@ EMALwith (node *arg_node, info *arg_info)
     WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     /*
-     * For all with-loops in WITHS nodes but the first, we only traverse the code.
+     * Allocate memory for the index vector
+     * and replace WITH_VEC ids with id
+     */
+    /*
+     * Only allocate the index vector once for every distributed with-loop.
      */
     if (!INFO_INWITHS (arg_info)) {
-        /*
-         * Allocate memory for the index vector
-         * and replace WITH_VEC ids with id
-         */
         INFO_ALLOCLIST (arg_info)
           = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (WITH_VEC (arg_node)),
                      TBmakeNum (1), MakeShapeArg (WITH_BOUND1 (arg_node)));
+    }
 
-        expr = TBmakeId (IDS_AVIS (WITH_VEC (arg_node)));
-        WITH_VEC (arg_node) = FREEdoFreeTree (WITH_VEC (arg_node));
-        WITH_VEC (arg_node) = expr;
+    expr = TBmakeId (IDS_AVIS (WITH_VEC (arg_node)));
+    WITH_VEC (arg_node) = FREEdoFreeTree (WITH_VEC (arg_node));
+    WITH_VEC (arg_node) = expr;
 
-        /*
-         * Traverse first withid to allocate memory for offset scalars
-         */
-        WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
+    /*
+     * Traverse first withid to allocate memory for offset scalars
+     */
+    WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
 
-        /*
-         * Duplicate withid for the second part
-         */
-        /*
-         if( PART_NEXT( WITH_PART( arg_node)) != NULL) {
-         node *nextpart = PART_NEXT( WITH_PART( arg_node));
-         PART_WITHID( nextpart) = FREEdoFreeNode( PART_WITHID( nextpart));
-         PART_WITHID( nextpart) = DUPdoDupNode( WITH_WITHID( arg_node));
-         }
-         */
-        node *nextpart = PART_NEXT (WITH_PART (arg_node));
-        while (nextpart != NULL) {
-            PART_WITHID (nextpart) = FREEdoFreeNode (PART_WITHID (nextpart));
-            PART_WITHID (nextpart) = DUPdoDupNode (WITH_WITHID (arg_node));
-            nextpart = PART_NEXT (nextpart);
-        }
-    } else {
-        /*
-         * Only replace WITH_VEC ids with id
-         */
-        expr = TBmakeId (IDS_AVIS (WITH_VEC (arg_node)));
-        WITH_VEC (arg_node) = FREEdoFreeTree (WITH_VEC (arg_node));
-        WITH_VEC (arg_node) = expr;
+    /*
+     * Duplicate withid for the second part
+     */
+    /*
+     if( PART_NEXT( WITH_PART( arg_node)) != NULL) {
+     node *nextpart = PART_NEXT( WITH_PART( arg_node));
+     PART_WITHID( nextpart) = FREEdoFreeNode( PART_WITHID( nextpart));
+     PART_WITHID( nextpart) = DUPdoDupNode( WITH_WITHID( arg_node));
+     }
+     */
+    node *nextpart = PART_NEXT (WITH_PART (arg_node));
+    while (nextpart != NULL) {
+        PART_WITHID (nextpart) = FREEdoFreeNode (PART_WITHID (nextpart));
+        PART_WITHID (nextpart) = DUPdoDupNode (WITH_WITHID (arg_node));
+        nextpart = PART_NEXT (nextpart);
     }
 
     DBUG_RETURN (arg_node);
@@ -2037,43 +2030,32 @@ EMALwith2 (node *arg_node, info *arg_info)
     WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
     /*
-     * For all with-loops in WITHS nodes but the first, we only traverse the code.
+     * Allocate memory for the index vector
+     * and replace WITH2_VEC ids with id
+     *
+     * In Nwith2, shape of the index vector is always known!
      */
-    if (!INFO_INWITHS (arg_info)) {
+    if (WITH2_VEC (arg_node) != NULL) {
         /*
-         * Allocate memory for the index vector
-         * and replace WITH2_VEC ids with id
-         *
-         * In Nwith2, shape of the index vector is always known!
+         * Only allocate the index vector once for every distributed with-loop.
          */
-        if (WITH2_VEC (arg_node) != NULL) {
+        if (!INFO_INWITHS (arg_info)) {
             INFO_ALLOCLIST (arg_info)
               = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (WITH2_VEC (arg_node)),
                          TBmakeNum (1),
                          SHshape2Array (TYgetShape (
                            AVIS_TYPE (IDS_AVIS (WITHID_VEC (WITH2_WITHID (arg_node)))))));
-
-            expr = TBmakeId (IDS_AVIS (WITH2_VEC (arg_node)));
-            WITH2_VEC (arg_node) = FREEdoFreeTree (WITH2_VEC (arg_node));
-            WITH2_VEC (arg_node) = expr;
         }
 
-        /*
-         * Traverse withid to allocate memory for the index scalars
-         */
-        WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
-    } else {
-        /*
-         * Only replace WITH2_VEC ids with id
-         *
-         * In Nwith2, shape of the index vector is always known!
-         */
-        if (WITH2_VEC (arg_node) != NULL) {
-            expr = TBmakeId (IDS_AVIS (WITH2_VEC (arg_node)));
-            WITH2_VEC (arg_node) = FREEdoFreeTree (WITH2_VEC (arg_node));
-            WITH2_VEC (arg_node) = expr;
-        }
+        expr = TBmakeId (IDS_AVIS (WITH2_VEC (arg_node)));
+        WITH2_VEC (arg_node) = FREEdoFreeTree (WITH2_VEC (arg_node));
+        WITH2_VEC (arg_node) = expr;
     }
+
+    /*
+     * Traverse withid to allocate memory for the index scalars
+     */
+    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -2102,9 +2084,14 @@ EMALwithid (node *arg_node, info *arg_info)
     expr = NULL;
     ids = WITHID_IDS (arg_node);
     while (ids != NULL) {
-        INFO_ALLOCLIST (arg_info)
-          = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (ids), TBmakeNum (0),
-                     TCcreateZeroVector (0, T_int));
+        /*
+         * Only allocate the index variables once for every distributed with-loop.
+         */
+        if (!INFO_INWITHS (arg_info)) {
+            INFO_ALLOCLIST (arg_info)
+              = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (ids), TBmakeNum (0),
+                         TCcreateZeroVector (0, T_int));
+        }
 
         expr = TCappendExprs (expr, TBmakeExprs (TBmakeId (IDS_AVIS (ids)), NULL));
         ids = IDS_NEXT (ids);
@@ -2122,9 +2109,14 @@ EMALwithid (node *arg_node, info *arg_info)
     expr = NULL;
     ids = WITHID_IDXS (arg_node);
     while (ids != NULL) {
-        INFO_ALLOCLIST (arg_info)
-          = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (ids), TBmakeNum (0),
-                     TCcreateZeroVector (0, T_int));
+        /*
+         * Only allocate the offset scalars once for every distributed with-loop.
+         */
+        if (!INFO_INWITHS (arg_info)) {
+            INFO_ALLOCLIST (arg_info)
+              = MakeALS (INFO_ALLOCLIST (arg_info), IDS_AVIS (ids), TBmakeNum (0),
+                         TCcreateZeroVector (0, T_int));
+        }
 
         expr = TCappendExprs (expr, TBmakeExprs (TBmakeId (IDS_AVIS (ids)), NULL));
         ids = IDS_NEXT (ids);
