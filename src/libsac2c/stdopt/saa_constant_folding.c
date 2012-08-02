@@ -77,6 +77,9 @@
  * description: Chase AVIS_MIN( AVIS_MIN( AVIS_MIN( arg_node)))
  *              until we find a constant (or don't).
  *
+ * params: minmax = 0 for AVIS_MIN,
+ *                  1 for AVIS_MAX.
+ *
  * returns: constant or NULL.
  *
  *****************************************************************************/
