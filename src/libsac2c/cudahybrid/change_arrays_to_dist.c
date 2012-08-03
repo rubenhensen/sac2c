@@ -209,7 +209,9 @@ CADTavis (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    AVIS_TYPE (arg_node) = changeType (AVIS_TYPE (arg_node));
+    if (!AVIS_ISCUDALOCAL (arg_node)) {
+        AVIS_TYPE (arg_node) = changeType (AVIS_TYPE (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }

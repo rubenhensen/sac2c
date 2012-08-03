@@ -545,6 +545,8 @@
         <node name="Fundef" />
         <node name="Let" />
         <node name="With2" />
+        <node name="Genarray" />
+        <node name="Modarray" />
         <node name="Prf" />
       </travuser>
     </traversal>

@@ -333,33 +333,10 @@ CUCMlet (node *arg_node, info *arg_info)
 node *
 CUCMwith (node *arg_node, info *arg_info)
 {
-    node *hostwl, *hostcode, *idxvec_avis;
+    node *hostwl, *hostcode;
     lut_t *hostlut;
-    ntype *scalar_type, *idxvec_type = NULL;
-    simpletype scalar_simple_type, res;
 
     DBUG_ENTER ();
-
-    /* change the index vector back to host type */
-    idxvec_avis = IDS_AVIS (WITH_VEC (arg_node));
-    idxvec_type = AVIS_TYPE (idxvec_avis);
-    scalar_type = TYgetScalar (idxvec_type);
-    scalar_simple_type = TYgetSimpleType (scalar_type);
-    /* Get the corresponding device simple type e.g. int_dev, float_dev...*/
-    switch (scalar_simple_type) {
-    case T_int_dist:
-        res = T_int;
-        break;
-    case T_float_dist:
-        res = T_float;
-        break;
-    case T_double_dist:
-        res = T_double;
-        break;
-    default:
-        res = scalar_simple_type;
-    }
-    scalar_type = TYsetSimpleType (scalar_type, res);
 
     /* for cudarizable with-loops, we need to figure out if cudarization is
      worthwhile. If so, we duplicate the with-loop so we can also get a host
@@ -397,7 +374,7 @@ CUCMwith (node *arg_node, info *arg_info)
 
             /* set iscudalocal flag on the index vector */
             if (WITH_CUDARIZABLE (arg_node)) {
-                AVIS_ISCUDALOCAL (idxvec_avis) = TRUE;
+                AVIS_ISCUDALOCAL (IDS_AVIS (WITH_VEC (arg_node))) = TRUE;
             }
         } else {
             WITH_CUDARIZABLE (arg_node) = FALSE;

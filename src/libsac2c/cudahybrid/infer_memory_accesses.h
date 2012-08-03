@@ -13,6 +13,8 @@ extern node *IMAdoInferMemoryAccesses (node *arg_node);
 extern node *IMAfundef (node *arg_node, info *arg_info);
 extern node *IMAlet (node *arg_node, info *arg_info);
 extern node *IMAwith2 (node *arg_node, info *arg_info);
+extern node *IMAgenarray (node *arg_node, info *arg_info);
+extern node *IMAmodarray (node *arg_node, info *arg_info);
 extern node *IMAprf (node *arg_node, info *arg_info);
 
 #endif

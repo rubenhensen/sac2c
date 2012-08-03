@@ -167,6 +167,7 @@ static bool CUisDistributedType (ntype *ty);
 static ntype *DISTNtypeConversion (ntype *dist_type, bool to_dev_type);
 static void Createdist2conc (node *id, node *host_avis, node *dev_avis, info *arg_info);
 // static void Createdistcont( node *dist_avis, info *arg_info);
+static bool PrfNeedsTransfer (node *rhs);
 
 /** <!--********************************************************************-->
  *
@@ -210,7 +211,7 @@ IMEMDISTdoInsertMemtranDist (node *syntax_tree)
 
 /** <!--********************************************************************-->
  *
- * @fn node* CUisDistributedType( ntype* ty)
+ * @fn bool CUisDistributedType( ntype* ty)
  *
  * @brief Returns whether ty is a distributed type or not
  *
@@ -254,7 +255,7 @@ CUisDistributedType (ntype *ty)
 //
 /** <!--********************************************************************-->
  *
- * @fn node* DISTNtypeConversion( ntype *dist_type, bool to_dev_type)
+ * @fn ntype* DISTNtypeConversion( ntype *dist_type, bool to_dev_type)
  *
  * @brief Returns the host or device type corresponding to type dist_type,
  *        according to argument to_dev_type.
@@ -331,21 +332,38 @@ Createdist2conc (node *id, node *dist_avis, node *conc_avis, info *arg_info)
     FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
       = TBmakeVardec (conc_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-    if ((INFO_INWL (arg_info) || INFO_KERNELAP (arg_info))
-        && (lut_pointer = LUTsearchInLutP (INFO_ACCESS (arg_info), dist_avis)) != NULL) {
-        /* If we are traversing a with-loop or a kernel function, we might find some
-         access pattern for the F_dist2conc */
-        offset = (offset_t *)*lut_pointer;
-        INFO_PREASSIGNS (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
-                                     TCmakePrf4 (F_dist2conc, TBmakeId (dist_avis),
-                                                 TBmakeNum (offset->min),
-                                                 TBmakeNum (offset->max),
-                                                 TBmakeBool (INFO_KERNELAP (arg_info)))),
-                          INFO_PREASSIGNS (arg_info));
+    if (INFO_ACCESS (arg_info) != NULL) {
+        lut_pointer = LUTsearchInLutS (INFO_ACCESS (arg_info), AVIS_NAME (dist_avis));
+        if (lut_pointer != NULL) {
+            /* If there is memory access data available, we might find some
+             access pattern for the F_dist2conc */
+            offset = (offset_t *)*lut_pointer;
+            DBUG_PRINT ("Found entry for %s -> [%d,%d]", AVIS_NAME (dist_avis),
+                        offset->min, offset->max);
+            INFO_PREASSIGNS (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
+                                         TCmakePrf4 (F_dist2conc, TBmakeId (dist_avis),
+                                                     TBmakeNum (offset->min),
+                                                     TBmakeNum (offset->max),
+                                                     TBmakeBool (
+                                                       INFO_KERNELAP (arg_info)))),
+                              INFO_PREASSIGNS (arg_info));
+        } else {
+            /* Unknown access pattern, so we set the minimum and maximum offsets to the
+             maximum value, the length of the first dimension. */
+            DBUG_PRINT ("No entry for %s", AVIS_NAME (dist_avis));
+            extent = SHgetExtent (TYgetShape (AVIS_TYPE (dist_avis)), 0);
+            INFO_PREASSIGNS (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
+                                         TCmakePrf4 (F_dist2conc, TBmakeId (dist_avis),
+                                                     TBmakeNum (-extent + 1),
+                                                     TBmakeNum (extent),
+                                                     TBmakeBool (
+                                                       INFO_KERNELAP (arg_info)))),
+                              INFO_PREASSIGNS (arg_info));
+        }
     } else {
-        /* Unknown access pattern, so we set the minimum and maximum offsets to the
-         maximum value, the length of the first dimension. */
+        DBUG_PRINT ("Table not available");
         extent = SHgetExtent (TYgetShape (AVIS_TYPE (dist_avis)), 0);
         INFO_PREASSIGNS (arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
@@ -389,6 +407,41 @@ Createdist2conc (node *id, node *dist_avis, node *conc_avis, info *arg_info)
 //
 //  DBUG_RETURN ();
 //}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool PrfNeedsTransfer( node* rhs);
+ *
+ * @brief Returns true if rhs is a N_prf and the prf is one of those for which
+ * we need to convert the arguments/result.
+ *
+ *****************************************************************************/
+static bool
+PrfNeedsTransfer (node *rhs)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    if (NODE_TYPE (rhs) == N_prf) {
+        switch (PRF_PRF (rhs)) {
+        case F_alloc:
+        case F_noop:
+        case F_inc_rc:
+        case F_dec_rc:
+        case F_free:
+            res = FALSE;
+            break;
+        default:
+            res = TRUE;
+            break;
+        }
+    } else {
+        res = FALSE;
+    }
+
+    DBUG_RETURN (res);
+}
 
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
@@ -542,20 +595,23 @@ node *
 IMEMDISTlet (node *arg_node, info *arg_info)
 {
     nodetype expr_ty;
+    bool old_inwl;
+    lut_t *old_lut;
     DBUG_ENTER ();
 
-    LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
+    old_inwl = INFO_INWL (arg_info);
+    old_lut = INFO_ACCESS (arg_info);
 
     expr_ty = NODE_TYPE (LET_EXPR (arg_node));
-    if (expr_ty == N_with2
-        || (expr_ty == N_prf && PRF_PRF (LET_EXPR (arg_node)) != F_alloc)
-        || INFO_KERNELAP (arg_info)) {
+    if (expr_ty == N_with2 || expr_ty == N_ap || PrfNeedsTransfer (LET_EXPR (arg_node))) {
+        LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
         LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
     }
 
-    /* these are resete here as the ids traversal needs these flags.*/
+    /* these are reset here as the ids traversal needs these flags.*/
     INFO_KERNELAP (arg_info) = FALSE;
-    INFO_INWL (arg_info) = FALSE;
+    INFO_ACCESS (arg_info) = old_lut;
+    INFO_INWL (arg_info) = old_inwl;
 
     DBUG_RETURN (arg_node);
 }
@@ -588,7 +644,6 @@ IMEMDISTwith2 (node *arg_node, info *arg_info)
 
         /* Cleanup */
         INFO_LUT (arg_info) = LUTremoveLut (INFO_LUT (arg_info));
-        INFO_ACCESS (arg_info) = NULL;
     } else {
 
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
