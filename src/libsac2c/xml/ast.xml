@@ -576,6 +576,8 @@
         <node name="Fundef" />
         <node name="Ap" />
         <node name="Return" />
+        <node name="Avis" />
+        <node name="Ret" />
       </travuser>
     </traversal>
     <traversal id="DISTCOND" name="Create distributed with-loop conditional" default="sons" include="create_dist_wl_cond.h" >

@@ -399,7 +399,7 @@ WLSIMPlet (node *arg_node, info *arg_info)
 node *
 WLSIMPwith (node *arg_node, info *arg_info)
 {
-    node *preass;
+    node *preass, *old_lhs;
 
     DBUG_ENTER ();
 
@@ -416,6 +416,9 @@ WLSIMPwith (node *arg_node, info *arg_info)
     } else {
         INFO_NUM_GENPARTS (arg_info) = 0;
     }
+    /* save old lhs, because if we are traversing a N_withs, the other with-loops
+     need it. The let traversal resets this to NULL afterwards anyway. */
+    old_lhs = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = NULL;
 
     if (!INFO_REPLACE (arg_info)) {
@@ -424,6 +427,8 @@ WLSIMPwith (node *arg_node, info *arg_info)
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_PREASSIGN (arg_info) = preass;
     }
+
+    INFO_LHS (arg_info) = old_lhs;
 
     DBUG_RETURN (arg_node);
 }

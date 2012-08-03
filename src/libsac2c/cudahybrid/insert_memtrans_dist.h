@@ -14,5 +14,7 @@ extern node *IMEMDISTassign (node *arg_node, info *arg_info);
 extern node *IMEMDISTwith2 (node *arg_node, info *arg_info);
 extern node *IMEMDISTids (node *arg_node, info *arg_info);
 extern node *IMEMDISTreturn (node *arg_node, info *arg_info);
+extern node *IMEMDISTavis (node *arg_node, info *arg_info);
+extern node *IMEMDISTret (node *arg_node, info *arg_info);
 
 #endif
