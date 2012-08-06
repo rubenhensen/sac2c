@@ -8,6 +8,22 @@
  *
  * description:
  *
+ *   Data flow masks are a storage-efficient implementation of local
+ *   (within one function) variable sets. Data flow masks are always
+ *   relative of a Fundef-specific mask base that defines the mappings
+ *   between bits in the masks and actual parameters and local variables
+ *   in the function definition. Thus, whenever the underlying set of
+ *   variables changes, the mask base and hence all masks must be
+ *   re-computed.
+ *
+ *   While the name clearly hints on their original purpose, data flow
+ *   masks can be used anywhere sets of local identifiers are needed.
+ *   Their use is not confined to attaching data flow masks to the abstract
+ *   syntax tree, but they may likewise be used as auxiliary data within
+ *   some transformation. This kind of use also solves the problem of
+ *   re-computing masks stored within the AST when new variables are
+ *   added or existing ones are removed from a function definition.
+ *
  *   This is the header file of a module providing sophisticated support
  *   for binary data flow masks. These data flow masks consist of a mask
  *   data base which has to be generated for each function individually
