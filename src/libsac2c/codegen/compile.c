@@ -7859,7 +7859,7 @@ COMPprfCond (node *arg_node, info *arg_info)
  * (Not implemented yet)
  */
 node *
-COMPprfIsCudaThread (node *arg_node, info *arg_info)
+COMPprfGetCudaThread (node *arg_node, info *arg_info)
 {
     node *ret_node;
     node *let_ids;
@@ -7868,10 +7868,7 @@ COMPprfIsCudaThread (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("SAC_IS_CUDA_THREAD", DUPdupIdsIdNt (let_ids),
-                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
-                                 TCmakeIdCopyString ("isCudaThread"), NULL);
+    ret_node = TCmakeAssignIcm1 ("SAC_DIST_ISCUDATHREAD", DUPdupIdsIdNt (let_ids), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7949,7 +7946,25 @@ COMPprfDistAlloc (node *arg_node, info *arg_info)
 }
 
 node *
-COMPprfDist2Conc (node *arg_node, info *arg_info)
+COMPprfDist2Conc_Rel (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("DIST_MEM_TRANSFER", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
+                                 TCmakeIdCopyString ("dist2conc"), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfDist2Conc_Abs (node *arg_node, info *arg_info)
 {
     node *ret_node;
     node *let_ids;

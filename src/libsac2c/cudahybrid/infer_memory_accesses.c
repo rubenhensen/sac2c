@@ -49,7 +49,6 @@ typedef struct {
  *****************************************************************************/
 struct INFO {
     bool in_wl;
-    bool in_kernel;
     lut_t *lut;
     lut_t *part_lut;
     lut_t *add_lut;
@@ -60,9 +59,6 @@ struct INFO {
 /*
  * INFO_INWL          Flag indicating whether the code currently being
  *                    traversed is in a N_withs
- *
- * INFO_INKERNEL      Flag indicating whether the code currently being
- *                    traversed is in a cuda kernel N_fundef
  *
  * INFO_LUT           Lookup table storing pairs of Name->{min,max}
  *                    were min and max are the minimum and maximum offsets
@@ -84,7 +80,6 @@ struct INFO {
  */
 
 #define INFO_INWL(n) (n->in_wl)
-#define INFO_INKERNEL(n) (n->in_kernel)
 #define INFO_LUT(n) (n->lut)
 #define INFO_ADDLUT(n) (n->add_lut)
 #define INFO_IDSAVIS(n) (n->ids_avis)
@@ -100,7 +95,6 @@ MakeInfo (void)
     result = (info *)MEMmalloc (sizeof (info));
 
     INFO_INWL (result) = FALSE;
-    INFO_INKERNEL (result) = FALSE;
     INFO_LUT (result) = NULL;
     INFO_ADDLUT (result) = NULL;
     INFO_IDSAVIS (result) = NULL;
@@ -289,18 +283,9 @@ IMAfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (FUNDEF_ISCUDAGLOBALFUN (arg_node),
-                 "IMA traversing non-kernel function!");
-
-    INFO_INKERNEL (arg_info) = TRUE;
-    INFO_LUT (arg_info) = LUTgenerateLut ();
-    INFO_ADDLUT (arg_info) = LUTgenerateLut ();
     DBUG_PRINT ("Traversing function %s", FUNDEF_NAME (arg_node));
 
     FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
-
-    FUNDEF_ACCESS (arg_node) = INFO_LUT (arg_info);
-    INFO_ADDLUT (arg_info) = LUTremoveLut (INFO_ADDLUT (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -330,18 +315,51 @@ IMAlet (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *IMAwith( node *arg_node, info *arg_info)
+ *
+ * @brief Create table if not nested with-loop. Then traverse through the
+ * operations and code.
+ *
+ *****************************************************************************/
+node *
+IMAwith (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+    DBUG_PRINT ("Found with");
+
+    if (!INFO_INWL (arg_info)) {
+        INFO_INWL (arg_info) = TRUE;
+        INFO_LUT (arg_info) = LUTgenerateLut ();
+        INFO_ADDLUT (arg_info) = LUTgenerateLut ();
+
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+        WITH_ACCESS (arg_node) = INFO_LUT (arg_info);
+
+        INFO_ADDLUT (arg_info) = LUTremoveLut (INFO_ADDLUT (arg_info));
+    } else {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *IMAwith2( node *arg_node, info *arg_info)
  *
- * @brief Traverse only through the operations.
+ * @brief Create table if not nested with-loop. Then traverse through the
+ * operations and code.
  *
  *****************************************************************************/
 node *
 IMAwith2 (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
-    DBUG_PRINT ("Found with");
+    DBUG_PRINT ("Found with2");
 
-    if (!INFO_INKERNEL (arg_info) && !INFO_INWL (arg_info)) {
+    if (!INFO_INWL (arg_info)) {
         INFO_INWL (arg_info) = TRUE;
         INFO_LUT (arg_info) = LUTgenerateLut ();
         INFO_ADDLUT (arg_info) = LUTgenerateLut ();
@@ -363,7 +381,8 @@ IMAwith2 (node *arg_node, info *arg_info)
  *
  * @fn node *IMAgenarray( node *arg_node, info *arg_info)
  *
- * @brief Save access with no offset for the idx.
+ * @brief Save access with no offset for the idx and offset of 0 for memory
+ *        allocation.
  *
  *****************************************************************************/
 node *
@@ -373,7 +392,10 @@ IMAgenarray (node *arg_node, info *arg_info)
     DBUG_PRINT ("Found genarray");
 
     INFO_OFFSETAVIS (arg_info) = GENARRAY_IDX (arg_node);
-    updateAddTable (INFO_ADDLUT (arg_info), GENARRAY_IDX (arg_node), 0);
+    INFO_ADDLUT (arg_info)
+      = updateAddTable (INFO_ADDLUT (arg_info), GENARRAY_IDX (arg_node), 0);
+    INFO_LUT (arg_info)
+      = updateOffsetsTable (INFO_LUT (arg_info), ID_AVIS (GENARRAY_MEM (arg_node)), 0);
     GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -383,7 +405,8 @@ IMAgenarray (node *arg_node, info *arg_info)
  *
  * @fn node *IMAmodarray( node *arg_node, info *arg_info)
  *
- * @brief Save access with no offset for the idx.
+ * @brief Save access with no offset for the idx and offset of 0 for memory
+ *        allocation.
  *
  *****************************************************************************/
 node *
@@ -393,7 +416,10 @@ IMAmodarray (node *arg_node, info *arg_info)
     DBUG_PRINT ("Found modarray");
 
     INFO_OFFSETAVIS (arg_info) = MODARRAY_IDX (arg_node);
-    updateAddTable (INFO_ADDLUT (arg_info), MODARRAY_IDX (arg_node), 0);
+    INFO_ADDLUT (arg_info)
+      = updateAddTable (INFO_ADDLUT (arg_info), MODARRAY_IDX (arg_node), 0);
+    INFO_LUT (arg_info)
+      = updateOffsetsTable (INFO_LUT (arg_info), ID_AVIS (MODARRAY_MEM (arg_node)), 0);
     MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -415,7 +441,7 @@ IMAprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (INFO_INWL (arg_info) || INFO_INKERNEL (arg_info)) {
+    if (INFO_INWL (arg_info)) {
         switch (PRF_PRF (arg_node)) {
         case F_idxs2offset:
             /* This is the let for the with-loop index offset */
@@ -455,6 +481,16 @@ IMAprf (node *arg_node, info *arg_info)
                 INFO_LUT (arg_info)
                   = updateOffsetsTable (INFO_LUT (arg_info), src_avis, val);
             }
+            //      case F_cuda_wl_assign:
+            //        /* This is a CUDA with-loop assignment. The second argument is the
+            //         * memory allocated for the resulting array. We need to add it to
+            //         the
+            //         * offsets table with offset 0, as we need to transfers/allocate
+            //         space
+            //         * for it based on the scheduler decision */
+            //        INFO_LUT(arg_info) = updateOffsetsTable(INFO_LUT(arg_info),
+            //                                                ID_AVIS(PRF_ARG2(arg_node)),
+            //                                                0);
         default:
             DBUG_PRINT ("Found unknown prf.");
             break;

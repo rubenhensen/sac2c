@@ -1827,25 +1827,6 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
 
-    case F_is_cuda_thread:
-        /*
-         * result is boolean scalar
-         */
-        als->dim = TBmakeNum (0);
-        als->shape = TCcreateZeroVector (0, T_bool);
-        break;
-
-    case F_device2dist:
-    case F_host2dist_st:
-    case F_host2dist_spmd:
-    case F_dist2conc:
-    case F_dist_alloc:
-        /* we don't want to allocate these */
-        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
-
-        INFO_MUSTFILL (arg_info) = FALSE;
-        break;
-
     case F_alloc:
     case F_suballoc:
     case F_fill:

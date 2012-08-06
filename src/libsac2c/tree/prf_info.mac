@@ -999,8 +999,8 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
   /*******************************************************************************
    * CUDA Heterogeneous code generation:
    */
-  PRF (is_cuda_thread, (PA_x, PA_x, PA_x), 0, XXX, SIMD, NTCCTprf_dummy, NULL,
-       COMPprfIsCudaThread, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
+  PRF (get_cuda_thread, (PA_x, PA_x, PA_x), 0, XXX, SIMD, NTCCTprf_dummy, NULL,
+       COMPprfGetCudaThread, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
        NULL, NULL),
 
   PRF (host2dist_st, (PA_x, PA_x, PA_x), 3, XXX, NOSIMD, NTCCTprf_dummy, NULL,
@@ -1015,9 +1015,13 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
        COMPprfDevice2Dist, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL,
        NULL),
 
-  PRF (dist2conc, (PA_x, PA_x, PA_x), 6, XXX, SIMD, NTCCTprf_dummy, NULL,
-       COMPprfDist2Conc, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone, NULL,
-       NULL),
+  PRF (dist2conc_rel, (PA_x, PA_x, PA_x), 6, XXX, SIMD, NTCCTprf_dummy, NULL,
+       COMPprfDist2Conc_Rel, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
+       NULL, NULL),
+
+  PRF (dist2conc_abs, (PA_x, PA_x, PA_x), 6, XXX, SIMD, NTCCTprf_dummy, NULL,
+       COMPprfDist2Conc_Abs, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
+       NULL, NULL),
 
   PRF (dist_alloc, (PA_x, PA_x, PA_x), 3, XXX, NOSIMD, NTCCTprf_dummy, NULL,
        COMPprfDistAlloc, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone, NULL,

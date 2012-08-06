@@ -544,6 +544,7 @@
       <travuser>
         <node name="Fundef" />
         <node name="Let" />
+        <node name="With" />
         <node name="With2" />
         <node name="Genarray" />
         <node name="Modarray" />
@@ -571,15 +572,14 @@
     <traversal id="IMEMDIST" name="Insert memory transfer primitives for distributed variables" default="sons" include="insert_memtrans_dist.h" >
       <travuser>
         <node name="Let" />
+        <node name="Block" />
         <node name="Assign" />
+        <node name="With" />
         <node name="With2" />
         <node name="Id" />
         <node name="Ids" />
         <node name="Fundef" />
-        <node name="Ap" />
         <node name="Return" />
-        <node name="Avis" />
-        <node name="Ret" />
       </travuser>
     </traversal>
     <traversal id="DISTCOND" name="Create distributed with-loop conditional" default="sons" include="create_dist_wl_cond.h" >
@@ -5497,22 +5497,6 @@ N_tfarg :
             </target>
           </type>
         </attribute>
-        <attribute name="Access" inconstructor="no" >
-          <description>
-            A LUT containing information about the memory access patterns of
-            relatively free arrays, for the distributed backend.
-          </description>
-          <type name="LUT">
-            <targets>
-              <target mandatory="no">
-                <any />
-                <phases>
-                  <phase name="pc_ima" />
-                </phases>
-              </target>
-            </targets>
-          </type>
-        </attribute>
       </attributes>
       <flags>
         <flag name="IsMain">
@@ -9012,6 +8996,22 @@ N_tfarg :
                 <any />
                 <phases>
                   <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
+        <attribute name="Access" inconstructor="no" >
+          <description>
+            A LUT containing information about the memory access patterns of
+            relatively free arrays, for the distributed backend.
+          </description>
+          <type name="LUT">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <phase name="pc_ima" />
                 </phases>
               </target>
             </targets>

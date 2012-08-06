@@ -1,6 +1,12 @@
 /** <!--********************************************************************-->
  *
- * @defgroup
+ * @defgroup Create Distributed With-loop Conditionals
+ *
+ * This module converts N_withs nodes into nested conditionals. For each
+ * with-loop, a predicate is generated, such as "is this a CUDA thread?".
+ * Should this predicate be true at runtime that version of the with-loop gets
+ * executed. Otherwise, the predicate of the next with-loop is checked and so on
+ *
  *
  *****************************************************************************/
 
@@ -44,7 +50,7 @@ struct INFO {
     node *fundef;
     node *assigns;
     node *letids;
-    node *predassigns;
+    node *preassigns;
     node *predavis;
     node *thenblock;
 };
@@ -56,7 +62,7 @@ struct INFO {
  *
  * INFO_LETIDS        N_ids of a N_let
  *
- * INFO_PREDASSIGNS   N_assign chain for the predicate of each branch of the
+ * INFO_PREASSIGNS    N_assign chain for the predicate of each branch of the
  *                    conditional
  *
  * INFO_PREDAVIS      N_avis for the predicate variable
@@ -68,7 +74,7 @@ struct INFO {
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_ASSIGNS(n) (n->assigns)
 #define INFO_LETIDS(n) (n->letids)
-#define INFO_PREDASSIGNS(n) (n->predassigns)
+#define INFO_PREASSIGNS(n) (n->preassigns)
 #define INFO_PREDAVIS(n) (n->predavis)
 #define INFO_THENBLOCK(n) (n->thenblock)
 
@@ -84,7 +90,7 @@ MakeInfo (void)
     INFO_FUNDEF (result) = NULL;
     INFO_ASSIGNS (result) = NULL;
     INFO_LETIDS (result) = NULL;
-    INFO_PREDASSIGNS (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
     INFO_PREDAVIS (result) = NULL;
     INFO_THENBLOCK (result) = NULL;
 
@@ -145,28 +151,28 @@ DISTCONDdoCreateDistWlCond (node *syntax_tree)
  *
  *****************************************************************************/
 
-static void CreatePredicateAssignments (node *expr, info *arg_info);
+static void CreatePreAssignments (node *expr, info *arg_info, node *pred_avis);
 
 /** <!--********************************************************************-->
  *
- * @fn void CreatePredicateAssignments( node *expr, info *arg_info)
+ * @fn void CreatePreAssignments( node *expr, info *arg_info, node *pred_avis)
  *
  * @brief Create variables and memory assignments for the predicate given by
  *        expr.
  *
  *****************************************************************************/
 static void
-CreatePredicateAssignments (node *expr, info *arg_info)
+CreatePreAssignments (node *expr, info *arg_info, node *pred_avis)
 {
-    node *alloc_avis, *pred_avis, *fill, *alloc_prf;
+    node *alloc_avis, *alloc_assign, *fill, *alloc_prf;
+    simpletype st;
 
     DBUG_ENTER ();
 
     /* create predicate avises */
-    alloc_avis = TBmakeAvis (TRAVtmpVarName ("pred_alloc"),
-                             TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
-    pred_avis = TBmakeAvis (TRAVtmpVarName ("pred"),
-                            TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
+    st = TYgetSimpleType (TYgetScalar (AVIS_TYPE (pred_avis)));
+    alloc_avis
+      = TBmakeAvis (TRAVtmpVarName ("_alloc"), TYcopyType (AVIS_TYPE (pred_avis)));
     INFO_PREDAVIS (arg_info) = pred_avis;
 
     /* add new avises to variable declarations */
@@ -180,9 +186,11 @@ CreatePredicateAssignments (node *expr, info *arg_info)
                          NULL);
 
     /* create assignment for allocation of predicate variable */
-    alloc_prf = TCmakePrf2 (F_alloc, TBmakeNum (0), TCcreateZeroVector (0, T_bool));
-    INFO_PREDASSIGNS (arg_info)
+    alloc_prf = TCmakePrf2 (F_alloc, TBmakeNum (0), TCcreateZeroVector (0, st));
+    alloc_assign
       = TBmakeAssign (TBmakeLet (TBmakeIds (alloc_avis, NULL), alloc_prf), fill);
+    INFO_PREASSIGNS (arg_info)
+      = TCappendAssign (INFO_PREASSIGNS (arg_info), alloc_assign);
 
     DBUG_RETURN ();
 }
@@ -298,7 +306,7 @@ DISTCONDwiths (node *arg_node, info *arg_info)
     /* the assignments for this with-loop are the predicate assignments and the
      conditional*/
     INFO_ASSIGNS (arg_info)
-      = TCappendAssign (INFO_PREDASSIGNS (arg_info), TBmakeAssign (cond, NULL));
+      = TCappendAssign (INFO_PREASSIGNS (arg_info), TBmakeAssign (cond, NULL));
 
     WITHS_NEXT (arg_node) = TRAVopt (WITHS_NEXT (arg_node), arg_info);
 
@@ -316,14 +324,22 @@ node *
 DISTCONDwith (node *arg_node, info *arg_info)
 {
     static int counter = 0;
-    node *new_rhs;
+    node *cudathreadavis, *new_rhs, *new_avis;
 
     DBUG_ENTER ();
 
-    /* create predicate value */
-    new_rhs = TBmakePrf (F_is_cuda_thread, TBmakeExprs (TBmakeNum (counter++), NULL));
+    INFO_PREASSIGNS (arg_info) = NULL;
+    cudathreadavis = TBmakeAvis (TRAVtmpVarName ("_cudathread"),
+                                 TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+    CreatePreAssignments (TCmakePrf1 (F_get_cuda_thread, TBmakeNum (counter++)), arg_info,
+                          cudathreadavis);
 
-    CreatePredicateAssignments (new_rhs, arg_info);
+    /* create predicate value */
+    new_rhs = TCmakePrf2 (F_ge_SxS, TBmakeId (cudathreadavis), TBmakeNum (0));
+
+    new_avis = TBmakeAvis (TRAVtmpVarName ("_pred"),
+                           TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
+    CreatePreAssignments (new_rhs, arg_info, new_avis);
 
     INFO_THENBLOCK (arg_info)
       = TBmakeAssign (TBmakeLet (DUPdoDupTree (INFO_LETIDS (arg_info)),
@@ -343,14 +359,18 @@ DISTCONDwith (node *arg_node, info *arg_info)
 node *
 DISTCONDwith2 (node *arg_node, info *arg_info)
 {
-    node *new_rhs;
+    node *new_rhs, *new_avis;
 
     DBUG_ENTER ();
 
+    INFO_PREASSIGNS (arg_info) = NULL;
+
     /* create predicate value */
     new_rhs = TBmakeBool (TRUE);
+    new_avis = TBmakeAvis (TRAVtmpVarName ("_pred"),
+                           TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
 
-    CreatePredicateAssignments (new_rhs, arg_info);
+    CreatePreAssignments (new_rhs, arg_info, new_avis);
 
     INFO_THENBLOCK (arg_info)
       = TBmakeAssign (TBmakeLet (DUPdoDupTree (INFO_LETIDS (arg_info)),

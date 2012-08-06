@@ -241,6 +241,7 @@ PrintGlobalSwitches (void)
         fprintf (global.outfile, "#define SAC_BACKEND_C99\n");
         break;
     case BE_cuda:
+    case BE_cudahybrid:
         fprintf (global.outfile, "#define SAC_BACKEND CUDA\n");
         break;
     case BE_omp:
@@ -809,6 +810,7 @@ GSCprintMain (void)
         GSCprintMainMuTC ();
         break;
     case BE_cuda:
+    case BE_cudahybrid:
         GSCprintMainC99 ();
         break;
     case BE_omp:

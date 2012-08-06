@@ -1218,6 +1218,9 @@ SUBPHASE (mmv, "Marking memval identifiers", MMVdoMarkMemVals, ALWAYS, pc)
 SUBPHASE (rnb, "Remove noop branch", RNBdoRemoveNoopBranch,
           global.optimize.dopra &&global.optimize.dornb, pc)
 
+SUBPHASE (imemdist, "Insert memory transfer primitives for distributed variables",
+          IMEMDISTdoInsertMemtranDist, global.backend == BE_cudahybrid, pc)
+
 SUBPHASE (cuasr, "CUDA Adjust return ids of single threaded kernel",
           CUASRdoAdjustStknlRets,
           (global.backend == BE_cuda || global.backend == BE_cudahybrid)
@@ -1226,9 +1229,6 @@ SUBPHASE (cuasr, "CUDA Adjust return ids of single threaded kernel",
 
 SUBPHASE (cuknl, "CUDA Create Cuda kernel functions", CUKNLdoCreateCudaKernels,
           (global.backend == BE_cuda || global.backend == BE_cudahybrid), pc)
-
-SUBPHASE (imemdist, "Insert memory transfer primitives for distributed variables",
-          IMEMDISTdoInsertMemtranDist, global.backend == BE_cudahybrid, pc)
 
 SUBPHASE (dvr, "Removing obsolete variable declarations", DVRdoDeadVardecRemoval, ALWAYS,
           pc)
