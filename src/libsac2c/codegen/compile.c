@@ -7856,7 +7856,6 @@ COMPprfCond (node *arg_node, info *arg_info)
 
 /*
  * Distributed Variable Primitive Functions
- * (Not implemented yet)
  */
 node *
 COMPprfGetCudaThread (node *arg_node, info *arg_info)
@@ -7868,7 +7867,7 @@ COMPprfGetCudaThread (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm1 ("SAC_DIST_ISCUDATHREAD", DUPdupIdsIdNt (let_ids), NULL);
+    ret_node = TCmakeAssignIcm1 ("SAC_DIST_GETCUDATHREAD", DUPdupIdsIdNt (let_ids), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7883,10 +7882,10 @@ COMPprfHost2Dist_st (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("DIST_UPDATE", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm4 ("DIST_HOST2DIST_ST", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
-                                 TCmakeIdCopyString ("host2dist_st"), NULL);
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7901,10 +7900,10 @@ COMPprfHost2Dist_spmd (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("DIST_UPDATE", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm4 ("DIST_HOST2DIST_SPMD", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
-                                 TCmakeIdCopyString ("host2dist_spmd"), NULL);
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7919,10 +7918,10 @@ COMPprfDevice2Dist (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("DIST_UPDATE", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm4 ("DIST_DEV2DIST", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
-                                 TCmakeIdCopyString ("dev2dist"), NULL);
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7955,10 +7954,11 @@ COMPprfDist2Conc_Rel (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("DIST_MEM_TRANSFER", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm5 ("DIST_DIST2CONC_REL", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
-                                 TCmakeIdCopyString ("dist2conc"), NULL);
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG4 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7973,10 +7973,11 @@ COMPprfDist2Conc_Abs (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("DIST_MEM_TRANSFER", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm5 ("DIST_DIST2CONC_ABS", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
-                                 TCmakeIdCopyString ("dist2conc"), NULL);
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG4 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -8009,10 +8010,8 @@ COMPprfCudaSetDevice (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("CUDA_SET_DEVICE", DUPdupIdsIdNt (let_ids),
-                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
-                                 TCmakeIdCopyString ("cudaSetDevice"), NULL);
+    ret_node
+      = TCmakeAssignIcm1 ("CUDA_SET_DEVICE", DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }

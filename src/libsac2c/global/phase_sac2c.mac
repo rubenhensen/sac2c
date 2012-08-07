@@ -1038,7 +1038,7 @@ SUBPHASE (simd, "SIMD inference", SIMDdoInferSIMD, global.simd, mem)
 SUBPHASE (cp, "Propagating constants", CPdoConstantPropagation, global.optimize.docp, mem)
 
 SUBPHASE (cnstass, "CUDA Flatten generators", CNSTASSdoCUDAconstantAssignment,
-          (global.backend == BE_cuda || global.backend == BE_cudahybrid), mem)
+          (global.backend == BE_cuda), mem)
 
 SUBPHASE (asd, "AUD/SCL distinction", ASDdoAudSclDistinction, ALWAYS, mem)
 

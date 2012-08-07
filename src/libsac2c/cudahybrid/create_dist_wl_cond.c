@@ -324,7 +324,7 @@ node *
 DISTCONDwith (node *arg_node, info *arg_info)
 {
     static int counter = 0;
-    node *cudathreadavis, *new_rhs, *new_avis;
+    node *cudathreadavis, *new_rhs, *new_avis, *wl_assign;
 
     DBUG_ENTER ();
 
@@ -341,10 +341,12 @@ DISTCONDwith (node *arg_node, info *arg_info)
                            TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
     CreatePreAssignments (new_rhs, arg_info, new_avis);
 
+    wl_assign = TBmakeAssign (TBmakeLet (DUPdoDupTree (INFO_LETIDS (arg_info)),
+                                         DUPdoDupTree (arg_node)),
+                              NULL);
     INFO_THENBLOCK (arg_info)
-      = TBmakeAssign (TBmakeLet (DUPdoDupTree (INFO_LETIDS (arg_info)),
-                                 DUPdoDupTree (arg_node)),
-                      NULL);
+      = TBmakeAssign (TCmakePrf1 (F_cuda_set_device, TBmakeId (cudathreadavis)),
+                      wl_assign);
 
     DBUG_RETURN (arg_node);
 }

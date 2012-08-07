@@ -84,6 +84,7 @@ struct INFO {
     lut_t *lut;
     node *idxavis;
     lut_t *access;
+    node *device_number;
 };
 
 /*
@@ -110,6 +111,8 @@ struct INFO {
  * INFO_ACCESS        Lookup table with memory access information for each
  *                    withloop (from IMA subphase).
  *
+ * INFO_DEVICENUMBER  N_id for the variable with the CUDA device number.
+ *
  */
 
 #define INFO_FUNDEF(n) (n->fundef)
@@ -120,6 +123,7 @@ struct INFO {
 #define INFO_LUT(n) (n->lut)
 #define INFO_IDXAVIS(n) (n->idxavis)
 #define INFO_ACCESS(n) (n->access)
+#define INFO_DEVICENUMBER(n) (n->device_number)
 
 static info *
 MakeInfo (void)
@@ -137,6 +141,7 @@ MakeInfo (void)
     INFO_LUT (result) = NULL;
     INFO_IDXAVIS (result) = NULL;
     INFO_ACCESS (result) = NULL;
+    INFO_DEVICENUMBER (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -325,40 +330,33 @@ Createdist2conc (node *id, node *dist_avis, node *conc_avis, info *arg_info)
     FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
       = TBmakeVardec (conc_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-    if (INFO_ACCESS (arg_info) != NULL) {
-        lut_pointer = LUTsearchInLutS (INFO_ACCESS (arg_info), AVIS_NAME (dist_avis));
-        if (lut_pointer != NULL) {
-            /* If there is memory access data available, we might find some
-             access pattern for the F_dist2conc */
-            offset = (offset_t *)*lut_pointer;
-            DBUG_PRINT ("Found entry for %s -> [%d,%d]", AVIS_NAME (dist_avis),
-                        offset->min, offset->max);
-            INFO_PREASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
-                                         TCmakePrf3 (F_dist2conc_rel,
-                                                     TBmakeId (dist_avis),
-                                                     TBmakeNum (offset->min),
-                                                     TBmakeNum (offset->max))),
-                              INFO_PREASSIGNS (arg_info));
-        } else {
-            /* Unknown access pattern, so we set the minimum and maximum offsets to the
-             maximum value, the length of the first dimension. */
-            DBUG_PRINT ("No entry for %s", AVIS_NAME (dist_avis));
-            extent = SHgetExtent (TYgetShape (AVIS_TYPE (dist_avis)), 0);
-            INFO_PREASSIGNS (arg_info)
-              = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
-                                         TCmakePrf3 (F_dist2conc_abs,
-                                                     TBmakeId (dist_avis), TBmakeNum (0),
-                                                     TBmakeNum (extent))),
-                              INFO_PREASSIGNS (arg_info));
-        }
+    lut_pointer = LUTsearchInLutS (INFO_ACCESS (arg_info), AVIS_NAME (dist_avis));
+
+    if (lut_pointer != NULL) {
+        /* If there is memory access data available, we might find some
+         access pattern for the F_dist2conc */
+        offset = (offset_t *)*lut_pointer;
+        DBUG_PRINT ("Found entry for %s -> [%d,%d]", AVIS_NAME (dist_avis), offset->min,
+                    offset->max);
+        INFO_PREASSIGNS (arg_info)
+          = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
+                                     TCmakePrf4 (F_dist2conc_rel, TBmakeId (dist_avis),
+                                                 TBmakeNum (offset->min),
+                                                 TBmakeNum (offset->max),
+                                                 DUPdoDupNode (
+                                                   INFO_DEVICENUMBER (arg_info)))),
+                          INFO_PREASSIGNS (arg_info));
     } else {
-        DBUG_PRINT ("Table not available");
+        /* Unknown access pattern, so we set the minimum and maximum offsets to the
+         maximum value, the length of the first dimension. */
+        DBUG_PRINT ("No entry for %s", AVIS_NAME (dist_avis));
         extent = SHgetExtent (TYgetShape (AVIS_TYPE (dist_avis)), 0);
         INFO_PREASSIGNS (arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
-                                     TCmakePrf3 (F_dist2conc_abs, TBmakeId (dist_avis),
-                                                 TBmakeNum (0), TBmakeNum (extent))),
+                                     TCmakePrf4 (F_dist2conc_abs, TBmakeId (dist_avis),
+                                                 TBmakeNum (0), TBmakeNum (extent),
+                                                 DUPdoDupNode (
+                                                   INFO_DEVICENUMBER (arg_info)))),
                           INFO_PREASSIGNS (arg_info));
     }
 
@@ -559,7 +557,7 @@ IMEMDISTlet (node *arg_node, info *arg_info)
         LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
         LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
-        /* these are reset here as the ids traversal needs these flags.*/
+        /* these are reset only here as the ids traversal needs these flags.*/
         INFO_CUDARIZABLE (arg_info) = old_cudarizable;
         INFO_ACCESS (arg_info) = old_lut;
         INFO_INWL (arg_info) = old_inwl;
@@ -583,6 +581,7 @@ IMEMDISTwith2 (node *arg_node, info *arg_info)
     /* If we are not already in a withloop */
     if (!INFO_INWL (arg_info)) {
         INFO_CUDARIZABLE (arg_info) = FALSE;
+        INFO_DEVICENUMBER (arg_info) = TBmakeNum (0);
 
         arg_node = IMAdoInferMemoryAccesses (arg_node);
 
@@ -595,6 +594,7 @@ IMEMDISTwith2 (node *arg_node, info *arg_info)
 
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
 
+        INFO_DEVICENUMBER (arg_info) = FREEdoFreeNode (INFO_DEVICENUMBER (arg_info));
     } else {
 
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
@@ -656,6 +656,7 @@ IMEMDISTids (node *arg_node, info *arg_info)
     ntype *ids_type, *conc_type;
     const char *suffix;
     prf conc2dist;
+    node *device_number;
 
     DBUG_ENTER ();
 
@@ -688,14 +689,18 @@ IMEMDISTids (node *arg_node, info *arg_info)
         }
 
         /* add concrete to distributed transfer */
-        conc2dist = INFO_CUDARIZABLE (arg_info)
-                      ? F_device2dist
-                      : (INFO_INWL (arg_info) ? F_host2dist_spmd : F_host2dist_st);
+        if (INFO_CUDARIZABLE (arg_info)) {
+            conc2dist = F_device2dist;
+            device_number = DUPdoDupNode (INFO_DEVICENUMBER (arg_info));
+        } else {
+            conc2dist = (INFO_INWL (arg_info) ? F_host2dist_spmd : F_host2dist_st);
+            device_number = TBmakeNum (0);
+        }
 
         INFO_POSTASSIGNS (arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (ids_avis, NULL),
-                                     TCmakePrf2 (conc2dist, TBmakeId (new_conc_avis),
-                                                 TBmakeId (ids_avis))),
+                                     TCmakePrf3 (conc2dist, TBmakeId (new_conc_avis),
+                                                 TBmakeId (ids_avis), device_number)),
                           INFO_POSTASSIGNS (arg_info));
     }
 
@@ -745,6 +750,25 @@ IMEMDISTid (node *arg_node, info *arg_info)
         //      if( INFO_INWL(arg_info) / *&& INFO_CUDARIZABLE(arg_info)* /) {
         //        Createdistcont( id_avis, arg_info );
         //      }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IMEMDISTprf( node *arg_node, info *arg_info)
+ *
+ * @brief Save avis of the cuda device variable.
+ *
+ *****************************************************************************/
+node *
+IMEMDISTprf (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (PRF_PRF (arg_node) == F_cuda_set_device) {
+        INFO_DEVICENUMBER (arg_info) = PRF_ARG1 (arg_node);
     }
 
     DBUG_RETURN (arg_node);
