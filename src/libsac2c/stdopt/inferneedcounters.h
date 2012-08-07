@@ -24,5 +24,6 @@ extern node *INFNCblock (node *arg_node, info *arg_info);
 extern node *INFNCprf (node *arg_node, info *arg_info);
 extern node *INFNCavis (node *arg_node, info *arg_info);
 extern node *INFNCid (node *arg_node, info *arg_info);
+extern node *INFNCids (node *arg_node, info *arg_info);
 
 #endif /* _SAC_INFERNEEDCOUNTERS_H_ */

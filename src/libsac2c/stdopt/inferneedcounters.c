@@ -228,6 +228,37 @@ INFNCavis (node *arg_node, info *arg_info)
 
     AVIS_NEEDCOUNT (arg_node) = 0;
 
+    arg_node = TRAVsons (arg_node, arg_info); /* Traverse AVIS_DIM, etc. */
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * N_ids Needcount inference traversal
+ *
+ * @fn node *INFNCids( node *arg_node, info *arg_info)
+ *
+ * @brief We get here from the LHS of an N_assign,
+ *        such as a WLPROP WL. We have to traverse
+ *        the AVIS_DIM/SHAPE/MIN/MAX of the LHS.
+ *
+ * @param arg_node
+ *
+ * @return
+ *
+ *****************************************************************************/
+node *
+INFNCids (node *arg_node, info *arg_info)
+{
+    node *avis;
+
+    DBUG_ENTER ();
+
+    avis = IDS_AVIS (arg_node);
+    DBUG_PRINT ("Looking at N_ids %s", AVIS_NAME (avis));
+    IDS_AVIS (arg_node) = TRAVdo (IDS_AVIS (arg_node), arg_info);
+
     DBUG_RETURN (arg_node);
 }
 
@@ -256,6 +287,7 @@ INFNCid (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     avis = ID_AVIS (arg_node);
+    DBUG_PRINT ("Looking at N_id %s", AVIS_NAME (avis));
 
     if (!exclusionDueToHostTraversal (arg_node, arg_info)) {
         AVIS_NEEDCOUNT (avis) += 1;
@@ -263,10 +295,12 @@ INFNCid (node *arg_node, info *arg_info)
                     AVIS_NEEDCOUNT (avis));
     }
 
+#ifdef HOPEFULLYDEAD
     AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
     AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
     AVIS_MIN (avis) = TRAVopt (AVIS_MIN (avis), arg_info);
     AVIS_MAX (avis) = TRAVopt (AVIS_MAX (avis), arg_info);
+#endif // HOPEFULLYDEAD
 
     DBUG_RETURN (arg_node);
 }

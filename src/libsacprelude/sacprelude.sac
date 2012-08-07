@@ -230,10 +230,13 @@ inline
 bool[.] isPartitionIntersect1Part( int[.] idxmin, int[.] idxmax,
                                    int[.] bound1, int[.] bound2)
 { /* Predicate to determine if intersection of CWL index scalar and
-   * PWL partition bounds lays entirely within the PWL partition.
+   * PWL partition bounds lays entirely within one PWL partition.
    * If so, then AWLF can be performed with no slicing of the CWL.
    * This function requires an assist from 
    * the compiler to perform the all-reduce on this function's result.
+   *
+   * All arguments are normalized.
+   *
    */
 
   z = _and_VxV_( _ge_VxV_( idxmin, bound1), _le_VxV_( idxmax, bound2));
@@ -244,10 +247,13 @@ inline
 bool[.] isPartitionIntersect1Part( int idxmin, int idxmax,
                                    int[.] bound1, int[.] bound2)
 { /* Predicate to determine if intersection of CWL index scalar and
-   * PWL partition bounds lays entirely within the PWL partition.
+   * PWL partition bounds lays entirely within one PWL partition.
    * If so, then AWLF can be performed with no slicing of the CWL.
    * This function requires an assist from 
    * the compiler to perform the all-reduce on this function's result.
+   *
+   * All arguments are normalized.
+   *
    */
 
   z = _and_VxV_( _ge_SxV_( idxmin, bound1), _le_SxV_( idxmax, bound2));

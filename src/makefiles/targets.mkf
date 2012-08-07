@@ -144,15 +144,16 @@ libsac2c_generics    := remove_generic_definitions \
 
 libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         deadcoderemoval SSACSE \
-                        SSALUR iteration_invariant_parameter_inference \
+                        iteration_invariant_parameter_inference \
                         SSAWLUnroll rmcasts \
-                        ElimSubDiv wlpropagation UndoElimSubDiv \
+                        ElimSubDiv UndoElimSubDiv \
                         constant_propagation \
                         variable_propagation \
                         signature_simplification inlining inferneedcounters \
                         arithmetic_simplification                           \
+                        SSALUR                                              \
                         associative_law  distributive_law elimtypeconv liftoptflags \
-                        wlsimplification copywlelim prfunroll wlselcount \
+                        wlsimplification prfunroll wlselcount \
                         insert_symb_arrayattr elim_shapevars makedimexpr \
                         makeshapeexpr remove_vardecs \
                         statistics saa_constant_folding constant_folding \
@@ -180,6 +181,8 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize      \
                         indexvectorutils                                    \
                         lacfun_utilities                                    \
                         with_loop_utilities                                 \
+                        copywlelim                                          \
+                        wlpropagation                                       \
                         eliminate_duplicate_fundef_args
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \

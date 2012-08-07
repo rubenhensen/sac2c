@@ -552,6 +552,7 @@ CWLEids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Setting DFM for %s", AVIS_NAME (IDS_AVIS (arg_node)));
     DFMsetMaskEntrySet (INFO_DFM (arg_info), NULL, IDS_AVIS (arg_node));
 
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
@@ -573,14 +574,13 @@ CWLEids (node *arg_node, info *arg_info)
  *   found in the codes.
  *
  *****************************************************************************/
-
 node *
 CWLEwith (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+    DBUG_PRINT ("Looking at WL %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
     INFO_WITHID (arg_info) = WITH_WITHID (arg_node);
     WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
