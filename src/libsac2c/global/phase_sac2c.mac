@@ -1107,7 +1107,7 @@ SUBPHASE (rco, "Optimizing reference counting instructions", EMRCOdoRefCountOpt,
 SUBPHASE( mvsmi,
           "Moving shared memory management instructions out of SPMD functions",
           MVSMIdoMoveSharedMemoryManagementInstructions, 
-          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop) || (global.mtmode == MT_lpel),
+          (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop),
           mem)
 #endif
 
@@ -1146,41 +1146,29 @@ ENDPHASE (ussa)
 
 PHASE (mt, "Running automatic parallelisation",
        (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)
-         || (global.mtmode == MT_lpel) || (global.backend == BE_omp))
+         || (global.backend == BE_omp))
 
 SUBPHASE (mtcm, "Running multithreading cost model", MTCMdoRunCostModel, ALWAYS, mt)
 
 SUBPHASE (mtstf, "Creating MT and ST functions", MTSTFdoCreateMtStFuns, ALWAYS, mt)
 
 SUBPHASE (mtspmdf, "Creating SPMD functions", MTSPMDFdoCreateSpmdFuns,
-          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)
-           || (global.mtmode == MT_lpel)),
-          mt)
+          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
 SUBPHASE (rmpr, "Filtering propagates", RMPRdoRemovePropagates,
-          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)
-           || (global.mtmode == MT_lpel)),
-          mt)
+          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
 SUBPHASE (mtrmi, "Restoring memory instructions", MTRMIdoRestoreMemoryInstrs,
-          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)
-           || (global.mtmode == MT_lpel)),
-          mt)
+          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
 SUBPHASE (mtdcr, "Removing dead code", MTDCRdoMtDeadCodeRemoval,
-          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)
-           || (global.mtmode == MT_lpel)),
-          mt)
+          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
 SUBPHASE (mtas, "Annotating scheduling information", MTASdoAnnotateScheduling,
-          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)
-           || (global.mtmode == MT_lpel)),
-          mt)
+          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
 SUBPHASE (sspmdls, "Applying SPMD linksign pragma", SSPMDLSdoSetSpmdLinksign,
-          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)
-           || (global.mtmode == MT_lpel)),
-          mt)
+          ((global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop)), mt)
 
 SUBPHASE (distcond, "Creating distributed with-loop conditionals",
           DISTCONDdoCreateDistWlCond, global.backend == BE_cudahybrid, mt)

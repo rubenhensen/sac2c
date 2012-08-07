@@ -165,10 +165,12 @@ PrintGlobalSwitches (void)
              (global.num_threads == 1) ? 0 : 1);
 
     fprintf (global.outfile, "#define SAC_DO_MT_PTHREAD      %d\n",
-             ((global.mtmode == MT_none) || (global.mtmode == MT_lpel)) ? 0 : 1);
+             ((global.mtmode != MT_none) && STReq (global.config.mt_lib, "pthread")) ? 1
+                                                                                     : 0);
 
     fprintf (global.outfile, "#define SAC_DO_MT_LPEL         %d\n",
-             (global.mtmode == MT_lpel) ? 1 : 0);
+             ((global.mtmode != MT_none) && STReq (global.config.mt_lib, "lpel")) ? 1
+                                                                                  : 0);
 
     fprintf (global.outfile, "#define SAC_DO_MT_OMP          %d\n",
              (global.backend == BE_omp) ? 1 : 0);
@@ -697,8 +699,9 @@ GSCprintMainC99 (void)
 
     DBUG_ENTER ();
 
-    run_mt_pthread = (global.mtmode == MT_createjoin) || (global.mtmode == MT_startstop);
-    run_mt_lpel = (global.mtmode == MT_lpel);
+    run_mt_pthread
+      = (global.mtmode != MT_none) && STReq (global.config.mt_lib, "pthread");
+    run_mt_lpel = (global.mtmode != MT_none) && STReq (global.config.mt_lib, "lpel");
     run_mt_omp = (global.backend == BE_omp);
     run_mt = run_mt_pthread || run_mt_omp || run_mt_lpel;
 

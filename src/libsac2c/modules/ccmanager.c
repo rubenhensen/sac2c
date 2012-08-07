@@ -156,11 +156,11 @@ AddSacLib (str_buf *buffer)
     case MT_createjoin: /* PThreads */
     case MT_startstop:  /* PThreads, default */
     case MT_mtstblock:  /* ?? */
-        SBUFprint (buffer, ".mt.pth ");
-        break;
-
-    case MT_lpel: /* threading via LPEL library from S-Net; requires pthreads */
-        SBUFprint (buffer, ".mt.lpel -llpel");
+        if (STReq (global.config.mt_lib, "lpel")) {
+            SBUFprint (buffer, ".mt.lpel -llpel");
+        } else if (STReq (global.config.mt_lib, "pthread")) {
+            SBUFprint (buffer, ".mt.pth ");
+        }
         break;
     }
 

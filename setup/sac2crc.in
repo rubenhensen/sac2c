@@ -108,7 +108,10 @@
  *                  library that result of the compilation of a SAC module
  *                  file. Useful to keep multiple versions of the standard
  *                  library for different targets.
- *   
+ *
+ *  MT_LIB          Multithreading backend library: either pthread or lpel.
+ *                  This is effective only when compiling with -mt enabled.
+ *
  *  OPT_O0          OPT_O0 specifies the C compiler option to disable optimizations.
  *                  This is triggered by the sac2c option -O0.
  *                  
@@ -267,7 +270,8 @@ TREE_CEXT        :=  "c"
 RC_METHOD        :=  "local"
 BACKEND          :=  "C99"
 LIB_VARIANT      :=  ""
- 
+MT_LIB           :=  "pthread"
+
 OPT_O0           :=  "@OPT_O0@"
 OPT_O1           :=  "@OPT_O1@"
 OPT_O2           :=  "@OPT_O2@"
@@ -663,6 +667,19 @@ target gnumalloc:
 
 CCMTLINK        +=  " -lglib"
 
+
+/*******************************************************************************
+ *
+ * Target lpel: use the LPEL multithreading library instead of pthreads
+ *              in the -mt builds.
+ *              Also selects the reference counting method suitable for external
+ *              use via sac4c.
+ */
+
+target lpel:
+MT_LIB           := "lpel"
+RC_METHOD        := "local_pasync_norc_desc"
+LIB_VARIANT      := "-lpel"
 
  
 /*******************************************************************************

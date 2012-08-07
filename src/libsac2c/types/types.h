@@ -182,8 +182,7 @@ typedef enum {
     MT_none = 0,
     MT_createjoin = 1, /* PThreads */
     MT_startstop = 2,  /* PThreads, default */
-    MT_mtstblock = 3,  /* ?? */
-    MT_lpel = 4        /* threading via LPEL library from S-Net; requires pthreads */
+    MT_mtstblock = 3   /* ?? */
 } mtmode_t;
 
 /* the possible executiomodes of mtmode 3 (mtstblock) */
@@ -688,6 +687,7 @@ typedef struct {
     char *cext;
     char *rc_method;
     char *backend;
+    char *mt_lib;
 
     char *tree_cc;
     char *tree_ld;

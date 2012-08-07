@@ -229,14 +229,25 @@ OPTcheckOptionConsistency (void)
                   " yet available for " ARCH " running " OS ".");
     }
 #endif
+
+    if (global.mtmode != MT_none) {
+        /* multithreading requested */
+        /* check the mt_lib spec */
+        if (!(STReq (global.config.mt_lib, "lpel")
+              || STReq (global.config.mt_lib, "pthread"))) {
+            global.mtmode = MT_none;
+            global.num_threads = 1;
+            CTIerror ("The MT_LIB specification can be either 'pthread' or 'lpel'.");
+        }
 #if !ENABLE_MT_LPEL
-    if (global.mtmode == MT_lpel) {
-        global.mtmode = MT_none;
-        global.num_threads = 1;
-        CTIerror ("Code generation for LPEL-base multi-threaded program execution not"
-                  " configured during compiler build.");
-    }
+        if (STReq (global.config.mt_lib, "lpel")) {
+            global.mtmode = MT_none;
+            global.num_threads = 1;
+            CTIerror ("Code generation for LPEL-base multi-threaded program execution not"
+                      " configured during compiler build.");
+        }
 #endif
+    }
 
 #if !ENABLE_PHM
     if (global.optimize.dophm) {
@@ -657,7 +668,7 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("mtmode")
     {
-        ARG_RANGE (store_mtmode, (int)MT_createjoin, (int)MT_lpel);
+        ARG_RANGE (store_mtmode, (int)MT_createjoin, (int)MT_mtstblock);
         if (global.mtmode != MT_none)
             global.mtmode = store_mtmode;
     }
@@ -1129,7 +1140,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_OPTION_BEGIN ("mtmode")
     {
-        ARG_RANGE (store_mtmode, MT_createjoin, MT_lpel);
+        ARG_RANGE (store_mtmode, MT_createjoin, MT_mtstblock);
         if (global.mtmode != MT_none)
             global.mtmode = store_mtmode;
     }

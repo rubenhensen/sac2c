@@ -612,7 +612,6 @@ PrintMultithreadOptions (void)
             "                      2: with start/stop barriers\n"
             "                      3: with magical new techniques, WARNING: UNDER "
             "CONSTRUCTION!!!\n"
-            "                      4: via the LPEL library from S-Net\n"
             "                      (default: %d)\n"
             "\n"
             "    -numthreads <n> Specify at compile time the exact number of threads to "

@@ -104,6 +104,7 @@ static struct {
   {"CEXT", str, &global.config.cext},
   {"RC_METHOD", str, &global.config.rc_method},
   {"BACKEND", str, &global.config.backend},
+  {"MT_LIB", str, &global.config.mt_lib},
 
   {"TREE_CC", str, &global.config.tree_cc},
   {"TREE_LD", str, &global.config.tree_ld},
@@ -778,6 +779,8 @@ xfree_configuration (configuration_t conf)
         MEMfree (conf.rc_method);
     if (conf.backend)
         MEMfree (conf.backend);
+    if (conf.mt_lib)
+        MEMfree (conf.mt_lib);
     if (conf.tree_cc)
         MEMfree (conf.tree_cc);
     if (conf.tree_ld)
