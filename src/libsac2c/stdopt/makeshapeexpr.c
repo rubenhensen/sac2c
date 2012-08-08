@@ -132,6 +132,7 @@ MakeAssignForIdShape (node *id, node *fundef, node **preass)
 
     FUNDEF_VARDECS (fundef) = TBmakeVardec (res, FUNDEF_VARDECS (fundef));
 
+    DBUG_ASSERT (NULL != AVIS_SHAPE (ID_AVIS (id)), "NULL AVIS_SHAPE for id");
     newass = TBmakeAssign (TBmakeLet (TBmakeIds (res, NULL),
                                       DUPdoDupNode (AVIS_SHAPE (ID_AVIS (id)))),
                            NULL);
@@ -563,6 +564,7 @@ MSEid (node *arg_node, info *arg_info)
     lhsavis = INFO_AVIS (arg_info);
     shapeavis = ID_AVIS (AVIS_SHAPE (lhsavis));
 
+    DBUG_ASSERT (NULL != AVIS_SHAPE (ID_AVIS (arg_node)), "NULL AVIS_SHAPE");
     rhsnode = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (arg_node)));
     res = TBmakeAssign (TBmakeLet (TBmakeIds (shapeavis, NULL), rhsnode), NULL);
     AVIS_SSAASSIGN (shapeavis) = res;
@@ -598,6 +600,11 @@ MSEarray (node *arg_node, info *arg_info)
     node *rhsnode;
     node *res = NULL;
     node *preass = NULL;
+    shape *cshape;
+    int framedim;
+    node *fsavis;
+
+    node *csavis;
 
     DBUG_ENTER ();
 
@@ -605,25 +612,16 @@ MSEarray (node *arg_node, info *arg_info)
     shpavis = ID_AVIS (AVIS_SHAPE (lhsavis));
 
     if (ARRAY_AELEMS (arg_node) == NULL) {
-        shape *cshape;
-
         DBUG_ASSERT (TUshapeKnown (ARRAY_ELEMTYPE (arg_node)),
                      "Empty array without AKS elements encountered!");
 
         cshape = SHappendShapes (ARRAY_FRAMESHAPE (arg_node),
                                  TYgetShape (ARRAY_ELEMTYPE (arg_node)));
-
         rhsnode = SHshape2Array (cshape);
-
         cshape = SHfreeShape (cshape);
     } else if (NODE_TYPE (EXPRS_EXPR (ARRAY_AELEMS (arg_node))) != N_id) {
         rhsnode = SHshape2Array (ARRAY_FRAMESHAPE (arg_node));
     } else {
-        int framedim;
-        node *fsavis;
-
-        node *csavis;
-
         framedim = SHgetDim (ARRAY_FRAMESHAPE (arg_node));
         fsavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (T_int),
                                                        SHcreateShape (1, framedim)));
