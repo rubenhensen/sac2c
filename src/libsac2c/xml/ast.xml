@@ -593,6 +593,19 @@
         <node name="With2" />
       </travuser>
     </traversal>
+    <traversal id="IAL" name="Introduce Availability Loops" default="sons" include="introduce_availability_loop.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Prf" />
+        <node name="With" />
+        <node name="Part" />
+        <node name="Generator" />
+        <node name="Exprs" />
+        <node name="Genarray" />
+        <node name="Modarray" />
+      </travuser>
+    </traversal>
       <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
         <travuser>
           <node name="Ap" />

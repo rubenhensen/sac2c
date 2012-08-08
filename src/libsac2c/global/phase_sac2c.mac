@@ -1209,6 +1209,9 @@ SUBPHASE (rnb, "Remove noop branch", RNBdoRemoveNoopBranch,
 SUBPHASE (imemdist, "Insert memory transfer primitives for distributed variables",
           IMEMDISTdoInsertMemtranDist, global.backend == BE_cudahybrid, pc)
 
+SUBPHASE (ial, "Introduce availability loops for CUDA backend of distributed variables",
+          IALdoIntroduceAvailabilityLoops, global.backend == BE_cudahybrid, pc)
+
 SUBPHASE (cuasr, "CUDA Adjust return ids of single threaded kernel",
           CUASRdoAdjustStknlRets,
           (global.backend == BE_cuda || global.backend == BE_cudahybrid)

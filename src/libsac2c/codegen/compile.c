@@ -7983,6 +7983,27 @@ COMPprfDist2Conc_Abs (node *arg_node, info *arg_info)
 }
 
 node *
+COMPprfDist2Dev_Avail (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm7 ("DIST_DIST2DEV_AVAIL", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG4 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG5 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG6 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
 COMPprfDistContBlock (node *arg_node, info *arg_info)
 {
     node *ret_node;
@@ -7992,10 +8013,24 @@ COMPprfDistContBlock (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("DIST_CONT_BLOCK", DUPdupIdsIdNt (let_ids),
-                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 MakeBasetypeArg (ID_TYPE (PRF_ARG1 (arg_node))),
-                                 TCmakeIdCopyString ("dist_end_contiguous_block"), NULL);
+    ret_node = TCmakeAssignIcm6 ("DIST_DISTCONTBLOCK", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG4 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG5 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfCudaGetStream (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    ret_node = TCmakeAssignIcm0 ("CUDA_GET_STREAM", NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -8004,14 +8039,43 @@ node *
 COMPprfCudaSetDevice (node *arg_node, info *arg_info)
 {
     node *ret_node;
+
+    DBUG_ENTER ();
+
+    ret_node
+      = TCmakeAssignIcm1 ("CUDA_SET_DEVICE", DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfSched_Start (node *arg_node, info *arg_info)
+{
+    node *ret_node;
     node *let_ids;
 
     DBUG_ENTER ();
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node
-      = TCmakeAssignIcm1 ("CUDA_SET_DEVICE", DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
+    ret_node = TCmakeAssignIcm2 ("SCHED_START", DUPdupIdsIdNt (let_ids),
+                                 DUPdupNodeNt (PRF_ARG1 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfSched_Stop (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm2 ("SCHED_STOP", DUPdupIdsIdNt (let_ids),
+                                 DUPdupNodeNt (PRF_ARG1 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
