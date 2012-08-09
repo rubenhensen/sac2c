@@ -36,7 +36,7 @@
 #include "free.h"
 #include "new_types.h"
 #include "shape.h"
-#include "LookupTable.h"
+#include "LookUpTable.h"
 #include "DupTree.h"
 
 /** <!--********************************************************************-->
