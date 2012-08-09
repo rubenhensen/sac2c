@@ -8059,7 +8059,7 @@ COMPprfSched_Start (node *arg_node, info *arg_info)
     let_ids = INFO_LASTIDS (arg_info);
 
     ret_node = TCmakeAssignIcm2 ("SCHED_START", DUPdupIdsIdNt (let_ids),
-                                 DUPdupNodeNt (PRF_ARG1 (arg_node)), NULL);
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -8075,7 +8075,7 @@ COMPprfSched_Stop (node *arg_node, info *arg_info)
     let_ids = INFO_LASTIDS (arg_info);
 
     ret_node = TCmakeAssignIcm2 ("SCHED_STOP", DUPdupIdsIdNt (let_ids),
-                                 DUPdupNodeNt (PRF_ARG1 (arg_node)), NULL);
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }

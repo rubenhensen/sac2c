@@ -497,8 +497,7 @@ IALgenerator (node *arg_node, info *arg_info)
 node *
 IALexprs (node *arg_node, info *arg_info)
 {
-    node *sched_avis, *vardecs, *genassigns, *bound_avis, *pred_avis, *assign;
-    node *expr;
+    node *sched_avis, *vardecs, *genassigns, *bound_avis, *assign;
 
     DBUG_ENTER ();
 
@@ -520,7 +519,7 @@ IALexprs (node *arg_node, info *arg_info)
             sched_avis
               = TBmakeAvis (TRAVtmpVarName ("schedule"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-            FUNDEF_VARDECS (INFO_FUNDEF (arg_info)) = TBmakeVardec (sched_avis, vardecs);
+            vardecs = TBmakeVardec (sched_avis, vardecs);
 
             assign
               = TBmakeAssign (TBmakeLet (TBmakeIds (sched_avis, NULL),
@@ -534,22 +533,14 @@ IALexprs (node *arg_node, info *arg_info)
         /* create new bound variable and predicate */
         bound_avis = TBmakeAvis (TRAVtmpVarName ("bound"),
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-        pred_avis = TBmakeAvis (TRAVtmpVarName ("pred"),
-                                TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)));
-        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (bound_avis, TBmakeVardec (pred_avis, vardecs));
+        FUNDEF_VARDECS (INFO_FUNDEF (arg_info)) = TBmakeVardec (bound_avis, vardecs);
 
         /* new bound is the maximum between the current bound and the
          * scheduled/available bounds. These assignments perform the calculations.*/
-        expr = EXPRS_EXPR (arg_node);
         assign = TBmakeAssign (TBmakeLet (TBmakeIds (bound_avis, NULL),
-                                          TBmakeFuncond (TBmakeId (pred_avis), expr,
-                                                         TBmakeId (sched_avis))),
-                               NULL);
-        assign = TBmakeAssign (TBmakeLet (TBmakeIds (pred_avis, NULL),
-                                          TCmakePrf2 (F_gt_SxS, DUPdoDupNode (expr),
+                                          TCmakePrf2 (F_max_SxS, EXPRS_EXPR (arg_node),
                                                       TBmakeId (sched_avis))),
-                               assign);
+                               NULL);
         INFO_GENASSIGNS (arg_info) = TCappendAssign (genassigns, assign);
         EXPRS_EXPR (arg_node) = TBmakeId (bound_avis);
 

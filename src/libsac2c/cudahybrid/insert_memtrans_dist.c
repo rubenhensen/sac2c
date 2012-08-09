@@ -160,13 +160,6 @@ FreeInfo (info *info)
  * @}  <!-- INFO structure -->
  *****************************************************************************/
 
-static bool CUisDistributedType (ntype *ty);
-// static bool CUisConcreteTypeNew( ntype* ty);
-static ntype *DISTNtypeConversion (ntype *dist_type, bool to_dev_type);
-static void Createdist2conc (node *id, node *host_avis, node *dev_avis, info *arg_info);
-// static void Createdistcont( node *dist_avis, info *arg_info);
-static bool PrfNeedsTransfer (node *rhs);
-
 /** <!--********************************************************************-->
  *
  * @name Entry functions
@@ -206,6 +199,12 @@ IMEMDISTdoInsertMemtranDist (node *syntax_tree)
  * @{
  *
  *****************************************************************************/
+
+static bool CUisDistributedType (ntype *ty);
+// static bool CUisConcreteTypeNew( ntype* ty);
+static ntype *DISTNtypeConversion (ntype *dist_type, bool to_dev_type);
+static void Createdist2conc (node *dist_avis, node *conc_avis, info *arg_info);
+static bool PrfNeedsTransfer (node *rhs);
 
 /** <!--********************************************************************-->
  *
@@ -311,88 +310,57 @@ DISTNtypeConversion (ntype *dist_type, bool to_dev_type)
 
 /** <!--********************************************************************-->
  *
- * @fn node* Createdist2conc( node *id, node *dist_avis,
- *                           node *conc_avis, info *arg_info)
+ * @fn void Createdist2conc( node *dist_avis, node *conc_avis, info *arg_info)
  *
  * @brief Create distributed to concrete convertion primitive function
  *
  *****************************************************************************/
 static void
-Createdist2conc (node *id, node *dist_avis, node *conc_avis, info *arg_info)
+Createdist2conc (node *dist_avis, node *conc_avis, info *arg_info)
 {
     offset_t *offset;
+    node *device_number, *prf;
     void **lut_pointer;
     int extent;
 
     DBUG_ENTER ();
 
-    ID_AVIS (id) = conc_avis;
     FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
       = TBmakeVardec (conc_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-    lut_pointer = LUTsearchInLutS (INFO_ACCESS (arg_info), AVIS_NAME (dist_avis));
+    /* create device number node */
+    if (INFO_CUDARIZABLE (arg_info)) {
+        device_number = DUPdoDupNode (INFO_DEVICENUMBER (arg_info));
+    } else {
+        device_number = TBmakeNum (0);
+    }
 
+    lut_pointer = LUTsearchInLutS (INFO_ACCESS (arg_info), AVIS_NAME (dist_avis));
     if (lut_pointer != NULL) {
         /* If there is memory access data available, we might find some
          access pattern for the F_dist2conc */
         offset = (offset_t *)*lut_pointer;
         DBUG_PRINT ("Found entry for %s -> [%d,%d]", AVIS_NAME (dist_avis), offset->min,
                     offset->max);
-        INFO_PREASSIGNS (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
-                                     TCmakePrf4 (F_dist2conc_rel, TBmakeId (dist_avis),
-                                                 TBmakeNum (offset->min),
-                                                 TBmakeNum (offset->max),
-                                                 DUPdoDupNode (
-                                                   INFO_DEVICENUMBER (arg_info)))),
-                          INFO_PREASSIGNS (arg_info));
+        prf = TCmakePrf4 (F_dist2conc_rel, TBmakeId (dist_avis), TBmakeNum (offset->min),
+                          TBmakeNum (offset->max), device_number);
     } else {
         /* Unknown access pattern, so we set the minimum and maximum offsets to the
          maximum value, the length of the first dimension. */
         DBUG_PRINT ("No entry for %s", AVIS_NAME (dist_avis));
         extent = SHgetExtent (TYgetShape (AVIS_TYPE (dist_avis)), 0);
-        INFO_PREASSIGNS (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL),
-                                     TCmakePrf4 (F_dist2conc_abs, TBmakeId (dist_avis),
-                                                 TBmakeNum (0), TBmakeNum (extent),
-                                                 DUPdoDupNode (
-                                                   INFO_DEVICENUMBER (arg_info)))),
-                          INFO_PREASSIGNS (arg_info));
+        prf = TCmakePrf4 (F_dist2conc_abs, TBmakeId (dist_avis), TBmakeNum (0),
+                          TBmakeNum (extent), device_number);
     }
+
+    INFO_PREASSIGNS (arg_info)
+      = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL), prf),
+                      INFO_PREASSIGNS (arg_info));
 
     /* Insert pair dist_avis->conc_avis into lookup table. */
     INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), dist_avis, conc_avis);
     DBUG_RETURN ();
 }
-
-///** <!--********************************************************************-->
-// *
-// * @fn node* Createdistcont( node *dist_avis, info *arg_info)
-// *
-// * @brief Create distributed continuous blocks primitive function
-// *
-// *****************************************************************************/
-// static void Createdistcont( node *dist_avis, info *arg_info)
-//{
-//  node *cont_avis;
-//
-//  DBUG_ENTER ();
-//
-//  cont_avis = TBmakeAvis(TRAVtmpVarName("cont_block"),
-//                         TYmakeAKS(TYmakeSimpleType(T_int), SHmakeShape( 0)));
-//
-//  FUNDEF_VARDECS( INFO_FUNDEF( arg_info)) =
-//  TBmakeVardec( cont_avis,  FUNDEF_VARDECS( INFO_FUNDEF( arg_info)));
-//
-//  INFO_PREASSIGNS( arg_info) =
-//  TBmakeAssign( TBmakeLet( TBmakeIds( cont_avis, NULL),
-//                          TBmakePrf( F_dist_cont_block,
-//                                    TBmakeExprs( TBmakeId( dist_avis),
-//                                                NULL))),
-//               INFO_PREASSIGNS( arg_info));
-//
-//  DBUG_RETURN ();
-//}
 
 /** <!--********************************************************************-->
  *
@@ -509,7 +477,7 @@ IMEMDISTassign (node *arg_node, info *arg_info)
 
     /* If we are no longer in a N_with, we insert
      * data transfer primitives into the syntax tree */
-    if (!INFO_INWL (arg_info) && !INFO_CUDARIZABLE (arg_info)) {
+    if (!INFO_INWL (arg_info)) {
         next = ASSIGN_NEXT (arg_node);
         ASSIGN_NEXT (arg_node) = NULL;
 
@@ -580,9 +548,6 @@ IMEMDISTwith2 (node *arg_node, info *arg_info)
 
     /* If we are not already in a withloop */
     if (!INFO_INWL (arg_info)) {
-        INFO_CUDARIZABLE (arg_info) = FALSE;
-        INFO_DEVICENUMBER (arg_info) = TBmakeNum (0);
-
         arg_node = IMAdoInferMemoryAccesses (arg_node);
 
         INFO_INWL (arg_info) = TRUE;
@@ -593,8 +558,6 @@ IMEMDISTwith2 (node *arg_node, info *arg_info)
         INFO_IDXAVIS (arg_info) = ID_AVIS (WITH2_VEC (arg_node));
 
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
-
-        INFO_DEVICENUMBER (arg_info) = FREEdoFreeNode (INFO_DEVICENUMBER (arg_info));
     } else {
 
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
@@ -722,9 +685,10 @@ IMEMDISTids (node *arg_node, info *arg_info)
 node *
 IMEMDISTid (node *arg_node, info *arg_info)
 {
-    node *new_avis, *avis, *id_avis;
+    node *new_avis, *id_avis;
     ntype *conc_type, *id_type;
     const char *suffix;
+    char *name;
 
     DBUG_ENTER ();
 
@@ -733,23 +697,22 @@ IMEMDISTid (node *arg_node, info *arg_info)
 
     /* skip non-distributed variables and idx vector */
     if (CUisDistributedType (id_type) && (INFO_IDXAVIS (arg_info) != id_avis)) {
-        avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
-        if (avis != id_avis) {
-            /* If the N_avis has been come across before, replace its
-             * N_avis by the device N_avis */
-            ID_AVIS (arg_node) = avis;
-        } else {
-            /* Otherwise, create transfer */
+        new_avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
+        if (new_avis == id_avis) {
+            /* If the avises are equal, this is the first occurence of this variable.
+             * Therefore, we create transfer */
+            DBUG_PRINT ("ID %s not found, creating transfer", ID_NAME (arg_node));
             suffix = INFO_CUDARIZABLE (arg_info) ? "_cuda" : "_host";
             conc_type = DISTNtypeConversion (id_type, INFO_CUDARIZABLE (arg_info));
-            new_avis = TBmakeAvis (TRAVtmpVarName (STRcat (ID_NAME (arg_node), suffix)),
-                                   conc_type);
-            Createdist2conc (arg_node, id_avis, new_avis, arg_info);
+            name = STRcat (ID_NAME (arg_node), suffix);
+            new_avis = TBmakeAvis (TRAVtmpVarName (name), conc_type);
+            MEMfree (name);
+            Createdist2conc (id_avis, new_avis, arg_info);
+        } else {
+            DBUG_PRINT ("ID %s found, new ID is %s", ID_NAME (arg_node),
+                        AVIS_NAME (new_avis));
         }
-        //      /* create distributed continous blocks function for with-loops */
-        //      if( INFO_INWL(arg_info) / *&& INFO_CUDARIZABLE(arg_info)* /) {
-        //        Createdistcont( id_avis, arg_info );
-        //      }
+        ID_AVIS (arg_node) = new_avis;
     }
 
     DBUG_RETURN (arg_node);
@@ -770,6 +733,7 @@ IMEMDISTprf (node *arg_node, info *arg_info)
     if (PRF_PRF (arg_node) == F_cuda_set_device) {
         INFO_DEVICENUMBER (arg_info) = PRF_ARG1 (arg_node);
     }
+    PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

@@ -344,9 +344,10 @@ DISTCONDwith (node *arg_node, info *arg_info)
     wl_assign = TBmakeAssign (TBmakeLet (DUPdoDupTree (INFO_LETIDS (arg_info)),
                                          DUPdoDupTree (arg_node)),
                               NULL);
-    INFO_THENBLOCK (arg_info)
-      = TBmakeAssign (TCmakePrf1 (F_cuda_set_device, TBmakeId (cudathreadavis)),
-                      wl_assign);
+    wl_assign = TBmakeAssign (TBmakeLet (NULL, TCmakePrf1 (F_cuda_set_device,
+                                                           TBmakeId (cudathreadavis))),
+                              wl_assign);
+    INFO_THENBLOCK (arg_info) = wl_assign;
 
     DBUG_RETURN (arg_node);
 }
