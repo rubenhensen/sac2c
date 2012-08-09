@@ -988,7 +988,9 @@ typedef intptr_t *SAC_array_descriptor_t;
         SAC_HM_MALLOC_FIXED_SIZE (SAC_ND_A_DESC (var_NT),                                \
                                   BYTE_SIZE_OF_DESC (SAC_ND_A_MIRROR_DIM (var_NT)),      \
                                   SAC_ND_DESC_BASETYPE (var_NT))                         \
+        DESC_RC (SAC_ND_A_DESC (var_NT)) = 0;                                            \
         DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_LOCAL;                  \
+        DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
     }
@@ -1002,7 +1004,9 @@ typedef intptr_t *SAC_array_descriptor_t;
                          ("Illegal dimension for array %s found!", NT_STR (var_NT)));    \
         SAC_HM_MALLOC (SAC_ND_A_DESC (var_NT), BYTE_SIZE_OF_DESC (dim),                  \
                        SAC_ND_DESC_BASETYPE (var_NT))                                    \
+        DESC_RC (SAC_ND_A_DESC (var_NT)) = 0;                                            \
         DESC_RC_MODE (SAC_ND_A_DESC (var_NT)) = SAC_DESC_RC_MODE_LOCAL;                  \
+        DESC_PARENT (SAC_ND_A_DESC (var_NT)) = 0;                                        \
         SAC_TR_MEM_PRINT (("ND_ALLOC__DESC( %s, %s) at addr: %p", NT_STR (var_NT), #dim, \
                            SAC_ND_A_DESC (var_NT)))                                      \
         SAC_ND_A_DESC_DIM (var_NT) = SAC_ND_A_MIRROR_DIM (var_NT) = dim;                 \
@@ -1013,7 +1017,9 @@ typedef intptr_t *SAC_array_descriptor_t;
         SAC_ASSURE_TYPE ((dim >= 0),                                                     \
                          ("Illegal dimension for array %s found!", NT_STR (var_NT)));    \
         SAC_HM_MALLOC (ndesc, BYTE_SIZE_OF_DESC (dim), SAC_ND_DESC_BASETYPE (ndesc))     \
+        DESC_RC (ndesc) = 0;                                                             \
         DESC_RC_MODE (ndesc) = SAC_DESC_RC_MODE_LOCAL;                                   \
+        DESC_PARENT (ndesc) = 0;                                                         \
         DESC_DIM (ndesc) = dim;                                                          \
     }
 

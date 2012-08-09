@@ -25,7 +25,8 @@
 #define SAC_ND_TRY_LOCALIZE_RC__ASYNC(var_NT)                                            \
     {                                                                                    \
         SAC_TR_REF_PRINT (("SAC_ND_TRY_LOCALIZE_RC__ASYNC( %s)", NT_STR (var_NT)))       \
-        SAC_IF_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););   \
+        SAC_IF_DEBUG_RC (                                                                \
+          SAC_Print (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););               \
                                                                                          \
         SAC_ND_DESC_PARENT_TYPE parent = SAC_ND_A_DESC_PARENT (var_NT);                  \
         if (PARENT_DESC_NCHILD (parent) == 1) {                                          \
@@ -115,7 +116,8 @@
  * Must use the atomic operation. */
 #define SAC_RC_PARENT_INC_SYNC(var_NT)                                                   \
     {                                                                                    \
-        SAC_IF_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););   \
+        SAC_IF_DEBUG_RC (                                                                \
+          SAC_Print (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););               \
         SAC_TR_REF_PRINT (("RC_PARENT_INC( %s)", NT_STR (var_NT)))                       \
         __sync_add_and_fetch (&PARENT_DESC_NCHILD (                                      \
                                 (SAC_ND_DESC_PARENT_TYPE)SAC_ND_A_DESC_PARENT (var_NT)), \
@@ -163,9 +165,9 @@
             }                                                                            \
             if (SAC_ND_A_DESC_PARENT (array) == NULL) {                                  \
                 SAC_ND_ALLOC__DESC__PARENT (array, SAC_ND_A_DIM (array));                \
-                SAC_DEBUG_RC (printf ("alloced parent at %p in %p\n",                    \
-                                      (void *)SAC_ND_A_DESC_PARENT (array),              \
-                                      SAC_ND_A_DESC (array));)                           \
+                SAC_DEBUG_RC (SAC_Print ("alloced parent at %p in %p\n",                 \
+                                         (void *)SAC_ND_A_DESC_PARENT (array),           \
+                                         SAC_ND_A_DESC (array));)                        \
                 PARENT_DESC_NCHILD (SAC_ND_A_DESC_PARENT (array)) = 2;                   \
             } else {                                                                     \
                 SAC_RC_PARENT_INC_SYNC (array);                                          \
@@ -173,9 +175,9 @@
             SAC_ND_A_COPY_DESC (new, array);                                             \
             DESC_RC (SAC_ND_A_DESC (new)) = 0;                                           \
             SAC_ND_DEC_RC__DEFAULT (array, 1);                                           \
-            SAC_IF_DEBUG_RC (printf ("copy from %p to %p\n",                             \
-                                     SAC_ND_GETVAR (array, SAC_ND_A_DESC (array)),       \
-                                     SAC_ND_A_DESC (new)););                             \
+            SAC_IF_DEBUG_RC (SAC_Print ("copy from %p to %p\n",                          \
+                                        SAC_ND_GETVAR (array, SAC_ND_A_DESC (array)),    \
+                                        SAC_ND_A_DESC (new)););                          \
             SAC_RC_PRINT (array);                                                        \
             SAC_RC_PRINT (new);                                                          \
         }                                                                                \

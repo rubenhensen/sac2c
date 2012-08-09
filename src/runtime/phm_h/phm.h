@@ -123,6 +123,7 @@ typedef union header_t {
 #define SAC_HM_LARGECHUNK_ARENA(header) (((header) + 1)->data1.arena)
 #define SAC_HM_LARGECHUNK_NEXTFREE(header) (((header) + 2)->data2.nextfree)
 
+/* smallchunk_size is valid only for the special wilderness chunk! */
 #define SAC_HM_SMALLCHUNK_SIZE(header) (((header) + 0)->data1.size)
 #define SAC_HM_SMALLCHUNK_ARENA(header) (((header) + 0)->data1.arena)
 #define SAC_HM_SMALLCHUNK_NEXTFREE(header) (((header) + 1)->data2.nextfree)
@@ -240,7 +241,8 @@ typedef struct arena_t {
  */
 
 #define SAC_HM_ADDR_ARENA(addr) ((((SAC_HM_header_t *)addr) - 1)->data1.arena)
-#define SAC_HM_ADDR_SIZE(addr) ((((SAC_HM_header_t *)addr) - 1)->data1.size)
+#define SAC_HM_ADDR_SIZE(addr)                                                           \
+    ((((SAC_HM_header_t *)addr) - 1)->data1.size) /* it's a lie! */
 #define SAC_HM_ADDR_NEXTFREE(addr) (((SAC_HM_header_t *)addr)->data2.nextfree)
 
 /*

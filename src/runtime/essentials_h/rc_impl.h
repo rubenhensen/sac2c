@@ -36,15 +36,18 @@
  *
  ******************************************************************************/
 
+// #undef SAC_DEBUG_RC
+// #define SAC_DEBUG_RC    1
+
 #if SAC_DEBUG_RC
 /** debug builds: sac2c -debug_rc */
-#include <stdio.h>
+
 #define SAC_RC_PRINT(var_NT)                                                             \
-    fprintf (stddebug, " ");                                                             \
-    printf ("%s:%d " TO_STR (var_NT) " @ %p = {%d} [ %d, %p, %d]\n", __FILE__, __LINE__, \
-            SAC_REAL_DESC_POINTER (SAC_ND_A_DESC (var_NT)),                              \
-            DESC_RC_MODE (SAC_ND_A_DESC (var_NT)), (int)SAC_ND_A_DESC (var_NT)[0],       \
-            (void *)SAC_ND_A_DESC (var_NT)[1], (int)SAC_ND_A_DESC (var_NT)[2]);
+    SAC_Print ("%s:%d " TO_STR (var_NT) " @ %p = {%d} [ %d, %p, %d]\n", __FILE__,        \
+               __LINE__, SAC_ND_A_DESC (var_NT), DESC_RC_MODE (SAC_ND_A_DESC (var_NT)),  \
+               (int)SAC_ND_A_DESC (var_NT)[0], (void *)SAC_ND_A_DESC (var_NT)[1],        \
+               (int)SAC_ND_A_DESC (var_NT)[2]);
+/* [0] = ref count, [1] = ptr to parent, [2] = rc mode */
 
 #define SAC_IF_DEBUG_RC(a) a
 
@@ -84,7 +87,8 @@
 /* Atomically decrement the reference counter. */
 #define SAC_ND_DEC_RC__ASYNC(var_NT, rc)                                                 \
     {                                                                                    \
-        SAC_IF_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););   \
+        SAC_IF_DEBUG_RC (                                                                \
+          SAC_Print (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););               \
         SAC_TR_REF_PRINT (("ND_DEC_RC( %s, %d)", NT_STR (var_NT), rc))                   \
         SAC_RC_PRINT (var_NT);                                                           \
         __sync_sub_and_fetch (&DESC_RC (SAC_ND_A_DESC (var_NT)), rc);                    \
@@ -94,7 +98,8 @@
 /* Atomically set the reference counter to the given value. */
 #define SAC_ND_SET__RC__ASYNC(var_NT, rc)                                                \
     {                                                                                    \
-        SAC_IF_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););   \
+        SAC_IF_DEBUG_RC (                                                                \
+          SAC_Print (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););               \
         SAC_TR_REF_PRINT (("ND_SET__RC( %s, %d)", NT_STR (var_NT), rc))                  \
         SAC_RC_PRINT (var_NT);                                                           \
         DESC_RC (SAC_ND_A_DESC (var_NT)) = rc;                                           \
@@ -118,7 +123,8 @@
 #define SAC_ND_A_RC__ASYNC(var_NT)                                                       \
     ({                                                                                   \
         SAC_TR_REF_PRINT (("ND_A_RC( %s)", NT_STR (var_NT)))                             \
-        SAC_IF_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););   \
+        SAC_IF_DEBUG_RC (                                                                \
+          SAC_Print (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););               \
         SAC_RC_PRINT (var_NT);                                                           \
         DESC_RC (SAC_ND_A_DESC (var_NT));                                                \
     })
@@ -131,7 +137,8 @@
     {                                                                                    \
         SAC_TR_REF_PRINT (                                                               \
           ("ND_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))                \
-        SAC_IF_DEBUG_RC (printf (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););   \
+        SAC_IF_DEBUG_RC (                                                                \
+          SAC_Print (TO_STR (var_NT) " = %p\n", SAC_ND_A_DESC (var_NT)););               \
         SAC_RC_PRINT (var_NT);                                                           \
         if (__sync_sub_and_fetch (&DESC_RC (SAC_ND_A_DESC (var_NT)), rc) == 0) {         \
             free (SAC_ND_GETVAR (var_NT, SAC_ND_A_FIELD (var_NT)));                      \
