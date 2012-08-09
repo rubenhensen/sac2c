@@ -606,6 +606,13 @@
         <node name="Modarray" />
       </travuser>
     </traversal>
+    <traversal id="PDS" name="Prepare distributed with-loop schedulers" default="sons" include="prepare_dist_scheduler.h" >
+      <travuser>
+        <node name="Fundef" />
+        <node name="Assign" />
+        <node name="Cond" />
+      </travuser>
+    </traversal>
       <traversal id="SOSSK" name="Specialization Oracle for Static Shape Knowledge" default="sons" include="specialization_oracle_static_shape_knowledge.h" >
         <travuser>
           <node name="Ap" />

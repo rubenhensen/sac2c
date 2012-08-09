@@ -204,7 +204,8 @@ libsac2c_cuda        := annotate_cuda_withloop2 create_constant_assignments \
                         
 libsac2c_cudahybrid  := cuda_cost_model change_arrays_to_dist \
                         insert_memtrans_dist create_dist_wl_cond \
-                        infer_memory_accesses introduce_availability_loop
+                        infer_memory_accesses introduce_availability_loop \
+                        prepare_dist_scheduler
 
 libsac2c_concurrent  := cost_model create_mtst_funs create_mtst_funs_module \
                         create_spmd_funs mtdcr scheduling annotate_scheduling \

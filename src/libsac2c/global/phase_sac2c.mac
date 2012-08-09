@@ -1284,6 +1284,9 @@ SUBPHASE (ctr, "Converting to old type representation", CTRdoConvertToOldTypes, 
 
 SUBPHASE (cpl, "Creating intermediate code macros", COMPdoCompile, ALWAYS, cg)
 
+SUBPHASE (pds, "Prepare distributed with-loop schedulers",
+          PDSdoPrepareDistributedScheduler, global.backend == BE_cudahybrid, cg)
+
 SUBPHASE (prt, "Generating C file(s)", PRTdoPrint, ALWAYS, cg)
 
 SUBPHASE (frtr, "De-allocating syntax tree representation", FREEdoFreeTree, ALWAYS, cg)

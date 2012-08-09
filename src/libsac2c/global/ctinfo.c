@@ -1157,7 +1157,7 @@ CTIterminateCompilation (node *syntax_tree)
      */
 
     if (global.print_after_break && (syntax_tree != NULL)
-        && ((global.tool != TOOL_sac2c) || (global.compiler_subphase <= PH_cg_cpl))
+        && ((global.tool != TOOL_sac2c) || (global.compiler_subphase <= PH_cg_pds))
         && ((global.break_after_phase < PHIlastPhase ())
             || (global.break_after_subphase < PHIlastPhase ())
             || (global.break_after_cyclephase < PHIlastPhase ()))) {
