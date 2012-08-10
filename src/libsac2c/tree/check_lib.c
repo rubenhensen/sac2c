@@ -252,7 +252,7 @@ isMemberArgs (node *arg_node, node *fundef)
  *
  * @params: arg_node: The N_fundef node for this fundef.
  *
- * @return: VOID;
+ * @return: arg_node
  *
  *****************************************************************************/
 node *
@@ -307,17 +307,58 @@ CHKfundefVardecExtrema (node *arg_node)
  *
  * @params: arg_node: N_arg.
  *
- * @return: VOID;
+ * @return: arg_node
  *
  *****************************************************************************/
 node *
 CHKisNullSsaassign (node *arg_node)
 {
+    DBUG_ENTER ();
+
+    if (NULL != AVIS_SSAASSIGN (ARG_AVIS (arg_node))) {
+        NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node),
+                                                "non-NULL AVIS_SSAASSIGN in N_arg node");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--**********************************************************************-->
+ *
+ * @fn node *CHKcondfun( node *arg_node)
+ *
+ * @brief: arg_node is an N_fundef.
+ *         If the function is a CONDFUN, then its
+ *         first N_assign node must be an N_cond or N_funcond.
+ *
+ * @params: arg_node: N_fundef.
+ *
+ * @return: arg_node
+ *
+ *****************************************************************************/
+node *
+CHKcondfun (node *arg_node)
+{
+    node *assgn;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NULL == AVIS_SSAASSIGN (ARG_AVIS (arg_node)),
-                 "Non-NULL AVIS_SSAASSIGN in N_arg node");
+    if (FUNDEF_ISCONDFUN (arg_node)) {
+        assgn = BLOCK_ASSIGNS (FUNDEF_BODY (arg_node));
+        DBUG_ASSERT (NULL != assgn, "Expected non-NULL BLOCK_ASSIGNS");
+        assgn = ASSIGN_STMT (assgn);
+        if (NULL == assgn) {
+            NODE_ERROR (arg_node)
+              = CHKinsertError (NODE_ERROR (arg_node), "Expected non-NULL ASSIGN_STMT");
+        }
+        if ((N_cond != NODE_TYPE (assgn)) && (N_funcond != NODE_TYPE (assgn))) {
+            NODE_ERROR (arg_node)
+              = CHKinsertError (NODE_ERROR (arg_node),
+                                "No leading N_cond/N_funcond in CONDFUN");
+            DBUG_PRINT ("Offending function is %s", FUNDEF_NAME (arg_node));
+        }
+    }
+
     DBUG_RETURN (arg_node);
 }
 
