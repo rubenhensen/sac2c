@@ -484,6 +484,7 @@ MTSPMDFwiths (node *arg_node, info *arg_info)
     WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
     WITHS_NEXT (arg_node) = TRAVopt (WITHS_NEXT (arg_node), arg_info);
 
+    INFO_INWITHS (arg_info) = FALSE;
     INFO_COLLECT (arg_info) = FALSE;
     /*
      * Stop collecting data flow information

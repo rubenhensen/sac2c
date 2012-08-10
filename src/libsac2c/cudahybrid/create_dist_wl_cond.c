@@ -47,6 +47,7 @@
  *
  *****************************************************************************/
 struct INFO {
+    bool inwiths;
     node *fundef;
     node *assigns;
     node *letids;
@@ -56,6 +57,8 @@ struct INFO {
 };
 
 /*
+ * INFO_INWITHS       True if traversing a N_withs
+ *
  * INFO_FUNDEF        N_fundef node of the enclosing function
  *
  * INFO_ASSIGNS       N_assign chain to replace the distributed wl assignment
@@ -71,6 +74,7 @@ struct INFO {
  *
  */
 
+#define INFO_INWITHS(n) (n->inwiths)
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_ASSIGNS(n) (n->assigns)
 #define INFO_LETIDS(n) (n->letids)
@@ -87,6 +91,7 @@ MakeInfo (void)
 
     result = (info *)MEMmalloc (sizeof (info));
 
+    INFO_INWITHS (result) = FALSE;
     INFO_FUNDEF (result) = NULL;
     INFO_ASSIGNS (result) = NULL;
     INFO_LETIDS (result) = NULL;
@@ -164,33 +169,24 @@ static void CreatePreAssignments (node *expr, info *arg_info, node *pred_avis);
 static void
 CreatePreAssignments (node *expr, info *arg_info, node *pred_avis)
 {
-    node *alloc_avis, *alloc_assign, *fill, *alloc_prf;
+    node *res;
     simpletype st;
 
     DBUG_ENTER ();
 
     /* create predicate avises */
     st = TYgetSimpleType (TYgetScalar (AVIS_TYPE (pred_avis)));
-    alloc_avis
-      = TBmakeAvis (TRAVtmpVarName ("_alloc"), TYcopyType (AVIS_TYPE (pred_avis)));
     INFO_PREDAVIS (arg_info) = pred_avis;
 
     /* add new avises to variable declarations */
     FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (alloc_avis,
-                      TBmakeVardec (pred_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info))));
+      = TBmakeVardec (pred_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
     /* create assignment of new predicate variable */
-    fill = TBmakeAssign (TBmakeLet (TBmakeIds (pred_avis, NULL),
-                                    TCmakePrf2 (F_fill, expr, TBmakeId (alloc_avis))),
-                         NULL);
+    res = TBmakeAssign (TBmakeLet (TBmakeIds (pred_avis, NULL), expr), NULL);
 
     /* create assignment for allocation of predicate variable */
-    alloc_prf = TCmakePrf2 (F_alloc, TBmakeNum (0), TCcreateZeroVector (0, st));
-    alloc_assign
-      = TBmakeAssign (TBmakeLet (TBmakeIds (alloc_avis, NULL), alloc_prf), fill);
-    INFO_PREASSIGNS (arg_info)
-      = TCappendAssign (INFO_PREASSIGNS (arg_info), alloc_assign);
+    INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), res);
 
     DBUG_RETURN ();
 }
@@ -253,7 +249,7 @@ DISTCONDassign (node *arg_node, info *arg_info)
         INFO_ASSIGNS (arg_info) = NULL;
         FREEdoFreeNode (arg_node);
     } else {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
         res = arg_node;
     }
 
@@ -293,6 +289,7 @@ DISTCONDwiths (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    INFO_INWITHS (arg_info) = TRUE;
     /*
      * traverse with-loop to get predicate avis and assignments for this withloop.
      */
@@ -309,6 +306,8 @@ DISTCONDwiths (node *arg_node, info *arg_info)
       = TCappendAssign (INFO_PREASSIGNS (arg_info), TBmakeAssign (cond, NULL));
 
     WITHS_NEXT (arg_node) = TRAVopt (WITHS_NEXT (arg_node), arg_info);
+
+    INFO_INWITHS (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -366,19 +365,21 @@ DISTCONDwith2 (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    INFO_PREASSIGNS (arg_info) = NULL;
+    if (INFO_INWITHS (arg_info)) {
+        INFO_PREASSIGNS (arg_info) = NULL;
 
-    /* create predicate value */
-    new_rhs = TBmakeBool (TRUE);
-    new_avis = TBmakeAvis (TRAVtmpVarName ("_pred"),
-                           TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
+        /* create predicate value */
+        new_rhs = TBmakeBool (TRUE);
+        new_avis = TBmakeAvis (TRAVtmpVarName ("_pred"),
+                               TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
 
-    CreatePreAssignments (new_rhs, arg_info, new_avis);
+        CreatePreAssignments (new_rhs, arg_info, new_avis);
 
-    INFO_THENBLOCK (arg_info)
-      = TBmakeAssign (TBmakeLet (DUPdoDupTree (INFO_LETIDS (arg_info)),
-                                 DUPdoDupTree (arg_node)),
-                      NULL);
+        INFO_THENBLOCK (arg_info)
+          = TBmakeAssign (TBmakeLet (DUPdoDupTree (INFO_LETIDS (arg_info)),
+                                     DUPdoDupTree (arg_node)),
+                          NULL);
+    }
 
     DBUG_RETURN (arg_node);
 }
