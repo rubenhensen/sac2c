@@ -9,6 +9,7 @@
  *
  * Loop and cond scalarization (LACS) is the successor of
  * array elimination (AE) and loop scalarization (LS).
+ *
  * LACS extends LS to operate on CONDFUNs as well as on LOOPFUNS.
  *
  * LS and LACS are based on the observation that most simple cases
@@ -252,8 +253,9 @@
  *  are used as array arguments in selections only.
  *  After traversing the body of a Do-fun, we traverse its arguments
  *  to see which ones are suitable candidates, i.e., which ones are used
- *  as arrays within selections only AND are AKS with an unrolling smaller
- *  or equal to "maxae" (default 4).
+ *  as arrays within selections only AND are AKS with element count
+ *  less than or equal to "maxae", AKA "global.minarray" (default 4).
+ *
  *  For each of these, we generate 3 "portions" of code:
  *   1) the new formal arguments for changing the signature and the
  *      array assignment in the beginning of the Do-fun,
@@ -316,6 +318,7 @@
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
+#include "LookUpTable.h"
 
 /** <!--********************************************************************-->
  *
@@ -395,6 +398,8 @@ CreateArg (constant *idx, void *accu, void *scalar_type)
 {
     accu = TBmakeArg (TBmakeAvis (TRAVtmpVar (), TYcopyType ((ntype *)scalar_type)),
                       (node *)accu);
+    DBUG_PRINT ("Created arg: %s", ARG_NAME (accu));
+
     return (accu);
 }
 
@@ -409,6 +414,8 @@ CreateVardecs (constant *idx, void *accu, void *scalar_type)
 {
     accu = TBmakeVardec (TBmakeAvis (TRAVtmpVar (), TYcopyType ((ntype *)scalar_type)),
                          (node *)accu);
+    DBUG_PRINT ("Created vardec: %s", VARDEC_NAME (accu));
+
     return (accu);
 }
 
@@ -417,6 +424,7 @@ CreateVardecs (constant *idx, void *accu, void *scalar_type)
  * @fn void *CreateAssigns( constant *idx, void *accu, void *local_info)
  *
  * fold function for creating assignment chains.
+ *
  *****************************************************************************/
 static void *
 CreateAssigns (constant *idx, void *accu, void *local_info)
@@ -435,6 +443,7 @@ CreateAssigns (constant *idx, void *accu, void *local_info)
      */
     avis = TBmakeAvis (TRAVtmpVar (),
                        TYmakeAKV (TYmakeSimpleType (T_int), COcopyConstant (idx)));
+    DBUG_PRINT ("Created avis: %s", AVIS_NAME (avis));
     l_info->vardecs = TBmakeVardec (avis, l_info->vardecs);
 
     /**
@@ -542,12 +551,18 @@ AdjustRecursiveCall (node *exprs, shape *shp, info *arg_info)
  * This function translates the non-scalar N_arg node "arg" into a
  * sequence of scalar N_arg nodes with fresh names whose length is
  * identical to the product of the shape "shp" and returns these.
+ *
  * Furthermore, an assignment of the form
+ *
  *    arg = _reshape_( shp, [sarg1, ...., sargn] );
+ *
  * is created and prepended to the function body utilising INFO_FUNDEF.
- * A vardec for arg is being created and inserted into the function
+ * A vardec for arg is created and inserted into the function
  * body as well. This vardec reuses the N_avis of the arg given and the
  * arg given is being freed!
+ *
+ * If the function is a CONDFUN, two args are generated,
+ * one for each leg of the N_cond.
  *
  *****************************************************************************/
 static node *
@@ -556,7 +571,10 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
     node *avis, *vardec, *block;
     node *new_args, *old_args;
     node *assign;
+    node *assignelse;
     ntype *scalar_type;
+    node *thenelse;
+    lut_t *lut;
 
     DBUG_ENTER ();
 
@@ -566,6 +584,7 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
     avis = ARG_AVIS (arg);
     old_args = ARG_NEXT (arg);
     vardec = TBmakeVardec (avis, NULL);
+    DBUG_PRINT ("Created vardec: %s", AVIS_NAME (avis));
 
     ARG_AVIS (arg) = NULL;
     arg = FREEdoFreeNode (arg);
@@ -574,8 +593,7 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
      * insert vardec:
      */
     block = FUNDEF_BODY (INFO_FUNDEF (arg_info));
-    VARDEC_NEXT (vardec) = BLOCK_VARDECS (block);
-    BLOCK_VARDECS (block) = vardec;
+    BLOCK_VARDECS (block) = TCappendVardec (BLOCK_VARDECS (block), vardec);
 
     /**
      * create the new arguments arg1, ...., argn
@@ -593,11 +611,40 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
                                                    TCcreateExprsFromArgs (new_args))),
                            NULL);
     AVIS_SSAASSIGN (avis) = assign;
-    /**
-     * and insert it:
+
+    /*
+     * and insert the new assign:
      */
-    ASSIGN_NEXT (assign) = BLOCK_ASSIGNS (block);
-    BLOCK_ASSIGNS (block) = assign;
+
+    if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
+        /* LOOPFUN */
+        BLOCK_ASSIGNS (block) = TCappendAssign (assign, BLOCK_ASSIGNS (block));
+    } else {
+        /* CONDFUN is harder */
+        DBUG_ASSERT (FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)), "Expected CONDFUN");
+
+        thenelse = BLOCK_ASSIGNS (COND_THEN (ASSIGN_STMT (BLOCK_ASSIGNS (block))));
+        BLOCK_ASSIGNS (COND_THEN (ASSIGN_STMT (BLOCK_ASSIGNS (block))))
+          = TCappendAssign (assign, thenelse);
+
+        /* This handily gives us a shiny new vardec and avis! */
+        assignelse = DUPdoDupNodeSsa (assign, INFO_FUNDEF (arg_info));
+
+        /* We have to rename uses of assignelse in the COND_ELSE block */
+        lut = LUTgenerateLut ();
+        LUTinsertIntoLutP (lut, IDS_AVIS (LET_IDS (ASSIGN_STMT (assign))),
+                           IDS_AVIS (LET_IDS (ASSIGN_STMT (assignelse))));
+
+        thenelse = BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (block))));
+        BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (block))))
+          = TCappendAssign (assignelse, thenelse);
+
+        BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (block))))
+          = DUPdoDupTreeLut (BLOCK_ASSIGNS (
+                               COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (block)))),
+                             lut);
+        lut = LUTremoveLut (lut);
+    }
 
     DBUG_RETURN (TCappendArgs (new_args, old_args));
 }
@@ -804,7 +851,8 @@ LACSarg (node *arg_node, info *arg_info)
         INFO_RECCALL (arg_info) = mem_reccall;
     }
 
-    DBUG_PRINT ("inspecting arg %s!", ARG_NAME (arg_node));
+    DBUG_PRINT ("inspecting arg: %s", ARG_NAME (arg_node));
+
     /* Traverse AVIS_SHAPE, etc., to mark extrema and SAA info as AVIS_ISUSED */
     ARG_AVIS (arg_node) = TRAVdo (ARG_AVIS (arg_node), arg_info);
 
@@ -813,7 +861,7 @@ LACSarg (node *arg_node, info *arg_info)
         shp = SHcopyShape (TYgetShape (AVIS_TYPE (ARG_AVIS (arg_node))));
         if ((SHgetUnrLen (shp) <= global.minarray)
             && !AVIS_ISUSED (ARG_AVIS (arg_node))) {
-            DBUG_PRINT ("   replacing arg %s!", ARG_NAME (arg_node));
+            DBUG_PRINT ("replacing arg: %s!", ARG_NAME (arg_node));
             global.optcounters.lacs_expr += 1;
             /**
              * First we create new arguments and we insert the array construction
@@ -840,7 +888,7 @@ LACSarg (node *arg_node, info *arg_info)
         }
         shp = SHfreeShape (shp);
     } else {
-        DBUG_PRINT ("insufficient shape info!");
+        DBUG_PRINT ("arg: %s - shape unknown or scalar", ARG_NAME (arg_node));
     }
 
     DBUG_RETURN (arg_node);
@@ -952,6 +1000,8 @@ LACSprf (node *arg_node, info *arg_info)
  *
  * @fn node *LACSid( node *arg_node, info *arg_info)
  *
+ * Basically, we scalarize just about everything now.
+ *
  *****************************************************************************/
 node *
 LACSid (node *arg_node, info *arg_info)
@@ -959,8 +1009,9 @@ LACSid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    AVIS_ISUSED (ID_AVIS (arg_node)) = TRUE;
-    DBUG_PRINT ("%s marked as non-scalarizable", ID_NAME (arg_node));
+    //  DBUG_PRINT ( "%s marked as scalarizable!", ID_NAME( arg_node));
+    // AVIS_ISUSED( ID_AVIS( arg_node)) = TRUE;
+    //  DBUG_PRINT ( "%s marked as non-scalarizable", ID_NAME( arg_node));
 
     DBUG_RETURN (arg_node);
 }
