@@ -18,6 +18,8 @@
 #ifndef _SAC_HEAPMGR_H
 #define _SAC_HEAPMGR_H
 
+#include <assert.h>
+
 #if SAC_MUTC_MACROS
 #define SAC_DO_PHM 0
 #endif
@@ -419,6 +421,10 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
 #define SAC_HM_INC_DIAG_COUNTER(counter)
 #endif
 
+/* FIXME: move to the SAC_DO_CHECK_HEAP #if-block above once the worst bugs get
+ * hunted down. */
+#define SAC_HM_ASSERT(x) assert (x)
+
 /*
  * Definition of memory allocation macros.
  */
@@ -427,6 +433,8 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
     {                                                                                    \
         switch (SAC_HM_thread_status) {                                                  \
         case SAC_HM_single_threaded:                                                     \
+            SAC_HM_ASSERT (SAC_MT_globally_single                                        \
+                           && "An ST/SEQ call in the MT/XT context!! (1)");              \
             var = (basetype *)SAC_HM_MallocAnyChunk_st (size);                           \
             break;                                                                       \
         case SAC_HM_multi_threaded:                                                      \
@@ -442,6 +450,8 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
     {                                                                                    \
         switch (SAC_HM_thread_status) {                                                  \
         case SAC_HM_single_threaded:                                                     \
+            SAC_HM_ASSERT (SAC_MT_globally_single                                        \
+                           && "An ST/SEQ call in the MT/XT context!! (2)");              \
             var = (basetype)SAC_HM_MallocAnyChunk_st (size);                             \
             break;                                                                       \
         case SAC_HM_multi_threaded:                                                      \
@@ -457,8 +467,12 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
 
 #define SAC_HM_MALLOC_SMALL_CHUNK(var, units, arena_num, basetype)                       \
     {                                                                                    \
+        SAC_HM_ASSERT ((arena_num >= 0 && arena_num < 5)                                 \
+                       && "That is not a small arena!");                                 \
         switch (SAC_HM_thread_status) {                                                  \
         case SAC_HM_single_threaded:                                                     \
+            SAC_HM_ASSERT (SAC_MT_globally_single                                        \
+                           && "An ST/SEQ small-arena call in the MT/XT context!!");      \
             var = (basetype *)SAC_HM_MallocSmallChunk (units,                            \
                                                        &(SAC_HM_arenas[0][arena_num]));  \
             break;                                                                       \
@@ -478,8 +492,12 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
 
 #define SAC_HM_MALLOC_LARGE_CHUNK(var, units, arena_num, basetype)                       \
     {                                                                                    \
+        SAC_HM_ASSERT ((arena_num >= 5 && arena_num < SAC_HM_TOP_ARENA)                  \
+                       && "That is not a large arena");                                  \
         switch (SAC_HM_thread_status) {                                                  \
         case SAC_HM_single_threaded:                                                     \
+            SAC_HM_ASSERT (SAC_MT_globally_single                                        \
+                           && "An ST/SEQ large-arena call in the MT/XT context!!");      \
             var = (basetype *)SAC_HM_MallocLargeChunk (units,                            \
                                                        &(SAC_HM_arenas[0][arena_num]));  \
             break;                                                                       \
@@ -501,6 +519,8 @@ SAC_C_EXTERN int SAC_HM_DiscoversThreads (void);
     {                                                                                    \
         switch (SAC_HM_thread_status) {                                                  \
         case SAC_HM_single_threaded:                                                     \
+            SAC_HM_ASSERT (SAC_MT_globally_single                                        \
+                           && "An ST/SEQ top-arena call in the MT/XT context!!");        \
             var = (basetype *)                                                           \
               SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));    \
             break;                                                                       \

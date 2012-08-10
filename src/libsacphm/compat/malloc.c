@@ -36,6 +36,8 @@
 #include <malloc.h>
 #include <errno.h>
 #include <pthread.h>
+#include <assert.h>
+#include <stdio.h>
 
 #include "heapmgr.h"
 
@@ -97,7 +99,7 @@ malloc (size_t sz) __throw
     }
 
 #ifdef MT
-    if (multi_threaded && (size <= SAC_HM_ARENA_7_MAXCS_BYTES)) {
+    if (multi_threaded) {
         /*
          * OpenMP mt solution and Pthread solution
          * share the same code of phm
@@ -112,7 +114,12 @@ malloc (size_t sz) __throw
           thread_id = *thread_id_ptr;
         }
         */
-        thread_id = SAC_HM_CurrentThreadId ();
+        if (size <= SAC_HM_ARENA_7_MAXCS_BYTES) {
+            thread_id = SAC_HM_CurrentThreadId ();
+        } else {
+            /* the allocation will go to the top arena, which is shared */
+            thread_id = (unsigned)0xb19b00b5; /* invalid id, negative int */
+        }
     } else {
         thread_id = 0;
     }
@@ -143,6 +150,7 @@ malloc (size_t sz) __throw
         units = ((size - 1) / SAC_HM_UNIT_SIZE) + 3;
 
         if (units < SAC_HM_ARENA_7_MINCS) {
+            assert ((int)thread_id >= 0);
             /* Now, it's arena 5 or 6. */
             if (units < SAC_HM_ARENA_6_MINCS) {
                 DIAG_INC (SAC_HM_arenas[thread_id][5].cnt_alloc_var_size);
@@ -154,6 +162,7 @@ malloc (size_t sz) __throw
         } else {
             /* Now, it's arena 7 or 8. */
             if (units < SAC_HM_ARENA_8_MINCS) {
+                assert ((int)thread_id >= 0);
                 DIAG_INC (SAC_HM_arenas[thread_id][7].cnt_alloc_var_size);
                 return (SAC_HM_MallocLargeChunk (units, &(SAC_HM_arenas[thread_id][7])));
             } else {
@@ -175,6 +184,7 @@ malloc (size_t sz) __throw
                 mem = SAC_HM_MallocLargeChunk (units,
                                                &(SAC_HM_arenas[0][SAC_HM_TOP_ARENA]));
 #endif /* MT */
+                // fprintf(stderr, "malloc: top arena alloc: %p, size %u\n", mem, sz);
                 return (mem);
             }
         }
@@ -381,7 +391,9 @@ memalign (size_t alignment, size_t size)
 
     SAC_HM_LARGECHUNK_SIZE (freep) = SAC_HM_LARGECHUNK_SIZE (prefixp) - offset_units;
     SAC_HM_LARGECHUNK_ARENA (freep) = arena;
-    SAC_HM_LARGECHUNK_PREVSIZE (freep) = offset_units;
+    SAC_HM_LARGECHUNK_PREVSIZE (freep)
+      = -1; /* preceeding chunk is allocated; was 'offset_units' */
+    SAC_HM_LARGECHUNK_DIAG (freep) = DIAG_ALLOCPATTERN;
 
     /*
      * Setup memory location returned by malloc();

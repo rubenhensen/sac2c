@@ -376,6 +376,15 @@ extern void SAC_HM_CheckAllocDiagPattern (SAC_HM_size_unit_t diag, int arena_num
 extern void SAC_HM_CheckFreeDiagPattern (SAC_HM_size_unit_t diag, int arena_num);
 extern void SAC_HM_CheckDiagPatternAnyChunk (SAC_HM_header_t *addr);
 
+static inline void
+memset_words (void *s, unsigned c, size_t nw)
+{
+    unsigned *sw = (unsigned *)s;
+    for (size_t i = 0; i < nw; ++i) {
+        sw[i] = c;
+    }
+}
+
 /*
  * Definition of macros for diagnostic heap management
  */

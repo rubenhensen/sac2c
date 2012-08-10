@@ -54,6 +54,7 @@ SAC_HM_MallocSmallChunk (SAC_HM_size_unit_t units, SAC_HM_arena_t *arena)
     /* SAC_DO_HM_XTHR_FREE: free all the unused chunks */
     do_free_small_unused_chunks (arena);
 
+    assert (units >= arena->min_chunk_size);
     DIAG_INC (arena->cnt_alloc);
 
     /*
@@ -199,6 +200,12 @@ SAC_HM_FreeSmallChunk (SAC_HM_header_t *addr, SAC_HM_arena_t *arena)
      * nextfree is a field already in the user part, hence we may overwrite/reuse
      * it here at will. */
     SAC_HM_header_t *freep = addr - 1;
+
+#if 0
+  /* write 0xdeadbeef over the chunk data */
+  memset_words(addr, 0xdeadbeef,
+              (SAC_HM_SMALLCHUNK_ARENA( freep)->min_chunk_size - 1) * (SAC_HM_UNIT_SIZE/sizeof(unsigned)));
+#endif
 
 #if SAC_DO_HM_XTHR_FREE
     /* note: current thread is not necessarily the arena thread */

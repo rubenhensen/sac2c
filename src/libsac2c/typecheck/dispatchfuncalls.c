@@ -195,7 +195,7 @@ DispatchFunCall (node *fundef, ntype *arg_types, info *arg_info)
                  * fundef can be found in FUNDEF_IMPL (dirty hack!)
                  */
                 new_fundef = FUNDEF_IMPL (fundef);
-                DBUG_PRINT ("  dispatched statically %s", CTIitemName (new_fundef));
+                DBUG_PRINT ("  (1) dispatched statically %s", CTIitemName (new_fundef));
             } else if ((dft_res->num_partials
                         == CountSpecializations (dft_res->num_partials,
                                                  dft_res->partials))
@@ -242,7 +242,7 @@ DispatchFunCall (node *fundef, ntype *arg_types, info *arg_info)
                         && !FUNDEF_ISINLINE (new_fundef)) {
                         new_fundef = NULL;
                     } else {
-                        DBUG_PRINT ("  dispatched statically %s",
+                        DBUG_PRINT ("  (2) dispatched statically %s",
                                     CTIitemName (new_fundef));
                     }
                 }

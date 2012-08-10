@@ -139,8 +139,7 @@ SAC_HM_CheckDiagPatternAnyChunk (SAC_HM_header_t *addr)
         && (SAC_HM_LARGECHUNK_DIAG (addr - 2) != DIAG_ALLOCPATTERN)
         && (SAC_HM_LARGECHUNK_DIAG (addr - 2) != DIAG_FREEPATTERN)) {
         atexit (SAC_HM_ShowDiagnostics);
-        SAC_RuntimeError ("Corrupted free list encountered upon memory allocation "
-                          "in unspecified arena");
+        SAC_RuntimeError ("Corrupted chunk encountered!");
     }
 }
 
