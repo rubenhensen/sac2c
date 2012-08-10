@@ -780,6 +780,8 @@ DLIRfundef (node *arg_node, info *arg_info)
         info = FreeInfo (info);
     }
 
+    DBUG_PRINT ("Ended loop-invariant removal in fundef %s", FUNDEF_NAME (arg_node));
+
     /**
      * traverse only in next fundef if we've came here from a non-function subtree,
      * i.e. from the module chain.
@@ -787,8 +789,6 @@ DLIRfundef (node *arg_node, info *arg_info)
     if (INFO_FUNDEF (arg_info) == NULL) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
-
-    DBUG_PRINT ("Ended loop-invariant removal in fundef %s", FUNDEF_NAME (arg_node));
 
     DBUG_RETURN (arg_node);
 }
