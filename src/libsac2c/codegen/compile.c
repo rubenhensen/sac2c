@@ -282,13 +282,18 @@ GetBasetypeStr (types *type)
         str = "float";
     } else if (basetype == T_int_dev || basetype == T_int_shmem) {
         str = "int";
-    } else if (basetype == T_double_dev || basetype == T_double_shmem) {
-        str = "double"; /* We do not support double in CUDA yet */
-    }
-    /* If the enforce_float flag is set,
-     * we change all doubles to floats */
-    else if (basetype == T_double && global.enforce_float) {
-        str = "float";
+    } else if (basetype == T_double_dev || basetype == T_double_shmem
+               || basetype == T_double) {
+        /* If the enforce_float flag is set,
+         * we change all doubles to floats */
+        if (global.enforce_float) {
+            str = "float";
+        } else {
+            str = "double";
+        }
+    } else if (basetype == T_int_dist || basetype == T_float_dist
+               || basetype == T_double_dist) {
+        str = "SAC_dist";
     } else {
         str = global.type_string[basetype];
     }
@@ -888,6 +893,9 @@ static node *
 MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_icm,
               node *pragma, node *assigns)
 {
+    node *typeArg;
+    simpletype baseType;
+
     DBUG_ENTER ();
 
     DBUG_ASSERT (RC_IS_LEGAL (rc), "illegal RC value found!");
@@ -897,23 +905,51 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
 
     if (RC_IS_ACTIVE (rc)) {
         if (pragma == NULL) {
+
+            baseType = TCgetBasetype (type);
             /* This is an array that should be allocated on the device */
-            if (TCgetBasetype (type) == T_float_dev || TCgetBasetype (type) == T_int_dev
-                || TCgetBasetype (type) == T_double_dev) {
+            if (baseType == T_float_dev || baseType == T_int_dev
+                || baseType == T_double_dev) {
 #if USE_COMPACT_ALLOC
                 assigns
                   = TCmakeAssignIcm3 ("ND_ALLOC", TCmakeIdCopyStringNt (name, type),
                                       TBmakeNum (rc), get_dim, set_shape_icm, assigns);
 #else
+                typeArg = MakeBasetypeArg (type);
                 assigns = TCmakeAssignIcm4 (
                   "CUDA_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type), TBmakeNum (rc),
-                  get_dim, MakeBasetypeArg (type),
+                  get_dim, typeArg,
                   TBmakeAssign (set_shape_icm,
                                 TCmakeAssignIcm4 ("CUDA_ALLOC_END",
                                                   TCmakeIdCopyStringNt (name, type),
                                                   TBmakeNum (rc), DUPdoDupTree (get_dim),
-                                                  MakeBasetypeArg (type), assigns)));
+                                                  DUPdoDupNode (typeArg), assigns)));
 #endif
+            }
+            /* This is a distributed array, we allocate a control structure for it */
+            else if (baseType == T_float_dist || baseType == T_int_dist
+                     || baseType == T_double_dist) {
+                switch (baseType) {
+                case T_float_dist:
+                    typeArg = TCmakeIdCopyString ("float");
+                    break;
+                case T_int_dist:
+                    typeArg = TCmakeIdCopyString ("int");
+                    break;
+                case T_double_dist:
+                    typeArg = TCmakeIdCopyString ("double");
+                    break;
+                default:
+                    break;
+                }
+                assigns = TCmakeAssignIcm4 (
+                  "DIST_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type), TBmakeNum (rc),
+                  get_dim, typeArg,
+                  TBmakeAssign (set_shape_icm,
+                                TCmakeAssignIcm4 ("DIST_ALLOC_END",
+                                                  TCmakeIdCopyStringNt (name, type),
+                                                  TBmakeNum (rc), DUPdoDupTree (get_dim),
+                                                  DUPdoDupNode (typeArg), assigns)));
             } else {
 #if USE_COMPACT_ALLOC
                 assigns

@@ -180,7 +180,8 @@ CAST_HIVE_COMMON_TO_PTH (struct sac_hive_common_t *cp)
  * In ST the value should point to the single global queen-bee created for the
  * standalone program execution. */
 #define SAC_MT_DEFINE_ST_SELF()                                                          \
-    struct sac_bee_pth_t *const SAC_MT_self = SAC_MT_singleton_queen;
+    struct sac_bee_pth_t *const SAC_MT_self                                              \
+      = (struct sac_bee_pth_t *)SAC_MT_singleton_queen;
 
 /*****************************************************************************/
 
