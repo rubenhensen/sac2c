@@ -111,9 +111,8 @@ cache_malloc (size_t size, int device)
         }
         cacheAlloc[device] = NULL;
         if ((res = cudaMalloc (&(newElem->pointer), size)) != cudaSuccess) {
-            //       fprintf(stderr, "Error allocating %zu bytes on CUDA device %d: %d\n",
-            //       size,
-            //               device, res);
+            SAC_RuntimeError ("Error allocating %zu bytes on CUDA device %d: %d\n", size,
+                              device, res);
             exit (-1);
         }
     }
@@ -143,8 +142,8 @@ cache_free (void *pointer, int device)
             return;
         }
     }
-    //   fprintf(stderr, "Pointer %p being freed not found on cache for device %d\n",
-    //           pointer, device);
+    SAC_RuntimeError ("Pointer %p being freed not found on cache for device %d\n",
+                      pointer, device);
     exit (-1);
 }
 

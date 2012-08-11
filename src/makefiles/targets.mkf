@@ -315,7 +315,7 @@ runtime_mutc_h         := mutc mutc_world \
 
 runtime_cuda_h         := cuda cuda_gen
 
-runtime_cudahybrid_h   := cudahybrid alloc_cache dist_var_nomemsave
+runtime_cudahybrid_h   := cudahybrid alloc_cache dist_var_nomemsave basic
 
 runtime_rtspec_h       := rtspec registry reqqueue controller
 

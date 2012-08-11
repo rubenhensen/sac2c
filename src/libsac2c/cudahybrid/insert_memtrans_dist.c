@@ -327,7 +327,8 @@ Createdist2conc (node *dist_avis, node *conc_avis, info *arg_info)
     DBUG_ENTER ();
 
     FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-      = TBmakeVardec (conc_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+      = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
+                        TBmakeVardec (conc_avis, NULL));
 
     lut_pointer = LUTsearchInLutS (INFO_ACCESS (arg_info), AVIS_NAME (dist_avis));
     if (lut_pointer != NULL) {

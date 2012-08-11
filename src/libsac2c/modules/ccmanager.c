@@ -29,7 +29,8 @@ GetCCCall (void)
 
     DBUG_ENTER ();
 
-    if (global.backend == BE_cuda && STReq (global.config.cuda_arch, "")) {
+    if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+        && STReq (global.config.cuda_arch, "")) {
         CTIwarn ("CUDA architecture cannot be detected, set to default(1.0)\n");
     }
 
@@ -124,7 +125,8 @@ AddCCLibs (str_buf *buffer)
      */
 
 #if ENABLE_MT
-    if (global.backend != BE_cuda) { /* Does not work with cuda compiler nvcc */
+    if (global.backend != BE_cuda
+        && global.backend != BE_cudahybrid) { /* Does not work with cuda compiler nvcc */
         SBUFprintf (buffer, "%s ", global.config.ccmtlink);
     }
 #endif

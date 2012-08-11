@@ -4056,7 +4056,7 @@ COMPprfSyncIn (node *arg_node, info *arg_info)
         ret_node = TCmakeAssignIcm2 ("SAC_ND_PRF_SYNCIN",
                                      DUPdupIdsIdNt (INFO_LASTIDS (arg_info)),
                                      DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
-    } else if (global.backend == BE_cuda) {
+    } else if (global.backend == BE_cuda || global.backend == BE_cudahybrid) {
         ret_node = TCmakeAssignIcm2 ("SAC_CUDA_PRF_SYNCIN",
                                      DUPdupIdsIdNt (INFO_LASTIDS (arg_info)),
                                      DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
@@ -4077,7 +4077,7 @@ COMPprfSyncOut (node *arg_node, info *arg_info)
         ret_node
           = TCmakeAssignIcm2 ("SAC_ND_PRF_SYNCOUT", DUPdupIdNt (PRF_ARG1 (arg_node)),
                               DUPdupIdNt (PRF_ARG2 (arg_node)), ret_node);
-    } else if (global.backend == BE_cuda) {
+    } else if (global.backend == BE_cuda || global.backend == BE_cudahybrid) {
         ret_node
           = TCmakeAssignIcm2 ("SAC_CUDA_PRF_SYNCOUT", DUPdupIdNt (PRF_ARG2 (arg_node)),
                               DUPdupIdNt (PRF_ARG1 (arg_node)), ret_node);
@@ -5453,7 +5453,7 @@ COMPprfCopy (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    if (global.backend != BE_cuda) {
+    if (global.backend != BE_cuda && global.backend != BE_cudahybrid) {
         ret_node
           = TCmakeAssignIcm3 ("ND_COPY__DATA", DUPdupIdsIdNt (let_ids),
                               DUPdupIdNt (PRF_ARG1 (arg_node)),
@@ -5937,7 +5937,7 @@ COMPprfIdxModarray_AxSxA (node *arg_node, info *arg_info)
     DBUG_ASSERT (NODE_TYPE (arg3) != N_array,
                  "3rd arg of F_idx_modarray_AxSxA is a N_array!");
 
-    if (global.backend == BE_cuda
+    if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
         && (TCgetBasetype (ID_TYPE (arg1)) == T_float_dev
             || TCgetBasetype (ID_TYPE (arg1)) == T_int_dev
             || TCgetBasetype (ID_TYPE (arg1)) == T_double_dev)
@@ -8095,7 +8095,8 @@ COMPprfCudaGetStream (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    ret_node = TCmakeAssignIcm0 ("CUDA_GET_STREAM", NULL);
+    ret_node
+      = TCmakeAssignIcm1 ("CUDA_GET_STREAM", DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -9529,7 +9530,7 @@ COMPwith3 (node *arg_node, info *arg_info)
         }
 
         INFO_CONCURRENTRANGES (arg_info) = old_concurrentranges;
-    } else if (global.backend == BE_cuda) {
+    } else if (global.backend == BE_cuda || global.backend == BE_cudahybrid) {
         arg_node = TRAVopt (WITH3_RANGES (arg_node), arg_info);
     } else {
         DBUG_ASSERT (FALSE, "With3 not defined for this backend");
@@ -9645,7 +9646,7 @@ COMPrange (node *arg_node, info *arg_info)
         FREEdoFreeTree (thread_fun);
 
         res = family;
-    } else if (global.backend == BE_cuda) {
+    } else if (global.backend == BE_cuda || global.backend == BE_cudahybrid) {
 
         RANGE_LOWERBOUND (arg_node)
           = MakeIcm_GETVAR_ifNeeded (RANGE_LOWERBOUND (arg_node));

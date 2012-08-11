@@ -416,7 +416,8 @@ struct sac_hive_common_t {
         unsigned int SAC_MT_ready_count = SAC_MT_MYWORKERCLASS ();                       \
         unsigned int SAC_MT_son_id;                                                      \
         unsigned int SAC_MT_i;                                                           \
-        struct spmdfun##_RT *rdata = SAC_MT_self->c.hive->retdata;                       \
+        struct spmdfun##_RT *rdata;                                                      \
+        rdata = (struct spmdfun##_RT *)SAC_MT_self->c.hive->retdata;                     \
                                                                                          \
         while (SAC_MT_ready_count > 0) {                                                 \
             SAC_MT_i = SAC_MT_MYWORKERCLASS ();                                          \

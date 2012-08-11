@@ -58,6 +58,7 @@ struct INFO {
     node *wl;
     int dim;
     prf genprf;
+    node *device_number;
 };
 
 /*
@@ -91,6 +92,8 @@ struct INFO {
  *
  * INFO_GENPRF          The prf to use for flattening the generators (see exprs)
  *
+ * INFO_DEVICENUMBER    The avis of the device number variable.
+ *
  */
 
 #define INFO_FUNDEF(n) (n->fundef)
@@ -105,6 +108,7 @@ struct INFO {
 #define INFO_WL(n) (n->wl)
 #define INFO_DIM(n) (n->dim)
 #define INFO_GENPRF(n) (n->genprf)
+#define INFO_DEVICENUMBER(n) (n->device_number)
 
 static info *
 MakeInfo (void)
@@ -127,6 +131,7 @@ MakeInfo (void)
     INFO_WL (result) = NULL;
     INFO_DIM (result) = 0;
     INFO_GENPRF (result) = F_unknown;
+    INFO_DEVICENUMBER (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -231,7 +236,7 @@ IALassign (node *arg_node, info *arg_info)
 {
     node *schedule_start0, *schedule_stop0, *avail_start, *avail_stop;
     node *loop_block, *res, *vardecs, *rhs, *stop_var, *exprs, *cont_stop;
-    prf prf;
+    prf rhs_prf;
     nodetype node_type;
 
     DBUG_ENTER ();
@@ -251,11 +256,11 @@ IALassign (node *arg_node, info *arg_info)
              * comes after the <dist2device> transfers. */
             ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-            prf = PRF_PRF (rhs);
+            rhs_prf = PRF_PRF (rhs);
             if (LUTsearchInLutPp (INFO_MEMTRAN (arg_info),
                                   IDS_AVIS (ASSIGN_LHS (arg_node)))
                   == NULL
-                || prf == F_dist2device_abs) {
+                || rhs_prf == F_dist2device_abs) {
                 /* if this is a transfer for one of the memory destinations, move it to
                  * the preassignments on info. */
                 INFO_PREASSIGNS (arg_info)
@@ -263,7 +268,7 @@ IALassign (node *arg_node, info *arg_info)
                 res = ASSIGN_NEXT (arg_node);
                 ASSIGN_NEXT (arg_node) = NULL;
             } else {
-                DBUG_ASSERT (prf == F_dist2device_rel,
+                DBUG_ASSERT (rhs_prf == F_dist2device_rel,
                              "There should be only F_dist2device_rel or "
                              "F_dist2device_abs N_prfs inside CUDA branch of the SPMD!");
                 /*
@@ -363,9 +368,8 @@ IALassign (node *arg_node, info *arg_info)
             loop_block = TBmakeAssign (TBmakeLet (TBmakeIds (avail_start, NULL),
                                                   TBmakeId (schedule_stop0)),
                                        loop_block);
-            loop_block
-              = TBmakeAssign (TBmakeLet (NULL, TBmakePrf (F_cuda_get_stream, NULL)),
-                              loop_block);
+            rhs = TCmakePrf1 (F_cuda_get_stream, TBmakeId (INFO_DEVICENUMBER (arg_info)));
+            loop_block = TBmakeAssign (TBmakeLet (NULL, rhs), loop_block);
             loop_block = TBmakeBlock (loop_block, NULL);
 
             /* create loop and surrounding assignments */
@@ -420,6 +424,7 @@ IALprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (PRF_PRF (arg_node) == F_cuda_set_device) {
+        INFO_DEVICENUMBER (arg_info) = ID_AVIS (PRF_ARG1 (arg_node));
         INFO_INCUDABLOCK (arg_info) = TRUE;
     }
 

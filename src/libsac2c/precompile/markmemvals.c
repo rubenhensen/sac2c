@@ -717,7 +717,8 @@ MMVprfSuballoc (node *arg_node, info *arg_info)
          * Scrap the 3rd/4th argument, as this suballoc does not need to
          * set the shape descriptor.
          */
-        if (global.backend == BE_c99 || global.backend == BE_cuda) {
+        if (global.backend == BE_c99 || global.backend == BE_cuda
+            || global.backend == BE_cudahybrid) {
             if (PRF_EXPRS3 (arg_node) != NULL) {
                 PRF_EXPRS3 (arg_node) = FREEdoFreeTree (PRF_EXPRS3 (arg_node));
             }

@@ -19,9 +19,8 @@ typedef struct dist_var {
     char **allocations; // pointers in bytes
 } * dist_var_t;
 
-extern unsigned int SAC_MT_DEVICES;
-extern unsigned int SAC_CUDA_DEVICES;
-extern double SAC_CUDA_SHARE;
+unsigned int SAC_MT_DEVICES;
+unsigned int SAC_CUDA_DEVICES;
 
 /*
  * memfuncs
@@ -38,12 +37,9 @@ dist_var_t dist_var_free (dist_var_t dist_array);
  */
 
 // updates distributed variable structure
-dist_var_t host2dist_st (dist_var_t dist_array, unsigned int block_start,
-                         unsigned int block_stop);
-dist_var_t host2dist_spmd (dist_var_t dist_array, unsigned int block_start,
-                           unsigned int block_stop);
-dist_var_t dev2dist_spmd (dist_var_t dist_array, void *array, unsigned int block_start,
-                          unsigned int block_stop, int device);
+dist_var_t host2dist_st (dist_var_t dist_array, void *array);
+dist_var_t host2dist_spmd (dist_var_t dist_array, void *array);
+dist_var_t dev2dist_spmd (dist_var_t dist_array, void *array, int device);
 
 // assigns section of distributed array to device, returns pointer for section
 void *dist2conc (dist_var_t dist_array, unsigned int block_start, unsigned int block_stop,
@@ -123,79 +119,69 @@ dist_var_free (dist_var_t dist_array)
 
 /*type conversions*/
 dist_var_t
-host2dist_st (dist_var_t dist_array, unsigned int block_start, unsigned int block_stop)
+host2dist_st (dist_var_t dist_array, void *array)
 {
-    debug ("host2dist_st(dist %p, array %p, start %d, stop %d)\n", dist_array, array,
-           block_start, block_stop);
+    debug ("host2dist_st(dist %p, array %p)\n", dist_array, array);
 
     /* cast block_state array to matrix */
     block_state (*state)[SAC_MT_DEVICES][dist_array->n_blocks]
       = (block_state (*)[SAC_MT_DEVICES][dist_array->n_blocks]) (dist_array->state);
 
-    // unswitch host case
-    for (unsigned int j = block_start; j < block_stop; j++) {
-        (*state)[0][j] = Owned;
-    }
-    for (unsigned int i = 1; i < SAC_MT_DEVICES; i++) {
-        for (unsigned int j = block_start; j < block_stop; j++) {
-            (*state)[i][j] = Invalid;
+    for (unsigned int i = 0; i < SAC_MT_DEVICES; i++) {
+        for (unsigned int j = 0; j < dist_array->n_blocks; j++) {
+            if (dist_array->owner[j] == i)
+                (*state)[i][j] = Owned;
+            else
+                (*state)[i][j] = Invalid;
         }
     }
 
-    debug ("host2dist_st(dist %p, array %p, start %d, stop %d) = %p\n", dist_array, array,
-           block_start, block_stop, dist_array);
+    debug ("host2dist_st(dist %p, array %p) = %p\n", dist_array, array, dist_array);
 
     return dist_array;
 }
 
 dist_var_t
-host2dist_spmd (dist_var_t dist_array, unsigned int block_start, unsigned int block_stop)
+host2dist_spmd (dist_var_t dist_array, void *array)
 {
-    debug ("host2dist_spmd(dist %p, first_host_block %d, start %d, stop %d)\n",
-           dist_array, first_host_block, block_start, block_stop);
+    debug ("host2dist_spmd(dist %p)\n", dist_array);
 
     /* cast block_state array to matrix */
     block_state (*state)[SAC_MT_DEVICES][dist_array->n_blocks]
       = (block_state (*)[SAC_MT_DEVICES][dist_array->n_blocks]) (dist_array->state);
     unsigned int i;
 
-    for (i = block_start; i < block_stop; i++) {
-        (*state)[0][i] = Owned;
+    for (i = 0; i < dist_array->n_blocks; i++) {
+        if (dist_array->owner[i] == 0)
+            (*state)[0][i] = Owned;
+        else
+            (*state)[0][i] = Invalid;
     }
 
-    debug ("host2dist_spmd(dist %p, array %p, start %d, stop %d, device %d) = %p\n",
-           dist_array, array, block_start, block_stop, device, dist_array);
+    debug ("host2dist_spmd(dist %p) = %p\n", dist_array);
 
     return dist_array;
 }
 
 dist_var_t
-dev2dist_spmd (dist_var_t dist_array, void *array, unsigned int block_start,
-               unsigned int block_stop, int device)
+dev2dist_spmd (dist_var_t dist_array, void *array, int device)
 {
-    debug ("dev2dist_spmd(dist %p, array %p, start %d, stop %d, device %d)\n", dist_array,
-           array, block_start, block_stop, device);
+    debug ("dev2dist_spmd(dist %p, array %p, device %d)\n", dist_array, array, device);
 
     /* cast block_state array to matrix */
     block_state (*state)[SAC_MT_DEVICES][dist_array->n_blocks]
       = (block_state (*)[SAC_MT_DEVICES][dist_array->n_blocks]) (dist_array->state);
     unsigned int i;
 
-    for (i = 0; i < block_start; i++) {
-        (*state)[0][i] = Invalid;
-        (*state)[device][i] = Invalid;
-    }
-    for (; i < block_stop; i++) {
-        (*state)[0][i] = Invalid;
-        (*state)[device][i] = Owned;
-    }
-    for (; i < dist_array->n_blocks; i++) {
-        (*state)[0][i] = Invalid;
-        (*state)[device][i] = Invalid;
+    for (i = 0; i < dist_array->n_blocks; i++) {
+        if (dist_array->owner[i] == device)
+            (*state)[device][i] = Owned;
+        else
+            (*state)[device][i] = Invalid;
     }
 
-    debug ("dev2dist_spmd(dist %p, array %p, start %d, stop %d, device %d) = %p\n",
-           dist_array, array, block_start, block_stop, device, dist_array);
+    debug ("dev2dist_spmd(dist %p, array %p, device %d) = %p\n", dist_array, array,
+           device, dist_array);
 
     return dist_array;
 }

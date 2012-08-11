@@ -226,7 +226,7 @@ PrintGlobalSwitches (void)
     fprintf (global.outfile, "\n");
 
     fprintf (global.outfile, "#define SAC_CUDA_MACROS  %d\n",
-             (global.backend == BE_cuda) ? 1 : 0);
+             (global.backend == BE_cuda || global.backend == BE_cudahybrid) ? 1 : 0);
 
     fprintf (global.outfile, "#define SAC_OMP_MACROS  %d\n",
              (global.backend == BE_omp) ? 1 : 0);
@@ -243,8 +243,11 @@ PrintGlobalSwitches (void)
         fprintf (global.outfile, "#define SAC_BACKEND_C99\n");
         break;
     case BE_cuda:
+        fprintf (global.outfile, "#define SAC_BACKEND CUDA\n");
+        break;
     case BE_cudahybrid:
         fprintf (global.outfile, "#define SAC_BACKEND CUDA\n");
+        fprintf (global.outfile, "#define SAC_BACKEND_C99\n");
         break;
     case BE_omp:
         fprintf (global.outfile, "#define SAC_BACKEND OMP\n");
@@ -264,7 +267,9 @@ PrintGlobalSwitches (void)
     fprintf (global.outfile, "#define SAC_C_EXTERN           %s\n",
              (global.backend == BE_mutc)
                ? ""
-               : (global.backend == BE_cuda) ? "extern \"C\"" : "extern");
+               : (global.backend == BE_cuda || global.backend == BE_cudahybrid)
+                   ? "extern \"C\""
+                   : "extern");
     fprintf (global.outfile, "\n");
 
     DBUG_RETURN ();
@@ -635,6 +640,12 @@ GSCprintMainBegin (void)
     fprintf (global.outfile, "SAC_HM_SETUP();\n");
     INDENT;
     fprintf (global.outfile, "SAC_MT_SETUP();\n");
+
+    if (global.backend == BE_cudahybrid) {
+        INDENT;
+        fprintf (global.outfile, "SAC_DIST_SETUP();\n");
+    }
+
     INDENT;
     fprintf (global.outfile, "SAC_CS_SETUP();\n");
     INDENT;
