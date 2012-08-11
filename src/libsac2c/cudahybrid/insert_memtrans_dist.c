@@ -319,21 +319,15 @@ static void
 Createdist2conc (node *dist_avis, node *conc_avis, info *arg_info)
 {
     offset_t *offset;
-    node *device_number, *prf;
+    node *prf_node, *last_arg;
     void **lut_pointer;
-    int extent;
+    int start, stop;
+    prf dist2conc;
 
     DBUG_ENTER ();
 
     FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
       = TBmakeVardec (conc_avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
-
-    /* create device number node */
-    if (INFO_CUDARIZABLE (arg_info)) {
-        device_number = DUPdoDupNode (INFO_DEVICENUMBER (arg_info));
-    } else {
-        device_number = TBmakeNum (0);
-    }
 
     lut_pointer = LUTsearchInLutS (INFO_ACCESS (arg_info), AVIS_NAME (dist_avis));
     if (lut_pointer != NULL) {
@@ -342,19 +336,48 @@ Createdist2conc (node *dist_avis, node *conc_avis, info *arg_info)
         offset = (offset_t *)*lut_pointer;
         DBUG_PRINT ("Found entry for %s -> [%d,%d]", AVIS_NAME (dist_avis), offset->min,
                     offset->max);
-        prf = TCmakePrf4 (F_dist2conc_rel, TBmakeId (dist_avis), TBmakeNum (offset->min),
-                          TBmakeNum (offset->max), device_number);
+
+        /* generate correct dist2conc parameters */
+        start = offset->min;
+        stop = offset->max;
+        if (INFO_CUDARIZABLE (arg_info)) {
+            last_arg = DUPdoDupNode (INFO_DEVICENUMBER (arg_info));
+            dist2conc = F_dist2device_rel;
+        } else {
+            last_arg = TBmakeBool (offset->own);
+            dist2conc = F_dist2host_rel;
+        }
     } else {
-        /* Unknown access pattern, so we set the minimum and maximum offsets to the
-         maximum value, the length of the first dimension. */
+        /* Unknown access pattern, so we set the minimum and maximum offsets to
+         * cover all blocks. */
+        // TODO: infer which blocks to copy rather than all of them
         DBUG_PRINT ("No entry for %s", AVIS_NAME (dist_avis));
-        extent = SHgetExtent (TYgetShape (AVIS_TYPE (dist_avis)), 0);
-        prf = TCmakePrf4 (F_dist2conc_abs, TBmakeId (dist_avis), TBmakeNum (0),
-                          TBmakeNum (extent), device_number);
+
+        /* generate correct dist2conc parameters */
+        start = 0;
+        stop = SHgetExtent (TYgetShape (AVIS_TYPE (dist_avis)), 0);
+        if (INFO_CUDARIZABLE (arg_info)) {
+            last_arg = DUPdoDupNode (INFO_DEVICENUMBER (arg_info));
+            dist2conc = F_dist2device_abs;
+        } else {
+            /* In a with-loop, the destination memory we want to mark as owned is
+             * always defined relative to the with-loop offsets. So, if we use
+             * absolute index copy in a with-loop, we are only reading and don't want
+             * to mark array as owned by host.
+             * If not on a with-loop, most likely we do want to be the owner.
+             */
+            /* TODO: figure out whether we want to own a piece of memory or not outside
+             * with-loops. */
+            last_arg = TBmakeBool (!INFO_INWL (arg_info));
+            dist2conc = F_dist2host_abs;
+        }
     }
 
+    prf_node = TCmakePrf4 (dist2conc, TBmakeId (dist_avis), TBmakeNum (start),
+                           TBmakeNum (stop), last_arg);
+
     INFO_PREASSIGNS (arg_info)
-      = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL), prf),
+      = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL), prf_node),
                       INFO_PREASSIGNS (arg_info));
 
     /* Insert pair dist_avis->conc_avis into lookup table. */
@@ -615,11 +638,10 @@ IMEMDISTwith (node *arg_node, info *arg_info)
 node *
 IMEMDISTids (node *arg_node, info *arg_info)
 {
-    node *new_conc_avis, *ids_avis;
+    node *new_conc_avis, *ids_avis, *prf_node;
     ntype *ids_type, *conc_type;
     const char *suffix;
     prf conc2dist;
-    node *device_number;
 
     DBUG_ENTER ();
 
@@ -631,7 +653,7 @@ IMEMDISTids (node *arg_node, info *arg_info)
         new_conc_avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), ids_avis);
         if (new_conc_avis != ids_avis) {
             /* If the N_avis has been come across before, replace its
-             * N_avis by the device N_avis */
+             * N_avis by the concrete N_avis */
             IDS_AVIS (arg_node) = new_conc_avis;
         } else {
             conc_type = DISTNtypeConversion (ids_type, INFO_CUDARIZABLE (arg_info));
@@ -653,17 +675,17 @@ IMEMDISTids (node *arg_node, info *arg_info)
 
         /* add concrete to distributed transfer */
         if (INFO_CUDARIZABLE (arg_info)) {
-            conc2dist = F_device2dist;
-            device_number = DUPdoDupNode (INFO_DEVICENUMBER (arg_info));
+            prf_node
+              = TCmakePrf3 (F_device2dist, TBmakeId (new_conc_avis), TBmakeId (ids_avis),
+                            DUPdoDupNode (INFO_DEVICENUMBER (arg_info)));
         } else {
             conc2dist = (INFO_INWL (arg_info) ? F_host2dist_spmd : F_host2dist_st);
-            device_number = TBmakeNum (0);
+            prf_node
+              = TCmakePrf2 (conc2dist, TBmakeId (new_conc_avis), TBmakeId (ids_avis));
         }
 
         INFO_POSTASSIGNS (arg_info)
-          = TBmakeAssign (TBmakeLet (TBmakeIds (ids_avis, NULL),
-                                     TCmakePrf3 (conc2dist, TBmakeId (new_conc_avis),
-                                                 TBmakeId (ids_avis), device_number)),
+          = TBmakeAssign (TBmakeLet (TBmakeIds (ids_avis, NULL), prf_node),
                           INFO_POSTASSIGNS (arg_info));
     }
 

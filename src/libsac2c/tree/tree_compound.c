@@ -1859,6 +1859,21 @@ TCmakeAssignIcm7 (const char *name, node *arg1, node *arg2, node *arg3, node *ar
     DBUG_RETURN (assigns);
 }
 
+node *
+TCmakeAssignIcm8 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4,
+                  node *arg5, node *arg6, node *arg7, node *arg8, node *next)
+{
+    node *assigns;
+
+    DBUG_ENTER ();
+
+    assigns
+      = TBmakeAssign (TCmakeIcm8 (name, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8),
+                      next);
+
+    DBUG_RETURN (assigns);
+}
+
 /******************************************************************************
  *
  * Function:
@@ -3336,6 +3351,27 @@ TCmakeIcm7 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4, no
     DBUG_ENTER ();
 
     arg7 = TCcombineExprs (arg7, NULL);
+    arg6 = TCcombineExprs (arg6, arg7);
+    arg5 = TCcombineExprs (arg5, arg6);
+    arg4 = TCcombineExprs (arg4, arg5);
+    arg3 = TCcombineExprs (arg3, arg4);
+    arg2 = TCcombineExprs (arg2, arg3);
+    arg1 = TCcombineExprs (arg1, arg2);
+    icm = TBmakeIcm (name, arg1);
+
+    DBUG_RETURN (icm);
+}
+
+node *
+TCmakeIcm8 (const char *name, node *arg1, node *arg2, node *arg3, node *arg4, node *arg5,
+            node *arg6, node *arg7, node *arg8)
+{
+    node *icm;
+
+    DBUG_ENTER ();
+
+    arg8 = TCcombineExprs (arg8, NULL);
+    arg7 = TCcombineExprs (arg7, arg8);
     arg6 = TCcombineExprs (arg6, arg7);
     arg5 = TCcombineExprs (arg5, arg6);
     arg4 = TCcombineExprs (arg4, arg5);

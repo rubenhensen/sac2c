@@ -293,7 +293,7 @@ GetBasetypeStr (types *type)
         }
     } else if (basetype == T_int_dist || basetype == T_float_dist
                || basetype == T_double_dist) {
-        str = "SAC_dist";
+        str = "struct dist_var";
     } else {
         str = global.type_string[basetype];
     }
@@ -789,6 +789,8 @@ MakeMutcLocalAllocDescIcm (char *name, types *type, int rc, node *get_dim, node 
 static node *
 MakeSetRcIcm (char *name, types *type, int rc, node *assigns)
 {
+    simpletype basetype;
+
     DBUG_ENTER ();
 
     DBUG_ASSERT (RC_IS_LEGAL (rc), "illegal RC value found!");
@@ -798,15 +800,22 @@ MakeSetRcIcm (char *name, types *type, int rc, node *assigns)
             assigns = TCmakeAssignIcm2 ("ND_SET__RC", TCmakeIdCopyStringNt (name, type),
                                         TBmakeNum (rc), assigns);
         } else {
-            if (TCgetBasetype (type) != T_float_dev && TCgetBasetype (type) != T_int_dev
-                && TCgetBasetype (type) != T_double_dev) {
+            basetype = TCgetBasetype (type);
+            if (basetype == T_float_dev || basetype == T_int_dev
+                || basetype == T_double_dev) {
                 assigns
-                  = TCmakeAssignIcm2 ("ND_FREE", TCmakeIdCopyStringNt (name, type),
+                  = TCmakeAssignIcm2 ("CUDA_FREE", TCmakeIdCopyStringNt (name, type),
+                                      TCmakeIdCopyString (GenericFun (GF_free, type)),
+                                      assigns);
+            } else if (basetype == T_float_dist || basetype == T_int_dist
+                       || basetype == T_double_dist) {
+                assigns
+                  = TCmakeAssignIcm2 ("DIST_FREE", TCmakeIdCopyStringNt (name, type),
                                       TCmakeIdCopyString (GenericFun (GF_free, type)),
                                       assigns);
             } else {
                 assigns
-                  = TCmakeAssignIcm2 ("CUDA_FREE", TCmakeIdCopyStringNt (name, type),
+                  = TCmakeAssignIcm2 ("ND_FREE", TCmakeIdCopyStringNt (name, type),
                                       TCmakeIdCopyString (GenericFun (GF_free, type)),
                                       assigns);
             }
@@ -942,14 +951,10 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
                 default:
                     break;
                 }
-                assigns = TCmakeAssignIcm4 (
-                  "DIST_ALLOC_BEGIN", TCmakeIdCopyStringNt (name, type), TBmakeNum (rc),
-                  get_dim, typeArg,
-                  TBmakeAssign (set_shape_icm,
-                                TCmakeAssignIcm4 ("DIST_ALLOC_END",
-                                                  TCmakeIdCopyStringNt (name, type),
-                                                  TBmakeNum (rc), DUPdoDupTree (get_dim),
-                                                  DUPdoDupNode (typeArg), assigns)));
+                assigns
+                  = TCmakeAssignIcm4 ("DIST_ALLOC", TCmakeIdCopyStringNt (name, type),
+                                      TBmakeNum (rc), get_dim, typeArg, NULL);
+                FREEdoFreeTree (set_shape_icm);
             } else {
 #if USE_COMPACT_ALLOC
                 assigns
@@ -7918,10 +7923,9 @@ COMPprfHost2Dist_st (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("DIST_HOST2DIST_ST", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm3 ("DIST_HOST2DIST_ST", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 DUPdupIdNt (PRF_ARG2 (arg_node)),
-                                 DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7936,10 +7940,9 @@ COMPprfHost2Dist_spmd (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("DIST_HOST2DIST_SPMD", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm3 ("DIST_HOST2DIST_SPMD", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 DUPdupIdNt (PRF_ARG2 (arg_node)),
-                                 DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
+                                 DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7963,7 +7966,7 @@ COMPprfDevice2Dist (node *arg_node, info *arg_info)
 }
 
 node *
-COMPprfDist2Conc_Rel (node *arg_node, info *arg_info)
+COMPprfDist2Host_Rel (node *arg_node, info *arg_info)
 {
     node *ret_node;
     node *let_ids;
@@ -7972,17 +7975,18 @@ COMPprfDist2Conc_Rel (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm5 ("DIST_DIST2CONC_REL", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm6 ("DIST_DIST2HOST_REL", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG2 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG3 (arg_node)),
-                                 DUPdupNodeNt (PRF_ARG4 (arg_node)), NULL);
+                                 DUPdupNodeNt (PRF_ARG4 (arg_node)),
+                                 MakeBasetypeArg (IDS_TYPE (let_ids)), NULL);
 
     DBUG_RETURN (ret_node);
 }
 
 node *
-COMPprfDist2Conc_Abs (node *arg_node, info *arg_info)
+COMPprfDist2Dev_Rel (node *arg_node, info *arg_info)
 {
     node *ret_node;
     node *let_ids;
@@ -7991,11 +7995,52 @@ COMPprfDist2Conc_Abs (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm5 ("DIST_DIST2CONC_ABS", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm6 ("DIST_DIST2DEV_REL", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG2 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG3 (arg_node)),
-                                 DUPdupNodeNt (PRF_ARG4 (arg_node)), NULL);
+                                 DUPdupIdNt (PRF_ARG4 (arg_node)),
+                                 MakeBasetypeArg (IDS_TYPE (let_ids)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfDist2Host_Abs (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm6 ("DIST_DIST2HOST_ABS", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG4 (arg_node)),
+                                 MakeBasetypeArg (IDS_TYPE (let_ids)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfDist2Dev_Abs (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm6 ("DIST_DIST2HOST_ABS", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG4 (arg_node)),
+                                 MakeBasetypeArg (IDS_TYPE (let_ids)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -8010,13 +8055,14 @@ COMPprfDist2Dev_Avail (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm7 ("DIST_DIST2DEV_AVAIL", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm8 ("DIST_DIST2DEV_AVAIL", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG2 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG3 (arg_node)),
-                                 DUPdupNodeNt (PRF_ARG4 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG4 (arg_node)),
                                  DUPdupIdNt (PRF_ARG5 (arg_node)),
-                                 DUPdupIdNt (PRF_ARG6 (arg_node)), NULL);
+                                 DUPdupIdNt (PRF_ARG6 (arg_node)),
+                                 MakeBasetypeArg (IDS_TYPE (let_ids)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -8031,12 +8077,13 @@ COMPprfDistContBlock (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm6 ("DIST_DISTCONTBLOCK", DUPdupIdsIdNt (let_ids),
-                                 DUPdupIdNt (PRF_ARG2 (arg_node)),
+    ret_node = TCmakeAssignIcm7 ("DIST_DISTCONTBLOCK", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG3 (arg_node)),
-                                 DUPdupNodeNt (PRF_ARG4 (arg_node)),
-                                 DUPdupNodeNt (PRF_ARG5 (arg_node)),
-                                 DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
+                                 DUPdupIdNt (PRF_ARG4 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG5 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG6 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }

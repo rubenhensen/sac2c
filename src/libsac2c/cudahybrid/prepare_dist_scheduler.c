@@ -250,7 +250,7 @@ PDSassign (node *arg_node, info *arg_info)
                 ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
                 res = arg_node;
             }
-        } else if (STReq ("DIST_DIST2CONC_REL", icm_name)
+        } else if (STReq ("DIST_DIST2HOST_REL", icm_name)
                    && INFO_SCHEDULERBEGIN (arg_info) == NULL) {
             /* Since we have not yet come across a scheduler_begin statement, as it is
              * NULL, we are still collecting memory transfers to place after the

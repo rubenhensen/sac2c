@@ -1011,31 +1011,39 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
        COMPprfCudaGetStream, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (host2dist_st, (PA_x, PA_x, PA_x), 3, XXX, NOSIMD, NTCCTprf_dummy, NULL,
+  PRF (host2dist_st, (PA_x, PA_x, PA_x), 2, XXX, NOSIMD, NTCCTprf_dummy, NULL,
        COMPprfHost2Dist_st, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (host2dist_spmd, (PA_x, PA_x, PA_x), 3, XXX, SIMD, NTCCTprf_dummy, NULL,
+  PRF (host2dist_spmd, (PA_x, PA_x, PA_x), 2, XXX, SIMD, NTCCTprf_dummy, NULL,
        COMPprfHost2Dist_spmd, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (device2dist, (PA_x, PA_x, PA_x), 5, XXX, SIMD, NTCCTprf_dummy, NULL,
+  PRF (device2dist, (PA_x, PA_x, PA_x), 3, XXX, SIMD, NTCCTprf_dummy, NULL,
        COMPprfDevice2Dist, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL,
        NULL),
 
-  PRF (dist2conc_rel, (PA_x, PA_x, PA_x), 6, XXX, SIMD, NTCCTprf_dummy, NULL,
-       COMPprfDist2Conc_Rel, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
+  PRF (dist2host_rel, (PA_x, PA_x, PA_x), 4, XXX, SIMD, NTCCTprf_dummy, NULL,
+       COMPprfDist2Host_Rel, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (dist2conc_abs, (PA_x, PA_x, PA_x), 6, XXX, SIMD, NTCCTprf_dummy, NULL,
-       COMPprfDist2Conc_Abs, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
+  PRF (dist2device_rel, (PA_x, PA_x, PA_x), 4, XXX, SIMD, NTCCTprf_dummy, NULL,
+       COMPprfDist2Dev_Rel, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (dist2dev_avail, (PA_x, PA_x, PA_x), 8, XXX, SIMD, NTCCTprf_dummy, NULL,
+  PRF (dist2host_abs, (PA_x, PA_x, PA_x), 4, XXX, SIMD, NTCCTprf_dummy, NULL,
+       COMPprfDist2Host_Abs, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
+       NULL, NULL),
+
+  PRF (dist2device_abs, (PA_x, PA_x, PA_x), 4, XXX, SIMD, NTCCTprf_dummy, NULL,
+       COMPprfDist2Dev_Abs, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
+       NULL, NULL),
+
+  PRF (dist2dev_avail, (PA_x, PA_x, PA_x), 7, XXX, SIMD, NTCCTprf_dummy, NULL,
        COMPprfDist2Dev_Avail, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (dist_cont_block, (PA_x, PA_x, PA_x), 4, XXX, SIMD, NTCCTprf_dummy, NULL,
+  PRF (dist_cont_block, (PA_x, PA_x, PA_x), 7, XXX, SIMD, NTCCTprf_dummy, NULL,
        COMPprfDistContBlock, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
        NULL, NULL),
 

@@ -192,7 +192,12 @@ ICMCompileCUDA_GLOBALFUN_AP (char *funname, int vararg_cnt, char **vararg)
 
     INDENT;
     INDENT;
-    fprintf (global.outfile, "%s<<<grid, block>>>(", funname);
+    if (global.backend == BE_cudahybrid) {
+        // on cudahybrid, we make use of streams, which have a fixed name
+        fprintf (global.outfile, "%s<<<grid, block, 0, *stream>>>(", funname);
+    } else {
+        fprintf (global.outfile, "%s<<<grid, block>>>(", funname);
+    }
 
     for (i = 0; i < 4 * vararg_cnt; i += 4) {
         if (STReq (vararg[i + 1], "float_dev")) {

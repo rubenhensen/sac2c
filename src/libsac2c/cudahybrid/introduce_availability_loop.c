@@ -230,7 +230,7 @@ node *
 IALassign (node *arg_node, info *arg_info)
 {
     node *schedule_start0, *schedule_stop0, *avail_start, *avail_stop;
-    node *loop_block, *res, *vardecs, *rhs, *stop_var, *exprs;
+    node *loop_block, *res, *vardecs, *rhs, *stop_var, *exprs, *cont_stop;
     prf prf;
     nodetype node_type;
 
@@ -255,7 +255,7 @@ IALassign (node *arg_node, info *arg_info)
             if (LUTsearchInLutPp (INFO_MEMTRAN (arg_info),
                                   IDS_AVIS (ASSIGN_LHS (arg_node)))
                   == NULL
-                || prf == F_dist2conc_abs) {
+                || prf == F_dist2device_abs) {
                 /* if this is a transfer for one of the memory destinations, move it to
                  * the preassignments on info. */
                 INFO_PREASSIGNS (arg_info)
@@ -263,9 +263,9 @@ IALassign (node *arg_node, info *arg_info)
                 res = ASSIGN_NEXT (arg_node);
                 ASSIGN_NEXT (arg_node) = NULL;
             } else {
-                DBUG_ASSERT (prf == F_dist2conc_rel,
-                             "There should be only F_dist2conc_rel or F_dist2conc_abs "
-                             "N_prfs inside CUDA branch of the SPMD!");
+                DBUG_ASSERT (prf == F_dist2device_rel,
+                             "There should be only F_dist2device_rel or "
+                             "F_dist2device_abs N_prfs inside CUDA branch of the SPMD!");
                 /*
                  * create check for availability of this array
                  */
@@ -280,21 +280,19 @@ IALassign (node *arg_node, info *arg_info)
 
                 /* create dist_cont_block prf for this transfer, copy the arguments
                  from the dist2conc */
-                avail_stop
+                exprs = TBmakeExprs (TBmakeId (INFO_AVAILSTART (arg_info)),
+                                     TBmakeExprs (TBmakeId (INFO_AVAILSTOP (arg_info)),
+                                                  NULL));
+                cont_stop
                   = TBmakePrf (F_dist_cont_block,
-                               TBmakeExprs (TBmakeId (INFO_AVAILSTART (arg_info)),
-                                            DUPdoDupTree (PRF_ARGS (rhs))));
+                               TCappendExprs (DUPdoDupTree (PRF_ARGS (rhs)), exprs));
                 INFO_PREMEMTRAN (arg_info)
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (stop_var, NULL), avail_stop),
+                  = TBmakeAssign (TBmakeLet (TBmakeIds (stop_var, NULL), cont_stop),
                                   INFO_PREMEMTRAN (arg_info));
 
                 /* change dist2conc to dist2device prf with availability check */
                 PRF_PRF (rhs) = F_dist2dev_avail;
-                exprs
-                  = TBmakeExprs (TBmakeId (INFO_AVAILSTART (arg_info)),
-                                 TBmakeExprs (TBmakeId (INFO_AVAILSTOP (arg_info)),
-                                              TBmakeExprs (TBmakeId (stop_var), NULL)));
-                PRF_ARGS (rhs) = TCappendExprs (PRF_ARGS (rhs), exprs);
+                PRF_ARGS (rhs) = TCappendExprs (PRF_ARGS (rhs), DUPdoDupTree (exprs));
 
                 res = arg_node;
             }

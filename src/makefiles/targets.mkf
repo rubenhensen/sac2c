@@ -286,7 +286,7 @@ runtime_extraclean_devel  :=
 runtime_extraclean_prod   := 
 
 runtime_sourcedirs        := essentials_h extras_h mt_h mt_omp_h mt_beehive_h mt_pth_h \
-                              mt_lpel_h phm_h mutc_h cuda_h rtspec_h
+                              mt_lpel_h phm_h mutc_h cuda_h rtspec_h cudahybrid_h
 
 ###############################################################################
 
@@ -314,6 +314,8 @@ runtime_mutc_h         := mutc mutc_world \
                           mutc_startup mutc_rc mutc_rc_gen
 
 runtime_cuda_h         := cuda cuda_gen
+
+runtime_cudahybrid_h   := cudahybrid alloc_cache dist_var_nomemsave
 
 runtime_rtspec_h       := rtspec registry reqqueue controller
 
