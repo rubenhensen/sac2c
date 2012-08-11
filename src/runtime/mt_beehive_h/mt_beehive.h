@@ -105,13 +105,12 @@ struct sac_hive_common_t {
  * it immediatelly afterwards */
 // #define SAC_DO_MT_CREATE_JOIN          1
 
-/* irrespective of SAC_DO_MT_GLOBAL_FRAME, we always define a global
- * union type SAC_spmd_frame_t to contain all SPMD-specific frame types.
- * The union type name SAC_spmd_frame_t is currently not used.
- */
+#if SAC_DO_MT_GLOBAL_FRAME
+
+/* Define a global union type SAC_spmd_frame_t to contain all SPMD-specific frame types.
+ * The union type name SAC_spmd_frame_t is currently not used. */
 #define SAC_MT_SPMD_FRAME_BEGIN() union SAC_spmd_frame_t {
 
-#if SAC_DO_MT_GLOBAL_FRAME
 /* Define a single global frame variable, called SAC_spmd_frame */
 #define SAC_MT_SPMD_FRAME_END()                                                          \
     int _dummy;                                                                          \
@@ -119,23 +118,36 @@ struct sac_hive_common_t {
     SAC_spmd_frame;
 
 #else /* SAC_DO_MT_GLOBAL_FRAME else */
-/* Local frames allocated at spmd call points.
- * Define union datatype. */
-#define SAC_MT_SPMD_FRAME_END()                                                          \
-    int _dummy;                                                                          \
-    }                                                                                    \
-    ;
+
+/* Local frames allocated at spmd call points. */
+
+#define SAC_MT_SPMD_FRAME_BEGIN() /* empty */
+#define SAC_MT_SPMD_FRAME_END()   /* empty */
 
 #endif /* SAC_DO_MT_GLOBAL_FRAME */
 
 /* Define a new struct type, specific for the SPMD function. */
 #define SAC_MT_SPMD_FRAME_ELEMENT_BEGIN(spmdfun) struct spmdfun##_FT {
 
+#if SAC_DO_MT_GLOBAL_FRAME
+
 /* _dummy: C99 does not allow empty structs/unions */
+/* this is a field in the global union */
 #define SAC_MT_SPMD_FRAME_ELEMENT_END(spmdfun)                                           \
     int _dummy;                                                                          \
     }                                                                                    \
     spmdfun##_FV;
+
+#else /* SAC_DO_MT_GLOBAL_FRAME else */
+
+/* _dummy: C99 does not allow empty structs/unions */
+/* this is only a struct type definition */
+#define SAC_MT_SPMD_FRAME_ELEMENT_END(spmdfun)                                           \
+    int _dummy;                                                                          \
+    }                                                                                    \
+    ;
+
+#endif /* SAC_DO_MT_GLOBAL_FRAME */
 
 #define SAC_MT_FRAME_ELEMENT_in__NODESC(name, num, basetype, var_NT)                     \
     SAC_ND_TYPE (var_NT, basetype) in_##num;
@@ -312,7 +324,15 @@ struct sac_hive_common_t {
  * Defined as several struct types.
  */
 
+#if SAC_DO_MT_GLOBAL_FRAME
+
 #define SAC_MT_SPMD_BARRIER_BEGIN() union SAC_spmd_barrier_t {
+
+#else /* SAC_DO_MT_GLOBAL_FRAME */
+
+#define SAC_MT_SPMD_BARRIER_BEGIN() /* empty */
+
+#endif /* SAC_DO_MT_GLOBAL_FRAME */
 
 #define SAC_MT_SPMD_BARRIER_ELEMENT_BEGIN(spmdfun) struct spmdfun##_RT {
 
@@ -325,13 +345,14 @@ struct sac_hive_common_t {
     SAC_ND_TYPE (var_NT, basetype) in_##num;                                             \
     SAC_ND_DESC_TYPE (var_NT) in_##num##_desc;
 
+#if SAC_DO_MT_GLOBAL_FRAME
+/* Single global frame/barrier */
+
 #define SAC_MT_SPMD_BARRIER_ELEMENT_END(spmdfun)                                         \
     int _dummy; /* C99 does not allow empty structs/unions */                            \
     }                                                                                    \
     spmdfun##_BV;
 
-#if SAC_DO_MT_GLOBAL_FRAME
-/* Single global frame/barrier */
 #define SAC_MT_SPMD_BARRIER_END()                                                        \
     int _dummy;                                                                          \
     }                                                                                    \
@@ -339,10 +360,12 @@ struct sac_hive_common_t {
 
 #else /* SAC_DO_MT_GLOBAL_FRAME else */
 /* Local frame/barrier, needed for sac4c mt */
-#define SAC_MT_SPMD_BARRIER_END()                                                        \
-    int _dummy;                                                                          \
+#define SAC_MT_SPMD_BARRIER_ELEMENT_END(spmdfun)                                         \
+    int _dummy; /* C99 does not allow empty structs/unions */                            \
     }                                                                                    \
     ;
+
+#define SAC_MT_SPMD_BARRIER_END() /* empty */
 
 #endif /* SAC_DO_MT_GLOBAL_FRAME */
 
