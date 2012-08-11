@@ -15,7 +15,8 @@
 
 #ifdef __CUDACC__
 
-#define getDeviceNumber(SAC_MT_mythread) SAC_MT_LOCAL_THREADS () - (SAC_MT_mythread + 1)
+#define getDeviceNumber(SAC_MT_mythread)                                                 \
+    SAC_MT_mythread - (SAC_MT_LOCAL_THREADS () - SAC_CUDA_DEVICES)
 
 #define SAC_CUDA_ENV_VAR_NAME "SAC_CUDA"
 
