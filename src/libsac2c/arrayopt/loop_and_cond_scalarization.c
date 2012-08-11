@@ -294,6 +294,7 @@
  * assignments via INFO_FUNDEF. Similarily, AdjustRecursiveCall uses
  * INFO_FUNDEF and INFO_PRECONDASSIGN do directly insert the generated
  * vardecs and assignments, respectively.
+ *
  * Although AdjustExternalCall creates code very similar to that of
  * AdjustRecursiveCall, it does not insert the code directly but stores
  * the vardecs and assignments in INFO_EXTVARDECS and in INFO_EXTASSIGNS.
@@ -301,6 +302,26 @@
  * now pointing to the N_fundef of the external function), the assignments
  * are inserted in LACSassign (which is traversed bottom up in order to
  * avoid a superfluous traversal of the freshly generated assignments).
+ *
+ *
+ * We also make a final pass across the LACFUN loop signature,
+ * replacing AVIS_SHAPE N_id nodes by their equivalent N_array
+ * nodes. Strictly speaking, this only has to be done for CONDFUNs,
+ * because of the need to preserve SSA behavior.
+ *
+ * Consider this example:
+ *
+ *   int condfun( int shp0, int shp1, int[.,.] mat { shape: shp}...
+ *
+ * We are * unable to write:
+ *
+ *   shp = [ shp0, shp1];
+ *
+ * and then use shp as an AVIS_SHAPE for mat, because the assignment
+ * of the N_array has to appear in both legs of the cond, AND
+ * they must have distinct names. So, that's nasty, but we CAN
+ * just write:  AVIS_SHAPE( mat) = [ shp0, shp1];
+ *
  */
 
 #define DBUG_PREFIX "LACS"
@@ -319,6 +340,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "LookUpTable.h"
+#include "pattern_match.h"
 
 /** <!--********************************************************************-->
  *
@@ -723,6 +745,55 @@ AdjustExternalCall (node *exprs, shape *shp, info *arg_info)
 
 /******************************************************************************
  *
+ * function: node *CorrectArgavisShapes( arg_node, arg_info)
+ *
+ * description: Examine FUNDEF_ARG, and replace any
+ *  AVIS_SHAPE(arg) elements by their N_array equivalents, if arg is AKD.
+ *
+ * argument: N_fundef node.
+ *
+ * result: Updated fundef.
+ *
+ *****************************************************************************/
+static node *
+CorrectArgavisShapes (node *arg_node, info *arg_info)
+{
+    node *args;
+    node *avis;
+    pattern *pat;
+    node *arr = NULL;
+
+    DBUG_ENTER ();
+
+    pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
+    args = FUNDEF_ARGS (arg_node);
+    while (args != NULL) {
+        avis = ARG_AVIS (args);
+        DBUG_PRINT ("Looking at %s", AVIS_NAME (avis));
+        if ((NULL != AVIS_SHAPE (avis)) && (N_id == NODE_TYPE (AVIS_SHAPE (avis)))) {
+            DBUG_PRINT ("Found AVIS_SHAPE N_id %s",
+                        AVIS_NAME (ID_AVIS (AVIS_SHAPE (avis))));
+            if (PMmatchFlat (pat, AVIS_SHAPE (avis))) {
+                /* AVIS_SHAPE is an N_array. Replace AVIS_SHAPE N_id by its value */
+                DBUG_PRINT ("Replacing AVIS_SHAPE N_id %s",
+                            AVIS_NAME (ID_AVIS (AVIS_SHAPE (avis))));
+                AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
+                AVIS_SHAPE (avis) = DUPdoDupNode (arr);
+            } else {
+                DBUG_PRINT ("AVIS_SHAPE not defined by N_array %s",
+                            AVIS_NAME (ID_AVIS (AVIS_SHAPE (avis))));
+            }
+        }
+        args = ARG_NEXT (args);
+    }
+
+    pat = PMfree (pat);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
  * function:
  *   node *LACSmodule(node *arg_node, info *arg_info)
  *
@@ -730,7 +801,6 @@ AdjustExternalCall (node *exprs, shape *shp, info *arg_info)
  *   prunes the syntax tree by only going into function defintions
  *
  *****************************************************************************/
-
 node *
 LACSmodule (node *arg_node, info *arg_info)
 {
@@ -802,8 +872,9 @@ LACSfundef (node *arg_node, info *arg_info)
             }
             INFO_EXTCALL (arg_info) = NULL;
             INFO_RECCALL (arg_info) = NULL;
-        }
 
+            arg_node = CorrectArgavisShapes (arg_node, arg_info);
+        }
         INFO_FUNDEF (arg_info) = fundef;
     }
     DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
