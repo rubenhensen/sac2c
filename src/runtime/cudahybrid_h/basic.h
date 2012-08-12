@@ -45,7 +45,7 @@ SAC_DIST_setup (int argc, char **argv)
     int deviceCount;
     cudaGetDeviceCount (&deviceCount);
     if (SAC_CUDA_DEVICES > (unsigned int)deviceCount) {
-        SAC_RuntimeError ("Number of CUDA devices requested exceeds those "
+        SAC_RuntimeError ("Number of CUDA devices requested exceeds those"
                           " available (%d).\n"
                           "    Use the '%s' environment variable or the option"
                           " -cuda <num>' (which overrides the environment variable).",

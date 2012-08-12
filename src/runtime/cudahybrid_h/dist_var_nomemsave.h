@@ -127,7 +127,7 @@ host2dist_st (dist_var_t dist_array, void *array)
     block_state (*state)[SAC_MT_DEVICES][dist_array->n_blocks]
       = (block_state (*)[SAC_MT_DEVICES][dist_array->n_blocks]) (dist_array->state);
 
-    for (unsigned int i = 0; i < SAC_MT_DEVICES; i++) {
+    for (int i = 0; i < (int)SAC_MT_DEVICES; i++) {
         for (unsigned int j = 0; j < dist_array->n_blocks; j++) {
             if (dist_array->owner[j] == i)
                 (*state)[i][j] = Owned;

@@ -846,7 +846,7 @@ GSCprintSACargCopyFreeStubs (void)
 {
     DBUG_ENTER ();
 
-    if (global.backend != BE_cuda) {
+    if (global.backend != BE_cuda && global.backend != BE_cudahybrid) {
         fprintf (global.outfile, "/*\n"
                                  " * stubs for SACARGfreeDataUdt and SACARGcopyDataUdt\n"
                                  " */\n"

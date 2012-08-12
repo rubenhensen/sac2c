@@ -65,6 +65,7 @@
 #define _REENTRANT
 #endif
 
+#ifndef __CUDACC__
 #ifndef memset
 extern void *memset (void *s, int c, size_t n);
 #endif
@@ -72,6 +73,7 @@ extern void *memset (void *s, int c, size_t n);
 #ifndef memcpy
 extern void *memcpy (void *dest, const void *src, size_t n);
 #endif
+#endif /* ifndef __CUDACC__ */
 
 /*
  * We need the above extern declarations here rather than including
