@@ -1007,19 +1007,19 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
        COMPprfCudaSetDevice, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (cuda_get_stream, (PA_x, PA_x, PA_x), 0, XXX, SIMD, NTCCTprf_dummy, NULL,
+  PRF (cuda_get_stream, (PA_x, PA_x, PA_x), 1, XXX, SIMD, NTCCTprf_dummy, NULL,
        COMPprfCudaGetStream, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (host2dist_st, (PA_x, PA_x, PA_x), 2, XXX, NOSIMD, NTCCTprf_dummy, NULL,
+  PRF (host2dist_st, (PA_x, PA_x, PA_x), 3, XXX, NOSIMD, NTCCTprf_dummy, NULL,
        COMPprfHost2Dist_st, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (host2dist_spmd, (PA_x, PA_x, PA_x), 2, XXX, SIMD, NTCCTprf_dummy, NULL,
+  PRF (host2dist_spmd, (PA_x, PA_x, PA_x), 1, XXX, SIMD, NTCCTprf_dummy, NULL,
        COMPprfHost2Dist_spmd, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (device2dist, (PA_x, PA_x, PA_x), 3, XXX, SIMD, NTCCTprf_dummy, NULL,
+  PRF (device2dist, (PA_x, PA_x, PA_x), 4, XXX, SIMD, NTCCTprf_dummy, NULL,
        COMPprfDevice2Dist, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, TEone, NULL,
        NULL),
 
@@ -1047,11 +1047,11 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
        COMPprfDistContBlock, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone,
        NULL, NULL),
 
-  PRF (sched_start, (PA_x, PA_x, PA_x), 2, XXX, SIMD, NTCCTprf_dummy, NULL,
+  PRF (sched_start, (PA_x, PA_x, PA_x), 1, XXX, SIMD, NTCCTprf_dummy, NULL,
        COMPprfSched_Start, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone, NULL,
        NULL),
 
-  PRF (sched_stop, (PA_x, PA_x, PA_x), 2, XXX, SIMD, NTCCTprf_dummy, NULL,
+  PRF (sched_stop, (PA_x, PA_x, PA_x), 1, XXX, SIMD, NTCCTprf_dummy, NULL,
        COMPprfSched_Stop, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, TEone, NULL,
        NULL),
 

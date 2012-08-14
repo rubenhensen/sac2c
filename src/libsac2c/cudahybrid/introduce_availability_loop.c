@@ -51,7 +51,6 @@ struct INFO {
     node *avail_start;
     node *avail_stop;
     node *preassigns;
-    node *postassigns;
     node *genassigns;
     node *prememtran;
     lut_t *memory_transfers;
@@ -74,8 +73,6 @@ struct INFO {
  *                      section
  *
  * INFO_PREASSIGNS      N_assign chain to be prepended to the availability loop
- *
- * INFO_POSTASSIGNS     N_assign chain to be appended to the availability loop
  *
  * INFO_GENASSIGNS      N_assign chain of flattened generators, to be prepended
  *                      to the with-loop.
@@ -101,7 +98,6 @@ struct INFO {
 #define INFO_AVAILSTART(n) (n->avail_start)
 #define INFO_AVAILSTOP(n) (n->avail_stop)
 #define INFO_PREASSIGNS(n) (n->preassigns)
-#define INFO_POSTASSIGNS(n) (n->postassigns)
 #define INFO_GENASSIGNS(n) (n->genassigns)
 #define INFO_PREMEMTRAN(n) (n->prememtran)
 #define INFO_MEMTRAN(n) (n->memory_transfers)
@@ -124,7 +120,6 @@ MakeInfo (void)
     INFO_AVAILSTART (result) = NULL;
     INFO_AVAILSTOP (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
-    INFO_POSTASSIGNS (result) = NULL;
     INFO_GENASSIGNS (result) = NULL;
     INFO_PREMEMTRAN (result) = NULL;
     INFO_MEMTRAN (result) = NULL;
@@ -248,13 +243,14 @@ IALassign (node *arg_node, info *arg_info)
         DBUG_ASSERT (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_let,
                      "All the statements in the CUDA branch of a SPMD should be N_let!");
 
+        /* We do a bottom-up traversal, as
+         * the with-loop contains the information of the destination memory but it
+         * comes after the <dist2device> transfers. */
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+
         rhs = ASSIGN_RHS (arg_node);
         node_type = NODE_TYPE (rhs);
         if (node_type == N_prf) {
-            /* We do a bottom-up traversal, as
-             * the with-loop contains the information of the destination memory but it
-             * comes after the <dist2device> transfers. */
-            ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
             rhs_prf = PRF_PRF (rhs);
             if (LUTsearchInLutPp (INFO_MEMTRAN (arg_info),
@@ -267,10 +263,7 @@ IALassign (node *arg_node, info *arg_info)
                   = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
                 res = ASSIGN_NEXT (arg_node);
                 ASSIGN_NEXT (arg_node) = NULL;
-            } else {
-                DBUG_ASSERT (rhs_prf == F_dist2device_rel,
-                             "There should be only F_dist2device_rel or "
-                             "F_dist2device_abs N_prfs inside CUDA branch of the SPMD!");
+            } else if (rhs_prf == F_dist2device_rel) {
                 /*
                  * create check for availability of this array
                  */
@@ -300,6 +293,13 @@ IALassign (node *arg_node, info *arg_info)
                 PRF_ARGS (rhs) = TCappendExprs (PRF_ARGS (rhs), DUPdoDupTree (exprs));
 
                 res = arg_node;
+            } else {
+                DBUG_ASSERT (rhs_prf == F_device2dist,
+                             "Invalid prf found in CUDA SPMD branch!");
+                /* Insert availability start and stop IDs in the prf's arguments */
+                ID_AVIS (PRF_ARG3 (rhs)) = INFO_AVAILSTART (arg_info);
+                ID_AVIS (PRF_ARG4 (rhs)) = INFO_AVAILSTOP (arg_info);
+                res = arg_node;
             }
         } else {
             /* When we reach the with-loop we traverse it to flatten the generators
@@ -310,12 +310,8 @@ IALassign (node *arg_node, info *arg_info)
             INFO_WL (arg_info) = IDS_AVIS (ASSIGN_LHS (arg_node));
             ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-            INFO_POSTASSIGNS (arg_info)
-              = TCappendAssign (INFO_POSTASSIGNS (arg_info), ASSIGN_NEXT (arg_node));
-
             res = TCappendAssign (INFO_GENASSIGNS (arg_info), arg_node);
             INFO_GENASSIGNS (arg_info) = NULL;
-            ASSIGN_NEXT (arg_node) = NULL;
         }
 
     } else {
@@ -366,15 +362,14 @@ IALassign (node *arg_node, info *arg_info)
                                                   TBmakeId (schedule_stop0)),
                                        loop_block);
             loop_block = TBmakeAssign (TBmakeLet (TBmakeIds (avail_start, NULL),
-                                                  TBmakeId (schedule_stop0)),
+                                                  TBmakeId (avail_stop)),
                                        loop_block);
             rhs = TCmakePrf1 (F_cuda_get_stream, TBmakeId (INFO_DEVICENUMBER (arg_info)));
             loop_block = TBmakeAssign (TBmakeLet (NULL, rhs), loop_block);
             loop_block = TBmakeBlock (loop_block, NULL);
 
             /* create loop and surrounding assignments */
-            res = TBmakeAssign (TBmakeDo (TBmakeId (stop_var), loop_block),
-                                INFO_POSTASSIGNS (arg_info));
+            res = TBmakeAssign (TBmakeDo (TBmakeId (stop_var), loop_block), NULL);
             res = TBmakeAssign (TBmakeLet (TBmakeIds (avail_stop, NULL),
                                            TBmakeId (schedule_start0)),
                                 res);
@@ -400,7 +395,6 @@ IALassign (node *arg_node, info *arg_info)
             INFO_MEMTRAN (arg_info) = LUTremoveLut (INFO_MEMTRAN (arg_info));
             INFO_WL (arg_info) = NULL;
             INFO_PREASSIGNS (arg_info) = NULL;
-            INFO_POSTASSIGNS (arg_info) = NULL;
             INFO_PREMEMTRAN (arg_info) = NULL;
         } else {
             ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);

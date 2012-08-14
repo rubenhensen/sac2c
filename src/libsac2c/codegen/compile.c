@@ -7923,9 +7923,10 @@ COMPprfHost2Dist_st (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm3 ("DIST_HOST2DIST_ST", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm4 ("DIST_HOST2DIST_ST", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7940,9 +7941,8 @@ COMPprfHost2Dist_spmd (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm3 ("DIST_HOST2DIST_SPMD", DUPdupIdsIdNt (let_ids),
-                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 DUPdupIdNt (PRF_ARG2 (arg_node)), NULL);
+    ret_node = TCmakeAssignIcm2 ("DIST_HOST2DIST_SPMD", DUPdupIdsIdNt (let_ids),
+                                 DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7957,10 +7957,11 @@ COMPprfDevice2Dist (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("DIST_DEV2DIST", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm5 ("DIST_DEV2DIST", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  DUPdupIdNt (PRF_ARG2 (arg_node)),
-                                 DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
+                                 DUPdupIdNt (PRF_ARG3 (arg_node)),
+                                 DUPdupIdNt (PRF_ARG4 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }

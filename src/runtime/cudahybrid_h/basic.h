@@ -16,7 +16,7 @@
 #ifdef __CUDACC__
 
 #define getDeviceNumber(SAC_MT_mythread)                                                 \
-    SAC_MT_mythread - (SAC_MT_LOCAL_THREADS () - SAC_CUDA_DEVICES)
+    SAC_MT_mythread - (SAC_MT_LOCAL_THREADS () - SAC_CUDA_DEVICES) + 1
 
 #define SAC_CUDA_ENV_VAR_NAME "SAC_CUDA"
 
@@ -40,8 +40,8 @@ SAC_DIST_setup (int argc, char **argv)
         sac_parallel = getenv (SAC_CUDA_ENV_VAR_NAME);
         SAC_CUDA_DEVICES = (sac_parallel != NULL) ? atoi (sac_parallel) : 1;
     }
-    if (SAC_CUDA_DEVICES < 1)
-        SAC_CUDA_DEVICES = 1;
+    if (SAC_CUDA_DEVICES < 0)
+        SAC_CUDA_DEVICES = 0;
     int deviceCount;
     cudaGetDeviceCount (&deviceCount);
     if (SAC_CUDA_DEVICES > (unsigned int)deviceCount) {

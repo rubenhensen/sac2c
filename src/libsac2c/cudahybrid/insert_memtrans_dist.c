@@ -201,9 +201,7 @@ IMEMDISTdoInsertMemtranDist (node *syntax_tree)
  *****************************************************************************/
 
 static bool CUisDistributedType (ntype *ty);
-// static bool CUisConcreteTypeNew( ntype* ty);
 static ntype *DISTNtypeConversion (ntype *dist_type, bool to_dev_type);
-static void Createdist2conc (node *dist_avis, node *conc_avis, info *arg_info);
 static bool PrfNeedsTransfer (node *rhs);
 
 /** <!--********************************************************************-->
@@ -228,28 +226,6 @@ CUisDistributedType (ntype *ty)
     DBUG_RETURN (res);
 }
 
-///** <!--********************************************************************-->
-// *
-// * @fn node* CUisConcreteTypeNew( ntype* ty)
-// *
-// * @brief Returns whether ty is a concrete type or not
-// *
-// *****************************************************************************/
-// static bool CUisConcreteTypeNew( ntype* ty)
-//{
-//  bool res;
-//  simpletype conc_type;
-//
-//  DBUG_ENTER ();
-//  conc_type = TYgetSimpleType( TYgetScalar( ty));
-//
-//  res = (conc_type == T_float_dev || conc_type == T_int_dev ||
-//         conc_type == T_double_dev || conc_type == T_float ||
-//         conc_type == T_int || conc_type == T_double);
-//
-//  DBUG_RETURN (res);
-//}
-//
 /** <!--********************************************************************-->
  *
  * @fn ntype* DISTNtypeConversion( ntype *dist_type, bool to_dev_type)
@@ -306,84 +282,6 @@ DISTNtypeConversion (ntype *dist_type, bool to_dev_type)
     }
 
     DBUG_RETURN (conc_type);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void Createdist2conc( node *dist_avis, node *conc_avis, info *arg_info)
- *
- * @brief Create distributed to concrete convertion primitive function
- *
- *****************************************************************************/
-static void
-Createdist2conc (node *dist_avis, node *conc_avis, info *arg_info)
-{
-    offset_t *offset;
-    node *prf_node, *last_arg;
-    void **lut_pointer;
-    int start, stop;
-    prf dist2conc;
-
-    DBUG_ENTER ();
-
-    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-      = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
-                        TBmakeVardec (conc_avis, NULL));
-
-    lut_pointer = LUTsearchInLutS (INFO_ACCESS (arg_info), AVIS_NAME (dist_avis));
-    if (lut_pointer != NULL) {
-        /* If there is memory access data available, we might find some
-         access pattern for the F_dist2conc */
-        offset = (offset_t *)*lut_pointer;
-        DBUG_PRINT ("Found entry for %s -> [%d,%d]", AVIS_NAME (dist_avis), offset->min,
-                    offset->max);
-
-        /* generate correct dist2conc parameters */
-        start = offset->min;
-        stop = offset->max;
-        if (INFO_CUDARIZABLE (arg_info)) {
-            last_arg = DUPdoDupNode (INFO_DEVICENUMBER (arg_info));
-            dist2conc = F_dist2device_rel;
-        } else {
-            last_arg = TBmakeBool (offset->own);
-            dist2conc = F_dist2host_rel;
-        }
-    } else {
-        /* Unknown access pattern, so we set the minimum and maximum offsets to
-         * cover all blocks. */
-        // TODO: infer which blocks to copy rather than all of them
-        DBUG_PRINT ("No entry for %s", AVIS_NAME (dist_avis));
-
-        /* generate correct dist2conc parameters */
-        start = 0;
-        stop = SHgetExtent (TYgetShape (AVIS_TYPE (dist_avis)), 0);
-        if (INFO_CUDARIZABLE (arg_info)) {
-            last_arg = DUPdoDupNode (INFO_DEVICENUMBER (arg_info));
-            dist2conc = F_dist2device_abs;
-        } else {
-            /* In a with-loop, the destination memory we want to mark as owned is
-             * always defined relative to the with-loop offsets. So, if we use
-             * absolute index copy in a with-loop, we are only reading and don't want
-             * to mark array as owned by host.
-             * If not on a with-loop, most likely we do want to be the owner.
-             */
-            /* TODO: figure out whether we want to own a piece of memory or not outside
-             * with-loops. */
-            last_arg = TBmakeBool (!INFO_INWL (arg_info));
-            dist2conc = F_dist2host_abs;
-        }
-    }
-
-    prf_node = TCmakePrf4 (dist2conc, TBmakeId (dist_avis), TBmakeNum (start),
-                           TBmakeNum (stop), last_arg);
-
-    INFO_PREASSIGNS (arg_info)
-      = TBmakeAssign (TBmakeLet (TBmakeIds (conc_avis, NULL), prf_node),
-                      INFO_PREASSIGNS (arg_info));
-
-    /* Insert pair dist_avis->conc_avis into lookup table. */
-    INFO_LUT (arg_info) = LUTinsertIntoLutP (INFO_LUT (arg_info), dist_avis, conc_avis);
-    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -642,7 +540,7 @@ IMEMDISTids (node *arg_node, info *arg_info)
     node *new_conc_avis, *ids_avis, *prf_node;
     ntype *ids_type, *conc_type;
     const char *suffix;
-    prf conc2dist;
+    int stop;
 
     DBUG_ENTER ();
 
@@ -676,13 +574,23 @@ IMEMDISTids (node *arg_node, info *arg_info)
 
         /* add concrete to distributed transfer */
         if (INFO_CUDARIZABLE (arg_info)) {
-            prf_node
-              = TCmakePrf3 (F_device2dist, TBmakeId (new_conc_avis), TBmakeId (ids_avis),
-                            DUPdoDupNode (INFO_DEVICENUMBER (arg_info)));
+            /* the starting and end blocks to transfer depend on the data available.
+             * We insert the id's for those in a later traversal (IAL)
+             */
+            prf_node = TCmakePrf4 (F_device2dist, TBmakeId (ids_avis),
+                                   DUPdoDupNode (INFO_DEVICENUMBER (arg_info)),
+                                   TBmakeId (ids_avis), TBmakeId (ids_avis));
+        } else if (INFO_INWL (arg_info)) {
+            /* The starting and ending blocks depend only on the scheduler. The ICM
+             macros take care of it. */
+            prf_node = TCmakePrf1 (F_host2dist_spmd, TBmakeId (ids_avis));
         } else {
-            conc2dist = (INFO_INWL (arg_info) ? F_host2dist_spmd : F_host2dist_st);
-            prf_node
-              = TCmakePrf2 (conc2dist, TBmakeId (new_conc_avis), TBmakeId (ids_avis));
+            /* We need to insert the start and end blocks to transfer. Assuming we are
+             * transferring the whole array for now. */
+            // TODO: infer which blocks to copy rather than all of them
+            stop = SHgetExtent (TYgetShape (AVIS_TYPE (ids_avis)), 0);
+            prf_node = TCmakePrf3 (F_host2dist_st, TBmakeId (ids_avis), TBmakeNum (0),
+                                   TBmakeNum (stop));
         }
 
         INFO_POSTASSIGNS (arg_info)
@@ -708,10 +616,14 @@ IMEMDISTids (node *arg_node, info *arg_info)
 node *
 IMEMDISTid (node *arg_node, info *arg_info)
 {
-    node *new_avis, *id_avis;
+    node *new_avis, *id_avis, *vardecs, *prf_node, *last_arg;
+    void **lut_pointer;
     ntype *conc_type, *id_type;
     const char *suffix;
     char *name;
+    int start, stop;
+    offset_t *offset;
+    prf dist2conc;
 
     DBUG_ENTER ();
 
@@ -730,7 +642,67 @@ IMEMDISTid (node *arg_node, info *arg_info)
             name = STRcat (ID_NAME (arg_node), suffix);
             new_avis = TBmakeAvis (TRAVtmpVarName (name), conc_type);
             MEMfree (name);
-            Createdist2conc (id_avis, new_avis, arg_info);
+
+            /* Create Dist2Conc */
+            vardecs = TCappendVardec (FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
+                                      TBmakeVardec (new_avis, NULL));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info)) = vardecs;
+
+            lut_pointer = LUTsearchInLutS (INFO_ACCESS (arg_info), AVIS_NAME (id_avis));
+            if (lut_pointer != NULL) {
+                /* If there is memory access data available, we might find some
+                 access pattern for the F_dist2conc */
+                offset = (offset_t *)*lut_pointer;
+                DBUG_PRINT ("Found entry for %s -> [%d,%d]", AVIS_NAME (id_avis),
+                            offset->min, offset->max);
+
+                /* generate correct dist2conc parameters */
+                start = offset->min;
+                stop = offset->max;
+                if (INFO_CUDARIZABLE (arg_info)) {
+                    last_arg = DUPdoDupNode (INFO_DEVICENUMBER (arg_info));
+                    dist2conc = F_dist2device_rel;
+                } else {
+                    last_arg = TBmakeBool (offset->own);
+                    dist2conc = F_dist2host_rel;
+                }
+            } else {
+                /* Unknown access pattern, so we set the minimum and maximum offsets to
+                 * cover all blocks. */
+                // TODO: infer which blocks to copy rather than all of them
+                DBUG_PRINT ("No entry for %s", AVIS_NAME (id_avis));
+
+                /* generate correct dist2conc parameters */
+                start = 0;
+                stop = SHgetExtent (TYgetShape (AVIS_TYPE (id_avis)), 0);
+                if (INFO_CUDARIZABLE (arg_info)) {
+                    last_arg = DUPdoDupNode (INFO_DEVICENUMBER (arg_info));
+                    dist2conc = F_dist2device_abs;
+                } else {
+                    /* In a with-loop, the destination memory we want to mark as owned is
+                     * always defined relative to the with-loop offsets. So, if we use
+                     * absolute index copy in a with-loop, we are only reading and don't
+                     * want to mark array as owned by host. If not on a with-loop, most
+                     * likely we do want to be the owner.
+                     */
+                    /* TODO: figure out whether we want to own a piece of memory or not
+                     * outside with-loops. */
+                    last_arg = TBmakeBool (!INFO_INWL (arg_info));
+                    dist2conc = F_dist2host_abs;
+                }
+            }
+
+            prf_node = TCmakePrf4 (dist2conc, TBmakeId (id_avis), TBmakeNum (start),
+                                   TBmakeNum (stop), last_arg);
+
+            INFO_PREASSIGNS (arg_info)
+              = TBmakeAssign (TBmakeLet (TBmakeIds (new_avis, NULL), prf_node),
+                              INFO_PREASSIGNS (arg_info));
+
+            /* Insert pair dist_avis->conc_avis into lookup table. */
+            INFO_LUT (arg_info)
+              = LUTinsertIntoLutP (INFO_LUT (arg_info), id_avis, new_avis);
+
         } else {
             DBUG_PRINT ("ID %s found, new ID is %s", ID_NAME (arg_node),
                         AVIS_NAME (new_avis));

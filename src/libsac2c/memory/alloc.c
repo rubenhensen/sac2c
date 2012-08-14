@@ -218,28 +218,6 @@ FreeALS (alloclist_struct *als)
 
 /** <!--******************************************************************-->
  *
- * @fn alloclist_struct *DupAls( node *ids)
- *
- *  @brief Duplicates an alloclist.
- *
- *  @param als The alloclist to be duplicated
- *
- ***************************************************************************/
-static alloclist_struct *
-DupAls (alloclist_struct *als)
-{
-    alloclist_struct *res = NULL;
-
-    if (als != NULL) {
-        res = MEMcopy (sizeof (alloclist_struct), als);
-        res->next = DupAls (res->next);
-    }
-
-    return (res);
-}
-
-/** <!--******************************************************************-->
- *
  * @fn alloclist_struct *Ids2ALS( node *ids)
  *
  *  @brief Converts a list of N_ids nodes to an alloclist.
@@ -2127,13 +2105,13 @@ EMALwithid (node *arg_node, info *arg_info)
 node *
 EMALwiths (node *arg_node, info *arg_info)
 {
-    alloclist_struct *ids, *als, *end;
+    alloclist_struct *als, *end, *ids;
 
     DBUG_ENTER ();
 
     if (WITHS_NEXT (arg_node) != NULL) {
         /* save the start of the allocation list for the LHS of the let. */
-        ids = DupAls (INFO_ALLOCLIST (arg_info));
+        ids = INFO_ALLOCLIST (arg_info);
 
         /* get allocation list for this with-loop */
         WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
@@ -2141,7 +2119,7 @@ EMALwiths (node *arg_node, info *arg_info)
         /*
          * for the next with-loop, we want to reset the allocation list to its
          * initial state, that is, with only the element corresponding to the LHS of
-         * the let. This will create a different memory allocation for each withloop
+         * the let.
          */
         als = INFO_ALLOCLIST (arg_info);
         INFO_ALLOCLIST (arg_info) = ids;
@@ -2150,11 +2128,15 @@ EMALwiths (node *arg_node, info *arg_info)
         WITHS_NEXT (arg_node) = TRAVdo (WITHS_NEXT (arg_node), arg_info);
 
         /* to restore the ALS, we go through the resulting list until we find the
-         * last element. We then append the saved allocation list, which also
+         * first ids element. We then append the saved allocation list, which also
          * contains the ids elements in its tail */
-        for (end = INFO_ALLOCLIST (arg_info); end->next != NULL; end = end->next)
-            ;
-        end->next = als;
+        if (INFO_ALLOCLIST (arg_info) != ids) {
+            for (end = INFO_ALLOCLIST (arg_info); end->next != ids; end = end->next)
+                ;
+            end->next = als;
+        } else {
+            INFO_ALLOCLIST (arg_info) = als;
+        }
     } else {
         /* get allocation list for this with-loop */
         WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
@@ -2198,17 +2180,23 @@ EMALgenarray (node *arg_node, info *arg_info)
     GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
     if (INFO_WITHOPMODE (arg_info) == EA_memname) {
-
-        /*
-         * Create new identifier for new memory
+        /* We don't want to allocate a distributed array for each with-loop version.
+         * We keep the allocations in a table, and reuse them as possible.
          */
-        wlavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (als->avis)),
-                             TYeliminateAKV (AVIS_TYPE (als->avis)));
+        if (!INFO_INWITHS (arg_info)) {
+            /*
+             * Create new identifier for new memory
+             */
+            wlavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (als->avis)),
+                                 TYeliminateAKV (AVIS_TYPE (als->avis)));
 
-        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (wlavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (wlavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-        als->avis = wlavis;
+            als->avis = wlavis;
+        } else {
+            wlavis = als->avis;
+        }
 
         /*
          * Annotate which memory is to be used
@@ -2339,16 +2327,23 @@ EMALmodarray (node *arg_node, info *arg_info)
 
     if (INFO_WITHOPMODE (arg_info) == EA_memname) {
 
-        /*
-         * Create new identifier for new memory
+        /* We don't want to allocate a distributed array for each with-loop version.
+         * We keep the allocations in a table, and reuse them as possible.
          */
-        wlavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (als->avis)),
-                             TYeliminateAKV (AVIS_TYPE (als->avis)));
+        if (!INFO_INWITHS (arg_info)) {
+            /*
+             * Create new identifier for new memory
+             */
+            wlavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (als->avis)),
+                                 TYeliminateAKV (AVIS_TYPE (als->avis)));
 
-        FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-          = TBmakeVardec (wlavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
+            FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
+              = TBmakeVardec (wlavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-        als->avis = wlavis;
+            als->avis = wlavis;
+        } else {
+            wlavis = als->avis;
+        }
 
         /*
          * Annotate which memory is to be used

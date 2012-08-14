@@ -12,7 +12,7 @@
 enum block_state { Invalid = 0, Shared = 1, Owned = 2 };
 
 typedef struct dist_var {
-    unsigned int n_blocks;
+    int n_blocks;
     size_t block_size;
     block_state *state;
     int *owner;
@@ -37,37 +37,33 @@ dist_var_t dist_var_free (dist_var_t dist_array);
  */
 
 // updates distributed variable structure
-dist_var_t host2dist_st (dist_var_t dist_array, void *array);
-dist_var_t host2dist_spmd (dist_var_t dist_array, void *array);
-dist_var_t dev2dist_spmd (dist_var_t dist_array, void *array, int device);
+dist_var_t conc2dist (dist_var_t dist_array, int block_start, int block_stop, int device);
 
 // assigns section of distributed array to device, returns pointer for section
-void *dist2conc (dist_var_t dist_array, unsigned int block_start, unsigned int block_stop,
-                 int device, bool set_owner, cudaStream_t *stream);
+void *dist2conc (dist_var_t dist_array, int block_start, int block_stop, int device,
+                 bool set_owner, cudaStream_t *stream);
 
 /* others */
 // return index of last block between [block_start->block_stop] with same state as
 // block_start
-unsigned int dist_end_contiguous_block (dist_var_t dist_array, unsigned int block_start,
-                                        unsigned int block_stop, int device);
+unsigned int dist_end_contiguous_block (dist_var_t dist_array, int block_start,
+                                        int block_stop, int device);
 
 #ifdef DEBUG_DIST
-#define debug(s, ...) printf (s, ##__VA_ARGS__)
-#define checkBounds                                                                      \
-    if (block_start > dist_array->n_blocks) {                                            \
-        printf ("starting block %d bigger than total of %d!\n", block_start,             \
-                dist_array->n_blocks);                                                   \
-        exit (-1);                                                                       \
+#define debug_dist(s, ...) SAC_Print (s, ##__VA_ARGS__)
+#else
+#define debug_dist(s, ...)
+#endif
+
+#define checkBounds()                                                                    \
+    if (block_start >= dist_array->n_blocks) {                                           \
+        block_start = dist_array->n_blocks - 1;                                          \
+    } else if (block_start < 0) {                                                        \
+        block_start = 0;                                                                 \
     }                                                                                    \
     if (block_stop > (dist_array->n_blocks)) {                                           \
-        printf ("ending block %d bigger than total of %d!\n", block_stop,                \
-                dist_array->n_blocks);                                                   \
-        exit (-1);                                                                       \
+        block_stop = dist_array->n_blocks;                                               \
     }
-#else
-#define debug(s, ...)
-#define checkBounds
-#endif
 
 /*
  * memfuncs
@@ -87,14 +83,15 @@ dist_var_alloc (unsigned int n_blocks, int total_size, size_t unit_size)
     result->state
       = (block_state *)calloc (SAC_MT_DEVICES * n_blocks, sizeof (block_state));
 
-    debug ("Allocating host-side array\n");
+    debug_dist ("Allocating host-side array\n");
 #ifdef DEBUG_DIST
     result->allocations[0] = (char *)calloc (total_size, unit_size);
 #else
     result->allocations[0] = (char *)malloc (total_size * unit_size);
 #endif
 
-    debug ("New dist var with %d blocks of size: %zu\n", n_blocks, result->block_size);
+    debug_dist ("New dist var with %d blocks of size: %zu\n", n_blocks,
+                result->block_size);
 
     return result;
 }
@@ -102,7 +99,7 @@ dist_var_alloc (unsigned int n_blocks, int total_size, size_t unit_size)
 dist_var_t
 dist_var_free (dist_var_t dist_array)
 {
-    debug ("Freeing dist_array\n");
+    debug_dist ("Freeing dist_array\n");
 
     free (dist_array->owner);
     free (dist_array->allocations[0]);
@@ -119,87 +116,52 @@ dist_var_free (dist_var_t dist_array)
 
 /*type conversions*/
 dist_var_t
-host2dist_st (dist_var_t dist_array, void *array)
+conc2dist (dist_var_t dist_array, int block_start, int block_stop, int device)
 {
-    debug ("host2dist_st(dist %p, array %p)\n", dist_array, array);
+    debug_dist ("conc2dist(dist %p, start %d, stop %d, device %d)\n", dist_array,
+                block_start, block_stop, device);
 
     /* cast block_state array to matrix */
     block_state (*state)[SAC_MT_DEVICES][dist_array->n_blocks]
       = (block_state (*)[SAC_MT_DEVICES][dist_array->n_blocks]) (dist_array->state);
+    int i;
 
-    for (int i = 0; i < (int)SAC_MT_DEVICES; i++) {
-        for (unsigned int j = 0; j < dist_array->n_blocks; j++) {
-            if (dist_array->owner[j] == i)
-                (*state)[i][j] = Owned;
-            else
-                (*state)[i][j] = Invalid;
+    checkBounds ();
+
+    for (i = 0; i < device; i++) {
+        for (int j = block_start; j < block_stop; j++) {
+            (*state)[i][j] = Invalid;
+        }
+    }
+    for (int j = block_start; j < block_stop; j++) {
+        (*state)[device][j] = Owned;
+    }
+    for (i = device + 1; i < (int)SAC_MT_DEVICES; i++) {
+        for (int j = block_start; j < block_stop; j++) {
+            (*state)[i][j] = Invalid;
         }
     }
 
-    debug ("host2dist_st(dist %p, array %p) = %p\n", dist_array, array, dist_array);
-
-    return dist_array;
-}
-
-dist_var_t
-host2dist_spmd (dist_var_t dist_array, void *array)
-{
-    debug ("host2dist_spmd(dist %p)\n", dist_array);
-
-    /* cast block_state array to matrix */
-    block_state (*state)[SAC_MT_DEVICES][dist_array->n_blocks]
-      = (block_state (*)[SAC_MT_DEVICES][dist_array->n_blocks]) (dist_array->state);
-    unsigned int i;
-
-    for (i = 0; i < dist_array->n_blocks; i++) {
-        if (dist_array->owner[i] == 0)
-            (*state)[0][i] = Owned;
-        else
-            (*state)[0][i] = Invalid;
-    }
-
-    debug ("host2dist_spmd(dist %p) = %p\n", dist_array);
-
-    return dist_array;
-}
-
-dist_var_t
-dev2dist_spmd (dist_var_t dist_array, void *array, int device)
-{
-    debug ("dev2dist_spmd(dist %p, array %p, device %d)\n", dist_array, array, device);
-
-    /* cast block_state array to matrix */
-    block_state (*state)[SAC_MT_DEVICES][dist_array->n_blocks]
-      = (block_state (*)[SAC_MT_DEVICES][dist_array->n_blocks]) (dist_array->state);
-    unsigned int i;
-
-    for (i = 0; i < dist_array->n_blocks; i++) {
-        if (dist_array->owner[i] == device)
-            (*state)[device][i] = Owned;
-        else
-            (*state)[device][i] = Invalid;
-    }
-
-    debug ("dev2dist_spmd(dist %p, array %p, device %d) = %p\n", dist_array, array,
-           device, dist_array);
+    debug_dist ("conc2dist(dist %p, start %d, stop %d, device %d) = %p\n", dist_array,
+                block_start, block_stop, device, dist_array);
 
     return dist_array;
 }
 
 unsigned int
-dist_end_contiguous_block (dist_var_t dist_array, unsigned int block_start,
-                           unsigned int block_stop, int device)
+dist_end_contiguous_block (dist_var_t dist_array, int block_start, int block_stop,
+                           int device)
 {
 
-    debug ("dist_end_contiguous_block(dist %p, start %d, stop %d, device %d)\n",
-           (void *)dist_array, block_start, block_stop, device);
+    debug_dist ("dist_end_contiguous_block(dist %p, start %d, stop %d, device %d)\n",
+                (void *)dist_array, block_start, block_stop, device);
 
-    checkBounds
+    checkBounds ();
 
-      /* cast block_state array to matrix */
-      block_state (*state)[SAC_MT_DEVICES][dist_array->n_blocks]
+    /* cast block_state array to matrix */
+    block_state (*state)[SAC_MT_DEVICES][dist_array->n_blocks]
       = (block_state (*)[SAC_MT_DEVICES][dist_array->n_blocks]) (dist_array->state);
-    unsigned int res;
+    int res;
 
     // find more contiguous blocks
     if ((*state)[device][block_start] == Invalid) {
@@ -207,27 +169,30 @@ dist_end_contiguous_block (dist_var_t dist_array, unsigned int block_start,
              res++)
             ;
 
-        debug ("Device %d has invalid blocks from %d to %d\n", device, block_start, res);
+        debug_dist ("Device %d has invalid blocks from %d to %d\n", device, block_start,
+                    res);
     } else {
         for (res = block_start + 1; res < block_stop && (*state)[device][res] != Invalid;
              res++)
             ;
 
-        debug ("Device %d has valid blocks from %d to %d\n", device, block_start, res);
+        debug_dist ("Device %d has valid blocks from %d to %d\n", device, block_start,
+                    res);
     }
 
-    debug ("dist_end_contiguous_block(dist %p, start %d, stop %d, device %d) = %d\n",
-           (void *)dist_array, block_start, block_stop, device, res);
+    debug_dist ("dist_end_contiguous_block(dist %p, start %d, stop %d, device %d) = %d\n",
+                (void *)dist_array, block_start, block_stop, device, res);
     return res;
 }
 
 void *
-dist2conc (dist_var_t dist_array, unsigned int block_start, unsigned int block_stop,
-           int device, bool set_owner, cudaStream_t *stream)
+dist2conc (dist_var_t dist_array, int block_start, int block_stop, int device,
+           bool set_owner, cudaStream_t *stream)
 {
 
-    debug ("dist2conc(dist %p, start %d, stop %d, device %d, owner? %d, stream %p)\n",
-           (void *)dist_array, block_start, block_stop, device, set_owner, stream);
+    debug_dist (
+      "dist2conc(dist %p, start %d, stop %d, device %d, owner? %d, stream %p)\n",
+      (void *)dist_array, block_start, block_stop, device, set_owner, stream);
 
     char *array_p;
     size_t block_size = dist_array->block_size;
@@ -237,37 +202,34 @@ dist2conc (dist_var_t dist_array, unsigned int block_start, unsigned int block_s
       = (block_state (*)[SAC_MT_DEVICES][dist_array->n_blocks]) (dist_array->state);
     char **allocations = dist_array->allocations;
 
-    checkBounds
+    checkBounds ();
 
-      /* find/allocate destination array */
+    /* find/allocate destination array */
 
-      if (allocations[device] == NULL)
-    {
-        debug ("Device %d: Array not allocated\n", device);
+    if (allocations[device] == NULL) {
+        debug_dist ("Device %d: Array not allocated\n", device);
         size_t size_alloc = block_size * dist_array->n_blocks;
         // allocate
         if (device == 0) { /* host initialization */
-            debug ("Device %d: allocating host-side array\n", device);
+            debug_dist ("Device %d: allocating host-side array\n", device);
             array_p = (char *)malloc (size_alloc);
         } else { /* cuda allocation */
-            debug ("Device %d: allocating cuda array\n", device);
+            debug_dist ("Device %d: allocating cuda array\n", device);
             array_p = (char *)cache_malloc (size_alloc, device - 1);
         }
         allocations[device] = array_p;
-    }
-    else
-    {
+    } else {
         array_p = allocations[device];
     }
-    debug ("Device %d: Will store at %p\n", device, array_p);
+    debug_dist ("Device %d: Will store at %p\n", device, array_p);
 
     // for each block requested:
-    for (unsigned int i = block_start; i < block_stop;) {
-        unsigned int k;
+    for (int i = block_start; i < block_stop;) {
+        int k;
 
-        debug ("Device %d checking block %d: ", device, i);
-        debug ("local state %d, ", (*state)[device][i]);
-        debug ("owner %d\n", owner[i]);
+        debug_dist ("Device %d checking block %d: ", device, i);
+        debug_dist ("local state %d, ", (*state)[device][i]);
+        debug_dist ("owner %d\n", owner[i]);
         // if the block is not in the destination array
         if ((*state)[device][i] == Invalid) {
             char *source_p, *destination_p;
@@ -281,8 +243,8 @@ dist2conc (dist_var_t dist_array, unsigned int block_start, unsigned int block_s
 
             if (source > -1) {
 
-                debug ("Device %d Missing blocks %d to %d, will copy from %d\n", device,
-                       i, k, source);
+                debug_dist ("Device %d Missing blocks %d to %d, will copy from %d\n",
+                            device, i, k, source);
 
                 source_p = allocations[source];
 
@@ -291,15 +253,15 @@ dist2conc (dist_var_t dist_array, unsigned int block_start, unsigned int block_s
                 source_p += offset;
                 destination_p = array_p + offset;
 
-                debug ("Device %d: offset %zu, size %zu\n", device, offset, size);
+                debug_dist ("Device %d: offset %zu, size %zu\n", device, offset, size);
                 if (device == 0) { /* cuda to host */
-                    debug ("Device %d: copying from cuda %p to host %p\n", device,
-                           source_p, destination_p);
+                    debug_dist ("Device %d: copying from cuda %p to host %p\n", device,
+                                source_p, destination_p);
                     cudaSetDevice (source - 1);
                     cudaMemcpy (destination_p, source_p, size, cudaMemcpyDeviceToHost);
                 } else if (source == 0) { /* host to cuda */
-                    debug ("Device %d: copying from host %p to cuda %p\n", device,
-                           source_p, destination_p);
+                    debug_dist ("Device %d: copying from host %p to cuda %p\n", device,
+                                source_p, destination_p);
                     cudaSetDevice (device - 1);
                     if (stream) {
                         cudaMemcpyAsync (destination_p, source_p, size,
@@ -309,8 +271,8 @@ dist2conc (dist_var_t dist_array, unsigned int block_start, unsigned int block_s
                                     cudaMemcpyHostToDevice);
                     }
                 } else { /* cuda to cuda */
-                    debug ("Device %d: copying from cuda %p to cuda %p\n", device,
-                           source_p, destination_p);
+                    debug_dist ("Device %d: copying from cuda %p to cuda %p\n", device,
+                                source_p, destination_p);
                     if (stream) {
                         cudaMemcpyPeerAsync (destination_p, device - 1, source_p,
                                              source - 1, size, *stream);
@@ -321,14 +283,14 @@ dist2conc (dist_var_t dist_array, unsigned int block_start, unsigned int block_s
                 }
 
                 // mark_blocks
-                for (unsigned int m = i; m < k; m++) {
+                for (int m = i; m < k; m++) {
                     (*state)[device][m] = Shared;
                 }
 
-                debug ("Device %d copied blocks %d to %d\n", device, i, k);
+                debug_dist ("Device %d copied blocks %d to %d\n", device, i, k);
             } else {
-                debug ("Device %d: blocks %d to %d not computed yet, skipping\n", device,
-                       i, k);
+                debug_dist ("Device %d: blocks %d to %d not computed yet, skipping\n",
+                            device, i, k);
             }
 
         } else {
@@ -336,19 +298,19 @@ dist2conc (dist_var_t dist_array, unsigned int block_start, unsigned int block_s
             for (k = i + 1; k < block_stop && (*state)[device][k] != Invalid; k++)
                 ;
 
-            debug ("Device %d skipped blocks %d to %d\n", device, i, k);
+            debug_dist ("Device %d skipped blocks %d to %d\n", device, i, k);
         }
         i = k;
 
-        debug ("Device %d check done until block %d\n", device, i);
+        debug_dist ("Device %d check done until block %d\n", device, i);
     }
 
     // mark as owner
     if (set_owner)
-        for (unsigned int i = block_start; i < block_stop; i++)
+        for (int i = block_start; i < block_stop; i++)
             owner[i] = device;
 
-    debug (
+    debug_dist (
       "dist2conc(dist %p, start %d, stop %d, device %d, owner? %d, stream %p) = %p\n",
       (void *)dist_array, block_start, block_stop, device, set_owner, stream, array_p);
 

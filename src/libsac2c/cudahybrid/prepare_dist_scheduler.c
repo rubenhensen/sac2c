@@ -49,6 +49,7 @@ struct INFO {
     node *scheduler_begin;
     node *scheduler_end;
     node *mem_assigns;
+    node *host2dist;
 };
 
 /*
@@ -63,6 +64,9 @@ struct INFO {
  * INFO_MEMASSIGNS      N_assign chain of <dist2conc_rel> transfers on the MT
  *                      branch.
  *
+ * INFO_HOST2DIST       N_assign chain of <host2dist> transfers on the MT
+ *                      branch.
+ *
  */
 
 #define INFO_SCHEDULEBEGIN(n) (n->schedule_begin)
@@ -70,6 +74,7 @@ struct INFO {
 #define INFO_SCHEDULERBEGIN(n) (n->scheduler_begin)
 #define INFO_SCHEDULEREND(n) (n->scheduler_end)
 #define INFO_MEMASSIGNS(n) (n->mem_assigns)
+#define INFO_HOST2DIST(n) (n->host2dist)
 
 static info *
 MakeInfo (void)
@@ -85,6 +90,7 @@ MakeInfo (void)
     INFO_SCHEDULERBEGIN (result) = NULL;
     INFO_SCHEDULEREND (result) = NULL;
     INFO_MEMASSIGNS (result) = NULL;
+    INFO_HOST2DIST (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -212,13 +218,6 @@ PDSassign (node *arg_node, info *arg_info)
             res = DUPdoDupNode (INFO_SCHEDULEBEGIN (arg_info));
             ASSIGN_NEXT (res) = scheduler;
             ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-        } else if (STReq (icm_name, "DIST_DEV2DIST")) {
-            /* This is the last statement on the CUDA branch, it no longer needs the
-             * scheduler.  We insert the scheduler_end assignments before it. */
-            scheduler = DUPdoDupNode (INFO_SCHEDULEREND (arg_info));
-            ASSIGN_NEXT (scheduler) = arg_node;
-            res = DUPdoDupNode (INFO_SCHEDULEEND (arg_info));
-            ASSIGN_NEXT (res) = scheduler;
         } else if (STReq (icm_name, "WL_SCHEDULE__BEGIN")) {
             /* This is the first scheduler statement on the MT branch. We save it.*/
             INFO_SCHEDULEBEGIN (arg_info) = arg_node;
@@ -228,6 +227,8 @@ PDSassign (node *arg_node, info *arg_info)
             /* This is the last scheduler statement on the MT branch. We save it and
              * stop traversing deeper. */
             INFO_SCHEDULEEND (arg_info) = arg_node;
+            INFO_HOST2DIST (arg_info) = ASSIGN_NEXT (arg_node);
+            ASSIGN_NEXT (arg_node) = NULL;
             res = arg_node;
         } else if (STRprefix ("MT_SCHEDULER_", icm_name)) {
             /* The MT scheduler ICMs vary according to the scheduler used, so we check
@@ -244,7 +245,7 @@ PDSassign (node *arg_node, info *arg_info)
             } else if (STRsuffix ("_END", icm_name)) {
                 INFO_SCHEDULEREND (arg_info) = arg_node;
                 ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-                res = arg_node;
+                res = TCappendAssign (INFO_HOST2DIST (arg_info), arg_node);
             } else {
                 /* This is another scheduler statment, such as INIT. We just traverse.*/
                 ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
@@ -273,9 +274,18 @@ PDSassign (node *arg_node, info *arg_info)
         ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
         res = arg_node;
         break;
+    case N_do:
+        /* This is the availability loop of the CUDA SPMD branch. We insert the
+         * end of scheduling ICMs after this assignment */
+        scheduler = DUPdoDupNode (INFO_SCHEDULEREND (arg_info));
+        ASSIGN_NEXT (scheduler) = ASSIGN_NEXT (arg_node);
+        res = DUPdoDupNode (INFO_SCHEDULEEND (arg_info));
+        ASSIGN_NEXT (res) = scheduler;
+        ASSIGN_NEXT (arg_node) = res;
+        res = arg_node;
+
     default:
-        /* For anything else (probably just the N_do on the CUDA branch), just
-         * traverse the next assignment. */
+        /* For anything else, just traverse the next assignment. */
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
         res = arg_node;
     }

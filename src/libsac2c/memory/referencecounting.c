@@ -814,8 +814,7 @@ RCIwith (node *arg_node, info *arg_info)
     INFO_WITHMASK (arg_info) = DFMremoveMask (INFO_WITHMASK (arg_info));
 
     /*
-     * For all with-loops in WITHS nodes but the first, we only traverse the code
-     * and the withop.
+     * For all with-loops in WITHS nodes but the first, we only traverse the code.
      */
     if (!INFO_INWITHS (arg_info)) {
         /*
@@ -826,9 +825,9 @@ RCIwith (node *arg_node, info *arg_info)
 
         INFO_MODE (arg_info) = rc_prfuse;
         WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
-    }
 
-    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -873,8 +872,7 @@ RCIwith2 (node *arg_node, info *arg_info)
     INFO_WITHMASK (arg_info) = DFMremoveMask (INFO_WITHMASK (arg_info));
 
     /*
-     * For all with-loops in WITHS nodes but the first, we only traverse the code
-     * and the withop.
+     * For all with-loops in WITHS nodes but the first, we only traverse the code.
      */
     if (!INFO_INWITHS (arg_info)) {
         /*
@@ -885,9 +883,9 @@ RCIwith2 (node *arg_node, info *arg_info)
 
         INFO_MODE (arg_info) = rc_prfuse;
         WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
-    }
 
-    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

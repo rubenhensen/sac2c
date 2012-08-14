@@ -334,7 +334,7 @@ DISTCONDwith (node *arg_node, info *arg_info)
                           cudathreadavis);
 
     /* create predicate value */
-    new_rhs = TCmakePrf2 (F_ge_SxS, TBmakeId (cudathreadavis), TBmakeNum (0));
+    new_rhs = TCmakePrf2 (F_gt_SxS, TBmakeId (cudathreadavis), TBmakeNum (0));
 
     new_avis = TBmakeAvis (TRAVtmpVarName ("_pred"),
                            TYmakeAKS (TYmakeSimpleType (T_bool), SHmakeShape (0)));
