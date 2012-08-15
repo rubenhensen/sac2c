@@ -115,7 +115,7 @@ spmd_kill_lpel_bee (struct sac_bee_lpel_t *const SAC_MT_self)
                    SAC_MT_self->c.local_id, SAC_MT_self->worker_id));
     LpelBiSemaSignal (&SAC_MT_self->stop_lck);
     LpelSetUserData (SAC_MT_self->tsk, NULL);
-    LpelTaskExit (NULL);
+    LpelTaskExit ();
     /* never reached here */
     abort ();
 }
@@ -189,7 +189,7 @@ static
  *
  ******************************************************************************/
 
-static void *
+static void
 ThreadControl (void *arg)
 {
     /* This is executed in the bee >1 of a new hive */
@@ -240,7 +240,6 @@ ThreadControl (void *arg)
     }
 
     __ThreadServeLoop (SAC_MT_self);
-    return SAC_MT_self;
 }
 
 /******************************************************************************
@@ -259,7 +258,7 @@ ThreadControl (void *arg)
  *
  ******************************************************************************/
 
-static void *
+static void
 ThreadControlInitialWorker (void *arg)
 {
     /* This is executed in the bee #1 of a new hive */
@@ -303,7 +302,6 @@ ThreadControlInitialWorker (void *arg)
     }
 
     __ThreadServeLoop (SAC_MT_self);
-    return SAC_MT_self;
 }
 
 /******************************************************************************
@@ -751,7 +749,7 @@ struct sac_lpel_main_fn_cont {
 };
 
 /** continuation from SAC_MT_LPEL_SetupAndRunStandalone, but inside an LPEL task */
-static void *
+static void
 sac_lpel_run_main_wrapper (void *arg)
 {
     struct sac_lpel_main_fn_cont *c = arg;
@@ -778,8 +776,6 @@ sac_lpel_run_main_wrapper (void *arg)
     /* signal the main thread it may start shuttind down LPEL.
      * It just means that unused LPEL workes will be removed. */
     pthread_cond_signal (&c->done_sig);
-
-    return NULL;
 }
 
 #if TRACE
