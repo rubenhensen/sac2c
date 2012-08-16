@@ -95,7 +95,11 @@ extern int SAC_MT_hopefully_under_lpel;
 static inline struct sac_bee_lpel_t *
 SAC_MT_LPEL_determine_self (void)
 {
-    return LpelGetUserData (LpelTaskSelf ());
+    struct sac_bee_lpel_t *b = LpelGetUserData (LpelTaskSelf ());
+    /* check: either no bee (NULL), or the magic has to be correct */
+    assert ((!b || b->magic1 == SAC_MT_LPEL_MAGIC_1)
+            && "Incorrect magic of the bee in the LPEL TLS!");
+    return b;
 }
 
 /******************************************************************************
@@ -157,6 +161,7 @@ static
   SAC_MT_LPEL_ThreadServeLoop (struct sac_bee_lpel_t *SAC_MT_self)
 #endif
 {
+    assert (SAC_MT_self->magic1 == SAC_MT_LPEL_MAGIC_1);
     for (;;) {
         SAC_TR_PRINT (("LPEL-based bee H:%p, L:%d, W:%d ready.", SAC_MT_self->c.hive,
                        SAC_MT_self->c.local_id, SAC_MT_self->worker_id));
@@ -196,6 +201,7 @@ ThreadControl (void *arg)
     struct sac_bee_lpel_t *const SAC_MT_self = arg;
     assert (SAC_MT_self && SAC_MT_self->c.hive);
     assert (SAC_MT_self->c.local_id >= 2);
+    assert (SAC_MT_self->magic1 == SAC_MT_LPEL_MAGIC_1);
 
     /* set self bee ptr */
     LpelSetUserData (LpelTaskSelf (), SAC_MT_self);
@@ -265,6 +271,7 @@ ThreadControlInitialWorker (void *arg)
     struct sac_bee_lpel_t *const SAC_MT_self = arg;
     assert (SAC_MT_self && SAC_MT_self->c.hive);
     assert (SAC_MT_self->c.local_id == 1);
+    assert (SAC_MT_self->magic1 == SAC_MT_LPEL_MAGIC_1);
 
     /* set self bee ptr */
     LpelSetUserData (LpelTaskSelf (), SAC_MT_self);
@@ -420,6 +427,7 @@ EnsureThreadHasBee (void)
     /* thread_id: ask the HM or use the worker id */
     self->c.thread_id
       = (SAC_HM_DiscoversThreads ()) ? SAC_HM_CurrentThreadId () : self->worker_id;
+    self->magic1 = SAC_MT_LPEL_MAGIC_1;
     /* init locks */
     SAC_MT_INIT_START_LCK (self);
     SAC_MT_INIT_BARRIER (self);
@@ -490,9 +498,10 @@ SAC_MT_ReleaseHive (struct sac_hive_common_t *h)
 
     /* now, all slave bees should be dead; release data */
     for (unsigned i = 1; i < hive->c.num_bees; ++i) {
-
-        LpelBiSemaDestroy (&CAST_BEE_COMMON_TO_LPEL (hive->c.bees[i])->start_lck);
-        LpelBiSemaDestroy (&CAST_BEE_COMMON_TO_LPEL (hive->c.bees[i])->stop_lck);
+        struct sac_bee_lpel_t *bee = CAST_BEE_COMMON_TO_LPEL (hive->c.bees[i]);
+        LpelBiSemaDestroy (&bee->start_lck);
+        LpelBiSemaDestroy (&bee->stop_lck);
+        bee->magic1 = SAC_MT_LPEL_BAD_MAGIC_1;
     }
 
     /* release the memory */
@@ -544,6 +553,7 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
         /* init locks */
         SAC_MT_INIT_START_LCK (b);
         SAC_MT_INIT_BARRIER (b);
+        b->magic1 = SAC_MT_LPEL_MAGIC_1;
         /* set place */
         if (places) {
             b->worker_id = places[i];
@@ -620,6 +630,7 @@ SAC_MT_ReleaseQueen (void)
     /* release the queen bee structure associated with this thread */
     LpelBiSemaDestroy (&self->start_lck);
     LpelBiSemaDestroy (&self->stop_lck);
+    self->magic1 = SAC_MT_LPEL_BAD_MAGIC_1;
     SAC_FREE (self);
 
     /* set self bee ptr */

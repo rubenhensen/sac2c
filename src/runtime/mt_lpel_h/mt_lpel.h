@@ -55,7 +55,12 @@ struct sac_bee_lpel_t {
     lpel_bisema_t start_lck;
     /* stop_lck: stop-barrier synchro lock */
     lpel_bisema_t stop_lck;
+    /* magic constant, for assertion checks */
+    unsigned int magic1;
 };
+
+#define SAC_MT_LPEL_MAGIC_1 0xBeefCace     /* when alive */
+#define SAC_MT_LPEL_BAD_MAGIC_1 0xDeadBeef /* when dead (freed) */
 
 /**
  * The LPEL-specific hive type structure.
