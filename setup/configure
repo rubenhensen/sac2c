@@ -5111,9 +5111,9 @@ if  test "$GCC" = yes ; then
 
   RCCCFLAGS="-Wall -Wno-unused -fno-builtin -std=c99"
 
-  MKCCFLAGS="-Wall -Wextra -Wstrict-prototypes -Werror-implicit-function-declaration -Wno-unused-parameter -Wno-unused-but-set-variable -pedantic -g -std=c99"
+  MKCCFLAGS="-Wall -Wextra -Wstrict-prototypes -Werror-implicit-function-declaration -Wno-unused -pedantic -g -std=c99"
 
-  PDCCFLAGS="-Wall -Wextra -Wstrict-prototypes -Werror-implicit-function-declaration -Wno-unused-parameter -Wno-unused-but-set-variable -pedantic -O3 -std=c99"
+  PDCCFLAGS="-Wall -Wextra -Wstrict-prototypes -Werror-implicit-function-declaration -Wno-unused -pedantic -O3 -std=c99"
 
   GENPIC="-fPIC -DPIC"
 
