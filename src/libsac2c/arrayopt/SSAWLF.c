@@ -1258,6 +1258,7 @@ static int
 FoldDecision (node *target_wl, node *subst_wl)
 {
     int result;
+    ntype *shtype;
 
     DBUG_ENTER ();
 
@@ -1269,6 +1270,12 @@ FoldDecision (node *target_wl, node *subst_wl)
               && WITH_REFERENCED (subst_wl) == WITH_REFERENCED_FOLD (subst_wl)
               && (N_genarray == NODE_TYPE (WITH_WITHOP (subst_wl))
                   || N_modarray == NODE_TYPE (WITH_WITHOP (subst_wl))));
+
+    if (N_genarray == NODE_TYPE (WITH_WITHOP (subst_wl))) {
+        shtype = NTCnewTypeCheck_Expr (GENARRAY_SHAPE (WITH_WITHOP (subst_wl)));
+        result = result && TYisAKV (shtype);
+        shtype = TYfreeType (shtype);
+    }
 
     DBUG_RETURN (result);
 }
