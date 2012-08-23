@@ -949,6 +949,7 @@ MakeAllocIcm (char *name, types *type, int rc, node *get_dim, node *set_shape_ic
                     typeArg = TCmakeIdCopyString ("double");
                     break;
                 default:
+                    typeArg = NULL;
                     break;
                 }
                 assigns
@@ -8111,6 +8112,19 @@ COMPprfCudaSetDevice (node *arg_node, info *arg_info)
 
     ret_node
       = TCmakeAssignIcm1 ("CUDA_SET_DEVICE", DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+node *
+COMPprfCudaDeviceSync (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    ret_node
+      = TCmakeAssignIcm1 ("CUDA_DEVICE_SYNC", DUPdupIdNt (PRF_ARG1 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }

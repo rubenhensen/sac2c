@@ -229,7 +229,7 @@ IALfundef (node *arg_node, info *arg_info)
 node *
 IALassign (node *arg_node, info *arg_info)
 {
-    node *schedule_start0, *schedule_stop0, *avail_start, *avail_stop;
+    node *schedule_start0, *schedule_stop0, *avail_start, *avail_stop, *prf_node;
     node *loop_block, *res, *vardecs, *rhs, *stop_var, *exprs, *cont_stop;
     prf rhs_prf;
     nodetype node_type;
@@ -369,7 +369,11 @@ IALassign (node *arg_node, info *arg_info)
             loop_block = TBmakeBlock (loop_block, NULL);
 
             /* create loop and surrounding assignments */
-            res = TBmakeAssign (TBmakeDo (TBmakeId (stop_var), loop_block), NULL);
+            prf_node
+              = TCmakePrf1 (F_cuda_device_sync, TBmakeId (INFO_DEVICENUMBER (arg_info)));
+            res = TBmakeAssign (TBmakeLet (NULL, prf_node), NULL);
+
+            res = TBmakeAssign (TBmakeDo (TBmakeId (stop_var), loop_block), res);
             res = TBmakeAssign (TBmakeLet (TBmakeIds (avail_stop, NULL),
                                            TBmakeId (schedule_start0)),
                                 res);

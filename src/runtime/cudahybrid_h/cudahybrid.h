@@ -51,9 +51,7 @@
 #define SAC_DIST_DEV2DIST(to_NT, orig_NT, devnumber_NT, start_NT, stop_NT)               \
     SAC_ND_A_FIELD (to_NT)                                                               \
       = conc2dist (SAC_ND_A_FIELD (orig_NT), SAC_ND_A_FIELD (start_NT),                  \
-                   SAC_ND_A_FIELD (stop_NT), SAC_ND_A_FIELD (devnumber_NT));             \
-    cudaDeviceSynchronize ();                                                            \
-    cache_stream_destroy (SAC_ND_A_FIELD (devnumber_NT));
+                   SAC_ND_A_FIELD (stop_NT), SAC_ND_A_FIELD (devnumber_NT));
 
 #define SAC_DIST_HOST2DIST_SPMD(to_NT, orig_NT)                                          \
     SAC_ND_A_FIELD (to_NT) = conc2dist (SAC_ND_A_FIELD (orig_NT), SAC_schedule_start0,   \
@@ -119,6 +117,10 @@
 #define SAC_CUDA_SET_DEVICE(var_NT)                                                      \
     cudaSetDevice (SAC_ND_A_FIELD (var_NT) - 1);                                         \
     SAC_CUDA_GET_STREAM (var_NT)
+
+#define SAC_CUDA_DEVICE_SYNC(devnumber_NT)                                               \
+    cudaDeviceSynchronize ();                                                            \
+    cache_stream_destroy (SAC_ND_A_FIELD (devnumber_NT));
 
 #define SAC_CUDA_GET_STREAM(var_NT)                                                      \
     cudaStream_t *stream = cache_stream_create (SAC_ND_A_FIELD (var_NT));

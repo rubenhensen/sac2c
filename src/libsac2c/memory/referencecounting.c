@@ -61,7 +61,6 @@ struct INFO {
     bool withvecneeded;
     node *assign;
     bool mustcount;
-    bool inwiths;
 };
 
 #define INFO_MODE(n) (n->mode)
@@ -74,7 +73,6 @@ struct INFO {
 #define INFO_WITHVECNEEDED(n) (n->withvecneeded)
 #define INFO_ASSIGN(n) (n->assign)
 #define INFO_MUSTCOUNT(n) (n->mustcount)
-#define INFO_INWITHS(n) ((n)->inwiths)
 
 static info *
 MakeInfo (void)
@@ -95,7 +93,6 @@ MakeInfo (void)
     INFO_ASSIGN (result) = NULL;
     INFO_MUSTCOUNT (result) = FALSE;
     INFO_WITHVECNEEDED (result) = FALSE;
-    INFO_INWITHS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -745,8 +742,8 @@ RCIarray (node *arg_node, info *arg_info)
  *
  * @fn node *RCIwiths( node *arg_node, info *arg_info)
  *
- *  @brief Traverse first with-loop, then set flag in info so that for the
- *         next with-loops we only look at the code nodes.
+ *  @brief Traverse all with-loops, but keep the current with-loop's post
+ *         assignments from ending up inside the next with-loop.
  *
  *  @param arg_node with-loop
  *  @param arg_info
@@ -757,18 +754,18 @@ RCIarray (node *arg_node, info *arg_info)
 node *
 RCIwiths (node *arg_node, info *arg_info)
 {
+    node *postassigns;
+
     DBUG_ENTER ();
 
-    /* get allocation list for this with-loop */
     WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
 
-    if (WITHS_NEXT (arg_node) != NULL) {
-        INFO_INWITHS (arg_info) = TRUE;
+    postassigns = INFO_POSTASSIGN (arg_info);
+    INFO_POSTASSIGN (arg_info) = NULL;
 
-        WITHS_NEXT (arg_node) = TRAVdo (WITHS_NEXT (arg_node), arg_info);
-    } else {
-        INFO_INWITHS (arg_info) = FALSE;
-    }
+    WITHS_NEXT (arg_node) = TRAVopt (WITHS_NEXT (arg_node), arg_info);
+
+    INFO_POSTASSIGN (arg_info) = TCappendAssign (postassigns, INFO_POSTASSIGN (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -814,20 +811,15 @@ RCIwith (node *arg_node, info *arg_info)
     INFO_WITHMASK (arg_info) = DFMremoveMask (INFO_WITHMASK (arg_info));
 
     /*
-     * For all with-loops in WITHS nodes but the first, we only traverse the code.
+     * In AKD-IV-Withloops, the IV is always needed
      */
-    if (!INFO_INWITHS (arg_info)) {
-        /*
-         * In AKD-IV-Withloops, the IV is always needed
-         */
-        INFO_WITHVECNEEDED (arg_info) = TRUE;
-        WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
+    INFO_WITHVECNEEDED (arg_info) = TRUE;
+    WITH_WITHID (arg_node) = TRAVdo (WITH_WITHID (arg_node), arg_info);
 
-        INFO_MODE (arg_info) = rc_prfuse;
-        WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
+    INFO_MODE (arg_info) = rc_prfuse;
+    WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
-    }
+    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -872,20 +864,15 @@ RCIwith2 (node *arg_node, info *arg_info)
     INFO_WITHMASK (arg_info) = DFMremoveMask (INFO_WITHMASK (arg_info));
 
     /*
-     * For all with-loops in WITHS nodes but the first, we only traverse the code.
+     * In with2-loops ( AKS-IV), the index vector is not always required
      */
-    if (!INFO_INWITHS (arg_info)) {
-        /*
-         * In with2-loops ( AKS-IV), the index vector is not always required
-         */
-        INFO_WITHVECNEEDED (arg_info) = FALSE;
-        WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
+    INFO_WITHVECNEEDED (arg_info) = FALSE;
+    WITH2_WITHID (arg_node) = TRAVdo (WITH2_WITHID (arg_node), arg_info);
 
-        INFO_MODE (arg_info) = rc_prfuse;
-        WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
+    INFO_MODE (arg_info) = rc_prfuse;
+    WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
 
-        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
-    }
+    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }

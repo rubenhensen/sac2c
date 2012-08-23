@@ -206,8 +206,8 @@ PDSassign (node *arg_node, info *arg_info)
     switch (stmt_type) {
     case N_icm:
         /* depending on the ICM being observed we do different things. Note that
-         * this depends heavily on the distributed SPMDs having specific instructions
-         * in a specific order.
+         * this depends heavily on the distributed SPMDs having specific
+         * instructions in a specific order.
          */
         icm_name = ICM_NAME (stmt);
         if (STReq (icm_name, "SCHED_START")) {
@@ -224,12 +224,16 @@ PDSassign (node *arg_node, info *arg_info)
             ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
             res = arg_node;
         } else if (STReq (icm_name, "WL_SCHEDULE__END")) {
-            /* This is the last scheduler statement on the MT branch. We save it and
-             * stop traversing deeper. */
+            /* This is the last scheduler statement on the MT branch. We save it. */
             INFO_SCHEDULEEND (arg_info) = arg_node;
-            INFO_HOST2DIST (arg_info) = ASSIGN_NEXT (arg_node);
-            ASSIGN_NEXT (arg_node) = NULL;
+            ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
             res = arg_node;
+        } else if (STReq (icm_name, "DIST_HOST2DIST_SPMD")) {
+            /* This is the first of the concrete to distributed memory transfers on
+             * the MT branch. We save the assignment chain in info, and stop
+             * traversing deeper.*/
+            INFO_HOST2DIST (arg_info) = arg_node;
+            res = NULL;
         } else if (STRprefix ("MT_SCHEDULER_", icm_name)) {
             /* The MT scheduler ICMs vary according to the scheduler used, so we check
              * for them through the suffix and prefix. We save both the begin and end
@@ -245,6 +249,11 @@ PDSassign (node *arg_node, info *arg_info)
             } else if (STRsuffix ("_END", icm_name)) {
                 INFO_SCHEDULEREND (arg_info) = arg_node;
                 ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+                /* The updates to the distributed variables should be inside the
+                 * scheduler loop. We know where these start from info, and since these
+                 * are the last assignments in a conditional branch, we can use them
+                 * directly here.
+                 */
                 res = TCappendAssign (INFO_HOST2DIST (arg_info), arg_node);
             } else {
                 /* This is another scheduler statment, such as INIT. We just traverse.*/
@@ -269,20 +278,20 @@ PDSassign (node *arg_node, info *arg_info)
         }
         break;
     case N_cond:
-        /* The conditionals are nested, so if we find one we can just traverse it.
-         * No need to traverse the next assignment at this level.*/
         ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
+        ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
         res = arg_node;
         break;
     case N_do:
         /* This is the availability loop of the CUDA SPMD branch. We insert the
          * end of scheduling ICMs after this assignment */
-        scheduler = DUPdoDupNode (INFO_SCHEDULEREND (arg_info));
+        scheduler = DUPdoDupNode (INFO_SCHEDULEEND (arg_info));
         ASSIGN_NEXT (scheduler) = ASSIGN_NEXT (arg_node);
-        res = DUPdoDupNode (INFO_SCHEDULEEND (arg_info));
+        res = DUPdoDupNode (INFO_SCHEDULEREND (arg_info));
         ASSIGN_NEXT (res) = scheduler;
         ASSIGN_NEXT (arg_node) = res;
         res = arg_node;
+        break;
 
     default:
         /* For anything else, just traverse the next assignment. */

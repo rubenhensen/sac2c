@@ -4404,6 +4404,7 @@ PRTwith (node *arg_node, info *arg_info)
         fprintf (global.outfile, " {\n");
         global.indent++;
         TRAVdo (WITH_PART (arg_node), arg_info);
+        INDENT
         fprintf (global.outfile, " } :\n");
         global.indent--;
 #endif // OLDWAY
@@ -4666,18 +4667,21 @@ PRTpart (node *arg_node, info *arg_info)
     INFO_NPART (arg_info) = arg_node;
 
     if (PART_CUDARIZABLE (arg_node)) {
+        INDENT
         fprintf (global.outfile, "/*** CUDA Partition ***/\n");
     } else {
         // fprintf (global.outfile, "/*** Partition ***/\n");
     }
 
     if (PART_THREADBLOCKSHAPE (arg_node) != NULL) {
+        INDENT
         fprintf (global.outfile, "/*** Thread Block Shape: ");
         PRTarray (PART_THREADBLOCKSHAPE (arg_node), arg_info);
         fprintf (global.outfile, " ***/\n");
     }
 
     if (PART_ISCOPY (arg_node)) {
+        INDENT
         fprintf (global.outfile, "/*** Copy Partition ***/\n");
     }
 
@@ -5618,15 +5622,21 @@ PRTwiths (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, " /* Distributed With-Loop */ {\n");
+    fprintf (global.outfile, " /* Hybrid With-Loop */ {\n");
     global.indent++;
     INDENT;
+    fprintf (global.outfile, "wl: ");
     TRAVdo (WITHS_WITH (arg_node), arg_info);
     INDENT;
-    fprintf (global.outfile, "} / \n");
-
+    fprintf (global.outfile, ";\n");
+    if (WITHS_NEXT (arg_node) != NULL) {
+        INDENT;
+        fprintf (global.outfile, "next: ");
+        TRAVopt (WITHS_NEXT (arg_node), arg_info);
+    }
     global.indent--;
-    TRAVopt (WITHS_NEXT (arg_node), arg_info);
+    INDENT;
+    fprintf (global.outfile, "}\n");
 
     DBUG_RETURN (arg_node);
 }
