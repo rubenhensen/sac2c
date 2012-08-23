@@ -6835,6 +6835,9 @@ N_tfarg :
           </description>
         </flag>
       </flags>
+    <checks>
+      <check name="CHKapArgCount" />
+    </checks>
     </node>
 <!--
 
@@ -8694,6 +8697,9 @@ N_tfarg :
           </description>
         </flag>
       </flags>
+    <checks>
+      <check name="CHKavisReflection" />
+    </checks>
     </node>
 <!--
 

@@ -362,4 +362,97 @@ CHKcondfun (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--**********************************************************************-->
+ *
+ * @fn node *CHKavisReflection( node *arg_node)
+ *
+ * @brief: arg_node is an N_avis. Ensure that one of the following holds:
+ *
+ *    1. AVIS_DECL points to an N_vardec whose VARDEC_AVIS points to the avis.
+ *    2. AVIS_DECL points to an N_arg whose ARG_AVIS points to the avis.
+ *
+ * @params: arg_node: N_avis.
+ *
+ * @return: arg_node
+ *
+ *****************************************************************************/
+node *
+CHKavisReflection (node *arg_node)
+{
+    node *arg;
+
+    DBUG_ENTER ();
+
+    if (NULL == AVIS_DECL (arg_node)) {
+        NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node), "NULL AVIS_DECL");
+    }
+
+    arg = AVIS_DECL (arg_node);
+
+    if ((N_arg == NODE_TYPE (arg)) && (arg_node != ARG_AVIS (arg))) {
+        NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node),
+                                                "AVIS_DECL and ARG_AVIS do not reflect");
+    }
+    if ((N_vardec == NODE_TYPE (arg)) && (arg_node != VARDEC_AVIS (arg))) {
+        NODE_ERROR (arg_node)
+          = CHKinsertError (NODE_ERROR (arg_node),
+                            "AVIS_DECL and VARDEC_AVIS do not reflect");
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--**********************************************************************-->
+ *
+ * @fn node *CHKapArgCount( node *arg_node)
+ *
+ * @brief: arg_node is an N_ap.
+ *         Ensure that the number of arguments in the call matches
+ *         the number of arguments in the called function.
+ *
+ *         If this is a LOOPFUN, attempt to do the same for the
+ *         recursive call.
+ *
+ * @params: arg_node: N_ap.
+ *
+ * @return: arg_node
+ *
+ *****************************************************************************/
+node *
+CHKapArgCount (node *arg_node)
+{
+    node *fundef_args;
+    node *ap_args;
+    int numapargs;
+    int numfundefargs;
+
+    DBUG_ENTER ();
+
+    fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+    ap_args = AP_ARGS (arg_node);
+    numapargs = TCcountExprs (ap_args);
+    numfundefargs = TCcountArgs (fundef_args);
+    if (numapargs != numfundefargs) {
+        NODE_ERROR (arg_node)
+          = CHKinsertError (NODE_ERROR (arg_node),
+                            "Function parameter/argument count mismatch");
+        DBUG_PRINT ("Offender %s has %d parameters, call has %d arguments",
+                    FUNDEF_NAME (AP_FUNDEF (arg_node)), numfundefargs, numapargs);
+    }
+
+    if (NULL != FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (arg_node))) {
+        ap_args = AP_ARGS (FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (arg_node)));
+        numapargs = TCcountExprs (ap_args);
+        if (numapargs != numfundefargs) {
+            NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node),
+                                                    "Loopfun recursive call "
+                                                    "parameter/argument count mismatch");
+            DBUG_PRINT ("Offender %s has %d parameters, call has %d arguments",
+                        FUNDEF_NAME (AP_FUNDEF (arg_node)), numfundefargs, numapargs);
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 #undef DBUG_PREFIX
