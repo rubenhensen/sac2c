@@ -1222,14 +1222,14 @@ SCHmakeTasksel (char *discipline, ...)
         disc_no++;
     }
 
-    DBUG_ASSERT (taskselector_table[i].discipline[0] != '\0',
+    DBUG_ASSERT (taskselector_table[disc_no].discipline[0] != '\0',
                  "Infered scheduling discipline not implemented");
 
     tasksel = (tasksel_t *)MEMmalloc (sizeof (tasksel_t));
-    tasksel->discipline = taskselector_table[i].discipline;
+    tasksel->discipline = taskselector_table[disc_no].discipline;
 
-    tasksel->num_args = taskselector_table[i].num_args;
-    tasksel->dims = taskselector_table[i].dims;
+    tasksel->num_args = taskselector_table[disc_no].num_args;
+    tasksel->dims = taskselector_table[disc_no].dims;
     if (tasksel->num_args == 0) {
         tasksel->arg = NULL;
     } else {
