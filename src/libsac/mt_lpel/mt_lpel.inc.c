@@ -547,6 +547,12 @@ SAC_MT_AllocHive (unsigned int num_bees, int num_schedulers, const int *places,
     const unsigned callers_wkid = (places) ? 0 : LpelTaskGetWorkerId (LpelTaskSelf ());
     const unsigned wk_count = (places) ? 0 : LpelWorkerCount ();
 
+    if ((places != NULL) && (places[0] != -1)) {
+        SAC_RuntimeWarning (
+          "LPEL::SAC_MT_AllocHive: the mapping specification `places[0]' is not used, "
+          "it shall be -1 to suppress the warning.");
+    }
+
     /* setup extended info in bees */
     for (unsigned i = 1; i < hive->c.num_bees; ++i) {
         struct sac_bee_lpel_t *b = CAST_BEE_COMMON_TO_LPEL (hive->c.bees[i]);

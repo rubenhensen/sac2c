@@ -150,6 +150,7 @@ SAC_HM_CurrentThreadId (void)
     /* This should never be called as no PHM is installed and the MT should assign ID
      * itself. */
     SAC_RuntimeError ("SAC_HM_CurrentThreadId: in -nophm this should not be called!");
+    return 0xdeadbeef;
 }
 
 int
