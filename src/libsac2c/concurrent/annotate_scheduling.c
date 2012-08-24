@@ -164,7 +164,7 @@ InferSchedulingConstSegment (node *wlseg, info *arg_info)
     DBUG_ENTER ();
 
     if (global.backend == BE_cudahybrid)
-        sched = SCHmakeScheduling ("Static");
+        sched = SCHmakeScheduling ("Self", STRcpy ("FirstStatic"));
     else
         sched = MakeDefaultSchedulingConstSegment ();
 
@@ -190,7 +190,7 @@ InferSchedulingVarSegment (node *wlsegvar, info *arg_info)
     DBUG_ENTER ();
 
     if (global.backend == BE_cudahybrid)
-        sched = SCHmakeScheduling ("Static");
+        sched = SCHmakeScheduling ("Self", STRcpy ("FirstStatic"));
     else
         sched = MakeDefaultSchedulingVarSegment ();
 

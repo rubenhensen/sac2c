@@ -650,7 +650,7 @@ IMEMDISTid (node *arg_node, info *arg_info)
             FUNDEF_VARDECS (INFO_FUNDEF (arg_info)) = vardecs;
 
             lut_pointer = LUTsearchInLutS (INFO_ACCESS (arg_info), AVIS_NAME (id_avis));
-            if (lut_pointer != NULL) {
+            if (lut_pointer != NULL && ((offset_t *)*lut_pointer)->inferred) {
                 /* If there is memory access data available, we might find some
                  access pattern for the F_dist2conc */
                 offset = (offset_t *)*lut_pointer;

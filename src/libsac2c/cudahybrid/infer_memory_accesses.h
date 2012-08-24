@@ -8,6 +8,7 @@ typedef struct {
     int min;
     int max;
     bool own;
+    bool inferred;
 } offset_t;
 
 extern node *IMAdoInferMemoryAccesses (node *arg_node);

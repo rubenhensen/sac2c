@@ -787,14 +787,21 @@ node *
 RCIwith (node *arg_node, info *arg_info)
 {
     node *avis;
+    bool old_inwiths;
 
     DBUG_ENTER ();
 
     INFO_WITHMASK (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
     if (WITH_CODE (arg_node) != NULL) {
+        /* Nested with-loops have to be fully traversed, regardless of being inside
+         * a hybrid with-loop. We thus set the corresponding flag to false, and
+         * restore it later.*/
+        old_inwiths = INFO_INWITHS (arg_info);
+        INFO_INWITHS (arg_info) = FALSE;
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         INFO_MUSTCOUNT (arg_info) = TRUE;
+        INFO_INWITHS (arg_info) = old_inwiths;
     }
 
     /*
@@ -846,14 +853,21 @@ node *
 RCIwith2 (node *arg_node, info *arg_info)
 {
     node *avis;
+    bool old_inwiths;
 
     DBUG_ENTER ();
 
     INFO_WITHMASK (arg_info) = DFMgenMaskClear (INFO_MASKBASE (arg_info));
 
     if (WITH2_CODE (arg_node) != NULL) {
+        /* Nested with-loops have to be fully traversed, regardless of being inside
+         * a hybrid with-loop. We thus set the corresponding flag to false, and
+         * restore it later.*/
+        old_inwiths = INFO_INWITHS (arg_info);
+        INFO_INWITHS (arg_info) = FALSE;
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
         INFO_MUSTCOUNT (arg_info) = TRUE;
+        INFO_INWITHS (arg_info) = old_inwiths;
     }
 
     /*

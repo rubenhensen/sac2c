@@ -39,6 +39,7 @@
 
 typedef struct {
     int add;
+    bool constant;
 } add_access_t;
 
 /** <!--********************************************************************-->
@@ -157,14 +158,16 @@ IMAdoInferMemoryAccesses (node *syntax_tree)
  *
  *****************************************************************************/
 
-static lut_t *updateOffsetsTable (lut_t *table, node *src_avis, int val, bool own);
+static lut_t *updateOffsetsTable (lut_t *table, node *src_avis, int val, bool own,
+                                  bool inferred);
 
-static lut_t *updateAddTable (lut_t *table, node *idx_offset_avis, int val);
+static lut_t *updateAddTable (lut_t *table, node *idx_offset_avis, int val,
+                              bool constant);
 
 /** <!--********************************************************************-->
  *
  * @fn static lut_t *updateOffsetsTable( lut_t *table, node* src_avis, int val,
- *                                       bool own)
+ *                                       bool own, bool inferred)
  *
  * @brief Updates the given LUT's entry for src_avis with value val. If the
  *        entry does not exist, one is created.
@@ -172,7 +175,7 @@ static lut_t *updateAddTable (lut_t *table, node *idx_offset_avis, int val);
  *****************************************************************************/
 
 static lut_t *
-updateOffsetsTable (lut_t *table, node *src_avis, int val, bool own)
+updateOffsetsTable (lut_t *table, node *src_avis, int val, bool own, bool inferred)
 {
     void **lut_pointer;
     offset_t *offset;
@@ -209,6 +212,7 @@ updateOffsetsTable (lut_t *table, node *src_avis, int val, bool own)
         /* offset structure exists, update it */
         offset->min = MATHmin (offset->min, block_offset);
         offset->max = MATHmax (offset->max, block_offset);
+        offset->inferred = inferred && offset->inferred;
         DBUG_PRINT ("updated offset for %s, it is now [%d,%d]", avis_name, offset->min,
                     offset->max);
     } else {
@@ -219,6 +223,7 @@ updateOffsetsTable (lut_t *table, node *src_avis, int val, bool own)
         offset->min = block_offset;
         offset->max = block_offset;
         offset->own = own;
+        offset->inferred = inferred;
         table = LUTinsertIntoLutS (table, avis_name, offset);
         DBUG_PRINT ("created offset for %s, it is now [%d,%d]", avis_name, block_offset,
                     block_offset);
@@ -230,7 +235,7 @@ updateOffsetsTable (lut_t *table, node *src_avis, int val, bool own)
 /** <!--********************************************************************-->
  *
  * @fn static lut_t *updateAddTable ( lut_t *table, node *idx_offset_avis,
- *                                    int val)
+ *                                    int val, bool constant)
  *
  * @brief Updates the given LUT's entry for arg_avis with value val. If the
  *        entry does not exist, one is created.
@@ -238,7 +243,7 @@ updateOffsetsTable (lut_t *table, node *src_avis, int val, bool own)
  *****************************************************************************/
 
 static lut_t *
-updateAddTable (lut_t *table, node *idx_offset_avis, int val)
+updateAddTable (lut_t *table, node *idx_offset_avis, int val, bool constant)
 {
     void **lut_pointer;
     add_access_t *access;
@@ -252,6 +257,7 @@ updateAddTable (lut_t *table, node *idx_offset_avis, int val)
          */
         access = MEMmalloc (sizeof (add_access_t));
         access->add = val;
+        access->constant = constant;
         table = LUTinsertIntoLutP (table, idx_offset_avis, access);
         DBUG_PRINT ("created add access for %s, it is now %d",
                     AVIS_NAME (idx_offset_avis), val);
@@ -395,9 +401,10 @@ IMAgenarray (node *arg_node, info *arg_info)
 
     INFO_OFFSETAVIS (arg_info) = GENARRAY_IDX (arg_node);
     INFO_ADDLUT (arg_info)
-      = updateAddTable (INFO_ADDLUT (arg_info), GENARRAY_IDX (arg_node), 0);
-    INFO_LUT (arg_info) = updateOffsetsTable (INFO_LUT (arg_info),
-                                              ID_AVIS (GENARRAY_MEM (arg_node)), 0, TRUE);
+      = updateAddTable (INFO_ADDLUT (arg_info), GENARRAY_IDX (arg_node), 0, TRUE);
+    INFO_LUT (arg_info)
+      = updateOffsetsTable (INFO_LUT (arg_info), ID_AVIS (GENARRAY_MEM (arg_node)), 0,
+                            TRUE, TRUE);
     GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -419,9 +426,10 @@ IMAmodarray (node *arg_node, info *arg_info)
 
     INFO_OFFSETAVIS (arg_info) = MODARRAY_IDX (arg_node);
     INFO_ADDLUT (arg_info)
-      = updateAddTable (INFO_ADDLUT (arg_info), MODARRAY_IDX (arg_node), 0);
-    INFO_LUT (arg_info) = updateOffsetsTable (INFO_LUT (arg_info),
-                                              ID_AVIS (MODARRAY_MEM (arg_node)), 0, TRUE);
+      = updateAddTable (INFO_ADDLUT (arg_info), MODARRAY_IDX (arg_node), 0, TRUE);
+    INFO_LUT (arg_info)
+      = updateOffsetsTable (INFO_LUT (arg_info), ID_AVIS (MODARRAY_MEM (arg_node)), 0,
+                            TRUE, TRUE);
     MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -440,6 +448,7 @@ IMAprf (node *arg_node, info *arg_info)
     node *new_offset_avis, *idx_offset_avis, *src_avis;
     int val;
     void *access_p;
+    bool inferred;
 
     DBUG_ENTER ();
 
@@ -449,20 +458,31 @@ IMAprf (node *arg_node, info *arg_info)
             /* This is the let for the with-loop index offset */
             DBUG_PRINT ("Found index offset %s", AVIS_NAME (INFO_IDSAVIS (arg_info)));
             INFO_OFFSETAVIS (arg_info) = INFO_IDSAVIS (arg_info);
-            updateAddTable (INFO_ADDLUT (arg_info), INFO_IDSAVIS (arg_info), 0);
+            updateAddTable (INFO_ADDLUT (arg_info), INFO_IDSAVIS (arg_info), 0, TRUE);
             break;
         case F_add_SxS:
             /* If we are adding to the with-loop index offset variable, we record
              how much we are adding. */
-            idx_offset_avis = ID_AVIS (PRF_ARG2 (arg_node));
-            new_offset_avis = INFO_IDSAVIS (arg_info);
-            if (idx_offset_avis == INFO_OFFSETAVIS (arg_info)) {
-                val = NUM_VAL (PRF_ARG1 (arg_node));
-                DBUG_PRINT ("Found addition to offset of %d, new offset in %s", val,
-                            AVIS_NAME (new_offset_avis));
-                updateAddTable (INFO_ADDLUT (arg_info), new_offset_avis, val);
+            if (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id) {
+                idx_offset_avis = ID_AVIS (PRF_ARG2 (arg_node));
+                new_offset_avis = INFO_IDSAVIS (arg_info);
+                if (idx_offset_avis == INFO_OFFSETAVIS (arg_info)) {
+                    if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_num) {
+                        val = NUM_VAL (PRF_ARG1 (arg_node));
+                        DBUG_PRINT ("Found addition to offset of %d, new offset in %s",
+                                    val, AVIS_NAME (new_offset_avis));
+                        updateAddTable (INFO_ADDLUT (arg_info), new_offset_avis, val,
+                                        TRUE);
+                    } else {
+                        DBUG_PRINT ("Found non-constant addition.");
+                        updateAddTable (INFO_ADDLUT (arg_info), new_offset_avis, 0,
+                                        FALSE);
+                    }
+                } else {
+                    DBUG_PRINT ("Found addition without the index offset.");
+                }
             } else {
-                DBUG_PRINT ("Found addition without the index offset.");
+                DBUG_PRINT ("Found addition with constant argument.");
             }
             break;
         case F_idx_sel:
@@ -478,10 +498,11 @@ IMAprf (node *arg_node, info *arg_info)
                             AVIS_NAME (new_offset_avis), AVIS_NAME (src_avis));
             } else {
                 val = (*(add_access_t **)access_p)->add;
+                inferred = (*(add_access_t **)access_p)->constant;
                 DBUG_PRINT ("Found idxsel %s into %s with offset %d",
                             AVIS_NAME (new_offset_avis), AVIS_NAME (src_avis), val);
-                INFO_LUT (arg_info)
-                  = updateOffsetsTable (INFO_LUT (arg_info), src_avis, val, FALSE);
+                INFO_LUT (arg_info) = updateOffsetsTable (INFO_LUT (arg_info), src_avis,
+                                                          val, FALSE, inferred);
             }
             //      case F_cuda_wl_assign:
             //        /* This is a CUDA with-loop assignment. The second argument is the

@@ -8039,7 +8039,7 @@ COMPprfDist2Dev_Abs (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm6 ("DIST_DIST2HOST_ABS", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm6 ("DIST_DIST2DEV_ABS", DUPdupIdsIdNt (let_ids),
                                  DUPdupIdNt (PRF_ARG1 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG2 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG3 (arg_node)),
