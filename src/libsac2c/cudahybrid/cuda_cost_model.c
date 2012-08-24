@@ -368,6 +368,9 @@ CUCMwith (node *arg_node, info *arg_info)
             WITH_REFERENCED (hostwl) = WITH_REFERENCED (arg_node);
             WITH_ISFOLDABLE (hostwl) = WITH_ISFOLDABLE (arg_node);
 
+            /* copy any pragmas to the host with-loop. */
+            WITH_PRAGMA (hostwl) = DUPdoDupTree (WITH_PRAGMA (arg_node));
+
             INFO_HOSTWL (arg_info) = hostwl;
             INFO_ISWORTH (arg_info) = FALSE;
             INFO_HOSTLUT (arg_info) = LUTremoveLut (hostlut);

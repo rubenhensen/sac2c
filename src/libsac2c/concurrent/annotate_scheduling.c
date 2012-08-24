@@ -163,7 +163,10 @@ InferSchedulingConstSegment (node *wlseg, info *arg_info)
 
     DBUG_ENTER ();
 
-    sched = MakeDefaultSchedulingConstSegment ();
+    if (global.backend == BE_cudahybrid)
+        sched = SCHmakeScheduling ("Static");
+    else
+        sched = MakeDefaultSchedulingConstSegment ();
 
     DBUG_RETURN (sched);
 }
@@ -186,9 +189,64 @@ InferSchedulingVarSegment (node *wlsegvar, info *arg_info)
 
     DBUG_ENTER ();
 
-    sched = MakeDefaultSchedulingVarSegment ();
+    if (global.backend == BE_cudahybrid)
+        sched = SCHmakeScheduling ("Static");
+    else
+        sched = MakeDefaultSchedulingVarSegment ();
 
     DBUG_RETURN (sched);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   tasksel_t *InferTaskselConstSegment(node *wlseg, info *arg_info)
+ *
+ * description:
+ *   This function defines the inference strategy for the task selection of
+ *   constant segments.
+ *
+ ******************************************************************************/
+
+static tasksel_t *
+InferTaskselConstSegment (node *wlseg, info *arg_info)
+{
+    tasksel_t *tasksel;
+
+    DBUG_ENTER ();
+
+    if (global.backend == BE_cudahybrid)
+        tasksel = SCHmakeTasksel ("Even", 0, global.min_parallel_size);
+    else
+        tasksel = WLSEG_TASKSEL (wlseg);
+
+    DBUG_RETURN (tasksel);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   tasksel_t *InferTaskselVarSegment(node *wlsegvar, info *arg_info)
+ *
+ * description:
+ *   This function defines the inference strategy for the task selection of
+ *   variable segments.
+ *
+ ******************************************************************************/
+
+static tasksel_t *
+InferTaskselVarSegment (node *wlsegvar, info *arg_info)
+{
+    tasksel_t *tasksel;
+
+    DBUG_ENTER ();
+
+    if (global.backend == BE_cudahybrid)
+        tasksel = SCHmakeTasksel ("Even", 0, global.min_parallel_size);
+    else
+        tasksel = WLSEG_TASKSEL (wlsegvar);
+
+    DBUG_RETURN (tasksel);
 }
 
 /** <!--********************************************************************-->
@@ -285,9 +343,11 @@ MTASwlseg (node *arg_node, info *arg_info)
             if (WLSEG_ISDYNAMIC (arg_node)) {
                 WLSEG_SCHEDULING (arg_node)
                   = InferSchedulingVarSegment (arg_node, arg_info);
+                WLSEG_TASKSEL (arg_node) = InferTaskselVarSegment (arg_node, arg_info);
             } else {
                 WLSEG_SCHEDULING (arg_node)
                   = InferSchedulingConstSegment (arg_node, arg_info);
+                WLSEG_TASKSEL (arg_node) = InferTaskselConstSegment (arg_node, arg_info);
             }
         } else {
             if (WLSEG_ISDYNAMIC (arg_node)) {

@@ -1193,6 +1193,62 @@ CheckTaskselArgs (tasksel_t *tasksel, node *exprs, int line)
 /******************************************************************************
  *
  * function:
+ *   tasksel_t *SCHMakeTasksel( node *ap_node, int line)
+ *
+ * description:
+ *   This may be used to generate arbitray task selectors. The first paramter in
+ *   the variable parameter list must always be of type 'char*' and provide the
+ *   name of the task selector discipline. The following parameters must be
+ *   defined according to the task selector specification table. For all task
+ *   selector arguments, a parameter of type 'int' is required.
+ *
+ ******************************************************************************/
+
+tasksel_t *
+SCHmakeTasksel (char *discipline, ...)
+{
+    va_list args;
+    tasksel_t *tasksel;
+    int i, disc_no;
+
+    DBUG_ENTER ();
+
+    va_start (args, discipline);
+
+    disc_no = 0;
+
+    while ((taskselector_table[disc_no].discipline[0] != '\0')
+           && (!STReq (taskselector_table[disc_no].discipline, discipline))) {
+        disc_no++;
+    }
+
+    DBUG_ASSERT (taskselector_table[i].discipline[0] != '\0',
+                 "Infered scheduling discipline not implemented");
+
+    tasksel = (tasksel_t *)MEMmalloc (sizeof (tasksel_t));
+    tasksel->discipline = taskselector_table[i].discipline;
+
+    tasksel->num_args = taskselector_table[i].num_args;
+    tasksel->dims = taskselector_table[i].dims;
+    if (tasksel->num_args == 0) {
+        tasksel->arg = NULL;
+    } else {
+        tasksel->arg = (int *)MEMmalloc (tasksel->num_args * sizeof (int));
+    }
+    tasksel->line = -1;
+
+    for (i = 0; i < tasksel->num_args; i++) {
+        tasksel->arg[i] = va_arg (args, int);
+    }
+
+    va_end (args);
+
+    DBUG_RETURN (tasksel);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   tasksel_t *SCHMakeTaskselByPragma( node *ap_node, int line)
  *
  * description:

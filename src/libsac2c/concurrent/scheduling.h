@@ -50,6 +50,7 @@ extern node *SCHcompileSchedulingEnd (int seg_id, node *wl_ids, sched_t *sched,
 extern node *SCHcompileSchedulingInit (int seg_id, node *wl_ids, sched_t *sched,
                                        node *arg_node);
 
+extern tasksel_t *SCHmakeTasksel (char *discipline, ...);
 extern tasksel_t *SCHmakeTaskselByPragma (node *ap_node, int line);
 
 extern tasksel_t *SCHremoveTasksel (tasksel_t *tasksel);
