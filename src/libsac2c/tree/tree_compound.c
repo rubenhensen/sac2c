@@ -1378,6 +1378,38 @@ TCappendArgs (node *arg_chain, node *arg)
     DBUG_RETURN (ret);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn node *TCgetNthArg(int n, node *args)
+ *
+ * @brief Given an N_arg chain, return the nTH N_arg node
+ *        in the chain. If 0==n, return the argument.
+ *        If n > chain length, return NULL.
+ *
+ * @param N_arg chain
+ *
+ * @return N_arg node
+ ******************************************************************************/
+node *
+TCgetNthArg (int n, node *args)
+{
+    int cnt;
+    node *result = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (n >= 0, "n<0");
+    for (cnt = 0; cnt < n; cnt++) {
+        if (NULL == args) {
+            DBUG_ASSERT (FALSE, "n > N_arg chain length.");
+        }
+
+        args = ARG_NEXT (args);
+    }
+
+    result = args;
+    DBUG_RETURN (result);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***

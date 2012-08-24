@@ -405,6 +405,7 @@ extern int TCcountVardecs (node *vardecs);
 extern int TCcountArgs (node *args);
 extern int TCcountArgsIgnoreArtificials (node *args);
 extern node *TCappendArgs (node *arg_chain, node *arg);
+extern node *TCgetNthArg (int n, node *args);
 
 /*--------------------------------------------------------------------------*/
 
