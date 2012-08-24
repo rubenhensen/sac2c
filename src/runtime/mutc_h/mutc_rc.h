@@ -30,7 +30,7 @@
 #define SAC_MUTC_RC_PRINT(var_NT)                                                        \
     fprintf (stddebug, " ");                                                             \
     printf ("%s:%d " TO_STR (var_NT) " @ %p = {%d} [ %d, %p, %d]\n", __FILE__, __LINE__, \
-            SAC_REAL_DESC_POINTER (SAC_ND_A_DESC (var_NT)),                              \
+            SAC_REAL_DESC (SAC_ND_A_DESC (var_NT)),                                      \
             DESC_RC_MODE (SAC_ND_A_DESC (var_NT)), (int)SAC_ND_A_DESC (var_NT)[0],       \
             (void *)SAC_ND_A_DESC (var_NT)[1], (int)SAC_ND_A_DESC (var_NT)[2]);
 
@@ -426,6 +426,9 @@ SAC_IF_NOT_MUTC_RC_INDIRECT (
             SAC_MUTC_RC_PRINT (array);                                                   \
             SAC_MUTC_RC_PRINT (new);                                                     \
         }                                                                                \
+    } else {                                                                             \
+        SAC_ND_A_FIELD (new) = SAC_ND_GETVAR (array, SAC_ND_A_FIELD (array));            \
+        SAC_ND_A_DESC (new) = SAC_ND_A_DESC (array);                                     \
     }
 #endif
 

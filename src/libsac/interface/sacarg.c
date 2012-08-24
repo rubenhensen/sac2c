@@ -19,6 +19,16 @@
 #error SAC_RC_METHOD is defined to an invalid value!
 #endif
 
+/*
+ * Attribute posibly unused variable to stop warnings
+ * Used for mirrors only
+ */
+#ifndef SAC_BACKEND_MUTC
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #undef SAC_FREE
 #define SAC_FREE(x) SAC_FREE_dbg (x, sizeof (*(x)))
 #define SAC_FREE_nrm(x) free ((x));
@@ -41,22 +51,22 @@ struct SAC_SACARG {
  * access macros
  */
 #define SACARG_DESC(n) ((n)->desc)
+#define SACARG_DATA(n) ((n)->data)
+#define SACARG_BTYPE(n) ((n)->mbasetype)
 #define SACARG_DIM(n) DESC_DIM (SACARG_DESC (n))
 #define SACARG_SIZE(n) DESC_SIZE (SACARG_DESC (n))
 #define SACARG_SHAPE(n, p) DESC_SHAPE (SACARG_DESC (n), p)
-#define SACARG_DATA(n) ((n)->data)
-#define SACARG_BTYPE(n) ((n)->mbasetype)
 
 /**
- *
+4 *
  * Hidden debug stuff
  */
 
 void
 SACARGprint (SACarg *arg)
 {
-    printf ("descriptor at 0x%08lx: RC: %d\ndata at 0x%08lx\n", (long)SACARG_DESC (arg),
-            SAC_DESC_A_RC (SACARG_DESC (arg)), (long)SACARG_DATA (arg));
+    printf ("descriptor at 0x%08lx:\ndata at 0x%08lx\n", (long)SACARG_DESC (arg),
+            (long)SACARG_DATA (arg));
 }
 
 /*
@@ -75,6 +85,13 @@ static const int basetype_to_size[] = {
      || (btype == T_ulonglong) || (btype == T_double) || (btype == T_char)               \
      || (btype == T_bool))
 
+#define result_nt (result, (AUD, (NHD, (NUQ, (INT, (GLO, (FAG, (NOT, ))))))))
+#define param_nt (param, (AUD, (NHD, (NUQ, (INT, (GLO, (FAG, (NOT, ))))))))
+#define param_hid_nt (param, (SCL, (HID, (NUQ, (INT, (GLO, (FAG, (NOT, ))))))))
+#define out_nt (out, (AUD, (NHD, (NUQ, (INT, (GLO, (FAG, (NOT, ))))))))
+#define data_nt (data, (AUD, (NHD, (NUQ, (INT, (GLO, (FAG, (NOT, ))))))))
+#define data_hid_nt (data, (SCL, (HID, (NUQ, (INT, (GLO, (FAG, (NOT, ))))))))
+
 /**
  * Functions for creating SACargs
  */
@@ -84,25 +101,24 @@ SAC_array_descriptor_t
 SACARGmakeDescriptor (int dim, va_list args)
 {
     int pos;
-    int size;
     va_list argp;
-    SAC_array_descriptor_t result;
 
-    result = (SAC_array_descriptor_t)SAC_MALLOC (BYTE_SIZE_OF_DESC (dim));
-    SAC_DESC_INIT_RC (result, 0);
+    SAC_ND_DECL__DESC (result_nt, );
+    int UNUSED SAC_ND_A_MIRROR_SIZE (result_nt) = 1;
+    int UNUSED SAC_ND_A_MIRROR_DIM (result_nt) = dim;
 
-    size = 1;
+    SAC_ND_ALLOC__DESC (result_nt, dim);
+    SAC_ND_INIT__RC (result_nt, 1);
+
     va_copy (argp, args);
     for (pos = 0; pos < dim; pos++) {
-        DESC_SHAPE (result, pos) = va_arg (argp, int);
-        size *= DESC_SHAPE (result, pos);
+        SAC_ND_A_MIRROR_SIZE (result_nt) *= SAC_ND_A_DESC_SHAPE (result_nt, pos)
+          = va_arg (argp, int);
     }
     va_end (argp);
+    SAC_ND_A_DESC_SIZE (result_nt) = SAC_ND_A_MIRROR_SIZE (result_nt);
 
-    DESC_DIM (result) = dim;
-    DESC_SIZE (result) = size;
-
-    return (result);
+    return (SAC_ND_A_DESC (result_nt));
 }
 
 /** Create a pristine descriptor for SACarg itself. */
@@ -110,49 +126,46 @@ SAC_array_descriptor_t
 SACARGmakeDescriptorVect (int dim, int *shape)
 {
     int pos;
-    int size;
-    SAC_array_descriptor_t result;
 
-    result = (SAC_array_descriptor_t)SAC_MALLOC (BYTE_SIZE_OF_DESC (dim));
-    SAC_DESC_INIT_RC (result, 0);
+    SAC_ND_DECL__DESC (result_nt, );
+    int UNUSED SAC_ND_A_MIRROR_SIZE (result_nt) = 1;
+    int UNUSED SAC_ND_A_MIRROR_DIM (result_nt) = dim;
 
-    size = 1;
+    SAC_ND_ALLOC__DESC (result_nt, dim);
+    SAC_ND_INIT__RC (result_nt, 1);
+
     for (pos = 0; pos < dim; pos++) {
-        DESC_SHAPE (result, pos) = shape[pos];
-        size *= DESC_SHAPE (result, pos);
+        SAC_ND_A_MIRROR_SIZE (result_nt) *= SAC_ND_A_DESC_SHAPE (result_nt, pos)
+          = shape[pos];
     }
+    SAC_ND_A_DESC_SIZE (result_nt) = SAC_ND_A_MIRROR_SIZE (result_nt);
 
-    DESC_DIM (result) = dim;
-    DESC_SIZE (result) = size;
-
-    return (result);
+    return (SAC_ND_A_DESC (result_nt));
 }
 
+/* Unfortunatly param is the wrong way round, else we could just use one macro */
 SACarg *
-SACARGmakeSacArg (basetype btype, SAC_array_descriptor_t desc, void *data)
+SACARGmakeSacArg (basetype btype, SAC_ND_PARAM_in_justdesc (param_nt, void),
+                  SAC_ND_PARAM_in_nodesc (param_nt, void))
 {
     SACarg *result;
 
     result = (SACarg *)SAC_MALLOC (sizeof (SACarg));
 
-    SACARG_DATA (result) = data;
+    SACARG_DATA (result) = SAC_ND_A_FIELD (param_nt);
     SACARG_BTYPE (result) = btype;
 
     /* Create a new reference (inc_ref), then convert the reference
      * into an asynchronous mode. */
-    SAC_DESC_INC_RC (desc, 1);
-    SAC_DESC_RC_GIVE_ASYNC (SACARG_DESC (result), desc);
+    SAC_ND_INC_RC (param_nt, 1);
+
+#ifdef SAC_DESC_RC_GIVE_ASYNC
+    SAC_DESC_RC_GIVE_ASYNC (SACARG_DESC (result), SAC_ND_A_DESC (param_nt));
+#else
+    SACARG_DESC (result) = SAC_ND_A_DESC (param_nt);
+#endif
 
     return (result);
-}
-
-/**
- * Functions for handling references to SACargs
- */
-void
-SACARGfreeDataInternal (basetype btype, void *data)
-{
-    SAC_FREE_nrm (data);
 }
 
 /*
@@ -160,26 +173,62 @@ SACARGfreeDataInternal (basetype btype, void *data)
  */
 extern void SACARGfreeDataUdt (basetype btype, void *data);
 
+#define TYP_SEPARATOR
+#define TYP_IFname(name)                                                                 \
+    static inline void SACARGfreeData##name (void *data)                                 \
+    {                                                                                    \
+        if (data != NULL) {                                                              \
+            SACARGfreeDataUdt (name, data);                                              \
+        }                                                                                \
+    }
+#include "type_info.mac"
+#undef TYP_IFname
+#undef TYP_SEPARATOR
+
+/* Check data is set as it may have been extracted */
+static inline void
+SACARGfreeDataInternal (void *data)
+{
+    if (data != NULL) {
+        SAC_FREE (data);
+    }
+}
+
 void
 SACARGfree (SACarg *arg)
 {
     /* Release/free the SACarg structure.
      * We will free one reference to the array, so decrement its RC.
-     * The q_waslast flag will indicate if the data should be freed as well.
      */
 
-    int q_waslast;
-    SAC_DESC_DEC_RC_FREE (SACARG_DESC (arg), 1, q_waslast);
+    SAC_ND_DECL__DATA (data_nt, void, );
+    SAC_ND_DECL__DESC (data_nt, );
+    int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
+    int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = 0;
 
-    if (q_waslast) {
-        /*
-         * last reference freed, so free the contained data
-         */
-        if (!BTYPE_ISINTERNAL (SACARG_BTYPE (arg))) {
-            SACARGfreeDataUdt (SACARG_BTYPE (arg), SACARG_DATA (arg));
-        } else {
-            SACARGfreeDataInternal (SACARG_BTYPE (arg), SACARG_DATA (arg));
+    SAC_ND_A_FIELD (data_nt) = SACARG_DATA (arg);
+    SAC_ND_A_DESC (data_nt) = SACARG_DESC (arg);
+    SAC_ND_A_MIRROR_SIZE (data_nt) = SAC_ND_A_DESC_SIZE (data_nt);
+    SAC_ND_A_MIRROR_DIM (data_nt) = SAC_ND_A_DESC_DIM (data_nt);
+
+    /*
+     * Make name tuple hidden so we can control how freeing is done
+     */
+    if (BTYPE_ISINTERNAL (SACARG_BTYPE (arg))) {
+        switch (SACARG_BTYPE (arg)) {
+#define TYP_SEPARATOR
+#define TYP_IFname(name)                                                                 \
+    case name:                                                                           \
+        SAC_ND_DEC_RC_FREE (data_hid_nt, 1, SACARGfreeData##name);                       \
+        break;
+#include "type_info.mac"
+#undef TYP_IFname
+#undef TYP_SEPARATOR
+        default:
+            assert (0 == 1);
         }
+    } else {
+        SAC_ND_DEC_RC_FREE (data_hid_nt, 1, SACARGfreeDataInternal);
     }
 
     /*
@@ -209,17 +258,6 @@ SACARGcopy (SACarg *arg)
     return (SACARGnewReference (arg));
 }
 
-void *
-SACARGcopyDataInternal (basetype btype, int size, void *data)
-{
-    void *result;
-
-    result = SAC_MALLOC (basetype_to_size[btype] * size);
-    result = memcpy (result, data, basetype_to_size[btype] * size);
-
-    return (result);
-}
-
 /*
  * this function is generated by sac4c
  */
@@ -228,30 +266,40 @@ extern void *SACARGcopyDataUdt (basetype btype, int size, void *data);
 void *
 SACARGextractData (SACarg *arg)
 {
-    assert (SAC_DESC_A_RC (SACARG_DESC (arg)) > 0);
+    /* Release/free the SACarg structure.
+     * We will free one reference to the array, so decrement its RC.
+     */
+    void *result = NULL;
+    SAC_ND_DECL__DATA (data_nt, void, );
+    SAC_ND_DECL__DESC (data_nt, );
+    int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = SAC_ND_A_DESC_SIZE (data_nt);
+    int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = SAC_ND_A_DESC_DIM (data_nt);
 
-    void *result;
-    int q_waslast;
-    SAC_DESC_DEC_RC_FREE (SACARG_DESC (arg), 1, q_waslast);
+    SAC_ND_A_FIELD (data_nt) = SACARG_DATA (arg);
+    SAC_ND_A_DESC (data_nt) = SACARG_DESC (arg);
 
-    if (q_waslast) {
-        /* it was the last reference to the SACarg.
-         * Hence the data may be moved */
-        result = SACARG_DATA (arg);
+    /** SAC_ND_A_RC will always return 1 iff it is safe to reuse the
+        data associated with this descriptor */
+    if (SAC_ND_A_RC (data_nt) == 1) {
+        /* Can reuse */
+        result = SAC_ND_A_FIELD (data_nt);
+        /* Set to null so not freed with the rest */
+        SAC_ND_A_FIELD (data_nt) = NULL;
     } else {
-        /* There are still some references left to the SACarg.
-         * Hence the data must be copied. */
+        /* Can NOT reuse */
         if (!BTYPE_ISINTERNAL (SACARG_BTYPE (arg))) {
-            result = SACARGcopyDataUdt (SACARG_BTYPE (arg), SACARG_SIZE (arg),
-                                        SACARG_DATA (arg));
+            result = SACARGcopyDataUdt (SACARG_BTYPE (arg), SAC_ND_A_SIZE (data_nt),
+                                        SAC_ND_A_FIELD (data_nt));
         } else {
-            result = SACARGcopyDataInternal (SACARG_BTYPE (arg), SACARG_SIZE (arg),
-                                             SACARG_DATA (arg));
+            result = SAC_MALLOC (basetype_to_size[SACARG_BTYPE (arg)]
+                                 * SAC_ND_A_SIZE (data_nt));
+            result
+              = memcpy (result, SAC_ND_A_FIELD (data_nt),
+                        basetype_to_size[SACARG_BTYPE (arg)] * SAC_ND_A_SIZE (data_nt));
         }
     }
 
-    /* in any case the SACarg itself is released because it has been consumed. */
-    SAC_FREE (arg);
+    SACARGfree (arg);
 
     return (result);
 }
@@ -281,41 +329,47 @@ SACARGgetBasetype (SACarg *arg)
  * Functions used to unwrap/wrap SACargs within SAC
  */
 
-static inline void
-SACARG_common_unwrap (void **data, SAC_array_descriptor_t *desc, SACarg *arg,
-                      SAC_array_descriptor_t arg_desc)
+static inline void SACARG_common_unwrap (SAC_ND_PARAM_out (out_nt, void),
+                                         SAC_ND_PARAM_in (param_nt, SACarg))
 {
+    int UNUSED SAC_ND_A_MIRROR_SIZE (param_nt) = SAC_ND_A_DESC_SIZE (param_nt);
+    int UNUSED SAC_ND_A_MIRROR_DIM (param_nt) = SAC_ND_A_DESC_DIM (param_nt);
+
+    SAC_ND_DECL__DATA (data_nt, void, );
+    SAC_ND_DECL__DESC (data_nt, );
+    int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = SAC_ND_A_DESC_SIZE (data_nt);
+    int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = SAC_ND_A_DESC_DIM (data_nt);
+
+    SAC_ND_A_FIELD (data_nt) = SACARG_DATA (SAC_ND_A_FIELD (param_nt));
+    SAC_ND_A_DESC (data_nt) = SACARG_DESC (SAC_ND_A_FIELD (param_nt));
     /*
      * we create a new reference to the data here, so we need to
      * increment its reference counter!
      */
-    SAC_DESC_INC_RC (SACARG_DESC (arg), 1);
-
-    *data = SACARG_DATA (arg);
-    *desc = SACARG_DESC (arg);
+    SAC_ND_INC_RC (data_nt, 1);
 
     /*
      * we consume one reference to the outer shell. If that counter drops
      * to 0, we can free it! (ONLY the outer shell)
      * Note that this removes one reference to the inner data!
      */
-    int q_waslast;
-    SAC_DESC_DEC_RC_FREE (arg_desc, 1, q_waslast);
 
-    if (q_waslast) {
-        /* It was the last ref to the arg_desc, and it is now gone.
-         * Remove the SACarg as well, but don't forget to dec.ref. the data also.
-         */
-        SAC_DESC_DEC_RC (SACARG_DESC (arg), 1); /* paired with the incref above */
-        SAC_FREE (arg);
-    }
+    SAC_ND_DEC_RC_FREE (param_hid_nt, 1, SACARGfree);
+
+    SAC_ND_RET_out (out_nt, data_nt);
 }
 
 #define UNWRAP(name, ctype, btype)                                                       \
-    void SACARGunwrap##name (void **data, SAC_array_descriptor_t *desc, SACarg *arg,     \
-                             SAC_array_descriptor_t arg_desc)                            \
+    void SACARGunwrap##name (SAC_ND_PARAM_out (out_nt, ctype),                           \
+                             SAC_ND_PARAM_in (param_nt, SACarg))                         \
     {                                                                                    \
-        SACARG_common_unwrap (data, desc, arg, arg_desc);                                \
+        SAC_ND_DECL_PARAM_inout (out_nt, void);                                          \
+        int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);          \
+        int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);            \
+                                                                                         \
+        SACARG_common_unwrap (SAC_ND_ARG_inout (out_nt, void),                           \
+                              SAC_ND_ARG_in (param_nt, SACarg));                         \
+        SAC_ND_RET_inout (out_nt, out_nt);                                               \
     }
 
 UNWRAP (Int, int, T_int)          /* SACARGwrapInt */
@@ -324,18 +378,29 @@ UNWRAP (Float, float, T_float)    /* SACARGwrapFloat */
 UNWRAP (Double, double, T_double) /* SACARGwrapDouble */
 UNWRAP (Char, char, T_char)       /* SACARGwrapChar */
 
-void
-SACARGunwrapUdt (void **data, SAC_array_descriptor_t *desc, SACarg *arg,
-                 SAC_array_descriptor_t arg_desc)
+void SACARGunwrapUdt (SAC_ND_PARAM_inout (out_nt, void),
+                      SAC_ND_PARAM_in (param_nt, SACarg))
 {
-    SACARG_common_unwrap (data, desc, arg, arg_desc);
+    SAC_ND_DECL_PARAM_inout (out_nt, void);
+    int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);
+    int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);
+
+    SACARG_common_unwrap (SAC_ND_ARG_inout (out_nt, void),
+                          SAC_ND_ARG_in (param_nt, SACarg));
+    SAC_ND_RET_inout (out_nt, out_nt);
 }
 
 #define UNWRAPWRAPPER(name, ctype)                                                       \
-    void SACARGunwrapUdt##name (ctype **data, SAC_array_descriptor_t *desc, SACarg *arg, \
-                                SAC_array_descriptor_t arg_desc)                         \
+    void SACARGunwrapUdt##name (SAC_ND_PARAM_inout (out_nt, ctype),                      \
+                                SAC_ND_PARAM_in (param_nt, SACarg))                      \
     {                                                                                    \
-        SACARGunwrapUdt ((void **)data, desc, arg, arg_desc);                            \
+        SAC_ND_DECL_PARAM_inout (out_nt, void);                                          \
+        int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);          \
+        int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);            \
+                                                                                         \
+        SACARGunwrapUdt (SAC_ND_ARG_inout (out_nt, void),                                \
+                         SAC_ND_ARG_in (param_nt, SACarg));                              \
+        SAC_ND_RET_inout (out_nt, out_nt);                                               \
     }
 
 UNWRAPWRAPPER (Int, int)
@@ -345,33 +410,42 @@ UNWRAPWRAPPER (Double, double)
 UNWRAPWRAPPER (Char, char)
 
 static inline void
-SACARG_common_wrap (SACarg **arg, SAC_array_descriptor_t *desc, basetype btype,
-                    void *data, SAC_array_descriptor_t data_desc)
+SACARG_common_wrap (SAC_ND_PARAM_inout (out_nt, SACarg), basetype btype,
+                    SAC_ND_PARAM_in (param_nt, void))
 {
+    SAC_ND_DECL_PARAM_inout (out_nt, void);
+    int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);
+    int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);
     /*
      * we simply wrap it. As we consume one reference, we have
      * to decrement the rc.
      * SACARGmakeSacArg holds a new reference, but it is potentially
      * an asynchronous copy, hence we need to use the full dec.ref. operation.
      */
-    *arg = SACARGmakeSacArg (btype, data_desc, data);
-    int q_waslast;
-    SAC_DESC_DEC_RC_FREE (data_desc, 1, q_waslast);
-    assert (!q_waslast);
+    SAC_ND_A_FIELD (out_nt)
+      = SACARGmakeSacArg (btype, SAC_ND_A_DESC (param_nt), SAC_ND_A_FIELD (param_nt));
+    SAC_ND_DEC_RC (param_nt, 1);
     /*
      * now we need a descriptor! As SACargs use standard SAC descriptors,
      * we can use those functions to build one. However, we have to
      * manually increment the RC by 1!
      */
-    *desc = SACARGmakeDescriptorVect (0, NULL);
-    SAC_DESC_INC_RC ((*desc), 1);
+    SAC_ND_A_DESC (out_nt) = SACARGmakeDescriptorVect (0, NULL);
+    SAC_ND_INC_RC (out_nt, 1);
+    SAC_ND_RET_inout (out_nt, out_nt);
 }
 
 #define WRAP(name, ctype, btype)                                                         \
-    void SACARGwrap##name (SACarg **arg, SAC_array_descriptor_t *desc, void *data,       \
-                           SAC_array_descriptor_t data_desc)                             \
+    void SACARGwrap##name (SAC_ND_PARAM_inout (out_nt, SACarg),                          \
+                           SAC_ND_PARAM_in (param_nt, ctype))                            \
     {                                                                                    \
-        SACARG_common_wrap (arg, desc, btype, data, data_desc);                          \
+        SAC_ND_DECL_PARAM_inout (out_nt, SACarg);                                        \
+        int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);          \
+        int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);            \
+                                                                                         \
+        SACARG_common_wrap (SAC_ND_ARG_inout (out_nt, SACarg), btype,                    \
+                            SAC_ND_ARG_in (param_nt, void));                             \
+        SAC_ND_RET_inout (out_nt, out_nt);                                               \
     }
 
 WRAP (Int, int, T_int)
@@ -381,18 +455,28 @@ WRAP (Double, double, T_double)
 WRAP (Char, char, T_char)
 
 void
-SACARGwrapUdt (SACarg **arg, SAC_array_descriptor_t *desc, basetype btype, void *data,
-               SAC_array_descriptor_t data_desc)
+SACARGwrapUdt (SAC_ND_PARAM_inout (out_nt, SACarg), basetype btype,
+               SAC_ND_PARAM_in (param_nt, void))
 {
-    SACARG_common_wrap (arg, desc, btype, data, data_desc);
+    SAC_ND_DECL_PARAM_inout (out_nt, SACarg);
+    int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);
+    int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);
+
+    SACARG_common_wrap (SAC_ND_ARG_inout (out_nt, SACarg), btype,
+                        SAC_ND_ARG_in (param_nt, void));
+    SAC_ND_RET_inout (out_nt, out_nt);
 }
 
 #define WRAPWRAPPER(name, ctype)                                                         \
-    void SACARGwrapUdt##name (SACarg **arg, SAC_array_descriptor_t *desc,                \
-                              basetype btype, ctype *data,                               \
-                              SAC_array_descriptor_t data_desc)                          \
+    void SACARGwrapUdt##name (SAC_ND_PARAM_inout (out_nt, SACarg), basetype btype,       \
+                              SAC_ND_PARAM_in (param_nt, ctype))                         \
     {                                                                                    \
-        SACARGwrapUdt (arg, desc, btype, (void *)data, data_desc);                       \
+        SAC_ND_DECL_PARAM_inout (out_nt, SACarg);                                        \
+        int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);          \
+        int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);            \
+        SACARGwrapUdt (SAC_ND_ARG_inout (out_nt, SACarg), btype,                         \
+                       SAC_ND_ARG_in (param_nt, ctype));                                 \
+        SAC_ND_RET_inout (out_nt, out_nt);                                               \
     }
 
 WRAPWRAPPER (Int, int)

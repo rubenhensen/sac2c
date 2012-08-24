@@ -156,6 +156,7 @@
 /* This method supports the NORC mode. */
 #define SAC_HAS_RC_NORC 1
 
+/* THIS DOES NOT CREATE A DESCRIPTOR AS COMMENT SUGGESTS */
 /* SAC_ND_RC_GIVE_ASYNC is generated in m4.
  * It *consumes* a single reference from the input descriptor and returns
  * a (possibly new) descriptor that can be accessed asynchronously to

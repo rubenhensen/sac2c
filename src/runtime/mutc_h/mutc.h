@@ -43,6 +43,10 @@
 
 #define SAC_MUTC_SAVE_NODESC(nt) NT_NAME (nt) = sl_geta (CAT0 (SAC_ND_A_FIELD (nt), _sh));
 
+#define SAC_MUTC_SAVE_DESC(nt)                                                           \
+    SAC_ND_A_FIELD (nt) = sl_geta (CAT0 (SAC_ND_A_FIELD (nt), _sh));                     \
+    SAC_ND_A_DESC (nt) = sl_geta (CAT0 (SAC_ND_A_DESC (nt), _sh));
+
 #define SAC_MUTC_CREATE_BLOCK_START() {
 #define SAC_MUTC_CREATE_BLOCK_END() }
 

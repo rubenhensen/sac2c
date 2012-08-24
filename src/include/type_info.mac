@@ -12,6 +12,10 @@
 ** initializing routines are using 0 for unknown values.
 */
 
+#ifndef TYP_SEPARATOR
+#define TYP_SEPARATOR ,
+#endif
+
 #ifndef TYP_IFname
 #define TYP_IFname(it_name)
 #endif
@@ -67,7 +71,8 @@
     TYP_IFname (it_name) TYP_IFdb_str (it_db_str) TYP_IFpr_str (it_pr_str)               \
       TYP_IFfunr_str (it_funr_str) TYP_IFcv2scal (it_cv2scal) TYP_IFcv2cv (it_cv2cv)     \
         TYP_IFcv2str (it_cv2str) TYP_IFsize (it_size) TYP_IFzipcv (it_zipcv)             \
-          TYP_IFbasecv (it_basecv) TYP_IFmutcsc (it_mutc_sc) TYP_IFunused (it_unused),
+          TYP_IFbasecv (it_basecv) TYP_IFmutcsc (it_mutc_sc) TYP_IFunused (it_unused)    \
+            TYP_SEPARATOR
 #endif
 
 /*
@@ -200,5 +205,5 @@ TYP_IF (T_nothing, "nothing", "nothing", "n", COcv2ScalarDummy, COcv2CvDummy,
 #undef TYP_IFsize
 #undef TYP_IFzipcv
 #undef TYP_IFbasecv
-
+#undef TYP_SEPARATOR
 #undef TYP_IF

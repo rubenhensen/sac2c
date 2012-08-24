@@ -29,6 +29,7 @@
 #undef bool
 #undef true
 #undef false
+#undef __bool_true_false_are_defined
 #endif /*  __bool_true_false_are_defined */
 
 #ifndef SAC_SIMD_COMPILATION
@@ -45,7 +46,7 @@ typedef int bool;
 
 #define true 1
 #define false 0
-
+#define __bool_true_false_are_defined
 #endif
 #undef MUTC
 
