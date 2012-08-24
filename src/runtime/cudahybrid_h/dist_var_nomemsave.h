@@ -218,10 +218,12 @@ dist2conc (dist_var_t dist_array, int block_start, int block_stop, int device,
             array_p = (char *)cache_malloc (size_alloc, device - 1);
         }
         allocations[device] = array_p;
+        debug_dist ("Device %d: Will store from %p to %p\n", device, array_p,
+                    array_p + size_alloc);
     } else {
         array_p = allocations[device];
+        debug_dist ("Device %d: Will store at %p\n", device, array_p);
     }
-    debug_dist ("Device %d: Will store at %p\n", device, array_p);
 
     // for each block requested:
     for (int i = block_start; i < block_stop;) {

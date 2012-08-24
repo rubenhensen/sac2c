@@ -2840,6 +2840,7 @@
         <node name="Fundef" />
         <node name="Assign" />
         <node name="Let" />
+        <node name="Withs" />
         <node name="With" />
         <node name="With2" />
         <node name="Code" />
@@ -2937,6 +2938,7 @@
       <travsons>
         <node name="Module" />
         <node name="Cond" />
+        <node name="Withs" />
         <node name="With" />
         <node name="With2" />
         <node name="With3" />
@@ -2986,6 +2988,7 @@
       </travuser>
       <travsons>
         <node name="Module" />
+        <node name="Withs" />
         <node name="With" />
         <node name="With2" />
         <node name="With3" />

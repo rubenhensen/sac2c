@@ -30,7 +30,7 @@
 
 #define SAC_DIST_FREE(var_NT, freefun) dist_var_free (SAC_ND_A_FIELD (var_NT));
 
-#define SAC_DIST_DEC_RC_FREE__DEFAULT(var_NT, rc, freefun)                               \
+#define SAC_DIST_DEC_RC_FREE(var_NT, rc, freefun)                                        \
     {                                                                                    \
         SAC_TR_REF_PRINT (                                                               \
           ("DIST_DEC_RC_FREE( %s, %d, %s)", NT_STR (var_NT), rc, #freefun))              \
@@ -119,11 +119,14 @@
     SAC_CUDA_GET_STREAM (var_NT)
 
 #define SAC_CUDA_DEVICE_SYNC(devnumber_NT)                                               \
-    cudaDeviceSynchronize ();                                                            \
-    cache_stream_destroy (SAC_ND_A_FIELD (devnumber_NT));
+    cudaError_t error = cudaDeviceSynchronize ();                                        \
+    if (error != cudaSuccess)                                                            \
+        SAC_RuntimeError ("CUDA error synchronizing devices: %s\n",                      \
+                          cudaGetErrorString (error));                                   \
+    cache_stream_destroy (SAC_ND_A_FIELD (devnumber_NT) - 1);
 
 #define SAC_CUDA_GET_STREAM(var_NT)                                                      \
-    cudaStream_t *stream = cache_stream_create (SAC_ND_A_FIELD (var_NT));
+    cudaStream_t *stream = cache_stream_create (SAC_ND_A_FIELD (var_NT) - 1);
 
 /*****************************************************************************
  *

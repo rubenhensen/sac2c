@@ -56,7 +56,7 @@ struct INFO {
     lut_t *memory_transfers;
     node *wl;
     int dim;
-    prf genprf;
+    bool bound1;
     node *device_number;
 };
 
@@ -87,7 +87,7 @@ struct INFO {
  *
  * INFO_DIM             The dimension of the generator bounds being flattened.
  *
- * INFO_GENPRF          The prf to use for flattening the generators (see exprs)
+ * INFO_BOUND1          Whether this is the first generator boundary.
  *
  * INFO_DEVICENUMBER    The avis of the device number variable.
  *
@@ -103,7 +103,7 @@ struct INFO {
 #define INFO_MEMTRAN(n) (n->memory_transfers)
 #define INFO_WL(n) (n->wl)
 #define INFO_DIM(n) (n->dim)
-#define INFO_GENPRF(n) (n->genprf)
+#define INFO_BOUND1(n) (n->bound1)
 #define INFO_DEVICENUMBER(n) (n->device_number)
 
 static info *
@@ -125,7 +125,7 @@ MakeInfo (void)
     INFO_MEMTRAN (result) = NULL;
     INFO_WL (result) = NULL;
     INFO_DIM (result) = 0;
-    INFO_GENPRF (result) = F_unknown;
+    INFO_BOUND1 (result) = FALSE;
     INFO_DEVICENUMBER (result) = NULL;
 
     DBUG_RETURN (result);
@@ -479,10 +479,10 @@ IALgenerator (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_DIM (arg_info) = 0;
-    INFO_GENPRF (arg_info) = F_sched_start;
+    INFO_BOUND1 (arg_info) = TRUE;
     GENERATOR_BOUND1 (arg_node) = TRAVdo (GENERATOR_BOUND1 (arg_node), arg_info);
     INFO_DIM (arg_info) = 0;
-    INFO_GENPRF (arg_info) = F_sched_stop;
+    INFO_BOUND1 (arg_info) = FALSE;
     GENERATOR_BOUND2 (arg_node) = TRAVdo (GENERATOR_BOUND2 (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
@@ -499,6 +499,7 @@ node *
 IALexprs (node *arg_node, info *arg_info)
 {
     node *sched_avis, *vardecs, *genassigns, *bound_avis, *assign;
+    prf sched_prf, intersect;
 
     DBUG_ENTER ();
 
@@ -513,18 +514,19 @@ IALexprs (node *arg_node, info *arg_info)
          * variables. For the others, we query the scheduler directly.
          */
         if (INFO_DIM (arg_info) == 0) {
-            sched_avis
-              = (INFO_GENPRF (arg_info) == F_sched_start ? INFO_AVAILSTART (arg_info)
-                                                         : INFO_AVAILSTOP (arg_info));
+            sched_avis = (INFO_BOUND1 (arg_info) ? INFO_AVAILSTART (arg_info)
+                                                 : INFO_AVAILSTOP (arg_info));
         } else {
             sched_avis
               = TBmakeAvis (TRAVtmpVarName ("schedule"),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
             vardecs = TBmakeVardec (sched_avis, vardecs);
 
+            sched_prf = (INFO_BOUND1 (arg_info) ? F_sched_start : F_sched_stop);
+
             assign
               = TBmakeAssign (TBmakeLet (TBmakeIds (sched_avis, NULL),
-                                         TCmakePrf2 (INFO_GENPRF (arg_info),
+                                         TCmakePrf2 (sched_prf,
                                                      TBmakeId (INFO_WL (arg_info)),
                                                      TBmakeNum (INFO_DIM (arg_info)))),
                               NULL);
@@ -536,10 +538,11 @@ IALexprs (node *arg_node, info *arg_info)
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
         FUNDEF_VARDECS (INFO_FUNDEF (arg_info)) = TBmakeVardec (bound_avis, vardecs);
 
-        /* new bound is the maximum between the current bound and the
+        /* new bound is the maximum or minimum between the current bound and the
          * scheduled/available bounds. These assignments perform the calculations.*/
+        intersect = (INFO_BOUND1 (arg_info) ? F_max_SxS : F_min_SxS);
         assign = TBmakeAssign (TBmakeLet (TBmakeIds (bound_avis, NULL),
-                                          TCmakePrf2 (F_max_SxS, EXPRS_EXPR (arg_node),
+                                          TCmakePrf2 (intersect, EXPRS_EXPR (arg_node),
                                                       TBmakeId (sched_avis))),
                                NULL);
         INFO_GENASSIGNS (arg_info) = TCappendAssign (genassigns, assign);

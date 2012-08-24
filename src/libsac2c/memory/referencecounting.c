@@ -61,6 +61,7 @@ struct INFO {
     bool withvecneeded;
     node *assign;
     bool mustcount;
+    bool inwiths;
 };
 
 #define INFO_MODE(n) (n->mode)
@@ -73,6 +74,7 @@ struct INFO {
 #define INFO_WITHVECNEEDED(n) (n->withvecneeded)
 #define INFO_ASSIGN(n) (n->assign)
 #define INFO_MUSTCOUNT(n) (n->mustcount)
+#define INFO_INWITHS(n) ((n)->inwiths)
 
 static info *
 MakeInfo (void)
@@ -93,6 +95,7 @@ MakeInfo (void)
     INFO_ASSIGN (result) = NULL;
     INFO_MUSTCOUNT (result) = FALSE;
     INFO_WITHVECNEEDED (result) = FALSE;
+    INFO_INWITHS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -763,9 +766,11 @@ RCIwiths (node *arg_node, info *arg_info)
     postassigns = INFO_POSTASSIGN (arg_info);
     INFO_POSTASSIGN (arg_info) = NULL;
 
+    INFO_INWITHS (arg_info) = TRUE;
     WITHS_NEXT (arg_node) = TRAVopt (WITHS_NEXT (arg_node), arg_info);
 
     INFO_POSTASSIGN (arg_info) = TCappendAssign (postassigns, INFO_POSTASSIGN (arg_info));
+    INFO_INWITHS (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }
@@ -819,7 +824,12 @@ RCIwith (node *arg_node, info *arg_info)
     INFO_MODE (arg_info) = rc_prfuse;
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
-    WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    /*
+     * For all with-loops in WITHS nodes but the first, we skip the withops.
+     */
+    if (!INFO_INWITHS (arg_info)) {
+        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -872,7 +882,12 @@ RCIwith2 (node *arg_node, info *arg_info)
     INFO_MODE (arg_info) = rc_prfuse;
     WITH2_SEGS (arg_node) = TRAVdo (WITH2_SEGS (arg_node), arg_info);
 
-    WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    /*
+     * For all with-loops in WITHS nodes but the first, we skip the withops.
+     */
+    if (!INFO_INWITHS (arg_info)) {
+        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }

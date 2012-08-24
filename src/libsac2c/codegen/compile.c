@@ -855,7 +855,7 @@ MakeIncRcIcm (char *name, types *type, int num, node *assigns)
  *                          node *assigns)
  *
  * @brief  According to 'type', 'rc' and 'num', builds a
- *         ND_DEC_RC_FREE( name, num, freefun) icm,
+ *         xxxx_DEC_RC_FREE( name, num, freefun) icm,
  *         or no icm at all.
  *
  ******************************************************************************/
@@ -863,25 +863,27 @@ MakeIncRcIcm (char *name, types *type, int num, node *assigns)
 static node *
 MakeDecRcIcm (char *name, types *type, int num, node *assigns)
 {
+    const char *icm;
+
     DBUG_ENTER ();
 
     DBUG_ASSERT (num >= 0, "decrement for rc must be >= 0.");
 
     if (num > 0) {
-        if (TCgetBasetype (type) != T_float_dev && TCgetBasetype (type) != T_int_dev
-            && TCgetBasetype (type) != T_double_dev) {
-            assigns
-              = TCmakeAssignIcm3 ("ND_DEC_RC_FREE", TCmakeIdCopyStringNt (name, type),
-                                  TBmakeNum (num),
-                                  TCmakeIdCopyString (GenericFun (GF_free, type)),
-                                  assigns);
+        if (TCgetBasetype (type) == T_float_dist || TCgetBasetype (type) == T_int_dist
+            || TCgetBasetype (type) == T_double_dist) {
+            icm = "DIST_DEC_RC_FREE";
+        } else if (TCgetBasetype (type) == T_float_dev
+                   || TCgetBasetype (type) == T_int_dev
+                   || TCgetBasetype (type) == T_double_dev) {
+
+            icm = "CUDA_DEC_RC_FREE";
         } else {
-            assigns
-              = TCmakeAssignIcm3 ("CUDA_DEC_RC_FREE", TCmakeIdCopyStringNt (name, type),
-                                  TBmakeNum (num),
-                                  TCmakeIdCopyString (GenericFun (GF_free, type)),
-                                  assigns);
+            icm = "ND_DEC_RC_FREE";
         }
+        assigns
+          = TCmakeAssignIcm3 (icm, TCmakeIdCopyStringNt (name, type), TBmakeNum (num),
+                              TCmakeIdCopyString (GenericFun (GF_free, type)), assigns);
     }
 
     DBUG_RETURN (assigns);
