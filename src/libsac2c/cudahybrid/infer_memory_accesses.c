@@ -54,7 +54,7 @@ struct INFO {
     lut_t *part_lut;
     lut_t *add_lut;
     node *ids_avis;
-    node *offset_avis;
+    lut_t *offset_avis_lut;
 };
 
 /*
@@ -76,7 +76,8 @@ struct INFO {
  *
  * INFO_IDSAVIS       The N_avis of the LHS of the current let
  *
- * INFO_OFFSETAVIS    The N_avis of the offset variable of a with-loop
+ * INFO_OFFSETAVISLUT A LUT storing the N_avis of each offset variable of a
+ *                    with-loop
  *
  */
 
@@ -84,7 +85,7 @@ struct INFO {
 #define INFO_LUT(n) (n->lut)
 #define INFO_ADDLUT(n) (n->add_lut)
 #define INFO_IDSAVIS(n) (n->ids_avis)
-#define INFO_OFFSETAVIS(n) (n->offset_avis)
+#define INFO_OFFSETAVISLUT(n) (n->offset_avis_lut)
 
 static info *
 MakeInfo (void)
@@ -99,7 +100,7 @@ MakeInfo (void)
     INFO_LUT (result) = NULL;
     INFO_ADDLUT (result) = NULL;
     INFO_IDSAVIS (result) = NULL;
-    INFO_OFFSETAVIS (result) = NULL;
+    INFO_OFFSETAVISLUT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -339,12 +340,14 @@ IMAwith (node *arg_node, info *arg_info)
         INFO_INWL (arg_info) = TRUE;
         INFO_LUT (arg_info) = LUTgenerateLut ();
         INFO_ADDLUT (arg_info) = LUTgenerateLut ();
+        INFO_OFFSETAVISLUT (arg_info) = LUTgenerateLut ();
 
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
         WITH_ACCESS (arg_node) = INFO_LUT (arg_info);
 
         INFO_ADDLUT (arg_info) = LUTremoveLut (INFO_ADDLUT (arg_info));
+        INFO_OFFSETAVISLUT (arg_info) = LUTremoveLut (INFO_OFFSETAVISLUT (arg_info));
     } else {
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
@@ -371,12 +374,14 @@ IMAwith2 (node *arg_node, info *arg_info)
         INFO_INWL (arg_info) = TRUE;
         INFO_LUT (arg_info) = LUTgenerateLut ();
         INFO_ADDLUT (arg_info) = LUTgenerateLut ();
+        INFO_OFFSETAVISLUT (arg_info) = LUTgenerateLut ();
 
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
         WITH2_ACCESS (arg_node) = INFO_LUT (arg_info);
 
         INFO_ADDLUT (arg_info) = LUTremoveLut (INFO_ADDLUT (arg_info));
+        INFO_OFFSETAVISLUT (arg_info) = LUTremoveLut (INFO_OFFSETAVISLUT (arg_info));
     } else {
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
@@ -399,7 +404,8 @@ IMAgenarray (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     DBUG_PRINT ("Found genarray");
 
-    INFO_OFFSETAVIS (arg_info) = GENARRAY_IDX (arg_node);
+    INFO_OFFSETAVISLUT (arg_info)
+      = LUTinsertIntoLutP (INFO_OFFSETAVISLUT (arg_info), GENARRAY_IDX (arg_node), NULL);
     INFO_ADDLUT (arg_info)
       = updateAddTable (INFO_ADDLUT (arg_info), GENARRAY_IDX (arg_node), 0, TRUE);
     INFO_LUT (arg_info)
@@ -424,7 +430,8 @@ IMAmodarray (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     DBUG_PRINT ("Found modarray");
 
-    INFO_OFFSETAVIS (arg_info) = MODARRAY_IDX (arg_node);
+    INFO_OFFSETAVISLUT (arg_info)
+      = LUTinsertIntoLutP (INFO_OFFSETAVISLUT (arg_info), MODARRAY_IDX (arg_node), NULL);
     INFO_ADDLUT (arg_info)
       = updateAddTable (INFO_ADDLUT (arg_info), MODARRAY_IDX (arg_node), 0, TRUE);
     INFO_LUT (arg_info)
@@ -457,7 +464,9 @@ IMAprf (node *arg_node, info *arg_info)
         case F_idxs2offset:
             /* This is the let for the with-loop index offset */
             DBUG_PRINT ("Found index offset %s", AVIS_NAME (INFO_IDSAVIS (arg_info)));
-            INFO_OFFSETAVIS (arg_info) = INFO_IDSAVIS (arg_info);
+            INFO_OFFSETAVISLUT (arg_info)
+              = LUTinsertIntoLutP (INFO_OFFSETAVISLUT (arg_info), INFO_IDSAVIS (arg_info),
+                                   NULL);
             updateAddTable (INFO_ADDLUT (arg_info), INFO_IDSAVIS (arg_info), 0, TRUE);
             break;
         case F_add_SxS:
@@ -466,7 +475,8 @@ IMAprf (node *arg_node, info *arg_info)
             if (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id) {
                 idx_offset_avis = ID_AVIS (PRF_ARG2 (arg_node));
                 new_offset_avis = INFO_IDSAVIS (arg_info);
-                if (idx_offset_avis == INFO_OFFSETAVIS (arg_info)) {
+                if (LUTsearchInLutP (INFO_OFFSETAVISLUT (arg_info), idx_offset_avis)
+                    != NULL) {
                     if (NODE_TYPE (PRF_ARG1 (arg_node)) == N_num) {
                         val = NUM_VAL (PRF_ARG1 (arg_node));
                         DBUG_PRINT ("Found addition to offset of %d, new offset in %s",
@@ -479,7 +489,8 @@ IMAprf (node *arg_node, info *arg_info)
                                         FALSE);
                     }
                 } else {
-                    DBUG_PRINT ("Found addition without the index offset.");
+                    DBUG_PRINT ("Found addition %s without the index offset.",
+                                AVIS_NAME (new_offset_avis));
                 }
             } else {
                 DBUG_PRINT ("Found addition with constant argument.");
@@ -492,10 +503,11 @@ IMAprf (node *arg_node, info *arg_info)
             src_avis = ID_AVIS (PRF_ARG2 (arg_node));
             new_offset_avis = ID_AVIS (PRF_ARG1 (arg_node));
             access_p = LUTsearchInLutP (INFO_ADDLUT (arg_info), new_offset_avis);
-            idx_offset_avis = INFO_OFFSETAVIS (arg_info);
             if (access_p == NULL) {
                 DBUG_PRINT ("Found idxsel %s into %s with unknown offset",
                             AVIS_NAME (new_offset_avis), AVIS_NAME (src_avis));
+                INFO_LUT (arg_info)
+                  = updateOffsetsTable (INFO_LUT (arg_info), src_avis, 0, FALSE, FALSE);
             } else {
                 val = (*(add_access_t **)access_p)->add;
                 inferred = (*(add_access_t **)access_p)->constant;
@@ -504,16 +516,6 @@ IMAprf (node *arg_node, info *arg_info)
                 INFO_LUT (arg_info) = updateOffsetsTable (INFO_LUT (arg_info), src_avis,
                                                           val, FALSE, inferred);
             }
-            //      case F_cuda_wl_assign:
-            //        /* This is a CUDA with-loop assignment. The second argument is the
-            //         * memory allocated for the resulting array. We need to add it to
-            //         the
-            //         * offsets table with offset 0, as we need to transfers/allocate
-            //         space
-            //         * for it based on the scheduler decision */
-            //        INFO_LUT(arg_info) = updateOffsetsTable(INFO_LUT(arg_info),
-            //                                                ID_AVIS(PRF_ARG2(arg_node)),
-            //                                                0);
         default:
             DBUG_PRINT ("Found unknown prf.");
             break;

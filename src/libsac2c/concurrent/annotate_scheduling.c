@@ -164,7 +164,7 @@ InferSchedulingConstSegment (node *wlseg, info *arg_info)
     DBUG_ENTER ();
 
     if (global.backend == BE_cudahybrid)
-        sched = SCHmakeScheduling ("Self", STRcpy ("FirstStatic"));
+        sched = SCHmakeScheduling ("Affinity");
     else
         sched = MakeDefaultSchedulingConstSegment ();
 
@@ -190,7 +190,7 @@ InferSchedulingVarSegment (node *wlsegvar, info *arg_info)
     DBUG_ENTER ();
 
     if (global.backend == BE_cudahybrid)
-        sched = SCHmakeScheduling ("Self", STRcpy ("FirstStatic"));
+        sched = SCHmakeScheduling ("Affinity");
     else
         sched = MakeDefaultSchedulingVarSegment ();
 
@@ -215,7 +215,7 @@ InferTaskselSegment (node *wlseg, info *arg_info)
     DBUG_ENTER ();
 
     if (global.backend == BE_cudahybrid)
-        tasksel = SCHmakeTasksel ("Even", 0, global.min_parallel_size);
+        tasksel = SCHmakeTasksel ("Even", 0, 50);
 
     DBUG_RETURN (tasksel);
 }
