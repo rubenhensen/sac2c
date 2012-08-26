@@ -3863,7 +3863,7 @@ BuildCubes (node *strides, int iter_dims, shape *iter_shp, bool *do_naive_comp)
 
         cubes = strides;
     } else {
-        if (*do_naive_comp) {
+        if (*do_naive_comp && global.backend != BE_cudahybrid) {
             /*
              * this is a trick in order to put each stride in a separate
              * segment later on

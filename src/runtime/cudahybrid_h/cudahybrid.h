@@ -54,8 +54,9 @@
                    SAC_ND_A_FIELD (stop_NT), SAC_ND_A_FIELD (devnumber_NT));
 
 #define SAC_DIST_HOST2DIST_SPMD(to_NT, orig_NT)                                          \
-    SAC_ND_A_FIELD (to_NT) = conc2dist (SAC_ND_A_FIELD (orig_NT), SAC_schedule_start0,   \
-                                        SAC_schedule_stop0, 0);
+    SAC_ND_A_FIELD (to_NT)                                                               \
+      = conc2dist (SAC_ND_A_FIELD (orig_NT), SAC_WL_MT_SCHEDULE_START (0),               \
+                   SAC_WL_MT_SCHEDULE_STOP (0), 0);
 
 #define SAC_DIST_HOST2DIST_ST(to_NT, orig_NT, start, stop)                               \
     SAC_ND_A_FIELD (to_NT) = conc2dist (SAC_ND_A_FIELD (orig_NT), start, stop, 0);
@@ -63,24 +64,30 @@
 #define SAC_DIST_DIST2HOST_ABS(to_NT, from_NT, start, stop, setOwner, basetype)          \
     SAC_ND_A_FIELD (to_NT)                                                               \
       = (basetype *)dist2conc (SAC_ND_A_FIELD (from_NT), start, stop, 0, setOwner,       \
-                               (cudaStream_t *)0);
+                               (cudaStream_t *)0);                                       \
+    SAC_ND_A_DESC (to_NT) = SAC_ND_A_DESC (from_NT);
 
 #define SAC_DIST_DIST2DEV_ABS(to_NT, from_NT, start, stop, device_NT, basetype)          \
     SAC_ND_A_FIELD (to_NT)                                                               \
       = (basetype *)dist2conc (SAC_ND_A_FIELD (from_NT), start, stop,                    \
-                               SAC_ND_A_FIELD (device_NT), FALSE, stream);
+                               SAC_ND_A_FIELD (device_NT), FALSE, stream);               \
+    SAC_ND_A_DESC (to_NT) = SAC_ND_A_DESC (from_NT);
 
 #define SAC_DIST_DIST2HOST_REL(to_NT, from_NT, start, stop, setOwner, basetype)          \
     SAC_ND_A_FIELD (to_NT)                                                               \
-      = (basetype *)dist2conc (SAC_ND_A_FIELD (from_NT), start + SAC_schedule_start0,    \
-                               stop + SAC_schedule_stop0, 0, setOwner,                   \
-                               (cudaStream_t *)0);
+      = (basetype *)dist2conc (SAC_ND_A_FIELD (from_NT),                                 \
+                               start + SAC_WL_MT_SCHEDULE_START (0),                     \
+                               stop + SAC_WL_MT_SCHEDULE_STOP (0), 0, setOwner,          \
+                               (cudaStream_t *)0);                                       \
+    SAC_ND_A_DESC (to_NT) = SAC_ND_A_DESC (from_NT);
 
 #define SAC_DIST_DIST2DEV_REL(to_NT, from_NT, start, stop, device_NT, basetype)          \
     SAC_ND_A_FIELD (to_NT)                                                               \
-      = (basetype *)dist2conc (SAC_ND_A_FIELD (from_NT), start + SAC_schedule_start0,    \
-                               stop + SAC_schedule_stop0, SAC_ND_A_FIELD (device_NT),    \
-                               TRUE, stream);
+      = (basetype *)dist2conc (SAC_ND_A_FIELD (from_NT),                                 \
+                               start + SAC_WL_MT_SCHEDULE_START (0),                     \
+                               stop + SAC_WL_MT_SCHEDULE_STOP (0),                       \
+                               SAC_ND_A_FIELD (device_NT), TRUE, stream);                \
+    SAC_ND_A_DESC (to_NT) = SAC_ND_A_DESC (from_NT);
 
 #define SAC_DIST_DIST2DEV_AVAIL(to_NT, from_NT, start, stop, device_NT, start_NT,        \
                                 stop_NT, basetype)                                       \
@@ -88,7 +95,8 @@
       = (basetype *)dist2conc (SAC_ND_A_FIELD (from_NT),                                 \
                                start + SAC_ND_A_FIELD (start_NT),                        \
                                stop + SAC_ND_A_FIELD (stop_NT),                          \
-                               SAC_ND_A_FIELD (device_NT), FALSE, stream);
+                               SAC_ND_A_FIELD (device_NT), FALSE, stream);               \
+    SAC_ND_A_DESC (to_NT) = SAC_ND_A_DESC (from_NT);
 
 #define SAC_DIST_DISTCONTBLOCK(to_NT, from_NT, start, stop, device_NT, availstart_NT,    \
                                availstop_NT)                                             \
@@ -135,8 +143,10 @@
  *
  *****************************************************************************/
 
-#define SAC_SCHED_START(var_NT, dim) SAC_ND_A_FIELD (var_NT) = SAC_schedule_start##dim;
+#define SAC_SCHED_START(var_NT, dim)                                                     \
+    SAC_ND_A_FIELD (var_NT) = SAC_WL_MT_SCHEDULE_START (dim);
 
-#define SAC_SCHED_STOP(var_NT, dim) SAC_ND_A_FIELD (var_NT) = SAC_schedule_stop##dim;
+#define SAC_SCHED_STOP(var_NT, dim)                                                      \
+    SAC_ND_A_FIELD (var_NT) = SAC_WL_MT_SCHEDULE_STOP (dim);
 
 #endif

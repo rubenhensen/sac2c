@@ -163,10 +163,10 @@ InferSchedulingConstSegment (node *wlseg, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (global.backend == BE_cudahybrid)
-        sched = SCHmakeScheduling ("Affinity");
-    else
-        sched = MakeDefaultSchedulingConstSegment ();
+    //  if(global.backend == BE_cudahybrid)
+    //    sched = SCHmakeScheduling("Affinity");
+    //  else
+    sched = MakeDefaultSchedulingConstSegment ();
 
     DBUG_RETURN (sched);
 }
@@ -189,10 +189,10 @@ InferSchedulingVarSegment (node *wlsegvar, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (global.backend == BE_cudahybrid)
-        sched = SCHmakeScheduling ("Affinity");
-    else
-        sched = MakeDefaultSchedulingVarSegment ();
+    //  if(global.backend == BE_cudahybrid)
+    //    sched = SCHmakeScheduling("Affinity");
+    //  else
+    sched = MakeDefaultSchedulingVarSegment ();
 
     DBUG_RETURN (sched);
 }
@@ -318,9 +318,9 @@ MTASwlseg (node *arg_node, info *arg_info)
                 WLSEG_SCHEDULING (arg_node)
                   = InferSchedulingConstSegment (arg_node, arg_info);
             }
-            if (global.backend == BE_cudahybrid) {
-                WLSEG_TASKSEL (arg_node) = InferTaskselSegment (arg_node, arg_info);
-            }
+            //      if( global.backend == BE_cudahybrid) {
+            //        WLSEG_TASKSEL(arg_node) = InferTaskselSegment(arg_node, arg_info);
+            //      }
         } else {
             if (WLSEG_ISDYNAMIC (arg_node)) {
                 SCHcheckSuitabilityVarSeg (WLSEG_SCHEDULING (arg_node));

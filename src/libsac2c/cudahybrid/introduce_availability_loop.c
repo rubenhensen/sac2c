@@ -367,6 +367,7 @@ IALassign (node *arg_node, info *arg_info)
             rhs = TCmakePrf1 (F_cuda_get_stream, TBmakeId (INFO_DEVICENUMBER (arg_info)));
             loop_block = TBmakeAssign (TBmakeLet (NULL, rhs), loop_block);
             loop_block = TBmakeBlock (loop_block, NULL);
+            BLOCK_ISMTPARALLELBRANCH (loop_block) = TRUE;
 
             /* create loop and surrounding assignments */
             prf_node

@@ -572,6 +572,7 @@
     <traversal id="IMEMDIST" name="Insert memory transfer primitives for distributed variables" default="sons" include="insert_memtrans_dist.h" >
       <travuser>
         <node name="Let" />
+        <node name="Ap" />
         <node name="Block" />
         <node name="Assign" />
         <node name="With" />

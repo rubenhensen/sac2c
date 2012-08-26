@@ -10,6 +10,7 @@ extern node *IMEMDISTfundef (node *arg_node, info *arg_info);
 extern node *IMEMDISTap (node *arg_node, info *arg_info);
 extern node *IMEMDISTid (node *arg_node, info *arg_info);
 extern node *IMEMDISTlet (node *arg_node, info *arg_info);
+extern node *IMEMDISTap (node *arg_node, info *arg_info);
 extern node *IMEMDISTblock (node *arg_node, info *arg_info);
 extern node *IMEMDISTassign (node *arg_node, info *arg_info);
 extern node *IMEMDISTwith (node *arg_node, info *arg_info);

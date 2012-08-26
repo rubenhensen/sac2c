@@ -285,7 +285,7 @@ DISTCONDlet (node *arg_node, info *arg_info)
 node *
 DISTCONDwiths (node *arg_node, info *arg_info)
 {
-    node *cond;
+    node *cond, *thenblock, *elseblock;
 
     DBUG_ENTER ();
 
@@ -297,9 +297,11 @@ DISTCONDwiths (node *arg_node, info *arg_info)
 
     /* create conditional with the previous withloop's assignments in the else
      * branch*/
-    cond = TBmakeCond (TBmakeId (INFO_PREDAVIS (arg_info)),
-                       TBmakeBlock (INFO_THENBLOCK (arg_info), NULL),
-                       TBmakeBlock (INFO_ASSIGNS (arg_info), NULL));
+    thenblock = TBmakeBlock (INFO_THENBLOCK (arg_info), NULL);
+    BLOCK_ISMTPARALLELBRANCH (thenblock) = TRUE;
+    elseblock = TBmakeBlock (INFO_ASSIGNS (arg_info), NULL);
+    BLOCK_ISMTPARALLELBRANCH (elseblock) = TRUE;
+    cond = TBmakeCond (TBmakeId (INFO_PREDAVIS (arg_info)), thenblock, elseblock);
     /* the assignments for this with-loop are the predicate assignments and the
      conditional*/
     INFO_ASSIGNS (arg_info)

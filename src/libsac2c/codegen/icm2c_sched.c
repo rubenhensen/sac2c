@@ -301,8 +301,13 @@ ICMCompileMT_SCHEDULER_Block_BEGIN (int sched_id, int dim, char **vararg)
 #undef MT_SCHEDULER_Block_BEGIN
 
     INDENT;
-    fprintf (global.outfile, "SAC_MT_SCHEDULER_Block_DIM0( %s, %s, %s);\n",
-             lower_bound[0], upper_bound[0], unrolling[0]);
+    if (global.backend == BE_cudahybrid) {
+        fprintf (global.outfile, "SAC_DIST_SCHEDULER_Block_DIM0( %s, %s, %s);\n",
+                 lower_bound[0], upper_bound[0], unrolling[0]);
+    } else {
+        fprintf (global.outfile, "SAC_MT_SCHEDULER_Block_DIM0( %s, %s, %s);\n",
+                 lower_bound[0], upper_bound[0], unrolling[0]);
+    }
 
     for (i = 1; i < dim; i++) {
         INDENT;
@@ -381,8 +386,13 @@ ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int sched_id, int dim, char **vararg)
 #undef MT_SCHEDULER_BlockVar_BEGIN
 
     INDENT;
-    fprintf (global.outfile, "SAC_MT_SCHEDULER_BlockVar_DIM0( %s, %s, %s);\n",
-             lower_bound[0], upper_bound[0], unrolling[0]);
+    if (global.backend == BE_cudahybrid) {
+        fprintf (global.outfile, "SAC_DIST_SCHEDULER_BlockVar_DIM0( %s, %s, %s);\n",
+                 lower_bound[0], upper_bound[0], unrolling[0]);
+    } else {
+        fprintf (global.outfile, "SAC_MT_SCHEDULER_BlockVar_DIM0( %s, %s, %s);\n",
+                 lower_bound[0], upper_bound[0], unrolling[0]);
+    }
 
     for (i = 1; i < dim; i++) {
         INDENT;

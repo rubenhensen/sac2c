@@ -203,6 +203,7 @@ IMEMDISTdoInsertMemtranDist (node *syntax_tree)
 static bool CUisDistributedType (ntype *ty);
 static ntype *DISTNtypeConversion (ntype *dist_type, bool to_dev_type);
 static bool PrfNeedsTransfer (node *rhs);
+static bool ApNeedsTransfer (node *rhs);
 
 /** <!--********************************************************************-->
  *
@@ -316,6 +317,28 @@ PrfNeedsTransfer (node *rhs)
     } else {
         res = FALSE;
     }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool ApNeedsTransfer( node* rhs);
+ *
+ * @brief Returns true if rhs is a N_ap and the function has been imported.
+ *
+ *****************************************************************************/
+static bool
+ApNeedsTransfer (node *rhs)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    if (NODE_TYPE (rhs) == N_ap)
+        res = !FUNDEF_ISLOCAL (AP_FUNDEF (rhs));
+    else
+        res = FALSE;
 
     DBUG_RETURN (res);
 }
@@ -439,7 +462,7 @@ IMEMDISTlet (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     expr_ty = NODE_TYPE (LET_EXPR (arg_node));
-    if (expr_ty == N_with2 || expr_ty == N_with
+    if (expr_ty == N_with2 || expr_ty == N_with || ApNeedsTransfer (LET_EXPR (arg_node))
         || PrfNeedsTransfer (LET_EXPR (arg_node))) {
         old_inwl = INFO_INWL (arg_info);
         old_lut = INFO_ACCESS (arg_info);
@@ -452,6 +475,35 @@ IMEMDISTlet (node *arg_node, info *arg_info)
         INFO_CUDARIZABLE (arg_info) = old_cudarizable;
         INFO_ACCESS (arg_info) = old_lut;
         INFO_INWL (arg_info) = old_inwl;
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IMEMDISTap( node *arg_node, info *arg_info)
+ *
+ * @brief Create transfer if function's arguments are not distributed arrays
+ *
+ *****************************************************************************/
+node *
+IMEMDISTap (node *arg_node, info *arg_info)
+{
+    node *expr, *arg;
+    ntype *expr_type, *arg_type;
+
+    DBUG_ENTER ();
+
+    arg = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+    for (expr = AP_ARGS (arg_node); expr != NULL; expr = EXPRS_NEXT (expr)) {
+        if (NODE_TYPE (EXPRS_EXPR (expr)) == N_id) {
+            expr_type = AVIS_TYPE (ID_AVIS (EXPRS_EXPR (expr)));
+            arg_type = AVIS_TYPE (ARG_AVIS (arg));
+            if (CUisDistributedType (expr_type) && !CUisDistributedType (arg_type)) {
+                EXPRS_EXPR (expr) = TRAVdo (EXPRS_EXPR (expr), arg_info);
+            }
+        }
     }
 
     DBUG_RETURN (arg_node);

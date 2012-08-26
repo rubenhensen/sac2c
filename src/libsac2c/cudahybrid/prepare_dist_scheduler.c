@@ -50,6 +50,7 @@ struct INFO {
     node *scheduler_end;
     node *mem_assigns;
     node *host2dist;
+    int sched_count;
 };
 
 /*
@@ -67,6 +68,9 @@ struct INFO {
  * INFO_HOST2DIST       N_assign chain of <host2dist> transfers on the MT
  *                      branch.
  *
+ * INFO_SCHEDCOUNT      Counter for the number of (nested) schedulers
+ *                      encountered
+ *
  */
 
 #define INFO_SCHEDULEBEGIN(n) (n->schedule_begin)
@@ -75,6 +79,7 @@ struct INFO {
 #define INFO_SCHEDULEREND(n) (n->scheduler_end)
 #define INFO_MEMASSIGNS(n) (n->mem_assigns)
 #define INFO_HOST2DIST(n) (n->host2dist)
+#define INFO_SCHEDCOUNT(n) (n->sched_count)
 
 static info *
 MakeInfo (void)
@@ -91,6 +96,7 @@ MakeInfo (void)
     INFO_SCHEDULEREND (result) = NULL;
     INFO_MEMASSIGNS (result) = NULL;
     INFO_HOST2DIST (result) = NULL;
+    INFO_SCHEDCOUNT (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -173,9 +179,14 @@ PDSfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_ISSPMDFUN (arg_node)) {
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-        INFO_MEMASSIGNS (arg_info) = NULL;
+        INFO_SCHEDULEBEGIN (arg_info) = NULL;
+        INFO_SCHEDULEEND (arg_info) = NULL;
         INFO_SCHEDULERBEGIN (arg_info) = NULL;
+        INFO_SCHEDULEREND (arg_info) = NULL;
+        INFO_MEMASSIGNS (arg_info) = NULL;
+        INFO_HOST2DIST (arg_info) = NULL;
+        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+        DBUG_ASSERT (INFO_SCHEDCOUNT (arg_info) == 0, "Unbalanced number of schedulers!");
     }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -219,13 +230,17 @@ PDSassign (node *arg_node, info *arg_info)
             ASSIGN_NEXT (res) = scheduler;
             ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
         } else if (STReq (icm_name, "WL_SCHEDULE__BEGIN")) {
-            /* This is the first scheduler statement on the MT branch. We save it.*/
-            INFO_SCHEDULEBEGIN (arg_info) = arg_node;
+            if (INFO_SCHEDULEBEGIN (arg_info) == NULL) {
+                /* This is the first scheduler statement on the MT branch. We save it.*/
+                INFO_SCHEDULEBEGIN (arg_info) = arg_node;
+            }
             ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
             res = arg_node;
         } else if (STReq (icm_name, "WL_SCHEDULE__END")) {
-            /* This is the last scheduler statement on the MT branch. We save it. */
-            INFO_SCHEDULEEND (arg_info) = arg_node;
+            if (INFO_SCHEDULEEND (arg_info) == NULL) {
+                /* This is the last scheduler statement on the MT branch. We save it. */
+                INFO_SCHEDULEEND (arg_info) = arg_node;
+            }
             ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
             res = arg_node;
         } else if (STReq (icm_name, "DIST_HOST2DIST_SPMD")) {
@@ -239,22 +254,32 @@ PDSassign (node *arg_node, info *arg_info)
              * for them through the suffix and prefix. We save both the begin and end
              * ICMs in info.*/
             if (STRsuffix ("_BEGIN", icm_name)) {
-                /* we insert any memory transfers after this statement, as they need the
-                 * scheduler to operate properly. */
-                INFO_SCHEDULERBEGIN (arg_info) = arg_node;
+                if (INFO_SCHEDULERBEGIN (arg_info) == NULL) {
+                    /* we insert any memory transfers after this statement, as they need
+                     * the scheduler to operate properly. */
+                    INFO_SCHEDULERBEGIN (arg_info) = arg_node;
+                }
+                INFO_SCHEDCOUNT (arg_info)++;
                 next = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
                 ASSIGN_NEXT (arg_node)
                   = TCappendAssign (INFO_MEMASSIGNS (arg_info), next);
+                INFO_MEMASSIGNS (arg_info) = NULL;
                 res = arg_node;
             } else if (STRsuffix ("_END", icm_name)) {
-                INFO_SCHEDULEREND (arg_info) = arg_node;
-                ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-                /* The updates to the distributed variables should be inside the
-                 * scheduler loop. We know where these start from info, and since these
-                 * are the last assignments in a conditional branch, we can use them
-                 * directly here.
-                 */
-                res = TCappendAssign (INFO_HOST2DIST (arg_info), arg_node);
+                INFO_SCHEDCOUNT (arg_info)--;
+                if (INFO_SCHEDCOUNT (arg_info) == 0) {
+                    INFO_SCHEDULEREND (arg_info) = arg_node;
+                    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+                    /* The updates to the distributed variables should be inside the
+                     * scheduler loop. We know where these start from info, and since
+                     * these are the last assignments in a conditional branch, we can use
+                     * them directly here.
+                     */
+                    res = TCappendAssign (INFO_HOST2DIST (arg_info), arg_node);
+                } else {
+                    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+                    res = arg_node;
+                }
             } else {
                 /* This is another scheduler statment, such as INIT. We just traverse.*/
                 ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
@@ -278,19 +303,25 @@ PDSassign (node *arg_node, info *arg_info)
         }
         break;
     case N_cond:
-        ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
+        if (BLOCK_ISMTPARALLELBRANCH (COND_THEN (stmt)))
+            ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
         res = arg_node;
         break;
     case N_do:
-        /* This is the availability loop of the CUDA SPMD branch. We insert the
-         * end of scheduling ICMs after this assignment */
-        scheduler = DUPdoDupNode (INFO_SCHEDULEEND (arg_info));
-        ASSIGN_NEXT (scheduler) = ASSIGN_NEXT (arg_node);
-        res = DUPdoDupNode (INFO_SCHEDULEREND (arg_info));
-        ASSIGN_NEXT (res) = scheduler;
-        ASSIGN_NEXT (arg_node) = res;
-        res = arg_node;
+        if (BLOCK_ISMTPARALLELBRANCH (DO_BODY (stmt))) {
+            /* This is the availability loop of the CUDA SPMD branch. We insert the
+             * end of scheduling ICMs after this assignment */
+            scheduler = DUPdoDupNode (INFO_SCHEDULEEND (arg_info));
+            ASSIGN_NEXT (scheduler) = ASSIGN_NEXT (arg_node);
+            res = DUPdoDupNode (INFO_SCHEDULEREND (arg_info));
+            ASSIGN_NEXT (res) = scheduler;
+            ASSIGN_NEXT (arg_node) = res;
+            res = arg_node;
+        } else {
+            ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+            res = arg_node;
+        }
         break;
 
     default:

@@ -162,7 +162,7 @@ CADTfundef (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (!FUNDEF_ISSTICKY (arg_node)) {
+    if (!FUNDEF_ISSTICKY (arg_node) && FUNDEF_ISLOCAL (arg_node)) {
         if (FUNDEF_BODY (arg_node) != NULL) {
             FUNDEF_VARDECS (arg_node) = TRAVopt (FUNDEF_VARDECS (arg_node), arg_info);
         }
