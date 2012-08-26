@@ -319,7 +319,8 @@ MTCMwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+    if (!WITH_CUDARIZABLE (arg_node))
+        WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
