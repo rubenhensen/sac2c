@@ -197,28 +197,28 @@ InferSchedulingVarSegment (node *wlsegvar, info *arg_info)
     DBUG_RETURN (sched);
 }
 
-/******************************************************************************
- *
- * function:
- *   tasksel_t *InferTaskselSegment(node *wlseg, info *arg_info)
- *
- * description:
- *   This function defines the inference strategy for the task selection.
- *
- ******************************************************************************/
-
-static tasksel_t *
-InferTaskselSegment (node *wlseg, info *arg_info)
-{
-    tasksel_t *tasksel;
-
-    DBUG_ENTER ();
-
-    if (global.backend == BE_cudahybrid)
-        tasksel = SCHmakeTasksel ("Even", 0, 50);
-
-    DBUG_RETURN (tasksel);
-}
+///******************************************************************************
+// *
+// * function:
+// *   tasksel_t *InferTaskselSegment(node *wlseg, info *arg_info)
+// *
+// * description:
+// *   This function defines the inference strategy for the task selection.
+// *
+// ******************************************************************************/
+//
+// static
+// tasksel_t *InferTaskselSegment(node *wlseg, info *arg_info)
+//{
+//  tasksel_t *tasksel;
+//
+//  DBUG_ENTER ();
+//
+//  if(global.backend == BE_cudahybrid)
+//    tasksel = SCHmakeTasksel("Even", 0, 50);
+//
+//  DBUG_RETURN (tasksel);
+//}
 
 /** <!--********************************************************************-->
  *

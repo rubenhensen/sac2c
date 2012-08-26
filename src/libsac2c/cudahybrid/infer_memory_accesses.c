@@ -437,6 +437,9 @@ IMAmodarray (node *arg_node, info *arg_info)
     INFO_LUT (arg_info)
       = updateOffsetsTable (INFO_LUT (arg_info), ID_AVIS (MODARRAY_MEM (arg_node)), 0,
                             TRUE, TRUE);
+    INFO_LUT (arg_info)
+      = updateOffsetsTable (INFO_LUT (arg_info), ID_AVIS (MODARRAY_ARRAY (arg_node)), 0,
+                            FALSE, TRUE);
     MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
