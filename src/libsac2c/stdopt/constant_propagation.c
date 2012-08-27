@@ -421,6 +421,18 @@ CPprf (node *arg_node, info *arg_info)
         PRF_ARG4 (arg_node) = TRAVdo (PRF_ARG4 (arg_node), arg_info);
         break;
 
+    case F_unshare:
+        /* If the first argument becomes constant, remove the whole prf. */
+        INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_arrayconst;
+        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
+        if (NODE_TYPE (PRF_ARG1 (arg_node)) != N_id) {
+            node *old_node = arg_node;
+            arg_node = PRF_ARG1 (arg_node);
+            PRF_ARG1 (old_node) = NULL;
+            old_node = FREEdoFreeNode (old_node);
+        }
+        break;
+
 #ifdef BUG437
     case F_idx_modarray_AxSxS:
     case F_idx_modarray_AxSxA:
