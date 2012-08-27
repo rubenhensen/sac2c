@@ -405,6 +405,7 @@ MDEid (node *arg_node, info *arg_info)
     lhsavis = INFO_AVIS (arg_info);
     dimavis = ID_AVIS (AVIS_DIM (lhsavis));
 
+    DBUG_PRINT ("Duping AVIS_DIM for N_id %s", AVIS_NAME (ID_AVIS (arg_node)));
     rhsnode = DUPdoDupNode (AVIS_DIM (ID_AVIS (arg_node)));
     res = TBmakeAssign (TBmakeLet (TBmakeIds (dimavis, NULL), rhsnode), NULL);
     AVIS_SSAASSIGN (dimavis) = res;
