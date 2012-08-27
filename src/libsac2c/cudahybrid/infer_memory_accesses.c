@@ -50,6 +50,7 @@ typedef struct {
  *****************************************************************************/
 struct INFO {
     bool in_wl;
+    bool nested_wl;
     lut_t *lut;
     lut_t *part_lut;
     lut_t *add_lut;
@@ -59,7 +60,10 @@ struct INFO {
 
 /*
  * INFO_INWL          Flag indicating whether the code currently being
- *                    traversed is in a N_withs
+ *                    traversed is in a with loop
+ *
+ * INFO_NESTEDWL      Flag indicating whether the code currently being
+ *                    traversed is in a nested with loop
  *
  * INFO_LUT           Lookup table storing pairs of Name->{min,max}
  *                    were min and max are the minimum and maximum offsets
@@ -82,6 +86,7 @@ struct INFO {
  */
 
 #define INFO_INWL(n) (n->in_wl)
+#define INFO_NESTEDWL(n) (n->nested_wl)
 #define INFO_LUT(n) (n->lut)
 #define INFO_ADDLUT(n) (n->add_lut)
 #define INFO_IDSAVIS(n) (n->ids_avis)
@@ -97,6 +102,7 @@ MakeInfo (void)
     result = (info *)MEMmalloc (sizeof (info));
 
     INFO_INWL (result) = FALSE;
+    INFO_NESTEDWL (result) = FALSE;
     INFO_LUT (result) = NULL;
     INFO_ADDLUT (result) = NULL;
     INFO_IDSAVIS (result) = NULL;
@@ -349,8 +355,9 @@ IMAwith (node *arg_node, info *arg_info)
         INFO_ADDLUT (arg_info) = LUTremoveLut (INFO_ADDLUT (arg_info));
         INFO_OFFSETAVISLUT (arg_info) = LUTremoveLut (INFO_OFFSETAVISLUT (arg_info));
     } else {
-        WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+        INFO_NESTEDWL (arg_info) = TRUE;
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
+        INFO_NESTEDWL (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -383,8 +390,9 @@ IMAwith2 (node *arg_node, info *arg_info)
         INFO_ADDLUT (arg_info) = LUTremoveLut (INFO_ADDLUT (arg_info));
         INFO_OFFSETAVISLUT (arg_info) = LUTremoveLut (INFO_OFFSETAVISLUT (arg_info));
     } else {
-        WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+        INFO_NESTEDWL (arg_info) = TRUE;
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
+        INFO_NESTEDWL (arg_info) = FALSE;
     }
 
     DBUG_RETURN (arg_node);
@@ -465,12 +473,15 @@ IMAprf (node *arg_node, info *arg_info)
     if (INFO_INWL (arg_info)) {
         switch (PRF_PRF (arg_node)) {
         case F_idxs2offset:
-            /* This is the let for the with-loop index offset */
-            DBUG_PRINT ("Found index offset %s", AVIS_NAME (INFO_IDSAVIS (arg_info)));
-            INFO_OFFSETAVISLUT (arg_info)
-              = LUTinsertIntoLutP (INFO_OFFSETAVISLUT (arg_info), INFO_IDSAVIS (arg_info),
-                                   NULL);
-            updateAddTable (INFO_ADDLUT (arg_info), INFO_IDSAVIS (arg_info), 0, TRUE);
+            // skip nested with-loops
+            if (!INFO_NESTEDWL (arg_info)) {
+                /* This is the let for the with-loop index offset */
+                DBUG_PRINT ("Found index offset %s", AVIS_NAME (INFO_IDSAVIS (arg_info)));
+                INFO_OFFSETAVISLUT (arg_info)
+                  = LUTinsertIntoLutP (INFO_OFFSETAVISLUT (arg_info),
+                                       INFO_IDSAVIS (arg_info), NULL);
+                updateAddTable (INFO_ADDLUT (arg_info), INFO_IDSAVIS (arg_info), 0, TRUE);
+            }
             break;
         case F_add_SxS:
             /* If we are adding to the with-loop index offset variable, we record

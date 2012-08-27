@@ -39,6 +39,7 @@
 
 struct INFO {
     bool inparwl;
+    bool inwiths;
 };
 
 /**
@@ -46,6 +47,7 @@ struct INFO {
  */
 
 #define INFO_INPARWL(n) (n->inparwl)
+#define INFO_INWITHS(n) (n->inwiths)
 
 /**
  * INFO functions
@@ -61,6 +63,7 @@ MakeInfo (void)
     result = (info *)MEMmalloc (sizeof (info));
 
     INFO_INPARWL (result) = FALSE;
+    INFO_INWITHS (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -163,10 +166,10 @@ InferSchedulingConstSegment (node *wlseg, info *arg_info)
 
     DBUG_ENTER ();
 
-    //  if(global.backend == BE_cudahybrid)
-    //    sched = SCHmakeScheduling("Affinity");
-    //  else
-    sched = MakeDefaultSchedulingConstSegment ();
+    if (INFO_INWITHS (arg_info))
+        sched = SCHmakeScheduling ("BlockDist");
+    else
+        sched = MakeDefaultSchedulingConstSegment ();
 
     DBUG_RETURN (sched);
 }
@@ -189,10 +192,10 @@ InferSchedulingVarSegment (node *wlsegvar, info *arg_info)
 
     DBUG_ENTER ();
 
-    //  if(global.backend == BE_cudahybrid)
-    //    sched = SCHmakeScheduling("Affinity");
-    //  else
-    sched = MakeDefaultSchedulingVarSegment ();
+    if (INFO_INWITHS (arg_info))
+        sched = SCHmakeScheduling ("BlockVarDist");
+    else
+        sched = MakeDefaultSchedulingVarSegment ();
 
     DBUG_RETURN (sched);
 }
@@ -249,6 +252,32 @@ MTASfundef (node *arg_node, info *arg_info)
 
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *MTASwiths(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   This function sets the INWITHS flag in info, so we can choose the right
+ *   scheduler for distributed with-loops.
+ *
+ ******************************************************************************/
+
+node *
+MTASwiths (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    INFO_INWITHS (arg_info) = TRUE;
+
+    WITHS_WITH (arg_node) = TRAVdo (WITHS_WITH (arg_node), arg_info);
+    WITHS_NEXT (arg_node) = TRAVopt (WITHS_NEXT (arg_node), arg_info);
+
+    INFO_INWITHS (arg_info) = FALSE;
 
     DBUG_RETURN (arg_node);
 }

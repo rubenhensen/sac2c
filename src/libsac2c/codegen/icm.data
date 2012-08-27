@@ -1314,6 +1314,58 @@ ICM_END( MT_SCHEDULER_BlockVar_INIT, (sched_id, dim, vararg))
 
 
 
+#if defined(MT_SCHEDULER_BlockDist_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_BlockDist_BEGIN, ICM_TRACE_NONE)
+  ICM_INT( sched_id)
+  ICM_INT( dim)
+  ICM_VARANY( (3*dim), vararg)
+ICM_END( MT_SCHEDULER_BlockDist_BEGIN, (sched_id, dim, vararg))
+#endif
+
+#if defined(MT_SCHEDULER_BlockDist_END) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_BlockDist_END, ICM_TRACE_NONE)
+  ICM_INT( sched_id)
+  ICM_INT( dim)
+  ICM_VARANY( (3*dim), vararg)
+ICM_END( MT_SCHEDULER_BlockDist_END, (sched_id, dim, vararg))
+#endif
+
+#if defined(MT_SCHEDULER_BlockDist_INIT) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_BlockDist_INIT, ICM_TRACE_NONE)
+  ICM_INT( sched_id)
+  ICM_INT( dim)
+  ICM_VARANY( (3*dim), vararg)
+ICM_END( MT_SCHEDULER_BlockDist_INIT, (sched_id, dim, vararg))
+#endif
+
+
+
+#if defined(MT_SCHEDULER_BlockVarDist_BEGIN) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_BlockVarDist_BEGIN, ICM_TRACE_NONE)
+  ICM_INT( sched_id)
+  ICM_INT( dim)
+  ICM_VARANY( (3*dim), vararg)
+ICM_END( MT_SCHEDULER_BlockVarDist_BEGIN, (sched_id, dim, vararg))
+#endif
+
+#if defined(MT_SCHEDULER_BlockVarDist_END) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_BlockVarDist_END, ICM_TRACE_NONE)
+  ICM_INT( sched_id)
+  ICM_INT( dim)
+  ICM_VARANY( (3*dim), vararg)
+ICM_END( MT_SCHEDULER_BlockVarDist_END, (sched_id, dim, vararg))
+#endif
+
+#if defined(MT_SCHEDULER_BlockVarDist_INIT) || defined(ICM_ALL)
+ICM_DEF( MT_SCHEDULER_BlockVarDist_INIT, ICM_TRACE_NONE)
+  ICM_INT( sched_id)
+  ICM_INT( dim)
+  ICM_VARANY( (3*dim), vararg)
+ICM_END( MT_SCHEDULER_BlockVarDist_INIT, (sched_id, dim, vararg))
+#endif
+
+
+
 #if defined(MT_SCHEDULER_Static_BEGIN) || defined(ICM_ALL)
 ICM_DEF( MT_SCHEDULER_Static_BEGIN, ICM_TRACE_NONE)
   ICM_INT( sched_id)

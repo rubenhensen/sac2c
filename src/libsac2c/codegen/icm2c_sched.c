@@ -301,13 +301,8 @@ ICMCompileMT_SCHEDULER_Block_BEGIN (int sched_id, int dim, char **vararg)
 #undef MT_SCHEDULER_Block_BEGIN
 
     INDENT;
-    if (global.backend == BE_cudahybrid) {
-        fprintf (global.outfile, "SAC_DIST_SCHEDULER_Block_DIM0( %s, %s, %s);\n",
-                 lower_bound[0], upper_bound[0], unrolling[0]);
-    } else {
-        fprintf (global.outfile, "SAC_MT_SCHEDULER_Block_DIM0( %s, %s, %s);\n",
-                 lower_bound[0], upper_bound[0], unrolling[0]);
-    }
+    fprintf (global.outfile, "SAC_MT_SCHEDULER_Block_DIM0( %s, %s, %s);\n",
+             lower_bound[0], upper_bound[0], unrolling[0]);
 
     for (i = 1; i < dim; i++) {
         INDENT;
@@ -386,13 +381,8 @@ ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int sched_id, int dim, char **vararg)
 #undef MT_SCHEDULER_BlockVar_BEGIN
 
     INDENT;
-    if (global.backend == BE_cudahybrid) {
-        fprintf (global.outfile, "SAC_DIST_SCHEDULER_BlockVar_DIM0( %s, %s, %s);\n",
-                 lower_bound[0], upper_bound[0], unrolling[0]);
-    } else {
-        fprintf (global.outfile, "SAC_MT_SCHEDULER_BlockVar_DIM0( %s, %s, %s);\n",
-                 lower_bound[0], upper_bound[0], unrolling[0]);
-    }
+    fprintf (global.outfile, "SAC_MT_SCHEDULER_BlockVar_DIM0( %s, %s, %s);\n",
+             lower_bound[0], upper_bound[0], unrolling[0]);
 
     for (i = 1; i < dim; i++) {
         INDENT;
@@ -430,6 +420,166 @@ ICMCompileMT_SCHEDULER_BlockVar_INIT (int sched_id, int dim, char **vararg)
 #include "icm_comment.c"
 #include "icm_trace.c"
 #undef MT_SCHEDULER_BlockVar_INIT
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SCHEDULER_BlockDist_BEGIN( int sched_id, int dim,
+ *                                                char **vararg)
+ *   void ICMCompileMT_SCHEDULER_BlockDist_END( int sched_id, int dim,
+ *                                              char **vararg)
+ *   void ICMCompileMT_SCHEDULER_BlockDist_INIT( int sched_id, int dim,
+ *                                               char **vararg)
+ *
+ * description:
+ *   These two ICMs implement the scheduling for constant segments
+ *   called "BlockDist".
+ *
+ *   This scheduling is a very simple one that partitions the iteration
+ *   space along the outermost dimension upon the available processors.
+ *   Blocking is not considered!
+ *   Unrolling is not considered!
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SCHEDULER_BlockDist_BEGIN (int sched_id, int dim, char **vararg)
+{
+    char **lower_bound = vararg;
+    char **upper_bound = vararg + dim;
+    char **unrolling = vararg + 2 * dim;
+    int i;
+
+    DBUG_ENTER ();
+
+#define MT_SCHEDULER_BlockDist_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_BlockDist_BEGIN
+
+    INDENT;
+    fprintf (global.outfile, "SAC_DIST_SCHEDULER_Block_DIM0( %s, %s, %s);\n",
+             lower_bound[0], upper_bound[0], unrolling[0]);
+
+    for (i = 1; i < dim; i++) {
+        INDENT;
+        fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i,
+                 lower_bound[i]);
+        INDENT;
+        fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i,
+                 upper_bound[i]);
+    }
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SCHEDULER_BlockDist_END (int sched_id, int dim, char **vararg)
+{
+    DBUG_ENTER ();
+
+#define MT_SCHEDULER_BlockDist_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_BlockDist_END
+
+    fprintf (global.outfile, "\n");
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SCHEDULER_BlockDist_INIT (int sched_id, int dim, char **vararg)
+{
+    DBUG_ENTER ();
+
+#define MT_SCHEDULER_BlockDist_INIT
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_BlockDist_INIT
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   void ICMCompileMT_SCHEDULER_BlockVarDist_BEGIN( int sched_id, int dim,
+ *                                                   char **vararg)
+ *   void ICMCompileMT_SCHEDULER_BlockVarDist_END( int sched_id, int dim,
+ *                                                 char **vararg)
+ *   void ICMCompileMT_SCHEDULER_BlockVarDist_INIT( int sched_id, int dim,
+ *                                                  char **vararg)
+ *
+ * description:
+ *   These two ICMs implement the scheduling for variable segments
+ *   called "BlockVarDist".
+ *
+ *   This scheduling is a very simple one that partitions the iteration
+ *   space along the outermost dimension upon the available processors.
+ *   Blocking is not considered!
+ *   Unrolling is not considered!
+ *
+ ******************************************************************************/
+
+void
+ICMCompileMT_SCHEDULER_BlockVarDist_BEGIN (int sched_id, int dim, char **vararg)
+{
+    char **lower_bound = vararg;
+    char **upper_bound = vararg + dim;
+    char **unrolling = vararg + 2 * dim;
+    int i;
+
+    DBUG_ENTER ();
+
+#define MT_SCHEDULER_BlockVarDist_BEGIN
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_BlockVarDist_BEGIN
+
+    INDENT;
+    fprintf (global.outfile, "SAC_DIST_SCHEDULER_BlockVar_DIM0( %s, %s, %s);\n",
+             lower_bound[0], upper_bound[0], unrolling[0]);
+
+    for (i = 1; i < dim; i++) {
+        INDENT;
+        fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_START( %d) = %s;\n", i,
+                 lower_bound[i]);
+        INDENT;
+        fprintf (global.outfile, "SAC_WL_MT_SCHEDULE_STOP( %d) = %s;\n", i,
+                 upper_bound[i]);
+    }
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SCHEDULER_BlockVarDist_END (int sched_id, int dim, char **vararg)
+{
+    DBUG_ENTER ();
+
+#define MT_SCHEDULER_BlockVarDist_END
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_BlockVarDist_END
+
+    fprintf (global.outfile, "\n");
+
+    DBUG_RETURN ();
+}
+
+void
+ICMCompileMT_SCHEDULER_BlockVarDist_INIT (int sched_id, int dim, char **vararg)
+{
+    DBUG_ENTER ();
+
+#define MT_SCHEDULER_BlockVarDist_INIT
+#include "icm_comment.c"
+#include "icm_trace.c"
+#undef MT_SCHEDULER_BlockVarDist_INIT
 
     DBUG_RETURN ();
 }

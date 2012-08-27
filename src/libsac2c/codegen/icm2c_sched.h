@@ -49,6 +49,17 @@ extern void ICMCompileMT_SCHEDULER_BlockVar_BEGIN (int sched_id, int dim, char *
 extern void ICMCompileMT_SCHEDULER_BlockVar_END (int sched_id, int dim, char **vararg);
 extern void ICMCompileMT_SCHEDULER_BlockVar_INIT (int sched_id, int dim, char **vararg);
 
+extern void ICMCompileMT_SCHEDULER_BlockDist_BEGIN (int sched_id, int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_BlockDist_END (int sched_id, int dim, char **vararg);
+extern void ICMCompileMT_SCHEDULER_BlockDist_INIT (int sched_id, int dim, char **vararg);
+
+extern void ICMCompileMT_SCHEDULER_BlockVarDist_BEGIN (int sched_id, int dim,
+                                                       char **vararg);
+extern void ICMCompileMT_SCHEDULER_BlockVarDist_END (int sched_id, int dim,
+                                                     char **vararg);
+extern void ICMCompileMT_SCHEDULER_BlockVarDist_INIT (int sched_id, int dim,
+                                                      char **vararg);
+
 extern void ICMCompileMT_SCHEDULER_Static_BEGIN (int sched_id, char *ts_name, int ts_dims,
                                                  int ts_arg_num, char **ts_args, int dim,
                                                  char **vararg);

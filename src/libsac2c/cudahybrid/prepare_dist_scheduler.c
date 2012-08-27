@@ -50,6 +50,7 @@ struct INFO {
     node *scheduler_end;
     node *mem_assigns;
     node *host2dist;
+    node *rest;
     int sched_count;
 };
 
@@ -68,6 +69,9 @@ struct INFO {
  * INFO_HOST2DIST       N_assign chain of <host2dist> transfers on the MT
  *                      branch.
  *
+ * INFO_REST            N_assign chain with remaing statements after <host2dist>
+ *                      transfers.
+ *
  * INFO_SCHEDCOUNT      Counter for the number of (nested) schedulers
  *                      encountered
  *
@@ -79,6 +83,7 @@ struct INFO {
 #define INFO_SCHEDULEREND(n) (n->scheduler_end)
 #define INFO_MEMASSIGNS(n) (n->mem_assigns)
 #define INFO_HOST2DIST(n) (n->host2dist)
+#define INFO_REST(n) (n->rest)
 #define INFO_SCHEDCOUNT(n) (n->sched_count)
 
 static info *
@@ -96,6 +101,7 @@ MakeInfo (void)
     INFO_SCHEDULEREND (result) = NULL;
     INFO_MEMASSIGNS (result) = NULL;
     INFO_HOST2DIST (result) = NULL;
+    INFO_REST (result) = NULL;
     INFO_SCHEDCOUNT (result) = 0;
 
     DBUG_RETURN (result);
@@ -185,6 +191,7 @@ PDSfundef (node *arg_node, info *arg_info)
         INFO_SCHEDULEREND (arg_info) = NULL;
         INFO_MEMASSIGNS (arg_info) = NULL;
         INFO_HOST2DIST (arg_info) = NULL;
+        INFO_REST (arg_info) = NULL;
         FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
         DBUG_ASSERT (INFO_SCHEDCOUNT (arg_info) == 0, "Unbalanced number of schedulers!");
     }
@@ -221,7 +228,18 @@ PDSassign (node *arg_node, info *arg_info)
          * instructions in a specific order.
          */
         icm_name = ICM_NAME (stmt);
-        if (STReq (icm_name, "SCHED_START")) {
+        if (INFO_HOST2DIST (arg_info) != NULL) {
+            /* We found a host2dist transfer. We need to find the last of them.*/
+            if (!STReq (icm_name, "DIST_HOST2DIST_SPMD")
+                && !STReq (icm_name, "DIST_HOST2DIST_ST")) {
+                // This is not a transfer, return NULL and save the rest of the chain.
+                INFO_REST (arg_info) = arg_node;
+                res = NULL;
+            } else {
+                ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+                res = arg_node;
+            }
+        } else if (STReq (icm_name, "SCHED_START")) {
             /* This is the first statement on the CUDA branch that needs the scheduler.
              * We insert the scheduler_begin assignments before it. */
             scheduler = DUPdoDupNode (INFO_SCHEDULERBEGIN (arg_info));
@@ -243,12 +261,14 @@ PDSassign (node *arg_node, info *arg_info)
             }
             ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
             res = arg_node;
-        } else if (STReq (icm_name, "DIST_HOST2DIST_SPMD")) {
+        } else if (STReq (icm_name, "DIST_HOST2DIST_SPMD")
+                   || STReq (icm_name, "DIST_HOST2DIST_ST")) {
             /* This is the first of the concrete to distributed memory transfers on
-             * the MT branch. We save the assignment chain in info, and stop
-             * traversing deeper.*/
+             * the MT branch. We save the assignment chain in info. We'll later
+             * return the remaining statements after the transfers. */
             INFO_HOST2DIST (arg_info) = arg_node;
-            res = NULL;
+            ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
+            res = INFO_REST (arg_info);
         } else if (STRprefix ("MT_SCHEDULER_", icm_name)) {
             /* The MT scheduler ICMs vary according to the scheduler used, so we check
              * for them through the suffix and prefix. We save both the begin and end
@@ -260,10 +280,11 @@ PDSassign (node *arg_node, info *arg_info)
                     INFO_SCHEDULERBEGIN (arg_info) = arg_node;
                 }
                 INFO_SCHEDCOUNT (arg_info)++;
-                next = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
-                ASSIGN_NEXT (arg_node)
-                  = TCappendAssign (INFO_MEMASSIGNS (arg_info), next);
+                next = ASSIGN_NEXT (arg_node);
+                ASSIGN_NEXT (arg_node) = INFO_MEMASSIGNS (arg_info);
                 INFO_MEMASSIGNS (arg_info) = NULL;
+                ASSIGN_NEXT (arg_node)
+                  = TCappendAssign (ASSIGN_NEXT (arg_node), TRAVopt (next, arg_info));
                 res = arg_node;
             } else if (STRsuffix ("_END", icm_name)) {
                 INFO_SCHEDCOUNT (arg_info)--;
@@ -276,6 +297,7 @@ PDSassign (node *arg_node, info *arg_info)
                      * them directly here.
                      */
                     res = TCappendAssign (INFO_HOST2DIST (arg_info), arg_node);
+                    INFO_HOST2DIST (arg_info) = NULL;
                 } else {
                     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
                     res = arg_node;
@@ -285,8 +307,7 @@ PDSassign (node *arg_node, info *arg_info)
                 ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
                 res = arg_node;
             }
-        } else if (STReq ("DIST_DIST2HOST_REL", icm_name)
-                   && INFO_SCHEDULERBEGIN (arg_info) == NULL) {
+        } else if (STReq ("DIST_DIST2HOST_REL", icm_name)) {
             /* Since we have not yet come across a scheduler_begin statement, as it is
              * NULL, we are still collecting memory transfers to place after the
              * scheduler starts on the MT branch. Append this transfer to the chain in

@@ -89,12 +89,15 @@ CUd2shSimpleTypeConversion (simpletype sty)
 
     switch (sty) {
     case T_int_dev:
+    case T_int_dist:
         res = T_int_shmem;
         break;
     case T_float_dev:
+    case T_float_dist:
         res = T_float_shmem;
         break;
     case T_double_dev:
+    case T_double_dist:
         res = T_double_shmem;
         break;
     default:

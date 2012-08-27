@@ -147,6 +147,8 @@ static struct {
   /* Name            Class          Adjust Dim  Args  ArgTypes */
   {"Block", SC_const_seg, 1, 0, 0, ""},
   {"BlockVar", SC_var_seg, 1, 0, 0, ""},
+  {"BlockDist", SC_var_seg, 1, 0, 0, ""},
+  {"BlockVarDist", SC_var_seg, 1, 0, 0, ""},
   {"Static", SC_var_seg, 1, 0, 0, ""},
   {"Self", SC_var_seg, 1, 0, 1, "i"},
   {"Affinity", SC_var_seg, 1, 0, 0, ""},

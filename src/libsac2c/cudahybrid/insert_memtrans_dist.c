@@ -82,7 +82,6 @@ struct INFO {
     node *postassigns;
     node *preassigns;
     lut_t *lut;
-    node *idxavis;
     lut_t *access;
     node *device_number;
 };
@@ -106,8 +105,6 @@ struct INFO {
  *                    e.g. Given a_dev = dist2conc( a_dist),
  *                    Avis(a_dist)->Avis(a_dev) will be stored into the table
  *
- * INFO_IDXAVIS       Avis of the index vector
- *
  * INFO_ACCESS        Lookup table with memory access information for each
  *                    withloop (from IMA subphase).
  *
@@ -121,7 +118,6 @@ struct INFO {
 #define INFO_POSTASSIGNS(n) (n->postassigns)
 #define INFO_PREASSIGNS(n) (n->preassigns)
 #define INFO_LUT(n) (n->lut)
-#define INFO_IDXAVIS(n) (n->idxavis)
 #define INFO_ACCESS(n) (n->access)
 #define INFO_DEVICENUMBER(n) (n->device_number)
 
@@ -139,7 +135,6 @@ MakeInfo (void)
     INFO_POSTASSIGNS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_LUT (result) = NULL;
-    INFO_IDXAVIS (result) = NULL;
     INFO_ACCESS (result) = NULL;
     INFO_DEVICENUMBER (result) = NULL;
 
@@ -519,6 +514,8 @@ IMEMDISTap (node *arg_node, info *arg_info)
 node *
 IMEMDISTwith2 (node *arg_node, info *arg_info)
 {
+    node *idxavis;
+
     DBUG_ENTER ();
 
     /* If we are not already in a withloop */
@@ -530,12 +527,17 @@ IMEMDISTwith2 (node *arg_node, info *arg_info)
 
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
 
-        INFO_IDXAVIS (arg_info) = ID_AVIS (WITH2_VEC (arg_node));
+        idxavis = ID_AVIS (WITH2_VEC (arg_node));
+        AVIS_TYPE (idxavis) = DISTNtypeConversion (AVIS_TYPE (idxavis), FALSE);
 
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     } else {
 
         WITH2_WITHOP (arg_node) = TRAVdo (WITH2_WITHOP (arg_node), arg_info);
+
+        idxavis = ID_AVIS (WITH2_VEC (arg_node));
+        AVIS_TYPE (idxavis) = DISTNtypeConversion (AVIS_TYPE (idxavis), FALSE);
+        AVIS_ISCUDALOCAL (idxavis) = INFO_CUDARIZABLE (arg_info);
 
         WITH2_CODE (arg_node) = TRAVdo (WITH2_CODE (arg_node), arg_info);
     }
@@ -553,6 +555,8 @@ IMEMDISTwith2 (node *arg_node, info *arg_info)
 node *
 IMEMDISTwith (node *arg_node, info *arg_info)
 {
+    node *idxavis;
+
     DBUG_ENTER ();
 
     /* If we are not already in a withloop */
@@ -566,13 +570,14 @@ IMEMDISTwith (node *arg_node, info *arg_info)
 
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
 
-        INFO_IDXAVIS (arg_info) = ID_AVIS (WITH_VEC (arg_node));
-
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
 
     } else {
-
         WITH_WITHOP (arg_node) = TRAVdo (WITH_WITHOP (arg_node), arg_info);
+
+        idxavis = ID_AVIS (WITH_VEC (arg_node));
+        AVIS_TYPE (idxavis) = DISTNtypeConversion (AVIS_TYPE (idxavis), FALSE);
+        AVIS_ISCUDALOCAL (idxavis) = INFO_CUDARIZABLE (arg_info);
 
         WITH_CODE (arg_node) = TRAVdo (WITH_CODE (arg_node), arg_info);
     }
@@ -683,8 +688,8 @@ IMEMDISTid (node *arg_node, info *arg_info)
     id_avis = ID_AVIS (arg_node);
     id_type = AVIS_TYPE (id_avis);
 
-    /* skip non-distributed variables and idx vector */
-    if (CUisDistributedType (id_type) && (INFO_IDXAVIS (arg_info) != id_avis)) {
+    /* skip non-distributed variables */
+    if (CUisDistributedType (id_type)) {
         new_avis = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), id_avis);
         if (new_avis == id_avis) {
             /* If the avises are equal, this is the first occurence of this variable.
