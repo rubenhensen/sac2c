@@ -8701,6 +8701,14 @@ N_tfarg :
                   index vector have to be swapped.
           </description>
         </flag>
+	<flag name="GenericMarker" default="FALSE" >
+	  <description> 
+	  This Boolean may be used by any local traversal,
+	  as long as you promise to reset it to its default
+	  value when you are done. At present, it is used
+	  by EDFA and LFU.
+	  </description>
+        </flag>	 
       </flags>
     <checks>
       <check name="CHKavisReflection" />

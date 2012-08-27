@@ -12,26 +12,22 @@
  *
  * Overview of traversal:
  *
- *  We traverse all functions, including LACFUNs, several times:
+ *  We traverse all functions, including LACFUNs, once.
+ *  All of the work is done from the N_ap node of the caller.
  *
- *  Pass markdups: Find the duplicated arguments to each LACFUN,
- *          and mark the FUNDEF_ARGS of the LACFUN to indicate
- *          that they are superfluous.
+ *  First, we mark the duplicate entries in the call to the LACFUN, and
+ *  build a LUT for mapping duplicate names in the LACFUN itself.
  *
- *          We also rewrite the LACFUN body, renaming
- *          references to duplicated parameters to refer to
- *          the non-duplicated ones.
+ *  Then, we DUP the LACFUN body, renaming references to
+ *  duplicated parameters to refer to the non-duplicated ones.
  *
- *  Pass simplifycalls: Find the calls to each LACFUN, and eliminate
- *          the duplicate elements from those calls, using
- *          the marking on the LACFUN parameters as a guide.
+ *  Then we find the call to each LACFUN, and eliminate
+ *  the duplicate elements from those calls, using
+ *  the marking on the LACFUN parameters as a guide.
  *
- *          Also, remove the duplicate elements on the
- *          recursive LOOPFUN calls.
+ *  Then, we remove the duplicate elements from the recursive LOOPFUN call.
  *
- *  Pass simplifylacfun:
- *          Finally, remove the duplicate entries from the
- *          LACFUN parameters.
+ *  Finally, we remove the duplicated entries from the LACFUN header.
  *
  **************************************************************************/
 
@@ -52,11 +48,9 @@
 #include "tree_compound.h"
 #include "LookUpTable.h"
 #include "DupTree.h"
-#include "indexvectorutils.h"
 #include "eliminate_duplicate_fundef_args.h"
 #include "lacfun_utilities.h"
 
-typedef enum { markdups, simplifycalls, simplifylacfun } travphases;
 /*
  * INFO structure
  */
@@ -65,14 +59,12 @@ struct INFO {
     bool onefundef;
     lut_t *lutargs;
     lut_t *lutrenames;
-    travphases phase;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
 #define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_LUTARGS(n) (n->lutargs)
 #define INFO_LUTRENAMES(n) (n->lutrenames)
-#define INFO_PHASE(n) (n->phase)
 
 static info *
 MakeInfo (void)
@@ -86,7 +78,6 @@ MakeInfo (void)
     INFO_ONEFUNDEF (result) = FALSE;
     INFO_LUTARGS (result) = NULL;
     INFO_LUTRENAMES (result) = NULL;
-    INFO_PHASE (result) = markdups;
 
     DBUG_RETURN (result);
 }
@@ -114,13 +105,16 @@ FreeInfo (info *info)
  *
  * @brief Remove any duplicate parameters from a call to a LACFUN.
  *
- * @param arg_node: N_ap call to some LACFUN (inner and outer)
+ * @param arg_node: N_ap call to some LACFUN.
  *
  * @result: Updated N_ap node.
  *
  * @implementation:
+ *
  *   Loop over the N_ap's N_exprs chain, and the LACFUN's parameters.
  *   Remove any N_ap elements that correspond to duplicated LACFUN args.
+ *   This alters AP_ARGS, but does not return a new AP, so we
+ *   can run in place.
  *
  ******************************************************************************/
 static node *
@@ -165,39 +159,33 @@ SimplifyCall (node *arg_node, info *arg_info)
  * @brief Eliminate any duplicate parameters from the LACFUN function
  *        header.
  *
- * @param arg_node: N_fundef
+ * @param arg_node: N_args
  *
- * @result: Updated LACFUN N_fundef node.
+ * @result: Updated LACFUN N_args node.
  *
  ******************************************************************************/
 static node *
 SimplifyFunctionHeader (node *arg_node)
 {
-    node *args;
     node *newargs = NULL;
     node *next;
 
     DBUG_ENTER ();
 
-    if (FUNDEF_ISLACFUN (arg_node)) {
-        args = FUNDEF_ARGS (arg_node);
-
-        while (NULL != args) {
-            next = ARG_NEXT (args);
-            ARG_NEXT (args) = NULL;
-            if (!ARG_ISDUPLICATE (args)) {
-                newargs = TCappendArgs (newargs, args);
-            } else {
-                DBUG_PRINT ("Duplicate LACFUN parameter %s deleted from %s",
-                            AVIS_NAME (ARG_AVIS (args)), FUNDEF_NAME (arg_node));
-                args = FREEdoFreeNode (args);
-            }
-            args = next;
+    while (NULL != arg_node) {
+        next = ARG_NEXT (arg_node);
+        ARG_NEXT (arg_node) = NULL;
+        if (!ARG_ISDUPLICATE (arg_node)) {
+            newargs = TCappendArgs (newargs, arg_node);
+        } else {
+            DBUG_PRINT ("Duplicate LACFUN parameter %s deleted from %s",
+                        AVIS_NAME (ARG_AVIS (arg_node)), FUNDEF_NAME (arg_node));
+            arg_node = FREEdoFreeNode (arg_node);
         }
-        FUNDEF_ARGS (arg_node) = newargs;
+        arg_node = next;
     }
 
-    DBUG_RETURN (arg_node);
+    DBUG_RETURN (newargs);
 }
 
 /**<!--***********************************************************************-->
@@ -265,17 +253,18 @@ RenameArgs (node *arg_node, lut_t *lutrenames)
  *        in a LOOPFUN. Rename FUNDEF_BODY references to those
  *        names to refer to the non-duplicated names.
  *
- * @param N_fundef arg_node to be traversed
+ * @param N_ap arg_node to be traversed
  *
- * @result: fundef node, with ARG_ISDUPLICATE( FUNDEF_ARGS()) set
- *          for some nodes, and FUNDEF_BODY references to the
+ * @result: N_ap, unchanged?
+ *          Side effects: ARG_ISDUPLICATE( FUNDEF_ARGS(lacunf)) set
+ *          for some nodes, and lacfun FUNDEF_BODY references to the
  *          dups renamed.
  *
  * @implementation:
  *         We populate a LUT, LUTARGS, to quickly(?) find
  *         duplicate N_ap arguments, and at the same time,
  *         map the argument name into the LACFUN
- *         formal parameter (FUNDEF_ARG) name.
+ *         formal parameter (FUNDEF_ARG) name, using another LUT.
  *
  *         As an example of this inference, if we have the following call:
  *
@@ -285,7 +274,7 @@ RenameArgs (node *arg_node, lut_t *lutrenames)
  *
  *           int Loop_1( int CA, int CB, int CC, int CD, int CE)
  *
- *         with this recursive call, in which CC NOT loop-invariant:
+ *         with this recursive call (in which CC is NOT loop-invariant):
  *
  *           xx = Loop_1( A, B, XX, D, A);
  *
@@ -317,61 +306,63 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
     bool lutnonempty = FALSE;
     node **lutitem = NULL;
     node *formalargavis = NULL;
+    node *lacfundef;
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Examining LACFUN %s", FUNDEF_NAME (arg_node));
+    lacfundef = AP_FUNDEF (arg_node);
+    DBUG_PRINT ("Examining LACFUN %s", FUNDEF_NAME (lacfundef));
 
-    if (NULL != FUNDEF_CALLAP (arg_node)) { /* did not find call ap yet */
-        LUTremoveContentLut (INFO_LUTARGS (arg_info));
-        LUTremoveContentLut (INFO_LUTRENAMES (arg_info));
+    LUTremoveContentLut (INFO_LUTARGS (arg_info));
+    LUTremoveContentLut (INFO_LUTRENAMES (arg_info));
 
-        apargs = AP_ARGS (FUNDEF_CALLAP (arg_node)); /* outer call */
-        fundefargs = FUNDEF_ARGS (arg_node);         /* formal parameters */
-        /* recursive callargs */
-        rca = FUNDEF_LOOPRECURSIVEAP (arg_node);
-        rca = (NULL != rca) ? AP_ARGS (rca) : NULL;
+    apargs = AP_ARGS (arg_node);          /* outer call */
+    fundefargs = FUNDEF_ARGS (lacfundef); /* formal parameters */
+    /* recursive callargs, if any */
+    rca = FUNDEF_LOOPRECURSIVEAP (lacfundef);
+    rca = (NULL != rca) ? AP_ARGS (rca) : NULL;
 
-        while (NULL != apargs) {
-            argid = EXPRS_EXPR (apargs);
-            argavis = ID_AVIS (argid);
-            if (LFUisLoopFunInvariant (arg_node, fundefargs, rca)) {
-                lutitem = (node **)LUTsearchInLutP (INFO_LUTARGS (arg_info), argavis);
-                if (NULL == lutitem) {
-                    /* Entry not in LUT. This is a new argument.
-                     * Insert avis for set membership.
-                     * Also, insert for renaming to corresponding name inside lacfun.
-                     */
-                    INFO_LUTARGS (arg_info)
-                      = LUTinsertIntoLutP (INFO_LUTARGS (arg_info), argavis,
-                                           ARG_AVIS (fundefargs));
-                    DBUG_PRINT ("Non-duplicate argument %s found", AVIS_NAME (argavis));
-                } else {
-                    /* This argument is a loop-invariant dup */
-                    ARG_ISDUPLICATE (fundefargs) = TRUE;
-                    formalargavis = *lutitem;
-                    DBUG_PRINT ("Duplicate arg %s renamed to %s in LACFUN %s",
-                                AVIS_NAME (argavis), AVIS_NAME (formalargavis),
-                                FUNDEF_NAME (arg_node));
-                    INFO_LUTRENAMES (arg_info)
-                      = LUTinsertIntoLutP (INFO_LUTRENAMES (arg_info),
-                                           ARG_AVIS (fundefargs), formalargavis);
-                    lutnonempty = TRUE;
-                }
+    while (NULL != apargs) {
+        argid = EXPRS_EXPR (apargs);
+        argavis = ID_AVIS (argid);
+        if (LFUisLoopFunInvariant (lacfundef, argid, rca)) {
+            lutitem = (node **)LUTsearchInLutP (INFO_LUTARGS (arg_info), argavis);
+            if (NULL == lutitem) {
+                /* Entry not in LUT. This is a new argument.
+                 * Insert avis for set membership.
+                 * Also, insert for renaming to corresponding name inside lacfun.
+                 */
+                INFO_LUTARGS (arg_info)
+                  = LUTinsertIntoLutP (INFO_LUTARGS (arg_info), argavis,
+                                       ARG_AVIS (fundefargs));
+                DBUG_PRINT ("Non-duplicate argument %s found", AVIS_NAME (argavis));
+            } else {
+                /* This argument is a loop-invariant dup */
+                ARG_ISDUPLICATE (fundefargs) = TRUE;
+                formalargavis = *lutitem;
+                DBUG_PRINT ("Duplicate arg %s renamed to %s in LACFUN %s",
+                            AVIS_NAME (argavis), AVIS_NAME (formalargavis),
+                            FUNDEF_NAME (lacfundef));
+                INFO_LUTRENAMES (arg_info)
+                  = LUTinsertIntoLutP (INFO_LUTRENAMES (arg_info), ARG_AVIS (fundefargs),
+                                       formalargavis);
+                lutnonempty = TRUE;
             }
-            apargs = EXPRS_NEXT (apargs);
-            fundefargs = ARG_NEXT (fundefargs);
-            rca = (NULL != rca) ? EXPRS_NEXT (rca) : NULL;
         }
 
-        if (lutnonempty) {
-            DBUG_PRINT ("Performing renames for LACFUN %s", FUNDEF_NAME (arg_node));
-            FUNDEF_ARGS (arg_node)
-              = RenameArgs (FUNDEF_ARGS (arg_node), INFO_LUTRENAMES (arg_info));
+        apargs = EXPRS_NEXT (apargs);
+        fundefargs = ARG_NEXT (fundefargs);
+        rca = (NULL != rca) ? EXPRS_NEXT (rca) : NULL;
+    }
 
-            FUNDEF_BODY (arg_node)
-              = DUPdoDupNodeLut (FUNDEF_BODY (arg_node), INFO_LUTRENAMES (arg_info));
-        }
+    if (lutnonempty) {
+        DBUG_PRINT ("Performing renames for LACFUN %s", FUNDEF_NAME (lacfundef));
+        FUNDEF_ARGS (lacfundef)
+          = RenameArgs (FUNDEF_ARGS (lacfundef), INFO_LUTRENAMES (arg_info));
+        FUNDEF_BODY (lacfundef)
+          = DUPdoDupNodeLut (FUNDEF_BODY (lacfundef), INFO_LUTRENAMES (arg_info));
+        FUNDEF_RETS (lacfundef)
+          = DUPdoDupTreeLut (FUNDEF_RETS (lacfundef), INFO_LUTRENAMES (arg_info));
     }
 
     DBUG_RETURN (arg_node);
@@ -455,55 +446,19 @@ EDFAmodule (node *arg_node, info *arg_info)
 node *
 EDFAfundef (node *arg_node, info *arg_info)
 {
-    info *oldinfo;
 
     DBUG_ENTER ();
 
-    oldinfo = arg_info;
-    arg_info = MakeInfo ();
     INFO_FUNDEF (arg_info) = arg_node;
-    INFO_PHASE (arg_info) = INFO_PHASE (oldinfo);
-    INFO_LUTARGS (arg_info) = INFO_LUTARGS (oldinfo);
-    INFO_LUTRENAMES (arg_info) = INFO_LUTRENAMES (oldinfo);
 
-    /* Set ARG_ISDUPLICATE for all LACFUN parameters */
-    if (markdups == INFO_PHASE (arg_info)) {
-        DBUG_PRINT ("Marking in: %s", FUNDEF_NAME (arg_node));
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-        if (FUNDEF_ISLACFUN (arg_node)) {
-            arg_node = MarkDupsAndRenameBody (arg_node, arg_info);
-        }
+    DBUG_PRINT ("Handling %s", FUNDEF_NAME (arg_node));
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
-        /* Phase change when we are back at non-LACFUN level */
-        if (!FUNDEF_ISLACFUN (arg_node)) {
-            INFO_PHASE (arg_info) = simplifycalls;
-        }
-    }
-
-    /* Remove duplicated arguments from all calls to LACFUNs */
-    if ((simplifycalls == INFO_PHASE (arg_info))) {
-        DBUG_PRINT ("Simplifying calls in: %s", FUNDEF_NAME (arg_node));
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-        if (!FUNDEF_ISLACFUN (arg_node)) {
-            INFO_PHASE (arg_info) = simplifylacfun;
-        }
-    }
-
-    if ((simplifylacfun == INFO_PHASE (arg_info))) {
-        DBUG_PRINT ("Simplifying header in: %s", FUNDEF_NAME (arg_node));
-        arg_node = SimplifyFunctionHeader (arg_node);
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-        FUNDEF_CALLAP (arg_node) = NULL;
-    }
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     if (!INFO_ONEFUNDEF (arg_info)) {
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
-
-    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -512,17 +467,8 @@ EDFAfundef (node *arg_node, info *arg_info)
  *
  * @fn node *EDFAap(node *arg_node, info *arg_info)
  *
- * @brief Pass markdups:
- *          We have found a function call site.
- *          If the callee is a LACFUN, put the
- *          address of our N_ap into FUNDEF_CALLAP.
- *
- *        Pass simplifycalls:
- *          Here, we are looking at a LACFUN call site;
- *          we use the LACFUN header parameters, previously
- *          perhaps marked as duplicates, as guidance for
- *          eliminating the corresponding elements from
- *          the N_ap call.
+ * @brief We have found a function call site.
+ *        If the callee is a LACFUN, examine and deal with it.
  *
  * @param arg_node N_ap node to be traversed
  * @param arg_info
@@ -533,27 +479,23 @@ EDFAfundef (node *arg_node, info *arg_info)
 node *
 EDFAap (node *arg_node, info *arg_info)
 {
-    node *calledfn;
+    node *lacfundef;
+    node *reccall;
 
     DBUG_ENTER ();
 
-    calledfn = AP_FUNDEF (arg_node);
-    if ((markdups == INFO_PHASE (arg_info)) && (FUNDEF_ISLACFUN (calledfn))
-        && (calledfn != INFO_FUNDEF (arg_info))) { /* Ignore recursive call */
-        DBUG_PRINT ("Found LACFUN: %s call from: %s", FUNDEF_NAME (calledfn),
+    lacfundef = AP_FUNDEF (arg_node);
+    if (FUNDEF_ISLACFUN (lacfundef) && (lacfundef != INFO_FUNDEF (arg_info))) {
+        /* non-recursive LACFUN calls only */
+        DBUG_PRINT ("Found LACFUN: %s call from: %s", FUNDEF_NAME (lacfundef),
                     FUNDEF_NAME (INFO_FUNDEF (arg_info)));
-        FUNDEF_CALLAP (calledfn) = arg_node; /* Point LACFUN at our N_ap */
-    }
-
-    if ((simplifycalls == INFO_PHASE (arg_info)) && (FUNDEF_ISLACFUN (calledfn))) {
-        DBUG_PRINT ("Simplifying call to LACFUN: %s from: %s", FUNDEF_NAME (calledfn),
-                    FUNDEF_NAME (INFO_FUNDEF (arg_info)));
-        arg_node = SimplifyCall (arg_node, arg_info);
-
-        /* Correct pointer to recursive call in the LOOPFUN */
-        if (calledfn == INFO_FUNDEF (arg_info)) {
-            FUNDEF_LOOPRECURSIVEAP (calledfn) = arg_node;
+        arg_node = MarkDupsAndRenameBody (arg_node, arg_info);
+        arg_node = SimplifyCall (arg_node, arg_info); /* outer call */
+        if (FUNDEF_ISLOOPFUN (lacfundef)) {
+            reccall = FUNDEF_LOOPRECURSIVEAP (lacfundef);
+            reccall = SimplifyCall (reccall, arg_info); /* recursive call */
         }
+        FUNDEF_ARGS (lacfundef) = SimplifyFunctionHeader (FUNDEF_ARGS (lacfundef));
     }
 
     DBUG_RETURN (arg_node);
