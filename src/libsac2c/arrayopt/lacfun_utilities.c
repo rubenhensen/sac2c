@@ -28,6 +28,8 @@
 #include "lacfun_utilities.h"
 #include "indexvectorutils.h"
 #include "pattern_match.h"
+#include "DupTree.h"
+#include "LookUpTable.h"
 
 /** <!--********************************************************************-->
  *
@@ -134,18 +136,18 @@ LFUisLoopFunInvariant (node *arg_node, node *argid, node *rca)
     DBUG_ENTER ();
 
     if (FUNDEF_ISLOOPFUN (arg_node)) {
-        z = ARG_AVIS (argid) == ID_AVIS (EXPRS_EXPR (rca));
+        z = ID_AVIS (argid) == ID_AVIS (EXPRS_EXPR (rca));
         if (!z) {
             proxy = IVUTarrayFromProxySel (EXPRS_EXPR (rca));
             if (NULL != proxy) {
-                z = ARG_AVIS (argid) == ID_AVIS (proxy);
+                z = ID_AVIS (argid) == ID_AVIS (proxy);
             }
         }
 
         if (!z) {
             proxy = IVUTarrayFromProxyIdxsel (EXPRS_EXPR (rca));
             if (NULL != proxy) {
-                z = ARG_AVIS (argid) == ID_AVIS (proxy);
+                z = ID_AVIS (argid) == ID_AVIS (proxy);
             }
         }
     }
@@ -482,5 +484,237 @@ LFUisAvisMemberIds (node *arg_node, node *ids)
 
     DBUG_RETURN (z);
 }
+
+/** <!--********************************************************************-->
+ *
+ * @fn
+ *
+ * @brief:
+ *
+ * @param: arg_node - an N_fundef node for a LOOPFUN.
+ *
+ * @result: Address of the recursive LOOPFUN call.
+ *
+ *****************************************************************************/
+node *
+IFUfindRecursiveCallAp (node *arg_node)
+{
+    node *z = NULL;
+    node *assgn;
+    node *stmt;
+    node *expr;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (FUNDEF_ISLOOPFUN (arg_node), "Expected LOOPFUN node");
+
+    assgn = BLOCK_ASSIGNS (FUNDEF_BODY (arg_node));
+    while ((NULL == z) && (NULL != assgn)) {
+        stmt = ASSIGN_STMT (assgn);
+        if (N_cond == NODE_TYPE (stmt)) {
+            /* Get THEN side of cond */
+            expr = LET_EXPR (ASSIGN_STMT (BLOCK_ASSIGNS (COND_THEN (stmt))));
+            if ((N_ap == NODE_TYPE (expr) && (arg_node == AP_FUNDEF (expr)))) {
+                z = expr;
+            }
+        }
+        assgn = ASSIGN_NEXT (assgn);
+    }
+
+    DBUG_ASSERT (NULL != z, "Did not find recursive LOOPFUN call to %s",
+                 FUNDEF_NAME (arg_node));
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *LFUinsertAssignIntoLacfun( arg_node, assign, oldavis);
+ *
+ * @brief: Insert assign into a LACFUN. If the LACFUNS is a LOOPFUN, this is
+ *         trivial. If it's a CONDFUN, we need two copies, and
+ *         they have to go into the THEN and ELSE legs of the COND.
+ *
+ * @param: arg_node - an N_fundef node.
+ *         assign   - an N_assign node to be inserted into the blocks.
+ *         oldavis  - an N_avis node. All references to oldavis are
+ *                    changed to the assign LHS.
+ *
+ * @result: updated N_fundef node.
+ *          WLPROP, at least, assumes that we do NOT allocate a
+ *          new N_fundef node. This assumption could be
+ *          eliminated, if need be.
+ *
+ *          We refresh the recursive AP call address in a LOOPFUN.
+ *
+ *****************************************************************************/
+node *
+LFUinsertAssignIntoLacfun (node *arg_node, node *assign, node *oldavis)
+{
+    node *block;
+    node *thenelse;
+    node *assignelse;
+    lut_t *lut;
+
+    DBUG_ENTER ();
+
+    lut = LUTgenerateLut ();
+    LUTinsertIntoLutP (lut, oldavis, IDS_AVIS (LET_IDS (ASSIGN_STMT (assign))));
+    block = FUNDEF_BODY (arg_node);
+
+    if (FUNDEF_ISLOOPFUN (arg_node)) {
+        /* LOOPFUN */
+        BLOCK_ASSIGNS (block) = DUPdoDupTreeLut (BLOCK_ASSIGNS (block), lut);
+        BLOCK_ASSIGNS (block) = TCappendAssign (assign, BLOCK_ASSIGNS (block));
+        FUNDEF_LOOPRECURSIVEAP (arg_node) = IFUfindRecursiveCallAp (arg_node);
+    } else {
+
+        /* CONDFUN is harder */
+        /* DUP gives us a shiny new vardec and avis! */
+        assignelse = DUPdoDupNodeSsa (assign, arg_node);
+
+        DBUG_ASSERT (FUNDEF_ISCONDFUN (arg_node), "Expected CONDFUN");
+        thenelse = BLOCK_ASSIGNS (COND_THEN (ASSIGN_STMT (BLOCK_ASSIGNS (block))));
+        thenelse = DUPdoDupTreeLut (thenelse, lut);
+        thenelse = TCappendAssign (assign, thenelse);
+        BLOCK_ASSIGNS (COND_THEN (ASSIGN_STMT (BLOCK_ASSIGNS (block)))) = thenelse;
+
+        /* We have to rename uses of assignelse in the COND_ELSE block */
+        lut = LUTremoveLut (lut);
+        lut = LUTgenerateLut ();
+        LUTinsertIntoLutP (lut, oldavis, IDS_AVIS (LET_IDS (ASSIGN_STMT (assignelse))));
+
+        thenelse = BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (block))));
+        BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (block))))
+          = TCappendAssign (assignelse, thenelse);
+
+        BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (block))))
+          = DUPdoDupTreeLut (BLOCK_ASSIGNS (
+                               COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (block)))),
+                             lut);
+    }
+    lut = LUTremoveLut (lut);
+
+    DBUG_RETURN (arg_node);
+}
+
+#ifdef DEADCODE
+/** <!--********************************************************************-->
+ *
+ * @fn void LFUclearAvisGenericMarkers( node *arg_node);
+ *
+ * @brief: Clear generic marker bit in N_avis nodes
+ *         pointed to by N_arg elements.
+ *
+ * @param: arg_node - an N_ap node.
+ *
+ * @result: none.
+ *
+ *****************************************************************************/
+void
+LFUclearAvisGenericMarkers (node *arg_node)
+{
+    node *apargs;
+    node *argavis;
+
+    DBUG_ENTER ();
+
+    apargs = AP_ARGS (arg_node);
+    while (NULL != apargs) {
+        argavis = ID_AVIS (EXPRS_EXPR (apargs));
+        AVIS_GENERICMARKER (argavis) = FALSE;
+        apargs = EXPRS_NEXT (apargs);
+    }
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void LFUclearArgIsDuplicateMarkers( node *arg_node);
+ *
+ * @brief: Clear ARG_ISDUPLICATE marker bit in N_arg nodes
+ *         pointed to by N_arg elements.
+ *
+ * @param: arg_node - an N_ap node.
+ *
+ * @result: none.
+ *
+ *****************************************************************************/
+void
+LFUclearArgIsDuplicateMarkers (node *arg_node)
+{
+    node *apargs;
+    node *argavis;
+
+    DBUG_ENTER ();
+
+    apargs = AP_ARGS (arg_node);
+    while (NULL != apargs) {
+        ARG_ISDUPLICATE (apargs) = FALSE;
+        argavis = ID_AVIS (EXPRS_EXPR (apargs));
+        apargs = EXPRS_NEXT (apargs);
+    }
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn void LFUmarkDuplicateLacfunArgs( node *arg_node);
+ *
+ * @brief: Mark N_ap arguments that are duplicates.
+ *         By "duplicate", we mean that the argument occurs more
+ *         than once in the function call, and the corresponding
+ *         elements in the called function are all loop-invariant.
+ *
+ *         NOP if called function is not a LACFUN.
+ *
+ * @param: arg_node - an N_ap node.
+ *
+ * @result: none.
+ *
+ *****************************************************************************/
+void
+LFUmarkDuplicateLacfunArgs (node *arg_node)
+{
+    node *apargs;
+    node *lacfunargs;
+    node *rca;
+    node *lacfundef;
+
+    DBUG_ENTER ();
+
+    lacfundef = FUNDEF_CALLAP (arg_node);
+    if (FUNDEF_ISLACFUN (lacfundef)) {
+        apargs = AP_ARGS (arg_node);          /* outer call */
+        lacfunargs = FUNDEF_ARGS (lacfundef); /* formal parameters */
+        rca = FUNDEF_LOOPRECURSIVEAP (lacfundef);
+        rca = (NULL != rca) ? AP_ARGS (rca) : NULL; /* recursive call */
+        LFUClearArgIsDuplicateMarkers (apargs);
+        LFUclearAvisGenericMarkers (apargs);
+
+        apargs = AP_ARGS (arg_node);
+        while (NULL != apargs) {
+            argid = EXPRS_EXPR (apargs);
+            argavis = ID_AVIS (argid);
+            if ((LFUisLoopFunInvariant (lacfundef, argid, rca))
+                && (!ARG_ISDUPLICATE (apargs))) {
+                /* Arg is a duplicate if loop-invariant and we have seen it already */
+                ARG_ISDUPLICATE (apargs) = AVIS_GENERICMARKER (ARG_AVIS (apargs));
+                ARG_AVIS (apargs) = TRUE;
+                if (ARG_ISDUPLICATE (apargs)) {
+                    DBUG_PRINT ("Duplicate arg %s detected in LACFUN %s",
+                                AVIS_NAME (argavis), FUNDEF_NAME (arg_node));
+                }
+                apargs = EXPRS_NEXT (apargs);
+            }
+        }
+    }
+    LFUclearAvisGenericMarkers (apargs);
+
+    DBUG_RETURN ();
+}
+#endif // DEADCODE
 
 #undef DBUG_PREFIX
