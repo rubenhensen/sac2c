@@ -93,6 +93,13 @@ ExtendMask (mask_t *mask)
  * functions for dealing with mask data bases
  */
 
+/*
+ * Generate a mask base. This is a table that contains the
+ * DECL and AVIS_NAME/ARG_NAME for each function argument
+ * and local variable in the fundef.
+ *
+ */
+
 mask_base_t *
 DFMgenMaskBase (node *arguments, node *vardecs)
 {
@@ -105,10 +112,11 @@ DFMgenMaskBase (node *arguments, node *vardecs)
 
     if (access_mask_table == NULL) {
         /*
-         * The first time this function is called, the so-called access mask table is
-         * initialized. For each bit in a bit mask implemented as unsigned int, a
-         * particular mask of type unsigned int is generated that allows to extract
-         * exactly one bit from a data flow mask.
+         * The first time this function is called, a so-called access mask table is
+         * created. For each bit in a bit mask, implemented as unsigned int, a
+         * particular mask, of type unsigned int, is generated that allows
+         * extraction of one bit from a data flow mask.
+         *
          */
 
         access_mask_table
@@ -156,7 +164,7 @@ DFMgenMaskBase (node *arguments, node *vardecs)
     base->num_bitfields = (cnt / (sizeof (unsigned int) * 8)) + 1;
 
     /*
-     * The local identifiers are stored in a table.
+     * All local identifiers are stored in a table.
      */
 
     tmp = arguments;
@@ -165,6 +173,7 @@ DFMgenMaskBase (node *arguments, node *vardecs)
     while (tmp != NULL) {
         base->decls[cnt] = tmp;
         base->ids[cnt] = ARG_NAME (tmp);
+        DBUG_PRINT ("Adding N_arg %s as element #%d", AVIS_NAME (ARG_AVIS (tmp)), cnt);
         cnt += 1;
         tmp = ARG_NEXT (tmp);
     }
@@ -174,6 +183,7 @@ DFMgenMaskBase (node *arguments, node *vardecs)
     while (tmp != NULL) {
         base->decls[cnt] = tmp;
         base->ids[cnt] = VARDEC_NAME (tmp);
+        DBUG_PRINT ("Adding N_vardec %s as element #%d", VARDEC_NAME (tmp), cnt);
         cnt += 1;
         tmp = VARDEC_NEXT (tmp);
     }
@@ -1040,9 +1050,11 @@ DFMprintMaskDetailed (FILE *handle, mask_t *mask)
     for (cnt = 0; cnt < mask->mask_base->num_ids; cnt++) {
         if (mask->mask_base->ids[cnt] != NULL) {
             if (mask->bitfield[i] & access_mask_table[j]) {
-                fprintf (handle, "%s  ", mask->mask_base->ids[cnt]);
+                fprintf (handle, "%s 0X%8x\n", mask->mask_base->ids[cnt],
+                         (uint)mask->mask_base->decls[cnt]);
             } else {
-                fprintf (handle, "[%s]  ", mask->mask_base->ids[cnt]);
+                fprintf (handle, "[%s] 0X%8x\n", mask->mask_base->ids[cnt],
+                         (uint)mask->mask_base->decls[cnt]);
             }
         }
 
@@ -1116,7 +1128,7 @@ DFMsetMaskEntrySet (mask_t *mask, const char *id, node *avis)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (mask != NULL, "DFMsetMaskEntrySet() called with mask NULL");
+    DBUG_ASSERT (mask != NULL, "called with mask NULL");
 
     if (avis != NULL) {
         DBUG_ASSERT (N_avis == NODE_TYPE (avis), "avis expected!");
@@ -1124,11 +1136,11 @@ DFMsetMaskEntrySet (mask_t *mask, const char *id, node *avis)
     }
 
     DBUG_ASSERT (((id != NULL) || (decl != NULL)),
-                 "Neither name nor declaration provided to call to DFMsetMaskEntrySet");
+                 "Neither name nor declaration provided to call");
     DBUG_EXECUTE (if (id != NULL) {
-        fprintf (stderr, "DFMsetMaskEntrySet called for identifier %s\n", id);
+        fprintf (stderr, "DFMsetMastEntrySet() called for identifier %s\n", id);
     } else {
-        fprintf (stderr, "DFMsetMaskEntrySet called for declaration of %s\n",
+        fprintf (stderr, "DFMsetMastEntrySet() called for declaration of %s\n",
                  DECL_NAME (decl));
     });
 

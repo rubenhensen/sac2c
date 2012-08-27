@@ -8,9 +8,16 @@
  *
  * description:
  *
+ *   A data flow mask (DFM) is a bit vector that has as many elements
+ *   as the fundef has N_vardec and N_arg entries, and may be
+ *   thought of as a compression vector for that entire set
+ *   of names. A typical use of a DFM is to mark the set
+ *   of variables that are inputs to a block of code, such as
+ *   a WL.
+ *
  *   Data flow masks are a storage-efficient implementation of local
- *   (within one function) variable sets. Data flow masks are always
- *   relative of a Fundef-specific mask base that defines the mappings
+ *   (within one function) variable sets. Data flow masks are created
+ *   relative to a Fundef-specific mask base that defines the mappings
  *   between bits in the masks and actual parameters and local variables
  *   in the function definition. Thus, whenever the underlying set of
  *   variables changes, the mask base and hence all masks must be
