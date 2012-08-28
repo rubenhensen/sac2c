@@ -69,6 +69,7 @@
  *
  *****************************************************************************/
 struct INFO {
+    int nothing /* Stop gcc warnning about empty struct */
 };
 
 static info *
