@@ -455,4 +455,47 @@ CHKapArgCount (node *arg_node)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--**********************************************************************-->
+ *
+ * @fn node *CHKfundefReturn( node *arg_node)
+ *
+ * @brief: arg_node is an N_fundef.
+ *         Ensure that the N_return in the fundef body
+ *         is pointed to by the FUNDEF_RETURN attribute.
+ *
+ *         For better or worse, we ignore 0 == FUNDEF_RETURN().
+ *
+ * @params: arg_node: N_fundef.
+ *
+ * @return: arg_node
+ *
+ *****************************************************************************/
+node *
+CHKfundefReturn (node *arg_node)
+{
+    node *assgn;
+    node *ret = NULL;
+
+    DBUG_ENTER ();
+
+    assgn = FUNDEF_BODY (arg_node);
+    if (NULL != assgn) { /* Some fns do not have a body. Weird... */
+        assgn = BLOCK_ASSIGNS (assgn);
+        while (NULL == ret) {
+            if (N_return == NODE_TYPE (ASSIGN_STMT (assgn))) {
+                ret = ASSIGN_STMT (assgn);
+            }
+            assgn = ASSIGN_NEXT (assgn);
+        }
+
+        if ((NULL != FUNDEF_RETURN (arg_node)) && (FUNDEF_RETURN (arg_node) != ret)) {
+            NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node),
+                                                    "Function's FUNDEF_RETURN is wrong");
+            DBUG_PRINT ("Offending function is %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
 #undef DBUG_PREFIX

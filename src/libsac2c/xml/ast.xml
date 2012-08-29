@@ -5660,6 +5660,7 @@ N_tfarg :
     <checks>
       <check name="CHKfundefVardecExtrema" />
       <check name="CHKcondfun" />
+      <check name="CHKfundefReturn" />
     </checks>
     </node>
 <!--

@@ -27,5 +27,6 @@ extern node *CHKisNullSsaassign (node *arg_node);
 extern node *CHKcondfun (node *arg_node);
 extern node *CHKavisReflection (node *arg_node);
 extern node *CHKapArgCount (node *arg_node);
+extern node *CHKfundefReturn (node *arg_node);
 
 #endif /*_SAC_CHECK_LIB_H_ */
