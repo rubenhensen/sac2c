@@ -129,16 +129,15 @@ IIPIarg (node *arg_node, info *arg_info)
 
     /* compare arg and fun-ap argument */
     if (ARG_AVIS (arg_node) == ID_AVIS (EXPRS_EXPR (INFO_EXPRCHAIN (arg_info)))) {
-        DBUG_PRINT ("mark %s as loop-invariant", ARG_NAME (arg_node));
+        DBUG_PRINT ("%s is loop-invariant", ARG_NAME (arg_node));
         AVIS_SSALPINV (ARG_AVIS (arg_node)) = TRUE;
     } else {
         DBUG_PRINT ("%s is non-loop-invariant", ARG_NAME (arg_node));
     }
 
+    /* traverse to next arg */
     if (ARG_NEXT (arg_node) != NULL) {
         INFO_EXPRCHAIN (arg_info) = EXPRS_NEXT (INFO_EXPRCHAIN (arg_info));
-
-        /* traverse to next arg */
         ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
     }
 
@@ -226,18 +225,20 @@ IIPIap (node *arg_node, info *arg_info)
             INFO_EXPRCHAIN (arg_info) = AP_ARGS (arg_node);
 
             /* traverse arg chain of fundef */
+            DBUG_PRINT ("Starting traversal of recursive call of loopfun %s",
+                        CTIitemName (AP_FUNDEF (arg_node)));
             FUNDEF_ARGS (INFO_FUNDEF (arg_info))
               = TRAVdo (FUNDEF_ARGS (INFO_FUNDEF (arg_info)), arg_info);
 
             /* remove exprs chain */
             INFO_EXPRCHAIN (arg_info) = NULL;
         } else {
-            DBUG_PRINT ("traverse in special fundef %s",
+            DBUG_PRINT ("Starting traversal of lacfun %s",
                         CTIitemName (AP_FUNDEF (arg_node)));
 
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-            DBUG_PRINT ("traversal of special fundef %s finished\n",
+            DBUG_PRINT ("Finished traversal of lacfun %s",
                         CTIitemName (AP_FUNDEF (arg_node)));
         }
     }
@@ -259,8 +260,7 @@ IIPIdoIterationInvariantParameterInference (node *fundef)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "IIPIdoIterationInvariantParameterInfere"
-                                                 "nce() is used for fundef nodes only");
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "Expected fundef node");
 
     if (!(FUNDEF_ISLACFUN (fundef))) {
         TRAVpush (TR_iipi);
