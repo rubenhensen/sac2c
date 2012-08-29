@@ -274,13 +274,18 @@ SACARGextractData (SACarg *arg)
     SAC_ND_DECL__DESC (data_nt, );
     int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
     int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = 0;
+    int rc = 0;
 
     SAC_ND_A_FIELD (data_nt) = SACARG_DATA (arg);
     SAC_ND_A_DESC (data_nt) = SACARG_DESC (arg);
 
+    SAC_ND_A_MIRROR_SIZE (data_nt) = SAC_ND_A_DESC_SIZE (data_nt);
+    SAC_ND_A_MIRROR_DIM (data_nt) = SAC_ND_A_DESC_DIM (data_nt);
+
     /** SAC_ND_A_RC will always return 1 iff it is safe to reuse the
         data associated with this descriptor */
-    if (SAC_ND_A_RC (data_nt) == 1) {
+    rc = SAC_ND_A_RC (data_nt);
+    if (rc == 1) {
         /* Can reuse */
         result = SAC_ND_A_FIELD (data_nt);
         /* Set to null so not freed with the rest */
