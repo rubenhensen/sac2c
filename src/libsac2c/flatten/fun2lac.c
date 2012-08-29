@@ -485,7 +485,7 @@ TransformIntoDoLoop (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FUN2LACfundef( node *arg_node, info *arg_info)
+ *   node *F2Lfundef( node *arg_node, info *arg_info)
  *
  * description:
  *   This function traverses the function body of any function that does NOT
@@ -510,12 +510,11 @@ F2Lfundef (node *arg_node, info *arg_info)
             arg_node = TransformIntoDoLoop (arg_node, arg_info);
             FUNDEF_ISLOOPFUN (arg_node) = FALSE;
             FUNDEF_ISLACINLINE (arg_node) = TRUE;
+            FUNDEF_LOOPRECURSIVEAP (arg_node) = NULL;
         }
     }
 
-    if (FUNDEF_NEXT (arg_node) != NULL) {
-        FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -523,7 +522,7 @@ F2Lfundef (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
- *   node *FUN2LACmodul( node *arg_node, info *arg_info)
+ *   node *F2lmodule( node *arg_node, info *arg_info)
  *
  * description:
  *   This function traverses all function definitions under a N_modul

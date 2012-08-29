@@ -5096,7 +5096,7 @@ N_tfarg :
               <target mandatory="no">
                 <node name="Return" />
                 <phases>
-                  <range from="ptc_l2f" to="final"/>
+                  <range from="ptc_l2f" to="cg_ctr"/>
                 </phases>
               </target>
             </targets>
@@ -5110,7 +5110,7 @@ N_tfarg :
               <target mandatory="no">
                 <node name="Ap" />
                 <phases>
-                  <range from="ptc_l2f" to="final"/>
+                  <range from="ptc_l2f" to="ussa_f2l"/>
                 </phases>
               </target>
             </targets>

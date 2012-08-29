@@ -413,6 +413,9 @@ CHKavisReflection (node *arg_node)
  *         If this is a LOOPFUN, attempt to do the same for the
  *         recursive call.
  *
+ *         The check of the recursive LACFUN call is made
+ *         only when we are in LACFUN mode.
+ *
  * @params: arg_node: N_ap.
  *
  * @return: arg_node
@@ -440,7 +443,9 @@ CHKapArgCount (node *arg_node)
                     FUNDEF_NAME (AP_FUNDEF (arg_node)), numfundefargs, numapargs);
     }
 
-    if (NULL != FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (arg_node))) {
+    if ((NULL != FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (arg_node)))
+        && (global.compiler_anyphase >= PH_ptc_l2f)
+        && (global.compiler_anyphase < PH_ussa_f2l)) {
         ap_args = AP_ARGS (FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (arg_node)));
         numapargs = TCcountExprs (ap_args);
         if (numapargs != numfundefargs) {
@@ -465,6 +470,8 @@ CHKapArgCount (node *arg_node)
  *
  *         For better or worse, we ignore 0 == FUNDEF_RETURN().
  *
+ *         We make this check only in LACFUN mode.
+ *
  * @params: arg_node: N_fundef.
  *
  * @return: arg_node
@@ -478,20 +485,25 @@ CHKfundefReturn (node *arg_node)
 
     DBUG_ENTER ();
 
-    assgn = FUNDEF_BODY (arg_node);
-    if (NULL != assgn) { /* Some fns do not have a body. Weird... */
-        assgn = BLOCK_ASSIGNS (assgn);
-        while (NULL == ret) {
-            if (N_return == NODE_TYPE (ASSIGN_STMT (assgn))) {
-                ret = ASSIGN_STMT (assgn);
+    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (global.compiler_anyphase >= PH_ptc_l2f)
+        && (global.compiler_anyphase < PH_cg_ctr)) {
+        assgn = FUNDEF_BODY (arg_node);
+        if (NULL != assgn) { /* Some fns do not have a body. Weird... */
+            assgn = BLOCK_ASSIGNS (assgn);
+            while (NULL == ret) {
+                if (N_return == NODE_TYPE (ASSIGN_STMT (assgn))) {
+                    ret = ASSIGN_STMT (assgn);
+                }
+                assgn = ASSIGN_NEXT (assgn);
             }
-            assgn = ASSIGN_NEXT (assgn);
-        }
 
-        if ((NULL != FUNDEF_RETURN (arg_node)) && (FUNDEF_RETURN (arg_node) != ret)) {
-            NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node),
-                                                    "Function's FUNDEF_RETURN is wrong");
-            DBUG_PRINT ("Offending function is %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
+            if ((NULL != FUNDEF_RETURN (arg_node)) && (FUNDEF_RETURN (arg_node) != ret)) {
+                NODE_ERROR (arg_node)
+                  = CHKinsertError (NODE_ERROR (arg_node),
+                                    "Function's FUNDEF_RETURN is wrong");
+                DBUG_PRINT ("Offending function is %s",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node)));
+            }
         }
     }
 
