@@ -108,7 +108,7 @@ SACARGmakeDescriptor (int dim, va_list args)
     int UNUSED SAC_ND_A_MIRROR_DIM (result_nt) = dim;
 
     SAC_ND_ALLOC__DESC (result_nt, dim);
-    SAC_ND_INIT__RC (result_nt, 1);
+    SAC_ND_INIT__RC (result_nt, 0);
 
     va_copy (argp, args);
     for (pos = 0; pos < dim; pos++) {
@@ -132,7 +132,7 @@ SACARGmakeDescriptorVect (int dim, int *shape)
     int UNUSED SAC_ND_A_MIRROR_DIM (result_nt) = dim;
 
     SAC_ND_ALLOC__DESC (result_nt, dim);
-    SAC_ND_INIT__RC (result_nt, 1);
+    SAC_ND_INIT__RC (result_nt, 0);
 
     for (pos = 0; pos < dim; pos++) {
         SAC_ND_A_MIRROR_SIZE (result_nt) *= SAC_ND_A_DESC_SHAPE (result_nt, pos)
@@ -272,8 +272,8 @@ SACARGextractData (SACarg *arg)
     void *result = NULL;
     SAC_ND_DECL__DATA (data_nt, void, );
     SAC_ND_DECL__DESC (data_nt, );
-    int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = SAC_ND_A_DESC_SIZE (data_nt);
-    int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = SAC_ND_A_DESC_DIM (data_nt);
+    int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
+    int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = 0;
 
     SAC_ND_A_FIELD (data_nt) = SACARG_DATA (arg);
     SAC_ND_A_DESC (data_nt) = SACARG_DESC (arg);
@@ -337,11 +337,13 @@ static inline void SACARG_common_unwrap (SAC_ND_PARAM_out (out_nt, void),
 
     SAC_ND_DECL__DATA (data_nt, void, );
     SAC_ND_DECL__DESC (data_nt, );
-    int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = SAC_ND_A_DESC_SIZE (data_nt);
-    int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = SAC_ND_A_DESC_DIM (data_nt);
+    int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
+    int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = 0;
 
     SAC_ND_A_FIELD (data_nt) = SACARG_DATA (SAC_ND_A_FIELD (param_nt));
     SAC_ND_A_DESC (data_nt) = SACARG_DESC (SAC_ND_A_FIELD (param_nt));
+    SAC_ND_A_MIRROR_SIZE (data_nt) = SAC_ND_A_DESC_SIZE (data_nt);
+    SAC_ND_A_MIRROR_DIM (data_nt) = SAC_ND_A_DESC_DIM (data_nt);
     /*
      * we create a new reference to the data here, so we need to
      * increment its reference counter!
@@ -364,8 +366,6 @@ static inline void SACARG_common_unwrap (SAC_ND_PARAM_out (out_nt, void),
                              SAC_ND_PARAM_in (param_nt, SACarg))                         \
     {                                                                                    \
         SAC_ND_DECL_PARAM_inout (out_nt, void);                                          \
-        int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);          \
-        int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);            \
                                                                                          \
         SACARG_common_unwrap (SAC_ND_ARG_inout (out_nt, void),                           \
                               SAC_ND_ARG_in (param_nt, SACarg));                         \
@@ -382,8 +382,6 @@ void SACARGunwrapUdt (SAC_ND_PARAM_inout (out_nt, void),
                       SAC_ND_PARAM_in (param_nt, SACarg))
 {
     SAC_ND_DECL_PARAM_inout (out_nt, void);
-    int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);
-    int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);
 
     SACARG_common_unwrap (SAC_ND_ARG_inout (out_nt, void),
                           SAC_ND_ARG_in (param_nt, SACarg));
@@ -410,19 +408,20 @@ UNWRAPWRAPPER (Double, double)
 UNWRAPWRAPPER (Char, char)
 
 static inline void
-SACARG_common_wrap (SAC_ND_PARAM_inout (out_nt, SACarg), basetype btype,
+SACARG_common_wrap (SAC_ND_PARAM_out (out_nt, SACarg), basetype btype,
                     SAC_ND_PARAM_in (param_nt, void))
 {
-    SAC_ND_DECL_PARAM_inout (out_nt, void);
-    int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);
-    int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);
+    SAC_ND_DECL__DATA (data_nt, void, );
+    SAC_ND_DECL__DESC (data_nt, );
+    int UNUSED SAC_ND_A_MIRROR_SIZE (data_nt) = 0;
+    int UNUSED SAC_ND_A_MIRROR_DIM (data_nt) = 0;
     /*
      * we simply wrap it. As we consume one reference, we have
      * to decrement the rc.
      * SACARGmakeSacArg holds a new reference, but it is potentially
      * an asynchronous copy, hence we need to use the full dec.ref. operation.
      */
-    SAC_ND_A_FIELD (out_nt)
+    SAC_ND_A_FIELD (data_nt)
       = SACARGmakeSacArg (btype, SAC_ND_A_DESC (param_nt), SAC_ND_A_FIELD (param_nt));
     SAC_ND_DEC_RC (param_nt, 1);
     /*
@@ -430,9 +429,9 @@ SACARG_common_wrap (SAC_ND_PARAM_inout (out_nt, SACarg), basetype btype,
      * we can use those functions to build one. However, we have to
      * manually increment the RC by 1!
      */
-    SAC_ND_A_DESC (out_nt) = SACARGmakeDescriptorVect (0, NULL);
-    SAC_ND_INC_RC (out_nt, 1);
-    SAC_ND_RET_inout (out_nt, out_nt);
+    SAC_ND_A_DESC (data_nt) = SACARGmakeDescriptorVect (0, NULL);
+    SAC_ND_INC_RC (data_nt, 1);
+    SAC_ND_RET_inout (out_nt, data_nt);
 }
 
 #define WRAP(name, ctype, btype)                                                         \
@@ -440,9 +439,6 @@ SACARG_common_wrap (SAC_ND_PARAM_inout (out_nt, SACarg), basetype btype,
                            SAC_ND_PARAM_in (param_nt, ctype))                            \
     {                                                                                    \
         SAC_ND_DECL_PARAM_inout (out_nt, SACarg);                                        \
-        int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);          \
-        int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);            \
-                                                                                         \
         SACARG_common_wrap (SAC_ND_ARG_inout (out_nt, SACarg), btype,                    \
                             SAC_ND_ARG_in (param_nt, void));                             \
         SAC_ND_RET_inout (out_nt, out_nt);                                               \
