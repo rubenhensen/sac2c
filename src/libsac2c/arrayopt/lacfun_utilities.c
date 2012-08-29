@@ -487,17 +487,17 @@ LFUisAvisMemberIds (node *arg_node, node *ids)
 
 /** <!--********************************************************************-->
  *
- * @fn
+ * @fn node *LFUfindRecursiveCallAp( node *arg_node)
  *
- * @brief:
+ * @brief:  Find the recursive call to self in a LOOPFUN, if any.
  *
  * @param: arg_node - an N_fundef node for a LOOPFUN.
  *
- * @result: Address of the recursive LOOPFUN call.
+ * @result: Address of the recursive LOOPFUN call, or NULL.
  *
  *****************************************************************************/
 node *
-IFUfindRecursiveCallAp (node *arg_node)
+LFUfindRecursiveCallAp (node *arg_node)
 {
     node *z = NULL;
     node *assgn;
@@ -566,7 +566,7 @@ LFUinsertAssignIntoLacfun (node *arg_node, node *assign, node *oldavis)
         /* LOOPFUN */
         BLOCK_ASSIGNS (block) = DUPdoDupTreeLut (BLOCK_ASSIGNS (block), lut);
         BLOCK_ASSIGNS (block) = TCappendAssign (assign, BLOCK_ASSIGNS (block));
-        FUNDEF_LOOPRECURSIVEAP (arg_node) = IFUfindRecursiveCallAp (arg_node);
+        FUNDEF_LOOPRECURSIVEAP (arg_node) = LFUfindRecursiveCallAp (arg_node);
     } else {
 
         /* CONDFUN is harder */
@@ -716,5 +716,41 @@ LFUmarkDuplicateLacfunArgs (node *arg_node)
     DBUG_RETURN ();
 }
 #endif // DEADCODE
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *LFUfindFundefReturn( node *arg_node)
+ *
+ * @brief: Find the N_return for an N_fundef, if it exists.
+ *         Wrappers do not have an N_return.
+ *
+ * @param: arg_node - an N_fundef node.
+ *
+ * @result: Address of the N_return, if it exists, or NULL.
+ *
+ *****************************************************************************/
+node *
+LFUfindFundefReturn (node *arg_node)
+{
+    node *z = NULL;
+    node *assgn;
+
+    DBUG_ENTER ();
+
+    if ((!FUNDEF_ISWRAPPERFUN (arg_node)) && (global.compiler_anyphase >= PH_ptc_l2f)
+        && (global.compiler_anyphase < PH_cg_ctr)) {
+        assgn = FUNDEF_BODY (arg_node);
+        if (NULL != assgn) { /* Some fns do not have a body. Weird... */
+            assgn = BLOCK_ASSIGNS (assgn);
+            while (NULL == z) {
+                if (N_return == NODE_TYPE (ASSIGN_STMT (assgn))) {
+                    z = ASSIGN_STMT (assgn);
+                }
+                assgn = ASSIGN_NEXT (assgn);
+            }
+        }
+    }
+    DBUG_RETURN (z);
+}
 
 #undef DBUG_PREFIX

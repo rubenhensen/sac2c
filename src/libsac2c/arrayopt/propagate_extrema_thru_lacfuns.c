@@ -209,7 +209,7 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
     while (NULL != apargs) {
         callarg = EXPRS_EXPR (apargs);
         argavis = ID_AVIS (callarg);
-        if (LFUisLoopFunInvariant (arg_node, lacfunargs, rca)) {
+        if (LFUisLoopFunInvariant (arg_node, callarg, rca)) {
             typ = AVIS_TYPE (argavis);
             if ((NULL == AVIS_MIN (ARG_AVIS (lacfunargs))) && (!TYisAKV (typ))
                 && (NULL != AVIS_MIN (argavis))) {

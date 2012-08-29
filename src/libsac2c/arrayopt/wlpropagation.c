@@ -26,7 +26,7 @@
  *
  * The rationale of with-loop propagation is the following:
  *
- * In the presence of with-loop folding it sometimes makes sense to not
+ * In the presence of with-loop folding, it sometimes makes sense not to
  * lift a loop-invariant with-loop out of a do-loop. More precisely, it
  * may make sense to move a with-loop actively into a do-loop. This is
  * the case if the with-loop can be folded with an existing with-loop in
@@ -57,6 +57,15 @@
  * before. In case, with-loop folding does not happen eventually, a further
  * run of with-loop invariant removal will re-establish the original code.
  *
+ * IMPLEMENTATION:
+ *
+ *  The algorithm effectively works at the N_ap level of the function
+ *  that calls a LACFUN.
+ *
+ *  It appends new arguments to the AP_ARGS list, and alters,
+ *  in place, the sons of the called function's N_fundef node,
+ *  without having to rebuild the FUNDEF_LOCALFUN chain.
+ *
  **************************************************************************/
 
 #include "tree_basic.h"
@@ -79,6 +88,7 @@
 #include "infer_dfms.h"
 #include "iteration_invariant_parameter_inference.h"
 #include "phase.h"
+#include "lacfun_utilities.h"
 
 #include "wlpropagation.h"
 
@@ -89,17 +99,28 @@ typedef enum { S_undef, S_withloop_prop } travstate;
  */
 struct INFO {
     node *fundef;
-    travstate mtravstate;
+    travstate travstate;
     node *ap;
-    node *corr;
+    node *lacfunarg;
     int argnum;
+    bool iscondfun;
+    node *newlacfunargs;
+    node *newlacfunreccall;
+    node *newexternalcall;
+#ifdef DEADCODE
+    node *localfuns;
+#endif // DEADCODE
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
-#define INFO_TRAVSTATE(n) (n->mtravstate)
+#define INFO_TRAVSTATE(n) (n->travstate)
 #define INFO_AP(n) (n->ap)
-#define INFO_CORRESPONDINGFUNARG(n) (n->corr)
+#define INFO_LACFUNARG(n) (n->lacfunarg)
 #define INFO_ARGNUM(n) (n->argnum)
+#define INFO_ISCONDFUN(n) (n->iscondfun)
+#define INFO_NEWLACFUNARGS(n) (n->newlacfunargs)
+#define INFO_NEWLACFUNRECCALL(n) (n->newlacfunreccall)
+#define INFO_NEWEXTERNALCALL(n) (n->newexternalcall)
 
 static info *
 MakeInfo (void)
@@ -113,8 +134,12 @@ MakeInfo (void)
     INFO_FUNDEF (result) = NULL;
     INFO_TRAVSTATE (result) = S_undef;
     INFO_AP (result) = NULL;
-    INFO_CORRESPONDINGFUNARG (result) = NULL;
+    INFO_LACFUNARG (result) = NULL;
     INFO_ARGNUM (result) = 0;
+    INFO_ISCONDFUN (result) = FALSE;
+    INFO_NEWLACFUNARGS (result) = NULL;
+    INFO_NEWLACFUNRECCALL (result) = NULL;
+    INFO_NEWEXTERNALCALL (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -172,47 +197,63 @@ IdIsDefinedByWL (node *arg_node)
  *
  * @brief: create new identifiers (become arg nodes)
  *         add them to applying and applied function signature
- *         insert old/new pair into lut
+ *         insert old/new pair into lut. The old name is that
+ *         in the external call; the new name is generated here.
+ *         The lut will be used for renames in the code block
+ *         copied into the lacfun.
  *
+ * @param  oldname: The external function's N_avis to insert,
+ *         or something AVIS_DIMish.
  *
- * @param  origin: The N_avis to insert, or something AVIS_DIMish.
  *         lut: The lut table we need to build
- *         argchains
  *
- * @result updated LUT, side effects on argchains
- *         NOP on non-AVIS nodes
+ *         argchains:
+ *          lacfunargs: the lacfun's new funargs
+ *          lacfunreccall: the new args to a LOOPFUN recursive call
+ *            If we are dealing with a CONDFUN, this will be NULL.
+ *          externalcall: the new args to the  external call to a LACFUN
+ *
+ * @result updated LUT, used for renames within the LACFUN,
+ *         renaming oldname to the newly generated name.
+ *
+ *         Side effects on argchains,
+ *         NOP on non-N_avis/N_id nodes
  *
  ********************************************************************/
 static lut_t *
-insertNameIntoArgAndSig (node *origin, lut_t *lut, node **argchain_applied,
-                         node **argchain_recapp, node **argchain_applying)
+insertNameIntoArgAndSig (node *oldname, lut_t *lut, info *arg_info)
 {
     node *avis;
     node *copy;
 
     DBUG_ENTER ();
 
-    if ((NULL != origin) && (N_id == NODE_TYPE (origin))) {
-        origin = ID_AVIS (origin);
+    if ((NULL != oldname) && (N_id == NODE_TYPE (oldname))) {
+        oldname = ID_AVIS (oldname);
     }
 
-    if ((NULL != origin) && (N_avis == NODE_TYPE (origin))) {
+    if ((NULL != oldname) && (N_avis == NODE_TYPE (oldname))) {
 
-        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (origin)));
+        avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (oldname)));
         copy = TBmakeArg (avis, NULL);
 
-        *argchain_applied = TCappendArgs (*argchain_applied, copy);
+        INFO_NEWLACFUNARGS (arg_info)
+          = TCappendArgs (INFO_NEWLACFUNARGS (arg_info), copy);
 
-        *argchain_recapp
-          = TCappendExprs (*argchain_recapp, TBmakeExprs (TBmakeId (avis), NULL));
+        if (!INFO_ISCONDFUN (arg_info)) {
+            INFO_NEWLACFUNRECCALL (arg_info)
+              = TCappendExprs (INFO_NEWLACFUNRECCALL (arg_info),
+                               TBmakeExprs (TBmakeId (avis), NULL));
+        }
 
-        *argchain_applying
-          = TCappendExprs (*argchain_applying, TBmakeExprs (TBmakeId (origin), NULL));
+        INFO_NEWEXTERNALCALL (arg_info)
+          = TCappendExprs (INFO_NEWEXTERNALCALL (arg_info),
+                           TBmakeExprs (TBmakeId (oldname), NULL));
 
-        DBUG_PRINT ("Inserting N_id=%s into LUT, origin=%s", AVIS_NAME (avis),
-                    AVIS_NAME (origin));
+        DBUG_PRINT ("Inserting into LUT, oldname=%s, newname=%s", AVIS_NAME (oldname),
+                    AVIS_NAME (avis));
 
-        lut = LUTinsertIntoLutP (lut, origin, avis);
+        lut = LUTinsertIntoLutP (lut, oldname, avis);
     }
 
     DBUG_RETURN (lut);
@@ -242,8 +283,7 @@ WLPROPdoWithloopPropagation (node *arg_node)
 
     arg_info = MakeInfo ();
 
-    if (!FUNDEF_ISLOOPFUN (arg_node)) {
-
+    if (!FUNDEF_ISLACFUN (arg_node)) {
         TRAVpush (TR_wlprop);
         arg_node = TRAVdo (arg_node, arg_info);
         TRAVpop ();
@@ -272,11 +312,17 @@ WLPROPdoWithloopPropagation (node *arg_node)
 node *
 WLPROPfundef (node *arg_node, info *arg_info)
 {
+    info *old_info;
+
     DBUG_ENTER ();
 
-    INFO_FUNDEF (arg_info) = arg_node;
+    old_info = arg_info;
+    arg_info = MakeInfo ();
 
-    DBUG_PRINT ("Starting WLPROP for %s", FUNDEF_NAME (arg_node));
+    INFO_FUNDEF (arg_info) = arg_node;
+    INFO_ISCONDFUN (arg_info) = INFO_ISCONDFUN (old_info);
+
+    DBUG_PRINT ("Starting %s", FUNDEF_NAME (arg_node));
 
     /**
      * Infer before actual traversal:
@@ -295,6 +341,11 @@ WLPROPfundef (node *arg_node, info *arg_info)
      * do actual traversal
      */
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    FUNDEF_RETURN (arg_node) = LFUfindFundefReturn (arg_node);
+
+    DBUG_PRINT ("Done with %s", FUNDEF_NAME (arg_node));
+
+    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -322,6 +373,59 @@ WLPROPassign (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#ifdef DEADCODE2
+// the idea here is to handle AVIS son nodes cleanly. FIXME
+/**<!--*************************************************************-->
+ *
+ * @fn node *WLPROPavis(node *arg_node, info *arg_info)
+ *
+ * @brief: This traversal handles the sons of avis nodes
+ *         that are required by the WLs we copy into a lACFUN.
+ *         E.g., AVIS_SHAPE,DIM/MIN/MAX
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @result update arg_node
+ *
+ ********************************************************************/
+node *
+WLPROPavis (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Looking at N_avis %s", CTIitemName (arg_node));
+    arg_node = TRAVsons (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/**<!--*************************************************************-->
+ *
+ * @fn node *WLPROPids(node *arg_node, info *arg_info)
+ *
+ * @brief: This traversal handles the LHS of assigments
+ *         It is required by the WLs we copy into a lACFUN.
+ *         E.g., AVIS_SHAPE,DIM/MIN/MAX
+ *
+ * @param arg_node
+ * @param arg_info
+ *
+ * @result update arg_node
+ *
+ ********************************************************************/
+node *
+WLPROPavis (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Looking at N_ids %s", CTIitemName (arg_node));
+    arg_node = TRAVsons (arg_node, arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+#endif // DEADCODE2
 /**<!--*************************************************************-->
  *
  * @fn node *WLPROPap(node *arg_node, info *arg_info)
@@ -342,16 +446,16 @@ WLPROPassign (node *arg_node, info *arg_info)
 node *
 WLPROPap (node *arg_node, info *arg_info)
 {
-
-    info *newinfo;
+    bool oldiscondfun;
 
     DBUG_ENTER ();
 
-    if ((FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node)))
+    if (((FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node)))
+         || (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
 
         /**
-         * We apply a do-function, which is not the
+         * We apply a cond-function, or a do-function, if it is not the
          * recursive application of the current function
          */
 
@@ -361,7 +465,12 @@ WLPROPap (node *arg_node, info *arg_info)
         INFO_TRAVSTATE (arg_info) = S_withloop_prop;
         INFO_AP (arg_info) = arg_node;
         INFO_ARGNUM (arg_info) = 0;
-        INFO_CORRESPONDINGFUNARG (arg_info) = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+        INFO_LACFUNARG (arg_info) = NULL;
+        oldiscondfun = INFO_ISCONDFUN (arg_info);
+        INFO_ISCONDFUN (arg_info) = FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node));
+        INFO_NEWLACFUNARGS (arg_info) = NULL;
+        INFO_NEWLACFUNRECCALL (arg_info) = NULL;
+        INFO_NEWEXTERNALCALL (arg_info) = NULL;
 
         DBUG_PRINT ("Checking function arguments of %s",
                     FUNDEF_NAME (AP_FUNDEF (arg_node)));
@@ -372,23 +481,33 @@ WLPROPap (node *arg_node, info *arg_info)
          */
         AP_ARGS (arg_node) = TRAVdo (AP_ARGS (arg_node), arg_info);
 
+        /* Prefix any new arguments to external function call */
+        AP_ARGS (arg_node)
+          = TCappendExprs (INFO_NEWEXTERNALCALL (arg_info), AP_ARGS (arg_node));
+
+        /* Prefix any new formal parameters to LACFUN args */
+        FUNDEF_ARGS (AP_FUNDEF (arg_node))
+          = TCappendArgs (INFO_NEWLACFUNARGS (arg_info),
+                          FUNDEF_ARGS (AP_FUNDEF (arg_node)));
+
+        /* Prefix any new arguments to recursive call in LACFUN */
+        if (NULL != INFO_NEWLACFUNRECCALL (arg_info)) {
+            AP_ARGS (FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (arg_node)))
+              = TCappendExprs (INFO_NEWLACFUNRECCALL (arg_info),
+                               AP_ARGS (FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (arg_node))));
+        }
+        INFO_NEWLACFUNARGS (arg_info) = NULL;
+        INFO_NEWLACFUNRECCALL (arg_info) = NULL;
+        INFO_NEWEXTERNALCALL (arg_info) = NULL;
+        INFO_ISCONDFUN (arg_info) = oldiscondfun;
+
         /**
-         * traverse into applied do-fun and do
+         * traverse into applied con/do-fun and do
          * with-loop propagation again
          */
         DBUG_PRINT ("Checking function application of %s",
                     FUNDEF_NAME (AP_FUNDEF (arg_node)));
-        newinfo = MakeInfo ();
-        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), newinfo);
-        newinfo = FreeInfo (newinfo);
-    }
-
-    if (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
-        DBUG_PRINT ("You need to implement WLPR for condfun %s",
-                    FUNDEF_NAME (AP_FUNDEF (arg_node)));
-        /*
-         * TODO: to be implemented
-         */
+        AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
     }
 
     INFO_TRAVSTATE (arg_info) = S_undef;
@@ -418,8 +537,6 @@ WLPROPexprs (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
-
     if (S_withloop_prop == INFO_TRAVSTATE (arg_info)) {
         /**
          * since we are trying to propagate withloops into
@@ -427,13 +544,154 @@ WLPROPexprs (node *arg_node, info *arg_info)
          * applied do-fun to correspond to the id-node of the
          * applying (calling) function which will be traversed next.
          */
-        INFO_CORRESPONDINGFUNARG (arg_info)
-          = ARG_NEXT (INFO_CORRESPONDINGFUNARG (arg_info));
-
+        INFO_LACFUNARG (arg_info)
+          = TCgetNthArg (INFO_ARGNUM (arg_info),
+                         FUNDEF_ARGS (AP_FUNDEF (INFO_AP (arg_info))));
+        DBUG_PRINT ("Trying to propagate N_arg %s",
+                    AVIS_NAME (ARG_AVIS (INFO_LACFUNARG (arg_info))));
         INFO_ARGNUM (arg_info) = INFO_ARGNUM (arg_info) + 1;
+        EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
     }
 
     EXPRS_NEXT (arg_node) = TRAVopt (EXPRS_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/**<!--*************************************************************-->
+ *
+ * @fn node *CopyWL(node *arg_node, info *arg_info)
+ *
+ * @brief: Copy one WL and its dependences into LACFUN body.
+ *         Introduce required renames for code body.
+ *         Introduce new parameters and arguments to
+ *         N_ap calls and N_args.
+ *
+ * arg_node is defined by a with-loop and both the
+ * with-loop and arg_node fulfill the conditions for with-loop propagation.
+ *
+ * A lookup table and a dataflow mask are used
+ * to identify identifiers used in the with-loop, to create corresponding
+ * new ones and to keep track of them. Then the with-loop is moved from
+ * the calling function into the called function (insert code in
+ * argument chain, adjust references and function signatures).
+ *
+ * @param arg_node
+ * @param arg_info
+ * @param withloop: N_assign for WL to be copied.
+ *
+ * @result updated arg_node.
+ *         Side effects on LACFUN
+ *         Side effect on N_ap call
+ *
+ ********************************************************************/
+static node *
+CopyWL (node *arg_node, info *arg_info)
+{
+    node *newids;
+    dfmask_t *inmask;
+    lut_t *lut;
+    node *next;
+    node *old_withloop;
+    node *new_withloop;
+    node *withvardec;
+    node *wlavis;
+    node *withloop = NULL;
+    node *lacfundef;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Copying WL %s from %s into LACFUN %s", AVIS_NAME (ID_AVIS (arg_node)),
+                FUNDEF_NAME (INFO_FUNDEF (arg_info)),
+                FUNDEF_NAME (AP_FUNDEF (INFO_AP (arg_info))));
+
+    /*
+     * create dataflowmask for withloop
+     */
+    old_withloop = AVIS_SSAASSIGN (ID_AVIS (arg_node));
+    next = ASSIGN_NEXT (old_withloop);
+    ASSIGN_NEXT (old_withloop) = NULL;
+
+    lut = LUTgenerateLut ();
+    inmask = INFDFMSdoInferInDfmAssignChain (old_withloop, INFO_FUNDEF (arg_info));
+
+    ASSIGN_NEXT (old_withloop) = next;
+
+    /**
+     * create new identifiers for identifiers marked in dfm
+     * and append them to corresponding arg/exprs chains and insert
+     * them into the lut.
+     */
+
+    next = DFMgetMaskEntryAvisSet (inmask);
+
+    while (next != NULL) {
+        lut = insertNameIntoArgAndSig (next, lut, arg_info);
+        /*
+         * get next marked element in dfm
+         */
+        next = DFMgetMaskEntryAvisSet (NULL);
+    }
+
+    /*
+     * Put WL result's AVIS sons nodes into LUT.
+     * Find a cleaner way to do this...
+     *
+     */
+
+    wlavis = ID_AVIS (arg_node);
+    lut = insertNameIntoArgAndSig (AVIS_DIM (wlavis), lut, arg_info);
+    lut = insertNameIntoArgAndSig (AVIS_SHAPE (wlavis), lut, arg_info);
+    lut = insertNameIntoArgAndSig (AVIS_MIN (wlavis), lut, arg_info);
+    lut = insertNameIntoArgAndSig (AVIS_MAX (wlavis), lut, arg_info);
+
+    /*
+     * now all needed identifiers have been created
+     * the lut is filled
+     * copy the withloop and insert it into the applied function
+     */
+    lacfundef = AP_FUNDEF (INFO_AP (arg_info));
+
+    /* Copy the WL RHS (but not its NEXT) & insert its variables into the LACFUN.
+     * Give the copied WL's LHS its old N_arg name.
+     */
+    next = ASSIGN_NEXT (old_withloop);
+    ASSIGN_NEXT (old_withloop) = NULL;
+    new_withloop = DUPdoDupTreeLutSsa (old_withloop, lut, lacfundef);
+    ASSIGN_NEXT (old_withloop) = next;
+    lut = LUTremoveLut (lut);
+
+    /*
+     * At this point, the new local WL is ready for insertion, and we
+     * have set up the new function parameters that it will use.
+     *
+     * Now, we work on the LACFUN:
+     * Build vardec for new local WL.
+     * Correct the AVIS_SONs of the new local WL's AVIS
+     * I don't like what's going on here (or above with
+     * avis sons, but have no great ideas on how to fix it cleanly.
+     */
+
+    wlavis = IDS_AVIS (LET_IDS (ASSIGN_STMT (new_withloop)));
+    AVIS_DIM (wlavis) = DUPdoDupTreeLut (AVIS_DIM (wlavis), lut);
+    AVIS_SHAPE (wlavis) = DUPdoDupTreeLut (AVIS_SHAPE (wlavis), lut);
+    AVIS_MIN (wlavis) = DUPdoDupTreeLut (AVIS_MIN (wlavis), lut);
+    AVIS_MAX (wlavis) = DUPdoDupTreeLut (AVIS_MAX (wlavis), lut);
+
+    /*
+     * Copy the withloop definition into the body
+     * of the lacfun.
+     *
+     */
+
+    /* Finally, copy the WL to where it belongs in the LACFUN */
+    lacfundef = LFUinsertAssignIntoLacfun (lacfundef, new_withloop,
+                                           ARG_AVIS (INFO_LACFUNARG (arg_info)));
+
+    /*
+     * increase optimization counter
+     */
+    global.optcounters.wlprop_expr++;
 
     DBUG_RETURN (arg_node);
 }
@@ -463,230 +721,32 @@ WLPROPexprs (node *arg_node, info *arg_info)
 node *
 WLPROPid (node *arg_node, info *arg_info)
 {
-    node *newids;
     node *withloop;
-    dfmask_t *inmask;
-    lut_t *lut;
-    node *next;
-    node *argchain_applying, *argchain_applied, *argchain_recapp;
-    node *new_withloop, *old_withloop;
-    node *witharg, *withvardec;
-    node *wlavis;
     node *correspond_arg;
 
     DBUG_ENTER ();
 
     if (S_withloop_prop == INFO_TRAVSTATE (arg_info)) {
-        correspond_arg = INFO_CORRESPONDINGFUNARG (arg_info);
 
         DBUG_PRINT ("Checking argument number %i, N_id=%s", INFO_ARGNUM (arg_info),
                     AVIS_NAME (ID_AVIS (arg_node)));
 
-        /**
-         * is the argument defined by an with-loop
-         * which is loop independent?
+        /*
+         * is the argument defined by a loop-independent with-loop,
+         * or by a CONDFUN?
          */
-        if ((IdIsDefinedByWL (arg_node)) && (AVIS_SSALPINV (ARG_AVIS (correspond_arg)))) {
+        correspond_arg = INFO_LACFUNARG (arg_info);
+        if ((IdIsDefinedByWL (arg_node)) && (NULL != INFO_LACFUNARG (arg_info))
+            && ((INFO_ISCONDFUN (arg_info))
+                || (AVIS_SSALPINV (ARG_AVIS (correspond_arg))))) {
             withloop = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (arg_node))));
 
-            /**
+            /*
              * Does the with-loop fulfil the required selection
-             * conditions?
+             * conditions? If so, then do the actual work.
              */
-            if (!WITH_CONTAINSFUNAPS (withloop)
-#ifdef RELAXFIXME
-                && ((WITH_SELMAX (withloop) == 0)
-                    || ((AVIS_NEEDCOUNT (ID_AVIS (arg_node)) == 1)
-                        && (WITH_SELMAX (withloop) == 1)))) {
-#else  // RELAXFIXME
-            ) {
-#endif // RELAXFIXME
-
-                DBUG_PRINT ("Checking argument number %i successful, N_id=%s",
-                            INFO_ARGNUM (arg_info), AVIS_NAME (ID_AVIS (arg_node)));
-
-                /*
-                 * generate LUT to keep track of identifiers
-                 */
-                lut = LUTgenerateLut ();
-
-                /*
-                 * create dataflowmask for withloop
-                 */
-                old_withloop = AVIS_SSAASSIGN (ID_AVIS (arg_node));
-                next = ASSIGN_NEXT (old_withloop);
-                ASSIGN_NEXT (old_withloop) = NULL;
-
-                inmask
-                  = INFDFMSdoInferInDfmAssignChain (old_withloop, INFO_FUNDEF (arg_info));
-
-                ASSIGN_NEXT (old_withloop) = next;
-
-                /**
-                 * create new identifiers for identifiers marked in dfm
-                 * and append them to corresponding arg/exprs chains and insert
-                 * them into the lut.
-                 */
-
-                next = DFMgetMaskEntryAvisSet (inmask);
-
-                argchain_applied = FUNDEF_ARGS (AP_FUNDEF (INFO_AP (arg_info)));
-                argchain_applying = AP_ARGS (INFO_AP (arg_info));
-                argchain_recapp = FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (INFO_AP (arg_info)));
-                argchain_recapp = AP_ARGS (argchain_recapp);
-
-                while (next != NULL) {
-                    lut = insertNameIntoArgAndSig (next, lut, &argchain_applied,
-                                                   &argchain_recapp, &argchain_applying);
-#ifdef FIXME
-                    node *avis, *copy, *origin;
-
-                    /*
-                     * create new identifiers (become arg nodes)
-                     * add them to applying and applied function signature
-                     * insert old/new pair into lut
-                     */
-                    origin = next;
-                    avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (origin)));
-                    copy = TBmakeArg (avis, NULL);
-
-                    argchain_applied = TCappendArgs (argchain_applied, copy);
-
-                    argchain_recapp = TCappendExprs (argchain_recapp,
-                                                     TBmakeExprs (TBmakeId (avis), NULL));
-
-                    argchain_applying
-                      = TCappendExprs (argchain_applying,
-                                       TBmakeExprs (TBmakeId (origin), NULL));
-
-                    DBUG_PRINT ("Inserting N_id=%s into LUT, origin=%s", AVIS_NAME (avis),
-                                AVIS_NAME (origin));
-                    lut = LUTinsertIntoLutP (lut, origin, avis);
-
-#endif // FIXME
-
-                    /*
-                     * get next marked element in dfm
-                     */
-                    next = DFMgetMaskEntryAvisSet (NULL);
-                }
-
-                wlavis = ID_AVIS (arg_node);
-                /* Put WL result's AVIS sons nodes into LUT.
-                 * I hope there is some cleaner way to do this...
-                 */
-
-                lut = insertNameIntoArgAndSig (AVIS_DIM (wlavis), lut, &argchain_applied,
-                                               &argchain_recapp, &argchain_applying);
-                lut
-                  = insertNameIntoArgAndSig (AVIS_SHAPE (wlavis), lut, &argchain_applied,
-                                             &argchain_recapp, &argchain_applying);
-                lut = insertNameIntoArgAndSig (AVIS_MIN (wlavis), lut, &argchain_applied,
-                                               &argchain_recapp, &argchain_applying);
-                lut = insertNameIntoArgAndSig (AVIS_MAX (wlavis), lut, &argchain_applied,
-                                               &argchain_recapp, &argchain_applying);
-
-                /*
-                 * now all needed identifiers were created
-                 * the lut was filled
-                 * now it is time to copy the withloop and insert it into
-                 * the applied function
-                 */
-                new_withloop
-                  = DUPdoDupTreeLutSsa (withloop, lut, AP_FUNDEF (INFO_AP (arg_info)));
-
-                witharg = INFO_CORRESPONDINGFUNARG (arg_info);
-                newids = TBmakeIds (ARG_AVIS (witharg), NULL);
-                new_withloop = TBmakeLet (newids, new_withloop);
-                new_withloop
-                  = TBmakeAssign (new_withloop,
-                                  FUNDEF_ASSIGNS (AP_FUNDEF (INFO_AP (arg_info))));
-
-                FUNDEF_ASSIGNS (AP_FUNDEF (INFO_AP (arg_info))) = new_withloop;
-
-                AVIS_SSAASSIGN (ARG_AVIS (witharg)) = new_withloop;
-
-                /*
-                 * move the AVIS_DIM and AVIS_SHAPE annotations to the
-                 * current context
-                 */
-                if (AVIS_DIM (ARG_AVIS (witharg)) != NULL) {
-                    AVIS_DIM (ARG_AVIS (witharg))
-                      = FREEdoFreeTree (AVIS_DIM (ARG_AVIS (witharg)));
-                }
-
-                if (AVIS_SHAPE (ARG_AVIS (witharg)) != NULL) {
-                    AVIS_SHAPE (ARG_AVIS (witharg))
-                      = FREEdoFreeTree (AVIS_SHAPE (ARG_AVIS (witharg)));
-                }
-
-                AVIS_DIM (ARG_AVIS (witharg))
-                  = DUPdoDupTreeLut (AVIS_DIM (ID_AVIS (arg_node)), lut);
-                AVIS_SHAPE (ARG_AVIS (witharg))
-                  = DUPdoDupTreeLut (AVIS_SHAPE (ID_AVIS (arg_node)), lut);
-
-                if (AVIS_MIN (ARG_AVIS (witharg)) != NULL) {
-                    AVIS_MIN (ARG_AVIS (witharg))
-                      = FREEdoFreeNode (AVIS_MIN (ARG_AVIS (witharg)));
-                }
-
-                if (AVIS_MAX (ARG_AVIS (witharg)) != NULL) {
-                    AVIS_MAX (ARG_AVIS (witharg))
-                      = FREEdoFreeNode (AVIS_MAX (ARG_AVIS (witharg)));
-                }
-
-                AVIS_MIN (ARG_AVIS (witharg))
-                  = DUPdoDupNodeLut (AVIS_MIN (ID_AVIS (arg_node)), lut);
-                AVIS_MAX (ARG_AVIS (witharg))
-                  = DUPdoDupNodeLut (AVIS_MAX (ID_AVIS (arg_node)), lut);
-
-                /*
-                 * Now the withloop definition was moved into the body
-                 * of the applied function.
-                 *
-                 * Will be done in the following:
-                 *                Transforming former withloop-arg to vardec
-                 *                Replace the withloop-arg in signature
-                 *                by dummy identifier
-                 */
-
-#ifdef FIXME
-                withvardec = TBmakeVardec (IDS_AVIS (wl), NULL);
-#else // FIXME
-                /*
-                 * Build vardec for new local WL.
-                 * Correct the AVIS_SONs of the new local WL's AVIS
-                 * I don't like what's going on here (or above with
-                 * avis sons, but have no great ideas on how to fix it cleanly.
-                 */
-                wlavis = IDS_AVIS (newids);
-                withvardec = TBmakeVardec (wlavis, NULL);
-                AVIS_DIM (wlavis) = DUPdoDupTreeLut (AVIS_DIM (wlavis), lut);
-                AVIS_SHAPE (wlavis) = DUPdoDupTreeLut (AVIS_SHAPE (wlavis), lut);
-                AVIS_MIN (wlavis) = DUPdoDupTreeLut (AVIS_MIN (wlavis), lut);
-                AVIS_MAX (wlavis) = DUPdoDupTreeLut (AVIS_MAX (wlavis), lut);
-
-#endif // FIXME
-                BLOCK_VARDECS (FUNDEF_BODY (AP_FUNDEF (INFO_AP (arg_info))))
-                  = TCappendVardec (BLOCK_VARDECS (
-                                      FUNDEF_BODY (AP_FUNDEF (INFO_AP (arg_info)))),
-                                    withvardec);
-
-                /**
-                 * change corresponding argument of current id to dummy
-                 * identifier
-                 */
-                ARG_AVIS (INFO_CORRESPONDINGFUNARG (arg_info))
-                  = TBmakeAvis (TRAVtmpVar (), TYcopyType (AVIS_TYPE (ARG_AVIS (
-                                                 INFO_CORRESPONDINGFUNARG (arg_info)))));
-
-                AVIS_DECL (ARG_AVIS (INFO_CORRESPONDINGFUNARG (arg_info)))
-                  = INFO_CORRESPONDINGFUNARG (arg_info);
-
-                /*
-                 * increase optimization counter
-                 */
-                global.optcounters.wlprop_expr++;
+            if (!WITH_CONTAINSFUNAPS (withloop)) {
+                arg_node = CopyWL (arg_node, arg_info);
             }
         }
     }

@@ -22,6 +22,7 @@ extern node *LFUfindAssignOfType (node *assigns, nodetype n);
 extern bool LFUisLURPredicate (node *arg_node);
 extern bool LFUisAvisMemberIds (node *arg_node, node *ids);
 extern node *LFUinsertAssignIntoLacfun (node *arg_node, node *assign, node *oldavis);
-extern node *IFUfindRecursiveCallAp (node *arg_node);
+extern node *LFUfindRecursiveCallAp (node *arg_node);
+extern node *LFUfindFundefReturn (node *arg_node);
 
 #endif /* _SAC_LACFUN_UTILITIES_H_ */

@@ -341,6 +341,7 @@
 #include "tree_compound.h"
 #include "LookUpTable.h"
 #include "pattern_match.h"
+#include "lacfun_utilities.h"
 
 /** <!--********************************************************************-->
  *
@@ -593,10 +594,7 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
     node *avis, *vardec, *block;
     node *new_args, *old_args;
     node *assign;
-    node *assignelse;
     ntype *scalar_type;
-    node *thenelse;
-    lut_t *lut;
 
     DBUG_ENTER ();
 
@@ -606,8 +604,7 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
     avis = ARG_AVIS (arg);
     old_args = ARG_NEXT (arg);
     vardec = TBmakeVardec (avis, NULL);
-    DBUG_PRINT ("Created vardec: %s", AVIS_NAME (avis));
-
+    DBUG_PRINT ("Created vardec, deleted arg: %s", AVIS_NAME (avis));
     ARG_AVIS (arg) = NULL;
     arg = FREEdoFreeNode (arg);
 
@@ -638,37 +635,12 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
      * and insert the new assign:
      */
 
-    if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
-        /* LOOPFUN */
-        BLOCK_ASSIGNS (block) = TCappendAssign (assign, BLOCK_ASSIGNS (block));
-    } else {
-        /* CONDFUN is harder */
-        DBUG_ASSERT (FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info)), "Expected CONDFUN");
+    INFO_FUNDEF (arg_info)
+      = LFUinsertAssignIntoLacfun (INFO_FUNDEF (arg_info), assign, avis);
 
-        thenelse = BLOCK_ASSIGNS (COND_THEN (ASSIGN_STMT (BLOCK_ASSIGNS (block))));
-        BLOCK_ASSIGNS (COND_THEN (ASSIGN_STMT (BLOCK_ASSIGNS (block))))
-          = TCappendAssign (assign, thenelse);
+    new_args = TCappendArgs (new_args, old_args);
 
-        /* This handily gives us a shiny new vardec and avis! */
-        assignelse = DUPdoDupNodeSsa (assign, INFO_FUNDEF (arg_info));
-
-        /* We have to rename uses of assignelse in the COND_ELSE block */
-        lut = LUTgenerateLut ();
-        LUTinsertIntoLutP (lut, IDS_AVIS (LET_IDS (ASSIGN_STMT (assign))),
-                           IDS_AVIS (LET_IDS (ASSIGN_STMT (assignelse))));
-
-        thenelse = BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (block))));
-        BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (block))))
-          = TCappendAssign (assignelse, thenelse);
-
-        BLOCK_ASSIGNS (COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (block))))
-          = DUPdoDupTreeLut (BLOCK_ASSIGNS (
-                               COND_ELSE (ASSIGN_STMT (BLOCK_ASSIGNS (block)))),
-                             lut);
-        lut = LUTremoveLut (lut);
-    }
-
-    DBUG_RETURN (TCappendArgs (new_args, old_args));
+    DBUG_RETURN (new_args);
 }
 
 /** <!--*******************************************************************-->
@@ -761,7 +733,7 @@ CorrectArgavisShapes (node *arg_node, info *arg_info)
     node *args;
     node *avis;
     pattern *pat;
-    node *arr = NULL;
+    node *arr;
 
     DBUG_ENTER ();
 
@@ -773,6 +745,7 @@ CorrectArgavisShapes (node *arg_node, info *arg_info)
         if ((NULL != AVIS_SHAPE (avis)) && (N_id == NODE_TYPE (AVIS_SHAPE (avis)))) {
             DBUG_PRINT ("Found AVIS_SHAPE N_id %s",
                         AVIS_NAME (ID_AVIS (AVIS_SHAPE (avis))));
+            arr = NULL;
             if (PMmatchFlat (pat, AVIS_SHAPE (avis))) {
                 /* AVIS_SHAPE is an N_array. Replace AVIS_SHAPE N_id by its value */
                 DBUG_PRINT ("Replacing AVIS_SHAPE N_id %s",
@@ -875,11 +848,14 @@ LACSfundef (node *arg_node, info *arg_info)
 
             arg_node = CorrectArgavisShapes (arg_node, arg_info);
         }
+
+        FUNDEF_RETURN (arg_node) = LFUfindFundefReturn (arg_node);
         INFO_FUNDEF (arg_info) = fundef;
     }
     DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
 
     if (INFO_LEVEL (arg_info) == 0) {
+        DBUG_PRINT ("Traversing next and local fns");
         FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
         FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     }
