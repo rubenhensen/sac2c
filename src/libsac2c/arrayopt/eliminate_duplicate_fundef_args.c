@@ -154,7 +154,7 @@ SimplifyCall (node *arg_node, info *arg_info)
 
 /**<!--***********************************************************************-->
  *
- * @fn node *SimplifyFunctionHeader( node *arg_node)
+ * @fn node *SimplifyFunctionHeader( node *arg_node, node *lacfundef)
  *
  * @brief Eliminate any duplicate parameters from the LACFUN function
  *        header.
@@ -165,7 +165,7 @@ SimplifyCall (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 static node *
-SimplifyFunctionHeader (node *arg_node)
+SimplifyFunctionHeader (node *arg_node, node *lacfundef)
 {
     node *newargs = NULL;
     node *next;
@@ -179,7 +179,9 @@ SimplifyFunctionHeader (node *arg_node)
             newargs = TCappendArgs (newargs, arg_node);
         } else {
             DBUG_PRINT ("Duplicate LACFUN parameter %s deleted from %s",
-                        AVIS_NAME (ARG_AVIS (arg_node)), FUNDEF_NAME (arg_node));
+                        AVIS_NAME (ARG_AVIS (arg_node)), FUNDEF_NAME (lacfundef));
+            ARG_AVIS (arg_node) = NULL; // Leave the N_avis around for now.
+            // This is likely wrong, but let's see what happens.
             arg_node = FREEdoFreeNode (arg_node);
         }
         arg_node = next;
@@ -495,7 +497,8 @@ EDFAap (node *arg_node, info *arg_info)
             reccall = FUNDEF_LOOPRECURSIVEAP (lacfundef);
             reccall = SimplifyCall (reccall, arg_info); /* recursive call */
         }
-        FUNDEF_ARGS (lacfundef) = SimplifyFunctionHeader (FUNDEF_ARGS (lacfundef));
+        FUNDEF_ARGS (lacfundef)
+          = SimplifyFunctionHeader (FUNDEF_ARGS (lacfundef), lacfundef);
         FUNDEF_RETURN (lacfundef) = LFUfindFundefReturn (lacfundef);
     }
 
