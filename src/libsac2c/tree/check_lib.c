@@ -431,29 +431,33 @@ CHKapArgCount (node *arg_node)
 
     DBUG_ENTER ();
 
-    fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
-    ap_args = AP_ARGS (arg_node);
-    numapargs = TCcountExprs (ap_args);
-    numfundefargs = TCcountArgs (fundef_args);
-    if (numapargs != numfundefargs) {
-        NODE_ERROR (arg_node)
-          = CHKinsertError (NODE_ERROR (arg_node),
-                            "Function parameter/argument count mismatch");
-        DBUG_PRINT ("Offender %s has %d parameters, call has %d arguments",
-                    FUNDEF_NAME (AP_FUNDEF (arg_node)), numfundefargs, numapargs);
-    }
-
-    if ((NULL != FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (arg_node)))
-        && (global.compiler_anyphase >= PH_ptc_l2f)
-        && (global.compiler_anyphase < PH_ussa_f2l)) {
-        ap_args = AP_ARGS (FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (arg_node)));
+    /* wrappers seem a bit weird. Forget them for now.*/
+    if (!FUNDEF_ISWRAPPERFUN (AP_FUNDEF (arg_node))) {
+        fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
+        ap_args = AP_ARGS (arg_node);
         numapargs = TCcountExprs (ap_args);
+        numfundefargs = TCcountArgs (fundef_args);
         if (numapargs != numfundefargs) {
-            NODE_ERROR (arg_node) = CHKinsertError (NODE_ERROR (arg_node),
-                                                    "Loopfun recursive call "
-                                                    "parameter/argument count mismatch");
+            NODE_ERROR (arg_node)
+              = CHKinsertError (NODE_ERROR (arg_node),
+                                "Function parameter/argument count mismatch");
             DBUG_PRINT ("Offender %s has %d parameters, call has %d arguments",
                         FUNDEF_NAME (AP_FUNDEF (arg_node)), numfundefargs, numapargs);
+        }
+
+        if ((NULL != FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (arg_node)))
+            && (global.compiler_anyphase >= PH_ptc_l2f)
+            && (global.compiler_anyphase < PH_ussa_f2l)) {
+            ap_args = AP_ARGS (FUNDEF_LOOPRECURSIVEAP (AP_FUNDEF (arg_node)));
+            numapargs = TCcountExprs (ap_args);
+            if (numapargs != numfundefargs) {
+                NODE_ERROR (arg_node)
+                  = CHKinsertError (NODE_ERROR (arg_node), "Loopfun recursive call "
+                                                           "parameter/argument count "
+                                                           "mismatch");
+                DBUG_PRINT ("Offender %s has %d parameters, call has %d arguments",
+                            FUNDEF_NAME (AP_FUNDEF (arg_node)), numfundefargs, numapargs);
+            }
         }
     }
 

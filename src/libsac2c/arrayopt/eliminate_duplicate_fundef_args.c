@@ -496,6 +496,7 @@ EDFAap (node *arg_node, info *arg_info)
             reccall = SimplifyCall (reccall, arg_info); /* recursive call */
         }
         FUNDEF_ARGS (lacfundef) = SimplifyFunctionHeader (FUNDEF_ARGS (lacfundef));
+        FUNDEF_RETURN (lacfundef) = LFUfindFundefReturn (lacfundef);
     }
 
     DBUG_RETURN (arg_node);
