@@ -815,12 +815,12 @@ SAC_MT_LPEL_SetupAndRunStandalone (SAC_main_fun_t main_fn, int *main_arg,
     /* init LPEL */
     lpel_config_t cfg;
     memset (&cfg, 0, sizeof (lpel_config_t));
+    LpelInit (&cfg);
+
     cfg.proc_workers = cfg.num_workers = SAC_MT_global_threads;
     cfg.proc_others = 0;
     cfg.flags = 0;
-
-    LpelInit (&cfg);
-    LpelStart ();
+    LpelStart (&cfg);
 
     /* continuation */
     struct sac_lpel_main_fn_cont c;
