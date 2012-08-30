@@ -456,16 +456,14 @@ WRAP (Double, double, T_double)
 WRAP (Char, char, T_char)
 
 void
-SACARGwrapUdt (SAC_ND_PARAM_inout (out_nt, SACarg), basetype btype,
+SACARGwrapUdt (SAC_ND_PARAM_out (out_nt, SACarg), basetype btype,
                SAC_ND_PARAM_in (param_nt, void))
 {
-    SAC_ND_DECL_PARAM_inout (out_nt, SACarg);
-    int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);
-    int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);
-
-    SACARG_common_wrap (SAC_ND_ARG_inout (out_nt, SACarg), btype,
+    SAC_ND_DECL__DATA (data_nt, SACarg, );
+    SAC_ND_DECL__DESC (data_nt, );
+    SACARG_common_wrap (SAC_ND_ARG_out (data_nt, SACarg), btype,
                         SAC_ND_ARG_in (param_nt, void));
-    SAC_ND_RET_inout (out_nt, out_nt);
+    SAC_ND_RET_inout (out_nt, data_nt);
 }
 
 #define WRAPWRAPPER(name, ctype)                                                         \
@@ -473,8 +471,6 @@ SACARGwrapUdt (SAC_ND_PARAM_inout (out_nt, SACarg), basetype btype,
                               SAC_ND_PARAM_in (param_nt, ctype))                         \
     {                                                                                    \
         SAC_ND_DECL_PARAM_inout (out_nt, SACarg);                                        \
-        int UNUSED SAC_ND_A_MIRROR_SIZE (out_nt) = SAC_ND_A_DESC_SIZE (out_nt);          \
-        int UNUSED SAC_ND_A_MIRROR_DIM (out_nt) = SAC_ND_A_DESC_DIM (out_nt);            \
         SACARGwrapUdt (SAC_ND_ARG_inout (out_nt, SACarg), btype,                         \
                        SAC_ND_ARG_in (param_nt, ctype));                                 \
         SAC_ND_RET_inout (out_nt, out_nt);                                               \
