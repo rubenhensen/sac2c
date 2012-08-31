@@ -29,8 +29,8 @@
 #define UNUSED
 #endif
 
-#undef SAC_FREE
-#define SAC_FREE(x) SAC_FREE_dbg (x, sizeof (*(x)))
+/*#undef SAC_FREE
+#define SAC_FREE(x)               SAC_FREE_dbg(x, sizeof(*(x)))(*/
 #define SAC_FREE_nrm(x) free ((x));
 #define SAC_FREE_dbg(x, siz)                                                             \
     {                                                                                    \
@@ -58,7 +58,7 @@ struct SAC_SACARG {
 #define SACARG_SHAPE(n, p) DESC_SHAPE (SACARG_DESC (n), p)
 
 /**
-4 *
+ *
  * Hidden debug stuff
  */
 
@@ -178,7 +178,7 @@ extern void SACARGfreeDataUdt (basetype btype, void *data);
     static inline void SACARGfreeData##name (void *data)                                 \
     {                                                                                    \
         if (data != NULL) {                                                              \
-            SACARGfreeDataUdt (name, data);                                              \
+            SAC_FREE (data);                                                             \
         }                                                                                \
     }
 #include "type_info.mac"
@@ -289,7 +289,7 @@ SACARGextractData (SACarg *arg)
         /* Can reuse */
         result = SAC_ND_A_FIELD (data_nt);
         /* Set to null so not freed with the rest */
-        SAC_ND_A_FIELD (data_nt) = NULL;
+        SACARG_DATA (arg) = NULL;
     } else {
         /* Can NOT reuse */
         if (!BTYPE_ISINTERNAL (SACARG_BTYPE (arg))) {
@@ -428,7 +428,7 @@ SACARG_common_wrap (SAC_ND_PARAM_out (out_nt, SACarg), basetype btype,
      */
     SAC_ND_A_FIELD (data_nt)
       = SACARGmakeSacArg (btype, SAC_ND_A_DESC (param_nt), SAC_ND_A_FIELD (param_nt));
-    SAC_ND_DEC_RC (param_nt, 1);
+    SAC_ND_DEC_RC_FREE (param_nt, 1, );
     /*
      * now we need a descriptor! As SACargs use standard SAC descriptors,
      * we can use those functions to build one. However, we have to
