@@ -748,7 +748,7 @@ STRitoa (int number)
 
     str = (char *)MEMmalloc (sizeof (int) * 4);
     num = snprintf (str, (sizeof (int) * 4) - 1, "%d", number);
-    DBUG_ASSERT (num < (sizeof (int) * 4) - 1, "Trouble in STRitoa");
+    DBUG_ASSERT ((unsigned)num < (sizeof (int) * 4) - 1, "Trouble in STRitoa");
 
     DBUG_RETURN (str);
 }

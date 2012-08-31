@@ -792,7 +792,7 @@ GLOBfinalizeGlobal (void)
 
     xfree_namespace_pool ();
 
-#define GLOBAL(type, name, val, func, ...) func (global.name, ##__VA_ARGS__);
+#define GLOBAL(type, name, val, func, ...) func (global.name __VA_ARGS__);
 #include "globals.mac"
     DBUG_RETURN ();
 }

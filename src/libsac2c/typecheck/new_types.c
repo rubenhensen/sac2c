@@ -7643,7 +7643,7 @@ TYdeserializeType (int _con, ...)
         namespace_t *ns;
         bool has_hidden;
 
-        va_start (args, con);
+        va_start (args, _con);
 
         st = (simpletype)va_arg (args, int);
         has_hidden = (bool)va_arg (args, int);
@@ -7671,7 +7671,7 @@ TYdeserializeType (int _con, ...)
         char *name;
         namespace_t *ns;
 
-        va_start (args, con);
+        va_start (args, _con);
 
         name = va_arg (args, char *);
         ns = va_arg (args, namespace_t *);
@@ -7685,7 +7685,7 @@ TYdeserializeType (int _con, ...)
         namespace_t *ns;
         usertype udt;
 
-        va_start (args, con);
+        va_start (args, _con);
 
         symid = va_arg (args, char *);
         ns = va_arg (args, namespace_t *);
@@ -7700,7 +7700,7 @@ TYdeserializeType (int _con, ...)
         ntype *type;
         constant *cnst;
 
-        va_start (args, con);
+        va_start (args, _con);
 
         type = va_arg (args, ntype *);
         cnst = va_arg (args, constant *);
@@ -7713,7 +7713,7 @@ TYdeserializeType (int _con, ...)
         ntype *type;
         shape *shp;
 
-        va_start (args, con);
+        va_start (args, _con);
 
         type = va_arg (args, ntype *);
         shp = va_arg (args, shape *);
@@ -7727,7 +7727,7 @@ TYdeserializeType (int _con, ...)
         int dim;
         shape *shp;
 
-        va_start (args, con);
+        va_start (args, _con);
 
         type = va_arg (args, ntype *);
         dim = va_arg (args, int);
@@ -7738,19 +7738,19 @@ TYdeserializeType (int _con, ...)
         va_end (args);
     } break;
     case TC_aud: {
-        va_start (args, con);
+        va_start (args, _con);
 
         result = TYmakeAUD (va_arg (args, ntype *));
 
         va_end (args);
     } break;
     case TC_audgz: {
-        va_start (args, con);
+        va_start (args, _con);
 
         result = TYmakeAUDGZ (va_arg (args, ntype *));
     } break;
     case TC_prod: {
-        va_start (args, con);
+        va_start (args, _con);
 
         result = MakeNtype (TC_prod, va_arg (args, int));
 
@@ -7761,7 +7761,7 @@ TYdeserializeType (int _con, ...)
         va_end (args);
     } break;
     case TC_union: {
-        va_start (args, con);
+        va_start (args, _con);
 
         result = MakeNtype (TC_union, va_arg (args, int));
 
@@ -7772,7 +7772,7 @@ TYdeserializeType (int _con, ...)
         va_end (args);
     } break;
     case TC_fun: {
-        va_start (args, con);
+        va_start (args, _con);
 
         result = MakeNtype (TC_fun, va_arg (args, int));
 
@@ -7783,7 +7783,7 @@ TYdeserializeType (int _con, ...)
         va_end (args);
     } break;
     case TC_ibase: {
-        va_start (args, con);
+        va_start (args, _con);
 
         result = MakeNtype (TC_ibase, 3);
 
@@ -7795,7 +7795,7 @@ TYdeserializeType (int _con, ...)
         va_end (args);
     } break;
     case TC_iarr: {
-        va_start (args, con);
+        va_start (args, _con);
 
         result = MakeNtype (TC_iarr, va_arg (args, int));
 
@@ -7808,7 +7808,7 @@ TYdeserializeType (int _con, ...)
         va_end (args);
     } break;
     case TC_idim: {
-        va_start (args, con);
+        va_start (args, _con);
 
         result = MakeNtype (TC_idim, va_arg (args, int));
 
@@ -7823,7 +7823,7 @@ TYdeserializeType (int _con, ...)
         va_end (args);
     } break;
     case TC_ishape: {
-        va_start (args, con);
+        va_start (args, _con);
 
         result = MakeNtype (TC_ishape, 1);
 
@@ -7833,7 +7833,7 @@ TYdeserializeType (int _con, ...)
         va_end (args);
     } break;
     case TC_ires: {
-        va_start (args, con);
+        va_start (args, _con);
 
         result = MakeNtype (TC_ires, 1);
         IRES_NUMFUNS (result) = va_arg (args, int);
@@ -7865,7 +7865,7 @@ TYdeserializeType (int _con, ...)
         result = NULL;
     } break;
     case TC_poly: {
-        va_start (args, con);
+        va_start (args, _con);
 
         result = TYmakePolyType (STRcpy (va_arg (args, char *)));
 
@@ -7875,7 +7875,7 @@ TYdeserializeType (int _con, ...)
         char *outer, *inner, *shape;
         bool denest, renest;
 
-        va_start (args, con);
+        va_start (args, _con);
 
         outer = STRcpy (va_arg (args, char *));
         inner = STRcpy (va_arg (args, char *));
@@ -7888,7 +7888,7 @@ TYdeserializeType (int _con, ...)
         va_end (args);
     } break;
     case TC_bottom: {
-        va_start (args, con);
+        va_start (args, _con);
 
         result = TYmakeBottomType (STRcpy (va_arg (args, char *)));
 
