@@ -5605,8 +5605,12 @@ N_tfarg :
         <flag name="IsInlineCompleted" />
         <flag name="IsLacInline" />
         <flag name="AllowsInfix" />
-        <flag name="HasDotArgs" />
-        <flag name="HasDotRets" />
+        <flag name="HasDotArgs" >
+	  <description>True if the function may take an arbitrary number of arguments. E.g., printf</description>
+	</flag>
+        <flag name="HasDotRets" >
+	  <description>True if the function may generate an arbitrary number of results.</description>
+	</flag>
 	<flag name="HasStepWidthArgs" default="FALSE" />
 	<flag name="RefcountDots" default="FALSE" />
         <flag name="IsSpecialisation" />

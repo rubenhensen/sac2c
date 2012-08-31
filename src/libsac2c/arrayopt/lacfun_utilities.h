@@ -24,5 +24,6 @@ extern bool LFUisAvisMemberIds (node *arg_node, node *ids);
 extern node *LFUinsertAssignIntoLacfun (node *arg_node, node *assign, node *oldavis);
 extern node *LFUfindRecursiveCallAp (node *arg_node);
 extern node *LFUfindFundefReturn (node *arg_node);
+extern node *LFUarg2Vardec (node *arg_node, node *lacfundef);
 
 #endif /* _SAC_LACFUN_UTILITIES_H_ */

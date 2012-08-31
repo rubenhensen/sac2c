@@ -753,4 +753,43 @@ LFUfindFundefReturn (node *arg_node)
     DBUG_RETURN (z);
 }
 
+/**<!--***********************************************************************-->
+ *
+ * @fn node *LFUarg2Vardec( node *arg_node, node *fundef)
+ *
+ * @brief Replace an N_arg by an N_vardec.
+ *        This function is used by optimizations such as EDFA,
+ *        when it wants to remove an N_arg from a FUNDEF_ARGS
+ *        chain. We do not want to FREE the node, because
+ *        that will take the ARG_AVIS and its sons with it,
+ *        and they may still be referenced.
+ *
+ *        So, we create an N_vardec for the AVIS node and
+ *        attach that to the FUNDEF. Eventually, DCR will
+ *        come along and deallocate it properly.
+ *
+ * @param arg_node: N_args
+ *        fundef:   N_fundef
+ *
+ * @result: ARG_NEXT node.
+ *
+ ******************************************************************************/
+node *
+LFUarg2Vardec (node *arg_node, node *fundef)
+{
+    node *z;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Replacing N_arg %s by N_vardec in %s", AVIS_NAME (ARG_AVIS (arg_node)),
+                FUNDEF_NAME (fundef));
+    z = ARG_NEXT (arg_node);
+    ARG_NEXT (arg_node) = NULL;
+    FUNDEF_VARDECS (fundef) = TBmakeVardec (ARG_AVIS (arg_node), FUNDEF_VARDECS (fundef));
+    ARG_AVIS (arg_node) = NULL;
+    arg_node = FREEdoFreeNode (arg_node);
+
+    DBUG_RETURN (z);
+}
+
 #undef DBUG_PREFIX

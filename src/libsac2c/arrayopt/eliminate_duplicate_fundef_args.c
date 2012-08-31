@@ -180,9 +180,7 @@ SimplifyFunctionHeader (node *arg_node, node *lacfundef)
         } else {
             DBUG_PRINT ("Duplicate LACFUN parameter %s deleted from %s",
                         AVIS_NAME (ARG_AVIS (arg_node)), FUNDEF_NAME (lacfundef));
-            ARG_AVIS (arg_node) = NULL; // Leave the N_avis around for now.
-            // This is likely wrong, but let's see what happens.
-            arg_node = FREEdoFreeNode (arg_node);
+            LFUarg2Vardec (arg_node, lacfundef);
         }
         arg_node = next;
     }
@@ -220,22 +218,22 @@ RenameArgs (node *arg_node, lut_t *lutrenames)
     curarg = arg_node;
     while (NULL != curarg) {
         avis = ARG_AVIS (curarg);
-        if ((NULL != AVIS_DIM (avis)) && (N_id == NODE_TYPE (AVIS_DIM (avis)))) {
+        if (NULL != AVIS_DIM (avis)) {
             son = DUPdoDupNodeLut (AVIS_DIM (avis), lutrenames);
             FREEdoFreeNode (AVIS_DIM (avis));
             AVIS_DIM (avis) = son;
         }
-        if ((NULL != AVIS_SHAPE (avis)) && (N_id == NODE_TYPE (AVIS_SHAPE (avis)))) {
+        if (NULL != AVIS_SHAPE (avis)) {
             son = DUPdoDupNodeLut (AVIS_SHAPE (avis), lutrenames);
             FREEdoFreeNode (AVIS_SHAPE (avis));
             AVIS_SHAPE (avis) = son;
         }
-        if ((NULL != AVIS_MIN (avis)) && (N_id == NODE_TYPE (AVIS_MIN (avis)))) {
+        if (NULL != AVIS_MIN (avis)) {
             son = DUPdoDupNodeLut (AVIS_MIN (avis), lutrenames);
             FREEdoFreeNode (AVIS_MIN (avis));
             AVIS_MIN (avis) = son;
         }
-        if ((NULL != AVIS_MAX (avis)) && (N_id == NODE_TYPE (AVIS_MAX (avis)))) {
+        if (NULL != AVIS_MAX (avis)) {
             son = DUPdoDupNodeLut (AVIS_MAX (avis), lutrenames);
             FREEdoFreeNode (AVIS_MAX (avis));
             AVIS_MAX (avis) = son;
@@ -343,7 +341,7 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
                 ARG_ISDUPLICATE (fundefargs) = TRUE;
                 formalargavis = *lutitem;
                 DBUG_PRINT ("Duplicate arg %s renamed to %s in LACFUN %s",
-                            AVIS_NAME (argavis), AVIS_NAME (formalargavis),
+                            AVIS_NAME (ARG_AVIS (fundefargs)), formalargavis,
                             FUNDEF_NAME (lacfundef));
                 INFO_LUTRENAMES (arg_info)
                   = LUTinsertIntoLutP (INFO_LUTRENAMES (arg_info), ARG_AVIS (fundefargs),

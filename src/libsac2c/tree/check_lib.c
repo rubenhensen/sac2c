@@ -414,7 +414,9 @@ CHKavisReflection (node *arg_node)
  *         recursive call.
  *
  *         The check of the recursive LACFUN call is made
- *         only when we are in LACFUN mode.
+ *         only when we are in LACFUN mode, and does not apply
+ *         to functions, such as printf, that can take an arbitrary
+ *         number of arguments.
  *
  * @params: arg_node: N_ap.
  *
@@ -431,8 +433,9 @@ CHKapArgCount (node *arg_node)
 
     DBUG_ENTER ();
 
-    /* wrappers seem a bit weird. Forget them for now.*/
-    if (!FUNDEF_ISWRAPPERFUN (AP_FUNDEF (arg_node))) {
+    if ((!FUNDEF_HASDOTARGS (AP_FUNDEF (arg_node)))
+        && (!FUNDEF_ISOBJINITFUN (AP_FUNDEF (arg_node)))
+        && (!FUNDEF_ISWRAPPERFUN (AP_FUNDEF (arg_node)))) {
         fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
         ap_args = AP_ARGS (arg_node);
         numapargs = TCcountExprs (ap_args);
