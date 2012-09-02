@@ -450,9 +450,14 @@ WLPROPap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+#ifdef SEEBUG1019
     if (((FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node)))
          || (FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))))
         && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
+#else  //  SEEBUG1019
+    if ((FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node)))
+        && (AP_FUNDEF (arg_node) != INFO_FUNDEF (arg_info))) {
+#endif // SEEBUG1019
 
         /**
          * We apply a cond-function, or a do-function, if it is not the
