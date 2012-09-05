@@ -12,6 +12,55 @@
  *
  * LACS extends LS to operate on CONDFUNs as well as on LOOPFUNS.
  *
+ * This implementation may invalidate a lot of what follows here
+ * in the way of motivation and documentation. This is the way
+ * LACS works now:
+ *
+ * We scalarize ALL small array arguments, regardless of type. This may
+ * be overkill, but we shall see. Some optimizations, such as AWLFI,
+ * want to perform algebra on array shape elements. For example,
+ * Livermore Loop 09 is a hand-unrolled sparse vector-matrix multiply.
+ * The SAC abstract version of the code actually uses a sparse
+ * matrix multiply (not unrolled), but it still has to determine
+ * that shape(vec)[0] == shape(mat)[0]. This is trivial if
+ * the shapes are scalarized, and not possible otherwise.
+ *
+ * Our implementation is as follows:
+ *
+ *   narr = [ s0, s1, s2];
+ *   z = lacfun( narr);
+ *
+ * and the lacfun header is:
+ *
+ *   int lacfun( int[3] nid)
+ *
+ *
+ * We rewrite this as:
+ *
+ *   z = lacfun( s0, s1, s2, narr);
+ *
+ * and the header as:
+ *
+ *   int lacfun( int s0, int s1, int s2, int[3] nid { scalars: [ s0, s1, s2]}
+ *
+ * where AVIS_SCALARS is an N_array of scalarized values, similar to
+ * AVIS_SHAPE.
+ *
+ * Other optimizations can make use of AVIS_SCALARS as follows.
+ * Assume we have this code in the LACFUN;
+ *
+ *  planes = _sel_VxA_( [0], nid);
+ *
+ * CF can replace this, in exactly the same way as if nid was an N_array:
+ *
+ *  planes = s0;
+ *
+ * If PMarray is extended to detect AVIS_SCALARS, then many
+ * optimizations will be able to take advantage of LACS with NO
+ * code changes.
+ *
+ * ----------- all comments below here need review ----------FIXME
+ *
  * LS and LACS are based on the observation that most simple cases
  * of AE are covered by other optimizations, most notably Constant Folding.
  * The only case left (almost) is the case where small arrays are passed
@@ -197,7 +246,7 @@
  * Another extension that could come to our mind would be to allow
  * occurrences of x in index vector positions since index vectors will
  * be eliminated by Index Vector Elimination (IVE) anyways.
- * However, this - in general - may leed to problems.
+ * However, this - in general - may lead to problems.
  * For example, consider the following scenario:
  *
  * <pre>
@@ -243,12 +292,8 @@
  * Implementation Strategy:
  * ------------------------
  *
- *  This optimization treats the LaC funs as if they were inline!
- *  To enable that, use INFO_LEVEL which reflects the current level
- *  of the function. Thus we can avoid traversing top-level LaC-funs.
- *
  *  The overall idea is as follows:
- *  During the traversal of any Do-Fun, we collect pointers to places
+ *  During the traversal of any LACFUN, we collect pointers to places
  *  which are subject to modification (if any) and we infer which arguments
  *  are used as array arguments in selections only.
  *  After traversing the body of a Do-fun, we traverse its arguments
@@ -279,25 +324,20 @@
  *   INFO_PRECONDASSIGN : the N_assign node which precedes the N_assign that
  *                        hosts the N_cond of the current Do-fun
  *
- * Furthermore, we tag all N_avis nodes that are used in other positions than
- * the second arg of F_sel_VxA_VxA_ as AVIS_ISUSED (see LACSid / LACSprf). Thus,
- * all arguments that are used within selections only are exactly those
- * that have NOT been tagged;-)
- *
  * As can be seen in LACSarg, we have extraced the actual code modifications
  * by means of three local functions:
  *  - AdjustLoopSignature,
  *  - AdjustRecursiveCall, and
- *  - AdjustExternalCall
+ *  - ExtendExternalCall
  * All these directly modify the formal/actual parameters of the Do-fun and
  * its two calls. Furthermore, AdjustLoopSignature inserts its vardecs and
  * assignments via INFO_FUNDEF. Similarily, AdjustRecursiveCall uses
  * INFO_FUNDEF and INFO_PRECONDASSIGN do directly insert the generated
  * vardecs and assignments, respectively.
  *
- * Although AdjustExternalCall creates code very similar to that of
+ * Although ExtendExternalCall creates code very similar to that of
  * AdjustRecursiveCall, it does not insert the code directly but stores
- * the vardecs and assignments in INFO_EXTVARDECS and in INFO_EXTASSIGNS.
+ * the vardecs and assignments in INFO_VARDECS and in INFO_PREASSIGNS.
  * While the vardecs are inserted in LACSap (utilizing INFO_FUNDEF again -
  * now pointing to the N_fundef of the external function), the assignments
  * are inserted in LACSassign (which is traversed bottom up in order to
@@ -351,23 +391,23 @@
  *****************************************************************************/
 struct INFO {
     node *fundef;
-    int level;
     node *reccall;
-    node *extcall;
-    node *assigns;
+    node *extargs;
     node *vardecs;
-    node *lastassign;
-    node *precond;
+    node *preassigns;
+    node *ap;
+    int argnum;
+    bool inap;
 };
 
 #define INFO_FUNDEF(n) ((n)->fundef)
-#define INFO_LEVEL(n) ((n)->level)
-#define INFO_EXTCALL(n) ((n)->extcall)
-#define INFO_EXTASSIGNS(n) ((n)->assigns)
-#define INFO_EXTVARDECS(n) ((n)->vardecs)
 #define INFO_RECCALL(n) ((n)->reccall)
-#define INFO_LASTASSIGN(n) ((n)->lastassign)
-#define INFO_PRECONDASSIGN(n) ((n)->precond)
+#define INFO_EXTARGS(n) ((n)->extargs)
+#define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_PREASSIGNS(n) ((n)->preassigns)
+#define INFO_AP(n) ((n)->ap)
+#define INFO_ARGNUM(n) ((n)->argnum)
+#define INFO_INAP(n) ((n)->inap)
 
 static info *
 MakeInfo (void)
@@ -379,13 +419,13 @@ MakeInfo (void)
     result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
-    INFO_LEVEL (result) = 0;
-    INFO_EXTCALL (result) = NULL;
-    INFO_EXTASSIGNS (result) = NULL;
-    INFO_EXTVARDECS (result) = NULL;
     INFO_RECCALL (result) = NULL;
-    INFO_LASTASSIGN (result) = NULL;
-    INFO_PRECONDASSIGN (result) = NULL;
+    INFO_EXTARGS (result) = NULL;
+    INFO_VARDECS (result) = NULL;
+    INFO_PREASSIGNS (result) = NULL;
+    INFO_AP (result) = NULL;
+    INFO_ARGNUM (result) = 0;
+    INFO_INAP (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -414,7 +454,8 @@ struct ca_info {
  *
  * @fn void *CreateArg( constant *idx, void *accu, void *scalar_type)
  *
- * fold function for creating Vardecs.
+ * fold function for creating N_arg nodes
+ *
  *****************************************************************************/
 static void *
 CreateArg (constant *idx, void *accu, void *scalar_type)
@@ -424,6 +465,26 @@ CreateArg (constant *idx, void *accu, void *scalar_type)
     DBUG_PRINT ("Created arg: %s", ARG_NAME (accu));
 
     return (accu);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn bool LACShasAvisScalars( int argnum, node *ap))
+ *
+ * fold function for creating Vardecs.
+ *****************************************************************************/
+static bool
+LACShasAvisScalars (int argnum, node *ap)
+{
+    node *arg;
+    bool z;
+
+    DBUG_ENTER ();
+
+    arg = TCgetNthArg (argnum, FUNDEF_ARGS (AP_FUNDEF (ap)));
+    z = (NULL != AVIS_SCALARS (ARG_AVIS (arg)));
+
+    DBUG_RETURN (z);
 }
 
 /** <!--*******************************************************************-->
@@ -452,7 +513,8 @@ CreateVardecs (constant *idx, void *accu, void *scalar_type)
 static void *
 CreateAssigns (constant *idx, void *accu, void *local_info)
 {
-    node *scal_avis, *array_avis;
+    node *scal_avis;
+    node *array_avis;
     node *avis;
     struct ca_info *l_info;
 
@@ -492,196 +554,62 @@ CreateAssigns (constant *idx, void *accu, void *local_info)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *AdjustRecursiveCall( node *exprs, shape * shp, info *arg_info)
+ * @fn node *GenerateNewRecursiveCallArguments( node *args)
  *
- * This function replaces the non scalar recursive argument exprs_expr
- * by an exprs
- * chain of new scalar identifiers a1, ..., an of the same element type and
- * returns these. The topmost N-exprs of exprs is freed, its successors are
- * appended to the freshly created exprs chain!
- * Furthermore, it creates a sequence of assignments
- *    a1 = exprs[ 0*shp];
- *       ...
- *    an = exprs[ shp-1];
- * which are directly inserted in the body of the function using
- * INFO_PRECONDASSIGN.
- * The according vardecs are inserted within the body as well using INFO_FUNDEF.
+ * @brief: exprs is an N_arg chain of the new parameters for the lacfun.
+ *         From it, we generate an N_exprs chain which will be used
+ *         to prefix the recursive call to the lacfun.
  *
  *****************************************************************************/
 static node *
-AdjustRecursiveCall (node *exprs, shape *shp, info *arg_info)
+GenerateNewRecursiveCallArguments (node *args)
 {
-    node *old_exprs, *new_exprs;
+    node *z = NULL;
     node *avis;
-    ntype *scalar_type;
-    node *new_vardecs, *new_assigns;
-    struct ca_info local_info;
-    struct ca_info *local_info_ptr = &local_info;
+    node *expr;
 
     DBUG_ENTER ();
 
-    /**
-     * eliminate topmost exprs/expr:
-     */
-    avis = ID_AVIS (EXPRS_EXPR (exprs));
-    old_exprs = EXPRS_NEXT (exprs);
-    exprs = FREEdoFreeNode (exprs);
+    while (NULL != args) {
+        avis = ARG_AVIS (args);
+        expr = TBmakeExprs (TBmakeId (avis), NULL);
+        z = TCappendExprs (z, expr);
+        args = ARG_NEXT (args);
+    }
 
-    /**
-     * create the vardecs:
-     */
-    scalar_type
-      = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
-    new_vardecs
-      = (node *)COcreateAllIndicesAndFold (shp, CreateVardecs, NULL, scalar_type);
-
-    /**
-     * create the exprs:
-     */
-    new_exprs = TCcreateExprsFromVardecs (new_vardecs);
-
-    /**
-     * create the assignments:
-     */
-    local_info_ptr->exprs = new_exprs;
-    local_info_ptr->avis = avis;
-    local_info_ptr->vardecs = NULL;
-
-    new_assigns
-      = (node *)COcreateAllIndicesAndFold (shp, CreateAssigns, NULL, local_info_ptr);
-    new_vardecs = TCappendVardec (new_vardecs, local_info_ptr->vardecs);
-
-    /**
-     * insert vardecs:
-     */
-    FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-      = TCappendVardec (new_vardecs, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
-
-    /**
-     * insert assignments:
-     */
-
-    ASSIGN_NEXT (INFO_PRECONDASSIGN (arg_info))
-      = TCappendAssign (new_assigns, ASSIGN_NEXT (INFO_PRECONDASSIGN (arg_info)));
-
-    DBUG_RETURN (TCappendExprs (new_exprs, old_exprs));
+    DBUG_RETURN (z);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn node *AdjustLoopSignature( node *arg, shape * shp, info *arg_info)
+ * @fn node * ExtendExternalCall( node *avis, info *arg_info)
  *
- * This function translates the non-scalar N_arg node "arg" into a
- * sequence of scalar N_arg nodes with fresh names whose length is
- * identical to the product of the shape "shp" and returns these.
+ * This function generates an exprs chain of new scalar identifiers a1, ...,
+ * and of the same element type as avis, and returns these.
  *
- * Furthermore, an assignment of the form
- *
- *    arg = _reshape_( shp, [sarg1, ...., sargn] );
- *
- * is created and prepended to the function body utilising INFO_FUNDEF.
- * A vardec for arg is created and inserted into the function
- * body as well. This vardec reuses the N_avis of the arg given and the
- * arg given is being freed!
- *
- * If the function is a CONDFUN, two args are generated,
- * one for each leg of the N_cond.
- *
- *****************************************************************************/
-static node *
-AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
-{
-    node *avis, *vardec, *block;
-    node *new_args, *old_args;
-    node *assign;
-    ntype *scalar_type;
-
-    DBUG_ENTER ();
-
-    /**
-     * replace arg by vardec:
-     */
-    avis = ARG_AVIS (arg);
-    old_args = ARG_NEXT (arg);
-    vardec = TBmakeVardec (avis, NULL);
-    DBUG_PRINT ("Created vardec, deleted arg: %s", AVIS_NAME (avis));
-    ARG_AVIS (arg) = NULL;
-    arg = FREEdoFreeNode (arg);
-
-    /**
-     * insert vardec:
-     */
-    block = FUNDEF_BODY (INFO_FUNDEF (arg_info));
-    BLOCK_VARDECS (block) = TCappendVardec (BLOCK_VARDECS (block), vardec);
-
-    /**
-     * create the new arguments arg1, ...., argn
-     */
-    scalar_type
-      = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
-    new_args = (node *)COcreateAllIndicesAndFold (shp, CreateArg, NULL, scalar_type);
-
-    /**
-     * create assignment
-     *   arg = _reshape_( shp, [arg1, ...., argn] )
-     */
-    assign = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL),
-                                      TBmakeArray (scalar_type, SHcopyShape (shp),
-                                                   TCcreateExprsFromArgs (new_args))),
-                           NULL);
-    AVIS_SSAASSIGN (avis) = assign;
-
-    /*
-     * and insert the new assign:
-     */
-
-    INFO_FUNDEF (arg_info)
-      = LFUinsertAssignIntoLacfun (INFO_FUNDEF (arg_info), assign, avis);
-
-    new_args = TCappendArgs (new_args, old_args);
-
-    DBUG_RETURN (new_args);
-}
-
-/** <!--*******************************************************************-->
- *
- * @fn node * AdjustExternalCall( node *exprs, shape * shp, info *arg_info)
- *
- * This function replaces the non-scalar external argument exprs_expr
- * by an exprs chain of new scalar identifiers a1, ..., an
- * o the same element type and returns these.
- * The topmost N-exprs of exprs is freed, its successors are
- * appended to the freshly created exprs chain!
- * Furthermore, it creates a sequence of assignments
- *
- *    a1 = exprs[ 0*shp];
+ *    a1 = exprs[ shp-shp];
  *       ...
  *    an = exprs[ shp-1];
  *
- * which are stored in INFO_EXTASSIGNS( arg_info) for later insertion.
- * The according vardecs are stored in INFO_EXTVARDECS( arg_info)
- *
+ * which are stored in INFO_PREASSIGNS( arg_info) for later insertion.
+ * The according vardecs are stored in INFO_VARDECS( arg_info)
  *
  *****************************************************************************/
 static node *
-AdjustExternalCall (node *exprs, shape *shp, info *arg_info)
+ExtendExternalCall (node *avis, info *arg_info)
 {
-    node *old_exprs, *new_exprs;
-    node *avis;
+    node *old_exprs;
+    node *new_exprs;
     ntype *scalar_type;
-    node *new_vardecs, *new_assigns;
+    node *new_vardecs;
+    node *new_assigns;
     struct ca_info local_info;
     struct ca_info *local_info_ptr = &local_info;
+    shape *shp;
 
     DBUG_ENTER ();
 
-    /**
-     * eliminate topmost exprs/expr:
-     */
-    avis = ID_AVIS (EXPRS_EXPR (exprs));
-    old_exprs = EXPRS_NEXT (exprs);
-    exprs = FREEdoFreeNode (exprs);
-
+    shp = SHcopyShape (TYgetShape (AVIS_TYPE (avis)));
     /**
      * create the vardecs:
      */
@@ -709,15 +637,47 @@ AdjustExternalCall (node *exprs, shape *shp, info *arg_info)
     /**
      * insert vardecs and assignments into arg_info:
      */
-    INFO_EXTVARDECS (arg_info) = TCappendVardec (new_vardecs, INFO_EXTVARDECS (arg_info));
-    INFO_EXTASSIGNS (arg_info) = TCappendAssign (new_assigns, INFO_EXTASSIGNS (arg_info));
+    INFO_VARDECS (arg_info) = TCappendVardec (new_vardecs, INFO_VARDECS (arg_info));
+    INFO_PREASSIGNS (arg_info) = TCappendAssign (new_assigns, INFO_PREASSIGNS (arg_info));
 
-    DBUG_RETURN (TCappendExprs (new_exprs, old_exprs));
+    DBUG_RETURN (new_exprs);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *ExtendLacfunSignature( node *arg_node, info *arg_info)
+ *
+ * This function prefixes the lacfuns's signature with scalarized
+ * elements of the N_id arg_node.
+ *
+ *****************************************************************************/
+static node *
+ExtendLacfunSignature (node *arg_node, info *arg_info)
+{
+    node *avis;
+    node *vardecs;
+    node *new_args;
+    ntype *scalar_type;
+    shape *shp;
+
+    DBUG_ENTER ();
+
+    avis = ID_AVIS (arg_node);
+    shp = SHcopyShape (TYgetShape (AVIS_TYPE (avis)));
+
+    /**
+     * create the new arguments arg1, ...., argn
+     */
+    scalar_type
+      = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
+    new_args = (node *)COcreateAllIndicesAndFold (shp, CreateArg, NULL, scalar_type);
+
+    DBUG_RETURN (new_args);
 }
 
 /******************************************************************************
  *
- * function: node *CorrectArgavisShapes( arg_node, arg_info)
+ * function: node *CorrectArgAvisShape( arg_node, arg_info)
  *
  * description: Examine FUNDEF_ARG, and replace any
  *  AVIS_SHAPE(arg) elements by their N_array equivalents, if arg is AKD.
@@ -728,7 +688,7 @@ AdjustExternalCall (node *exprs, shape *shp, info *arg_info)
  *
  *****************************************************************************/
 static node *
-CorrectArgavisShapes (node *arg_node, info *arg_info)
+CorrectArgAvisShape (node *arg_node, info *arg_info)
 {
     node *args;
     node *avis;
@@ -792,150 +752,123 @@ LACSmodule (node *arg_node, info *arg_info)
 node *
 LACSfundef (node *arg_node, info *arg_info)
 {
-    node *fundef, *args;
-    node *extap, *recap;
+    node *old_fundef;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Starting to traverse %s %s",
                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                 FUNDEF_NAME (arg_node));
-    if (!((INFO_LEVEL (arg_info) == 0)
-          && (FUNDEF_ISLOOPFUN (arg_node) || FUNDEF_ISCONDFUN (arg_node)))) {
+    old_fundef = INFO_FUNDEF (arg_info);
+    INFO_FUNDEF (arg_info) = arg_node;
 
-        fundef = INFO_FUNDEF (arg_info);
-        INFO_FUNDEF (arg_info) = arg_node;
-
-        /**
-         *
-         * First, we clear all AVIS_ISUSED for all arguments:
-         * It is one of the mysteries of the universe that
-         * a TRUE value of AVIS_ISUSED means: Do NOT attempt to
-         * scalarize this array.
-         */
-        args = FUNDEF_ARGS (arg_node);
-        while (args != NULL) {
-            AVIS_ISUSED (ARG_AVIS (args)) = FALSE;
-            args = ARG_NEXT (args);
-        }
-
-        /**
-         * Then, mark all AVISs that are NOT used as 2nd arg to F_Sel
-         * as ISUSED:
-         */
-        FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
-
-        if (FUNDEF_ISLACFUN (arg_node)) {
-            /**
-             * We should now have the external call to the LACFUN in INFO_EXTCALL
-             * and should have the recursive call to a LOOPFUN in INFO_RECCALL.
-             * Therefore, we should be able to do our magic while traversing
-             * the LACFUN args.
-             */
-            if (FUNDEF_ARGS (arg_node) != NULL) {
-                extap = INFO_EXTCALL (arg_info);
-                recap = INFO_RECCALL (arg_info);
-                INFO_EXTCALL (arg_info) = AP_ARGS (extap);
-                INFO_RECCALL (arg_info) = (NULL != recap) ? AP_ARGS (recap) : NULL;
-                FUNDEF_ARGS (arg_node) = TRAVdo (FUNDEF_ARGS (arg_node), arg_info);
-                AP_ARGS (extap) = INFO_EXTCALL (arg_info);
-                if (NULL != recap) {
-                    AP_ARGS (recap) = INFO_RECCALL (arg_info);
-                }
-            }
-            INFO_EXTCALL (arg_info) = NULL;
-            INFO_RECCALL (arg_info) = NULL;
-
-            arg_node = CorrectArgavisShapes (arg_node, arg_info);
-        }
-
-        FUNDEF_RETURN (arg_node) = LFUfindFundefReturn (arg_node);
-        INFO_FUNDEF (arg_info) = fundef;
+    FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
+    FUNDEF_RETURN (arg_node) = LFUfindFundefReturn (arg_node);
+    if (NULL != INFO_VARDECS (arg_info)) {
+        FUNDEF_VARDECS (arg_node)
+          = TCappendVardec (INFO_VARDECS (arg_info), FUNDEF_VARDECS (arg_node));
+        INFO_VARDECS (arg_info) = NULL;
     }
+
+    INFO_FUNDEF (arg_info) = old_fundef;
     DBUG_PRINT ("leaving function %s", FUNDEF_NAME (arg_node));
 
-    if (INFO_LEVEL (arg_info) == 0) {
-        DBUG_PRINT ("Traversing next and local fns");
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
+    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
 /** <!--*******************************************************************-->
  *
- * @fn node *LACSarg( node *arg_node, info *arg_info)
+ * @fn node *LACSid( node *arg_node, info *arg_info)
  *
- * @brief
+ * @brief Most of the action happens here. We are looking
+ *        at one of the external function call arguments in an N_ap.
  *
- * @note Conditionals on INFO_RECCALL are because of LOOPFUN vs. CONDFUN
+ * @note At present, we require the N_id to be loop-invariant.
+ *       This restriction could be eased if the recursive call
+ *       was preceded by selections on the N_id, as is done
+ *       in the external call. However, I want to get this part
+ *       working first.
  *
  *****************************************************************************/
 node *
-LACSarg (node *arg_node, info *arg_info)
+LACSid (node *arg_node, info *arg_info)
 {
-    node *mem_extcall, *mem_reccall;
     shape *shp;
+    node *newexprs;
+    node *rca;
+    node *lacfundef;
+    node *newargs;
+    node *avis;
+    ntype *scalar_type;
+    node *arg;
 
     DBUG_ENTER ();
 
-    if (ARG_NEXT (arg_node) != NULL) {
-        mem_extcall = INFO_EXTCALL (arg_info);
-        mem_reccall = INFO_RECCALL (arg_info);
-        INFO_EXTCALL (arg_info) = EXPRS_NEXT (INFO_EXTCALL (arg_info));
-        if (NULL != INFO_RECCALL (arg_info)) {
-            INFO_RECCALL (arg_info) = EXPRS_NEXT (INFO_RECCALL (arg_info));
-        }
+    avis = ID_AVIS (arg_node);
+    DBUG_PRINT ("inspecting call value: %s", AVIS_NAME (avis));
 
-        ARG_NEXT (arg_node) = TRAVdo (ARG_NEXT (arg_node), arg_info);
+    lacfundef = (NULL != INFO_AP (arg_info)) ? AP_FUNDEF (INFO_AP (arg_info)) : NULL;
+    rca = (NULL != lacfundef) ? FUNDEF_LOOPRECURSIVEAP (lacfundef) : NULL;
+    rca = (NULL != rca) ? AP_ARGS (rca) : NULL;
 
-        EXPRS_NEXT (mem_extcall) = INFO_EXTCALL (arg_info);
-        if (NULL != mem_reccall) {
-            EXPRS_NEXT (mem_reccall) = INFO_RECCALL (arg_info);
-        }
-        INFO_EXTCALL (arg_info) = mem_extcall;
-        INFO_RECCALL (arg_info) = mem_reccall;
-    }
+    /* Does this LACFUN argument meet our criteria for LACS? */
+    if (TUshapeKnown (AVIS_TYPE (avis)) && (INFO_INAP (arg_info))
+        && (!LACShasAvisScalars (INFO_ARGNUM (arg_info), INFO_AP (arg_info)))
+        && (LFUisLoopFunInvariant (lacfundef, arg_node, rca))
+        && (TYgetDim (AVIS_TYPE (avis)) > 0)) {
 
-    DBUG_PRINT ("inspecting arg: %s", ARG_NAME (arg_node));
-
-    /* Traverse AVIS_SHAPE, etc., to mark extrema and SAA info as AVIS_ISUSED */
-    ARG_AVIS (arg_node) = TRAVdo (ARG_AVIS (arg_node), arg_info);
-
-    if (TUshapeKnown (AVIS_TYPE (ARG_AVIS (arg_node)))
-        && (TYgetDim (AVIS_TYPE (ARG_AVIS (arg_node))) > 0)) {
-        shp = SHcopyShape (TYgetShape (AVIS_TYPE (ARG_AVIS (arg_node))));
-        if ((SHgetUnrLen (shp) <= global.minarray)
-            && !AVIS_ISUSED (ARG_AVIS (arg_node))) {
-            DBUG_PRINT ("replacing arg: %s!", ARG_NAME (arg_node));
+        shp = SHcopyShape (TYgetShape (AVIS_TYPE (avis)));
+        if ((SHgetUnrLen (shp) <= global.minarray)) {
+            DBUG_PRINT ("replacing arg: %s!", AVIS_NAME (avis));
             global.optcounters.lacs_expr += 1;
+
             /**
-             * First we create new arguments and we insert the array construction
-             * at the beginning of the function body:
+             * First we create new external function call arguments and the required
+             * selections from the N_id. New vardecs and assigns will be
+             * dealt with in LACSfundef and LACSassign, respectively.
+             * INFO_EXTARGS will be handled when we return to LACSap.
+             * That will complete changes to the calling function.
              */
-            arg_node = AdjustLoopSignature (arg_node, shp, arg_info);
+            newexprs = ExtendExternalCall (avis, arg_info);
+            INFO_EXTARGS (arg_info) = TCappendExprs (INFO_EXTARGS (arg_info), newexprs);
+
+            // Now, extend the lacfun signature. First, the new scalar arguments.
+            newargs = ExtendLacfunSignature (arg_node, arg_info);
+
+            // And now, the AVIS_SCALARS N_array for the corresponding
+            // lacfun's N_arg entry.
+            arg = TCgetNthArg (INFO_ARGNUM (arg_info), FUNDEF_ARGS (lacfundef));
+            scalar_type = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))),
+                                     SHcreateShape (0));
+            AVIS_SCALARS (ARG_AVIS (arg)) = TBmakeArray (scalar_type, SHcopyShape (shp),
+                                                         TCcreateExprsFromArgs (newargs));
+
+            // We have to do the prefixing after we generate AVIS_SCALARS
+            FUNDEF_ARGS (lacfundef) = TCappendArgs (newargs, FUNDEF_ARGS (lacfundef));
+
             /**
-             * Then, we modify the recursive call to reflect the change
-             * in the signature:
+             * Lastly, we prefix the recursive call to reflect the
+             * new arguments in the signature. We could do this now,
+             * if we want to extend LACS to work on non-LIR variables,
+             * it will be easier to collect all the parameters and do
+             * it in LACSap.
              */
-            if (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
+            if (FUNDEF_ISLOOPFUN (lacfundef)) {
                 INFO_RECCALL (arg_info)
-                  = AdjustRecursiveCall (INFO_RECCALL (arg_info), shp, arg_info);
+                  = TCappendExprs (INFO_RECCALL (arg_info),
+                                   GenerateNewRecursiveCallArguments (newargs));
             }
-            /**
-             * Eventually, we compute INFO_EXTVARDECS and INFO_EXTASSIGNS
-             * for later insertion into the calling context:
-             */
-            INFO_EXTCALL (arg_info)
-              = AdjustExternalCall (INFO_EXTCALL (arg_info), shp, arg_info);
+
         } else {
-            DBUG_PRINT ("  %s!",
-                        AVIS_ISUSED (ARG_AVIS (arg_node)) ? "vector use!" : "too large!");
+            DBUG_PRINT ("not scalarized: %s", AVIS_NAME (ID_AVIS (arg_node)));
         }
         shp = SHfreeShape (shp);
     } else {
-        DBUG_PRINT ("arg: %s - shape unknown or scalar", ARG_NAME (arg_node));
+        DBUG_PRINT ("arg: %s - shape unknown or scalar",
+                    AVIS_NAME (ID_AVIS ((arg_node))));
     }
 
     DBUG_RETURN (arg_node);
@@ -945,37 +878,43 @@ LACSarg (node *arg_node, info *arg_info)
  *
  * @fn node *LACSassign( node *arg_node, info *arg_info)
  *
+ * @note We do this part bottom-up, because that keeps the
+ *       preassigns out of the way.
+ *
  *****************************************************************************/
 node *
 LACSassign (node *arg_node, info *arg_info)
 {
-    node *lastassign = NULL;
-    node *precondassign;
 
     DBUG_ENTER ();
 
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        lastassign = INFO_LASTASSIGN (arg_info);
-        INFO_LASTASSIGN (arg_info) = arg_node;
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
+    ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
-        INFO_LASTASSIGN (arg_info) = lastassign;
+    if (NULL != INFO_PREASSIGNS (arg_info)) {
+        arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
+        INFO_PREASSIGNS (arg_info) = NULL;
     }
 
-    if (NODE_TYPE (ASSIGN_STMT (arg_node)) == N_cond) {
-        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-        INFO_PRECONDASSIGN (arg_info) = lastassign;
-    } else {
-        precondassign = INFO_PRECONDASSIGN (arg_info);
-        ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-        INFO_PRECONDASSIGN (arg_info) = precondassign;
-    }
+    DBUG_RETURN (arg_node);
+}
 
-    if (INFO_EXTASSIGNS (arg_info) != NULL) {
-        arg_node = TCappendAssign (INFO_EXTASSIGNS (arg_info), arg_node);
-        INFO_EXTASSIGNS (arg_info) = NULL;
-    }
+/** <!--*******************************************************************-->
+ *
+ * @fn node *LACSarg( node *arg_node, info *arg_info)
+ *
+ * @brief We keep track of the argument index, then continue.
+ *
+ *****************************************************************************/
+node *
+LACSarg (node *arg_node, info *arg_info)
+{
+
+    DBUG_ENTER ();
+
+    INFO_ARGNUM (arg_info) = INFO_ARGNUM (arg_info) + 1;
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -984,40 +923,51 @@ LACSassign (node *arg_node, info *arg_info)
  *
  * @fn node *LACSap( node *arg_node, info *arg_info)
  *
+ * INFO_ARGNUM keeps track of which AP_ARG element we are looking at.
+ *
  *****************************************************************************/
 node *
 LACSap (node *arg_node, info *arg_info)
 {
-    node *external, *recursive;
+    node *lacfundef;
+    node *reccall;
 
     DBUG_ENTER ();
 
-    if ((AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info))
-        && FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info))) {
-        INFO_RECCALL (arg_info) = arg_node;
-    } else {
+    lacfundef = AP_FUNDEF (arg_node);
+    /* non-recursive LACFUN calls only */
+    if (FUNDEF_ISLACFUN (lacfundef) && (lacfundef != INFO_FUNDEF (arg_info))) {
+        DBUG_PRINT ("Found LACFUN: %s call from: %s", FUNDEF_NAME (lacfundef),
+                    FUNDEF_NAME (INFO_FUNDEF (arg_info)));
+
+        DBUG_ASSERT (NULL == INFO_VARDECS (arg_info), "INFO_VARDECS not NULL");
+        DBUG_ASSERT (NULL == INFO_EXTARGS (arg_info), "INFO_EXTARGS not NULL");
+        DBUG_ASSERT (NULL == INFO_RECCALL (arg_info), "INFO_RECCALL not NULL");
+
+        INFO_AP (arg_info) = arg_node;
+        INFO_INAP (arg_info) = TRUE;
+        INFO_ARGNUM (arg_info) = 0;
         AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
+        INFO_INAP (arg_info) = FALSE;
+        INFO_AP (arg_info) = NULL;
+        INFO_ARGNUM (arg_info) = 0;
 
-        if (FUNDEF_ISLOOPFUN (AP_FUNDEF (arg_node))
-            || FUNDEF_ISCONDFUN (AP_FUNDEF (arg_node))) {
-            INFO_LEVEL (arg_info)++;
-            external = INFO_EXTCALL (arg_info);
-            recursive = INFO_RECCALL (arg_info);
-            INFO_EXTCALL (arg_info) = arg_node;
-
-            AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
-
-            if (INFO_EXTVARDECS (arg_info) != NULL) {
-                FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
-                  = TCappendVardec (INFO_EXTVARDECS (arg_info),
-                                    FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
-                INFO_EXTVARDECS (arg_info) = NULL;
-            }
-
-            INFO_EXTCALL (arg_info) = external;
-            INFO_RECCALL (arg_info) = recursive;
-            INFO_LEVEL (arg_info)--;
+        // Extend the external call argument list.
+        if (NULL != INFO_EXTARGS (arg_info)) {
+            AP_ARGS (arg_node)
+              = TCappendExprs (INFO_EXTARGS (arg_info), AP_ARGS (arg_node));
+            INFO_EXTARGS (arg_info) = NULL;
         }
+
+        // Extend the recursive call argument list.
+        if (NULL != INFO_RECCALL (arg_info)) {
+            AP_ARGS (FUNDEF_LOOPRECURSIVEAP (lacfundef))
+              = TCappendExprs (INFO_RECCALL (arg_info),
+                               AP_ARGS (FUNDEF_LOOPRECURSIVEAP (lacfundef)));
+            INFO_RECCALL (arg_info) = NULL;
+        }
+
+        FUNDEF_RETURN (lacfundef) = LFUfindFundefReturn (lacfundef);
     }
 
     DBUG_RETURN (arg_node);
@@ -1031,34 +981,11 @@ LACSap (node *arg_node, info *arg_info)
 node *
 LACSprf (node *arg_node, info *arg_info)
 {
+    int DEADCODE;
 
     DBUG_ENTER ();
 
-    if ((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel)) {
-        PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
-    } else {
-        arg_node = TRAVcont (arg_node, arg_info);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/** <!--*******************************************************************-->
- *
- * @fn node *LACSid( node *arg_node, info *arg_info)
- *
- * Basically, we scalarize just about everything now.
- *
- *****************************************************************************/
-node *
-LACSid (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ();
-
-    //  DBUG_PRINT ( "%s marked as scalarizable!", ID_NAME( arg_node));
-    // AVIS_ISUSED( ID_AVIS( arg_node)) = TRUE;
-    //  DBUG_PRINT ( "%s marked as non-scalarizable", ID_NAME( arg_node));
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }

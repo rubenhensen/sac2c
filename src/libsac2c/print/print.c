@@ -2358,6 +2358,12 @@ PRTarg (node *arg_node, info *arg_info)
                      AVIS_NAME (ID_AVIS (AVIS_MAX (ARG_AVIS (arg_node)))));
         }
 
+        if (AVIS_SCALARS (ARG_AVIS (arg_node)) != NULL) {
+            fprintf (global.outfile, ", scalars: ");
+            AVIS_SCALARS (ARG_AVIS (arg_node))
+              = TRAVdo (AVIS_SCALARS (ARG_AVIS (arg_node)), arg_info);
+        }
+
         fprintf (global.outfile, " } "); /* end of avis info */
     }
     TRAVdo (ARG_AVIS (arg_node), arg_info);

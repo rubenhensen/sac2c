@@ -1721,7 +1721,6 @@
           <node name="Arg" />
           <node name="Assign" />
           <node name="Ap" />
-          <node name="Prf" />
           <node name="Id" />
         </travuser>
         <travnone>
@@ -8066,6 +8065,24 @@ N_tfarg :
             <targets>
               <target mandatory="no">
                 <node name="Id" />
+                <phases>
+                  <range from="opt_saacyc" to="opt_esaa" />
+                </phases>
+              </target>
+            </targets>
+        </son>
+
+        <son name="Scalars" default="NULL">
+          <description>
+	  For small arrays, such as shape vectors and 
+	  index vectors, this field comprises the scalars constituting
+	  those arrays as an N_array. This allows us to manipulate the
+	  scalars in optimizations such as AWLF, and avoids the need
+	  to build an N_array within LACFUNs.
+          </description>
+            <targets>
+              <target mandatory="no">
+                <node name="Array" />
                 <phases>
                   <range from="opt_saacyc" to="opt_esaa" />
                 </phases>
