@@ -104,7 +104,7 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
  *        the current inner N_ap recursive call element.
  *
  * @param arg_node: N_fundef in question
- *        argid: The current argument to the outer call of
+ *        arg:   The current N_id or N_avis element of the outer call of
  *               arg_node.
  *        rca:   The current N_exprs chain of arguments to the
  *               recursive call of arg_node.
@@ -128,26 +128,28 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
  *
  ******************************************************************************/
 bool
-LFUisLoopFunInvariant (node *arg_node, node *argid, node *rca)
+LFUisLoopFunInvariant (node *arg_node, node *arg, node *rca)
 {
     bool z = TRUE;
     node *proxy;
+    node *avis;
 
     DBUG_ENTER ();
 
+    avis = (N_avis == NODE_TYPE (arg)) ? arg : ID_AVIS (arg);
     if (FUNDEF_ISLOOPFUN (arg_node)) {
-        z = ID_AVIS (argid) == ID_AVIS (EXPRS_EXPR (rca));
+        z = avis == ID_AVIS (EXPRS_EXPR (rca));
         if (!z) {
             proxy = IVUTarrayFromProxySel (EXPRS_EXPR (rca));
             if (NULL != proxy) {
-                z = ID_AVIS (argid) == ID_AVIS (proxy);
+                z = (avis == ID_AVIS (proxy));
             }
         }
 
         if (!z) {
             proxy = IVUTarrayFromProxyIdxsel (EXPRS_EXPR (rca));
             if (NULL != proxy) {
-                z = ID_AVIS (argid) == ID_AVIS (proxy);
+                z = (avis == ID_AVIS (proxy));
             }
         }
     }

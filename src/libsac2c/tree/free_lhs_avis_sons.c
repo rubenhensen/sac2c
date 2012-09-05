@@ -99,6 +99,10 @@ FLASids (node *arg_node, info *arg_info)
         AVIS_MAX (avis) = FREEdoFreeNode (AVIS_MAX (avis));
     }
 
+    if (NULL != AVIS_SCALARS (avis)) {
+        AVIS_SCALARS (avis) = FREEdoFreeNode (AVIS_SCALARS (avis));
+    }
+
     DBUG_RETURN (z);
 }
 

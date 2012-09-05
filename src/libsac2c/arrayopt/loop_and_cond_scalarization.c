@@ -783,8 +783,9 @@ LACSfundef (node *arg_node, info *arg_info)
  *
  * @fn node *LACSid( node *arg_node, info *arg_info)
  *
- * @brief Most of the action happens here. We are looking
+ * @brief Most of the action happens here. We want to look
  *        at one of the external function call arguments in an N_ap.
+ *        If we are not called from the N_ap node, do nothing.
  *
  * @note At present, we require the N_id to be loop-invariant.
  *       This restriction could be eased if the recursive call
@@ -807,68 +808,74 @@ LACSid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    avis = ID_AVIS (arg_node);
-    DBUG_PRINT ("inspecting call value: %s", AVIS_NAME (avis));
+    if (INFO_INAP (arg_info)) { // Do nothing if not called from LACSap
+        avis = ID_AVIS (arg_node);
+        DBUG_PRINT ("inspecting call value: %s", AVIS_NAME (avis));
 
-    lacfundef = (NULL != INFO_AP (arg_info)) ? AP_FUNDEF (INFO_AP (arg_info)) : NULL;
-    rca = (NULL != lacfundef) ? FUNDEF_LOOPRECURSIVEAP (lacfundef) : NULL;
-    rca = (NULL != rca) ? AP_ARGS (rca) : NULL;
+        lacfundef = (NULL != INFO_AP (arg_info)) ? AP_FUNDEF (INFO_AP (arg_info)) : NULL;
+        rca = (NULL != lacfundef) ? FUNDEF_LOOPRECURSIVEAP (lacfundef) : NULL;
+        rca = (NULL != rca) ? AP_ARGS (rca) : NULL;
+        arg = TCgetNthArg (INFO_ARGNUM (arg_info), FUNDEF_ARGS (lacfundef));
 
-    /* Does this LACFUN argument meet our criteria for LACS? */
-    if (TUshapeKnown (AVIS_TYPE (avis)) && (INFO_INAP (arg_info))
-        && (!LACShasAvisScalars (INFO_ARGNUM (arg_info), INFO_AP (arg_info)))
-        && (LFUisLoopFunInvariant (lacfundef, arg_node, rca))
-        && (TYgetDim (AVIS_TYPE (avis)) > 0)) {
+        /* Does this LACFUN argument meet our criteria for LACS? */
+        if (TUshapeKnown (AVIS_TYPE (avis))
+            && (!LACShasAvisScalars (INFO_ARGNUM (arg_info), INFO_AP (arg_info)))
+            && (LFUisLoopFunInvariant (lacfundef, ARG_AVIS (arg), rca))
+            && (TYgetDim (AVIS_TYPE (avis)) > 0)) {
 
-        shp = SHcopyShape (TYgetShape (AVIS_TYPE (avis)));
-        if ((SHgetUnrLen (shp) <= global.minarray)) {
-            DBUG_PRINT ("replacing arg: %s!", AVIS_NAME (avis));
-            global.optcounters.lacs_expr += 1;
+            shp = SHcopyShape (TYgetShape (AVIS_TYPE (avis)));
+            if ((SHgetUnrLen (shp) <= global.minarray)) {
+                DBUG_PRINT ("replacing arg: %s!", AVIS_NAME (avis));
+                global.optcounters.lacs_expr += 1;
 
-            /**
-             * First we create new external function call arguments and the required
-             * selections from the N_id. New vardecs and assigns will be
-             * dealt with in LACSfundef and LACSassign, respectively.
-             * INFO_EXTARGS will be handled when we return to LACSap.
-             * That will complete changes to the calling function.
-             */
-            newexprs = ExtendExternalCall (avis, arg_info);
-            INFO_EXTARGS (arg_info) = TCappendExprs (INFO_EXTARGS (arg_info), newexprs);
+                /**
+                 * First we create new external function call arguments and the required
+                 * selections from the N_id. New vardecs and assigns will be
+                 * dealt with in LACSfundef and LACSassign, respectively.
+                 * INFO_EXTARGS will be handled when we return to LACSap.
+                 * That will complete changes to the calling function.
+                 */
+                newexprs = ExtendExternalCall (avis, arg_info);
+                INFO_EXTARGS (arg_info)
+                  = TCappendExprs (INFO_EXTARGS (arg_info), newexprs);
 
-            // Now, extend the lacfun signature. First, the new scalar arguments.
-            newargs = ExtendLacfunSignature (arg_node, arg_info);
+                // Now, extend the lacfun signature. First, the new scalar arguments.
+                newargs = ExtendLacfunSignature (arg_node, arg_info);
 
-            // And now, the AVIS_SCALARS N_array for the corresponding
-            // lacfun's N_arg entry.
-            arg = TCgetNthArg (INFO_ARGNUM (arg_info), FUNDEF_ARGS (lacfundef));
-            scalar_type = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))),
-                                     SHcreateShape (0));
-            AVIS_SCALARS (ARG_AVIS (arg)) = TBmakeArray (scalar_type, SHcopyShape (shp),
-                                                         TCcreateExprsFromArgs (newargs));
+                // And now, the AVIS_SCALARS N_array for the corresponding
+                // lacfun's N_arg entry.
+                arg = TCgetNthArg (INFO_ARGNUM (arg_info), FUNDEF_ARGS (lacfundef));
+                scalar_type = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))),
+                                         SHcreateShape (0));
+                AVIS_SCALARS (ARG_AVIS (arg))
+                  = TBmakeArray (scalar_type, SHcopyShape (shp),
+                                 TCcreateExprsFromArgs (newargs));
 
-            // We have to do the prefixing after we generate AVIS_SCALARS
-            FUNDEF_ARGS (lacfundef) = TCappendArgs (newargs, FUNDEF_ARGS (lacfundef));
+                /**
+                 * Lastly, we prefix the recursive call to reflect the
+                 * new arguments in the signature. We could do this now,
+                 * if we want to extend LACS to work on non-LIR variables,
+                 * it will be easier to collect all the parameters and do
+                 * it in LACSap.
+                 */
+                if (FUNDEF_ISLOOPFUN (lacfundef)) {
+                    INFO_RECCALL (arg_info)
+                      = TCappendExprs (INFO_RECCALL (arg_info),
+                                       GenerateNewRecursiveCallArguments (newargs));
+                }
 
-            /**
-             * Lastly, we prefix the recursive call to reflect the
-             * new arguments in the signature. We could do this now,
-             * if we want to extend LACS to work on non-LIR variables,
-             * it will be easier to collect all the parameters and do
-             * it in LACSap.
-             */
-            if (FUNDEF_ISLOOPFUN (lacfundef)) {
-                INFO_RECCALL (arg_info)
-                  = TCappendExprs (INFO_RECCALL (arg_info),
-                                   GenerateNewRecursiveCallArguments (newargs));
+                // We have to do the prefixing after we generate AVIS_SCALARS
+                // and handle the recursive call.
+                FUNDEF_ARGS (lacfundef) = TCappendArgs (newargs, FUNDEF_ARGS (lacfundef));
+
+            } else {
+                DBUG_PRINT ("not scalarized: %s", AVIS_NAME (ID_AVIS (arg_node)));
             }
-
+            shp = SHfreeShape (shp);
         } else {
-            DBUG_PRINT ("not scalarized: %s", AVIS_NAME (ID_AVIS (arg_node)));
+            DBUG_PRINT ("arg: %s - shape unknown or scalar",
+                        AVIS_NAME (ID_AVIS ((arg_node))));
         }
-        shp = SHfreeShape (shp);
-    } else {
-        DBUG_PRINT ("arg: %s - shape unknown or scalar",
-                    AVIS_NAME (ID_AVIS ((arg_node))));
     }
 
     DBUG_RETURN (arg_node);

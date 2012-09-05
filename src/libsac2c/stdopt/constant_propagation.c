@@ -230,6 +230,11 @@ CPavis (node *arg_node, info *arg_info)
         AVIS_MAX (arg_node) = TRAVdo (AVIS_MAX (arg_node), arg_info);
     }
 
+    if ((AVIS_SCALARS (arg_node) != NULL)) {
+        INFO_PROPMODE (arg_info) = PROP_scalarconst | PROP_arrayconst | PROP_array;
+        AVIS_SCALARS (arg_node) = TRAVdo (AVIS_SCALARS (arg_node), arg_info);
+    }
+
     DBUG_RETURN (arg_node);
 }
 

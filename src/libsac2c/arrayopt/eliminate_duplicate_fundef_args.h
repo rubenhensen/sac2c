@@ -12,16 +12,16 @@
 
 #include "types.h"
 
-node *EDFAdoEliminateDuplicateFundefArgs (node *arg_node);
-bool EDFAisLoopFunInvariant (node *arg_node, node *argid, node *rca);
+extern node *EDFAdoEliminateDuplicateFundefArgs (node *arg_node);
+extern bool EDFAisLoopFunInvariant (node *arg_node, node *argid, node *rca);
 
-node *EDFAmodule (node *arg_node, info *arg_info);
-node *EDFAfundef (node *arg_node, info *arg_info);
+extern node *EDFAmodule (node *arg_node, info *arg_info);
+extern node *EDFAfundef (node *arg_node, info *arg_info);
 // node *EDFAarg(node *arg_node, info *arg_info);
 // node *EDFAblock(node *arg_node, info *arg_info);
 // node *EDFAassign(node *arg_node, info *arg_info);
 // node *EDFAlet(node *arg_node, info *arg_info);
-node *EDFAap (node *arg_node, info *arg_info);
+extern node *EDFAap (node *arg_node, info *arg_info);
 // node *EDFAret(node *arg_node, info *arg_info);
 // node *EDFAreturn(node *arg_node, info *arg_info);
 // node *EDFAids(node *arg_node, info *arg_info);

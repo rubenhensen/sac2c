@@ -649,6 +649,7 @@ CopyWL (node *arg_node, info *arg_info)
     lut = insertNameIntoArgAndSig (AVIS_SHAPE (wlavis), lut, arg_info);
     lut = insertNameIntoArgAndSig (AVIS_MIN (wlavis), lut, arg_info);
     lut = insertNameIntoArgAndSig (AVIS_MAX (wlavis), lut, arg_info);
+    lut = insertNameIntoArgAndSig (AVIS_SCALARS (wlavis), lut, arg_info);
 
     /*
      * now all needed identifiers have been created
@@ -682,6 +683,7 @@ CopyWL (node *arg_node, info *arg_info)
     AVIS_SHAPE (wlavis) = DUPdoDupTreeLut (AVIS_SHAPE (wlavis), lut);
     AVIS_MIN (wlavis) = DUPdoDupTreeLut (AVIS_MIN (wlavis), lut);
     AVIS_MAX (wlavis) = DUPdoDupTreeLut (AVIS_MAX (wlavis), lut);
+    AVIS_SCALARS (wlavis) = DUPdoDupTreeLut (AVIS_SCALARS (wlavis), lut);
 
     /*
      * Copy the withloop definition into the body

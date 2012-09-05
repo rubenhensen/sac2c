@@ -238,6 +238,12 @@ RenameArgs (node *arg_node, lut_t *lutrenames)
             FREEdoFreeNode (AVIS_MAX (avis));
             AVIS_MAX (avis) = son;
         }
+
+        if (NULL != AVIS_SCALARS (avis)) {
+            son = DUPdoDupNodeLut (AVIS_SCALARS (avis), lutrenames);
+            FREEdoFreeNode (AVIS_SCALARS (avis));
+            AVIS_SCALARS (avis) = son;
+        }
         curarg = ARG_NEXT (curarg);
     }
 

@@ -1441,6 +1441,9 @@ SSATids (node *arg_node, info *arg_info)
         if (AVIS_MAX (avis) != NULL) {
             AVIS_MAX (new_avis) = DUPdoDupNode (AVIS_MAX (avis));
         }
+        if (AVIS_SCALARS (avis) != NULL) {
+            AVIS_SCALARS (new_avis) = DUPdoDupNode (AVIS_SCALARS (avis));
+        }
 
         if (global.compiler_phase <= PH_tc) {
             /**

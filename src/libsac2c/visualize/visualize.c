@@ -3190,6 +3190,7 @@ VISUALavis (node *arg_node, info *arg_info)
     TRAVopt (AVIS_SHAPE (arg_node), arg_info);
     TRAVopt (AVIS_MIN (arg_node), arg_info);
     TRAVopt (AVIS_MAX (arg_node), arg_info);
+    TRAVopt (AVIS_SCALARS (arg_node), arg_info);
 
     // fprintf( INFO_FILE( arg_info), "%s[label=Avis];\n",node_name);
     fprintf (INFO_FILE (arg_info),
@@ -3211,6 +3212,11 @@ VISUALavis (node *arg_node, info *arg_info)
     if (NULL != AVIS_MAX (arg_node)) {
         fprintf (INFO_FILE (arg_info), "%s -> %s [label=Max];\n", node_name,
                  (char *)*LUTsearchInLutP (INFO_TABLE (arg_info), AVIS_MAX (arg_node)));
+    }
+    if (NULL != AVIS_SCALARS (arg_node)) {
+        fprintf (INFO_FILE (arg_info), "%s -> %s [label=Scalars];\n", node_name,
+                 (char *)*LUTsearchInLutP (INFO_TABLE (arg_info),
+                                           AVIS_SCALARS (arg_node)));
     }
 
     DBUG_RETURN (arg_node);

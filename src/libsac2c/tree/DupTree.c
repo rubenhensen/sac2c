@@ -1375,6 +1375,25 @@ DUPblock (node *arg_node, info *arg_info)
             }
         }
 
+        // AVIS_SCALARS is NULL or an N_array, but see comment below re AVIS_MIN
+        if (NULL != AVIS_SCALARS (avis)) {
+            if (N_id == NODE_TYPE (AVIS_SCALARS (avis))) {
+                nid = (node *)LUTsearchInLutPp (INFO_LUT (arg_info), AVIS_SCALARS (avis));
+                if (nid != AVIS_SCALARS (avis)) { /* nilpotent rename */
+                    DBUG_ASSERT (N_id == NODE_TYPE (nid),
+                                 "Found non-id AVIS_SCALARS rename target");
+                    DBUG_PRINT ("renaming AVIS_SCALARS from %s to %s",
+                                AVIS_NAME (ID_AVIS (AVIS_SCALARS (avis))),
+                                AVIS_NAME (ID_AVIS (nid)));
+                    AVIS_SCALARS (avis) = FREEdoFreeNode (AVIS_SCALARS (avis));
+                    AVIS_SCALARS (avis) = TBmakeId (ID_AVIS (nid));
+                }
+            } else if (N_array == NODE_TYPE (AVIS_SCALARS (avis))) {
+                AVIS_SCALARS (avis) = DUPCONT (AVIS_SCALARS (avis));
+            } else {
+                DBUG_ASSERT (FALSE, "found oddball AVIS_SCALARS node type");
+            }
+        }
         /* AVIS_MIN and AVIS_MAX are restricted to N_id nodes, but
          * we use clones of the AVIS_DIM/SHAPE code, just to keep them
          * looking the same.

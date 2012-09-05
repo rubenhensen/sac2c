@@ -192,6 +192,10 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                 if (NULL != AVIS_MAX (ARG_AVIS (form_arg))) {
                     AVIS_MAX (newavis) = DUPdoDupNode (AVIS_MAX (ARG_AVIS (form_arg)));
                 }
+                if (NULL != AVIS_SCALARS (ARG_AVIS (form_arg))) {
+                    AVIS_SCALARS (newavis)
+                      = DUPdoDupNode (AVIS_SCALARS (ARG_AVIS (form_arg)));
+                }
 
                 ARG_AVIS (form_arg) = newavis;
             } else {
@@ -229,6 +233,9 @@ AdaptConcreteArgs (node *conc_arg, node *form_arg, node *fundef)
                 }
                 if (NULL != AVIS_MAX (oldavis)) {
                     AVIS_MAX (newavis) = DUPdoDupNode (AVIS_MAX (oldavis));
+                }
+                if (NULL != AVIS_SCALARS (oldavis)) {
+                    AVIS_SCALARS (newavis) = DUPdoDupNode (AVIS_SCALARS (oldavis));
                 }
 
                 ARG_AVIS (form_arg) = newavis;

@@ -8084,7 +8084,7 @@ N_tfarg :
               <target mandatory="no">
                 <node name="Array" />
                 <phases>
-                  <range from="opt_saacyc" to="opt_esaa" />
+                  <range from="opt" to="opt_esaa" />
                 </phases>
               </target>
             </targets>

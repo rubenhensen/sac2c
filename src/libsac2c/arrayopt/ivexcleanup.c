@@ -230,6 +230,12 @@ IVEXCavis (node *arg_node, info *arg_info)
     AVIS_COUNTING_WL (arg_node) = NULL;
     AVIS_WL_NEEDCOUNT (arg_node) = 0;
 
+    // This was done here only for convenience. If the back end wants it,
+    // we can defer this.
+    AVIS_SCALARS (arg_node) = (NULL != AVIS_SCALARS (arg_node))
+                                ? FREEdoFreeNode (AVIS_SCALARS (arg_node))
+                                : NULL;
+
     DBUG_RETURN (arg_node);
 }
 
