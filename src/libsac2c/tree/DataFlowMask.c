@@ -1050,11 +1050,11 @@ DFMprintMaskDetailed (FILE *handle, mask_t *mask)
     for (cnt = 0; cnt < mask->mask_base->num_ids; cnt++) {
         if (mask->mask_base->ids[cnt] != NULL) {
             if (mask->bitfield[i] & access_mask_table[j]) {
-                fprintf (handle, "%s 0X%8x\n", mask->mask_base->ids[cnt],
-                         (uint)mask->mask_base->decls[cnt]);
+                fprintf (handle, "%s " F_PTR "\n", mask->mask_base->ids[cnt],
+                         mask->mask_base->decls[cnt]);
             } else {
-                fprintf (handle, "[%s] 0X%8x\n", mask->mask_base->ids[cnt],
-                         (uint)mask->mask_base->decls[cnt]);
+                fprintf (handle, "[%s] " F_PTR "\n", mask->mask_base->ids[cnt],
+                         mask->mask_base->decls[cnt]);
             }
         }
 
