@@ -159,6 +159,8 @@ PMMskipId (void *param, node *expr)
             if (TCcountIds (LET_IDS (let)) == 1) {
                 expr = LET_EXPR (let);
             }
+        } else if (AVIS_SCALARS (ID_AVIS (expr)) != NULL) {
+            expr = AVIS_SCALARS (ID_AVIS (expr));
         } else if (follow_lut != NULL) {
             new_id = (node *)LUTsearchInLutP (follow_lut, ID_AVIS (expr));
             expr = (new_id != NULL ? new_id : expr);
