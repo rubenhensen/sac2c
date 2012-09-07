@@ -396,6 +396,7 @@ struct INFO {
     node *vardecs;
     node *preassigns;
     node *ap;
+    node *newlacfunargs;
     int argnum;
     bool inap;
 };
@@ -406,6 +407,7 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_AP(n) ((n)->ap)
+#define INFO_NEWLACFUNARGS(n) ((n)->newlacfunargs)
 #define INFO_ARGNUM(n) ((n)->argnum)
 #define INFO_INAP(n) ((n)->inap)
 
@@ -424,6 +426,7 @@ MakeInfo (void)
     INFO_VARDECS (result) = NULL;
     INFO_PREASSIGNS (result) = NULL;
     INFO_AP (result) = NULL;
+    INFO_NEWLACFUNARGS (result) = NULL;
     INFO_ARGNUM (result) = 0;
     INFO_INAP (result) = FALSE;
 
@@ -582,7 +585,7 @@ GenerateNewRecursiveCallArguments (node *args)
 
 /** <!--*******************************************************************-->
  *
- * @fn node * ExtendExternalCall( node *avis, info *arg_info)
+ * @fn node *ExtendExternalCall( node *avis, info *arg_info)
  *
  * This function generates an exprs chain of new scalar identifiers a1, ...,
  * and of the same element type as avis, and returns these.
@@ -808,7 +811,7 @@ LACSid (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if (INFO_INAP (arg_info)) { // Do nothing if not called from LACSap
+    if (NULL != INFO_AP (arg_info)) { // Do nothing if not called from LACSap
         avis = ID_AVIS (arg_node);
         DBUG_PRINT ("inspecting call value: %s", AVIS_NAME (avis));
 
@@ -825,7 +828,7 @@ LACSid (node *arg_node, info *arg_info)
 
             shp = SHcopyShape (TYgetShape (AVIS_TYPE (avis)));
             if ((SHgetUnrLen (shp) <= global.minarray)) {
-                DBUG_PRINT ("replacing arg: %s!", AVIS_NAME (avis));
+                DBUG_PRINT ("Scalarizing lacfun arg: %s", AVIS_NAME (ARG_AVIS (arg)));
                 global.optcounters.lacs_expr += 1;
 
                 /**
@@ -864,9 +867,10 @@ LACSid (node *arg_node, info *arg_info)
                                        GenerateNewRecursiveCallArguments (newargs));
                 }
 
-                // We have to do the prefixing after we generate AVIS_SCALARS
-                // and handle the recursive call.
-                FUNDEF_ARGS (lacfundef) = TCappendArgs (newargs, FUNDEF_ARGS (lacfundef));
+                // We have to do the prefixing on the LACFUN argument list
+                // after we handle all N_id nodes.
+                INFO_NEWLACFUNARGS (arg_info)
+                  = TCappendArgs (INFO_NEWLACFUNARGS (arg_info), newargs);
 
             } else {
                 DBUG_PRINT ("not scalarized: %s", AVIS_NAME (ID_AVIS (arg_node)));
@@ -909,19 +913,25 @@ LACSassign (node *arg_node, info *arg_info)
 
 /** <!--*******************************************************************-->
  *
- * @fn node *LACSarg( node *arg_node, info *arg_info)
+ * @fn node *LACSexprs( node *arg_node, info *arg_info)
  *
- * @brief We keep track of the argument index, then continue.
+ * @brief We should be traversing the N_ap argument list here.
+ *        We increment the argument index, then continue.
  *
  *****************************************************************************/
 node *
-LACSarg (node *arg_node, info *arg_info)
+LACSexprs (node *arg_node, info *arg_info)
 {
 
     DBUG_ENTER ();
 
-    INFO_ARGNUM (arg_info) = INFO_ARGNUM (arg_info) + 1;
-    arg_node = TRAVcont (arg_node, arg_info);
+    EXPRS_EXPR (arg_node) = TRAVdo (EXPRS_EXPR (arg_node), arg_info);
+
+    if (NULL != INFO_AP (arg_info)) { // Do nothing if not called from LACSap
+        INFO_ARGNUM (arg_info) = INFO_ARGNUM (arg_info) + 1;
+    }
+
+    EXPRS_NEXT (arg_node) = TRAVopt (EXPRS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -947,9 +957,10 @@ LACSap (node *arg_node, info *arg_info)
         DBUG_PRINT ("Found LACFUN: %s call from: %s", FUNDEF_NAME (lacfundef),
                     FUNDEF_NAME (INFO_FUNDEF (arg_info)));
 
-        DBUG_ASSERT (NULL == INFO_VARDECS (arg_info), "INFO_VARDECS not NULL");
         DBUG_ASSERT (NULL == INFO_EXTARGS (arg_info), "INFO_EXTARGS not NULL");
         DBUG_ASSERT (NULL == INFO_RECCALL (arg_info), "INFO_RECCALL not NULL");
+        DBUG_ASSERT (NULL == INFO_NEWLACFUNARGS (arg_info),
+                     "INFO_NEWLACFUNARGS not NULL");
 
         INFO_AP (arg_info) = arg_node;
         INFO_INAP (arg_info) = TRUE;
@@ -972,6 +983,13 @@ LACSap (node *arg_node, info *arg_info)
               = TCappendExprs (INFO_RECCALL (arg_info),
                                AP_ARGS (FUNDEF_LOOPRECURSIVEAP (lacfundef)));
             INFO_RECCALL (arg_info) = NULL;
+        }
+
+        // Prefix the new lacfun arguments
+        if (NULL != INFO_NEWLACFUNARGS (arg_info)) {
+            FUNDEF_ARGS (lacfundef)
+              = TCappendArgs (INFO_NEWLACFUNARGS (arg_info), FUNDEF_ARGS (lacfundef));
+            INFO_NEWLACFUNARGS (arg_info) = NULL;
         }
 
         FUNDEF_RETURN (lacfundef) = LFUfindFundefReturn (lacfundef);
