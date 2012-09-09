@@ -250,6 +250,8 @@ LFUgetLoopVariable (node *var, node *fundef, node *params)
  * @brief Find the N_assign that is just before the N_cond
  *        N_assign in a LOOPFUN.
  *
+ *        Blind assumption that first N_assign is not the N_cond.
+ *
  * @params arg_node: A LOOPFUN N_fundef node
  *
  * @result: The N_assign BEFORE the N_cond in a LOOPFUN
@@ -265,9 +267,9 @@ LFUfindAssignBeforeCond (node *arg_node)
     DBUG_ENTER ();
     /* separate loop body assignment chain */
     assignchain = BLOCK_ASSIGNS (FUNDEF_BODY (arg_node));
-
     z = assignchain;
     assignchain = ASSIGN_NEXT (z);
+
     while ((assignchain != NULL) && (NODE_TYPE (ASSIGN_STMT (assignchain)) != N_cond)) {
         z = assignchain;
         assignchain = ASSIGN_NEXT (assignchain);

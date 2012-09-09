@@ -122,15 +122,15 @@ SimplifyCall (node *arg_node, info *arg_info)
 {
     node *args;
     node *newargs = NULL;
-    node *calledfn;
+    node *lacfundef;
     node *lacfunparms;
     node *next;
 
     DBUG_ENTER ();
 
-    calledfn = AP_FUNDEF (arg_node);
+    lacfundef = AP_FUNDEF (arg_node);
     args = AP_ARGS (arg_node);
-    lacfunparms = FUNDEF_ARGS (calledfn);
+    lacfunparms = FUNDEF_ARGS (lacfundef);
 
     while (NULL != args) {
         next = EXPRS_NEXT (args);
@@ -154,7 +154,7 @@ SimplifyCall (node *arg_node, info *arg_info)
 
 /**<!--***********************************************************************-->
  *
- * @fn node *SimplifyFunctionHeader( node *arg_node, node *lacfundef)
+ * @fn node *SimplifyLacfunHeader( node *arg_node, node *lacfundef)
  *
  * @brief Eliminate any duplicate parameters from the LACFUN function
  *        header.
@@ -165,7 +165,7 @@ SimplifyCall (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 static node *
-SimplifyFunctionHeader (node *arg_node, node *lacfundef)
+SimplifyLacfunHeader (node *arg_node, node *lacfundef)
 {
     node *newargs = NULL;
     node *next;
@@ -238,7 +238,6 @@ RenameArgs (node *arg_node, lut_t *lutrenames)
             FREEdoFreeNode (AVIS_MAX (avis));
             AVIS_MAX (avis) = son;
         }
-
         if (NULL != AVIS_SCALARS (avis)) {
             son = DUPdoDupNodeLut (AVIS_SCALARS (avis), lutrenames);
             FREEdoFreeNode (AVIS_SCALARS (avis));
@@ -331,7 +330,7 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
     while (NULL != apargs) {
         argid = EXPRS_EXPR (apargs);
         argavis = ID_AVIS (argid);
-        if (LFUisLoopFunInvariant (lacfundef, argid, rca)) {
+        if (LFUisLoopFunInvariant (lacfundef, ARG_AVIS (fundefargs), rca)) {
             lutitem = (node **)LUTsearchInLutP (INFO_LUTARGS (arg_info), argavis);
             if (NULL == lutitem) {
                 /* Entry not in LUT. This is a new argument.
@@ -341,9 +340,10 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
                 INFO_LUTARGS (arg_info)
                   = LUTinsertIntoLutP (INFO_LUTARGS (arg_info), argavis,
                                        ARG_AVIS (fundefargs));
-                DBUG_PRINT ("Non-duplicate argument %s found", AVIS_NAME (argavis));
+                DBUG_PRINT ("Non-dup arg %s (%s in lacfun) found", AVIS_NAME (argavis),
+                            AVIS_NAME (ARG_AVIS (fundefargs)));
             } else {
-                /* This argument is a loop-invariant dup */
+                /* This parameter is a loop-invariant dup */
                 ARG_ISDUPLICATE (fundefargs) = TRUE;
                 formalargavis = *lutitem;
                 DBUG_PRINT ("Duplicate arg %s renamed to %s in LACFUN %s",
@@ -354,6 +354,9 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
                                        formalargavis);
                 lutnonempty = TRUE;
             }
+        } else {
+            DBUG_PRINT ("argument %s (%s in lacfun) is not loop-invariant",
+                        AVIS_NAME (argavis), AVIS_NAME (ARG_AVIS (fundefargs)));
         }
 
         apargs = EXPRS_NEXT (apargs);
@@ -498,11 +501,12 @@ EDFAap (node *arg_node, info *arg_info)
         arg_node = MarkDupsAndRenameBody (arg_node, arg_info);
         arg_node = SimplifyCall (arg_node, arg_info); /* outer call */
         if (FUNDEF_ISLOOPFUN (lacfundef)) {
+            FUNDEF_LOOPRECURSIVEAP (lacfundef) = LFUfindRecursiveCallAp (lacfundef);
             reccall = FUNDEF_LOOPRECURSIVEAP (lacfundef);
             reccall = SimplifyCall (reccall, arg_info); /* recursive call */
         }
         FUNDEF_ARGS (lacfundef)
-          = SimplifyFunctionHeader (FUNDEF_ARGS (lacfundef), lacfundef);
+          = SimplifyLacfunHeader (FUNDEF_ARGS (lacfundef), lacfundef);
         FUNDEF_RETURN (lacfundef) = LFUfindFundefReturn (lacfundef);
     }
 

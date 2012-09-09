@@ -189,12 +189,11 @@
  *    the small array x is passed from the CONDFUN caller
  *    to the LOOPFUN.
  *
- * 2. LACS is applied to ALL small integer vectors. If this
- *    works out OK from a performance standpoint, then we
- *    can trivially extend LS to operate on all small arrays.
+ * 2. LACS is applied to ALL small  vectors.
  *    This should benefit certain codes that operate on such
  *    arrays, such as the complex-arithmetic version of Mandelbrot,
- *    which works with two-element sets of doubles.
+ *    which works with complex numbers represented as two-element vectors
+ *    of doubles.
  *
  * 3. Implementation of the extension in (2) should be accompanied
  *    by a similar extension of PFRUNR, to unroll all (most?) small array
@@ -205,11 +204,11 @@
  *    A scalarized version of vect2offset is certainly required,
  *    with semantics perhaps along these lines:
  *
- *      offset = scalars2offset( iv, N,
+ *      offset = scalars2offset( iv,
  *             shp0, shp1,...shp(N-1),
  *             iv0,  iv1,...,iv(N-1));
  *
- * 5. The only reason we need IV around is so that optimizations
+ *    The only reason we need iv around is so that optimizations
  *    such as AWLF can trace back the origin of the indices to
  *    a WL generator, etc. A post-optimization traversal
  *    would convert replace the scalars2offset by an equivalent
@@ -328,39 +327,20 @@
  * by means of three local functions:
  *  - AdjustLoopSignature,
  *  - AdjustRecursiveCall, and
- *  - ExtendExternalCall
+ *  - GenerateScalarsFromArray
  * All these directly modify the formal/actual parameters of the Do-fun and
  * its two calls. Furthermore, AdjustLoopSignature inserts its vardecs and
  * assignments via INFO_FUNDEF. Similarily, AdjustRecursiveCall uses
  * INFO_FUNDEF and INFO_PRECONDASSIGN do directly insert the generated
  * vardecs and assignments, respectively.
  *
- * Although ExtendExternalCall creates code very similar to that of
+ * Although GenerateScalarsFromArray creates code very similar to that of
  * AdjustRecursiveCall, it does not insert the code directly but stores
  * the vardecs and assignments in INFO_VARDECS and in INFO_PREASSIGNS.
  * While the vardecs are inserted in LACSap (utilizing INFO_FUNDEF again -
  * now pointing to the N_fundef of the external function), the assignments
  * are inserted in LACSassign (which is traversed bottom up in order to
  * avoid a superfluous traversal of the freshly generated assignments).
- *
- *
- * We also make a final pass across the LACFUN loop signature,
- * replacing AVIS_SHAPE N_id nodes by their equivalent N_array
- * nodes. Strictly speaking, this only has to be done for CONDFUNs,
- * because of the need to preserve SSA behavior.
- *
- * Consider this example:
- *
- *   int condfun( int shp0, int shp1, int[.,.] mat { shape: shp}...
- *
- * We are * unable to write:
- *
- *   shp = [ shp0, shp1];
- *
- * and then use shp as an AVIS_SHAPE for mat, because the assignment
- * of the N_array has to appear in both legs of the cond, AND
- * they must have distinct names. So, that's nasty, but we CAN
- * just write:  AVIS_SHAPE( mat) = [ shp0, shp1];
  *
  */
 
@@ -397,6 +377,7 @@ struct INFO {
     node *preassigns;
     node *ap;
     node *newlacfunargs;
+    node *preassignslacfun;
     int argnum;
     bool inap;
 };
@@ -408,6 +389,7 @@ struct INFO {
 #define INFO_PREASSIGNS(n) ((n)->preassigns)
 #define INFO_AP(n) ((n)->ap)
 #define INFO_NEWLACFUNARGS(n) ((n)->newlacfunargs)
+#define INFO_PREASSIGNSLACFUN(n) ((n)->preassignslacfun)
 #define INFO_ARGNUM(n) ((n)->argnum)
 #define INFO_INAP(n) ((n)->inap)
 
@@ -427,6 +409,7 @@ MakeInfo (void)
     INFO_PREASSIGNS (result) = NULL;
     INFO_AP (result) = NULL;
     INFO_NEWLACFUNARGS (result) = NULL;
+    INFO_PREASSIGNSLACFUN (result) = NULL;
     INFO_ARGNUM (result) = 0;
     INFO_INAP (result) = FALSE;
 
@@ -555,6 +538,7 @@ CreateAssigns (constant *idx, void *accu, void *local_info)
     return (accu);
 }
 
+#ifdef DEADCDODE
 /** <!--*******************************************************************-->
  *
  * @fn node *GenerateNewRecursiveCallArguments( node *args)
@@ -582,10 +566,12 @@ GenerateNewRecursiveCallArguments (node *args)
 
     DBUG_RETURN (z);
 }
+#endif // DEADCDODE
 
 /** <!--*******************************************************************-->
  *
- * @fn node *ExtendExternalCall( node *avis, info *arg_info)
+ * @fn node *GenerateScalarsFromArray( node *avis, node **preassigns,
+ *                               node **vardecs)
  *
  * This function generates an exprs chain of new scalar identifiers a1, ...,
  * and of the same element type as avis, and returns these.
@@ -599,7 +585,7 @@ GenerateNewRecursiveCallArguments (node *args)
  *
  *****************************************************************************/
 static node *
-ExtendExternalCall (node *avis, info *arg_info)
+GenerateScalarsFromArray (node *avis, node **preassigns, node **vardecs)
 {
     node *old_exprs;
     node *new_exprs;
@@ -638,10 +624,10 @@ ExtendExternalCall (node *avis, info *arg_info)
     new_vardecs = TCappendVardec (new_vardecs, local_info_ptr->vardecs);
 
     /**
-     * insert vardecs and assignments into arg_info:
+     * prefix new vardecs and assignments
      */
-    INFO_VARDECS (arg_info) = TCappendVardec (new_vardecs, INFO_VARDECS (arg_info));
-    INFO_PREASSIGNS (arg_info) = TCappendAssign (new_assigns, INFO_PREASSIGNS (arg_info));
+    *vardecs = TCappendVardec (new_vardecs, *vardecs);
+    *preassigns = TCappendAssign (new_assigns, *preassigns);
 
     DBUG_RETURN (new_exprs);
 }
@@ -802,12 +788,14 @@ LACSid (node *arg_node, info *arg_info)
 {
     shape *shp;
     node *newexprs;
+    node *newlacfunexprs = NULL;
     node *rca;
     node *lacfundef;
     node *newargs;
     node *avis;
     ntype *scalar_type;
     node *arg;
+    node *recursivearg = NULL;
 
     DBUG_ENTER ();
 
@@ -822,9 +810,10 @@ LACSid (node *arg_node, info *arg_info)
 
         /* Does this LACFUN argument meet our criteria for LACS? */
         if (TUshapeKnown (AVIS_TYPE (avis))
-            && (!LACShasAvisScalars (INFO_ARGNUM (arg_info), INFO_AP (arg_info)))
-            && (LFUisLoopFunInvariant (lacfundef, ARG_AVIS (arg), rca))
-            && (TYgetDim (AVIS_TYPE (avis)) > 0)) {
+            && (!LACShasAvisScalars (INFO_ARGNUM (arg_info), INFO_AP (arg_info))) &&
+            // NO LONGER NEEDED( LFUisLoopFunInvariant( lacfundef, ARG_AVIS( arg), rca))
+            // &&
+            (TYgetDim (AVIS_TYPE (avis)) > 0)) {
 
             shp = SHcopyShape (TYgetShape (AVIS_TYPE (avis)));
             if ((SHgetUnrLen (shp) <= global.minarray)) {
@@ -838,7 +827,18 @@ LACSid (node *arg_node, info *arg_info)
                  * INFO_EXTARGS will be handled when we return to LACSap.
                  * That will complete changes to the calling function.
                  */
-                newexprs = ExtendExternalCall (avis, arg_info);
+                newexprs = GenerateScalarsFromArray (avis, &INFO_PREASSIGNS (arg_info),
+                                                     &INFO_VARDECS (arg_info));
+
+                if (FUNDEF_ISLOOPFUN (lacfundef)) {
+                    recursivearg
+                      = TCgetNthExprs (INFO_ARGNUM (arg_info),
+                                       AP_ARGS (FUNDEF_LOOPRECURSIVEAP (lacfundef)));
+                    newlacfunexprs
+                      = GenerateScalarsFromArray (ID_AVIS (EXPRS_EXPR (recursivearg)),
+                                                  &INFO_PREASSIGNSLACFUN (arg_info),
+                                                  &FUNDEF_VARDECS (lacfundef));
+                }
                 INFO_EXTARGS (arg_info)
                   = TCappendExprs (INFO_EXTARGS (arg_info), newexprs);
 
@@ -857,14 +857,18 @@ LACSid (node *arg_node, info *arg_info)
                 /**
                  * Lastly, we prefix the recursive call to reflect the
                  * new arguments in the signature. We could do this now,
-                 * if we want to extend LACS to work on non-LIR variables,
+                 * but if we want to extend LACS to work on non-LIR variables,
                  * it will be easier to collect all the parameters and do
                  * it in LACSap.
                  */
                 if (FUNDEF_ISLOOPFUN (lacfundef)) {
                     INFO_RECCALL (arg_info)
+                      = TCappendExprs (INFO_RECCALL (arg_info), newlacfunexprs);
+#ifdef DEADCDODE
+                    INFO_RECCALL (arg_info)
                       = TCappendExprs (INFO_RECCALL (arg_info),
                                        GenerateNewRecursiveCallArguments (newargs));
+#endif // DEADCDODE
                 }
 
                 // We have to do the prefixing on the LACFUN argument list
@@ -948,6 +952,8 @@ LACSap (node *arg_node, info *arg_info)
 {
     node *lacfundef;
     node *reccall;
+    node *nass;
+    node *newass;
 
     DBUG_ENTER ();
 
@@ -978,6 +984,9 @@ LACSap (node *arg_node, info *arg_info)
         }
 
         // Extend the recursive call argument list.
+        if (FUNDEF_ISLOOPFUN (lacfundef)) {
+            FUNDEF_LOOPRECURSIVEAP (lacfundef) = LFUfindRecursiveCallAp (lacfundef);
+        }
         if (NULL != INFO_RECCALL (arg_info)) {
             AP_ARGS (FUNDEF_LOOPRECURSIVEAP (lacfundef))
               = TCappendExprs (INFO_RECCALL (arg_info),
@@ -990,6 +999,15 @@ LACSap (node *arg_node, info *arg_info)
             FUNDEF_ARGS (lacfundef)
               = TCappendArgs (INFO_NEWLACFUNARGS (arg_info), FUNDEF_ARGS (lacfundef));
             INFO_NEWLACFUNARGS (arg_info) = NULL;
+        }
+
+        // Insert preassigns for recursive call before N_cond
+        if (NULL != INFO_PREASSIGNSLACFUN (arg_info)) {
+            nass = LFUfindAssignBeforeCond (lacfundef);
+            newass = ASSIGN_NEXT (nass);
+            ASSIGN_NEXT (nass) = INFO_PREASSIGNSLACFUN (arg_info);
+            nass = TCappendAssign (nass, newass);
+            INFO_PREASSIGNSLACFUN (arg_info) = NULL;
         }
 
         FUNDEF_RETURN (lacfundef) = LFUfindFundefReturn (lacfundef);
