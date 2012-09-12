@@ -308,6 +308,7 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
     node *apargs;
     node *fundefargs = NULL;
     node *rca = NULL;
+    node *rcaid;
     bool lutnonempty = FALSE;
     node **lutitem = NULL;
     node *formalargavis = NULL;
@@ -330,7 +331,9 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
     while (NULL != apargs) {
         argid = EXPRS_EXPR (apargs);
         argavis = ID_AVIS (argid);
-        if (LFUisLoopFunInvariant (lacfundef, ARG_AVIS (fundefargs), rca)) {
+        rcaid = (NULL != rca) ? EXPRS_EXPR (rca) : NULL;
+
+        if (LFUisLoopFunInvariant (lacfundef, ARG_AVIS (fundefargs), rcaid)) {
             lutitem = (node **)LUTsearchInLutP (INFO_LUTARGS (arg_info), argavis);
             if (NULL == lutitem) {
                 /* Entry not in LUT. This is a new argument.

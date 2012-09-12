@@ -104,10 +104,9 @@ LFUprefixFunctionArgument (node *arg_node, node *calleravis, node **callerapargs
  *        the current inner N_ap recursive call element.
  *
  * @param arg_node: N_fundef in question
- *        arg:   The current N_id or N_avis element of the outer call of
- *               arg_node.
- *        rca:   The current N_exprs chain of arguments to the
- *               recursive call of arg_node.
+ *        arg:   The current N_id or N_avis element of the
+ *               lacfun's N_arg.
+ *        rca:   The current N_id of the recursive call of arg_node.
  *
  * @result: True if the above brief holds.
  *
@@ -138,21 +137,24 @@ LFUisLoopFunInvariant (node *arg_node, node *arg, node *rca)
 
     avis = (N_avis == NODE_TYPE (arg)) ? arg : ID_AVIS (arg);
     if (FUNDEF_ISLOOPFUN (arg_node)) {
-        z = avis == ID_AVIS (EXPRS_EXPR (rca));
+        z = avis == ID_AVIS (rca);
         if (!z) {
-            proxy = IVUTarrayFromProxySel (EXPRS_EXPR (rca));
+            proxy = IVUTarrayFromProxySel (rca);
             if (NULL != proxy) {
                 z = (avis == ID_AVIS (proxy));
             }
         }
 
         if (!z) {
-            proxy = IVUTarrayFromProxyIdxsel (EXPRS_EXPR (rca));
+            proxy = IVUTarrayFromProxyIdxsel (rca);
             if (NULL != proxy) {
                 z = (avis == ID_AVIS (proxy));
             }
         }
     }
+    DBUG_PRINT ("arg=%s and rca=%s are %s loop-invariant", AVIS_NAME (avis),
+                ((NULL != rca) ? AVIS_NAME (ID_AVIS (rca)) : "notrecursive!"),
+                ((z ? "" : "not")));
 
     DBUG_RETURN (z);
 }
@@ -702,7 +704,7 @@ LFUmarkDuplicateLacfunArgs (node *arg_node)
         while (NULL != apargs) {
             argid = EXPRS_EXPR (apargs);
             argavis = ID_AVIS (argid);
-            if ((LFUisLoopFunInvariant (lacfundef, argid, rca))
+            if ((LFUisLoopFunInvariant (lacfundef, ARG_AVIS (lacfunargs), rca))
                 && (!ARG_ISDUPLICATE (apargs))) {
                 /* Arg is a duplicate if loop-invariant and we have seen it already */
                 ARG_ISDUPLICATE (apargs) = AVIS_GENERICMARKER (ARG_AVIS (apargs));
@@ -712,6 +714,7 @@ LFUmarkDuplicateLacfunArgs (node *arg_node)
                                 AVIS_NAME (argavis), FUNDEF_NAME (arg_node));
                 }
                 apargs = EXPRS_NEXT (apargs);
+                lacfunargs = ARG_NEXT (lacfunargs);
             }
         }
     }

@@ -15,7 +15,7 @@
  *
  *  b. It propagates extrema out of LACFUN results into the
  *     calling environment.
- *     Or will, eventually... It does not do so, at present.
+ *     Or will, eventually... It does NOT do so, at present.
  *
  *  The traversal does not concern itself with scalarization, duplicated
  *  arguments, etc.  These tasks are left to LS and EDFA.
@@ -80,7 +80,9 @@
 #include "propagate_extrema_thru_lacfuns.h"
 #include "eliminate_duplicate_fundef_args.h"
 #include "ivextrema.h"
+#include "compare_tree.h"
 #include "lacfun_utilities.h"
+#include "pattern_match.h"
 
 /*
  * INFO structure
@@ -147,6 +149,63 @@ FreeInfo (info *info)
 
 /**<!--***********************************************************************-->
  *
+ * @fn static bool IsSameExtremum(node *arg, arg_node rca)
+ *
+ * @brief Comparator for extrema
+ *
+ *  The problem we are trying to solve here is this. We have this loopfun:
+ *
+ *  with a call to it that has AVIS_MINVAL( arg) = 0;
+ *
+ * int  loopfun( int arg) {
+ * ...
+ *  garg, p = _non_neg_val_S_( arg);
+ *    loopfun( garg); NB. Recursive call
+ *
+ *    There are two distinct problems here:
+ *
+ *    a. LACS won't propagate AVIS_MINVAL( _lacs_2325) = 0 into the loopfun,
+ *       because arg is not loop-invariant.
+ *
+ *    b. DLIR won't lift the guard expression out of the loopfun, for the
+ *       same reason, I think.
+ *
+ *    This code allows the LACS propagation when the extrema match.
+ *
+ * @param arg, rca: ARG_AVIS for lacfun caller
+ *        and N_id for lacfun recursive call.
+ *
+ * @result Return TRUE if both extrema exist and match.
+ *
+ *
+ * This is a kludge until Bug #1022 is resolved. Bodo proposed a
+ * more general solution that also handles identity results
+ * from non-lacfuns. He promises to stick notes into Bug #1022,
+ * but is gone for the day.
+ *
+ ******************************************************************************/
+static bool
+IsSameExtremum (node *arg, node *rca)
+{
+    bool z = FALSE;
+    pattern *pat;
+    node *target = NULL;
+
+    DBUG_ENTER ();
+
+    if ((NULL != arg) && (NULL != rca)) {
+        pat = PMany (1, PMAgetNode (&target), 0);
+        if (PMmatchFlatSkipGuards (pat, rca)) {
+            z = (N_id == NODE_TYPE (target)) && (ID_AVIS (target) == arg);
+        }
+        pat = PMfree (pat);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/**<!--***********************************************************************-->
+ *
  * @fn node *EnhanceLacfunHeader( node *arg_node, info *arg_info)
  *
  * @brief Add N_arg nodes for new extrema.
@@ -190,10 +249,11 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
     node *minmax;
     node *argavis;
     node *rca;
+    node *rcaid;
     ntype *typ;
     node *reccall;
     node *newrecursiveapargs = NULL;
-    ;
+    node *lfa;
 
     DBUG_ENTER ();
     DBUG_PRINT ("Attempting to enhance LACFUN %s header", FUNDEF_NAME (arg_node));
@@ -209,28 +269,33 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
     while (NULL != apargs) {
         callarg = EXPRS_EXPR (apargs);
         argavis = ID_AVIS (callarg);
-        if (LFUisLoopFunInvariant (arg_node, callarg, rca)) {
-            typ = AVIS_TYPE (argavis);
-            if ((NULL == AVIS_MIN (ARG_AVIS (lacfunargs))) && (!TYisAKV (typ))
-                && (NULL != AVIS_MIN (argavis))) {
-                minmax = AVIS_MIN (argavis);
-                newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
-                                                     &INFO_NEWOUTERAPARGS (arg_info));
-                AVIS_MIN (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
-                DBUG_PRINT ("Adding AVIS_MIN(%s) for formal parameter %s",
-                            AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
-            }
+        lfa = ARG_AVIS (lacfunargs);
 
-            if ((NULL == AVIS_MAX (ARG_AVIS (lacfunargs))) && (!TYisAKV (typ))
-                && (NULL != AVIS_MAX (argavis))) {
-                minmax = AVIS_MAX (argavis);
-                newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
-                                                     &INFO_NEWOUTERAPARGS (arg_info));
-                AVIS_MAX (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
-                DBUG_PRINT ("Adding AVIS_MAX(%s) for formal parameter %s",
-                            AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
-            }
+        typ = AVIS_TYPE (argavis);
+        if ((NULL == AVIS_MIN (lfa)) && (!TYisAKV (typ)) && (NULL != AVIS_MIN (argavis))
+            && (NULL != rca)
+            && ((LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca))) ||
+                // FIXME: Next line is KLUDGE for Bug #1022
+                (IsSameExtremum (lfa, EXPRS_EXPR (rca))))) {
+            minmax = AVIS_MIN (argavis);
+            newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
+                                                 &INFO_NEWOUTERAPARGS (arg_info));
+            AVIS_MIN (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
+            DBUG_PRINT ("Adding AVIS_MIN(%s) for formal parameter %s",
+                        AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
         }
+
+        int fixme; // same as above
+        if ((NULL == AVIS_MAX (ARG_AVIS (lacfunargs))) && (!TYisAKV (typ))
+            && (NULL != rca) && (NULL != AVIS_MAX (argavis))) {
+            minmax = AVIS_MAX (argavis);
+            newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
+                                                 &INFO_NEWOUTERAPARGS (arg_info));
+            AVIS_MAX (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
+            DBUG_PRINT ("Adding AVIS_MAX(%s) for formal parameter %s",
+                        AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
+        }
+
         apargs = EXPRS_NEXT (apargs);
         lacfunargs = ARG_NEXT (lacfunargs);
         rca = (NULL != rca) ? EXPRS_NEXT (rca) : NULL;

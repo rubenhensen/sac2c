@@ -80,19 +80,21 @@ ASFdoAddSpecialFunctions (node *syntaxtree)
         DSaddSymbolByName ("zero", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("eq", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("adjustLacFunParams", SET_wrapperhead, global.preludename);
-        DSaddSymbolByName ("prod", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("adjustLacFunParamsReshape", SET_wrapperhead,
                            global.preludename);
-        DSaddSymbolByName ("partitionSlicer", SET_wrapperhead, global.preludename);
-        DSaddSymbolByName ("gridFiller", SET_wrapperhead, global.preludename);
-        DSaddSymbolByName ("partitionIntersectMax", SET_wrapperhead, global.preludename);
-        DSaddSymbolByName ("partitionIntersectMin", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("isPartitionIntersectNull", SET_wrapperhead,
-                           global.preludename);
-        DSaddSymbolByName ("isPartitionIntersect1Part", SET_wrapperhead,
                            global.preludename);
         DSaddSymbolByName ("partitionMin", SET_wrapperhead, global.preludename);
         DSaddSymbolByName ("partitionMax", SET_wrapperhead, global.preludename);
+        DSaddSymbolByName ("isPartitionIntersect1Part", SET_wrapperhead,
+                           global.preludename);
+        DSaddSymbolByName ("partitionIntersectMax", SET_wrapperhead, global.preludename);
+        DSaddSymbolByName ("partitionIntersectMin", SET_wrapperhead, global.preludename);
+        DSaddSymbolByName ("SACarg", SET_wrapperhead, global.preludename);
+        DSaddSymbolByName ("prod", SET_wrapperhead, global.preludename);
+        DSaddSymbolByName ("partitionSlicer", SET_wrapperhead, global.preludename);
+        DSaddSymbolByName ("gridFiller", SET_wrapperhead, global.preludename);
+        DSaddSymbolByName ("++", SET_wrapperhead, global.preludename);
 
         DSfinishDeserialize (syntaxtree);
 
