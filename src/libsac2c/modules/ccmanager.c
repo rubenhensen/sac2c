@@ -20,6 +20,7 @@
 #include "resource.h"
 #include "stringset.h"
 #include "filemgr.h"
+#include "cygwinhelpers.h"
 
 static char *
 GetCCCall (void)
@@ -328,7 +329,15 @@ InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
 
     libpath = GetLibPath ();
 
+/*
+ * If cygwin/windows environment then build dependencies based
+ * on ported PE COFF ld linker.
+ */
+#if IS_CYGWIN
+    deplibs = CYGHgetCompleteLibString (CYGH_sac);
+#else
     deplibs = (char *)STRSfold (&BuildDepLibsStringProg, deps, STRcpy (""));
+#endif
 
     SYScall ("%s %s -o %s %s %s %s %s", cccall, ccflags, global.outfilename,
              global.cfilename, libpath, deplibs, libs);
@@ -540,8 +549,18 @@ CCMgetLinkerFlags (node *syntax_tree)
 
     libs = GetLibs ();
     paths = GetLibPath ();
+
+    /*
+     * Cygwin/windows specific linker flags.
+     */
+
+#if (IS_CYGWIN)
+    deplibs
+      = (char *)STRSfold (&CYGHbuildLibSearchString, global.dependencies, STRcpy (""));
+#else
     deplibs
       = (char *)STRSfold (&BuildDepLibsStringProg, global.dependencies, STRcpy (""));
+#endif
 
     result = STRcatn (5, paths, " ", libs, " ", deplibs);
 

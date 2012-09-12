@@ -1139,6 +1139,18 @@ GLOBAL (int, cuda_2d_block_x, 0, xfree_dummy, )
 GLOBAL (int, cuda_2d_block_y, 0, xfree_dummy, )
 GLOBAL (int, cuda_blocking_factor, 0, xfree_dummy, )
 
+/*
+ * cygwin compatibility globals
+ */
+#if IS_CYGWIN
+GLOBAL (cyg_fun_table_t *, cyg_fun_table, NULL, xfree_dummy)
+/*
+ * Stores a list of function pointers for compiled sac modules to call.
+ * This is in order to solve a problem where a compiled module will be
+ * dependant on the compiler used. See sac2ccyg.c
+ */
+#endif /* IS_CYGWIN */
+
 #undef GLOBALtype
 #undef GLOBALname
 #undef GLOBALinit

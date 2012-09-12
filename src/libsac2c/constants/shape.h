@@ -24,6 +24,10 @@
 
 extern shape *SHmakeShape (int dim);
 extern shape *SHcreateShape (int dim, ...);
+#if IS_CYGWIN
+extern shape *SHcreateShapeVa (int dim, va_list Argp);
+#endif
+
 extern shape *SHcopyShape (shape *shp);
 extern void SHprintShape (FILE *file, shape *shp);
 extern shape *SHfreeShape (shape *shp);

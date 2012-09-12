@@ -1,8 +1,11 @@
+
 /*
  *
  * $Id$
  *
  */
+
+#include <stdio.h>
 
 #include "libbuilder.h"
 
@@ -17,6 +20,10 @@
 #include "resource.h"
 #include "filemgr.h"
 #include "globals.h"
+
+#if IS_CYGWIN
+#include "cygwinhelpers.h"
+#endif /* IS_CYGWIN */
 
 /** <!--********************************************************************-->
  *
@@ -91,6 +98,10 @@ LIBBcreateLibrary (node *syntax_tree)
     char *ldCmd;
     stringset_t *deps = global.dependencies;
 
+    /* used under cygwin */
+    char *cygdeplibs = "";
+    char *ldDir = "";
+
     DBUG_ENTER ();
 
     if (global.gen_cccall) {
@@ -116,17 +127,29 @@ LIBBcreateLibrary (node *syntax_tree)
     if (STReq (global.config.ld_dynamic, "")) {
         CTInote ("Shared libraries are not supported by the target.");
     } else {
-        CTInote ("Creating shared SAC library `lib%sMod%s.so'", global.modulename,
-                 global.config.lib_variant);
+        CTInote ("Creating shared SAC library `lib%sMod%s" SHARED_LIB_EXT "'",
+                 global.modulename, global.config.lib_variant);
 
         libraryName = STRcatn (5, "lib", global.modulename, "Mod",
-                               global.config.lib_variant, ".so");
+                               global.config.lib_variant, SHARED_LIB_EXT);
         ldCmd = STRsubstToken (global.config.ld_dynamic, "%libname%", libraryName);
+
+#if IS_CYGWIN
+        /*
+         * Under cygwin we need to tell the linker about these dependencies
+         * because shared libraries (DLLs) cannot have undefined symols.
+         */
+        cygdeplibs = CYGHgetCompleteLibString (CYGH_sac);
+
+        ldDir = CYGHbuildLibDirectoryString ();
+        ldCmd = STRcat (ldCmd, ldDir);
+#endif
 
         DBUG_PRINT ("linker command: %s", ldCmd);
 
-        SYScall ("%s -o %s%s %s/fun*_pic.o %s/globals_pic.o %s", ldCmd, global.targetdir,
-                 libraryName, global.tmp_dirname, global.tmp_dirname, deplibs);
+        SYScall ("%s -o %s%s %s/fun*_pic.o %s/globals_pic.o %s%s", ldCmd,
+                 global.targetdir, libraryName, global.tmp_dirname, global.tmp_dirname,
+                 deplibs, cygdeplibs);
 
         libraryName = MEMfree (libraryName);
         ldCmd = MEMfree (ldCmd);
@@ -134,20 +157,32 @@ LIBBcreateLibrary (node *syntax_tree)
 
     deplibs = MEMfree (deplibs);
 
-    CTInote ("Creating shared SAC library `lib%sTree%s.so'", global.modulename,
-             global.config.lib_variant);
+    CTInote ("Creating shared SAC library `lib%sTree%s" SHARED_LIB_EXT "'",
+             global.modulename, global.config.lib_variant);
 
-    libraryName
-      = STRcatn (5, "lib", global.modulename, "Tree", global.config.lib_variant, ".so");
+    libraryName = STRcatn (5, "lib", global.modulename, "Tree", global.config.lib_variant,
+                           SHARED_LIB_EXT);
     ldCmd = STRsubstToken (global.config.tree_ld, "%libname%", libraryName);
 
+#if IS_CYGWIN
+    cygdeplibs = CYGHgetCompleteLibString (CYGH_sac2c);
+
+    ldDir = CYGHbuildLibDirectoryString ();
+    ldCmd = STRcat (ldCmd, ldDir);
+#endif
+
     SYScall ("%s -o %s%s %s/serialize.o %s/symboltable.o"
-             " %s/dependencytable.o %s/namespacemap.o %s/filenames.o",
+             " %s/dependencytable.o %s/namespacemap.o %s/filenames.o%s",
              ldCmd, global.targetdir, libraryName, global.tmp_dirname, global.tmp_dirname,
-             global.tmp_dirname, global.tmp_dirname, global.tmp_dirname);
+             global.tmp_dirname, global.tmp_dirname, global.tmp_dirname, cygdeplibs);
 
     libraryName = MEMfree (libraryName);
     ldCmd = MEMfree (ldCmd);
+
+#if IS_CYGWIN
+    ldDir = MEMfree (ldDir);
+    cygdeplibs = MEMfree (cygdeplibs);
+#endif
 
     if (global.gen_cccall) {
         /*
@@ -155,7 +190,6 @@ LIBBcreateLibrary (node *syntax_tree)
          */
         SYSstopTracking ();
     }
-
     DBUG_RETURN (syntax_tree);
 }
 
@@ -192,9 +226,10 @@ LIBBcreateWrapperLibrary (node *syntax_tree)
                  STRonNull (".", global.lib_dirname), global.outfilename);
     }
 
-    CTInote ("Creating shared wrapper library `lib%s.so'", global.outfilename);
+    CTInote ("Creating shared wrapper library `lib%s" SHARED_LIB_EXT "'",
+             global.outfilename);
 
-    libraryName = STRcatn (3, "lib", global.outfilename, ".so");
+    libraryName = STRcatn (3, "lib", global.outfilename, SHARED_LIB_EXT);
     ldCmd = STRsubstToken (global.config.ld_dynamic, "%libname%", libraryName);
 
     SYScall ("%s -o %s/%s %s/fun*_pic.o %s/globals_pic.o "

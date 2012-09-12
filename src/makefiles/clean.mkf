@@ -69,7 +69,7 @@ clean_subdirs: $(CLEAN_SUBDIRS) $(CLEAN_TARGETS)
 #
 
 clean_sourcedir_all:
-	$(HIDE) $(RM) *.o *.a *.so *.bak *~ .*.d
+	$(HIDE) $(RM) *.o *.a *.so *.bak *~ .*.d *.dll *.dll.a
 	$(HIDE) $(RM) $(patsubst %.xsl,%,$(wildcard *.xsl))
 	$(HIDE) $(RM) $(patsubst %.m4,%,$(wildcard *.m4))
 	$(HIDE) $(RM) -r .sb SunWS_cache

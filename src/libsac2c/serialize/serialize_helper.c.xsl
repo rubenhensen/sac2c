@@ -84,6 +84,7 @@ version="1.0">
 #include "stdarg.h"
 #include "check_mem.h"
 #include "serialize_stack.h"
+#include "serialize_helper.h"
 
   </xsl:text>
   <xsl:apply-templates select="." mode="gen-make-fun" />
@@ -92,10 +93,33 @@ version="1.0">
 </xsl:template>
 
 <xsl:template match="/" mode="gen-make-fun">
+  <!-- function added for cygwin compat -->
+  <xsl:text>
+#if IS_CYGWIN
+node *
+SHLPmakeNode( int _node_type, int lineno, char* sfile, ...)
+{
+  node *result;
+  va_list Argp;
+
+  va_start (Argp, sfile);
+  result = SHLPmakeNodeVa( _node_type, lineno, sfile, Argp);
+  va_end(Argp);
+  
+  return( result);
+}
+  </xsl:text>
+  <xsl:value-of select="'node *SHLPmakeNodeVa( int _node_type, int lineno, char* sfile, va_list args) {'" />
+  <xsl:text>
+#else
+  </xsl:text>
   <xsl:value-of select="'node *SHLPmakeNode( int _node_type, int lineno, char* sfile, ...) {'" />
+  <xsl:value-of select="'va_list args;'" />
+  <xsl:text>
+#endif /* IS_CYGWIN */
+  </xsl:text>
   <xsl:value-of select="'nodetype node_type = (nodetype)_node_type;'" />
   <xsl:value-of select="'node *xthis = NULL;'" />
-  <xsl:value-of select="'va_list args;'" />
   <xsl:if test="key(&quot;arraytypes&quot;, //syntaxtree//type/@name)">
     <xsl:value-of select="'int cnt, max;'" />
   </xsl:if>
@@ -172,11 +196,23 @@ version="1.0">
 <xsl:template match="node" mode="gen-fill-fun">
   <!-- check whether there was an argument -->
   <xsl:if test="sons/son | attributes/attribute">
+    <xsl:text>
+#if !IS_CYGWIN
+    </xsl:text>
     <xsl:value-of select="'va_start( args, sfile);'" />
+    <xsl:text>
+#endif
+    </xsl:text>
     <xsl:apply-templates select="attributes/attribute" mode="gen-fill-fun" />
     <xsl:apply-templates select="sons/son" mode="gen-fill-fun" />
     <xsl:apply-templates select="flags/flag" mode="gen-fill-fun" />
+    <xsl:text>
+#if !IS_CYGWIN
+    </xsl:text>
     <xsl:value-of select="'va_end( args);'" />
+    <xsl:text>
+#endif
+    </xsl:text>
   </xsl:if>
 </xsl:template>
 

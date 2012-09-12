@@ -20,6 +20,10 @@
 #include "types_nodetype.h"
 #include "types_trav.h"
 
+#if IS_CYGWIN
+#include <stdarg.h>
+#endif
+
 /*
  * bool values
  */
@@ -986,15 +990,6 @@ typedef struct {
     travfun_p travfun;
 } anontrav_t;
 
-/*
- * Read in global variables from globals.mac
- */
-
-typedef struct GLOBAL_T {
-#define GLOBAL(type, name, val, ...) type name;
-#include "globals.mac"
-} global_t;
-
 /******************************************************************************
  * moved from SSAConstantFolding.h:
  *
@@ -1117,6 +1112,54 @@ typedef struct ELEMLIST elemlist;
 typedef struct ELEMQUEUE elemqueue;
 typedef struct LUBINFO lubinfo;
 typedef struct COMPINFO compinfo;
+
+/******************************************************************************
+ *
+ * The following types are for cygwin compatibility only
+ *
+ ******************************************************************************/
+#if IS_CYGWIN
+/*
+ * This struct is used to collect function pointers to allow compiled modules
+ * to callback to the correct libsac2c.x.dll
+ * It is passed to any sac module that is opened dlopened.
+ *
+ * See cygcompat.c for more information.
+ */
+
+typedef struct CYG_FUN_TABLE {
+    char *(*STRcpy_fp) (const char *);
+    shape *(*SHcreateShapeVa_fp) (int, va_list);
+    ntype *(*TYdeserializeTypeVa_fp) (int, va_list);
+    namespace_t *(*NSdeserializeNamespace_fp) (int);
+    int (*NSaddMapping_fp) (const char *, void *);
+    void *(*NSdeserializeView_fp) (const char *, int, void *);
+    node *(*SHLPmakeNodeVa_fp) (int, int, char *, va_list);
+    void (*SHLPfixLink_fp) (serstack_t *, int, int, int);
+    serstack_t *(*SERbuildSerStack_fp) (node *);
+    constant *(*COdeserializeConstant_fp) (simpletype, shape *, int, char *);
+    node *(*DSlookupFunction_fp) (const char *, const char *);
+    node *(*DSlookupObject_fp) (const char *, const char *);
+    node *(*DSfetchArgAvis_fp) (int);
+    double (*DShex2Double_fp) (const char *);
+    float (*DShex2Float_fp) (const char *);
+    sttable_t *(*STinit_fp) (void);
+    void (*STadd_fp) (const char *, int, const char *, int, void *, unsigned);
+    stringset_t *(*STRSadd_fp) (const char *, strstype_t, stringset_t *);
+} cyg_fun_table_t;
+
+#endif /* IS_CYGWIN */
+
+/*****************************************************************************/
+
+/*
+ * Read in global variables from globals.mac
+ */
+
+typedef struct GLOBAL_T {
+#define GLOBAL(type, name, val, ...) type name;
+#include "globals.mac"
+} global_t;
 
 /******************************************************************************
  * typedef for CUDA data reuse analysis

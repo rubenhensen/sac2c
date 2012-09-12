@@ -63,7 +63,7 @@ extern sttable_t *STinit (void);
 extern sttable_t *STdestroy (sttable_t *table);
 extern sttable_t *STcopy (const sttable_t *table);
 extern void STadd (const char *symbol, int visbility, const char *name, int type,
-                   void *table, unsigned);
+                   void *table, unsigned int argc);
 
 extern void STremove (const char *symbol, sttable_t *table);
 extern bool STcontains (const char *symbol, const sttable_t *table);

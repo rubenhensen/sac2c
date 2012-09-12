@@ -1133,7 +1133,9 @@ PrintAuthors (void)
             "      Roeland Douma\n"
             "      Oscar Leijendekker\n"
             "      Miguel Diogo\n"
-            "      Jaroslav Sykora\n");
+            "      Jaroslav Sykora\n"
+            "      Edward Michniak\n"
+            "      Martin Hawes\n");
 
     DBUG_RETURN ();
 }

@@ -6,6 +6,7 @@
 #include "sacinterface.h"
 #include "sac.h"
 #include <stdarg.h>
+#include "config.h"
 
 /*
  * names for types
@@ -33,5 +34,10 @@ extern void *SACARGextractData (SACarg *arg);
 extern int SACARGgetDim (SACarg *arg);
 extern int SACARGgetShape (SACarg *arg, int pos);
 extern int SACARGgetBasetype (SACarg *arg);
+
+#if IS_CYGWIN == 0
+extern void *SACARGcopyDataUdt (basetype btype, int size, void *data);
+extern void *SACARGfreeDataUdt (basetype btype, void *data);
+#endif
 
 #endif /* _SAC_SACARG_H_ */

@@ -1195,6 +1195,7 @@ DSlookupFunction (const char *module, const char *symbol)
         DBUG_PRINT ("Looking up function `%s:%s' in `%s'.", module, symbol, module);
 
         result = AddSymbolById (symbol, module, FALSE);
+
     } else {
         updateContextInformation (result);
     }

@@ -5,6 +5,10 @@
 #define DBUG_PREFIX "LIB"
 #include "debug.h"
 
+#if IS_CYGWIN
+#include "cygwinhelpers.h"
+#endif /* is_CYGWIN */
+
 #include "ctinfo.h"
 
 #include <dlfcn.h>
@@ -61,6 +65,10 @@ LIBMloadLibrary (const char *name)
     dynlib_t result;
 
     DBUG_ENTER ();
+
+#if IS_CYGWIN
+    name = CYGHcygToWinPath (name);
+#endif
 
     DBUG_PRINT ("Loading library `%s'", name);
 

@@ -295,7 +295,7 @@ STentryInsert (const char *symbolname, stvisibility_t vis, stentry_t *entry,
 
 void
 STadd (const char *symbol, int _vis, const char *name, int _type, void *_table,
-       unsigned argc)
+       unsigned int argc)
 {
     stentry_t *entry;
     stvisibility_t vis = (stvisibility_t)_vis;

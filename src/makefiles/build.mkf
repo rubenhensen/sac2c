@@ -172,19 +172,35 @@ $(PROJECT_ROOT)/src/bin/%: $(SUBTARGETS)
 # Building libsac2c
 #
 
-$(PROJECT_ROOT)/lib/libsac2c.so: $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so
+$(PROJECT_ROOT)/lib/libsac2c$(SHARED_LIB_EXT): $(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short)$(SHARED_LIB_EXT)
 	@$(ECHO) ""
-	@$(ECHO) "Using $(PREFIX_ROOT)lib/libsac2c.$($(STYLE)_short).so ($($(STYLE)_long) version)"
-	$(HIDE) $(CP) $< $@
-
-$(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short).so: global/build_$(STYLE).$($(STYLE)_short).o
+	@$(ECHO) "Using $(PREFIX_ROOT)lib/libsac2c.$($(STYLE)_short)$(SHARED_LIB_EXT) ($($(STYLE)_long) version)"
+	@if [ $(SHARED_LIB_EXT) == ".dll" ]; \
+		then \
+			cd $(PROJECT_ROOT)/lib/ ;\
+			$(LN) libsac2c.$($(STYLE)_short)$(SHARED_LIB_EXT) libsac2c$(SHARED_LIB_EXT) ;\
+		else \
+			$(CP) $< $@ ;\
+		fi
+  
+# This rule filters out cygcompat.o because it is not part of libsac2c but still belongs in the sub project.
+# cygcompat.o belongs in libcygcompat.a which will only be built under cygwin. See the rule bellow.
+$(PROJECT_ROOT)/lib/libsac2c.$($(STYLE)_short)$(SHARED_LIB_EXT): global/build_$(STYLE).$($(STYLE)_short).o
 	@$(ECHO) ""
-	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac2c.$($(STYLE)_short).so ($($(STYLE)_long) version)"
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac2c.$($(STYLE)_short)$(SHARED_LIB_EXT) ($($(STYLE)_long) version)"
 	@$(TOUCH) $(FINGERPRINT_FILE)
 	$(HIDE) $(subst %libname%,$(notdir $@),$(LD_DYNAMIC)) -o $@ \
-                $(SUBTARGETS) $^ \
+                $(filter-out support/cygcompat.$($(STYLE)_short).o, $(SUBTARGETS)) $^ \
                 $(LIBDIRS) $(LIB_MAKETOOLS) $(LIBS)
 
+
+$(PROJECT_ROOT)/lib/libcygcompat.a: support/cygcompat.$($(STYLE)_short).o
+	@if [ $(SHARED_LIB_EXT) == ".dll" ]; \
+		then \
+			$(ECHO) "" ;\
+			$(ECHO) "Creating $(PREFIX_ROOT)lib/libcygcompat.a" ;\
+			$(CROSS_AR) $@ $^ ;\
+		fi
 
 ################################################################################
 #
@@ -239,24 +255,24 @@ $(PROJECT_ROOT)/lib/libsacpreludeMod$(CROSS_VARIANT).a: \
 	@$(ECHO) "Creating " $(notdir $@)
 	$(HIDE) $(CP) $< $@
 	@$(CLOCK_SKEW_ELIMINATION)
-	$(HIDE) if [ -e $(basename $<).so ]; \
+	$(HIDE) if [ -e $(basename $<)$(SHARED_LIB_EXT) ]; \
 	        then \
-	          $(ECHO) "Creating " $(basename $(notdir $@)).so; \
-                  $(CP) $(basename $<).so $(basename $@).so; \
+	          $(ECHO) "Creating " $(basename $(notdir $@))$(SHARED_LIB_EXT); \
+                  $(CP) $(basename $<)$(SHARED_LIB_EXT) $(basename $@)$(SHARED_LIB_EXT); \
 	        fi
 
-$(PROJECT_ROOT)/lib/libsacpreludeTree$(CROSS_VARIANT).so: \
-  $(STYLE)/libsacpreludeTree$(CROSS_VARIANT).so
+$(PROJECT_ROOT)/lib/libsacpreludeTree$(CROSS_VARIANT)$(SHARED_LIB_EXT): \
+  $(STYLE)/libsacpreludeTree$(CROSS_VARIANT)$(SHARED_LIB_EXT)
 	@$(ECHO) "Creating " `basename $@`
 	$(HIDE) $(CP) $< $@
 	@$(CLOCK_SKEW_ELIMINATION)
 
 
 $(STYLE)/libsacpreludeMod$(CROSS_VARIANT).a \
-$(STYLE)/libsacpreludeMod$(CROSS_VARIANT).so: \
-  $(STYLE)/libsacpreludeTree$(CROSS_VARIANT).so
+$(STYLE)/libsacpreludeMod$(CROSS_VARIANT)$(SHARED_LIB_EXT): \
+  $(STYLE)/libsacpreludeTree$(CROSS_VARIANT)$(SHARED_LIB_EXT)
 
-$(STYLE)/libsacpreludeTree$(CROSS_VARIANT).so: \
+$(STYLE)/libsacpreludeTree$(CROSS_VARIANT)$(SHARED_LIB_EXT): \
   sacprelude.sac $(FINGERPRINT_FILE)
 	@$(ECHO) "Compiling $< $(CROSS_FOR)"
 	$(HIDE) $(SAC2C) -o $(STYLE) $(CROSS_TARGET) \
@@ -278,9 +294,9 @@ $(PROJECT_ROOT)/lib/libsacphm$(CROSS_VARIANT)%.a: $(SUBTARGETS:.o=%.o)
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
-$(PROJECT_ROOT)/lib/libsacphm$(CROSS_VARIANT)%.so: $(SUBTARGETS:.o=%.o)
+$(PROJECT_ROOT)/lib/libsacphm$(CROSS_VARIANT)%$(SHARED_LIB_EXT): $(SUBTARGETS:.o=%.o)
 	@$(ECHO) ""
-	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac$(CROSS_VARIANT)$*.so " \
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac$(CROSS_VARIANT)$*$(SHARED_LIB_EXT) " \
                  "($($(STYLE)_long) version) $(CROSS_FOR)"
 	$(HIDE) $(subst %libname%,$(notdir $@),$(CROSS_LD_DYNAMIC)) -o $@ $^
 	@$(TOUCH) .done
@@ -295,9 +311,9 @@ $(PROJECT_ROOT)/lib/libsac$(CROSS_VARIANT)%.a: $(SUBTARGETS:.o=%.o)
 	@$(TOUCH) .done
 	@$(CLOCK_SKEW_ELIMINATION)  
 
-$(PROJECT_ROOT)/lib/libsac$(CROSS_VARIANT)%.so: $(SUBTARGETS:.o=%.o)
+$(PROJECT_ROOT)/lib/libsac$(CROSS_VARIANT)%$(SHARED_LIB_EXT): $(SUBTARGETS:.o=%.o)
 	@$(ECHO) ""
-	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac$(CROSS_VARIANT)$*.so " \
+	@$(ECHO) "Creating $(PREFIX_ROOT)lib/libsac$(CROSS_VARIANT)$*$(SHARED_LIB_EXT) " \
                  "($($(STYLE)_long) version) $(CROSS_FOR)"
 	$(HIDE) $(subst %libname%,$(notdir $@),$(CROSS_LD_DYNAMIC)) -o $@ $^
 	@$(TOUCH) .done

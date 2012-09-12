@@ -35,7 +35,7 @@ extern const char *NSgetModule (const namespace_t *ns);
 extern namespace_t *NSbuildView (const namespace_t *orig);
 
 extern void NSserializeNamespace (FILE *file, const namespace_t *ns);
-extern namespace_t *NSdeserialzeNamespace (int id);
+extern namespace_t *NSdeserializeNamespace (int id);
 extern void *NSdeserializeView (const char *module, int id, void *_next);
 
 extern void NSgenerateNamespaceMap (void);

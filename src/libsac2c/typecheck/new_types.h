@@ -343,5 +343,8 @@ extern node *TYcreateWrapperCode (node *fundef, node *vardecs, node **new_vardec
 
 extern void TYserializeType (FILE *file, ntype *type);
 extern ntype *TYdeserializeType (int _con, ...);
+#if IS_CYGWIN
+extern ntype *TYdeserializeTypeVa (int _con, va_list Argp);
+#endif
 
 #endif /* _SAC_NEW_TYPES_H_ */

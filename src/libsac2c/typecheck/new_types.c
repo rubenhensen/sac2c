@@ -7623,18 +7623,44 @@ TYserializeType (FILE *file, ntype *type)
  ** De-Serialization support
  **/
 
+#if IS_CYGWIN
 ntype *
 TYdeserializeType (int _con, ...)
 {
     ntype *result = NULL;
+    va_list Argp;
+
+    DBUG_ENTER ();
+
+    va_start (Argp, _con);
+    result = TYdeserializeTypeVa (_con, Argp);
+    va_end (Argp);
+
+    DBUG_RETURN (result);
+}
+
+ntype *
+TYdeserializeTypeVa (int _con, va_list args)
+{
+#else
+ntype *
+TYdeserializeType (int _con, ...)
+{
+    va_list args;
+#endif /* IS_CYGWIN */
+    ntype *result = NULL;
     int cnt;
     typeconstr con = (typeconstr)_con;
-    va_list args;
+
     simpletype st;
 
     DBUG_ENTER ();
 
     DBUG_PRINT_TAG ("SER", "Deserializing ntype %s", dbug_str[con]);
+
+#if !IS_CYGWIN
+    va_start (args, _con);
+#endif
 
     switch (con) {
     case TC_simple: {
@@ -7642,8 +7668,6 @@ TYdeserializeType (int _con, ...)
         char *symid;
         namespace_t *ns;
         bool has_hidden;
-
-        va_start (args, _con);
 
         st = (simpletype)va_arg (args, int);
         has_hidden = (bool)va_arg (args, int);
@@ -7664,28 +7688,20 @@ TYdeserializeType (int _con, ...)
                 result = TYmakeSimpleType (st);
             }
         }
-
-        va_end (args);
     } break;
     case TC_symbol: {
         char *name;
         namespace_t *ns;
 
-        va_start (args, _con);
-
         name = va_arg (args, char *);
         ns = va_arg (args, namespace_t *);
 
         result = TYmakeSymbType (STRcpy (name), ns);
-
-        va_end (args);
     } break;
     case TC_user: {
         char *symid;
         namespace_t *ns;
         usertype udt;
-
-        va_start (args, _con);
 
         symid = va_arg (args, char *);
         ns = va_arg (args, namespace_t *);
@@ -7693,110 +7709,72 @@ TYdeserializeType (int _con, ...)
         udt = DSloadUserType (symid, ns);
 
         result = TYmakeUserType (udt);
-
-        va_end (args);
     } break;
     case TC_akv: {
         ntype *type;
         constant *cnst;
 
-        va_start (args, _con);
-
         type = va_arg (args, ntype *);
         cnst = va_arg (args, constant *);
 
         result = TYmakeAKV (type, cnst);
-
-        va_end (args);
     } break;
     case TC_aks: {
         ntype *type;
         shape *shp;
 
-        va_start (args, _con);
-
         type = va_arg (args, ntype *);
         shp = va_arg (args, shape *);
 
         result = TYmakeAKS (type, shp);
-
-        va_end (args);
     } break;
     case TC_akd: {
         ntype *type;
         int dim;
         shape *shp;
 
-        va_start (args, _con);
-
         type = va_arg (args, ntype *);
         dim = va_arg (args, int);
         shp = va_arg (args, shape *);
 
         result = TYmakeAKD (type, dim, shp);
-
-        va_end (args);
     } break;
     case TC_aud: {
-        va_start (args, _con);
-
         result = TYmakeAUD (va_arg (args, ntype *));
-
-        va_end (args);
     } break;
     case TC_audgz: {
-        va_start (args, _con);
-
         result = TYmakeAUDGZ (va_arg (args, ntype *));
     } break;
     case TC_prod: {
-        va_start (args, _con);
-
         result = MakeNtype (TC_prod, va_arg (args, int));
 
         for (cnt = 0; cnt < NTYPE_ARITY (result); cnt++) {
             PROD_MEMBER (result, cnt) = va_arg (args, ntype *);
         }
-
-        va_end (args);
     } break;
     case TC_union: {
-        va_start (args, _con);
-
         result = MakeNtype (TC_union, va_arg (args, int));
 
         for (cnt = 0; cnt < NTYPE_ARITY (result); cnt++) {
             UNION_MEMBER (result, cnt) = va_arg (args, ntype *);
         }
-
-        va_end (args);
     } break;
     case TC_fun: {
-        va_start (args, _con);
-
         result = MakeNtype (TC_fun, va_arg (args, int));
 
         for (cnt = 0; cnt < NTYPE_ARITY (result); cnt++) {
             NTYPE_SON (result, cnt) = va_arg (args, ntype *);
         }
-
-        va_end (args);
     } break;
     case TC_ibase: {
-        va_start (args, _con);
-
         result = MakeNtype (TC_ibase, 3);
 
         IBASE_BASE (result) = va_arg (args, ntype *);
         IBASE_SCAL (result) = va_arg (args, ntype *);
         IBASE_GEN (result) = va_arg (args, ntype *);
         IBASE_IARR (result) = va_arg (args, ntype *);
-
-        va_end (args);
     } break;
     case TC_iarr: {
-        va_start (args, _con);
-
         result = MakeNtype (TC_iarr, va_arg (args, int));
 
         IARR_GEN (result) = va_arg (args, ntype *);
@@ -7804,12 +7782,8 @@ TYdeserializeType (int _con, ...)
         for (cnt = 0; cnt < NTYPE_ARITY (result) - 1; cnt++) {
             IARR_IDIM (result, cnt) = va_arg (args, ntype *);
         }
-
-        va_end (args);
     } break;
     case TC_idim: {
-        va_start (args, _con);
-
         result = MakeNtype (TC_idim, va_arg (args, int));
 
         IDIM_DIM (result) = va_arg (args, int);
@@ -7819,22 +7793,14 @@ TYdeserializeType (int _con, ...)
         for (cnt = 0; cnt < NTYPE_ARITY (result) - 1; cnt++) {
             IDIM_ISHAPE (result, cnt) = va_arg (args, ntype *);
         }
-
-        va_end (args);
     } break;
     case TC_ishape: {
-        va_start (args, _con);
-
         result = MakeNtype (TC_ishape, 1);
 
         ISHAPE_SHAPE (result) = va_arg (args, shape *);
         ISHAPE_GEN (result) = va_arg (args, ntype *);
-
-        va_end (args);
     } break;
     case TC_ires: {
-        va_start (args, _con);
-
         result = MakeNtype (TC_ires, 1);
         IRES_NUMFUNS (result) = va_arg (args, int);
 
@@ -7856,8 +7822,6 @@ TYdeserializeType (int _con, ...)
         }
 
         IRES_TYPE (result) = va_arg (args, ntype *);
-
-        va_end (args);
     } break;
     case TC_alpha: {
         DBUG_ASSERT (0, "Cannot deserialize alpha types");
@@ -7865,17 +7829,11 @@ TYdeserializeType (int _con, ...)
         result = NULL;
     } break;
     case TC_poly: {
-        va_start (args, _con);
-
         result = TYmakePolyType (STRcpy (va_arg (args, char *)));
-
-        va_end (args);
     } break;
     case TC_polyuser: {
         char *outer, *inner, *shape;
         bool denest, renest;
-
-        va_start (args, _con);
 
         outer = STRcpy (va_arg (args, char *));
         inner = STRcpy (va_arg (args, char *));
@@ -7884,20 +7842,18 @@ TYdeserializeType (int _con, ...)
         renest = (bool)va_arg (args, int);
 
         result = TYmakePolyUserType (outer, inner, shape, denest, renest);
-
-        va_end (args);
     } break;
     case TC_bottom: {
-        va_start (args, _con);
-
         result = TYmakeBottomType (STRcpy (va_arg (args, char *)));
-
-        va_end (args);
     } break;
     case TC_dummy: {
         result = MakeNtype (TC_dummy, 0);
     } break;
     }
+
+#if !IS_CYGWIN
+    va_end (args);
+#endif
 
     DBUG_RETURN (result);
 }

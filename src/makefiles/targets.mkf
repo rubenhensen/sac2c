@@ -44,7 +44,8 @@ maketools_hzip              := hzip
 #
 ###############################################################################
 
-libsac2c_targets           := src/doc/ast.html  src/doc/ast.png  lib/libsac2c.so
+libsac2c_targets           := src/doc/ast.html  src/doc/ast.png  lib/libsac2c$(SHARED_LIB_EXT)  lib/libcygcompat.a
+                              
 libsac2c_targetdir         := 
 
 libsac2c_subtarget_suffix  := .o
@@ -90,7 +91,13 @@ libsac2c_tree        := traverse tree_basic free tree_compound DupTree \
                         free_lhs_avis_sons
 
 libsac2c_support     := debug str ptr_buffer str_buffer system math_utils \
-                        gdb_utils int_matrix
+                        gdb_utils int_matrix cygcompat cygwinhelpers
+
+# in the case that we are not using cygwin these files need not be compiled.
+ifneq ($(OS),cygwin)
+libsac2c_support := $(filter-out cygcompat, $(libsac2c_support))
+libsac2c_support := $(filter-out cygwinhelpers, $(libsac2c_support))
+endif
 
 libsac2c_serialize   := serialize_node serialize_attribs deserialize \
                         serialize_buildstack serialize_helper \
@@ -126,6 +133,7 @@ libsac2c_typecheck   := new_typecheck new_types user_types create_wrappers \
                         builtin_types
 
 libsac2c_types       := 
+
 
 libsac2c_modules     := symboltable stringset libstat modulemanager libmanager \
                         export ccmanager libbuilder resolveall \
@@ -326,7 +334,7 @@ runtime_rtspec_h       := rtspec registry reqqueue controller
 #
 ###############################################################################
 
-libsacprelude_targets           := libsacpreludeTree$(CROSS_VARIANT).so \
+libsacprelude_targets           := libsacpreludeTree$(CROSS_VARIANT)$(SHARED_LIB_EXT) \
                                    libsacpreludeMod$(CROSS_VARIANT).a
 libsacprelude_targetdir         := lib
 
@@ -353,14 +361,25 @@ libsacprelude_sourcedirs        := .
 ifeq  (MUTC, $(CROSS_BACKEND))
 libsac_targets             := libsac$(CROSS_VARIANT).seq.a
 else
-libsac_targets             := libsac$(CROSS_VARIANT).seq.a     \
-                              libsac$(CROSS_VARIANT).seq.so    \
-                              libsac$(CROSS_VARIANT).mt.pth.a  \
-                              libsac$(CROSS_VARIANT).mt.pth.so \
-                              libsac$(CROSS_VARIANT).mt.lpel.a  \
-                              libsac$(CROSS_VARIANT).mt.lpel.so \
-                              libsac$(CROSS_VARIANT).mt.omp.a  \
-                              libsac$(CROSS_VARIANT).mt.omp.so
+ifeq ($(OS),cygwin)
+libsac_targets := libsac$(CROSS_VARIANT).seq.a                   \
+                  libsac$(CROSS_VARIANT).seq$(SHARED_LIB_EXT)    \
+                  libsac$(CROSS_VARIANT).mt.pth.a                \
+                  libsac$(CROSS_VARIANT).mt.pth$(SHARED_LIB_EXT) \
+#                  libsac$(CROSS_VARIANT).mt.lpel.a               \
+#                  libsac$(CROSS_VARIANR).mt.lpel$(SHARED_LIB_EXT)\
+                  libsac$(CROSS_VARIANT).mt.omp.a                \
+                  libsac$(CROSS_VARIANT).mt.omp$(SHARED_LIB_EXT) 
+else
+libsac_targets := libsac$(CROSS_VARIANT).seq.a                   \
+                  libsac$(CROSS_VARIANT).seq$(SHARED_LIB_EXT)    \
+                  libsac$(CROSS_VARIANT).mt.pth.a                \
+                  libsac$(CROSS_VARIANT).mt.pth$(SHARED_LIB_EXT) \
+                  libsac$(CROSS_VARIANT).mt.lpel.a               \
+                  libsac$(CROSS_VARIANR).mt.lpel$(SHARED_LIB_EXT)\
+                  libsac$(CROSS_VARIANT).mt.omp.a                \
+                  libsac$(CROSS_VARIANT).mt.omp$(SHARED_LIB_EXT)
+endif
 endif
 
 libsac_targetdir           := lib
@@ -412,17 +431,17 @@ ifeq  (MUTC, $(CROSS_BACKEND))
 libsacphm_targets           :=
 else
 libsacphm_targets           := libsacphm$(CROSS_VARIANT).seq.a \
-                               libsacphm$(CROSS_VARIANT).seq.so \
+                               libsacphm$(CROSS_VARIANT).seq$(SHARED_LIB_EXT) \
                                libsacphm$(CROSS_VARIANT).seq.diag.a \
-                               libsacphm$(CROSS_VARIANT).seq.diag.so \
+                               libsacphm$(CROSS_VARIANT).seq.diag$(SHARED_LIB_EXT) \
                                libsacphm$(CROSS_VARIANT).mt.a \
-                               libsacphm$(CROSS_VARIANT).mt.so \
+                               libsacphm$(CROSS_VARIANT).mt$(SHARED_LIB_EXT) \
                                libsacphm$(CROSS_VARIANT).mt.diag.a \
-                               libsacphm$(CROSS_VARIANT).mt.diag.so \
+                               libsacphm$(CROSS_VARIANT).mt.diag$(SHARED_LIB_EXT) \
                                libsacphm$(CROSS_VARIANT).xt.a \
-                               libsacphm$(CROSS_VARIANT).xt.so \
+                               libsacphm$(CROSS_VARIANT).xt$(SHARED_LIB_EXT) \
                                libsacphm$(CROSS_VARIANT).xt.diag.a \
-                               libsacphm$(CROSS_VARIANT).xt.diag.so
+                               libsacphm$(CROSS_VARIANT).xt.diag$(SHARED_LIB_EXT)
 endif
 libsacphm_targetdir         := lib
 

@@ -35,6 +35,7 @@ LD_FLAGS        := @LD_FLAGS@
 LD_DYNAMIC      := @SAC2C_CC@ @LD_DYNAMIC@
 LD_PATH         := @LD_PATH@
 
+SHARED_LIB_EXT  := @SHARED_LIB_EXT@
 
 ################################################################################
 #
@@ -63,7 +64,7 @@ SLC_PATH        := @SLC_PATH@
 CPP		:= @CPP@
 SORT		:= @SORT@
 UNIQ		:= @UNIQ@
-
+LN              := ln -s -f
 
 ################################################################################
 #

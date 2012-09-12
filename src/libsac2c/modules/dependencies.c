@@ -166,9 +166,11 @@ PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
     if (kind == STRS_saclib) {
         char *libname;
         char *libfile;
-
-        libname = (char *)MEMmalloc (sizeof (char) * (STRlen (entry) + 5));
-        sprintf (libname, "%s.sac", entry);
+        /*
+            libname = (char *)MEMmalloc( sizeof( char) * ( STRlen( entry) + 5));
+            sprintf( libname, "%s.sac", entry);
+        */
+        libname = STRcat (entry, ".sac");
 
         libfile = STRcpy (FMGRfindFile (PK_imp_path, libname));
         libname = MEMfree (libname);
@@ -187,8 +189,8 @@ PrintLibDepFoldFun (const char *entry, strstype_t kind, void *modname)
              * alldeps rules, in particular, the empty rule in
              * doPrintLibDependencies
              */
-            printf ("%s :\n\t( cd %s; $(MAKE) lib%sTree%s.so)\n\n", entry, libdir, entry,
-                    global.config.lib_variant);
+            printf ("%s :\n\t( cd %s; $(MAKE) lib%sTree%s" SHARED_LIB_EXT ")\n\n", entry,
+                    libdir, entry, global.config.lib_variant);
         }
 
         libfile = MEMfree (libfile);
@@ -229,12 +231,15 @@ PrintSACLib (const char *name)
     DBUG_ENTER ();
 
     /*
-     * first try to find the .so file
+     * first try to find the shared library file
      */
-
-    filename = (char *)MEMmalloc (
-      sizeof (char) * (STRlen (name) + 11 + STRlen (global.config.lib_variant)));
-    sprintf (filename, "lib%sTree%s.so", name, global.config.lib_variant);
+    /*  filename = (char *)MEMmalloc( sizeof( char) *
+                            ( STRlen( name) + 11 +
+                              STRlen( global.config.lib_variant)));
+      sprintf( filename, "lib%sTree%s" SHARED_LIB_EXT, name, global.config.lib_variant);
+    */
+    filename
+      = STRcatn (5, "lib", name, "Tree", global.config.lib_variant, SHARED_LIB_EXT);
 
     result = STRcpy (FMGRfindFile (PK_lib_path, filename));
 
@@ -244,23 +249,34 @@ PrintSACLib (const char *name)
         /*
          * now try to find the .sac file
          */
-
-        filename = (char *)MEMmalloc (sizeof (char) * (STRlen (name) + 5));
-        sprintf (filename, "%s.sac", name);
+        /*
+            filename = (char *) MEMmalloc( sizeof( char) * ( STRlen( name) + 5));
+            sprintf( filename, "%s.sac", name);
+        */
+        filename = STRcat (name, ".sac");
 
         result = STRcpy (FMGRdirname (FMGRfindFile (PK_imp_path, filename)));
 
         filename = MEMfree (filename);
 
         if (result != NULL) {
-            filename = (char *)MEMmalloc (sizeof (char)
-                                          * (STRlen (result) + 16 + /* $(LIBTARGETDIR)/ */
-                                             3 +                    /* lib */
-                                             4 +                    /* Tree */
-                                             4 +                    /* .so\0 */
-                                             1024 + STRlen (global.config.lib_variant)));
-            sprintf (filename, "%s$(LIBTARGETDIR)/lib%sTree%s.so", result, name,
-                     global.config.lib_variant);
+            /*
+                 filename = (char *)MEMmalloc( sizeof( char) *
+                                       ( STRlen( result) +
+                                         16 + /* $(LIBTARGETDIR)/ */
+            //                            3 + /* lib */
+            //                            4 + /* Tree */
+            //                             STRlen( SHARED_LIB_EXT) + 2 + /* .so\0 */
+            //                             1024 +
+            //                             STRlen( global.config.lib_variant)));
+            /*      sprintf( filename,
+                           "%s$(LIBTARGETDIR)/lib%sTree%s" SHARED_LIB_EXT,
+                           result,
+                           name,
+                           global.config.lib_variant);
+            */
+            filename = STRcatn (6, result, "$(LIBTARGETDIR)/lib", name, "Tree",
+                                global.config.lib_variant, SHARED_LIB_EXT);
 
             result = MEMfree (result);
             result = filename;
@@ -273,9 +289,14 @@ PrintSACLib (const char *name)
          * otherwise use the pure filename
          */
 
-        result = (char *)MEMmalloc (
-          sizeof (char) * (STRlen (name) + 11 + STRlen (global.config.lib_variant)));
-        sprintf (result, "lib%sTree%s.so", name, global.config.lib_variant);
+        /*    result = (char *)MEMmalloc( sizeof( char) *
+                                ( STRlen( name) + 11 +
+                                  STRlen( global.config.lib_variant)));
+            sprintf( result, "lib%sTree%s" SHARED_LIB_EXT, name,
+           global.config.lib_variant);
+            */
+        result
+          = STRcatn (5, "lib", name, "Tree", global.config.lib_variant, SHARED_LIB_EXT);
     }
 
     printf (" \\\n  %s", result);
@@ -292,9 +313,11 @@ static void PrintSACLibInclude( const char *name)
   char *cwd="./";
 
   DBUG_ENTER ();
-
+/*
   filename = MEMmalloc( sizeof( char) * ( STRlen( name) + 5));
   sprintf( filename, "%s.sac", name);
+*/
+  filename = STRcat( name, ".sac");
 
   dir = FMGRdirname( FMGRfindFile( PK_imp_path, filename));
 
@@ -409,11 +432,13 @@ PrintTargetName (node *tree)
         break;
     case FT_modimp:
     case FT_classimp:
-        printf ("%slib%sTree%s.so %slib%sMod%s.a %slib%sMod%s.so:", (global.targetdir),
-                NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant,
+        printf ("%slib%sTree%s" SHARED_LIB_EXT
+                " %slib%sMod%s.a %slib%sMod%s" SHARED_LIB_EXT ":",
                 (global.targetdir), NSgetName (MODULE_NAMESPACE (tree)),
                 global.config.lib_variant, (global.targetdir),
-                NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant);
+                NSgetName (MODULE_NAMESPACE (tree)), global.config.lib_variant,
+                (global.targetdir), NSgetName (MODULE_NAMESPACE (tree)),
+                global.config.lib_variant);
         break;
     default:
         DBUG_ASSERT (0, "unknown file type found!");

@@ -114,25 +114,56 @@ SHmakeShape (int dim)
  *
  ******************************************************************************/
 
+#if IS_CYGWIN
+shape *
+SHcreateShape (int dim, ...)
+{
+    shape *result;
+    va_list Argp;
+
+    DBUG_ENTER ();
+
+    va_start (Argp, dim);
+
+    result = SHcreateShapeVa (dim, Argp);
+    va_end (Argp);
+
+    DBUG_RETURN (result);
+}
+
+/* added flexibility for cygwin compatibility */
+shape *
+SHcreateShapeVa (int dim, va_list args)
+{
+    va_list Argp = args;
+#else
 shape *
 SHcreateShape (int dim, ...)
 {
     va_list Argp;
+#endif /* IS_CYGWIN */
+
     int i;
     shape *result;
 
     DBUG_ENTER ();
     result = SHmakeShape (dim);
 
+#if !IS_CYGWIN
+    va_start (Argp, dim);
+#endif
+
     DBUG_ASSERT (result != NULL, "CreateShape: Get NULL shape from MakeShape!");
 
     if (dim > 0) {
-        va_start (Argp, dim);
         for (i = 0; i < dim; i++) {
             result = SHsetExtent (result, i, va_arg (Argp, int));
         }
-        va_end (Argp);
     }
+
+#if !IS_CYGWIN
+    va_end (Argp);
+#endif
 
     DBUG_RETURN (result);
 }

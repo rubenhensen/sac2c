@@ -12,6 +12,11 @@
 #include "memory.h"
 #include "tree_basic.h"
 #include "globals.h"
+#include "config.h"
+
+#if IS_CYGWIN
+#include "cygwinhelpers.h"
+#endif /* IS_CYGWIN */
 
 #undef MODM_UNLOAD_MODULES
 
@@ -245,13 +250,22 @@ AddModuleToPool (const char *name)
 
     DBUG_ENTER ();
 
+#if IS_CYGWIN
+    /*
+     * Done under cygwin to resolve symbols at compile time.
+     * This adds the dependency to the set global.dependencies.
+     */
+    CYGHaddToDeps (name);
+#endif
+
     DBUG_PRINT ("Start loading module '%s'.", name);
 
     result = (module_t *)MEMmalloc (sizeof (module_t));
 
     tmp = (char *)MEMmalloc (sizeof (char)
-                             * (STRlen (name) + STRlen (global.config.lib_variant) + 11));
-    sprintf (tmp, "lib%sTree%s.so", name, global.config.lib_variant);
+                             * (STRlen (name) + STRlen (global.config.lib_variant)
+                                + sizeof (SHARED_LIB_EXT) + 7));
+    sprintf (tmp, "lib%sTree%s" SHARED_LIB_EXT, name, global.config.lib_variant);
 
     result->sofile = STRcpy (FMGRfindFile (PK_lib_path, tmp));
 
@@ -272,6 +286,10 @@ AddModuleToPool (const char *name)
     if (result->lib == NULL)
         CTIabort ("Unable to open module `%s' (%s). The reported error was: %s", name,
                   result->sofile, LIBMgetError ());
+
+#if IS_CYGWIN
+    CYGHpassToMod (result->lib);
+#endif /* IS_CYGWIN */
 
     checkMixedCasesCorrect (result);
     checkHasSameASTVersion (result);
