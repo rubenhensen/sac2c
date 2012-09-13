@@ -600,6 +600,8 @@ TYmakeUserType (usertype udt)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT_TAG ("TYmakeUserType", "MAKING USER TYPE: %s", UTgetName (udt));
+
     res = MakeNtype (TC_user, 0);
     USER_TYPE (res) = udt;
 
@@ -1006,7 +1008,11 @@ TYmakeProductType (int size, ...)
         va_start (Argp, size);
         for (i = 0; i < size; i++) {
             arg = va_arg (Argp, ntype *);
-            DBUG_ASSERT ((TYisArray (arg) || TYisBottom (arg) || TYisAlpha (arg)),
+            /*
+             * We also want non AKS user types here!
+             */
+            DBUG_ASSERT ((TYisArray (arg) || TYisBottom (arg) || TYisAlpha (arg)
+                          || (TYisUser (arg) && !TYisAKS (arg))),
                          "non array type / bottom / type var components of product types"
                          " are not yet supported!");
             PROD_MEMBER (res, i) = arg;
@@ -1389,6 +1395,17 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     DBUG_ENTER ();
     DBUG_PRINT_TAG ("NTY_MEM", "Allocated mem on entering TYmakeFunType: %u",
                     global.current_allocated_mem);
+    DBUG_PRINT_TAG ("NTY", "fun: %s", CTIitemName (fundef));
+    DBUG_PRINT_TAG ("NTY", "rets: %d", TCcountRets (FUNDEF_RETS (fundef)));
+
+    node *r = FUNDEF_RETS (fundef);
+    int i = 0;
+    while (r != NULL) {
+        DBUG_PRINT_TAG ("NTY", "  arg %d: %s", i,
+                        TYtype2DebugString (RET_TYPE (r), FALSE, 0));
+        r = RET_NEXT (r);
+        i++;
+    }
 
     res = MakeNtype (TC_ires, 1);
 
@@ -1404,6 +1421,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
 
     switch (NTYPE_CON (arg)) {
     case TC_akv:
+        DBUG_PRINT_TAG ("NTY", "AKV");
         aks = TYeliminateAKV (arg);
         arg = TYfreeType (arg);
         arg = aks;
@@ -1415,6 +1433,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
          */
 
     case TC_aks:
+        DBUG_PRINT_TAG ("NTY", "AKS");
         if (TYgetDim (arg) == 0) {
             IBASE_SCAL (base) = TYcopyType (res); /* scalar: definition case */
             /* finally, we make res an up-projection as res will be used in AUD! */
@@ -1440,6 +1459,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
         break;
 
     case TC_akd:
+        DBUG_PRINT_TAG ("NTY", "AKD");
         if (TYgetDim (arg) == 0) {
             IBASE_SCAL (base) = TYcopyType (res); /* scalar: definition case */
         } else {
@@ -1457,6 +1477,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
         break;
 
     case TC_audgz:
+        DBUG_PRINT_TAG ("NTY", "AUDGZ");
         arr = MakeNtype (TC_iarr, 1);
         IARR_GEN (arr) = TYcopyType (res); /* AUDGZ definition case */
 
@@ -1465,6 +1486,7 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
         break;
 
     case TC_aud:
+        DBUG_PRINT_TAG ("NTY", "AUD");
         break;
 
     default:
@@ -1476,12 +1498,15 @@ TYmakeFunType (ntype *arg, ntype *res_type, node *fundef)
     IBASE_IARR (base) = arr;
 
     if (TYisPoly (IBASE_BASE (base))) {
+        DBUG_PRINT_TAG ("NTY", "fun type poly");
         fun = MakeNtype (TC_fun, 2);
         FUN_POLY (fun) = base;
     } else if (TYisPolyUser (IBASE_BASE (base))) {
+        DBUG_PRINT_TAG ("NTY", "fun type poly user");
         fun = MakeNtype (TC_fun, 2);
         FUN_UPOLY (fun) = base;
     } else {
+        DBUG_PRINT_TAG ("NTY", "fun type not poly");
         fun = MakeNtype (TC_fun, 3);
         FUN_IBASE (fun, 0) = base;
     }
@@ -3646,9 +3671,10 @@ TYgetBottom (ntype *type)
         n = TYgetProductSize (type);
         i = 0;
         while ((i < n) && (res == NULL)) {
-            res
-              = (TYisBottom (TYgetProductMember (type, i)) ? TYgetProductMember (type, i)
-                                                           : NULL);
+            res = (TYisBottom (TYgetProductMember (type, i))
+                       || TYisUser (TYgetProductMember (type, i))
+                     ? TYgetProductMember (type, i)
+                     : NULL);
             i++;
         }
     } else if (TYisBottom (type)) {
@@ -4359,7 +4385,11 @@ TYfreeTypeConstructor (ntype *type)
     default:
         DBUG_ASSERT (0, "trying to free illegal type constructor!");
     }
-    type = MEMfree (type);
+    if (NTYPE_CON (type) == TC_simple) {
+        type = NULL;
+    } else {
+        type = MEMfree (type);
+    }
 
     DBUG_RETURN (type);
 }
@@ -5045,6 +5075,9 @@ TYtype2String (ntype *type, bool multiline, int offset)
         case TC_alpha:
             res = SSIvariable2DebugString (ALPHA_SSI (type));
             break;
+        case TC_user:
+            res = ScalarType2String (type);
+            break;
         default:
             DBUG_ASSERT (0, "TYtype2String applied to non-SAC type!");
             res = NULL;
@@ -5490,131 +5523,135 @@ TYdeNestTypeFromInner (ntype *nested, ntype *inner)
 
     DBUG_ENTER ();
 
-    if (global.irregular_arrays != TRUE) {
-        DBUG_ASSERT (TYisAKS (inner), "TYDeNestTypeFromInner with non AKS inner type not "
-                                      "yet implemented!");
-    }
-
-    switch (NTYPE_CON (nested)) {
-    case TC_aks:
-        /*
-         * AKS{ a, s1}, AKS{ b, s2}      => AKS{ a, drop( [-d2], s1) }
-         * AKS{ a, s1}, AKD{ b, do2, --} => AKS{ a, drop( [-do2], s1) }
-         * AKS{ a, s1}, AUDGZ{ b}        => AUD{ a} / AKS{ a, []}
-         * AKS{ a, s1}, AUD{ b}          => AUD{ a} / AKS{ a, []}
-         * AKS{ a, s1}, b                => AKS{ a, s1}
-         *
-         */
-        switch (NTYPE_CON (inner)) {
+    if (TYisAKS (inner)) {
+        switch (NTYPE_CON (nested)) {
         case TC_aks:
-        case TC_akd:
-            res = TYmakeAKS (TYcopyType (AKS_BASE (nested)),
-                             SHdropFromShape (-TYgetDim (inner), AKS_SHP (nested)));
-            break;
-        case TC_audgz:
-            if (TYgetDim (nested) == 1) {
-                res = TYmakeAKS (TYcopyType (AKS_BASE (nested)), SHmakeShape (0));
-            } else {
-                res = TYmakeAUD (TYcopyType (AKD_BASE (nested)));
+            /*
+             * AKS{ a, s1}, AKS{ b, s2}      => AKS{ a, drop( [-d2], s1) }
+             * AKS{ a, s1}, AKD{ b, do2, --} => AKS{ a, drop( [-do2], s1) }
+             * AKS{ a, s1}, AUDGZ{ b}        => AUD{ a} / AKS{ a, []}
+             * AKS{ a, s1}, AUD{ b}          => AUD{ a} / AKS{ a, []}
+             * AKS{ a, s1}, b                => AKS{ a, s1}
+             *
+             */
+            switch (NTYPE_CON (inner)) {
+            case TC_aks:
+            case TC_akd:
+                res = TYmakeAKS (TYcopyType (AKS_BASE (nested)),
+                                 SHdropFromShape (-TYgetDim (inner), AKS_SHP (nested)));
+                break;
+            case TC_audgz:
+                if (TYgetDim (nested) == 1) {
+                    res = TYmakeAKS (TYcopyType (AKS_BASE (nested)), SHmakeShape (0));
+                } else {
+                    res = TYmakeAUD (TYcopyType (AKD_BASE (nested)));
+                }
+                break;
+            case TC_aud:
+                if (TYgetDim (nested) == 0) {
+                    res = TYmakeAKS (TYcopyType (AKS_BASE (nested)), SHmakeShape (0));
+                } else {
+                    res = TYmakeAUD (TYcopyType (AKD_BASE (nested)));
+                }
+                break;
+            default:
+                res = TYcopyType (nested);
             }
             break;
-        case TC_aud:
-            if (TYgetDim (nested) == 0) {
-                res = TYmakeAKS (TYcopyType (AKS_BASE (nested)), SHmakeShape (0));
-            } else {
-                res = TYmakeAUD (TYcopyType (AKD_BASE (nested)));
-            }
-            break;
-        default:
-            res = TYcopyType (nested);
-        }
-        break;
 
-    case TC_akd:
-        /*
-         * AKD{ a, do1, --}, AKS{ b, s2}      => AKD{ a, do1-d2, --}} / AKS{ a, []}
-         * AKD{ a, do1, --}, AKD{ b, do2, --} => AKD{ a, do1-do2, --} / AKS{ a, []}
-         * AKD{ a, do1, --}, AUDGZ{ b}        => AUD{ a} / AKS{ a, []}
-         * AKD{ a, do1, --}, AUD{ b}          => AUD{ a} / AKS{ a, []}
-         * AKD{ a, do1, --}, b                => AKD{ a, do1, --}
-         *
-         */
-        switch (NTYPE_CON (inner)) {
-        case TC_aks:
         case TC_akd:
-            if ((TYgetDim (nested) - TYgetDim (inner)) == 0) {
-                res = TYmakeAKS (TYcopyType (AKS_BASE (nested)), SHmakeShape (0));
-            } else {
-                res = TYmakeAKD (TYcopyType (AKD_BASE (nested)),
-                                 TYgetDim (nested) - TYgetDim (inner), SHmakeShape (0));
+            /*
+             * AKD{ a, do1, --}, AKS{ b, s2}      => AKD{ a, do1-d2, --}} / AKS{ a, []}
+             * AKD{ a, do1, --}, AKD{ b, do2, --} => AKD{ a, do1-do2, --} / AKS{ a, []}
+             * AKD{ a, do1, --}, AUDGZ{ b}        => AUD{ a} / AKS{ a, []}
+             * AKD{ a, do1, --}, AUD{ b}          => AUD{ a} / AKS{ a, []}
+             * AKD{ a, do1, --}, b                => AKD{ a, do1, --}
+             *
+             */
+            switch (NTYPE_CON (inner)) {
+            case TC_aks:
+            case TC_akd:
+                if ((TYgetDim (nested) - TYgetDim (inner)) == 0) {
+                    res = TYmakeAKS (TYcopyType (AKS_BASE (nested)), SHmakeShape (0));
+                } else {
+                    res
+                      = TYmakeAKD (TYcopyType (AKD_BASE (nested)),
+                                   TYgetDim (nested) - TYgetDim (inner), SHmakeShape (0));
+                }
+                break;
+            case TC_audgz:
+                if (TYgetDim (nested) == 1) {
+                    res = TYmakeAKS (TYcopyType (AKS_BASE (nested)), SHmakeShape (0));
+                } else {
+                    res = TYmakeAUD (TYcopyType (AKS_BASE (nested)));
+                }
+                break;
+            case TC_aud:
+                if (TYgetDim (nested) == 0) {
+                    res = TYmakeAKS (TYcopyType (AKS_BASE (nested)), SHmakeShape (0));
+                } else {
+                    res = TYmakeAUD (TYcopyType (AKS_BASE (nested)));
+                }
+                break;
+            default:
+                res = TYcopyType (nested);
             }
             break;
-        case TC_audgz:
-            if (TYgetDim (nested) == 1) {
-                res = TYmakeAKS (TYcopyType (AKS_BASE (nested)), SHmakeShape (0));
-            } else {
-                res = TYmakeAUD (TYcopyType (AKS_BASE (nested)));
-            }
-            break;
-        case TC_aud:
-            if (TYgetDim (nested) == 0) {
-                res = TYmakeAKS (TYcopyType (AKS_BASE (nested)), SHmakeShape (0));
-            } else {
-                res = TYmakeAUD (TYcopyType (AKS_BASE (nested)));
-            }
-            break;
-        default:
-            res = TYcopyType (nested);
-        }
-        break;
 
-    case TC_audgz:
-        /*
-         * AUDGZ{ a}, AKS{ b, s2}      => AUD{ a} / AUDGZ{ a}
-         * AUDGZ{ a}, AKD{ b, do2, s2} => AUD{ a} / AUDGZ{ a}
-         * AUDGZ{ a}, AUDGZ{ b}        => AUD{ a}
-         * AUDGZ{ a}, AUD{ b}          => AUD{ a}
-         * AUDGZ{ a}, b                => AUDGZ{ a}
-         *
-         */
-        switch (NTYPE_CON (inner)) {
-        case TC_aks:
-        case TC_akd:
-            if (TYgetDim (inner) == 0) {
-                res = TYmakeAUDGZ (TYcopyType (AKD_BASE (nested)));
-            } else {
+        case TC_audgz:
+            /*
+             * AUDGZ{ a}, AKS{ b, s2}      => AUD{ a} / AUDGZ{ a}
+             * AUDGZ{ a}, AKD{ b, do2, s2} => AUD{ a} / AUDGZ{ a}
+             * AUDGZ{ a}, AUDGZ{ b}        => AUD{ a}
+             * AUDGZ{ a}, AUD{ b}          => AUD{ a}
+             * AUDGZ{ a}, b                => AUDGZ{ a}
+             *
+             */
+            switch (NTYPE_CON (inner)) {
+            case TC_aks:
+            case TC_akd:
+                if (TYgetDim (inner) == 0) {
+                    res = TYmakeAUDGZ (TYcopyType (AKD_BASE (nested)));
+                } else {
+                    res = TYmakeAUD (TYcopyType (AKD_BASE (nested)));
+                }
+                break;
+            case TC_audgz:
+            case TC_aud:
                 res = TYmakeAUD (TYcopyType (AKD_BASE (nested)));
+                break;
+            default:
+                res = TYcopyType (nested);
+                break;
             }
             break;
-        case TC_audgz:
+
         case TC_aud:
-            res = TYmakeAUD (TYcopyType (AKD_BASE (nested)));
+            /*
+             * AUD{ a}, AKS{ b, s2}      => AUD{ a}
+             * AUD{ a}, AKD{ b, do2, s2} => AUD{ a}
+             * AUD{ a}, AUDGZ{ b}        => AUD{ a}
+             * AUD{ a}, AUD{ b}          => AUD{ a}
+             * AUD{ a}, b                => AUD{ a}
+             *
+             */
+            res = TYcopyType (nested);
             break;
+
         default:
+            /*
+             * a, b => a
+             *
+             */
             res = TYcopyType (nested);
             break;
         }
-        break;
-
-    case TC_aud:
-        /*
-         * AUD{ a}, AKS{ b, s2}      => AUD{ a}
-         * AUD{ a}, AKD{ b, do2, s2} => AUD{ a}
-         * AUD{ a}, AUDGZ{ b}        => AUD{ a}
-         * AUD{ a}, AUD{ b}          => AUD{ a}
-         * AUD{ a}, b                => AUD{ a}
-         *
-         */
+    } else if (TYisAKD (inner)) {
         res = TYcopyType (nested);
-        break;
-
-    default:
-        /*
-         * a, b => a
-         *
-         */
-        res = TYcopyType (nested);
-        break;
+        printf ("WE ARE HERE\n");
+    } else {
+        DBUG_ASSERT (0, "TYDeNestTypeFromInner with non AKS/AKD inner type not yet "
+                        "implemented!");
     }
 
     DBUG_RETURN (res);

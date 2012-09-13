@@ -1043,6 +1043,8 @@ is_type (struct parser *parser)
         case TYPE_BOOL:
         case TYPE_CHAR:
         case TYPE_DBL:
+        /* FIXME: This might not be the best place for this hack */
+        case NESTED:
         /* FIXME: We may want to check that the structure was
            defined before it can be used as a type.  */
         case STRUCT:
@@ -1125,6 +1127,8 @@ make_simple_type (enum token_kind tkind)
         return TYmakeSimpleType (T_char);
     case TYPE_DBL:
         return TYmakeSimpleType (T_double);
+    case NESTED:
+        return TYmakeSimpleType (T_int);
     default:
         unreachable ("cannot build symple type from `%s'", token_kind_as_string (tkind));
     }
@@ -1895,7 +1899,6 @@ handle_primary_expr (struct parser *parser)
                 type = TYmakeAKS (TYmakeSimpleType (T_unknown), SHmakeShape (0));
 
                 res = TCmakeVector (type, els);
-                ARRAY_ISIRREGULAR (res) = TRUE;
             }
 
             if (parser_expect_tval (parser, tv_rsquare))
@@ -5135,6 +5138,7 @@ handle_typedef (struct parser *parser)
 {
     struct token *tok;
     bool extern_p = false;
+    bool nested = false;
     bool builtin_p = false;
     node *ret = error_mark_node;
     ntype *type = error_type_node;
@@ -5163,6 +5167,8 @@ handle_typedef (struct parser *parser)
         }
     } else if (token_is_keyword (tok, TYPEDEF))
         ;
+    else if (token_is_keyword (tok, NESTED))
+        nested = true;
     else {
         error_loc (token_location (tok), "`%s' or `%s %s' expected, `%s' found",
                    token_kind_as_string (TYPEDEF), token_kind_as_string (EXTERN),
@@ -5254,6 +5260,9 @@ handle_typedef (struct parser *parser)
         TYPEDEF_PRAGMA (ret) = pragmas;
     } else {
         ret = TBmakeTypedef (name, NULL, component_name, type, NULL, NULL);
+        if (nested == true) {
+            TYPEDEF_ISNESTED (ret) = true;
+        }
 
         if (builtin_p) {
             TYPEDEF_ARGS (ret) = args;
@@ -5611,7 +5620,7 @@ handle_definitions (struct parser *parser)
                 exp = handle_function (parser, &ftype);
                 ADD_FUNCTION (ret, exp, ftype);
             }
-        } else if (token_is_keyword (tok, TYPEDEF)) {
+        } else if (token_is_keyword (tok, TYPEDEF) || token_is_keyword (tok, NESTED)) {
             exp = handle_typedef (parser);
             TYPEDEF_ADD (ret, exp);
         } else if (token_is_keyword (tok, OBJDEF)) {

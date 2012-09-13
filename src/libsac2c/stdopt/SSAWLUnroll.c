@@ -32,6 +32,7 @@
 #include "traverse.h"
 #include "constants.h"
 #include "new_types.h"
+#include "user_types.h"
 #include "shape.h"
 #include "math_utils.h"
 #include "type_utils.h"
@@ -897,9 +898,15 @@ FinalizeGenarray (node *bodycode, node *withop, node *lhs, info *arg_info)
                                      SHcreateShape (1, SHgetDim (TYgetShape (type)))));
     vardecs = TBmakeVardec (shpavis, vardecs);
 
-    vect = TCcreateZeroVector (length, btype);
-    vectavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (btype),
-                                                     SHcreateShape (1, length)));
+    if (btype == T_hidden) {
+        vect = TCcreateZeroNestedVector (length, TYgetScalar (type));
+        vectavis = TBmakeAvis (TRAVtmpVar (),
+                               TYmakeAKS (TYgetScalar (type), SHcreateShape (1, length)));
+    } else {
+        vect = TCcreateZeroVector (length, btype);
+        vectavis = TBmakeAvis (TRAVtmpVar (), TYmakeAKS (TYmakeSimpleType (btype),
+                                                         SHcreateShape (1, length)));
+    }
     vardecs = TBmakeVardec (vectavis, vardecs);
 
     reshape = TCmakePrf2 (F_reshape_VxA, TBmakeId (shpavis), TBmakeId (vectavis));

@@ -113,8 +113,6 @@ LINEEND     \n|\r|\r\n
 "}"                        { FILTER( BRACE_R); }
 "("                        { FILTER( BRACKET_L); }
 ")"                        { FILTER( BRACKET_R); }
-"[>"                       { FILTER( TRIANGLEBR_L); }
-"<]"                       { FILTER( TRIANGLEBR_R); }
 "["                        { FILTER( SQBR_L); }
 "]"                        { FILTER( SQBR_R); }
 "::"                       { FILTER( DCOLON); }
@@ -278,6 +276,7 @@ LINEEND     \n|\r|\r\n
 
 "struct"                   { FILTER( STRUCT); }
 "typedef"                  { FILTER( TYPEDEF); }
+"nested"                   { FILTER( NESTED); }
 "classtype"                { FILTER( CLASSTYPE); }
 "objdef"                   { FILTER( OBJDEF); }
 "main"                     { FILTER( K_MAIN); }
@@ -361,6 +360,8 @@ LINEEND     \n|\r|\r\n
 "&&"                       { FILTER( LAZYAND); }
 "||"                       { FILTER( LAZYOR); }
 "?"                        { FILTER( QUESTION); }  /* needed for conditional expressions */
+
+"nested_init"              { FILTER( NESTED_INIT); } /* init value for nested types */
 
 "const"                    { FILTER( C_KEYWORD); }
 "auto"                     { FILTER( C_KEYWORD); }

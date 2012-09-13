@@ -84,6 +84,9 @@ SUBPHASE (flt, "Flattening nested expressions", FLATdoFlatten, ALWAYS, sim)
 
 SUBPHASE (udt, "Processing user defined types", RSTdoResolveSymbolTypes, ALWAYS, sim)
 
+SUBPHASE (gntc, "Generating nested type conversion functions",
+          GNTCdoGenerateNestedTypeConversions, ALWAYS, sim)
+
 SUBPHASE (ggtc, "Generating generic type conversion functions",
           GGTCdoGenerateGenericTypeConversions, ALWAYS, sim)
 

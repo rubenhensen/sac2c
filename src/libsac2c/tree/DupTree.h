@@ -80,6 +80,7 @@ extern node *DUPnumuint (node *arg_node, info *arg_info);
 extern node *DUPnumulong (node *arg_node, info *arg_info);
 extern node *DUPnumulonglong (node *arg_node, info *arg_info);
 extern node *DUPbool (node *arg_node, info *arg_info);
+extern node *DUPnested_init (node *arg_node, info *arg_info);
 extern node *DUPfloat (node *arg_node, info *arg_info);
 extern node *DUPdouble (node *arg_node, info *arg_info);
 extern node *DUPchar (node *arg_node, info *arg_info);

@@ -13,6 +13,7 @@
 
 #include "free.h"
 #include "new_types.h"
+#include "user_types.h"
 #include "new_typecheck.h"
 #include "ctinfo.h"
 #include "DataFlowMask.h"
@@ -433,7 +434,9 @@ TCgetShapeDim (types *type)
          */
         impl_dim = TYPES_DIM (impl_type);
 
-        if ((UNKNOWN_SHAPE == impl_dim) || (UNKNOWN_SHAPE == base_dim)) {
+        if (TYPEDEF_ISNESTED (TYPES_TDEF (type))) {
+            dim = base_dim;
+        } else if ((UNKNOWN_SHAPE == impl_dim) || (UNKNOWN_SHAPE == base_dim)) {
             dim = UNKNOWN_SHAPE;
         } else if ((ARRAY_OR_SCALAR == impl_dim) && (ARRAY_OR_SCALAR == base_dim)) {
             dim = ARRAY_OR_SCALAR;
@@ -735,6 +738,24 @@ TCisUnique (types *type)
 
     if (TYPES_BASETYPE (type) == T_user) {
         ret = TUisUniqueUserType (TYoldType2Type (type));
+    }
+
+    DBUG_RETURN (ret);
+}
+
+bool
+TCisNested (types *type)
+{
+    node *tdef;
+    bool ret = FALSE;
+
+    DBUG_ENTER ();
+
+    if (TYPES_BASETYPE (type) == T_user) {
+        tdef = TYPES_TDEF (type);
+        DBUG_ASSERT (tdef != NULL, "Failed attempt to look up typedef");
+
+        ret = TYPEDEF_ISNESTED (tdef);
     }
 
     DBUG_RETURN (ret);
@@ -2864,6 +2885,55 @@ TCcreateZeroVector (int length, simpletype btype)
 
     ret_node
       = TCmakeVector (TYmakeAKS (TYmakeSimpleType (btype), SHmakeShape (0)), exprs_node);
+
+    DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *TCcreateZeroNestedScalar( ntype btype)
+ *
+ * description:
+ *   Returns a scalar 0.
+ *
+ *****************************************************************************/
+node *
+TCcreateZeroNestedScalar (ntype *btype)
+{
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    ret_node = TBmakeNested_init ();
+
+    DBUG_RETURN (ret_node);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *TCcreateZeroNestedVector( int length, simpletype btype)
+ *
+ * description:
+ *   Returns an N_array node with 'length' components, each 0.
+ *
+ ******************************************************************************/
+
+node *
+TCcreateZeroNestedVector (int length, ntype *btype)
+{
+    node *ret_node, *exprs_node;
+    int i;
+
+    DBUG_ENTER ();
+
+    exprs_node = NULL;
+    for (i = 0; i < length; i++) {
+        exprs_node = TBmakeExprs (TCcreateZeroNestedScalar (btype), exprs_node);
+    }
+
+    ret_node = TCmakeVector (TYmakeAKS (btype, SHmakeShape (0)), exprs_node);
 
     DBUG_RETURN (ret_node);
 }

@@ -588,14 +588,17 @@ GGTCtypedef (node *arg_node, info *arg_info)
               = TBmakeSymbol (from_name, INFO_NOTEXPORTEDSYMBOLS (arg_info));
         }
 
-        INFO_FUNDEFS (arg_info)
-          = BuildWrap (tdef_type, TYPEDEF_NS (arg_node), TYPEDEF_NAME (arg_node),
-                       &INFO_PROVIDEDSYMBOLS (arg_info),
-                       &INFO_NOTEXPORTEDSYMBOLS (arg_info), INFO_FUNDEFS (arg_info));
-        INFO_FUNDEFS (arg_info)
-          = BuildUnWrap (tdef_type, TYPEDEF_NS (arg_node), TYPEDEF_NAME (arg_node),
-                         &INFO_PROVIDEDSYMBOLS (arg_info),
-                         &INFO_NOTEXPORTEDSYMBOLS (arg_info), INFO_FUNDEFS (arg_info));
+        if (!TYPEDEF_ISNESTED (arg_node)) {
+            INFO_FUNDEFS (arg_info)
+              = BuildWrap (tdef_type, TYPEDEF_NS (arg_node), TYPEDEF_NAME (arg_node),
+                           &INFO_PROVIDEDSYMBOLS (arg_info),
+                           &INFO_NOTEXPORTEDSYMBOLS (arg_info), INFO_FUNDEFS (arg_info));
+            INFO_FUNDEFS (arg_info)
+              = BuildUnWrap (tdef_type, TYPEDEF_NS (arg_node), TYPEDEF_NAME (arg_node),
+                             &INFO_PROVIDEDSYMBOLS (arg_info),
+                             &INFO_NOTEXPORTEDSYMBOLS (arg_info),
+                             INFO_FUNDEFS (arg_info));
+        }
 
         tdef_type = TYfreeType (tdef_type);
     }

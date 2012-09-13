@@ -42,6 +42,7 @@ extern node *NTCnumuint (node *arg_node, info *arg_info);
 extern node *NTCnumulong (node *arg_node, info *arg_info);
 extern node *NTCnumulonglong (node *arg_node, info *arg_info);
 extern node *NTCbool (node *arg_node, info *arg_info);
+extern node *NTCnested_init (node *arg_node, info *arg_info);
 extern node *NTCchar (node *arg_node, info *arg_info);
 extern node *NTCdouble (node *arg_node, info *arg_info);
 extern node *NTCfloat (node *arg_node, info *arg_info);

@@ -91,7 +91,8 @@ typedef intptr_t *SAC_array_descriptor_parent_t;
  *   [2]     -> reference count mode
  *   [3]     -> # of dimensions
  *   [4]     -> # of elements
- *   [5,...] -> shape vector
+ *   [5]     -> hidden type
+ *   [6,...] -> shape vector
  */
 /*
  * Use intptr_t so that we can store ints and pointers in the same
@@ -109,7 +110,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 //   ((desc_parent) [0])
 
 /* size of dimension-independent parts of the descriptor */
-#define FIXED_SIZE_OF_DESC 5
+#define FIXED_SIZE_OF_DESC 6
 /* size of dimension-dependent parts of the descriptor */
 #define VAR_SIZE_OF_DESC 1
 /* size of the descriptor = (FIXED_SIZE_OF_DESC + dim * VAR_SIZE_OF_DESC) */
@@ -139,12 +140,18 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define SAC_RC_PTR_MASK (3)
 #define SAC_RC_PTR_NEG_MASK (-1 ^ SAC_RC_PTR_MASK)
 
+#define SAC_DESC_HIDDEN_NONE 0
+#define SAC_DESC_HIDDEN_HIDDEN 1
+#define SAC_DESC_HIDDEN_NESTED 2
+
 /* offsets inside the descriptor */
 #define DESC_OFFSET_RC 0
 #define DESC_OFFSET_PARENT 1
 #define DESC_OFFSET_RC_MODE 2
 #define DESC_OFFSET_DIM 3
 #define DESC_OFFSET_SIZE 4
+#define DESC_OFFSET_HIDDEN_TYPE 5
+
 #define DESC_OFFSET_SHAPE FIXED_SIZE_OF_DESC
 
 /* offsets in the parent descriptor */
@@ -198,6 +205,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 #define DESC_RC_MODE(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_RC_MODE)
 #define DESC_DIM(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_DIM)
 #define DESC_SIZE(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_SIZE)
+#define DESC_HIDDEN_TYPE(desc) SAC_REAL_DESC_POINTER (desc, DESC_OFFSET_HIDDEN_TYPE)
 #define DESC_SHAPE(desc, pos) SAC_REAL_DESC_POINTER (desc, (DESC_OFFSET_SHAPE + (pos)))
 
 /* parent descriptor */
@@ -442,7 +450,7 @@ typedef intptr_t *SAC_array_descriptor_t;
         SAC_ND_WRITE (to_NT, to_pos) = SAC_ND_READ (from_NT, from_pos);                  \
     }
 
-#define SAC_ND_WRITE_READ_COPY(to_NT, to_pos, from_NT, from_pos, copyfun)                \
+#define SAC_ND_WRITE_READ_COPY__DEFAULT(to_NT, to_pos, from_NT, from_pos, copyfun)       \
     SAC_ND_WRITE_COPY (to_NT, to_pos, SAC_ND_READ (from_NT, from_pos), copyfun)
 
 /*
@@ -938,7 +946,7 @@ typedef intptr_t *SAC_array_descriptor_t;
 
 #define SAC_ND_ALLOC_END__DAO(var_NT, rc, dim, basetype) }
 
-#define SAC_ND_ALLOC_END__NO_DAO(var_NT, rc, dim, basetype)                              \
+#define SAC_ND_ALLOC_END__NO_DAO__DEFAULT(var_NT, rc, dim, basetype)                     \
     SAC_ND_ALLOC__DATA_BASETYPE (var_NT, basetype)                                       \
     }
 

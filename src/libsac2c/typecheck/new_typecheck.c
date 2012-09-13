@@ -1363,7 +1363,7 @@ NTCprf (node *arg_node, info *arg_info)
         INFO_TYPE (arg_info) = NULL;
 
         info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf,
-                              global.prf_name[prf], prf, prf_te_funtab[prf](args), FALSE);
+                              global.prf_name[prf], prf, prf_te_funtab[prf](args));
         res = NTCCTcomputeType (prf_tc_funtab[prf], info, args);
         TYfreeType (args);
     }
@@ -1476,18 +1476,9 @@ NTCarray (node *arg_node, info *arg_info)
         /**
          * Now, we built the resulting (AKS-)type type from the product type found:
          */
-        info
-          = TEmakeInfoPrf (global.linenum, global.filename, TE_prf, "array-constructor",
-                           (prf)0, 1, ARRAY_ISIRREGULAR (arg_node));
+        info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf,
+                              "array-constructor", (prf)0, 1);
 
-        if (ARRAY_ISIRREGULAR (arg_node)) {
-            /* Do something */
-        }
-
-        /*
-         * TODO: syntatic sugar for the irregular array option
-         * This mainly consists of finding the leasy common type (*, +, .)
-         */
         type = NTCCTcomputeType (NTCCTprf_array, info, elems);
 
         TYfreeType (elems);
@@ -1600,6 +1591,14 @@ NTCglobobj (node *arg_node, info *arg_info)
     DBUG_ASSERT (type != NULL, "N_objdef wo type found in NTCglobobj");
 
     INFO_TYPE (arg_info) = TYcopyType (type);
+
+    DBUG_RETURN (arg_node);
+}
+
+node *
+NTCnested_init (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
 
     DBUG_RETURN (arg_node);
 }
@@ -1788,8 +1787,8 @@ NTCcast (node *arg_node, info *arg_info)
     }
     cast_t = CAST_NTYPE (arg_node);
 
-    info = TEmakeInfoPrf (global.linenum, global.filename, TE_prf, "type-cast", (prf)0, 1,
-                          FALSE);
+    info
+      = TEmakeInfoPrf (global.linenum, global.filename, TE_prf, "type-cast", (prf)0, 1);
     type = NTCCTcomputeType (NTCCTprf_cast, info, TYmakeProductType (2, cast_t, expr_t));
 
     INFO_TYPE (arg_info) = TYgetProductMember (type, 0);

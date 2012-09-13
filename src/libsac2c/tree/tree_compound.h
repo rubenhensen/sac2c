@@ -94,6 +94,7 @@ extern node *TCtype2Exprs (types *type);
 
 extern bool TCisUnique (types *type);
 extern bool TCisHidden (types *type);
+extern bool TCisNested (types *type);
 
 /*--------------------------------------------------------------------------*/
 
@@ -860,6 +861,9 @@ extern int TCgetIntVectorNthValue (int pos, node *vect);
 
 extern node *TCcreateZeroScalar (simpletype btype);
 extern node *TCcreateZeroVector (int length, simpletype btype);
+
+extern node *TCcreateZeroNestedScalar (ntype *btype);
+extern node *TCcreateZeroNestedVector (int length, ntype *btype);
 
 extern node *TCids2Exprs (node *ids_arg);
 extern node *TCids2ExprsNt (node *ids_arg);

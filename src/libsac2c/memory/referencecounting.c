@@ -712,6 +712,19 @@ RCIprf (node *arg_node, info *arg_info)
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
         break;
 
+    case F_enclose:
+        INFO_MODE (arg_info) = rc_apuse;
+        PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
+        break;
+
+    case F_disclose:
+        INFO_MODE (arg_info) = rc_prfuse;
+        PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
+        INFO_POSTASSIGN (arg_info)
+          = AdjustRC (IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_ASSIGN (arg_info)))), 1,
+                      INFO_POSTASSIGN (arg_info));
+        break;
+
     default:
         INFO_MODE (arg_info) = rc_prfuse;
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);

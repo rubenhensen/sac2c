@@ -12,6 +12,8 @@ extern ntype *NTCCTprf_id (te_info *info, ntype *args);
 extern ntype *NTCCTprf_array (te_info *info, ntype *elems);
 extern ntype *NTCCTprf_cast (te_info *info, ntype *elems);
 extern ntype *NTCCTprf_type_conv (te_info *info, ntype *args);
+extern ntype *NTCCTprf_enclose (te_info *info, ntype *args);
+extern ntype *NTCCTprf_disclose (te_info *info, ntype *args);
 extern ntype *NTCCTprf_dispatch_error (te_info *info, ntype *args);
 extern ntype *NTCCTprf_guard (te_info *info, ntype *args);
 extern ntype *NTCCTprf_afterguard (te_info *info, ntype *args);

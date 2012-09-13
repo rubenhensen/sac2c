@@ -1,0 +1,43 @@
+/*
+ * CAUTION: 
+ *
+ * nested_gen.h  is generated automatically from mt_nested.h.m4
+ *
+ */
+
+/*
+ * See ../m4/README
+ */
+
+include(`icm.m4')
+
+start_icm_definition(nested_gen)
+
+#ifndef _SAC_NESTED_GEN_H_
+#define _SAC_NESTED_GEN_H_
+
+pat(`SAC_ND_DECL_NESTED__DESC', `0', `1', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_DECL_NESTED__DESC', `SAC_ND_DECL__DESC__NONE', `SCL', `HNS', `NUQ')
+rule(`SAC_ND_DECL_NESTED__DESC', `SAC_ND_DECL__DESC__DEFAULT', `*SHP', `HNS', `NUQ')
+
+pat(`SAC_ND_DECL_NESTED__DATA', `0', `2', `NT_SHP', `NT_HID', `NT_UNQ')
+rule(`SAC_ND_DECL_NESTED__DATA', `SAC_ND_DECL_NESTED__DATA__SCL', `SCL', `HNS', `NUQ')
+rule(`SAC_ND_DECL_NESTED__DATA', `SAC_ND_DECL_NESTED__DATA__DEFAULT', `*SHP', `HNS', `NUQ')
+
+pat(`SAC_ND_WRITE_NESTED', `0', `1', `NT_SHP')
+rule(`SAC_ND_WRITE_NESTED', `SAC_ND_WRITE_NESTED__DEFAULT', `*SHP')
+
+pat(`SAC_ND_ALLOC__DATA_BASETYPE__NESTED', `0', `1', `NT_SHP')
+rule(`SAC_ND_ALLOC__DATA_BASETYPE__NESTED', `SAC_ND_ALLOC__DATA_BASETYPE__NESTED__SCL', `SCL')
+rule(`SAC_ND_ALLOC__DATA_BASETYPE__NESTED', `SAC_ND_ALLOC__DATA_BASETYPE__NESTED__AKS', `AKS')
+rule(`SAC_ND_ALLOC__DATA_BASETYPE__NESTED', `SAC_ND_ALLOC__DATA_BASETYPE__NESTED__AKD_AUD', `*SHP')
+
+pat(`GEN_SAC_ND_ASSIGN__DATA__AUD_HNS', `1', `1', `NT_SHP', `NT_HID')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_HNS', `SAC_ND_ASSIGN__DATA__UNDEF', `SCL', `NHD')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_HNS', `SAC_ND_ASSIGN__DATA__UNDEF', `SCL', `HID')
+rule(`GEN_SAC_ND_ASSIGN__DATA__AUD_HNS', `SAC_ND_ASSIGN__DATA__AUD_AKS', `*SHP', `*HID')
+
+
+#endif  /* _SAC_NESTED_GEN_H_ */
+
+end_icm_definition

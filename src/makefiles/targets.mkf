@@ -67,7 +67,7 @@ libsac2c_sourcedirs        := global tree support serialize \
                               concurrent multithread profile \
                               memory precompile codegen print visualize\
                               cinterface generics constraints cuda mutc \
-                              rtspec funcpara flexsub cudahybrid
+                              rtspec funcpara flexsub cudahybrid nested
 
 ###############################################################################
 
@@ -146,6 +146,8 @@ libsac2c_objects     := object_init resolve_reference_args object_analysis \
                         generate_object_initialiser strip_external_signatures \
                         manage_object_initialisers check_uniqueness spmdfun_fix
 
+libsac2c_nested      := generate_nested_type_conversions
+
 libsac2c_generics    := remove_generic_definitions \
                         check_and_simplify_generic_definitions \
                         generate_generic_type_conversions
@@ -171,7 +173,6 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         loop_invariant_removal withloop_invariant_removal \
                         comparison_to_zero comparison_to_zero_guards \
                         UndoCondZeroCmp 
-
 
 libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize      \
                         ive_split_loop_invariants                           \
@@ -252,7 +253,7 @@ libsac2c_codegen     := convert_type_representation gen_startup_code compile \
                         icm2c icm2c_basic \
                         icm2c_utils icm2c_std icm2c_prf icm2c_mt icm2c_sched \
                         icm2c_wl icm2c_error simd_infer tag_preparation icm2c_cuda \
-                        icm2c_rtspec icm2c_fp icm2c_ia
+                        icm2c_rtspec icm2c_fp icm2c_ia icm2c_nested
 
 libsac2c_print       := print convert
 
@@ -294,7 +295,8 @@ runtime_extraclean_devel  :=
 runtime_extraclean_prod   := 
 
 runtime_sourcedirs        := essentials_h extras_h mt_h mt_omp_h mt_beehive_h mt_pth_h \
-                              mt_lpel_h phm_h mutc_h cuda_h rtspec_h cudahybrid_h
+                             mt_lpel_h phm_h mutc_h cuda_h rtspec_h \
+                             cudahybrid_h nested_h
 
 ###############################################################################
 
@@ -326,6 +328,8 @@ runtime_cuda_h         := cuda cuda_gen
 runtime_cudahybrid_h   := cudahybrid alloc_cache dist_var_nomemsave basic
 
 runtime_rtspec_h       := rtspec registry reqqueue controller
+
+runtime_nested_h       := nested nested_gen
 
 
 ###############################################################################

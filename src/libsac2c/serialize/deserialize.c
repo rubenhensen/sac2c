@@ -229,7 +229,7 @@ InsertIntoState (node *item)
             udt = UTaddUserType (STRcpy (TYPEDEF_NAME (item)),
                                  NSdupNamespace (TYPEDEF_NS (item)),
                                  TYcopyType (TYPEDEF_NTYPE (item)), NULL,
-                                 NODE_LINE (item), item);
+                                 NODE_LINE (item), item, TYPEDEF_ISNESTED (item));
         }
 
         /*
@@ -312,7 +312,7 @@ DSfinishDeserialize (node *module)
       = TCappendFundef (MODULE_FUNDECS (module), INFO_FUNDECS (DSstate));
 
     MODULE_TYPES (module)
-      = TCappendTypedef (MODULE_TYPES (module), INFO_TYPEDEFS (DSstate));
+      = TCappendTypedef (INFO_TYPEDEFS (DSstate), MODULE_TYPES (module));
 
     MODULE_OBJS (module) = TCappendObjdef (MODULE_OBJS (module), INFO_OBJDEFS (DSstate));
 

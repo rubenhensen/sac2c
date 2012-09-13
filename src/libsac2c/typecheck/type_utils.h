@@ -37,6 +37,7 @@ extern bool TUisUniqueUserType (ntype *type);
 extern bool TUisArrayOfUser (ntype *type);
 extern bool TUcontainsUser (ntype *type);
 extern bool TUisHidden (ntype *type);
+extern bool TUisNested (ntype *type);
 extern bool TUisBoxed (ntype *type);
 extern bool TUisPolymorphic (ntype *type);
 extern bool TUeqShapes (ntype *a, ntype *b);

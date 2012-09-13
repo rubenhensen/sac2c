@@ -55,8 +55,7 @@ extern te_info *TEmakeInfoUdf (int linenum, const char *file, te_kind_t kind,
                                const char *mod_str, const char *name_str, node *wrapper,
                                node *assign, te_info *parent);
 extern te_info *TEmakeInfoPrf (int linenum, const char *file, te_kind_t kind,
-                               const char *name_str, prf prf_no, int num_rets,
-                               bool is_irregular);
+                               const char *name_str, prf prf_no, int num_rets);
 extern int TEone (ntype *args);
 extern int TEtwo (ntype *args);
 extern int TEthree (ntype *args);
@@ -81,6 +80,5 @@ extern node *TEgetAssign (te_info *info);
 extern prf TEgetPrf (te_info *info);
 extern constant *(*TEgetCFFun (te_info *info)) (constant *, constant *, constant *);
 extern te_info *TEgetParent (te_info *info);
-extern bool TEgetIsIrregular (te_info *info);
 
 #endif /* _SAC_TYPE_ERRORS_H_ */

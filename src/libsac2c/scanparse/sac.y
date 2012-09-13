@@ -106,7 +106,7 @@ static int prf_arity[] = {
 
 %token BRACE_L  BRACE_R  BRACKET_L  BRACKET_R  SQBR_L  SQBR_R  COLON DCOLON SEMIC 
 COMMA  AMPERS  DOT TWODOTS THREEDOTS QUESTION  RIGHTARROW LEFTARROW 
-INLINE THREAD  LET  STRUCT  TYPEDEF  OBJDEF  CLASSTYPE 
+INLINE THREAD  LET  STRUCT  TYPEDEF  OBJDEF  CLASSTYPE  NESTED
 INC  DEC  ADDON  SUBON  MULON  DIVON  MODON 
 K_MAIN  RETURN  IF  ELSE  DO  WHILE  FOR  NWITH  FOLD FOLDFIX
 MODULE  IMPORT  EXPORT  PROVIDE  USE  CLASS  ALL  EXCEPT DEPRECATED
@@ -118,7 +118,7 @@ LOCAL WLCOMP  CACHESIM  SPECIALIZE
 TARGET  STEP  WIDTH  GENARRAY  MODARRAY  PROPAGATE
 LE  LT  GT LAZYAND LAZYOR
 STAR  PLUS  MINUS  TILDE  EXCL SPAWN RSPAWN
-TRIANGLEBR_L TRIANGLEBR_R
+NESTED_INIT
 
 PRF_DIM_A  PRF_SHAPE_A  PRF_RESHAPE_VxA  PRF_SEL_VxA  PRF_MODARRAY_AxVxS
 PRF_SEL_VxIA
@@ -186,7 +186,7 @@ TFTYPEREL SUBTYPE IFF
 
 %type <node> prg  defs  def1 def2  def3  def4  def5 def6
 
-%type <node> structdef structdef2 typedef exttypedef
+%type <node> structdef structdef2 typedef exttypedef nested
 
 %type <node> objdef extobjdef
 
@@ -260,7 +260,7 @@ TFTYPEREL SUBTYPE IFF
 GENARRAY MODARRAY ALL AMPERS
 %right BM_OP
 %right MM_OP CAST
-%right SQBR_L BRACKET_L TRIANGLEBR_L
+%right SQBR_L BRACKET_L
 %right ELSE 
 %nonassoc RET_BRACKET
 
@@ -362,6 +362,12 @@ def3: typedef def3
       { $$ = $4;
         TYPEDEF_NEXT( $1) = MODULE_TYPES( $$);
         TYPEDEF_PRAGMA( $1) = $3;
+        MODULE_TYPES( $$) = $1;
+      }
+    | nested def3
+      {
+        $$ = $2;
+        TYPEDEF_NEXT( $1) = MODULE_TYPES( $$);
         MODULE_TYPES( $$) = $1;
       }
     | def4
@@ -590,7 +596,27 @@ exttypedef: EXTERN TYPEDEF ID SEMIC
             }
           ;
 
-
+/*
+*********************************************************************
+*
+*  rules for nested
+*
+*********************************************************************
+*/
+
+nested: NESTED ntype ID SEMIC
+        { $$ = TBmakeTypedef( $3, NULL, $2, NULL);
+          TYPEDEF_ISNESTED( $$) = TRUE;
+
+          DBUG_PRINT("%s:"F_PTR","F_PTR", Id: %s",
+                       global.mdb_nodetype[ NODE_TYPE( $$)],
+                       $$, 
+                       TYPEDEF_NTYPE( $$),
+                       TYPEDEF_NAME( $$));
+        }
+      ;
+
+
 /*
 *********************************************************************
 *
@@ -1404,6 +1430,7 @@ nostrexpr:
     | string                     { $$ = STRstring2Array( $1); MEMfree( $1);  }
     | TRUETOKEN                  { $$ = TBmakeBool( 1);       }
     | FALSETOKEN                 { $$ = TBmakeBool( 0);       }
+    | NESTED_INIT                { $$ = TBmakeBool( 0); }
     | expr LAZYAND expr          { $$ = TBmakeFuncond( $1, $3, TBmakeBool(0)); }
     | expr LAZYOR expr           { $$ = TBmakeFuncond( $1, TBmakeBool(1), $3); }
     | expr QUESTION expr COLON expr 
@@ -1669,13 +1696,6 @@ expr_ar: SQBR_L { $<cint>$ = global.linenum; } exprs SQBR_R
          { $$ = TCmakeVector( TYmakeAKS( TYmakeSimpleType( T_int), 
                                          SHmakeShape(0)), 
                               NULL);
-           NODE_LINE( $$) = $<cint>2;
-         }
-       | TRIANGLEBR_L { $<cint>$ = global.linenum; } exprs TRIANGLEBR_R
-         { $$ = TCmakeVector( TYmakeAKS( TYmakeSimpleType( T_unknown), 
-                                         SHmakeShape(0)),
-                              $3);
-           ARRAY_ISIRREGULAR($$) = TRUE;
            NODE_LINE( $$) = $<cint>2;
          }
        ;

@@ -189,18 +189,10 @@ GLOBAL (backend_t, backend, BE_c99, xfree_dummy, )
  * Dynamic-sized arrays option
  */
 
-GLOBAL (bool, dynamic_shapes, FALSE, xfree_dummy, )
 /*
  * Dynamic shapes are disabled by default
  */
-
-/*
- * Irregular arrays option
- */
-GLOBAL (bool, irregular_arrays, FALSE, xfree_dummy, )
-/*
- * Irregular arrays are disbaled by default
- */
+GLOBAL (bool, dynamic_shapes, FALSE, xfree_dummy, )
 
 /*
  * Struct support options

@@ -1,6 +1,10 @@
 /*
  *
  * $Log$
+ *
+ * Revision 3.5  2011/08/26 14:36:00  rjd
+ * nested hidden tag added
+ *
  * Revision 3.4  2002/07/31 15:34:55  dkr
  * new hidden tag added
  *
@@ -57,7 +61,7 @@ YOU HAVE TO DEFINE ATTRIB !!!Do this before you include this file.
 
 #elif (ATTRIB == NT_HIDDEN_INDEX)
 
-NTIF (C_nhd, "NHD"), NTIF (C_hid, "HID"),
+NTIF (C_nhd, "NHD"), NTIF (C_hid, "HID"), NTIF (C_hns, "HNS"),
   NTIF (C_unknownh, "???") /* should be the last entry! */
 
 #elif (ATTRIB == NT_UNIQUE_INDEX)

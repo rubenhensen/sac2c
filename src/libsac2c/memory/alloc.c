@@ -374,6 +374,11 @@ MakeDimArg (node *arg)
         arg = TCmakePrf1 (F_dim_A, DUPdoDupNode (arg));
         break;
 
+    case N_typedef:
+    case N_type:
+        DBUG_ASSERT (0, "typedef");
+        break;
+
     default:
         DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg));
         DBUG_ASSERT (0, "Invalid argument");
@@ -1830,6 +1835,15 @@ EMALprf (node *arg_node, info *arg_info)
          */
         INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
 
+        INFO_MUSTFILL (arg_info) = FALSE;
+        break;
+
+    /*
+     * Both enclose and disclose do not really create new structures.
+     */
+    case F_enclose:
+    case F_disclose:
+        INFO_ALLOCLIST (arg_info) = FreeALS (INFO_ALLOCLIST (arg_info));
         INFO_MUSTFILL (arg_info) = FALSE;
         break;
 

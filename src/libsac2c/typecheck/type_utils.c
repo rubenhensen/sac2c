@@ -786,6 +786,30 @@ TUisHidden (ntype *ty)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool TUisHidden( ntype *ty)
+ *
+ *   @brief
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+bool
+TUisNested (ntype *ty)
+{
+    bool res = FALSE;
+
+    DBUG_ENTER ();
+
+    if (TUisHidden (ty) && TYisUser (ty)) {
+        res = UTisNested (TYgetUserType (ty));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TUisArrayOfUser( ntype *ty)
  *
  *   @brief
@@ -1461,12 +1485,18 @@ TUcheckUdtAndSetBaseType (usertype udt, int *visited)
     if (base == NULL) {
         base = UTgetTypedef (udt);
         if (!TYisAKS (base)) {
-            if (global.irregular_arrays == FALSE) {
+            /*
+             * Try to handle non AKS UDT's
+             */
+            if (TYisAKD (base) || UTisNested (udt)) {
+                if (visited != NULL) {
+                    visited = MEMfree (visited);
+                }
+            } else {
                 CTIerrorLine (global.linenum,
                               "Typedef of %s::%s is illegal; should be either"
                               " scalar type or array type of fixed shape",
                               NSgetName (UTgetNamespace (udt)), UTgetName (udt));
-            } else {
             }
         } else {
             /*

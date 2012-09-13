@@ -1551,6 +1551,8 @@ PRTtypedef (node *arg_node, info *arg_info)
             fprintf (global.outfile, "typealias ");
         } else if (TYPEDEF_ISUNIQUE (arg_node)) {
             fprintf (global.outfile, "classtype ");
+        } else if (TYPEDEF_ISNESTED (arg_node)) {
+            fprintf (global.outfile, "nested ");
         } else {
             fprintf (global.outfile, "typedef ");
         }
@@ -3758,6 +3760,30 @@ PRTbool (node *arg_node, info *arg_info)
     } else {
         fprintf (global.outfile, "true");
     }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *PRTneste_init( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_nested_init node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+PRTnested_init (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    fprintf (global.outfile, "nested_init");
 
     DBUG_RETURN (arg_node);
 }

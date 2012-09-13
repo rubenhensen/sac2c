@@ -7,7 +7,7 @@ dnl Return definition of given * tag
 dnl
 dnl $1  * tag
 define(_star, `ifelse(`$1', `*SHP', `SCL, AKS, AKD, AUD, ___',
-                      `$1', `*HID', `NHD, HID, ___',
+                      `$1', `*HID', `NHD, HID, HNS, ___',
                       `$1', `*UNQ', `NUQ, UNQ, ___',
                       `$1', `*REG', `INT, FLO, ___',
                       `$1', `*SCO', `SHR, GLO, ___',

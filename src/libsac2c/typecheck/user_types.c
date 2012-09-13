@@ -45,6 +45,7 @@ typedef struct UDT_ENTRY {
     usertype alias;
     int line;
     node *tdef;
+    bool nested;
 } udt_entry;
 
 /*
@@ -59,6 +60,7 @@ typedef struct UDT_ENTRY {
 #define ENTRY_ALIAS(e) ((e)->alias)
 #define ENTRY_LINE(e) ((e)->line)
 #define ENTRY_TDEF(e) ((e)->tdef)
+#define ENTRY_NESTED(e) ((e)->nested)
 
 /*
  * We use a global datastructure "udt_rep", in order to keep all the information
@@ -134,7 +136,7 @@ InsertIntoRepository (udt_entry *entry)
 
 usertype
 UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, int lineno,
-               node *tdef)
+               node *tdef, bool nested)
 {
     udt_entry *entry;
     usertype result;
@@ -152,6 +154,7 @@ UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base, int lineno
     ENTRY_LINE (entry) = lineno;
     ENTRY_TDEF (entry) = tdef;
     ENTRY_ALIAS (entry) = UT_NOT_DEFINED;
+    ENTRY_NESTED (entry) = nested;
 
     result = InsertIntoRepository (entry);
 
@@ -465,6 +468,23 @@ UTisAlias (usertype udt)
     DBUG_ASSERT (udt < udt_no, "UTisAlias called with illegal udt!");
 
     DBUG_RETURN (ENTRY_ALIAS (udt_rep[udt]) != UT_NOT_DEFINED);
+}
+
+/** <!-- ****************************************************************** -->
+ * @fn bool UTisNested( usertype udt)
+ *
+ * @brief checks whether the passed udt is a nested type
+ *
+ * @param udt
+ *
+ * @return
+ ******************************************************************************/
+bool
+UTisNested (usertype udt)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (ENTRY_NESTED (udt_rep[udt]));
 }
 
 /******************************************************************************

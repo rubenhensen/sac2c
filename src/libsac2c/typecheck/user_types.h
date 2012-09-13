@@ -29,7 +29,7 @@
 #define UT_NOT_DEFINED -1
 
 extern usertype UTaddUserType (char *name, namespace_t *ns, ntype *type, ntype *base,
-                               int lineno, node *tdef);
+                               int lineno, node *tdef, bool nested);
 extern usertype UTaddAlias (char *name, namespace_t *ns, usertype alias, int lineno,
                             node *tdef);
 extern usertype UTfindUserType (const char *name, const namespace_t *ns);
@@ -52,6 +52,8 @@ extern void UTsetNamespace (usertype t1, const namespace_t *ns);
 
 extern bool UTeq (usertype udt1, usertype udt2);
 extern bool UTisAlias (usertype udt);
+
+extern bool UTisNested (usertype udt);
 
 extern void UTprintRepository (FILE *outfile);
 

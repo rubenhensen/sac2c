@@ -73,6 +73,7 @@ extern node *VISUALdataflownode (node *arg_node, info *arg_info);
 extern node *VISUALglobobj (node *arg_node, info *arg_info);
 extern node *VISUALerror (node *arg_node, info *arg_info);
 extern node *VISUALlivevars (node *arg_node, info *arg_info);
+extern node *VISUALnested_init (node *arg_node, info *arg_info);
 
 /* with-loop (frontend) */
 extern node *VISUALwith (node *arg_node, info *arg_info);

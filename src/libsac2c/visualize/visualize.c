@@ -3978,6 +3978,37 @@ VISUALlivevars (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *VISUALnested_init( node *arg_node, info *arg_info)
+ *
+ *   @brief print N_nested_init node
+ *   @param
+ *   @return
+ *
+ ******************************************************************************/
+
+node *
+VISUALnested_init (node *arg_node, info *arg_info)
+{
+    char *number = STRitoa (INFO_NODENUMBER (arg_info)++);
+    char *node_name = STRcat ("node", number);
+
+    DBUG_ENTER ();
+
+    // add node into table
+    INFO_TABLE (arg_info)
+      = LUTinsertIntoLutP (INFO_TABLE (arg_info), arg_node, node_name);
+
+    // ouput current node
+    fprintf (INFO_FILE (arg_info),
+             "%s[label=false style=filled fillcolor=\"lightyellow\"];\n", node_name);
+
+    number = MEMfree (number);
+
+    DBUG_RETURN (arg_node);
+}
+
 /******************************************************************************
  *
  * function:

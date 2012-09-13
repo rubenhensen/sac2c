@@ -564,24 +564,6 @@ PrintMutcOptions (void)
 }
 
 static void
-PrintIrregularArrayOptions (void)
-{
-    DBUG_ENTER ();
-
-    printf (
-      "\n\nIRREGULAR ARRAY OPTIONS:\n\n"
-      "    Irregular arrays allows for shapes of any dimension (>=1) to contain "
-      "elements\n"
-      "    of different size and dimension.\n"
-      "    For example a 2x2 matrix could consist of three elements that are just a "
-      "number\n"
-      "    but the fourth element is 3x3 matrix\n\n"
-      "    -irr_arr                          Enable the use of irregular arrays.\n\n");
-
-    DBUG_RETURN ();
-}
-
-static void
 PrintMultithreadOptions (void)
 {
     DBUG_ENTER ();
@@ -1184,7 +1166,6 @@ USGprintUsage ()
         PrintOptimisationOptions ();
         PrintMultithreadOptions ();
         PrintMutcOptions ();
-        PrintIrregularArrayOptions ();
         PrintBackendOptions ();
 #ifndef DBUG_OFF
         PrintDebugOptions ();

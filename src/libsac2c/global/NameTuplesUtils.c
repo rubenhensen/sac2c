@@ -121,6 +121,8 @@ NTUgetHiddenClassFromTypes (types *type)
          */
         DBUG_ASSERT (0, "illegal data class found!");
         z = C_unknownh;
+    } else if (TCisNested (type)) {
+        z = C_hns;
     } else if (TCisHidden (type)) {
         z = C_hid;
     } else {
@@ -530,7 +532,9 @@ NTUgetHiddenClassFromNType (ntype *ntype)
 
     DBUG_ASSERT (ntype != NULL, "No type found!");
 
-    if (TUisHidden (ntype)) {
+    if (TUisNested (ntype)) {
+        z = C_hns;
+    } else if (TUisHidden (ntype)) {
         z = C_hid;
     } else {
         z = C_nhd;

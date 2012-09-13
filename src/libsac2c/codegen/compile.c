@@ -3163,6 +3163,12 @@ COMPvardec (node *arg_node, info *arg_info)
                                           TRUE, FALSE, FALSE, NULL),
                             VARDEC_INIT (arg_node));
             VARDEC_INIT (arg_node) = NULL;
+        } else if (TYPES_TDEF (VARDEC_TYPE (arg_node)) != NULL
+                   && TYPEDEF_ISNESTED (TYPES_TDEF (VARDEC_TYPE (arg_node)))) {
+            VARDEC_ICM (arg_node)
+              = TCmakeIcm1 ("ND_DECL_NESTED",
+                            MakeTypeArgs (VARDEC_NAME (arg_node), VARDEC_TYPE (arg_node),
+                                          TRUE, TRUE, TRUE, NULL));
         } else {
             VARDEC_ICM (arg_node)
               = TCmakeIcm1 ("ND_DECL",
@@ -4263,6 +4269,68 @@ COMPprfToUnq (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+/*
+ * TODO: IMPLEMENT
+ */
+static node *
+COMPprfEnclose (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    types *lhs_type, *rhs_type;
+    node *icm_args;
+    node *ret_node, *arg;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    arg = PRF_ARG3 (arg_node);
+
+    lhs_type = IDS_TYPE (let_ids);
+    rhs_type = ID_TYPE (arg);
+
+    icm_args
+      = MakeTypeArgs (IDS_NAME (let_ids), lhs_type, FALSE, TRUE, TRUE,
+                      MakeTypeArgs (ID_NAME (arg), rhs_type, FALSE, TRUE, FALSE, NULL));
+
+    ret_node = TCmakeAssignIcm1 ("ND_ENCLOSE", icm_args, NULL);
+
+    ret_node = MakeIncRcIcm (ID_NAME (arg), ID_TYPE (arg), 1, ret_node);
+
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+COMPprfDisclose (node *arg_node, info *arg_info)
+{
+    node *let_ids;
+    types *lhs_type, *rhs_type;
+    node *icm_args;
+    node *ret_node, *arg;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    arg = PRF_ARG3 (arg_node);
+
+    lhs_type = IDS_TYPE (let_ids);
+    rhs_type = ID_TYPE (arg);
+
+    icm_args
+      = MakeTypeArgs (IDS_NAME (let_ids), lhs_type, FALSE, TRUE, FALSE,
+                      MakeTypeArgs (ID_NAME (arg), rhs_type, FALSE, TRUE, FALSE, NULL));
+
+    /*
+     * No RC manipulation requires as MAKE_UNIQUE always yields rc == 1
+     */
+    ret_node
+      = TCmakeAssignIcm3 ("ND_DISCLOSE", icm_args, MakeBasetypeArg (lhs_type),
+                          TCmakeIdCopyString (GenericFun (GF_copy, rhs_type)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPscalar( node *arg_node, info *arg_info)
@@ -4650,24 +4718,11 @@ COMParray (node *arg_node, info *arg_info)
             copyfun = NULL;
         }
 
-        /*
-         * Array data is generated differently when using an irregular
-         * array.
-         */
-        if (ARRAY_ISIRREGULAR (arg_node) == TRUE) {
-            ret_node = TCmakeAssignIcm2 ("ND_CREATE__IRREGULAR__ARRAY__DATA",
-                                         MakeTypeArgs (IDS_NAME (let_ids),
-                                                       IDS_TYPE (let_ids), FALSE, TRUE,
-                                                       FALSE, DUPdoDupTree (icm_args)),
-                                         TCmakeIdCopyString (copyfun), ret_node);
-
-        } else {
-            ret_node = TCmakeAssignIcm2 ("ND_CREATE__ARRAY__DATA",
-                                         MakeTypeArgs (IDS_NAME (let_ids),
-                                                       IDS_TYPE (let_ids), FALSE, TRUE,
-                                                       FALSE, DUPdoDupTree (icm_args)),
-                                         TCmakeIdCopyString (copyfun), ret_node);
-        }
+        ret_node
+          = TCmakeAssignIcm2 ("ND_CREATE__ARRAY__DATA",
+                              MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE,
+                                            TRUE, FALSE, DUPdoDupTree (icm_args)),
+                              TCmakeIdCopyString (copyfun), ret_node);
     }
 
     DBUG_RETURN (ret_node);

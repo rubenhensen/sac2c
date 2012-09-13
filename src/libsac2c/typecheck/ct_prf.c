@@ -117,10 +117,7 @@ NTCCTprf_array (te_info *info, ntype *elems)
     for (i = 2; i < num_elems; i++) {
         elem2 = TYgetProductMember (elems, i);
         TEassureSameScalarType ("array element #0", elem, TEarrayElem2Obj (i), elem2);
-        if (TEgetIsIrregular (info) == FALSE) {
-            elem2
-              = TEassureSameShape ("array element #0", elem, TEarrayElem2Obj (i), elem2);
-        }
+        elem2 = TEassureSameShape ("array element #0", elem, TEarrayElem2Obj (i), elem2);
         TYfreeType (elem);
         elem = elem2;
     }
@@ -129,7 +126,7 @@ NTCCTprf_array (te_info *info, ntype *elems)
         res = TYmakeBottomType (err_msg);
 
     } else {
-        if (TYisProdOfAKVafter (elems, 1) && TEgetIsIrregular (info) == FALSE) {
+        if (TYisProdOfAKVafter (elems, 1)) {
             val = COcopyConstant (TYgetValue (TYgetProductMember (elems, 1)));
             for (i = 2; i < num_elems; i++) {
                 tmp = val;
@@ -347,6 +344,54 @@ NTCCTprf_type_conv (te_info *info, ntype *args)
         err_msg = TEfetchErrors ();
         res = TYmakeBottomType (err_msg);
     }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_nest( te_info *info, ntype *elems)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_enclose (te_info *info, ntype *args)
+{
+    ntype *to;
+    ntype *res;
+
+    DBUG_ENTER ();
+
+    to = TYgetProductMember (args, 1);
+
+    res = TYcopyType (to);
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_denest( te_info *info, ntype *elems)
+ *
+ * description:
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_disclose (te_info *info, ntype *args)
+{
+    ntype *to;
+    ntype *res;
+
+    DBUG_ENTER ();
+
+    to = TYgetProductMember (args, 1);
+
+    res = TYcopyType (to);
 
     DBUG_RETURN (TYmakeProductType (1, res));
 }
@@ -1211,7 +1256,11 @@ NTCCTprf_dim_A (te_info *info, ntype *args)
                  "dim called with incorrect number of arguments");
 
     array = TYgetProductMember (args, 0);
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+
+    if (!(TYisUser (TYgetScalar (array))
+          && UTisNested (TYgetUserType (TYgetScalar (array))))) {
+        TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
+    }
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -1253,7 +1302,6 @@ NTCCTprf_shape_A (te_info *info, ntype *args)
 
     arg = TYgetProductMember (args, 0);
 
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), arg);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -1379,7 +1427,6 @@ NTCCTprf_sel_VxA (te_info *info, ntype *args)
     array = TYgetProductMember (args, 1);
 
     TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 2), array);
     err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);

@@ -957,28 +957,28 @@
         <travuser>
           <node name="Num" />
           <node name="NumByte" />
-	  <node name="NumShort" />
-	  <node name="NumInt" />
-	  <node name="NumLong" />
-	  <node name="NumLonglong" />
-	  <node name="NumUbyte" />
-	  <node name="NumUshort" />
-	  <node name="NumUint" />
-	  <node name="NumUlong" />
+	        <node name="NumShort" />
+      	  <node name="NumInt" />
+      	  <node name="NumLong" />
+      	  <node name="NumLonglong" />
+      	  <node name="NumUbyte" />
+      	  <node name="NumUshort" />
+    	    <node name="NumUint" />
+  	      <node name="NumUlong" />
           <node name="NumUlonglong" />
           <node name="Char" />
           <node name="Bool" />
           <node name="Float" />
-		  <node name="Double" />
-		  <node name="Type" />
-		  <node name="Str" />
-		  <node name="Id" />
-		  <node name="Ids" />
-		  <node name="Array" />
-		  <node name="Prf" />
-		  <node name="Ap" />
-		  <node name="Generator" />
-		  <node name="Fold" />
+	    	  <node name="Double" />
+    		  <node name="Type" />
+		      <node name="Str" />
+    		  <node name="Id" />
+		      <node name="Ids" />
+    		  <node name="Array" />
+		      <node name="Prf" />
+    		  <node name="Ap" />
+		      <node name="Generator" />
+    		  <node name="Fold" />
 
 		  <node name="Block" />
 		  <node name="Assign" />
@@ -1091,6 +1091,12 @@
 		  <node name="Return" />
 		  <node name="Assign" />
 		</travuser>
+	      </traversal>
+	      <traversal id="GNTC" name="Generate Nested Type Conversions" default="sons" include="generate_nested_type_conversions.h">
+	      	<travuser>
+            <node name="Module" />
+		        <node name="Typedef" />
+      		</travuser>
 	      </traversal>
 	      <traversal id="GGTC" name="Generate Generic Type Conversions" default="sons" include="generate_generic_type_conversions.h">
 		<travuser>
@@ -1408,6 +1414,7 @@
 		  <node name="NumUlong" />
 		  <node name="NumUlonglong" />
 		  <node name="Bool" />
+      <node name="Nested_init" />
 		  <node name="Char" />
 		  <node name="Double" />
           <node name="Float" />
@@ -3654,14 +3661,15 @@
         <node name="SPAp" />
         <node name="Prf" />
         <node name="Funcond" />
-	<node name="Cast" />
-	<node name="SPMop" />
-	<node name="SetWL" />
-	<node name="Dot" />
-	<node name="Str" />
+	      <node name="Cast" />
+      	<node name="SPMop" />
+       	<node name="SetWL" />
+      	<node name="Dot" />
+       	<node name="Str" />
         <node name="Icm" />
         <node name="Type" />
         <node name="Globobj" />
+        <node name="Nested_init" />
       </target>
     </nodeset>
 
@@ -4707,6 +4715,7 @@ N_tfarg :
         <flag name="IsLocal" default="TRUE"/>
         <flag name="IsUnique" />
         <flag name="IsAlias" />
+        <flag name="IsNested" />
       </flags>
     </node>
 <!--
@@ -7034,9 +7043,7 @@ N_tfarg :
           </type>
         </attribute>
       </attributes>
-      <flags>
-        <flag name="IsIrregular" default="FALSE"/>
-      </flags>
+      <flags />
     </node>
 <!--
 
@@ -7476,6 +7483,18 @@ N_tfarg :
       </attributes>
       <flags></flags>
     </node>
+<!--
+
+  N_nested_init :
+
+-->
+    <node name="Nested_init">
+     <description>Nested init value</description>
+      <sons/>
+      <attributes/>
+      <flags/>
+    </node>
+
 <!--
 
   N_str :

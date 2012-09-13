@@ -1561,6 +1561,33 @@ ICM_DEF( ND_PRF_COND, ICM_TRACE_NONE)
 ICM_END( ND_PRF_COND, ( to_NT, cond_NT, then_NT, else_NT))
 #endif
 
+#if defined (ND_ENCLOSE) || defined(ICM_ALL)
+ICM_DEF( ND_ENCLOSE, ICM_TRACE_NONE)
+  ICM_NT  ( to_NT)
+  ICM_INT ( to_DIM)
+  ICM_NT  ( from_NT)
+  ICM_INT ( from_DIM)
+ICM_END( ND_ENCLOSE, ( to_NT, to_DIM, from_NT, from_DIM))
+#endif
+
+#if defined (ND_DISCLOSE) || defined(ICM_ALL)
+ICM_DEF( ND_DISCLOSE, ICM_TRACE_NONE)
+  ICM_NT  ( to_NT)
+  ICM_INT ( to_DIM)
+  ICM_NT  ( from_NT)
+  ICM_INT ( from_DIM)
+ICM_END( ND_DISCLOSE, ( to_NT, to_DIM, from_NT, from_DIM))
+#endif
+
+#if defined(ND_DECL_NESTED) || defined(ICM_ALL)
+ICM_DEF( ND_DECL_NESTED, ICM_TRACE_NONE)
+  ICM_NT( var_NT)
+  ICM_ID( basetype)
+  ICM_INT( sdim)
+  ICM_VARINT( sdim, shp)
+ICM_END( ND_DECL_NESTED, (var_NT, basetype, sdim, shp))
+#endif
+
 #if defined(ND_UNSHARE) || defined(ICM_ALL)
 ICM_DEF( ND_UNSHARE, ICM_TRACE_NONE)
   ICM_NT( va_NT)
@@ -1571,3 +1598,4 @@ ICM_DEF( ND_UNSHARE, ICM_TRACE_NONE)
   ICM_ID( copyfun)
 ICM_END( ND_UNSHARE, (va_NT, va_sdim, viv_NT, viv_sdim, basetype, copyfun))
 #endif
+

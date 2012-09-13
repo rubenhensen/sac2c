@@ -756,6 +756,22 @@ DUPbool (node *arg_node, info *arg_info)
 /******************************************************************************/
 
 node *
+DUPnested_init (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ();
+
+    new_node = TBmakeNested_init ();
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
+/******************************************************************************/
+
+node *
 DUPfloat (node *arg_node, info *arg_info)
 {
     node *new_node;

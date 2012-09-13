@@ -518,7 +518,7 @@ FLATexprs (node *arg_node, info *arg_info)
              || (NODE_TYPE (expr) == N_char) || (NODE_TYPE (expr) == N_str)
              || (NODE_TYPE (expr) == N_array) || (NODE_TYPE (expr) == N_spap)
              || (NODE_TYPE (expr) == N_prf) || (NODE_TYPE (expr) == N_with)
-             || (NODE_TYPE (expr) == N_cast));
+             || (NODE_TYPE (expr) == N_cast) || (NODE_TYPE (expr) == N_nested_init));
         break;
     case CT_array:
     case CT_return:
