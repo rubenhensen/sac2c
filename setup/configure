@@ -615,9 +615,9 @@ CCDLLINK
 CCMTLINK
 CPPFILE
 DEPSFLAG
-GENPIC
 PDCCFLAGS
 MKCCFLAGS
+GENPIC
 RCCCFLAGS
 RCLDFLAGS
 OPT_g
@@ -633,6 +633,8 @@ MT_CFLAGS_LPEL
 ENABLE_MT_LPEL
 ENABLE_MT
 LPEL_CFLAGS
+IS_CYGWIN
+SHARED_LIB_EXT
 SLC_PATH
 ENABLE_MUTC
 M4
@@ -4644,6 +4646,46 @@ done
 
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for shared lib file extension" >&5
+$as_echo_n "checking for shared lib file extension... " >&6; }
+case "$target_os" in
+  *cygwin* | *windows* | *mingw*)
+    SHARED_LIB_EXT=".dll"
+
+
+$as_echo "#define SHARED_LIB_EXT \".dll\"" >>confdefs.h
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: .dll" >&5
+$as_echo ".dll" >&6; }
+    ;;
+  *)
+    SHARED_LIB_EXT=".so"
+
+
+$as_echo "#define SHARED_LIB_EXT \".so\"" >>confdefs.h
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: .so" >&5
+$as_echo ".so" >&6; }
+    ;;
+esac
+
+case "$target_os" in
+*cygwin*)
+
+$as_echo "#define IS_CYGWIN 1" >>confdefs.h
+
+  IS_CYGWIN=yes
+
+  ;;
+*)
+
+$as_echo "#define IS_CYGWIN 0" >>confdefs.h
+
+  IS_CYGWIN=no
+
+  ;;
+esac
+
 
 # Check whether --with-lpel-include-path was given.
 if test "${with_lpel_include_path+set}" = set; then :
@@ -5111,12 +5153,21 @@ if  test "$GCC" = yes ; then
 
   RCCCFLAGS="-Wall -Wno-unused -fno-builtin -std=c99"
 
-  MKCCFLAGS="-Wall -Wextra -Wstrict-prototypes -Werror-implicit-function-declaration -Wno-unused -pedantic -g -std=c99"
+  if  test "$IS_CYGWIN" = yes ; then
+    GENPIC="-DPIC"
 
-  PDCCFLAGS="-Wall -Wextra -Wstrict-prototypes -Werror-implicit-function-declaration -Wno-unused -pedantic -O3 -std=c99"
+    MKCCFLAGS="-Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -pedantic -g -std=c99"
 
-  GENPIC="-fPIC -DPIC"
+    PDCCFLAGS="-Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -pedantic -O3 -std=c99"
 
+  else
+    GENPIC="-fPIC -DPIC"
+
+    MKCCFLAGS="-Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unused-but-set-variable -pedantic -g -std=c99"
+
+    PDCCFLAGS="-Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unused-but-set-variable -pedantic -O3 -std=c99"
+
+  fi
   DEPSFLAG="-M"
 
   CPPFILE="gcc -E -C -x c"
@@ -5341,6 +5392,14 @@ $as_echo "solaris settings" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: linux settings" >&5
 $as_echo "linux settings" >&6; }
     ;;
+ *cygwin* | *mingw*)
+    OSFLAGS="-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"
+    LD_DYNAMIC="-dy -shared"
+    LD_PATH="-L%path% -Wl,-rpath,%path%"
+    LD_FLAGS=""
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: cygwin settings" >&5
+$as_echo "cygwin settings" >&6; }
+    ;;
   *osf*)
     OSFLAGS="-D_OSF_SOURCE"
     LD_DYNAMIC=""
@@ -5381,10 +5440,10 @@ $as_echo "darwin 9.x settings" >&6; }
 $as_echo "darwin 7.x/8.x settings" >&6; }
       ;;
       *)
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown darwin system" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown darwin system" >&5
 $as_echo "unknown darwin system" >&6; }
-    esac
-    ;;
+      esac
+      ;;
   *bsd*)
     OSFLAGS="-fpic"
     LD_DYNAMIC="ld -dy -shared -symbolic"
@@ -5394,6 +5453,10 @@ $as_echo "unknown darwin system" >&6; }
 $as_echo "BSD settings" >&6; }
     ;;
   *)
+    OSFLAGS="-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"
+    LD_DYNAMIC="-dy -shared -Wl,-allow-shlib-undefined"
+    LD_PATH="-L%path% -Wl,-rpath,%path%"
+    LD_FLAGS="-Wl,-allow-shlib-undefined"
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: unknown" >&5
 $as_echo "unknown" >&6; }
     ;;
@@ -5423,7 +5486,6 @@ $as_echo "#define PF_MAXFUNNAMELEN 100" >>confdefs.h
 
 
 $as_echo "#define SAC_PRELUDE_NAME \"sacprelude\"" >>confdefs.h
-
 
 
 

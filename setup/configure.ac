@@ -295,6 +295,33 @@ dnl check for mkdtemp
 AC_CHECK_FUNCS(mkdtemp)
 
 
+dnl Set the file extension for shared libs to either .dll for windows or .so
+AC_MSG_CHECKING([for shared lib file extension])
+case "$target_os" in
+  *cygwin* | *windows* | *mingw*)
+    AC_SUBST(SHARED_LIB_EXT, [".dll"])
+    AC_DEFINE(SHARED_LIB_EXT, ".dll", [File extension used for shared library files.])
+    AC_MSG_RESULT([.dll])
+    ;;
+  *)
+    AC_SUBST(SHARED_LIB_EXT, [".so"])  
+    AC_DEFINE(SHARED_LIB_EXT, ".so", [File extension used for shared library files.])
+    AC_MSG_RESULT([.so])
+    ;;
+esac
+
+dnl if cygwin set IS_CYGWIN 
+case "$target_os" in
+*cygwin*)
+  AC_DEFINE(IS_CYGWIN, 1, set to 1 if target os is cygwin)
+  AC_SUBST(IS_CYGWIN, yes)
+  ;;
+*)
+  AC_DEFINE(IS_CYGWIN, 0, set to 1 if target os is cygwin)
+  AC_SUBST(IS_CYGWIN, no)
+  ;;
+esac
+
 dnl Get LPEL library and include locations
 AC_ARG_WITH([lpel-include-path],
   [AS_HELP_STRING([--with-lpel-include-path],
@@ -511,10 +538,16 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
-  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin -std=c99"])
-  AC_SUBST(MKCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -Werror-implicit-function-declaration -Wno-unused -pedantic -g -std=c99"])
-  AC_SUBST(PDCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -Werror-implicit-function-declaration -Wno-unused -pedantic -O3 -std=c99"])
-  AC_SUBST(GENPIC, ["-fPIC -DPIC"])
+  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin -std=c99"])  
+  if [ test "$IS_CYGWIN" = yes ]; then
+    AC_SUBST(GENPIC, ["-DPIC"])
+    AC_SUBST(MKCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -pedantic -g -std=c99"])
+    AC_SUBST(PDCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -pedantic -O3 -std=c99"])
+  else
+    AC_SUBST(GENPIC, ["-fPIC -DPIC"])
+    AC_SUBST(MKCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unused-but-set-variable -pedantic -g -std=c99"])
+    AC_SUBST(PDCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unused-but-set-variable -pedantic -O3 -std=c99"])
+  fi  
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CPP, ["gcc -E -P -x c"])
@@ -652,6 +685,13 @@ case "$target_os" in
     LD_FLAGS="-Wl,-allow-shlib-undefined"
     AC_MSG_RESULT([linux settings])
     ;;
+ *cygwin* | *mingw*)      
+    OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
+    LD_DYNAMIC=["-dy -shared"]
+    LD_PATH=["-L%path% -Wl,-rpath,%path%"]
+    LD_FLAGS=""
+    AC_MSG_RESULT([cygwin settings])
+    ;;
   *osf*)	
     OSFLAGS=["-D_OSF_SOURCE"]
     LD_DYNAMIC=[""]
@@ -687,9 +727,9 @@ case "$target_os" in
         AC_MSG_RESULT([darwin 7.x/8.x settings])
       ;;
       *)
-        AC_MSG_RESULT([unknown darwin system])
-    esac
-    ;;
+      AC_MSG_RESULT([unknown darwin system])
+      esac
+      ;;
   *bsd*)
     OSFLAGS=["-fpic"]
     LD_DYNAMIC=["ld -dy -shared -symbolic"]
@@ -698,6 +738,10 @@ case "$target_os" in
     AC_MSG_RESULT([BSD settings])
     ;;
   *)
+    OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
+    LD_DYNAMIC=["-dy -shared -Wl,-allow-shlib-undefined"]
+    LD_PATH=["-L%path% -Wl,-rpath,%path%"]
+    LD_FLAGS="-Wl,-allow-shlib-undefined"
     AC_MSG_RESULT([unknown])
     ;;
 esac
@@ -720,7 +764,6 @@ AC_DEFINE( PF_MAXFUNNAMELEN, 100,
            [set to maximum length of sac function names for profiling])
 
 AC_DEFINE( SAC_PRELUDE_NAME, "sacprelude", [name of sac prelude])
-
 
 dnl
 dnl create configure-generated file
