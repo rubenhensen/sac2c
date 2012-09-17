@@ -1933,7 +1933,6 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     /* Handle constant iv: make N_array nodes */
     DBUG_ASSERT (NULL != ivavis, "Should always have non-NULL ivavis");
     if ((NULL == ivavis) || TYisAKV (AVIS_TYPE (ivavis))) {
-        DBUG_ASSERT (NULL != ivavis, "more confusion -- not really dead code");
         ivminco = COaST2Constant (ivavis);
         ivmin = COconstant2AST (ivminco);
 
@@ -1951,6 +1950,8 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 
         if (PMmatchFlat (pat3, AVIS_MAX (ivavis))) {
             if (isNakedConsumer (arg_info)) {
+                DBUG_PRINT ("Found naked consumerWL: %s",
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
                 /* Fake up value:  ivmax = AVIS_MIN( ivavis) + 1 */
                 PMmatchFlat (pat3, AVIS_MIN (ivavis)); /* Check for N_array */
                 ivmax = IVEXPadjustExtremaBound (ID_AVIS (AVIS_MIN (ivavis)), 1,
@@ -2305,7 +2306,7 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
         DBUG_PRINT ("PWL %s is OK for folding; WITH_REFERENCED_FOLD=%d",
                     AVIS_NAME (ID_AVIS (arg_node)), WITH_REFERENCED_FOLD (p));
     } else {
-        nm = (NULL != p) ? AVIS_NAME (ID_AVIS (arg_node)) : "(not a WL";
+        nm = (NULL != p) ? AVIS_NAME (ID_AVIS (arg_node)) : "(not a WL) ";
         DBUG_PRINT ("PWL %s is not OK for folding", nm);
     }
 
