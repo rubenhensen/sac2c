@@ -249,7 +249,6 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
     node *minmax;
     node *argavis;
     node *rca;
-    node *rcaid;
     ntype *typ;
     node *reccall;
     node *newrecursiveapargs = NULL;
@@ -285,9 +284,11 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
                         AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
         }
 
-        int fixme; // same as above
-        if ((NULL == AVIS_MAX (ARG_AVIS (lacfunargs))) && (!TYisAKV (typ))
-            && (NULL != rca) && (NULL != AVIS_MAX (argavis))) {
+        if ((NULL == AVIS_MAX (lfa)) && (!TYisAKV (typ)) && (NULL != AVIS_MAX (argavis))
+            && (NULL != rca)
+            && ((LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca))) ||
+                // FIXME: Next line is KLUDGE for Bug #1022
+                (IsSameExtremum (lfa, EXPRS_EXPR (rca))))) {
             minmax = AVIS_MAX (argavis);
             newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
                                                  &INFO_NEWOUTERAPARGS (arg_info));
