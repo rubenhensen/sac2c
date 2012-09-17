@@ -593,15 +593,12 @@ WLPROPexprs (node *arg_node, info *arg_info)
 static node *
 CopyWL (node *arg_node, info *arg_info)
 {
-    node *newids;
     dfmask_t *inmask;
     lut_t *lut;
     node *next;
     node *old_withloop;
     node *new_withloop;
-    node *withvardec;
     node *wlavis;
-    node *withloop = NULL;
     node *lacfundef;
 
     DBUG_ENTER ();
