@@ -13,6 +13,7 @@
  * prefix: SCS
  *
  *****************************************************************************/
+extern bool SCSisNonneg (node *arg_node);
 extern void SCSinitSymbolicConstantSimplification (void);
 extern void SCSfinalizeSymbolicConstantSimplification (void);
 extern node *SCSmakeTrue (node *prfarg);

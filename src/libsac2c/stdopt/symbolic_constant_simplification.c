@@ -103,6 +103,44 @@
 
 /******************************************************************************
  *
+ * function: Predicate for determining if an argument is known to
+ *           be non-negative.
+ *
+ * description: We check for a constant arg_node, and if that
+ *              fails, look for a suitable constant AVIS_MIN.
+ *
+ * result: True if argument is known to be non-negative.
+ *         Else false.
+ *
+ *         NB. False does NOT imply that the argument is negative.
+ *
+ *****************************************************************************/
+bool
+SCSisNonneg (node *arg_node)
+{
+    pattern *pat;
+    constant *con = NULL;
+    bool z;
+
+    pat = PMconst (1, PMAgetVal (&con));
+
+    DBUG_ENTER ();
+
+    z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
+
+    if (!z) {
+        con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
+        z = (NULL != con) && COisNonNeg (con, TRUE);
+    }
+
+    con = (NULL != con) ? COfreeConstant (con) : con;
+    pat = PMfree (pat);
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
  * function: Function to apply current CF function on extrema
  *
  * description: arg1 and arg2 are PRF_ARG1/2 or AVIS_MIN/MAXof same.
@@ -1566,6 +1604,7 @@ SCSprf_mod_VxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     /* Could be supported with ISMOP and shape conformability check */
     /* FIXME : what is mod(0,0) etc??? ??? */
+
     DBUG_RETURN (res);
 }
 
@@ -2005,12 +2044,7 @@ SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
     pat1 = PMconst (1, PMAgetVal (&arg1c));
 
     /* Case 1*/
-    b = PMmatchFlatSkipExtrema (pat1, PRF_ARG1 (arg_node)) && COisNonNeg (arg1c, TRUE);
-
-    if (!b) {
-        arg1c = SAACFchaseMinMax (PRF_ARG1 (arg_node), SAACFCHASEMIN);
-        b = (NULL != arg1c) && COisNonNeg (arg1c, TRUE);
-    }
+    b = SCSisNonneg (PRF_ARG1 (arg_node));
 
     if (b) {
         DBUG_PRINT ("SCSprf_non_neg_val removed guard");
