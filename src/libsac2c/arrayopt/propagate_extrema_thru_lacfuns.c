@@ -637,6 +637,7 @@ PETLap (node *arg_node, info *arg_info)
               = TCappendExprs (INFO_NEWOUTERAPARGS (arg_info), AP_ARGS (arg_node));
             INFO_NEWOUTERAPARGS (arg_info) = NULL;
         }
+        FUNDEF_RETURN (AP_FUNDEF (arg_node)) = LFUfindFundefReturn (AP_FUNDEF (arg_node));
     }
 
     if ((NULL == INFO_LACFUN (arg_info))) { /* Vanilla traversal */
