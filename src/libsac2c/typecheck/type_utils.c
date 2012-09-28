@@ -1316,7 +1316,7 @@ TUretsAreConstant (node *rets)
 /** <!-- ****************************************************************** -->
  * @fn ntype *TUcombineBottom( ntype *left, ntype *right)
  *
- * @brief resturns a new bottom ntype containing the concatenation of
+ * @brief returns a new bottom ntype containing the concatenation of
  *        the error messages of the given two bottom types.
  *
  * @param left bottom type
@@ -1341,7 +1341,7 @@ TUcombineBottom (ntype *left, ntype *right)
 /** <!-- ****************************************************************** -->
  * @fn ntype *TUcombineBottoms( ntype *prod)
  *
- * @brief resturns a new bottom ntype containing the concatenation of
+ * @brief returns a new bottom ntype containing the concatenation of
  *        the error messages contained in the given type.
  *
  * @param type
@@ -1415,7 +1415,7 @@ TUspreadBottoms (ntype *prod)
 /** <!-- ****************************************************************** -->
  * @fn ntype *TUcombineBottomsFromRets( node *rets)
  *
- * @brief resturns a new bottom ntype containing the concatenation of all
+ * @brief returns a new bottom ntype containing the concatenation of all
  *        error messages of the given rets chain. if the chain does not
  *        contain any bottom type, NULL is returned.
  *
