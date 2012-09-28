@@ -120,6 +120,7 @@ extern node *TCmakeIdsFromVardecs (node *vardecs);
 extern node *TCsetSSAAssignForIdsChain (node *ids, node *assign);
 extern node *TClastIds (node *ids);
 extern node *TCconvertIds2Exprs (node *ids);
+extern node *TCcreateIdsChainFromExprs (node *arg_node);
 
 /******************************************************************************
  *

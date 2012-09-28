@@ -3056,6 +3056,29 @@ TCmakeIdCopyStringNtNew (const char *str, ntype *type)
 /*--------------------------------------------------------------------------*/
 
 /** <!-- ****************************************************************** -->
+ * @fn node *TCcreateIdsChainFromExprs()
+ *
+ * @brief Returns an N_ids chain from, e.g., an ARRAY_AELEMS chain
+ *        containing N_id nodes.
+ *
+ * @return created N_ids chain
+ ******************************************************************************/
+node *
+TCcreateIdsChainFromExprs (node *arg_node)
+{
+    node *ids = NULL;
+
+    DBUG_ENTER ();
+
+    while (NULL != arg_node) {
+        ids = TCappendIds (ids, TBmakeIds (ID_AVIS (EXPRS_EXPR (arg_node)), NULL));
+        arg_node = EXPRS_NEXT (arg_node);
+    }
+
+    DBUG_RETURN (ids);
+}
+
+/** <!-- ****************************************************************** -->
  * @fn node *TCcreateIdsChainFromAvises( int num_avises, ...)
  *
  * @brief Returns an N_ids chain containing nodes with
