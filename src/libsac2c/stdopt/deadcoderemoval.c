@@ -315,6 +315,11 @@ DCRarg (node *arg_node, info *arg_info)
         arg_node = FREEdoFreeNode (arg_node);
         AP_ARGS (extap) = FREEdoFreeNode (AP_ARGS (extap));
         if (INFO_INT_ASSIGN (arg_info) != NULL) {
+
+            // FIXME something wrong here. Crashes...
+            // DBUG_PRINT ("removing corresponding concrete arg in N_ap %s",
+            //  AVIS_NAME( ID_AVIS( EXPRS_EXPR(( AP_ARGS( intap))))));
+
             AP_ARGS (intap) = FREEdoFreeNode (AP_ARGS (intap));
         }
     }
@@ -389,6 +394,8 @@ DCRret (node *arg_node, info *arg_info)
         arg_node = FREEdoFreeNode (arg_node);
         LET_IDS (extlet) = FREEdoFreeNode (LET_IDS (extlet));
         if (INFO_INT_ASSIGN (arg_info) != NULL) {
+            DBUG_PRINT ("removing corresponding LET_IDS in N_ap for %s",
+                        AVIS_NAME (IDS_AVIS (LET_IDS (intlet))));
             LET_IDS (intlet) = FREEdoFreeNode (LET_IDS (intlet));
         }
     }
@@ -557,8 +564,8 @@ DCRlet (node *arg_node, info *arg_info)
  *   node *DCRap(node *arg_node , info *arg_info)
  *
  * description:
- *   if application of special function (cond, do) traverse into this
- *   function except for recursive calls of the current function.
+ *   if application of lacfun (cond, do), traverse into this
+ *   function, except for recursive calls of the current function.
  *
  *****************************************************************************/
 node *
@@ -574,13 +581,12 @@ DCRap (node *arg_node, info *arg_info)
             /* remember internal assignment */
             INFO_INT_ASSIGN (arg_info) = INFO_ASSIGN (arg_info);
         } else {
-            DBUG_PRINT ("traverse in special fundef %s",
-                        CTIitemName (AP_FUNDEF (arg_node)));
+            DBUG_PRINT ("traverse in lacfun %s", CTIitemName (AP_FUNDEF (arg_node)));
 
             /* start traversal of special fundef (and maybe reduce parameters!) */
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-            DBUG_PRINT ("traversal of special fundef %s finished.",
+            DBUG_PRINT ("traversal of lacfun %s finished.",
                         CTIitemName (AP_FUNDEF (arg_node)));
             DBUG_PRINT ("continuing with function %s...",
                         CTIitemName (INFO_FUNDEF (arg_info)));
