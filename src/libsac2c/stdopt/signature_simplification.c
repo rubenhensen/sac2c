@@ -397,8 +397,9 @@ SISIap (node *arg_node, info *arg_info)
                  */
 
                 tmp = curr_args;
-                DBUG_PRINT ("Removing AP_ARG %s",
-                            AVIS_NAME (ID_AVIS (EXPRS_EXPR (curr_args))));
+                DBUG_PRINT ("Removing AP_ARG %s in call to %s",
+                            AVIS_NAME (ID_AVIS (EXPRS_EXPR (curr_args))),
+                            FUNDEF_NAME (fundef));
                 curr_args = EXPRS_NEXT (curr_args);
                 EXPRS_NEXT (tmp) = NULL;
                 tmp = FREEdoFreeNode (tmp);
