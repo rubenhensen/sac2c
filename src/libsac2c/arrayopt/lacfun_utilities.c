@@ -38,6 +38,12 @@
  *
  *****************************************************************************/
 
+struct ca_info {
+    node *exprs;
+    node *avis;
+    node *vardecs;
+};
+
 /**<!--***********************************************************************-->
  *
  * @fn node *LFUprefixFunctionArgument( node *arg_node, node *calleravis,
@@ -493,42 +499,44 @@ LFUisAvisMemberIds (node *arg_node, node *ids)
 
 /** <!--********************************************************************-->
  *
- * @fn node *LFUfindRecursiveCallAp( node *arg_node)
+ * @fn node *LFUfindRecursiveCallAssign( node *arg_node)
  *
  * @brief:  Find the recursive call to self in a LOOPFUN, if any.
  *
  * @param: arg_node - an N_fundef node for a LOOPFUN.
  *
- * @result: Address of the recursive LOOPFUN call, or NULL.
+ * @result: Address of the N_assign node for the recursive LOOPFUN call, or NULL.
  *
  *****************************************************************************/
 node *
-LFUfindRecursiveCallAp (node *arg_node)
+LFUfindRecursiveCallAssign (node *arg_node)
 {
     node *z = NULL;
     node *assgn;
     node *stmt;
     node *expr;
+    node *assg;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (FUNDEF_ISLOOPFUN (arg_node), "Expected LOOPFUN node");
-
-    assgn = BLOCK_ASSIGNS (FUNDEF_BODY (arg_node));
-    while ((NULL == z) && (NULL != assgn)) {
-        stmt = ASSIGN_STMT (assgn);
-        if (N_cond == NODE_TYPE (stmt)) {
-            /* Get THEN side of cond */
-            expr = LET_EXPR (ASSIGN_STMT (BLOCK_ASSIGNS (COND_THEN (stmt))));
-            if ((N_ap == NODE_TYPE (expr) && (arg_node == AP_FUNDEF (expr)))) {
-                z = expr;
+    if (FUNDEF_ISLOOPFUN (arg_node)) {
+        assgn = BLOCK_ASSIGNS (FUNDEF_BODY (arg_node));
+        while ((NULL == z) && (NULL != assgn)) {
+            stmt = ASSIGN_STMT (assgn);
+            if (N_cond == NODE_TYPE (stmt)) {
+                /* Get THEN side of cond */
+                assg = BLOCK_ASSIGNS (COND_THEN (stmt));
+                expr = LET_EXPR (ASSIGN_STMT (assg));
+                if ((N_ap == NODE_TYPE (expr) && (arg_node == AP_FUNDEF (expr)))) {
+                    z = assg;
+                }
             }
+            assgn = ASSIGN_NEXT (assgn);
         }
-        assgn = ASSIGN_NEXT (assgn);
-    }
 
-    DBUG_ASSERT (NULL != z, "Did not find recursive LOOPFUN call to %s",
-                 FUNDEF_NAME (arg_node));
+        DBUG_ASSERT (NULL != z, "Did not find recursive LOOPFUN call to %s",
+                     FUNDEF_NAME (arg_node));
+    }
 
     DBUG_RETURN (z);
 }
@@ -572,7 +580,8 @@ LFUinsertAssignIntoLacfun (node *arg_node, node *assign, node *oldavis)
         /* LOOPFUN */
         BLOCK_ASSIGNS (block) = DUPdoDupTreeLut (BLOCK_ASSIGNS (block), lut);
         BLOCK_ASSIGNS (block) = TCappendAssign (assign, BLOCK_ASSIGNS (block));
-        FUNDEF_LOOPRECURSIVEAP (arg_node) = LFUfindRecursiveCallAp (arg_node);
+        FUNDEF_LOOPRECURSIVEAP (arg_node)
+          = LET_EXPR (ASSIGN_STMT (LFUfindRecursiveCallAssign (arg_node)));
     } else {
 
         /* CONDFUN is harder */
@@ -797,6 +806,136 @@ LFUarg2Vardec (node *arg_node, node *fundef)
     arg_node = FREEdoFreeNode (arg_node);
 
     DBUG_RETURN (z);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn void *LFUcreateVardecs( constant *idx, void *accu, void *scalar_type)
+ *
+ * @brief utility function for creating vardecs
+ *
+ *****************************************************************************/
+static void *
+LFUcreateVardecs (constant *idx, void *accu, void *scalar_type)
+{
+    accu = TBmakeVardec (TBmakeAvis (TRAVtmpVar (), TYcopyType ((ntype *)scalar_type)),
+                         (node *)accu);
+    DBUG_PRINT ("Created vardec: %s", VARDEC_NAME (accu));
+
+    return (accu);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn void *LFUcreateAssigns( constant *idx, void *accu, void *local_info)
+ *
+ * fold function for creating assignment chains.
+ *
+ *****************************************************************************/
+static void *
+LFUcreateAssigns (constant *idx, void *accu, void *local_info)
+{
+    node *scal_avis;
+    node *array_avis;
+    node *avis;
+    struct ca_info *l_info;
+
+    l_info = (struct ca_info *)local_info;
+
+    scal_avis = ID_AVIS (EXPRS_EXPR (l_info->exprs));
+    array_avis = l_info->avis;
+
+    /**
+     * create a temp variable to hold the index:
+     */
+    avis = TBmakeAvis (TRAVtmpVar (),
+                       TYmakeAKV (TYmakeSimpleType (T_int), COcopyConstant (idx)));
+    DBUG_PRINT ("Created avis: %s", AVIS_NAME (avis));
+    l_info->vardecs = TBmakeVardec (avis, l_info->vardecs);
+
+    /**
+     * create the selection:
+     */
+    accu = TBmakeAssign (TBmakeLet (TBmakeIds (scal_avis, NULL),
+                                    TCmakePrf2 (F_sel_VxA, TBmakeId (avis),
+                                                TBmakeId (array_avis))),
+                         (node *)accu);
+    AVIS_SSAASSIGN (scal_avis) = (node *)accu;
+
+    /**
+     * create the assignment of the constant index:
+     */
+    accu = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), COconstant2AST (idx)),
+                         (node *)accu);
+    AVIS_SSAASSIGN (avis) = (node *)accu;
+
+    l_info->exprs = EXPRS_NEXT (l_info->exprs);
+
+    return (accu);
+}
+
+/** <!--*******************************************************************-->
+ *
+ * @fn node *LFUscalarizeArray( node *avis, node **preassigns,
+ *                               node **vardecs)
+ *
+ * This function generates an exprs chain of new scalar identifiers a1, ...,
+ * and of the same element type as avis, and returns these.
+ *
+ *    a1 = exprs[ shp-shp];
+ *       ...
+ *    an = exprs[ shp-1];
+ *
+ * which are stored in preassigns for later insertion.
+ * The according vardecs are stored in vardecs.
+ *
+ *****************************************************************************/
+node *
+LFUscalarizeArray (node *avis, node **preassigns, node **vardecs)
+{
+    node *new_exprs;
+    ntype *scalar_type;
+    node *new_vardecs;
+    node *new_assigns;
+    struct ca_info local_info;
+    struct ca_info *local_info_ptr = &local_info;
+    shape *shp;
+
+    DBUG_ENTER ();
+
+    shp = SHcopyShape (TYgetShape (AVIS_TYPE (avis)));
+
+    /**
+     * create the vardecs:
+     */
+    scalar_type
+      = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
+    new_vardecs
+      = (node *)COcreateAllIndicesAndFold (shp, LFUcreateVardecs, NULL, scalar_type);
+
+    /**
+     * create the exprs:
+     */
+    new_exprs = TCcreateExprsFromVardecs (new_vardecs);
+
+    /**
+     * create the assignments:
+     */
+    local_info_ptr->exprs = new_exprs;
+    local_info_ptr->avis = avis;
+    local_info_ptr->vardecs = NULL;
+
+    new_assigns
+      = (node *)COcreateAllIndicesAndFold (shp, LFUcreateAssigns, NULL, local_info_ptr);
+    new_vardecs = TCappendVardec (new_vardecs, local_info_ptr->vardecs);
+
+    /**
+     * prefix new vardecs and assignments
+     */
+    *vardecs = TCappendVardec (new_vardecs, *vardecs);
+    *preassigns = TCappendAssign (new_assigns, *preassigns);
+
+    DBUG_RETURN (new_exprs);
 }
 
 #undef DBUG_PREFIX
