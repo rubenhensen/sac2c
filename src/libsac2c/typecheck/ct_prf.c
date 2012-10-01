@@ -1686,11 +1686,9 @@ NTCCTprf_modarray_AxSxS (te_info *info, ntype *args)
     idx = TYgetProductMember (args, 1);
     val = TYgetProductMember (args, 2);
 
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 3), val);
     TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 3), val);
     TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 3), idx);
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
-    TEassureSameSimpleType (TEarg2Obj (1), array, TEprfArg2Obj (TEgetNameStr (info), 3),
+    TEassureSameScalarType (TEarg2Obj (1), array, TEprfArg2Obj (TEgetNameStr (info), 3),
                             val);
     TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 2), idx);
 
@@ -1737,10 +1735,8 @@ NTCCTprf_modarray_AxVxS (te_info *info, ntype *args)
     idx = TYgetProductMember (args, 1);
     val = TYgetProductMember (args, 2);
 
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 3), val);
     TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 3), val);
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
-    TEassureSameSimpleType (TEarg2Obj (1), array, TEprfArg2Obj (TEgetNameStr (info), 3),
+    TEassureSameScalarType (TEarg2Obj (1), array, TEprfArg2Obj (TEgetNameStr (info), 3),
                             val);
     TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 2), idx);
 
@@ -1805,9 +1801,7 @@ NTCCTprf_modarray_AxVxA (te_info *info, ntype *args)
     idx = TYgetProductMember (args, 1);
     val = TYgetProductMember (args, 2);
 
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 3), val);
-    TEassureSameSimpleType (TEarg2Obj (1), array, TEprfArg2Obj (TEgetNameStr (info), 3),
+    TEassureSameScalarType (TEarg2Obj (1), array, TEprfArg2Obj (TEgetNameStr (info), 3),
                             val);
     TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
 
@@ -1874,9 +1868,7 @@ NTCCTprf_modarray_AxSxA (te_info *info, ntype *args)
     idx = TYgetProductMember (args, 1);
     val = TYgetProductMember (args, 2);
 
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 1), array);
-    TEassureSimpleType (TEprfArg2Obj (TEgetNameStr (info), 3), val);
-    TEassureSameSimpleType (TEarg2Obj (1), array, TEprfArg2Obj (TEgetNameStr (info), 3),
+    TEassureSameScalarType (TEarg2Obj (1), array, TEprfArg2Obj (TEgetNameStr (info), 3),
                             val);
     TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
 
