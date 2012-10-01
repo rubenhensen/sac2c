@@ -162,6 +162,7 @@ MarkAvisAlive (node *avis)
         AVIS_ISDEAD (avis) = FALSE;
         DBUG_PRINT ("marking var %s as alive", AVIS_NAME (avis));
 
+#ifdef DEADCODEIHOPE
         if (AVIS_DIM (avis) != NULL) {
             DBUG_PRINT ("Traversing AVIS_DIM for %s", AVIS_NAME (avis));
             AVIS_DIM (avis) = TRAVdo (AVIS_DIM (avis), NULL);
@@ -186,9 +187,70 @@ MarkAvisAlive (node *avis)
             DBUG_PRINT ("Traversing AVIS_SCALARS for %s", AVIS_NAME (avis));
             AVIS_SCALARS (avis) = TRAVdo (AVIS_SCALARS (avis), NULL);
         }
+
+        if (AVIS_LACSO (avis) != NULL) {
+            DBUG_PRINT ("Traversing AVIS_LACSO for %s", AVIS_NAME (avis));
+            AVIS_LACSO (avis) = TRAVdo (AVIS_LACSO (avis), NULL);
+        }
+
+#else // DEADCODEIHOPE
+
+        avis = TRAVsons (avis, NULL);
+
+#endif // DEADCODEIHOPE
     }
 
     DBUG_RETURN ();
+}
+/** <!--********************************************************************-->
+ *
+ * function:
+ *     static node *FreeAvisSons( node *arg_node)
+ *
+ * description:
+ *     Free the N_avis son nodes associated with arg_node, which is
+ *     an N_return value. If we do not do this, things get
+ *     very confused.
+ *
+ * Result: arg_node.
+ *
+ *****************************************************************************/
+static node *
+FreeAvisSons (node *arg_node)
+{
+    node *avis;
+
+    DBUG_ENTER ();
+
+    avis = ID_AVIS (arg_node);
+    DBUG_PRINT ("Freeing avis sons for %s", AVIS_NAME (avis));
+
+    // This is so ugly, I could spit...
+    if (AVIS_DIM (avis) != NULL) {
+        AVIS_DIM (avis) = FREEdoFreeNode (AVIS_DIM (avis));
+    }
+
+    if (AVIS_SHAPE (avis) != NULL) {
+        AVIS_SHAPE (avis) = FREEdoFreeNode (AVIS_SHAPE (avis));
+    }
+
+    if (AVIS_MIN (avis) != NULL) {
+        AVIS_MIN (avis) = FREEdoFreeNode (AVIS_MIN (avis));
+    }
+
+    if (AVIS_MAX (avis) != NULL) {
+        AVIS_MAX (avis) = FREEdoFreeNode (AVIS_MAX (avis));
+    }
+
+    if (AVIS_SCALARS (avis) != NULL) {
+        AVIS_SCALARS (avis) = FREEdoFreeNode (AVIS_SCALARS (avis));
+    }
+
+    if (AVIS_LACSO (avis) != NULL) {
+        AVIS_LACSO (avis) = FREEdoFreeNode (AVIS_LACSO (avis));
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 /******************************************************************************
@@ -357,17 +419,22 @@ DCIassign (node *arg_node, info *arg_info)
  *   node *DCIreturn(node *arg_node , info *arg_info)
  *
  * description:
- *   starts traversal of return expressions to mark them as needed.
+ *   performs traversal of return expressions to mark them as needed.
+ *
+ *   At this point, any N_avis son nodes associated with the N_return
+ *   values are freed.
  *
  *****************************************************************************/
 node *
 DCIreturn (node *arg_node, info *arg_info)
 {
+    node *extids;
+    node *retexprs;
+
     DBUG_ENTER ();
 
     if ((INFO_TRAVSCOPE (arg_info) == TS_function)
         && (FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))) {
-        node *extids, *retexprs;
 
         /* mark only those return values as needed that are required in the
            applying context */
@@ -375,8 +442,14 @@ DCIreturn (node *arg_node, info *arg_info)
         retexprs = RETURN_EXPRS (arg_node);
 
         while (extids != NULL) {
+            DBUG_PRINT ("caller result value %s is for return value %s",
+                        AVIS_NAME (IDS_AVIS (extids)),
+                        AVIS_NAME (ID_AVIS (EXPRS_EXPR (retexprs))));
             if (!AVIS_ISDEAD (IDS_AVIS (extids))) {
-                MarkAvisAlive (ID_AVIS (EXPRS_EXPR (retexprs)));
+                DBUG_PRINT ("Marking return value %s alive",
+                            AVIS_NAME (ID_AVIS (EXPRS_EXPR (retexprs))));
+                AVIS_ISDEAD (ID_AVIS (EXPRS_EXPR (retexprs))) = FALSE;
+                EXPRS_EXPR (retexprs) = FreeAvisSons (EXPRS_EXPR (retexprs));
             }
             extids = IDS_NEXT (extids);
             retexprs = EXPRS_NEXT (retexprs);
@@ -429,9 +502,7 @@ DCIlet (node *arg_node, info *arg_info)
     INFO_ONEIDSNEEDED (arg_info) = FALSE;
     INFO_ALLIDSNEEDED (arg_info) = FALSE;
 
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
     /*
      * accu() must never become dead code
@@ -452,9 +523,7 @@ DCIlet (node *arg_node, info *arg_info)
              * alive
              */
             INFO_ALLIDSNEEDED (arg_info) = TRUE;
-            if (LET_IDS (arg_node) != NULL) {
-                LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-            }
+            LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
         }
 
         /*

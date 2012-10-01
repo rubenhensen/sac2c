@@ -967,50 +967,139 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * Description: Generate extrema computation for commutative
+ * Description:  Generate extrema for modulus.
+ *               if( ( arg1 >=0 ) && ( arg2 >= 0)), then we
+ *               set AVIS_MIN( res) = 0
+ *               and AVIS_MAX( normalize( arg2 - 1));
+ *
+ * @params arg_node: Your basic N_let node.
+ *         arg_info: As usual.
+ *
+ * @return Same arg_node, but with side effects on INFO_MINVAL and
+ *         INFO_MAXVAL.
+ *
+ ******************************************************************************/
+static node *
+GenerateExtremaModulus (node *arg_node, info *arg_info)
+{
+    node *arg1avis;
+    node *arg2avis;
+    node *lhsavis;
+    node *rhs;
+    node *zr;
+    node *nsa;
+    bool arg1scalar;
+    bool arg2scalar;
+
+    DBUG_ENTER ();
+
+    rhs = LET_EXPR (arg_node);
+    if (SCSisNonneg (PRF_ARG1 (rhs)) && SCSisNonneg (PRF_ARG2 (rhs))) {
+        lhsavis = IDS_AVIS (LET_IDS (arg_node));
+        arg1avis = ID_AVIS (PRF_ARG1 (rhs));
+        arg2avis = ID_AVIS (PRF_ARG2 (rhs));
+
+        arg1scalar = TUisIntScalar (AVIS_TYPE (ID_AVIS (PRF_ARG1 (rhs))));
+        arg2scalar = TUisIntScalar (AVIS_TYPE (ID_AVIS (PRF_ARG2 (rhs))));
+
+        /* non-scalar argument */
+        nsa = arg2scalar ? PRF_ARG1 (rhs) : PRF_ARG2 (rhs);
+
+        if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
+
+            /* Create zero minimum */
+            zr = SCSmakeZero (nsa);
+            zr = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGNS (arg_info),
+                                         TYeliminateAKV (AVIS_TYPE (lhsavis)));
+            AVIS_ISMINHANDLED (zr) = TRUE;
+            INFO_MINVAL (arg_info) = TBmakeId (zr);
+        }
+
+        if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
+            /* Create maximum from PRF_ARG2, unless it is scalar and
+             * PRF_ARG1 is vector. We cheat here a bit because
+             * we want the maximum to be PRF_ARG2-1, but we have to
+             * normalize it, so we can just copy the value.
+             */
+            if ((nsa == PRF_ARG2 (rhs)) || arg1scalar) {
+                INFO_MAXVAL (arg_info) = TBmakeId (ID_AVIS (PRF_ARG2 (rhs)));
+            } else {
+                // vector/scalar case: PRF_ARG2( rhs) + ( 0 * PRF_ARG2( rhs));
+                zr = SCSmakeZero (nsa);
+                zr = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
+                                             &INFO_PREASSIGNS (arg_info),
+                                             TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                zr = TCmakePrf2 (F_add_VxS, TBmakeId (zr),
+                                 TBmakeId (ID_AVIS (PRF_ARG2 (rhs))));
+                zr = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
+                                             &INFO_PREASSIGNS (arg_info),
+                                             TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                INFO_MAXVAL (arg_info) = TBmakeId (zr);
+                AVIS_ISMAXHANDLED (zr) = TRUE;
+            }
+        }
+    }
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
+ * Description: Generate extrema computation for
  *              dyadic scalar function.
  *
- *    Ideally, we want to compute the extrema between
+ *    We want to compute the extrema between
  *    a constant argument and the extremum of the non-constant
- *    argument. This gives us these cases:
+ *    argument. This gives us these cases for commutative functions:
  *
- *     f( const, nonconst), with minval on non-const:
- *  --> minval = f( const, minval)
- *     f( nonconst, const), with minval on non-const:
- *  --> minval = f( minval, const)
+ *      f( const, nonconst), with minval on non-const:
+ *          --> minval = f( const, minval)
+ *      f( nonconst, const), with minval on non-const:
+ *          --> minval = f( minval, const)
  *
  *      f( non_const, non_const) with minval on first arg:
- *  --> minval = f( minval, non_const)
+ *          --> minval = f( minval, non_const)
  *      f( non_const, non_const) with minval on second arg:
- *  --> minval = f( non_const, minval)
+ *          --> minval = f( non_const, minval)
  *
- *  We have to pre- and post-adjust AVIS_MAX, or _mul_
+ *  For maxval, we have to pre- and post-adjust AVIS_MAX, or _mul_
  *  will get wrong answer, i.e.:
  *
- *     f( const, nonconst), with maxval on non-const:
- *  --> maxval =  1 + f( const, maxval -1)
- *     f( nonconst, const), with maxval on non-const:
- *  --> maxval =  1 + f( maxval - 1, const)
+ *      f( const, nonconst), with maxval on non-const:
+ *          --> maxval =  Normalize( f( const, Denormalize( maxval)))
+ *      f( nonconst, const), with maxval on non-const:
+ *          --> maxval =  Normalize( f( Denormalize( maxval), const))
  *
  *      f( non_const, non_const) with maxval on first arg:
- *  --> maxval = 1 + f( maxval - 1, non_const)
+ *          --> maxval = Normalize( f( Denormalize( maxval), non_const))
  *      f( non_const, non_const) with maxval on second arg:
- *  --> maxval = 1 + f( non_const, maxval - 1)
+ *          --> maxval = Normalize( f( non_const, Denormalize( maxval)))
  *
- *  Just to make things messier, we have avoid the situation in
- *  which we use PRF_ARG1 extrema for minv, and PRF_ARG2 extrema
- *  for maxv (or vice versa). That would lead us to the final
- *  code wanting to swap minv/maxv for PRF_ARG2, but not for
- *  PRG_ARG1. We arrange things so that if we use the PRF_ARG2
- *  extremum for minv, we never use the PRF_ARG1 extremum for maxv, by
- *  refuting the fact that PRF_ARG1 has AVIS_MAX, and vice versa.
+ *
+ * For subtract (the only non-commutative function), we have:
+ *
+ *     For Min or Max on PRF_ARG1:
+ *        minmax = minmax( PRF_ARG1) - PRF_ARG2.
+ *
+ *     For Min or Max on PRF_ARG2:
+ *        min = PRF_ARG1 - Denormalize( AVIS_MAX( PRF_ARG2));
+ *        max = Normalize( PRF_ARG1 - AVIS_MIN( PRF_ARG2));
  *
  * @return argument arg_node is returned, unchanged.
  *         All changes are side effects.
  *
+ * @note In the following, "normalized" means that extrema follow
+ *       the same rules as with-loop bounds. I.e., AVIS_MIN
+ *       is exact, like GENERATOR_BOUND1, and AVIS_MAX is one
+ *       greater, like GENERATOR_BOUND2. Hence, we have:
+ *
+ *         Normalizeize( x) = x + 1;
+ *         Denormalizeize( x) = x - 1;
+ *
  ******************************************************************************/
 static node *
-GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
+GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg_info)
 {
     node *minarg1 = NULL;
     node *minarg2 = NULL;
@@ -1020,8 +1109,6 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
     node *maxv = NULL;
     node *lhsavis;
     node *rhs;
-    bool arg1c;
-    bool arg2c;
     bool min1;
     bool min2;
     bool max1;
@@ -1032,13 +1119,9 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
     rhs = LET_EXPR (arg_node);
     lhsavis = IDS_AVIS (LET_IDS (arg_node));
 
-    arg1c = COisConstant (PRF_ARG1 (rhs));
-    arg2c = COisConstant (PRF_ARG2 (rhs));
-
     /* Slight dance to circumvent bug #693, in which DL generates
      * PRF_ARGs with N_num nodes.
      */
-
     min1 = IVEXPisAvisHasMin (ID_AVIS (PRF_ARG1 (rhs)));
     max1 = IVEXPisAvisHasMax (ID_AVIS (PRF_ARG1 (rhs)));
     min2 = IVEXPisAvisHasMin (ID_AVIS (PRF_ARG2 (rhs)));
@@ -1046,66 +1129,16 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
 
     /* Compute AVIS_MIN, perhaps */
     if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
-        switch (PRF_PRF (rhs)) {
-        case F_sub_SxS:
-        case F_sub_SxV:
-        case F_sub_VxS:
-        case F_sub_VxV:
-            if (max2) {
-                /*  Case 1: minv( z) = A - denormalize( maxv( B));  */
-                minarg1 = ID_AVIS (PRF_ARG1 (rhs));
-                minarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
-                minarg2 = IVEXPadjustExtremaBound (/* Normalize maxv */
-                                                   minarg2, -1, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info), "dsf1");
-            } else if (min1) {
-                /*  Case 2: minv( z) = minv( A) - B; */
-                minarg1 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
-                minarg2 = ID_AVIS (PRF_ARG2 (rhs));
-            } else if (max1) {
-                /* Case 3: minv( z) = denormalize( maxv( A)) - B; */
-                minarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
-                minarg1 = IVEXPadjustExtremaBound (/* Normalize maxv */
-                                                   minarg1, -1, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info), "dsf5");
-                minarg2 = ID_AVIS (PRF_ARG2 (rhs));
-            }
-            break;
-
-        default:
-            if (min1) {
-                minarg1 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
-                minarg2 = ID_AVIS (PRF_ARG2 (rhs));
-            } else if (min2) {
-                minarg1 = ID_AVIS (PRF_ARG1 (rhs));
-                minarg2 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))));
-            }
-            break;
+        if (min1) {
+            minarg1 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
+            minarg2 = ID_AVIS (PRF_ARG2 (rhs));
+        } else if (min2) {
+            minarg1 = ID_AVIS (PRF_ARG1 (rhs));
+            minarg2 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))));
         }
-    }
 
-    /* Compute AVIS_MAX, perhaps */
-    if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
-        switch (PRF_PRF (rhs)) {
-        case F_sub_SxS:
-        case F_sub_SxV:
-        case F_sub_VxS:
-        case F_sub_VxV:
-            if (min2) {
-                /*  Case 1: maxv( z) = normalize( A - minv( B)); */
-                maxarg1 = ID_AVIS (PRF_ARG1 (rhs));
-                maxarg2 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))));
-            } else if (max1) {
-                /*  Case 2: maxv( z) = normalize( denormalize( maxv( A)) - B); */
-                maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
-                maxarg1 = IVEXPadjustExtremaBound (/* Denormalize maxv */
-                                                   maxarg1, -1, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info), "dsf2");
-                maxarg2 = ID_AVIS (PRF_ARG2 (rhs));
-            }
-            break;
-
-        default:
+        /* Compute AVIS_MAX, perhaps */
+        if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
             if (max1) {
                 maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
                 maxarg1 = IVEXPadjustExtremaBound (/* Denormalize maxv */
@@ -1119,7 +1152,6 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
                                                    maxarg2, -1, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info), "dsf4");
             }
-            break;
         }
     }
 
@@ -1138,9 +1170,96 @@ GenerateExtremaComputationsDyadicScalarPrf (node *arg_node, info *arg_info)
                                        TYeliminateAKV (AVIS_TYPE (lhsavis)));
     }
 
-    /* Denormalize maxv */
+    /* Normalize maxv */
     maxv = IVEXPadjustExtremaBound (maxv, +1, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info), "dsf5");
+                                    &INFO_PREASSIGNS (arg_info), "dsfc");
+
+    INFO_MINVAL (arg_info) = (NULL != minv) ? TBmakeId (minv) : minv;
+    INFO_MAXVAL (arg_info) = (NULL != maxv) ? TBmakeId (maxv) : maxv;
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+GenerateExtremaComputationsNoncommutativeDyadicScalarPrf (node *arg_node, info *arg_info)
+{
+    node *minarg1 = NULL;
+    node *minarg2 = NULL;
+    node *maxarg1 = NULL;
+    node *maxarg2 = NULL;
+    node *minv = NULL;
+    node *maxv = NULL;
+    node *lhsavis;
+    node *rhs;
+    bool min1;
+    bool min2;
+    bool max1;
+    bool max2;
+
+    DBUG_ENTER ();
+
+    rhs = LET_EXPR (arg_node);
+    lhsavis = IDS_AVIS (LET_IDS (arg_node));
+
+    /* Slight dance to circumvent bug #693, in which DL generates
+     * PRF_ARGs with N_num nodes.
+     */
+
+    min1 = IVEXPisAvisHasMin (ID_AVIS (PRF_ARG1 (rhs)));
+    max1 = IVEXPisAvisHasMax (ID_AVIS (PRF_ARG1 (rhs)));
+    min2 = IVEXPisAvisHasMin (ID_AVIS (PRF_ARG2 (rhs)));
+    max2 = IVEXPisAvisHasMax (ID_AVIS (PRF_ARG2 (rhs)));
+
+    /* Compute AVIS_MIN, perhaps */
+    if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
+        if (min1) {
+            /*  Case 1: minv( z) = minv( A) - B);  */
+            minarg1 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
+            minarg2 = ID_AVIS (PRF_ARG2 (rhs));
+        } else if (max2) {
+            /*  Case 2: minv( z) = A - denormalize( maxv( B)); */
+            minarg1 = ID_AVIS (PRF_ARG1 (rhs));
+            minarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
+            minarg2 = IVEXPadjustExtremaBound (/* Denormalize maxv */
+                                               minarg2, -1, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info), "dsfmaxa");
+        }
+    }
+
+    /* Compute AVIS_MAX, perhaps */
+    if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
+        if (max1) {
+            /*  Case 1: maxv( z) =  normalize( denormalize( maxv( A)) - B); */
+            maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
+            maxarg1 = IVEXPadjustExtremaBound (/* Denormalize maxv */
+                                               maxarg1, -1, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info), "dsfmaxb");
+            maxarg2 = ID_AVIS (PRF_ARG2 (rhs));
+        } else if (min2) {
+            /*  Case 2: maxv( z) = normalize( A - minv( B)); */
+            maxarg1 = ID_AVIS (PRF_ARG1 (rhs));
+            maxarg2 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))));
+        }
+    }
+
+    /* Generate normalized extrema calculation for dyadic primitives */
+    if (NULL != minarg1) {
+        minv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (minarg1), TBmakeId (minarg2));
+        minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
+                                       &INFO_PREASSIGNS (arg_info),
+                                       TYeliminateAKV (AVIS_TYPE (lhsavis)));
+    }
+
+    if (NULL != maxarg1) {
+        maxv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (maxarg1), TBmakeId (maxarg2));
+        maxv = FLATGflattenExpression (maxv, &INFO_VARDECS (arg_info),
+                                       &INFO_PREASSIGNS (arg_info),
+                                       TYeliminateAKV (AVIS_TYPE (lhsavis)));
+    }
+
+    /* Normalize maxv */
+    maxv = IVEXPadjustExtremaBound (maxv, +1, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info), "dsfnc");
 
     INFO_MINVAL (arg_info) = (NULL != minv) ? TBmakeId (minv) : minv;
     INFO_MAXVAL (arg_info) = (NULL != maxv) ? TBmakeId (maxv) : maxv;
@@ -1230,6 +1349,108 @@ GetMaxvalForMax (node *prfarg, node *nca, node *lhsavis, info *arg_info)
     }
 
     DBUG_RETURN (m);
+}
+
+/** <!--********************************************************************-->
+ *
+ * Description: Scalar-extend arg1, if scalar, to shape of arg2.
+ *              A non-scalar arg2 must be AKS/AKV.
+ *
+ * @params arg1: an N_avis
+ *         arg2: an N_id
+ *
+ * @return N_id node for flattened N_array result.
+ *         If arg2 is scalar, N_id for arg1.
+ *
+ ******************************************************************************/
+static node *
+ScalarExtend (node *arg1, node *arg2, info *arg_info)
+{
+    node *z;
+    shape *shp;
+    node *arg2avis;
+
+    DBUG_ENTER ();
+
+    arg2avis = ID_AVIS (arg2);
+    if ((TUisScalar (AVIS_TYPE (arg1))) && (!TUisScalar (AVIS_TYPE (arg2avis)))
+        && (TYisAKV (AVIS_TYPE (arg2avis)) || TYisAKS (AVIS_TYPE (arg2avis)))) {
+        shp = SHcopyShape (TYgetShape (AVIS_TYPE (arg2avis)));
+        z = SCSmakeVectorArray (shp, TBmakeId (arg1));
+        z = FLATGflattenExpression (z, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info), NULL);
+    } else {
+        z = arg1;
+    }
+    z = TBmakeId (z);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * Description:
+ *
+ * Case 1: max( constant, nonconstant-without-minval):
+ *         the constant becomes the minval.
+ *
+ * Case 2: max( constant, nonconstant-with-minval):
+ *         We conservatively estimate the extremum as the minval.
+ *
+ * @params lhsavis, rhs, arg_info - as expected.
+ *
+ * @return No explicit results. However, new N_assigns and N_vardecs
+ *         may be generated by flattening, and INFO_MINVAL/MAXVAL
+ *         may be set.
+ *
+ ******************************************************************************/
+static void
+GenerateExtremaForMax (node *lhsavis, node *rhs, info *arg_info)
+{
+    node *arg1avis;
+    bool c1;
+    bool c2;
+    bool e1;
+    bool e2;
+
+    DBUG_ENTER ();
+
+    if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
+
+        arg1avis = ID_AVIS (PRF_ARG1 (rhs));
+        c1 = COisConstant (PRF_ARG1 (rhs)); // Could use TYisAKV here,
+        c2 = COisConstant (PRF_ARG2 (rhs)); // if flatness guaranteed.
+        e1 = NULL != AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs)));
+        e2 = NULL != AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs)));
+
+        // Case 1: max( constant, nonconstant-without-minval),
+        //    or   max( nonconstant-without-minval, constant):
+        //    the constant becomes the result minval.
+        if (c1 && (!c2) && (!e2) && (NULL == INFO_MINVAL (arg_info))) {
+            INFO_MINVAL (arg_info)
+              = ScalarExtend (ID_AVIS (PRF_ARG1 (rhs)), PRF_ARG2 (rhs), arg_info);
+        }
+        if (c2 && (!c1) && (!e1) && (NULL == INFO_MINVAL (arg_info))) {
+            INFO_MINVAL (arg_info)
+              = ScalarExtend (ID_AVIS (PRF_ARG2 (rhs)), PRF_ARG1 (rhs), arg_info);
+        }
+
+        // Case 3:
+        // max( non-constant, non-constant with minval)
+        //   or
+        // max( non-constant with minval, non-constant)
+        //   minval becomes result minval.
+        if ((!c1) && (!c2) && (e2) && (NULL == INFO_MINVAL (arg_info))) {
+            INFO_MINVAL (arg_info) = ScalarExtend (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))),
+                                                   PRF_ARG1 (rhs), arg_info);
+        }
+        if ((!c2) && (!c1) && (e1) && (NULL == INFO_MINVAL (arg_info))) {
+            INFO_MINVAL (arg_info) = ScalarExtend (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))),
+                                                   PRF_ARG2 (rhs), arg_info);
+        }
+    }
+
+    DBUG_RETURN ();
 }
 
 /** <!--********************************************************************-->
@@ -1422,12 +1643,9 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                 }
                 break;
 
-                /* FIXME Have to make constant scalar into vector, or vice versa.
-                 * ISMOP
-                case F_min_SxV:
-                case F_min_VxS:
-                 FIXME Have to make constant scalar into vector, or vice versa.
-                */
+            case F_min_SxV:
+            case F_min_VxS:
+                break;
 
             case F_min_SxS:
             case F_min_VxV:
@@ -1481,50 +1699,11 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                 }
                 break;
 
-                /* FIXME Have to make constant scalar into vector, or vice versa.
-                case F_max_SxV:
-                case F_max_VxS:
-                 FIXME Have to make constant scalar into vector, or vice versa.
-                */
-
+            case F_max_SxV:
+            case F_max_VxS:
             case F_max_SxS:
             case F_max_VxV:
-                /* Case 1: max( constant, nonconstant-without-minval):
-                 *         the constant becomes the minval.
-                 *
-                 * Case 2: max( constant, nonconstant-with-minval):
-                 *         We conservatively estimate the extremum as the minval.
-                 */
-                if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
-                    arg1avis = ID_AVIS (PRF_ARG1 (rhs));
-                    nca = GetMinvalOnNonconstantArg (rhs, arg_info);
-
-                    /* Case 1 */
-                    if (NULL == nca) {
-                        if (COisConstant (PRF_ARG1 (rhs))) {
-                            INFO_MINVAL (arg_info) = DUPdoDupNode (PRF_ARG1 (rhs));
-                        } else {
-                            if (COisConstant (PRF_ARG2 (rhs))) {
-                                INFO_MINVAL (arg_info) = DUPdoDupNode (PRF_ARG2 (rhs));
-                            }
-                        }
-                    } else {
-                        /* Case 2 */
-                        INFO_MINVAL (arg_info) = DUPdoDupNode (nca);
-                    }
-                }
-
-                /* max( constant, non-constant with constant maxval) */
-                if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
-                    nca = GetMaxvalOnNonconstantArg (rhs, arg_info);
-                    maxv = GetMaxvalForMax (PRF_ARG1 (rhs), nca, lhsavis, arg_info);
-                    if (NULL == maxv) {
-                        maxv = GetMaxvalForMax (PRF_ARG2 (rhs), nca, lhsavis, arg_info);
-                    }
-                    if (NULL != maxv) {
-                        INFO_MINVAL (arg_info) = TBmakeId (maxv);
-                    }
-                }
+                GenerateExtremaForMax (lhsavis, rhs, arg_info);
                 break;
 
             case F_neg_S:
@@ -1563,6 +1742,10 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_sub_SxV:
             case F_sub_VxS:
             case F_sub_VxV:
+                arg_node
+                  = GenerateExtremaComputationsNoncommutativeDyadicScalarPrf (arg_node,
+                                                                              arg_info);
+                break;
 
             /* Commutative dyadic functions */
             case F_add_SxS:
@@ -1574,7 +1757,16 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_mul_VxS:
             case F_mul_VxV:
                 arg_node
-                  = GenerateExtremaComputationsDyadicScalarPrf (arg_node, arg_info);
+                  = GenerateExtremaComputationsCommutativeDyadicScalarPrf (arg_node,
+                                                                           arg_info);
+                break;
+
+            /* Modulus */
+            case F_mod_SxS:
+            case F_mod_SxV:
+            case F_mod_VxS:
+            case F_mod_VxV:
+                arg_node = GenerateExtremaModulus (arg_node, arg_info);
                 break;
 
             /* Selection: _sel_VxA_( constant, argwithextrema)

@@ -1721,7 +1721,7 @@
           <node name="Withid" />
         </travnone>
       </traversal>
-      <traversal id="LACS" name="Loop and Conditional Scalarization" default="sons" include="loop_and_cond_scalarization.h" >
+      <traversal id="LACSI" name="Lacfun Argument Scalarization" default="sons" include="loop_and_cond_scalarization_in.h" >
         <travuser>
 		  <node name="Module" />			
 		  <node name="Fundef" />
@@ -1729,6 +1729,22 @@
           <node name="Assign" />
           <node name="Ap" />
           <node name="Id" />
+        </travuser>
+        <travnone>
+          <node name="Withid" />
+        </travnone>
+      </traversal>
+      <traversal id="LACSO" name="Lacfun Result Scalarization" default="sons" include="loop_and_cond_scalarization_out.h" >
+        <travuser>
+		  <node name="Module" />			
+		  <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Ap" />
+          <node name="Id" />
+          <node name="Return" />
+          <node name="Cond" />
+          <node name="Funcond" />
         </travuser>
         <travnone>
           <node name="Withid" />
@@ -8548,6 +8564,24 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="Lacso" inconstructor="no" default="0">
+          <description>
+	   Hidey-hole used by LACSO to link the being-scalarized array to its
+	   scalar elements. Strictly local, and could be eliminated with
+	   a bit of work.
+          </description>
+          <type name="Link">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <range from="opt_cyc_lacso"     to="opt_cyc_lacso" />
+                  <range from="opt_saacyc_lacso" to="opt_saacyc_lacso" />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
 
       </attributes>
 
@@ -8562,6 +8596,14 @@ N_tfarg :
         <flag name="IsDead" >
           <description>Used to indicate 
             which VARDECS are no longer needed and can thus be eliminated.
+          </description>
+        </flag>
+        <flag name="IsDeadReturn" >
+          <description>Used to indicate a dead N_return value.
+	   This is used solely by DCI/DCR to mark return values that
+	   are not used by the external caller. We must not use
+	   AVIS_ISDEAD for this purpose, because the value may be
+	   in use elsewhere, such as for an AVIS_SHAPE.
           </description>
         </flag>
         <flag name="IsLifted" >
@@ -8748,6 +8790,14 @@ N_tfarg :
 	  as long as you promise to reset it to its default
 	  value when you are done. At present, it is used
 	  by EDFA and LFU.
+	  </description>
+        </flag>	 
+	<flag name="IsScalarized" default="FALSE" >
+	  <description> 
+	  Used by LACSO to indicate that a small array
+	  argument or result has been scalarized. Its only
+	  function is to prevent us from doing the scalarization
+	  more than once.
 	  </description>
         </flag>	 
       </flags>

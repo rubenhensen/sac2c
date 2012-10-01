@@ -2366,6 +2366,12 @@ PRTarg (node *arg_node, info *arg_info)
               = TRAVdo (AVIS_SCALARS (ARG_AVIS (arg_node)), arg_info);
         }
 
+        if (AVIS_LACSO (ARG_AVIS (arg_node)) != NULL) {
+            fprintf (global.outfile, ", lacso: ");
+            AVIS_LACSO (ARG_AVIS (arg_node))
+              = TRAVdo (AVIS_LACSO (ARG_AVIS (arg_node)), arg_info);
+        }
+
         fprintf (global.outfile, " } "); /* end of avis info */
     }
     TRAVdo (ARG_AVIS (arg_node), arg_info);
@@ -2437,6 +2443,18 @@ PRTvardec (node *arg_node, info *arg_info)
         if (AVIS_MAX (VARDEC_AVIS (arg_node)) != NULL) {
             fprintf (global.outfile, ", maxval: %s",
                      AVIS_NAME (ID_AVIS (AVIS_MAX (VARDEC_AVIS (arg_node)))));
+        }
+
+        if (AVIS_SCALARS (VARDEC_AVIS (arg_node)) != NULL) {
+            fprintf (global.outfile, ", scalars: ");
+            AVIS_SCALARS (VARDEC_AVIS (arg_node))
+              = TRAVdo (AVIS_SCALARS (VARDEC_AVIS (arg_node)), arg_info);
+        }
+
+        if (AVIS_LACSO (VARDEC_AVIS (arg_node)) != NULL) {
+            fprintf (global.outfile, ", lacso: ");
+            AVIS_LACSO (VARDEC_AVIS (arg_node))
+              = TRAVdo (AVIS_LACSO (VARDEC_AVIS (arg_node)), arg_info);
         }
 
         if (AVIS_SUBALLOC (VARDEC_AVIS (arg_node))) {

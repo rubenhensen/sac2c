@@ -24,6 +24,7 @@ extern bool SCSmatchConstantOne (node *arg_node);
 extern simpletype SCSgetBasetypeOfExpr (node *expr);
 extern node *SCSrecurseWithExtrema (node *arg_node, info *arg_info, node *arg1,
                                     node *arg2, node *(*fun) (node *, info *));
+extern node *SCSmakeVectorArray (shape *shp, node *scalarval);
 
 extern node *SCSprf_tobool_S (node *arg_node, info *arg_info);
 extern node *SCSprf_toc_S (node *arg_node, info *arg_info);

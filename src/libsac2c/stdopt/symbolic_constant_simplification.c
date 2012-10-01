@@ -265,7 +265,7 @@ SCSmakeFalse (node *prfarg)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SCSmakeVectorConstant( shape *shp, node *scalarval)
+ * @fn node *SCSmakeVectorArray( shape *shp, node *scalarval)
  *
  * @brief: Create an N_array, of shape shp elements, containing
  *         scalarval as each item.
@@ -274,7 +274,7 @@ SCSmakeFalse (node *prfarg)
  *
  *****************************************************************************/
 node *
-SCSmakeVectorConstant (shape *shp, node *scalarval)
+SCSmakeVectorArray (shape *shp, node *scalarval)
 {
     node *res = NULL;
     node *aelems = NULL;
@@ -573,7 +573,7 @@ SCSprf_add_SxV (node *arg_node, info *arg_info)
         if (SCSmatchConstantZero (PRF_ARG2 (arg_node))
             && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
 
-            res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
+            res = SCSmakeVectorArray (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
             DBUG_PRINT ("SCSprf_add_SxV replaced S + [0,0...,0] by [S,S,..S]");
         }
 
@@ -643,7 +643,7 @@ SCSprf_add_VxS (node *arg_node, info *arg_info)
         if (SCSmatchConstantZero (PRF_ARG1 (arg_node))
             && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG1 (arg_node))) {
 
-            res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
+            res = SCSmakeVectorArray (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
             DBUG_PRINT ("SCSprf_add_VxS replaced [0,0...,0] + S by [S,S,...S]");
         }
 
@@ -676,7 +676,7 @@ SCSprf_sub_SxV (node *arg_node, info *arg_info)
     if (SCSmatchConstantZero (PRF_ARG2 (arg_node))
         && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
 
-        res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
+        res = SCSmakeVectorArray (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
         DBUG_PRINT ("SCSprf_sub_SxV replaced  S - [0,0...,0] by [S,S,...S]");
     }
     pat = PMfree (pat);
@@ -792,7 +792,7 @@ SCSprf_mul_SxV (node *arg_node, info *arg_info)
 
     } else if (SCSmatchConstantOne (PRF_ARG2 (arg_node))
                && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
-        res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
+        res = SCSmakeVectorArray (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
         DBUG_PRINT ("SCSprf_mul_SxV replaced S * [1,1,...1] by [S,S,...S]");
     }
 
@@ -834,7 +834,7 @@ SCSprf_mul_VxS (node *arg_node, info *arg_info)
 
     } else if (SCSmatchConstantOne (PRF_ARG1 (arg_node))
                && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG1 (arg_node))) {
-        res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
+        res = SCSmakeVectorArray (ARRAY_FRAMESHAPE (arr), PRF_ARG2 (arg_node));
         DBUG_PRINT ("SCSprf_mul_VxS replaced [1,1,...1] * S by [S,S,...S]");
     }
 
@@ -901,7 +901,7 @@ SCSprf_div_SxX (node *arg_node, info *arg_info)
         /* Scalar extension case:      S / [1,1,...1]  --> [S,S,..,S] */
     } else if (SCSmatchConstantOne (PRF_ARG2 (arg_node))
                && PMmatchFlatSkipExtremaAndGuards (pat, PRF_ARG2 (arg_node))) {
-        res = SCSmakeVectorConstant (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
+        res = SCSmakeVectorArray (ARRAY_FRAMESHAPE (arr), PRF_ARG1 (arg_node));
         DBUG_PRINT ("SCSprf_div_SxX replaced S / [1,1,...1] by [S,S,...S]");
     }
     pat = PMfree (pat);

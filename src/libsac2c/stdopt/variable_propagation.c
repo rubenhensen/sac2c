@@ -107,11 +107,18 @@ VPavis (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_PRINT ("Looking at N_avis %s", AVIS_NAME (arg_node));
+
+#ifdef DEADCODEIHOPE
     AVIS_DIM (arg_node) = TRAVopt (AVIS_DIM (arg_node), arg_info);
     AVIS_SHAPE (arg_node) = TRAVopt (AVIS_SHAPE (arg_node), arg_info);
     AVIS_MIN (arg_node) = TRAVopt (AVIS_MIN (arg_node), arg_info);
     AVIS_MAX (arg_node) = TRAVopt (AVIS_MAX (arg_node), arg_info);
     AVIS_SCALARS (arg_node) = TRAVopt (AVIS_SCALARS (arg_node), arg_info);
+    AVIS_LACSO (arg_node) = TRAVopt (AVIS_LACSO (arg_node), arg_info);
+#else // DEADCODEIHOPE
+
+    arg_node = TRAVsons (arg_node, arg_info);
+#endif DEADCODEIHOPE
 
     DBUG_RETURN (arg_node);
 }

@@ -313,8 +313,11 @@ CYCLEPHASEFUN (wlprop, "Applying with-loop propagation", WLPROPdoWithloopPropaga
 CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
                global.optimize.dols, opt, cyc)
 
-CYCLEPHASEFUN (lacs, "Applying Loop and Conditional Scalarization",
-               LACSdoLoopAndCondScalarization, global.optimize.dolacs, opt, cyc)
+CYCLEPHASEFUN (lacsi, "Applying Loop & Conditional Argument Scalarization",
+               LACSIdoLoopAndCondScalarization, global.optimize.dolacsi, opt, cyc)
+
+CYCLEPHASEFUN (lacso, "Applying Loop & Conditional Result Scalarization",
+               LACSOdoLoopAndCondScalarization, global.optimize.dolacso, opt, cyc)
 
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
                opt, cyc)
@@ -328,7 +331,7 @@ CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.
 CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
                global.optimize.dowlpg, opt, cyc)
 
-CYCLEPHASEFUN (wlbsc, "Ensuring structrual constants for with-loop partition bounds",
+CYCLEPHASEFUN (wlbsc, "Ensuring structural constants for with-loop partition bounds",
                WLBSCdoWlbounds2structConsts, global.optimize.dowlpg, opt, cyc)
 
 CYCLEPHASEFUN (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
@@ -469,8 +472,11 @@ CYCLEPHASEFUN (wlprop, "Applying with-loop propagation", WLPROPdoWithloopPropaga
 CYCLEPHASEFUN (ls, "Applying Loop Scalarization", LSdoLoopScalarization,
                global.optimize.dols, opt, saacyc)
 
-CYCLEPHASEFUN (lacs, "Applying Loop and Conditional Scalarization",
-               LACSdoLoopAndCondScalarization, global.optimize.dolacs, opt, saacyc)
+CYCLEPHASEFUN (lacsi, "Applying Loop & Conditional Argument Scalarization",
+               LACSIdoLoopAndCondScalarization, global.optimize.dolacsi, opt, saacyc)
+
+CYCLEPHASEFUN (lacso, "Applying Loop & Conditional Result Scalarization",
+               LACSOdoLoopAndCondScalarization, global.optimize.dolacso, opt, saacyc)
 
 CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.optimize.docf,
                opt, saacyc)
@@ -620,7 +626,7 @@ SUBPHASE (wlbscnf2, "Unflattening WL-partition structural constants",
 SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
 
 SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCleanup,
-          global.optimize.doawlf, opt)
+          global.optimize.doawlf || global.optimize.dolacsi, opt)
 
 SUBPHASE (tup, "Running final type inference", NTCdoNewReTypeCheckFromScratch, ALWAYS,
           opt)
@@ -739,8 +745,11 @@ SUBPHASE (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp,
 SUBPHASE (ls, "Applying Loop Scalarization", LSdoLoopScalarization, global.optimize.dols,
           opt)
 
-SUBPHASE (lacs, "Applying Loop and Conditional Scalarization",
-          LACSdoLoopAndCondScalarization, global.optimize.dolacs, opt)
+SUBPHASE (lacsi, "Applying Loop & Conditional Argument Scalarization",
+          LACSIdoLoopAndCondScalarization, global.optimize.dolacsi, opt)
+
+SUBPHASE (lacso, "Applying Loop & Conditional Result Scalarization",
+          LACSOdoLoopAndCondScalarization, global.optimize.dolacso, opt)
 
 /* Some WL generators are resolved to degeneracy too late for
  * SAACYC to remove them.
