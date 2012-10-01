@@ -184,7 +184,8 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize      \
                         algebraic_wlfi algebraic_wlf cubeslicer             \
                         wl_cost_check wl_needcount                          \
                         loop_scalarization withloop_flattening              \
-                        loop_and_cond_scalarization                         \
+                        loop_and_cond_scalarization_in                      \
+                        loop_and_cond_scalarization_out                     \
                         ivextrema ivexpropagation ivexcleanup               \
                         propagate_extrema_thru_lacfuns                      \
                         indexvectorutils                                    \
