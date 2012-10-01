@@ -504,7 +504,8 @@ EDFAap (node *arg_node, info *arg_info)
         arg_node = MarkDupsAndRenameBody (arg_node, arg_info);
         arg_node = SimplifyCall (arg_node, arg_info); /* outer call */
         if (FUNDEF_ISLOOPFUN (lacfundef)) {
-            FUNDEF_LOOPRECURSIVEAP (lacfundef) = LFUfindRecursiveCallAp (lacfundef);
+            FUNDEF_LOOPRECURSIVEAP (lacfundef)
+              = LET_EXPR (ASSIGN_STMT (LFUfindRecursiveCallAssign (lacfundef)));
             reccall = FUNDEF_LOOPRECURSIVEAP (lacfundef);
             reccall = SimplifyCall (reccall, arg_info); /* recursive call */
         }
