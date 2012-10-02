@@ -1302,7 +1302,7 @@ SelModarray (node *arg_node, info *arg_info)
  *         becomes:
  *                  z = val;
  *
- *         The guards on offset remain.
+
  *
  *
  * @result: If the selection can be folded, val from the modarray.
@@ -1609,6 +1609,10 @@ isAllElemsSame (node *arg_node)
  *
  *        where the length of iv matches the length of the frameshape of
  *        the array.
+ *
+ *        NB. We do not make any check of iv's value. Our assumption
+ *        here is that you will compile with "-check c" if you really
+ *        care about checking for index error.
  *
  * @param arg_node N_prf node of sel
  * @param arg_info info structure
