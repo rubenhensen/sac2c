@@ -1309,6 +1309,7 @@ GetMinvalForMin (node *prfarg, node *nca, node *lhsavis, info *arg_info)
     DBUG_RETURN (m);
 }
 
+#ifdef DEADCODEMAYBE
 /** <!--********************************************************************-->
  *
  * Description: For max( constant, non-constant with constant AVIS_MAX),
@@ -1350,6 +1351,8 @@ GetMaxvalForMax (node *prfarg, node *nca, node *lhsavis, info *arg_info)
 
     DBUG_RETURN (m);
 }
+
+#endif // DEADCODEMAYBE
 
 /** <!--********************************************************************-->
  *
