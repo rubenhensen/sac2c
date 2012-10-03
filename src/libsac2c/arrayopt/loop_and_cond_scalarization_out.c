@@ -708,7 +708,7 @@ LACSOid (node *arg_node, info *arg_info)
         /* Does this LACFUN result meet our criteria for LACS? */
         if ((TUshapeKnown (AVIS_TYPE (avis)) && (!AVIS_ISSCALARIZED (avis))
              && (TYgetDim (AVIS_TYPE (avis)) > 0))) {
-            shp = SHcopyShape (TYgetShape (AVIS_TYPE (avis)));
+            shp = TYgetShape (AVIS_TYPE (avis));
             len = SHgetUnrLen (shp);
             if ((len > 0) && (len <= global.minarray)) {
                 DBUG_PRINT ("Scalarizing lacfun result: %s", AVIS_NAME (avis));
@@ -722,7 +722,7 @@ LACSOid (node *arg_node, info *arg_info)
 
                 newexprsthen = LFUscalarizeArray (ID_AVIS (FUNCOND_THEN (funcond)),
                                                   &INFO_PREASSIGNSTHEN (arg_info),
-                                                  &INFO_VARDECS (arg_info));
+                                                  &INFO_VARDECS (arg_info), shp);
 
                 if (NULL != INFO_FDA (arg_info)) { // May be CONDFUN
                     DBUG_PRINT ("attaching THEN N_array to AVIS_LACSO( %s)",
@@ -740,7 +740,7 @@ LACSOid (node *arg_node, info *arg_info)
 
                 newexprselse = LFUscalarizeArray (ID_AVIS (FUNCOND_ELSE (funcond)),
                                                   &INFO_PREASSIGNSELSE (arg_info),
-                                                  &INFO_VARDECS (arg_info));
+                                                  &INFO_VARDECS (arg_info), shp);
 
                 // Build new funconds for scalarized avis.
                 nassgn = BuildFunconds (avis, newexprsthen, newexprselse, arg_info);
@@ -755,8 +755,6 @@ LACSOid (node *arg_node, info *arg_info)
             } else {
                 DBUG_PRINT ("not scalarized: %s", AVIS_NAME (ID_AVIS (arg_node)));
             }
-            shp = SHfreeShape (shp);
-
         } else {
             DBUG_PRINT ("result: %s - shape unknown or scalar", AVIS_NAME (avis));
         }

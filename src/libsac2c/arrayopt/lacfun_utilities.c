@@ -877,7 +877,7 @@ LFUcreateAssigns (constant *idx, void *accu, void *local_info)
 /** <!--*******************************************************************-->
  *
  * @fn node *LFUscalarizeArray( node *avis, node **preassigns,
- *                               node **vardecs)
+ *                               node **vardecs, shape *shp)
  *
  * This function generates an exprs chain of new scalar identifiers a1, ...,
  * and of the same element type as avis, and returns these.
@@ -889,9 +889,21 @@ LFUcreateAssigns (constant *idx, void *accu, void *local_info)
  * which are stored in preassigns for later insertion.
  * The according vardecs are stored in vardecs.
  *
+ * @params avis: the array we want scalarized.
+ *
+ *         preassigns: indirect pointer to where new preassign chain
+ *                     should go.
+ *
+ *         vardecs:    indirect pointer to where new vardec chain should go.
+ *
+ *         shp:        optional shape to be used. If NULL, we use AVIS_SHAPE.
+ *                     This argument was introduced to fix Bug #1027,
+ *                     where the external call to a lacfun was int[2],
+ *                     but the recursive call was still int[.].
+ *
  *****************************************************************************/
 node *
-LFUscalarizeArray (node *avis, node **preassigns, node **vardecs)
+LFUscalarizeArray (node *avis, node **preassigns, node **vardecs, shape *shp)
 {
     node *new_exprs;
     ntype *scalar_type;
@@ -899,11 +911,11 @@ LFUscalarizeArray (node *avis, node **preassigns, node **vardecs)
     node *new_assigns;
     struct ca_info local_info;
     struct ca_info *local_info_ptr = &local_info;
-    shape *shp;
 
     DBUG_ENTER ();
 
-    shp = SHcopyShape (TYgetShape (AVIS_TYPE (avis)));
+    shp = (NULL == shp) ? TYgetShape (AVIS_TYPE (avis)) : shp;
+    shp = SHcopyShape (shp);
 
     /**
      * create the vardecs:

@@ -449,11 +449,14 @@ CreateArg (constant *idx, void *accu, void *scalar_type)
 
 /** <!--*******************************************************************-->
  *
- * @fn bool LACSIhasAvisScalars( int argnum, node *ap))
+ * @fn bool LACSIargHasAvisScalars( int argnum, node *ap))
+ *
+ * @brief Predicate for determining if argnumTH function call
+ *        argument has already been scalarized.
  *
  *****************************************************************************/
 static bool
-LACSIhasAvisScalars (int argnum, node *ap)
+LACSIargHasAvisScalars (int argnum, node *ap)
 {
     node *arg;
     bool z;
@@ -652,12 +655,12 @@ LACSIid (node *arg_node, info *arg_info)
 
         /* Does this LACFUN argument meet our criteria for LACS? */
         if (TUshapeKnown (AVIS_TYPE (avis))
-            && (!LACSIhasAvisScalars (INFO_ARGNUM (arg_info), INFO_AP (arg_info))) &&
+            && (!LACSIargHasAvisScalars (INFO_ARGNUM (arg_info), INFO_AP (arg_info))) &&
             // checking outside call here is fruitless. We
             // must check loop-invariance, too. ( !TYisAKV( AVIS_TYPE( avis)))   &&
             (TYgetDim (AVIS_TYPE (avis)) > 0)) {
 
-            shp = SHcopyShape (TYgetShape (AVIS_TYPE (avis)));
+            shp = TYgetShape (AVIS_TYPE (avis));
             len = SHgetUnrLen (shp);
             if ((len > 0) && (len <= global.minarray)) {
                 DBUG_PRINT ("Scalarizing lacfun arg: %s", AVIS_NAME (ARG_AVIS (arg)));
@@ -671,7 +674,7 @@ LACSIid (node *arg_node, info *arg_info)
                  * That will complete changes to the calling function.
                  */
                 newexprs = LFUscalarizeArray (avis, &INFO_PREASSIGNS (arg_info),
-                                              &INFO_VARDECS (arg_info));
+                                              &INFO_VARDECS (arg_info), shp);
 
                 if (FUNDEF_ISLOOPFUN (lacfundef)) {
                     recursivearg
@@ -680,7 +683,7 @@ LACSIid (node *arg_node, info *arg_info)
                     newlacfunexprs
                       = LFUscalarizeArray (ID_AVIS (EXPRS_EXPR (recursivearg)),
                                            &INFO_PREASSIGNSLACFUN (arg_info),
-                                           &FUNDEF_VARDECS (lacfundef));
+                                           &FUNDEF_VARDECS (lacfundef), shp);
                 }
                 INFO_EXTARGS (arg_info)
                   = TCappendExprs (INFO_EXTARGS (arg_info), newexprs);
@@ -717,7 +720,6 @@ LACSIid (node *arg_node, info *arg_info)
             } else {
                 DBUG_PRINT ("not scalarized: %s", AVIS_NAME (ID_AVIS (arg_node)));
             }
-            shp = SHfreeShape (shp);
         } else {
             DBUG_PRINT ("arg: %s - shape unknown or scalar",
                         AVIS_NAME (ID_AVIS ((arg_node))));
@@ -807,13 +809,12 @@ LACSIap (node *arg_node, info *arg_info)
         INFO_INAP (arg_info) = TRUE;
         INFO_ARGNUM (arg_info) = 0;
         AP_ARGS (arg_node) = TRAVopt (AP_ARGS (arg_node), arg_info);
+
+        arg_node = ScalarizeArguments (arg_node, arg_info);
+        FUNDEF_RETURN (lacfundef) = LFUfindFundefReturn (lacfundef);
         INFO_INAP (arg_info) = FALSE;
         INFO_AP (arg_info) = NULL;
         INFO_ARGNUM (arg_info) = 0;
-
-        arg_node = ScalarizeArguments (arg_node, arg_info);
-
-        FUNDEF_RETURN (lacfundef) = LFUfindFundefReturn (lacfundef);
     }
 
     DBUG_RETURN (arg_node);

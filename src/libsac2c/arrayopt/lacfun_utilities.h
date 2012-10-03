@@ -25,6 +25,7 @@ extern node *LFUinsertAssignIntoLacfun (node *arg_node, node *assign, node *olda
 extern node *LFUfindRecursiveCallAssign (node *arg_node);
 extern node *LFUfindFundefReturn (node *arg_node);
 extern node *LFUarg2Vardec (node *arg_node, node *lacfundef);
-extern node *LFUscalarizeArray (node *avis, node **preassigns, node **vardecs);
+extern node *LFUscalarizeArray (node *avis, node **preassigns, node **vardecs,
+                                shape *shp);
 
 #endif /* _SAC_LACFUN_UTILITIES_H_ */
