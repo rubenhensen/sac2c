@@ -371,6 +371,43 @@ BuildFunconds (node *avis, node *newexprsthen, node *newexprselse, info *arg_inf
 
 /******************************************************************************
  *
+ * function: node *ReplaceAvisShapeByScalars( node *arg_node,
+ *                                             node *avis, node *scalars)
+ *
+ * description: For all vardecs in fundef arg_node, replace any AVIS_SHAPE
+ *              nodes that refer to avis by scalars.
+ *              This is a fix for Bug #1028.
+ *
+ * @result: All the real work is side effects in the calling function's
+ *          VARDEC_AVIS nodes.
+ *
+ *****************************************************************************/
+static void
+ReplaceAvisShapeByScalars (node *arg_node, node *avis, node *scalars)
+{
+    node *vardecs;
+
+    DBUG_ENTER ();
+
+    vardecs = BLOCK_VARDECS (FUNDEF_BODY (arg_node));
+    ;
+    while (NULL != vardecs) {
+        if ((NULL != AVIS_SHAPE (VARDEC_AVIS (vardecs)))
+            && (N_id == NODE_TYPE (AVIS_SHAPE (VARDEC_AVIS (vardecs))))
+            && (avis == ID_AVIS (AVIS_SHAPE (VARDEC_AVIS (vardecs))))) {
+            DBUG_PRINT ("In vardec %s, replacing AVIS_SHAPE %s by scalars",
+                        AVIS_NAME (VARDEC_AVIS (vardecs)), AVIS_NAME (avis));
+            FREEdoFreeNode (AVIS_SHAPE (VARDEC_AVIS (vardecs)));
+            AVIS_SHAPE (VARDEC_AVIS (vardecs)) = DUPdoDupNode (scalars);
+        }
+        vardecs = VARDEC_NEXT (vardecs);
+    }
+
+    DBUG_RETURN ();
+}
+
+/******************************************************************************
+ *
  * function: node *BuildExternalAssigns(node *arg_node, info *arg_info)
  *
  * description: If arg_node N_assign is an N_ap calling a lacfun, examine all
@@ -399,6 +436,12 @@ BuildFunconds (node *avis, node *newexprsthen, node *newexprselse, info *arg_inf
  *                vec = [ s0, s1];
  *
  *             NB. We steal the old vec and reuse it.
+ *
+ *             Finally, we traverse the FUNDEF_VARDEC chain for the
+ *             lacfun, and replace any AVIS_SHAPE references to vec
+ *             with a copy of the N_array [ s0, s1].
+ *             This is required because of interactions with ISAA,
+ *             which places saabind() immediately
  *
  *
  *****************************************************************************/
@@ -443,6 +486,10 @@ BuildExternalAssigns (node *arg_node, info *arg_info)
                 newassigns = TBmakeAssign (let, newassigns);
                 AVIS_SSAASSIGN (idsavis) = newassigns;
                 IDS_AVIS (ids) = dummyavis;
+
+                // Replace all lacfun vardec AVIS_SHAPE references to
+                // idsavis by its N_array equivalent.
+                ReplaceAvisShapeByScalars (INFO_FUNDEF (arg_info), idsavis, scalars);
             }
             ids = IDS_NEXT (ids);
         }
@@ -695,6 +742,7 @@ LACSOid (node *arg_node, info *arg_info)
     node *newexprsthen;
     node *newexprselse;
     node *nassgn;
+    node *narr;
     int len;
 
     DBUG_ENTER ();
@@ -707,7 +755,8 @@ LACSOid (node *arg_node, info *arg_info)
 
         /* Does this LACFUN result meet our criteria for LACS? */
         if ((TUshapeKnown (AVIS_TYPE (avis)) && (!AVIS_ISSCALARIZED (avis))
-             && (TYgetDim (AVIS_TYPE (avis)) > 0))) {
+             && (!TYisAKV (AVIS_TYPE (avis))) && // No constants need apply.
+             (TYgetDim (AVIS_TYPE (avis)) > 0))) {
             shp = TYgetShape (AVIS_TYPE (avis));
             len = SHgetUnrLen (shp);
             if ((len > 0) && (len <= global.minarray)) {
@@ -729,8 +778,8 @@ LACSOid (node *arg_node, info *arg_info)
                                 AVIS_NAME (avis));
                     DBUG_ASSERT (NULL == AVIS_LACSO (IDS_AVIS (INFO_FDA (arg_info))),
                                  "Design blunder");
-                    AVIS_LACSO (IDS_AVIS (INFO_FDA (arg_info)))
-                      = BuildNarrayForAvisSonFromExprs (newexprsthen);
+                    narr = BuildNarrayForAvisSonFromExprs (newexprsthen);
+                    AVIS_LACSO (IDS_AVIS (INFO_FDA (arg_info))) = narr;
                 }
 
                 // For the recursive loopfun call
@@ -747,8 +796,8 @@ LACSOid (node *arg_node, info *arg_info)
 
                 DBUG_PRINT ("attaching N_array to AVIS_LACSO( %s)", AVIS_NAME (avis));
                 DBUG_ASSERT (NULL == AVIS_LACSO (avis), "Design blunder");
-                AVIS_LACSO (avis) = BuildNarrayForAvisSonFromAssigns (nassgn);
-
+                narr = BuildNarrayForAvisSonFromAssigns (nassgn);
+                AVIS_LACSO (avis) = narr;
                 INFO_NEWFUNCONDS (arg_info)
                   = TCappendAssign (INFO_NEWFUNCONDS (arg_info), nassgn);
 
