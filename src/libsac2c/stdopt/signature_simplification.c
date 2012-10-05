@@ -13,6 +13,9 @@
  * Also, all constant and scalar return types of that functions are removed
  * from the function signature and inserted directly in the calling context.
  *
+ * I am amending this to handle lacfuns. I do not understand the
+ * rationale for the above filtering of sheep vs. goats.
+ *
  * First, while traversing through the function body, all unused function
  * arguments are removed from the signature of the calling contexts and
  * constant scalar return values are inserted in the calling context.
@@ -201,14 +204,18 @@ SISIfundef (node *arg_node, info *arg_info)
 
         INFO_FUNDEF (arg_info) = arg_node;
 
-        if ((!FUNDEF_ISLACFUN (arg_node)) && (!STReq ("main", FUNDEF_NAME (arg_node)))
-            && (!NSequals (NSgetRootNamespace (), FUNDEF_NS (arg_node)))
-            && (!FUNDEF_ISEXPORTED (arg_node)) && (!FUNDEF_ISPROVIDED (arg_node))) {
+        // Do all lacfuns
+        if ((FUNDEF_ISLACFUN (arg_node))
+            || ((!STReq ("main", FUNDEF_NAME (arg_node)))
+                && (!NSequals (NSgetRootNamespace (), FUNDEF_NS (arg_node)))
+                && (!FUNDEF_ISEXPORTED (arg_node)) && (!FUNDEF_ISPROVIDED (arg_node)))) {
             FUNDEF_RETS (arg_node) = TRAVopt (FUNDEF_RETS (arg_node), arg_info);
         }
 
-        if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISLACFUN (arg_node))
-            && (!FUNDEF_ISEXPORTED (arg_node)) && (!FUNDEF_ISPROVIDED (arg_node))) {
+        if ((FUNDEF_BODY (arg_node) != NULL)
+            && ((FUNDEF_ISLACFUN (arg_node))
+                || ((!FUNDEF_ISEXPORTED (arg_node))
+                    && (!FUNDEF_ISPROVIDED (arg_node))))) {
             FUNDEF_ARGS (arg_node) = TRAVopt (FUNDEF_ARGS (arg_node), arg_info);
         }
     } else {
@@ -370,8 +377,9 @@ SISIap (node *arg_node, info *arg_info)
 
     fundef = AP_FUNDEF (arg_node);
 
-    if ((!FUNDEF_ISLACFUN (fundef)) && (!FUNDEF_ISPROVIDED (fundef))
-        && (!FUNDEF_ISEXPORTED (fundef)) && (!FUNDEF_ISEXTERN (fundef))) {
+    if ((FUNDEF_ISLACFUN (fundef))
+        || ((!FUNDEF_ISPROVIDED (fundef)) && (!FUNDEF_ISEXPORTED (fundef))
+            && (!FUNDEF_ISEXTERN (fundef)))) {
 
         INFO_APFUNRETS (arg_info) = FUNDEF_RETS (AP_FUNDEF (arg_node));
         fun_args = FUNDEF_ARGS (fundef);
@@ -506,11 +514,11 @@ SISIreturn (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if ((!FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))
-        && (!STReq ("main", FUNDEF_NAME (INFO_FUNDEF (arg_info))))
-        && (!NSequals (NSgetRootNamespace (), FUNDEF_NS (INFO_FUNDEF (arg_info))))
-        && (!FUNDEF_ISEXPORTED (INFO_FUNDEF (arg_info)))
-        && (!FUNDEF_ISPROVIDED (INFO_FUNDEF (arg_info)))) {
+    if ((FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info)))
+        || ((!STReq ("main", FUNDEF_NAME (INFO_FUNDEF (arg_info))))
+            && (!NSequals (NSgetRootNamespace (), FUNDEF_NS (INFO_FUNDEF (arg_info))))
+            && (!FUNDEF_ISEXPORTED (INFO_FUNDEF (arg_info)))
+            && (!FUNDEF_ISPROVIDED (INFO_FUNDEF (arg_info))))) {
 
         INFO_RETURNEXPRS (arg_info) = TRUE;
 

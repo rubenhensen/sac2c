@@ -980,7 +980,7 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
  *         arg_node1 and arg_node2. [One of them is supposed
  *         to be an AVIS_MIN or AVIS_MAX.
  *
- *         We could extend this via ISMOP to handle SxV and VxS, at
+ *         We should extend this via ISMOP to handle SxV and VxS, at
  *         least when the non-scalar argument is an N_array,
  *         potentially of S.
  *
@@ -992,13 +992,16 @@ CompareEqExtrema (node *res, node *arg_node1, node *arg_node2)
 {
     DBUG_ENTER ();
 
-#ifdef FIXME // maybe broken? bugipbb.sac in lacs UT
     if ((NULL == res) && (NULL != arg_node1) && (NULL != arg_node2)
-        && (N_id == NODE_TYPE (arg_node1)) && (N_id == NODE_TYPE (arg_node2))
-        && (ID_AVIS (arg_node1) == ID_AVIS (arg_node2))) {
-        res = SCSmakeTrue (arg_node1);
+        && (N_id == NODE_TYPE (arg_node1)) && (N_id == NODE_TYPE (arg_node2))) {
+        DBUG_PRINT ("comparing %s and %s", AVIS_NAME (ID_AVIS (arg_node1)),
+                    AVIS_NAME (ID_AVIS (arg_node2)));
+        if (ID_AVIS (arg_node1) == ID_AVIS (arg_node2)) {
+            res = SCSmakeTrue (arg_node1);
+            DBUG_PRINT ("%s and %s compare equal", AVIS_NAME (ID_AVIS (arg_node1)),
+                        AVIS_NAME (ID_AVIS (arg_node2)));
+        }
     }
-#endif // FIXME // maybe broken? bugipbb.sac in lacs UT
 
     DBUG_RETURN (res);
 }
@@ -1059,6 +1062,9 @@ SAACFprf_lt_SxV (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
                     SAACFCHASEMAX, PRF_ARG2 (arg_node), TRUE, TRUE);
 
+    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
+                            PRF_ARG2 (arg_node));
+
     DBUG_RETURN (res);
 }
 
@@ -1084,6 +1090,9 @@ SAACFprf_lt_VxS (node *arg_node, info *arg_info)
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
                     SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+
+    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
+                            PRF_ARG2 (arg_node));
 
     DBUG_RETURN (res);
 }
@@ -1182,6 +1191,11 @@ SAACFprf_le_SxV (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
                     SAACFCHASEMAX, PRF_ARG2 (arg_node), TRUE, TRUE);
 
+    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
+                            AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))));
+    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
+                            PRF_ARG2 (arg_node));
+
     DBUG_RETURN (res);
 }
 
@@ -1207,6 +1221,11 @@ SAACFprf_le_VxS (node *arg_node, info *arg_info)
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
                     SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+
+    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
+                            AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))));
+    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
+                            PRF_ARG2 (arg_node));
 
     DBUG_RETURN (res);
 }
@@ -1307,6 +1326,11 @@ SAACFprf_ge_SxV (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_ge, REL_le,
                     SAACFCHASEMIN, PRF_ARG2 (arg_node), TRUE, TRUE);
 
+    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
+                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))));
+    res = CompareEqExtrema (res, AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))),
+                            PRF_ARG2 (arg_node));
+
     DBUG_RETURN (res);
 }
 
@@ -1331,6 +1355,10 @@ SAACFprf_ge_VxS (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_ge, REL_le,
                     SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
 
+    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
+                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))));
+    res = CompareEqExtrema (res, AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))),
+                            PRF_ARG2 (arg_node));
     DBUG_RETURN (res);
 }
 
@@ -1431,6 +1459,9 @@ SAACFprf_gt_SxV (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_gt, REL_lt,
                     SAACFCHASEMIN, PRF_ARG2 (arg_node), TRUE, TRUE);
 
+    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
+                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))));
+
     DBUG_RETURN (res);
 }
 
@@ -1456,6 +1487,9 @@ SAACFprf_gt_VxS (node *arg_node, info *arg_info)
 
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_gt, REL_lt,
                     SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
+
+    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
+                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))));
 
     DBUG_RETURN (res);
 }
