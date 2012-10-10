@@ -511,34 +511,38 @@ LFUisAvisMemberIds (node *arg_node, node *ids)
 node *
 LFUfindRecursiveCallAssign (node *arg_node)
 {
-    node *z = NULL;
-    node *assgn;
-    node *stmt;
-    node *expr;
-    node *assg;
+    node *ass = NULL;
 
     DBUG_ENTER ();
 
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_fundef, "Illegal argument!");
     if (FUNDEF_ISLOOPFUN (arg_node)) {
-        assgn = BLOCK_ASSIGNS (FUNDEF_BODY (arg_node));
-        while ((NULL == z) && (NULL != assgn)) {
-            stmt = ASSIGN_STMT (assgn);
-            if (N_cond == NODE_TYPE (stmt)) {
-                /* Get THEN side of cond */
-                assg = BLOCK_ASSIGNS (COND_THEN (stmt));
-                expr = LET_EXPR (ASSIGN_STMT (assg));
-                if ((N_ap == NODE_TYPE (expr) && (arg_node == AP_FUNDEF (expr)))) {
-                    z = assg;
-                }
-            }
-            assgn = ASSIGN_NEXT (assgn);
+        DBUG_ASSERT (FUNDEF_BODY (arg_node) != NULL, "Loop function %s has no body",
+                     FUNDEF_NAME (arg_node));
+
+        ass = FUNDEF_ASSIGNS (arg_node);
+        while ((ass != NULL) && (NODE_TYPE (ASSIGN_STMT (ass)) != N_cond)) {
+            ass = ASSIGN_NEXT (ass);
         }
 
-        DBUG_ASSERT (NULL != z, "Did not find recursive LOOPFUN call to %s",
+        DBUG_ASSERT (ass != NULL, "Loop function %s without conditional",
+                     FUNDEF_NAME (arg_node));
+
+        ass = COND_THENASSIGNS (ASSIGN_STMT (ass));
+
+        while ((ass != NULL) && (NODE_TYPE (ASSIGN_STMT (ass)) == N_annotate)) {
+            ass = ASSIGN_NEXT (ass);
+        }
+
+        DBUG_ASSERT ((ass != NULL) && (NODE_TYPE (ass) == N_assign)
+                       && (NODE_TYPE (ASSIGN_STMT (ass)) == N_let)
+                       && (NODE_TYPE (ASSIGN_RHS (ass)) == N_ap)
+                       && (AP_FUNDEF (ASSIGN_RHS (ass)) == arg_node),
+                     "No recursive call found in expected position in function %s",
                      FUNDEF_NAME (arg_node));
     }
 
-    DBUG_RETURN (z);
+    DBUG_RETURN (ass);
 }
 
 /** <!--********************************************************************-->
@@ -948,6 +952,35 @@ LFUscalarizeArray (node *avis, node **preassigns, node **vardecs, shape *shp)
     *preassigns = TCappendAssign (new_assigns, *preassigns);
 
     DBUG_RETURN (new_exprs);
+}
+
+/******************************************************************************
+ * @fn node *LFUcorrectSSAAssigns( node *arg_node, node *nassgn)
+ *
+ * @brief: Correct the AVIS_SSAASSIGN links for this N_ids chain.
+ *
+ * @params: arg_node - an N_ids chain
+ *          nassgn - the N_assign for this N_ids chain.
+ *
+ * @result: Updated N_ids chain
+ *
+ *****************************************************************************/
+node *
+LFUcorrectSSAAssigns (node *arg_node, node *nassgn)
+{
+    node *ids;
+
+    DBUG_ENTER ();
+
+    ids = arg_node;
+    DBUG_ASSERT (NULL != nassgn, "Non-NULL AVIS_SSAASSIGNs only, please");
+
+    while (NULL != ids) {
+        AVIS_SSAASSIGN (IDS_AVIS (ids)) = nassgn;
+        ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN (arg_node);
 }
 
 #undef DBUG_PREFIX

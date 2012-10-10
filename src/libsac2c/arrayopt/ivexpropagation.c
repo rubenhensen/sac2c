@@ -1391,6 +1391,7 @@ ScalarExtend (node *arg1, node *arg2, info *arg_info)
     } else {
         z = arg1;
     }
+
     z = TBmakeId (z);
 
     DBUG_RETURN (z);
@@ -1461,7 +1462,7 @@ GenerateExtremaForMin (node *lhsavis, node *rhs, info *arg_info)
 
         if (NULL != INFO_MAXVAL (arg_info)) {
             // Normalize AVIS_MAX
-            maxv = IVEXPadjustExtremaBound (INFO_MAXVAL (arg_info), 1,
+            maxv = IVEXPadjustExtremaBound (ID_AVIS (INFO_MAXVAL (arg_info)), 1,
                                             &INFO_VARDECS (arg_info),
                                             &INFO_PREASSIGNS (arg_info), "gefmin");
             INFO_MAXVAL (arg_info) = TBmakeId (maxv);

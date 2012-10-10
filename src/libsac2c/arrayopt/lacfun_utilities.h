@@ -27,5 +27,6 @@ extern node *LFUfindFundefReturn (node *arg_node);
 extern node *LFUarg2Vardec (node *arg_node, node *lacfundef);
 extern node *LFUscalarizeArray (node *avis, node **preassigns, node **vardecs,
                                 shape *shp);
+extern node *LFUcorrectSSAAssigns (node *arg_node, node *nassgn);
 
 #endif /* _SAC_LACFUN_UTILITIES_H_ */

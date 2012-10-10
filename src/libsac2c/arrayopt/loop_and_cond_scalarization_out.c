@@ -260,34 +260,6 @@ FreeInfo (info *info)
 
 /******************************************************************************
  *
- * @brief: Correct the AVIS_SSAASSIGN links for this N_ids chain.
- *
- * @params: ids - an N_ids chain
- *          nassgn - the N_assign for this N_ids chain.
- *
- * @result: Updated N_ids chain
- *
- *****************************************************************************/
-static node *
-CorrectSSAAssigns (node *arg_node, node *nassgn)
-{
-    node *ids;
-
-    DBUG_ENTER ();
-
-    ids = arg_node;
-    DBUG_ASSERT (NULL != nassgn, "Non-NULL AVIS_SSAASSIGNs only, please");
-
-    while (NULL != ids) {
-        AVIS_SSAASSIGN (IDS_AVIS (ids)) = nassgn;
-        ids = IDS_NEXT (ids);
-    }
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
  * function: node *BuildFunconds( node *avis,
  *                                node *newexprsthen, node *newexprselse,
  *                                info *arg_info)
@@ -498,7 +470,7 @@ BuildExternalAssigns (node *arg_node, info *arg_info)
             LET_IDS (ASSIGN_STMT (arg_node))
               = TCappendIds (newids, LET_IDS (ASSIGN_STMT (arg_node)));
             LET_IDS (ASSIGN_STMT (arg_node))
-              = CorrectSSAAssigns (LET_IDS (ASSIGN_STMT (arg_node)), arg_node);
+              = LFUcorrectSSAAssigns (LET_IDS (ASSIGN_STMT (arg_node)), arg_node);
 
             // Append new assigns
             ASSIGN_NEXT (arg_node) = TCappendAssign (newassigns, ASSIGN_NEXT (arg_node));
@@ -914,7 +886,7 @@ LACSOlet (node *arg_node, info *arg_info)
         LET_IDS (arg_node) = ReplaceNidsAvisShapeByNarray (LET_IDS (arg_node));
 
         LET_IDS (arg_node)
-          = CorrectSSAAssigns (LET_IDS (arg_node), INFO_ASSIGN (arg_info));
+          = LFUcorrectSSAAssigns (LET_IDS (arg_node), INFO_ASSIGN (arg_info));
     }
 
     DBUG_RETURN (arg_node);

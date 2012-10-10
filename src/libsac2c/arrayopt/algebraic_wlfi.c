@@ -337,7 +337,7 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
     for (i = 0; i < global.max_optcycles; i++) {
         ct = i;
 
-        DBUG_PRINT_TAG ("SSE", "Cycle interation %d (fun %s %s) begins.", i,
+        DBUG_PRINT_TAG ("SSE", "Cycle iteration %d (fun %s %s) begins.", i,
                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                         FUNDEF_NAME (arg_node));
 
@@ -353,7 +353,7 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
         /* debug compiler */
 #define RUNCHECK(Name)                                                                   \
     if (global.check_frequency >= 4) {                                                   \
-        DBUG_PRINT_TAG ("SSE", "Cycle interation %d: running post-" #Name " check", i);  \
+        DBUG_PRINT_TAG ("SSE", "Cycle iteration %d: running post-" #Name " check", i);   \
         arg_node = PHrunConsistencyChecks (arg_node);                                    \
     }
 #else
@@ -363,7 +363,7 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 
 #define RUNOPT(Name, Cond, CntStmt, PassFun)                                             \
     if (Cond) {                                                                          \
-        DBUG_PRINT_TAG ("SSE", "Cycle interation %d: running " #Name, i);                \
+        DBUG_PRINT_TAG ("SSE", "Cycle iteration %d: running " #Name, i);                 \
         CntStmt;                                                                         \
         arg_node = PassFun (arg_node);                                                   \
         RUNCHECK (Name)                                                                  \
