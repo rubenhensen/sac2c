@@ -48,6 +48,8 @@ extern node *SCSprf_add_SxS (node *arg_node, info *arg_info);
 extern node *SCSprf_add_SxV (node *arg_node, info *arg_info);
 extern node *SCSprf_add_VxS (node *arg_node, info *arg_info);
 extern node *SCSprf_add_VxV (node *arg_node, info *arg_info);
+extern node *SCSprf_add_VxV (node *arg_node, info *arg_info);
+extern node *SCSprf_add_SMxSM (node *arg_node, info *arg_info);
 extern node *SCSprf_sub (node *arg_node, info *arg_info);
 extern node *SCSprf_sub_VxV (node *arg_node, info *arg_info);
 extern node *SCSprf_sub_SxV (node *arg_node, info *arg_info);

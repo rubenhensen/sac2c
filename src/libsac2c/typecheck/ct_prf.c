@@ -3837,4 +3837,52 @@ NTCCTprf_hideDim_SxA (te_info *info, ntype *args)
     DBUG_RETURN (TYmakeProductType (1, res));
 }
 
+/* Typecheck SIMD expression of two SIMD operands.  */
+ntype *
+NTCCTprf_ari_op_SMxSM (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *simd_length, *array1, *array2;
+    char *err_msg;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 3,
+                 "%s called with incorrect "
+                 "number of arguments",
+                 __func__);
+
+    simd_length = TYgetProductMember (args, 0);
+    array1 = TYgetProductMember (args, 1);
+    array2 = TYgetProductMember (args, 2);
+
+    /* FIXME Add checking for the validity of vector length.  */
+
+    TEassureNumV (TEprfArg2Obj (TEgetNameStr (info), 2), array1);
+    TEassureNumV (TEprfArg2Obj (TEgetNameStr (info), 3), array2);
+    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
+                             array2);
+    err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+    if ((err_msg == NULL) && TEgetPrf (info) == F_div_VxV) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array1) && TYisAKV (array2)) {
+            res = TYfreeType (res);
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
 #undef DBUG_PREFIX

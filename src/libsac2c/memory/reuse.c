@@ -316,6 +316,7 @@ EMRIprf (node *arg_node, info *arg_info)
     case F_add_SxV:
     case F_add_VxS:
     case F_add_VxV:
+    case F_add_SMxSM:
     case F_sub_SxS:
     case F_sub_SxV:
     case F_sub_VxS:

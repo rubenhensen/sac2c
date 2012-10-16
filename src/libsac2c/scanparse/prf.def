@@ -12,12 +12,12 @@
    ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
    OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.  */
 
-/* This list must be sorted alphabetically by column (2)
-   to allow bsearch work correctly. */
-
 KEYWORD_PRF (ABS_S, "_abs_S_", F_abs_S)
 KEYWORD_PRF (ABS_V, "_abs_V_", F_abs_V)
 KEYWORD_PRF (ADD_SxS, "_add_SxS_", F_add_SxS)
+
+/* SIMD Addition.  */
+KEYWORD_PRF (ADD_SMxSM, "_add_SMxSM_", F_add_SMxSM)
 KEYWORD_PRF (ADD_SxV, "_add_SxV_", F_add_SxV)
 KEYWORD_PRF (ADD_VxS, "_add_VxS_", F_add_VxS)
 KEYWORD_PRF (ADD_VxV, "_add_VxV_", F_add_VxV)

@@ -1376,6 +1376,13 @@ SCSprf_add_VxV (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
+/* FIXME Implement SIMD constants properly.  */
+node *
+SCSprf_add_SMxSM (node *arg_node, info *arg_info)
+{
+    return NULL;
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_add_VxS( node *arg_node, info *arg_info)

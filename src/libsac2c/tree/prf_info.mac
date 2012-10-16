@@ -6,15 +6,12 @@
  * 3. Add a COMPprf... function for the primitive to codegen/compile.c
  *    and a ccode entry in this table, below.
  * 4. Add an entry for the primitive to memory/alloc.c
- * 5. Add entries for the primitive to scanparse/sac.l and sac.y, if
- *    the primitive is intended to be allowed within SAC source code.
  *
- *    The scanparse rewrite now appears to want an entry in
- *    scanparse/prf.def. Perhaps the sac.l and sac.y entries are
- *    no longer needed. If so, then the scanparse author should
- *    remove those documents and correct these comments.
- *
- *    NB. There are TWO places in sac.y that need changing.
+ * 5. Add entries for the primitive to scanparse/prf.def if the
+ *    primitive is intended to be allowed within SAC source code,
+ *    and it is being treated as a normal fucntion call.  In case you
+ *    need a special treatement, like conversion to a sepcific AST, then
+ *    adjust scanparse/parser.c handle_function_call and friends.
  *
  * 6. Add a function COxxx to constants/constants.h and write
  *    appropriate to handle evaluation of xxx when all its
@@ -279,6 +276,11 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
   PRF (or_VxV, (PA_V, PA_V, PA_x), 2, OR, NOSIMD, NTCCTprf_log_op_VxV, COor,
        COMPprfOp_VxV, SCSprf_or_VxV, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
        PPIgetPVVxV, ICCsameShape, TEone, NULL, NULL),
+
+  /* SIMD Primitive operations.  */
+  PRF (add_SMxSM, (PA_S, PA_V, PA_V), 3, SIMD_ADD, NOSIMD, NTCCTprf_ari_op_SMxSM,
+       COadd_simd, COMPprfOp_SMxSM, SCSprf_add_SMxSM, NULL, NULL, SAAdim_is_1,
+       SAAshp_of_arg2, NULL, 0, PPIgetPVVxV, ICCnone, TEone, NULL, NULL),
 
   /*******************************************************************************
    * Standard arithmetic operations

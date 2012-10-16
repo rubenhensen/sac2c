@@ -70,6 +70,19 @@
 #define SAC_ND_PRF_GE(arg1, arg2) (arg1) >= (arg2)
 #define SAC_ND_PRF_GT(arg1, arg2) (arg1) > (arg2)
 
+#define __type_vector(num, base) base __attribute__ ((vector_size (num * sizeof (base))))
+#define __to_vec(vectype, ptr) (*(vectype *)ptr)
+
+#define SAC_ND_PRF_SIMD_ADD(basetype, num, arg1, arg2)                                   \
+    (__to_vec (__type_vector (num, basetype), arg1))                                     \
+      + (__to_vec (__type_vector (num, basetype), arg2))
+
+#define __get_var(var) SAC_ND_GETVAR (var, SAC_ND_A_FIELD (var))
+
+#define SAC_ND_PRF_SMxSM__DATA(var, basetype, op, num, arg1, arg2)                       \
+    __to_vec (__type_vector (num, basetype), __get_var (var))                            \
+      = op (basetype, num, __get_var (arg1), __get_var (arg2));
+
 /******************************************************************************
  *
  * ICMs for primitive functions

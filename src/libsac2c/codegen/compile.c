@@ -6759,6 +6759,54 @@ COMPprfOp_VxV (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+/* FIXME Enforce using of the following function across the entire file.  */
+static inline bool
+prf_arg_number_correct (node *arg_node, size_t num_args)
+{
+    size_t i;
+    node *args = PRF_ARGS (arg_node);
+
+    for (i = 0; i < num_args; i++) {
+        if (!args)
+            return FALSE;
+
+        args = EXPRS_NEXT (args);
+    }
+
+    return args == NULL;
+}
+
+static node *
+COMPprfOp_SMxSM (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2, *arg3;
+    node *let_ids;
+    node *ret_node;
+
+    char *base_type;
+    node *id_wrapper;
+
+    DBUG_ENTER ();
+
+    /* Assure that the prf has exactly three arguments */
+    DBUG_ASSERT (prf_arg_number_correct (arg_node, 3), "Wrong number of arguments found");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+    arg3 = PRF_ARG3 (arg_node);
+
+    base_type = GetBaseTypeFromExpr (arg2);
+    id_wrapper = TBmakeSpid (NULL, base_type);
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_SMxSM__DATA", DUPdupIdsIdNt (let_ids), id_wrapper,
+                          TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPprfTypeError( node *arg_node, info *arg_info)

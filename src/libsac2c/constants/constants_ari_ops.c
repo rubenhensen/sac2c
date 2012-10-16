@@ -195,6 +195,17 @@ COadd (constant *a, constant *b, constant *tmp1)
     DBUG_RETURN (res);
 }
 
+constant *
+COadd_simd (constant *dummy, constant *a, constant *b)
+{
+    constant *res;
+
+    DBUG_ENTER ();
+    res = COzip (global.zipcv_plus, a, b, T_unknown);
+    DBUG_EXECUTE (COINTdbugPrintBinOp (__func__, a, b, res));
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * function:

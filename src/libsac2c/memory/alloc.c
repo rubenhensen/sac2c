@@ -1659,6 +1659,17 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
 
+    /* SIMD stuff  */
+    case F_add_SMxSM:
+        /*
+         * The first argument is a stupid scalar, so the second
+         * or the third (as they are identical shape-wise) argument
+         * is a right shape for the allocation.
+         */
+        als->dim = MakeDimArg (PRF_ARG2 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
+        break;
+
     case F_add_VxV:
     case F_sub_VxV:
     case F_mul_VxV:
@@ -1675,6 +1686,11 @@ EMALprf (node *arg_node, info *arg_info)
     case F_neq_VxV:
     case F_ge_VxV:
     case F_gt_VxV:
+    case F_mask_VxVxV:
+    case F_mask_VxVxS:
+        /* XXX Why does it matter if the type of the argument is id or not
+         * it still has a shape, right?
+         */
         if (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id) {
             als->dim = MakeDimArg (PRF_ARG1 (arg_node));
             als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
