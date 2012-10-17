@@ -6110,7 +6110,7 @@ COMPprfSel (node *arg_node, info *arg_info)
     DBUG_ASSERT (NODE_TYPE (arg2) == N_id, "2nd arg of F_sel_VxA is no N_id!");
 
     if (NODE_TYPE (arg1) == N_id) {
-        DBUG_ASSERT ((TCgetBasetype (ID_TYPE (arg1)) == T_int),
+        DBUG_ASSERT (TCgetBasetype (ID_TYPE (arg1)) == T_int,
                      "1st arg of F_sel_VxA is a illegal indexing var!");
 
         icm_args
@@ -6124,18 +6124,19 @@ COMPprfSel (node *arg_node, info *arg_info)
                               TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                               NULL);
     } else {
+        node *type_args;
+
         DBUG_ASSERT (NODE_TYPE (arg1) == N_array,
                      "1st arg of F_sel_VxA is neither N_id nor N_array!");
 
-        icm_args
-          = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
-                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
-                                        FALSE,
-                                        TBmakeExprs (MakeSizeArg (arg1, TRUE),
-                                                     TCappendExprs (DUPdupExprsNt (
-                                                                      ARRAY_AELEMS (
-                                                                        arg1)),
-                                                                    NULL))));
+        type_args
+          = MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE, FALSE,
+                          TBmakeExprs (MakeSizeArg (arg1, TRUE),
+                                       TCappendExprs (DUPdupExprsNt (ARRAY_AELEMS (arg1)),
+                                                      NULL)));
+
+        icm_args = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
+                                 FALSE, type_args);
 
         ret_node
           = TCmakeAssignIcm2 ("ND_PRF_SEL_VxA__DATA_arr", DUPdoDupTree (icm_args),
