@@ -317,6 +317,28 @@ extern int print_comment; /* bool */
     BLOCK_END                                                                            \
     ()
 
+/* Shape macros madness.  */
+
+#define SET_SHP_AUD(to_NT, idx_stmt, set_stmt)                                           \
+    do {                                                                                 \
+        indout ("SAC_ND_A_DESC_SHAPE( %s, ", to_NT);                                     \
+        idx_stmt;                                                                        \
+        out (") = ");                                                                    \
+        set_stmt;                                                                        \
+        out (";\n");                                                                     \
+    } while (0)
+
+#define SET_SHP_AUD_NUM(to_NT, idx_num, set_stmt)                                        \
+    SET_SHP_AUD (to_NT, out ("%d", idx_num), set_stmt)
+
+#define SET_SHP_AKD(to_NT, idx_num, set_stmt)                                            \
+    do {                                                                                 \
+        indout ("SAC_ND_A_MIRROR_SHAPE( %s, %d) = \n", to_NT, idx_num);                  \
+        indout ("SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);                      \
+        set_stmt;                                                                        \
+        out (";\n");                                                                     \
+    } while (0)
+
 extern void Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,
                           void (*shp1_size_fun) (void *),
                           void (*shp1_read_fun) (void *, char *, int), void *shp2,

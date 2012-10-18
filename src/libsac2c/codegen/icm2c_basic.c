@@ -203,8 +203,8 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
     int to_dim = DIM_NO_OFFSET (to_sdim);
 
     DBUG_ENTER ();
-
     DBUG_ASSERT (shp1_read_fun != NULL, "1st shape-read-fun not found!");
+
     if (shp2 == NULL) {
         DBUG_ASSERT (shp2_size == 0, "inconsistant 2nd shape found!");
     } else {
@@ -212,7 +212,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
     }
 
     if (to_dim >= 0) {
-        if ((shp1_size >= 0) && (shp2_size >= 0)) {
+        if (shp1_size >= 0 && shp2_size >= 0) {
             DBUG_ASSERT (shp1_size == to_dim - shp2_size,
                          "inconsistant dimensions/sizes found!");
         } else if ((shp1_size < 0) && (shp2_size >= 0)) {
@@ -224,154 +224,190 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
         }
     }
 
-    /*
-     * check constant part of mirror
-     */
+    /* Check constant part of mirror.  */
     Check_Mirror (to_NT, to_sdim, shp1, shp1_size, shp1_size_fun, shp1_read_fun, shp2,
                   shp2_size, shp2_size_fun, shp2_read_fun);
 
-    /*
-     * set descriptor entries and non-constant part of mirror
-     */
+    /* Set descriptor entries and non-constant part of mirror.  */
     switch (to_sc) {
     case C_aud:
         /*
-         * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been set by ND_ALLOC__DESC!
+         * ND_A_DESC_DIM, ND_A_MIRROR_DIM have already been
+         * set by ND_ALLOC__DESC!
          */
-        ASSURE_TYPE_ASS (
-          out ("SAC_ND_A_DIM( %s) == ", to_NT); GetAttr (shp1, shp1_size, shp1_size_fun);
-          if (shp2 != NULL) {
-              out (" + ");
-              GetAttr (shp2, shp2_size, shp2_size_fun);
-          },
-          out ("Assignment with incompatible types found!"););
-        BLOCK_VARDECSS (out ("int SAC_i");
-                        if (shp2_size
-                            < 0) { out (", SAC_j"); } if ((shp1_prod_fun == NULL)
-                                                          || (shp2_prod_fun == NULL)) {
-                            out (", SAC_size = 1");
-                        } out (";");
-                        ,
-                        /*
-                         * although 'to_NT' is AUD, 'to_dim' may indeed be >=0 if the
-                         * sac2c flag -minarrayrep has been used, i.e. 'to_NT' may be
-                         * implemented as AUD although it is AKD!!!
-                         */
-                        SET_SHAPES_AUD__XXX (to_NT, i, out ("SAC_i");, 0, out ("0");
-                                             , shp1_size, shp1_size_fun (shp1);
-                                             ,
-                                             if (shp1_prod_fun == NULL) {
-                                                 indout ("SAC_size *= \n");
-                                             },
-                                             shp1_read_fun (shp1, NULL, i);
-                                             , shp1_read_fun (shp1, "SAC_i", -1););
-                        if ((shp1_size >= 0) && (shp2_size != 0)) {
-                            /* to ease the code generation for the next loop */
-                            out ("SAC_i = %d;", shp1_size);
-                        }
+        ASSURE_TYPE_HEADER ()
+            ;
+            out ("SAC_ND_A_DIM( %s) == ", to_NT);
+            GetAttr (shp1, shp1_size, shp1_size_fun);
+            if (shp2 != NULL) {
+                out (" + ");
+                GetAttr (shp2, shp2_size, shp2_size_fun);
+            }
+        ASSURE_TYPE_FOOTER ()
+        ;
 
-                        if (shp2_size >= 0) {
-                            for (i = 0; i < shp2_size; i++) {
-                                DBUG_ASSERT (shp2 != NULL, "second shape not found!");
-                                if (shp2_prod_fun == NULL) {
-                                    indout ("SAC_size *= \n");
-                                }
-                                SET_SHAPE_AUD (to_NT, out ("SAC_i + %d", i);
-                                               , shp2_read_fun (shp2, NULL, i););
-                            }
-                        } else {
-                            DBUG_ASSERT (shp2 != NULL, "second shape not found!");
-                            FOR_LOOP (out ("SAC_j = 0");
-                                      , out ("SAC_i < SAC_ND_A_DIM( %s)", to_NT);
-                                      , out ("SAC_i++, SAC_j++");
-                                      ,
-                                      if (shp2_prod_fun == NULL) {
-                                          indout ("SAC_size *= \n");
-                                      } SET_SHAPE_AUD (to_NT, out ("SAC_i");
-                                                       , shp2_read_fun (shp2, "SAC_j",
-                                                                        -1);););
-                        }
+        BLOCK_BEGIN ("int SAC_i;")
+            ;
+            if (shp2_size < 0) {
+                indout ("int SAC_j;\n");
+            }
 
-                        SET_SIZE (to_NT,
-                                  if ((shp1_prod_fun == NULL)
-                                      || (shp2_prod_fun == NULL)) {
-                                      out ("SAC_size");
-                                  } else { out ("1"); } if (shp1_prod_fun != NULL) {
-                                      out (" * ");
-                                      shp1_prod_fun (shp1);
-                                  } if (shp2_prod_fun != NULL) {
-                                      out (" * ");
-                                      shp2_prod_fun (shp2);
-                                  }););
+            if (shp1_prod_fun == NULL || shp2_prod_fun == NULL) {
+                indout ("int SAC_size = 1;\n");
+            }
+
+            /*
+             * Although 'to_NT' is AUD, 'to_dim' may indeed be >=0 if
+             * the sac2c flag -minarrayrep has been used, i.e.
+             * 'to_NT' may be implemented as AUD although it is
+             * AKD!
+             */
+            if (shp1_size >= 0) {
+                DBUG_ASSERT (shp1_size >= 0, "illegal dimension found");
+                for (i = 0; i < shp1_size; i++) {
+                    if (shp1_prod_fun == NULL) {
+                        out ("SAC_size *= \n");
+                    }
+                    SET_SHP_AUD_NUM (to_NT, i, shp1_read_fun (shp1, NULL, i));
+                }
+            } else {
+                indout ("for (SAC_i = 0; SAC_i < ");
+                shp1_size_fun (shp1);
+                out ("; SAC_i++)\n");
+                BLOCK_NOVAR_BEGIN ()
+                    ;
+                    if (shp1_prod_fun == NULL) {
+                        out ("SAC_size *= \n");
+                    }
+                    SET_SHP_AUD (to_NT, out ("SAC_i"), shp1_read_fun (shp1, "SAC_i", -1));
+                BLOCK_END ();
+            }
+
+            if (shp1_size >= 0 && shp2_size != 0) {
+                /* To ease the code generation for the next loop.  */
+                out ("SAC_i = %d;", shp1_size);
+            }
+
+            if (shp2_size >= 0) {
+                for (i = 0; i < shp2_size; i++) {
+                    DBUG_ASSERT (shp2 != NULL, "second shape not found!");
+                    if (shp2_prod_fun == NULL) {
+                        indout ("SAC_size *= \n");
+                    }
+                    SET_SHP_AUD (to_NT, out ("SAC_i + %d", i),
+                                 shp2_read_fun (shp2, NULL, i));
+                }
+            } else {
+                DBUG_ASSERT (shp2 != NULL, "second shape not found!");
+                FOR_LOOP_BEGIN ("SAC_j = 0; SAC_i < SAC_ND_A_DIM( %s)"
+                                "SAC_i++, SAC_j++",
+                                to_NT)
+                    ;
+                    if (shp2_prod_fun == NULL) {
+                        indout ("SAC_size *= \n");
+                    }
+                    SET_SHP_AUD (to_NT, out ("SAC_i"), shp2_read_fun (shp2, "SAC_j", -1));
+                FOR_LOOP_END ();
+            }
+
+            SET_SIZE (to_NT,
+                      if (shp1_prod_fun == NULL || shp2_prod_fun == NULL) {
+                          out ("SAC_size");
+                      } else { out ("1"); }
+
+                      if (shp1_prod_fun != NULL) {
+                          out (" * ");
+                          shp1_prod_fun (shp1);
+                      }
+
+                      if (shp2_prod_fun != NULL) {
+                          out (" * ");
+                          shp2_prod_fun (shp2);
+                      });
+        BLOCK_END ();
         break;
 
     case C_akd:
         DBUG_ASSERT (to_dim >= 0, "illegal dimension found!");
-        BLOCK_VARDECSS (if (shp1_size
-                            < 0) { out ("int SAC_i, SAC_j; "); } if ((shp1_prod_fun
-                                                                      == NULL)
-                                                                     || (shp2_prod_fun
-                                                                         == NULL)) {
-            out ("int SAC_size = 1;");
-        },
-                        if (shp1_size < 0) {
-                            DBUG_ASSERT (shp2 != NULL, "second shape not found!");
-                            FOR_LOOP_INC (out ("SAC_i");, out ("0");
-                                          , shp1_size_fun (shp1);
-                                          ,
-                                          if (shp1_prod_fun == NULL) {
-                                              indout ("SAC_size *= \n");
-                                          } SET_SHAPE_AUD (to_NT, /* mirror is set
-                                                                     separately */
-                                                           out ("SAC_i");
-                                                           , shp1_read_fun (shp1, "SAC_i",
-                                                                            -1);););
-                            FOR_LOOP (out ("SAC_j = 0");, out ("SAC_i < %d", to_dim);
-                                      , out ("SAC_i++, SAC_j++");
-                                      ,
-                                      if (shp2_prod_fun == NULL) {
-                                          indout ("SAC_size *= \n");
-                                      } SET_SHAPE_AUD (to_NT, /* mirror is set separately
-                                                               */
-                                                       out ("SAC_i");
-                                                       , shp2_read_fun (shp2, "SAC_j",
-                                                                        -1);););
-                            /* refresh mirror */
-                            for (i = 0; i < to_dim; i++) {
-                                indout ("SAC_ND_A_MIRROR_SHAPE( %s, %d)"
-                                        " = SAC_ND_A_DESC_SHAPE( %s, %d);\n",
-                                        to_NT, i, to_NT, i);
-                            }
-                        } else {
-                            SET_SHAPES_AKD (to_NT, i, 0, shp1_size,
-                                            if (shp1_prod_fun == NULL) {
-                                                indout ("SAC_size *= \n");
-                                            },
-                                            shp1_read_fun (shp1, NULL, i););
-                            SET_SHAPES_AKD (to_NT, i, shp1_size, to_dim,
-                                            if (shp2_prod_fun == NULL) {
-                                                indout ("SAC_size *= \n");
-                                            },
-                                            DBUG_ASSERT (shp2 != NULL,
-                                                         "second shape not found!");
-                                            shp2_read_fun (shp2, NULL, i - shp1_size););
-                        }
+        BLOCK_NOVAR_BEGIN ()
+            ;
+            if (shp1_size < 0) {
+                indout ("int SAC_i, SAC_j;\n");
+            }
 
-                        SET_SIZE (to_NT,
-                                  if ((shp1_prod_fun == NULL)
-                                      || (shp2_prod_fun == NULL)) {
-                                      out ("SAC_size");
-                                  } else { out ("1"); } if (shp1_prod_fun != NULL) {
-                                      out (" * ");
-                                      shp1_prod_fun (shp1);
-                                  } if (shp2_prod_fun != NULL) {
-                                      out (" * ");
-                                      shp2_prod_fun (shp2);
-                                  }););
+            if (shp1_prod_fun == NULL || shp2_prod_fun == NULL) {
+                indout ("int SAC_size = 1;\n");
+            }
+
+            if (shp1_size < 0) {
+                DBUG_ASSERT (shp2 != NULL, "second shape not found!");
+                indout ("for (SAC_i = 0; SAC_i < ");
+                shp1_size_fun (shp1);
+                out ("; SAC_i++)\n");
+                BLOCK_NOVAR_BEGIN ()
+                    ;
+                    if (shp1_prod_fun == NULL) {
+                        indout ("SAC_size *= \n");
+                    }
+
+                    /* mirror is set separately */
+                    SET_SHP_AUD (to_NT, out ("SAC_i"), shp1_read_fun (shp1, "SAC_i", -1));
+                BLOCK_END ();
+
+                FOR_LOOP_BEGIN ("SAC_j = 0; SAC_i < %d; "
+                                "SAC_j++, SAC_i++",
+                                to_dim)
+                    ;
+                    if (shp2_prod_fun == NULL) {
+                        indout ("SAC_size *= \n");
+                    }
+
+                    /* mirror is set separately */
+                    SET_SHP_AUD (to_NT, out ("SAC_i"), shp2_read_fun (shp2, "SAC_j", -1));
+                FOR_LOOP_END ();
+
+                /* refresh mirror */
+                for (i = 0; i < to_dim; i++) {
+                    indout ("SAC_ND_A_MIRROR_SHAPE( %s, %d)"
+                            " = SAC_ND_A_DESC_SHAPE( %s, %d);\n",
+                            to_NT, i, to_NT, i);
+                }
+            } else {
+                DBUG_ASSERT (shp1_size >= 0, "illegal dimension found!");
+                for (int i = 0; i < shp1_size; i++) {
+                    if (shp1_prod_fun == NULL) {
+                        indout ("SAC_size *= \n");
+                    }
+                    SET_SHP_AKD (to_NT, i, shp1_read_fun (shp1, NULL, i));
+                }
+
+                for (int i = shp1_size; i < to_dim; i++) {
+                    if (shp2_prod_fun == NULL) {
+                        indout ("SAC_size *= \n");
+                    }
+                    DBUG_ASSERT (shp2 != NULL, "second shape not found!");
+                    SET_SHP_AKD (to_NT, i, shp2_read_fun (shp2, NULL, i - shp1_size));
+                }
+
+                SET_SIZE (to_NT,
+                          if (shp1_prod_fun == NULL || shp2_prod_fun == NULL) {
+                              out ("SAC_size");
+                          } else { out ("1"); }
+
+                          if (shp1_prod_fun != NULL) {
+                              out (" * ");
+                              shp1_prod_fun (shp1);
+                          }
+
+                          if (shp2_prod_fun != NULL) {
+                              out (" * ");
+                              shp2_prod_fun (shp2);
+                          });
+            }
+        BLOCK_END ();
         break;
 
     case C_aks:
-        /* here is no break missing */
     case C_scl:
         indout ("SAC_NOOP()\n");
         break;
