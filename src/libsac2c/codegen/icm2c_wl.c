@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include <stdio.h>
 
 #include "icm2c_basic.h"
@@ -47,18 +41,18 @@ PrintTraceICM (char *to_NT, char *idx_vec_NT, int dims, char **idxs_scl_NT,
 
     DBUG_ENTER ();
 
-    INDENT;
-    fprintf (global.outfile, "SAC_TR_WL_PRINT( (\"index vector [%%d");
+    indout ("SAC_TR_WL_PRINT( (\"index vector [%%d");
     for (i = 1; i < dims; i++) {
-        fprintf (global.outfile, ", %%d");
+        out (", %%d");
     }
-    fprintf (global.outfile, "]");
-    fprintf (global.outfile, " -- %s", operation);
-    fprintf (global.outfile, "\", SAC_ND_READ( %s, 0)", idxs_scl_NT[0]);
+    out ("]");
+    out (" -- %s", operation);
+    out ("\", SAC_ND_READ( %s, 0)", idxs_scl_NT[0]);
+
     for (i = 1; i < dims; i++) {
-        fprintf (global.outfile, ", SAC_ND_READ( %s, 0)", idxs_scl_NT[i]);
+        out (", SAC_ND_READ( %s, 0)", idxs_scl_NT[i]);
     }
-    fprintf (global.outfile, "));\n");
+    out ("));\n");
 
     DBUG_RETURN ();
 }
@@ -81,22 +75,21 @@ DefineShapeFactor (char *to_NT, int to_sdim, int current_dim)
 
     DBUG_ENTER ();
 
-    INDENT;
-    fprintf (global.outfile, "SAC_WL_SHAPE_FACTOR( %s, %d) = 1", to_NT, current_dim);
+    indout ("SAC_WL_SHAPE_FACTOR( %s, %d) = 1", to_NT, current_dim);
     if (to_dim >= 0) {
         for (i = current_dim + 1; i < to_dim; i++) {
-            fprintf (global.outfile, " * SAC_ND_A_SHAPE( %s, %d)", to_NT, i);
+            out (" * SAC_ND_A_SHAPE( %s, %d)", to_NT, i);
         }
-        fprintf (global.outfile, ";\n");
+
+        out (";\n");
     } else {
-        fprintf (global.outfile, ";\n");
-        FOR_LOOP_INC (fprintf (global.outfile, "SAC_i");
-                      , fprintf (global.outfile, "%d", current_dim + 1);
-                      , fprintf (global.outfile, "SAC_ND_A_DIM( %s)", to_NT);, INDENT;
-                      fprintf (global.outfile,
-                               "SAC_WL_SHAPE_FACTOR( %s, %d)"
-                               " *= SAC_ND_A_SHAPE( %s, SAC_i);\n",
-                               to_NT, current_dim, to_NT););
+        out (";\n");
+        FOR_LOOP_BEGIN ("SAC_i = %d; SAC_i < SAC_ND_A_DIM( %s); SAC_i++", current_dim + 1,
+                        to_NT)
+            ;
+            indout ("SAC_WL_SHAPE_FACTOR( %s, %d) *= SAC_ND_A_SHAPE( %s, SAC_i);\n",
+                    to_NT, current_dim, to_NT);
+        FOR_LOOP_END ();
     }
 
     DBUG_RETURN ();
@@ -129,15 +122,11 @@ ICMCompileND_WL_GENARRAY__SHAPE_id_arr (char *to_NT, int to_sdim, char *shp_NT,
 #include "icm_trace.c"
 #undef ND_WL_GENARRAY__SHAPE_id_arr
 
-    INDENT;
-    fprintf (global.outfile,
-             "SAC_TR_PRF_PRINT("
-             " (\"ND_WL_GENARRAY__SHAPE( %s, %d, %s, ...)\"))\n",
-             to_NT, to_sdim, shp_NT);
+    indout ("SAC_TR_PRF_PRINT( (\"ND_WL_GENARRAY__SHAPE( %s, %d, %s, ...)\"))\n", to_NT,
+            to_sdim, shp_NT);
 
-    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", shp_NT);
-                     , fprintf (global.outfile,
-                                "Shape of genarray with-loop has (dim != 1)!"););
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", shp_NT),
+                 ASSURE_TEXT ("Shape of genarray with-loop has (dim != 1)!"));
 
     /*
      * CAUTION:
@@ -146,10 +135,8 @@ ICMCompileND_WL_GENARRAY__SHAPE_id_arr (char *to_NT, int to_sdim, char *shp_NT,
      */
     for (i = 0; i < val_size; i++) {
         if (vals_ANY[i][0] == '(') {
-            ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0",
-                                      vals_ANY[i]);
-                             , fprintf (global.outfile,
-                                        "Shape of genarray with-loop has (dim != 1)!"););
+            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", vals_ANY[i]),
+                         ASSURE_TEXT ("Shape of genarray with-loop has (dim != 1)!"));
         }
     }
 
@@ -186,15 +173,12 @@ ICMCompileND_WL_GENARRAY__SHAPE_id_id (char *to_NT, int to_sdim, char *shp_NT,
 #include "icm_trace.c"
 #undef ND_WL_GENARRAY__SHAPE_id_id
 
-    INDENT;
-    fprintf (global.outfile,
-             "SAC_TR_PRF_PRINT("
-             " (\"ND_WL_GENARRAY__SHAPE( %s, %d, ..., %s, %d)\"))\n",
-             to_NT, to_sdim, val_NT, val_sdim);
+    indout ("SAC_TR_PRF_PRINT("
+            " (\"ND_WL_GENARRAY__SHAPE( %s, %d, ..., %s, %d)\"))\n",
+            to_NT, to_sdim, val_NT, val_sdim);
 
-    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 1", shp_NT);
-                     , fprintf (global.outfile,
-                                "Shape of genarray with-loop has (dim != 1)!"););
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 1", shp_NT),
+                 ASSURE_TEXT ("Shape of genarray with-loop has (dim != 1)!"));
 
     Set_Shape (to_NT, to_sdim, shp_NT, -1, SizeId, NULL, ReadId, val_NT, val_dim, DimId,
                SizeId, ShapeId);
@@ -237,18 +221,13 @@ ICMCompileND_WL_GENARRAY__SHAPE_arr_id (char *to_NT, int to_sdim, int shp_size,
      * or a constant scalar!!
      */
 
-    INDENT;
-    fprintf (global.outfile,
-             "SAC_TR_PRF_PRINT("
-             " (\"ND_WL_GENARRAY__SHAPE( %s, %d, ..., %s, %d)\"))\n",
-             to_NT, to_sdim, val_NT, val_sdim);
+    indout ("SAC_TR_PRF_PRINT( (\"ND_WL_GENARRAY__SHAPE( %s, %d, ..., %s, %d)\"))\n",
+            to_NT, to_sdim, val_NT, val_sdim);
 
     for (i = 0; i < shp_size; i++) {
         if (shp_ANY[i][0] == '(') {
-            ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0",
-                                      shp_ANY[i]);
-                             , fprintf (global.outfile,
-                                        "Shape of genarray with-loop has (dim != 1)!"););
+            ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", shp_ANY[i]),
+                         ASSURE_TEXT ("Shape of genarray with-loop has (dim != 1)!"));
         }
     }
 
@@ -282,15 +261,12 @@ ICMCompileWL_SCHEDULE__BEGIN (int dims)
 #include "icm_trace.c"
 #undef WL_SCHEDULE__BEGIN
 
-    INDENT;
-    fprintf (global.outfile, "{\n");
+    indout ("{\n");
     global.indent++;
 
     for (i = 0; i < dims; i++) {
-        INDENT;
-        fprintf (global.outfile, "int SAC_WL_MT_SCHEDULE_START( %d);\n", i);
-        INDENT;
-        fprintf (global.outfile, "int SAC_WL_MT_SCHEDULE_STOP( %d);\n", i);
+        indout ("int SAC_WL_MT_SCHEDULE_START( %d);\n", i);
+        indout ("int SAC_WL_MT_SCHEDULE_STOP( %d);\n", i);
     }
 
     DBUG_RETURN ();
@@ -320,18 +296,15 @@ ICMCompileWL3_SCHEDULE__BEGIN (int lb, char *idx_nt, int ub, int chunksz,
 #include "icm_trace.c"
 #undef WL3_SCHEDULE__BEGIN
 
-    INDENT;
     if (need_unroll) {
-        fprintf (global.outfile, "#pragma unroll\n");
+        indout ("#pragma unroll\n");
     }
 
-    INDENT;
-    fprintf (global.outfile,
-             "for( SAC_ND_A_FIELD( %s) = %d; SAC_ND_A_FIELD( %s) < %d; SAC_ND_A_FIELD( "
-             "%s) += %d)\n",
-             idx_nt, lb, idx_nt, ub, idx_nt, chunksz);
-    INDENT;
-    fprintf (global.outfile, "{\n");
+    indout ("for( SAC_ND_A_FIELD( %s) = %d; "
+            "SAC_ND_A_FIELD( %s) < %d; "
+            "SAC_ND_A_FIELD( %s) += %d)\n",
+            idx_nt, lb, idx_nt, ub, idx_nt, chunksz);
+    indout ("{\n");
     global.indent++;
 
     DBUG_RETURN ();
@@ -362,11 +335,8 @@ ICMCompileWL_DECLARE_SHAPE_FACTOR (char *to_NT, int to_sdim, char *idx_vec_NT, i
 #include "icm_trace.c"
 #undef WL_DECLARE_SHAPE_FACTOR
 
-    INDENT;
-
     for (i = 0; i < dims; i++) {
-        INDENT;
-        fprintf (global.outfile, "int SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT, i);
+        indout ("int SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT, i);
     }
 
     DBUG_RETURN ();
@@ -397,19 +367,16 @@ ICMCompileWL_DEFINE_SHAPE_FACTOR (char *to_NT, int to_sdim, char *idx_vec_NT, in
 #include "icm_trace.c"
 #undef WL_DEFINE_SHAPE_FACTOR
 
-    INDENT;
-    fprintf (global.outfile, "{\n");
+    indout ("{\n");
     global.indent++;
 
-    INDENT;
-    fprintf (global.outfile, "int SAC_i;\n"); /* for DefineShapeFactor() !!! */
+    indout ("int SAC_i;\n"); /* for DefineShapeFactor() !!! */
     for (i = 0; i < dims; i++) {
         DefineShapeFactor (to_NT, to_sdim, i);
     }
 
     global.indent--;
-    INDENT;
-    fprintf (global.outfile, "}\n");
+    indout ("}\n");
 
     DBUG_RETURN ();
 }
@@ -437,8 +404,7 @@ ICMCompileWL_SCHEDULE__END (int dims)
 #undef WL_SCHEDULE__END
 
     global.indent--;
-    INDENT;
-    fprintf (global.outfile, "}\n");
+    indout ("}\n");
 
     DBUG_RETURN ();
 }
@@ -466,8 +432,7 @@ ICMCompileWL3_SCHEDULE__END (char *idx_nt)
 #undef WL3_SCHEDULE__END
 
     global.indent--;
-    INDENT;
-    fprintf (global.outfile, "}\n");
+    indout ("}\n");
 
     DBUG_RETURN ();
 }
@@ -494,11 +459,9 @@ ICMCompileWL_SUBALLOC (char *sub_NT, char *to_NT, char *off_NT)
 #include "icm_trace.c"
 #undef WL_SUBALLOC
 
-    INDENT;
-    fprintf (global.outfile,
-             "SAC_ND_GETVAR(%s, SAC_ND_A_FIELD( %s)) = SAC_ND_GETVAR( %s, "
-             "SAC_ND_A_FIELD( %s))+SAC_ND_READ( %s, 0);\n",
-             sub_NT, sub_NT, to_NT, to_NT, off_NT);
+    indout ("SAC_ND_GETVAR(%s, SAC_ND_A_FIELD( %s)) "
+            "= SAC_ND_GETVAR( %s, SAC_ND_A_FIELD( %s))+SAC_ND_READ( %s, 0);\n",
+            sub_NT, sub_NT, to_NT, to_NT, off_NT);
 
     DBUG_RETURN ();
 }
@@ -535,42 +498,37 @@ ICMCompileWL_MODARRAY_SUBSHAPE (char *sub_NT, char *idx_NT, int dims, char *to_N
     switch (sub_sc) {
     case C_scl:
     case C_aks:
-        fprintf (global.outfile, "SAC_NOOP()\n");
+        out ("SAC_NOOP()\n");
         break;
     case C_akd:
-        DBUG_ASSERT (((to_sc == C_akd) || (to_sc == C_aud)),
+        DBUG_ASSERT (to_sc == C_akd || to_sc == C_aud,
                      "applied WL_MODARRAY_SUBSHAPE to AKD subvar but "
                      "non AKD/AUD resultvar. cannot handle this!");
-        /*
-         * start a fresh block
-         */
-        BLOCK_VARDECSS (fprintf (global.outfile, "int SAC_size = 1;");
-                        ,
-                        /*
-                         * update shape elements and calculate size.
-                         *
-                         * NOTE: we have to use DESC_SHAPE here as the
-                         *       selection index is not constant. But we
-                         *       do know that it is a AKD/AUD so this
-                         *       should exist;)
-                         */
-                        for (cnt = 0; cnt < dims; cnt++) {
-                            SET_SHAPE_AKD (sub_NT, cnt,
-                                           fprintf (global.outfile,
-                                                    "SAC_ND_A_DESC_SHAPE( %s, "
-                                                    "SAC_ND_A_DIM( %s) - %d)",
-                                                    to_NT, to_NT, dims - cnt););
-                            fprintf (global.outfile,
-                                     "SAC_size *= SAC_ND_A_SHAPE( %s, %d);", sub_NT, cnt);
-                        }
-                        /*
-                         * update size
-                         */
-                        SET_SIZE (sub_NT, fprintf (global.outfile, "SAC_size");););
+        /* Start a fresh block.  */
+        BLOCK_BEGIN ("int SAC_size = 1;")
+            ;
+            /*
+             * update shape elements and calculate size.
+             *
+             * NOTE: we have to use DESC_SHAPE here as the
+             *       selection index is not constant. But we
+             *       do know that it is a AKD/AUD so this
+             *       should exist;)
+             */
+            for (cnt = 0; cnt < dims; cnt++) {
+                SET_SHP_AKD (sub_NT, cnt,
+                             out ("SAC_ND_A_DESC_SHAPE( %s, SAC_ND_A_DIM( %s) - %d)",
+                                  to_NT, to_NT, dims - cnt));
+                out ("SAC_size *= SAC_ND_A_SHAPE( %s, %d);", sub_NT, cnt);
+            }
 
+            /* Update size.  */
+            SET_SIZE (sub_NT, out ("SAC_size"););
+        BLOCK_END ();
         break;
+
     case C_aud:
-        DBUG_ASSERT (((to_sc == C_aud) || (to_sc == C_akd)),
+        DBUG_ASSERT (to_sc == C_aud || to_sc == C_akd,
                      "applied WL_MODARRAY_SUBSHAPE to AUD subvar but "
                      "non AUD/AKD resultvar. cannot handle this!");
         /*
@@ -580,31 +538,21 @@ ICMCompileWL_MODARRAY_SUBSHAPE (char *sub_NT, char *idx_NT, int dims, char *to_N
          *       is not constant. but we know that the to_sc
          *       is an AKD/AUD, so the descriptor exists
          */
-        BLOCK_VARDECSS (fprintf (global.outfile, "int SAC_size = 1;\n");
-                        ,
-                        FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
-                                             , fprintf (global.outfile, "0");
-                                             , fprintf (global.outfile,
-                                                        "SAC_ND_A_DIM( %s)", sub_NT);
-                                             , SET_SHAPE_AUD (sub_NT,
-                                                              fprintf (global.outfile,
-                                                                       "SAC_i");
-                                                              , fprintf (global.outfile,
-                                                                         "SAC_ND_A_DESC_"
-                                                                         "SHAPE( %s, "
-                                                                         "SAC_ND_A_DIM( "
-                                                                         "%s) - "
-                                                                         "SAC_ND_A_DIM( "
-                                                                         "%s) + SAC_i)",
-                                                                         to_NT, to_NT,
-                                                                         sub_NT););
-                                             fprintf (global.outfile,
-                                                      "SAC_size *= "
-                                                      "SAC_ND_A_SHAPE( %s, SAC_i);\n",
-                                                      sub_NT););
-                        SET_SIZE (sub_NT, fprintf (global.outfile, "SAC_size");););
+        BLOCK_BEGIN ("int SAC_size = 1;")
+            ;
+            FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_DIM( %s); SAC_i++", sub_NT)
+                ;
+                SET_SHP_AUD (sub_NT, out ("SAC_i"),
+                             out ("SAC_ND_A_DESC_SHAPE( %s, SAC_ND_A_DIM( %s)"
+                                  " - SAC_ND_A_DIM( %s) + SAC_i)",
+                                  to_NT, to_NT, sub_NT));
+                indout ("SAC_size *= SAC_ND_A_SHAPE( %s, SAC_i);\n", sub_NT);
+            FOR_LOOP_END ();
 
+            SET_SIZE (sub_NT, out ("SAC_size"););
+        BLOCK_END ();
         break;
+
     default:
         DBUG_ASSERT (0, "unknown shape class found!");
     }
@@ -643,34 +591,26 @@ ICMCompileWL_ASSIGN (char *val_NT, int val_sdim, char *to_NT, int to_sdim,
 #include "icm_trace.c"
 #undef WL_ASSIGN
 
-    ASSURE_TYPE_ASS (fprintf (global.outfile,
-                              "SAC_ND_A_DIM( %s) == (SAC_ND_A_DIM( %s) - SAC_ND_A_SIZE( "
-                              "%s))",
-                              val_NT, to_NT, idx_vec_NT);
-                     , fprintf (global.outfile,
-                                "WL expression with illegal dimension found!"););
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) "
+                              "== (SAC_ND_A_DIM( %s) - SAC_ND_A_SIZE( %s))",
+                              val_NT, to_NT, idx_vec_NT),
+                 ASSURE_TEXT ("WL expression with illegal dimension found!"));
 
-    ASSURE_TYPE_ASS (fprintf (global.outfile,
-                              "SAC_ND_A_SIZE( %s) == SAC_WL_SHAPE_FACTOR( %s, %d)",
-                              val_NT, to_NT, (dims < 0 ? 0 : dims - 1));
-                     ,
-                     fprintf (global.outfile, "WL expression with illegal size found!"););
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_SIZE( %s) "
+                              "== SAC_WL_SHAPE_FACTOR( %s, %d)",
+                              val_NT, to_NT, (dims < 0 ? 0 : dims - 1)),
+                 ASSURE_TEXT ("WL expression with illegal size found!"));
 
-    if ((val_dim == 0) || (to_dim == dims)) {
-        INDENT;
-        fprintf (global.outfile,
-                 "SAC_ND_WRITE_READ_COPY( %s, SAC_ND_READ( %s, 0),"
-                 " %s, 0, %s);\n",
-                 to_NT, off_NT, val_NT, copyfun);
+    if (val_dim == 0 || to_dim == dims) {
+        indout ("SAC_ND_WRITE_READ_COPY( %s, SAC_ND_READ( %s, 0), %s, 0, %s);\n", to_NT,
+                off_NT, val_NT, copyfun);
     } else {
-        FOR_LOOP_INC_VARDEC (fprintf (global.outfile, "SAC_i");
-                             , fprintf (global.outfile, "0");
-                             , fprintf (global.outfile, "SAC_ND_A_SIZE( %s)", val_NT);
-                             , INDENT; fprintf (global.outfile,
-                                                "SAC_ND_WRITE_READ_COPY( %s, "
-                                                "SAC_ND_READ( %s, 0) + SAC_i,"
-                                                " %s, SAC_i, %s);\n",
-                                                to_NT, off_NT, val_NT, copyfun););
+        FOR_LOOP_BEGIN ("int SAC_i = 0; SAC_i < SAC_ND_A_SIZE( %s); SAC_i++", val_NT)
+            ;
+            indout ("SAC_ND_WRITE_READ_COPY( %s, SAC_ND_READ( %s, 0) + SAC_i, "
+                    "%s, SAC_i, %s);\n",
+                    to_NT, off_NT, val_NT, copyfun);
+        FOR_LOOP_END ();
     }
 
     DBUG_RETURN ();
@@ -701,9 +641,7 @@ ICMCompileWL_FOLD (char *to_NT, int to_sdim, char *idx_vec_NT, int dims,
 #undef WL_FOLD
 
     PrintTraceICM (to_NT, idx_vec_NT, dims, idxs_scl_NT, "fold");
-
-    INDENT;
-    fprintf (global.outfile, "/* fold operation */\n");
+    indout ("/* fold operation */\n");
 
     DBUG_RETURN ();
 }
@@ -745,24 +683,20 @@ ICMCompileWL_INIT_OFFSET (char *off_NT, char *to_NT, int to_sdim, char *idx_vec_
 #include "icm_trace.c"
 #undef WL_INIT_OFFSET
 
-    INDENT;
-    fprintf (global.outfile, "SAC_ND_WRITE( %s, 0)\n", off_NT);
+    indout ("SAC_ND_WRITE( %s, 0)\n", off_NT);
     global.indent++;
 
-    INDENT;
-    fprintf (global.outfile,
-             "= SAC_WL_MT_SCHEDULE_START( 0)"
-             " * SAC_WL_SHAPE_FACTOR( %s, %d)",
-             to_NT, 0);
+    indout ("= SAC_WL_MT_SCHEDULE_START( 0)"
+            " * SAC_WL_SHAPE_FACTOR( %s, %d)",
+            to_NT, 0);
 
     for (i = 1; i < dims; i++) {
-        fprintf (global.outfile, "\n");
-        INDENT;
-        fprintf (global.outfile, "+ SAC_WL_MT_SCHEDULE_START( %d)", i);
-        fprintf (global.outfile, " * SAC_WL_SHAPE_FACTOR( %s, %d)", to_NT, i);
+        out ("\n");
+        indout ("+ SAC_WL_MT_SCHEDULE_START( %d)", i);
+        out (" * SAC_WL_SHAPE_FACTOR( %s, %d)", to_NT, i);
     }
 
-    fprintf (global.outfile, ";\n");
+    out (";\n");
     global.indent--;
 
     DBUG_RETURN ();
@@ -800,11 +734,9 @@ ICMCompileWL_ADJUST_OFFSET (char *off_NT, int dim, char *to_NT, int to_sdim,
 #include "icm_trace.c"
 #undef WL_ADJUST_OFFSET
 
-    INDENT;
-    fprintf (global.outfile,
-             "SAC_ND_WRITE( %s, 0) += SAC_WL_VAR( diff, %s)"
-             " * SAC_WL_SHAPE_FACTOR( %s, %d);\n",
-             off_NT, idxs_scl_NT[dim], to_NT, dim);
+    indout ("SAC_ND_WRITE( %s, 0) += SAC_WL_VAR( diff, %s)"
+            " * SAC_WL_SHAPE_FACTOR( %s, %d);\n",
+            off_NT, idxs_scl_NT[dim], to_NT, dim);
 
     DBUG_RETURN ();
 }
@@ -853,38 +785,36 @@ ICMCompileWL_SET_OFFSET (char *off_NT, int dim, int first_block_dim, char *to_NT
 #include "icm_trace.c"
 #undef WL_SET_OFFSET
 
-    INDENT;
-    fprintf (global.outfile, "SAC_ND_WRITE( %s, 0) \n", off_NT);
+    indout ("SAC_ND_WRITE( %s, 0) \n", off_NT);
     global.indent++;
 
-    INDENT;
-    fprintf (global.outfile, "= ");
+    indout ("= ");
     for (i = dims - 1; i > 0; i--) {
-        fprintf (global.outfile, "( SAC_ND_A_SHAPE( %s, %d) * ", to_NT, i);
+        out ("( SAC_ND_A_SHAPE( %s, %d) * ", to_NT, i);
     }
-    fprintf (global.outfile, "SAC_ND_READ( %s, 0)\n", idxs_scl_NT[0]);
+    out ("SAC_ND_READ( %s, 0)\n", idxs_scl_NT[0]);
 
     INDENT;
     for (i = 1; i < dims; i++) {
         if (i <= dim) {
-            fprintf (global.outfile, "+ SAC_ND_READ( %s, 0) )", idxs_scl_NT[i]);
+            out ("+ SAC_ND_READ( %s, 0) )", idxs_scl_NT[i]);
         } else {
             if (i <= first_block_dim) {
                 /*
                  * no blocking in this dimension
                  *  -> we use the start index of the current MT region
                  */
-                fprintf (global.outfile, " + SAC_WL_MT_SCHEDULE_START( %d) )", i);
+                out (" + SAC_WL_MT_SCHEDULE_START( %d) )", i);
             } else {
                 /*
                  * blocking in this dimension
                  *  -> we use the first index of the current block
                  */
-                fprintf (global.outfile, " + SAC_WL_VAR( first, %s) )", idxs_scl_NT[i]);
+                out (" + SAC_WL_VAR( first, %s) )", idxs_scl_NT[i]);
             }
         }
     }
-    fprintf (global.outfile, " * SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT, dims - 1);
+    out (" * SAC_WL_SHAPE_FACTOR( %s, %d);\n", to_NT, dims - 1);
     global.indent--;
 
     DBUG_RETURN ();
@@ -906,8 +836,7 @@ ICMCompileWL_SIMD_BEGIN (int cnt)
     tmp_name = STRitoa (cnt);
     simd_filename = STRcatn (4, global.tmp_dirname, "/simd", tmp_name, ".c");
 
-    INDENT;
-    fprintf (global.outfile, "#include \"%s\"\n", simd_filename);
+    indout ("#include \"%s\"\n", simd_filename);
     INDENT;
 
     simd_file = fopen (simd_filename, "w");
@@ -924,10 +853,10 @@ ICMCompileWL_SIMD_BEGIN (int cnt)
 
     INDENT;
 #if 0
-  fprintf( global.outfile, "\n#include \"simd.h\"\n");
+  out( "\n#include \"simd.h\"\n");
 #else
-    fprintf (global.outfile, "\n#define SAC_SIMD_COMPILATION\n");
-    fprintf (global.outfile, "#include \"sac.h\"\n");
+    out ("\n#define SAC_SIMD_COMPILATION\n");
+    out ("#include \"sac.h\"\n");
 #endif
     DBUG_RETURN ();
 }

@@ -86,133 +86,6 @@
 
 extern int print_comment; /* bool */
 
-#define ASSURE_TYPE_ASS(cond_expr, msg_expr)                                             \
-    INDENT;                                                                              \
-    ASSURE_TYPE_EXPR (cond_expr, msg_expr);                                              \
-    fprintf (global.outfile, ";\n")
-
-#define ASSURE_TYPE_EXPR(cond_expr, msg_expr)                                            \
-    fprintf (global.outfile, "SAC_ASSURE_TYPE_LINE( (");                                 \
-    cond_expr fprintf (global.outfile, "), %d, \"", global.linenum);                     \
-    msg_expr fprintf (global.outfile, "\")")
-
-#define BLOCK(ass)                                                                       \
-    INDENT;                                                                              \
-    BLOCK_VARDECSS (, ass)
-
-#define BLOCK_VARDECSS(vardecs, ass)                                                     \
-    INDENT;                                                                              \
-    BLOCK_VARDECSS__NOINDENT (vardecs, ass)
-
-#define BLOCK__NOINDENT(ass) BLOCK_VARDECSS__NOINDENT (, ass)
-
-#define BLOCK_VARDECSS__NOINDENT(vardecs, ass)                                           \
-    fprintf (global.outfile, "{ ");                                                      \
-    vardecs fprintf (global.outfile, "\n");                                              \
-    global.indent++;                                                                     \
-    ass global.indent--;                                                                 \
-    INDENT;                                                                              \
-    fprintf (global.outfile, "}\n")
-
-#define FOR_LOOP(init, cond, post, ass)                                                  \
-    INDENT;                                                                              \
-    fprintf (global.outfile, "for (");                                                   \
-    init fprintf (global.outfile, "; ");                                                 \
-    cond fprintf (global.outfile, "; ");                                                 \
-    post fprintf (global.outfile, ") ");                                                 \
-    BLOCK__NOINDENT (ass)
-
-#define FOR_LOOP_VARDECS(vardecs, init, cond, post, ass)                                 \
-    BLOCK_VARDECSS (vardecs, FOR_LOOP (init, cond, post, ass);)
-
-#define FOR_LOOP_INC(idx_var, start, stop, ass)                                          \
-    FOR_LOOP (idx_var fprintf (global.outfile, " = ");                                   \
-              start, idx_var fprintf (global.outfile, " < ");                            \
-              stop, idx_var fprintf (global.outfile, "++");, ass)
-
-#define FOR_LOOP_INC_VARDEC(idx_var, start, stop, ass)                                   \
-    BLOCK_VARDECSS (fprintf (global.outfile, "int ");                                    \
-                    idx_var fprintf (global.outfile, ";");                               \
-                    , FOR_LOOP_INC (idx_var, start, stop, ass);)
-
-#define COND1(cond, ass)                                                                 \
-    INDENT;                                                                              \
-    fprintf (global.outfile, "if (");                                                    \
-    cond fprintf (global.outfile, ") ");                                                 \
-    BLOCK__NOINDENT (ass)
-
-#define COND2(cond, then_ass, else_ass)                                                  \
-    INDENT;                                                                              \
-    fprintf (global.outfile, "if (");                                                    \
-    cond fprintf (global.outfile, ") ");                                                 \
-    BLOCK__NOINDENT (then_ass);                                                          \
-    INDENT;                                                                              \
-    fprintf (global.outfile, "else ");                                                   \
-    BLOCK__NOINDENT (else_ass)
-
-#define SET_SIZE(to_NT, set_expr)                                                        \
-    INDENT;                                                                              \
-    fprintf (global.outfile,                                                             \
-             "SAC_ND_A_DESC_SIZE( %s) = SAC_ND_A_MIRROR_SIZE( %s) = ", to_NT, to_NT);    \
-    set_expr fprintf (global.outfile, ";\n");                                            \
-    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_MIRROR_SIZE( %s) >= 0", to_NT);  \
-                     , fprintf (global.outfile, "Array with size <0 found!"););
-
-#define SET_SHAPE_AUD(to_NT, idx_expr, set_expr)                                         \
-    INDENT;                                                                              \
-    fprintf (global.outfile, "SAC_ND_A_DESC_SHAPE( %s, ", to_NT);                        \
-    idx_expr fprintf (global.outfile, ") = ");                                           \
-    set_expr fprintf (global.outfile, ";\n")
-
-#define SET_SHAPE_AUD__NUM(to_NT, idx_num, set_expr)                                     \
-    INDENT;                                                                              \
-    fprintf (global.outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);         \
-    set_expr fprintf (global.outfile, ";\n")
-
-#define SET_SHAPE_AKD(to_NT, idx_num, set_expr)                                          \
-    INDENT;                                                                              \
-    fprintf (global.outfile, "SAC_ND_A_MIRROR_SHAPE( %s, %d) = \n", to_NT, idx_num);     \
-    INDENT;                                                                              \
-    fprintf (global.outfile, "SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);         \
-    set_expr fprintf (global.outfile, ";\n")
-
-#define SET_SHAPES_AUD(to_NT, idx_var, idx_start_expr, idx_stop_expr, prolog_ass,        \
-                       set_expr)                                                         \
-    FOR_LOOP_INC (idx_var, idx_start_expr, idx_stop_expr,                                \
-                  prolog_ass SET_SHAPE_AUD (to_NT, idx_var, set_expr);)
-
-#define SET_SHAPES_AUD__NUM(to_NT, idx_var, idx_start, idx_stop, prolog_ass, set_expr)   \
-    DBUG_ASSERT ((idx_start >= 0), "illegal dimension found!");                          \
-    DBUG_ASSERT ((idx_stop >= 0), "illegal dimension found!");                           \
-    for (idx_var = idx_start; idx_var < idx_stop; i++) {                                 \
-        prolog_ass SET_SHAPE_AUD__NUM (to_NT, idx_var, set_expr);                        \
-    }
-
-#define SET_SHAPES_AUD__XXX(to_NT, idx_var, idx_var2, idx_start, idx_start_expr2,        \
-                            idx_stop, idx_stop_expr2, prolog_ass, set_expr, set_expr2)   \
-    if ((idx_start >= 0) && (idx_stop >= 0)) {                                           \
-        SET_SHAPES_AUD__NUM (to_NT, idx_var, idx_start, idx_stop, prolog_ass, set_expr); \
-    } else {                                                                             \
-        SET_SHAPES_AUD (to_NT, idx_var2, idx_start_expr2, idx_stop_expr2, prolog_ass,    \
-                        set_expr2);                                                      \
-    }
-
-#define SET_SHAPES_AKD(to_NT, idx_var, idx_start, idx_stop, prolog_ass, set_expr)        \
-    DBUG_ASSERT ((idx_stop >= 0), "illegal dimension found!");                           \
-    for (idx_var = idx_start; idx_var < idx_stop; i++) {                                 \
-        prolog_ass SET_SHAPE_AKD (to_NT, idx_var, set_expr);                             \
-    }
-
-/*
- * Here we  introduce a little bit more reasonable macros
- * for expanding ICMS.  The main idea is to get rid of statemnt
- * passing in the macro-invocations, which looks really confusing,
- * and also confuses syntax-highlighters, reformatiing tools, etc.
- *
- * Secondly, new macros use INDOUT and OUT macro-functions, which
- * looks cleaner and shorter.
- */
-
 /*
  * Wraps default fprintf call with `global.outfile` as a parameter
  * in one short an simple macro called `out`.
@@ -237,14 +110,21 @@ extern int print_comment; /* bool */
 #define ASSURE_COND(...) out (__VA_ARGS__)
 #define ASSURE_TEXT(...) out (__VA_ARGS__)
 
-#define ASSURE_TYPE(cond_stmt, text_stmt)                                                \
+#define ASSURE_EXPR(cond_stmt, text_stmt)                                                \
     do {                                                                                 \
-        indout ("SAC_ASSURE_TYPE_LINE ((");                                              \
+        out ("SAC_ASSURE_TYPE_LINE ((");                                                 \
         cond_stmt;                                                                       \
         /* FIXME Why global.linenum -- does it make sense?  */                           \
         out ("), %d, \"", global.linenum);                                               \
         text_stmt;                                                                       \
-        out ("\");\n");                                                                  \
+        out ("\")");                                                                     \
+    } while (0)
+
+#define ASSURE_TYPE(cond_stmt, text_stmt)                                                \
+    do {                                                                                 \
+        INDENT;                                                                          \
+        ASSURE_EXPR (cond_stmt, text_stmt);                                              \
+        out (";\n");                                                                     \
     } while (0)
 
 /* Generic block template.  */
@@ -317,8 +197,7 @@ extern int print_comment; /* bool */
     BLOCK_END                                                                            \
     ()
 
-/* Shape macros madness.  */
-
+/* Shape macro templates.  */
 #define SET_SHP_AUD(to_NT, idx_stmt, set_stmt)                                           \
     do {                                                                                 \
         indout ("SAC_ND_A_DESC_SHAPE( %s, ", to_NT);                                     \
@@ -337,6 +216,21 @@ extern int print_comment; /* bool */
         indout ("SAC_ND_A_DESC_SHAPE( %s, %d) = ", to_NT, idx_num);                      \
         set_stmt;                                                                        \
         out (";\n");                                                                     \
+    } while (0)
+
+/*
+ * This is the only macro where we have to pass a statement
+ * as a parameter.  But unfortunately there is no simple way
+ * around it.  Leave it here until the next refactoring.
+ */
+#define SET_SIZE(to_NT, set_expr)                                                        \
+    do {                                                                                 \
+        indout ("SAC_ND_A_DESC_SIZE( %s) "                                               \
+                "= SAC_ND_A_MIRROR_SIZE( %s) = ",                                        \
+                to_NT, to_NT);                                                           \
+        set_expr out (";\n");                                                            \
+        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_MIRROR_SIZE( %s) >= 0", to_NT),              \
+                     ASSURE_TEXT ("Array with size <0 found!"));                         \
     } while (0)
 
 extern void Check_Mirror (char *to_NT, int to_sdim, void *shp1, int shp1_size,

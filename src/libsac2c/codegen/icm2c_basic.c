@@ -299,7 +299,7 @@ Set_Shape (char *to_NT, int to_sdim, void *shp1, int shp1_size,
                 }
             } else {
                 DBUG_ASSERT (shp2 != NULL, "second shape not found!");
-                FOR_LOOP_BEGIN ("SAC_j = 0; SAC_i < SAC_ND_A_DIM( %s)"
+                FOR_LOOP_BEGIN ("SAC_j = 0; SAC_i < SAC_ND_A_DIM( %s); "
                                 "SAC_i++, SAC_j++",
                                 to_NT)
                     ;
@@ -436,12 +436,12 @@ WriteScalar (char *scl)
     DBUG_ENTER ();
 
     if (scl[0] == '(') {
-        /* 'scl' is a tagged id */
+/* 'scl' is a tagged id */
 #ifndef DBUG_OFF
         shape_class_t dc = ICUGetShapeClass (scl);
 #endif
 
-        DBUG_ASSERT (((dc == C_scl) || (dc == C_aud)), "tagged id is no scalar!");
+        DBUG_ASSERT (dc == C_scl || dc == C_aud, "tagged id is no scalar!");
         out ("SAC_ND_WRITE( %s, 0)", scl);
     } else {
         /* 'scl' is a scalar constant */
@@ -465,7 +465,6 @@ void
 ReadId (void *var_NT, char *idx_str, int idx)
 {
     DBUG_ENTER ();
-
     DBUG_ASSERT (((char *)var_NT)[0] == '(', "no tag found!");
 
     if (idx_str != NULL) {
@@ -500,12 +499,12 @@ ReadScalar (void *scl, char *idx_str, int idx)
                 idx);
 
     if (((char *)scl)[0] == '(') {
-        /* 'scl' is a tagged id */
+/* 'scl' is a tagged id */
 #ifndef DBUG_OFF
         shape_class_t sc = ICUGetShapeClass ((char *)scl);
 #endif
 
-        DBUG_ASSERT (((sc == C_scl) || (sc == C_aud)), "tagged id is no scalar!");
+        DBUG_ASSERT (sc == C_scl || sc == C_aud, "tagged id is no scalar!");
         ReadId (scl, idx_str, idx);
     } else {
         if (idx_str == NULL) {
@@ -538,13 +537,15 @@ ReadScalar_Check (void *scl, char *idx_str, int idx)
         /* 'scl' is a tagged id */
         shape_class_t sc = ICUGetShapeClass ((char *)scl);
 
-        DBUG_ASSERT (((sc == C_scl) || (sc == C_aud)), "tagged id is no scalar!");
+        DBUG_ASSERT (sc == C_scl || sc == C_aud, "tagged id is no scalar!");
         if (sc == C_aud) {
             out ("\n");
             global.indent++;
             out ("( ");
-            ASSURE_TYPE_EXPR (out ("SAC_ND_A_DIM( %s) == 0", (char *)scl);
-                              , out ("Scalar expected but array with (dim > 0) found!"););
+
+            ASSURE_EXPR (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", (char *)scl),
+                         ASSURE_TEXT ("Scalar expected but array "
+                                      "with (dim > 0) found!"));
             out (" , \n");
             indout ("  ");
             ReadId (scl, idx_str, idx);
@@ -577,10 +578,13 @@ ReadConstArray_Str (void *v, char *idx_str, int idx)
     DBUG_ENTER ();
 
     if (idx_str != NULL) {
-        DBUG_ASSERT (0, "illegal argument for ReadConstArray_Str() found!");
+        DBUG_ASSERT (0, "illegal argument for "
+                        "ReadConstArray_Str() found!");
     } else {
-        DBUG_ASSERT (idx >= 0, "illegal index for ReadConstArray_Str() found!");
-        DBUG_ASSERT (v != NULL, "array for ReadConstArray_Str() not found!");
+        DBUG_ASSERT (idx >= 0, "illegal index for "
+                               "ReadConstArray_Str() found!");
+        DBUG_ASSERT (v != NULL, "array for "
+                                "ReadConstArray_Str() not found!");
         DBUG_PRINT ("array = " F_PTR ", idx = %d", v, idx);
         ReadScalar (((char **)v)[idx], NULL, 0);
     }
@@ -603,7 +607,8 @@ ReadConstArray_Num (void *v, char *idx_str, int idx)
 {
     DBUG_ENTER ();
 
-    DBUG_ASSERT (idx_str == NULL, "illegal argument for ReadConstArray_Num() found!");
+    DBUG_ASSERT (idx_str == NULL, "illegal argument for "
+                                  "ReadConstArray_Num() found!");
     DBUG_ASSERT (idx >= 0, "illegal index for ReadConstArray_Num() found!");
     DBUG_ASSERT (v != NULL, "array for ReadConstArray_Num() not found!");
     DBUG_PRINT ("array = " F_PTR ", idx = %d", v, idx);
@@ -728,90 +733,114 @@ Vect2Offset2 (char *off_ANY, void *v_ANY, int v_size, void (*v_size_fun) (void *
 
     DBUG_ASSERT (v_read_fun != NULL, "access function not found!");
     DBUG_ASSERT (a_shape_fun != NULL, "access function not found!");
-
-    DBUG_ASSERT ((((v_size >= 0) || (v_size_fun != NULL))
-                  && ((a_dim >= 0) || (a_dim_fun != NULL))),
+    DBUG_ASSERT ((v_size >= 0 || v_size_fun != NULL) && (a_dim >= 0 || a_dim_fun != NULL),
                  "access function not found!");
 
     if (v_size == 0) {
         INDENT;
         WriteScalar (off_ANY);
         out (" = 0;\n");
-    } else if ((v_size >= 0) && (a_dim >= 0)) {
+    } else if (v_size >= 0 && a_dim >= 0) {
         INDENT;
         WriteScalar (off_ANY);
         out (" = ");
+
         for (i = v_size - 1; i > 0; i--) {
             out ("( ");
             a_shape_fun (a_ANY, NULL, i);
             out (" * ");
         }
+
         v_read_fun (v_ANY, NULL, 0);
         for (i = 1; i < v_size; i++) {
             out (" + ");
             v_read_fun (v_ANY, NULL, i);
             out (" )");
         }
+
         for (i = v_size; i < a_dim; i++) {
             out (" * ");
             a_shape_fun (a_ANY, NULL, i);
         }
+
         out (";\n");
     } else if (a_dim < 0) {
-        BLOCK_VARDECSS (
-          out ("int SAC_i, SAC_l;");,
-                                    /*
-                                     * init offset
-                                     */
-                                    indout ("SAC_l = 0;\n");
+        BLOCK_BEGIN ("int SAC_i, SAC_l;")
+            ;
+            indout ("SAC_l = 0;\n");
+            if (v_size < 0) {
+                indout ("for (SAC_i = 0; SAC_i < ");
+                v_size_fun (v_ANY);
+                out ("; SAC_i++)\n");
+                BLOCK_NOVAR_BEGIN ()
+                    ;
+                    indout ("SAC_l = ");
+                    a_shape_fun (a_ANY, "SAC_i", -1);
+                    out (" * SAC_l + ");
+                    v_read_fun (v_ANY, "SAC_i", -1);
+                    out (";\n");
+                BLOCK_END ();
+            } else {
+                indout ("SAC_l = ");
+                for (i = v_size - 1; i > 0; i--) {
+                    out ("( ");
+                    a_shape_fun (a_ANY, NULL, i);
+                    out (" * ");
+                }
 
-          /*
-           * compute offset for indices (0 <= .. < v_size)
-           */
-          if (v_size < 0) {
-              FOR_LOOP (out ("SAC_i = 0");, out ("SAC_i < "); v_size_fun (v_ANY);
-                        , out ("SAC_i++");, indout ("SAC_l = ");
-                        a_shape_fun (a_ANY, "SAC_i", -1); out (" * SAC_l + ");
-                        v_read_fun (v_ANY, "SAC_i", -1); out (";\n"););
-          } else {
-              indout ("SAC_l = ");
-              for (i = v_size - 1; i > 0; i--) {
-                  out ("( ");
-                  a_shape_fun (a_ANY, NULL, i);
-                  out (" * ");
-              }
-              v_read_fun (v_ANY, NULL, 0);
-              for (i = 1; i < v_size; i++) {
-                  out (" + ");
-                  v_read_fun (v_ANY, NULL, i);
-                  out (" )");
-              }
-              out (";\n");
-          }
+                v_read_fun (v_ANY, NULL, 0);
+                for (i = 1; i < v_size; i++) {
+                    out (" + ");
+                    v_read_fun (v_ANY, NULL, i);
+                    out (" )");
+                }
 
-          /*
-           * compute offset for indices (v_size <= .. < a_dim)
-           */
-          FOR_LOOP (out ("SAC_i = "); GetAttr (v_ANY, v_size, v_size_fun);
-                    , out ("SAC_i < "); GetAttr (a_ANY, a_dim, a_dim_fun);
-                    , out ("SAC_i++");, indout ("SAC_l *= ");
-                    a_shape_fun (a_ANY, "SAC_i", -1); out (";\n"););
-          /*
-           * write back result
-           */
-          INDENT; WriteScalar (off_ANY); out (" = SAC_l;\n");
+                out (";\n");
+            }
 
-        );
-    } else { /* ((a_dim >= 0) && (v_size < 0)) */
-        BLOCK_VARDECSS (
-          out ("int SAC_l;\n");, indout ("SAC_l = 0;\n"); for (i = 0; i < a_dim; i++) {
-              indout ("SAC_l *= ");
-              a_shape_fun (a_ANY, NULL, i);
-              out (";\n");
-              COND1 (out ("%d < ", i); v_size_fun (v_ANY);, out ("SAC_l += ");
-                     v_read_fun (v_ANY, NULL, i); out (";\n"););
-          } WriteScalar (off_ANY);
-          out (" = SAC_l; "););
+            /* Compute offset for indices (v_size <= .. < a_dim)  */
+            indout ("for (SAC_i = ");
+            GetAttr (v_ANY, v_size, v_size_fun);
+            out ("; SAC_i < ");
+            GetAttr (a_ANY, a_dim, a_dim_fun);
+            out ("; SAC_i++)\n");
+
+            BLOCK_NOVAR_BEGIN ()
+                ;
+                indout ("SAC_l *= ");
+                a_shape_fun (a_ANY, "SAC_i", -1);
+                out (";\n");
+            BLOCK_END ();
+
+            /* Write back result.  */
+            INDENT;
+            WriteScalar (off_ANY);
+            out (" = SAC_l;\n");
+        BLOCK_END ();
+    } else {
+        /* ((a_dim >= 0) && (v_size < 0)) */
+        BLOCK_BEGIN ("int SAC_l;")
+            ;
+            indout ("SAC_l = 0;\n");
+            for (i = 0; i < a_dim; i++) {
+                indout ("SAC_l *= ");
+                a_shape_fun (a_ANY, NULL, i);
+                out (";\n");
+
+                indout ("if (%d < ", i);
+                v_size_fun (v_ANY);
+                out (")\n");
+                BLOCK_NOVAR_BEGIN ()
+                    ;
+                    indout ("SAC_l += ");
+                    v_read_fun (v_ANY, NULL, i);
+                    out (";\n");
+                BLOCK_END ();
+            }
+
+            WriteScalar (off_ANY);
+            out (" = SAC_l; ");
+        BLOCK_END ();
     }
 
     DBUG_RETURN ();
