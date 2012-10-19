@@ -772,10 +772,9 @@ ICMCompileCUDA_MEM_TRANSFER (char *to_NT, char *from_NT, char *basetype, char *d
 #include "icm_trace.c"
 #undef CUDA_MEM_TRANSFER
 
-    ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_SIZE( %s) == SAC_ND_A_SIZE( %s)",
-                              to_NT, from_NT);
-                     , fprintf (global.outfile, "cudaMemcpy: Destionation and source "
-                                                "arrays should have equal sizes!"););
+    ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_SIZE( %s) == SAC_ND_A_SIZE( %s)", to_NT, from_NT),
+                 ASSURE_TEXT ("cudaMemcpy: Destionation and source arrays "
+                              "should have equal sizes!"));
 
     INDENT;
     fprintf (global.outfile, "SAC_CUDA_MEM_TRANSFER(%s, %s, %s, %s)", to_NT, from_NT,
@@ -850,9 +849,9 @@ ICMCompileCUDA_PRF_IDX_MODARRAY_AxSxA__DATA (char *to_NT, int to_sdim, char *fro
 #undef CUDA_PRF_IDX_MODARRAY_AxSxA__DATA
 
     if (idx_ANY[0] == '(') {
-        ASSURE_TYPE_ASS (fprintf (global.outfile, "SAC_ND_A_DIM( %s) == 0", idx_ANY);
-                         , fprintf (global.outfile, "2nd argument of %s is not a scalar!",
-                                    global.prf_name[F_idx_modarray_AxSxS]););
+        ASSURE_TYPE (ASSURE_COND ("SAC_ND_A_DIM( %s) == 0", idx_ANY),
+                     ASSURE_TEXT ("2nd argument of %s is not a scalar!",
+                                  global.prf_name[F_idx_modarray_AxSxS]));
     }
 
     INDENT;
