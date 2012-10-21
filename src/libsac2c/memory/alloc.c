@@ -1661,6 +1661,7 @@ EMALprf (node *arg_node, info *arg_info)
 
     /* SIMD stuff  */
     case F_add_SMxSM:
+    case F_mul_SMxSM:
         /*
          * The first argument is a stupid scalar, so the second
          * or the third (as they are identical shape-wise) argument
@@ -1669,6 +1670,17 @@ EMALprf (node *arg_node, info *arg_info)
         als->dim = MakeDimArg (PRF_ARG2 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
         break;
+
+    case F_simd_sel_VxA: {
+        node *simd_length;
+
+        als->dim = MakeDimArg (TBmakeNum (1));
+
+        /* 1-d vector, with the value defined in the first agument.  */
+        simd_length = DUPdoDupTree (PRF_ARG1 (arg_node));
+        als->shape = TCmakeIntVector (TBmakeExprs (simd_length, NULL));
+        break;
+    }
 
     case F_add_VxV:
     case F_sub_VxV:

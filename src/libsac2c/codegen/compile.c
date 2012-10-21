@@ -6146,6 +6146,85 @@ COMPprfSel (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+/* This is as SIMD version of the selection.  It selects a SIMD verctor,
+ * rathter than a scalar.
+ */
+static node *
+COMPsimd_prfSel (node *arg_node, info *arg_info)
+{
+    node *simd_length, *arg1, *arg2;
+    node *let_ids;
+    node *icm_args;
+    node *ret_node;
+
+    node *base_type_node;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    simd_length = DUPdoDupTree (PRF_ARG1 (arg_node));
+    arg1 = PRF_ARG2 (arg_node);
+    arg2 = PRF_ARG3 (arg_node);
+
+    /*
+     *   B = sel( iv, A);
+     *
+     ****************************************************************************
+     *
+     * For efficiency reasons, constant arrays are excepted as 1st argument of
+     * sel() as well:
+     *
+     *   A = fun( ...);
+     *   B = sel( [3,4], A);
+     *
+     * Here, the backend can avoid the creation of the array containing the shape
+     * [3,4].
+     */
+
+    DBUG_ASSERT (NODE_TYPE (arg2) == N_id, "2nd arg of F_sel_VxA is no N_id!");
+
+    /* Name of the type of the array, to pass it in the macro.  */
+    base_type_node = TCmakeIdCopyString (GetBaseTypeFromExpr (arg2));
+
+    if (NODE_TYPE (arg1) == N_id) {
+        DBUG_ASSERT (TCgetBasetype (ID_TYPE (arg1)) == T_int,
+                     "1st arg of F_sel_VxA is a illegal indexing var!");
+
+        icm_args
+          = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE, FALSE,
+                          MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE,
+                                        FALSE, TBmakeExprs (DUPdupIdNt (arg1), NULL)));
+
+        ret_node
+          = TCmakeAssignIcm5 ("ND_PRF_SIMD_SEL_VxA__DATA_id", DUPdoDupTree (icm_args),
+                              MakeSizeArg (arg1, TRUE),
+                              TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
+                              simd_length, base_type_node, NULL);
+    } else {
+        node *type_args;
+
+        DBUG_ASSERT (NODE_TYPE (arg1) == N_array,
+                     "1st arg of F_sel_VxA is neither N_id nor N_array!");
+
+        type_args
+          = MakeTypeArgs (ID_NAME (arg2), ID_TYPE (arg2), FALSE, TRUE, FALSE,
+                          TBmakeExprs (MakeSizeArg (arg1, TRUE),
+                                       TCappendExprs (DUPdupExprsNt (ARRAY_AELEMS (arg1)),
+                                                      NULL)));
+
+        icm_args = MakeTypeArgs (IDS_NAME (let_ids), IDS_TYPE (let_ids), FALSE, TRUE,
+                                 FALSE, type_args);
+
+        ret_node
+          = TCmakeAssignIcm4 ("ND_PRF_SIMD_SEL_VxA__DATA_arr", DUPdoDupTree (icm_args),
+                              TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
+                              simd_length, base_type_node, NULL);
+    }
+
+    DBUG_RETURN (ret_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPprfSelI( node *arg_node, info *arg_info)
@@ -6783,7 +6862,7 @@ COMPprfOp_SMxSM (node *arg_node, info *arg_info)
     node *let_ids;
     node *ret_node;
 
-    char *base_type;
+    const char *base_type;
     node *id_wrapper;
 
     DBUG_ENTER ();
@@ -6797,7 +6876,7 @@ COMPprfOp_SMxSM (node *arg_node, info *arg_info)
     arg3 = PRF_ARG3 (arg_node);
 
     base_type = GetBaseTypeFromExpr (arg2);
-    id_wrapper = TBmakeSpid (NULL, base_type);
+    id_wrapper = TBmakeSpid (NULL, STRcpy (base_type));
 
     ret_node
       = TCmakeAssignIcm4 ("ND_PRF_SMxSM__DATA", DUPdupIdsIdNt (let_ids), id_wrapper,

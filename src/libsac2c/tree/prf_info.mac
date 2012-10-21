@@ -93,6 +93,10 @@
 #define PRFicc_fun(icc_fun)
 #endif
 
+/* Function, indicating a number of return values.  Normally
+ * we use function TEone, TEtwo, etc, which are defined in
+ * typecheck/type_errors.c
+ */
 #ifndef PRFte_fun
 #define PRFte_fun(te_fun)
 #endif
@@ -157,7 +161,7 @@
  *   num_dataflow_returns     number of arguments that are returned
  *                  by this function (conformity constraints)
  *   shape_oracle_fun         function that provides the propagation vectors
- *                            (shape oracle)
+ *                            (shape oracle)  AND WHAT THE F*CK IS THAT??
  *   icc_fun        function used to insert conformity checks
  *
  *   te_fn          I think this is the number of results created by the
@@ -281,6 +285,16 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
   PRF (add_SMxSM, (PA_S, PA_V, PA_V), 3, SIMD_ADD, NOSIMD, NTCCTprf_ari_op_SMxSM,
        COadd_simd, COMPprfOp_SMxSM, SCSprf_add_SMxSM, NULL, NULL, SAAdim_is_1,
        SAAshp_of_arg2, NULL, 0, PPIgetPVVxV, ICCnone, TEone, NULL, NULL),
+
+  PRF (mul_SMxSM, (PA_S, PA_V, PA_V), 3, SIMD_MUL, NOSIMD, NTCCTprf_ari_op_SMxSM,
+       COmul_simd, COMPprfOp_SMxSM, SCSprf_add_SMxSM, NULL, NULL, SAAdim_is_1,
+       SAAshp_of_arg2, NULL, 0, PPIgetPVVxV, ICCnone, TEone, NULL, NULL),
+
+  /*   This is a simd selecton.  */
+  PRF (simd_sel_VxA, (PA_S, PA_V, PA_A), 3, XXX, NOSIMD, NTCCTprf_simd_sel_VxA,
+       COsimd_sel, COMPsimd_prfSel, SCSprf_simd_sel_VxA, NULL /*SCCFprf_sel*/, NULL,
+       SAAdim_is_1, SAAshp_for_simd_sel, NULL, 0, PPIgetPVVxV, ICCsimd_sel, TEone, NULL,
+       NULL),
 
   /*******************************************************************************
    * Standard arithmetic operations

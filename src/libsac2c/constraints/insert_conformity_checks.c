@@ -327,6 +327,18 @@ ICCsel (node *ids, node *args)
 }
 
 static node *
+ICCsimd_sel (node *ids, node *args)
+{
+    DBUG_ENTER ();
+    /* Throw away the first arg, and do the same as for a standard
+     * selection.  The first argument should be just a number which
+     * might be checked elsewhere.
+     */
+    args = EXPRS_NEXT (args);
+    DBUG_RETURN (ICCsel (ids, args));
+}
+
+static node *
 ICCprfModarray (node *ids, node *args)
 {
     DBUG_ENTER ();

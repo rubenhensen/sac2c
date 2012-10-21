@@ -1382,6 +1382,16 @@ SCSprf_add_SMxSM (node *arg_node, info *arg_info)
 {
     return NULL;
 }
+node *
+SCSprf_mul_SMxSM (node *arg_node, info *arg_info)
+{
+    return NULL;
+}
+node *
+SCSprf_simd_sel_VxA (node *arg_node, info *arg_info)
+{
+    return NULL;
+}
 
 /** <!--********************************************************************-->
  *

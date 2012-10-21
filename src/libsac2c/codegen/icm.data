@@ -464,6 +464,43 @@ ICM_END( ND_PRF_SEL_VxA__DATA_arr, (to_NT, to_sdim, from_NT, from_sdim,
                                   idx_size, idxs_ANY, copyfun))
 #endif
 
+/* SIMD sel icms -- make them similar to standard selection,
+   but pass an extra type-name and number of elements in the
+   vector.  */
+#if defined(ND_PRF_SIMD_SEL_VxA__DATA_id) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_SIMD_SEL_VxA__DATA_id, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( from_NT)
+  ICM_INT( from_sdim)
+  ICM_NT( idx_NT)
+  ICM_INT( idx_size)
+  ICM_ID( copyfun)
+  ICM_INT( simd_length)
+  ICM_ID( base_type)
+ICM_END( ND_PRF_SIMD_SEL_VxA__DATA_id, (to_NT, to_sdim, from_NT, from_sdim,
+                                        idx_NT, idx_size, copyfun,
+                                        simd_length, base_type))
+#endif
+
+#if defined(ND_PRF_SIMD_SEL_VxA__DATA_arr) || defined(ICM_ALL)
+ICM_DEF( ND_PRF_SIMD_SEL_VxA__DATA_arr, ICM_TRACE_NONE)
+  ICM_NT( to_NT)
+  ICM_INT( to_sdim)
+  ICM_NT( from_NT)
+  ICM_INT( from_sdim)
+  ICM_INT( idx_size)
+  ICM_VARANY( idx_size, idxs_ANY)
+  ICM_ID( copyfun)
+  ICM_INT( simd_length)
+  ICM_ID( base_type)
+ICM_END( ND_PRF_SIMD_SEL_VxA__DATA_arr, (to_NT, to_sdim, from_NT, from_sdim,
+                                         idx_size, idxs_ANY, copyfun,
+                                         simd_length, base_type))
+#endif
+
+
+
 #if defined(ND_PRF_MODARRAY_AxVxS__DATA_id) || defined(ICM_ALL)
 ICM_DEF( ND_PRF_MODARRAY_AxVxS__DATA_id, ICM_TRACE_NONE)
   ICM_NT( to_NT)

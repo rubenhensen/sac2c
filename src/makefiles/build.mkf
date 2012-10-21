@@ -366,8 +366,8 @@ global/build_$(STYLE).c: $(SUBTARGETS) $(PROJECT_ROOT)/.revision.txt
 	@$(CLOCK_SKEW_ELIMINATION)  
 
 # Create an icm_vars file, which could be used by both C and C++ compilers
-codegen/fancy_icm_vars.c: codegen/icm_vars.c
-	$(CPP) $^ -DICM_ALL | $(SORT) | $(UNIQ) > $@
+codegen/fancy_icm_vars.c: codegen/icm_vars.c codegen/icm.data
+	$(CPP) $< -DICM_ALL | $(SORT) | $(UNIQ) > $@
 
 ###############################################################################
 #
