@@ -77,9 +77,17 @@
     (__to_vec (__type_vector (num, basetype), arg1))                                     \
       + (__to_vec (__type_vector (num, basetype), arg2))
 
+#define SAC_ND_PRF_SIMD_SUB(basetype, num, arg1, arg2)                                   \
+    (__to_vec (__type_vector (num, basetype), arg1))                                     \
+      - (__to_vec (__type_vector (num, basetype), arg2))
+
 #define SAC_ND_PRF_SIMD_MUL(basetype, num, arg1, arg2)                                   \
     (__to_vec (__type_vector (num, basetype), arg1))                                     \
       * (__to_vec (__type_vector (num, basetype), arg2))
+
+#define SAC_ND_PRF_SIMD_DIV(basetype, num, arg1, arg2)                                   \
+    (__to_vec (__type_vector (num, basetype), arg1))                                     \
+      / (__to_vec (__type_vector (num, basetype), arg2))
 
 #define __get_var(var) SAC_ND_GETVAR (var, SAC_ND_A_FIELD (var))
 

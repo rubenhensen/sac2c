@@ -316,8 +316,13 @@ EMRIprf (node *arg_node, info *arg_info)
     case F_add_SxV:
     case F_add_VxS:
     case F_add_VxV:
+
+    /* SIMD operations.  */
     case F_add_SMxSM:
+    case F_sub_SMxSM:
     case F_mul_SMxSM:
+    case F_div_SMxSM:
+
     case F_sub_SxS:
     case F_sub_SxV:
     case F_sub_VxS:

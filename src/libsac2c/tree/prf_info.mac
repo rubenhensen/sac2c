@@ -283,11 +283,19 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
 
   /* SIMD Primitive operations.  */
   PRF (add_SMxSM, (PA_S, PA_V, PA_V), 3, SIMD_ADD, NOSIMD, NTCCTprf_ari_op_SMxSM,
-       COadd_simd, COMPprfOp_SMxSM, SCSprf_add_SMxSM, NULL, NULL, SAAdim_is_1,
+       COsimd_add, COMPprfOp_SMxSM, SCSprf_add_SMxSM, NULL, NULL, SAAdim_is_1,
+       SAAshp_of_arg2, NULL, 0, PPIgetPVVxV, ICCnone, TEone, NULL, NULL),
+
+  PRF (sub_SMxSM, (PA_S, PA_V, PA_V), 3, SIMD_SUB, NOSIMD, NTCCTprf_ari_op_SMxSM,
+       COsimd_sub, COMPprfOp_SMxSM, SCSprf_sub_SMxSM, NULL, NULL, SAAdim_is_1,
        SAAshp_of_arg2, NULL, 0, PPIgetPVVxV, ICCnone, TEone, NULL, NULL),
 
   PRF (mul_SMxSM, (PA_S, PA_V, PA_V), 3, SIMD_MUL, NOSIMD, NTCCTprf_ari_op_SMxSM,
-       COmul_simd, COMPprfOp_SMxSM, SCSprf_add_SMxSM, NULL, NULL, SAAdim_is_1,
+       COsimd_mul, COMPprfOp_SMxSM, SCSprf_add_SMxSM, NULL, NULL, SAAdim_is_1,
+       SAAshp_of_arg2, NULL, 0, PPIgetPVVxV, ICCnone, TEone, NULL, NULL),
+
+  PRF (div_SMxSM, (PA_S, PA_V, PA_V), 3, SIMD_DIV, NOSIMD, NTCCTprf_ari_op_SMxSM,
+       COsimd_div, COMPprfOp_SMxSM, SCSprf_div_SMxSM, NULL, NULL, SAAdim_is_1,
        SAAshp_of_arg2, NULL, 0, PPIgetPVVxV, ICCnone, TEone, NULL, NULL),
 
   /*   This is a simd selecton.  */

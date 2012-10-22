@@ -108,7 +108,8 @@ extern int print_comment; /* bool */
         indout ("else if (");                                                            \
         out (__VA_ARGS__);                                                               \
         out (") {\n");                                                                   \
-        global.indent++;
+        global.indent++;                                                                 \
+    } while (0)
 
 #define ELIF_END()                                                                       \
     BLOCK_END                                                                            \

@@ -196,7 +196,7 @@ COadd (constant *a, constant *b, constant *tmp1)
 }
 
 constant *
-COadd_simd (constant *dummy, constant *a, constant *b)
+COsimd_add (constant *dummy, constant *a, constant *b)
 {
     constant *res;
 
@@ -205,14 +205,33 @@ COadd_simd (constant *dummy, constant *a, constant *b)
     DBUG_EXECUTE (COINTdbugPrintBinOp (__func__, a, b, res));
     DBUG_RETURN (res);
 }
-
 constant *
-COmul_simd (constant *dummy, constant *a, constant *b)
+COsimd_sub (constant *dummy, constant *a, constant *b)
+{
+    constant *res;
+
+    DBUG_ENTER ();
+    res = COzip (global.zipcv_minus, a, b, T_unknown);
+    DBUG_EXECUTE (COINTdbugPrintBinOp (__func__, a, b, res));
+    DBUG_RETURN (res);
+}
+constant *
+COsimd_mul (constant *dummy, constant *a, constant *b)
 {
     constant *res;
 
     DBUG_ENTER ();
     res = COzip (global.zipcv_mul, a, b, T_unknown);
+    DBUG_EXECUTE (COINTdbugPrintBinOp (__func__, a, b, res));
+    DBUG_RETURN (res);
+}
+constant *
+COsimd_div (constant *dummy, constant *a, constant *b)
+{
+    constant *res;
+
+    DBUG_ENTER ();
+    res = COzip (global.zipcv_div, a, b, T_unknown);
     DBUG_EXECUTE (COINTdbugPrintBinOp (__func__, a, b, res));
     DBUG_RETURN (res);
 }

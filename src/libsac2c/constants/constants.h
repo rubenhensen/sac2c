@@ -135,8 +135,10 @@ extern constant *  CORotate  ( constant *dim, constant *num, constant *a);
  ***/
 /* numerical ops */
 extern constant *COadd (constant *a, constant *b, constant *);
-extern constant *COadd_simd (constant *dummy, constant *a, constant *b);
-extern constant *COmul_simd (constant *dummy, constant *a, constant *b);
+extern constant *COsimd_add (constant *dummy, constant *a, constant *b);
+extern constant *COsimd_sub (constant *dummy, constant *a, constant *b);
+extern constant *COsimd_mul (constant *dummy, constant *a, constant *b);
+extern constant *COsimd_div (constant *dummy, constant *a, constant *b);
 extern constant *COsimd_sel (constant *simd_length, constant *idx, constant *a);
 extern constant *COsub (constant *a, constant *b, constant *);
 extern constant *COmul (constant *a, constant *b, constant *);

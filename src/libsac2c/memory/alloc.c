@@ -1661,7 +1661,9 @@ EMALprf (node *arg_node, info *arg_info)
 
     /* SIMD stuff  */
     case F_add_SMxSM:
+    case F_sub_SMxSM:
     case F_mul_SMxSM:
+    case F_div_SMxSM:
         /*
          * The first argument is a stupid scalar, so the second
          * or the third (as they are identical shape-wise) argument
@@ -1698,8 +1700,6 @@ EMALprf (node *arg_node, info *arg_info)
     case F_neq_VxV:
     case F_ge_VxV:
     case F_gt_VxV:
-    case F_mask_VxVxV:
-    case F_mask_VxVxS:
         /* XXX Why does it matter if the type of the argument is id or not
          * it still has a shape, right?
          */

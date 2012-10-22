@@ -1383,7 +1383,17 @@ SCSprf_add_SMxSM (node *arg_node, info *arg_info)
     return NULL;
 }
 node *
+SCSprf_sub_SMxSM (node *arg_node, info *arg_info)
+{
+    return NULL;
+}
+node *
 SCSprf_mul_SMxSM (node *arg_node, info *arg_info)
+{
+    return NULL;
+}
+node *
+SCSprf_div_SMxSM (node *arg_node, info *arg_info)
 {
     return NULL;
 }

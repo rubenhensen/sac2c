@@ -51,7 +51,9 @@ extern node *SCSprf_add_VxV (node *arg_node, info *arg_info);
 
 /* SIMD operations.  */
 extern node *SCSprf_add_SMxSM (node *arg_node, info *arg_info);
+extern node *SCSprf_sub_SMxSM (node *arg_node, info *arg_info);
 extern node *SCSprf_mul_SMxSM (node *arg_node, info *arg_info);
+extern node *SCSprf_div_SMxSM (node *arg_node, info *arg_info);
 extern node *SCSprf_simd_sel_VxA (node *arg_node, info *arg_info);
 
 extern node *SCSprf_sub (node *arg_node, info *arg_info);
