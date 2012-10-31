@@ -267,6 +267,9 @@ SUBPHASE (dfr, "Removing dead functions", DFRdoDeadFunctionRemoval, global.optim
 
 SUBPHASE (inl, "Applying function inlining", INLdoInlining, global.optimize.doinl, opt)
 
+SUBPHASE (tgtl, "Transform gt and ge operators to lt and le operators",
+          TGTLdoTransformGtgeToLtle, global.optimize.dotgtl, opt)
+
 SUBPHASE (dfr2, "Removing dead functions", DFRdoDeadFunctionRemoval,
           global.optimize.dodfr, opt)
 
@@ -307,6 +310,9 @@ CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, AL
 CYCLEPHASEFUNOLD (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt,
                   cyc)
 
+CYCLEPHASEFUNOLD (tgtl, "Transform gt and ge operators to lt and le operators",
+                  TGTLdoTransformGtgeToLtle, global.optimize.dotgtl, opt, cyc)
+
 CYCLEPHASEFUN (wlprop, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
                global.optimize.dowlprop, opt, cyc)
 
@@ -327,6 +333,9 @@ CYCLEPHASEFUNOLD (linl, "Inlining degenerated LaC functions", LINLdoLACInlining,
 
 CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt,
                cyc)
+
+CYCLEPHASEFUN (rea, "Reorder arguments of equality primitive function ",
+               REAdoReorderEqualityprfArguments, global.optimize.dorea, opt, cyc)
 
 CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
                global.optimize.dowlpg, opt, cyc)
@@ -372,6 +381,9 @@ CYCLEPHASEFUN (etc, "Eliminating typeconv primitives", ETCdoEliminateTypeConvers
 
 CYCLEPHASEFUN (xvp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp,
                opt, cyc)
+
+CYCLEPHASEFUN (xrea, "Reorder arguments of equality primitive function ",
+               REAdoReorderEqualityprfArguments, global.optimize.dorea, opt, cyc)
 
 CYCLEPHASEFUN (lur, "Applying loop unrolling", LURdoLoopUnrolling, global.optimize.dolur,
                opt, cyc)
@@ -466,6 +478,9 @@ CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, AL
 CYCLEPHASEFUNOLD (inl, "Applying inlining", INLdoInlining, global.optimize.doinl, opt,
                   saacyc)
 
+CYCLEPHASEFUNOLD (tgtl, "Transform gt and ge operators to lt and le operators",
+                  TGTLdoTransformGtgeToLtle, global.optimize.dotgtl, opt, saacyc)
+
 CYCLEPHASEFUN (wlprop, "Applying with-loop propagation", WLPROPdoWithloopPropagation,
                global.optimize.dowlprop, opt, saacyc)
 
@@ -486,6 +501,9 @@ CYCLEPHASEFUNOLD (linl, "Inlining degenerated LaC functions", LINLdoLACInlining,
 
 CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt,
                saacyc)
+
+CYCLEPHASEFUN (rea, "Reorder arguments of equality primitive function ",
+               REAdoReorderEqualityprfArguments, global.optimize.dorea, opt, saacyc)
 
 CYCLEPHASEFUN (wlpg, "Generating full with-loop partitions", WLPGdoWlPartitionGeneration,
                global.optimize.dowlpg, opt, saacyc)
@@ -706,6 +724,9 @@ CYCLEPHASEFUN (cf, "Applying constant folding", CFdoConstantFolding, global.opti
 CYCLEPHASEFUN (vp, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt,
                scyc)
 
+CYCLEPHASEFUN (rea, "Reorder arguments of equality primitive function ",
+               REAdoReorderEqualityprfArguments, global.optimize.dorea, opt, scyc)
+
 CYCLEPHASEFUN (dfc, "Applying function call dispatch", DFCdoDispatchFunCalls, ALWAYS, opt,
                scyc)
 
@@ -825,6 +846,9 @@ SUBPHASE (dfc, "Applying final function call dispatch", DFCdoDispatchFunCalls, A
           opt)
 
 SUBPHASE (finalinl, "Applying final inlining", INLdoInlining, global.optimize.doinl, opt)
+
+SUBPHASE (xtgtl, "Transform gt and ge operators to lt and le operators",
+          TGTLdoTransformGtgeToLtle, global.optimize.dotgtl, opt)
 
 SUBPHASE (fdi, "Freeing dispatch information", FDIdoFreeDispatchInformation, ALWAYS, opt)
 

@@ -22,6 +22,7 @@ extern bool STReqoct (const char *first, const char *second);
 extern bool STRprefix (const char *prefix, const char *str);
 extern bool STRsuffix (const char *suffix, const char *str);
 extern bool STReqn (const char *first, const char *second, int n);
+extern bool STRgt (const char *first, const char *second);
 extern bool STRsub (const char *sub, const char *str);
 extern int STRlen (const char *str);
 extern char *STRonNull (char *alt, char *str);

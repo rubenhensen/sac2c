@@ -115,6 +115,8 @@
 #include "string.h"
 #include "constant_folding.h"
 #include "variable_propagation.h"
+#include "reorder_equalityprf_arguments.h"
+#include "transform_gtge_to_ltle.h"
 #include "ElimSubDiv.h"
 #include "UndoElimSubDiv.h"
 #include "arithmetic_simplification.h"
@@ -319,6 +321,7 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
     int countTUP = 0;
     int countCF = 0;
     int countVP = 0;
+    int countREA = 0;
     int countAS = 0;
     int countAL = 0;
     int countDL = 0;
@@ -387,6 +390,10 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
                 CFdoConstantFolding);
         RUNOPT (VP, global.optimize.dovp, countVP = global.optcounters.vp_expr,
                 VPdoVarPropagation);
+        RUNOPT (REA, global.optimize.dorea, countREA = global.optcounters.rea_expr,
+                REAdoReorderEqualityprfArguments);
+        RUNOPT (TGTL, global.optimize.dotgtl, countREA = global.optcounters.tgtl_expr,
+                TGTLdoTransformGtgeToLtle);
         RUNOPT (ESD, global.optimize.dosde, countESD = global.optcounters.esd_expr,
                 ESDdoElimSubDiv);
         RUNOPT (AS, global.optimize.doas, countAS = global.optcounters.as_expr,

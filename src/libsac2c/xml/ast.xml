@@ -1840,15 +1840,38 @@
         <travnone>
           <node name="Withid" />
         </travnone>
-      </traversal>
+     </traversal>
       <traversal id="VP" name="Variable Propagation" default="sons" include="variable_propagation.h" >
-	<travuser>
+	  <travuser>
 	  <node name="Fundef" />
 	  <node name="Assign" />
 	  <node name="Id" />
-          <node name="Avis" />
-	</travuser>
+      <node name="Avis" />
+	  </travuser>
+    </traversal>
+
+      <traversal id="REA" name="Reorder EqualityOperator arguments" default="sons" include="reorder_equalityprf_arguments.h" >
+	    <travuser>
+	      <node name="Module" />
+          <node name="Fundef" />
+          <node name="Block" />    
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Prf" />
+        </travuser>
       </traversal>
+
+      <traversal id="TGTL" name="Transform all gt and ge operators to lt and le operators " default="sons" include="transform_gtge_to_ltle.h" >
+	    <travuser>
+	      <node name="Module" />
+          <node name="Fundef" />
+          <node name="Block" />    
+          <node name="Assign" />
+          <node name="Let" />
+          <node name="Prf" />
+        </travuser>
+      </traversal>
+
       <traversal id="CP" name="Constant Propagation" default="sons" include="constant_propagation.h" >
 	<travuser>
 	  <node name="Fundef" />

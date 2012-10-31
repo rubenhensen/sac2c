@@ -159,6 +159,8 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         ElimSubDiv UndoElimSubDiv \
                         constant_propagation \
                         variable_propagation \
+                        reorder_equalityprf_arguments \
+                        transform_gtge_to_ltle \
                         signature_simplification inlining inferneedcounters \
                         arithmetic_simplification                           \
                         SSALUR                                              \

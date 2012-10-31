@@ -331,6 +331,36 @@ STReq (const char *first, const char *second)
 
 /*******************************************************************************
  *
+ * Description: Compare two strings.
+ *
+ * Parameters: - first, first string to compare
+ *             - second, second string to compare
+ *
+ * Return: - TRUE, string contents are equal
+ *         - FALSE, string contents are not equal
+ *
+ *******************************************************************************/
+
+bool
+STRgt (const char *first, const char *second)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    if ((first == NULL) && (second == NULL)) {
+        res = TRUE;
+    } else if ((first == NULL) || (second == NULL)) {
+        res = FALSE;
+    } else {
+        res = (1 == strcmp (first, second));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/*******************************************************************************
+ *
  * Description: Compare two strings for referring to the same hexadecimal number
  *
  * Parameters: - first, first string to compare
