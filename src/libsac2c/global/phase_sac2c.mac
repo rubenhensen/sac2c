@@ -785,27 +785,27 @@ SUBPHASE (wlsimp, "Simplifying with-loops", WLSIMPdoWithloopSimplification,
  */
 
 SUBPHASE (tupls, "Applying type upgrade for LS/LACS", NTCdoNewReTypeCheckFromScratch,
-          global.optimize.dols &&global.optimize.dotup, opt)
+          global.optimize.dotup, opt)
 
 SUBPHASE (etvls, "Eliminating Type Variables for LS/LACS", EATdoEliminateAlphaTypes,
-          global.optimize.dols &&global.optimize.dotup, opt)
+          global.optimize.dotup, opt)
 
 SUBPHASE (ebtls, "Eliminating Bottom Types for LS/LACS", EBTdoEliminateBottomTypes,
-          global.optimize.dols &&global.optimize.dotup, opt)
+          global.optimize.dotup, opt)
 
 SUBPHASE (cfls, "Applying constant folding for LS/LACS", CFdoConstantFolding,
-          global.optimize.dols &&global.optimize.docf, opt)
+          global.optimize.docf, opt)
 
 SUBPHASE (dlirls, "Applying do-loop invariant removal for LS/LACS",
-          DLIRdoLoopInvariantRemoval, global.optimize.dols &&global.optimize.dodlir, opt)
+          DLIRdoLoopInvariantRemoval, global.optimize.dodlir, opt)
 
 SUBPHASE (wlirls, "Applying with-loop invariant removal for LS/LACS",
-          WLIRdoLoopInvariantRemoval, global.optimize.dols &&global.optimize.dowlir, opt)
+          WLIRdoLoopInvariantRemoval, global.optimize.dowlir, opt)
 
 SUBPHASE (ussai, "Undo SSAIV Transform", USSAIdoUndoSSAivTransform, global.ssaiv, opt)
 
 SUBPHASE (vpls, "Propagating variables for LS/LACS", VPdoVarPropagation,
-          global.optimize.dols &&global.optimize.dovp, opt)
+          global.optimize.dovp, opt)
 
 SUBPHASE (cpive, "Propagating constants for IVE", CPdoConstantPropagation,
           global.optimize.doive &&global.optimize.docp, opt)
@@ -828,10 +828,10 @@ SUBPHASE (dcr3, "Removing dead code", DCRdoDeadCodeRemoval,
 
 /* TODO: lir perhaps should be run in a loop */
 SUBPHASE (dlir2, "Applying do-loop invariant removal", DLIRdoLoopInvariantRemoval,
-          global.optimize.dols &&global.optimize.dodlir, opt)
+          global.optimize.dodlir, opt)
 
 SUBPHASE (wlir2, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemoval,
-          global.optimize.dols &&global.optimize.dowlir, opt)
+          global.optimize.dowlir, opt)
 
 SUBPHASE (fprc, "Filtering partial reuse candidates", FPRCdoFilterPartialReuseCandidates,
           (global.optimize.douip && global.optimize.dopr), opt)
