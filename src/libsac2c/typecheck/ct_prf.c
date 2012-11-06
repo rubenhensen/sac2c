@@ -457,6 +457,7 @@ NTCCTprf_guard (te_info *info, ntype *args)
     DBUG_ENTER ();
 
     num_rets = TYgetProductSize (args) - 1;
+
     pred = TYgetProductMember (args, num_rets);
     TEassureBoolS ("predicate (last argument of guard())", pred);
     err_msg = TEfetchErrors ();
@@ -470,6 +471,40 @@ NTCCTprf_guard (te_info *info, ntype *args)
     }
 
     DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *    ntype *NTCCTprf_guardhold( te_info *info, ntype *elems)
+ *
+ * description: X', Y', Z'... = guard( X, Y, Z, ..., pred);
+ *             pred is Boolean scalar
+ *             X, Y, Z... are anything.
+ *             If( pred), X' = X; Y' = Y; Z' = Z; ...
+ *             else error.
+ *
+ ******************************************************************************/
+
+ntype *
+NTCCTprf_guardhold (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    char *err_msg;
+    ntype *pred;
+    int num_rets;
+
+    DBUG_ENTER ();
+
+    pred = TYgetProductMember (args, 0);
+    TEassureBoolS ("requires predicate", pred);
+    if (err_msg != NULL) {
+        CTIabort (err_msg);
+    }
+
+    res = TYcopyType (pred);
+
+    DBUG_RETURN (TYmakeProductType (1, res));
 }
 
 /******************************************************************************
