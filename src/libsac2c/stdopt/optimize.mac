@@ -78,7 +78,8 @@ OPTIMIZE ("wlpg", wlpg, TRUE, TRUE, "with-loop partition generation")
 OPTIMIZE ("cp", cp, TRUE, TRUE, "constant propagation")
 OPTIMIZE ("vp", vp, TRUE, TRUE, "variable propagation")
 OPTIMIZE ("rea", rea, TRUE, TRUE, "reorder arguments of equality operator")
-OPTIMIZE ("tgtl", tgtl, TRUE, TRUE, "Transform gt and ge operator to lt and le operator")
+OPTIMIZE ("tgtl", tgtl, FALSE, FALSE,
+          "Transform gt and ge operator to lt and le operator")
 OPTIMIZE ("srf", srf, TRUE, TRUE, "static reuse / static free")
 OPTIMIZE ("pr", pr, FALSE, FALSE, "partial reuse")
 #if ENABLE_PHM
