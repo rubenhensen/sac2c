@@ -104,7 +104,7 @@ IsEqualityOperator (prf op)
 
     DBUG_PRINT ("Looking for comparison operator");
 
-    result = (op == F_eq_SxS || op == F_eq_SxV || op == F_eq_VxS || op == F_eq_VxV);
+    result = (op == F_eq_SxS || op == F_eq_VxV);
 
     if (result) {
         DBUG_PRINT ("Comparison operator found");
