@@ -103,3 +103,20 @@ $(PROJECT_ROOT)/.revision.txt: $(PROJECT_ROOT)/.revision.txt.PHONY
               rm $@.new;                         \
             fi                                   \
           fi          
+# This code merely counts the number of GIT commits, and
+# used that to fake a revision number.
+# #
+	@ if which git > /dev/null; then                                \
+            git rev-list --abbrev-commit HEAD $(PROJECT_ROOT)           \
+              | wc -l  > $@.new;                                        \
+            if which diff >/dev/null; then                              \
+              if diff $@ $@.new >/dev/null; then                        \
+                rm $@.new;                                              \
+              else                                                      \
+                mv $@.new $@;                                           \
+              fi                                                        \
+            else                                                        \
+              rm $@.new;                                                \
+            fi                                                          \
+          fi          
+
