@@ -202,6 +202,7 @@ MarkAvisAlive (node *avis)
 
     DBUG_RETURN ();
 }
+
 /** <!--********************************************************************-->
  *
  * function:
@@ -224,6 +225,7 @@ FreeAvisSons (node *arg_node)
 
     avis = ID_AVIS (arg_node);
     DBUG_PRINT ("Freeing avis sons for %s", AVIS_NAME (avis));
+#ifdef FIXME // this at very least belongs in deadcoderemoval.c.
 
     // This is so ugly, I could spit...
     if (AVIS_DIM (avis) != NULL) {
@@ -249,6 +251,7 @@ FreeAvisSons (node *arg_node)
     if (AVIS_LACSO (avis) != NULL) {
         AVIS_LACSO (avis) = FREEdoFreeNode (AVIS_LACSO (avis));
     }
+#endif // FIXME // this at very least belongs in deadcoderemoval.c.
 
     DBUG_RETURN (arg_node);
 }
@@ -541,7 +544,7 @@ DCIlet (node *arg_node, info *arg_info)
  *   node *DCIap(node *arg_node , info *arg_info)
  *
  * description:
- *   if application of special function (cond, do) traverse into this
+ *   if application of lacfun function (cond, do) traverse into this
  *   function except for recursive calls of the current function.
  *   traverse all arguments to mark them as needed
  *
@@ -553,7 +556,7 @@ DCIap (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    /* traverse special fundef without recursion */
+    /* traverse lacfun without recursion */
     if ((INFO_TRAVSCOPE (arg_info) == TS_function)
         && (FUNDEF_ISLACFUN (AP_FUNDEF (arg_node)))) {
         if (AP_FUNDEF (arg_node) == INFO_FUNDEF (arg_info)) {
@@ -592,18 +595,17 @@ DCIap (node *arg_node, info *arg_info)
         } else {
             node *args, *argexprs;
 
-            DBUG_PRINT ("traverse in special fundef %s",
-                        FUNDEF_NAME (AP_FUNDEF (arg_node)));
+            DBUG_PRINT ("traverse in lacfun %s", FUNDEF_NAME (AP_FUNDEF (arg_node)));
 
-            /* start traversal of special fundef (and maybe reduce parameters!) */
+            /* start traversal of lacfun (and maybe reduce parameters!) */
             AP_FUNDEF (arg_node) = TRAVdo (AP_FUNDEF (arg_node), arg_info);
 
-            DBUG_PRINT ("traversal of special fundef %s finished;\n"
+            DBUG_PRINT ("traversal of lacfun %s finished;\n"
                         "continue in fundef %s\n",
                         FUNDEF_NAME (AP_FUNDEF (arg_node)),
                         FUNDEF_NAME (INFO_FUNDEF (arg_info)));
 
-            /* mark only those variables needed by the special function as live */
+            /* mark only those variables needed by the lacfun as live */
             args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
             argexprs = AP_ARGS (arg_node);
 
@@ -692,19 +694,13 @@ DCIcode (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     /* traverse expression */
-    if (CODE_CEXPRS (arg_node) != NULL) {
-        CODE_CEXPRS (arg_node) = TRAVdo (CODE_CEXPRS (arg_node), arg_info);
-    }
+    CODE_CEXPRS (arg_node) = TRAVopt (CODE_CEXPRS (arg_node), arg_info);
 
     /* traverse code block */
-    if (CODE_CBLOCK (arg_node) != NULL) {
-        CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-    }
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
-    /* traverse expression */
-    if (CODE_NEXT (arg_node) != NULL) {
-        CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-    }
+    /* traverse next block */
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
