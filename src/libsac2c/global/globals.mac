@@ -1016,11 +1016,8 @@ GLOBAL (const zipcvfunptr *, zipcv_ge, zipcv_ge_init, xfree_dummy, )
 GLOBAL (const zipcvfunptr *, zipcv_not, zipcv_not_init, xfree_dummy, )
 GLOBAL (const zipcvfunptr *, zipcv_tob, zipcv_tob_init, xfree_dummy, )
 GLOBAL (const zipcvfunptr *, zipcv_tos, zipcv_tos_init, xfree_dummy, )
-
-#ifdef RBECANTCODE
+GLOBAL (const zipcvfunptr *, zipcv_toc, zipcv_toc_init, xfree_dummy, )
 GLOBAL (const zipcvfunptr *, zipcv_tobool, zipcv_tobool, xfree_dummy, )
-#endif // RBECANTCODE
-
 GLOBAL (const zipcvfunptr *, zipcv_toi, zipcv_toi_init, xfree_dummy, )
 GLOBAL (const zipcvfunptr *, zipcv_tol, zipcv_tol_init, xfree_dummy, )
 GLOBAL (const zipcvfunptr *, zipcv_toll, zipcv_toll_init, xfree_dummy, )

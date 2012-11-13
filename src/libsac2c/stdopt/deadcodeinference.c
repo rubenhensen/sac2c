@@ -225,7 +225,6 @@ FreeAvisSons (node *arg_node)
 
     avis = ID_AVIS (arg_node);
     DBUG_PRINT ("Freeing avis sons for %s", AVIS_NAME (avis));
-#ifdef FIXME // this at very least belongs in deadcoderemoval.c.
 
     // This is so ugly, I could spit...
     if (AVIS_DIM (avis) != NULL) {
@@ -251,7 +250,6 @@ FreeAvisSons (node *arg_node)
     if (AVIS_LACSO (avis) != NULL) {
         AVIS_LACSO (avis) = FREEdoFreeNode (AVIS_LACSO (avis));
     }
-#endif // FIXME // this at very least belongs in deadcoderemoval.c.
 
     DBUG_RETURN (arg_node);
 }

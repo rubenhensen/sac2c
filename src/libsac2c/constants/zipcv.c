@@ -7,7 +7,7 @@
 
 /*
  * This module provides a set of functions for applying arithmetic functions
- * two two elements of constant vectors.
+ * to two elements of constant vectors.
  * The problem with this task is that each such function has to be overloaded on
  * all potential types.
  * Since C does not support such specifications, a function table is created
@@ -106,17 +106,31 @@
     {                                                                                    \
         DBUG_ENTER ();                                                                   \
         if (0 == (((arg_t *)arg1)[pos1])) {                                              \
-            ((res_t *)res)[res_pos] = false;                                             \
+            ((res_t *)res)[res_pos] = 0;                                                 \
         } else {                                                                         \
             if (1 == (((arg_t *)arg1)[pos1])) {                                          \
-                i ((res_t *)res)[res_pos] = true;                                        \
+                ((res_t *)res)[res_pos] = 1;                                             \
             } else {                                                                     \
-                DBUG_ASSERT (FALSE, "tobool() given non-Boolean-valued argument")        \
-                ((res_t *)res)[res_pos] = false;                                         \
+                /* FIXME. What is wrong here?  DBUG_ASSERT( 1==0, "tobool() given        \
+                 * non-Boolean-valued argument")  */                                     \
+                ((res_t *)res)[res_pos] = 0;                                             \
             }                                                                            \
         }                                                                                \
         DBUG_RETURN ();                                                                  \
     }
+
+#define COzipCvTOCTEMPLATE(fun, fun_ext, arg_t, arg_ext, res_t)                          \
+    void COzipCv##arg_ext##fun_ext (void *arg1, int pos1, void *arg2, int pos2,          \
+                                    void *res, int res_pos)                              \
+    {                                                                                    \
+        DBUG_ENTER ();                                                                   \
+                                                                                         \
+        DBUG_ASSERT (0 <= (((arg_t *)arg1)[pos1]) "toc() given negative argument")       \
+        DBUG_ASSERT (256 > (((arg_t *)arg1)[pos1]) "toc() given argument > 255")         \
+        ((res_t *)res)[res_pos] = (char)((arg_t *)arg1[pos1]);                           \
+        DBUG_RETURN ();                                                                  \
+    }
+
 /* macro expansion for all basetypes - or dummy if not useful */
 #define MAP_NUMxNUM_NUM(fun, fname)                                                      \
     COzipCvTEMPLATE (fun, fname, unsigned char, UByte, unsigned char)                    \
@@ -312,6 +326,41 @@
                               COzipCvDUMMYTEMP (Bool, fname)                             \
                                 COzipCvDUMMYTEMP (Char, fname)                           \
                                   COzipCvDUMMYTEMP (Dummy, fname)
+
+#define MAP_TOC_NUM_NUM(fun, fname)                                                      \
+    COzipCvUNARYTEMPLATE (, fname, unsigned char, UByte, unsigned char)                  \
+      COzipCvUNARYTEMPLATE (, fname, unsigned short, UShort, unsigned char)              \
+        COzipCvUNARYTEMPLATE (, fname, unsigned int, UInt, unsigned char)                \
+          COzipCvUNARYTEMPLATE (, fname, unsigned long, ULong, unsigned char)            \
+            COzipCvUNARYTEMPLATE (, fname, unsigned long long, ULongLong, unsigned char) \
+              COzipCvUNARYTEMPLATE (, fname, char, Byte, unsigned char)                  \
+                COzipCvUNARYTEMPLATE (, fname, short, Short, unsigned char)              \
+                  COzipCvUNARYTEMPLATE (, fname, int, Int, unsigned char)                \
+                    COzipCvUNARYTEMPLATE (, fname, long, Long, unsigned char)            \
+                      COzipCvUNARYTEMPLATE (, fname, long long, LongLong, unsigned char) \
+                        COzipCvDUMMYTEMP (Float, fname) COzipCvDUMMYTEMP (Double, fname) \
+                          COzipCvDUMMYTEMP (LongDouble, fname)                           \
+                            COzipCvDUMMYTEMP (Bool, fname)                               \
+                              COzipCvDUMMYTEMP (Char, fname)                             \
+                                COzipCvDUMMYTEMP (Dummy, fname)
+
+#define MAP_TOBOOL_NUM_NUM(fun, fname)                                                   \
+    COzipCvTOBOOLTEMPLATE (, fname, unsigned char, UByte, bool)                          \
+      COzipCvTOBOOLTEMPLATE (, fname, unsigned short, UShort, bool)                      \
+        COzipCvTOBOOLTEMPLATE (, fname, unsigned int, UInt, bool)                        \
+          COzipCvTOBOOLTEMPLATE (, fname, unsigned long, ULong, bool)                    \
+            COzipCvTOBOOLTEMPLATE (, fname, unsigned long long, ULongLong, bool)         \
+              COzipCvTOBOOLTEMPLATE (, fname, char, Byte, bool)                          \
+                COzipCvTOBOOLTEMPLATE (, fname, short, Short, bool)                      \
+                  COzipCvTOBOOLTEMPLATE (, fname, int, Int, bool)                        \
+                    COzipCvTOBOOLTEMPLATE (, fname, long, Long, bool)                    \
+                      COzipCvTOBOOLTEMPLATE (, fname, long long, LongLong, bool)         \
+                        COzipCvTOBOOLTEMPLATE (, fname, float, Float, bool)              \
+                          COzipCvTOBOOLTEMPLATE (, fname, double, Double, bool)          \
+                            COzipCvTOBOOLTEMPLATE (, fname, long long, LongDouble, bool) \
+                              COzipCvTOBOOLTEMPLATE (, fname, bool, Bool, bool)          \
+                                COzipCvDUMMYTEMP (Char, fname)                           \
+                                  COzipCvDUMMYTEMP (Dummy, fname)
 /*
  * The actual function definitions are defined by the following macro usages:
  */
@@ -379,11 +428,11 @@ MAP_NUMxNUM_NUM (+, Plus)
 
                                                         MAP_ABS_NUM_NUM (NOP, Abs)
 
-#ifdef RBECANTCODE
-                                                          MAP_TOBOOL_NUM_NUM (NOP, (int),
-                                                                              xxx, bool)
-#endif //  RBECANTCODE
+                                                          MAP_TOC_NUM_NUM ((char), Toc)
 
-                                                            MAP_NUM_NUM (-, Neg)
+                                                            MAP_TOBOOL_NUM_NUM ((boolean),
+                                                                                Tobool)
+
+                                                              MAP_NUM_NUM (-, Neg)
 
 #undef DBUG_PREFIX
