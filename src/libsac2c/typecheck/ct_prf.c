@@ -478,11 +478,8 @@ NTCCTprf_guard (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_guardhold( te_info *info, ntype *elems)
  *
- * description: X', Y', Z'... = guard( X, Y, Z, ..., pred);
- *             pred is Boolean scalar
- *             X, Y, Z... are anything.
- *             If( pred), X' = X; Y' = Y; Z' = Z; ...
- *             else error.
+ * description: pred' = guard( pred);  pred is Boolean scalar
+ *              guardhold means the pred is always evaluated to true;
  *
  ******************************************************************************/
 
@@ -492,7 +489,6 @@ NTCCTprf_guardhold (te_info *info, ntype *args)
     ntype *res = NULL;
     char *err_msg;
     ntype *pred;
-    int num_rets;
 
     DBUG_ENTER ();
 
