@@ -48,8 +48,19 @@
  *
  *****************************************************************************/
 
+static enum equal_type {
+    not_equal,
+    equal_same,
+    equal_diff
+}
+
 struct INFO {
+    node *new_equal_prf;
+    node *lhs;
 };
+
+#define INFO_NEWEQUALPRF(n) ((n)->new_equal_prf)
+#define INFO_LHS(n) ((n)->lhs)
 
 static info *
 MakeInfo (void)
@@ -59,6 +70,8 @@ MakeInfo (void)
     DBUG_ENTER ();
 
     result = (info *)MEMmalloc (sizeof (info));
+    INFO_NEWEQUALPRF (result) = NULL;
+    INFO_LHS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -95,7 +108,7 @@ FreeInfo (info *info)
  * @return is given operator a comparison operator
  *
  *****************************************************************************/
-static bool
+static equal_type
 IsEqualityOperator (prf op)
 {
     bool result;
@@ -104,7 +117,7 @@ IsEqualityOperator (prf op)
 
     DBUG_PRINT ("Looking for comparison operator");
 
-    result = (op == F_eq_SxS || op == F_eq_VxV);
+    result = (op == F_eq_SxS || op == F_eq_VxV || op == F_eq_SxV || F_eq_VxS);
 
     if (result) {
         DBUG_PRINT ("Comparison operator found");
@@ -117,13 +130,54 @@ IsEqualityOperator (prf op)
 
 /** <!--********************************************************************-->
  *
- * @fn static bool IsEqualityOperator( prf op)
+ * @fn static prf GetContraryOperator( prf op)
  *
- * @brief Returns whether or not the given operator is a equality operator
+ * @brief Returns contrary operator
  *
  * @param op primitive operator
  *
- * @return is given operator a comparison operator
+ * @return is given contrary operator
+ *
+ *****************************************************************************/
+static prf
+GetContraryOperator (prf op)
+{
+    prf result;
+
+    DBUG_ENTER ();
+
+    DBUG_PRINT ("Looking for comparison operator");
+
+    switch (op) {
+    case F_eq_SxS:
+        result = F_eq_SxS;
+        break;
+    case F_eq_VxV:
+        result = F_eq_VxV;
+        break;
+    case F_eq_SxV:
+        result = F_eq_VxS;
+        break;
+    case F_eq_VxS:
+        result = F_eq_SxV;
+        break;
+    default:
+        DBUG_ASSERT (0, "Illegal argument, must be a gt/ge operator");
+        result = F_unknown;
+    }
+
+    DBUG_RETURN (result);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static bool AreId( prf op)
+ *
+ * @brief Returns whether or not the given arguments are ids
+ *
+ * @param arguments
+ *
+ * @return is true or false
  *
  *****************************************************************************/
 static bool
@@ -303,9 +357,24 @@ REAassign (node *arg_node, info *arg_info)
 node *
 REAlet (node *arg_node, info *arg_info)
 {
+    node *previous_prf;
+
     DBUG_ENTER ();
 
+    INFO_LHS (arg_info) = LET_IDS (arg_node);
+    INFO_NEWEQUALPRF (arg_info) = NULL;
+
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
+
+    if (INFO_NEWEQUALPRF (arg_info) != NULL) {
+        previous_prf = LET_EXPR (arg_node);
+        previous_prf = FREEdoFreeNode (previous_prf);
+
+        LET_EXPR (arg_node) = INFO_NEWEQUALPRF (arg_info);
+        INFO_NEWEQUALPRF (arg_info) = NULL;
+    }
+
+    INFO_LHS (arg_info) = NULL;
 
     DBUG_RETURN (arg_node);
 }
@@ -328,10 +397,13 @@ REAprf (node *arg_node, info *arg_info)
 {
     node *first_argu;
     node *second_argu;
-    node *new_first;
-    node *new_second;
+    char *first_id;
+    char *second_id;
+    node *new_equal_prf;
 
     DBUG_ENTER ();
+
+    DBUG_PRINT ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
     if (IsEqualityOperator (PRF_PRF (arg_node))
         && !IsNodeLiteralZero (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))
@@ -339,19 +411,29 @@ REAprf (node *arg_node, info *arg_info)
                   EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))) {
         DBUG_PRINT ("Found equality function");
 
-        first_argu = EXPRS_EXPR (PRF_ARGS (arg_node));
+        first_id = AVIS_NAME (ID_AVIS (EXPRS_EXPR (PRF_ARGS (arg_node))));
+        second_id = AVIS_NAME (ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)))));
 
-        second_argu = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
+        if (STRgt (first_id, second_id)) {
+            first_argu = EXPRS_NEXT (PRF_ARGS (arg_node));
+            second_argu = PRF_ARGS (arg_node);
 
-        if (STRgt (AVIS_NAME (ID_AVIS (first_argu)), AVIS_NAME (ID_AVIS (second_argu)))) {
-            new_second = DUPdoDupNode (first_argu);
-            first_argu = FREEdoFreeNode (first_argu);
+            // reset the link
+            EXPRS_NEXT (first_argu) = second_argu;
+            EXPRS_NEXT (second_argu) = NULL;
+            PRF_ARGS (arg_node) = NULL;
+            // create new pritive operator
+            new_equal_prf
+              = TBmakePrf (GetContraryOperator (PRF_PRF (arg_node)), first_argu);
 
-            new_first = DUPdoDupNode (second_argu);
-            second_argu = FREEdoFreeNode (second_argu);
+            PRF_ISNOTEINTERSECTPRESENT (new_equal_prf)
+              = PRF_ISNOTEINTERSECTPRESENT (arg_node);
 
-            EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) = new_second;
-            EXPRS_EXPR (PRF_ARGS (arg_node)) = new_first;
+            PRF_ISINPLACESELECT (new_equal_prf) = PRF_ISINPLACESELECT (arg_node);
+
+            PRF_ISNOP (new_equal_prf) = PRF_ISNOP (arg_node);
+
+            INFO_NEWEQUALPRF (arg_info) = new_equal_prf;
         }
 
     } // end IsComparisonOperator...
