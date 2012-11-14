@@ -48,12 +48,6 @@
  *
  *****************************************************************************/
 
-static enum equal_type {
-    not_equal,
-    equal_same,
-    equal_diff
-}
-
 struct INFO {
     node *new_equal_prf;
     node *lhs;
@@ -108,7 +102,7 @@ FreeInfo (info *info)
  * @return is given operator a comparison operator
  *
  *****************************************************************************/
-static equal_type
+static bool
 IsEqualityOperator (prf op)
 {
     bool result;
@@ -117,7 +111,7 @@ IsEqualityOperator (prf op)
 
     DBUG_PRINT ("Looking for comparison operator");
 
-    result = (op == F_eq_SxS || op == F_eq_VxV || op == F_eq_SxV || F_eq_VxS);
+    result = FALSE;
 
     if (result) {
         DBUG_PRINT ("Comparison operator found");
