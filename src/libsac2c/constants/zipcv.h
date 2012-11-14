@@ -89,11 +89,8 @@ EXT_DECLS (Toul)
 EXT_DECLS (Toull)
 EXT_DECLS (Tob)
 EXT_DECLS (Tos)
-
-#ifdef RBECANTCODE
+EXT_DECLS (Toc)
 EXT_DECLS (Tobool)
-#endif // RBECANTCODE
-
 EXT_DECLS (Toi)
 EXT_DECLS (Tol)
 EXT_DECLS (Toll)

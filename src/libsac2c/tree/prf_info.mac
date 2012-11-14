@@ -171,11 +171,11 @@
  * Built-in type conversion operations
  */
 
-PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, NULL,
+PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtobool,
      COMPprfOp_S, SCSprf_tobool_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
      PPIgetPVS, ICCnone, TEone, NULL, NULL),
 
-  PRF (toc_S, (PA_S, PA_x, PA_x), 1, TOC, NOSIMD, NTCCTprf_toc_S, NULL, COMPprfOp_S,
+  PRF (toc_S, (PA_S, PA_x, PA_x), 1, TOC, NOSIMD, NTCCTprf_toc_S, COtoc, COMPprfOp_S,
        SCSprf_toc_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
        ICCnone, TEone, NULL, NULL),
 

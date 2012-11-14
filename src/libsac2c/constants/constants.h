@@ -161,6 +161,7 @@ extern constant *COgt (constant *a, constant *b, constant *);
 extern constant *COnot (constant *a, constant *, constant *);
 extern constant *COtobool (constant *a, constant *, constant *);
 extern constant *COtob (constant *a, constant *, constant *);
+extern constant *COtoc (constant *a, constant *, constant *);
 extern constant *COtos (constant *a, constant *, constant *);
 extern constant *COtoi (constant *a, constant *, constant *);
 extern constant *COtol (constant *a, constant *, constant *);
