@@ -1377,19 +1377,21 @@ ScalarExtend (node *arg1, node *arg2, info *arg_info)
 {
     node *z;
     shape *shp;
+    node *arg1avis;
     node *arg2avis;
 
     DBUG_ENTER ();
 
+    arg1avis = ID_AVIS (arg1);
     arg2avis = ID_AVIS (arg2);
-    if ((TUisScalar (AVIS_TYPE (arg1))) && (!TUisScalar (AVIS_TYPE (arg2avis)))
+    if ((TUisScalar (AVIS_TYPE (arg1avis))) && (!TUisScalar (AVIS_TYPE (arg2avis)))
         && (TYisAKV (AVIS_TYPE (arg2avis)) || TYisAKS (AVIS_TYPE (arg2avis)))) {
         shp = SHcopyShape (TYgetShape (AVIS_TYPE (arg2avis)));
-        z = SCSmakeVectorArray (shp, TBmakeId (arg1));
+        z = SCSmakeVectorArray (shp, TBmakeId (arg1avis));
         z = FLATGflattenExpression (z, &INFO_VARDECS (arg_info),
                                     &INFO_PREASSIGNS (arg_info), NULL);
     } else {
-        z = arg1;
+        z = arg1avis;
     }
 
     z = TBmakeId (z);
