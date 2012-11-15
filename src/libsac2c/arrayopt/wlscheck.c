@@ -196,6 +196,7 @@ WLSCdoCheck (node *with, node *nassign)
     info *arg_info;
     node *lhs;
     int res;
+    ntype *typ;
 
     DBUG_ENTER ();
 
@@ -219,7 +220,19 @@ WLSCdoCheck (node *with, node *nassign)
              * dimensions is only given by the CEXPRs
              */
 
-            res = TYgetDim (ID_NTYPE (INFO_CEXPR (arg_info)));
+            typ = ID_NTYPE (INFO_CEXPR (arg_info));
+            res = TYgetDim (typ);
+
+            /*
+             * If there is one CEXPRS, and it happens to be an
+             * empty array, do not attempt WLS. Other optimizations
+             * will eliminate the outer WL.
+             */
+            if (0 == SHgetUnrLen (TYgetShape (typ))) {
+                res = 0;
+                DBUG_PRINT ("Skipping WLS for empty array cell CEXPRS %s",
+                            AVIS_NAME (ID_AVIS (INFO_CEXPR (arg_info))));
+            }
         } else {
             /*
              * In all other cases, use the number of inner index scalars
