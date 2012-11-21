@@ -26,7 +26,6 @@ extern intersect_type_t CUBSLfindMatchingPart (node *arg_node, node *consumerpar
                                                node *producerWL, info *arg_info,
                                                node **producerpart);
 extern bool matchGeneratorField (node *fa, node *fb);
-extern intersect_type_t isNullIntersect (node *arg_node);
 
 extern node *CUBSLfundef (node *arg_node, info *arg_info);
 extern node *CUBSLassign (node *arg_node, info *arg_info);
