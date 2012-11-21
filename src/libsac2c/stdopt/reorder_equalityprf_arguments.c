@@ -4,10 +4,36 @@
 
 /** <!--********************************************************************-->
  *
- * @defgroup REA Reorder arguments of primitive function _eq_XxX
+ * @defgroup REA
  *
- *   For _eq_XxX(b,a), it will be transformed into _eq_XxX(a,b);
+ *    Module reorder_equalityprf_arguments.c  reorder arguments of primitive
+ *    function _eq_XxX if the first argument is "greater" than second one. e.g.
  *
+ *    becuase b is "greater" than a, we need to change the order of argument and
+ *    type of primitive function accordingly.
+ *
+ *    _eq_SxS(b,a)  ==> _eq_SxS(a,b);
+ *    _eq_SxV(b,a)  ==> _eq_VxS(a,b);
+ *    _eq_VxS(b,a)  ==> _eq_SxV(a,b);
+ *    _eq_VxV(b,a)  ==> _eq_VxV(a,b);
+ *
+ *
+ *    Motivation:
+ *        We do this optimization to further optimize the sac code. For instance,
+ *        we have the followint code :
+ *
+ *              c = _eq_SxV(b,a);
+ *              d = _eq_VxS(a,b);
+ *              e =  a || d;
+ *
+ *        After code transformation, we have :
+ *
+ *              c'= _eq_VxS(a,b);
+ *              d = _eq_VxS(a,b);
+ *              e =  a || d;
+ *
+ *        Now, you can see that c' and d are the same indeed, which will be
+ *        further optimized by our other optimizations phase.
  *
  * @ingroup opt
  *
@@ -19,7 +45,7 @@
  *
  * @file reorder_equalityprf_arugment.c
  *
- * Prefix: CZC
+ * Prefix: REA
  *
  *****************************************************************************/
 #include "reorder_equalityprf_arguments.h"
@@ -49,11 +75,9 @@
  *****************************************************************************/
 
 struct INFO {
-    node *new_equal_prf;
     node *lhs;
 };
 
-#define INFO_NEWEQUALPRF(n) ((n)->new_equal_prf)
 #define INFO_LHS(n) ((n)->lhs)
 
 static info *
@@ -64,7 +88,6 @@ MakeInfo (void)
     DBUG_ENTER ();
 
     result = (info *)MEMmalloc (sizeof (info));
-    INFO_NEWEQUALPRF (result) = NULL;
     INFO_LHS (result) = NULL;
 
     DBUG_RETURN (result);
@@ -159,31 +182,6 @@ GetContraryOperator (prf op)
         DBUG_ASSERT (0, "Illegal argument, must be a gt/ge operator");
         result = F_unknown;
     }
-
-    DBUG_RETURN (result);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static bool AreId( prf op)
- *
- * @brief Returns whether or not the given arguments are ids
- *
- * @param arguments
- *
- * @return is true or false
- *
- *****************************************************************************/
-static bool
-AreId (node *first_argu, node *second_argu)
-{
-    bool result;
-
-    DBUG_ENTER ();
-
-    DBUG_PRINT ("Checking whether all arguments of equality operator are ids");
-
-    result = (NODE_TYPE (first_argu) == N_id && NODE_TYPE (second_argu) == N_id);
 
     DBUG_RETURN (result);
 }
@@ -356,17 +354,8 @@ REAlet (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
-    INFO_NEWEQUALPRF (arg_info) = NULL;
 
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
-
-    if (INFO_NEWEQUALPRF (arg_info) != NULL) {
-        previous_prf = LET_EXPR (arg_node);
-        previous_prf = FREEdoFreeNode (previous_prf);
-
-        LET_EXPR (arg_node) = INFO_NEWEQUALPRF (arg_info);
-        INFO_NEWEQUALPRF (arg_info) = NULL;
-    }
 
     INFO_LHS (arg_info) = NULL;
 
@@ -378,7 +367,7 @@ REAlet (node *arg_node, info *arg_info)
  * @fn node *REAprf(node *arg_node, info *arg_info)
  *
  * @brief This function looks for suitable comparisons, applies the
- *        optimization and creates the new structure.
+ *        optimization.
  *
  * @param arg_node
  * @param arg_info
@@ -400,37 +389,22 @@ REAprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
     if (IsEqualityOperator (PRF_PRF (arg_node))
-        && !IsNodeLiteralZero (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))
-        && AreId (EXPRS_EXPR (PRF_ARGS (arg_node)),
-                  EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))) {
+        && !IsNodeLiteralZero (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))) {
         DBUG_PRINT ("Found equality function");
 
         first_id = AVIS_NAME (ID_AVIS (EXPRS_EXPR (PRF_ARGS (arg_node))));
         second_id = AVIS_NAME (ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)))));
 
         if (STRgt (first_id, second_id)) {
-            first_argu = EXPRS_NEXT (PRF_ARGS (arg_node));
-            second_argu = PRF_ARGS (arg_node);
+            first_argu = EXPRS_EXPR (PRF_ARGS (arg_node));
+            second_argu = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
 
-            // reset the link
-            EXPRS_NEXT (first_argu) = second_argu;
-            EXPRS_NEXT (second_argu) = NULL;
-            PRF_ARGS (arg_node) = NULL;
-            // create new pritive operator
-            new_equal_prf
-              = TBmakePrf (GetContraryOperator (PRF_PRF (arg_node)), first_argu);
+            EXPRS_EXPR (PRF_ARGS (arg_node)) = second_argu;
+            EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) = first_argu;
 
-            PRF_ISNOTEINTERSECTPRESENT (new_equal_prf)
-              = PRF_ISNOTEINTERSECTPRESENT (arg_node);
-
-            PRF_ISINPLACESELECT (new_equal_prf) = PRF_ISINPLACESELECT (arg_node);
-
-            PRF_ISNOP (new_equal_prf) = PRF_ISNOP (arg_node);
-
-            INFO_NEWEQUALPRF (arg_info) = new_equal_prf;
+            PRF_PRF (arg_node) = GetContraryOperator (PRF_PRF (arg_node));
         }
-
-    } // end IsComparisonOperator...
+    } //
 
     DBUG_PRINT ("Leaving prf");
     DBUG_RETURN (arg_node);

@@ -4,7 +4,28 @@
 
 /** <!--********************************************************************-->
  *
- * @defgroup TGTL Transform all gt and ge operators to lt and le operators.
+ * @defgroup TGTL Operation Trasnformation
+ *
+ *    Module transform_gtge_to_ltle.c transform all gt and ge operators to lt and
+ *    le operators.
+ *
+ *    For example, we have the following code
+ *
+ *    a = 3;
+ *    b = 5;
+ *    c = [3,5];
+ *    d = [3,5];
+ *
+ *    _gt_SxS(a,b);                              _lt_SxS(b,a);
+ *    _gt_VxV(c,d);   will be transformed into   _lt_VxV(d,c);
+ *    _gt_SxV(a,d);                              _lt_VxS(d,a);
+ *
+ *
+ *    Motivation:
+ *      We employ this optimization to simpilfy the relationship operator in our
+ *      SaC code. After code transformation, there are only equal or less or less
+ *      than operators left. In the future, we want to build a grpahic for all
+ *      static known knowledge to statically reslove other relation operations.
  *
  *
  * @ingroup opt
@@ -44,11 +65,9 @@
  *****************************************************************************/
 
 struct INFO {
-    node *contrary_prf;
     node *lhs;
 };
 
-#define INFO_CONTRARYPRF(n) ((n)->contrary_prf)
 #define INFO_LHS(n) ((n)->lhs)
 
 static info *
@@ -59,8 +78,6 @@ MakeInfo (void)
     DBUG_ENTER ();
 
     result = (info *)MEMmalloc (sizeof (info));
-
-    INFO_CONTRARYPRF (result) = NULL;
     INFO_LHS (result) = NULL;
 
     DBUG_RETURN (result);
@@ -162,7 +179,7 @@ GetContraryOperator (prf op)
         result = F_le_SxV;
         break;
     case F_ge_VxV:
-        result = F_lt_VxV;
+        result = F_le_VxV;
         break;
     default:
         DBUG_ASSERT (0, "Illegal argument, must be a gt/ge operator");
@@ -299,22 +316,12 @@ TGTLassign (node *arg_node, info *arg_info)
 node *
 TGTLlet (node *arg_node, info *arg_info)
 {
-    node *previous_prf;
 
     DBUG_ENTER ();
 
     INFO_LHS (arg_info) = LET_IDS (arg_node);
-    INFO_CONTRARYPRF (arg_info) = NULL;
 
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
-
-    if (INFO_CONTRARYPRF (arg_info) != NULL) {
-        previous_prf = LET_EXPR (arg_node);
-        previous_prf = FREEdoFreeNode (previous_prf);
-
-        LET_EXPR (arg_node) = INFO_CONTRARYPRF (arg_info);
-        INFO_CONTRARYPRF (arg_info) = NULL;
-    }
 
     INFO_LHS (arg_info) = NULL;
 
@@ -325,8 +332,8 @@ TGTLlet (node *arg_node, info *arg_info)
  *
  * @fn node *TGTLprf(node *arg_node, info *arg_info)
  *
- * @brief This function looks for suitable comparisons, applies the
- *        optimization and creates the new structure.
+ * @brief This function looks for suitable operator, and transform all _gt_ or
+ *        _ge_ to _lt_ and _le_.
  *
  * @param arg_node
  * @param arg_info
@@ -339,31 +346,20 @@ TGTLprf (node *arg_node, info *arg_info)
 {
     node *first_argu;
     node *second_argu;
-    node *contrary_prf = NULL;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
-    // Check for comparisons that don't already use a literal zero
+    // Check for is the current operator are _gt_ or _ge_
     if (IsGtgeOperator (PRF_PRF (arg_node))) {
-        first_argu = EXPRS_NEXT (PRF_ARGS (arg_node));
-        second_argu = PRF_ARGS (arg_node);
+        first_argu = EXPRS_EXPR (PRF_ARGS (arg_node));
+        second_argu = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
 
-        // reset the link
-        EXPRS_NEXT (first_argu) = second_argu;
-        EXPRS_NEXT (second_argu) = NULL;
-        PRF_ARGS (arg_node) = NULL;
-        // create new pritive operator
-        contrary_prf = TBmakePrf (GetContraryOperator (PRF_PRF (arg_node)), first_argu);
+        EXPRS_EXPR (PRF_ARGS (arg_node)) = second_argu;
+        EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))) = first_argu;
 
-        PRF_ISNOTEINTERSECTPRESENT (contrary_prf) = PRF_ISNOTEINTERSECTPRESENT (arg_node);
-
-        PRF_ISINPLACESELECT (contrary_prf) = PRF_ISINPLACESELECT (arg_node);
-
-        PRF_ISNOP (contrary_prf) = PRF_ISNOP (arg_node);
-
-        INFO_CONTRARYPRF (arg_info) = contrary_prf;
+        PRF_PRF (arg_node) = GetContraryOperator (PRF_PRF (arg_node));
 
     } // end IsComparisonOperator...
 
