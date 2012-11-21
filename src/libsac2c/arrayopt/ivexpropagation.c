@@ -1362,18 +1362,18 @@ GetMaxvalForMax (node *prfarg, node *nca, node *lhsavis, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * Description: Scalar-extend arg1, if scalar, to shape of arg2.
+ * Description: Scalar-extend arg1avis, if scalar, to shape of arg2.
  *              A non-scalar arg2 must be AKS/AKV.
  *
- * @params arg1: an N_avis
+ * @params arg1avis: an N_avis
  *         arg2: an N_id
  *
  * @return N_id node for flattened N_array result.
- *         If arg2 is scalar, N_id for arg1.
+ *         If arg2 is scalar, N_id for arg1avis.
  *
  ******************************************************************************/
 static node *
-ScalarExtend (node *arg1, node *arg2, info *arg_info)
+ScalarExtend (node *arg1avis, node *arg2, info *arg_info)
 {
     node *z;
     shape *shp;
@@ -1382,14 +1382,14 @@ ScalarExtend (node *arg1, node *arg2, info *arg_info)
     DBUG_ENTER ();
 
     arg2avis = ID_AVIS (arg2);
-    if ((TUisScalar (AVIS_TYPE (arg1))) && (!TUisScalar (AVIS_TYPE (arg2avis)))
+    if ((TUisScalar (AVIS_TYPE (arg1avis))) && (!TUisScalar (AVIS_TYPE (arg2avis)))
         && (TYisAKV (AVIS_TYPE (arg2avis)) || TYisAKS (AVIS_TYPE (arg2avis)))) {
         shp = SHcopyShape (TYgetShape (AVIS_TYPE (arg2avis)));
-        z = SCSmakeVectorArray (shp, TBmakeId (arg1));
+        z = SCSmakeVectorArray (shp, TBmakeId (arg1avis));
         z = FLATGflattenExpression (z, &INFO_VARDECS (arg_info),
                                     &INFO_PREASSIGNS (arg_info), NULL);
     } else {
-        z = arg1;
+        z = arg1avis;
     }
 
     z = TBmakeId (z);
@@ -1452,12 +1452,14 @@ GenerateExtremaForMin (node *lhsavis, node *rhs, info *arg_info)
         // max( non-constant with maxval, non-constant)
         //   maxval becomes result maxval.
         if ((!c1) && (!c2) && (e2) && (NULL == INFO_MAXVAL (arg_info))) {
-            INFO_MAXVAL (arg_info) = ScalarExtend (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))),
-                                                   PRF_ARG1 (rhs), arg_info);
+            INFO_MAXVAL (arg_info)
+              = ScalarExtend (ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs)))),
+                              PRF_ARG1 (rhs), arg_info);
         }
         if ((!c2) && (!c1) && (e1) && (NULL == INFO_MAXVAL (arg_info))) {
-            INFO_MAXVAL (arg_info) = ScalarExtend (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))),
-                                                   PRF_ARG2 (rhs), arg_info);
+            INFO_MAXVAL (arg_info)
+              = ScalarExtend (ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs)))),
+                              PRF_ARG2 (rhs), arg_info);
         }
 
         if (NULL != INFO_MAXVAL (arg_info)) {
@@ -1526,12 +1528,14 @@ GenerateExtremaForMax (node *lhsavis, node *rhs, info *arg_info)
         // max( non-constant with minval, non-constant)
         //   minval becomes result minval.
         if ((!c1) && (!c2) && (e2) && (NULL == INFO_MINVAL (arg_info))) {
-            INFO_MINVAL (arg_info) = ScalarExtend (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))),
-                                                   PRF_ARG1 (rhs), arg_info);
+            INFO_MINVAL (arg_info)
+              = ScalarExtend (ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs)))),
+                              PRF_ARG1 (rhs), arg_info);
         }
         if ((!c2) && (!c1) && (e1) && (NULL == INFO_MINVAL (arg_info))) {
-            INFO_MINVAL (arg_info) = ScalarExtend (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))),
-                                                   PRF_ARG2 (rhs), arg_info);
+            INFO_MINVAL (arg_info)
+              = ScalarExtend (ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs)))),
+                              PRF_ARG2 (rhs), arg_info);
         }
     }
 
