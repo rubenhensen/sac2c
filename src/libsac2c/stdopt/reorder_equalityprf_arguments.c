@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id ftg$
  */
 
 /** <!--********************************************************************-->
@@ -128,13 +128,13 @@ FreeInfo (info *info)
 static bool
 IsEqualityOperator (prf op)
 {
-    bool result;
+    bool result = FALSE;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Looking for comparison operator");
 
-    result = FALSE;
+    result = (op == F_eq_SxS || op == F_eq_VxV || op == F_eq_SxV || op == F_eq_VxS);
 
     if (result) {
         DBUG_PRINT ("Comparison operator found");
@@ -184,42 +184,6 @@ GetContraryOperator (prf op)
     }
 
     DBUG_RETURN (result);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn static bool IsNodeLiteralZero( node *node)
- *
- * @brief This function checks if the given node is a literal 0.
- *
- * @param node
- *
- * @return is given node a 0
- *
- *****************************************************************************/
-static bool
-IsNodeLiteralZero (node *node)
-{
-    constant *argconst;
-    bool res = FALSE;
-
-    DBUG_ENTER ();
-    DBUG_PRINT ("Comparing to zero");
-
-    argconst = COaST2Constant (node);
-
-    if (NULL != argconst) {
-        res = COisZero (argconst, TRUE);
-        argconst = COfreeConstant (argconst);
-    }
-
-    if (res) {
-        DBUG_PRINT ("Zero found");
-    } else {
-        DBUG_PRINT ("Zero not found");
-    }
-
-    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -349,7 +313,6 @@ REAassign (node *arg_node, info *arg_info)
 node *
 REAlet (node *arg_node, info *arg_info)
 {
-    node *previous_prf;
 
     DBUG_ENTER ();
 
@@ -382,20 +345,17 @@ REAprf (node *arg_node, info *arg_info)
     node *second_argu;
     char *first_id;
     char *second_id;
-    node *new_equal_prf;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Looking at prf for %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 
-    if (IsEqualityOperator (PRF_PRF (arg_node))
-        && !IsNodeLiteralZero (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node))))) {
-        DBUG_PRINT ("Found equality function");
+    if (IsEqualityOperator (PRF_PRF (arg_node))) {
 
         first_id = AVIS_NAME (ID_AVIS (EXPRS_EXPR (PRF_ARGS (arg_node))));
         second_id = AVIS_NAME (ID_AVIS (EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)))));
 
-        if (STRgt (first_id, second_id)) {
+        if (STRgt (first_id, second_id) == TRUE) {
             first_argu = EXPRS_EXPR (PRF_ARGS (arg_node));
             second_argu = EXPRS_EXPR (EXPRS_NEXT (PRF_ARGS (arg_node)));
 
@@ -415,10 +375,6 @@ REAprf (node *arg_node, info *arg_info)
  *****************************************************************************/
 
 /** <!--********************************************************************-->
- * @}  <!-- Conditional Zero Comparison -->
- *****************************************************************************/
-
-/** <!--********************************************************************-->
  *
  * @name Entry functions
  * @{
@@ -434,6 +390,7 @@ REAprf (node *arg_node, info *arg_info)
 node *
 REAdoReorderEqualityprfArguments (node *argnode)
 {
+
     info *info;
     DBUG_ENTER ();
 

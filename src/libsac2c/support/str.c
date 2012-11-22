@@ -353,7 +353,7 @@ STRgt (const char *first, const char *second)
     } else if ((first == NULL) || (second == NULL)) {
         res = FALSE;
     } else {
-        res = (1 == strcmp (first, second));
+        res = (strcmp (first, second) > 0);
     }
 
     DBUG_RETURN (res);

@@ -3,6 +3,11 @@
 
 # Run one unit test on sac source program $1, and check results.
 
+# Here, we set variable bopt, which is "-bopt" by default. In the 
+# UnitTesRunGrep1.config, we can reset bopt that define the different break phase
+
+bopt="-bopt"
+
 source UnitTestRunGrep1.config
 
 function getargs
@@ -48,13 +53,14 @@ function getargs
          filterop=cat
          filter=\"$fil\"
  fi
- 
+                
+              
  # Test with opts disabled
- sac2c $1 -v0 -bopt $optsoff $s1 $s2 $s3 $s4  $s5 $s6 > crudn.$1.out
+ sac2c $1 -v0 $bopt $optsoff $s1 $s2 $s3 $s4  $s5 $s6 > crudn.$1.out
  cat crudn.$1.out | $filterop | UnitTestRunCounts $1 "$optsoff" $grepstr $noopt
  cat crudn.$1.out | $filterop > crudn
  # Test with opts enabled
- sac2c $1 -v0 -bopt $optson $s1 $s2 $s3 $s4 $s5 $s6 > crudd.$1.out
+ sac2c $1 -v0 $bopt $optson $s1 $s2 $s3 $s4 $s5 $s6 > crudd.$1.out
  cat crudd.$1.out | $filterop | UnitTestRunCounts $1 "$optson" $grepstr $doopt 
  cat crudd.$1.out | $filterop >crudd
  # This test leaves crudn.$1 and crudd.$1 around for possible later
