@@ -968,6 +968,8 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
     DBUG_RETURN (minmaxavis);
 }
 
+#ifdef FIXME // crippled in order to make majordiagonalSlice.sac work again.
+
 /** <!--********************************************************************-->
  *
  * Description:  Generate extrema for modulus.
@@ -1046,6 +1048,8 @@ GenerateExtremaModulus (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#endif // FIXME // crippled in order to make majordiagonalSlice.sac work again.
 
 /** <!--********************************************************************-->
  *
@@ -1855,7 +1859,9 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_mod_SxV:
             case F_mod_VxS:
             case F_mod_VxV:
+#ifdef FIXME // crippled in order to make majordiagonalSlice.sac work again.
                 arg_node = GenerateExtremaModulus (arg_node, arg_info);
+#endif //  FIXME // crippled in order to make majordiagonalSlice.sac work again.
                 break;
 
             /* Selection: _sel_VxA_( constant, argwithextrema)

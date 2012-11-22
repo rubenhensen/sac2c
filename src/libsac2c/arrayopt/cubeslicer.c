@@ -342,29 +342,110 @@ matchGeneratorField (node *fa, node *fb)
 
 /** <!--********************************************************************-->
  *
- * @fn static intersect_type_t isNullIntersect( node *arg_node)
+ * @fn static isNullIntersect( node *arg_node)
+ * @fn static isNotNullIntersect( node *arg_node)
  *
- * @brief Function for determining Null intersection of two WLs
+ * @brief Functions for determining Null intersection of two WLs
  *
- * @params arg_node: A F_noteintersect null intersection entry.
+ * @params arg_node: An F_noteintersect null-intersection entry.
  *
- * @result: INTERSECT_null if intersection of index vector set and producerWL
+ * @result: IsNullIntersect: TRUE if any element of the
+ *          intersection of index vector set and producerWL
  *          partition is empty.
- *          INTERSECT_notnull is the intersection is known to be non-empty.
- *          Otherwise, INTERSECT_unknown.
+ *
+ *          Otherwise, FALSE. Slicing may or may not be required.
+ *          And, we may not yet know if the intersect is, or is not, NULL.
+ *          I.e., do not make decisions based on a FALSE result here.
+ *
+ *          IsNotNullIntersect: TRUE if all elements of the
+ *          intersection of index vector set and producerWL
+ *          are non-null. Else FALSE.
+ *
  *
  *****************************************************************************/
-intersect_type_t
+static bool
 isNullIntersect (node *arg_node)
 {
-    intersect_type_t z = INTERSECT_unknown;
+    bool z = FALSE;
     constant *con;
 
     DBUG_ENTER ();
 
     con = COaST2Constant (arg_node);
     if (NULL != con) {
-        z = (COisFalse (con, TRUE)) ? INTERSECT_notnull : INTERSECT_null;
+        z = COisTrue (con, FALSE);
+        COfreeConstant (con);
+    }
+
+    DBUG_RETURN (z);
+}
+
+static bool
+isNotNullIntersect (node *arg_node)
+{
+    bool z = FALSE;
+    constant *con;
+
+    DBUG_ENTER ();
+
+    con = COaST2Constant (arg_node);
+    if (NULL != con) {
+        z = COisFalse (con, TRUE);
+        COfreeConstant (con);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static isInt1Part( node *arg_node)
+ * @fn static isNotInt1Part( node *arg_node)
+ *
+ * @brief Functions for determining if WL intersection does not
+ *        cross PWL partition boundaries.
+ *
+ * @params arg_node: An F_noteintersect WLINTERSECT1PART entry.
+ *
+ * @result: isInt1Part: TRUE if all elements of the
+ *          intersection of the index vector set and producerWL
+ *          lie within a single partition of the PWL.
+ *          Else FALSE.
+ *
+ *          IsNotInt1Part: TRUE if any element of the
+ *          intersection of the index vector set and producerWL
+ *          cross partitions of the PWL.
+ *          Else FALSE.
+ *
+ *****************************************************************************/
+static bool
+isInt1Part (node *arg_node)
+{
+    bool z = FALSE;
+    constant *con;
+
+    DBUG_ENTER ();
+
+    con = COaST2Constant (arg_node);
+    if (NULL != con) {
+        z = COisTrue (con, TRUE);
+        COfreeConstant (con);
+    }
+
+    DBUG_RETURN (z);
+}
+
+static bool
+isNotInt1Part (node *arg_node)
+{
+    bool z = FALSE;
+    constant *con;
+
+    DBUG_ENTER ();
+
+    con = COaST2Constant (arg_node);
+    if (NULL != con) {
+        z = COisFalse (con, FALSE);
         COfreeConstant (con);
     }
 
@@ -401,10 +482,11 @@ SetWLProjections (node *noteint, int intersectListNo, info *arg_info)
     DBUG_RETURN ();
 }
 
+#ifdef DEADCODEMAYBE
 /** <!--********************************************************************-->
  *
- * @fn static intersect_type_t isExactIntersect( node *cbound1, node *intersectb1,
- *                                               node *cbound2, node *intersectb2)
+ * @fn static intersect_type_t isExactIntersect( node *cbound1,
+ * node *intersectb1, node *cbound2, node *intersectb2)
  *
  * @brief Predicate for exact partition intersection.
  *
@@ -412,14 +494,11 @@ SetWLProjections (node *noteint, int intersectListNo, info *arg_info)
  *         intersectb1, intersectb2: intersection of producerWL partition
  *                                   and consumer WL idx extrema, normalize
  *                                   back to consumerWL bounds
- * @result: INTERSECT_exact if intersection is exact;
- *          INTERSECT_unknown if we are unable to find N_array bounds
- *          for all arguments;
- *          else INTERSECT_sliceneeded, on the assumption that
- *          we know the intersect is non-NULL.
+ * @result: TRUE intersection is exact;
+ *          FALSE does NOT imply non-exact intersect!!
  *
  *****************************************************************************/
-static intersect_type_t
+static bool
 isExactIntersect (node *cbound1, node *intersectb1, node *cbound2, node *intersectb2)
 {
     pattern *pat;
@@ -428,7 +507,7 @@ isExactIntersect (node *cbound1, node *intersectb1, node *cbound2, node *interse
     node *c2;
     node *i1;
     node *i2;
-    intersect_type_t z = INTERSECT_unknown;
+    bool z = FALSE;
 
     DBUG_ENTER ();
 
@@ -444,14 +523,13 @@ isExactIntersect (node *cbound1, node *intersectb1, node *cbound2, node *interse
     i2 = arr;
 
     if ((NULL != c1) && (NULL != c2) && (NULL != i1) && (NULL != i2)) {
-        z = (matchGeneratorField (c1, i1)) && (matchGeneratorField (c2, i2))
-              ? INTERSECT_exact
-              : INTERSECT_sliceneeded;
+        z = (matchGeneratorField (c1, i1)) && (matchGeneratorField (c2, i2));
     }
     pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
+#endif // DEADCODEMAYBE
 
 /** <!--********************************************************************-->
  *
@@ -489,6 +567,10 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     bool cwlpstepok;
     bool cwlpwidthok;
     node *intersect1Part;
+    bool int1part;
+    bool notint1part;
+    bool intnull;
+    bool notintnull;
 
     DBUG_ENTER ();
 
@@ -527,8 +609,6 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
           = TCgetNthExprsExpr (WLBOUND1ORIGINAL (intersectListNo), PRF_ARGS (noteint));
         producerWLBound2Original
           = TCgetNthExprsExpr (WLBOUND2ORIGINAL (intersectListNo), PRF_ARGS (noteint));
-        z = isNullIntersect (
-          TCgetNthExprsExpr (WLINTERSECTIONNULL (intersectListNo), PRF_ARGS (noteint)));
         intersect1Part
           = TCgetNthExprsExpr (WLINTERSECTION1PART (intersectListNo), PRF_ARGS (noteint));
 
@@ -539,51 +619,38 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
             && (cwlpstepok && cwlpwidthok)) {
             DBUG_PRINT ("All generator fields match");
 
-            if (SCSmatchConstantOne (intersect1Part)) {
-                z = INTERSECT_exact; /* CWL entirely within PWL  */
-                DBUG_PRINT ("Intersect is entirely in PWL partn");
+            int1part = isInt1Part (intersect1Part);
+            notint1part = isNotInt1Part (intersect1Part);
+            intnull
+              = isNullIntersect (TCgetNthExprsExpr (WLINTERSECTIONNULL (intersectListNo),
+                                                    PRF_ARGS (noteint)));
+            notintnull = isNotNullIntersect (
+              TCgetNthExprsExpr (WLINTERSECTIONNULL (intersectListNo),
+                                 PRF_ARGS (noteint)));
+
+            /* Slicing and exact intersect criteria */
+
+            if (intnull) {
+                DBUG_PRINT ("Null intersect");
+                z = INTERSECT_null;
             }
 
-            switch (z) {
-
-            case INTERSECT_exact:
-                DBUG_PRINT ("Exact intersect");
+            if (int1part) {
+                z = INTERSECT_exact;
+                DBUG_PRINT ("exact intersect");
                 SetWLProjections (noteint, intersectListNo, arg_info);
-                break;
+            }
 
-            case INTERSECT_sliceneeded:
+            if (notint1part && notintnull) {
+                z = INTERSECT_sliceneeded;
                 DBUG_PRINT ("slice needed");
                 SetWLProjections (noteint, intersectListNo, arg_info);
-                // break; intentionally elided.
+            }
 
-            case INTERSECT_notnull:
-#ifdef FIXME // This is bad. N_array elements might be local to WL */
-                /* FIXME clean up this code to use better PM, ala CF */
-                bnd = NULL;
-                PMmatchFlat (pat, proj1);
-                proj1 = bnd;
-                bnd = NULL;
-                PMmatchFlat (pat, proj2);
-                proj2 = bnd;
-#endif //  FIXME // This is bad. N_array elements might be local to WL */
-
-                if (NULL != cwlpb1) {
-                    z = isExactIntersect (cwlpb1, proj1, cwlpb2, proj2);
-                } else {
-                    z = INTERSECT_exact; /* Naked consumer  */
-                }
-
+            if (notintnull && (NULL == cwlpb1)) {
+                DBUG_PRINT ("Naked consumer detected");
+                z = INTERSECT_exact;
                 SetWLProjections (noteint, intersectListNo, arg_info);
-                break;
-
-            case INTERSECT_unknown:
-                DBUG_PRINT ("intersection unknown");
-                z = INTERSECT_unknown;
-                break;
-
-            case INTERSECT_null:
-                DBUG_PRINT ("Null intersect");
-                break;
             }
         } else {
             DBUG_PRINT ("Generator field mismatch");
@@ -692,13 +759,13 @@ CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
     node *producerWLGenerator;
     node *producerWLPart;
     intersect_type_t z = INTERSECT_unknown;
+    intersect_type_t intersecttype = INTERSECT_unknown;
     node *idx;
     node *idxassign;
     node *idxparent;
-    intersect_type_t intersecttype = INTERSECT_unknown;
     int producerPartno = 0;
-    char *nm;
     node *noteint;
+    char *nm;
 
     DBUG_ENTER ();
     DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "expected N_prf arg_node");
