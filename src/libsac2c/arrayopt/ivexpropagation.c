@@ -82,6 +82,7 @@
 #include "shape.h"
 #include "symbolic_constant_simplification.h"
 #include "constant_folding.h"
+#include "algebraic_wlfi.h"
 
 #include "string.h" /* BobboBreaker */
 
@@ -100,6 +101,7 @@ struct INFO {
     node *vardecs;
     node *curwith;
     node *let;
+    node *withidids;
 };
 
 /**
@@ -113,6 +115,7 @@ struct INFO {
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_CURWITH(n) ((n)->curwith)
 #define INFO_LET(n) ((n)->let)
+#define INFO_WITHIDIDS(n) ((n)->withidids)
 
 static info *
 MakeInfo (void)
@@ -131,6 +134,7 @@ MakeInfo (void)
     INFO_VARDECS (result) = NULL;
     INFO_CURWITH (result) = NULL;
     INFO_LET (result) = NULL;
+    INFO_WITHIDIDS (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -968,8 +972,6 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
     DBUG_RETURN (minmaxavis);
 }
 
-#ifdef FIXME // crippled in order to make majordiagonalSlice.sac work again.
-
 /** <!--********************************************************************-->
  *
  * Description:  Generate extrema for modulus.
@@ -1049,8 +1051,6 @@ GenerateExtremaModulus (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-#endif // FIXME // crippled in order to make majordiagonalSlice.sac work again.
-
 /** <!--********************************************************************-->
  *
  * Description: Generate extrema computation for
@@ -1083,7 +1083,6 @@ GenerateExtremaModulus (node *arg_node, info *arg_info)
  *      f( non_const, non_const) with maxval on second arg:
  *          --> maxval = Normalize( f( non_const, Denormalize( maxval)))
  *
- *
  * For subtract (the only non-commutative function), we have:
  *
  *     For Min or Max on PRF_ARG1:
@@ -1104,6 +1103,23 @@ GenerateExtremaModulus (node *arg_node, info *arg_info)
  *         Normalizeize( x) = x + 1;
  *         Denormalizeize( x) = x - 1;
  *
+ * @note If the min/max derives from a WITHID, we accept
+ *       the extrema only on that argument.
+ *       Otherwise, sumrotateiota2AKD.sac, realrelaxAKD.sac, and
+ *       other benchmarks will fail. This would happen if
+ *       both N_prf args have a min/max and we pick the wrong
+ *       one to propagate, or if only one has a min/max, and it
+ *       is not the one derived from a WITHID.
+ *
+ *       This restriction may degrade the amount of guard removal
+ *       that can be done statically. If this is a serious problem,
+ *       consider rewriting AWLFI to avoid extrema entirely,
+ *       by computing the intersection using the search method
+ *       used by AWLFI in BuildInverseProjections.
+ *       That rewriting should actually allow elimination of
+ *       IVEXP and IVEXI, and should speed up compilation with
+ *       -doawlf considerably, due to less code explosion.
+ *
  ******************************************************************************/
 static node *
 GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg_info)
@@ -1120,6 +1136,8 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
     bool min2;
     bool max1;
     bool max2;
+    int parentarg;
+    node *wid;
 
     DBUG_ENTER ();
 
@@ -1131,8 +1149,25 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
      */
     min1 = IVEXPisAvisHasMin (ID_AVIS (PRF_ARG1 (rhs)));
     max1 = IVEXPisAvisHasMax (ID_AVIS (PRF_ARG1 (rhs)));
+
     min2 = IVEXPisAvisHasMin (ID_AVIS (PRF_ARG2 (rhs)));
     max2 = IVEXPisAvisHasMax (ID_AVIS (PRF_ARG2 (rhs)));
+
+    parentarg = AWLFIfindPrfParent2 (rhs, INFO_WITHIDIDS (arg_info), &wid);
+    switch (parentarg) {
+    case 1: // PRF_ARG1 derives from WITHID
+        min2 = FALSE;
+        max2 = FALSE;
+        break;
+
+    case 2: // PRF_ARG2 derives from WITHID
+        min1 = FALSE;
+        max1 = FALSE;
+        break;
+
+    default:
+        break;
+    }
 
     /* Compute AVIS_MIN, perhaps */
     if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
@@ -1203,6 +1238,8 @@ GenerateExtremaComputationsNoncommutativeDyadicScalarPrf (node *arg_node, info *
     bool min2;
     bool max1;
     bool max2;
+    int parentarg;
+    node *wid;
 
     DBUG_ENTER ();
 
@@ -1215,8 +1252,25 @@ GenerateExtremaComputationsNoncommutativeDyadicScalarPrf (node *arg_node, info *
 
     min1 = IVEXPisAvisHasMin (ID_AVIS (PRF_ARG1 (rhs)));
     max1 = IVEXPisAvisHasMax (ID_AVIS (PRF_ARG1 (rhs)));
+
     min2 = IVEXPisAvisHasMin (ID_AVIS (PRF_ARG2 (rhs)));
     max2 = IVEXPisAvisHasMax (ID_AVIS (PRF_ARG2 (rhs)));
+
+    parentarg = AWLFIfindPrfParent2 (rhs, INFO_WITHIDIDS (arg_info), &wid);
+    switch (parentarg) {
+    case 1: // PRF_ARG1 derives from WITHID
+        min2 = FALSE;
+        max2 = FALSE;
+        break;
+
+    case 2: // PRF_ARG2 derives from WITHID
+        min1 = FALSE;
+        max1 = FALSE;
+        break;
+
+    default:
+        break;
+    }
 
     /* Compute AVIS_MIN, perhaps */
     // I think that, ideally, we would want to compute both
@@ -1859,9 +1913,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_mod_SxV:
             case F_mod_VxS:
             case F_mod_VxV:
-#ifdef FIXME // crippled in order to make majordiagonalSlice.sac work again.
                 arg_node = GenerateExtremaModulus (arg_node, arg_info);
-#endif //  FIXME // crippled in order to make majordiagonalSlice.sac work again.
                 break;
 
             /* Selection: _sel_VxA_( constant, argwithextrema)
@@ -2287,15 +2339,24 @@ IVEXPwith (node *arg_node, info *arg_info)
  *
  * description: Into the depths
  *
+ *   We also maintain the WITHID for the partition, for use by
+ *   AWLFIfindParent2.
+ *
  ******************************************************************************/
 node *
 IVEXPpart (node *arg_node, info *arg_info)
 {
+    node *oldwithidids;
 
     DBUG_ENTER ();
 
+    oldwithidids = INFO_WITHIDIDS (arg_info);
+    INFO_WITHIDIDS (arg_info) = WITHID_IDS (PART_WITHID (arg_node));
+
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+
+    INFO_WITHIDIDS (arg_info) = oldwithidids;
 
     DBUG_RETURN (arg_node);
 }

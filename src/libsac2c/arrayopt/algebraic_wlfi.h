@@ -25,6 +25,7 @@ extern node *AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns,
 extern bool AWLFIisValidNoteintersect (node *arg_node, node *pwlid);
 extern node *AWLFIdetachNoteintersect (node *arg_node);
 extern node *AWLFIfindNoteintersect (node *arg_node);
+extern int AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **infowithid);
 
 extern node *AWLFIflattenExpression (node *arg_node, node **vardecs, node **preassigns,
                                      ntype *ztype);

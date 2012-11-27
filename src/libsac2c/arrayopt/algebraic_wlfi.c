@@ -461,24 +461,24 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn int FindPrfParent2(...)
+ * @fn int AWLFIfindPrfParent2(...)
  *
  * @brief: Find parent node -- the one with a WITHID_IDS,
  *         of a dyadic scalar function
  *
  * @param: arg_node - an N_prf or N_id or N_num ...  of interest.
- *         arg_info - your basic arg_info node
+ *         withidids  - the WITH_IDS of the consumerWL partition of interesst.
+ *         withid - the address of the withids we found, if any.
  *
  * @result: 0 = Not found
  *          1 = PRF_ARG1 traces back to a WITHID_IDS
  *          2 = PRF_ARG2 traces back to a WITHID_IDS
  *
  *****************************************************************************/
-static int
-FindPrfParent2 (node *arg_node, info *arg_info)
+int
+AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
 {
     int z = 0;
-    node *withidids;
     node *arg = NULL;
     ;
     pattern *pat;
@@ -486,48 +486,51 @@ FindPrfParent2 (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    withidids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
-    pat = PMany (1, PMAgetNode (&arg), 0);
+    if (NULL != withidids) {
+        pat = PMany (1, PMAgetNode (&arg), 0);
 
-    switch (NODE_TYPE (arg_node)) {
-    case N_prf:
+        switch (NODE_TYPE (arg_node)) {
+        case N_prf:
 
-        tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG2 (arg_node)));
-        if (-1 != tcindex) {
-            z = 2;
-        }
+            tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG2 (arg_node)));
+            if (-1 != tcindex) {
+                z = 2;
+            }
 
-        tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG1 (arg_node)));
-        if (-1 != tcindex) {
-            z = 1;
-        }
-
-        if ((0 == z) && (0 != FindPrfParent2 (PRF_ARG1 (arg_node), arg_info))) {
-            z = 1;
-        }
-        if ((0 == z) && (0 != FindPrfParent2 (PRF_ARG2 (arg_node), arg_info))) {
-            z = 2;
-        }
-        break;
-
-    case N_id:
-        if ((PMmatchFlatSkipExtrema (pat, arg_node)) && (N_id == NODE_TYPE (arg))) {
-            tcindex = TClookupIdsNode (withidids, ID_AVIS (arg));
+            tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG1 (arg_node)));
             if (-1 != tcindex) {
                 z = 1;
             }
+
+            if ((0 == z)
+                && (0 != AWLFIfindPrfParent2 (PRF_ARG1 (arg_node), withidids, withid))) {
+                z = 1;
+            }
+            if ((0 == z)
+                && (0 != AWLFIfindPrfParent2 (PRF_ARG2 (arg_node), withidids, withid))) {
+                z = 2;
+            }
+            break;
+
+        case N_id:
+            if ((PMmatchFlatSkipExtrema (pat, arg_node)) && (N_id == NODE_TYPE (arg))) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (arg));
+                if (-1 != tcindex) {
+                    z = 1;
+                }
+            }
+            break;
+
+        default:
+            break;
         }
-        break;
 
-    default:
-        break;
+        if ((NULL != withid) && (z != 0) && (-1 != tcindex)) {
+            *withid = TCgetNthIds (tcindex, withidids);
+        }
+
+        pat = PMfree (pat);
     }
-
-    if ((z != 0) && (-1 != tcindex)) {
-        INFO_WITHIDS (arg_info) = TCgetNthIds (tcindex, withidids);
-    }
-
-    pat = PMfree (pat);
 
     DBUG_RETURN (z);
 }
@@ -830,10 +833,10 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
          * and guards. E.g., in twopartoffsetWLAKD.sac
          */
         if (PMmatchFlatSkipExtremaAndGuards (pat, iprime)) {
+            withidids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
+
             switch (NODE_TYPE (idx)) {
             case N_id:
-                /* Check for WITHID_IDS */
-                withidids = WITHID_IDS (PART_WITHID (INFO_CONSUMERWLPART (arg_info)));
                 tcindex = TClookupIdsNode (withidids, ID_AVIS (idx));
                 if (-1 != tcindex) {
                     DBUG_PRINT ("Found %s as source of iv'=%s", AVIS_NAME (ID_AVIS (idx)),
@@ -854,7 +857,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
                     /* iv' = ( iv + x);   -->  iv = ( iv' - x);
                      * iv' = ( x  + iv);  -->  iv = ( iv' - x);
                      */
-                    markiv = FindPrfParent2 (idx, arg_info);
+                    markiv
+                      = AWLFIfindPrfParent2 (idx, withidids, &INFO_WITHIDS (arg_info));
                     if (0 != markiv) {
                         ivarg = (2 == markiv) ? PRF_ARG2 (idx) : PRF_ARG1 (idx);
                         xarg = (2 == markiv) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
@@ -891,7 +895,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
                                                      SHcreateShape (0)));
                     INFO_VARDECS (arg_info)
                       = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
-                    markiv = FindPrfParent2 (idx, arg_info);
+                    markiv
+                      = AWLFIfindPrfParent2 (idx, withidids, &INFO_WITHIDS (arg_info));
                     if (0 != markiv) {
                         ivarg = (2 == markiv) ? PRF_ARG2 (idx) : PRF_ARG1 (idx);
                         xarg = (2 == markiv) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
@@ -931,7 +936,8 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
                     break;
 
                 case F_mul_SxS:
-                    markiv = FindPrfParent2 (idx, arg_info);
+                    markiv
+                      = AWLFIfindPrfParent2 (idx, withidids, &INFO_WITHIDS (arg_info));
                     DBUG_ASSERT (FALSE, "Coding time for F_mul_SxS_");
                     if (COisConstant (PRF_ARG2 (idx))) {
                     }
