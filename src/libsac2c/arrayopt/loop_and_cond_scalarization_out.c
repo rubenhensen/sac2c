@@ -22,8 +22,8 @@
  *   size = shp[0];
  *   res = sum( take( [size - 1], z));
  *
- * The loop has to generate shape vector on every iteration,
- * which makes them very slow. Hence, we transform the outer code this
+ * The loop has to generate a shape vector on every iteration,
+ * which makes it very slow. Hence, we transform the outer code this
  * way:
  *
  *   s0, shp, z = loop( args); NB. shp is shape(z);
@@ -441,8 +441,8 @@ BuildExternalAssigns (node *arg_node, info *arg_info)
             scalars = AVIS_LACSO (idsavis);
             if (NULL != scalars) {
                 DBUG_PRINT ("found scalarized result %s", AVIS_NAME (idsavis));
-                newids = TCappendIds (TCcreateIdsChainFromExprs (ARRAY_AELEMS (scalars)),
-                                      newids);
+                newids = TCappendIds (newids,
+                                      TCcreateIdsChainFromExprs (ARRAY_AELEMS (scalars)));
                 let = TBmakeLet (TBmakeIds (idsavis, NULL), scalars);
                 AVIS_LACSO (idsavis) = NULL;
 
@@ -856,9 +856,6 @@ LACSOassign (node *arg_node, info *arg_info)
  *          sa0, sa1, sb0, sb1, sb2 = lacfun();
  *          resa = [ sa0, sa1];
  *          resb = [ sb0, sb1, sb2];
- *
- *        If we generated new result elements for the external
- *        N_ap, prefix them to the call here.
  *
  *        We also build the N_array assign chain for the scalarized
  *        result array, remove the non-scalarized result from
