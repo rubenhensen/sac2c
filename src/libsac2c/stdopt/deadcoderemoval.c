@@ -394,8 +394,6 @@ DCRret (node *arg_node, info *arg_info)
         arg_node = FREEdoFreeNode (arg_node);
         LET_IDS (extlet) = FREEdoFreeNode (LET_IDS (extlet));
         if (INFO_INT_ASSIGN (arg_info) != NULL) {
-            DBUG_PRINT ("removing corresponding LET_IDS in N_ap for %s",
-                        AVIS_NAME (IDS_AVIS (LET_IDS (intlet))));
             LET_IDS (intlet) = FREEdoFreeNode (LET_IDS (intlet));
         }
     }

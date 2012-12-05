@@ -341,6 +341,7 @@ DCIarg (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     AVIS_ISDEAD (ARG_AVIS (arg_node)) = TRUE;
+    DBUG_PRINT ("marking arg %s as potentially dead", AVIS_NAME (ARG_AVIS (arg_node)));
 
     if (!FUNDEF_ISLACFUN (INFO_FUNDEF (arg_info))) {
         MarkAvisAlive (ARG_AVIS (arg_node));
