@@ -1781,10 +1781,13 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                 break;
 
             case F_abs_S: /* AVIS_MIN is now zero */
+            case F_abs_V: /* AVIS_MIN is now zero */
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
                 if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
-                    minv = IVEXImakeIntScalar (0, &INFO_VARDECS (arg_info),
-                                               &INFO_PREASSIGNS (arg_info));
+                    minv = SCSmakeZero (PRF_ARG1 (rhs));
+                    minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
+                                                   &INFO_PREASSIGNS (arg_info),
+                                                   TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     INFO_MINVAL (arg_info) = TBmakeId (minv);
                 }
                 break;
@@ -1793,56 +1796,6 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_min_VxS:
             case F_min_SxS:
             case F_min_VxV:
-#ifdef DEADCODE
-                /* Case 1: min( constant, nonconstant-without-maxval):
-                 *         the constant becomes the maxval.
-                 *
-                 * Case 2: min( constant, nonconstant-with-maxval):
-                 *         We conservatively estimate the extremum as the maxval.
-                 */
-                if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
-                    arg1avis = ID_AVIS (PRF_ARG1 (rhs));
-                    nca = GetMaxvalOnNonconstantArg (rhs, arg_info);
-
-                    if (NULL == nca) {
-                        /* Case 1 */
-                        if (COisConstant (PRF_ARG1 (rhs))) {
-                            maxv = IVEXPadjustExtremaBound (ID_AVIS (PRF_ARG1 (rhs)), 1,
-                                                            &INFO_VARDECS (arg_info),
-                                                            &INFO_PREASSIGNS (arg_info),
-                                                            "dsf6");
-
-                            INFO_MAXVAL (arg_info) = TBmakeId (maxv);
-                            AVIS_ISMAXHANDLED (maxv) = TRUE;
-                        } else {
-                            if (COisConstant (PRF_ARG2 (rhs))) {
-                                maxv
-                                  = IVEXPadjustExtremaBound (ID_AVIS (PRF_ARG2 (rhs)), 1,
-                                                             &INFO_VARDECS (arg_info),
-                                                             &INFO_PREASSIGNS (arg_info),
-                                                             "dsf7");
-                                INFO_MAXVAL (arg_info) = TBmakeId (maxv);
-                                AVIS_ISMAXHANDLED (maxv) = TRUE;
-                            }
-                        }
-                    } else {
-                        /* Case 2*/
-                        INFO_MAXVAL (arg_info) = DUPdoDupNode (nca);
-                    }
-                }
-
-                /* min( constant, non-constant with constant minval) */
-                if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
-                    nca = GetMinvalOnNonconstantArg (rhs, arg_info);
-                    minv = GetMinvalForMin (PRF_ARG1 (rhs), nca, lhsavis, arg_info);
-                    if (NULL == minv) {
-                        minv = GetMinvalForMin (PRF_ARG2 (rhs), nca, lhsavis, arg_info);
-                    }
-                    if (NULL != minv) {
-                        INFO_MINVAL (arg_info) = TBmakeId (minv);
-                    }
-                }
-#endif //  DEADCODE
                 GenerateExtremaForMin (lhsavis, rhs, arg_info);
                 break;
 
