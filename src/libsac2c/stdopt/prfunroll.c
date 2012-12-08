@@ -278,15 +278,9 @@ PRFUnrollOracle (node *arg_node)
 
     case F_non_neg_val_V:
     case F_neg_V:
+    case F_abs_V:
         res = TRUE;
         break;
-
-// iotanAKD.sac, ipape much worse without this. only testfor.sac better
-#ifdef SLOWLOOPS
-    case F_shape_A:
-        res = TRUE;
-        break;
-#endif // SLOWLOOPS
 
     case F_val_lt_shape_VxA:
         /* Unroll onlyif we know array dim */
@@ -359,11 +353,9 @@ NormalizePrf (prf p)
         p = F_val_le_val_SxS;
         break;
 
-#ifdef SLOWLOOPS
-    case F_shape_A:
-        p = F_shape_A;
+    case F_abs_V:
+        p = F_abs_S;
         break;
-#endif // SLOWLOOPS
 
     default:
         DBUG_ASSERT (FALSE, "Illegal prf!");
@@ -408,33 +400,6 @@ ReverseAssignments (node *ass, node *agg)
 
     DBUG_RETURN (res);
 }
-
-#ifdef SLOWLOOPS
-/** <!--********************************************************************-->
- *
- * @fn node *MakeIntScalar(...)
- *
- * @brief Create integer scalar, i.
- *        Return N_avis pointer for same.
- *
- *****************************************************************************/
-static node *
-MakeIntScalar (int i, info *arg_info)
-{
-    node *selarravis;
-
-    DBUG_ENTER ();
-    selarravis = TBmakeAvis (TRAVtmpVar (),
-                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
-    INFO_VARDEC (arg_info) = TBmakeVardec (selarravis, INFO_VARDEC (arg_info));
-    INFO_PREASSIGN (arg_info)
-      = TBmakeAssign (TBmakeLet (TBmakeIds (selarravis, NULL), TBmakeNum (i)),
-                      INFO_PREASSIGN (arg_info));
-    AVIS_SSAASSIGN (selarravis) = INFO_PREASSIGN (arg_info);
-
-    DBUG_RETURN (selarravis);
-}
-#endif // SLOWLOOPS
 
 /** <!--********************************************************************-->
  *
@@ -504,14 +469,9 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
     case F_non_neg_val_V:
     case F_neg_V:
     case F_val_le_val_VxV:
+    case F_abs_V:
         nprf = F_sel_VxA;
         break;
-
-#ifdef SLOWLOOPS
-    case F_shape_A:
-        zavis = MakeIntScalar (i, arg_info);
-        break;
-#endif // SLOWLOOPS
 
     case F_val_lt_shape_VxA:
         nprf = F_sel_VxA;
@@ -558,6 +518,7 @@ MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
     switch (PRF_PRF (arg_node)) {
 
     case F_neg_V:
+    case F_abs_V:
     case F_non_neg_val_V:
         dyadic = FALSE;
         break;
@@ -590,13 +551,6 @@ MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
         selop1 = TBmakeId (MakeIntVec (i, arg_info));
         nprf = F_sel_VxA;
         break;
-
-#ifdef SLOWLOOPS
-    case F_shape_A:
-        zavis = ID_AVIS (PRF_ARG1 (arg_node));
-        dyadic = FALSE;
-        break;
-#endif // SLOWLOOPS
     }
 
     if (dyadic) {
@@ -699,9 +653,7 @@ MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node 
 
     case F_non_neg_val_V:
     case F_neg_V:
-#ifdef SLOWLOOPS
-    case F_shape_A:
-#endif // SLOWLOOPS
+    case F_abs_V:
         INFO_PREASSIGN (arg_info)
           = TBmakeAssign (TBmakeLet (ids, TCmakePrf1 (NormalizePrf (PRF_PRF (arg_node)),
                                                       TBmakeId (argavis1))),
