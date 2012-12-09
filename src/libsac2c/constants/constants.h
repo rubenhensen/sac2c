@@ -104,6 +104,7 @@ extern bool COisOne (constant *a, bool all);
 extern bool COisTrue (constant *a, bool all);
 extern bool COisFalse (constant *a, bool all);
 extern bool COisNonNeg (constant *a, bool all);
+extern bool COisNeg (constant *a, bool all);
 extern bool COisEmptyVect (constant *a);
 
 /***

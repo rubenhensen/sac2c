@@ -1212,6 +1212,47 @@ COisNonNeg (constant *a, bool all)
 }
 
 bool
+COisNeg (constant *a, bool all)
+{
+    bool result;
+    constant *zero;
+    constant *eq;
+    int i;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (a != NULL, "COisNeg called with NULL pointer");
+
+    /* create a "zero" constant with one element */
+    zero = COmakeZero (COgetType (a), SHmakeShape (0));
+
+    /* check for correct constant */
+    if (zero != NULL) {
+        /* vector-compare constants */
+        eq = COlt (a, zero, NULL);
+
+        /* compute result dependent on flag "all" */
+        if (all) {
+            result = TRUE; /* and-reduce */
+            for (i = 0; i < CONSTANT_VLEN (eq); i++) {
+                result = result && ((bool *)(CONSTANT_ELEMS (eq)))[i];
+            }
+        } else {
+            result = FALSE; /* or-reduce */
+            for (i = 0; i < CONSTANT_VLEN (eq); i++) {
+                result = result || ((bool *)(CONSTANT_ELEMS (eq)))[i];
+            }
+        }
+        eq = COfreeConstant (eq);
+        zero = COfreeConstant (zero);
+    } else {
+        result = FALSE;
+    }
+
+    DBUG_RETURN (result);
+}
+
+bool
 COisOne (constant *a, bool all)
 {
     bool result;
