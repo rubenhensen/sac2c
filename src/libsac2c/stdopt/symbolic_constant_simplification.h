@@ -92,5 +92,7 @@ extern node *SCSprf_neg_S (node *arg_node, info *arg_info);
 extern node *SCSprf_neg_V (node *arg_node, info *arg_info);
 extern node *SCSprf_reciproc_S (node *arg_node, info *arg_info);
 extern node *SCSprf_reciproc_V (node *arg_node, info *arg_info);
+extern node *SCSprf_abs_S (node *arg_node, info *arg_info);
+extern node *SCSprf_abs_V (node *arg_node, info *arg_info);
 
 #endif /* symbolic_constant_simplification.h */

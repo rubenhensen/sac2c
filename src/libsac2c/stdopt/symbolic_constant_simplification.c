@@ -2993,4 +2993,89 @@ SCSprf_notemaxval (node *arg_node, info *arg_info)
     DBUG_RETURN (res);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_abs_S( node *arg_node, info *arg_info)
+ *
+ * description: If PRF_ARG1 has a constant minval >= 0,
+ *              result is PRF_ARG1.
+ *              If PRF_ARG1 has a constant maxval < 0, result is  ( -PRF_ARG1).
+ *
+ *****************************************************************************/
+node *
+SCSprf_abs_S (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    constant *con1 = NULL;
+    pattern *pat;
+    node *minmax;
+
+    DBUG_ENTER ();
+
+    pat = PMconst (1, PMAgetVal (&con1));
+    minmax = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
+    if ((NULL != minmax) && (PMmatchFlat (pat, minmax)) && (COisNonNeg (con1, TRUE))) {
+        res = DUPdoDupNode (PRF_ARG1 (arg_node));
+        con1 = COfreeConstant (con1);
+    }
+
+    minmax = AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node)));
+    if ((NULL == res) && (NULL != minmax) && (PMmatchFlat (pat, minmax))
+        && (!COisNonNeg (con1, TRUE))) {
+        res = TBmakeId (
+          FLATGflattenExpression (TCmakePrf1 (F_neg_S,
+                                              DUPdoDupNode (PRF_ARG1 (arg_node))),
+                                  &INFO_VARDECS (arg_info), &INFO_PREASSIGN (arg_info),
+                                  TYcopyType (
+                                    (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))));
+        con1 = COfreeConstant (con1);
+    }
+    pat = PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_abs_V( node *arg_node, info *arg_info)
+ *
+ * description: If PRF_ARG1 has all ( constant minval >= 0),
+ *                result is PRF_ARG1.
+ *              If PRF_ARG1 has all ( constant maxval < 0),
+ *                result is  ( -PRF_ARG1).
+ *
+ *****************************************************************************/
+node *
+SCSprf_abs_V (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    constant *con1 = NULL;
+    pattern *pat;
+    node *minmax;
+
+    DBUG_ENTER ();
+
+    pat = PMconst (1, PMAgetVal (&con1));
+    minmax = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
+    if ((NULL != minmax) && (PMmatchFlat (pat, minmax)) && (COisNonNeg (con1, TRUE))) {
+        res = DUPdoDupNode (PRF_ARG1 (arg_node));
+        con1 = COfreeConstant (con1);
+    }
+
+    minmax = AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node)));
+    if ((NULL == res) && (NULL != minmax) && (PMmatchFlat (pat, minmax))
+        && (COisNeg (con1, TRUE))) {
+        res = TBmakeId (
+          FLATGflattenExpression (TCmakePrf1 (F_neg_V,
+                                              DUPdoDupNode (PRF_ARG1 (arg_node))),
+                                  &INFO_VARDECS (arg_info), &INFO_PREASSIGN (arg_info),
+                                  TYcopyType (
+                                    (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))));
+        con1 = COfreeConstant (con1);
+    }
+    pat = PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
 #undef DBUG_PREFIX
