@@ -655,7 +655,8 @@ LACSIid (node *arg_node, info *arg_info)
 
         /* Does this LACFUN argument meet our criteria for LACS? */
         if (TUshapeKnown (AVIS_TYPE (avis))
-            && (!LACSIargHasAvisScalars (INFO_ARGNUM (arg_info), INFO_AP (arg_info))) &&
+            && (!LACSIargHasAvisScalars (INFO_ARGNUM (arg_info), INFO_AP (arg_info)))
+            && (!TYisAKV (AVIS_TYPE (avis))) &&
             // checking outside call here is fruitless. We
             // must check loop-invariance, too. ( !TYisAKV( AVIS_TYPE( avis)))   &&
             (TYgetDim (AVIS_TYPE (avis)) > 0)) {
