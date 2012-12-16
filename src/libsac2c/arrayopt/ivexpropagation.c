@@ -982,8 +982,9 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
  * @params arg_node: Your basic N_let node.
  *         arg_info: As usual.
  *
- * @return Same arg_node, but with side effects on INFO_MINVAL and
+ * @return Same arg_node, but with potential side effects on INFO_MINVAL and
  *         INFO_MAXVAL.
+ *         Requires AKS arguments.
  *
  ******************************************************************************/
 static node *
@@ -1016,11 +1017,13 @@ GenerateExtremaModulus (node *arg_node, info *arg_info)
 
             /* Create zero minimum */
             zr = SCSmakeZero (nsa);
-            zr = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
-                                         &INFO_PREASSIGNS (arg_info),
-                                         TYeliminateAKV (AVIS_TYPE (lhsavis)));
-            AVIS_ISMINHANDLED (zr) = TRUE;
-            INFO_MINVAL (arg_info) = TBmakeId (zr);
+            if (NULL != zr) { // nsa may not be AKS
+                zr = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
+                                             &INFO_PREASSIGNS (arg_info),
+                                             TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                AVIS_ISMINHANDLED (zr) = TRUE;
+                INFO_MINVAL (arg_info) = TBmakeId (zr);
+            }
         }
 
         if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
@@ -1034,16 +1037,18 @@ GenerateExtremaModulus (node *arg_node, info *arg_info)
             } else {
                 // vector/scalar case: PRF_ARG2( rhs) + ( 0 * PRF_ARG2( rhs));
                 zr = SCSmakeZero (nsa);
-                zr = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGNS (arg_info),
-                                             TYeliminateAKV (AVIS_TYPE (lhsavis)));
-                zr = TCmakePrf2 (F_add_VxS, TBmakeId (zr),
-                                 TBmakeId (ID_AVIS (PRF_ARG2 (rhs))));
-                zr = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGNS (arg_info),
-                                             TYeliminateAKV (AVIS_TYPE (lhsavis)));
-                INFO_MAXVAL (arg_info) = TBmakeId (zr);
-                AVIS_ISMAXHANDLED (zr) = TRUE;
+                if (NULL != zr) { // nsa may not be AKS
+                    zr = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
+                                                 &INFO_PREASSIGNS (arg_info),
+                                                 TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                    zr = TCmakePrf2 (F_add_VxS, TBmakeId (zr),
+                                     TBmakeId (ID_AVIS (PRF_ARG2 (rhs))));
+                    zr = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
+                                                 &INFO_PREASSIGNS (arg_info),
+                                                 TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                    INFO_MAXVAL (arg_info) = TBmakeId (zr);
+                    AVIS_ISMAXHANDLED (zr) = TRUE;
+                }
             }
         }
     }
