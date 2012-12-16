@@ -260,6 +260,7 @@ PRFUnrollOracle (node *arg_node)
     DBUG_ENTER ();
 
     switch (PRF_PRF (arg_node)) {
+
     case F_add_VxS:
     case F_add_SxV:
     case F_add_VxV:
@@ -279,6 +280,30 @@ PRFUnrollOracle (node *arg_node)
     case F_non_neg_val_V:
     case F_neg_V:
     case F_abs_V:
+
+    case F_lt_VxS:
+    case F_lt_SxV:
+    case F_lt_VxV:
+
+    case F_le_VxS:
+    case F_le_SxV:
+    case F_le_VxV:
+
+    case F_eq_VxS:
+    case F_eq_SxV:
+    case F_eq_VxV:
+
+    case F_ge_VxS:
+    case F_ge_SxV:
+    case F_ge_VxV:
+
+    case F_gt_VxS:
+    case F_gt_SxV:
+    case F_gt_VxV:
+
+    case F_neq_VxS:
+    case F_neq_SxV:
+    case F_neq_VxV:
         res = TRUE;
         break;
 
@@ -313,6 +338,43 @@ NormalizePrf (prf p)
     DBUG_ENTER ();
 
     switch (p) {
+
+    case F_lt_SxV:
+    case F_lt_VxS:
+    case F_lt_VxV:
+        p = F_lt_SxS;
+        break;
+
+    case F_le_SxV:
+    case F_le_VxS:
+    case F_le_VxV:
+        p = F_le_SxS;
+        break;
+
+    case F_eq_SxV:
+    case F_eq_VxS:
+    case F_eq_VxV:
+        p = F_eq_SxS;
+        break;
+
+    case F_ge_SxV:
+    case F_ge_VxS:
+    case F_ge_VxV:
+        p = F_ge_SxS;
+        break;
+
+    case F_gt_SxV:
+    case F_gt_VxS:
+    case F_gt_VxV:
+        p = F_gt_SxS;
+        break;
+
+    case F_neq_SxV:
+    case F_neq_VxS:
+    case F_neq_VxV:
+        p = F_neq_SxS;
+        break;
+
     case F_add_VxS:
     case F_add_SxV:
     case F_add_VxV:
@@ -470,6 +532,19 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
     case F_neg_V:
     case F_val_le_val_VxV:
     case F_abs_V:
+
+    case F_lt_VxS:
+    case F_le_VxS:
+    case F_eq_VxS:
+    case F_ge_VxS:
+    case F_gt_VxS:
+    case F_neq_VxS:
+    case F_lt_VxV:
+    case F_le_VxV:
+    case F_eq_VxV:
+    case F_ge_VxV:
+    case F_gt_VxV:
+    case F_neq_VxV:
         nprf = F_sel_VxA;
         break;
 
@@ -507,9 +582,9 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
 static node *
 MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
 {
-    node *selop1;
     node *zavis = NULL;
-    bool dyadic = TRUE;
+    node *selarravis;
+    bool dyadic;
     prf nprf;
 
     DBUG_ENTER ();
@@ -527,39 +602,40 @@ MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
     case F_sub_VxS:
     case F_mul_VxS:
     case F_div_VxS:
+
+    case F_lt_VxS:
+    case F_le_VxS:
+    case F_eq_VxS:
+    case F_ge_VxS:
+    case F_gt_VxS:
+    case F_neq_VxS:
         zavis = avis;
         dyadic = FALSE;
+        nprf = F_sel_VxA;
         break;
 
     case F_val_lt_shape_VxA:
-        avis = INFO_SHPAVIS (arg_info);
+        nprf = F_sel_VxA;
+        dyadic = TRUE;
         INFO_LEN (arg_info) = TYgetDim (AVIS_TYPE (ID_AVIS (PRF_ARG2 (arg_node))));
-        /* Break intentionally elided */
-
-    case F_add_SxV:
-    case F_add_VxV:
-    case F_sub_SxV:
-    case F_sub_VxV:
-    case F_mul_SxV:
-    case F_mul_VxV:
-    case F_div_SxV:
-    case F_div_VxV:
-    case F_val_le_val_VxV:
-        /* Break intentionally elided */
+        avis = INFO_SHPAVIS (arg_info);
+        break;
 
     default:
-        selop1 = TBmakeId (MakeIntVec (i, arg_info));
+        dyadic = TRUE;
         nprf = F_sel_VxA;
         break;
     }
 
     if (dyadic) {
+        selarravis = MakeIntVec (i, arg_info);
         zavis = TBmakeAvis (TRAVtmpVar (),
                             TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)));
         INFO_VARDEC (arg_info) = TBmakeVardec (zavis, INFO_VARDEC (arg_info));
         INFO_PREASSIGN (arg_info)
           = TBmakeAssign (TBmakeLet (TBmakeIds (zavis, NULL),
-                                     TCmakePrf2 (nprf, selop1, TBmakeId (avis))),
+                                     TCmakePrf2 (nprf, TBmakeId (selarravis),
+                                                 TBmakeId (avis))),
                           INFO_PREASSIGN (arg_info));
         AVIS_SSAASSIGN (zavis) = INFO_PREASSIGN (arg_info);
     }
@@ -637,6 +713,26 @@ MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node 
     case F_div_VxS:
     case F_div_SxV:
     case F_div_VxV:
+
+    case F_lt_VxS:
+    case F_lt_SxV:
+    case F_lt_VxV:
+    case F_le_VxS:
+    case F_le_SxV:
+    case F_le_VxV:
+    case F_eq_VxS:
+    case F_eq_SxV:
+    case F_eq_VxV:
+    case F_ge_VxS:
+    case F_ge_SxV:
+    case F_ge_VxV:
+    case F_gt_VxS:
+    case F_gt_SxV:
+    case F_gt_VxV:
+    case F_neq_VxS:
+    case F_neq_SxV:
+    case F_neq_VxV:
+
     case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:
 
