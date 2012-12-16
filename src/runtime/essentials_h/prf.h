@@ -64,7 +64,7 @@
 #define SAC_ND_PRF_GE(arg1, arg2) (arg1) >= (arg2)
 #define SAC_ND_PRF_GT(arg1, arg2) (arg1) > (arg2)
 
-#define SAC_ND_PRF_MESH(arg1, arg2, arg3) (arg1) ? (arg2) : (arg3)
+#define SAC_ND_PRF_MASK(arg1, arg2, arg3) (arg1) ? (arg2) : (arg3)
 
 /******************************************************************************
  *
@@ -117,6 +117,8 @@
  * ND_PRF_SxV__DATA( to_NT, op, scl,      from_NT)
  * ND_PRF_VxS__DATA( to_NT, op, from_NT,  scl)
  * ND_PRF_VxV__DATA( to_NT, op, from1_NT, from2_NT)
+ *
+ * ND_PRF_SxSxS__DATA( to_NT, op, scl1,     scl2, scl3)
  *
  * ND_PRF_SHAPE_IDX_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, scl)
  * ND_PRF_SHAPE_SEL__DATA( to_NT, to_sdim, from_NT, from_sdim, from2_NT)
@@ -191,6 +193,11 @@
     SAC_TR_PRF_PRINT (                                                                   \
       ("ND_PRF_SxS__DATA( %s, %s, %s, %s)\n", NT_STR (to_NT), #op_macro, #scl1, #scl2)); \
     SAC_ND_WRITE_COPY (to_NT, 0, op_macro (scl1, scl2), );
+
+#define SAC_ND_PRF_SxSxS__DATA(to_NT, op_macro, scl1, scl2, scl3)                        \
+    SAC_TR_PRF_PRINT (("ND_PRF_SxSxS__DATA( %s, %s, %s, %s, %s)\n", NT_STR (to_NT),      \
+                       #op_macro, #scl1, #scl2, #scl3));                                 \
+    SAC_ND_WRITE_COPY (to_NT, 0, op_macro (scl1, scl2, scl3), );
 
 #define SAC_ND_PRF_SxV__DATA(to_NT, op_macro, scl, from_NT)                              \
     SAC_TR_PRF_PRINT (("ND_PRF_SxV__DATA( %s, %s, %s, %s)\n", NT_STR (to_NT), #op_macro, \
@@ -296,6 +303,8 @@
         SAC_RuntimeError ("Arrays " NT_STR (from_NT) " and " NT_STR (                    \
           from2_NT) " do not adhere to shape "                                           \
                     "matches dim constraint in " __FILE__ ":" TO_STR (__LINE__) ".");    \
+    } else {                                                                             \
+        SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
 #define SAC_ND_PRF_NON_NEG_VAL_S(to_NT, from_NT)                                         \
@@ -348,6 +357,16 @@
               from2_NT) " violated in " __FILE__ ":" TO_STR (__LINE__) ".");             \
         }                                                                                \
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
+    }
+
+#define DEADCODE_SAC_ND_MASK_SxSxS__DATA(to_NT, from1_NT, from2_NT, from3_NT)            \
+    {                                                                                    \
+        if (SAC_ND_READ (from1_NT, 0)) {                                                 \
+            SAC_ND_A_FIELD (to_N) = SAC_ND_READ (from2_NT, 0);                           \
+        } else {                                                                         \
+            SAC_ND_A_FIELD (to_N) = SAC_ND_READ (from3_NT, 0);                           \
+        }                                                                                \
+    }                                                                                    \
     }
 
 #define SAC_ND_PRF_MASK_VxVxS(to_NT, from1_NT, from2_NT, from3_NT)                       \

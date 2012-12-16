@@ -146,7 +146,7 @@ PRF_TOF_S  PRF_TOD_S PRF_TOC_S PRF_TOBOOL_S
 PRF_TOB_S  PRF_TOS_S PRF_TOI_S PRF_TOL_S PRF_TOLL_S
 PRF_TOUB_S PRF_TOUS_S PRF_TOUI_S PRF_TOUL_S PRF_TOULL_S
 PRF_CAT_VxV  PRF_TAKE_SxV  PRF_DROP_SxV
-PRF_MASK_VxVxS PRF_MASK_VxVxV
+PRF_MASK_SxSxS PRF_MASK_VxVxS PRF_MASK_VxVxV
 PRF_NON_NEG_VAL_S PRF_NON_NEG_VAL_V
 PRF_VAL_LT_VAL_SxS PRF_GUARD
 PRF_VAL_LE_VAL_SxS PRF_VAL_LE_VAL_VxV
@@ -1970,6 +1970,7 @@ prf: PRF_DIM_A          { $$ = F_dim_A;     }
    | PRF_CAT_VxV        { $$ = F_cat_VxV; }
    | PRF_TAKE_SxV       { $$ = F_take_SxV;}
    | PRF_DROP_SxV       { $$ = F_drop_SxV;}
+   | PRF_MASK_SxSxS     { $$ = F_mask_SxSxS; }
    | PRF_MASK_VxVxV     { $$ = F_mask_VxVxV; }
    | PRF_MASK_VxVxS     { $$ = F_mask_VxVxS; }
    | PRF_NON_NEG_VAL_S  { $$ = F_non_neg_val_S; }

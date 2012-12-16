@@ -6760,6 +6760,60 @@ COMPprfOp_VxV (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn  node *COMPprfOp_SxSxS( node *arg_node, info *arg_info)
+ *
+ * @brief  Compiles a binary N_prf node into a ND_PRF_SxSxS__DATA-icm.
+ *         The return value is a N_assign chain of ICMs.
+ *         Note, that the old 'arg_node' is removed by COMPLet.
+ *
+ *         NB. This is only used by _mask_SxSxS_() today.
+ *
+ * Remarks:
+ *   INFO_LASTIDS contains name of assigned variable.
+ *
+ ******************************************************************************/
+
+static node *
+COMPprfOp_SxSxS (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2, *arg3;
+    node *let_ids;
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    /* assure that the prf has exactly three arguments */
+    DBUG_ASSERT (((PRF_EXPRS1 (arg_node) != NULL) && (PRF_EXPRS2 (arg_node) != NULL)
+                  && (PRF_EXPRS3 (arg_node) != NULL) && (PRF_EXPRS4 (arg_node) == NULL)),
+                 "illegal number of args found!");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+    arg3 = PRF_ARG3 (arg_node);
+
+    DBUG_ASSERT (((NODE_TYPE (arg1) != N_id)
+                  || (TCgetShapeDim (ID_TYPE (arg1)) == SCALAR)),
+                 "%s: non-scalar first argument found!",
+                 global.prf_name[PRF_PRF (arg_node)]);
+
+    DBUG_ASSERT (((NODE_TYPE (arg2) != N_id)
+                  || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
+                 "%s: non-scalar second argument found!",
+                 global.prf_name[PRF_PRF (arg_node)]);
+    DBUG_ASSERT (((NODE_TYPE (arg3) != N_id)
+                  || (TCgetShapeDim (ID_TYPE (arg3)) == SCALAR)),
+                 "%s: non-scalar third argument found!",
+                 global.prf_name[PRF_PRF (arg_node)]);
+    ret_node = TCmakeAssignIcm3 ("ND_PRF_SxSxS__DATA", DUPdupIdsIdNt (let_ids),
+                                 TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                                 DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
 #ifdef FIXME // can't make this stuff work properly.
 /** <!--********************************************************************-->
  *
@@ -7362,6 +7416,32 @@ COMPprfRunMtFold (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *COMPprfMask_SxSxS( node *arg_node, info *arg_info)
+ *
+ * @brief This mask() entry looks more like ND_PRF_SxS, because the arguments
+ *        and results are scalars.
+ *
+ *****************************************************************************/
+node *
+COMPprfMask_SxSxS (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("ND_MASK_SxSxS__DATA", DUPdupIdsIdNt (let_ids),
+                                 DUPdupNodeNt (PRF_ARG1 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *COMPprfMask_VxVxV( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
@@ -7376,9 +7456,9 @@ COMPprfMask_VxVxV (node *arg_node, info *arg_info)
     let_ids = INFO_LASTIDS (arg_info);
 
     ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_VxVxV", DUPdupIdsIdNt (let_ids),
-                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 DUPdupIdNt (PRF_ARG2 (arg_node)),
-                                 DUPdupIdNt (PRF_ARG3 (arg_node)), NULL);
+                                 DUPdupNodeNt (PRF_ARG1 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }
@@ -7399,9 +7479,9 @@ COMPprfMask_VxVxS (node *arg_node, info *arg_info)
     let_ids = INFO_LASTIDS (arg_info);
 
     ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_VxVxS", DUPdupIdsIdNt (let_ids),
-                                 DUPdupIdNt (PRF_ARG1 (arg_node)),
-                                 DUPdupIdNt (PRF_ARG2 (arg_node)),
-                                 DUPdupIdNt (PRF_ARG3 (arg_node)), NULL);
+                                 DUPdupNodeNt (PRF_ARG1 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }

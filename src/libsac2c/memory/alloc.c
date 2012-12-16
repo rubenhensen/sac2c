@@ -1669,6 +1669,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_neq_VxV:
     case F_ge_VxV:
     case F_gt_VxV:
+    case F_mask_SxSxS:
     case F_mask_VxVxV:
     case F_mask_VxVxS:
         if (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id) {

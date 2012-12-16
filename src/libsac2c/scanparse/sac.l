@@ -205,6 +205,7 @@ LINEEND     \n|\r|\r\n
 "_reciproc_S_"             { FILTER( PRF_RECIPROC_S); }
 "_reciproc_V_"             { FILTER( PRF_RECIPROC_V); }
 
+"_mask_SxSxS_"             { FILTER( PRF_MASK_SxSxS); }
 "_mask_VxVxV_"             { FILTER( PRF_MASK_VxVxV); }
 "_mask_VxVxS_"             { FILTER( PRF_MASK_VxVxS); }
 

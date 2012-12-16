@@ -2252,6 +2252,63 @@ SCCFprf_idx_sel (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *SCCFprf_mask_SxSxS(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Implements mask function, used by ALWFI.
+ *   The semantics of z = mask( p, x, y) are, essentially, the same as
+ *   the ill-named <where> function of the SAC stdlib:
+ *
+ *     z = p ? x : y;
+ *
+ *   We implement this so that it is a primitive, rather than
+ *   a CONDFUN. The intent here is to let extrema pass through
+ *   the argument, which does not happen for CONDFUNs.
+ *
+ * result:
+ *   If p is constant, then we perform the above substutition.
+ *   If x and y match, the result is x, regardless of p.
+ *
+ *   Otherwise, we do nothing.
+ *
+ *****************************************************************************/
+node *
+SCCFprf_mask_SxSxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    pattern *pat = NULL;
+    constant *conp = NULL;
+    node *arg2 = NULL;
+    node *arg3 = NULL;
+
+    DBUG_ENTER ();
+
+    if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
+        res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    } else {
+        pat = PMprf (1, PMAisPrf (F_mask_SxSxS), 3, PMconst (1, PMAgetVal (&conp)),
+                     PMany (1, PMAgetNode (&arg2), 0), PMany (1, PMAgetNode (&arg3), 0));
+
+        if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
+            /* p is constant */
+            if (COisTrue (conp, TRUE)) {
+                DBUG_PRINT ("Replacing mask_SxSxS result by PRF_ARG2");
+                res = DUPdoDupNode (arg2);
+            } else {
+                DBUG_PRINT ("Replacing mask_SxSxS result by PRF_ARG3");
+                res = DUPdoDupNode (arg3);
+            }
+            conp = COfreeConstant (conp);
+        }
+        pat = PMfree (pat);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *SCCFprf_mask_VxVxV(node *arg_node, info *arg_info)
  *
  * description:
@@ -2295,7 +2352,7 @@ SCCFprf_mask_VxVxV (node *arg_node, info *arg_info)
                      PMarray (2, PMAgetNode (&x), PMAhasFS (&xfs), 1, PMskip (0)),
                      PMarray (2, PMAgetNode (&y), PMAhasFS (&xfs), 1, PMskip (0)));
 
-        if ((PMmatchFlatSkipExtrema (pat, arg_node)) && COisConstant (p)) {
+        if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
             DBUG_PRINT ("Replacing mask result by mask of x,y");
             /* p is constant, x and y are N_array nodes */
             res = DUPdoDupTree (x); /* Handy starter for result */
@@ -2362,7 +2419,7 @@ SCCFprf_mask_VxVxS (node *arg_node, info *arg_info)
                PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
                PMarray (2, PMAgetNode (&x), PMAhasFS (&xfs), 1, PMskip (0)), PMskip (0));
 
-    if ((PMmatchFlatSkipExtrema (pat, arg_node)) && COisConstant (p)) {
+    if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
         DBUG_PRINT ("Replacing mask result by mask of x,y");
         /* p is constant, x is N_array node */
         res = DUPdoDupTree (x); /* Handy starter for result */

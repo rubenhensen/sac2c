@@ -8,10 +8,15 @@
  * 1. Add an entry for the primitive to the table below.
  * 2. Add a function for the primitive to typecheck/ct_prf.c/h.
  * 3. Add a COMPprf... function for the primitive to codegen/compile.c
- *    and a ccode entry in this table.
+ *    and a ccode entry in this table, below.
  * 4. Add an entry for the primitive to memory/alloc.c
  * 5. Add entries for the primitive to scanparse/sac.l and sac.y, if
  *    the primitive is intended to be allowed within SAC source code.
+ *
+ *    The scanparse rewrite now appears to want an entry in
+ *    scanparse/prf.def. Perhaps the sac.l and sac.y entries are
+ *    no longer needed. If so, then the scanparse author should
+ *    remove those documents and correct these comments.
  *
  *    NB. There are TWO places in sac.y that need changing.
  *
@@ -19,6 +24,8 @@
  *    appropriate to handle evaluation of xxx when all its
  *    arguments are constant.
  *
+ * 7. Run-time: add code to src/runtime/essentials_h/prf.h for
+ *    the run-time execution code.
  *
  */
 
@@ -368,12 +375,12 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
        TEone, NULL, NULL),
 
   PRF (abs_S, (PA_S, PA_x, PA_x), 1, ABS, NOSIMD, NTCCTprf_ari_op_S, COabs, COMPprfOp_S,
-       NULL, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS, ICCnone, TEone,
-       NULL, NULL),
+       SCSprf_abs_S, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0, PPIgetPVS,
+       ICCnone, TEone, NULL, NULL),
 
   PRF (abs_V, (PA_V, PA_x, PA_x), 1, ABS, NOSIMD, NTCCTprf_ari_op_V, COabs, COMPprfOp_V,
-       NULL, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0, PPIgetPVV, ICCnone, TEone,
-       NULL, NULL),
+       SCSprf_abs_V, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0, PPIgetPVV, ICCnone,
+       TEone, NULL, NULL),
 
   PRF (min_SxS, (PA_S, PA_S, PA_x), 2, MIN, NOSIMD, NTCCTprf_ari_op_SxS, COmin,
        COMPprfOp_SxS, SCSprf_min_SxS, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
@@ -866,6 +873,16 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
   PRF (notemaxval, (PA_x, PA_x, PA_x), 0, XXX, NOSIMD, NTCCTprf_notemaxval, NULL,
        COMPprfNoop, SCSprf_notemaxval, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL,
        0, NULL, NULL, TEone, NULL, NULL),
+
+  /*
+   * There are no COxxx entries for masKxxx because I have not had time
+   * to write same.
+   * However, CF handles many cases where PRF_ARG1 is constant.
+   *
+   */
+  PRF (mask_SxSxS, (PA_S, PA_S, PA_S), 3, MASK, NOSIMD, NTCCTprf_mask_SxSxS, NULL,
+       COMPprfOp_SxSxS, NULL, SCCFprf_mask_SxSxS, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
+       NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   PRF (mask_VxVxV, (PA_V, PA_V, PA_V), 3, MASK, NOSIMD, NTCCTprf_mask_VxVxV, NULL,
        COMPprfMask_VxVxV, NULL, SCCFprf_mask_VxVxV, NULL, SAAdim_of_arg1, SAAshp_of_arg1,

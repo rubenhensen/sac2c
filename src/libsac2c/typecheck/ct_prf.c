@@ -3473,6 +3473,7 @@ NTCCTprf_mask_VxVxS (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCCTprf_mask_SxSxS( te_info *info, ntype *elems)
  *    ntype *NTCCTprf_mask_VxVxV( te_info *info, ntype *elems)
  *
  * description:
@@ -3487,6 +3488,21 @@ NTCCTprf_mask_VxVxS (te_info *info, ntype *args)
  *     should have the same types.
  *
  ******************************************************************************/
+ntype *
+NTCCTprf_mask_SxSxS (te_info *info, ntype *args)
+{
+    ntype *arg;
+    ntype *res;
+
+    DBUG_ENTER ();
+
+    arg = TYgetProductMember (args, 1);
+    arg = TYeliminateAKV (arg);
+    res = TYcopyType (arg);
+    res = TYmakeProductType (1, res);
+
+    DBUG_RETURN (res);
+}
 
 ntype *
 NTCCTprf_mask_VxVxV (te_info *info, ntype *args)
