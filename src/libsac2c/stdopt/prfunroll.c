@@ -304,6 +304,11 @@ PRFUnrollOracle (node *arg_node)
     case F_neq_VxS:
     case F_neq_SxV:
     case F_neq_VxV:
+
+    case F_mod_VxS:
+    case F_mod_SxV:
+    case F_mod_VxV:
+
         res = TRUE;
         break;
 
@@ -419,6 +424,12 @@ NormalizePrf (prf p)
         p = F_abs_S;
         break;
 
+    case F_mod_VxS:
+    case F_mod_SxV:
+    case F_mod_VxV:
+        p = F_mod_SxS;
+        break;
+
     default:
         DBUG_ASSERT (FALSE, "Illegal prf!");
         break;
@@ -512,6 +523,9 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
     case F_sub_SxV:
     case F_mul_SxV:
     case F_div_SxV:
+    case F_mod_SxV:
+        // break elided intentionally
+
     default:
         zavis = avis;
         break;
@@ -539,12 +553,17 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
     case F_ge_VxS:
     case F_gt_VxS:
     case F_neq_VxS:
+
     case F_lt_VxV:
     case F_le_VxV:
     case F_eq_VxV:
     case F_ge_VxV:
     case F_gt_VxV:
     case F_neq_VxV:
+
+    case F_mod_VxS:
+    case F_mod_VxV:
+
         nprf = F_sel_VxA;
         break;
 
@@ -609,6 +628,9 @@ MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
     case F_ge_VxS:
     case F_gt_VxS:
     case F_neq_VxS:
+
+    case F_mod_VxS:
+
         zavis = avis;
         dyadic = FALSE;
         nprf = F_sel_VxA;
@@ -732,6 +754,10 @@ MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node 
     case F_neq_VxS:
     case F_neq_SxV:
     case F_neq_VxV:
+
+    case F_mod_VxS:
+    case F_mod_SxV:
+    case F_mod_VxV:
 
     case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:
