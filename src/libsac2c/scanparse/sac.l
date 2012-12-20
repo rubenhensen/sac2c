@@ -148,7 +148,9 @@ LINEEND     \n|\r|\r\n
 "_shape_A_"                { FILTER( PRF_SHAPE_A); }
 "_reshape_VxA_"            { FILTER( PRF_RESHAPE_VxA); }
 "_sel_VxA_"                { FILTER( PRF_SEL_VxA); }
+"_idx_sel_"                { FILTER( PRF_IDX_SEL); }
 "_modarray_AxVxS_"         { FILTER( PRF_MODARRAY_AxVxS); }
+"_idx_modarray_AxSxS_"     { FILTER( PRF_IDX_MODARRAY_AxSxS); }
 
 "_sel_VxIA_"               { FILTER( PRF_SEL_VxIA); }
 

@@ -635,7 +635,16 @@ ModarrayModarray_AxVxS (node *arg_node, info *arg_info)
  *
  *   becomes val.
  *
- *   Case 1:
+ *   Case 1: Degenerate scalar PRF_ARG1 case.
+ *
+ *   Case 2: PRF_ARG1 is a vector. NB. The SCCFprf_modarray_AxVxS does
+ *           a fancier job on this. FIXME - this could be extended to
+ *           handle higher-rank PRF_ARG1.
+ *
+ *           PRF_ARG1 is a structural constant, and PRF_ARG2 is
+ *           a constant.
+ *
+ *           We do the modarray here, returning a new structural constant.
  *
  *   Case 3: Remove the N_prf if SelModarray() has marked this N_prf as a no-op.
  *
@@ -645,6 +654,13 @@ node *
 SCCFprf_idx_modarray_AxSxS (node *arg_node, info *arg_info)
 {
     node *z = NULL;
+    pattern *pat;
+    node *X = NULL;
+    constant *fsX = NULL;
+    constant *coiv = NULL;
+    node *val = NULL;
+    node *exprs;
+    int offset;
 
     DBUG_ENTER ();
 
@@ -662,6 +678,25 @@ SCCFprf_idx_modarray_AxSxS (node *arg_node, info *arg_info)
                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                     AVIS_NAME (ID_AVIS (PRF_ARG3 (arg_node))),
                     AVIS_NAME (ID_AVIS (PRF_ARG3 (arg_node))));
+    }
+
+    /* Case 2 */
+
+    if ((NULL == z)) {
+        pat = PMprf (1, PMAisPrf (F_idx_modarray_AxSxS), 3,
+                     PMarray (2, PMAgetNode (&X), PMAgetFS (&fsX), 1, PMskip (0)),
+                     PMconst (1, PMAgetVal (&coiv)), PMvar (1, PMAgetNode (&val), 0));
+        if ((PMmatchFlat (pat, arg_node)) && (1 == SHgetUnrLen (COgetShape (fsX)))
+            && // PRF_ARG1 is vector
+            (TUisScalar (AVIS_TYPE (ID_AVIS (val))))) {
+            offset = COconst2Int (coiv);
+            z = DUPdoDupNode (X);
+            exprs = TCgetNthExprs (offset, ARRAY_AELEMS (z));
+            EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
+            EXPRS_EXPR (exprs) = DUPdoDupNode (PRF_ARG3 (arg_node));
+            DBUG_PRINT ("_idx_modarray_AxSxS (structcon, [..], val) eliminated");
+        }
+        pat = PMfree (pat);
     }
 
 #ifdef FIXME
@@ -1366,14 +1401,15 @@ IdxselModarray (node *arg_node, info *arg_info)
  *      d = modarray(c, ivc3, val2);
  *      z = sel(ivc3, d)
  *
- *      This becomes:
+ *      If ivc2 != ivc3, but ivc3 == ivc1, then
+ *      this becomes:
  *
- *      z = val5;
+ *        z = val5;
  *
- *      In the above, if  any of ivc1, ivc2, or ivc3 are not identical
+ *      In the above, if any of ivc1, ivc2, or ivc3 are not
  *      constants, then we must NOT perform the
  *      optimization, because we are unable to assert that
- *      the constant ivc1 is not equal to, e.g, ivc1.
+ *      those values are not equal to ivc3.
  *
  * @result: if the selection can be folded, the result is the
  *          val5 from the first modarray. Otherwise, NULL.
@@ -1446,14 +1482,15 @@ SelModarrayCase2 (node *arg_node, info *arg_info)
  *      d = _idx_modarray_AxSxS(c, ivc3, val2);
  *      z = _idx_sel(ivc3, d)
  *
- *      This becomes:
+ *      If ivc2 != ivc3, but ivc3 == ivc1, then
+ *      this becomes:
  *
- *      z = val5;
+ *        z = val5;
  *
- *      In the above, if  any of ivc1, ivc2, or ivc3 are not identical
+ *      In the above, if any of ivc1, ivc2, or ivc3 are not
  *      constants, then we must NOT perform the
  *      optimization, because we are unable to assert that
- *      the constant ivc1 is not equal to, e.g, ivc1.
+ *      those values are not equal to ivc3.
  *
  * @result: if the selection can be folded, the result is the
  *          val5 from the first modarray. Otherwise, NULL.
