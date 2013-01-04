@@ -574,8 +574,6 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
 
     DBUG_ENTER ();
 
-    intersectListNo = 0;
-
     /* NB. We assume noteintersect immediately precedes idx ! */
     noteint = AWLFIfindNoteintersect (idx);
     intersectListLim = (TCcountExprs (PRF_ARGS (noteint)) - WLFIRST) / WLEPP;
@@ -599,8 +597,11 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                       || (SCSmatchConstantOne (GENERATOR_WIDTH (producerWLGenerator)));
     }
 
+    intersectListNo = 0;
     while (((INTERSECT_unknown == z) || (INTERSECT_null == z))
            && (intersectListNo < intersectListLim)) {
+
+        DBUG_PRINT ("Started check of partition #%d", intersectListNo);
 
         proj1 = TCgetNthExprsExpr (WLPROJECTION1 (intersectListNo), PRF_ARGS (noteint));
         proj2 = TCgetNthExprsExpr (WLPROJECTION2 (intersectListNo), PRF_ARGS (noteint));
@@ -656,6 +657,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
             DBUG_PRINT ("Generator field mismatch");
             z = INTERSECT_null;
         }
+        DBUG_PRINT ("Finished check of partition #%d", intersectListNo);
         intersectListNo++;
     }
     pat = PMfree (pat);
