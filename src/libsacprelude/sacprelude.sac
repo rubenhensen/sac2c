@@ -156,7 +156,7 @@ int partitionMin( int x, int y)
 
   dif  = _sub_SxS_( x, y);
   p = _le_SxS_( dif, 0);
-  z = p ? x : y;
+  z = _mask_SxSxS_( p, x, y);
   return(z);
 }
 
@@ -168,7 +168,7 @@ int partitionMax( int x, int y)
 
   dif  = _sub_SxS_( x, y);
   p = _ge_SxS_( dif, 0);
-  z = p ? x : y;
+  z = _mask_SxSxS_( p, x, y);
   return(z);
 }
 
@@ -209,6 +209,9 @@ bool[.] isPartitionIntersectNull( int[.] idxmin, int[.] idxmax,
 { /* Predicate to determine if intersection of index set and
    * partition bounds is null. It requires an assist from 
    * the compiler to perform the any-reduce on this function's result.
+   *
+   * All arguments are normalized.
+   *
    */
 
   z = _or_VxV_( _le_VxV_( idxmax, bound1), _ge_VxV_( idxmin, bound2));
@@ -221,6 +224,9 @@ bool[.] isPartitionIntersectNull( int idxmin, int idxmax,
 { /* Predicate to determine if intersection of index scalar and
    * partition bounds is null. It requires an assist from 
    * the compiler to perform the any-reduce on this function's result.
+   *
+   * All arguments are normalized.
+   *
    */
 
   z = _or_VxV_( _le_SxV_( idxmax, bound1), _ge_SxV_( idxmin, bound2));
