@@ -229,6 +229,7 @@ struct INFO {
     node *idxbound1;
     node *idxbound2;
     intersect_type_t intersecttype;
+    node *assign;
 };
 
 /**
@@ -245,6 +246,7 @@ struct INFO {
 #define INFO_IDXBOUND1(n) ((n)->idxbound1)
 #define INFO_IDXBOUND2(n) ((n)->idxbound2)
 #define INFO_INTERSECTTYPE(n) ((n)->intersecttype)
+#define INFO_ASSIGN(n) ((n)->assign)
 
 static info *
 MakeInfo (node *fundef)
@@ -266,6 +268,7 @@ MakeInfo (node *fundef)
     INFO_IDXBOUND1 (result) = NULL;
     INFO_IDXBOUND2 (result) = NULL;
     INFO_INTERSECTTYPE (result) = INTERSECT_unknown;
+    INFO_ASSIGN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -744,6 +747,8 @@ doAWLFreplace (node *arg_node, node *producerWLPart, info *arg_info)
 
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Replacing code block in CWL=%s",
+                AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_ASSIGN (arg_info))))));
     oldblock = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (producerWLPart)));
 
     arg_node = BypassNoteintersect (arg_node);
@@ -855,20 +860,24 @@ node *
 AWLFassign (node *arg_node, info *arg_info)
 {
     node *foldableProducerPart;
+    node *oldassign;
 
     DBUG_ENTER ();
 
     /* top-down traversal */
     ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
+    oldassign = INFO_ASSIGN (arg_info);
+    INFO_ASSIGN (arg_info) = arg_node;
+
 #ifdef VERBOSE
-    DBUG_PRINT ("Traversing N_assign");
+    DBUG_PRINT ("Traversing N_assign for %s",
+                AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_ASSIGN (arg_info))))));
 #endif // VERBOSE
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
     foldableProducerPart = INFO_PRODUCERPART (arg_info);
     INFO_PRODUCERPART (arg_info) = NULL;
-    DBUG_ASSERT (NULL == INFO_PREASSIGNS (arg_info),
-                 "AWLFassign INFO_PREASSIGNS not NULL");
+    DBUG_ASSERT (NULL == INFO_PREASSIGNS (arg_info), "INFO_PREASSIGNS not NULL");
 
     /*
      * Append the new cloned block
@@ -883,6 +892,7 @@ AWLFassign (node *arg_node, info *arg_info)
         INFO_PREASSIGNS (arg_info) = NULL;
     }
 
+    INFO_ASSIGN (arg_info) = oldassign;
     DBUG_RETURN (arg_node);
 }
 
@@ -904,7 +914,8 @@ AWLFwith (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_PRINT ("Examining N_with");
+    DBUG_PRINT ("Examining N_with for %s",
+                AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_ASSIGN (arg_info))))));
     old_info = arg_info;
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
     INFO_CWL (arg_info) = arg_node;
@@ -1124,11 +1135,14 @@ AWLFwhile (node *arg_node, info *arg_info)
  *   node *AWLFlet( node *arg_node, info *arg_info)
  *
  * description:
+ *   Tuck away N_let for debugging info, then
+ *   descend into let.
  *
  ******************************************************************************/
 node *
 AWLFlet (node *arg_node, info *arg_info)
 {
+
     DBUG_ENTER ();
 
     DBUG_PRINT ("Traversing N_let for LHS %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
