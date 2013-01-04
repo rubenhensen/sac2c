@@ -973,7 +973,8 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
 
 /** <!--********************************************************************-->
  *
- * @fn node *CompareEqExtrema(node *res, node *arg_node1, node *arg_node2)
+ * @fn node *CompareEqExtrema(node *res, node *arg_node1,
+ *                            node *arg_node2, bool val)
  *
  * @brief: For a relational primitive on SxS or VxV:
  *         If res is NULL, attempt an exact compare between
@@ -984,23 +985,26 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
  *         least when the non-scalar argument is an N_array,
  *         potentially of S.
  *
- * @result: If the arguments match, return the appropriate TRUE constant.
+ * @result: If the arguments match, return the appropriate val constant.
  *
  *****************************************************************************/
 static node *
-CompareEqExtrema (node *res, node *arg_node1, node *arg_node2)
+CompareEqExtrema (node *res, node *arg_node1, node *arg_node2, bool val)
 {
+    pattern *pat;
+
     DBUG_ENTER ();
 
-    if ((NULL == res) && (NULL != arg_node1) && (NULL != arg_node2)
-        && (N_id == NODE_TYPE (arg_node1)) && (N_id == NODE_TYPE (arg_node2))) {
+    if ((NULL == res) && (NULL != arg_node1) && (NULL != arg_node2)) {
+        pat = PMvar (1, PMAisVar (&arg_node1), 0);
         DBUG_PRINT ("comparing %s and %s", AVIS_NAME (ID_AVIS (arg_node1)),
                     AVIS_NAME (ID_AVIS (arg_node2)));
-        if (ID_AVIS (arg_node1) == ID_AVIS (arg_node2)) {
-            res = SCSmakeTrue (arg_node1);
+        if (PMmatchFlat (pat, arg_node2)) {
+            res = val ? SCSmakeTrue (arg_node1) : SCSmakeFalse (arg_node1);
             DBUG_PRINT ("%s and %s compare equal", AVIS_NAME (ID_AVIS (arg_node1)),
                         AVIS_NAME (ID_AVIS (arg_node2)));
         }
+        pat = PMfree (pat);
     }
 
     DBUG_RETURN (res);
@@ -1012,16 +1016,20 @@ CompareEqExtrema (node *res, node *arg_node1, node *arg_node2)
  *
  * @brief: for _lt_SxS_( x, y)
  *
- *          If AVIS_MAX(x) <  y,  return:  genarray( shape(x), TRUE);
- *          If AVIS_MIN(y) >= x,  return:  genarray( shape(x), TRUE);
+ *          If AVIS_MAX(x) <  y, return:  genarray( shape(x), TRUE);
+ *          If x < AVIS_MIN(y),  return:  genarray( shape(x), TRUE);
  *
  *          If AVIS_MIN(x) >= y, return:  genarray( shape(x), FALSE);
- *          If AVIS_MAX(y) <  x, return:  genarray( shape(x), FALSE);
+ *          If x >= AVIS_MAX(y),  return:  genarray( shape(x), FALSE);
  *
  * CompareEqExtrema handles this case for non-constant extrema:
  *
- *          If AVIS_MAX(V1) == V2, return:  genarray( shape(V1), TRUE);
- *          Since AVIS_MAX is normalized, V1<V2.
+ *          If AVIS_MAX(x) == y, return:  genarray( shape(x), TRUE);
+ *          Since AVIS_MAX is normalized, x<y.
+ *
+ *          If AVIS_MIN(x) == y, then x>=y. Return FALSE.
+ *          If x == AVIS_MAX(y), then x>y.  Return FALSE.
+ *
  *
  *****************************************************************************/
 node *
@@ -1034,7 +1042,13 @@ SAACFprf_lt_SxS (node *arg_node, info *arg_info)
                     SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node));
+                            PRF_ARG2 (arg_node), TRUE);
+
+    res = CompareEqExtrema (res, AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))),
+                            PRF_ARG2 (arg_node), FALSE);
+
+    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
+                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))), FALSE);
 
     DBUG_RETURN (res);
 }
@@ -1062,9 +1076,6 @@ SAACFprf_lt_SxV (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
                     SAACFCHASEMAX, PRF_ARG2 (arg_node), TRUE, TRUE);
 
-    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node));
-
     DBUG_RETURN (res);
 }
 
@@ -1091,28 +1102,12 @@ SAACFprf_lt_VxS (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
                     SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
 
-    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node));
-
     DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
  *
  * @fn node *SAACFprf_lt_VxV( node *arg_node, info *arg_info)
-
- * @brief: for _lt_VxS_( x, y)
- *
- *          If AVIS_MAX(x) <  y,  return:  genarray( shape(x), TRUE);
- *          If AVIS_MIN(y) >= x,  return:  genarray( shape(x), TRUE);
- *
- *          If AVIS_MIN(x) >= y, return:  genarray( shape(x), FALSE);
- *          If AVIS_MAX(y) <  x, return:  genarray( shape(x), FALSE);
- *
- * CompareEqExtrema handles this case for non-constant extrema:
- *
- *          If AVIS_MAX(V1) == V2, return:  genarray( shape(V1), TRUE);
- *          Since AVIS_MAX is normalized, V1<V2.
  *
  *****************************************************************************/
 node *
@@ -1122,11 +1117,7 @@ SAACFprf_lt_VxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
-                    SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
-
-    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node));
+    res = SAACFprf_lt_SxS (arg_node, arg_info);
 
     DBUG_RETURN (res);
 }
@@ -1145,9 +1136,9 @@ SAACFprf_lt_VxV (node *arg_node, info *arg_info)
  *
  * CompareEqExtrema handles this case for non-constant extrema:
  *
- *          If V1 == AVIS_MIN(V2), return:  genarray( shape(V1), TRUE);
- *
- *          If AVIS_MAX(V1) == V2, return:  genarray( shape(V1), TRUE);
+ *          If x == AVIS_MIN(y), return:  genarray( shape(x), TRUE);
+ *          If AVIS_MAX(x) == y, return:  genarray( shape(x), TRUE);
+ *          If x == AVIS_MAX(y), return:  genarray( shape(x), FALSE);
  *
  *****************************************************************************/
 node *
@@ -1161,9 +1152,13 @@ SAACFprf_le_SxS (node *arg_node, info *arg_info)
                     SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))));
+                            AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))), TRUE);
+
     res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node));
+                            PRF_ARG2 (arg_node), TRUE);
+
+    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
+                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))), FALSE);
 
     DBUG_RETURN (res);
 }
@@ -1191,11 +1186,6 @@ SAACFprf_le_SxV (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
                     SAACFCHASEMAX, PRF_ARG2 (arg_node), TRUE, TRUE);
 
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))));
-    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node));
-
     DBUG_RETURN (res);
 }
 
@@ -1222,31 +1212,12 @@ SAACFprf_le_VxS (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
                     SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
 
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))));
-    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node));
-
     DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
  *
  * @fn node *SAACFprf_le_VxV( node *arg_node, info *arg_info)
- *
- * @brief: for _le_VxV_( x, y):
- *
- *          If AVIS_MAX(x) <= y,  return:  genarray( shape(x), TRUE);
- *          If AVIS_MIN(y) >= x,  return:  genarray( shape(x), TRUE);
- *
- *          If AVIS_MIN(x) >  y, return:  genarray( shape(x), FALSE);
- *          If AVIS_MAX(y) <  x, return:  genarray( shape(x), FALSE);
- *
- * CompareEqExtrema handles this case for non-constant extrema:
- *
- *          If V1 == AVIS_MIN(V2), return:  genarray( shape(V1), TRUE);
- *
- *          If AVIS_MAX(V1) == V2, return:  genarray( shape(V1), TRUE);
  *
  *****************************************************************************/
 node *
@@ -1256,13 +1227,7 @@ SAACFprf_le_VxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
-                    SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
-
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))));
-    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node));
+    res = SAACFprf_le_SxS (arg_node, arg_info);
 
     DBUG_RETURN (res);
 }
@@ -1281,10 +1246,11 @@ SAACFprf_le_VxV (node *arg_node, info *arg_info)
  *
  * CompareEqExtrema handles this case for non-constant extrema:
  *
- *          If V1 == AVIS_MAX(V2), return:  genarray( shape(V1), TRUE);
- *          Since AVIS_MAX is normalized, V1>V2, so V1>=V2 is satisfied.
+ *          If x == AVIS_MAX(y), return:  genarray( shape(x), TRUE);
+ *          Since AVIS_MAX is normalized, x>y, so x>=y is satisfied.
  *
- *          If AVIS_MIN(V1) == V2, return:  genarray( shape(V1), TRUE);
+ *          If AVIS_MIN(x) == y, return:  genarray( shape(x), TRUE);
+ *          If AVIS_MAX(x) == y, return:  genarray( shape(x), FALSE);
  *
  *****************************************************************************/
 node *
@@ -1298,9 +1264,11 @@ SAACFprf_ge_SxS (node *arg_node, info *arg_info)
                     SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))));
+                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))), TRUE);
     res = CompareEqExtrema (res, AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node));
+                            PRF_ARG2 (arg_node), TRUE);
+    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
+                            PRF_ARG2 (arg_node), FALSE);
 
     DBUG_RETURN (res);
 }
@@ -1326,11 +1294,6 @@ SAACFprf_ge_SxV (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_ge, REL_le,
                     SAACFCHASEMIN, PRF_ARG2 (arg_node), TRUE, TRUE);
 
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))));
-    res = CompareEqExtrema (res, AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node));
-
     DBUG_RETURN (res);
 }
 
@@ -1355,31 +1318,12 @@ SAACFprf_ge_VxS (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_ge, REL_le,
                     SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
 
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))));
-    res = CompareEqExtrema (res, AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node));
     DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
  *
  * @fn node *SAACFprf_ge_VxV( node *arg_node, info *arg_info)
- *
- * @brief: For _ge_VxV_( V1, V2),
- *
- *          If AVIS_MIN(V1) >= V2, return:  genarray( shape(V1), TRUE);
- *          If AVIS_MAX(V2) <= V1, return:  genarray( shape(V1), TRUE);
- *
- *          If AVIS_MAX(V1) <  V2, return:  genarray( shape(V1), FALSE);
- *          If AVIS_MIN(V2) >  V1, return:  genarray( shape(V1), FALSE);
- *
- * CompareEqExtrema handles this case for non-constant extrema:
- *
- *          If V1 == AVIS_MAX(V2), return:  genarray( shape(V1), TRUE);
- *          Since AVIS_MAX is normalized, V1>V2, so V1>=V2 is satisfied.
- *
- *          If AVIS_MIN(V1) == V2, return:  genarray( shape(V1), TRUE);
  *
  *****************************************************************************/
 node *
@@ -1389,13 +1333,7 @@ SAACFprf_ge_VxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_ge, REL_le,
-                    SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
-
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))));
-    res = CompareEqExtrema (res, AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node));
+    res = SAACFprf_ge_SxS (arg_node, arg_info);
 
     DBUG_RETURN (res);
 }
@@ -1414,10 +1352,15 @@ SAACFprf_ge_VxV (node *arg_node, info *arg_info)
  *          If AVIS_MAX(V) <= S, return:  genarray( shape(V), FALSE);
  *          If AVIS_MIN(S) >= V, return:  genarray( shape(V), FALSE);
  *
- * CompareEqExtrema handles this case for non-constant extrema:
+ * CompareEqExtrema handles these cases for non-constant extrema:
  *
- *          If V == AVIS_MAX(S), return:  genarray( shape(V), TRUE);
- *          Since AVIS_MAX is normalized, V>S.
+ *          If x == AVIS_MAX(y), return:  genarray( shape(x), TRUE);
+ *          Since AVIS_MAX is normalized, x>y.
+ *
+ *          If x == AVIS_MIN(y), return:  genarray( shape(x), FALSE);
+ *          If AVIS_MAX(x) == y, return:  genarray( shape(x), FALSE);
+ *
+ *
  *
  *****************************************************************************/
 node *
@@ -1431,7 +1374,13 @@ SAACFprf_gt_SxS (node *arg_node, info *arg_info)
                     SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
 
     res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))));
+                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))), TRUE);
+
+    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
+                            AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))), FALSE);
+
+    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
+                            PRF_ARG2 (arg_node), FALSE);
 
     DBUG_RETURN (res);
 }
@@ -1459,9 +1408,6 @@ SAACFprf_gt_SxV (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_gt, REL_lt,
                     SAACFCHASEMIN, PRF_ARG2 (arg_node), TRUE, TRUE);
 
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))));
-
     DBUG_RETURN (res);
 }
 
@@ -1488,28 +1434,12 @@ SAACFprf_gt_VxS (node *arg_node, info *arg_info)
     res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_gt, REL_lt,
                     SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
 
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))));
-
     DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
  *
  * @fn node *SAACFprf_gt_VxV( node *arg_node, info *arg_info)
- *
- * @brief: For _gt_VxV_( V1, V2),
- *
- *          If AVIS_MIN(V1) >  V2, return:  genarray( shape(V1), TRUE);
- *          If AVIS_MAX(V2) <  V1, return:  genarray( shape(V1), TRUE);
- *
- *          If AVIS_MAX(V1) <= V2, return:  genarray( shape(V1), FALSE);
- *          If AVIS_MIN(V2) >= V1, return:  genarray( shape(V1), FALSE);
- *
- * CompareEqExtrema handles this case for non-constant extrema:
- *
- *          If V1 == AVIS_MAX(V2), return:  genarray( shape(V1), TRUE);
- *          Since AVIS_MAX is normalized, V1>V2.
  *
  *****************************************************************************/
 node *
@@ -1519,11 +1449,7 @@ SAACFprf_gt_VxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_gt, REL_lt,
-                    SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
-
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))));
+    res = SAACFprf_gt_SxS (arg_node, arg_info);
 
     DBUG_RETURN (res);
 }
