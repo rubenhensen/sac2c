@@ -974,10 +974,13 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * Description:  Generate extrema for modulus.
- *               if( ( arg1 >=0 ) && ( arg2 >= 0)), then we
- *               set AVIS_MIN( res) = 0
- *               and AVIS_MAX( normalize( arg2 - 1));
+ * Description:  Generate extrema for modulus, extended to support
+ *               negative arg1 values, per the APL standard.
+ *
+ *               if(( arg2 >= 0)), then we set:
+ *
+ *                 AVIS_MIN( res) = 0
+ *                 AVIS_MAX( normalize( arg2 - 1));
  *
  * @params arg_node: Your basic N_let node.
  *         arg_info: As usual.
@@ -1002,7 +1005,8 @@ GenerateExtremaModulus (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     rhs = LET_EXPR (arg_node);
-    if (SCSisNonneg (PRF_ARG1 (rhs)) && SCSisNonneg (PRF_ARG2 (rhs))) {
+    if ( // APL extended definition  SCSisNonneg( PRF_ARG1( rhs)) &&
+      SCSisNonneg (PRF_ARG2 (rhs))) {
         lhsavis = IDS_AVIS (LET_IDS (arg_node));
         arg1avis = ID_AVIS (PRF_ARG1 (rhs));
         arg2avis = ID_AVIS (PRF_ARG2 (rhs));

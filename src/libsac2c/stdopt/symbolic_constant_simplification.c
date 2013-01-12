@@ -19,7 +19,6 @@
  *    div (x/0          ->error, x/1 ->x),
  *    and (x&1          ->x,     1&x ->x, x&1 -> x, x&0 ->0, 0&x. ->0),
  *    or  (x|1          ->1,     1|x ->1, x|1 -> 1, x|0 ->x, 0|x. ->x)
- *    mod (mod(x,0)     -> error)
  *
  *    eq ((x == y)  -> TRUE  IFF (x == y))
  *    neq((x != y)  -> FALSE IFF (x == y))
@@ -1180,7 +1179,11 @@ SCSprf_and_VxV (node *arg_node, info *arg_info)
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_mod( node *arg_node, info *arg_info)
- * mod(X,0)  -> error
+ *
+ * @brief: Extend mod definition to that of ISO Standard APL, N8485:
+ *
+ *  1. If PRF_ARG2 is zero, the result is PRF_ARG1.
+ *     This can't be handled by type checker, if PRF_ARG1 is not AKV.
  *
  *****************************************************************************/
 node *
@@ -1190,7 +1193,32 @@ SCSprf_mod (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
     if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) {
-        CTIabortLine (NODE_LINE (PRF_ARG2 (arg_node)), "mod(X,0) encountered.");
+        res = DUPdoDupNode (PRF_ARG1 (arg_node));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_mod_SxV( node *arg_node, info *arg_info)
+ *
+ * @brief: Extend mod definition to that of ISO Standard APL, N8485:
+ *
+ *  1. If PRF_ARG2 is zero, the result is PRF_ARG1, reshaped to that of PRF_ARG2.
+ *     This can't be handled by type checker, if PRF_ARG1 is not AKV.
+ *
+ *****************************************************************************/
+node *
+SCSprf_mod_SxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    shape *shp;
+
+    DBUG_ENTER ();
+    if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) {
+        shp = TYgetShape (ID_NTYPE (PRF_ARG2 (arg_node)));
+        res = SCSmakeVectorArray (shp, PRF_ARG1 (arg_node));
     }
 
     DBUG_RETURN (res);
@@ -1590,23 +1618,6 @@ SCSprf_min_VxV (node *arg_node, info *arg_info)
  * The actual function table operations follow
  *
  *****************************************************************************/
-
-/** <!--********************************************************************-->
- *
- * @fn node *SCSprf_mod_VxV( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-SCSprf_mod_VxV (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-
-    DBUG_ENTER ();
-    /* Could be supported with ISMOP and shape conformability check */
-    /* FIXME : what is mod(0,0) etc??? ??? */
-
-    DBUG_RETURN (res);
-}
 
 /** <!--********************************************************************-->
  *

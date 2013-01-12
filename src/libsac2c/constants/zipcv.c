@@ -90,6 +90,28 @@
         DBUG_RETURN ();                                                                  \
     }
 
+#define SIGNUM(x) ((0 == (x)) ? 0 : (0 < (x)) ? 1 : -1)
+
+/* Ensure that the code below and the code in runtime/essentials/prf.h match! */
+
+#define COzipCvMODTEMPLATE(fun, fun_ext, arg_t, arg_ext, res_t)                          \
+    void COzipCv##arg_ext##fun_ext (void *arg1, int pos1, void *arg2, int pos2,          \
+                                    void *res, int res_pos)                              \
+    {                                                                                    \
+        int x;                                                                           \
+        int y;                                                                           \
+        int z;                                                                           \
+        DBUG_ENTER ();                                                                   \
+        x = ((arg_t *)arg1)[pos1];                                                       \
+        y = ((arg_t *)arg2)[pos2];                                                       \
+        z = (0 == y) ? x : x - (y * (x / y));                                            \
+        if ((0 != z) && (SIGNUM (x) != SIGNUM (y))) {                                    \
+            z = z + y;                                                                   \
+        }                                                                                \
+        ((res_t *)res)[res_pos] = z;                                                     \
+        DBUG_RETURN ();                                                                  \
+    }
+
 #define COzipCvABSTEMPLATE(fun, fun_ext, arg_t, arg_ext, res_t)                          \
     void COzipCv##arg_ext##fun_ext (void *arg1, int pos1, void *arg2, int pos2,          \
                                     void *res, int res_pos)                              \
@@ -171,19 +193,20 @@
                                 COzipCvDUMMYTEMP (Char, fname)                           \
                                   COzipCvDUMMYTEMP (Dummy, fname)
 
+/* This is currently used only by _mod_(), and is likely of no use to others. */
 #define MAP_INTxINT_INT(fun, fname)                                                      \
-    COzipCvTEMPLATE (fun, fname, unsigned char, UByte, unsigned char)                    \
-      COzipCvTEMPLATE (fun, fname, unsigned short, UShort, unsigned short)               \
-        COzipCvTEMPLATE (fun, fname, unsigned int, UInt, unsigned int)                   \
-          COzipCvTEMPLATE (fun, fname, unsigned long, ULong, unsigned long)              \
-            COzipCvTEMPLATE (fun, fname, unsigned long long, ULongLong,                  \
-                             unsigned long long)                                         \
-              COzipCvTEMPLATE (fun, fname, char, Byte, char)                             \
-                COzipCvTEMPLATE (fun, fname, short, Short, short)                        \
-                  COzipCvTEMPLATE (fun, fname, int, Int, int)                            \
-                    COzipCvTEMPLATE (fun, fname, long, Long, long)                       \
-                      COzipCvTEMPLATE (fun, fname, unsigned long long, LongLong,         \
-                                       unsigned long long)                               \
+    COzipCvMODTEMPLATE (fun, fname, unsigned char, UByte, unsigned char)                 \
+      COzipCvMODTEMPLATE (fun, fname, unsigned short, UShort, unsigned short)            \
+        COzipCvMODTEMPLATE (fun, fname, unsigned int, UInt, unsigned int)                \
+          COzipCvMODTEMPLATE (fun, fname, unsigned long, ULong, unsigned long)           \
+            COzipCvMODTEMPLATE (fun, fname, unsigned long long, ULongLong,               \
+                                unsigned long long)                                      \
+              COzipCvMODTEMPLATE (fun, fname, char, Byte, char)                          \
+                COzipCvMODTEMPLATE (fun, fname, short, Short, short)                     \
+                  COzipCvMODTEMPLATE (fun, fname, int, Int, int)                         \
+                    COzipCvMODTEMPLATE (fun, fname, long, Long, long)                    \
+                      COzipCvMODTEMPLATE (fun, fname, unsigned long long, LongLong,      \
+                                          unsigned long long)                            \
                         COzipCvDUMMYTEMP (Float, fname) COzipCvDUMMYTEMP (Double, fname) \
                           COzipCvDUMMYTEMP (LongDouble, fname)                           \
                             COzipCvDUMMYTEMP (Bool, fname)                               \

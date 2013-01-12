@@ -478,7 +478,7 @@ NTCCTprf_guard (te_info *info, ntype *args)
  * function:
  *    ntype *NTCCTprf_guardhold( te_info *info, ntype *elems)
  *
- * description: pred' = guard( pred);  pred is Boolean scalar
+ * description: pred' = guardhold( pred);  pred is Boolean scalar
  *              guardhold means the pred is always evaluated to true;
  *
  ******************************************************************************/
@@ -494,6 +494,7 @@ NTCCTprf_guardhold (te_info *info, ntype *args)
 
     pred = TYgetProductMember (args, 0);
     TEassureBoolS ("requires predicate", pred);
+    err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         CTIabort (err_msg);
     }
@@ -3103,10 +3104,6 @@ NTCCTprf_int_op_SxS (te_info *info, ntype *args)
     TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
-    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_SxS) {
-        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
-        err_msg = TEfetchErrors ();
-    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -3148,10 +3145,6 @@ NTCCTprf_int_op_SxV (te_info *info, ntype *args)
     TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
-    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_SxV) {
-        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
-        err_msg = TEfetchErrors ();
-    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -3194,10 +3187,6 @@ NTCCTprf_int_op_VxS (te_info *info, ntype *args)
     TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), array1);
     TEassureIntS (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
     err_msg = TEfetchErrors ();
-    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_VxS) {
-        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
-        err_msg = TEfetchErrors ();
-    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
@@ -3242,10 +3231,6 @@ NTCCTprf_int_op_VxV (te_info *info, ntype *args)
     res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
     err_msg = TEfetchErrors ();
-    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_VxV) {
-        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
-        err_msg = TEfetchErrors ();
-    }
 
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);

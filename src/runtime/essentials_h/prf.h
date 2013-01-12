@@ -50,7 +50,18 @@
 #define SAC_ND_PRF_SUB(arg1, arg2) (arg1) - (arg2)
 #define SAC_ND_PRF_MUL(arg1, arg2) (arg1) * (arg2)
 #define SAC_ND_PRF_DIV(arg1, arg2) (arg1) / (arg2)
-#define SAC_ND_PRF_MOD(arg1, arg2) (arg1) % (arg2)
+
+/* Modulus definition (integer only) taken from ISO APL Standard N8485 */
+/* Make sure that the code below matches that in constants/zipcv.c */
+
+#define SIGNUM(x) ((0 == (x)) ? 0 : (0 < (x)) ? 1 : -1)
+#define FLRDIV(arg1, arg2)                                                               \
+    ((0 == (arg2)) ? (arg1) : (arg1) - ((arg2) * ((arg1) / (arg2))))
+
+#define SAC_ND_PRF_MOD(arg1, arg2)                                                       \
+    (((0 != FLRDIV (arg1, arg2)) && ((SIGNUM (arg1) != SIGNUM (arg2))))                  \
+       ? FLRDIV (arg1, arg2) + (arg2)                                                    \
+       : FLRDIV (arg1, arg2))
 
 #define SAC_ND_PRF_NEG(arg) -(arg)
 #define SAC_ND_PRF_ABS(arg) ((arg) < 0) ? SAC_ND_PRF_NEG (arg) : (arg)
