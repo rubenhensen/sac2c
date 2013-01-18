@@ -26,6 +26,7 @@
 #endif
 
 TRACE (fun, 'f', FALSE)
+TRACE (rtspec, 'o', FALSE)
 TRACE (prf, 'p', FALSE)
 TRACE (ref, 'r', FALSE)
 TRACE (mem, 'm', FALSE)

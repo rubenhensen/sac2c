@@ -145,6 +145,8 @@ PrintGlobalSwitches (void)
              (global.trace.aa) ? 1 : 0);
     fprintf (global.outfile, "#define SAC_DO_TRACE_MT        %d\n",
              (global.trace.mt) ? 1 : 0);
+    fprintf (global.outfile, "#define SAC_DO_TRACE_RTSPEC    %d\n",
+             (global.trace.rtspec) ? 1 : 0);
     fprintf (global.outfile, "\n");
 
     fprintf (global.outfile, "#define SAC_DO_CACHESIM        %d\n",
