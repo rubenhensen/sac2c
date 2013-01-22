@@ -749,7 +749,7 @@ IVEXPgenerateNarrayExtrema (node *arg_node, node **vardecs, node **preassigns)
 
     if (!TYisAKV (AVIS_TYPE (IDS_AVIS (lhs)))) {
 
-        if ((!AVIS_ISMINHANDLED (IDS_AVIS (lhs)))
+        if ((!IVEXPisAvisHasMin (IDS_AVIS (lhs)))
             && (isAllNarrayExtremumPresent (rhs, 0))) {
             minv = buildExtremaChain (ARRAY_AELEMS (rhs), 0);
             minv
@@ -757,7 +757,7 @@ IVEXPgenerateNarrayExtrema (node *arg_node, node **vardecs, node **preassigns)
             IVEXPsetMinvalIfNotNull (lhsavis, TBmakeId (minv), FALSE);
         }
 
-        if ((!AVIS_ISMAXHANDLED (IDS_AVIS (lhs)))
+        if ((!IVEXPisAvisHasMax (IDS_AVIS (lhs)))
             && (isAllNarrayExtremumPresent (rhs, 1))) {
             maxv = buildExtremaChain (ARRAY_AELEMS (rhs), 1);
             maxv
@@ -977,7 +977,7 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
  * Description:  Generate extrema for modulus, extended to support
  *               negative arg1 values, per the APL standard.
  *
- *               if(( arg2 >= 0)), then we set:
+ *               if( arg2 > 0), then we set:
  *
  *                 AVIS_MIN( res) = 0
  *                 AVIS_MAX( normalize( arg2 - 1));
@@ -1006,7 +1006,7 @@ GenerateExtremaModulus (node *arg_node, info *arg_info)
 
     rhs = LET_EXPR (arg_node);
     if ( // APL extended definition  SCSisNonneg( PRF_ARG1( rhs)) &&
-      SCSisNonneg (PRF_ARG2 (rhs))) {
+      SCSisPositive (PRF_ARG2 (rhs))) {
         lhsavis = IDS_AVIS (LET_IDS (arg_node));
         arg1avis = ID_AVIS (PRF_ARG1 (rhs));
         arg2avis = ID_AVIS (PRF_ARG2 (rhs));
@@ -1017,8 +1017,7 @@ GenerateExtremaModulus (node *arg_node, info *arg_info)
         /* non-scalar argument */
         nsa = arg2scalar ? PRF_ARG1 (rhs) : PRF_ARG2 (rhs);
 
-        if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
-
+        if (!IVEXPisAvisHasMin (lhsavis)) {
             /* Create zero minimum */
             zr = SCSmakeZero (nsa);
             if (NULL != zr) { // nsa may not be AKS
@@ -1030,7 +1029,7 @@ GenerateExtremaModulus (node *arg_node, info *arg_info)
             }
         }
 
-        if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
+        if (!IVEXPisAvisHasMax (lhsavis)) {
             /* Create maximum from PRF_ARG2, unless it is scalar and
              * PRF_ARG1 is vector. We cheat here a bit because
              * we want the maximum to be PRF_ARG2-1, but we have to
@@ -1179,7 +1178,7 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
     }
 
     /* Compute AVIS_MIN, perhaps */
-    if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
+    if (!IVEXPisAvisHasMin (lhsavis)) {
         if (min1) {
             minarg1 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
             minarg2 = ID_AVIS (PRF_ARG2 (rhs));
@@ -1189,7 +1188,7 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
         }
 
         /* Compute AVIS_MAX, perhaps */
-        if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
+        if (!IVEXPisAvisHasMax (lhsavis)) {
             if (max1) {
                 maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
                 maxarg1 = IVEXPadjustExtremaBound (/* Denormalize maxv */
@@ -1285,7 +1284,7 @@ GenerateExtremaComputationsNoncommutativeDyadicScalarPrf (node *arg_node, info *
     // I think that, ideally, we would want to compute both
     // of these, and take the min of those. It might just lead
     // to more problems, perhaps.
-    if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
+    if (!IVEXPisAvisHasMin (lhsavis)) {
         if (max2) {
             /*  Case 2: minv( z) = A - denormalize( maxv( B)); */
             minarg1 = ID_AVIS (PRF_ARG1 (rhs));
@@ -1301,7 +1300,7 @@ GenerateExtremaComputationsNoncommutativeDyadicScalarPrf (node *arg_node, info *
     }
 
     /* Compute AVIS_MAX, perhaps */
-    if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
+    if (!IVEXPisAvisHasMax (lhsavis)) {
         if (max1) {
             /*  Case 1: maxv( z) =  normalize( denormalize( maxv( A)) - B); */
             maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
@@ -1493,7 +1492,7 @@ GenerateExtremaForMin (node *lhsavis, node *rhs, info *arg_info)
     bool e2;
 
     DBUG_ENTER ();
-    if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
+    if (!IVEXPisAvisHasMax (lhsavis)) {
 
         arg1avis = ID_AVIS (PRF_ARG1 (rhs));
         c1 = COisConstant (PRF_ARG1 (rhs)); // Could use TYisAKV here,
@@ -1569,7 +1568,7 @@ GenerateExtremaForMax (node *lhsavis, node *rhs, info *arg_info)
 
     DBUG_ENTER ();
 
-    if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))) {
+    if (!IVEXPisAvisHasMin (lhsavis)) {
 
         arg1avis = ID_AVIS (PRF_ARG1 (rhs));
         c1 = COisConstant (PRF_ARG1 (rhs)); // Could use TYisAKV here,
@@ -1775,7 +1774,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_non_neg_val_V:
             case F_non_neg_val_S:
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
-                if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))
+                if ((!IVEXPisAvisHasMin (lhsavis))
                     && (TYisAKV (AVIS_TYPE (arg1avis))
                         || TYisAKS (AVIS_TYPE (arg1avis)))) {
                     /* Create zero minimum */
@@ -1792,7 +1791,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_abs_S: /* AVIS_MIN is now zero */
             case F_abs_V: /* AVIS_MIN is now zero */
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
-                if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))) {
+                if (!IVEXPisAvisHasMax (lhsavis)) {
                     minv = SCSmakeZero (PRF_ARG1 (rhs));
                     minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info),
@@ -1819,8 +1818,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_neg_V:
                 /* Min becomes max and vice versa */
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
-                if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))
-                    && (IVEXPisAvisHasMin (arg1avis))) {
+                if ((!IVEXPisAvisHasMax (lhsavis)) && (IVEXPisAvisHasMin (arg1avis))) {
                     minv = InvokeMonadicFn (ID_AVIS (AVIS_MIN (arg1avis)), lhsavis, rhs,
                                             arg_info);
                     minv = IVEXPadjustExtremaBound (minv, +1, &INFO_VARDECS (arg_info),
@@ -1828,8 +1826,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     INFO_MAXVAL (arg_info) = TBmakeId (minv);
                 }
 
-                if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))
-                    && (IVEXPisAvisHasMax (arg1avis))) {
+                if ((!IVEXPisAvisHasMin (lhsavis)) && (IVEXPisAvisHasMax (arg1avis))) {
                     /* Instead of generating (-(AVIS_MAX(arg1avis)-1)),
                      * we generate           (1-AVIS_MAX(arg1avis)).
                      */
@@ -1886,8 +1883,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_sel_VxA:
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
                 arg2avis = ID_AVIS (PRF_ARG2 (rhs));
-                if ((!IVEXPisAvisHasMin (lhsavis)) && (!AVIS_ISMINHANDLED (lhsavis))
-                    && (IVEXPisAvisHasMin (arg2avis))
+                if ((!IVEXPisAvisHasMin (lhsavis)) && (IVEXPisAvisHasMin (arg2avis))
                     && (COisConstant (PRF_ARG1 (rhs)))) {
                     /* select from AVIS_MIN */
                     minv = DUPdoDupNode (rhs);
