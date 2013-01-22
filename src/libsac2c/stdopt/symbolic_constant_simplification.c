@@ -140,6 +140,44 @@ SCSisNonneg (node *arg_node)
 
 /******************************************************************************
  *
+ * function: Predicate for determining if an argument is known to
+ *           be positive.
+ *
+ * description: We check for a constant arg_node, and if that
+ *              fails, look for a suitable constant AVIS_MIN.
+ *
+ * result: True if argument is known to be non-negative.
+ *         Else false.
+ *
+ *         NB. False does NOT imply that the argument is negative.
+ *
+ *****************************************************************************/
+bool
+SCSisPositive (node *arg_node)
+{
+    pattern *pat;
+    constant *con = NULL;
+    bool z;
+
+    pat = PMconst (1, PMAgetVal (&con));
+
+    DBUG_ENTER ();
+
+    z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNonNeg (con, TRUE);
+
+    if (!z) {
+        con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
+        z = (NULL != con) && COisNonNeg (con, TRUE) && (!COisZero (con, TRUE));
+    }
+
+    con = (NULL != con) ? COfreeConstant (con) : con;
+    pat = PMfree (pat);
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
  * function: Function to apply current CF function on extrema
  *
  * description: arg1 and arg2 are PRF_ARG1/2 or AVIS_MIN/MAXof same.
