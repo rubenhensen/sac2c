@@ -108,7 +108,7 @@ $(PROJECT_ROOT)/.revision.txt: $(PROJECT_ROOT)/.revision.txt.PHONY
 # #
 	@ if which git > /dev/null; then                                \
             git rev-list --abbrev-commit HEAD $(PROJECT_ROOT)           \
-              | wc -l  > $@.new;                                        \
+              | wc -l | sed -e 's/[ ]*//g' > $@.new;                    \
             if which diff >/dev/null; then                              \
               if diff $@ $@.new >/dev/null; then                        \
                 rm $@.new;                                              \
