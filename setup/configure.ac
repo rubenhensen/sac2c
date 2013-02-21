@@ -50,63 +50,63 @@ fi
 
 
 dnl search for a C compiler
-AC_PROG_CC(gcc cc)
-AC_PROG_CXX(g++ c++ cxx gxx)
+AC_PROG_CC([gcc cc])
+AC_PROG_CXX([g++ c++ cxx gxx])
 
+if test "$GCC" != "yes" ; then
 
+  dnl
+  dnl check whether its suns cc
+  dnl
 
-dnl
-dnl check whether its suns cc
-dnl
-
-AC_MSG_CHECKING(whether cc is a Sun Pro C compiler)
-AC_TRY_COMPILE(,
-[#ifndef __SUNPRO_C
-  choke me
-#endif],
-AC_MSG_RESULT(yes)
-SUNC=yes,
-AC_MSG_RESULT(no)
-SUNC=no
-)
-
-
-dnl
-dnl check whether its compaqs (or dec) cc
-dnl
-
-AC_MSG_CHECKING(whether cc is a Compaq/DEC C compiler)
-AC_TRY_COMPILE(,
-[#ifndef __DECC
-  choke me
-#endif],
-AC_MSG_RESULT(yes)
-DECC=yes,
-AC_MSG_RESULT(no)
-DECC=no
-)
-
-
-
-
-
-dnl
-dnl check whether its apples cc
-dnl
-
-AC_MSG_CHECKING(whether cc is a Apple compiler)
-AC_TRY_COMPILE(,
-[#ifndef __APPLE_CC__
-  choke me
+  AC_MSG_CHECKING(whether cc is a Sun Pro C compiler)
+  AC_TRY_COMPILE(,
+  [#ifndef __SUNPRO_C
+    choke me
   #endif],
   AC_MSG_RESULT(yes)
-  MACC=yes
-  GCC=no,
+  SUNC=yes,
   AC_MSG_RESULT(no)
-  MACC=no
-)
-  
+  SUNC=no
+  )
 
+
+  dnl
+  dnl check whether its compaqs (or dec) cc
+  dnl
+
+  AC_MSG_CHECKING(whether cc is a Compaq/DEC C compiler)
+  AC_TRY_COMPILE(,
+  [#ifndef __DECC
+    choke me
+  #endif],
+  AC_MSG_RESULT(yes)
+  DECC=yes,
+  AC_MSG_RESULT(no)
+  DECC=no
+  )
+
+
+
+
+
+  dnl
+  dnl check whether its apples cc
+  dnl
+
+  AC_MSG_CHECKING(whether cc is a Apple compiler)
+  AC_TRY_COMPILE(,
+  [#ifndef __APPLE_CC__
+    choke me
+    #endif],
+    AC_MSG_RESULT(yes)
+    MACC=yes
+    GCC=no,
+    AC_MSG_RESULT(no)
+    MACC=no
+  )
+  
+fi
 
 dnl
 dnl Check For Darwin 9+ for linker rpath support
@@ -705,12 +705,12 @@ case "$target_os" in
     AC_SUBST(ENABLE_PHM, no)
     RANLIB="$RANLIB -c"
     case "$target_os" in
-      [*darwin1[0-1]\.*)]
+      [*darwin1[0-2]\.*)]
         OSFLAGS=["-D_DARWIN_C_SOURCE"]
         LD_DYNAMIC=["-undefined suppress -flat_namespace -dynamiclib -install_name '@rpath/%libname%' "]
         LD_PATH=["-L%path% -Wl,-rpath,%path%"]
         LD_FLAGS=""
-        AC_MSG_RESULT([darwin 10.x/11.x settings])
+        AC_MSG_RESULT([darwin 10.x/11.x/12.x settings])
         ;;
       *darwin9\.*)
         OSFLAGS=["-Wno-long-double -D_DARWIN_C_SOURCE"]

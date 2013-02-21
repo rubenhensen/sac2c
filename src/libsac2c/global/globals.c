@@ -711,6 +711,19 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname)
     global.tool = tool;
     global.toolname = toolname;
 
+    /* Make sure that dynamically allocated strings are actually
+     * empty strings, otherwise there might be some surprises
+     * later :)
+     */
+
+    global.ccflags[0] = '\0';
+    global.cachesim_host[0] = '\0';
+    global.cachesim_file[0] = '\0';
+    global.cachesim_dir[0] = '\0';
+
+    memset (global.profile_funnme, 0, sizeof (char *) * PF_MAXFUN);
+    memset (global.profile_funapcntr, 0, sizeof (int) * PF_MAXFUN);
+
     DBUG_RETURN ();
 }
 
@@ -763,7 +776,7 @@ xfree_char_ptr_ptr (char **ptr, size_t size)
         return;
 
     for (i = 0; i < size; i++)
-        if (ptr[i] && __builtin_constant_p (ptr[i]))
+        if (ptr[i] && !__builtin_constant_p (ptr[i]))
             MEMfree (ptr[i]);
     if (ptr)
         MEMfree (ptr);
