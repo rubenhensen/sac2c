@@ -318,6 +318,31 @@ COmod (constant *a, constant *b, constant *tmp1)
 /******************************************************************************
  *
  * function:
+ *    constant *COaplmod( constant *a, constant *b)
+ *
+ * description:
+ *    returns a constant whose elements are the elementwise modulo of a and b,
+ *    provided that    either shape(a) == shape(b),
+ *                     or at least one of { a, b } is scalar
+ *
+ *    This is for the ISO Standard N8485 aplmod() function.
+ *
+ ******************************************************************************/
+
+constant *
+COaplmod (constant *a, constant *b, constant *tmp1)
+{
+    constant *res;
+
+    DBUG_ENTER ();
+    res = COzip (global.zipcv_mod, a, b, T_unknown);
+    DBUG_EXECUTE (COINTdbugPrintBinOp ("COaplmod", a, b, res));
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *    constant *Min( constant *a, constant *b)
  *
  * description:

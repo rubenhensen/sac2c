@@ -644,7 +644,7 @@ SUBPHASE (wlbscnf2, "Unflattening WL-partition structural constants",
 SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
 
 SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCleanup,
-          global.optimize.doawlf || global.optimize.dolacsi, opt)
+          ALWAYS, opt)
 
 SUBPHASE (tup, "Running final type inference", NTCdoNewReTypeCheckFromScratch, ALWAYS,
           opt)

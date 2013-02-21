@@ -1580,6 +1580,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_and_SxS:
     case F_or_SxS:
     case F_mod_SxS:
+    case F_aplmod_SxS:
     case F_min_SxS:
     case F_max_SxS:
     case F_le_SxS:
@@ -1620,6 +1621,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_and_SxV:
     case F_or_SxV:
     case F_mod_SxV:
+    case F_aplmod_SxV:
     case F_min_SxV:
     case F_max_SxV:
     case F_le_SxV:
@@ -1639,6 +1641,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_and_VxS:
     case F_or_VxS:
     case F_mod_VxS:
+    case F_aplmod_VxS:
     case F_min_VxS:
     case F_max_VxS:
     case F_le_VxS:
@@ -1661,6 +1664,7 @@ EMALprf (node *arg_node, info *arg_info)
     case F_and_VxV:
     case F_or_VxV:
     case F_mod_VxV:
+    case F_aplmod_VxV:
     case F_min_VxV:
     case F_max_VxV:
     case F_le_VxV:

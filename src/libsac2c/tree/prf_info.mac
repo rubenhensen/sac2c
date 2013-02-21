@@ -362,6 +362,22 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
        COMPprfOp_VxV, SCSprf_mod, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
        PPIgetPVVxV, ICCsameShape, TEone, NULL, NULL),
 
+  PRF (aplmod_SxS, (PA_S, PA_S, PA_x), 2, APLMOD, NOSIMD, NTCCTprf_int_op_SxS, COaplmod,
+       COMPprfOp_SxS, SCSprf_aplmod, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
+       PPIgetPVSxS, ICCnone, TEone, NULL, NULL),
+
+  PRF (aplmod_SxV, (PA_S, PA_V, PA_x), 2, APLMOD, NOSIMD, NTCCTprf_int_op_SxV, COaplmod,
+       COMPprfOp_SxV, SCSprf_aplmod_SxV, NULL, NULL, SAAdim_is_1, SAAshp_of_arg2, NULL, 0,
+       PPIgetPVSxV, ICCnone, TEone, NULL, NULL),
+
+  PRF (aplmod_VxS, (PA_V, PA_S, PA_x), 2, APLMOD, NOSIMD, NTCCTprf_int_op_VxS, COaplmod,
+       COMPprfOp_VxS, SCSprf_aplmod, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
+       PPIgetPVVxS, ICCnone, TEone, NULL, NULL),
+
+  PRF (aplmod_VxV, (PA_V, PA_V, PA_x), 2, APLMOD, NOSIMD, NTCCTprf_int_op_VxV, COaplmod,
+       COMPprfOp_VxV, SCSprf_aplmod, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
+       PPIgetPVVxV, ICCsameShape, TEone, NULL, NULL),
+
   /*******************************************************************************
    * Further arithmetic operations
    */

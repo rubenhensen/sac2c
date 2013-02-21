@@ -142,6 +142,7 @@ extern constant *COsub (constant *a, constant *b, constant *);
 extern constant *COmul (constant *a, constant *b, constant *);
 extern constant *COdiv (constant *a, constant *b, constant *);
 extern constant *COmod (constant *a, constant *b, constant *);
+extern constant *COaplmod (constant *a, constant *b, constant *);
 extern constant *COmin (constant *a, constant *b, constant *);
 extern constant *COmax (constant *a, constant *b, constant *);
 

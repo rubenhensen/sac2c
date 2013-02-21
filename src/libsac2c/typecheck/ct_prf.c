@@ -2351,6 +2351,11 @@ NTCCTprf_ari_op_SxS (te_info *info, ntype *args)
         err_msg = TEfetchErrors ();
     }
 
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_SxS) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
@@ -2398,6 +2403,11 @@ NTCCTprf_ari_op_SxV (te_info *info, ntype *args)
         err_msg = TEfetchErrors ();
     }
     if ((err_msg == NULL) && TEgetPrf (info) == F_div_SxV) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_SxV) {
         TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
         err_msg = TEfetchErrors ();
     }
@@ -2453,6 +2463,11 @@ NTCCTprf_ari_op_VxS (te_info *info, ntype *args)
         err_msg = TEfetchErrors ();
     }
 
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_VxS) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
@@ -2502,6 +2517,11 @@ NTCCTprf_ari_op_VxV (te_info *info, ntype *args)
         err_msg = TEfetchErrors ();
     }
     if ((err_msg == NULL) && TEgetPrf (info) == F_div_VxV) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
+    if ((err_msg == NULL) && TEgetPrf (info) == F_mod_VxV) {
         TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
         err_msg = TEfetchErrors ();
     }

@@ -1218,14 +1218,29 @@ SCSprf_and_VxV (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_mod( node *arg_node, info *arg_info)
  *
- * @brief: Extend mod definition to that of ISO Standard APL, N8485:
+ *****************************************************************************/
+node *
+SCSprf_mod (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_aplmod( node *arg_node, info *arg_info)
+ *
+ * @brief: Extended mod definition to match ISO Standard APL, N8485:
  *
  *  1. If PRF_ARG2 is zero, the result is PRF_ARG1.
  *     This can't be handled by type checker, if PRF_ARG1 is not AKV.
  *
  *****************************************************************************/
 node *
-SCSprf_mod (node *arg_node, info *arg_info)
+SCSprf_aplmod (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
@@ -1241,6 +1256,21 @@ SCSprf_mod (node *arg_node, info *arg_info)
  *
  * @fn node *SCSprf_mod_SxV( node *arg_node, info *arg_info)
  *
+ *****************************************************************************/
+node *
+SCSprf_mod_SxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_aplmod_SxV( node *arg_node, info *arg_info)
+ *
  * @brief: Extend mod definition to that of ISO Standard APL, N8485:
  *
  *  1. If PRF_ARG2 is zero, the result is PRF_ARG1, reshaped to that of PRF_ARG2.
@@ -1248,7 +1278,7 @@ SCSprf_mod (node *arg_node, info *arg_info)
  *
  *****************************************************************************/
 node *
-SCSprf_mod_SxV (node *arg_node, info *arg_info)
+SCSprf_aplmod_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     shape *shp;

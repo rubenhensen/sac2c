@@ -58,15 +58,16 @@
 #define FLRDIV(arg1, arg2)                                                               \
     ((0 == (arg2)) ? (arg1) : (arg1) - ((arg2) * ((arg1) / (arg2))))
 
-#define SAC_ND_PRF_MOD(arg1, arg2)                                                       \
-    (((0 != FLRDIV (arg1, arg2)) && ((SIGNUM (arg1) != SIGNUM (arg2))))                  \
-       ? FLRDIV (arg1, arg2) + (arg2)                                                    \
-       : FLRDIV (arg1, arg2))
-
 #define SAC_ND_PRF_NEG(arg) -(arg)
 #define SAC_ND_PRF_ABS(arg) ((arg) < 0) ? SAC_ND_PRF_NEG (arg) : (arg)
 #define SAC_ND_PRF_MIN(arg1, arg2) (arg1) < (arg2) ? (arg1) : (arg2)
 #define SAC_ND_PRF_MAX(arg1, arg2) (arg1) > (arg2) ? (arg1) : (arg2)
+#define SAC_ND_PRF_MOD(arg1, arg2) (arg1) % (arg2)
+
+#define SAC_ND_PRF_APLMOD(arg1, arg2)                                                    \
+    (((0 != FLRDIV (arg1, arg2)) && ((SIGNUM (arg1) != SIGNUM (arg2))))                  \
+       ? FLRDIV (arg1, arg2) + (arg2)                                                    \
+       : FLRDIV (arg1, arg2))
 
 #define SAC_ND_PRF_EQ(arg1, arg2) (arg1) == (arg2)
 #define SAC_ND_PRF_NE(arg1, arg2) (arg1) != (arg2)

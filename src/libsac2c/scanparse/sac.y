@@ -130,6 +130,7 @@ PRF_SUB_SxS  PRF_SUB_SxV  PRF_SUB_VxS  PRF_SUB_VxV
 PRF_MUL_SxS  PRF_MUL_SxV  PRF_MUL_VxS  PRF_MUL_VxV 
 PRF_DIV_SxS  PRF_DIV_SxV  PRF_DIV_VxS  PRF_DIV_VxV 
 PRF_MOD_SxS  PRF_MOD_SxV  PRF_MOD_VxS  PRF_MOD_VxV
+PRF_APLMOD_SxS  PRF_APLMOD_SxV  PRF_APLMOD_VxS  PRF_APLMOD_VxV
 PRF_MIN_SxS  PRF_MIN_SxV  PRF_MIN_VxS  PRF_MIN_VxV
 PRF_MAX_SxS  PRF_MAX_SxV  PRF_MAX_VxS  PRF_MAX_VxV
 PRF_ABS_S  PRF_ABS_V
@@ -1909,6 +1910,10 @@ prf: PRF_DIM_A          { $$ = F_dim_A;     }
    | PRF_MOD_SxV        { $$ = F_mod_SxV; }
    | PRF_MOD_VxS        { $$ = F_mod_VxS; }
    | PRF_MOD_VxV        { $$ = F_mod_VxV; }
+   | PRF_APLMOD_SxS        { $$ = F_aplmod_SxS; }
+   | PRF_APLMOD_SxV        { $$ = F_aplmod_SxV; }
+   | PRF_APLMOD_VxS        { $$ = F_aplmod_VxS; }
+   | PRF_APLMOD_VxV        { $$ = F_aplmod_VxV; }
    | PRF_ABS_S          { $$ = F_abs_S;   }
    | PRF_ABS_V          { $$ = F_abs_V;   }
    | PRF_NEG_S          { $$ = F_neg_S;   }

@@ -94,7 +94,7 @@
 
 /* Ensure that the code below and the code in runtime/essentials/prf.h match! */
 
-#define COzipCvMODTEMPLATE(fun, fun_ext, arg_t, arg_ext, res_t)                          \
+#define COzipCvAPLMODTEMPLATE(fun, fun_ext, arg_t, arg_ext, res_t)                       \
     void COzipCv##arg_ext##fun_ext (void *arg1, int pos1, void *arg2, int pos2,          \
                                     void *res, int res_pos)                              \
     {                                                                                    \
@@ -193,20 +193,20 @@
                                 COzipCvDUMMYTEMP (Char, fname)                           \
                                   COzipCvDUMMYTEMP (Dummy, fname)
 
-/* This is currently used only by _mod_(), and is likely of no use to others. */
+/* This is used only by _aplmod_(), and is likely of no use to others. */
 #define MAP_INTxINT_INT(fun, fname)                                                      \
-    COzipCvMODTEMPLATE (fun, fname, unsigned char, UByte, unsigned char)                 \
-      COzipCvMODTEMPLATE (fun, fname, unsigned short, UShort, unsigned short)            \
-        COzipCvMODTEMPLATE (fun, fname, unsigned int, UInt, unsigned int)                \
-          COzipCvMODTEMPLATE (fun, fname, unsigned long, ULong, unsigned long)           \
-            COzipCvMODTEMPLATE (fun, fname, unsigned long long, ULongLong,               \
-                                unsigned long long)                                      \
-              COzipCvMODTEMPLATE (fun, fname, char, Byte, char)                          \
-                COzipCvMODTEMPLATE (fun, fname, short, Short, short)                     \
-                  COzipCvMODTEMPLATE (fun, fname, int, Int, int)                         \
-                    COzipCvMODTEMPLATE (fun, fname, long, Long, long)                    \
-                      COzipCvMODTEMPLATE (fun, fname, unsigned long long, LongLong,      \
-                                          unsigned long long)                            \
+    COzipCvAPLMODTEMPLATE (fun, fname, unsigned char, UByte, unsigned char)              \
+      COzipCvAPLMODTEMPLATE (fun, fname, unsigned short, UShort, unsigned short)         \
+        COzipCvAPLMODTEMPLATE (fun, fname, unsigned int, UInt, unsigned int)             \
+          COzipCvAPLMODTEMPLATE (fun, fname, unsigned long, ULong, unsigned long)        \
+            COzipCvAPLMODTEMPLATE (fun, fname, unsigned long long, ULongLong,            \
+                                   unsigned long long)                                   \
+              COzipCvAPLMODTEMPLATE (fun, fname, char, Byte, char)                       \
+                COzipCvAPLMODTEMPLATE (fun, fname, short, Short, short)                  \
+                  COzipCvAPLMODTEMPLATE (fun, fname, int, Int, int)                      \
+                    COzipCvAPLMODTEMPLATE (fun, fname, long, Long, long)                 \
+                      COzipCvAPLMODTEMPLATE (fun, fname, unsigned long long, LongLong,   \
+                                             unsigned long long)                         \
                         COzipCvDUMMYTEMP (Float, fname) COzipCvDUMMYTEMP (Double, fname) \
                           COzipCvDUMMYTEMP (LongDouble, fname)                           \
                             COzipCvDUMMYTEMP (Bool, fname)                               \
@@ -396,7 +396,7 @@ MAP_NUMxNUM_NUM (+, Plus)
 
       MAP_NUMxNUM_NUM (/, Div)
 
-        MAP_INTxINT_INT (%, Mod)
+        MAP_INTxINT_INT (%, Mod) MAP_INTxINT_INT (aplmod %, Aplmod)
 
           MAP_MINMAX_NUMxNUM_NUM (<, Min)
 

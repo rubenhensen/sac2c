@@ -974,9 +974,14 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * Description:  Generate extrema for modulus, extended to support
- *               negative arg1 values, per the APL standard.
+ * Description:  Generate extrema for C99 modulus, and for
+ *               modulus extended to support
+ *               negative arg1 values and zero arg2 values,
+ *               per the APL ISO N8485 standard.
  *
+ *               For C99, if (arg1 >=0 ) && ( arg2 > 0):
+ *
+ *               For APL modulus,
  *               if( arg2 > 0), then we set:
  *
  *                 AVIS_MIN( res) = 0
@@ -984,14 +989,18 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
  *
  * @params arg_node: Your basic N_let node.
  *         arg_info: As usual.
+ *         aplmod: if this is APL modulus, TRUE; else FALSE.
  *
  * @return Same arg_node, but with potential side effects on INFO_MINVAL and
  *         INFO_MAXVAL.
  *         Requires AKS arguments.
  *
+ * @comment It would be nice to handle the case of arg2 == 0,
+ *          but perhaps another day...
+ *
  ******************************************************************************/
 static node *
-GenerateExtremaModulus (node *arg_node, info *arg_info)
+GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
 {
     node *arg1avis;
     node *arg2avis;
@@ -1005,8 +1014,7 @@ GenerateExtremaModulus (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     rhs = LET_EXPR (arg_node);
-    if ( // APL extended definition  SCSisNonneg( PRF_ARG1( rhs)) &&
-      SCSisPositive (PRF_ARG2 (rhs))) {
+    if ((SCSisPositive (PRF_ARG2 (rhs))) && (aplmod || SCSisNonneg (PRF_ARG1 (rhs)))) {
         lhsavis = IDS_AVIS (LET_IDS (arg_node));
         arg1avis = ID_AVIS (PRF_ARG1 (rhs));
         arg2avis = ID_AVIS (PRF_ARG2 (rhs));
@@ -1247,7 +1255,7 @@ GenerateExtremaComputationsNoncommutativeDyadicScalarPrf (node *arg_node, info *
     bool max1;
     bool max2;
     int parentarg;
-    node *wid;
+    node *wid = NULL;
 
     DBUG_ENTER ();
 
@@ -1872,7 +1880,15 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_mod_SxV:
             case F_mod_VxS:
             case F_mod_VxV:
-                arg_node = GenerateExtremaModulus (arg_node, arg_info);
+                arg_node = GenerateExtremaModulus (arg_node, arg_info, FALSE);
+                break;
+
+            /* APL Modulus */
+            case F_aplmod_SxS:
+            case F_aplmod_SxV:
+            case F_aplmod_VxS:
+            case F_aplmod_VxV:
+                arg_node = GenerateExtremaModulus (arg_node, arg_info, TRUE);
                 break;
 
             /* Selection: _sel_VxA_( constant, argwithextrema)

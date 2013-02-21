@@ -188,6 +188,11 @@ LINEEND     \n|\r|\r\n
 "_mod_VxS_"                { FILTER( PRF_MOD_VxS); }
 "_mod_VxV_"                { FILTER( PRF_MOD_VxV); }
 
+"_aplmod_SxS_"             { FILTER( PRF_APLMOD_SxS); }
+"_aplmod_SxV_"             { FILTER( PRF_APLMOD_SxV); }
+"_aplmod_VxS_"             { FILTER( PRF_APLMOD_VxS); }
+"_aplmod_VxV_"             { FILTER( PRF_APLMOD_VxV); }
+
 "_min_SxS_"                { FILTER( PRF_MIN_SxS); }
 "_min_SxV_"                { FILTER( PRF_MIN_SxV); }
 "_min_VxS_"                { FILTER( PRF_MIN_VxS); }
