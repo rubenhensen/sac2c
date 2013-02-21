@@ -513,7 +513,8 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
             break;
 
         case N_id:
-            if ((PMmatchFlatSkipExtrema (pat, arg_node)) && (N_id == NODE_TYPE (arg))) {
+            if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node))
+                && (N_id == NODE_TYPE (arg))) {
                 tcindex = TClookupIdsNode (withidids, ID_AVIS (arg));
                 if (-1 != tcindex) {
                     z = 1;
