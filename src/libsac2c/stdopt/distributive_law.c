@@ -96,7 +96,7 @@
  * =======================
  *
  * - The internal representation of the multi-operand expressions is a bit
- * weired. All operations are represented as SaC AST prf's with n >= 0
+ * weird. All operations are represented as SaC AST prf's with n >= 0
  * argument expressions. Furthermore, ALL prfs are changed to their SxS
  * counterparts when creating the lists. After optimisation, the appropriate
  * versions (potentially VxS, SxV or VxV) are inserted. I assume that the
