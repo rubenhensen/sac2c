@@ -900,6 +900,10 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
        COMPprfOp_SxSxS, NULL, SCCFprf_mask_SxSxS, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
        NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
+  PRF (mask_SxVxV, (PA_S, PA_V, PA_V), 3, MASK, NOSIMD, NTCCTprf_mask_SxVxV, NULL,
+       COMPprfMask_SxVxV, NULL, SCCFprf_mask_SxVxV, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
+       NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
   PRF (mask_VxVxV, (PA_V, PA_V, PA_V), 3, MASK, NOSIMD, NTCCTprf_mask_VxVxV, NULL,
        COMPprfMask_VxVxV, NULL, SCCFprf_mask_VxVxV, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
        NULL, 0, NULL, NULL, TEone, NULL, NULL),

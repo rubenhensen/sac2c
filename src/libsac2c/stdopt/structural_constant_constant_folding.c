@@ -2346,6 +2346,59 @@ SCCFprf_mask_SxSxS (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *SCCFprf_mask_SxVxV(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Implements mask function, used by AWLFI, and stdlib
+ *   The semantics of z = mask( p, x, y) are, essentially, the same as
+ *   the ill-named <where> function of the SAC stdlib:
+ *
+ *    z] = x if p;  else y;
+ *
+ * result:
+ *   If p is constant, then we perform the above substutition.
+ *
+ *   Finally, if x and y match, the result is x, regardless of p.
+ *
+ *   Otherwise, we do nothing.
+ *
+ *****************************************************************************/
+node *
+SCCFprf_mask_SxVxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    constant *conp = NULL;
+    node *arg2 = NULL;
+    node *arg3 = NULL;
+    pattern *pat;
+
+    DBUG_ENTER ();
+
+    if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
+        res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    } else {
+        pat = PMprf (1, PMAisPrf (F_mask_SxVxV), 3, PMconst (1, PMAgetVal (&conp)),
+                     PMany (1, PMAgetNode (&arg2), 0), PMany (1, PMAgetNode (&arg3), 0));
+
+        if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
+            DBUG_PRINT ("Replacing mask result by mask of arg2, arg3");
+            /* p is constant. */
+            if (COisTrue (conp, TRUE)) {
+                res = DUPdoDupNode (PRF_ARG2 (arg_node));
+            } else {
+                res = DUPdoDupNode (PRF_ARG3 (arg_node));
+            }
+            conp = COfreeConstant (conp);
+        }
+        pat = PMfree (pat);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *SCCFprf_mask_VxVxV(node *arg_node, info *arg_info)
  *
  * description:

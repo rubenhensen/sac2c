@@ -3510,6 +3510,24 @@ NTCCTprf_mask_SxSxS (te_info *info, ntype *args)
 }
 
 ntype *
+NTCCTprf_mask_SxVxV (te_info *info, ntype *args)
+{
+    ntype *arg;
+    ntype *res;
+
+    DBUG_ENTER ();
+
+    arg = TYgetProductMember (args, 2);
+    arg = TYeliminateAKV (arg);
+    res = TYcopyType (arg);
+    res = TYmakeProductType (1, res);
+
+    /* FIXME We should check that arguments 1 and 3 are the same shape */
+
+    DBUG_RETURN (res);
+}
+
+ntype *
 NTCCTprf_mask_VxVxV (te_info *info, ntype *args)
 {
     ntype *arg;

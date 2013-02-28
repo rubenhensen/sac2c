@@ -7442,6 +7442,29 @@ COMPprfMask_SxSxS (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *COMPprfMask SxVxV( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+COMPprfMask_SxVxV (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+    node *let_ids;
+
+    DBUG_ENTER ();
+
+    let_ids = INFO_LASTIDS (arg_info);
+
+    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_SxVxV", DUPdupIdsIdNt (let_ids),
+                                 DUPdupNodeNt (PRF_ARG1 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG2 (arg_node)),
+                                 DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *COMPprfMask_VxVxV( node *arg_node, info *arg_info)
  *
  *****************************************************************************/
