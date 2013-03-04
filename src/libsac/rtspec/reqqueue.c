@@ -24,21 +24,32 @@
 #include "registry.h"
 #include "reqqueue.h"
 
+#define SAC_DO_TRACE 1
+#include "sac.h"
+
 reqqueue_t *request_queue = NULL;
 pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t empty_queue_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t empty_queue_cond = PTHREAD_COND_INITIALIZER;
 
+static int do_trace;
+
 /** <!--*******************************************************************-->
  *
- * @fn SAC_initializeQueue(void)
+ * @fn SAC_initializeQueue(int trace)
  *
  * @brief Allocate memory for the central request queue.
  *
  ****************************************************************************/
 void
-SAC_initializeQueue (void)
+SAC_initializeQueue (int trace)
 {
+    do_trace = trace;
+
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Initialize request queue.");
+    }
+
     pthread_mutex_lock (&queue_mutex);
 
     /*
@@ -117,6 +128,10 @@ SAC_createNode (char *func_name, char *module, char *types, int *shapes,
 queue_node_t *
 SAC_dequeueRequest (void)
 {
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Dequeue specialization request.");
+    }
+
     pthread_mutex_lock (&queue_mutex);
 
     if (request_queue->first == NULL) {
@@ -158,6 +173,10 @@ void
 SAC_enqueueRequest (char *func_name, char *module, char *types, int *shapes,
                     reg_obj_t *registry)
 {
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Enqueue specialization request.");
+    }
+
     pthread_mutex_lock (&queue_mutex);
 
     queue_node_t *xnew = SAC_createNode (func_name, module, types, shapes, registry);

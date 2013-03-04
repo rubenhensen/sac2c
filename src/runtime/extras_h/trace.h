@@ -113,16 +113,6 @@ SAC_C_EXTERN void SAC_TR_DecHiddenMemcnt (int size);
 
 #endif /* SAC_DO_TRACE_AA */
 
-#if SAC_DO_TRACE_RTSPEC
-
-#define SAC_TR_RTSPEC_PRINT(msg) SAC_TR_PRINT (msg);
-
-#else /* SAC_DO_TRACE_RTSPEC */
-
-#define SAC_TR_RTSPEC_PRINT(msg)
-
-#endif /* SAC_DO_TRACE_RTSPEC */
-
 #if SAC_DO_TRACE_MT
 
 typedef enum {

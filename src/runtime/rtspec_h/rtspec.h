@@ -24,7 +24,7 @@
  */
 #define SAC_RTSPEC_SETUP()                                                               \
     {                                                                                    \
-        SAC_setupController (SAC_SET_TMPDIR);                                            \
+        SAC_setupController (SAC_SET_TMPDIR, SAC_DO_TRACE_RTSPEC);                       \
     }
 
 /*

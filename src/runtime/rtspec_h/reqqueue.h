@@ -56,7 +56,7 @@ typedef struct reqqueue {
 
 } reqqueue_t;
 
-void SAC_initializeQueue (void);
+void SAC_initializeQueue (int trace);
 
 queue_node_t *SAC_createNode (char *, char *, char *, int *, reg_obj_t *);
 

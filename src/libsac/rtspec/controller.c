@@ -28,6 +28,7 @@
 #include "reqqueue.h"
 #include "registry.h"
 
+#define SAC_DO_TRACE 1
 #include "sac.h"
 
 #define TMP_DIR_NAME_PREFIX "SACrt_"
@@ -35,6 +36,7 @@
 #define MAX_STRING_LENGTH 256
 
 static int running = 1;
+static int do_trace;
 static char *tmpdir_name = NULL;
 static char *rtspec_syscall = NULL;
 static list_t *processed;
@@ -97,20 +99,29 @@ CreateTmpDir (char *dir)
  ****************************************************************************/
 
 void
-SAC_setupController (char *dir)
+SAC_setupController (char *dir, int trace)
 {
+    do_trace = trace;
+
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Setup controller.");
+    }
+
     pthread_t controller_thread;
     int result;
     char *tmpdir_name;
 
     result = 0;
 
-    SAC_initializeQueue ();
+    SAC_initializeQueue (trace);
 
     tmpdir_name = CreateTmpDir (dir);
 
     if (tmpdir_name == NULL) {
         SAC_RuntimeError ("Unable to create tmp directory for specialization controller");
+    } else if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Setup specialization repository in: ");
+        SAC_TR_Print (tmpdir_name);
     }
 
     result = pthread_create (&controller_thread, NULL, SAC_runController, NULL);
@@ -139,6 +150,10 @@ SAC_setupController (char *dir)
 void *
 SAC_runController (void *param)
 {
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Starting controller.");
+    }
+
     queue_node_t *current;
 
     while (running) {
@@ -355,7 +370,11 @@ addProcessed (char *function, char *shape_info)
 void
 SAC_handleRequest (queue_node_t *request)
 {
-    static char *call_format = "sac2c -v0 -noprelude -runtime "
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Handling new specialization request.");
+    }
+
+    static char *call_format = "sac2c -v%i -noprelude -runtime "
                                "-rt_old_mod %s -rt_new_mod %s "
                                "-rtfunname %s -rtnewname %s "
                                "-rttypeinfo %s -rtshapeinfo %s "
@@ -389,28 +408,42 @@ SAC_handleRequest (queue_node_t *request)
     }
 
     /* Build the system call. */
-    sprintf (syscall, call_format, request->module_name, new_module, request->func_name,
-             new_func_name, request->type_info, shape_info, tmpdir_name, tmpdir_name);
+    sprintf (syscall, call_format, (do_trace == 1) ? 3 : 0, request->module_name,
+             new_module, request->func_name, new_func_name, request->type_info,
+             shape_info, tmpdir_name, tmpdir_name);
+
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Calling runtime compiler with:");
+        SAC_TR_Print (syscall);
+    }
 
     /* The path to the new library. */
     sprintf (filename, "%s/lib%sMod.so", tmpdir_name, new_module);
+
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Generating specialized library at:");
+        SAC_TR_Print (filename);
+    }
 
     /* Execute the system call and act according to the return value. */
     switch (system (syscall)) {
     default:
         fprintf (stderr, "ERROR -- \t [RTSpec Controller: "
-                         "handle_request()] Compilation failed!");
+                         "handle_request()] Compilation failed!\n");
 
         exit (EXIT_FAILURE);
         break;
 
     case -1:
         fprintf (stderr, "ERROR -- \t [RTSpec Controller: "
-                         "handle_request()] System call failed!");
+                         "handle_request()] System call failed!\n");
 
         exit (EXIT_FAILURE);
 
     case 0:
+        if (do_trace == 1) {
+            SAC_TR_Print ("Runtime specialization: Linking with generated library.");
+        }
         /* Dynamically link with the new libary. */
         request->reg_obj->dl_handle = dlopen (filename, RTLD_NOW | RTLD_GLOBAL);
 
@@ -423,6 +456,9 @@ SAC_handleRequest (queue_node_t *request)
 
         dlerror ();
 
+        if (do_trace == 1) {
+            SAC_TR_Print ("Runtime specialization: Load symbols for new wrapper.");
+        }
         /* Load the symbol for the new wrapper. */
         request->reg_obj->func_ptr = dlsym (request->reg_obj->dl_handle, new_func_name);
 
@@ -453,6 +489,10 @@ SAC_handleRequest (queue_node_t *request)
 void
 SAC_finalizeController (void)
 {
+    if (do_trace == 1) {
+        SAC_TR_Print ("Runtime specialization: Finalize controller!");
+    }
+
     int success;
 
     if (tmpdir_name != NULL) {
