@@ -6,7 +6,7 @@ rm -f $1.exe $1.exe.c
 
 source UnitTestRunGrep1.config
 
-echo Starting Worktest: sac2c -v0 -O3 $1 -o $1.exe $optson
+# HUSH echo Starting Worktest: sac2c -v0 -O3 $1 -o $1.exe $optson
 sac2c -v0 -O3 $1 -o $1.exe $optson
 	./$1.exe
 	z=$?
