@@ -631,7 +631,7 @@ CollectExprs (prf target_prf, node *a, bool is_scalar_arg)
          * Here, we SHOULD set AVIS_ISDLACTIVE( LHS) to FALSE!
          * Unfortunately, PM does not yet support that feature yet.
          * This does not impede the correctness of the optimised
-         * code, it just may leed to redundant work during optimisation!
+         * code, it just may lead to redundant work during optimisation!
          */
         left = CollectExprs (target_prf, arg1, isArg1Scl (found_prf));
         right = CollectExprs (target_prf, arg2, isArg2Scl (found_prf));

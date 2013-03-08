@@ -90,6 +90,7 @@ extern ntype *NTCCTprf_drop_SxV (te_info *info, ntype *args);
 extern ntype *NTCCTprf_take_SxV (te_info *info, ntype *args);
 extern ntype *NTCCTprf_cat_VxV (te_info *info, ntype *args);
 extern ntype *NTCCTprf_mask_SxSxS (te_info *info, ntype *args);
+extern ntype *NTCCTprf_mask_SxVxV (te_info *info, ntype *args);
 extern ntype *NTCCTprf_mask_VxVxV (te_info *info, ntype *args);
 extern ntype *NTCCTprf_mask_VxVxS (te_info *info, ntype *args);
 

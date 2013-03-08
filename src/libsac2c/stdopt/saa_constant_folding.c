@@ -1354,11 +1354,11 @@ SAACFprf_ge_VxV (node *arg_node, info *arg_info)
  *
  * CompareEqExtrema handles these cases for non-constant extrema:
  *
- *          If x == AVIS_MAX(y), return:  genarray( shape(x), TRUE);
- *          Since AVIS_MAX is normalized, x>y.
+ *          If V == AVIS_MAX(S), return:  genarray( shape(V), TRUE);
+ *          Since AVIS_MAX is normalized, V>S.
  *
- *          If x == AVIS_MIN(y), return:  genarray( shape(x), FALSE);
- *          If AVIS_MAX(x) == y, return:  genarray( shape(x), FALSE);
+ *          If V == AVIS_MIN(S), return:  genarray( shape(V), FALSE);
+ *          If AVIS_MAX(V) == S, return:  genarray( shape(V), FALSE);
  *
  *
  *

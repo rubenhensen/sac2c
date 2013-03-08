@@ -26,6 +26,7 @@ extern node *SCCFprf_take_SxV (node *arg_node, info *arg_info);
 extern node *SCCFprf_drop_SxV (node *arg_node, info *arg_info);
 extern node *SCCFprf_idx_shape_sel (node *arg_node, info *arg_info);
 extern node *SCCFprf_mask_SxSxS (node *arg_node, info *arg_info);
+extern node *SCCFprf_mask_SxVxV (node *arg_node, info *arg_info);
 extern node *SCCFprf_mask_VxVxV (node *arg_node, info *arg_info);
 extern node *SCCFprf_mask_VxVxS (node *arg_node, info *arg_info);
 extern node *SCCFprf_idxs2offset (node *arg_node, info *arg_info);

@@ -23,7 +23,6 @@ function getargs
  s6=$9
 }
  ## HUSH         echo RunGrep1 testing: $1
-        echo UnitTestRunGrep1 testing: $1
  # Extract result-checking args from source file
  args=`grep RESULT: $1`
  args=${args#/* RESULT: }

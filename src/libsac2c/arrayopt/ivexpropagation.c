@@ -874,8 +874,8 @@ IVEXPadjustExtremaBound (node *arg_node, int k, node **vardecs, node **preassign
             AVIS_ISMAXHANDLED (zavis) = TRUE;
         }
 
-        DBUG_PRINT ("adjustExtremaBound introduced adjustment named: %s for: %s",
-                    AVIS_NAME (zavis), AVIS_NAME (arg_node));
+        DBUG_PRINT ("introduced adjustment named: %s for: %s", AVIS_NAME (zavis),
+                    AVIS_NAME (arg_node));
         pat = PMfree (pat);
     }
 
@@ -1793,6 +1793,31 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     AVIS_ISMINHANDLED (minv) = TRUE;
                     AVIS_ISMAXHANDLED (minv) = TRUE;
                     INFO_MINVAL (arg_info) = TBmakeId (minv);
+                }
+                break;
+
+            case F_val_le_val_SxS:
+            case F_val_le_val_VxV:
+                arg1avis = ID_AVIS (PRF_ARG1 (rhs));
+                if ((!IVEXPisAvisHasMax (lhsavis))
+                    && (TYisAKV (AVIS_TYPE (arg1avis))
+                        || TYisAKS (AVIS_TYPE (arg1avis)))) {
+                    /* Create maximum as normalize( PRF_ARG2) */
+                    maxv = IVEXPadjustExtremaBound (ID_AVIS (PRF_ARG2 (rhs)), +1,
+                                                    &INFO_VARDECS (arg_info),
+                                                    &INFO_PREASSIGNS (arg_info), "valle");
+                    INFO_MAXVAL (arg_info) = TBmakeId (maxv);
+                }
+                break;
+
+            case F_val_lt_val_SxS:
+                arg1avis = ID_AVIS (PRF_ARG1 (rhs));
+                if ((!IVEXPisAvisHasMax (lhsavis))
+                    && (TYisAKV (AVIS_TYPE (arg1avis))
+                        || TYisAKS (AVIS_TYPE (arg1avis)))) {
+                    /* Create maximum as PRF_ARG2 */
+                    maxv = ID_AVIS (PRF_ARG2 (rhs));
+                    INFO_MAXVAL (arg_info) = TBmakeId (maxv);
                 }
                 break;
 
