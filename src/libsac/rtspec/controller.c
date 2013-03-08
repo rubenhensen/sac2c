@@ -394,7 +394,6 @@ SAC_handleRequest (queue_node_t *request)
 
     /* The path to the new library. */
     sprintf (filename, "%s/lib%sMod.so", tmpdir_name, new_module);
-    printf ("syscall: %s\n", syscall);
 
     /* Execute the system call and act according to the return value. */
     switch (system (syscall)) {
