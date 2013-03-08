@@ -57,7 +57,7 @@ CreateTmpDir (char *dir)
     tmpdir_name = (char *)malloc (sizeof (char) * (strlen (dir) + 16));
 
     strcpy (tmpdir_name, dir);
-    strcat (tmpdir_name, "/" TMP_DIR_NAME_PREFIX "xxxxxx");
+    strcat (tmpdir_name, "/" TMP_DIR_NAME_PREFIX "XXXXXX");
 
     tmpdir_name = mkdtemp (tmpdir_name);
 
@@ -394,6 +394,7 @@ SAC_handleRequest (queue_node_t *request)
 
     /* The path to the new library. */
     sprintf (filename, "%s/lib%sMod.so", tmpdir_name, new_module);
+    printf ("syscall: %s\n", syscall);
 
     /* Execute the system call and act according to the return value. */
     switch (system (syscall)) {
@@ -402,6 +403,7 @@ SAC_handleRequest (queue_node_t *request)
                          "handle_request()] Compilation failed!");
 
         exit (EXIT_FAILURE);
+        break;
 
     case -1:
         fprintf (stderr, "ERROR -- \t [RTSpec Controller: "

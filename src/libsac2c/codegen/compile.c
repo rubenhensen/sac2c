@@ -6944,44 +6944,19 @@ COMPprfWrapperShapeEncode (node *arg_node, info *arg_info)
 {
     node *assigns = NULL;
     node *args;
-    node *curr_arg;
-    node *expr = NULL;
-    node *arg_expr = NULL;
-    char *name;
-    int num_args;
 
     DBUG_ENTER ();
 
-    num_args = 0;
     args = PRF_ARGS (arg_node);
 
     if (args == NULL) {
         DBUG_PRINT_TAG ("RTSPEC", "Arguments are NULL!");
-        assigns = TCmakeAssignIcm1 ("WE_NO_SHAPE_ENCODE", TBmakeNum (num_args), NULL);
+        assigns = TCmakeAssignIcm1 ("WE_NO_SHAPE_ENCODE", TBmakeNum (0), NULL);
     } else {
-        while (args != NULL) {
-            curr_arg = EXPRS_EXPR (args);
-            name = AVIS_NAME (ID_AVIS (curr_arg));
-
-            DBUG_ASSERT (curr_arg != NULL, "Missing argument name!");
-            DBUG_PRINT_TAG ("RTSPEC", "Argument name: %s", name);
-
-            if (expr == NULL) {
-                expr = TBmakeExprs (TCmakeIdCopyString (name), NULL);
-                arg_expr = expr;
-            } else {
-                EXPRS_NEXT (expr) = TBmakeExprs (TCmakeIdCopyString (name), NULL);
-                expr = EXPRS_NEXT (expr);
-            }
-
-            num_args++;
-            args = EXPRS_NEXT (args);
-        }
-
-        /*DBUG_ASSERT(expr != NULL, "No arguments were encoded!");*/
-
         assigns = TCmakeAssignIcm1 ("WE_SHAPE_ENCODE",
-                                    TBmakeExprs (TBmakeNum (num_args), arg_expr), NULL);
+                                    TBmakeExprs (TBmakeNum (TCcountExprs (args)),
+                                                 DUPdupExprsNt (args)),
+                                    NULL);
     }
 
     DBUG_RETURN (assigns);

@@ -12,6 +12,9 @@
  *
  * @author tvd
  *
+ *
+ * @TODO Update all (relevant) allocations to SAC_malloc.
+ *
  *****************************************************************************/
 
 #if SAC_DO_RTSPEC
@@ -109,6 +112,11 @@
 
 /*
  * Print the 'update' of the function pointer.
+ *
+ * @TODO
+ * GCC prints a warning for this code because the types of SAC_func_ptr and
+ * SAC_reg_obj->func_ptr are different. Maybe adding a cast here could remove
+ * this warning?
  */
 #define SAC_WE_PTR_UPDATE() SAC_func_ptr = SAC_reg_obj->func_ptr;
 
@@ -116,10 +124,11 @@
  * Print the correct indexation of the descriptor to get the dimensions of a
  * certain argument.
  */
-#define SAC_WE_GET_DIM(arg) arg##__desc[1]
+#define SAC_WE_GET_DIM(arg) SAC_ND_A_DIM (arg)
 
 /*
  * Allocate memory for the shape array.
+ *
  */
 #define SAC_WE_ALLOC_SHAPE_ARRAY() SAC_shapes = malloc (size * sizeof (int));
 
@@ -137,7 +146,7 @@
     SAC_shapes[i] = SAC_WE_GET_DIM (arg);                                                \
     i++;                                                                                 \
     for (j = 0; j < SAC_WE_GET_DIM (arg); j++) {                                         \
-        SAC_shapes[i++] = arg##__desc[3 + j];                                            \
+        SAC_shapes[i++] = SAC_ND_A_SHAPE (arg, j);                                       \
     }
 
 /*

@@ -265,8 +265,12 @@ GLOBAL (char *, rt_new_name, "", xfree_dummy, )
 
 /*
  * The functions arguments as they should be after optimization.
+ *
+ * The last element (xfree_dummy) should not be changed to 'xfree_node' as
+ * 'rt_args' is not a proper syntax tree. Setting it to xfree_node leads to a
+ * segfault *after* compilation has finished.
  */
-GLOBAL (node *, rt_args, NULL, xfree_node, )
+GLOBAL (node *, rt_args, NULL, xfree_dummy, )
 /*
  * Default it is NULL.
  */
