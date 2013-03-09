@@ -676,6 +676,10 @@ simpletype
 TYgetSimpleType (ntype *simple)
 {
     DBUG_ENTER ();
+    if (NTYPE_CON (simple) != TC_simple) {
+        printf ("NTYPE_CON() returns %i instead of %i (TC_simple)\n", NTYPE_CON (simple),
+                TC_simple);
+    }
     DBUG_ASSERT (NTYPE_CON (simple) == TC_simple,
                  "TYgetSimpleType applied to nonsimple-type!");
     DBUG_RETURN (SIMPLE_TYPE (simple));
