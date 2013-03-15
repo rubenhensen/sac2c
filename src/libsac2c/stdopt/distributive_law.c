@@ -42,7 +42,7 @@
  * Eventually, the original expression is replaced by a flattened form
  * of the optimised version (Mop2Ast).
  *
- * Example: Assume we have and expression of the form:
+ * Example: Assume we have an expression of the form:
  *
  *   ( ( a * b * c) + a + ( b * c * d) + ( b * d))
  *
