@@ -56,13 +56,11 @@
  */
 struct INFO {
     node *fundef;
-    bool onefundef;
     lut_t *lutargs;
     lut_t *lutrenames;
 };
 
 #define INFO_FUNDEF(n) (n->fundef)
-#define INFO_ONEFUNDEF(n) (n->onefundef)
 #define INFO_LUTARGS(n) (n->lutargs)
 #define INFO_LUTRENAMES(n) (n->lutrenames)
 
@@ -75,7 +73,6 @@ MakeInfo (void)
     result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = NULL;
-    INFO_ONEFUNDEF (result) = FALSE;
     INFO_LUTARGS (result) = NULL;
     INFO_LUTRENAMES (result) = NULL;
 
@@ -337,8 +334,9 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
             lutitem = (node **)LUTsearchInLutP (INFO_LUTARGS (arg_info), argavis);
             if (NULL == lutitem) {
                 /* Entry not in LUT. This is a new argument.
-                 * Insert avis for set membership.
-                 * Also, insert for renaming to corresponding name inside lacfun.
+                 * Insert avis for set membership in N_ap.
+                 * Also, insert name of corresponding parameter inside lacfun,
+                 * for renaming.
                  */
                 INFO_LUTARGS (arg_info)
                   = LUTinsertIntoLutP (INFO_LUTARGS (arg_info), argavis,
@@ -350,8 +348,9 @@ MarkDupsAndRenameBody (node *arg_node, info *arg_info)
                 ARG_ISDUPLICATE (fundefargs) = TRUE;
                 formalargavis = *lutitem;
                 DBUG_PRINT ("Duplicate arg %s renamed to %s in LACFUN %s",
-                            AVIS_NAME (ARG_AVIS (fundefargs)), formalargavis,
+                            AVIS_NAME (ARG_AVIS (fundefargs)), AVIS_NAME (formalargavis),
                             FUNDEF_NAME (lacfundef));
+
                 INFO_LUTRENAMES (arg_info)
                   = LUTinsertIntoLutP (INFO_LUTRENAMES (arg_info), ARG_AVIS (fundefargs),
                                        formalargavis);
@@ -405,7 +404,6 @@ EDFAdoEliminateDuplicateFundefArgs (node *arg_node)
     DBUG_ENTER ();
 
     arg_info = MakeInfo ();
-    INFO_ONEFUNDEF (arg_info) = (N_fundef == NODE_TYPE (arg_node));
 
     INFO_LUTARGS (arg_info) = LUTgenerateLut ();
     INFO_LUTRENAMES (arg_info) = LUTgenerateLut ();
@@ -467,10 +465,7 @@ EDFAfundef (node *arg_node, info *arg_info)
     FUNDEF_BODY (arg_node) = TRAVopt (FUNDEF_BODY (arg_node), arg_info);
 
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
-
-    if (!INFO_ONEFUNDEF (arg_info)) {
-        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    }
+    FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
