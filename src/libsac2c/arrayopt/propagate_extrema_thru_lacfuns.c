@@ -238,6 +238,8 @@ IsSameExtremum (node *arg, node *rca)
  *        The former is dealt with later on; the recursive
  *        is replaced here.
  *
+ *        A CONDFUN is treated in a similar manner to a LOOPFUN.
+ *
  ******************************************************************************/
 static node *
 EnhanceLacfunHeader (node *arg_node, info *arg_info)
@@ -272,29 +274,33 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
 
         typ = AVIS_TYPE (argavis);
         if ((NULL == AVIS_MIN (lfa)) && (!TYisAKV (typ)) && (NULL != AVIS_MIN (argavis))
-            && (NULL != rca)
-            && ((LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca))) ||
-                // FIXME: Next line is KLUDGE for Bug #1022
-                (IsSameExtremum (lfa, EXPRS_EXPR (rca))))) {
+            && (FUNDEF_ISCONDFUN (arg_node)
+                || ((NULL != rca)
+                    && ((LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca))) ||
+                        // FIXME: Next line is KLUDGE for Bug #1022
+                        (IsSameExtremum (lfa, EXPRS_EXPR (rca))))))) {
             minmax = AVIS_MIN (argavis);
             newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
                                                  &INFO_NEWOUTERAPARGS (arg_info));
             AVIS_MIN (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
             DBUG_PRINT ("Adding AVIS_MIN(%s) for formal parameter %s",
                         AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
+            global.optcounters.petl_expr++;
         }
 
         if ((NULL == AVIS_MAX (lfa)) && (!TYisAKV (typ)) && (NULL != AVIS_MAX (argavis))
-            && (NULL != rca)
-            && ((LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca))) ||
-                // FIXME: Next line is KLUDGE for Bug #1022
-                (IsSameExtremum (lfa, EXPRS_EXPR (rca))))) {
+            && (FUNDEF_ISCONDFUN (arg_node)
+                || ((NULL != rca)
+                    && ((LFUisLoopFunInvariant (arg_node, lfa, EXPRS_EXPR (rca))) ||
+                        // FIXME: Next line is KLUDGE for Bug #1022
+                        (IsSameExtremum (lfa, EXPRS_EXPR (rca))))))) {
             minmax = AVIS_MAX (argavis);
             newavis = LFUprefixFunctionArgument (arg_node, ID_AVIS (minmax),
                                                  &INFO_NEWOUTERAPARGS (arg_info));
             AVIS_MAX (ARG_AVIS (lacfunargs)) = TBmakeId (newavis);
             DBUG_PRINT ("Adding AVIS_MAX(%s) for formal parameter %s",
                         AVIS_NAME (newavis), AVIS_NAME (ARG_AVIS (lacfunargs)));
+            global.optcounters.petl_expr++;
         }
 
         apargs = EXPRS_NEXT (apargs);
@@ -306,7 +312,6 @@ EnhanceLacfunHeader (node *arg_node, info *arg_info)
         DBUG_PRINT ("Replacing recursive call to LACFUN: %s", FUNDEF_NAME (arg_node));
         reccall = FUNDEF_LOOPRECURSIVEAP (arg_node);
         AP_ARGS (reccall) = TCappendExprs (newrecursiveapargs, AP_ARGS (reccall));
-        global.optcounters.petl_expr++;
     }
 
     DBUG_RETURN (arg_node);
@@ -576,17 +581,11 @@ PETLblock (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if ((NULL != INFO_LACFUN (arg_info))) {
-        if (FUNDEF_ISCONDFUN (INFO_FUNDEF (arg_info))) {
-            arg_node = TRAVcont (arg_node, arg_info); /* Dig deeper for then/else */
-        } else {                                      /* This is a loopfun */
-            DBUG_ASSERT (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)), "Expected LOOPFUN");
-            arg_node = EnhanceLacfunBody (arg_node, arg_info, TRUE);
-            arg_node = TRAVcont (arg_node, arg_info); /* Fix outer call */
-        }
-    } else {
-        arg_node = TRAVcont (arg_node, arg_info); /* Vanilla traversal */
+    if ((NULL != INFO_LACFUN (arg_info)) && (FUNDEF_ISLOOPFUN (INFO_FUNDEF (arg_info)))) {
+        arg_node = EnhanceLacfunBody (arg_node, arg_info, TRUE);
     }
+
+    arg_node = TRAVcont (arg_node, arg_info); /* Vanilla traversal */
 
     DBUG_RETURN (arg_node);
 }
@@ -640,9 +639,7 @@ PETLap (node *arg_node, info *arg_info)
         FUNDEF_RETURN (AP_FUNDEF (arg_node)) = LFUfindFundefReturn (AP_FUNDEF (arg_node));
     }
 
-    if ((NULL == INFO_LACFUN (arg_info))) { /* Vanilla traversal */
-        arg_node = TRAVcont (arg_node, arg_info);
-    }
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -654,8 +651,6 @@ PETLap (node *arg_node, info *arg_info)
  * @brief If we have addded extrema, then
  *        generate F_noteminval/maxval statements for the
  *        THEN and ELSE paths.
- *
- *        Otherwise, this is a normal traversal.
  *
  * @param arg_node N_cond node
  * @param arg_info
@@ -669,13 +664,13 @@ PETLcond (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if ((NULL != INFO_LACFUN (arg_info))) {
-        DBUG_PRINT ("Looking at COND_THEN for %s", INFO_FUNDEF (arg_info));
+        DBUG_PRINT ("Looking at COND_THEN for %s", FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         COND_THEN (arg_node) = EnhanceLacfunBody (COND_THEN (arg_node), arg_info, FALSE);
-        DBUG_PRINT ("Looking at COND_ELSE for %s", INFO_FUNDEF (arg_info));
+        DBUG_PRINT ("Looking at COND_ELSE for %s", FUNDEF_NAME (INFO_FUNDEF (arg_info)));
         COND_ELSE (arg_node) = EnhanceLacfunBody (COND_ELSE (arg_node), arg_info, TRUE);
-    } else {
-        arg_node = TRAVcont (arg_node, arg_info); /* Vanilla traversal */
     }
+
+    arg_node = TRAVcont (arg_node, arg_info);
 
     DBUG_RETURN (arg_node);
 }
