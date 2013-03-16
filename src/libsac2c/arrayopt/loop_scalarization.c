@@ -384,7 +384,8 @@ AdjustLoopSignature (node *arg, shape *shp, info *arg_info)
      */
     scalar_type
       = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
-    new_args = (node *)COcreateAllIndicesAndFold (shp, CreateArg, NULL, scalar_type);
+    new_args
+      = (node *)COcreateAllIndicesAndFold (shp, CreateArg, NULL, scalar_type, FALSE);
 
     /**
      * create assignment
@@ -468,7 +469,7 @@ AdjustRecursiveCall (node *exprs, shape *shp, info *arg_info)
     scalar_type
       = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
     new_vardecs
-      = (node *)COcreateAllIndicesAndFold (shp, CreateVardecs, NULL, scalar_type);
+      = (node *)COcreateAllIndicesAndFold (shp, CreateVardecs, NULL, scalar_type, FALSE);
 
     /**
      * create the exprs:
@@ -482,8 +483,8 @@ AdjustRecursiveCall (node *exprs, shape *shp, info *arg_info)
     local_info_ptr->avis = avis;
     local_info_ptr->vardecs = NULL;
 
-    new_assigns
-      = (node *)COcreateAllIndicesAndFold (shp, CreateAssigns, NULL, local_info_ptr);
+    new_assigns = (node *)COcreateAllIndicesAndFold (shp, CreateAssigns, NULL,
+                                                     local_info_ptr, FALSE);
     new_vardecs = TCappendVardec (new_vardecs, local_info_ptr->vardecs);
 
     /**
@@ -547,7 +548,7 @@ AdjustExternalCall (node *exprs, shape *shp, info *arg_info)
     scalar_type
       = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
     new_vardecs
-      = (node *)COcreateAllIndicesAndFold (shp, CreateVardecs, NULL, scalar_type);
+      = (node *)COcreateAllIndicesAndFold (shp, CreateVardecs, NULL, scalar_type, FALSE);
 
     /**
      * create the exprs:
@@ -561,8 +562,8 @@ AdjustExternalCall (node *exprs, shape *shp, info *arg_info)
     local_info_ptr->avis = avis;
     local_info_ptr->vardecs = NULL;
 
-    new_assigns
-      = (node *)COcreateAllIndicesAndFold (shp, CreateAssigns, NULL, local_info_ptr);
+    new_assigns = (node *)COcreateAllIndicesAndFold (shp, CreateAssigns, NULL,
+                                                     local_info_ptr, FALSE);
     new_vardecs = TCappendVardec (new_vardecs, local_info_ptr->vardecs);
 
     /**

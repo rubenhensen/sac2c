@@ -82,7 +82,7 @@ extern void *COgetDataVec (constant *a);
 
 extern void *COcreateAllIndicesAndFold (shape *shp,
                                         void *(*foldfun) (constant *idx, void *, void *),
-                                        void *accu, void *attr);
+                                        void *accu, void *attr, bool scalaridx);
 
 extern constant *COcopyConstant (constant *a);
 extern constant *COcopyScalar2OneElementVector (constant *a);

@@ -1366,14 +1366,19 @@ COcompareConstants (constant *c1, constant *c2)
  *              shape *shp,
  *              void *(*foldfun)( constant *idx, void *, void *),
  *              void *accu,
- *              void* attr)
+ *              void* attr,
+ *              bool  scalaridx)
  *
+ * @brief: Bodo will write this.
+ *
+ * @params:     scalaridx: if this is FALSE, the indices are generated
+ *              as 1-element vectors. If TRUE, they are generated as scalars.
  *
  ******************************************************************************/
 
 void *
 COcreateAllIndicesAndFold (shape *shp, void *(*foldfun) (constant *idx, void *, void *),
-                           void *accu, void *attr)
+                           void *accu, void *attr, bool scalaridx)
 {
     constant *idx;
     int *datav;
@@ -1384,7 +1389,12 @@ COcreateAllIndicesAndFold (shape *shp, void *(*foldfun) (constant *idx, void *, 
 
     DBUG_ENTER ();
 
-    idx = COmakeZero (T_int, SHcreateShape (1, SHgetDim (shp)));
+    if (scalaridx) {
+        idx = COmakeZero (T_int, SHcreateShape (0, 0));
+    } else {
+        idx = COmakeZero (T_int, SHcreateShape (1, SHgetDim (shp)));
+    }
+
     datav = (int *)COgetDataVec (idx);
     max_d = SHgetDim (shp) - 1;
     len = SHgetUnrLen (shp);

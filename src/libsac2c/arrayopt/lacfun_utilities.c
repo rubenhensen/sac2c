@@ -617,126 +617,6 @@ LFUinsertAssignIntoLacfun (node *arg_node, node *assign, node *oldavis)
     DBUG_RETURN (arg_node);
 }
 
-#ifdef DEADCODE
-/** <!--********************************************************************-->
- *
- * @fn void LFUclearAvisGenericMarkers( node *arg_node);
- *
- * @brief: Clear generic marker bit in N_avis nodes
- *         pointed to by N_arg elements.
- *
- * @param: arg_node - an N_ap node.
- *
- * @result: none.
- *
- *****************************************************************************/
-void
-LFUclearAvisGenericMarkers (node *arg_node)
-{
-    node *apargs;
-    node *argavis;
-
-    DBUG_ENTER ();
-
-    apargs = AP_ARGS (arg_node);
-    while (NULL != apargs) {
-        argavis = ID_AVIS (EXPRS_EXPR (apargs));
-        AVIS_GENERICMARKER (argavis) = FALSE;
-        apargs = EXPRS_NEXT (apargs);
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void LFUclearArgIsDuplicateMarkers( node *arg_node);
- *
- * @brief: Clear ARG_ISDUPLICATE marker bit in N_arg nodes
- *         pointed to by N_arg elements.
- *
- * @param: arg_node - an N_ap node.
- *
- * @result: none.
- *
- *****************************************************************************/
-void
-LFUclearArgIsDuplicateMarkers (node *arg_node)
-{
-    node *apargs;
-    node *argavis;
-
-    DBUG_ENTER ();
-
-    apargs = AP_ARGS (arg_node);
-    while (NULL != apargs) {
-        ARG_ISDUPLICATE (apargs) = FALSE;
-        argavis = ID_AVIS (EXPRS_EXPR (apargs));
-        apargs = EXPRS_NEXT (apargs);
-    }
-
-    DBUG_RETURN ();
-}
-
-/** <!--********************************************************************-->
- *
- * @fn void LFUmarkDuplicateLacfunArgs( node *arg_node);
- *
- * @brief: Mark N_ap arguments that are duplicates.
- *         By "duplicate", we mean that the argument occurs more
- *         than once in the function call, and the corresponding
- *         elements in the called function are all loop-invariant.
- *
- *         NOP if called function is not a LACFUN.
- *
- * @param: arg_node - an N_ap node.
- *
- * @result: none.
- *
- *****************************************************************************/
-void
-LFUmarkDuplicateLacfunArgs (node *arg_node)
-{
-    node *apargs;
-    node *lacfunargs;
-    node *rca;
-    node *lacfundef;
-
-    DBUG_ENTER ();
-
-    lacfundef = FUNDEF_CALLAP (arg_node);
-    if (FUNDEF_ISLACFUN (lacfundef)) {
-        apargs = AP_ARGS (arg_node);          /* outer call */
-        lacfunargs = FUNDEF_ARGS (lacfundef); /* formal parameters */
-        rca = FUNDEF_LOOPRECURSIVEAP (lacfundef);
-        rca = (NULL != rca) ? AP_ARGS (rca) : NULL; /* recursive call */
-        LFUClearArgIsDuplicateMarkers (apargs);
-        LFUclearAvisGenericMarkers (apargs);
-
-        apargs = AP_ARGS (arg_node);
-        while (NULL != apargs) {
-            argid = EXPRS_EXPR (apargs);
-            argavis = ID_AVIS (argid);
-            if ((LFUisLoopFunInvariant (lacfundef, ARG_AVIS (lacfunargs), rca))
-                && (!ARG_ISDUPLICATE (apargs))) {
-                /* Arg is a duplicate if loop-invariant and we have seen it already */
-                ARG_ISDUPLICATE (apargs) = AVIS_GENERICMARKER (ARG_AVIS (apargs));
-                ARG_AVIS (apargs) = TRUE;
-                if (ARG_ISDUPLICATE (apargs)) {
-                    DBUG_PRINT ("Duplicate arg %s detected in LACFUN %s",
-                                AVIS_NAME (argavis), FUNDEF_NAME (arg_node));
-                }
-                apargs = EXPRS_NEXT (apargs);
-                lacfunargs = ARG_NEXT (lacfunargs);
-            }
-        }
-    }
-    LFUclearAvisGenericMarkers (apargs);
-
-    DBUG_RETURN ();
-}
-#endif // DEADCODE
-
 /** <!--********************************************************************-->
  *
  * @fn node *LFUfindFundefReturn( node *arg_node)
@@ -861,7 +741,7 @@ LFUcreateAssigns (constant *idx, void *accu, void *local_info)
      * create the selection:
      */
     accu = TBmakeAssign (TBmakeLet (TBmakeIds (scal_avis, NULL),
-                                    TCmakePrf2 (F_sel_VxA, TBmakeId (avis),
+                                    TCmakePrf2 (F_idx_sel, TBmakeId (avis),
                                                 TBmakeId (array_avis))),
                          (node *)accu);
     AVIS_SSAASSIGN (scal_avis) = (node *)accu;
@@ -926,8 +806,8 @@ LFUscalarizeArray (node *avis, node **preassigns, node **vardecs, shape *shp)
      */
     scalar_type
       = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
-    new_vardecs
-      = (node *)COcreateAllIndicesAndFold (shp, LFUcreateVardecs, NULL, scalar_type);
+    new_vardecs = (node *)COcreateAllIndicesAndFold (shp, LFUcreateVardecs, NULL,
+                                                     scalar_type, TRUE);
 
     /**
      * create the exprs:
@@ -941,8 +821,8 @@ LFUscalarizeArray (node *avis, node **preassigns, node **vardecs, shape *shp)
     local_info_ptr->avis = avis;
     local_info_ptr->vardecs = NULL;
 
-    new_assigns
-      = (node *)COcreateAllIndicesAndFold (shp, LFUcreateAssigns, NULL, local_info_ptr);
+    new_assigns = (node *)COcreateAllIndicesAndFold (shp, LFUcreateAssigns, NULL,
+                                                     local_info_ptr, TRUE);
     new_vardecs = TCappendVardec (new_vardecs, local_info_ptr->vardecs);
 
     /**

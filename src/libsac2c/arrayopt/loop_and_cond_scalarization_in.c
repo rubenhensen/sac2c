@@ -495,7 +495,8 @@ ExtendLacfunSignature (node *arg_node, info *arg_info)
      */
     scalar_type
       = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
-    new_args = (node *)COcreateAllIndicesAndFold (shp, CreateArg, NULL, scalar_type);
+    new_args
+      = (node *)COcreateAllIndicesAndFold (shp, CreateArg, NULL, scalar_type, FALSE);
 
     DBUG_RETURN (new_args);
 }

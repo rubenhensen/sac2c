@@ -1973,7 +1973,7 @@ SelProxyArray (node *arg_node, info *arg_info)
                  * xtemplate ++ some constants
                  */
                 tmp = (node *)COcreateAllIndicesAndFold (iter_shp, IsProxySel, aelems_P,
-                                                         xtemplate);
+                                                         xtemplate, FALSE);
 
                 /*
                  * if that worked out, we can replace the selection by
@@ -2113,8 +2113,7 @@ IdxselProxyArray (node *arg_node, info *arg_info)
                  * xtemplate ++ some constants
                  */
                 tmp = (node *)COcreateAllIndicesAndFold (iter_shp, IsProxySel, aelems_P,
-                                                         xtemplate);
-
+                                                         xtemplate, FALSE);
                 /*
                  * if that worked out, we can replace the selection by
                  *
