@@ -233,8 +233,8 @@ CFdoConstantFolding (node *arg_node)
 
     arg_info = FreeInfo (arg_info);
 
-    if ((global.local_funs_grouped) && (!FUNDEF_ISLACFUN (arg_node))
-        && (N_fundef == NODE_TYPE (arg_node))) {
+    if ((global.local_funs_grouped) && (N_fundef == NODE_TYPE (arg_node))
+        && (!FUNDEF_ISLACFUN (arg_node))) {
         /**
          *   In case we are dealing with an "ordinary" (ie non LACFUN) function
          *   we are facing a potential inconsistency in case of
