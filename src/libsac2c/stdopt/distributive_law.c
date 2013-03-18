@@ -46,7 +46,7 @@
  *
  *   ( ( a * b * c) + a + ( b * c * d) + ( b * d))
  *
- * Internaly, we represent this as
+ * Internally, we represent this as
  *
  *  ADD{ MUL{a,b,c},
  *       Mul{a},
@@ -1001,6 +1001,9 @@ DLfundef (node *arg_node, info *arg_info)
         /*
          * Infer need counters
          */
+        DBUG_PRINT ("traversing body of (%s) %s",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                    FUNDEF_NAME (arg_node));
         arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_dl);
 
         INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
@@ -1020,6 +1023,9 @@ DLfundef (node *arg_node, info *arg_info)
         }
         BLOCK_VARDECS (INFO_TOPBLOCK (arg_info))
           = ClearDLActiveFlags (BLOCK_VARDECS (INFO_TOPBLOCK (arg_info)));
+        DBUG_PRINT ("Exiting body of (%s) %s",
+                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
+                    FUNDEF_NAME (arg_node));
     }
 
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
