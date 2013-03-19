@@ -644,6 +644,8 @@ SUBPHASE (wlbscnf2, "Unflattening WL-partition structural constants",
 SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCleanup,
           ALWAYS, opt)
 
+SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
+
 SUBPHASE (tup, "Running final type inference", NTCdoNewReTypeCheckFromScratch, ALWAYS,
           opt)
 
@@ -653,8 +655,6 @@ SUBPHASE (ebt, "Eliminating bottom types", EBTdoEliminateBottomTypes, ALWAYS, op
 
 SUBPHASE (cffinal, "Final round of constant folding", CFdoConstantFolding,
           global.optimize.docf, opt)
-
-SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
 
 SUBPHASE (wlfs, "Applying with-loop fusion", WLFSdoWithloopFusion, global.optimize.dowlfs,
           opt)
