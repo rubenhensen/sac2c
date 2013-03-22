@@ -18,6 +18,7 @@ KEYWORD (TFUSER, "user-typedef")*/
 
 KEYWORD (BUILTIN, "builtin")
 KEYWORD (ALL, "all")
+KEYWORD (ASSERT, "assert")
 KEYWORD (TYPE_BOOL, "bool")
 KEYWORD (TYPE_BYTE, "byte")
 KEYWORD (CACHESIM, "cachesim")
