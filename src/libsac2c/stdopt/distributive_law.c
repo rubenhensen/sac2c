@@ -49,8 +49,8 @@
  * Internally, we represent this as
  *
  *  ADD{ MUL{a,b,c},
- *       Mul{a},
- *       Mul{b,c,d},
+ *       MUL{a},
+ *       MUL{b,c,d},
  *       MUL{b,d} }
  *
  * round 1:
@@ -90,8 +90,6 @@
  * done. It seems that there is no particular reason other than that the
  * implementation would get more complicated [really???]
  *
- *
- *
  * Implementation details:
  * =======================
  *
@@ -109,18 +107,18 @@
  * the occurrecnces of the most common factor.
  * In round 1 of the example above, this transforms
  *  ADD{ MUL{a,b,c},
- *       Mul{a},
- *       Mul{b,c,d},
+ *       MUL{a},
+ *       MUL{b,c,d},
  *       MUL{b,d} }
  *
  * into
  *   ADD{ MUL{a,c},
- *        Mul{c,d},
+ *        MUL{c,d},
  *        MUL{d} }
  * and
- *   ADD{ Mul{a}}
+ *   ADD{ MUL{a}}
  *
- * which are subsequenly recombined in OptimizeMop itself into:
+ * which are subsequently recombined in OptimizeMop into:
  *   ADD{ MUL{b, ADD{ MUL{a,c},
  *                    MUL{c,d},
  *                    MUL{d}}},
@@ -651,7 +649,8 @@ BuildMopTree (node *addition)
 {
     node *tmp, *exprs;
     node *res;
-    node *left, *right;
+    node *left;
+    node *right;
     bool sclprf;
 
     DBUG_ENTER ();
