@@ -50,9 +50,6 @@
 #include "memory.h"
 #include "free.h"
 #include "DupTree.h"
-#include "globals.h"
-
-#include "globals.h"
 
 #include "UndoElimSubDiv.h"
 
@@ -524,7 +521,11 @@ UESDprf (node *arg_node, info *arg_info)
             FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
               = TBmakeVardec (avis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-            ++global.optcounters.uesd_expr;
+            /* ESD is NOT an optimization, merely a transformer for AL/DL/AS.
+             * Hence, it should NOT cause an optcounters increment,
+             * which could be the cause of never-ending CYC/SAACYC cycles.
+              ++global.optcounters.uesd_expr;
+            */
         }
     }
 

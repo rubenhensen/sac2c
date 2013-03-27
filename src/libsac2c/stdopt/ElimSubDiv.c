@@ -436,7 +436,11 @@ ESDprf (node *arg_node, info *arg_info)
         DBUG_PRINT ("replacing prf for %s with %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), AVIS_NAME (avis));
 
-        ++global.optcounters.esd_expr;
+        /* ESD is NOT an optimization, merely a transformer for AL/DL/AS.
+         * Hence, it should NOT cause an optcounters increment,
+         * which could be the cause of never-ending CYC/SAACYC cycles.
+         ++global.optcounters.esd_expr;
+        */
     }
 
     DBUG_RETURN (arg_node);
