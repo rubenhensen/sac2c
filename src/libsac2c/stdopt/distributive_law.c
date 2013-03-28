@@ -35,7 +35,7 @@
  * Once such a structure has been created, the function   OptimizeMop
  * is responsible for converting it into the compound expression with
  * potentially fewer multiplications. This is done by repeatedly
- *  1) identifying the most frequently used factor found in ALL summands
+ *  1) examining all summands to find the most frequently used factor
  *     s_1 ... s_n  (MostCommonFactor)
  *  2) pulling out those summands that contain that very factor and,
  *     while doing so, applying distributive law to it.
@@ -55,27 +55,33 @@
  *
  * round 1:
  *  The most common factor is b.
- *  We obtain ADD{ MUL{b, ADD{ MUL{a,c},
- *                             MUL{c,d},
- *                             MUL{d}}},
- *                 MUL{a} }
+ *  We obtain:
+ *
+ *  ADD{ MUL{b, ADD{ MUL{a,c},
+ *       MUL{c,d},
+ *       MUL{d}}},
+ *       MUL{a} }
  *
  * round 2:
  *   The most common factors (per level) are c and d. Inference is bottom
- *   up, so d is chosen here.
- *   So, ADD{ MUL{a,c},
- *            MUL{c,d},
- *            MUL{d}}
- *   is replaced by
- *       ADD{ MUL{d, ADD{ MUL{c},
- *                        MUL{}}},
- *            MUL{a,c}}
- *   equating to
- *       ADD{ MUL{b, ADD{ MUL{d, ADD{ MUL{c},
- *                                    MUL{}}},
- *                        MUL{a,c}}},
- *            MUL{a}}
- *   overall.
+ *   up, so d is chosen here. So,
+ *
+ *   ADD{ MUL{a,c},
+ *        MUL{c,d},
+ *        MUL{d}}
+ *
+ *   is replaced by:
+ *
+ *   ADD{ MUL{d, ADD{ MUL{c},
+ *                    MUL{}}},
+ *        MUL{a,c}}
+ *
+ *   equating to:
+ *
+ *   ADD{ MUL{b, ADD{ MUL{d, ADD{ MUL{c},
+ *                                MUL{}}},
+ *                    MUL{a,c}}},
+ *        MUL{a}}
  *
  * NB: The intermediate rounds can be made visible using -#d,DL  !!
  *
@@ -90,6 +96,11 @@
  * done. It seems that there is no particular reason other than that the
  * implementation would get more complicated [really???]
  *
+ * DL now treats _neg_( X) as MUL{ X, -1} This is intended to let
+ * DL handle expressions such as  Z = ( X +  X) - X;
+ * The problem is documented in Bug #1046 and DL unit test bug1046C.sac
+ * demonstrates the fault.
+ *
  * Implementation details:
  * =======================
  *
@@ -101,28 +112,52 @@
  * former is measure of convenience, and that the latter simplifies the
  * actual optimisation process.
  *
+ * I found it a bit easier to understand what's going on by thinking of
+ * ADD as sum() and MUL as prod().
+ *
  * - The actual transformation is split up between two functions. The main
  * "work" is done in SplitMop. It separates the summands that do contain
  * the most common factor from those that do not. While doing so it eliminates
  * the occurrecnces of the most common factor.
- * In round 1 of the example above, this transforms
+ * In round 1 of the example above, removal of b transforms
+ *
  *  ADD{ MUL{a,b,c},
  *       MUL{a},
  *       MUL{b,c,d},
  *       MUL{b,d} }
  *
  * into
+ *
  *   ADD{ MUL{a,c},
  *        MUL{c,d},
  *        MUL{d} }
  * and
+ *
  *   ADD{ MUL{a}}
  *
  * which are subsequently recombined in OptimizeMop into:
+ *
  *   ADD{ MUL{b, ADD{ MUL{a,c},
  *                    MUL{c,d},
  *                    MUL{d}}},
  *        MUL{a} }
+ *
+ * ============================
+ *
+ * Suggestions and questions:
+ *
+ * 1. This optimization only really works on scalars and
+ *    vectors, yet it jumps through hoops to sort-of work
+ *    on AUD code such as that shown in Bug #760.
+ *    I think the code could be significantly simpler and
+ *    more comprehensible if it operated ONLY on known
+ *    types - scalars and vectors.
+ *
+ * 2. I do not know the intent of the AVIS_ISDLACTIVE flag.
+ *    Perhaps the author can supply a description of in ast.xml.
+ *
+ * 3. Why does the optimization clear AVIS_ISDLACTIVE for
+ *    all the vardecs, but not do the same for the N_arg nodes?
  *
  *****************************************************************************/
 
@@ -160,6 +195,7 @@ struct INFO {
     bool travrhs;
     node *lhs;
     node *vardecs;
+    node *fundef;
 };
 
 /*
@@ -171,6 +207,7 @@ struct INFO {
 #define INFO_TRAVRHS(n) ((n)->travrhs)
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_VARDECS(n) ((n)->vardecs)
+#define INFO_FUNDEF(n) ((n)->fundef)
 
 /*
  * INFO functions
@@ -190,6 +227,7 @@ MakeInfo (void)
     INFO_TRAVRHS (result) = FALSE;
     INFO_LHS (result) = FALSE;
     INFO_VARDECS (result) = NULL;
+    INFO_FUNDEF (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -311,6 +349,11 @@ normalizePrf (prf prf)
         prf = F_mul_SxS;
         break;
 
+    case F_neg_S:
+    case F_neg_V:
+        prf = F_mul_SxS;
+        break;
+
     default:
         break;
     }
@@ -328,6 +371,7 @@ LocalSkipControl (void *param, node *expr)
         avis = ID_AVIS (expr);
         if ((AVIS_NEEDCOUNT (avis) != 1) || !AVIS_ISDLACTIVE (avis)) {
             expr = NULL; /* ABORT skipping !! */
+            DBUG_PRINT ("Skipping %s", AVIS_NAME (avis));
         }
     }
     DBUG_RETURN (expr);
@@ -453,8 +497,10 @@ isArg1Scl (prf prf)
     case F_add_SxV:
     case F_mul_SxS:
     case F_mul_SxV:
+    case F_neg_S:
         res = TRUE;
         break;
+
     default:
         res = FALSE;
     }
@@ -487,15 +533,20 @@ isArg2Scl (prf prf)
  * Utility function to flatten non-id nodes. We assume the nodes
  * are simple scalars.
  *
+ * This does a bit more than just flatten the argument - it also
+ * marks the generated N_id as a scalar.
+ *
+ * Result is an N_id node.
+ *
  *****************************************************************************/
-
 static node *
 flattenPrfarg (node *arg_node, info *arg_info)
 {
     node *res;
+    simpletype typ;
+
     DBUG_ENTER ();
 
-    simpletype typ;
     if (N_id != NODE_TYPE (arg_node)) {
         typ = NTCnodeToType (arg_node);
         res
@@ -507,9 +558,19 @@ flattenPrfarg (node *arg_node, info *arg_info)
     } else {
         res = arg_node;
     }
+
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * Return the first argument of the N_prf mop.
+ *
+ * As a side effect, drop that argument from mop.
+ *
+ * Result is an N_id node, we hope.
+ *
+ *****************************************************************************/
 static node *
 consumeHead (node *mop)
 {
@@ -574,10 +635,19 @@ ReverseAssignChain (node *ass, node *agg)
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * Mop2Ast converts the tree created by OptimizeMop back into
+ * proper AST form.
+ *
+ *****************************************************************************/
 static node *
 Mop2Ast (node *mop, info *arg_info)
 {
     node *res;
+    prf prf;
+    node *e1;
+    node *e2;
 
     DBUG_ENTER ();
 
@@ -587,8 +657,6 @@ Mop2Ast (node *mop, info *arg_info)
             res = Mop2Ast (res, arg_info);
             mop = FREEdoFreeNode (mop);
         } else {
-            prf prf;
-            node *e1, *e2;
             prf = PRF_PRF (mop);
             e1 = consumeHead (mop);
             e1 = flattenPrfarg (Mop2Ast (e1, arg_info), arg_info);
@@ -605,64 +673,99 @@ Mop2Ast (node *mop, info *arg_info)
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * CollectExprs does a recursive search, starting at N_id,
+ * for a maximal chain of target_prf instructions, either add or mul.
+ * The result is an N_exprs chain of the N_id arguments to those prfs.
+ *
+ *****************************************************************************/
 static node *
-CollectExprs (prf target_prf, node *a, bool is_scalar_arg)
+CollectExprs (prf target_prf, node *arg_node, bool is_scalar_arg, info *arg_info)
 {
     node *res = NULL;
-    pattern *pat;
-    prf found_prf;
-    node *arg1;
-    node *arg2;
+    pattern *patmonadic;
+    pattern *patdyadic;
+    prf found_prf = 0;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
     node *left;
-    node *right;
+    node *right = NULL;
+    constant *negone;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (a) == N_id, "CollectExprs called with non N_id node");
-    DBUG_PRINT ("Collecting exprs for %s", AVIS_NAME (ID_AVIS (a)));
+    DBUG_ASSERT (NODE_TYPE (arg_node) == N_id, "CollectExprs called with non N_id node");
+    DBUG_PRINT ("Collecting exprs for %s", AVIS_NAME (ID_AVIS (arg_node)));
 
-    pat = PMprf (1, PMAgetPrf (&found_prf), 2, PMvar (1, PMAgetNode (&arg1), 0),
-                 PMvar (1, PMAgetNode (&arg2), 0));
+    patdyadic = PMprf (1, PMAgetPrf (&found_prf), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                       PMvar (1, PMAgetNode (&arg2), 0));
+    patmonadic = PMprf (1, PMAgetPrf (&found_prf), 1, PMvar (1, PMAgetNode (&arg1), 0));
 
-    if (PMmatch (pat, dl_pm_mode, a) && compatiblePrf (target_prf, found_prf)) {
+    if ((PMmatch (patdyadic, dl_pm_mode, arg_node))
+        && compatiblePrf (target_prf, found_prf)) {
+        /* Dyadic case */
         /**
          * Here, we SHOULD set AVIS_ISDLACTIVE( LHS) to FALSE!
          * Unfortunately, PM does not yet support that feature yet.
          * This does not impede the correctness of the optimised
          * code, it just may lead to redundant work during optimisation!
          */
-        left = CollectExprs (target_prf, arg1, isArg1Scl (found_prf));
-        right = CollectExprs (target_prf, arg2, isArg2Scl (found_prf));
+        left = CollectExprs (target_prf, arg1, isArg1Scl (found_prf), arg_info);
+        right = CollectExprs (target_prf, arg2, isArg2Scl (found_prf), arg_info);
+        res = TCappendExprs (left, right);
+    } else if ((PMmatch (patmonadic, dl_pm_mode, arg_node))
+               && compatiblePrf (target_prf, found_prf)) {
+        /**
+         * Here, we SHOULD set AVIS_ISDLACTIVE( LHS) to FALSE!
+         * Unfortunately, PM does not yet support that feature yet.
+         * This does not impede the correctness of the optimised
+         * code, it just may lead to redundant work during optimisation!
+         */
+        left = CollectExprs (target_prf, arg1, isArg1Scl (found_prf), arg_info);
+        /* Fake up -1 for multiply */
+        negone = COmakeConstantFromInt (-1);
+        right = COconstant2AST (negone);
+        right = flattenPrfarg (right, arg_info);
+        DBUG_PRINT ("Generated negone as %s", AVIS_NAME (ID_AVIS (right)));
+        right = TBmakeExprs (right, NULL);
+        negone = COfreeConstant (negone);
         res = TCappendExprs (left, right);
     } else {
-        res = TBmakeExprs (DUPdoDupNode (a), NULL);
+        res = TBmakeExprs (DUPdoDupNode (arg_node), NULL);
         ID_ISSCLPRF (EXPRS_EXPR (res)) = is_scalar_arg;
     }
 
-    pat = PMfree (pat);
+    patmonadic = PMfree (patmonadic);
+    patdyadic = PMfree (patdyadic);
 
     DBUG_RETURN (res);
 }
 
 static node *
-BuildMopTree (node *addition)
+BuildMopTree (node *addition, info *arg_info)
 {
     node *tmp, *exprs;
     node *res;
     node *left;
-    node *right;
+    node *right = NULL;
     bool sclprf;
+    node *mop;
+    node *summand;
 
     DBUG_ENTER ();
 
-    left = CollectExprs (F_add_SxS, PRF_ARG1 (addition), isArg1Scl (PRF_PRF (addition)));
-    right = CollectExprs (F_add_SxS, PRF_ARG2 (addition), isArg2Scl (PRF_PRF (addition)));
+    left = CollectExprs (F_add_SxS, PRF_ARG1 (addition), isArg1Scl (PRF_PRF (addition)),
+                         arg_info);
+    if (NULL != PRF_EXPRS2 (addition)) { /* Dyadic prfs only */
+        right = CollectExprs (F_add_SxS, PRF_ARG2 (addition),
+                              isArg2Scl (PRF_PRF (addition)), arg_info);
+    }
+
     exprs = TCappendExprs (left, right);
 
     tmp = exprs;
     while (tmp != NULL) {
-        node *mop;
-        node *summand;
 
         summand = EXPRS_EXPR (tmp);
         if (NODE_TYPE (summand) == N_id) {
@@ -671,7 +774,7 @@ BuildMopTree (node *addition)
             sclprf = TRUE;
         }
 
-        mop = TBmakePrf (F_mul_SxS, CollectExprs (F_mul_SxS, summand, sclprf));
+        mop = TBmakePrf (F_mul_SxS, CollectExprs (F_mul_SxS, summand, sclprf, arg_info));
 
         EXPRS_EXPR (tmp) = FREEdoFreeNode (EXPRS_EXPR (tmp));
         EXPRS_EXPR (tmp) = mop;
@@ -883,6 +986,9 @@ static node *
 OptimizeMop (node *mop)
 {
     node *exprs;
+    node *mcf;
+    node *newexprs;
+    node *newmop;
 
     DBUG_ENTER ();
 
@@ -895,12 +1001,11 @@ OptimizeMop (node *mop)
         }
 
         if (PRF_PRF (mop) == F_add_SxS) {
-            node *mcf;
 
             mcf = MostCommonFactor (mop);
 
             if (mcf != NULL) {
-                node *newexprs = TBmakeExprs (NULL, NULL);
+                newexprs = TBmakeExprs (NULL, NULL);
                 EXPRS_EXPR (newexprs) = SplitMop (mcf, mop);
 
                 newexprs = TBmakeExprs (mcf, newexprs);
@@ -909,7 +1014,7 @@ OptimizeMop (node *mop)
                   = TBmakeExprs (TBmakePrf (F_mul_SxS, newexprs), PRF_ARGS (mop));
 
                 if (TCcountExprs (PRF_ARGS (mop)) == 1) {
-                    node *newmop = PRF_ARG1 (mop);
+                    newmop = PRF_ARG1 (mop);
                     PRF_ARG1 (mop) = NULL;
                     mop = FREEdoFreeTree (mop);
                     mop = newmop;
@@ -1003,6 +1108,7 @@ DLfundef (node *arg_node, info *arg_info)
         DBUG_PRINT ("traversing body of (%s) %s",
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                     FUNDEF_NAME (arg_node));
+        INFO_FUNDEF (arg_info) = arg_node; /* For debugging ease */
         arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_dl);
 
         INFO_TOPBLOCK (arg_info) = FUNDEF_BODY (arg_node);
@@ -1026,6 +1132,8 @@ DLfundef (node *arg_node, info *arg_info)
                     (FUNDEF_ISWRAPPERFUN (arg_node) ? "wrapper" : "fundef"),
                     FUNDEF_NAME (arg_node));
     }
+
+    INFO_FUNDEF (arg_info) = NULL;
 
     FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
@@ -1162,6 +1270,8 @@ DLprf (node *arg_node, info *arg_info)
     case F_add_SxV:
     case F_add_VxS:
     case F_add_VxV:
+    case F_neg_S:
+    case F_neg_V:
         ltype = IDS_NTYPE (INFO_LHS (arg_info));
 
         if ((!global.enforce_ieee)
@@ -1171,7 +1281,7 @@ DLprf (node *arg_node, info *arg_info)
             /*
              * Collect operands into multi-operation (sum of products)
              */
-            mop = BuildMopTree (arg_node);
+            mop = BuildMopTree (arg_node, arg_info);
 
             if (TCcountExprs (PRF_ARGS (mop)) >= 2) {
                 DBUG_PRINT ("identified suitable expression:");
@@ -1182,6 +1292,8 @@ DLprf (node *arg_node, info *arg_info)
                  */
                 oldoptcounter = global.optcounters.dl_expr;
                 mop = OptimizeMop (mop);
+                DBUG_PRINT ("Optimized into:");
+                DBUG_EXECUTE (PRTdoPrintFile (stderr, mop););
 
                 if (oldoptcounter != global.optcounters.dl_expr) {
                     /*
@@ -1193,10 +1305,10 @@ DLprf (node *arg_node, info *arg_info)
                     /*
                      * Convert mop back into ast representation
                      */
-                    DBUG_PRINT ("converted into:");
-                    DBUG_EXECUTE (PRTdoPrintFile (stderr, mop););
                     arg_node = FREEdoFreeNode (arg_node);
                     arg_node = Mop2Ast (mop, arg_info);
+                    DBUG_PRINT ("converted back into ast:");
+                    DBUG_EXECUTE (PRTdoPrintFile (stderr, arg_node););
                 } else {
                     DBUG_PRINT ("not converted!");
                 }
