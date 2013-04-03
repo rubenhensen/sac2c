@@ -41,6 +41,7 @@
                                                                                          \
     extern constant *CObaseCvDummy##fun (shape *shp);
 
+EXT_DECLS (NegativeOne)
 EXT_DECLS (Zero)
 EXT_DECLS (One)
 

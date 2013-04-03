@@ -1673,9 +1673,6 @@ EMALprf (node *arg_node, info *arg_info)
     case F_neq_VxV:
     case F_ge_VxV:
     case F_gt_VxV:
-    case F_mask_SxSxS:
-    case F_mask_VxVxV:
-    case F_mask_VxVxS:
         if (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id) {
             als->dim = MakeDimArg (PRF_ARG1 (arg_node));
             als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
@@ -1683,6 +1680,26 @@ EMALprf (node *arg_node, info *arg_info)
             als->dim = MakeDimArg (PRF_ARG2 (arg_node));
             als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
         }
+        break;
+
+    case F_mask_SxSxS:
+    case F_mask_VxSxS:
+    case F_mask_VxSxV:
+    case F_mask_VxVxS:
+    case F_mask_VxVxV:
+        als->dim = MakeDimArg (PRF_ARG1 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
+        break;
+
+    case F_mask_SxVxS:
+    case F_mask_SxVxV:
+        als->dim = MakeDimArg (PRF_ARG2 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
+        break;
+
+    case F_mask_SxSxV:
+        als->dim = MakeDimArg (PRF_ARG3 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG3 (arg_node));
         break;
 
     case F_copy:

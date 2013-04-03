@@ -1070,6 +1070,7 @@ COisConstant (node *n)
 /******************************************************************************
  *
  * function:
+ *   constant *COmakeNegativeOne( simpletype type, shape *shp)
  *   constant *COmakeZero( simpletype type, shape *shp)
  *   constant *COmakeOne( simpletype type, shape *shp)
  *   constant *COmakeTrue( simpletype type, shape *shp)
@@ -1081,6 +1082,14 @@ COisConstant (node *n)
  *   the result will be NULL.
  *
  ******************************************************************************/
+constant *
+COmakeNegativeOne (simpletype type, shape *shp)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (global.basecv_negativeone[type](shp));
+}
+
 constant *
 COmakeZero (simpletype type, shape *shp)
 {

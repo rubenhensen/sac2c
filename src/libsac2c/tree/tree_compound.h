@@ -1708,4 +1708,6 @@ extern node *TCappendRange (node *range_chain, node *range);
 extern int TCcountRanges (node *range);
 
 extern bool TCisScalar (node *arg_node);
+extern bool TCisSignedType (ntype *typ);
+
 #endif /* _SAC_TREE_COMPOUND_H_ */

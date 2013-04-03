@@ -2345,6 +2345,130 @@ SCCFprf_mask_SxSxS (node *arg_node, info *arg_info)
 /******************************************************************************
  *
  * function:
+ *   node *SCCFprf_mask_SxSxV(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Implements mask function, used by ALWFI.
+ *   The semantics of z = mask( p, x, y) are, essentially, the same as
+ *   the ill-named <where> function of the SAC stdlib:
+ *
+ *    z[i] = x if p;  else y[i];
+ *
+ * result:
+ *   If p is constant, then we perform the above substutition.
+ *   We also do a quick check to see if p is all TRUE or all FALSE.
+ *   If so, we don't care if y is an N_array node or not.
+ *
+ *   Otherwise, we do nothing.
+ *
+ *****************************************************************************/
+node *
+SCCFprf_mask_SxSxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *p;
+    node *x;
+    node *y;
+    constant *xfs = NULL;
+    pattern *pat;
+    constant *c;
+    node *curel;
+    bool b;
+    node *z = NULL;
+
+    DBUG_ENTER ();
+
+    pat = PMprf (1, PMAisPrf (F_mask_SxSxV), 3, PMany (1, PMAgetNode (&p), 0),
+                 PMany (1, PMAgetNode (&x), 0),
+                 PMarray (2, PMAgetNode (&y), PMAgetFS (&xfs), 1, PMskip (0)));
+
+    if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
+        DBUG_PRINT ("Replacing mask result by mask of x,y");
+        /* p is constant, y is an N_array node */
+        res = DUPdoDupTree (y); /* Handy starter for result */
+        FREEdoFreeTree (ARRAY_AELEMS (res));
+        y = ARRAY_AELEMS (y);
+        while (y != NULL) {
+            c = COaST2Constant (p);
+            b = COisTrue (c, TRUE);
+            c = COfreeConstant (c);
+            curel = b ? x : EXPRS_EXPR (y);
+            z = TCappendExprs (z, TBmakeExprs (DUPdoDupNode (curel), NULL));
+            y = EXPRS_NEXT (y);
+        }
+        ARRAY_AELEMS (res) = z;
+    }
+    pat = PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SCCFprf_mask_SxVxS(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Implements mask function, used by ALWFI.
+ *   The semantics of z = mask( p, x, y) are, essentially, the same as
+ *   the ill-named <where> function of the SAC stdlib:
+ *
+ *    z[i] = x[i] if p;  else y;
+ *
+ * result:
+ *   If p is constant, then we perform the above substutition.
+ *
+ *   Otherwise, we do nothing.
+ *
+ *****************************************************************************/
+node *
+SCCFprf_mask_SxVxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *p;
+    node *x;
+    node *y;
+    constant *xfs = NULL;
+    pattern *pat;
+    constant *c;
+    node *curel;
+    bool b;
+    node *z = NULL;
+
+    DBUG_ENTER ();
+
+    if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
+        res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    } else {
+        pat = PMprf (1, PMAisPrf (F_mask_SxVxS), 3, PMany (1, PMAgetNode (&p), 0),
+                     PMarray (2, PMAgetNode (&x), PMAgetFS (&xfs), 1, PMskip (0)),
+                     PMany (1, PMAgetNode (&y), 0));
+
+        if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
+            DBUG_PRINT ("Replacing mask result by mask of x,y");
+            /* p is constant, x is N_array node */
+            res = DUPdoDupTree (x); /* Handy starter for result */
+            FREEdoFreeTree (ARRAY_AELEMS (res));
+            x = ARRAY_AELEMS (x);
+            while (x != NULL) {
+                c = COaST2Constant (EXPRS_EXPR (p));
+                b = COisTrue (c, TRUE);
+                c = COfreeConstant (c);
+                curel = b ? EXPRS_EXPR (x) : y;
+                z = TCappendExprs (z, TBmakeExprs (DUPdoDupNode (curel), NULL));
+                x = EXPRS_NEXT (x);
+            }
+            ARRAY_AELEMS (res) = z;
+        }
+        pat = PMfree (pat);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
  *   node *SCCFprf_mask_SxVxV(node *arg_node, info *arg_info)
  *
  * description:
@@ -2391,6 +2515,208 @@ SCCFprf_mask_SxVxV (node *arg_node, info *arg_info)
         }
         pat = PMfree (pat);
     }
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SCCFprf_mask_VxSxS(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Implements mask function, used by ALWFI.
+ *   The semantics of z = mask( p, x, y) are, essentially, the same as
+ *   the ill-named <where> function of the SAC stdlib:
+ *
+ *    z[i] = x[i] if p;  else y;
+ *
+ * result:
+ *   If p is constant, then we perform the above substutition.
+ *   We also do a quick check to see if p is all TRUE or all FALSE.
+ *
+ *   Finally, if x and y match, the result is x, regardless of p.
+ *
+ *   Otherwise, we do nothing.
+ *
+ *****************************************************************************/
+node *
+SCCFprf_mask_VxSxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+#ifdef FIXME // Need to fix res initialization code
+    node *p;
+    node *x;
+    node *y;
+    constant *xfs = NULL;
+    pattern *pat;
+    constant *c;
+    node *curel;
+    bool b;
+    node *z = NULL;
+
+    DBUG_ENTER ();
+
+    if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
+        res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    } else {
+        pat = PMprf (1, PMAisPrf (F_mask_VxSxS), 3,
+                     PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
+                     PMany (1, PMAgetNode (&x), 0), PMany (1, PMAgetNode (&y), 0));
+
+        if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
+            DBUG_PRINT ("Replacing mask result by mask of x,y");
+            /* p is constant. We don't care about x and y */
+            ughres = DUPdoDupTree (x); /* Handy starter for result */
+            FREEdoFreeTree (ARRAY_AELEMS (res));
+            p = ARRAY_AELEMS (p);
+            while (p != NULL) {
+                c = COaST2Constant (EXPRS_EXPR (p));
+                b = COisTrue (c, TRUE);
+                c = COfreeConstant (c);
+                curel = b ? x : y;
+                z = TCappendExprs (z, TBmakeExprs (DUPdoDupNode (curel), NULL));
+                p = EXPRS_NEXT (p);
+            }
+            ARRAY_AELEMS (res) = z;
+        }
+        pat = PMfree (pat);
+    }
+#else  // FIXME // Need to fix res initialization code
+#endif // FIXME // Need to fix res initialization code
+
+    DBUG_ENTER ();
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SCCFprf_mask_VxSxV(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Implements mask function, used by ALWFI.
+ *   The semantics of z = mask( p, x, y) are, essentially, the same as
+ *   the ill-named <where> function of the SAC stdlib:
+ *
+ *    z[i] = x if p[i];  else y;
+ *
+ * result:
+ *   If p is constant, then we perform the above substutition.
+ *   We also do a quick check to see if p is all TRUE or all FALSE.
+ *   If so, we don't care if x and y are N_array nodes or not.
+ *
+ *   Otherwise, we do nothing.
+ *
+ *
+ *****************************************************************************/
+node *
+SCCFprf_mask_VxSxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *p = NULL;
+    node *x = NULL;
+    node *y = NULL;
+    constant *xfs = NULL;
+    pattern *pat;
+    constant *c;
+    node *curel;
+    bool b;
+    node *z = NULL;
+
+    DBUG_ENTER ();
+
+    pat
+      = PMprf (1, PMAisPrf (F_mask_VxSxV), 3,
+               PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
+               PMany (1, PMAgetNode (&x), 0),
+               PMarray (2, PMAgetNode (&y), PMAhasFS (&xfs), 1, PMskip (0)), PMskip (0));
+
+    if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
+        DBUG_PRINT ("Replacing mask result by mask of x,y");
+        /* p is constant, y is N_array node */
+        res = DUPdoDupTree (y); /* Handy starter for result */
+        FREEdoFreeTree (ARRAY_AELEMS (res));
+        p = ARRAY_AELEMS (p);
+        y = ARRAY_AELEMS (y);
+        while (p != NULL) {
+            c = COaST2Constant (EXPRS_EXPR (p));
+            b = COisTrue (c, TRUE);
+            c = COfreeConstant (c);
+            curel = b ? PRF_ARG2 (arg_node) : EXPRS_EXPR (y);
+            z = TCappendExprs (z, TBmakeExprs (DUPdoDupNode (curel), NULL));
+            p = EXPRS_NEXT (p);
+            y = EXPRS_NEXT (y);
+        }
+        ARRAY_AELEMS (res) = z;
+    }
+    pat = PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
+/******************************************************************************
+ *
+ * function:
+ *   node *SCCFprf_mask_VxVxS(node *arg_node, info *arg_info)
+ *
+ * description:
+ *   Implements mask function, used by ALWFI.
+ *   The semantics of z = mask( p, x, y) are, essentially, the same as
+ *   the ill-named <where> function of the SAC stdlib:
+ *
+ *    z[i] = x[i] if p[i];  else y;
+ *
+ * result:
+ *   If p is constant, then we perform the above substutition.
+ *   We also do a quick check to see if p is all TRUE or all FALSE.
+ *   If so, we don't care if x and y are N_array nodes or not.
+ *
+ *   Otherwise, we do nothing.
+ *
+ *
+ *****************************************************************************/
+node *
+SCCFprf_mask_VxVxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *p = NULL;
+    node *x = NULL;
+    constant *xfs = NULL;
+    pattern *pat;
+    constant *c;
+    node *curel;
+    bool b;
+    node *z = NULL;
+
+    DBUG_ENTER ();
+
+    pat
+      = PMprf (1, PMAisPrf (F_mask_VxVxS), 3,
+               PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
+               PMarray (2, PMAgetNode (&x), PMAhasFS (&xfs), 1, PMskip (0)), PMskip (0));
+
+    if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
+        DBUG_PRINT ("Replacing mask result by mask of x,y");
+        /* p is constant, x is N_array node */
+        res = DUPdoDupTree (x); /* Handy starter for result */
+        FREEdoFreeTree (ARRAY_AELEMS (res));
+        p = ARRAY_AELEMS (p);
+        x = ARRAY_AELEMS (x);
+        while (p != NULL) {
+            c = COaST2Constant (EXPRS_EXPR (p));
+            b = COisTrue (c, TRUE);
+            c = COfreeConstant (c);
+            curel = b ? EXPRS_EXPR (x) : PRF_ARG3 (arg_node);
+            z = TCappendExprs (z, TBmakeExprs (DUPdoDupNode (curel), NULL));
+            p = EXPRS_NEXT (p);
+            x = EXPRS_NEXT (x);
+        }
+        ARRAY_AELEMS (res) = z;
+    }
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
@@ -2463,70 +2789,6 @@ SCCFprf_mask_VxVxV (node *arg_node, info *arg_info)
         }
         pat = PMfree (pat);
     }
-
-    DBUG_RETURN (res);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *SCCFprf_mask_VxVxS(node *arg_node, info *arg_info)
- *
- * description:
- *   Implements mask function, used by ALWFI.
- *   The semantics of z = mask( p, x, y) are, essentially, the same as
- *   the ill-named <where> function of the SAC stdlib:
- *
- *    z[i] = x[i] if p[i];  else y;
- *
- * result:
- *   If p is constant, then we perform the above substutition.
- *   We also do a quick check to see if p is all TRUE or all FALSE.
- *   If so, we don't care if x and y are N_array nodes or not.
- *
- *   Otherwise, we do nothing.
- *
- *
- *****************************************************************************/
-node *
-SCCFprf_mask_VxVxS (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-    node *p = NULL;
-    node *x = NULL;
-    constant *xfs = NULL;
-    pattern *pat;
-    constant *c;
-    node *curel;
-    bool b;
-    node *z = NULL;
-
-    DBUG_ENTER ();
-
-    pat
-      = PMprf (1, PMAisPrf (F_mask_VxVxS), 3,
-               PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
-               PMarray (2, PMAgetNode (&x), PMAhasFS (&xfs), 1, PMskip (0)), PMskip (0));
-
-    if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
-        DBUG_PRINT ("Replacing mask result by mask of x,y");
-        /* p is constant, x is N_array node */
-        res = DUPdoDupTree (x); /* Handy starter for result */
-        FREEdoFreeTree (ARRAY_AELEMS (res));
-        p = ARRAY_AELEMS (p);
-        x = ARRAY_AELEMS (x);
-        while (p != NULL) {
-            c = COaST2Constant (EXPRS_EXPR (p));
-            b = COisTrue (c, TRUE);
-            c = COfreeConstant (c);
-            curel = b ? EXPRS_EXPR (x) : PRF_ARG3 (arg_node);
-            z = TCappendExprs (z, TBmakeExprs (DUPdoDupNode (curel), NULL));
-            p = EXPRS_NEXT (p);
-            x = EXPRS_NEXT (x);
-        }
-        ARRAY_AELEMS (res) = z;
-    }
-    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }

@@ -679,6 +679,9 @@ Mop2Ast (node *mop, info *arg_info)
  * for a maximal chain of target_prf instructions, either add or mul.
  * The result is an N_exprs chain of the N_id arguments to those prfs.
  *
+ * If we encounter _neg_( X), we replace it by ( X * -1), unless
+ * X is unsigned. See Bug #1055 and Bug #1046.
+ *
  *****************************************************************************/
 static node *
 CollectExprs (prf target_prf, node *arg_node, bool is_scalar_arg, info *arg_info)
@@ -692,6 +695,8 @@ CollectExprs (prf target_prf, node *arg_node, bool is_scalar_arg, info *arg_info
     node *left;
     node *right = NULL;
     constant *negone;
+    simpletype styp;
+    shape *shp;
 
     DBUG_ENTER ();
 
@@ -715,7 +720,8 @@ CollectExprs (prf target_prf, node *arg_node, bool is_scalar_arg, info *arg_info
         right = CollectExprs (target_prf, arg2, isArg2Scl (found_prf), arg_info);
         res = TCappendExprs (left, right);
     } else if ((PMmatch (patmonadic, dl_pm_mode, arg_node))
-               && compatiblePrf (target_prf, found_prf)) {
+               && (TCisSignedType (AVIS_TYPE (ID_AVIS (arg1))))
+               && (compatiblePrf (target_prf, found_prf))) {
         /**
          * Here, we SHOULD set AVIS_ISDLACTIVE( LHS) to FALSE!
          * Unfortunately, PM does not yet support that feature yet.
@@ -724,7 +730,9 @@ CollectExprs (prf target_prf, node *arg_node, bool is_scalar_arg, info *arg_info
          */
         left = CollectExprs (target_prf, arg1, isArg1Scl (found_prf), arg_info);
         /* Fake up -1 for multiply */
-        negone = COmakeConstantFromInt (-1);
+        styp = TYgetSimpleType (TYgetScalar (AVIS_TYPE (ID_AVIS (arg1))));
+        shp = SHmakeShape (0);
+        negone = COmakeNegativeOne (styp, shp);
         right = COconstant2AST (negone);
         right = flattenPrfarg (right, arg_info);
         DBUG_PRINT ("Generated negone as %s", AVIS_NAME (ID_AVIS (right)));

@@ -3441,15 +3441,16 @@ NTCCTprf_cat_VxV (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
+ *    ntype *NTCCTprf_mask_VxSxS( te_info *info, ntype *elems)
+ *    ntype *NTCCTprf_mask_VxSxV( te_info *info, ntype *elems)
  *    ntype *NTCCTprf_mask_VxVxS( te_info *info, ntype *elems)
+ *    ntype *NTCCTprf_mask_VxVxV( te_info *info, ntype *elems)
  *
  * description:
- *    _mask_VxVxV_( p, x, y) masks the values of x and y,
+ *    _mask_VxVxS_( p, x, y) masks the values of x and y,
  *     based on the boolean predicate, p. It selects x[i] if
  *     p[i], else y. First two arguments must be the same shape;
  *     y must be a scalar.
- *     This is an internal-use-only primitive, used as part of AWLF.
- *     It does not survive the optimization phase.
  *
  *     The idea below is to make the result have the same type as x,
  *     but without any AKV-ness. This should work, because x and y
@@ -3458,19 +3459,115 @@ NTCCTprf_cat_VxV (te_info *info, ntype *args)
  ******************************************************************************/
 
 ntype *
-NTCCTprf_mask_VxVxS (te_info *info, ntype *args)
+NTCCTprf_mask_VxSxS (te_info *info, ntype *args)
 {
     ntype *arg;
     ntype *res;
 
     DBUG_ENTER ();
 
-    arg = TYgetProductMember (args, 1);
+    arg = TYgetProductMember (args, 0);
     arg = TYeliminateAKV (arg);
     res = TYcopyType (arg);
     res = TYmakeProductType (1, res);
 
-    /* FIXME We should check that x and y are the same shape */
+    DBUG_RETURN (res);
+}
+
+ntype *
+NTCCTprf_mask_VxSxV (te_info *info, ntype *args)
+{
+    ntype *arg;
+    ntype *res;
+    ntype *array1, *array3;
+    char *err_msg;
+
+    DBUG_ENTER ();
+
+    arg = TYgetProductMember (args, 0);
+    arg = TYeliminateAKV (arg);
+    res = TYcopyType (arg);
+
+    /* Check that p and y are the same shape */
+    array1 = TYgetProductMember (args, 0);
+    array3 = TYgetProductMember (args, 2);
+    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
+                             array3);
+    err_msg = TEfetchErrors ();
+
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    }
+
+    res = TYmakeProductType (1, res);
+
+    DBUG_RETURN (res);
+}
+
+ntype *
+NTCCTprf_mask_VxVxS (te_info *info, ntype *args)
+{
+    ntype *arg;
+    ntype *res;
+    ntype *array1, *array2;
+    char *err_msg;
+
+    DBUG_ENTER ();
+
+    arg = TYgetProductMember (args, 1);
+    arg = TYeliminateAKV (arg);
+    res = TYcopyType (arg);
+
+    /* Check that p and x are the same shape */
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
+    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
+                             array2);
+    err_msg = TEfetchErrors ();
+
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    }
+
+    res = TYmakeProductType (1, res);
+
+    DBUG_RETURN (res);
+}
+
+ntype *
+NTCCTprf_mask_VxVxV (te_info *info, ntype *args)
+{
+    ntype *arg;
+    ntype *res;
+    ntype *array1, *array2, *array3;
+    char *err_msg;
+
+    DBUG_ENTER ();
+
+    arg = TYgetProductMember (args, 1);
+    arg = TYeliminateAKV (arg);
+    res = TYcopyType (arg);
+
+    /* Check that all 3 arguments are the same shape */
+    array1 = TYgetProductMember (args, 0);
+    array2 = TYgetProductMember (args, 1);
+    array3 = TYgetProductMember (args, 2);
+    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
+                             array2);
+    err_msg = TEfetchErrors ();
+
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+        res = TEassureSameShape (TEarg2Obj (1), array2,
+                                 TEprfArg2Obj (TEgetNameStr (info), 2), array3);
+        err_msg = TEfetchErrors ();
+        if (err_msg != NULL) {
+            res = TYmakeBottomType (err_msg);
+        }
+    }
+
+    res = TYmakeProductType (1, res);
 
     DBUG_RETURN (res);
 }
@@ -3479,7 +3576,9 @@ NTCCTprf_mask_VxVxS (te_info *info, ntype *args)
  *
  * function:
  *    ntype *NTCCTprf_mask_SxSxS( te_info *info, ntype *elems)
- *    ntype *NTCCTprf_mask_VxVxV( te_info *info, ntype *elems)
+ *    ntype *NTCCTprf_mask_SxSxV( te_info *info, ntype *elems)
+ *    ntype *NTCCTprf_mask_SxVxS( te_info *info, ntype *elems)
+ *    ntype *NTCCTprf_mask_SxVxV( te_info *info, ntype *elems)
  *
  * description:
  *    _mask_VxVxV_( p, x, y) masks the values of x and y,
@@ -3510,7 +3609,7 @@ NTCCTprf_mask_SxSxS (te_info *info, ntype *args)
 }
 
 ntype *
-NTCCTprf_mask_SxVxV (te_info *info, ntype *args)
+NTCCTprf_mask_SxSxV (te_info *info, ntype *args)
 {
     ntype *arg;
     ntype *res;
@@ -3522,13 +3621,11 @@ NTCCTprf_mask_SxVxV (te_info *info, ntype *args)
     res = TYcopyType (arg);
     res = TYmakeProductType (1, res);
 
-    /* FIXME We should check that arguments 1 and 3 are the same shape */
-
     DBUG_RETURN (res);
 }
 
 ntype *
-NTCCTprf_mask_VxVxV (te_info *info, ntype *args)
+NTCCTprf_mask_SxVxS (te_info *info, ntype *args)
 {
     ntype *arg;
     ntype *res;
@@ -3540,7 +3637,35 @@ NTCCTprf_mask_VxVxV (te_info *info, ntype *args)
     res = TYcopyType (arg);
     res = TYmakeProductType (1, res);
 
-    /* FIXME We should check that all 3 arguments are the same shape */
+    DBUG_RETURN (res);
+}
+
+ntype *
+NTCCTprf_mask_SxVxV (te_info *info, ntype *args)
+{
+    ntype *arg;
+    ntype *res;
+    ntype *array2, *array3;
+    char *err_msg;
+
+    DBUG_ENTER ();
+
+    arg = TYgetProductMember (args, 2);
+    arg = TYeliminateAKV (arg);
+    res = TYcopyType (arg);
+
+    /* Check that arguments 2 and 3 are the same shape */
+    array2 = TYgetProductMember (args, 1);
+    array3 = TYgetProductMember (args, 2);
+    res = TEassureSameShape (TEarg2Obj (1), array2, TEprfArg2Obj (TEgetNameStr (info), 2),
+                             array3);
+    err_msg = TEfetchErrors ();
+
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    }
+
+    res = TYmakeProductType (1, res);
 
     DBUG_RETURN (res);
 }

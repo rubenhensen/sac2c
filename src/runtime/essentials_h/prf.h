@@ -76,8 +76,6 @@
 #define SAC_ND_PRF_GE(arg1, arg2) (arg1) >= (arg2)
 #define SAC_ND_PRF_GT(arg1, arg2) (arg1) > (arg2)
 
-#define SAC_ND_PRF_MASK(arg1, arg2, arg3) (arg1) ? (arg2) : (arg3)
-
 /******************************************************************************
  *
  * ICMs for primitive functions
@@ -371,6 +369,8 @@
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
+#define SAC_ND_PRF_MASK(arg1, arg2, arg3) (arg1) ? (arg2) : (arg3)
+
 #define DEADCODE_SAC_ND_MASK_SxSxS__DATA(to_NT, from1_NT, from2_NT, from3_NT)            \
     {                                                                                    \
         if (SAC_ND_READ (from1_NT, 0)) {                                                 \
@@ -381,6 +381,30 @@
     }                                                                                    \
     }
 
+#define SAC_ND_MASK_SxSxV__DATA(to_NT, from1_NT, from2_NT, from3_NT)                     \
+    {                                                                                    \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
+            if (SAC_ND_READ (from1_NT, 0)) {                                             \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from2_NT, 0), );           \
+            } else {                                                                     \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from3_NT, 0), );           \
+            }                                                                            \
+        }                                                                                \
+    }
+
+#define SAC_ND_MASK_SxVxS__DATA(to_NT, from1_NT, from2_NT, from3_NT)                     \
+    {                                                                                    \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
+            if (SAC_ND_READ (from1_NT, 0)) {                                             \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from2_NT, SAC_i), );       \
+            } else {                                                                     \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from3_NT, 0), );           \
+            }                                                                            \
+        }                                                                                \
+    }
+
 #define SAC_ND_MASK_SxVxV__DATA(to_NT, from1_NT, from2_NT, from3_NT)                     \
     {                                                                                    \
         int SAC_i;                                                                       \
@@ -389,6 +413,29 @@
                 SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from2_NT, SAC_i), );       \
             } else {                                                                     \
                 SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from3_NT, 0), );           \
+            }                                                                            \
+        }                                                                                \
+    }
+
+#define SAC_ND_PRF_MASK_VxSxS(to_NT, from1_NT, from2_NT, from3_NT)                       \
+    {                                                                                    \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
+            if (SAC_ND_READ (from1_NT, SAC_i)) {                                         \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from2_NT, 0), );           \
+            } else {                                                                     \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from3_NT, 0), );           \
+            }                                                                            \
+        }                                                                                \
+    }
+#define SAC_ND_PRF_MASK_VxSxV(to_NT, from1_NT, from2_NT, from3_NT)                       \
+    {                                                                                    \
+        int SAC_i;                                                                       \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
+            if (SAC_ND_READ (from1_NT, SAC_i)) {                                         \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from2_NT, 0), );           \
+            } else {                                                                     \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from3_NT, SAC_i), );       \
             }                                                                            \
         }                                                                                \
     }

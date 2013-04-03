@@ -50,6 +50,7 @@ extern constant *COmakeConstantFromDynamicArguments (simpletype type, int dim, .
 extern constant *COmakeConstantFromArray (simpletype type, int dim, int *shp,
                                           void *elems);
 
+extern constant *COmakeNegativeOne (simpletype type, shape *shp);
 extern constant *COmakeZero (simpletype type, shape *shp);
 extern constant *COmakeOne (simpletype type, shape *shp);
 extern constant *COmakeTrue (shape *shp);

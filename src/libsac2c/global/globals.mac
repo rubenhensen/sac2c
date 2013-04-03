@@ -1039,6 +1039,7 @@ GLOBAL (const zipcvfunptr *, zipcv_neg, zipcv_neg_init, xfree_dummy, )
  * Primitive base function tables, previously defined in basecv.c
  */
 
+GLOBAL (const basecvfunptr *, basecv_negativeone, basecv_negativeone_init, xfree_dummy, )
 GLOBAL (const basecvfunptr *, basecv_zero, basecv_zero_init, xfree_dummy, )
 GLOBAL (const basecvfunptr *, basecv_one, basecv_one_init, xfree_dummy, )
 

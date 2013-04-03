@@ -99,11 +99,13 @@
                                                 LongDouble, const)                       \
                                 CObaseCvDUMMYTEMP (Dummy, fname)
 
+MAP (NegativeOne, -1)
 MAP (Zero, 0)
 MAP (One, 1)
 
 /* special versions for Boolean (Zero == False, One == True) */
-CObaseCvTEMPLATE (Zero, T_bool, bool, Bool, FALSE)
-  CObaseCvTEMPLATE (One, T_bool, bool, Bool, TRUE)
+CObaseCvTEMPLATE (NegativeOne, T_bool, bool, Bool, FALSE) /* This is a cheat */
+  CObaseCvTEMPLATE (Zero, T_bool, bool, Bool, FALSE)
+    CObaseCvTEMPLATE (One, T_bool, bool, Bool, TRUE)
 
 #undef DBUG_PREFIX

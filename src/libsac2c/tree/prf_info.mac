@@ -890,26 +890,36 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
        COMPprfNoop, SCSprf_notemaxval, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL,
        0, NULL, NULL, TEone, NULL, NULL),
 
-  /*
-   * There are no COxxx entries for masKxxx because I have not had time
-   * to write same.
-   * However, CF handles many cases where PRF_ARG1 is constant.
-   *
-   */
   PRF (mask_SxSxS, (PA_S, PA_S, PA_S), 3, MASK, NOSIMD, NTCCTprf_mask_SxSxS, NULL,
        COMPprfOp_SxSxS, NULL, SCCFprf_mask_SxSxS, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
+       NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
+  PRF (mask_SxSxV, (PA_S, PA_S, PA_V), 3, MASK, NOSIMD, NTCCTprf_mask_SxSxV, NULL,
+       COMPprfMask_SxSxV, NULL, SCCFprf_mask_SxSxV, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
+       NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
+  PRF (mask_SxVxS, (PA_S, PA_V, PA_S), 3, MASK, NOSIMD, NTCCTprf_mask_SxVxS, NULL,
+       COMPprfMask_SxVxS, NULL, SCCFprf_mask_SxVxS, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
        NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   PRF (mask_SxVxV, (PA_S, PA_V, PA_V), 3, MASK, NOSIMD, NTCCTprf_mask_SxVxV, NULL,
        COMPprfMask_SxVxV, NULL, SCCFprf_mask_SxVxV, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
        NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
-  PRF (mask_VxVxV, (PA_V, PA_V, PA_V), 3, MASK, NOSIMD, NTCCTprf_mask_VxVxV, NULL,
-       COMPprfMask_VxVxV, NULL, SCCFprf_mask_VxVxV, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
+  PRF (mask_VxSxS, (PA_V, PA_S, PA_S), 3, MASK, NOSIMD, NTCCTprf_mask_VxSxS, NULL,
+       COMPprfMask_VxSxS, NULL, SCCFprf_mask_VxSxS, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
+       NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
+  PRF (mask_VxSxV, (PA_V, PA_S, PA_V), 3, MASK, NOSIMD, NTCCTprf_mask_VxSxV, NULL,
+       COMPprfMask_VxSxV, NULL, SCCFprf_mask_VxSxV, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
        NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   PRF (mask_VxVxS, (PA_V, PA_V, PA_S), 3, MASK, NOSIMD, NTCCTprf_mask_VxVxS, NULL,
        COMPprfMask_VxVxS, NULL, SCCFprf_mask_VxVxS, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
+       NULL, 0, NULL, NULL, TEone, NULL, NULL),
+
+  PRF (mask_VxVxV, (PA_V, PA_V, PA_V), 3, MASK, NOSIMD, NTCCTprf_mask_VxVxV, NULL,
+       COMPprfMask_VxVxV, NULL, SCCFprf_mask_VxVxV, NULL, SAAdim_of_arg1, SAAshp_of_arg1,
        NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   /*******************************************************************************

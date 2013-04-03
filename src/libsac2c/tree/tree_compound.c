@@ -4116,4 +4116,43 @@ TCisScalar (node *arg_node)
     DBUG_RETURN (res);
 }
 
+/** <!-- ****************************************************************** -->
+ *
+ * @brief Predicate to return true if basetype is signed
+ *
+ * @param  a simple type
+ *
+ * @return true if argument is signed
+ *
+ * @note: Perhaps should allow uchar here, too.
+ *
+ ******************************************************************************/
+bool
+TCisSignedType (ntype *typ)
+{
+    bool res = FALSE;
+    simpletype styp;
+
+    DBUG_ENTER ();
+
+    styp = TYgetSimpleType (TYgetScalar (typ));
+
+    switch (styp) {
+    case T_int:
+    case T_byte:
+    case T_long:
+    case T_longlong:
+    case T_short:
+    case T_double:
+    case T_float:
+        res = TRUE;
+        break;
+    default:
+        res = FALSE;
+        break;
+    }
+
+    DBUG_RETURN (res);
+}
+
 #undef DBUG_PREFIX

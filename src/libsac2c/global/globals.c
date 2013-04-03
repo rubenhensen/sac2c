@@ -362,6 +362,12 @@ static const zipcvfunptr zipcv_neg_init[] = {
 #undef TYP_IFzipcv
 };
 
+static const basecvfunptr basecv_negativeone_init[] = {
+#define TYP_IFbasecv(fun) fun##NegativeOne
+#include "type_info.mac"
+#undef TYP_IFbasecv
+};
+
 static const basecvfunptr basecv_zero_init[] = {
 #define TYP_IFbasecv(fun) fun##Zero
 #include "type_info.mac"
