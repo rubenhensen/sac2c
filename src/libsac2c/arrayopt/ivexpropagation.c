@@ -2118,15 +2118,15 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
         IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE);
         break;
 
-    case F_min_SxS:
-    case F_min_VxV:
+    case F_max_SxS:
+    case F_max_VxV:
         /* If either argument has a maxval, propagate it */
         IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))), TRUE);
         IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))), TRUE);
         break;
 
-    case F_max_SxS:
-    case F_max_VxV:
+    case F_min_SxS:
+    case F_min_VxV:
         /* If either argument has a minval, propagate it */
         IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))), TRUE);
         IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))), TRUE);

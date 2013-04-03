@@ -3466,10 +3466,12 @@ NTCCTprf_mask_VxSxS (te_info *info, ntype *args)
 
     DBUG_ENTER ();
 
-    arg = TYgetProductMember (args, 0);
+    arg = TYgetProductMember (args, 2);
     arg = TYeliminateAKV (arg);
     res = TYcopyType (arg);
     res = TYmakeProductType (1, res);
+
+    DBUG_ASSERT (FALSE, "_mask_VxSxS_ wants type of PRF_ARG2/3 but shape of PRF_ARG1");
 
     DBUG_RETURN (res);
 }
@@ -3477,16 +3479,11 @@ NTCCTprf_mask_VxSxS (te_info *info, ntype *args)
 ntype *
 NTCCTprf_mask_VxSxV (te_info *info, ntype *args)
 {
-    ntype *arg;
     ntype *res;
     ntype *array1, *array3;
     char *err_msg;
 
     DBUG_ENTER ();
-
-    arg = TYgetProductMember (args, 0);
-    arg = TYeliminateAKV (arg);
-    res = TYcopyType (arg);
 
     /* Check that p and y are the same shape */
     array1 = TYgetProductMember (args, 0);
@@ -3507,16 +3504,11 @@ NTCCTprf_mask_VxSxV (te_info *info, ntype *args)
 ntype *
 NTCCTprf_mask_VxVxS (te_info *info, ntype *args)
 {
-    ntype *arg;
     ntype *res;
     ntype *array1, *array2;
     char *err_msg;
 
     DBUG_ENTER ();
-
-    arg = TYgetProductMember (args, 1);
-    arg = TYeliminateAKV (arg);
-    res = TYcopyType (arg);
 
     /* Check that p and x are the same shape */
     array1 = TYgetProductMember (args, 0);
@@ -3537,16 +3529,11 @@ NTCCTprf_mask_VxVxS (te_info *info, ntype *args)
 ntype *
 NTCCTprf_mask_VxVxV (te_info *info, ntype *args)
 {
-    ntype *arg;
     ntype *res;
     ntype *array1, *array2, *array3;
     char *err_msg;
 
     DBUG_ENTER ();
-
-    arg = TYgetProductMember (args, 1);
-    arg = TYeliminateAKV (arg);
-    res = TYcopyType (arg);
 
     /* Check that all 3 arguments are the same shape */
     array1 = TYgetProductMember (args, 0);
@@ -3643,16 +3630,11 @@ NTCCTprf_mask_SxVxS (te_info *info, ntype *args)
 ntype *
 NTCCTprf_mask_SxVxV (te_info *info, ntype *args)
 {
-    ntype *arg;
     ntype *res;
     ntype *array2, *array3;
     char *err_msg;
 
     DBUG_ENTER ();
-
-    arg = TYgetProductMember (args, 2);
-    arg = TYeliminateAKV (arg);
-    res = TYcopyType (arg);
 
     /* Check that arguments 2 and 3 are the same shape */
     array2 = TYgetProductMember (args, 1);
