@@ -1194,22 +1194,22 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
             minarg1 = ID_AVIS (PRF_ARG1 (rhs));
             minarg2 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))));
         }
+    }
 
-        /* Compute AVIS_MAX, perhaps */
-        if (!IVEXPisAvisHasMax (lhsavis)) {
-            if (max1) {
-                maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
-                maxarg1 = IVEXPadjustExtremaBound (/* Denormalize maxv */
-                                                   maxarg1, -1, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info), "dsf3");
-                maxarg2 = ID_AVIS (PRF_ARG2 (rhs));
-            } else if (max2) {
-                maxarg1 = ID_AVIS (PRF_ARG1 (rhs));
-                maxarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
-                maxarg2 = IVEXPadjustExtremaBound (/* Denormalize maxv */
-                                                   maxarg2, -1, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info), "dsf4");
-            }
+    /* Compute AVIS_MAX, perhaps */
+    if (!IVEXPisAvisHasMax (lhsavis)) {
+        if (max1) {
+            maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
+            maxarg1 = IVEXPadjustExtremaBound (/* Denormalize maxv */
+                                               maxarg1, -1, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info), "dsf3");
+            maxarg2 = ID_AVIS (PRF_ARG2 (rhs));
+        } else if (max2) {
+            maxarg1 = ID_AVIS (PRF_ARG1 (rhs));
+            maxarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
+            maxarg2 = IVEXPadjustExtremaBound (/* Denormalize maxv */
+                                               maxarg2, -1, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info), "dsf4");
         }
     }
 
@@ -1824,7 +1824,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_abs_S: /* AVIS_MIN is now zero */
             case F_abs_V: /* AVIS_MIN is now zero */
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
-                if (!IVEXPisAvisHasMax (lhsavis)) {
+                if (!IVEXPisAvisHasMin (lhsavis)) {
                     minv = SCSmakeZero (PRF_ARG1 (rhs));
                     minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
                                                    &INFO_PREASSIGNS (arg_info),

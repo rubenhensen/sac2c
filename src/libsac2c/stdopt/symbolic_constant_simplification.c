@@ -3098,6 +3098,8 @@ SCSprf_abs_S (node *arg_node, info *arg_info)
     minmax = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
     if ((NULL != minmax) && (PMmatchFlat (pat, minmax)) && (COisNonNeg (con1, TRUE))) {
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
+        DBUG_PRINT ("_abs_S_( %s) AVIS_MIN >= 0, so prf removed",
+                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : NULL;
 
@@ -3113,6 +3115,8 @@ SCSprf_abs_S (node *arg_node, info *arg_info)
                                       &INFO_PREASSIGN (arg_info),
                                       TYcopyType (
                                         (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))));
+            DBUG_PRINT ("_abs_S_( %s) AVIS_MAX <0, so replaced by _neg_S_()",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
         }
         con2 = COfreeConstant (con2);
         denorm = COfreeConstant (denorm);
