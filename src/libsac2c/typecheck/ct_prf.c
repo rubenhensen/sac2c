@@ -3488,15 +3488,20 @@ NTCCTprf_mask_VxSxV (te_info *info, ntype *args)
     /* Check that p and y are the same shape */
     array1 = TYgetProductMember (args, 0);
     array3 = TYgetProductMember (args, 2);
-    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
-                             array3);
-    err_msg = TEfetchErrors ();
+    res = TEassureSameShape (TEarg2Obj (1), array3, TEprfArg2Obj (TEgetNameStr (info), 2),
+                             array1);
+    /* Damn TEassureSameShape may make res either type, so can't
+     * use its result.
+     */
+    res = (NULL != res) ? TYfreeType (res) : res;
 
+    err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     }
 
-    res = TYmakeProductType (1, res);
+    array3 = TYeliminateAKV (array3);
+    res = TYmakeProductType (1, array3);
 
     DBUG_RETURN (res);
 }
@@ -3505,23 +3510,25 @@ ntype *
 NTCCTprf_mask_VxVxS (te_info *info, ntype *args)
 {
     ntype *res;
-    ntype *array1, *array2;
+    ntype *p, *array2;
     char *err_msg;
 
     DBUG_ENTER ();
 
     /* Check that p and x are the same shape */
-    array1 = TYgetProductMember (args, 0);
+    p = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
-    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
+    res = TEassureSameShape (TEarg2Obj (1), p, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
-    err_msg = TEfetchErrors ();
+    res = (NULL != res) ? TYfreeType (res) : res;
 
+    err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     }
 
-    res = TYmakeProductType (1, res);
+    array2 = TYeliminateAKV (array2);
+    res = TYmakeProductType (1, array2);
 
     DBUG_RETURN (res);
 }
@@ -3530,19 +3537,20 @@ ntype *
 NTCCTprf_mask_VxVxV (te_info *info, ntype *args)
 {
     ntype *res;
-    ntype *array1, *array2, *array3;
+    ntype *p, *array2, *array3;
     char *err_msg;
 
     DBUG_ENTER ();
 
     /* Check that all 3 arguments are the same shape */
-    array1 = TYgetProductMember (args, 0);
+    p = TYgetProductMember (args, 0);
     array2 = TYgetProductMember (args, 1);
     array3 = TYgetProductMember (args, 2);
-    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
+    res = TEassureSameShape (TEarg2Obj (1), p, TEprfArg2Obj (TEgetNameStr (info), 2),
                              array2);
-    err_msg = TEfetchErrors ();
+    res = (NULL != res) ? TYfreeType (res) : res;
 
+    err_msg = TEfetchErrors ();
     if (err_msg != NULL) {
         res = TYmakeBottomType (err_msg);
     } else {
@@ -3554,6 +3562,7 @@ NTCCTprf_mask_VxVxV (te_info *info, ntype *args)
         }
     }
 
+    res = TYeliminateAKV (res);
     res = TYmakeProductType (1, res);
 
     DBUG_RETURN (res);
@@ -3647,6 +3656,7 @@ NTCCTprf_mask_SxVxV (te_info *info, ntype *args)
         res = TYmakeBottomType (err_msg);
     }
 
+    res = TYeliminateAKV (res);
     res = TYmakeProductType (1, res);
 
     DBUG_RETURN (res);

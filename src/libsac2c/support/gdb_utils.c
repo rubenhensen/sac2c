@@ -144,6 +144,8 @@ GDBwhatIs (char *nm, node *fundef)
 void
 GDBwhatIsNid (node *arg_node, node *fundef)
 {
+    node *args;
+    node *arg;
 
     if (NULL != arg_node) {
         switch (NODE_TYPE (arg_node)) {
@@ -154,7 +156,12 @@ GDBwhatIsNid (node *arg_node, node *fundef)
             GDBwhatIs (AVIS_NAME (arg_node), fundef);
             break;
         case N_prf:
-            GDBwhatIs (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), fundef);
+            args = PRF_ARGS (arg_node);
+            while (NULL != args) {
+                arg = EXPRS_EXPR (args);
+                GDBwhatIs (AVIS_NAME (ID_AVIS (arg)), fundef);
+                args = EXPRS_NEXT (args);
+            }
             break;
         default:
             break;

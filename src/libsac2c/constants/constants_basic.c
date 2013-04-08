@@ -1005,7 +1005,7 @@ COaST2Constant (node *n)
  * description:
  *    checks if a given node is constant
  *
- *    this funtion can deal with scalar types like
+ *    this function can deal with scalar types like
  *      N_num, N_double, N_float, N_bool, N_char
  *    arrays (N_array)
  *    avis nodes ( N_avis)

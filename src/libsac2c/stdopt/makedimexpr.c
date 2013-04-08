@@ -166,6 +166,18 @@ SAAdim_of_arg2 (node *arg_node, info *arg_info)
 }
 
 static node *
+SAAdim_of_arg3 (node *arg_node, info *arg_info)
+{
+    node *dim_expr;
+
+    DBUG_ENTER ();
+
+    dim_expr = DUPdoDupNode (AVIS_DIM (ID_AVIS (PRF_ARG3 (arg_node))));
+
+    DBUG_RETURN (dim_expr);
+}
+
+static node *
 SAAdim_is_arg1_0 (node *arg_node, info *arg_info)
 {
     node *dim_expr;

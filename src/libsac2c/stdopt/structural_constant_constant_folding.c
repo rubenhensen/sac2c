@@ -2313,28 +2313,29 @@ SCCFprf_mask_SxSxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     pattern *pat = NULL;
-    constant *conp = NULL;
+    constant *p = NULL;
     node *arg2 = NULL;
     node *arg3 = NULL;
 
     DBUG_ENTER ();
 
     if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
+        DBUG_PRINT ("Replacing mask( p, x, x) by x");
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else {
-        pat = PMprf (1, PMAisPrf (F_mask_SxSxS), 3, PMconst (1, PMAgetVal (&conp)),
+        pat = PMprf (1, PMAisPrf (F_mask_SxSxS), 3, PMconst (1, PMAgetVal (&p)),
                      PMany (1, PMAgetNode (&arg2), 0), PMany (1, PMAgetNode (&arg3), 0));
 
         if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
             /* p is constant */
-            if (COisTrue (conp, TRUE)) {
+            if (COisTrue (p, TRUE)) {
                 DBUG_PRINT ("Replacing mask_SxSxS result by PRF_ARG2");
                 res = DUPdoDupNode (arg2);
             } else {
                 DBUG_PRINT ("Replacing mask_SxSxS result by PRF_ARG3");
                 res = DUPdoDupNode (arg3);
             }
-            conp = COfreeConstant (conp);
+            p = COfreeConstant (p);
         }
         pat = PMfree (pat);
     }
@@ -2366,32 +2367,30 @@ node *
 SCCFprf_mask_SxSxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *p;
+    constant *p = NULL;
     node *x;
     node *y;
     constant *xfs = NULL;
     pattern *pat;
-    constant *c;
     node *curel;
     bool b;
     node *z = NULL;
 
     DBUG_ENTER ();
 
-    pat = PMprf (1, PMAisPrf (F_mask_SxSxV), 3, PMany (1, PMAgetNode (&p), 0),
+    pat = PMprf (1, PMAisPrf (F_mask_SxSxV), 3, PMconst (1, PMAgetVal (&p)),
                  PMany (1, PMAgetNode (&x), 0),
                  PMarray (2, PMAgetNode (&y), PMAgetFS (&xfs), 1, PMskip (0)));
 
-    if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
-        DBUG_PRINT ("Replacing mask result by mask of x,y");
+    if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
         /* p is constant, y is an N_array node */
+        b = COisTrue (p, TRUE);
+        p = COfreeConstant (p);
         res = DUPdoDupTree (y); /* Handy starter for result */
         FREEdoFreeTree (ARRAY_AELEMS (res));
+        DBUG_PRINT ("Replacing mask(p, x, y) by %s", b ? "genarray of x" : "y");
         y = ARRAY_AELEMS (y);
         while (y != NULL) {
-            c = COaST2Constant (p);
-            b = COisTrue (c, TRUE);
-            c = COfreeConstant (c);
             curel = b ? x : EXPRS_EXPR (y);
             z = TCappendExprs (z, TBmakeExprs (DUPdoDupNode (curel), NULL));
             y = EXPRS_NEXT (y);
@@ -2425,43 +2424,37 @@ node *
 SCCFprf_mask_SxVxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *p;
+    constant *p = NULL;
     node *x;
     node *y;
     constant *xfs = NULL;
     pattern *pat;
-    constant *c;
     node *curel;
     bool b;
     node *z = NULL;
 
     DBUG_ENTER ();
 
-    if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
-        res = DUPdoDupNode (PRF_ARG2 (arg_node));
-    } else {
-        pat = PMprf (1, PMAisPrf (F_mask_SxVxS), 3, PMany (1, PMAgetNode (&p), 0),
-                     PMarray (2, PMAgetNode (&x), PMAgetFS (&xfs), 1, PMskip (0)),
-                     PMany (1, PMAgetNode (&y), 0));
+    pat = PMprf (1, PMAisPrf (F_mask_SxVxS), 3, PMconst (1, PMAgetVal (&p)),
+                 PMarray (2, PMAgetNode (&x), PMAgetFS (&xfs), 1, PMskip (0)),
+                 PMany (1, PMAgetNode (&y), 0));
 
-        if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
-            DBUG_PRINT ("Replacing mask result by mask of x,y");
-            /* p is constant, x is N_array node */
-            res = DUPdoDupTree (x); /* Handy starter for result */
-            FREEdoFreeTree (ARRAY_AELEMS (res));
-            x = ARRAY_AELEMS (x);
-            while (x != NULL) {
-                c = COaST2Constant (EXPRS_EXPR (p));
-                b = COisTrue (c, TRUE);
-                c = COfreeConstant (c);
-                curel = b ? EXPRS_EXPR (x) : y;
-                z = TCappendExprs (z, TBmakeExprs (DUPdoDupNode (curel), NULL));
-                x = EXPRS_NEXT (x);
-            }
-            ARRAY_AELEMS (res) = z;
+    if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
+        b = COisTrue (p, TRUE);
+        p = COfreeConstant (p);
+        DBUG_PRINT ("Replacing mask(p, x, y) by %s", b ? "x" : "genarray of y");
+        /* p is constant, x is N_array node */
+        res = DUPdoDupTree (x); /* Handy starter for result */
+        FREEdoFreeTree (ARRAY_AELEMS (res));
+        x = ARRAY_AELEMS (x);
+        while (x != NULL) {
+            curel = b ? EXPRS_EXPR (x) : y;
+            z = TCappendExprs (z, TBmakeExprs (DUPdoDupNode (curel), NULL));
+            x = EXPRS_NEXT (x);
         }
-        pat = PMfree (pat);
+        ARRAY_AELEMS (res) = z;
     }
+    pat = PMfree (pat);
 
     DBUG_RETURN (res);
 }
@@ -2490,7 +2483,7 @@ node *
 SCCFprf_mask_SxVxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    constant *conp = NULL;
+    constant *p = NULL;
     node *arg2 = NULL;
     node *arg3 = NULL;
     pattern *pat;
@@ -2498,20 +2491,21 @@ SCCFprf_mask_SxVxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
+        DBUG_PRINT ("Replacing mask( p, x, x) by x");
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else {
-        pat = PMprf (1, PMAisPrf (F_mask_SxVxV), 3, PMconst (1, PMAgetVal (&conp)),
+        pat = PMprf (1, PMAisPrf (F_mask_SxVxV), 3, PMconst (1, PMAgetVal (&p)),
                      PMany (1, PMAgetNode (&arg2), 0), PMany (1, PMAgetNode (&arg3), 0));
 
         if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
             DBUG_PRINT ("Replacing mask result by mask of arg2, arg3");
             /* p is constant. */
-            if (COisTrue (conp, TRUE)) {
+            if (COisTrue (p, TRUE)) {
                 res = DUPdoDupNode (PRF_ARG2 (arg_node));
             } else {
                 res = DUPdoDupNode (PRF_ARG3 (arg_node));
             }
-            conp = COfreeConstant (conp);
+            p = COfreeConstant (p);
         }
         pat = PMfree (pat);
     }
@@ -2546,7 +2540,7 @@ SCCFprf_mask_VxSxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
 #ifdef FIXME // Need to fix res initialization code
-    node *p;
+    node *p = NULL;
     node *x;
     node *y;
     constant *xfs = NULL;
@@ -2559,6 +2553,7 @@ SCCFprf_mask_VxSxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
+        DBUG_PRINT ("Replacing mask( p, x, x) by x");
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else {
         pat = PMprf (1, PMAisPrf (F_mask_VxSxS), 3,
@@ -2747,7 +2742,7 @@ node *
 SCCFprf_mask_VxVxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *p;
+    node *p = NULL;
     node *x;
     node *y;
     constant *xfs = NULL;
@@ -2760,6 +2755,7 @@ SCCFprf_mask_VxVxV (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (PRF_ARG3 (arg_node))) {
+        DBUG_PRINT ("Replacing mask( p, x, x) by x");
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
     } else {
         pat = PMprf (1, PMAisPrf (F_mask_VxVxV), 3,

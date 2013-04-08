@@ -236,6 +236,18 @@ SAAshp_of_arg2 (node *arg_node, info *arg_info)
 }
 
 static node *
+SAAshp_of_arg3 (node *arg_node, info *arg_info)
+{
+    node *shp_expr;
+
+    DBUG_ENTER ();
+
+    shp_expr = DUPdoDupNode (AVIS_SHAPE (ID_AVIS (PRF_ARG3 (arg_node))));
+
+    DBUG_RETURN (shp_expr);
+}
+
+static node *
 SAAshp_for_shape (node *arg_node, info *arg_info)
 {
     node *shp_expr = NULL;
