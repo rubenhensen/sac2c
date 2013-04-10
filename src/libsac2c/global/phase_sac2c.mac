@@ -1349,4 +1349,16 @@ ENDPHASE (icc)
 
 /******************************************************************************/
 
+PHASE (prof, "Profiling report", ALWAYS)
+
+SUBPHASE (time, "Generating time report", TIMEtimeReport, global.timefreq, prof)
+
+/*SUBPHASE( mem,
+          "Generating memory reports",
+          PRFmallocReport,
+          global.memcheck,
+          prof)
+*/
+ENDPHASE (prof)
+
 #include "phase_undefine_defs.mac"

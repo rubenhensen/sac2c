@@ -703,6 +703,8 @@ GLOBAL (bool, memclean, TRUE, xfree_dummy, )
  * reasons.
  */
 
+GLOBAL (int, timefreq, 0, xfree_dummy, )
+
 GLOBAL (bool, use_efence, FALSE, xfree_dummy, )
 /*
  * link executable with ElectricFence (Malloc Debugger)

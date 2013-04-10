@@ -12,6 +12,7 @@
 #include "filemgr.h"
 #include "ctinfo.h"
 #include "globals.h"
+#include "profiler.h"
 #include "str.h"
 #include "memory.h"
 #include "tree_basic.h"
@@ -163,7 +164,10 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
 
     if (cond) {
         CTIstate ("** %2d: %s ...", global.phase_num, PHIphaseText (phase));
+
+        TIMEbegin (phase);
         syntax_tree = PHIphaseFun (phase) (syntax_tree);
+        TIMEend (phase);
 
         CTIabortOnError ();
 
@@ -241,7 +245,11 @@ PHrunSubPhase (compiler_phase_t subphase, node *syntax_tree, bool cond)
         if (PHIphaseType (subphase) != PHT_cycle) {
             CTInote ("**** %s ...", PHIphaseText (subphase));
         }
+
+        TIMEbegin (subphase);
         syntax_tree = PHIphaseFun (subphase) (syntax_tree);
+        TIMEend (subphase);
+
         CTIabortOnError ();
 
 #ifndef DBUG_OFF
@@ -325,7 +333,9 @@ PHrunCycle (compiler_phase_t cycle, node *syntax_tree, bool cond, bool reset)
             CTInote ("**** %s pass: %i", PHIphaseText (cycle), global.cycle_counter);
             STATclearCounters (&oc_pass);
 
+            TIMEbegin (cycle);
             syntax_tree = PHIphaseFun (cycle) (syntax_tree);
+            TIMEend (cycle);
 
             CTIabortOnError ();
 
@@ -428,7 +438,9 @@ PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
             || (global.cycle_counter < global.break_cycle_specifier))) {
         CTInote ("****** %s ...", PHIphaseText (cyclephase));
 
+        TIMEbegin (cyclephase);
         syntax_tree = PHIphaseFun (cyclephase) (syntax_tree);
+        TIMEend (cyclephase);
 
         CTIabortOnError ();
 
@@ -567,7 +579,10 @@ PHrunCyclePhaseFun (compiler_phase_t cyclephase, node *fundef, bool cond)
         FUNDEF_NEXT (fundef) = NULL;
 
         DBUG_PRINT ("Calling phase for function: %s", FUNDEF_NAME (fundef));
+
+        TIMEbegin (cyclephase);
         fundef = PHIphaseFun (cyclephase) (fundef);
+        TIMEend (cyclephase);
 
         DBUG_ASSERT (FUNDEF_NEXT (fundef) == NULL,
                      "Fun-based cycle phase returned more than one fundef.");
@@ -643,7 +658,9 @@ PHrunCyclePhaseFunOld (compiler_phase_t cyclephase, node *fundef, bool cond)
 
         CTItell (4, "         %s ...", PHIphaseText (cyclephase));
 
+        TIMEbegin (cyclephase);
         fundef = PHIphaseFun (cyclephase) (fundef);
+        TIMEend (cyclephase);
 
         CTIabortOnError ();
 
