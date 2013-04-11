@@ -4649,6 +4649,18 @@ COMPfloat (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+node *
+COMPfloatvec (node *arg_node, info *arg_info)
+{
+    node *ret_node;
+
+    DBUG_ENTER ();
+
+    ret_node = COMPscalar (arg_node, arg_info);
+
+    DBUG_RETURN (ret_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPdouble( node *arg_node, info *arg_info)
@@ -6221,6 +6233,73 @@ COMPsimd_prfSel (node *arg_node, info *arg_info)
                               TCmakeIdCopyString (GenericFun (GF_copy, ID_TYPE (arg2))),
                               simd_length, base_type_node, NULL);
     }
+
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+COMPsimd_sel_SxS (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2, *arg3;
+    node *let_ids;
+    node *ret_node;
+
+    const char *base_type;
+    node *id_wrapper;
+
+    DBUG_ENTER ();
+
+    /* Assure that the prf has exactly three arguments */
+    // DBUG_ASSERT (prf_arg_number_correct (arg_node, 3),
+    //             "Wrong number of arguments found");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+
+    base_type = GetBaseTypeFromExpr (arg2);
+    id_wrapper = TBmakeSpid (NULL, STRcpy (base_type));
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_SIMD_SELSxS__DATA", DUPdupIdsIdNt (let_ids), id_wrapper,
+                          /*TCmakeIdCopyString(
+                           * prf_ccode_tab[PRF_PRF(arg_node)])*/
+                          TBmakeSpid (NULL, STRcpy ("XXX")),
+                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
+
+    DBUG_RETURN (ret_node);
+}
+
+static node *
+COMPsimd_modarray (node *arg_node, info *arg_info)
+{
+    node *arg1, *arg2, *arg3;
+    node *let_ids;
+    node *ret_node;
+
+    const char *base_type;
+    node *id_wrapper;
+
+    DBUG_ENTER ();
+
+    /* Assure that the prf has exactly three arguments */
+    // DBUG_ASSERT (prf_arg_number_correct (arg_node, 3),
+    //             "Wrong number of arguments found");
+
+    let_ids = INFO_LASTIDS (arg_info);
+    arg1 = PRF_ARG1 (arg_node);
+    arg2 = PRF_ARG2 (arg_node);
+    arg3 = PRF_ARG3 (arg_node);
+
+    base_type = GetBaseTypeFromExpr (arg1);
+    id_wrapper = TBmakeSpid (NULL, STRcpy (base_type));
+
+    ret_node
+      = TCmakeAssignIcm4 ("ND_PRF_SIMD_MODARRAY", DUPdupIdsIdNt (let_ids), id_wrapper,
+                          /*TCmakeIdCopyString(
+                           * prf_ccode_tab[PRF_PRF(arg_node)])*/
+                          TBmakeSpid (NULL, STRcpy ("XXX")),
+                          DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
 }

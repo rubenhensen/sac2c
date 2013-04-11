@@ -43,6 +43,10 @@ struct location {
     size_t line, col;
 };
 
+/* Types for SIMD vectors.
+   FIXME preprocess out for non-gcc compilers.  */
+typedef float __attribute__ ((vector_size (4 * sizeof (float)))) floatvec;
+
 /*
  * The NEW node structure of the SAC syntax tree
  * The type is abstract, as there is _no_ way to access a node other

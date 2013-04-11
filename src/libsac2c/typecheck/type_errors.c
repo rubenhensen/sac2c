@@ -191,6 +191,7 @@ MatchNumA (ntype *type)
                || (TYgetSimpleType (TYgetScalar (type)) == T_ulong)
                || (TYgetSimpleType (TYgetScalar (type)) == T_ulonglong)
                || (TYgetSimpleType (TYgetScalar (type)) == T_float)
+               || (TYgetSimpleType (TYgetScalar (type)) == T_floatvec)
                || (TYgetSimpleType (TYgetScalar (type)) == T_double)));
 
     DBUG_RETURN (res);

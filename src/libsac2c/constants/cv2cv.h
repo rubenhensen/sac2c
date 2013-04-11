@@ -16,6 +16,7 @@ extern void COcv2CvLongLong (void *src, int off, int len, void *res, int res_off
 extern void COcv2CvBool (void *src, int off, int len, void *res, int res_off);
 
 extern void COcv2CvFloat (void *src, int off, int len, void *res, int res_off);
+extern void COcv2CvFloatvec (void *src, int off, int len, void *res, int res_off);
 extern void COcv2CvDouble (void *src, int off, int len, void *res, int res_off);
 extern void COcv2CvLongDouble (void *src, int off, int len, void *res, int res_off);
 

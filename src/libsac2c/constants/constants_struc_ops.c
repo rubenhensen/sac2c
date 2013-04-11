@@ -468,6 +468,27 @@ COsimd_sel (constant *simd_length, constant *idx, constant *a)
     DBUG_RETURN (res);
 }
 
+constant *
+COsimd_sel_SxS (constant *idx, constant *a)
+{
+    void *elems;
+    int res_dim, res_vlen, curr_ext_a, i;
+    shape *res_shp;
+    constant *res, *co;
+    float fval;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 1, "idx to COSel not vector!");
+    DBUG_ASSERT (CONSTANT_TYPE (a) == T_floatvec, "only floatvec can be subscipted");
+
+    /* Check that SIMD_LENGTH is a proper constant and grab it's value.  */
+    co = TYgetValue (a);
+    fval = ((floatvec *)COgetDataVec (co))[0][((int *)CONSTANT_ELEMS (idx))[0]];
+
+    res = COmakeConstantFromFloat (fval);
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * function:

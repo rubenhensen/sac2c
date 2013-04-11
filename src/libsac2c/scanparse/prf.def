@@ -17,6 +17,8 @@ KEYWORD_PRF (ABS_V, "_abs_V_", F_abs_V)
 KEYWORD_PRF (ADD_SxS, "_add_SxS_", F_add_SxS)
 
 /* SIMD Operations.  */
+KEYWORD_PRF (SIMD_SEL_SxS, "_simd_sel_SxS_", F_simd_sel_SxS)
+KEYWORD_PRF (SIMD_MODARRAY, "_simd_modarray_", F_simd_modarray)
 KEYWORD_PRF (ADD_SMxSM, "_add_SMxSM_", F_add_SMxSM)
 KEYWORD_PRF (SUB_SMxSM, "_sub_SMxSM_", F_sub_SMxSM)
 KEYWORD_PRF (MUL_SMxSM, "_mul_SMxSM_", F_mul_SMxSM)

@@ -91,6 +91,15 @@
 
 #define __get_var(var) SAC_ND_GETVAR (var, SAC_ND_A_FIELD (var))
 
+#define SAC_ND_PRF_SIMD_SELSxS__DATA(var, basetype, op, arg1, arg2)                      \
+    __get_var (var) = (arg2)[arg1];
+
+#define SAC_ND_PRF_SIMD_MODARRAY(var, basetype, op, arg1, arg2, arg3)                    \
+    {                                                                                    \
+        __get_var (var) = arg1;                                                          \
+        (__get_var (var))[arg2] = arg3;                                                  \
+    }
+
 #define SAC_ND_PRF_SMxSM__DATA(var, basetype, op, num, arg1, arg2)                       \
     __to_vec (__type_vector (num, basetype), __get_var (var))                            \
       = op (basetype, num, __get_var (arg1), __get_var (arg2));

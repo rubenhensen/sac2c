@@ -39,6 +39,7 @@ extern node *CMPTnumulonglong (node *arg_node, info *arg_info);
 extern node *CMPTchar (node *arg_node, info *arg_info);
 extern node *CMPTbool (node *arg_node, info *arg_info);
 extern node *CMPTfloat (node *arg_node, info *arg_info);
+extern node *CMPTfloatvec (node *arg_node, info *arg_info);
 extern node *CMPTdouble (node *arg_node, info *arg_info);
 extern node *CMPTtype (node *arg_node, info *arg_info);
 extern node *CMPTstr (node *arg_node, info *arg_info);

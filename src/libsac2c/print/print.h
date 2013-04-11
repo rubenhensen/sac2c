@@ -79,6 +79,7 @@ extern node *PRTnumuint (node *arg_node, info *arg_info);
 extern node *PRTnumulong (node *arg_node, info *arg_info);
 extern node *PRTnumulonglong (node *arg_node, info *arg_info);
 extern node *PRTfloat (node *arg_node, info *arg_info);
+extern node *PRTfloatvec (node *arg_node, info *arg_info);
 extern node *PRTdouble (node *arg_node, info *arg_info);
 extern node *PRTbool (node *arg_node, info *arg_info);
 extern node *PRTnested_init (node *arg_node, info *arg_info);

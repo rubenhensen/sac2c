@@ -1403,6 +1403,12 @@ SCSprf_simd_sel_VxA (node *arg_node, info *arg_info)
     return NULL;
 }
 
+node *
+SCSprf_simd_sel_SxS (node *arg_node, info *arg_info)
+{
+    return NULL;
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *SCSprf_add_VxS( node *arg_node, info *arg_info)

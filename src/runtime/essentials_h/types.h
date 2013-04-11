@@ -24,6 +24,11 @@
 #endif /* SAC_BACKEND */
 #undef MUTC
 
+#ifndef FLOATVEC_DEFINED
+typedef float __attribute__ ((vector_size (4 * sizeof (float)))) floatvec;
+#define FLOATVEC_DEFINED
+#endif
+
 #ifndef BYTE_DEFINED
 typedef char byte;
 #define BYTE_DEFINED

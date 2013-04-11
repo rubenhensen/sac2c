@@ -356,6 +356,9 @@ MakeDimArg (node *arg)
     case N_numulonglong:
     case N_num:
     case N_float:
+    /* FIXME  Not sure it should be 0...  */
+    case N_floatvec:
+
     case N_double:
     case N_char:
     case N_bool:
@@ -411,6 +414,8 @@ MakeShapeArg (node *arg)
     case N_numulonglong:
     case N_num:
     case N_float:
+    /* FIXME Still not sure that it should be 0...  */
+    case N_floatvec:
     case N_double:
     case N_char:
     case N_bool:
@@ -1240,6 +1245,7 @@ EMALcode (node *arg_node, info *arg_info)
 EMALCONST (bool)
 EMALCONST (char)
 EMALCONST (float)
+EMALCONST (floatvec)
 EMALCONST (double)
 EMALCONST (num)
 EMALCONST (numbyte)
@@ -1671,6 +1677,16 @@ EMALprf (node *arg_node, info *arg_info)
          */
         als->dim = MakeDimArg (PRF_ARG2 (arg_node));
         als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
+        break;
+
+    case F_simd_sel_SxS:
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_int);
+        break;
+
+    case F_simd_modarray:
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_int);
         break;
 
     case F_simd_sel_VxA: {

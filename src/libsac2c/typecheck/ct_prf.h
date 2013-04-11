@@ -96,4 +96,6 @@ extern ntype *NTCCTprf_mask_VxVxV (te_info *info, ntype *args);
 
 extern ntype *NTCCTprf_ari_op_SMxSM (te_info *, ntype *);
 extern ntype *NTCCTprf_simd_sel_VxA (te_info *, ntype *);
+extern ntype *NTCCTprf_simd_sel_SxS (te_info *, ntype *);
+extern ntype *NTCCTprf_simd_modarray (te_info *, ntype *);
 #endif /* _SAC_CT_PRF_H_ */

@@ -115,6 +115,10 @@ TYP_IF (T_ulonglong, "ulonglong", "ulonglong", "ull", COcv2Numulonglong, COcv2Cv
 TYP_IF (T_float, "float", "float", "f", COcv2Float, COcv2CvFloat, COcv2StrFloat,
         sizeof (float), COzipCvFloat, CObaseCvFloat, MUTC_SC_FLOAT, unused)
 
+TYP_IF (T_floatvec, "floatvec", "floatvec", "fv", COcv2Floatvec, COcv2CvFloatvec,
+        COcv2StrFloatvec, sizeof (floatvec), COzipCvDummy, CObaseCvFloatvec,
+        MUTC_SC_FLOAT, unused)
+
 TYP_IF (T_double, "double", "double", "d", COcv2Double, COcv2CvDouble, COcv2StrDouble,
         sizeof (double), COzipCvDouble, CObaseCvDouble, MUTC_SC_FLOAT, unused)
 

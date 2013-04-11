@@ -34,6 +34,7 @@ extern node *MDEnumuint (node *arg_node, info *arg_info);
 extern node *MDEnumulong (node *arg_node, info *arg_info);
 extern node *MDEnumulonglong (node *arg_node, info *arg_info);
 extern node *MDEfloat (node *arg_node, info *arg_info);
+extern node *MDEfloatvec (node *arg_node, info *arg_info);
 extern node *MDEdouble (node *arg_node, info *arg_info);
 extern node *MakeScalarAvis (char *name);
 

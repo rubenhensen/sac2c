@@ -24,6 +24,7 @@
  *
  ******************************************************************************/
 
+/* FIXME consider using memcpy -- it is faster ans simpler.  */
 #define COcv2CvTEMPLATE(type, ext)                                                       \
     void COcv2Cv##ext (void *src, int off, int len, void *res, int res_off)              \
     {                                                                                    \
@@ -47,8 +48,8 @@ COcv2CvTEMPLATE (unsigned char, UByte) COcv2CvTEMPLATE (unsigned short, UShort)
         COcv2CvTEMPLATE (long, Long) COcv2CvTEMPLATE (long long, LongLong)
           COcv2CvTEMPLATE (bool, Bool)
 
-            COcv2CvTEMPLATE (float, Float) COcv2CvTEMPLATE (double, Double)
-              COcv2CvTEMPLATE (long double, LongDouble)
+            COcv2CvTEMPLATE (float, Float) COcv2CvTEMPLATE (floatvec, Floatvec)
+              COcv2CvTEMPLATE (double, Double) COcv2CvTEMPLATE (long double, LongDouble)
 
                 COcv2CvTEMPLATE (char, Char)
 

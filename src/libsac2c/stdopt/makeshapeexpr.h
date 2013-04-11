@@ -33,6 +33,7 @@ extern node *MSEnumuint (node *arg_node, info *arg_info);
 extern node *MSEnumulong (node *arg_node, info *arg_info);
 extern node *MSEnumulonglong (node *arg_node, info *arg_info);
 extern node *MSEfloat (node *arg_node, info *arg_info);
+extern node *MSEfloatvec (node *arg_node, info *arg_info);
 extern node *MSEdouble (node *arg_node, info *arg_info);
 extern node *MakeVectAvis (char *name, node *dim);
 

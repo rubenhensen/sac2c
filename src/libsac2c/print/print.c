@@ -3745,6 +3745,28 @@ PRTfloat (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+node *
+PRTfloatvec (node *arg_node, info *arg_info)
+{
+    floatvec val;
+
+    DBUG_ENTER ();
+
+    if (NODE_ERROR (arg_node) != NULL) {
+        NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
+    }
+
+    val = FLOATVEC_VAL (arg_node);
+    fprintf (global.outfile, "((floatvec){");
+    for (size_t i = 0; i < sizeof (floatvec) / sizeof (float); i++)
+        if (i != sizeof (floatvec) / sizeof (float) - 1)
+            fprintf (global.outfile, "%f, ", ((float *)&val)[i]);
+        else
+            fprintf (global.outfile, "%f})", ((float *)&val)[i]);
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *PRTdouble( node *arg_node, info *arg_info)

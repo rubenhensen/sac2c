@@ -65,6 +65,26 @@ CVfloat2String (float val)
     DBUG_RETURN (tmp_string);
 }
 
+char *
+CVfloatvec2String (floatvec val)
+{
+    char *s;
+    const unsigned vec_len = sizeof (floatvec) / sizeof (float);
+    const unsigned mem
+      = 270 * vec_len + vec_len * strlen (", ") + strlen ("(floatvec){}");
+
+    s = (char *)MEMmalloc (sizeof (char) * mem);
+    sprintf (s, "(floatvec){");
+
+    for (unsigned i = 0; i < vec_len; i++) {
+        char *t = CVfloat2String (val[i]);
+        sprintf (s, "%s%s%s", s, t, i == vec_len - 1 ? "}" : ", ");
+        MEMfree (t);
+    }
+
+    return s;
+}
+
 /*
  *
  *  functionname  : CVdouble2String

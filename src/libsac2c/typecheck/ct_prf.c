@@ -3949,4 +3949,75 @@ NTCCTprf_simd_sel_VxA (te_info *info, ntype *args)
     DBUG_RETURN (TYmakeProductType (1, res));
 }
 
+/* Typecheck element selection from scalar SIMD vector.  */
+ntype *
+NTCCTprf_simd_sel_SxS (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *idx, *simd_vector;
+    char *err_msg;
+    constant *co;
+    int vec_length;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "simd_sel called with incorrect number of arguments");
+
+    idx = TYgetProductMember (args, 0);
+    simd_vector = TYgetProductMember (args, 1);
+
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 0), idx);
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 1), simd_vector);
+
+    DBUG_ASSERT (TYgetSimpleType (TYgetScalar (simd_vector)) == T_floatvec,
+                 "Currently only floatvec can be subscripted");
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        res = TYmakeAKS (TYmakeSimpleType (T_float), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+ntype *
+NTCCTprf_simd_modarray (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *simd_vector, *idx, *value;
+    char *err_msg;
+    constant *co;
+    int vec_length;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 3,
+                 "simd_sel called with incorrect number of arguments");
+
+    simd_vector = TYgetProductMember (args, 0);
+    idx = TYgetProductMember (args, 1);
+    value = TYgetProductMember (args, 2);
+
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 0), simd_vector);
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 2), value);
+
+    DBUG_ASSERT (TYgetSimpleType (TYgetScalar (simd_vector)) == T_floatvec
+                   && TYgetSimpleType (TYgetScalar (idx)) == T_int
+                   && TYgetSimpleType (TYgetScalar (value)) == T_float,
+                 "Currently modarray must be called on floatvec, int, float");
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        res = TYmakeAKS (TYmakeSimpleType (T_floatvec), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
 #undef DBUG_PREFIX
