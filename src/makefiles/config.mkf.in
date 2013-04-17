@@ -26,7 +26,7 @@ CC_FLAGS_MT     := -D_REENTRANT @MT_CFLAGS_LPEL@
 CC_FLAGS_YY     := -DYYLMAX=8192
 
 LD              := @SAC2C_CC@
-LD_FLAGS        := @LD_FLAGS@ -lrt
+LD_FLAGS        := @LD_FLAGS@
 LD_DYNAMIC      := @SAC2C_CC@ @LD_DYNAMIC@
 LD_PATH         := @LD_PATH@
 
