@@ -1,14 +1,3 @@
-/*
- * $Log$
- * Revision 1.2  2005/06/28 20:55:43  cg
- * Separate traversal for transforming while-loops into do-loops reactivated.
- *
- * Revision 1.1  2001/04/18 15:38:34  nmw
- * Initial revision
- *
- *
- */
-
 #include "types.h"
 
 /******************************************************************************

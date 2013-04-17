@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_CT_PRF_H_
 #define _SAC_CT_PRF_H_
 

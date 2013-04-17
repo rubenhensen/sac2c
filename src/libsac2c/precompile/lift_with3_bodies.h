@@ -1,9 +1,3 @@
-/*
- * Lifting with3 into functions
- * $Log$
- *
- */
-
 #ifndef _SAC_LIFT_WITH3_BODIES_H_
 #define _SAC_LIFT_WITH3_BODIES_H_
 

@@ -1,28 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.6  2005/07/26 16:04:22  sbs
- * added SSIfreeAllTvars
- *
- * Revision 1.5  2004/11/22 15:36:00  sbs
- * SacDevCamp04
- *
- * Revision 1.4  2004/08/08 16:05:08  sah
- * fixed some includes.
- *
- * Revision 1.3  2002/08/05 17:00:38  sbs
- * first alpha version of the new type checker !!
- *
- * Revision 1.2  2002/05/31 14:51:54  sbs
- * intermediate version to ensure compilable overall state.
- *
- * Revision 1.1  2002/03/12 15:16:29  sbs
- * Initial revision
- *
- *
- *
- */
-
 #ifndef _SAC_SSI_H_
 #define _SAC_SSI_H_
 

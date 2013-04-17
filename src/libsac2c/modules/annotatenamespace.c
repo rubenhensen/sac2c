@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #define DBUG_PREFIX "ANS"
 #include "debug.h"
 

@@ -1,7 +1,5 @@
 /*******************************************************************************
 
- $Id$
-
  This file realizes the information gathering for the SAC-WLs (SSAWLI phase).
  The decision to fold or not to fold (SSAWLF) is based on these informations.
 

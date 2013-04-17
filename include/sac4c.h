@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /*
  * SACarg argument type
  */

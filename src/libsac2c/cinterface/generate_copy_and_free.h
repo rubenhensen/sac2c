@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_GENERATE_COPY_AND_FREE_H_
 #define _SAC_GENERATE_COPY_AND_FREE_H_
 

@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "check_uniqueness_annotations.h"
 
 #include "traverse.h"

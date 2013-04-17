@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _FREE_LHS_AVIS_SONS_H_
 #define _FREE_LHS_AVIS_SONS_H_
 

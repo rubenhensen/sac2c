@@ -1,9 +1,4 @@
 /*
- * $Id$
- *
- */
-
-/*
  * CAUTION: 
  *
  * mt_gen.h  is generated automatically from mt_gen.h.m4

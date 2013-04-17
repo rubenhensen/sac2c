@@ -15,8 +15,6 @@
  ***********************************************************************
  -->
 
-<!--  $Id$  -->
-
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   
   <xsl:import href="../xml/common_travfun.xsl"/>
@@ -37,7 +35,7 @@
         <xsl:value-of select="'Defines the helper function needed by the traversal system'" />
       </xsl:with-param>
       <xsl:with-param name="xslt">
-        <xsl:value-of select="'$Id$'"/>
+        <xsl:value-of select="'traverse_helper.c.xsl'"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:text>

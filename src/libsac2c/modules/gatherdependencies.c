@@ -1,6 +1,4 @@
 /**
- * $Id$
- *
  * @file gatherdependencies.c
  * @brief gathers the dependencies of a sac file
  * @author Stephan Herhut

@@ -1,21 +1,3 @@
-/*
- * $Log$
- * Revision 1.3  2005/09/12 13:57:49  ktr
- * added ...OneFundef variant
- *
- * Revision 1.2  2005/07/26 14:32:08  sah
- * moved creation of special fold funs to
- * dispatchfuncall as new2old is running
- * prior to the module system which again relies
- * on the fact that no foldfuns have been
- * created, yet.
- *
- * Revision 1.1  2005/07/15 15:53:39  sah
- * Initial revision
- *
- *
- */
-
 #ifndef _SAC_DISPATCHFUNCALLS_H_
 #define _SAC_DISPATCHFUNCALLS_H_
 

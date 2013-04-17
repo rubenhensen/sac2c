@@ -1,8 +1,4 @@
 /*
- *
- * $Id$
- */
-/*
  * WARNING: this fild contains old, deprecated stuff!!!!
  * As soon as all uses of PMOxxx are gone it should be deleted!
  *

@@ -1,17 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.3  2005/09/04 12:52:11  ktr
- * re-engineered the optimization cycle
- *
- * Revision 1.2  2005/07/19 16:09:20  sbs
- * added INFO_EXT_ASSIGN
- *
- * Revision 1.1  2004/07/18 20:00:48  sah
- * Initial revision
- *
- */
-
 /*****************************************************************************
  * This file contains the INFO structure and macros used by:
  * - SSALUR.c         (creates structure)

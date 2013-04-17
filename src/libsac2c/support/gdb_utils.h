@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _GDB_UTILS_H_
 #define _GDB_UTILS_H_
 

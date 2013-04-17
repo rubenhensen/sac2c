@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_CV2STR_H_
 #define _SAC_CV2STR_H_
 

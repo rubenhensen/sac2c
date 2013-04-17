@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * This module infers how often each variable is used in RHS expressions
  * and puts the value found into each variable's AVIS_NEEDCOUNT.
  * This information, IN PRINCIPLE, is needed by several optimisations

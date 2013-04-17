@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "str_buffer.h"
 
 #include <stdio.h>

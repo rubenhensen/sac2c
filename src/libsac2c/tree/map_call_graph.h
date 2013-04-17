@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_MAP_CALL_GRAPH_H_
 #define _SAC_MAP_CALL_GRAPH_H_
 

@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /*****************************************************************************
  *
  * This file contains the all static information derived from the phase

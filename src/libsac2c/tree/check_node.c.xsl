@@ -15,8 +15,6 @@
  ***********************************************************************
  -->
 
-<!--  $Id$  -->
-
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
 
@@ -60,7 +58,7 @@ version="1.0">
       <xsl:value-of select="'Functions needed by chkm traversal.'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id$'"/>
+      <xsl:value-of select="'check_node.c.xsl'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:call-template name="travfun-group-begin">

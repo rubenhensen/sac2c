@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "object_init.h"
 
 #include "types.h"

@@ -1,18 +1,3 @@
-/*
- * $Log$
- * Revision 1.3  2005/02/16 22:29:13  sah
- * changed link handling
- *
- * Revision 1.2  2004/11/26 21:18:50  sah
- * pour Bodo *<8-)
- *
- * Revision 1.1  2004/11/23 22:41:02  sah
- * Initial revision
- *
- *
- *
- */
-
 #ifndef _SAC_SERIALIZE_INFO_H_
 #define _SAC_SERIALIZE_INFO_H_
 

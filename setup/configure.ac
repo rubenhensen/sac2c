@@ -1,7 +1,3 @@
-dnl
-dnl $Id$
-dnl
-
 dnl configure script for building sac2c compiler 
 dnl on different hosts and operating systems
 dnl the general layout is to first to the platform

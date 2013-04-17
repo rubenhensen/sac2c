@@ -1,16 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.2  2004/11/27 02:25:29  ktr
- * new version
- *
- * Revision 1.1  2004/11/26 23:13:29  sah
- * Initial revision
- *
- *
- *
- */
-
 #ifndef _SAC_FUNCTIONPRECOMPILE_H_
 #define _SAC_FUNCTIONPRECOMPILE_H_
 

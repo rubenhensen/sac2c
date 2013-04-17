@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_FILTERRC_H_
 #define _SAC_FILTERRC_H_
 

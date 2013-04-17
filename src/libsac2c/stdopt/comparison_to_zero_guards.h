@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_COMPARISON_TO_ZERO_GUARDS_H_
 #define _SAC_COMPARISON_TO_ZERO_GUARDS_H_
 

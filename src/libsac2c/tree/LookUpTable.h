@@ -1,8 +1,4 @@
 /*
- * $Id$
- */
-
-/*
  *
  *  Look-Up-Table (LUT) for Pointers and Strings
  *  --------------------------------------------

@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "free_dispatch_information.h"
 
 #include "tree_basic.h"

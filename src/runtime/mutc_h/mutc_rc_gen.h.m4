@@ -1,9 +1,4 @@
 /*
- * $Id$
- *
- */
-
-/*
  * CAUTION: 
  *
  * mutc_rc_gen.h  is generated automatically from mutc_rc_gen.h.m4

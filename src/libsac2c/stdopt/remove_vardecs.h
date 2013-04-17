@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_REMOVE_VARDECS_H_
 #define _SAC_REMOVE_VARDECS_H_
 

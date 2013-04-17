@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /**
  * @defgroup stre Reuse elimination
  *

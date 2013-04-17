@@ -81,11 +81,17 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* set to 1 if target os is cygwin */
+#undef IS_CYGWIN
+
 /* set to maximum file name length */
 #undef MAX_FILE_NAME
 
 /* set to maximum path length */
 #undef MAX_PATH_LEN
+
+/* cc flags for LPEL */
+#undef MT_CFLAGS_LPEL
 
 /* set to 1 if gcc complains about unused labels */
 #undef MUST_REFERENCE_YYLABELS
@@ -129,6 +135,9 @@
 /* set to the type of sbrk argument */
 #undef SBRK_T
 
+/* File extension used for shared library files. */
+#undef SHARED_LIB_EXT
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
@@ -138,9 +147,3 @@
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */
 #undef YYTEXT_POINTER
-
-/* File extension used for shared library files. */
-#undef SHARED_LIB_EXT
-
-/* set to 1 if target os is cygwin. */
-#undef IS_CYGWIN

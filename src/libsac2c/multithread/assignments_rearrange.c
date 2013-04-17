@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 /**
  *
  * @defgroup asmra Assignments Rearrange

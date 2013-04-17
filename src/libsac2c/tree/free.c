@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "free.h"
 
 #define DBUG_PREFIX "FREE"

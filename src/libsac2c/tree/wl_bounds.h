@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_WL_BOUNDS_H_
 #define _SAC_WL_BOUNDS_H_
 

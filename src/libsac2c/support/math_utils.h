@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _MATH_UTILS_H_
 #define _MATH_UTILS_H_
 

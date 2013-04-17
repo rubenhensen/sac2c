@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "restore_objects.h"
 
 #define DBUG_PREFIX "RESO"

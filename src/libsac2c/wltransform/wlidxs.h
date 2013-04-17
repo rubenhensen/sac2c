@@ -1,11 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.1  2005/08/24 10:16:29  ktr
- * Initial revision
- *
- */
-
 #ifndef _SAC_WLIDXS_H_
 #define _SAC_WLIDXS_H_
 

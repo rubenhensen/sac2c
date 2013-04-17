@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_IVE_SPLIT_SELECTIONS_H_
 #define _SAC_IVE_SPLIT_SELECTIONS_H_
 

@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_SHAPE_H_
 #define _SAC_SHAPE_H_
 

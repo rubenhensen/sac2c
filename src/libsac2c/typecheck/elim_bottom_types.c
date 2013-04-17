@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include <stdio.h>
 
 #include "elim_bottom_types.h"

@@ -1,10 +1,3 @@
-/*
- *
- * $Id$
- *
- *
- */
-
 /**
  * @file serialize_attribs.c
  *

@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "type_statistics.h"
 
 #define DBUG_PREFIX "UNDEFINED"

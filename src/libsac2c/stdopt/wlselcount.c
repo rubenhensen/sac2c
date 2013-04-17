@@ -1,8 +1,6 @@
 
 /**<!--******************************************************************-->
  *
- * $Id$
- *
  * @file wlselcount.c
  *
  * This traversal infers two WIth-Loop attributes:

@@ -1,31 +1,3 @@
-/*
- * $Log$
- * Revision 1.8  2004/11/26 15:49:05  jhb
- * compile
- *
- * Revision 1.7  2004/11/26 14:29:53  sbs
- * change run
- *
- * Revision 1.6  2003/04/09 15:38:14  sbs
- * CONeg added.
- *
- * Revision 1.5  2001/05/17 14:16:21  nmw
- * MALLOC/FREE replaced by MEMmalloc/Free, using result of MEMfree()
- *
- * Revision 1.4  2001/03/22 14:25:08  nmw
- * primitive ari ops implemented
- *
- * Revision 1.3  2001/03/06 10:29:56  sbs
- * res in COZip post-mortem initialized in order to please gcc 8-))
- *
- * Revision 1.2  2001/03/05 16:57:04  sbs
- * COAdd, COSub, COMul, and CODiv added
- *
- * Revision 1.1  2001/03/02 14:32:54  sbs
- * Initial revision
- *
- */
-
 #include <stdlib.h>
 
 #define DBUG_PREFIX "COOPS"

@@ -32,7 +32,7 @@ version="1.0">
       <xsl:value-of select="'Functions to serialize links in node structures'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id$'"/>
+      <xsl:value-of select="'serialize_link.h.xsl'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:text>

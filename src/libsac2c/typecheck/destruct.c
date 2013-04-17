@@ -1,7 +1,3 @@
-/**
- * $Id$
- */
-
 #include "destruct.h"
 
 #include "tree_basic.h"

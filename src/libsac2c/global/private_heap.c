@@ -1,21 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.4  2005/08/16 14:38:31  sbs
- * eliminated bug in PHPfindElem
- *
- * Revision 1.3  2005/07/26 16:02:07  sbs
- * PHPfreeHeap may be called with NULL ptr now.
- *
- * Revision 1.2  2005/07/25 17:13:09  sbs
- * commented all functions
- *
- * Revision 1.1  2005/07/25 16:43:06  sbs
- * Initial revision
- *
- *
- */
-
 /**
  *
  * @file

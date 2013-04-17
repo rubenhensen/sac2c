@@ -1,12 +1,3 @@
-/*
- * $Log$
- * Revision 1.1  2005/07/16 18:34:03  sah
- * Initial revision
- *
- *
- *
- */
-
 #include "serialize_info.h"
 
 #define DBUG_PREFIX "UNDEFINED"

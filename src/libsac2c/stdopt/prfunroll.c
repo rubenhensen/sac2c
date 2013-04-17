@@ -1,5 +1,4 @@
 /**
- * $Id$
  *
  * @defgroup uprf unroll primitive operations
  * @ingroup opt

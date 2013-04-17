@@ -1,7 +1,3 @@
-/*
- * $Id: undossaivtransform.c 15674 2009-09-24 15:10:11Z rbe $
- */
-
 #include <stdio.h>
 
 #include "globals.h"

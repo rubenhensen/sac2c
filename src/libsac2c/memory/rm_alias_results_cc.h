@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_RM_ALIAS_RESULTS_CC_H_
 #define _SAC_RC_ALIAS_RESULTS_CC_H_
 

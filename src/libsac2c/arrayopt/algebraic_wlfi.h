@@ -1,11 +1,3 @@
-/*
- * $Id: algebraic_wlfi.h 16002 2009-02-18 22:03:23Z rbe $
- */
-#ifndef _SAC_ALGEBRAIC_WLFI_H_
-#define _SAC_ALGEBRAIC_WLFI_H_
-
-#include "types.h"
-
 /** <!--********************************************************************-->
  *
  * Algebraic With-Loop-Folding-Inference traversal
@@ -13,6 +5,12 @@
  * Prefix: AWLFI
  *
  *****************************************************************************/
+
+#ifndef _SAC_ALGEBRAIC_WLFI_H_
+#define _SAC_ALGEBRAIC_WLFI_H_
+
+#include "types.h"
+
 extern node *AWLFIdoAlgebraicWithLoopFolding (node *arg_node);
 extern bool AWLFIisSingleOpWL (node *arg_node);
 extern node *AWLFIfindWL (node *arg_node);

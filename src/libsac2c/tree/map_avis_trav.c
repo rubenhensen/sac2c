@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 #include "map_avis_trav.h"
 
 #include "traverse.h"

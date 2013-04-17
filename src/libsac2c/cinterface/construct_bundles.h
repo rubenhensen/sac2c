@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_CONSTRUCT_BUNDLES_H_
 #define _SAC_CONSTRUCT_BUNDLES_H_
 

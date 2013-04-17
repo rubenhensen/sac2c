@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_TAG_PREPARATION_H_
 #define _SAC_TAG_PREPARATION_H_
 

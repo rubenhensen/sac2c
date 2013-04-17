@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "specialize.h"
 
 #define DBUG_PREFIX "SPEC"

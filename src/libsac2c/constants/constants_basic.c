@@ -1,8 +1,4 @@
 /*
- * $Id$
- */
-
-/*
  * This module implements an abstract datatype for keeping "machine"
  * constants (scalars as well as arbitrary shaped arrays).
  *

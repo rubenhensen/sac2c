@@ -1,25 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.5  2005/01/11 13:32:21  cg
- * Converted output from Error.h to ctinfo.c
- *
- * Revision 1.4  2004/11/24 23:16:39  khf
- * SacDevCamp04
- *
- * Revision 1.3  2004/11/24 14:33:21  khf
- * SacDevCamp04: Compiles
- *
- * Revision 1.2  2004/10/27 15:50:19  khf
- * some debugging
- *
- * Revision 1.1  2004/10/20 08:22:52  khf
- * Initial revision
- *
- *
- *
- */
-
 /**
  *
  * @file resolvedependencies.c

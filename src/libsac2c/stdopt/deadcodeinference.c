@@ -1,8 +1,3 @@
-/*
- *
- * $Id$
- *
- */
 #include "deadcodeinference.h"
 
 #include "tree_basic.h"

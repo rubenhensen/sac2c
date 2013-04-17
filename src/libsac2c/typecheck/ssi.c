@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "ssi.h"
 
 #define DBUG_PREFIX "SSI"

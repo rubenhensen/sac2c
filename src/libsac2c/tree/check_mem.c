@@ -1,12 +1,4 @@
-/*
- * $Id$ check_mem.c
- *
- */
-
-#ifndef DBUG_OFF
-
 /******************************************************************************
- * $Id$ check_mem.c
  *
  * PREFIX: CHKM
  *
@@ -15,10 +7,10 @@
  *
  ******************************************************************************/
 
+#ifndef DBUG_OFF
+
 #include <stdlib.h>
-
 #include "check_mem.h"
-
 #include "str.h"
 #include "memory.h"
 #include "traverse.h"

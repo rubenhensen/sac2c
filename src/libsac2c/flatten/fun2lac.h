@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_FUN2LAC_H_
 #define _SAC_FUN2LAC_H_
 

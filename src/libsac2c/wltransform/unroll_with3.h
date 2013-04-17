@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_UNROLL_WITH3_H_
 #define _SAC_UNROLL_WITH3_H_
 

@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_ADD_SYNC_H_
 #define _SAC_ADD_SYNC_H_
 

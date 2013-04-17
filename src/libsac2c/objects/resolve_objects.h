@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_RESOLVE_OBJECTS_H_
 #define _SAC_RESOLVE_OBJECTS_H_
 

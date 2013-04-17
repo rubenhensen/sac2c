@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "symboltable.h"
 
 #define DBUG_PREFIX "UNDEFINED"

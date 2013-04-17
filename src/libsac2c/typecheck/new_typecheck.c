@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include <stdio.h>
 
 #define DBUG_PREFIX "NTC"

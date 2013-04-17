@@ -1,12 +1,3 @@
-/*
- * $Log$
- * Revision 1.1  2004/11/23 22:41:12  sah
- * Initial revision
- *
- *
- *
- */
-
 #ifndef _SAC_SERIALIZE_STACK_H_
 #define _SAC_SERIALIZE_STACK_H_
 

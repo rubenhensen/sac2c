@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /**
  * @defgroup wrci With-loop reuse candidate inference
  *

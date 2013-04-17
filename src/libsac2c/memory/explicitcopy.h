@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_EXPLICITCOPY_H_
 #define _SAC_EXPLICITCOPY_H_
 

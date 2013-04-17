@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SANITY_CHECKS_H_
 #define _SANITY_CHECKS_H_
 

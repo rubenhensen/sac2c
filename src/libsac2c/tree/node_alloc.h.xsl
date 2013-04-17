@@ -15,8 +15,6 @@
  ***********************************************************************
  -->
 
-<!--  $Id$  -->
-
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   
   <xsl:import href="../xml/common_key_tables.xsl"/>
@@ -36,7 +34,7 @@
         <xsl:value-of select="'Defines the a structure that allows alligned allocation of entire node structures.'"/>
       </xsl:with-param>
       <xsl:with-param name="xslt">
-        <xsl:value-of select="'$Id$'"/>
+        <xsl:value-of select="'node_alloc.h.xsl'"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:text>

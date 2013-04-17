@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_ICM2C_STD_H_
 #define _SAC_ICM2C_STD_H_
 

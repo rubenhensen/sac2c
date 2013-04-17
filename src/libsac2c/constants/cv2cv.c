@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /*
  * This module provides a set of functions for copying elements of constant vectors
  * into other constant vectors. The problem with this task is that such a function

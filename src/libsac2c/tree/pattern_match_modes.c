@@ -1,8 +1,3 @@
-/*
- *
- * $Id$
- */
-
 /**
  *
  * @file pattern_match_modes.c

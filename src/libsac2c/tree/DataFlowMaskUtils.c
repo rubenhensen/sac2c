@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "DataFlowMaskUtils.h"
 
 #include "new_types.h"

@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_SPMDFUN_FIX_H_
 #define _SAC_SPMDFUN_FIX_H_
 

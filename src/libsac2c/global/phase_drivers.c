@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "phase_drivers.h"
 
 #define DBUG_PREFIX "UNDEFINED"

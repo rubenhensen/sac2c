@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 #include <stdarg.h>
 
 #include "type_errors.h"

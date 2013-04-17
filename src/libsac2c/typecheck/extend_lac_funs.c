@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include <stdio.h>
 
 #include "extend_lac_funs.h"

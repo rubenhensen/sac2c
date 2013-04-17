@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_RCMINIMIZE_H_
 #define _SAC_RCMINIMIZE_H_
 

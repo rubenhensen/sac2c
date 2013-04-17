@@ -1,17 +1,16 @@
-#ifndef _SAC_MOVESHAREDMEMINSTR_H_
-#define _SAC_MOVESHAREDMEMINSTR_H_
-
-#include "types.h"
-
 /******************************************************************************
- *
- * $Id$
  *
  * Move shared memory management instructions
  *
  * Prefix: MVSMI
  *
  *****************************************************************************/
+
+#ifndef _SAC_MOVESHAREDMEMINSTR_H_
+#define _SAC_MOVESHAREDMEMINSTR_H_
+
+#include "types.h"
+
 extern node *MVSMIdoMoveSharedMemoryManagementInstructions (node *syntax_tree);
 
 extern node *MVSMIfundef (node *arg_node, info *arg_info);

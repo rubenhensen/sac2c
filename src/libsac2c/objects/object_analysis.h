@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_OBJECT_ANALYSIS_H_
 #define _SAC_OBJECT_ANALYSIS_H_
 

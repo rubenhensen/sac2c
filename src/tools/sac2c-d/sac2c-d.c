@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "sactools.h"
 
 #define LIBRARY "/lib/libsac2c.d.so"

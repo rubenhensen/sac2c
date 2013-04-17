@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /** <!--********************************************************************-->
  *
  * @defgroup msc clonse functions with spawn to create slow clones

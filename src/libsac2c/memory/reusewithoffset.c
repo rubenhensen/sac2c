@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /**
  *
  * @defgroup rwo Offset-Aware With-Loop Reuse Candidate Inference

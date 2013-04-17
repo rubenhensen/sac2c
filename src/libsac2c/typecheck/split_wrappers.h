@@ -1,11 +1,3 @@
-/*
- * $Log$
- * Revision 1.1  2005/07/17 20:10:25  sbs
- * Initial revision
- *
- *
- */
-
 #ifndef _SAC_SPLIT_WRAPPERS_H_
 #define _SAC_SPLIT_WRAPPERS_H_
 

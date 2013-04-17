@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _PTR_BUFFER_H_
 #define _PTR_BUFFER_H_
 

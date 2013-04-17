@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "memory.h"
 #undef MEMmalloc
 

@@ -1,8 +1,4 @@
 /*
- * $Id$
- */
-
-/*
 **
 ** Some macro definitions used for the automatic creation
 ** of tables which depend on the correct order of the tags

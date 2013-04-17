@@ -1,29 +1,3 @@
-/*
- * $Log$
- * Revision 1.7  2005/08/23 14:23:42  sbs
- * introduced the Char versions
- *
- * Revision 1.6  2004/11/23 11:38:17  cg
- * SacDevCamp renaming
- *
- * Revision 1.5  2004/11/22 18:55:29  cg
- * Moved all definitions/declarations of global variables to globals.mac
- *
- * Revision 1.4  2004/11/22 11:27:04  ktr
- * Ismop SacDevCamp 04
- *
- * Revision 1.3  2003/04/09 15:37:16  sbs
- * zipcv_neg added.
- *
- * Revision 1.2  2001/03/22 14:28:07  nmw
- * macros and function tables for primitive ari functions added
- *
- * Revision 1.1  2001/03/05 16:59:16  sbs
- * Initial revision
- *
- *
- */
-
 #ifndef _SAC_ZIPCV_H_
 #define _SAC_ZIPCV_H_
 

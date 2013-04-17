@@ -1,10 +1,4 @@
 /*
- *
- * $Id$
- *
- */
-
-/*
  *  This source code file does not contain any tabs any more. This is
  *  important to guarantee its unique appearance with all kinds of editors.
  *  So, please try to keep it this way !

@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /**
  * @file importsymbols.c
  * @brief traversal handling import of functions and types

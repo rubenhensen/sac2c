@@ -1,15 +1,3 @@
-/*
- * $Log$
- * Revision 1.2  2004/11/26 21:18:50  sah
- * pour Bodo *<8-)
- *
- * Revision 1.1  2004/11/23 22:41:06  sah
- * Initial revision
- *
- *
- *
- */
-
 #include "serialize_stack.h"
 
 #define DBUG_PREFIX "UNDEFINED"

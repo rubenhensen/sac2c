@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_WLTRANSFORM_H_
 #define _SAC_WLTRANSFORM_H_
 

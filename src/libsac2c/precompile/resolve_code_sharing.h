@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_RESOLVE_CODE_SHARING_H_
 #define _SAC_RESOLVE_CODE_SHARING_H_
 

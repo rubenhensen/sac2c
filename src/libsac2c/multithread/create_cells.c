@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 /**
  *
  * @defgroup crece Create Cells

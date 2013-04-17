@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_STRIP_EXTERNAL_SIGNATURES_H_
 #define _SAC_STRIP_EXTERNAL_SIGNATURES_H_
 

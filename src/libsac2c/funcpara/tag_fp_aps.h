@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_TAG_FP_APS_H_
 #define _SAC_TAG_FP_APS_H_
 

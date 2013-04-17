@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_REMOVE_DFMS_H_
 #define _SAC_REMOVE_DFMS_H_
 

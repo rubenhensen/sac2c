@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_SETFUNDEF_WASOPTIMIZED_H_
 #define _SAC_SETFUNDEF_WASOPTIMIZED_H_
 

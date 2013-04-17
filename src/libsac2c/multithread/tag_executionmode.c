@@ -1,7 +1,5 @@
 /**
  *
- * $Id$
- *
  * @defgroup tem Tag Executionmode
  * @ingroup muth
  *

@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "globals.h"
 #include "tree_basic.h"
 #include "tree_compound.h"

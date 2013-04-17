@@ -1,7 +1,5 @@
 /**
  *
- * $Id$
- *
  * @defgroup fpc Function Precompile
  * @ingroup prec Precompile
  *

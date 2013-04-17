@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "builtin_types.h"
 #include "shape.h"
 #include "constants.h"

@@ -15,8 +15,6 @@
  ***********************************************************************
  -->
 
-<!--  $Id$  -->
-
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 version="1.0">
   
@@ -46,8 +44,7 @@ version="1.0">
         <xsl:value-of select="'Functions needed by check.'"/>
       </xsl:with-param>
       <xsl:with-param name="xslt">
-        <xsl:value-of select="'$Id: check.c.xsl 14618 2006-02-28 16:08:17Z 
-                              jhb $'"/>
+        <xsl:value-of select="'check.c.xsl'"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:call-template name="travfun-group-begin">

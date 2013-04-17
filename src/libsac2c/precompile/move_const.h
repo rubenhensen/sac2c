@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_MOVE_CONST_H_
 #define _SAC_MOVE_CONST_H_
 

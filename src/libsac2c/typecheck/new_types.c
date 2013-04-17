@@ -1,9 +1,3 @@
-/*
- *
- * $Id: new_types.c 16784 2010-03-24 21:26:58Z cg $
- *
- */
-
 /**
  *
  * @defgroup nty New Types

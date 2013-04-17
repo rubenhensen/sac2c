@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_REMOVEWITH3_H_
 #define _SAC_REMOVEWITH3_H_
 

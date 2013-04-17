@@ -1,11 +1,3 @@
-/*
- * $Id: ivextram.h 15815 2008-10-24 18:04:47Z rbe $
- */
-#ifndef _SAC_INDEX_VECTOR_EXTREMA_INSERTION_H_
-#define _SAC_INDEX_VECTOR_EXTREMA_INSERTION_H_
-
-#include "types.h"
-
 /** <!--********************************************************************-->
  *
  * Template traversal ( ivext_tab)
@@ -13,6 +5,12 @@
  * Prefix: IVEXI
  *
  *****************************************************************************/
+
+#ifndef _SAC_INDEX_VECTOR_EXTREMA_INSERTION_H_
+#define _SAC_INDEX_VECTOR_EXTREMA_INSERTION_H_
+
+#include "types.h"
+
 extern node *IVEXIdoInsertIndexVectorExtrema (node *arg_node);
 
 extern node *IVEXImodule (node *arg_node, info *arg_info);

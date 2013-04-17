@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /** <!--********************************************************************-->
  *
  * @defgroup REUSE Reusable With-loop Argument Inference

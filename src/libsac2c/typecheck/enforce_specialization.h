@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_ENFORCE_SPECIALIZATION_H_
 #define _SAC_ENFORCE_SPECIALIZATION_H_
 

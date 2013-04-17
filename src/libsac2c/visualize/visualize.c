@@ -1,7 +1,3 @@
-/*
- * $Id: visualization.c 17507 2011-07-27 13:15:39Z ftg $
- */
-
 /**
  * @defgroup graph Graph Functions.
  *

@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_SACARG_H_
 #define _SAC_SACARG_H_
 

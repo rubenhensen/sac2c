@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "deserialize.h"
 #include "serialize.h"
 #include "str.h"

@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_SHOW_ALIAS_H_
 #define _SAC_SHOW_ALIAS_H_
 

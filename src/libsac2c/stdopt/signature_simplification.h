@@ -1,12 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.1  2005/02/02 18:13:34  mwe
- * Initial revision
- *
- *
- */
-
 #ifndef _SAC_SIGNATURE_SIMPLIFICATION_H_
 #define _SAC_SIGNATURE_SIMPLIFICATION_H_
 

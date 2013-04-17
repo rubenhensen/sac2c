@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_SSALUR_H_
 #define _SAC_SSALUR_H_
 

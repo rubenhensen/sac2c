@@ -1,16 +1,3 @@
-/*
- * $Log$
- * Revision 1.3  2005/09/09 16:46:24  sbs
- * NTCCTwl_multicode added
- *
- * Revision 1.2  2004/11/22 15:36:00  sbs
- * SacDevCamp04
- *
- * Revision 1.1  2002/08/05 16:57:54  sbs
- * Initial revision
- *
- *
- */
 
 #ifndef _SAC_CT_WITH_H_
 #define _SAC_CT_WITH_H_

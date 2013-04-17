@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_WL_NEEDCOUNT_H_
 #define _SAC_WL_NEEDCOUNT_H_
 

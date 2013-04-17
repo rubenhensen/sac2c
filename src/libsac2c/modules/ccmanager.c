@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "ccmanager.h"
 #include "system.h"
 #include "str.h"

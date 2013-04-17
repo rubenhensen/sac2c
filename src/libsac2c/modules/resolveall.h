@@ -1,16 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.2  2004/11/22 16:57:41  ktr
- * SACDevCamp 04 Ismop
- *
- * Revision 1.1  2004/10/21 17:19:00  sah
- * Initial revision
- *
- *
- *
- */
-
 #ifndef _SAC_RESOLVE_ALL_H_
 #define _SAC_RESOLVE_ALL_H_
 

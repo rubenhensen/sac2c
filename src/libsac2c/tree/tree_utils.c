@@ -1,7 +1,5 @@
 /**
  *
- * $Id$
- *
  * This file contains several utility functions for inspecting or manipulating
  * ASTs or their elements.
  */

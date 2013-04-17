@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "split_wrappers.h"
 #include "tree_basic.h"
 #include "tree_compound.h"

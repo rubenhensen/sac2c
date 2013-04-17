@@ -1,7 +1,5 @@
 /**
  *
- * $Id$
- *
  * This file frees N_avis son nodes associated with the lhs
  * nodes defined in the arg_node block.
  */

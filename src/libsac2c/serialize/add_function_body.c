@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "add_function_body.h"
 #include "deserialize.h"
 #include "serialize.h"

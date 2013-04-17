@@ -1,8 +1,4 @@
 /**
- * $Id$
- */
-
-/**
  *
  * @file movesharedmeminstr.c
  *

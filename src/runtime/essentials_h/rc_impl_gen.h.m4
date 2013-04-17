@@ -1,9 +1,4 @@
 /*
- * $Id: rc_impl_gen.h.m4 18064 2012-07-12 12:13:31Z jsa $
- *
- */
-
-/*
  * CAUTION: 
  *
  * rc_impl_gen.h  is generated automatically from rc_impl_gen.h.m4

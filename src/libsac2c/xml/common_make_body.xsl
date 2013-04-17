@@ -15,10 +15,7 @@
  ***********************************************************************
  -->
 
-<!--  $Id$  -->
-
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-version="1.0">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
 <xsl:import href="../xml/common_c_code.xsl"/>
 <xsl:import href="../xml/common_name_to_nodeenum.xsl"/>

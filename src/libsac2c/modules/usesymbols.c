@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "usesymbols.h"
 #include "traverse.h"
 

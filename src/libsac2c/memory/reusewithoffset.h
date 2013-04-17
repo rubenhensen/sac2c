@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_RWO_H_
 #define _SAC_RWO_H_
 

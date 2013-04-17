@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_DUPTREE_H_
 #define _SAC_DUPTREE_H_
 

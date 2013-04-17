@@ -1,29 +1,4 @@
 /*
- * $Log$
- * Revision 3.3  2002/09/26 12:49:01  sbs
- * trailing comma eliminated
- *
- * Revision 3.2  2001/02/09 17:11:42  cg
- * Removed type comparison results CMP_different_shapes and
- * CMP_different_dimension due to buggy implementation and general
- * uselessness.
- *
- * Revision 3.1  2000/11/20 18:00:01  sacbase
- * new release made
- *
- * Revision 2.1  1999/02/23 12:40:42  sacbase
- * new release made
- *
- * Revision 1.2  1999/01/19 13:55:31  cg
- * no changes
- *
- * Revision 1.1  1996/01/25 16:18:48  hw
- * Initial revision
- * $
- *
- */
-
-/*
 **
 ** Some macro definitions used for the automatic creation
 ** of tables which depend on the correct order of the tags

@@ -1,7 +1,3 @@
-/**
- * $Id$
- */
-
 #include "hidestructs.h"
 
 #include "tree_basic.h"

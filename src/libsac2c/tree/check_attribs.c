@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "check_attribs.h"
 
 #include "tree_basic.h"

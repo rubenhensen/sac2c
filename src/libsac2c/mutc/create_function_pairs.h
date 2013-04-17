@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_CREATE_FUNCTION_PAIRS_H_
 #define _SAC_CREATE_FUNCTION_PAIRS_H_
 

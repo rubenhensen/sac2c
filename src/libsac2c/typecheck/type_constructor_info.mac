@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /*
  * This file keeps all type constructors and related info.
  * Similar to all other .mac-files it is included several times!

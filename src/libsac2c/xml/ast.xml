@@ -1,5 +1,4 @@
 <?xml-stylesheet href="ast2html.xsl" type="text/xsl" name="HTML" media="screen"?>
-<!-- $Id$ -->
 <definition>
   <attributetypes>
     <type name="IdagFun" ctype="idag_fun_t " init="NULL"

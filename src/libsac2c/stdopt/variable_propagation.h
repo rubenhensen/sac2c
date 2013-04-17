@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_VARIABLEPROPAGATION_H_
 #define _SAC_VARIABLEPROPAGATION_H_
 

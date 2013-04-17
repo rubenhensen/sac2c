@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_REFERENCECOUNTING_H_
 #define _SAC_REFERENCECOUNTING_H_
 

@@ -1,8 +1,4 @@
 /*
- * $Id$
- */
-
-/*
  * @file
  *
  * This file provides the interface for producing any kind of output during

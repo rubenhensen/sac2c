@@ -1,16 +1,4 @@
-/*
- *
- * $Log$
- * Revision 1.2  2005/06/29 08:49:53  ktr
- * added rules for N_code, N_with and N_do
- *
- * Revision 1.1  2005/06/28 20:52:13  cg
- * Initial revision
- *
- */
-
 #include "handle_condexpr.h"
-
 #include "traverse.h"
 #include "tree_basic.h"
 #include "tree_compound.h"

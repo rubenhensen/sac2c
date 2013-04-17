@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 #ifndef _SAC_INSERT_DOMAIN_CONSTRAINTS_H_
 #define _SAC_INSERT_DOMAIN_CONSTRAINTS_H_
 

@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #define DBUG_PREFIX "APT"
 #include "debug.h"
 

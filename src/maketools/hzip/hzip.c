@@ -1,9 +1,4 @@
 /*
- *  $Id$
- *
- */
-
-/*
  * hzip
  *
  * This little tool reads in header files as specified on the command line,

@@ -1,7 +1,3 @@
-/*
- * $Id: flatten.c 15674 2008-02-28 12:08:58Z sah $
- */
-
 #include <stdio.h>
 
 #include "globals.h"

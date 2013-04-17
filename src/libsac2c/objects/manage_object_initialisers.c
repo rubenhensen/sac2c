@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "manage_object_initialisers.h"
 
 #include "traverse.h"

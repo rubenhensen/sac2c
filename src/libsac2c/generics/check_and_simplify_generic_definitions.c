@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /** <!--********************************************************************-->
  *
  * @defgroup csgd Check and Simplify Generic Definitions

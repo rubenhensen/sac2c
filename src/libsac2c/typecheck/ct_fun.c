@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "ct_fun.h"
 
 #define DBUG_PREFIX "NTC"

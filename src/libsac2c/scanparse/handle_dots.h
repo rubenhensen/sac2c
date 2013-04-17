@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _HANDLE_DOTS_H_
 #define _HANDLE_DOTS_H_
 

@@ -1,11 +1,3 @@
-/*
- * $Log$
- * Revision 1.1  2005/05/22 19:46:48  sah
- * Initial revision
- *
- *
- */
-
 /**
  * @file importsymbols.h
  * @brief traversal handling import of functions and types

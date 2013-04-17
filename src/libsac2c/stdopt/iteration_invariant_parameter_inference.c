@@ -1,7 +1,5 @@
 /*****************************************************************************
  *
- * $Id$
- *
  * file:   iteration_invariant_parameter_inference.c
  *
  * prefix: IIPI

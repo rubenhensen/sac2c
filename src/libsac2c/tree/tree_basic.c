@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "tree_basic.h"
 #include "str.h"
 #include "memory.h"

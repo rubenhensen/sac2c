@@ -1,12 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.1  2005/02/02 18:13:34  rbe
- * Initial revision
- *
- *
- */
-
 #ifndef _SAC_LACFUN_UTILITIES_H_
 #define _SAC_LACFUN_UTILITIES_H_
 

@@ -1,23 +1,3 @@
-/*
- * $Log$
- * Revision 1.5  2005/06/28 20:55:43  cg
- * Separate traversal for transforming while-loops into do-loops reactivated.
- *
- * Revision 1.4  2003/09/11 08:21:21  sbs
- * DBUG_PRINTs OPT inserted.
- *
- * Revision 1.3  2001/05/17 11:44:02  dkr
- * FREE eliminated
- *
- * Revision 1.2  2001/04/19 11:48:13  nmw
- * missing recursive traversal in converted while loops added
- *
- * Revision 1.1  2001/04/18 15:38:34  nmw
- * Initial revision
- *
- *
- */
-
 /*****************************************************************************
  *
  * file:   while2do.c

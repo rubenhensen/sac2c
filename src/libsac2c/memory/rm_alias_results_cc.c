@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /** <!--********************************************************************-->
  *
  * @defgroup racc Remove Alias Results from Conformity Checks

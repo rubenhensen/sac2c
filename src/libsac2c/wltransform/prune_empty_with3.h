@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_PRUNE_EMPTY_WITH3_H_
 #define _SAC_PRUNE_EMPTY_WITH3_H_
 

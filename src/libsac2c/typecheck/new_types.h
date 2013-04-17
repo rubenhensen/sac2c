@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_NEW_TYPES_H_
 #define _SAC_NEW_TYPES_H_
 

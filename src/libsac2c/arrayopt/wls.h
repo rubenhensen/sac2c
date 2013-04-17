@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_WLS_H_
 #define _SAC_WLS_H_
 

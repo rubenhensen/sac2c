@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "stringset.h"

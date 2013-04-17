@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_RESOLVE_REFERENCE_ARGS_H_
 #define _SAC_RESOLVE_REFERENCE_ARGS_H_
 

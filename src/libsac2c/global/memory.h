@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_MEMORY_H_
 #define _SAC_MEMORY_H_
 

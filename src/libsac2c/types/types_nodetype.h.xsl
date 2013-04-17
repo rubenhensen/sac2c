@@ -15,8 +15,6 @@
  ***********************************************************************
  -->
 
-<!--  $Id$  -->
-
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   
   <xsl:import href="../xml/common_travfun.xsl" />
@@ -35,7 +33,7 @@
         <xsl:value-of select="'This file defines the nodetype node enumeration.'"/>
       </xsl:with-param>
       <xsl:with-param name="xslt">
-        <xsl:value-of select="'$Id$'"/>
+        <xsl:value-of select="'types_nodetype.h.xsl'"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:text>

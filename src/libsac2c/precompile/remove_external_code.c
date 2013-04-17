@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "remove_external_code.h"
 
 #include "tree_basic.h"

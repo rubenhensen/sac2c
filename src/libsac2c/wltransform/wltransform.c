@@ -1,7 +1,5 @@
 /******************************************************************************
  *
- * $Id$
- *
  * description:
  *
  * This module implements the transformation of the with-loops from the

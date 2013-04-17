@@ -1,34 +1,4 @@
 /*
- *
- * $Log$
- *
- * Revision 3.5  2011/08/26 14:36:00  rjd
- * nested hidden tag added
- *
- * Revision 3.4  2002/07/31 15:34:55  dkr
- * new hidden tag added
- *
- * Revision 3.3  2002/06/04 08:35:54  dkr
- * C_unknownc renamed into C_unknownd
- *
- * Revision 3.2  2001/12/12 09:41:52  dkr
- * some minor changes done
- *
- * Revision 3.1  2000/11/20 17:59:35  sacbase
- * new release made
- *
- * Revision 1.5  2000/09/13 15:06:15  dkr
- * C_last? renamed into C_unknown?
- *
- * Revision 1.2  2000/03/23 14:02:11  jhs
- * Brushing, same system as in node_info.mac now.
- *
- * Revision 1.1  1999/06/25 15:13:01  rob
- * Initial revision
- *
- */
-
-/*
  * info:
  *   Names are presumed to be 3 characters long.
  *   This affects NT_OVERHEAD in types.h

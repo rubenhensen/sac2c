@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_PHASE_DRIVERS_H_
 #define _SAC_PHASE_DRIVERS_H_
 

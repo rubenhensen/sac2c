@@ -1,7 +1,5 @@
 /**
  *
- * $Id$
- *
  * @defgroup wlsimp With-loop simplification
  * @ingroup opt
  *

@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /*
  * The uniqueness checker will check whether unique user types are
  * consumed not more than once, with the exception that they may

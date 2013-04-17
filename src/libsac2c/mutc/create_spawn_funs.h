@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_CREATE_SPAWN_FUNS_H_
 #define _SAC_CREATE_SPAWN_FUNS_H_
 

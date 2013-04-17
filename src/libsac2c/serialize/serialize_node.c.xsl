@@ -15,10 +15,7 @@
  ***********************************************************************
  -->
 
-<!--  $Id$  -->
-
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-version="1.0">
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
 <xsl:import href="../xml/common_key_tables.xsl"/>
 <xsl:import href="../xml/common_travfun.xsl"/>
@@ -63,7 +60,7 @@ version="1.0">
       <xsl:value-of select="'Functions needed by serialize traversal.'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id$'"/>
+      <xsl:value-of select="'serialize_node.c.xsl'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:call-template name="travfun-group-begin">

@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_TYPE_UTILS_H_
 #define _SAC_TYPE_UTILS_H_
 

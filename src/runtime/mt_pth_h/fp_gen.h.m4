@@ -1,9 +1,4 @@
 /*
- * $Id$
- *
- */
-
-/*
  * CAUTION: 
  *
  * fp_gen.h  is generated automatically from fp_gen.h.m4

@@ -1,10 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.1  2005/09/12 13:56:20  ktr
- * Initial revision
- *
- */
 #ifndef _SAC_WLSIMPLIFICATION_H_
 #define _SAC_WLSIMPLIFICATION_H_
 

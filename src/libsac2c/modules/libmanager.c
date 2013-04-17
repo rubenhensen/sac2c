@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "libmanager.h"
 
 #define DBUG_PREFIX "LIB"

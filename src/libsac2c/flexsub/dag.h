@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_DAG_H_
 #define _SAC_DAG_H_
 

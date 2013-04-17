@@ -1,8 +1,4 @@
 
-/*
- * $Id$
- */
-
 #ifndef _SAC_WITH_LOOP_UTILITIES_H_
 #define _SAC_WITH_LOOP_UTILITIES_H_
 

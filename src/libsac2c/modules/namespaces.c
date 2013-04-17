@@ -1,5 +1,4 @@
 /**
- * $Id$
  *
  * @file namespaces.c
  * @brief function and type definitions for namespaces as uses throughout

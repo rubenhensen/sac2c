@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_CONSTANT_PROPAGATION_H_
 #define _SAC_CONSTANT_PROPAGATION_H_
 

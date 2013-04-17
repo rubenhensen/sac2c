@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_symbolic_constant_simplification_h_
 #define _SAC_symbolic_constant_simplification_h_
 

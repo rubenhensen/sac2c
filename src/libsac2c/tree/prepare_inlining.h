@@ -1,12 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.1  2005/02/14 11:15:46  cg
- * Initial revision
- *
- *
- */
-
 #ifndef _SAC_PREPARE_INLINING_H_
 #define _SAC_PREPARE_INLINING_H_
 

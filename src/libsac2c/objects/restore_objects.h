@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_RESTORE_OBJECTS_H_
 #define _SAC_RESTORE_OBJECTS_H_
 

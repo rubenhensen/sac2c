@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_ADD_NORC_PRF_H_
 #define _SAC_ADD_NORC_PRF_H_
 

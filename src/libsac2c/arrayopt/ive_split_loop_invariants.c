@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /** <!--********************************************************************-->
  *
  * @defgroup ivesli Index Vector Elimintation Split Loop Invariants

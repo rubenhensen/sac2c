@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_ALGEBRAIC_WLF_H_
 #define _SAC_ALGEBRAIC_WLF_H_
 

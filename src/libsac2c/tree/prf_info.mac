@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /* If you wish to add a new primitive to the compiler, you
  * likely ended up here. Here's a recipe for doing that.
  *

@@ -1,12 +1,3 @@
-/*
- * $Log$
- * Revision 1.1  2005/09/08 11:06:07  sbs
- * Initial revision
- *
- *
- *
- */
-
 #include "update_wrapper_type.h"
 
 #define DBUG_PREFIX "UNDEFINED"

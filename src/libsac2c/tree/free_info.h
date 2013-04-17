@@ -1,13 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.2  2004/08/10 20:48:03  sah
- * added RCS log;)
- *
- *
- *
- */
-
 /**
  * @file free_info.h
  *

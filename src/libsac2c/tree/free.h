@@ -1,21 +1,3 @@
-/*
- *
- * $Log$
- * Revision 3.27  2005/03/10 09:41:09  cg
- * Added FREEzombify()
- *
- * Revision 3.26  2004/11/23 10:05:24  sah
- * SaC DevCamp 04
- *
- * Revision 3.25  2004/09/30 19:50:48  sah
- * renamed FreeCSEInfo to FreeCSEinfo
- *
- * Revision 3.24  2004/08/10 13:42:56  sah
- * renamed FreeNWithId to FreeNWithid and
- * added switch to new xml generated free
- *
- */
-
 #ifndef _SAC_FREE_H_
 #define _SAC_FREE_H_
 

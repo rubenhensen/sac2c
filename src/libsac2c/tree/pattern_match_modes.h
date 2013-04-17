@@ -1,9 +1,4 @@
 
-/*
- *
- * $Id$
- */
-
 #ifndef _SAC_PATTERN_MATCH_MODES_H_
 #define _SAC_PATTERN_MATCH_MODES_H_
 

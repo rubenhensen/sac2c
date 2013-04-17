@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_MAP_FUN_TRAV_H_
 #define _SAC_MAP_FUN_TRAV_H_
 

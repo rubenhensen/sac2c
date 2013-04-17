@@ -1,11 +1,3 @@
-/*
- * $Id: ivexpropagation.h 15815 2008-10-24 18:04:47Z rbe $
- */
-#ifndef _SAC_INDEX_VECTOR_EXTREMA_PROPAGATION_H_
-#define _SAC_INDEX_VECTOR_EXTREMA_PROPAGATION_H_
-
-#include "types.h"
-
 /** <!--********************************************************************-->
  *
  * Template traversal ( ivexp_tab)
@@ -13,6 +5,12 @@
  * Prefix: IVEXP
  *
  *****************************************************************************/
+
+#ifndef _SAC_INDEX_VECTOR_EXTREMA_PROPAGATION_H_
+#define _SAC_INDEX_VECTOR_EXTREMA_PROPAGATION_H_
+
+#include "types.h"
+
 extern node *IVEXPdoIndexVectorExtremaProp (node *arg_node);
 void IVEXPsetExtremumIfNotNull (node **snk, node *src);
 extern node *IVEXPadjustExtremaBound (node *arg_node, int k, node **vardecs,

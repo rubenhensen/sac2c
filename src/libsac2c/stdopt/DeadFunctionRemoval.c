@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "DeadFunctionRemoval.h"
 
 #include "DupTree.h"

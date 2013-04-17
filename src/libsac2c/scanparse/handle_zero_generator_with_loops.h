@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_HANDLE_ZERO_GENERATOR_WITH_LOOPS__H_
 #define _SAC_HANDLE_ZERO_GENERATOR_WITH_LOOPS__H_
 

@@ -1,11 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.1  2005/08/24 10:16:22  ktr
- * Initial revision
- *
- */
-
 #include "tree_basic.h"
 
 #define DBUG_PREFIX "UNDEFINED"

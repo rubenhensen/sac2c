@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_ELIM_SHAPEVARS_H_
 #define _SAC_ELIM_SHAPEVARS_H_
 

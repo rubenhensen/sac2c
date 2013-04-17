@@ -1,14 +1,3 @@
-/*
- *
- * $Id: undossaivtransform.h 15657 2009-09-24 15:10:10Z rbe $
- *
- */
-
-#ifndef _SAC_UNDOSSAIVTRANSFORM_H_
-#define _SAC_UNDOSSAIVTRANSFORM_H_
-
-#include "types.h"
-
 /******************************************************************************
  *
  * Undo SSAIV traversal
@@ -16,6 +5,11 @@
  * Prefix: USSAI
  *
  *****************************************************************************/
+
+#ifndef _SAC_UNDOSSAIVTRANSFORM_H_
+#define _SAC_UNDOSSAIVTRANSFORM_H_
+
+#include "types.h"
 
 extern node *USSAIdoUnflattenWLGenerators (node *arg_node);
 

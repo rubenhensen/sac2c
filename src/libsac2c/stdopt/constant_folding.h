@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_constantfolding_h_
 #define _SAC_constantfolding_h_
 

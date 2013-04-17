@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "ive_split_selections.h"
 
 #include "tree_basic.h"

@@ -1,8 +1,4 @@
 /*
- * $Id$
- */
-
-/*
  * This file contains external declarations for all functions/global variables
  * provided by the scanner/parser which are used from outside.
  */

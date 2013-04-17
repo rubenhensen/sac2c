@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_ELIM_ALPHA_TYPES_H_
 #define _SAC_ELIM_ALPHA_TYPES_H_
 

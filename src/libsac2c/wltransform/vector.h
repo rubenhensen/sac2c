@@ -1,8 +1,4 @@
 /*
- * $Id$
- */
-
-/*
  * Highly deprecated macros that used to be in internal_lib.
  * DO NOT USE !!
  *

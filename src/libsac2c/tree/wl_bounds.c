@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "wl_bounds.h"
 #include "tree_basic.h"
 #include "tree_compound.h"
