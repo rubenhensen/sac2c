@@ -745,6 +745,10 @@ case "$target_os" in
     AC_MSG_RESULT([unknown])
     ;;
 esac
+
+dnl check for timing support (could also be included in libc)
+AC_SEARCH_LIBS(clock_gettime, rt, [OSFLAGS="$OSFLAGS -D_TIMING_ENABLED_"])
+
 AC_SUBST(OSFLAGS)
 AC_SUBST(LD_DYNAMIC)
 AC_SUBST(LD_PATH)

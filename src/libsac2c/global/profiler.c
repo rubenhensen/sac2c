@@ -20,6 +20,24 @@ static FILE *reportfile = 0;
 static const char *phasename[]
   = {"Dummy", "Phase", "Subphase", "Cycle", "Cycle_fun", "Cyclephase", "Cyclephase_fun"};
 
+#ifndef _TIMING_ENABLED_
+void
+TIMEbegin (compiler_phase_t _)
+{
+    if (global.timefreq) {
+        CTIerror ("Trying to profile without timing support from OS, please fix this "
+                  "(clock_gettime)");
+    }
+}
+
+void
+TIMEend (compiler_phase_t _)
+{
+    if (global.timefreq) {
+        CTIerror ("Trying to profile without timing support from OS, please fix this");
+    }
+}
+#else
 bool
 TIMEshouldTime (void)
 {
@@ -126,6 +144,8 @@ TIMEend (compiler_phase_t phase)
         memset (&phasetime->duration, 0, sizeof (struct timespec));
     }
 }
+
+#endif /* clock_gettime */
 
 static void
 CreateReport (timeinfo_t *phasetime)
