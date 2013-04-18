@@ -1,12 +1,46 @@
-dnl
-dnl $Id$
-dnl
+### Macro definitions 
 
-dnl configure script for building sac2c compiler 
-dnl on different hosts and operating systems
-dnl the general layout is to first to the platform
-dnl independent checks for programs and then have
-dnl one big check for different operating systems
+# CHECK_CC_OPTION(OPTION, VAR_TO_APPEND)
+# The macro is checking whether chosen compiler supports an OPTION
+# in case it does, the VAR_TO_APPEND is being appended by the OPTION
+AC_DEFUN([CHECK_CC_OPTION],[
+AC_REQUIRE([AC_PROG_CC])
+AS_VAR_PUSHDEF([ac_cc_option], [ac_cv_$1_option])
+save_CFLAGS="$CFLAGS"
+AC_CACHE_CHECK([whether $CC supports $1], ac_cc_option,
+[   CFLAGS="$1"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],
+        [AS_VAR_SET(ac_cc_option, yes)],
+        [AS_VAR_SET(ac_cc_option, no)])
+    AS_IF([test AS_VAR_GET(ac_cc_option) = yes],
+          [$2="$$2 $1"])
+])
+CFLAGS="$save_CFLAGS"
+AS_VAR_POPDEF([ac_cc_option])
+])
+
+# CHECK_CPP_FLAG(FLAG, VARIABLE)
+# This macro checks whether a preprocessor have predefined FLAG
+# and if it does, the VARIABLE is being set to yes
+# in other case the VARIABLE is set to no
+AC_DEFUN([CHECK_CPP_FLAG],[
+AC_REQUIRE([AC_PROG_CC])
+AS_VAR_PUSHDEF([ac_cpp_flag], [ac_cv_$1_cpp_flag])
+AC_CACHE_CHECK([whether $CC supports $1 flag], ac_cpp_flag,
+[   AC_TRY_COMPILE([],
+    [
+        #ifndef $1
+            choke me
+        #endif
+    ],
+    [AS_VAR_SET(ac_cpp_flag, yes)],
+    [AS_VAR_SET(ac_cpp_flag, no)])
+    $2=AS_VAR_GET(ac_cpp_flag)
+])
+AS_VAR_POPDEF([ac_cpp_flag])
+])
+
+### Configuration
 
 dnl Old versions of Autoconf appear to fail
 AC_PREREQ([2.63])
@@ -33,9 +67,7 @@ AC_CANONICAL_TARGET()
 
 dnl set OS and ARCH flags
 AC_DEFINE_UNQUOTED(OS,"$target_os",set to the os type)
-AC_SUBST(OS,$target_os)
 AC_DEFINE_UNQUOTED(ARCH,"$target_cpu",set to the architecture)
-AC_SUBST(ARCH,$target_cpu)
 
 
 AC_ARG_ENABLE(cplusplus,
@@ -48,83 +80,27 @@ if test "${ENABLE_CPLUSPLUS}" = "yes" ; then
   enable_cplusplus=yes
 fi
 
+# Check if C preprocessor is available
+AC_PROG_CPP()
 
-dnl search for a C compiler
-AC_PROG_CC([gcc cc])
-AC_PROG_CXX([g++ c++ cxx gxx])
-
-if test "$GCC" != "yes" ; then
-
-  dnl
-  dnl check whether its suns cc
-  dnl
-
-  AC_MSG_CHECKING(whether cc is a Sun Pro C compiler)
-  AC_TRY_COMPILE(,
-  [#ifndef __SUNPRO_C
-    choke me
-  #endif],
-  AC_MSG_RESULT(yes)
-  SUNC=yes,
-  AC_MSG_RESULT(no)
-  SUNC=no
-  )
-
-
-  dnl
-  dnl check whether its compaqs (or dec) cc
-  dnl
-
-  AC_MSG_CHECKING(whether cc is a Compaq/DEC C compiler)
-  AC_TRY_COMPILE(,
-  [#ifndef __DECC
-    choke me
-  #endif],
-  AC_MSG_RESULT(yes)
-  DECC=yes,
-  AC_MSG_RESULT(no)
-  DECC=no
-  )
-
-
-
-
-
-  dnl
-  dnl check whether its apples cc
-  dnl
-
-  AC_MSG_CHECKING(whether cc is a Apple compiler)
-  AC_TRY_COMPILE(,
-  [#ifndef __APPLE_CC__
-    choke me
-    #endif],
-    AC_MSG_RESULT(yes)
-    MACC=yes
-    GCC=no,
-    AC_MSG_RESULT(no)
-    MACC=no
-  )
-  
+# When C compiler is not GCC, chcek if one of 
+# Sun, Dec or Mac compiler is available on the system.
+if test "$GCC" != yes ; then
+  CHECK_CPP_FLAG([__SUNPRO_C], [SUNC])
+  CHECK_CPP_FLAG([__DECC], [DECC])
+  CHECK_CPP_FLAG([__APPLE_CC__], [MACC])
 fi
 
-dnl
-dnl Check For Darwin 9+ for linker rpath support
-dnl
 
 dnl
 dnl check whether popen is an extension
 dnl
-
 AC_MSG_CHECKING([need of _EXTENSIONS_ flag])
 AC_TRY_COMPILE([#include <stdio.h>],[popen("rw","testfile")],
 AC_MSG_RESULT(no)
 need_ext_flags=no,
 AC_MSG_RESULT(yes)
 need_ext_flags=yes)
-
-dnl check for C preprocessor
-AC_PROG_CPP()
 
 dnl check for ranlib
 AC_PROG_RANLIB()
@@ -531,6 +507,19 @@ if test "$GCC" = yes; then
 fi
 
 
+
+# Check which GCC warning options are available and 
+# add them later to MKCCFLAGS and PDCCFLAGS
+gcc_options=
+if test "$GCC" = yes ; then
+  CHECK_CC_OPTION([-Wall], [gcc_options])
+  CHECK_CC_OPTION([-Wextra], [gcc_options])
+  CHECK_CC_OPTION([-Wstrict-prototypes], [gcc_options])
+  CHECK_CC_OPTION([-Wno-unused-parameter], [gcc_options])
+  CHECK_CC_OPTION([-Wno-unused-but-set-variable], [gcc_options])
+fi
+
+
 dnl
 dnl test for compiler flags for sac2crc
 dnl
@@ -544,14 +533,12 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
   AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin -std=c99"])  
+  AC_SUBST(MKCCFLAGS, ["$gcc_options -pedantic -g -std=c99"])
+  AC_SUBST(PDCCFLAGS, ["$gcc_options -pedantic -O3 -std=c99"])
   if [ test "$IS_CYGWIN" = yes ]; then
     AC_SUBST(GENPIC, ["-DPIC"])
-    AC_SUBST(MKCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -pedantic -g -std=c99"])
-    AC_SUBST(PDCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -pedantic -O3 -std=c99"])
   else
     AC_SUBST(GENPIC, ["-fPIC -DPIC"])
-    AC_SUBST(MKCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unused-but-set-variable -pedantic -g -std=c99"])
-    AC_SUBST(PDCCFLAGS, ["-Wall -Wextra -Wstrict-prototypes -Wno-unused-parameter -Wno-unused-but-set-variable -pedantic -O3 -std=c99"])
   fi  
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
@@ -751,7 +738,8 @@ case "$target_os" in
     ;;
 esac
 
-
+AC_SUBST(OS,$target_os)
+AC_SUBST(ARCH,$target_cpu)
 AC_SUBST(OSFLAGS)
 AC_SUBST(LD_DYNAMIC)
 AC_SUBST(LD_PATH)
