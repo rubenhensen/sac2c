@@ -410,13 +410,30 @@ checkAndRebuildWrapperType (ntype *type)
  * @return modified N_fundef node
  ******************************************************************************/
 static node *
-ResetLaCFlags (node *arg_node, info *arg_info)
+ResetLaCFlagsAndArgTypes (node *arg_node, info *arg_info)
 {
+    node *args;
     DBUG_ENTER ();
 
     FUNDEF_ISLOCAL (arg_node) = TRUE;
     FUNDEF_WASUSED (arg_node) = FALSE;
     FUNDEF_WASIMPORTED (arg_node) = FALSE;
+
+    /*
+     * Now, we reset all argument types to unknown[*] to avoid potential previous
+     * constraints from the more generic function version to persist!
+     * This fixes bug #1062.
+     */
+    args = FUNDEF_ARGS (arg_node);
+    while (args != NULL) {
+        if (TYisAlpha (AVIS_TYPE (ARG_AVIS (args)))) {
+            AVIS_TYPE (ARG_AVIS (args)) = TYfreeType (AVIS_TYPE (ARG_AVIS (args)));
+            AVIS_TYPE (ARG_AVIS (args)) = TYmakeAUD (TYmakeSimpleType (T_unknown));
+        }
+        args = ARG_NEXT (args);
+    }
+
+    DBUG_RETURN (arg_node);
 
     DBUG_RETURN (arg_node);
 }
@@ -505,9 +522,9 @@ DoSpecialize (node *wrapper, node *fundef, ntype *args, ntype *rets)
     FUNDEF_ISSPECIALISATION (res) = TRUE;
 
     /*
-     * reset flags of contained lac funs as well
+     * reset flags and arg types of contained lac funs as well
      */
-    MCGdoMapCallGraph (res, ResetLaCFlags, NULL, MCGcontLacFun, NULL);
+    MCGdoMapCallGraph (res, ResetLaCFlagsAndArgTypes, NULL, MCGcontLacFun, NULL);
 
     /*
      * if it is a used function, we have to make up a new
