@@ -1,3 +1,7 @@
+dnl
+dnl $Id$
+dnl
+
 dnl configure script for building sac2c compiler 
 dnl on different hosts and operating systems
 dnl the general layout is to first to the platform
@@ -418,6 +422,11 @@ AC_SEARCH_LIBS(sqrt, m)
 dnl check whether to link dlopen library
 AC_SEARCH_LIBS(dlopen, dl)
 
+dnl check for timing support (could also be included in libc)
+AC_SEARCH_LIBS(clock_gettime, rt, [
+AC_DEFINE(HAVE_GETTIME, 1, set to 1 because you have clock_gettime) 
+])
+
 dnl checking for presence of strtok and strrchr
 AC_CHECK_FUNCS([strtok strrchr])
 
@@ -742,8 +751,6 @@ case "$target_os" in
     ;;
 esac
 
-dnl check for timing support (could also be included in libc)
-AC_SEARCH_LIBS(clock_gettime, rt, [OSFLAGS="$OSFLAGS -D_TIMING_ENABLED_"])
 
 AC_SUBST(OSFLAGS)
 AC_SUBST(LD_DYNAMIC)

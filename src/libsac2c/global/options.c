@@ -920,7 +920,12 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
 
     ARGS_OPTION ("target", global.target_name = ARG);
 
+#ifdef HAVE_GETTIME
     ARGS_OPTION ("timefreq", global.timefreq = atoi (ARG));
+#else
+    ARGS_OPTION ("timefreq",
+                 CTIerror ("Timing is not available since you don't have clock_gettime"));
+#endif
 
     ARGS_FLAG ("tog", global.dotogstuff = TRUE);
 

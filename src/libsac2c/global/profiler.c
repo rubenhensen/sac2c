@@ -1,3 +1,7 @@
+
+#include "config.h"
+#ifdef HAVE_GETTIME
+
 #define DBUG_PREFIX "TIME"
 #include "tree_basic.h"
 #include "types.h"
@@ -20,24 +24,6 @@ static FILE *reportfile = 0;
 static const char *phasename[]
   = {"Dummy", "Phase", "Subphase", "Cycle", "Cycle_fun", "Cyclephase", "Cyclephase_fun"};
 
-#ifndef _TIMING_ENABLED_
-void
-TIMEbegin (compiler_phase_t _)
-{
-    if (global.timefreq) {
-        CTIerror ("Trying to profile without timing support from OS, please fix this "
-                  "(clock_gettime)");
-    }
-}
-
-void
-TIMEend (compiler_phase_t _)
-{
-    if (global.timefreq) {
-        CTIerror ("Trying to profile without timing support from OS, please fix this");
-    }
-}
-#else
 bool
 TIMEshouldTime (void)
 {
@@ -145,8 +131,6 @@ TIMEend (compiler_phase_t phase)
     }
 }
 
-#endif /* clock_gettime */
-
 static void
 CreateReport (timeinfo_t *phasetime)
 {
@@ -242,3 +226,5 @@ TIMEtimeReport (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#endif /* HAVE_GETTIME */

@@ -1347,8 +1347,9 @@ ENDPHASE (icc)
 
 PHASE (prof, "Profiling report", ALWAYS)
 
+#ifdef HAVE_GETTIME
 SUBPHASE (time, "Generating time report", TIMEtimeReport, global.timefreq, prof)
-
+#endif
 /*SUBPHASE( mem,
           "Generating memory reports",
           PRFmallocReport,
