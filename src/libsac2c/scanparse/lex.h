@@ -14,6 +14,11 @@
 //#  include "compat.h"
 #else
 typedef int bool;
+
+struct location {
+    const char *fname;
+    size_t line, col;
+};
 #endif
 
 #define true 1
@@ -143,11 +148,6 @@ enum token_class {
    kind (which we have) and another value to mark a token being user-op,
    the latter is defined further down.  */
 #define TRIE_USEROP (tok_kind_length + 1)
-
-struct location {
-    const char *fname;
-    size_t line, col;
-};
 
 struct token {
     struct location loc;

@@ -38,20 +38,7 @@
 #define error_mark_node ((node *)0x1)
 #define error_type_node ((ntype *)0x2)
 
-/* FIXME: This is a hack, as for the time being tokens and
-          AST nodes use a different location structures.
-          AST one should be extended.  */
-static inline struct location
-CONVERT_LOC (node *n) {
-    struct location loc;
-    loc.fname = NODE_FILE (n);
-    loc.line = (size_t)NODE_LINE (n);
-    loc.col = 0;
-    return loc;
-}
-
-node *
-MakeIncDecLet (node *, char *);
+node *MakeIncDecLet (node *, char *);
 ntype *Exprs2NType (ntype *, node *);
 int CountDotsInExprs (node *);
 shape *Exprs2Shape (node *);
@@ -85,9 +72,7 @@ Exprs2NType (ntype *basetype, node *exprs)
     DBUG_ENTER ();
 
     n = TCcountExprs (exprs);
-
-    /* FIXME: This is a hack, store a propre location in AST.  */
-    loc = CONVERT_LOC (EXPRS_EXPR1 (exprs));
+    loc = NODE_LOCATION (EXPRS_EXPR1 (exprs));
 
     switch (NODE_TYPE (EXPRS_EXPR1 (exprs))) {
     case N_spid:
@@ -532,7 +517,7 @@ handle_type_subscript_expr (struct parser *parser)
         return error_mark_node;
     }
 
-    NODE_LINE (t) = token_location (tok).line;
+    NODE_LOCATION (t) = token_location (tok);
 
     return t;
 }
@@ -1557,7 +1542,7 @@ handle_function_call (struct parser *parser)
 
         /* FIXME: check the number of arguments.  */
         ret = TBmakePrf (to_prf (tkind), args);
-        NODE_LINE (ret) = loc.line;
+        NODE_LOCATION (ret) = loc;
         return ret;
     } else
         parser_unget (parser);
@@ -1574,7 +1559,7 @@ handle_function_call (struct parser *parser)
     }
 
     ret = TBmakeSpap (ret, args);
-    NODE_LINE (ret) = loc.line;
+    NODE_LOCATION (ret) = loc;
     return ret;
 }
 
@@ -2004,7 +1989,7 @@ handle_primary_expr (struct parser *parser)
 
     /* Initialize the location of the RES node.  */
     if (res != NULL && res != error_mark_node)
-        NODE_LINE (res) = loc.line;
+        NODE_LOCATION (res) = loc;
 
     return res;
 }
@@ -2049,7 +2034,7 @@ handle_postfix_expr (struct parser *parser)
                 res = TBmakeSpap (id_node, TBmakeExprs (res, NULL));
 
                 /* Set location for every internal function-call.  */
-                NODE_LINE (res) = loc.line;
+                NODE_LOCATION (res) = loc;
             } else {
                 parser_unget (parser);
                 return error_mark_node;
@@ -2081,7 +2066,7 @@ handle_postfix_expr (struct parser *parser)
             }
 
             /* Set location for every internal function-call.  */
-            NODE_LINE (res) = loc.line;
+            NODE_LOCATION (res) = loc;
         } else {
             parser_unget (parser);
             goto out;
@@ -2120,7 +2105,7 @@ handle_postfix_expr (struct parser *parser)
     }
 
 out:
-    NODE_LINE (res) = loc.line;
+    NODE_LOCATION (res) = loc;
     return res;
 }
 
@@ -3453,7 +3438,7 @@ handle_assign (struct parser *parser)
     }
 
     if (ret != NULL && ret != error_mark_node)
-        NODE_LINE (ret) = loc.line;
+        NODE_LOCATION (ret) = loc;
 
     return ret;
 
@@ -3510,7 +3495,7 @@ handle_if_stmt (struct parser *parser)
     }
 
     ret = TBmakeCond (cond, if_branch, else_branch);
-    NODE_LINE (ret) = loc.line;
+    NODE_LOCATION (ret) = loc;
     return ret;
 
 error:
@@ -3556,7 +3541,7 @@ handle_while_stmt (struct parser *parser)
         goto error;
 
     ret = TBmakeWhile (cond, stmts);
-    NODE_LINE (ret) = loc.line;
+    NODE_LOCATION (ret) = loc;
     return ret;
 
 error:
@@ -3606,7 +3591,7 @@ handle_do_stmt (struct parser *parser)
         goto error;
 
     ret = TBmakeDo (cond, stmts);
-    NODE_LINE (ret) = loc.line;
+    NODE_LOCATION (ret) = loc;
     return ret;
 
 error:
@@ -3689,7 +3674,7 @@ handle_for_stmt (struct parser *parser)
 
     BLOCK_ASSIGNS (stmts) = TCappendAssign (BLOCK_ASSIGNS (stmts), cond_exp3);
     ret = TBmakeAssign (TBmakeWhile (cond_exp2, stmts), NULL);
-    NODE_LINE (ret) = loc.line;
+    NODE_LOCATION (ret) = loc;
     ret = TCappendAssign (cond_exp1, ret);
     return ret;
 
@@ -3744,7 +3729,7 @@ handle_stmt (struct parser *parser)
     }
 
     if (ret != error_mark_node) {
-        NODE_LINE (ret) = loc.line;
+        NODE_LOCATION (ret) = loc;
         return for_loop_p ? ret : TBmakeAssign (ret, NULL);
     } else
         goto error;
@@ -3924,7 +3909,7 @@ handle_return (struct parser *parser)
         /* return ';'  */
         if (token_is_operator (tok, tv_semicolon)) {
             exprs = TBmakeAssign (TBmakeReturn (NULL), NULL);
-            NODE_LINE (exprs) = loc.line;
+            NODE_LOCATION (exprs) = loc;
             return exprs;
         }
         /* return '(' ')'  */
@@ -3937,7 +3922,7 @@ handle_return (struct parser *parser)
                 /* eat-up ';'  */
                 parser_get_token (parser);
                 exprs = TBmakeAssign (TBmakeReturn (NULL), NULL);
-                NODE_LINE (exprs) = loc.line;
+                NODE_LOCATION (exprs) = loc;
                 return exprs;
             } else
                 parser_unget2 (parser);
@@ -3962,7 +3947,7 @@ handle_return (struct parser *parser)
         /* eat ';'  */
         parser_get_token (parser);
         exprs = TBmakeAssign (TBmakeReturn (exprs), NULL);
-        NODE_LINE (exprs) = loc.line;
+        NODE_LOCATION (exprs) = loc;
         return exprs;
     } else {
         parser_unget (parser);
@@ -3987,7 +3972,7 @@ handle_stmt_list (struct parser *parser, unsigned flags)
     if (flags & STMT_BLOCK_SEMICOLON_F) {
         if (token_is_operator (tok, tv_semicolon)) {
             ret = MAKE_EMPTY_BLOCK ();
-            NODE_LINE (ret) = token_location (tok).line;
+            NODE_LOCATION (ret) = token_location (tok);
             return ret;
         }
     }
@@ -3998,7 +3983,7 @@ handle_stmt_list (struct parser *parser, unsigned flags)
 
         if (token_is_operator (tok, tv_rbrace)) {
             ret = MAKE_EMPTY_BLOCK ();
-            NODE_LINE (ret) = loc.line;
+            NODE_LOCATION (ret) = loc;
             return ret;
         } else
             parser_unget (parser);
@@ -4035,7 +4020,7 @@ handle_stmt_list (struct parser *parser, unsigned flags)
             ret = TCappendAssign (ret, ret_stmt);
 
         ret = TBmakeBlock (ret, NULL);
-        NODE_LINE (ret) = loc.line;
+        NODE_LOCATION (ret) = loc;
 
         if ((flags & STMT_BLOCK_RETURN_F) && !parse_error) {
             BLOCK_VARDECS (ret) = vardecl;
@@ -4057,7 +4042,7 @@ handle_stmt_list (struct parser *parser, unsigned flags)
         }
 
         ret = TBmakeBlock (ret, NULL);
-        NODE_LINE (ret) = loc.line;
+        NODE_LOCATION (ret) = loc;
         return ret;
     }
 
@@ -4798,7 +4783,7 @@ pragmas:
             *ftype = fun_extern_fundec;
     }
 
-    NODE_LINE (ret) = loc.line;
+    NODE_LOCATION (ret) = loc;
     return ret;
 }
 
@@ -6020,6 +6005,28 @@ cleanup:
     if (parser)
         free (parser);
     if (lex) {
+        struct file_name *f;
+        struct file_name *tmp;
+        size_t sz = 0;
+
+        /* Before finalizing lexer dump the list of the files in the
+           global.file_table to keep token file links alive.  */
+
+        HASH_ITER (hh, lex->file_names, f, tmp)
+            sz++;
+
+        global.file_table = (char **)malloc (sz * sizeof (char *));
+        global.file_table_size = sz;
+
+        /* Fill global.file_table and remove the filenams from lexer's
+           hash table to avoid freeing.  */
+        sz = 0;
+        HASH_ITER (hh, lex->file_names, f, tmp) {
+            global.file_table[sz++] = f->name;
+            HASH_DEL (lex->file_names, f);
+            free (f);
+        }
+
         lexer_finalize (lex, false);
         free (lex);
     }

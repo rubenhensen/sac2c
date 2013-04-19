@@ -37,6 +37,12 @@ typedef int bool;
 #define FALSE 0
 #define TRUE 1
 
+/* Structcure to store where a token came from.  */
+struct location {
+    const char *fname;
+    size_t line, col;
+};
+
 /*
  * The NEW node structure of the SAC syntax tree
  * The type is abstract, as there is _no_ way to access a node other
