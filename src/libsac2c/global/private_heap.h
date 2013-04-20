@@ -1,12 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.1  2005/07/25 16:43:24  sbs
- * Initial revision
- *
- *
- */
-
 #ifndef _SAC_PRIVATE_HEAP_H_
 #define _SAC_PRIVATE_HEAP_H_
 

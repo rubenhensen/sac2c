@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 #ifndef _SAC_TYPE_ERRORS_H_
 #define _SAC_TYPE_ERRORS_H_
 

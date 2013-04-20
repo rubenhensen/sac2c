@@ -1,8 +1,4 @@
 /*
- * $Id$
- */
-
-/*
  * File : globals.h
  *
  * Description:

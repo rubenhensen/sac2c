@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "load_module_contents.h"
 
 #define DBUG_PREFIX "LMC"

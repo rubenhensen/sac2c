@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 /**
  *
  * @defgroup pem Propagate Executionmode

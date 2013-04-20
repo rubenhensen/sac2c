@@ -1,7 +1,5 @@
 /**
  *
- * $Id$
- *
  * @file WLbounds2structConsts.c
  *
  * <pre>

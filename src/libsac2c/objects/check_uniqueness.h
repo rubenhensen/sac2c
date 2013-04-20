@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_CHECK_UNIQUENESS_H_
 #define _SAC_CHECK_UNIQUENESS_H_
 

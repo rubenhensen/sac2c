@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /**
  * @file namespaces.h
  * @brief function declarations for handling namespace identifiers

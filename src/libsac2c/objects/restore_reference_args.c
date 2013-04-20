@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "restore_reference_args.h"
 
 #define DBUG_PREFIX "UNDEFINED"

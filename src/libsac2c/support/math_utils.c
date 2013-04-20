@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "math_utils.h"
 
 #define DBUG_PREFIX "UNDEFINED"

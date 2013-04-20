@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_WL_COST_CHECK_H_
 #define _SAC_WL_COST_CHECK_H_
 

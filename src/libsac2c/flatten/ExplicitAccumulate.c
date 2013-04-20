@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /**
  *
  * @file ExplicitAccumulate.c

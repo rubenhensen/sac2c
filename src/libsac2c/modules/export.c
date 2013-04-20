@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #define DBUG_PREFIX "EXP"
 #include "debug.h"
 

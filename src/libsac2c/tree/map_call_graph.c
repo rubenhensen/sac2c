@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "map_call_graph.h"
 
 #include "traverse.h"

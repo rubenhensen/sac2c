@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_ANNOTATENAMESPACES_H_
 #define _SAC_ANNOTATENAMESPACES_H_
 

@@ -1,10 +1,3 @@
-/*
- *
- * $Id$
- *
- *
- */
-
 #ifndef _SAC_BOUNDS2STRUCTCONSTS_H_
 #define _SAC_BOUNDS2STRUCTCONSTS_H_
 

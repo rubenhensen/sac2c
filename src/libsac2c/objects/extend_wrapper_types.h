@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_EXTEND_WRAPPER_TYPES_H_
 #define _SAC_EXTEND_WRAPPER_TYPES_H_
 

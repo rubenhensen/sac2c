@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_DEPENDENCIES_H_
 #define _SAC_DEPENDENCIES_H_
 

@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "handle_dots.h"
 #include "traverse.h"
 

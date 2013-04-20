@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "dependencies.h"
 
 #include <libgen.h>

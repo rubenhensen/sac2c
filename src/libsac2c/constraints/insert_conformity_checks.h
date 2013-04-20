@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_INSERT_CONFORMITY_CHECKS_H_
 #define _SAC_INSERT_CONFORMITY_CHECKS_H_
 

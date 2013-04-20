@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_NAMETUPLESUTILS_H_
 #define _SAC_NAMETUPLESUTILS_H_
 

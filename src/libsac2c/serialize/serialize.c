@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "serialize.h"
 #include "serialize_info.h"
 #include "serialize_stack.h"

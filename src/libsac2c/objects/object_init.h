@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_OBJECT_INIT_H_
 #define _SAC_OBJECT_INIT_H_
 

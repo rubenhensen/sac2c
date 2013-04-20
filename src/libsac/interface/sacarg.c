@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "sacarg.h"
 #include "sac.h"
 #include <stdio.h>

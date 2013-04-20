@@ -1,5 +1,3 @@
-/* $Id$  */
-
 #include "modulemanager.h"
 #include "libmanager.h"
 #include "serialize.h"

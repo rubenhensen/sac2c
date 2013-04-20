@@ -1,11 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.1  2005/05/13 16:37:41  ktr
- * Initial revision
- *
- */
-
 #ifndef _SAC_LACINLINING_H_
 #define _SAC_LACINLINING_H_
 

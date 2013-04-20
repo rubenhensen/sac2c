@@ -1,19 +1,17 @@
-#ifndef _SAC_COMPILE_H_
-#define _SAC_COMPILE_H_
-
-#include "types.h"
-
-extern node *COMPgetFoldCode (node *fundef);
-
 /******************************************************************************
- *
- * $Id$
  *
  * Compilation traversal ( comp_tab)
  *
  * Prefix: COMP
  *
  *****************************************************************************/
+
+#ifndef _SAC_COMPILE_H_
+#define _SAC_COMPILE_H_
+
+#include "types.h"
+
+extern node *COMPgetFoldCode (node *fundef);
 extern node *COMPdoCompile (node *arg_node);
 
 extern node *COMPap (node *arg_node, info *arg_info);

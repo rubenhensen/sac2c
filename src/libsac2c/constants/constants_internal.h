@@ -1,26 +1,3 @@
-/*
- * $Log$
- * Revision 1.6  2004/11/26 15:04:30  jhb
- * add prefix COINT to the functions
- *
- * Revision 1.5  2004/11/26 14:34:03  sbs
- * change run
- *
- * Revision 1.4  2004/11/22 11:27:04  ktr
- * Ismop SacDevCamp 04
- *
- * Revision 1.3  2003/06/11 22:05:36  ktr
- * Added support for multidimensional arrays
- *
- * Revision 1.2  2001/03/22 14:27:12  nmw
- * DebugPrint added
- *
- * Revision 1.1  2001/03/02 14:32:56  sbs
- * Initial revision
- *
- *
- */
-
 #ifndef _SAC_CONSTANTS_INTERNAL_H_
 #define _SAC_CONSTANTS_INTERNAL_H_
 

@@ -1,10 +1,3 @@
-/*
- *
- * $Id$
- *
- *
- */
-
 #include "resolvepragma.h"
 #include "str.h"
 #include "memory.h"

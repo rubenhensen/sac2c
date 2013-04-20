@@ -64,7 +64,7 @@ version="1.0">
       <xsl:value-of select="'Functions needed by serialize buildstack traversal.'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
-      <xsl:value-of select="'$Id$'"/>
+      <xsl:value-of select="'serialize_buildstack.c.xsl'"/>
     </xsl:with-param>
   </xsl:call-template>
   <xsl:call-template name="travfun-group-begin">

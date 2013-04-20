@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "libstat.h"
 
 #define DBUG_PREFIX "LIBSTAT"

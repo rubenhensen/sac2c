@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "constraint_statistics.h"
 
 #define DBUG_PREFIX "UNDEFINED"

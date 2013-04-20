@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 #ifndef _SAC_SIG_DEPS_H_
 #define _SAC_SIG_DEPS_H_
 

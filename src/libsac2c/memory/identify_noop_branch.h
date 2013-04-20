@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_INB_H_
 #define _SAC_INB_H_
 

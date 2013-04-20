@@ -1,17 +1,16 @@
-#ifndef _SAC_DATAREUSE_H_
-#define _SAC_DATAREUSE_H_
-
-#include "types.h"
-
 /******************************************************************************
- *
- * $Id$
  *
  * Data reuse traversal
  *
  * Prefix: EMDR
  *
  *****************************************************************************/
+
+#ifndef _SAC_DATAREUSE_H_
+#define _SAC_DATAREUSE_H_
+
+#include "types.h"
+
 extern node *EMDRdoDataReuse (node *syntax_tree);
 
 extern node *EMDRap (node *arg_node, info *arg_info);

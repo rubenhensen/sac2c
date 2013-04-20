@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_HANDLE_HANDLE_WITH_LOOP_OPERATORS_H_
 #define _SAC_HANDLE_HANDLE_WITH_LOOP_OPERATORS_H_
 

@@ -1,7 +1,5 @@
 /**<!--******************************************************************-->
  *
- * $Id$
- *
  * @file wlpropagation.c
  *
  * The following functions implement the functionality of with-loop

@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #define ALWAYS TRUE
 #define NEVER FALSE
 #define ONLYIF(c) c

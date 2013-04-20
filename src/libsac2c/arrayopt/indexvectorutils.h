@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_IVUT_TRAV_H_
 #define _SAC_IVUT_TRAV_H_
 

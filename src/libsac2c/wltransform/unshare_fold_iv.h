@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_UNSHARE_FOLD_IV_H_
 #define _SAC_UNSHARE_FOLD_IV_H_
 

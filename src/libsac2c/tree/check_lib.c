@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "check_lib.h"
 
 #include "print.h"

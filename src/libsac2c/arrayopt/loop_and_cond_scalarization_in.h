@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 #ifndef _SAC_LOOP_AND_COND_SCALARIZATION__IN_H_
 #define _SAC_LOOP_AND_COND_SCALARIZATION__IN_H_
 

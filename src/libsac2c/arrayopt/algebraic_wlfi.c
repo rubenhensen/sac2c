@@ -1,8 +1,3 @@
-/*
- *        one partition of the producerWL.
- * $Id: algebraic_wlfi.c 16030 2009-04-09 19:40:34Z rbe $
- */
-
 /** <!--********************************************************************-->
  *
  * @defgroup awlfi Algebraic With-Loop Folding Inference

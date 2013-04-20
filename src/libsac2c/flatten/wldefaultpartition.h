@@ -1,17 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.2  2005/06/15 08:43:21  ktr
- * Some bugfixing
- *
- * Revision 1.1  2005/06/14 08:58:59  khf
- * Initial revision
- *
- *
- *
- *
- */
-
 #ifndef _SAC_WLDEFAULTPARTITION_H_
 #define _SAC_WLDEFAULTPARTITION_H_
 

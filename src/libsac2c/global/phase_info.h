@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _PHASE_INFO_H_
 #define _PHASE_INFO_H_
 

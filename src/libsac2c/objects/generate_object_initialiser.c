@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "generate_object_initialiser.h"
 
 #define DBUG_PREFIX "GOI"

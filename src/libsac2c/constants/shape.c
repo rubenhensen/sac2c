@@ -1,7 +1,5 @@
 /**
  *
- * $Id$
- *
  * @defgroup shape Shape
  *
  * @brief Shape is an abstract datatype for keeping shapes of

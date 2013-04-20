@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_DEADFUNCTIONREMOVAL_H_
 #define _SAC_DEADFUNCTIONREMOVAL_H_
 

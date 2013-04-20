@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #define STR_DUP(buffer, name)                                                            \
     name = (char *)malloc ((STRlen (buffer) + 1) * sizeof (char));                       \
     strcpy (name, buffer)

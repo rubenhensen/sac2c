@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /**
  * @defgroup strf Static reuse inference
  *

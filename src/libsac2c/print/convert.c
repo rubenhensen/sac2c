@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #define TYPE_LENGTH 256      /* dimension of array of char */
 #define INT_STRING_LENGTH 16 /* dimension of array of char */
 

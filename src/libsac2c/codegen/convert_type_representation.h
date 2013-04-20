@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_CONVERT_TYPE_REPRESENTATION_H_
 #define _SAC_CONVERT_TYPE_REPRESENTATION_H_
 

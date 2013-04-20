@@ -9,6 +9,16 @@
  */
 #ifndef PROFILE_H_
 #define PROFILE_H_
+
+#include "config.h"
+#ifndef HAVE_GETTIME
+
+#define TIMEbegin(x)
+#define TIMEend(x)
+#define TIMEtimeReport(x, info)
+
+#else
+
 #include <sys/times.h>
 
 typedef struct timeinfo_t {
@@ -23,4 +33,5 @@ void TIMEbegin (compiler_phase_t);
 void TIMEend (compiler_phase_t);
 node *TIMEtimeReport (node *, info *);
 
+#endif /* HAVE_GETTIME */
 #endif /* PROFILE_H_ */

@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /**
  *
  * @file prepare_inlining.c

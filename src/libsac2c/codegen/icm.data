@@ -1,9 +1,4 @@
 /*
- * $Id$
- */
-
-
-/*
  * ATTENTION!!
  * Same variable names within different ICM-argument specifications should be
  * of the same type even if they are in different ICM-specifications!!!!

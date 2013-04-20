@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_WRCI_H_
 #define _SAC_WRCI_H_
 

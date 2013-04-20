@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 #ifndef _SAC_CT_BASIC_H_
 #define _SAC_CT_BASIC_H_
 

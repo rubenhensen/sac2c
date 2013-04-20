@@ -1,12 +1,8 @@
 /**
  *
- * $Id$
- *
- * file: check_lacfuns.c
+ * @file: check_lacfuns.c
  *
  * prefix: CHKLACF
- *
- * Description:
  *
  * This file implements a traversal of the ast that checks whether LaC functions
  * are only called once. This is an internal ast consistency check.

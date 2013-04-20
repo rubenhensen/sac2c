@@ -1,7 +1,3 @@
-/*
- * $Id: Index Vector Extrema Cleanup.c 16070 2009-05-12 04:11:07Z rbe $
- */
-
 /** <!--********************************************************************-->
  *
  * @defgroup ivexc Index Vector Extrema Cleanup

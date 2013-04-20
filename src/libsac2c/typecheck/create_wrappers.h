@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_CREATE_WRAPPERS_H_
 #define _SAC_CREATE_WRAPPERS_H_
 

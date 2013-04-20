@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_TREE_BASIC_H_
 #define _SAC_TREE_BASIC_H_
 

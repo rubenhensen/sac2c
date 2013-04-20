@@ -1,11 +1,3 @@
-/*
- * $Log$
- * Revision 1.1  2005/07/21 14:19:34  sah
- * Initial revision
- *
- *
- */
-
 #ifndef _SAC_REMOVE_EXTERNAL_CODE_H_
 #define _SAC_REMOVE_EXTERNAL_CODE_H_
 

@@ -1,8 +1,3 @@
-/*
- *
- * $Id$
- */
-
 /**
  *
  * @file loop_and_cond_scalarization_out.c

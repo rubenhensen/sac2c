@@ -1,9 +1,4 @@
 /*
- * $Id$
- *
- */
-
-/*
  * @defgroup opt Optimizations
  *
  * This group contains all those files/ modules that apply optimizations

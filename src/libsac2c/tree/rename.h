@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_RENAME_H_
 #define _SAC_RENAME_H_
 

@@ -1,12 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.1  2005/02/02 18:13:34  rbe
- * Initial revision
- *
- *
- */
-
 #ifndef _SAC_PROPAGATE_EXTREMA_THRU_LACFUNS_H_
 #define _SAC_PROPAGATE_EXTREMA_THRU_LACFUNS_H_
 

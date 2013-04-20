@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /**
  * @defgroup tcp Type conversions precompilation
  * @ingroup prec Precompile

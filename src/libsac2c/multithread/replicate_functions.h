@@ -1,21 +1,3 @@
-/*
- * $Log$
- * Revision 1.4  2005/03/04 21:21:42  cg
- * Added REPFUNmodule() to adjust initiation of traversal to
- * coding guidelines. This is essential for the new style of
- * silently adding duplicated LaC funs to the fundef chain.
- *
- * Revision 1.3  2004/11/23 20:52:11  skt
- * big compiler brushing during SACDevCampDK 2k4
- *
- * Revision 1.2  2004/11/22 17:59:48  skt
- * code brushing in SACDevCampDK 2004
- *
- * Revision 1.1  2004/08/31 16:56:20  skt
- * Initial revision
- *
- */
-
 /*****************************************************************************
  *
  * file:   replicate_functions.h

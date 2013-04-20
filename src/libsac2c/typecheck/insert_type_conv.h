@@ -1,18 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.3  2005/10/03 14:38:33  sbs
- * added INSTCwith
- *
- * Revision 1.2  2005/08/19 17:26:54  sbs
- * added avis and block
- *
- * Revision 1.1  2005/08/18 07:01:55  sbs
- * Initial revision
- *
- *
- */
-
 #ifndef _SAC_INSERT_TYPE_CONV_H_
 #define _SAC_INSERT_TYPE_CONV_H_
 

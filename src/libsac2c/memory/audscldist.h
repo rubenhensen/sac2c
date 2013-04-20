@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_AUD_SCL_DISTINCTION_H_
 #define _SAC_AUD_SCL_DISTINCTION_H_
 

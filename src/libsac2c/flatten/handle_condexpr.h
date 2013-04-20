@@ -1,14 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.2  2005/06/29 08:49:53  ktr
- * added rules for N_code, N_with and N_do
- *
- * Revision 1.1  2005/06/28 20:53:17  cg
- * Initial revision
- *
- */
-
 #ifndef _SAC_HANDLE_CONDEXPR_H_
 #define _SAC_HANDLE_CONDEXPR_H_
 

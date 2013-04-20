@@ -1,10 +1,4 @@
 
-/*
- *
- * $Id$
- *
- */
-
 #include <stdio.h>
 
 #include "libbuilder.h"

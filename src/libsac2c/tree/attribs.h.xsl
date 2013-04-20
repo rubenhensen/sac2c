@@ -15,8 +15,6 @@
  ***********************************************************************
  -->
 
-<!--  $Id$  -->
-
 <!-- This xslt script generates a definition for type node from ast.xml. To
      generate attribs.h using the Sablotron XSLT Engine, execute
      > sabcmd ast2node.xslt ast.xml node.h
@@ -40,7 +38,7 @@
         <xsl:value-of select="'Defines the AttribUnion and attrib structures.'"/>
       </xsl:with-param>
       <xsl:with-param name="xslt">
-        <xsl:value-of select="'$Id$'"/>
+        <xsl:value-of select="'attribs.h.xsl'"/>
       </xsl:with-param>
     </xsl:call-template>
     <xsl:text>

@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 /**
  *
  * @defgroup cdfg Create Dataflowgraph

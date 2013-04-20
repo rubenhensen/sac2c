@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #define DBUG_PREFIX "FSFS"
 #include "debug.h"
 

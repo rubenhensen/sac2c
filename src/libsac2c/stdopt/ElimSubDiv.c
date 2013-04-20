@@ -1,7 +1,5 @@
 /**
  *
- * $Id$
- *
  * @file ElimSubDiv.c
  *
  * @brief replace subtraction by addition and division by multiplication

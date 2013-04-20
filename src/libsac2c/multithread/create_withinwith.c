@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 /**
  *
  * @defgroup crwiw Create Withinwith-Functions

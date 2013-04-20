@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_CREATE_C_WRAPPER_HEADER_H_
 #define _SAC_CREATE_C_WRAPPER_HEADER_H_
 

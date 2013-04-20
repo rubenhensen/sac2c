@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_TRAVERSE_H_
 #define _SAC_TRAVERSE_H_
 

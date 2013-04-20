@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_structural_constant_constant_folding_h_
 #define _SAC_structural_constant_constant_folding_h_
 

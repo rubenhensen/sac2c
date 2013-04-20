@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "strip_external_signatures.h"
 
 #define DBUG_PREFIX "UNDEFINED"

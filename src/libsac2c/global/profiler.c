@@ -1,3 +1,7 @@
+
+#include "config.h"
+#ifdef HAVE_GETTIME
+
 #define DBUG_PREFIX "TIME"
 #include "tree_basic.h"
 #include "types.h"
@@ -222,3 +226,5 @@ TIMEtimeReport (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
+#endif /* HAVE_GETTIME */

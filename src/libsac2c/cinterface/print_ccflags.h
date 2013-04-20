@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_PRINT_CCFLAGS_H_
 #define _SAC_PRINT_CCFLAGS_H_
 

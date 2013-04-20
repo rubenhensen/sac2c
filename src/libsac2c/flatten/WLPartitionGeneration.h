@@ -1,10 +1,3 @@
-/*
- *
- * $Id$
- *
- *
- */
-
 #ifndef _SAC_WLPARTIONGENERATION_H_
 #define _SAC_WLPARTIONGENERATION_H_
 

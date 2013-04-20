@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_DISTRIBUTIVE_LAW_H_
 #define _SAC_DISTRIBUTIVE_LAW_H_
 

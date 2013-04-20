@@ -1,11 +1,3 @@
-/*
- *
- * $Id$
- *
- *
- *
- */
-
 #include "tree_basic.h"
 
 #define DBUG_PREFIX "UNDEFINED"

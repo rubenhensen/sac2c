@@ -1,7 +1,5 @@
 /*******************************************************************************
 
- $Id$
-
  This file realizes the withlop folding for a code in ssa form. it uses no
  masks anymore. Most code is unchanged from the original implementation in
  WLF.c . Due to the ssaform, we can simplify some task in WLF concerning

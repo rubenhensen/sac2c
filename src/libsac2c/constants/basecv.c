@@ -1,22 +1,4 @@
 /*
- *
- * $Log$
- * Revision 1.4  2004/11/26 16:09:53  jhb
- * compile
- *
- * Revision 1.3  2004/11/22 18:55:29  cg
- * Moved all definitions/declarations of global variables to globals.mac
- *
- * Revision 1.2  2001/05/17 14:16:21  nmw
- * MALLOC/FREE replaced by Malloc/Free, using result of Free()
- *
- * Revision 1.1  2001/05/02 08:00:21  nmw
- * Initial revision
- *
- *
- */
-
-/*
  * This module provides a set of functions for generating base constantants like
  * Zero/One/True/False.
  * The problem with this task is that each such function has to be overloaded on

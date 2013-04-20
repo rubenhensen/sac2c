@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /**
  * @defgroup rb Reuse Branching
  *

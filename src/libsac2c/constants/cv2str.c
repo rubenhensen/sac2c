@@ -1,10 +1,4 @@
 /*
- *
- * $Id$
- *
- */
-
-/*
  * This module provides a set of functions for creating strings from elements
  * of constant vectors.
  * The problem with this task is that such a function has to be overloaded on

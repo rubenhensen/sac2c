@@ -1,7 +1,5 @@
 /******************************************************************************
  *
- * $Id$
- *
  * Look up table which associates integers to variables
  *
  * Prefix: NLUT

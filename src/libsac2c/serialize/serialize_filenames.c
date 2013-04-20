@@ -1,14 +1,3 @@
-/*
- * $Log$
- * Revision 1.2  2005/07/21 15:13:32  sah
- * moved var decl to beginning of block
- *
- * Revision 1.1  2005/07/17 11:42:41  sah
- * Initial revision
- *
- *
- */
-
 #include "serialize_filenames.h"
 
 #define DBUG_PREFIX "UNDEFINED"

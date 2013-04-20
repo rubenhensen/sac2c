@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "print_ccflags.h"
 #include "ccmanager.h"
 #include "memory.h"

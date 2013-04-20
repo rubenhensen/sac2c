@@ -1,9 +1,4 @@
 /*
- * $Id$
- *
- */
-
-/*
  * This file certainly needs some tweaking to work again.
  * Nevertheless, it is left as is as a starting point.
  */

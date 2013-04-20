@@ -1,9 +1,4 @@
 /*
- * $Id$
- *
- */
-
-/*
  * Revision 1.1  1994/12/11  17:33:27  sbs
  * Initial revision
  *

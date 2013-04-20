@@ -1,10 +1,4 @@
 /*
- *
- * $Id$
- *
- */
-
-/*
  * File : globals.c
  *
  * This file should contain the definitions of all global variables

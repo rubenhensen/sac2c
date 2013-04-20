@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "handle_mops.h"
 #include "traverse.h"
 #include "tree_basic.h"

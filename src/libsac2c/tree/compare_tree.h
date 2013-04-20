@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef SAC_COMPARETREE_H
 #define SAC_COMPARETREE_H
 

@@ -1,12 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.1  2005/02/02 18:13:34  mwe
- * Initial revision
- *
- *
- */
-
 #ifndef _SAC_ELIMINATE_DUPLICATE_FUNDEF_ARGS_H_
 #define _SAC_ELIMINATE_DUPLICATE_FUNDEF_ARGS_H_
 

@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_EXTEND_LAC_FUNS_H_
 #define _SAC_EXTEND_LAC_FUNS_H_
 

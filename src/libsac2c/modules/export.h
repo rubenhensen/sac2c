@@ -1,22 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.4  2004/11/25 21:14:38  sah
- * COMPILES
- *
- * Revision 1.3  2004/11/22 16:57:41  ktr
- * SACDevCamp 04 Ismop
- *
- * Revision 1.2  2004/11/14 15:23:04  sah
- * extended traversal to typedefs
- *
- * Revision 1.1  2004/10/17 14:51:14  sah
- * Initial revision
- *
- *
- *
- */
-
 #ifndef _SAC_EXPORT_H_
 #define _SAC_EXPORT_H_
 

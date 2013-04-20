@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "icm2c_basic.h"
 
 #include "types.h"

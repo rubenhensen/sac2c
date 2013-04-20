@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #ifndef _SAC_IVE_REUSEWL_AND_SCALARIZE_H_
 #define _SAC_IVE_REUSEWL_AND_SCALARIZE_H_
 

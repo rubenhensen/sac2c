@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef SELECTelement
 #define SELECTelement(it_element)
 #endif

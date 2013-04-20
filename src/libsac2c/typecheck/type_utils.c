@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "type_utils.h"
 
 #define DBUG_PREFIX "TU"

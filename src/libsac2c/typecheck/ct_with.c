@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 #include "ct_with.h"
 
 #define DBUG_PREFIX "UNDEFINED"

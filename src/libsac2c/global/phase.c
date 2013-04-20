@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "phase.h"
 
 #define DBUG_PREFIX "OPT"

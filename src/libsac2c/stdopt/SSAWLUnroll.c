@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /* FIXME:
  *  This optimization apparently fails to catch single-trip WLs,
  *  which arise from generator expressions of the form:

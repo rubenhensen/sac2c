@@ -1,17 +1,16 @@
-#ifndef _SAC_MARKMEMVALS_H_
-#define _SAC_MARKMEMVALS_H_
-
-#include "types.h"
-
 /******************************************************************************
- *
- * $Id$
  *
  * MarkMemVals traversal ( mmv_tab)
  *
  * Prefix: MMV
  *
  *****************************************************************************/
+
+#ifndef _SAC_MARKMEMVALS_H_
+#define _SAC_MARKMEMVALS_H_
+
+#include "types.h"
+
 extern node *MMVdoMarkMemVals (node *syntax_tree);
 
 extern node *MMVblock (node *arg_node, info *arg_info);

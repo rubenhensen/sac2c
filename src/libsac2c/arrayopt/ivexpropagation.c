@@ -1,7 +1,3 @@
-/*
- * $Id: ivexpropagation.c 15815 2008-10-24 18:04:47Z rbe $
- */
-
 /** <!--********************************************************************-->
  *
  * @defgroup ivexp Index Vector Extrema Propagation Traversal

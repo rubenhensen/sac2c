@@ -1,7 +1,5 @@
 /*****************************************************************************
  *
- * $Id$
- *
  * Multithreading cost model traversal
  *
  * prefix: MTCM

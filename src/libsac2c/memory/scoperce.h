@@ -1,17 +1,16 @@
-#ifndef _SAC_SCOPERCE_H_
-#define _SAC_SCOPERCE_H_
-
-#include "types.h"
-
 /******************************************************************************
- *
- * $Id$
  *
  * Scope-based reuse candidate elimination traversal (srce_tab)
  *
  * Prefix: SRCE
  *
  *****************************************************************************/
+
+#ifndef _SAC_SCOPERCE_H_
+#define _SAC_SCOPERCE_H_
+
+#include "types.h"
+
 extern node *SRCEdoRemoveReuseCandidate (node *syntax_tree);
 
 extern node *SRCEfundef (node *arg_node, info *arg_info);

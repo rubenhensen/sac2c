@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "resolve_reference_args.h"
 
 #include "tree_basic.h"

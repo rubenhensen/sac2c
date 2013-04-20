@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _STR_BUFFER_H_
 #define _STR_BUFFER_H_
 

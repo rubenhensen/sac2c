@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /*****************************************************************************
  *
  * This file contains functions to interpret command line options related

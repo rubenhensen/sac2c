@@ -1,9 +1,3 @@
-/*
- * Lifting with3 into functions
- * $Log$
- *
- */
-
 #ifndef _SAC_OMP_FIND_PRIVATE_H_
 #define _SAC_OMP_FIND_PRIVATE_H_
 

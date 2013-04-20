@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_PRFUNROLL_H_
 #define _SAC_PRFUNROLL_H_
 

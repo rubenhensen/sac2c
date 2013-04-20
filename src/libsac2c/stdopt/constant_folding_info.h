@@ -1,15 +1,13 @@
-/*
- * $Id constant_folding_info.h rbe $
- */
-
-#ifndef _SAC__CONSTANTFOLDING_H_
-#define _SAC__CONSTANTFOLDING_H_
 /** <!--********************************************************************-->
  *
  * @name INFO structure
  * @{
  *
  *****************************************************************************/
+
+#ifndef _SAC__CONSTANTFOLDING_H_
+#define _SAC__CONSTANTFOLDING_H_
+
 struct INFO {
     int numidssofar;
     ntype *lhstype;

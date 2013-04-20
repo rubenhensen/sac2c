@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "stringset.h"
 
 #define DBUG_PREFIX "STRS"

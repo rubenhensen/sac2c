@@ -1,7 +1,5 @@
 /******************************************************************************
  *
- * $Id$
- *
  * Iteration Invariant Parameter Inference
  *
  * Prefix: IIPI

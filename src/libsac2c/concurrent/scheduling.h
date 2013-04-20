@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_SCHEDULING_H_
 #define _SAC_SCHEDULING_H_
 

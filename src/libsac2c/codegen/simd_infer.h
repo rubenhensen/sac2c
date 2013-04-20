@@ -1,13 +1,3 @@
-/*
- *
- * $Log$
- * Revision 1.1  2005/09/27 17:23:18  sbs
- * Initial revision
- *
- *
- *
- */
-
 #ifndef _SAC_SIMD_INFER_H_
 #define _SAC_SIMD_INFER_H_
 

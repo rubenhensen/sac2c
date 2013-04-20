@@ -1,8 +1,4 @@
 /*
- * $Id$
- */
-
-/*
  * this code implements the SSA-aware version of the original withloop folding.
  * it reuses most code of the old implementation, but the ssa form simplifies
  * many cases and allows to avoid any masks in the opt cycle.

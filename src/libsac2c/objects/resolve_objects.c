@@ -1,5 +1,3 @@
-/* $Id$ */
-
 /*
  * Analyzes the set of objects used by functions, then adds them as
  * reference arguments to the function applications. Also adds propagate()

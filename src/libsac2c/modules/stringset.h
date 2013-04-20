@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_STRINGSET_H_
 #define _SAC_STRINGSET_H_
 

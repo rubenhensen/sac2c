@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "extend_wrapper_types.h"
 
 #define DBUG_PREFIX "EWT"

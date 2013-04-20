@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_IVE_SPLIT_LOOP_INVARIANTS_H_
 #define _SAC_IVE_SPLIT_LOOP_INVARIANTS_H_
 

@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_DATAFLOWMASKUTILS_H_
 #define _SAC_DATAFLOWMASKUTILS_H_
 

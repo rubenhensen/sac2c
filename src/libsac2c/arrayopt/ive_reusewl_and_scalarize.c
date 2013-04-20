@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "ive_reusewl_and_scalarize.h"
 
 #define DBUG_PREFIX "IVERAS"

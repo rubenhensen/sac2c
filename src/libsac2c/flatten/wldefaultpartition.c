@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /**
  *
  * @file wldefaultpartition.c

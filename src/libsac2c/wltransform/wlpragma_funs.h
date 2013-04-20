@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_WLPRAGMA_FUNS_H_
 #define _SAC_WLPRAGMA_FUNS_H_
 

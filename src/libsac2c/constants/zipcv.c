@@ -1,11 +1,4 @@
 /*
- *
- * $Id$
- *
- *
- */
-
-/*
  * This module provides a set of functions for applying arithmetic functions
  * to two elements of constant vectors.
  * The problem with this task is that each such function has to be overloaded on

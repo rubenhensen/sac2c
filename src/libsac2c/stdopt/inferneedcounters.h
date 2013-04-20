@@ -1,9 +1,3 @@
-/*
- * $Log$
- * Revision 1.1  2005/08/19 18:17:47  ktr
- * Initial revision
- *
- */
 #ifndef _SAC_INFERNEEDCOUNTERS_H_
 #define _SAC_INFERNEEDCOUNTERS_H_
 

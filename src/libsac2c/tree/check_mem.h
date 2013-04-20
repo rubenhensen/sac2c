@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_CHECK_MEM_H_
 #define _SAC_CHECK_MEM_H_
 

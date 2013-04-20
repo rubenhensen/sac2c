@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_MAKE_SLOW_CLONES_H_
 #define _SAC_MAKE_SLOW_CLONES_H_
 

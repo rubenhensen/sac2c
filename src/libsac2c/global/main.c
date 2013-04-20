@@ -1,10 +1,4 @@
 /*
- *
- * $Id$
- *
- */
-
-/*
  *  This file contains the start functions for the various sac tools.
  */
 

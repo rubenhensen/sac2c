@@ -1,16 +1,3 @@
-/*
- * $Log$
- * Revision 1.3  2004/11/23 20:52:11  skt
- * big compiler brushing during SACDevCampDK 2k4
- *
- * Revision 1.2  2004/11/22 14:37:39  skt
- * code brushing in SACDevCampDK 2004
- *
- * Revision 1.1  2004/09/02 16:02:25  skt
- * Initial revision
- *
- */
-
 /*****************************************************************************
  *
  * file:   consolidate_cells.h

@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_RNB_H_
 #define _SAC_RNB_H_
 

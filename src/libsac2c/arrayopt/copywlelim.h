@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_CWLE_TRAV_H_
 #define _SAC_CWLE_TRAV_H_
 

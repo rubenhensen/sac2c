@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #ifndef _SAC_CONVERT_H_
 #define _SAC_CONVERT_H_
 

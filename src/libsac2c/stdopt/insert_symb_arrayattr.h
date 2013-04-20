@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_INSERT_SYMB_ARRAYATTR_H_
 #define _SAC_INSERT_SYMB_ARRAYATTR_H_
 

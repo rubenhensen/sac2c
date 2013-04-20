@@ -1,7 +1,3 @@
-/**
- * $Id$
- */
-
 #ifndef _SAC_MARK_NOOP_GRIDS_H_
 #define _SAC_MARK_NOOP_GRIDS_H_
 

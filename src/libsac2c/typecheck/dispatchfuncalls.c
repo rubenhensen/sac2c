@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "dispatchfuncalls.h"
 #include "tree_basic.h"
 #include "tree_compound.h"

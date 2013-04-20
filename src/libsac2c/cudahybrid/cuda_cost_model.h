@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_CUDACOSTMODEL_H_
 #define _SAC_CUDACOSTMODEL_H_
 

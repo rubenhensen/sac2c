@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 /**
  * @defgroup scre Scope-Based Reuse Candidate Elimination
  * @ingroup mm

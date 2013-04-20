@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "resolveall.h"
 #include "tree_basic.h"
 #include "traverse.h"

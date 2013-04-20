@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "traverse.h"
 
 #include "traverse_tables.h"

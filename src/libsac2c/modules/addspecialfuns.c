@@ -1,9 +1,4 @@
 /*
- * $Id$
- *
- */
-
-/*
  * this file contains the helper functions ASFdoAddSpecialFunctions
  * which is intended to load all the sac2c helper functions
  * from the special sacprelude module, that will be used later on.

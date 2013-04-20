@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 /**
  *
  * @file wlanalysis.c

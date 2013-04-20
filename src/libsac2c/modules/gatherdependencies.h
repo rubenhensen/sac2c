@@ -1,5 +1,4 @@
 /**
- * $Id$
  *
  * @file gatherdependencies.h
  * @brief gathers the dependencies of a sac file

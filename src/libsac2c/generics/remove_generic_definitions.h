@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_REMOVE_GENERIC_DEFINITIONS_H_
 #define _SAC_REMOVE_GENERIC_DEFINITIONS_H_
 

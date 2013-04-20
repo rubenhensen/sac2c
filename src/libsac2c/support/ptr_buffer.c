@@ -1,9 +1,3 @@
-/*
- *
- * $Id$
- *
- */
-
 #include "ptr_buffer.h"
 
 #define DBUG_PREFIX "PBUF"

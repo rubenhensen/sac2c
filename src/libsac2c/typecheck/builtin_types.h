@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #ifndef _SAC_BIT_H_
 #define _SAC_BIT_H_
 

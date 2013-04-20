@@ -1,8 +1,3 @@
-/*
- * $Id$
- *
- */
-
 #include <stdio.h>
 
 #include "sig_deps.h"

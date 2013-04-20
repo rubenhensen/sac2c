@@ -1,10 +1,3 @@
-/*
- *
- * $Id$
- *
- *
- */
-
 #ifndef _SAC_PHASE_H_
 #define _SAC_PHASE_H_
 

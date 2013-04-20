@@ -1,6 +1,3 @@
-/*
- * $Id$
- */
 #ifndef _SAC_ARITHMETIC_SIMPLIFICATION_H_
 #define _SAC_ARITHMETIC_SIMPLIFICATION_H_
 

@@ -1,7 +1,3 @@
-/*
- * $Id$
- */
-
 #include "types.h"
 
 #ifndef _PHASE_OPTIONS_H_
