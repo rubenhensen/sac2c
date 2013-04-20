@@ -13,6 +13,9 @@
  *   functions are considered local in this sense, but later this should be
  *   extended to all functions that have a unique call site.
  *
+ *   When this traversal completes, NO local function should have a
+ *   non-NULL FUNDEF_NEXT.
+ *
  *****************************************************************************/
 
 /**
