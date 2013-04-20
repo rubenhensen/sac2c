@@ -95,23 +95,23 @@ version="1.0">
   <xsl:text>
 #if IS_CYGWIN
 node *
-SHLPmakeNode( int _node_type, int lineno, char* sfile, ...)
+SHLPmakeNode( int _node_type, char* sfile, size_t lineno, size_t col ...)
 {
   node *result;
   va_list Argp;
 
   va_start (Argp, sfile);
-  result = SHLPmakeNodeVa( _node_type, lineno, sfile, Argp);
+  result = SHLPmakeNodeVa( _node_type, sfile, lineno, col, Argp);
   va_end(Argp);
   
   return( result);
 }
   </xsl:text>
-  <xsl:value-of select="'node *SHLPmakeNodeVa( int _node_type, int lineno, char* sfile, va_list args) {'" />
+  <xsl:value-of select="'node *SHLPmakeNodeVa (int _node_type, char* sfile, size_t lineno, size_t col, va_list args) {'" />
   <xsl:text>
 #else
   </xsl:text>
-  <xsl:value-of select="'node *SHLPmakeNode( int _node_type, int lineno, char* sfile, ...) {'" />
+  <xsl:value-of select="'node *SHLPmakeNode (int _node_type, char* sfile, size_t lineno, size_t col, ...) {'" />
   <xsl:value-of select="'va_list args;'" />
   <xsl:text>
 #endif /* IS_CYGWIN */
@@ -164,8 +164,9 @@ SHLPmakeNode( int _node_type, int lineno, char* sfile, ...)
   <!-- set basic info -->
   <xsl:value-of select="'xthis = (node *) &amp;(nodealloc->nodestructure);'" />
   <xsl:value-of select="'NODE_TYPE( xthis) = node_type;'" />
-  <xsl:value-of select="'NODE_LINE( xthis) = lineno;'" />
   <xsl:value-of select="'NODE_FILE( xthis) = sfile;'" />
+  <xsl:value-of select="'NODE_LINE( xthis) = lineno;'" />
+  <xsl:value-of select="'NODE_COL( xthis) = col;'" />
   <xsl:value-of select="'NODE_ERROR( xthis) = NULL;'" />
   <xsl:call-template name="newline" />
   <xsl:text>
@@ -203,7 +204,7 @@ SHLPmakeNode( int _node_type, int lineno, char* sfile, ...)
     <xsl:text>
 #if !IS_CYGWIN
     </xsl:text>
-    <xsl:value-of select="'va_start( args, sfile);'" />
+    <xsl:value-of select="'va_start (args, col);'" />
     <xsl:text>
 #endif
     </xsl:text>
@@ -213,7 +214,7 @@ SHLPmakeNode( int _node_type, int lineno, char* sfile, ...)
     <xsl:text>
 #if !IS_CYGWIN
     </xsl:text>
-    <xsl:value-of select="'va_end( args);'" />
+    <xsl:value-of select="'va_end (args);'" />
     <xsl:text>
 #endif
     </xsl:text>
