@@ -644,7 +644,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                 SetWLProjections (noteint, intersectListNo, arg_info);
             }
 
-            if (notintnull && (NULL == cwlpb1)) {
+            if (int1part && (NULL == cwlpb1)) {
                 DBUG_PRINT ("Naked consumer detected");
                 z = INTERSECT_exact;
                 SetWLProjections (noteint, intersectListNo, arg_info);
@@ -745,8 +745,7 @@ IntersectTypeName (intersect_type_t itype)
  *         pwl: the N_with of the pwl.
  *         arg_info: Either arg_info or NULL.
  *
- * @result: The match we actually found.
- *          NULL if none is found.
+ * @result: The type of match we found; NULL if none is found.
  *          We also set INFO_PRODUCERPART, if a match is found.
  *
  *****************************************************************************/
@@ -762,6 +761,7 @@ CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
     node *idxassign;
     node *idxparent;
     int producerPartno = 0;
+    int intPartno = -1;
     node *noteint;
     char *nm;
 
@@ -788,6 +788,7 @@ CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
         if (intersecttype > z) {
             (*producerpart) = producerWLPart; /* Note best match */
             z = intersecttype;
+            intPartno = producerPartno;
         }
         producerWLPart = PART_NEXT (producerWLPart);
         producerPartno++;
@@ -799,8 +800,8 @@ CUBSLfindMatchingPart (node *arg_node, node *cwlp, node *pwl, info *arg_info,
         nm = "?";
     }
 
-    DBUG_PRINT ("match type is (%s) for producerPartno %d of PWL=%s, CWL=%s",
-                IntersectTypeName (z), producerPartno,
+    DBUG_PRINT ("match type is (%s) for intPartno %d of PWL=%s, CWL=%s",
+                IntersectTypeName (z), intPartno,
                 AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))), nm);
 
     DBUG_RETURN (z);
