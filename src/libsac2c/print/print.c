@@ -37,6 +37,7 @@
 #include "graphtypes.h"
 #include "tfprintutils.h"
 #include "int_matrix.h"
+#include "stringset.h"
 
 /*
  * use of arg_info in this file:
@@ -1112,7 +1113,8 @@ PRTmodule (node *arg_node, info *arg_info)
 
     if (INFO_SEPARATE (arg_info)) {
         /*
-         * In this case, we print a module or class implementation and we want
+         * In this case, we print a module or class implementation and we are
+         * printing to generate C-code. Therefore, we want
          * each function to appear in a separate file to create a real archive
          * for later linking.
          *
@@ -1147,14 +1149,7 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_TYPES (arg_node), arg_info);
         }
 
-        /*
-         * The following conditional is a cruel hack to get sac2tex
-         * going; a much better solution should be adopted once print.c
-         * is rewritten!!!! (sbs)
-         */
-        if (global.tool != TOOL_sac2tex) {
-            GSCprintDefines ();
-        }
+        GSCprintDefines ();
 
         if (NULL != MODULE_FUNDECS (arg_node)) {
             fprintf (global.outfile, "\n\n");
@@ -1241,18 +1236,14 @@ PRTmodule (node *arg_node, info *arg_info)
         case FT_modimp:
             fprintf (global.outfile,
                      "\n"
-                     "/*\n"
-                     " *  Module %s :\n"
-                     " */\n",
+                     "module %s;\n",
                      NSgetName (MODULE_NAMESPACE (arg_node)));
             break;
         case FT_classimp:
             fprintf (global.outfile,
                      "\n"
-                     "/*\n"
-                     " *  Class %s :\n",
+                     "class %s;\n",
                      NSgetName (MODULE_NAMESPACE (arg_node)));
-            fprintf (global.outfile, " */\n");
             break;
         case FT_prog:
             fprintf (global.outfile,
@@ -1332,12 +1323,9 @@ PRTmodule (node *arg_node, info *arg_info)
             TRAVdo (MODULE_FPFRAMESTORE (arg_node), arg_info);
         }
 
-        /*
-         * The following conditional is a cruel hack to get sac2tex
-         * going; a much better solution should be adopted once print.c
-         * is rewritten!!!! (sbs)
-         */
-        if (global.tool != TOOL_sac2tex && allow_non_fun) {
+        if (((global.compiler_subphase == PH_cg_prt)
+             || (global.compiler_subphase == PH_ccg_prt))
+            && allow_non_fun) {
             GSCprintDefines ();
         }
 
@@ -1983,10 +1971,14 @@ PRTfundef (node *arg_node, info *arg_info)
                             TRAVdo (FUNDEF_ICMDECL (arg_node), arg_info);
                         }
 
-                        if (!((FUNDEF_ICMDEFBEGIN (arg_node) == NULL)
-                              || (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm))) {
-                            fprintf (global.outfile, ";\n");
-                        }
+#if 0
+          if (!((FUNDEF_ICMDEFBEGIN (arg_node) == NULL) ||
+               (NODE_TYPE (FUNDEF_ICMDEFBEGIN (arg_node)) != N_icm))) {
+            fprintf (global.outfile, ";\n");
+          }
+#else
+                        fprintf (global.outfile, ";\n");
+#endif
 
                         if ((global.compiler_subphase != PH_cg_prt)
                             && (global.compiler_subphase != PH_ccg_prt)) {
@@ -2330,7 +2322,7 @@ PRTarg (node *arg_node, info *arg_info)
         fprintf (global.outfile, "[CD]");
     }
 
-    if (global.tool != TOOL_sac2tex) {
+    if ((global.tool != TOOL_sac2tex) && (global.compiler_phase > PH_scp)) {
 
         fprintf (global.outfile, " { "); /* Start of avis info */
         if (AVIS_DIM (ARG_AVIS (arg_node)) != NULL) {
@@ -2417,51 +2409,55 @@ PRTvardec (node *arg_node, info *arg_info)
 
         /* Print SAA information */
         fprintf (global.outfile, "%s", VARDEC_NAME (arg_node));
-        fprintf (global.outfile, " { "); /* Start of avis info */
-        if (AVIS_DIM (VARDEC_AVIS (arg_node)) != NULL) {
-            fprintf (global.outfile, "dim: ");
-            AVIS_DIM (VARDEC_AVIS (arg_node))
-              = TRAVdo (AVIS_DIM (VARDEC_AVIS (arg_node)), arg_info);
-        }
-        if (AVIS_SHAPE (VARDEC_AVIS (arg_node)) != NULL) {
-            fprintf (global.outfile, ", shape: ");
-            AVIS_SHAPE (VARDEC_AVIS (arg_node))
-              = TRAVdo (AVIS_SHAPE (VARDEC_AVIS (arg_node)), arg_info);
-        }
-        /* Print extrema information */
-        minmk = AVIS_ISMINHANDLED (VARDEC_AVIS (arg_node)) ? "Y" : "N";
-        maxmk = AVIS_ISMAXHANDLED (VARDEC_AVIS (arg_node)) ? "Y" : "N";
-        fprintf (global.outfile, ", %s%s", minmk, maxmk);
-        if (AVIS_MIN (VARDEC_AVIS (arg_node)) != NULL) {
-            fprintf (global.outfile, ", minval: %s",
-                     AVIS_NAME (ID_AVIS (AVIS_MIN (VARDEC_AVIS (arg_node)))));
-        }
-        if (AVIS_MAX (VARDEC_AVIS (arg_node)) != NULL) {
-            fprintf (global.outfile, ", maxval: %s",
-                     AVIS_NAME (ID_AVIS (AVIS_MAX (VARDEC_AVIS (arg_node)))));
-        }
 
-        if (AVIS_SCALARS (VARDEC_AVIS (arg_node)) != NULL) {
-            fprintf (global.outfile, ", scalars: ");
-            AVIS_SCALARS (VARDEC_AVIS (arg_node))
-              = TRAVdo (AVIS_SCALARS (VARDEC_AVIS (arg_node)), arg_info);
-        }
+        if (global.compiler_phase > PH_scp) {
+            fprintf (global.outfile, " { "); /* Start of avis info */
+            if (AVIS_DIM (VARDEC_AVIS (arg_node)) != NULL) {
+                fprintf (global.outfile, "dim: ");
+                AVIS_DIM (VARDEC_AVIS (arg_node))
+                  = TRAVdo (AVIS_DIM (VARDEC_AVIS (arg_node)), arg_info);
+            }
+            if (AVIS_SHAPE (VARDEC_AVIS (arg_node)) != NULL) {
+                fprintf (global.outfile, ", shape: ");
+                AVIS_SHAPE (VARDEC_AVIS (arg_node))
+                  = TRAVdo (AVIS_SHAPE (VARDEC_AVIS (arg_node)), arg_info);
+            }
+            /* Print extrema information */
+            minmk = AVIS_ISMINHANDLED (VARDEC_AVIS (arg_node)) ? "Y" : "N";
+            maxmk = AVIS_ISMAXHANDLED (VARDEC_AVIS (arg_node)) ? "Y" : "N";
+            fprintf (global.outfile, ", %s%s", minmk, maxmk);
+            if (AVIS_MIN (VARDEC_AVIS (arg_node)) != NULL) {
+                fprintf (global.outfile, ", minval: %s",
+                         AVIS_NAME (ID_AVIS (AVIS_MIN (VARDEC_AVIS (arg_node)))));
+            }
+            if (AVIS_MAX (VARDEC_AVIS (arg_node)) != NULL) {
+                fprintf (global.outfile, ", maxval: %s",
+                         AVIS_NAME (ID_AVIS (AVIS_MAX (VARDEC_AVIS (arg_node)))));
+            }
 
-        if (AVIS_LACSO (VARDEC_AVIS (arg_node)) != NULL) {
-            fprintf (global.outfile, ", lacso: ");
-            AVIS_LACSO (VARDEC_AVIS (arg_node))
-              = TRAVdo (AVIS_LACSO (VARDEC_AVIS (arg_node)), arg_info);
-        }
+            if (AVIS_SCALARS (VARDEC_AVIS (arg_node)) != NULL) {
+                fprintf (global.outfile, ", scalars: ");
+                AVIS_SCALARS (VARDEC_AVIS (arg_node))
+                  = TRAVdo (AVIS_SCALARS (VARDEC_AVIS (arg_node)), arg_info);
+            }
 
-        if (AVIS_SUBALLOC (VARDEC_AVIS (arg_node))) {
-            fprintf (global.outfile, ", SUBALLOC");
-        }
+            if (AVIS_LACSO (VARDEC_AVIS (arg_node)) != NULL) {
+                fprintf (global.outfile, ", lacso: ");
+                AVIS_LACSO (VARDEC_AVIS (arg_node))
+                  = TRAVdo (AVIS_LACSO (VARDEC_AVIS (arg_node)), arg_info);
+            }
 
-        if (AVIS_COUNT (VARDEC_AVIS (arg_node)) != 0) {
-            fprintf (global.outfile, ", USAGE: %d", AVIS_COUNT (VARDEC_AVIS (arg_node)));
-        }
+            if (AVIS_SUBALLOC (VARDEC_AVIS (arg_node))) {
+                fprintf (global.outfile, ", SUBALLOC");
+            }
 
-        fprintf (global.outfile, " } "); /* end of avis info */
+            if (AVIS_COUNT (VARDEC_AVIS (arg_node)) != 0) {
+                fprintf (global.outfile, ", USAGE: %d",
+                         AVIS_COUNT (VARDEC_AVIS (arg_node)));
+            }
+
+            fprintf (global.outfile, " } "); /* end of avis info */
+        }
 
         if (VARDEC_INIT (arg_node) != NULL) {
             fprintf (global.outfile, " = ");
@@ -3473,7 +3469,12 @@ PRTnumbyte (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "%d", NUMBYTE_VAL (arg_node));
+    if ((global.compiler_subphase == PH_cg_prt)
+        || (global.compiler_subphase == PH_ccg_prt)) {
+        fprintf (global.outfile, "%d", NUMBYTE_VAL (arg_node));
+    } else {
+        fprintf (global.outfile, "%db", NUMBYTE_VAL (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -3497,7 +3498,12 @@ PRTnumshort (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "%hd", NUMSHORT_VAL (arg_node));
+    if ((global.compiler_subphase == PH_cg_prt)
+        || (global.compiler_subphase == PH_ccg_prt)) {
+        fprintf (global.outfile, "%hd", NUMSHORT_VAL (arg_node));
+    } else {
+        fprintf (global.outfile, "%hds", NUMSHORT_VAL (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -3545,7 +3551,7 @@ PRTnumlong (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "%ld", NUMLONG_VAL (arg_node));
+    fprintf (global.outfile, "%ldl", NUMLONG_VAL (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -3593,7 +3599,12 @@ PRTnumubyte (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "%u", NUMUBYTE_VAL (arg_node));
+    if ((global.compiler_subphase == PH_cg_prt)
+        || (global.compiler_subphase == PH_ccg_prt)) {
+        fprintf (global.outfile, "%u", NUMUBYTE_VAL (arg_node));
+    } else {
+        fprintf (global.outfile, "%uub", NUMUBYTE_VAL (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -3617,7 +3628,12 @@ PRTnumushort (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "%hu", NUMUSHORT_VAL (arg_node));
+    if ((global.compiler_subphase == PH_cg_prt)
+        || (global.compiler_subphase == PH_ccg_prt)) {
+        fprintf (global.outfile, "%hu", NUMUSHORT_VAL (arg_node));
+    } else {
+        fprintf (global.outfile, "%huus", NUMUSHORT_VAL (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -3641,7 +3657,12 @@ PRTnumuint (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "%u", NUMUINT_VAL (arg_node));
+    if ((global.compiler_subphase == PH_cg_prt)
+        || (global.compiler_subphase == PH_ccg_prt)) {
+        fprintf (global.outfile, "%u", NUMUINT_VAL (arg_node));
+    } else {
+        fprintf (global.outfile, "%uui", NUMUINT_VAL (arg_node));
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -3665,7 +3686,7 @@ PRTnumulong (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "%lu", NUMULONG_VAL (arg_node));
+    fprintf (global.outfile, "%luul", NUMULONG_VAL (arg_node));
 
     DBUG_RETURN (arg_node);
 }
@@ -4089,6 +4110,13 @@ PRTicm (node *arg_node, info *arg_info)
  *
  ******************************************************************************/
 
+static void *
+StringSetPrint (const char *entry, strstype_t kind, void *rest)
+{
+    fprintf (global.outfile, " \"%s\"", entry);
+    return ((void *)0);
+}
+
 node *
 PRTpragma (node *arg_node, info *arg_info)
 {
@@ -4103,6 +4131,12 @@ PRTpragma (node *arg_node, info *arg_info)
 
     if (PRAGMA_LINKNAME (arg_node) != NULL) {
         fprintf (global.outfile, "#pragma linkname \"%s\"\n", PRAGMA_LINKNAME (arg_node));
+    }
+
+    if (PRAGMA_LINKOBJ (arg_node) != NULL) {
+        fprintf (global.outfile, "#pragma linkobj");
+        STRSfold (&StringSetPrint, PRAGMA_LINKOBJ (arg_node), NULL);
+        fprintf (global.outfile, "\n");
     }
 
     if (PRAGMA_LINKSIGN (arg_node) != NULL) {
@@ -4910,22 +4944,28 @@ PRTspfold (node *arg_node, info *arg_info)
     /**
      * udf-case prior to TC!
      */
-    if (SPFOLD_NS (arg_node) == NULL) {
-        fprintf (global.outfile, "fold/*udf-symb*/( %s(", SPFOLD_FUN (arg_node));
+    if (SPFOLD_GUARD (arg_node) == NULL) {
+        fprintf (global.outfile, "fold/*udf-symb*/( ");
     } else {
-        fprintf (global.outfile, "fold/*udf-symb*/( %s::%s(",
-                 NSgetName (SPFOLD_NS (arg_node)), SPFOLD_FUN (arg_node));
+        fprintf (global.outfile, "foldfix/*udf-symb*/( ");
     }
+    if (SPFOLD_NS (arg_node) == NULL) {
+        fprintf (global.outfile, "%s(", SPFOLD_FUN (arg_node));
+    } else {
+        fprintf (global.outfile, "%s::%s(", NSgetName (SPFOLD_NS (arg_node)),
+                 SPFOLD_FUN (arg_node));
+    }
+
     TRAVopt (SPFOLD_ARGS (arg_node), arg_info);
     fprintf (global.outfile, "), ");
     TRAVdo (SPFOLD_NEUTRAL (arg_node), arg_info);
 
-    fprintf (global.outfile, ")");
-
     if (SPFOLD_GUARD (arg_node) != NULL) {
-        fprintf (global.outfile, " break ");
+        fprintf (global.outfile, ", ");
         TRAVdo (SPFOLD_GUARD (arg_node), arg_info);
     }
+
+    fprintf (global.outfile, ")");
 
     if (SPFOLD_NEXT (arg_node) != NULL) {
         fprintf (global.outfile, ",\n");
@@ -4967,7 +5007,12 @@ PRTfold (node *arg_node, info *arg_info)
      * * udf-case after TC!
      */
     fundef = FOLD_FUNDEF (arg_node);
-    fprintf (global.outfile, "fold(");
+
+    if (FOLD_GUARD (arg_node) == NULL) {
+        fprintf (global.outfile, "fold(");
+    } else {
+        fprintf (global.outfile, "foldfix(");
+    }
 
     if (FUNDEF_NS (fundef) != NULL) {
         fprintf (global.outfile, " %s::", NSgetName (FUNDEF_NS (fundef)));
@@ -4987,12 +5032,12 @@ PRTfold (node *arg_node, info *arg_info)
         TRAVdo (FOLD_PARTIALMEM (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, ")");
-
     if (FOLD_GUARD (arg_node) != NULL) {
-        fprintf (global.outfile, " break ");
+        fprintf (global.outfile, ", ");
         TRAVdo (FOLD_GUARD (arg_node), arg_info);
     }
+
+    fprintf (global.outfile, ")");
 
     if (FOLD_NEXT (arg_node) != NULL) {
         fprintf (global.outfile, ",\n");
@@ -5865,9 +5910,11 @@ PrintTRAVdo (node *syntax_tree, info *arg_info)
             INFO_SEPARATE (arg_info) = 0;
         }
     } else {
-        fprintf (global.outfile, "\n-----------------------------------------------\n");
+        fprintf (global.outfile,
+                 "\n/*-----------------------------------------------*/\n");
         TRAVdo (syntax_tree, arg_info);
-        fprintf (global.outfile, "\n-----------------------------------------------\n");
+        fprintf (global.outfile,
+                 "\n/*-----------------------------------------------*/\n");
     }
 
     TRAVpop ();
@@ -6284,7 +6331,12 @@ PRTuse (node *arg_node, info *arg_info)
 
     if (USE_ALL (arg_node)) {
         fprintf (global.outfile, "all");
-    } else {
+        if (USE_SYMBOL (arg_node) != NULL) {
+            fprintf (global.outfile, " except ");
+        }
+    }
+
+    if (USE_SYMBOL (arg_node) != NULL) {
         fprintf (global.outfile, "{ ");
         USE_SYMBOL (arg_node) = TRAVdo (USE_SYMBOL (arg_node), arg_info);
         fprintf (global.outfile, "}");
@@ -6362,12 +6414,12 @@ PRTsymbol (node *arg_node, info *arg_info)
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fprintf (global.outfile, "%s", SYMBOL_ID (arg_node));
-
     if (SYMBOL_NEXT (arg_node) != NULL) {
-        fprintf (global.outfile, ", ");
         SYMBOL_NEXT (arg_node) = TRAVdo (SYMBOL_NEXT (arg_node), arg_info);
+        fprintf (global.outfile, ", ");
     }
+
+    fprintf (global.outfile, "%s", SYMBOL_ID (arg_node));
 
     DBUG_RETURN (arg_node);
 }
