@@ -663,18 +663,32 @@ AWLFIdetachNoteintersect (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool
+ * @fn bool isNakedConsumer( node *arg_node, info *arg_info)
  *
  * @brief: Predicate for checking that consumer sel() is a naked consumer.
  *
  * @param: arg_info: as usual
  *
- * @result: TRUE if consumer sel() is at same level as PWL,
+ * @result: TRUE if consumer sel( iv, M) is at same level as PWL,
+ *          and iv is constant.
  *          i.e., is a naked consumer.
  *
+ * @note: The requirement for constant iv means that
+ *        a code sequence such as:
+ *
+ *           PWL =  with(...);
+ *           s = _sel_VxA_( shape(PWL)-1, PWL);
+ *
+ *        will not be folded. I don't know a safe way to handle this,
+ *        because in the more general case (e.g., iv is loop-carried
+ *        in a FOR-loop), iv may vary in value,
+ *        and in the absence of extrema, we will not be able to
+ *        correctly determine the intersection(s) of iv with PWL.
+ *        See Bug #11067.
+ *
  *****************************************************************************/
-bool
-isNakedConsumer (info *arg_info)
+static bool
+isNakedConsumer (node *arg_node, info *arg_info)
 {
     bool z;
     char *cwlnm;
@@ -686,6 +700,8 @@ isNakedConsumer (info *arg_info)
               : "(naked consumer)";
 
     z = INFO_LEVEL (arg_info) == AVIS_DEFDEPTH (ID_AVIS (INFO_PRODUCERWLLHS (arg_info)));
+
+    z = z && (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))));
 
     if (z) {
         DBUG_PRINT ("CWL %s is naked consumer of PWL %s", cwlnm,
@@ -1924,8 +1940,8 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
-    node *ivmin;
-    node *ivmax;
+    node *ivmin = NULL;
+    node *ivmax = NULL;
     constant *ivminco;
     constant *ivmaxco;
     constant *kcon;
@@ -1941,7 +1957,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 
     /* Handle constant iv: make N_array nodes */
     DBUG_ASSERT (NULL != ivavis, "Should always have non-NULL ivavis");
-    if ((NULL == ivavis) || TYisAKV (AVIS_TYPE (ivavis))) {
+    if (TYisAKV (AVIS_TYPE (ivavis))) {
         ivminco = COaST2Constant (ivavis);
         ivmin = COconstant2AST (ivminco);
 
@@ -1951,6 +1967,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
         ivmaxco = COfreeConstant (ivmaxco);
         kcon = COfreeConstant (kcon);
     } else {
+        /* non-constant iv */
         if (PMmatchFlat (pat3, AVIS_MIN (ivavis))) {
             ivmin = DUPdoDupTree (ivminmax);
         } else {
@@ -1958,10 +1975,10 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
         }
 
         if (PMmatchFlat (pat3, AVIS_MAX (ivavis))) {
-            if (isNakedConsumer (arg_info)) {
+            if (isNakedConsumer (arg_node, arg_info)) {
                 DBUG_PRINT ("Found naked consumerWL: %s",
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
-                /* Fake up value:  ivmax = AVIS_MIN( ivavis) + 1 */
+                /* Fake up ivmax = AVIS_MIN( ivavis) + 1 */
                 PMmatchFlat (pat3, AVIS_MIN (ivavis)); /* Check for N_array */
                 ivmax = IVEXPadjustExtremaBound (ID_AVIS (AVIS_MIN (ivavis)), 1,
                                                  &INFO_VARDECS (arg_info),
