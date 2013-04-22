@@ -33,9 +33,12 @@ const char *token_class_name[] = {
 static size_t keywords_length = tok_kind_length  - first_keyword;  */
 static size_t operators_length = (size_t)first_keyword;
 
-/* Variables for error and warning macros.  */
+/* Define error and warning counters if we create a lexer binary only,
+   otherwise use the counters from ctinfo.c.  */
+#ifdef LEXER_BINARY
 int error_count = 0;
 int warning_count = 0;
+#endif
 
 /* SaC operates with yyin file.  */
 FILE *yyin;

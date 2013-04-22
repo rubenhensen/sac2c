@@ -5655,7 +5655,7 @@ parse (struct parser *parser)
 {
     struct token *tok;
 
-    error_count = warning_count = 0;
+    // error_count = warning_count = 0;
     tok = parser_get_token (parser);
 
     if (token_is_keyword (tok, MODULE)) {
@@ -5680,7 +5680,7 @@ parse (struct parser *parser)
             parser_get_until_tval (parser, tv_semicolon);
 
         /* FIXME otherwise what... */
-        if (error_count == 0)
+        if (CTIgetErrorCount () == 0)
             if (parser_expect_tval (parser, tv_semicolon))
                 parser_get_token (parser);
 
@@ -5690,7 +5690,7 @@ parse (struct parser *parser)
         parser->in_module = false;
         parser->current_module = NULL;
 
-        if (error_count == 0 && defs != NULL && defs != error_mark_node) {
+        if (CTIgetErrorCount () == 0 && defs != NULL && defs != error_mark_node) {
             MODULE_NAMESPACE (defs) = NSgetNamespace (name);
             MODULE_FILETYPE (defs) = FT_modimp;
             MODULE_DEPRECATED (defs) = deprecated;
@@ -5739,7 +5739,7 @@ parse (struct parser *parser)
                 symbol_set_type (ks);
         }
 
-        if (error_count == 0)
+        if (CTIgetErrorCount () == 0)
             if (parser_expect_tval (parser, tv_semicolon))
                 parser_get_token (parser);
 
@@ -5776,7 +5776,7 @@ parse (struct parser *parser)
         parser->in_module = false;
         parser->current_module = NULL;
 
-        if (error_count == 0 && defs != NULL && defs != error_mark_node) {
+        if (CTIgetErrorCount () == 0 && defs != NULL && defs != error_mark_node) {
             MODULE_NAMESPACE (defs) = NSgetNamespace (name);
             MODULE_FILETYPE (defs) = FT_classimp;
             MODULE_DEPRECATED (defs) = deprecated;
@@ -5791,7 +5791,7 @@ parse (struct parser *parser)
 
         parser_unget (parser);
         defs = handle_definitions (parser);
-        if (error_count == 0 && defs != error_mark_node) {
+        if (CTIgetErrorCount () == 0 && defs != error_mark_node) {
             MODULE_NAMESPACE (defs) = NSgetRootNamespace ();
             MODULE_FILETYPE (defs) = FT_prog;
             global.syntax_tree = defs;
@@ -5944,7 +5944,7 @@ parse_rcfile (struct parser *parser)
     struct token *tok;
     target_list_t *tl = NULL;
 
-    error_count = warning_count = 0;
+    // error_count = warning_count = 0;
 
     while (token_class (tok = parser_get_token (parser)) != tok_eof) {
         switch (token_class (tok)) {
@@ -5997,8 +5997,8 @@ SPmyYyparse (void)
         parse (parser);
 
     // fprintf (stderr, "-- finsihed parsing --\n");
-    if (error_count != 0)
-        global.syntax_tree = NULL;
+    // if (error_count != 0)
+    //  global.syntax_tree = NULL;
 cleanup:
     parser_finalize (parser);
 

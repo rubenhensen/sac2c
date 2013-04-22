@@ -69,9 +69,9 @@ static char *message_buffer = NULL;
 static int message_buffer_size = 0;
 static int message_line_length = 76;
 
-static char *abort_message_header = "ABORT: ";
-static char *error_message_header = "ERROR: ";
-static char *warn_message_header = "WARNING: ";
+static char *abort_message_header = "abort: ";
+static char *error_message_header = "error: ";
+static char *warn_message_header = "warning: ";
 static char *state_message_header = "";
 static char *note_message_header = "  ";
 
@@ -79,6 +79,12 @@ static int errors = 0;
 static int warnings = 0;
 
 #define MAX_ITEM_NAME_LENGTH 255
+
+int
+CTIgetErrorCount (void)
+{
+    return errors;
+}
 
 /** <!--********************************************************************-->
  *
@@ -256,7 +262,7 @@ static void
 PrintMessage (const char *header, const char *format, va_list arg_p)
 {
     char *line;
-
+    ;
     DBUG_ENTER ();
 
     Format2Buffer (format, arg_p);
@@ -355,10 +361,15 @@ AbortCompilation (void)
 
     CleanUp ();
 
-    fprintf (stderr, "\n*** Compilation failed ***\n");
-    fprintf (stderr, "*** Exit code %d (%s)\n", ecode,
-             PHIphaseText (global.compiler_phase));
-    fprintf (stderr, "*** %d Error(s), %d Warning(s)\n\n", errors, warnings);
+    (void)fprintf (stderr, "compilation failed while %s",
+                   PHIphaseText (global.compiler_phase));
+    if (errors > 0)
+        (void)fprintf (stderr, ", %d error(s)", errors);
+
+    if (warnings > 0)
+        (void)fprintf (stderr, ", %d warning(s)", warnings);
+
+    (void)fprintf (stderr, ".\n");
 
     exit (ecode);
 
@@ -599,7 +610,6 @@ CTIerror (const char *format, ...)
 
     va_start (arg_p, format);
 
-    fprintf (stderr, "\n");
     PrintMessage (error_message_header, format, arg_p);
 
     va_end (arg_p);
@@ -630,14 +640,66 @@ CTIerrorLine (int line, const char *format, ...)
 
     va_start (arg_p, format);
 
-    fprintf (stderr, "\n");
-    fprintf (stderr, "%sline %d  file: %s\n", error_message_header, line,
-             global.filename);
+    fprintf (stderr, "%s %d ", global.filename, line);
     PrintMessage (error_message_header, format, arg_p);
 
     va_end (arg_p);
 
     errors++;
+
+    DBUG_RETURN ();
+}
+
+void
+CTIerrorLoc (struct location loc, const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ();
+
+    va_start (arg_p, format);
+    (void)fprintf (stderr, "%s ", loc.fname);
+    if (loc.line == 0)
+        (void)fprintf (stderr, "??");
+    else
+        (void)fprintf (stderr, "%zd", loc.line);
+
+    if (loc.col > 0)
+        (void)fprintf (stderr, ":%zd ", loc.col);
+    else
+        (void)fprintf (stderr, " ");
+
+    PrintMessage (error_message_header, format, arg_p);
+    va_end (arg_p);
+
+    errors++;
+
+    DBUG_RETURN ();
+}
+
+void
+CTIwarnLoc (struct location loc, const char *format, ...)
+{
+    va_list arg_p;
+
+    DBUG_ENTER ();
+
+    va_start (arg_p, format);
+    (void)fprintf (stderr, "%s ", loc.fname);
+    if (loc.line == 0)
+        (void)fprintf (stderr, "??");
+    else
+        (void)fprintf (stderr, "%zd", loc.line);
+
+    if (loc.col > 0)
+        (void)fprintf (stderr, ":%zd ", loc.col);
+    else
+        (void)fprintf (stderr, " ");
+
+    PrintMessage (error_message_header, format, arg_p);
+    va_end (arg_p);
+
+    warnings++;
 
     DBUG_RETURN ();
 }
@@ -659,9 +721,7 @@ CTIerrorLineVA (int line, const char *format, va_list arg_p)
 {
     DBUG_ENTER ();
 
-    fprintf (stderr, "\n");
-    fprintf (stderr, "%sline %d  file: %s\n", error_message_header, line,
-             global.filename);
+    fprintf (stderr, "%s %d ", global.filename, line);
     PrintMessage (error_message_header, format, arg_p);
 
     errors++;
@@ -712,7 +772,7 @@ CTIerrorInternal (const char *format, ...)
 
     DBUG_ENTER ();
 
-    fprintf (stderr, "\n%sInternal %s failure\n", error_message_header, global.toolname);
+    fprintf (stderr, "%sInternal %s failure\n", error_message_header, global.toolname);
 
     va_start (arg_p, format);
     PrintMessage (error_message_header, format, arg_p);
@@ -778,8 +838,6 @@ CTIabortOnBottom (char *err_msg)
         line = strtok (NULL, "@");
     }
 
-    errors++;
-
     AbortCompilation ();
 
     DBUG_RETURN ();
@@ -805,12 +863,9 @@ CTIabort (const char *format, ...)
 
     va_start (arg_p, format);
 
-    fprintf (stderr, "\n");
     PrintMessage (abort_message_header, format, arg_p);
 
     va_end (arg_p);
-
-    errors++;
 
     AbortCompilation ();
 
@@ -838,14 +893,10 @@ CTIabortLine (int line, const char *format, ...)
 
     va_start (arg_p, format);
 
-    fprintf (stderr, "\n");
-    fprintf (stderr, "%sline %d  file: %s\n", abort_message_header, line,
-             global.filename);
+    fprintf (stderr, "%s %d ", global.filename, line);
     PrintMessage (abort_message_header, format, arg_p);
 
     va_end (arg_p);
-
-    errors++;
 
     AbortCompilation ();
 
@@ -876,15 +927,12 @@ CTIabortOutOfMemory (unsigned int request)
     DBUG_ENTER ();
 
     fprintf (stderr,
-             "\n"
              "%sOut of memory:\n"
              "%s %u bytes requested\n",
              abort_message_header, abort_message_header, request);
 
     fprintf (stderr, "%s %u bytes already allocated\n", abort_message_header,
              global.current_allocated_mem);
-
-    errors++;
 
     AbortCompilation ();
 
@@ -932,8 +980,7 @@ CTIwarnLine (int line, const char *format, ...)
     if (global.verbose_level >= 1) {
         va_start (arg_p, format);
 
-        fprintf (stderr, "%sline %d  file: %s\n", warn_message_header, line,
-                 global.filename);
+        fprintf (stderr, "%s %d ", global.filename, line);
         PrintMessage (warn_message_header, format, arg_p);
 
         va_end (arg_p);
@@ -1094,8 +1141,7 @@ CTInoteLine (int line, const char *format, ...)
     if (global.verbose_level >= 3) {
         va_start (arg_p, format);
 
-        fprintf (stderr, "%sline %d  file: %s\n", note_message_header, line,
-                 global.filename);
+        fprintf (stderr, "%s %d ", global.filename, line);
         PrintMessage (note_message_header, format, arg_p);
 
         va_end (arg_p);
