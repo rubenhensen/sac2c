@@ -811,7 +811,7 @@ TClookupIdsNode (node *ids_chain, node *idsavis)
  *   node *TCgetNthIds( int n, node *ids_chain)
  *
  * Description:
- *   Return  IDS_AVIS( ids_chain[n])
+ *   Return IDS_AVIS( ids_chain[n])
  *
  ******************************************************************************/
 node *
