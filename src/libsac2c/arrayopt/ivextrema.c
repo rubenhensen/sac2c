@@ -209,6 +209,7 @@
 #include "algebraic_wlfi.h"
 #include "symbolic_constant_simplification.h"
 #include "lacfun_utilities.h"
+#include "with_loop_utilities.h"
 
 /** <!--********************************************************************-->
  *
@@ -319,6 +320,31 @@ IVEXIdoInsertIndexVectorExtrema (node *arg_node)
 /** <!--********************************************************************-->
  * @}  <!-- Static helper functions -->
  *****************************************************************************/
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool IVEXIisExtremaActive( void)
+ *
+ *   @brief
+ *
+ *   @return TRUE is compiler is currently in a phase where extrema are valid.
+ *
+ *  NB. This probably belongs in globals somewhere, but I don't see a good spot
+ *      for it just now.
+ *
+ ******************************************************************************/
+bool
+IVEXIisExtremaActive (void)
+{
+    bool z;
+
+    DBUG_ENTER ();
+
+    z = (global.compiler_anyphase >= PH_opt_saacyc_isaa)
+        && (global.compiler_anyphase < PH_opt_esaa);
+
+    DBUG_RETURN (z);
+}
 
 /** <!--********************************************************************-->
  *
@@ -557,11 +583,13 @@ IVEXItmpIds (node *curpart, node *iavis, int k, node **preassignspart, node **va
     DBUG_PRINT ("Working on %s", AVIS_NAME (iavis));
 
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (curpart));
+    b1 = WLUTfindArrayForBound (b1); /* crash in next says we didn't find it */
     b1 = TCgetNthExprsExpr (k, ARRAY_AELEMS (b1));
     b1 = FLATGflattenExpression (DUPdoDupNode (b1), vardecs, preassignspart,
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (curpart));
+    b2 = WLUTfindArrayForBound (b2); /* crash in next says we didn't find it */
     b2 = TCgetNthExprsExpr (k, ARRAY_AELEMS (b2));
     b2 = FLATGflattenExpression (DUPdoDupNode (b2), vardecs, preassignspart,
                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
@@ -1113,10 +1141,14 @@ IVEXIwithidsKludge (int offset, node *withidids, node *curpart, node **preassign
     DBUG_ENTER ();
 
     ijk = TCgetNthExprsExpr (offset, ARRAY_AELEMS (withidids));
-    if ((NULL != curpart)
-        && (LFUisAvisMemberIds (ID_AVIS (ijk), WITHID_IDS (PART_WITHID (curpart))))) {
-        z = TCgetNthIds (offset, WITHID_IDS (PART_WITHID (curpart)));
-        z = IVEXItmpIds (curpart, z, offset, preassignspart, vardecs);
+    if (NULL != curpart) {
+        offset = LFUindexOfMemberIds (ID_AVIS (ijk), WITHID_IDS (PART_WITHID (curpart)));
+        if (-1 != offset) {
+            z = TCgetNthIds (offset, WITHID_IDS (PART_WITHID (curpart)));
+            if (IVEXIisExtremaActive ()) {
+                z = IVEXItmpIds (curpart, z, offset, preassignspart, vardecs);
+            }
+        }
     }
 
     DBUG_RETURN (z);

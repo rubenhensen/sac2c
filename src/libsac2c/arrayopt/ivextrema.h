@@ -35,5 +35,6 @@ extern node *IVEXIwithidsKludge (int offset, node *withidvec, node *curpart,
                                  node **preassignspart, node **vardecs);
 extern node *IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs,
                                  node **preassigns, prf nprf);
+extern bool IVEXIisExtremaActive (void);
 
 #endif // _SAC_INDEX_VECTOR_EXTREMA_INSERTION_H_
