@@ -745,14 +745,14 @@ NTCCTprf_same_shape (te_info *info, ntype *args)
 /******************************************************************************
  *
  * function:
- *    ntype *NTCCTprf_shape_dim( te_info *info, ntype *args)
+ *    ntype *NTCCTprf_shape_matches_dim_VxA( te_info *info, ntype *args)
  *
  * description:
  *
  ******************************************************************************/
 
 ntype *
-NTCCTprf_shape_dim (te_info *info, ntype *args)
+NTCCTprf_shape_matches_dim_VxA (te_info *info, ntype *args)
 {
     ntype *idx, *array, *res, *pred;
     char *err_msg;

@@ -23,6 +23,9 @@
  * 7. Run-time: add code to src/runtime/essentials_h/prf.h for
  *    the run-time execution code.
  *
+ * 8. Do a make clean on BOTH sac2c and the stdlib, or you will
+ *    see VERY strange things happening. I think this is due to
+ *    assumptions about PRF_PRF values.
  */
 
 #ifndef PRFname
@@ -836,10 +839,11 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
        SAAdim_same_shape_AxA, SAAshp_same_shape_AxA, NULL, 2, NULL, NULL, TEthree, NULL,
        NULL),
 
-  PRF (shape_matches_dim_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD, NTCCTprf_shape_dim,
-       NULL, COMPprfShapeMatchesDim, SCSprf_shape_matches_dim_VxA, NULL, NULL,
-       SAAdim_shape_matches_dim_VxA, SAAshp_shape_matches_dim_VxA,
-       SAACFprf_shape_matches_dim_VxA, 1, NULL, NULL, TEtwo, NULL, NULL),
+  PRF (shape_matches_dim_VxA, (PA_V, PA_A, PA_x), 2, XXX, NOSIMD,
+       NTCCTprf_shape_matches_dim_VxA, NULL, COMPprfShapeMatchesDim,
+       SCSprf_shape_matches_dim_VxA, NULL, NULL, SAAdim_shape_matches_dim_VxA,
+       SAAshp_shape_matches_dim_VxA, SAACFprf_shape_matches_dim_VxA, 1, NULL, NULL, TEtwo,
+       NULL, NULL),
 
   PRF (non_neg_val_S, (PA_S, PA_x, PA_x), 1, XXX, NOSIMD, NTCCTprf_non_neg_S, NULL,
        COMPprfNonNegVal_S, SCSprf_non_neg_val_S, NULL, SAACFprf_non_neg_val_S,
