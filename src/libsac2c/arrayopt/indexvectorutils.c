@@ -594,6 +594,11 @@ CreateIvArray (node *arg_node, node **vardecs, node **preassigns)
  *        Then, idxsiv2offset would be turned into a proper
  *        idxs2offset by some other, post-SAACYC traversal.
  *
+ *
+ * @param: arg_node an N_prf node.
+ *
+ * @param: cwlpart: Optional consumerWL N_part.
+ *
  * @return: the desired avis node, pointing to a vector N_array.
  *          If we can't find one, we return NULL.
  *
@@ -614,18 +619,17 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
     node *iv = NULL;
     node *iv2 = NULL;
     node *iv0 = NULL;
-    node *arg1;
     constant *ivc = NULL;
     node *narr = NULL;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (N_prf == NODE_TYPE (arg_node), "Expected N_prf");
-    arg1 = PRF_ARG1 (arg_node);
+    pat1 = PMprf (1, PMAisPrf (F_noteintersect), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                  PMvar (1, PMAgetNode (&arg2), 0), 0);
 
-    pat1 = PMprf (2, PMAisPrf (F_noteintersect), PMAgetNode (&arg1), 0);
-
-    pat2 = PMprf (1, PMAisPrf (F_idxs2offset), 1, PMvar (1, PMAgetNode (&shp), 0), 1,
+    pat2 = PMprf (1, PMAisPrf (F_idxs2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
                   PMvar (1, PMAgetNode (&iv0), 0), 0);
 
     pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&shp), 0),
@@ -635,10 +639,8 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
 
     pat5 = PMarray (1, PMAgetNode (&narr), 1, PMskip (0));
 
-    if ((NULL == z) && /* skip any noteintersect */
-        (PMmatchFlat (pat1, arg1))) {
-        arg1 = PRF_ARG1 (arg1);
-    }
+    arg1 = PRF_ARG1 (arg_node);
+    PMmatchFlat (pat1, arg_node); /* Skip any noteintersect */
 
     /* If we have an N_array, we are done. Return its LHS */
     if (PMmatchFlat (pat5, arg1)) {
@@ -653,7 +655,7 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
              */
             z = ID_AVIS (iv);
         } else { /* May be withid_vec. If so, get withid_ids */
-            if (IVUTivMatchesWithid (iv, PART_WITHID (cwlpart))) {
+            if ((NULL != cwlpart) && (IVUTivMatchesWithid (iv, PART_WITHID (cwlpart)))) {
                 z = TCconvertIds2Exprs (WITHID_IDS (PART_WITHID (cwlpart)));
                 z = CreateIvArray (z, vardecs, preassigns);
             }
