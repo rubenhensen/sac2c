@@ -476,6 +476,10 @@ LFUfindLoopInductionVariable (node *arg_node)
  *
  * @result: TRUE if arg_node is a member of the ids chain.
  *
+ * FIXME: This function will be dead code later today. I'm leaving
+ *        it here until LFUindexOfMemberIds is in place and
+ *        has replaced all refernces to LFUisAvisMemberIds.
+ *
  *****************************************************************************/
 bool
 LFUisAvisMemberIds (node *arg_node, node *ids)
@@ -488,6 +492,40 @@ LFUisAvisMemberIds (node *arg_node, node *ids)
     while ((NULL != ids) && (!z)) {
         z = (arg_node == IDS_AVIS (ids));
         ids = IDS_NEXT (ids);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn int LFUindexOfMemberIds( node *arg_node, node *ids)
+ *
+ * @brief: Function for finding the index of an N_avis node
+ *         in an N_ids chain.
+ *
+ * @param: arg_node - an N_avis node.
+ *         ids      - an N_ids chain.
+ *
+ * @result: 0...(length of idschain -1) if arg_node is a member of the ids chain.
+ *          -1 if arg_node is not a member of the ids chain.
+ *
+ *****************************************************************************/
+int
+LFUindexOfMemberIds (node *arg_node, node *ids)
+{
+    int z = -1;
+    int j = 0;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (N_avis == NODE_TYPE (arg_node), "Expected N_avis node");
+    while ((NULL != ids) && (-1 == z)) {
+        if (arg_node == IDS_AVIS (ids)) {
+            z = j;
+        }
+        ids = IDS_NEXT (ids);
+        j++;
     }
 
     DBUG_RETURN (z);
@@ -780,6 +818,7 @@ LFUcreateAssigns (constant *idx, void *accu, void *local_info)
  *                     This argument was introduced to fix Bug #1027,
  *                     where the external call to a lacfun was int[2],
  *                     but the recursive call was still int[.].
+ *
  *
  *****************************************************************************/
 node *

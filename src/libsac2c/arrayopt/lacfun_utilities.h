@@ -12,6 +12,7 @@ extern node *LFUfindAssignBeforeCond (node *arg_node);
 extern node *LFUfindAssignOfType (node *assigns, nodetype n);
 extern bool LFUisLURPredicate (node *arg_node);
 extern bool LFUisAvisMemberIds (node *arg_node, node *ids);
+extern int LFUindexOfMemberIds (node *arg_node, node *ids);
 extern node *LFUinsertAssignIntoLacfun (node *arg_node, node *assign, node *oldavis);
 extern node *LFUfindRecursiveCallAssign (node *arg_node);
 extern node *LFUfindFundefReturn (node *arg_node);
