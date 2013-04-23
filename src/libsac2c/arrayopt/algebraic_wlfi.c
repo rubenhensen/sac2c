@@ -1404,8 +1404,8 @@ BuildInverseProjections (node *arg_node, info *arg_info)
 
     /* ivid is either iv from sel(iv, PWL) or rebuilt value of same */
     ivid = TCgetNthExprsExpr (WLIVAVIS, PRF_ARGS (arg_node));
-    if ((PMmatchFlat (pat3, ivid)) || (PMmatchFlat (pat4, ivid))) {
-
+    /* Guard-skipping for the benefit of Bug #525. */
+    if ((PMmatchFlatSkipGuards (pat3, ivid)) || (PMmatchFlat (pat4, ivid))) {
         /* Iterate across intersects */
         for (curpart = 0; curpart < numpart; curpart++) {
             curelidxlb = WLPROJECTION1 (curpart);
@@ -1971,7 +1971,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
         if (PMmatchFlat (pat3, AVIS_MIN (ivavis))) {
             ivmin = DUPdoDupTree (ivminmax);
         } else {
-            DBUG_ASSERT (FALSE, "Expected N_array ivmin");
+            DBUG_PRINT ("Expected N_array ivmin for ivavis=%s", AVIS_NAME (ivavis));
         }
 
         if (PMmatchFlat (pat3, AVIS_MAX (ivavis))) {
@@ -1991,98 +1991,102 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
                 ivmax = DUPdoDupTree (ivminmax); /* normal AWLF */
             }
         } else {
-            DBUG_ASSERT (FALSE, "Expected N_array ivmax");
+            DBUG_PRINT ("Expected N_array ivmax for ivavis=%s", AVIS_NAME (ivavis));
         }
     }
 
     pwlp = WITH_PART (INFO_PRODUCERWL (arg_info));
 
-    while (NULL != pwlp) {
-        pwlpb1 = GENERATOR_BOUND1 (PART_GENERATOR (pwlp));
-        if (PMmatchFlatSkipExtrema (pat1, pwlpb1)) {
-            pwlpb1 = gen1;
-        }
-        pwlpb1 = WLSflattenBound (DUPdoDupTree (pwlpb1), &INFO_VARDECS (arg_info),
-                                  &INFO_PREASSIGNS (arg_info));
+    if ((NULL != ivmin) && (NULL != ivmax)) {
+        while (NULL != pwlp) {
+            pwlpb1 = GENERATOR_BOUND1 (PART_GENERATOR (pwlp));
+            if (PMmatchFlatSkipExtrema (pat1, pwlpb1)) {
+                pwlpb1 = gen1;
+            }
+            pwlpb1 = WLSflattenBound (DUPdoDupTree (pwlpb1), &INFO_VARDECS (arg_info),
+                                      &INFO_PREASSIGNS (arg_info));
 
-        pwlpb2 = GENERATOR_BOUND2 (PART_GENERATOR (pwlp));
-        if (PMmatchFlatSkipExtrema (pat2, pwlpb2)) {
-            pwlpb2 = gen2;
-        }
-        pwlpb2 = WLSflattenBound (DUPdoDupTree (pwlpb2), &INFO_VARDECS (arg_info),
-                                  &INFO_PREASSIGNS (arg_info));
+            pwlpb2 = GENERATOR_BOUND2 (PART_GENERATOR (pwlp));
+            if (PMmatchFlatSkipExtrema (pat2, pwlpb2)) {
+                pwlpb2 = gen2;
+            }
+            pwlpb2 = WLSflattenBound (DUPdoDupTree (pwlpb2), &INFO_VARDECS (arg_info),
+                                      &INFO_PREASSIGNS (arg_info));
 
-        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (pwlpb1), NULL));
-        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (pwlpb2), NULL));
+            expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (pwlpb1), NULL));
+            expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (pwlpb2), NULL));
 
-        avismin = IntersectBoundsBuilderOne (arg_node, arg_info, pwlp, 1, ivmin, ivmax);
-        DBUG_ASSERT (NULL != avismin, "Expected non-NULL avismin");
+            avismin
+              = IntersectBoundsBuilderOne (arg_node, arg_info, pwlp, 1, ivmin, ivmax);
+            DBUG_ASSERT (NULL != avismin, "Expected non-NULL avismin");
 
-        avismax = IntersectBoundsBuilderOne (arg_node, arg_info, pwlp, 2, ivmin, ivmax);
-        /* avismin and avismax are now denormalized */
+            avismax
+              = IntersectBoundsBuilderOne (arg_node, arg_info, pwlp, 2, ivmin, ivmax);
+            /* avismin and avismax are now denormalized */
 
-        DBUG_ASSERT (NULL != avismax, "Expected non_NULL avismax");
+            DBUG_ASSERT (NULL != avismax, "Expected non_NULL avismax");
 
-        /* Swap (some) elements of avismin and avismax, due to
-         * subtractions of the form (k - iv) in the index vector
-         * We have to move down the scalarized version of avismin/avismax
-         * as a following swap would otherwise result in value error.
-         */
-        minarr = DUPdoDupTree (LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismin))));
-        avismin = FLATGflattenExpression (minarr, &INFO_VARDECS (arg_info),
-                                          &INFO_PREASSIGNS (arg_info),
-                                          TYcopyType (AVIS_TYPE (avismin)));
-        maxarr = DUPdoDupTree (LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismax))));
-        avismax = FLATGflattenExpression (maxarr, &INFO_VARDECS (arg_info),
-                                          &INFO_PREASSIGNS (arg_info),
-                                          TYcopyType (AVIS_TYPE (avismax)));
+            /* Swap (some) elements of avismin and avismax, due to
+             * subtractions of the form (k - iv) in the index vector
+             * We have to move down the scalarized version of avismin/avismax
+             * as a following swap would otherwise result in value error.
+             */
+            minarr = DUPdoDupTree (LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismin))));
+            avismin = FLATGflattenExpression (minarr, &INFO_VARDECS (arg_info),
+                                              &INFO_PREASSIGNS (arg_info),
+                                              TYcopyType (AVIS_TYPE (avismin)));
+            maxarr = DUPdoDupTree (LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismax))));
+            avismax = FLATGflattenExpression (maxarr, &INFO_VARDECS (arg_info),
+                                              &INFO_PREASSIGNS (arg_info),
+                                              TYcopyType (AVIS_TYPE (avismax)));
 
-        minarr = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismin)));
-        maxarr = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismax)));
-        minex = ARRAY_AELEMS (minarr);
-        maxex = ARRAY_AELEMS (maxarr);
-        while (NULL != minex) {
-            minel = EXPRS_EXPR (minex);
-            maxel = EXPRS_EXPR (maxex);
-            DBUG_ASSERT (AVIS_FINVERSESWAP (ID_AVIS (minel))
-                           == AVIS_FINVERSESWAP (ID_AVIS (maxel)),
-                         "Expected matching swap values");
-            if (AVIS_FINVERSESWAP (ID_AVIS (minel))) {
-                DBUG_PRINT ("Swapping F-inverse %s and %s", AVIS_NAME (ID_AVIS (minel)),
-                            AVIS_NAME (ID_AVIS (maxel)));
-                AVIS_FINVERSESWAP (ID_AVIS (minel)) = FALSE;
-                AVIS_FINVERSESWAP (ID_AVIS (maxel)) = FALSE;
-                EXPRS_EXPR (minex) = maxel;
-                EXPRS_EXPR (maxex) = minel;
+            minarr = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismin)));
+            maxarr = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (avismax)));
+            minex = ARRAY_AELEMS (minarr);
+            maxex = ARRAY_AELEMS (maxarr);
+            while (NULL != minex) {
+                minel = EXPRS_EXPR (minex);
+                maxel = EXPRS_EXPR (maxex);
+                DBUG_ASSERT (AVIS_FINVERSESWAP (ID_AVIS (minel))
+                               == AVIS_FINVERSESWAP (ID_AVIS (maxel)),
+                             "Expected matching swap values");
+                if (AVIS_FINVERSESWAP (ID_AVIS (minel))) {
+                    DBUG_PRINT ("Swapping F-inverse %s and %s",
+                                AVIS_NAME (ID_AVIS (minel)), AVIS_NAME (ID_AVIS (maxel)));
+                    AVIS_FINVERSESWAP (ID_AVIS (minel)) = FALSE;
+                    AVIS_FINVERSESWAP (ID_AVIS (maxel)) = FALSE;
+                    EXPRS_EXPR (minex) = maxel;
+                    EXPRS_EXPR (maxex) = minel;
+                }
+
+                minex = EXPRS_NEXT (minex);
+                maxex = EXPRS_NEXT (maxex);
             }
 
-            minex = EXPRS_NEXT (minex);
-            maxex = EXPRS_NEXT (maxex);
+            expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (avismin), NULL));
+            expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (avismax), NULL));
+
+            curavis
+              = IntersectNullComputationBuilder (ivmin, ivmax, pwlpb1, pwlpb2, arg_info);
+            expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
+
+            curavis = Intersect1PartBuilder (ivmin, ivmax, pwlpb1, pwlpb2, arg_info);
+            expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
+
+            /* Reserve room for inverse projections */
+            hole = IVEXImakeIntScalar (NOINVERSEPROJECTION, &INFO_VARDECS (arg_info),
+                                       &INFO_PREASSIGNS (arg_info));
+            expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (hole), NULL));
+            expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (hole), NULL));
+
+            pwlp = PART_NEXT (pwlp);
         }
 
-        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (avismin), NULL));
-        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (avismax), NULL));
-
-        curavis
-          = IntersectNullComputationBuilder (ivmin, ivmax, pwlpb1, pwlpb2, arg_info);
-        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
-
-        curavis = Intersect1PartBuilder (ivmin, ivmax, pwlpb1, pwlpb2, arg_info);
-        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (curavis), NULL));
-
-        /* Reserve room for inverse projections */
-        hole = IVEXImakeIntScalar (NOINVERSEPROJECTION, &INFO_VARDECS (arg_info),
-                                   &INFO_PREASSIGNS (arg_info));
-        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (hole), NULL));
-        expn = TCappendExprs (expn, TBmakeExprs (TBmakeId (hole), NULL));
-
-        pwlp = PART_NEXT (pwlp);
+        cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
+                  ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
+                  : "(naked consumer)";
+        DBUG_PRINT ("Built bounds intersect computations for consumer-WL %s", cwlnm);
     }
-
-    cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
-              ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
-              : "(naked consumer)";
-    DBUG_PRINT ("Built bounds intersect computations for consumer-WL %s", cwlnm);
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
@@ -2093,7 +2097,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 
 /** <!--********************************************************************-->
  *
- * @fn node *attachIntersectCalc( node *arg_node, info *arg_info, node *ivprime)
+ * @fn node *attachIntersectCalc( node *arg_node, info *arg_info, node *ivavis)
  *
  * @brief  We are looking at a sel() N_prf for:
  *
@@ -2126,7 +2130,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
  *
  *      See IntersectBoundsBuilderOne for details.
  *
- *      ivprimeavis is either an avis, from iv in a _sel_VxA_( iv, producerWL),
+ *      ivavis is either an avis, from iv in a _sel_VxA_( iv, producerWL),
  *      or from a rebuilt iv from an _idx_sel( offset, producerWL).
  *
  * @return: The N_avis for the newly created iv'/offset' node.
@@ -2137,7 +2141,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
  *****************************************************************************/
 
 static node *
-attachIntersectCalc (node *arg_node, info *arg_info, node *ivprimeavis)
+attachIntersectCalc (node *arg_node, info *arg_info, node *ivavis)
 {
     node *ivpavis;
     node *ivassign;
@@ -2155,7 +2159,7 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivprimeavis)
     DBUG_PRINT ("Inserting attachextrema for producerWL %s into consumerWL %s",
                 AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))), nm);
 
-    intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, ivprimeavis);
+    intersectcalc = IntersectBoundsBuilder (arg_node, arg_info, ivavis);
 
     if (NULL != intersectcalc) {
         /* WLARGNODE */
@@ -2165,14 +2169,14 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivprimeavis)
                                                    INFO_PRODUCERWLLHS (arg_info))),
                                                  NULL));
         /* WLIVAVIS */
-        args = TCappendExprs (args, TBmakeExprs (TBmakeId (ivprimeavis), NULL));
+        args = TCappendExprs (args, TBmakeExprs (TBmakeId (ivavis), NULL));
         /* WLINTERSECT1/2 */
         args = TCappendExprs (args, intersectcalc);
 
         ztype = AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)));
         ivshape = SHgetUnrLen (TYgetShape (ztype));
         ivpavis
-          = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ivprimeavis)), TYeliminateAKV (ztype));
+          = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ivavis)), TYeliminateAKV (ztype));
 
         INFO_VARDECS (arg_info) = TBmakeVardec (ivpavis, INFO_VARDECS (arg_info));
         ivassign = TBmakeAssign (TBmakeLet (TBmakeIds (ivpavis, NULL),
