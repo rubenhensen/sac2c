@@ -87,9 +87,44 @@ WLUTisIdsMemberPartition (node *arg_node, node *partn)
     if (NULL != partn) {
         nassgns = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (partn)));
         while ((NULL != nassgns) && (!z)) {
-            z = LFUisAvisMemberIds (ID_AVIS (arg_node), LET_IDS (ASSIGN_STMT (nassgns)));
+            if (-1
+                != LFUindexOfMemberIds (ID_AVIS (arg_node),
+                                        LET_IDS (ASSIGN_STMT (nassgns)))) {
+                z = TRUE;
+            }
             nassgns = ASSIGN_NEXT (nassgns);
         }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *WLUTfindArrayForBound( node *bnd)
+ *
+ * @brief Assuming that bnd is GENERATOR_BOUND1/2 for a WL generator,
+ *        try to find an N_array that gives its elements.
+ *
+ * @param:  N_id or N_array
+ * @result: N_array, or NULL if we can't find an N_array.
+ *
+ *****************************************************************************/
+node *
+WLUTfindArrayForBound (node *bnd)
+{
+    node *z = NULL;
+    pattern *pat;
+
+    DBUG_ENTER ();
+
+    if (N_array == NODE_TYPE (bnd)) {
+        z = bnd;
+    }
+
+    if ((NULL == z) && (N_id == NODE_TYPE (bnd))) {
+        pat = PMarray (1, PMAgetNode (&z), 1, PMskip (0));
+        PMmatchFlat (pat, bnd);
     }
 
     DBUG_RETURN (z);
