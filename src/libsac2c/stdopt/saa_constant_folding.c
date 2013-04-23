@@ -161,10 +161,12 @@ SAACF_ids (node *arg_node, info *arg_info)
  * description:
  *   Replace the expression:
  *      reshape( shp, arr)
- *   by
- *      arr
- *   when SAA information can show that:
+ *   by arr, when SAA information can show that the reshape is idempotent,
+ *   i.e.:
+ *
  *      shp <==> shape(arr)
+ *
+ *   We have to skip past guards on both arguments.
  *
  * returns:
  *   new result node or NULL if no replacement is possible.
@@ -174,26 +176,37 @@ node *
 SAACFprf_reshape (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    pattern *pat1;
+    pattern *pat2;
+    pattern *pat3;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    node *ashp = NULL;
+    node *ashpp = NULL;
+    node *arg1p = NULL;
 
     DBUG_ENTER ();
 
-    /* Check if arg1 matches shape of arg2 */
-    if (((NULL != PRF_ARG1 (arg_node)) && (NULL != PRF_ARG2 (arg_node))
-         && (N_id == NODE_TYPE (PRF_ARG1 (arg_node)))
-         && (NULL != AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))))
-         && (CMPT_EQ
-             == CMPTdoCompareTree (PRF_ARG1 (arg_node),
-                                   AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))))))
-        ||
-        /* or if rhs of assign of arg1 matches shape of arg2 */
-        ((NULL != AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node))))
-         && (CMPT_EQ
-             == CMPTdoCompareTree (ASSIGN_RHS (
-                                     AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node)))),
-                                   AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node))))))) {
-        DBUG_PRINT ("idempotent _reshape_ eliminated");
-        res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    pat1 = PMprf (1, PMAisPrf (F_reshape_VxA), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                  PMvar (1, PMAgetNode (&arg2), 0), PMskip (0));
+
+    pat2 = PMany (1, PMAgetNode (&ashpp), 0);
+    pat3 = PMany (1, PMAgetNode (&arg1p), 0);
+
+    if ((PMmatchFlat (pat1, arg_node)) && (NULL != AVIS_SHAPE (ID_AVIS (arg2)))) {
+        ashp = AVIS_SHAPE (ID_AVIS (arg2));
+        /* SkipGuards required for unit test SAACFprf_reshapeAKD.sac */
+        if ((PMmatchFlatSkipGuards (pat2, ashp)) && (PMmatchFlatSkipGuards (pat3, arg1))
+            && (CMPT_EQ == CMPTdoCompareTree (ashpp, arg1p))) {
+            DBUG_PRINT ("idempotent _reshape_ eliminated");
+            res = DUPdoDupNode (arg2);
+        }
     }
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+
     DBUG_RETURN (res);
 }
 
@@ -436,7 +449,7 @@ SAACFprf_take_SxV (node *arg_node, info *arg_info)
  *
  * @result New arg_node if folding happens.
  *
- * SCSprf_drop2.sac requires skipping guards.
+ * NB. SCSprf_drop2.sac requires skipping guards.
  *
  ********************************************************************/
 
