@@ -101,24 +101,25 @@
  *****************************************************************************/
 
 static node *
-StructOpSel (node *arg_node, info *arg_info)
+StructOpSelHelper (node *prfarg1, node *prfarg2, info *arg_info)
 {
-    node *result = NULL;
 
+    node *result = NULL;
     int iv_len;
     int X_dim;
-
-    constant *take_vec;
+    constant *take_vec = NULL;
     constant *con1 = NULL;
     constant *con2 = NULL;
     constant *arg2fs = NULL;
     int offset;
-    node *tmpivid;
-    node *tmpivval;
-    node *tmpivavis;
-    node *tmpXid;
+    node *tmpivid = NULL;
+    node *tmpivval = NULL;
+    node *tmpivavis = NULL;
+    node *tmpXid = NULL;
     node *arg2 = NULL;
-    pattern *pat1;
+    pattern *patconst;
+    pattern *patarray;
+
     DBUG_ENTER ();
 
     /**
@@ -127,10 +128,13 @@ StructOpSel (node *arg_node, info *arg_info)
      *                 arg2    to N_array-node
      *                 arg2fs  to the frameshape of N_array
      */
-    pat1 = PMprf (1, PMAisPrf (F_sel_VxA), 2, PMconst (1, PMAgetVal (&con1)),
-                  PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0)));
+    patconst = PMconst (1, PMAgetVal (&con1));
+    patarray = PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0));
 
-    if (PMmatchFlat (pat1, arg_node)) {
+    if ((PMmatchFlat (patconst, prfarg1)) &&
+        /* Bug #525 must skip guards here. */
+        /* Unfortunately, doing so introduces Bug #1060. */
+        (PMmatchFlat (patarray, prfarg2))) { /* Get N_array */
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);
         arg2fs = COfreeConstant (arg2fs);
         iv_len = SHgetUnrLen (COgetShape (con1));
@@ -146,8 +150,7 @@ StructOpSel (node *arg_node, info *arg_info)
             // Case 1 : Exact selection: do the sel operation now.
             DBUG_PRINT ("Exact selection performed for %s = _sel_VxA_( %s, %s)",
                         AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))),
-                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+                        AVIS_NAME (ID_AVIS (prfarg1)), AVIS_NAME (ID_AVIS (prfarg2)));
             result = tmpXid;
         } else {
             // Case 2: Selection vector has more elements than frame_dim(X):
@@ -156,10 +159,9 @@ StructOpSel (node *arg_node, info *arg_info)
             DBUG_ASSERT (N_id == NODE_TYPE (tmpXid), "X element not N_id");
             con1 = COdrop (take_vec, con1, NULL); // iv suffix
             take_vec = COfreeConstant (take_vec);
-            tmpivavis
-              = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
-                            TYmakeAKS (TYmakeSimpleType (T_int),
-                                       SHcreateShape (1, iv_len - X_dim)));
+            tmpivavis = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ID_AVIS (prfarg1))),
+                                    TYmakeAKS (TYmakeSimpleType (T_int),
+                                               SHcreateShape (1, iv_len - X_dim)));
             tmpivval = COconstant2AST (con1);
             INFO_VARDECS (arg_info) = TBmakeVardec (tmpivavis, INFO_VARDECS (arg_info));
             tmpivid = TBmakeId (tmpivavis);
@@ -169,14 +171,27 @@ StructOpSel (node *arg_node, info *arg_info)
 
             AVIS_SSAASSIGN (tmpivavis) = INFO_PREASSIGN (arg_info);
             DBUG_PRINT ("sel(iv,X) replaced iv: old: %s; new: %s",
-                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), AVIS_NAME (tmpivavis));
+                        AVIS_NAME (ID_AVIS (prfarg1)), AVIS_NAME (tmpivavis));
 
             // Create new sel() operation  _sel_VxA_(tmpiv, tmpX);
             result = TCmakePrf2 (F_sel_VxA, tmpivid, tmpXid);
         }
-        con1 = COfreeConstant (con1);
+        con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     }
-    pat1 = PMfree (pat1);
+    patconst = PMfree (patconst);
+    patarray = PMfree (patarray);
+
+    DBUG_RETURN (result);
+}
+
+static node *
+StructOpSel (node *arg_node, info *arg_info)
+{
+    node *result = NULL;
+
+    DBUG_ENTER ();
+
+    result = StructOpSelHelper (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info);
 
     DBUG_RETURN (result);
 }
@@ -187,10 +202,9 @@ StructOpSel (node *arg_node, info *arg_info)
  *   node *IdxselStructOpSel(node *arg_node, info *arg_info)
  *
  * description:
- *  Like StructOpSel(), but limited due to lack of semantic
- *  info about PRF_ARG1.
+ *  Like StructOpSel(), but for _idx_sel().
  *
- *  In addition, we may have the following situation:
+ *  We may have the following situation:
  *
  *     offset = _vect2offset( [1] [0]);
  *     z = _idx_sel_( offset, _notemaxval_( WITHID_VEC));
@@ -202,9 +216,10 @@ StructOpSel (node *arg_node, info *arg_info)
  *  WITHID_VEC, or we would end up at WITH_IDS, which have no
  *  extrema on them.
  *
+ *  Effectively, we now rebuild the iv from the offset.
+ *  Hence, the call to StructOpSelHelper...
  *
- *  FIXME: This needs to have the partial indexing support written!!
- *  See SCCFprf_sel4ivecyc.sac.
+ *  If that fails, we look for a WITHID_IDS reference.
  *
  *****************************************************************************/
 static node *
@@ -212,113 +227,59 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
 {
 
     node *result = NULL;
+    node *iv = NULL;
+    node *ivid = NULL;
+    pattern *pat3;
+    node *arg2 = NULL;
     int iv_len;
     int X_dim;
     int offset;
     constant *con1 = NULL;
-    constant *arg2fs = NULL;
-    constant *take_vec;
-    node *arg2 = NULL;
-    node *tmpXid;
-    node *tmpivid;
-    node *tmpivavis;
-    node *tmpivval;
-    pattern *pat1;
-    pattern *pat2;
-    pattern *pat3;
 
     DBUG_ENTER ();
 
-    /**
-     *   Match for    _idx_sel( constant, N_array)
-     *   and bind      con1    to constant
-     *                 arg2    to N_array-node
-     *                 arg2fs  to the frameshape of N_array
-     */
-
-    pat1 = PMprf (1, PMAisPrf (F_idx_sel), 2, PMconst (1, PMAgetVal (&con1)),
-                  PMvar (1, PMAgetNode (&arg2), 0));
-
-    pat2 = PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0));
-
-    pat3 = PMany (1, PMAgetNode (&arg2), 0);
-
-    if (PMmatchFlat (pat1, arg_node)) {
-        con1 = COfreeConstant (con1);
-        con1 = IVUToffset2Constant (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node));
+    iv = IVUToffset2Vect (arg_node, &INFO_VARDECS (arg_info), &INFO_PREASSIGN (arg_info),
+                          NULL);
+    if (NULL != iv) {
+        ivid = TBmakeId (iv);
+        result = StructOpSelHelper (ivid, PRF_ARG2 (arg_node), arg_info);
+        ivid = FREEdoFreeNode (ivid);
     }
 
-    if (NULL != con1) {
-        iv_len = SHgetUnrLen (COgetShape (con1));
-        /* Bug #525 must skip guards. */
-        if (PMmatchFlatSkipGuards (pat2, PRF_ARG2 (arg_node))) { /* Get the N_array */
-            X_dim = SHgetExtent (COgetShape (arg2fs), 0);
-            arg2fs = COfreeConstant (arg2fs);
-            DBUG_ASSERT (iv_len >= X_dim, "shape(iv) <  dim(X)");
-            take_vec = COmakeConstantFromInt (X_dim);
-            offset = COconst2Int (con1);
-            tmpXid = DUPdoDupNode (TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
-            if (iv_len == X_dim) {
-                // Case 1 : Exact selection: do the sel operation now.
-                result = DUPdoDupNode (TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
-                tmpXid = DUPdoDupNode (TCgetNthExprsExpr (offset, ARRAY_AELEMS (arg2)));
-                DBUG_PRINT ("Exact selection performed for %s = _idx_sel( %s, %s)",
-                            AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))),
-                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
-                result = tmpXid;
-            } else {
-                // Case 2: Selection vector has more elements than frame_dim(X):
-                // Perform partial selection on X now; build new selection for
-                // run-time.
-                con1 = COdrop (take_vec, con1, NULL); // iv suffix
-                take_vec = COfreeConstant (take_vec);
-                tmpivavis = TBmakeAvis (TRAVtmpVarName (
-                                          AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node)))),
-                                        TYmakeAKS (TYmakeSimpleType (T_int),
-                                                   SHcreateShape (1, iv_len - X_dim)));
-                tmpivval = COconstant2AST (con1);
-                INFO_VARDECS (arg_info)
-                  = TBmakeVardec (tmpivavis, INFO_VARDECS (arg_info));
-                tmpivid = TBmakeId (tmpivavis);
-                INFO_PREASSIGN (arg_info)
-                  = TBmakeAssign (TBmakeLet (TBmakeIds (tmpivavis, NULL), tmpivval),
-                                  INFO_PREASSIGN (arg_info));
-
-                AVIS_SSAASSIGN (tmpivavis) = INFO_PREASSIGN (arg_info);
-                DBUG_PRINT ("sel(iv,X) replaced iv: old: %s; new: %s",
-                            AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                            AVIS_NAME (tmpivavis));
-
-                // Create new sel() operation  _sel_VxA_(tmpiv, tmpX);
-                result = TCmakePrf2 (F_sel_VxA, tmpivid, tmpXid);
-            }
-        } else {
-            /* Kludge for matching WITHID_IDS:
-             * PM( pat1...)  must not skip the extrema or we lose that information
-             * on the CF result. This is due to the fact that
-             * WITH_IDS names are the same across N_part nodes, and can't have
-             * extrema on them.
+    if (NULL == result) {
+        con1 = IVUToffset2Constant (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node));
+        if (NULL != con1) {
+            iv_len = SHgetUnrLen (COgetShape (con1));
+            pat3 = PMany (1, PMAgetNode (&arg2), 0);
+            /* Code for matching WITHID_IDS:
+             * The PM( pat1...) in StructOpSelHelper  must not skip the extrema
+             * or we lose that information on the CF result.
+             * This is due to the fact that WITH_IDS names are the same
+             * across N_part nodes, and can't have extrema on them.
              *
-             * The kludge builds a copy of the WITHID_IDS element, with extrema.
+             * We build a copy of the WITHID_IDS element, with extrema.
              */
             if (NULL != INFO_PART (arg_info)) {
                 X_dim = TCcountIds (WITHID_IDS (PART_WITHID (INFO_PART (arg_info))));
                 if ((PMmatchFlatSkipExtrema (pat3, PRF_ARG2 (arg_node)))
-                    && (N_array == NODE_TYPE (arg2)) && (iv_len == X_dim)) {
-                    offset = COconst2Int (con1);
+                    && (N_array == NODE_TYPE (arg2)) /* a WITHID_IDS? */
+                    && (iv_len == X_dim)) {
+                    offset = COconst2Int (con1); /* Offset into ravel */
                     result = IVEXIwithidsKludge (offset, arg2, INFO_PART (arg_info),
                                                  &INFO_PREASSIGN (arg_info),
                                                  &INFO_VARDECS (arg_info));
-                    result = (NULL != result) ? TBmakeId (result) : result;
+                    if (NULL != result) {
+                        DBUG_PRINT (
+                          "Replaced _idx_sel( offset, WITHID_ID by WITHID_IDS=%s",
+                          AVIS_NAME (result));
+                        result = TBmakeId (result);
+                    }
                 }
             }
+            pat3 = PMfree (pat3);
+            con1 = COfreeConstant (con1);
         }
-        con1 = COfreeConstant (con1);
     }
-    pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
-    pat3 = PMfree (pat3);
 
     DBUG_RETURN (result);
 }
@@ -667,7 +628,7 @@ SCCFprf_idx_modarray_AxSxS (node *arg_node, info *arg_info)
      *           where X and val are both scalars, becomes:
      *           z = val;
      */
-    if ((NULL == z) && (TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
+    if ((TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
         && (TUisScalar (AVIS_TYPE (ID_AVIS (PRF_ARG3 (arg_node)))))) {
         z = DUPdoDupNode (PRF_ARG3 (arg_node));
         DBUG_PRINT ("_modarray_AxVxS( %s, [], %s) replaced by %s",
