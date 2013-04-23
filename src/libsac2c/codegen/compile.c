@@ -7475,7 +7475,7 @@ COMPprfMask_SxVxV (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_SxVxV", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_SxVxV__DATA", DUPdupIdsIdNt (let_ids),
                                  DUPdupNodeNt (PRF_ARG1 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG2 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
@@ -7498,7 +7498,7 @@ COMPprfMask_VxSxS (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_VxSxS", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_VxSxS__DATA", DUPdupIdsIdNt (let_ids),
                                  DUPdupNodeNt (PRF_ARG1 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG2 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
@@ -7521,7 +7521,7 @@ COMPprfMask_VxSxV (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_VxSxV", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_VxSxV__DATA", DUPdupIdsIdNt (let_ids),
                                  DUPdupNodeNt (PRF_ARG1 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG2 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
@@ -7544,7 +7544,7 @@ COMPprfMask_VxVxS (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_VxVxS", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_VxVxS__DATA", DUPdupIdsIdNt (let_ids),
                                  DUPdupNodeNt (PRF_ARG1 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG2 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);
@@ -7567,7 +7567,7 @@ COMPprfMask_VxVxV (node *arg_node, info *arg_info)
 
     let_ids = INFO_LASTIDS (arg_info);
 
-    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_VxVxV", DUPdupIdsIdNt (let_ids),
+    ret_node = TCmakeAssignIcm4 ("ND_PRF_MASK_VxVxV__DATA", DUPdupIdsIdNt (let_ids),
                                  DUPdupNodeNt (PRF_ARG1 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG2 (arg_node)),
                                  DUPdupNodeNt (PRF_ARG3 (arg_node)), NULL);

@@ -375,22 +375,22 @@
     }                                                                                    \
     }
 
-#define SAC_ND_MASK_SxSxV__DATA(to_NT, from1_NT, from2_NT, from3_NT)                     \
+#define SAC_ND_PRF_MASK_SxSxV__DATA(to_NT, from1_NT, from2_NT, from3_NT)                 \
     {                                                                                    \
         int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from3_NT); SAC_i++) {                     \
             if (SAC_ND_READ (from1_NT, 0)) {                                             \
                 SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from2_NT, 0), );           \
             } else {                                                                     \
-                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from3_NT, 0), );           \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from3_NT, SAC_i), );       \
             }                                                                            \
         }                                                                                \
     }
 
-#define SAC_ND_MASK_SxVxS__DATA(to_NT, from1_NT, from2_NT, from3_NT)                     \
+#define SAC_ND_PRF_MASK_SxVxS__DATA(to_NT, from1_NT, from2_NT, from3_NT)                 \
     {                                                                                    \
         int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from2_NT); SAC_i++) {                     \
             if (SAC_ND_READ (from1_NT, 0)) {                                             \
                 SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from2_NT, SAC_i), );       \
             } else {                                                                     \
@@ -399,19 +399,19 @@
         }                                                                                \
     }
 
-#define SAC_ND_MASK_SxVxV__DATA(to_NT, from1_NT, from2_NT, from3_NT)                     \
+#define SAC_ND_PRF_MASK_SxVxV__DATA(to_NT, from1_NT, from2_NT, from3_NT)                 \
     {                                                                                    \
         int SAC_i;                                                                       \
-        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
-            if (SAC_ND_READ (from1_NT, SAC_0)) {                                         \
+        for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from2_NT); SAC_i++) {                     \
+            if (SAC_ND_READ (from1_NT, 0)) {                                             \
                 SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from2_NT, SAC_i), );       \
             } else {                                                                     \
-                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from3_NT, 0), );           \
+                SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from3_NT, SAC_i), );       \
             }                                                                            \
         }                                                                                \
     }
 
-#define SAC_ND_PRF_MASK_VxSxS(to_NT, from1_NT, from2_NT, from3_NT)                       \
+#define SAC_ND_PRF_MASK_VxSxS__DATA(to_NT, from1_NT, from2_NT, from3_NT)                 \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
@@ -422,7 +422,7 @@
             }                                                                            \
         }                                                                                \
     }
-#define SAC_ND_PRF_MASK_VxSxV(to_NT, from1_NT, from2_NT, from3_NT)                       \
+#define SAC_ND_PRF_MASK_VxSxV__DATA(to_NT, from1_NT, from2_NT, from3_NT)                 \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
@@ -434,7 +434,7 @@
         }                                                                                \
     }
 
-#define SAC_ND_PRF_MASK_VxVxS(to_NT, from1_NT, from2_NT, from3_NT)                       \
+#define SAC_ND_PRF_MASK_VxVxS__DATA(to_NT, from1_NT, from2_NT, from3_NT)                 \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
@@ -446,7 +446,7 @@
         }                                                                                \
     }
 
-#define SAC_ND_PRF_MASK_VxVxV(to_NT, from1_NT, from2_NT, from3_NT)                       \
+#define SAC_ND_PRF_MASK_VxVxV__DATA(to_NT, from1_NT, from2_NT, from3_NT)                 \
     {                                                                                    \
         int SAC_i;                                                                       \
         for (SAC_i = 0; SAC_i < SAC_ND_A_SIZE (from1_NT); SAC_i++) {                     \
