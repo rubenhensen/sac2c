@@ -1478,6 +1478,13 @@ ScalarExtend (node *arg1avis, node *arg2, info *arg_info)
  * Case 2: min( constant, nonconstant-with-maxval):
  *         We conservatively estimate the non-constant extremum as the maxval.
  *
+ * Case 3:
+ *            min( non-constant, non-constant with maxval)
+ *          or
+ *            min( non-constant with maxval, non-constant)
+ *
+ *          maxval becomes result maxval.
+ *
  * @params lhsavis, rhs, arg_info - as expected.
  *
  * @return No explicit results. However, new N_assigns and N_vardecs
@@ -1511,16 +1518,13 @@ GenerateExtremaForMin (node *lhsavis, node *rhs, info *arg_info)
             INFO_MAXVAL (arg_info)
               = ScalarExtend (ID_AVIS (PRF_ARG1 (rhs)), PRF_ARG2 (rhs), arg_info);
         }
+        // Case 2:
         if (c2 && (!c1) && (!e1) && (NULL == INFO_MINVAL (arg_info))) {
             INFO_MAXVAL (arg_info)
               = ScalarExtend (ID_AVIS (PRF_ARG2 (rhs)), PRF_ARG1 (rhs), arg_info);
         }
 
         // Case 3:
-        // max( non-constant, non-constant with maxval)
-        //   or
-        // max( non-constant with maxval, non-constant)
-        //   maxval becomes result maxval.
         if ((!c1) && (!c2) && (e2) && (NULL == INFO_MAXVAL (arg_info))) {
             INFO_MAXVAL (arg_info)
               = ScalarExtend (ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs)))),
@@ -1554,6 +1558,11 @@ GenerateExtremaForMin (node *lhsavis, node *rhs, info *arg_info)
  * Case 2: max( constant, nonconstant-with-minval):
  *         We conservatively estimate the extremum as the minval.
  *
+ * Case 3:   max( non-constant, non-constant with minval)
+ *        or
+ *           max( non-constant with minval, non-constant)
+ *        minval becomes result minval.
+ *
  * @params lhsavis, rhs, arg_info - as expected.
  *
  * @return No explicit results. However, new N_assigns and N_vardecs
@@ -1580,23 +1589,19 @@ GenerateExtremaForMax (node *lhsavis, node *rhs, info *arg_info)
         e1 = NULL != AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs)));
         e2 = NULL != AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs)));
 
-        // Case 1: max( constant, nonconstant-without-minval),
-        //    or   max( nonconstant-without-minval, constant):
-        //    the constant becomes the result minval.
+        // Case 1:
         if (c1 && (!c2) && (!e2) && (NULL == INFO_MINVAL (arg_info))) {
             INFO_MINVAL (arg_info)
               = ScalarExtend (ID_AVIS (PRF_ARG1 (rhs)), PRF_ARG2 (rhs), arg_info);
         }
+
+        // Case 2:
         if (c2 && (!c1) && (!e1) && (NULL == INFO_MINVAL (arg_info))) {
             INFO_MINVAL (arg_info)
               = ScalarExtend (ID_AVIS (PRF_ARG2 (rhs)), PRF_ARG1 (rhs), arg_info);
         }
 
         // Case 3:
-        // max( non-constant, non-constant with minval)
-        //   or
-        // max( non-constant with minval, non-constant)
-        //   minval becomes result minval.
         if ((!c1) && (!c2) && (e2) && (NULL == INFO_MINVAL (arg_info))) {
             INFO_MINVAL (arg_info)
               = ScalarExtend (ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs)))),
