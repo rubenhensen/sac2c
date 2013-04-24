@@ -369,7 +369,7 @@ libsac_targets := libsac$(CROSS_VARIANT).seq.a                   \
                   libsac$(CROSS_VARIANT).mt.pth.a                \
                   libsac$(CROSS_VARIANT).mt.pth$(SHARED_LIB_EXT) \
 #                  libsac$(CROSS_VARIANT).mt.lpel.a               \
-#                  libsac$(CROSS_VARIANR).mt.lpel$(SHARED_LIB_EXT)\
+#                  libsac$(CROSS_VARIANT).mt.lpel$(SHARED_LIB_EXT)\
                   libsac$(CROSS_VARIANT).mt.omp.a                \
                   libsac$(CROSS_VARIANT).mt.omp$(SHARED_LIB_EXT) 
 else
@@ -378,7 +378,7 @@ libsac_targets := libsac$(CROSS_VARIANT).seq.a                   \
                   libsac$(CROSS_VARIANT).mt.pth.a                \
                   libsac$(CROSS_VARIANT).mt.pth$(SHARED_LIB_EXT) \
                   libsac$(CROSS_VARIANT).mt.lpel.a               \
-                  libsac$(CROSS_VARIANR).mt.lpel$(SHARED_LIB_EXT)\
+                  libsac$(CROSS_VARIANT).mt.lpel$(SHARED_LIB_EXT)\
                   libsac$(CROSS_VARIANT).mt.omp.a                \
                   libsac$(CROSS_VARIANT).mt.omp$(SHARED_LIB_EXT)
 endif
