@@ -627,6 +627,7 @@ node *
 LACSIid (node *arg_node, info *arg_info)
 {
     shape *shp;
+    shape *ravelshp;
     node *newexprs;
     node *newlacfunexprs = NULL;
     node *rca;
@@ -636,6 +637,7 @@ LACSIid (node *arg_node, info *arg_info)
     ntype *scalar_type;
     node *arg;
     node *recursivearg = NULL;
+    node *exprs;
     int len;
 
     DBUG_ENTER ();
@@ -651,13 +653,13 @@ LACSIid (node *arg_node, info *arg_info)
 
         /* Does this LACFUN argument meet our criteria for LACS? */
         if (TUshapeKnown (AVIS_TYPE (avis))
-            && (!LACSIargHasAvisScalars (INFO_ARGNUM (arg_info), INFO_AP (arg_info)))
-            && (!TYisAKV (AVIS_TYPE (avis))) &&
+            && (!LACSIargHasAvisScalars (INFO_ARGNUM (arg_info), INFO_AP (arg_info))) &&
             // checking outside call here is fruitless. We
             // must check loop-invariance, too. ( !TYisAKV( AVIS_TYPE( avis)))   &&
             (TYgetDim (AVIS_TYPE (avis)) > 0)) {
 
             shp = TYgetShape (AVIS_TYPE (avis));
+            ravelshp = SHcreateShape (1, SHgetUnrLen (shp));
             len = SHgetUnrLen (shp);
             if ((len > 0) && (len <= global.minarray)) {
                 DBUG_PRINT ("Scalarizing lacfun arg: %s", AVIS_NAME (ARG_AVIS (arg)));
@@ -669,9 +671,14 @@ LACSIid (node *arg_node, info *arg_info)
                  * dealt with in LACSfundef and LACSassign, respectively.
                  * INFO_EXTARGS will be handled when we return to LACSap.
                  * That will complete changes to the calling function.
+                 *
+                 * NB. We use the ravel of shp.
+                 *
                  */
+
+                DBUG_ASSERT (0 != SHgetDim (shp), "Why scalarize a scalar?");
                 newexprs = LFUscalarizeArray (avis, &INFO_PREASSIGNS (arg_info),
-                                              &INFO_VARDECS (arg_info), shp);
+                                              &INFO_VARDECS (arg_info), ravelshp);
 
                 if (FUNDEF_ISLOOPFUN (lacfundef)) {
                     recursivearg
@@ -680,7 +687,7 @@ LACSIid (node *arg_node, info *arg_info)
                     newlacfunexprs
                       = LFUscalarizeArray (ID_AVIS (EXPRS_EXPR (recursivearg)),
                                            &INFO_PREASSIGNSLACFUN (arg_info),
-                                           &FUNDEF_VARDECS (lacfundef), shp);
+                                           &FUNDEF_VARDECS (lacfundef), ravelshp);
                 }
                 INFO_EXTARGS (arg_info)
                   = TCappendExprs (INFO_EXTARGS (arg_info), newexprs);
@@ -693,9 +700,9 @@ LACSIid (node *arg_node, info *arg_info)
                 arg = TCgetNthArg (INFO_ARGNUM (arg_info), FUNDEF_ARGS (lacfundef));
                 scalar_type = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))),
                                          SHcreateShape (0));
-                AVIS_SCALARS (ARG_AVIS (arg))
-                  = TBmakeArray (scalar_type, SHcopyShape (shp),
-                                 TCcreateExprsFromArgs (newargs));
+                exprs = TCcreateExprsFromArgs (newargs);
+                exprs = TBmakeArray (scalar_type, SHcopyShape (shp), exprs);
+                AVIS_SCALARS (ARG_AVIS (arg)) = exprs;
 
                 /**
                  * Lastly, we prefix the recursive call to reflect the

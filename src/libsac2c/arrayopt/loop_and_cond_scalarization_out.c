@@ -290,7 +290,6 @@ BuildFunconds (node *avis, node *newexprsthen, node *newexprselse, info *arg_inf
     node *funcond;
     node *calleravis;
     ntype *typ;
-    ntype *styp;
     node *narr;
     node *elems = NULL;
     shape *shp;
@@ -322,15 +321,14 @@ BuildFunconds (node *avis, node *newexprsthen, node *newexprselse, info *arg_inf
     // as a way to tie the scalarized N_id nodes to the non-scalarized
     // original array.
     //
-    // the use AVIS_LACSO is emphemeral, as it exists only within this
+    // I.e., the use of AVIS_LACSO is emphemeral, as it exists only within this
     // traversal. It you can think of a nice way to tie those
     // together without using an N_avis element, please feel free to
     // change it.
     //
-    styp = TYmakeAKS (TYcopyType (typ), SHcreateShape (0));
-    shp = SHcopyShape (TYgetShape (AVIS_TYPE (avis)));
-    narr
-      = TCmakeVector (TYmakeAKS (TYcopyType (TYgetScalar (typ)), SHmakeShape (0)), elems);
+    typ = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (avis))), SHcreateShape (0));
+    shp = TYgetShape (AVIS_TYPE (avis));
+    narr = TBmakeArray (typ, SHcopyShape (shp), elems);
     AVIS_LACSO (IDS_AVIS (INFO_LETIDS (arg_info))) = narr;
 
     DBUG_RETURN (assgns);
@@ -508,7 +506,7 @@ BuildNarrayForAvisSonFromExprs (node *arg_node)
 
 /******************************************************************************
  *
- * function: node *BuildNarrayForAvisSonFromAssigns( nassgn);
+ * function: node *BuildNarrayForAvisSonFromAssigns( arg_node, node *avis);
  *
  * description: Build N_array of scalarized names from N_assign
  *              chain.
@@ -517,29 +515,34 @@ BuildNarrayForAvisSonFromExprs (node *arg_node)
  *              but if we ever propagate AVIS_MIN/MAX out of
  *              lacfuns, they will need the same treatment.
  *
+ * @param: arg_node - an N_assign chain of lacso scalars.
+ * @param: resavis: the N_avis of the result.
+ *         This is used to create the correct N_array result shape.
+ *         This is needed because if have a non-vector result
+ *         (e.g., int[2,3]), we have to build the N_array with
+ *         that same shape.
+ *
  *****************************************************************************/
 static node *
-BuildNarrayForAvisSonFromAssigns (node *arg_node)
+BuildNarrayForAvisSonFromAssigns (node *arg_node, node *resavis)
 {
     node *elems = NULL;
-    node *avis;
     node *narr;
+    node *elavis;
     ntype *typ;
+    shape *shp;
 
     DBUG_ENTER ();
 
-    // First element will do as well as any for type/shape.
-    avis = IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)));
-    typ = TYcopyType (AVIS_TYPE (avis));
-
     while (NULL != arg_node) {
-        avis = IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)));
-        elems = TCappendExprs (elems, TBmakeExprs (TBmakeId (avis), NULL));
+        elavis = IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)));
+        elems = TCappendExprs (elems, TBmakeExprs (TBmakeId (elavis), NULL));
         arg_node = ASSIGN_NEXT (arg_node);
     }
 
-    narr
-      = TCmakeVector (TYmakeAKS (TYcopyType (TYgetScalar (typ)), SHmakeShape (0)), elems);
+    typ = TYmakeAKS (TYcopyType (TYgetScalar (AVIS_TYPE (resavis))), SHcreateShape (0));
+    shp = TYgetShape (AVIS_TYPE (resavis));
+    narr = TBmakeArray (typ, SHcopyShape (shp), elems);
 
     DBUG_RETURN (narr);
 }
@@ -703,6 +706,7 @@ node *
 LACSOid (node *arg_node, info *arg_info)
 {
     shape *shp;
+    shape *ravelshp;
     node *lacfundef;
     node *avis;
     node *funcond;
@@ -736,9 +740,11 @@ LACSOid (node *arg_node, info *arg_info)
                 DBUG_ASSERT (N_funcond == NODE_TYPE (funcond),
                              "Did not find N_funcond at N_return");
 
+                DBUG_ASSERT (0 != SHgetDim (shp), "Why scalarize a scalar?");
+                ravelshp = SHcreateShape (1, SHgetUnrLen (shp));
                 newexprsthen = LFUscalarizeArray (ID_AVIS (FUNCOND_THEN (funcond)),
                                                   &INFO_PREASSIGNSTHEN (arg_info),
-                                                  &INFO_VARDECS (arg_info), shp);
+                                                  &INFO_VARDECS (arg_info), ravelshp);
 
                 if (NULL != INFO_FDA (arg_info)) { // May be CONDFUN
                     DBUG_PRINT ("attaching THEN N_array to AVIS_LACSO( %s)",
@@ -756,14 +762,16 @@ LACSOid (node *arg_node, info *arg_info)
 
                 newexprselse = LFUscalarizeArray (ID_AVIS (FUNCOND_ELSE (funcond)),
                                                   &INFO_PREASSIGNSELSE (arg_info),
-                                                  &INFO_VARDECS (arg_info), shp);
+                                                  &INFO_VARDECS (arg_info), ravelshp);
+
+                ravelshp = SHfreeShape (ravelshp);
 
                 // Build new funconds for scalarized avis.
                 nassgn = BuildFunconds (avis, newexprsthen, newexprselse, arg_info);
 
                 DBUG_PRINT ("attaching N_array to AVIS_LACSO( %s)", AVIS_NAME (avis));
                 DBUG_ASSERT (NULL == AVIS_LACSO (avis), "Design blunder");
-                narr = BuildNarrayForAvisSonFromAssigns (nassgn);
+                narr = BuildNarrayForAvisSonFromAssigns (nassgn, avis);
                 AVIS_LACSO (avis) = narr;
                 INFO_NEWFUNCONDS (arg_info)
                   = TCappendAssign (INFO_NEWFUNCONDS (arg_info), nassgn);
