@@ -363,16 +363,13 @@
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
-#define SAC_ND_PRF_MASK(arg1, arg2, arg3) (arg1) ? (arg2) : (arg3)
-
-#define DEADCODE_SAC_ND_MASK_SxSxS__DATA(to_NT, from1_NT, from2_NT, from3_NT)            \
+#define SAC_ND_PRF_MASK_SxSxS__DATA(to_NT, from1_NT, from2_NT, from3_NT)                 \
     {                                                                                    \
         if (SAC_ND_READ (from1_NT, 0)) {                                                 \
-            SAC_ND_A_FIELD (to_N) = SAC_ND_READ (from2_NT, 0);                           \
+            SAC_ND_A_FIELD (to_NT) = SAC_ND_READ (from2_NT, 0);                          \
         } else {                                                                         \
-            SAC_ND_A_FIELD (to_N) = SAC_ND_READ (from3_NT, 0);                           \
+            SAC_ND_A_FIELD (to_NT) = SAC_ND_READ (from3_NT, 0);                          \
         }                                                                                \
-    }                                                                                    \
     }
 
 #define SAC_ND_PRF_MASK_SxSxV__DATA(to_NT, from1_NT, from2_NT, from3_NT)                 \

@@ -3463,7 +3463,7 @@ NTCCTprf_mask_VxSxS (te_info *info, ntype *args)
     arg = TYgetProductMember (args, 2);
     arg = TYeliminateAKV (arg);
     res = TYcopyType (arg);
-    res = TYmakeProductType (1, res);
+    res = TYmakeProductType (0, res);
 
     DBUG_ASSERT (FALSE, "_mask_VxSxS_ wants type of PRF_ARG2/3 but shape of PRF_ARG1");
 

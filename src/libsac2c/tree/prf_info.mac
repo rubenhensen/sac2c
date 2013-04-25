@@ -891,7 +891,7 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
        0, NULL, NULL, TEone, NULL, NULL),
 
   PRF (mask_SxSxS, (PA_S, PA_S, PA_S), 3, MASK, NOSIMD, NTCCTprf_mask_SxSxS, NULL,
-       COMPprfOp_SxSxS, NULL, SCCFprf_mask_SxSxS, NULL, SAAdim_is_0, SAAshp_is_empty,
+       COMPprfMask_SxSxS, NULL, SCCFprf_mask_SxSxS, NULL, SAAdim_is_0, SAAshp_is_empty,
        NULL, 0, NULL, NULL, TEone, NULL, NULL),
 
   PRF (mask_SxSxV, (PA_S, PA_S, PA_V), 3, MASK, NOSIMD, NTCCTprf_mask_SxSxV, NULL,
