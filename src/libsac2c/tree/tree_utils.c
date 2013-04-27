@@ -270,7 +270,7 @@ checkBoundShape (node *arg1, node *arg2)
 bool
 TULSisFullGenerator (node *generator, node *op)
 {
-    bool z;
+    bool z = FALSE;
     bool z2 = FALSE;
     int shpgen;
     constant *lb = NULL;
@@ -310,31 +310,28 @@ TULSisFullGenerator (node *generator, node *op)
         break;
 
     case N_modarray:
-        z = PMmatchFlatSkipGuards (patlb, GENERATOR_BOUND1 (generator))
-            && COisZero (lb, TRUE) && checkStepWidth (generator);
-
-        if (PMmatchFlatSkipGuards (patub, GENERATOR_BOUND2 (generator))
+        if (PMmatchFlatSkipGuards (patlb, GENERATOR_BOUND1 (generator))
+            && COisZero (lb, TRUE) && checkStepWidth (generator)
+            && PMmatchFlatSkipGuards (patub, GENERATOR_BOUND2 (generator))
             && PMmatchFlatSkipGuards (patarr, MODARRAY_ARRAY (op))) {
 
-            /* Check for matching frame shapes */
+            /* Check for matching frame shapes, or empty array shape */
             shpgen = SHgetUnrLen (ARRAY_FRAMESHAPE (ub));
-            if (0 == shpgen) {
+            if ((0 == shpgen) || (0 == ARRAY_AELEMS (arr))) {
                 z2 = TRUE;
             } else {
                 shp = TCtakeDropExprs (shpgen, 0, ARRAY_AELEMS (arr));
                 z2 = (CMPT_EQ == CMPTdoCompareTree (shp, ARRAY_AELEMS (ub)));
                 FREEdoFreeTree (shp);
             }
+            DBUG_ASSERT (N_id == NODE_TYPE (GENERATOR_BOUND2 (generator)),
+                         "Expected N_id GENERATOR_BOUND");
+
+            modarrshp = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (op)));
+            DBUG_ASSERT ((NULL == modarrshp) || (N_id == NODE_TYPE (modarrshp)),
+                         "AVIS_SHAPE not flattened");
+            z = (z2 || (GENERATOR_BOUND2 (generator) == modarrshp));
         }
-
-        DBUG_ASSERT (N_id == NODE_TYPE (GENERATOR_BOUND2 (generator)),
-                     "TULSisFullGenerator wants N_id GENERATOR_BOUND");
-
-        modarrshp = AVIS_SHAPE (ID_AVIS (MODARRAY_ARRAY (op)));
-        DBUG_ASSERT ((NULL == modarrshp) || (N_id == NODE_TYPE (modarrshp)),
-                     "TULSisFullGenerator AVIS_SHAPE not flattened");
-
-        z = z && (z2 || (GENERATOR_BOUND2 (generator) == modarrshp));
         break;
 
     default:
