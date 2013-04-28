@@ -135,6 +135,30 @@ SCSisNonneg (node *arg_node)
     DBUG_RETURN (z);
 }
 
+bool
+SCSisNegative (node *arg_node)
+{
+    pattern *pat;
+    constant *con = NULL;
+    bool z;
+
+    pat = PMconst (1, PMAgetVal (&con));
+
+    DBUG_ENTER ();
+
+    z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNeg (con, TRUE);
+
+    if (!z) {
+        con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
+        z = (NULL != con) && COisNeg (con, TRUE);
+    }
+
+    con = (NULL != con) ? COfreeConstant (con) : con;
+    pat = PMfree (pat);
+
+    DBUG_RETURN (z);
+}
+
 /******************************************************************************
  *
  * function: Predicate for determining if an argument is known to
