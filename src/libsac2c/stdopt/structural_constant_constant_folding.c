@@ -375,7 +375,7 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
         argxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
         DBUG_ASSERT (resxrho <= argxrho, "SCCFprf_take_SxV attempted overtake");
         if (argxrho == resxrho) {
-            res = DUPdoDupNode (arg2);
+            res = DUPdoDupNode (PRF_ARG2 (arg_node));
         } else {
             dropcount = (takecount >= 0) ? 0 : argxrho + takecount;
             tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2));
@@ -429,10 +429,9 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
     if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
         dc = COconst2Int (con);
         if (0 == dc) {
-            res = DUPdoDupNode (arg2); /* Case 1 */
+            res = DUPdoDupNode (PRF_ARG2 (arg_node)); /* Case 1 */
         } else {
             pat2 = PMarray (1, PMAgetNode (&arg2array), 0);
-
             /* We have to skip guards for matmulAKD.sac in the awlf unit tests */
             if (PMmatchFlatSkipExtremaAndGuards (pat2, arg2)) { /* Case 2 */
                 dropcount = (dc < 0) ? 0 : dc;
@@ -816,7 +815,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                   PMconst (1, PMAisVal (&emptyVec)), PMvar (1, PMAgetNode (&val), 0));
 
     if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
-        res = DUPdoDupNode (val);
+        res = DUPdoDupNode (PRF_ARG3 (arg_node));
     } else {
         /**
          *   match F_modarray_AxVxA( X = [...], [c0,...,cn], val)
@@ -2283,14 +2282,14 @@ SCCFprf_mask_SxSxS (node *arg_node, info *arg_info)
         pat = PMprf (1, PMAisPrf (F_mask_SxSxS), 3, PMconst (1, PMAgetVal (&p)),
                      PMany (1, PMAgetNode (&arg2), 0), PMany (1, PMAgetNode (&arg3), 0));
 
-        if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
+        if (PMmatchFlat (pat, arg_node)) {
             /* p is constant */
             if (COisTrue (p, TRUE)) {
                 DBUG_PRINT ("Replacing mask_SxSxS result by PRF_ARG2");
-                res = DUPdoDupNode (arg2);
+                res = DUPdoDupNode (PRF_ARG2 (arg_node));
             } else {
                 DBUG_PRINT ("Replacing mask_SxSxS result by PRF_ARG3");
-                res = DUPdoDupNode (arg3);
+                res = DUPdoDupNode (PRF_ARG3 (arg_node));
             }
             p = COfreeConstant (p);
         }
@@ -2339,7 +2338,7 @@ SCCFprf_mask_SxSxV (node *arg_node, info *arg_info)
                  PMany (1, PMAgetNode (&x), 0),
                  PMarray (2, PMAgetNode (&y), PMAgetFS (&xfs), 1, PMskip (0)));
 
-    if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
+    if (PMmatchFlat (pat, arg_node)) {
         /* p is constant, y is an N_array node */
         b = COisTrue (p, TRUE);
         p = COfreeConstant (p);
@@ -2396,7 +2395,7 @@ SCCFprf_mask_SxVxS (node *arg_node, info *arg_info)
                  PMarray (2, PMAgetNode (&x), PMAgetFS (&xfs), 1, PMskip (0)),
                  PMany (1, PMAgetNode (&y), 0));
 
-    if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
+    if (PMmatchFlat (pat, arg_node)) {
         b = COisTrue (p, TRUE);
         p = COfreeConstant (p);
         DBUG_PRINT ("Replacing mask(p, x, y) by %s", b ? "x" : "genarray of y");
@@ -2454,7 +2453,7 @@ SCCFprf_mask_SxVxV (node *arg_node, info *arg_info)
         pat = PMprf (1, PMAisPrf (F_mask_SxVxV), 3, PMconst (1, PMAgetVal (&p)),
                      PMany (1, PMAgetNode (&arg2), 0), PMany (1, PMAgetNode (&arg3), 0));
 
-        if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
+        if (PMmatchFlat (pat, arg_node)) {
             DBUG_PRINT ("Replacing mask result by mask of arg2, arg3");
             /* p is constant. */
             if (COisTrue (p, TRUE)) {
@@ -2517,7 +2516,7 @@ SCCFprf_mask_VxSxS (node *arg_node, info *arg_info)
                      PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
                      PMany (1, PMAgetNode (&x), 0), PMany (1, PMAgetNode (&y), 0));
 
-        if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
+        if ((PMmatchFlat (pat, arg_node)) && (COisConstant (p))) {
             DBUG_PRINT ("Replacing mask result by mask of x,y");
             /* p is constant. We don't care about x and y */
             ughres = DUPdoDupTree (x); /* Handy starter for result */
@@ -2586,7 +2585,7 @@ SCCFprf_mask_VxSxV (node *arg_node, info *arg_info)
                PMany (1, PMAgetNode (&x), 0),
                PMarray (2, PMAgetNode (&y), PMAhasFS (&xfs), 1, PMskip (0)), PMskip (0));
 
-    if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
+    if ((PMmatchFlat (pat, arg_node)) && (COisConstant (p))) {
         DBUG_PRINT ("Replacing mask result by mask of x,y");
         /* p is constant, y is N_array node */
         res = DUPdoDupTree (y); /* Handy starter for result */
@@ -2650,7 +2649,7 @@ SCCFprf_mask_VxVxS (node *arg_node, info *arg_info)
                PMarray (2, PMAgetNode (&p), PMAgetFS (&xfs), 1, PMskip (0)),
                PMarray (2, PMAgetNode (&x), PMAhasFS (&xfs), 1, PMskip (0)), PMskip (0));
 
-    if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
+    if ((PMmatchFlat (pat, arg_node)) && (COisConstant (p))) {
         DBUG_PRINT ("Replacing mask result by mask of x,y");
         /* p is constant, x is N_array node */
         res = DUPdoDupTree (x); /* Handy starter for result */
@@ -2720,7 +2719,7 @@ SCCFprf_mask_VxVxV (node *arg_node, info *arg_info)
                      PMarray (2, PMAgetNode (&x), PMAhasFS (&xfs), 1, PMskip (0)),
                      PMarray (2, PMAgetNode (&y), PMAhasFS (&xfs), 1, PMskip (0)));
 
-        if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) && (COisConstant (p))) {
+        if ((PMmatchFlat (pat, arg_node)) && (COisConstant (p))) {
             DBUG_PRINT ("Replacing mask result by mask of x,y");
             /* p is constant, x and y are N_array nodes */
             res = DUPdoDupTree (x); /* Handy starter for result */
