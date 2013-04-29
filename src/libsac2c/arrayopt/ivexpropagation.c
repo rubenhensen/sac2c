@@ -878,77 +878,6 @@ IVEXPadjustExtremaBound (node *arg_node, int k, node **vardecs, node **preassign
     DBUG_RETURN (zavis);
 }
 
-#ifdef DEADCODE
-/******************************************************************************
- *
- * function:
- *   node *GetExtremaOnNonconstantArg( node *arg_node, info *arg_info)
- *
- * description: Function for obtaining dyadic scalar function nprf
- *              extrema on non-constant argument
- *
- * @params  arg_node: an N_prf node
- *          arg_info: your basic arg_info
- * @result: If the non-constant argument has an AVIS_MIN/AVIS_MAX,
- *          return that MIN/MAX. Else NULL.
- *
- ******************************************************************************/
-static node *
-GetMinvalOnNonconstantArg (node *arg_node, info *arg_info)
-{
-    node *z = NULL;
-    bool arg1c;
-    bool arg2c;
-
-    DBUG_ENTER ();
-
-    arg1c = COisConstant (PRF_ARG1 (arg_node));
-    arg2c = COisConstant (PRF_ARG2 (arg_node));
-
-    if ((arg1c != arg2c) && arg1c) {
-        z = AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node)));
-    }
-
-    if ((arg1c != arg2c) && arg2c) {
-        z = AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)));
-    }
-
-    if (NULL != z) {
-        DBUG_PRINT ("Found minval %s for non-constant argument", AVIS_NAME (ID_AVIS (z)));
-    }
-
-    DBUG_RETURN (z);
-}
-
-static node *
-GetMaxvalOnNonconstantArg (node *arg_node, info *arg_info)
-{
-    node *z = NULL;
-    bool arg1c;
-    bool arg2c;
-
-    DBUG_ENTER ();
-
-    arg1c = COisConstant (PRF_ARG1 (arg_node));
-    arg2c = COisConstant (PRF_ARG2 (arg_node));
-
-    if ((arg1c != arg2c) && arg1c) {
-        z = AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node)));
-    }
-
-    if ((arg1c != arg2c) && arg2c) {
-        z = AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node)));
-    }
-
-    if (NULL != z) {
-        DBUG_PRINT ("Found maxval %s for non-constant argument", AVIS_NAME (ID_AVIS (z)));
-    }
-
-    DBUG_RETURN (z);
-}
-
-#endif // DEADCODE
-
 /** <!--********************************************************************-->
  *
  * Description: Emit code to invoke monadic function on AVIS_MIN/MAX
@@ -1234,8 +1163,175 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
     DBUG_RETURN (arg_node);
 }
 
+/******************************************************************************
+ *
+ * function: node *GenerateExtremaComputationsMultiply(node *arg_node, info *arg_info)
+ *
+ * description: Generate extrema for multiply.
+ *
+ * @params  arg_node: an N_prf node
+ *          arg_info: your basic arg_info
+ *
+ * @result: Regardless of argument order, if we have:
+ *
+ *             f( non_negative_const, nonconst), with minval on non-const
+ *
+ *          then:
+ *
+ *             minval = f( non_negative_const,       minval)
+ *
+ *           Ditto for maxval, except that we denormalize and normalize:
+ *
+ *             maxval = N( f( non_negative_const, D( maxval)))
+ *
+ *           If the constant is negative, we have to swap extrema:
+ *
+ *             minval = f( negative_constant,     D( maxval))
+ *             maxval = N( negative_constant,        minval)
+ *
+ *           Also, if the "const" is non-constant, but has a
+ *           constant minval/maxval, so that we can determine signum( const),
+ *           then treat it the same way.
+ *
+ * @note: See note in previous section re WITHID.
+ *
+ ******************************************************************************/
 static node *
-GenerateExtremaComputationsNoncommutativeDyadicScalarPrf (node *arg_node, info *arg_info)
+GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
+{
+    node *minarg1 = NULL;
+    node *minarg2 = NULL;
+    node *maxarg1 = NULL;
+    node *maxarg2 = NULL;
+    node *minv = NULL;
+    node *maxv = NULL;
+    node *lhsavis;
+    node *rhs;
+    bool min1;
+    bool min2;
+    bool max1;
+    bool max2;
+    int parentarg;
+    node *wid = NULL;
+
+    DBUG_ENTER ();
+
+    rhs = LET_EXPR (arg_node);
+    lhsavis = IDS_AVIS (LET_IDS (arg_node));
+
+    /* Slight dance to circumvent bug #693, in which DL generates
+     * unflattened PRF_ARGs with N_num nodes.
+     */
+
+    min1 = IVEXPisAvisHasMin (ID_AVIS (PRF_ARG1 (rhs)));
+    max1 = IVEXPisAvisHasMax (ID_AVIS (PRF_ARG1 (rhs)));
+
+    min2 = IVEXPisAvisHasMin (ID_AVIS (PRF_ARG2 (rhs)));
+    max2 = IVEXPisAvisHasMax (ID_AVIS (PRF_ARG2 (rhs)));
+
+    parentarg = AWLFIfindPrfParent2 (rhs, INFO_WITHIDIDS (arg_info), &wid);
+    switch (parentarg) {
+    case 1: // PRF_ARG1 derives from WITHID, so don't use extrema from PRF_ARG2
+        min2 = FALSE;
+        max2 = FALSE;
+        break;
+
+    case 2: // PRF_ARG2 derives from WITHID, so don't use extrema from PRF_ARG1
+        min1 = FALSE;
+        max1 = FALSE;
+        break;
+
+    default:
+        break;
+    }
+
+    /* AVIS_MIN is present */
+    if (min1) {
+        if ((!IVEXPisAvisHasMin (lhsavis)) && (SCSisNonneg (PRF_ARG2 (rhs)))) {
+            minarg1 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
+            minarg2 = ID_AVIS (PRF_ARG2 (rhs));
+        }
+        if ((!IVEXPisAvisHasMax (lhsavis)) && (SCSisNegative (PRF_ARG2 (rhs)))) {
+            maxarg1 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
+            maxarg2 = ID_AVIS (PRF_ARG2 (rhs));
+        }
+    }
+
+    if (min2) {
+        if ((!IVEXPisAvisHasMin (lhsavis)) && (SCSisNonneg (PRF_ARG1 (rhs)))) {
+            minarg1 = ID_AVIS (PRF_ARG1 (rhs));
+            minarg2 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))));
+        }
+        if ((!IVEXPisAvisHasMax (lhsavis)) && (SCSisNegative (PRF_ARG1 (rhs)))) {
+            maxarg1 = ID_AVIS (PRF_ARG1 (rhs));
+            maxarg2 = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))));
+        }
+    }
+
+    /* AVIS_MAX1 is present */
+    if (max1) {
+        if ((!IVEXPisAvisHasMax (lhsavis)) && (SCSisNonneg (PRF_ARG2 (rhs)))) {
+            maxarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
+            maxarg1 = IVEXPadjustExtremaBound (/* Denormalize maxv */
+                                               maxarg1, -1, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info), "muldenorm1");
+            maxarg2 = ID_AVIS (PRF_ARG2 (rhs));
+        }
+
+        if ((!IVEXPisAvisHasMin (lhsavis)) && (SCSisNegative (PRF_ARG2 (rhs)))) {
+            minarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
+            minarg1 = IVEXPadjustExtremaBound (/* Denormalize maxv */
+                                               maxarg1, -1, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info), "muldenorm2");
+            minarg2 = ID_AVIS (PRF_ARG2 (rhs));
+        }
+    }
+
+    /* AVIS_MAX2 is present */
+    if (max2) {
+        if ((!IVEXPisAvisHasMax (lhsavis)) && (SCSisNonneg (PRF_ARG1 (rhs)))) {
+            maxarg1 = ID_AVIS (PRF_ARG1 (rhs));
+            maxarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
+            maxarg2 = IVEXPadjustExtremaBound (/* Denormalize maxv */
+                                               maxarg2, -1, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info), "muldenorm3");
+        }
+
+        if ((!IVEXPisAvisHasMin (lhsavis)) && (SCSisNegative (PRF_ARG1 (rhs)))) {
+            minarg1 = ID_AVIS (PRF_ARG1 (rhs));
+            minarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
+            minarg2 = IVEXPadjustExtremaBound (/* Denormalize maxv */
+                                               maxarg2, -1, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info), "muldenorm4");
+        }
+    }
+
+    /* Generate normalized extrema calculation for dyadic primitives */
+    if (NULL != minarg1) {
+        minv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (minarg1), TBmakeId (minarg2));
+        minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
+                                       &INFO_PREASSIGNS (arg_info),
+                                       TYeliminateAKV (AVIS_TYPE (lhsavis)));
+    }
+
+    if (NULL != maxarg1) {
+        maxv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (maxarg1), TBmakeId (maxarg2));
+        maxv = FLATGflattenExpression (maxv, &INFO_VARDECS (arg_info),
+                                       &INFO_PREASSIGNS (arg_info),
+                                       TYeliminateAKV (AVIS_TYPE (lhsavis)));
+        /* Normalize maxv */
+        maxv = IVEXPadjustExtremaBound (maxv, +1, &INFO_VARDECS (arg_info),
+                                        &INFO_PREASSIGNS (arg_info), "mulnorm");
+    }
+
+    INFO_MINVAL (arg_info) = (NULL != minv) ? TBmakeId (minv) : minv;
+    INFO_MAXVAL (arg_info) = (NULL != maxv) ? TBmakeId (maxv) : maxv;
+
+    DBUG_RETURN (arg_node);
+}
+
+static node *
+GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
 { // F_sub_() only!
 
     node *minarg1 = NULL;
@@ -1342,93 +1438,6 @@ GenerateExtremaComputationsNoncommutativeDyadicScalarPrf (node *arg_node, info *
 
     DBUG_RETURN (arg_node);
 }
-
-#ifdef DEADCODEMAYBE
-/** <!--********************************************************************-->
- *
- * Description: For min( constant, non-constant with constant AVIS_MIN),
- *              compute AVIS_MIN. For other cases, return NULL.
- *
- * @params prfarg: PRF_ARG1 or PRF_ARG2 from the min().
- *         nca: the non-constant argument.
- *         lhsavis: N_avis for LHS.
- *         arg_info: your basic arg_info.
- *
- * @return N_avis node for result, or NULL
- *
- ******************************************************************************/
-static node *
-GetMinvalForMin (node *prfarg, node *nca, node *lhsavis, info *arg_info)
-{
-    constant *con1;
-    constant *con2;
-    constant *conz;
-    node *m = NULL;
-
-    DBUG_ENTER ();
-
-    if ((NULL != nca) && (COisConstant (prfarg))) {
-        con1 = COaST2Constant (prfarg);
-        con2 = COaST2Constant (nca);
-        if (NULL != con2) {
-            conz = COmin (con1, con2, NULL);
-            m = COconstant2AST (conz);
-            m = FLATGflattenExpression (m, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNS (arg_info),
-                                        TYeliminateAKV (AVIS_TYPE (lhsavis)));
-            AVIS_ISMINHANDLED (m) = TRUE;
-            con1 = COfreeConstant (con1);
-            con2 = COfreeConstant (con2);
-            conz = COfreeConstant (conz);
-        }
-    }
-
-    DBUG_RETURN (m);
-}
-
-/** <!--********************************************************************-->
- *
- * Description: For max( constant, non-constant with constant AVIS_MAX),
- *              compute AVIS_MAX. For other cases, return NULL.
- *
- * @params prfarg: PRF_ARG1 or PRF_ARG2 from the min().
- *         nca: the non-constant argument.
- *         lhsavis: N_avis for LHS.
- *         arg_info: your basic arg_info.
- *
- * @return N_avis node for result, or NULL
- *
- ******************************************************************************/
-static node *
-GetMaxvalForMax (node *prfarg, node *nca, node *lhsavis, info *arg_info)
-{
-    constant *con1;
-    constant *con2;
-    constant *conz;
-    node *m = NULL;
-
-    DBUG_ENTER ();
-
-    if ((NULL != nca) && (COisConstant (prfarg))) {
-        con1 = COaST2Constant (prfarg);
-        con2 = COaST2Constant (nca);
-        if (NULL != con2) {
-            conz = COmax (con1, con2, NULL);
-            m = COconstant2AST (conz);
-            m = FLATGflattenExpression (m, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNS (arg_info),
-                                        TYeliminateAKV (AVIS_TYPE (lhsavis)));
-            AVIS_ISMAXHANDLED (m) = TRUE;
-            con1 = COfreeConstant (con1);
-            con2 = COfreeConstant (con2);
-            conz = COfreeConstant (conz);
-        }
-    }
-
-    DBUG_RETURN (m);
-}
-
-#endif // DEADCODEMAYBE
 
 /** <!--********************************************************************-->
  *
@@ -1882,9 +1891,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_sub_SxV:
             case F_sub_VxS:
             case F_sub_VxV:
-                arg_node
-                  = GenerateExtremaComputationsNoncommutativeDyadicScalarPrf (arg_node,
-                                                                              arg_info);
+                arg_node = GenerateExtremaComputationsSubtract (arg_node, arg_info);
                 break;
 
             /* Commutative dyadic functions */
@@ -1892,13 +1899,17 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_add_SxV:
             case F_add_VxS:
             case F_add_VxV:
+                arg_node
+                  = GenerateExtremaComputationsCommutativeDyadicScalarPrf (arg_node,
+                                                                           arg_info);
+                break;
+
+            /* Multiply is commutative dyadic function, but negatives need help */
             case F_mul_SxS:
             case F_mul_SxV:
             case F_mul_VxS:
             case F_mul_VxV:
-                arg_node
-                  = GenerateExtremaComputationsCommutativeDyadicScalarPrf (arg_node,
-                                                                           arg_info);
+                arg_node = GenerateExtremaComputationsMultiply (arg_node, arg_info);
                 break;
 
             /* Modulus */
