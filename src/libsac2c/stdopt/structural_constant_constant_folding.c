@@ -2264,6 +2264,9 @@ SCCFprf_idx_sel (node *arg_node, info *arg_info)
  *
  *   Otherwise, we do nothing.
  *
+ *   In all of the mask() CF code, we skip extrema and guards for
+ *   analysis only: results are PRF_ARG values.
+ *
  *****************************************************************************/
 node *
 SCCFprf_mask_SxSxS (node *arg_node, info *arg_info)
@@ -2286,11 +2289,13 @@ SCCFprf_mask_SxSxS (node *arg_node, info *arg_info)
         if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
             /* p is constant */
             if (COisTrue (p, TRUE)) {
-                DBUG_PRINT ("Replacing mask_SxSxS result by PRF_ARG2");
-                res = DUPdoDupNode (arg2);
+                DBUG_PRINT ("Replacing mask_SxSxS result by PRF_ARG2=%s",
+                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+                res = DUPdoDupNode (PRF_ARG2 (arg_node));
             } else {
-                DBUG_PRINT ("Replacing mask_SxSxS result by PRF_ARG3");
-                res = DUPdoDupNode (arg3);
+                DBUG_PRINT ("Replacing mask_SxSxS result by PRF_ARG3%s",
+                            AVIS_NAME (ID_AVIS (PRF_ARG3 (arg_node))));
+                res = DUPdoDupNode (PRF_ARG3 (arg_node));
             }
             p = COfreeConstant (p);
         }
