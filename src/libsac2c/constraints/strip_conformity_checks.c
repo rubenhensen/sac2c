@@ -338,6 +338,12 @@ SCCprf (node *arg_node, info *arg_info)
     case F_afterguard:
     case F_non_neg_val_V:
     case F_non_neg_val_S:
+    case F_val_le_val_VxV:
+    case F_val_le_val_SxS:
+    case F_val_lt_val_SxS:
+    case F_shape_matches_dim_VxA:
+    case F_val_lt_shape_VxA:
+    case F_prod_matches_prod_shape_VxA:
         if (!global.runtimecheck.conformity && global.insertconformitychecks) {
             INFO_LHS (arg_info)
               = RenameOrReplaceRets (0, 1, INFO_LHS (arg_info), PRF_ARGS (arg_node),
@@ -348,12 +354,6 @@ SCCprf (node *arg_node, info *arg_info)
 
     /* prfs with two identities on first args */
     case F_same_shape_AxA:
-    case F_shape_matches_dim_VxA:
-    case F_val_lt_shape_VxA:
-    case F_val_le_val_VxV:
-    case F_val_le_val_SxS:
-    case F_val_lt_val_SxS:
-    case F_prod_matches_prod_shape_VxA:
         if (!global.runtimecheck.conformity && global.insertconformitychecks) {
             INFO_LHS (arg_info)
               = RenameOrReplaceRets (0, 2, INFO_LHS (arg_info), PRF_ARGS (arg_node),
