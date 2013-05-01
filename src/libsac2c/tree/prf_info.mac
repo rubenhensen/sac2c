@@ -132,6 +132,7 @@
  *   cf_scs_fun               cf_sccf_fun              cf_saa_fun
  *   makedim_fun              make_shp_fun             alloc_fun
  *   num_dataflow_returns     shape_oracle_fun         icc_fun
+ *   tc_fun
  *
  *  Explanation of table entries:
  *
@@ -162,6 +163,8 @@
  *                            (shape oracle)
  *   icc_fun        function used to insert conformity checks
  *
+ *   te_fn          I think this is the number of results created by the
+ *                  function.
  *
  */
 
