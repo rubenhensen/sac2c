@@ -206,8 +206,8 @@ gridFiller( int[.] lb, int[.] ub, int[.] wdth, int dim, int[.] maxwidth)
 inline
 bool[.] isPartitionIntersectNull( int[.] idxmin, int[.] idxmax,
                                   int[.] bound1, int[.] bound2)
-{ /* Predicate to determine if intersection of index set and
-   * partition bounds is null. It requires an assist from 
+{ /* Predicate to determine if intersection of comsumer-WL index set and
+   * producer-WL partition bounds is null. It requires an assist from 
    * the compiler to perform the any-reduce on this function's result.
    *
    * All arguments are normalized.
@@ -221,11 +221,13 @@ bool[.] isPartitionIntersectNull( int[.] idxmin, int[.] idxmax,
 inline
 bool[.] isPartitionIntersectNull( int idxmin, int idxmax,
                                   int[.] bound1, int[.] bound2)
-{ /* Predicate to determine if intersection of index scalar and
-   * partition bounds is null. It requires an assist from 
+{ /* Predicate to determine if intersection of comsumer-WL index set and
+   * producer-WL partition bounds is null. It requires an assist from 
    * the compiler to perform the any-reduce on this function's result.
    *
-   * All arguments are normalized.
+   * idxmax and bound2 are normalized, i.e., they are like GENERATOR_BOUND2
+   * in a WL, where their value is 1 greater than the maximum value of
+   * the index.
    *
    */
 
@@ -236,13 +238,15 @@ bool[.] isPartitionIntersectNull( int idxmin, int idxmax,
 inline
 bool[.] isPartitionIntersect1Part( int[.] idxmin, int[.] idxmax,
                                    int[.] bound1, int[.] bound2)
-{ /* Predicate to determine if intersection of CWL index scalar and
-   * PWL partition bounds lays entirely within one PWL partition.
-   * If so, then AWLF can be performed with no slicing of the CWL.
+{ /* Predicate to determine if intersection of consumer-WL index scalar and
+   * producer-WL partition bounds lays entirely within one producer-WL partition.
+   * If so, then AWLF can be performed with no slicing of the consumer-WL.
    * This function requires an assist from 
    * the compiler to perform the all-reduce on this function's result.
    *
-   * All arguments are normalized.
+   * idxmax and bound2 are normalized, i.e., they are like GENERATOR_BOUND2
+   * in a WL, where their value is 1 greater than the maximum value of
+   * the index.
    *
    */
 
@@ -253,13 +257,14 @@ bool[.] isPartitionIntersect1Part( int[.] idxmin, int[.] idxmax,
 inline
 bool[.] isPartitionIntersect1Part( int idxmin, int idxmax,
                                    int[.] bound1, int[.] bound2)
-{ /* Predicate to determine if intersection of CWL index scalar and
-   * PWL partition bounds lays entirely within one PWL partition.
-   * If so, then AWLF can be performed with no slicing of the CWL.
+{ /* Predicate to determine if intersection of consumer-WL index scalar and
+   * producer-WL partition bounds lays entirely within one producer-WL partition.
+   * If so, then AWLF can be performed with no slicing of the consumer-WL.
    * This function requires an assist from 
    * the compiler to perform the all-reduce on this function's result.
    *
-   * All arguments are normalized.
+   * idxmax and bound2 are normalized, i.e., they are like GENERATOR_BOUND2
+   * in a WL, where their value is 1 greater than the maximum value of
    *
    */
 
