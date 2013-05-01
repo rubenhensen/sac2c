@@ -1281,7 +1281,7 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
         if ((!IVEXPisAvisHasMin (lhsavis)) && (SCSisNegative (PRF_ARG2 (rhs)))) {
             minarg1 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
             minarg1 = IVEXPadjustExtremaBound (/* Denormalize maxv */
-                                               maxarg1, -1, &INFO_VARDECS (arg_info),
+                                               minarg1, -1, &INFO_VARDECS (arg_info),
                                                &INFO_PREASSIGNS (arg_info), "muldenorm2");
             minarg2 = ID_AVIS (PRF_ARG2 (rhs));
         }
@@ -1301,7 +1301,7 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
             minarg1 = ID_AVIS (PRF_ARG1 (rhs));
             minarg2 = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))));
             minarg2 = IVEXPadjustExtremaBound (/* Denormalize maxv */
-                                               maxarg2, -1, &INFO_VARDECS (arg_info),
+                                               minarg2, -1, &INFO_VARDECS (arg_info),
                                                &INFO_PREASSIGNS (arg_info), "muldenorm4");
         }
     }
