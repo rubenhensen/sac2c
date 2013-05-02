@@ -365,7 +365,9 @@ LocalSkipControl (void *param, node *expr)
 
     if (NODE_TYPE (expr) == N_id) {
         avis = ID_AVIS (expr);
-        if ((AVIS_NEEDCOUNT (avis) != 1) || !AVIS_ISDLACTIVE (avis)) {
+        // breaks DL unit tests bug1046C bug1046D bug1046G
+        // if( (AVIS_NEEDCOUNT( avis) != 1) || ! AVIS_ISDLACTIVE(avis) ) {
+        if (!AVIS_ISDLACTIVE (avis)) {
             expr = NULL; /* ABORT skipping !! */
             DBUG_PRINT ("Skipping %s", AVIS_NAME (avis));
         }
@@ -581,18 +583,43 @@ consumeHead (node *mop)
     DBUG_RETURN (res);
 }
 
+/******************************************************************************
+ *
+ * Generate: newid = prf( expr1, expr2);
+ *
+ * Result: newid.
+ *
+ * Note: The kludge below is so that if we have a nilpotent DL
+ *       case, we restore the negation of expr2.
+ *
+ *****************************************************************************/
 static node *
-CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
+CombineExprs2Prf (prf oprf, node *expr1, node *expr2, info *arg_info)
 {
     node *rhs;
     node *avis = NULL;
     node *assign;
     node *id;
     ntype *prod;
+    prf nprf;
+    bool issc;
 
     DBUG_ENTER ();
 
-    rhs = TCmakePrf2 (getPrf (prf, expr1, expr2), expr1, expr2);
+    issc = isScalar (expr1) && isScalar (expr2);
+
+    // kludge for mul( -1, expr2) --> _neg_S( expr2)  [ or _neg_V_( expr2)]
+    if ((F_mul_SxS == oprf) && (N_num == NODE_TYPE (expr1))
+        && ((-1) == NUM_VAL (expr1))) {
+        nprf = (isScalar (expr2)) ? F_neg_S : F_neg_V;
+        rhs = TCmakePrf1 (nprf, expr2);
+        expr1 = FREEdoFreeNode (expr1); /* -1 no longer needed */
+    } else {
+        // normal case
+        expr1 = flattenPrfarg (expr1, arg_info);
+        expr2 = flattenPrfarg (expr2, arg_info);
+        rhs = TCmakePrf2 (getPrf (oprf, expr1, expr2), expr1, expr2);
+    }
 
     prod = NTCnewTypeCheck_Expr (rhs);
     avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (TYgetProductMember (prod, 0)));
@@ -608,7 +635,7 @@ CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
     INFO_PREASSIGN (arg_info) = assign;
 
     id = TBmakeId (avis);
-    ID_ISSCLPRF (id) = isScalar (expr1) && isScalar (expr2);
+    ID_ISSCLPRF (id) = issc;
 
     DBUG_RETURN (id);
 }
@@ -655,9 +682,9 @@ Mop2Ast (node *mop, info *arg_info)
         } else {
             prf = PRF_PRF (mop);
             e1 = consumeHead (mop);
-            e1 = flattenPrfarg (Mop2Ast (e1, arg_info), arg_info);
+            e1 = Mop2Ast (e1, arg_info);
             e2 = consumeHead (mop);
-            e2 = flattenPrfarg (Mop2Ast (e2, arg_info), arg_info);
+            e2 = Mop2Ast (e2, arg_info);
             PRF_ARGS (mop)
               = TBmakeExprs (CombineExprs2Prf (prf, e1, e2, arg_info), PRF_ARGS (mop));
             res = Mop2Ast (mop, arg_info);
@@ -730,8 +757,6 @@ CollectExprs (prf target_prf, node *arg_node, bool is_scalar_arg, info *arg_info
         shp = SHmakeShape (0);
         negone = COmakeNegativeOne (styp, shp);
         right = COconstant2AST (negone);
-        right = flattenPrfarg (right, arg_info);
-        DBUG_PRINT ("Generated negone as %s", AVIS_NAME (ID_AVIS (right)));
         right = TBmakeExprs (right, NULL);
         negone = COfreeConstant (negone);
         res = TCappendExprs (left, right);
