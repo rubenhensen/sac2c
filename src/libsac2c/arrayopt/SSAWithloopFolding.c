@@ -58,6 +58,7 @@
 #include "SSAWLF.h"
 #include "new_types.h"
 #include "shape.h"
+#include "pattern_match.h"
 
 /******************************************************************************
  *
@@ -484,10 +485,19 @@ WLFarrayST2ArrayInt (node *arrayn, int **iarray, int shape)
     constant *tmp_co;
     int *tmp;
     int i;
+    pattern *pat;
+    node *arr = NULL;
 
     DBUG_ENTER ();
 
     DBUG_ASSERT (iarray != NULL, "no iarray found!");
+
+    /* Dereference arrayn to find N_array node, maybe */
+    pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
+    if (PMmatchFlat (pat, arrayn)) {
+        arrayn = arr;
+    }
+    pat = PMfree (pat);
 
     if (*iarray == NULL) {
         *iarray = (int *)MEMmalloc (shape * sizeof (int));
