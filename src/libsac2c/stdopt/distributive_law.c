@@ -585,14 +585,62 @@ consumeHead (node *mop)
 
 /******************************************************************************
  *
- * Generate: newid = prf( expr1, expr2);
+ * node *CombineExprs2Prf( prf oprf, node *expr1, node *expr2, info *arg_info)
+ * @brief: Generate: newid = oprf( expr1, expr2);
+ *         Ensure that arguments are flattened.
  *
  * Result: newid.
  *
- * Note: The kludge below is so that if we have a nilpotent DL
- *       case, we restore the negation of expr2.
+ *
+ * Note: MakeRhs is CombineExprs2Prf's helper function.
+ *
+ *       If we have a nilpotent mul() kicking around (introduced
+ *       by CollectExprs), we restore the negation of expr2.
+ *       I.e.:
+ *
+ *       It replaces _mul_SxS_( -1, expr2) by _neg_S_( expr2)
+ *       or _neg_V_( expr2)
+ *
+ *       and         _mul_SxS_( expr1, -1) by _neg_S_( expr1)
+ *       or _neg_V_( expr1)
+ *
  *
  *****************************************************************************/
+static node *
+MakeRhs (prf oprf, node *expr1, node *expr2, info *arg_info)
+{
+    node *rhs = NULL;
+    prf nprf;
+
+    DBUG_ENTER ();
+
+    // Case 1
+    if ((F_mul_SxS == oprf) && (N_num == NODE_TYPE (expr1))
+        && ((-1) == NUM_VAL (expr1))) {
+        nprf = (isScalar (expr2)) ? F_neg_S : F_neg_V;
+        rhs = TCmakePrf1 (nprf, expr2);
+        expr1 = FREEdoFreeNode (expr1); /* -1 no longer needed */
+    }
+
+    // Case 2
+    if ((F_mul_SxS == oprf) && (N_num == NODE_TYPE (expr2))
+        && ((-1) == NUM_VAL (expr2))) {
+        nprf = (isScalar (expr1)) ? F_neg_S : F_neg_V;
+        rhs = TCmakePrf1 (nprf, expr1);
+        expr2 = FREEdoFreeNode (expr2); /* -1 no longer needed */
+    }
+
+    // Case 3
+    if (NULL == rhs) {
+        // the usual case
+        expr1 = flattenPrfarg (expr1, arg_info);
+        expr2 = flattenPrfarg (expr2, arg_info);
+        rhs = TCmakePrf2 (getPrf (oprf, expr1, expr2), expr1, expr2);
+    }
+
+    DBUG_RETURN (rhs);
+}
+
 static node *
 CombineExprs2Prf (prf oprf, node *expr1, node *expr2, info *arg_info)
 {
@@ -601,25 +649,13 @@ CombineExprs2Prf (prf oprf, node *expr1, node *expr2, info *arg_info)
     node *assign;
     node *id;
     ntype *prod;
-    prf nprf;
     bool issc;
 
     DBUG_ENTER ();
 
     issc = isScalar (expr1) && isScalar (expr2);
 
-    // kludge for mul( -1, expr2) --> _neg_S( expr2)  [ or _neg_V_( expr2)]
-    if ((F_mul_SxS == oprf) && (N_num == NODE_TYPE (expr1))
-        && ((-1) == NUM_VAL (expr1))) {
-        nprf = (isScalar (expr2)) ? F_neg_S : F_neg_V;
-        rhs = TCmakePrf1 (nprf, expr2);
-        expr1 = FREEdoFreeNode (expr1); /* -1 no longer needed */
-    } else {
-        // normal case
-        expr1 = flattenPrfarg (expr1, arg_info);
-        expr2 = flattenPrfarg (expr2, arg_info);
-        rhs = TCmakePrf2 (getPrf (oprf, expr1, expr2), expr1, expr2);
-    }
+    rhs = MakeRhs (oprf, expr1, expr2, arg_info);
 
     prod = NTCnewTypeCheck_Expr (rhs);
     avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (TYgetProductMember (prod, 0)));
