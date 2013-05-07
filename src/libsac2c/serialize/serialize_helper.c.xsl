@@ -168,7 +168,13 @@ SHLPmakeNode( int _node_type, int lineno, char* sfile, ...)
   <xsl:value-of select="'NODE_FILE( xthis) = sfile;'" />
   <xsl:value-of select="'NODE_ERROR( xthis) = NULL;'" />
   <xsl:call-template name="newline" />
-  <xsl:value-of select="'CHKMsetNodeType (xthis, node_type);'" />
+  <xsl:text>
+#ifndef DBUG_OFF
+  </xsl:text>
+  <xsl:value-of select="'CHKMisNode (xthis, node_type);'" />
+  <xsl:text>
+#endif
+  </xsl:text>
   <xsl:call-template name="newline" />
   <!-- set sons and attribs types -->
   <xsl:if test="sons/son">

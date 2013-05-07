@@ -997,7 +997,7 @@
 	      </traversal>
 	      <traversal id="CHK" name="Check the Tree" default="user" ifndef="DBUG_OFF" include="check.h" />
 	      <traversal id="CHKRST" name="Reset for Tree Check" default="user" ifndef="DBUG_OFF" include="check_reset.h" />
-	      <traversal id="CHKM" name="Check the memspace" default="user" postfun="CHKMpostfun" ifndef="DBUG_OFF" include="check_node.h" />
+	      <traversal id="CHKM" name="Check the memspace" default="user" ifndef="DBUG_OFF" include="check_node.h" />
 	      <traversal id="CHKLACF" name="Check LaC functions" 
 		       default="sons" include="check_lacfuns.h" >
 		<travuser>
