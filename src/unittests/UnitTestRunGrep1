@@ -54,13 +54,17 @@ function getargs
  fi
                 
               
+logfile="logGreps"$( sac2c-p -V | grep rev | cut -f 4 -d\ )
+echo $( sac2c-p -V) >> $logfile
+echo $( date)       >> $logfile
+
  # Test with opts disabled
- sac2c $1 -v0 $bopt $optsoff $s1 $s2 $s3 $s4  $s5 $s6 > crudn.$1.out
- cat crudn.$1.out | $filterop | UnitTestRunCounts $1 "$optsoff" $grepstr $noopt
+ sac2c $1 -v0 $bopt $optsoff $s1 $s2 $s3 $s4 $s5 $s6 > crudn.$1.out
+ cat crudn.$1.out | $filterop | UnitTestRunCounts $1 "$optsoff" $grepstr $noopt    | tee -a $logfile
  cat crudn.$1.out | $filterop > crudn
  # Test with opts enabled
- sac2c $1 -v0 $bopt $optson $s1 $s2 $s3 $s4 $s5 $s6 > crudd.$1.out
- cat crudd.$1.out | $filterop | UnitTestRunCounts $1 "$optson" $grepstr $doopt 
+ sac2c $1 -v0 $bopt $optson  $s1 $s2 $s3 $s4 $s5 $s6 > crudd.$1.out
+ cat crudd.$1.out | $filterop | UnitTestRunCounts $1 "$optson" $grepstr $doopt     | tee -a $logfile
  cat crudd.$1.out | $filterop >crudd
  # This test leaves crudn.$1 and crudd.$1 around for possible later
  # inspection by the puzzled programmer.

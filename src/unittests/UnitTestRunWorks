@@ -2,6 +2,9 @@
 
 # Run all tests to ensure correct results.
 
+logfile="logWorks"$( sac2c-p -V | grep rev | cut -f 4 -d\ )
+rm -f $logfile
+
 for i in *.sac; do
         UnitTestRunWorks1 $i
 done
