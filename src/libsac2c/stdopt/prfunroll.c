@@ -308,6 +308,14 @@ PRFUnrollOracle (node *arg_node)
     case F_mod_SxV:
     case F_mod_VxV:
 
+    case F_min_VxS:
+    case F_min_SxV:
+    case F_min_VxV:
+
+    case F_max_VxS:
+    case F_max_SxV:
+    case F_max_VxV:
+
         res = TRUE;
         break;
 
@@ -429,6 +437,18 @@ NormalizePrf (prf p)
         p = F_mod_SxS;
         break;
 
+    case F_min_VxS:
+    case F_min_SxV:
+    case F_min_VxV:
+        p = F_min_SxS;
+        break;
+
+    case F_max_VxS:
+    case F_max_SxV:
+    case F_max_VxV:
+        p = F_max_SxS;
+        break;
+
     default:
         DBUG_ASSERT (FALSE, "Illegal prf!");
         break;
@@ -523,6 +543,8 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
     case F_mul_SxV:
     case F_div_SxV:
     case F_mod_SxV:
+    case F_min_SxV:
+    case F_max_SxV:
         // break elided intentionally
 
     default:
@@ -563,6 +585,12 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
     case F_mod_VxS:
     case F_mod_VxV:
 
+    case F_min_VxS:
+    case F_min_VxV:
+
+    case F_max_VxS:
+    case F_max_VxV:
+
         nprf = F_sel_VxA;
         break;
 
@@ -591,7 +619,7 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
  *
  * @fn node *MakeSelOpArg2(...)
  *
- * @brief Create _sel_VxA_( [i], PRF_ARG);
+ * @brief Create _sel_VxA_( [i], PRF_ARG2);
  *        or, nothing for monadic ops
  *
  *        Return N_avis pointer for same.
@@ -629,6 +657,9 @@ MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
     case F_neq_VxS:
 
     case F_mod_VxS:
+
+    case F_min_VxS:
+    case F_max_VxS:
 
         zavis = avis;
         dyadic = FALSE;
@@ -757,6 +788,14 @@ MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node 
     case F_mod_VxS:
     case F_mod_SxV:
     case F_mod_VxV:
+
+    case F_min_VxS:
+    case F_min_SxV:
+    case F_min_VxV:
+
+    case F_max_VxS:
+    case F_max_SxV:
+    case F_max_VxV:
 
     case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:
