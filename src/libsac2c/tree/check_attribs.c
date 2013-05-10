@@ -78,7 +78,9 @@ CHKMattribDag (dag *attr, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /* do nothing */
+    if (attr != NULL) {
+        CHKMtouch (attr, arg_info);
+    }
 
     DBUG_RETURN (attr);
 }
@@ -124,8 +126,6 @@ CHKMattribSharedString (const char *attr, info *arg_info)
 {
     DBUG_ENTER ();
 
-    /* do nothing */
-
     DBUG_RETURN (attr);
 }
 
@@ -147,7 +147,7 @@ CHKMattribOldType (types *attr, info *arg_info)
     DBUG_ENTER ();
 
     if (attr != NULL) {
-        CHKMtouch (attr, arg_info); /* problem */
+        CHKMtouch (attr, arg_info);
     }
 
     DBUG_RETURN (attr);
@@ -195,9 +195,13 @@ CHKMattribNamespace (namespace_t *attr, info *arg_info)
     DBUG_ENTER ();
 
     if (attr != NULL) {
-        NStouchNamespace (attr, arg_info); /* problem */
+        CHKMtouch (attr, arg_info);
     }
-
+#if 0
+  if( attr != NULL) {
+    NStouchNamespace( attr, arg_info); /* problem */
+  }
+#endif
     DBUG_RETURN (attr);
 }
 
@@ -336,9 +340,16 @@ CHKMattribNodeList (nodelist *attr, info *arg_info)
 nodelist *
 CHKMattribSharedNodeList (nodelist *attr, info *arg_info)
 {
+    nodelist *list = attr;
+
     DBUG_ENTER ();
 
-    /* do nothing here */
+    while (list != NULL) {
+        CHKMtouch (list, arg_info);
+        list = NODELIST_NEXT (list);
+    }
+
+    CHKMtouch (attr, arg_info);
 
     DBUG_RETURN (attr);
 }
@@ -821,6 +832,7 @@ CHKMattribNodePointer (node **attr, info *arg_info)
 {
     DBUG_ENTER ();
 
+    CHKMtouch (attr, arg_info);
     /* TODO: implement node pointer free function */
 
     DBUG_RETURN (attr);
@@ -911,6 +923,8 @@ CHKMattribCompInfo (compinfo *attr, info *arg_info)
 {
     DBUG_ENTER ();
 
+    CHKMtouch (attr, arg_info);
+
     DBUG_RETURN (attr);
 }
 
@@ -930,6 +944,8 @@ vertex *
 CHKMattribVertexWrapper (vertex *attr, info *arg_info)
 {
     DBUG_ENTER ();
+
+    CHKMtouch (attr, arg_info);
 
     DBUG_RETURN (attr);
 }

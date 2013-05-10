@@ -1,251 +1,226 @@
-#include "memory.h"
-#undef MEMmalloc
-
 #include <stdlib.h>
 #include <string.h>
 
 #define DBUG_PREFIX "MEM_ALLOC"
 #include "debug.h"
+#include "memory.h"
 
-#include "check_mem.h"
 #include "ctinfo.h"
 #include "globals.h"
-#include "DupTree.h"
-#include "free.h"
 #include "convert.h"
-#include "str.h"
+#include "hash_table.h"
+#include "phase_info.h"
 
-/******************************************************************************
- *
- * function:
- *   void *MEMmalloc( int size)
- *   void *MEMfree( void *address)
- *
- * description:
- *   These functions for memory allocation and de-allocation are wrappers
- *   for the standard functions malloc() and free().
- *
- *   They allow to implement some additional functionality, e.g. accounting
- *   of currently allocated memory.
- *
- ******************************************************************************/
-
-/*
- * These types are only used to compute malloc_align_step.
- *
- * CAUTION:
- *
- * We need malloc_align_step in check_mem.c as well. Rather than using a single
- * global variable we use two static global variables, which are initialised
- * exactly in the same way, and of course need to be.
- */
-
-typedef union {
-    long int l;
-    double d;
-} malloc_align_type;
-
-typedef struct {
-    int size;
-    malloc_align_type align;
-} malloc_header_type;
-
-static int malloc_align_step = sizeof (malloc_header_type) - sizeof (malloc_align_type);
+ht_t *malloctable = 0;
+mallocphaseinfo_t phasetable[PH_final + 1] = {{0, 0, 0, 0, 0, 0, 0, 0}};
+FILE *mreport = 0;
 
 void *
-MEMmalloc (int size)
+_MEMmalloc (int size, char *file, int line)
 {
-    void *orig_ptr;
-    void *shifted_ptr;
+#ifndef DBUG_OFF
+    void *ptr;
+    mallocinfo_t *info;
 
     DBUG_ENTER ();
-
     DBUG_ASSERT (size >= 0, "MEMmalloc called with negative size!");
-    DBUG_ASSERT (malloc_align_step > 0, "malloc_align_step not set");
 
-    if (size > 0) {
-        int alloc_size = global.memcheck ? size + malloc_align_step : size;
-
-        /*
-         * Since some UNIX system (e.g. ALPHA) do return NULL for size 0 as well
-         * we do complain for ((NULL == tmp) && (size > 0)) only!!
-         */
-        orig_ptr = malloc (alloc_size);
-
-        if (orig_ptr == NULL) {
+    if (!(size > 0)) {
+        ptr = NULL;
+    } else {
+        ptr = malloc (size);
+        if (!ptr) {
             CTIabortOutOfMemory (size);
         }
 
         if (global.memcheck) {
-            shifted_ptr = CHKMregisterMem (size, orig_ptr);
-
-            if (global.current_allocated_mem + size < global.current_allocated_mem) {
-
-                DBUG_ASSERT (0, "counter for allocated memory: overflow detected");
+            info = malloc (sizeof (mallocinfo_t));
+            if (!info) {
+                CTIabortOutOfMemory (sizeof (mallocinfo_t));
             }
+
             global.current_allocated_mem += size;
-            if (global.max_allocated_mem < global.current_allocated_mem) {
-                global.max_allocated_mem = global.current_allocated_mem;
+            global.max_allocated_mem
+              = global.current_allocated_mem > global.max_allocated_mem
+                  ? global.current_allocated_mem
+                  : global.max_allocated_mem;
+
+            info->size = size;
+            info->phase = global.compiler_anyphase;
+            info->isfreed = FALSE;
+            info->isnode = FALSE;
+            info->isreachable = FALSE;
+            info->line = line;
+            info->file = file;
+            info->occurrence = 1;
+
+            phasetable[info->phase].nmallocd++;
+
+            global.memcheck = FALSE;
+            if (!malloctable) {
+                malloctable = HTcreate (100000);
             }
 
-            DBUG_PRINT ("Alloc memory: %d Bytes at adress: " F_PTR, size, shifted_ptr);
-
-            DBUG_PRINT_TAG ("MEM_TOTAL", "Currently allocated memory: %u",
-                            global.current_allocated_mem);
-
-        } else {
-            shifted_ptr = orig_ptr;
-        }
-
-        if (global.memclean) {
             /*
-             * Initialize memory
+             * Store the info in a ascosiative hashtable with the malloc adress as key
+             * and info adress as value
              */
-            shifted_ptr = memset (shifted_ptr, 0, size);
+            malloctable = HTinsert (malloctable, ptr, info);
+            global.memcheck = TRUE;
         }
-    } else {
-        shifted_ptr = NULL;
     }
 
-    DBUG_RETURN (shifted_ptr);
+    DBUG_RETURN (ptr);
+#else
+    return malloc (size);
+#endif
 }
 
 void *
-MEMmallocAt (int size, char *file, int line)
+_MEMrealloc (void *ptr, int size)
 {
-    void *pointer;
-
-    DBUG_ENTER ();
-
-    if (size > 0) {
-        pointer = MEMmalloc (size);
-
-        CHKMsetLocation (pointer, file, line);
-    } else {
-        pointer = NULL;
-    }
-
-    DBUG_RETURN (pointer);
-}
-
-void *
-__MEMrealloc (void *ptr, int size)
-{
-    int ptr_size;
-    void *ret = NULL;
-
-    DBUG_ENTER ();
-    DBUG_ASSERT (size > 0, "%s called with negative size", __func__);
+#ifndef DBUG_OFF
+    mallocinfo_t *info, *newinfo;
+    void *newptr;
 
     if (global.memcheck) {
-        /* FIXME:  This is a very bad implemenation of realloc, however the good one
-         requires touching freaking check_mem and dealing with their pointer
-         arithmetics.  */
-
-        ptr_size = CHKMgetSize (ptr);
-
-        ret = MEMmalloc (size);
-        memcpy (ret, ptr, ptr_size);
-        MEMfree (ptr);
-    } else {
-        ret = realloc (ptr, size);
-        /* FIXME: Is it appropriate for realloc?  */
-        if (ret == NULL) {
-            CTIabortOutOfMemory (size);
+        info = HTlookup (malloctable, ptr);
+        if (info) {
+            newptr = MEMmalloc (size);
+            memcpy (newptr, ptr, info->size);
+            newinfo = HTlookup (malloctable, newptr);
+            newinfo->phase = info->phase;
+            MEMfree (ptr);
+        } else {
+            newptr = realloc (ptr, size);
         }
+    } else {
+        newptr = realloc (ptr, size);
     }
-    DBUG_RETURN (ret);
+
+    return newptr;
+#else
+    return realloc (ptr, size);
+#endif
 }
 
 void *
-__MEMfree (void *shifted_ptr)
+_MEMfree (void *ptr)
 {
-    void *orig_ptr = NULL;
-    int size;
+#ifndef DBUG_OFF
+    mallocinfo_t *info;
 
-    DBUG_ENTER ();
-
-    DBUG_ASSERT (malloc_align_step > 0, "malloc_align_step not set");
-
-    if (!global.nofree && shifted_ptr != NULL) {
-        if (global.memcheck) {
-            size = CHKMgetSize (shifted_ptr);
-
-            DBUG_ASSERT (size >= 0, "illegal size found!");
-            DBUG_PRINT ("Free memory: %d Bytes at adress: " F_PTR, size, shifted_ptr);
-
-            if (global.current_allocated_mem < global.current_allocated_mem - size) {
-                DBUG_ASSERT (0, "counter for allocated memory: overflow detected");
-            }
-            global.current_allocated_mem -= size;
-
-            DBUG_PRINT_TAG ("MEM_TOTAL", "Currently allocated memory: %u",
-                            global.current_allocated_mem);
-
-            if (global.memclean) {
-                /*
-                 * this code overwrites the memory prior to freeing it. This
-                 * is very useful when watching a memory address in gdb, as
-                 * one gets notified as soon as it is freed. Needs memcheck
-                 * to get the size of the freed memory chunk.
-                 */
-                shifted_ptr = memset (shifted_ptr, 0, size);
-            }
-
-            orig_ptr = CHKMunregisterMem (shifted_ptr);
-        } else {
-            orig_ptr = shifted_ptr;
+    if (global.memcheck) {
+        info = HTlookup (malloctable, ptr);
+        if (info) {
+            phasetable[info->phase].nfreed++;
+            global.current_allocated_mem -= info->size;
+            HTdelete (malloctable, ptr);
+            free (info);
         }
-        free (orig_ptr);
-        orig_ptr = NULL;
+    }
+#endif
+    free (ptr);
+    return NULL;
+}
+
+void *
+foldmallocreport (void *init, void *key, void *value)
+{
+    mallocinfo_t *info = value;
+    mallocinfo_t *iterator;
+    bool ispresent = FALSE;
+    if (info->phase > PH_final + 1) {
+        CTInote ("corrupted mallocinfo, ignoring ...");
+    } else {
+
+        iterator = phasetable[info->phase].notfreed;
+        while (iterator) {
+            if ((!strcmp (iterator->file, info->file)) && iterator->line == info->line) {
+                iterator->occurrence++;
+                iterator->size += info->size;
+                ispresent = TRUE;
+                break;
+            }
+            iterator = iterator->next;
+        }
+
+        if (!ispresent) {
+            info->next = phasetable[info->phase].notfreed;
+            phasetable[info->phase].notfreed = info;
+        }
+        phasetable[info->phase].notfreedsize += info->size;
     }
 
-    DBUG_RETURN (orig_ptr);
+    return NULL;
 }
 
-/******************************************************************************
- *
- * function:
- *   void MEMdbugMemoryLeakCheck( void)
- *
- * description:
- *   computes and prints memory usage w/o memory used for the actual
- *   syntax tree.
- *
- ******************************************************************************/
-
-void
-MEMdbugMemoryLeakCheck (void)
+static int
+SortMemreport (const void *a, const void *b)
 {
-    node *ast_dup;
-    int mem_before;
+    mallocphaseinfo_t *aa = (mallocphaseinfo_t *)a;
+    mallocphaseinfo_t *bb = (mallocphaseinfo_t *)b;
 
+    return bb->leakedsize - aa->leakedsize;
+}
+
+node *
+MEMreport (node *arg_node, info *arg_info)
+{
     DBUG_ENTER ();
 
-    mem_before = global.current_allocated_mem;
-    CTInote ("*** Currently allocated memory (Bytes):   %s",
-             CVintBytes2String (global.current_allocated_mem));
-    ast_dup = DUPdoDupTree (global.syntax_tree);
-    CTInote ("*** Size of the syntax tree (Bytes):      %s",
-             CVintBytes2String (global.current_allocated_mem - mem_before));
-    CTInote ("*** Other memory allocated/ Leak (Bytes): %s",
-             CVintBytes2String (2 * mem_before - global.current_allocated_mem));
-    FREEdoFreeTree (ast_dup);
-    CTInote ("*** FreeTree / DupTree leak (Bytes):      %s",
-             CVintBytes2String (global.current_allocated_mem - mem_before));
+    char *name = 0;
+    mallocinfo_t *iterator;
 
-    DBUG_RETURN ();
+    if (mreport == NULL) {
+        name = MEMmalloc ((strlen (global.outfilename) + 9) * sizeof (char));
+        sprintf (name, "%s.mreport", global.outfilename);
+        mreport = fopen (name, "w");
+    }
+
+    global.memcheck = FALSE;
+    HTfold (malloctable, 0, foldmallocreport);
+    global.memcheck = TRUE;
+    for (int i = 0; i < PH_final + 1; i++) {
+        phasetable[i].phase = i;
+    }
+    qsort (phasetable, PH_final + 1, sizeof (mallocphaseinfo_t), SortMemreport);
+
+    for (int i = 0; i <= PH_final; i++) {
+        fprintf (mreport, "** description: %s\n", PHIphaseText (phasetable[i].phase));
+        fprintf (mreport,
+                 "     ident: %s, malloced: %d, leaked: %d, total bytes leaked %d\n",
+                 PHIphaseIdent (phasetable[i].phase), phasetable[i].nmallocd,
+                 phasetable[i].nleaked, phasetable[i].leakedsize);
+        iterator = phasetable[i].leaked;
+        if (iterator) {
+            fprintf (mreport, "\n  ** The following mallocs where leaked during the "
+                              "traversal of this phase\n");
+        }
+        while (iterator) {
+            fprintf (mreport,
+                     "     ** file: %s, line: %d, occurrence: %d, size: %d, from phase: "
+                     "%s\n",
+                     iterator->file, iterator->line, iterator->occurrence, iterator->size,
+                     PHIphaseIdent (iterator->phase));
+            iterator = iterator->next;
+        }
+        iterator = phasetable[i].notfreed;
+        if (iterator) {
+            fprintf (mreport,
+                     "\n  ** The following mallocs from this phase where not freed\n");
+        }
+        while (iterator) {
+            fprintf (mreport, "     ** file: %s, line: %d, occurrence: %d, size: %d\n",
+                     iterator->file, iterator->line, iterator->occurrence,
+                     iterator->size);
+            iterator = iterator->next;
+        }
+        fprintf (mreport, "\n");
+    }
+
+    DBUG_RETURN (arg_node);
 }
-
-/******************************************************************************
- *
- * Function:
- *   void *MEMcopy( int size, void *mem)
- *
- * Description:
- *   Allocates memory and returns a pointer to the copy of 'mem'.
- *
- ******************************************************************************/
 
 void *
 MEMcopy (int size, void *mem)

@@ -172,12 +172,11 @@ PHrunPhase (compiler_phase_t phase, node *syntax_tree, bool cond)
             syntax_tree = PHrunConsistencyChecks (syntax_tree);
         }
 
-        DBUG_EXECUTE_TAG ("MEM_LEAK", MEMdbugMemoryLeakCheck ());
-
         if (global.memcheck && (syntax_tree != NULL)) {
             syntax_tree = CHKMdoMemCheck (syntax_tree);
         }
 #endif
+
     } else {
         CTIstate ("** %2d: %s skipped.", global.phase_num, PHIphaseText (phase));
     }
@@ -448,6 +447,9 @@ PHrunCyclePhase (compiler_phase_t cyclephase, node *syntax_tree, bool cond)
     }
 
 #ifndef DBUG_OFF
+    if (global.memcheck) {
+        syntax_tree = CHKMdoMemCheck (syntax_tree);
+    }
     CheckDisableDbug (cyclephase);
 #endif
 
@@ -540,6 +542,12 @@ PHrunCycleFun (compiler_phase_t cycle, node *syntax_tree)
 
         fundef = FUNDEF_NEXT (fundef);
     }
+
+#ifndef DBUG_OFF
+    if (global.memcheck) {
+        syntax_tree = CHKMdoMemCheck (syntax_tree);
+    }
+#endif
 
     DBUG_RETURN (syntax_tree);
 }

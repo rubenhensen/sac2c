@@ -23,8 +23,8 @@ version="1.0">
 <xsl:output method="text" indent="no"/>
 <xsl:strip-space elements="*"/>
 
-<!-- This stylesheet generates a check_node.h file implementing all
-     functions needed to free a node -->
+<!-- This stylesheet generates a check_node.h file
+     generating the nescessary functions to check a node -->
 
 <xsl:template match="/">
   <xsl:call-template name="travfun-file">
@@ -32,7 +32,7 @@ version="1.0">
       <xsl:value-of select="'check_node.h'"/>
     </xsl:with-param>
     <xsl:with-param name="desc">
-      <xsl:value-of select="'Functions to free node structures'"/>
+      <xsl:value-of select="'Functions to check node structures'"/>
     </xsl:with-param>
     <xsl:with-param name="xslt">
       <xsl:value-of select="'check_node.h.xsl'"/>
@@ -43,8 +43,7 @@ version="1.0">
 #define _SAC_CHECK_NODE_H_
 
 #include "types.h"
-
-extern node *CHKMpostfun( node * arg_node, info * arg_info);
+#include "memory.h"
 
   </xsl:text>
   <xsl:apply-templates select="//syntaxtree/node">

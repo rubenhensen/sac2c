@@ -71,13 +71,19 @@
   <!-- set node structure -->
   <xsl:value-of select="'xthis = (node *) &amp;(nodealloc->nodestructure);'" />
   <xsl:call-template name="newline" />
-  <xsl:value-of select="'CHKMsetNodeType(xthis, N_'" />
+  <xsl:text>
+#ifndef DBUG_OFF
+  </xsl:text>
+  <xsl:value-of select="'CHKMisNode(xthis, N_'" />
   <xsl:call-template name="lowercase" >
     <xsl:with-param name="string" >
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
   <xsl:value-of select="');'" />
+  <xsl:text>
+#endif
+  </xsl:text>
   <xsl:call-template name="newline" />
   <!-- set sons and attribs pointer -->
   <!-- only set sons if we have sons -->

@@ -85,25 +85,8 @@ version="1.0">
 #include "check_mem.h"
 
 #define CHKMTRAV( node, info) (node != NULL) ? TRAVdo( node, info) : node
-#define CHKMCOND( node, info)                                    \
-    ? CHKMTRAV( node, info)                                      \
-    : (node)
 
 
-
-/*******************************************************************************
- *
- * @fn CHKMpostfun
- *
- * This is the postfun function of the CHKM Traversal  
- *
- ******************************************************************************/
-node *CHKMpostfun( node * arg_node, info * arg_info)
-{
-  DBUG_ENTER ();
-  CHKMappendErrorNodes( arg_node, arg_info);
-  DBUG_RETURN (arg_node);
-}
   </xsl:text>
   <!-- functions -->
   <xsl:apply-templates select="//syntaxtree/node">

@@ -1345,17 +1345,16 @@ ENDPHASE (icc)
 
 /******************************************************************************/
 
-PHASE (prof, "Profiling report", ALWAYS)
+PHASE (prof, "Profiling report", global.timefreq || global.memcheck)
 
 #ifdef HAVE_GETTIME
 SUBPHASE (time, "Generating time report", TIMEtimeReport, global.timefreq, prof)
 #endif
-/*SUBPHASE( mem,
-          "Generating memory reports",
-          PRFmallocReport,
-          global.memcheck,
-          prof)
-*/
+
+#ifndef DBUG_OFF
+SUBPHASE (mem, "Generating memory reports", MEMreport, global.memcheck, prof)
+#endif
+
 ENDPHASE (prof)
 
 #include "phase_undefine_defs.mac"
