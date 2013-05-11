@@ -62,7 +62,7 @@ FreeInfo (info *info)
 }
 
 static void
-CheckRefReadNums (int line, int size, node *nums)
+CheckRefReadNums (struct location loc, int size, node *nums)
 {
     int i;
     node *tmp;
@@ -76,10 +76,10 @@ CheckRefReadNums (int line, int size, node *nums)
         DBUG_PRINT_TAG ("PRAGMA", "Nums value is %d", NUMS_VAL (tmp));
 
         if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) >= size)) {
-            CTIerrorLine (line,
-                          "Invalid argument of pragma 'readonly` or 'refcounting`: "
-                          "Entry no. %d does not match a function parameter",
-                          i, NUMS_VAL (tmp));
+            CTIerrorLoc (loc,
+                         "Invalid argument of pragma 'readonly` or 'refcounting`: "
+                         "Entry no. %d does not match a function parameter",
+                         i, NUMS_VAL (tmp));
         }
 
         tmp = NUMS_NEXT (tmp);
@@ -90,7 +90,7 @@ CheckRefReadNums (int line, int size, node *nums)
 }
 
 static bool
-CheckLinkSignNums (int line, int size, node *nums)
+CheckLinkSignNums (struct location loc, int size, node *nums)
 {
     int i;
     node *tmp;
@@ -102,19 +102,19 @@ CheckLinkSignNums (int line, int size, node *nums)
         DBUG_PRINT_TAG ("PRAGMA", "Nums value is %d", NUMS_VAL (tmp));
 
         if ((NUMS_VAL (tmp) < 0) || (NUMS_VAL (tmp) > size)) {
-            CTIerrorLine (line,
-                          "Invalid argument of pragma 'linksign`: "
-                          "Entry no. %d does not match a valid parameter position",
-                          i + 1);
+            CTIerrorLoc (loc,
+                         "Invalid argument of pragma 'linksign`: "
+                         "Entry no. %d does not match a valid parameter position",
+                         i + 1);
             result = FALSE;
         }
     }
 
     if (i < size) {
-        CTIerrorLine (line,
-                      "Invalid argument of pragma 'linksign` :"
-                      "Less entries (%d) than parameters of function (%d)",
-                      i, size);
+        CTIerrorLoc (loc,
+                     "Invalid argument of pragma 'linksign` :"
+                     "Less entries (%d) than parameters of function (%d)",
+                     i, size);
         result = FALSE;
     }
 
@@ -127,10 +127,10 @@ CheckLinkSignNums (int line, int size, node *nums)
             tmp = NUMS_NEXT (tmp);
         } while (tmp != NULL);
 
-        CTIerrorLine (line,
-                      "Invalid argument of pragma 'linksign`: "
-                      "More entries (%d) than function parameters (%d)",
-                      i, size);
+        CTIerrorLoc (loc,
+                     "Invalid argument of pragma 'linksign`: "
+                     "More entries (%d) than function parameters (%d)",
+                     i, size);
         result = FALSE;
     }
 
@@ -365,25 +365,25 @@ RSPfundef (node *arg_node, info *arg_info)
           = TCcountArgs (FUNDEF_ARGS (arg_node)) + TCcountRets (FUNDEF_RETS (arg_node));
 
         if (PRAGMA_COPYFUN (pragma) != NULL) {
-            CTIwarnLine (NODE_LINE (arg_node),
-                         "Pragma 'copyfun` has no effect on function");
+            CTIwarnLoc (NODE_LOCATION (arg_node),
+                        "Pragma 'copyfun` has no effect on function");
             PRAGMA_COPYFUN (pragma) = MEMfree (PRAGMA_COPYFUN (pragma));
         }
 
         if (PRAGMA_FREEFUN (pragma) != NULL) {
-            CTIwarnLine (NODE_LINE (arg_node),
-                         "Pragma 'freefun` has no effect on function");
+            CTIwarnLoc (NODE_LOCATION (arg_node),
+                        "Pragma 'freefun` has no effect on function");
             PRAGMA_FREEFUN (pragma) = MEMfree (PRAGMA_FREEFUN (pragma));
         }
 
         if (PRAGMA_INITFUN (pragma) != NULL) {
-            CTIwarnLine (NODE_LINE (arg_node),
-                         "Pragma 'initfun` has no effect on function");
+            CTIwarnLoc (NODE_LOCATION (arg_node),
+                        "Pragma 'initfun` has no effect on function");
             PRAGMA_INITFUN (pragma) = MEMfree (PRAGMA_INITFUN (pragma));
         }
 
         if (PRAGMA_LINKSIGN (pragma) != NULL) {
-            if (CheckLinkSignNums (NODE_LINE (arg_node), PRAGMA_NUMPARAMS (pragma),
+            if (CheckLinkSignNums (NODE_LOCATION (arg_node), PRAGMA_NUMPARAMS (pragma),
                                    PRAGMA_LINKSIGN (pragma))) {
                 arg_node
                   = AnnotateLinksign (arg_node, arg_info, PRAGMA_LINKSIGN (pragma));
@@ -393,7 +393,7 @@ RSPfundef (node *arg_node, info *arg_info)
         }
 
         if (PRAGMA_REFCOUNTING (pragma) != NULL) {
-            CheckRefReadNums (NODE_LINE (arg_node), PRAGMA_NUMPARAMS (pragma),
+            CheckRefReadNums (NODE_LOCATION (arg_node), PRAGMA_NUMPARAMS (pragma),
                               PRAGMA_REFCOUNTING (pragma));
 
             arg_node
@@ -406,8 +406,8 @@ RSPfundef (node *arg_node, info *arg_info)
             if (FUNDEF_HASDOTARGS (arg_node) || FUNDEF_HASDOTRETS (arg_node)) {
                 FUNDEF_REFCOUNTDOTS (arg_node) = PRAGMA_REFCOUNTDOTS (pragma);
             } else {
-                CTIwarnLine (NODE_LINE (arg_node),
-                             "Pragma 'refcountdots' has no effect on function");
+                CTIwarnLoc (NODE_LOCATION (arg_node),
+                            "Pragma 'refcountdots' has no effect on function");
             }
         }
 
@@ -454,9 +454,9 @@ RSPfundef (node *arg_node, info *arg_info)
 
         if (PRAGMA_CUDALINKNAME (pragma) != NULL) {
             if (FUNDEF_LINKNAME (pragma) == NULL) {
-                CTIwarnLine (NODE_LINE (arg_node),
-                             "Implicit declaration of 'C' version of external function"
-                             " use linkname to explicitly declare 'C' version");
+                CTIwarnLoc (NODE_LOCATION (arg_node),
+                            "Implicit declaration of 'C' version of external function"
+                            " use linkname to explicitly declare 'C' version");
             }
             FUNDEF_CUDALINKNAME (arg_node) = PRAGMA_CUDALINKNAME (pragma);
             PRAGMA_CUDALINKNAME (pragma) = NULL;

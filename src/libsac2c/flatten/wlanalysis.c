@@ -343,16 +343,16 @@ CheckBounds (node *arg_node, shape *max_shp)
         tnum = SHgetExtent (max_shp, dim);
         if (lbnum < 0) {
             NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-            CTIerrorLine (NODE_LINE (arg_node),
-                          "Lower bound of WL-generator in dim %d below zero: %d", dim,
-                          lbnum);
+            CTIerrorLoc (NODE_LOCATION (arg_node),
+                         "Lower bound of WL-generator in dim %d below zero: %d", dim,
+                         lbnum);
         }
         if (ubnum > tnum) {
             NUM_VAL (EXPRS_EXPR (ube)) = tnum;
-            CTIerrorLine (NODE_LINE (arg_node),
-                          "Upper bound of WL-generator in dim %d greater than shape %d: "
-                          "%d",
-                          dim, tnum, ubnum);
+            CTIerrorLoc (NODE_LOCATION (arg_node),
+                         "Upper bound of WL-generator in dim %d greater than shape %d: "
+                         "%d",
+                         dim, tnum, ubnum);
         }
 
         dim++;
@@ -475,16 +475,16 @@ CropBounds (node *wl, shape *max_shp)
         tnum = SHgetExtent (max_shp, dim);
         if (lbnum < 0) {
             NUM_VAL (EXPRS_EXPR (lbe)) = 0;
-            CTIerrorLine (NODE_LINE (wl),
-                          "Lower bound of WL-generator in dim %d below zero: %d", dim,
-                          lbnum);
+            CTIerrorLoc (NODE_LOCATION (wl),
+                         "Lower bound of WL-generator in dim %d below zero: %d", dim,
+                         lbnum);
         }
         if (ubnum > tnum) {
             NUM_VAL (EXPRS_EXPR (ube)) = tnum;
-            CTIerrorLine (NODE_LINE (wl),
-                          "Upper bound of WL-generator in dim %d greater than shape %d: "
-                          "%d",
-                          dim, tnum, ubnum);
+            CTIerrorLoc (NODE_LOCATION (wl),
+                         "Upper bound of WL-generator in dim %d greater than shape %d: "
+                         "%d",
+                         dim, tnum, ubnum);
         }
 
         dim++;

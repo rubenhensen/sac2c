@@ -135,12 +135,12 @@ CheckImportNameClash (const char *symbol, const char *module, sttable_t *table)
 }
 
 static void
-CheckLocalNameClash (const char *symbol, sttable_t *table, int lineno)
+CheckLocalNameClash (const char *symbol, sttable_t *table, struct location loc)
 {
     DBUG_ENTER ();
 
     if (STcontains (symbol, table)) {
-        CTIerrorLine (lineno, "Symbol `%s' used and locally defined", symbol);
+        CTIerrorLoc (loc, "Symbol `%s' used and locally defined", symbol);
     }
 
     DBUG_RETURN ();
@@ -322,7 +322,7 @@ ANSfundef (node *arg_node, info *arg_info)
     DBUG_ASSERT (INFO_IDS (arg_info) == NULL, "found leftover ids in ans info");
 
     CheckLocalNameClash (FUNDEF_NAME (arg_node), INFO_SYMBOLS (arg_info),
-                         NODE_LINE (arg_node));
+                         NODE_LOCATION (arg_node));
 
     if (FUNDEF_NS (arg_node) == NULL) {
         FUNDEF_NS (arg_node) = NSdupNamespace (MODULE_NAMESPACE (INFO_MODULE (arg_info)));
@@ -362,7 +362,7 @@ ANStypedef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     CheckLocalNameClash (TYPEDEF_NAME (arg_node), INFO_SYMBOLS (arg_info),
-                         NODE_LINE (arg_node));
+                         NODE_LOCATION (arg_node));
 
     if (TYPEDEF_NS (arg_node) == NULL) {
         DBUG_PRINT ("Updated namespace for typedef %s to %s", CTIitemName (arg_node),
@@ -389,7 +389,7 @@ ANSobjdef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     CheckLocalNameClash (OBJDEF_NAME (arg_node), INFO_SYMBOLS (arg_info),
-                         NODE_LINE (arg_node));
+                         NODE_LOCATION (arg_node));
 
     if (OBJDEF_NS (arg_node) == NULL) {
         OBJDEF_NS (arg_node) = NSdupNamespace (MODULE_NAMESPACE (INFO_MODULE (arg_info)));
