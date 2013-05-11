@@ -9,6 +9,9 @@ extern void CHKMdeinitialize (void);
 extern node *CHKMdoMemCheck (node *syntax_tree);
 extern void CHKMtouch (void *shifted_ptr, info *arg_info);
 
+/*
+ * CHKMisNode is called for every attribute in the tree
+ */
 extern void CHKMisNode (void *, nodetype);
 
 extern void CHKMdoNotReport (void *shifted_ptr);

@@ -12,6 +12,7 @@ typedef struct mallocinfo_t {
     int size;
     bool isfreed;
     bool isreachable;
+    bool wasintree;
     bool isnode;
     nodetype type;
     char *file;

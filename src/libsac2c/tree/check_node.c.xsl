@@ -77,7 +77,6 @@ version="1.0">
   <xsl:text>
 
 #include "check_node.h"
-#include "check_attribs.h"
 #include "tree_basic.h"
 #include "traverse.h"
 #define DBUG_PREFIX "CHKM"
@@ -248,7 +247,7 @@ version="1.0">
         <xsl:value-of select="key(&quot;types&quot;, ./type/@name)/@size"/>
         <xsl:value-of select="'; cnt++) { '" />
       </xsl:if>
-      <!-- left side of assignment -->
+      <!-- left side of assignment 
       <xsl:call-template name="node-access">
         <xsl:with-param name="node">
           <xsl:value-of select="'arg_node'" />
@@ -259,7 +258,7 @@ version="1.0">
         <xsl:with-param name="field">
           <xsl:value-of select="@name" />
         </xsl:with-param>
-        <!-- if its is an array, we have to add another parameter -->
+        <- if its is an array, we have to add another parameter ->
         <xsl:with-param name="index">
           <xsl:if test="key(&quot;arraytypes&quot;, ./type/@name)">
             <xsl:value-of select="'cnt'"/>
@@ -267,9 +266,8 @@ version="1.0">
         </xsl:with-param>
       </xsl:call-template>
       <xsl:value-of select="' = '" />
-      <!-- right side of assignment -->
-      <xsl:value-of select="'CHKMattrib'"/>
-      <xsl:value-of select="./type/@name"/>
+      <- right side of assignment -->
+      <xsl:value-of select="'CHKMtouch'"/>
       <xsl:value-of select="'('"/>
       <xsl:call-template name="node-access">
         <xsl:with-param name="node">

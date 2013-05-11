@@ -77,7 +77,7 @@ libsac2c_tree        := traverse tree_basic free tree_compound DupTree \
                         wl_bounds node_basic free_node check_lacfuns\
                         free_attribs traverse_tables traverse_helper check \
                         check_lib check_reset prepare_inlining map_call_graph \
-                        map_fun_trav check_node check_attribs remove_dfms \
+                        map_fun_trav check_node remove_dfms \
                         sanity_checks \
                         pattern_match pattern_match_attribs pattern_match_modes \
                         prf_pvs_info map_avis_trav rename group_local_funs \
