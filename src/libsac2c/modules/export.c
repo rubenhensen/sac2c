@@ -160,9 +160,9 @@ EXPprovide (node *arg_node, info *arg_info)
                 INFO_PROVIDED (arg_info) = TRUE;
             }
         } else {
-            CTIwarnLine (NODE_LINE (arg_node),
-                         "The provide directive is only allowed in modules and "
-                         "classes. Ignoring...");
+            CTIwarnLoc (NODE_LOCATION (arg_node),
+                        "The provide directive is only allowed in modules and "
+                        "classes. Ignoring...");
 
             arg_node = FREEdoFreeNode (arg_node);
         }
@@ -188,9 +188,9 @@ EXPexport (node *arg_node, info *arg_info)
                 INFO_EXPORTED (arg_info) = TRUE;
             }
         } else {
-            CTIwarnLine (NODE_LINE (arg_node),
-                         "The export directive is only allowed in modules and classes. "
-                         "Ignoring...");
+            CTIwarnLoc (NODE_LOCATION (arg_node),
+                        "The export directive is only allowed in modules and classes. "
+                        "Ignoring...");
 
             arg_node = FREEdoFreeNode (arg_node);
         }
@@ -217,9 +217,9 @@ EXPsymbol (node *arg_node, info *arg_info)
         }
     } else if (INFO_SYMBMODE (arg_info) == SYM_check) {
         if (!SYMBOL_USED (arg_node)) {
-            CTIerrorLine (NODE_LINE (arg_node),
-                          "Symbol '%s' used in export or provide is not defined.",
-                          SYMBOL_ID (arg_node));
+            CTIerrorLoc (NODE_LOCATION (arg_node),
+                         "Symbol '%s' used in export or provide is not defined.",
+                         SYMBOL_ID (arg_node));
         }
     }
 

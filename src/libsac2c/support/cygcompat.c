@@ -121,13 +121,13 @@ NSdeserializeView (const char *module, int id, void *_next)
 }
 
 node *
-SHLPmakeNode (int _node_type, int lineno, char *sfile, ...)
+SHLPmakeNode (int _node_type, char *sfile, size_t lineno, size_t col, ...)
 {
     node *result;
     va_list Argp;
 
-    va_start (Argp, sfile);
-    result = CALL_FROM_TABLE (SHLPmakeNodeVa_fp (_node_type, lineno, sfile, Argp));
+    va_start (Argp, col);
+    result = CALL_FROM_TABLE (SHLPmakeNodeVa_fp (_node_type, sfile, lineno, col, Argp));
     va_end (Argp);
 
     return result;

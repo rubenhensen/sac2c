@@ -1,13 +1,15 @@
 #ifndef _SAC_SERIALIZE_H_
 #define _SAC_SERIALIZE_H_
 
+#include <stdlib.h>
+
 #ifndef NULL
 #define NULL ((void *)0)
 #endif
 
 /* FIXME Why the hell this file is not auto-generated?  */
 
-extern void *SHLPmakeNode (int ntype, int lineno, char *sfile, ...);
+extern void *SHLPmakeNode (int ntype, char *sfile, size_t lineno, size_t col, ...);
 extern void *SHLPfixLink (void *stack, int a, int b, int c);
 extern void *COdeserializeConstant (int type, void *shp, int vlen, char *vec);
 extern void *SHcreateShape (int dim, ...);

@@ -182,13 +182,11 @@ HighestLinksign (node *args)
 static argtab_t *
 InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
 {
+    struct location loc = NODE_LOCATION (fundef);
     argtag_t argtag;
     int idx;
-    int line;
 
     DBUG_ENTER ();
-
-    line = NODE_LINE (fundef);
 
     /*
      * Get the linksign value. This will just be the return's natural position
@@ -209,8 +207,8 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
          * the C return expression.
          */
         if (idx == 0) {
-            CTIerrorLine (line, "Pragma 'linksign' or 'refcounting' illegal: "
-                                "return value must not use a descriptor");
+            CTIerrorLoc (loc, "Pragma 'linksign' or 'refcounting' illegal: "
+                              "return value must not use a descriptor");
         }
     }
 
@@ -256,19 +254,19 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
 
     /* Check for illegal index values. */
     if ((idx < 0) || (idx >= argtab->size)) {
-        CTIerrorLine (line,
-                      "Pragma 'linksign' illegal: "
-                      "entry contains illegal value %d",
-                      idx);
+        CTIerrorLoc (loc,
+                     "Pragma 'linksign' illegal: "
+                     "entry contains illegal value %d",
+                     idx);
         DBUG_RETURN (argtab);
     }
 
     /* Check whether this parameter was already given. */
     if (argtab->ptr_out[idx] != NULL) {
-        CTIerrorLine (line,
-                      "Pragma 'linksign' illegal: "
-                      "out-parameter at position %d found twice in function %s",
-                      idx, FUNDEF_NAME (fundef));
+        CTIerrorLoc (loc,
+                     "Pragma 'linksign' illegal: "
+                     "out-parameter at position %d found twice in function %s",
+                     idx, FUNDEF_NAME (fundef));
         DBUG_RETURN (argtab);
     }
 
@@ -285,7 +283,7 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
      * message.
      */
     if (argtab->tag[idx] != ATG_notag) {
-        CTIerrorLine (line, "Pragma 'linksign' illegal: return value found twice");
+        CTIerrorLoc (loc, "Pragma 'linksign' illegal: return value found twice");
         DBUG_RETURN (argtab);
     }
 
@@ -312,13 +310,11 @@ InsertIntoOut (argtab_t *argtab, node *fundef, node *ret)
 static argtab_t *
 InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
 {
+    struct location loc = NODE_LOCATION (fundef);
     argtag_t argtag;
-    int line;
     int idx;
 
     DBUG_ENTER ();
-
-    line = NODE_LINE (fundef);
 
     /* Check if the type is not refcounted, so we don't pass the descriptor. */
     if (!ARG_ISREFCOUNTED (arg)) {
@@ -357,26 +353,26 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
 
     /* Check for illegal index values. */
     if ((idx < 0) || (idx >= argtab->size)) {
-        CTIerrorLine (line,
-                      "Pragma 'linksign' illegal: "
-                      "entry contains illegal value %d",
-                      idx);
+        CTIerrorLoc (loc,
+                     "Pragma 'linksign' illegal: "
+                     "entry contains illegal value %d",
+                     idx);
         DBUG_RETURN (argtab);
     }
 
     /* Index 0 is reserved for return positions. */
     if (idx == 0) {
-        CTIerrorLine (line, "Pragma 'linksign' illegal: "
-                            "in-parameter cannot be used as return value");
+        CTIerrorLoc (loc, "Pragma 'linksign' illegal: "
+                          "in-parameter cannot be used as return value");
         DBUG_RETURN (argtab);
     }
 
     /* Check whether this parameter was already given. */
     if (argtab->ptr_in[idx] != NULL) {
-        CTIerrorLine (line,
-                      "Pragma 'linksign' illegal: "
-                      "in-parameter at position %d found twice in function %s",
-                      idx, FUNDEF_NAME (fundef));
+        CTIerrorLoc (loc,
+                     "Pragma 'linksign' illegal: "
+                     "in-parameter at position %d found twice in function %s",
+                     idx, FUNDEF_NAME (fundef));
         DBUG_RETURN (argtab);
     }
 
@@ -411,17 +407,17 @@ InsertIntoIn (argtab_t *argtab, node *fundef, node *arg)
         if (!(FUNDEF_ISSPMDFUN (fundef)) && !(FUNDEF_ISCUDAGLOBALFUN (fundef))
             && !(FUNDEF_ISCUDASTGLOBALFUN (fundef))
             && !(argtab->tag[idx] == ATG_out_nodesc && argtag == ATG_in_nodesc)) {
-            CTIerrorLine (line, "Pragma 'linksign' illegal: "
-                                "mappings allowed exclusively between parameters"
-                                " without descriptor");
+            CTIerrorLoc (loc, "Pragma 'linksign' illegal: "
+                              "mappings allowed exclusively between parameters"
+                              " without descriptor");
             DBUG_RETURN (argtab);
         }
 
         /* Check that both parameters have equal types. */
         if (!TYeqTypes (RET_TYPE (argtab->ptr_out[idx]), ARG_NTYPE (arg))) {
-            CTIerrorLine (line, "Pragma 'linksign' illegal: "
-                                "mappings allowed exclusively between parameters"
-                                " with identical types");
+            CTIerrorLoc (loc, "Pragma 'linksign' illegal: "
+                              "mappings allowed exclusively between parameters"
+                              " with identical types");
         }
 
         /*

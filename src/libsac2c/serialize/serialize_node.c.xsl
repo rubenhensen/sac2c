@@ -128,15 +128,15 @@
   <xsl:value-of select="'DBUG_PRINT (&quot;Serializing '" />
   <xsl:value-of select="@name"/>
   <xsl:value-of select="' node&quot;);'" />
-  <!-- print start of block -->
-  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, SHLPmakeNode( %d, %d, FILENAME( %d) &quot;, '" />
+  <!-- print start of block SHLPmakeNode (node_type, filename, line, col)  -->
+  <xsl:value-of select="'fprintf( INFO_SER_FILE( arg_info), &quot;, SHLPmakeNode (%d, FILENAME( %d), %zd, %zd &quot;, '" />
   <!-- generate nodetype argument -->
   <xsl:call-template name="name-to-nodeenum">
     <xsl:with-param name="name">
       <xsl:value-of select="@name" />
     </xsl:with-param>
   </xsl:call-template>
-  <xsl:value-of select="', NODE_LINE( arg_node), SFNgetId( NODE_FILE( arg_node)));'" /> 
+  <xsl:value-of select="', SFNgetId (NODE_FILE (arg_node)), NODE_LINE (arg_node), NODE_COL (arg_node));'" /> 
   <!-- print generators of all arguments -->
   <xsl:apply-templates select="." mode="gen-values"/>
   <!-- print end of block -->

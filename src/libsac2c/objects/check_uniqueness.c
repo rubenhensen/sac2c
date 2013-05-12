@@ -128,8 +128,8 @@ CUavis (node *arg_node, info *arg_info)
 
         if (used == TRUE) {
             if (thenused == TRUE || elseused == TRUE) {
-                CTIerrorLine (NODE_LINE (arg_node),
-                              "Unique type used in both main and then-else branch!");
+                CTIerrorLoc (NODE_LOCATION (arg_node),
+                             "Unique type used in both main and then-else branch!");
             }
         }
     }
@@ -279,10 +279,10 @@ CUid (node *arg_node, info *arg_info)
             if (AVIS_ISUNIQUECONSUMED (avis) == TRUE
                 || AVIS_ISUNIQUECONSUMEDTHEN (avis) == TRUE
                 || AVIS_ISUNIQUECONSUMEDELSE (avis) == TRUE) {
-                CTIerrorLine (NODE_LINE (arg_node),
-                              "Unique var %s of type %s referenced more than once",
-                              AVIS_NAME (avis),
-                              UTgetName (TYgetUserType (TYgetScalar (type))));
+                CTIerrorLoc (NODE_LOCATION (arg_node),
+                             "Unique var %s of type %s referenced more than once",
+                             AVIS_NAME (avis),
+                             UTgetName (TYgetUserType (TYgetScalar (type))));
                 CTIerrorLine (NODE_LINE (AVIS_UNIQUEREF (avis)),
                               "Previous reference was here");
             } else {
@@ -294,10 +294,10 @@ CUid (node *arg_node, info *arg_info)
         case CU_MODE_THEN: /* then-mode */
             if (AVIS_ISUNIQUECONSUMEDTHEN (avis) == TRUE
                 || AVIS_ISUNIQUECONSUMED (avis) == TRUE) {
-                CTIerrorLine (NODE_LINE (arg_node),
-                              "Unique var %s of type %s referenced more than once",
-                              AVIS_NAME (avis),
-                              UTgetName (TYgetUserType (TYgetScalar (type))));
+                CTIerrorLoc (NODE_LOCATION (arg_node),
+                             "Unique var %s of type %s referenced more than once",
+                             AVIS_NAME (avis),
+                             UTgetName (TYgetUserType (TYgetScalar (type))));
                 CTIerrorLine (NODE_LINE (AVIS_UNIQUEREF (avis)),
                               "Previous reference was here");
             } else {
@@ -309,10 +309,10 @@ CUid (node *arg_node, info *arg_info)
         case CU_MODE_ELSE: /* else-mode */
             if (AVIS_ISUNIQUECONSUMEDELSE (avis) == TRUE
                 || AVIS_ISUNIQUECONSUMED (avis) == TRUE) {
-                CTIerrorLine (NODE_LINE (arg_node),
-                              "Unique var %s of type %s referenced more than once",
-                              AVIS_NAME (avis),
-                              UTgetName (TYgetUserType (TYgetScalar (type))));
+                CTIerrorLoc (NODE_LOCATION (arg_node),
+                             "Unique var %s of type %s referenced more than once",
+                             AVIS_NAME (avis),
+                             UTgetName (TYgetUserType (TYgetScalar (type))));
                 CTIerrorLine (NODE_LINE (AVIS_UNIQUEREF (avis)),
                               "Previous reference was here");
             } else {
@@ -323,11 +323,10 @@ CUid (node *arg_node, info *arg_info)
         }
 
         if (AVIS_WITHLOOPLEVEL (avis) != INFO_WITHLOOPLEVEL (arg_info)) {
-            CTIerrorLine (NODE_LINE (arg_node),
-                          "Unique var %s of type %s not propagated into this WithLoop",
-                          AVIS_NAME (avis),
-                          UTgetName (TYgetUserType (TYgetScalar (type))),
-                          INFO_WITHLOOPLEVEL (arg_info));
+            CTIerrorLoc (NODE_LOCATION (arg_node),
+                         "Unique var %s of type %s not propagated into this WithLoop",
+                         AVIS_NAME (avis), UTgetName (TYgetUserType (TYgetScalar (type))),
+                         INFO_WITHLOOPLEVEL (arg_info));
         }
     }
 
