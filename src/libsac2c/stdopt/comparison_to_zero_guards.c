@@ -1,32 +1,30 @@
 /** <!--********************************************************************-->
  *
- * @defgroup ctzg  Replace certain guards by new code that
- *   uses the same method as sacprelude min/max functions and CTZ,
- *   to facilitate optimization of guarded expressions.
+ * @defgroup ctzg
  *
- *   This module searches for selected guards, transforms them into
- *   a suitable comparison with zero instead.
+ *   FIXME: Rename this traversal, as the name
+ *   no longer bears any resemblance to its purpose.
+ *
+ *   This module searches for selected guards, adds an extra argument,
+ *   which will hopefully be reduced to a Boolean result.
+ *
  *   For example:
  *
  *     iv  = q + [4];
  *     iv2 = q + [10];
- *     iv', p = _val_le_val_SxS_( iv, iv2);
+ *     iv', p = _val_lt_val_SxS_( iv, iv2);
  *
- *   This can not be optimized any further.
- *   But if we rewrite it this way, using a relational
- *   (which will itself be rewritten by CTZ into a comparison to zero),
- *   then AS/AS/DL/CF may be able to optimize it:
+ *   This can not be optimized any further, and we must not
+ *   play the subtract-iv-from-both-arguments trick, because
+ *   we need to preserve PRF_ARG1.
  *
- *      p = _le_SxS_( iv, iv2);
- *      iv' = _guard( iv, p);
+ *   So, we add a third argument:
  *
- *   This change is the only operation this module does.
+ *     arg3 = iv < iv2;
+ *     iv', p = _val_lt_val_SxS_( iv, iv2, arg3);
  *
- *   Unfortunately, the clever lad who wrote this failed to
- *   observe that, for VxV guards, p will be a vector,
- *   and we require a scalar. Hence, VxV is disabled for the nonce.
- *   This should not be a serious drawback, as we are moving
- *   toward complete scalarization of such arrays, anyway.
+ *   CF will later examine PRF_ARG3 and optimize the guard away
+ *   if PRF_ARG3 is true.
  *
  * @ingroup opt
  *
@@ -176,9 +174,7 @@ IsSuitableGuard (prf op)
 
     DBUG_ENTER ();
 
-    z = (op == F_val_lt_val_SxS ||
-         //       disabled. See comments at top of doc        op == F_val_le_val_VxV ||
-         op == F_val_le_val_SxS);
+    z = (op == F_val_lt_val_SxS);
 
     DBUG_RETURN (z);
 }
@@ -207,6 +203,7 @@ GetRelationalPrimitive (prf op)
         result = F_lt_SxS;
         break;
 
+#ifdef DEADORNOTYETALIVE
     case F_val_le_val_VxV:
         result = F_le_VxV;
         break;
@@ -214,6 +211,7 @@ GetRelationalPrimitive (prf op)
     case F_val_le_val_SxS:
         result = F_le_SxS;
         break;
+#endif // DEADORNOTYETALIVE
 
     default:
         DBUG_ASSERT (0, "Illegal argument.");
@@ -302,10 +300,6 @@ CTZGassign (node *arg_node, info *arg_info)
 
     ASSIGN_STMT (arg_node) = TRAVopt (ASSIGN_STMT (arg_node), arg_info);
     if (INFO_PREASSIGNS (arg_info) != NULL) {
-
-        /* CTZGlet corrupted this */
-        AVIS_SSAASSIGN (IDS_AVIS (LET_IDS (ASSIGN_STMT (arg_node)))) = arg_node;
-
         arg_node = TCappendAssign (INFO_PREASSIGNS (arg_info), arg_node);
         INFO_PREASSIGNS (arg_info) = NULL;
     }
@@ -318,17 +312,6 @@ CTZGassign (node *arg_node, info *arg_info)
  * @fn node *CTZGlet(node *arg_node, info *arg_info)
  *
  * @brief Traverse into the LET_EXPR.
- *        When we return, if we were able to rewrite the
- *        guard( if is it one), then adjust the result of
- *        the guard from, e.g.:
- *
- *           iv', p = val_lt_val(iv, jv);
- *
- *        to:
- *
- *           iv' = guard( iv, p);
- *
- *        The computation of p will be in the preassigns by then.
  *
  * @param arg_node
  * @param arg_info
@@ -339,14 +322,14 @@ CTZGassign (node *arg_node, info *arg_info)
 node *
 CTZGlet (node *arg_node, info *arg_info)
 {
+    node *oldlet;
+
     DBUG_ENTER ();
 
+    oldlet = INFO_LET (arg_info);
     INFO_LET (arg_info) = arg_node;
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
-    if (NULL != INFO_PREASSIGNS (arg_info)) {
-        IDS_NEXT (LET_IDS (arg_node)) = FREEdoFreeNode (IDS_NEXT (LET_IDS (arg_node)));
-    }
-    INFO_LET (arg_info) = NULL;
+    INFO_LET (arg_info) = oldlet;
 
     DBUG_RETURN (arg_node);
 }
@@ -377,9 +360,8 @@ CTZGprf (node *arg_node, info *arg_info)
     DBUG_PRINT ("Looking at prf for %s",
                 AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
 
-    if ((IsSuitableGuard (PRF_PRF (arg_node)))
-        && (IVEXPisAvisHasBothExtrema (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))))) {
-        DBUG_PRINT ("Replacing guard on %s",
+    if ((IsSuitableGuard (PRF_PRF (arg_node))) && (NULL == PRF_EXPRS3 (arg_node))) {
+        DBUG_PRINT ("Appending to guard on %s",
                     AVIS_NAME (IDS_AVIS (LET_IDS (INFO_LET (arg_info)))));
 
         relop = TBmakePrf (GetRelationalPrimitive (PRF_PRF (arg_node)),
@@ -391,16 +373,17 @@ CTZGprf (node *arg_node, info *arg_info)
                                             &INFO_PREASSIGNS (arg_info),
                                             TYmakeAKS (TYmakeSimpleType (T_bool),
                                                        SHcreateShape (0)));
+
+#ifdef DEADCODE
         pavis = IDS_AVIS (IDS_NEXT (LET_IDS (INFO_LET (arg_info))));
         passign = TBmakeAssign (TBmakeLet (TBmakeIds (pavis, NULL), TBmakeId (relopavis)),
                                 NULL);
         AVIS_SSAASSIGN (pavis) = passign;
         INFO_PREASSIGNS (arg_info) = TCappendAssign (INFO_PREASSIGNS (arg_info), passign);
+#endif // DEADCODE
 
-        // Change the guard expression.
-        PRF_PRF (arg_node) = F_guard;
-        // PRF_ARG1( arg_node) is still iv
-        PRF_ARG2 (arg_node) = TBmakeId (relopavis);
+        PRF_ARGS (arg_node)
+          = TCappendExprs (PRF_ARGS (arg_node), TBmakeExprs (TBmakeId (relopavis), NULL));
 
         global.optcounters.ctzg_expr += 1;
     }

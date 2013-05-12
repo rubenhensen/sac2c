@@ -860,7 +860,7 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
        COMPprfValLtShape, SCSprf_val_lt_shape_VxA, NULL, SAACFprf_val_lt_shape_VxA,
        SAAdim_cc_inherit, SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
-  PRF (val_lt_val_SxS, (PA_S, PA_S, PA_x), 2, XXX, NOSIMD, NTCCTprf_val_lt_val_SxS, NULL,
+  PRF (val_lt_val_SxS, (PA_S, PA_S, PA_x), 3, XXX, NOSIMD, NTCCTprf_val_lt_val_SxS, NULL,
        COMPprfValLtVal_SxS, SCSprf_val_lt_val_SxS, NULL, SAACFprf_val_lt_val_SxS,
        SAAdim_cc_inherit, SAAshp_cc_inherit, NULL, 1, NULL, NULL, TEtwo, NULL, NULL),
 
