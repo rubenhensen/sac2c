@@ -898,7 +898,7 @@ IDCaddFunConstraint (node *expr)
     avis = FindAvisOfLastDefinition (args);
 
     if (avis == NULL) {
-        CTIwarnLine (NODE_LINE (expr), "illegal requirement ignored!");
+        CTIwarnLoc (NODE_LOCATION (expr), "illegal requirement ignored!");
         res = NULL;
     } else {
         res = TBmakeAvis (TRAVtmpVarName ("pred"),

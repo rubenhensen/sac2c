@@ -49,6 +49,7 @@ _MEMmalloc (int size, char *file, int line)
             info->phase = global.compiler_anyphase;
             info->isfreed = FALSE;
             info->isnode = FALSE;
+            info->wasintree = FALSE;
             info->isreachable = FALSE;
             info->line = line;
             info->file = file;
@@ -188,10 +189,9 @@ MEMreport (node *arg_node, info *arg_info)
 
     for (int i = 0; i <= PH_final; i++) {
         fprintf (mreport, "** description: %s\n", PHIphaseText (phasetable[i].phase));
-        fprintf (mreport,
-                 "     ident: %s, malloced: %d, leaked: %d, total bytes leaked %d\n",
-                 PHIphaseIdent (phasetable[i].phase), phasetable[i].nmallocd,
-                 phasetable[i].nleaked, phasetable[i].leakedsize);
+        fprintf (mreport, "     ident: %s, leaked: %d, total bytes leaked %d\n",
+                 PHIphaseIdent (phasetable[i].phase), phasetable[i].nleaked,
+                 phasetable[i].leakedsize);
         iterator = phasetable[i].leaked;
         if (iterator) {
             fprintf (mreport, "\n  ** The following mallocs where leaked during the "
@@ -208,7 +208,11 @@ MEMreport (node *arg_node, info *arg_info)
         iterator = phasetable[i].notfreed;
         if (iterator) {
             fprintf (mreport,
-                     "\n  ** The following mallocs from this phase where not freed\n");
+                     "\n  ** Total malloced in this phase: %d, Total freed from this "
+                     "phase: %d\n",
+                     phasetable[i].nmallocd, phasetable[i].nleaked);
+            fprintf (mreport,
+                     "  ** The following mallocs from this phase where not freed\n");
         }
         while (iterator) {
             fprintf (mreport, "     ** file: %s, line: %d, occurrence: %d, size: %d\n",

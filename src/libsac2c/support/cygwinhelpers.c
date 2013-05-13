@@ -29,7 +29,7 @@
 #define DBUG_PREFIX "CYGH"
 #include "debug.h"
 
-extern node *SHLPmakeNode (int _node_type, int lineno, char *sfile, ...);
+extern node *SHLPmakeNode (int _node_type, char *sfile, size_t lineno, size_t col, ...);
 
 /** <!--********************************************************************-->
  *

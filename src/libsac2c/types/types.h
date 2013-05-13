@@ -37,6 +37,12 @@ typedef int bool;
 #define FALSE 0
 #define TRUE 1
 
+/* Structcure to store where a token came from.  */
+struct location {
+    const char *fname;
+    size_t line, col;
+};
+
 /*
  * The NEW node structure of the SAC syntax tree
  * The type is abstract, as there is _no_ way to access a node other
@@ -1128,7 +1134,7 @@ typedef struct CYG_FUN_TABLE {
     namespace_t *(*NSdeserializeNamespace_fp) (int);
     int (*NSaddMapping_fp) (const char *, void *);
     void *(*NSdeserializeView_fp) (const char *, int, void *);
-    node *(*SHLPmakeNodeVa_fp) (int, int, char *, va_list);
+    node *(*SHLPmakeNodeVa_fp) (int, char *, size_t, size_t, va_list);
     void (*SHLPfixLink_fp) (serstack_t *, int, int, int);
     serstack_t *(*SERbuildSerStack_fp) (node *);
     constant *(*COdeserializeConstant_fp) (simpletype, shape *, int, char *);

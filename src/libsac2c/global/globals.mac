@@ -15,6 +15,19 @@
 
 #include "config.h"
 
+/* The source file of sac program can come from various files due to
+   recognition of #line directives.  Usually massively used by preprocessor.
+   Every token keeps a pointer to the file name.  In order to share file names
+   we keep a table of file names we've seen so far.  The table is just a dynamic
+   array with size attached.
+
+   Currently such a simple format suffises, as the lexer keeps file names in the
+   hash table, and on exit it dumps the list to this table.  We do not search over
+   this table and we do not support multiple file compilation, which means that one
+   global table would work.  */
+GLOBAL (size_t, file_table_size, 0, xfree_dummy, )
+GLOBAL (char **, file_table, NULL, xfree_char_ptr_ptr, , global.file_table_size)
+
 /*
  * Memory allocation
  */

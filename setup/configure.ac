@@ -69,7 +69,7 @@ dnl set OS and ARCH flags
 AC_DEFINE_UNQUOTED(OS,"$target_os",set to the os type)
 AC_DEFINE_UNQUOTED(ARCH,"$target_cpu",set to the architecture)
 
-
+# Enable sac2c compilation with C++
 AC_ARG_ENABLE(cplusplus,
 [AS_HELP_STRING([[--enable-cplusplus[=ARG]]],
                 [Compile sources with C++ compiler @<:@ARG={yes,no}@:>@])],
@@ -80,12 +80,29 @@ if test "${ENABLE_CPLUSPLUS}" = "yes" ; then
   enable_cplusplus=yes
 fi
 
+# Enable sac2c compilation with LTO -- (link time optimisation),
+# GCC specific, triggers -flto flag for compilation and linking
+AC_ARG_ENABLE(lto,
+[AS_HELP_STRING([[--enable-lto[=ARG]]],
+                [Perform link time optimisation (LTO) by passing -flto flag @<:@ARG={yes,no}@:>@])],
+ENABLE_LTO=$enableval,
+ENABLE_LTO=no)
+enable_lto=
+if test "${ENABLE_LTO}" = "yes" ; then
+  enable_lto=yes
+fi
+
 # Check if C preprocessor is available
 AC_PROG_CPP()
 
 # When C compiler is not GCC, chcek if one of 
 # Sun, Dec or Mac compiler is available on the system.
 if test "$GCC" != yes ; then
+  # Disable LTO if compiling without GCC support
+  if test "$enable_lto" = yes; then
+    AC_MSG_NOTICE([Disabling usage of lto as CC compiler is not GCC.])
+    enable_lto=no
+  fi 
   CHECK_CPP_FLAG([__SUNPRO_C], [SUNC])
   CHECK_CPP_FLAG([__DECC], [DECC])
   CHECK_CPP_FLAG([__APPLE_CC__], [MACC])
@@ -519,6 +536,15 @@ if test "$GCC" = yes ; then
   CHECK_CC_OPTION([-Wno-unused-but-set-variable], [gcc_options])
 fi
 
+# Check if GCC compiler supports lto, and if LTO is enabled
+# add -flto to the compilation flags.
+flags_lto=
+if [[ "$GCC" = yes -a "$enable_lto" = yes ]]; then
+  CHECK_CC_OPTION([-flto], [flags_lto])
+  if test "x$flags_lto" = "x"; then
+    AC_MSG_NOTICE([Diabling compilation with LTO, as chosen compiler does not support -flto option.])
+  fi
+fi
 
 dnl
 dnl test for compiler flags for sac2crc
@@ -532,9 +558,9 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
-  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin -std=c99"])  
-  AC_SUBST(MKCCFLAGS, ["$gcc_options -pedantic -g -std=c99"])
-  AC_SUBST(PDCCFLAGS, ["$gcc_options -pedantic -O3 -std=c99"])
+  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin -std=c99 $flags_lto"])  
+  AC_SUBST(MKCCFLAGS, ["$gcc_options -pedantic -g -std=c99 $flags_lto"])
+  AC_SUBST(PDCCFLAGS, ["$gcc_options -pedantic -O3 -std=c99 $flags_lto"])
   if [ test "$IS_CYGWIN" = yes ]; then
     AC_SUBST(GENPIC, ["-DPIC"])
   else
@@ -544,7 +570,7 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CPP, ["gcc -E -P -x c"])
   AC_SUBST(CCMTLINK, [$GCC_PTHREADS])
-  AC_SUBST(CCDLLINK, ["-ldl"])
+  AC_SUBST(CCDLLINK, ["-ldl -flto"])
   AC_MSG_RESULT([gcc settings])
 elif [ test "$SUNC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -672,9 +698,9 @@ case "$target_os" in
     ;;
   *linux*)      
     OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
-    LD_DYNAMIC=["-dy -shared -Wl,-allow-shlib-undefined"]
+    LD_DYNAMIC=["-shared -Wl,-allow-shlib-undefined -O3 $flags_lto"]
     LD_PATH=["-L%path% -Wl,-rpath,%path%"]
-    LD_FLAGS="-Wl,-allow-shlib-undefined"
+    LD_FLAGS="-Wl,-allow-shlib-undefined $flags_lto"
     AC_MSG_RESULT([linux settings])
     ;;
  *cygwin* | *mingw*)      

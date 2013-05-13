@@ -9,8 +9,10 @@
  */
 
 #define NODE_TYPE(n) ((n)->mnodetype)
-#define NODE_LINE(n) ((n)->lineno)
-#define NODE_FILE(n) ((n)->src_file)
+#define NODE_LOCATION(n) ((n)->loc)
+#define NODE_LINE(n) ((n)->loc.line)
+#define NODE_COL(n) ((n)->loc.col)
+#define NODE_FILE(n) ((n)->loc.fname)
 #define NODE_ERROR(n) ((n)->error)
 #define NODE_CHECKVISITED(n) ((n)->checkvisited)
 #define NODE_TEXT(n) (global.mdb_nodetype[NODE_TYPE (n)])
@@ -256,8 +258,7 @@ extern cuda_access_info_t *TBfreeCudaAccessInfo (cuda_access_info_t *access_info
 
 struct NODE {
     nodetype mnodetype;        /* type of node */
-    int lineno;                /* line number in source code */
-    char *src_file;            /* pointer to filename or source code */
+    struct location loc;       /* location of the node in a file */
     node *error;               /* error node */
     bool checkvisited;         /* visited flag to detect illegal node sharing */
     union SONUNION sons;       /* the sons */

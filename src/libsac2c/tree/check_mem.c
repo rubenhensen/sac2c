@@ -20,7 +20,6 @@
 #include "phase_info.h"
 #include "print.h"
 #include "check_node.h"
-#include "check_attribs.h"
 
 #define DBUG_PREFIX "CHKM"
 #include "debug.h"
@@ -77,6 +76,7 @@ CHKMtouch (void *ptr, info *arg_info)
     if (global.memcheck) {
         mallocinfo_t *info = HTlookup (malloctable, ptr);
         if (info) {
+            info->wasintree = TRUE;
             info->isreachable = TRUE;
         }
     }
@@ -108,7 +108,7 @@ foldmemcheck (void *init, void *key, void *value)
     mallocinfo_t *iterator;
     bool ispresent = FALSE;
 
-    if (!info->isnode) {
+    if (!info->isnode || !info->wasintree) {
     } else if (info->isreachable) {
         info->isreachable = FALSE;
     } else {

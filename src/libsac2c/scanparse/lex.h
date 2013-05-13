@@ -9,50 +9,26 @@
 #include <unistd.h>
 #endif
 
+static inline int xfprintf (FILE *f, const char *fmt, ...);
+
 #ifndef LEXER_BINARY
 #include "types.h"
-//#  include "compat.h"
+
+#define error(...) CTIerror (__VA_ARGS__)
+#define error_loc(...) CTIerrorLoc (__VA_ARGS__)
+#define warning(...) CTIwarn (__VA_ARGS__)
+#define warning_loc(...) CTIwarnLoc (__VA_ARGS__)
 #else
 typedef int bool;
-#endif
 
-#define true 1
-#define false 0
+struct location {
+    const char *fname;
+    size_t line, col;
+};
 
-#include "uthash.h"
-#include "trie.h"
-
-#define LEXER_BUFFER 8192
-
-static inline int
-xfprintf (FILE *f, const char *fmt, ...)
-{
-    va_list args;
-
-    if (fmt == 0 || strlen (fmt) == 0)
-        return 0;
-    else {
-        va_start (args, fmt);
-        (void)vfprintf (f, fmt, args);
-        va_end (args);
-        return fprintf (f, "\n");
-    }
-}
-
+/* Use error and warning count defined in lex.c.  */
 extern int error_count;
 extern int warning_count;
-
-#undef assert
-#define assert(expr, ...)                                                                \
-    ((expr) ? (void)0                                                                    \
-            : (void)(fprintf (stderr, "%s:%i %s: Assertion (" #expr ") failed.\n",       \
-                              __FILE__, __LINE__, __func__),                             \
-                     xfprintf (stderr, __VA_ARGS__), abort ()))
-
-#define unreachable(...)                                                                 \
-    ((void)(fprintf (stderr, "Code in %s:%d reached impossible state.\n", __FILE__,      \
-                     __LINE__),                                                          \
-            xfprintf (stderr, __VA_ARGS__), abort ()))
 
 #define error_loc(loc, ...)                                                              \
     do {                                                                                 \
@@ -60,10 +36,10 @@ extern int warning_count;
         if (loc.line == 0)                                                               \
             (void)fprintf (stderr, "??");                                                \
         else                                                                             \
-            (void)fprintf (stderr, "%d", (int)loc.line);                                 \
+            (void)fprintf (stderr, "%zd", loc.line);                                     \
                                                                                          \
         if (loc.col > 0)                                                                 \
-            (void)fprintf (stderr, ":%d ", (int)loc.col);                                \
+            (void)fprintf (stderr, ":%zd ", loc.col);                                    \
         else                                                                             \
             (void)fprintf (stderr, " ");                                                 \
                                                                                          \
@@ -81,7 +57,7 @@ extern int warning_count;
 
 #define warning_loc(loc, ...)                                                            \
     do {                                                                                 \
-        (void)fprintf (stderr, "warning:%d:%d: ", (int)loc.line, (int)loc.col);          \
+        (void)fprintf (stderr, "warning:%zd:%zd: ", loc.line, loc.col);                  \
         (void)xfprintf (stderr, __VA_ARGS__);                                            \
         ++warning_count;                                                                 \
     } while (0)
@@ -92,6 +68,42 @@ extern int warning_count;
         (void)xfprintf (stderr, __VA_ARGS__);                                            \
         ++warning_count;                                                                 \
     } while (0)
+#endif
+
+#define true 1
+#define false 0
+
+#include "uthash.h"
+#include "trie.h"
+
+#define LEXER_BUFFER 8192
+
+#undef assert
+#define assert(expr, ...)                                                                \
+    ((expr) ? (void)0                                                                    \
+            : (void)(fprintf (stderr, "%s:%i %s: Assertion (" #expr ") failed.\n",       \
+                              __FILE__, __LINE__, __func__),                             \
+                     xfprintf (stderr, __VA_ARGS__), abort ()))
+
+#define unreachable(...)                                                                 \
+    ((void)(fprintf (stderr, "Code in %s:%d reached impossible state.\n", __FILE__,      \
+                     __LINE__),                                                          \
+            xfprintf (stderr, __VA_ARGS__), abort ()))
+
+static inline int
+xfprintf (FILE *f, const char *fmt, ...)
+{
+    va_list args;
+
+    if (fmt == 0 || strlen (fmt) == 0)
+        return 0;
+    else {
+        va_start (args, fmt);
+        (void)vfprintf (f, fmt, args);
+        va_end (args);
+        return fprintf (f, "\n");
+    }
+}
 
 #define TOKEN_KIND(a, b) a,
 #define KEYWORD_PRF(a, b, c) PRF_##a,
@@ -143,11 +155,6 @@ enum token_class {
    kind (which we have) and another value to mark a token being user-op,
    the latter is defined further down.  */
 #define TRIE_USEROP (tok_kind_length + 1)
-
-struct location {
-    const char *fname;
-    size_t line, col;
-};
 
 struct token {
     struct location loc;

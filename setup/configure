@@ -743,6 +743,7 @@ RCMAC'
 ac_user_opts='
 enable_option_checking
 enable_cplusplus
+enable_lto
 with_lpel_include_path
 '
       ac_precious_vars='build_alias
@@ -1372,6 +1373,8 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-cplusplus[=ARG]
                           Compile sources with C++ compiler [ARG={yes,no}]
+  --enable-lto[=ARG]      Perform link time optimisation (LTO) by passing
+                          -flto flag [ARG={yes,no}]
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -2344,7 +2347,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-
+# Enable sac2c compilation with C++
 # Check whether --enable-cplusplus was given.
 if test "${enable_cplusplus+set}" = set; then :
   enableval=$enable_cplusplus; ENABLE_CPLUSPLUS=$enableval
@@ -2355,6 +2358,20 @@ fi
 enable_cplusplus=
 if test "${ENABLE_CPLUSPLUS}" = "yes" ; then
   enable_cplusplus=yes
+fi
+
+# Enable sac2c compilation with LTO -- (link time optimisation),
+# GCC specific, triggers -flto flag for compilation and linking
+# Check whether --enable-lto was given.
+if test "${enable_lto+set}" = set; then :
+  enableval=$enable_lto; ENABLE_LTO=$enableval
+else
+  ENABLE_LTO=no
+fi
+
+enable_lto=
+if test "${ENABLE_LTO}" = "yes" ; then
+  enable_lto=yes
 fi
 
 # Check if C preprocessor is available
@@ -3288,6 +3305,12 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 # When C compiler is not GCC, chcek if one of
 # Sun, Dec or Mac compiler is available on the system.
 if test "$GCC" != yes ; then
+  # Disable LTO if compiling without GCC support
+  if test "$enable_lto" = yes; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Disabling usage of lto as CC compiler is not GCC." >&5
+$as_echo "$as_me: Disabling usage of lto as CC compiler is not GCC." >&6;}
+    enable_lto=no
+  fi
 
 
 
@@ -5308,6 +5331,52 @@ CFLAGS="$save_CFLAGS"
 
 fi
 
+# Check if GCC compiler supports lto, and if LTO is enabled
+# add -flto to the compilation flags.
+flags_lto=
+if [ "$GCC" = yes -a "$enable_lto" = yes ]; then
+
+
+
+save_CFLAGS="$CFLAGS"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC supports -flto" >&5
+$as_echo_n "checking whether $CC supports -flto... " >&6; }
+if ${ac_cv__flto_option+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+     CFLAGS="-flto"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv__flto_option=yes
+else
+  ac_cv__flto_option=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+    if test $ac_cv__flto_option = yes; then :
+  flags_lto="$flags_lto -flto"
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv__flto_option" >&5
+$as_echo "$ac_cv__flto_option" >&6; }
+CFLAGS="$save_CFLAGS"
+
+
+  if test "x$flags_lto" = "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Diabling compilation with LTO, as chosen compiler does not support -flto option." >&5
+$as_echo "$as_me: Diabling compilation with LTO, as chosen compiler does not support -flto option." >&6;}
+  fi
+fi
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking sac2crc compiler flags" >&5
@@ -5325,11 +5394,11 @@ if  test "$GCC" = yes ; then
 
   RCLDFLAGS=""
 
-  RCCCFLAGS="-Wall -Wno-unused -fno-builtin -std=c99"
+  RCCCFLAGS="-Wall -Wno-unused -fno-builtin -std=c99 $flags_lto"
 
-  MKCCFLAGS="$gcc_options -pedantic -g -std=c99"
+  MKCCFLAGS="$gcc_options -pedantic -g -std=c99 $flags_lto"
 
-  PDCCFLAGS="$gcc_options -pedantic -O3 -std=c99"
+  PDCCFLAGS="$gcc_options -pedantic -O3 -std=c99 $flags_lto"
 
   if  test "$IS_CYGWIN" = yes ; then
     GENPIC="-DPIC"
@@ -5346,7 +5415,7 @@ if  test "$GCC" = yes ; then
 
   CCMTLINK=$GCC_PTHREADS
 
-  CCDLLINK="-ldl"
+  CCDLLINK="-ldl -flto"
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: gcc settings" >&5
 $as_echo "gcc settings" >&6; }
@@ -5556,9 +5625,9 @@ $as_echo "solaris settings" >&6; }
     ;;
   *linux*)
     OSFLAGS="-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"
-    LD_DYNAMIC="-dy -shared -Wl,-allow-shlib-undefined"
+    LD_DYNAMIC="-shared -Wl,-allow-shlib-undefined -O3 $flags_lto"
     LD_PATH="-L%path% -Wl,-rpath,%path%"
-    LD_FLAGS="-Wl,-allow-shlib-undefined"
+    LD_FLAGS="-Wl,-allow-shlib-undefined $flags_lto"
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: linux settings" >&5
 $as_echo "linux settings" >&6; }
     ;;
