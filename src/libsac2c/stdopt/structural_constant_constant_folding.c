@@ -55,6 +55,7 @@
 #include "phase.h"
 #include "indexvectorutils.h"
 #include "ivextrema.h"
+#include "flattengenerators.h"
 
 /******************************************************************************
  *
@@ -487,14 +488,18 @@ SCCFprf_drop_SxV (node *arg_node, info *arg_info)
 static node *
 ModarrayModarray_AxSxS (node *arg_node, info *arg_info)
 {
+
+    DBUG_ENTER ();
+
+#ifdef BUG897
+    // all very dead code now.
+
     node *arr = NULL;
     node *b = NULL;
     node *offset = NULL;
     node *prf = NULL;
     pattern *pat1;
     pattern *pat2;
-
-    DBUG_ENTER ();
 
     /* z = _modarray_AxSxS_( b, offset, val2)  */
     pat1 = PMprf (1, PMAisPrf (F_idx_modarray_AxSxS), 3, PMany (1, PMAgetNode (&b), 0),
@@ -508,12 +513,12 @@ ModarrayModarray_AxSxS (node *arg_node, info *arg_info)
     if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat2, b))) {
         DBUG_PRINT ("Marked _idx_modarray_AxSxS for $s for removal",
                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
-#ifdef BUG897
         PRF_ISNOP (prf) = TRUE;
-#endif // BUG897
     }
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
+
+#endif // BUG897
 
     DBUG_RETURN (arg_node);
 }
@@ -545,14 +550,17 @@ ModarrayModarray_AxSxS (node *arg_node, info *arg_info)
 static node *
 ModarrayModarray_AxVxS (node *arg_node, info *arg_info)
 {
+    DBUG_ENTER ();
+
+#ifdef BUG897
+    // all very dead code now.
+
     node *arr = NULL;
     node *b = NULL;
     node *iv = NULL;
     node *prf = NULL;
     pattern *pat1;
     pattern *pat2;
-
-    DBUG_ENTER ();
 
     /* z = _modarray_AxVxS_( b, iv, val2)  */
     pat1 = PMprf (1, PMAisPrf (F_modarray_AxVxS), 3, PMany (1, PMAgetNode (&b), 0),
@@ -566,14 +574,43 @@ ModarrayModarray_AxVxS (node *arg_node, info *arg_info)
     if ((PMmatchFlat (pat1, arg_node)) && (PMmatchFlat (pat2, b))) {
         DBUG_PRINT ("Marked _modarray_AxVxS for %s for removal",
                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
-#ifdef BUG897
         PRF_ISNOP (prf) = TRUE;
-#endif // BUG897
     }
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
+#endif // BUG897
 
     DBUG_RETURN (arg_node);
+}
+
+/******************************************************************************
+ *
+ * function: node *ReplaceNarrayElementHelper( node *X, int offset, node *val,
+ *                  info *arg_info)
+ *
+ * description: X is an N_array. Perform X[offset] = val;
+ *
+ *              This entails flattening each element of the N_array, so
+ *              that we do not end up with a mongrel such as [ 666, val];
+ *
+ * result: Shiny, new N_array node.
+ *
+ *****************************************************************************/
+static node *
+ReplaceNarrayElementHelper (node *X, int offset, node *val, info *arg_info)
+{
+    node *z;
+    node *exprs;
+
+    DBUG_ENTER ();
+
+    z = DUPdoDupNode (X);
+    ARRAY_AELEMS (z) = FLATGflattenExprsChain (ARRAY_AELEMS (z), &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGN (arg_info), NULL);
+    exprs = TCgetNthExprs (offset, ARRAY_AELEMS (z));
+    EXPRS_EXPR (exprs) = DUPdoDupNode (val);
+
+    DBUG_RETURN (z);
 }
 
 /******************************************************************************
@@ -616,7 +653,6 @@ SCCFprf_idx_modarray_AxSxS (node *arg_node, info *arg_info)
     constant *fsX = NULL;
     constant *coiv = NULL;
     node *val = NULL;
-    node *exprs;
     int offset;
 
     DBUG_ENTER ();
@@ -647,10 +683,7 @@ SCCFprf_idx_modarray_AxSxS (node *arg_node, info *arg_info)
             && // PRF_ARG1 is vector
             (TUisScalar (AVIS_TYPE (ID_AVIS (val))))) {
             offset = COconst2Int (coiv);
-            z = DUPdoDupNode (X);
-            exprs = TCgetNthExprs (offset, ARRAY_AELEMS (z));
-            EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
-            EXPRS_EXPR (exprs) = DUPdoDupNode (PRF_ARG3 (arg_node));
+            z = ReplaceNarrayElementHelper (X, offset, PRF_ARG3 (arg_node), arg_info);
             DBUG_PRINT ("_idx_modarray_AxSxS (structcon, [..], val) eliminated");
         }
         pat = PMfree (pat);
@@ -693,7 +726,6 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
 
     node *X = NULL;
     node *val = NULL;
-    node *exprs;
     constant *emptyVec;
     constant *coiv = NULL;
     constant *fsX = NULL;
@@ -747,10 +779,7 @@ SCCFprf_modarray_AxVxS (node *arg_node, info *arg_info)
             && (SHcompareShapes (COgetShape (fsX), COgetShape (coiv)))) {
             offsetcon = COvect2offset (fsX, coiv, NULL);
             offset = COconst2Int (offsetcon);
-            z = DUPdoDupNode (X);
-            exprs = TCgetNthExprs (offset, ARRAY_AELEMS (z));
-            EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
-            EXPRS_EXPR (exprs) = DUPdoDupNode (PRF_ARG3 (arg_node));
+            z = ReplaceNarrayElementHelper (X, offset, PRF_ARG3 (arg_node), arg_info);
             DBUG_PRINT ("_modarray_AxVxS (structcon, [..], val) eliminated");
         }
     }
@@ -914,10 +943,7 @@ SCCFprf_modarray_AxVxA (node *arg_node, info *arg_info)
                  */
                 offsetcon = COvect2offset (fsX, coiv, NULL);
                 offset = COconst2Int (offsetcon);
-                res = DUPdoDupNode (X);
-                exprs = TCgetNthExprs (offset, ARRAY_AELEMS (res));
-                EXPRS_EXPR (exprs) = FREEdoFreeNode (EXPRS_EXPR (exprs));
-                EXPRS_EXPR (exprs) = DUPdoDupNode (val);
+                res = ReplaceNarrayElementHelper (X, offset, val, arg_info);
             }
         }
         if (fsX != NULL) {
