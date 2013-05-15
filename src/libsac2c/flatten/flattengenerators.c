@@ -153,6 +153,55 @@ FLATGflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
 
 /** <!--********************************************************************-->
  *
+ * @fn node *FLATGflattenExprsChain(node *arg_node, node **vardecs,
+ *                                  node **preassigns, ntype *restype)
+ *
+ *   @brief  Flattens each N_exprs node in arg_node.
+ *
+ *           e.g., if arg_node is this at entry:
+ *
+ *            z = [ 0, colsx];
+ *
+ *          it will look like this at exit:
+ *
+ *            t1 = 0;
+ *            z = [ g1, colsx];
+ *
+ *
+ *   @param  node *arg_node: an N_exprs node whose elements are to be flattened.
+ *           node **vardecs: a pointer to a vardecs chain that
+ *                           will have a new vardec appended to it.
+ *           node **preassigns: a pointer to a preassigns chain that
+ *                           will have a new assign appended to it.
+ *           node *restype:  the ntype of TMP.
+ *
+ *   @return node *node:     New N_exprs chain, appropriately DUPed.
+ *
+ ******************************************************************************/
+node *
+FLATGflattenExprsChain (node *arg_node, node **vardecs, node **preassigns, ntype *restype)
+{
+    node *exprs;
+    node *expr;
+    node *z;
+
+    DBUG_ENTER ();
+
+    exprs = DUPdoDupTree (arg_node);
+    z = exprs;
+
+    while (NULL != exprs) {
+        expr = EXPRS_EXPR (exprs);
+        expr = FLATGflattenExpression (expr, vardecs, preassigns, restype);
+        EXPRS_EXPR (exprs) = TBmakeId (expr);
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn static node *FLATGflattenBound( node *arg_node, info *arg_info)
  *
  *   @brief  Flattens the WL bound at arg_node.
