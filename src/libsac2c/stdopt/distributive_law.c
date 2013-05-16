@@ -10,8 +10,6 @@
  * To have the best possible impact, this optimisation implicitly applies
  * commutative law if that facilitates further applications.
  *
- *
- *
  * Overall Approach:
  * ==================
  *
@@ -138,6 +136,20 @@
  *                    MUL{d}}},
  *        MUL{a} }
  *
+ *
+ * INFO_VARDECSTMP:
+ * INFO_PREASSIGNTMP: CollectExprs replaces _neg_S_( X) by
+ *                    _mul_SxS_( -1, X), as being a simple method for
+ *                    handling negative numbers. However, at the time
+ *                    this transformation happens, we do not yet know if
+ *                    the optimization is going to take place or not.
+ *                    If not, then we end up with dead code. So,
+ *                    the assign and vardec are placed in INFO_PREASSIGNTMP
+ *                    and INFO_VARDECSTMP. If no optimization takes place,
+ *                    we merely free those fields. If the optimization
+ *                    does take place, it appends them to INFO_PREASSIGN
+ *                    and INFO_VARDEC.
+ *
  * ============================
  *
  * Suggestions and questions:
@@ -192,6 +204,8 @@ struct INFO {
     node *lhs;
     node *vardecs;
     node *fundef;
+    node *vardecstmp;
+    node *preassigntmp;
 };
 
 /*
@@ -204,6 +218,8 @@ struct INFO {
 #define INFO_LHS(n) ((n)->lhs)
 #define INFO_VARDECS(n) ((n)->vardecs)
 #define INFO_FUNDEF(n) ((n)->fundef)
+#define INFO_VARDECSTMP(n) ((n)->vardecstmp)
+#define INFO_PREASSIGNTMP(n) ((n)->preassigntmp)
 
 /*
  * INFO functions
@@ -224,6 +240,8 @@ MakeInfo (void)
     INFO_LHS (result) = FALSE;
     INFO_VARDECS (result) = NULL;
     INFO_FUNDEF (result) = NULL;
+    INFO_VARDECSTMP (result) = NULL;
+    INFO_PREASSIGNTMP (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -365,9 +383,11 @@ LocalSkipControl (void *param, node *expr)
 
     if (NODE_TYPE (expr) == N_id) {
         avis = ID_AVIS (expr);
-        // breaks DL unit tests bug1046C bug1046D bug1046G
-        // if( (AVIS_NEEDCOUNT( avis) != 1) || ! AVIS_ISDLACTIVE(avis) ) {
+#ifdef IDONOTUNDERSTANDTHIS
+        if ((AVIS_NEEDCOUNT (avis) != 1) || !AVIS_ISDLACTIVE (avis)) {
+#else                    // IDONOTUNDERSTANDTHIS
         if (!AVIS_ISDLACTIVE (avis)) {
+#endif                   // IDONOTUNDERSTANDTHIS
             expr = NULL; /* ABORT skipping !! */
             DBUG_PRINT ("Skipping %s", AVIS_NAME (avis));
         }
@@ -538,7 +558,7 @@ isArg2Scl (prf prf)
  *
  *****************************************************************************/
 static node *
-flattenPrfarg (node *arg_node, info *arg_info)
+flattenPrfarg (node *arg_node, node **vardecs, node **preassign)
 {
     node *res;
     simpletype typ;
@@ -548,8 +568,7 @@ flattenPrfarg (node *arg_node, info *arg_info)
     if (N_id != NODE_TYPE (arg_node)) {
         typ = NTCnodeToType (arg_node);
         res
-          = FLATGflattenExpression (arg_node, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGN (arg_info),
+          = FLATGflattenExpression (arg_node, vardecs, preassign,
                                     TYmakeAKS (TYmakeSimpleType (typ), SHmakeShape (0)));
         res = TBmakeId (res);
         ID_ISSCLPRF (res) = TRUE;
@@ -583,79 +602,18 @@ consumeHead (node *mop)
     DBUG_RETURN (res);
 }
 
-/******************************************************************************
- *
- * node *CombineExprs2Prf( prf oprf, node *expr1, node *expr2, info *arg_info)
- * @brief: Generate: newid = oprf( expr1, expr2);
- *         Ensure that arguments are flattened.
- *
- * Result: newid.
- *
- *
- * Note: MakeRhs is CombineExprs2Prf's helper function.
- *
- *       If we have a nilpotent mul() kicking around (introduced
- *       by CollectExprs), we restore the negation of expr2.
- *       I.e.:
- *
- *       It replaces _mul_SxS_( -1, expr2) by _neg_S_( expr2)
- *       or _neg_V_( expr2)
- *
- *       and         _mul_SxS_( expr1, -1) by _neg_S_( expr1)
- *       or _neg_V_( expr1)
- *
- *
- *****************************************************************************/
 static node *
-MakeRhs (prf oprf, node *expr1, node *expr2, info *arg_info)
-{
-    node *rhs = NULL;
-    prf nprf;
-
-    DBUG_ENTER ();
-
-    // Case 1
-    if ((F_mul_SxS == oprf) && (N_num == NODE_TYPE (expr1))
-        && ((-1) == NUM_VAL (expr1))) {
-        nprf = (isScalar (expr2)) ? F_neg_S : F_neg_V;
-        rhs = TCmakePrf1 (nprf, expr2);
-        expr1 = FREEdoFreeNode (expr1); /* -1 no longer needed */
-    }
-
-    // Case 2
-    if ((F_mul_SxS == oprf) && (N_num == NODE_TYPE (expr2))
-        && ((-1) == NUM_VAL (expr2))) {
-        nprf = (isScalar (expr1)) ? F_neg_S : F_neg_V;
-        rhs = TCmakePrf1 (nprf, expr1);
-        expr2 = FREEdoFreeNode (expr2); /* -1 no longer needed */
-    }
-
-    // Case 3
-    if (NULL == rhs) {
-        // the usual case
-        expr1 = flattenPrfarg (expr1, arg_info);
-        expr2 = flattenPrfarg (expr2, arg_info);
-        rhs = TCmakePrf2 (getPrf (oprf, expr1, expr2), expr1, expr2);
-    }
-
-    DBUG_RETURN (rhs);
-}
-
-static node *
-CombineExprs2Prf (prf oprf, node *expr1, node *expr2, info *arg_info)
+CombineExprs2Prf (prf prf, node *expr1, node *expr2, info *arg_info)
 {
     node *rhs;
     node *avis = NULL;
     node *assign;
     node *id;
     ntype *prod;
-    bool issc;
 
     DBUG_ENTER ();
 
-    issc = isScalar (expr1) && isScalar (expr2);
-
-    rhs = MakeRhs (oprf, expr1, expr2, arg_info);
+    rhs = TCmakePrf2 (getPrf (prf, expr1, expr2), expr1, expr2);
 
     prod = NTCnewTypeCheck_Expr (rhs);
     avis = TBmakeAvis (TRAVtmpVar (), TYcopyType (TYgetProductMember (prod, 0)));
@@ -671,7 +629,7 @@ CombineExprs2Prf (prf oprf, node *expr1, node *expr2, info *arg_info)
     INFO_PREASSIGN (arg_info) = assign;
 
     id = TBmakeId (avis);
-    ID_ISSCLPRF (id) = issc;
+    ID_ISSCLPRF (id) = isScalar (expr1) && isScalar (expr2);
 
     DBUG_RETURN (id);
 }
@@ -718,9 +676,11 @@ Mop2Ast (node *mop, info *arg_info)
         } else {
             prf = PRF_PRF (mop);
             e1 = consumeHead (mop);
-            e1 = Mop2Ast (e1, arg_info);
+            e1 = flattenPrfarg (Mop2Ast (e1, arg_info), &INFO_VARDECS (arg_info),
+                                &INFO_PREASSIGN (arg_info));
             e2 = consumeHead (mop);
-            e2 = Mop2Ast (e2, arg_info);
+            e2 = flattenPrfarg (Mop2Ast (e2, arg_info), &INFO_VARDECS (arg_info),
+                                &INFO_PREASSIGN (arg_info));
             PRF_ARGS (mop)
               = TBmakeExprs (CombineExprs2Prf (prf, e1, e2, arg_info), PRF_ARGS (mop));
             res = Mop2Ast (mop, arg_info);
@@ -793,6 +753,9 @@ CollectExprs (prf target_prf, node *arg_node, bool is_scalar_arg, info *arg_info
         shp = SHmakeShape (0);
         negone = COmakeNegativeOne (styp, shp);
         right = COconstant2AST (negone);
+        right = flattenPrfarg (right, &INFO_VARDECSTMP (arg_info),
+                               &INFO_PREASSIGNTMP (arg_info));
+        DBUG_PRINT ("Generated negone as %s", AVIS_NAME (ID_AVIS (right)));
         right = TBmakeExprs (right, NULL);
         negone = COfreeConstant (negone);
         res = TCappendExprs (left, right);
@@ -1218,7 +1181,6 @@ DLfundef (node *arg_node, info *arg_info)
 node *
 DLblock (node *arg_node, info *arg_info)
 {
-
     DBUG_ENTER ();
 
     BLOCK_ASSIGNS (arg_node) = TRAVopt (BLOCK_ASSIGNS (arg_node), arg_info);
@@ -1361,6 +1323,19 @@ DLprf (node *arg_node, info *arg_info)
                 DBUG_EXECUTE (PRTdoPrintFile (stderr, mop););
 
                 if (oldoptcounter != global.optcounters.dl_expr) {
+
+                    /*
+                     * Move any new negatives we created */
+                    if (INFO_PREASSIGNTMP (arg_info) != NULL) {
+                        INFO_PREASSIGN (arg_info)
+                          = TCappendAssign (INFO_PREASSIGN (arg_info),
+                                            INFO_PREASSIGNTMP (arg_info));
+                        INFO_PREASSIGNTMP (arg_info) = NULL;
+                        INFO_VARDECS (arg_info)
+                          = TCappendVardec (INFO_VARDECS (arg_info),
+                                            INFO_VARDECSTMP (arg_info));
+                        INFO_VARDECSTMP (arg_info) = NULL;
+                    }
                     /*
                      * Eliminate empty products
                      */
@@ -1376,6 +1351,14 @@ DLprf (node *arg_node, info *arg_info)
                     DBUG_EXECUTE (PRTdoPrintFile (stderr, arg_node););
                 } else {
                     DBUG_PRINT ("not converted!");
+                    INFO_PREASSIGNTMP (arg_info)
+                      = (NULL != INFO_PREASSIGNTMP (arg_info))
+                          ? FREEdoFreeTree (INFO_PREASSIGNTMP (arg_info))
+                          : NULL;
+                    INFO_VARDECSTMP (arg_info)
+                      = (NULL != INFO_VARDECSTMP (arg_info))
+                          ? FREEdoFreeTree (INFO_VARDECSTMP (arg_info))
+                          : NULL;
                 }
             } else {
                 mop = FREEdoFreeNode (mop);
