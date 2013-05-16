@@ -77,6 +77,7 @@
 #include "with_loop_utilities.h"
 #include "gdb_utils.h"
 #include "symbolic_constant_simplification.h"
+#include "flattengenerators.h"
 
 /** <!--********************************************************************-->
  *
@@ -840,6 +841,37 @@ CloneCode (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *AdjustGeneratorElementHelper(...)
+ *
+ * @brief Perform:  narr[ axis] = ilba;
+ *        Generate a new N_array, and ensure that its elements
+ *        are all flattened, so we do not end up with a
+ *        generator that looks like: [ 18, colsx].
+ *
+ * @params: narr: An N_array for a WL generator.
+ *          axis: the index of the N_array element to be replaced.
+ *          ilba: the replacement element.
+ *
+ * @result: The updated, now-flattened N_array.
+ *
+ *****************************************************************************/
+static node *
+AdjustGeneratorElementHelper (node *narr, int axis, node *ilba, info *arg_info)
+{
+    node *newb;
+
+    DBUG_ENTER ();
+
+    newb = DUPdoDupNode (narr);
+    ARRAY_AELEMS (newb) = TCputNthExprs (axis, ARRAY_AELEMS (newb), DUPdoDupNode (ilba));
+    ARRAY_AELEMS (newb)
+      = FLATGflattenExprsChain (ARRAY_AELEMS (newb), &INFO_VARDECS (arg_info),
+                                &INFO_PREASSIGNSWITH (arg_info), NULL);
+    DBUG_RETURN (newb);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn static node *PartitionSlicerOneAxis(...)
  *
  * @params consumerWLpartn: an N_part of the consumerWL.
@@ -980,9 +1012,7 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
         DBUG_PRINT ("Constructing partition A for %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
         newlb = DUPdoDupNode (partlb);
-        newub = DUPdoDupNode (partub);
-        ARRAY_AELEMS (newub)
-          = TCputNthExprs (axis, ARRAY_AELEMS (newub), DUPdoDupNode (ilba));
+        newub = AdjustGeneratorElementHelper (partub, axis, ilba, arg_info);
         genn
           = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupNode (step), NULL);
         clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
@@ -993,12 +1023,9 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
     /* All cases need partI or original node */
     DBUG_PRINT ("Constructing partition I for %s",
                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-    newlb = DUPdoDupNode (partlb);
-    ARRAY_AELEMS (newlb)
-      = TCputNthExprs (axis, ARRAY_AELEMS (newlb), DUPdoDupNode (ilba));
-    newub = DUPdoDupNode (partub);
-    ARRAY_AELEMS (newub)
-      = TCputNthExprs (axis, ARRAY_AELEMS (newub), DUPdoDupNode (iuba));
+    newlb = AdjustGeneratorElementHelper (partlb, axis, ilba, arg_info);
+    newub = AdjustGeneratorElementHelper (partub, axis, iuba, arg_info);
+
     genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupNode (step), NULL);
     clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
     newpart = TBmakePart (clone, DUPdoDupNode (withid), genn);
@@ -1008,10 +1035,9 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
     if (CMPT_NEQ == CMPTdoCompareTree (iuba, puba)) {
         DBUG_PRINT ("Constructing partition C for %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-        newlb = DUPdoDupNode (partlb);
         newub = DUPdoDupNode (partub);
-        ARRAY_AELEMS (newlb)
-          = TCputNthExprs (axis, ARRAY_AELEMS (newlb), DUPdoDupNode (iuba));
+        newlb = AdjustGeneratorElementHelper (partlb, axis, iuba, arg_info);
+
         genn = TBmakeGenerator (F_wl_le, F_wl_lt, newlb, newub, DUPdoDupNode (step),
                                 DUPdoDupNode (width));
         clone = CloneCode (PART_CODE (consumerWLpartn), arg_info);
