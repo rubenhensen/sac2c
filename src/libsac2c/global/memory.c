@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <string.h>
 
 #define DBUG_PREFIX "MEM_ALLOC"
@@ -8,10 +7,16 @@
 #include "ctinfo.h"
 #include "globals.h"
 #include "convert.h"
-#include "hash_table.h"
+#include "uthash.h"
 #include "phase_info.h"
 
-ht_t *malloctable = 0;
+#undef malloc
+#undef realloc
+#undef free
+
+#include <stdlib.h>
+
+mallocinfo_t *malloctable = 0;
 mallocphaseinfo_t phasetable[PH_final + 1] = {{0, 0, 0, 0, 0, 0, 0, 0}};
 FILE *mreport = 0;
 
@@ -58,15 +63,13 @@ _MEMmalloc (int size, char *file, int line)
             phasetable[info->phase].nmallocd++;
 
             global.memcheck = FALSE;
-            if (!malloctable) {
-                malloctable = HTcreate (100000);
-            }
 
             /*
              * Store the info in a ascosiative hashtable with the malloc adress as key
              * and info adress as value
              */
-            malloctable = HTinsert (malloctable, ptr, info);
+            info->key = ptr;
+            HASH_ADD_PTR (malloctable, key, info);
             global.memcheck = TRUE;
         }
     }
@@ -85,11 +88,11 @@ _MEMrealloc (void *ptr, int size)
     void *newptr;
 
     if (global.memcheck) {
-        info = HTlookup (malloctable, ptr);
+        HASH_FIND_PTR (malloctable, &ptr, info);
         if (info) {
             newptr = MEMmalloc (size);
             memcpy (newptr, ptr, info->size);
-            newinfo = HTlookup (malloctable, newptr);
+            HASH_FIND_PTR (malloctable, &newptr, newinfo);
             newinfo->phase = info->phase;
             MEMfree (ptr);
         } else {
@@ -112,11 +115,11 @@ _MEMfree (void *ptr)
     mallocinfo_t *info;
 
     if (global.memcheck) {
-        info = HTlookup (malloctable, ptr);
+        HASH_FIND_PTR (malloctable, &ptr, info);
         if (info) {
             phasetable[info->phase].nfreed++;
             global.current_allocated_mem -= info->size;
-            HTdelete (malloctable, ptr);
+            HASH_DEL (malloctable, info);
             free (info);
         }
     }
@@ -180,7 +183,9 @@ MEMreport (node *arg_node, info *arg_info)
     }
 
     global.memcheck = FALSE;
-    HTfold (malloctable, 0, foldmallocreport);
+    for (mallocinfo_t *iter = malloctable; iter != NULL; iter = iter->hh.next) {
+        foldmallocreport (NULL, NULL, iter);
+    }
     global.memcheck = TRUE;
     for (int i = 0; i < PH_final + 1; i++) {
         phasetable[i].phase = i;

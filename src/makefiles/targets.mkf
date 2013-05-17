@@ -69,7 +69,7 @@ libsac2c_sourcedirs        := global tree support serialize \
 libsac2c_global      := main usage memory globals \
                         resource options NameTuplesUtils phase_drivers \
                         filemgr ctinfo private_heap phase phase_info \
-                        phase_options profiler hash_table
+                        phase_options profiler 
 
 libsac2c_tree        := traverse tree_basic free tree_compound DupTree \
                         LookUpTable DataFlowMask DataFlowMaskUtils check_mem \

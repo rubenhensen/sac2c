@@ -27,9 +27,9 @@
 #include "globals.h"
 #include "ctinfo.h"
 #include "memory.h"
-#include "hash_table.h"
+#include "uthash.h"
 
-extern ht_t *malloctable;
+extern mallocinfo_t *malloctable;
 extern mallocphaseinfo_t phasetable[];
 
 void
@@ -74,7 +74,8 @@ void
 CHKMtouch (void *ptr, info *arg_info)
 {
     if (global.memcheck) {
-        mallocinfo_t *info = HTlookup (malloctable, ptr);
+        mallocinfo_t *info;
+        HASH_FIND_PTR (malloctable, &ptr, info);
         if (info) {
             info->wasintree = TRUE;
             info->isreachable = TRUE;
@@ -93,7 +94,8 @@ void
 CHKMisNode (void *ptr, nodetype newnodetype)
 {
     if (global.memcheck) {
-        mallocinfo_t *info = HTlookup (malloctable, ptr);
+        mallocinfo_t *info;
+        HASH_FIND_PTR (malloctable, &ptr, info);
         if (info) {
             info->isnode = TRUE;
         }
@@ -136,7 +138,7 @@ foldmemcheck (void *init, void *key, void *value)
         }
         phasetable[global.compiler_anyphase].leakedsize += info->size;
         phasetable[global.compiler_anyphase].nleaked++;
-        HTdelete (malloctable, key);
+        HASH_DEL (malloctable, info);
     }
 
     return NULL;
@@ -145,8 +147,11 @@ foldmemcheck (void *init, void *key, void *value)
 void
 CHKMcheckLeakedMemory ()
 {
+    mallocinfo_t *iter, *tmp;
     global.memcheck = FALSE;
-    HTfold (malloctable, 0, foldmemcheck);
+    HASH_ITER (hh, malloctable, iter, tmp) {
+        foldmemcheck (malloctable, iter->key, iter);
+    }
     global.memcheck = TRUE;
 }
 #else /*DBUG_OFF*/

@@ -64,6 +64,7 @@
 #include "new_types.h" /* for TYtype2String */
 
 #include "cppcompat.h"
+#undef exit
 
 static char *message_buffer = NULL;
 static int message_buffer_size = 0;
