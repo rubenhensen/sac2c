@@ -230,6 +230,90 @@ checkBoundShape (node *arg1, node *arg2)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool TULSisMatchingValues( node *arg1, node *arg2)
+ *
+ * Predicate to determine if two nodes have the same algebraic value.
+ *
+ * Nodes may be anything that can appear in a GENERATOR_BOUND node.
+ * I.e.: N_num, N_id, or  N_array, in any combination.
+ *
+ * We can safely skip guards and extrema, because this is a predicate
+ * only.
+ *
+ * NB: If you were planning to use this function to pick one arg
+ * over the other (say, for something like VP), do NOT do so,
+ * or we will have unguarded values propagating past their guards,
+ * and other unpleasantness.
+ *
+ *****************************************************************************/
+bool
+TULSisMatchingValues (node *arg1, node *arg2)
+{
+    pattern *pat1;
+    pattern *pat2;
+    pattern *pat3;
+    pattern *pat4;
+    pattern *pat5;
+    pattern *pat6;
+    bool res = FALSE;
+    node *elem = NULL;
+    constant *con = NULL;
+    node *aelems1 = NULL;
+    node *aelems2 = NULL;
+    constant *fs1 = NULL;
+    constant *fs2 = NULL;
+
+    DBUG_ENTER ();
+
+    pat1 = PMvar (1, PMAgetNode (&elem), 0);
+    pat2 = PMvar (1, PMAisVar (&elem), 0);
+
+    pat3 = PMconst (1, PMAgetVal (&con), 0);
+    pat4 = PMconst (1, PMAisVal (&con), 0);
+
+    pat5 = PMarray (1, PMAgetFS (&fs1), 1, PMskip (1, PMAgetNode (&aelems1)));
+    pat6 = PMarray (1, PMAgetFS (&fs2), 1, PMskip (1, PMAgetNode (&aelems2)));
+
+    /* Try N_ids first */
+    res = PMmatchFlatSkipExtremaAndGuards (pat1, arg1)
+          && PMmatchFlatSkipExtremaAndGuards (pat2, arg2);
+
+    /* And then constants */
+
+    res = res
+          || (PMmatchFlatSkipExtremaAndGuards (pat3, arg1)
+              && PMmatchFlatSkipExtremaAndGuards (pat4, arg2));
+    con = (NULL != con) ? COfreeConstant (con) : NULL;
+
+    /* And, failing that, N_arrays of same shape and all same values */
+    if ((!res)
+        && (PMmatchFlatSkipExtremaAndGuards (pat5, arg1)
+            && PMmatchFlatSkipExtremaAndGuards (pat6, arg2))
+        && (SHcompareShapes (COgetShape (fs1), COgetShape (fs2)))) {
+        res = TRUE;
+
+        while (res && (NULL != aelems1)) {
+            res
+              = res && TULSisMatchingValues (EXPRS_EXPR (aelems1), EXPRS_EXPR (aelems2));
+            aelems1 = EXPRS_NEXT (aelems1);
+            aelems2 = EXPRS_NEXT (aelems2);
+        }
+        fs1 = (NULL != fs1) ? COfreeConstant (fs1) : NULL;
+        fs2 = (NULL != fs2) ? COfreeConstant (fs2) : NULL;
+    }
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+    pat4 = PMfree (pat4);
+    pat5 = PMfree (pat5);
+    pat6 = PMfree (pat6);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TULSisFullGenerator( node *generator, node *operator)
  *
  * @brief
