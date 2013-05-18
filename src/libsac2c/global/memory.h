@@ -2,12 +2,13 @@
 #define _SAC_MEMORY_H_
 
 #include "types.h"
-#include "hash_table.h"
+#include "uthash.h"
 
 /*
  * mallocinfo_t is a struct we use to store information about a malloc
  */
 typedef struct mallocinfo_t {
+    void *key;
     compiler_phase_t phase;
     int size;
     bool isfreed;
@@ -19,6 +20,7 @@ typedef struct mallocinfo_t {
     int line;
     int occurrence;
     struct mallocinfo_t *next;
+    struct UT_hash_handle hh;
 } mallocinfo_t;
 
 /*
