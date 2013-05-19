@@ -277,11 +277,18 @@ int[.] partitionIntersectMax( int[.] PWLbound1, int ivmin)
 { /* compute maximum of producerWL partition bound1 scalar
    * and index vector set.
    *  z = max( PWLbound1, ivmin);
+   *
+   *  We do this as a WL so as to scalarize the computation.
+   *
    */
 
-  dif  = _sub_VxS_( PWLbound1, ivmin);
-  p = _ge_VxS_( dif, 0);
-  z = _mask_VxVxS_( p, PWLbound1, ivmin);
+  z = with {
+        ( . <= iv=[k] <= .) {
+            PWLbound1el = _idx_sel_( k, PWLbound1);
+            p = _ge_SxS_( PWLbound1el, ivmin);
+            el = _mask_SxSxS_( p, PWLbound1el, ivmin);
+          } : el;
+        } : genarray( _shape_A_( PWLbound1), 0);
   return(z);
 }
 
@@ -296,9 +303,21 @@ int[.] partitionIntersectMin( int[.] PWLbound2, int ivmax)
    * minval and maxval. It will be restored, in any case, later.
    */
 
+#ifdef DEADIHOPE
   dif  = _sub_VxS_( PWLbound2, ivmax);
   p = _le_VxS_( dif, 0);
   z = _mask_VxVxS_( p, PWLbound2, ivmax);
+#else // DEADIHOPE
+  z = with {
+        ( . <= iv=[k] <= .) {
+            PWLbound2el = _idx_sel_( k, PWLbound2);
+            p = _le_SxS_( PWLbound2el, ivmax);
+            el = _mask_SxSxS_( p, PWLbound2el, ivmax);
+          } : el;
+        } : genarray( _shape_A_( PWLbound2), 0);
+  
+#endif // DEADIHOPE
+
   z = _sub_VxS_( z, 1); /* Remove bound2 bias. */
   return(z);
 }
@@ -310,9 +329,22 @@ int[.] partitionIntersectMax( int[.] PWLbound1, int[.] ivmin)
    *  z = max( PWLbound1, ivmin);
    */
 
+#ifdef DEADIHOPE
   dif  = _sub_VxV_( PWLbound1, ivmin);
   p = _ge_VxS_( dif, 0);
   z = _mask_VxVxV_( p, PWLbound1, ivmin);
+
+#else // DEADIHOPE
+  z = with {
+        ( . <= iv=[k] <= .) {
+            PWLbound1el = _idx_sel_( k, PWLbound1);
+            ivminel     = _idx_sel_( k, ivmin);
+            p = _ge_SxS_( PWLbound1el, ivminel);
+            el = _mask_SxSxS_( p, PWLbound1el, ivminel);
+          } : el;
+        } : genarray( _shape_A_( PWLbound1), 0);
+#endif // DEADIHOPE
+
   return(z);
 }
 
@@ -327,9 +359,22 @@ int[.] partitionIntersectMin( int[.] PWLbound2, int[.] ivmax)
    * minval and maxval. It will be restored, in any case, later.
    */
 
+#ifdef DEADIHOPE
   dif  = _sub_VxV_( PWLbound2, ivmax);
   p = _le_VxS_( dif, 0);
   z = _mask_VxVxV_( p, PWLbound2, ivmax);
+#else // DEADIHOPE
+
+  z = with {
+        ( . <= iv=[k] <= .) {
+            PWLbound2el = _idx_sel_( k, PWLbound2);
+            ivmaxel     = _idx_sel_( k, ivmax);
+            p = _le_SxS_( PWLbound2el, ivmaxel);
+            el = _mask_SxSxS_( p, PWLbound2el, ivmaxel);
+          } : el;
+        } : genarray( _shape_A_( PWLbound2), 0);
+#endif // DEADIHOPE
+  
   z = _sub_VxS_( z, 1); /* Remove bound2 bias. */
   return(z);
 }

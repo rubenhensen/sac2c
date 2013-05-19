@@ -736,7 +736,7 @@ AWLFIisHasInverseProjection (node *arg_node)
      * is not a legal index
      */
     if (NULL != arg_node) {
-        co = COaST2Constant (arg_node);
+        co = IVUTiV2Constant (arg_node);
         if (NULL != co) {
             z = (NOINVERSEPROJECTION != COconst2Int (co));
             co = COfreeConstant (co);

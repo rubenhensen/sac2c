@@ -72,12 +72,13 @@
 #include "algebraic_wlf.h"
 #include "algebraic_wlfi.h"
 #include "ivexcleanup.h"
-#include "compare_tree.h"
 #include "check.h"
 #include "with_loop_utilities.h"
 #include "gdb_utils.h"
 #include "symbolic_constant_simplification.h"
 #include "flattengenerators.h"
+#include "tree_utils.h"
+#include "compare_tree.h"
 
 /** <!--********************************************************************-->
  *
@@ -312,18 +313,16 @@ matchGeneratorField (node *fa, node *fb)
     pata = PMarray (1, PMAgetNode (&fav), 1, PMskip (0));
     patb = PMarray (1, PMAgetNode (&fbv), 1, PMskip (0));
 
-    z = fa == fb;
-    if ((!z)
-        && (((NULL != fa) && (NULL != fb)) && (PMmatchFlatSkipExtrema (pata, fa))
-            && (PMmatchFlatSkipExtrema (patb, fb)))) {
-        z = CMPT_EQ == CMPTdoCompareTree (fav, fbv);
-    }
+    z = (fa == fb)
+        || (((NULL != fa) && (NULL != fb)) && (PMmatchFlatSkipExtrema (pata, fa))
+            && (PMmatchFlatSkipExtrema (patb, fb)) && (TULSisValuesMatch (fa, fb)));
     PMfree (pata);
     PMfree (patb);
 
     if ((!z) && (NULL != fa) && (NULL != fb)) {
 
         z = matchValues (fa, fb);
+        DBUG_ASSERT (!z, "This is supposed to be handed by TULS!");
     }
 
     if ((NULL != fa) && (NULL != fb)) {
@@ -478,55 +477,6 @@ SetWLProjections (node *noteint, int intersectListNo, info *arg_info)
 
     DBUG_RETURN ();
 }
-
-#ifdef DEADCODEMAYBE
-/** <!--********************************************************************-->
- *
- * @fn static intersect_type_t isExactIntersect( node *cbound1,
- * node *intersectb1, node *cbound2, node *intersectb2)
- *
- * @brief Predicate for exact partition intersection.
- *
- * @params cbound1, cbound2: bounds of consumerWL partition
- *         intersectb1, intersectb2: intersection of producerWL partition
- *                                   and consumer WL idx extrema, normalize
- *                                   back to consumerWL bounds
- * @result: TRUE intersection is exact;
- *          FALSE does NOT imply non-exact intersect!!
- *
- *****************************************************************************/
-static bool
-isExactIntersect (node *cbound1, node *intersectb1, node *cbound2, node *intersectb2)
-{
-    pattern *pat;
-    node *arr = NULL;
-    node *c1;
-    node *c2;
-    node *i1;
-    node *i2;
-    bool z = FALSE;
-
-    DBUG_ENTER ();
-
-    pat = PMarray (1, PMAgetNode (&arr), 1, PMskip (0));
-
-    PMmatchFlat (pat, cbound1);
-    c1 = arr;
-    PMmatchFlat (pat, cbound2);
-    c2 = arr;
-    PMmatchFlat (pat, intersectb1);
-    i1 = arr;
-    PMmatchFlat (pat, intersectb2);
-    i2 = arr;
-
-    if ((NULL != c1) && (NULL != c2) && (NULL != i1) && (NULL != i2)) {
-        z = (matchGeneratorField (c1, i1)) && (matchGeneratorField (c2, i2));
-    }
-    pat = PMfree (pat);
-
-    DBUG_RETURN (z);
-}
-#endif // DEADCODEMAYBE
 
 /** <!--********************************************************************-->
  *
@@ -1008,9 +958,10 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
     puba = TCgetNthExprsExpr (axis, ARRAY_AELEMS (partub));
 
     /* Cases beta, gamma need partA */
-    if (CMPT_NEQ == CMPTdoCompareTree (ilba, plba)) {
+    if (!TULSisValuesMatch (ilba, plba)) {
         DBUG_PRINT ("Constructing partition A for %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+        DBUG_ASSERT (!TULSisValuesMatch (ilba, plba), "oopsie");
         newlb = DUPdoDupNode (partlb);
         newub = AdjustGeneratorElementHelper (partub, axis, ilba, arg_info);
         genn
@@ -1032,7 +983,7 @@ PartitionSlicerOneAxis (node *consumerWLpartn, node *lb, node *ub, int axis,
     partz = TCappendPart (partz, newpart);
 
     /* Case alpha, beta need partC */
-    if (CMPT_NEQ == CMPTdoCompareTree (iuba, puba)) {
+    if (!TULSisValuesMatch (iuba, puba)) {
         DBUG_PRINT ("Constructing partition C for %s",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
         newub = DUPdoDupNode (partub);
@@ -1252,7 +1203,7 @@ CUBSLwith (node *arg_node, info *arg_info)
  *
  * @fn node *CUBSLpart( node *arg_node, info *arg_info)
  *
- * @brief Traverse each partition of a WL.
+ * @brief Traverse a partition of a WL.
  *
  * In order for slicing to occur, the WL projections must have
  * been moved out of the WL by LIR. If they have not been moved,
@@ -1268,6 +1219,8 @@ CUBSLpart (node *arg_node, info *arg_info)
     node *oldwlprojection1;
     node *oldwlprojection2;
     intersect_type_t oldintersecttype;
+    int partsbefore;
+    int partsafter;
 
     DBUG_ENTER ();
 
@@ -1310,11 +1263,14 @@ CUBSLpart (node *arg_node, info *arg_info)
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
         DBUG_ASSERT (INFO_CUTNOW (arg_info), "more cutnow confusion");
 
+        partsbefore = TCcountParts (arg_node);
         partnext = PART_NEXT (arg_node);
         PART_NEXT (arg_node) = NULL;
         arg_node = PartitionSlicer (arg_node, arg_info, INFO_WLPROJECTION1 (arg_info),
                                     INFO_WLPROJECTION2 (arg_info));
         PART_NEXT (arg_node) = TCappendPart (PART_NEXT (arg_node), partnext);
+        partsafter = TCcountParts (arg_node);
+        DBUG_ASSERT (partsbefore != partsafter, "Partition Slicer did not slice!");
         INFO_CUTNOW (arg_info) = FALSE;
     }
 

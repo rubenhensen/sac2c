@@ -230,7 +230,7 @@ checkBoundShape (node *arg1, node *arg2)
 
 /** <!--********************************************************************-->
  *
- * @fn bool TULSisMatchingValues( node *arg1, node *arg2)
+ * @fn bool TULSisValuesMatch( node *arg1, node *arg2)
  *
  * Predicate to determine if two nodes have the same algebraic value.
  *
@@ -247,7 +247,7 @@ checkBoundShape (node *arg1, node *arg2)
  *
  *****************************************************************************/
 bool
-TULSisMatchingValues (node *arg1, node *arg2)
+TULSisValuesMatch (node *arg1, node *arg2)
 {
     pattern *pat1;
     pattern *pat2;
@@ -293,8 +293,7 @@ TULSisMatchingValues (node *arg1, node *arg2)
         res = TRUE;
 
         while (res && (NULL != aelems1)) {
-            res
-              = res && TULSisMatchingValues (EXPRS_EXPR (aelems1), EXPRS_EXPR (aelems2));
+            res = res && TULSisValuesMatch (EXPRS_EXPR (aelems1), EXPRS_EXPR (aelems2));
             aelems1 = EXPRS_NEXT (aelems1);
             aelems2 = EXPRS_NEXT (aelems2);
         }
