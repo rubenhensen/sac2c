@@ -315,8 +315,7 @@ DFRdoDeadFunctionRemoval (node *arg_node)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (arg_node) == N_module,
-                 "DFR can only be called on entire modules");
+    //  DBUG_ASSERT (NODE_TYPE( arg_node) == N_module, "DFR must be called on module");
 
     DBUG_ASSERT (DUPgetCopiedSpecialFundefsHook () == NULL,
                  "DFR found LaC funs on hook.");
@@ -364,20 +363,20 @@ DFRmodule (node *arg_node, info *arg_info)
     /*
      * Step 2: Search for needed fundecs, fundefs and objdefs in fundef bodies.
      */
-    DBUG_PRINT ("processing objects...");
     if (MODULE_OBJS (arg_node) != NULL) {
+        DBUG_PRINT ("processing objects");
         INFO_SPINE (arg_info) = TRUE;
         MODULE_OBJS (arg_node) = TRAVdo (MODULE_OBJS (arg_node), arg_info);
     }
 
-    DBUG_PRINT ("processing fundefs...");
     if (MODULE_FUNS (arg_node) != NULL) {
+        DBUG_PRINT ("processing module fundefs");
         INFO_SPINE (arg_info) = TRUE;
         MODULE_FUNS (arg_node) = TRAVdo (MODULE_FUNS (arg_node), arg_info);
     }
 
-    DBUG_PRINT ("processing fundecs...");
     if (MODULE_FUNDECS (arg_node) != NULL) {
+        DBUG_PRINT ("processing fundecs");
         INFO_SPINE (arg_info) = TRUE;
         MODULE_FUNDECS (arg_node) = TRAVdo (MODULE_FUNDECS (arg_node), arg_info);
     }
