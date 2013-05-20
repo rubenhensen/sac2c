@@ -19,12 +19,15 @@
  *
  * Definition of Cost function of with-loop partition:
  *   SAC Function's Structure
- *     cost(primitive fn on scalars):    1
+ *
+ *     cost(primitive fn on scalars):       1
  *        e.g., F_add_SxS,  F_tod_S_
- *     cost(primitive fnon non-scalars): infinite
- *     cost( N_ap):                      infinite
- *     cost( N_with):                    infinite
- *     cost( other):                     infinite
+ *     cost( indexing):                     1
+ *     cost( primitive fn on non-scalars):  2
+ *
+ *     cost( N_ap):                        infinite
+ *     cost( N_with):                      infinite
+ *     cost( other):                       infinite
  *
  * @ingroup opt
  *
@@ -126,8 +129,7 @@ WLCCdoWLCostCheck (node *fundef)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef,
-                 "WLCCdoWLCostCheck called for non-fundef node");
+    DBUG_ASSERT (NODE_TYPE (fundef) == N_fundef, "Called with non-fundef node");
 
     arg_info = MakeInfo ();
 

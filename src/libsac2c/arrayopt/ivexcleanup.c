@@ -123,11 +123,16 @@ IVEXCdoIndexVectorExtremaCleanupPartition (node *arg_node, info *arg_info)
  *
  * @brief  Resets N_with fields no longer needed by AWLF.
  *
+ * We explicitly traverse PART_CODE in case we are being
+ * called with an N_part only.
+ *
  *****************************************************************************/
 node *
 IVEXCpart (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
+
+    PART_CODE (arg_node) = TRAVopt (PART_CODE (arg_node), arg_info);
 
     arg_node = TRAVcont (arg_node, arg_info);
 
