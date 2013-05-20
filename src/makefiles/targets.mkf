@@ -263,6 +263,7 @@ libsac2c_cinterface  := load_module_contents construct_bundles \
                         print_ccflags generate_copy_and_free
 
 libsac2c_constraints := insert_domain_constraints insert_conformity_checks \
+                        generate_guard_solvers                             \
                         strip_conformity_checks constraint_statistics
 
 libsac2c_rtspec      := runtime_specialization runtime_compiler runtime_filtering

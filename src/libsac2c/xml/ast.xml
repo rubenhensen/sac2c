@@ -746,6 +746,13 @@
           <node name="Block" />
         </travuser>
       </traversal>
+      <traversal id="GGS" name="Generate Guard Solvers" default="sons" include="generate_guard_solvers.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="Prf" />
+        </travuser>
+      </traversal> 
       <traversal id="GLF" name="Group Local functions" default="sons" include="group_local_funs.h" >
         <travuser>
           <node name="Module" />

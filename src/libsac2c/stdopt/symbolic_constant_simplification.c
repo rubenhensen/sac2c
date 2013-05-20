@@ -2273,7 +2273,7 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
  * description:
  *  Similar to val_le_val_SxS version.
  *
- *  Case 6: If this is an extended guard, with PRF_ARG3 not NULL,
+ *  Case 6: If this is an extended guard (GGS), with PRF_ARG3 not NULL,
  *          and PRF_ARG3 is TRUE, perform the optimization,
  *          and PERHAPS? set AVIS_MAXVAL( res) = PRF_ARG2.
  *
@@ -2396,7 +2396,8 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     if ((NULL == res) && (NULL != PRF_EXPRS3 (arg_node))) {
         con3 = COaST2Constant (PRF_ARG3 (arg_node));
         if ((NULL != con3) && COisTrue (con3, TRUE)) {
-            res = DUPdoDupNode (PRF_ARG1 (arg_node));
+            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (TBmakeBool (TRUE), NULL));
             DBUG_PRINT ("removed guard Case 6( %s, %s)",
                         AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                         AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
@@ -2437,6 +2438,11 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
  *
  *       Case 5: Constant AVIS_MINVAL( x) <= constant y.
  *
+ *       Case 6: If this is an extended guard (GGS) , with PRF_ARG3 not NULL,
+ *          and PRF_ARG3 is TRUE, perform the optimization,
+ *          and PERHAPS? set AVIS_MAXVAL( res) = PRF_ARG2.
+ *
+ *
  *****************************************************************************/
 node *
 SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
@@ -2449,6 +2455,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     node *b;
     constant *con1 = NULL;
     constant *con2 = NULL;
+    constant *con3 = NULL;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
@@ -2533,6 +2540,19 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
             cob = (NULL != cob) ? COfreeConstant (cob) : cob;
             b = (NULL != b) ? FREEdoFreeNode (b) : b;
         }
+    }
+
+    /* Case 6 */
+    if ((NULL == res) && (NULL != PRF_EXPRS3 (arg_node))) {
+        con3 = COaST2Constant (PRF_ARG3 (arg_node));
+        if ((NULL != con3) && COisTrue (con3, TRUE)) {
+            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (TBmakeBool (TRUE), NULL));
+            DBUG_PRINT ("removed guard Case 6( %s, %s)",
+                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+        }
+        con3 = (NULL != con1) ? COfreeConstant (con3) : con3;
     }
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
