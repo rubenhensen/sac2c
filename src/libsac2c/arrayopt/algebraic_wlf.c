@@ -544,10 +544,18 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
              * We should allow "cheap" PWL partitions to fold.
              * E.g., toi(iota(N)).
              */
-            if ((NULL != pwlp)
-                && ((AVIS_NEEDCOUNT (producerWLavis)
-                     != AVIS_WL_NEEDCOUNT (producerWLavis)))
-                && (!WLUTisEmptyPartitionCodeBlock (pwlp))) {
+            if ((NULL != pwlp) &&
+// I am disabling this check. We'll see who complains about duplicate
+// work (when PWL gets copied into several CWLs).
+// I think a better fix is to write a cost function for each PWL partition,
+// and allow AWLF if the cost is "low enough".
+#ifdef WANTNEEDCOUNT
+                ((AVIS_NEEDCOUNT (producerWLavis) != AVIS_WL_NEEDCOUNT (producerWLavis)))
+                &&
+#else  // WANTNEEDCOUNT
+                FALSE &&
+#endif // WANTNEEDCOUNT
+                (!WLUTisEmptyPartitionCodeBlock (pwlp))) {
                 DBUG_PRINT (
                   "Can't intersect PWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
                   AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
