@@ -46,7 +46,7 @@
  *    } : copy
  * </pre>
  *
- *    NOTE: This can only happen if -wls_aggressive or maxwls are specified!
+ *    NOTE: This can only happen if -dowls_aggressive or maxwls are specified!
  *
  * </pre>
  *

@@ -961,12 +961,6 @@ AnalyseCommandlineSac2c (int argc, char *argv[])
     ARGS_FLAG ("VV", USGprintVersionVerbose (); exit (0));
 
     /*
-     * Options starting with wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
-     */
-
-    ARGS_FLAG ("wls_aggressive", global.wls_aggressive = TRUE);
-
-    /*
      * Options starting with strange symbols
      */
 

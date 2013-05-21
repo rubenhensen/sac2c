@@ -140,6 +140,7 @@ OPTIMIZE ("ctzg", ctzg, FALSE, FALSE, "comparisons to zero for guards")
 OPTIMIZE ("ctz", ctz, TRUE, TRUE, "comparisons to zero")
 OPTIMIZE ("uctz", uctz, TRUE, TRUE, "eliminating comparisons to zero")
 OPTIMIZE ("ggs", ggs, TRUE, TRUE, "generating guard solvers")
+OPTIMIZE ("wls_aggressive", wls_aggressive, TRUE, TRUE, "aggressive loop scalarization")
 
 /* OPTIMIZE entries after this point are intended for
  * developer use only.

@@ -31,7 +31,7 @@
  * - lb_i, ub_i must either be AKV N_id nodes OR N_array nodes,
  *              or their predecessors must be one of those.
  *
- * - if wls_aggressive was specified or size( res_i) < maxwls,
+ * - if -dowls_aggressive was specified or size( res_i) < maxwls,
  *    => perform With-Loop Scalarization
  *
  * - In all other cases, block_i must either be empty or must contain a
@@ -439,7 +439,7 @@ WLSCcode (node *arg_node, info *arg_info)
         }
     }
 
-    if ((INFO_POSSIBLE (arg_info)) && (!global.wls_aggressive)
+    if ((INFO_POSSIBLE (arg_info)) && (!global.optimize.dowls_aggressive)
         && (SHgetUnrLen (TYgetShape (ID_NTYPE (CODE_CEXPR (arg_node))))
             > global.maxwls)) {
 

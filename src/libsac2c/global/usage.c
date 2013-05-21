@@ -482,7 +482,7 @@ PrintOptimisationOptions (void)
       "                      (default: %d)\n\n",
       global.apdiag_limit);
 
-    printf ("    -wls_aggressive Set WLS optimization level to aggressive.\n"
+    printf ("    -dowls_aggressive Set WLS optimization level to aggressive.\n"
             "                    WARNING:\n"
             "                    Aggressive with-loop scalarization may have the "
             "opposite\n"
@@ -492,7 +492,7 @@ PrintOptimisationOptions (void)
             "    -maxwls         Set the maximum number of inner with-loop elements for "
             "which\n"
             "                    aggressive behaviour will be used even if "
-            "-wls_aggressive is\n"
+            "-dowls_aggressive is\n"
             "                    not given. (default: %d)\n\n",
             global.maxwls);
 

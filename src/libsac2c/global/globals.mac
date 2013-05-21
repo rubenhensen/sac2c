@@ -463,12 +463,6 @@ GLOBAL (int, ssaform_phase, 0, xfree_dummy, )
  * SCRATCH(!), i.e., how often UndoSSATransform has been called.
  */
 
-GLOBAL (bool, wls_aggressive, FALSE, xfree_dummy, )
-/*
- * Per default do not use aggressive WLS
- * except the inner WL has <= wls_bound elems
- */
-
 GLOBAL (int, maxwls, 1, xfree_dummy, )
 /*
  * Apply aggressive withloop scalarization regardless of wls_aggressive
