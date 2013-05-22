@@ -17,6 +17,7 @@ typedef struct mallocinfo_t {
     bool isnode;
     nodetype type;
     char *file;
+    const char *callingfunc;
     int line;
     int occurrence;
     struct mallocinfo_t *next;
@@ -46,9 +47,9 @@ typedef struct mallocphaseinfo_t {
  *
  *   should be used instead of malloc
  */
-extern void *_MEMmalloc (int size, char *file, int line);
-#define MEMmalloc(size) _MEMmalloc (size, __FILE__, __LINE__)
-#define MEMmallocAt(size, file, line) _MEMmalloc (size, file, line)
+extern void *_MEMmalloc (int size, char *file, int line, const char *func);
+#define MEMmalloc(size) _MEMmalloc (size, __FILE__, __LINE__, __func__)
+#define MEMmallocAt(size, file, line) _MEMmalloc (size, file, line, __func__)
 
 /*
  * description:

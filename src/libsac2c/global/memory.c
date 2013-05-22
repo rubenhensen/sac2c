@@ -21,7 +21,7 @@ mallocphaseinfo_t phasetable[PH_final + 1] = {{0, 0, 0, 0, 0, 0, 0, 0}};
 FILE *mreport = 0;
 
 void *
-_MEMmalloc (int size, char *file, int line)
+_MEMmalloc (int size, char *file, int line, const char *func)
 {
 #ifndef DBUG_OFF
     void *ptr;
@@ -58,6 +58,7 @@ _MEMmalloc (int size, char *file, int line)
             info->isreachable = FALSE;
             info->line = line;
             info->file = file;
+            info->callingfunc = func;
             info->occurrence = 1;
 
             phasetable[info->phase].nmallocd++;
@@ -205,9 +206,9 @@ MEMreport (node *arg_node, info *arg_info)
         while (iterator) {
             fprintf (mreport,
                      "     ** file: %s, line: %d, occurrence: %d, size: %d, from phase: "
-                     "%s\n",
+                     "%s, from func: %s\n",
                      iterator->file, iterator->line, iterator->occurrence, iterator->size,
-                     PHIphaseIdent (iterator->phase));
+                     PHIphaseIdent (iterator->phase), iterator->callingfunc);
             iterator = iterator->next;
         }
         iterator = phasetable[i].notfreed;
