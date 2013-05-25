@@ -275,9 +275,9 @@ CreateOneVector (int nr, info *arg_info)
     while (temp != NULL) {
         NUM_VAL (EXPRS_EXPR (temp)) = 1;
         EXPRS_EXPR (temp) = TBmakeId (
-          FLATGflattenExpression (EXPRS_EXPR (temp), &INFO_VARDECS (arg_info),
-                                  &INFO_PREASSIGNS (arg_info),
-                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0))));
+          FLATGexpression2Avis (EXPRS_EXPR (temp), &INFO_VARDECS (arg_info),
+                                &INFO_PREASSIGNS (arg_info),
+                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0))));
         temp = EXPRS_NEXT (temp);
     }
 

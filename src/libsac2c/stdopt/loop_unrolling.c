@@ -234,8 +234,8 @@ FlattenMM (node *val, info *arg_info)
     DBUG_ENTER ();
 
     avis
-      = FLATGflattenExpression (val, &INFO_VARDECS (arg_info), &INFO_PREASSIGN (arg_info),
-                                TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+      = FLATGexpression2Avis (val, &INFO_VARDECS (arg_info), &INFO_PREASSIGN (arg_info),
+                              TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
     id = TBmakeId (avis);
 
     DBUG_RETURN (id);

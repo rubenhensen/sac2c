@@ -567,8 +567,7 @@ flattenPrfarg (node *arg_node, node **vardecs, node **preassign)
 
     if (N_id != NODE_TYPE (arg_node)) {
         typ = NTCnodeToType (arg_node);
-        res
-          = FLATGflattenExpression (arg_node, vardecs, preassign,
+        res = FLATGexpression2Avis (arg_node, vardecs, preassign,
                                     TYmakeAKS (TYmakeSimpleType (typ), SHmakeShape (0)));
         res = TBmakeId (res);
         ID_ISSCLPRF (res) = TRUE;

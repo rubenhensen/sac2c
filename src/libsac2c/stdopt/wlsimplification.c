@@ -225,17 +225,17 @@ CreateGenwidth (node *lb_array, node *ub_array, info *arg_info)
         FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
           = TBmakeVardec (diffavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
 
-        lb = FLATGflattenExpression (DUPdoDupNode (EXPRS_EXPR (lb_exprs)),
-                                     &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
-                                     &INFO_PREASSIGN (arg_info),
-                                     TYmakeAKS (TYmakeSimpleType (T_int),
-                                                SHcreateShape (0)));
+        lb = FLATGexpression2Avis (DUPdoDupNode (EXPRS_EXPR (lb_exprs)),
+                                   &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
+                                   &INFO_PREASSIGN (arg_info),
+                                   TYmakeAKS (TYmakeSimpleType (T_int),
+                                              SHcreateShape (0)));
 
-        ub = FLATGflattenExpression (DUPdoDupNode (EXPRS_EXPR (ub_exprs)),
-                                     &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
-                                     &INFO_PREASSIGN (arg_info),
-                                     TYmakeAKS (TYmakeSimpleType (T_int),
-                                                SHcreateShape (0)));
+        ub = FLATGexpression2Avis (DUPdoDupNode (EXPRS_EXPR (ub_exprs)),
+                                   &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
+                                   &INFO_PREASSIGN (arg_info),
+                                   TYmakeAKS (TYmakeSimpleType (T_int),
+                                              SHcreateShape (0)));
 
         prfassgn = TBmakeAssign (TBmakeLet (TBmakeIds (diffavis, NULL),
                                             TCmakePrf2 (F_sub_SxS, TBmakeId (ub),

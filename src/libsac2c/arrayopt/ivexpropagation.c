@@ -522,7 +522,7 @@ makeNarray (node *extrema, ntype *typ, node *nar, node **vardecs, node **preassi
 #ifdef FIXME
         narr = CFunflattenSimpleScalars (narr);
 #endif // ifdef FIXME
-        zavis = FLATGflattenExpression (narr, vardecs, preassigns, TYeliminateAKV (typ));
+        zavis = FLATGexpression2Avis (narr, vardecs, preassigns, TYeliminateAKV (typ));
     }
 
     DBUG_RETURN (zavis);
@@ -891,9 +891,9 @@ InvokeMonadicFn (node *minmaxavis, node *lhsavis, node *rhs, info *arg_info)
     DBUG_ENTER ();
 
     minmaxavis = TCmakePrf1 (PRF_PRF (rhs), TBmakeId (minmaxavis));
-    minmaxavis = FLATGflattenExpression (minmaxavis, &INFO_VARDECS (arg_info),
-                                         &INFO_PREASSIGNS (arg_info),
-                                         TYeliminateAKV (AVIS_TYPE (lhsavis)));
+    minmaxavis = FLATGexpression2Avis (minmaxavis, &INFO_VARDECS (arg_info),
+                                       &INFO_PREASSIGNS (arg_info),
+                                       TYeliminateAKV (AVIS_TYPE (lhsavis)));
     DBUG_RETURN (minmaxavis);
 }
 
@@ -954,9 +954,9 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
             /* Create zero minimum */
             zr = SCSmakeZero (nsa);
             if (NULL != zr) { // nsa may not be AKS
-                zr = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGNS (arg_info),
-                                             TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                zr = FLATGexpression2Avis (zr, &INFO_VARDECS (arg_info),
+                                           &INFO_PREASSIGNS (arg_info),
+                                           TYeliminateAKV (AVIS_TYPE (lhsavis)));
                 AVIS_ISMINHANDLED (zr) = TRUE;
                 INFO_MINVAL (arg_info) = TBmakeId (zr);
             }
@@ -974,14 +974,14 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
                 // vector/scalar case: PRF_ARG2( rhs) + ( 0 * PRF_ARG2( rhs));
                 zr = SCSmakeZero (nsa);
                 if (NULL != zr) { // nsa may not be AKS
-                    zr = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
-                                                 &INFO_PREASSIGNS (arg_info),
-                                                 TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                    zr = FLATGexpression2Avis (zr, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info),
+                                               TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     zr = TCmakePrf2 (F_add_VxS, TBmakeId (zr),
                                      TBmakeId (ID_AVIS (PRF_ARG2 (rhs))));
-                    zr = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
-                                                 &INFO_PREASSIGNS (arg_info),
-                                                 TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                    zr = FLATGexpression2Avis (zr, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info),
+                                               TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     INFO_MAXVAL (arg_info) = TBmakeId (zr);
                     AVIS_ISMAXHANDLED (zr) = TRUE;
                 }
@@ -1141,16 +1141,16 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
     /* Generate normalized extrema calculation for dyadic primitives */
     if (NULL != minarg1) {
         minv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (minarg1), TBmakeId (minarg2));
-        minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
-                                       &INFO_PREASSIGNS (arg_info),
-                                       TYeliminateAKV (AVIS_TYPE (lhsavis)));
+        minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info),
+                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
     }
 
     if (NULL != maxarg1) {
         maxv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (maxarg1), TBmakeId (maxarg2));
-        maxv = FLATGflattenExpression (maxv, &INFO_VARDECS (arg_info),
-                                       &INFO_PREASSIGNS (arg_info),
-                                       TYeliminateAKV (AVIS_TYPE (lhsavis)));
+        maxv = FLATGexpression2Avis (maxv, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info),
+                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
     }
 
     /* Normalize maxv */
@@ -1309,16 +1309,16 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
     /* Generate normalized extrema calculation for dyadic primitives */
     if (NULL != minarg1) {
         minv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (minarg1), TBmakeId (minarg2));
-        minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
-                                       &INFO_PREASSIGNS (arg_info),
-                                       TYeliminateAKV (AVIS_TYPE (lhsavis)));
+        minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info),
+                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
     }
 
     if (NULL != maxarg1) {
         maxv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (maxarg1), TBmakeId (maxarg2));
-        maxv = FLATGflattenExpression (maxv, &INFO_VARDECS (arg_info),
-                                       &INFO_PREASSIGNS (arg_info),
-                                       TYeliminateAKV (AVIS_TYPE (lhsavis)));
+        maxv = FLATGexpression2Avis (maxv, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info),
+                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
         /* Normalize maxv */
         maxv = IVEXPadjustExtremaBound (maxv, +1, &INFO_VARDECS (arg_info),
                                         &INFO_PREASSIGNS (arg_info), "mulnorm");
@@ -1418,16 +1418,16 @@ GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
     /* Generate normalized extrema calculation for dyadic primitives */
     if (NULL != minarg1) {
         minv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (minarg1), TBmakeId (minarg2));
-        minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
-                                       &INFO_PREASSIGNS (arg_info),
-                                       TYeliminateAKV (AVIS_TYPE (lhsavis)));
+        minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info),
+                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
     }
 
     if (NULL != maxarg1) {
         maxv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (maxarg1), TBmakeId (maxarg2));
-        maxv = FLATGflattenExpression (maxv, &INFO_VARDECS (arg_info),
-                                       &INFO_PREASSIGNS (arg_info),
-                                       TYeliminateAKV (AVIS_TYPE (lhsavis)));
+        maxv = FLATGexpression2Avis (maxv, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info),
+                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
         /* Normalize maxv */
         maxv = IVEXPadjustExtremaBound (maxv, +1, &INFO_VARDECS (arg_info),
                                         &INFO_PREASSIGNS (arg_info), "dsfnc");
@@ -1465,8 +1465,8 @@ ScalarExtend (node *arg1avis, node *arg2, info *arg_info)
         && (TYisAKV (AVIS_TYPE (arg2avis)) || TYisAKS (AVIS_TYPE (arg2avis)))) {
         shp = SHcopyShape (TYgetShape (AVIS_TYPE (arg2avis)));
         z = SCSmakeVectorArray (shp, TBmakeId (arg1avis));
-        z = FLATGflattenExpression (z, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info), NULL);
+        z = FLATGexpression2Avis (z, &INFO_VARDECS (arg_info),
+                                  &INFO_PREASSIGNS (arg_info), NULL);
     } else {
         z = arg1avis;
     }
@@ -1639,6 +1639,8 @@ GenerateExtremaForMax (node *lhsavis, node *rhs, info *arg_info)
  *      If this insertion is already done, this function is an identity.
  *      Ditto if no insertion is desired or possible.
  *
+ *      This code operates on AKS/AKV results only.
+ *
  * Arguments:
  *      arg_node: N_let for the N_prf.
  *
@@ -1772,7 +1774,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
     withid = (NULL != withid) ? PART_WITHID (WITH_PART (withid)) : NULL;
     lhsavis = IDS_AVIS (LET_IDS (arg_node));
     rhs = LET_EXPR (arg_node);
-    if ((!IVEXPisAvisHasBothExtrema (lhsavis))
+    if ((!IVEXPisAvisHasBothExtrema (lhsavis)) && (TYisAKS (AVIS_TYPE (lhsavis)))
         && (TUisIntScalar (AVIS_TYPE (lhsavis)) || TUisIntVect (AVIS_TYPE (lhsavis)))
         && (!TYisAKV (AVIS_TYPE (lhsavis)))) {
 
@@ -1797,9 +1799,9 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                         || TYisAKS (AVIS_TYPE (arg1avis)))) {
                     /* Create zero minimum */
                     zr = SCSmakeZero (PRF_ARG1 (rhs));
-                    minv = FLATGflattenExpression (zr, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info),
-                                                   TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                    minv = FLATGexpression2Avis (zr, &INFO_VARDECS (arg_info),
+                                                 &INFO_PREASSIGNS (arg_info),
+                                                 TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     AVIS_ISMINHANDLED (minv) = TRUE;
                     AVIS_ISMAXHANDLED (minv) = TRUE;
                     INFO_MINVAL (arg_info) = TBmakeId (minv);
@@ -1836,9 +1838,9 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
                 if (!IVEXPisAvisHasMin (lhsavis)) {
                     minv = SCSmakeZero (PRF_ARG1 (rhs));
-                    minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info),
-                                                   TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                    minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
+                                                 &INFO_PREASSIGNS (arg_info),
+                                                 TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     INFO_MINVAL (arg_info) = TBmakeId (minv);
                 }
                 break;
@@ -1878,9 +1880,9 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     nprf = (F_neg_S == PRF_PRF (rhs)) ? F_sub_SxS : F_sub_SxV;
                     maxv = TCmakePrf2 (nprf, TBmakeId (maxv),
                                        TBmakeId (ID_AVIS (AVIS_MAX (arg1avis))));
-                    maxv = FLATGflattenExpression (maxv, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info),
-                                                   TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                    maxv = FLATGexpression2Avis (maxv, &INFO_VARDECS (arg_info),
+                                                 &INFO_PREASSIGNS (arg_info),
+                                                 TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     AVIS_ISMINHANDLED (maxv) = TRUE;
                     INFO_MINVAL (arg_info) = TBmakeId (maxv);
                 }
@@ -1943,10 +1945,10 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     FREEdoFreeNode (PRF_ARG2 (minv));
                     PRF_ARG2 (minv) = DUPdoDupNode (AVIS_MIN (arg2avis));
                     arg2type = TUgetBaseSimpleType (AVIS_TYPE (arg2avis));
-                    minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info),
-                                                   TYmakeAKS (TYmakeSimpleType (arg2type),
-                                                              SHmakeShape (0)));
+                    minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
+                                                 &INFO_PREASSIGNS (arg_info),
+                                                 TYmakeAKS (TYmakeSimpleType (arg2type),
+                                                            SHmakeShape (0)));
                     AVIS_ISMINHANDLED (minv) = TRUE;
                     INFO_MINVAL (arg_info) = TBmakeId (minv);
                 }
@@ -1959,10 +1961,10 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     FREEdoFreeNode (PRF_ARG2 (maxv));
                     PRF_ARG2 (maxv) = DUPdoDupNode (AVIS_MAX (arg2avis));
                     arg2type = TUgetBaseSimpleType (AVIS_TYPE (arg2avis));
-                    maxv = FLATGflattenExpression (maxv, &INFO_VARDECS (arg_info),
-                                                   &INFO_PREASSIGNS (arg_info),
-                                                   TYmakeAKS (TYmakeSimpleType (arg2type),
-                                                              SHmakeShape (0)));
+                    maxv = FLATGexpression2Avis (maxv, &INFO_VARDECS (arg_info),
+                                                 &INFO_PREASSIGNS (arg_info),
+                                                 TYmakeAKS (TYmakeSimpleType (arg2type),
+                                                            SHmakeShape (0)));
                     AVIS_ISMAXHANDLED (maxv) = TRUE;
                     INFO_MAXVAL (arg_info) = TBmakeId (maxv);
                 }
@@ -2098,6 +2100,17 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
 
     case F_non_neg_val_S:
     case F_non_neg_val_V:
+        // Overwrite/propagate minval only if it is known to be >= 0.
+        // Otherwise, we will generate a minval (elsewhere).
+        rhsavis = ID_AVIS (PRF_ARG1 (rhs));
+        if ((NULL != AVIS_MIN (rhsavis)) && SCSisNonneg (AVIS_MIN (rhsavis))) {
+            AVIS_MIN (lhsavis)
+              = (NULL != AVIS_MIN (lhsavis)) ? FREEdoFreeNode (AVIS_MIN (lhsavis)) : NULL;
+            IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE);
+        }
+        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE);
+        break;
+
     case F_afterguard:
     case F_noteintersect:
     case F_shape_matches_dim_VxA:

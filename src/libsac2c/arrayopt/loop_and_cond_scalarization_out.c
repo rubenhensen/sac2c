@@ -303,7 +303,7 @@ BuildFunconds (node *avis, node *newexprsthen, node *newexprselse, info *arg_inf
                      "Did not find N_funcond at N_return");
         fc = TBmakeFuncond (DUPdoDupNode (FUNCOND_IF (funcond)),
                             EXPRS_EXPR (newexprsthen), EXPRS_EXPR (newexprselse));
-        fc = FLATGflattenExpression (fc, &INFO_VARDECS (arg_info), &assgns, NULL);
+        fc = FLATGexpression2Avis (fc, &INFO_VARDECS (arg_info), &assgns, NULL);
         INFO_FUNCONDEXPRS (arg_info) = TCappendExprs (INFO_FUNCONDEXPRS (arg_info),
                                                       TBmakeExprs (TBmakeId (fc), NULL));
         typ = TYcopyType (AVIS_TYPE (fc));

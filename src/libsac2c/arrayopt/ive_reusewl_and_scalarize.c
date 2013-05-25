@@ -573,9 +573,9 @@ FlattenEachExprsNode (node *arg_node, info *arg_info)
     exprs = arg_node;
     while (NULL != exprs) {
         typ = TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0));
-        newz = FLATGflattenExpression (DUPdoDupNode (EXPRS_EXPR (exprs)),
-                                       &INFO_VARDECS (arg_info),
-                                       &INFO_PREASSIGNS (arg_info), typ);
+        newz = FLATGexpression2Avis (DUPdoDupNode (EXPRS_EXPR (exprs)),
+                                     &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info), typ);
         z = TCappendExprs (z, TBmakeExprs (TBmakeId (newz), NULL));
         exprs = EXPRS_NEXT (exprs);
     }

@@ -6,9 +6,11 @@
  *        cost of each with-loop partition.
  *
  *        Basically, we want to identify the set of producerWLs
- *        that are worthy of being folded in to more than one
- *        consumerWLs. A typical example of this would
- *        be:  tod( genarray(iota(N)))
+ *        that are worthy of being folded into more than one
+ *        consumerWLs. A typical example of this is:
+ *
+ *           tod( genarray(iota(N)))
+ *
  *        where the per-element computation cost is small.
  *
  *        There is no problem in making this function more
@@ -20,13 +22,14 @@
  * Definition of Cost function of with-loop partition:
  *   SAC Function's Structure
  *
- *     cost(primitive fn on scalars):       1
- *        e.g., F_add_SxS,  F_tod_S_
+ *     cost(primitive fn):                  1
+ *        e.g., F_add_SxV,  F_tod_S_
  *     cost( indexing):                     1
- *     cost( primitive fn on non-scalars):  2
  *
  *     cost( N_ap):                        infinite
  *     cost( N_with):                      infinite
+ *     cost( guards)                       0
+ *     cost( extrema)                      0
  *     cost( other):                       infinite
  *
  * @ingroup opt

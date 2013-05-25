@@ -98,16 +98,16 @@ FreeInfo (info *info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *FLATGflattenExpression(node *arg_node, node **vardecs,
+ * @fn node *expression2Avis(node *arg_node, node **vardecs,
  *                                  node **preassigns, ntype *restype)
  *
- *   @brief  Flattens the expression at arg_node.
- *           E.g., if the expression is:
+ *   @brief  Generates (usually) an assignment for the expression at arg_node.
+ *           E.g., if arg_node is:
  *
  *            _max_VxV_(a, b);
  *
  *          it will look like this on the way out:
- *           TYPETHINGY  TMP;
+ *           TYPE  TMP;
  *            ...
  *
  *            TMP = _max_VxV_(a, b);
@@ -122,12 +122,14 @@ FreeInfo (info *info)
  *           node **preassigns: a pointer to a preassigns chain that
  *                           will have a new assign appended to it.
  *           node *restype:  the ntype of TMP.
+ *                          NB. restype is now computed directly here!!
  *
- *   @return node *node:      N_avis node for flattened node
+ *
+ *   @return node *node:      N_avis node for TMP.
  *
  ******************************************************************************/
 node *
-FLATGflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype *restype)
+FLATGexpression2Avis (node *arg_node, node **vardecs, node **preassigns, ntype *restype)
 {
     node *avis;
     node *nas;
@@ -139,6 +141,11 @@ FLATGflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
     } else {
         if (NULL == restype) {
             restype = NTCnewTypeCheck_Expr (arg_node);
+            // This may be a product type or a simple type. Disambiguate here.
+            if (TYisProd (restype)) {
+                DBUG_ASSERT (1 == TYgetProductSize (restype), "expected one result type");
+                restype = TYgetProductMember (restype, 0);
+            }
         }
         avis = TBmakeAvis (TRAVtmpVar (), restype);
         *vardecs = TBmakeVardec (avis, *vardecs);
@@ -160,12 +167,13 @@ FLATGflattenExpression (node *arg_node, node **vardecs, node **preassigns, ntype
  *
  *           e.g., if arg_node is this at entry:
  *
- *            z = [ 0, colsx];
+ *            z = [ 42, colsx, 666];
  *
  *          it will look like this at exit:
  *
- *            t1 = 0;
- *            z = [ g1, colsx];
+ *            t1 = 42;
+ *            t2 = 666;
+ *            z = [ t1, colsx, t2];
  *
  *
  *   @param  node *arg_node: an N_exprs node whose elements are to be flattened.
@@ -192,7 +200,7 @@ FLATGflattenExprsChain (node *arg_node, node **vardecs, node **preassigns, ntype
 
     while (NULL != exprs) {
         expr = EXPRS_EXPR (exprs);
-        expr = FLATGflattenExpression (expr, vardecs, preassigns, restype);
+        expr = FLATGexpression2Avis (expr, vardecs, preassigns, restype);
         EXPRS_EXPR (exprs) = TBmakeId (expr);
         exprs = EXPRS_NEXT (exprs);
     }
@@ -741,9 +749,9 @@ FLATGexprs (node *arg_node, info *arg_info)
         if (doflatten) {
             DBUG_PRINT ("Flattening N_prf for %s",
                         AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-            expr = FLATGflattenExpression (expr, &INFO_VARDECS (arg_info),
-                                           &INFO_PREASSIGNSPRF (arg_info),
-                                           TYmakeAUD (TYmakeSimpleType (T_unknown)));
+            expr = FLATGexpression2Avis (expr, &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGNSPRF (arg_info),
+                                         TYmakeAUD (TYmakeSimpleType (T_unknown)));
             expr = TBmakeId (expr);
             EXPRS_EXPR (arg_node) = expr;
         }

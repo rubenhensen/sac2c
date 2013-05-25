@@ -710,7 +710,7 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
 
     if ((NULL != z) && (N_avis != NODE_TYPE (z))) {
         DBUG_ASSERT (N_array == NODE_TYPE (z), "Expected N_array");
-        z = FLATGflattenExpression (DUPdoDupTree (z), vardecs, preassigns, NULL);
+        z = FLATGexpression2Avis (DUPdoDupTree (z), vardecs, preassigns, NULL);
     }
 
     DBUG_RETURN (z);

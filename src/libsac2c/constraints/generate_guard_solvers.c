@@ -215,11 +215,10 @@ GGSprf (node *arg_node, info *arg_info)
     if ((F_unknown != nprf) && (INFO_GENERATE (arg_info))
         && (NULL == PRF_EXPRS3 (arg_node))) {
         // generate PRF_ARG3
-        avis
-          = FLATGflattenExpression (TCmakePrf2 (nprf, DUPdoDupNode (PRF_ARG1 (arg_node)),
-                                                DUPdoDupNode (PRF_ARG2 (arg_node))),
-                                    &INFO_VARDECS (arg_info), &INFO_PREASSIGNS (arg_info),
-                                    NULL);
+        avis = FLATGexpression2Avis (TCmakePrf2 (nprf, DUPdoDupNode (PRF_ARG1 (arg_node)),
+                                                 DUPdoDupNode (PRF_ARG2 (arg_node))),
+                                     &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info), NULL);
         PRF_ARGS (arg_node)
           = TCappendExprs (PRF_ARGS (arg_node), TBmakeExprs (TBmakeId (avis), NULL));
     }

@@ -629,15 +629,13 @@ MDEwith (node *arg_node, info *arg_info)
             framedim = TBmakeId (fdavis);
         }
         framedim
-          = FLATGflattenExpression (framedim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
-                                    &preassigns,
-                                    TYmakeAKS (TYmakeSimpleType (T_int),
-                                               SHmakeShape (0)));
+          = FLATGexpression2Avis (framedim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
+                                  &preassigns,
+                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
         celldim
-          = FLATGflattenExpression (celldim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
-                                    &preassigns,
-                                    TYmakeAKS (TYmakeSimpleType (T_int),
-                                               SHmakeShape (0)));
+          = FLATGexpression2Avis (celldim, &FUNDEF_VARDECS (INFO_FUNDEF (arg_info)),
+                                  &preassigns,
+                                  TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
         rhsnode = TCmakePrf2 (F_add_SxS, TBmakeId (framedim), TBmakeId (celldim));
     } break;
 

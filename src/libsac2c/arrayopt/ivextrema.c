@@ -585,14 +585,14 @@ IVEXItmpIds (node *curpart, node *iavis, int k, node **preassignspart, node **va
     b1 = GENERATOR_BOUND1 (PART_GENERATOR (curpart));
     b1 = WLUTfindArrayForBound (b1); /* crash in next says we didn't find it */
     b1 = TCgetNthExprsExpr (k, ARRAY_AELEMS (b1));
-    b1 = FLATGflattenExpression (DUPdoDupNode (b1), vardecs, preassignspart,
-                                 TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+    b1 = FLATGexpression2Avis (DUPdoDupNode (b1), vardecs, preassignspart,
+                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
     b2 = GENERATOR_BOUND2 (PART_GENERATOR (curpart));
     b2 = WLUTfindArrayForBound (b2); /* crash in next says we didn't find it */
     b2 = TCgetNthExprsExpr (k, ARRAY_AELEMS (b2));
-    b2 = FLATGflattenExpression (DUPdoDupNode (b2), vardecs, preassignspart,
-                                 TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
+    b2 = FLATGexpression2Avis (DUPdoDupNode (b2), vardecs, preassignspart,
+                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
 
     avisp = IVEXIattachExtrema (b1, iavis, vardecs, preassignspart, F_noteminval);
 
@@ -1002,8 +1002,8 @@ IVEXIprf (node *arg_node, info *arg_info)
             if (NULL != con) {
                 typ = TYmakeAKV (TYmakeSimpleType (T_int), con);
                 minv = COconstant2AST (con);
-                minv = FLATGflattenExpression (minv, &INFO_VARDECS (arg_info),
-                                               &INFO_PREASSIGNSWITH (arg_info), typ);
+                minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
+                                             &INFO_PREASSIGNSWITH (arg_info), typ);
                 minv = TBmakeId (minv);
                 IVEXPsetMinvalIfNotNull (IDS_AVIS (INFO_LHS (arg_info)), minv, FALSE);
             }

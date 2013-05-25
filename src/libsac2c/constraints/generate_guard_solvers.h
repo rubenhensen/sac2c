@@ -15,4 +15,4 @@ extern node *GGSfundef (node *arg_node, info *arg_info);
 extern node *GGSassign (node *arg_node, info *arg_info);
 extern node *GGSprf (node *arg_node, info *arg_info);
 
-#endif _SAC_GENERATE_GUARD_SOLVERS_H_
+#endif // _SAC_GENERATE_GUARD_SOLVERS_H_

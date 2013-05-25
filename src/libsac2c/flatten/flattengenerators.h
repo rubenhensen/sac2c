@@ -12,8 +12,8 @@
 #include "types.h"
 
 extern node *FLATGdoFlatten (node *syntax_tree);
-extern node *FLATGflattenExpression (node *arg_node, node **vardecs, node **preassigns,
-                                     ntype *restype);
+extern node *FLATGexpression2Avis (node *arg_node, node **vardecs, node **preassigns,
+                                   ntype *restype);
 extern node *FLATGflattenExprsChain (node *arg_node, node **vardecs, node **preassigns,
                                      ntype *restype);
 

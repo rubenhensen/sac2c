@@ -369,10 +369,10 @@ CTZGprf (node *arg_node, info *arg_info)
                                         TBmakeExprs (DUPdoDupNode (PRF_ARG2 (arg_node)),
                                                      NULL)));
 
-        relopavis = FLATGflattenExpression (relop, &INFO_VARDECS (arg_info),
-                                            &INFO_PREASSIGNS (arg_info),
-                                            TYmakeAKS (TYmakeSimpleType (T_bool),
-                                                       SHcreateShape (0)));
+        relopavis = FLATGexpression2Avis (relop, &INFO_VARDECS (arg_info),
+                                          &INFO_PREASSIGNS (arg_info),
+                                          TYmakeAKS (TYmakeSimpleType (T_bool),
+                                                     SHcreateShape (0)));
 
 #ifdef DEADCODE
         pavis = IDS_AVIS (IDS_NEXT (LET_IDS (INFO_LET (arg_info))));
