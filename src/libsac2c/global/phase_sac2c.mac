@@ -281,6 +281,9 @@ SUBPHASE (wlir, "Applying with-loop invariant removal", WLIRdoLoopInvariantRemov
 
 SUBPHASE (glf, "Grouping local functions", GLFdoGroupLocalFuns, ALWAYS, opt)
 
+SUBPHASE (linl, "Inlining degenerated LaC functions", LINLdoLACInlining, global.lacinline,
+          opt)
+
 CYCLE (cyc, "Optimization cycle", global.optimize.docyc, opt, RESET)
 
 FUNBEGIN (cyc, opt, cyc)
