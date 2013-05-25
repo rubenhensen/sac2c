@@ -1354,6 +1354,8 @@ WLURwith (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    DBUG_PRINT ("Looking at WL for %s",
+                AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_ASSIGN (arg_info))))));
     /* traverse the N_Nwithop node */
     WITH_WITHOP (arg_node) = TRAVopt (WITH_WITHOP (arg_node), arg_info);
 
@@ -1365,8 +1367,13 @@ WLURwith (node *arg_node, info *arg_info)
 
     /* can this WL be unrolled? */
     if (CheckUnrollWithloop (arg_node, arg_info)) {
+        DBUG_PRINT ("Unrolling WL for %s", AVIS_NAME (IDS_AVIS (LET_IDS (
+                                             ASSIGN_STMT (INFO_ASSIGN (arg_info))))));
         global.optcounters.wlunr_expr++;
         INFO_PREASSIGN (arg_info) = DoUnrollWithloop (arg_node, arg_info);
+    } else {
+        DBUG_PRINT ("Cannot unroll WL for %s", AVIS_NAME (IDS_AVIS (LET_IDS (
+                                                 ASSIGN_STMT (INFO_ASSIGN (arg_info))))));
     }
 
     DBUG_RETURN (arg_node);
