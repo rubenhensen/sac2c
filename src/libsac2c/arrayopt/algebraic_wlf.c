@@ -443,17 +443,17 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
              * E.g., toi(iota(N)).
              */
             if ((NULL != pwlp) &&
-// I am disabling this check. We'll see who complains about duplicate
-// work (when PWL gets copied into several CWLs).
-// I think a better fix is to write a cost function for each PWL partition,
-// and allow AWLF if the cost is "low enough".
-#ifdef WANTNEEDCOUNT
+                // I am disabling this check. We'll see who complains about duplicate
+                // work (when PWL gets copied into several CWLs).
+                // I think a better fix is to write a cost function for each PWL
+                // partition, and allow AWLF if the cost is "low enough".
+                //
+                // OK. We need the cost function: ipbb.sac ended up folding the
+                // _aplmod_() reshape function into the inner loop of the matrix
+                // product. That was a bad idea, as it turns out.
+                //
                 ((AVIS_NEEDCOUNT (producerWLavis) != AVIS_WL_NEEDCOUNT (producerWLavis)))
-                &&
-#else  // WANTNEEDCOUNT
-                FALSE &&
-#endif // WANTNEEDCOUNT
-                (!WLUTisEmptyPartitionCodeBlock (pwlp))) {
+                && (!WLUTisEmptyPartitionCodeBlock (pwlp))) {
                 DBUG_PRINT (
                   "Can't intersect PWL %s: AVIS_NEEDCOUNT=%d, AVIS_WL_NEEDCOUNT=%d",
                   AVIS_NAME (producerWLavis), AVIS_NEEDCOUNT (producerWLavis),
