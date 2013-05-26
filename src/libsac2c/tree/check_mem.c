@@ -126,15 +126,8 @@ foldmemcheck (void *init, void *key, void *value)
         }
 
         if (!ispresent) {
-            /*somewhere something corrupts some memory, so we copy the info in the
-             * hope that it wont be corrupted
-             * TODO: find out what corrupts which memory
-             */
-            // info->next = phasetable[global.compiler_anyphase].leaked;
-            // phasetable[global.compiler_anyphase].leaked = info;
-            mallocinfo_t *newinfo = MEMcopy (sizeof (mallocinfo_t), info);
-            newinfo->next = phasetable[global.compiler_anyphase].leaked;
-            phasetable[global.compiler_anyphase].leaked = newinfo;
+            info->next = phasetable[global.compiler_anyphase].leaked;
+            phasetable[global.compiler_anyphase].leaked = info;
         }
         phasetable[global.compiler_anyphase].leakedsize += info->size;
         phasetable[global.compiler_anyphase].nleaked++;
