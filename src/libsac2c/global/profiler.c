@@ -108,7 +108,7 @@ TIMEend (compiler_phase_t phase)
     preusage.tv_nsec = phasetime->timer.tv_nsec;
     clock_gettime (CLOCK_PROCESS_CPUTIME_ID, &phasetime->timer);
     if ((phasetime->timer.tv_nsec - preusage.tv_nsec) < 0) {
-        phasetime->timer.tv_sec -= preusage.tv_sec - 1;
+        phasetime->timer.tv_sec -= (preusage.tv_sec + 1);
         phasetime->timer.tv_nsec += 1000000000 - preusage.tv_nsec;
     } else {
         phasetime->timer.tv_sec -= preusage.tv_sec;
@@ -138,7 +138,7 @@ CreateReport (timeinfo_t *phasetime)
 
     if (reportfile == NULL) {
         name = MEMmalloc ((strlen (global.outfilename) + 8) * sizeof (char));
-        sprintf (name, "%s.report", global.outfilename);
+        sprintf (name, "%s.treport", global.outfilename);
         reportfile = fopen (name, "w");
     }
 
