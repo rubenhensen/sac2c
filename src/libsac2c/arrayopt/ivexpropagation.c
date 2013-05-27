@@ -745,19 +745,15 @@ IVEXPgenerateNarrayExtrema (node *arg_node, node **vardecs, node **preassigns)
 
     if (!TYisAKV (AVIS_TYPE (IDS_AVIS (lhs)))) {
 
-        if ((!IVEXPisAvisHasMin (IDS_AVIS (lhs)))
-            && (isAllNarrayExtremumPresent (rhs, 0))) {
+        if ((!IVEXPisAvisHasMin (lhsavis)) && (isAllNarrayExtremumPresent (rhs, 0))) {
             minv = buildExtremaChain (ARRAY_AELEMS (rhs), 0);
-            minv
-              = makeNarray (minv, AVIS_TYPE (IDS_AVIS (lhs)), rhs, vardecs, preassigns);
+            minv = makeNarray (minv, AVIS_TYPE (lhsavis), rhs, vardecs, preassigns);
             IVEXPsetMinvalIfNotNull (lhsavis, TBmakeId (minv), FALSE);
         }
 
-        if ((!IVEXPisAvisHasMax (IDS_AVIS (lhs)))
-            && (isAllNarrayExtremumPresent (rhs, 1))) {
+        if ((!IVEXPisAvisHasMax (lhsavis)) && (isAllNarrayExtremumPresent (rhs, 1))) {
             maxv = buildExtremaChain (ARRAY_AELEMS (rhs), 1);
-            maxv
-              = makeNarray (maxv, AVIS_TYPE (IDS_AVIS (lhs)), rhs, vardecs, preassigns);
+            maxv = makeNarray (maxv, AVIS_TYPE (lhsavis), rhs, vardecs, preassigns);
             IVEXPsetMaxvalIfNotNull (lhsavis, TBmakeId (maxv), FALSE);
         }
     }
@@ -2100,9 +2096,15 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
 
     case F_non_neg_val_S:
     case F_non_neg_val_V:
-        // Overwrite/propagate minval only if it is known to be >= 0.
-        // Otherwise, we will generate a minval (elsewhere).
-        rhsavis = ID_AVIS (PRF_ARG1 (rhs));
+#ifdef DUMBIDEA
+
+        This does not work at all well when PRF_ARG1 is a WITHID_IDS with extant AVIS_MIN
+          > 0.
+
+          // Overwrite/propagate minval only if it is known to be >= 0.
+          // Otherwise, we will generate a minval (elsewhere).
+          rhsavis
+          = ID_AVIS (PRF_ARG1 (rhs));
         if ((NULL != AVIS_MIN (rhsavis)) && SCSisNonneg (AVIS_MIN (rhsavis))) {
             AVIS_MIN (lhsavis)
               = (NULL != AVIS_MIN (lhsavis)) ? FREEdoFreeNode (AVIS_MIN (lhsavis)) : NULL;
@@ -2110,6 +2112,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
         }
         IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE);
         break;
+#endif // DUMBIDEA
 
     case F_afterguard:
     case F_noteintersect:
