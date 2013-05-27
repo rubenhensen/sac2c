@@ -110,7 +110,7 @@ foldmemcheck (void *init, void *key, void *value)
     mallocinfo_t *iterator;
     bool ispresent = FALSE;
 
-    if (!info->isnode || !info->wasintree) {
+    if (!info->wasintree) {
     } else if (info->isreachable) {
         info->isreachable = FALSE;
     } else {
