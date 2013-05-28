@@ -467,7 +467,7 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
      * break far from here, in a very confusing manner. */
     if (!isSameTypeShape (ivid, extid)) {
         DBUG_PRINT ("WARNING: type/shape mismatch: id=%s, extremum=%s",
-                    AVIS_NAME (ID_AVIS (ivid)), AVIS_NAME (ID_AVIS (extid)));
+                    AVIS_NAME (ID_AVIS (ivid)), AVIS_NAME (extremum));
     }
 
     lhsavis = TBmakeAvis (TRAVtmpVarName ("ext"), TYeliminateAKV (AVIS_TYPE (ivavis)));
@@ -481,11 +481,11 @@ IVEXIattachExtrema (node *extremum, node *ivavis, node **vardecs, node **preassi
     *preassigns = TCappendAssign (*preassigns, nas);
 
     if ((F_noteminval == nprf)) {
-        IVEXPsetMinvalIfNotNull (lhsavis, extid, TRUE);
+        IVEXPsetMinvalIfNotNull (lhsavis, extremum);
     }
 
     if ((F_notemaxval == nprf)) {
-        IVEXPsetMaxvalIfNotNull (lhsavis, extid, TRUE);
+        IVEXPsetMaxvalIfNotNull (lhsavis, extremum);
     }
 
     DBUG_PRINT ("Introduced temp index variable: %s for: %s", AVIS_NAME (lhsavis),
@@ -1004,8 +1004,7 @@ IVEXIprf (node *arg_node, info *arg_info)
                 minv = COconstant2AST (con);
                 minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
                                              &INFO_PREASSIGNSWITH (arg_info), typ);
-                minv = TBmakeId (minv);
-                IVEXPsetMinvalIfNotNull (IDS_AVIS (INFO_LHS (arg_info)), minv, FALSE);
+                IVEXPsetMinvalIfNotNull (IDS_AVIS (INFO_LHS (arg_info)), minv);
             }
         }
         break;

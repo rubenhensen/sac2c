@@ -230,15 +230,14 @@ static node *
 FlattenMM (node *val, info *arg_info)
 {
     node *avis;
-    node *id;
+
     DBUG_ENTER ();
 
     avis
       = FLATGexpression2Avis (val, &INFO_VARDECS (arg_info), &INFO_PREASSIGN (arg_info),
                               TYmakeAKS (TYmakeSimpleType (T_int), SHmakeShape (0)));
-    id = TBmakeId (avis);
 
-    DBUG_RETURN (id);
+    DBUG_RETURN (avis);
 }
 
 /** <!--********************************************************************-->
@@ -329,14 +328,14 @@ InitialValueExtrema (struct idx_vector *ivptr, info *arg_info)
                                          &INFO_NEWOUTERAPARGS (arg_info));
 
     if (ivptr->mfunc.b > 0) { /* LIV stride is positive */
-        IVEXPsetMinvalIfNotNull (liv, TBmakeId (newavis), FALSE);
+        IVEXPsetMinvalIfNotNull (liv, newavis);
         DBUG_PRINT ("LIV initial value %s is AVIS_MIN( %s)", AVIS_NAME (newavis),
                     AVIS_NAME (liv));
     } else {                               /* LIV stride is negative */
         newavis = IVEXPadjustExtremaBound (/* Normalize maxv */
                                            newavis, 1, &INFO_VARDECS (arg_info),
                                            &INFO_PREASSIGN (arg_info), "lurex1");
-        IVEXPsetMaxvalIfNotNull (liv, TBmakeId (newavis), FALSE);
+        IVEXPsetMaxvalIfNotNull (liv, newavis);
         DBUG_PRINT ("LIV initial value %s is AVIS_MAX( %s)", AVIS_NAME (newavis),
                     AVIS_NAME (liv));
     }
@@ -431,14 +430,14 @@ ModifierValueExtrema (struct idx_vector *ivptr, info *arg_info,
     node *p1;
     node *tmp;
     int adjval;
-    node *adj;
+    node *avis;
 
     DBUG_ENTER ();
 
     liv = ID_AVIS (ivptr->var);
     p1 = TBmakeId (ID_AVIS (PRF_ARG1 (predicate)));
     adjval = AdjustToNormalizePredicate (predicate, var_or_loopvar_sign);
-    adj = FlattenMM (TBmakeNum (adjval), arg_info);
+    avis = FlattenMM (TBmakeNum (adjval), arg_info);
     DBUG_ASSERT (N_id == NODE_TYPE (expr), "Expected N_id expr");
 
     if (ivptr->mfunc.b > 0) { /* Loop stride is positive. Set AVIS_MAX  */
@@ -459,9 +458,9 @@ ModifierValueExtrema (struct idx_vector *ivptr, info *arg_info,
         }
     }
     val = FlattenMM (TCmakePrf2 (F_sub_SxS, expr, p1), arg_info);
-    val = TCmakePrf2 (F_add_SxS, val, adj);
+    val = TCmakePrf2 (F_add_SxS, TBmakeId (val), TBmakeId (avis));
     val = FlattenMM (val, arg_info);
-    IVEXPsetMaxvalIfNotNull (liv, val, FALSE);
+    IVEXPsetMaxvalIfNotNull (liv, val);
 
     DBUG_RETURN ();
 }

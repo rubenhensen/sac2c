@@ -530,44 +530,38 @@ makeNarray (node *extrema, ntype *typ, node *nar, node **vardecs, node **preassi
 
 /******************************************************************************
  *
- * function: void IVEXPsetMinvalIfNotNull( node *snk, node *src, bool dup);
- * function: void IVEXPsetMaxvalIfNotNull( node *snk, node *src, bool dup);
+ * function: void IVEXPsetMinvalIfNotNull( node *snk, node *minv);
+ * function: void IVEXPsetMaxvalIfNotNull( node *snk, node *maxv);
  *
- * description: Set extremum from src if it is not NULL.
+ * description: Set extremum from min/maxv if it is not NULL.
  *              If the snk is not NULL, free it first.
  *
  * @params:     snk: pointer to an N_avis
- *              src: pointer to an N_id or NULL.
- *              dup: if TRUE, DUP the src.
+ *              minv/max: pointer to an N_avis or NULL.
  *
- * @result: If src is NULL, or if both N_id nodes point to
- *          the same N_avis, no change.
+ * @result: If src is NULL, or if its ID)AVIS matches minv/maxv,
  *          Otherwise, the snk pointer, if non-NULL, is freed,
- *          and overwritten by the src pointer.
- *          We assume that any DUP required was performed by
- *          the caller.
+ *          and overwritten by an N_id created from minv/maxv.
  *
  ******************************************************************************/
 void
-IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup)
+IVEXPsetMinvalIfNotNull (node *snk, node *minv)
 {
 
     DBUG_ENTER ();
 
-    if (NULL != src) {
-        DBUG_ASSERT (N_id == NODE_TYPE (src), "Expected N_id src");
+    if (NULL != minv) {
+        DBUG_ASSERT (N_avis == NODE_TYPE (minv), "Expected N_avis minv");
         if (NULL == AVIS_MIN (snk)) {
-            AVIS_MIN (snk) = dup ? TBmakeId (ID_AVIS (src)) : src;
+            AVIS_MIN (snk) = TBmakeId (minv);
             AVIS_ISMINHANDLED (snk) = TRUE;
-            DBUG_PRINT ("AVIS_MIN(%s) set to %s", AVIS_NAME (snk),
-                        AVIS_NAME (ID_AVIS (src)));
+            DBUG_PRINT ("AVIS_MIN(%s) set to %s", AVIS_NAME (snk), AVIS_NAME (minv));
             global.optcounters.ivexp_expr++;
-        } else if ((ID_AVIS (src) != ID_AVIS (AVIS_MIN (snk)))) {
+        } else if ((minv != ID_AVIS (AVIS_MIN (snk)))) {
             FREEdoFreeNode (AVIS_MIN (snk));
-            AVIS_MIN (snk) = dup ? TBmakeId (ID_AVIS (src)) : src;
+            AVIS_MIN (snk) = TBmakeId (minv);
             AVIS_ISMINHANDLED (snk) = TRUE;
-            DBUG_PRINT ("AVIS_MIN(%s) set to %s", AVIS_NAME (snk),
-                        AVIS_NAME (ID_AVIS (src)));
+            DBUG_PRINT ("AVIS_MIN(%s) set to %s", AVIS_NAME (snk), AVIS_NAME (minv));
             global.optcounters.ivexp_expr++;
         }
     }
@@ -576,25 +570,23 @@ IVEXPsetMinvalIfNotNull (node *snk, node *src, bool dup)
 }
 
 void
-IVEXPsetMaxvalIfNotNull (node *snk, node *src, bool dup)
+IVEXPsetMaxvalIfNotNull (node *snk, node *maxv)
 {
 
     DBUG_ENTER ();
 
-    if (NULL != src) {
-        DBUG_ASSERT (N_id == NODE_TYPE (src), "Expected N_id src");
+    if (NULL != maxv) {
+        DBUG_ASSERT (N_avis == NODE_TYPE (maxv), "Expected N_avis src");
         if (NULL == AVIS_MAX (snk)) {
-            AVIS_MAX (snk) = dup ? TBmakeId (ID_AVIS (src)) : src;
+            AVIS_MAX (snk) = TBmakeId (maxv);
             AVIS_ISMAXHANDLED (snk) = TRUE;
-            DBUG_PRINT ("AVIS_MAX(%s) set to %s", AVIS_NAME (snk),
-                        AVIS_NAME (ID_AVIS (src)));
+            DBUG_PRINT ("AVIS_MAX(%s) set to %s", AVIS_NAME (snk), AVIS_NAME (maxv));
             global.optcounters.ivexp_expr++;
-        } else if ((ID_AVIS (src) != ID_AVIS (AVIS_MAX (snk)))) {
+        } else if ((maxv != ID_AVIS (AVIS_MAX (snk)))) {
             FREEdoFreeNode (AVIS_MAX (snk));
-            AVIS_MAX (snk) = dup ? TBmakeId (ID_AVIS (src)) : src;
+            AVIS_MAX (snk) = TBmakeId (maxv);
             AVIS_ISMAXHANDLED (snk) = TRUE;
-            DBUG_PRINT ("AVIS_MAX(%s) set to %s", AVIS_NAME (snk),
-                        AVIS_NAME (ID_AVIS (src)));
+            DBUG_PRINT ("AVIS_MAX(%s) set to %s", AVIS_NAME (snk), AVIS_NAME (maxv));
             global.optcounters.ivexp_expr++;
         }
     }
@@ -748,13 +740,13 @@ IVEXPgenerateNarrayExtrema (node *arg_node, node **vardecs, node **preassigns)
         if ((!IVEXPisAvisHasMin (lhsavis)) && (isAllNarrayExtremumPresent (rhs, 0))) {
             minv = buildExtremaChain (ARRAY_AELEMS (rhs), 0);
             minv = makeNarray (minv, AVIS_TYPE (lhsavis), rhs, vardecs, preassigns);
-            IVEXPsetMinvalIfNotNull (lhsavis, TBmakeId (minv), FALSE);
+            IVEXPsetMinvalIfNotNull (lhsavis, minv);
         }
 
         if ((!IVEXPisAvisHasMax (lhsavis)) && (isAllNarrayExtremumPresent (rhs, 1))) {
             maxv = buildExtremaChain (ARRAY_AELEMS (rhs), 1);
             maxv = makeNarray (maxv, AVIS_TYPE (lhsavis), rhs, vardecs, preassigns);
-            IVEXPsetMaxvalIfNotNull (lhsavis, TBmakeId (maxv), FALSE);
+            IVEXPsetMaxvalIfNotNull (lhsavis, maxv);
         }
     }
 
@@ -954,7 +946,7 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
                                            &INFO_PREASSIGNS (arg_info),
                                            TYeliminateAKV (AVIS_TYPE (lhsavis)));
                 AVIS_ISMINHANDLED (zr) = TRUE;
-                INFO_MINVAL (arg_info) = TBmakeId (zr);
+                INFO_MINVAL (arg_info) = zr;
             }
         }
 
@@ -965,7 +957,7 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
              * normalize it, so we can just copy the value.
              */
             if ((nsa == PRF_ARG2 (rhs)) || arg1scalar) {
-                INFO_MAXVAL (arg_info) = TBmakeId (ID_AVIS (PRF_ARG2 (rhs)));
+                INFO_MAXVAL (arg_info) = ID_AVIS (PRF_ARG2 (rhs));
             } else {
                 // vector/scalar case: PRF_ARG2( rhs) + ( 0 * PRF_ARG2( rhs));
                 zr = SCSmakeZero (nsa);
@@ -978,7 +970,7 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
                     zr = FLATGexpression2Avis (zr, &INFO_VARDECS (arg_info),
                                                &INFO_PREASSIGNS (arg_info),
                                                TYeliminateAKV (AVIS_TYPE (lhsavis)));
-                    INFO_MAXVAL (arg_info) = TBmakeId (zr);
+                    INFO_MAXVAL (arg_info) = zr;
                     AVIS_ISMAXHANDLED (zr) = TRUE;
                 }
             }
@@ -1153,8 +1145,8 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
     maxv = IVEXPadjustExtremaBound (maxv, +1, &INFO_VARDECS (arg_info),
                                     &INFO_PREASSIGNS (arg_info), "dsfc");
 
-    INFO_MINVAL (arg_info) = (NULL != minv) ? TBmakeId (minv) : minv;
-    INFO_MAXVAL (arg_info) = (NULL != maxv) ? TBmakeId (maxv) : maxv;
+    INFO_MINVAL (arg_info) = minv;
+    INFO_MAXVAL (arg_info) = maxv;
 
     DBUG_RETURN (arg_node);
 }
@@ -1320,8 +1312,8 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
                                         &INFO_PREASSIGNS (arg_info), "mulnorm");
     }
 
-    INFO_MINVAL (arg_info) = (NULL != minv) ? TBmakeId (minv) : minv;
-    INFO_MAXVAL (arg_info) = (NULL != maxv) ? TBmakeId (maxv) : maxv;
+    INFO_MINVAL (arg_info) = minv;
+    INFO_MAXVAL (arg_info) = maxv;
 
     DBUG_RETURN (arg_node);
 }
@@ -1429,8 +1421,8 @@ GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
                                         &INFO_PREASSIGNS (arg_info), "dsfnc");
     }
 
-    INFO_MINVAL (arg_info) = (NULL != minv) ? TBmakeId (minv) : minv;
-    INFO_MAXVAL (arg_info) = (NULL != maxv) ? TBmakeId (maxv) : maxv;
+    INFO_MINVAL (arg_info) = minv;
+    INFO_MAXVAL (arg_info) = maxv;
 
     DBUG_RETURN (arg_node);
 }
@@ -1467,8 +1459,6 @@ ScalarExtend (node *arg1avis, node *arg2, info *arg_info)
         z = arg1avis;
     }
 
-    z = TBmakeId (z);
-
     DBUG_RETURN (z);
 }
 
@@ -1501,7 +1491,6 @@ static void
 GenerateExtremaForMin (node *lhsavis, node *rhs, info *arg_info)
 {
     node *arg1avis;
-    node *maxv;
     bool c1;
     bool c2;
     bool e1;
@@ -1543,10 +1532,10 @@ GenerateExtremaForMin (node *lhsavis, node *rhs, info *arg_info)
 
         if (NULL != INFO_MAXVAL (arg_info)) {
             // Normalize AVIS_MAX
-            maxv = IVEXPadjustExtremaBound (ID_AVIS (INFO_MAXVAL (arg_info)), 1,
-                                            &INFO_VARDECS (arg_info),
-                                            &INFO_PREASSIGNS (arg_info), "gefmin");
-            INFO_MAXVAL (arg_info) = TBmakeId (maxv);
+            INFO_MAXVAL (arg_info)
+              = IVEXPadjustExtremaBound (ID_AVIS (INFO_MAXVAL (arg_info)), 1,
+                                         &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGNS (arg_info), "gefmin");
         }
     }
 
@@ -1800,7 +1789,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                                                  TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     AVIS_ISMINHANDLED (minv) = TRUE;
                     AVIS_ISMAXHANDLED (minv) = TRUE;
-                    INFO_MINVAL (arg_info) = TBmakeId (minv);
+                    INFO_MINVAL (arg_info) = minv;
                 }
                 break;
 
@@ -1814,7 +1803,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     maxv = IVEXPadjustExtremaBound (ID_AVIS (PRF_ARG2 (rhs)), +1,
                                                     &INFO_VARDECS (arg_info),
                                                     &INFO_PREASSIGNS (arg_info), "valle");
-                    INFO_MAXVAL (arg_info) = TBmakeId (maxv);
+                    INFO_MAXVAL (arg_info) = maxv;
                 }
                 break;
 
@@ -1825,7 +1814,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                         || TYisAKS (AVIS_TYPE (arg1avis)))) {
                     /* Create maximum as PRF_ARG2 */
                     maxv = ID_AVIS (PRF_ARG2 (rhs));
-                    INFO_MAXVAL (arg_info) = TBmakeId (maxv);
+                    INFO_MAXVAL (arg_info) = maxv;
                 }
                 break;
 
@@ -1837,7 +1826,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
                                                  &INFO_PREASSIGNS (arg_info),
                                                  TYeliminateAKV (AVIS_TYPE (lhsavis)));
-                    INFO_MINVAL (arg_info) = TBmakeId (minv);
+                    INFO_MINVAL (arg_info) = minv;
                 }
                 break;
 
@@ -1864,7 +1853,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                                             arg_info);
                     minv = IVEXPadjustExtremaBound (minv, +1, &INFO_VARDECS (arg_info),
                                                     &INFO_PREASSIGNS (arg_info), "dsf8");
-                    INFO_MAXVAL (arg_info) = TBmakeId (minv);
+                    INFO_MAXVAL (arg_info) = minv;
                 }
 
                 if ((!IVEXPisAvisHasMin (lhsavis)) && (IVEXPisAvisHasMax (arg1avis))) {
@@ -1880,7 +1869,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                                                  &INFO_PREASSIGNS (arg_info),
                                                  TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     AVIS_ISMINHANDLED (maxv) = TRUE;
-                    INFO_MINVAL (arg_info) = TBmakeId (maxv);
+                    INFO_MINVAL (arg_info) = maxv;
                 }
                 break;
 
@@ -1946,7 +1935,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                                                  TYmakeAKS (TYmakeSimpleType (arg2type),
                                                             SHmakeShape (0)));
                     AVIS_ISMINHANDLED (minv) = TRUE;
-                    INFO_MINVAL (arg_info) = TBmakeId (minv);
+                    INFO_MINVAL (arg_info) = minv;
                 }
 
                 if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))
@@ -1962,7 +1951,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                                                  TYmakeAKS (TYmakeSimpleType (arg2type),
                                                             SHmakeShape (0)));
                     AVIS_ISMAXHANDLED (maxv) = TRUE;
-                    INFO_MAXVAL (arg_info) = TBmakeId (maxv);
+                    INFO_MAXVAL (arg_info) = maxv;
                 }
                 break;
 
@@ -1972,8 +1961,8 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             } /* end of switch */
     }
 
-    IVEXPsetMinvalIfNotNull (lhsavis, INFO_MINVAL (arg_info), FALSE);
-    IVEXPsetMaxvalIfNotNull (lhsavis, INFO_MAXVAL (arg_info), FALSE);
+    IVEXPsetMinvalIfNotNull (lhsavis, INFO_MINVAL (arg_info));
+    IVEXPsetMaxvalIfNotNull (lhsavis, INFO_MAXVAL (arg_info));
 
     DBUG_RETURN (arg_node);
 }
@@ -2076,6 +2065,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     node *rhs;
     node *rhsavis;
     node *withid;
+    node *minv;
     node *maxv;
 
     DBUG_ENTER ();
@@ -2090,8 +2080,12 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
 
     case F_saabind:
         rhsavis = ID_AVIS (PRF_ARG3 (rhs));
-        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE);
-        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE);
+        if (NULL != AVIS_MIN (rhsavis)) {
+            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)));
+        }
+        if (NULL != AVIS_MAX (rhsavis)) {
+            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (AVIS_MAX (rhsavis)));
+        }
         break;
 
     case F_non_neg_val_S:
@@ -2108,9 +2102,11 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
         if ((NULL != AVIS_MIN (rhsavis)) && SCSisNonneg (AVIS_MIN (rhsavis))) {
             AVIS_MIN (lhsavis)
               = (NULL != AVIS_MIN (lhsavis)) ? FREEdoFreeNode (AVIS_MIN (lhsavis)) : NULL;
-            IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE);
+            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)), TRUE);
         }
-        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE);
+        if (NULL != AVIS_MAX (rhsavis)) {
+            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (AVIS_MAX (rhsavis)));
+        }
         break;
 #endif // DUMBIDEA
 
@@ -2122,42 +2118,62 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     case F_val_le_val_VxV:
     case F_val_lt_val_SxS:
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
-        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE);
-        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE);
+        if (NULL != AVIS_MIN (rhsavis)) {
+            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)));
+        }
+        if (NULL != AVIS_MAX (rhsavis)) {
+            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (AVIS_MAX (rhsavis)));
+        }
         if (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (rhs))))) {
-            IVEXPsetMinvalIfNotNull (lhsavis, PRF_ARG1 (rhs), TRUE);
+            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (PRF_ARG1 (rhs)));
             if (NULL == AVIS_MAX (lhsavis)) {
                 maxv = IVEXPadjustExtremaBound (rhsavis, 1, &INFO_VARDECS (arg_info),
                                                 &INFO_PREASSIGNS (arg_info), "dsf9");
-                IVEXPsetMaxvalIfNotNull (lhsavis, TBmakeId (maxv), FALSE);
+                IVEXPsetMaxvalIfNotNull (lhsavis, maxv);
             }
         }
         break;
 
     case F_noteminval:
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
-        IVEXPsetMinvalIfNotNull (lhsavis, PRF_ARG2 (rhs), TRUE);
-        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE);
+        IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (PRF_ARG2 (rhs)));
+        if (NULL != AVIS_MAX (rhsavis)) {
+            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (AVIS_MAX (rhsavis)));
+        }
         break;
 
     case F_notemaxval:
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
-        IVEXPsetMaxvalIfNotNull (lhsavis, PRF_ARG2 (rhs), TRUE);
-        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE);
+        IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (PRF_ARG2 (rhs)));
+        if (NULL != AVIS_MIN (rhsavis)) {
+            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)));
+        }
         break;
 
     case F_max_SxS:
     case F_max_VxV:
         /* If either argument has a maxval, propagate it */
-        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))), TRUE);
-        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs))), TRUE);
+        maxv = AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs)));
+        if (NULL != maxv) {
+            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (maxv));
+        }
+        maxv = AVIS_MAX (ID_AVIS (PRF_ARG2 (rhs)));
+        if (NULL != maxv) {
+            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (maxv));
+        }
         break;
 
     case F_min_SxS:
     case F_min_VxV:
         /* If either argument has a minval, propagate it */
-        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))), TRUE);
-        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs))), TRUE);
+        minv = AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs)));
+        if (NULL != minv) {
+            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (minv));
+        }
+        minv = AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs)));
+        if (NULL != minv) {
+            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (minv));
+        }
         break;
 
     default:
@@ -2184,6 +2200,8 @@ PropagateExtrema (node *arg_node, info *arg_info)
     node *rhs;
     node *lhsavis;
     node *rhsavis;
+    node *minv;
+    node *maxv;
 
     DBUG_ENTER ();
 
@@ -2192,8 +2210,16 @@ PropagateExtrema (node *arg_node, info *arg_info)
     switch (NODE_TYPE (rhs)) {
     case N_id:
         rhsavis = ID_AVIS (rhs);
-        IVEXPsetMinvalIfNotNull (lhsavis, AVIS_MIN (rhsavis), TRUE);
-        IVEXPsetMaxvalIfNotNull (lhsavis, AVIS_MAX (rhsavis), TRUE);
+
+        minv = AVIS_MIN (rhsavis);
+        if (NULL != minv) {
+            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (minv));
+        }
+
+        maxv = AVIS_MAX (rhsavis);
+        if (NULL != maxv) {
+            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (maxv));
+        }
         break;
 
     case N_prf:
