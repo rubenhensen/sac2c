@@ -14,7 +14,6 @@
  * Prefix: NAUT
  *
  *****************************************************************************/
-#include "copywlelim.h"
 
 #include "globals.h"
 
@@ -95,3 +94,57 @@ NAUTisAllElemsSame (node *arg_node)
     DBUG_RETURN (z);
 }
 #undef DBUG_PREFIX
+
+/** <!--********************************************************************-->
+ *
+ * @fn NAUTisNarrayAnyTrue( node *arg_node)
+ *
+ * @brief Set membership for Boolean N_array node.
+ *
+ * @params arg_node:
+ *
+ * @result: NAUTisMemberArray: TRUE if any element of the
+ *          N_array matches tf. Otherwise FALSE.
+ *
+ *          The idea here is that we may have something like
+ *
+ *            narr = [ TRUE, DONTKNOW];
+ *
+ *          Hence, checking for a constant won't always work here.
+ *
+ * NB. A FALSE result does NOT mean that the set membership
+ *     does not hold. It may only mean "don't know".
+ *
+ *****************************************************************************/
+bool
+NAUTisMemberArray (bool tf, node *arg_node)
+{
+    bool z = FALSE;
+    node *aelems = NULL;
+    constant *con = NULL;
+    pattern *patcon;
+    pattern *patarr;
+    node *array = NULL;
+
+    DBUG_ENTER ();
+
+    patcon = PMconst (1, PMAgetVal (&con));
+    patarr = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
+
+    if (PMmatchFlat (patarr, arg_node)) {
+        aelems = ARRAY_AELEMS (array);
+    }
+
+    while ((!z) && (aelems != NULL)) {
+        DBUG_ASSERT (NODE_TYPE (aelems) == N_exprs, "no N_exprs node found!");
+        z = PMmatchFlat (patcon, EXPRS_EXPR (aelems))
+            && (tf ? COisTrue (con, TRUE) : COisFalse (con, TRUE));
+        aelems = EXPRS_NEXT (aelems);
+        con = (NULL != con) ? COfreeConstant (con) : NULL;
+    }
+
+    patcon = PMfree (patcon);
+    patarr = PMfree (patarr);
+
+    DBUG_RETURN (z);
+}

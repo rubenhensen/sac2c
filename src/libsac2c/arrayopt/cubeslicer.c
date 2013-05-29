@@ -79,6 +79,7 @@
 #include "flattengenerators.h"
 #include "tree_utils.h"
 #include "compare_tree.h"
+#include "narray_utilities.h"
 
 /** <!--********************************************************************-->
  *
@@ -346,7 +347,7 @@ matchGeneratorField (node *fa, node *fb)
  * @params arg_node: An F_noteintersect null-intersection entry.
  *
  * @result: IsNullIntersect: TRUE if any element of the
- *          intersection of index vector set and producerWL
+ *          intersection between the index vector set and producerWL
  *          partition is empty.
  *
  *          Otherwise, FALSE. Slicing may or may not be required.
@@ -362,16 +363,11 @@ matchGeneratorField (node *fa, node *fb)
 static bool
 isNullIntersect (node *arg_node)
 {
-    bool z = FALSE;
-    constant *con;
+    bool z;
 
     DBUG_ENTER ();
 
-    con = COaST2Constant (arg_node);
-    if (NULL != con) {
-        z = COisTrue (con, FALSE);
-        COfreeConstant (con);
-    }
+    z = NAUTisMemberArray (TRUE, arg_node);
 
     DBUG_RETURN (z);
 }
@@ -434,16 +430,11 @@ isInt1Part (node *arg_node)
 static bool
 isNotInt1Part (node *arg_node)
 {
-    bool z = FALSE;
-    constant *con;
+    bool z;
 
     DBUG_ENTER ();
 
-    con = COaST2Constant (arg_node);
-    if (NULL != con) {
-        z = COisFalse (con, FALSE);
-        COfreeConstant (con);
-    }
+    z = NAUTisMemberArray (FALSE, arg_node);
 
     DBUG_RETURN (z);
 }
