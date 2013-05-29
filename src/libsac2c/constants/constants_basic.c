@@ -842,7 +842,7 @@ COconstant2AST (constant *a)
 /******************************************************************************
  *
  * function:
- *    constant *COAST2Constant( node *n)
+ *    constant *COaST2Constant( node *n)
  *
  * description:
  *    converts a given node from the AST to a constant.
