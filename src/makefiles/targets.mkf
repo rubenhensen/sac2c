@@ -190,6 +190,7 @@ libsac2c_arrayopt    := ive_split_selections ive_reusewl_and_scalarize      \
                         with_loop_utilities                                 \
                         copywlelim                                          \
                         wlpropagation                                       \
+                        narray_utilities                                    \
                         eliminate_duplicate_fundef_args
 
 libsac2c_wltransform := wlpragma_funs wltransform wlidxs wl_split_dimensions \

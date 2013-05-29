@@ -56,6 +56,7 @@
 #include "indexvectorutils.h"
 #include "ivextrema.h"
 #include "flattengenerators.h"
+#include "narray_utilities.h"
 
 /******************************************************************************
  *
@@ -1564,63 +1565,6 @@ SelEmptyScalar (node *arg_node, info *arg_info)
 }
 
 /** <!-- ****************************************************************** -->
- * @fn bool isAllElemsSame( node *arg_node)
- *
- * @brief Predicate for determining that all elements of an N_array
- *        have the same value, e.g., [ true, true, true] or [ 2, 2, 2, 2]
- *
- * @param arg_node, assumed to have at least one element.
- *
- * @return TRUE if predicate holds; else FALSE.
- *
- ******************************************************************************/
-static bool
-isAllElemsSame (node *arg_node)
-{
-    bool z = FALSE;
-    node *elem = NULL;
-    node *aelems;
-    pattern *pat1;
-    pattern *pat2;
-    pattern *patcon1;
-    pattern *patcon2;
-    constant *con1 = NULL;
-    constant *con2 = NULL;
-    constant *coz;
-
-    DBUG_ENTER ();
-
-    pat1 = PMvar (1, PMAgetNode (&elem), 0);
-    pat2 = PMvar (1, PMAisVar (&elem), 0);
-    patcon1 = PMconst (1, PMAgetVal (&con1));
-    patcon2 = PMconst (1, PMAgetVal (&con2));
-
-    if ((PMmatchFlat (patcon1, arg_node))
-        && (PMmatchFlat (patcon2, EXPRS_EXPR (ARRAY_AELEMS (arg_node))))) {
-        coz = COeq (con1, con2, NULL);
-        z = COisTrue (coz, TRUE);
-        con1 = (NULL != con1) ? COfreeConstant (con1) : NULL;
-        con2 = (NULL != con2) ? COfreeConstant (con2) : NULL;
-        coz = (NULL != coz) ? COfreeConstant (coz) : NULL;
-    } else {
-        z = TRUE;
-        aelems = ARRAY_AELEMS (arg_node);
-        PMmatchFlat (pat1, EXPRS_EXPR (aelems));
-        while (z && (NULL != elem) && (NULL != aelems)) {
-            z = PMmatchFlat (pat2, EXPRS_EXPR (aelems));
-            aelems = EXPRS_NEXT (aelems);
-        }
-    }
-
-    pat1 = PMfree (pat1);
-    pat2 = PMfree (pat2);
-    patcon1 = PMfree (patcon1);
-    patcon2 = PMfree (patcon2);
-
-    DBUG_RETURN (z);
-}
-
-/** <!-- ****************************************************************** -->
  * @fn node *SelArrayOfEqualElements( node *arg_node, info *arg_info)
  *
  * @brief Matches selections of the following form
@@ -1665,7 +1609,7 @@ SelArrayOfEqualElements (node *arg_node, info *arg_info)
         && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv))) && (0 != ARRAY_AELEMS (aelems))
             && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
                 == COgetExtent (frameshape, 0)))) {
-        if (isAllElemsSame (aelems)) {
+        if (NAUTisAllElemsSame (aelems)) {
             DBUG_PRINT ("Removed sel()");
             res = DUPdoDupTree (EXPRS_EXPR (ARRAY_AELEMS (aelems)));
         }
@@ -1726,7 +1670,7 @@ IdxselArrayOfEqualElements (node *arg_node, info *arg_info)
         && (TUshapeKnown (AVIS_TYPE (ID_AVIS (iv)))) && (0 != ARRAY_AELEMS (aelems))
         && (SHgetExtent (TYgetShape (AVIS_TYPE (ID_AVIS (iv))), 0)
             == COgetExtent (frameshape, 0))) {
-        if (isAllElemsSame (aelems)) {
+        if (NAUTisAllElemsSame (aelems)) {
             DBUG_PRINT ("Removed idx_sel()");
             res = DUPdoDupTree (EXPRS_EXPR (ARRAY_AELEMS (aelems)));
         }
