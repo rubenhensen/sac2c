@@ -614,7 +614,7 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
 
 /** <!--********************************************************************-->
  *
- * @fn node *doAWLFreplace( ... )
+ * @fn node *AWLFperformFold( ... )
  *
  * @brief
  *   In
@@ -638,8 +638,8 @@ makeIdxAssigns (node *arg_node, info *arg_info, node *pwlpart)
  *    PWL: N_part node of PWL.
  *
  *****************************************************************************/
-static node *
-doAWLFreplace (node *arg_node, node *producerWLPart, info *arg_info)
+node *
+AWLFperformFold (node *arg_node, node *producerWLPart, info *arg_info)
 {
     node *oldblock;
     node *newblock;
@@ -688,6 +688,7 @@ doAWLFreplace (node *arg_node, node *producerWLPart, info *arg_info)
     }
 
     arg_node = TCappendAssign (idxassigns, arg_node);
+    global.optcounters.awlf_expr += 1;
 
     DBUG_RETURN (arg_node);
 }
@@ -787,8 +788,7 @@ AWLFassign (node *arg_node, info *arg_info)
      * Append the new cloned block
      */
     if (NULL != foldableProducerPart) {
-        arg_node = doAWLFreplace (arg_node, foldableProducerPart, arg_info);
-        global.optcounters.awlf_expr += 1;
+        arg_node = AWLFperformFold (arg_node, foldableProducerPart, arg_info);
     }
 
     if (NULL != INFO_PREASSIGNS (arg_info)) {
