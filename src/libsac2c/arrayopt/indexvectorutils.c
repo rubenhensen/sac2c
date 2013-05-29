@@ -836,7 +836,7 @@ IVUTiV2Constant (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool IVUToffsetMatchesOffsetivmatchesIv( node *offset1, node *offset2)
+ * @fn bool IVUToffsetMatchesOffset( node *offset1, node *offset2)
  *
  * @brief offset1, offset2 are PRF_ARG1 of an _idx_sel() or
  *                             PRG_ARG2 of an _idx_modarray....()
