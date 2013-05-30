@@ -686,6 +686,9 @@ AWLFIdetachNoteintersect (node *arg_node)
  *        correctly determine the intersection(s) of iv with PWL.
  *        See Bug #11067.
  *
+ *        2013-05-30. Trying to lift AKV restriction by faking
+ *        extrema of iv, iv+1.
+ *
  *****************************************************************************/
 static bool
 isNakedConsumer (node *arg_node, info *arg_info)
@@ -701,7 +704,9 @@ isNakedConsumer (node *arg_node, info *arg_info)
 
     z = INFO_LEVEL (arg_info) == AVIS_DEFDEPTH (ID_AVIS (INFO_PRODUCERWLLHS (arg_info)));
 
+#ifdef NOAKV
     z = z && (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))));
+#endif // NOAKV
 
     if (z) {
         DBUG_PRINT ("CWL %s is naked consumer of PWL %s", cwlnm,
@@ -1908,6 +1913,7 @@ Intersect1PartBuilder (node *idxmin, node *idxmax, node *bound1, node *bound2,
  * @params arg_info.
  * @params boundnum: 1 for bound1,        2 for bound2
  * @params ivavis: the N_avis of the index vector used by the sel() operation.
+ *
  * @return An N_exprs node containing the ( 2 * # producerwlPart partitions)
  *         intersect expressions, in the form:
  *           p0bound1, p0bound2, p0intlo, p0inthi, p0nullint,
@@ -1915,6 +1921,8 @@ Intersect1PartBuilder (node *idxmin, node *idxmax, node *bound1, node *bound2,
  *           ...
  *         If we are unable to produce an inverse mapping function
  *         for the CWL index vector, NULL.
+ *
+ * @note: For a naked consumer, we use iv as idxmin, and iv+1 as idxmax.
  *
  *****************************************************************************/
 
@@ -1948,6 +1956,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     node *ivminmax = NULL;
     node *ivid;
     char *cwlnm;
+    node *tmp = NULL;
 
     DBUG_ENTER ();
 
@@ -1975,23 +1984,30 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
         }
 
         if (PMmatchFlat (pat3, AVIS_MAX (ivavis))) {
-            if (isNakedConsumer (arg_node, arg_info)) {
-                DBUG_PRINT ("Found naked consumerWL: %s",
-                            AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
-                /* Fake up ivmax = AVIS_MIN( ivavis) + 1 */
-                PMmatchFlat (pat3, AVIS_MIN (ivavis)); /* Check for N_array */
-                ivmax = IVEXPadjustExtremaBound (ID_AVIS (AVIS_MIN (ivavis)), 1,
-                                                 &INFO_VARDECS (arg_info),
-                                                 &INFO_PREASSIGNS (arg_info), "nakedcon");
-                ivid = TBmakeId (ivmax); /* N_avis --> Nid --> N_array */
+            ivmax = DUPdoDupTree (ivminmax); /* normal AWLF */
+        } else {
+            DBUG_PRINT ("Expected N_array ivmax for ivavis=%s", AVIS_NAME (ivavis));
+        }
+
+        if (isNakedConsumer (arg_node, arg_info)) {
+            DBUG_PRINT ("Found naked consumerWL: %s",
+                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
+            ivmin = (NULL != ivmin) ? FREEdoFreeNode (ivmin) : NULL;
+            ivmax = (NULL != ivmax) ? FREEdoFreeNode (ivmax) : NULL;
+
+            tmp = TBmakeId (ivavis); /* Find the N_array */
+            if (PMmatchFlat (pat3, tmp)) {
+                ivmin = DUPdoDupTree (ivminmax);
+                /* Fake up ivmax = ivavis + 1 */
+                ivid = TBmakeId (
+                  IVEXPadjustExtremaBound (ID_AVIS (tmp), 1, &INFO_VARDECS (arg_info),
+                                           &INFO_PREASSIGNS (arg_info), "nakedcon"));
+                tmp = FREEdoFreeNode (tmp);
+
                 PMmatchFlat (pat3, ivid);
                 ivmax = ivminmax;
                 ivid = FREEdoFreeNode (ivid);
-            } else {
-                ivmax = DUPdoDupTree (ivminmax); /* normal AWLF */
             }
-        } else {
-            DBUG_PRINT ("Expected N_array ivmax for ivavis=%s", AVIS_NAME (ivavis));
         }
     }
 
