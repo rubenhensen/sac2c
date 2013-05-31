@@ -644,4 +644,47 @@ TUmoveAssign (node *avis, node *preassigns)
     DBUG_RETURN (z);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn int TULSsearchAssignChainForAssign( node *chn, node *assgn)
+ *
+ * @brief Search the N_assign chain chn for N_assign assgn.
+ *        Return the 0-origin index of its location in the chain,
+ *        if it exists, and otherwise -1.
+ *
+ *        This could have been written as a set-membership predicate,
+ *        but I thought this version might come in handy for something.
+ *
+ *
+ * @param  chn: An N_assign chain
+ * @param  assgn: An N_assign node
+ *
+ * @return As above. If assgn's SSA_ASSIGN is NULL, return -1.
+ *         This situation will arise if assgn is a WITH_ID or the
+ *         formal parameter of a defined function.
+ *
+ ******************************************************************************/
+int
+TULSsearchAssignChainForAssign (node *chn, node *assgn)
+{
+    int z = -1;
+    int cnt = 0;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (NODE_TYPE (chn) == N_assign, "Expected N_assign chn");
+    DBUG_ASSERT (NODE_TYPE (assgn) == N_assign, "Expected N_assign assgn");
+
+    while ((-1 == z) && (NULL != chn)) {
+        if (assgn != chn) {
+            cnt++;
+            chn = ASSIGN_NEXT (chn);
+        } else {
+            z = cnt;
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
 #undef DBUG_PREFIX
