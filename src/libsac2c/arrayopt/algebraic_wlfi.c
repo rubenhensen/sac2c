@@ -663,6 +663,102 @@ AWLFIdetachNoteintersect (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *GenerateFakeMinMaxForArray( node *ivavis, info *arg_info, bool emax)
+ *
+ * @brief: Fake up AVIS_MIN/MAX N_array for naked consumer and for
+ *         non-in-block elements of other consumers.
+ *
+ *         We do not alter the AVIS_MIN/MAX values of ivavis or its
+ *         N_array elements.
+ *
+ * @param: ivavis: an N_avis for an N_array, iv from _sel_VxA_( iv, PWL)
+ *         emax: TRUE for AVIS_MAX, FALSE for AVIS_MIN
+ *
+ * @result: The generated AVIS_MIN/MAX for the N_array, unless we can't
+ *          generate one, in which case we return NULL.
+ *
+ *****************************************************************************/
+node *
+GenerateFakeMinMaxForArray (node *ivavis, info *arg_info, bool emax)
+{
+    node *elem;
+    node *aelems;
+    node *narr = NULL;
+    pattern *pat;
+    node *ivid = NULL;
+    node *elavis;
+    node *chn;
+    node *assgn;
+    node *exprs = NULL;
+    node *exavis = NULL;
+    bool badnews = FALSE;
+    node *newarr = NULL;
+
+    DBUG_ENTER ();
+
+    ivid = TBmakeId (ivavis);
+    pat = PMarray (1, PMAgetNode (&narr), 1, PMskip (0));
+    if ((NULL != INFO_CONSUMERWLPART (arg_info)) && (PMmatchFlat (pat, ivid))) {
+        aelems = ARRAY_AELEMS (narr);
+        chn = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (INFO_CONSUMERWLPART (arg_info))));
+        while (NULL != aelems) {
+            elem = EXPRS_EXPR (aelems);
+            aelems = EXPRS_NEXT (aelems);
+            elavis = ID_AVIS (elem);
+            assgn = AVIS_SSAASSIGN (elavis);
+
+            if (TYisAKV (AVIS_TYPE (elavis))) { /* constant */
+                exavis = ID_AVIS (elavis);
+            }
+
+            if ((!emax) && IVEXPisAvisHasMin (elavis)) {
+                exavis = ID_AVIS (AVIS_MIN (elavis)); /* copy extant min */
+            }
+
+            if ((emax) && IVEXPisAvisHasMax (elavis)) {
+                exavis = ID_AVIS (AVIS_MAX (elavis)); /* copy extant max */
+            }
+
+            if (NULL == exavis) {
+                if (-1 == TULSsearchAssignChainForAssign (chn, assgn)) {
+                    exavis = elavis; /* Not defined in this block. */
+                } else {             /* Defined in this block, but
+                                      * no min/max yet. Try again later.
+                                      */
+                    badnews = TRUE;
+                    exavis = NULL;
+                }
+            }
+
+            if (emax && (NULL != exavis)) {
+                /* Set ivmax = ivavis + 1 for elem */
+                exavis = IVEXPadjustExtremaBound (exavis, 1, &INFO_VARDECS (arg_info),
+                                                  &INFO_PREASSIGNS (arg_info), "fakeex");
+            }
+            exavis = badnews ? NULL : TBmakeId (exavis);
+            exprs = TCappendExprs (exprs, TBmakeExprs (exavis, NULL));
+        }
+
+        if (!badnews) {
+            newarr = DUPdoDupTree (narr);
+            ARRAY_AELEMS (newarr) = FREEdoFreeTree (ARRAY_AELEMS (newarr));
+            ARRAY_AELEMS (newarr) = exprs;
+            DBUG_PRINT ("Built fake extrema for %s", AVIS_NAME (ivavis));
+        } else {
+            exprs = FREEdoFreeTree (exprs);
+            DBUG_PRINT ("Could not build fake extrema for %s", AVIS_NAME (ivavis));
+        }
+    }
+
+    pat = PMfree (pat);
+    ivid = FREEdoFreeNode (ivid);
+
+    DBUG_RETURN (newarr);
+}
+
+#ifdef MAYBEDEADNOW
+/** <!--********************************************************************-->
+ *
  * @fn bool isNakedConsumer( node *arg_node, info *arg_info)
  *
  * @brief: Predicate for checking that consumer sel() is a naked consumer.
@@ -704,10 +800,6 @@ isNakedConsumer (node *arg_node, info *arg_info)
 
     z = INFO_LEVEL (arg_info) == AVIS_DEFDEPTH (ID_AVIS (INFO_PRODUCERWLLHS (arg_info)));
 
-#ifdef NOAKV
-    z = z && (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))));
-#endif // NOAKV
-
     if (z) {
         DBUG_PRINT ("CWL %s is naked consumer of PWL %s", cwlnm,
                     AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))));
@@ -715,6 +807,7 @@ isNakedConsumer (node *arg_node, info *arg_info)
 
     DBUG_RETURN (z);
 }
+#endif // MAYBEDEADNOW
 
 /** <!--********************************************************************-->
  *
@@ -1954,9 +2047,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     constant *ivmaxco;
     constant *kcon;
     node *ivminmax = NULL;
-    node *ivid;
     char *cwlnm;
-    node *tmp = NULL;
 
     DBUG_ENTER ();
 
@@ -1980,15 +2071,19 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
         if (PMmatchFlat (pat3, AVIS_MIN (ivavis))) {
             ivmin = DUPdoDupTree (ivminmax);
         } else {
-            DBUG_PRINT ("Expected N_array ivmin for ivavis=%s", AVIS_NAME (ivavis));
+            DBUG_PRINT ("Generating fake ivmin for ivavis=%s", AVIS_NAME (ivavis));
+            ivmin = GenerateFakeMinMaxForArray (ivavis, arg_info, FALSE);
         }
 
         if (PMmatchFlat (pat3, AVIS_MAX (ivavis))) {
             ivmax = DUPdoDupTree (ivminmax); /* normal AWLF */
         } else {
-            DBUG_PRINT ("Expected N_array ivmax for ivavis=%s", AVIS_NAME (ivavis));
+            DBUG_PRINT ("Generating fake N_array ivmax for ivavis=%s",
+                        AVIS_NAME (ivavis));
+            ivmax = GenerateFakeMinMaxForArray (ivavis, arg_info, TRUE);
         }
 
+#ifdef MAYBEDEADNOW
         if (isNakedConsumer (arg_node, arg_info)) {
             DBUG_PRINT ("Found naked consumerWL: %s",
                         AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
@@ -2009,6 +2104,7 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
                 ivid = FREEdoFreeNode (ivid);
             }
         }
+#endif // MAYBEDEADNOW
     }
 
     pwlp = WITH_PART (INFO_PRODUCERWL (arg_info));
@@ -2361,34 +2457,116 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn bool checkConsumerWLFoldable( node *arg_node, info *arg_info)
+ * @fn bool isDefinedInPart( node *arg_node, node *cwlpart)
  *
- * @brief We are looking at _sel_VxA_(iv, producerWL), contained
- *        within a consumerWL. We want to determine if
- *        the consumerWL is acceptable to have something folded into it.
+ * @brief Return TRUE if arg_node is defined inside this N_part.
+ *        If cwlpart is non-NULL, it must be an N_part; we check
+ *        arg_node to see if it is a member of WITHID_VEC or WITHID_IDS.
  *
- *        We deem the prf foldable if iv directly from
- *        an _noteintersect, or if iv has extrema.
- *        This may not be enough to guarantee foldability, but
- *        without extrema, we're stuck.
+ * @param arg_node: an N_id element of the iv N_array value.
+ * @parem block:    the N_block for this CWL partition.
+ * @param cwlpart: NULL, or the N_part for a CWL.
  *
- * @param _sel_VxA_( iv, producerWL) arg_node.
- *
- * @result True if the consumerWL (and the indexing expression)
- *         are acceptable for having another WL folded into it,
- *         else false.
- *
- *         This is hopefully dead code now. FIXME
+ * @result predicate described above.
  *
  *****************************************************************************/
 static bool
-checkConsumerWLFoldable (node *arg_node, info *arg_info)
+isDefinedInPart (node *arg_node, node *cwlpart)
 {
     bool z;
 
     DBUG_ENTER ();
 
-    z = TRUE;
+    z = (-1
+         != TULSsearchAssignChainForAssign (BLOCK_ASSIGNS (
+                                              CODE_CBLOCK (PART_CODE (cwlpart))),
+                                            arg_node));
+
+    z = z || IVUTivMatchesWithid (arg_node, PART_WITHID (cwlpart));
+
+    if (z) {
+        DBUG_PRINT ("%s is defined inside the consumer WL",
+                    AVIS_NAME (ID_AVIS (arg_node)));
+    } else {
+        DBUG_PRINT ("%s is defined outside the consumer WL",
+                    AVIS_NAME (ID_AVIS (arg_node)));
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool isCanAttachIntersectCalc( node *arg_node, node *ivavis, node *cwlpart)
+ *
+ * @brief  TRUE if iv/ivavis are in suitable shape that we can
+ *         attach intersect calculations for the sel().
+ *
+ * @param arg_node:  _sel_VxA_( iv, producerWL)
+ *        ivavis:    N_avis for iv's predecessor N_array
+ *        cwlpart:     N_part for CWL partition
+ *
+ * @result boolean
+ *
+ *****************************************************************************/
+static bool
+isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart)
+{
+    bool z;
+    node *narr;
+    pattern *pat;
+    node *ivid;
+    node *aelems;
+    node *elem;
+    node *avis;
+    node *assgn;
+
+    DBUG_ENTER ();
+
+    /* This is the old code. I hope we can burn it. FIXME */
+    z = (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
+        || ((NULL != ivavis)
+            && ((TYisAKV (AVIS_TYPE (ivavis))) || (IVEXPisAvisHasBothExtrema (ivavis))));
+
+    if ((!z) && (NULL != cwlpart) && (NULL != ivavis)) {
+        /*
+         * Now we have to get fancy: we want to allow a mix of three
+         * element types in the N_array: AKV, both-extrema-present,
+         * and element defined-outside-the-WL.
+         *
+         * The latter appears in AWLF unit test realrelaxAKDLowerA.sac,
+         * where we have:
+         *
+         *   A = genarray( [ m, n], 42);
+         *   lower_A = drop( [m-1,0], A);
+         *
+         * In this code, m-1 is NOT constant, but neither does it have
+         * extrema. Since it is WL-invariant, it is defined outside the
+         * N_code block for the WL.
+         *
+         */
+
+        z = TRUE;
+        pat = PMarray (1, PMAgetNode (&narr), 1, PMskip (0));
+        ivid = TBmakeId (ivavis);
+        if (z && PMmatchFlat (pat, ivid)) {
+            aelems = ARRAY_AELEMS (narr);
+            while (NULL != aelems) {
+                elem = EXPRS_EXPR (aelems);
+                aelems = EXPRS_NEXT (aelems);
+                avis = ID_AVIS (elem);
+                assgn = AVIS_SSAASSIGN (avis);
+                DBUG_PRINT ("Looking at elem %s", AVIS_NAME (avis));
+                z = z
+                    && ((TYisAKV (AVIS_TYPE (ID_AVIS (elem))))
+                        || (IVEXPisAvisHasBothExtrema (ID_AVIS (elem)))
+                        || (!isDefinedInPart (assgn, cwlpart)));
+            }
+        }
+
+        ivid = FREEdoFreeNode (ivid);
+        pat = PMfree (pat);
+    }
 
     DBUG_RETURN (z);
 }
@@ -2733,8 +2911,7 @@ AWLFIprf (node *arg_node, info *arg_info)
         INFO_PRODUCERWLLHS (arg_info) = pwlid;
         INFO_PRODUCERWL (arg_info) = AWLFIfindWL (pwlid);
         INFO_PRODUCERWLFOLDABLE (arg_info)
-          = checkConsumerWLFoldable (PRF_ARG2 (arg_node), arg_info)
-            && checkProducerWLFoldable (pwlid, arg_info)
+          = checkProducerWLFoldable (pwlid, arg_info)
             && checkBothFoldable (pwlid, INFO_CONSUMERWLIDS (arg_info),
                                   INFO_LEVEL (arg_info));
 
@@ -2749,16 +2926,14 @@ AWLFIprf (node *arg_node, info *arg_info)
                                       INFO_CONSUMERWLPART (arg_info));
 
             /* We need both extrema or constant index vector */
-            if (((TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
-                 || ((NULL != ivavis)
-                     && ((TYisAKV (AVIS_TYPE (ivavis)))
-                         || (IVEXPisAvisHasBothExtrema (ivavis)))))) {
+            if (isCanAttachIntersectCalc (arg_node, ivavis,
+                                          INFO_CONSUMERWLPART (arg_info))) {
+                DBUG_PRINT ("Trying to attach F_noteintersect into cwl=%s", cwlnm);
                 z = attachIntersectCalc (arg_node, arg_info, ivavis);
                 if (z != ID_AVIS (PRF_ARG1 (arg_node))) {
                     FREEdoFreeNode (PRF_ARG1 (arg_node));
                     PRF_ARG1 (arg_node) = TBmakeId (z);
-                    DBUG_PRINT ("Inserted F_noteintersect into cwl=%s for sel/idx_sel",
-                                cwlnm);
+                    DBUG_PRINT ("Inserted F_noteintersect into cwl=%s", cwlnm);
                 }
             }
         }
