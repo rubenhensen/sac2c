@@ -673,7 +673,6 @@ TULSsearchAssignChainForAssign (node *chn, node *assgn)
     DBUG_ENTER ();
 
     DBUG_ASSERT (NODE_TYPE (chn) == N_assign, "Expected N_assign chn");
-    DBUG_ASSERT (NODE_TYPE (assgn) == N_assign, "Expected N_assign assgn");
 
     while ((-1 == z) && (NULL != chn)) {
         if (assgn != chn) {
