@@ -90,6 +90,7 @@
 #include "namespaces.h"
 #include "globals.h"
 #include "traverse.h"
+#include "flattengenerators.h"
 
 /*
  * Since all type constructors may have different attributes,
@@ -6575,6 +6576,7 @@ BuildDimAssign (node *arg, node **new_vardecs)
     node *preassign = NULL;
     node *dim;
     ntype *type;
+    node *dimnum;
 
     DBUG_ENTER ();
 
@@ -6593,8 +6595,9 @@ BuildDimAssign (node *arg, node **new_vardecs)
      *
      * where _dim_( base( A)) is statically known
      *
-     * As the userdefined types might have been resolved by now,
+     * As the user-defined types might have been resolved by now,
      * we have to use the declared type here!
+     *
      */
     type = AVIS_DECLTYPE (ARG_AVIS (arg));
 
@@ -6613,8 +6616,11 @@ BuildDimAssign (node *arg, node **new_vardecs)
                                          TCmakePrf1 (F_dim_A, TBmakeId (ARG_AVIS (arg)))),
                               NULL);
 
+            dimnum = TBmakeNum (TYgetDim (basetype));
+            dimnum = FLATGexpression2Avis (dimnum, new_vardecs, &preassign, NULL);
+
             dim = TCmakePrf2 (F_sub_SxS, TBmakeId (IDS_AVIS (ASSIGN_LHS (preassign))),
-                              TBmakeNum (TYgetDim (basetype)));
+                              TBmakeId (dimnum));
         } else {
             dim = TBmakePrf (F_dim_A, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
         }
@@ -6628,10 +6634,13 @@ BuildDimAssign (node *arg, node **new_vardecs)
                                       dim),
                            NULL);
 
+#ifdef OLDSCHOOL // rip these out after shakedown for a week or two...
     if (preassign != NULL) {
         ASSIGN_NEXT (preassign) = assign;
         assign = preassign;
     }
+#endif OLDSCHOOL
+    assign = TCappendAssign (preassign, assign);
 
     DBUG_RETURN (assign);
 }
@@ -6643,6 +6652,8 @@ BuildShapeAssign (node *arg, node **new_vardecs)
     node *preassign = NULL;
     node *shape;
     ntype *type;
+    node *dimnum;
+    node *lhsid;
 
     DBUG_ENTER ();
 
@@ -6680,8 +6691,10 @@ BuildShapeAssign (node *arg, node **new_vardecs)
                                                      TBmakeId (ARG_AVIS (arg)))),
                               NULL);
 
-            shape = TCmakePrf2 (F_drop_SxV, TBmakeNum (-TYgetDim (basetype)),
-                                TBmakeId (IDS_AVIS (ASSIGN_LHS (preassign))));
+            lhsid = TBmakeId (IDS_AVIS (ASSIGN_LHS (preassign)));
+            dimnum = TBmakeNum (TYgetDim (basetype));
+            dimnum = FLATGexpression2Avis (dimnum, new_vardecs, &preassign, NULL);
+            shape = TCmakePrf2 (F_drop_SxV, TBmakeId (dimnum), lhsid);
         } else {
             shape = TBmakePrf (F_shape_A, TBmakeExprs (TBmakeId (ARG_AVIS (arg)), NULL));
         }
@@ -6694,10 +6707,13 @@ BuildShapeAssign (node *arg, node **new_vardecs)
                                       shape),
                            NULL);
 
+#ifdef OLDSCHOOL
     if (preassign != NULL) {
         ASSIGN_NEXT (preassign) = assign;
         assign = preassign;
     }
+#endif OLDSCHOOL
+    assign = TCappendAssign (preassign, assign);
 
     DBUG_RETURN (assign);
 }
@@ -6707,7 +6723,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
                  node **new_vardecs)
 {
     prf prf;
-    node *assigns;
+    node *assigns = NULL;
     node *prf_ids;
 
     DBUG_ENTER ();
@@ -6768,14 +6784,31 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
             node *flt_prf2, *flt_prf3, *flt_prf4, *flt_array;
             node *aexprs, *last_ass;
             node *id;
+            node *el;
             int dim;
 
             DBUG_ASSERT (NODE_TYPE (expr) == N_array, "illegal expression found!");
 
+#ifdef OLDSCHOOL
             last_ass = assigns = TBmakeAssign (NULL, NULL); /* dummy assignment */
+#endif OLDSCHOOL
             aexprs = ARRAY_AELEMS (expr);
             dim = 0;
-            flt_prf4 = TBmakeBool (TRUE);
+
+            flt_prf4
+              = BuildTmpId (TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)),
+                            new_vardecs);
+#ifdef OLDSCHOOL
+//          ASSIGN_NEXT( last_ass) = TBmakeAssign(
+#endif OLDSCHOOL
+            assigns
+              = TCappendAssign (assigns, TBmakeAssign (TBmakeLet (DUPdupIdIds (flt_prf4),
+                                                                  TBmakeBool (TRUE)),
+                                                       NULL));
+#ifdef OLDSCHOOL
+            last_ass = ASSIGN_NEXT (last_ass);
+#endif OLDSCHOOL
+
             while (aexprs != NULL) {
                 id = DUPdupIdsId (prf_ids);
                 array = TCmakeIntVector (TBmakeExprs (TBmakeNum (dim), NULL));
@@ -6789,9 +6822,11 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
                   = BuildTmpId (TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (0)),
                                 new_vardecs);
 
-                prf3 = TBmakePrf (rel_prf,
-                                  TBmakeExprs (flt_prf2,
-                                               TBmakeExprs (EXPRS_EXPR (aexprs), NULL)));
+                el = EXPRS_EXPR (aexprs);
+                el = FLATGexpression2Avis (el, new_vardecs, &assigns, NULL);
+                prf3
+                  = TBmakePrf (rel_prf,
+                               TBmakeExprs (flt_prf2, TBmakeExprs (TBmakeId (el), NULL)));
                 flt_prf3
                   = BuildTmpId (TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)),
                                 new_vardecs);
@@ -6808,25 +6843,37 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
                   = BuildTmpId (TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)),
                                 new_vardecs);
 
-                ASSIGN_NEXT (last_ass) = TBmakeAssign (
-                  TBmakeLet (DUPdupIdIds (flt_array), array),
-                  TBmakeAssign (TBmakeLet (DUPdupIdIds (flt_prf2), prf2),
-                                TBmakeAssign (TBmakeLet (DUPdupIdIds (flt_prf3), prf3),
-                                              TBmakeAssign (TBmakeLet (DUPdupIdIds (
-                                                                         flt_prf4),
-                                                                       prf4),
-                                                            NULL))));
+                assigns = TCappendAssign (
+                  assigns,
+                  TBmakeAssign (
+                    TBmakeLet (DUPdupIdIds (flt_array), array),
+                    TBmakeAssign (TBmakeLet (DUPdupIdIds (flt_prf2), prf2),
+                                  TBmakeAssign (TBmakeLet (DUPdupIdIds (flt_prf3), prf3),
+                                                TBmakeAssign (TBmakeLet (DUPdupIdIds (
+                                                                           flt_prf4),
+                                                                         prf4),
+                                                              NULL)))));
+#ifdef OLDSCHOOL
                 last_ass
                   = ASSIGN_NEXT (ASSIGN_NEXT (ASSIGN_NEXT (ASSIGN_NEXT (last_ass))));
+#endif OLDSCHOOL
 
                 aexprs = EXPRS_NEXT (aexprs);
                 dim++;
             }
-            ASSIGN_NEXT (last_ass)
-              = TBmakeAssign (TBmakeCond (flt_prf4, TBmakeBlock (then_ass, NULL),
-                                          TBmakeBlock (else_ass, NULL)),
-                              NULL);
+#ifdef OLDSCHOOL
+            //      ASSIGN_NEXT( last_ass) = TBmakeAssign( TBmakeCond( flt_prf4,
+#endif OLDSCHOOL
+
+            assigns
+              = TCappendAssign (assigns,
+                                TBmakeAssign (TBmakeCond (flt_prf4,
+                                                          TBmakeBlock (then_ass, NULL),
+                                                          TBmakeBlock (else_ass, NULL)),
+                                              NULL));
+#ifdef OLDSCHOOL
             assigns = FREEdoFreeNode (assigns); /* free dummy assignment */
+#endif OLDSCHOOL
 
             ARRAY_AELEMS (expr) = NULL;
             expr = FREEdoFreeNode (expr);
@@ -6889,18 +6936,21 @@ BuildApAssign (node *fundef, node *args, node *vardecs, node **new_vardecs)
 static node *
 BuildDispatchErrorAssign (char *funname, node *args, node *rets, node *vardecs)
 {
-    node *assigns;
+    node *assigns = NULL;
     node *exprs;
+    node *retcount;
 
     DBUG_ENTER ();
 
     exprs = TBmakeExprs (TCmakeStrCopy (funname), Args2Exprs (args));
     exprs = TCappendExprs (TUmakeTypeExprsFromRets (rets), exprs);
-    exprs = TBmakeExprs (TBmakeNum (TCcountRets (rets)), exprs);
+    retcount = TBmakeNum (TCcountRets (rets)), exprs;
+    // ?? retcount = FLATGexpression2Avis( retcount, &vardecs, &assigns, NULL);
+    exprs = TBmakeExprs (retcount, exprs);
 
     assigns = TBmakeAssign (TBmakeLet (TCmakeIdsFromVardecs (vardecs),
                                        TBmakePrf (F_dispatch_error, exprs)),
-                            NULL);
+                            assigns);
 
     DBUG_RETURN (assigns);
 }
@@ -6967,6 +7017,7 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
     node *assigns;
     node *tmp_ass;
     int i;
+    node *dimnum;
 #ifndef DBUG_OFF
     char *dbug_str;
 #endif
@@ -7007,8 +7058,11 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
                      * exists
                      */
                     tmp_ass = BuildDimAssign (arg, new_vardecs);
+                    dimnum = TBmakeNum (0);
+                    // dimnum = FLATGexpression2Avis( dimnum, new_vardecs, &assigns,
+                    // NULL);
                     assigns
-                      = BuildCondAssign (tmp_ass, F_gt_SxS, TBmakeNum (0), assigns,
+                      = BuildCondAssign (tmp_ass, F_gt_SxS, dimnum, assigns,
                                          CreateWrapperCode (IBASE_GEN (type), state, 3,
                                                             funname, arg, args, rets,
                                                             vardecs, new_vardecs),
@@ -7021,7 +7075,9 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             }
             if (IBASE_SCAL (type) != NULL) {
                 tmp_ass = BuildDimAssign (arg, new_vardecs);
-                assigns = BuildCondAssign (tmp_ass, F_eq_SxS, TBmakeNum (0),
+                dimnum = TBmakeNum (0);
+                // dimnum = FLATGexpression2Avis( dimnum, new_vardecs, &assigns, NULL);
+                assigns = BuildCondAssign (tmp_ass, F_eq_SxS, dimnum,
                                            CreateWrapperCode (IBASE_SCAL (type), state, 0,
                                                               funname, arg, args, rets,
                                                               vardecs, new_vardecs),
@@ -7040,9 +7096,11 @@ CreateWrapperCode (ntype *type, dft_state *state, int lower, char *funname, node
             tmp_ass = BuildDimAssign (arg, new_vardecs);
             for (i = NTYPE_ARITY (type) - 2; i >= 0; i--) {
                 if (IARR_IDIM (type, i) != NULL) {
+                    dimnum = TBmakeNum (IDIM_DIM (IARR_IDIM (type, i)));
+                    // dimnum = FLATGexpression2Avis( dimnum, new_vardecs, &assigns,
+                    // NULL);
                     assigns
-                      = BuildCondAssign (tmp_ass, F_eq_SxS,
-                                         TBmakeNum (IDIM_DIM (IARR_IDIM (type, i))),
+                      = BuildCondAssign (tmp_ass, F_eq_SxS, dimnum,
                                          CreateWrapperCode (IARR_IDIM (type, i), state,
                                                             lower, funname, arg, args,
                                                             rets, vardecs, new_vardecs),
