@@ -94,6 +94,7 @@
 #include "phase.h"
 #include "flattengenerators.h"
 #include "saa_constant_folding.h"
+#include "ivexpropagation.h"
 
 /* local used helper functions */
 
@@ -439,12 +440,110 @@ SCSmatchConstantOne (node *prfarg)
 
 /** <!--********************************************************************-->
  *
- * @fn bool MatchPrfrgs( node *arg_node)
- * Predicate for PRF_ARG1 matching PRF_ARG2
+ * @fn bool MatchGenwidth1Partition(node *prfarg1, node *prfarg2, info *arg_info)
+ *
+ * @brief: This function is intended to help match variables that have
+ *         extrema in WL partitions that have genwidth 1.
+ *
+ *         This came about as a result of studying the performance
+ *         of the wlcondo.sac constant-folding unit test, using
+ *         this SIMD APLish version of the code:
+ *
+ *           mask = (iota(N+1) == 0) | (iota(N+1) == N);
+ *           a = tod( mask) * a + tod( !mask) * (shift([1], a) + shift([-1], a));
+ *
+ *         I had this swell idea of making this work on AKD wlconvoAKD.sac,
+ *         but let's see how far we can get today with AKS and constant
+ *         indices.
+ *
+ * Case 1: We require that AVIS_MIN( prfarg1) == prfarg2, that
+ *         prfarg2 be constant, that AVIS_MAX( prfarg1) == (1 + prfarg2),
+ *         and that the arguments be of integer type.
+ *
+ * Case 2: If AVIS_MIN( prfarg1) > prfarg2, never equal. (constants only)
+ *
+ * Case 3: If AVIS_MAX( prfarg1) <= prfarg2, then prfarg1<prfarg2, so never
+ *         equal. (constants only).
+ *
+ *****************************************************************************/
+bool
+isMatchGenwidth1Partition (node *prfarg1, node *prfarg2, info *arg_info)
+{
+    bool res = FALSE;
+    pattern *pat1min;
+    pattern *pat1max;
+    pattern *patIs1min;
+    pattern *pat2con;
+    pattern *patIsconsum;
+    constant *con1min = NULL;
+    constant *con1max = NULL;
+    constant *con2 = NULL;
+    constant *consum = NULL;
+    constant *cone = NULL;
+    ntype *typ;
+    node *avis1;
+    node *avis2;
+
+    DBUG_ENTER ();
+
+    // Case 1:
+    pat1min = PMconst (1, PMAgetVal (&con1min), 0);
+    pat1max = PMconst (1, PMAgetVal (&con1max), 0);
+    patIs1min = PMconst (1, PMAisVal (&con1min), 0);
+    pat2con = PMconst (1, PMAgetVal (&con2), 0);
+    patIsconsum = PMconst (1, PMAisVal (&consum), 0);
+    avis1 = ID_AVIS (prfarg1);
+    avis2 = ID_AVIS (prfarg2);
+    typ = AVIS_TYPE (avis1);
+
+    if (IVEXPisAvisHasMin (avis1)) {
+        PMmatchFlat (pat1min, AVIS_MIN (avis1));
+    }
+    if (IVEXPisAvisHasMax (avis1)) {
+        PMmatchFlat (pat1max, AVIS_MAX (avis1));
+    }
+    PMmatchFlat (pat2con, prfarg2);
+
+    if ((NULL != con1min) && (NULL != con1max)
+        && (TUisIntScalar (typ) || TUisIntVect (typ))
+        && (PMmatchFlat (patIs1min, prfarg2)) && (NULL != con2)) {
+
+        // At this point, AVIS_MIN( prfarg1) == prfarg, and prfarg2 is constant
+        cone = COmakeConstantFromInt (1);
+        consum = COadd (cone, con2, NULL); // 1 + prfarg2
+        res = PMmatchFlat (patIsconsum, AVIS_MAX (avis1));
+        DBUG_PRINT ("Result for %s==%s is %s", AVIS_NAME (avis1), AVIS_NAME (avis2),
+                    (res ? "TRUE" : "FALSE"));
+    }
+
+    con1min = (NULL != con1min) ? COfreeConstant (con1min) : NULL;
+    con1max = (NULL != con1max) ? COfreeConstant (con1max) : NULL;
+    con2 = (NULL != con2) ? COfreeConstant (con2) : NULL;
+    consum = (NULL != consum) ? COfreeConstant (consum) : NULL;
+    cone = (NULL != cone) ? COfreeConstant (cone) : NULL;
+
+    pat1min = PMfree (pat1min);
+    pat1max = PMfree (pat1max);
+    patIs1min = PMfree (patIs1min);
+    pat2con = PMfree (pat2con);
+    patIsconsum = PMfree (patIsconsum);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool isMatchPrfrgs( node *arg_node, arg_info)
+ *
+ * @brief Predicate for PRF_ARG1 matching PRF_ARG2
+ *
+ *        If this returns TRUE, then the nodes are guaranteed equal.
+ *        If this returns FALSE, no guarantees are made. In particular,
+ *        do NOT assume that FALSE means not-equal!
  *
  *****************************************************************************/
 static bool
-MatchPrfargs (node *arg_node)
+isMatchPrfargs (node *arg_node, info *arg_info)
 {
     pattern *pat1;
     pattern *pat2;
@@ -455,22 +554,136 @@ MatchPrfargs (node *arg_node)
 
     pat1 = PMany (1, PMAgetNodeOrAvis (&node_ptr), 0);
     pat2 = PMany (1, PMAisNodeOrAvis (&node_ptr), 0);
+
     res = PMmatchFlatSkipExtremaAndGuards (pat1, PRF_ARG1 (arg_node))
           && PMmatchFlatSkipExtremaAndGuards (pat2, PRF_ARG2 (arg_node));
+
+    res
+      = res
+        || isMatchGenwidth1Partition (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info)
+        || isMatchGenwidth1Partition (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info);
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
 
     DBUG_RETURN (res);
 }
+
 /** <!--********************************************************************-->
  *
- * @fn bool MatchPrShapes( node *arg_node)
+ * @fn bool isNotEqual( node *arg1, node *arg2, arg_info)
+ *
+ * @brief Predicate for arg1 not equal to arg2
+ *
+ *        If this returns TRUE, then the nodes are guaranteed not-equal.
+ *        If this returns FALSE, no guarantees are made. In particular,
+ *        do NOT assume that FALSE means equal!
+ *
+ * @notes Case 1: If maxval( arg1) == arg2, then x<y  --> Not equal
+ *        Case 2: If constant( minval( arg1)) >  constant( arg2) --> Not equal
+ *        Case 3: If constant( maxval( arg1)) <= constant( arg2) --> Not equal
+ *
+ *****************************************************************************/
+static bool
+isNotEqual (node *arg1, node *arg2, info *arg_info)
+{
+    pattern *pat1;
+    pattern *pat2;
+    pattern *pat1mincon;
+    pattern *pat1maxcon;
+    pattern *pat2con;
+    node *node_ptr = NULL;
+    constant *con1min = NULL;
+    constant *con1max = NULL;
+    constant *con2 = NULL;
+    constant *conrel = NULL;
+    node *avis1;
+    node *avis2;
+    bool res = FALSE;
+
+    DBUG_ENTER ();
+
+    pat1 = PMany (1, PMAgetNodeOrAvis (&node_ptr), 0);
+    pat2 = PMany (1, PMAisNodeOrAvis (&node_ptr), 0);
+    pat1mincon = PMconst (1, PMAgetVal (&con1min), 0);
+    pat1maxcon = PMconst (1, PMAgetVal (&con1max), 0);
+    pat2con = PMconst (1, PMAgetVal (&con2), 0);
+    avis1 = ID_AVIS (arg1);
+    avis2 = ID_AVIS (arg2);
+
+    // Case 1: If maxval( arg1) == arg2, then x<y  --> Not equal
+    if (IVEXPisAvisHasMax (avis1)) { // Case 1
+        res = PMmatchFlatSkipExtremaAndGuards (pat1, AVIS_MAX (avis1))
+              && PMmatchFlatSkipExtremaAndGuards (pat2, arg2);
+    }
+
+    if (!res) {
+        if (IVEXPisAvisHasMin (avis1)) {
+            PMmatchFlatSkipExtremaAndGuards (pat1mincon, AVIS_MIN (avis1));
+        }
+
+        if (IVEXPisAvisHasMax (avis1)) {
+            PMmatchFlatSkipExtremaAndGuards (pat1maxcon, AVIS_MAX (avis1));
+        }
+        PMmatchFlatSkipExtremaAndGuards (pat2con, arg2);
+    }
+
+    // Case 2: If constant( minval( arg1)) >  constant( arg2) --> Not equal
+    if ((!res) && (NULL != con1min) && (NULL != con2)) {
+        conrel = COgt (con1min, con2, NULL);
+        res = COisTrue (conrel, TRUE);
+    }
+
+    // Case 3: If constant( maxval( arg1)) <= constant( arg2) --> Not equal
+    if ((!res) && (NULL != con1max) && (NULL != con2)) {
+        conrel = COle (con1max, con2, NULL);
+        res = COisTrue (conrel, TRUE);
+    }
+
+    con1min = (NULL != con1min) ? COfreeConstant (con1min) : NULL;
+    con1max = (NULL != con1max) ? COfreeConstant (con1max) : NULL;
+    con2 = (NULL != con2) ? COfreeConstant (con2) : NULL;
+    conrel = (NULL != conrel) ? COfreeConstant (conrel) : NULL;
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat1mincon = PMfree (pat1mincon);
+    pat1maxcon = PMfree (pat1maxcon);
+    pat2con = PMfree (pat2con);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool isNotEqualPrf( node *arg_node, info *arg_info)
+ *
+ * @brief Predicate for not equal on PRF_ARG1 and PRF_ARG2
+ *
+ *        See notes for isNotEqual, above.
+ *
+ *****************************************************************************/
+static bool
+isNotEqualPrf (node *arg_node, info *arg_info)
+{
+    bool res;
+
+    DBUG_ENTER ();
+
+    res = isNotEqual (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info)
+          || isNotEqual (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool isMatchPrfShapes( node *arg_node)
  * Predicate for shape( PRF_ARG1) matching shape( PRF_ARG2)
  *
  *****************************************************************************/
 static bool
-MatchPrfShapes (node *arg_node)
+isMatchPrfShapes (node *arg_node)
 {
     bool res;
 
@@ -760,7 +973,7 @@ SCSprf_sub (node *arg_node, info *arg_info)
 
     if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
-    } else if (MatchPrfargs (arg_node)) { /* X - X */
+    } else if (isMatchPrfargs (arg_node, arg_info)) { /* X - X */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
     }
 
@@ -783,7 +996,7 @@ SCSprf_sub_VxV (node *arg_node, info *arg_info)
 
     if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) { /* X - 0 */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
-    } else if (MatchPrfargs (arg_node)) { /* X - X */
+    } else if (isMatchPrfargs (arg_node, arg_info)) { /* X - X */
         res = SCSmakeZero (PRF_ARG1 (arg_node));
     }
     DBUG_RETURN (res);
@@ -1059,7 +1272,7 @@ SCSprf_or_SxS (node *arg_node, info *arg_info)
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
 
         /* S | S */
-    } else if (MatchPrfargs (arg_node)) {
+    } else if (isMatchPrfargs (arg_node, arg_info)) {
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -1126,9 +1339,9 @@ SCSprf_or_VxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (MatchPrfargs (arg_node)) { /*  X | X */
+    if (isMatchPrfargs (arg_node, arg_info)) { /*  X | X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
-    } else if (MatchPrfShapes (arg_node)) {
+    } else if (isMatchPrfShapes (arg_node)) {
         res = SCSprf_or_SxS (arg_node, arg_info);
     }
 
@@ -1163,7 +1376,7 @@ SCSprf_and_SxS (node *arg_node, info *arg_info)
     } else if (SCSmatchConstantZero (PRF_ARG1 (arg_node))) { /* 0 & X */
         res = SCSmakeFalse (PRF_ARG2 (arg_node));
 
-    } else if (MatchPrfargs (arg_node)) { /* X & X */
+    } else if (isMatchPrfargs (arg_node, arg_info)) { /* X & X */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -1226,9 +1439,9 @@ SCSprf_and_VxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (MatchPrfargs (arg_node)) { /*  X & X */
+    if (isMatchPrfargs (arg_node, arg_info)) { /*  X & X */
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
-    } else if (MatchPrfShapes (arg_node)) {
+    } else if (isMatchPrfShapes (arg_node)) {
         res = SCSprf_and_SxS (arg_node, arg_info);
     }
 
@@ -1633,7 +1846,7 @@ SCSprf_max_SxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (MatchPrfargs (arg_node)) { /* max ( X, X) */
+    if (isMatchPrfargs (arg_node, arg_info)) { /* max ( X, X) */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -1670,7 +1883,7 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (MatchPrfargs (arg_node)) { /* min( X, X) */
+    if (isMatchPrfargs (arg_node, arg_info)) { /* min( X, X) */
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
@@ -1710,33 +1923,21 @@ SCSprf_min_VxV (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn node *SCSprf_eq_SxV( node *arg_node, info *arg_info)
- *
- * @brief: Handle relational where one argument is constant
- *         and the other has known extrema.
+ * @fn node *SCSprf_lege( node *arg_node, info *arg_info)
+ * If (X == Y), then TRUE.
+ * Implements SCSprf_ge_SxS, SCSprf_ge_VxV, SCSprf_le_SxS, SCSprf_ge_VxV,
+ *            SCSprf_eq_SxS, SCSprf_eq_VxV
  *
  *****************************************************************************/
 node *
-SCSprf_eq_SxV (node *arg_node, info *arg_info)
+SCSprf_lege (node *arg_node, info *arg_info)
 {
     node *res = NULL;
 
     DBUG_ENTER ();
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *SCSprf_eq_VxS( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-SCSprf_eq_VxS (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-
-    DBUG_ENTER ();
-    /* Could be supported with ISMOP */
+    if (isMatchPrfargs (arg_node, arg_info)) {
+        res = SCSmakeTrue (PRF_ARG1 (arg_node));
+    }
     DBUG_RETURN (res);
 }
 
@@ -1756,9 +1957,115 @@ SCSprf_nlege (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    if (MatchPrfargs (arg_node)) {
+    if (isMatchPrfargs (arg_node, arg_info)) {
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
     }
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_eq_SxS( node *arg_node, info *arg_info)
+ *
+ * @brief:
+ *
+ *****************************************************************************/
+node *
+SCSprf_eq_SxS (node *arg_node, info *arg_info)
+{
+    node *res;
+
+    DBUG_ENTER ();
+
+    res = SCSprf_lege (arg_node, arg_info);
+
+    if ((NULL == res) && isNotEqualPrf (arg_node, arg_info)) {
+        res = SCSmakeFalse (PRF_ARG1 (arg_node));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_eq_SxV( node *arg_node, info *arg_info)
+ *
+ * @brief:
+ *
+ *****************************************************************************/
+node *
+SCSprf_eq_SxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    if ((NULL == res) && isNotEqualPrf (arg_node, arg_info)) {
+        res = SCSmakeFalse (PRF_ARG2 (arg_node));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_eq_VxS( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SCSprf_eq_VxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+
+    DBUG_ENTER ();
+
+    if ((NULL == res) && isNotEqualPrf (arg_node, arg_info)) {
+        res = SCSmakeFalse (PRF_ARG1 (arg_node));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_eq_VxV( node *arg_node, info *arg_info)
+ *
+ * @brief:
+ *
+ *****************************************************************************/
+node *
+SCSprf_eq_VxV (node *arg_node, info *arg_info)
+{
+    node *res;
+
+    DBUG_ENTER ();
+
+    res = SCSprf_lege (arg_node, arg_info);
+
+    if ((NULL == res) && isNotEqualPrf (arg_node, arg_info)) {
+        res = SCSmakeFalse (PRF_ARG1 (arg_node));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_neq_SxS( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SCSprf_neq_SxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    DBUG_ENTER ();
+
+    res = SCSprf_nlege (arg_node, arg_info);
+
+    if ((NULL == res) && isNotEqualPrf (arg_node, arg_info)) {
+        res = SCSmakeTrue (PRF_ARG1 (arg_node));
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -1773,7 +2080,11 @@ SCSprf_neq_SxV (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    /* Could be supported with ISMOP */
+
+    if (isNotEqualPrf (arg_node, arg_info)) {
+        res = SCSmakeTrue (PRF_ARG2 (arg_node));
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -1786,9 +2097,32 @@ node *
 SCSprf_neq_VxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-
     DBUG_ENTER ();
-    /* Could be supported with ISMOP */
+
+    if (isNotEqualPrf (arg_node, arg_info)) {
+        res = SCSmakeTrue (PRF_ARG1 (arg_node));
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCSprf_neq_VxV( node *arg_node, info *arg_info)
+ *
+ *****************************************************************************/
+node *
+SCSprf_neq_VxV (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    DBUG_ENTER ();
+
+    res = SCSprf_nlege (arg_node, arg_info);
+
+    if ((NULL == res) && isNotEqualPrf (arg_node, arg_info)) {
+        res = SCSmakeTrue (PRF_ARG1 (arg_node));
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -1819,26 +2153,6 @@ SCSprf_le_VxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
     /* Handled by SAACF */
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *SCSprf_lege( node *arg_node, info *arg_info)
- * If (X == Y), then TRUE.
- * Implements SCSprf_ge_SxS, SCSprf_ge_VxV, SCSprf_le_SxS, SCSprf_ge_VxV,
- *            SCSprf_eq_SxS, SCSprf_eq_VxV
- *
- *****************************************************************************/
-node *
-SCSprf_lege (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-
-    DBUG_ENTER ();
-    if (MatchPrfargs (arg_node)) {
-        res = SCSmakeTrue (PRF_ARG1 (arg_node));
-    }
     DBUG_RETURN (res);
 }
 
@@ -2046,7 +2360,7 @@ SCSprf_same_shape_AxA (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     arg1type = ID_NTYPE (PRF_ARG1 (arg_node));
     arg2type = ID_NTYPE (PRF_ARG2 (arg_node));
-    if (MatchPrfargs (arg_node) /* same_shape(X, X) */
+    if (isMatchPrfargs (arg_node, arg_info) /* same_shape(X, X) */
         || (TUshapeKnown (arg1type) && TUshapeKnown (arg2type)
             && TUeqShapes (arg1type, arg2type))) { /* AKS & shapes match */
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),

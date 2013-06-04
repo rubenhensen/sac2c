@@ -558,6 +558,9 @@ InvokeCFprfAndFlattenExtrema (node *arg_node, info *arg_info, travfun_p fn, node
  *   the args are only traversed in loop special functions to remove
  *   propagated constants from loop-dependent arguments.
  *
+ *   CF does NOT traverse wrapper functions, not the LOCALFUNS of
+ *   wrapper functions.
+ *
  *****************************************************************************/
 
 node *
@@ -568,7 +571,7 @@ CFfundef (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    if ((FUNDEF_BODY (arg_node) != NULL)) {
+    if ((FUNDEF_BODY (arg_node) != NULL) && (!FUNDEF_ISWRAPPERFUN (arg_node))) {
         old_fundef = INFO_FUNDEF (arg_info);
         old_topblock = INFO_TOPBLOCK (arg_info);
         old_vardecs = INFO_VARDECS (arg_info);
@@ -597,7 +600,10 @@ CFfundef (node *arg_node, info *arg_info)
     }
 
     FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
-    FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+
+    if (!FUNDEF_ISWRAPPERFUN (arg_node)) {
+        FUNDEF_LOCALFUNS (arg_node) = TRAVopt (FUNDEF_LOCALFUNS (arg_node), arg_info);
+    }
 
     DBUG_RETURN (arg_node);
 }
