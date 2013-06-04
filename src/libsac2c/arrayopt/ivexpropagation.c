@@ -536,8 +536,8 @@ makeNarray (node *extrema, ntype *typ, node *nar, node **vardecs, node **preassi
  * description: Set extremum from min/maxv if it is not NULL.
  *              If the snk is not NULL, free it first.
  *
- * @params:     snk: pointer to an N_avis
- *              minv/max: pointer to an N_avis or NULL.
+ * @params:     snk: an N_avis
+ *              minv/maxv: an N_avis or NULL.
  *
  * @result: If src is NULL, or if its ID)AVIS matches minv/maxv,
  *          Otherwise, the snk pointer, if non-NULL, is freed,
