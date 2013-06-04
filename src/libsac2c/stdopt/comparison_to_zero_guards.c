@@ -352,8 +352,10 @@ CTZGprf (node *arg_node, info *arg_info)
 {
     node *relop;
     node *relopavis;
+#ifdef DEADCODE
     node *passign;
     node *pavis;
+#endif // DEADCODE
 
     DBUG_ENTER ();
 
