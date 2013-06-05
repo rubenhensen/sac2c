@@ -792,6 +792,7 @@
           <node name="Cond" />
           <node name="Funcond" />
           <node name="While" />
+          <node name="Ids" />
         </travuser>
       </traversal> 
       <traversal id="IVEXC" name="Index Vector Extrema Cleanup" default="sons" include="ivexcleanup.h" >

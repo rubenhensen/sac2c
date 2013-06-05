@@ -677,6 +677,8 @@ AWLFIdetachNoteintersect (node *arg_node)
  * @result: The generated AVIS_MIN/MAX for the N_array, unless we can't
  *          generate one, in which case we return NULL.
  *
+ *          NB. results are DENORMALIZED.
+ *
  *****************************************************************************/
 node *
 GenerateFakeMinMaxForArray (node *ivavis, info *arg_info, bool emax)
@@ -708,7 +710,7 @@ GenerateFakeMinMaxForArray (node *ivavis, info *arg_info, bool emax)
             assgn = AVIS_SSAASSIGN (elavis);
 
             if (TYisAKV (AVIS_TYPE (elavis))) { /* constant */
-                exavis = ID_AVIS (elavis);
+                exavis = elavis;
             }
 
             if ((!emax) && IVEXPisAvisHasMin (elavis)) {
@@ -730,11 +732,13 @@ GenerateFakeMinMaxForArray (node *ivavis, info *arg_info, bool emax)
                 }
             }
 
+#ifdef NORMALIZED
             if (emax && (NULL != exavis)) {
                 /* Set ivmax = ivavis + 1 for elem */
                 exavis = IVEXPadjustExtremaBound (exavis, 1, &INFO_VARDECS (arg_info),
                                                   &INFO_PREASSIGNS (arg_info), "fakeex");
             }
+#endif // NORMALIZED
             exavis = badnews ? NULL : TBmakeId (exavis);
             exprs = TCappendExprs (exprs, TBmakeExprs (exavis, NULL));
         }
@@ -1944,12 +1948,13 @@ IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node 
  *
  *          This predicate is:
  *
- *            z = ( idxavisminbound1 >= bound1) && ( idxavismax <= bound2)
+ *            z = ( idxavismin >= bound1) && ( denorm( idxavismax) <= bound2)
  *
- * @params: idxmin: AVIS_MIN( consumerWL partition index vector)
- * @params: idxmax: AVIS_MAX( consumerWL partition index vector)
- * @params: bound1: N_avis of GENERATOR_BOUND1 of producerWL partition.
- * @params: bound2: N_avis of GENERATOR_BOUND2 of producerWL partition.
+ * @params: idxavismin: AVIS_MIN( consumerWL partn index vector)
+ * @params: idxavismax: DENORMALIZED! AVIS_MAX( consumerWL partn index vector)
+ * @params: bound1: N_avis of GENERATOR_BOUND1 of producerWL partn.
+ * @params: bound2: N_avis of GENERATOR_BOUND2 of
+ *                  producerWL pn.
  * @params: arg_info: your basic arg_info node
  *
  * @result: N_avis node of generated computation's boolean result.
@@ -2068,43 +2073,25 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
         kcon = COfreeConstant (kcon);
     } else {
         /* non-constant iv */
+
         if (PMmatchFlat (pat3, AVIS_MIN (ivavis))) {
+            // Normal AWLF
             ivmin = DUPdoDupTree (ivminmax);
         } else {
+            // Partial AVIS_MIN or naked consumer
             DBUG_PRINT ("Generating fake ivmin for ivavis=%s", AVIS_NAME (ivavis));
             ivmin = GenerateFakeMinMaxForArray (ivavis, arg_info, FALSE);
         }
 
         if (PMmatchFlat (pat3, AVIS_MAX (ivavis))) {
-            ivmax = DUPdoDupTree (ivminmax); /* normal AWLF */
+            // Normal AWLF
+            ivmax = DUPdoDupTree (ivminmax);
         } else {
+            // Partial AVIS_MIN or naked consumer
             DBUG_PRINT ("Generating fake N_array ivmax for ivavis=%s",
                         AVIS_NAME (ivavis));
             ivmax = GenerateFakeMinMaxForArray (ivavis, arg_info, TRUE);
         }
-
-#ifdef MAYBEDEADNOW
-        if (isNakedConsumer (arg_node, arg_info)) {
-            DBUG_PRINT ("Found naked consumerWL: %s",
-                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
-            ivmin = (NULL != ivmin) ? FREEdoFreeNode (ivmin) : NULL;
-            ivmax = (NULL != ivmax) ? FREEdoFreeNode (ivmax) : NULL;
-
-            tmp = TBmakeId (ivavis); /* Find the N_array */
-            if (PMmatchFlat (pat3, tmp)) {
-                ivmin = DUPdoDupTree (ivminmax);
-                /* Fake up ivmax = ivavis + 1 */
-                ivid = TBmakeId (
-                  IVEXPadjustExtremaBound (ID_AVIS (tmp), 1, &INFO_VARDECS (arg_info),
-                                           &INFO_PREASSIGNS (arg_info), "nakedcon"));
-                tmp = FREEdoFreeNode (tmp);
-
-                PMmatchFlat (pat3, ivid);
-                ivmax = ivminmax;
-                ivid = FREEdoFreeNode (ivid);
-            }
-        }
-#endif // MAYBEDEADNOW
     }
 
     pwlp = WITH_PART (INFO_PRODUCERWL (arg_info));
@@ -2134,7 +2121,9 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 
             avismax
               = IntersectBoundsBuilderOne (arg_node, arg_info, pwlp, 2, ivmin, ivmax);
-            /* avismin and avismax are now denormalized */
+            /* avismin and avismax are now denormalized, in case we have
+             * to swap them later.
+             */
 
             DBUG_ASSERT (NULL != avismax, "Expected non_NULL avismax");
 

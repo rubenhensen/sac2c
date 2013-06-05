@@ -23,12 +23,14 @@ extern node *IVEXPgenerateNarrayExtrema (node *arg_node, node **vardecs,
 extern bool IVEXPisAvisHasMin (node *avis);
 extern bool IVEXPisAvisHasMax (node *avis);
 extern bool IVEXPisAvisHasBothExtrema (node *avis);
+extern bool IVEXPisAllNarrayExtremaPresent (node *arg_node, int minmax);
 
 extern node *IVEXPmodule (node *arg_node, info *arg_info);
 extern node *IVEXPfundef (node *arg_node, info *arg_info);
 extern node *IVEXPassign (node *arg_node, info *arg_info);
 extern node *IVEXPlet (node *arg_node, info *arg_info);
 extern node *IVEXPwith (node *arg_node, info *arg_info);
+extern node *IVEXPids (node *arg_node, info *arg_info);
 extern node *IVEXPcond (node *arg_node, info *arg_info);
 extern node *IVEXPfuncond (node *arg_node, info *arg_info);
 extern node *IVEXPpart (node *arg_node, info *arg_info);

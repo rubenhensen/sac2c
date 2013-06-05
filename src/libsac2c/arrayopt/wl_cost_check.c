@@ -2,7 +2,7 @@
  *
  * @defgroup wlcc With Loop Cost Estimate
  *
- * @brief Computes a rough estimate of the per-element-computation
+ * @brief Computes a crude estimate of the per-element-computation
  *        cost of each with-loop partition.
  *
  *        Basically, we want to identify the set of producerWLs
@@ -194,6 +194,25 @@ WLCCwith (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *WLCCpart( node *arg_node, info *arg_info)
+ *
+ * @brief applies WLCC to an N_with
+ *
+ *****************************************************************************/
+node *
+WLCCpart (node *arg_node, info *arg_info)
+{
+    DBUG_ENTER ();
+
+    CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
+
+    CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *WLCCcode( node *arg_node, info *arg_info)
  *
  * @brief applies WLCC on a with code
@@ -208,9 +227,7 @@ WLCCcode (node *arg_node, info *arg_info)
         arg_node = TRAVcont (arg_node, arg_info);
     } else {
         INFO_CODE_COST (arg_info) = 0;
-        if (CODE_CBLOCK (arg_node) != NULL) {
-            CODE_CBLOCK (arg_node) = TRAVdo (CODE_CBLOCK (arg_node), arg_info);
-        }
+        CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
         /* FIXME wrong
         if( INFO_CODE_COST( arg_info) > WITH_COST( INFO_WITH( arg_info))) {
@@ -218,9 +235,7 @@ WLCCcode (node *arg_node, info *arg_info)
         }
         */
 
-        if (CODE_NEXT (arg_node) != NULL) {
-            CODE_NEXT (arg_node) = TRAVdo (CODE_NEXT (arg_node), arg_info);
-        }
+        CODE_NEXT (arg_node) = TRAVopt (CODE_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
