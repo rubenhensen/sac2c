@@ -848,7 +848,7 @@ GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
     pat = PMarray (1, PMAgetNode (&narr), 1, PMskip (0));
     if ((PMmatchFlat (pat, ivid))) {
         aelems = ARRAY_AELEMS (narr);
-        while (NULL != aelems) {
+        while ((NULL != aelems) && !badnews) {
             exavis = NULL;
             elem = EXPRS_EXPR (aelems);
             aelems = EXPRS_NEXT (aelems);
@@ -884,20 +884,20 @@ GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
                 badnews = TRUE;
                 exavis = NULL;
             }
+            if (!badnews) {
+                exprs = TCappendExprs (exprs, TBmakeExprs (TBmakeId (exavis), NULL));
+            }
         }
-
-        exavis = badnews ? NULL : TBmakeId (exavis);
-        exprs = TCappendExprs (exprs, TBmakeExprs (exavis, NULL));
     }
 
-    if (!badnews) {
+    if (badnews) {
+        exprs = FREEdoFreeTree (exprs);
+        DBUG_PRINT ("Could not build fake extrema for %s", AVIS_NAME (ivavis));
+    } else {
         newarr = DUPdoDupTree (narr);
         ARRAY_AELEMS (newarr) = FREEdoFreeTree (ARRAY_AELEMS (newarr));
         ARRAY_AELEMS (newarr) = exprs;
         DBUG_PRINT ("Built fake extrema for %s", AVIS_NAME (ivavis));
-    } else {
-        exprs = FREEdoFreeTree (exprs);
-        DBUG_PRINT ("Could not build fake extrema for %s", AVIS_NAME (ivavis));
     }
 
     pat = PMfree (pat);
