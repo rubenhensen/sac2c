@@ -663,115 +663,69 @@ AWLFIdetachNoteintersect (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn node *GenerateFakeMinMaxForArray( node *ivavis, info *arg_info, bool emax)
+ * @fn node *FakeUpConstantExtremum( node *elem, info *arg_info, int emax)
  *
- * @brief: Fake up AVIS_MIN/MAX N_array for naked consumer and for
- *         non-in-block elements of other consumers.
+ * @brief: If elem is a constant (AKV), generate the appropriate
+ *         constant extremum for it. Else NULL.
  *
- *         We do not alter the AVIS_MIN/MAX values of ivavis or its
- *         N_array elements.
+ * @param: elem: the avis for an index vector or index scalar.
+ *               or an N_num.
  *
- * @param: ivavis: an N_avis for an N_array, iv from _sel_VxA_( iv, PWL)
- *         emax: TRUE for AVIS_MAX, FALSE for AVIS_MIN
+ * @result: an N_avis for AVIS_MIN or AVIS_MAX for the constant, or NULL
+ *          if elem is not constant.
  *
- * @result: The generated AVIS_MIN/MAX for the N_array, unless we can't
- *          generate one, in which case we return NULL.
- *
- *          NB. results are DENORMALIZED.
+ *          AVIS_MAX is denormalized here, which makes life easier, as
+ *          we can return same value for min and max.
  *
  *****************************************************************************/
-node *
-GenerateFakeMinMaxForArray (node *ivavis, info *arg_info, bool emax)
+static node *
+FakeUpConstantExtremum (node *elem, info *arg_info, int emax)
 {
-    node *elem;
-    node *aelems;
-    node *narr = NULL;
-    pattern *pat;
-    node *ivid = NULL;
-    node *elavis;
-    node *chn;
-    node *assgn;
-    node *exprs = NULL;
-    node *exavis = NULL;
-    bool badnews = FALSE;
-    node *newarr = NULL;
+    constant *elminco = NULL;
+    node *elavis = NULL;
+    node *el;
 
     DBUG_ENTER ();
 
-    ivid = TBmakeId (ivavis);
-    pat = PMarray (1, PMAgetNode (&narr), 1, PMskip (0));
-    if ((NULL != INFO_CONSUMERWLPART (arg_info)) && (PMmatchFlat (pat, ivid))) {
-        aelems = ARRAY_AELEMS (narr);
-        chn = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (INFO_CONSUMERWLPART (arg_info))));
-        while (NULL != aelems) {
-            elem = EXPRS_EXPR (aelems);
-            aelems = EXPRS_NEXT (aelems);
-            elavis = ID_AVIS (elem);
-            assgn = AVIS_SSAASSIGN (elavis);
+    elminco = COaST2Constant (elem);
+    if (NULL != elminco) {
+        el = COconstant2AST (elminco);
+        elminco = COfreeConstant (elminco);
 
-            if (TYisAKV (AVIS_TYPE (elavis))) { /* constant */
-                exavis = elavis;
-            }
+#ifdef DEADCODE
+        constant *elmaxco = NULL;
+        constant *kcon = NULL;
 
-            if ((!emax) && IVEXPisAvisHasMin (elavis)) {
-                exavis = ID_AVIS (AVIS_MIN (elavis)); /* copy extant min */
-            }
-
-            if ((emax) && IVEXPisAvisHasMax (elavis)) {
-                exavis = ID_AVIS (AVIS_MAX (elavis)); /* copy extant max */
-            }
-
-            if (NULL == exavis) {
-                if (-1 == TULSsearchAssignChainForAssign (chn, assgn)) {
-                    exavis = elavis; /* Not defined in this block. */
-                } else {             /* Defined in this block, but
-                                      * no min/max yet. Try again later.
-                                      */
-                    badnews = TRUE;
-                    exavis = NULL;
-                }
-            }
-
-#ifdef NORMALIZED
-            if (emax && (NULL != exavis)) {
-                /* Set ivmax = ivavis + 1 for elem */
-                exavis = IVEXPadjustExtremaBound (exavis, 1, &INFO_VARDECS (arg_info),
-                                                  &INFO_PREASSIGNS (arg_info), "fakeex");
-            }
-#endif // NORMALIZED
-            exavis = badnews ? NULL : TBmakeId (exavis);
-            exprs = TCappendExprs (exprs, TBmakeExprs (exavis, NULL));
-        }
-
-        if (!badnews) {
-            newarr = DUPdoDupTree (narr);
-            ARRAY_AELEMS (newarr) = FREEdoFreeTree (ARRAY_AELEMS (newarr));
-            ARRAY_AELEMS (newarr) = exprs;
-            DBUG_PRINT ("Built fake extrema for %s", AVIS_NAME (ivavis));
+        if (emax) {
+            kcon = COmakeConstantFromInt (1);
+            elmaxco = COadd (elminco, kcon, NULL);
+            el = COconstant2AST (elmaxco);
+            elmaxco = COfreeConstant (elmaxco);
+            kcon = COfreeConstant (kcon);
         } else {
-            exprs = FREEdoFreeTree (exprs);
-            DBUG_PRINT ("Could not build fake extrema for %s", AVIS_NAME (ivavis));
+            el = COconstant2AST (elminco);
         }
+        elminco = COfreeConstant (elminco);
+#endif // DEADCODE
+
+        elavis = FLATGexpression2Avis (el, &INFO_VARDECS (arg_info),
+                                       &INFO_PREASSIGNS (arg_info), NULL);
     }
 
-    pat = PMfree (pat);
-    ivid = FREEdoFreeNode (ivid);
-
-    DBUG_RETURN (newarr);
+    DBUG_RETURN (elavis);
 }
 
-#ifdef MAYBEDEADNOW
 /** <!--********************************************************************-->
  *
- * @fn bool isNakedConsumer( node *arg_node, info *arg_info)
+ * @fn bool isDefinedInThisBlock( node *avis, info *arg_info)
  *
- * @brief: Predicate for checking that consumer sel() is a naked consumer.
+ * @brief: Predicate for checking that iv in sel( iv, PWL)
+ *         is defined in this block.
  *
+ * @param: avis: an N_avis
  * @param: arg_info: as usual
  *
- * @result: TRUE if consumer sel( iv, M) is at same level as PWL,
- *          and iv is constant.
- *          i.e., is a naked consumer.
+ * @result: TRUE if iv is defined in this block.
  *
  * @note: The requirement for constant iv means that
  *        a code sequence such as:
@@ -782,36 +736,175 @@ GenerateFakeMinMaxForArray (node *ivavis, info *arg_info, bool emax)
  *        will not be folded. I don't know a safe way to handle this,
  *        because in the more general case (e.g., iv is loop-carried
  *        in a FOR-loop), iv may vary in value,
- *        and in the absence of extrema, we will not be able to
- *        correctly determine the intersection(s) of iv with PWL.
+ *        and the extrema on iv, if this sequence is in another WL,
+ *        are not suitable for AWLF.
+ *
  *        See Bug #11067.
  *
- *        2013-05-30. Trying to lift AKV restriction by faking
- *        extrema of iv, iv+1.
+ *        TRUE here indicates a case of naked-consumer AWLF.
+ *
  *
  *****************************************************************************/
 static bool
-isNakedConsumer (node *arg_node, info *arg_info)
+isDefinedInThisBlock (node *avis, info *arg_info)
 {
     bool z;
-    char *cwlnm;
 
     DBUG_ENTER ();
 
-    cwlnm = (NULL != INFO_CONSUMERWLIDS (arg_info))
-              ? AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info)))
-              : "(naked consumer)";
-
-    z = INFO_LEVEL (arg_info) == AVIS_DEFDEPTH (ID_AVIS (INFO_PRODUCERWLLHS (arg_info)));
+    z = INFO_LEVEL (arg_info) == AVIS_DEFDEPTH (avis);
 
     if (z) {
-        DBUG_PRINT ("CWL %s is naked consumer of PWL %s", cwlnm,
-                    AVIS_NAME (ID_AVIS (INFO_PRODUCERWLLHS (arg_info))));
+        DBUG_PRINT ("%s is defined in this block", AVIS_NAME (avis));
+    } else {
+        DBUG_PRINT ("%s is not defined in this block", AVIS_NAME (avis));
     }
 
     DBUG_RETURN (z);
 }
-#endif // MAYBEDEADNOW
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool isDefinedInNextOuterBlock( node *avis, info *arg_info)
+ *
+ * @brief: Predicate for checking that iv in sel( iv, PWL)
+ *         is defined in the block just outside this one.
+ *         This is for standard AWLF, e.g.:
+ *
+ *          PWL = with(...);                LEVEL n
+ *          CWL = with( ...)
+ *               el .= sel( iv, PWL);       LEVEL n+1
+ *               ...
+ *
+ *
+ * @param: avis: an N_avis
+ * @param: arg_info: as usual
+ *
+ * @result: TRUE if iv is defined in this block.
+ *
+ *****************************************************************************/
+static bool
+isDefinedInNextOuterBlock (node *avis, info *arg_info)
+{
+    bool z;
+
+    DBUG_ENTER ();
+
+    z = (1 + INFO_LEVEL (arg_info)) == AVIS_DEFDEPTH (avis);
+
+    if (z) {
+        DBUG_PRINT ("%s is defined in next-outer block", AVIS_NAME (avis));
+    } else {
+        DBUG_PRINT ("%s is not defined in next-outer block", AVIS_NAME (avis));
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *GenerateeMinMaxForArray( node *ivavis, info *arg_info, bool emax)
+ *
+ * @brief: Fake up AVIS_MIN/MAX N_array for naked consumer and for
+ *         non-in-block elements of other consumers.
+ *
+ *         We do NOT alter the AVIS_MIN/MAX values of ivavis or its
+ *         N_array elements, as they may be used later.
+ *
+ *         Extrema for each element, elem, are built as follows:
+ *           - constants: faked, as elem and elem+1
+ *           - non-constants, not defined in block: elem and elem+1
+ *           - defined-in-block with extrema: extrema are used directly
+ *           - defined-in-block, with missing extrema: elem and/or elem+1
+ *
+ * @param: ivavis: an N_avis for an N_array, iv from _sel_VxA_( iv, PWL)
+ *         emax: TRUE for AVIS_MAX, FALSE for AVIS_MIN
+ *
+ * @result: The generated AVIS_MIN/MAX for the N_array, unless we can't
+ *          generate one, in which case we return NULL.
+ *
+ *          NB. results are DENORMALIZED.
+ *
+ *
+ *
+ *****************************************************************************/
+node *
+GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
+{
+    node *elem;
+    node *aelems;
+    node *narr = NULL;
+    pattern *pat;
+    node *ivid = NULL;
+    node *exprs = NULL;
+    node *exavis = NULL;
+    bool badnews = FALSE;
+    node *newarr = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (NULL != ivavis, "Must have non-NULL ivavis");
+    ivid = TBmakeId (ivavis);
+    pat = PMarray (1, PMAgetNode (&narr), 1, PMskip (0));
+    if ((PMmatchFlat (pat, ivid))) {
+        aelems = ARRAY_AELEMS (narr);
+        while (NULL != aelems) {
+            exavis = NULL;
+            elem = EXPRS_EXPR (aelems);
+            aelems = EXPRS_NEXT (aelems);
+
+            /* If constant element, fake up extrema for it */
+            exavis = FakeUpConstantExtremum (elem, arg_info, emax);
+
+            /* Non-constant, defined in this block, & extremum present: normal AWLF */
+            if ((NULL == exavis) && (isDefinedInThisBlock (ID_AVIS (elem), arg_info))
+                && (!emax) && (IVEXPisAvisHasMin (ID_AVIS (elem)))) {
+                exavis = ID_AVIS (AVIS_MIN (ID_AVIS (elem)));
+            }
+
+            if ((NULL == exavis) && (isDefinedInThisBlock (ID_AVIS (elem), arg_info))
+                && (emax) && (IVEXPisAvisHasMax (ID_AVIS (elem)))) {
+                /* Copy max and denormalize */
+                exavis = ID_AVIS (AVIS_MAX (ID_AVIS (elem)));
+                exavis
+                  = IVEXPadjustExtremaBound (exavis, -1, &INFO_VARDECS (arg_info),
+                                             &INFO_PREASSIGNS (arg_info), "genminmax");
+            }
+
+            /* Non-constant, defined in other block. Fake up value.
+             * Same for min or max, because we are denormalized here. */
+            if ((NULL == exavis) && (!isDefinedInThisBlock (ID_AVIS (elem), arg_info))) {
+                exavis = ID_AVIS (elem); /* Not defined in this block. */
+            }
+
+            if (NULL == exavis) {
+                /* Defined in this block, but
+                 * no extrema yet. Try again later.
+                 */
+                badnews = TRUE;
+                exavis = NULL;
+            }
+        }
+
+        exavis = badnews ? NULL : TBmakeId (exavis);
+        exprs = TCappendExprs (exprs, TBmakeExprs (exavis, NULL));
+    }
+
+    if (!badnews) {
+        newarr = DUPdoDupTree (narr);
+        ARRAY_AELEMS (newarr) = FREEdoFreeTree (ARRAY_AELEMS (newarr));
+        ARRAY_AELEMS (newarr) = exprs;
+        DBUG_PRINT ("Built fake extrema for %s", AVIS_NAME (ivavis));
+    } else {
+        exprs = FREEdoFreeTree (exprs);
+        DBUG_PRINT ("Could not build fake extrema for %s", AVIS_NAME (ivavis));
+    }
+
+    pat = PMfree (pat);
+    ivid = FREEdoFreeNode (ivid);
+
+    DBUG_RETURN (newarr);
+}
 
 /** <!--********************************************************************-->
  *
@@ -2048,9 +2141,6 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     pattern *pat3;
     node *ivmin = NULL;
     node *ivmax = NULL;
-    constant *ivminco;
-    constant *ivmaxco;
-    constant *kcon;
     node *ivminmax = NULL;
     char *cwlnm;
 
@@ -2060,39 +2150,8 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
     pat2 = PMarray (1, PMAgetNode (&gen2), 0);
     pat3 = PMarray (1, PMAgetNode (&ivminmax), 0);
 
-    /* Handle constant iv: make N_array nodes */
-    DBUG_ASSERT (NULL != ivavis, "Should always have non-NULL ivavis");
-    if (TYisAKV (AVIS_TYPE (ivavis))) {
-        ivminco = COaST2Constant (ivavis);
-        ivmin = COconstant2AST (ivminco);
-
-        kcon = COmakeConstantFromInt (1);
-        ivmaxco = COadd (ivminco, kcon, NULL);
-        ivmax = COconstant2AST (ivmaxco);
-        ivmaxco = COfreeConstant (ivmaxco);
-        kcon = COfreeConstant (kcon);
-    } else {
-        /* non-constant iv */
-
-        if (PMmatchFlat (pat3, AVIS_MIN (ivavis))) {
-            // Normal AWLF
-            ivmin = DUPdoDupTree (ivminmax);
-        } else {
-            // Partial AVIS_MIN or naked consumer
-            DBUG_PRINT ("Generating fake ivmin for ivavis=%s", AVIS_NAME (ivavis));
-            ivmin = GenerateFakeMinMaxForArray (ivavis, arg_info, FALSE);
-        }
-
-        if (PMmatchFlat (pat3, AVIS_MAX (ivavis))) {
-            // Normal AWLF
-            ivmax = DUPdoDupTree (ivminmax);
-        } else {
-            // Partial AVIS_MIN or naked consumer
-            DBUG_PRINT ("Generating fake N_array ivmax for ivavis=%s",
-                        AVIS_NAME (ivavis));
-            ivmax = GenerateFakeMinMaxForArray (ivavis, arg_info, TRUE);
-        }
-    }
+    ivmin = GenerateMinMaxForArray (ivavis, arg_info, FALSE);
+    ivmax = GenerateMinMaxForArray (ivavis, arg_info, TRUE);
 
     pwlp = WITH_PART (INFO_PRODUCERWL (arg_info));
 
