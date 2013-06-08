@@ -21,7 +21,6 @@ extern node *AWLFcode (node *arg_node, info *arg_info);
 extern node *AWLFcond (node *arg_node, info *arg_info);
 extern node *AWLFfuncond (node *arg_node, info *arg_info);
 extern node *AWLFwhile (node *arg_node, info *arg_info);
-extern node *AWLFids (node *arg_node, info *arg_info);
 extern node *AWLFprf (node *arg_node, info *arg_info);
 
 #endif /* _SAC_ALGEBRAIC_WLF_H_ */

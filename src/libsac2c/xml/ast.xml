@@ -782,6 +782,18 @@
           <node name="Ap" />
         </travuser>
       </traversal> 
+      <traversal id="SWLD" name="Set Withloop Depth" default="sons" include="set_withloop_depth.h" >
+        <travuser>
+          <node name="Fundef" />
+          <node name="Assign" />
+          <node name="With" />
+          <node name="Part" />
+          <node name="Withid" />
+          <node name="Ids" />
+          <node name="Vardec" />
+          <node name="Arg" />
+        </travuser>
+      </traversal> 
       <traversal id="IVEXP" name="Index Variable Extrema Propagation" default="sons" include="ivexpropagation.h" >
         <travuser>
           <node name="Fundef" />
@@ -792,7 +804,6 @@
           <node name="Cond" />
           <node name="Funcond" />
           <node name="While" />
-          <node name="Ids" />
         </travuser>
       </traversal> 
       <traversal id="IVEXC" name="Index Vector Extrema Cleanup" default="sons" include="ivexcleanup.h" >
@@ -2276,7 +2287,6 @@
         <node name="With"    />
         <node name="Modarray"    />
         <node name="Part"    />
-        <node name="Ids"     />
         <node name="Prf"     />
      </travuser>
    </traversal>
@@ -2297,7 +2307,6 @@
         <node name="With"    />
         <node name="Code"    />
         <node name="Part"    />
-        <node name="Ids"     />
         <node name="Prf"     />
      </travuser>
    </traversal>

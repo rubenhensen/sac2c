@@ -42,7 +42,6 @@ extern node *AWLFIpart (node *arg_node, info *arg_info);
 extern node *AWLFIcode (node *arg_node, info *arg_info);
 extern node *AWLFImodarray (node *arg_node, info *arg_info);
 extern node *AWLFIgenerator (node *arg_node, info *arg_info);
-extern node *AWLFIids (node *arg_node, info *arg_info);
 extern node *AWLFIprf (node *arg_node, info *arg_info);
 
 /* expressions per partition are: bound1, bound2, intlo, inthi, intNull,

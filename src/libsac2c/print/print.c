@@ -1040,6 +1040,8 @@ PRTids (node *arg_node, info *arg_info)
         fprintf (global.outfile, "%s", IDS_NAME (arg_node));
 
         if (global.print.avis) {
+            fprintf (global.outfile, " /* DEFDEPTH=%d */ ",
+                     AVIS_DEFDEPTH (IDS_AVIS (arg_node)));
             if (IDS_AVIS (arg_node) != NULL) {
                 fprintf (global.outfile, "/* avis: %p */", (void *)IDS_AVIS (arg_node));
             }
@@ -5660,6 +5662,9 @@ PRTavis (node *arg_node, info *arg_info)
         }
 
         fprintf (global.outfile, " SSAASSIGN = %p ", (void *)AVIS_SSAASSIGN (arg_node));
+
+        fprintf (global.outfile, " /* DEFDEPTH = %d */ ", AVIS_DEFDEPTH (arg_node));
+
         fprintf (global.outfile, " */ ");
     }
 

@@ -542,8 +542,8 @@ CYCLEPHASEFUN (cse2, "Eliminating common subexpressions",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
 
 CYCLEPHASEFUN (cubsl, "Slicing algebraically foldable with-loops",
-               CUBSLdoAlgebraicWithLoopFoldingCubeSlicing, global.optimize.doawlf, opt,
-               saacyc)
+               CUBSLdoAlgebraicWithLoopFoldingCubeSlicing,
+               global.optimize.doawlf &&global.optimize.docubsl, opt, saacyc)
 
 CYCLEPHASEFUN (awlf, "Applying algebraic with-loop folding",
                AWLFdoAlgebraicWithLoopFolding, global.optimize.doawlf, opt, saacyc)

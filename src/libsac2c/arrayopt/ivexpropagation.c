@@ -79,6 +79,7 @@
 #include "symbolic_constant_simplification.h"
 #include "constant_folding.h"
 #include "algebraic_wlfi.h"
+#include "set_withloop_depth.h"
 
 #include "string.h" /* BobboBreaker */
 
@@ -98,7 +99,7 @@ struct INFO {
     node *curwith;
     node *let;
     node *withidids;
-    int level;
+    int defdepth;
 };
 
 /**
@@ -113,7 +114,7 @@ struct INFO {
 #define INFO_CURWITH(n) ((n)->curwith)
 #define INFO_LET(n) ((n)->let)
 #define INFO_WITHIDIDS(n) ((n)->withidids)
-#define INFO_LEVEL(n) ((n)->level)
+#define INFO_DEFDEPTH(n) ((n)->defdepth)
 
 static info *
 MakeInfo (void)
@@ -133,7 +134,7 @@ MakeInfo (void)
     INFO_CURWITH (result) = NULL;
     INFO_LET (result) = NULL;
     INFO_WITHIDIDS (result) = NULL;
-    INFO_LEVEL (result) = 0;
+    INFO_DEFDEPTH (result) = 0;
 
     DBUG_RETURN (result);
 }
@@ -489,30 +490,6 @@ IVEXPisAvisHasBothExtrema (node *avis)
 
     DBUG_ENTER ();
     z = IVEXPisAvisHasMin (avis) && IVEXPisAvisHasMax (avis);
-    DBUG_RETURN (z);
-}
-
-/******************************************************************************
- *
- * @fn: bool DefinedInBlock( node *arg_node, info *arg_info)
- *
- * description: Predicate to determine if arg_node is local to this block.
- *
- * @params  arg_node: an N_avis node.
- * @param   level: INFO_LEVEL( arg_info) - the nesting depth of the current WL.
- * @result: True if the arg_node is at the same WL nesting depth as
- *          the current WL and, hence, must be defined within this WL.
- *
- ******************************************************************************/
-bool
-DefinedInBlock (node *arg_node, info *arg_info)
-{
-    bool z;
-
-    DBUG_ENTER ();
-
-    z = AVIS_DEFDEPTH (arg_node) == INFO_LEVEL (arg_info);
-
     DBUG_RETURN (z);
 }
 
@@ -965,7 +942,8 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
         /* non-scalar argument */
         nsa = arg2scalar ? PRF_ARG1 (rhs) : PRF_ARG2 (rhs);
 
-        if ((!IVEXPisAvisHasMin (lhsavis)) && (DefinedInBlock (arg1avis, arg_info))) {
+        if ((!IVEXPisAvisHasMin (lhsavis))
+            && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))) {
             /* Create zero minimum */
             zr = SCSmakeZero (nsa);
             if (NULL != zr) { // nsa may not be AKS
@@ -977,7 +955,8 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
             }
         }
 
-        if ((!IVEXPisAvisHasMax (lhsavis)) && (DefinedInBlock (arg1avis, arg_info))) {
+        if ((!IVEXPisAvisHasMax (lhsavis))
+            && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))) {
             /* Create maximum from PRF_ARG2, unless it is scalar and
              * PRF_ARG1 is vector. We cheat here a bit because
              * we want the maximum to be PRF_ARG2-1, but we have to
@@ -1107,11 +1086,15 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
     /* Slight dance to circumvent bug #693, in which DL generates
      * PRF_ARGs with N_num nodes.
      */
-    min1 = IVEXPisAvisHasMin (arg1avis) && DefinedInBlock (arg1avis, arg_info);
-    max1 = IVEXPisAvisHasMax (arg1avis) && DefinedInBlock (arg1avis, arg_info);
+    min1 = IVEXPisAvisHasMin (arg1avis)
+           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
+    max1 = IVEXPisAvisHasMax (arg1avis)
+           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
 
-    min2 = IVEXPisAvisHasMin (arg2avis) && DefinedInBlock (arg2avis, arg_info);
-    max2 = IVEXPisAvisHasMax (arg2avis) && DefinedInBlock (arg2avis, arg_info);
+    min2 = IVEXPisAvisHasMin (arg2avis)
+           && SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info));
+    max2 = IVEXPisAvisHasMax (arg2avis)
+           && SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info));
 
     parentarg = AWLFIfindPrfParent2 (rhs, INFO_WITHIDIDS (arg_info), &wid);
     switch (parentarg) {
@@ -1246,11 +1229,15 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
      * unflattened PRF_ARGs with N_num nodes.
      */
 
-    min1 = IVEXPisAvisHasMin (arg1avis) && DefinedInBlock (arg1avis, arg_info);
-    max1 = IVEXPisAvisHasMax (arg1avis) && DefinedInBlock (arg1avis, arg_info);
+    min1 = IVEXPisAvisHasMin (arg1avis)
+           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
+    max1 = IVEXPisAvisHasMax (arg1avis)
+           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
 
-    min2 = IVEXPisAvisHasMin (arg2avis) && DefinedInBlock (arg2avis, arg_info);
-    max2 = IVEXPisAvisHasMax (arg2avis) && DefinedInBlock (arg2avis, arg_info);
+    min2 = IVEXPisAvisHasMin (arg2avis)
+           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
+    max2 = IVEXPisAvisHasMax (arg2avis)
+           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
 
     parentarg = AWLFIfindPrfParent2 (rhs, INFO_WITHIDIDS (arg_info), &wid);
     switch (parentarg) {
@@ -1385,11 +1372,15 @@ GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
      * unflattened PRF_ARGs with N_num nodes.
      */
 
-    min1 = IVEXPisAvisHasMin (arg1avis) && DefinedInBlock (arg1avis, arg_info);
-    max1 = IVEXPisAvisHasMax (arg1avis) && DefinedInBlock (arg1avis, arg_info);
+    min1 = IVEXPisAvisHasMin (arg1avis)
+           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
+    max1 = IVEXPisAvisHasMax (arg1avis)
+           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
 
-    min2 = IVEXPisAvisHasMin (arg2avis) && DefinedInBlock (arg2avis, arg_info);
-    max2 = IVEXPisAvisHasMax (arg2avis) && DefinedInBlock (arg2avis, arg_info);
+    min2 = IVEXPisAvisHasMin (arg2avis)
+           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
+    max2 = IVEXPisAvisHasMax (arg2avis)
+           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
 
     parentarg = AWLFIfindPrfParent2 (rhs, INFO_WITHIDIDS (arg_info), &wid);
     switch (parentarg) {
@@ -1541,10 +1532,11 @@ GenerateExtremaForMin (node *lhsavis, node *rhs, info *arg_info)
     arg1avis = ID_AVIS (PRF_ARG1 (rhs));
     arg2avis = ID_AVIS (PRF_ARG2 (rhs));
 
-    if ((!IVEXPisAvisHasMax (lhsavis)) && (DefinedInBlock (arg1avis, arg_info))
-        && (DefinedInBlock (arg2avis, arg_info))) {
+    if ((!IVEXPisAvisHasMax (lhsavis))
+        && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))
+        && (SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info)))) {
 
-        c1 = COisConstant (PRF_ARG1 (rhs)); // Could use TYisAKV here,
+        c1 = COisConstant (PRF_ARG1 (rhs)); // Could use TYisAKV here,)
         c2 = COisConstant (PRF_ARG2 (rhs)); // if flatness guaranteed.
         e1 = NULL != AVIS_MAX (arg1avis);
         e2 = NULL != AVIS_MAX (arg2avis);
@@ -1619,8 +1611,9 @@ GenerateExtremaForMax (node *lhsavis, node *rhs, info *arg_info)
     arg1avis = ID_AVIS (PRF_ARG1 (rhs));
     arg2avis = ID_AVIS (PRF_ARG1 (rhs));
 
-    if ((!IVEXPisAvisHasMin (lhsavis)) && (DefinedInBlock (arg1avis, arg_info))
-        && (DefinedInBlock (arg2avis, arg_info))) {
+    if ((!IVEXPisAvisHasMin (lhsavis))
+        && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))
+        && (SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info)))) {
 
         c1 = COisConstant (PRF_ARG1 (rhs)); // Could use TYisAKV here,
         c2 = COisConstant (PRF_ARG2 (rhs)); // if flatness guaranteed.
@@ -1824,7 +1817,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_non_neg_val_S:
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
                 if ((!IVEXPisAvisHasMin (lhsavis))
-                    && (DefinedInBlock (arg1avis, arg_info))
+                    && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))
                     && (TYisAKV (AVIS_TYPE (arg1avis))
                         || TYisAKS (AVIS_TYPE (arg1avis)))) {
                     /* Create zero minimum */
@@ -1843,8 +1836,8 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
                 arg2avis = ID_AVIS (PRF_ARG2 (rhs));
                 if ((!IVEXPisAvisHasMax (lhsavis))
-                    && (DefinedInBlock (arg1avis, arg_info))
-                    && (DefinedInBlock (arg2avis, arg_info))
+                    && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))
+                    && (SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info)))
                     && (TYisAKV (AVIS_TYPE (arg1avis))
                         || TYisAKS (AVIS_TYPE (arg1avis)))) {
                     /* Create maximum as normalize( PRF_ARG2) */
@@ -1859,8 +1852,8 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
                 arg2avis = ID_AVIS (PRF_ARG2 (rhs));
                 if ((!IVEXPisAvisHasMax (lhsavis))
-                    && (DefinedInBlock (arg1avis, arg_info))
-                    && (DefinedInBlock (arg2avis, arg_info))
+                    && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))
+                    && (SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info)))
                     && (TYisAKV (AVIS_TYPE (arg1avis))
                         || TYisAKS (AVIS_TYPE (arg1avis)))) {
                     /* Create maximum as PRF_ARG2 */
@@ -1872,8 +1865,8 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_abs_S: /* AVIS_MIN is now zero */
             case F_abs_V: /* AVIS_MIN is now zero */
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
-                if (!IVEXPisAvisHasMin (lhsavis)
-                    && (DefinedInBlock (arg1avis, arg_info))) {
+                if ((!IVEXPisAvisHasMin (lhsavis))
+                    && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))) {
                     minv = SCSmakeZero (PRF_ARG1 (rhs));
                     minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
                                                  &INFO_PREASSIGNS (arg_info),
@@ -1901,7 +1894,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                 /* Min becomes max and vice versa */
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
                 if ((!IVEXPisAvisHasMax (lhsavis))
-                    && (DefinedInBlock (arg1avis, arg_info))
+                    && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))
                     && (IVEXPisAvisHasMin (arg1avis))) {
                     minv = InvokeMonadicFn (ID_AVIS (AVIS_MIN (arg1avis)), lhsavis, rhs,
                                             arg_info);
@@ -1911,7 +1904,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                 }
 
                 if ((!IVEXPisAvisHasMin (lhsavis))
-                    && (DefinedInBlock (arg1avis, arg_info))
+                    && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))
                     && (IVEXPisAvisHasMax (arg1avis))) {
                     /* Instead of generating (-(AVIS_MAX(arg1avis)-1)),
                      * we generate           (1-AVIS_MAX(arg1avis)).
@@ -1980,7 +1973,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                 arg1avis = ID_AVIS (PRF_ARG1 (rhs));
                 arg2avis = ID_AVIS (PRF_ARG2 (rhs));
                 if ((!IVEXPisAvisHasMin (lhsavis)) && (IVEXPisAvisHasMin (arg2avis))
-                    && (DefinedInBlock (arg2avis, arg_info))
+                    && (SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info)))
                     && (COisConstant (PRF_ARG1 (rhs)))) {
                     /* select from AVIS_MIN */
                     minv = DUPdoDupNode (rhs);
@@ -1997,7 +1990,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
 
                 if ((!IVEXPisAvisHasMax (lhsavis)) && (!AVIS_ISMAXHANDLED (lhsavis))
                     && (IVEXPisAvisHasMax (arg2avis))
-                    && (DefinedInBlock (arg2avis, arg_info))
+                    && (SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info)))
                     && (COisConstant (PRF_ARG1 (rhs)))) {
                     /* select from AVIS_MAX */
                     maxv = DUPdoDupNode (rhs);
@@ -2400,9 +2393,11 @@ IVEXPlet (node *arg_node, info *arg_info)
     lhsavis = IDS_AVIS (LET_IDS (arg_node));
 
     lhsname = AVIS_NAME (lhsavis); /* Handy for ddd condition-setting */
+
 #ifdef VERBOSE
     DBUG_PRINT ("Looking at %s", AVIS_NAME (lhsavis));
 #endif // VERBOSE
+
     typ = AVIS_TYPE (lhsavis);
     if ((!TYisAKV (typ)) && (TUisIntScalar (typ) || TUisIntVect (typ))) {
 
@@ -2432,19 +2427,19 @@ node *
 IVEXPwith (node *arg_node, info *arg_info)
 {
     node *oldwith;
-    int oldlevel;
+    int olddepth;
 
     DBUG_ENTER ();
 
     oldwith = INFO_CURWITH (arg_info);
-    oldlevel = INFO_LEVEL (arg_info);
+    olddepth = INFO_DEFDEPTH (arg_info);
     INFO_CURWITH (arg_info) = arg_node;
-    INFO_LEVEL (arg_info) = INFO_LEVEL (arg_info) + 1;
+    INFO_DEFDEPTH (arg_info) = INFO_DEFDEPTH (arg_info) + 1;
 
     WITH_PART (arg_node) = TRAVdo (WITH_PART (arg_node), arg_info);
 
     INFO_CURWITH (arg_info) = oldwith;
-    INFO_LEVEL (arg_info) = oldlevel;
+    INFO_DEFDEPTH (arg_info) = olddepth;
 
     DBUG_RETURN (arg_node);
 }
@@ -2495,29 +2490,6 @@ IVEXPcond (node *arg_node, info *arg_info)
     COND_COND (arg_node) = TRAVdo (COND_COND (arg_node), arg_info);
     COND_THEN (arg_node) = TRAVopt (COND_THEN (arg_node), arg_info);
     COND_ELSE (arg_node) = TRAVopt (COND_ELSE (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-
-/******************************************************************************
- *
- * function:
- *   node *IVEXPids( node *arg_node, info *arg_info)
- *
- * description: Mark each ids nodes with its depth
- *
- ******************************************************************************/
-node *
-IVEXPids (node *arg_node, info *arg_info)
-{
-
-    DBUG_ENTER ();
-
-    AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_LEVEL (arg_info);
-    DBUG_PRINT ("%s is defined at DEFDEPTH %d", AVIS_NAME (IDS_AVIS (arg_node)),
-                AVIS_DEFDEPTH (IDS_AVIS (arg_node)));
-
-    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -2581,7 +2553,9 @@ IVEXPfundef (node *arg_node, info *arg_info)
                 (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                 FUNDEF_NAME (arg_node));
 
-    DBUG_ASSERT (INFO_VARDECS (arg_info) == NULL, "IVEXPfundef INFO_VARDECS not NULL");
+    arg_node = SWLDdoSetWithloopDepth (arg_node);
+
+    DBUG_ASSERT (INFO_VARDECS (arg_info) == NULL, "INFO_VARDECS not NULL");
 
     INFO_FUNDEF (arg_info) = arg_node;
 

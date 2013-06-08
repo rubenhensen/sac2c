@@ -1039,7 +1039,7 @@ AnalyseCommandlineSac4c (int argc, char *argv[])
 
     ARGS_FLAG ("ccflags", global.printccflags = TRUE;);
 
-    /* it is very unfortunate to have two similalrly named but different options
+    /* it is very unfortunate to have two similarly named, but different, options
      * ccflags and ccflag. Can I do something about it? */
     ARGS_OPTION ("ccflag", strncpy (global.ccflags, ARG, MAX_FILE_NAME - 1));
 

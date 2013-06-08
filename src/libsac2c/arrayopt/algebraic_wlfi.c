@@ -132,6 +132,7 @@
 #include "indexvectorutils.h"
 #include "deadcoderemoval.h"
 #include "with_loop_utilities.h"
+#include "set_withloop_depth.h"
 
 /** <!--********************************************************************-->
  *
@@ -151,11 +152,11 @@ struct INFO {
     node *producerwllhs;     /* The producerWL LHS for this consumerWL */
     node *let;               /* The N_let node */
     node *withids;           /* the WITHID_IDS entry for an iv element */
-    int level;               /* The current nesting level of WLs. This
+    int defdepth;            /* The current nesting level of WLs. This
                               * is used to ensure that an index expression
                               * refers to an earlier WL in the same code
                               * block, rather than to a WL within this
-                              * WL. I think...
+                              * WL.
                               */
     bool producerWLFoldable; /* producerWL may be legally foldable. */
                              /* (If index sets prove to be OK)     */
@@ -179,7 +180,7 @@ struct INFO {
 #define INFO_PRODUCERWLLHS(n) ((n)->producerwllhs)
 #define INFO_LET(n) ((n)->let)
 #define INFO_WITHIDS(n) ((n)->withids)
-#define INFO_LEVEL(n) ((n)->level)
+#define INFO_DEFDEPTH(n) ((n)->defdepth)
 #define INFO_PRODUCERWLFOLDABLE(n) ((n)->producerWLFoldable)
 #define INFO_NOFINVERSE(n) ((n)->nofinverse)
 #define INFO_FINVERSESWAP(n) ((n)->finverseswap)
@@ -206,7 +207,7 @@ MakeInfo (node *fundef)
     INFO_PRODUCERWLLHS (result) = NULL;
     INFO_LET (result) = NULL;
     INFO_WITHIDS (result) = NULL;
-    INFO_LEVEL (result) = 0;
+    INFO_DEFDEPTH (result) = 0;
     INFO_PRODUCERWLFOLDABLE (result) = TRUE;
     INFO_NOFINVERSE (result) = FALSE;
     INFO_FINVERSESWAP (result) = FALSE;
@@ -717,93 +718,7 @@ FakeUpConstantExtremum (node *elem, info *arg_info, int emax)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isDefinedInThisBlock( node *avis, info *arg_info)
- *
- * @brief: Predicate for checking that iv in sel( iv, PWL)
- *         is defined in this block.
- *
- * @param: avis: an N_avis
- * @param: arg_info: as usual
- *
- * @result: TRUE if iv is defined in this block.
- *
- * @note: The requirement for constant iv means that
- *        a code sequence such as:
- *
- *           PWL =  with(...);
- *           s = _sel_VxA_( shape(PWL)-1, PWL);
- *
- *        will not be folded. I don't know a safe way to handle this,
- *        because in the more general case (e.g., iv is loop-carried
- *        in a FOR-loop), iv may vary in value,
- *        and the extrema on iv, if this sequence is in another WL,
- *        are not suitable for AWLF.
- *
- *        See Bug #11067.
- *
- *        TRUE here indicates a case of naked-consumer AWLF.
- *
- *
- *****************************************************************************/
-static bool
-isDefinedInThisBlock (node *avis, info *arg_info)
-{
-    bool z;
-
-    DBUG_ENTER ();
-
-    z = INFO_LEVEL (arg_info) == AVIS_DEFDEPTH (avis);
-
-    if (z) {
-        DBUG_PRINT ("%s is defined in this block", AVIS_NAME (avis));
-    } else {
-        DBUG_PRINT ("%s is not defined in this block", AVIS_NAME (avis));
-    }
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn bool isDefinedInNextOuterBlock( node *avis, info *arg_info)
- *
- * @brief: Predicate for checking that iv in sel( iv, PWL)
- *         is defined in the block just outside this one.
- *         This is for standard AWLF, e.g.:
- *
- *          PWL = with(...);                LEVEL n
- *          CWL = with( ...)
- *               el .= sel( iv, PWL);       LEVEL n+1
- *               ...
- *
- *
- * @param: avis: an N_avis
- * @param: arg_info: as usual
- *
- * @result: TRUE if iv is defined in this block.
- *
- *****************************************************************************/
-static bool
-isDefinedInNextOuterBlock (node *avis, info *arg_info)
-{
-    bool z;
-
-    DBUG_ENTER ();
-
-    z = (1 + INFO_LEVEL (arg_info)) == AVIS_DEFDEPTH (avis);
-
-    if (z) {
-        DBUG_PRINT ("%s is defined in next-outer block", AVIS_NAME (avis));
-    } else {
-        DBUG_PRINT ("%s is not defined in next-outer block", AVIS_NAME (avis));
-    }
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *GenerateeMinMaxForArray( node *ivavis, info *arg_info, bool emax)
+ * @fn node *GenerateMinMaxForArray( node *ivavis, info *arg_info, bool emax)
  *
  * @brief: Fake up AVIS_MIN/MAX N_array for naked consumer and for
  *         non-in-block elements of other consumers.
@@ -857,12 +772,14 @@ GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
             exavis = FakeUpConstantExtremum (elem, arg_info, emax);
 
             /* Non-constant, defined in this block, & extremum present: normal AWLF */
-            if ((NULL == exavis) && (isDefinedInThisBlock (ID_AVIS (elem), arg_info))
+            if ((NULL == exavis)
+                && (SWLDisDefinedInThisBlock (ID_AVIS (elem), INFO_DEFDEPTH (arg_info)))
                 && (!emax) && (IVEXPisAvisHasMin (ID_AVIS (elem)))) {
                 exavis = ID_AVIS (AVIS_MIN (ID_AVIS (elem)));
             }
 
-            if ((NULL == exavis) && (isDefinedInThisBlock (ID_AVIS (elem), arg_info))
+            if ((NULL == exavis)
+                && (SWLDisDefinedInThisBlock (ID_AVIS (elem), INFO_DEFDEPTH (arg_info)))
                 && (emax) && (IVEXPisAvisHasMax (ID_AVIS (elem)))) {
                 /* Copy max and denormalize */
                 exavis = ID_AVIS (AVIS_MAX (ID_AVIS (elem)));
@@ -873,7 +790,9 @@ GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
 
             /* Non-constant, defined in other block. Fake up value.
              * Same for min or max, because we are denormalized here. */
-            if ((NULL == exavis) && (!isDefinedInThisBlock (ID_AVIS (elem), arg_info))) {
+            if ((NULL == exavis)
+                && (!SWLDisDefinedInThisBlock (ID_AVIS (elem),
+                                               INFO_DEFDEPTH (arg_info)))) {
                 exavis = ID_AVIS (elem); /* Not defined in this block. */
             }
 
@@ -888,18 +807,17 @@ GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
                 exprs = TCappendExprs (exprs, TBmakeExprs (TBmakeId (exavis), NULL));
             }
         }
-    }
 
-    if (badnews) {
-        exprs = FREEdoFreeTree (exprs);
-        DBUG_PRINT ("Could not build fake extrema for %s", AVIS_NAME (ivavis));
-    } else {
-        newarr = DUPdoDupTree (narr);
-        ARRAY_AELEMS (newarr) = FREEdoFreeTree (ARRAY_AELEMS (newarr));
-        ARRAY_AELEMS (newarr) = exprs;
-        DBUG_PRINT ("Built fake extrema for %s", AVIS_NAME (ivavis));
+        if (badnews) {
+            exprs = FREEdoFreeTree (exprs);
+            DBUG_PRINT ("Could not build fake extrema for %s", AVIS_NAME (ivavis));
+        } else {
+            newarr = DUPdoDupTree (narr);
+            ARRAY_AELEMS (newarr) = FREEdoFreeTree (ARRAY_AELEMS (newarr));
+            ARRAY_AELEMS (newarr) = exprs;
+            DBUG_PRINT ("Built fake extrema for %s", AVIS_NAME (ivavis));
+        }
     }
-
     pat = PMfree (pat);
     ivid = FREEdoFreeNode (ivid);
 
@@ -2505,47 +2423,8 @@ checkProducerWLFoldable (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isDefinedInPart( node *arg_node, node *cwlpart)
- *
- * @brief Return TRUE if arg_node is defined inside this N_part.
- *        If cwlpart is non-NULL, it must be an N_part; we check
- *        arg_node to see if it is a member of WITHID_VEC or WITHID_IDS.
- *
- * @param arg_node: an N_id element of the iv N_array value.
- * @parem block:    the N_block for this CWL partition.
- * @param cwlpart: NULL, or the N_part for a CWL.
- *
- * @result predicate described above.
- *
- *****************************************************************************/
-static bool
-isDefinedInPart (node *arg_node, node *cwlpart)
-{
-    bool z;
-
-    DBUG_ENTER ();
-
-    z = (-1
-         != TULSsearchAssignChainForAssign (BLOCK_ASSIGNS (
-                                              CODE_CBLOCK (PART_CODE (cwlpart))),
-                                            arg_node));
-
-    z = z || IVUTivMatchesWithid (arg_node, PART_WITHID (cwlpart));
-
-    if (z) {
-        DBUG_PRINT ("%s is defined inside the consumer WL",
-                    AVIS_NAME (ID_AVIS (arg_node)));
-    } else {
-        DBUG_PRINT ("%s is defined outside the consumer WL",
-                    AVIS_NAME (ID_AVIS (arg_node)));
-    }
-
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn bool isCanAttachIntersectCalc( node *arg_node, node *ivavis, node *cwlpart)
+ * @fn bool isCanAttachIntersectCalc( node *arg_node, node *ivavis, node *cwlpart,
+ *                                    info *arg_info)
  *
  * @brief  TRUE if iv/ivavis are in suitable shape that we can
  *         attach intersect calculations for the sel().
@@ -2558,7 +2437,7 @@ isDefinedInPart (node *arg_node, node *cwlpart)
  *
  *****************************************************************************/
 static bool
-isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart)
+isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg_info)
 {
     bool z;
     node *narr;
@@ -2608,7 +2487,8 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart)
                 z = z
                     && ((TYisAKV (AVIS_TYPE (ID_AVIS (elem))))
                         || (IVEXPisAvisHasBothExtrema (ID_AVIS (elem)))
-                        || (!isDefinedInPart (assgn, cwlpart)));
+                        || (!SWLDisDefinedInThisBlock (ID_AVIS (elem),
+                                                       INFO_DEFDEPTH (arg_info))));
             }
         }
 
@@ -2637,7 +2517,7 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart)
  *
  * @param  pwlid: N_id of PWL
  *         cwlids: N_ids of CWL or naked sel(), or NULL.
- *         cwllevel: INFO_LEVEL of CWL (or naked sel())
+ *         cwllevel: INFO_DEFDEPTH of CWL (or naked sel())
  *
  * @result True if the consumerWL and PWL
  *         shapes are conformable for folding.
@@ -2709,6 +2589,7 @@ AWLFIfundef (node *arg_node, info *arg_info)
         optctr = global.optcounters.awlfi_expr;
 
         if (FUNDEF_BODY (arg_node) != NULL) {
+            arg_node = SWLDdoSetWithloopDepth (arg_node);
             FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
             /* If new vardecs were made, append them to the current set */
@@ -2797,13 +2678,15 @@ AWLFIwith (node *arg_node, info *arg_info)
     old_arg_info = arg_info;
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
 
-    INFO_LEVEL (arg_info) = INFO_LEVEL (old_arg_info) + 1;
+    INFO_DEFDEPTH (arg_info) = INFO_DEFDEPTH (old_arg_info) + 1;
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_arg_info);
     INFO_FINVERSEINTRODUCED (arg_info) = INFO_FINVERSEINTRODUCED (old_arg_info);
 
     INFO_CONSUMERWL (arg_info) = arg_node;
     INFO_CONSUMERWLIDS (arg_info) = LET_IDS (INFO_LET (old_arg_info));
-    DBUG_PRINT ("Looking at %s", AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))));
+    DBUG_PRINT ("Looking at %s with INFO_DEFDEPTH=%d",
+                AVIS_NAME (IDS_AVIS (INFO_CONSUMERWLIDS (arg_info))),
+                INFO_DEFDEPTH (arg_info));
 
     DBUG_PRINT ("Resetting WITH_REFERENCED_CONSUMERWL, etc.");
     WITH_REFERENCED_FOLD (arg_node) = 0;
@@ -2844,6 +2727,7 @@ AWLFIpart (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#ifdef DEADCODE
 /** <!--********************************************************************-->
  *
  * @fn node *AWLFIids( node *arg_node, info *arg_info)
@@ -2856,13 +2740,14 @@ AWLFIids (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_LEVEL (arg_info);
+    AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_DEFDEPTH (arg_info);
     DBUG_PRINT ("%s DEFDEPTH set to %i", AVIS_NAME (IDS_AVIS (arg_node)),
                 AVIS_DEFDEPTH (IDS_AVIS (arg_node)));
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
+#endif // DEADCODE
 
 /******************************************************************************
  *  (cloned from SSAWLI)
@@ -2961,7 +2846,7 @@ AWLFIprf (node *arg_node, info *arg_info)
         INFO_PRODUCERWLFOLDABLE (arg_info)
           = checkProducerWLFoldable (pwlid, arg_info)
             && checkBothFoldable (pwlid, INFO_CONSUMERWLIDS (arg_info),
-                                  INFO_LEVEL (arg_info));
+                                  INFO_DEFDEPTH (arg_info));
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
@@ -2975,7 +2860,7 @@ AWLFIprf (node *arg_node, info *arg_info)
 
             /* We need both extrema or constant index vector */
             if (isCanAttachIntersectCalc (arg_node, ivavis,
-                                          INFO_CONSUMERWLPART (arg_info))) {
+                                          INFO_CONSUMERWLPART (arg_info), arg_info)) {
                 DBUG_PRINT ("Trying to attach F_noteintersect into cwl=%s", cwlnm);
                 z = attachIntersectCalc (arg_node, arg_info, ivavis);
                 if (z != ID_AVIS (PRF_ARG1 (arg_node))) {

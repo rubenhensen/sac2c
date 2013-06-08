@@ -202,6 +202,7 @@
 #include "type_utils.h"
 #include "flattengenerators.h"
 #include "with_loop_utilities.h"
+#include "set_withloop_depth.h"
 
 /** <!--********************************************************************-->
  *
@@ -215,7 +216,7 @@ struct INFO {
     /* This is the current partition in the consumerWL. */
     node *cwl;
     /* This is the current consumerWL. */
-    int level;
+    int defdepth;
     /* This is the current nesting level of WLs */
     node *producerpart;
     lut_t *lut;
@@ -234,7 +235,7 @@ struct INFO {
 #define INFO_FUNDEF(n) ((n)->fundef)
 #define INFO_PART(n) ((n)->part)
 #define INFO_CWL(n) ((n)->cwl)
-#define INFO_LEVEL(n) ((n)->level)
+#define INFO_DEFDEPTH(n) ((n)->defdepth)
 #define INFO_PRODUCERPART(n) ((n)->producerpart)
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_VARDECS(n) ((n)->vardecs)
@@ -256,7 +257,7 @@ MakeInfo (node *fundef)
     INFO_FUNDEF (result) = fundef;
     INFO_PART (result) = NULL;
     INFO_CWL (result) = NULL;
-    INFO_LEVEL (result) = 0;
+    INFO_DEFDEPTH (result) = 0;
     INFO_PRODUCERPART (result) = NULL;
     INFO_LUT (result) = NULL;
     INFO_VARDECS (result) = NULL;
@@ -727,9 +728,11 @@ AWLFfundef (node *arg_node, info *arg_info)
          * WLNC, which is driven by vardecs, NOT by function body traversal.
          */
         arg_node = DCRdoDeadCodeRemoval (arg_node);
+
         arg_node = INFNCdoInferNeedCountersOneFundef (arg_node, TR_awlfi);
         arg_node = WLNCdoWLNeedCount (arg_node);
         arg_node = WLCCdoWLCostCheck (arg_node);
+        arg_node = SWLDdoSetWithloopDepth (arg_node);
 
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
 
@@ -824,7 +827,7 @@ AWLFwith (node *arg_node, info *arg_info)
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
     INFO_CWL (arg_info) = arg_node;
     INFO_LUT (arg_info) = INFO_LUT (old_info);
-    INFO_LEVEL (arg_info) = INFO_LEVEL (old_info) + 1;
+    INFO_DEFDEPTH (arg_info) = INFO_DEFDEPTH (old_info) + 1;
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_info);
     INFO_PREASSIGNS (arg_info) = INFO_PREASSIGNS (old_info);
 
@@ -915,6 +918,8 @@ AWLFpart (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+#ifdef DEADCODE
+
 /** <!--********************************************************************-->
  *
  * @fn node *AWLFids( node *arg_node, info *arg_info)
@@ -930,11 +935,12 @@ AWLFids (node *arg_node, info *arg_info)
 #ifdef VERBOSE
     DBUG_PRINT ("Traversing N_ids");
 #endif // VERBOSE
-    AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_LEVEL (arg_info);
+    AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_DEFDEPTH (arg_info);
     IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
+#endif // DEADCODE
 
 /** <!--********************************************************************-->
  *
@@ -964,7 +970,7 @@ AWLFprf (node *arg_node, info *arg_info)
         && (AWLFIisHasNoteintersect (arg_node))) {
         INFO_PRODUCERPART (arg_info)
           = checkAWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
-                              INFO_LEVEL (arg_info));
+                              INFO_DEFDEPTH (arg_info));
     }
 
     DBUG_RETURN (arg_node);
