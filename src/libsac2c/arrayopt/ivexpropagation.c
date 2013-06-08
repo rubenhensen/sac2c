@@ -1235,9 +1235,9 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
            && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
 
     min2 = IVEXPisAvisHasMin (arg2avis)
-           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
+           && SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info));
     max2 = IVEXPisAvisHasMax (arg2avis)
-           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
+           && SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info));
 
     parentarg = AWLFIfindPrfParent2 (rhs, INFO_WITHIDIDS (arg_info), &wid);
     switch (parentarg) {
@@ -1378,9 +1378,9 @@ GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
            && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
 
     min2 = IVEXPisAvisHasMin (arg2avis)
-           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
+           && SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info));
     max2 = IVEXPisAvisHasMax (arg2avis)
-           && SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info));
+           && SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info));
 
     parentarg = AWLFIfindPrfParent2 (rhs, INFO_WITHIDIDS (arg_info), &wid);
     switch (parentarg) {
