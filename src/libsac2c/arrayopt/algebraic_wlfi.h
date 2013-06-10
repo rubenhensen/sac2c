@@ -58,9 +58,10 @@ extern node *AWLFIprf (node *arg_node, info *arg_info);
 #define WLINTERSECTION1(partno) (WLFIRST + 2 + (WLEPP * partno))
 #define WLINTERSECTION2(partno) (WLFIRST + 3 + (WLEPP * partno))
 /*
- * With one exception, these fields are normalized, i.e.,
+ * These fields are normalized, i.e.,
  * the same as GENERATOR_BOUND1 and GENERATOR_BOUND2.
  *
+ * FIXME: NO LONGER TRUE I HOPE
  * WLINTERSECTION2 is denormalized, because if BuildInversePartition
  * denormalized it, that denormalization
  * code would end up in the CWL block, when it must appear
