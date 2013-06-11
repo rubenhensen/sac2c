@@ -150,8 +150,9 @@ SCSisNegative (node *arg_node)
     z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNeg (con, TRUE);
 
     if (!z) {
-        con = SAACFchaseMinMax (arg_node, SAACFCHASEMIN);
-        z = (NULL != con) && COisNeg (con, TRUE);
+        // If maximum value is <= 0, then arg_node is negative.
+        con = SAACFchaseMinMax (arg_node, SAACFCHASEMAX);
+        z = (NULL != con) && (COisNeg (con, TRUE) || COisZero (con, TRUE));
     }
 
     con = (NULL != con) ? COfreeConstant (con) : con;
@@ -2731,6 +2732,93 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *SawingTheBoardInTwo( arg_node, arg_info)
+ *
+ * @brief Case 7: The "sawing the board in two" optimization, where
+ *          we observe that if we cut off part of a board, both
+ *          resulting parts are shorter than the original board.
+ *
+ *          This appears in an the stdlib shift() code, where lack of
+ *          this optimization causes AWLF to fail.
+ *          Cf. the AWLF unit tests.
+ *
+ *          We have this code for shift right (Case 7a):
+ *
+ *           count = _max_SxS_( shiftcount, 0);    // count >= 0
+ *           shpa = _shape_A_( vec);               // shpa >= 0
+ *           nc = shpa - count;
+ *           iv = _non_neg_val_V_( nc);            // iv >= 0
+ *           iv', p = =_val_le_val_SxS( iv, shpa);
+ *
+ *          If (count >= 0) && (shpa >= 0), then:
+ *            (shpa - count) <= shpa
+ *          so we statically resolve this guard.
+ *
+ *          Similarly, for shift left, we have (Case 7b):
+ *
+ *           count = _min_SxS_( shiftcount, -1);    // count < 0
+ *           shpa = _shape_A_( vec);                // shpa >= 0
+ *           nc = shpa + count;
+ *           iv = _non_neg_val_V_( nc);             // iv >= 0
+ *           iv', p = =_val_le_val_SxS( iv, shpa);
+ *
+ *          If (count < 0) && (shpa >= 0), then:
+ *            (shpa + count) <= shpa
+ *          so we statically resolve this guard.
+ *
+ *  NB. This optimization can be applied to other guards, with a bit of ISMOP.
+ *
+ *****************************************************************************/
+static node *
+SawingTheBoardInTwo (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *shpa;
+    node *iv;
+    node *count = NULL;
+    pattern *patadd1;
+    pattern *patadd2;
+    pattern *patsub;
+
+    DBUG_ENTER ();
+
+    patadd1 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAisVar (&shpa), 0),
+                     PMvar (1, PMAgetNode (&count), 0));
+
+    patadd2 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAgetNode (&count), 0),
+                     PMvar (1, PMAisVar (&shpa), 0));
+
+    patsub = PMprf (1, PMAisPrf (F_sub_SxS), 2, PMvar (1, PMAisVar (&shpa), 0),
+                    PMvar (1, PMAgetNode (&count), 0));
+
+    // Case 7a
+    iv = PRF_ARG1 (arg_node);
+    shpa = PRF_ARG2 (arg_node);
+
+    if ((SCSisNonneg (shpa)) && (PMmatchFlatSkipGuards (patsub, iv))
+        && (SCSisNonneg (count))) {
+        res = TBmakeExprs (DUPdoDupNode (iv), TBmakeExprs (TBmakeBool (TRUE), NULL));
+        DBUG_PRINT ("removed guard Case 7a( %s)", AVIS_NAME (ID_AVIS (iv)));
+    }
+
+    // Case 7b
+    if ((NULL == res) && (SCSisNonneg (shpa))
+        && ((PMmatchFlatSkipGuards (patadd1, iv))
+            || (PMmatchFlatSkipGuards (patadd2, iv)))
+        && (SCSisNegative (count))) {
+        res = TBmakeExprs (DUPdoDupNode (iv), TBmakeExprs (TBmakeBool (TRUE), NULL));
+        DBUG_PRINT ("removed guard Case 7b( %s)", AVIS_NAME (ID_AVIS (iv)));
+    }
+
+    patadd1 = PMfree (patadd1);
+    patadd2 = PMfree (patadd2);
+    patsub = PMfree (patsub);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *SCSprf_val_le_val_SxS( node *arg_node, info *arg_info)
  *
  * @brief Case 1. If both arguments are constant, compare them
@@ -2742,10 +2830,10 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
  *             (x <= minval(y))  || (maxval(x) <= y)
  *
  *        Case 4:
- *         iv', p   =_val_lt_val_SxS_( iv, y);
- *         iv'', p' =_val_lt_val_SxS_( iv', y);
+ *         iv', p   =_val_le_val_SxS_( iv, y);
+ *         iv'', p' =_val_le_val_SxS_( iv', y);
  *
- *         I know this case seems silly, but it arises in
+ *         I know this case looks silly, but it arises in
  *         SCCFprf_modarray12.sac, and is critical for
  *         loop fusion/array contraction performance.
  *         We can remove the second guard, on iv''.
@@ -2755,6 +2843,32 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
  *       Case 6: If this is an extended guard (GGS) , with PRF_ARG3 not NULL,
  *          and PRF_ARG3 is TRUE, perform the optimization,
  *          and PERHAPS? set AVIS_MAXVAL( res) = PRF_ARG2.
+ *
+ *       Case 7: The "sawing the board in two" optimization, where
+ *          we observe that if we cut off part of a board, the
+ *          resulting parts are both shorter than the original board.
+ *          This arose in an attempt to make stdlib shift() AWLF.
+ *          Cf. the AWLF unit tests.
+ *
+ *          We have this code for shift right (Case 7a):
+ *
+ *           count = _max_SxS_( 0, shiftcount);    // count >= 0
+ *           shpa = _shape_A_( vec);               // shpa >= 0
+ *           iv = shpa - count;
+ *           iv', p = =_val_le_val_SxS( iv, shpa);
+ *
+ *          If (count >= 0) && (shpa >= 0), then:
+ *            (shpa - count) <= shpa
+ *
+ *          Similarly, for shift left, we have (Case 7b):
+ *
+ *           count = _min_SxS_( -1, shiftcount);    // count < 0
+ *           shpa = _shape_A_( vec);                // shpa >= 0
+ *           iv = shpa + count;
+ *           iv', p = =_val_le_val_SxS( iv, shpa);
+ *
+ *          If (count < 0) && (shpa >= 0), then:
+ *            (shpa + count) <= shpa
  *
  *
  *****************************************************************************/
@@ -2875,6 +2989,10 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
     pat4 = PMfree (pat4);
+
+    if (NULL == res) {
+        res = SawingTheBoardInTwo (arg_node, arg_info);
+    }
 
     DBUG_RETURN (res);
 }
