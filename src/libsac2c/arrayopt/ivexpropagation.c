@@ -543,7 +543,8 @@ makeNarray (node *extrema, ntype *typ, node *nar, node **vardecs, node **preassi
  * @params:     snk: an N_avis
  *              minv/maxv: an N_avis or NULL.
  *
- * @result: If src is NULL, or if its ID)AVIS matches minv/maxv,
+ * @result: If src is NULL, or if its ID_AVIS matches minv/maxv,
+ *          do nothing.
  *          Otherwise, the snk pointer, if non-NULL, is freed,
  *          and overwritten by an N_id created from minv/maxv.
  *
@@ -2118,6 +2119,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     node *withid;
     node *minv;
     node *maxv;
+    node *zer;
 
     DBUG_ENTER ();
 
@@ -2160,6 +2162,38 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
         }
         break;
 #endif // DUMBIDEA
+
+        /*
+         * Case 1: If AVIS_MIN( lhsavis) is non-positive, replace it by zero,
+         *         as this tightens the constraint. Skip this if it is already zero.
+         * Case 2: If AVIS_MIN( lhsavis) is not NULL, and AVIS_MIN( rhsavis)
+         *         are both are constant, propagate the tighter one.
+         * Case 3: If AVIS_MIN( lhsavis) is NULL, propagate AVIS_MIN( rhsavis).
+         *
+         */
+        rhsavis = ID_AVIS (PRF_ARG1 (rhs));
+
+        if ((NULL != AVIS_MIN (lhsavis)) && (!SCSmatchConstantZero (AVIS_MIN (lhsavis)))
+            && (SCSisNonPositive (AVIS_MIN (lhsavis)))) {
+            // Case 1
+            AVIS_MIN (lhsavis) = FREEdoFreeNode (AVIS_MIN (lhsavis));
+            zer = SCSmakeZero (PRF_ARG1 (rhs));
+            zer = FLATGexpression2Avis (zer, &INFO_VARDECS (arg_info),
+                                        &INFO_PREASSIGNS (arg_info),
+                                        TYeliminateAKV (AVIS_TYPE (lhsavis)));
+            IVEXPsetMinvalIfNotNull (lhsavis, zer);
+        } else {
+            // Case 2 ISMOP
+        }
+
+        if (NULL != AVIS_MIN (rhsavis)) { // Case 3
+            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)));
+        }
+
+        if (NULL != AVIS_MAX (rhsavis)) {
+            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (AVIS_MAX (rhsavis)));
+        }
+        break;
 
     case F_afterguard:
     case F_noteintersect:
