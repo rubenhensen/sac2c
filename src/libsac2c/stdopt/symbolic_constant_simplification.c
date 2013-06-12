@@ -96,8 +96,6 @@
 #include "saa_constant_folding.h"
 #include "ivexpropagation.h"
 
-/* local used helper functions */
-
 /******************************************************************************
  *
  * function: Predicate for determining if an argument is known to
@@ -136,6 +134,20 @@ SCSisNonneg (node *arg_node)
     DBUG_RETURN (z);
 }
 
+/******************************************************************************
+ *
+ * function: Predicate for determining if an argument is known to
+ *           be negative.
+ *
+ * description: We check for a constant arg_node, and if that
+ *              fails, look for a suitable constant AVIS_MIN.
+ *
+ * result: True if argument is known to be negative.
+ *         Else false.
+ *
+ *         NB. False does NOT imply that the argument is non-negative.
+ *
+ *****************************************************************************/
 bool
 SCSisNegative (node *arg_node)
 {
@@ -153,6 +165,46 @@ SCSisNegative (node *arg_node)
         // If maximum value is <= 0, then arg_node is negative.
         con = SAACFchaseMinMax (arg_node, SAACFCHASEMAX);
         z = (NULL != con) && (COisNeg (con, TRUE) || COisZero (con, TRUE));
+    }
+
+    con = (NULL != con) ? COfreeConstant (con) : con;
+    pat = PMfree (pat);
+
+    DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function: Predicate for determining if an argument is known to
+ *           be non-positive.
+ *
+ * description: We check for a constant arg_node, and if that
+ *              fails, look for a suitable constant AVIS_MIN.
+ *
+ * result: True if argument is known to be <= 0.
+ *         Else false.
+ *
+ *         NB. False does NOT imply that the argument is positive.
+ *
+ *****************************************************************************/
+bool
+SCSisNonPositive (node *arg_node)
+{
+    pattern *pat;
+    constant *con = NULL;
+    bool z;
+
+    pat = PMconst (1, PMAgetVal (&con));
+
+    DBUG_ENTER ();
+
+    z = PMmatchFlatSkipExtrema (pat, arg_node) && COisNeg (con, TRUE);
+
+    if (!z) {
+        // If maximum value is <= 1, then arg_node is negative.
+        con = SAACFchaseMinMax (arg_node, SAACFCHASEMAX);
+        z = (NULL != con)
+            && (COisNeg (con, TRUE) || COisZero (con, TRUE) || COisOne (con, TRUE));
     }
 
     con = (NULL != con) ? COfreeConstant (con) : con;
@@ -467,7 +519,7 @@ SCSmatchConstantOne (node *prfarg)
  *         equal. (constants only).
  *
  *****************************************************************************/
-bool
+static bool
 isMatchGenwidth1Partition (node *prfarg1, node *prfarg2, info *arg_info)
 {
     bool res = FALSE;
@@ -2448,39 +2500,17 @@ node *
 SCSprf_non_neg_val_V (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *tmpivavis;
-    constant *arg1c = NULL;
-    constant *scalarp;
-    pattern *pat1;
-    bool b;
 
     DBUG_ENTER ();
 
-    pat1 = PMconst (1, PMAgetVal (&arg1c));
-
     /* Case 1*/
-    b = SCSisNonneg (PRF_ARG1 (arg_node));
+    if (SCSisNonneg (PRF_ARG1 (arg_node))) {
 
-    if (b) {
-        DBUG_PRINT ("SCSprf_non_neg_val removed guard");
-
-        /* Generate   p = TRUE; */
-        scalarp = COmakeTrue (SHmakeShape (0));
-        tmpivavis
-          = TBmakeAvis (TRAVtmpVar (), TYmakeAKV (TYmakeSimpleType (T_bool), scalarp));
-        INFO_VARDECS (arg_info) = TBmakeVardec (tmpivavis, INFO_VARDECS (arg_info));
-        INFO_PREASSIGN (arg_info) = TBmakeAssign (TBmakeLet (TBmakeIds (tmpivavis, NULL),
-                                                             COconstant2AST (scalarp)),
-                                                  INFO_PREASSIGN (arg_info));
-
-        AVIS_SSAASSIGN (tmpivavis) = INFO_PREASSIGN (arg_info);
-        DBUG_PRINT ("SCSprf_non_neg_val(%s) created TRUE pred %s",
-                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))), AVIS_NAME (tmpivavis));
+        DBUG_PRINT ("Removed non_neg guard on %s",
+                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                           TBmakeExprs (TBmakeId (tmpivavis), NULL));
+                           TBmakeExprs (TBmakeBool (TRUE), NULL));
     }
-    arg1c = (NULL != arg1c) ? COfreeConstant (arg1c) : arg1c;
-    pat1 = PMfree (pat1);
 
     DBUG_RETURN (res);
 }
