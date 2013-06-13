@@ -467,6 +467,32 @@ SCSmatchConstantZero (node *arg_node)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool SCSmatchConstantNonZero( node *prfarg)
+ * Predicate for PRF_ARG being a constant non-zero of any rank or type.
+ * E.g., 0 or  [0,0] or  genarray([2,3], 0)
+ *
+ *****************************************************************************/
+bool
+SCSmatchConstantNonZero (node *arg_node)
+{
+    constant *argconst = NULL;
+    pattern *pat;
+    bool res = FALSE;
+
+    DBUG_ENTER ();
+
+    pat = PMconst (1, PMAgetVal (&argconst));
+    if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
+        res = !COisZero (argconst, TRUE);
+        argconst = COfreeConstant (argconst);
+    }
+    pat = PMfree (pat);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool SCSmatchConstantOne( node *prfarg)
  * Predicate for PRF_ARG being a constant one of any rank or type.
  * E.g., 1 or  [1,1] or  genarray([2,3], 1)
