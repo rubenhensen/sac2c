@@ -232,54 +232,6 @@ RemoveSuperfluousCodes (node *wln)
 
 /** <!--********************************************************************-->
  *
- * @fn bool matchValues( node *fa, node *fb)
- *
- * @brief Match two AVIS nodes. This is to catch the case
- *        where one is an N_vardec and the other is an N_arg node.
- *
- * @param - fa and fb are N_avis nodes.
- *
- * @return Boolean TRUE if both fields are the same or can
- *          be shown to represent the same value.
- *
- *****************************************************************************/
-static bool
-matchValues (node *fa, node *fb)
-{
-    constant *fac;
-    constant *fbc;
-    bool z;
-
-    DBUG_ENTER ();
-
-    /* If one field is local and the other is a function argument,
-     * we can have both AKV, but they do not share the same N_vardec.
-     */
-    z = (fa == fb);
-    if ((!z) && (NULL != fa) && (NULL != fb)) {
-        fac = COaST2Constant (fa);
-        fbc = COaST2Constant (fb);
-        z = (NULL != fac) && (NULL != fbc) && COcompareConstants (fac, fbc);
-        fac = (NULL != fac) ? COfreeConstant (fac) : NULL;
-        fbc = (NULL != fbc) ? COfreeConstant (fbc) : NULL;
-    }
-
-    if ((NULL != fa) && (NULL != fb)) {
-        if (z) {
-            DBUG_PRINT ("Values match");
-        } else {
-            DBUG_PRINT ("Values do not match");
-        }
-    }
-
-#ifdef FIXME // bug??
-    DBUG_ASSERT (FALSE == z, "this is supposed to be dead code!");
-#endif // FIXME // bug??
-    DBUG_RETURN (z);
-}
-
-/** <!--********************************************************************-->
- *
  * @fn bool matchGeneratorField( node *fa, node *fb)
  *
  * @brief Attempt to match corresponding N_id/N_array fields of
@@ -319,12 +271,6 @@ matchGeneratorField (node *fa, node *fb)
             && (PMmatchFlatSkipExtrema (patb, fb)) && (TULSisValuesMatch (fa, fb)));
     PMfree (pata);
     PMfree (patb);
-
-    if ((!z) && (NULL != fa) && (NULL != fb)) {
-
-        z = matchValues (fa, fb);
-        DBUG_ASSERT (!z, "This is supposed to be handed by TULS!");
-    }
 
     if ((NULL != fa) && (NULL != fb)) {
         if (z) {
