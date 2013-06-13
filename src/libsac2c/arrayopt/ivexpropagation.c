@@ -2120,6 +2120,10 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     node *minv;
     node *maxv;
     node *zer;
+    pattern *patlhs;
+    pattern *patrhs;
+    constant *lhsmin = NULL;
+    constant *rhsmin = NULL;
 
     DBUG_ENTER ();
 
@@ -2164,16 +2168,25 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
 #endif // DUMBIDEA
 
         /*
-         * Case 1: If AVIS_MIN( lhsavis) is non-positive, replace it by zero,
-         *         as this tightens the constraint. Skip this if it is already zero.
+         * Case 1: If AVIS_MIN( lhsavis) is negatived, replace it by zero,
+         *         as this tightens the constraint.
          * Case 2: If AVIS_MIN( lhsavis) is not NULL, and AVIS_MIN( rhsavis)
-         *         are both are constant, propagate the tighter one.
+         *         are both are constant, propagate the larger one.
+         *
+         *         This can arise if GenerateExtremaComputationsPrf has
+         *         created a zero AVIS_MIN( lhsavis), and we have a
+         *         non-NULL AVIS_MIN( rhsavis).
+         *
+         *         If we are unable to compute the larger of the two,
+         *         we must propagate the rhsavis. E.g., rhsavis is
+         *         a WITHIDS_IDS with non-zero GENERATOR_BOUND1.
+         *
          * Case 3: If AVIS_MIN( lhsavis) is NULL, propagate AVIS_MIN( rhsavis).
          *
          */
         rhsavis = ID_AVIS (PRF_ARG1 (rhs));
 
-        if ((NULL != AVIS_MIN (lhsavis)) && (!SCSmatchConstantZero (AVIS_MIN (lhsavis)))
+        if ((NULL != AVIS_MIN (lhsavis)) && (SCSmatchConstantNonZero (AVIS_MIN (lhsavis)))
             && (SCSisNonPositive (AVIS_MIN (lhsavis)))) {
             // Case 1
             AVIS_MIN (lhsavis) = FREEdoFreeNode (AVIS_MIN (lhsavis));
@@ -2183,7 +2196,21 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
                                         TYeliminateAKV (AVIS_TYPE (lhsavis)));
             IVEXPsetMinvalIfNotNull (lhsavis, zer);
         } else {
-            // Case 2 ISMOP
+            // Case 2 Propagate larger constraint
+            patlhs = PMconst (1, PMAgetVal (&lhsmin), 0);
+            patrhs = PMconst (1, PMAgetVal (&rhsmin), 0);
+            if ((NULL != AVIS_MIN (lhsavis)) && (NULL != AVIS_MIN (rhsavis))
+                && (PMmatchFlat (patlhs, AVIS_MIN (lhsavis)))
+                && (PMmatchFlat (patrhs, AVIS_MIN (rhsavis)))) {
+                if (COgt (rhsmin, lhsmin, NULL)) {
+                    AVIS_MIN (lhsavis) = FREEdoFreeNode (AVIS_MIN (lhsavis));
+                    IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)));
+                }
+            }
+            lhsmin = (NULL != lhsmin) ? COfreeConstant (lhsmin) : NULL;
+            rhsmin = (NULL != rhsmin) ? COfreeConstant (rhsmin) : NULL;
+            patlhs = PMfree (patlhs);
+            patrhs = PMfree (patrhs);
         }
 
         if (NULL != AVIS_MIN (rhsavis)) { // Case 3
