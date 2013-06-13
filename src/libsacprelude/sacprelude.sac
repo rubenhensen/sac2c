@@ -62,7 +62,7 @@ a[*] sel( int[.] idx, a[*] array)                                        \
           ( . <= iv <= . )                                               \
           {                                                              \
             new_idx = _cat_VxV_( idx, iv);                               \
-          } : _sel_VxA_(new_idx, array);                                     \
+          } : _sel_VxA_(new_idx, array);                                 \
         } : genarray( new_shape, zero( array ) );                        \
   return( res);                                                          \
 }
@@ -150,25 +150,15 @@ int[*] adjustLacFunParams( bool[*] p, int[*] i, int[.] iv)
 
 inline 
 int partitionMin( int x, int y)
-{ /* Function to perform min_SxS_( x, y), but written to 
-   * let the optimizers simplify the arguments.
-   */
-
-  dif  = _sub_SxS_( x, y);
-  p = _le_SxS_( dif, 0);
-  z = _mask_SxSxS_( p, x, y);
+{ 
+  z = _min_SxS_( x, y);
   return(z);
 }
 
 inline 
 int partitionMax( int x, int y)
-{ /* Function to perform max_SxS_( x, y), but written to 
-   * let the optimizers simplify the arguments.
-   */
-
-  dif  = _sub_SxS_( x, y);
-  p = _ge_SxS_( dif, 0);
-  z = _mask_SxSxS_( p, x, y);
+{ 
+  z = _max_SxS_( x, y);
   return(z);
 }
 
@@ -276,6 +266,7 @@ inline
 int[.] partitionIntersectMax( int[.] PWLbound1, int ivmin)
 { /* compute maximum of producerWL partition bound1 scalar
    * and index vector set.
+   *
    *  z = max( PWLbound1, ivmin);
    *
    *  We do this as a WL so as to scalarize the computation.
@@ -296,18 +287,11 @@ inline
 int[.] partitionIntersectMin( int[.] PWLbound2, int ivmax)
 { /* Function to perform min( PWLbound2, ivmax), but written to 
    * let the optimizers simplify the arguments.
-
+   * We are depending on WLUR working here.
    *  z = min( PWLbound2, ivmax);
    *
-   * The bound2 bias is removed, in case we have to switch
-   * minval and maxval. It will be restored, in any case, later.
    */
 
-#ifdef DEADIHOPE
-  dif  = _sub_VxS_( PWLbound2, ivmax);
-  p = _le_VxS_( dif, 0);
-  z = _mask_VxVxS_( p, PWLbound2, ivmax);
-#else // DEADIHOPE
   z = with {
         ( . <= iv=[k] <= .) {
             PWLbound2el = _idx_sel_( k, PWLbound2);
@@ -316,9 +300,6 @@ int[.] partitionIntersectMin( int[.] PWLbound2, int ivmax)
           } : el;
         } : genarray( _shape_A_( PWLbound2), 0);
   
-#endif // DEADIHOPE
-
-  z = _sub_VxS_( z, 1); /* Remove bound2 bias. */
   return(z);
 }
 
@@ -326,15 +307,10 @@ inline
 int[.] partitionIntersectMax( int[.] PWLbound1, int[.] ivmin)
 { /* compute maximum of producerWL partition bound1
    * and index vector set.
+   * We are depending on WLUR working here.
    *  z = max( PWLbound1, ivmin);
    */
 
-#ifdef DEADIHOPE
-  dif  = _sub_VxV_( PWLbound1, ivmin);
-  p = _ge_VxS_( dif, 0);
-  z = _mask_VxVxV_( p, PWLbound1, ivmin);
-
-#else // DEADIHOPE
   z = with {
         ( . <= iv=[k] <= .) {
             PWLbound1el = _idx_sel_( k, PWLbound1);
@@ -343,7 +319,6 @@ int[.] partitionIntersectMax( int[.] PWLbound1, int[.] ivmin)
             el = _mask_SxSxS_( p, PWLbound1el, ivminel);
           } : el;
         } : genarray( _shape_A_( PWLbound1), 0);
-#endif // DEADIHOPE
 
   return(z);
 }
@@ -352,18 +327,9 @@ inline
 int[.] partitionIntersectMin( int[.] PWLbound2, int[.] ivmax)
 { /* Function to perform min( PWLbound2, ivmax), but written to 
    * let the optimizers simplify the arguments.
-
    *  z = min( PWLbound2, ivmax);
    *
-   * The bound2 bias is removed, in case we have to switch
-   * minval and maxval. It will be restored, in any case, later.
    */
-
-#ifdef DEADIHOPE
-  dif  = _sub_VxV_( PWLbound2, ivmax);
-  p = _le_VxS_( dif, 0);
-  z = _mask_VxVxV_( p, PWLbound2, ivmax);
-#else // DEADIHOPE
 
   z = with {
         ( . <= iv=[k] <= .) {
@@ -373,9 +339,7 @@ int[.] partitionIntersectMin( int[.] PWLbound2, int[.] ivmax)
             el = _mask_SxSxS_( p, PWLbound2el, ivmaxel);
           } : el;
         } : genarray( _shape_A_( PWLbound2), 0);
-#endif // DEADIHOPE
   
-  z = _sub_VxS_( z, 1); /* Remove bound2 bias. */
   return(z);
 }
 
