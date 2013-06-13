@@ -327,36 +327,37 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    if (global.optimize.dosse) {
 #define DEBUG
 #ifdef DEBUG // rbe
-    DBUG_PRINT_TAG ("SSE", "Entering opt micro-cycle for %s %s",
-                    (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
-                    FUNDEF_NAME (arg_node));
-    /* Loop over optimizers until we reach a fix point or give up */
-    for (i = 0; i < global.max_optcycles; i++) {
-        ct = i;
-
-        DBUG_PRINT_TAG ("SSE", "Cycle iteration %d (fun %s %s) begins.", i,
+        DBUG_PRINT_TAG ("SSE", "Entering opt micro-cycle for %s %s",
                         (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
                         FUNDEF_NAME (arg_node));
+        /* Loop over optimizers until we reach a fix point or give up */
+        for (i = 0; i < global.max_optcycles; i++) {
+            ct = i;
+
+            DBUG_PRINT_TAG ("SSE", "Cycle iteration %d (fun %s %s) begins.", i,
+                            (FUNDEF_ISWRAPPERFUN (arg_node) ? "(wrapper)" : "function"),
+                            FUNDEF_NAME (arg_node));
 
 #ifndef DBUG_OFF
-        if (global.check_frequency >= 4) {
-            arg_node = PHrunConsistencyChecks (arg_node);
-        }
+            if (global.check_frequency >= 4) {
+                arg_node = PHrunConsistencyChecks (arg_node);
+            }
 #endif
 
-        /* Invoke each opt */
+            /* Invoke each opt */
 
 #ifndef DBUG_OFF
-        /* debug compiler */
+            /* debug compiler */
 #define RUNCHECK(Name)                                                                   \
     if (global.check_frequency >= 4) {                                                   \
         DBUG_PRINT_TAG ("SSE", "Cycle iteration %d: running post-" #Name " check", i);   \
         arg_node = PHrunConsistencyChecks (arg_node);                                    \
     }
 #else
-        /* production compiler does not have PHrunConsistencyChecks() */
+            /* production compiler does not have PHrunConsistencyChecks() */
 #define RUNCHECK(Name) /*empty*/
 #endif
 
@@ -368,89 +369,90 @@ SimplifySymbioticExpression (node *arg_node, info *arg_info)
         RUNCHECK (Name)                                                                  \
     }
 
-        RUNOPT (DLIR, global.optimize.dodlir, countDLIR = global.optcounters.dlir_expr,
-                DLIRdoLoopInvariantRemoval);
-        RUNOPT (WLIR, global.optimize.dowlir, countWLIR = global.optcounters.wlir_expr,
-                WLIRdoLoopInvariantRemoval);
-        RUNOPT (INL, global.optimize.doinl, countINL = global.optcounters.inl_fun,
-                INLdoInlining);
-        RUNOPT (ISAA, global.optimize.dosaa, , ISAAdoInsertShapeVariables);
-        RUNOPT (CSE, global.optimize.docse, countCSE = global.optcounters.cse_expr,
-                CSEdoCommonSubexpressionElimination);
-        RUNOPT (NTC, global.optimize.dotup, countTUP = global.optcounters.tup_upgrades,
-                NTCdoNewTypeCheck);
-        RUNOPT (EAT, global.optimize.dotup, , EATdoEliminateAlphaTypes);
-        RUNOPT (EBT, global.optimize.dotup, , EBTdoEliminateBottomTypes);
-        RUNOPT (DFC, TRUE, , DFCdoDispatchFunCalls);
-        RUNOPT (CF, global.optimize.docf, countCF = global.optcounters.cf_expr,
-                CFdoConstantFolding);
-        RUNOPT (VP, global.optimize.dovp, countVP = global.optcounters.vp_expr,
-                VPdoVarPropagation);
-        RUNOPT (REA, global.optimize.dorea, countREA = global.optcounters.rea_expr,
-                REAdoReorderEqualityprfArguments);
-        RUNOPT (TGTL, global.optimize.dotgtl, countREA = global.optcounters.tgtl_expr,
-                TGTLdoTransformGtgeToLtle);
-        RUNOPT (ESD, global.optimize.dosde, countESD = global.optcounters.esd_expr,
-                ESDdoElimSubDiv);
-        RUNOPT (AS, global.optimize.doas, countAS = global.optcounters.as_expr,
-                ASdoArithmeticSimplification);
-        RUNOPT (CF, global.optimize.docf, countCF = global.optcounters.cf_expr,
-                CFdoConstantFolding);
-        RUNOPT (CSE, global.optimize.docse, , CSEdoCommonSubexpressionElimination);
-        RUNOPT (AL, global.optimize.doal, countAL = global.optcounters.al_expr,
-                ALdoAssocLawOptimization);
-        RUNOPT (DL, global.optimize.dodl, countDL = global.optcounters.dl_expr,
-                DLdoDistributiveLawOptimization);
-        RUNOPT (UESD, global.optimize.dosde, countUESD = global.optcounters.uesd_expr,
-                UESDdoUndoElimSubDiv);
-        RUNOPT (DCR, global.optimize.dodcr,
-                countDCR = global.optcounters.dead_var + global.optcounters.dead_expr,
-                DCRdoDeadCodeRemoval);
+            RUNOPT (DLIR, global.optimize.dodlir,
+                    countDLIR = global.optcounters.dlir_expr, DLIRdoLoopInvariantRemoval);
+            RUNOPT (WLIR, global.optimize.dowlir,
+                    countWLIR = global.optcounters.wlir_expr, WLIRdoLoopInvariantRemoval);
+            RUNOPT (INL, global.optimize.doinl, countINL = global.optcounters.inl_fun,
+                    INLdoInlining);
+            RUNOPT (ISAA, global.optimize.dosaa, , ISAAdoInsertShapeVariables);
+            RUNOPT (CSE, global.optimize.docse, countCSE = global.optcounters.cse_expr,
+                    CSEdoCommonSubexpressionElimination);
+            RUNOPT (NTC, global.optimize.dotup,
+                    countTUP = global.optcounters.tup_upgrades, NTCdoNewTypeCheck);
+            RUNOPT (EAT, global.optimize.dotup, , EATdoEliminateAlphaTypes);
+            RUNOPT (EBT, global.optimize.dotup, , EBTdoEliminateBottomTypes);
+            RUNOPT (DFC, TRUE, , DFCdoDispatchFunCalls);
+            RUNOPT (CF, global.optimize.docf, countCF = global.optcounters.cf_expr,
+                    CFdoConstantFolding);
+            RUNOPT (VP, global.optimize.dovp, countVP = global.optcounters.vp_expr,
+                    VPdoVarPropagation);
+            RUNOPT (REA, global.optimize.dorea, countREA = global.optcounters.rea_expr,
+                    REAdoReorderEqualityprfArguments);
+            RUNOPT (TGTL, global.optimize.dotgtl, countREA = global.optcounters.tgtl_expr,
+                    TGTLdoTransformGtgeToLtle);
+            RUNOPT (ESD, global.optimize.dosde, countESD = global.optcounters.esd_expr,
+                    ESDdoElimSubDiv);
+            RUNOPT (AS, global.optimize.doas, countAS = global.optcounters.as_expr,
+                    ASdoArithmeticSimplification);
+            RUNOPT (CF, global.optimize.docf, countCF = global.optcounters.cf_expr,
+                    CFdoConstantFolding);
+            RUNOPT (CSE, global.optimize.docse, , CSEdoCommonSubexpressionElimination);
+            RUNOPT (AL, global.optimize.doal, countAL = global.optcounters.al_expr,
+                    ALdoAssocLawOptimization);
+            RUNOPT (DL, global.optimize.dodl, countDL = global.optcounters.dl_expr,
+                    DLdoDistributiveLawOptimization);
+            RUNOPT (UESD, global.optimize.dosde, countUESD = global.optcounters.uesd_expr,
+                    UESDdoUndoElimSubDiv);
+            RUNOPT (DCR, global.optimize.dodcr,
+                    countDCR = global.optcounters.dead_var + global.optcounters.dead_expr,
+                    DCRdoDeadCodeRemoval);
 
 #undef RUNOPT
 #undef RUNCHECK
 
-        /* We do not count DCR, as it's merely for cleanup */
-        DBUG_PRINT_TAG ("SSE",
-                        "DLIR= %d, WLIR= %d, INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, "
-                        "AS=%d, AL=%d, DL=%d, "
-                        "ESD=%d, UESD=%d, DCR=%d",
-                        (global.optcounters.dlir_expr - countDLIR),
-                        (global.optcounters.wlir_expr - countWLIR),
-                        (global.optcounters.inl_fun - countINL),
-                        (global.optcounters.cse_expr - countCSE),
-                        (global.optcounters.tup_upgrades - countTUP),
-                        (global.optcounters.cf_expr - countCF),
-                        (global.optcounters.vp_expr - countVP),
-                        (global.optcounters.as_expr - countAS),
-                        (global.optcounters.al_expr - countAL),
-                        (global.optcounters.dl_expr - countDL),
-                        /* The following are not for some reason in the fixpoint check
-                           below: */
-                        (global.optcounters.esd_expr - countESD),
-                        (global.optcounters.uesd_expr - countUESD),
-                        ((global.optcounters.dead_var + global.optcounters.dead_expr)
-                         - countDCR));
+            /* We do not count DCR, as it's merely for cleanup */
+            DBUG_PRINT_TAG ("SSE",
+                            "DLIR= %d, WLIR= %d, INL=%d, CSE=%d, TUP=%d, CF=%d, VP=%d, "
+                            "AS=%d, AL=%d, DL=%d, "
+                            "ESD=%d, UESD=%d, DCR=%d",
+                            (global.optcounters.dlir_expr - countDLIR),
+                            (global.optcounters.wlir_expr - countWLIR),
+                            (global.optcounters.inl_fun - countINL),
+                            (global.optcounters.cse_expr - countCSE),
+                            (global.optcounters.tup_upgrades - countTUP),
+                            (global.optcounters.cf_expr - countCF),
+                            (global.optcounters.vp_expr - countVP),
+                            (global.optcounters.as_expr - countAS),
+                            (global.optcounters.al_expr - countAL),
+                            (global.optcounters.dl_expr - countDL),
+                            /* The following are not for some reason in the fixpoint check
+                               below: */
+                            (global.optcounters.esd_expr - countESD),
+                            (global.optcounters.uesd_expr - countUESD),
+                            ((global.optcounters.dead_var + global.optcounters.dead_expr)
+                             - countDCR));
 
-        if (/* Fix point check */
-            (countDLIR == global.optcounters.dlir_expr)
-            && (countWLIR == global.optcounters.wlir_expr)
-            && (countINL == global.optcounters.inl_fun)
-            && (countCSE == global.optcounters.cse_expr)
-            && (countTUP == global.optcounters.tup_upgrades)
-            && (countCF == global.optcounters.cf_expr)
-            && (countVP == global.optcounters.vp_expr)
-            && (countAS == global.optcounters.as_expr)
-            && (countAL == global.optcounters.al_expr)
-            && (countDL == global.optcounters.dl_expr)) {
-            i = global.max_optcycles;
+            if (/* Fix point check */
+                (countDLIR == global.optcounters.dlir_expr)
+                && (countWLIR == global.optcounters.wlir_expr)
+                && (countINL == global.optcounters.inl_fun)
+                && (countCSE == global.optcounters.cse_expr)
+                && (countTUP == global.optcounters.tup_upgrades)
+                && (countCF == global.optcounters.cf_expr)
+                && (countVP == global.optcounters.vp_expr)
+                && (countAS == global.optcounters.as_expr)
+                && (countAL == global.optcounters.al_expr)
+                && (countDL == global.optcounters.dl_expr)) {
+                i = global.max_optcycles;
+            }
         }
-    }
-    DBUG_PRINT_TAG ("SSE", "Stabilized at iteration %d for function %s", ct,
-                    FUNDEF_NAME (arg_node));
+        DBUG_PRINT_TAG ("SSE", "Stabilized at iteration %d for function %s", ct,
+                        FUNDEF_NAME (arg_node));
 
 #endif // DEBUG // rbe
 #undef DEBUG
+    }
 
     DBUG_RETURN (arg_node);
 }
@@ -667,16 +669,13 @@ AWLFIdetachNoteintersect (node *arg_node)
  * @fn node *FakeUpConstantExtremum( node *elem, info *arg_info, int emax)
  *
  * @brief: If elem is a constant (AKV), generate the appropriate
- *         constant extremum for it. Else NULL.
+ *         normalized constant extremum for it. Else NULL.
  *
  * @param: elem: the avis for an index vector or index scalar.
  *               or an N_num.
  *
  * @result: an N_avis for AVIS_MIN or AVIS_MAX for the constant, or NULL
  *          if elem is not constant.
- *
- *          AVIS_MAX is denormalized here, which makes life easier, as
- *          we can return same value for min and max.
  *
  *****************************************************************************/
 static node *
@@ -711,6 +710,10 @@ FakeUpConstantExtremum (node *elem, info *arg_info, int emax)
 
         elavis = FLATGexpression2Avis (el, &INFO_VARDECS (arg_info),
                                        &INFO_PREASSIGNS (arg_info), NULL);
+        if (emax) { // normalize maxval
+            elavis = IVEXPadjustExtremaBound (elavis, 1, &INFO_VARDECS (arg_info),
+                                              &INFO_PREASSIGNS (arg_info), "fakecon");
+        }
     }
 
     DBUG_RETURN (elavis);
@@ -738,7 +741,7 @@ FakeUpConstantExtremum (node *elem, info *arg_info, int emax)
  * @result: The generated AVIS_MIN/MAX for the N_array, unless we can't
  *          generate one, in which case we return NULL.
  *
- *          NB. results are DENORMALIZED.
+ *          NB. results are NORMALIZED.
  *
  *
  *
@@ -775,25 +778,26 @@ GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
             if ((NULL == exavis)
                 && (SWLDisDefinedInThisBlock (ID_AVIS (elem), INFO_DEFDEPTH (arg_info)))
                 && (!emax) && (IVEXPisAvisHasMin (ID_AVIS (elem)))) {
-                exavis = ID_AVIS (AVIS_MIN (ID_AVIS (elem)));
+                exavis = ID_AVIS (AVIS_MIN (ID_AVIS (elem))); // copy min
             }
 
             if ((NULL == exavis)
                 && (SWLDisDefinedInThisBlock (ID_AVIS (elem), INFO_DEFDEPTH (arg_info)))
                 && (emax) && (IVEXPisAvisHasMax (ID_AVIS (elem)))) {
-                /* Copy max and denormalize */
-                exavis = ID_AVIS (AVIS_MAX (ID_AVIS (elem)));
-                exavis
-                  = IVEXPadjustExtremaBound (exavis, -1, &INFO_VARDECS (arg_info),
-                                             &INFO_PREASSIGNS (arg_info), "genminmax");
+                exavis = ID_AVIS (AVIS_MAX (ID_AVIS (elem))); // copy max
             }
 
-            /* Non-constant, defined in other block. Fake up value.
-             * Same for min or max, because we are denormalized here. */
+            /* Non-constant, defined in other block. Fake up value. */
             if ((NULL == exavis)
                 && (!SWLDisDefinedInThisBlock (ID_AVIS (elem),
                                                INFO_DEFDEPTH (arg_info)))) {
                 exavis = ID_AVIS (elem); /* Not defined in this block. */
+                if (emax) {
+                    exavis = IVEXPadjustExtremaBound (exavis, 1, /* normalize */
+                                                      &INFO_VARDECS (arg_info),
+                                                      &INFO_PREASSIGNS (arg_info),
+                                                      "nonconminmax");
+                }
             }
 
             if (NULL == exavis) {
@@ -801,7 +805,6 @@ GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
                  * no extrema yet. Try again later.
                  */
                 badnews = TRUE;
-                exavis = NULL;
             }
             if (!badnews) {
                 exprs = TCappendExprs (exprs, TBmakeExprs (TBmakeId (exavis), NULL));
@@ -900,9 +903,7 @@ FlattenLbubel (node *lbub, int ivindx, info *arg_info)
         if (N_num == NODE_TYPE (lbubel)) {
             lbubelavis
               = FLATGexpression2Avis (DUPdoDupTree (lbubel), &INFO_VARDECS (arg_info),
-                                      &INFO_PREASSIGNS (arg_info),
-                                      TYmakeAKS (TYmakeSimpleType (T_int),
-                                                 SHcreateShape (0)));
+                                      &INFO_PREASSIGNS (arg_info), NULL);
         } else {
             lbubelavis = ID_AVIS (lbubel);
         }
@@ -1129,9 +1130,8 @@ FlattenScalarNode (node *arg_node, info *arg_info)
 
     if (N_num == NODE_TYPE (arg_node)) {
         z = FLATGexpression2Avis (DUPdoDupNode (arg_node), &INFO_VARDECS (arg_info),
-                                  &INFO_PREASSIGNS (arg_info),
-                                  TYmakeAKS (TYmakeSimpleType (T_int),
-                                             SHcreateShape (0)));
+                                  &INFO_PREASSIGNS (arg_info), NULL);
+
     } else {
         DBUG_ASSERT (N_id == NODE_TYPE (arg_node), "Expected N_id");
         z = ID_AVIS (arg_node);
@@ -1219,8 +1219,8 @@ BuildAxisConfluence (node *zarr, int idx, node *zelnew, node *bndel, int boundnu
 
 /** <!--********************************************************************-->
  *
- * @fn node *PermuteIntersectElements( node *intr, node *zwithids,
- *                                     info *arg_info, int boundnum)
+ * @fn node *PermuteIntersectElements( node *zelu, node *zwithids,
+                                       info *arg_info, int boundnum)
  *
  * @brief: Permute and/or merge inverse intersection elements, to
  *         construct CUBSL argument.
@@ -1466,6 +1466,8 @@ BuildInverseProjectionOne (node *arg_node, info *arg_info, node *arriv, node *lb
  *          one per PWL axis, and a failure on any axis is cause
  *          for failure.
  *
+ *          This section of code operates with denormalized extrema.
+ *
  *****************************************************************************/
 static bool
 MatchExpr (node *arg, node *expr)
@@ -1528,6 +1530,13 @@ BuildInverseProjections (node *arg_node, info *arg_info)
             intrlb = TCgetNthExprsExpr (WLINTERSECTION1 (curpart), PRF_ARGS (arg_node));
             intrub = TCgetNthExprsExpr (WLINTERSECTION2 (curpart), PRF_ARGS (arg_node));
 
+            // Denormalize upper bound before performing inverse projection.
+            // Part of the reason for this is that we may swap bounds later on.
+            intrub
+              = IVEXPadjustExtremaBound (ID_AVIS (intrub), -1, &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGNS (arg_info), "biptop");
+            intrub = TBmakeId (intrub);
+
             /* If naked consumer, inverse projection is identity */
             if (NULL == INFO_CONSUMERWLPART (arg_info)) {
                 PRF_ARGS (arg_node) = TCputNthExprs (curelidxlb, PRF_ARGS (arg_node),
@@ -1574,6 +1583,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                     DBUG_ASSERT (N_exprs == NODE_TYPE (zel), "Expected N_exprs zel");
                     DBUG_ASSERT (N_exprs == NODE_TYPE (zeu), "Expected N_exprs zeu");
                     if (swaplb) {
+                        DBUG_ASSERT (FALSE, "time2 code");
                         tmp = zel;
                         zel = zeu;
                         zeu = tmp;
@@ -1816,7 +1826,7 @@ AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
  *
  *
  *        NB. ALL lower bounds precede all upper bounds in the
- *            _attach_extrema_ arguments.
+ *            _attach_extrema_arguments.
  *
  *        NB. We need the producerWL partition bounds for at least
  *            two reasons: a producerWL partition may be split
@@ -1944,6 +1954,7 @@ IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node 
 
     DBUG_RETURN (resavis);
 }
+
 /** <!--********************************************************************-->
  *
  * @fn node *Intersect1PartBuilder( node *idxavismin,
@@ -1962,7 +1973,7 @@ IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node 
  *            z = ( idxavismin >= bound1) && ( denorm( idxavismax) <= bound2)
  *
  * @params: idxavismin: AVIS_MIN( consumerWL partn index vector)
- * @params: idxavismax: DENORMALIZED! AVIS_MAX( consumerWL partn index vector)
+ * @params: idxavismax: normalized AVIS_MAX( consumerWL partn index vector)
  * @params: bound1: N_avis of GENERATOR_BOUND1 of producerWL partn.
  * @params: bound2: N_avis of GENERATOR_BOUND2 of
  *                  producerWL pn.
@@ -2098,9 +2109,6 @@ IntersectBoundsBuilder (node *arg_node, info *arg_info, node *ivavis)
 
             avismax
               = IntersectBoundsBuilderOne (arg_node, arg_info, pwlp, 2, ivmin, ivmax);
-            /* avismin and avismax are now denormalized, in case we have
-             * to swap them later.
-             */
 
             DBUG_ASSERT (NULL != avismax, "Expected non_NULL avismax");
 
