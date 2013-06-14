@@ -204,7 +204,7 @@ bool[.] isPartitionIntersectNull( int[.] idxmin, int[.] idxmax,
    *
    */
 
-  z = _or_VxV_( _le_VxV_( idxmax, bound1), _ge_VxV_( idxmin, bound2));
+  z = _or_VxV_( _lt_VxV_( idxmax, bound1), _ge_VxV_( idxmin, bound2));
   return(z);
 }
 
@@ -221,7 +221,7 @@ bool[.] isPartitionIntersectNull( int idxmin, int idxmax,
    *
    */
 
-  z = _or_VxV_( _le_SxV_( idxmax, bound1), _ge_SxV_( idxmin, bound2));
+  z = _or_VxV_( _lt_SxV_( idxmax, bound1), _ge_SxV_( idxmin, bound2));
   return(z);
 }
 

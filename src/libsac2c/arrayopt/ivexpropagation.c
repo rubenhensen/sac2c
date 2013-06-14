@@ -1827,7 +1827,6 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                                                  &INFO_PREASSIGNS (arg_info),
                                                  TYeliminateAKV (AVIS_TYPE (lhsavis)));
                     AVIS_ISMINHANDLED (minv) = TRUE;
-                    AVIS_ISMAXHANDLED (minv) = TRUE;
                     INFO_MINVAL (arg_info) = minv;
                 }
                 break;
@@ -2214,7 +2213,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
         }
 
         if (NULL != AVIS_MIN (rhsavis)) { // Case 3
-            IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)));
+            IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (AVIS_MIN (rhsavis)));
         }
 
         if (NULL != AVIS_MAX (rhsavis)) {
