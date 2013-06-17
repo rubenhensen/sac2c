@@ -36,6 +36,7 @@
 #include "str.h"
 #include "memory.h"
 #include "new_types.h"
+#include "tree_utils.h"
 #include "type_utils.h"
 #include "new_typecheck.h"
 #include "globals.h"
@@ -92,13 +93,29 @@
  *
  *    Illegal.
  *
- * Notes:
+ * Note:
  *   In order to make iotan.sac work properly, Case 1 has to
  *   work across extrema. E.g.:
  *
  *      x = [a,b,c,...];
  *      x' = _noteminval( x, ...);
  *      z = _sel_VxA_( [0], x');
+ *
+ * Note:
+ *
+ *   In order to make CF unit test bug964.sac work properly,
+ *   Case 1 (and perhaps others) has to work across guards.
+ *   In that case, we have _idx_sel_( constant, guard (structcon)).
+ *   Re the note about Bug #1060 below, I think what happens is this:
+ *
+ *      x = [ v];
+ *      x' = _non_neg_val_V_( x);
+ *      z = _idx_sel_( 0, x'];
+ *
+ *   If we optimize across, e.g., v', p= _non_neg_val( v) guard, then
+ *   we lose the AVIS_MIN on x'. I think this is the intent of Bug #1060,
+ *   but saczilla remains off the air, months later...
+ *
  *
  *****************************************************************************/
 
@@ -346,8 +363,16 @@ SCCFprf_reshape (node *arg_node, info *arg_info)
  *   node *SCCFprf_take_SxV(node *arg_node, info *arg_info)
  *
  * description:
- *   Computes structural undertake on array expressions with constant arg1,
- *   and arg2 an N_array.
+ *
+ *  Case 1: Idempotent take, e.g, _take_SxV_( k, iota( k));
+ *          with non-constant k. Unfortunately, today, this does not
+ *          handle:  _take_SxV_( (-k), iota( k));
+ *
+ *
+ *  Case 2: Undertake on array expression with constant arg1,
+ *          and arg2 an N_array.
+ *
+ *  Case 3: Like Case 1, except constant k.
  *
  *   [If both arguments are constant, CF was done by the typechecker.]
  *
@@ -357,37 +382,76 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *tail;
+    node *arg1 = NULL;
     node *arg2 = NULL;
+    node *arg2array = NULL;
     constant *con = NULL;
-    pattern *pat;
+    pattern *pat1;
+    pattern *pat2;
+    pattern *pat3;
+    pattern *pat4;
+    node *el0 = NULL;
 
     int takecount;
     int dropcount;
     int argxrho;
     int resxrho;
+    ntype *typ;
 
     DBUG_ENTER ();
 
-    pat = PMprf (1, PMAisPrf (F_take_SxV), 2, PMconst (1, PMAgetVal (&con)),
-                 PMarray (1, PMAgetNode (&arg2), 1, PMskip (0)));
+    pat1 = PMprf (1, PMAisPrf (F_take_SxV), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                  PMvar (1, PMAgetNode (&arg2), 0));
+    pat2 = PMarray (1, PMAgetNode (&arg2array), 0);
+    pat3 = PMprf (1, PMAisPrf (F_take_SxV), 2, PMconst (1, PMAgetVal (&con)),
+                  PMvar (1, PMAgetNode (&arg2), 0));
+    pat4 = PMprf (1, PMAisPrf (F_take_SxV), 2, PMconst (1, PMAgetVal (&con)),
+                  PMarray (1, PMAgetNode (&arg2), 1, PMskip (0)));
 
-    if (PMmatchFlatSkipExtrema (pat, arg_node)) {
-        takecount = COconst2Int (con);
-        resxrho = abs (takecount);
-        argxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2));
-        DBUG_ASSERT (resxrho <= argxrho, "SCCFprf_take_SxV attempted overtake");
-        if (argxrho == resxrho) {
-            res = DUPdoDupNode (PRF_ARG2 (arg_node));
-        } else {
+    if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
+        /* Case 1 */
+        if ((NULL != AVIS_SHAPE (ID_AVIS (arg2)))
+            && (PMmatchFlat (pat2, AVIS_SHAPE (ID_AVIS (arg2))))) {
+            // match shape( arg2)[0] against arg1
+            el0 = TCgetNthExprs (0, ARRAY_AELEMS (arg2array));
+            if (TULSisValuesMatch (el0, PRF_ARG1 (arg_node))) {
+                res = DUPdoDupNode (PRF_ARG2 (arg_node)); /* Idempotent take */
+                DBUG_PRINT ("Idempotent take performed based on AVIS_SHAPE ");
+            }
+        }
+
+        /* Case 2 */
+        if ((NULL == res) && (PMmatchFlatSkipExtrema (pat4, arg_node))) {
+            argxrho = SHgetUnrLen (ARRAY_FRAMESHAPE (arg2array));
+            takecount = COconst2Int (con);
+            resxrho = abs (takecount);
+            DBUG_ASSERT (resxrho <= argxrho, "Attempted overtake");
             dropcount = (takecount >= 0) ? 0 : argxrho + takecount;
             tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2));
-            DBUG_PRINT ("SCCFprf_take performed ");
+            DBUG_PRINT ("Undertake performed ");
             res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)),
                                SHcreateShape (1, resxrho), tail);
         }
-        con = COfreeConstant (con);
+
+        /* Case 3 */
+        typ = AVIS_TYPE (ID_AVIS (arg2));
+        if ((res == NULL) && (NULL != con) && (TYisAKV (typ) || TYisAKS (typ))
+            && (PMmatchFlatSkipExtrema (pat3, arg_node))) {
+            argxrho = SHgetUnrLen (TYgetShape (typ));
+            takecount = COconst2Int (con);
+            resxrho = abs (takecount);
+            if (argxrho == resxrho) {
+                res = DUPdoDupNode (PRF_ARG2 (arg_node)); /* Idempotent take */
+                DBUG_PRINT ("Idempotent constant take performed ");
+            }
+        }
     }
-    pat = PMfree (pat);
+
+    con = (NULL != con) ? COfreeConstant (con) : NULL;
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+    pat4 = PMfree (pat4);
 
     DBUG_RETURN (res);
 }
