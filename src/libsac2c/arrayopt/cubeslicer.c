@@ -269,8 +269,8 @@ matchGeneratorField (node *fa, node *fb)
     z = (fa == fb)
         || (((NULL != fa) && (NULL != fb)) && (PMmatchFlatSkipExtrema (pata, fa))
             && (PMmatchFlatSkipExtrema (patb, fb)) && (TULSisValuesMatch (fa, fb)));
-    PMfree (pata);
-    PMfree (patb);
+    pata = PMfree (pata);
+    patb = PMfree (patb);
 
     if ((NULL != fa) && (NULL != fb)) {
         if (z) {
