@@ -10,4 +10,5 @@ do
   UnitTestRunGrep1 $i
 done;
  rm -f crudd* crudn*
+ cp $logfile logGreps
 

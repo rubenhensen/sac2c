@@ -8,3 +8,4 @@ rm -f $logfile
 for i in *.sac; do
         UnitTestRunWorks1 $i
 done
+cp $logfile logWorks

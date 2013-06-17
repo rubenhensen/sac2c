@@ -1,12 +1,6 @@
 #!/bin/bash
 
-
 # Run one unit test on sac source program $1, and check results.
-
-# Here, we set variable bopt, which is "-bopt" by default. In the 
-# UnitTesRunGrep1.config, we can reset bopt that define the different break phase
-
-bopt="-bopt"
 
 source UnitTestRunGrep1.config
 
@@ -37,22 +31,35 @@ function getargs
  # Ditch trailing blanks
  fil=${fil%%\ }
 
+ nono='no-no'
+ breakpoint='-bopt:dcr5 '
+
+ # We can probably scrap 99% of the following filter code,
+ # now that -printfunsets is here.
+ #
  # If no-no filter, keep all code
  # If no filter, filter main()
  if [ -n "$fil" ]; then
-         filterop=UnitTestExtractFunction\ $fil
-         filter=\"$fil\"
+        #filterop=UnitTestExtractFunction\ $fil
+        filterop=cat
+        filter=\"$fil\"
+        bopt=" -printfunsets d -printfun $fil "
  else
-         filterop=UnitTestExtractFunction\ _MAIN::main 
-         filter=\"$fil\"
+        fil=main  
+        filterop=cat
+        # Ignore default filtering, because -printfun now does that for us.
+        # filterop=UnitTestExtractFunction\ _MAIN::main 
+        # filter=\"$fil\"
+        bopt=" -printfunsets d -printfun main "
  fi 
 
- nono='no-no'
  if [ x$fil =  x$nono ]; then
          filterop=cat
          filter=\"$fil\"
+         bopt=
  fi
-                
+
+bopt=$breakpoint$bopt
               
 logfile="logGreps"$( sac2c-p -V | grep rev | cut -f 4 -d\ )
 echo $( sac2c-p -V) >> $logfile

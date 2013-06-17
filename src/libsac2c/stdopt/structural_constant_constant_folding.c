@@ -406,7 +406,7 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
     pat3 = PMprf (1, PMAisPrf (F_take_SxV), 2, PMconst (1, PMAgetVal (&con)),
                   PMvar (1, PMAgetNode (&arg2), 0));
     pat4 = PMprf (1, PMAisPrf (F_take_SxV), 2, PMconst (1, PMAgetVal (&con)),
-                  PMarray (1, PMAgetNode (&arg2), 1, PMskip (0)));
+                  PMarray (1, PMAgetNode (&arg2array), 1, PMskip (0)));
 
     if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
         /* Case 1 */
@@ -427,9 +427,9 @@ SCCFprf_take_SxV (node *arg_node, info *arg_info)
             resxrho = abs (takecount);
             DBUG_ASSERT (resxrho <= argxrho, "Attempted overtake");
             dropcount = (takecount >= 0) ? 0 : argxrho + takecount;
-            tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2));
+            tail = TCtakeDropExprs (resxrho, dropcount, ARRAY_AELEMS (arg2array));
             DBUG_PRINT ("Undertake performed ");
-            res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2)),
+            res = TBmakeArray (TYcopyType (ARRAY_ELEMTYPE (arg2array)),
                                SHcreateShape (1, resxrho), tail);
         }
 
