@@ -1856,7 +1856,8 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     && (SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info)))
                     && (TYisAKV (AVIS_TYPE (arg1avis))
                         || TYisAKS (AVIS_TYPE (arg1avis)))) {
-                    /* Create maximum as PRF_ARG2 */
+                    /* Create maximum as PRF_ARG2. No need to normalize because it's lt()
+                     */
                     maxv = ID_AVIS (PRF_ARG2 (rhs));
                     INFO_MAXVAL (arg_info) = maxv;
                 }
@@ -1962,6 +1963,25 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
             case F_aplmod_VxS:
             case F_aplmod_VxV:
                 arg_node = GenerateExtremaModulus (arg_node, arg_info, TRUE);
+                break;
+
+            /* prod_matches_prod_shape and similar prfs merely propagate
+             * PRF_ARG1 extrema.
+             */
+            case F_prod_matches_prod_shape_VxA:
+                arg1avis = ID_AVIS (PRF_ARG1 (rhs));
+                arg2avis = ID_AVIS (PRF_ARG2 (rhs));
+                if ((!IVEXPisAvisHasMin (lhsavis)) && (IVEXPisAvisHasMin (arg1avis))
+                    && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))) {
+                    INFO_MINVAL (arg_info)
+                      = ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (rhs))));
+                }
+
+                if ((!IVEXPisAvisHasMax (lhsavis)) && (IVEXPisAvisHasMax (arg1avis))
+                    && (SWLDisDefinedInThisBlock (arg1avis, INFO_DEFDEPTH (arg_info)))) {
+                    INFO_MAXVAL (arg_info)
+                      = ID_AVIS (AVIS_MAX (ID_AVIS (PRF_ARG1 (rhs))));
+                }
                 break;
 
             /* Selection: _sel_VxA_( constant, argwithextrema)
