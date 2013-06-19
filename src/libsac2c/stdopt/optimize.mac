@@ -142,7 +142,7 @@ OPTIMIZE ("ctz", ctz, TRUE, TRUE, "comparisons to zero")
 OPTIMIZE ("uctz", uctz, TRUE, TRUE, "eliminating comparisons to zero")
 OPTIMIZE ("ggs", ggs, TRUE, TRUE, "generating guard solvers")
 OPTIMIZE ("wls_aggressive", wls_aggressive, TRUE, TRUE, "aggressive loop scalarization")
-OPTIMIZE ("sse", sse, TRUE, TRUE, "simplify symbiotic expressions")
+OPTIMIZE ("sse", sse, FALSE, FALSE, "simplify symbiotic expressions")
 
 /* OPTIMIZE entries after this point are intended for
  * developer use only.

@@ -4,6 +4,7 @@
  *
  * @brief:
  *
+ *
  *  This code performs several related functions:
  *
  *    1. It propagates extrema (AVIS_MIN and AVIS_MAX) through
@@ -65,6 +66,7 @@
 #include "tree_basic.h"
 #include "memory.h"
 #include "new_types.h"
+#include "tree_utils.h"
 #include "type_utils.h"
 #include "constants.h"
 #include "tree_compound.h"
@@ -989,6 +991,47 @@ GenerateExtremaModulus (node *arg_node, info *arg_info, bool aplmod)
 
 /** <!--********************************************************************-->
  *
+ * Description: Generate normalized extrema calculation for dyadic primitives
+ *
+ * @params See callers
+ *
+ * @return No explicit result. Updated INFO_MINVAL, INFO_MAXVAL, side effects
+ *         from new vardecs and assigns.
+ *
+ ******************************************************************************/
+static void
+GenExCalc (node *rhs, node *minarg1, node *minarg2, node *maxarg1, node *maxarg2,
+           node *lhsavis, info *arg_info)
+{
+    node *minv = NULL;
+    node *maxv = NULL;
+
+    DBUG_ENTER ();
+
+    if (NULL != minarg1) {
+        minv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (minarg1), TBmakeId (minarg2));
+        minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info),
+                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
+        INFO_MINVAL (arg_info) = minv;
+    }
+
+    if (NULL != maxarg1) {
+        maxv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (maxarg1), TBmakeId (maxarg2));
+        maxv = FLATGexpression2Avis (maxv, &INFO_VARDECS (arg_info),
+                                     &INFO_PREASSIGNS (arg_info),
+                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
+        /* Normalize maxv */
+        maxv = IVEXPadjustExtremaBound (maxv, +1, &INFO_VARDECS (arg_info),
+                                        &INFO_PREASSIGNS (arg_info), "gexc");
+        INFO_MAXVAL (arg_info) = maxv;
+    }
+
+    DBUG_RETURN ();
+}
+
+/** <!--********************************************************************-->
+ *
  * Description: Generate extrema computation for
  *              dyadic scalar function.
  *
@@ -1064,8 +1107,6 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
     node *minarg2 = NULL;
     node *maxarg1 = NULL;
     node *maxarg2 = NULL;
-    node *minv = NULL;
-    node *maxv = NULL;
     node *lhsavis;
     node *rhs;
     bool min1;
@@ -1141,27 +1182,7 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
         }
     }
 
-    /* Generate normalized extrema calculation for dyadic primitives */
-    if (NULL != minarg1) {
-        minv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (minarg1), TBmakeId (minarg2));
-        minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
-                                     &INFO_PREASSIGNS (arg_info),
-                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
-    }
-
-    if (NULL != maxarg1) {
-        maxv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (maxarg1), TBmakeId (maxarg2));
-        maxv = FLATGexpression2Avis (maxv, &INFO_VARDECS (arg_info),
-                                     &INFO_PREASSIGNS (arg_info),
-                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
-    }
-
-    /* Normalize maxv */
-    maxv = IVEXPadjustExtremaBound (maxv, +1, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info), "dsfc");
-
-    INFO_MINVAL (arg_info) = minv;
-    INFO_MAXVAL (arg_info) = maxv;
+    GenExCalc (rhs, minarg1, minarg2, maxarg1, maxarg2, lhsavis, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1206,8 +1227,6 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
     node *minarg2 = NULL;
     node *maxarg1 = NULL;
     node *maxarg2 = NULL;
-    node *minv = NULL;
-    node *maxv = NULL;
     node *lhsavis;
     node *rhs;
     bool min1;
@@ -1317,30 +1336,49 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
         }
     }
 
-    /* Generate normalized extrema calculation for dyadic primitives */
-    if (NULL != minarg1) {
-        minv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (minarg1), TBmakeId (minarg2));
-        minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
-                                     &INFO_PREASSIGNS (arg_info),
-                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
-    }
-
-    if (NULL != maxarg1) {
-        maxv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (maxarg1), TBmakeId (maxarg2));
-        maxv = FLATGexpression2Avis (maxv, &INFO_VARDECS (arg_info),
-                                     &INFO_PREASSIGNS (arg_info),
-                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
-        /* Normalize maxv */
-        maxv = IVEXPadjustExtremaBound (maxv, +1, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNS (arg_info), "mulnorm");
-    }
-
-    INFO_MINVAL (arg_info) = minv;
-    INFO_MAXVAL (arg_info) = maxv;
+    GenExCalc (rhs, minarg1, minarg2, maxarg1, maxarg2, lhsavis, arg_info);
 
     DBUG_RETURN (arg_node);
 }
 
+/** <!--********************************************************************-->
+ *
+ * Description:  Generate extrema for _sub_().
+ *
+ * @params arg_node: Your basic N_let node.
+ *         arg_info: As usual.
+ *
+ * @return Same arg_node, but with potential side effects on INFO_MINVAL and
+ *         INFO_MAXVAL.
+ *
+ * @notes:
+ *
+ *   Case 1: minv( z) = minv( A) - B);
+ *
+ *   Case 2: minv( z) = A - denormalize( maxv( B));
+ *
+ *   Case 3: [I would like to find a better place for this sort of thing,
+ *            but let's see how this works.]
+ *
+ *           AWLF intersect and null-intersect calculation involve
+ *           this calculation (at least):
+ *
+ *            tmp = N - min( N, k);
+ *            p = tmp < 0;
+ *
+ *           With Case 1 or Case 2, we end up with AVIS_MIN( tmp) = N - k;
+ *           this does not allow AWLF to proceed.
+ *
+ *           However, observe that:
+ *
+ *            k <= N --> tmp = ( N - k), but since k is <= than N,
+ *                       tmp is >0.
+ *            k >  N --> tmp = ( N - N), so
+ *                       tmp = 0;
+ *
+ *            Hence, setting AVIS_MIN( tmp) = 0 is safe;
+ *
+ ******************************************************************************/
 static node *
 GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
 { // F_sub_() only!
@@ -1349,8 +1387,6 @@ GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
     node *minarg2 = NULL;
     node *maxarg1 = NULL;
     node *maxarg2 = NULL;
-    node *minv = NULL;
-    node *maxv = NULL;
     node *lhsavis;
     node *rhs;
     bool min1;
@@ -1361,6 +1397,9 @@ GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
     node *wid = NULL;
     node *arg1avis;
     node *arg2avis;
+    pattern *pat;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
 
     DBUG_ENTER ();
 
@@ -1399,10 +1438,29 @@ GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
         break;
     }
 
+    // Case 3 ( N - min( N, count))
+    // I think we can get away with doing this one on scalars only.
+    // I don't know if we need similar code for max().
+    if (!IVEXPisAvisHasMin (lhsavis)) {
+        pat = PMprf (1, PMAisPrf (F_min_SxS), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                     PMvar (1, PMAgetNode (&arg2), 0));
+        if ((PMmatchFlat (pat, PRF_ARG2 (rhs)))
+            && (TULSisValuesMatch (PRF_ARG1 (rhs), arg1)
+                || TULSisValuesMatch (PRF_ARG1 (rhs), arg2))) {
+            minarg1 = SCSmakeZero (PRF_ARG1 (rhs)); /* Create zero minimum */
+            minarg1 = FLATGexpression2Avis (minarg1, &INFO_VARDECS (arg_info),
+                                            &INFO_PREASSIGNS (arg_info),
+                                            TYeliminateAKV (AVIS_TYPE (lhsavis)));
+        }
+
+        pat = PMfree (pat);
+    }
+
     /* Compute AVIS_MIN, perhaps */
     // I think that, ideally, we would want to compute both
     // of these, and take the min of those. It might just lead
     // to more problems, perhaps.
+
     if (!IVEXPisAvisHasMin (lhsavis)) {
         if (max2) {
             /*  Case 2: minv( z) = A - denormalize( maxv( B)); */
@@ -1434,26 +1492,7 @@ GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
         }
     }
 
-    /* Generate normalized extrema calculation for dyadic primitives */
-    if (NULL != minarg1) {
-        minv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (minarg1), TBmakeId (minarg2));
-        minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
-                                     &INFO_PREASSIGNS (arg_info),
-                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
-    }
-
-    if (NULL != maxarg1) {
-        maxv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (maxarg1), TBmakeId (maxarg2));
-        maxv = FLATGexpression2Avis (maxv, &INFO_VARDECS (arg_info),
-                                     &INFO_PREASSIGNS (arg_info),
-                                     TYeliminateAKV (AVIS_TYPE (lhsavis)));
-        /* Normalize maxv */
-        maxv = IVEXPadjustExtremaBound (maxv, +1, &INFO_VARDECS (arg_info),
-                                        &INFO_PREASSIGNS (arg_info), "dsfnc");
-    }
-
-    INFO_MINVAL (arg_info) = minv;
-    INFO_MAXVAL (arg_info) = maxv;
+    GenExCalc (rhs, minarg1, minarg2, maxarg1, maxarg2, lhsavis, arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -2187,7 +2226,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
 #endif // DUMBIDEA
 
         /*
-         * Case 1: If AVIS_MIN( lhsavis) is negatived, replace it by zero,
+         * Case 1: If AVIS_MIN( lhsavis) is negative, replace it by zero,
          *         as this tightens the constraint.
          * Case 2: If AVIS_MIN( lhsavis) is not NULL, and AVIS_MIN( rhsavis)
          *         are both are constant, propagate the larger one.
