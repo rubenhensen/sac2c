@@ -227,6 +227,7 @@ MakeInfo (void)
     INFO_PREASSIGNSTHEN (result) = NULL;
     INFO_PREASSIGNSELSE (result) = NULL;
     INFO_AP (result) = NULL;
+    INFO_NEWFUNCONDS (result) = NULL;
     INFO_FUNCONDEXPRS (result) = NULL;
     INFO_RETS (result) = NULL;
     INFO_RECCALLERIDS (result) = NULL;
