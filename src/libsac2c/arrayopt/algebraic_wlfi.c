@@ -1864,7 +1864,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     node *gen = NULL;
     node *mmx;
     node *z;
-    const char *fun;
+    prf prfminmax;
     int shp;
 
     DBUG_ENTER ();
@@ -1880,7 +1880,6 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     DBUG_ASSERT (N_array == NODE_TYPE (gen), "Expected N_array gen");
 
     shp = SHgetUnrLen (ARRAY_FRAMESHAPE (gen));
-    fun = (1 == boundnum) ? "partitionIntersectMax" : "partitionIntersectMin";
     mmx = (1 == boundnum) ? ivmin : ivmax;
     mmx = AWLFItakeDropIv (shp, 0, mmx, &INFO_VARDECS (arg_info),
                            &INFO_PREASSIGNS (arg_info));
@@ -1888,8 +1887,8 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
     gen = WLSflattenBound (DUPdoDupTree (gen), &INFO_VARDECS (arg_info),
                            &INFO_PREASSIGNS (arg_info));
 
-    fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), fun,
-                                TCcreateExprsChainFromAvises (2, gen, mmx));
+    prfminmax = (1 == boundnum) ? F_max_VxV : F_min_VxV;
+    fncall = TCmakePrf2 (prfminmax, TBmakeId (gen), TBmakeId (mmx));
     resavis = FLATGexpression2Avis (fncall, &INFO_VARDECS (arg_info),
                                     &INFO_PREASSIGNS (arg_info),
                                     TYmakeAKS (TYmakeSimpleType (T_int),
@@ -1909,8 +1908,11 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
  *                                            node *bound1, node *bound2,
  *                                            info *arg_info)
  *
- * @brief:  Emit symbiotic expression to determine if intersection
- *          of index vector set and partition bounds is null.
+ * @brief:  Emit expression to determine if intersection
+ *          of index vector set and partition bounds is null:
+ *
+ *            isnull = _or_VxV_( _lt_VxV_( idxavismax, bound1),
+ *                               _ge_VxV_( idxavismin, bound2));
  *
  * @params: idxmin: AVIS_MIN( consumerWL partition index vector)
  * @params: idxmax: AVIS_MAX( consumerWL partition index vector)
@@ -1926,11 +1928,13 @@ static node *
 IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node *bound2,
                                  info *arg_info)
 {
-    node *fncall;
     node *resavis;
     node *idxavismin;
     node *idxavismax;
     int shp;
+    node *fncall1;
+    node *fncall2;
+    node *fncall3;
 
     DBUG_ENTER ();
 
@@ -1942,15 +1946,17 @@ IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node 
     idxavismax = AWLFItakeDropIv (shp, 0, idxmax, &INFO_VARDECS (arg_info),
                                   &INFO_PREASSIGNS (arg_info));
 
-    fncall = DSdispatchFunCall (NSgetNamespace ("sacprelude"), "isPartitionIntersectNull",
-                                TCcreateExprsChainFromAvises (4, idxavismin, idxavismax,
-                                                              bound1, bound2));
-
-    shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (bound1)));
-    resavis = FLATGexpression2Avis (fncall, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info),
-                                    TYmakeAKS (TYmakeSimpleType (T_bool),
-                                               SHcreateShape (1, shp)));
+    fncall1 = TCmakePrf2 (F_lt_VxV, TBmakeId (idxavismax), TBmakeId (bound1));
+    fncall1 = FLATGexpression2Avis (fncall1, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info), NULL);
+    fncall2 = TCmakePrf2 (F_ge_VxV, TBmakeId (idxavismin), TBmakeId (bound2));
+    fncall2 = FLATGexpression2Avis (fncall2, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info), NULL);
+    fncall3 = TCmakePrf2 (F_or_VxV, TBmakeId (fncall1), TBmakeId (fncall2));
+    resavis = FLATGexpression2Avis (fncall3, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info), NULL);
+    resavis = TUscalarizeVector (resavis, &INFO_PREASSIGNS (arg_info),
+                                 &INFO_VARDECS (arg_info));
 
     DBUG_RETURN (resavis);
 }
@@ -1970,13 +1976,13 @@ IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node 
  *
  *          This predicate is:
  *
- *            z = ( idxavismin >= bound1) && ( denorm( idxavismax) <= bound2)
+ *            z = ( idxavismin >= bound1) && ( idxavismax <= bound2)
  *
  * @params: idxavismin: AVIS_MIN( consumerWL partn index vector)
  * @params: idxavismax: normalized AVIS_MAX( consumerWL partn index vector)
  * @params: bound1: N_avis of GENERATOR_BOUND1 of producerWL partn.
  * @params: bound2: N_avis of GENERATOR_BOUND2 of
- *                  producerWL pn.
+ *                  producerWL partn.
  * @params: arg_info: your basic arg_info node
  *
  * @result: N_avis node of generated computation's boolean result.
@@ -1986,11 +1992,13 @@ static node *
 Intersect1PartBuilder (node *idxmin, node *idxmax, node *bound1, node *bound2,
                        info *arg_info)
 {
-    node *fncall;
     node *resavis;
     node *idxavismin;
     node *idxavismax;
     int shp;
+    node *fncall1;
+    node *fncall2;
+    node *fncall3;
 
     DBUG_ENTER ();
 
@@ -2002,16 +2010,17 @@ Intersect1PartBuilder (node *idxmin, node *idxmax, node *bound1, node *bound2,
     idxavismax = AWLFItakeDropIv (shp, 0, idxmax, &INFO_VARDECS (arg_info),
                                   &INFO_PREASSIGNS (arg_info));
 
-    fncall
-      = DSdispatchFunCall (NSgetNamespace ("sacprelude"), "isPartitionIntersect1Part",
-                           TCcreateExprsChainFromAvises (4, idxavismin, idxavismax,
-                                                         bound1, bound2));
-
-    shp = SHgetUnrLen (TYgetShape (AVIS_TYPE (bound1)));
-    resavis = FLATGexpression2Avis (fncall, &INFO_VARDECS (arg_info),
-                                    &INFO_PREASSIGNS (arg_info),
-                                    TYmakeAKS (TYmakeSimpleType (T_bool),
-                                               SHcreateShape (1, shp)));
+    fncall1 = TCmakePrf2 (F_ge_VxV, TBmakeId (idxavismin), TBmakeId (bound1));
+    fncall1 = FLATGexpression2Avis (fncall1, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info), NULL);
+    fncall2 = TCmakePrf2 (F_le_VxV, TBmakeId (idxavismax), TBmakeId (bound2));
+    fncall2 = FLATGexpression2Avis (fncall2, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info), NULL);
+    fncall3 = TCmakePrf2 (F_and_VxV, TBmakeId (fncall1), TBmakeId (fncall2));
+    resavis = FLATGexpression2Avis (fncall3, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNS (arg_info), NULL);
+    resavis = TUscalarizeVector (resavis, &INFO_PREASSIGNS (arg_info),
+                                 &INFO_VARDECS (arg_info));
 
     DBUG_RETURN (resavis);
 }
