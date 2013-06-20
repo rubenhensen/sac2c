@@ -1009,6 +1009,7 @@ GenExCalc (node *rhs, node *minarg1, node *minarg2, node *maxarg1, node *maxarg2
     DBUG_ENTER ();
 
     if (NULL != minarg1) {
+        DBUG_ASSERT (NULL != minarg2, "NULL minarg2!");
         minv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (minarg1), TBmakeId (minarg2));
         minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
                                      &INFO_PREASSIGNS (arg_info),
@@ -1017,6 +1018,7 @@ GenExCalc (node *rhs, node *minarg1, node *minarg2, node *maxarg1, node *maxarg2
     }
 
     if (NULL != maxarg1) {
+        DBUG_ASSERT (NULL != maxarg2, "NULL maxarg2!");
         maxv = TCmakePrf2 (PRF_PRF (rhs), TBmakeId (maxarg1), TBmakeId (maxarg2));
         maxv = FLATGexpression2Avis (maxv, &INFO_VARDECS (arg_info),
                                      &INFO_PREASSIGNS (arg_info),
@@ -1357,27 +1359,6 @@ GenerateExtremaComputationsMultiply (node *arg_node, info *arg_info)
  *
  *   Case 2: minv( z) = A - denormalize( maxv( B));
  *
- *   Case 3: [I would like to find a better place for this sort of thing,
- *            but let's see how this works.]
- *
- *           AWLF intersect and null-intersect calculation involve
- *           this calculation (at least):
- *
- *            tmp = N - min( N, k);
- *            p = tmp < 0;
- *
- *           With Case 1 or Case 2, we end up with AVIS_MIN( tmp) = N - k;
- *           this does not allow AWLF to proceed.
- *
- *           However, observe that:
- *
- *            k <= N --> tmp = ( N - k), but since k is <= than N,
- *                       tmp is >0.
- *            k >  N --> tmp = ( N - N), so
- *                       tmp = 0;
- *
- *            Hence, setting AVIS_MIN( tmp) = 0 is safe;
- *
  ******************************************************************************/
 static node *
 GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
@@ -1397,9 +1378,6 @@ GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
     node *wid = NULL;
     node *arg1avis;
     node *arg2avis;
-    pattern *pat;
-    node *arg1 = NULL;
-    node *arg2 = NULL;
 
     DBUG_ENTER ();
 
@@ -1436,24 +1414,6 @@ GenerateExtremaComputationsSubtract (node *arg_node, info *arg_info)
 
     default:
         break;
-    }
-
-    // Case 3 ( N - min( N, count))
-    // I think we can get away with doing this one on scalars only.
-    // I don't know if we need similar code for max().
-    if (!IVEXPisAvisHasMin (lhsavis)) {
-        pat = PMprf (1, PMAisPrf (F_min_SxS), 2, PMvar (1, PMAgetNode (&arg1), 0),
-                     PMvar (1, PMAgetNode (&arg2), 0));
-        if ((PMmatchFlat (pat, PRF_ARG2 (rhs)))
-            && (TULSisValuesMatch (PRF_ARG1 (rhs), arg1)
-                || TULSisValuesMatch (PRF_ARG1 (rhs), arg2))) {
-            minarg1 = SCSmakeZero (PRF_ARG1 (rhs)); /* Create zero minimum */
-            minarg1 = FLATGexpression2Avis (minarg1, &INFO_VARDECS (arg_info),
-                                            &INFO_PREASSIGNS (arg_info),
-                                            TYeliminateAKV (AVIS_TYPE (lhsavis)));
-        }
-
-        pat = PMfree (pat);
     }
 
     /* Compute AVIS_MIN, perhaps */
@@ -2180,8 +2140,11 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
     node *zer;
     pattern *patlhs;
     pattern *patrhs;
+    pattern *pat;
     constant *lhsmin = NULL;
     constant *rhsmin = NULL;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
 
     DBUG_ENTER ();
 
@@ -2343,6 +2306,50 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
         minv = AVIS_MIN (ID_AVIS (PRF_ARG2 (rhs)));
         if (NULL != minv) {
             IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (minv));
+        }
+        break;
+
+    case F_sub_SxS:
+        /*
+         *  [I would like to find a better place for this sort of thing,
+         *   but let's see how this works.]
+         *
+         *           AWLF intersect and null-intersect calculation involve
+         *           this calculation (at least):
+         *
+         *            tmp = N - min( N, k);
+         *            p = tmp < 0;
+         *
+         *           With Case 1 or Case 2, we end up with AVIS_MIN( tmp) = N - k;
+         *           this does not allow AWLF to proceed.
+         *
+         *           However, observe that:
+         *
+         *            k <= N --> tmp = ( N - k), but since k is <= than N,
+         *                       tmp is >0.
+         *            k >  N --> tmp = ( N - N), so
+         *                       tmp = 0;
+         *
+         *            Hence, setting AVIS_MIN( tmp) = 0 is safe;
+         *
+         *
+         * I think we can get away with doing this one on scalars only.
+         * I don't know if we need similar code for max().
+         */
+        if (!IVEXPisAvisHasMin (lhsavis)) {
+            pat = PMprf (1, PMAisPrf (F_min_SxS), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                         PMvar (1, PMAgetNode (&arg2), 0));
+            if ((PMmatchFlat (pat, PRF_ARG2 (rhs)))
+                && (TULSisValuesMatch (PRF_ARG1 (rhs), arg1)
+                    || TULSisValuesMatch (PRF_ARG1 (rhs), arg2))) {
+                minv = SCSmakeZero (PRF_ARG1 (rhs)); /* Create zero minimum */
+                minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
+                                             &INFO_PREASSIGNS (arg_info),
+                                             TYeliminateAKV (AVIS_TYPE (lhsavis)));
+                IVEXPsetMinvalIfNotNull (lhsavis, minv);
+            }
+
+            pat = PMfree (pat);
         }
         break;
 
