@@ -1918,6 +1918,8 @@ SCSprf_tod_S (node *arg_node, info *arg_info)
  * Case 4: If min( X, Y), where AVIS_MAX( Y) == X, then Y.
  * Case 5: If min( X, Y), where AVIS_MAX( X) == Y, then X.
  *
+ * Case 6: check relationals on extrema.
+ *
  *****************************************************************************/
 node *
 SCSprf_max_SxS (node *arg_node, info *arg_info)
@@ -1941,6 +1943,14 @@ SCSprf_max_SxS (node *arg_node, info *arg_info)
         && (ID_AVIS (PRF_ARG2 (arg_node))
             == ID_AVIS (AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node)))))) {
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
+    }
+
+    // case 6
+    if ((NULL == res) && (SAACFisGtExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node)))) {
+        res = DUPdoDupNode (PRF_ARG1 (arg_node));
+    }
+    if ((NULL == res) && (SAACFisGtExtrema (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node)))) {
+        res = DUPdoDupNode (PRF_ARG2 (arg_node));
     }
 
     DBUG_RETURN (res);
@@ -1980,6 +1990,13 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
+    // case 6
+    if ((NULL == res) && (SAACFisGtExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node)))) {
+        res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    }
+    if ((NULL == res) && (SAACFisGtExtrema (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node)))) {
+        res = DUPdoDupNode (PRF_ARG1 (arg_node));
+    }
     DBUG_RETURN (res);
 }
 

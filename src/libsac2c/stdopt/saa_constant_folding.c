@@ -77,8 +77,8 @@
  * description: Chase AVIS_MIN( AVIS_MIN( AVIS_MIN( arg_node)))
  *              until we find a constant (or don't).
  *
- * params: minmax = 0 for AVIS_MIN,
- *                  1 for AVIS_MAX.
+ * params: minmax = AVIS_MIN: SAACFCHASEMIN = FALSE
+ *                  AVIS_MAX: SAACFCHASEMAX = TRUE
  *
  * returns: constant or NULL.
  *
@@ -107,6 +107,75 @@ SAACFchaseMinMax (node *arg_node, bool minmax)
     }
 
     DBUG_RETURN (z);
+}
+
+/******************************************************************************
+ *
+ * function: bool SAACFisGtExtrema(node *arg1, node *arg2)
+ *
+ * description: This is a helper function for min() and max(),
+ *              and the relationals, when we have a constant argument
+ *              and a non-constant one with extrema.
+ *
+ *              As an example, if we have:
+ *
+ *               _min_SxS_( const, id)
+ *
+ *              and AVIS_MIN( id) = const + 1, then the result
+ *              is const. For max(), the result would be id.
+ *
+ * parameters: arg_node:
+ *
+ * returns: TRUE if arg1 > arg2.
+ *          FALSE otherwise.
+ *
+ *          NB. Do NOT make decisions based on a FALSE result here,
+ *              because it may mean "Do Not Know".
+ *
+ *          TRUE only if AVIS_MIN( arg1) > arg2
+ *           or                    arg1  >= AVIS_MAX( arg2)
+ *
+ *
+ *****************************************************************************/
+bool
+SAACFisGtExtrema (node *arg1, node *arg2)
+{
+    bool res = FALSE;
+    constant *con1 = NULL;
+    constant *con2 = NULL;
+    constant *cres = NULL;
+
+    DBUG_ENTER ();
+
+    // AVIS_MIN( arg1) > arg2
+    con1 = SAACFchaseMinMax (arg1, SAACFCHASEMIN);
+    if (NULL != con1) {
+        con2 = COaST2Constant (arg2);
+        if (NULL != con2) {
+            cres = COgt (con1, con2, NULL);
+            res = COisTrue (cres, TRUE);
+        }
+    }
+    con1 = (NULL != con1) ? COfreeConstant (con1) : NULL;
+    con2 = (NULL != con2) ? COfreeConstant (con2) : NULL;
+    cres = (NULL != cres) ? COfreeConstant (cres) : NULL;
+
+    // arg1 > AVIS_MAX( arg2)
+    if (!res) {
+        con2 = SAACFchaseMinMax (arg2, SAACFCHASEMAX);
+        if (NULL != con2) {
+            con1 = COaST2Constant (arg1);
+            if (NULL != con1) {
+                cres = COgt (con1, con2, NULL);
+                res = COisTrue (cres, TRUE);
+            }
+        }
+        con1 = (NULL != con1) ? COfreeConstant (con1) : NULL;
+        con2 = (NULL != con2) ? COfreeConstant (con2) : NULL;
+        cres = (NULL != cres) ? COfreeConstant (cres) : NULL;
+    }
+
+    DBUG_RETURN (res);
 }
 
 /** <!--********************************************************************-->
@@ -224,7 +293,6 @@ SAACFprf_reshape (node *arg_node, info *arg_info)
  *         else NULL
  *
  ********************************************************************/
-
 node *
 SAACFprf_dim (node *arg_node, info *arg_info)
 {
@@ -232,8 +300,7 @@ SAACFprf_dim (node *arg_node, info *arg_info)
     node *dim = NULL;
 
     DBUG_ENTER ();
-    DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
-                 "SAACF_dim_ expected N_id node");
+    DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)), "expected N_id node");
 
     dim = AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node)));
     if (NULL != dim) {
@@ -276,8 +343,7 @@ SAACFprf_shape (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)),
-                 "SAACF_shape_ expected N_id node");
+    DBUG_ASSERT (N_id == NODE_TYPE (PRF_ARG1 (arg_node)), "expected N_id node");
     shp = AVIS_SHAPE (ID_AVIS (PRF_ARG1 (arg_node)));
     if (NULL != shp) {
         /* Case 1 */

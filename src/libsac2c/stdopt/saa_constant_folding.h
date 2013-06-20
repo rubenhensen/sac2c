@@ -53,6 +53,8 @@ extern constant *SAACFchaseMinMax (node *arg_node, bool minmax);
 #define SAACFCHASEMIN FALSE
 #define SAACFCHASEMAX TRUE
 
+extern bool SAACFisGtExtrema (node *arg1, node *arg2);
+
 node *saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb,
                 bool minmax, node *prfargres, bool tf, bool recur);
 
