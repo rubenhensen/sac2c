@@ -1780,9 +1780,10 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
     node *rhs;
     node *minv = NULL;
     node *maxv = NULL;
-    node *lhsavis;
-    node *arg1avis;
-    node *arg2avis;
+    node *lhsavis = NULL;
+    node *lhsavis2 = NULL;
+    node *arg1avis = NULL;
+    node *arg2avis = NULL;
     node *zr;
     node *withid;
     prf nprf;
@@ -1828,6 +1829,30 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     AVIS_ISMINHANDLED (minv) = TRUE;
                     INFO_MINVAL (arg_info) = minv;
                 }
+                break;
+
+            case F_same_shape_AxA:
+                // Propagate extrema on both arguments.
+                arg1avis = ID_AVIS (PRF_ARG1 (rhs));
+                arg2avis = ID_AVIS (PRF_ARG2 (rhs));
+                lhsavis2 = IDS_AVIS (IDS_NEXT (LET_IDS (arg_node)));
+                minv = AVIS_MIN (arg1avis);
+                if (NULL != minv) {
+                    IVEXPsetMinvalIfNotNull (lhsavis, ID_AVIS (minv));
+                }
+                minv = AVIS_MIN (arg2avis);
+                if (NULL != minv) {
+                    IVEXPsetMinvalIfNotNull (lhsavis2, ID_AVIS (minv));
+                }
+                maxv = AVIS_MAX (arg1avis);
+                if (NULL != maxv) {
+                    IVEXPsetMaxvalIfNotNull (lhsavis, ID_AVIS (maxv));
+                }
+                maxv = AVIS_MAX (arg2avis);
+                if (NULL != maxv) {
+                    IVEXPsetMaxvalIfNotNull (lhsavis2, ID_AVIS (maxv));
+                }
+
                 break;
 
             case F_val_le_val_SxS:

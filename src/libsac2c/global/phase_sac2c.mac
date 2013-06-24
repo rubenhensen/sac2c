@@ -654,6 +654,23 @@ SUBPHASE (ivexc, "Cleaning up index vector extrema", IVEXCdoIndexVectorExtremaCl
 SUBPHASE (rgs, "Remove guard solvers", GGSdoRemoveGuardSolvers, global.optimize.doggs,
           opt)
 
+/*
+ * The next calls to vp, cse, dcr are not necessary, but they
+ * do clean up a lot of the mess made by AL/DL and friends, and
+ * facilitate analysis of code by automated unit test scripts, while
+ * still in GLF mode.
+ * We can kill them or move them into saacyc, if somebody thinks
+ * that is a better idea.
+ *
+ */
+
+SUBPHASE (vp2, "Propagating variables", VPdoVarPropagation, global.optimize.dovp, opt)
+
+SUBPHASE (cse3, "Eliminating common subexpression", CSEdoCommonSubexpressionElimination,
+          global.optimize.docse, opt)
+
+SUBPHASE (dcr5, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr, opt)
+
 SUBPHASE (uglf, "Ungrouping local functions", UGLFdoUngroupLocalFuns, ALWAYS, opt)
 
 SUBPHASE (tup, "Running final type inference", NTCdoNewReTypeCheckFromScratch, ALWAYS,

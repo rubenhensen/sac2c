@@ -130,7 +130,7 @@ SAACFchaseMinMax (node *arg_node, bool minmax)
  *          FALSE otherwise.
  *
  *          NB. Do NOT make decisions based on a FALSE result here,
- *              because it may mean "Do Not Know".
+ *              because FALSE may mean "Do Not Know".
  *
  *          TRUE only if AVIS_MIN( arg1) > arg2
  *           or                    arg1  >= AVIS_MAX( arg2)

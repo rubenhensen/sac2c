@@ -32,7 +32,7 @@ function getargs
  fil=${fil%%\ }
 
  nono='no-no'
- breakpoint='-bopt:dcr5 '
+ breakpoint='-bopt:wlbscnf2'
 
  # We can probably scrap 99% of the following filter code,
  # now that -printfunsets is here.
