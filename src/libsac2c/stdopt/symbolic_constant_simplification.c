@@ -496,7 +496,6 @@ SCSmatchConstantNonZero (node *arg_node)
  * @fn bool SCSmatchConstantOne( node *prfarg)
  * Predicate for PRF_ARG being a constant one of any rank or type.
  * E.g., 1 or  [1,1] or  genarray([2,3], 1)
- * This also works for TRUE, e.g:   [ TRUE, TRUE]
  *
  *****************************************************************************/
 bool
@@ -1947,10 +1946,9 @@ SCSprf_max_SxS (node *arg_node, info *arg_info)
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
-    // case 6
     if (NULL == res) {
         res2 = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), NULL, REL_ge, REL_lt,
-                         SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+                         SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
         if (NULL != res2) {
             if (SCSmatchConstantOne (res2)) {
                 res = DUPdoDupNode (PRF_ARG1 (arg_node));
@@ -2693,7 +2691,6 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     node *b = NULL;
     constant *con1 = NULL;
     constant *con2 = NULL;
-    constant *con3 = NULL;
     pattern *pat1;
     pattern *pat2;
     pattern *pat3;
@@ -2780,6 +2777,7 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     if (NULL == res) {
         b = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
                       SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+
         if ((NULL != b) && SCSmatchConstantOne (b)) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
@@ -2791,16 +2789,13 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     }
 
     /* Case 6 */
-    if ((NULL == res) && (NULL != PRF_EXPRS3 (arg_node))) {
-        con3 = COaST2Constant (PRF_ARG3 (arg_node));
-        if ((NULL != con3) && COisTrue (con3, TRUE)) {
-            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
-                               TBmakeExprs (TBmakeBool (TRUE), NULL));
-            DBUG_PRINT ("removed guard Case 6( %s, %s)",
-                        AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
-                        AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
-        }
-        con3 = (NULL != con1) ? COfreeConstant (con3) : con3;
+    b = PRF_EXPRS3 (arg_node);
+    if ((NULL == res) && (NULL != b) && SCSmatchConstantOne (b)) {
+        res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                           TBmakeExprs (TBmakeBool (TRUE), NULL));
+        DBUG_PRINT ("removed guard Case 6( %s, %s)",
+                    AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
+                    AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
     }
 
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
@@ -3037,6 +3032,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     if (NULL == res) {
         b = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
                       SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+
         if ((NULL != b) && SCSmatchConstantOne (b)) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
