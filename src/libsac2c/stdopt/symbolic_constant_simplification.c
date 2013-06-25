@@ -866,6 +866,146 @@ StripTrues (node *args)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *SawingTheBoardInTwo( arg_node, arg_info)
+ *
+ * @brief Case 7: The "sawing the board in two" optimization, where
+ *          we observe that if we cut off part of a board, both
+ *          resulting parts are shorter than the original board.
+ *
+ *          This appears in an the stdlib shift() code, where lack of
+ *          this optimization causes AWLF to fail.
+ *          Cf. the AWLF unit tests.
+ *
+ *          We have this code for shift right (Case 7a):
+ *
+ *           count = _max_SxS_( shiftcount, 0);    // count >= 0
+ *           shpa = _shape_A_( vec);               // shpa >= 0
+ *           nc = shpa - count;
+ *           iv = _non_neg_val_V_( nc);            // iv >= 0
+ *           iv', p = =_val_le_val_SxS( iv, shpa);
+ *
+ *          If (count >= 0) && (shpa >= 0), then:
+ *            (shpa - count) <= shpa
+ *          so we statically resolve this guard.
+ *
+ *          Similarly, for shift left, we have (Case 7b):
+ *
+ *           count = _min_SxS_( shiftcount, -1);    // count < 0
+ *           shpa = _shape_A_( vec);                // shpa >= 0
+ *           nc = shpa + count;
+ *           iv = _non_neg_val_V_( nc);             // iv >= 0
+ *           iv', p = =_val_le_val_SxS( iv, shpa);
+ *
+ *          If (count < 0) && (shpa >= 0), then:
+ *            (shpa + count) <= shpa
+ *          so we statically resolve this guard.
+ *
+ *****************************************************************************/
+static node *
+SawingTheBoardInTwo (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    node *shpa;
+    node *iv;
+    node *count = NULL;
+    pattern *patadd1;
+    pattern *patadd2;
+    pattern *patsub;
+
+    DBUG_ENTER ();
+
+    patadd1 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAisVar (&shpa), 0),
+                     PMvar (1, PMAgetNode (&count), 0));
+
+    patadd2 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAgetNode (&count), 0),
+                     PMvar (1, PMAisVar (&shpa), 0));
+
+    patsub = PMprf (1, PMAisPrf (F_sub_SxS), 2, PMvar (1, PMAisVar (&shpa), 0),
+                    PMvar (1, PMAgetNode (&count), 0));
+
+    // Case 7a
+    iv = PRF_ARG1 (arg_node);
+    shpa = PRF_ARG2 (arg_node);
+
+    if ((SCSisNonneg (shpa)) && (PMmatchFlatSkipGuards (patsub, iv))
+        && (SCSisNonneg (count))) {
+        res = TBmakeExprs (DUPdoDupNode (iv), TBmakeExprs (TBmakeBool (TRUE), NULL));
+        DBUG_PRINT ("removed guard Case 7a( %s)", AVIS_NAME (ID_AVIS (iv)));
+    }
+
+    // Case 7b
+    if ((NULL == res) && (SCSisNonneg (shpa))
+        && ((PMmatchFlatSkipGuards (patadd1, iv))
+            || (PMmatchFlatSkipGuards (patadd2, iv)))
+        && (SCSisNegative (count))) {
+        res = TBmakeExprs (DUPdoDupNode (iv), TBmakeExprs (TBmakeBool (TRUE), NULL));
+        DBUG_PRINT ("removed guard Case 7b( %s)", AVIS_NAME (ID_AVIS (iv)));
+    }
+
+    patadd1 = PMfree (patadd1);
+    patadd2 = PMfree (patadd2);
+    patsub = PMfree (patsub);
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *isVal1IsSumOfVal2( node *arg1, node *arg2, info *arg_info)
+ *
+ * @brief  Return TRUE if arg1 is part of a sum of arg2, and both
+ *         arguments are non-negative.
+ *
+ *         E.g., we have:
+ *
+ *             x'  = non_neg( x);
+ *             y'  = non_neg( y);
+ *             xy  = x' + y;
+ *             z   = _min_SxS_( x', xy);
+ *
+ *         We can use this function to determine that x' <= xy.
+ *
+ *         Do NOT assume that a FALSE result here means x' > xy; it
+ *         may just mean Do Not Know!
+ *
+ *         See above SawingTheBoardInTwo for a similar case.
+ *
+ *         This function could be extended to non-scalar types,
+ *         and to subtraction, using ISMOP.
+ *
+ *****************************************************************************/
+static bool
+isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info)
+{
+    bool z;
+    bool z2;
+    bool z3;
+    pattern *patadd;
+    node *v1;
+    node *v2;
+
+    DBUG_ENTER ();
+
+    patadd = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAisVar (&v1), 0),
+                    PMvar (1, PMAgetNode (&v2), 0));
+
+    z = (SCSisNonneg (arg1)) && (SCSisNonneg (arg2));
+
+    v1 = arg1;
+    z2 = PMmatchFlat (patadd, arg2); // prf( arg1, arg1 + arg2);
+
+    v1 = arg2;
+    z3 = PMmatchFlat (patadd, arg1); // prf( arg2, arg1 + arg2);
+
+    z = z & (z2 | z3);
+
+    patadd = PMfree (patadd);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *SCSprf_add_SxS( node *arg_node, info *arg_info)
  *   Case 1:  X + 0            --> X
  *   Case 2:  0 + X            --> X
@@ -1959,6 +2099,16 @@ SCSprf_max_SxS (node *arg_node, info *arg_info)
         }
     }
 
+    if ((NULL == res) && // max( x, x+y)
+        (isVal1IsSumOfVal2 (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info))) {
+        res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    }
+
+    if ((NULL == res) && // max( x+y, x)
+        (isVal1IsSumOfVal2 (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info))) {
+        res = DUPdoDupNode (PRF_ARG1 (arg_node));
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -2009,6 +2159,16 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
             }
             res2 = FREEdoFreeNode (res2);
         }
+    }
+
+    if ((NULL == res) && // min( x, x+y)
+        (isVal1IsSumOfVal2 (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info))) {
+        res = DUPdoDupNode (PRF_ARG1 (arg_node));
+    }
+
+    if ((NULL == res) && // min( x+y, x)
+        (isVal1IsSumOfVal2 (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info))) {
+        res = DUPdoDupNode (PRF_ARG2 (arg_node));
     }
 
     DBUG_RETURN (res);
@@ -2804,93 +2964,6 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
     pat4 = PMfree (pat4);
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *SawingTheBoardInTwo( arg_node, arg_info)
- *
- * @brief Case 7: The "sawing the board in two" optimization, where
- *          we observe that if we cut off part of a board, both
- *          resulting parts are shorter than the original board.
- *
- *          This appears in an the stdlib shift() code, where lack of
- *          this optimization causes AWLF to fail.
- *          Cf. the AWLF unit tests.
- *
- *          We have this code for shift right (Case 7a):
- *
- *           count = _max_SxS_( shiftcount, 0);    // count >= 0
- *           shpa = _shape_A_( vec);               // shpa >= 0
- *           nc = shpa - count;
- *           iv = _non_neg_val_V_( nc);            // iv >= 0
- *           iv', p = =_val_le_val_SxS( iv, shpa);
- *
- *          If (count >= 0) && (shpa >= 0), then:
- *            (shpa - count) <= shpa
- *          so we statically resolve this guard.
- *
- *          Similarly, for shift left, we have (Case 7b):
- *
- *           count = _min_SxS_( shiftcount, -1);    // count < 0
- *           shpa = _shape_A_( vec);                // shpa >= 0
- *           nc = shpa + count;
- *           iv = _non_neg_val_V_( nc);             // iv >= 0
- *           iv', p = =_val_le_val_SxS( iv, shpa);
- *
- *          If (count < 0) && (shpa >= 0), then:
- *            (shpa + count) <= shpa
- *          so we statically resolve this guard.
- *
- *  NB. This optimization can be applied to other guards, with a bit of ISMOP.
- *
- *****************************************************************************/
-static node *
-SawingTheBoardInTwo (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-    node *shpa;
-    node *iv;
-    node *count = NULL;
-    pattern *patadd1;
-    pattern *patadd2;
-    pattern *patsub;
-
-    DBUG_ENTER ();
-
-    patadd1 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAisVar (&shpa), 0),
-                     PMvar (1, PMAgetNode (&count), 0));
-
-    patadd2 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAgetNode (&count), 0),
-                     PMvar (1, PMAisVar (&shpa), 0));
-
-    patsub = PMprf (1, PMAisPrf (F_sub_SxS), 2, PMvar (1, PMAisVar (&shpa), 0),
-                    PMvar (1, PMAgetNode (&count), 0));
-
-    // Case 7a
-    iv = PRF_ARG1 (arg_node);
-    shpa = PRF_ARG2 (arg_node);
-
-    if ((SCSisNonneg (shpa)) && (PMmatchFlatSkipGuards (patsub, iv))
-        && (SCSisNonneg (count))) {
-        res = TBmakeExprs (DUPdoDupNode (iv), TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT ("removed guard Case 7a( %s)", AVIS_NAME (ID_AVIS (iv)));
-    }
-
-    // Case 7b
-    if ((NULL == res) && (SCSisNonneg (shpa))
-        && ((PMmatchFlatSkipGuards (patadd1, iv))
-            || (PMmatchFlatSkipGuards (patadd2, iv)))
-        && (SCSisNegative (count))) {
-        res = TBmakeExprs (DUPdoDupNode (iv), TBmakeExprs (TBmakeBool (TRUE), NULL));
-        DBUG_PRINT ("removed guard Case 7b( %s)", AVIS_NAME (ID_AVIS (iv)));
-    }
-
-    patadd1 = PMfree (patadd1);
-    patadd2 = PMfree (patadd2);
-    patsub = PMfree (patsub);
 
     DBUG_RETURN (res);
 }
