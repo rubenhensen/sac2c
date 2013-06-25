@@ -978,28 +978,25 @@ static bool
 isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info)
 {
     bool z;
-    bool z2;
-    bool z3;
-    pattern *patadd;
-    node *v1;
+    pattern *patadd1;
+    pattern *patadd2;
     node *v2;
 
     DBUG_ENTER ();
 
-    patadd = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAisVar (&v1), 0),
-                    PMvar (1, PMAgetNode (&v2), 0));
+    patadd1 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAisVar (&arg1), 0),
+                     PMvar (1, PMAgetNode (&v2), 0));
+
+    patadd2 = PMprf (1, PMAisPrf (F_add_SxS), 2, PMvar (1, PMAgetNode (&v2), 0),
+                     PMvar (1, PMAisVar (&arg1), 0));
 
     z = (SCSisNonneg (arg1)) && (SCSisNonneg (arg2));
+    z = z
+        && (PMmatchFlat (patadd1, arg2) || // prf( arg1, arg1 + arg2);
+            PMmatchFlat (patadd2, arg2));  // prf( arg1, arg2 + arg1);
 
-    v1 = arg1;
-    z2 = PMmatchFlat (patadd, arg2); // prf( arg1, arg1 + arg2);
-
-    v1 = arg2;
-    z3 = PMmatchFlat (patadd, arg1); // prf( arg2, arg1 + arg2);
-
-    z = z & (z2 | z3);
-
-    patadd = PMfree (patadd);
+    patadd1 = PMfree (patadd1);
+    patadd2 = PMfree (patadd2);
 
     DBUG_RETURN (z);
 }
