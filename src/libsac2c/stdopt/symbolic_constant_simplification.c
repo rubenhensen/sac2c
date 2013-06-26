@@ -80,6 +80,7 @@
 #include "tree_compound.h"
 #include "traverse.h"
 #include "new_types.h"
+#include "tree_utils.h"
 #include "type_utils.h"
 #include "new_typecheck.h"
 #include "free.h"
@@ -886,7 +887,7 @@ StripTrues (node *args)
  *
  *          If (count >= 0) && (shpa >= 0), then:
  *            (shpa - count) <= shpa
- *          so we statically resolve this guard.
+ *          so we can statically resolve this guard.
  *
  *          Similarly, for shift left, we have (Case 7b):
  *
@@ -898,7 +899,7 @@ StripTrues (node *args)
  *
  *          If (count < 0) && (shpa >= 0), then:
  *            (shpa + count) <= shpa
- *          so we statically resolve this guard.
+ *          so we can statically resolve this guard.
  *
  *****************************************************************************/
 static node *
@@ -970,7 +971,7 @@ SawingTheBoardInTwo (node *arg_node, info *arg_info)
  *
  *         See above SawingTheBoardInTwo for a similar case.
  *
- *         This function could be extended to non-scalar types,
+ *  Note:  This function could be extended to non-scalar types,
  *         and to subtraction, using ISMOP.
  *
  *****************************************************************************/
@@ -997,6 +998,105 @@ isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info)
 
     patadd1 = PMfree (patadd1);
     patadd2 = PMfree (patadd2);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool SCSisRelationalOnMinMax( prf fun, node *arg1, node *arg2,
+ *                                   info *arg_info)
+ *
+ * @brief  Return TRUE if:
+ *           arg_node is:
+ *               min( x, y) <= x
+ *               min( x, y) <= y
+ *               x          >= min( x, y)
+ *               y          >= min( x, y)
+ *
+ *               max( x, y) >= x
+ *               max( x, y) >= y
+ *               x          <= max( x, y)
+ *               y          <= max( x, y)
+ *
+ * @param: fun: an N_prf
+ * @param: arg1: PRF_ARG1 of fun
+ * @param: arg2: PRF_ARG2 of fun
+ * @param: arg_info: Your basic arg_info node, here only to
+ *                   facilitate debugging. E.g.:
+ *                      GDBWhatIsnNid( arg_node, arg_info->fundef)
+ *
+ * @result: TRUE if we can satisfy the relational.
+ *          FALSE if we are unable to satisfy it or if the relational
+ *          is not true. Do NOT make decisions based on a FALSE result!
+ *
+ * @note: This optimization is required to allow AWLF to operate
+ *        on code such as that in AWLF unit test SCSprf_val_le_val_SxSMax.sac.
+ *
+ *
+ *        We start by looking for a generic match on the above four
+ *        patterns, such as:
+ *
+ *              ( f( x,y) g x)
+ *
+ *        Then, we filter any results that match.
+ *
+ *****************************************************************************/
+bool
+SCSisRelationalOnMinMax (prf fun, node *arg1, node *arg2, info *arg_info)
+{
+    bool z = FALSE;
+    pattern *patadd1;
+    pattern *patadd2;
+    node *farg1 = NULL;
+    node *farg2 = NULL;
+    node *xy = NULL;
+    prf fn;
+
+    DBUG_ENTER ();
+
+    if ((TULSisInPrfFamily (fun, F_le_SxS)) || (TULSisInPrfFamily (fun, F_ge_SxS))) {
+
+        patadd1 = PMprf (1, PMAgetPrf (&fn), 2, PMvar (1, PMAisVar (&xy), 0),
+                         PMvar (1, PMAgetNode (&farg2), 0));
+
+        patadd2 = PMprf (1, PMAgetPrf (&fn), 2, PMvar (1, PMAgetNode (&farg1), 0),
+                         PMvar (1, PMAisVar (&xy), 0));
+
+        xy = arg2;
+        if ((PMmatchFlat (patadd1, arg1) || PMmatchFlat (patadd2, arg1))) {
+
+            //  min( x, y) <= x
+            //  min( x, y) <= y
+            z = TULSisInPrfFamily (fn, F_min_SxS) && TULSisInPrfFamily (fun, F_le_SxS);
+
+            //  max( x, y) >= x
+            //  max( x, y) >= y
+            z = z
+                || (TULSisInPrfFamily (fn, F_max_SxS)
+                    && TULSisInPrfFamily (fun, F_ge_SxS));
+        }
+
+        if (!z) {
+            xy = arg1;
+            if ((PMmatchFlat (patadd1, arg2) || PMmatchFlat (patadd2, arg2))) {
+
+                //  x >= min( x, y)
+                //  y >= min( x, y)
+                z = TULSisInPrfFamily (fn, F_min_SxS)
+                    && TULSisInPrfFamily (fun, F_ge_SxS);
+
+                //  x <= max( x, y)
+                //  y <= max( x, y)
+                z = z
+                    || (TULSisInPrfFamily (fn, F_max_SxS)
+                        && TULSisInPrfFamily (fun, F_le_SxS));
+            }
+        }
+
+        patadd1 = PMfree (patadd1);
+        patadd2 = PMfree (patadd2);
+    }
 
     DBUG_RETURN (z);
 }
@@ -2205,6 +2305,13 @@ SCSprf_lege (node *arg_node, info *arg_info)
     if (isMatchPrfargs (arg_node, arg_info)) {
         res = SCSmakeTrue (PRF_ARG1 (arg_node));
     }
+
+    if ((NULL == res)
+        && SCSisRelationalOnMinMax (PRF_PRF (arg_node), PRF_ARG1 (arg_node),
+                                    PRF_ARG2 (arg_node), arg_info)) {
+        res = SCSmakeTrue (PRF_ARG1 (arg_node));
+        DBUG_PRINT ("Found TRUE relational minmax");
+    }
     DBUG_RETURN (res);
 }
 
@@ -3161,7 +3268,7 @@ node *
 SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    node *val = NULL;
+    node *val1 = NULL;
     node *val2 = NULL;
     node *val3 = NULL;
     node *res2;
@@ -3178,10 +3285,10 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
     pat1 = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMconst (1, PMAgetVal (&con1)),
                   PMconst (1, PMAgetVal (&con2), 0));
 
-    pat2 = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMvar (1, PMAgetNode (&val), 0),
-                  PMvar (1, PMAisVar (&val), 0));
+    pat2 = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMvar (1, PMAgetNode (&val1), 0),
+                  PMvar (1, PMAisVar (&val1), 0));
 
-    pat3 = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMvar (1, PMAgetNode (&val), 0),
+    pat3 = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMvar (1, PMAgetNode (&val1), 0),
                   PMvar (1, PMAgetNode (&val2), 0));
 
     pat4 = PMprf (1, PMAisPrf (F_val_le_val_VxV), 2, PMvar (1, PMAgetNode (&val3), 0),
@@ -3245,7 +3352,7 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
 
     /* Case 4:  */
     if ((NULL == res) && (PMmatchFlatSkipExtrema (pat3, arg_node))
-        && (PMmatchFlatSkipExtrema (pat4, val))) {
+        && (PMmatchFlatSkipExtrema (pat4, val1))) {
         res = TBmakeExprs (DUPdoDupNode (val3), TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT_TAG ("SCS", "removed guard Case 4( %s -> %s)",
                         AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
