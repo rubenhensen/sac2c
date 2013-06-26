@@ -686,4 +686,85 @@ TULSsearchAssignChainForAssign (node *chn, node *assgn)
     DBUG_RETURN (z);
 }
 
+/** <!--********************************************************************-->
+ *
+ * @fn bool TULSisInPrfFamily( prf fun, prf funfam)
+ * @fn prf TULSgetPrfFamilyName( prf fun)
+ *
+ * @brief Predicate for determining if an N_prf is in the same function
+ *        family as funfam.
+ *
+ * @param fun: the function we are curious about, e.g, F_add_SxS, F_add_SxV,
+ *            F_add_VxS, F_add_VxV, F_sub_SxS.
+ *
+ * @param funfam: the prototypical function that represents the function.
+ *                In most cases, this is the SxS version of the function.
+ *                E.g., for addition, it is F_add_SxS.
+ *
+ * @return TRUE if fun is a member of funfam; else FALSE. For example, all four
+ *         addition functions above are members of F_add_SxS, but F_sub_SxS
+ *         is not.
+ *
+ ******************************************************************************/
+bool
+TULSisInPrfFamily (prf fun, prf funfam)
+{
+    bool z;
+
+    DBUG_ENTER ();
+
+    z = (TULSgetPrfFamilyName (fun) == funfam);
+
+    DBUG_RETURN (z);
+}
+
+prf
+TULSgetPrfFamilyName (prf fun)
+{ // Return prototypical family name for function.
+    // E.g., F_sub_SxS for F_sub_VxS
+    // If not part of a family, return fun.
+
+    prf z;
+
+    DBUG_ENTER ();
+
+#define FNFAM(fn)                                                                        \
+    case F_##fn##_SxS:                                                                   \
+    case F_##fn##_SxV:                                                                   \
+    case F_##fn##_VxS:                                                                   \
+    case F_##fn##_VxV:                                                                   \
+        z = F_##fn##_SxS;                                                                \
+        break;
+
+    switch (fun) {
+    default:
+        z = fun;
+        break;
+
+        // Dyadic scalar functions, which are all I care about just now...
+        FNFAM (add)
+        FNFAM (sub)
+        FNFAM (mul)
+        FNFAM (div)
+
+        FNFAM (min)
+        FNFAM (max)
+
+        FNFAM (lt)
+        FNFAM (le)
+        FNFAM (eq)
+        FNFAM (ge)
+        FNFAM (gt)
+        FNFAM (neq)
+
+        FNFAM (and)
+        FNFAM (or)
+
+        FNFAM (mod)
+        FNFAM (aplmod)
+    }
+
+    DBUG_RETURN (z);
+}
+
 #undef DBUG_PREFIX

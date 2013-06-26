@@ -12,5 +12,7 @@ extern node *TUscalarizeVector (node *arg_node, node **preassigns, node **vardec
 extern node *TUmoveAssign (node *avismax, node *preassigns);
 extern bool TULSisValuesMatch (node *arg1, node *arg2);
 extern int TULSsearchAssignChainForAssign (node *chn, node *assgn);
+extern prf TULSgetPrfFamilyName (prf fn);
+extern bool TULSisInPrfFamily (prf fn, prf fnfam);
 
 #endif /* _SAC_TREE_UTILS_H_ */
