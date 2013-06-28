@@ -1789,30 +1789,7 @@ AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
  *          (The next few lines compute:
  *           intlo = _max_VxV_( AVIS_MIN( iv'),
  *                              GENERATOR_BOUND1(producerwlPart));
- *
- *          but the optimizers are unable to compute common
- *          expressions such as:
- *
- *           _max_VxV_( iv, iv + 1)
- *
- *          Hence, we use the following:
- *
- *           xl = AVIS_MIN( iv');
- *           yl = GENERATOR_BOUND1( producerwlPart);
- *           d  = _sub_VxV_( xl, yl);
- *           zero = 0;
- *           p = _gt_VxS_( d, zero);
- *           p0intlo = _mask_( p, xl, yl);
- *           )
- *
- *          ( Similar treatment for _min_VxV_ as above:
- *
- *          xh = AVIS_MAX( iv');
- *          yh = GENERATOR_BOUND2( producerwlPart);
- *          d'  = _sub_VxV_( xh, yh);
- *          p' = _lt_VxS_( d', zero);
- *          p0inthi = _mask_( p', xh, yh);
- *          )
+ *           ...
  *
  *          iv'' = _noteintersect(iv',
  *                                 p0bound1, p0bound2, p0intlo, p0inthi, p0int,
@@ -1828,13 +1805,13 @@ AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
  *        NB. ALL lower bounds precede all upper bounds in the
  *            _attach_extrema_arguments.
  *
- *        NB. We need the producerWL partition bounds for at least
- *            two reasons: a producerWL partition may be split
+ *        NB. We need the producerWL partition bounds in the noteintersect
+ *            for at least two reasons: a producerWL partition may be split
  *            between the time we build this code and the time
  *            we look at the answer. When we find a potential
  *            hit, we have to go look up the partition bounds
  *            in the producerWL again, to ensure that the requisite
- *            partition still exists. Also, even if the partitions
+ *            PWL partition still exists. Also, even if the partitions
  *            remain unchanged in size, their order may be
  *            shuffled, so we have to search for the right one.
  *
@@ -1974,9 +1951,15 @@ IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node 
  *          If so, then we can blindly perform the AWLF for
  *          this partition.
  *
- *          This predicate is:
+ *          We would like This predicate to be:
  *
  *            z = ( idxavismin >= bound1) && ( idxavismax <= bound2)
+ *
+ *          NB. Unfortunately, that does help in cases such as this:
+ *              catenate( VecAKD1, VecAKD2);
+ *              If one of the vectors can be empty, then we may end up
+ *              with:  idxavismax == bound2, whereas we otherwise have
+ *                     idxavismax >  bound2.
  *
  * @params: idxavismin: AVIS_MIN( consumerWL partn index vector)
  * @params: idxavismax: normalized AVIS_MAX( consumerWL partn index vector)
