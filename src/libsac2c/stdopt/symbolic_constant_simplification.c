@@ -1004,11 +1004,86 @@ isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn bool SCSisRelationalOnMinMax( prf fun, node *arg1, node *arg2,
- *                                   info *arg_info)
+ * @fn bool SCSextractCompositionInfo( )
  *
- * @brief  Return TRUE if:
- *           arg_node is:
+ * @brief Extract semantic info for compositions of the form:
+ *
+ *            ( X f Y) g X
+ *            ( Y f X) g X
+ *
+ *        We do not directly support compositions of the following form,
+ *        because g may not be commutative, but the caller can just
+ *        call this function twice, with reversed arg1/arg2:
+ *
+ *            X        g ( X f Y)
+ *            X        g ( Y f X)
+ *
+ *
+ *        We assume that f is commutative and dyadic, and that g is dyadic.
+ *
+ * @param: fung: an N_prf for g
+ * @param: arg1: PRF_ARG1 of fung
+ * @param: arg2: PRF_ARG2 of fung
+ * @param: arg_info: Your basic arg_info node, here only to
+ *                   facilitate debugging. E.g.:
+ *                      GDBWhatIsnNid( arg_node, arg_info->fundef)
+ *
+ *
+ * @result: TRUE if we found a suitable expression; else FALSE
+ *          Side effects: We set fff, fffg, and Y, if the result is TRUE.
+ *
+ *
+ * @result: fff: The function family prototype for f
+ * @result: ffg: The function family prototype for g
+ * @result: Y: the value of Y, from the above expressions.
+ *
+ *****************************************************************************/
+bool
+SCSextractCompositionInfo (prf fung, node *arg1, node *arg2, info *arg_info, prf *fff,
+                           prf *ffg, node **Y)
+{
+    bool z = FALSE;
+    pattern *patadd1;
+    pattern *patadd2;
+    node *farg = NULL;
+    node *xy = NULL;
+    prf funf = F_unknown;
+
+    DBUG_ENTER ();
+
+    patadd1 = PMprf (1, PMAgetPrf (&funf), 2, PMvar (1, PMAisVar (&xy), 0),
+                     PMvar (1, PMAgetNode (&farg), 0));
+
+    patadd2 = PMprf (1, PMAgetPrf (&funf), 2, PMvar (1, PMAgetNode (&farg), 0),
+                     PMvar (1, PMAisVar (&xy), 0));
+
+    xy = arg2;
+    if ((PMmatchFlat (patadd1, arg1) || PMmatchFlat (patadd2, arg1))) {
+        z = TRUE;
+        //  f( x, y) g x
+        //  f( x, y) g y
+        *fff = TULSgetPrfFamilyName (funf);
+        *ffg = TULSgetPrfFamilyName (fung);
+        *Y = farg;
+    }
+
+    patadd1 = PMfree (patadd1);
+    patadd2 = PMfree (patadd2);
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool SCSisRelationalOnDyadicFn( prf funf, node *arg1, node *arg2,
+ *                                   info *arg_info, bool *res)
+ *
+ * @brief  Return TRUE if we can satisfy the composition, and FALSE
+ *         if we do not know. If TRUE, res is set to TRUE OR FALSE, as
+ *         required.
+ *         Some compositions produce res=TRUE, some FALSE, and some DoNotKnow.
+ *         These compositions produce res = TRUE:
+ *
  *               min( x, y) <= x
  *               min( x, y) <= y
  *               x          >= min( x, y)
@@ -1019,9 +1094,14 @@ isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info)
  *               x          <= max( x, y)
  *               y          <= max( x, y)
  *
- * @param: fun: an N_prf
- * @param: arg1: PRF_ARG1 of fun
- * @param: arg2: PRF_ARG2 of fun
+ *
+ *          See below for FALSE ones.
+ *
+ *
+ *
+ * @param: funf: an N_prf
+ * @param: arg1: PRF_ARG1 of funf
+ * @param: arg2: PRF_ARG2 of funf
  * @param: arg_info: Your basic arg_info node, here only to
  *                   facilitate debugging. E.g.:
  *                      GDBWhatIsnNid( arg_node, arg_info->fundef)
@@ -1042,60 +1122,79 @@ isVal1IsSumOfVal2 (node *arg1, node *arg2, info *arg_info)
  *        Then, we filter any results that match.
  *
  *****************************************************************************/
+
+#define SCSECI(funf, fung, myres, condit)                                                \
+    if ((funf == fff) && (fung == ffg) && (condit)) {                                    \
+        z = TRUE;                                                                        \
+        *res = myres;                                                                    \
+    }
+
 bool
-SCSisRelationalOnMinMax (prf fun, node *arg1, node *arg2, info *arg_info)
+SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, bool *res)
 {
     bool z = FALSE;
-    pattern *patadd1;
-    pattern *patadd2;
-    node *farg1 = NULL;
-    node *farg2 = NULL;
-    node *xy = NULL;
-    prf fn;
+    prf fff = F_unknown;
+    prf ffg = F_unknown;
+    node *Y = NULL;
 
     DBUG_ENTER ();
 
-    if ((TULSisInPrfFamily (fun, F_le_SxS)) || (TULSisInPrfFamily (fun, F_ge_SxS))) {
+    if (SCSextractCompositionInfo (fung, arg1, arg2, arg_info, &fff, &ffg, &Y)) {
 
-        patadd1 = PMprf (1, PMAgetPrf (&fn), 2, PMvar (1, PMAisVar (&xy), 0),
-                         PMvar (1, PMAgetNode (&farg2), 0));
+        // (x min y) <= x
+        SCSECI (F_min_SxS, F_le_SxS, TRUE, TRUE);
+        // z = (( F_min_SxS == fff) && ( F_le_SxS  == ffg)) ? TRUE  : z;
 
-        patadd2 = PMprf (1, PMAgetPrf (&fn), 2, PMvar (1, PMAgetNode (&farg1), 0),
-                         PMvar (1, PMAisVar (&xy), 0));
+        // (x min y) >  x
+        SCSECI (F_min_SxS, F_gt_SxS, FALSE, TRUE);
+        // z = (( F_min_SxS == fff) && ( F_gt_SxS  == ffg)) ? FALSE : z;
 
-        xy = arg2;
-        if ((PMmatchFlat (patadd1, arg1) || PMmatchFlat (patadd2, arg1))) {
+        // (x max y) >= x
+        SCSECI (F_max_SxS, F_ge_SxS, TRUE, TRUE);
+        // z = (( F_max_SxS == fff) && ( F_ge_SxS  == ffg)) ? TRUE  : z;
 
-            //  min( x, y) <= x
-            //  min( x, y) <= y
-            z = TULSisInPrfFamily (fn, F_min_SxS) && TULSisInPrfFamily (fun, F_le_SxS);
+        // (x max y) <  x
+        SCSECI (F_max_SxS, F_lt_SxS, FALSE, TRUE);
+        // z = (( F_max_SxS == fff) && ( F_lt_SxS  == ffg)) ? FALSE : z;
 
-            //  max( x, y) >= x
-            //  max( x, y) >= y
-            z = z
-                || (TULSisInPrfFamily (fn, F_max_SxS)
-                    && TULSisInPrfFamily (fun, F_ge_SxS));
-        }
+        // (x + nonnegY) >= x
+        SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNonneg (Y));
+        // z = (( F_add_SxS == fff) && ( F_ge_SxS  == ffg))
+        //                         &&  SCSisNonneg( Y)     ? TRUE  : z;
 
-        if (!z) {
-            xy = arg1;
-            if ((PMmatchFlat (patadd1, arg2) || PMmatchFlat (patadd2, arg2))) {
+        // (x + nonnegY) < x
+        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNonneg (Y));
+        // z = (( F_add_SxS == fff) && ( F_lt_SxS  == ffg))
+        //                         &&  SCSisNonneg( Y)     ? FALSE : z;
+    }
 
-                //  x >= min( x, y)
-                //  y >= min( x, y)
-                z = TULSisInPrfFamily (fn, F_min_SxS)
-                    && TULSisInPrfFamily (fun, F_ge_SxS);
+    // With reversed arguments, we have to reverse the sense of the relational
+    // E.g., < becomes >; <= becomes >=
+    if (SCSextractCompositionInfo (fung, arg2, arg1, arg_info, &fff, &ffg, &Y)) {
+        // x >= (x min y)
+        SCSECI (F_min_SxS, F_le_SxS, TRUE, TRUE);
+        // z = (( F_min_SxS == fff) && ( F_le_SxS  == ffg)) ? TRUE  : z;
 
-                //  x <= max( x, y)
-                //  y <= max( x, y)
-                z = z
-                    || (TULSisInPrfFamily (fn, F_max_SxS)
-                        && TULSisInPrfFamily (fun, F_le_SxS));
-            }
-        }
+        // x < (x min y)
+        SCSECI (F_min_SxS, F_gt_SxS, FALSE, TRUE);
+        // z = (( F_min_SxS == fff) && ( F_gt_SxS  == ffg)) ? FALSE : z;
 
-        patadd1 = PMfree (patadd1);
-        patadd2 = PMfree (patadd2);
+        // x <= (x max y)
+        SCSECI (F_max_SxS, F_ge_SxS, TRUE, TRUE);
+        // z = (( F_max_SxS == fff) && ( F_ge_SxS  == ffg)) ? TRUE  : z;
+
+        // x >  (x max y)
+        SCSECI (F_max_SxS, F_lt_SxS, FALSE, TRUE);
+        // z = (( F_max_SxS == fff) && ( F_lt_SxS  == ffg)) ? FALSE  : z;
+
+        // x <= (x + nonnegY)
+        SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNonneg (Y));
+        // z = (( F_add_SxS == fff) && ( F_ge_SxS  == ffg))
+        //                         &&  SCSisNonneg( Y)     ? TRUE  : z;
+        // x > (x + nonnegY)
+        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNonneg (Y));
+        // z = (( F_add_SxS == fff) && ( F_lt_SxS  == ffg))
+        //                         &&  SCSisNonneg( Y)     ? FALSE  : z;
     }
 
     DBUG_RETURN (z);
@@ -2300,6 +2399,7 @@ node *
 SCSprf_lege (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    bool z = FALSE;
 
     DBUG_ENTER ();
     if (isMatchPrfargs (arg_node, arg_info)) {
@@ -2307,11 +2407,16 @@ SCSprf_lege (node *arg_node, info *arg_info)
     }
 
     if ((NULL == res)
-        && SCSisRelationalOnMinMax (PRF_PRF (arg_node), PRF_ARG1 (arg_node),
-                                    PRF_ARG2 (arg_node), arg_info)) {
-        res = SCSmakeTrue (PRF_ARG1 (arg_node));
-        DBUG_PRINT ("Found TRUE relational minmax");
+        && SCSisRelationalOnDyadicFn (PRF_PRF (arg_node), PRF_ARG1 (arg_node),
+                                      PRF_ARG2 (arg_node), arg_info, &z)) {
+        if (z) {
+            res = SCSmakeTrue (PRF_ARG1 (arg_node));
+        } else {
+            res = SCSmakeFalse (PRF_ARG1 (arg_node));
+        }
+        DBUG_PRINT ("Found TRUE relational minmax 12");
     }
+
     DBUG_RETURN (res);
 }
 
@@ -2329,11 +2434,24 @@ node *
 SCSprf_nlege (node *arg_node, info *arg_info)
 {
     node *res = NULL;
+    bool z = FALSE;
 
     DBUG_ENTER ();
     if (isMatchPrfargs (arg_node, arg_info)) {
         res = SCSmakeFalse (PRF_ARG1 (arg_node));
     }
+
+    if ((NULL == res)
+        && SCSisRelationalOnDyadicFn (PRF_PRF (arg_node), PRF_ARG1 (arg_node),
+                                      PRF_ARG2 (arg_node), arg_info, &z)) {
+        if (z) {
+            res = SCSmakeTrue (PRF_ARG1 (arg_node));
+        } else {
+            res = SCSmakeFalse (PRF_ARG1 (arg_node));
+        }
+        DBUG_PRINT ("Found TRUE relational minmax 12");
+    }
+
     DBUG_RETURN (res);
 }
 

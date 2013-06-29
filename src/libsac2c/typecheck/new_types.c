@@ -6634,12 +6634,6 @@ BuildDimAssign (node *arg, node **new_vardecs)
                                       dim),
                            NULL);
 
-#ifdef OLDSCHOOL // rip these out after shakedown for a week or two...
-    if (preassign != NULL) {
-        ASSIGN_NEXT (preassign) = assign;
-        assign = preassign;
-    }
-#endif OLDSCHOOL
     assign = TCappendAssign (preassign, assign);
 
     DBUG_RETURN (assign);
@@ -6707,12 +6701,6 @@ BuildShapeAssign (node *arg, node **new_vardecs)
                                       shape),
                            NULL);
 
-#ifdef OLDSCHOOL
-    if (preassign != NULL) {
-        ASSIGN_NEXT (preassign) = assign;
-        assign = preassign;
-    }
-#endif OLDSCHOOL
     assign = TCappendAssign (preassign, assign);
 
     DBUG_RETURN (assign);
@@ -6789,25 +6777,15 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
 
             DBUG_ASSERT (NODE_TYPE (expr) == N_array, "illegal expression found!");
 
-#ifdef OLDSCHOOL
-            last_ass = assigns = TBmakeAssign (NULL, NULL); /* dummy assignment */
-#endif OLDSCHOOL
             aexprs = ARRAY_AELEMS (expr);
             dim = 0;
-
             flt_prf4
               = BuildTmpId (TYmakeAKS (TYmakeSimpleType (T_bool), SHcreateShape (0)),
                             new_vardecs);
-#ifdef OLDSCHOOL
-//          ASSIGN_NEXT( last_ass) = TBmakeAssign(
-#endif OLDSCHOOL
             assigns
               = TCappendAssign (assigns, TBmakeAssign (TBmakeLet (DUPdupIdIds (flt_prf4),
                                                                   TBmakeBool (TRUE)),
                                                        NULL));
-#ifdef OLDSCHOOL
-            last_ass = ASSIGN_NEXT (last_ass);
-#endif OLDSCHOOL
 
             while (aexprs != NULL) {
                 id = DUPdupIdsId (prf_ids);
@@ -6853,17 +6831,9 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
                                                                            flt_prf4),
                                                                          prf4),
                                                               NULL)))));
-#ifdef OLDSCHOOL
-                last_ass
-                  = ASSIGN_NEXT (ASSIGN_NEXT (ASSIGN_NEXT (ASSIGN_NEXT (last_ass))));
-#endif OLDSCHOOL
-
                 aexprs = EXPRS_NEXT (aexprs);
                 dim++;
             }
-#ifdef OLDSCHOOL
-            //      ASSIGN_NEXT( last_ass) = TBmakeAssign( TBmakeCond( flt_prf4,
-#endif OLDSCHOOL
 
             assigns
               = TCappendAssign (assigns,
@@ -6871,10 +6841,6 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
                                                           TBmakeBlock (then_ass, NULL),
                                                           TBmakeBlock (else_ass, NULL)),
                                               NULL));
-#ifdef OLDSCHOOL
-            assigns = FREEdoFreeNode (assigns); /* free dummy assignment */
-#endif OLDSCHOOL
-
             ARRAY_AELEMS (expr) = NULL;
             expr = FREEdoFreeNode (expr);
         } break;
