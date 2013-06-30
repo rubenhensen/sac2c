@@ -336,6 +336,7 @@ SCSmakeZero (node *prfarg)
     node *res = NULL;
 
     DBUG_ENTER ();
+
     typ = NTCnewTypeCheck_Expr (prfarg);
     if (TUshapeKnown (typ)) {
         shp = TYgetShape (typ);
@@ -345,6 +346,7 @@ SCSmakeZero (node *prfarg)
             con = COfreeConstant (con);
         }
     }
+
     DBUG_RETURN (res);
 }
 
