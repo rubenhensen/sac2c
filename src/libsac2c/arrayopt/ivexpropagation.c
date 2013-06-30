@@ -1219,6 +1219,11 @@ GenerateExtremaComputationsCommutativeDyadicScalarPrf (node *arg_node, info *arg
  *           constant minval/maxval, so that we can determine signum( const),
  *           then treat it the same way.
  *
+ *           Case 42: If we have no extrema, but
+ *           have ( N times non_negative_even_const),
+ *           then minval = 0.
+ *
+ *
  * @note: See note in previous section re WITHID.
  *
  ******************************************************************************/
@@ -1880,8 +1885,7 @@ GenerateExtremaComputationsPrf (node *arg_node, info *arg_info)
                     && (SWLDisDefinedInThisBlock (arg2avis, INFO_DEFDEPTH (arg_info)))
                     && (TYisAKV (AVIS_TYPE (arg1avis))
                         || TYisAKS (AVIS_TYPE (arg1avis)))) {
-                    /* Create maximum as PRF_ARG2. No need to normalize because it's lt()
-                     */
+                    /* Create max as PRF_ARG2. No need to normalize because it's lt() */
                     maxv = ID_AVIS (PRF_ARG2 (rhs));
                     INFO_MAXVAL (arg_info) = maxv;
                 }
@@ -2377,6 +2381,25 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
             pat = PMfree (pat);
         }
         break;
+
+#ifdef UNDERCONSTRUCTION
+    case F_mul_SxS:
+    case F_mul_SxV:
+    case F_mul_VxS:
+    case F_mul_VxV:
+        /* If either argument is a non-negative even constant, AVIS_MIN
+         * is zero
+         */
+        if (!IVEXPisAvisHasMin (lhsavis)) {
+            minv stuff;
+            minv = SCSmakeZero (PRF_ARG1 (rhs)); /* Create zero minimum */
+            fixSv minv = FLATGexpression2Avis (minv, &INFO_VARDECS (arg_info),
+                                               &INFO_PREASSIGNS (arg_info),
+                                               TYeliminateAKV (AVIS_TYPE (lhsavis)));
+            IVEXPsetMinvalIfNotNull (lhsavis, minv);
+        }
+        break;
+#endif UNDERCONSTRUCTION
 
     default:
         break;
