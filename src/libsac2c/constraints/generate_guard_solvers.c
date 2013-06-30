@@ -34,11 +34,12 @@
  *
  *
  *   tmp = y - x;
- *   x',p = _val_lt_val_SxS_( x, y, tmp);
+ *   p2 =  _lt_SxS_( tmp, 0);
+ *   x',p = _val_lt_val_SxS_( x, y, p2);
  *
- * This is solvable, so if tmp ever becomes AKV, CF
- * or TC can eliminate the guard (if tmp is TRUE), and complain
- * (if tmp is FALSE).
+ * This is solvable, so if p2 ever becomes AKV, CF
+ * or TC can eliminate the guard (if p2 is TRUE), and complain
+ * (if p2 is FALSE).
  *
  * The cleanup traversal eliminates PRF_ARG3 at the end of optimization.
  *
@@ -62,6 +63,7 @@
 #include "tree_basic.h"
 #include "tree_compound.h"
 #include "flattengenerators.h"
+#include "symbolic_constant_simplification.h"
 
 /** <!--********************************************************************-->
  *
@@ -193,6 +195,8 @@ node *
 GGSprf (node *arg_node, info *arg_info)
 {
     node *avis;
+    node *avissub;
+    node *aviszero;
     prf nprf;
 
     DBUG_ENTER ();
@@ -214,9 +218,20 @@ GGSprf (node *arg_node, info *arg_info)
 
     if ((F_unknown != nprf) && (INFO_GENERATE (arg_info))
         && (NULL == PRF_EXPRS3 (arg_node))) {
+        // generate subtraction
+        avissub = FLATGexpression2Avis (TCmakePrf2 (F_sub_SxS,
+                                                    DUPdoDupNode (PRF_ARG1 (arg_node)),
+                                                    DUPdoDupNode (PRF_ARG2 (arg_node))),
+                                        &INFO_VARDECS (arg_info),
+                                        &INFO_PREASSIGNS (arg_info), NULL);
+
+        // generate zero
+        aviszero = FLATGexpression2Avis (SCSmakeZero (PRF_ARG1 (arg_node)),
+                                         &INFO_VARDECS (arg_info),
+                                         &INFO_PREASSIGNS (arg_info), NULL);
         // generate PRF_ARG3
-        avis = FLATGexpression2Avis (TCmakePrf2 (nprf, DUPdoDupNode (PRF_ARG1 (arg_node)),
-                                                 DUPdoDupNode (PRF_ARG2 (arg_node))),
+        avis = FLATGexpression2Avis (TCmakePrf2 (nprf, TBmakeId (avissub),
+                                                 TBmakeId (aviszero)),
                                      &INFO_VARDECS (arg_info),
                                      &INFO_PREASSIGNS (arg_info), NULL);
         PRF_ARGS (arg_node)
