@@ -9,6 +9,6 @@ for i in *.sac;
 do
   UnitTestRunGrep1 $i
 done;
- rm -f crudd* crudn*
+ rm -f grepn* grepd*
  cp $logfile logGreps
 
