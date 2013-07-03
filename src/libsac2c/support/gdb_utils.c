@@ -142,6 +142,7 @@ GDBwhatIsNid (node *arg_node, node *fundef)
     node *arg;
 
     if (NULL != arg_node) {
+        PRTdoPrintNode (arg_node);
         switch (NODE_TYPE (arg_node)) {
         case N_id:
             GDBwhatIs (AVIS_NAME (ID_AVIS (arg_node)), fundef);
