@@ -1590,6 +1590,25 @@ TUisScalar (ntype *ty)
 }
 
 /** <!-- ****************************************************************** -->
+ * @fn TUisVector( ntype *ty)
+ *
+ * @brief Simple but useful utility to check whether a type definitely
+ *        represents a vector.
+ *
+ * @param type
+ *
+ * @return boolean
+ ******************************************************************************/
+
+bool
+TUisVector (ntype *ty)
+{
+    DBUG_ENTER ();
+
+    DBUG_RETURN (TUdimKnown (ty) && (TYgetDim (ty) == 1));
+}
+
+/** <!-- ****************************************************************** -->
  * @fn bool TUhasBasetype( ntype *ty, simpletype smpl)
  *
  * @brief Checks whether the given type is an array type with the given
