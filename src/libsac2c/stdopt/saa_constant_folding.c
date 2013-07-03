@@ -50,6 +50,7 @@
 #include "compare_tree.h"
 #include "str.h"
 #include "new_types.h"
+#include "tree_utils.h"
 #include "type_utils.h"
 #include "new_typecheck.h"
 #include "globals.h"
@@ -60,6 +61,7 @@
 #include "pattern_match.h"
 #include "free.h"
 #include "symbolic_constant_simplification.h"
+#include "constants.h"
 #include "constant_folding_info.h"
 
 /** <!--********************************************************************-->
@@ -842,11 +844,6 @@ SAACFprf_val_lt_val_SxS (node *arg_node, info *arg_info)
  * and
  *          If AVIS_MAX(S) <  V, return:  genarray( shape(V), FALSE);
  *
- * TODO:
- *  With a bit of work, we could check both the TRUE and
- *  FALSE cases, and merge them if they cover the argument.
- *  I have no idea if this is worthwhile in practice.
- *
  *  Enhancement: Consider a nested WL in which the
  *  lower bound of an inner WL is the index vector of the outer:
  *    z = with ... ( [0] <= iv1 < [N1]) ...
@@ -854,23 +851,20 @@ SAACFprf_val_lt_val_SxS (node *arg_node, info *arg_info)
  *
  *  AVIS_MIN( iv2) is iv1, but iv1 is not constant. However,
  *  AVIS_MIN( AVIS_MIN( iv2)) IS constant. So, for relationals,
- *  we can search the extrema chains seeking a constant.
+ *  we search the extrema chains seeking a constant.
  *
  *****************************************************************************/
 
+// This table must match the relationalfns typedef in constant_folding_info.h
+// I.e., NULL, F_lt_SxS, F_le_SxS, F_ge_SxS, F_gt_SxS.
 static constant *(*relfn[]) (constant *, constant *, constant *)
-  = {COlt, COle, COge, COgt};
+  = {NULL, COlt, COle, COge, COgt};
 
 /** <!--********************************************************************-->
  *
- * @fn node *saarelat( node *prfarg1, node *prfarg2, info *arg_info,
- *                         node* ( *fn)( node *, node *),
- *                         bool minmax,
- *                         node *prfargres,
- *                         bool tf,
- *                         bool recur);
+ * @fn node *SAACFonRelationalswithExtrema( ...)
  *
- * @brief: Generic function for performing CF on VxS relationals
+ * @brief: Generic function for performing CF on relationals
  *         and their extrema. For example, if we are doing:
  *
  *           z = _gt_VxS_( V, S);
@@ -884,28 +878,44 @@ static constant *(*relfn[]) (constant *, constant *, constant *)
  *                   checked for extrema.
  * @params: arg_info: as usual.
  *
- * @params: fn is the relational fn enum to be used for comparison
+ * @params: fun is the relational fn enum to be used for comparison
  *          against zero, e.g., REL_gt in the above example.
- *
- * @params: minmax: A boolean, used to select extremum:
- *                  0: AVIS_MIN
- *                  1: AVIS_MAX.
- *
- * @params: prfargres: the PRF_ARG to be used to determine the result
- *          shape.
- *
- * @params: tf: Boolean result value if comparison is TRUE.
- *
- * @params: recur: Recur once with recur FALSE, if recur is TRUE &&
- *          res still NULL.
  *
  * @result: NULL, or a Boolean ast constant of the same shape as prfargres, of
  *          all TRUE or FALSE.
  *
  *****************************************************************************/
-node *
-saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool minmax,
-          node *prfargres, bool tf, bool recur)
+
+static int
+GetFunNum (prf fun)
+{ // Map function name to an integer for indexing
+    int z;
+
+    DBUG_ENTER ();
+    switch (fun) {
+    default:
+        z = 0;
+        DBUG_ASSERT (FALSE, "fun confusion");
+        break;
+    case F_lt_SxS:
+        z = 1;
+        break;
+    case F_le_SxS:
+        z = 2;
+        break;
+    case F_ge_SxS:
+        z = 3;
+        break;
+    case F_gt_SxS:
+        z = 4;
+        break;
+    }
+
+    DBUG_RETURN (z);
+}
+
+static node *
+relatHelper (node *prfarg1, node *prfarg2, info *arg_info, prf fun, bool minmax, bool tf)
 {
     node *res = NULL;
     constant *arg1c = NULL;
@@ -915,11 +925,18 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
     constant *adj;
     simpletype tp;
     node *arg1ex;
+    node *prfargres;
 
     DBUG_ENTER ();
 
     tp = SCSgetBasetypeOfExpr (prfarg1);
 
+    // This block handles the direct cases:
+    //
+    //  AVIS_MAX( x) <  y --> TRUE
+    //  AVIS_MIN( x) >  y --> TRUE
+    //  AVIS_MAX( x) <= y --> TRUE
+    //  AVIS_MIN( x) >= y --> TRUE
     if (N_id == NODE_TYPE (prfarg1)) {
         arg1ex = minmax ? AVIS_MAX (ID_AVIS (prfarg1)) : AVIS_MIN (ID_AVIS (prfarg1));
         arg1c = SAACFchaseMinMax (arg1ex, minmax);
@@ -928,12 +945,14 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
         if ((NULL != arg1c) && (NULL != arg2c)) {
             adj = minmax ? COmakeOne (tp, SHmakeShape (0))
                          : COmakeZero (tp, SHmakeShape (0));
-            arg1cp = COsub (arg1c, adj, NULL); /* Correct AVIS_MAX*/
+            arg1cp = COsub (arg1c, adj, NULL); /* Denormalize AVIS_MAX*/
             adj = COfreeConstant (adj);
-            b = ((relfn[fna])) (arg1cp, arg2c, NULL);
+            b = ((relfn[GetFunNum (fun)])) (arg1cp, arg2c, NULL);
             if (COisTrue (b, TRUE)) {
+                prfargres
+                  = (TUisVector (AVIS_TYPE (ID_AVIS (prfarg1)))) ? prfarg1 : prfarg2;
                 res = tf ? SCSmakeTrue (prfargres) : SCSmakeFalse (prfargres);
-                DBUG_PRINT ("saarelat replacing RHS by constant");
+                DBUG_PRINT ("replacing RHS by tob( %d)", tf);
             }
             b = COfreeConstant (b);
         }
@@ -941,41 +960,83 @@ saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb, bool m
         arg1c = (NULL != arg1c) ? COfreeConstant (arg1c) : arg1c;
         arg1cp = (NULL != arg1cp) ? COfreeConstant (arg1cp) : arg1cp;
         arg2c = (NULL != arg2c) ? COfreeConstant (arg2c) : arg2c;
+    }
 
-        /* If no joy, try again to catch case where y has extrema.
-         * E.g., if we are doing _lt_VxS_( V, S)
-         *
-         *          If AVIS_MAX(V) <  S,  return:  genarray( shape(V), TRUE);
-         *
-         * If that fails, try this:
-         *
-         *          If AVIS_MIN(S) >= V,  return:  genarray( shape(V), TRUE);
-         *
-         */
-        if ((NULL == res) && recur) {
-            res = saarelat (prfarg2, prfarg1, arg_info, fnb, fnb, (!minmax), prfargres,
-                            tf, FALSE);
-        }
+    DBUG_RETURN (res);
+}
 
-        /*
-         * If that fails, try the FALSE case, as above:
-         *
-         *          If AVIS_MIN(V) >= S, return:  genarray( shape(V), FALSE);
-         */
-        if ((NULL == res) && recur) {
-            res = saarelat (prfarg1, prfarg2, arg_info, fnb, fnb, (!minmax), prfargres,
-                            (!tf), FALSE);
-        }
+node *
+SAACFonRelationalsWithExtrema (node *prfarg1, node *prfarg2, info *arg_info, prf fun)
+{
+    node *res = NULL;
+    simpletype tp;
+    prf fna;
+    prf fnb;
+    prf fnc;
+    prf fnd;
+    int funnuma;
+    bool minmax;
 
-        /*
-         * If that fails, try the other FALSE case, as above:
-         *
-         *          If AVIS_MAX(S) <  V, return:  genarray( shape(V), FALSE);
-         */
-        if ((NULL == res) && recur) {
-            res = saarelat (prfarg2, prfarg1, arg_info, fna, fnb, minmax, prfargres,
-                            (!tf), FALSE);
-        }
+    // These tables are used to obtain the complementary relational fns for relfn.
+    // Make sure that they correspond to the REL_xxx definitions.
+    //                     NULL,        COlt,    COle,     COge,     COgt};
+    prf complementfnb[] = {F_unknown, F_ge_SxS, F_gt_SxS, F_lt_SxS, F_le_SxS};
+    prf complementfnc[] = {F_unknown, F_gt_SxS, F_ge_SxS, F_lt_SxS, F_le_SxS};
+    prf complementfnd[] = {F_unknown, F_le_SxS, F_lt_SxS, F_gt_SxS, F_ge_SxS};
+    bool minmaxtab[]
+      = {FALSE, SAACFCHASEMAX, SAACFCHASEMAX, SAACFCHASEMIN, SAACFCHASEMIN};
+
+    DBUG_ENTER ();
+
+    tp = SCSgetBasetypeOfExpr (prfarg1);
+    fna = TULSgetPrfFamilyName (fun);
+    funnuma = GetFunNum (fna);
+    fnb = complementfnb[funnuma];
+    fnc = complementfnc[funnuma];
+    fnd = complementfnd[funnuma];
+    minmax = minmaxtab[funnuma];
+
+    // This block handles the direct cases:
+    //
+    // x <  y --> TRUE, if AVIS_MAX( x) <  y
+    // x <= y --> TRUE, if AVIS_MAX( x) <= y
+    // x >= y --> TRUE, if AVIS_MIN( x) >= y
+    // x >  y --> TRUE, if AVIS_MIN( x) >  y
+    res = relatHelper (prfarg1, prfarg2, arg_info, fna, minmax, TRUE);
+
+    // This block handles the case of extrema on y, via argument
+    // and function swapping. This is done because our relatHelper only
+    // deals with extrema on x.
+    //
+    // x <  y --> TRUE, if AVIS_MIN( y) >= x
+    // x <= y --> TRUE, if AVIS_MIN( y) >  x
+    // x >= y --> TRUE, if AVIS_MAX( y) <  x
+    // x >  y --> TRUE, if AVIS_MAX( y) <= x
+
+    if (NULL == res) {
+        res = relatHelper (prfarg2, prfarg1, arg_info, fnb, (!minmax), TRUE);
+    }
+
+    // This block handles the direct complementary case:
+    //
+    // x <  y --> FALSE, if AVIS_MIN( x) >= y
+    // x <= y --> FALSE, if AVIS_MIN( x) >  y
+    // x >= y --> FALSE, if AVIS_MAX( x) <  y
+    // x >  y --> FALSE, if AVIS_MAX( x) <= y
+
+    if (NULL == res) {
+        res = relatHelper (prfarg1, prfarg2, arg_info, fnc, (!minmax), FALSE);
+    }
+
+    // This block handles the swapped complementary case, with
+    //
+    // x <  y --> FALSE, if AVIS_MAX( y) <= x;
+    // x <= y --> FALSE, if AVIS_MAX( y) <  x;
+    // x >= y --> FALSE, if AVIS_MIN( y) >  x;
+    // x >  y --> FALSE, if AVIS_MIN( y) >= x;
+    //
+    if (NULL == res) {
+        res = relatHelper (prfarg2, prfarg1, arg_info, fnd, minmax, FALSE);
     }
 
     DBUG_RETURN (res);
@@ -1048,8 +1109,8 @@ SAACFprf_lt_SxS (node *arg_node, info *arg_info)
     node *res = NULL;
 
     DBUG_ENTER ();
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
-                    SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
 
     res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
                             PRF_ARG2 (arg_node), TRUE);
@@ -1083,8 +1144,8 @@ SAACFprf_lt_SxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
-                    SAACFCHASEMAX, PRF_ARG2 (arg_node), TRUE, TRUE);
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
 
     DBUG_RETURN (res);
 }
@@ -1109,8 +1170,8 @@ SAACFprf_lt_VxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
-                    SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
 
     DBUG_RETURN (res);
 }
@@ -1158,8 +1219,8 @@ SAACFprf_le_SxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
-                    SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
 
     res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
                             AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))), TRUE);
@@ -1193,8 +1254,8 @@ SAACFprf_le_SxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
-                    SAACFCHASEMAX, PRF_ARG2 (arg_node), TRUE, TRUE);
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
 
     DBUG_RETURN (res);
 }
@@ -1219,8 +1280,8 @@ SAACFprf_le_VxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
-                    SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
 
     DBUG_RETURN (res);
 }
@@ -1270,8 +1331,8 @@ SAACFprf_ge_SxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_ge, REL_le,
-                    SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
 
     res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
                             AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))), TRUE);
@@ -1301,8 +1362,8 @@ SAACFprf_ge_SxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_ge, REL_le,
-                    SAACFCHASEMIN, PRF_ARG2 (arg_node), TRUE, TRUE);
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
 
     DBUG_RETURN (res);
 }
@@ -1325,8 +1386,8 @@ SAACFprf_ge_VxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_ge, REL_le,
-                    SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
 
     DBUG_RETURN (res);
 }
@@ -1380,8 +1441,8 @@ SAACFprf_gt_SxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_gt, REL_lt,
-                    SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
 
     res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
                             AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))), TRUE);
@@ -1415,8 +1476,8 @@ SAACFprf_gt_SxV (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_gt, REL_lt,
-                    SAACFCHASEMIN, PRF_ARG2 (arg_node), TRUE, TRUE);
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
 
     DBUG_RETURN (res);
 }
@@ -1441,8 +1502,8 @@ SAACFprf_gt_VxS (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
-    res = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_gt, REL_lt,
-                    SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
+    res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                         arg_info, PRF_PRF (arg_node));
 
     DBUG_RETURN (res);
 }

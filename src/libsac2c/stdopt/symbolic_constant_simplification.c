@@ -1084,22 +1084,40 @@ SCSextractCompositionInfo (prf fung, node *arg1, node *arg2, info *arg_info, prf
  *         if we do not know. If TRUE, res is set to TRUE OR FALSE, as
  *         required.
  *         Some compositions produce res=TRUE, some FALSE, and some DoNotKnow.
+ *
  *         These compositions produce res = TRUE:
  *
- *               min( x, y) <= x
- *               min( x, y) <= y
- *               x          >= min( x, y)
- *               y          >= min( x, y)
+ *               min( x, Y) <= x
+ *               min( Y, x) <= x
+ *               x          >= min( x, Y)
+ *               x          >= min( Y, x)
  *
- *               max( x, y) >= x
- *               max( x, y) >= y
- *               x          <= max( x, y)
- *               y          <= max( x, y)
+ *               max( x, Y) >=Yx
+ *               max( Y, x) >= x
+ *               x          <= max( x, Y)
+ *               x          <= max( Y, x)
  *
+ *               add( x, nonnegY) >= x
+ *               add( nonnegY, x) >= x
+ *               x          <= add( x, nonnegY)
+ *               x          <= add( nonnegY, x)
  *
- *          See below for FALSE ones.
+ *         These compositions produce res = FALSE:
  *
+ *               min( x, Y) >  x
+ *               min( Y, x) >  x
+ *               x          < min( x, Y)
+ *               x          < min( Y, x)
  *
+ *               max( x, Y) < x
+ *               max( Y, x) < x
+ *               x          > max( x, Y)
+ *               x          > max( Y, x)
+ *
+ *               x < add( x, nonnegY)
+ *               x < add( nonnegY, x)
+ *               x          > add( x, nonnegY)
+ *               x          > add( nonnegY, x)
  *
  * @param: funf: an N_prf
  * @param: arg1: PRF_ARG1 of funf
@@ -1123,6 +1141,8 @@ SCSextractCompositionInfo (prf fung, node *arg1, node *arg2, info *arg_info, prf
  *
  *        Then, we filter any results that match.
  *
+ * @note: Feel free to expand the set of supported compositions.
+ *
  *****************************************************************************/
 
 #define SCSECI(funf, fung, myres, condit)                                                \
@@ -1145,58 +1165,43 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
 
         // (x min y) <= x
         SCSECI (F_min_SxS, F_le_SxS, TRUE, TRUE);
-        // z = (( F_min_SxS == fff) && ( F_le_SxS  == ffg)) ? TRUE  : z;
 
         // (x min y) >  x
         SCSECI (F_min_SxS, F_gt_SxS, FALSE, TRUE);
-        // z = (( F_min_SxS == fff) && ( F_gt_SxS  == ffg)) ? FALSE : z;
 
         // (x max y) >= x
         SCSECI (F_max_SxS, F_ge_SxS, TRUE, TRUE);
-        // z = (( F_max_SxS == fff) && ( F_ge_SxS  == ffg)) ? TRUE  : z;
 
         // (x max y) <  x
         SCSECI (F_max_SxS, F_lt_SxS, FALSE, TRUE);
-        // z = (( F_max_SxS == fff) && ( F_lt_SxS  == ffg)) ? FALSE : z;
 
         // (x + nonnegY) >= x
         SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNonneg (Y));
-        // z = (( F_add_SxS == fff) && ( F_ge_SxS  == ffg))
-        //                         &&  SCSisNonneg( Y)     ? TRUE  : z;
 
         // (x + nonnegY) < x
         SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNonneg (Y));
-        // z = (( F_add_SxS == fff) && ( F_lt_SxS  == ffg))
-        //                         &&  SCSisNonneg( Y)     ? FALSE : z;
     }
 
     // With reversed arguments, we have to reverse the sense of the relational
     // E.g., < becomes >; <= becomes >=
     if (SCSextractCompositionInfo (fung, arg2, arg1, arg_info, &fff, &ffg, &Y)) {
         // x >= (x min y)
-        SCSECI (F_min_SxS, F_le_SxS, TRUE, TRUE);
-        // z = (( F_min_SxS == fff) && ( F_le_SxS  == ffg)) ? TRUE  : z;
+        SCSECI (F_min_SxS, F_ge_SxS, TRUE, TRUE);
 
         // x < (x min y)
-        SCSECI (F_min_SxS, F_gt_SxS, FALSE, TRUE);
-        // z = (( F_min_SxS == fff) && ( F_gt_SxS  == ffg)) ? FALSE : z;
+        SCSECI (F_min_SxS, F_lt_SxS, FALSE, TRUE);
 
         // x <= (x max y)
-        SCSECI (F_max_SxS, F_ge_SxS, TRUE, TRUE);
-        // z = (( F_max_SxS == fff) && ( F_ge_SxS  == ffg)) ? TRUE  : z;
+        SCSECI (F_max_SxS, F_le_SxS, TRUE, TRUE);
 
         // x >  (x max y)
-        SCSECI (F_max_SxS, F_lt_SxS, FALSE, TRUE);
-        // z = (( F_max_SxS == fff) && ( F_lt_SxS  == ffg)) ? FALSE  : z;
+        SCSECI (F_max_SxS, F_gt_SxS, FALSE, TRUE);
 
         // x <= (x + nonnegY)
-        SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNonneg (Y));
-        // z = (( F_add_SxS == fff) && ( F_ge_SxS  == ffg))
-        //                         &&  SCSisNonneg( Y)     ? TRUE  : z;
+        SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisNonneg (Y));
+
         // x > (x + nonnegY)
-        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNonneg (Y));
-        // z = (( F_add_SxS == fff) && ( F_lt_SxS  == ffg))
-        //                         &&  SCSisNonneg( Y)     ? FALSE  : z;
+        SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisNonneg (Y));
     }
 
     DBUG_RETURN (z);
@@ -2285,8 +2290,8 @@ SCSprf_max_SxS (node *arg_node, info *arg_info)
     }
 
     if (NULL == res) {
-        res2 = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), NULL, REL_ge, REL_lt,
-                         SAACFCHASEMIN, PRF_ARG1 (arg_node), TRUE, TRUE);
+        res2 = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                              NULL, F_ge_SxS);
         if (NULL != res2) {
             if (SCSmatchConstantOne (res2)) {
                 res = DUPdoDupNode (PRF_ARG1 (arg_node));
@@ -2347,8 +2352,8 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
 
     // case 6
     if (NULL == res) {
-        res2 = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), NULL, REL_le, REL_gt,
-                         SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+        res2 = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                              NULL, F_le_SxS);
         if (NULL != res2) {
             if (SCSmatchConstantOne (res2)) {
                 res = DUPdoDupNode (PRF_ARG1 (arg_node));
@@ -2417,6 +2422,11 @@ SCSprf_lege (node *arg_node, info *arg_info)
             res = SCSmakeFalse (PRF_ARG1 (arg_node));
         }
         DBUG_PRINT ("Found TRUE relational minmax 12");
+    }
+
+    if (NULL == res) {
+        res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                             NULL, PRF_PRF (arg_node));
     }
 
     DBUG_RETURN (res);
@@ -3159,8 +3169,8 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
 
     /* Case 5 */
     if (NULL == res) {
-        b = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_lt, REL_ge,
-                      SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+        b = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                           arg_info, F_lt_SxS);
 
         if ((NULL != b) && SCSmatchConstantOne (b)) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
@@ -3327,8 +3337,8 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
 
     /* Case 5 */
     if (NULL == res) {
-        b = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
-                      SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+        b = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                           arg_info, F_le_SxS);
 
         if ((NULL != b) && SCSmatchConstantOne (b)) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
@@ -3481,8 +3491,8 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
 
     /* Case 5 */
     if (NULL == res) {
-        b = saarelat (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node), arg_info, REL_le, REL_ge,
-                      SAACFCHASEMAX, PRF_ARG1 (arg_node), TRUE, TRUE);
+        b = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                           arg_info, F_le_SxS);
         if ((NULL != b) && (SCSmatchConstantOne (b))) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));

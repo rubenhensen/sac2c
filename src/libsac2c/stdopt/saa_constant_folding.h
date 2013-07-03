@@ -53,7 +53,7 @@ extern constant *SAACFchaseMinMax (node *arg_node, bool minmax);
 #define SAACFCHASEMIN FALSE
 #define SAACFCHASEMAX TRUE
 
-node *saarelat (node *prfarg1, node *prfarg2, info *arg_info, int fna, int fnb,
-                bool minmax, node *prfargres, bool tf, bool recur);
+node *SAACFonRelationalsWithExtrema (node *prfarg1, node *prfarg2, info *arg_info,
+                                     prf fun);
 
 #endif /* _SAC_saa_constantfolding_h_ */

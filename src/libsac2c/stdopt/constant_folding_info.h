@@ -43,6 +43,4 @@ struct INFO {
 
 #define INFO_DOINGEXTREMA(n) (n->doingextrema)
 
-typedef enum { REL_lt, REL_le, REL_ge, REL_gt } relationalfns;
-
 #endif //  _SAC__CONSTANTFOLDING_H_
