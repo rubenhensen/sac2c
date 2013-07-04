@@ -279,6 +279,7 @@ PRFUnrollOracle (node *arg_node)
     case F_non_neg_val_V:
     case F_neg_V:
     case F_abs_V:
+    case F_not_V:
 
     case F_lt_VxS:
     case F_lt_SxV:
@@ -315,6 +316,14 @@ PRFUnrollOracle (node *arg_node)
     case F_max_VxS:
     case F_max_SxV:
     case F_max_VxV:
+
+    case F_and_VxS:
+    case F_and_SxV:
+    case F_and_VxV:
+
+    case F_or_VxS:
+    case F_or_SxV:
+    case F_or_VxV:
 
         res = TRUE;
         break;
@@ -431,6 +440,10 @@ NormalizePrf (prf p)
         p = F_abs_S;
         break;
 
+    case F_not_V:
+        p = F_not_S;
+        break;
+
     case F_mod_VxS:
     case F_mod_SxV:
     case F_mod_VxV:
@@ -447,6 +460,18 @@ NormalizePrf (prf p)
     case F_max_SxV:
     case F_max_VxV:
         p = F_max_SxS;
+        break;
+
+    case F_and_VxS:
+    case F_and_SxV:
+    case F_and_VxV:
+        p = F_and_SxS;
+        break;
+
+    case F_or_VxS:
+    case F_or_SxV:
+    case F_or_VxV:
+        p = F_or_SxS;
         break;
 
     default:
@@ -545,6 +570,8 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
     case F_mod_SxV:
     case F_min_SxV:
     case F_max_SxV:
+    case F_and_SxV:
+    case F_or_SxV:
         // break elided intentionally
 
     default:
@@ -567,6 +594,7 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
     case F_neg_V:
     case F_val_le_val_VxV:
     case F_abs_V:
+    case F_not_V:
 
     case F_lt_VxS:
     case F_le_VxS:
@@ -590,6 +618,11 @@ MakeSelOpArg1 (node *arg_node, info *arg_info, int i, node *avis)
 
     case F_max_VxS:
     case F_max_VxV:
+
+    case F_and_VxS:
+    case F_and_VxV:
+    case F_or_VxS:
+    case F_or_VxV:
 
         nprf = F_sel_VxA;
         break;
@@ -641,6 +674,7 @@ MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
     case F_neg_V:
     case F_abs_V:
     case F_non_neg_val_V:
+    case F_not_V:
         dyadic = FALSE;
         break;
 
@@ -660,6 +694,9 @@ MakeSelOpArg2 (node *arg_node, info *arg_info, int i, node *avis)
 
     case F_min_VxS:
     case F_max_VxS:
+
+    case F_and_VxS:
+    case F_or_VxS:
 
         zavis = avis;
         dyadic = FALSE;
@@ -797,6 +834,13 @@ MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node 
     case F_max_SxV:
     case F_max_VxV:
 
+    case F_and_VxS:
+    case F_and_SxS:
+    case F_and_VxV:
+    case F_or_VxS:
+    case F_or_SxS:
+    case F_or_VxV:
+
     case F_val_lt_shape_VxA:
     case F_val_le_val_VxV:
 
@@ -814,6 +858,7 @@ MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node 
     case F_non_neg_val_V:
     case F_neg_V:
     case F_abs_V:
+    case F_not_V:
         INFO_PREASSIGN (arg_info)
           = TBmakeAssign (TBmakeLet (ids, TCmakePrf1 (NormalizePrf (PRF_PRF (arg_node)),
                                                       TBmakeId (argavis1))),
