@@ -979,9 +979,9 @@ SAACFonRelationalsWithExtrema (node *prfarg1, node *prfarg2, info *arg_info, prf
 
     // These tables are used to obtain the complementary relational fns for relfn.
     // Make sure that they correspond to the REL_xxx definitions.
-    //                     NULL,        COlt,    COle,     COge,     COgt};
-    prf complementfnb[] = {F_unknown, F_ge_SxS, F_gt_SxS, F_lt_SxS, F_le_SxS};
-    prf complementfnc[] = {F_unknown, F_gt_SxS, F_ge_SxS, F_lt_SxS, F_le_SxS};
+    //                     NULL,       COlt,     COle,     COge,     COgt};
+    prf complementfnb[] = {F_unknown, F_gt_SxS, F_ge_SxS, F_le_SxS, F_lt_SxS};
+    prf complementfnc[] = {F_unknown, F_ge_SxS, F_gt_SxS, F_lt_SxS, F_le_SxS};
     prf complementfnd[] = {F_unknown, F_le_SxS, F_lt_SxS, F_gt_SxS, F_ge_SxS};
     bool minmaxtab[]
       = {FALSE, SAACFCHASEMAX, SAACFCHASEMAX, SAACFCHASEMIN, SAACFCHASEMIN};
@@ -990,53 +990,65 @@ SAACFonRelationalsWithExtrema (node *prfarg1, node *prfarg2, info *arg_info, prf
 
     tp = SCSgetBasetypeOfExpr (prfarg1);
     fna = TULSgetPrfFamilyName (fun);
-    funnuma = GetFunNum (fna);
-    fnb = complementfnb[funnuma];
-    fnc = complementfnc[funnuma];
-    fnd = complementfnd[funnuma];
-    minmax = minmaxtab[funnuma];
+    switch (fna) { // sheep vs. goats
+    case F_lt_SxS:
+    case F_le_SxS:
+    case F_ge_SxS:
+    case F_gt_SxS:
 
-    // This block handles the direct cases:
-    //
-    // x <  y --> TRUE, if AVIS_MAX( x) <  y
-    // x <= y --> TRUE, if AVIS_MAX( x) <= y
-    // x >= y --> TRUE, if AVIS_MIN( x) >= y
-    // x >  y --> TRUE, if AVIS_MIN( x) >  y
-    res = relatHelper (prfarg1, prfarg2, arg_info, fna, minmax, TRUE);
+        funnuma = GetFunNum (fna);
+        fnb = complementfnb[funnuma];
+        fnc = complementfnc[funnuma];
+        fnd = complementfnd[funnuma];
+        minmax = minmaxtab[funnuma];
 
-    // This block handles the case of extrema on y, via argument
-    // and function swapping. This is done because our relatHelper only
-    // deals with extrema on x.
-    //
-    // x <  y --> TRUE, if AVIS_MIN( y) >= x
-    // x <= y --> TRUE, if AVIS_MIN( y) >  x
-    // x >= y --> TRUE, if AVIS_MAX( y) <  x
-    // x >  y --> TRUE, if AVIS_MAX( y) <= x
+        // This block handles the direct cases:
+        //
+        // x <  y --> TRUE, if AVIS_MAX( x) <  y
+        // x <= y --> TRUE, if AVIS_MAX( x) <= y
+        // x >= y --> TRUE, if AVIS_MIN( x) >= y
+        // x >  y --> TRUE, if AVIS_MIN( x) >  y
+        res = relatHelper (prfarg1, prfarg2, arg_info, fna, minmax, TRUE);
 
-    if (NULL == res) {
-        res = relatHelper (prfarg2, prfarg1, arg_info, fnb, (!minmax), TRUE);
-    }
+        // This block handles the case of extrema on y, via argument
+        // and function swapping. This is done because our relatHelper only
+        // deals with extrema on x.
+        //
+        // x <  y --> TRUE, if AVIS_MIN( y) >  x
+        // x <= y --> TRUE, if AVIS_MIN( y) >= x
+        // x >= y --> TRUE, if AVIS_MAX( y) <= x
+        // x >  y --> TRUE, if AVIS_MAX( y) <  x
 
-    // This block handles the direct complementary case:
-    //
-    // x <  y --> FALSE, if AVIS_MIN( x) >= y
-    // x <= y --> FALSE, if AVIS_MIN( x) >  y
-    // x >= y --> FALSE, if AVIS_MAX( x) <  y
-    // x >  y --> FALSE, if AVIS_MAX( x) <= y
+        if (NULL == res) {
+            res = relatHelper (prfarg2, prfarg1, arg_info, fnb, (!minmax), TRUE);
+        }
 
-    if (NULL == res) {
-        res = relatHelper (prfarg1, prfarg2, arg_info, fnc, (!minmax), FALSE);
-    }
+        // This block handles the direct complementary case:
+        //
+        // x <  y --> FALSE, if AVIS_MIN( x) >= y
+        // x <= y --> FALSE, if AVIS_MIN( x) >  y
+        // x >= y --> FALSE, if AVIS_MAX( x) <  y
+        // x >  y --> FALSE, if AVIS_MAX( x) <= y
 
-    // This block handles the swapped complementary case, with
-    //
-    // x <  y --> FALSE, if AVIS_MAX( y) <= x;
-    // x <= y --> FALSE, if AVIS_MAX( y) <  x;
-    // x >= y --> FALSE, if AVIS_MIN( y) >  x;
-    // x >  y --> FALSE, if AVIS_MIN( y) >= x;
-    //
-    if (NULL == res) {
-        res = relatHelper (prfarg2, prfarg1, arg_info, fnd, minmax, FALSE);
+        if (NULL == res) {
+            res = relatHelper (prfarg1, prfarg2, arg_info, fnc, (!minmax), FALSE);
+        }
+
+        // This block handles the swapped complementary case, with
+        //
+        // x <  y --> FALSE, if AVIS_MAX( y) <= x;
+        // x <= y --> FALSE, if AVIS_MAX( y) <  x;
+        // x >= y --> FALSE, if AVIS_MIN( y) >  x;
+        // x >  y --> FALSE, if AVIS_MIN( y) >= x;
+        //
+        if (NULL == res) {
+            res = relatHelper (prfarg2, prfarg1, arg_info, fnd, minmax, FALSE);
+        }
+
+        break;
+
+    default:
+        break;
     }
 
     DBUG_RETURN (res);

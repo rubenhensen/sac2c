@@ -3089,6 +3089,7 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
+    bool flg = FALSE;
 
     DBUG_ENTER ();
 
@@ -3192,6 +3193,15 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
                     AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
     }
 
+    if ((NULL == res)
+        && SCSisRelationalOnDyadicFn (F_lt_SxS, PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                      arg_info, &flg)) {
+        if (flg) {
+            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (TBmakeBool (TRUE), NULL));
+        }
+    }
+
     con1 = (NULL != con1) ? COfreeConstant (con1) : con1;
     con2 = (NULL != con2) ? COfreeConstant (con2) : con2;
     pat1 = PMfree (pat1);
@@ -3273,6 +3283,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
+    bool flg = FALSE;
 
     DBUG_ENTER ();
 
@@ -3374,6 +3385,15 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
         res = SawingTheBoardInTwo (arg_node, arg_info);
     }
 
+    if ((NULL == res)
+        && SCSisRelationalOnDyadicFn (F_le_SxS, PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                      arg_info, &flg)) {
+        if (flg) {
+            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (TBmakeBool (TRUE), NULL));
+        }
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -3409,6 +3429,7 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
     pattern *pat2;
     pattern *pat3;
     pattern *pat4;
+    bool flg = FALSE;
 
     DBUG_ENTER ();
 
@@ -3500,6 +3521,15 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
                         AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
                         AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))));
             b = (NULL != b) ? FREEdoFreeNode (b) : b;
+        }
+    }
+
+    if ((NULL == res)
+        && SCSisRelationalOnDyadicFn (F_le_VxV, PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                      arg_info, &flg)) {
+        if (flg) {
+            res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
+                               TBmakeExprs (TBmakeBool (TRUE), NULL));
         }
     }
 
