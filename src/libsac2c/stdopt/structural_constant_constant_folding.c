@@ -150,10 +150,16 @@ StructOpSelHelper (node *prfarg1, node *prfarg2, info *arg_info)
     patconst = PMconst (1, PMAgetVal (&con1));
     patarray = PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0));
 
-    if ((PMmatchFlat (patconst, prfarg1)) &&
+    if ((PMmatchFlatSkipExtrema (patconst, prfarg1)) &&
         /* Bug #525 must skip guards here. */
         /* Unfortunately, doing so introduces Bug #1060. */
-        (PMmatchFlat (patarray, prfarg2))) { /* Get N_array */
+        /* I'd go look up that bug, but saczilla remains off the air
+         * this month, too. However, CF unit test funnyivecyc
+         * suffers from failure to remove _idx_sel_( 0, WITHID_VEC),
+         * because of the noteintersect in the WL. Hence, we try
+         * introducing extrema-skipping here.
+         */
+        (PMmatchFlatSkipExtrema (patarray, prfarg2))) { /* Get N_array */
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);
         arg2fs = COfreeConstant (arg2fs);
         iv_len = SHgetUnrLen (COgetShape (con1));

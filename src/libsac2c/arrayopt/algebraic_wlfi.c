@@ -812,7 +812,7 @@ GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
         }
 
         if (badnews) {
-            exprs = FREEdoFreeTree (exprs);
+            exprs = (NULL != exprs) ? FREEdoFreeTree (exprs) : NULL;
             DBUG_PRINT ("Could not build fake extrema for %s", AVIS_NAME (ivavis));
         } else {
             newarr = DUPdoDupTree (narr);
