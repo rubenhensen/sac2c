@@ -824,6 +824,44 @@ SAACFprf_val_lt_val_SxS (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool isEqExtrema(node *arg_node1, node *arg_node2)
+ *
+ * @brief: For a relational primitive on SxS or VxV:
+ *         Attempt an exact compare between
+ *         arg_node1 and arg_node2. [One of them is supposed
+ *         to be an AVIS_MIN or AVIS_MAX.
+ *
+ *         We should extend this via ISMOP to handle SxV and VxS, at
+ *         least when the non-scalar argument is an N_array,
+ *         potentially of S.
+ *
+ * @result: TRUE if the arguments match. Do NOT make assumptions
+ *          about values if result is false.
+ *
+ *****************************************************************************/
+static bool
+isEqExtrema (node *arg_node1, node *arg_node2)
+{
+    bool res = FALSE;
+    pattern *pat;
+
+    DBUG_ENTER ();
+
+    if ((NULL != arg_node1) && (NULL != arg_node2)
+        && (TUeqShapes (AVIS_TYPE (ID_AVIS (arg_node1)),
+                        AVIS_TYPE (ID_AVIS (arg_node2))))) {
+        pat = PMvar (1, PMAisVar (&arg_node1), 0);
+        res = PMmatchFlat (pat, arg_node2);
+        DBUG_PRINT ("comparing %s and %s gave %d", AVIS_NAME (ID_AVIS (arg_node1)),
+                    AVIS_NAME (ID_AVIS (arg_node2)), res);
+        pat = PMfree (pat);
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * Code below here provides extrema-based CF for relationals
  *
  * The basic principle is that if the appropriate extremum of
@@ -885,7 +923,6 @@ static constant *(*relfn[]) (constant *, constant *, constant *)
  *          all TRUE or FALSE.
  *
  *****************************************************************************/
-
 static int
 GetFunNum (prf fun)
 { // Map function name to an integer for indexing
@@ -915,7 +952,8 @@ GetFunNum (prf fun)
 }
 
 static node *
-relatHelper (node *prfarg1, node *prfarg2, info *arg_info, prf fun, bool minmax, bool tf)
+relatHelper (node *prfarg1, node *prfarg2, info *arg_info, prf fun, bool minmax, bool tf,
+             bool swapped)
 {
     node *res = NULL;
     constant *arg1c = NULL;
@@ -926,6 +964,7 @@ relatHelper (node *prfarg1, node *prfarg2, info *arg_info, prf fun, bool minmax,
     simpletype tp;
     node *arg1ex;
     node *prfargres;
+    bool mat = FALSE;
 
     DBUG_ENTER ();
 
@@ -939,27 +978,34 @@ relatHelper (node *prfarg1, node *prfarg2, info *arg_info, prf fun, bool minmax,
     //  AVIS_MIN( x) >= y --> TRUE
     if (N_id == NODE_TYPE (prfarg1)) {
         arg1ex = minmax ? AVIS_MAX (ID_AVIS (prfarg1)) : AVIS_MIN (ID_AVIS (prfarg1));
-        arg1c = SAACFchaseMinMax (arg1ex, minmax);
-        arg2c = COaST2Constant (prfarg2);
+        // Try exact match on extremum N_id:
+        // If we get one, fake up arguments to the relfn call, below.
+        if (isEqExtrema (arg1ex, prfarg2)) {
+            arg1c = COmakeOne (tp, SHmakeShape (0));
+            arg2c = COmakeOne (tp, SHmakeShape (0));
+        } else { // Otherwise, try to match constants
+            arg1c = SAACFchaseMinMax (arg1ex, minmax);
+            arg2c = COaST2Constant (prfarg2);
+        }
 
-        if ((NULL != arg1c) && (NULL != arg2c)) {
+        if (((NULL != arg1c)) && (NULL != arg2c)) {
             adj = minmax ? COmakeOne (tp, SHmakeShape (0))
                          : COmakeZero (tp, SHmakeShape (0));
             arg1cp = COsub (arg1c, adj, NULL); /* Denormalize AVIS_MAX*/
             adj = COfreeConstant (adj);
             b = ((relfn[GetFunNum (fun)])) (arg1cp, arg2c, NULL);
-            if (COisTrue (b, TRUE)) {
-                prfargres
-                  = (TUisVector (AVIS_TYPE (ID_AVIS (prfarg1)))) ? prfarg1 : prfarg2;
-                res = tf ? SCSmakeTrue (prfargres) : SCSmakeFalse (prfargres);
-                DBUG_PRINT ("replacing RHS by tob( %d)", tf);
-            }
+            mat = COisTrue (b, TRUE);
             b = COfreeConstant (b);
         }
 
         arg1c = (NULL != arg1c) ? COfreeConstant (arg1c) : arg1c;
         arg1cp = (NULL != arg1cp) ? COfreeConstant (arg1cp) : arg1cp;
         arg2c = (NULL != arg2c) ? COfreeConstant (arg2c) : arg2c;
+        if (mat) {
+            prfargres = (TUisVector (AVIS_TYPE (ID_AVIS (prfarg1)))) ? prfarg1 : prfarg2;
+            res = tf ? SCSmakeTrue (prfargres) : SCSmakeFalse (prfargres);
+            DBUG_PRINT ("replacing RHS by tob( %d)", tf);
+        }
     }
 
     DBUG_RETURN (res);
@@ -994,7 +1040,7 @@ SAACFonRelationalsWithExtrema (node *prfarg1, node *prfarg2, info *arg_info, prf
     case F_lt_SxS:
     case F_le_SxS:
     case F_ge_SxS:
-    case F_gt_SxS:
+    case F_gt_SxS: // sheep
 
         funnuma = GetFunNum (fna);
         fnb = complementfnb[funnuma];
@@ -1008,7 +1054,7 @@ SAACFonRelationalsWithExtrema (node *prfarg1, node *prfarg2, info *arg_info, prf
         // x <= y --> TRUE, if AVIS_MAX( x) <= y
         // x >= y --> TRUE, if AVIS_MIN( x) >= y
         // x >  y --> TRUE, if AVIS_MIN( x) >  y
-        res = relatHelper (prfarg1, prfarg2, arg_info, fna, minmax, TRUE);
+        res = relatHelper (prfarg1, prfarg2, arg_info, fna, minmax, TRUE, FALSE);
 
         // This block handles the case of extrema on y, via argument
         // and function swapping. This is done because our relatHelper only
@@ -1020,7 +1066,7 @@ SAACFonRelationalsWithExtrema (node *prfarg1, node *prfarg2, info *arg_info, prf
         // x >  y --> TRUE, if AVIS_MAX( y) <  x
 
         if (NULL == res) {
-            res = relatHelper (prfarg2, prfarg1, arg_info, fnb, (!minmax), TRUE);
+            res = relatHelper (prfarg2, prfarg1, arg_info, fnb, (!minmax), TRUE, TRUE);
         }
 
         // This block handles the direct complementary case:
@@ -1031,7 +1077,7 @@ SAACFonRelationalsWithExtrema (node *prfarg1, node *prfarg2, info *arg_info, prf
         // x >  y --> FALSE, if AVIS_MAX( x) <= y
 
         if (NULL == res) {
-            res = relatHelper (prfarg1, prfarg2, arg_info, fnc, (!minmax), FALSE);
+            res = relatHelper (prfarg1, prfarg2, arg_info, fnc, (!minmax), FALSE, FALSE);
         }
 
         // This block handles the swapped complementary case, with
@@ -1042,52 +1088,13 @@ SAACFonRelationalsWithExtrema (node *prfarg1, node *prfarg2, info *arg_info, prf
         // x >  y --> FALSE, if AVIS_MIN( y) >= x;
         //
         if (NULL == res) {
-            res = relatHelper (prfarg2, prfarg1, arg_info, fnd, minmax, FALSE);
+            res = relatHelper (prfarg2, prfarg1, arg_info, fnd, minmax, FALSE, TRUE);
         }
 
         break;
 
     default:
-        break;
-    }
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *CompareEqExtrema(node *res, node *arg_node1,
- *                            node *arg_node2, bool val)
- *
- * @brief: For a relational primitive on SxS or VxV:
- *         If res is NULL, attempt an exact compare between
- *         arg_node1 and arg_node2. [One of them is supposed
- *         to be an AVIS_MIN or AVIS_MAX.
- *
- *         We should extend this via ISMOP to handle SxV and VxS, at
- *         least when the non-scalar argument is an N_array,
- *         potentially of S.
- *
- * @result: If the arguments match, return the appropriate val constant.
- *
- *****************************************************************************/
-static node *
-CompareEqExtrema (node *res, node *arg_node1, node *arg_node2, bool val)
-{
-    pattern *pat;
-
-    DBUG_ENTER ();
-
-    if ((NULL == res) && (NULL != arg_node1) && (NULL != arg_node2)) {
-        pat = PMvar (1, PMAisVar (&arg_node1), 0);
-        DBUG_PRINT ("comparing %s and %s", AVIS_NAME (ID_AVIS (arg_node1)),
-                    AVIS_NAME (ID_AVIS (arg_node2)));
-        if (PMmatchFlat (pat, arg_node2)) {
-            res = val ? SCSmakeTrue (arg_node1) : SCSmakeFalse (arg_node1);
-            DBUG_PRINT ("%s and %s compare equal", AVIS_NAME (ID_AVIS (arg_node1)),
-                        AVIS_NAME (ID_AVIS (arg_node2)));
-        }
-        pat = PMfree (pat);
+        break; // goats
     }
 
     DBUG_RETURN (res);
@@ -1123,15 +1130,6 @@ SAACFprf_lt_SxS (node *arg_node, info *arg_info)
     DBUG_ENTER ();
     res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
                                          arg_info, PRF_PRF (arg_node));
-
-    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node), TRUE);
-
-    res = CompareEqExtrema (res, AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node), FALSE);
-
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))), FALSE);
 
     DBUG_RETURN (res);
 }
@@ -1233,15 +1231,6 @@ SAACFprf_le_SxS (node *arg_node, info *arg_info)
 
     res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
                                          arg_info, PRF_PRF (arg_node));
-
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))), TRUE);
-
-    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node), TRUE);
-
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))), FALSE);
 
     DBUG_RETURN (res);
 }
@@ -1346,13 +1335,6 @@ SAACFprf_ge_SxS (node *arg_node, info *arg_info)
     res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
                                          arg_info, PRF_PRF (arg_node));
 
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))), TRUE);
-    res = CompareEqExtrema (res, AVIS_MIN (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node), TRUE);
-    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node), FALSE);
-
     DBUG_RETURN (res);
 }
 
@@ -1455,15 +1437,6 @@ SAACFprf_gt_SxS (node *arg_node, info *arg_info)
 
     res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
                                          arg_info, PRF_PRF (arg_node));
-
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MAX (ID_AVIS (PRF_ARG2 (arg_node))), TRUE);
-
-    res = CompareEqExtrema (res, PRF_ARG1 (arg_node),
-                            AVIS_MIN (ID_AVIS (PRF_ARG2 (arg_node))), FALSE);
-
-    res = CompareEqExtrema (res, AVIS_MAX (ID_AVIS (PRF_ARG1 (arg_node))),
-                            PRF_ARG2 (arg_node), FALSE);
 
     DBUG_RETURN (res);
 }
