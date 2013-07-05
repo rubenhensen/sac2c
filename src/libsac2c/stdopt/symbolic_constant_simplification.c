@@ -3030,7 +3030,7 @@ SCSprf_val_lt_shape_VxA (node *arg_node, info *arg_info)
 
     /* Case 1 */
     iv = PRF_ARG1 (arg_node);
-    if (PMmatchFlatSkipExtrema (pat1, arg_node)) {
+    if (PMmatchFlat (pat1, arg_node)) {
         ivtype = ID_NTYPE (iv);
         arrtype = ID_NTYPE (arr);
         if (TUdimKnown (arrtype)) {
@@ -3106,8 +3106,8 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
                   PMvar (1, PMAisVar (&val2), 0));
 
     /* Cases 1 and 2 */
-    if ((PMmatchFlatSkipExtrema (pat2, arg_node))
-        || (PMmatchFlatSkipExtrema (pat1, arg_node) && (COlt (con1, con2, NULL)))) {
+    if ((PMmatchFlat (pat2, arg_node))
+        || (PMmatchFlat (pat1, arg_node) && (COlt (con1, con2, NULL)))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT_TAG ("SCS", "removed guard Case 1( %s, %s)",
@@ -3160,8 +3160,7 @@ SCSprf_val_lt_val_SxS (node *arg_node, info *arg_info)
     }
 
     /* Case 4:  */
-    if ((NULL == res) && (PMmatchFlatSkipExtrema (pat3, arg_node))
-        && (PMmatchFlatSkipExtrema (pat4, val))) {
+    if ((NULL == res) && (PMmatchFlat (pat3, arg_node)) && (PMmatchFlat (pat4, val))) {
         res = TBmakeExprs (DUPdoDupNode (val3), TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT_TAG ("SCS", "removed guard Case 4( %s -> %s)",
                         AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
@@ -3300,8 +3299,8 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
                   PMvar (1, PMAisVar (&val2), 0));
 
     /* Cases 1 and 2 */
-    if ((PMmatchFlatSkipExtrema (pat2, arg_node))
-        || (PMmatchFlatSkipExtrema (pat1, arg_node) && (COle (con1, con2, NULL)))) {
+    if ((PMmatchFlat (pat2, arg_node))
+        || (PMmatchFlat (pat1, arg_node) && (COle (con1, con2, NULL)))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                            TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT ("removed guard Case 1( %s, %s)",
@@ -3338,8 +3337,7 @@ SCSprf_val_le_val_SxS (node *arg_node, info *arg_info)
     }
 
     /* Case 4:  */
-    if ((NULL == res) && (PMmatchFlatSkipExtrema (pat3, arg_node))
-        && (PMmatchFlatSkipExtrema (pat4, val))) {
+    if ((NULL == res) && (PMmatchFlat (pat3, arg_node)) && (PMmatchFlat (pat4, val))) {
         res = TBmakeExprs (DUPdoDupNode (val3), TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT ("removed guard Case 4( %s -> %s)",
                     AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
@@ -3446,8 +3444,8 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
                   PMvar (1, PMAisVar (&val2), 0));
 
     /* Cases 1 and 2 */
-    if ((PMmatchFlatSkipExtrema (pat2, arg_node))
-        || (PMmatchFlatSkipExtrema (pat1, arg_node)
+    if ((PMmatchFlat (pat2, arg_node))
+        || (PMmatchFlat (pat1, arg_node)
             && (COgetExtent (con1, 0) == COgetExtent (con2, 0))
             && COle (con1, con2, NULL))) {
         res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
@@ -3502,8 +3500,7 @@ SCSprf_val_le_val_VxV (node *arg_node, info *arg_info)
     }
 
     /* Case 4:  */
-    if ((NULL == res) && (PMmatchFlatSkipExtrema (pat3, arg_node))
-        && (PMmatchFlatSkipExtrema (pat4, val1))) {
+    if ((NULL == res) && (PMmatchFlat (pat3, arg_node)) && (PMmatchFlat (pat4, val1))) {
         res = TBmakeExprs (DUPdoDupNode (val3), TBmakeExprs (TBmakeBool (TRUE), NULL));
         DBUG_PRINT_TAG ("SCS", "removed guard Case 4( %s -> %s)",
                         AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))),
@@ -3578,14 +3575,14 @@ SCSprf_prod_matches_prod_shape_VxA (node *arg_node, info *arg_info)
     shp = AVIS_SHAPE (ID_AVIS (PRF_ARG2 (arg_node)));
     if (NULL != shp) {
         if ((N_id == NODE_TYPE (shp)) && /* Case 1 */
-            (PMmatchFlatSkipExtrema (pat1, arg_node))) {
+            (PMmatchFlat (pat1, arg_node))) {
             res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                TBmakeExprs (TBmakeBool (TRUE), NULL));
             DBUG_PRINT ("Case 1 Result is %ss",
                         AVIS_NAME (ID_AVIS (PRF_ARG1 (arg_node))));
         } else {
             if ((N_array == NODE_TYPE (shp)) && /* Case 2 */
-                (PMmatchFlatSkipExtrema (pat2, PRF_ARG1 (arg_node)))
+                (PMmatchFlat (pat2, PRF_ARG1 (arg_node)))
                 && (CMPT_EQ == CMPTdoCompareTree (shp, arr))) {
                 res = TBmakeExprs (DUPdoDupNode (PRF_ARG1 (arg_node)),
                                    TBmakeExprs (TBmakeBool (TRUE), NULL));
