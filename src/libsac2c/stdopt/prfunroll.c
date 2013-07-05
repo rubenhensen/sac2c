@@ -835,10 +835,10 @@ MakeUnrolledOp (node *arg_node, info *arg_info, node *ids, node *argavis1, node 
     case F_max_VxV:
 
     case F_and_VxS:
-    case F_and_SxS:
+    case F_and_SxV:
     case F_and_VxV:
     case F_or_VxS:
-    case F_or_SxS:
+    case F_or_SxV:
     case F_or_VxV:
 
     case F_val_lt_shape_VxA:
