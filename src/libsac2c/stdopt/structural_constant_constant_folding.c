@@ -150,16 +150,27 @@ StructOpSelHelper (node *prfarg1, node *prfarg2, info *arg_info)
     patconst = PMconst (1, PMAgetVal (&con1));
     patarray = PMarray (2, PMAgetNode (&arg2), PMAgetFS (&arg2fs), 1, PMskip (0));
 
-    if ((PMmatchFlatSkipExtrema (patconst, prfarg1)) &&
+    if ((PMmatchFlat (patconst, prfarg1)) &&
         /* Bug #525 must skip guards here. */
+
         /* Unfortunately, doing so introduces Bug #1060. */
         /* I'd go look up that bug, but saczilla remains off the air
          * this month, too. However, CF unit test funnyivecyc
          * suffers from failure to remove _idx_sel_( 0, WITHID_VEC),
          * because of the noteintersect in the WL. Hence, we try
          * introducing extrema-skipping here.
+         *
+         * Well, that makes SAACFprf_le_SxV.sac die, because
+         * the sel() ends up giving us a direct reference to
+         * the WITHID_IDS, sans extrema. This then makes the
+         * le() CF removal fail. Poop.
+         *
+         * Look at the code in IdxselStructOpSel, after the return
+         * from here. That looks to be intended to fix this
+         * very problem.
+         *
          */
-        (PMmatchFlatSkipExtrema (patarray, prfarg2))) { /* Get N_array */
+        (PMmatchFlat (patarray, prfarg2))) { /* Get N_array */
         X_dim = SHgetExtent (COgetShape (arg2fs), 0);
         arg2fs = COfreeConstant (arg2fs);
         iv_len = SHgetUnrLen (COgetShape (con1));
@@ -257,7 +268,6 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
     pattern *pat3;
     node *arg2 = NULL;
     int iv_len;
-    int X_dim;
     int offset;
     constant *con1 = NULL;
 
@@ -285,11 +295,10 @@ IdxselStructOpSel (node *arg_node, info *arg_info)
              * We build a copy of the WITHID_IDS element, with extrema.
              */
             if (NULL != INFO_PART (arg_info)) {
-                X_dim = TCcountIds (WITHID_IDS (PART_WITHID (INFO_PART (arg_info))));
                 if ((PMmatchFlatSkipExtrema (pat3, PRF_ARG2 (arg_node)))
                     && (N_array == NODE_TYPE (arg2)) /* a WITHID_IDS? */
-                    && (iv_len == X_dim)) {
-                    offset = COconst2Int (con1); /* Offset into ravel */
+                    && (1 == iv_len)) {              /* Vector index */
+                    offset = COconst2Int (con1);     /* Offset into ravel */
                     result = IVEXIwithidsKludge (offset, arg2, INFO_PART (arg_info),
                                                  &INFO_PREASSIGN (arg_info),
                                                  &INFO_VARDECS (arg_info));
