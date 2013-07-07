@@ -354,6 +354,12 @@ BypassNoteintersect (node *arg_node)
     DBUG_ENTER ();
 
     expr = LET_EXPR (ASSIGN_STMT (arg_node));
+    expr = AWLFIfindNoteintersect (PRF_ARG1 (expr));
+    DBUG_PRINT ("Insertion cycle was %d, folding cycle is %d",
+                PRF_NOTEINTERSECTINSERTIONCYCLE (expr), global.cycle_counter);
+
+    expr = LET_EXPR (ASSIGN_STMT (arg_node));
+
     pat = PMprf (1, PMAisPrf (F_noteintersect), 2, PMvar (1, PMAgetNode (&z), 0),
                  PMskip (0));
     if (PMmatchFlat (pat, PRF_ARG1 (expr))) {

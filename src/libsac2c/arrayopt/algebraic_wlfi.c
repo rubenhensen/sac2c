@@ -1888,7 +1888,7 @@ IntersectBoundsBuilderOne (node *arg_node, info *arg_info, node *producerPart,
  * @brief:  Emit expression to determine if intersection
  *          of index vector set and partition bounds is null:
  *
- *            isnull = _or_VxV_( _lt_VxV_( idxavismax, bound1),
+ *            isnull = _or_VxV_( _le_VxV_( idxavismax, bound1),
  *                               _ge_VxV_( idxavismin, bound2));
  *
  * @params: idxmin: AVIS_MIN( consumerWL partition index vector)
@@ -1923,7 +1923,7 @@ IntersectNullComputationBuilder (node *idxmin, node *idxmax, node *bound1, node 
     idxavismax = AWLFItakeDropIv (shp, 0, idxmax, &INFO_VARDECS (arg_info),
                                   &INFO_PREASSIGNS (arg_info));
 
-    fncall1 = TCmakePrf2 (F_lt_VxV, TBmakeId (idxavismax), TBmakeId (bound1));
+    fncall1 = TCmakePrf2 (F_le_VxV, TBmakeId (idxavismax), TBmakeId (bound1));
     fncall1 = FLATGexpression2Avis (fncall1, &INFO_VARDECS (arg_info),
                                     &INFO_PREASSIGNS (arg_info), NULL);
     fncall2 = TCmakePrf2 (F_ge_VxV, TBmakeId (idxavismin), TBmakeId (bound2));
@@ -2228,6 +2228,7 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivavis)
     node *args;
     ntype *ztype;
     const char *nm;
+    node *noteint;
 
     DBUG_ENTER ();
 
@@ -2257,9 +2258,9 @@ attachIntersectCalc (node *arg_node, info *arg_info, node *ivavis)
           = TBmakeAvis (TRAVtmpVarName (AVIS_NAME (ivavis)), TYeliminateAKV (ztype));
 
         INFO_VARDECS (arg_info) = TBmakeVardec (ivpavis, INFO_VARDECS (arg_info));
-        ivassign = TBmakeAssign (TBmakeLet (TBmakeIds (ivpavis, NULL),
-                                            TBmakePrf (F_noteintersect, args)),
-                                 NULL);
+        noteint = TBmakePrf (F_noteintersect, args);
+        PRF_NOTEINTERSECTINSERTIONCYCLE (noteint) = global.cycle_counter;
+        ivassign = TBmakeAssign (TBmakeLet (TBmakeIds (ivpavis, NULL), noteint), NULL);
 
         INFO_PREASSIGNS (arg_info)
           = TCappendAssign (INFO_PREASSIGNS (arg_info), ivassign);
