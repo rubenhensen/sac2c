@@ -614,6 +614,10 @@ CYCLEPHASEFUN (uesd, "Reintroducing subtraction and division operators",
                global.optimize.dosde && (global.optimize.doal || global.optimize.dodl),
                opt, saacyc)
 
+CYCLEPHASEFUN (safa, "Sorting associative function arguments",
+               SAFAdoSortAssociativeFunctionArguments, global.optimize.dosafa, opt,
+               saacyc)
+
 CYCLEPHASEFUN (dcr2, "Removing dead code", DCRdoDeadCodeRemoval, global.optimize.dodcr,
                opt, saacyc)
 

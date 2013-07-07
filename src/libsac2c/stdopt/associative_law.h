@@ -25,4 +25,6 @@ extern node *ALcode (node *arg_node, info *arg_info);
 extern node *ALpart (node *arg_node, info *arg_info);
 extern node *ALprf (node *arg_node, info *arg_info);
 
+extern bool ALisAssociativeAndCommutativePrf (prf fun);
+
 #endif /* _SAC_ASSOCIATIVE_LAW_H_ */

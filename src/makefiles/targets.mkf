@@ -159,7 +159,9 @@ libsac2c_stdopt      := DeadFunctionRemoval deadcodeinference \
                         signature_simplification inlining inferneedcounters \
                         arithmetic_simplification                           \
                         SSALUR                                              \
-                        associative_law  distributive_law elimtypeconv liftoptflags \
+                        associative_law                                     \
+                        sortassociativefunctionarguments                    \
+                        distributive_law elimtypeconv liftoptflags \
                         wlsimplification prfunroll wlselcount \
                         insert_symb_arrayattr elim_shapevars makedimexpr \
                         makeshapeexpr remove_vardecs \

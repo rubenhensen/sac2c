@@ -393,14 +393,14 @@ identifyInverses (prf inverse_prf, node **head)
     DBUG_RETURN (res);
 }
 
-static bool
-isAssociativeAndCommutativePrf (prf prf)
+bool
+ALisAssociativeAndCommutativePrf (prf fun)
 {
     bool res;
 
     DBUG_ENTER ();
 
-    switch (prf) {
+    switch (fun) {
     case F_add_SxS:
     case F_add_SxV:
     case F_add_VxS:
@@ -1194,7 +1194,7 @@ ALprf (node *arg_node, info *arg_info)
     prf = PRF_PRF (arg_node);
 
     if ((INFO_MODE (arg_info) == MODE_transform)
-        && isAssociativeAndCommutativePrf (prf)) {
+        && ALisAssociativeAndCommutativePrf (prf)) {
 
         ltype = IDS_NTYPE (INFO_LHS (arg_info));
 

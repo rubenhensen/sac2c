@@ -1965,6 +1965,16 @@
 	  <node name="Module" />
 	</travuser>
       </traversal>
+      <traversal id="SAFA" name="SortAssociativeFunctionArguments" default="sons" include="sortassociativefunctionarguments.h" >
+	<travuser>
+	  <node name="Block" />
+	  <node name="Assign" />
+	  <node name="Let" />
+	  <node name="Prf" />
+	  <node name="Fundef" />
+	  <node name="Module" />
+	</travuser>
+      </traversal>
       <traversal id="IIPI" name="Iteration Invariant Parameter Inference" default="sons" include="iteration_invariant_parameter_inference.h" >
 	<travuser>
 	  <node name="Fundef" />

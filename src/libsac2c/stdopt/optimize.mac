@@ -143,6 +143,7 @@ OPTIMIZE ("uctz", uctz, TRUE, TRUE, "eliminating comparisons to zero")
 OPTIMIZE ("ggs", ggs, TRUE, TRUE, "generating guard solvers")
 OPTIMIZE ("wls_aggressive", wls_aggressive, TRUE, TRUE, "aggressive loop scalarization")
 OPTIMIZE ("sse", sse, FALSE, FALSE, "simplify symbiotic expressions")
+OPTIMIZE ("safa", safa, TRUE, TRUE, "sort associative function arguments")
 
 /* OPTIMIZE entries after this point are intended for
  * developer use only.
@@ -199,6 +200,7 @@ OPTCOUNTER (ctz_expr, TRUE, "comparisons to zero")
 OPTCOUNTER (ctzg_expr, TRUE, "comparisons to zero for guards")
 OPTCOUNTER (esd_expr, TRUE, "eliminated sub/div expression(s)")
 OPTCOUNTER (uesd_expr, TRUE, "undo-eliminated sub/div expression(s)")
+OPTCOUNTER (safa_expr, TRUE, "associative function argument(s) sorted")
 
 #undef OPTIMIZEstr
 #undef OPTIMIZEabbr
