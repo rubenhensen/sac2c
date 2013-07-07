@@ -7637,6 +7637,25 @@ N_tfarg :
             </targets>
           </type>
         </attribute>
+        <attribute name="NoteintersectInsertionCycle" inconstructor="no" >
+          <description>
+	   This is used for analysis of AWLF performance. It is initialized
+	   to global.cycle_counter when an F_noteintersect is inserted
+	   into the AST, and referenced when AWLF actually performs
+	   a WL fold. The intent is to see if we should make AWLF give
+	   up on a folding attempt after some N iterations.
+          </description>
+          <type name="Integer">
+            <targets>
+              <target mandatory="no">
+                <any />
+                <phases>
+                  <all />
+                </phases>
+              </target>
+            </targets>
+          </type>
+        </attribute>
       </attributes>
         <flags>
         <flag name="IsNoteIntersectPresent" default="FALSE" >
