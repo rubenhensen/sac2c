@@ -1165,43 +1165,46 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
 
         // (x min y) <= x
         SCSECI (F_min_SxS, F_le_SxS, TRUE, TRUE);
-
         // (x min y) >  x
         SCSECI (F_min_SxS, F_gt_SxS, FALSE, TRUE);
 
         // (x max y) >= x
         SCSECI (F_max_SxS, F_ge_SxS, TRUE, TRUE);
-
         // (x max y) <  x
         SCSECI (F_max_SxS, F_lt_SxS, FALSE, TRUE);
 
         // (x + nonnegY) >= x
         SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNonneg (Y));
-
         // (x + nonnegY) < x
         SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNonneg (Y));
+        // (x + posY) < x
+        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisPositive (Y));
+        // (x + posY) <= x
+        SCSECI (F_add_SxS, F_le_SxS, FALSE, SCSisPositive (Y));
     }
 
     // With reversed arguments, we have to reverse the sense of the relational
     // E.g., < becomes >; <= becomes >=
     if (SCSextractCompositionInfo (fung, arg2, arg1, arg_info, &fff, &ffg, &Y)) {
+
         // x >= (x min y)
         SCSECI (F_min_SxS, F_ge_SxS, TRUE, TRUE);
-
         // x < (x min y)
         SCSECI (F_min_SxS, F_lt_SxS, FALSE, TRUE);
 
         // x <= (x max y)
         SCSECI (F_max_SxS, F_le_SxS, TRUE, TRUE);
-
         // x >  (x max y)
         SCSECI (F_max_SxS, F_gt_SxS, FALSE, TRUE);
 
         // x <= (x + nonnegY)
         SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisNonneg (Y));
-
         // x > (x + nonnegY)
         SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisNonneg (Y));
+        // x <= (x + posY)
+        SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisPositive (Y));
+        // x <  (x + posY)
+        SCSECI (F_add_SxS, F_lt_SxS, TRUE, SCSisPositive (Y));
     }
 
     DBUG_RETURN (z);
