@@ -29,6 +29,8 @@ extern node *AWLFIflattenExpression (node *arg_node, node **vardecs, node **prea
                                      ntype *ztype);
 extern node *AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
                               node **preassigns);
+bool AWLFIcheckProducerWLFoldable (node *arg_node);
+
 extern node *AWLFIfundef (node *arg_node, info *arg_info);
 extern node *AWLFIblock (node *arg_node, info *arg_info);
 extern node *AWLFIassign (node *arg_node, info *arg_info);
