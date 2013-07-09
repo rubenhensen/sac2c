@@ -97,7 +97,7 @@ NAUTisAllElemsSame (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn NAUTisNarrayAnyTrue( node *arg_node)
+ * @fn NAUTisMemberArray( node *arg_node)
  *
  * @brief Set membership for Boolean N_array node.
  *
