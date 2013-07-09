@@ -2314,6 +2314,7 @@
      <travuser>
         <node name="Fundef"  />
         <node name="Assign"  />
+        <node name="Let"  />
         <node name="With"    />
         <node name="Code"    />
         <node name="Part"    />

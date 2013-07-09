@@ -212,10 +212,13 @@
  *****************************************************************************/
 struct INFO {
     node *fundef;
-    node *part;
+    node *cwlpart;
     /* This is the current partition in the consumerWL. */
-    node *cwl;
-    /* This is the current consumerWL. */
+    node *let; /* Current N_let */
+    node *cwlids;
+    /* current consumerWL N_ids */
+    node *pwlid;
+    /* current producerWL N_id */
     int defdepth;
     /* This is the current nesting level of WLs */
     node *producerpart;
@@ -233,8 +236,10 @@ struct INFO {
  * Macro definitions for INFO structure
  */
 #define INFO_FUNDEF(n) ((n)->fundef)
-#define INFO_PART(n) ((n)->part)
-#define INFO_CWL(n) ((n)->cwl)
+#define INFO_CWLPART(n) ((n)->cwlpart)
+#define INFO_LET(n) ((n)->let)
+#define INFO_CWLIDS(n) ((n)->cwlids)
+#define INFO_PWLID(n) ((n)->pwlid)
 #define INFO_DEFDEPTH(n) ((n)->defdepth)
 #define INFO_PRODUCERPART(n) ((n)->producerpart)
 #define INFO_LUT(n) ((n)->lut)
@@ -255,8 +260,10 @@ MakeInfo (node *fundef)
     result = (info *)MEMmalloc (sizeof (info));
 
     INFO_FUNDEF (result) = fundef;
-    INFO_PART (result) = NULL;
-    INFO_CWL (result) = NULL;
+    INFO_CWLPART (result) = NULL;
+    INFO_LET (result) = NULL;
+    INFO_CWLIDS (result) = NULL;
+    INFO_PWLID (result) = NULL;
     INFO_DEFDEPTH (result) = 0;
     INFO_PRODUCERPART (result) = NULL;
     INFO_LUT (result) = NULL;
@@ -337,7 +344,8 @@ AWLFdoAlgebraicWithLoopFolding (node *arg_node)
  *
  * @fn node *BypassNoteintersect( node *arg_node)
  *
- * @brief Bypass the  F_noteintersect that must precede the arg_node.
+ * @brief Bypass the  F_noteintersect that might precede the arg_node.
+ *        "might", because we may have SimpleComposition happening.
  *        Actually, we just bypass that node and let DCR do the dirty work.
  *
  * @param N_assign for _idx_sel() or _sel_VxA_()
@@ -350,15 +358,17 @@ BypassNoteintersect (node *arg_node)
     node *z = NULL;
     pattern *pat;
     node *expr;
+    node *exprni;
 
     DBUG_ENTER ();
 
     expr = LET_EXPR (ASSIGN_STMT (arg_node));
-    expr = AWLFIfindNoteintersect (PRF_ARG1 (expr));
-    DBUG_PRINT ("Insertion cycle was %d, folding cycle is %d",
-                PRF_NOTEINTERSECTINSERTIONCYCLE (expr), global.cycle_counter);
 
-    expr = LET_EXPR (ASSIGN_STMT (arg_node));
+    exprni = AWLFIfindNoteintersect (PRF_ARG1 (expr));
+    if (NULL != exprni) {
+        DBUG_PRINT ("Insertion cycle was %d, folding cycle is %d",
+                    PRF_NOTEINTERSECTINSERTIONCYCLE (exprni), global.cycle_counter);
+    }
 
     pat = PMprf (1, PMAisPrf (F_noteintersect), 2, PMvar (1, PMAgetNode (&z), 0),
                  PMskip (0));
@@ -706,6 +716,64 @@ AWLFperformFold (node *arg_node, node *producerWLPart, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn static bool isSimpleComposition( node *pwl, node *cwlids)
+ *
+ * @brief Predicate to determine if consumer-WL cwl is a simple
+ *        composition on the producer-WL pwl. I.e., we have something
+ *        like:
+ *                 z = sum( iota( N));
+ *
+ *        where iota() comprises pwl, and sum() comprises cwl.
+ *
+ * @params pwl: The producer WL N_id
+ *         cwlids The consumer WL N_ids
+ *
+ * @result: TRUE if the pair of WLs form a simple composition.
+ *
+ * NB. The rules for a composition, over and above the rules
+ *     checked in checkAWLFoldable (AWLF) are:
+ *
+ *      - cwl and pwl each are 1 partition.
+ *      - pwl is a modarray or genarray
+ *      - both WLs are single-op WLs
+ *
+ * Rationale:
+ *     If this is a composition, such as we see in take( [10], iota( N)),
+ *     we can blindly AWLF. The rationale for this is that we may
+ *     not be able to determine if 10<=N, but if it is, then all is
+ *     well. If not, then we will find out the hard way at execution
+ *     time, and if you compile with -check c, you will find out why.
+ *
+ *****************************************************************************/
+static bool
+isSimpleComposition (node *pwlid, node *cwlids, int defdepth)
+{
+    bool z = FALSE;
+    node *pwlwith;
+    node *cwlwith;
+
+    DBUG_ENTER ();
+
+    pwlwith = AWLFIfindWL (pwlid);
+    if ((NULL != pwlwith) && (NULL != cwlids)) {
+        cwlwith = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (IDS_AVIS (cwlids))));
+        z = (1 == TCcountParts (WITH_PART (pwlwith)))
+            && (1 == TCcountParts (WITH_PART (cwlwith)));
+        z = z && AWLFIisSingleOpWL (cwlwith);
+        z = z && AWLFIcheckProducerWLFoldable (pwlid);
+        z = z && AWLFIcheckBothFoldable (pwlid, cwlids, defdepth);
+
+        if (z) {
+            DBUG_PRINT ("Simple composition %s( %s) detected",
+                        AVIS_NAME (IDS_AVIS (cwlids)), AVIS_NAME (ID_AVIS (pwlid)));
+        }
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @name Traversal functions
  * @{
  *****************************************************************************/
@@ -788,7 +856,9 @@ AWLFassign (node *arg_node, info *arg_info)
     DBUG_PRINT ("Traversing N_assign for %s",
                 AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_ASSIGN (arg_info))))));
 #endif // VERBOSE
+
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
+
     foldableProducerPart = INFO_PRODUCERPART (arg_info);
     INFO_PRODUCERPART (arg_info) = NULL;
     DBUG_ASSERT (NULL == INFO_PREASSIGNS (arg_info), "INFO_PREASSIGNS not NULL");
@@ -831,11 +901,13 @@ AWLFwith (node *arg_node, info *arg_info)
                 AVIS_NAME (IDS_AVIS (LET_IDS (ASSIGN_STMT (INFO_ASSIGN (arg_info))))));
     old_info = arg_info;
     arg_info = MakeInfo (INFO_FUNDEF (arg_info));
-    INFO_CWL (arg_info) = arg_node;
     INFO_LUT (arg_info) = INFO_LUT (old_info);
+    INFO_LET (arg_info) = INFO_LET (old_info);
     INFO_DEFDEPTH (arg_info) = INFO_DEFDEPTH (old_info) + 1;
     INFO_VARDECS (arg_info) = INFO_VARDECS (old_info);
     INFO_PREASSIGNS (arg_info) = INFO_PREASSIGNS (old_info);
+
+    INFO_CWLIDS (arg_info) = LET_IDS (INFO_LET (arg_info));
 
     WITH_REFERENCED_CONSUMERWL (arg_node) = NULL;
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
@@ -876,7 +948,6 @@ AWLFwith (node *arg_node, info *arg_info)
     }
     //#endif // BREAKSDUPLHS
 
-    INFO_CWL (old_info) = NULL;
     INFO_VARDECS (old_info) = INFO_VARDECS (arg_info);
     INFO_PREASSIGNS (old_info) = INFO_PREASSIGNS (arg_info);
     arg_info = FreeInfo (arg_info);
@@ -915,9 +986,9 @@ AWLFpart (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     DBUG_PRINT ("Traversing N_part");
-    INFO_PART (arg_info) = arg_node;
+    INFO_CWLPART (arg_info) = arg_node;
     PART_CODE (arg_node) = TRAVdo (PART_CODE (arg_node), arg_info);
-    INFO_PART (arg_info) = NULL;
+    INFO_CWLPART (arg_info) = NULL;
 
     PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
 
@@ -966,6 +1037,8 @@ AWLFids (node *arg_node, info *arg_info)
 node *
 AWLFprf (node *arg_node, info *arg_info)
 {
+    node *pwl;
+    node *nwith;
 
     DBUG_ENTER ();
 
@@ -975,8 +1048,15 @@ AWLFprf (node *arg_node, info *arg_info)
     if (((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel))
         && (AWLFIisHasNoteintersect (arg_node))) {
         INFO_PRODUCERPART (arg_info)
-          = checkAWLFoldable (arg_node, arg_info, INFO_PART (arg_info),
+          = checkAWLFoldable (arg_node, arg_info, INFO_CWLPART (arg_info),
                               INFO_DEFDEPTH (arg_info));
+        pwl = PRF_ARG2 (arg_node);
+        if ((NULL == INFO_PRODUCERPART (arg_info)
+             && (isSimpleComposition (pwl, INFO_CWLIDS (arg_info),
+                                      INFO_DEFDEPTH (arg_info))))) {
+            nwith = AWLFIfindWL (pwl); /* Now the N_with */
+            INFO_PRODUCERPART (arg_info) = WITH_PART (nwith);
+        }
     }
 
     DBUG_RETURN (arg_node);
@@ -1058,12 +1138,17 @@ AWLFwhile (node *arg_node, info *arg_info)
 node *
 AWLFlet (node *arg_node, info *arg_info)
 {
+    node *oldlet;
 
     DBUG_ENTER ();
 
     DBUG_PRINT ("Traversing N_let for LHS %s", AVIS_NAME (IDS_AVIS (LET_IDS (arg_node))));
+    oldlet = INFO_LET (arg_info);
+    INFO_LET (arg_info) = arg_node;
 
     LET_EXPR (arg_node) = TRAVopt (LET_EXPR (arg_node), arg_info);
+
+    INFO_LET (arg_info) = oldlet;
 
     DBUG_RETURN (arg_node);
 }

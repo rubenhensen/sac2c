@@ -2326,7 +2326,7 @@ AWLFIisSingleOpWL (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool checkProducerWLFoldable( node *arg_node, info *arg_info)
+ * @fn bool AWLFIcheckProducerWLFoldable( node *arg_node)
  *
  * @brief We are looking at an N_id, arg_node, that may point to a WL, p.
  *        We want to determine if p is a WL that is a
@@ -2380,15 +2380,15 @@ AWLFIisSingleOpWL (node *arg_node)
  *        set requirements are met.
  *
  *
- * @param  an N_id
+ * @param  arg_node: an N_id, hopefully pointing to a producer WL
  *
  * @result If any partition of p may be a legal
  *         candidate for folding into a consumerWL, return true.
  *         Else false.
  *
  *****************************************************************************/
-static bool
-checkProducerWLFoldable (node *arg_node, info *arg_info)
+bool
+AWLFIcheckProducerWLFoldable (node *arg_node)
 {
     bool z = FALSE;
     node *cellavis;
@@ -2502,7 +2502,7 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg
 
 /** <!--********************************************************************-->
  *
- * @fn bool checkBothFoldable( node *pwlid, node *cwlavis, int cwllevel)
+ * @fn bool AWLFIcheckBothFoldable( node *pwlid, node *cwlavis, int cwllevel)
  *
  * @brief Make any early checks we can that may show that
  *        the producerWL and consumerWL are not foldable.
@@ -2524,8 +2524,8 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg
  *         shapes are conformable for folding.
  *
  *****************************************************************************/
-static bool
-checkBothFoldable (node *pwlid, node *cwlids, int cwllevel)
+bool
+AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel)
 {
 #ifdef FIXME //  this definitely breaks majordiagonal2.sac
     int lenpwl;
@@ -2845,9 +2845,9 @@ AWLFIprf (node *arg_node, info *arg_info)
         INFO_PRODUCERWLLHS (arg_info) = pwlid;
         INFO_PRODUCERWL (arg_info) = AWLFIfindWL (pwlid);
         INFO_PRODUCERWLFOLDABLE (arg_info)
-          = checkProducerWLFoldable (pwlid, arg_info)
-            && checkBothFoldable (pwlid, INFO_CONSUMERWLIDS (arg_info),
-                                  INFO_DEFDEPTH (arg_info));
+          = AWLFIcheckProducerWLFoldable (pwlid)
+            && AWLFIcheckBothFoldable (pwlid, INFO_CONSUMERWLIDS (arg_info),
+                                       INFO_DEFDEPTH (arg_info));
 
         PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
 
