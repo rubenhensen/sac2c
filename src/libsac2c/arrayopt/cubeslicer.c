@@ -100,6 +100,7 @@ struct INFO {
     lut_t *lut;                     /* LUT for renaming */
     node *producerpart;             /* PWL part matching CWL */
     bool cutnow;                    /* This CWL partn should be cut now */
+    bool isfoldnow;                 /* Fold this partition now. */
 };
 
 /**
@@ -117,6 +118,7 @@ struct INFO {
 #define INFO_LUT(n) ((n)->lut)
 #define INFO_PRODUCERPART(n) ((n)->producerpart)
 #define INFO_CUTNOW(n) ((n)->cutnow)
+#define INFO_ISFOLDNOW(n) ((n)->isfoldnow)
 
 static info *
 MakeInfo (node *fundef)
@@ -139,6 +141,7 @@ MakeInfo (node *fundef)
     INFO_LUT (result) = NULL;
     INFO_PRODUCERPART (result) = NULL;
     INFO_CUTNOW (result) = FALSE;
+    INFO_ISFOLDNOW (result) = FALSE;
 
     DBUG_RETURN (result);
 }
@@ -440,8 +443,10 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
     node *producerWLBound2Original;
     node *cwlpg;
     node *bnd;
+#ifdef DEADCODE
     node *proj1 = NULL;
     node *proj2 = NULL;
+#endif // DEADCODE
     node *noteint;
     pattern *pat;
     int intersectListNo;
@@ -487,8 +492,10 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
 
         DBUG_PRINT ("Started check of partition #%d", intersectListNo);
 
+#ifdef DEADCODE
         proj1 = TCgetNthExprsExpr (WLPROJECTION1 (intersectListNo), PRF_ARGS (noteint));
         proj2 = TCgetNthExprsExpr (WLPROJECTION2 (intersectListNo), PRF_ARGS (noteint));
+#endif // DEADCODE
 
         producerWLBound1Original
           = TCgetNthExprsExpr (WLBOUND1ORIGINAL (intersectListNo), PRF_ARGS (noteint));
@@ -1007,6 +1014,62 @@ PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
 
 /** <!--********************************************************************-->
  *
+ * @fn static node *MarkSlicedPartitionFor Folding( node *arg_node,
+ *            info *arg_info, node *proj1, node *proj2)
+ *
+ * @brief arg_node is a set of N_part nodes, containing the
+ *        newly minted N_part with bounds proj1 and proj2.
+ *
+ *        This partition is, by definition, suitable for AWLF, so
+ *        we find that partition and mark it so.
+ *
+ * @params arg_node: N_part chain
+ *         arg_info: for noting that the N_prf should cause fold
+ *         proj1: GENERATOR_BOUND1 for the new N_part
+ *         proj2: GENERATOR_BOUND2 for the new N_part
+ *
+ * @result: Same N_part chain, but with one N_part marked for folding.
+ *
+ *****************************************************************************/
+static node *
+MarkSlicedPartitionForFolding (node *arg_node, info *arg_info, node *proj1, node *proj2)
+{
+    node *curpart;
+    node *arrproj1 = NULL;
+    node *arrproj2 = NULL;
+    bool found = FALSE;
+    pattern *pat1;
+    pattern *pat2;
+
+    DBUG_ENTER ();
+
+    curpart = arg_node;
+    pat1 = PMarray (1, PMAgetNode (&arrproj1), 1, PMskip (0));
+    pat2 = PMarray (1, PMAgetNode (&arrproj2), 1, PMskip (0));
+
+    while ((NULL != curpart) && !found) {
+        PMmatchFlat (pat1, proj1);
+        PMmatchFlat (pat2, proj2);
+        if ((matchGeneratorField (GENERATOR_BOUND1 (PART_GENERATOR (curpart)), arrproj1))
+            && (matchGeneratorField (GENERATOR_BOUND2 (PART_GENERATOR (curpart)),
+                                     arrproj2))) {
+            found = TRUE;
+            DBUG_PRINT ("Marking sliced N_part for folding");
+            // Next line assumes that N_code blocks are not shared by now.
+            INFO_ISFOLDNOW (arg_info) = TRUE;
+        }
+        curpart = PART_NEXT (curpart);
+    }
+
+    DBUG_ASSERT (found, "Did not find sliced N_part!");
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+
+    DBUG_RETURN (arg_node);
+}
+
+/** <!--********************************************************************-->
+ *
  * @name Traversal functions
  * @{
  *****************************************************************************/
@@ -1136,6 +1199,7 @@ CUBSLwith (node *arg_node, info *arg_info)
 
     DBUG_RETURN (arg_node);
 }
+
 /** <!--********************************************************************-->
  *
  * @fn node *CUBSLpart( node *arg_node, info *arg_info)
@@ -1209,6 +1273,9 @@ CUBSLpart (node *arg_node, info *arg_info)
         partsafter = TCcountParts (arg_node);
         DBUG_ASSERT (partsbefore != partsafter, "Partition Slicer did not slice!");
         INFO_CUTNOW (arg_info) = FALSE;
+        arg_node = MarkSlicedPartitionForFolding (arg_node, arg_info,
+                                                  INFO_WLPROJECTION1 (arg_info),
+                                                  INFO_WLPROJECTION2 (arg_info));
     }
 
     INFO_CONSUMERPART (arg_info) = oldconsumerpart;
@@ -1273,6 +1340,7 @@ CUBSLprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if ((F_sel_VxA == PRF_PRF (arg_node)) || (F_idx_sel == PRF_PRF (arg_node))) {
+        PRF_ISFOLDNOW (arg_node) = FALSE;
         noteint = AWLFIfindNoteintersect (PRF_ARG1 (arg_node));
         DBUG_PRINT ("Looking at %s =_sel_VxA_( iv, X)",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
@@ -1305,6 +1373,7 @@ CUBSLprf (node *arg_node, info *arg_info)
                                        arg_info, &INFO_PRODUCERPART (arg_info));
             if (INTERSECT_sliceneeded == INFO_INTERSECTTYPE (arg_info)) {
                 INFO_CUTNOW (arg_info) = TRUE;
+                PRF_ISFOLDNOW (arg_node) = INFO_ISFOLDNOW (arg_info);
                 DBUG_PRINT ("Found producerPart in %s for slicing consumerWL %s",
                             AVIS_NAME (ID_AVIS (PRF_ARG2 (arg_node))),
                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));

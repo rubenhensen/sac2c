@@ -7692,6 +7692,12 @@ N_tfarg :
 	    has set this flag.
           </description>
         </flag>
+        <flag name="IsFoldNow"  default="FALSE">
+          <description> 
+            Set to true by CUBSL if this sel is in a consumer-WL and
+	    has been determined to be foldable by AWLF.
+	  </description>
+	</flag>
       </flags>
     </node>
 <!--

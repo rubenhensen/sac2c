@@ -769,6 +769,11 @@ isSimpleComposition (node *pwlid, node *cwlids, int defdepth)
         }
     }
 
+    z = FALSE; // VERY strange WLs for AWLF UT bodomatmulbug2AKD.sac and
+               // many others. Fewer WLs, supposedly correct answers,
+               // but code clearly could never work properly.
+               // E.g., matmul with two non-nested WLs. So, disabled for now.
+
     DBUG_RETURN (z);
 }
 
@@ -1051,11 +1056,15 @@ AWLFprf (node *arg_node, info *arg_info)
           = checkAWLFoldable (arg_node, arg_info, INFO_CWLPART (arg_info),
                               INFO_DEFDEPTH (arg_info));
         pwl = PRF_ARG2 (arg_node);
-        if ((NULL == INFO_PRODUCERPART (arg_info)
-             && (isSimpleComposition (pwl, INFO_CWLIDS (arg_info),
-                                      INFO_DEFDEPTH (arg_info))))) {
-            nwith = AWLFIfindWL (pwl); /* Now the N_with */
+        nwith = AWLFIfindWL (pwl); /* Now the N_with */
+        if ((NULL == INFO_PRODUCERPART (arg_info) && (NULL != INFO_CWLIDS (arg_info))
+             && (NULL != INFO_CWLPART (arg_info)) && (NULL != nwith)
+             && (((isSimpleComposition (pwl, INFO_CWLIDS (arg_info),
+                                        INFO_DEFDEPTH (arg_info))))
+                 || (FALSE && PRF_ISFOLDNOW (arg_node))))) { // DISABLED. wrong answers
+            // AWLF UT realrelax.sac and overly enthusiastic AWLF on other ones.
             INFO_PRODUCERPART (arg_info) = WITH_PART (nwith);
+            PRF_ISFOLDNOW (arg_node) = FALSE;
         }
     }
 
