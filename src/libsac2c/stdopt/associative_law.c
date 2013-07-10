@@ -430,6 +430,16 @@ ALisAssociativeAndCommutativePrf (prf fun)
     case F_or_SxV:
     case F_or_VxS:
     case F_or_VxV:
+
+    case F_eq_SxS:
+    case F_eq_SxV:
+    case F_eq_VxS:
+    case F_eq_VxV:
+
+    case F_neq_SxS:
+    case F_neq_SxV:
+    case F_neq_VxS:
+    case F_neq_VxV:
         res = TRUE;
         break;
 
