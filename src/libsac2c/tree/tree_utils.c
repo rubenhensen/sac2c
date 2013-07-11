@@ -292,7 +292,7 @@ TULSisValuesMatch (node *arg1, node *arg2)
         && (SHcompareShapes (COgetShape (fs1), COgetShape (fs2)))) {
         res = TRUE;
 
-        while (res && (NULL != aelems1)) {
+        while (res && (NULL != aelems1) && (NULL != aelems2)) {
             res = res && TULSisValuesMatch (EXPRS_EXPR (aelems1), EXPRS_EXPR (aelems2));
             aelems1 = EXPRS_NEXT (aelems1);
             aelems2 = EXPRS_NEXT (aelems2);
