@@ -1133,7 +1133,6 @@ SCSextractCompositionInfo (prf fung, node *arg1, node *arg2, info *arg_info, prf
  * @note: This optimization is required to allow AWLF to operate
  *        on code such as that in AWLF unit test SCSprf_val_le_val_SxSMax.sac.
  *
- *
  *        We start by looking for a generic match on the above four
  *        patterns, such as:
  *
@@ -1142,6 +1141,8 @@ SCSextractCompositionInfo (prf fung, node *arg1, node *arg2, info *arg_info, prf
  *        Then, we filter any results that match.
  *
  * @note: Feel free to expand the set of supported compositions.
+ *        Or, if you want to make this table-driven, that would
+ *        reduce code size by a wee bit.
  *
  *****************************************************************************/
 
@@ -1173,38 +1174,68 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         // (x max y) <  x
         SCSECI (F_max_SxS, F_lt_SxS, FALSE, TRUE);
 
+        // (x + negY) < x
+        SCSECI (F_add_SxS, F_lt_SxS, TRUE, SCSisNegative (Y));
+        // (x + negY) <= x
+        SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisNegative (Y));
+        // (x + negY) >= x
+        SCSECI (F_add_SxS, F_ge_SxS, FALSE, SCSisNegative (Y));
+        // (x + negY) >  x
+        SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisNegative (Y));
+
+        // (x + nonnegY) <  x
+        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNonneg (Y));
+        // (x + nonnegY) <= x         dunno
         // (x + nonnegY) >= x
         SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNonneg (Y));
-        // (x + nonnegY) < x
-        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNonneg (Y));
-        // (x + posY) < x
-        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisPositive (Y));
+        // (x + nonnegY) > x          dunno
+
         // (x + posY) <= x
         SCSECI (F_add_SxS, F_le_SxS, FALSE, SCSisPositive (Y));
+        // (x + posY) < x
+        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisPositive (Y));
+        // (x + posY) >= x
+        SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisPositive (Y));
+        // (x + posY) >  x
+        SCSECI (F_add_SxS, F_gt_SxS, TRUE, SCSisPositive (Y));
     }
 
     // With reversed arguments, we have to reverse the sense of the relational
     // E.g., < becomes >; <= becomes >=
     if (SCSextractCompositionInfo (fung, arg2, arg1, arg_info, &fff, &ffg, &Y)) {
 
-        // x >= (x min y)
-        SCSECI (F_min_SxS, F_ge_SxS, TRUE, TRUE);
         // x < (x min y)
         SCSECI (F_min_SxS, F_lt_SxS, FALSE, TRUE);
+        // x >= (x min y)
+        SCSECI (F_min_SxS, F_ge_SxS, TRUE, TRUE);
 
         // x <= (x max y)
         SCSECI (F_max_SxS, F_le_SxS, TRUE, TRUE);
         // x >  (x max y)
         SCSECI (F_max_SxS, F_gt_SxS, FALSE, TRUE);
 
+        // x <  (x + negY)
+        SCSECI (F_add_SxS, F_lt_SxS, FALSE, SCSisNegative (Y));
+        // x <= (x + negY)
+        SCSECI (F_add_SxS, F_le_SxS, FALSE, SCSisNegative (Y));
+        // x >= (x + negY)
+        SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisNegative (Y));
+        // x >  (x + negY)
+        SCSECI (F_add_SxS, F_gt_SxS, TRUE, SCSisNegative (Y));
+
         // x <= (x + nonnegY)
         SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisNonneg (Y));
-        // x > (x + nonnegY)
+        // x >  (x + nonnegY)
         SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisNonneg (Y));
+
         // x <= (x + posY)
         SCSECI (F_add_SxS, F_le_SxS, TRUE, SCSisPositive (Y));
         // x <  (x + posY)
         SCSECI (F_add_SxS, F_lt_SxS, TRUE, SCSisPositive (Y));
+        // x >= (x + posY)
+        SCSECI (F_add_SxS, F_ge_SxS, FALSE, SCSisPositive (Y));
+        // x >  (x + posY)
+        SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisPositive (Y));
     }
 
     DBUG_RETURN (z);
