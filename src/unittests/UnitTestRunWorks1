@@ -10,12 +10,12 @@ logfile="logWorks"$( sac2c-p -V | grep rev | cut -f 4 -d\ )
 echo $( sac2c-p -V) >> $logfile
 echo $( date)       >> $logfile
 
-# HUSH echo Starting Worktest: sac2c -v0 -O3 $1 -o $1.exe $optson
+echo Starting Worktest: sac2c -v0 -O3 $1 -o $1.exe $optson  >> $logfile
 sac2c -v0 -O3 $1 -o $1.exe $optson   | tee -a $logfile
 	./$1.exe                     >>       $logfile
 	z=$?
 	if [ 0 -eq $z ]; then 
-          # HUSH echo Worktest: $1 OK  | tee -a $logfile
+          echo Worktest: $1 OK  | tee -a $logfile
           junk=0
 	else 
            echo -e '\a\a'            
