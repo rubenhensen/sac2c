@@ -22,7 +22,6 @@ extern node *CUBSLdoAlgebraicWithLoopFoldingCubeSlicing (node *arg_node);
 extern intersect_type_t CUBSLfindMatchingPart (node *arg_node, node *consumerpart,
                                                node *producerWL, info *arg_info,
                                                node **producerpart);
-extern bool matchGeneratorField (node *fa, node *fb);
 
 extern node *CUBSLfundef (node *arg_node, info *arg_info);
 extern node *CUBSLassign (node *arg_node, info *arg_info);
