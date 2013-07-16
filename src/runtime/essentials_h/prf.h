@@ -317,6 +317,7 @@
             SAC_RuntimeError ("Non-negativity constraint violated "                      \
                               "for scalar " NT_STR (from_NT) " in " __FILE__             \
                                                              ":" TO_STR (__LINE__) "."); \
+        SAC_ND_WRITE_COPY (to_NT, 0, SAC_ND_READ (from_NT, 0), );                        \
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
 
@@ -329,6 +330,7 @@
                                   "for vector " NT_STR (                                 \
                                     from_NT) " in " __FILE__ ":" TO_STR (__LINE__) "."); \
             }                                                                            \
+            SAC_ND_WRITE_COPY (to_NT, SAC_i, SAC_ND_READ (from_NT, SAC_i), );            \
         }                                                                                \
         SAC_ND_A_FIELD (to_NT) = 1;                                                      \
     }
