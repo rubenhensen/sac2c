@@ -1583,7 +1583,7 @@ BuildInverseProjections (node *arg_node, info *arg_info)
                     DBUG_ASSERT (N_exprs == NODE_TYPE (zel), "Expected N_exprs zel");
                     DBUG_ASSERT (N_exprs == NODE_TYPE (zeu), "Expected N_exprs zeu");
                     if (swaplb) {
-                        DBUG_ASSERT (FALSE, "time2 code");
+                        //  DBUG_ASSERT( FALSE, "time2 code");
                         tmp = zel;
                         zel = zeu;
                         zeu = tmp;
