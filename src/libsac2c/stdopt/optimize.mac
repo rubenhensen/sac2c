@@ -143,7 +143,10 @@ OPTIMIZE ("uctz", uctz, TRUE, TRUE, "eliminating comparisons to zero")
 OPTIMIZE ("ggs", ggs, TRUE, TRUE, "generating guard solvers")
 OPTIMIZE ("wls_aggressive", wls_aggressive, TRUE, TRUE, "aggressive loop scalarization")
 OPTIMIZE ("sse", sse, FALSE, FALSE, "simplify symbiotic expressions")
-OPTIMIZE ("safa", safa, TRUE, TRUE, "sort associative function arguments")
+OPTIMIZE ("safa", safa, TRUE, TRUE, "sort associative fun arguments")
+OPTIMIZE ("scs", scs, TRUE, TRUE, "Symbolic Constant Simplification")
+OPTIMIZE ("sccf", sccf, TRUE, TRUE, "Structural constant constant folding")
+OPTIMIZE ("saacf", saacf, TRUE, TRUE, "SAA constant folding")
 
 /* OPTIMIZE entries after this point are intended for
  * developer use only.
