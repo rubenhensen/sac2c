@@ -720,9 +720,11 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
  *
  * @fn node *IVUTfindIvWith(...)
  *
- * @brief Try to map arg_node back to the producerWL WITHID_VEC.
+ * @brief arg_node is an iv in _sel_VxA_( iv, PWL) or
+ *                       offset in _idx_sel_( offset, PWL).
+ *        Try to map arg_node back to the producerWL WITHID_VEC.
  *
- * @return: the desired avis node.
+ * @return: the desired WITHID_VEC avis node, if we can find it, or NULL.
  *
  *****************************************************************************/
 node *
@@ -732,24 +734,26 @@ IVUTfindIvWith (node *arg_node, node *cwlpart)
     pattern *pat;
     pattern *pat2;
     node *bndarr = NULL;
-    node *ivprf = NULL;
+    prf ivprf = F_unknown;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
 
     DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
-    pat2 = PMvar (1, PMAgetNode (&ivprf), 1, PMskip (0));
+    pat2 = PMprf (1, PMAgetPrf (&ivprf), 2, PMany (1, PMAgetNode (&arg1), 0),
+                  PMany (1, PMAgetNode (&arg2), 0), 0);
 
     if (0 != TYgetDim (AVIS_TYPE (ID_AVIS (arg_node)))) { /* _sel_VxA_() case */
         z = ID_AVIS (arg_node);
     } else {
         /* Skip the F_noteintersect */
-        if ((PMmatchFlatSkipGuards (pat2, arg_node) && (N_prf == NODE_TYPE (ivprf))
-             && (F_noteintersect == PRF_PRF (ivprf)))) {
-            arg_node = PRF_ARG1 (ivprf);
+        if ((PMmatchFlatSkipGuards (pat2, arg_node) && (F_noteintersect == ivprf))) {
+            arg_node = arg1;
         }
 
         if (PMmatchFlatSkipGuards (pat2, arg_node)) { /* _idx_sel() case */
-            if ((N_prf == NODE_TYPE (ivprf)) && (F_idxs2offset == PRF_PRF (ivprf))) {
+            if (F_idxs2offset == ivprf) {
                 DBUG_PRINT ("look for pwlpart WITHIDS here");
                 z = NULL; /* FIXME */
             } else {
@@ -767,8 +771,8 @@ IVUTfindIvWith (node *arg_node, node *cwlpart)
     }
 
     /* Case 4 */
-    if ((NULL == z) && (NULL != ivprf) && (F_vect2offset == PRF_PRF (ivprf))) {
-        z = ID_AVIS (PRF_ARG2 (ivprf));
+    if ((NULL == z) && (F_unknown != ivprf) && (F_vect2offset == ivprf)) {
+        z = ID_AVIS (arg2);
     }
 
     pat = PMfree (pat);
