@@ -133,6 +133,7 @@
 #include "deadcoderemoval.h"
 #include "with_loop_utilities.h"
 #include "set_withloop_depth.h"
+#include "symbolic_constant_simplification.h"
 
 /** <!--********************************************************************-->
  *
@@ -481,6 +482,7 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
     ;
     pattern *pat;
     int tcindex = -1;
+    node *id;
 
     DBUG_ENTER ();
 
@@ -490,32 +492,42 @@ AWLFIfindPrfParent2 (node *arg_node, node *withidids, node **withid)
         switch (NODE_TYPE (arg_node)) {
         case N_prf:
 
-            tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG2 (arg_node)));
-            if (-1 != tcindex) {
-                z = 2;
+            if (NULL != PRF_EXPRS2 (arg_node)) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG2 (arg_node)));
+                if (-1 != tcindex) {
+                    z = 2;
+                }
             }
 
-            tcindex = TClookupIdsNode (withidids, ID_AVIS (PRF_ARG1 (arg_node)));
-            if (-1 != tcindex) {
-                z = 1;
+            id = PRF_ARG1 (arg_node); /* Stupid _type_conv_() has N_type
+                                       * as PRF_ARG1.
+                                       */
+            if (N_id == NODE_TYPE (id)) {
+                tcindex = TClookupIdsNode (withidids, ID_AVIS (id));
+                if (-1 != tcindex) {
+                    z = 1;
+                }
             }
 
-            if ((0 == z)
-                && (0 != AWLFIfindPrfParent2 (PRF_ARG1 (arg_node), withidids, withid))) {
+            if ((0 == z) && (N_id == NODE_TYPE (id))
+                && (0 != AWLFIfindPrfParent2 (id, withidids, withid))) {
                 z = 1;
             }
-            if ((0 == z)
+            if ((0 == z) && (NULL != PRF_EXPRS2 (arg_node))
                 && (0 != AWLFIfindPrfParent2 (PRF_ARG2 (arg_node), withidids, withid))) {
                 z = 2;
             }
             break;
 
         case N_id:
-            if ((PMmatchFlatSkipExtremaAndGuards (pat, arg_node))
-                && (N_id == NODE_TYPE (arg))) {
-                tcindex = TClookupIdsNode (withidids, ID_AVIS (arg));
-                if (-1 != tcindex) {
-                    z = 1;
+            if (PMmatchFlatSkipExtremaAndGuards (pat, arg_node)) {
+                if (N_id == NODE_TYPE (arg)) {
+                    tcindex = TClookupIdsNode (withidids, ID_AVIS (arg));
+                    if (-1 != tcindex) {
+                        z = 1;
+                    }
+                } else {
+                    z = AWLFIfindPrfParent2 (arg, withidids, withid);
                 }
             }
             break;
@@ -1062,10 +1074,39 @@ BuildInverseProjectionScalar (node *iprime, info *arg_info, node *lbub, int ivin
                     break;
 
                 case F_mul_SxS:
+                    /* iv' = ( iv *  x);  -->  iv = ( iv' / x);
+                     * iv' = ( x  * iv);  -->  iv = ( iv' / x);
+                     */
                     markiv
                       = AWLFIfindPrfParent2 (idx, withidids, &INFO_WITHIDS (arg_info));
-                    DBUG_ASSERT (FALSE, "Coding time for F_mul_SxS_");
-                    if (COisConstant (PRF_ARG2 (idx))) {
+                    if (0 != markiv) {
+                        ivarg = (2 == markiv) ? PRF_ARG2 (idx) : PRF_ARG1 (idx);
+                        xarg = (2 == markiv) ? PRF_ARG1 (idx) : PRF_ARG2 (idx);
+                        DBUG_ASSERT (N_id == NODE_TYPE (xarg), "Expected N_id xarg");
+                        DBUG_ASSERT (N_id == NODE_TYPE (ivarg), "Expected N_id ivarg");
+                        // Check for multiply by zero, just in case.
+                        if (SCSmatchConstantZero (xarg)) {
+                            DBUG_PRINT ("multiply by zero has no inverse");
+                        } else {
+                            resavis = TBmakeAvis (TRAVtmpVarName ("tismul"),
+                                                  TYmakeAKS (TYmakeSimpleType (T_int),
+                                                             SHcreateShape (0)));
+                            INFO_VARDECS (arg_info)
+                              = TBmakeVardec (resavis, INFO_VARDECS (arg_info));
+                            ids = TBmakeIds (resavis, NULL);
+                            assgn = TBmakeAssign (
+                              TBmakeLet (ids, TCmakePrf2 (F_div_SxS,
+                                                          TBmakeId (
+                                                            FlattenLbubel (lbub, ivindx,
+                                                                           arg_info)),
+                                                          TBmakeId (ID_AVIS (xarg)))),
+                              NULL);
+                            INFO_PREASSIGNS (arg_info)
+                              = TCappendAssign (INFO_PREASSIGNS (arg_info), assgn);
+                            AVIS_SSAASSIGN (resavis) = assgn;
+                            z = BuildInverseProjectionScalar (ivarg, arg_info, resavis,
+                                                              ivindx);
+                        }
                     }
                     break;
 
