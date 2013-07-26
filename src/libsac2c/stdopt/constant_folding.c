@@ -1114,16 +1114,22 @@ CFprf (node *arg_node, info *arg_info)
     /* Bog-standard constant-folding is all handled by typechecker now */
 
     /* Try symbolic constant simplification */
-    res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
-                                        prf_cfscs_funtab[PRF_PRF (arg_node)], res);
+    if (global.optimize.doscs) {
+        res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
+                                            prf_cfscs_funtab[PRF_PRF (arg_node)], res);
+    }
 
     /* If that doesn't help, try structural constant constant folding */
-    res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
-                                        prf_cfsccf_funtab[PRF_PRF (arg_node)], res);
+    if (global.optimize.dosccf) {
+        res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
+                                            prf_cfsccf_funtab[PRF_PRF (arg_node)], res);
+    }
 
     /* If that doesn't help, try SAA constant folding */
-    res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
-                                        prf_cfsaa_funtab[PRF_PRF (arg_node)], res);
+    if (global.optimize.dosaacf) {
+        res = InvokeCFprfAndFlattenExtrema (arg_node, arg_info,
+                                            prf_cfsaa_funtab[PRF_PRF (arg_node)], res);
+    }
 
     if (res != NULL) {
         /* free this primitive function and replace it by new node */
