@@ -716,7 +716,7 @@ AWLFperformFold (node *arg_node, node *producerWLPart, info *arg_info)
 
 /** <!--********************************************************************-->
  *
- * @fn static bool isSimpleComposition( node *pwl, node *cwlids)
+ * @fn static bool isSimpleComposition()
  *
  * @brief Predicate to determine if consumer-WL cwl is a simple
  *        composition on the producer-WL pwl. I.e., we have something
@@ -725,8 +725,11 @@ AWLFperformFold (node *arg_node, node *producerWLPart, info *arg_info)
  *
  *        where iota() comprises pwl, and sum() comprises cwl.
  *
- * @params pwl: The producer WL N_id
- *         cwlids The consumer WL N_ids
+ * @params arg_node: the _sel_VxA() or _idx_sel_() op in the cwl
+ *         pwl: The producer-WL N_id
+ *         cwlids The consumer-WL N_ids
+ *         defdepth: the nesting depth of the cwl.
+ *         cwlpart: the current cwl partition
  *
  * @result: TRUE if the pair of WLs form a simple composition.
  *
@@ -736,6 +739,7 @@ AWLFperformFold (node *arg_node, node *producerWLPart, info *arg_info)
  *      - cwl and pwl each are 1 partition.
  *      - pwl is a modarray or genarray
  *      - both WLs are single-op WLs
+ *      - indexing is in ravel order. I.e., no transpose, rotate, etc.
  *
  * Rationale:
  *     If this is a composition, such as we see in take( [10], iota( N)),
@@ -744,13 +748,22 @@ AWLFperformFold (node *arg_node, node *producerWLPart, info *arg_info)
  *     well. If not, then we will find out the hard way at execution
  *     time, and if you compile with -check c, you will find out why.
  *
+ * Extensions: Multi-partition compositions, in which we can
+ *             easily show that no array slicing is needed,
+ *             can be performed, too.
+ *             E.g.,
+ *
  *****************************************************************************/
 static bool
-isSimpleComposition (node *pwlid, node *cwlids, int defdepth)
+isSimpleComposition (node *arg_node, node *pwlid, node *cwlids, int defdepth,
+                     node *cwlpart)
 {
     bool z = FALSE;
     node *pwlwith;
     node *cwlwith;
+    node *noteint;
+    node *proj1;
+    node *proj2;
 
     DBUG_ENTER ();
 
@@ -762,17 +775,26 @@ isSimpleComposition (node *pwlid, node *cwlids, int defdepth)
         z = z && AWLFIisSingleOpWL (cwlwith);
         z = z && AWLFIcheckProducerWLFoldable (pwlid);
         z = z && AWLFIcheckBothFoldable (pwlid, cwlids, defdepth);
-
-        if (z) {
-            DBUG_PRINT ("Simple composition %s( %s) detected",
-                        AVIS_NAME (IDS_AVIS (cwlids)), AVIS_NAME (ID_AVIS (pwlid)));
+        // garbage = IVUTfindIvWith( PRF_ARG1( arg_node), cwlpart);
+        // z = z && pwlboundsmatchesCwlIndexBounds();
+        // z = z && nooffset( CWLIndexBounds);
+        noteint = AWLFIfindNoteintersect (PRF_ARG1 (arg_node));
+        if (NULL != noteint) {
+            proj1 = TCgetNthExprsExpr (WLPROJECTION1 (0), PRF_ARGS (noteint));
+            proj2 = TCgetNthExprsExpr (WLPROJECTION2 (0), PRF_ARGS (noteint));
+            z = z && (AWLFIisHasInverseProjection (proj1))
+                && (AWLFIisHasInverseProjection (proj2));
+            if (z) {
+                DBUG_PRINT ("Simple composition %s( %s) detected",
+                            AVIS_NAME (IDS_AVIS (cwlids)), AVIS_NAME (ID_AVIS (pwlid)));
+            }
         }
     }
 
-    z = FALSE; // VERY strange WLs for AWLF UT bodomatmulbug2AKD.sac and
-               // many others. Fewer WLs, supposedly correct answers,
-               // but code clearly could never work properly.
-               // E.g., matmul with two non-nested WLs. So, disabled for now.
+    // z = FALSE;  // VERY strange WLs for AWLF UT bodomatmulbug2AKD.sac and
+    // many others. Fewer WLs, supposedly correct answers,
+    // but code clearly could never work properly.
+    // E.g., matmul with two non-nested WLs. So, disabled for now.
 
     DBUG_RETURN (z);
 }
@@ -1059,8 +1081,9 @@ AWLFprf (node *arg_node, info *arg_info)
         nwith = AWLFIfindWL (pwl); /* Now the N_with */
         if ((NULL == INFO_PRODUCERPART (arg_info) && (NULL != INFO_CWLIDS (arg_info))
              && (NULL != INFO_CWLPART (arg_info)) && (NULL != nwith)
-             && (((isSimpleComposition (pwl, INFO_CWLIDS (arg_info),
-                                        INFO_DEFDEPTH (arg_info))))
+             && (((isSimpleComposition (arg_node, pwl, INFO_CWLIDS (arg_info),
+                                        INFO_DEFDEPTH (arg_info),
+                                        INFO_CWLPART (arg_info))))
                  || (FALSE && PRF_ISFOLDNOW (arg_node))))) { // DISABLED. wrong answers
             // AWLF UT realrelax.sac and overly enthusiastic AWLF on other ones.
             INFO_PRODUCERPART (arg_info) = WITH_PART (nwith);
