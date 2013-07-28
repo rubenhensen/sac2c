@@ -2582,7 +2582,8 @@ AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel)
     /* Composition-style AWLF: CWL sel() one level deeper than PWL */
     /* Naked consumer AWLF: PWL and CWL sel() at same nesting level */
     plev = AVIS_DEFDEPTH (ID_AVIS (pwlid));
-    z = (plev <= cwllevel);
+    z = (NULL == cwlids) && (cwllevel == plev);
+    z = z || ((NULL != cwlids) && (cwllevel == (1 + plev)));
 
 #ifdef FIXME //  this definitely breaks majordiagonal2.sac
     /* Restrict producerWL to scalar cells, and require that
