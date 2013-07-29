@@ -116,6 +116,7 @@
 #include "DupTree.h"
 #include "shape.h"
 #include "phase.h"
+#include "flattengenerators.h"
 
 /** <!--********************************************************************-->
  *
@@ -206,22 +207,11 @@ node *
 WLSflattenBound (node *arg_node, node **vardecs, node **preassigns)
 {
     node *avis;
-    node *assgn;
-    int shp;
 
     DBUG_ENTER ();
 
     if (N_array == NODE_TYPE (arg_node)) {
-        shp = TCcountExprs (ARRAY_AELEMS (arg_node));
-        avis = TBmakeAvis (TRAVtmpVar (),
-                           TYmakeAKS (TYmakeSimpleType (T_int), SHcreateShape (1, shp)));
-        *vardecs = TBmakeVardec (avis, *vardecs);
-        assgn = TBmakeAssign (TBmakeLet (TBmakeIds (avis, NULL), DUPdoDupTree (arg_node)),
-                              NULL);
-        AVIS_SSAASSIGN (avis) = assgn;
-        *preassigns = TCappendAssign (*preassigns, assgn);
-
-        DBUG_PRINT ("WLSflattenBound introduced flattened bound: %s", AVIS_NAME (avis));
+        avis = FLATGexpression2Avis (DUPdoDupTree (arg_node), vardecs, preassigns, NULL);
     } else {
         DBUG_ASSERT (N_id == NODE_TYPE (arg_node), "Expected N_id or N_array");
         avis = ID_AVIS (arg_node);
