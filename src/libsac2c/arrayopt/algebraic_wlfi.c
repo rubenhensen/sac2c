@@ -2543,6 +2543,65 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg
 
 /** <!--********************************************************************-->
  *
+ * @fn bool AWLFIisNakedWL( int cwllevel, int plev)
+ *
+ * @brief
+ *
+ * @param  cwllevel: INFO_DEFDEPTH of CWL (or naked sel())
+ *         pwllevel: AVIS_DEFDEPTH of PWL
+ *
+ * @result True if the CWL and PWL (even though there is not a PWL...)
+ *         are at the same level. I.e., we
+ *         have this sort of code layout:
+ *
+ *           PWL = with (...);
+ *           ...
+ *           z = _sel_VxA_( iv, PWL);
+ *
+ *****************************************************************************/
+bool
+AWLFIisNakedWL (int cwllevel, int pwllevel)
+{
+    bool z;
+
+    DBUG_ENTER ();
+    z = cwllevel == pwllevel;
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn bool AWLFIisUusualWL( int cwllevel, int plev)
+ *
+ * @brief
+ *
+ * @param  cwllevel: INFO_DEFDEPTH of CWL (or naked sel())
+ *         pwllevel: AVIS_DEFDEPTH of PWL
+ *
+ * @result True if the CWL is one level deeper in WL nesting
+ *        than the PWL. I.e., we
+ *         have this sort of code layout:
+ *
+ *           PWL = with (...);
+ *           ...
+ *           z = with  (...
+ *             el = _sel_VxA_( iv, PWL);
+ *             );
+ *
+ *****************************************************************************/
+bool
+AWLFIisUsualWL (int cwllevel, int pwllevel)
+{
+    bool z;
+
+    DBUG_ENTER ();
+    z = cwllevel == (1 + pwllevel);
+
+    DBUG_RETURN (z);
+}
+/** <!--********************************************************************-->
+ *
  * @fn bool AWLFIcheckBothFoldable( node *pwlid, node *cwlavis, int cwllevel)
  *
  * @brief Make any early checks we can that may show that
@@ -2582,8 +2641,7 @@ AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel)
     /* Composition-style AWLF: CWL sel() one level deeper than PWL */
     /* Naked consumer AWLF: PWL and CWL sel() at same nesting level */
     plev = AVIS_DEFDEPTH (ID_AVIS (pwlid));
-    z = (NULL == cwlids) && (cwllevel == plev);
-    z = z || ((NULL != cwlids) && (cwllevel == (1 + plev)));
+    z = AWLFIisNakedWL (cwllevel, plev) || AWLFIisUsualWL (cwllevel, plev);
 
 #ifdef FIXME //  this definitely breaks majordiagonal2.sac
     /* Restrict producerWL to scalar cells, and require that

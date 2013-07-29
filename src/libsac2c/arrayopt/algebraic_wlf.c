@@ -421,7 +421,7 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
         PWL = AWLFIfindWL (PWL); /* Now the N_with */
 
         /* Allow naked _sel_() of WL */
-        if (AVIS_DEFDEPTH (producerWLavis) == level) {
+        if (AWLFIisNakedWL (level, AVIS_DEFDEPTH (producerWLavis))) {
             cwlp = NULL; /* cwlp was a lie anyway, in this case */
         }
         if (((AVIS_DEFDEPTH (producerWLavis) + 1) >= level)
@@ -465,9 +465,9 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
                 // I think a better fix is to write a cost function for each PWL
                 // partition, and allow AWLF if the cost is "low enough".
                 //
-                // OK. We need the cost function: ipbb.sac ended up folding the
+                // Oops: we need the cost function: ipbb.sac ended up folding the
                 // _aplmod_() reshape function into the inner loop of the matrix
-                // product. That was a bad idea, as it turns out.
+                // product. That was a bad idea, as it turns out, as it's quite expensive.
                 //
                 ((AVIS_NEEDCOUNT (producerWLavis) != AVIS_WL_NEEDCOUNT (producerWLavis)))
                 && (!WLUTisEmptyPartitionCodeBlock (pwlp))) {
@@ -768,7 +768,7 @@ isSimpleComposition (node *arg_node, node *pwlid, node *cwlids, int defdepth,
     DBUG_ENTER ();
 
     pwlwith = AWLFIfindWL (pwlid);
-    if ((NULL != pwlwith) && (NULL != cwlids)) {
+    if ((global.optimize.doscwlf) && (NULL != pwlwith) && (NULL != cwlids)) {
         cwlwith = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (IDS_AVIS (cwlids))));
         z = (1 == TCcountParts (WITH_PART (pwlwith)))
             && (1 == TCcountParts (WITH_PART (cwlwith)));
@@ -1081,10 +1081,10 @@ AWLFprf (node *arg_node, info *arg_info)
         nwith = AWLFIfindWL (pwl); /* Now the N_with */
         if ((NULL == INFO_PRODUCERPART (arg_info) && (NULL != INFO_CWLIDS (arg_info))
              && (NULL != INFO_CWLPART (arg_info)) && (NULL != nwith)
-             && (((isSimpleComposition (arg_node, pwl, INFO_CWLIDS (arg_info),
-                                        INFO_DEFDEPTH (arg_info),
-                                        INFO_CWLPART (arg_info))))
-                 || (FALSE && PRF_ISFOLDNOW (arg_node))))) { // DISABLED. wrong answers
+             && (isSimpleComposition (arg_node, pwl, INFO_CWLIDS (arg_info),
+                                      INFO_DEFDEPTH (arg_info),
+                                      INFO_CWLPART (arg_info))))) {
+            //  || (FALSE && PRF_ISFOLDNOW( arg_node))))) {  // DISABLED. wrong answers
             // AWLF UT realrelax.sac and overly enthusiastic AWLF on other ones.
             INFO_PRODUCERPART (arg_info) = WITH_PART (nwith);
             PRF_ISFOLDNOW (arg_node) = FALSE;

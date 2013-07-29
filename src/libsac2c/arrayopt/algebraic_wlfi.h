@@ -29,8 +29,10 @@ extern node *AWLFIflattenExpression (node *arg_node, node **vardecs, node **prea
                                      ntype *ztype);
 extern node *AWLFItakeDropIv (int takect, int dropct, node *arg_node, node **vardecs,
                               node **preassigns);
-bool AWLFIcheckProducerWLFoldable (node *arg_node);
-bool AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel);
+extern bool AWLFIcheckProducerWLFoldable (node *arg_node);
+extern bool AWLFIcheckBothFoldable (node *pwlid, node *cwlids, int cwllevel);
+extern bool AWLFIisNakedWL (int cwllevel, int pwllevel);
+extern bool AWLFIisUsualWL (int cwllevel, int pwllevel);
 
 extern node *AWLFIfundef (node *arg_node, info *arg_info);
 extern node *AWLFIblock (node *arg_node, info *arg_info);
