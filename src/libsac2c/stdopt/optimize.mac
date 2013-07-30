@@ -147,6 +147,7 @@ OPTIMIZE ("safa", safa, TRUE, TRUE, "sort associative fun arguments")
 OPTIMIZE ("scs", scs, TRUE, TRUE, "Symbolic Constant Simplification")
 OPTIMIZE ("sccf", sccf, TRUE, TRUE, "Structural constant constant folding")
 OPTIMIZE ("saacf", saacf, TRUE, TRUE, "SAA constant folding")
+OPTIMIZE ("scwlf", scwlf, TRUE, TRUE, "Simple composition AWLF")
 
 /* OPTIMIZE entries after this point are intended for
  * developer use only.
