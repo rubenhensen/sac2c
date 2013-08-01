@@ -1126,7 +1126,7 @@ SCSextractCompositionInfo (prf fung, node *arg1, node *arg2, info *arg_info, prf
  *                   facilitate debugging. E.g.:
  *                      GDBWhatIsnNid( arg_node, arg_info->fundef)
  *
- * @result: TRUE if we can satisfy the relational.
+ * @result: TRUE if we can match the relational.
  *          FALSE if we are unable to satisfy it or if the relational
  *          is not true. Do NOT make decisions based on a FALSE result!
  *
@@ -1143,6 +1143,11 @@ SCSextractCompositionInfo (prf fung, node *arg1, node *arg2, info *arg_info, prf
  * @note: Feel free to expand the set of supported compositions.
  *        Or, if you want to make this table-driven, that would
  *        reduce code size by a wee bit.
+ *
+ * @note: This function is really misnamed. We might want to call it
+ *        SCSisCompositionOnRelationalFunctions(), or something like that.
+ *         Note that, for example, we have min/max code below that
+ *         does not entail any relationals.
  *
  *****************************************************************************/
 
@@ -1198,6 +1203,13 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         SCSECI (F_add_SxS, F_ge_SxS, TRUE, SCSisPositive (Y));
         // (x + posY) >  x
         SCSECI (F_add_SxS, F_gt_SxS, TRUE, SCSisPositive (Y));
+
+        // In these functions, myres == FALSE means PRF_ARG2 is the result;
+        //                               TRUE means PRF_ARG1 is the result.
+        // max( x, min( x, y)) --> x
+        SCSECI (F_min_SxS, F_max_SxS, FALSE, TRUE);
+        // min( x, max( x, y)) --> x
+        SCSECI (F_max_SxS, F_min_SxS, FALSE, TRUE);
     }
 
     // With reversed arguments, we have to reverse the sense of the relational
@@ -1236,10 +1248,81 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         SCSECI (F_add_SxS, F_ge_SxS, FALSE, SCSisPositive (Y));
         // x >  (x + posY)
         SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisPositive (Y));
+
+        // max( min( x, y), x) --> x
+        SCSECI (F_min_SxS, F_max_SxS, TRUE, TRUE);
+        // min( max( x, y), x) --> x
+        SCSECI (F_max_SxS, F_min_SxS, TRUE, TRUE);
     }
 
     DBUG_RETURN (z);
 }
+
+#ifdef DEADCODE
+/** <!--********************************************************************-->
+ *
+ * @fn node *SCScomposeOnDyadicFunctions( prf funf, node *arg1, node *arg2,
+ *                                   info *arg_info)
+ *
+ * @brief  Return a PRF_ARG, if we can match the composition, and NULL otherwise.
+ *
+ *         The compositions are of the form: ( f( x,y) g x)
+ *         E.g.:
+ *
+ *           max( X, min( X, k)) --> X
+ *           max( min( X, k), X) --> X
+ *
+ *           min( X, max( X, k)) --> X
+ *           min( max( X, k), X) --> X
+ *
+ * @param: funf: an N_prf
+ * @param: arg1: PRF_ARG1 of funf
+ * @param: arg2: PRF_ARG2 of funf
+ * @param: arg_info: Your basic arg_info node, here only to
+ *                   facilitate debugging. E.g.:
+ *                      GDBWhatIsnNid( arg_node, arg_info->fundef)
+ *
+ * @result: If we can match the composition, the result is PRF_ARG1 or
+ *          PRF_ARG2, depending on "myres".
+ *
+ * @note: Feel free to expand the set of supported compositions.
+ *        Or, if you want to make this table-driven, that would
+ *        reduce code size by a wee bit.
+ *
+ *        This function was introduced in an attempt to improve
+ *        AWLF analysis for various AWLF shift() unit tests.
+ *
+ *****************************************************************************/
+bool
+SCScomposeOnDyadicFunctions (prf fung, node *arg1, node *arg2, info *arg_info, bool *res)
+{
+    bool z = FALSE;
+    prf fff = F_unknown;
+    prf ffg = F_unknown;
+    node *Y = NULL;
+
+    DBUG_ENTER ();
+
+    if (SCSextractCompositionInfo (fung, arg1, arg2, arg_info, &fff, &ffg, &Y)) {
+
+        // (x min y) max x -- > x
+        SCSECI (F_min_SxS, F_max_SxS, TRUE, TRUE);
+    }
+
+    // With reversed arguments, we have to reverse the sense of the relational
+    // E.g., < becomes >; <= becomes >=
+    if (SCSextractCompositionInfo (fung, arg2, arg1, arg_info, &fff, &ffg, &Y)) {
+
+        // x max (x min y) --> x
+        SCSECI (F_min_SxS, F_max_SxS, FALSE, TRUE);
+    }
+
+    DBUG_RETURN (z);
+}
+
+#endif //  DEADCODE
+
+#undef SCSECI
 
 /** <!--********************************************************************-->
  *
@@ -2297,12 +2380,27 @@ SCSprf_tod_S (node *arg_node, info *arg_info)
  *
  * Case 6: check relationals on extrema.
  *
+ * Case 7:    min( X, max( X, k))
+ *         if X >= k,
+ *            min( X, max( X, k)) --> min( X, X) --> X
+ *         if X < k,
+ *            min( X, max( X, k)) --> min( X, k) --> X
+ *
+ *         The same holds for max( X, min( N, k)):
+ *         if X >= k,
+ *            max( X, min( X, k)) --> max( X, k) --> X
+ *         if X < k,
+ *            max( X, min( X, k)) --> max( X, X) --> X
+ *
+ *         And ditto for PRFARGs in reversed order.
+ *
  *****************************************************************************/
 node *
 SCSprf_max_SxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *res2 = NULL;
+    bool z = FALSE;
 
     DBUG_ENTER ();
     if (isMatchPrfargs (arg_node, arg_info)) { /* max ( X, X) */
@@ -2346,6 +2444,17 @@ SCSprf_max_SxS (node *arg_node, info *arg_info)
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
 
+    // Case 7
+    if ((NULL == res)
+        && SCSisRelationalOnDyadicFn (PRF_PRF (arg_node), PRF_ARG1 (arg_node),
+                                      PRF_ARG2 (arg_node), arg_info, &z)) {
+        if (z) {
+            res = DUPdoDupNode (PRF_ARG1 (arg_node));
+        } else {
+            res = DUPdoDupNode (PRF_ARG2 (arg_node));
+        }
+    }
+
     DBUG_RETURN (res);
 }
 
@@ -2364,6 +2473,7 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
     node *res2 = NULL;
+    bool z = FALSE;
 
     DBUG_ENTER ();
     if (isMatchPrfargs (arg_node, arg_info)) { /* min( X, X) */
@@ -2406,6 +2516,17 @@ SCSprf_min_SxS (node *arg_node, info *arg_info)
     if ((NULL == res) && // min( x+y, x)
         (isVal1IsSumOfVal2 (PRF_ARG2 (arg_node), PRF_ARG1 (arg_node), arg_info))) {
         res = DUPdoDupNode (PRF_ARG2 (arg_node));
+    }
+
+    // Case 7
+    if ((NULL == res)
+        && SCSisRelationalOnDyadicFn (PRF_PRF (arg_node), PRF_ARG1 (arg_node),
+                                      PRF_ARG2 (arg_node), arg_info, &z)) {
+        if (z) {
+            res = DUPdoDupNode (PRF_ARG1 (arg_node));
+        } else {
+            res = DUPdoDupNode (PRF_ARG2 (arg_node));
+        }
     }
 
     DBUG_RETURN (res);
