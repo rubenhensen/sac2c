@@ -33,7 +33,7 @@
  * Hence, this traversal generates PRF_ARG3, as follows:
  *
  *
- *   tmp = y - x;
+ *   tmp = x - y;
  *   p2 =  _lt_SxS_( tmp, 0);
  *   x',p = _val_lt_val_SxS_( x, y, p2);
  *
@@ -45,6 +45,18 @@
  *
  * NB. This traversal runs within SAACYC, because PRFUNR and friends
  *     may create new guards on the fly.
+ *
+ * NB. We can safely skip guards here, because we are only using
+ * the results of the computation to generate predicates.
+ * To see where this is useful, consider this example, from this
+ * CF unit test: bugnoctzfunnyivecyc.sac
+ *
+ *    x = someguard( lim + 1);
+ *    y = someguard( lim + 5);
+ *    x' p = _val_le_val_SxS_( x, y);
+ *
+ * Skipping guards lets ggs generate: (( lim + 1) - ( lim + 5)) < 0, which
+ * will be solved by AL/AS/DL/CF.
  *
  */
 
@@ -64,6 +76,7 @@
 #include "tree_compound.h"
 #include "flattengenerators.h"
 #include "symbolic_constant_simplification.h"
+#include "pattern_match.h"
 
 /** <!--********************************************************************-->
  *
@@ -197,7 +210,15 @@ GGSprf (node *arg_node, info *arg_info)
     node *avis;
     node *avissub;
     node *aviszero;
+    node *x = NULL;
+    node *y = NULL;
     prf nprf;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    pattern *patxp;
+    pattern *patyp;
+    pattern *patxv;
+    pattern *patyv;
 
     DBUG_ENTER ();
 
@@ -218,22 +239,71 @@ GGSprf (node *arg_node, info *arg_info)
 
     if ((F_unknown != nprf) && (INFO_GENERATE (arg_info))
         && (NULL == PRF_EXPRS3 (arg_node))) {
+
+        arg1 = PRF_ARG1 (arg_node);
+        arg2 = PRF_ARG2 (arg_node);
+#ifdef HOWDOESPMWORK
+
+        prf guardprf;
+        pattern *pat;
+        pattern *patx;
+        pattern *paty;
+        pattern *pat2;
+        pattern *pat3;
+        pat = PMprf (1, PMAgetPrf (&guardprf), 2, PMvar (1, PMAgetNode (&x), 0),
+                     PMvar (1, PMAgetNode (&y), 0));
+
+        pat2 = PMprf (1, PMAgetPrf (&guardprf), 2, PMparam (1, PMAgetNode (&x), 0),
+                      PMparam (1, PMAgetNode (&y), 0));
+
+        patx = PMparam (1, PMAgetNode (&x), 0);
+        paty = PMparam (1, PMAgetNode (&y), 0);
+        pat3 = PMvar (1, PMAgetNode (&y), 0);
+
+        if ((!PMmatchFlatSkipExtremaAndGuards (patx, arg1))
+            || (!PMmatchFlatSkipExtremaAndGuards (paty, arg2))) {
+            DBUG_ASSERT (FALSE, "Expected N_id arguments");
+        }
+        pat = PMfree (pat);
+        patx = PMfree (patx);
+        paty = PMfree (paty);
+        pat2 = PMfree (pat2);
+#endif HOWDOESPMWORK
+
+        patxp = PMparam (1, PMAgetNode (&x), 0);
+        patyp = PMparam (1, PMAgetNode (&y), 0);
+        patxv = PMvar (1, PMAgetNode (&x), 0);
+        patyv = PMvar (1, PMAgetNode (&y), 0);
+
+        PMmatchFlatSkipGuards (patxv, arg1);
+        PMmatchFlatSkipGuards (patxp, arg1);
+        DBUG_ASSERT (NULL != x, "Expected N_id arg1");
+
+        PMmatchFlatSkipGuards (patyv, arg2);
+        PMmatchFlatSkipGuards (patyp, arg2);
+        DBUG_ASSERT (NULL != y, "Expected N_id arg2");
+
+        patxp = PMfree (patxp);
+        patyp = PMfree (patyp);
+        patxv = PMfree (patxv);
+        patyv = PMfree (patyv);
+
         // generate subtraction
-        avissub = FLATGexpression2Avis (TCmakePrf2 (F_sub_SxS,
-                                                    DUPdoDupNode (PRF_ARG1 (arg_node)),
-                                                    DUPdoDupNode (PRF_ARG2 (arg_node))),
+        avissub = FLATGexpression2Avis (TCmakePrf2 (F_sub_SxS, DUPdoDupNode (x),
+                                                    DUPdoDupNode (y)),
                                         &INFO_VARDECS (arg_info),
                                         &INFO_PREASSIGNS (arg_info), NULL);
 
         // generate zero
-        aviszero = FLATGexpression2Avis (SCSmakeZero (PRF_ARG1 (arg_node)),
-                                         &INFO_VARDECS (arg_info),
+        aviszero = FLATGexpression2Avis (SCSmakeZero (x), &INFO_VARDECS (arg_info),
                                          &INFO_PREASSIGNS (arg_info), NULL);
+
         // generate PRF_ARG3
         avis = FLATGexpression2Avis (TCmakePrf2 (nprf, TBmakeId (avissub),
                                                  TBmakeId (aviszero)),
                                      &INFO_VARDECS (arg_info),
                                      &INFO_PREASSIGNS (arg_info), NULL);
+
         PRF_ARGS (arg_node)
           = TCappendExprs (PRF_ARGS (arg_node), TBmakeExprs (TBmakeId (avis), NULL));
     }

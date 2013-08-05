@@ -241,6 +241,7 @@ bool[.] isPartitionIntersect1Part( int[.] idxmin, int[.] idxmax,
    */
 
   z = _and_VxV_( _ge_VxV_( idxmin, bound1), _le_VxV_( idxmax, bound2));
+
   return(z);
 }
 
@@ -259,86 +260,56 @@ bool[.] isPartitionIntersect1Part( int idxmin, int idxmax,
    */
 
   z = _and_VxV_( _ge_SxV_( idxmin, bound1), _le_SxV_( idxmax, bound2));
+
   return(z);
 }
 
 inline 
 int[.] partitionIntersectMax( int[.] PWLbound1, int ivmin)
-{ /* compute maximum of producerWL partition bound1 scalar
+{ /*
+   * Compute maximum of producerWL partition bound1 scalar
    * and index vector set.
-   *
-   *  z = max( PWLbound1, ivmin);
-   *
-   *  We do this as a WL so as to scalarize the computation.
    *
    */
 
-  z = with {
-        ( . <= iv=[k] <= .) {
-            PWLbound1el = _idx_sel_( k, PWLbound1);
-            p = _ge_SxS_( PWLbound1el, ivmin);
-            el = _mask_SxSxS_( p, PWLbound1el, ivmin);
-          } : el;
-        } : genarray( _shape_A_( PWLbound1), 0);
+  z = _max_VxS_( PWLbound1, ivmin);
+
   return(z);
 }
 
 inline 
 int[.] partitionIntersectMin( int[.] PWLbound2, int ivmax)
-{ /* Function to perform min( PWLbound2, ivmax), but written to 
-   * let the optimizers simplify the arguments.
-   * We are depending on WLUR working here.
-   *  z = min( PWLbound2, ivmax);
+{ /* 
+   *  Perform min( PWLbound2, ivmax)
    *
    */
-
-  z = with {
-        ( . <= iv=[k] <= .) {
-            PWLbound2el = _idx_sel_( k, PWLbound2);
-            p = _le_SxS_( PWLbound2el, ivmax);
-            el = _mask_SxSxS_( p, PWLbound2el, ivmax);
-          } : el;
-        } : genarray( _shape_A_( PWLbound2), 0);
+   
+  z = _min_VxS_( PWLbound2, ivmax);
   
   return(z);
 }
 
 inline 
 int[.] partitionIntersectMax( int[.] PWLbound1, int[.] ivmin)
-{ /* compute maximum of producerWL partition bound1
+{ /* 
+   * Compute maximum of producerWL partition bound1
    * and index vector set.
-   * We are depending on WLUR working here.
-   *  z = max( PWLbound1, ivmin);
+   *
    */
 
-  z = with {
-        ( . <= iv=[k] <= .) {
-            PWLbound1el = _idx_sel_( k, PWLbound1);
-            ivminel     = _idx_sel_( k, ivmin);
-            p = _ge_SxS_( PWLbound1el, ivminel);
-            el = _mask_SxSxS_( p, PWLbound1el, ivminel);
-          } : el;
-        } : genarray( _shape_A_( PWLbound1), 0);
+  z = _max_VxV_( PWLbound1, ivmin);
 
   return(z);
 }
 
 inline 
 int[.] partitionIntersectMin( int[.] PWLbound2, int[.] ivmax)
-{ /* Function to perform min( PWLbound2, ivmax), but written to 
-   * let the optimizers simplify the arguments.
-   *  z = min( PWLbound2, ivmax);
+{ /* 
+   * Function to perform min( PWLbound2, ivmax).
    *
    */
 
-  z = with {
-        ( . <= iv=[k] <= .) {
-            PWLbound2el = _idx_sel_( k, PWLbound2);
-            ivmaxel     = _idx_sel_( k, ivmax);
-            p = _le_SxS_( PWLbound2el, ivmaxel);
-            el = _mask_SxSxS_( p, PWLbound2el, ivmaxel);
-          } : el;
-        } : genarray( _shape_A_( PWLbound2), 0);
+  z = _min_VxV_( PWLbound2, ivmax);
   
   return(z);
 }
