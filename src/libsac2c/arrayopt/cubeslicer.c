@@ -570,12 +570,21 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
             /* Slicing and exact intersect criteria */
             // After four kicks at the AWLFI can, give up and slice.
             if (((global.cycle_counter - noteintinsertcycle) > 3)
-                && ((NULL != proj1) && (NULL != proj2))) {
+                && (AWLFIisHasInverseProjection (proj1))
+                && (AWLFIisHasInverseProjection (proj2))) {
                 DBUG_PRINT ("Blind slicing cube at cycle %d", global.cycle_counter);
-#ifdef BROKEN // definitely breaks this:
+#ifdef BROKEN // This definitely breaks a few things:
               // sac2c codingtimeformul.sac -v1  -doawlf -nowlf -noctz
+              // gives wrong answers.
+              // Also, takeAKSunknownAKDVector.sac goes to cube-slicing
+              // heaven, never quite getting the intersect right
+              // for AWLF.
 
-                z = INTERSECT_sliceneeded;
+                This needs to : mark the sel () to force immediate fold AND to mark the
+                                  noteintersect partition somehow.
+
+                                z
+                  = INTERSECT_sliceneeded;
                 SetWLProjections (noteint, intersectListNo, arg_info);
 #endif BROKEN
             }
