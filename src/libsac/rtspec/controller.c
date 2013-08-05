@@ -443,11 +443,19 @@ SAC_handleRequest (queue_node_t *request)
         /* Dynamically link with the new libary. */
         request->reg_obj->dl_handle = dlopen (filename, RTLD_NOW | RTLD_GLOBAL);
 
+        if (do_trace == 1) {
+            SAC_TR_Print ("Runtime specialization: Check handle not being NULL.");
+        }
+
         /* Exit on failure. */
         if (request->reg_obj->dl_handle == NULL) {
             fprintf (stderr, "ERROR -- \t %s\n", dlerror ());
 
             exit (EXIT_FAILURE);
+        }
+
+        if (do_trace == 1) {
+            SAC_TR_Print ("Runtime specialization: Check linking error.");
         }
 
         dlerror ();
