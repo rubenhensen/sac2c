@@ -77,7 +77,7 @@ CVfloatvec2String (floatvec val)
     sprintf (s, "(floatvec){");
 
     for (unsigned i = 0; i < vec_len; i++) {
-        char *t = CVfloat2String (val[i]);
+        char *t = CVfloat2String (FLOATVEC_IDX (val, i));
         sprintf (s, "%s%s%s", s, t, i == vec_len - 1 ? "}" : ", ");
         MEMfree (t);
     }

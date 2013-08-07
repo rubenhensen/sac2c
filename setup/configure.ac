@@ -108,6 +108,27 @@ if test "$GCC" != yes ; then
   CHECK_CPP_FLAG([__APPLE_CC__], [MACC])
 fi
 
+# Check whether CC supports vector operations expressed in GCC form.
+# Normally we would expect that we are dealing with GCC, but if anybody else
+# can support the same syntax -- awesome!
+gcc_supports_simd_operations=
+AC_TRY_COMPILE([],
+  [
+    float __attribute__((vector_size (16))) a, b, c;
+    float x;
+    a = b + c;
+    a = b - c;
+    a = b / c;
+    a = b * c;
+    x = a[0];
+  ],
+  gcc_supports_simd_operations=yes, gcc_supports_simd_operations=no)
+if test "$gcc_supports_simd_operations" = yes; then
+  AC_DEFINE(HAVE_GCC_SIMD_OPERATIONS, 1, [GCC supports for vector operations.])
+else
+  AC_DEFINE(HAVE_GCC_SIMD_OPERATIONS, 0, [GCC does not support vector operations.])
+fi
+
 
 dnl
 dnl check whether popen is an extension

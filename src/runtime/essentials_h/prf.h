@@ -70,6 +70,45 @@
 #define SAC_ND_PRF_GE(arg1, arg2) (arg1) >= (arg2)
 #define SAC_ND_PRF_GT(arg1, arg2) (arg1) > (arg2)
 
+#if HAVE_GCC_SIMD_OPERATIONS
+#define SAC_ND_PRF_EQ_SIMD(arg1, arg2) SAC_ND_PRF_EQ (arg1, arg2)
+#define SAC_ND_PRF_NE_SIMD(arg1, arg2) SAC_ND_PRF_NE (arg1, arg2)
+#define SAC_ND_PRF_LE_SIMD(arg1, arg2) SAC_ND_PRF_LE (arg1, arg2)
+#define SAC_ND_PRF_LT_SIMD(arg1, arg2) SAC_ND_PRF_LT (arg1, arg2)
+#define SAC_ND_PRF_GE_SIMD(arg1, arg2) SAC_ND_PRF_GE (arg1, arg2)
+#define SAC_ND_PRF_GT_SIMD(arg1, arg2) SAC_ND_PRF_GT (arg1, arg2)
+#define SAC_ND_PRF_AND_SIMD(arg1, arg2) SAC_ND_PRF_AND (arg1, arg2)
+#define SAC_ND_PRF_OR_SIMD(arg1, arg2) SAC_ND_PRF_OR (arg1, arg2)
+#define SAC_ND_PRF_ADD_SIMD(arg1, arg2) SAC_ND_PRF_ADD (arg1, arg2)
+#define SAC_ND_PRF_SUB_SIMD(arg1, arg2) SAC_ND_PRF_SUB (arg1, arg2)
+#define SAC_ND_PRF_MUL_SIMD(arg1, arg2) SAC_ND_PRF_MUL (arg1, arg2)
+#define SAC_ND_PRF_DIV_SIMD(arg1, arg2) SAC_ND_PRF_DIV (arg1, arg2)
+#else
+/* NOTE here we substitute the operations that normally are performed
+ * in vector mode with N scalar operations.  Currently we assume that
+ * we only deal with floatvec type which is equivalent to 4 floats.
+ * FIXME generalise for other simd types.
+ * TODO chek if simd operation is not supported.
+ */
+#define SAC_SIMD_WRAPPER(op, a, b)                                                       \
+    ((floatvec){op (FLOATVEC_IDX (a, 0), FLOATVEC_IDX (b, 0)),                           \
+                op (FLOATVEC_IDX (a, 1), FLOATVEC_IDX (b, 1)),                           \
+                op (FLOATVEC_IDX (a, 2), FLOATVEC_IDX (b, 2)),                           \
+                op (FLOATVEC_IDX (a, 3), FLOATVEC_IDX (b, 3))})
+#define SAC_ND_PRF_EQ_SIMD(arg1, arg2) SAC_SIMD_WRAPPER (SAC_ND_PRF_EQ, arg1, arg2)
+#define SAC_ND_PRF_NE_SIMD(arg1, arg2) SAC_SIMD_WRAPPER (SAC_ND_PRF_NE, arg1, arg2)
+#define SAC_ND_PRF_LE_SIMD(arg1, arg2) SAC_SIMD_WRAPPER (SAC_ND_PRF_LE, arg1, arg2)
+#define SAC_ND_PRF_LT_SIMD(arg1, arg2) SAC_SIMD_WRAPPER (SAC_ND_PRF_LT, arg1, arg2)
+#define SAC_ND_PRF_GE_SIMD(arg1, arg2) SAC_SIMD_WRAPPER (SAC_ND_PRF_GE, arg1, arg2)
+#define SAC_ND_PRF_GT_SIMD(arg1, arg2) SAC_SIMD_WRAPPER (SAC_ND_PRF_GT, arg1, arg2)
+#define SAC_ND_PRF_AND_SIMD(arg1, arg2) SAC_SIMD_WRAPPER (SAC_ND_PRF_AND, arg1, arg2)
+#define SAC_ND_PRF_OR_SIMD(arg1, arg2) SAC_SIMD_WRAPPER (SAC_ND_PRF_OR, arg1, arg2)
+#define SAC_ND_PRF_ADD_SIMD(arg1, arg2) SAC_SIMD_WRAPPER (SAC_ND_PRF_ADD, arg1, arg2)
+#define SAC_ND_PRF_SUB_SIMD(arg1, arg2) SAC_SIMD_WRAPPER (SAC_ND_PRF_SUB, arg1, arg2)
+#define SAC_ND_PRF_MUL_SIMD(arg1, arg2) SAC_SIMD_WRAPPER (SAC_ND_PRF_MUL, arg1, arg2)
+#define SAC_ND_PRF_DIV_SIMD(arg1, arg2) SAC_SIMD_WRAPPER (SAC_ND_PRF_DIV, arg1, arg2)
+#endif
+
 #define __type_vector(num, base) base __attribute__ ((vector_size (num * sizeof (base))))
 #define __to_vec(vectype, ptr) (*(vectype *)ptr)
 
@@ -92,12 +131,12 @@
 #define __get_var(var) SAC_ND_GETVAR (var, SAC_ND_A_FIELD (var))
 
 #define SAC_ND_PRF_SIMD_SELSxS__DATA(var, basetype, op, arg1, arg2)                      \
-    __get_var (var) = (arg2)[arg1];
+    __get_var (var) = FLOATVEC_IDX ((arg2), arg1);
 
 #define SAC_ND_PRF_SIMD_MODARRAY(var, basetype, op, arg1, arg2, arg3)                    \
     {                                                                                    \
         __get_var (var) = arg1;                                                          \
-        (__get_var (var))[arg2] = arg3;                                                  \
+        FLOATVEC_IDX ((__get_var (var)), arg2) = arg3;                                   \
     }
 
 #define SAC_ND_PRF_SMxSM__DATA(var, basetype, op, num, arg1, arg2)                       \

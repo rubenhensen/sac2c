@@ -483,7 +483,8 @@ COsimd_sel_SxS (constant *idx, constant *a)
 
     /* Check that SIMD_LENGTH is a proper constant and grab it's value.  */
     co = TYgetValue (a);
-    fval = ((floatvec *)COgetDataVec (co))[0][((int *)CONSTANT_ELEMS (idx))[0]];
+    fval = FLOATVEC_IDX (((floatvec *)COgetDataVec (co))[0],
+                         ((int *)CONSTANT_ELEMS (idx))[0]);
 
     res = COmakeConstantFromFloat (fval);
     DBUG_RETURN (res);

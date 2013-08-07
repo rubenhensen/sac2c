@@ -61,10 +61,11 @@ SUBTARGETS       := $(addsuffix $($(SUBPROJECT)_subtarget_suffix),\
                       $(addsuffix .$($(STYLE)_short),\
                         $(SUBTARGETS_RAW)))
 
-SUBTARGETS_HEADER   := $(addsuffix .h,\
+SUBTARGETS_HEADER   := $(PROJECT_ROOT)/src/include/config.h \
+                       $(addsuffix .h,\
                          $(foreach srcdir,$(runtime_sourcedirs),\
                            $(addprefix ../runtime/$(srcdir)/,\
-                             $(runtime_$(srcdir)))))
+                             $(runtime_$(srcdir))))) 
 #
 # We must treat the header file targets of the runtime subproject differently
 # because some of the libsac source files include sac.h, which creates a 

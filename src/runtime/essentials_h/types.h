@@ -25,7 +25,16 @@
 #undef MUTC
 
 #ifndef FLOATVEC_DEFINED
+#if HAVE_GCC_SIMD_OPERATIONS
 typedef float __attribute__ ((vector_size (4 * sizeof (float)))) floatvec;
+#define FLOATVEC_IDX(vec, idx) (vec)[(idx)]
+#else
+/* You cannot assign static arrays, so we go with struct.  Stupid C!  */
+typedef union {
+    float __flvec_array[4];
+} floatvec;
+#define FLOATVEC_IDX(vec, idx) (vec).__flvec_array[(idx)]
+#endif
 #define FLOATVEC_DEFINED
 #endif
 

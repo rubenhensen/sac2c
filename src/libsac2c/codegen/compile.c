@@ -6747,6 +6747,34 @@ COMPprfOp_V (node *arg_node, info *arg_info)
     DBUG_RETURN (ret_node);
 }
 
+/* This function suppose to catch all the cases when the binary prf was called
+ * with SIMD arguments.  Hopefully all the cases...
+ */
+static inline bool
+is_simd_type (node *n)
+{
+    if (NODE_TYPE (n) == N_floatvec)
+        return TRUE;
+
+    if (NODE_TYPE (n) == N_exprs)
+        n = EXPRS_EXPR (n);
+
+    if (NODE_TYPE (n) == N_id) {
+        node *av = AVIS_DECL (ID_AVIS (n));
+        types *type;
+        if (NODE_TYPE (av) == N_vardec)
+            type = VARDEC_TYPE (av);
+        else if (NODE_TYPE (av) == N_arg)
+            type = ARG_TYPE (av);
+        else
+            DBUG_ASSERT (FALSE, "unexpected node type of avis");
+        return TCgetBasetype (type) == T_floatvec;
+    }
+
+    DBUG_ASSERT (NODE_TYPE (n) != N_ids, "N_ids in binary prf -- WTF?  O_o");
+    return FALSE;
+}
+
 /** <!--********************************************************************-->
  *
  * @fn  node *COMPprfOp_SxS( node *arg_node, info *arg_info)
@@ -6766,6 +6794,8 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
     node *arg1, *arg2;
     node *let_ids;
     node *ret_node;
+    char *prf_orig_name = prf_ccode_tab[PRF_PRF (arg_node)];
+    char *prf_name = prf_orig_name;
 
     DBUG_ENTER ();
 
@@ -6787,8 +6817,18 @@ COMPprfOp_SxS (node *arg_node, info *arg_info)
                   || (TCgetShapeDim (ID_TYPE (arg2)) == SCALAR)),
                  "%s: non-scalar second argument found!",
                  global.prf_name[PRF_PRF (arg_node)]);
+
+    /* Here we have a special case for floatvec.  We are going to append
+     * _SIMD prefix to the name of prf we generate.  The current implementation
+     * is more of a hack.  FIXME implement it properly.
+     */
+    if (is_simd_type (arg1)) {
+        prf_name = MEMmalloc (strlen (prf_orig_name) + strlen ("_SIMD") + 1);
+        sprintf (prf_name, "%s%s", prf_orig_name, "_SIMD");
+    }
+
     ret_node = TCmakeAssignIcm3 ("ND_PRF_SxS__DATA", DUPdupIdsIdNt (let_ids),
-                                 TCmakeIdCopyString (prf_ccode_tab[PRF_PRF (arg_node)]),
+                                 TCmakeIdCopyString (prf_name),
                                  DupExprs_NT_AddReadIcms (PRF_ARGS (arg_node)), NULL);
 
     DBUG_RETURN (ret_node);
