@@ -1204,6 +1204,13 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         // (x + posY) >  x
         SCSECI (F_add_SxS, F_gt_SxS, TRUE, SCSisPositive (Y));
 
+        // (x - nonnegY) <   x         dunno
+        // (x - nonnegY) <=  x
+        SCSECI (F_sub_SxS, F_le_SxS, TRUE, SCSisNonneg (Y));
+        // (x - nonnegY) > x
+        SCSECI (F_sub_SxS, F_gt_SxS, FALSE, SCSisNonneg (Y));
+        // (x - nonnegY) >= x         dunno
+
         // In these functions, myres == FALSE means PRF_ARG2 is the result;
         //                               TRUE means PRF_ARG1 is the result.
         // max( x, min( x, y)) --> x
@@ -1248,6 +1255,13 @@ SCSisRelationalOnDyadicFn (prf fung, node *arg1, node *arg2, info *arg_info, boo
         SCSECI (F_add_SxS, F_ge_SxS, FALSE, SCSisPositive (Y));
         // x >  (x + posY)
         SCSECI (F_add_SxS, F_gt_SxS, FALSE, SCSisPositive (Y));
+
+        // x <  (x - nonnegY)
+        SCSECI (F_sub_SxS, F_lt_SxS, FALSE, SCSisNonneg (Y));
+        // x <= (x - nonnegY)         dunno
+        // x >= (x - nonnegY)
+        SCSECI (F_sub_SxS, F_ge_SxS, TRUE, SCSisNonneg (Y));
+        // x >  (x - nonnegY)         dunno
 
         // max( min( x, y), x) --> x
         SCSECI (F_min_SxS, F_max_SxS, TRUE, TRUE);
