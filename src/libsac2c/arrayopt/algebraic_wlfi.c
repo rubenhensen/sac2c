@@ -841,6 +841,42 @@ GenerateMinMaxForArray (node *ivavis, info *arg_info, bool emax)
 
 /** <!--********************************************************************-->
  *
+ * @fn bool AWLFIisHasAllInverseProjections( node *arg_node)
+ *
+ * @brief: Predicate for presence of inverse projection of arg_node
+ *
+ * @param: arg_node - an F_noteintersect.
+ *
+ * @result: TRUE if arg_node has all inverse projections present.
+ *
+ *****************************************************************************/
+bool
+AWLFIisHasAllInverseProjections (node *arg_node)
+{
+    bool z = TRUE;
+    int intersectListLim;
+    int intersectListNo;
+    node *proj1;
+    node *proj2;
+
+    DBUG_ENTER ();
+
+    intersectListLim = (TCcountExprs (PRF_ARGS (arg_node)) - WLFIRST) / WLEPP;
+    intersectListNo = 0;
+
+    while (z && (intersectListNo < intersectListLim)) {
+        proj1 = TCgetNthExprsExpr (WLPROJECTION1 (intersectListNo), PRF_ARGS (arg_node));
+        proj2 = TCgetNthExprsExpr (WLPROJECTION2 (intersectListNo), PRF_ARGS (arg_node));
+        z = z && AWLFIisHasInverseProjection (proj1);
+        z = z && AWLFIisHasInverseProjection (proj2);
+        intersectListNo++;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool AWLFIisHasInverseProjection( node *arg_node)
  *
  * @brief: Predicate for presence of inverse projection of arg_node

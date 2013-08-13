@@ -18,6 +18,7 @@ extern node *AWLFIfindWlId (node *arg_node);
 extern bool AWLFIisHasNoteintersect (node *arg_node);
 extern bool AWLFIisIdsMemberPartition (node *arg_node, node *partn);
 extern bool AWLFIisHasInverseProjection (node *arg_node);
+extern bool AWLFIisHasAllInverseProjections (node *arg_node);
 extern node *AWLFIoffset2Iv (node *arg_node, node **vardecs, node **preassigns,
                              node *pwlpart);
 extern bool AWLFIisValidNoteintersect (node *arg_node, node *pwlid);
