@@ -101,6 +101,7 @@ struct INFO {
     node *producerpart;             /* PWL part matching CWL */
     node *cutnow;                   /* This CWL partn should be cut now */
     bool isfoldnow;                 /* Fold this partition now. */
+    node *noteintersect;            /* The relevant noteintersect in the N_part */
 };
 
 /**
@@ -119,6 +120,7 @@ struct INFO {
 #define INFO_PRODUCERPART(n) ((n)->producerpart)
 #define INFO_CUTNOW(n) ((n)->cutnow)
 #define INFO_ISFOLDNOW(n) ((n)->isfoldnow)
+#define INFO_NOTEINTERSECT(n) ((n)->noteintersect)
 
 static info *
 MakeInfo (node *fundef)
@@ -142,6 +144,7 @@ MakeInfo (node *fundef)
     INFO_PRODUCERPART (result) = NULL;
     INFO_CUTNOW (result) = NULL;
     INFO_ISFOLDNOW (result) = FALSE;
+    INFO_NOTEINTERSECT (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -1077,6 +1080,113 @@ PartitionSlicer (node *arg_node, info *arg_info, node *lb, node *ub)
 
 /** <!--********************************************************************-->
  *
+ * @fn static node *BuildSubcube(...)
+ *
+ * @params arg_node: an N_part of the consumerWL.
+ *         arg_info: your basic info node
+ *         lb: the generator lower bound for the new partition
+ *         ub: the generator upper bound for the new partition
+ *         step: the generator step for the new partition
+ *         width: the generator width for the new partition
+ *         withid: the WITHID for the new partition
+ *
+ * @result: Build new partition from arg_node and new bounds.
+ *          New N_code node is also built.
+ *
+ * @brief From a consumerWL partition, construct one N_part.
+ *
+ *****************************************************************************/
+static node *
+BuildSubcube (node *arg_node, info *arg_info, node *lb, node *ub, node *step, node *width,
+              node *withid)
+{
+    node *clone;
+    node *newpart;
+    node *genn;
+
+    DBUG_ENTER ();
+    int fixme; // need to check current bounds against new bounds!
+               // and maybe is1Part and/or isNull
+
+    genn = TBmakeGenerator (F_wl_le, F_wl_lt, lb, ub, DUPdoDupNode (step),
+                            DUPdoDupNode (width));
+    clone = CloneCode (PART_CODE (arg_node), arg_info);
+    newpart = TBmakePart (clone, DUPdoDupNode (withid), genn);
+
+    DBUG_RETURN (newpart);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn static node *BuildSubcubes(...)
+ *
+ * @params arg_node: an N_part of the consumerWL.
+ *         arg_info: your basic info node
+ *
+ * @result: 1 or more N_part nodes
+ *          New N_code nodes are also built.
+ *
+ * @brief From a consumerWL partition, construct one N_part
+ *        per noteintersect segment.
+ *
+ *****************************************************************************/
+static node *
+BuildSubcubes (node *arg_node, info *arg_info)
+{
+    node *newpartns = NULL;
+    node *newpart;
+    int partno;
+    int partlim;
+    node *lb;
+    node *ub;
+    node *noteintersect;
+    node *step;
+    node *width;
+    node *withid;
+    pattern *patlb;
+    pattern *patub;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (N_part == NODE_TYPE (arg_node), "Expected N_part");
+
+    patlb = PMarray (1, PMAgetNode (&lb), 1, PMskip (0));
+    patub = PMarray (1, PMAgetNode (&ub), 1, PMskip (0));
+
+    noteintersect = INFO_NOTEINTERSECT (arg_info);
+    partlim = (TCcountExprs (PRF_ARGS (noteintersect)) - WLFIRST) / WLEPP;
+    partno = 0;
+
+    step = GENERATOR_STEP (PART_GENERATOR (arg_node));
+    width = GENERATOR_WIDTH (PART_GENERATOR (arg_node));
+    withid = PART_WITHID (arg_node);
+
+    if (partlim != 1) { // Do not slice simple compositions
+        DBUG_PRINT ("Slicing partition %s into %d pieces",
+                    AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), partlim);
+        while (partno < partlim) {
+            PMmatchFlat (patlb, TCgetNthExprsExpr (WLPROJECTION1 (partno),
+                                                   PRF_ARGS (noteintersect)));
+            PMmatchFlat (patub, TCgetNthExprsExpr (WLPROJECTION2 (partno),
+                                                   PRF_ARGS (noteintersect)));
+            newpart = BuildSubcube (arg_node, arg_info, lb, ub, step, width, withid);
+            newpartns = TCappendPart (newpartns, newpart);
+            partno++;
+        }
+    } else {
+        newpartns = arg_node;
+    }
+
+    patlb = PMfree (patlb);
+    patub = PMfree (patub);
+
+    global.optcounters.cubsl_expr++;
+
+    DBUG_RETURN (newpartns);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn static node *MarkSlicedPartitionFor Folding( node *arg_node,
  *            info *arg_info, node *proj1, node *proj2)
  *
@@ -1300,12 +1410,11 @@ node *
 CUBSLpart (node *arg_node, info *arg_info)
 {
     node *oldconsumerpart;
-    node *partnext;
     node *oldwlprojection1;
     node *oldwlprojection2;
     intersect_type_t oldintersecttype;
-    int partsbefore;
-    int partsafter;
+    bool allprojpresent;
+    node *oldnoteintersect;
 
     DBUG_ENTER ();
 
@@ -1324,6 +1433,8 @@ CUBSLpart (node *arg_node, info *arg_info)
     INFO_WLPROJECTION1 (arg_info) = NULL;
     oldwlprojection2 = INFO_WLPROJECTION2 (arg_info);
     INFO_WLPROJECTION2 (arg_info) = NULL;
+    oldnoteintersect = INFO_NOTEINTERSECT (arg_info);
+    INFO_NOTEINTERSECT (arg_info) = NULL;
 
     DBUG_ASSERT (NULL == INFO_CUTNOW (arg_info), "cutnow confusion");
 
@@ -1336,7 +1447,10 @@ CUBSLpart (node *arg_node, info *arg_info)
     DBUG_PRINT ("CWL partition %s intersect type is %s",
                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
                 IntersectTypeName (INFO_INTERSECTTYPE (arg_info)));
-
+    allprojpresent = AWLFIisHasAllInverseProjections (INFO_NOTEINTERSECT (arg_info));
+    DBUG_PRINT ("CWL partition %s allproj present value is %d",
+                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), allprojpresent);
+#ifdef OLDSCHOOL
     if ((INTERSECT_sliceneeded == INFO_INTERSECTTYPE (arg_info))
         && (NULL != INFO_WLPROJECTION1 (arg_info))
         && (AWLFIisHasInverseProjection (INFO_WLPROJECTION1 (arg_info)))
@@ -1361,12 +1475,19 @@ CUBSLpart (node *arg_node, info *arg_info)
                                                   INFO_WLPROJECTION1 (arg_info),
                                                   INFO_WLPROJECTION2 (arg_info));
     }
+#else  // OLDSCHOOL
+    // blind slicing.
+    if (allprojpresent) {
+        arg_node = BuildSubcubes (arg_node, arg_info);
+    }
+#endif // OLDSCHOOL
 
     INFO_CONSUMERPART (arg_info) = oldconsumerpart;
     INFO_INTERSECTTYPE (arg_info) = oldintersecttype;
     INFO_WLPROJECTION1 (arg_info) = oldwlprojection1;
     INFO_WLPROJECTION2 (arg_info) = oldwlprojection2;
     INFO_CUTNOW (arg_info) = NULL;
+    INFO_NOTEINTERSECT (arg_info) = oldnoteintersect;
 
     DBUG_RETURN (arg_node);
 }
@@ -1452,6 +1573,7 @@ CUBSLprf (node *arg_node, info *arg_info)
              * Side effect of call is to set INFO_CONSUMERPART and
              * INFO_INTERSECTTYPE.
              */
+            INFO_NOTEINTERSECT (arg_info) = noteint;
             INFO_INTERSECTTYPE (arg_info)
               = CUBSLfindMatchingPart (arg_node, INFO_CONSUMERPART (arg_info), pwl,
                                        arg_info, &INFO_PRODUCERPART (arg_info));

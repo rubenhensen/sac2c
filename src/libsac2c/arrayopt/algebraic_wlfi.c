@@ -861,8 +861,9 @@ AWLFIisHasAllInverseProjections (node *arg_node)
 
     DBUG_ENTER ();
 
-    intersectListLim = (TCcountExprs (PRF_ARGS (arg_node)) - WLFIRST) / WLEPP;
+    z = NULL != arg_node;
     intersectListNo = 0;
+    intersectListLim = z ? (TCcountExprs (PRF_ARGS (arg_node)) - WLFIRST) / WLEPP : 0;
 
     while (z && (intersectListNo < intersectListLim)) {
         proj1 = TCgetNthExprsExpr (WLPROJECTION1 (intersectListNo), PRF_ARGS (arg_node));
