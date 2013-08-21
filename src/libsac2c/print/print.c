@@ -4748,6 +4748,9 @@ PRTpart (node *arg_node, info *arg_info)
     tmp_npart = INFO_NPART (arg_info);
     INFO_NPART (arg_info) = arg_node;
 
+    fprintf (global.outfile, "/* Partn */\n"); // For automated partition counting
+                                               // by unit testing code.
+
     if (PART_CUDARIZABLE (arg_node)) {
         INDENT
         fprintf (global.outfile, "/*** CUDA Partition ***/\n");
