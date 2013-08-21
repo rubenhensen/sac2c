@@ -293,14 +293,6 @@ INFNCid (node *arg_node, info *arg_info)
                     AVIS_NEEDCOUNT (avis));
     }
 
-#ifdef HOPEFULLYDEAD
-    AVIS_DIM (avis) = TRAVopt (AVIS_DIM (avis), arg_info);
-    AVIS_SHAPE (avis) = TRAVopt (AVIS_SHAPE (avis), arg_info);
-    AVIS_MIN (avis) = TRAVopt (AVIS_MIN (avis), arg_info);
-    AVIS_MAX (avis) = TRAVopt (AVIS_MAX (avis), arg_info);
-    AVIS_SCALARS (avis) = TRAVopt (AVIS_SCALARS (avis), arg_info);
-#endif // HOPEFULLYDEAD
-
     DBUG_RETURN (arg_node);
 }
 
