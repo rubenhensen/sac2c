@@ -412,6 +412,7 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
     node *producerWLavis;
     node *PWL;
     node *pwlp = NULL;
+    node *noteint;
 
     DBUG_ENTER ();
 
@@ -767,6 +768,8 @@ isSimpleComposition (node *arg_node, node *pwlid, node *cwlids, int defdepth,
 
     DBUG_ENTER ();
 
+#ifdef DEADCODE // CUBSL blind slicing will do this job for us.
+
     pwlwith = AWLFIfindWL (pwlid);
     if ((global.optimize.doscwlf) && (NULL != pwlwith) && (NULL != cwlids)) {
         cwlwith = LET_EXPR (ASSIGN_STMT (AVIS_SSAASSIGN (IDS_AVIS (cwlids))));
@@ -795,6 +798,8 @@ isSimpleComposition (node *arg_node, node *pwlid, node *cwlids, int defdepth,
     // many others. Fewer WLs, supposedly correct answers,
     // but code clearly could never work properly.
     // E.g., matmul with two non-nested WLs. So, disabled for now.
+
+#endif // DEADCODE
 
     DBUG_RETURN (z);
 }
