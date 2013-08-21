@@ -570,6 +570,8 @@ AWLFIfindNoteintersect (node *arg_node)
     PMmatchFlat (pat, arg_node);
     pat = PMfree (pat);
 
+    DBUG_ASSERT ((NULL == z) || (N_prf == NODE_TYPE (z)), "did not find N_prf");
+
     DBUG_RETURN (z);
 }
 
