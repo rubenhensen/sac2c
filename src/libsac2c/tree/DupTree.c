@@ -328,8 +328,10 @@ DUPtreeTravPost (node *arg_node, info *arg_info)
  * Function:
  *   node *DupFlags( node *new_node, node *old_node)
  *
- * Description:
- *
+ * Description: For reasons I do not comprehend, DUP does not
+ *              copy AST flags. This function looks like a kludge
+ *              to achieve selective copying of flags when that
+ *              is needed.
  *
  ******************************************************************************/
 
@@ -343,6 +345,10 @@ DupFlags (node *new_node, node *old_node)
     /* A quick fix to enable cuda unrolling - jgo */
     if (NODE_TYPE (new_node) == N_range) {
         RANGE_NEEDCUDAUNROLL (new_node) = RANGE_NEEDCUDAUNROLL (old_node);
+    }
+
+    if (NODE_TYPE (new_node) == N_prf) {
+        PRF_ISFOLDNOW (new_node) = PRF_ISFOLDNOW (old_node);
     }
 
     DBUG_RETURN (new_node);
