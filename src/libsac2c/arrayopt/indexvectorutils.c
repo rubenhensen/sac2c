@@ -640,7 +640,7 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
     pat5 = PMarray (1, PMAgetNode (&narr), 1, PMskip (0));
 
     arg1 = PRF_ARG1 (arg_node);
-    PMmatchFlat (pat1, arg_node); /* Skip any noteintersect */
+    PMmatchFlat (pat1, arg1); /* Skip any noteintersect */
 
     /* If we have an N_array, we are done. Return its LHS */
     if (PMmatchFlat (pat5, arg1)) {
