@@ -541,6 +541,10 @@ CYCLEPHASEFUN (awlfi, "Inferring algebraically foldable with-loops",
 CYCLEPHASEFUN (cse2, "Eliminating common subexpressions",
                CSEdoCommonSubexpressionElimination, global.optimize.docse, opt, saacyc)
 
+CYCLEPHASEFUN (wlircubsl, "Applying with-loop invariant removal for CUBSL",
+               WLIRdoLoopInvariantRemoval,
+               global.optimize.dowlir &&global.optimize.docubsl, opt, saacyc)
+
 CYCLEPHASEFUN (cubsl, "Slicing algebraically foldable with-loops",
                CUBSLdoAlgebraicWithLoopFoldingCubeSlicing,
                global.optimize.doawlf &&global.optimize.docubsl, opt, saacyc)
