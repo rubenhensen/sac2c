@@ -1180,6 +1180,7 @@ extern node *TCmakeIcm8 (const char *name, node *arg1, node *arg2, node *arg3, n
 
 extern int TCcountParts (node *parts);
 extern node *TCappendPart (node *parts1, node *parts2);
+extern node *TCgetNthPart (node *parts, int n);
 extern bool TCcontainsDefaultPartition (node *parts);
 
 /*--------------------------------------------------------------------------*/

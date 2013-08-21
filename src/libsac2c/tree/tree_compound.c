@@ -3595,6 +3595,36 @@ TCappendPart (node *parts1, node *parts2)
 
 /** <!--********************************************************************-->
  *
+ * @fn node * TCgetNthPart( node *parts, int n)
+ *
+ * @brief Return nth N_part of parts. Origin 0, i.e. n==0 --> first N_part
+ *
+ * @param parts - an N_part
+ *
+ * @return the Nth N_part of parts
+ *
+ *****************************************************************************/
+node *
+TCgetNthPart (node *parts, int n)
+{
+    node *z = NULL;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (parts == NULL || NODE_TYPE (parts) == N_part,
+                 "called with wrong node type.");
+
+    z = parts;
+    while (n != 0) {
+        z = PART_NEXT (z);
+        n--;
+    }
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TCcontainsDefaultPartition( node *parts)
  *
  * @brief
