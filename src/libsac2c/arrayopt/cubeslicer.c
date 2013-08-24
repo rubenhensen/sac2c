@@ -538,6 +538,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
                 && (AWLFIisHasInverseProjection (proj1))
                 && (AWLFIisHasInverseProjection (proj2))) {
                 DBUG_PRINT ("Blind slicing cube at cycle %d", global.cycle_counter);
+#define BROKEN
 #ifdef BROKEN // This definitely breaks a few things:
               // sac2c codingtimeformul.sac -v1  -doawlf -nowlf -noctz
               // gives wrong answers.
@@ -883,14 +884,21 @@ BuildNewNoteintersect (node *newpart, int partno, node *noteintersect, info *arg
     node *iv;
     node *selassgn;
     node *selavis;
+    node *onepart;
 
     DBUG_ENTER ();
 
-    // Select interesting part of F_noteintersect
     ni = DUPdoDupTreeLutSsa (noteintersect, INFO_LUT (arg_info), INFO_FUNDEF (arg_info));
+    // Mark the relevant partition as having a one-partition intersect,
+    // so that it will immediately AWLF.
+    onepart = TCgetNthExprsExpr (WLINTERSECTION1PART (partno), PRF_ARGS (ni));
+    onepart = SCSmakeTrue (onepart);
+    onepart = FLATGexpression2Avis (onepart, &INFO_VARDECS (arg_info),
+                                    &INFO_PREASSIGNSWITH (arg_info), NULL);
+    PRF_ARGS (ni)
+      = TCputNthExprs (WLINTERSECTION1PART (partno), PRF_ARGS (ni), TBmakeId (onepart));
+
 #ifdef CRUD
-    args = PRF_ARGS (ni);
-    PRF_ARGS (ni) = NULL;
     nargs = TCtakeDropExprs (WLFIRST, 0, args);
     ndx = WLFIRST + (partno * WLEPP);
     nargs = TCappendExprs (nargs, TCtakeDropExprs (WLEPP, ndx, args));
@@ -916,6 +924,9 @@ BuildNewNoteintersect (node *newpart, int partno, node *noteintersect, info *arg
     PRF_ARG1 (selprf) = FREEdoFreeNode (PRF_ARG1 (selprf));
     PRF_ARG1 (selprf) = TBmakeId (niavis);
 
+    // Unmark the sel() N_prf.
+    PRF_ISFOLDNOW (selprf) = FALSE;
+
     // Make the F_noteintersect use the sel()'s PRF_ARG1 as its PRF_ARG1
     PRF_ARG1 (ni) = FREEdoFreeNode (PRF_ARG1 (ni));
     PRF_ARG1 (ni) = iv;
@@ -940,7 +951,7 @@ BuildNewNoteintersect (node *newpart, int partno, node *noteintersect, info *arg
  * @params arg_node: an N_part of the consumerWL.
  *         arg_info: your basic info node
  *
- * @result: 1 or more N_part nodes
+ * @result: New N_part node, or NULL (if this is simple composition)
  *          New N_code nodes are also built.
  *
  * @brief From a consumerWL partition, construct one N_part
@@ -962,6 +973,7 @@ BuildSubcubes (node *arg_node, info *arg_info)
     node *withid;
     pattern *patlb;
     pattern *patub;
+    node *assgn;
 
     DBUG_ENTER ();
 
@@ -986,13 +998,15 @@ BuildSubcubes (node *arg_node, info *arg_info)
                                                    PRF_ARGS (noteintersect)));
             PMmatchFlat (patub, TCgetNthExprsExpr (WLPROJECTION2 (partno),
                                                    PRF_ARGS (noteintersect)));
+            // Next two lines are poor man's assertion
+            assgn = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (arg_node)));
+            assgn = FindMarkedSelAssign (assgn);
+
             newpart = BuildSubcube (arg_node, arg_info, lb, ub, step, width, withid);
             newpart = BuildNewNoteintersect (newpart, partno, noteintersect, arg_info);
             newpartns = TCappendPart (newpartns, newpart);
             partno++;
         }
-    } else {
-        newpartns = arg_node;
     }
 
     patlb = PMfree (patlb);
@@ -1025,9 +1039,9 @@ IntersectExactPresent (node *arg_node)
 
     DBUG_ENTER ();
 
-    z = NULL != arg_node;
     intersectListNo = 0;
-    intersectListLim = z ? (TCcountExprs (PRF_ARGS (arg_node)) - WLFIRST) / WLEPP : 0;
+    intersectListLim
+      = (NULL != arg_node) ? (TCcountExprs (PRF_ARGS (arg_node)) - WLFIRST) / WLEPP : 0;
 
     while ((!z) && (intersectListNo < intersectListLim)) {
         onepart = TCgetNthExprsExpr (WLINTERSECTION1PART (intersectListNo),
@@ -1197,6 +1211,7 @@ CUBSLpart (node *arg_node, info *arg_info)
     bool intersectexactpresent;
     node *oldnoteintersect;
     node *newparts;
+    node *newnode;
 
     DBUG_ENTER ();
 
@@ -1239,11 +1254,12 @@ CUBSLpart (node *arg_node, info *arg_info)
     if (allprojpresent && !intersectexactpresent) {
         DBUG_ASSERT (1 == CODE_USED (PART_CODE (arg_node)), "CODE_USED confusion");
         newparts = BuildSubcubes (arg_node, arg_info);
-        // arg_node = FREEdoFreeNode( arg_node);
-        // FIXME
-        int memoryleakhere;
-        arg_node = TCappendPart (newparts, PART_NEXT (arg_node));
-        DBUG_ASSERT (1 == CODE_USED (PART_CODE (arg_node)), "CODE_USED confusion2");
+        if (NULL != newparts) { // We may not have done any work
+            newnode = TCappendPart (newparts, PART_NEXT (arg_node));
+            arg_node = FREEdoFreeNode (arg_node);
+            arg_node = newnode;
+            DBUG_ASSERT (1 == CODE_USED (PART_CODE (arg_node)), "CODE_USED confusion2");
+        }
     }
 
     INFO_CONSUMERPART (arg_info) = oldconsumerpart;
@@ -1309,10 +1325,10 @@ CUBSLprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if ((F_sel_VxA == PRF_PRF (arg_node)) || (F_idx_sel == PRF_PRF (arg_node))) {
-        PRF_ISFOLDNOW (arg_node) = FALSE;
-        noteint = AWLFIfindNoteintersect (PRF_ARG1 (arg_node));
         DBUG_PRINT ("Looking at %s =_sel_VxA_( iv, X)",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+        PRF_ISFOLDNOW (arg_node) = FALSE;
+        noteint = AWLFIfindNoteintersect (PRF_ARG1 (arg_node));
         pwlid = AWLFIfindWlId (PRF_ARG2 (arg_node));
         pwl = AWLFIfindWL (pwlid);
     }
