@@ -17,6 +17,15 @@
  *   Note that DUPTRAV, unlike usual traversal functions, does not fail if its
  *   argument is NULL. Instead, it is the identity on the argument in this case.
  *
+ * NB. DUP does NOT, with rare exceptions, copy flags, and it apparently
+ *     never copies attributes. I consider both of these to be bugs,
+ *     but am leary about messing with it right now.
+ *
+ *     See FLAGSTRUCTURE references for dealing with flags. This could
+ *     better be handled by xml-generated code, or even by the cruder
+ *     switch() in DupFlags
+ *
+ *
  ******************************************************************************/
 
 #include "globals.h"
@@ -345,10 +354,6 @@ DupFlags (node *new_node, node *old_node)
     /* A quick fix to enable cuda unrolling - jgo */
     if (NODE_TYPE (new_node) == N_range) {
         RANGE_NEEDCUDAUNROLL (new_node) = RANGE_NEEDCUDAUNROLL (old_node);
-    }
-
-    if (NODE_TYPE (new_node) == N_prf) {
-        PRF_ISFOLDNOW (new_node) = PRF_ISFOLDNOW (old_node);
     }
 
     DBUG_RETURN (new_node);
@@ -1945,6 +1950,8 @@ DUPprf (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     new_node = TBmakePrf (PRF_PRF (arg_node), DUPTRAV (PRF_ARGS (arg_node)));
+
+    PRF_FLAGSTRUCTURE (new_node) = PRF_FLAGSTRUCTURE (arg_node);
 
     CopyCommonNodeData (new_node, arg_node);
 
