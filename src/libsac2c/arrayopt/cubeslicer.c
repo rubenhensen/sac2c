@@ -558,7 +558,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
 
             if (int1part) {
                 z = INTERSECT_exact;
-                DBUG_PRINT ("exact intersect");
+                DBUG_PRINT ("exact intersect and not NULL");
                 SetWLProjections (noteint, intersectListNo, arg_info);
             }
 
@@ -898,14 +898,6 @@ BuildNewNoteintersect (node *newpart, int partno, node *noteintersect, info *arg
     PRF_ARGS (ni)
       = TCputNthExprs (WLINTERSECTION1PART (partno), PRF_ARGS (ni), TBmakeId (onepart));
 
-#ifdef CRUD
-    nargs = TCtakeDropExprs (WLFIRST, 0, args);
-    ndx = WLFIRST + (partno * WLEPP);
-    nargs = TCappendExprs (nargs, TCtakeDropExprs (WLEPP, ndx, args));
-    PRF_ARGS (ni) = DUPdoDupTree (nargs);
-    FREEdoFreeTree (args);
-#endif // CRUD
-
     // Stick new F_noteintersect before sel().
     assgn = BLOCK_ASSIGNS (CODE_CBLOCK (PART_CODE (newpart)));
     assgn = FindMarkedSelAssign (assgn);
@@ -1048,7 +1040,8 @@ IntersectExactPresent (node *arg_node)
                                      PRF_ARGS (arg_node));
         isnull
           = TCgetNthExprsExpr (WLINTERSECTIONNULL (intersectListNo), PRF_ARGS (arg_node));
-        z = SCSmatchConstantOne (onepart) && SCSmatchConstantZero (isnull);
+        z = SCSmatchConstantOne (onepart);
+        // DEADCODE && SCSmatchConstantZero( isnull);
         intersectListNo++;
     }
 
@@ -1371,6 +1364,10 @@ CUBSLprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+// If exact match, ignore other projections, and
+//
+// let AWLF do its thing.
+//
 /** <!--********************************************************************-->
  * @}  <!-- Algebraic with loop folding cube slicing -->
  *****************************************************************************/
