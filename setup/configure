@@ -5415,7 +5415,7 @@ if  test "$GCC" = yes ; then
 
   CCMTLINK=$GCC_PTHREADS
 
-  CCDLLINK="-ldl -flto"
+  CCDLLINK="-ldl $flags_lto"
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: gcc settings" >&5
 $as_echo "gcc settings" >&6; }
