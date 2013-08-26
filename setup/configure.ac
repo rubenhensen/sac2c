@@ -570,7 +570,7 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CPP, ["gcc -E -P -x c"])
   AC_SUBST(CCMTLINK, [$GCC_PTHREADS])
-  AC_SUBST(CCDLLINK, ["-ldl -flto"])
+  AC_SUBST(CCDLLINK, ["-ldl $flags_lto"])
   AC_MSG_RESULT([gcc settings])
 elif [ test "$SUNC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
