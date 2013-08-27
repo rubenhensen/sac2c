@@ -480,7 +480,8 @@ REUSEprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if ((PRF_PRF (arg_node) == F_sel_VxA) && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
+    if (((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel))
+        && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
         && (!DFMtestMaskEntry (INFO_NEGMASK (arg_info), NULL,
                                ID_AVIS (PRF_ARG2 (arg_node))))
         && IsValidIndex (PRF_ARG1 (arg_node), INFO_IV (arg_info),
@@ -493,9 +494,7 @@ REUSEprf (node *arg_node, info *arg_info)
          */
         DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (PRF_ARG2 (arg_node)));
     } else {
-        if (PRF_ARGS (arg_node) != NULL) {
-            PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
-        }
+        PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
