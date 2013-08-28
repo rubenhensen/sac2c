@@ -1686,6 +1686,7 @@ extern int TCsetDel (node **links, node *link);
 extern int TCsetUnion (node **links, node *add);
 extern bool TCsetContains (node *set, node *link);
 extern bool TCsetIsSubset (node *super, node *sub);
+extern void TCprintSet (node *links);
 
 /*--------------------------------------------------------------------------*/
 

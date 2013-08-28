@@ -3997,6 +3997,31 @@ TCsetIsSubset (node *super, node *sub)
     DBUG_RETURN (result);
 }
 
+/** <!-- ****************************************************************** -->
+ * @fn void TCprintSet( node *set)
+ *
+ * @brief Print set members on stderr
+ *        This was written for debugging N_set stuff.
+ *
+ * @param an N_set
+ *
+ * @return void
+ *
+ ******************************************************************************/
+void
+TCprintSet (node *set)
+{
+
+    DBUG_ENTER ();
+
+    while (set != NULL) {
+        fprintf (stderr, "%s\n", AVIS_NAME (IDS_AVIS (SET_MEMBER (set))));
+        set = SET_NEXT (set);
+    }
+
+    DBUG_RETURN ();
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***
