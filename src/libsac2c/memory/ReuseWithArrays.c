@@ -219,11 +219,10 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
      *
      * Case 2:
      *
-     * [i0, i1, i2, i3, ...] => the scalars are a prefix of ivids
-     *                          or ivids is a prefix of the scalars
+     * [i0, i1, i2, i3, ...] => Case 2a: the scalars are a prefix of ivids, or
+     *                          Case 2b: ivids is a prefix of the scalars
      *
-     *  NB. The former case is not implemented directly here, but
-     *      I think arises from the catenate Case 1.
+     *  NB. Case 2a is not implemented here, from what I can see.
      *
      * Case 3:
      *
