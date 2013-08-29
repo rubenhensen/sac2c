@@ -655,7 +655,9 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
              */
             z = ID_AVIS (iv);
         } else { /* May be withid_vec. If so, get withid_ids */
-            if ((NULL != cwlpart) && (IVUTivMatchesWithid (iv, PART_WITHID (cwlpart)))) {
+            if ((NULL != cwlpart)
+                && (IVUTisIvMatchesWithid (iv, WITHID_VEC (PART_WITHID (cwlpart)),
+                                           WITHID_IDS (PART_WITHID (cwlpart))))) {
                 z = TCconvertIds2Exprs (WITHID_IDS (PART_WITHID (cwlpart)));
                 z = CreateIvArray (z, vardecs, preassigns);
             }
@@ -724,7 +726,7 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
  *                       offset in _idx_sel_( offset, PWL).
  *        Try to map arg_node back to the producerWL WITHID_VEC.
  *
- * @return: the desired WITHID_VEC avis node, if we can find it, or NULL.
+ * @return: the WITHID_VEC avis node, if we can find it, or NULL.
  *
  *****************************************************************************/
 node *
@@ -741,8 +743,8 @@ IVUTfindIvWith (node *arg_node, node *cwlpart)
     DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
-    pat2 = PMprf (1, PMAgetPrf (&ivprf), 2, PMany (1, PMAgetNode (&arg1), 0),
-                  PMany (1, PMAgetNode (&arg2), 0), 0);
+    pat2 = PMprf (1, PMAgetPrf (&ivprf), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                  PMvar (1, PMAgetNode (&arg2), 0), 0);
 
     if (0 != TYgetDim (AVIS_TYPE (ID_AVIS (arg_node)))) { /* _sel_VxA_() case */
         z = ID_AVIS (arg_node);
@@ -764,7 +766,6 @@ IVUTfindIvWith (node *arg_node, node *cwlpart)
                     && (1 == TCcountIds (WITHID_IDS (PART_WITHID (cwlpart))))) {
                     DBUG_PRINT ("confusion   look for pwlpart WITHIDS here");
                     z = NULL; /* FIXME */
-                    z = NULL;
                 }
             }
         }
@@ -778,7 +779,11 @@ IVUTfindIvWith (node *arg_node, node *cwlpart)
     pat = PMfree (pat);
     pat2 = PMfree (pat2);
 
-    DBUG_ASSERT (NULL != z, "Unable to locate iv from offset");
+    // Give up if result does not match the desired WITHID_VEC.
+    if ((NULL != z) && (NULL != cwlpart)
+        && (z != IDS_AVIS (WITHID_VEC (PART_WITHID (cwlpart))))) {
+        z = NULL;
+    }
 
     DBUG_RETURN (z);
 }
@@ -791,7 +796,8 @@ IVUTfindIvWith (node *arg_node, node *cwlpart)
  *        Try to find the vect2offset it came from, and return its
  *        PRF_ARG2.
  *
- * @return: the N_id of the PRF_ARG2 node.
+ * @return: the N_id of the PRF_ARG2 node, or NULL if we could not
+ *          find it.
  *
  *****************************************************************************/
 node *
@@ -884,16 +890,20 @@ IVUToffsetMatchesOffset (node *offset1, node *offset2)
 
 /** <!--********************************************************************-->
  *
- * @fn bool IVUTivMatchesWithid( node *iv, node *withid);
+ * @fn bool IVUTisIvMatchesWithid( node *iv, node *withidvec, node *withidids);
  *
- * @brief iv is an N_id node. withid is an N_withid node.
+ * @brief See if iv is either WITHID_VEC or WITHID_IDS
  *        We skip guards and extrema in this search.
  *
- * @return: TRUE if iv matches the WITHID.
+ * @param iv is an N_id node.
+ * @param withidvec is an N_ids WITHID_VEC node.
+ * @param withidids is a WITHID_IDS chain
+ *
+ * @return: TRUE if iv matches WITHID_VEC or WITHIDS_IDS
  *
  *****************************************************************************/
 bool
-IVUTivMatchesWithid (node *iv, node *withid)
+IVUTisIvMatchesWithid (node *iv, node *withidvec, node *withidids)
 {
     bool z = FALSE;
     pattern *pat;
@@ -913,14 +923,14 @@ IVUTivMatchesWithid (node *iv, node *withid)
             break;
 
         case N_id:
-            z = (IDS_AVIS (WITHID_VEC (withid)) == ID_AVIS (iv2));
+            z = (NULL != withidvec) && (IDS_AVIS (withidvec) == ID_AVIS (iv2));
             break;
 
         case N_array:
             /* We have to skip over extrema and guards when comparing these items */
             aelems = ARRAY_AELEMS (iv2);
-            ids = WITHID_IDS (withid);
-            z = TRUE;
+            ids = withidids;
+            z = (NULL != ids);
             while ((NULL != aelems) && (NULL != ids) && (NULL != EXPRS_EXPR (aelems))
                    && (TRUE == z)
                    && (PMmatchFlatSkipExtremaAndGuards (pat, EXPRS_EXPR (aelems)))

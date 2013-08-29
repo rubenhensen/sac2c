@@ -12,6 +12,7 @@
  *         genarray( ...)                      modarray( B, ...)
  *
  * In modarray with-loops we can possibly reuse "B".
+ *
  * In modarray/genarray with-loops we can possibly reuse all arrays ("C")
  * found in <assigns> with the following characteristics:
  *
@@ -22,7 +23,9 @@
  *          "sel( idx, C)"
  *      where the current index-vector of the potentially nested
  *      withloops is a prefix of idx.
+ *
  *      [Otherwise reuse might miss data dependencies!]
+ *
  * </pre>
  *
  * @ingroup mm
@@ -55,6 +58,8 @@
 #include "memory.h"
 #include "new_types.h"
 #include "pattern_match.h"
+#include "indexvectorutils.h"
+#include "DupTree.h"
 
 /** <!--********************************************************************-->
  *
@@ -67,12 +72,14 @@ struct INFO {
     node *ivids;
     dfmask_t *mask;
     dfmask_t *negmask;
+    node *partn;
 };
 
 #define INFO_IV(n) ((n)->iv)
 #define INFO_IVIDS(n) ((n)->ivids)
 #define INFO_MASK(n) ((n)->mask)
 #define INFO_NEGMASK(n) ((n)->negmask)
+#define INFO_PARTN(n) ((n)->partn)
 
 static info *
 MakeInfo (void)
@@ -87,6 +94,7 @@ MakeInfo (void)
     INFO_IVIDS (result) = NULL;
     INFO_MASK (result) = NULL;
     INFO_NEGMASK (result) = NULL;
+    INFO_PARTN (result) = NULL;
 
     DBUG_RETURN (result);
 }
@@ -177,42 +185,89 @@ REUSEdoGetReuseArrays (node *with, node *fundef)
  * @param index node representing index under investigation
  * @param ivs   set of index vectors
  * @param ivids set of index scalars
+ * @param partn N_part of innermost WL
  *
  * @return true iff the index is valid
+ *
+ *
  *****************************************************************************/
 static bool
-IsValidIndexHelper (node *index, node **ivs, node **ivids)
+IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
 {
     node *array;
     node *aexprs = NULL;
-    node *rest = NULL;
     node *iv1 = NULL;
     node *iv2 = NULL;
+    node *iv = NULL;
+    node *ivavis = NULL;
+    node *ividselem = NULL;
     pattern *pat1, *pat2;
+    pattern *pat3;
+    pattern *pat4;
+    node *index2 = NULL;
     bool result = FALSE;
 
     DBUG_ENTER ();
 
     /*
-     * index can be
+     * index can be:
+     *
+     * Case 1:
      *
      * iv1 ++ iv2 : result is true iff  iv1 is prefix of current ivs
      *                                  && iv2 is valid index for the remainder
      *
+     * Case 2:
+     *
      * [i0, i1, i2, i3, ...] => the scalars are a prefix of ivids
      *                          or ivids is a prefix of the scalars
      *
-     * iv : result is true iff iv is in ivs
+     *  NB. The former case is not implemented directly here, but
+     *      I think arises from the catenate Case 1.
+     *
+     * Case 3:
+     *
+     *     iv : result is true iff iv is in ivs
+     *
+     * Case 4: index is an offset for _idx_sel( offset, mat), created
+     *         by vect2offset or idxs2offset.
      *
      */
+
     pat1 = PMprf (1, PMAisPrf (F_cat_VxV), 2, PMvar (1, PMAgetNode (&iv1), 0),
                   PMvar (1, PMAgetNode (&iv2), 0));
     pat2 = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
+    pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&iv1), 0),
+                  PMvar (1, PMAgetNode (&iv2), 0));
+    pat4 = PMprf (1, PMAisPrf (F_idxs2offset), 2, PMvar (1, PMAgetNode (&iv1), 0),
+                  PMvar (1, PMAgetNode (&iv2), 0));
 
-    if (PMmatchFlat (pat1, index)) {
-        result
-          = IsValidIndexHelper (iv1, ivs, ivids) && IsValidIndexHelper (iv2, ivs, ivids);
-    } else if (PMmatchFlat (pat2, index)) {
+    // First, we try to map Case 4 into Case 2.
+    if (PMmatchFlat (pat3, index)) {
+        iv = IVUTfindOffset2Iv (index);
+        if (NULL != iv) {
+            index2 = DUPdoDupNode (iv); // Dup so we can free it later
+        }
+    }
+
+    if (index2 == NULL) {
+        ivavis = IVUTfindIvWith (index, partn);
+        if (NULL != ivavis) {
+            index2 = TBmakeId (ivavis);
+        }
+    }
+
+    index2 = (NULL == index2) ? DUPdoDupNode (index) : index2;
+
+    // Now, do the dirty work.
+
+    if (PMmatchFlat (pat1, index2)) {
+        // Case 1
+        result = IsValidIndexHelper (iv1, ivs, ivids, partn)
+                 && IsValidIndexHelper (iv2, ivs, ivids, partn);
+
+    } else if (PMmatchFlat (pat2, index2)) {
+        // Case 2b: ivids matches prefix of scalars
         result = TRUE;
         aexprs = ARRAY_AELEMS (array);
 
@@ -221,38 +276,42 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids)
                (SET_MEMBER (*ivids) != NULL) && /* this level has idx scalars */
                (aexprs != NULL)) {              /* more elements in index */
 
-            node *tmp = TCids2Exprs (SET_MEMBER (*ivids));
-
-            result = PMO (PMOexprs (&rest, PMOpartExprs (tmp, aexprs)));
-
-            tmp = FREEdoFreeTree (tmp);
-            aexprs = rest;
-            rest = NULL;
+            ividselem = IDS_AVIS (SET_MEMBER (*ivids));
+            result = ividselem == ID_AVIS (EXPRS_EXPR (aexprs));
+            aexprs = EXPRS_NEXT (aexprs);
 
             *ivs = SET_NEXT (*ivs);
             *ivids = SET_NEXT (*ivids);
         }
-    } else if ((NODE_TYPE (index) == N_id)
-               && (ID_AVIS (index) == IDS_AVIS (SET_MEMBER (*ivs)))) {
-        *ivs = SET_NEXT (*ivs);
-        *ivids = SET_NEXT (*ivids);
-
-        result = TRUE;
+    } else if ((NODE_TYPE (index2) == N_id)) {
+        // Case 3: index matches WITHID_VEC.
+        if (IVUTisIvMatchesWithid (index2, SET_MEMBER (*ivs), SET_MEMBER (*ivids))) {
+            *ivs = SET_NEXT (*ivs);
+            *ivids = SET_NEXT (*ivids);
+            result = TRUE;
+        }
     }
+
+    index2 = (NULL != index2) ? FREEdoFreeNode (index2) : NULL;
+
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
+    pat3 = PMfree (pat3);
+    pat4 = PMfree (pat4);
+    int DEADCODE;
 
     DBUG_RETURN (result);
 }
 
 static bool
-IsValidIndex (node *index, node *ivs, node *ivids)
+IsValidIndex (node *index, node *ivs, node *ivids, node *partn)
 {
     bool result;
 
     DBUG_ENTER ();
 
-    result = IsValidIndexHelper (index, &ivs, &ivids) && (ivs == NULL) && (ivids == NULL);
+    result = IsValidIndexHelper (index, &ivs, &ivids, partn) && (ivs == NULL)
+             && (ivids == NULL);
 
     DBUG_RETURN (result);
 }
@@ -325,8 +384,12 @@ REUSEwith (node *arg_node, info *arg_info)
 node *
 REUSEpart (node *arg_node, info *arg_info)
 {
+    node *oldpartn;
+
     DBUG_ENTER ();
 
+    oldpartn = INFO_PARTN (arg_info);
+    INFO_PARTN (arg_info) = arg_node;
     /*
      * add current index information to sets
      */
@@ -343,9 +406,9 @@ REUSEpart (node *arg_node, info *arg_info)
     INFO_IV (arg_info) = TCdropSet (-1, INFO_IV (arg_info));
     INFO_IVIDS (arg_info) = TCdropSet (-1, INFO_IVIDS (arg_info));
 
-    if (NULL != PART_NEXT (arg_node)) {
-        PART_NEXT (arg_node) = TRAVdo (PART_NEXT (arg_node), arg_info);
-    }
+    PART_NEXT (arg_node) = TRAVopt (PART_NEXT (arg_node), arg_info);
+
+    INFO_PARTN (arg_info) = oldpartn;
 
     DBUG_RETURN (arg_node);
 }
@@ -368,13 +431,9 @@ REUSEgenarray (node *arg_node, info *arg_info)
 
     GENARRAY_SHAPE (arg_node) = TRAVdo (GENARRAY_SHAPE (arg_node), arg_info);
 
-    if (GENARRAY_DEFAULT (arg_node) != NULL) {
-        GENARRAY_DEFAULT (arg_node) = TRAVdo (GENARRAY_DEFAULT (arg_node), arg_info);
-    }
+    GENARRAY_DEFAULT (arg_node) = TRAVopt (GENARRAY_DEFAULT (arg_node), arg_info);
 
-    if (GENARRAY_NEXT (arg_node) != NULL) {
-        GENARRAY_NEXT (arg_node) = TRAVdo (GENARRAY_NEXT (arg_node), arg_info);
-    }
+    GENARRAY_NEXT (arg_node) = TRAVopt (GENARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -406,9 +465,7 @@ REUSEmodarray (node *arg_node, info *arg_info)
                             ID_AVIS (MODARRAY_ARRAY (arg_node)));
     }
 
-    if (MODARRAY_NEXT (arg_node) != NULL) {
-        MODARRAY_NEXT (arg_node) = TRAVdo (MODARRAY_NEXT (arg_node), arg_info);
-    }
+    MODARRAY_NEXT (arg_node) = TRAVopt (MODARRAY_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -431,9 +488,7 @@ REUSEfold (node *arg_node, info *arg_info)
 
     FOLD_NEUTRAL (arg_node) = TRAVdo (FOLD_NEUTRAL (arg_node), arg_info);
 
-    if (FOLD_NEXT (arg_node) != NULL) {
-        FOLD_NEXT (arg_node) = TRAVdo (FOLD_NEXT (arg_node), arg_info);
-    }
+    FOLD_NEXT (arg_node) = TRAVopt (FOLD_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -461,9 +516,8 @@ REUSElet (node *arg_node, info *arg_info)
     /*
      * removes all left hand side ids from the reuse-mask
      */
-    if (LET_IDS (arg_node) != NULL) {
-        LET_IDS (arg_node) = TRAVdo (LET_IDS (arg_node), arg_info);
-    }
+
+    LET_IDS (arg_node) = TRAVopt (LET_IDS (arg_node), arg_info);
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
@@ -484,8 +538,8 @@ REUSEprf (node *arg_node, info *arg_info)
         && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
         && (!DFMtestMaskEntry (INFO_NEGMASK (arg_info), NULL,
                                ID_AVIS (PRF_ARG2 (arg_node))))
-        && IsValidIndex (PRF_ARG1 (arg_node), INFO_IV (arg_info),
-                         INFO_IVIDS (arg_info))) {
+        && IsValidIndex (PRF_ARG1 (arg_node), INFO_IV (arg_info), INFO_IVIDS (arg_info),
+                         INFO_PARTN (arg_info))) {
 
         /*
          * 'arg2' is used in a WL-sel that only references
@@ -516,9 +570,7 @@ REUSEids (node *arg_node, info *arg_info)
     DFMsetMaskEntryClear (INFO_MASK (arg_info), NULL, IDS_AVIS (arg_node));
     DFMsetMaskEntrySet (INFO_NEGMASK (arg_info), NULL, IDS_AVIS (arg_node));
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -531,7 +583,7 @@ REUSEids (node *arg_node, info *arg_info)
  * description:
  *   Removes 'arg_node' from the reuse-mask ('INFO_MASK( arg_info)')
  *   and inserts it into the no-reuse-mask ('INFO_NEGMASK( arg_info)'),
- *   because this is an occur on a right hand side of an assignment.
+ *   because this is a reference on the right hand side of an assignment.
  *
  ******************************************************************************/
 

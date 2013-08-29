@@ -246,7 +246,7 @@ ivMatchCase1 (node *withid, node *cexpr)
 
     if ((NULL == z) && (PMmatchFlatSkipGuards (pat2, cexpr))
         && (PMmatchFlatSkipExtremaAndGuards (pat3, offset))
-        && (IVUTivMatchesWithid (iv, withid))) {
+        && (IVUTisIvMatchesWithid (iv, WITHID_VEC (withid), WITHID_IDS (withid)))) {
         z = ID_AVIS (srcwl);
         DBUG_PRINT ("Case 2: body matches _idx_sel( offset, pwl) with pwl=%s",
                     AVIS_NAME (z));
