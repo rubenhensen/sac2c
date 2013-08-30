@@ -203,9 +203,9 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
     node *ividselem = NULL;
     pattern *pat1, *pat2;
     pattern *pat3;
-    pattern *pat4;
     node *index2 = NULL;
     bool result = FALSE;
+    bool madeNid = FALSE;
 
     DBUG_ENTER ();
 
@@ -216,6 +216,10 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
      *
      * iv1 ++ iv2 : result is true iff  iv1 is prefix of current ivs
      *                                  && iv2 is valid index for the remainder
+     *
+     *              Since this function is recursive, it also supports:
+     *                iv1 ++ iv2 ++iv2
+     *              and Case 1 in combination with Case 2 and Case 3.
      *
      * Case 2:
      *
@@ -238,14 +242,12 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
     pat2 = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
     pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&iv1), 0),
                   PMvar (1, PMAgetNode (&iv2), 0));
-    pat4 = PMprf (1, PMAisPrf (F_idxs2offset), 2, PMvar (1, PMAgetNode (&iv1), 0),
-                  PMvar (1, PMAgetNode (&iv2), 0));
-
     // First, we try to map Case 4 into Case 2.
+
     if (PMmatchFlat (pat3, index)) {
         iv = IVUTfindOffset2Iv (index);
         if (NULL != iv) {
-            index2 = DUPdoDupNode (iv); // Dup so we can free it later
+            index2 = iv;
         }
     }
 
@@ -253,15 +255,16 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
         ivavis = IVUTfindIvWith (index, partn);
         if (NULL != ivavis) {
             index2 = TBmakeId (ivavis);
+            madeNid = TRUE;
         }
     }
 
-    index2 = (NULL == index2) ? DUPdoDupNode (index) : index2;
+    index2 = (NULL == index2) ? index : index2;
 
     // Now, do the dirty work.
 
     if (PMmatchFlat (pat1, index2)) {
-        // Case 1
+        // Case 1:  ivs matches iv1 ++ iv2
         result = IsValidIndexHelper (iv1, ivs, ivids, partn)
                  && IsValidIndexHelper (iv2, ivs, ivids, partn);
 
@@ -291,13 +294,11 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
         }
     }
 
-    index2 = (NULL != index2) ? FREEdoFreeNode (index2) : NULL;
+    index2 = madeNid ? FREEdoFreeNode (index2) : NULL;
 
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
-    pat4 = PMfree (pat4);
-    int DEADCODE;
 
     DBUG_RETURN (result);
 }

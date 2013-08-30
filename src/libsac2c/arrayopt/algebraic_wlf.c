@@ -760,15 +760,15 @@ isSimpleComposition (node *arg_node, node *pwlid, node *cwlids, int defdepth,
                      node *cwlpart)
 {
     bool z = FALSE;
+
+    DBUG_ENTER ();
+
+#ifdef DEADCODE // CUBSL blind slicing will do this job for us.
     node *pwlwith;
     node *cwlwith;
     node *noteint;
     node *proj1;
     node *proj2;
-
-    DBUG_ENTER ();
-
-#ifdef DEADCODE // CUBSL blind slicing will do this job for us.
 
     pwlwith = AWLFIfindWL (pwlid);
     if ((global.optimize.doscwlf) && (NULL != pwlwith) && (NULL != cwlids)) {

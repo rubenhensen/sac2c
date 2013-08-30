@@ -100,7 +100,7 @@ struct INFO {
     intersect_type_t intersecttype; /* intersect type. see enum */
     lut_t *lut;                     /* LUT for renaming */
     node *producerpart;             /* PWL part matching CWL */
-    node *cutnow;                   /* This CWL partn should be cut now */
+    bool cutnow;                    /* Cut this CWL partn now */
     bool isfoldnow;                 /* Fold this partition now. */
     node *noteintersect;            /* The relevant noteintersect in the N_part */
 };
@@ -143,7 +143,7 @@ MakeInfo (node *fundef)
     INFO_INTERSECTTYPE (result) = INTERSECT_unknown;
     INFO_LUT (result) = NULL;
     INFO_PRODUCERPART (result) = NULL;
-    INFO_CUTNOW (result) = NULL;
+    INFO_CUTNOW (result) = FALSE;
     INFO_ISFOLDNOW (result) = FALSE;
     INFO_NOTEINTERSECT (result) = NULL;
 
@@ -872,10 +872,7 @@ static node *
 BuildNewNoteintersect (node *newpart, int partno, node *noteintersect, info *arg_info)
 {
     node *z;
-    int ndx;
     node *ni;
-    node *args;
-    node *nargs;
     node *assgn;
     node *niavis;
     ntype *restype;
@@ -1127,6 +1124,7 @@ CUBSLassign (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    DBUG_ASSERT (!INFO_CUTNOW (arg_info), "more cutnow confusion");
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
 
     if ((N_let == NODE_TYPE (ASSIGN_STMT (arg_node)))
@@ -1139,7 +1137,7 @@ CUBSLassign (node *arg_node, info *arg_info)
     /*
      * Top-down traversal, unless we have found a partn to slice.
      */
-    if (NULL == INFO_CUTNOW (arg_info)) {
+    if (!INFO_CUTNOW (arg_info)) {
         ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
     }
 
@@ -1200,8 +1198,6 @@ CUBSLpart (node *arg_node, info *arg_info)
     node *oldwlprojection1;
     node *oldwlprojection2;
     intersect_type_t oldintersecttype;
-    bool allprojpresent;
-    bool intersectexactpresent;
     node *oldnoteintersect;
     node *newparts;
     node *newnode;
@@ -1226,7 +1222,7 @@ CUBSLpart (node *arg_node, info *arg_info)
     oldnoteintersect = INFO_NOTEINTERSECT (arg_info);
     INFO_NOTEINTERSECT (arg_info) = NULL;
 
-    DBUG_ASSERT (NULL == INFO_CUTNOW (arg_info), "cutnow confusion");
+    DBUG_ASSERT (!INFO_CUTNOW (arg_info), "cutnow confusion");
 
     DBUG_PRINT ("traversing code block for %s",
                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
@@ -1237,14 +1233,9 @@ CUBSLpart (node *arg_node, info *arg_info)
     DBUG_PRINT ("CWL partition %s intersect type is %s",
                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
                 IntersectTypeName (INFO_INTERSECTTYPE (arg_info)));
-    allprojpresent = AWLFIisHasAllInverseProjections (INFO_NOTEINTERSECT (arg_info));
-    intersectexactpresent = IntersectExactPresent (INFO_NOTEINTERSECT (arg_info));
-    DBUG_PRINT ("CWL partition %s allprojpresent value=%d; intersectexactpresent=%d",
-                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), allprojpresent,
-                intersectexactpresent);
 
     // blind slicing.
-    if (allprojpresent && !intersectexactpresent) {
+    if (INFO_CUTNOW (arg_info)) {
         DBUG_ASSERT (1 == CODE_USED (PART_CODE (arg_node)), "CODE_USED confusion");
         newparts = BuildSubcubes (arg_node, arg_info);
         if (NULL != newparts) { // We may not have done any work
@@ -1259,7 +1250,7 @@ CUBSLpart (node *arg_node, info *arg_info)
     INFO_INTERSECTTYPE (arg_info) = oldintersecttype;
     INFO_WLPROJECTION1 (arg_info) = oldwlprojection1;
     INFO_WLPROJECTION2 (arg_info) = oldwlprojection2;
-    INFO_CUTNOW (arg_info) = NULL;
+    INFO_CUTNOW (arg_info) = FALSE;
     INFO_NOTEINTERSECT (arg_info) = oldnoteintersect;
 
     DBUG_RETURN (arg_node);
@@ -1352,7 +1343,7 @@ CUBSLprf (node *arg_node, info *arg_info)
                                        arg_info, &INFO_PRODUCERPART (arg_info));
             if ((INTERSECT_exact != INFO_INTERSECTTYPE (arg_info)) && (NULL != noteint)
                 && (AWLFIisHasAllInverseProjections (noteint))) {
-                INFO_CUTNOW (arg_info) = INFO_CONSUMERPART (arg_info);
+                INFO_CUTNOW (arg_info) = TRUE;
                 PRF_ISFOLDNOW (arg_node) = TRUE;
                 DBUG_PRINT ("Marked for slicing: %s=sel( iv, %s)",
                             AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))),
@@ -1364,10 +1355,6 @@ CUBSLprf (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-// If exact match, ignore other projections, and
-//
-// let AWLF do its thing.
-//
 /** <!--********************************************************************-->
  * @}  <!-- Algebraic with loop folding cube slicing -->
  *****************************************************************************/
