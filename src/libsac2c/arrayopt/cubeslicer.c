@@ -996,6 +996,10 @@ BuildSubcubes (node *arg_node, info *arg_info)
             newpartns = TCappendPart (newpartns, newpart);
             partno++;
         }
+    } else {
+        // Simple composition merely gets marked for folding
+        newpartns = DUPdoDupNode (arg_node);
+        newpartns = BuildNewNoteintersect (newpartns, partno, noteintersect, arg_info);
     }
 
     patlb = PMfree (patlb);
