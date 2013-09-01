@@ -61,7 +61,7 @@
  *                           where a::int[n]{vec} and vec contains a 0
  *    5) ( lb <= iv <= ub width [v1,...,vn])
  *                           where exists i such that vi == 0
- *   In ase any of these is true, it returns TRUE.
+ *   If any of these is true, it returns TRUE.
  *
  *****************************************************************************/
 
