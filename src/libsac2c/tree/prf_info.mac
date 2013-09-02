@@ -349,11 +349,11 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
        PPIgetPVVxV, ICCsameShape, TEone, NULL, NULL),
 
   PRF (mod_SxS, (PA_S, PA_S, PA_x), 2, MOD, NOSIMD, NTCCTprf_int_op_SxS, COmod,
-       COMPprfOp_SxS, SCSprf_mod, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
+       COMPprfOp_SxS, SCSprf_mod_SxS, NULL, NULL, SAAdim_is_0, SAAshp_is_empty, NULL, 0,
        PPIgetPVSxS, ICCnone, TEone, NULL, NULL),
 
   PRF (mod_SxV, (PA_S, PA_V, PA_x), 2, MOD, NOSIMD, NTCCTprf_int_op_SxV, COmod,
-       COMPprfOp_SxV, SCSprf_mod_SxV, NULL, NULL, SAAdim_is_1, SAAshp_of_arg2, NULL, 0,
+       COMPprfOp_SxV, SCSprf_mod, NULL, NULL, SAAdim_is_1, SAAshp_of_arg2, NULL, 0,
        PPIgetPVSxV, ICCnone, TEone, NULL, NULL),
 
   PRF (mod_VxS, (PA_V, PA_S, PA_x), 2, MOD, NOSIMD, NTCCTprf_int_op_VxS, COmod,

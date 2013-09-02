@@ -68,7 +68,7 @@ extern node *SCSprf_or_SxV (node *arg_node, info *arg_info);
 extern node *SCSprf_or_VxS (node *arg_node, info *arg_info);
 extern node *SCSprf_or_VxV (node *arg_node, info *arg_info);
 extern node *SCSprf_mod (node *arg_node, info *arg_info);
-extern node *SCSprf_mod_SxV (node *arg_node, info *arg_info);
+extern node *SCSprf_mod_SxS (node *arg_node, info *arg_info);
 extern node *SCSprf_aplmod (node *arg_node, info *arg_info);
 extern node *SCSprf_aplmod_SxV (node *arg_node, info *arg_info);
 extern node *SCSprf_eq_SxS (node *arg_node, info *arg_info);

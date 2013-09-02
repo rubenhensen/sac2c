@@ -1939,7 +1939,37 @@ SCSprf_and_VxV (node *arg_node, info *arg_info)
 
 /** <!--********************************************************************-->
  *
+ * @fn node *SCSprf_mod_SxS( node *arg_node, info *arg_info)
+ *
+ * @brief: If both args are positive, and arg1<arg2,
+ *         then the result is arg1.
+ *
+ *****************************************************************************/
+node *
+SCSprf_mod_SxS (node *arg_node, info *arg_info)
+{
+    node *res = NULL;
+    bool z = FALSE;
+
+    DBUG_ENTER ();
+
+    if ((SCSisPositive (PRF_ARG1 (arg_node))) && (SCSisPositive (PRF_ARG2 (arg_node)))) {
+        res = SAACFonRelationalsWithExtrema (PRF_ARG1 (arg_node), PRF_ARG2 (arg_node),
+                                             NULL, F_lt_SxS);
+        if (NULL != res) {
+            FREEdoFreeNode (res);
+            res = DUPdoDupNode (PRF_ARG1 (arg_node));
+        }
+    }
+
+    DBUG_RETURN (res);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn node *SCSprf_mod( node *arg_node, info *arg_info)
+ *
+ * @brief:
  *
  *****************************************************************************/
 node *
@@ -1971,21 +2001,6 @@ SCSprf_aplmod (node *arg_node, info *arg_info)
     if (SCSmatchConstantZero (PRF_ARG2 (arg_node))) {
         res = DUPdoDupNode (PRF_ARG1 (arg_node));
     }
-
-    DBUG_RETURN (res);
-}
-
-/** <!--********************************************************************-->
- *
- * @fn node *SCSprf_mod_SxV( node *arg_node, info *arg_info)
- *
- *****************************************************************************/
-node *
-SCSprf_mod_SxV (node *arg_node, info *arg_info)
-{
-    node *res = NULL;
-
-    DBUG_ENTER ();
 
     DBUG_RETURN (res);
 }
