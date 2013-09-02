@@ -21,6 +21,7 @@
 #include "compare_tree.h"
 #include "traverse.h"
 #include "free_lhs_avis_sons.h"
+#include "symbolic_constant_simplification.h"
 
 /**
  *
@@ -44,13 +45,114 @@
 
 /** <!--********************************************************************-->
  *
+ * @fn bool isZeroTripGeneratorComposition( node *lb, node *ub)
+ *
+ * @brief Predicate for determining if WL generator bounds lb and ub
+ *        are zero-trip, when we need to analyze a function composition to do so.
+ *
+ *        lb and ub must be N_id or N_array nodes.
+ *
+ *        A typical case shows up in the wlcondoAPL.sac unit test,
+ *        where one partition looks like this:
+ *
+ *          lb = _max_SxS_( x, N);
+ *          ub = N;
+ *          z = with {
+ *            ( [ lb] <= iv < [ ub]) ...
+ *            }
+ *
+ *        We have a zero-trip generator if lb >= ub. Plugging
+ *        the arguments into the relational gives us:
+ *
+ *           _max_SxS_( x, N) >= N
+ *
+ *        which can be solved by SCS. Two other ways we could
+ *        solve this in a cleaner, more general manner are:
+ *
+ *          - extend extrema past the point where GENWIDTH is
+ *            introduced. Were that done, a trip through IVEXP and CF
+ *            should provide extrema for the GENWIDTH value, which
+ *            we could examine here.
+ *
+ *          - Introduce a new Boolean N_generator field, similar to GENWIDTH,
+ *            but containing the desired relational: lb >= ub.
+ *
+ *
+ * @result: TRUE if the relational above is satisfied for
+ *          any generator element pairs.
+ *
+ *****************************************************************************/
+static bool
+isZeroTripGeneratorComposition (node *lb, node *ub)
+{
+    bool z = FALSE;
+    pattern *patlb;
+    pattern *patub;
+    node *aelemslb = NULL;
+    node *aelemsub = NULL;
+    node *ellb;
+    node *elub;
+    constant *fslb = NULL;
+    constant *fsub = NULL;
+    int lenlb = 0;
+    int lenub = 0;
+    bool relres;
+
+    DBUG_ENTER ();
+
+    patlb = PMarray (1, PMAgetFS (&fslb), 1, PMskip (1, PMAgetNode (&aelemslb)));
+    patub = PMarray (1, PMAgetFS (&fsub), 1, PMskip (1, PMAgetNode (&aelemsub)));
+    PMmatchFlat (patlb, lb);
+    PMmatchFlat (patub, ub);
+
+    if ((NULL == aelemslb) && (N_array == NODE_TYPE (lb))) {
+        aelemslb = ARRAY_AELEMS (lb);
+        lenlb = SHgetUnrLen (ARRAY_FRAMESHAPE (lb));
+    }
+    if (NULL != fslb) {
+        lenlb = SHgetUnrLen (COgetShape (fslb));
+    }
+
+    if ((NULL == aelemsub) && (N_array == NODE_TYPE (ub))) {
+        aelemsub = ARRAY_AELEMS (ub);
+        lenub = SHgetUnrLen (ARRAY_FRAMESHAPE (ub));
+    }
+    if (NULL != fsub) {
+        lenub = SHgetUnrLen (COgetShape (fsub));
+    }
+
+    // shapes must match, but eschew [:int]
+    if ((0 != lenlb) && (0 != lenub) && (lenlb == lenub)) {
+        while ((!z) && (NULL != aelemslb)) {
+            ellb = EXPRS_EXPR (aelemslb);
+            elub = EXPRS_EXPR (aelemsub);
+            if ((N_id == NODE_TYPE (ellb)) && // We may have non-flattened bounds!
+                (N_id == NODE_TYPE (elub))
+                && SCSisRelationalOnDyadicFn (F_ge_SxS, ellb, elub, NULL, &relres)) {
+                z = relres;
+            }
+            aelemslb = EXPRS_NEXT (aelemslb);
+            aelemsub = EXPRS_NEXT (aelemsub);
+        }
+    }
+
+    patlb = PMfree (patlb);
+    patub = PMfree (patub);
+    fslb = (NULL != fslb) ? COfreeConstant (fslb) : NULL;
+    fsub = (NULL != fsub) ? COfreeConstant (fsub) : NULL;
+
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
  * @fn bool TULSisZeroTripGenerator( node *lb, node *ub, node *width)
  *
  * @brief checks for the following 5 criteria:
  *
  *    1) (  a <= iv <  a)    where a::int[n]  with n>0  !
  *    2) ( lb <= iv < ub)    where lb::int[n]{vec1}, ub::int[n]{vec2}
- *                                 and all( vec1 >= vec2)
+ *                                 and any( vec1 >= vec2)
  *                                 and n>0!
  *    3) ( [l1, ..., ln] <= iv < [u1, ..., un])
  *                           where n > 0
@@ -61,10 +163,12 @@
  *                           where a::int[n]{vec} and vec contains a 0
  *    5) ( lb <= iv <= ub width [v1,...,vn])
  *                           where exists i such that vi == 0
+ *
+ *    6) See isZeroTripGeneratorComposition, above.
+ *
  *   If any of these is true, it returns TRUE.
  *
  *****************************************************************************/
-
 bool
 TULSisZeroTripGenerator (node *lb, node *ub, node *width)
 {
@@ -123,17 +227,16 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
         DBUG_PRINT ("criterion 3 met!");
         res = TRUE;
     }
+
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
     pat4 = PMfree (pat4);
-    if (c != NULL) {
-        c = COfreeConstant (c);
-    }
+
+    c = (NULL != c) ? COfreeConstant (c) : NULL;
 
     if (width != NULL) {
         pattern *pat1, *pat2;
-        constant *c = NULL;
         int i, l, zero = 0;
 
         pat1 = PMconst (1, PMAgetVal (&c));
@@ -158,10 +261,10 @@ TULSisZeroTripGenerator (node *lb, node *ub, node *width)
         }
         pat1 = PMfree (pat1);
         pat2 = PMfree (pat2);
-        if (c != NULL) {
-            c = COfreeConstant (c);
-        }
+        c = (NULL != c) ? COfreeConstant (c) : NULL;
     }
+
+    res = res || isZeroTripGeneratorComposition (lb, ub);
 
     DBUG_RETURN (res);
 }
