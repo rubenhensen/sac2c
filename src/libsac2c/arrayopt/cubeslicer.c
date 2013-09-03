@@ -1277,13 +1277,14 @@ CUBSLlet (node *arg_node, info *arg_info)
     oldlhs = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = LET_IDS (arg_node);
 #ifdef VERBOSE
-    DBUG_PRINT ("Start looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+    DBUG_PRINT ("Start looking at N_let %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 #endif // VERBOSE
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
 #ifdef VERBOSE
-    DBUG_PRINT ("Finished looking at %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
+    DBUG_PRINT ("Finished looking at N_let %s",
+                AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
 #endif // VERBOSE
 
     INFO_LHS (arg_info) = oldlhs;
@@ -1347,6 +1348,7 @@ CUBSLprf (node *arg_node, info *arg_info)
                                        arg_info, &INFO_PRODUCERPART (arg_info));
             if ((INTERSECT_exact != INFO_INTERSECTTYPE (arg_info)) && (NULL != noteint)
                 && (AWLFIisHasAllInverseProjections (noteint))) {
+                DBUG_ASSERT (!INFO_CUTNOW (arg_info), "CUTNOW error");
                 INFO_CUTNOW (arg_info) = TRUE;
                 PRF_ISFOLDNOW (arg_node) = TRUE;
                 DBUG_PRINT ("Marked for slicing: %s=sel( iv, %s)",
