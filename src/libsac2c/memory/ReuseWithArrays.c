@@ -279,7 +279,10 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
                (aexprs != NULL)) {              /* more elements in index */
 
             ividselem = IDS_AVIS (SET_MEMBER (*ivids));
-            result = ividselem == ID_AVIS (EXPRS_EXPR (aexprs));
+            // fix -nocf apex/ipddAKD/ipddAKD.sac crash.
+            // We assume that, e.g., an N_num, will never match ivid
+            result = (N_id == NODE_TYPE (EXPRS_EXPR (aexprs)))
+                     && (ividselem == ID_AVIS (EXPRS_EXPR (aexprs)));
             aexprs = EXPRS_NEXT (aexprs);
 
             *ivs = SET_NEXT (*ivs);
