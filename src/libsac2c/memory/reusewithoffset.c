@@ -30,6 +30,8 @@
 #include "new_types.h"
 #include "constants.h"
 #include "copywlelim.h"
+#include "pattern_match.h"
+#include "indexvectorutils.h"
 
 /*
  * INFO structure
@@ -289,9 +291,7 @@ RWOids (node *arg_node, info *arg_info)
         INFO_RC (arg_info) = FREEdoFreeNode (INFO_RC (arg_info));
     }
 
-    if (IDS_NEXT (arg_node) != NULL) {
-        IDS_NEXT (arg_node) = TRAVdo (IDS_NEXT (arg_node), arg_info);
-    }
+    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -322,21 +322,44 @@ RWOid (node *arg_node, info *arg_info)
 node *
 RWOprf (node *arg_node, info *arg_info)
 {
+    pattern *pat1;
+    pattern *pat2;
+    pattern *patarray;
     bool traverse = TRUE;
+    node *arg1 = NULL;
+    node *arg2 = NULL;
+    prf selop;
+    node *other = NULL;
+    node *rhs = NULL;
+    node *gwelem = NULL;
+    node *elem = NULL;
+    node *ids = NULL;
+    int gwval;
+    constant *con = NULL;
+    node *iv = NULL;
+    node *narray = NULL;
 
     DBUG_ENTER ();
 
-    if ((PRF_PRF (arg_node) == F_sel_VxA) && (INFO_RC (arg_info) != NULL)
-        && (NODE_TYPE (PRF_ARG1 (arg_node)) == N_id)
-        && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
-        && (ID_AVIS (PRF_ARG2 (arg_node)) == ID_AVIS (INFO_RC (arg_info)))) {
-        node *ass;
+    pat1 = PMprf (1, PMAgetPrf (&selop), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                  PMvar (1, PMAisVar (&arg2), 0));
+
+    pat2 = PMprf (1, PMAgetPrf (&selop), 2, PMvar (1, PMAgetNode (&arg1), 0),
+                  PMvar (1, PMAgetNode (&arg2), 0));
+
+    patarray = PMarray (1, PMAgetNode (&narray), 0);
+
+    arg2 = INFO_RC (arg_info);
+    if ((NULL != arg2) && (PMmatchFlatSkipExtremaAndGuards (pat1, arg_node))
+        && ((F_sel_VxA == selop) || (F_idx_sel == selop))) {
+        DBUG_PRINT ("Found selection op on potential RC candidate %s",
+                    AVIS_NAME (ID_AVIS (arg2)));
+        iv = arg1;
 
         /*
-         * The access may either be A[iv]
+         * The access may either be A[iv]...
          */
-        if ((ID_AVIS (PRF_ARG1 (arg_node))
-             == IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info))))) {
+        if (ID_AVIS (iv) == IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)))) {
             DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
             traverse = FALSE;
         }
@@ -344,78 +367,98 @@ RWOprf (node *arg_node, info *arg_info)
         /*
          * ... or it may be A[iv+offset], where ANY( offset >= genwidth)
          */
-        ass = AVIS_SSAASSIGN (ID_AVIS (PRF_ARG1 (arg_node)));
-        if (ass != NULL) {
-            node *rhs = ASSIGN_RHS (ass);
-            if ((NODE_TYPE (rhs) == N_prf)
-                && ((PRF_PRF (rhs) == F_add_VxV) || (PRF_PRF (rhs) == F_sub_VxV))) {
-                node *other = NULL;
 
-                if ((NODE_TYPE (PRF_ARG1 (rhs)) == N_id)
-                    && (ID_AVIS (PRF_ARG1 (rhs)) = WITHID_VEC (INFO_WITHID (arg_info)))) {
-                    other = PRF_ARG2 (rhs);
-                }
-                if ((NODE_TYPE (PRF_ARG2 (rhs)) == N_id)
-                    && (ID_AVIS (PRF_ARG2 (rhs)) = WITHID_VEC (INFO_WITHID (arg_info)))) {
-                    other = PRF_ARG1 (rhs);
-                }
-
-                /*
-                 * Implement me
-                 */
+        // Skip vect2offset, if present, and look at its PRF_ARG2
+        if (PMmatchFlatSkipExtremaAndGuards (pat2, iv)) {
+            DBUG_ASSERT (F_idxs2offset != selop, "idxs2offset coding time for Bonzo");
+            if (F_vect2offset == selop) {
+                iv = arg2;
+                DBUG_PRINT ("Got vect2offset. iv now %s", AVIS_NAME (ID_AVIS (iv)));
             }
-            if (NODE_TYPE (rhs) == N_array) {
-                node *gwelem = ARRAY_AELEMS (INFO_GENWIDTH (arg_info));
-                node *elem = ARRAY_AELEMS (rhs);
-                node *ids = WITHID_IDS (INFO_WITHID (arg_info));
+        }
 
-                while (elem != NULL) {
-                    if ((NODE_TYPE (EXPRS_EXPR (elem)) == N_id)
-                        && (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (elem))) != NULL) &&
-                        // ( NODE_TYPE( EXPRS_EXPR( gwelem)) == N_num)) {
-                        (COisConstant (EXPRS_EXPR (gwelem)))) {
-                        // int gwval = NUM_VAL( EXPRS_EXPR( gwelem));
-                        int gwval = COconst2Int (COaST2Constant (EXPRS_EXPR (gwelem)));
-                        rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (elem))));
+        // match on N_prf.
+        if ((PMmatchFlatSkipExtremaAndGuards (pat2, iv))
+            && ((F_add_SxS == selop) || (F_sub_SxS == selop))) {
+            // Look for IV + offset OR IV - offset OR IV - offset  OR offset - IV
+            if ((ID_AVIS (arg1) == WITHID_VEC (INFO_WITHID (arg_info)))) {
+                other = arg2; // IV +- offset
+            } else {
+                if ((ID_AVIS (arg2) == WITHID_VEC (INFO_WITHID (arg_info)))) {
+                    other = arg1; // offset +- IV
+                }
+            }
+            int fixme; // how interesting. This code now does nothing more with other.
+        }
 
-                        if ((NODE_TYPE (rhs) == N_prf)
-                            && ((PRF_PRF (rhs) == F_add_SxS)
-                                || (PRF_PRF (rhs) == F_sub_SxS))) {
+        // This block of code handles a scalarized index vector, stored
+        // as an N_array. GENWIDTH must be constant:
+        // Reuse is allowed if we have one of these situations for any
+        // elements of the N_array:
+        //
+        //    ids + constant
+        //    ids - constant
+        //    constant + ids
+        //
+        //    where abs( constant) >= GENWIDTH
 
-                            if ((NODE_TYPE (PRF_ARG1 (rhs)) == N_id)
-                                && (ID_AVIS (PRF_ARG1 (rhs)) == IDS_AVIS (ids))
-                                && (((NODE_TYPE (PRF_ARG2 (rhs)) == N_num)
-                                     && (abs (NUM_VAL (PRF_ARG2 (rhs))) >= gwval))
-                                    || ((COisConstant (PRF_ARG2 (rhs)))
-                                        && (abs (COconst2Int (
-                                              COaST2Constant (PRF_ARG2 (rhs))))
-                                            >= gwval)))) {
+        if (PMmatchFlatSkipExtremaAndGuards (patarray, iv)) {
+            gwelem = ARRAY_AELEMS (INFO_GENWIDTH (arg_info));
+            elem = ARRAY_AELEMS (narray);
+            ids = WITHID_IDS (INFO_WITHID (arg_info));
+
+            while (elem != NULL) {
+                if ((NODE_TYPE (EXPRS_EXPR (elem)) == N_id)
+                    && (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (elem))) != NULL)
+                    && (COisConstant (EXPRS_EXPR (gwelem)))) {
+                    con = COaST2Constant (EXPRS_EXPR (gwelem));
+                    gwval = COconst2Int (con);
+                    con = COfreeConstant (con);
+                    rhs = ASSIGN_RHS (AVIS_SSAASSIGN (ID_AVIS (EXPRS_EXPR (elem))));
+
+                    if ((NODE_TYPE (rhs) == N_prf)
+                        && ((PRF_PRF (rhs) == F_add_SxS)
+                            || (PRF_PRF (rhs) == F_sub_SxS))) {
+                        // ids +- constant
+                        if ((NODE_TYPE (PRF_ARG1 (rhs)) == N_id)
+                            && (ID_AVIS (PRF_ARG1 (rhs)) == IDS_AVIS (ids))
+                            && (((COisConstant (PRF_ARG2 (rhs)))))) {
+                            con = COaST2Constant (PRF_ARG2 (rhs));
+                            if (abs (COconst2Int (con)) >= gwval) {
                                 DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
                                 traverse = FALSE;
                             }
+                            con = COfreeConstant (con);
+                        }
 
-                            if ((PRF_PRF (rhs) == F_add_SxS)
-                                && (NODE_TYPE (PRF_ARG2 (rhs)) == N_id)
-                                && (ID_AVIS (PRF_ARG2 (rhs)) == IDS_AVIS (ids))
-                                && (NODE_TYPE (PRF_ARG1 (rhs)) == N_num)
-                                && (abs (NUM_VAL (PRF_ARG1 (rhs))) >= gwval)) {
+                        // constant + ids
+                        if ((PRF_PRF (rhs) == F_add_SxS)
+                            && (NODE_TYPE (PRF_ARG2 (rhs)) == N_id)
+                            && (ID_AVIS (PRF_ARG2 (rhs)) == IDS_AVIS (ids))
+                            && (((COisConstant (PRF_ARG2 (rhs)))))) {
+                            con = COaST2Constant (PRF_ARG1 (rhs));
+                            if (abs (COconst2Int (con)) >= gwval) {
                                 DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
                                 traverse = FALSE;
                             }
+                            con = COfreeConstant (con);
                         }
                     }
-
-                    ids = IDS_NEXT (ids);
-                    elem = EXPRS_NEXT (elem);
-                    gwelem = EXPRS_NEXT (gwelem);
                 }
+                ids = IDS_NEXT (ids);
+                elem = EXPRS_NEXT (elem);
+                gwelem = EXPRS_NEXT (gwelem);
             }
         }
     }
 
-    if ((traverse) && (PRF_ARGS (arg_node) != NULL)) {
-        PRF_ARGS (arg_node) = TRAVdo (PRF_ARGS (arg_node), arg_info);
+    if (traverse) {
+        PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
     }
+
+    pat1 = PMfree (pat1);
+    pat2 = PMfree (pat2);
+    patarray = PMfree (patarray);
 
     DBUG_RETURN (arg_node);
 }

@@ -2521,6 +2521,7 @@ static bool
 isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg_info)
 {
     bool z;
+    bool z2;
     node *narr;
     pattern *pat;
     node *ivid;
@@ -2532,11 +2533,11 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg
     DBUG_ENTER ();
 
     /* This is the old code. I hope we can burn it. FIXME */
-    z = (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
-        || ((NULL != ivavis)
-            && ((TYisAKV (AVIS_TYPE (ivavis))) || (IVEXPisAvisHasBothExtrema (ivavis))));
+    z2 = (TYisAKV (AVIS_TYPE (ID_AVIS (PRF_ARG1 (arg_node)))))
+         || ((NULL != ivavis)
+             && ((TYisAKV (AVIS_TYPE (ivavis))) || (IVEXPisAvisHasBothExtrema (ivavis))));
 
-    if ((!z) && (NULL != cwlpart) && (NULL != ivavis)) {
+    if ((!z2) && (NULL != cwlpart) && (NULL != ivavis)) {
         /*
          * Now we have to get fancy: we want to allow a mix of three
          * element types in the N_array: AKV, both-extrema-present,
@@ -2576,6 +2577,9 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg
         ivid = FREEdoFreeNode (ivid);
         pat = PMfree (pat);
     }
+
+    // DEADCODE test
+    DBUG_ASSERT ((!z) | (z & !z2), "No, we still need z2");
 
     DBUG_RETURN (z);
 }
