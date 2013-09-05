@@ -4006,16 +4006,27 @@ TCsetIsSubset (node *super, node *sub)
  * @param an N_set
  *
  * @return void
+ *         side effect is to print each N_ids chain in the set.
+ *         E.g.:
+ *           [ i, j ]
+ *           [ k, ]
  *
  ******************************************************************************/
 void
 TCprintSet (node *set)
 {
+    node *ids;
 
     DBUG_ENTER ();
 
     while (set != NULL) {
-        fprintf (stderr, "%s\n", AVIS_NAME (IDS_AVIS (SET_MEMBER (set))));
+        ids = SET_MEMBER (set);
+        fprintf (stderr, "[ ");
+        while (NULL != ids) {
+            fprintf (stderr, "%s, ", AVIS_NAME (IDS_AVIS (ids)));
+            ids = IDS_NEXT (ids);
+        }
+        fprintf (stderr, " ]\n");
         set = SET_NEXT (set);
     }
 

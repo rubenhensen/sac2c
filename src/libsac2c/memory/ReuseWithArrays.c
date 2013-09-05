@@ -200,12 +200,15 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
     node *iv2 = NULL;
     node *iv = NULL;
     node *ivavis = NULL;
-    node *ividselem = NULL;
     pattern *pat1, *pat2;
     pattern *pat3;
+    pattern *pat4;
     node *index2 = NULL;
     bool result = FALSE;
     bool madeNid = FALSE;
+    node *el = NULL;
+    node *ids = NULL;
+    node *idsid = NULL;
 
     DBUG_ENTER ();
 
@@ -242,6 +245,8 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
     pat2 = PMarray (1, PMAgetNode (&array), 1, PMskip (0));
     pat3 = PMprf (1, PMAisPrf (F_vect2offset), 2, PMvar (1, PMAgetNode (&iv1), 0),
                   PMvar (1, PMAgetNode (&iv2), 0));
+    pat4 = PMvar (1, PMAisVar (&el), 0);
+
     // First, we try to map Case 4 into Case 2.
 
     if (PMmatchFlat (pat3, index)) {
@@ -270,6 +275,13 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
 
     } else if (PMmatchFlat (pat2, index2)) {
         // Case 2b: ivids matches prefix of scalars
+        // ivids is a vector of index vectors, e.g., if we have
+        // a nest of WLs, with these generators:
+        //   iv1 = [i,j];
+        //   iv2 = [k];
+        //   then, ivids =  ( [i,j], [k] ),
+        //   and we obtain a (perhaps partial) match if array = [ i, j, k,...]
+        //
         result = TRUE;
         aexprs = ARRAY_AELEMS (array);
 
@@ -278,12 +290,15 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
                (SET_MEMBER (*ivids) != NULL) && /* this level has idx scalars */
                (aexprs != NULL)) {              /* more elements in index */
 
-            ividselem = IDS_AVIS (SET_MEMBER (*ivids));
-            // fix -nocf apex/ipddAKD/ipddAKD.sac crash.
-            // We assume that, e.g., an N_num, will never match ivid
-            result = (N_id == NODE_TYPE (EXPRS_EXPR (aexprs)))
-                     && (ividselem == ID_AVIS (EXPRS_EXPR (aexprs)));
-            aexprs = EXPRS_NEXT (aexprs);
+            ids = SET_MEMBER (*ivids);
+            while (result && (NULL != aexprs) && (NULL != ids)) {
+                idsid = TBmakeId (IDS_AVIS (ids));
+                el = EXPRS_EXPR (aexprs);
+                result = PMmatchFlat (pat4, idsid);
+                aexprs = EXPRS_NEXT (aexprs);
+                ids = IDS_NEXT (ids);
+            }
+            idsid = FREEdoFreeNode (idsid);
 
             *ivs = SET_NEXT (*ivs);
             *ivids = SET_NEXT (*ivids);
@@ -302,6 +317,7 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
     pat1 = PMfree (pat1);
     pat2 = PMfree (pat2);
     pat3 = PMfree (pat3);
+    pat4 = PMfree (pat4);
 
     DBUG_RETURN (result);
 }
