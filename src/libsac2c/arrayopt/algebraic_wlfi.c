@@ -2520,7 +2520,7 @@ AWLFIcheckProducerWLFoldable (node *arg_node)
 static bool
 isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg_info)
 {
-    bool z;
+    bool z = FALSE;
     bool z2;
     node *narr;
     pattern *pat;
@@ -2537,7 +2537,7 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg
          || ((NULL != ivavis)
              && ((TYisAKV (AVIS_TYPE (ivavis))) || (IVEXPisAvisHasBothExtrema (ivavis))));
 
-    if ((!z2) && (NULL != cwlpart) && (NULL != ivavis)) {
+    if ((NULL != cwlpart) && (NULL != ivavis)) {
         /*
          * Now we have to get fancy: we want to allow a mix of three
          * element types in the N_array: AKV, both-extrema-present,
@@ -2579,7 +2579,7 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg
     }
 
     // DEADCODE test
-    DBUG_ASSERT ((!z) | (z & !z2), "No, we still need z2");
+    DBUG_ASSERT ((z || (!z) && !z2), "No, we still need z2");
 
     DBUG_RETURN (z);
 }

@@ -84,6 +84,35 @@ FreeInfo (info *info)
  *
  *****************************************************************************/
 
+#ifdef DEADCODE // poop. hard to compute abs().
+/** <!--********************************************************************-->
+ *
+ * @fn  bool isGE( node *arg1, node *arg2)
+ * @brief performs abs( arg1) >= arg2
+ *
+ * @param arg1 and arg2 are numeric
+ *
+ * @return TRUE ONLY if we know for sure, return FALSE.
+ *         I.e., caller must NOT make any assumption about arguments
+ *         when we return FALSE - it could just mean Do Not Know!
+ *
+ *****************************************************************************/
+static bool
+isGEabs (node *arg1, node *arg2)
+{
+    bool z = FALSE;
+    bool relres = FALSE;
+
+    DBUG_ENTER ();
+
+    if (SCSisRelationalOnDyadicFn (F_ge_SxS, arg1, arg2, NULL, &relres)) {
+        z = relres;
+    }
+
+    DBUG_RETURN (info);
+}
+#endif // DEADCODE  // poop. hard to compute abs().
+
 /** <!--********************************************************************-->
  *
  * @fn node *RWOidentifyNoopArray( node *wl)
@@ -361,6 +390,8 @@ RWOprf (node *arg_node, info *arg_info)
          */
         if (ID_AVIS (iv) == IDS_AVIS (WITHID_VEC (INFO_WITHID (arg_info)))) {
             DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
+            DBUG_PRINT ("Found A{iv] selection op: RC set for %s",
+                        AVIS_NAME (ID_AVIS (arg2)));
             traverse = FALSE;
         }
 
@@ -401,6 +432,10 @@ RWOprf (node *arg_node, info *arg_info)
         //    constant + ids
         //
         //    where abs( constant) >= GENWIDTH
+        //
+        //    I think the (undocumented) idea here is that
+        //    reuse is allowed if we can show that the sel()
+        //    operation will never reference an element of this WL-partition.
 
         if (PMmatchFlatSkipExtremaAndGuards (patarray, iv)) {
             gwelem = ARRAY_AELEMS (INFO_GENWIDTH (arg_info));
@@ -426,6 +461,8 @@ RWOprf (node *arg_node, info *arg_info)
                             con = COaST2Constant (PRF_ARG2 (rhs));
                             if (abs (COconst2Int (con)) >= gwval) {
                                 DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
+                                DBUG_PRINT ("Found A[ids+-constant] - RC set for %s",
+                                            AVIS_NAME (ID_AVIS (arg2)));
                                 traverse = FALSE;
                             }
                             con = COfreeConstant (con);
@@ -439,6 +476,8 @@ RWOprf (node *arg_node, info *arg_info)
                             con = COaST2Constant (PRF_ARG1 (rhs));
                             if (abs (COconst2Int (con)) >= gwval) {
                                 DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, arg_node));
+                                DBUG_PRINT ("Found A[constant+ids] - RC set for %s",
+                                            AVIS_NAME (ID_AVIS (arg2)));
                                 traverse = FALSE;
                             }
                             con = COfreeConstant (con);
