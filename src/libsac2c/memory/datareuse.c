@@ -6,6 +6,30 @@
  *
  * @{
  *
+ * Documentation as provided from on high:
+ *
+ * "
+ * BTW, I took a quick look at datareuse.c, and note that:
+ *
+ *      - like everything else, there is zero documentation about
+ *        its purpose in life, or any outline about how it does what
+ *        it purports to do.
+ *
+ *      - I have NO idea what the backend macros (fill, wl_assign),
+ *        do, because that, too, is undocumented.
+ *
+ *  So, I do not intend to touch it until the above two problems are
+ *  remedied. Sorry about that...
+ *
+ *
+ * Cheap excuse my dear :-)
+ * check the first pub on this page out:
+ *
+ * http://www.sac-home.org/index.php?
+ *   p=.%2F33_Research%2F31_Publications%2F3_Basic_Compiler_Implementation
+ *
+ * I think I'll just check the first pub, instead.
+ *
  *****************************************************************************/
 
 /** <!--********************************************************************-->
@@ -711,10 +735,7 @@ EMDRassign (node *arg_node, info *arg_info)
      * Top-down traversal
      */
     ASSIGN_STMT (arg_node) = TRAVdo (ASSIGN_STMT (arg_node), arg_info);
-
-    if (ASSIGN_NEXT (arg_node) != NULL) {
-        ASSIGN_NEXT (arg_node) = TRAVdo (ASSIGN_NEXT (arg_node), arg_info);
-    }
+    ASSIGN_NEXT (arg_node) = TRAVopt (ASSIGN_NEXT (arg_node), arg_info);
 
     DBUG_RETURN (arg_node);
 }
@@ -1049,9 +1070,7 @@ EMDRfundef (node *arg_node, info *arg_info)
      * Traverse next fundef
      */
     if (arg_info == NULL) {
-        if (FUNDEF_NEXT (arg_node) != NULL) {
-            FUNDEF_NEXT (arg_node) = TRAVdo (FUNDEF_NEXT (arg_node), arg_info);
-        }
+        FUNDEF_NEXT (arg_node) = TRAVopt (FUNDEF_NEXT (arg_node), arg_info);
     }
 
     DBUG_RETURN (arg_node);
