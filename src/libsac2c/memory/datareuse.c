@@ -488,6 +488,8 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                     wliv = WITH_OR_WITH2_VEC (wlass);
                 }
 
+                DBUG_PRINT ("inner with-oop found...");
+
                 oneCodeIfApplicable = (NODE_TYPE (wlass) == N_with3)
                                       || (CODE_NEXT (WITH_OR_WITH2_CODE (wlass)) == NULL);
 
@@ -579,13 +581,30 @@ HandleCodeBlock (node *exprs, node *assigns, info *arg_info)
                         }
                     }
 
-                    if (iscopy
-                        && PMO (PMOvar (&mem, PMOprf (F_suballoc, GENARRAY_MEM (withop))))
-                        && (LUTsearchInLutPp (INFO_REUSELUT (arg_info), ID_AVIS (mem))
-                            == ID_AVIS (arr))) {
-                        DBUG_PRINT ("wl copy: reuse identified.");
+                    if (iscopy) {
+                        DBUG_PRINT ("wl copy: copy operation identified.");
 
-                        inplace = TRUE;
+                        if (PMO (PMOvar (&mem,
+                                         PMOprf (F_suballoc, GENARRAY_MEM (withop))))) {
+                            DBUG_PRINT ("wl copy: suballoc identified.");
+
+                            node *avis = LUTsearchInLutPp (INFO_REUSELUT (arg_info),
+                                                           ID_AVIS (mem));
+                            if (avis == ID_AVIS (arr)) {
+                                inplace = TRUE;
+                                DBUG_PRINT ("wl copy: reuse identified!");
+                            } else {
+                                DBUG_PRINT ("wl copy: looking up \"%s\": found \"%s\".",
+                                            ID_NAME (mem),
+                                            (avis != NULL ? AVIS_NAME (avis) : "--"));
+                                DBUG_PRINT ("wl copy: does not match \"%s\" .",
+                                            ID_NAME (arr));
+                            }
+                        } else {
+                            DBUG_PRINT ("wl copy: no suballoc found.");
+                        }
+                    } else {
+                        DBUG_PRINT ("wl copy: no copy operation identified.");
                     }
                 }
             }
@@ -839,8 +858,13 @@ node *
 EMDRwith2 (node *arg_node, info *arg_info)
 {
     node *oldivs, *oldiv, *oldidxs, *oldiirr;
+#ifndef DBUG_OFF
+    node *lhs_ids = INFO_LHS (arg_info);
+#endif
 
     DBUG_ENTER ();
+
+    DBUG_PRINT ("\nTraversing with2 defining \"%s\"", IDS_NAME (lhs_ids));
 
     oldiv = INFO_IV (arg_info);
     oldivs = INFO_IVIDS (arg_info);
@@ -854,6 +878,8 @@ EMDRwith2 (node *arg_node, info *arg_info)
     INFO_WLIDXS (arg_info) = oldidxs;
     INFO_IVIDS (arg_info) = oldivs;
     INFO_IV (arg_info) = oldiv;
+
+    DBUG_PRINT ("leaving with2 defining \"%s\"\n", IDS_NAME (lhs_ids));
 
     DBUG_RETURN (arg_node);
 }
@@ -955,12 +981,14 @@ EMDRcode (node *arg_node, info *arg_info)
     /*
      * Traverse into CBLOCK in order to apply datareuse in nested with-loops
      */
+    DBUG_PRINT ("traversing new code block...");
     CODE_CBLOCK (arg_node) = TRAVopt (CODE_CBLOCK (arg_node), arg_info);
 
     /*
      * The great moment:
      * check whether CEXPRS perform INPLACE-COPY-OPERATIONS
      */
+    DBUG_PRINT ("cheking for in-place option...");
     CODE_CBLOCK_ASSIGNS (arg_node)
       = HandleCodeBlock (CODE_CEXPRS (arg_node), CODE_CBLOCK_ASSIGNS (arg_node),
                          arg_info);

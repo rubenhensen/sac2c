@@ -21,7 +21,7 @@
 #include "tree_compound.h"
 #include "traverse.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "WRCI"
 #include "debug.h"
 
 #include "print.h"
@@ -226,6 +226,7 @@ WRCIfundef (node *arg_node, info *arg_info)
     DBUG_ENTER ();
 
     if (FUNDEF_BODY (arg_node) != NULL) {
+        DBUG_PRINT ("\nchecking function %s ...", FUNDEF_NAME (arg_node));
         INFO_FUNDEF (arg_info) = arg_node;
         FUNDEF_BODY (arg_node) = TRAVdo (FUNDEF_BODY (arg_node), arg_info);
     }
@@ -289,26 +290,41 @@ WRCIwith (node *arg_node, info *arg_info)
      * A[iv]
      */
     if (global.optimize.dorip) {
+        DBUG_PRINT ("Looking for A[iv] only use...");
         INFO_RC (arg_info) = REUSEdoGetReuseArrays (arg_node, INFO_FUNDEF (arg_info));
+        DBUG_PRINT ("candidates now: ");
+        DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
+            PRTdoPrintFile (stderr, INFO_RC (arg_info));
+        });
     }
 
     /*
      * Find more complex reuse candidates
      */
     if (global.optimize.dorwo) {
+        DBUG_PRINT ("Looking for more complex reuse candidates...");
         INFO_RC (arg_info)
           = TCappendExprs (INFO_RC (arg_info),
                            RWOdoOffsetAwareReuseCandidateInference (arg_node));
+        DBUG_PRINT ("candidates now: ");
+        DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
+            PRTdoPrintFile (stderr, INFO_RC (arg_info));
+        });
     }
 
     if (global.optimize.dopra) {
         /*
          * Find more complex reuse candidates
          */
+        DBUG_PRINT ("Looking for polyhedra-analysis based reuse candidates...");
         INFO_RC (arg_info)
           = TCappendExprs (INFO_RC (arg_info),
                            PRAdoPolyhedralReuseAnalysis (arg_node,
                                                          INFO_FUNDEF (arg_info)));
+        DBUG_PRINT ("candidates now: ");
+        DBUG_EXECUTE (if (INFO_RC (arg_info) != NULL) {
+            PRTdoPrintFile (stderr, INFO_RC (arg_info));
+        });
     }
 
     /*

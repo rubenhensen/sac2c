@@ -1,6 +1,16 @@
 /**
  * @defgroup emri Reuse Inference
  *
+ * This phase identifies reuse candidates and puts them into the corrsponding
+ * _alloc_ call as additional arguments. By doing so, it also replaces the _alloc_
+ * with either _alloc_or_reuse_ or _alloc_or_resize_ .
+ *
+ * This replacement affects two classes of allocations: those for the results of
+ * primitive functions and those for the results of With-Loops.
+ * For With-Loops it builds on the availability of GENARRAY_RC, GENARRAY_PRC and
+ * MODARRAY_RC which are inferred by wrci, run within the optimisations just before
+ * ive.
+ *
  * @ingroup mm
  *
  * @{
@@ -89,7 +99,9 @@ FreeInfo (info *info)
  *
  * @fn TypeMatch
  *
- *  @brief
+ *  @brief expects and exprs-chain (cand) and an ids-node (lhs) and deletes
+ *         all those expressions in 'cand' whose type whose type is not
+ *         identical to the type of 'lhs' or whose type is not at least AKS.
  *
  *  @param cand
  *  @param lhs
@@ -232,6 +244,9 @@ EMRIprf (node *arg_node, info *arg_info)
 
     DBUG_ENTER ();
 
+    /*
+     * SBS Aug 2013: open question: should these be all normal prfs? are they?
+     */
     switch (PRF_PRF (arg_node)) {
     case F_tobool_S:
     case F_toc_S:
@@ -323,15 +338,10 @@ EMRIprf (node *arg_node, info *arg_info)
 
         rhc = TypeMatch (DUPdoDupTree (PRF_ARGS (arg_node)), INFO_LHS (arg_info));
 
-        if (rhc != NULL) {
-            DBUG_PRINT ("rhc");
-            DBUG_EXECUTE (PRTdoPrintFile (stderr, rhc));
-        }
-
         INFO_RHSCAND (arg_info) = rhc;
 
         if (INFO_RHSCAND (arg_info) != NULL) {
-            DBUG_PRINT ("RHSCAND");
+            DBUG_PRINT ("RHSCAND:");
             DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
         }
         break;
@@ -361,23 +371,33 @@ EMRIprf (node *arg_node, info *arg_info)
              * we can only extend reuses or resizes but not have both at
              * the same time right now.
              */
-            if ((PRF_PRF (arg_node) == F_alloc)
-                || (PRF_PRF (arg_node) == INFO_ALLOCATOR (arg_info))) {
+            if (PRF_PRF (arg_node) == F_alloc) {
+                DBUG_PRINT ("replacing _alloc_ by %s",
+                            global.prf_name[INFO_ALLOCATOR (arg_info)]);
                 PRF_PRF (arg_node) = INFO_ALLOCATOR (arg_info);
+            }
+            if (PRF_PRF (arg_node) == INFO_ALLOCATOR (arg_info)) {
                 PRF_ARGS (arg_node)
                   = TCappendExprs (PRF_ARGS (arg_node), INFO_RHSCAND (arg_info));
                 INFO_RHSCAND (arg_info) = NULL;
+                DBUG_PRINT ("adding RHSCAND to reuse candidate list in %s",
+                            global.prf_name[INFO_ALLOCATOR (arg_info)]);
             } else {
+                INFO_RHSCAND (arg_info) = FREEdoFreeTree (INFO_RHSCAND (arg_info));
             }
         }
         break;
 
     case F_fill:
+        DBUG_PRINT ("cheking fill of \"%s\"...", IDS_NAME (INFO_LHS (arg_info)));
         PRF_ARG1 (arg_node) = TRAVdo (PRF_ARG1 (arg_node), arg_info);
 
         if (INFO_RHSCAND (arg_info) != NULL) {
             INFO_TRAVMODE (arg_info) = ri_annotate;
             INFO_ALLOCATOR (arg_info) = F_alloc_or_reuse;
+            DBUG_PRINT ("candidate(s) found, annotating memory allocation of \"%s\"...",
+                        IDS_NAME (LET_IDS (
+                          ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))))));
             AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node)))
               = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (PRF_ARG2 (arg_node))), arg_info);
             INFO_TRAVMODE (arg_info) = ri_default;
@@ -420,12 +440,21 @@ EMRIgenarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    if (INFO_RHSCAND (arg_info) != NULL) {
+        INFO_RHSCAND (arg_info) = FREEdoFreeTree (INFO_RHSCAND (arg_info));
+    }
+    DBUG_PRINT ("handling WL-genarray; resetting RHSCAND");
+
     INFO_RHSCAND (arg_info) = GENARRAY_RC (arg_node);
     GENARRAY_RC (arg_node) = NULL;
 
     if (INFO_RHSCAND (arg_info) != NULL) {
+        DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
         INFO_TRAVMODE (arg_info) = ri_annotate;
         INFO_ALLOCATOR (arg_info) = F_alloc_or_reuse;
+        DBUG_PRINT ("candidate(s) found, annotating memory allocation of \"%s\"...",
+                    IDS_NAME (LET_IDS (
+                      ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))))));
         AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))
           = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node))), arg_info);
         INFO_TRAVMODE (arg_info) = ri_default;
@@ -433,12 +462,20 @@ EMRIgenarray (node *arg_node, info *arg_info)
     } else {
         INFO_RHSCAND (arg_info) = GENARRAY_PRC (arg_node);
         GENARRAY_PRC (arg_node) = NULL;
-        INFO_TRAVMODE (arg_info) = ri_annotate;
-        INFO_ALLOCATOR (arg_info) = F_alloc_or_resize;
-        AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))
-          = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node))), arg_info);
-        INFO_TRAVMODE (arg_info) = ri_default;
-        INFO_ALLOCATOR (arg_info) = F_unknown;
+        DBUG_PRINT ("no candidates found; resetting RHSCAND to partial candidates");
+        if (INFO_RHSCAND (arg_info) != NULL) {
+            DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
+            INFO_TRAVMODE (arg_info) = ri_annotate;
+            INFO_ALLOCATOR (arg_info) = F_alloc_or_resize;
+            DBUG_PRINT (
+              "partial candidate(s) found, annotating memory allocation of \"%s\"...",
+              IDS_NAME (LET_IDS (
+                ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))))));
+            AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node)))
+              = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (GENARRAY_MEM (arg_node))), arg_info);
+            INFO_TRAVMODE (arg_info) = ri_default;
+            INFO_ALLOCATOR (arg_info) = F_unknown;
+        }
     }
 
     if (GENARRAY_NEXT (arg_node) != NULL) {
@@ -458,12 +495,21 @@ EMRImodarray (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
+    if (INFO_RHSCAND (arg_info) != NULL) {
+        INFO_RHSCAND (arg_info) = FREEdoFreeTree (INFO_RHSCAND (arg_info));
+    }
+    DBUG_PRINT ("handling WL-modarray; resetting RHSCAND");
+
     INFO_RHSCAND (arg_info) = MODARRAY_RC (arg_node);
     MODARRAY_RC (arg_node) = NULL;
 
     if (INFO_RHSCAND (arg_info) != NULL) {
+        DBUG_EXECUTE (PRTdoPrintFile (stderr, INFO_RHSCAND (arg_info)));
         INFO_TRAVMODE (arg_info) = ri_annotate;
         INFO_ALLOCATOR (arg_info) = F_alloc_or_reuse;
+        DBUG_PRINT ("candidate(s) found, annotating memory allocation of \"%s\"...",
+                    IDS_NAME (LET_IDS (
+                      ASSIGN_STMT (AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node)))))));
         AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node)))
           = TRAVdo (AVIS_SSAASSIGN (ID_AVIS (MODARRAY_MEM (arg_node))), arg_info);
         INFO_TRAVMODE (arg_info) = ri_default;

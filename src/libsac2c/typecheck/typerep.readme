@@ -1,0 +1,74 @@
+typedef int[3] vect;
+
+external typedef File;
+
+-------------------
+
+sactypeprelude:
+(used in all files)
+
+  typedef[elem] any;
+  typedef[elem] builtin;
+  typedef[elem] user;
+  
+  builtin typedef[elem] int;
+  builtin typedef[elem] bool;
+  builtin typedef[elem] char;
+  builtin typedef[elem] double;
+  builtin typedef[elem] float;
+
+  typerel user, builtin <: any
+  typerel bool, int, char, float, double <: builtin;
+
+------------------
+
+  builtin typedef[shape] audge( expand dim);
+  builtin typedef[shape] akd( expand dim);
+  builtin typedef[shape] aks( expand dim, expand shp);
+  builtin typedef[shape] akv( expand dim, expand shp, expand val);
+
+  typerel audge( m) <: audge( n)  | n >= m;
+  typerel akd( m) <: audge( n)    | n <= m;
+  typerel aks( m, shp) <: akd( n) | m == n;
+  typerel akv( m, shp, val) <: aks( n, shp2) | m == n && shp == shp2;
+
+
+--------------
+
+imposes existance of:
+BIT-module:
+
+typedef int     BITdim;
+typedef shape * BITshp;
+typedef const * BITval;
+
+Bool BITeqDimDim( BITdim a, BITdim b);
+Bool BITleDimDim( BITdim a, BITdim b);
+Bool BITgeDimDim( BITdim a, BITdim b);
+Bool BITeqShpShp( BITshp a, BITshp b);
+Bool BITeqValVal( BITval a, BITval b);
+
+/* maybe, as well as :
+
+typedef int     BITint;
+typedef double  BITdouble;
+...
+*/
+----------
+
+
+fs_type * FLEXSUBntype2fstype( ntype * t);
+
+typedef struct TYPE {
+  fs_handle * elem_comp;
+  fs_handle * shape_comp;
+} fs_type;
+
+ct_res FLEXSUBcmpTypes( fs_type *t1, fs_type *t2);
+fs_type * FLEXSUBlubOfTypes( fs_type *t1, fs_type *t2);
+
+
+
+
+
+

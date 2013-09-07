@@ -43,7 +43,7 @@
  *****************************************************************************/
 #include "ReuseWithArrays.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "WRCI_S"
 #include "debug.h"
 
 #include "types.h"
@@ -553,19 +553,28 @@ REUSEprf (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel))
-        && (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id)
-        && (!DFMtestMaskEntry (INFO_NEGMASK (arg_info), NULL,
-                               ID_AVIS (PRF_ARG2 (arg_node))))
-        && IsValidIndex (PRF_ARG1 (arg_node), INFO_IV (arg_info), INFO_IVIDS (arg_info),
-                         INFO_PARTN (arg_info))) {
+    if ((PRF_PRF (arg_node) == F_sel_VxA) || (PRF_PRF (arg_node) == F_idx_sel)) {
+        DBUG_PRINT ("selection found");
+        if (NODE_TYPE (PRF_ARG2 (arg_node)) == N_id) {
+            if (!DFMtestMaskEntry (INFO_NEGMASK (arg_info), NULL,
+                                   ID_AVIS (PRF_ARG2 (arg_node)))) {
+                DBUG_PRINT ("not yet in DF mask");
+                if (IsValidIndex (PRF_ARG1 (arg_node), INFO_IV (arg_info),
+                                  INFO_IVIDS (arg_info), INFO_PARTN (arg_info))) {
+                    DBUG_PRINT ("valid index; adding to DF mask");
 
-        /*
-         * 'arg2' is used in a WL-sel that only references
-         * elements of the sub-pane of the current iteration
-         *  -> we can possibly reuse this array
-         */
-        DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL, ID_AVIS (PRF_ARG2 (arg_node)));
+                    /*
+                     * 'arg2' is used in a WL-sel that only references
+                     * elements of the sub-pane of the current iteration
+                     *  -> we can possibly reuse this array
+                     */
+                    DFMsetMaskEntrySet (INFO_MASK (arg_info), NULL,
+                                        ID_AVIS (PRF_ARG2 (arg_node)));
+                } else {
+                    DBUG_PRINT ("invalid index");
+                }
+            }
+        }
     } else {
         PRF_ARGS (arg_node) = TRAVopt (PRF_ARGS (arg_node), arg_info);
     }

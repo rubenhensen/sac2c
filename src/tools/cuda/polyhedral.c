@@ -1,6 +1,7 @@
 #include "arithmetique.h"
 #include "types.h"
 #include "vector.h"
+#include "matrix.h"
 #include "polyhedron.h"
 
 int
