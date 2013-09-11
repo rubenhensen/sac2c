@@ -3655,6 +3655,40 @@ TCcontainsDefaultPartition (node *parts)
  ***  N_code :
  ***/
 
+/** <!--********************************************************************-->
+ *
+ * @fn node * TCappendCode( node *code1, node *code2)
+ *
+ * @brief Append one list of N_codes to another
+ *
+ * @param N_codes
+ *
+ * @return code1 ++ code2
+ *
+ *****************************************************************************/
+node *
+TCappendCode (node *code1, node *code2)
+{
+    node *current;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (code1 == NULL || NODE_TYPE (code1) == N_code, "Expected N_code");
+
+    DBUG_ASSERT (code2 == NULL || NODE_TYPE (code2) == N_code, "Expected N_code");
+
+    if (code1 == NULL) {
+        code1 = code2;
+    } else {
+        current = code1;
+        while (CODE_NEXT (current) != NULL) {
+            current = CODE_NEXT (current);
+        }
+        CODE_NEXT (current) = code2;
+    }
+    DBUG_RETURN (code1);
+}
+
 /*--------------------------------------------------------------------------*/
 
 /***

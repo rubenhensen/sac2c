@@ -1212,6 +1212,7 @@ extern bool TCcontainsDefaultPartition (node *parts);
     } else {                                                                             \
         CODE_USED (n) = CODE_USED (n) - 1;                                               \
     }
+extern node *TCappendCode (node *code1, node *code2);
 
 /*--------------------------------------------------------------------------*/
 
