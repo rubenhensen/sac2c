@@ -30,6 +30,11 @@
  *
  * I think I'll just check the first pub, instead.
  *
+ * The above doc is Kai Trojahner's well-written and highly readable
+ * thesis: "Implicit Memory Management for a Functional Array
+ * Processing Language". Since you have read this far, I suggest
+ * you read the above for much-needed background and terminolgy.
+ *
  *****************************************************************************/
 
 /** <!--********************************************************************-->

@@ -720,17 +720,19 @@ IVUToffset2Vect (node *arg_node, node **vardecs, node **preassigns, node *cwlpar
 
 /** <!--********************************************************************-->
  *
- * @fn node *IVUTfindIvWith(...)
+ * @fn node *IVUToffset2IV(...)
  *
  * @brief arg_node is an iv in _sel_VxA_( iv, PWL) or
- *                       offset in _idx_sel_( offset, PWL).
- *        Try to map arg_node back to the producerWL WITHID_VEC.
+ *                       an offset in _idx_sel_( offset, PWL).
  *
- * @return: the WITHID_VEC avis node, if we can find it, or NULL.
+ *        Try to map arg_node back to an IV.
+ *        For iv, this is simple. For offset, it is a bit harder.
+ *
+ * @return: the IV, if we can find it, or NULL, otherwise.
  *
  *****************************************************************************/
 node *
-IVUTfindIvWith (node *arg_node, node *cwlpart)
+IVUToffset2IV (node *arg_node)
 {
     node *z = NULL;
     pattern *pat;
@@ -743,46 +745,68 @@ IVUTfindIvWith (node *arg_node, node *cwlpart)
     DBUG_ENTER ();
 
     pat = PMarray (1, PMAgetNode (&bndarr), 1, PMskip (0));
-    pat2 = PMprf (1, PMAgetPrf (&ivprf), 2, PMvar (1, PMAgetNode (&arg1), 0),
-                  PMvar (1, PMAgetNode (&arg2), 0), 0);
+    pat2 = PMprf (1, PMAgetPrf (&ivprf), 3, PMvar (1, PMAgetNode (&arg1), 0),
+                  PMvar (1, PMAgetNode (&arg2), 0), PMskip (0));
 
-    if (0 != TYgetDim (AVIS_TYPE (ID_AVIS (arg_node)))) { /* _sel_VxA_() case */
-        z = ID_AVIS (arg_node);
-    } else {
-        /* Skip the F_noteintersect */
-        if ((PMmatchFlatSkipGuards (pat2, arg_node) && (F_noteintersect == ivprf))) {
-            arg_node = arg1;
-        }
+    /* Skip the F_noteintersect, if it is present */
+    if ((PMmatchFlatSkipGuards (pat2, arg_node) && (F_noteintersect == ivprf))) {
+        arg_node = arg1;
+    }
 
-        if (PMmatchFlatSkipGuards (pat2, arg_node)) { /* _idx_sel() case */
-            if (F_idxs2offset == ivprf) {
-                DBUG_PRINT ("look for pwlpart WITHIDS here");
-                z = NULL; /* FIXME */
-            } else {
-                /* We have not have _idxs2offset any more, due to opts.
-                 * This is OK if PWL bounds are 1-D
-                 */
-                if ((NULL != cwlpart)
-                    && (1 == TCcountIds (WITHID_IDS (PART_WITHID (cwlpart))))) {
-                    DBUG_PRINT ("confusion   look for pwlpart WITHIDS here");
-                    z = NULL; /* FIXME */
-                }
+    // If scalar arg_node, look for an IV */
+    if (0 == TYgetDim (AVIS_TYPE (ID_AVIS (arg_node)))) { /* _idx_sel() case */
+        if (PMmatchFlatSkipGuards (pat2, arg_node)) {
+            if ((F_idxs2offset == ivprf) || (F_vect2offset == ivprf)) {
+                DBUG_PRINT ("Found F_idxsoffset. Looking at %s",
+                            AVIS_NAME (ID_AVIS (arg2)));
+                arg_node = arg2;
             }
         }
     }
 
-    /* Case 4 */
-    if ((NULL == z) && (F_unknown != ivprf) && (F_vect2offset == ivprf)) {
-        z = ID_AVIS (arg2);
+    if (0 != TYgetDim (AVIS_TYPE (ID_AVIS (arg_node)))) {
+        z = arg_node;
     }
 
     pat = PMfree (pat);
     pat2 = PMfree (pat2);
 
-    // Give up if result does not match the desired WITHID_VEC.
-    if ((NULL != z) && (NULL != cwlpart)
-        && (z != IDS_AVIS (WITHID_VEC (PART_WITHID (cwlpart))))) {
-        z = NULL;
+    DBUG_RETURN (z);
+}
+
+/** <!--********************************************************************-->
+ *
+ * @fn node *IVUTfindIvWithid(...)
+ *
+ * @brief arg_node is an iv in _sel_VxA_( iv, PWL) or
+ *                       offset in _idx_sel_( offset, PWL).
+ *
+ *        Try to map arg_node back to the producerWL WITHID_VEC.
+ *        If this is successful, then iv and the result
+ *        are identical, in the sense that there is no
+ *        index offset, nor are axes elided, duplicated, or
+ *        interchanged.
+ *
+ * @return: the N_avis node for the WITHID_VEC, if we can find it.
+ *          Otherwise, NULL.
+ *
+ *****************************************************************************/
+node *
+IVUTfindIvWithid (node *arg_node, node *cwlpart)
+{
+    node *z = NULL;
+    node *withidvec;
+    node *withidids;
+
+    DBUG_ENTER ();
+
+    arg_node = IVUToffset2IV (arg_node);
+    if (NULL != arg_node) {
+        withidvec = WITHID_VEC (PART_WITHID (cwlpart));
+        withidids = WITHID_IDS (PART_WITHID (cwlpart));
+        if (IVUTisIvMatchesWithid (arg_node, withidvec, withidids)) {
+            z = IDS_AVIS (withidvec);
+        }
     }
 
     DBUG_RETURN (z);
@@ -795,6 +819,8 @@ IVUTfindIvWith (node *arg_node, node *cwlpart)
  * @brief arg_node is offset in _idx_sel( offset, X).
  *        Try to find the vect2offset it came from, and return its
  *        PRF_ARG2.
+ *
+ *        NB. Obsolescent now. Replaced by IVUToffset2IV.
  *
  * @return: the N_id of the PRF_ARG2 node, or NULL if we could not
  *          find it.
@@ -915,6 +941,7 @@ IVUTisIvMatchesWithid (node *iv, node *withidvec, node *withidids)
 
     pat = PMany (1, PMAgetNode (&iv2));
 
+    iv = IVUToffset2IV (iv); // Deal with idx_sel( offset, PWL)
     if (PMmatchFlatSkipExtremaAndGuards (pat, iv)) {
 
         switch (NODE_TYPE (iv2)) {

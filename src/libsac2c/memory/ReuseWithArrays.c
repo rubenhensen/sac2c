@@ -257,7 +257,7 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
     }
 
     if (index2 == NULL) {
-        ivavis = IVUTfindIvWith (index, partn);
+        ivavis = IVUTfindIvWithid (index, partn);
         if (NULL != ivavis) {
             index2 = TBmakeId (ivavis);
             madeNid = TRUE;

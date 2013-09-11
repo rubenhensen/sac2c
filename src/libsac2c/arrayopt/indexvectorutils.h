@@ -17,9 +17,10 @@ extern node *IVUTarrayFromProxySel (node *iv);
 extern node *IVUTarrayFromProxyIdxsel (node *iv);
 extern node *IVUTmatFromIv (node *iv);
 extern bool IVUTisShapesMatch (node *plet, node *clet, node *cletshap);
-extern node *IVUTfindIvWith (node *arg_node, node *cwlpart);
+extern node *IVUTfindIvWithid (node *arg_node, node *cwlpart);
 extern constant *IVUTiV2Constant (node *arg_node);
 extern node *IVUTfindOffset2Iv (node *arg_node);
+extern node *IVUToffset2IV (node *arg_node);
 extern bool IVUToffsetMatchesOffset (node *iv1, node *iv2);
 extern bool IVUTisIvMatchesWithid (node *iv, node *withidvec, node *withidids);
 

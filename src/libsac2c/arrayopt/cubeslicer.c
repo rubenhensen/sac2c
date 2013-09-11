@@ -758,9 +758,8 @@ CloneCode (node *arg_node, info *arg_info)
 
     z = IVEXCdoIndexVectorExtremaCleanupPartition (z, NULL);
 
-    /* prepend new code block to N_code chain */
-    CODE_NEXT (z) = CODE_NEXT (INFO_WITHCODE (arg_info));
-    CODE_NEXT (INFO_WITHCODE (arg_info)) = z;
+    /* append new code block to N_code chain */
+    INFO_WITHCODE (arg_info) = TCappendCode (INFO_WITHCODE (arg_info), z);
 
     DBUG_RETURN (z);
 }
@@ -982,6 +981,7 @@ BuildSubcubes (node *arg_node, info *arg_info)
     if (partlim != 1) { // Do not slice simple compositions
         DBUG_PRINT ("Slicing partition %s into %d pieces",
                     AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))), partlim);
+        global.optcounters.cubsl_expr++;
         while (partno < partlim) {
             PMmatchFlat (patlb, TCgetNthExprsExpr (WLPROJECTION1 (partno),
                                                    PRF_ARGS (noteintersect)));
@@ -997,15 +997,15 @@ BuildSubcubes (node *arg_node, info *arg_info)
             partno++;
         }
     } else {
+#ifdef DEADCODEIHOPE
         // Simple composition merely gets marked for folding
         newpartns = DUPdoDupNode (arg_node);
         newpartns = BuildNewNoteintersect (newpartns, partno, noteintersect, arg_info);
+#endif // DEADCODEIHOPE
     }
 
     patlb = PMfree (patlb);
     patub = PMfree (patub);
-
-    global.optcounters.cubsl_expr++;
 
     DBUG_RETURN (newpartns);
 }
@@ -1173,8 +1173,7 @@ CUBSLwith (node *arg_node, info *arg_info)
     oldwithcode = INFO_WITHCODE (arg_info);
     INFO_WITHCODE (arg_info) = WITH_CODE (arg_node);
     WITH_PART (arg_node) = TRAVopt (WITH_PART (arg_node), arg_info);
-    DBUG_ASSERT (WITH_CODE (arg_node) == INFO_WITHCODE (arg_info),
-                 "N_code list has been tangled");
+    WITH_CODE (arg_node) = INFO_WITHCODE (arg_info);
     INFO_INTERSECTTYPE (arg_info) = oldintersecttype;
     INFO_WITHCODE (arg_info) = oldwithcode;
     arg_node = RemoveSuperfluousCodes (arg_node);
@@ -1244,6 +1243,7 @@ CUBSLpart (node *arg_node, info *arg_info)
         newparts = BuildSubcubes (arg_node, arg_info);
         if (NULL != newparts) { // We may not have done any work
             newnode = TCappendPart (newparts, PART_NEXT (arg_node));
+            PART_NEXT (arg_node) = NULL;
             arg_node = FREEdoFreeNode (arg_node);
             arg_node = newnode;
             DBUG_ASSERT (1 == CODE_USED (PART_CODE (arg_node)), "CODE_USED confusion2");
@@ -1276,16 +1276,12 @@ CUBSLlet (node *arg_node, info *arg_info)
 
     oldlhs = INFO_LHS (arg_info);
     INFO_LHS (arg_info) = LET_IDS (arg_node);
-#ifdef VERBOSE
     DBUG_PRINT ("Start looking at N_let %s", AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-#endif // VERBOSE
 
     LET_EXPR (arg_node) = TRAVdo (LET_EXPR (arg_node), arg_info);
 
-#ifdef VERBOSE
     DBUG_PRINT ("Finished looking at N_let %s",
                 AVIS_NAME (IDS_AVIS (INFO_LHS (arg_info))));
-#endif // VERBOSE
 
     INFO_LHS (arg_info) = oldlhs;
 

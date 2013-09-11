@@ -692,7 +692,7 @@ isWithidVec (node *ivoroffset, node *partn)
     bool z;
     DBUG_ENTER ();
 
-    z = NULL != IVUTfindIvWith (ivoroffset, partn);
+    z = NULL != IVUTfindIvWithid (ivoroffset, partn);
 
     DBUG_RETURN (z);
 }

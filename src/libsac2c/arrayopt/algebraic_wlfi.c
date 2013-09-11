@@ -2504,7 +2504,7 @@ AWLFIcheckProducerWLFoldable (node *arg_node)
 
 /** <!--********************************************************************-->
  *
- * @fn bool isCanAttachIntersectCalc( node *arg_node, node *ivavis, node *cwlpart,
+ * @fn bool isCanAttachIntersectCalc( node *arg_node, node *ivavis
  *                                    info *arg_info)
  *
  * @brief  TRUE if iv/ivavis are in suitable shape that we can
@@ -2512,13 +2512,12 @@ AWLFIcheckProducerWLFoldable (node *arg_node)
  *
  * @param arg_node:  _sel_VxA_( iv, producerWL)
  *        ivavis:    N_avis for iv's predecessor N_array
- *        cwlpart:     N_part for CWL partition
  *
  * @result boolean
  *
  *****************************************************************************/
 static bool
-isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg_info)
+isCanAttachIntersectCalc (node *arg_node, node *ivavis, info *arg_info)
 {
     bool z = FALSE;
     bool z2;
@@ -2528,7 +2527,6 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg
     node *aelems;
     node *elem;
     node *avis;
-    node *assgn;
 
     DBUG_ENTER ();
 
@@ -2537,7 +2535,7 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg
          || ((NULL != ivavis)
              && ((TYisAKV (AVIS_TYPE (ivavis))) || (IVEXPisAvisHasBothExtrema (ivavis))));
 
-    if ((NULL != cwlpart) && (NULL != ivavis)) {
+    if (NULL != ivavis) {
         /*
          * Now we have to get fancy: we want to allow a mix of three
          * element types in the N_array: AKV, both-extrema-present,
@@ -2563,14 +2561,15 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg
             while (NULL != aelems) {
                 elem = EXPRS_EXPR (aelems);
                 aelems = EXPRS_NEXT (aelems);
-                avis = ID_AVIS (elem);
-                assgn = AVIS_SSAASSIGN (avis);
-                DBUG_PRINT ("Looking at elem %s", AVIS_NAME (avis));
-                z = z
-                    && ((TYisAKV (AVIS_TYPE (ID_AVIS (elem))))
-                        || (IVEXPisAvisHasBothExtrema (ID_AVIS (elem)))
-                        || (!SWLDisDefinedInThisBlock (ID_AVIS (elem),
-                                                       INFO_DEFDEPTH (arg_info))));
+                if (N_id == NODE_TYPE (elem)) { // Ignore N_num
+                    avis = ID_AVIS (elem);
+                    DBUG_PRINT ("Looking at elem %s", AVIS_NAME (avis));
+                    z = z
+                        && ((TYisAKV (AVIS_TYPE (ID_AVIS (elem))))
+                            || (IVEXPisAvisHasBothExtrema (ID_AVIS (elem)))
+                            || (!SWLDisDefinedInThisBlock (ID_AVIS (elem),
+                                                           INFO_DEFDEPTH (arg_info))));
+                }
             }
         }
 
@@ -2579,7 +2578,7 @@ isCanAttachIntersectCalc (node *arg_node, node *ivavis, node *cwlpart, info *arg
     }
 
     // DEADCODE test
-    DBUG_ASSERT ((z || (!z) && !z2), "No, we still need z2");
+    DBUG_ASSERT ((z || ((!z) && !z2)), "No, we still need z2");
 
     DBUG_RETURN (z);
 }
@@ -3003,8 +3002,7 @@ AWLFIprf (node *arg_node, info *arg_info)
                                       INFO_CONSUMERWLPART (arg_info));
 
             /* We need both extrema or constant index vector */
-            if (isCanAttachIntersectCalc (arg_node, ivavis,
-                                          INFO_CONSUMERWLPART (arg_info), arg_info)) {
+            if (isCanAttachIntersectCalc (arg_node, ivavis, arg_info)) {
                 DBUG_PRINT ("Trying to attach F_noteintersect into cwl=%s", cwlnm);
                 z = attachIntersectCalc (arg_node, arg_info, ivavis);
                 if (z != ID_AVIS (PRF_ARG1 (arg_node))) {

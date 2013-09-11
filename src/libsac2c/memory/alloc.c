@@ -510,7 +510,9 @@ static node *
 AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node *cexprs,
                    info *arg_info)
 {
-    node *memavis, *valavis, *cexavis, *indexvector, *wlidx;
+    node *valavis, *cexavis, *indexvector;
+    node *wlidx = NULL;
+    node *memavis = NULL;
     ntype *crestype = NULL;
     node *assign = NULL;
     int dim;
@@ -779,6 +781,8 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                  * Ex: a_val
                  */
                 valavis = TBmakeAvis (TRAVtmpVarName ("val"), TYcopyType (crestype));
+                DBUG_PRINT ("Created new scalar cell value variable %s",
+                            AVIS_NAME (valavis));
 
                 FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
                   = TBmakeVardec (valavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));
@@ -828,6 +832,8 @@ AmendWithLoopCode (node *withops, bool with3, node *idxs, node *chunksize, node 
                  * Ex: a_mem
                  */
                 memavis = TBmakeAvis (TRAVtmpVarName ("mem"), TYeliminateAKV (crestype));
+                DBUG_PRINT ("Created new non-scalar cell value variable %s",
+                            AVIS_NAME (memavis));
 
                 FUNDEF_VARDECS (INFO_FUNDEF (arg_info))
                   = TBmakeVardec (memavis, FUNDEF_VARDECS (INFO_FUNDEF (arg_info)));

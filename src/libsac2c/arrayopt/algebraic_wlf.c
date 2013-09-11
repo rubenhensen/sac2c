@@ -412,7 +412,6 @@ checkAWLFoldable (node *arg_node, info *arg_info, node *cwlp, int level)
     node *producerWLavis;
     node *PWL;
     node *pwlp = NULL;
-    node *noteint;
 
     DBUG_ENTER ();
 
@@ -763,12 +762,8 @@ isSimpleComposition (node *arg_node, node *pwlid, node *cwlids, int defdepth,
 
     DBUG_ENTER ();
 
-#ifdef DEADCODE // CUBSL blind slicing will do this job for us.
     node *pwlwith;
     node *cwlwith;
-    node *noteint;
-    node *proj1;
-    node *proj2;
 
     pwlwith = AWLFIfindWL (pwlid);
     if ((global.optimize.doscwlf) && (NULL != pwlwith) && (NULL != cwlids)) {
@@ -778,28 +773,31 @@ isSimpleComposition (node *arg_node, node *pwlid, node *cwlids, int defdepth,
         z = z && AWLFIisSingleOpWL (cwlwith);
         z = z && AWLFIcheckProducerWLFoldable (pwlid);
         z = z && AWLFIcheckBothFoldable (pwlid, cwlids, defdepth);
-        // garbage = IVUTfindIvWith( PRF_ARG1( arg_node), cwlpart);
-        // z = z && pwlboundsmatchesCwlIndexBounds();
-        // z = z && nooffset( CWLIndexBounds);
-        noteint = AWLFIfindNoteintersect (PRF_ARG1 (arg_node));
-        if (NULL != noteint) {
-            proj1 = TCgetNthExprsExpr (WLPROJECTION1 (0), PRF_ARGS (noteint));
-            proj2 = TCgetNthExprsExpr (WLPROJECTION2 (0), PRF_ARGS (noteint));
-            z = z && (AWLFIisHasInverseProjection (proj1))
-                && (AWLFIisHasInverseProjection (proj2));
-            if (z) {
-                DBUG_PRINT ("Simple composition %s( %s) detected",
-                            AVIS_NAME (IDS_AVIS (cwlids)), AVIS_NAME (ID_AVIS (pwlid)));
-            }
-        }
+
+        // Next line implies that CWL[iv] = f( PWL[iv]);
+        z = z && (NULL != IVUTfindIvWithid (PRF_ARG1 (arg_node), cwlpart));
     }
-
-    // z = FALSE;  // VERY strange WLs for AWLF UT bodomatmulbug2AKD.sac and
-    // many others. Fewer WLs, supposedly correct answers,
-    // but code clearly could never work properly.
-    // E.g., matmul with two non-nested WLs. So, disabled for now.
-
+#ifdef DEADCODE
+    node *noteint;
+    node *proj1;
+    node *proj2;
+    noteint = AWLFIfindNoteintersect (PRF_ARG1 (arg_node));
+    if (NULL != noteint) {
+        proj1 = TCgetNthExprsExpr (WLPROJECTION1 (0), PRF_ARGS (noteint));
+        proj2 = TCgetNthExprsExpr (WLPROJECTION2 (0), PRF_ARGS (noteint));
+        z = z && (AWLFIisHasInverseProjection (proj1))
+            && (AWLFIisHasInverseProjection (proj2));
+    }
 #endif // DEADCODE
+       // z = FALSE;  // VERY strange WLs for AWLF UT bodomatmulbug2AKD.sac and
+       // many others. Fewer WLs, supposedly correct answers,
+       // but code clearly could never work properly.
+       // E.g., matmul with two non-nested WLs. So, disabled for now.
+       // Still broken as of Build #18295.
+    if (z) {
+        DBUG_PRINT ("Simple composition %s( %s) detected", AVIS_NAME (IDS_AVIS (cwlids)),
+                    AVIS_NAME (ID_AVIS (pwlid)));
+    }
 
     DBUG_RETURN (z);
 }
@@ -1027,30 +1025,6 @@ AWLFpart (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
-#ifdef DEADCODE
-
-/** <!--********************************************************************-->
- *
- * @fn node *AWLFids( node *arg_node, info *arg_info)
- *
- * @brief set current With-Loop level as ids defDepth attribute
- *
- *****************************************************************************/
-node *
-AWLFids (node *arg_node, info *arg_info)
-{
-    DBUG_ENTER ();
-
-#ifdef VERBOSE
-    DBUG_PRINT ("Traversing N_ids");
-#endif // VERBOSE
-    AVIS_DEFDEPTH (IDS_AVIS (arg_node)) = INFO_DEFDEPTH (arg_info);
-    IDS_NEXT (arg_node) = TRAVopt (IDS_NEXT (arg_node), arg_info);
-
-    DBUG_RETURN (arg_node);
-}
-#endif // DEADCODE
-
 /** <!--********************************************************************-->
  *
  * @fn node *AWLFprf( node *arg_node, info *arg_info)
@@ -1070,7 +1044,7 @@ node *
 AWLFprf (node *arg_node, info *arg_info)
 {
     node *pwl;
-    node *nwith;
+    node *pwlwith;
 
     DBUG_ENTER ();
 
@@ -1083,15 +1057,15 @@ AWLFprf (node *arg_node, info *arg_info)
           = checkAWLFoldable (arg_node, arg_info, INFO_CWLPART (arg_info),
                               INFO_DEFDEPTH (arg_info));
         pwl = PRF_ARG2 (arg_node);
-        nwith = AWLFIfindWL (pwl); /* Now the N_with */
+        pwlwith = AWLFIfindWL (pwl); /* Now the N_with */
         if ((NULL == INFO_PRODUCERPART (arg_info) && (NULL != INFO_CWLIDS (arg_info))
-             && (NULL != INFO_CWLPART (arg_info)) && (NULL != nwith)
+             && (NULL != INFO_CWLPART (arg_info)) && (NULL != pwlwith)
              && (isSimpleComposition (arg_node, pwl, INFO_CWLIDS (arg_info),
                                       INFO_DEFDEPTH (arg_info),
                                       INFO_CWLPART (arg_info))))) {
             //  || (FALSE && PRF_ISFOLDNOW( arg_node))))) {  // DISABLED. wrong answers
             // AWLF UT realrelax.sac and overly enthusiastic AWLF on other ones.
-            INFO_PRODUCERPART (arg_info) = WITH_PART (nwith);
+            INFO_PRODUCERPART (arg_info) = WITH_PART (pwlwith);
             PRF_ISFOLDNOW (arg_node) = FALSE;
         }
     }
