@@ -199,6 +199,9 @@ TBfreeCudaIndex (cuda_index_t *index)
 {
     DBUG_ENTER ();
 
+    if (!index)
+        DBUG_RETURN ((cuda_index_t *)NULL);
+
     if (CUIDX_NEXT (index) != NULL) {
         CUIDX_NEXT (index) = TBfreeCudaIndex (CUIDX_NEXT (index));
     }
