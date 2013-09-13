@@ -557,6 +557,29 @@ GetNextFloat (float *ret, node *exprs)
 }
 
 static node *
+GetNextFloatvec (floatvec *ret, node *exprs)
+{
+    node *expr;
+
+    DBUG_ENTER ();
+
+    DBUG_ASSERT (ret != NULL, "no return value found!");
+
+    DBUG_ASSERT (exprs != NULL, "wrong icm-arg: NULL found!");
+    DBUG_ASSERT (NODE_TYPE (exprs) == N_exprs, "wrong icm-arg: N_exprs expected");
+    expr = EXPRS_EXPR (exprs);
+
+    DBUG_ASSERT (NODE_TYPE (expr) == N_floatvec, "wrong icm-arg: N_float expected");
+    (*ret) = FLOATVEC_VAL (expr);
+
+    DBUG_PRINT ("icm-arg found: %d", (*ret));
+
+    exprs = EXPRS_NEXT (exprs);
+
+    DBUG_RETURN (exprs);
+}
+
+static node *
 GetNextDouble (double *ret, node *exprs)
 {
     node *expr;
@@ -595,6 +618,7 @@ GetNextAny (char **ret, node *exprs)
     unsigned long long ullval;
     bool bval;
     float fval;
+    floatvec fvval;
     double dval;
     node *expr;
 
@@ -698,6 +722,11 @@ GetNextAny (char **ret, node *exprs)
         exprs = GetNextFloat (&fval, exprs);
         (*ret) = CVfloat2String (fval);
         break;
+    case N_floatvec:
+        exprs = GetNextFloatvec (&fvval, exprs);
+        (*ret) = CVfloatvec2String (fval);
+        break;
+
     case N_double:
         exprs = GetNextDouble (&dval, exprs);
         (*ret) = CVdouble2String (dval);

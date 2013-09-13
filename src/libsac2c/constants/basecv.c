@@ -87,7 +87,12 @@ MAP (One, 1)
 
 /* special versions for Boolean (Zero == False, One == True) */
 CObaseCvTEMPLATE (NegativeOne, T_bool, bool, Bool, FALSE) /* This is a cheat */
-  CObaseCvTEMPLATE (Zero, T_bool, bool, Bool, FALSE)
-    CObaseCvTEMPLATE (One, T_bool, bool, Bool, TRUE)
+  CObaseCvTEMPLATE (Zero, T_bool, bool, Bool, FALSE) CObaseCvTEMPLATE (One, T_bool, bool,
+                                                                       Bool, TRUE)
+
+    CObaseCvTEMPLATE (Zero, T_floatvec, floatvec, Floatvec, ((floatvec){0., 0., 0., 0.}))
+      CObaseCvTEMPLATE (One, T_floatvec, floatvec, Floatvec, ((floatvec){1., 1., 1., 1.}))
+        CObaseCvTEMPLATE (NegativeOne, T_floatvec, floatvec, Floatvec,
+                          ((floatvec){-1., -1., -1., -1.}))
 
 #undef DBUG_PREFIX

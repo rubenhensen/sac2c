@@ -418,6 +418,78 @@ COsel (constant *idx, constant *a, constant *tmp1)
     DBUG_RETURN (res);
 }
 
+constant *
+COsimd_sel (constant *simd_length, constant *idx, constant *a)
+{
+    void *elems;
+    int res_dim, res_vlen, curr_ext_a, i;
+    shape *res_shp;
+    constant *res, *co;
+    int vec_length;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_TYPE (idx) == T_int, "idx to COSel not int!");
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 1, "idx to COSel not vector!");
+    DBUG_ASSERT (CONSTANT_DIM (a) >= CONSTANT_VLEN (idx),
+                 "idx-vector exceeds dim of array in COSel!");
+
+    /* Check that SIMD_LENGTH is a proper constant and grab it's value.  */
+    co = TYgetValue (simd_length);
+    DBUG_ASSERT (COgetType (co) == T_int, "vector length should be of type cosntant int");
+    vec_length = ((int *)COgetDataVec (co))[0];
+
+    /*
+     * First, we create the shape of the result:
+     *
+     *   res_shp = drop( len(idx), shape(a)!
+     */
+    res_dim = CONSTANT_DIM (a) - CONSTANT_VLEN (idx); /* correct since dim(idx)==1! */
+    res_shp = SHmakeShape (res_dim);
+    for (i = 0; i < res_dim; i++) {
+        curr_ext_a = SHgetExtent (CONSTANT_SHAPE (a), i + CONSTANT_VLEN (idx));
+        res_shp = SHsetExtent (res_shp, i, curr_ext_a);
+    }
+
+    /* Now, as we are in the SIMD world, we would extend
+     * the reslut vector with SIMD_LENGTH value.
+     */
+    DBUG_ASSERT (res_dim == 0,
+                 "SIMD selection assumes indexing the beginning of SIMD vector");
+    res_dim++;
+    res_shp = SHsetExtent (res_shp, 0, vec_length);
+
+    /* Now we pick the desired elems from a:  */
+    res_vlen = SHgetUnrLen (res_shp);
+    elems = COINTpickNElemsFromCV (CONSTANT_TYPE (a), CONSTANT_ELEMS (a),
+                                   Idx2Offset (idx, a), res_vlen);
+
+    /* Finally, the result node is created:  */
+    res = COINTmakeConstant (CONSTANT_TYPE (a), res_shp, elems, res_vlen);
+    DBUG_RETURN (res);
+}
+
+constant *
+COsimd_sel_SxS (constant *idx, constant *a)
+{
+    void *elems;
+    int res_dim, res_vlen, curr_ext_a, i;
+    shape *res_shp;
+    constant *res, *co;
+    float fval;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (CONSTANT_DIM (idx) == 1, "idx to COSel not vector!");
+    DBUG_ASSERT (CONSTANT_TYPE (a) == T_floatvec, "only floatvec can be subscipted");
+
+    /* Check that SIMD_LENGTH is a proper constant and grab it's value.  */
+    co = TYgetValue (a);
+    fval = FLOATVEC_IDX (((floatvec *)COgetDataVec (co))[0],
+                         ((int *)CONSTANT_ELEMS (idx))[0]);
+
+    res = COmakeConstantFromFloat (fval);
+    DBUG_RETURN (res);
+}
+
 /******************************************************************************
  *
  * function:

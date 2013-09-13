@@ -440,6 +440,22 @@ SATserializeFloat (info *info, float attr, node *parent)
     DBUG_RETURN ();
 }
 
+void
+SATserializeFloatvec (info *info, floatvec attr, node *parent)
+{
+    char *data;
+
+    DBUG_ENTER ();
+
+    data = STRbytes2Hex (sizeof (floatvec), (unsigned char *)&attr);
+
+    fprintf (INFO_SER_FILE (info), "DShex2Float( \"%s\")", data);
+
+    data = MEMfree (data);
+
+    DBUG_RETURN ();
+}
+
 /** <!--******************************************************************-->
  *
  * @fn SATserializeDouble

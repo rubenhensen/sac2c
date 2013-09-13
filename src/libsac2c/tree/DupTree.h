@@ -76,6 +76,7 @@ extern node *DUPnumulonglong (node *arg_node, info *arg_info);
 extern node *DUPbool (node *arg_node, info *arg_info);
 extern node *DUPnested_init (node *arg_node, info *arg_info);
 extern node *DUPfloat (node *arg_node, info *arg_info);
+extern node *DUPfloatvec (node *arg_node, info *arg_info);
 extern node *DUPdouble (node *arg_node, info *arg_info);
 extern node *DUPchar (node *arg_node, info *arg_info);
 extern node *DUPstr (node *arg_node, info *arg_info);

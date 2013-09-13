@@ -44,6 +44,7 @@ extern node *COMPnumulonglong (node *arg_node, info *arg_info);
 extern node *COMPchar (node *arg_node, info *arg_info);
 extern node *COMPbool (node *arg_node, info *arg_info);
 extern node *COMPfloat (node *arg_node, info *arg_info);
+extern node *COMPfloatvec (node *arg_node, info *arg_info);
 extern node *COMPdouble (node *arg_node, info *arg_info);
 
 extern node *COMPwith (node *arg_node, info *arg_info);

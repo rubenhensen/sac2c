@@ -14,6 +14,7 @@ extern char *COcv2StrLongLong (void *src, int off, int len, int max_char);
 extern char *COcv2StrBool (void *src, int off, int len, int max_char);
 
 extern char *COcv2StrFloat (void *src, int off, int len, int max_char);
+extern char *COcv2StrFloatvec (void *src, int off, int len, int max_char);
 extern char *COcv2StrDouble (void *src, int off, int len, int max_char);
 extern char *COcv2StrLongDouble (void *src, int off, int len, int max_char);
 

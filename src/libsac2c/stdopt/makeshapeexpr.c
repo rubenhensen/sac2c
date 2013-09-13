@@ -259,6 +259,21 @@ SAAshp_for_shape (node *arg_node, info *arg_info)
 }
 
 static node *
+SAAshp_for_simd_sel (node *arg_node, info *arg_info)
+{
+    node *shp_expr = NULL;
+
+    DBUG_ENTER ();
+
+    if (AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node))) != NULL) {
+        node *simd_length = AVIS_DIM (ID_AVIS (PRF_ARG1 (arg_node)));
+        shp_expr = TCmakeIntVector (TBmakeExprs (DUPdoDupNode (simd_length), NULL));
+    }
+
+    DBUG_RETURN (shp_expr);
+}
+
+static node *
 SAAshp_for_cat (node *arg_node, info *arg_info)
 {
     node *shp_expr;
@@ -886,6 +901,7 @@ MSEwith (node *arg_node, info *arg_info)
 MSECONST (bool)
 MSECONST (char)
 MSECONST (float)
+MSECONST (floatvec)
 MSECONST (double)
 MSECONST (num)
 MSECONST (numbyte)

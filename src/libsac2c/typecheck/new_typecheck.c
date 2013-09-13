@@ -1638,6 +1638,7 @@ NTCBASIC (numulong, T_ulong)
 NTCBASIC (numulonglong, T_ulonglong)
 NTCBASIC (double, T_double)
 NTCBASIC (float, T_float)
+NTCBASIC (floatvec, T_floatvec)
 NTCBASIC (char, T_char)
 NTCBASIC (bool, T_bool)
 
@@ -1674,6 +1675,9 @@ NTCnodeToType (node *arg_node)
         break;
     case N_float:
         z = T_float;
+        break;
+    case N_floatvec:
+        z = T_floatvec;
         break;
     case N_num:
         z = T_int;

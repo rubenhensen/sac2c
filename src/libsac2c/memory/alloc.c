@@ -356,6 +356,9 @@ MakeDimArg (node *arg)
     case N_numulonglong:
     case N_num:
     case N_float:
+    /* FIXME  Not sure it should be 0...  */
+    case N_floatvec:
+
     case N_double:
     case N_char:
     case N_bool:
@@ -411,6 +414,8 @@ MakeShapeArg (node *arg)
     case N_numulonglong:
     case N_num:
     case N_float:
+    /* FIXME Still not sure that it should be 0...  */
+    case N_floatvec:
     case N_double:
     case N_char:
     case N_bool:
@@ -1240,6 +1245,7 @@ EMALcode (node *arg_node, info *arg_info)
 EMALCONST (bool)
 EMALCONST (char)
 EMALCONST (float)
+EMALCONST (floatvec)
 EMALCONST (double)
 EMALCONST (num)
 EMALCONST (numbyte)
@@ -1659,6 +1665,41 @@ EMALprf (node *arg_node, info *arg_info)
         als->shape = MakeShapeArg (PRF_ARG1 (arg_node));
         break;
 
+    /* SIMD stuff  */
+    case F_add_SMxSM:
+    case F_sub_SMxSM:
+    case F_mul_SMxSM:
+    case F_div_SMxSM:
+        /*
+         * The first argument is a stupid scalar, so the second
+         * or the third (as they are identical shape-wise) argument
+         * is a right shape for the allocation.
+         */
+        als->dim = MakeDimArg (PRF_ARG2 (arg_node));
+        als->shape = MakeShapeArg (PRF_ARG2 (arg_node));
+        break;
+
+    case F_simd_sel_SxS:
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_int);
+        break;
+
+    case F_simd_modarray:
+        als->dim = TBmakeNum (0);
+        als->shape = TCcreateZeroVector (0, T_int);
+        break;
+
+    case F_simd_sel_VxA: {
+        node *simd_length;
+
+        als->dim = MakeDimArg (TBmakeNum (1));
+
+        /* 1-d vector, with the value defined in the first agument.  */
+        simd_length = DUPdoDupTree (PRF_ARG1 (arg_node));
+        als->shape = TCmakeIntVector (TBmakeExprs (simd_length, NULL));
+        break;
+    }
+
     case F_add_VxV:
     case F_sub_VxV:
     case F_mul_VxV:
@@ -1675,6 +1716,9 @@ EMALprf (node *arg_node, info *arg_info)
     case F_neq_VxV:
     case F_ge_VxV:
     case F_gt_VxV:
+        /* XXX Why does it matter if the type of the argument is id or not
+         * it still has a shape, right?
+         */
         if (NODE_TYPE (PRF_ARG2 (arg_node)) != N_id) {
             als->dim = MakeDimArg (PRF_ARG1 (arg_node));
             als->shape = MakeShapeArg (PRF_ARG1 (arg_node));

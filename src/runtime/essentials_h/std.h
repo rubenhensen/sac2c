@@ -628,8 +628,10 @@ typedef intptr_t *SAC_array_descriptor_t;
     decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT);
 
 #define SAC_ND_DECL__DATA_(var_NT, basetype, decoration)                                 \
-    decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT)                    \
-      = (SAC_ND_TYPE (var_NT, basetype))0;
+    decoration SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT); /*                \
+FIXME Do not initialize for the time beinb, as value 0                                   \
+      does not work for SIMD types.                                                      \
+= ( SAC_ND_TYPE( var_NT, basetype)) 0;*/
 
 #define SAC_ND_DECL_CONST__DATA(var_NT, basetype, val)                                   \
     const SAC_ND_TYPE (var_NT, basetype) SAC_ND_A_FIELD (var_NT) = val;

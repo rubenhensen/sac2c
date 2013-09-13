@@ -17,6 +17,7 @@ extern node *COcv2Numulonglong (void *elems, int offset);
 extern node *COcv2Double (void *elems, int offset);
 extern node *COcv2Bool (void *elems, int offset);
 extern node *COcv2Float (void *elems, int offset);
+extern node *COcv2Floatvec (void *elems, int offset);
 extern node *COcv2Char (void *elems, int offset);
 extern node *COcv2ScalarDummy (void *elems, int offset);
 

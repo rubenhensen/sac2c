@@ -3837,4 +3837,187 @@ NTCCTprf_hideDim_SxA (te_info *info, ntype *args)
     DBUG_RETURN (TYmakeProductType (1, res));
 }
 
+/* Typecheck SIMD expression of two SIMD operands.  */
+ntype *
+NTCCTprf_ari_op_SMxSM (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *simd_length, *array1, *array2;
+    char *err_msg;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 3,
+                 "%s called with incorrect "
+                 "number of arguments",
+                 __func__);
+
+    simd_length = TYgetProductMember (args, 0);
+    array1 = TYgetProductMember (args, 1);
+    array2 = TYgetProductMember (args, 2);
+
+    /* FIXME Add checking for the validity of vector length.  */
+
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 1), simd_length);
+    TEassureNumV (TEprfArg2Obj (TEgetNameStr (info), 2), array1);
+    TEassureNumV (TEprfArg2Obj (TEgetNameStr (info), 3), array2);
+    res = TEassureSameShape (TEarg2Obj (1), array1, TEprfArg2Obj (TEgetNameStr (info), 2),
+                             array2);
+    err_msg = TEfetchErrors ();
+    if (err_msg == NULL) {
+        TEassureSameSimpleType (TEarg2Obj (1), array1,
+                                TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+    if ((err_msg == NULL) && TEgetPrf (info) == F_div_VxV) {
+        TEassureValNonZero (TEprfArg2Obj (TEgetNameStr (info), 2), array2);
+        err_msg = TEfetchErrors ();
+    }
+
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        if (TYisAKV (array1) && TYisAKV (array2)) {
+            res = TYfreeType (res);
+            res = TYmakeAKV (TYcopyType (TYgetScalar (array1)), ApplyCF (info, args));
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/*
+ * Typecheck SIMD selection.  The parameters are: SIMD_LENGTH, IDX, ARRAY;
+ * Return type is TYPEOF (ARRAY)[SIMD_LENGTH] -- constant 1-d vector of
+ * length SIMD_LENGTH and of the same basetype as ARRAY.
+ *
+ */
+ntype *
+NTCCTprf_simd_sel_VxA (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *simd_length, *idx, *array;
+    char *err_msg;
+    constant *co;
+    int vec_length;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 3,
+                 "simd_sel called with incorrect number of arguments");
+
+    simd_length = TYgetProductMember (args, 0);
+    idx = TYgetProductMember (args, 1);
+    array = TYgetProductMember (args, 2);
+
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 0), simd_length);
+    TEassureIntV (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+
+    /* Get SIMD_LENGTH value, to build a type later.  */
+    co = TYgetValue (simd_length);
+    DBUG_ASSERT (COgetType (co) == T_int, "vector length should be of type cosntant int");
+    vec_length = ((int *)COgetDataVec (co))[0];
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        TEassureShpMatchesDim (TEprfArg2Obj (TEgetNameStr (info), 2), idx, TEarg2Obj (3),
+                               array);
+        err_msg = TEfetchErrors ();
+        if (err_msg != NULL) {
+            res = TYmakeBottomType (err_msg);
+        } else {
+
+            TEassureValMatchesShape (TEprfArg2Obj (TEgetNameStr (info), 2), idx,
+                                     TEarg2Obj (3), array);
+            err_msg = TEfetchErrors ();
+            if (err_msg != NULL) {
+                res = TYmakeBottomType (err_msg);
+            } else {
+                if (TYisAKV (idx) && TYisAKV (array)) {
+                    res = TYmakeAKV (TYcopyType (TYgetScalar (array)),
+                                     ApplyCF (info, args));
+                } else {
+                    res = TYmakeAKS (TYcopyType (TYgetScalar (array)),
+                                     SHcreateShape (1, vec_length));
+                }
+            }
+        }
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+/* Typecheck element selection from scalar SIMD vector.  */
+ntype *
+NTCCTprf_simd_sel_SxS (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *idx, *simd_vector;
+    char *err_msg;
+    constant *co;
+    int vec_length;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 2,
+                 "simd_sel called with incorrect number of arguments");
+
+    idx = TYgetProductMember (args, 0);
+    simd_vector = TYgetProductMember (args, 1);
+
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 0), idx);
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 1), simd_vector);
+
+    DBUG_ASSERT (TYgetSimpleType (TYgetScalar (simd_vector)) == T_floatvec,
+                 "Currently only floatvec can be subscripted");
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        res = TYmakeAKS (TYmakeSimpleType (T_float), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
+ntype *
+NTCCTprf_simd_modarray (te_info *info, ntype *args)
+{
+    ntype *res = NULL;
+    ntype *simd_vector, *idx, *value;
+    char *err_msg;
+    constant *co;
+    int vec_length;
+
+    DBUG_ENTER ();
+    DBUG_ASSERT (TYgetProductSize (args) == 3,
+                 "simd_sel called with incorrect number of arguments");
+
+    simd_vector = TYgetProductMember (args, 0);
+    idx = TYgetProductMember (args, 1);
+    value = TYgetProductMember (args, 2);
+
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 0), simd_vector);
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 1), idx);
+    TEassureScalar (TEprfArg2Obj (TEgetNameStr (info), 2), value);
+
+    DBUG_ASSERT (TYgetSimpleType (TYgetScalar (simd_vector)) == T_floatvec
+                   && TYgetSimpleType (TYgetScalar (idx)) == T_int
+                   && TYgetSimpleType (TYgetScalar (value)) == T_float,
+                 "Currently modarray must be called on floatvec, int, float");
+
+    err_msg = TEfetchErrors ();
+    if (err_msg != NULL) {
+        res = TYmakeBottomType (err_msg);
+    } else {
+
+        res = TYmakeAKS (TYmakeSimpleType (T_floatvec), SHmakeShape (0));
+    }
+
+    DBUG_RETURN (TYmakeProductType (1, res));
+}
+
 #undef DBUG_PREFIX

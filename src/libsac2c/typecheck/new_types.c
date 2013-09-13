@@ -5873,6 +5873,7 @@ TYoldType2ScalarType (types *old)
     case T_ulong:
     case T_ulonglong:
     case T_float:
+    case T_floatvec:
     case T_double:
     case T_longdbl:
     case T_bool:

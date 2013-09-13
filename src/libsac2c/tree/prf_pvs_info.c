@@ -10,6 +10,7 @@
  * @prv_pvs_info.c
  *
  * @brief This file provides the propagation vectors for the prfs
+ * And whath the F*CK is a propagation vector??
  *
  */
 

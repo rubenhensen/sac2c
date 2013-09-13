@@ -1025,6 +1025,7 @@ is_type (struct parser *parser)
         case TYPE_ULONG:
         case TYPE_ULONGLONG:
         case TYPE_FLOAT:
+        case TYPE_FLOATVEC:
         case TYPE_BOOL:
         case TYPE_CHAR:
         case TYPE_DBL:
@@ -1106,6 +1107,8 @@ make_simple_type (enum token_kind tkind)
         return TYmakeSimpleType (T_ulonglong);
     case TYPE_FLOAT:
         return TYmakeSimpleType (T_float);
+    case TYPE_FLOATVEC:
+        return TYmakeSimpleType (T_floatvec);
     case TYPE_BOOL:
         return TYmakeSimpleType (T_bool);
     case TYPE_CHAR:
@@ -1750,6 +1753,8 @@ handle_primary_expr (struct parser *parser)
            Boolean FALSE constant.  */
         else if (token_is_keyword (tok, FALSETOKEN)) {
             res = TBmakeBool (0);
+        } else if (token_is_keyword (tok, ZERO_FLOATVEC)) {
+            res = TBmakeFloatvec (((floatvec){0., 0., 0., 0.}));
         }
         /* ::= function-call
            Function call where the name of the function is a

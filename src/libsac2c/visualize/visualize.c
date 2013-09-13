@@ -1835,6 +1835,21 @@ VISUALfloat (node *arg_node, info *arg_info)
     DBUG_RETURN (arg_node);
 }
 
+/* FIXME implement properly later.  */
+node *
+VISUALfloatvec (node *arg_node, info *arg_info)
+{
+    char *node_name = giveNodeName (arg_node, arg_info);
+    DBUG_ENTER ();
+
+    // ouput current node
+    fprintf (INFO_FILE (arg_info),
+             "%s[label=\"%s\" style=filled fillcolor=\"lightyellow\"];\n", node_name,
+             "<ho ho ho>");
+
+    DBUG_RETURN (arg_node);
+}
+
 /** <!--********************************************************************-->
  *
  * @fn node *VISUALdouble( node *arg_node, info *arg_info)

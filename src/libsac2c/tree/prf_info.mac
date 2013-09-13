@@ -6,15 +6,12 @@
  * 3. Add a COMPprf... function for the primitive to codegen/compile.c
  *    and a ccode entry in this table, below.
  * 4. Add an entry for the primitive to memory/alloc.c
- * 5. Add entries for the primitive to scanparse/sac.l and sac.y, if
- *    the primitive is intended to be allowed within SAC source code.
  *
- *    The scanparse rewrite now appears to want an entry in
- *    scanparse/prf.def. Perhaps the sac.l and sac.y entries are
- *    no longer needed. If so, then the scanparse author should
- *    remove those documents and correct these comments.
- *
- *    NB. There are TWO places in sac.y that need changing.
+ * 5. Add entries for the primitive to scanparse/prf.def if the
+ *    primitive is intended to be allowed within SAC source code,
+ *    and it is being treated as a normal fucntion call.  In case you
+ *    need a special treatement, like conversion to a sepcific AST, then
+ *    adjust scanparse/parser.c handle_function_call and friends.
  *
  * 6. Add a function COxxx to constants/constants.h and write
  *    appropriate to handle evaluation of xxx when all its
@@ -96,6 +93,10 @@
 #define PRFicc_fun(icc_fun)
 #endif
 
+/* Function, indicating a number of return values.  Normally
+ * we use function TEone, TEtwo, etc, which are defined in
+ * typecheck/type_errors.c
+ */
 #ifndef PRFte_fun
 #define PRFte_fun(te_fun)
 #endif
@@ -160,7 +161,7 @@
  *   num_dataflow_returns     number of arguments that are returned
  *                  by this function (conformity constraints)
  *   shape_oracle_fun         function that provides the propagation vectors
- *                            (shape oracle)
+ *                            (shape oracle)  AND WHAT THE F*CK IS THAT??
  *   icc_fun        function used to insert conformity checks
  *
  *   te_fn          I think this is the number of results created by the
@@ -279,6 +280,40 @@ PRF (tobool_S, (PA_S, PA_x, PA_x), 1, TOBOOL, NOSIMD, NTCCTprf_tobool_S, COtoboo
   PRF (or_VxV, (PA_V, PA_V, PA_x), 2, OR, NOSIMD, NTCCTprf_log_op_VxV, COor,
        COMPprfOp_VxV, SCSprf_or_VxV, NULL, NULL, SAAdim_is_1, SAAshp_of_arg1, NULL, 0,
        PPIgetPVVxV, ICCsameShape, TEone, NULL, NULL),
+
+  /* Subscript a SIMD vector represented by a scalar type.
+     NOTE:  Current implementation will only work for float vectors.  */
+  PRF (simd_sel_SxS, (PA_S, PA_S, PA_x), 2, XXX, NOSIMD, NTCCTprf_simd_sel_SxS,
+       COsimd_sel_SxS, COMPsimd_sel_SxS, SCSprf_simd_sel_SxS, NULL /*SCCFprf_sel*/, NULL,
+       SAAdim_is_0, SAAshp_of_arg2, NULL, 0, PPIgetPVSxS, NULL /* FIXME */, TEone, NULL,
+       NULL),
+
+  PRF (simd_modarray, (PA_S, PA_S, PA_S), 3, XXX, NOSIMD, NTCCTprf_simd_modarray, NULL,
+       COMPsimd_modarray, NULL, NULL, NULL, SAAdim_of_arg1, SAAshp_of_arg1, NULL, 0, NULL,
+       NULL, TEone, NULL, NULL),
+
+  /* SIMD Primitive operations.  */
+  PRF (add_SMxSM, (PA_S, PA_V, PA_V), 3, SIMD_ADD, NOSIMD, NTCCTprf_ari_op_SMxSM,
+       COsimd_add, COMPprfOp_SMxSM, SCSprf_add_SMxSM, NULL, NULL, SAAdim_is_1,
+       SAAshp_of_arg2, NULL, 0, PPIgetPVVxV, ICCnone, TEone, NULL, NULL),
+
+  PRF (sub_SMxSM, (PA_S, PA_V, PA_V), 3, SIMD_SUB, NOSIMD, NTCCTprf_ari_op_SMxSM,
+       COsimd_sub, COMPprfOp_SMxSM, SCSprf_sub_SMxSM, NULL, NULL, SAAdim_is_1,
+       SAAshp_of_arg2, NULL, 0, PPIgetPVVxV, ICCnone, TEone, NULL, NULL),
+
+  PRF (mul_SMxSM, (PA_S, PA_V, PA_V), 3, SIMD_MUL, NOSIMD, NTCCTprf_ari_op_SMxSM,
+       COsimd_mul, COMPprfOp_SMxSM, SCSprf_add_SMxSM, NULL, NULL, SAAdim_is_1,
+       SAAshp_of_arg2, NULL, 0, PPIgetPVVxV, ICCnone, TEone, NULL, NULL),
+
+  PRF (div_SMxSM, (PA_S, PA_V, PA_V), 3, SIMD_DIV, NOSIMD, NTCCTprf_ari_op_SMxSM,
+       COsimd_div, COMPprfOp_SMxSM, SCSprf_div_SMxSM, NULL, NULL, SAAdim_is_1,
+       SAAshp_of_arg2, NULL, 0, PPIgetPVVxV, ICCnone, TEone, NULL, NULL),
+
+  /*   This is a simd selecton.  */
+  PRF (simd_sel_VxA, (PA_S, PA_V, PA_A), 3, XXX, NOSIMD, NTCCTprf_simd_sel_VxA,
+       COsimd_sel, COMPsimd_prfSel, SCSprf_simd_sel_VxA, NULL /*SCCFprf_sel*/, NULL,
+       SAAdim_is_1, SAAshp_for_simd_sel, NULL, 0, PPIgetPVVxV, ICCsimd_sel, TEone, NULL,
+       NULL),
 
   /*******************************************************************************
    * Standard arithmetic operations

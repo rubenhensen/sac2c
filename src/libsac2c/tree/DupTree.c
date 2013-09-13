@@ -792,6 +792,20 @@ DUPfloat (node *arg_node, info *arg_info)
     DBUG_RETURN (new_node);
 }
 
+node *
+DUPfloatvec (node *arg_node, info *arg_info)
+{
+    node *new_node;
+
+    DBUG_ENTER ();
+
+    new_node = TBmakeFloatvec (FLOATVEC_VAL (arg_node));
+
+    CopyCommonNodeData (new_node, arg_node);
+
+    DBUG_RETURN (new_node);
+}
+
 /******************************************************************************/
 
 node *
