@@ -249,12 +249,15 @@ else
   AC_SUBST(SAC2C_MKCCFLAGS, ["$MKCCFLAGS"])
   AC_SUBST(SAC2C_PDCCFLAGS, ["$PDCCFLAGS"])
 fi
- 
-# append platform specific files to sac2crc
-AC_SUBST_FILE(RCSUN)
-AC_SUBST_FILE(RCX86)
-AC_SUBST_FILE(RCALPHA)
-AC_SUBST_FILE(RCMAC)
+
+dnl 
+dnl append platform specific files to sac2crc
+dnl 
+
+AC_SUBST_FILE([RCSUN])
+AC_SUBST_FILE([RCX86])
+AC_SUBST_FILE([RCALPHA])
+AC_SUBST_FILE([RCMAC])
 RCSUN=./sac2crc.SUN
 RCX86=./sac2crc.X86
 RCALPHA=./sac2crc.ALPHA
@@ -321,23 +324,27 @@ case "$target_os" in
     ;;
 esac
 
+AC_SUBST([OS], [$target_os])
+AC_SUBST([ARCH], [$target_cpu])
+AC_SUBST([OSFLAGS])
+AC_SUBST([CFLAGS])
+AC_SUBST([CPPFLAGS])
+AC_SUBST([LDFLAGS])
+AC_SUBST([LD_DYNAMIC])
+AC_SUBST([LD_PATH])
+AC_SUBST([LD_FLAGS])
 
-AC_SUBST(OS,$target_os)
-AC_SUBST(ARCH,$target_cpu)
-AC_SUBST(OSFLAGS)
-AC_SUBST(LD_DYNAMIC)
-AC_SUBST(LD_PATH)
-AC_SUBST(LD_FLAGS)
- 
+dnl 
+dnl static sac2c settings for config.h
+dnl
 
-# static sac2c settings for config.h
-AC_DEFINE( PF_MAXFUN, 100, [set to maximum number of sac functions for profiling])
-AC_DEFINE( PF_MAXFUNAP, 100, 
+AC_DEFINE([PF_MAXFUN], [100], [set to maximum number of sac functions for profiling])
+AC_DEFINE([PF_MAXFUNAP], [100],
            [set to maximum number of sac function applications for profiling])
-AC_DEFINE( PF_MAXFUNNAMELEN, 100, 
+AC_DEFINE([PF_MAXFUNNAMELEN], [100],
            [set to maximum length of sac function names for profiling])
 
-AC_DEFINE( SAC_PRELUDE_NAME, "sacprelude", [name of sac prelude])
+AC_DEFINE([SAC_PRELUDE_NAME], ["sacprelude"], [Name of the sac prelude module.])
 AC_DEFINE( UNUSED, __attribute__((unused)), define macro for unused variables)
 
 
