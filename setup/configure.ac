@@ -114,6 +114,10 @@ enable_rtspec=no
 if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes; then
   enable_rtspec=yes
 fi
+case $ac_cv_search_dlopen in
+  no | none required) dlopen_libs= ;;
+  * ) dlopen_libs=$ac_cv_search_dlopen ;;
+esac
 have_rtspec=`if test $enable_rtspec = yes; then echo 1; else echo 0; fi`
 AC_DEFINE_UNQUOTED([ENABLE_RTSPEC], [$have_rtspec],
                    [Define to 1 if runtime specialization is enabled, otherwise 0.])
@@ -155,7 +159,6 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CPP, ["gcc -E -P -x c"])
-  AC_SUBST(CCDLLINK, ["-ldl $flags_lto"])
   AC_MSG_RESULT([gcc settings])
 elif [ test "$SUNC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -171,7 +174,6 @@ elif [ test "$SUNC" = yes ]; then
   AC_SUBST(DEPSFLAG, ["-xM"])
   AC_SUBST(CPPFILE, ["cpp -E -C -x c"])
   AC_SUBST(CPP, ["cpp -E -P -x c"])
-  AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Sun cc settings])
 elif [ test "$DECC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -187,7 +189,6 @@ elif [ test "$DECC" = yes ]; then
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cc -E -C -x c"])
   AC_SUBST(CPP, ["cc -E -P -x c"])
-  AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Compaq/DEC cc settings])
 elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -203,7 +204,6 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CPP, ["gcc -E -P -x c"])
-  AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Apple cc settings])
 else
   AC_SUBST(OPT_O0, [""])
@@ -219,10 +219,10 @@ else
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cpp -C"])
   AC_SUBST(CPP, ["cpp -P"])
-  AC_SUBST(CCDLLINK, [""])
   AC_MSG_RESULT([none found])
 fi   
 AC_SUBST(CCMTLINK, ["$PTHREAD_LIBS"])
+AC_SUBST(CCDLLINK, ["$dlopen_libs $flags_lto"])
 
 # This is a special case for building sac2c with c++ compiler.
 if [[ "$GXX" = yes -a "$enable_cplusplus" = yes ]]; then
@@ -240,7 +240,6 @@ if [[ "$GXX" = yes -a "$enable_cplusplus" = yes ]]; then
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CPP, ["gcc -E -P -x c"])
-  AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([gcc settings])
 else
   AC_SUBST(SAC2C_CC, ["$CC"])
