@@ -78,6 +78,7 @@ AC_PROG_GCC_TRADITIONAL
 
 # Check for SAC back-ends
 CHECK_CUDA
+CHECK_SL
 
 # find a code beautifier.
 CHECK_CODE_BEAUTIFIER
@@ -93,20 +94,6 @@ CHECK_REQUIRED_TOOL([XSLT], [xsltproc sabcmd])
 
 # search for dot
 CHECK_GRAPHVIZ
-
-dnl check for slc
-AC_CHECK_PROG(ENABLE_MUTC,slc,"yes","no")
-
-if [ test "$ENABLE_MUTC" = "yes"]; then
-AC_SUBST(SLC,`which slc`)
-AC_SUBST(SLAR,`which slar`)
-AC_SUBST(SLRANLIB,`which slranlib`)
-AC_DEFINE(ENABLE_MUTC, 1, set to 1 to enable mutc)
-AC_SUBST(ENABLE_MUTC, yes)
-else
-AC_DEFINE(ENABLE_MUTC, 0, set to 0 to disable mutc)
-AC_SUBST(ENABLE_MUTC, no)
-fi
 
 dnl search for malloc.h
 AC_CHECK_HEADERS(malloc.h)
