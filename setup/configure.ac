@@ -104,39 +104,23 @@ AC_CHECK_HEADERS(malloc.h)
 dnl check for mkdtemp
 AC_CHECK_FUNCS(mkdtemp)
 
-# check DLL extension
+# check support for dynamic libraries
+AC_CHECK_HEADER([dlfcn.h], [], [AC_MSG_ERROR([dlfcn.h is required.])])
+AC_SEARCH_LIBS([dlopen], [dl])
 CHECK_DLL_EXT
 
-dnl search for dlfcn.h
-AC_CHECK_HEADER(dlfcn.h,[
-
-dnl if found, enable dynamic linking
-AC_DEFINE(HAVE_DLFCN_H, 1, set to 1 because you have the <dlfcn.h> header file)
-AC_DEFINE(ENABLE_DL, 1, set to 1 to enable dynamic linking)
-AC_SUBST(ENABLE_DL, yes)
-],[
-
-dnl otherwise disable dynamic linking
-AC_DEFINE(HAVE_DLFCN_H, 0, set to 0 because you do not have the <dlfcn.h> header file)
-AC_DEFINE(ENABLE_DL, 0, set to 0 to disable dynamic linking)
-AC_SUBST(ENABLE_DL, no)
-
-])
-
 dnl set rtspec flag
-if [[ "$ENABLE_DL"="yes" -a "$ENABLE_MT"="yes" ]]; then
-  AC_DEFINE(ENABLE_RTSPEC, 1, runtime specialization enabled)
-  AC_SUBST(ENABLE_RTSPEC, yes)
-else
-  AC_DEFINE(ENABLE_RTSPEC, 0, runtime specialization disabled)
-  AC_SUBST(ENABLE_RTSPEC, no)
+enable_rtspec=no
+if test x"$ac_cv_search_dlopen" != xno -a x"$enable_mt" = xyes; then
+  enable_rtspec=yes
 fi
+have_rtspec=`if test $enable_rtspec = yes; then echo 1; else echo 0; fi`
+AC_DEFINE_UNQUOTED([ENABLE_RTSPEC], [$have_rtspec],
+                   [Define to 1 if runtime specialization is enabled, otherwise 0.])
+AC_SUBST([ENABLE_RTSPEC], [$enable_rtspec])
 
 dnl check whether to link math library
 AC_SEARCH_LIBS(sqrt, m)
-
-dnl check whether to link dlopen library
-AC_SEARCH_LIBS(dlopen, dl)
 
 dnl check for timing support (could also be included in libc)
 AC_SEARCH_LIBS(clock_gettime, rt, [
