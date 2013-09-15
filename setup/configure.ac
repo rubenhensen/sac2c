@@ -341,3 +341,21 @@ AC_DEFINE( UNUSED, __attribute__((unused)), define macro for unused variables)
 
 
 AC_OUTPUT
+
+cat <<EOF
+*
+* Configuration done.
+*
+* Detected OS string:      $target_os
+* Detected CPU string:     $target_cpu
+*
+* Run-time specialization: $enable_rtspec
+* Private heap manager:    $enable_phm
+* Back-ends:
+* - MT/pthread:            $enable_mt
+* - MT/LPEL:               $enable_mt_lpel
+* - CUDA:                  $enable_cuda
+* - OpenMP:                $enable_omp
+* - SL:                    $enable_sl
+*
+EOF
