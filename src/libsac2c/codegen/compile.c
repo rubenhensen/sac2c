@@ -6761,7 +6761,7 @@ is_simd_type (node *n)
 
     if (NODE_TYPE (n) == N_id) {
         node *av = AVIS_DECL (ID_AVIS (n));
-        types *type;
+        types *type = NULL;
         if (NODE_TYPE (av) == N_vardec)
             type = VARDEC_TYPE (av);
         else if (NODE_TYPE (av) == N_arg)
