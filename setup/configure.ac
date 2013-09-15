@@ -76,7 +76,9 @@ AC_PROG_RANLIB()
 dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
 
-# Check for SAC back-ends
+# Check for SAC back-ends (CHECK_LPEL must appear after CHECK_MT)
+CHECK_MT
+CHECK_LPEL
 CHECK_CUDA
 CHECK_SL
 
@@ -101,7 +103,6 @@ AC_CHECK_HEADERS(malloc.h)
 dnl check for mkdtemp
 AC_CHECK_FUNCS(mkdtemp)
 
-
 dnl Set the file extension for shared libs to either .dll for windows or .so
 AC_MSG_CHECKING([for shared lib file extension])
 case "$target_os" in
@@ -121,60 +122,6 @@ case "$target_os" in
     AC_MSG_RESULT([.so])
     ;;
 esac
-
-dnl Get LPEL library and include locations
-AC_ARG_WITH([lpel-include-path],
-  [AS_HELP_STRING([--with-lpel-include-path],
-    [location of the LPEL headers, defaults to ''])],
-  [LPEL_CFLAGS="-I$withval"; CFLAGS="${CFLAGS} ${LPEL_CFLAGS}"],
-  [LPEL_CFLAGS=''])
-AC_SUBST([LPEL_CFLAGS])
-
-dnl AC_ARG_WITH([lpel-lib-path],
-dnl   [AS_HELP_STRING([--with-lpel-lib-path], [location of the LPEL libraries])],
-dnl   [LPEL_LIBS="-L$withval -llpel"],
-dnl   [LPEL_LIBS='-llpel'])
-dnl AC_SUBST([LPEL_LIBS])
-
-
-dnl search for pthread.h
-AC_CHECK_HEADER(pthread.h,[
-
-dnl if found, enable multi threading
-AC_DEFINE(HAVE_PTHREAD_H, 1, set to 1 because you have the <pthread.h> header file)
-AC_DEFINE(ENABLE_MT, 1, set to 1 to enable multi threading)
-AC_SUBST(ENABLE_MT, yes)
-
-  dnl search for lpel.h
-  AC_CHECK_HEADER(lpel.h,[
-  dnl if found, enable multi threading over lpel
-  AC_DEFINE(HAVE_LPEL_H, 1, set to 1 because you have the <lpel.h> header file)
-  AC_DEFINE(ENABLE_MT_LPEL, 1, set to 1 to enable multi threading via LPEL)
-  AC_SUBST(ENABLE_MT_LPEL, yes)
-  AC_DEFINE(MT_CFLAGS_LPEL, , cc flags for LPEL)
-  AC_SUBST(MT_CFLAGS_LPEL, ${LPEL_CFLAGS})
-  AC_SUBST(MT_LDFLAGS_LPEL, ${LPEL_LIBS})
-  
-  ],[
-  
-  dnl otherwise disable multithreading via LPEL
-  AC_DEFINE(HAVE_LPEL_H, 0, set to 0 because you do not have the <lpel.h> header file)
-  AC_DEFINE(ENABLE_MT_LPEL, 0, set to 0 to disable multi threading via LPEL)
-  AC_SUBST(ENABLE_MT_LPEL, no)
-  AC_DEFINE(MT_CFLAGS_LPEL, , cc flags for LPEL)
-  AC_SUBST(MT_CFLAGS_LPEL, '')
-  AC_SUBST(MT_LDFLAGS_LPEL, '')
-  
-  ], AC_INCLUDES_DEFAULT)
-
-],[
-
-dnl otherwise disable multi threading
-AC_DEFINE(HAVE_PTHREAD_H, 0, set to 0 because you do not have the <pthread.h> header file)
-AC_DEFINE(ENABLE_MT, 0, set to 0 to disable multi threading)
-AC_SUBST(ENABLE_MT, no)
-
-])
 
 dnl search for omp.h
 AC_CHECK_HEADER(omp.h,[
@@ -296,21 +243,6 @@ else
   AC_MSG_RESULT(no)
 fi
 
-dnl check for pthread flag on gcc
-if test "$GCC" = yes; then
-  AC_MSG_CHECKING([existence of pthread flag])
-  echo "int main(){return 0;}" > .sac_configure_temp.c
-  if test "`gcc -o .sac_configure_temp -pthread .sac_configure_temp.c 2>&1 | grep "unrecognized option"`" = ""; then
-    AC_MSG_RESULT([supported])
-    GCC_PTHREADS="-pthread"
-  else
-    AC_MSG_RESULT([unsupported])
-    GCC_PTHREADS="-lpthread"
-  fi
-  rm -f .sac_configure_temp.c .sac_configure_temp
-fi
-
-
 
 # Check which GCC warning options are available and 
 # add them later to MKCCFLAGS and PDCCFLAGS
@@ -354,7 +286,6 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CPP, ["gcc -E -P -x c"])
-  AC_SUBST(CCMTLINK, [$GCC_PTHREADS])
   AC_SUBST(CCDLLINK, ["-ldl $flags_lto"])
   AC_MSG_RESULT([gcc settings])
 elif [ test "$SUNC" = yes ]; then
@@ -371,7 +302,6 @@ elif [ test "$SUNC" = yes ]; then
   AC_SUBST(DEPSFLAG, ["-xM"])
   AC_SUBST(CPPFILE, ["cpp -E -C -x c"])
   AC_SUBST(CPP, ["cpp -E -P -x c"])
-  AC_SUBST(CCMTLINK, ["-lpthread"])
   AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Sun cc settings])
 elif [ test "$DECC" = yes ]; then
@@ -388,7 +318,6 @@ elif [ test "$DECC" = yes ]; then
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cc -E -C -x c"])
   AC_SUBST(CPP, ["cc -E -P -x c"])
-  AC_SUBST(CCMTLINK, ["-pthread"])
   AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Compaq/DEC cc settings])
 elif [ test "$MACC" = yes ]; then
@@ -405,7 +334,6 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CPP, ["gcc -E -P -x c"])
-  AC_SUBST(CCMTLINK, [""])
   AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([Apple cc settings])
 else
@@ -422,10 +350,10 @@ else
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["cpp -C"])
   AC_SUBST(CPP, ["cpp -P"])
-  AC_SUBST(CCMTLINK, [""])
   AC_SUBST(CCDLLINK, [""])
   AC_MSG_RESULT([none found])
 fi   
+AC_SUBST(CCMTLINK, ["$PTHREAD_LIBS"])
 
 # This is a special case for building sac2c with c++ compiler.
 if [[ "$GXX" = yes -a "$enable_cplusplus" = yes ]]; then
@@ -443,7 +371,6 @@ if [[ "$GXX" = yes -a "$enable_cplusplus" = yes ]]; then
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
   AC_SUBST(CPP, ["gcc -E -P -x c"])
-  AC_SUBST(CCMTLINK, [$GCC_PTHREADS])
   AC_SUBST(CCDLLINK, ["-ldl"])
   AC_MSG_RESULT([gcc settings])
 else
