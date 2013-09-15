@@ -352,7 +352,7 @@ node *
 PEMwith2 (node *arg_node, info *arg_info)
 {
     node *old_lastwith2;
-    int old_executionmode;
+    mtexecmode_t old_executionmode;
     DBUG_ENTER ();
     DBUG_ASSERT (NODE_TYPE (arg_node) == N_with2,
                  "PEMwith2 expects a N_with2 as argument");

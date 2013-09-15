@@ -56,7 +56,7 @@ struct INFO {
 #define INFO_FUNDECS(n) ((n)->fundecs)
 
 static info *
-MakeInfo ()
+MakeInfo (void)
 {
     info *result;
 
