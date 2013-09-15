@@ -132,7 +132,7 @@ clean cleandevel cleanprod: checks
                         PREFIX_LOCAL="src/libsacphm/"  PREFIX_ROOT="" $@
 	$(HIDE) $(MAKE) -C src/tools     DEPS="$(DEPS)" HIDE="$(HIDE)" \
                         PREFIX_LOCAL="src/tools/"     PREFIX_ROOT="" $@
-	$(HIDE) $(RM) lib/* bin/*
+	$(HIDE) $(RM) -rf lib/* bin/*
 	@$(ECHO) ""
 	@$(ECHO) "************************************************************"
 	@$(ECHO) "* Cleaning $(PROJECT_NAME) completed"
