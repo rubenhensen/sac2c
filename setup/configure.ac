@@ -100,11 +100,18 @@ CHECK_REQUIRED_TOOL([XSLT], [xsltproc sabcmd])
 # search for dot
 CHECK_GRAPHVIZ
 
-dnl search for malloc.h
-AC_CHECK_HEADERS(malloc.h)
+# check for various environment features
+CHECK_PTR_PREFIX
+CHECK_CONST_STDERR
+AC_CHECK_HEADERS([malloc.h])
+AC_CHECK_FUNCS([mkdtemp])
+AC_SEARCH_LIBS([sqrt], [m])
+AC_CHECK_FUNCS([strtok strrchr])
 
-dnl check for mkdtemp
-AC_CHECK_FUNCS(mkdtemp)
+AC_SEARCH_LIBS([clock_gettime], [rt], [dnl
+  AC_DEFINE([HAVE_GETTIME], 1,
+            [Define is clock_gettime from POSIX RT is available.])
+])
 
 # check support for dynamic libraries
 AC_CHECK_HEADER([dlfcn.h], [], [AC_MSG_ERROR([dlfcn.h is required.])])
@@ -121,22 +128,6 @@ AC_DEFINE_UNQUOTED([ENABLE_RTSPEC], [$have_rtspec],
                    [Define to 1 if runtime specialization is enabled, otherwise 0.])
 AC_SUBST([ENABLE_RTSPEC], [$enable_rtspec])
 
-dnl check whether to link math library
-AC_SEARCH_LIBS(sqrt, m)
-
-dnl check for timing support (could also be included in libc)
-AC_SEARCH_LIBS(clock_gettime, rt, [
-AC_DEFINE(HAVE_GETTIME, 1, set to 1 because you have clock_gettime) 
-])
-
-dnl checking for presence of strtok and strrchr
-AC_CHECK_FUNCS([strtok strrchr])
-
-dnl check if printf generates leading 0x for pointers
-CHECK_PTR_PREFIX
-
-dnl check if stderr is a constant (needed for dbug.c)
-CHECK_CONST_STDERR
 
 # Check which GCC warning options are available and 
 # add them later to MKCCFLAGS and PDCCFLAGS
