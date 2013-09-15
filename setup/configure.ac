@@ -61,18 +61,8 @@ fi
 # Check if C preprocessor is available
 AC_PROG_CPP()
 
-# When C compiler is not GCC, chcek if one of 
-# Sun, Dec or Mac compiler is available on the system.
-if test "$GCC" != yes ; then
-  # Disable LTO if compiling without GCC support
-  if test "$enable_lto" = yes; then
-    AC_MSG_NOTICE([Disabling usage of lto as CC compiler is not GCC.])
-    enable_lto=no
-  fi 
-  CHECK_CPP_FLAG([__SUNPRO_C], [SUNC])
-  CHECK_CPP_FLAG([__DECC], [DECC])
-  CHECK_CPP_FLAG([__APPLE_CC__], [MACC])
-fi
+# Find out if we are using GCC/SunC/DECC/"Mac C"
+CHECK_COMPILER_VENDOR
 
 # Check whether CC supports vector operations expressed in GCC form.
 # Normally we would expect that we are dealing with GCC, but if anybody else
