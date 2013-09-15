@@ -82,6 +82,8 @@ CHECK_CUDA
 # find a code beautifier.
 CHECK_CODE_BEAUTIFIER
 
+# search for lex/flex/yacc/bison
+CHECK_LEX_YACC
 
 dnl Check that sort and uniq are available.  Should be the case
 dnl for any half-decent unix system.
@@ -337,7 +339,6 @@ if [ test $stderr_is_constant = yes ]; then
 else
   AC_MSG_RESULT(no)
 fi
-
 
 dnl check for pthread flag on gcc
 if test "$GCC" = yes; then
