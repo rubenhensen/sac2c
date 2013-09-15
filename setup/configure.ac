@@ -61,19 +61,14 @@ fi
 # Check if C preprocessor is available
 AC_PROG_CPP()
 
+# Enable system extensions when they are disabled by default
+AC_USE_SYSTEM_EXTENSIONS
+
 # Find out if we are using GCC/SunC/DECC/"Mac C"
 CHECK_COMPILER_VENDOR
 
 # Check if C compiler supports SIMD syntax
 CHECK_SIMD_SYNTAX
-
-dnl check whether popen is an extension
-AC_MSG_CHECKING([need of _EXTENSIONS_ flag])
-AC_TRY_COMPILE([#include <stdio.h>],[popen("rw","testfile")],
-AC_MSG_RESULT(no)
-need_ext_flags=no,
-AC_MSG_RESULT(yes)
-need_ext_flags=yes)
 
 dnl check for ranlib
 AC_PROG_RANLIB()
