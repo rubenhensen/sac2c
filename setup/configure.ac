@@ -240,7 +240,9 @@ dnl check for slc
 AC_CHECK_PROG(ENABLE_MUTC,slc,"yes","no")
 
 if [ test "$ENABLE_MUTC" = "yes"]; then
-AC_SUBST(SLC_PATH,`which slc`)
+AC_SUBST(SLC,`which slc`)
+AC_SUBST(SLAR,`which slar`)
+AC_SUBST(SLRANLIB,`which slranlib`)
 AC_DEFINE(ENABLE_MUTC, 1, set to 1 to enable mutc)
 AC_SUBST(ENABLE_MUTC, yes)
 else

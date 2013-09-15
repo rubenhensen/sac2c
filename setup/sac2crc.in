@@ -397,15 +397,15 @@ IMPPATH          :=  "$SACBASE/stdlib/modules/structures:"
                      "$SACBASE/stdlib/classes/random:"
 RC_METHOD        :=  "local_pasync_norc_desc"
 BACKEND          :=  "MUTC"
-CC               :=  "slc -b seqc"
+CC               :=  "@SLC@ -b seqc"
 CCFLAGS          :=  "-Wall -Wno-unused"
 LDFLAGS          :=  "@RCLDFLAGS@"
 CCMTLINK         :=  ""
 CCDLLINK         :=  ""
 LD_DYNAMIC       :=  ""
 LIB_VARIANT      :=  "mutc-seqc"
-AR_CREATE        :=  "slar seqc cr"
-RANLIB           :=  "slranlib seqc"
+AR_CREATE        :=  "@SLAR@ seqc cr"
+RANLIB           :=  "@SLRANLIB@ seqc"
 OPT_g            :=  ""
 
 
@@ -416,17 +416,17 @@ target mutc::sl:
  */      
 target sl_mta::sl:
 
-CC               :=  "slc -b mta"
+CC               :=  "@SLC@ -b mta"
 LIB_VARIANT      :=  "mutc-mta"
-AR_CREATE        :=  "slar mta cr"
-RANLIB           :=  "slranlib mta"
+AR_CREATE        :=  "@SLAR@ mta cr"
+RANLIB           :=  "@SLRANLIB@ mta"
 
 /*
  * New ppp that does not use tls
  */
 target sl_mtantls::sl_mta:
 
-CC               :=  "slc -b mta -lmalloc_notls"
+CC               :=  "@SLC@ -b mta -lmalloc_notls"
 LIB_VARIANT      :=  "mutc-mtantls"
 
 /*
@@ -434,26 +434,26 @@ LIB_VARIANT      :=  "mutc-mtantls"
  */
 target sl_ppp::sl:
 
-CC               :=  "slc -b ppp"
+CC               :=  "@SLC@ -b ppp"
 LIB_VARIANT      :=  "mutc-ppp"
-AR_CREATE        :=  "slar ppp cr"
-RANLIB           :=  "slranlib ppp"
+AR_CREATE        :=  "@SLAR@ ppp cr"
+RANLIB           :=  "@SLRANLIB@ ppp"
 
 target sl_ptl::sl:
 
-CC               :=  "slc -b ptl"
+CC               :=  "@SLC@ -b ptl"
 LIB_VARIANT      :=  "mutc-ptl"
-AR_CREATE        :=  "slar ptl cr"
-RANLIB           :=  "slranlib ptl"
+AR_CREATE        :=  "@SLAR@ ptl cr"
+RANLIB           :=  "@SLRANLIB@ ptl"
 
 target sl_seqc::sl:
 
 target sl_utc::sl:
 
-CC               :=  "slc -b utc0"
+CC               :=  "@SLC@ -b utc0"
 LIB_VARIANT      :=  "mutc-utc0"
-AR_CREATE        :=  "slar utc0 cr"
-RANLIB           :=  "slranlib utc0"
+AR_CREATE        :=  "@SLAR@ utc0 cr"
+RANLIB           :=  "@SLRANLIB@ utc0"
  
 /*****************************************************************************
  * cuda targets
