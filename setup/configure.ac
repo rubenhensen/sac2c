@@ -35,7 +35,7 @@ dnl set OS and ARCH flags
 AC_DEFINE_UNQUOTED([OS], ["$target_os"], [OS string])
 AC_DEFINE_UNQUOTED([ARCH], ["$target_cpu"], [CPU architecture string])
 
-# Enable sac2c compilation with C++
+dnl Enable sac2c compilation with C++
 AC_ARG_ENABLE(cplusplus,
 [AS_HELP_STRING([[--enable-cplusplus[=ARG]]],
                 [Compile sources with C++ compiler @<:@ARG={yes,no}@:>@])],
@@ -46,22 +46,22 @@ if test "${ENABLE_CPLUSPLUS}" = "yes" ; then
   enable_cplusplus=yes
 fi
 
-# Check if C compiler and preprocessor are available
-# we force CFLAGS to be empty, so that it does not default to -g -O2
+dnl Check if C compiler and preprocessor are available
+dnl we force CFLAGS to be empty, so that it does not default to -g -O2
 CFLAGS=" "
 AC_PROG_CC_C99
 AC_PROG_CPP
 
-# Enable system extensions when they are disabled by default
+dnl Enable system extensions when they are disabled by default
 AC_USE_SYSTEM_EXTENSIONS
 
-# Find out if we are using GCC/SunC/DECC/"Mac C"
+dnl Find out if we are using GCC/SunC/DECC/"Mac C"
 CHECK_COMPILER_VENDOR
 
-# Try to enable link time optimizations (LTO)
+dnl Try to enable link time optimizations (LTO)
 CHECK_LTO
 
-# Check if C compiler supports SIMD syntax
+dnl Check if C compiler supports SIMD syntax
 CHECK_SIMD_SYNTAX
 
 dnl check for ranlib
@@ -70,31 +70,31 @@ AC_PROG_RANLIB
 dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
 
-# Check for SAC back-ends (CHECK_LPEL must appear after CHECK_MT)
+dnl Check for SAC back-ends (CHECK_LPEL must appear after CHECK_MT)
 CHECK_MT
 CHECK_LPEL
 CHECK_CUDA
 CHECK_SL
 CHECK_OMP
-# enable private heap manager?
+dnl enable private heap manager?
 CHECK_PHM
 
-# find a code beautifier.
+dnl find a code beautifier.
 CHECK_CODE_BEAUTIFIER
 
-# search for lex/flex/yacc/bison
+dnl search for lex/flex/yacc/bison
 CHECK_LEX_YACC
 
-# search/check various utilities
+dnl search/check various utilities
 CHECK_REQUIRED_TOOL([SORT], [sort])
 CHECK_REQUIRED_TOOL([UNIQ], [uniq])
 CHECK_REQUIRED_TOOL([M4], [gm4 m4])
 CHECK_REQUIRED_TOOL([XSLT], [xsltproc sabcmd])
 
-# search for dot
+dnl search for dot
 CHECK_GRAPHVIZ
 
-# check for various environment features
+dnl check for various environment features
 CHECK_PTR_PREFIX
 CHECK_CONST_STDERR
 AC_CHECK_HEADERS([malloc.h])
@@ -107,7 +107,7 @@ AC_SEARCH_LIBS([clock_gettime], [rt], [dnl
             [Define is clock_gettime from POSIX RT is available.])
 ])
 
-# check support for dynamic libraries
+dnl check support for dynamic libraries
 AC_CHECK_HEADER([dlfcn.h], [], [AC_MSG_ERROR([dlfcn.h is required.])])
 AC_SEARCH_LIBS([dlopen], [dl])
 CHECK_DLL_EXT
@@ -126,9 +126,8 @@ AC_DEFINE_UNQUOTED([ENABLE_RTSPEC], [$have_rtspec],
                    [Define to 1 if runtime specialization is enabled, otherwise 0.])
 AC_SUBST([ENABLE_RTSPEC], [$enable_rtspec])
 
-
-# Check which GCC warning options are available and 
-# add them later to MKCCFLAGS and PDCCFLAGS
+dnl Check which GCC warning options are available and 
+dnl add them later to MKCCFLAGS and PDCCFLAGS
 gcc_options=
 if test "$GCC" = yes ; then
   CHECK_CC_OPTION([-Wall], [gcc_options])
@@ -227,7 +226,7 @@ fi
 AC_SUBST(CCMTLINK, ["$PTHREAD_LIBS"])
 AC_SUBST(CCDLLINK, ["$dlopen_libs $flags_lto"])
 
-# This is a special case for building sac2c with c++ compiler.
+dnl This is a special case for building sac2c with c++ compiler.
 if [[ "$GXX" = yes -a "$enable_cplusplus" = yes ]]; then
   AC_SUBST(SAC2C_CC, ["g++"])
   AC_SUBST(OPT_O0, [""])
