@@ -85,25 +85,11 @@ CHECK_CODE_BEAUTIFIER
 # search for lex/flex/yacc/bison
 CHECK_LEX_YACC
 
-dnl Check that sort and uniq are available.  Should be the case
-dnl for any half-decent unix system.
-AC_CHECK_PROG(SORT, sort, "sort", "no")
-AC_CHECK_PROG(UNIQ, uniq, "uniq", "no")
-
-if [ test "$SORT" = "no" ]; then
-  AC_MSG_ERROR([Cannot find sort utility.])
-fi
-
-if [ test "$UNIQ" = "no" ]; then
-  AC_MSG_ERROR([Cannot find uniq utility.])
-fi
-
-dnl search for xlst engine
-AC_CHECK_PROGS(XSLT, [xsltproc sabcmd], [!fail])
-
-if [ test "$XSLT" = "!fail" ]; then
-  AC_MSG_ERROR( [Cannot find a usable xslt processor.])
-fi
+# search/check various utilities
+CHECK_REQUIRED_TOOL([SORT], [sort])
+CHECK_REQUIRED_TOOL([UNIQ], [uniq])
+CHECK_REQUIRED_TOOL([M4], [gm4 m4])
+CHECK_REQUIRED_TOOL([XSLT], [xsltproc sabcmd])
 
 dnl search for dot
 AC_ARG_VAR([DOT_CMD], [Path to Graphviz's dot command.])
@@ -117,13 +103,6 @@ else
   AC_SUBST(DOT_FLAG, yes)
 fi
 AC_SUBST([DOT_CMD])
-
-dnl search for m4 macro processor
-AC_CHECK_PROGS(M4, [gm4 m4], [!fail])
-
-if [ test "$M4" = "!fail" ]; then
-  AC_MSG_ERROR( [Cannot find a usable m4 processor.])
-fi
 
 dnl check for slc
 AC_CHECK_PROG(ENABLE_MUTC,slc,"yes","no")
