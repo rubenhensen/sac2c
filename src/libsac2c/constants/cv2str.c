@@ -87,18 +87,20 @@ COcv2StrTEMPLATE (unsigned char, UByte, "%c")
   char *COcv2StrFloatvec (void *src, int off, int len, int max_char)
 {
     char *buf = (char *)MEMmalloc (1024);
+    char *p = buf;
+    char *end = p + 1024;
 
-    sprintf (buf, "floatvec<%d>[", len);
+    p += snprintf (p, end - p, "floatvec<%d>[", len);
 
     for (int i = 0; i < len; i++)
         if (i < 3)
-            sprintf (buf, "[%f,...]", *(float *)&((floatvec *)src)[i + off]);
+            p += snprintf (p, end - p, "[%f,...]", *(float *)&((floatvec *)src)[i + off]);
         else {
-            sprintf (buf, "...");
+            p += snprintf (p, end - p, "...");
             break;
         }
 
-    sprintf (buf, "]");
+    p += snprintf (p, end - p, "]");
 
     return buf;
 }
