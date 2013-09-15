@@ -19,9 +19,9 @@ AC_CONFIG_FILES(../src/makefiles/config.mkf sac2crc)
 AC_CONFIG_HEADER(../src/include/config.h)
 
 dnl check for host type
-AC_CANONICAL_BUILD()
-AC_CANONICAL_HOST()
-AC_CANONICAL_TARGET()
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_CANONICAL_TARGET
 
 dnl if cygwin set IS_CYGWIN
 is_cygwin=0
@@ -50,7 +50,7 @@ fi
 # we force CFLAGS to be empty, so that it does not default to -g -O2
 CFLAGS=" "
 AC_PROG_CC_C99
-AC_PROG_CPP()
+AC_PROG_CPP
 
 # Enable system extensions when they are disabled by default
 AC_USE_SYSTEM_EXTENSIONS
@@ -65,7 +65,7 @@ CHECK_LTO
 CHECK_SIMD_SYNTAX
 
 dnl check for ranlib
-AC_PROG_RANLIB()
+AC_PROG_RANLIB
 
 dnl check, whether we need -traditinal flag
 AC_PROG_GCC_TRADITIONAL
@@ -348,5 +348,4 @@ AC_DEFINE([SAC_PRELUDE_NAME], ["sacprelude"], [Name of the sac prelude module.])
 AC_DEFINE( UNUSED, __attribute__((unused)), define macro for unused variables)
 
 
-# create configure-generated file
-AC_OUTPUT()
+AC_OUTPUT
