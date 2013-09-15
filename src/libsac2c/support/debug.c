@@ -164,10 +164,6 @@ LOCAL void FreeList (struct link *linkp);
 LOCAL void DoPrefix (int _line_);
 LOCAL int DelayArg (int value);
 
-#ifndef fflush        /* This is sometimes a macro */
-IMPORT int fflush (); /* Flush output for stream */
-#endif
-
 /*
  *     Debugging states can be pushed or popped off of a
  *     stack which is implemented as a linked list.  Note
@@ -302,8 +298,6 @@ Delay (int d_time)
 }
 
 /*                                                       */
-
-IMPORT unsigned sleep (); /* Pause for given number of seconds */
 
 /*
  *  FUNCTION
