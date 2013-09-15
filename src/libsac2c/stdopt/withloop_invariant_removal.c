@@ -256,7 +256,7 @@ depthmask_mark_level (info *inf, int level)
  * Use for debug prints only!
  *
  *****************************************************************************/
-__attribute__ ((unused)) static uint64_t
+static UNUSED uint64_t
 dmask2ui64 (info *inf)
 {
     DBUG_ENTER ();

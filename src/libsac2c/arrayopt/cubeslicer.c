@@ -596,7 +596,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
  * @result: A pointer to a character string constant.
  *
  *****************************************************************************/
-static __attribute__ ((unused)) char *
+static UNUSED char *
 IntersectTypeName (intersect_type_t itype)
 {
     char *z;

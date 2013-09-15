@@ -38,6 +38,9 @@ typedef union {
 #define FLOATVEC_DEFINED
 #endif
 
+/* Mark a global variable or function as unused. */
+#define UNUSED __attribute__ ((unused))
+
 #ifndef BYTE_DEFINED
 typedef char byte;
 #define BYTE_DEFINED

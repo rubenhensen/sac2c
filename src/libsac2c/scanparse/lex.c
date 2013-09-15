@@ -233,9 +233,10 @@ lexer_getch (struct lexer *lex)
 /* Put character back on the stream of the lexer.
    Consequent lexer_getch should return exactly this character.  */
 static inline void
-lexer_ungetch (struct lexer *lex, char ch __attribute__ ((unused)))
+lexer_ungetch (struct lexer *lex, char ch)
 {
     ssize_t s;
+    (void)ch; /* Surpress unused variable warning */
 
     lex->unget_idx++;
     assert (lex->unget_idx < LEXER_BUFFER, "parser buffer holds only up to %i values.",

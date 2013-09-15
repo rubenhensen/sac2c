@@ -782,7 +782,7 @@ xfree_char_ptr_ptr (char **ptr, size_t size)
         MEMfree (ptr);
 }
 
-static void
+static UNUSED void
 xfree_node (node *node)
 {
     if (node)
