@@ -82,6 +82,8 @@ CHECK_LPEL
 CHECK_CUDA
 CHECK_SL
 CHECK_OMP
+# enable private heap manager?
+CHECK_PHM
 
 # find a code beautifier.
 CHECK_CODE_BEAUTIFIER
@@ -129,36 +131,6 @@ AC_DEFINE(HAVE_GETTIME, 1, set to 1 because you have clock_gettime)
 
 dnl checking for presence of strtok and strrchr
 AC_CHECK_FUNCS([strtok strrchr])
-
-dnl check for sbrk function
-AC_CHECK_FUNC(sbrk, [
-
-dnl if found, check type check definition of sbrk
-AC_MSG_CHECKING(for sbrk argument type)
-include_file_list=`ls -1 /usr/include/*.h`
-sbrk_types=`for name in $include_file_list; do grep sbrk $name 2>/dev/null; done`
-[sbrk_types=`echo "$sbrk_types" | sed -e 's/[A-Za-z0-9 _*]*([ ]*//g' | sed -e 's/)[A-Za-z0-9_* ;]*//g' | sed -e 's/ [A-Za-z0-9_* ]*//g'` ]
-[ for name in $sbrk_types; do ]
- AC_TRY_COMPILE([#include <unistd.h>],[sbrk(($name) 0)],break,name=none)
-[ done ]
-
-[ if test $name = none ; then ]
-AC_DEFINE(ENABLE_PHM, 0)
-AC_SUBST(ENABLE_PHM, no)
-AC_MSG_RESULT(not found)
-[ else ]
-AC_DEFINE_UNQUOTED(SBRK_T,$name,set to the type of sbrk argument)
-AC_MSG_RESULT($name)
-AC_SUBST(ENABLE_PHM, yes)
-AC_DEFINE(ENABLE_PHM, 1)
-[ fi ]
-],[
-
-dnl otherwise disable pm
-AC_DEFINE(ENABLE_PHM, 1, set to disable private heapmanagement)
-AC_SUBST(ENABLE_PHM, yes)
-])
-
 
 dnl check if printf generates leading 0x for pointers
 AC_MSG_CHECKING(for 0x prefix when printing pointers)
