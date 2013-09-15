@@ -454,7 +454,15 @@ CC               :=  "@SLC@ -b utc0"
 LIB_VARIANT      :=  "mutc-utc0"
 AR_CREATE        :=  "@SLAR@ utc0 cr"
 RANLIB           :=  "@SLRANLIB@ utc0"
- 
+
+/*****************************************************************************
+ * OpenMP targets
+ */
+target openmp:
+
+CCFLAGS          += " @OPENMP_CFLAGS@"
+LDFLAGS          += " @OPENMP_CFLAGS@"
+
 /*****************************************************************************
  * cuda targets
  */
