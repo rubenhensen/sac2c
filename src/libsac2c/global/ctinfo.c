@@ -1240,7 +1240,7 @@ CTIterminateCompilation (node *syntax_tree)
 
             visual_output = VISUALdoVisual (syntax_tree);
             shell_command
-              = STRcatn (8, "dot ", visual_output, " -T", global.visual_format, " -o ",
+              = STRcatn (8, DOT_CMD, visual_output, " -T", global.visual_format, " -o ",
                          global.outfilename, ".", global.visual_format);
             DBUG_PRINT ("\n %s \n", shell_command);
             SYScall (shell_command);

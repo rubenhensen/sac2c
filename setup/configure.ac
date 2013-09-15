@@ -217,16 +217,17 @@ if [ test "$XSLT" = "!fail" ]; then
 fi
 
 dnl search for dot
-AC_CHECK_PROG(DOT, dot, "yes", "no")
-
-if [ test "$DOT" = "no" ]; then
+AC_ARG_VAR([DOT_CMD], [Path to Graphviz's dot command.])
+AC_CHECK_PROG([DOT_CMD], dot, "dot", "no")
+if [ test "$DOT_CMD" = "no" ]; then
+  AC_MSG_NOTICE( [Cannot find a usable dot.])
   AC_DEFINE(DOT_FLAG, 0, set to 0 to disable visualization)
-  AC_SUBST(DOT_FLAG, no)  
+  AC_SUBST(DOT_FLAG, no)
 else
   AC_DEFINE(DOT_FLAG, 1, set to 1 to enable visualization)
   AC_SUBST(DOT_FLAG, yes)
 fi
-
+AC_SUBST([DOT_CMD])
 
 dnl search for m4 macro processor
 AC_CHECK_PROGS(M4, [gm4 m4], [!fail])
