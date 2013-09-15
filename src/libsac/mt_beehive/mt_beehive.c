@@ -14,7 +14,7 @@
 
 #include "config.h"
 
-static int _dummy_mt_beehive;
+static UNUSED int _dummy_mt_beehive;
 
 #if ENABLE_MT
 

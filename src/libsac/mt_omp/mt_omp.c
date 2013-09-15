@@ -22,7 +22,7 @@
  * For this reason a dummy variable is declared.
  *
  ******************************************************************************/
-static int dummy_mt_omp;
+static UNUSED int dummy_mt_omp;
 
 /*
  * In case we do not have mt available, we have to make sure this file

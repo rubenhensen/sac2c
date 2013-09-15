@@ -150,6 +150,9 @@
 /* set to 1 if stderr is a constant */
 #undef STDERR_IS_CONSTANT
 
+/* define macro for unused variables */
+#undef UNUSED
+
 /* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
    `char[]'. */
 #undef YYTEXT_POINTER

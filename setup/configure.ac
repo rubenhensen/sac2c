@@ -806,6 +806,7 @@ AC_DEFINE( PF_MAXFUNNAMELEN, 100,
            [set to maximum length of sac function names for profiling])
 
 AC_DEFINE( SAC_PRELUDE_NAME, "sacprelude", [name of sac prelude])
+AC_DEFINE( UNUSED, __attribute__((unused)), define macro for unused variables)
 
 dnl
 dnl create configure-generated file

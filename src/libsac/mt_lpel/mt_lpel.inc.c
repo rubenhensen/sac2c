@@ -15,7 +15,7 @@
 #include "config.h"
 
 /* ensure the file is not empty when mt lpel is disabled */
-static int dummy_mt_lpel;
+static UNUSED int dummy_mt_lpel;
 
 #if ENABLE_MT && ENABLE_MT_LPEL
 

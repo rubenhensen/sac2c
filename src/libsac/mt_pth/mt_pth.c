@@ -33,7 +33,7 @@
  * For this reason a dummy variable is declared.
  *
  ******************************************************************************/
-static int dummy_mt_pth;
+static UNUSED int dummy_mt_pth;
 
 /*
  * In case we do not have mt available, we have to make sure this file

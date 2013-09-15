@@ -5771,6 +5771,9 @@ $as_echo "#define PF_MAXFUNNAMELEN 100" >>confdefs.h
 $as_echo "#define SAC_PRELUDE_NAME \"sacprelude\"" >>confdefs.h
 
 
+$as_echo "#define UNUSED __attribute__((unused))" >>confdefs.h
+
+
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
