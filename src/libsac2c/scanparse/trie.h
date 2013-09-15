@@ -1,6 +1,8 @@
 #ifndef __TRIE_H__
 #define __TRIE_H__
 
+#include <sys/types.h>
+
 #ifndef LEXER_BINARY
 #  include "compat.h"
 #endif
