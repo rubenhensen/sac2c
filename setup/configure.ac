@@ -23,6 +23,14 @@ AC_CANONICAL_BUILD()
 AC_CANONICAL_HOST()
 AC_CANONICAL_TARGET()
 
+dnl if cygwin set IS_CYGWIN
+is_cygwin=0
+case "$target_os" in
+  *cygwin*) is_cygwin=1 ;;
+esac
+AC_DEFINE_UNQUOTED([IS_CYGWIN], [$is_cygwin],
+                   [Set to 1 if target is Cygwin, otherwise 0.])
+
 dnl set OS and ARCH flags
 AC_DEFINE_UNQUOTED(OS,"$target_os",set to the os type)
 AC_DEFINE_UNQUOTED(ARCH,"$target_cpu",set to the architecture)
@@ -233,18 +241,6 @@ case "$target_os" in
     AC_DEFINE(SHARED_LIB_EXT, ".so", [File extension used for shared library files.])
     AC_MSG_RESULT([.so])
     ;;
-esac
-
-dnl if cygwin set IS_CYGWIN 
-case "$target_os" in
-*cygwin*)
-  AC_DEFINE(IS_CYGWIN, 1, set to 1 if target os is cygwin)
-  AC_SUBST(IS_CYGWIN, yes)
-  ;;
-*)
-  AC_DEFINE(IS_CYGWIN, 0, set to 1 if target os is cygwin)
-  AC_SUBST(IS_CYGWIN, no)
-  ;;
 esac
 
 dnl Get LPEL library and include locations
