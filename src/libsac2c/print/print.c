@@ -38,7 +38,7 @@
 #include "tfprintutils.h"
 #include "int_matrix.h"
 #include "stringset.h"
-#include "artem.h"
+#include "lex.h"
 
 /*
  * use of arg_info in this file:

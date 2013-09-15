@@ -255,6 +255,24 @@ lexer_change_file_name (struct lexer *lex, const char *fname)
     return f->name;
 }
 
+static inline bool
+is_operator_symbol (const char c)
+{
+    return !(isspace (c) || isalnum (c) || c == '(' || c == ')' || c == '[' || c == ']'
+             || c == '{' || c == '}' || c == ';' || c == ',' || c == '\'' || c == '"'
+             || c == EOF);
+}
+
+static inline bool
+LEXERisOperator (const char *name)
+{
+    for (size_t i = 0; i < strlen (name); i++)
+        if (!is_operator_symbol (name[i]))
+            return FALSE;
+
+    return TRUE;
+}
+
 /* If the value of the token needs a character buffer or it is
    stored as an enum token_kind variable.  */
 
