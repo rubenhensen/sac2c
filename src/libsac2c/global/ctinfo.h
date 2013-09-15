@@ -41,5 +41,6 @@ extern void CTIterminateCompilation (node *syntax_tree);
 extern void CTIterminateCompilationSilent (void);
 extern const char *CTIitemName (node *item);
 extern const char *CTIfunParams (node *fundef);
+extern void set_message_line_length (int l);
 
 #endif /* _SAC_CTINFO_H_ */

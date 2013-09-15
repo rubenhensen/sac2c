@@ -68,11 +68,12 @@
 
 static char *message_buffer = NULL;
 static int message_buffer_size = 0;
-static int message_line_length = 76;
+static int message_line_length = 80;
 
 static char *abort_message_header = "abort: ";
 static char *error_message_header = "error: ";
 static char *warn_message_header = "warning: ";
+static char *second_level_header = "=> ";
 static char *state_message_header = "";
 static char *note_message_header = "  ";
 
@@ -80,6 +81,12 @@ static int errors = 0;
 static int warnings = 0;
 
 #define MAX_ITEM_NAME_LENGTH 255
+
+void
+set_message_line_length (int l)
+{
+    message_line_length = l;
+}
 
 int
 CTIgetErrorCount (void)
@@ -263,13 +270,12 @@ static void
 PrintMessage (const char *header, const char *format, va_list arg_p)
 {
     char *line;
-    ;
+    char local_header[] = "=> ";
+
     DBUG_ENTER ();
 
     Format2Buffer (format, arg_p);
-
-    ProcessMessage (message_buffer, message_line_length - STRlen (header));
-
+    ProcessMessage (message_buffer, message_line_length - STRlen (local_header));
     line = strtok (message_buffer, "@");
 
     while (line != NULL) {
@@ -651,6 +657,31 @@ CTIerrorLine (int line, const char *format, ...)
     DBUG_RETURN ();
 }
 
+static inline char *
+produce_header (struct location loc, const char *hdr)
+{
+    char *res;
+    str_buf *buffer;
+
+    buffer = SBUFcreate (128);
+    SBUFprintf (buffer, "%s ", loc.fname);
+    if (loc.line == 0)
+        SBUFprint (buffer, "??");
+    else
+        SBUFprintf (buffer, "%zd", loc.line);
+
+    if (loc.col > 0)
+        SBUFprintf (buffer, ":%zd ", loc.col);
+    else
+        SBUFprint (buffer, " ");
+
+    SBUFprintf (buffer, "%s", hdr);
+    res = SBUF2str (buffer);
+
+    buffer = SBUFfree (buffer);
+    return res;
+}
+
 void
 CTIerrorLoc (struct location loc, const char *format, ...)
 {
@@ -659,18 +690,8 @@ CTIerrorLoc (struct location loc, const char *format, ...)
     DBUG_ENTER ();
 
     va_start (arg_p, format);
-    (void)fprintf (stderr, "%s ", loc.fname);
-    if (loc.line == 0)
-        (void)fprintf (stderr, "??");
-    else
-        (void)fprintf (stderr, "%zd", loc.line);
-
-    if (loc.col > 0)
-        (void)fprintf (stderr, ":%zd ", loc.col);
-    else
-        (void)fprintf (stderr, " ");
-
-    PrintMessage (error_message_header, format, arg_p);
+    fprintf (stderr, "%s\n", produce_header (loc, error_message_header));
+    PrintMessage (second_level_header, format, arg_p);
     va_end (arg_p);
 
     errors++;
@@ -686,18 +707,8 @@ CTIwarnLoc (struct location loc, const char *format, ...)
     DBUG_ENTER ();
 
     va_start (arg_p, format);
-    (void)fprintf (stderr, "%s ", loc.fname);
-    if (loc.line == 0)
-        (void)fprintf (stderr, "??");
-    else
-        (void)fprintf (stderr, "%zd", loc.line);
-
-    if (loc.col > 0)
-        (void)fprintf (stderr, ":%zd ", loc.col);
-    else
-        (void)fprintf (stderr, " ");
-
-    PrintMessage (error_message_header, format, arg_p);
+    fprintf (stderr, "%s\n", produce_header (loc, warn_message_header));
+    PrintMessage (second_level_header, format, arg_p);
     va_end (arg_p);
 
     warnings++;

@@ -1831,6 +1831,11 @@ handle_primary_expr (struct parser *parser)
             if (is_type (parser)) {
                 ntype *type;
 
+                if (saw_colon)
+                    warning_loc (token_location (tok),
+                                 "using deprecated type-cast "
+                                 "syntax, please remove the `:' character");
+
                 type = handle_type (parser);
 
                 if (!TYisAKS (type)) {
@@ -2213,20 +2218,37 @@ handle_cast_expr (struct parser *parser)
 
         /* eat-up unnecessary colon in the type-conversion
            left there only for compatibility reasons.  */
-        if (token_is_operator (tok, tv_colon))
+        if (token_is_operator (tok, tv_colon)) {
             saw_colon = true;
-        else
+        } else
             parser_unget (parser);
 
         if (is_type (parser)) {
             struct pre_post_expr ret;
             ntype *type = NULL;
 
+            if (saw_colon)
+                warning_loc (token_location (tok),
+                             "using deprecated type-cast "
+                             "syntax, please remove the `:' character");
+
             type = handle_type (parser);
 
             if (parser_expect_tval (parser, tv_rparen))
                 parser_get_token (parser);
 
+            /* FIXME here we can have a situation that there is no expression
+               standing after the type because it is a local variable named
+               the same as the type:
+                  typedef char x;
+                  ...
+                  x = 1;
+                  a = ((x))++;
+                  ...
+               in which case we would need to check that the type is actually
+               allowed to be a variable, and if so, construct an expression
+               from it.
+            */
             ret = handle_cast_expr (parser);
 
             if (ret.expr == error_mark_node || type == error_type_node)
@@ -3848,6 +3870,10 @@ handle_vardecl_list (struct parser *parser)
 
             type = handle_type (parser);
 
+            /* FIXME Here we need to check that at least one variable
+               exists after the type.  If not, check if the symbol is
+               `=' which can be an assignment where the variable is named
+               the same way as a type.  */
             if (type != NULL && type != error_type_node
                 && (error_mark_node != (ids = handle_var_id_list (parser))
                     && NULL != ids)) {
@@ -4621,6 +4647,11 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
     if (token_is_operator (tok, tv_lparen)) {
         allows_infix = true;
         tok = parser_get_token (parser);
+
+        warning_loc (token_location (tok),
+                     "using deprecated operator definition "
+                     "syntax, please remove `(' and `)' characters");
+
         parser->lex->is_read_user_op = false;
 
         if (token_is_reserved (tok) || token_class (tok) == tok_user_op)
@@ -4639,6 +4670,9 @@ handle_function (struct parser *parser, enum parsed_ftype *ftype)
         if (parser->in_module)
             error_loc (token_location (tok), "main function cannot be "
                                              "defined inside the module");
+        if (inline_p)
+            warning_loc (token_location (tok), "making main function inline "
+                                               "doesn't have any effect");
 
         fname = TBmakeSpid (NULL, strdup (token_as_string (tok)));
 
@@ -4775,6 +4809,7 @@ pragmas:
         FUNDEF_ISMAIN (ret) = true;
 
     if (fundef_p) {
+        /* FIXME ALLOWSINFIX is deprecated and is not used anywhere elese.  */
         FUNDEF_ALLOWSINFIX (ret) = allows_infix;
         FUNDEF_ISTHREADFUN (ret) = thread_p;
         FUNDEF_ISINLINE (ret) = inline_p;

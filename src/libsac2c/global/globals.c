@@ -18,7 +18,7 @@
 
 #include "globals.h"
 
-#define DBUG_PREFIX "UNDEFINED"
+#define DBUG_PREFIX "GLOBAL"
 #include "debug.h"
 
 #include "str.h"
@@ -43,6 +43,8 @@
 #include "resource.h"
 
 #include <limits.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
 
 /*
  * global variable to hold the global variables
@@ -694,6 +696,22 @@ BuildFunApLine (int maxfun, int maxfunap)
     DBUG_RETURN (aps);
 }
 
+/* Ask for terminal size if we are on the interactive terminal
+   or default value if we are writing to a file.  */
+static inline unsigned short
+get_terminal_size (void)
+{
+    struct winsize ws;
+
+    memset (&ws, 0, sizeof (struct winsize));
+
+    if (!isatty (STDERR_FILENO))
+        return 80;
+
+    ioctl (STDERR_FILENO, TIOCGWINSZ, &ws);
+    return ws.ws_col;
+}
+
 /*
  * Initialize global variables from globals.mac
  */
@@ -724,6 +742,9 @@ GLOBinitializeGlobal (int argc, char *argv[], tool_t tool, char *toolname)
 
     memset (global.profile_funnme, 0, sizeof (char *) * PF_MAXFUN);
     memset (global.profile_funapcntr, 0, sizeof (int) * PF_MAXFUN);
+
+    /* setup the line length for cti interface.  */
+    set_message_line_length ((int)get_terminal_size ());
 
     DBUG_RETURN ();
 }
