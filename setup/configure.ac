@@ -36,15 +36,11 @@ AC_DEFINE_UNQUOTED([OS], ["$target_os"], [OS string])
 AC_DEFINE_UNQUOTED([ARCH], ["$target_cpu"], [CPU architecture string])
 
 dnl Enable sac2c compilation with C++
-AC_ARG_ENABLE(cplusplus,
-[AS_HELP_STRING([[--enable-cplusplus[=ARG]]],
-                [Compile sources with C++ compiler @<:@ARG={yes,no}@:>@])],
-ENABLE_CPLUSPLUS=$enableval,
-ENABLE_CPLUSPLUS=no)
-enable_cplusplus=
-if test "${ENABLE_CPLUSPLUS}" = "yes" ; then
-  enable_cplusplus=yes
-fi
+AC_ARG_ENABLE([cplusplus],
+              [AS_HELP_STRING([[--enable-cplusplus]],
+                               [Use the C++ compiler to compile files produced by sac2c])],
+              [enable_cplusplus=$enableval],
+              [enable_cplusplus=no])
 
 dnl Check if C compiler and preprocessor are available
 dnl we force CFLAGS to be empty, so that it does not default to -g -O2
