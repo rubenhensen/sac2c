@@ -133,22 +133,7 @@ dnl checking for presence of strtok and strrchr
 AC_CHECK_FUNCS([strtok strrchr])
 
 dnl check if printf generates leading 0x for pointers
-AC_MSG_CHECKING(for 0x prefix when printing pointers)
-AC_EGREP_CPP(0x0*,
-[#include <stdio.h>
-int main()
-{
-printf("%p", (void*) 0);
-}
-], has_ptr_prefix=yes, has_ptr_prefix=no)
-if [ test $has_ptr_prefix = yes ]; then
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-  AC_DEFINE(NEED_PTR_PREFIX, 1, set to 1 if printf does not print a leading
-0x in front of pointers)
-fi
-
+CHECK_PTR_PREFIX
 
 dnl check if stderr is a constant (needed for dbug.c
 AC_MSG_CHECKING(whether stderr is a constant)
@@ -159,7 +144,8 @@ AC_TRY_COMPILE([
 
 FILE *_db_fp_ = stderr;
 ],[],stderr_is_constant=yes,stderr_is_constant=no)
-if [ test $stderr_is_constant = yes ]; then
+if [ test $stderr_is_constant = yes ];
+then
   AC_MSG_RESULT(yes)
   AC_DEFINE(STDERR_IS_CONSTANT, 1, set to 1 if stderr is a constant)
 else
