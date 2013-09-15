@@ -79,29 +79,8 @@ AC_PROG_GCC_TRADITIONAL
 # Check for SAC back-ends
 CHECK_CUDA
 
-
-dnl check whether its gnu indent
-AC_MSG_CHECKING([whether GNU indent works])
-GNUINDENT=$(indent --version 2>/dev/null)
-case "$GNUINDENT" in
-  *GNU*) 
-    CB="indent"
-    AC_MSG_RESULT(yes)
-    ;;
-  *) 
-    GNUINDENT=$(gindent --version 2>/dev/null)
-    case "$GNUINDENT" in
-    *GNU*)
-      CB="gindent"
-      AC_MSG_RESULT(yes)
-      ;;
-    *)
-      CB="\$(PROJECT_ROOT)/src/bin/cb"
-      AC_MSG_RESULT(no)
-      ;;
-    esac
-esac
-AC_SUBST(CB, $CB)
+# find a code beautifier.
+CHECK_CODE_BEAUTIFIER
 
 
 dnl Check that sort and uniq are available.  Should be the case
