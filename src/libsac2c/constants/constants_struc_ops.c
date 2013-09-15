@@ -5,6 +5,7 @@
 #define DBUG_PREFIX "COOPS"
 #include "debug.h"
 
+#include "new_types.h"
 #include "constants.h"
 #include "constants_internal.h"
 #include "tree_basic.h"
