@@ -91,18 +91,8 @@ CHECK_REQUIRED_TOOL([UNIQ], [uniq])
 CHECK_REQUIRED_TOOL([M4], [gm4 m4])
 CHECK_REQUIRED_TOOL([XSLT], [xsltproc sabcmd])
 
-dnl search for dot
-AC_ARG_VAR([DOT_CMD], [Path to Graphviz's dot command.])
-AC_CHECK_PROG([DOT_CMD], dot, "dot", "no")
-if [ test "$DOT_CMD" = "no" ]; then
-  AC_MSG_NOTICE( [Cannot find a usable dot.])
-  AC_DEFINE(DOT_FLAG, 0, set to 0 to disable visualization)
-  AC_SUBST(DOT_FLAG, no)
-else
-  AC_DEFINE(DOT_FLAG, 1, set to 1 to enable visualization)
-  AC_SUBST(DOT_FLAG, yes)
-fi
-AC_SUBST([DOT_CMD])
+# search for dot
+CHECK_GRAPHVIZ
 
 dnl check for slc
 AC_CHECK_PROG(ENABLE_MUTC,slc,"yes","no")
