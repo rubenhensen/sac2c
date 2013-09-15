@@ -46,18 +46,6 @@ if test "${ENABLE_CPLUSPLUS}" = "yes" ; then
   enable_cplusplus=yes
 fi
 
-# Enable sac2c compilation with LTO -- (link time optimisation),
-# GCC specific, triggers -flto flag for compilation and linking
-AC_ARG_ENABLE(lto,
-[AS_HELP_STRING([[--enable-lto[=ARG]]],
-                [Perform link time optimisation (LTO) by passing -flto flag @<:@ARG={yes,no}@:>@])],
-ENABLE_LTO=$enableval,
-ENABLE_LTO=no)
-enable_lto=
-if test "${ENABLE_LTO}" = "yes" ; then
-  enable_lto=yes
-fi
-
 # Check if C preprocessor is available
 AC_PROG_CPP()
 
@@ -66,6 +54,9 @@ AC_USE_SYSTEM_EXTENSIONS
 
 # Find out if we are using GCC/SunC/DECC/"Mac C"
 CHECK_COMPILER_VENDOR
+
+# Try to enable link time optimizations (LTO)
+CHECK_LTO
 
 # Check if C compiler supports SIMD syntax
 CHECK_SIMD_SYNTAX
@@ -140,16 +131,9 @@ if test "$GCC" = yes ; then
   CHECK_CC_OPTION([-Wno-unused-but-set-variable], [gcc_options])
 fi
 
-# Check if GCC compiler supports lto, and if LTO is enabled
-# add -flto to the compilation flags.
-flags_lto=
-if [[ "$GCC" = yes -a "$enable_lto" = yes ]]; then
-  CHECK_CC_OPTION([-flto], [flags_lto])
-  if test "x$flags_lto" = "x"; then
-    AC_MSG_NOTICE([Diabling compilation with LTO, as chosen compiler does not support -flto option.])
-  fi
-fi
-
+dnl
+dnl test for compiler flags for sac2crc
+dnl
 
 dnl test for compiler flags for sac2crc
 AC_MSG_CHECKING([sac2crc compiler flags])
