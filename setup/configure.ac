@@ -262,6 +262,11 @@ case "$target_os" in
     AC_DEFINE(SHARED_LIB_EXT, ".dll", [File extension used for shared library files.])
     AC_MSG_RESULT([.dll])
     ;;
+  *darwin*)
+    AC_SUBST(SHARED_LIB_EXT, [".dylib"])
+    AC_DEFINE(SHARED_LIB_EXT, ".dylib", [File extension used for shared library files.])
+    AC_MSG_RESULT([.dylib])
+    ;;
   *)
     AC_SUBST(SHARED_LIB_EXT, [".so"])  
     AC_DEFINE(SHARED_LIB_EXT, ".so", [File extension used for shared library files.])

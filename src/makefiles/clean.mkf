@@ -64,12 +64,12 @@ clean_subdirs: $(CLEAN_SUBDIRS) $(CLEAN_TARGETS)
 #
 
 clean_sourcedir_all:
-	$(HIDE) $(RM) *.o *.a *.so *.bak *~ .*.d *.dll *.dll.a
+	$(HIDE) $(RM) *.o *.a *.so *.bak *~ .*.d *.dylib *.dll *.dll.a
 	$(HIDE) $(RM) $(patsubst %.xsl,%,$(wildcard *.xsl))
 	$(HIDE) $(RM) $(patsubst %.m4,%,$(wildcard *.m4))
 	$(HIDE) $(RM) -r .sb SunWS_cache
 	$(HIDE) $(RM) SACbugreport .make_track
 
 clean_sourcedir_%:
-	$(HIDE) $(RM) *.$($*_short).o *.$($*_short).a *.$($*_short).so
+	$(HIDE) $(RM) *.$($*_short).o *.$($*_short).a *.$($*_short).so *.$($*_short).dll *.$($*_short).dylib
 
