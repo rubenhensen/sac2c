@@ -38,6 +38,7 @@
 #include "tfprintutils.h"
 #include "int_matrix.h"
 #include "stringset.h"
+#include "artem.h"
 
 /*
  * use of arg_info in this file:
@@ -57,6 +58,19 @@
  */
 
 /* INFO structure */
+
+typedef struct PRINT_OPTS {
+    unsigned int funap_props : 1;
+    unsigned int fundef_props : 1;
+} print_opts;
+
+void
+SetDefaultPrintOps (print_opts *po)
+{
+    po->funap_props = TRUE;
+    po->fundef_props = TRUE;
+}
+
 struct INFO {
     /* print */
     node *cont;
@@ -82,6 +96,7 @@ struct INFO {
     node *tfsupernode;
     char *tfstringexpr;
     dot_output_mode dotmode;
+    print_opts prtopts;
 
     /*record name space*/
     char *namesapce;
@@ -109,6 +124,7 @@ struct INFO {
 #define INFO_TFSTRINGEXPR(n) ((n)->tfstringexpr)
 #define INFO_DOTMODE(n) ((n)->dotmode)
 #define INFO_NAMESPACE(n) ((n)->namesapce)
+#define INFO_PRTOPTS(n) ((n)->prtopts)
 
 /*
  * This global variable is used to detect inside of PrintIcm() whether
@@ -245,6 +261,8 @@ MakeInfo (void)
     INFO_DOTMODE (result) = vertices;
 
     INFO_NAMESPACE (result) = NULL;
+
+    SetDefaultPrintOps (&INFO_PRTOPTS (result));
 
     DBUG_RETURN (result);
 }
@@ -1014,6 +1032,114 @@ PrintArgtags (argtab_t *argtab, bool in_comment)
     }
 
     DBUG_RETURN ();
+}
+
+void
+PrintFunapProps (node *ap, node *spap)
+{
+    if (ap != NULL) {
+        if (AP_ISSPAWNED (ap)) {
+            fprintf (global.outfile, "spawn ");
+        }
+        if (AP_SPAWNPLACE (ap) != NULL) {
+            fprintf (global.outfile, "(\"%s\")", AP_SPAWNPLACE (ap));
+        }
+
+    } else {
+        DBUG_ASSERT (spap == NULL, "PrintFunapProps call with 2 non-NULL args");
+        if (SPAP_ISSPAWNED (spap)) {
+            fprintf (global.outfile, "spawn ");
+        }
+        if (SPAP_SPAWNPLACE (spap) != NULL) {
+            fprintf (global.outfile, "(\"%s\")", SPAP_SPAWNPLACE (spap));
+        }
+    }
+}
+
+void
+PrintFundefProps (node *fundef)
+{
+    if ((FUNDEF_ISWRAPPERFUN (fundef))) {
+        fprintf (global.outfile, "wrapper:");
+    }
+    if ((FUNDEF_ISINDIRECTWRAPPERFUN (fundef))) {
+        fprintf (global.outfile, "indirect wrapper:");
+    }
+    if ((FUNDEF_ISWRAPPERENTRYFUN (fundef))) {
+        fprintf (global.outfile, "wrapper entry:");
+    }
+    if ((FUNDEF_ISTYPEERROR (fundef))) {
+        fprintf (global.outfile, "typeerror:");
+    }
+}
+
+void
+PrintFunName (node *fundef, info *arg_info)
+{
+    if (INFO_PRTOPTS (arg_info).fundef_props == TRUE) {
+        PrintFundefProps (fundef);
+    }
+
+    if (FUNDEF_NS (fundef) != NULL) {
+        fprintf (global.outfile, "%s::", NSgetName (FUNDEF_NS (fundef)));
+    }
+    fprintf (global.outfile, "%s", FUNDEF_NAME (fundef));
+}
+
+void
+PrintOperatorAp (node *ap, node *spap, info *arg_info)
+{
+    node *exprs;
+
+    exprs = (ap != NULL ? AP_ARGS (ap) : SPAP_ARGS (spap));
+
+    fprintf (global.outfile, "( ");
+    if (TCcountExprs (exprs) == 2) {
+        /* binary infix operator */
+        TRAVdo (EXPRS_EXPR (exprs), arg_info);
+        fprintf (global.outfile, " ");
+        exprs = EXPRS_NEXT (exprs);
+    }
+
+    if (INFO_PRTOPTS (arg_info).funap_props == TRUE) {
+        PrintFunapProps (ap, spap);
+    }
+    if (ap != NULL) {
+        PrintFunName (AP_FUNDEF (ap), arg_info);
+    } else {
+        SPAP_ID (spap) = TRAVdo (SPAP_ID (spap), arg_info);
+    }
+    /* we are either dealing with a monadic operation or a binary
+       one, whose first argument has been printed already and exprs
+       has been progressed accordingly! */
+    DBUG_ASSERT (TCcountExprs (exprs) == 1,
+                 "operator application with wrong number of arguments encountered!");
+
+    TRAVdo (EXPRS_EXPR (exprs), arg_info);
+    fprintf (global.outfile, ") ");
+}
+
+void
+PrintFunAp (node *ap, node *spap, info *arg_info)
+{
+    node *exprs;
+
+    exprs = (ap != NULL ? AP_ARGS (ap) : SPAP_ARGS (spap));
+
+    if (INFO_PRTOPTS (arg_info).funap_props == TRUE) {
+        PrintFunapProps (ap, spap);
+    }
+    if (ap != NULL) {
+        PrintFunName (AP_FUNDEF (ap), arg_info);
+    } else {
+        SPAP_ID (spap) = TRAVdo (SPAP_ID (spap), arg_info);
+    }
+    fprintf (global.outfile, "(");
+    if (exprs != NULL) {
+        fprintf (global.outfile, " ");
+        TRAVdo (exprs, arg_info);
+    }
+    fprintf (global.outfile, ") ");
 }
 
 /** <!--********************************************************************-->
@@ -3040,55 +3166,20 @@ PRTfuncond (node *arg_node, info *arg_info)
 node *
 PRTap (node *arg_node, info *arg_info)
 {
-    node *fundef;
-
     DBUG_ENTER ();
 
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    fundef = AP_FUNDEF (arg_node);
-
-    DBUG_ASSERT (fundef != NULL, "no AP_FUNDEF found!");
-
-    if (AP_ISSPAWNED (arg_node)) {
-        fprintf (global.outfile, "spawn ");
+    if (LEXERisOperator (FUNDEF_NAME (AP_FUNDEF (arg_node)))) {
+        PrintOperatorAp (arg_node, NULL, arg_info);
+    } else {
+        PrintFunAp (arg_node, NULL, arg_info);
     }
-
-    if (AP_SPAWNPLACE (arg_node) != NULL) {
-        fprintf (global.outfile, "(\"%s\")", AP_SPAWNPLACE (arg_node));
-    }
-
-    /*
-     * print name of 'AP_FUNDEF(arg_node)'
-     */
-    if ((FUNDEF_ISWRAPPERFUN (fundef))) {
-        fprintf (global.outfile, "wrapper:");
-    }
-    if ((FUNDEF_ISINDIRECTWRAPPERFUN (fundef))) {
-        fprintf (global.outfile, "indirect wrapper:");
-    }
-    if ((FUNDEF_ISWRAPPERENTRYFUN (fundef))) {
-        fprintf (global.outfile, "wrapper entry:");
-    }
-    if ((FUNDEF_ISTYPEERROR (fundef))) {
-        fprintf (global.outfile, "typeerror:");
-    }
-    if (FUNDEF_NS (fundef) != NULL) {
-        fprintf (global.outfile, "%s::", NSgetName (FUNDEF_NS (fundef)));
-    }
-    fprintf (global.outfile, "%s", FUNDEF_NAME (fundef));
-
-    fprintf (global.outfile, "(");
-    if (AP_ARGS (arg_node) != NULL) {
-        fprintf (global.outfile, " ");
-        TRAVdo (AP_ARGS (arg_node), arg_info);
-    }
-    fprintf (global.outfile, ") ");
 
     DBUG_EXECUTE_TAG ("PRINT_PTR", fprintf (global.outfile, " /* ");
-                      PRINT_POINTER (global.outfile, (void *)fundef);
+                      PRINT_POINTER (global.outfile, (void *)AP_FUNDEF (arg_node));
                       fprintf (global.outfile, " */ "));
 
     DBUG_RETURN (arg_node);
@@ -3109,26 +3200,15 @@ PRTspap (node *arg_node, info *arg_info)
 {
     DBUG_ENTER ();
 
-    if (SPAP_ISSPAWNED (arg_node)) {
-        fprintf (global.outfile, "spawn ");
-    }
-
-    if (SPAP_SPAWNPLACE (arg_node) != NULL) {
-        fprintf (global.outfile, "(\"%s\")", SPAP_SPAWNPLACE (arg_node));
-    }
-
     if (NODE_ERROR (arg_node) != NULL) {
         NODE_ERROR (arg_node) = TRAVdo (NODE_ERROR (arg_node), arg_info);
     }
 
-    SPAP_ID (arg_node) = TRAVdo (SPAP_ID (arg_node), arg_info);
-
-    fprintf (global.outfile, "(");
-    if (SPAP_ARGS (arg_node) != NULL) {
-        fprintf (global.outfile, " ");
-        TRAVdo (SPAP_ARGS (arg_node), arg_info);
+    if (LEXERisOperator (FUNDEF_NAME (AP_FUNDEF (arg_node)))) {
+        PrintOperatorAp (NULL, arg_node, arg_info);
+    } else {
+        PrintFunAp (NULL, arg_node, arg_info);
     }
-    fprintf (global.outfile, ")");
 
     DBUG_RETURN (arg_node);
 }
@@ -4088,7 +4168,8 @@ PRTicm (node *arg_node, info *arg_info)
 #undef ICM_VARID
 #undef ICM_VARINT
 #undef ICM_END
-        ;
+        {
+        }
     }
 
     if (!compiled_icm) {

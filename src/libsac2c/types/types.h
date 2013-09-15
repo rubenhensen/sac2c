@@ -31,7 +31,7 @@
 #endif /* __bool_true_false_are_defined */
 
 #ifndef __cplusplus
-typedef int bool;
+typedef unsigned int bool;
 #endif
 
 #define FALSE 0
