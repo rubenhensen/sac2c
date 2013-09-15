@@ -157,8 +157,8 @@ if [ test "$GCC" = yes ]; then
     AC_SUBST(GENPIC, ["-fPIC -DPIC"])
   fi  
   AC_SUBST(DEPSFLAG, ["-M"])
-  AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
-  AC_SUBST(CPP, ["gcc -E -P -x c"])
+  AC_SUBST(CPPFILE, ["$CPP -C -x c"])
+  AC_SUBST(CPP, ["$CPP -P -x c"])
   AC_MSG_RESULT([gcc settings])
 elif [ test "$SUNC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -172,8 +172,8 @@ elif [ test "$SUNC" = yes ]; then
   AC_SUBST(PDCCFLAGS, ["-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4 -xc99=all -KPIC"])
   AC_SUBST(GENPIC, ["-KPIC"])
   AC_SUBST(DEPSFLAG, ["-xM"])
-  AC_SUBST(CPPFILE, ["cpp -E -C -x c"])
-  AC_SUBST(CPP, ["cpp -E -P -x c"])
+  AC_SUBST(CPPFILE, ["$CPP -C -x c"])
+  AC_SUBST(CPP, ["$CPP -P -x c"])
   AC_MSG_RESULT([Sun cc settings])
 elif [ test "$DECC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -187,8 +187,8 @@ elif [ test "$DECC" = yes ]; then
   AC_SUBST(PDCCFLAGS, ["-g3"])
   AC_SUBST(GENPIC, [""])
   AC_SUBST(DEPSFLAG, ["-M"])
-  AC_SUBST(CPPFILE, ["cc -E -C -x c"])
-  AC_SUBST(CPP, ["cc -E -P -x c"])
+  AC_SUBST(CPPFILE, ["$CPP -C -x c"])
+  AC_SUBST(CPP, ["$CPP -P -x c"])
   AC_MSG_RESULT([Compaq/DEC cc settings])
 elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_O0, [""])
@@ -202,8 +202,8 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(PDCCFLAGS, ["-std=c99"])
   AC_SUBST(GENPIC, [""])
   AC_SUBST(DEPSFLAG, ["-M"])
-  AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
-  AC_SUBST(CPP, ["gcc -E -P -x c"])
+  AC_SUBST(CPPFILE, ["$CPP -C -x c"])
+  AC_SUBST(CPP, ["$CPP -P -x c"])
   AC_MSG_RESULT([Apple cc settings])
 else
   AC_SUBST(OPT_O0, [""])
@@ -217,8 +217,8 @@ else
   AC_SUBST(PDCCFLAGS, [""])
   AC_SUBST(GENPIC, [""])
   AC_SUBST(DEPSFLAG, ["-M"])
-  AC_SUBST(CPPFILE, ["cpp -C"])
-  AC_SUBST(CPP, ["cpp -P"])
+  AC_SUBST(CPPFILE, ["$CPP -C"])
+  AC_SUBST(CPP, ["$CPP -P"])
   AC_MSG_RESULT([none found])
 fi   
 AC_SUBST(CCMTLINK, ["$PTHREAD_LIBS"])
@@ -238,8 +238,8 @@ if [[ "$GXX" = yes -a "$enable_cplusplus" = yes ]]; then
   AC_SUBST(SAC2C_PDCCFLAGS, ["-Wno-write-strings -O3 -std=c++98"])
   AC_SUBST(GENPIC, ["-fPIC -DPIC"])
   AC_SUBST(DEPSFLAG, ["-M"])
-  AC_SUBST(CPPFILE, ["gcc -E -C -x c"])
-  AC_SUBST(CPP, ["gcc -E -P -x c"])
+  AC_SUBST(CPPFILE, ["$CPP -C -x c"])
+  AC_SUBST(CPP, ["$CPP -P -x c"])
   AC_MSG_RESULT([gcc settings])
 else
   AC_SUBST(SAC2C_CC, ["$CC"])
