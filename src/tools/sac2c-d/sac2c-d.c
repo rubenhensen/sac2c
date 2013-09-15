@@ -1,6 +1,7 @@
+#include "sac.h"
 #include "sactools.h"
 
-#define LIBRARY "/lib/libsac2c.d.so"
+#define LIBRARY "/lib/libsac2c.d" SHARED_LIB_EXT
 #define MAINFUN "SACrunSac2c"
 
 int
