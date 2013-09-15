@@ -91,7 +91,8 @@ static struct {
 
   {"CC", str, &global.config.cc},
   {"CCFLAGS", str, &global.config.ccflags},
-  {"CCDIR", str, &global.config.ccdir},
+  {"CCINCDIR", str, &global.config.ccincdir},
+  {"CCLIBDIR", str, &global.config.cclibdir},
   {"LDFLAGS", str, &global.config.ldflags},
   {"CCLINK", str, &global.config.cclink},
   {"CCMTLINK", str, &global.config.ccmtlink},
@@ -758,8 +759,10 @@ xfree_configuration (configuration_t conf)
         MEMfree (conf.cc);
     if (conf.ccflags)
         MEMfree (conf.ccflags);
-    if (conf.ccdir)
-        MEMfree (conf.ccdir);
+    if (conf.ccincdir)
+        MEMfree (conf.ccincdir);
+    if (conf.cclibdir)
+        MEMfree (conf.cclibdir);
     if (conf.ldflags)
         MEMfree (conf.ldflags);
     if (conf.cclink)

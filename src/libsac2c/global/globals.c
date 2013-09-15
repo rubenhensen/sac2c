@@ -420,7 +420,8 @@ static const char *rename_type_init[] = {
     {                                                                                    \
         NULL,   /* cc			  */                                                             \
           NULL, /* ccflags		  */                                                         \
-          NULL, /* ccdir		  */                                                           \
+          NULL, /* ccincdir		  */                                                        \
+          NULL, /* cclibdir		  */                                                        \
           NULL, /* ldflags		  */                                                         \
           NULL, /* cclink		  */                                                          \
           NULL, /* ccmtlink		  */                                                        \

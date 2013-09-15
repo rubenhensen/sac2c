@@ -16,32 +16,6 @@
 #include "filemgr.h"
 #include "cygwinhelpers.h"
 
-static char *
-GetCCCall (void)
-{
-    str_buf *buffer;
-    char *result;
-
-    DBUG_ENTER ();
-
-    if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
-        && STReq (global.config.cuda_arch, "")) {
-        CTIwarn ("CUDA architecture cannot be detected, set to default(1.0)\n");
-    }
-
-    buffer = SBUFcreate (128);
-
-    SBUFprintf (buffer, "%s %s %s %s %s -L%s ", global.config.cc, global.config.ccflags,
-                global.ccflags, global.config.ldflags, global.config.ccdir,
-                global.tmp_dirname);
-
-    result = SBUF2str (buffer);
-
-    buffer = SBUFfree (buffer);
-
-    DBUG_RETURN (result);
-}
-
 static void
 AddOptimizeFlag (str_buf *buffer)
 {
@@ -80,7 +54,32 @@ AddDebugFlag (str_buf *buffer)
 }
 
 static char *
-GetCCFlags (void)
+GetCCCall (void)
+{
+    str_buf *buffer;
+    char *result;
+
+    DBUG_ENTER ();
+
+    if ((global.backend == BE_cuda || global.backend == BE_cudahybrid)
+        && STReq (global.config.cuda_arch, "")) {
+        CTIwarn ("CUDA architecture cannot be detected, set to default(1.0)\n");
+    }
+
+    buffer = SBUFcreate (128);
+
+    SBUFprintf (buffer, "%s %s %s ", global.config.cc, global.config.ccflags,
+                global.ccflags);
+
+    result = SBUF2str (buffer);
+
+    buffer = SBUFfree (buffer);
+
+    DBUG_RETURN (result);
+}
+
+static char *
+GetCompilationFlags (void)
 {
     str_buf *buffer;
     char *result;
@@ -89,10 +88,33 @@ GetCCFlags (void)
 
     buffer = SBUFcreate (1024);
 
+    SBUFprintf (buffer, "%s ", global.config.ccincdir);
+
     AddOptimizeFlag (buffer);
     AddDebugFlag (buffer);
 
     result = SBUF2str (buffer);
+
+    buffer = SBUFfree (buffer);
+
+    DBUG_RETURN (result);
+}
+
+static char *
+GetLinkingFlags (void)
+{
+    str_buf *buffer;
+    char *result;
+
+    DBUG_ENTER ();
+
+    buffer = SBUFcreate (1024);
+
+    SBUFprintf (buffer, "%s %s -L%s ", global.config.ldflags, global.config.cclibdir,
+                global.tmp_dirname);
+
+    result = SBUF2str (buffer);
+
     buffer = SBUFfree (buffer);
 
     DBUG_RETURN (result);
@@ -314,7 +336,7 @@ BuildDepLibsStringProg (const char *lib, strstype_t kind, void *rest)
 }
 
 static void
-InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
+InvokeCCProg (char *cccall, char *linkflags, char *libs, stringset_t *deps)
 {
     char *libpath;
     char *deplibs;
@@ -333,7 +355,7 @@ InvokeCCProg (char *cccall, char *ccflags, char *libs, stringset_t *deps)
     deplibs = (char *)STRSfold (&BuildDepLibsStringProg, deps, STRcpy (""));
 #endif
 
-    SYScall ("%s %s -o %s %s %s %s %s", cccall, ccflags, global.outfilename,
+    SYScall ("%s %s -o %s %s %s %s %s", cccall, linkflags, global.outfilename,
              global.cfilename, libpath, deplibs, libs);
 
     libpath = MEMfree (libpath);
@@ -376,14 +398,14 @@ CompileOneFilePIC (const char *dir, const char *file, const char *callstring)
 }
 
 static void
-InvokeCCModule (char *cccall, char *ccflags)
+InvokeCCModule (char *cccall, char *compilationflags)
 {
-    char *callstring;
     char *str;
+    char *callstring;
 
     DBUG_ENTER ();
 
-    callstring = STRcat (cccall, ccflags);
+    callstring = STRcat (cccall, compilationflags);
 
     /*
      * compile non-PIC code
@@ -411,29 +433,29 @@ InvokeCCModule (char *cccall, char *ccflags)
     }
 
     SYScall ("cd %s; %s %s -c serialize.%s", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccdir, global.config.tree_cext);
+             global.config.ccincdir, global.config.tree_cext);
     SYScall ("cd %s; %s %s -c filenames.%s", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccdir, global.config.tree_cext);
+             global.config.ccincdir, global.config.tree_cext);
     SYScall ("cd %s; %s %s -c namespacemap.%s", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccdir, global.config.tree_cext);
+             global.config.ccincdir, global.config.tree_cext);
     SYScall ("cd %s; %s %s -c symboltable.%s", global.tmp_dirname, global.config.tree_cc,
-             global.config.ccdir, global.config.tree_cext);
+             global.config.ccincdir, global.config.tree_cext);
     SYScall ("cd %s; %s %s -c dependencytable.%s", global.tmp_dirname,
-             global.config.tree_cc, global.config.ccdir, global.config.tree_cext);
+             global.config.tree_cc, global.config.ccincdir, global.config.tree_cext);
 
-    callstring = MEMfree (callstring);
+    MEMfree (callstring);
 
     DBUG_RETURN ();
 }
 
 static void
-InvokeCCWrapper (char *cccall, char *ccflags)
+InvokeCCWrapper (char *cccall, char *compileflags)
 {
-    char *callstring;
     char *str;
+    char *callstring;
     DBUG_ENTER ();
 
-    callstring = STRcat (cccall, ccflags);
+    callstring = STRcat (cccall, compileflags);
 
     /*
      * compile non-PIC code
@@ -483,7 +505,7 @@ InvokeCCWrapper (char *cccall, char *ccflags)
     CompileOneFilePIC (global.tmp_dirname, str, callstring);
     MEMfree (str);
 
-    callstring = MEMfree (callstring);
+    MEMfree (callstring);
 
     DBUG_RETURN ();
 }
@@ -491,8 +513,9 @@ InvokeCCWrapper (char *cccall, char *ccflags)
 node *
 CCMinvokeCC (node *syntax_tree)
 {
-    char *ccflags;
     char *cccall;
+    char *compileflags;
+    char *linkflags;
     char *libs;
     stringset_t *deps = global.dependencies;
 
@@ -506,19 +529,21 @@ CCMinvokeCC (node *syntax_tree)
     }
 
     cccall = GetCCCall ();
-    ccflags = GetCCFlags ();
+    compileflags = GetCompilationFlags ();
+    linkflags = GetLinkingFlags ();
     libs = GetLibs ();
 
     if (global.filetype == FT_prog) {
-        InvokeCCProg (cccall, ccflags, libs, deps);
+        InvokeCCProg (cccall, linkflags, libs, deps);
     } else if (global.filetype == FT_cmod) {
-        InvokeCCWrapper (cccall, ccflags);
+        InvokeCCWrapper (cccall, compileflags);
     } else {
-        InvokeCCModule (cccall, ccflags);
+        InvokeCCModule (cccall, compileflags);
     }
 
     cccall = MEMfree (cccall);
-    ccflags = MEMfree (ccflags);
+    compileflags = MEMfree (compileflags);
+    linkflags = MEMfree (linkflags);
     libs = MEMfree (libs);
 
     if (global.gen_cccall) {

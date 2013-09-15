@@ -18,9 +18,10 @@ target MBair_32bit :
 
   target MBair_cuda::MBair_32bit::cuda :
 
-  CCDIR :
-  = "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/ "
-    "-I/Developer/GPU\ Computing/C/common/inc "
+  CCINCDIR :
+  = "-I$SAC2CBASE/include/ "
+    "-I/Developer/GPU\ Computing/C/common/inc " CCLIBDIR :
+  = "-L$SAC2CBASE/lib/ "
     "-L/Developer/GPU\ Computing/C/lib" CCLINK :
   = "-lcutil_i386 -lcudart -lcublas" LD_PATH :
   = "-Xlinker -L%path% -Xlinker '-rpath %path%'"
@@ -38,11 +39,12 @@ target MBair_32bit :
 
   target MBpro_cuda::MBpro_64bit::cuda64 :
 
-  CCDIR :
-  = "-I$SAC2CBASE/include/ -L$SAC2CBASE/lib/ "
+  CCINCDIR :
+  = "-I$SAC2CBASE/include/ "
     "-I'/Developer/GPU Computing/C/common/inc' "
-    "-L'/Developer/GPU Computing/C/lib' "
-    "-I\"$CUTIL\" -L\"$CUTIL_LIB\"" CCLINK :
+    "-I\"$CUTIL\" -L\"$CUTIL_LIB\" " CCLIBDIR :
+  = "-L$SAC2CBASE/lib/ "
+    "-L'/Developer/GPU Computing/C/lib' " CCLINK :
   = "-lcutil_x86_64 -lcudart -lcublas" LD_PATH :
   = "-Xlinker -L%path% -Xlinker '-rpath %path%'"
 

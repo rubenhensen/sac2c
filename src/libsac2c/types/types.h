@@ -697,7 +697,8 @@ typedef struct TARGET_LIST_T {
 typedef struct {
     char *cc;
     char *ccflags;
-    char *ccdir;
+    char *ccincdir;
+    char *cclibdir;
     char *ldflags;
     char *cclink;
     char *ccmtlink;
