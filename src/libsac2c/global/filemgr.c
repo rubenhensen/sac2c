@@ -1,3 +1,4 @@
+#include "config.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
@@ -12,7 +13,6 @@
 #define DBUG_PREFIX "FMGR"
 #include "debug.h"
 
-#include "config.h"
 #include "system.h"
 #include "str.h"
 #include "memory.h"
