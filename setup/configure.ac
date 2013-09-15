@@ -126,7 +126,7 @@ AC_DEFINE_UNQUOTED([ENABLE_RTSPEC], [$have_rtspec],
                    [Define to 1 if runtime specialization is enabled, otherwise 0.])
 AC_SUBST([ENABLE_RTSPEC], [$enable_rtspec])
 
-dnl Check which GCC warning options are available and 
+dnl Check which GCC warning options are available and
 dnl add them later to MKCCFLAGS and PDCCFLAGS
 gcc_options=
 if test "$GCC" = yes ; then
@@ -157,7 +157,7 @@ if [ test "$GCC" = yes ]; then
     AC_SUBST(GENPIC, ["-DPIC"])
   else
     AC_SUBST(GENPIC, ["-fPIC -DPIC"])
-  fi  
+  fi
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["$CPP -C -x c"])
   AC_SUBST(CPP, ["$CPP -P -x c"])
@@ -222,7 +222,7 @@ else
   AC_SUBST(CPPFILE, ["$CPP -C"])
   AC_SUBST(CPP, ["$CPP -P"])
   AC_MSG_RESULT([none found])
-fi   
+fi
 AC_SUBST(CCMTLINK, ["$PTHREAD_LIBS"])
 AC_SUBST(CCDLLINK, ["$dlopen_libs $flags_lto"])
 
@@ -249,9 +249,9 @@ else
   AC_SUBST(SAC2C_PDCCFLAGS, ["$PDCCFLAGS"])
 fi
 
-dnl 
+dnl
 dnl append platform specific files to sac2crc
-dnl 
+dnl
 
 AC_SUBST_FILE([RCSUN])
 AC_SUBST_FILE([RCX86])
@@ -268,35 +268,35 @@ AC_MSG_CHECKING([sac2crc system flags])
 
 OSFLAGS=""
 case "$target_os" in
-  solaris*)     
+  solaris*)
     OSFLAGS=["-D__EXTENSIONS__ -D_XPG6 -DMUST_INIT_YY -DPIC"]
     LD_DYNAMIC=["-G -dy"]
     LD_PATH=["-L%path% -R%path%"]
     LD_FLAGS="-Wl,-z,nodefs,-z,lazyload"
     AC_MSG_RESULT([solaris settings])
     ;;
-  *linux*)      
+  *linux*)
     OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"]
     LD_DYNAMIC=["-shared -Wl,-allow-shlib-undefined -O3 $flags_lto"]
     LD_PATH=["-L%path% -Wl,-rpath,%path%"]
     LD_FLAGS="-Wl,-allow-shlib-undefined $flags_lto"
     AC_MSG_RESULT([linux settings])
     ;;
- *cygwin* | *mingw*)      
+ *cygwin* | *mingw*)
     OSFLAGS=["-D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"]
     LD_DYNAMIC=["-dy -shared"]
     LD_PATH=["-L%path% -Wl,-rpath,%path%"]
     LD_FLAGS=""
     AC_MSG_RESULT([cygwin settings])
     ;;
-  *osf*)	
+  *osf*)
     OSFLAGS=["-D_OSF_SOURCE"]
     LD_DYNAMIC=[""]
     LD_PATH=["-L%path%"]
     LD_FLAGS=""
     AC_MSG_RESULT([OSF settings])
     ;;
-  *darwin*)      
+  *darwin*)
     dnl darwin needs some extra flags
     AC_DEFINE(ENABLE_PHM, 0)
     AC_SUBST(ENABLE_PHM, no)
@@ -315,7 +315,7 @@ case "$target_os" in
     AC_MSG_RESULT([BSD settings])
     ;;
   *)
-    OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE -Dlint"]
+    OSFLAGS=["-fPIC -DPIC -D_POSIX_SOURCE -D_SVID_SOURCE -D_BSD_SOURCE"]
     LD_DYNAMIC=["-dy -shared -Wl,-allow-shlib-undefined"]
     LD_PATH=["-L%path% -Wl,-rpath,%path%"]
     LD_FLAGS="-Wl,-allow-shlib-undefined"
@@ -333,7 +333,7 @@ AC_SUBST([LD_DYNAMIC])
 AC_SUBST([LD_PATH])
 AC_SUBST([LD_FLAGS])
 
-dnl 
+dnl
 dnl static sac2c settings for config.h
 dnl
 
