@@ -32,8 +32,8 @@ AC_DEFINE_UNQUOTED([IS_CYGWIN], [$is_cygwin],
                    [Set to 1 if target is Cygwin, otherwise 0.])
 
 dnl set OS and ARCH flags
-AC_DEFINE_UNQUOTED(OS,"$target_os",set to the os type)
-AC_DEFINE_UNQUOTED(ARCH,"$target_cpu",set to the architecture)
+AC_DEFINE_UNQUOTED([OS], ["$target_os"], [OS string])
+AC_DEFINE_UNQUOTED([ARCH], ["$target_cpu"], [CPU architecture string])
 
 # Enable sac2c compilation with C++
 AC_ARG_ENABLE(cplusplus,
