@@ -26,41 +26,6 @@
 #include "pattern_match.h"
 #include "move_assigns.h"
 #include <limits.h> /* MAX_INT */
-/** <!--********************************************************************-->
- *
- * @name INFO structure
- * @{
- *
- *****************************************************************************/
-
-struct INFO {
-};
-
-static info *
-MakeInfo (void)
-{
-    info *result;
-
-    DBUG_ENTER ();
-
-    result = (info *)MEMmalloc (sizeof (info));
-
-    DBUG_RETURN (result);
-}
-
-static info *
-FreeInfo (info *info)
-{
-    DBUG_ENTER ();
-
-    info = MEMfree (info);
-
-    DBUG_RETURN (info);
-}
-
-/** <!--********************************************************************-->
- * @}  <!-- INFO structure -->
- *****************************************************************************/
 
 /** <!--********************************************************************-->
  *
@@ -78,13 +43,10 @@ FreeInfo (info *info)
 node *
 MSSdoMoveSyncStatement (node *syntax_tree)
 {
-    info *info;
     pattern *pat;
     pattern *stop_pat;
     DBUG_ENTER ();
     DBUG_PRINT ("Moving sync statements...");
-
-    info = MakeInfo ();
 
     TRAVpush (TR_mss);
 
@@ -97,8 +59,6 @@ MSSdoMoveSyncStatement (node *syntax_tree)
 
     pat = PMfree (pat);
     stop_pat = PMfree (stop_pat);
-
-    info = FreeInfo (info);
 
     DBUG_RETURN (syntax_tree);
 }

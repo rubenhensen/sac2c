@@ -657,7 +657,7 @@ GetNextAny (char **ret, node *exprs)
     case N_numbyte:
         (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
         exprs = GetNextByte (&byval, exprs);
-        sprintf ((*ret), "%hd", byval);
+        sprintf ((*ret), "%hhd", byval);
         break;
     case N_numshort:
         (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
@@ -682,7 +682,7 @@ GetNextAny (char **ret, node *exprs)
     case N_numubyte:
         (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
         exprs = GetNextUbyte (&ubyval, exprs);
-        sprintf ((*ret), "%hu", ubyval);
+        sprintf ((*ret), "%hhu", ubyval);
         break;
     case N_numushort:
         (*ret) = (char *)MEMmalloc (sizeof (char) * 50);
@@ -724,7 +724,7 @@ GetNextAny (char **ret, node *exprs)
         break;
     case N_floatvec:
         exprs = GetNextFloatvec (&fvval, exprs);
-        (*ret) = CVfloatvec2String (fval);
+        (*ret) = CVfloatvec2String (fvval);
         break;
 
     case N_double:

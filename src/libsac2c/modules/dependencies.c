@@ -256,21 +256,21 @@ PrintSACLib (const char *name)
         filename = MEMfree (filename);
 
         if (result != NULL) {
-            /*
-                 filename = (char *)MEMmalloc( sizeof( char) *
-                                       ( STRlen( result) +
-                                         16 + /* $(LIBTARGETDIR)/ */
-            //                            3 + /* lib */
-            //                            4 + /* Tree */
-            //                             STRlen( SHARED_LIB_EXT) + 2 + /* .so\0 */
-            //                             1024 +
-            //                             STRlen( global.config.lib_variant)));
-            /*      sprintf( filename,
-                           "%s$(LIBTARGETDIR)/lib%sTree%s" SHARED_LIB_EXT,
-                           result,
-                           name,
-                           global.config.lib_variant);
-            */
+#if 0
+      filename = (char *)MEMmalloc( sizeof( char) *
+                            ( STRlen( result) +
+                              16 + /* $(LIBTARGETDIR)/ */
+  //                            3 + /* lib */
+  //                            4 + /* Tree */
+ //                             STRlen( SHARED_LIB_EXT) + 2 + /* .so\0 */
+ //                             1024 +
+ //                             STRlen( global.config.lib_variant)));
+        sprintf( filename,
+               "%s$(LIBTARGETDIR)/lib%sTree%s" SHARED_LIB_EXT, 
+               result, 
+               name,
+               global.config.lib_variant);
+#endif
             filename = STRcatn (6, result, "$(LIBTARGETDIR)/lib", name, "Tree",
                                 global.config.lib_variant, SHARED_LIB_EXT);
 

@@ -137,6 +137,8 @@ LIBBcreateLibrary (node *syntax_tree)
 
         ldDir = CYGHbuildLibDirectoryString ();
         ldCmd = STRcat (ldCmd, ldDir);
+#else
+        (void)ldDir; /* Surpress unused variable warning. */
 #endif
 
         DBUG_PRINT ("linker command: %s", ldCmd);

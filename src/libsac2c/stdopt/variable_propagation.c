@@ -57,41 +57,6 @@
  *       modifications, you have to take a look at these files...
  */
 
-/*
- * INFO structure
- */
-struct INFO {
-};
-
-/*
- * INFO macros
- */
-
-/*
- * INFO functions
- */
-static info *
-MakeInfo (void)
-{
-    info *result;
-
-    DBUG_ENTER ();
-
-    result = (info *)MEMmalloc (sizeof (info));
-
-    DBUG_RETURN (result);
-}
-
-static info *
-FreeInfo (info *info)
-{
-    DBUG_ENTER ();
-
-    info = MEMfree (info);
-
-    DBUG_RETURN (info);
-}
-
 /** <!--********************************************************************-->
  *
  * @fn node *VPavis( node *arg_node, info *arg_info)
@@ -206,17 +171,11 @@ VPfundef (node *arg_node, info *arg_info)
 node *
 VPdoVarPropagation (node *arg_node)
 {
-    info *arg_info;
-
     DBUG_ENTER ();
 
-    arg_info = MakeInfo ();
-
     TRAVpush (TR_vp);
-    arg_node = TRAVdo (arg_node, arg_info);
+    arg_node = TRAVdo (arg_node, NULL);
     TRAVpop ();
-
-    arg_info = FreeInfo (arg_info);
 
     DBUG_RETURN (arg_node);
 }

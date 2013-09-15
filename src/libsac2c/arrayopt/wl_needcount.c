@@ -385,7 +385,7 @@ WLNCid (node *arg_node, info *arg_info)
                 avis = ID_AVIS (producerWL);
                 DBUG_EXECUTE (PRTdoPrintNodeFile (stderr, parent));
                 DBUG_PRINT ("WLNCid looking at %s.", AVIS_NAME (avis));
-                if ((avis == ID_AVIS (arg_node))) {
+                if (avis == ID_AVIS (arg_node)) {
                     incrementNeedcount (avis, arg_info);
                 }
             }

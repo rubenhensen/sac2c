@@ -6240,7 +6240,7 @@ COMPsimd_prfSel (node *arg_node, info *arg_info)
 static node *
 COMPsimd_sel_SxS (node *arg_node, info *arg_info)
 {
-    node *arg1, *arg2, *arg3;
+    node *arg1, *arg2;
     node *let_ids;
     node *ret_node;
 

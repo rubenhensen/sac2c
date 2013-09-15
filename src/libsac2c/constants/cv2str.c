@@ -98,7 +98,7 @@ COcv2StrTEMPLATE (unsigned char, UByte, "%c")
             break;
         }
 
-    sprintf (buf, "]", len);
+    sprintf (buf, "]");
 
     return buf;
 }

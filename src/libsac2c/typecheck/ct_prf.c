@@ -3956,8 +3956,6 @@ NTCCTprf_simd_sel_SxS (te_info *info, ntype *args)
     ntype *res = NULL;
     ntype *idx, *simd_vector;
     char *err_msg;
-    constant *co;
-    int vec_length;
 
     DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 2,
@@ -3989,8 +3987,6 @@ NTCCTprf_simd_modarray (te_info *info, ntype *args)
     ntype *res = NULL;
     ntype *simd_vector, *idx, *value;
     char *err_msg;
-    constant *co;
-    int vec_length;
 
     DBUG_ENTER ();
     DBUG_ASSERT (TYgetProductSize (args) == 3,

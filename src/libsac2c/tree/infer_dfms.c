@@ -1565,7 +1565,7 @@ INFDFMSap (node *arg_node, info *arg_info)
     fundef_args = FUNDEF_ARGS (AP_FUNDEF (arg_node));
     ap_args = AP_ARGS (arg_node);
     while ((ap_args != NULL) && (fundef_args != NULL)) {
-        if ((NODE_TYPE (EXPRS_EXPR (ap_args)) == N_globobj)) {
+        if (NODE_TYPE (EXPRS_EXPR (ap_args)) == N_globobj) {
             /* CAJ
              * How should objects be handled, when lifting?
              */

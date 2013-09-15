@@ -202,7 +202,7 @@ COsimd_add (constant *dummy, constant *a, constant *b)
 
     DBUG_ENTER ();
     res = COzip (global.zipcv_plus, a, b, T_unknown);
-    DBUG_EXECUTE (COINTdbugPrintBinOp (__func__, a, b, res));
+    DBUG_EXECUTE (COINTdbugPrintBinOp ((char *)__func__, a, b, res));
     DBUG_RETURN (res);
 }
 constant *
@@ -212,7 +212,7 @@ COsimd_sub (constant *dummy, constant *a, constant *b)
 
     DBUG_ENTER ();
     res = COzip (global.zipcv_minus, a, b, T_unknown);
-    DBUG_EXECUTE (COINTdbugPrintBinOp (__func__, a, b, res));
+    DBUG_EXECUTE (COINTdbugPrintBinOp ((char *)__func__, a, b, res));
     DBUG_RETURN (res);
 }
 constant *
@@ -222,7 +222,7 @@ COsimd_mul (constant *dummy, constant *a, constant *b)
 
     DBUG_ENTER ();
     res = COzip (global.zipcv_mul, a, b, T_unknown);
-    DBUG_EXECUTE (COINTdbugPrintBinOp (__func__, a, b, res));
+    DBUG_EXECUTE (COINTdbugPrintBinOp ((char *)__func__, a, b, res));
     DBUG_RETURN (res);
 }
 constant *
@@ -232,7 +232,7 @@ COsimd_div (constant *dummy, constant *a, constant *b)
 
     DBUG_ENTER ();
     res = COzip (global.zipcv_div, a, b, T_unknown);
-    DBUG_EXECUTE (COINTdbugPrintBinOp (__func__, a, b, res));
+    DBUG_EXECUTE (COINTdbugPrintBinOp ((char *)__func__, a, b, res));
     DBUG_RETURN (res);
 }
 

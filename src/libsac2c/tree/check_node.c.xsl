@@ -268,7 +268,7 @@ version="1.0">
       <xsl:value-of select="' = '" />
       <- right side of assignment -->
       <xsl:value-of select="'CHKMtouch'"/>
-      <xsl:value-of select="'('"/>
+      <xsl:value-of select="'((void*) '"/>
       <xsl:call-template name="node-access">
         <xsl:with-param name="node">
           <xsl:value-of select="'arg_node'" />

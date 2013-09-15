@@ -8,6 +8,7 @@
 #include "constants.h"
 #include "constants_internal.h"
 #include "tree_basic.h"
+#include "new_types.h"
 
 /******************************************************************************
  ***
@@ -471,9 +472,6 @@ COsimd_sel (constant *simd_length, constant *idx, constant *a)
 constant *
 COsimd_sel_SxS (constant *idx, constant *a)
 {
-    void *elems;
-    int res_dim, res_vlen, curr_ext_a, i;
-    shape *res_shp;
     constant *res, *co;
     float fval;
 

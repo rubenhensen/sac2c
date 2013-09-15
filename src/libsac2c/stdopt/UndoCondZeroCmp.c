@@ -186,7 +186,7 @@ CmpToSub (prf op)
         break;
 
     default:
-        op = op;
+        break;
     }
 
     DBUG_RETURN (op);

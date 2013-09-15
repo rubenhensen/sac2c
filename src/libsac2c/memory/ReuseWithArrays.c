@@ -303,7 +303,7 @@ IsValidIndexHelper (node *index, node **ivs, node **ivids, node *partn)
             *ivs = SET_NEXT (*ivs);
             *ivids = SET_NEXT (*ivids);
         }
-    } else if ((NODE_TYPE (index2) == N_id)) {
+    } else if (NODE_TYPE (index2) == N_id) {
         // Case 3: index matches WITHID_VEC.
         if (IVUTisIvMatchesWithid (index2, SET_MEMBER (*ivs), SET_MEMBER (*ivids))) {
             *ivs = SET_NEXT (*ivs);

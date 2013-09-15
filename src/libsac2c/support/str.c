@@ -972,7 +972,7 @@ STRreplaceSpecialCharacters (const char *name)
         new_name = (char *)MEMmalloc (1 + (3 * STRlen (name)) * sizeof (char));
         new_name[0] = '\0';
 
-        for (i = 0, j = 0; (size_t)i < STRlen (name); i++, j++) {
+        for (i = 0, j = 0; i < STRlen (name); i++, j++) {
             switch (name[i]) {
             case '.':
                 tmp = "_DO";

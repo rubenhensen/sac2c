@@ -715,7 +715,7 @@ xfree_namespace (namespace_t *xnamespace)
 void
 xfree_namespace_pool ()
 {
-    size_t i;
+    int i;
     nspool_t *p = pool;
 
     for (i = 0; i < nextid; i++) {

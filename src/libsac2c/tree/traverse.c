@@ -62,7 +62,7 @@ TRAVdo (node *arg_node, info *arg_info)
      * correctly in case MakeXxx is called.
      */
     global.linenum = NODE_LINE (arg_node);
-    global.filename = NODE_FILE (arg_node);
+    global.filename = (char *)NODE_FILE (arg_node);
 
     /*
      * Save node type as it might be modified during traversal

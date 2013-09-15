@@ -2399,7 +2399,7 @@ PropagatePrfExtrema (node *arg_node, info *arg_info)
             IVEXPsetMinvalIfNotNull (lhsavis, minv);
         }
         break;
-#endif UNDERCONSTRUCTION
+#endif /* UNDERCONSTRUCTION */
 
     default:
         break;

@@ -171,7 +171,7 @@ CheckPrfSel (node *arg_node, info *arg_info)
             ids_tmp = ASSIGN_LHS (INFO_RDEPEND_FUSIONABLE_WL (arg_info));
             cexprs = INFO_RDEPEND_CEXPRS (arg_info);
             while (ids_tmp != NULL) {
-                if ((IDS_AVIS (ids_tmp) == ID_AVIS (PRF_ARG2 (arg_node))))
+                if (IDS_AVIS (ids_tmp) == ID_AVIS (PRF_ARG2 (arg_node)))
                     break;
                 ids_tmp = IDS_NEXT (ids_tmp);
                 cexprs = EXPRS_NEXT (cexprs);

@@ -6771,7 +6771,7 @@ BuildCondAssign (node *prf_ass, prf rel_prf, node *expr, node *then_ass, node *e
         case F_shape_A: {
             node *prf2, *prf3, *prf4, *array;
             node *flt_prf2, *flt_prf3, *flt_prf4, *flt_array;
-            node *aexprs, *last_ass;
+            node *aexprs;
             node *id;
             node *el;
             int dim;
@@ -6911,7 +6911,7 @@ BuildDispatchErrorAssign (char *funname, node *args, node *rets, node *vardecs)
 
     exprs = TBmakeExprs (TCmakeStrCopy (funname), Args2Exprs (args));
     exprs = TCappendExprs (TUmakeTypeExprsFromRets (rets), exprs);
-    retcount = TBmakeNum (TCcountRets (rets)), exprs;
+    retcount = TBmakeNum (TCcountRets (rets));
     // ?? retcount = FLATGexpression2Avis( retcount, &vardecs, &assigns, NULL);
     exprs = TBmakeExprs (retcount, exprs);
 

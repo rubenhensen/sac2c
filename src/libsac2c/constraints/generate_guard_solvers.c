@@ -268,7 +268,7 @@ GGSprf (node *arg_node, info *arg_info)
         patx = PMfree (patx);
         paty = PMfree (paty);
         pat2 = PMfree (pat2);
-#endif HOWDOESPMWORK
+#endif /* HOWDOESPMWORK */
 
         patxp = PMparam (1, PMAgetNode (&x), 0);
         patyp = PMparam (1, PMAgetNode (&y), 0);

@@ -412,14 +412,14 @@ RWOprf (node *arg_node, info *arg_info)
         if ((PMmatchFlatSkipExtremaAndGuards (pat2, iv))
             && ((F_add_SxS == selop) || (F_sub_SxS == selop))) {
             // Look for IV + offset OR IV - offset OR IV - offset  OR offset - IV
-            if ((ID_AVIS (arg1) == WITHID_VEC (INFO_WITHID (arg_info)))) {
+            if (ID_AVIS (arg1) == WITHID_VEC (INFO_WITHID (arg_info))) {
                 other = arg2; // IV +- offset
             } else {
-                if ((ID_AVIS (arg2) == WITHID_VEC (INFO_WITHID (arg_info)))) {
+                if (ID_AVIS (arg2) == WITHID_VEC (INFO_WITHID (arg_info))) {
                     other = arg1; // offset +- IV
                 }
             }
-            int fixme; // how interesting. This code now does nothing more with other.
+            // FIXME: how interesting. This code now does nothing more with other.
         }
 
         // This block of code handles a scalarized index vector, stored

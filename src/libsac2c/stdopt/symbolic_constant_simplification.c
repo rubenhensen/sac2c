@@ -1982,7 +1982,6 @@ node *
 SCSprf_mod_SxS (node *arg_node, info *arg_info)
 {
     node *res = NULL;
-    bool z = FALSE;
 
     DBUG_ENTER ();
 

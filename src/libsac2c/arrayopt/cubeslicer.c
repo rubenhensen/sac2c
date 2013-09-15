@@ -383,7 +383,7 @@ isInt1Part (node *arg_node, node *cwlb1, node *cwlb2, node *cwlproj1, node *cwlp
         COfreeConstant (con);
     }
 
-    int fixthis;
+    // FIXME
     z2 = (TULSisValuesMatch (cwlb1, cwlproj1) && TULSisValuesMatch (cwlb2, cwlproj2));
     if (!z) {
         DBUG_PRINT ("someone is confused");
@@ -548,7 +548,7 @@ FindIntersection (node *idx, node *producerWLGenerator, node *cwlp, info *arg_in
 
                 z = INTERSECT_sliceneeded;
                 SetWLProjections (noteint, intersectListNo, arg_info);
-#endif BROKEN
+#endif /* BROKEN */
             }
 
             if (intnull) {
@@ -791,8 +791,8 @@ BuildSubcube (node *arg_node, info *arg_info, node *lb, node *ub, node *step, no
     node *genn;
 
     DBUG_ENTER ();
-    int fixme; // need to check current bounds against new bounds!
-               // and maybe is1Part and/or isNull
+    // FIXME: need to check current bounds against new bounds!
+    // and maybe is1Part and/or isNull
 
     genn = TBmakeGenerator (F_wl_le, F_wl_lt, DUPdoDupNode (lb), DUPdoDupNode (ub),
                             DUPdoDupNode (step), DUPdoDupNode (width));
@@ -1021,7 +1021,7 @@ BuildSubcubes (node *arg_node, info *arg_info)
  * @result: TRUE if arg_node has at least one exact intersect present
  *
  *****************************************************************************/
-static bool
+static UNUSED bool
 IntersectExactPresent (node *arg_node)
 {
     bool z = FALSE;

@@ -47,6 +47,9 @@ version="1.0">
 #ifndef _SAC_NODE_BASIC_H_
 #define _SAC_NODE_BASIC_H_
 
+#include &lt;signal.h&gt;
+#include &lt;unistd.h&gt;
+
 #ifndef _SAC_TREE_BASIC_H_
 #error "node_basic.h should only be included as part of tree_basic.h!"
 #endif
@@ -75,7 +78,7 @@ node *NBMacroMatchesType( node *node, nodetype type)
             node->mnodetype, ndtp_name,
             type, global.mdb_nodetype[type]);
     fflush(stdout);
-    *((int *) 0) = 1; /* segfault */
+    kill(getpid(), SIGSEGV); /* segfault */
   }
 #endif
 

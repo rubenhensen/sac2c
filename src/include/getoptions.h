@@ -129,6 +129,10 @@
         char *OPT = NULL;                                                                \
         char *ARG = NULL;                                                                \
                                                                                          \
+        (void)ARGS_shift; /* Surpress unused var warning */                              \
+        (void)ARGS_argv;  /* Surpress unused var warning */                              \
+        (void)OPT;        /* Surpress unused var warning */                              \
+        (void)ARG;        /* Surpress unused var warning */                              \
         while (ARGS_i < ARGS_argc) {
 
 #define ARGS_FLAG(s, action)                                                             \
