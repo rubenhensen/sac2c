@@ -60,12 +60,6 @@ CHECK_LTO
 dnl Check if C compiler supports SIMD syntax
 CHECK_SIMD_SYNTAX
 
-dnl check for ranlib
-AC_PROG_RANLIB
-
-dnl check, whether we need -traditinal flag
-AC_PROG_GCC_TRADITIONAL
-
 dnl Check for SAC back-ends (CHECK_LPEL must appear after CHECK_MT)
 CHECK_MT
 CHECK_LPEL
@@ -74,6 +68,9 @@ CHECK_SL
 CHECK_OMP
 dnl enable private heap manager?
 CHECK_PHM
+
+dnl check for ranlib
+AC_PROG_RANLIB
 
 dnl find a code beautifier.
 CHECK_CODE_BEAUTIFIER
