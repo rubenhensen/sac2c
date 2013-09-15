@@ -153,7 +153,7 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(RCLDFLAGS, [""])
   AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin $flags_lto"])
   AC_SUBST(MKCCFLAGS, ["$gcc_options -pedantic -g $flags_lto"])
-  AC_SUBST(PDCCFLAGS, ["$gcc_options -pedantic -O3 $flags_lto"])
+  AC_SUBST(PDCCFLAGS, ["$gcc_options -pedantic -g -O3 $flags_lto"])
   if [ test "$IS_CYGWIN" = yes ]; then
     AC_SUBST(GENPIC, ["-DPIC"])
   else
@@ -238,7 +238,7 @@ if [[ "$GXX" = yes -a "$enable_cplusplus" = yes ]]; then
   AC_SUBST(RCLDFLAGS, [""])
   AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin"])
   AC_SUBST(SAC2C_MKCCFLAGS, ["-Wno-write-strings -g"])
-  AC_SUBST(SAC2C_PDCCFLAGS, ["-Wno-write-strings -O3"])
+  AC_SUBST(SAC2C_PDCCFLAGS, ["-Wno-write-strings -g -O3"])
   AC_SUBST(GENPIC, ["-fPIC -DPIC"])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["$CPP -C -x c"])
