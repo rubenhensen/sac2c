@@ -229,11 +229,12 @@ include $(MAKEFILE_DIR)/check.mkf
 # Rules for configure mechanism
 #
 
-config: 
-	@ cd setup ; \
-          svn lock configure $(AUTOHEADERED) ; \
-          autoconf ; \
-          autoheader ; \
+config:
+	@ cd setup && \
+          svn lock configure $(AUTOHEADERED) && \
+          aclocal -I config && \
+          autoconf -v -f -i && \
+          autoheader && \
           svn commit configure $(AUTOHEADERED)
 
 
