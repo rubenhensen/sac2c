@@ -46,7 +46,10 @@ if test "${ENABLE_CPLUSPLUS}" = "yes" ; then
   enable_cplusplus=yes
 fi
 
-# Check if C preprocessor is available
+# Check if C compiler and preprocessor are available
+# we force CFLAGS to be empty, so that it does not default to -g -O2
+CFLAGS=" "
+AC_PROG_CC_C99
 AC_PROG_CPP()
 
 # Enable system extensions when they are disabled by default
@@ -148,9 +151,9 @@ if [ test "$GCC" = yes ]; then
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
-  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin -std=c99 $flags_lto"])  
-  AC_SUBST(MKCCFLAGS, ["$gcc_options -pedantic -g -std=c99 $flags_lto"])
-  AC_SUBST(PDCCFLAGS, ["$gcc_options -pedantic -O3 -std=c99 $flags_lto"])
+  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin $flags_lto"])
+  AC_SUBST(MKCCFLAGS, ["$gcc_options -pedantic -g $flags_lto"])
+  AC_SUBST(PDCCFLAGS, ["$gcc_options -pedantic -O3 $flags_lto"])
   if [ test "$IS_CYGWIN" = yes ]; then
     AC_SUBST(GENPIC, ["-DPIC"])
   else
@@ -167,9 +170,9 @@ elif [ test "$SUNC" = yes ]; then
   AC_SUBST(OPT_O3, [-xO5])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
-  AC_SUBST(RCCCFLAGS, ["-dalign -fsimple -xsafe=mem -xc99=all"])
-  AC_SUBST(MKCCFLAGS, ["-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xc99=all"])
-  AC_SUBST(PDCCFLAGS, ["-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4 -xc99=all -KPIC"])
+  AC_SUBST(RCCCFLAGS, ["-dalign -fsimple -xsafe=mem"])
+  AC_SUBST(MKCCFLAGS, ["-erroff=E_CAST_DOESNT_YIELD_LVALUE -g"])
+  AC_SUBST(PDCCFLAGS, ["-erroff=E_CAST_DOESNT_YIELD_LVALUE -g -xO4 -KPIC"])
   AC_SUBST(GENPIC, ["-KPIC"])
   AC_SUBST(DEPSFLAG, ["-xM"])
   AC_SUBST(CPPFILE, ["$CPP -C -x c"])
@@ -197,9 +200,9 @@ elif [ test "$MACC" = yes ]; then
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
-  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin -std=c99"])
-  AC_SUBST(MKCCFLAGS, ["-Wall -std=c99 -g"])
-  AC_SUBST(PDCCFLAGS, ["-std=c99"])
+  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin"])
+  AC_SUBST(MKCCFLAGS, ["-Wall -g"])
+  AC_SUBST(PDCCFLAGS, [""])
   AC_SUBST(GENPIC, [""])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["$CPP -C -x c"])
@@ -233,9 +236,9 @@ if [[ "$GXX" = yes -a "$enable_cplusplus" = yes ]]; then
   AC_SUBST(OPT_O3, [-O3])
   AC_SUBST(OPT_g, [-g])
   AC_SUBST(RCLDFLAGS, [""])
-  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin -std=c99"])
-  AC_SUBST(SAC2C_MKCCFLAGS, ["-Wno-write-strings -g -std=c++98"])
-  AC_SUBST(SAC2C_PDCCFLAGS, ["-Wno-write-strings -O3 -std=c++98"])
+  AC_SUBST(RCCCFLAGS, ["-Wall -Wno-unused -fno-builtin"])
+  AC_SUBST(SAC2C_MKCCFLAGS, ["-Wno-write-strings -g"])
+  AC_SUBST(SAC2C_PDCCFLAGS, ["-Wno-write-strings -O3"])
   AC_SUBST(GENPIC, ["-fPIC -DPIC"])
   AC_SUBST(DEPSFLAG, ["-M"])
   AC_SUBST(CPPFILE, ["$CPP -C -x c"])
