@@ -81,6 +81,7 @@ CHECK_MT
 CHECK_LPEL
 CHECK_CUDA
 CHECK_SL
+CHECK_OMP
 
 # find a code beautifier.
 CHECK_CODE_BEAUTIFIER
@@ -105,23 +106,6 @@ AC_CHECK_FUNCS(mkdtemp)
 
 # check DLL extension
 CHECK_DLL_EXT
-
-dnl search for omp.h
-AC_CHECK_HEADER(omp.h,[
-
-dnl if found, enable OpenMP backend
-AC_DEFINE(HAVE_OMP_H, 1, set to 1 because you have the <omp.h> header file)
-AC_DEFINE(ENABLE_OMP, 1, set to 1 to enable OpenMP backend)
-AC_SUBST(ENABLE_OMP, yes)
-
-],[
-
-dnl otherwise disable OpenMP backend
-AC_DEFINE(HAVE_OMP_H, 0, set to 0 because you do not have the <omp.h> header file)
-AC_DEFINE(ENABLE_OMP, 0, set to 0 to disable OpenMP backend)
-AC_SUBST(ENABLE_OMP, no)
-
-])
 
 dnl search for dlfcn.h
 AC_CHECK_HEADER(dlfcn.h,[
