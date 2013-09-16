@@ -83,6 +83,7 @@ CHECK_REQUIRED_TOOL([SORT], [sort])
 CHECK_REQUIRED_TOOL([UNIQ], [uniq])
 CHECK_REQUIRED_TOOL([M4], [gm4 m4])
 CHECK_REQUIRED_TOOL([XSLT], [xsltproc sabcmd])
+CHECK_REQUIRED_TOOL([BASH], [bash])
 
 dnl search for dot
 CHECK_GRAPHVIZ
